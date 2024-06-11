@@ -1,5 +1,5 @@
 ---
-title: "Configuration overview"
+title: "How to configure NGINX Agent"
 draft: false
 weight: 100
 toc: true
@@ -8,8 +8,6 @@ docs: "DOCS-1229"
 categories: ["configuration"]
 doctypes: ["task"]
 ---
-
-## Overview
 
 The following sections explain how to configure NGINX Agent using configuration files, CLI flags, and environment variables.
 
@@ -25,7 +23,7 @@ The following sections explain how to configure NGINX Agent using configuration 
 
 {{</note>}}
 
-### Configure with Config Files
+## Configure with Config Files
 
 The default locations of configuration files for NGINX Agent are `/etc/nginx-agent/nginx-agent.conf` and `/var/lib/nginx-agent/agent-dynamic.conf`. The `agent-dynamic.conf` file default location is different for FreeBSD which is located `/var/db/nginx-agent/agent-dynamic.conf`. These files have comments at the top indicating their purpose.
 
@@ -35,7 +33,7 @@ Examples of the configuration files are provided below:
     <summary>example nginx-agent.conf</summary>
 
 {{<note>}}
-In the following example `nginx-agent.conf` file, you can change the `server.host` and `server.grpcPort` to connect to the control/management plane.
+In the following example `nginx-agent.conf` file, you can change the `server.host` and `server.grpcPort` to connect to the control plane.
 {{</note>}}
 
 ```nginx {hl_lines=[13]}
@@ -74,7 +72,7 @@ nginx:
 # data plane status message / 'heartbeat'
 dataplane:
   status:
-    # poll interval for dataplane status - the frequency the agent will query the dataplane for changes
+    # poll interval for dataplane status - the frequency the NGINX Agent will query the dataplane for changes
     poll_interval: 30s
     # report interval for dataplane status - the maximum duration to wait before syncing dataplane information if no updates have been observed
     report_interval: 24h
@@ -138,125 +136,84 @@ tags:
 
 </details>
 
+## CLI Flags & Environment Variables
 
-### NGINX Agent CLI Flags & Usage {#nginx-agent-cli-flags-usage}
+This section details the CLI flags and corresponding environment variables used to configure the NGINX Agent.
 
-This section displays the configurable options for NGINX Agent that can be set with CLI flags. See the CLI flags and their uses in the figure below:
+### Usage
 
-<details open>
-  <summary>NGINX Agent CLI flags & usage</summary>
+#### CLI Flags
 
-```text
-Usage:
-  nginx-agent [flags]
-  nginx-agent [command]
-
-Available Commands:
-  completion  Generate completion script.
-  help        Help about any command
-
-Flags:
-      --api-cert string                                  The cert used by the Agent API.
-      --api-host string                                  The host used by the Agent API. (default "127.0.0.1")
-      --api-key string                                   The key used by the Agent API.
-      --api-port int                                     The desired port to use for nginx-agent to expose for HTTP traffic.
-      --config-dirs string                               Defines the paths that you want to grant nginx-agent read/write access to. This key is formatted as a string and follows Unix PATH format. (default "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules:/etc/nms")
-      --dataplane-report-interval duration               The amount of time the agent will report on the dataplane. After this period of time it will send a snapshot of the dataplane information. (default 24h0m0s)
-      --dataplane-status-poll-interval duration          The frequency the agent will check the dataplane for changes. Used as a "heartbeat" to keep the gRPC connections alive. (default 30s)
-      --display-name string                              The instance's 'name' value.
-      --dynamic-config-path string                       Defines the path of the Agent dynamic config file. (default "/var/lib/nginx-agent/agent-dynamic.conf")
-      --features strings                                 A comma-separated list of features enabled for the agent. (default [registration,nginx-config-async,nginx-ssl-config,nginx-counting,metrics,dataplane-status,process-watcher,file-watcher,activity-events,agent-api])
-  -h, --help                                             help for nginx-agent
-      --ignore-directives strings                        A comma-separated list of ignoring directives which contain sensitive info.
-      --instance-group string                            The instance's 'group' value.
-      --log-level string                                 The desired verbosity level for logging messages from nginx-agent. Available options, in order of severity from highest to lowest, are: panic, fatal, error, info, debug, and trace. (default "info")
-      --log-path string                                  The path to output log messages to. If the default path doesn't exist, log messages are output to stdout/stderr.
-      --metrics-bulk-size int                            The amount of metrics reports collected before sending the data back to the server. (default 20)
-      --metrics-collection-interval duration             Sets the interval, in seconds, at which metrics are collected. (default 15s)
-      --metrics-mode string                              Sets the desired metrics collection mode: streaming or aggregation. (default "aggregated")
-      --metrics-report-interval duration                 The polling period specified for a single set of metrics being collected. (default 1m0s)
-      --nginx-config-reload-monitoring-period duration   The duration NGINX Agent will monitor error logs after a NGINX reload (default 10s)
-      --nginx-exclude-logs string                        One or more NGINX access log paths that you want to exclude from metrics collection. This key is formatted as a string and multiple values should be provided as a comma-separated list.
-      --nginx-socket string                              The NGINX Plus counting unix socket location. (default "unix:/var/run/nginx-agent/nginx.sock")
-      --nginx-treat-warnings-as-errors                   On nginx -t, treat warnings as failures on configuration application.
-      --queue-size int                                   The size of the NGINX Agent internal queue.
-      --server-command string                            The name of the command server sent in the tls configuration.
-      --server-grpcport int                              The desired GRPC port to use for nginx-agent traffic.
-      --server-host string                               The IP address of the server host. IPv4 addresses and hostnames are supported.
-      --server-metrics string                            The name of the metrics server sent in the tls configuration.
-      --server-token string                              An authentication token that grants nginx-agent access to the commander and metrics services. Auto-generated by default. (default "e202f883-54c6-4702-be15-3ba6e507879a")
-      --tags strings                                     A comma-separated list of tags to add to the current instance or machine, to be used for inventory purposes.
-      --tls-ca string                                    The path to the CA certificate file to use for TLS.
-      --tls-cert string                                  The path to the certificate file to use for TLS.
-      --tls-enable                                       Enables TLS for secure communications.
-      --tls-key string                                   The path to the certificate key file to use for TLS.
-      --tls-skip-verify                                  Only intended for demonstration, sets InsecureSkipVerify for gRPC TLS credentials
-  -v, --version                                          version for nginx-agent
-
-Use "nginx-agent [command] --help" for more information about a command.
+```sh
+nginx-agent [flags]
 ```
 
-</details>
+#### Environment Variables
 
-#### NGINX Agent Config Dirs Option
+```sh
+export ENV_VARIABLE_NAME="value"
+nginx-agent
+```
 
-Use the `--config-dirs` command-line option, or the `config_dirs` key in the `nginx-agent.conf` file, to identify the directories NGINX Agent can read from or write to. This setting also defines the location to which you can upload config files when using a control/management plane. NGINX Agent cannot write to directories outside the specified location when updating a config and cannot upload files to directories outside of the configured location.
-NGINX Agent follows NGINX configuration directives to file paths outside the designated directories and reads certificates' metadata. NGINX Agent uses the following directives:
+### CLI Flags and Environment Variables
+
+{{<bootstrap-table "table table-responsive table-bordered">}}
+| CLI flag                                    | Environment variable                 | Description                                                                 |
+|---------------------------------------------|--------------------------------------|-----------------------------------------------------------------------------|
+| `--api-cert`                                | `NMS_API_CERT`                       | Specifies the certificate used by the Agent API.                            |
+| `--api-host`                                | `NMS_API_HOST`                       | Sets the host used by the Agent API. Default: *127.0.0.1*                   |
+| `--api-key`                                 | `NMS_API_KEY`                        | Specifies the key used by the Agent API.                                    |
+| `--api-port`                                | `NMS_API_PORT`                       | Sets the port for exposing nginx-agent to HTTP traffic.                     |
+| `--config-dirs`                             | `NMS_CONFIG_DIRS`                    | Defines directories NGINX Agent can read/write. Default: *"/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules:/etc/nms"* |
+| `--dataplane-report-interval`               | `NMS_DATAPLANE_REPORT_INTERVAL`      | Sets the interval for dataplane reporting. Default: *24h0m0s*               |
+| `--dataplane-status-poll-interval`          | `NMS_DATAPLANE_STATUS_POLL_INTERVAL` | Sets the interval for polling dataplane status. Default: *30s*              |
+| `--display-name`                            | `NMS_DISPLAY_NAME`                   | Sets the instance's display name.                                           |
+| `--dynamic-config-path`                     | `NMS_DYNAMIC_CONFIG_PATH`            | Specifies the path of the Agent dynamic config file. Default: *"/var/lib/nginx-agent/agent-dynamic.conf"* |
+| `--features`                                | `NMS_FEATURES`                       | Specifies a comma-separated list of features enabled for the agent. Default: *[registration, nginx-config-async, nginx-ssl-config, nginx-counting, metrics, dataplane-status, process-watcher, file-watcher, activity-events, agent-api]* |
+| `--ignore-directives`                       |                                      | Specifies a comma-separated list of directives to ignore for sensitive info.|
+| `--instance-group`                          | `NMS_INSTANCE_GROUP`                 | Sets the instance's group value.                                            |
+| `--log-level`                               | `NMS_LOG_LEVEL`                      | Sets the logging level (e.g., panic, fatal, error, info, debug, trace). Default: *info* |
+| `--log-path`                                | `NMS_LOG_PATH`                       | Specifies the path to output log messages.                                  |
+| `--metrics-bulk-size`                       | `NMS_METRICS_BULK_SIZE`              | Specifies the number of metrics reports collected before sending data. Default: *20* |
+| `--metrics-collection-interval`             | `NMS_METRICS_COLLECTION_INTERVAL`    | Sets the interval for metrics collection. Default: *15s*                    |
+| `--metrics-mode`                            | `NMS_METRICS_MODE`                   | Sets the metrics collection mode: streaming or aggregation. Default: *aggregated* |
+| `--metrics-report-interval`                 | `NMS_METRICS_REPORT_INTERVAL`        | Sets the interval for reporting collected metrics. Default: *1m0s*          |
+| `--nginx-config-reload-monitoring-period`   |                                      | Sets the duration to monitor error logs after an NGINX reload. Default: *10s* |
+| `--nginx-exclude-logs`                      | `NMS_NGINX_EXCLUDE_LOGS`             | Specifies paths of NGINX access logs to exclude from metrics collection.    |
+| `--nginx-socket`                            | `NMS_NGINX_SOCKET`                   | Specifies the location of the NGINX Plus counting Unix socket. Default: *unix:/var/run/nginx-agent/nginx.sock* |
+| `--nginx-treat-warnings-as-errors`          | `NMS_NGINX_TREAT_WARNINGS_AS_ERRORS` | Treats warnings as failures on configuration application.                   |
+| `--queue-size`                              | `NMS_QUEUE_SIZE`                     | Specifies the size of the NGINX Agent internal queue.                       |
+| `--server-command`                          |                                      | Specifies the name of the command server sent in the TLS configuration.     |
+| `--server-grpcport`                         | `NMS_SERVER_GRPCPORT`                | Sets the desired GRPC port for NGINX Agent traffic.                         |
+| `--server-host`                             | `NMS_SERVER_HOST`                    | Specifies the IP address of the server host.                                |
+| `--server-metrics`                          |                                      | Specifies the name of the metrics server sent in the TLS configuration.     |
+| `--server-token`                            | `NMS_SERVER_TOKEN`                   | Sets the authentication token for accessing the commander and metrics services. Default: *e202f883-54c6-4702-be15-3ba6e507879a* |
+| `--tags`                                    | `NMS_TAGS`                           | Specifies a comma-separated list of tags for the instance or machine.       |
+| `--tls-ca`                                  | `NMS_TLS_CA`                         | Specifies the path to the CA certificate file for TLS.                      |
+| `--tls-cert`                                | `NMS_TLS_CERT`                       | Specifies the path to the certificate file for TLS.                         |
+| `--tls-enable`                              | `NMS_TLS_ENABLE`                     | Enables TLS for secure communications.                                      |
+| `--tls-key`                                 | `NMS_TLS_KEY`                        | Specifies the path to the certificate key file for TLS.                     |
+| `--tls-skip-verify`                         | `NMS_TLS_SKIP_VERIFY`                | Insecurely skips verification for gRPC TLS credentials.                     |
+{{</bootstrap-table>}}
+
+<br>
+
+{{<note>}}
+Use the `--config-dirs` command-line option, or the `config_dirs` key in the `nginx-agent.conf` file, to identify the directories NGINX Agent can read from or write to. This setting also defines the location to which you can upload config files when using a control plane. NGINX Agent cannot write to directories outside the specified location when updating a config and cannot upload files to directories outside of the configured location. NGINX Agent follows NGINX configuration directives to file paths outside the designated directories and reads certificates' metadata. NGINX Agent uses the following directives:
 
 - [`ssl_certificate`](https://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_certificate)
 
-#### NGINX Agent Dynamic Config Path Option
+{{</note>}}
 
-Use the `--dynamic-config-path` command-line option to set the location of the dynamic config file. This setting also requires you to move your dynamic config to the new path, or create a new dynamic config file at the specified location.
+{{<note>}} Use the `--dynamic-config-path` command-line option to set the location of the dynamic config file. This setting also requires you to move your dynamic config to the new path, or create a new dynamic config file at the specified location.
 
 Default location in Linux environments: `/var/lib/nginx-agent/agent-dynamic.conf`
 
 Default location in FreeBSD environments: `/var/db/nginx-agent/agent-dynamic.conf`
 
-### NGINX Agent Environment Variables
+{{</note>}}
 
-This section displays the configurable options for NGINX Agent that can be set with environment variables. Each environment variable maps to a CLI flag, [explained above](#nginx-agent-cli-flags-usage).
-
-{{<bootstrap-table "table table-striped table-bordered">}}
-
-| Environment variable                 | CLI flag                                 |
-| ------------------------------------ | ---------------------------------------- |
-| *NMS_CONFIG_DIRS*                    | *--config-dirs*                          |
-| *NMS_DATAPLANE_REPORT_INTERVAL*      | *--dataplane-report-interval*            |
-| *NMS_DATAPLANE_STATUS_POLL_INTERVAL* | *--dataplane-status-poll-interval*       |
-| *NMS_DISPLAY_NAME*                   | *--display-name*                         |  
-| *NMS_FEATURES*                       | *--features*                             |
-| *NMS_INSTANCE_GROUP*                 | *--instance-group*                       |
-| *NMS_LOG_LEVEL*                      | *--log-level*                            |
-| *NMS_LOG_PATH*                       | *--log-path*                             |
-| *NMS_PATH*                           | N/A, defines path for `nginx-agent.conf` |
-| *NMS_METRICS_COLLECTION_INTERVAL*    | *--metrics-collection-interval*          |
-| *NMS_METRICS_MODE*                   | *--metrics-mode*                         |
-| *NMS_METRICS_BULK_SIZE*              | *--metrics-bulk-size*                    |
-| *NMS_METRICS_REPORT_INTERVAL*        | *--metrics-report-interval*              |
-| *NMS_NGINX_EXCLUDE_LOGS*             | *--nginx-exclude-log*                    |
-| *NMS_NGINX_SOCKET*                   | *--nginx-socket*                         |
-| *NMS_NGINX_TREAT_WARNINGS_AS_ERRORS* | *--nginx-treat-warnings-as-errors*       |
-| *NMS_QUEUE_SIZE*                     | *--queue-size*                           |
-| *NMS_SERVER_GRPCPORT*                | *--server-grpcport*                      |
-| *NMS_SERVER_HOST*                    | *--server-host*                          |
-| *NMS_SERVER_TOKEN*                   | *--server-token*                         |
-| *NMS_SERVER_COMMAND*                 | *--server-command*                       |
-| *NMS_SERVER_METRICS*                 | *--server-metrics*                       |
-| *NMS_TAGS*                           | *--tags*                                 |
-| *NMS_TLS_CA*                         | *--tls-ca*                               |
-| *NMS_TLS_CERT*                       | *--tls-cert*                             |
-| *NMS_TLS_ENABLE*                     | *--tls-enable*                           |
-| *NMS_TLS_KEY*                        | *--tls-key*                              |
-| *NMS_TLS_SKIP_VERIFY*                | *--tls-skip-verify*                      |
-| *NMS_API_HOST*                       | *--api-host*                             |
-| *NMS_API_PORT*                       | *--api-port*                             |
-| *NMS_API_KEY*                        | *--api-key*                              |
-| *NMS_API_CERT*                       | *--api-cert*                             |
-
-{{</bootstrap-table>}}
-
-### NGINX Agent Log Rotation
+## Log Rotation
 
 By default, NGINX Agent rotates logs daily using logrotate with the following configuration:
 
@@ -286,6 +243,6 @@ By default, NGINX Agent rotates logs daily using logrotate with the following co
 ```
 </details>
 
-If you need to make changes to the default configuration you can update the file here `/etc/logrotate.d/nginx-agent`
+If you need to change the default configuration, update the file at `/etc/logrotate.d/nginx-agent`.
 
-For more detail on logrotate configuration see [Logrotate Configuration Options](https://linux.die.net/man/8/logrotate)
+For more details on logrotate configuration, see [Logrotate Configuration Options](https://linux.die.net/man/8/logrotate).
