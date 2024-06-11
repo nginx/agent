@@ -35,7 +35,7 @@ func TestConfigProviderSettings(t *testing.T) {
 	assert.Len(t, settings.ResolverSettings.ProviderFactories, 5, "There should be 5 provider factories")
 	assert.Len(t, settings.ResolverSettings.ConverterFactories, 1, "There should be 1 converter factory")
 	assert.NotEmpty(t, settings.ResolverSettings.URIs, "URIs should not be empty")
-	assert.Equal(t, "/var/etc/nginx-agent/nginx-agent-otelcol.yaml", settings.ResolverSettings.URIs[0],
+	assert.Equal(t, "/etc/nginx-agent/nginx-agent-otelcol.yaml", settings.ResolverSettings.URIs[0],
 		"Default URI should match")
 }
 
