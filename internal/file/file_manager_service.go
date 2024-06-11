@@ -9,14 +9,20 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"errors"
 	"log/slog"
 	"os"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/google/uuid"
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/files"
+	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/logger"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	backoffHelpers "github.com/nginx/agent/v3/internal/backoff"
 )
 
 type (
@@ -27,15 +33,17 @@ type (
 
 type FileManagerService struct {
 	fileServiceClient mpi.FileServiceClient
+	agentConfig       *config.Config
 	fileOperator      fileOperator
 	// TODO: Naming of these
 	fileOverviewCache map[string]*mpi.FileOverview // key is instance ID
 	fileContentsCache map[string][]byte            // key is file path
 }
 
-func NewFileManagerService(fileServiceClient mpi.FileServiceClient) *FileManagerService {
+func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig *config.Config) *FileManagerService {
 	return &FileManagerService{
 		fileServiceClient: fileServiceClient,
+		agentConfig:       agentConfig,
 		fileOperator:      NewFileOperator(),
 		fileOverviewCache: make(map[string]*mpi.FileOverview),
 		fileContentsCache: make(map[string][]byte),
@@ -65,7 +73,37 @@ func (fms *FileManagerService) UpdateOverview(
 		},
 	}
 
-	_, err := fms.fileServiceClient.UpdateOverview(ctx, request)
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Common.MaxElapsedTime)
+	defer backoffCancel()
+
+	sendUpdateOverview := func() (*mpi.UpdateOverviewResponse, error) {
+		slog.DebugContext(ctx, "Sending update overview request", "request", request)
+		if fms.fileServiceClient == nil {
+			return nil, errors.New("file service client is not initialized")
+		}
+
+		response, updateError := fms.fileServiceClient.UpdateOverview(ctx, request)
+
+		validatedError := grpc.ValidateGrpcError(updateError)
+
+		if validatedError != nil {
+			slog.ErrorContext(ctx, "Failed to send update overview", "error", validatedError)
+
+			return nil, validatedError
+		}
+
+		return response, nil
+	}
+
+	response, err := backoff.RetryWithData(
+		sendUpdateOverview,
+		backoffHelpers.Context(backOffCtx, fms.agentConfig.Common),
+	)
+	if err != nil {
+		return err
+	}
+
+	slog.DebugContext(ctx, "UpdateOverview response", "response", response)
 
 	return err
 }
@@ -88,9 +126,36 @@ func (fms *FileManagerService) UpdateFile(
 		},
 	}
 
-	_, updateFileErr := fms.fileServiceClient.UpdateFile(ctx, request)
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Common.MaxElapsedTime)
+	defer backoffCancel()
 
-	return updateFileErr
+	sendUpdateFile := func() (*mpi.UpdateFileResponse, error) {
+		slog.DebugContext(ctx, "Sending update file request", "request", request)
+		if fms.fileServiceClient == nil {
+			return nil, errors.New("file service client is not initialized")
+		}
+
+		response, updateError := fms.fileServiceClient.UpdateFile(ctx, request)
+
+		validatedError := grpc.ValidateGrpcError(updateError)
+
+		if validatedError != nil {
+			slog.ErrorContext(ctx, "Failed to send update file", "error", validatedError)
+
+			return nil, validatedError
+		}
+
+		return response, nil
+	}
+
+	response, err := backoff.RetryWithData(sendUpdateFile, backoffHelpers.Context(backOffCtx, fms.agentConfig.Common))
+	if err != nil {
+		return err
+	}
+
+	slog.DebugContext(ctx, "UpdateFile response", "response", response)
+
+	return err
 }
 
 func (fms *FileManagerService) ConfigApply(ctx context.Context, configApplyRequest *mpi.ConfigApplyRequest) error {

@@ -40,7 +40,7 @@ func (fp *FilePlugin) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 	slog.DebugContext(ctx, "Starting file plugin")
 
 	fp.messagePipe = messagePipe
-	fp.fileManagerService = NewFileManagerService(fp.conn.FileServiceClient())
+	fp.fileManagerService = NewFileManagerService(fp.conn.FileServiceClient(), fp.config)
 
 	return nil
 }

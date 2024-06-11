@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/protos"
 	"google.golang.org/grpc"
@@ -48,6 +49,12 @@ func (*ClientStream) SendMsg(m any) error {
 
 func (*ClientStream) RecvMsg(m any) error {
 	return nil
+}
+
+type TestError struct{}
+
+func (z TestError) Error() string {
+	return "Test"
 }
 
 func Test_GrpcConnection(t *testing.T) {
@@ -335,4 +342,12 @@ func validateError(t *testing.T, validationError error, isErrorExpected bool) {
 			assert.Equal(t, codes.InvalidArgument, err.Code())
 		}
 	}
+}
+
+func Test_ValidateGrpcError(t *testing.T) {
+	result := ValidateGrpcError(TestError{})
+	assert.IsType(t, TestError{}, result)
+
+	result = ValidateGrpcError(status.Errorf(codes.InvalidArgument, "error"))
+	assert.IsType(t, &backoff.PermanentError{}, result)
 }

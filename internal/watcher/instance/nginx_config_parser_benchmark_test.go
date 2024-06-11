@@ -3,13 +3,13 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package watcher
+package instance
 
 import (
 	"context"
 	"testing"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/require"
 )
@@ -35,11 +35,11 @@ func BenchmarkNginxConfigParser_Parse(b *testing.B) {
 				for i := 0; i < bb.N; i++ {
 					_, err := nginxConfigParser.Parse(
 						ctx,
-						&v1.Instance{
-							InstanceMeta: &v1.InstanceMeta{
-								InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+						&mpi.Instance{
+							InstanceMeta: &mpi.InstanceMeta{
+								InstanceType: mpi.InstanceMeta_INSTANCE_TYPE_NGINX,
 							},
-							InstanceRuntime: &v1.InstanceRuntime{
+							InstanceRuntime: &mpi.InstanceRuntime{
 								ConfigPath: configFilePath,
 							},
 						},

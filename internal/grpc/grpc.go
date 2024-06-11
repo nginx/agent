@@ -14,6 +14,7 @@ import (
 	"net"
 	"sync"
 
+	"github.com/cenkalti/backoff/v4"
 	grpcRetry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 
 	"github.com/bufbuild/protovalidate-go"
@@ -69,10 +70,6 @@ func NewGrpcConnection(ctx context.Context, agentConfig *config.Config) (*GrpcCo
 		return nil, errors.New("invalid command server settings")
 	}
 
-	if agentConfig.Common == nil {
-		return nil, errors.New("invalid common configuration settings")
-	}
-
 	grpcConnection := &GrpcConnection{
 		config: agentConfig,
 	}
@@ -89,7 +86,7 @@ func NewGrpcConnection(ctx context.Context, agentConfig *config.Config) (*GrpcCo
 
 	var err error
 	grpcConnection.mutex.Lock()
-	grpcConnection.conn, err = grpc.DialContext(ctx, serverAddr, GetDialOptions(agentConfig, resourceID)...)
+	grpcConnection.conn, err = grpc.NewClient(serverAddr, GetDialOptions(agentConfig, resourceID)...)
 	grpcConnection.mutex.Unlock()
 	if err != nil {
 		return nil, err
@@ -134,8 +131,6 @@ func (gc *GrpcConnection) Close(ctx context.Context) error {
 func (w *wrappedStream) RecvMsg(message any) error {
 	err := w.ClientStream.RecvMsg(message)
 	if err == nil {
-		slog.Debug("Stream validation interceptor received message", "message", message)
-
 		messageErr := validateMessage(w.Validator, message)
 		if messageErr != nil {
 			return status.Errorf(
@@ -150,8 +145,6 @@ func (w *wrappedStream) RecvMsg(message any) error {
 }
 
 func (w *wrappedStream) SendMsg(message any) error {
-	slog.Debug("Stream validation interceptor message to be sent", "message", message)
-
 	messageErr := validateMessage(w.Validator, message)
 	if messageErr != nil {
 		return status.Errorf(
@@ -245,8 +238,6 @@ func ProtoValidatorUnaryClientInterceptor() (grpc.UnaryClientInterceptor, error)
 		invoker grpc.UnaryInvoker,
 		opts ...grpc.CallOption,
 	) error {
-		slog.DebugContext(ctx, "Validation interceptor request", "req", req)
-
 		requestValidationErr := validateMessage(validator, req)
 		if requestValidationErr != nil {
 			return status.Errorf(
@@ -260,8 +251,6 @@ func ProtoValidatorUnaryClientInterceptor() (grpc.UnaryClientInterceptor, error)
 		if invokerErr != nil {
 			return invokerErr
 		}
-
-		slog.DebugContext(ctx, "Validation interceptor reply", "reply", reply)
 
 		replyValidationErr := validateMessage(validator, reply)
 		if replyValidationErr != nil {
@@ -297,6 +286,20 @@ func ProtoValidatorStreamClientInterceptor() (grpc.StreamClientInterceptor, erro
 
 		return &wrappedStream{clientStream, validator}, nil
 	}, nil
+}
+
+func ValidateGrpcError(err error) error {
+	if err != nil {
+		if statusError, ok := status.FromError(err); ok {
+			if statusError.Code() == codes.InvalidArgument || statusError.Code() == codes.Unimplemented {
+				return backoff.Permanent(err)
+			}
+		}
+
+		return err
+	}
+
+	return nil
 }
 
 func validateMessage(validator *protovalidate.Validator, message any) error {

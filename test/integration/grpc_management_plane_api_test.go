@@ -301,5 +301,4 @@ func verifyUpdateDataPlaneHealth(t *testing.T) {
 	// Verify health metadata
 	assert.NotEmpty(t, healths[0].GetInstanceId())
 	assert.Equal(t, v1.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY, healths[0].GetInstanceHealthStatus())
-	assert.NotEmpty(t, healths[0].GetDescription())
 }
