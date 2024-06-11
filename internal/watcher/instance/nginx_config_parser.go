@@ -20,7 +20,7 @@ import (
 	"strings"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/files"
+	"github.com/nginx/agent/v3/pkg/files"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/model"
 	crossplane "github.com/nginxinc/nginx-go-crossplane"

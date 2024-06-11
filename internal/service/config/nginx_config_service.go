@@ -22,7 +22,7 @@ import (
 
 	"github.com/nginx/agent/v3/internal/client"
 
-	"github.com/nginx/agent/v3/files"
+	"github.com/nginx/agent/v3/pkg/files"
 	"github.com/nginx/agent/v3/internal/config"
 	writer "github.com/nginx/agent/v3/internal/datasource/config"
 
