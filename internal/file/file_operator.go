@@ -48,14 +48,15 @@ func (fo *FileOperator) Write(ctx context.Context, fileContent []byte, file *mpi
 // ReadFileContents TODO: Need to either handle files not having any changes here or have it so by this point the list of files
 // only contains files needing to be updated, added or deleted ??
 func (fo *FileOperator) ReadFileContents(files []*mpi.File) (filesContents map[string][]byte, err error) {
+	filesContents = make(map[string][]byte)
 	for _, file := range files {
 		filePath := file.GetFileMeta().GetName()
-		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		if _, err = os.Stat(filePath); os.IsNotExist(err) {
 			// File is new and doesn't exist so no previous content to save
 			continue
 		}
-		f, err := os.Open(filePath)
-		if err != nil {
+		f, openErr := os.Open(filePath)
+		if openErr != nil {
 			return nil, err
 		}
 
