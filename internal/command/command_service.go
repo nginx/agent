@@ -39,6 +39,8 @@ type (
 		subscribeCancel      context.CancelFunc
 		subscribeMutex       sync.Mutex
 		subscribeChannel     chan *mpi.ManagementPlaneRequest
+		subscribeClient      mpi.CommandService_SubscribeClient
+		subscribeClientMutex sync.Mutex
 	}
 )
 
@@ -172,6 +174,36 @@ func (cs *CommandService) UpdateDataPlaneHealth(ctx context.Context, instanceHea
 	return err
 }
 
+func (cs *CommandService) SendDataPlaneResponse(ctx context.Context, response *mpi.DataPlaneResponse) error {
+	slog.DebugContext(ctx, "Sending data plane response", "response", response)
+
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, cs.agentConfig.Common.MaxElapsedTime)
+	defer backoffCancel()
+
+	sendDataPlaneResponse := func() error {
+		cs.subscribeClientMutex.Lock()
+		defer cs.subscribeClientMutex.Unlock()
+
+		if cs.subscribeClient == nil {
+			return errors.New("subscribe client is not initialized")
+		}
+
+		err := cs.subscribeClient.Send(response)
+		if err != nil {
+			slog.ErrorContext(ctx, "Failed to send data plane response", "error", err)
+
+			return err
+		}
+
+		return nil
+	}
+
+	return backoff.Retry(
+		sendDataPlaneResponse,
+		backoffHelpers.Context(backOffCtx, cs.agentConfig.Common),
+	)
+}
+
 func (cs *CommandService) CancelSubscription(ctx context.Context) {
 	slog.InfoContext(ctx, "Canceling subscribe context")
 
@@ -184,7 +216,6 @@ func (cs *CommandService) CancelSubscription(ctx context.Context) {
 
 // nolint: revive,gocognit
 func (cs *CommandService) subscribe(ctx context.Context) {
-	var subscribeClient mpi.CommandService_SubscribeClient
 	var err error
 
 	for {
@@ -193,27 +224,34 @@ func (cs *CommandService) subscribe(ctx context.Context) {
 			return
 		default:
 			subscribeFn := func() error {
-				if subscribeClient == nil {
+				cs.subscribeClientMutex.Lock()
+
+				if cs.subscribeClient == nil {
 					if cs.commandServiceClient == nil {
+						cs.subscribeClientMutex.Unlock()
 						return errors.New("command service client is not initialized")
 					}
 
-					subscribeClient, err = cs.commandServiceClient.Subscribe(ctx)
+					cs.subscribeClient, err = cs.commandServiceClient.Subscribe(ctx)
 					if err != nil {
 						slog.ErrorContext(ctx, "Failed to create subscribe client", "error", err)
+						cs.subscribeClientMutex.Unlock()
 
 						return err
 					}
 
-					if subscribeClient == nil {
+					if cs.subscribeClient == nil {
+						cs.subscribeClientMutex.Unlock()
 						return errors.New("subscribe client is not initialized")
 					}
 				}
 
-				request, recvError := subscribeClient.Recv()
+				cs.subscribeClientMutex.Unlock()
+
+				request, recvError := cs.subscribeClient.Recv()
 				if recvError != nil {
 					slog.ErrorContext(ctx, "Failed to receive message from subscribe stream", "error", recvError)
-					subscribeClient = nil
+					cs.subscribeClient = nil
 
 					return recvError
 				}

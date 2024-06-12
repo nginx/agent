@@ -258,10 +258,10 @@ func (cs *CommandService) addResponseAndRequestEndpoints() {
 	cs.server.POST("/api/v1/requests", func(c *gin.Context) {
 		request := v1.ManagementPlaneRequest{}
 		body, err := io.ReadAll(c.Request.Body)
-		slog.Debug("Received request, ", "body", body)
+		slog.Debug("Received request", "body", body)
 		if err != nil {
 			slog.Error("Error reading request body", "err", err)
-			c.JSON(http.StatusBadRequest, nil)
+			c.JSON(http.StatusBadRequest, err)
 
 			return
 		}
@@ -269,7 +269,9 @@ func (cs *CommandService) addResponseAndRequestEndpoints() {
 		pb := protojson.UnmarshalOptions{DiscardUnknown: true}
 		err = pb.Unmarshal(body, &request)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, nil)
+			slog.Error("Error unmarshalling request body", "err", err)
+			c.JSON(http.StatusBadRequest, err)
+
 			return
 		}
 

@@ -8,6 +8,7 @@ package command
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1/v1fakes"
 	"github.com/nginx/agent/v3/test/protos"
@@ -30,6 +31,27 @@ func (*FakeSubscribeClient) Send(*mpi.DataPlaneResponse) error {
 // nolint: nilnil
 func (*FakeSubscribeClient) Recv() (*mpi.ManagementPlaneRequest, error) {
 	return nil, nil
+}
+
+func TestCommandService_NewCommandService(t *testing.T) {
+	ctx := context.Background()
+	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
+
+	commandService := NewCommandService(
+		ctx,
+		commandServiceClient,
+		types.GetAgentConfig(),
+		make(chan *mpi.ManagementPlaneRequest),
+	)
+
+	defer commandService.CancelSubscription(ctx)
+
+	assert.Eventually(
+		t,
+		func() bool { return commandServiceClient.SubscribeCallCount() > 0 },
+		2*time.Second,
+		10*time.Millisecond,
+	)
 }
 
 func TestCommandService_UpdateDataPlaneStatus(t *testing.T) {
@@ -89,4 +111,25 @@ func TestCommandService_UpdateDataPlaneHealth(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, 1, commandServiceClient.UpdateDataPlaneHealthCallCount())
+}
+
+func TestCommandService_SendDataPlaneResponse(t *testing.T) {
+	ctx := context.Background()
+	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
+	subscribeClient := &FakeSubscribeClient{}
+
+	commandService := NewCommandService(
+		ctx,
+		commandServiceClient,
+		types.GetAgentConfig(),
+		make(chan *mpi.ManagementPlaneRequest),
+	)
+
+	commandService.subscribeClientMutex.Lock()
+	commandService.subscribeClient = subscribeClient
+	commandService.subscribeClientMutex.Unlock()
+
+	err := commandService.SendDataPlaneResponse(ctx, protos.OKDataPlaneResponse())
+
+	require.NoError(t, err)
 }
