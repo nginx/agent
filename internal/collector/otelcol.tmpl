@@ -57,6 +57,13 @@ exporters:
       initial_interval: 10s
       max_interval: 60s
       max_elapsed_time: 10m
+    tls:
+      insecure: {{ if .TLS -}}false{{ else -}}true{{- end }}
+      {{ if .TLS -}}
+      ca_file: "{{- .TLS.Ca -}}"
+      cert_file: "{{- .TLS.Cert -}}"
+      key_file: "{{- .TLS.Key -}}"
+      {{- end }}
   {{- else if eq .Type "prometheus" }}
   prometheus:
     endpoint: "{{ .Server.Host -}}:{{- .Server.Port }}"
@@ -69,7 +76,6 @@ exporters:
   {{- end }}
   {{- end }}
   
-
 extensions:
   health_check:
     {{- if .Health }}

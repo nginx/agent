@@ -401,7 +401,7 @@ func resolveWatchers() *Watchers {
 func resolveMapStructure(key string, object any) error {
 	err := viperInstance.UnmarshalKey(key, &object)
 	if err != nil {
-		return fmt.Errorf("resolve config %s", key)
+		return fmt.Errorf("resolve config %s: %w", key, err)
 	}
 
 	return nil
