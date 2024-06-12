@@ -83,7 +83,6 @@ func TestCommandPlugin_Process(t *testing.T) {
 
 func TestMonitorSubscribeChannel(t *testing.T) {
 	ctx, cncl := context.WithCancel(context.Background())
-	defer cncl()
 
 	logBuf := &bytes.Buffer{}
 	stub.StubLoggerWith(logBuf)
@@ -107,25 +106,15 @@ func TestMonitorSubscribeChannel(t *testing.T) {
 	if s := logBuf.String(); !strings.Contains(s, "Received management plane request") {
 		t.Errorf("Unexpected log %s", s)
 	}
-}
 
-func TestMonitorSubscribeChannel_ContextCancel(t *testing.T) {
-	ctx, cncl := context.WithCancel(context.Background())
+	logBuf = &bytes.Buffer{}
 
-	logBuf := &bytes.Buffer{}
-	stub.StubLoggerWith(logBuf)
-
-	cp := NewCommandPlugin(types.GetAgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
-
-	// Run in a separate goroutine
-	go cp.monitorSubscribeChannel(ctx)
-
-	// Give some time to process the goroutine
+	// Give some time to process the message
 	time.Sleep(100 * time.Millisecond)
 
 	cncl()
 
-	// Give some time to cancel the goroutine
+	// Give some time to process the message
 	time.Sleep(100 * time.Millisecond)
 
 	// Verify the logger was called
