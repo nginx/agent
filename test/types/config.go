@@ -6,6 +6,8 @@
 package types
 
 import (
+	"path/filepath"
+	"testing"
 	"time"
 
 	"github.com/nginx/agent/v3/internal/config"
@@ -29,7 +31,8 @@ const (
 	reloadMonitoringPeriod = 400 * time.Millisecond
 )
 
-func GetAgentConfig() *config.Config {
+// Produces a populated Agent Config for testing usage.
+func AgentConfig() *config.Config {
 	var (
 		randomPort1 = 1234
 		randomPort2 = 4321
@@ -141,4 +144,14 @@ func GetAgentConfig() *config.Config {
 			},
 		},
 	}
+}
+
+// Produces a populated Agent Config with a temp Collector config path for testing usage.
+func OTelConfig(t *testing.T) *config.Config {
+	t.Helper()
+
+	ac := AgentConfig()
+	ac.Collector.ConfigPath = filepath.Join(t.TempDir(), "otel-collector-config.yaml")
+
+	return ac
 }

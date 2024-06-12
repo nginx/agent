@@ -6,24 +6,23 @@ package collector
 
 import (
 	"context"
-	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/v3/internal/bus"
-	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/test/types"
 )
 
 func TestNewCollector(t *testing.T) {
-	conf := setupOTelConfig(t)
+	conf := types.OTelConfig(t)
 	_, err := New(conf)
 	require.NoError(t, err, "NewCollector should not return an error with valid config")
 }
 
 func TestInitAndClose(t *testing.T) {
-	conf := setupOTelConfig(t)
+	conf := types.OTelConfig(t)
 	collector, err := New(conf)
 	require.NoError(t, err, "NewCollector should not return an error with valid config")
 
@@ -42,39 +41,5 @@ func TestInitAndClose(t *testing.T) {
 		t.Log("Success")
 	case <-time.After(10 * time.Second):
 		t.Error("Timed out waiting for app to shut down")
-	}
-}
-
-func setupOTelConfig(t *testing.T) *config.Config {
-	t.Helper()
-	return &config.Config{
-		Collector: &config.Collector{
-			ConfigPath: filepath.Join(t.TempDir(), "otel-collector-config.yaml"),
-			Exporters: []config.Exporter{
-				{
-					Type: "otlp",
-					Server: &config.ServerConfig{
-						Host: "127.0.0.1",
-						Port: 1234,
-						Type: 0,
-					},
-				},
-			},
-			Receivers: []config.Receiver{
-				{
-					Type: "otlp",
-					Server: &config.ServerConfig{
-						Host: "localhost",
-						Port: 4321,
-						Type: 0,
-					},
-				},
-			},
-			Health: &config.ServerConfig{
-				Host: "localhost",
-				Port: 1337,
-				Type: 0,
-			},
-		},
 	}
 }

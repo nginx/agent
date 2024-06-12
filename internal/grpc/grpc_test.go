@@ -60,7 +60,7 @@ func (z TestError) Error() string {
 func Test_GrpcConnection(t *testing.T) {
 	ctx := context.Background()
 
-	conn, err := NewGrpcConnection(ctx, types.GetAgentConfig())
+	conn, err := NewGrpcConnection(ctx, types.AgentConfig())
 
 	require.NoError(t, err)
 	assert.NotNil(t, conn)
@@ -81,10 +81,10 @@ func Test_GetDialOptions(t *testing.T) {
 		{
 			"Test 1: DialOptions insecure",
 			&config.Config{
-				Client: types.GetAgentConfig().Client,
+				Client: types.AgentConfig().Client,
 				Command: &config.Command{
-					Server: types.GetAgentConfig().Command.Server,
-					Auth:   types.GetAgentConfig().Command.Auth,
+					Server: types.AgentConfig().Command.Server,
+					Auth:   types.AgentConfig().Command.Auth,
 					TLS: &config.TLSConfig{
 						Cert:       "some.cert",
 						Key:        "some.key",
@@ -99,7 +99,7 @@ func Test_GetDialOptions(t *testing.T) {
 		},
 		{
 			"Test 2: DialOptions mTLS",
-			types.GetAgentConfig(),
+			types.AgentConfig(),
 			5,
 			true,
 		},
@@ -107,8 +107,8 @@ func Test_GetDialOptions(t *testing.T) {
 			"Test 3: DialOptions TLS",
 			&config.Config{
 				Command: &config.Command{
-					Server: types.GetAgentConfig().Command.Server,
-					Auth:   types.GetAgentConfig().Command.Auth,
+					Server: types.AgentConfig().Command.Server,
+					Auth:   types.AgentConfig().Command.Auth,
 					TLS: &config.TLSConfig{
 						Cert:       "some.cert",
 						Key:        "some.key",
@@ -117,7 +117,7 @@ func Test_GetDialOptions(t *testing.T) {
 						ServerName: "server-name",
 					},
 				},
-				Client: types.GetAgentConfig().Client,
+				Client: types.AgentConfig().Client,
 			},
 			5,
 			false,
@@ -126,9 +126,9 @@ func Test_GetDialOptions(t *testing.T) {
 			"Test 4: DialOptions No Client",
 			&config.Config{
 				Command: &config.Command{
-					Server: types.GetAgentConfig().Command.Server,
-					Auth:   types.GetAgentConfig().Command.Auth,
-					TLS:    types.GetAgentConfig().Command.TLS,
+					Server: types.AgentConfig().Command.Server,
+					Auth:   types.AgentConfig().Command.Auth,
+					TLS:    types.AgentConfig().Command.TLS,
 				},
 			},
 			4,
@@ -137,10 +137,10 @@ func Test_GetDialOptions(t *testing.T) {
 		{
 			"Test 5: DialOptions No Auth",
 			&config.Config{
-				Client: types.GetAgentConfig().Client,
+				Client: types.AgentConfig().Client,
 				Command: &config.Command{
-					Server: types.GetAgentConfig().Command.Server,
-					TLS:    types.GetAgentConfig().Command.TLS,
+					Server: types.AgentConfig().Command.Server,
+					TLS:    types.AgentConfig().Command.TLS,
 				},
 			},
 			5,
@@ -149,10 +149,10 @@ func Test_GetDialOptions(t *testing.T) {
 		{
 			"Test 6: DialOptions No TLS",
 			&config.Config{
-				Client: types.GetAgentConfig().Client,
+				Client: types.AgentConfig().Client,
 				Command: &config.Command{
-					Server: types.GetAgentConfig().Command.Server,
-					Auth:   types.GetAgentConfig().Command.Auth,
+					Server: types.AgentConfig().Command.Server,
+					Auth:   types.AgentConfig().Command.Auth,
 				},
 			},
 			6,

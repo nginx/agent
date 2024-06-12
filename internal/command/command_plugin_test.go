@@ -23,14 +23,14 @@ import (
 )
 
 func TestCommandPlugin_Info(t *testing.T) {
-	commandPlugin := NewCommandPlugin(types.GetAgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
 	info := commandPlugin.Info()
 
 	assert.Equal(t, "command", info.Name)
 }
 
 func TestCommandPlugin_Subscriptions(t *testing.T) {
-	commandPlugin := NewCommandPlugin(types.GetAgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
 	subscriptions := commandPlugin.Subscriptions()
 
 	assert.Equal(
@@ -48,7 +48,7 @@ func TestCommandPlugin_Init(t *testing.T) {
 	messagePipe := bus.NewFakeMessagePipe()
 	fakeCommandService := &commandfakes.FakeCommandService{}
 
-	commandPlugin := NewCommandPlugin(types.GetAgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
 	err := commandPlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 
@@ -67,7 +67,7 @@ func TestCommandPlugin_Process(t *testing.T) {
 	messagePipe := bus.NewFakeMessagePipe()
 	fakeCommandService := &commandfakes.FakeCommandService{}
 
-	commandPlugin := NewCommandPlugin(types.GetAgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
 	err := commandPlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 	defer commandPlugin.Close(ctx)
@@ -88,7 +88,7 @@ func TestMonitorSubscribeChannel(t *testing.T) {
 	logBuf := &bytes.Buffer{}
 	stub.StubLoggerWith(logBuf)
 
-	cp := NewCommandPlugin(types.GetAgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	cp := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
 
 	message := protos.CreateManagementPlaneRequest()
 

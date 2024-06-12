@@ -29,7 +29,7 @@ func BenchmarkNginxConfigParser_Parse(b *testing.B) {
 		func(configFilePath string) {
 			b.Run(configFilePath, func(bb *testing.B) {
 				nginxConfigParser := NewNginxConfigParser(
-					types.GetAgentConfig(),
+					types.AgentConfig(),
 				)
 
 				for i := 0; i < bb.N; i++ {

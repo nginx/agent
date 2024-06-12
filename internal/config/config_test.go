@@ -183,12 +183,12 @@ func TestResolveCollector(t *testing.T) {
 				ConfigPath: testDefault.Collector.ConfigPath,
 				Exporters: []Exporter{
 					{
-						Type: "envoy",
+						Type: "not-allowed",
 					},
 				},
 			},
 			shouldErr: true,
-			errMsg:    "unsupported exporter type: envoy",
+			errMsg:    "unsupported exporter type: not-allowed",
 		},
 		{
 			name: "Test 4: Unsupported Processor",
@@ -211,12 +211,12 @@ func TestResolveCollector(t *testing.T) {
 				Exporters:  testDefault.Collector.Exporters,
 				Receivers: []Receiver{
 					{
-						Type: "haproxy",
+						Type: "not-allowed",
 					},
 				},
 			},
 			shouldErr: true,
-			errMsg:    "unsupported receiver type: haproxy",
+			errMsg:    "unsupported receiver type: not-allowed",
 		},
 	}
 

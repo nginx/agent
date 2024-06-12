@@ -15,8 +15,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const expectedTemplatePath = "../../test/config/collector/test-otelcol.yaml"
+
 func TestOTelCollectorSettings(t *testing.T) {
-	cfg := types.GetAgentConfig()
+	cfg := types.AgentConfig()
 
 	settings := OTelCollectorSettings(cfg)
 
@@ -29,7 +31,7 @@ func TestOTelCollectorSettings(t *testing.T) {
 }
 
 func TestConfigProviderSettings(t *testing.T) {
-	cfg := types.GetAgentConfig()
+	cfg := types.AgentConfig()
 	settings := ConfigProviderSettings(cfg)
 
 	assert.NotNil(t, settings.ResolverSettings, "ResolverSettings should not be nil")
@@ -41,10 +43,9 @@ func TestConfigProviderSettings(t *testing.T) {
 }
 
 func TestTemplateWrite(t *testing.T) {
-	cfg := types.GetAgentConfig()
+	cfg := types.AgentConfig()
 	actualConfPath := filepath.Join(t.TempDir(), "nginx-agent-otelcol-test.yaml")
 	cfg.Collector.ConfigPath = actualConfPath
-	// cfg.Collector.ConfigPath = "testdata/test-otelcol.yaml"
 
 	cfg.Collector.Exporters = append(cfg.Collector.Exporters, config.Exporter{
 		Type: "prometheus",
@@ -92,7 +93,7 @@ func TestTemplateWrite(t *testing.T) {
 	err := writeCollectorConfig(cfg.Collector)
 	require.NoError(t, err)
 
-	expected, err := os.ReadFile("testdata/test-otelcol.yaml")
+	expected, err := os.ReadFile(expectedTemplatePath)
 	require.NoError(t, err)
 
 	actual, err := os.ReadFile(actualConfPath)

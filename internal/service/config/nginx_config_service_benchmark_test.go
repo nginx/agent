@@ -15,7 +15,7 @@ import (
 
 	"github.com/nginx/agent/v3/internal/client/clientfakes"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/require"
 )
@@ -39,15 +39,15 @@ func BenchmarkNginxConfigService_ParseConfig(b *testing.B) {
 
 				nginxConfigService := NewNginx(
 					ctx,
-					&v1.Instance{
-						InstanceMeta: &v1.InstanceMeta{
-							InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+					&mpi.Instance{
+						InstanceMeta: &mpi.InstanceMeta{
+							InstanceType: mpi.InstanceMeta_INSTANCE_TYPE_NGINX,
 						},
-						InstanceRuntime: &v1.InstanceRuntime{
+						InstanceRuntime: &mpi.InstanceRuntime{
 							ConfigPath: configFilePath,
 						},
 					},
-					types.GetAgentConfig(),
+					types.AgentConfig(),
 					&clientfakes.FakeConfigClient{},
 				)
 
