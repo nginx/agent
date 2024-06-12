@@ -40,6 +40,11 @@ exporters:
       initial_interval: 10s
       max_interval: 60s
       max_elapsed_time: 10m
+    tls:
+      insecure: false
+      ca_file: "/path/to/server-cert.pem"
+      cert_file: "/path/to/server-cert.pem"
+      key_file: "/path/to/server-cert.pem"
   prometheus:
     endpoint: "localhost:9876"
     namespace: "nginx-agent"
@@ -48,7 +53,6 @@ exporters:
     sampling_initial: 5
     sampling_thereafter: 200
   
-
 extensions:
   health_check:
     endpoint: "localhost:1337"
