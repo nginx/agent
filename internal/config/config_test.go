@@ -45,8 +45,9 @@ func TestResolveConfig(t *testing.T) {
 	assert.True(t, viperInstance.IsSet(CollectorRootKey))
 	assert.True(t, viperInstance.IsSet(CollectorConfigPathKey))
 	assert.True(t, viperInstance.IsSet(CollectorExportersKey))
+	assert.True(t, viperInstance.IsSet(CollectorProcessorsKey))
 	assert.True(t, viperInstance.IsSet(CollectorReceiversKey))
-	assert.True(t, viperInstance.IsSet(CollectorHealthzEndpointKey))
+	assert.True(t, viperInstance.IsSet(CollectorHealthKey))
 
 	actual, err := ResolveConfig()
 	require.NoError(t, err)
@@ -60,8 +61,9 @@ func TestResolveConfig(t *testing.T) {
 	require.NotNil(t, actual.Collector)
 	assert.Equal(t, "/etc/nginx-agent/nginx-agent-otelcol.yaml", actual.Collector.ConfigPath)
 	assert.NotEmpty(t, actual.Collector.Receivers)
+	assert.NotEmpty(t, actual.Collector.Processors)
 	assert.NotEmpty(t, actual.Collector.Exporters)
-	assert.NotEmpty(t, actual.Collector.HealthzEndpoint)
+	assert.NotEmpty(t, actual.Collector.Health)
 
 	assert.Equal(t, 10*time.Second, actual.Client.Timeout)
 
@@ -189,7 +191,21 @@ func TestResolveCollector(t *testing.T) {
 			errMsg:    "unsupported exporter type: envoy",
 		},
 		{
-			name: "Test 4: Unsupported Receiver",
+			name: "Test 4: Unsupported Processor",
+			expected: &Collector{
+				ConfigPath: testDefault.Collector.ConfigPath,
+				Exporters:  testDefault.Collector.Exporters,
+				Processors: []Processor{
+					{
+						Type: "custom-processor",
+					},
+				},
+			},
+			shouldErr: true,
+			errMsg:    "unsupported processor type: custom-processor",
+		},
+		{
+			name: "Test 5: Unsupported Receiver",
 			expected: &Collector{
 				ConfigPath: testDefault.Collector.ConfigPath,
 				Exporters:  testDefault.Collector.Exporters,
@@ -210,8 +226,9 @@ func TestResolveCollector(t *testing.T) {
 			viperInstance.Set(CollectorRootKey, "set")
 			viperInstance.Set(CollectorConfigPathKey, test.expected.ConfigPath)
 			viperInstance.Set(CollectorReceiversKey, test.expected.Receivers)
+			viperInstance.Set(CollectorProcessorsKey, test.expected.Processors)
 			viperInstance.Set(CollectorExportersKey, test.expected.Exporters)
-			viperInstance.Set(CollectorHealthzEndpointKey, test.expected.HealthzEndpoint)
+			viperInstance.Set(CollectorHealthKey, test.expected.Health)
 
 			actual, err := resolveCollector(testDefault.AllowedDirectories)
 			if test.shouldErr {
@@ -314,6 +331,11 @@ func getAgentConfig() *Config {
 					},
 				},
 			},
+			Processors: []Processor{
+				{
+					Type: "batch",
+				},
+			},
 			Receivers: []Receiver{
 				{
 					Type: "otlp",
@@ -334,7 +356,7 @@ func getAgentConfig() *Config {
 					},
 				},
 			},
-			HealthzEndpoint: &ServerConfig{
+			Health: &ServerConfig{
 				Host: "localhost",
 				Port: 1337,
 				Type: 0,

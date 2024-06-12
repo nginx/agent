@@ -70,6 +70,11 @@ func GetAgentConfig() *config.Config {
 					},
 				},
 			},
+			Processors: []config.Processor{
+				{
+					Type: "batch",
+				},
+			},
 			Receivers: []config.Receiver{
 				{
 					Type: "otlp",
@@ -90,7 +95,7 @@ func GetAgentConfig() *config.Config {
 					},
 				},
 			},
-			HealthzEndpoint: &config.ServerConfig{
+			Health: &config.ServerConfig{
 				Host: "localhost",
 				Port: randomPort3,
 				Type: 0,

@@ -19,6 +19,10 @@ var (
 		"prometheus": {},
 	}
 
+	supportedProcessors = map[string]struct{}{
+		"batch": {},
+	}
+
 	supportedReceivers = map[string]struct{}{
 		"otlp":        {},
 		"hostmetrics": {},
@@ -80,10 +84,11 @@ type (
 	}
 
 	Collector struct {
-		ConfigPath      string        `yaml:"-" mapstructure:"config_path"`
-		Exporters       []Exporter    `yaml:"-" mapstructure:"exporters"`
-		Receivers       []Receiver    `yaml:"-" mapstructure:"receivers"`
-		HealthzEndpoint *ServerConfig `yaml:"-" mapstructure:"health_check_endpoint"`
+		ConfigPath string        `yaml:"-" mapstructure:"config_path"`
+		Exporters  []Exporter    `yaml:"-" mapstructure:"exporters"`
+		Health     *ServerConfig `yaml:"-" mapstructure:"health"`
+		Processors []Processor   `yaml:"-" mapstructure:"processors"`
+		Receivers  []Receiver    `yaml:"-" mapstructure:"receivers"`
 	}
 
 	// OTel Collector Exporter configuration.
@@ -92,6 +97,11 @@ type (
 		Server *ServerConfig `yaml:"-" mapstructure:"server"`
 		Auth   *AuthConfig   `yaml:"-" mapstructure:"auth"`
 		TLS    *TLSConfig    `yaml:"-" mapstructure:"tls"`
+	}
+
+	// OTel Collector Processor configuration.
+	Processor struct {
+		Type string `yaml:"-" mapstructure:"type"`
 	}
 
 	// OTel Collector Receiver configuration.
@@ -175,6 +185,16 @@ func (col *Collector) Validate(allowedDirectories []string) error {
 
 		// normalize field too
 		exp.Type = t
+	}
+
+	for _, proc := range col.Processors {
+		t := strings.ToLower(proc.Type)
+
+		if _, ok := supportedProcessors[t]; !ok {
+			return fmt.Errorf("unsupported processor type: %s", proc.Type)
+		}
+
+		proc.Type = t
 	}
 
 	for _, rec := range col.Receivers {

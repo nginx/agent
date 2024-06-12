@@ -70,7 +70,7 @@ func setupOTelConfig(t *testing.T) *config.Config {
 					},
 				},
 			},
-			HealthzEndpoint: &config.ServerConfig{
+			Health: &config.ServerConfig{
 				Host: "localhost",
 				Port: 1337,
 				Type: 0,

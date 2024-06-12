@@ -5,6 +5,7 @@
 package collector
 
 import (
+	_ "embed"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -25,6 +26,9 @@ const (
 	otelTemplatePath     = "otelcol.tmpl"
 	configFilePermission = 0o600
 )
+
+//go:embed otelcol.tmpl
+var otelcolTemplate string
 
 func OTelCollectorSettings(cfg *config.Config) otelcol.CollectorSettings {
 	return otelcol.CollectorSettings{
@@ -74,7 +78,7 @@ func createURIs(cfg *config.Config) []string {
 
 // Generates a OTel Collector config to a file by injecting the Metrics Config to a Go template.
 func writeCollectorConfig(conf *config.Collector) error {
-	otelcolTemplate, err := template.New(otelTemplatePath).ParseFiles(otelTemplatePath)
+	otelcolTemplate, err := template.New(otelTemplatePath).Parse(otelcolTemplate)
 	if err != nil {
 		return err
 	}

@@ -38,8 +38,12 @@ receivers:
   {{- end }}
   {{- end }}
 
+{{ if gt (len .Processors) 0 -}}
 processors:
-  batch:
+{{- range .Processors }}
+  {{ .Type }}:
+{{- end }}
+{{- end }}
 
 exporters:
   {{- range .Exporters }}
@@ -68,8 +72,8 @@ exporters:
 
 extensions:
   health_check:
-    {{- if .HealthzEndpoint }}
-    endpoint: "{{ .HealthzEndpoint.Host -}}:{{- .HealthzEndpoint.Port }}"
+    {{- if .Health }}
+    endpoint: "{{ .Health.Host -}}:{{- .Health.Port }}"
     {{- else }}
     endpoint: "localhost:13133"
     {{- end }}

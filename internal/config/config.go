@@ -302,6 +302,7 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 	var (
 		err         error
 		exporters   []Exporter
+		processors  []Processor
 		receivers   []Receiver
 		healthCheck ServerConfig
 	)
@@ -309,18 +310,20 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 	err = errors.Join(
 		err,
 		resolveMapStructure(CollectorExportersKey, &exporters),
+		resolveMapStructure(CollectorProcessorsKey, &processors),
 		resolveMapStructure(CollectorReceiversKey, &receivers),
-		resolveMapStructure(CollectorHealthzEndpointKey, &healthCheck),
+		resolveMapStructure(CollectorHealthKey, &healthCheck),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal collector config: %w", err)
 	}
 
 	col := &Collector{
-		ConfigPath:      viperInstance.GetString(CollectorConfigPathKey),
-		Exporters:       exporters,
-		Receivers:       receivers,
-		HealthzEndpoint: &healthCheck,
+		ConfigPath: viperInstance.GetString(CollectorConfigPathKey),
+		Exporters:  exporters,
+		Processors: processors,
+		Receivers:  receivers,
+		Health:     &healthCheck,
 	}
 
 	err = col.Validate(allowedDirs)
