@@ -9,12 +9,13 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"github.com/nginx/agent/v3/internal/logger"
-	"github.com/nginx/agent/v3/test/helpers"
-	"github.com/nginx/agent/v3/test/stub"
 	"log/slog"
 	"strings"
 	"testing"
+
+	"github.com/nginx/agent/v3/internal/logger"
+	"github.com/nginx/agent/v3/test/helpers"
+	"github.com/nginx/agent/v3/test/stub"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1/v1fakes"
 	"github.com/nginx/agent/v3/test/protos"
