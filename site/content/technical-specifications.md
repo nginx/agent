@@ -27,7 +27,7 @@ NGINX Agent can run in most environments. We support the following distributions
 {{< bootstrap-table "table table-striped table-bordered" >}}
 | |FreeBSD | Oracle Linux | Red Hat <br>Enterprise Linux <br>(RHEL) | Rocky Linux | SUSE Linux <br>Enterprise Server <br>(SLES) | Ubuntu |
 |-|--------|--------------|---------------------------------|-------------|-------------------------------------|--------|
-|**Version**|13<br><hr>14|7.4+<br><hr>8.1+<br><hr>9|7.4+<br><hr>8.1+<br><hr>9.0+|8<br><hr>9|12 SP5<br><hr>15 SP2|20.04 LTS<br><hr>22.04 LTS|
+|**Version**|13<br><hr>14|7.4+<br><hr>8.1+<br><hr>9|7.4+<br><hr>8.1+<br><hr>9.0+|8<br><hr>9|12 SP5<br><hr>15 SP2|20.04 LTS<br><hr>22.04 LTS<br><hr>24.04 LTS|
 |**Architecture**|amd64|x86_64|x86_64<br><hr>aarch64|x86_64<br><hr>aarch64|x86_64|x86_64<br><hr>aarch64|
 {{< /bootstrap-table >}}
 
