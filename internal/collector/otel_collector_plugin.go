@@ -63,8 +63,8 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 	}
 
 	go func() {
-		runErr := oc.run(runCtx)
-		if runErr != nil {
+		bootErr := oc.bootup(runCtx)
+		if bootErr != nil {
 			slog.ErrorContext(runCtx, "error", err)
 		}
 	}()
@@ -72,34 +72,35 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 	return nil
 }
 
-func (oc *Collector) run(ctx context.Context) error {
-	var err error
+func (oc *Collector) bootup(ctx context.Context) error {
 	oc.appDone = make(chan struct{})
+	errChan := make(chan error)
 
 	go func() {
 		defer close(oc.appDone)
 		appErr := oc.service.Run(ctx)
 		if appErr != nil {
-			err = appErr
+			errChan <- appErr
 		}
 	}()
 
 	for {
-		state := oc.service.GetState()
-		// While waiting for collector start, an error was found. Most likely
-		// an invalid custom collector configuration file.
-		if err != nil {
+		select {
+		case err := <-errChan:
 			return err
-		}
-
-		switch state {
-		case otelcol.StateStarting:
-			// NoOp
-		case otelcol.StateRunning:
-			return nil
-		case otelcol.StateClosing, otelcol.StateClosed:
 		default:
-			err = fmt.Errorf("unable to start, otelcol state is %d", state)
+			state := oc.service.GetState()
+
+			switch state {
+			case otelcol.StateStarting:
+				// NoOp
+				continue
+			case otelcol.StateRunning:
+				return nil
+			case otelcol.StateClosing, otelcol.StateClosed:
+			default:
+				return fmt.Errorf("unable to start, otelcol state is %s", state)
+			}
 		}
 	}
 }
