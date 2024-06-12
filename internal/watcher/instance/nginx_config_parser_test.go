@@ -15,7 +15,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/files"
+	"github.com/nginx/agent/v3/pkg/files"
 	testconfig "github.com/nginx/agent/v3/test/config"
 	"github.com/nginx/agent/v3/test/helpers"
 	modelHelpers "github.com/nginx/agent/v3/test/model"
