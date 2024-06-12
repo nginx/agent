@@ -14,3 +14,9 @@ func CreateManagementPlaneRequestConfigApplyRequest() *v1.ManagementPlaneRequest
 		},
 	}
 }
+
+func CreateManagementPlaneRequest() *v1.ManagementPlaneRequest {
+	return &v1.ManagementPlaneRequest{
+		MessageMeta: CreateMessageMeta(),
+	}
+}
