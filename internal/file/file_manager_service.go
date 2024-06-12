@@ -6,10 +6,8 @@
 package file
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"io"
 	"log/slog"
 	"os"
 
@@ -27,7 +25,8 @@ import (
 
 type (
 	fileOperator interface {
-		Write()
+		Write(ctx context.Context, fileContent []byte, file *mpi.FileMeta) error
+		ReadFileContents(files []*mpi.File) (filesContents map[string][]byte, err error)
 	}
 )
 
@@ -35,9 +34,9 @@ type FileManagerService struct {
 	fileServiceClient mpi.FileServiceClient
 	agentConfig       *config.Config
 	fileOperator      fileOperator
-	// TODO: Naming of these
 	fileOverviewCache map[string]*mpi.FileOverview // key is instance ID
 	fileContentsCache map[string][]byte            // key is file path
+	nginxConfigFiles  map[string][]*mpi.File       // key is instance ID, this is the list of files from the nginxConfigContext
 }
 
 func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig *config.Config) *FileManagerService {
@@ -47,6 +46,7 @@ func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig 
 		fileOperator:      NewFileOperator(),
 		fileOverviewCache: make(map[string]*mpi.FileOverview),
 		fileContentsCache: make(map[string][]byte),
+		nginxConfigFiles:  make(map[string][]*mpi.File),
 	}
 }
 
@@ -166,67 +166,42 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context, configApplyReque
 		return err
 	}
 	fms.fileOverviewCache[configApplyRequest.GetConfigVersion().GetInstanceId()] = fileOverview
+
+	contents, readErr := fms.fileOperator.ReadFileContents(fileOverview.GetFiles())
+	fms.fileContentsCache = contents
+	if readErr != nil {
+		return readErr
+	}
+
+	//TODO:
+	// Need to check if file is being updated, added or deleted
+	// Updated - compare hash
+	// Added - does file exist
+	// Deleted is file in nginxConfigFiles and not in FileOverview
+
 	for _, file := range fileOverview.GetFiles() {
-		action := file.GetAction()
-		switch action {
-		case mpi.File_FILE_ACTION_UNCHANGED, mpi.File_FILE_ACTION_UNSPECIFIED:
-			break
-		case mpi.File_FILE_ACTION_UPDATE, mpi.File_FILE_ACTION_ADD:
-			fileResponse, getFileErr := fms.fileServiceClient.GetFile(ctx, &mpi.GetFileRequest{
-				MessageMeta: &mpi.MessageMeta{
-					MessageId:     uuid.NewString(),
-					CorrelationId: logger.GetCorrelationID(ctx),
-					Timestamp:     timestamppb.Now(),
-				},
-				FileMeta: file.GetFileMeta(),
-			})
-			// TODO: should this be more specific ? mention file ??
-			if getFileErr != nil {
-				return getFileErr
-			}
+		fileResponse, getFileErr := fms.fileServiceClient.GetFile(ctx, &mpi.GetFileRequest{
+			MessageMeta: &mpi.MessageMeta{
+				MessageId:     uuid.NewString(),
+				CorrelationId: logger.GetCorrelationID(ctx),
+				Timestamp:     timestamppb.Now(),
+			},
+			FileMeta: file.GetFileMeta(),
+		})
 
-			// not sure if this is needed ?
-			fileContents[file.GetFileMeta().GetName()] = fileResponse.GetContents()
-			fallthrough
-		case mpi.File_FILE_ACTION_DELETE:
-			readErr := fms.readFileContent(file.GetFileMeta().GetName())
-			if readErr != nil {
-				return readErr
-			}
-
-			// write file
-
-			// compare file content and hash
-
-			// publish update successful
-
-			// keep content and cache
+		if getFileErr != nil {
+			return getFileErr
 		}
 
-	}
+		fileContents[file.GetFileMeta().GetName()] = fileResponse.GetContents()
 
-	return nil
-}
+		//TODO:
+		// write file
+		// compare file content and hash
+		// publish update successful
+		// keep content and cache
 
-func (fms *FileManagerService) readFileContent(filePath string) error {
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		// File is new and doesn't exist so no previous content to save
-		return nil
 	}
-	file, err := os.Open(filePath)
-	// TODO: should this be more specific ? mention file ??
-	if err != nil {
-		return err
-	}
-
-	content := bytes.NewBuffer([]byte{})
-	// TODO: should this be more specific ? mention file ??
-	_, copyErr := io.Copy(content, file)
-	if copyErr != nil {
-		return copyErr
-	}
-
-	fms.fileContentsCache[filePath] = content.Bytes()
 
 	return nil
 }
@@ -244,7 +219,6 @@ func (fms *FileManagerService) fileOverview(ctx context.Context,
 			},
 			ConfigVersion: configApplyRequest.GetConfigVersion(),
 		})
-		// TODO: should this be more specific ? mention file overview ??
 		if err != nil {
 			return nil, err
 		}
@@ -256,29 +230,7 @@ func (fms *FileManagerService) fileOverview(ctx context.Context,
 	return fileOverview, nil
 }
 
-// call file operator write
-//func write() {
-//}
-//
-//// compare hash from file overview with contents gotten from getFileResponse
-//func verify() {
-//}
-//
-//// clear fileOverviews and file contents for specific instance
-//func clearFiles() {
-//}
-
-// Receive config apply request with file overview
-// save file overview in fileOverviews map
-// get files from management plane
-// add contents of files to fileContents map
-
-// write each file
-// compare files content and file overview hash
-// publish file update successful
-// keep file contents and overview until resource plugin says apply was successful
-// if it fails and rollback is needed
-// compare the cache to the file overview to see if a file was added as the file will be in file overview
-// but won't be in the cache as its new and won't have previous content. this means the file should be deleted
-// files that were deleted should be created using the cache
-// files that were updated should be written to using the cache
+// TODO: Naming
+func (fms *FileManagerService) updateConfigFiles(instanceID string, files []*mpi.File) {
+	fms.nginxConfigFiles[instanceID] = files
+}

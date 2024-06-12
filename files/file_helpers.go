@@ -14,6 +14,7 @@ import (
 	"io"
 	"os"
 	"slices"
+	"strconv"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/uuid"
@@ -75,4 +76,13 @@ func GenerateFileHash(filePath string) (string, error) {
 	}
 
 	return base64.StdEncoding.EncodeToString(h.Sum(nil)), nil
+}
+
+func FileMode(mode string) os.FileMode {
+	result, err := strconv.ParseInt(mode, 8, 32)
+	if err != nil {
+		return os.FileMode(0o644)
+	}
+
+	return os.FileMode(result)
 }

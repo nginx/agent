@@ -63,6 +63,12 @@ func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 		fp.handleConfigUploadRequest(ctx, msg)
 	case bus.ConfigApplyRequestTopic:
 		fp.handleConfigApplyRequest(ctx, msg)
+	case bus.ConfigApplyFailedRequestTopic:
+		// rollback files
+		fallthrough
+	case bus.ConfigApplySuccessfulRequestTopic:
+		// clear caches from file manager service
+		fallthrough
 	default:
 		slog.DebugContext(ctx, "File plugin unknown topic", "topic", msg.Topic)
 	}
@@ -73,8 +79,8 @@ func (fp *FilePlugin) Subscriptions() []string {
 		bus.NginxConfigUpdateTopic,
 		bus.ConfigUploadRequestTopic,
 		bus.ConfigApplyRequestTopic,
-		// TODO: Need to subscribe to successful/failed config apply sent from resource plugin
-		// To determine if we need to rollback files or clear the cache content
+		bus.ConfigApplySuccessfulRequestTopic,
+		bus.ConfigApplyFailedRequestTopic,
 	}
 }
 
@@ -142,7 +148,12 @@ func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 			"instance_id", nginxConfigContext.InstanceID,
 			"error", err,
 		)
+		return
 	}
+
+	// TODO: Naming - update the list of files in the manager sevice for use in config apply to tell what file
+	// has been deleted
+	fp.fileManagerService.updateConfigFiles(nginxConfigContext.InstanceID, nginxConfigContext.Files)
 }
 
 func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Message) {
