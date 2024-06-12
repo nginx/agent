@@ -173,7 +173,7 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context, configApplyReque
 		return readErr
 	}
 
-	//TODO:
+	// TODO:
 	// Need to check if file is being updated, added or deleted
 	// Updated - compare hash
 	// Added - does file exist
@@ -195,7 +195,7 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context, configApplyReque
 
 		fileContents[file.GetFileMeta().GetName()] = fileResponse.GetContents()
 
-		//TODO:
+		// TODO:
 		// write file
 		// compare file content and hash
 		// publish update successful

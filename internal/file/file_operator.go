@@ -9,12 +9,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/files"
 	"io"
 	"log/slog"
 	"os"
 	"path"
+
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/files"
 )
 
 type FileOperator struct{}
@@ -42,7 +43,6 @@ func (fo *FileOperator) Write(ctx context.Context, fileContent []byte, file *mpi
 	slog.DebugContext(ctx, "Content written to file", "file_path", file.GetName())
 
 	return nil
-
 }
 
 // ReadFileContents TODO: Need to either handle files not having any changes here or have it so by this point the list of files
