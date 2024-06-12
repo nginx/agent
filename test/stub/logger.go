@@ -12,7 +12,7 @@ import (
 
 // StubLoggerWith follows the pattern for replacing slog
 // with a handler that can take a buffer. The buffer gets filled
-// by adding log statements to as the code is executed.
+// by adding log statements to it as the code is executed.
 // You can see more information in the following video for context
 // https://www.youtube.com/watch?v=i1bDIyIaxbE
 

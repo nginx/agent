@@ -12,7 +12,7 @@ The directory name for each application should match the name of the executable 
 
 ### `/internal`
 
-Private application and library code. This is the code will not be exported and available outside of this project.
+Private application and library code. This is the code that will not be exported and available outside of this project.
 
 ### `/pkg`
 
@@ -36,7 +36,7 @@ A set of test specific configurations and helper libraries. The convention with 
 
 ### `/api`
 
-A series of API defintions based on [protobuf](https://github.com/golang/protobuf) and generated [gRPC](https://grpc.io/) generated code for reuse by clients and servers.
+A series of API definitions based on [protobuf](https://github.com/golang/protobuf) and generated [gRPC](https://grpc.io/) generated code for reuse by clients and servers.
 
 ### `/docs`
 

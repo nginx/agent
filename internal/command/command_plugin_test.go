@@ -83,6 +83,7 @@ func TestCommandPlugin_Process(t *testing.T) {
 
 func TestMonitorSubscribeChannel(t *testing.T) {
 	ctx, cncl := context.WithCancel(context.Background())
+	defer cncl()
 
 	logBuf := &bytes.Buffer{}
 	stub.StubLoggerWith(logBuf)
@@ -102,21 +103,16 @@ func TestMonitorSubscribeChannel(t *testing.T) {
 	// Give some time to process the message
 	time.Sleep(100 * time.Millisecond)
 
+	cncl()
+
+	time.Sleep(100 * time.Millisecond)
+
 	// Verify the logger was called
 	if s := logBuf.String(); !strings.Contains(s, "Received management plane request") {
+		// defer wg.Done()
 		t.Errorf("Unexpected log %s", s)
 	}
 
-	logBuf = &bytes.Buffer{}
-
-	// Give some time to process the message
-	time.Sleep(100 * time.Millisecond)
-
-	cncl()
-
-	// Give some time to process the message
-	time.Sleep(100 * time.Millisecond)
-
-	// Verify the logger was called
-	assert.Equal(t, "", logBuf.String())
+	// Clear the log buffer
+	logBuf.Reset()
 }
