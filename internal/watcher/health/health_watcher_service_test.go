@@ -20,7 +20,7 @@ import (
 )
 
 func TestHealthWatcherService_AddHealthWatcher(t *testing.T) {
-	agentConfig := types.GetAgentConfig()
+	agentConfig := types.AgentConfig()
 	healthWatcher := NewHealthWatcherService(agentConfig)
 	instance := protos.GetNginxOssInstance([]string{})
 
@@ -33,7 +33,7 @@ func TestHealthWatcherService_AddHealthWatcher(t *testing.T) {
 }
 
 func TestHealthWatcherService_DeleteHealthWatcher(t *testing.T) {
-	agentConfig := types.GetAgentConfig()
+	agentConfig := types.AgentConfig()
 	healthWatcher := NewHealthWatcherService(agentConfig)
 	instance := protos.GetNginxOssInstance([]string{})
 
@@ -47,7 +47,7 @@ func TestHealthWatcherService_DeleteHealthWatcher(t *testing.T) {
 }
 
 func TestHealthWatcherService_UpdateHealthWatcher(t *testing.T) {
-	agentConfig := types.GetAgentConfig()
+	agentConfig := types.AgentConfig()
 	healthWatcher := NewHealthWatcherService(agentConfig)
 	instance := protos.GetNginxOssInstance([]string{})
 	updatedInstance := protos.GetNginxPlusInstance([]string{})
@@ -64,7 +64,7 @@ func TestHealthWatcherService_UpdateHealthWatcher(t *testing.T) {
 
 func TestHealthWatcherService_health(t *testing.T) {
 	ctx := context.Background()
-	agentConfig := types.GetAgentConfig()
+	agentConfig := types.AgentConfig()
 	healthWatcher := NewHealthWatcherService(agentConfig)
 	ossInstance := protos.GetNginxOssInstance([]string{})
 	plusInstance := protos.GetNginxPlusInstance([]string{})
@@ -226,7 +226,7 @@ func TestHealthWatcherService_compareCache(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			agentConfig := types.GetAgentConfig()
+			agentConfig := types.AgentConfig()
 			healthWatcher := NewHealthWatcherService(agentConfig)
 			healthWatcher.cache = healthCache
 			healthWatcher.instances = test.instances

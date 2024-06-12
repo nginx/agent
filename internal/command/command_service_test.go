@@ -51,7 +51,7 @@ func TestCommandService_UpdateDataPlaneStatus(t *testing.T) {
 	commandService := NewCommandService(
 		ctx,
 		commandServiceClient,
-		types.GetAgentConfig(),
+		types.AgentConfig(),
 		make(chan *mpi.ManagementPlaneRequest),
 	)
 	defer commandService.CancelSubscription(ctx)
@@ -89,7 +89,7 @@ func TestCommandService_UpdateDataPlaneStatusSubscribeError(t *testing.T) {
 	commandService := NewCommandService(
 		ctx,
 		commandServiceClient,
-		types.GetAgentConfig(),
+		types.AgentConfig(),
 		make(chan *mpi.ManagementPlaneRequest),
 	)
 	defer commandService.CancelSubscription(ctx)
@@ -111,7 +111,7 @@ func TestCommandService_UpdateDataPlaneHealth(t *testing.T) {
 	commandService := NewCommandService(
 		ctx,
 		commandServiceClient,
-		types.GetAgentConfig(),
+		types.AgentConfig(),
 		make(chan *mpi.ManagementPlaneRequest),
 	)
 

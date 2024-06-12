@@ -26,3 +26,6 @@ __debug_bin
 vendor/
 go.work
 go.work.sum
+
+# Apple's random filesystem file.
+.DS_Store

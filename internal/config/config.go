@@ -7,6 +7,7 @@ package config
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -65,32 +66,45 @@ func RegisterConfigFile() error {
 	return nil
 }
 
-func GetConfig() *Config {
-	config := &Config{
-		UUID:               viperInstance.GetString(UUIDKey),
-		Version:            viperInstance.GetString(VersionKey),
-		Path:               viperInstance.GetString(ConfigPathKey),
-		Log:                getLog(),
-		DataPlaneConfig:    getDataPlaneConfig(),
-		Client:             getClient(),
-		ConfigDir:          getConfigDir(),
-		AllowedDirectories: []string{},
-		Metrics:            getMetrics(),
-		Command:            getCommand(),
-		Common:             getCommon(),
-		Watchers:           getWatchers(),
-	}
-
-	for _, dir := range strings.Split(config.ConfigDir, ":") {
+func ResolveConfig() (*Config, error) {
+	// Collect allowed directories, so that paths in the config can be validated.
+	configDir := viperInstance.GetString(ConfigDirectoriesKey)
+	allowedDirs := make([]string, 0)
+	for _, dir := range strings.Split(configDir, ":") {
 		if dir != "" && filepath.IsAbs(dir) {
-			config.AllowedDirectories = append(config.AllowedDirectories, dir)
+			allowedDirs = append(allowedDirs, dir)
 		} else {
 			slog.Warn("Invalid directory: ", "dir", dir)
 		}
 	}
+
+	// Collect all parsing errors before returning the error, so the user sees all issues with config
+	// in one error message.
+	var err error
+	collector, otelcolErr := resolveCollector(allowedDirs)
+	err = errors.Join(err, otelcolErr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid configuration: %w", err)
+	}
+
+	config := &Config{
+		UUID:               viperInstance.GetString(UUIDKey),
+		Version:            viperInstance.GetString(VersionKey),
+		Path:               viperInstance.GetString(ConfigPathKey),
+		Log:                resolveLog(),
+		DataPlaneConfig:    resolveDataPlaneConfig(),
+		Client:             resolveClient(),
+		ConfigDir:          configDir,
+		AllowedDirectories: allowedDirs,
+		Collector:          collector,
+		Command:            resolveCommand(),
+		Common:             resolveCommon(),
+		Watchers:           resolveWatchers(),
+	}
+
 	slog.Debug("Agent config", "config", config)
 
-	return config
+	return config, nil
 }
 
 func setVersion(version, commit string) {
@@ -120,13 +134,13 @@ func registerFlags() {
 	)
 
 	fs.Duration(
-		DataPlaneConfigNginxReloadMonitoringPeriodKey,
-		DefaultDataPlaneConfigNginxReloadMonitoringPeriod,
+		NginxReloadMonitoringPeriodKey,
+		DefNginxReloadMonitoringPeriod,
 		"The amount of time to monitor NGINX after a reload of configuration.",
 	)
 	fs.Bool(
-		DataPlaneConfigNginxTreatWarningsAsErrorsKey,
-		true,
+		NginxTreatWarningsAsErrorsKey,
+		DefTreatErrorsAsWarnings,
 		"Warning messages in the NGINX errors logs after a NGINX reload will be treated as an error.",
 	)
 
@@ -186,6 +200,11 @@ func registerFlags() {
 		InstanceHealthWatcherMonitoringFrequencyKey,
 		DefInstanceHealthWatcherMonitoringFrequency,
 		"How often the NGINX Agent will check for instance health changes.",
+	)
+	fs.String(
+		CollectorConfigPathKey,
+		DefCollectorConfigPath,
+		"The path to the Opentelemetry Collector configuration file.",
 	)
 
 	fs.SetNormalizeFunc(normalizeFunc)
@@ -248,23 +267,23 @@ func normalizeFunc(f *flag.FlagSet, name string) flag.NormalizedName {
 	return flag.NormalizedName(name)
 }
 
-func getLog() *Log {
+func resolveLog() *Log {
 	return &Log{
 		Level: viperInstance.GetString(LogLevelKey),
 		Path:  viperInstance.GetString(LogPathKey),
 	}
 }
 
-func getDataPlaneConfig() *DataPlaneConfig {
+func resolveDataPlaneConfig() *DataPlaneConfig {
 	return &DataPlaneConfig{
 		Nginx: &NginxDataPlaneConfig{
-			ReloadMonitoringPeriod: viperInstance.GetDuration(DataPlaneConfigNginxReloadMonitoringPeriodKey),
-			TreatWarningsAsError:   viperInstance.GetBool(DataPlaneConfigNginxTreatWarningsAsErrorsKey),
+			ReloadMonitoringPeriod: viperInstance.GetDuration(NginxReloadMonitoringPeriodKey),
+			TreatWarningsAsError:   viperInstance.GetBool(NginxTreatWarningsAsErrorsKey),
 		},
 	}
 }
 
-func getClient() *Client {
+func resolveClient() *Client {
 	return &Client{
 		Timeout:             viperInstance.GetDuration(ClientTimeoutKey),
 		Time:                viperInstance.GetDuration(ClientTimeKey),
@@ -272,23 +291,50 @@ func getClient() *Client {
 	}
 }
 
-func getConfigDir() string {
-	return viperInstance.GetString(ConfigDirectoriesKey)
-}
-
-func getMetrics() *Metrics {
-	if !viperInstance.IsSet(MetricsRootKey) {
-		return nil
+func resolveCollector(allowedDirs []string) (*Collector, error) {
+	// We do not want to return a sentinel error because we are joining all returned errors
+	// from config resolution and returning them without pattern matching.
+	// nolint: nilnil
+	if !viperInstance.IsSet(CollectorRootKey) {
+		return nil, nil
 	}
 
-	metrics := &Metrics{
-		Collector: viperInstance.GetBool(MetricsCollectorKey),
+	var (
+		err         error
+		exporters   []Exporter
+		processors  []Processor
+		receivers   []Receiver
+		healthCheck ServerConfig
+	)
+
+	err = errors.Join(
+		err,
+		resolveMapStructure(CollectorExportersKey, &exporters),
+		resolveMapStructure(CollectorProcessorsKey, &processors),
+		resolveMapStructure(CollectorReceiversKey, &receivers),
+		resolveMapStructure(CollectorHealthKey, &healthCheck),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal collector config: %w", err)
 	}
 
-	return metrics
+	col := &Collector{
+		ConfigPath: viperInstance.GetString(CollectorConfigPathKey),
+		Exporters:  exporters,
+		Processors: processors,
+		Receivers:  receivers,
+		Health:     &healthCheck,
+	}
+
+	err = col.Validate(allowedDirs)
+	if err != nil {
+		return nil, fmt.Errorf("collector config: %w", err)
+	}
+
+	return col, nil
 }
 
-func getCommand() *Command {
+func resolveCommand() *Command {
 	if !viperInstance.IsSet(CommandRootKey) {
 		return nil
 	}
@@ -330,7 +376,7 @@ func getCommand() *Command {
 	return command
 }
 
-func getCommon() *CommonSettings {
+func resolveCommon() *CommonSettings {
 	return &CommonSettings{
 		InitialInterval:     DefBackoffInitialInterval,
 		MaxInterval:         DefBackoffMaxInterval,
@@ -340,7 +386,7 @@ func getCommon() *CommonSettings {
 	}
 }
 
-func getWatchers() *Watchers {
+func resolveWatchers() *Watchers {
 	return &Watchers{
 		InstanceWatcher: InstanceWatcher{
 			MonitoringFrequency: DefInstanceWatcherMonitoringFrequency,
@@ -349,4 +395,14 @@ func getWatchers() *Watchers {
 			MonitoringFrequency: DefInstanceHealthWatcherMonitoringFrequency,
 		},
 	}
+}
+
+// Wrapper needed for more detailed error message.
+func resolveMapStructure(key string, object any) error {
+	err := viperInstance.UnmarshalKey(key, &object)
+	if err != nil {
+		return fmt.Errorf("resolve config %s: %w", key, err)
+	}
+
+	return nil
 }

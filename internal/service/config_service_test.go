@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 
 	"github.com/nginx/agent/v3/internal/client/clientfakes"
 
@@ -34,7 +34,7 @@ func TestConfigService_SetConfigContext(t *testing.T) {
 
 	instance := protos.GetNginxOssInstance([]string{})
 
-	configService := NewConfigService(ctx, instance, types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
+	configService := NewConfigService(ctx, instance, types.AgentConfig(), &clientfakes.FakeConfigClient{})
 	configService.SetConfigContext(expectedConfigContext)
 
 	assert.Equal(t, expectedConfigContext, configService.configContext)
@@ -43,7 +43,7 @@ func TestConfigService_SetConfigContext(t *testing.T) {
 func TestUpdateInstanceConfiguration(t *testing.T) {
 	ctx := context.Background()
 	instance := protos.GetNginxOssInstance([]string{})
-	agentConfig := types.GetAgentConfig()
+	agentConfig := types.AgentConfig()
 
 	tests := []struct {
 		name        string
@@ -107,7 +107,7 @@ func TestUpdateInstanceConfiguration(t *testing.T) {
 
 			cs := NewConfigService(ctx, instance, agentConfig, &clientfakes.FakeConfigClient{})
 			cs.configService = &mockService
-			_, result := cs.UpdateInstanceConfiguration(ctx, &v1.ManagementPlaneRequest_ConfigApplyRequest{})
+			_, result := cs.UpdateInstanceConfiguration(ctx, &mpi.ManagementPlaneRequest_ConfigApplyRequest{})
 
 			assert.Equal(t, test.expected.GetStatus(), result.GetStatus())
 			assert.Equal(t, test.expected.GetMessage(), result.GetMessage())
@@ -123,7 +123,7 @@ func TestConfigService_ParseInstanceConfiguration(t *testing.T) {
 
 	instance := protos.GetNginxOssInstance([]string{})
 
-	configService := NewConfigService(ctx, instance, types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
+	configService := NewConfigService(ctx, instance, types.AgentConfig(), &clientfakes.FakeConfigClient{})
 
 	fakeDataPlaneConfig := &configfakes.FakeDataPlaneConfig{}
 	fakeDataPlaneConfig.ParseConfigReturns(expectedConfigContext, nil)
