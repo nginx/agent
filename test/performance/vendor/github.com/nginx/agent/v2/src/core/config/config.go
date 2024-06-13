@@ -47,7 +47,10 @@ const (
 `
 )
 
-var Viper = viper.NewWithOptions(viper.KeyDelimiter(agent_config.KeyDelimiter))
+var (
+	Viper       = viper.NewWithOptions(viper.KeyDelimiter(agent_config.KeyDelimiter))
+	MigratedEnv = false
+)
 
 func SetVersion(version, commit string) {
 	ROOT_COMMAND.Version = version + "-" + commit
@@ -133,7 +136,7 @@ func deprecateFlags() {
 }
 
 func RegisterFlags() {
-	Viper.SetEnvPrefix(EnvPrefix)
+	Viper.SetEnvPrefix(NewEnvPrefix)
 	Viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	Viper.AutomaticEnv()
 
@@ -149,6 +152,17 @@ func RegisterFlags() {
 		if err := Viper.BindPFlag(strings.ReplaceAll(flag.Name, "-", "_"), fs.Lookup(flag.Name)); err != nil {
 			return
 		}
+
+		oldKey := strings.ToUpper(OldEnvPrefix + "_" + strings.ReplaceAll(flag.Name, "-", "_"))
+		newKey := strings.ToUpper(NewEnvPrefix + "_" + strings.ReplaceAll(flag.Name, "-", "_"))
+
+		if os.Getenv(oldKey) != "" && os.Getenv(newKey) == "" {
+			if err := os.Setenv(newKey, os.Getenv(oldKey)); err != nil {
+				log.Warnf("Failed to set environment variable %s: %v", newKey, err)
+			}
+			MigratedEnv = true
+		}
+
 		err := Viper.BindEnv(flag.Name)
 		if err != nil {
 			log.Warnf("Error occurred binding env %s: %v", flag.Name, err)
