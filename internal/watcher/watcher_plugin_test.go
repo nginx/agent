@@ -25,7 +25,7 @@ import (
 func TestWatcher_Init(t *testing.T) {
 	ctx := context.Background()
 
-	watcherPlugin := NewWatcher(types.GetAgentConfig())
+	watcherPlugin := NewWatcher(types.AgentConfig())
 
 	messagePipe := bus.NewFakeMessagePipe()
 
@@ -89,11 +89,11 @@ func TestWatcher_Init(t *testing.T) {
 }
 
 func TestWatcher_Info(t *testing.T) {
-	watcherPlugin := NewWatcher(types.GetAgentConfig())
+	watcherPlugin := NewWatcher(types.AgentConfig())
 	assert.Equal(t, &bus.Info{Name: "watcher"}, watcherPlugin.Info())
 }
 
 func TestWatcher_Subscriptions(t *testing.T) {
-	watcherPlugin := NewWatcher(types.GetAgentConfig())
+	watcherPlugin := NewWatcher(types.AgentConfig())
 	assert.Equal(t, []string{}, watcherPlugin.Subscriptions())
 }

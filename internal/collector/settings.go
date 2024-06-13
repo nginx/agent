@@ -5,8 +5,11 @@
 package collector
 
 import (
+	_ "embed"
 	"log/slog"
 	"os"
+	"path/filepath"
+	"text/template"
 
 	"github.com/nginx/agent/v3/internal/config"
 	"go.opentelemetry.io/collector/confmap"
@@ -18,6 +21,14 @@ import (
 	"go.opentelemetry.io/collector/confmap/provider/yamlprovider"
 	"go.opentelemetry.io/collector/otelcol"
 )
+
+const (
+	otelTemplatePath     = "otelcol.tmpl"
+	configFilePermission = 0o600
+)
+
+//go:embed otelcol.tmpl
+var otelcolTemplate string
 
 func OTelCollectorSettings(cfg *config.Config) otelcol.CollectorSettings {
 	return otelcol.CollectorSettings{
@@ -62,15 +73,47 @@ func createConverterFactories() []confmap.ConverterFactory {
 }
 
 func createURIs(cfg *config.Config) []string {
-	return []string{getConfig(cfg)}
+	return []string{cfg.Collector.ConfigPath}
 }
 
-func getConfig(_ *config.Config) string {
-	val, ex := os.LookupEnv("OPENTELEMETRY_COLLECTOR_CONFIG_FILE")
-	if !ex {
-		return "/tmp/otel-collector-config.yaml"
+// Generates a OTel Collector config to a file by injecting the Metrics Config to a Go template.
+func writeCollectorConfig(conf *config.Collector) error {
+	otelcolTemplate, err := template.New(otelTemplatePath).Parse(otelcolTemplate)
+	if err != nil {
+		return err
 	}
-	slog.Info("Using config URI from environment")
 
-	return val
+	confPath := filepath.Clean(conf.ConfigPath)
+
+	// Check if file exists.
+	_, err = os.Stat(confPath)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return err
+		}
+
+		// Create if doesn't exist.
+		_, createErr := os.Create(confPath)
+		if createErr != nil {
+			return createErr
+		}
+	}
+
+	file, err := os.OpenFile(confPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, configFilePermission)
+	defer func() {
+		err = file.Close()
+		if err != nil {
+			slog.Warn("Failed to close file", "file_path", confPath)
+		}
+	}()
+	if err != nil {
+		return err
+	}
+
+	err = otelcolTemplate.Execute(file, conf)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

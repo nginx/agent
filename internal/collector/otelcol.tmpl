@@ -1,0 +1,101 @@
+receivers:
+  {{- range .Receivers }}
+  {{- if eq .Type "otlp" }}
+  otlp:
+    protocols:
+      {{- if eq .Server.Type 0 }}
+      grpc:
+      {{- else }}
+      http:
+      {{- end }}
+        endpoint: "{{- .Server.Host -}}:{{- .Server.Port -}}"
+  {{- else if eq .Type "hostmetrics" }}
+  hostmetrics:
+    collection_interval: 1m
+    initial_delay: 1s
+    scrapers:
+      cpu:
+      disk:
+      load:
+      filesystem:
+      memory:
+      network:
+      paging:
+      processes:
+      process:
+  {{- else if eq .Type "prometheus" }}
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'nginx-agent-otelcol'
+          scrape_interval: 5s
+          static_configs:
+            - targets: ['{{- .Server.Host -}}:{{- .Server.Port -}}']
+  {{- else if eq .Type "nginx" }}
+  nginx:
+    endpoint: "http://{{- .Server.Host -}}:{{- .Server.Port -}}/status"
+    collection_interval: 10s
+  {{- end }}
+  {{- end }}
+
+{{ if gt (len .Processors) 0 -}}
+processors:
+{{- range .Processors }}
+  {{ .Type }}:
+{{- end }}
+{{- end }}
+
+exporters:
+  {{- range .Exporters }}
+  {{- if eq .Type "otlp" }}
+  otlp:
+    endpoint: "{{ .Server.Host -}}:{{- .Server.Port }}"
+    compression: none
+    timeout: 10s
+    retry_on_failure:
+      enabled: true
+      initial_interval: 10s
+      max_interval: 60s
+      max_elapsed_time: 10m
+    tls:
+      insecure: {{ if .TLS -}}false{{ else -}}true{{- end }}
+      {{ if .TLS -}}
+      {{ if gt (len .TLS.Ca) 0 -}}ca_file: "{{- .TLS.Ca -}}"{{- end }}
+      {{ if gt (len .TLS.Cert) 0 -}}cert_file: "{{- .TLS.Cert -}}"{{- end }}
+      {{ if gt (len .TLS.Key) 0 -}}key_file: "{{- .TLS.Key -}}"{{- end }}
+      {{- end }}
+  {{- else if eq .Type "prometheus" }}
+  prometheus:
+    endpoint: "{{ .Server.Host -}}:{{- .Server.Port }}"
+    namespace: "nginx-agent"
+  {{- else if eq .Type "debug" }}
+  debug:
+    verbosity: detailed
+    sampling_initial: 5
+    sampling_thereafter: 200
+  {{- end }}
+  {{- end }}
+  
+extensions:
+  health_check:
+    {{- if .Health }}
+    endpoint: "{{ .Health.Host -}}:{{- .Health.Port }}"
+    {{- else }}
+    endpoint: "localhost:13133"
+    {{- end }}
+
+service:
+  extensions:
+    - health_check
+  pipelines:
+    metrics:
+      receivers:
+        {{- range .Receivers }}
+        - {{ .Type }}
+        {{- end }}
+      processors:
+        - batch
+      exporters:
+        {{- range .Exporters }}
+        - {{ .Type }}
+        {{- end }}

@@ -78,7 +78,7 @@ func TestNginx_ParseConfig(t *testing.T) {
 	instance := protos.GetNginxOssInstance([]string{})
 	instance.InstanceRuntime.ConfigPath = file.Name()
 
-	nginxConfig := NewNginx(ctx, instance, types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
+	nginxConfig := NewNginx(ctx, instance, types.AgentConfig(), &clientfakes.FakeConfigClient{})
 	result, err := nginxConfig.ParseConfig(ctx)
 
 	require.NoError(t, err)
@@ -106,7 +106,7 @@ func TestValidateConfigCheckResponse(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			nginxConfig := NewNginx(context.Background(), protos.GetNginxOssInstance([]string{}),
-				types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
+				types.AgentConfig(), &clientfakes.FakeConfigClient{})
 
 			err := nginxConfig.validateConfigCheckResponse([]byte(test.out))
 			assert.Equal(t, test.expected, err)
@@ -199,7 +199,7 @@ func TestNginx_Apply(t *testing.T) {
 			nginxConfig := NewNginx(
 				ctx,
 				instance,
-				types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
+				types.AgentConfig(), &clientfakes.FakeConfigClient{})
 
 			nginxConfig.executor = mockExec
 			nginxConfig.SetConfigContext(&model.NginxConfigContext{
@@ -262,7 +262,7 @@ func TestNginx_Validate(t *testing.T) {
 
 			instance := protos.GetNginxOssInstance([]string{})
 
-			nginxConfig := NewNginx(ctx, instance, types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
+			nginxConfig := NewNginx(ctx, instance, types.AgentConfig(), &clientfakes.FakeConfigClient{})
 			nginxConfig.executor = mockExec
 
 			err := nginxConfig.Validate(ctx)
@@ -633,7 +633,7 @@ func TestParseStatusAPIEndpoints(t *testing.T) {
 		payload, err := crossplane.Parse(f.Name(), parseOptions)
 		require.NoError(t, err)
 		instance := protos.GetNginxOssInstance([]string{})
-		nginxConfig := NewNginx(context.Background(), instance, types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
+		nginxConfig := NewNginx(context.Background(), instance, types.AgentConfig(), &clientfakes.FakeConfigClient{})
 
 		var oss, plus []string
 
@@ -681,7 +681,7 @@ func TestNginx_PingPlusAPIEndpoint(t *testing.T) {
 	defer fakeServer.Close()
 
 	instance := protos.GetNginxOssInstance([]string{})
-	nginxConfig := NewNginx(context.Background(), instance, types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
+	nginxConfig := NewNginx(context.Background(), instance, types.AgentConfig(), &clientfakes.FakeConfigClient{})
 
 	tests := []struct {
 		name     string
@@ -743,7 +743,7 @@ Reading: 0 Writing: 1 Waiting: 1
 	defer fakeServer.Close()
 
 	instance := protos.GetNginxOssInstance([]string{})
-	nginxConfig := NewNginx(context.Background(), instance, types.GetAgentConfig(), &clientfakes.FakeConfigClient{})
+	nginxConfig := NewNginx(context.Background(), instance, types.AgentConfig(), &clientfakes.FakeConfigClient{})
 
 	tests := []struct {
 		name     string

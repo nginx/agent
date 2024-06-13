@@ -301,7 +301,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 
 			test.instance.InstanceRuntime.ConfigPath = file.Name()
 
-			nginxConfig := NewNginxConfigParser(types.GetAgentConfig())
+			nginxConfig := NewNginxConfigParser(types.AgentConfig())
 			result, parseError := nginxConfig.Parse(ctx, test.instance)
 			require.NoError(t, parseError)
 
@@ -322,7 +322,7 @@ func TestNginxConfigParser_rootFiles(t *testing.T) {
 	defer helpers.RemoveFileWithErrorCheck(t, file2.Name())
 
 	// Not in allowed directory
-	nginxConfig := NewNginxConfigParser(types.GetAgentConfig())
+	nginxConfig := NewNginxConfigParser(types.AgentConfig())
 	nginxConfig.agentConfig.AllowedDirectories = []string{}
 	rootfiles := nginxConfig.rootFiles(ctx, dir)
 	assert.Empty(t, rootfiles)
@@ -343,7 +343,7 @@ func TestNginxConfigParser_sslCert(t *testing.T) {
 	defer helpers.RemoveFileWithErrorCheck(t, file1.Name())
 
 	// Not in allowed directory
-	nginxConfig := NewNginxConfigParser(types.GetAgentConfig())
+	nginxConfig := NewNginxConfigParser(types.AgentConfig())
 	nginxConfig.agentConfig.AllowedDirectories = []string{}
 	sslCert := nginxConfig.sslCert(ctx, file1.Name(), dir)
 	assert.Nil(t, sslCert)
@@ -502,7 +502,7 @@ func TestNginxConfigParser_urlsForLocationDirective(t *testing.T) {
 
 		payload, err := crossplane.Parse(f.Name(), parseOptions)
 		require.NoError(t, err)
-		nginxConfigParser := NewNginxConfigParser(types.GetAgentConfig())
+		nginxConfigParser := NewNginxConfigParser(types.AgentConfig())
 
 		var oss, plus []string
 
@@ -549,7 +549,7 @@ func TestNginxConfigParser_pingPlusAPIEndpoint(t *testing.T) {
 	fakeServer := httptest.NewServer(handler)
 	defer fakeServer.Close()
 
-	nginxConfigParser := NewNginxConfigParser(types.GetAgentConfig())
+	nginxConfigParser := NewNginxConfigParser(types.AgentConfig())
 
 	tests := []struct {
 		name     string
@@ -610,7 +610,7 @@ Reading: 0 Writing: 1 Waiting: 1
 	fakeServer := httptest.NewServer(handler)
 	defer fakeServer.Close()
 
-	nginxConfigParser := NewNginxConfigParser(types.GetAgentConfig())
+	nginxConfigParser := NewNginxConfigParser(types.AgentConfig())
 
 	tests := []struct {
 		name     string

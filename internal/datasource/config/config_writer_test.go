@@ -15,7 +15,7 @@ import (
 
 	"github.com/nginx/agent/v3/internal/logger"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/protos"
@@ -38,7 +38,7 @@ func TestWriteConfig(t *testing.T) {
 	_, instanceID := helpers.CreateTestIDs(t)
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 	allowedDirs := []string{tempDir}
-	agentConfig := types.GetAgentConfig()
+	agentConfig := types.AgentConfig()
 	agentConfig.AllowedDirectories = allowedDirs
 
 	instanceIDDir := path.Join(tempDir, instanceID.String())
@@ -59,8 +59,8 @@ func TestWriteConfig(t *testing.T) {
 
 	tests := []struct {
 		name               string
-		metaDataReturn     *v1.FileOverview
-		getFileReturn      *v1.FileContents
+		metaDataReturn     *mpi.FileOverview
+		getFileReturn      *mpi.FileContents
 		cacheShouldBeEqual bool
 		fileShouldBeEqual  bool
 		expSkippedCount    int
@@ -142,7 +142,7 @@ func TestDeleteFile(t *testing.T) {
 	tempDir := t.TempDir()
 	_, instanceID := helpers.CreateTestIDs(t)
 
-	agentconfig := types.GetAgentConfig()
+	agentconfig := types.AgentConfig()
 
 	instanceIDDir := path.Join(tempDir, instanceID.String())
 	helpers.CreateDirWithErrorCheck(t, instanceIDDir)
@@ -242,7 +242,7 @@ func TestRollback(t *testing.T) {
 	resp := []byte("location /test {\n    return 200 \"Test changed\\n\";\n}")
 	fakeConfigClient.GetFileReturns(protos.GetFileContents(resp), nil)
 
-	agentConfig := types.GetAgentConfig()
+	agentConfig := types.AgentConfig()
 	agentConfig.AllowedDirectories = allowedDirs
 
 	fileCache := NewFileCache(instanceID.String())
@@ -273,7 +273,7 @@ func TestRollback(t *testing.T) {
 		},
 	}
 
-	err = configWriter.Rollback(ctx, skippedFiles, &v1.ManagementPlaneRequest_ConfigApplyRequest{})
+	err = configWriter.Rollback(ctx, skippedFiles, &mpi.ManagementPlaneRequest_ConfigApplyRequest{})
 	require.NoError(t, err)
 
 	data, err := os.ReadFile(testConf.Name())
@@ -301,7 +301,7 @@ func TestComplete(t *testing.T) {
 	fakeConfigClient := &clientfakes.FakeConfigClient{}
 
 	fileCache := NewFileCache(instanceID.String())
-	agentConfig := types.GetAgentConfig()
+	agentConfig := types.AgentConfig()
 	agentConfig.AllowedDirectories = allowedDirs
 	fileCache.SetCachePath(cachePath)
 
@@ -391,7 +391,7 @@ func TestIsFilePathValid(t *testing.T) {
 
 	fileCache := NewFileCache("aecea348-62c1-4e3d-b848-6d6cdeb1cb9c")
 	fileCache.SetCachePath(cachePath)
-	agentConfig := types.GetAgentConfig()
+	agentConfig := types.AgentConfig()
 
 	configWriter, err := NewConfigWriter(agentConfig, fileCache, fakeConfigClient)
 	require.NoError(t, err)
@@ -431,13 +431,13 @@ func TestDoesFileRequireUpdate(t *testing.T) {
 	tests := []struct {
 		name            string
 		lastConfigApply CacheContent
-		fileData        *v1.FileMeta
+		fileData        *mpi.FileMeta
 		expectedResult  bool
 	}{
 		{
 			name:            "Test 1: File is latest version",
 			lastConfigApply: previousFileCache,
-			fileData: &v1.FileMeta{
+			fileData: &mpi.FileMeta{
 				ModifiedTime: fileTime1,
 				Name:         "/tmp/nginx/locations/metrics.conf",
 				Hash:         "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",
@@ -447,7 +447,7 @@ func TestDoesFileRequireUpdate(t *testing.T) {
 		{
 			name:            "Test 2: File needs updating",
 			lastConfigApply: previousFileCache,
-			fileData: &v1.FileMeta{
+			fileData: &mpi.FileMeta{
 				ModifiedTime: updateTimeFile1,
 				Name:         "/tmp/nginx/test.conf",
 				Hash:         "ibZkRVjemE5dl.tv88ttUJaXx6UJJMTu",

@@ -12,7 +12,7 @@ import (
 )
 
 func TestBuildInfo(t *testing.T) {
-	agentConfig := types.GetAgentConfig()
+	agentConfig := types.AgentConfig()
 	info := BuildInfo(agentConfig)
 
 	assert.Equal(t, agentConfig.Version, info.Version)

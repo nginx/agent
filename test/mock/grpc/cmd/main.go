@@ -38,7 +38,7 @@ func main() {
 	flag.Parse()
 	ctx := context.Background()
 
-	agentConfig := types.GetAgentConfig()
+	agentConfig := types.AgentConfig()
 	grpcHost, grpcPort, err := net.SplitHostPort(*grpcAddress)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to read host and port", "error", err)

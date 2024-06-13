@@ -39,7 +39,7 @@ func TestInstanceWatcherService_checkForUpdates(t *testing.T) {
 	fakeNginxConfigParser := &instancefakes.FakeNginxConfigParser{}
 	fakeNginxConfigParser.ParseReturns(nginxConfigContext, nil)
 
-	instanceWatcherService := NewInstanceWatcherService(types.GetAgentConfig())
+	instanceWatcherService := NewInstanceWatcherService(types.AgentConfig())
 	instanceWatcherService.processOperator = fakeProcessWatcher
 	instanceWatcherService.processParsers = []processParser{fakeProcessParser}
 	instanceWatcherService.nginxConfigParser = fakeNginxConfigParser
@@ -61,7 +61,7 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 	ctx := context.Background()
 	processID := int32(123)
 
-	agentInstance := protos.GetAgentInstance(processID, types.GetAgentConfig())
+	agentInstance := protos.GetAgentInstance(processID, types.AgentConfig())
 	nginxInstance := protos.GetNginxOssInstance([]string{})
 	nginxInstanceWithDifferentPID := protos.GetNginxOssInstance([]string{})
 	nginxInstanceWithDifferentPID.GetInstanceRuntime().ProcessId = 3526
@@ -134,7 +134,7 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 			fakeExec.ExecutableReturns(defaultAgentPath, nil)
 			fakeExec.ProcessIDReturns(processID)
 
-			instanceWatcherService := NewInstanceWatcherService(types.GetAgentConfig())
+			instanceWatcherService := NewInstanceWatcherService(types.AgentConfig())
 			instanceWatcherService.processOperator = fakeProcessWatcher
 			instanceWatcherService.processParsers = []processParser{fakeProcessParser}
 			instanceWatcherService.instanceCache = test.oldInstances
@@ -149,7 +149,7 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 }
 
 func TestInstanceWatcherService_updateNginxInstanceRuntime(t *testing.T) {
-	instanceWatcherService := NewInstanceWatcherService(types.GetAgentConfig())
+	instanceWatcherService := NewInstanceWatcherService(types.AgentConfig())
 
 	nginxOSSConfigContext := &model.NginxConfigContext{
 		AccessLogs: []*model.AccessLog{

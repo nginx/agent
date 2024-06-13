@@ -26,7 +26,7 @@ func TestFileManagerService_UpdateOverview(t *testing.T) {
 	require.NoError(t, fileMetaError)
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
-	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.GetAgentConfig())
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
 
 	err := fileManagerService.UpdateOverview(ctx, "123", []*mpi.File{
 		{
@@ -49,7 +49,7 @@ func TestFileManagerService_UpdateFile(t *testing.T) {
 	require.NoError(t, fileMetaError)
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
-	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.GetAgentConfig())
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
 
 	err := fileManagerService.UpdateFile(ctx, "123", &mpi.File{FileMeta: fileMeta})
 

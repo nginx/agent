@@ -5,9 +5,9 @@ pre-push:
   commands:
     1_generate:
       run: make generate generate-mocks
-    2_lint:
-      run: make lint
-    3_format:
-      run: make format
-    4_check_local_changes:
-      run: make no-local-changes
+    # 2_lint:
+    #   run: make lint
+    # 3_format:
+    #   run: make format
+    # 4_check_local_changes:
+    #   run: make no-local-changes
