@@ -480,7 +480,7 @@ func TestUpdateAgentConfig(t *testing.T) {
 }
 
 func setEnvVariable(t *testing.T, name string, value string) {
-	key := strings.ToUpper(EnvPrefix + agent_config.KeyDelimiter + name)
+	key := strings.ToUpper(NewEnvPrefix + agent_config.KeyDelimiter + name)
 	err := os.Setenv(key, value)
 	require.NoError(t, err)
 }
