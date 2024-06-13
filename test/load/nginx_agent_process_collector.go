@@ -9,7 +9,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path"
@@ -29,7 +29,7 @@ import (
 )
 
 // nginxAgentProcessCollector implements the OtelcolRunner interface as a child process on the same machine executing
-// the test. The process can be monitored and the output of which will be written to a log file.
+// the test. The process can be monitored and the output of which will be written to a slog file.
 type nginxAgentProcessCollector struct {
 	// Path to agent executable. If unset the default executable in
 	// bin/otelcol_{{.GOOS}}_{{.GOARCH}} will be used.
@@ -90,11 +90,22 @@ type nginxAgentProcessCollector struct {
 
 type NginxAgentProcessOption func(*nginxAgentProcessCollector)
 
-const mibibyte = 1024 * 1024
+const (
+	mibibyte                     = 1024 * 1024
+	maxCPU                       = 60
+	maxRAM                       = 200
+	cpuMultiplier                = 1000
+	cpuDeltaNumerator            = 100
+	curCPUPercentageX1000Divisor = 1000.0
+	cpuPercentageX1000Divisor    = 1000
+	waitPeriod                   = 10 * time.Second
+	processTimeMultiplier        = 100.0
+)
 
 // NewNginxAgentProcessCollector creates a new OtelcolRunner as a child process on the same machine executing the test.
+// nolint: ireturn
 func NewNginxAgentProcessCollector(options ...NginxAgentProcessOption) testbed.OtelcolRunner {
-	col := &nginxAgentProcessCollector{additionalEnv: map[string]string{}}
+	col := &nginxAgentProcessCollector{additionalEnv: make(map[string]string)}
 
 	for _, option := range options {
 		option(col)
@@ -124,32 +135,33 @@ func (cp *nginxAgentProcessCollector) PrepareConfig(configStr string) (configCle
 	var file *os.File
 	file, err = os.CreateTemp("", "agent*.yaml")
 	if err != nil {
-		log.Printf("%s", err)
+		slog.Info("%s", err)
 		return configCleanup, err
 	}
 
 	defer func() {
 		errClose := file.Close()
 		if errClose != nil {
-			log.Printf("%s", errClose)
+			slog.Info("%s", errClose)
 		}
 	}()
 
 	if _, err = file.WriteString(configStr); err != nil {
-		log.Printf("%s", err)
+		slog.Info("%s", err)
 		return configCleanup, err
 	}
 	cp.configFileName = file.Name()
 	configCleanup = func() {
 		os.Remove(cp.configFileName)
 	}
+
 	return configCleanup, err
 }
 
 func expandExeFileName(exeName string) string {
 	cfgTemplate, err := template.New("").Parse(exeName)
 	if err != nil {
-		log.Fatalf("Template failed to parse exe name %q: %s",
+		slog.Error("Template failed to parse exe name %q: %s",
 			exeName, err.Error())
 	}
 
@@ -162,7 +174,7 @@ func expandExeFileName(exeName string) string {
 	}
 	var buf bytes.Buffer
 	if err = cfgTemplate.Execute(&buf, templateVars); err != nil {
-		log.Fatalf("Configuration template failed to run on exe name %q: %s",
+		slog.Error("Configuration template failed to run on exe name %q: %s",
 			exeName, err.Error())
 	}
 
@@ -176,16 +188,16 @@ func expandExeFileName(exeName string) string {
 // {{.GOOS}} and {{.GOARCH}} will be expanded to the current OS and ARCH correspondingly.
 //
 // Parameters:
-// name is the human readable name of the process (e.g. "Agent"), used for logging.
-// logFilePath is the file path to write the standard output and standard error of
+// name is the human readable name of the process (e.g. "Agent"), used for slogging.
+// slogFilePath is the file path to write the standard output and standard error of
 // the process to.
 // cmdArgs is the command line arguments to pass to the process.
 func (cp *nginxAgentProcessCollector) Start(params testbed.StartParams) error {
 	cp.name = params.Name
 	cp.doneSignal = make(chan struct{})
 	cp.resourceSpec = &testbed.ResourceSpec{
-		ExpectedMaxCPU: 60,
-		ExpectedMaxRAM: 200,
+		ExpectedMaxCPU: maxCPU,
+		ExpectedMaxRAM: maxRAM,
 	}
 
 	if cp.agentExePath == "" {
@@ -197,21 +209,21 @@ func (cp *nginxAgentProcessCollector) Start(params testbed.StartParams) error {
 		return err
 	}
 
-	log.Printf("Starting %s (%s)", cp.name, exePath)
+	slog.Info("Starting %s (%s)", cp.name, exePath)
 
-	// Prepare log file
-	logFile, err := os.Create(params.LogFilePath)
+	// Prepare slog file
+	slogFile, err := os.Create(params.LogFilePath)
 	if err != nil {
 		return fmt.Errorf("cannot create %s: %w", params.LogFilePath, err)
 	}
-	log.Printf("Writing %s log to %s", cp.name, params.LogFilePath)
+	slog.Info("Writing %s slog to %s", cp.name, params.LogFilePath)
 
 	// Prepare to start the process.
 	// #nosec
 	args := params.CmdArgs
 	if !containsConfig(args) {
 		if cp.configFileName == "" {
-			configFile := path.Join("testdata", "agent-config.yaml")
+			configFile := path.Join("testdata", "axgent-config.yaml")
 			cp.configFileName, err = filepath.Abs(configFile)
 			if err != nil {
 				return err
@@ -225,7 +237,7 @@ func (cp *nginxAgentProcessCollector) Start(params testbed.StartParams) error {
 	cp.cmd.Env = os.Environ()
 
 	// update env deterministically
-	var additionalEnvVars []string
+	additionalEnvVars := make([]string, 0)
 	for k := range cp.additionalEnv {
 		additionalEnvVars = append(additionalEnvVars, k)
 	}
@@ -235,8 +247,8 @@ func (cp *nginxAgentProcessCollector) Start(params testbed.StartParams) error {
 	}
 
 	// Capture standard output and standard error.
-	cp.cmd.Stdout = logFile
-	cp.cmd.Stderr = logFile
+	cp.cmd.Stdout = slogFile
+	cp.cmd.Stderr = slogFile
 
 	// Start the process.
 	if err = cp.cmd.Start(); err != nil {
@@ -246,7 +258,7 @@ func (cp *nginxAgentProcessCollector) Start(params testbed.StartParams) error {
 	cp.startTime = time.Now()
 	cp.isStarted = true
 
-	log.Printf("%s running, pid=%d", cp.name, cp.cmd.Process.Pid)
+	slog.Info("%s running, pid=%d", cp.name, cp.cmd.Process.Pid)
 
 	return err
 }
@@ -256,21 +268,16 @@ func (cp *nginxAgentProcessCollector) Stop() (stopped bool, err error) {
 		return false, nil
 	}
 	cp.stopOnce.Do(func() {
-		if !cp.isStarted {
-			// Process wasn't started, nothing to stop.
-			return
-		}
-
 		cp.isStopped = true
 
-		log.Printf("Gracefully terminating %s pid=%d, sending SIGTEM...", cp.name, cp.cmd.Process.Pid)
+		slog.Info("Gracefully terminating %s pid=%d, sending SIGTEM...", cp.name, cp.cmd.Process.Pid)
 
 		// Notify resource monitor to stop.
 		close(cp.doneSignal)
 
 		// Gracefully signal process to stop.
 		if err = cp.cmd.Process.Signal(syscall.SIGTERM); err != nil {
-			log.Printf("Cannot send SIGTEM: %s", err.Error())
+			slog.Info("Cannot send SIGTEM: error", slog.String("error", err.Error()))
 		}
 
 		finished := make(chan struct{})
@@ -278,15 +285,14 @@ func (cp *nginxAgentProcessCollector) Stop() (stopped bool, err error) {
 		// Setup a goroutine to wait a while for process to finish and send kill signal
 		// to the process if it doesn't finish.
 		go func() {
-			// Wait 10 seconds.
-			t := time.After(10 * time.Second)
+			t := time.After(waitPeriod)
 			select {
 			case <-t:
 				// Time is out. Kill the process.
-				log.Printf("%s pid=%d is not responding to SIGTERM. Sending SIGKILL to kill forcedly.",
+				slog.Info("%s pid=%d is not responding to SIGTERM. Sending SIGKILL to kill forcedly.",
 					cp.name, cp.cmd.Process.Pid)
-				if err = cp.cmd.Process.Signal(syscall.SIGKILL); err != nil {
-					log.Printf("Cannot send SIGKILL: %s", err.Error())
+				if signalErr := cp.cmd.Process.Signal(syscall.SIGKILL); signalErr != nil {
+					slog.Error("Cannot send SIGKILL:", "error", signalErr.Error())
 				}
 			case <-finished:
 				// Process is successfully finished.
@@ -303,14 +309,14 @@ func (cp *nginxAgentProcessCollector) Stop() (stopped bool, err error) {
 		cp.ramMiBCur.Store(0)
 		cp.cpuPercentX1000Cur.Store(0)
 
-		log.Printf("%s process stopped, exit code=%d", cp.name, cp.cmd.ProcessState.ExitCode())
+		slog.Info("%s process stopped, exit code=%d", cp.name, cp.cmd.ProcessState.ExitCode())
 
 		if err != nil {
-			log.Printf("%s execution failed: %s", cp.name, err.Error())
+			slog.Info("%s execution failed: %s", cp.name, err.Error())
 		}
 	})
-	stopped = true
-	return stopped, err
+
+	return true, err
 }
 
 func (cp *nginxAgentProcessCollector) WatchResourceConsumption() error {
@@ -341,12 +347,13 @@ func (cp *nginxAgentProcessCollector) WatchResourceConsumption() error {
 	for start := time.Now(); time.Since(start) < time.Minute; {
 		cp.fetchRAMUsage()
 		cp.fetchCPUUsage()
-		if err := cp.checkAllowedResourceUsage(); err != nil {
-			log.Printf("Allowed usage of resources is too high before test starts wait for one second : %v", err)
-			time.Sleep(time.Second)
-		} else {
+		allowanceErr := cp.checkAllowedResourceUsage()
+		if allowanceErr == nil {
 			break
 		}
+
+		slog.Info("Allowed usage of resources is too high before test starts wait for one second : %v", allowanceErr)
+		time.Sleep(time.Second)
 	}
 
 	remainingFailures := cp.resourceSpec.MaxConsecutiveFailures
@@ -356,21 +363,23 @@ func (cp *nginxAgentProcessCollector) WatchResourceConsumption() error {
 			cp.fetchRAMUsage()
 			cp.fetchCPUUsage()
 
-			if err := cp.checkAllowedResourceUsage(); err != nil {
+			if allowUsageErr := cp.checkAllowedResourceUsage(); allowUsageErr != nil {
 				if remainingFailures > 0 {
 					remainingFailures--
-					log.Printf("Resource utilization too high. Remaining attempts: %d", remainingFailures)
-					
+					slog.Info("Resource utilization too high. Remaining attempts:", "failures_left", remainingFailures)
+
 					continue
 				}
 				if _, errStop := cp.Stop(); errStop != nil {
-					log.Printf("Failed to stop child process: %v", err)
+					slog.Info("Failed to stop child process: %v", errStop)
 				}
+
 				return err
 			}
 
 		case <-cp.doneSignal:
-			log.Printf("Stopping process monitor.")
+			slog.Info("Stopping process monitor.")
+
 			return nil
 		}
 	}
@@ -384,7 +393,10 @@ func (cp *nginxAgentProcessCollector) fetchRAMUsage() {
 	// Get process memory and CPU times
 	mi, err := cp.processMon.MemoryInfo()
 	if err != nil {
-		log.Printf("cannot get process memory for %d: %v", cp.cmd.Process.Pid, err)
+		slog.Info("cannot get process memory for pid: error",
+			slog.Int("pid", cp.cmd.Process.Pid),
+			slog.String("error", err.Error()))
+
 		return
 	}
 
@@ -405,7 +417,10 @@ func (cp *nginxAgentProcessCollector) fetchRAMUsage() {
 func (cp *nginxAgentProcessCollector) fetchCPUUsage() {
 	times, err := cp.processMon.Times()
 	if err != nil {
-		log.Printf("cannot get process times for %d: %v", cp.cmd.Process.Pid, err)
+		slog.Info("cannot get process times for pid: error",
+			slog.Int("pid", cp.cmd.Process.Pid),
+			slog.String("error", err.Error()))
+
 		return
 	}
 
@@ -423,12 +438,12 @@ func (cp *nginxAgentProcessCollector) fetchCPUUsage() {
 	cp.lastElapsedTime = now
 
 	// Calculate CPU usage percentage in elapsed period.
-	cpuPercent := deltaCPUTime * 100 / deltaElapsedTime
+	cpuPercent := deltaCPUTime * cpuDeltaNumerator / deltaElapsedTime
 	if cpuPercent > cp.cpuPercentMax {
 		cp.cpuPercentMax = cpuPercent
 	}
 
-	curCPUPercentageX1000 := uint32(cpuPercent * 1000)
+	curCPUPercentageX1000 := uint32(cpuPercent * cpuMultiplier)
 
 	// Store current usage.
 	cp.cpuPercentX1000Cur.Store(curCPUPercentageX1000)
@@ -437,9 +452,10 @@ func (cp *nginxAgentProcessCollector) fetchCPUUsage() {
 func (cp *nginxAgentProcessCollector) checkAllowedResourceUsage() error {
 	// Check if current CPU usage exceeds expected.
 	var errMsg string
-	if cp.resourceSpec.ExpectedMaxCPU != 0 && cp.cpuPercentX1000Cur.Load()/1000 > cp.resourceSpec.ExpectedMaxCPU {
+	if cp.resourceSpec.ExpectedMaxCPU != 0 &&
+		cp.cpuPercentX1000Cur.Load()/cpuPercentageX1000Divisor > cp.resourceSpec.ExpectedMaxCPU {
 		errMsg = fmt.Sprintf("CPU consumption is %.1f%%, max expected is %d%%",
-			float64(cp.cpuPercentX1000Cur.Load())/1000.0, cp.resourceSpec.ExpectedMaxCPU)
+			float64(cp.cpuPercentX1000Cur.Load())/curCPUPercentageX1000Divisor, cp.resourceSpec.ExpectedMaxCPU)
 	}
 
 	// Check if current RAM usage exceeds expected.
@@ -453,7 +469,7 @@ func (cp *nginxAgentProcessCollector) checkAllowedResourceUsage() error {
 		return nil
 	}
 
-	log.Printf("Performance error: %s", errMsg)
+	slog.Info("Performance error: error", slog.String("error", errMsg))
 
 	return errors.New(errMsg)
 }
@@ -468,7 +484,7 @@ func (cp *nginxAgentProcessCollector) GetResourceConsumption() string {
 	curCPUPercentageX1000 := cp.cpuPercentX1000Cur.Load()
 
 	return fmt.Sprintf("%s RAM (RES):%4d MiB, CPU:%4.1f%%", cp.name,
-		curRSSMib, float64(curCPUPercentageX1000)/1000.0)
+		curRSSMib, float64(curCPUPercentageX1000)/curCPUPercentageX1000Divisor)
 }
 
 // GetTotalConsumption returns total resource consumption since start of process
@@ -481,7 +497,7 @@ func (cp *nginxAgentProcessCollector) GetTotalConsumption() *testbed.ResourceCon
 
 		if elapsedDuration > 0 {
 			// Calculate average CPU usage since start of process
-			rc.CPUPercentAvg = totalCPU(cp.lastProcessTimes) / elapsedDuration * 100.0
+			rc.CPUPercentAvg = totalCPU(cp.lastProcessTimes) / elapsedDuration * processTimeMultiplier
 		}
 		rc.CPUPercentMax = cp.cpuPercentMax
 
@@ -501,6 +517,7 @@ func containsConfig(s []string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 

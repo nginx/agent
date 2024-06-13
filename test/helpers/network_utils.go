@@ -3,8 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 //
-// Useful functions pulled in from non public
-// "github.com/open-telemetry/opentelemetry-collector-contrib/internal/common/testutil"
+
 package helpers
 
 import (
@@ -24,6 +23,8 @@ type portpair struct {
 	last  string
 }
 
+// Useful functions pulled in from non public
+// "github.com/open-telemetry/opentelemetry-collector-contrib/internal/common/testutil"
 func GetAvailablePort(t testing.TB) int {
 	t.Helper()
 	endpoint := GetAvailableLocalAddress(t)
@@ -42,6 +43,7 @@ func GetAvailablePort(t testing.TB) int {
 // immediately.
 func GetAvailableLocalAddress(t testing.TB) string {
 	t.Helper()
+
 	return GetAvailableLocalNetworkAddress(t, "tcp")
 }
 
@@ -56,27 +58,15 @@ func GetAvailableLocalNetworkAddress(t testing.TB, network string) string {
 	// which do not show up under the "netstat -ano" but can only be found by
 	// "netsh interface ipv4 show excludedportrange protocol=tcp".  We'll use []exclusions to hold those ranges and
 	// retry if the port returned by GetAvailableLocalAddress falls in one of those them.
-	var exclusions []portpair
 
 	portFound := false
-	if runtime.GOOS == "windows" {
-		exclusions = getExclusionsList(t)
-	}
 
 	var endpoint string
 	for !portFound {
 		endpoint = findAvailableAddress(t, network)
-		_, port, err := net.SplitHostPort(endpoint)
+		_, _, err := net.SplitHostPort(endpoint)
 		require.NoError(t, err)
 		portFound = true
-		if runtime.GOOS == "windows" {
-			for _, pair := range exclusions {
-				if port >= pair.first && port <= pair.last {
-					portFound = false
-					break
-				}
-			}
-		}
 	}
 
 	return endpoint
@@ -102,21 +92,23 @@ func getExclusionsList(t testing.TB) []portpair {
 func createExclusionsList(t testing.TB, exclusionsText string) []portpair {
 	t.Helper()
 
+	const expectedParts, expectedEntries = 3, 2
 	var exclusions []portpair
 
 	parts := strings.Split(exclusionsText, "--------")
-	require.Equal(t, len(parts), 3)
+	require.Len(t, expectedParts, len(parts))
 	portsText := strings.Split(parts[2], "*")
 	require.Greater(t, len(portsText), 1) // original text may have a suffix like " - Administered port exclusions."
 	lines := strings.Split(portsText[0], "\n")
 	for _, line := range lines {
 		if strings.TrimSpace(line) != "" {
 			entries := strings.Fields(strings.TrimSpace(line))
-			require.Equal(t, len(entries), 2)
+			require.Len(t, expectedEntries, len(entries))
 			pair := portpair{entries[0], entries[1]}
 			exclusions = append(exclusions, pair)
 		}
 	}
+
 	return exclusions
 }
 
@@ -133,6 +125,7 @@ func findAvailableAddress(t testing.TB, network string) string {
 		defer func() {
 			assert.NoError(t, ln.Close())
 		}()
+
 		return ln.Addr().String()
 	// net.ListenPacket supported network strings
 	case "udp", "udp4", "udp6", "unixgram":
@@ -143,6 +136,7 @@ func findAvailableAddress(t testing.TB, network string) string {
 		defer func() {
 			assert.NoError(t, ln.Close())
 		}()
+
 		return ln.LocalAddr().String()
 	}
 

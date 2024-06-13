@@ -12,8 +12,8 @@ import (
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/stretchr/testify/require"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/testbed/testbed"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/testbed/correctnesstests"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/testbed/testbed"
 )
 
 func TestMetric10kDPS(t *testing.T) {
@@ -43,8 +43,8 @@ func TestMetric10kDPS(t *testing.T) {
 		agentProc := NewNginxAgentProcessCollector(WithEnvVar("GOMAXPROCS", "4"))
 
 		configStr := correctnesstests.CreateConfigYaml(t, sender, receiver, nil, nil)
-		configCleanup, err := agentProc.PrepareConfig(configStr)
-		require.NoError(t, err)
+		configCleanup, prepConfigErr := agentProc.PrepareConfig(configStr)
+		require.NoError(t, prepConfigErr)
 		defer configCleanup()
 
 		dataProvider := testbed.NewPerfTestDataProvider(options)
@@ -79,5 +79,4 @@ func TestMetric10kDPS(t *testing.T) {
 
 		tc.ValidateData()
 	})
-
 }
