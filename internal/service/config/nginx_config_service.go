@@ -22,9 +22,9 @@ import (
 
 	"github.com/nginx/agent/v3/internal/client"
 
-	"github.com/nginx/agent/v3/files"
 	"github.com/nginx/agent/v3/internal/config"
 	writer "github.com/nginx/agent/v3/internal/datasource/config"
+	"github.com/nginx/agent/v3/pkg/files"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/model"
@@ -346,6 +346,10 @@ func (n *Nginx) parsePathFromLocationDirective(location *crossplane.Directive) s
 func (n *Nginx) parseAddressesFromServerDirective(parent *crossplane.Directive) []string {
 	foundHosts := []string{}
 	port := "80"
+
+	if parent == nil {
+		return []string{}
+	}
 
 	for _, dir := range parent.Block {
 		var hostname string

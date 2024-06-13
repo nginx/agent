@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package watcher
+package instance
 
 import (
 	"bufio"
@@ -19,7 +19,7 @@ import (
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	"github.com/nginx/agent/v3/internal/model"
-	"github.com/nginx/agent/v3/internal/uuid"
+	"github.com/nginx/agent/v3/pkg/uuid"
 )
 
 const (
@@ -67,14 +67,14 @@ func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*model.Pro
 
 	for _, nginxProcess := range nginxProcesses {
 		// Here we are determining if the nginxProcess is a worker process
-		if masterProcess, ok := nginxProcesses[nginxProcess.PPID]; ok {
-			workers[masterProcess.PID] = append(workers[masterProcess.PID],
-				&mpi.InstanceChild{ProcessId: nginxProcess.PID})
-
-			continue
-		}
-		// Here we are determining if the nginxProcess is a worker process that has no master
 		if strings.Contains(nginxProcess.Cmd, "worker") {
+			// Here we are determining if the worker process has a master
+			if masterProcess, ok := nginxProcesses[nginxProcess.PPID]; ok {
+				workers[masterProcess.PID] = append(workers[masterProcess.PID],
+					&mpi.InstanceChild{ProcessId: nginxProcess.PID})
+
+				continue
+			}
 			nginxInfo, err := npp.getInfo(ctx, nginxProcess)
 			if err != nil {
 				slog.DebugContext(ctx, "Unable to get NGINX info", "pid", nginxProcess.PID, "error", err)
@@ -100,8 +100,8 @@ func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*model.Pro
 
 			continue
 		}
-		// Here we are determining if the nginxProcess is a master process
 
+		// Here we are determining if the nginxProcess is a master process
 		nginxInfo, err := npp.getInfo(ctx, nginxProcess)
 		if err != nil {
 			slog.DebugContext(ctx, "Unable to get NGINX info", "pid", nginxProcess.PID, "error", err)

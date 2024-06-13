@@ -14,7 +14,7 @@ import (
 	"strings"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	filesHelper "github.com/nginx/agent/v3/files"
+	filesHelper "github.com/nginx/agent/v3/pkg/files"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"

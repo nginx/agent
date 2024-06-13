@@ -6,8 +6,12 @@
 package plugin
 
 import (
+	"context"
 	"log/slog"
 
+	"github.com/nginx/agent/v3/internal/command"
+	"github.com/nginx/agent/v3/internal/file"
+	"github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/metrics/collector"
 	"github.com/nginx/agent/v3/internal/resource"
 
@@ -16,18 +20,21 @@ import (
 	"github.com/nginx/agent/v3/internal/watcher"
 )
 
-func LoadPlugins(agentConfig *config.Config) []bus.Plugin {
+func LoadPlugins(ctx context.Context, agentConfig *config.Config) []bus.Plugin {
 	plugins := make([]bus.Plugin, 0)
 
 	plugins = addResourcePlugin(plugins)
 
-	configPlugin := NewConfig(agentConfig)
-
-	plugins = append(plugins, configPlugin)
-
 	if isGrpcClientConfigured(agentConfig) {
-		grpcClient := NewGrpcClient(agentConfig)
-		plugins = append(plugins, grpcClient)
+		grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig)
+		if err != nil {
+			slog.WarnContext(ctx, "Failed to create gRPC connection", "error", err)
+		} else {
+			commandPlugin := command.NewCommandPlugin(agentConfig, grpcConnection)
+			plugins = append(plugins, commandPlugin)
+			filePlugin := file.NewFilePlugin(agentConfig, grpcConnection)
+			plugins = append(plugins, filePlugin)
+		}
 	}
 
 	plugins = addCollector(agentConfig, plugins)
