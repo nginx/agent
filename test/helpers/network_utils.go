@@ -8,20 +8,12 @@ package helpers
 
 import (
 	"net"
-	"os/exec"
-	"runtime"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-type portpair struct {
-	first string
-	last  string
-}
 
 // Useful functions pulled in from non public
 // "github.com/open-telemetry/opentelemetry-collector-contrib/internal/common/testutil"
@@ -70,46 +62,6 @@ func GetAvailableLocalNetworkAddress(t testing.TB, network string) string {
 	}
 
 	return endpoint
-}
-
-// Get excluded ports on Windows from the command: netsh interface ipv4 show excludedportrange protocol=tcp
-func getExclusionsList(t testing.TB) []portpair {
-	t.Helper()
-
-	cmdTCP := exec.Command("netsh", "interface", "ipv4", "show", "excludedportrange", "protocol=tcp")
-	outputTCP, errTCP := cmdTCP.CombinedOutput()
-	require.NoError(t, errTCP)
-	exclusions := createExclusionsList(t, string(outputTCP))
-
-	cmdUDP := exec.Command("netsh", "interface", "ipv4", "show", "excludedportrange", "protocol=udp")
-	outputUDP, errUDP := cmdUDP.CombinedOutput()
-	require.NoError(t, errUDP)
-	exclusions = append(exclusions, createExclusionsList(t, string(outputUDP))...)
-
-	return exclusions
-}
-
-func createExclusionsList(t testing.TB, exclusionsText string) []portpair {
-	t.Helper()
-
-	const expectedParts, expectedEntries = 3, 2
-	var exclusions []portpair
-
-	parts := strings.Split(exclusionsText, "--------")
-	require.Len(t, expectedParts, len(parts))
-	portsText := strings.Split(parts[2], "*")
-	require.Greater(t, len(portsText), 1) // original text may have a suffix like " - Administered port exclusions."
-	lines := strings.Split(portsText[0], "\n")
-	for _, line := range lines {
-		if strings.TrimSpace(line) != "" {
-			entries := strings.Fields(strings.TrimSpace(line))
-			require.Len(t, expectedEntries, len(entries))
-			pair := portpair{entries[0], entries[1]}
-			exclusions = append(exclusions, pair)
-		}
-	}
-
-	return exclusions
 }
 
 func findAvailableAddress(t testing.TB, network string) string {
