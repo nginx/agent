@@ -130,7 +130,7 @@ func TestGetConfig(t *testing.T) {
 		require.NoError(t, err)
 
 		// Initialize environment with the empty configs
-		cleanEnv(t, tempCfgFile, fmt.Sprintf("%s/%s", curDir, tempDynamicCfgFile))
+		cleanEnv(t, tempCfgFile, fmt.Sprintf("%s/%s", curDir, tempDynamicCfgFile), true)
 
 		config, err := GetConfig("12345")
 		require.NoError(t, err)
@@ -183,7 +183,7 @@ func TestGetConfig(t *testing.T) {
 		require.NoError(t, err)
 
 		// Initialize environment with the empty configs
-		cleanEnv(t, tempCfgFile, fmt.Sprintf("%s/%s", curDir, tempDynamicCfgFile))
+		cleanEnv(t, tempCfgFile, fmt.Sprintf("%s/%s", curDir, tempDynamicCfgFile), true)
 
 		updatedTag := "updated-tag"
 		updatedLogLevel := "fatal"
@@ -226,7 +226,7 @@ func TestGetConfig(t *testing.T) {
 		require.NoError(t, err)
 
 		// Initialize environment with the empty configs
-		cleanEnv(t, tempCfgFile, fmt.Sprintf("%s/%s", curDir, tempDynamicCfgFile))
+		cleanEnv(t, tempCfgFile, fmt.Sprintf("%s/%s", curDir, tempDynamicCfgFile), true)
 
 		// Copy config file with updated values to current directory
 		updatedTempConfDeleteFunc, err := sysutils.CopyFile(fmt.Sprintf("%s/%s", testCfgDir, updateCfgFile), updatedTempCfgFile)
@@ -292,13 +292,13 @@ func TestGetConfig(t *testing.T) {
 		require.NoError(t, err)
 
 		// Initialize environment with specified configs
-		cleanEnv(t, tempCfgFile, fmt.Sprintf("%s/%s", curDir, tempDynamicCfgFile))
+		cleanEnv(t, tempCfgFile, fmt.Sprintf("%s/%s", curDir, tempDynamicCfgFile), true)
 
 		envTags := "env tags"
-		setEnvVariable(t, ServerHost, updatedServerHost)
-		setEnvVariable(t, LogLevel, updatedLogLevel)
-		setEnvVariable(t, LogPath, updatedLogPath)
-		setEnvVariable(t, TagsKey, envTags)
+		setEnvVariable(t, EnvPrefix, ServerHost, updatedServerHost)
+		setEnvVariable(t, EnvPrefix, LogLevel, updatedLogLevel)
+		setEnvVariable(t, EnvPrefix, LogPath, updatedLogPath)
+		setEnvVariable(t, EnvPrefix, TagsKey, envTags)
 
 		config, err := GetConfig("5678")
 		require.NoError(t, err)
@@ -331,13 +331,13 @@ func TestGetConfig(t *testing.T) {
 		require.NoError(t, err)
 
 		// Initialize environment with the empty configs
-		cleanEnv(t, tempCfgFile, fmt.Sprintf("%s/%s", curDir, tempDynamicCfgFile))
+		cleanEnv(t, tempCfgFile, fmt.Sprintf("%s/%s", curDir, tempDynamicCfgFile), true)
 
 		envTags := "env tags"
-		setEnvVariable(t, ServerHost, updatedServerHost)
-		setEnvVariable(t, LogLevel, updatedLogLevel)
-		setEnvVariable(t, LogPath, updatedLogPath)
-		setEnvVariable(t, TagsKey, envTags)
+		setEnvVariable(t, EnvPrefix, ServerHost, updatedServerHost)
+		setEnvVariable(t, EnvPrefix, LogLevel, updatedLogLevel)
+		setEnvVariable(t, EnvPrefix, LogPath, updatedLogPath)
+		setEnvVariable(t, EnvPrefix, TagsKey, envTags)
 
 		config, err := GetConfig("5678")
 		require.NoError(t, err)
@@ -370,7 +370,7 @@ extensions:
 		require.NoError(t, err)
 
 		// Initialize environment with specified configs
-		cleanEnv(t, tempCfgFile, fmt.Sprintf("%s/%s", curDir, tempDynamicCfgFile))
+		cleanEnv(t, tempCfgFile, fmt.Sprintf("%s/%s", curDir, tempDynamicCfgFile), true)
 
 		config, err := GetConfig("5678")
 		require.NoError(t, err)
@@ -394,7 +394,7 @@ func TestUpdateAgentConfig(t *testing.T) {
 	}()
 	require.NoError(t, err)
 
-	cleanEnv(t, "empty_config.conf", fmt.Sprintf("%s/%s", curDir, tempDynamicCfgFile))
+	cleanEnv(t, "empty_config.conf", fmt.Sprintf("%s/%s", curDir, tempDynamicCfgFile), true)
 
 	// Get the current config so we can correctly set a few testcase variables
 	curConf, err := GetConfig("12345")
@@ -499,8 +499,11 @@ func TestDeprecatedEnvPrefixMigration(t *testing.T) {
 	}()
 	require.NoError(t, err)
 
-	cleanEnv(t, tempCfgFile, fmt.Sprintf("%s/%s", curDir, tempDynamicCfgFile))
-	setEnvVariable(t, "tls_skip_verify", "true")
+	cleanEnv(t, tempCfgFile, fmt.Sprintf("%s/%s", curDir, tempDynamicCfgFile), false)
+	setEnvVariable(t, LegacyEnvPrefix, "tls_skip_verify", "true")
+	setEnvVariable(t, EnvPrefix, "tls_skip_verify", "")
+
+	RegisterFlags()
 
 	config, err := GetConfig("1234")
 	require.NoError(t, err)
@@ -509,19 +512,26 @@ func TestDeprecatedEnvPrefixMigration(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
-func setEnvVariable(t *testing.T, name string, value string) {
-	key := strings.ToUpper(EnvPrefix + agent_config.KeyDelimiter + name)
-	err := os.Setenv(key, value)
+func setEnvVariable(t *testing.T, prefix, name, value string) {
+	var err error
+	key := strings.ToUpper(prefix + agent_config.KeyDelimiter + name)
+	if value == "" {
+		err = os.Unsetenv(key)
+	} else {
+		err = os.Setenv(key, value)
+	}
 	require.NoError(t, err)
 }
 
-func cleanEnv(t *testing.T, confFileName, dynamicConfFileAbsPath string) {
+func cleanEnv(t *testing.T, confFileName, dynamicConfFileAbsPath string, register bool) {
 	os.Clearenv()
 	ROOT_COMMAND.ResetFlags()
 	ROOT_COMMAND.ResetCommands()
 	Viper = viper.NewWithOptions(viper.KeyDelimiter(agent_config.KeyDelimiter))
 	SetDefaults()
-	RegisterFlags()
+	if register {
+		RegisterFlags()
+	}
 
 	cfg, err := RegisterConfigFile(dynamicConfFileAbsPath, confFileName, searchPaths...)
 	require.NoError(t, err)
