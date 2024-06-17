@@ -50,10 +50,10 @@ nginx-agent --tls-cert "path-to-cert" --tls-key "path-to-key" --tls-ca "path-to-
 To enable mTLS for NGINX Agent using environment variables, run the following commands:
 
 ```bash
-NMS_TLS_CA="my-env-ca"
-NMS_TLS_KEY="my-env-key"
-NMS_TLS_CERT="my-env-cert"
-NMS_TLS_ENABLE=true
+NGINX_AGENT_TLS_CA="my-env-ca"
+NGINX_AGENT_TLS_KEY="my-env-key"
+NGINX_AGENT_TLS_CERT="my-env-cert"
+NGINX_AGENT_TLS_ENABLE=true
 ```
 
 <br>
@@ -87,7 +87,7 @@ nginx-agent --tls-enable
 To enable server-side TLS using environment variables, run the following commands:
 
 ```bash
-NMS_TLS_ENABLE=true
+NGINX_AGENT_TLS_ENABLE=true
 ```
 
 <br>
@@ -124,5 +124,5 @@ tls:
 To enable insecure mode using environment variables, run the following commands:
 
 ```bash
-NMS_TLS_ENABLE=false
+NGINX_AGENT_TLS_ENABLE=false
 ```
