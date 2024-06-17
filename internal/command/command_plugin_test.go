@@ -6,7 +6,9 @@
 package command
 
 import (
+	"bytes"
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -15,20 +17,21 @@ import (
 	"github.com/nginx/agent/v3/internal/command/commandfakes"
 	"github.com/nginx/agent/v3/internal/grpc/grpcfakes"
 	"github.com/nginx/agent/v3/test/protos"
+	"github.com/nginx/agent/v3/test/stub"
 	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCommandPlugin_Info(t *testing.T) {
-	commandPlugin := NewCommandPlugin(types.GetAgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
 	info := commandPlugin.Info()
 
 	assert.Equal(t, "command", info.Name)
 }
 
 func TestCommandPlugin_Subscriptions(t *testing.T) {
-	commandPlugin := NewCommandPlugin(types.GetAgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
 	subscriptions := commandPlugin.Subscriptions()
 
 	assert.Equal(
@@ -47,7 +50,7 @@ func TestCommandPlugin_Init(t *testing.T) {
 	messagePipe := bus.NewFakeMessagePipe()
 	fakeCommandService := &commandfakes.FakeCommandService{}
 
-	commandPlugin := NewCommandPlugin(types.GetAgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
 	err := commandPlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 
@@ -66,7 +69,7 @@ func TestCommandPlugin_Process(t *testing.T) {
 	messagePipe := bus.NewFakeMessagePipe()
 	fakeCommandService := &commandfakes.FakeCommandService{}
 
-	commandPlugin := NewCommandPlugin(types.GetAgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
 	err := commandPlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 	defer commandPlugin.Close(ctx)
@@ -116,4 +119,40 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 	request, ok := messages[0].Data.(*mpi.ManagementPlaneRequest)
 	assert.True(t, ok)
 	require.NotNil(t, request.GetConfigUploadRequest())
+}
+
+func TestMonitorSubscribeChannel(t *testing.T) {
+	ctx, cncl := context.WithCancel(context.Background())
+	defer cncl()
+
+	logBuf := &bytes.Buffer{}
+	stub.StubLoggerWith(logBuf)
+
+	cp := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+
+	message := protos.CreateManagementPlaneRequest()
+
+	// Run in a separate goroutine
+	go cp.monitorSubscribeChannel(ctx)
+
+	// Give some time to exit the goroutine
+	time.Sleep(100 * time.Millisecond)
+
+	cp.subscribeChannel <- message
+
+	// Give some time to process the message
+	time.Sleep(100 * time.Millisecond)
+
+	cncl()
+
+	time.Sleep(100 * time.Millisecond)
+
+	// Verify the logger was called
+	if s := logBuf.String(); !strings.Contains(s, "Received management plane request") {
+		// defer wg.Done()
+		t.Errorf("Unexpected log %s", s)
+	}
+
+	// Clear the log buffer
+	logBuf.Reset()
 }

@@ -40,7 +40,11 @@ func (a *App) Run(ctx context.Context) error {
 			return
 		}
 
-		agentConfig := config.GetConfig()
+		agentConfig, err := config.ResolveConfig()
+		if err != nil {
+			slog.ErrorContext(ctx, "Invalid config", "error", err)
+			return
+		}
 
 		slogger := logger.New(*agentConfig.Log)
 		slog.SetDefault(slogger)

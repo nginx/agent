@@ -35,25 +35,42 @@ func TestRegisterConfigFile(t *testing.T) {
 	assert.NotEmpty(t, viperInstance.GetString(UUIDKey))
 }
 
-func TestGetConfig(t *testing.T) {
+func TestResolveConfig(t *testing.T) {
+	allowedDir := []string{"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx", "/usr/share/nginx/modules"}
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	err := loadPropertiesFromFile("./testdata/nginx-agent.conf")
-	allowedDir := []string{"/etc/nginx", "/usr/local/etc/nginx", "/usr/share/nginx/modules"}
 	require.NoError(t, err)
 
-	result := GetConfig()
+	// Ensure viper instance has populated values based on config file before resolving to struct.
+	assert.True(t, viperInstance.IsSet(CollectorRootKey))
+	assert.True(t, viperInstance.IsSet(CollectorConfigPathKey))
+	assert.True(t, viperInstance.IsSet(CollectorExportersKey))
+	assert.True(t, viperInstance.IsSet(CollectorProcessorsKey))
+	assert.True(t, viperInstance.IsSet(CollectorReceiversKey))
+	assert.True(t, viperInstance.IsSet(CollectorHealthKey))
 
-	assert.Equal(t, "debug", result.Log.Level)
-	assert.Equal(t, "./", result.Log.Path)
+	actual, err := ResolveConfig()
+	require.NoError(t, err)
 
-	assert.Equal(t, 30*time.Second, result.DataPlaneConfig.Nginx.ReloadMonitoringPeriod)
-	assert.False(t, result.DataPlaneConfig.Nginx.TreatWarningsAsError)
+	assert.Equal(t, "debug", actual.Log.Level)
+	assert.Equal(t, "./", actual.Log.Path)
 
-	assert.Equal(t, 10*time.Second, result.Client.Timeout)
+	assert.Equal(t, 30*time.Second, actual.DataPlaneConfig.Nginx.ReloadMonitoringPeriod)
+	assert.False(t, actual.DataPlaneConfig.Nginx.TreatWarningsAsError)
 
-	assert.Equal(t, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules:invalid/path", result.ConfigDir)
+	require.NotNil(t, actual.Collector)
+	assert.Equal(t, "/etc/nginx-agent/nginx-agent-otelcol.yaml", actual.Collector.ConfigPath)
+	assert.NotEmpty(t, actual.Collector.Receivers)
+	assert.NotEmpty(t, actual.Collector.Processors)
+	assert.NotEmpty(t, actual.Collector.Exporters)
+	assert.NotEmpty(t, actual.Collector.Health)
 
-	assert.Equal(t, allowedDir, result.AllowedDirectories)
+	assert.Equal(t, 10*time.Second, actual.Client.Timeout)
+
+	assert.Equal(t, "/etc/nginx:/usr/local/etc/nginx:/var/run/nginx:/usr/share/nginx/modules:invalid/path",
+		actual.ConfigDir)
+
+	assert.Equal(t, allowedDir, actual.AllowedDirectories)
 }
 
 func TestSetVersion(t *testing.T) {
@@ -89,7 +106,7 @@ func TestSeekFileInPaths(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestGetConfigFilePaths(t *testing.T) {
+func TestResolveConfigFilePaths(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	currentDirectory, err := os.Getwd()
 	require.NoError(t, err)
@@ -122,30 +139,107 @@ func TestNormalizeFunc(t *testing.T) {
 	assert.Equal(t, expected, result)
 }
 
-func TestGetLog(t *testing.T) {
+func TestResolveLog(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	viperInstance.Set(LogLevelKey, "error")
 	viperInstance.Set(LogPathKey, "/var/log/test/test.log")
 
-	result := getLog()
+	result := resolveLog()
 	assert.Equal(t, "error", result.Level)
 	assert.Equal(t, "/var/log/test/test.log", result.Path)
 }
 
-func TestGetClient(t *testing.T) {
+func TestResolveClient(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	viperInstance.Set(ClientTimeoutKey, time.Hour)
 
-	result := getClient()
+	result := resolveClient()
 	assert.Equal(t, time.Hour, result.Timeout)
 }
 
-func TestGetAllowedDirectories(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
-	viperInstance.Set(ConfigDirectoriesKey, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules")
+func TestResolveCollector(t *testing.T) {
+	testDefault := getAgentConfig()
+	tests := []struct {
+		name      string
+		expected  *Collector
+		shouldErr bool
+		errMsg    string
+	}{
+		{
+			name:     "Test 1: Happy path",
+			expected: testDefault.Collector,
+		},
+		{
+			name: "Test 2: Non allowed path",
+			expected: &Collector{
+				ConfigPath: "/path/to/secret",
+			},
+			shouldErr: true,
+			errMsg:    "collector path /path/to/secret not allowed",
+		},
+		{
+			name: "Test 3: Unsupported Exporter",
+			expected: &Collector{
+				ConfigPath: testDefault.Collector.ConfigPath,
+				Exporters: []Exporter{
+					{
+						Type: "not-allowed",
+					},
+				},
+			},
+			shouldErr: true,
+			errMsg:    "unsupported exporter type: not-allowed",
+		},
+		{
+			name: "Test 4: Unsupported Processor",
+			expected: &Collector{
+				ConfigPath: testDefault.Collector.ConfigPath,
+				Exporters:  testDefault.Collector.Exporters,
+				Processors: []Processor{
+					{
+						Type: "custom-processor",
+					},
+				},
+			},
+			shouldErr: true,
+			errMsg:    "unsupported processor type: custom-processor",
+		},
+		{
+			name: "Test 5: Unsupported Receiver",
+			expected: &Collector{
+				ConfigPath: testDefault.Collector.ConfigPath,
+				Exporters:  testDefault.Collector.Exporters,
+				Receivers: []Receiver{
+					{
+						Type: "not-allowed",
+					},
+				},
+			},
+			shouldErr: true,
+			errMsg:    "unsupported receiver type: not-allowed",
+		},
+	}
 
-	result := getConfigDir()
-	assert.Equal(t, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules", result)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
+			viperInstance.Set(CollectorRootKey, "set")
+			viperInstance.Set(CollectorConfigPathKey, test.expected.ConfigPath)
+			viperInstance.Set(CollectorReceiversKey, test.expected.Receivers)
+			viperInstance.Set(CollectorProcessorsKey, test.expected.Processors)
+			viperInstance.Set(CollectorExportersKey, test.expected.Exporters)
+			viperInstance.Set(CollectorHealthKey, test.expected.Health)
+
+			actual, err := resolveCollector(testDefault.AllowedDirectories)
+			if test.shouldErr {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), test.errMsg)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, test.expected, actual)
+			}
+		})
+	}
 }
 
 func TestCommand(t *testing.T) {
@@ -173,7 +267,7 @@ func TestCommand(t *testing.T) {
 	assert.True(t, viperInstance.IsSet(CommandAuthKey))
 	assert.True(t, viperInstance.IsSet(CommandTLSKey))
 
-	result := getCommand()
+	result := resolveCommand()
 
 	assert.Equal(t, expected.Server, result.Server)
 	assert.Equal(t, expected.Auth, result.Auth)
@@ -196,7 +290,7 @@ func TestMissingServerTLS(t *testing.T) {
 	assert.True(t, viperInstance.IsSet(CommandAuthKey))
 	assert.False(t, viperInstance.IsSet(CommandTLSKey))
 
-	result := getCommand()
+	result := resolveCommand()
 	assert.Equal(t, expected.Server, result.Server)
 	assert.Equal(t, expected.Auth, result.Auth)
 	assert.Nil(t, result.TLS)
@@ -211,9 +305,63 @@ func getAgentConfig() *Config {
 		Client: &Client{
 			Timeout: 5 * time.Second,
 		},
-		ConfigDir:          "",
-		AllowedDirectories: []string{},
-		Metrics:            &Metrics{},
+		ConfigDir: "",
+		AllowedDirectories: []string{
+			"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx", "/usr/share/nginx/modules",
+		},
+		Collector: &Collector{
+			ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
+			Exporters: []Exporter{
+				{
+					Type: "otlp",
+					Server: &ServerConfig{
+						Host: "127.0.0.1",
+						Port: 1234,
+						Type: 0,
+					},
+					Auth: &AuthConfig{
+						Token: "super-secret-token",
+					},
+					TLS: &TLSConfig{
+						Cert:       "/path/to/server-cert.pem",
+						Key:        "/path/to/server-cert.pem",
+						Ca:         "/path/to/server-cert.pem",
+						SkipVerify: true,
+						ServerName: "remote-saas-server",
+					},
+				},
+			},
+			Processors: []Processor{
+				{
+					Type: "batch",
+				},
+			},
+			Receivers: []Receiver{
+				{
+					Type: "otlp",
+					Server: &ServerConfig{
+						Host: "localhost",
+						Port: 4321,
+						Type: 0,
+					},
+					Auth: &AuthConfig{
+						Token: "even-secreter-token",
+					},
+					TLS: &TLSConfig{
+						Cert:       "/path/to/server-cert.pem",
+						Key:        "/path/to/server-cert.pem",
+						Ca:         "/path/to/server-cert.pem",
+						SkipVerify: true,
+						ServerName: "local-dataa-plane-server",
+					},
+				},
+			},
+			Health: &ServerConfig{
+				Host: "localhost",
+				Port: 1337,
+				Type: 0,
+			},
+		},
 		Command: &Command{
 			Server: &ServerConfig{
 				Host: "127.0.0.1",

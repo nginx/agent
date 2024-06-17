@@ -19,7 +19,7 @@ import (
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	"github.com/nginx/agent/v3/internal/model"
-	"github.com/nginx/agent/v3/internal/uuid"
+	"github.com/nginx/agent/v3/pkg/uuid"
 )
 
 const (

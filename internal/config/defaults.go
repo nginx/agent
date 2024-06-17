@@ -9,15 +9,11 @@ import (
 )
 
 const (
-	DefGracefulShutdownPeriod = 5 * time.Second
+	DefGracefulShutdownPeriod      = 5 * time.Second
+	DefNginxReloadMonitoringPeriod = 10 * time.Second
+	DefTreatErrorsAsWarnings       = true
 
-	DefMetricsProduceInterval       = 30 * time.Second
-	DefOTelExporterBufferLength     = 100
-	DefOTelExporterExportRetryCount = 3
-	DefOTelExporterExportInterval   = 20 * time.Second
-	DefOTelGRPCConnTimeout          = 10 * time.Second
-	DefOTelGRPCMinConnTimeout       = 5 * time.Second
-	DefOTelGRPCMBackoffDelay        = 240 * time.Second
+	DefCollectorConfigPath = "/var/run/nginx-agent-otelcol.yaml"
 
 	DefCommandServerHostKey    = ""
 	DefCommandServerPortKey    = 0

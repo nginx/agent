@@ -24,7 +24,7 @@ import (
 )
 
 func TestFilePlugin_Info(t *testing.T) {
-	filePlugin := NewFilePlugin(types.GetAgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	filePlugin := NewFilePlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
 	assert.Equal(t, "file", filePlugin.Info().Name)
 }
 
@@ -32,14 +32,14 @@ func TestFilePlugin_Close(t *testing.T) {
 	ctx := context.Background()
 	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
 
-	filePlugin := NewFilePlugin(types.GetAgentConfig(), fakeGrpcConnection)
+	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection)
 	filePlugin.Close(ctx)
 
 	assert.Equal(t, 1, fakeGrpcConnection.CloseCallCount())
 }
 
 func TestFilePlugin_Subscriptions(t *testing.T) {
-	filePlugin := NewFilePlugin(types.GetAgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	filePlugin := NewFilePlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
 	assert.Equal(
 		t,
 		[]string{
@@ -69,7 +69,7 @@ func TestFilePlugin_Process_NginxConfigUpdateTopic(t *testing.T) {
 	fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
 	messagePipe := bus.NewFakeMessagePipe()
 
-	filePlugin := NewFilePlugin(types.GetAgentConfig(), fakeGrpcConnection)
+	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection)
 	err := filePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 
@@ -119,7 +119,7 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic(t *testing.T) {
 	fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
 	messagePipe := bus.NewFakeMessagePipe()
 
-	filePlugin := NewFilePlugin(types.GetAgentConfig(), fakeGrpcConnection)
+	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection)
 	err := filePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 
@@ -178,7 +178,7 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic_Failure(t *testing.T) {
 	fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
 	messagePipe := bus.NewFakeMessagePipe()
 
-	filePlugin := NewFilePlugin(types.GetAgentConfig(), fakeGrpcConnection)
+	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection)
 	err := filePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 

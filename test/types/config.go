@@ -6,6 +6,8 @@
 package types
 
 import (
+	"path/filepath"
+	"testing"
 	"time"
 
 	"github.com/nginx/agent/v3/internal/config"
@@ -29,7 +31,14 @@ const (
 	reloadMonitoringPeriod = 400 * time.Millisecond
 )
 
-func GetAgentConfig() *config.Config {
+// Produces a populated Agent Config for testing usage.
+func AgentConfig() *config.Config {
+	var (
+		randomPort1 = 1234
+		randomPort2 = 4321
+		randomPort3 = 1337
+	)
+
 	return &config.Config{
 		Version: "test-version",
 		UUID:    "75442486-0878-440c-9db1-a7006c25a39f",
@@ -42,7 +51,59 @@ func GetAgentConfig() *config.Config {
 		},
 		ConfigDir:          "",
 		AllowedDirectories: []string{"/tmp/"},
-		Metrics:            &config.Metrics{},
+		Collector: &config.Collector{
+			ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
+			Exporters: []config.Exporter{
+				{
+					Type: "otlp",
+					Server: &config.ServerConfig{
+						Host: "127.0.0.1",
+						Port: randomPort1,
+						Type: 0,
+					},
+					Auth: &config.AuthConfig{
+						Token: "super-secret-token",
+					},
+					TLS: &config.TLSConfig{
+						Cert:       "/path/to/server-cert.pem",
+						Key:        "/path/to/server-cert.pem",
+						Ca:         "/path/to/server-cert.pem",
+						SkipVerify: true,
+						ServerName: "remote-saas-server",
+					},
+				},
+			},
+			Processors: []config.Processor{
+				{
+					Type: "batch",
+				},
+			},
+			Receivers: []config.Receiver{
+				{
+					Type: "otlp",
+					Server: &config.ServerConfig{
+						Host: "localhost",
+						Port: randomPort2,
+						Type: 0,
+					},
+					Auth: &config.AuthConfig{
+						Token: "even-secreter-token",
+					},
+					TLS: &config.TLSConfig{
+						Cert:       "/path/to/server-cert.pem",
+						Key:        "/path/to/server-cert.pem",
+						Ca:         "/path/to/server-cert.pem",
+						SkipVerify: true,
+						ServerName: "local-dataa-plane-server",
+					},
+				},
+			},
+			Health: &config.ServerConfig{
+				Host: "localhost",
+				Port: randomPort3,
+				Type: 0,
+			},
+		},
 		Command: &config.Command{
 			Server: &config.ServerConfig{
 				Host: "127.0.0.1",
@@ -83,4 +144,14 @@ func GetAgentConfig() *config.Config {
 			},
 		},
 	}
+}
+
+// Produces a populated Agent Config with a temp Collector config path for testing usage.
+func OTelConfig(t *testing.T) *config.Config {
+	t.Helper()
+
+	ac := AgentConfig()
+	ac.Collector.ConfigPath = filepath.Join(t.TempDir(), "otel-collector-config.yaml")
+
+	return ac
 }
