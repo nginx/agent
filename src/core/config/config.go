@@ -153,8 +153,8 @@ func RegisterFlags() {
 			return
 		}
 
-		oldKey := strings.ToUpper(LegacyEnvPrefix + "_" + strings.ReplaceAll(flag.Name, "-", "_"))
-		newKey := strings.ToUpper(EnvPrefix + "_" + strings.ReplaceAll(flag.Name, "-", "_"))
+		oldKey := strings.ToUpper(fmt.Sprintf("%s%s%s", LegacyEnvPrefix, agent_config.KeyDelimiter, strings.ReplaceAll(flag.Name, "-", "_")))
+		newKey := strings.ToUpper(fmt.Sprintf("%s%s%s", EnvPrefix, agent_config.KeyDelimiter, strings.ReplaceAll(flag.Name, "-", "_")))
 
 		if os.Getenv(oldKey) != "" && os.Getenv(newKey) == "" {
 			if err := os.Setenv(newKey, os.Getenv(oldKey)); err != nil {
