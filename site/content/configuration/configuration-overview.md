@@ -195,7 +195,7 @@ nginx-agent
 | `--tls-key`                                 | `NGINX_AGENT_TLS_KEY`                        | Specifies the path to the certificate key file for TLS.                     |
 | `--tls-skip-verify`                         | `NGINX_AGENT_TLS_SKIP_VERIFY`                | Insecurely skips verification for gRPC TLS credentials.                     |
 {{</bootstrap-table>}}
-The environment prefix NMS has been deprecated in favour of NGINX_AGENT
+{{< warning >}}The environment prefix NMS has been deprecated in favour of NGINX_AGENT{{< /warning >}}
 
 <br>
 
