@@ -482,12 +482,30 @@ func TestUpdateAgentConfig(t *testing.T) {
 func TestDeprecatedEnvPrefixMigration(t *testing.T) {
 	want := true
 
-	t.Setenv("NMS_TLS_SKIP_VERIFY", "true")
+	curDir, err := os.Getwd()
+	require.NoError(t, err)
 
-	SetDefaults()
-	RegisterFlags()
+	tempConfDeleteFunc, err := sysutils.CopyFile(fmt.Sprintf("%s/%s", testCfgDir, emptyConfigFile), tempCfgFile)
+	defer func() {
+		err := tempConfDeleteFunc()
+		require.NoError(t, err, "deletion of temp config file failed")
+	}()
+	require.NoError(t, err)
 
-	got := MigratedEnv
+	tempDynamicDeleteFunc, err := sysutils.CopyFile(fmt.Sprintf("%s/%s", testCfgDir, emptyConfigFile), tempDynamicCfgFile)
+	defer func() {
+		err := tempDynamicDeleteFunc()
+		require.NoError(t, err, "deletion of temp dynamic config file failed")
+	}()
+	require.NoError(t, err)
+
+	cleanEnv(t, tempCfgFile, fmt.Sprintf("%s/%s", curDir, tempDynamicCfgFile))
+	setEnvVariable(t, "tls_skip_verify", "true")
+
+	config, err := GetConfig("1234")
+	require.NoError(t, err)
+
+	got := config.TLS.SkipVerify
 	assert.Equal(t, want, got)
 }
 
