@@ -136,7 +136,7 @@ func deprecateFlags() {
 }
 
 func RegisterFlags() {
-	Viper.SetEnvPrefix(NewEnvPrefix)
+	Viper.SetEnvPrefix(EnvPrefix)
 	Viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	Viper.AutomaticEnv()
 
@@ -153,8 +153,8 @@ func RegisterFlags() {
 			return
 		}
 
-		oldKey := strings.ToUpper(OldEnvPrefix + "_" + strings.ReplaceAll(flag.Name, "-", "_"))
-		newKey := strings.ToUpper(NewEnvPrefix + "_" + strings.ReplaceAll(flag.Name, "-", "_"))
+		oldKey := strings.ToUpper(LegacyEnvPrefix + "_" + strings.ReplaceAll(flag.Name, "-", "_"))
+		newKey := strings.ToUpper(EnvPrefix + "_" + strings.ReplaceAll(flag.Name, "-", "_"))
 
 		if os.Getenv(oldKey) != "" && os.Getenv(newKey) == "" {
 			if err := os.Setenv(newKey, os.Getenv(oldKey)); err != nil {
