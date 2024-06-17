@@ -92,7 +92,7 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 
 	messagePipe := bus.NewFakeMessagePipe()
 
-	commandPlugin := NewCommandPlugin(types.GetAgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
 	err := commandPlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 	defer commandPlugin.Close(ctx)

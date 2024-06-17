@@ -8,6 +8,7 @@ package file
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 
@@ -26,7 +27,6 @@ import (
 type (
 	fileOperator interface {
 		Write(ctx context.Context, fileContent []byte, file *mpi.FileMeta) error
-		ReadFileContents(files []*mpi.File) (filesContents map[string][]byte, err error)
 	}
 )
 
@@ -34,9 +34,8 @@ type FileManagerService struct {
 	fileServiceClient mpi.FileServiceClient
 	agentConfig       *config.Config
 	fileOperator      fileOperator
-	fileOverviewCache map[string]*mpi.FileOverview // key is instance ID
-	fileContentsCache map[string][]byte            // key is file path
-	nginxConfigFiles  map[string][]*mpi.File       // key is instance ID, this is the list of files from the nginxConfigContext
+	filesCache        map[string]*mpi.File // key is filePath
+	fileContentsCache map[string][]byte    // key is file path
 }
 
 func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig *config.Config) *FileManagerService {
@@ -44,9 +43,8 @@ func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig 
 		fileServiceClient: fileServiceClient,
 		agentConfig:       agentConfig,
 		fileOperator:      NewFileOperator(),
-		fileOverviewCache: make(map[string]*mpi.FileOverview),
+		filesCache:        make(map[string]*mpi.File),
 		fileContentsCache: make(map[string][]byte),
-		nginxConfigFiles:  make(map[string][]*mpi.File),
 	}
 }
 
@@ -159,78 +157,97 @@ func (fms *FileManagerService) UpdateFile(
 }
 
 func (fms *FileManagerService) ConfigApply(ctx context.Context, configApplyRequest *mpi.ConfigApplyRequest) error {
-	fileContents := make(map[string]*mpi.FileContents) // key is file path
+	fileOverview := configApplyRequest.GetOverview()
 
-	fileOverview, err := fms.fileOverview(ctx, configApplyRequest)
+	if fileOverview == nil {
+		return fmt.Errorf("fileOverview is nil")
+	}
+
+	allowedErr := fms.checkAllowedDirectory(fileOverview.GetFiles())
+	if allowedErr != nil {
+		return allowedErr
+	}
+
+	diffFiles, fileContent, err := files.CompareFileHash(fileOverview)
 	if err != nil {
 		return err
 	}
-	fms.fileOverviewCache[configApplyRequest.GetConfigVersion().GetInstanceId()] = fileOverview
 
-	contents, readErr := fms.fileOperator.ReadFileContents(fileOverview.GetFiles())
-	fms.fileContentsCache = contents
-	if readErr != nil {
-		return readErr
-	}
+	fms.fileContentsCache = fileContent
+	fms.filesCache = diffFiles
 
-	// TODO:
-	// Need to check if file is being updated, added or deleted
-	// Updated - compare hash
-	// Added - does file exist
-	// Deleted is file in nginxConfigFiles and not in FileOverview
-
-	for _, file := range fileOverview.GetFiles() {
-		fileResponse, getFileErr := fms.fileServiceClient.GetFile(ctx, &mpi.GetFileRequest{
-			MessageMeta: &mpi.MessageMeta{
-				MessageId:     uuid.NewString(),
-				CorrelationId: logger.GetCorrelationID(ctx),
-				Timestamp:     timestamppb.Now(),
-			},
-			FileMeta: file.GetFileMeta(),
-		})
-
-		if getFileErr != nil {
-			return getFileErr
-		}
-
-		fileContents[file.GetFileMeta().GetName()] = fileResponse.GetContents()
-
-		// TODO:
-		// write file
-		// compare file content and hash
-		// publish update successful
-		// keep content and cache
-
+	fileErr := fms.fileActions(ctx)
+	if fileErr != nil {
+		return fileErr
 	}
 
 	return nil
 }
 
-func (fms *FileManagerService) fileOverview(ctx context.Context,
-	configApplyRequest *mpi.ConfigApplyRequest,
-) (*mpi.FileOverview, error) {
-	var fileOverview *mpi.FileOverview
-	if configApplyRequest.GetOverview() == nil {
-		overview, err := fms.fileServiceClient.GetOverview(ctx, &mpi.GetOverviewRequest{
-			MessageMeta: &mpi.MessageMeta{
-				MessageId:     uuid.NewString(),
-				CorrelationId: logger.GetCorrelationID(ctx),
-				Timestamp:     timestamppb.Now(),
-			},
-			ConfigVersion: configApplyRequest.GetConfigVersion(),
-		})
-		if err != nil {
-			return nil, err
+func (fms *FileManagerService) fileActions(ctx context.Context) error {
+	for _, file := range fms.filesCache {
+		switch file.GetAction() {
+		case mpi.File_FILE_ACTION_DELETE:
+			if err := os.Remove(file.GetFileMeta().GetName()); err != nil && !os.IsNotExist(err) {
+				return fmt.Errorf("error deleting file: %s error: %w", file.GetFileMeta().GetName(), err)
+			}
+
+			continue
+		case mpi.File_FILE_ACTION_ADD, mpi.File_FILE_ACTION_UPDATE:
+			getFileResp, getFileErr := fms.fileServiceClient.GetFile(ctx, &mpi.GetFileRequest{
+				MessageMeta: &mpi.MessageMeta{
+					MessageId:     uuid.NewString(),
+					CorrelationId: logger.GetCorrelationID(ctx),
+					Timestamp:     timestamppb.Now(),
+				},
+				FileMeta: file.GetFileMeta(),
+			})
+			if getFileErr != nil {
+				return fmt.Errorf("error getting file data for %s: %w", file.GetFileMeta(), getFileErr)
+			}
+
+			writeErr := fms.fileOperator.Write(ctx, getFileResp.GetContents().GetContents(), file.GetFileMeta())
+
+			if writeErr != nil {
+				return writeErr
+			}
+
+			ok, err := fms.compareHash(file.GetFileMeta().GetName())
+			if !ok || err != nil {
+				return err
+			}
+
+		default:
+			slog.DebugContext(ctx, "File Action not implemented")
 		}
-		fileOverview = overview.GetOverview()
-	} else {
-		fileOverview = configApplyRequest.GetOverview()
 	}
 
-	return fileOverview, nil
+	return nil
 }
 
-// TODO: Naming
-func (fms *FileManagerService) updateConfigFiles(instanceID string, files []*mpi.File) {
-	fms.nginxConfigFiles[instanceID] = files
+func (fms *FileManagerService) compareHash(filePath string) (bool, error) {
+	content, err := files.ReadFile(filePath)
+	if err != nil {
+		return false, err
+	}
+	fileHash, err := files.GenerateFileHashWithContent(content)
+	if err != nil {
+		return false, err
+	}
+	if fileHash != fms.filesCache[filePath].GetFileMeta().GetHash() {
+		return false, fmt.Errorf("error writing file, file hash does not match for file %s", filePath)
+	}
+
+	return true, nil
+}
+
+func (fms *FileManagerService) checkAllowedDirectory(checkFiles []*mpi.File) error {
+	for _, file := range checkFiles {
+		allowed := fms.agentConfig.IsDirectoryAllowed(file.GetFileMeta().GetName())
+		if !allowed {
+			return fmt.Errorf("file not in allowed directories %s", file.GetFileMeta().GetName())
+		}
+	}
+
+	return nil
 }

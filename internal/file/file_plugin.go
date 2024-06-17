@@ -85,13 +85,28 @@ func (fp *FilePlugin) Subscriptions() []string {
 }
 
 func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Message) {
+	slog.Info("handleConfigApplyRequest")
+	correlationID := logger.GetCorrelationID(ctx)
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest_ConfigApplyRequest)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest_ConfigApplyRequest",
 			"payload", msg.Data)
+
+		response := &mpi.DataPlaneResponse{
+			MessageMeta: &mpi.MessageMeta{
+				MessageId:     uuid.NewString(),
+				CorrelationId: correlationID,
+				Timestamp:     timestamppb.Now(),
+			},
+			CommandResponse: &mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_ERROR,
+				Message: "Config apply failed",
+				Error:   "unable to cast to message payload",
+			},
+		}
+		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
 	}
 	configApplyRequest := managementPlaneRequest.ConfigApplyRequest
-	correlationID := logger.GetCorrelationID(ctx)
 	var response *mpi.DataPlaneResponse
 
 	err := fp.fileManagerService.ConfigApply(ctx, configApplyRequest)
@@ -140,6 +155,7 @@ func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 		slog.ErrorContext(ctx, "Unable to cast message payload to *model.NginxConfigContext", "payload", msg.Data)
 	}
 
+	// TODO: Fix this, I broke mock management plane :( permissions issue
 	err := fp.fileManagerService.UpdateOverview(ctx, nginxConfigContext.InstanceID, nginxConfigContext.Files)
 	if err != nil {
 		slog.ErrorContext(
@@ -148,12 +164,9 @@ func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 			"instance_id", nginxConfigContext.InstanceID,
 			"error", err,
 		)
+
 		return
 	}
-
-	// TODO: Naming - update the list of files in the manager sevice for use in config apply to tell what file
-	// has been deleted
-	fp.fileManagerService.updateConfigFiles(nginxConfigContext.InstanceID, nginxConfigContext.Files)
 }
 
 func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Message) {

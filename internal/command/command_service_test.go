@@ -48,7 +48,7 @@ func TestCommandService_NewCommandService(t *testing.T) {
 	commandService := NewCommandService(
 		ctx,
 		commandServiceClient,
-		types.GetAgentConfig(),
+		types.AgentConfig(),
 		make(chan *mpi.ManagementPlaneRequest),
 	)
 
@@ -164,7 +164,7 @@ func TestCommandService_SendDataPlaneResponse(t *testing.T) {
 	commandService := NewCommandService(
 		ctx,
 		commandServiceClient,
-		types.GetAgentConfig(),
+		types.AgentConfig(),
 		make(chan *mpi.ManagementPlaneRequest),
 	)
 

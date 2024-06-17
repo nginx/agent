@@ -6,16 +6,15 @@
 package file
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"log/slog"
 	"os"
 	"path"
 
+	"github.com/nginx/agent/v3/pkg/files"
+
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/files"
 )
 
 type FileOperator struct{}
@@ -43,30 +42,4 @@ func (fo *FileOperator) Write(ctx context.Context, fileContent []byte, file *mpi
 	slog.DebugContext(ctx, "Content written to file", "file_path", file.GetName())
 
 	return nil
-}
-
-// ReadFileContents TODO: Need to either handle files not having any changes here or have it so by this point the list of files
-// only contains files needing to be updated, added or deleted ??
-func (fo *FileOperator) ReadFileContents(files []*mpi.File) (filesContents map[string][]byte, err error) {
-	filesContents = make(map[string][]byte)
-	for _, file := range files {
-		filePath := file.GetFileMeta().GetName()
-		if _, err = os.Stat(filePath); os.IsNotExist(err) {
-			// File is new and doesn't exist so no previous content to save
-			continue
-		}
-		f, openErr := os.Open(filePath)
-		if openErr != nil {
-			return nil, err
-		}
-
-		content := bytes.NewBuffer([]byte{})
-		_, copyErr := io.Copy(content, f)
-		if copyErr != nil {
-			return nil, copyErr
-		}
-
-		filesContents[filePath] = content.Bytes()
-	}
-	return filesContents, nil
 }
