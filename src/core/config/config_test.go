@@ -479,6 +479,18 @@ func TestUpdateAgentConfig(t *testing.T) {
 	}
 }
 
+func TestDeprecatedEnvPrefixMigration(t *testing.T){
+	want := true
+	
+	t.Setenv("NMS_TLS_SKIP_VERIFY","true")
+
+	SetDefaults()
+	RegisterFlags()
+
+	got := MigratedEnv
+	assert.Equal(t, want, got)
+} 
+
 func setEnvVariable(t *testing.T, name string, value string) {
 	key := strings.ToUpper(EnvPrefix + agent_config.KeyDelimiter + name)
 	err := os.Setenv(key, value)
