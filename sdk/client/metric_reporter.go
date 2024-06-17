@@ -116,6 +116,8 @@ func (r *metricReporter) createClient() error {
 	r.channel = channel
 	r.eventsChannel = eventsChannel
 
+	r.isRetrying = false
+
 	return nil
 }
 
@@ -165,12 +167,12 @@ func (r *metricReporter) Send(ctx context.Context, message Message) error {
 			}
 
 			if r.channel == nil {
-				r.isRetrying = true
+				r.setIsRetrying(true)
 				return r.handleGrpcError("Metric Reporter Channel Send", errors.New("metric service stream client not created yet"))
 			}
 
 			if err := r.channel.Send(report); err != nil {
-				r.isRetrying = true
+				r.setIsRetrying(true)
 				return r.handleGrpcError("Metric Reporter Channel Send", err)
 			}
 
@@ -191,7 +193,7 @@ func (r *metricReporter) Send(ctx context.Context, message Message) error {
 			}
 
 			if err := r.eventsChannel.Send(report); err != nil {
-				r.isRetrying = true
+				r.setIsRetrying(true)
 				return r.handleGrpcError("Metric Reporter Events Channel Send", err)
 			}
 
@@ -258,4 +260,10 @@ func (r *metricReporter) handleGrpcError(messagePrefix string, err error) error 
 	}
 
 	return err
+}
+
+func (r *metricReporter) setIsRetrying(value bool) {
+	r.retryLock.Lock()
+	defer r.retryLock.Unlock()
+	r.isRetrying = value
 }

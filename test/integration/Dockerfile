@@ -6,7 +6,7 @@ ENV GOFLAGS="-mod=vendor"
 ADD ./ /go_src 
 RUN cd /go_src/test/integration/ && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go test -v -timeout 5m -c -o integration-test
 
-FROM ${DEVOPS_DOCKER_URL}/dockerhub-remote/ubuntu:22.04
+FROM ${DEVOPS_DOCKER_URL}/dockerhub-remote/ubuntu:24.04
 ARG METRICS_MODULE_PKG
 ARG NGINX_PLUS_VERSION
 ADD ./ /go_src 

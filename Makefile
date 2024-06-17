@@ -1,6 +1,4 @@
-include Makefile.containers
 include Makefile.tools
-include Makefile.packaging
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Variable Definitions                                                                                            #
@@ -29,19 +27,18 @@ GOVET   = ${GOCMD} vet
 # | OS_RELEASE       | OS_VERSION                                | NOTES                                                          |
 # | ---------------- | ----------------------------------------- | -------------------------------------------------------------- |
 # | amazonlinux      | 2, 2023                                   |                                                                |
-# | ubuntu           | 20.04, 22.04                              |                                                                |
-# | debian           | bullseye-slim, bookworm-slim 			 |                                                                |
-# | centos           | 7                                         |                                                                |
-# | redhatenterprise | 7, 8, 9                                   |                                                                |
+# | ubuntu           | 20.04, 22.04, 24.04                       |                                                                |
+# | debian           | bullseye-slim, bookworm-slim              |                                                                |
+# | redhatenterprise | 8, 9                                      |                                                                |
 # | rockylinux       | 8, 9                                      |                                                                |
 # | almalinux        | 8, 9                                      |                                                                |
-# | alpine           | 3.16, 3.17, 3.18, 3.19                    |                                                                |
-# | oraclelinux      | 7, 8, 9                                   |                                                                |
+# | alpine           | 3.17, 3.18, 3.19, 3.20                    |                                                                |
+# | oraclelinux      | 8, 9                                      |                                                                |
 # | suse             | sles12sp5, sle15                          |                                                                |
 # | freebsd          |                                           | Not supported                                                  |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 OS_RELEASE  ?= ubuntu
-OS_VERSION  ?= 22.04
+OS_VERSION  ?= 24.04
 BASE_IMAGE  = "${CONTAINER_REGISTRY}/${OS_RELEASE}:${OS_VERSION}"
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 
@@ -82,6 +79,7 @@ CERT_SERVER_INT_CN := server-int.local
 CERT_SERVER_EE_CN  := server-ee.local
 CERT_SERVER_DNS    := tls.example.com
 
+include Makefile.containers
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Developer Targets                                                                                               #
@@ -161,6 +159,8 @@ local-txz-package: ## Create local txz package
 txz-packager-image: ## Builds txz packager container image
 	@echo Building Local Packager; \
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t build-local-packager:1.0.0 --build-arg package_type=local-package . --no-cache -f ./scripts/packages/packager/Dockerfile
+
+include Makefile.packaging
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Testing                                                                                                         #

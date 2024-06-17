@@ -18,16 +18,16 @@ This document provides technical specifications for NGINX Agent. It includes inf
 NGINX Agent can run in most environments. We support the following distributions:
 
 {{< bootstrap-table "table table-striped table-bordered" >}}
-| | AlmaLinux | Alpine Linux | Amazon Linux | Amazon Linux 2 | CentOS | Debian |
-|-|-----------|--------------|--------------|----------------|--------|--------|
-|**Version**|8 <br><hr>9 |  3.16<br><hr>3.17<br><hr> 3.18<br><hr> 3.19|  2023|  LTS|  7.4+|  11<br><hr> 12|
-|**Architecture**| x86_84<br><hr>aarch64| x86_64<br><hr>aarch64 | x86_64<br><hr>aarch64 | x86_64<br><hr>aarch64 | x86_64<br><hr>aarch64 | x86_64<br><hr>aarch64 |
+| | AlmaLinux | Alpine Linux | Amazon Linux | Amazon Linux 2 | Debian |
+|-|-----------|--------------|--------------|----------------|--------|
+|**Version**|8 <br><hr>9 | 3.17<br><hr> 3.18<br><hr> 3.19 <br><hr> 3.20|  2023|  LTS|  11<br><hr> 12|
+|**Architecture**| x86_84<br><hr>aarch64| x86_64<br><hr>aarch64 | x86_64<br><hr>aarch64 | x86_64<br><hr>aarch64 | x86_64<br><hr>aarch64 |
 {{< /bootstrap-table >}}
 
 {{< bootstrap-table "table table-striped table-bordered" >}}
 | |FreeBSD | Oracle Linux | Red Hat <br>Enterprise Linux <br>(RHEL) | Rocky Linux | SUSE Linux <br>Enterprise Server <br>(SLES) | Ubuntu |
 |-|--------|--------------|---------------------------------|-------------|-------------------------------------|--------|
-|**Version**|13<br><hr>14|7.4+<br><hr>8.1+<br><hr>9|7.4+<br><hr>8.1+<br><hr>9.0+|8<br><hr>9|12 SP5<br><hr>15 SP2|20.04 LTS<br><hr>22.04 LTS|
+|**Version**|13<br><hr>14|8.1+<br><hr>9|8.1+<br><hr>9.0+|8<br><hr>9|12 SP5<br><hr>15 SP2|20.04 LTS<br><hr>22.04 LTS<br><hr>24.04 LTS|
 |**Architecture**|amd64|x86_64|x86_64<br><hr>aarch64|x86_64<br><hr>aarch64|x86_64|x86_64<br><hr>aarch64|
 {{< /bootstrap-table >}}
 

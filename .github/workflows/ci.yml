@@ -28,7 +28,7 @@ jobs:
       contents: read  # for actions/checkout to fetch code
       pull-requests: read  # for golangci/golangci-lint-action to fetch pull requests
     name: Lint
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
@@ -50,7 +50,7 @@ jobs:
 
   unit-test:
     name: Unit Tests
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
@@ -65,7 +65,7 @@ jobs:
 
   component-test:
     name: Component Tests
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
@@ -76,7 +76,7 @@ jobs:
 
   build-unsigned-snapshot:
     name: Build unsigned snapshot
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
         with:
@@ -113,7 +113,7 @@ jobs:
   integration-tests:
     name: Integration Tests
     needs: build-unsigned-snapshot
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -131,21 +131,19 @@ jobs:
         - image: "amazonlinux"
           version: "2023"
         - image: "oraclelinux"
-          version: "7"
-        - image: "oraclelinux"
           version: "8"
         - image: "oraclelinux"
           version: "9"
         - image: "ubuntu"
-          version: "22.04"
-        - image: "alpine"
-          version: "3.16"
+          version: "24.04"
         - image: "alpine"
           version: "3.17"
         - image: "alpine"
           version: "3.18"
         - image: "alpine"
           version: "3.19"
+        - image: "alpine"
+          version: "3.20"
         - image: "debian"
           version: "bullseye-slim"
         - image: "debian"

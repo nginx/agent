@@ -95,8 +95,9 @@ ensure_agent_path() {
 }
 
 create_agent_group() {
-    if command -V systemctl >/dev/null 2>&1; then
-        printf "PostInstall: Adding nginx-agent group %s\n" "${AGENT_GROUP}"
+    printf "PostInstall: Adding nginx-agent group %s\n" "${AGENT_GROUP}"
+
+    if command -V groupadd >/dev/null 2>&1; then
         groupadd "${AGENT_GROUP}"
 
         printf "PostInstall: Adding NGINX / agent user %s to group %s\n" "${AGENT_USER}" "${AGENT_GROUP}"
@@ -108,7 +109,6 @@ create_agent_group() {
     fi
 
     if [ "$ID" = "freebsd" ]; then
-        printf "PostInstall: Adding nginx-agent group %s\n" "${AGENT_GROUP}"
         pw groupadd "${AGENT_GROUP}"
 
         printf "PostInstall: Adding NGINX / agent user %s to group %s\n" "${AGENT_USER}" "${AGENT_GROUP}"
@@ -120,7 +120,6 @@ create_agent_group() {
     fi
 
     if [ "$ID" = "alpine" ]; then
-        printf "PostInstall: Adding nginx-agent group %s\n" "${AGENT_GROUP}"
         addgroup "${AGENT_GROUP}"
 
         printf "PostInstall: Adding NGINX / agent user %s to group %s\n" "${AGENT_USER}" "${AGENT_GROUP}"
