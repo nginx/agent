@@ -103,7 +103,8 @@ const (
 	DynamicConfigFileAbsFreeBsdPath = "/var/db/nginx-agent/agent-dynamic.conf"
 	ConfigFileName                  = "nginx-agent.conf"
 	ConfigFileType                  = "yaml"
-	EnvPrefix                       = "nms"
+	LegacyEnvPrefix                 = "nms"
+	EnvPrefix                       = "nginx_agent"
 	ConfigPathKey                   = "path"
 	DynamicConfigPathKey            = "dynamic_config_path"
 

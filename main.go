@@ -59,6 +59,10 @@ func main() {
 			defer logFile.Close()
 		}
 
+		if config.MigratedEnv {
+			log.Warnf("The environment variable prefix 'NMS' is deprecated. Prefix has been migrated to 'NGINX_AGENT'. Please update your configuration to use the new prefix.")
+		}
+
 		log.Tracef("Config loaded from disk, %v", loadedConfig)
 
 		if loadedConfig.DisplayName == "" {
