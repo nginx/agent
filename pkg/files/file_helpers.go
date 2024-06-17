@@ -22,6 +22,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+const permissions = 0o644
+
 func GetFileMeta(filePath string) (*mpi.FileMeta, error) {
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
@@ -82,7 +84,7 @@ func GenerateFileHash(filePath string) (string, error) {
 func FileMode(mode string) os.FileMode {
 	result, err := strconv.ParseInt(mode, 8, 32)
 	if err != nil {
-		return os.FileMode(0o644)
+		return os.FileMode(permissions)
 	}
 
 	return os.FileMode(result)
@@ -98,24 +100,30 @@ func GenerateFileHashWithContent(content []byte) (string, error) {
 	return base64.StdEncoding.EncodeToString(h.Sum(nil)), nil
 }
 
-func ReadFile(filePath string) ([]byte, error) {
+func ReadFileGenerateFile(filePath string) ([]byte, string, error) {
 	f, openErr := os.Open(filePath)
 	if openErr != nil {
-		return nil, openErr
+		return nil, "", openErr
 	}
 
 	content := bytes.NewBuffer([]byte{})
 	_, copyErr := io.Copy(content, f)
 	if copyErr != nil {
-		return nil, copyErr
+		return nil, "", copyErr
 	}
 
-	return content.Bytes(), nil
+	hash, err := GenerateFileHashWithContent(content.Bytes())
+
+	return content.Bytes(), hash, err
 }
 
+// TODO: reduce complexity
+// nolint: revive, cyclop
 // CompareFileHash compares files from the FileOverview to files on disk and returns a map with the files that have
 // changed and a map with the contents of those files. Key to both maps is file path
-func CompareFileHash(fileOverview *mpi.FileOverview) (diffFiles map[string]*mpi.File, fileContents map[string][]byte, err error) {
+func CompareFileHash(fileOverview *mpi.FileOverview) (diffFiles map[string]*mpi.File,
+	fileContents map[string][]byte, err error,
+) {
 	diffFiles = make(map[string]*mpi.File)
 	fileContents = make(map[string][]byte)
 	for _, file := range fileOverview.GetFiles() {
@@ -126,7 +134,7 @@ func CompareFileHash(fileOverview *mpi.FileOverview) (diffFiles map[string]*mpi.
 				// File is already deleted skip
 				continue
 			}
-			fileContent, readErr := ReadFile(fileName)
+			fileContent, _, readErr := ReadFileGenerateFile(fileName)
 			if readErr != nil {
 				return nil, nil, fmt.Errorf("error reading file %s, error: %w", fileName, readErr)
 			}
@@ -145,24 +153,21 @@ func CompareFileHash(fileOverview *mpi.FileOverview) (diffFiles map[string]*mpi.
 
 			fallthrough
 		case mpi.File_FILE_ACTION_UPDATE:
-			fileContent, readErr := ReadFile(fileName)
-			if readErr != nil {
-				return nil, nil, fmt.Errorf("error reading file %s, error: %w", fileName, readErr)
-			}
-
-			fileHash, hashErr := GenerateFileHashWithContent(fileContent)
+			fileContent, hash, hashErr := ReadFileGenerateFile(fileName)
 			if hashErr != nil {
 				return nil, nil, fmt.Errorf("error generating hash for file %s, error: %w", fileName, err)
 			}
 
-			if fileHash == file.GetFileMeta().GetHash() {
+			if hash == file.GetFileMeta().GetHash() {
 				// file is same as on disk skip
 				continue
 			}
 			fileContents[fileName] = fileContent
 			diffFiles[fileName] = file
-		default:
+		case mpi.File_FILE_ACTION_UNSPECIFIED, mpi.File_FILE_ACTION_UNCHANGED:
 			// FileAction is UNSPECIFIED or UNCHANGED skipping, treat UNSPECIFIED as if it is UNCHANGED
+			fallthrough
+		default:
 			continue
 		}
 	}

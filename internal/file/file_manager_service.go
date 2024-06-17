@@ -194,29 +194,12 @@ func (fms *FileManagerService) fileActions(ctx context.Context) error {
 
 			continue
 		case mpi.File_FILE_ACTION_ADD, mpi.File_FILE_ACTION_UPDATE:
-			getFileResp, getFileErr := fms.fileServiceClient.GetFile(ctx, &mpi.GetFileRequest{
-				MessageMeta: &mpi.MessageMeta{
-					MessageId:     uuid.NewString(),
-					CorrelationId: logger.GetCorrelationID(ctx),
-					Timestamp:     timestamppb.Now(),
-				},
-				FileMeta: file.GetFileMeta(),
-			})
-			if getFileErr != nil {
-				return fmt.Errorf("error getting file data for %s: %w", file.GetFileMeta(), getFileErr)
+			updateErr := fms.fileUpdate(ctx, file)
+			if updateErr != nil {
+				return updateErr
 			}
-
-			writeErr := fms.fileOperator.Write(ctx, getFileResp.GetContents().GetContents(), file.GetFileMeta())
-
-			if writeErr != nil {
-				return writeErr
-			}
-
-			ok, err := fms.compareHash(file.GetFileMeta().GetName())
-			if !ok || err != nil {
-				return err
-			}
-
+		case mpi.File_FILE_ACTION_UNSPECIFIED, mpi.File_FILE_ACTION_UNCHANGED:
+			fallthrough
 		default:
 			slog.DebugContext(ctx, "File Action not implemented")
 		}
@@ -225,12 +208,35 @@ func (fms *FileManagerService) fileActions(ctx context.Context) error {
 	return nil
 }
 
-func (fms *FileManagerService) compareHash(filePath string) (bool, error) {
-	content, err := files.ReadFile(filePath)
-	if err != nil {
-		return false, err
+func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) error {
+	getFileResp, getFileErr := fms.fileServiceClient.GetFile(ctx, &mpi.GetFileRequest{
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     uuid.NewString(),
+			CorrelationId: logger.GetCorrelationID(ctx),
+			Timestamp:     timestamppb.Now(),
+		},
+		FileMeta: file.GetFileMeta(),
+	})
+	if getFileErr != nil {
+		return fmt.Errorf("error getting file data for %s: %w", file.GetFileMeta(), getFileErr)
 	}
-	fileHash, err := files.GenerateFileHashWithContent(content)
+
+	writeErr := fms.fileOperator.Write(ctx, getFileResp.GetContents().GetContents(), file.GetFileMeta())
+
+	if writeErr != nil {
+		return writeErr
+	}
+
+	ok, err := fms.compareHash(file.GetFileMeta().GetName())
+	if !ok || err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (fms *FileManagerService) compareHash(filePath string) (bool, error) {
+	_, fileHash, err := files.ReadFileGenerateFile(filePath)
 	if err != nil {
 		return false, err
 	}

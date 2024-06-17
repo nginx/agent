@@ -5,66 +5,66 @@ issues:
     - ".*fakes" # Skip mock directories
 run:
   timeout: 3m
-#linters:
-#  # By default, the enabled linters are:
-#  # errcheck, gosimple, govet, ineffassign, staticcheck, unused
-#  enable:
-#    - bodyclose
-#    - cyclop
-#    - contextcheck
-#    - dupl
-#    - errorlint
-#    - exhaustive
-#    - exportloopref
-#    - forcetypeassert
-#    - gocheckcompilerdirectives
-#    - gocognit
-#    - goconst
-#    - gocritic
-#    - gocyclo
+linters:
+  # By default, the enabled linters are:
+  # errcheck, gosimple, govet, ineffassign, staticcheck, unused
+  enable:
+    - bodyclose
+    - cyclop
+    - contextcheck
+    - dupl
+    - errorlint
+    - exhaustive
+    - exportloopref
+    - forcetypeassert
+    - gocheckcompilerdirectives
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
 #    - godox
-#    - gofumpt
-#    - goheader
-#    - gomnd
-#    - gomoddirectives
-#    - gosec
-#    - grouper
-#    - importas
-#    - inamedparam
-#    - ireturn
-#    - lll
-#    - maintidx
-#    - makezero
-#    - mirror
-#    - misspell
-#    - musttag
-#    - nakedret
-#    - nestif
-#    - nilerr
-#    - nilnil
-#    - nlreturn
-#    - noctx
-#    - nosprintfhostport
-#    - prealloc
-#    - predeclared
-#    - promlinter
-#    - protogetter
-#    - reassign
-#    - revive
-#    - rowserrcheck
-#    - sloglint
-#    - sqlclosecheck
-#    - stylecheck
-#    - tagalign
-#    - testableexamples
-#    - testifylint
-#    - thelper
-#    - unconvert
-#    - unparam
-#    - usestdlibvars
-#    - wastedassign
-#    - whitespace
-#    - zerologlint
+    - gofumpt
+    - goheader
+    - gomnd
+    - gomoddirectives
+    - gosec
+    - grouper
+    - importas
+    - inamedparam
+    - ireturn
+    - lll
+    - maintidx
+    - makezero
+    - mirror
+    - misspell
+    - musttag
+    - nakedret
+    - nestif
+    - nilerr
+    - nilnil
+    - nlreturn
+    - noctx
+    - nosprintfhostport
+    - prealloc
+    - predeclared
+    - promlinter
+    - protogetter
+    - reassign
+    - revive
+    - rowserrcheck
+    - sloglint
+    - sqlclosecheck
+    - stylecheck
+    - tagalign
+    - testableexamples
+    - testifylint
+    - thelper
+    - unconvert
+    - unparam
+    - usestdlibvars
+    - wastedassign
+    - whitespace
+    - zerologlint
 
 # Allows configuring linters that support configuration.
 # Refer to full list of linters here: https://golangci-lint.run/usage/linters/.

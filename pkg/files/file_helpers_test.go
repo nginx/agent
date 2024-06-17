@@ -120,7 +120,7 @@ func TestReadFile(t *testing.T) {
 	err := os.WriteFile(testFile.Name(), expectedFileContent, 0o600)
 	require.NoError(t, err)
 
-	resultContent, err := ReadFile(testFile.Name())
+	resultContent, _, err := ReadFileGenerateFile(testFile.Name())
 	require.NoError(t, err)
 
 	assert.Equal(t, expectedFileContent, resultContent)

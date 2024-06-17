@@ -56,3 +56,6 @@ func TestFileManagerService_UpdateFile(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, fakeFileServiceClient.UpdateFileCallCount())
 }
+
+func TestFileManagerService_fileActions(t *testing.T) {
+}
