@@ -135,7 +135,7 @@ func CompareFileHash(fileOverview *mpi.FileOverview) (fileDiff map[string]*mpi.F
 		case mpi.File_FILE_ACTION_UPDATE:
 			fileContent, fileHash, fileHashErr := GenerateHashWithReadFile(fileName)
 			if fileHashErr != nil {
-				return nil, nil, fmt.Errorf("error generating hash for file %s, error: %w", fileName, err)
+				return nil, nil, fmt.Errorf("error generating hash for file %s, error: %w", fileName, fileHashErr)
 			}
 
 			slog.Info("Action", "", file.GetAction())

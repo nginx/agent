@@ -7,9 +7,13 @@ package file
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/nginx/agent/v3/pkg/files"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1/v1fakes"
@@ -84,6 +88,103 @@ func TestFilePlugin_Process_NginxConfigUpdateTopic(t *testing.T) {
 		2*time.Second,
 		10*time.Millisecond,
 	)
+}
+
+func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
+	ctx := context.Background()
+	tempDir := t.TempDir()
+	addAction := mpi.File_FILE_ACTION_ADD
+
+	filePath := fmt.Sprintf("%s/nginx.conf", tempDir)
+	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
+	fileHash := files.GenerateHash(fileContent)
+
+	message := &mpi.ManagementPlaneRequest{
+		Request: &mpi.ManagementPlaneRequest_ConfigApplyRequest{
+			ConfigApplyRequest: &mpi.ConfigApplyRequest{
+				ConfigVersion: protos.CreateConfigVersion(),
+				Overview: &mpi.FileOverview{
+					Files: []*mpi.File{
+						{
+							FileMeta: &mpi.FileMeta{
+								Name:         filePath,
+								Hash:         fileHash,
+								ModifiedTime: timestamppb.Now(),
+								Permissions:  "0777",
+								Size:         0,
+							},
+							Action: &addAction,
+						},
+					},
+					ConfigVersion: protos.CreateConfigVersion(),
+				},
+			},
+		},
+	}
+	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+	agentConfig := types.AgentConfig()
+	agentConfig.AllowedDirectories = []string{tempDir}
+
+	tests := []struct {
+		name           string
+		getFileReturns error
+	}{
+		{
+			name:           "Test 1 - Success",
+			getFileReturns: nil,
+		},
+		{
+			name:           "Test 2 - Fail",
+			getFileReturns: fmt.Errorf("something went wrong"),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+			fakeFileServiceClient.GetFileReturns(&mpi.GetFileResponse{
+				Contents: &mpi.FileContents{
+					Contents: fileContent,
+				},
+			}, test.getFileReturns)
+
+			fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
+			messagePipe := bus.NewFakeMessagePipe()
+			filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection)
+			err := filePlugin.Init(ctx, messagePipe)
+			require.NoError(t, err)
+
+			filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigApplyRequestTopic, Data: message})
+
+			assert.Eventually(
+				t,
+				func() bool { return fakeFileServiceClient.GetFileCallCount() == 1 },
+				2*time.Second,
+				10*time.Millisecond,
+			)
+
+			messages := messagePipe.GetMessages()
+			assert.Len(t, messages, 1)
+			assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
+
+			dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
+			assert.True(t, ok)
+			if test.getFileReturns == nil {
+				assert.Equal(
+					t,
+					mpi.CommandResponse_COMMAND_STATUS_OK,
+					dataPlaneResponse.GetCommandResponse().GetStatus(),
+				)
+				helpers.RemoveFileWithErrorCheck(t, filePath)
+			} else {
+				assert.Equal(
+					t,
+					mpi.CommandResponse_COMMAND_STATUS_ERROR,
+					dataPlaneResponse.GetCommandResponse().GetStatus(),
+				)
+			}
+		})
+	}
 }
 
 func TestFilePlugin_Process_ConfigUploadRequestTopic(t *testing.T) {

@@ -24,6 +24,9 @@ import (
 	backoffHelpers "github.com/nginx/agent/v3/internal/backoff"
 )
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//counterfeiter:generate . fileOperator
+
 type (
 	fileOperator interface {
 		Write(ctx context.Context, fileContent []byte, file *mpi.FileMeta) error
@@ -240,6 +243,9 @@ func (fms *FileManagerService) compareHash(filePath string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	slog.Info("hash", "", fileHash)
+	slog.Info("hash", "", fms.filesCache[filePath].GetFileMeta().GetHash())
+
 	if fileHash != fms.filesCache[filePath].GetFileMeta().GetHash() {
 		return false, fmt.Errorf("error writing file, file hash does not match for file %s", filePath)
 	}
