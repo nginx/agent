@@ -27,7 +27,7 @@ func TestGetFileMeta(t *testing.T) {
 	expected := &mpi.FileMeta{
 		Name:        file.Name(),
 		Hash:        "4ae71336-e44b-39bf-b9d2-752e234818a5",
-		Permissions: "-rw-------",
+		Permissions: "0777",
 		Size:        0,
 	}
 
