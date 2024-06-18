@@ -100,7 +100,7 @@ func GenerateFileHashWithContent(content []byte) (string, error) {
 	return base64.StdEncoding.EncodeToString(h.Sum(nil)), nil
 }
 
-func ReadFileGenerateFile(filePath string) ([]byte, string, error) {
+func GenerateHashWithReadFile(filePath string) ([]byte, string, error) {
 	f, openErr := os.Open(filePath)
 	if openErr != nil {
 		return nil, "", openErr
@@ -117,15 +117,16 @@ func ReadFileGenerateFile(filePath string) ([]byte, string, error) {
 	return content.Bytes(), hash, err
 }
 
-// TODO: reduce complexity
-// nolint: revive, cyclop
+// cyclomatic complexity for function CompareFileHash is 11, max is 10 not sure how to reduce
+// nolint: revive,cyclop
 // CompareFileHash compares files from the FileOverview to files on disk and returns a map with the files that have
 // changed and a map with the contents of those files. Key to both maps is file path
-func CompareFileHash(fileOverview *mpi.FileOverview) (diffFiles map[string]*mpi.File,
+func CompareFileHash(fileOverview *mpi.FileOverview) (fileDiff map[string]*mpi.File,
 	fileContents map[string][]byte, err error,
 ) {
-	diffFiles = make(map[string]*mpi.File)
+	fileDiff = make(map[string]*mpi.File)
 	fileContents = make(map[string][]byte)
+
 	for _, file := range fileOverview.GetFiles() {
 		fileName := file.GetFileMeta().GetName()
 		switch file.GetAction() {
@@ -134,36 +135,38 @@ func CompareFileHash(fileOverview *mpi.FileOverview) (diffFiles map[string]*mpi.
 				// File is already deleted skip
 				continue
 			}
-			fileContent, _, readErr := ReadFileGenerateFile(fileName)
+			fileContent, _, readErr := GenerateHashWithReadFile(fileName)
 			if readErr != nil {
 				return nil, nil, fmt.Errorf("error reading file %s, error: %w", fileName, readErr)
 			}
 			fileContents[fileName] = fileContent
-			diffFiles[fileName] = file
+			fileDiff[fileName] = file
 
 			continue
 		case mpi.File_FILE_ACTION_ADD:
 			if _, err = os.Stat(fileName); os.IsNotExist(err) {
 				// file is new nothing to compare
-				diffFiles[fileName] = file
+				fileDiff[fileName] = file
 				continue
 			}
+			// file already exists and needs to be updated instead
 			updateAction := mpi.File_FILE_ACTION_UPDATE
 			file.Action = &updateAction
 
 			fallthrough
 		case mpi.File_FILE_ACTION_UPDATE:
-			fileContent, hash, hashErr := ReadFileGenerateFile(fileName)
-			if hashErr != nil {
+			fileContent, fileHash, fileHashErr := GenerateHashWithReadFile(fileName)
+			if fileHashErr != nil {
 				return nil, nil, fmt.Errorf("error generating hash for file %s, error: %w", fileName, err)
 			}
 
-			if hash == file.GetFileMeta().GetHash() {
+			if fileHash == file.GetFileMeta().GetHash() {
 				// file is same as on disk skip
 				continue
 			}
+
 			fileContents[fileName] = fileContent
-			diffFiles[fileName] = file
+			fileDiff[fileName] = file
 		case mpi.File_FILE_ACTION_UNSPECIFIED, mpi.File_FILE_ACTION_UNCHANGED:
 			// FileAction is UNSPECIFIED or UNCHANGED skipping, treat UNSPECIFIED as if it is UNCHANGED
 			fallthrough
@@ -172,5 +175,5 @@ func CompareFileHash(fileOverview *mpi.FileOverview) (diffFiles map[string]*mpi.
 		}
 	}
 
-	return diffFiles, fileContents, nil
+	return fileDiff, fileContents, nil
 }

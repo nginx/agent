@@ -87,8 +87,15 @@ func (fp *FilePlugin) Subscriptions() []string {
 func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Message) {
 	slog.Info("handleConfigApplyRequest")
 	correlationID := logger.GetCorrelationID(ctx)
-	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest_ConfigApplyRequest)
+
+	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
 	if !ok {
+		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest_ConfigApplyRequest",
+			"payload", msg.Data)
+	}
+	request, requestOk := managementPlaneRequest.GetRequest().(*mpi.ManagementPlaneRequest_ConfigApplyRequest)
+
+	if !requestOk {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest_ConfigApplyRequest",
 			"payload", msg.Data)
 
@@ -105,8 +112,10 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			},
 		}
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
+
+		return
 	}
-	configApplyRequest := managementPlaneRequest.ConfigApplyRequest
+	configApplyRequest := request.ConfigApplyRequest
 	var response *mpi.DataPlaneResponse
 
 	err := fp.fileManagerService.ConfigApply(ctx, configApplyRequest)
@@ -155,7 +164,6 @@ func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 		slog.ErrorContext(ctx, "Unable to cast message payload to *model.NginxConfigContext", "payload", msg.Data)
 	}
 
-	// TODO: Fix this, I broke mock management plane :( permissions issue
 	err := fp.fileManagerService.UpdateOverview(ctx, nginxConfigContext.InstanceID, nginxConfigContext.Files)
 	if err != nil {
 		slog.ErrorContext(

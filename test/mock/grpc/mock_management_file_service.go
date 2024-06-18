@@ -198,6 +198,9 @@ func getMapOfVersionedFiles(configDirectory string) (map[string][]*v1.File, erro
 				return fileErr
 			}
 
+			slog.Debug("File found:", "path", file.GetFileMeta().GetName(),
+				"hash", file.GetFileMeta().GetHash())
+
 			files[versionDirectory] = append(files[versionDirectory], file)
 		}
 
@@ -266,7 +269,7 @@ func createFile(fullPath, filePath string) (*v1.File, error) {
 			Name:         filePath,
 			Hash:         hash,
 			ModifiedTime: timestamppb.New(fileInfo.ModTime()),
-			Permissions:  fileInfo.Mode().Perm().String(),
+			Permissions:  "0777",
 			Size:         fileInfo.Size(),
 		},
 	}, nil

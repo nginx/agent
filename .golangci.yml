@@ -22,7 +22,7 @@ linters:
     - goconst
     - gocritic
     - gocyclo
-#    - godox
+    - godox
     - gofumpt
     - goheader
     - gomnd

@@ -236,7 +236,7 @@ func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) e
 }
 
 func (fms *FileManagerService) compareHash(filePath string) (bool, error) {
-	_, fileHash, err := files.ReadFileGenerateFile(filePath)
+	_, fileHash, err := files.GenerateHashWithReadFile(filePath)
 	if err != nil {
 		return false, err
 	}
