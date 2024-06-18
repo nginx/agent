@@ -85,7 +85,6 @@ func (fp *FilePlugin) Subscriptions() []string {
 }
 
 func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Message) {
-	slog.Info("handleConfigApplyRequest")
 	correlationID := logger.GetCorrelationID(ctx)
 
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)

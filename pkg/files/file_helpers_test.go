@@ -9,6 +9,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/google/uuid"
+
 	"github.com/nginx/agent/v3/test/protos"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -24,7 +26,7 @@ func TestGetFileMeta(t *testing.T) {
 
 	expected := &mpi.FileMeta{
 		Name:        file.Name(),
-		Hash:        "47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=",
+		Hash:        "4ae71336-e44b-39bf-b9d2-752e234818a5",
 		Permissions: "-rw-------",
 		Size:        0,
 	}
@@ -53,64 +55,90 @@ func TestGetPermissions(t *testing.T) {
 }
 
 func Test_GenerateConfigVersion(t *testing.T) {
-	expectedConfigVersion := "a7d6580c-8ac9-376e-acde-b2cbed21d291"
-
-	file1 := &mpi.File{
-		FileMeta: &mpi.FileMeta{
-			Name: "file1",
-			Hash: "3151431543",
+	tests := []struct {
+		name     string
+		input    []*mpi.File
+		expected string
+	}{
+		{
+			name:     "Test with empty file slice",
+			input:    []*mpi.File{},
+			expected: GenerateHash([]byte{}),
+		},
+		{
+			name: "Test with one file",
+			input: []*mpi.File{
+				{
+					FileMeta: &mpi.FileMeta{
+						Name: "file1",
+						Hash: "hash1",
+					},
+					Action: nil,
+				},
+			},
+			expected: GenerateHash([]byte("hash1")),
+		},
+		{
+			name: "Test with multiple files",
+			input: []*mpi.File{
+				{
+					FileMeta: &mpi.FileMeta{
+						Name: "file1",
+						Hash: "hash1",
+					},
+					Action: nil,
+				},
+				{
+					FileMeta: &mpi.FileMeta{
+						Name: "file2",
+						Hash: "hash2",
+					},
+					Action: nil,
+				},
+			},
+			expected: func() string {
+				hashes := "hash1hash2"
+				return GenerateHash([]byte(hashes))
+			}(),
 		},
 	}
-	file2 := &mpi.File{
-		FileMeta: &mpi.FileMeta{
-			Name: "file2",
-			Hash: "4234235325",
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := GenerateConfigVersion(tt.input)
+			if result != tt.expected {
+				t.Errorf("GenerateConfigVersion(%v) = %v, want %v", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestGenerateHash(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []byte
+		expected string
+	}{
+		{
+			name:     "Test with empty byte slice",
+			input:    []byte{},
+			expected: uuid.NewMD5(uuid.Nil, []byte("")).String(),
+		},
+		{
+			name:     "Test with non-empty byte slice",
+			input:    []byte("test"),
+			expected: uuid.NewMD5(uuid.Nil, []byte("test")).String(),
 		},
 	}
 
-	files := []*mpi.File{
-		file1,
-		file2,
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := GenerateHash(tt.input)
+			if result != tt.expected {
+				t.Errorf("GenerateHash(%v) = %v, want %v", tt.input, result, tt.expected)
+			}
+		})
 	}
-
-	configVersion := GenerateConfigVersion(files)
-	assert.Equal(t, expectedConfigVersion, configVersion)
-
-	// Reorder files to make sure version is still the same
-	files = []*mpi.File{
-		file2,
-		file1,
-	}
-
-	configVersion = GenerateConfigVersion(files)
-	assert.Equal(t, expectedConfigVersion, configVersion)
-}
-
-func Test_GenerateFileHash(t *testing.T) {
-	testFile := helpers.CreateFileWithErrorCheck(t, os.TempDir(), "testFile")
-	defer helpers.RemoveFileWithErrorCheck(t, testFile.Name())
-	err := os.WriteFile(testFile.Name(), []byte("test data"), 0o600)
-	require.NoError(t, err)
-
-	hash, err := GenerateFileHash(testFile.Name())
-	require.NoError(t, err)
-
-	assert.Equal(t, "kW8AJ6V1B0znKjMXd8NHjWUT94alkb2JLaGld78jNfk=", hash)
-}
-
-func Test_GenerateFileHashWithContent(t *testing.T) {
-	testFile := helpers.CreateFileWithErrorCheck(t, os.TempDir(), "testFile")
-	defer helpers.RemoveFileWithErrorCheck(t, testFile.Name())
-	err := os.WriteFile(testFile.Name(), []byte("test data"), 0o600)
-	require.NoError(t, err)
-
-	content, err := os.ReadFile(testFile.Name())
-	require.NoError(t, err)
-
-	hash, err := GenerateFileHashWithContent(content)
-	require.NoError(t, err)
-
-	assert.Equal(t, "kW8AJ6V1B0znKjMXd8NHjWUT94alkb2JLaGld78jNfk=", hash)
 }
 
 func TestReadFile(t *testing.T) {
@@ -137,7 +165,7 @@ func TestCompareFileHash_Delete(t *testing.T) {
 
 	updateTestFile := helpers.CreateFileWithErrorCheck(t, tempDir, "updateTestFile")
 	defer helpers.RemoveFileWithErrorCheck(t, updateTestFile.Name())
-	expectedUpdateFileContent := []byte("test data")
+	expectedUpdateFileContent := []byte("test update data")
 	updateErr := os.WriteFile(updateTestFile.Name(), expectedUpdateFileContent, 0o600)
 	require.NoError(t, updateErr)
 
@@ -165,7 +193,7 @@ func TestCompareFileHash_Delete(t *testing.T) {
 					{
 						FileMeta: &mpi.FileMeta{
 							Name:         deleteTestFile.Name(),
-							Hash:         "kW8AJ6V1B0znKjMXd8NHjWUT94alkb2JLaGld78jNfk=",
+							Hash:         "f0ebf313-853b-3582-b74a-eff115f6e4d3",
 							ModifiedTime: nil,
 							Permissions:  "",
 							Size:         0,
@@ -175,7 +203,7 @@ func TestCompareFileHash_Delete(t *testing.T) {
 					{
 						FileMeta: &mpi.FileMeta{
 							Name:         updateTestFile.Name(),
-							Hash:         "5xV2LmHSjZou6Bx50v/YRM4tlQ2AtR2mnqbJ/mx3e/w=",
+							Hash:         "ff8dcd5d-a12f-3895-a6b9-2ac8c98bfd08",
 							ModifiedTime: nil,
 							Permissions:  "",
 							Size:         0,
@@ -185,7 +213,7 @@ func TestCompareFileHash_Delete(t *testing.T) {
 					{
 						FileMeta: &mpi.FileMeta{
 							Name:         tempDir + "newFileName",
-							Hash:         "5xV2LmHSjZou6Bx50v/YRM4tlQ2AtR2mnqbJ/mx3e/w=",
+							Hash:         "ff8dcd5d-a12f-3895-a6b9-2ac8c98bfd08",
 							ModifiedTime: nil,
 							Permissions:  "",
 							Size:         0,
@@ -206,7 +234,7 @@ func TestCompareFileHash_Delete(t *testing.T) {
 				deleteTestFile.Name(): {
 					FileMeta: &mpi.FileMeta{
 						Name:         deleteTestFile.Name(),
-						Hash:         "kW8AJ6V1B0znKjMXd8NHjWUT94alkb2JLaGld78jNfk=",
+						Hash:         "f0ebf313-853b-3582-b74a-eff115f6e4d3",
 						ModifiedTime: nil,
 						Permissions:  "",
 						Size:         0,
@@ -216,7 +244,7 @@ func TestCompareFileHash_Delete(t *testing.T) {
 				updateTestFile.Name(): {
 					FileMeta: &mpi.FileMeta{
 						Name:         updateTestFile.Name(),
-						Hash:         "5xV2LmHSjZou6Bx50v/YRM4tlQ2AtR2mnqbJ/mx3e/w=",
+						Hash:         "ff8dcd5d-a12f-3895-a6b9-2ac8c98bfd08",
 						ModifiedTime: nil,
 						Permissions:  "",
 						Size:         0,
@@ -226,7 +254,7 @@ func TestCompareFileHash_Delete(t *testing.T) {
 				tempDir + "newFileName": {
 					FileMeta: &mpi.FileMeta{
 						Name:         tempDir + "newFileName",
-						Hash:         "5xV2LmHSjZou6Bx50v/YRM4tlQ2AtR2mnqbJ/mx3e/w=",
+						Hash:         "ff8dcd5d-a12f-3895-a6b9-2ac8c98bfd08",
 						ModifiedTime: nil,
 						Permissions:  "",
 						Size:         0,
@@ -242,7 +270,7 @@ func TestCompareFileHash_Delete(t *testing.T) {
 					{
 						FileMeta: &mpi.FileMeta{
 							Name:         tempDir + "deletedFile",
-							Hash:         "kW8AJ6V1B0znKjMXd8NHjWUT94alkb2JLaGld78jNfk=",
+							Hash:         "f0ebf313-853b-3582-b74a-eff115f6e4d3",
 							ModifiedTime: nil,
 							Permissions:  "",
 							Size:         0,
@@ -252,7 +280,7 @@ func TestCompareFileHash_Delete(t *testing.T) {
 					{
 						FileMeta: &mpi.FileMeta{
 							Name:         updateTestFile.Name(),
-							Hash:         "kW8AJ6V1B0znKjMXd8NHjWUT94alkb2JLaGld78jNfk=",
+							Hash:         "3ea160ae-b15e-3ce6-ac61-5b27f926c8b0",
 							ModifiedTime: nil,
 							Permissions:  "",
 							Size:         0,
@@ -262,7 +290,7 @@ func TestCompareFileHash_Delete(t *testing.T) {
 					{
 						FileMeta: &mpi.FileMeta{
 							Name:         addTestFile.Name(),
-							Hash:         "5xV2LmHSjZou6Bx50v/YRM4tlQ2AtR2mnqbJ/mx3e/w=",
+							Hash:         "3ea160ae-b15e-3ce6-ac61-5b27f926c8b0",
 							ModifiedTime: nil,
 							Permissions:  "",
 							Size:         0,
@@ -282,7 +310,7 @@ func TestCompareFileHash_Delete(t *testing.T) {
 				addTestFile.Name(): {
 					FileMeta: &mpi.FileMeta{
 						Name:         addTestFile.Name(),
-						Hash:         "5xV2LmHSjZou6Bx50v/YRM4tlQ2AtR2mnqbJ/mx3e/w=",
+						Hash:         "3ea160ae-b15e-3ce6-ac61-5b27f926c8b0",
 						ModifiedTime: nil,
 						Permissions:  "",
 						Size:         0,

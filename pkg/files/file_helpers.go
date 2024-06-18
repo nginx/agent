@@ -9,16 +9,15 @@ package files
 import (
 	"bytes"
 	"cmp"
-	"crypto/sha256"
-	"encoding/base64"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"slices"
 	"strconv"
 
+	"github.com/google/uuid"
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/pkg/uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -30,7 +29,7 @@ func GetFileMeta(filePath string) (*mpi.FileMeta, error) {
 		return nil, err
 	}
 
-	hash, err := GenerateFileHash(filePath)
+	_, hash, err := GenerateHashWithReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -49,6 +48,15 @@ func GetPermissions(fileMode os.FileMode) string {
 	return fmt.Sprintf("%#o", fileMode.Perm())
 }
 
+func FileMode(mode string) os.FileMode {
+	result, err := strconv.ParseInt(mode, 8, 32)
+	if err != nil {
+		return os.FileMode(permissions)
+	}
+
+	return os.FileMode(result)
+}
+
 // GenerateConfigVersion returns a unique config version for a set of files.
 // The config version is calculated by joining the file hashes together and generating a unique ID.
 func GenerateConfigVersion(fileSlice []*mpi.File) string {
@@ -62,44 +70,14 @@ func GenerateConfigVersion(fileSlice []*mpi.File) string {
 		hashes += file.GetFileMeta().GetHash()
 	}
 
-	return uuid.Generate("%s", hashes)
+	return GenerateHash([]byte(hashes))
 }
 
-// GenerateFileHash returns the hash value of a file's contents.
-func GenerateFileHash(filePath string) (string, error) {
-	f, err := os.Open(filePath)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-
-	h := sha256.New()
-	if _, copyErr := io.Copy(h, f); copyErr != nil {
-		return "", copyErr
-	}
-
-	return base64.StdEncoding.EncodeToString(h.Sum(nil)), nil
+func GenerateHash(b []byte) string {
+	return uuid.NewMD5(uuid.Nil, b).String()
 }
 
-func FileMode(mode string) os.FileMode {
-	result, err := strconv.ParseInt(mode, 8, 32)
-	if err != nil {
-		return os.FileMode(permissions)
-	}
-
-	return os.FileMode(result)
-}
-
-func GenerateFileHashWithContent(content []byte) (string, error) {
-	h := sha256.New()
-	_, err := h.Write(content)
-	if err != nil {
-		return "", err
-	}
-
-	return base64.StdEncoding.EncodeToString(h.Sum(nil)), nil
-}
-
+// GenerateHashWithReadFile reads file generates hash and returns the content of the file, hash
 func GenerateHashWithReadFile(filePath string) ([]byte, string, error) {
 	f, openErr := os.Open(filePath)
 	if openErr != nil {
@@ -112,9 +90,9 @@ func GenerateHashWithReadFile(filePath string) ([]byte, string, error) {
 		return nil, "", copyErr
 	}
 
-	hash, err := GenerateFileHashWithContent(content.Bytes())
+	hash := GenerateHash(content.Bytes())
 
-	return content.Bytes(), hash, err
+	return content.Bytes(), hash, nil
 }
 
 // cyclomatic complexity for function CompareFileHash is 11, max is 10 not sure how to reduce
@@ -160,6 +138,9 @@ func CompareFileHash(fileOverview *mpi.FileOverview) (fileDiff map[string]*mpi.F
 				return nil, nil, fmt.Errorf("error generating hash for file %s, error: %w", fileName, err)
 			}
 
+			slog.Info("Action", "", file.GetAction())
+			slog.Info("fileHash", "", fileHash)
+			slog.Info("fileHash", "", file.GetFileMeta().GetHash())
 			if fileHash == file.GetFileMeta().GetHash() {
 				// file is same as on disk skip
 				continue
