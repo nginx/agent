@@ -6,30 +6,25 @@
 package load
 
 import (
-	"context"
 	"path/filepath"
 	"testing"
 
-	"github.com/nginx/agent/v3/internal/collector"
-	"github.com/nginx/agent/v3/test/helpers"
-	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/testbed/correctnesstests"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/testbed/testbed"
 )
 
 func TestMetric10kDPS(t *testing.T) {
 	performanceResultsSummary := &testbed.PerformanceResults{}
 
-	otelTestBedCollector, err := filepath.Abs("../../build/oteltestbedcol_darwin_arm64")
+	otelTestBedCollector, err := filepath.Abs("../../build/nginx-agent")
 	require.NoError(t, err)
 
 	testbed.GlobalConfig.DefaultAgentExeRelativeFile = otelTestBedCollector
 
 	name := "OTLP"
-	sender := testbed.NewOTLPMetricDataSender(testbed.DefaultHost, helpers.GetAvailablePort(t))
-	receiver := testbed.NewOTLPDataReceiver(helpers.GetAvailablePort(t))
+	sender := testbed.NewOTLPMetricDataSender(testbed.DefaultHost, 4317)
+	receiver := testbed.NewOTLPDataReceiver(5643)
 	resourceSpec := testbed.ResourceSpec{
 		ExpectedMaxCPU: 60,
 		ExpectedMaxRAM: 200,
@@ -43,20 +38,8 @@ func TestMetric10kDPS(t *testing.T) {
 			ItemsPerBatch:      100,
 			Parallel:           1,
 		}
-		conf := types.OTelConfig(t)
 
-		colUnderTest, err := collector.New(conf)
-		require.NoError(t, err)
-
-		agentProc := NewNginxAgentProcessCollector(WithEnvVar("GOMAXPROCS", "4"))
-
-		err = colUnderTest.Init(context.TODO(), nil)
-		require.NoError(t, err)
-
-		configStr := correctnesstests.CreateConfigYaml(t, sender, receiver, nil, nil)
-		configCleanup, prepConfigErr := agentProc.PrepareConfig(configStr)
-		require.NoError(t, prepConfigErr)
-		defer configCleanup()
+		agentProc := NewNginxAgentProcessCollector(WithEnvVar("GOMAXPROCS", "10"))
 
 		dataProvider := testbed.NewPerfTestDataProvider(options)
 		tc := testbed.NewTestCase(

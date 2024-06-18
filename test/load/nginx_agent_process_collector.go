@@ -12,7 +12,6 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"runtime"
 	"sort"
@@ -38,9 +37,6 @@ type nginxAgentProcessCollector struct {
 
 	// Descriptive name of the process
 	name string
-
-	// Config file name
-	configFileName string
 
 	// Command to execute
 	cmd *exec.Cmd
@@ -129,33 +125,34 @@ func WithEnvVar(k, v string) NginxAgentProcessOption {
 }
 
 func (cp *nginxAgentProcessCollector) PrepareConfig(configStr string) (configCleanup func(), err error) {
-	configCleanup = func() {
-		// NoOp
-	}
-	var file *os.File
-	file, err = os.CreateTemp("", "agent*.yaml")
-	if err != nil {
-		slog.Info("%s", err)
-		return configCleanup, err
-	}
+	// configCleanup = func() {
+	// 	// NoOp
+	// }
+	// var file *os.File
+	// file, err = os.CreateTemp("", "agent*.yaml")
+	// if err != nil {
+	// 	slog.Info("%s", err)
+	// 	return configCleanup, err
+	// }
 
-	defer func() {
-		errClose := file.Close()
-		if errClose != nil {
-			slog.Info("%s", errClose)
-		}
-	}()
+	// defer func() {
+	// 	errClose := file.Close()
+	// 	if errClose != nil {
+	// 		slog.Info("%s", errClose)
+	// 	}
+	// }()
 
-	if _, err = file.WriteString(configStr); err != nil {
-		slog.Info("%s", err)
-		return configCleanup, err
-	}
-	cp.configFileName = file.Name()
-	configCleanup = func() {
-		os.Remove(cp.configFileName)
-	}
+	// if _, err = file.WriteString(configStr); err != nil {
+	// 	slog.Info("%s", err)
+	// 	return configCleanup, err
+	// }
+	// cp.configFileName = file.Name()
+	// configCleanup = func() {
+	// 	os.Remove(cp.configFileName)
+	// }
 
-	return configCleanup, err
+	// return configCleanup, err
+	return func() {}, nil
 }
 
 func expandExeFileName(exeName string) string {
@@ -183,9 +180,7 @@ func expandExeFileName(exeName string) string {
 
 // Start a child process.
 //
-// cp.AgentExePath defines the executable to run. If unspecified
-// "../../bin/otelcol_{{.GOOS}}_{{.GOARCH}}" will be used.
-// {{.GOOS}} and {{.GOARCH}} will be expanded to the current OS and ARCH correspondingly.
+// cp.AgentExePath defines the executable to run. 
 //
 // Parameters:
 // name is the human readable name of the process (e.g. "Agent"), used for slogging.
@@ -219,21 +214,7 @@ func (cp *nginxAgentProcessCollector) Start(params testbed.StartParams) error {
 	slog.Info("Writing %s slog to %s", cp.name, params.LogFilePath)
 
 	// Prepare to start the process.
-	// #nosec
-	args := params.CmdArgs
-	if !containsConfig(args) {
-		if cp.configFileName == "" {
-			configFile := path.Join("testdata", "axgent-config.yaml")
-			cp.configFileName, err = filepath.Abs(configFile)
-			if err != nil {
-				return err
-			}
-		}
-		args = append(args, "--config")
-		args = append(args, cp.configFileName)
-	}
-	// #nosec
-	cp.cmd = exec.Command(exePath, args...)
+	cp.cmd = exec.Command(exePath, params.CmdArgs...)
 	cp.cmd.Env = os.Environ()
 
 	// update env deterministically
@@ -509,16 +490,6 @@ func (cp *nginxAgentProcessCollector) GetTotalConsumption() *testbed.ResourceCon
 	}
 
 	return rc
-}
-
-func containsConfig(s []string) bool {
-	for _, a := range s {
-		if a == "--config" {
-			return true
-		}
-	}
-
-	return false
 }
 
 // Copied from cpu.TimesStat.Total(), since that func is deprecated.

@@ -110,7 +110,7 @@ no-local-changes:
 
 build: ## Build agent executable
 	mkdir -p $(BUILD_DIR)
-	@$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -pgo=default.pgo -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
+	@GOARCH=$(OSARCH) $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -pgo=default.pgo -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
 	@echo "📦 Build Done"
 
 lint: ## Run linter
