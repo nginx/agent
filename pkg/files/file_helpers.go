@@ -38,7 +38,7 @@ func GetFileMeta(filePath string) (*mpi.FileMeta, error) {
 		Name:         filePath,
 		Hash:         hash,
 		ModifiedTime: timestamppb.New(fileInfo.ModTime()),
-		Permissions:  fileInfo.Mode().Perm().String(),
+		Permissions:  "0777",
 		Size:         fileInfo.Size(),
 	}, nil
 }
