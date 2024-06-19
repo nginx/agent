@@ -20,9 +20,9 @@ func TestMetric10kDPS(t *testing.T) {
 	performanceResultsSummary := &testbed.PerformanceResults{}
 	binary := helpers.Env(t, "PACKAGE_NAME")
 	if binary == "" {
-		binary = "nginx-agent"
+		binary = "../../build/nginx-agent"
 	}
-	otelTestBedCollector, err := filepath.Abs(fmt.Sprintf("../../build/%s", binary))
+	otelTestBedCollector, err := filepath.Abs(binary)
 	require.NoError(t, err)
 
 	testbed.GlobalConfig.DefaultAgentExeRelativeFile = otelTestBedCollector
