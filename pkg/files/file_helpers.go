@@ -11,7 +11,6 @@ import (
 	"cmp"
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
 	"slices"
 	"strconv"
@@ -77,7 +76,7 @@ func GenerateHash(b []byte) string {
 	return uuid.NewMD5(uuid.Nil, b).String()
 }
 
-// GenerateHashWithReadFile reads file generates hash and returns the content of the file, hash
+// GenerateHashWithReadFile returns the content of a file and the hash of that file.
 func GenerateHashWithReadFile(filePath string) ([]byte, string, error) {
 	f, openErr := os.Open(filePath)
 	if openErr != nil {
@@ -95,10 +94,9 @@ func GenerateHashWithReadFile(filePath string) ([]byte, string, error) {
 	return content.Bytes(), hash, nil
 }
 
-// cyclomatic complexity for function CompareFileHash is 11, max is 10 not sure how to reduce
-// nolint: revive,cyclop
 // CompareFileHash compares files from the FileOverview to files on disk and returns a map with the files that have
 // changed and a map with the contents of those files. Key to both maps is file path
+// nolint: revive,cyclop
 func CompareFileHash(fileOverview *mpi.FileOverview) (fileDiff map[string]*mpi.File,
 	fileContents map[string][]byte, err error,
 ) {
@@ -110,7 +108,7 @@ func CompareFileHash(fileOverview *mpi.FileOverview) (fileDiff map[string]*mpi.F
 		switch file.GetAction() {
 		case mpi.File_FILE_ACTION_DELETE:
 			if _, err = os.Stat(fileName); os.IsNotExist(err) {
-				// File is already deleted skip
+				// File is already deleted, skip
 				continue
 			}
 			fileContent, _, readErr := GenerateHashWithReadFile(fileName)
@@ -123,7 +121,7 @@ func CompareFileHash(fileOverview *mpi.FileOverview) (fileDiff map[string]*mpi.F
 			continue
 		case mpi.File_FILE_ACTION_ADD:
 			if _, err = os.Stat(fileName); os.IsNotExist(err) {
-				// file is new nothing to compare
+				// file is new, nothing to compare
 				fileDiff[fileName] = file
 				continue
 			}
@@ -138,18 +136,15 @@ func CompareFileHash(fileOverview *mpi.FileOverview) (fileDiff map[string]*mpi.F
 				return nil, nil, fmt.Errorf("error generating hash for file %s, error: %w", fileName, fileHashErr)
 			}
 
-			slog.Info("Action", "", file.GetAction())
-			slog.Info("fileHash", "", fileHash)
-			slog.Info("fileHash", "", file.GetFileMeta().GetHash())
 			if fileHash == file.GetFileMeta().GetHash() {
-				// file is same as on disk skip
+				// file is same as on disk, skip
 				continue
 			}
 
 			fileContents[fileName] = fileContent
 			fileDiff[fileName] = file
 		case mpi.File_FILE_ACTION_UNSPECIFIED, mpi.File_FILE_ACTION_UNCHANGED:
-			// FileAction is UNSPECIFIED or UNCHANGED skipping, treat UNSPECIFIED as if it is UNCHANGED
+			// FileAction is UNSPECIFIED or UNCHANGED skipping. Treat UNSPECIFIED as if it is UNCHANGED.
 			fallthrough
 		default:
 			continue

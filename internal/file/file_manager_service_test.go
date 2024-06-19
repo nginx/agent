@@ -7,8 +7,8 @@ package file
 
 import (
 	"context"
-	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/nginx/agent/v3/pkg/files"
@@ -66,7 +66,7 @@ func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	tempDir := t.TempDir()
 	addAction := mpi.File_FILE_ACTION_ADD
 
-	filePath := fmt.Sprintf("%s/nginx.conf", tempDir)
+	filePath := filepath.Join(tempDir, "nginx.conf")
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 	fileHash := files.GenerateHash(fileContent)
 	defer helpers.RemoveFileWithErrorCheck(t, filePath)

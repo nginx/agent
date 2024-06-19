@@ -7,8 +7,8 @@ package file
 
 import (
 	"context"
-	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -21,7 +21,7 @@ func TestFileOperator_Write(t *testing.T) {
 	ctx := context.Background()
 
 	tempDir := t.TempDir()
-	filePath := fmt.Sprintf("%s/nginx.conf", tempDir)
+	filePath := filepath.Join(tempDir, "nginx.conf")
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 	fileOp := NewFileOperator()
 	fileMeta := &mpi.FileMeta{

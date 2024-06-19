@@ -50,8 +50,6 @@ func TestFilePlugin_Subscriptions(t *testing.T) {
 			bus.NginxConfigUpdateTopic,
 			bus.ConfigUploadRequestTopic,
 			bus.ConfigApplyRequestTopic,
-			bus.ConfigApplySuccessfulRequestTopic,
-			bus.ConfigApplyFailedRequestTopic,
 		},
 		filePlugin.Subscriptions(),
 	)

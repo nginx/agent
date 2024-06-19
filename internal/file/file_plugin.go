@@ -63,12 +63,6 @@ func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 		fp.handleConfigUploadRequest(ctx, msg)
 	case bus.ConfigApplyRequestTopic:
 		fp.handleConfigApplyRequest(ctx, msg)
-	case bus.ConfigApplyFailedRequestTopic:
-		// rollback files
-		fallthrough
-	case bus.ConfigApplySuccessfulRequestTopic:
-		// clear caches from file manager service
-		fallthrough
 	default:
 		slog.DebugContext(ctx, "File plugin unknown topic", "topic", msg.Topic)
 	}
@@ -79,8 +73,6 @@ func (fp *FilePlugin) Subscriptions() []string {
 		bus.NginxConfigUpdateTopic,
 		bus.ConfigUploadRequestTopic,
 		bus.ConfigApplyRequestTopic,
-		bus.ConfigApplySuccessfulRequestTopic,
-		bus.ConfigApplyFailedRequestTopic,
 	}
 }
 

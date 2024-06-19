@@ -37,7 +37,7 @@ type FileManagerService struct {
 	fileServiceClient mpi.FileServiceClient
 	agentConfig       *config.Config
 	fileOperator      fileOperator
-	filesCache        map[string]*mpi.File // key is filePath
+	filesCache        map[string]*mpi.File // key is file path
 	fileContentsCache map[string][]byte    // key is file path
 }
 
@@ -230,27 +230,25 @@ func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) e
 		return writeErr
 	}
 
-	ok, err := fms.compareHash(file.GetFileMeta().GetName())
-	if !ok || err != nil {
+	err := fms.compareHash(file.GetFileMeta().GetName())
+	if err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (fms *FileManagerService) compareHash(filePath string) (bool, error) {
+func (fms *FileManagerService) compareHash(filePath string) error {
 	_, fileHash, err := files.GenerateHashWithReadFile(filePath)
 	if err != nil {
-		return false, err
+		return err
 	}
-	slog.Info("hash", "", fileHash)
-	slog.Info("hash", "", fms.filesCache[filePath].GetFileMeta().GetHash())
 
 	if fileHash != fms.filesCache[filePath].GetFileMeta().GetHash() {
-		return false, fmt.Errorf("error writing file, file hash does not match for file %s", filePath)
+		return fmt.Errorf("error writing file, file hash does not match for file %s", filePath)
 	}
 
-	return true, nil
+	return nil
 }
 
 func (fms *FileManagerService) checkAllowedDirectory(checkFiles []*mpi.File) error {
