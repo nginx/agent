@@ -30,8 +30,7 @@ import (
 // nginxAgentProcessCollector implements the OtelcolRunner interface as a child process on the same machine executing
 // the test. The process can be monitored and the output of which will be written to a slog file.
 type nginxAgentProcessCollector struct {
-	// Path to agent executable. If unset the default executable in
-	// bin/otelcol_{{.GOOS}}_{{.GOARCH}} will be used.
+	// Path to agent executable.
 	// Can be set for example to use the unstable executable for a specific test.
 	agentExePath string
 
@@ -98,7 +97,8 @@ const (
 	processTimeMultiplier        = 100.0
 )
 
-// NewNginxAgentProcessCollector creates a new OtelcolRunner as a child process on the same machine executing the test.
+// NewNginxAgentProcessCollector creates a new NginxAgentProcessCollector
+// as a child process on the same machine executing the test.
 // nolint: ireturn
 func NewNginxAgentProcessCollector(options ...NginxAgentProcessOption) testbed.OtelcolRunner {
 	col := &nginxAgentProcessCollector{additionalEnv: make(map[string]string)}
@@ -110,13 +110,6 @@ func NewNginxAgentProcessCollector(options ...NginxAgentProcessOption) testbed.O
 	return col
 }
 
-// WithAgentExePath sets the path of the Collector executable
-func WithAgentExePath(exePath string) NginxAgentProcessOption {
-	return func(cpc *nginxAgentProcessCollector) {
-		cpc.agentExePath = exePath
-	}
-}
-
 // WithEnvVar sets an additional environment variable for the process
 func WithEnvVar(k, v string) NginxAgentProcessOption {
 	return func(cpc *nginxAgentProcessCollector) {
@@ -125,33 +118,6 @@ func WithEnvVar(k, v string) NginxAgentProcessOption {
 }
 
 func (cp *nginxAgentProcessCollector) PrepareConfig(configStr string) (configCleanup func(), err error) {
-	// configCleanup = func() {
-	// 	// NoOp
-	// }
-	// var file *os.File
-	// file, err = os.CreateTemp("", "agent*.yaml")
-	// if err != nil {
-	// 	slog.Info("%s", err)
-	// 	return configCleanup, err
-	// }
-
-	// defer func() {
-	// 	errClose := file.Close()
-	// 	if errClose != nil {
-	// 		slog.Info("%s", errClose)
-	// 	}
-	// }()
-
-	// if _, err = file.WriteString(configStr); err != nil {
-	// 	slog.Info("%s", err)
-	// 	return configCleanup, err
-	// }
-	// cp.configFileName = file.Name()
-	// configCleanup = func() {
-	// 	os.Remove(cp.configFileName)
-	// }
-
-	// return configCleanup, err
 	return func() {}, nil
 }
 
@@ -180,10 +146,10 @@ func expandExeFileName(exeName string) string {
 
 // Start a child process.
 //
-// cp.AgentExePath defines the executable to run. 
+// cp.AgentExePath defines the executable to run.
 //
 // Parameters:
-// name is the human readable name of the process (e.g. "Agent"), used for slogging.
+// name is the human-readable name of the process (e.g. "Agent"), used for slogging.
 // slogFilePath is the file path to write the standard output and standard error of
 // the process to.
 // cmdArgs is the command line arguments to pass to the process.
@@ -257,9 +223,7 @@ func (cp *nginxAgentProcessCollector) Stop() (stopped bool, err error) {
 		close(cp.doneSignal)
 
 		// Gracefully signal process to stop.
-		if err = cp.cmd.Process.Signal(syscall.SIGTERM); err != nil {
-			slog.Info("Cannot send SIGTEM: error", slog.String("error", err.Error()))
-		}
+		cp.stopProcessGracefully()
 
 		finished := make(chan struct{})
 
@@ -281,25 +245,40 @@ func (cp *nginxAgentProcessCollector) Stop() (stopped bool, err error) {
 		}()
 
 		// Wait for process to terminate
-		err = cp.cmd.Wait()
-
 		// Let goroutine know process is finished.
-		close(finished)
-
 		// Set resource consumption stats to 0
-		cp.ramMiBCur.Store(0)
-		cp.cpuPercentX1000Cur.Store(0)
-
-		slog.Info("%s process stopped, exit code=%d", cp.name, cp.cmd.ProcessState.ExitCode())
-
-		if err != nil {
-			slog.Info("%s execution failed: %s", cp.name, err.Error())
-		}
+		err = cp.waitAndTidy(finished)
 	})
 
 	return true, err
 }
 
+func (cp *nginxAgentProcessCollector) waitAndTidy(finished chan struct{}) error {
+	err := cp.cmd.Wait()
+
+	close(finished)
+
+	cp.ramMiBCur.Store(0)
+	cp.cpuPercentX1000Cur.Store(0)
+
+	slog.Info("%s process stopped, exit code=%d", cp.name, cp.cmd.ProcessState.ExitCode())
+
+	if err != nil {
+		slog.Info("%s execution failed: %s", cp.name, err.Error())
+	}
+
+	return err
+}
+
+func (cp *nginxAgentProcessCollector) stopProcessGracefully() {
+	if err := cp.cmd.Process.Signal(syscall.SIGTERM); err != nil {
+		slog.Info("Cannot send SIGTEM: error", slog.String("error", err.Error()))
+	}
+}
+
+// nolint: lll,gocognit,revive,cyclop
+// Want to leave the same as
+// https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/a29aa423036ff5f05f85fddcb380798b48120b91/testbed/testbed/child_process_collector.go#L310
 func (cp *nginxAgentProcessCollector) WatchResourceConsumption() error {
 	if cp.resourceSpec != nil && (cp.resourceSpec.ExpectedMaxCPU != 0 || cp.resourceSpec.ExpectedMaxRAM != 0) {
 		return nil
@@ -355,7 +334,7 @@ func (cp *nginxAgentProcessCollector) WatchResourceConsumption() error {
 					slog.Info("Failed to stop child process: %v", errStop)
 				}
 
-				return err
+				return allowUsageErr
 			}
 
 		case <-cp.doneSignal:

@@ -25,10 +25,6 @@ func TestMetric10kDPS(t *testing.T) {
 	name := "OTLP"
 	sender := testbed.NewOTLPMetricDataSender(testbed.DefaultHost, 4317)
 	receiver := testbed.NewOTLPDataReceiver(5643)
-	resourceSpec := testbed.ResourceSpec{
-		ExpectedMaxCPU: 60,
-		ExpectedMaxRAM: 200,
-	}
 
 	t.Run(name, func(t *testing.T) {
 		require.NoError(t, err)
@@ -50,7 +46,11 @@ func TestMetric10kDPS(t *testing.T) {
 			agentProc,
 			&testbed.PerfTestValidator{},
 			performanceResultsSummary,
-			testbed.WithResourceLimits(resourceSpec),
+			testbed.WithResourceLimits(
+				testbed.ResourceSpec{
+					ExpectedMaxCPU: 20,
+					ExpectedMaxRAM: 200,
+				}),
 		)
 
 		t.Cleanup(tc.Stop)
@@ -74,5 +74,5 @@ func TestMetric10kDPS(t *testing.T) {
 		tc.ValidateData()
 	})
 
-	testbed.SaveResults(performanceResultsSummary)
+	defer testbed.SaveResults(performanceResultsSummary)
 }

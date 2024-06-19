@@ -169,19 +169,19 @@ dev: ## Run agent executable
 	$(GORUN) $(PROJECT_DIR)/$(PROJECT_FILE)
 
 race-condition-dev: ## Run agent executable with race condition detection
-	@echo "🚀 Running app with race condition detection enabled"
+	@echo "🏎️ Running app with race condition detection enabled"
 	$(GORUN) -race $(PROJECT_DIR)/$(PROJECT_FILE)
 
 run-mock-management-grpc-server: ## Run mock management plane gRPC server
-	@echo "🚀 Running mock management plane gRPC server"
+	@echo "🖲️ Running mock management plane gRPC server"
 	$(GORUN) test/mock/grpc/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY) -logLevel=$(MOCK_MANAGEMENT_PLANE_LOG_LEVEL) -grpcAddress=$(MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS) -apiAddress=$(MOCK_MANAGEMENT_PLANE_API_ADDRESS)
 
 generate: ## Generate proto files and server and client stubs from OpenAPI specifications
-	@echo "Generating proto files"
+	@echo "🗄️ Generating proto files"
 	@cd api/grpc && $(GORUN) $(BUF) generate
 
 generate-mocks: ## Regenerate all needed mocks, in order to add new mocks generation add //go:generate to file from witch mocks should be generated
-	@echo "Generating mocks"
+	@echo "🗃️ Generating mocks"
 	@$(GOGEN) ./...
 
 local-apk-package: ## Create local apk package
@@ -196,7 +196,7 @@ local-rpm-package: ## Create local rpm package
 	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -pgo=default.pgo -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
 	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager rpm --target $(RPM_PACKAGE);
 
-generate-pgo-profile: build-mock-management-plane-grpc
+generate-pgo-profile: build-mock-management-plane-grpc ## Generate pgo profile to optimize calls for binary build
 	mv default.pgo profile.pprof
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) \
@@ -206,3 +206,12 @@ generate-pgo-profile: build-mock-management-plane-grpc
 	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 5m -bench=. -benchmem -run=^# ./internal/watcher -cpuprofile perf_watcher_cpu.pprof
 	@$(GOTOOL) pprof -proto perf_config_cpu.pprof perf_watcher_cpu.pprof integration_cpu.pprof > default.pgo
 	rm perf_config_cpu.pprof perf_watcher_cpu.pprof config.test integration_cpu.pprof integration.test profile.pprof
+
+# run under sudo locally
+load-test: clean build ## Perform load testing
+	@echo "🚚 Running load tests"
+	@cp ./test/config/agent/nginx-agent-otel-load.conf ./test/load/nginx-agent.conf
+	$(GOTEST) -timeout 30s -run ^TestMetric10kDPS$$ github.com/nginx/agent/v3/test/load
+	@mv test/load/results $(BUILD_DIR)
+	@mv test/load/benchmarks.json $(BUILD_DIR)/results
+	@rm test/load/nginx-agent.conf
