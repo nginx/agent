@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"sort"
 	"testing"
 	"time"
 
@@ -300,6 +301,9 @@ func verifyUpdateDataPlaneStatus(t *testing.T) {
 	assert.NotEmpty(t, messageMeta.GetTimestamp())
 
 	instances := updateDataPlaneStatusRequest.GetResource().GetInstances()
+	sort.Slice(instances, func(i, j int) bool {
+		return instances[i].GetInstanceMeta().GetInstanceType() < instances[j].GetInstanceMeta().GetInstanceType()
+	})
 	assert.Len(t, instances, 2)
 
 	// Verify agent instance metadata
