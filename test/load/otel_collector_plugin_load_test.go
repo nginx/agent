@@ -6,9 +6,11 @@
 package load
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 
+	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/stretchr/testify/require"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/testbed/testbed"
@@ -16,8 +18,11 @@ import (
 
 func TestMetric10kDPS(t *testing.T) {
 	performanceResultsSummary := &testbed.PerformanceResults{}
-
-	otelTestBedCollector, err := filepath.Abs("../../build/nginx-agent")
+	binary := helpers.Env(t, "PACKAGE_NAME")
+	if binary == "" {
+		binary = "nginx-agent"
+	}
+	otelTestBedCollector, err := filepath.Abs(fmt.Sprintf("../../build/%s", binary))
 	require.NoError(t, err)
 
 	testbed.GlobalConfig.DefaultAgentExeRelativeFile = otelTestBedCollector

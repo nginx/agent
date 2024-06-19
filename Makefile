@@ -208,10 +208,10 @@ generate-pgo-profile: build-mock-management-plane-grpc ## Generate pgo profile t
 	rm perf_config_cpu.pprof perf_watcher_cpu.pprof config.test integration_cpu.pprof integration.test profile.pprof
 
 # run under sudo locally
-load-test: clean build ## Perform load testing
+load-test: ## Perform load testing
 	@echo "🚚 Running load tests"
 	@cp ./test/config/agent/nginx-agent-otel-load.conf ./test/load/nginx-agent.conf
-	$(GOTEST) -timeout 30s -run ^TestMetric10kDPS$$ github.com/nginx/agent/v3/test/load
+	PACKAGE_NAME=$(SELECTED_PACKAGE) $(GOTEST) -timeout 30s -run ^TestMetric10kDPS$$ github.com/nginx/agent/v3/test/load
 	@mv test/load/results $(BUILD_DIR)
 	@mv test/load/benchmarks.json $(BUILD_DIR)/results
 	@rm test/load/nginx-agent.conf
