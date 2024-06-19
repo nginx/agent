@@ -8,6 +8,7 @@ package load
 import (
 	"fmt"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/nginx/agent/v3/test/helpers"
@@ -27,7 +28,7 @@ func TestMetric10kDPS(t *testing.T) {
 
 	testbed.GlobalConfig.DefaultAgentExeRelativeFile = otelTestBedCollector
 
-	name := "OTLP"
+	name := fmt.Sprintf("OTLP-%s-%s", runtime.GOOS, "ubuntu")
 	sender := testbed.NewOTLPMetricDataSender(testbed.DefaultHost, 4317)
 	receiver := testbed.NewOTLPDataReceiver(5643)
 

@@ -159,6 +159,15 @@ jobs:
     name: Load Tests
     runs-on: ubuntu-22.04
     needs: build-unsigned-snapshot
+    strategy:
+      matrix:
+        container:
+        - image: "ubuntu"
+          version: "22.04"
+        # - image: "redhatenterprise"
+        #   version: "9"
+        # - image: "alpine"
+        #   version: "3.19"
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
