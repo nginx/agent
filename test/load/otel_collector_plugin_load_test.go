@@ -73,4 +73,6 @@ func TestMetric10kDPS(t *testing.T) {
 
 		tc.ValidateData()
 	})
+
+	testbed.SaveResults(performanceResultsSummary)
 }
