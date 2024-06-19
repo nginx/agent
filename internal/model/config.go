@@ -20,6 +20,11 @@ type NginxConfigContext struct {
 	InstanceID string
 }
 
+type ConfigApply struct {
+	CorrelationID string
+	InstanceID    string
+}
+
 type AccessLog struct {
 	Name        string
 	Format      string

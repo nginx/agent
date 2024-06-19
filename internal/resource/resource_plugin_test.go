@@ -9,6 +9,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/nginx/agent/v3/test/types"
+
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/resource/resourcefakes"
@@ -90,7 +92,7 @@ func TestResource_Process(t *testing.T) {
 			fakeResourceService.DeleteInstancesReturns(test.resource)
 			messagePipe := bus.NewFakeMessagePipe()
 
-			resourcePlugin := NewResource()
+			resourcePlugin := NewResource(types.AgentConfig())
 			resourcePlugin.resourceService = fakeResourceService
 
 			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
@@ -107,18 +109,19 @@ func TestResource_Process(t *testing.T) {
 }
 
 func TestResource_Subscriptions(t *testing.T) {
-	resourcePlugin := NewResource()
+	resourcePlugin := NewResource(types.AgentConfig())
 	assert.Equal(t,
 		[]string{
 			bus.AddInstancesTopic,
 			bus.UpdatedInstancesTopic,
 			bus.DeletedInstancesTopic,
+			bus.WriteConfigSuccessfulTopic,
 		},
 		resourcePlugin.Subscriptions())
 }
 
 func TestResource_Info(t *testing.T) {
-	resourcePlugin := NewResource()
+	resourcePlugin := NewResource(types.AgentConfig())
 	assert.Equal(t, &bus.Info{Name: "resource"}, resourcePlugin.Info())
 }
 
@@ -129,7 +132,7 @@ func TestResource_Init(t *testing.T) {
 	messagePipe := bus.NewFakeMessagePipe()
 	messagePipe.RunWithoutInit(ctx)
 
-	resourcePlugin := NewResource()
+	resourcePlugin := NewResource(types.AgentConfig())
 	resourcePlugin.resourceService = &resourceService
 	err := resourcePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)

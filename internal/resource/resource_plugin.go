@@ -7,29 +7,42 @@ package resource
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/google/uuid"
+	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/model"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 
 	"github.com/nginx/agent/v3/internal/bus"
 )
 
+// The resource plugin listens for a writeConfigSuccessfulTopic from the file plugin after the config apply
+// files have been written. The resource plugin then, validates the config, reloads the instance and monitors the logs.
+// This is done in the resource plugin to make the file plugin usable for every type of instance.
+
 type Resource struct {
 	messagePipe     bus.MessagePipeInterface
 	resourceService resourceServiceInterface
+	agentConfig     *config.Config
 }
 
 var _ bus.Plugin = (*Resource)(nil)
 
-func NewResource() *Resource {
-	return &Resource{}
+func NewResource(agentConfig *config.Config) *Resource {
+	return &Resource{
+		agentConfig: agentConfig,
+	}
 }
 
 func (r *Resource) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
 	slog.DebugContext(ctx, "Starting resource plugin")
 
 	r.messagePipe = messagePipe
-	r.resourceService = NewResourceService(ctx)
+	r.resourceService = NewResourceService(ctx, r.agentConfig)
 
 	return nil
 }
@@ -45,12 +58,13 @@ func (*Resource) Info() *bus.Info {
 	}
 }
 
+// nolint: revive, cyclop
 func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
 	case bus.AddInstancesTopic:
-		instanceList, ok := msg.Data.([]*v1.Instance)
+		instanceList, ok := msg.Data.([]*mpi.Instance)
 		if !ok {
-			slog.ErrorContext(ctx, "Unable to cast message payload to []*v1.Instance", "payload", msg.Data)
+			slog.ErrorContext(ctx, "Unable to cast message payload to []*mpi.Instance", "payload", msg.Data)
 		}
 
 		resource := r.resourceService.AddInstances(instanceList)
@@ -59,9 +73,9 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 
 		return
 	case bus.UpdatedInstancesTopic:
-		instanceList, ok := msg.Data.([]*v1.Instance)
+		instanceList, ok := msg.Data.([]*mpi.Instance)
 		if !ok {
-			slog.ErrorContext(ctx, "Unable to cast message payload to []*v1.Instance", "payload", msg.Data)
+			slog.ErrorContext(ctx, "Unable to cast message payload to []*mpi.Instance", "payload", msg.Data)
 		}
 		resource := r.resourceService.UpdateInstances(instanceList)
 
@@ -70,15 +84,51 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 		return
 
 	case bus.DeletedInstancesTopic:
-		instanceList, ok := msg.Data.([]*v1.Instance)
+		instanceList, ok := msg.Data.([]*mpi.Instance)
 		if !ok {
-			slog.ErrorContext(ctx, "Unable to cast message payload to []*v1.Instance", "payload", msg.Data)
+			slog.ErrorContext(ctx, "Unable to cast message payload to []*mpi.Instance", "payload", msg.Data)
 		}
 		resource := r.resourceService.DeleteInstances(instanceList)
 
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: resource})
 
 		return
+	case bus.WriteConfigSuccessfulTopic:
+		data, ok := msg.Data.(model.ConfigApply)
+		if !ok {
+			slog.ErrorContext(ctx, "Unable to cast message payload to instanceID string", "payload", msg.Data)
+		}
+		err := r.resourceService.Apply(ctx, data.InstanceID)
+		if err != nil {
+			response := &mpi.DataPlaneResponse{
+				MessageMeta: &mpi.MessageMeta{
+					MessageId:     uuid.NewString(),
+					CorrelationId: data.CorrelationID,
+					Timestamp:     timestamppb.Now(),
+				},
+				CommandResponse: &mpi.CommandResponse{
+					Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+					Message: fmt.Sprintf("Config apply failed for instanceId: %s", data.CorrelationID),
+					Error:   err.Error(),
+				},
+			}
+			r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyFailedRequestTopic, Data: response})
+
+			return
+		}
+		response := &mpi.DataPlaneResponse{
+			MessageMeta: &mpi.MessageMeta{
+				MessageId:     uuid.NewString(),
+				CorrelationId: data.CorrelationID,
+				Timestamp:     timestamppb.Now(),
+			},
+			CommandResponse: &mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+				Message: fmt.Sprintf("Successful config apply for instanceId: %s", data.CorrelationID),
+			},
+		}
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplySuccessfulRequestTopic, Data: response})
+
 	default:
 		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)
 	}
@@ -89,5 +139,6 @@ func (*Resource) Subscriptions() []string {
 		bus.AddInstancesTopic,
 		bus.UpdatedInstancesTopic,
 		bus.DeletedInstancesTopic,
+		bus.WriteConfigSuccessfulTopic,
 	}
 }

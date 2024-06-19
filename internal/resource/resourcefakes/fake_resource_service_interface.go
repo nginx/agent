@@ -2,6 +2,7 @@
 package resourcefakes
 
 import (
+	"context"
 	"sync"
 
 	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -18,6 +19,18 @@ type FakeResourceServiceInterface struct {
 	}
 	addInstancesReturnsOnCall map[int]struct {
 		result1 *v1.Resource
+	}
+	ApplyStub        func(context.Context, string) error
+	applyMutex       sync.RWMutex
+	applyArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+	}
+	applyReturns struct {
+		result1 error
+	}
+	applyReturnsOnCall map[int]struct {
+		result1 error
 	}
 	DeleteInstancesStub        func([]*v1.Instance) *v1.Resource
 	deleteInstancesMutex       sync.RWMutex
@@ -108,6 +121,68 @@ func (fake *FakeResourceServiceInterface) AddInstancesReturnsOnCall(i int, resul
 	}
 	fake.addInstancesReturnsOnCall[i] = struct {
 		result1 *v1.Resource
+	}{result1}
+}
+
+func (fake *FakeResourceServiceInterface) Apply(arg1 context.Context, arg2 string) error {
+	fake.applyMutex.Lock()
+	ret, specificReturn := fake.applyReturnsOnCall[len(fake.applyArgsForCall)]
+	fake.applyArgsForCall = append(fake.applyArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+	}{arg1, arg2})
+	stub := fake.ApplyStub
+	fakeReturns := fake.applyReturns
+	fake.recordInvocation("Apply", []interface{}{arg1, arg2})
+	fake.applyMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeResourceServiceInterface) ApplyCallCount() int {
+	fake.applyMutex.RLock()
+	defer fake.applyMutex.RUnlock()
+	return len(fake.applyArgsForCall)
+}
+
+func (fake *FakeResourceServiceInterface) ApplyCalls(stub func(context.Context, string) error) {
+	fake.applyMutex.Lock()
+	defer fake.applyMutex.Unlock()
+	fake.ApplyStub = stub
+}
+
+func (fake *FakeResourceServiceInterface) ApplyArgsForCall(i int) (context.Context, string) {
+	fake.applyMutex.RLock()
+	defer fake.applyMutex.RUnlock()
+	argsForCall := fake.applyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeResourceServiceInterface) ApplyReturns(result1 error) {
+	fake.applyMutex.Lock()
+	defer fake.applyMutex.Unlock()
+	fake.ApplyStub = nil
+	fake.applyReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeResourceServiceInterface) ApplyReturnsOnCall(i int, result1 error) {
+	fake.applyMutex.Lock()
+	defer fake.applyMutex.Unlock()
+	fake.ApplyStub = nil
+	if fake.applyReturnsOnCall == nil {
+		fake.applyReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.applyReturnsOnCall[i] = struct {
+		result1 error
 	}{result1}
 }
 
@@ -248,6 +323,8 @@ func (fake *FakeResourceServiceInterface) Invocations() map[string][][]interface
 	defer fake.invocationsMutex.RUnlock()
 	fake.addInstancesMutex.RLock()
 	defer fake.addInstancesMutex.RUnlock()
+	fake.applyMutex.RLock()
+	defer fake.applyMutex.RUnlock()
 	fake.deleteInstancesMutex.RLock()
 	defer fake.deleteInstancesMutex.RUnlock()
 	fake.updateInstancesMutex.RLock()

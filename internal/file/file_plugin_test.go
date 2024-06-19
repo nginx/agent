@@ -163,21 +163,20 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 
 			messages := messagePipe.GetMessages()
 			assert.Len(t, messages, 1)
-			assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
-
-			dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
-			assert.True(t, ok)
 			if test.getFileReturns == nil {
-				assert.Equal(
-					t,
-					mpi.CommandResponse_COMMAND_STATUS_OK,
-					dataPlaneResponse.GetCommandResponse().GetStatus(),
-				)
+				assert.Equal(t, bus.WriteConfigSuccessfulTopic, messages[0].Topic)
+
+				_, ok := messages[0].Data.(model.ConfigApply)
+				assert.True(t, ok)
 				helpers.RemoveFileWithErrorCheck(t, filePath)
 			} else {
+				assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
+
+				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
+				assert.True(t, ok)
 				assert.Equal(
 					t,
-					mpi.CommandResponse_COMMAND_STATUS_ERROR,
+					mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 					dataPlaneResponse.GetCommandResponse().GetStatus(),
 				)
 			}

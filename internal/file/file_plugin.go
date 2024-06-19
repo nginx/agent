@@ -22,6 +22,9 @@ import (
 
 var _ bus.Plugin = (*FilePlugin)(nil)
 
+// The file plugin only writes, deletes and checks hashes of files
+// the file plugin does not care about the instance type
+
 type FilePlugin struct {
 	messagePipe        bus.MessagePipeInterface
 	config             *config.Config
@@ -126,27 +129,21 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 				Timestamp:     timestamppb.Now(),
 			},
 			CommandResponse: &mpi.CommandResponse{
-				Status: mpi.CommandResponse_COMMAND_STATUS_ERROR,
+				Status: mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 				Message: fmt.Sprintf("Config apply failed for instanceId: %s", configApplyRequest.
 					GetConfigVersion().GetInstanceId()),
 				Error: err.Error(),
 			},
 		}
+		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
 	} else {
-		response = &mpi.DataPlaneResponse{
-			MessageMeta: &mpi.MessageMeta{
-				MessageId:     uuid.NewString(),
-				CorrelationId: correlationID,
-				Timestamp:     timestamppb.Now(),
-			},
-			CommandResponse: &mpi.CommandResponse{
-				Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
-				Message: "Successfully applied config",
-			},
+		// Send WriteConfigSuccessfulTopic with Correlation and Instance ID for use by resource plugin
+		data := model.ConfigApply{
+			CorrelationID: correlationID,
+			InstanceID:    configApplyRequest.GetConfigVersion().GetInstanceId(),
 		}
+		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.WriteConfigSuccessfulTopic, Data: data})
 	}
-
-	fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
 }
 
 func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Message) {

@@ -9,6 +9,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/nginx/agent/v3/test/types"
+
 	"github.com/nginx/agent/v3/internal/datasource/host/hostfakes"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -50,7 +52,7 @@ func TestResourceService_AddInstance(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			resourceService := NewResourceService(ctx)
+			resourceService := NewResourceService(ctx, types.AgentConfig())
 			resource := resourceService.AddInstances(test.instanceList)
 			assert.Equal(tt, test.resource.GetInstances(), resource.GetInstances())
 		})
@@ -93,7 +95,7 @@ func TestResourceService_UpdateInstance(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			resourceService := NewResourceService(ctx)
+			resourceService := NewResourceService(ctx, types.AgentConfig())
 			resourceService.resource.Instances = []*v1.Instance{protos.GetNginxOssInstance([]string{})}
 			resource := resourceService.UpdateInstances(test.instanceList)
 			assert.Equal(tt, test.resource.GetInstances(), resource.GetInstances())
@@ -127,7 +129,7 @@ func TestResourceService_DeleteInstance(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			resourceService := NewResourceService(ctx)
+			resourceService := NewResourceService(ctx, types.AgentConfig())
 			resourceService.resource.Instances = []*v1.Instance{
 				protos.GetNginxOssInstance([]string{}),
 				protos.GetNginxPlusInstance([]string{}),
@@ -172,7 +174,7 @@ func TestResourceService_GetResource(t *testing.T) {
 
 		mockInfo.IsContainerReturns(tc.isContainer)
 
-		resourceService := NewResourceService(ctx)
+		resourceService := NewResourceService(ctx, types.AgentConfig())
 		resourceService.info = mockInfo
 		resourceService.resource = tc.expectedResource
 
