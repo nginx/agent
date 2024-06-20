@@ -28,7 +28,7 @@ func TestMetric10kDPS(t *testing.T) {
 
 	testbed.GlobalConfig.DefaultAgentExeRelativeFile = otelTestBedCollector
 
-	name := fmt.Sprintf("OTLP-%s-%s", runtime.GOOS, "ubuntu")
+	name := fmt.Sprintf("OTLP-%s-%s", runtime.GOOS, binary)
 	sender := testbed.NewOTLPMetricDataSender(testbed.DefaultHost, 4317)
 	receiver := testbed.NewOTLPDataReceiver(5643)
 

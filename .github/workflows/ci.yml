@@ -164,10 +164,10 @@ jobs:
         container:
         - image: "ubuntu"
           version: "22.04"
-        # - image: "redhatenterprise"
-        #   version: "9"
-        # - image: "alpine"
-        #   version: "3.19"
+        - image: "redhatenterprise"
+          version: "9"
+        - image: "alpine"
+          version: "3.19"
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
@@ -187,3 +187,18 @@ jobs:
           name: load-test-results-raw
           path: build/results
           retention-days: 1
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@4de1bed97a47495fc4c5404952da0499e31f5c29 # v1.20.3
+        with:
+          name: Compare Benchmark Results
+          tool: 'go'
+          output-file-path: ./build/test/benchmarks.json
+          benchmark-data-dir-path: ""
+          # Set auto-push to false since GitHub API token is not given
+          auto-push: false
+          alert-threshold: '125%'
+          gh-pages-branch: "benchmark-results"
+          fail-on-alert: true
+      - name: Push benchmark result
+        if:  ${{ success() && github.ref_name == 'v3'}}
+        run: git push 'https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/nginx/agent.git' benchmark-results:benchmark-results
