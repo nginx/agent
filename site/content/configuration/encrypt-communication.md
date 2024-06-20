@@ -110,7 +110,7 @@ tls:
 
 To enable insecure mode, you simply need to set `tls:enable` to `false`. Setting this value to `false` can be done only by updating the configuration file or with environment variables. See the following examples:
 
-### Enabling Insecure Mode via Config Values**
+### Enabling Insecure Mode via Config Values
 
 You can edit the `/etc/nginx-agent/nginx-agent.conf` file to enable insecure mode. Make the following changes:
 
@@ -119,7 +119,7 @@ tls:
   enable: false
 ```
 
-### Enabling Insecure Mode with Environment Variables**
+### Enabling Insecure Mode with Environment Variables
 
 To enable insecure mode using environment variables, run the following commands:
 
