@@ -2253,3 +2253,129 @@ func TestSslDirectives(t *testing.T) {
 		})
 	}
 }
+
+// Test SSL directive metadata deduplication
+func TestSslDirectiveMetaDedup(t *testing.T) {
+	// Config content is static, and can be used repeatedly
+	const config = `daemon            off;
+	worker_processes  2;
+	user              www-data;
+
+	events {
+		use           epoll;
+		worker_connections  128;
+	}
+
+	http {
+		log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+											'$status $body_bytes_sent "$http_referer" '
+											'"$http_user_agent" "$http_x_forwarded_for"';
+
+		server_tokens off;
+		charset       utf-8;
+
+		access_log    /tmp/testdata/logs/access1.log  $upstream_time;
+		error_log         /tmp/testdata/logs/error.log info;
+
+		server {
+			listen        127.0.0.1:443;
+
+			ssl_certificate     /tmp/testdata/nginx/ca.crt;
+			ssl_certificate_key /tmp/testdata/nginx/ca.key;
+
+			location / {
+				return 200 'test';
+			}
+		}
+		server {
+			listen              49747 ssl;
+			ssl_certificate     /tmp/testdata/nginx/ca.crt;
+			ssl_certificate_key /tmp/testdata/nginx/ca.key;
+			location / {
+				return 200 'test';
+			}
+		}
+		server {
+			listen              49748 ssl;
+			ssl_certificate     /tmp/testdata/nginx/ca.crt;
+			ssl_certificate_key /tmp/testdata/nginx/ca.key;
+			location / {
+				return 200 'test';
+			}
+		}
+		server {
+			listen              49749 ssl;
+			ssl_certificate     /tmp/testdata/nginx/ca.crt;
+			ssl_certificate_key /tmp/testdata/nginx/ca.key;
+			location / {
+				return 200 'test';
+			}
+		}
+	}`
+
+	// preparing test cases as well as expected results
+	tests := []struct {
+		algoName string
+		config   string
+		expected struct {
+			nginxConf *proto.NginxConfig
+			algoName  string
+		}
+		expectedAuxFiles map[string]struct{}
+		fileName         string
+	}{
+		{
+			algoName: "rsaEncryption",
+			fileName: "/tmp/testdata/nginx/ssl.conf",
+			config:   config,
+			expected: struct {
+				nginxConf *proto.NginxConfig
+				algoName  string
+			}{
+				algoName: "rsaEncryption",
+				nginxConf: &proto.NginxConfig{
+					Action: proto.NginxConfigAction_RETURN,
+					DirectoryMap: &proto.DirectoryMap{
+						Directories: []*proto.Directory{
+							{
+								Name:        "/tmp/testdata/nginx",
+								Permissions: "0755",
+								Files: []*proto.File{
+									{
+										Name:        "ssl.conf",
+										Permissions: "0644",
+										Lines:       int32(37),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.algoName, func(t *testing.T) {
+			err := setUpDirectories()
+			assert.NoError(t, err)
+			defer tearDownDirectories()
+
+			err = setUpFile(test.fileName, []byte(test.config))
+			assert.NoError(t, err)
+
+			err = generateCertificates(test.algoName)
+			assert.NoError(t, err)
+
+			allowedDirs := map[string]struct{}{
+				"/tmp/testdata/nginx": {},
+			}
+			ignoreDirectives := []string{}
+
+			result, err := GetNginxConfigWithIgnoreDirectives(test.fileName, nginxID, systemID, allowedDirs, ignoreDirectives)
+			assert.NoError(t, err)
+			assert.NotNil(t, result)
+			assert.Equal(t, 1, len(result.Ssl.SslCerts))
+		})
+	}
+}
