@@ -212,7 +212,7 @@ load-test: $(SELECTED_PACKAGE) ## Perform load testing
 	@echo "🚚 Running load tests"
 	@echo ${SELECTED_PACKAGE}
 	@cp ./test/config/agent/nginx-agent-otel-load.conf ./test/load/nginx-agent.conf
-	@CGO_ENABLED=0 PACKAGE_NAME=$(SELECTED_PACKAGE) $(GOTEST) -timeout 30s -run ^TestMetric10kDPS$$ github.com/nginx/agent/v3/test/load
+	@CGO_ENABLED=0 PACKAGE_PATH=$(SELECTED_PACKAGE) $(GOTEST) -timeout 30s -run ^TestMetric10kDPS$$ github.com/nginx/agent/v3/test/load
 	@mv test/load/results $(BUILD_DIR)
 	@mv test/load/benchmarks.json $(BUILD_DIR)/results
 	@rm test/load/nginx-agent.conf

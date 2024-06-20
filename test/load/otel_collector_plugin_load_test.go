@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -22,7 +23,9 @@ func TestMetric10kDPS(t *testing.T) {
 
 	binary := os.Getenv("PACKAGE_NAME")
 	if binary == "" {
-		binary = "./build/nginx-agent"
+		binary = "build/nginx-agent"
+	} else {
+		binary = strings.ReplaceAll(binary, "./", "")
 	}
 
 	otelTestBedCollector, err := filepath.Abs(fmt.Sprintf("../../%s", binary))
