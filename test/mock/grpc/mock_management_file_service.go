@@ -48,6 +48,7 @@ func NewFileService(configDirectory string) (*FileService, error) {
 		)
 		overviews[configVersion] = versionedFiles
 		versionDirectories[configVersion] = versionDirectory
+		slog.Debug("versioned Files", "", versionedFiles)
 	}
 
 	return &FileService{

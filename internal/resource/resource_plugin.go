@@ -58,6 +58,7 @@ func (*Resource) Info() *bus.Info {
 	}
 }
 
+// cyclomatic complexity 11 max is 10
 // nolint: revive, cyclop
 func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
@@ -100,6 +101,7 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 		}
 		err := r.resourceService.Apply(ctx, data.InstanceID)
 		if err != nil {
+			slog.Error("errors found during config apply, sending failure status", "err", err)
 			response := &mpi.DataPlaneResponse{
 				MessageMeta: &mpi.MessageMeta{
 					MessageId:     uuid.NewString(),
@@ -112,7 +114,8 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 					Error:   err.Error(),
 				},
 			}
-			r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyFailedRequestTopic, Data: response})
+			r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
+			r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyFailedRequestTopic, Data: data.InstanceID})
 
 			return
 		}
@@ -127,7 +130,8 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 				Message: fmt.Sprintf("Successful config apply for instanceId: %s", data.CorrelationID),
 			},
 		}
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplySuccessfulRequestTopic, Data: response})
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplySuccessfulRequestTopic, Data: data.InstanceID})
 
 	default:
 		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)

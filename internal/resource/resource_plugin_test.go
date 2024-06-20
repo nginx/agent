@@ -7,7 +7,10 @@ package resource
 
 import (
 	"context"
+	"errors"
 	"testing"
+
+	"github.com/nginx/agent/v3/internal/model"
 
 	"github.com/nginx/agent/v3/test/types"
 
@@ -104,6 +107,63 @@ func TestResource_Process(t *testing.T) {
 
 			assert.Equal(t, test.topic, messagePipe.GetMessages()[0].Topic)
 			assert.Equal(t, test.resource, messagePipe.GetMessages()[0].Data)
+		})
+	}
+}
+
+func TestResource_Process_Apply(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		name     string
+		message  *bus.Message
+		applyErr error
+		topic    []string
+	}{
+		{
+			name: "Test 1: Write Config Successful Topic - Success Status",
+			message: &bus.Message{
+				Topic: bus.WriteConfigSuccessfulTopic,
+				Data: &model.ConfigApply{
+					CorrelationID: "",
+					InstanceID:    protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				},
+			},
+			applyErr: nil,
+			topic:    []string{bus.DataPlaneResponseTopic, bus.ConfigApplySuccessfulRequestTopic},
+		},
+		{
+			name: "Test 2: Write Config Successful Topic - Fail Status",
+			message: &bus.Message{
+				Topic: bus.WriteConfigSuccessfulTopic,
+				Data: &model.ConfigApply{
+					CorrelationID: "",
+					InstanceID:    protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				},
+			},
+			applyErr: errors.New("error reloading"),
+			topic:    []string{bus.DataPlaneResponseTopic, bus.ConfigApplyFailedRequestTopic},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
+			fakeResourceService.ApplyReturns(test.applyErr)
+			messagePipe := bus.NewFakeMessagePipe()
+
+			resourcePlugin := NewResource(types.AgentConfig())
+			resourcePlugin.resourceService = fakeResourceService
+
+			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
+			require.NoError(t, err)
+
+			resourcePlugin.messagePipe = messagePipe
+
+			resourcePlugin.Process(ctx, test.message)
+
+			assert.Equal(t, test.topic[0], messagePipe.GetMessages()[0].Topic)
+			assert.Equal(t, test.topic[1], messagePipe.GetMessages()[1].Topic)
 		})
 	}
 }

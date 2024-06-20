@@ -8,6 +8,7 @@ package resource
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"sync"
 
@@ -122,12 +123,11 @@ func (r *ResourceService) DeleteInstances(instanceList []*mpi.Instance) *mpi.Res
 	return r.resource
 }
 
-// nolint: revive
 func (r *ResourceService) Apply(ctx context.Context, instanceID string) error {
 	var instance *mpi.Instance
-	var errorLogs []string
 	var errorsFound error
 	operator := r.instanceOperators[instanceID]
+
 	for _, resourceInstance := range r.resource.GetInstances() {
 		if resourceInstance.GetInstanceMeta().GetInstanceId() == instanceID {
 			instance = resourceInstance
@@ -136,19 +136,15 @@ func (r *ResourceService) Apply(ctx context.Context, instanceID string) error {
 
 	valErr := operator.Validate(ctx, instance)
 	if valErr != nil {
-		return valErr
+		return fmt.Errorf("failed validating config %w", valErr)
 	}
 
 	reloadErr := operator.Reload(ctx, instance)
 	if reloadErr != nil {
-		return reloadErr
+		return fmt.Errorf("failed to reload NGINX %w", reloadErr)
 	}
 
-	if instance.GetInstanceMeta().GetInstanceType() == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
-		errorLogs = instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo().GetErrorLogs()
-	} else if instance.GetInstanceMeta().GetInstanceType() == mpi.InstanceMeta_INSTANCE_TYPE_NGINX {
-		errorLogs = instance.GetInstanceRuntime().GetNginxRuntimeInfo().GetErrorLogs()
-	}
+	errorLogs := r.errorLogs(instance)
 
 	logErrorChannel := make(chan error, len(errorLogs))
 	defer close(logErrorChannel)
@@ -172,6 +168,16 @@ func (r *ResourceService) Apply(ctx context.Context, instanceID string) error {
 	}
 
 	return nil
+}
+
+func (r *ResourceService) errorLogs(instance *mpi.Instance) (errorLogs []string) {
+	if instance.GetInstanceMeta().GetInstanceType() == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
+		errorLogs = instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo().GetErrorLogs()
+	} else if instance.GetInstanceMeta().GetInstanceType() == mpi.InstanceMeta_INSTANCE_TYPE_NGINX {
+		errorLogs = instance.GetInstanceRuntime().GetNginxRuntimeInfo().GetErrorLogs()
+	}
+
+	return errorLogs
 }
 
 func (r *ResourceService) monitorLogs(ctx context.Context, errorLogs []string, errorChannel chan error) {
