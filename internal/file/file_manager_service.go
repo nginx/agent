@@ -230,7 +230,7 @@ func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) e
 		return writeErr
 	}
 
-	err := fms.compareHash(file.GetFileMeta().GetName())
+	err := fms.validateFileHash(file.GetFileMeta().GetName())
 	if err != nil {
 		return err
 	}
@@ -238,7 +238,7 @@ func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) e
 	return nil
 }
 
-func (fms *FileManagerService) compareHash(filePath string) error {
+func (fms *FileManagerService) validateFileHash(filePath string) error {
 	_, fileHash, err := files.GenerateHashWithReadFile(filePath)
 	if err != nil {
 		return err
