@@ -157,6 +157,14 @@ nginx-agent
 
 ### CLI Flags and Environment Variables
 
+{{< warning >}} 
+
+Before version 2.35.0, the environment variables were prefixed with `NMS_` instead of `NGINX_AGENT_`. 
+
+If you are upgrading from an older version, update your configuration accordingly.
+
+{{< /warning >}}
+
 {{<bootstrap-table "table table-responsive table-bordered">}}
 | CLI flag                                    | Environment variable                 | Description                                                                 |
 |---------------------------------------------|--------------------------------------|-----------------------------------------------------------------------------|
@@ -195,12 +203,15 @@ nginx-agent
 | `--tls-key`                                 | `NGINX_AGENT_TLS_KEY`                        | Specifies the path to the certificate key file for TLS.                     |
 | `--tls-skip-verify`                         | `NGINX_AGENT_TLS_SKIP_VERIFY`                | Insecurely skips verification for gRPC TLS credentials.                     |
 {{</bootstrap-table>}}
-{{< warning >}}The environment prefix NMS has been deprecated in favour of NGINX_AGENT{{< /warning >}}
 
 <br>
 
 {{<note>}}
-Use the `--config-dirs` command-line option, or the `config_dirs` key in the `nginx-agent.conf` file, to identify the directories NGINX Agent can read from or write to. This setting also defines the location to which you can upload config files when using a control plane. NGINX Agent cannot write to directories outside the specified location when updating a config and cannot upload files to directories outside of the configured location. NGINX Agent follows NGINX configuration directives to file paths outside the designated directories and reads certificates' metadata. NGINX Agent uses the following directives:
+Use the `--config-dirs` command-line option, or the `config_dirs` key in the `nginx-agent.conf` file, to identify the directories NGINX Agent can read from or write to. This setting also defines the location to which you can upload config files when using a control plane. 
+
+NGINX Agent cannot write to directories outside the specified location when updating a config and cannot upload files to directories outside of the configured location. 
+
+NGINX Agent follows NGINX configuration directives to file paths outside the designated directories and reads certificates' metadata. NGINX Agent uses the following directives:
 
 - [`ssl_certificate`](https://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_certificate)
 
