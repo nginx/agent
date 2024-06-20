@@ -109,7 +109,7 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 					Timestamp:     timestamppb.Now(),
 				},
 				CommandResponse: &mpi.CommandResponse{
-					Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+					Status:  mpi.CommandResponse_COMMAND_STATUS_ERROR,
 					Message: fmt.Sprintf("Config apply failed for instanceId: %s", data.CorrelationID),
 					Error:   err.Error(),
 				},

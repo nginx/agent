@@ -129,7 +129,7 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 				Timestamp:     timestamppb.Now(),
 			},
 			CommandResponse: &mpi.CommandResponse{
-				Status: mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Status: mpi.CommandResponse_COMMAND_STATUS_ERROR,
 				Message: fmt.Sprintf("Config apply failed for instanceId: %s", configApplyRequest.
 					GetConfigVersion().GetInstanceId()),
 				Error: err.Error(),

@@ -176,7 +176,7 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 				assert.True(t, ok)
 				assert.Equal(
 					t,
-					mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+					mpi.CommandResponse_COMMAND_STATUS_ERROR,
 					dataPlaneResponse.GetCommandResponse().GetStatus(),
 				)
 			}
