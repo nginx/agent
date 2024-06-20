@@ -90,12 +90,12 @@ func parseBinary(s string) string {
 		return "build/nginx-agent"
 	}
 
-	if strings.HasPrefix(s, "./") {
-		return strings.TrimPrefix(s, "./")
-	} else if strings.HasPrefix(s, "agent") {
-		return strings.TrimPrefix(s, "agent")
-	} else if strings.HasPrefix(s, "./agent") {
-		return strings.TrimPrefix(s, "./agent")
+	prefixes := []string{"./agent", "./", "agent"}
+
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(s, prefix) {
+			return strings.TrimPrefix(s, prefix)
+		}
 	}
 
 	return s
