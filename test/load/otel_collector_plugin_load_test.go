@@ -22,7 +22,7 @@ func TestMetric10kDPS(t *testing.T) {
 	performanceResultsSummary := &testbed.PerformanceResults{}
 
 	binary := parseBinary(os.Getenv("PACKAGE_NAME"))
-	
+
 	otelTestBedCollector, err := filepath.Abs(fmt.Sprintf("../../%s", binary))
 	require.NoError(t, err)
 
@@ -89,13 +89,14 @@ func parseBinary(s string) string {
 	if s == "" {
 		return "build/nginx-agent"
 	}
-	
+
 	if strings.HasPrefix(s, "./") {
 		return strings.TrimPrefix(s, "./")
 	} else if strings.HasPrefix(s, "agent") {
 		return strings.TrimPrefix(s, "agent")
-	} else if strings.HasPrefix("./agent") {
-		return strings.TrimPrefix(s, "./agent")	
+	} else if strings.HasPrefix(s, "./agent") {
+		return strings.TrimPrefix(s, "./agent")
 	}
+
 	return s
 }
