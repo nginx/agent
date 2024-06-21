@@ -139,8 +139,8 @@ var tests = []struct {
 			charset       utf-8;
 		
 			access_log    /tmp/testdata/logs/access1.log  $upstream_time;
-			ssl_certificate     /tmp/testdata/nginx/ca.crt;
-			ssl_trusted_certificate     /tmp/testdata/nginx/trusted.crt;
+			ssl_certificate     /tmp/testdata/nginx/ca/ca.crt;
+			ssl_trusted_certificate     /tmp/testdata/nginx/trusted/ca.crt;
 		
 			server {
 				listen        127.0.0.1:80;
@@ -155,7 +155,7 @@ var tests = []struct {
 					app_protect_policy_file /tmp/testdata/root/my-nap-policy.json;
 					app_protect_security_log_enable on;
 					app_protect_security_log "/tmp/testdata/root/log-default.json" /var/log/app_protect/security.log;		
-					proxy_ssl_certificate /tmp/testdata/nginx/proxy.crt;
+					proxy_ssl_certificate /tmp/testdata/nginx/proxy/ca.crt;
 				}
 
 				location /privateapi {
@@ -234,7 +234,7 @@ var tests = []struct {
 			Ssl: &proto.SslCertificates{
 				SslCerts: []*proto.SslCertificate{
 					{
-						FileName: "/tmp/testdata/nginx/ca.crt",
+						FileName: "/tmp/testdata/nginx/ca/ca.crt",
 						Validity: &proto.CertificateDates{
 							NotBefore: 1632834204,
 							NotAfter:  1635426204,
@@ -266,7 +266,7 @@ var tests = []struct {
 						Version:                3,
 					},
 					{
-						FileName: "/tmp/testdata/nginx/trusted.crt",
+						FileName: "/tmp/testdata/nginx/trusted/ca.crt",
 						Validity: &proto.CertificateDates{
 							NotBefore: 1632834204,
 							NotAfter:  1635426204,
@@ -298,7 +298,7 @@ var tests = []struct {
 						Version:                3,
 					},
 					{
-						FileName: "/tmp/testdata/nginx/proxy.crt",
+						FileName: "/tmp/testdata/nginx/proxy/ca.crt",
 						Validity: &proto.CertificateDates{
 							NotBefore: 1632834204,
 							NotAfter:  1635426204,
@@ -343,9 +343,9 @@ var tests = []struct {
 		},
 		expectedAuxFiles: map[string]struct{}{
 			"/tmp/testdata/root/test.html":          {},
-			"/tmp/testdata/nginx/ca.crt":            {},
-			"/tmp/testdata/nginx/trusted.crt":       {},
-			"/tmp/testdata/nginx/proxy.crt":         {},
+			"/tmp/testdata/nginx/ca/ca.crt":            {},
+			"/tmp/testdata/nginx/trusted/ca.crt":       {},
+			"/tmp/testdata/nginx/proxy/ca.crt":         {},
 			"/tmp/testdata/root/my-nap-policy.json": {},
 			"/tmp/testdata/root/log-default.json":   {},
 		},
@@ -377,7 +377,7 @@ var tests = []struct {
 			charset       utf-8;
 		
 			access_log    /tmp/testdata/logs/access1.log  $upstream_time;
-			ssl_certificate     /tmp/testdata/nginx/ca.crt;	
+			ssl_certificate     /tmp/testdata/nginx/ca/ca.crt;	
 		
 			server {
 				listen        127.0.0.1:80;
@@ -442,7 +442,7 @@ var tests = []struct {
 			Ssl: &proto.SslCertificates{
 				SslCerts: []*proto.SslCertificate{
 					{
-						FileName: "/tmp/testdata/nginx/ca.crt",
+						FileName: "/tmp/testdata/nginx/ca/ca.crt",
 						Validity: &proto.CertificateDates{
 							NotBefore: 1632834204,
 							NotAfter:  1635426204,
@@ -489,7 +489,7 @@ var tests = []struct {
 		},
 		expectedAuxFiles: map[string]struct{}{
 			"/tmp/testdata/foo/test.html": {},
-			"/tmp/testdata/nginx/ca.crt":  {},
+			"/tmp/testdata/nginx/ca/ca.crt":  {},
 		},
 	},
 	{
@@ -654,7 +654,7 @@ var tests = []struct {
 			charset       utf-8;
 		
 			access_log    /tmp/testdata/logs/access1.log  $upstream_time;
-			ssl_certificate     /tmp/testdata/nginx/ca.crt;	
+			ssl_certificate     /tmp/testdata/nginx/ca/ca.crt;	
 		
 			server {
 				listen        127.0.0.1:80;
@@ -719,7 +719,7 @@ var tests = []struct {
 			Ssl: &proto.SslCertificates{
 				SslCerts: []*proto.SslCertificate{
 					{
-						FileName: "/tmp/testdata/nginx/ca.crt",
+						FileName: "/tmp/testdata/nginx/ca/ca.crt",
 						Validity: &proto.CertificateDates{
 							NotBefore: 1632834204,
 							NotAfter:  1635426204,
@@ -766,7 +766,7 @@ var tests = []struct {
 		},
 		expectedAuxFiles: map[string]struct{}{
 			"/tmp/testdata/foo/test.html": {},
-			"/tmp/testdata/nginx/ca.crt":  {},
+			"/tmp/testdata/nginx/ca/ca.crt":  {},
 		},
 	},
 }
@@ -775,36 +775,36 @@ func TestGetNginxConfigFiles(t *testing.T) {
 	for _, test := range tests {
 		config := &proto.NginxConfig{}
 		err := setUpDirectories()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		defer tearDownDirectories()
 
 		err = setUpFile(test.fileName, []byte(test.config))
 		assert.Nil(t, err)
 
 		conf, err := zip.NewWriter(test.fileName)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = conf.AddFile(test.fileName)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		config.Zconfig, err = conf.Proto()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, config.GetZconfig())
 
 		if test.expected.Zaux != nil {
 			aux, err := zip.NewWriter(test.fileName)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			err = aux.AddFile(test.fileName)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			config.Zaux, err = aux.Proto()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.NotNil(t, config.GetZaux())
 		}
 
 		configFiles, auxFiles, err := GetNginxConfigFiles(config)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, configFiles)
 		assert.NotEmpty(t, configFiles)
 
@@ -822,14 +822,14 @@ func TestGetNginxConfigFiles(t *testing.T) {
 func TestGetNginxConfig(t *testing.T) {
 	for _, test := range tests {
 		err := setUpDirectories()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		defer tearDownDirectories()
 
 		err = setUpFile(test.fileName, []byte(test.config))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = generateCertificates("rsaEncryption")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		allowedDirs := map[string]struct{}{}
 		ignoreDirectives := []string{}
@@ -906,7 +906,7 @@ func TestGetNginxConfig(t *testing.T) {
 
 			assert.Equal(t, test.expected.Zaux.Checksum, result.Zaux.Checksum)
 			zf, err := zip.NewReader(result.Zaux)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			files := make(map[string]struct{})
 			zf.RangeFileReaders(func(err error, path string, mode os.FileMode, r io.Reader) bool {
 				files[path] = struct{}{}
@@ -952,7 +952,7 @@ Reading: 0 Writing: 1 Waiting: 1
 			splitUrl := strings.Split(server.URL, "//")[1]
 
 			output := bytes.Replace(input, []byte("127.0.0.1:80"), []byte(splitUrl), -1)
-			assert.NoError(t, os.WriteFile(test.fileName, output, 0o664))
+			require.NoError(t, os.WriteFile(test.fileName, output, 0o664))
 
 			ignoreDirectives := []string{}
 			result, err := GetStatusApiInfoWithIgnoreDirectives(test.fileName, ignoreDirectives)
@@ -962,7 +962,7 @@ Reading: 0 Writing: 1 Waiting: 1
 
 			assert.Equal(t, test.plusApi, result)
 			if test.plusApi != "" {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			} else {
 				assert.Error(t, err)
 			}
@@ -1332,17 +1332,17 @@ server {
 		},
 	} {
 		f, err := os.CreateTemp(tmpDir, "conf")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		_, err = f.Write([]byte(fmt.Sprintf("http{ %s }", tt.conf)))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		payload, err := crossplane.Parse(f.Name(),
 			&crossplane.ParseOptions{
 				SingleFile:         false,
 				StopParsingOnError: true,
 			},
 		)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		var oss []string
 		var plus []string
 		assert.Equal(t, len(payload.Config), 1)
@@ -1355,7 +1355,7 @@ server {
 				plus = append(plus, _plus...)
 				return true, nil
 			})
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 		}
 
@@ -1367,14 +1367,14 @@ server {
 func TestGetErrorAndAccessLogs(t *testing.T) {
 	for _, test := range tests {
 		err := setUpDirectories()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = setUpFile(test.fileName, []byte(test.config))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		ignoreDirectives := []string{}
 
 		errorLogs, accessLogs, err := GetErrorAndAccessLogsWithIgnoreDirectives(test.fileName, ignoreDirectives)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		for index, accessLog := range accessLogs.AccessLog {
 			assert.Equal(t, test.expected.AccessLogs.AccessLog[index].Name, accessLog.Name)
@@ -1490,24 +1490,27 @@ func getCertMeta(file string) crtMetaFields {
 }
 
 func generateCertificates(algoname string) error {
-	cmd := exec.Command("../scripts/tls/gen_cnf.sh", "ca", "--cn", "'ca.local'", "--state", "Cork", "--locality", "Cork", "--org", "NGINX", "--country", "IE", "--out", "certs/conf")
-
-	err := cmd.Run()
-	if err != nil {
-		return err
-	}
-
 	certs := []string { "ca", "proxy", "trusted" }
 	var cmd1 *exec.Cmd
 	
 	for _, cert := range certs {
+		local := fmt.Sprintf("'%s.local'", cert)
+		output := fmt.Sprintf("certs/conf/%s/", cert)
+		caCmd := exec.Command("../scripts/tls/gen_cnf.sh", "ca", "--cn", local, "--state", "Cork", "--locality", "Cork", "--org", "NGINX", "--country", "IE", "--out", output)
 
+		err := caCmd.Run()
+		if err != nil {
+			return err
+		}
+
+		cnf := fmt.Sprintf("certs/conf/%s/ca.cnf", cert)
+		outputDir := fmt.Sprintf("/tmp/testdata/nginx/%s/", cert)
 		if algoname == "rsaEncryption" {
 			// generate rsa key
-			cmd1 = exec.Command("../scripts/tls/gen_cert.sh", cert, "rsa", "--config", "certs/conf/ca.cnf", "--out", "/tmp/testdata/nginx/")
+			cmd1 = exec.Command("../scripts/tls/gen_cert.sh", "ca", "rsa", "--config", cnf, "--out", outputDir)
 		} else if algoname == "dsaEncryption" {
 			// generate dsa
-			cmd1 = exec.Command("../scripts/tls/gen_cert.sh", cert, "dsa", "--config", "certs/conf/ca.cnf", "--out", "/tmp/testdata/nginx/")
+			cmd1 = exec.Command("../scripts/tls/gen_cert.sh", "ca", "dsa", "--config", cnf, "--out", outputDir)
 		}
 
 		err = cmd1.Run()
@@ -1551,7 +1554,7 @@ root foo/bar;`,
 			require.NoError(t, err)
 
 			_, err = f.WriteString(tt.input)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			auxWriter, err := zip.NewWriter(filepath.Dir(f.Name()))
 			require.NoError(t, err)
@@ -1566,13 +1569,13 @@ root foo/bar;`,
 			defer reader.Close()
 
 			err = auxWriter.Add(f.Name(), fs.FileMode(os.O_RDWR), reader)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			err = updateNginxConfigFileWithRoot(auxWriter, f.Name(), seen, allowedDirectories, directoryPathMap)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			aux, err := auxWriter.Proto()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.NotNil(t, aux)
 
 			// one file read is expected in the auxWriter per unique root dir
@@ -1621,17 +1624,17 @@ func TestUpdateNginxConfigFileWithAuxFile(t *testing.T) {
 
 	for _, test := range myTests {
 		err := setUpDirectories()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		defer tearDownDirectories()
 
 		err = setUpFile(test.fileName, []byte(test.content))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		allowedDirs := map[string]struct{}{}
 		allowedDirs[test.allowDir] = struct{}{}
 
 		aux, err := zip.NewWriter(filepath.Dir(test.allowDir))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		nginxConfig := &proto.NginxConfig{
 			Action: proto.NginxConfigAction_RETURN,
@@ -1652,16 +1655,16 @@ func TestUpdateNginxConfigFileWithAuxFile(t *testing.T) {
 		directoryMap := &DirectoryMap{make(map[string]*proto.Directory)}
 
 		err = updateNginxConfigFileWithAuxFile(aux, test.fileName, nginxConfig, seen, allowedDirs, directoryMap, true)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		if test.expected.Zaux != nil {
 			assert.NotNil(t, aux)
 			auxProto, err := aux.Proto()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			assert.Equal(t, test.expected.Zaux.Checksum, auxProto.Checksum)
 			zf, err := zip.NewReader(auxProto)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			expectedFiles := make(map[string]struct{})
 			zf.RangeFileReaders(func(err error, path string, mode os.FileMode, r io.Reader) bool {
 				expectedFiles[path] = struct{}{}
@@ -1735,11 +1738,11 @@ func TestAddAuxfileToNginxConfig(t *testing.T) {
 
 	for _, test := range tests {
 		err := setUpDirectories()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		defer tearDownDirectories()
 
 		err = setUpFile(test.fileName, []byte(test.content))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		allowedDirs := map[string]struct{}{}
 		allowedDirs[test.allowDir] = struct{}{}
@@ -1763,12 +1766,12 @@ func TestAddAuxfileToNginxConfig(t *testing.T) {
 		}
 
 		nginxConfig, err = AddAuxfileToNginxConfig(test.allowDir, nginxConfig, test.fileName, allowedDirs, true)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		if test.expected.Zaux != nil {
 			assert.Equal(t, test.expected.Zaux.Checksum, nginxConfig.GetZaux().GetChecksum())
 			zf, err := zip.NewReader(nginxConfig.Zaux)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			files := make(map[string]struct{})
 			zf.RangeFileReaders(func(err error, path string, mode os.FileMode, r io.Reader) bool {
 				files[path] = struct{}{}
@@ -1931,13 +1934,13 @@ func TestGetAppProtectPolicyAndSecurityLogFiles(t *testing.T) {
 			defer tearDownDirectories()
 
 			err := setUpFile(tc.file, []byte(tc.config))
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			allowedDirs := map[string]struct{}{}
 			ignoreDirectives := []string{}
 
 			cfg, err := GetNginxConfigWithIgnoreDirectives(tc.file, nginxID, systemID, allowedDirs, ignoreDirectives)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			policies, profiles := GetAppProtectPolicyAndSecurityLogFilesWithIgnoreDirectives(cfg, ignoreDirectives)
 			assert.ElementsMatch(t, tc.expPolicies, policies)
@@ -2076,9 +2079,9 @@ func TestSslDirectives(t *testing.T) {
 			listen        127.0.0.1:443;
 			server_name   ca.local;
 
-			ssl_certificate     /tmp/testdata/nginx/ca.crt;
+			ssl_certificate     /tmp/testdata/nginx/ca/ca.crt;
 			ssl_certificate_key /tmp/testdata/nginx/ca.key;
-			ssl_trusted_certificate     /tmp/testdata/nginx/trusted.crt;
+			ssl_trusted_certificate     /tmp/testdata/nginx/trusted/ca.crt;
 
 			location      / {
 				root      /tmp/testdata/root;
@@ -2129,13 +2132,25 @@ func TestSslDirectives(t *testing.T) {
 										Permissions: "0644",
 										Lines:       int32(31),
 									},
+								},
+							},
+							{
+								Name:        "/tmp/testdata/nginx/trusted",
+								Permissions: "0755",
+								Files: []*proto.File{
 									{
-										Name:        "trusted.crt",
+										Name:        "ca.crt",
 										Permissions: "0644",
 										Lines:       int32(31),
 									},
+								},
+							},
+							{
+								Name:        "/tmp/testdata/nginx/proxy",
+								Permissions: "0755",
+								Files: []*proto.File{
 									{
-										Name:        "proxy.crt",
+										Name:        "ca.crt",
 										Permissions: "0644",
 										Lines:       int32(31),
 									},
@@ -2195,14 +2210,14 @@ func TestSslDirectives(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.algoName, func(t *testing.T) {
 			err := setUpDirectories()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			defer tearDownDirectories()
 
 			err = setUpFile(test.fileName, []byte(test.config))
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			err = generateCertificates(test.algoName)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			allowedDirs := map[string]struct{}{
 				"/tmp/testdata/nginx": {},
@@ -2210,7 +2225,7 @@ func TestSslDirectives(t *testing.T) {
 			ignoreDirectives := []string{}
 
 			result, err := GetNginxConfigWithIgnoreDirectives(test.fileName, nginxID, systemID, allowedDirs, ignoreDirectives)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.NotNil(t, result)
 
 			assert.Equal(t, test.expected.nginxConf.Action, result.Action)
@@ -2268,8 +2283,8 @@ func TestSslDirectiveMetaDedup(t *testing.T) {
 		server {
 			listen        127.0.0.1:443;
 
-			ssl_certificate     /tmp/testdata/nginx/ca.crt;
-			ssl_certificate_key /tmp/testdata/nginx/ca.key;
+			ssl_certificate     /tmp/testdata/nginx/ca/ca.crt;
+			ssl_certificate_key /tmp/testdata/nginx/ca/ca.key;
 
 			location / {
 				return 200 'test';
@@ -2277,24 +2292,24 @@ func TestSslDirectiveMetaDedup(t *testing.T) {
 		}
 		server {
 			listen              49747 ssl;
-			ssl_certificate     /tmp/testdata/nginx/ca.crt;
-			ssl_certificate_key /tmp/testdata/nginx/ca.key;
+			ssl_certificate     /tmp/testdata/nginx/ca/ca.crt;
+			ssl_certificate_key /tmp/testdata/nginx/ca/ca.key;
 			location / {
 				return 200 'test';
 			}
 		}
 		server {
 			listen              49748 ssl;
-			ssl_certificate     /tmp/testdata/nginx/ca.crt;
-			ssl_certificate_key /tmp/testdata/nginx/ca.key;
+			ssl_certificate     /tmp/testdata/nginx/ca/ca.crt;
+			ssl_certificate_key /tmp/testdata/nginx/ca/ca.key;
 			location / {
 				return 200 'test';
 			}
 		}
 		server {
 			listen              49749 ssl;
-			ssl_certificate     /tmp/testdata/nginx/ca.crt;
-			ssl_certificate_key /tmp/testdata/nginx/ca.key;
+			ssl_certificate     /tmp/testdata/nginx/ca/ca.crt;
+			ssl_certificate_key /tmp/testdata/nginx/ca/ca.key;
 			location / {
 				return 200 'test';
 			}
@@ -2346,14 +2361,14 @@ func TestSslDirectiveMetaDedup(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.algoName, func(t *testing.T) {
 			err := setUpDirectories()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			defer tearDownDirectories()
 
 			err = setUpFile(test.fileName, []byte(test.config))
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			err = generateCertificates(test.algoName)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			allowedDirs := map[string]struct{}{
 				"/tmp/testdata/nginx": {},
@@ -2361,7 +2376,7 @@ func TestSslDirectiveMetaDedup(t *testing.T) {
 			ignoreDirectives := []string{}
 
 			result, err := GetNginxConfigWithIgnoreDirectives(test.fileName, nginxID, systemID, allowedDirs, ignoreDirectives)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.NotNil(t, result)
 			assert.Equal(t, 1, len(result.Ssl.SslCerts))
 		})
