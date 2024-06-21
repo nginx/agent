@@ -1,4 +1,5 @@
 # Go parameters
+GO_VERSION = $(shell cat go.mod | grep toolchain | sed 's/toolchain //; s/go//')
 GOCMD	= go
 GOBUILD	= $(GOCMD) build
 GOTEST	= $(GOCMD) test
@@ -33,6 +34,7 @@ IMAGE_TAG   = "agent_$(OS_RELEASE)_$(OS_VERSION)"
 
 BUILD_DIR		:= build
 TEST_BUILD_DIR  := build/test
+CERTS_DIR       := build/certs
 DOCS_DIR        := docs
 PROTO_DIR       := proto
 BINARY_NAME		:= nginx-agent
@@ -210,9 +212,11 @@ generate-pgo-profile: build-mock-management-plane-grpc ## Generate pgo profile t
 # run under sudo locally
 load-test: $(SELECTED_PACKAGE) ## Perform load testing
 	@echo "🚚 Running load tests"
-	@echo ${SELECTED_PACKAGE}
-	@cp ./test/config/agent/nginx-agent-otel-load.conf ./test/load/nginx-agent.conf
-	@CGO_ENABLED=0 PACKAGE_PATH=$(SELECTED_PACKAGE) $(GOTEST) -timeout 30s -run ^TestMetric10kDPS$$ github.com/nginx/agent/v3/test/load
-	@mv test/load/results $(BUILD_DIR)
-	@mv test/load/benchmarks.json $(BUILD_DIR)/results
-	@rm test/load/nginx-agent.conf
+	@echo ${GO_VERSION}
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${IMAGE_TAG}_load_test . \
+		--no-cache -f ./scripts/testing/load//Dockerfile \
+		--secret id=nginx-crt,src=${CERTS_DIR}/nginx-repo.crt \
+		--secret id=nginx-key,src=${CERTS_DIR}/nginx-repo.key \
+		--build-arg PACKAGE_NAME=${PACKAGE_NAME} \
+		--build-arg OSARCH=${OSARCH} \
+		--build-arg GO_VERSION=${GO_VERSION}
