@@ -336,6 +336,15 @@ func updateNginxConfigWithCert(
 		}
 
 		fingerprint := sha256.Sum256(cert.Raw)
+		// check for duplicate fingerprint in the certs slice
+		fingerPrintHex := convertToHexFormat(hex.EncodeToString(fingerprint[:]))
+		for _, e := range nginxConfig.Ssl.SslCerts {
+			if e.Fingerprint == fingerPrintHex {
+				log.Debugf("certs: %s duplicate. Skipping", file)
+				return nil
+			}
+		}
+
 		certProto := &proto.SslCertificate{
 			FileName:           file,
 			PublicKeyAlgorithm: cert.PublicKeyAlgorithm.String(),

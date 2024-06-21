@@ -1497,35 +1497,23 @@ func generateCertificates(algoname string) error {
 		return err
 	}
 
+	certs := []string { "ca", "proxy", "trusted" }
 	var cmd1 *exec.Cmd
+	
+	for _, cert := range certs {
 
-	if algoname == "rsaEncryption" {
-		// generate rsa key
-		cmd1 = exec.Command("../scripts/tls/gen_cert.sh", "ca", "rsa", "--config", "certs/conf/ca.cnf", "--out", "/tmp/testdata/nginx/")
-	} else if algoname == "dsaEncryption" {
-		// generate dsa
-		cmd1 = exec.Command("../scripts/tls/gen_cert.sh", "ca", "dsa", "--config", "certs/conf/ca.cnf", "--out", "/tmp/testdata/nginx/")
-	}
+		if algoname == "rsaEncryption" {
+			// generate rsa key
+			cmd1 = exec.Command("../scripts/tls/gen_cert.sh", cert, "rsa", "--config", "certs/conf/ca.cnf", "--out", "/tmp/testdata/nginx/")
+		} else if algoname == "dsaEncryption" {
+			// generate dsa
+			cmd1 = exec.Command("../scripts/tls/gen_cert.sh", cert, "dsa", "--config", "certs/conf/ca.cnf", "--out", "/tmp/testdata/nginx/")
+		}
 
-	err = cmd1.Run()
-	if err != nil {
-		return err
-	}
-
-	// create proxy.crt copy
-	copyCmd := exec.Command("cp", "/tmp/testdata/nginx/ca.crt", "/tmp/testdata/nginx/proxy.crt")
-
-	err = copyCmd.Run()
-	if err != nil {
-		return err
-	}
-
-	// create trusted.crt copy
-	copyCmd = exec.Command("cp", "/tmp/testdata/nginx/ca.crt", "/tmp/testdata/nginx/trusted.crt")
-
-	err = copyCmd.Run()
-	if err != nil {
-		return err
+		err = cmd1.Run()
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
