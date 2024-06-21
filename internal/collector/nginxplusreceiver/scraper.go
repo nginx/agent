@@ -55,22 +55,6 @@ func newNginxPlusScraper(
 	}, nil
 }
 
-// func (nps *nginxPlusScraper) ID() component.ID {
-// 	return component.NewID(metadata.Type)
-// }
-
-// func (nps *nginxPlusScraper) Start(ctx context.Context, host component.Host) error {
-// 	httpClient, err := nps.cfg.ToClient(ctx, host, nps.settings)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	nps.httpClient = httpClient
-
-// 	nps.plusClient
-
-// 	return nil
-// }
-
 func (nps *nginxPlusScraper) scrape(context.Context) (pmetric.Metrics, error) {
 	stats, err := nps.plusClient.GetStats()
 	if err != nil {
