@@ -128,7 +128,7 @@ github.com/nats-io/nkeys
 ## explicit
 github.com/nats-io/nuid
 # github.com/nginx/agent/sdk/v2 v2.30.3 => ./../../sdk
-## explicit; go 1.21
+## explicit; go 1.22
 github.com/nginx/agent/sdk/v2
 github.com/nginx/agent/sdk/v2/agent/config
 github.com/nginx/agent/sdk/v2/agent/events
@@ -143,7 +143,7 @@ github.com/nginx/agent/sdk/v2/proto/common
 github.com/nginx/agent/sdk/v2/proto/events
 github.com/nginx/agent/sdk/v2/zip
 # github.com/nginx/agent/v2 v2.30.3 => ./../../
-## explicit; go 1.21.6
+## explicit; go 1.22
 github.com/nginx/agent/v2/src/core
 github.com/nginx/agent/v2/src/core/config
 github.com/nginx/agent/v2/src/core/logger
