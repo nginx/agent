@@ -18,7 +18,7 @@ The total number of bytes read from the cache or proxied server.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {bytes} | Sum | Int | Cumulative | true |
+| bytes | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -32,7 +32,7 @@ The limit on the maximum size of the cache specified in the configuration.
 
 | Unit | Metric Type | Value Type |
 | ---- | ----------- | ---------- |
-| {bytes} | Gauge | Int |
+| bytes | Gauge | Int |
 
 ### nginx.cache.memory.usage
 
@@ -40,7 +40,7 @@ The current size of the cache.
 
 | Unit | Metric Type | Value Type |
 | ---- | ----------- | ---------- |
-| {bytes} | Gauge | Int |
+| bytes | Gauge | Int |
 
 ### nginx.cache.responses
 
@@ -48,7 +48,7 @@ The total number of responses read from the cache or proxied server.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {responses} | Sum | Int | Cumulative | true |
+| responses | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -62,7 +62,7 @@ The total number of connections to an endpoint with a limit_conn directive.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {connections} | Sum | Int | Cumulative | true |
+| connections | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -77,7 +77,7 @@ The total number of requests to an endpoint with a limit_req directive.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {requests} | Sum | Int | Cumulative | true |
+| requests | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -92,7 +92,7 @@ The total number of HTTP byte IO.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {bytes} | Sum | Int | Cumulative | true |
+| bytes | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -108,7 +108,7 @@ The total number of requests completed without sending a response.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {requests} | Sum | Int | Cumulative | true |
+| requests | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -123,7 +123,7 @@ The number of client requests that are currently being processed.
 
 | Unit | Metric Type | Value Type |
 | ---- | ----------- | ---------- |
-| {requests} | Gauge | Int |
+| requests | Gauge | Int |
 
 #### Attributes
 
@@ -138,7 +138,7 @@ The total number of client requests received from clients.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {requests} | Sum | Int | Cumulative | true |
+| requests | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -153,7 +153,7 @@ The number of responses, grouped by status code range.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {responses} | Sum | Int | Cumulative | true |
+| responses | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -169,7 +169,7 @@ The total number of client requests received from clients.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {responses} | Sum | Int | Cumulative | true |
+| responses | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -184,7 +184,7 @@ The current number of idle keepalive connections per HTTP upstream.
 
 | Unit | Metric Type | Value Type |
 | ---- | ----------- | ---------- |
-| {connections} | Gauge | Int |
+| connections | Gauge | Int |
 
 #### Attributes
 
@@ -199,7 +199,7 @@ The total number of byte IO per HTTP upstream peer.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {bytes} | Sum | Int | Cumulative | true |
+| bytes | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -216,7 +216,7 @@ The average number of active connections per HTTP upstream peer.
 
 | Unit | Metric Type | Value Type |
 | ---- | ----------- | ---------- |
-| {connections} | Gauge | Int |
+| connections | Gauge | Int |
 
 #### Attributes
 
@@ -232,7 +232,7 @@ The current count of peers on the HTTP upstream grouped by state.
 
 | Unit | Metric Type | Value Type |
 | ---- | ----------- | ---------- |
-| {peers} | Gauge | Int |
+| peers | Gauge | Int |
 
 #### Attributes
 
@@ -248,7 +248,7 @@ The total number of unsuccessful attempts to communicate with the HTTP upstream 
 
 | Unit | Metric Type | Value Type |
 | ---- | ----------- | ---------- |
-| {attempts} | Gauge | Int |
+| attempts | Gauge | Int |
 
 #### Attributes
 
@@ -280,7 +280,7 @@ The total number of health check requests made to a HTTP upstream peer.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {requests} | Sum | Int | Cumulative | true |
+| requests | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -297,7 +297,7 @@ The total number of client requests forwarded to the HTTP upstream peer.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {requests} | Sum | Int | Cumulative | true |
+| requests | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -329,7 +329,7 @@ The total number of responses obtained from the HTTP upstream peer grouped by st
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {responses} | Sum | Int | Cumulative | true |
+| responses | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -346,7 +346,7 @@ Number of times the server became unavailable for client requests (“unavail”
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {requests} | Sum | Int | Cumulative | true |
+| requests | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -362,7 +362,7 @@ The maximum number of requests that can be in the queue at the same time.
 
 | Unit | Metric Type | Value Type |
 | ---- | ----------- | ---------- |
-| {requests} | Gauge | Int |
+| requests | Gauge | Int |
 
 #### Attributes
 
@@ -377,7 +377,7 @@ The total number of requests rejected due to the queue overflow.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {responses} | Sum | Int | Cumulative | true |
+| responses | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -392,7 +392,7 @@ The current number of requests in the queue.
 
 | Unit | Metric Type | Value Type |
 | ---- | ----------- | ---------- |
-| {requests} | Gauge | Int |
+| requests | Gauge | Int |
 
 #### Attributes
 
@@ -407,7 +407,7 @@ Current state of upstream peers in deployment. If any of the upstream servers in
 
 | Unit | Metric Type | Value Type |
 | ---- | ----------- | ---------- |
-| {is_deployed} | Gauge | Int |
+| is_deployed | Gauge | Int |
 
 #### Attributes
 
@@ -423,7 +423,7 @@ The current number of upstream peers removed from the group but still processing
 
 | Unit | Metric Type | Value Type |
 | ---- | ----------- | ---------- |
-| {is_deployed} | Gauge | Int |
+| is_deployed | Gauge | Int |
 
 #### Attributes
 
@@ -438,7 +438,7 @@ The current number of free memory pages.
 
 | Unit | Metric Type | Value Type |
 | ---- | ----------- | ---------- |
-| {pages} | Gauge | Int |
+| pages | Gauge | Int |
 
 #### Attributes
 
@@ -452,7 +452,7 @@ The total number of memory pages (free and used).
 
 | Unit | Metric Type | Value Type |
 | ---- | ----------- | ---------- |
-| {pages} | Gauge | Int |
+| pages | Gauge | Int |
 
 #### Attributes
 
@@ -466,7 +466,7 @@ The current number of used memory pages.
 
 | Unit | Metric Type | Value Type |
 | ---- | ----------- | ---------- |
-| {pages} | Gauge | Int |
+| pages | Gauge | Int |
 
 #### Attributes
 
@@ -480,7 +480,7 @@ The current percentage of used memory pages.
 
 | Unit | Metric Type | Value Type |
 | ---- | ----------- | ---------- |
-| {pages} | Gauge | Double |
+| pages | Gauge | Double |
 
 #### Attributes
 
@@ -494,7 +494,7 @@ The number of attempts to allocate memory of specified size.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {allocations} | Sum | Int | Cumulative | true |
+| allocations | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -510,7 +510,7 @@ The current number of free memory slots.
 
 | Unit | Metric Type | Value Type |
 | ---- | ----------- | ---------- |
-| {slots} | Gauge | Int |
+| slots | Gauge | Int |
 
 #### Attributes
 
@@ -525,7 +525,7 @@ The current number of used memory slots.
 
 | Unit | Metric Type | Value Type |
 | ---- | ----------- | ---------- |
-| {slots} | Gauge | Int |
+| slots | Gauge | Int |
 
 #### Attributes
 
@@ -540,7 +540,7 @@ The total number of SSL handshakes.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {handshakes} | Sum | Int | Cumulative | true |
+| handshakes | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -554,7 +554,7 @@ The total number of Stream byte IO.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {bytes} | Sum | Int | Cumulative | true |
+| bytes | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -569,7 +569,7 @@ The total number of connections accepted from clients.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {connections} | Sum | Int | Cumulative | true |
+| connections | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -583,7 +583,7 @@ Total number of connections completed without creating a session.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {connections} | Sum | Int | Cumulative | true |
+| connections | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -597,7 +597,7 @@ The number of client connections that are currently being processed.
 
 | Unit | Metric Type | Value Type |
 | ---- | ----------- | ---------- |
-| {connections} | Gauge | Int |
+| connections | Gauge | Int |
 
 #### Attributes
 
@@ -611,7 +611,7 @@ The total number of completed sessions.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {sessions} | Sum | Int | Cumulative | true |
+| sessions | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -626,7 +626,7 @@ The total number of Stream Upstream Peer byte IO.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {bytes} | Sum | Int | Cumulative | true |
+| bytes | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -643,7 +643,7 @@ The current number of Stream Upstream Peer connections.
 
 | Unit | Metric Type | Value Type |
 | ---- | ----------- | ---------- |
-| {connections} | Gauge | Int |
+| connections | Gauge | Int |
 
 #### Attributes
 
@@ -675,7 +675,7 @@ The total number of client connections forwarded to this stream upstream peer.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {connections} | Sum | Int | Cumulative | true |
+| connections | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -691,7 +691,7 @@ The total number of stream upstream peers grouped by state.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {peers} | Sum | Int | Cumulative | true |
+| peers | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -707,7 +707,7 @@ The total number of unsuccessful attempts to communicate with the stream upstrea
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {peers} | Sum | Int | Cumulative | true |
+| peers | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -723,7 +723,7 @@ The total number of health check requests made to the stream upstream peer.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {requests} | Sum | Int | Cumulative | true |
+| requests | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -772,7 +772,7 @@ How many times the server became unavailable for client connections (state “un
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {requests} | Sum | Int | Cumulative | true |
+| requests | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -788,7 +788,7 @@ Current state of upstream peers in deployment. If any of the upstream peers in t
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| {deployments} | Sum | Int | Cumulative | true |
+| deployments | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -804,7 +804,7 @@ The current number of peers removed from the group but still processing active c
 
 | Unit | Metric Type | Value Type |
 | ---- | ----------- | ---------- |
-| {deployments} | Gauge | Int |
+| deployments | Gauge | Int |
 
 #### Attributes
 

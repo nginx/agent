@@ -6,6 +6,7 @@ package nginxplusreceiver
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.opentelemetry.io/collector/component"
@@ -32,7 +33,7 @@ func createDefaultConfig() component.Config {
 	return &Config{
 		ControllerConfig: cfg,
 		ClientConfig: confighttp.ClientConfig{
-			Endpoint: "http://localhost:80/status",
+			Endpoint: "http://localhost:80/api",
 			Timeout:  10 * time.Second,
 		},
 		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
@@ -47,8 +48,12 @@ func createMetricsReceiver(
 ) (receiver.Metrics, error) {
 	cfg := rConf.(*Config)
 
-	ns := newNginxPlusScraper(params, cfg)
-	scraper, err := scraperhelper.NewScraper(metadata.Type.String(), ns.scrape, scraperhelper.WithStart(ns.start))
+	nps, err := newNginxPlusScraper(params, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("new nginx plus scraper: %w", err)
+	}
+
+	scraper, err := scraperhelper.NewScraper(metadata.Type.String(), nps.scrape)
 	if err != nil {
 		return nil, err
 	}

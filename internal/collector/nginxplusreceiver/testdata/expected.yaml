@@ -1,0 +1,143 @@
+resourceMetrics:
+  - resource: {}
+    scopeMetrics:
+      - metrics:
+          - description: The number of responses, grouped by status code range.
+            name: nginx.http.response.status
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "29"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 2xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: SERVER
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 3xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: SERVER
+                - asInt: "2"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 4xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: SERVER
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 5xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: SERVER
+                - asInt: "31"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 2xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: location_test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: LOCATION
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 3xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: location_test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: LOCATION
+                - asInt: "3"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 4xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: location_test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: LOCATION
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 5xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: location_test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: LOCATION
+              isMonotonic: true
+            unit: responses
+          - description: The total number of requests completed without sending a response.
+            name: nginx.http.request.discarded
+            sum:
+              aggregationTemporality: 2
+              isMonotonic: true
+              dataPoints:
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: location_test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: LOCATION
+                  timeUnixNano: "1000000"
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: SERVER
+                  timeUnixNano: "1000000"
+            unit: requests
+          - description: The number of client requests that are currently being processed.
+            name: nginx.http.request.processing.count
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "1"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: SERVER
+                  timeUnixNano: "1000000"
+              isMonotonic: true
+            unit: requests
+        scope:
+          name: otelcol/nginxplusreceiver
+          version: latest

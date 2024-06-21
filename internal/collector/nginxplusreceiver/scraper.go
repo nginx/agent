@@ -6,17 +6,28 @@ package nginxplusreceiver
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"time"
 
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
 
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver/internal/metadata"
+	plusapi "github.com/nginxinc/nginx-plus-go-client/client"
+)
+
+// var _ scraperhelper.Scraper = (*nginxPlusScraper)(nil)
+
+const (
+	plusAPIVersion = 9
 )
 
 type nginxPlusScraper struct {
 	httpClient *http.Client
+	plusClient *plusapi.NginxClient
 
 	settings component.TelemetrySettings
 	cfg      *Config
@@ -26,49 +37,118 @@ type nginxPlusScraper struct {
 func newNginxPlusScraper(
 	settings receiver.Settings,
 	cfg *Config,
-) *nginxPlusScraper {
+) (*nginxPlusScraper, error) {
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
-	return &nginxPlusScraper{
-		settings: settings.TelemetrySettings,
-		cfg:      cfg,
-		mb:       mb,
-	}
-}
 
-func (r *nginxPlusScraper) start(ctx context.Context, host component.Host) error {
-	httpClient, err := r.cfg.ToClient(ctx, host, r.settings)
+	plusClient, err := plusapi.NewNginxClient(cfg.Endpoint,
+		plusapi.WithAPIVersion(plusAPIVersion),
+	)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	r.httpClient = httpClient
 
-	return nil
+	return &nginxPlusScraper{
+		plusClient: plusClient,
+		settings:   settings.TelemetrySettings,
+		cfg:        cfg,
+		mb:         mb,
+	}, nil
 }
 
-func (r *nginxPlusScraper) scrape(context.Context) (pmetric.Metrics, error) {
-	// Init client in scrape method in case there are transient errors in the constructor.
-	// if r.client == nil {
-	// 	var err error
-	// 	r.client, err = client.NewNginxClient(r.httpClient, r.cfg.ClientConfig.Endpoint)
-	// 	if err != nil {
-	// 		r.client = nil
-	// 		return pmetric.Metrics{}, err
-	// 	}
-	// }
+// func (nps *nginxPlusScraper) ID() component.ID {
+// 	return component.NewID(metadata.Type)
+// }
 
-	// stats, err := r.client.GetStubStats()
-	// if err != nil {
-	// 	r.settings.Logger.Error("Failed to fetch nginx stats", zap.Error(err))
-	// 	return pmetric.Metrics{}, err
-	// }
+// func (nps *nginxPlusScraper) Start(ctx context.Context, host component.Host) error {
+// 	httpClient, err := nps.cfg.ToClient(ctx, host, nps.settings)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	nps.httpClient = httpClient
 
-	// now := pcommon.NewTimestampFromTime(time.Now())
-	// r.mb.RecordNginxRequestsDataPoint(now, stats.Requests)
-	// r.mb.RecordNginxConnectionsAcceptedDataPoint(now, stats.Connections.Accepted)
-	// r.mb.RecordNginxConnectionsHandledDataPoint(now, stats.Connections.Handled)
-	// r.mb.RecordNginxConnectionsCurrentDataPoint(now, stats.Connections.Active, metadata.AttributeStateActive)
-	// r.mb.RecordNginxConnectionsCurrentDataPoint(now, stats.Connections.Reading, metadata.AttributeStateReading)
-	// r.mb.RecordNginxConnectionsCurrentDataPoint(now, stats.Connections.Writing, metadata.AttributeStateWriting)
-	// r.mb.RecordNginxConnectionsCurrentDataPoint(now, stats.Connections.Waiting, metadata.AttributeStateWaiting)
-	return pmetric.Metrics{}, nil
+// 	nps.plusClient
+
+// 	return nil
+// }
+
+func (nps *nginxPlusScraper) scrape(context.Context) (pmetric.Metrics, error) {
+	stats, err := nps.plusClient.GetStats()
+	if err != nil {
+		return pmetric.Metrics{}, fmt.Errorf("GET stats: %w", err)
+	}
+
+	now := pcommon.NewTimestampFromTime(time.Now())
+	nps.recordResponseStatuses(stats, now)
+	return nps.mb.Emit(), nil
 }
+
+func (nps *nginxPlusScraper) recordResponseStatuses(stats *plusapi.Stats, now pcommon.Timestamp) {
+	for lzName, lz := range stats.LocationZones {
+		nps.mb.RecordNginxHTTPResponseStatusDataPoint(now, int64(lz.Responses.Responses2xx),
+			metadata.AttributeNginxStatusRange2xx,
+			lzName,
+			metadata.AttributeNginxZoneTypeLOCATION,
+		)
+		nps.mb.RecordNginxHTTPResponseStatusDataPoint(now, int64(lz.Responses.Responses3xx),
+			metadata.AttributeNginxStatusRange3xx,
+			lzName,
+			metadata.AttributeNginxZoneTypeLOCATION,
+		)
+
+		nps.mb.RecordNginxHTTPResponseStatusDataPoint(now, int64(lz.Responses.Responses4xx),
+			metadata.AttributeNginxStatusRange4xx,
+			lzName,
+			metadata.AttributeNginxZoneTypeLOCATION,
+		)
+
+		nps.mb.RecordNginxHTTPResponseStatusDataPoint(now, int64(lz.Responses.Responses5xx),
+			metadata.AttributeNginxStatusRange5xx,
+			lzName,
+			metadata.AttributeNginxZoneTypeLOCATION,
+		)
+
+		nps.mb.RecordNginxHTTPRequestDiscardedDataPoint(now, int64(lz.Discarded),
+			lzName,
+			metadata.AttributeNginxZoneTypeLOCATION,
+		)
+	}
+
+	for szName, sz := range stats.ServerZones {
+		nps.mb.RecordNginxHTTPResponseStatusDataPoint(now, int64(sz.Responses.Responses2xx),
+			metadata.AttributeNginxStatusRange2xx,
+			szName,
+			metadata.AttributeNginxZoneTypeSERVER,
+		)
+		nps.mb.RecordNginxHTTPResponseStatusDataPoint(now, int64(sz.Responses.Responses3xx),
+			metadata.AttributeNginxStatusRange3xx,
+			szName,
+			metadata.AttributeNginxZoneTypeSERVER,
+		)
+
+		nps.mb.RecordNginxHTTPResponseStatusDataPoint(now, int64(sz.Responses.Responses4xx),
+			metadata.AttributeNginxStatusRange4xx,
+			szName,
+			metadata.AttributeNginxZoneTypeSERVER,
+		)
+
+		nps.mb.RecordNginxHTTPResponseStatusDataPoint(now, int64(sz.Responses.Responses5xx),
+			metadata.AttributeNginxStatusRange5xx,
+			szName,
+			metadata.AttributeNginxZoneTypeSERVER,
+		)
+
+		nps.mb.RecordNginxHTTPRequestDiscardedDataPoint(now, int64(sz.Discarded),
+			szName,
+			metadata.AttributeNginxZoneTypeSERVER,
+		)
+
+		nps.mb.RecordNginxHTTPRequestProcessingCountDataPoint(now, int64(sz.Processing),
+			szName,
+			metadata.AttributeNginxZoneTypeSERVER,
+		)
+	}
+}
+
+// func (nps *nginxPlusScraper) Shutdown(ctx context.Context) error {
+// 	return nil
+// }

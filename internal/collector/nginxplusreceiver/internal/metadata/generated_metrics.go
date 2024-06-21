@@ -341,7 +341,7 @@ type metricNginxCacheBytes struct {
 func (m *metricNginxCacheBytes) init() {
 	m.data.SetName("nginx.cache.bytes")
 	m.data.SetDescription("The total number of bytes read from the cache or proxied server.")
-	m.data.SetUnit("{bytes}")
+	m.data.SetUnit("bytes")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -394,7 +394,7 @@ type metricNginxCacheMemoryLimit struct {
 func (m *metricNginxCacheMemoryLimit) init() {
 	m.data.SetName("nginx.cache.memory.limit")
 	m.data.SetDescription("The limit on the maximum size of the cache specified in the configuration.")
-	m.data.SetUnit("{bytes}")
+	m.data.SetUnit("bytes")
 	m.data.SetEmptyGauge()
 }
 
@@ -443,7 +443,7 @@ type metricNginxCacheMemoryUsage struct {
 func (m *metricNginxCacheMemoryUsage) init() {
 	m.data.SetName("nginx.cache.memory.usage")
 	m.data.SetDescription("The current size of the cache.")
-	m.data.SetUnit("{bytes}")
+	m.data.SetUnit("bytes")
 	m.data.SetEmptyGauge()
 }
 
@@ -492,7 +492,7 @@ type metricNginxCacheResponses struct {
 func (m *metricNginxCacheResponses) init() {
 	m.data.SetName("nginx.cache.responses")
 	m.data.SetDescription("The total number of responses read from the cache or proxied server.")
-	m.data.SetUnit("{responses}")
+	m.data.SetUnit("responses")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -545,7 +545,7 @@ type metricNginxHTTPLimitConnRequests struct {
 func (m *metricNginxHTTPLimitConnRequests) init() {
 	m.data.SetName("nginx.http.limit_conn.requests")
 	m.data.SetDescription("The total number of connections to an endpoint with a limit_conn directive.")
-	m.data.SetUnit("{connections}")
+	m.data.SetUnit("connections")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -599,7 +599,7 @@ type metricNginxHTTPLimitReqRequests struct {
 func (m *metricNginxHTTPLimitReqRequests) init() {
 	m.data.SetName("nginx.http.limit_req.requests")
 	m.data.SetDescription("The total number of requests to an endpoint with a limit_req directive.")
-	m.data.SetUnit("{requests}")
+	m.data.SetUnit("requests")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -653,7 +653,7 @@ type metricNginxHTTPRequestByteIo struct {
 func (m *metricNginxHTTPRequestByteIo) init() {
 	m.data.SetName("nginx.http.request.byte.io")
 	m.data.SetDescription("The total number of HTTP byte IO.")
-	m.data.SetUnit("{bytes}")
+	m.data.SetUnit("bytes")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -708,7 +708,7 @@ type metricNginxHTTPRequestDiscarded struct {
 func (m *metricNginxHTTPRequestDiscarded) init() {
 	m.data.SetName("nginx.http.request.discarded")
 	m.data.SetDescription("The total number of requests completed without sending a response.")
-	m.data.SetUnit("{requests}")
+	m.data.SetUnit("requests")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -762,7 +762,7 @@ type metricNginxHTTPRequestProcessingCount struct {
 func (m *metricNginxHTTPRequestProcessingCount) init() {
 	m.data.SetName("nginx.http.request.processing.count")
 	m.data.SetDescription("The number of client requests that are currently being processed.")
-	m.data.SetUnit("{requests}")
+	m.data.SetUnit("requests")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
@@ -814,7 +814,7 @@ type metricNginxHTTPRequests struct {
 func (m *metricNginxHTTPRequests) init() {
 	m.data.SetName("nginx.http.requests")
 	m.data.SetDescription("The total number of client requests received from clients.")
-	m.data.SetUnit("{requests}")
+	m.data.SetUnit("requests")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -868,7 +868,7 @@ type metricNginxHTTPResponseStatus struct {
 func (m *metricNginxHTTPResponseStatus) init() {
 	m.data.SetName("nginx.http.response.status")
 	m.data.SetDescription("The number of responses, grouped by status code range.")
-	m.data.SetUnit("{responses}")
+	m.data.SetUnit("responses")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -923,7 +923,7 @@ type metricNginxHTTPResponses struct {
 func (m *metricNginxHTTPResponses) init() {
 	m.data.SetName("nginx.http.responses")
 	m.data.SetDescription("The total number of client requests received from clients.")
-	m.data.SetUnit("{responses}")
+	m.data.SetUnit("responses")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -977,7 +977,7 @@ type metricNginxHTTPUpstreamKeepaliveCount struct {
 func (m *metricNginxHTTPUpstreamKeepaliveCount) init() {
 	m.data.SetName("nginx.http.upstream.keepalive.count")
 	m.data.SetDescription("The current number of idle keepalive connections per HTTP upstream.")
-	m.data.SetUnit("{connections}")
+	m.data.SetUnit("connections")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
@@ -1029,7 +1029,7 @@ type metricNginxHTTPUpstreamPeerByteIo struct {
 func (m *metricNginxHTTPUpstreamPeerByteIo) init() {
 	m.data.SetName("nginx.http.upstream.peer.byte.io")
 	m.data.SetDescription("The total number of byte IO per HTTP upstream peer.")
-	m.data.SetUnit("{bytes}")
+	m.data.SetUnit("bytes")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -1085,7 +1085,7 @@ type metricNginxHTTPUpstreamPeerConnCount struct {
 func (m *metricNginxHTTPUpstreamPeerConnCount) init() {
 	m.data.SetName("nginx.http.upstream.peer.conn.count")
 	m.data.SetDescription("The average number of active connections per HTTP upstream peer.")
-	m.data.SetUnit("{connections}")
+	m.data.SetUnit("connections")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
@@ -1138,7 +1138,7 @@ type metricNginxHTTPUpstreamPeerCount struct {
 func (m *metricNginxHTTPUpstreamPeerCount) init() {
 	m.data.SetName("nginx.http.upstream.peer.count")
 	m.data.SetDescription("The current count of peers on the HTTP upstream grouped by state.")
-	m.data.SetUnit("{peers}")
+	m.data.SetUnit("peers")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
@@ -1191,7 +1191,7 @@ type metricNginxHTTPUpstreamPeerFails struct {
 func (m *metricNginxHTTPUpstreamPeerFails) init() {
 	m.data.SetName("nginx.http.upstream.peer.fails")
 	m.data.SetDescription("The total number of unsuccessful attempts to communicate with the HTTP upstream peer.")
-	m.data.SetUnit("{attempts}")
+	m.data.SetUnit("attempts")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
@@ -1297,7 +1297,7 @@ type metricNginxHTTPUpstreamPeerHealthChecks struct {
 func (m *metricNginxHTTPUpstreamPeerHealthChecks) init() {
 	m.data.SetName("nginx.http.upstream.peer.health_checks")
 	m.data.SetDescription("The total number of health check requests made to a HTTP upstream peer.")
-	m.data.SetUnit("{requests}")
+	m.data.SetUnit("requests")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -1353,7 +1353,7 @@ type metricNginxHTTPUpstreamPeerRequests struct {
 func (m *metricNginxHTTPUpstreamPeerRequests) init() {
 	m.data.SetName("nginx.http.upstream.peer.requests")
 	m.data.SetDescription("The total number of client requests forwarded to the HTTP upstream peer.")
-	m.data.SetUnit("{requests}")
+	m.data.SetUnit("requests")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -1461,7 +1461,7 @@ type metricNginxHTTPUpstreamPeerResponses struct {
 func (m *metricNginxHTTPUpstreamPeerResponses) init() {
 	m.data.SetName("nginx.http.upstream.peer.responses")
 	m.data.SetDescription("The total number of responses obtained from the HTTP upstream peer grouped by status range.")
-	m.data.SetUnit("{responses}")
+	m.data.SetUnit("responses")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -1517,7 +1517,7 @@ type metricNginxHTTPUpstreamPeerUnavailables struct {
 func (m *metricNginxHTTPUpstreamPeerUnavailables) init() {
 	m.data.SetName("nginx.http.upstream.peer.unavailables")
 	m.data.SetDescription("Number of times the server became unavailable for client requests (“unavail”).")
-	m.data.SetUnit("{requests}")
+	m.data.SetUnit("requests")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -1572,7 +1572,7 @@ type metricNginxHTTPUpstreamQueueLimit struct {
 func (m *metricNginxHTTPUpstreamQueueLimit) init() {
 	m.data.SetName("nginx.http.upstream.queue.limit")
 	m.data.SetDescription("The maximum number of requests that can be in the queue at the same time.")
-	m.data.SetUnit("{requests}")
+	m.data.SetUnit("requests")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
@@ -1624,7 +1624,7 @@ type metricNginxHTTPUpstreamQueueOverflows struct {
 func (m *metricNginxHTTPUpstreamQueueOverflows) init() {
 	m.data.SetName("nginx.http.upstream.queue.overflows")
 	m.data.SetDescription("The total number of requests rejected due to the queue overflow.")
-	m.data.SetUnit("{responses}")
+	m.data.SetUnit("responses")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -1678,7 +1678,7 @@ type metricNginxHTTPUpstreamQueueUsage struct {
 func (m *metricNginxHTTPUpstreamQueueUsage) init() {
 	m.data.SetName("nginx.http.upstream.queue.usage")
 	m.data.SetDescription("The current number of requests in the queue.")
-	m.data.SetUnit("{requests}")
+	m.data.SetUnit("requests")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
@@ -1730,7 +1730,7 @@ type metricNginxHTTPUpstreamState struct {
 func (m *metricNginxHTTPUpstreamState) init() {
 	m.data.SetName("nginx.http.upstream.state")
 	m.data.SetDescription("Current state of upstream peers in deployment. If any of the upstream servers in the deployment are in the given state then the value will be 1. If no upstream server matches the selected state then the value will be 0.")
-	m.data.SetUnit("{is_deployed}")
+	m.data.SetUnit("is_deployed")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
@@ -1783,7 +1783,7 @@ type metricNginxHTTPUpstreamZombieCount struct {
 func (m *metricNginxHTTPUpstreamZombieCount) init() {
 	m.data.SetName("nginx.http.upstream.zombie.count")
 	m.data.SetDescription("The current number of upstream peers removed from the group but still processing active client requests.")
-	m.data.SetUnit("{is_deployed}")
+	m.data.SetUnit("is_deployed")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
@@ -1835,7 +1835,7 @@ type metricNginxSlabPageFree struct {
 func (m *metricNginxSlabPageFree) init() {
 	m.data.SetName("nginx.slab.page.free")
 	m.data.SetDescription("The current number of free memory pages.")
-	m.data.SetUnit("{pages}")
+	m.data.SetUnit("pages")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
@@ -1886,7 +1886,7 @@ type metricNginxSlabPageLimit struct {
 func (m *metricNginxSlabPageLimit) init() {
 	m.data.SetName("nginx.slab.page.limit")
 	m.data.SetDescription("The total number of memory pages (free and used).")
-	m.data.SetUnit("{pages}")
+	m.data.SetUnit("pages")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
@@ -1937,7 +1937,7 @@ type metricNginxSlabPageUsage struct {
 func (m *metricNginxSlabPageUsage) init() {
 	m.data.SetName("nginx.slab.page.usage")
 	m.data.SetDescription("The current number of used memory pages.")
-	m.data.SetUnit("{pages}")
+	m.data.SetUnit("pages")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
@@ -1988,7 +1988,7 @@ type metricNginxSlabPageUtilization struct {
 func (m *metricNginxSlabPageUtilization) init() {
 	m.data.SetName("nginx.slab.page.utilization")
 	m.data.SetDescription("The current percentage of used memory pages.")
-	m.data.SetUnit("{pages}")
+	m.data.SetUnit("pages")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
@@ -2039,7 +2039,7 @@ type metricNginxSlabSlotAllocations struct {
 func (m *metricNginxSlabSlotAllocations) init() {
 	m.data.SetName("nginx.slab.slot.allocations")
 	m.data.SetDescription("The number of attempts to allocate memory of specified size.")
-	m.data.SetUnit("{allocations}")
+	m.data.SetUnit("allocations")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -2094,7 +2094,7 @@ type metricNginxSlabSlotFree struct {
 func (m *metricNginxSlabSlotFree) init() {
 	m.data.SetName("nginx.slab.slot.free")
 	m.data.SetDescription("The current number of free memory slots.")
-	m.data.SetUnit("{slots}")
+	m.data.SetUnit("slots")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
@@ -2146,7 +2146,7 @@ type metricNginxSlabSlotUsage struct {
 func (m *metricNginxSlabSlotUsage) init() {
 	m.data.SetName("nginx.slab.slot.usage")
 	m.data.SetDescription("The current number of used memory slots.")
-	m.data.SetUnit("{slots}")
+	m.data.SetUnit("slots")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
@@ -2198,7 +2198,7 @@ type metricNginxSslHandshakes struct {
 func (m *metricNginxSslHandshakes) init() {
 	m.data.SetName("nginx.ssl.handshakes")
 	m.data.SetDescription("The total number of SSL handshakes.")
-	m.data.SetUnit("{handshakes}")
+	m.data.SetUnit("handshakes")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -2251,7 +2251,7 @@ type metricNginxStreamByteIo struct {
 func (m *metricNginxStreamByteIo) init() {
 	m.data.SetName("nginx.stream.byte.io")
 	m.data.SetDescription("The total number of Stream byte IO.")
-	m.data.SetUnit("{bytes}")
+	m.data.SetUnit("bytes")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -2305,7 +2305,7 @@ type metricNginxStreamConnectionAccepted struct {
 func (m *metricNginxStreamConnectionAccepted) init() {
 	m.data.SetName("nginx.stream.connection.accepted")
 	m.data.SetDescription("The total number of connections accepted from clients.")
-	m.data.SetUnit("{connections}")
+	m.data.SetUnit("connections")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -2358,7 +2358,7 @@ type metricNginxStreamConnectionDiscarded struct {
 func (m *metricNginxStreamConnectionDiscarded) init() {
 	m.data.SetName("nginx.stream.connection.discarded")
 	m.data.SetDescription("Total number of connections completed without creating a session.")
-	m.data.SetUnit("{connections}")
+	m.data.SetUnit("connections")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -2411,7 +2411,7 @@ type metricNginxStreamConnectionProcessingCount struct {
 func (m *metricNginxStreamConnectionProcessingCount) init() {
 	m.data.SetName("nginx.stream.connection.processing.count")
 	m.data.SetDescription("The number of client connections that are currently being processed.")
-	m.data.SetUnit("{connections}")
+	m.data.SetUnit("connections")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
@@ -2462,7 +2462,7 @@ type metricNginxStreamSessionStatus struct {
 func (m *metricNginxStreamSessionStatus) init() {
 	m.data.SetName("nginx.stream.session.status")
 	m.data.SetDescription("The total number of completed sessions.")
-	m.data.SetUnit("{sessions}")
+	m.data.SetUnit("sessions")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -2516,7 +2516,7 @@ type metricNginxStreamUpstreamPeerByteIo struct {
 func (m *metricNginxStreamUpstreamPeerByteIo) init() {
 	m.data.SetName("nginx.stream.upstream.peer.byte.io")
 	m.data.SetDescription("The total number of Stream Upstream Peer byte IO.")
-	m.data.SetUnit("{bytes}")
+	m.data.SetUnit("bytes")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -2572,7 +2572,7 @@ type metricNginxStreamUpstreamPeerConnCount struct {
 func (m *metricNginxStreamUpstreamPeerConnCount) init() {
 	m.data.SetName("nginx.stream.upstream.peer.conn.count")
 	m.data.SetDescription("The current number of Stream Upstream Peer connections.")
-	m.data.SetUnit("{connections}")
+	m.data.SetUnit("connections")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
@@ -2678,7 +2678,7 @@ type metricNginxStreamUpstreamPeerConns struct {
 func (m *metricNginxStreamUpstreamPeerConns) init() {
 	m.data.SetName("nginx.stream.upstream.peer.conns")
 	m.data.SetDescription("The total number of client connections forwarded to this stream upstream peer.")
-	m.data.SetUnit("{connections}")
+	m.data.SetUnit("connections")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -2733,7 +2733,7 @@ type metricNginxStreamUpstreamPeerCount struct {
 func (m *metricNginxStreamUpstreamPeerCount) init() {
 	m.data.SetName("nginx.stream.upstream.peer.count")
 	m.data.SetDescription("The total number of stream upstream peers grouped by state.")
-	m.data.SetUnit("{peers}")
+	m.data.SetUnit("peers")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -2788,7 +2788,7 @@ type metricNginxStreamUpstreamPeerFails struct {
 func (m *metricNginxStreamUpstreamPeerFails) init() {
 	m.data.SetName("nginx.stream.upstream.peer.fails")
 	m.data.SetDescription("The total number of unsuccessful attempts to communicate with the stream upstream peer.")
-	m.data.SetUnit("{peers}")
+	m.data.SetUnit("peers")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -2843,7 +2843,7 @@ type metricNginxStreamUpstreamPeerHealthChecks struct {
 func (m *metricNginxStreamUpstreamPeerHealthChecks) init() {
 	m.data.SetName("nginx.stream.upstream.peer.health_checks")
 	m.data.SetDescription("The total number of health check requests made to the stream upstream peer.")
-	m.data.SetUnit("{requests}")
+	m.data.SetUnit("requests")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -3005,7 +3005,7 @@ type metricNginxStreamUpstreamPeerUnavailable struct {
 func (m *metricNginxStreamUpstreamPeerUnavailable) init() {
 	m.data.SetName("nginx.stream.upstream.peer.unavailable")
 	m.data.SetDescription("How many times the server became unavailable for client connections (state “unavail”) due to the number of unsuccessful attempts reaching the max_fails threshold.")
-	m.data.SetUnit("{requests}")
+	m.data.SetUnit("requests")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -3060,7 +3060,7 @@ type metricNginxStreamUpstreamState struct {
 func (m *metricNginxStreamUpstreamState) init() {
 	m.data.SetName("nginx.stream.upstream.state")
 	m.data.SetDescription("Current state of upstream peers in deployment. If any of the upstream peers in the deployment match the given state then the value will be 1. If no upstream peer is a match then the value will be 0.")
-	m.data.SetUnit("{deployments}")
+	m.data.SetUnit("deployments")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -3115,7 +3115,7 @@ type metricNginxStreamUpstreamZombieCount struct {
 func (m *metricNginxStreamUpstreamZombieCount) init() {
 	m.data.SetName("nginx.stream.upstream.zombie.count")
 	m.data.SetDescription("The current number of peers removed from the group but still processing active client connections.")
-	m.data.SetUnit("{deployments}")
+	m.data.SetUnit("deployments")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }

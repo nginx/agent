@@ -106,7 +106,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{bytes}"
+    unit: "bytes"
     attributes:
       - nginx.cache.outcome
   nginx.cache.responses:
@@ -116,7 +116,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{responses}"
+    unit: "responses"
     attributes:
       - nginx.cache.outcome
   nginx.cache.memory.limit:
@@ -124,13 +124,13 @@ metrics:
     description: The limit on the maximum size of the cache specified in the configuration.
     gauge:
       value_type: int
-    unit: "{bytes}"
+    unit: "bytes"
   nginx.cache.memory.usage:
     enabled: true
     description: The current size of the cache.
     gauge:
       value_type: int
-    unit: "{bytes}"
+    unit: "bytes"
   nginx.http.limit_conn.requests:
     enabled: true
     description: The total number of connections to an endpoint with a limit_conn directive.
@@ -138,7 +138,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{connections}"
+    unit: "connections"
     attributes:
       - nginx.limit_conn.outcome
       - nginx.zone.name
@@ -149,7 +149,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{requests}"
+    unit: "requests"
     attributes:
       - nginx.limit_req.outcome
       - nginx.zone.name
@@ -160,7 +160,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{bytes}"
+    unit: "bytes"
     attributes:
       - nginx.byte.io.direction
       - nginx.zone.name
@@ -172,7 +172,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{requests}"
+    unit: "requests"
     attributes:
       - nginx.zone.name
       - nginx.zone.type
@@ -181,7 +181,7 @@ metrics:
     description: The number of client requests that are currently being processed.
     gauge:
       value_type: int
-    unit: "{requests}"
+    unit: "requests"
     attributes:
       - nginx.zone.name
       - nginx.zone.type
@@ -192,7 +192,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{requests}"
+    unit: "requests"
     attributes:
       - nginx.zone.name
       - nginx.zone.type
@@ -203,7 +203,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{responses}"
+    unit: "responses"
     attributes:
       - nginx.zone.name
       - nginx.zone.type
@@ -214,7 +214,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{responses}"
+    unit: "responses"
     attributes:
       - nginx.status_range
       - nginx.zone.name
@@ -224,7 +224,7 @@ metrics:
     description: The current number of idle keepalive connections per HTTP upstream.
     gauge:
       value_type: int
-    unit: "{connections}"
+    unit: "connections"
     attributes:
       - nginx.zone.name
       - nginx.upstream.name
@@ -235,7 +235,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{bytes}"
+    unit: "bytes"
     attributes:
       - nginx.byte.io.direction
       - nginx.zone.name
@@ -246,7 +246,7 @@ metrics:
     description: The average number of active connections per HTTP upstream peer.
     gauge:
       value_type: int
-    unit: "{connections}"
+    unit: "connections"
     attributes:
       - nginx.zone.name
       - nginx.upstream.name
@@ -256,7 +256,7 @@ metrics:
     description: The current count of peers on the HTTP upstream grouped by state.
     gauge:
       value_type: int
-    unit: "{peers}"
+    unit: "peers"
     attributes:
       - nginx.peer.state
       - nginx.zone.name
@@ -266,7 +266,7 @@ metrics:
     description: The total number of unsuccessful attempts to communicate with the HTTP upstream peer.
     gauge:
       value_type: int
-    unit: "{attempts}"
+    unit: "attempts"
     attributes:
       - nginx.zone.name
       - nginx.upstream.name
@@ -288,7 +288,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{requests}"
+    unit: "requests"
     attributes:
       - nginx.health_check
       - nginx.zone.name
@@ -301,7 +301,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{requests}"
+    unit: "requests"
     attributes:
       - nginx.zone.name
       - nginx.upstream.name
@@ -323,7 +323,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{responses}"
+    unit: "responses"
     attributes:
       - nginx.status_range
       - nginx.zone.name
@@ -336,7 +336,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{requests}"
+    unit: "requests"
     attributes:
       - nginx.zone.name
       - nginx.upstream.name
@@ -346,7 +346,7 @@ metrics:
     description: The maximum number of requests that can be in the queue at the same time.
     gauge:
       value_type: int
-    unit: "{requests}"
+    unit: "requests"
     attributes:
       - nginx.zone.name
       - nginx.upstream.name
@@ -357,7 +357,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{responses}"
+    unit: "responses"
     attributes:
       - nginx.zone.name
       - nginx.upstream.name
@@ -366,7 +366,7 @@ metrics:
     description: The current number of requests in the queue.
     gauge:
       value_type: int
-    unit: "{requests}"
+    unit: "requests"
     attributes:
       - nginx.zone.name
       - nginx.upstream.name
@@ -376,7 +376,7 @@ metrics:
       state then the value will be 1. If no upstream server matches the selected state then the value will be 0.
     gauge:
       value_type: int
-    unit: "{is_deployed}"
+    unit: "is_deployed"
     attributes:
       - nginx.peer.state
       - nginx.zone.name
@@ -386,7 +386,7 @@ metrics:
     description: The current number of upstream peers removed from the group but still processing active client requests.
     gauge:
       value_type: int
-    unit: "{is_deployed}"
+    unit: "is_deployed"
     attributes:
       - nginx.peer.state
       - nginx.zone.name
@@ -395,7 +395,7 @@ metrics:
     description: The current number of free memory pages.
     gauge:
       value_type: int
-    unit: "{pages}"
+    unit: "pages"
     attributes:
       - nginx.zone.name
   nginx.slab.page.limit:
@@ -403,7 +403,7 @@ metrics:
     description: The total number of memory pages (free and used).
     gauge:
       value_type: int
-    unit: "{pages}"
+    unit: "pages"
     attributes:
       - nginx.zone.name
   nginx.slab.page.usage:
@@ -411,7 +411,7 @@ metrics:
     description: The current number of used memory pages.
     gauge:
       value_type: int
-    unit: "{pages}"
+    unit: "pages"
     attributes:
       - nginx.zone.name
   nginx.slab.page.utilization:
@@ -419,7 +419,7 @@ metrics:
     description: The current percentage of used memory pages.
     gauge:
       value_type: double
-    unit: "{pages}"
+    unit: "pages"
     attributes:
       - nginx.zone.name
   nginx.slab.slot.usage:
@@ -427,7 +427,7 @@ metrics:
     description: The current number of used memory slots.
     gauge:
       value_type: int
-    unit: "{slots}"
+    unit: "slots"
     attributes:
       - nginx.slab.slot.limit
       - nginx.zone.name
@@ -436,7 +436,7 @@ metrics:
     description: The current number of free memory slots.
     gauge:
       value_type: int
-    unit: "{slots}"
+    unit: "slots"
     attributes:
       - nginx.slab.slot.limit
       - nginx.zone.name
@@ -447,7 +447,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{allocations}"
+    unit: "allocations"
     attributes:
       - nginx.slab.slot.limit
       - nginx.slab.slot.allocation.result
@@ -459,7 +459,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{handshakes}"
+    unit: "handshakes"
     attributes:
       - nginx.ssl.status
   nginx.stream.byte.io:
@@ -469,7 +469,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{bytes}"
+    unit: "bytes"
     attributes:
       - nginx.byte.io.direction
       - nginx.zone.name
@@ -480,7 +480,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{connections}"
+    unit: "connections"
     attributes:
       - nginx.zone.name
   nginx.stream.connection.discarded:
@@ -490,7 +490,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{connections}"
+    unit: "connections"
     attributes:
       - nginx.zone.name
   nginx.stream.connection.processing.count:
@@ -498,7 +498,7 @@ metrics:
     description: The number of client connections that are currently being processed.
     gauge:
       value_type: int
-    unit: "{connections}"
+    unit: "connections"
     attributes:
       - nginx.zone.name
   nginx.stream.session.status:
@@ -508,7 +508,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{sessions}"
+    unit: "sessions"
     attributes:
       - nginx.status_range
       - nginx.zone.name
@@ -519,7 +519,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{bytes}"
+    unit: "bytes"
     attributes:
       - nginx.byte.io.direction
       - nginx.zone.name
@@ -530,7 +530,7 @@ metrics:
     description: The current number of Stream Upstream Peer connections.
     gauge:
       value_type: int
-    unit: "{connections}"
+    unit: "connections"
     attributes:
       - nginx.zone.name
       - nginx.upstream.name
@@ -552,7 +552,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{connections}"
+    unit: "connections"
     attributes:
       - nginx.zone.name
       - nginx.upstream.name
@@ -564,7 +564,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{peers}"
+    unit: "peers"
     attributes:
       - nginx.peer.state
       - nginx.zone.name
@@ -576,7 +576,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{peers}"
+    unit: "peers"
     attributes:
       - nginx.zone.name
       - nginx.upstream.name
@@ -588,7 +588,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{requests}"
+    unit: "requests"
     attributes:
       - nginx.health_check
       - nginx.zone.name
@@ -622,7 +622,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{requests}"
+    unit: "requests"
     attributes:
       - nginx.zone.name
       - nginx.upstream.name
@@ -635,7 +635,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "{deployments}"
+    unit: "deployments"
     attributes:
       - nginx.peer.state
       - nginx.zone.name
@@ -645,7 +645,7 @@ metrics:
     description: The current number of peers removed from the group but still processing active client connections.
     gauge:
       value_type: int
-    unit: "{deployments}"
+    unit: "deployments"
     attributes:
       - nginx.zone.name
       - nginx.upstream.name
