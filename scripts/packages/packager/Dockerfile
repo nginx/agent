@@ -11,7 +11,7 @@ RUN apt-get update && \
 
 # compile, install pkg tool for linux
 RUN	mkdir $PKG_DIR; cd $PKG_DIR; \
-	go install github.com/goreleaser/nfpm/v2/cmd/nfpm@vv2.35.3; \
+	go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.35.3; \
     curl -L -o pkg.zip https://github.com/freebsd/pkg/archive/refs/tags/$PKG_VER.zip; \
 	unzip -qo pkg.zip; cd pkg-$PKG_VER; ./configure; make -s -j$(nproc); make install; \
 	rm -rf $PKG_DIR
