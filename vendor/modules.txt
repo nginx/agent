@@ -90,7 +90,7 @@ github.com/maxbrunsfeld/counterfeiter/v6/generator
 ## explicit; go 1.14
 github.com/mitchellh/mapstructure
 # github.com/nginx/agent/sdk/v2 v2.30.3 => ./sdk
-## explicit; go 1.21
+## explicit; go 1.22
 github.com/nginx/agent/sdk/v2
 github.com/nginx/agent/sdk/v2/agent/config
 github.com/nginx/agent/sdk/v2/agent/events
