@@ -8,16 +8,14 @@ package instance
 import (
 	"context"
 	"log/slog"
-	"reflect"
 	"time"
-
-	"github.com/nginx/agent/v3/internal/watcher/process"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/internal/watcher/process"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -263,7 +261,27 @@ func areInstancesEqual(oldRuntime, currentRuntime *mpi.InstanceRuntime) (equal b
 		return false
 	}
 
-	return reflect.DeepEqual(oldRuntime.GetInstanceChildren(), currentRuntime.GetInstanceChildren())
+	oldRuntimeChildren := oldRuntime.GetInstanceChildren()
+	currentRuntimeChildren := currentRuntime.GetInstanceChildren()
+
+	if len(oldRuntimeChildren) != len(currentRuntimeChildren) {
+		return false
+	}
+
+	for _, oldChild := range oldRuntimeChildren {
+		childFound := false
+		for _, currentChild := range currentRuntimeChildren {
+			if oldChild.GetProcessId() == currentChild.GetProcessId() {
+				childFound = true
+			}
+		}
+
+		if !childFound {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (iw *InstanceWatcherService) updateNginxInstanceRuntime(
