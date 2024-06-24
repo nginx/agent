@@ -43,6 +43,7 @@ func TestFilePlugin_Subscriptions(t *testing.T) {
 	assert.Equal(
 		t,
 		[]string{
+			bus.ConnectionCreatedTopic,
 			bus.NginxConfigUpdateTopic,
 			bus.ConfigUploadRequestTopic,
 		},

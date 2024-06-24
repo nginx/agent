@@ -70,6 +70,7 @@ func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 
 func (fp *FilePlugin) Subscriptions() []string {
 	return []string{
+		bus.ConnectionCreatedTopic,
 		bus.NginxConfigUpdateTopic,
 		bus.ConfigUploadRequestTopic,
 	}
