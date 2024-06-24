@@ -19,8 +19,8 @@ permissions:
   contents: read
 
 env:
-  GOLANGCI_LINT_VERSION: 'v1.54.2'
-  NFPM_VERSION: 'v2.32.0'
+  GOLANGCI_LINT_VERSION: 'v1.55.1'
+  NFPM_VERSION: 'v2.35.3'
 
 jobs:
   lint:
