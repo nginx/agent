@@ -9,6 +9,7 @@ package sdk
 
 import (
 	"crypto/sha256"
+	"crypto/x509"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -175,6 +176,7 @@ func updateNginxConfigFromPayload(
 	directoryMap := newDirectoryMap()
 	formatMap := map[string]string{}  // map of accessLog/errorLog formats
 	seen := make(map[string]struct{}) // local cache of seen files
+	seenCerts := make(map[string]*x509.Certificate) // local cache of seen certs
 
 	// Add files to the zipped config in a consistent order.
 	if err = conf.AddFile(payload.Config[0].File); err != nil {
@@ -206,7 +208,7 @@ func updateNginxConfigFromPayload(
 			return err
 		}
 
-		err = updateNginxConfigFileConfig(xpConf, nginxConfig, filepath.Dir(confFile), aux, formatMap, seen, allowedDirectories, directoryMap)
+		err = updateNginxConfigFileConfig(xpConf, nginxConfig, filepath.Dir(confFile), aux, formatMap, seen, allowedDirectories, directoryMap, seenCerts)
 		if err != nil {
 			return fmt.Errorf("configs: failed to update nginx config: %s", err)
 		}
@@ -253,6 +255,7 @@ func updateNginxConfigFileConfig(
 	seen map[string]struct{},
 	allowedDirectories map[string]struct{},
 	directoryMap *DirectoryMap,
+	seenCerts map[string]*x509.Certificate,
 ) error {
 	err := CrossplaneConfigTraverse(&conf,
 		func(parent *crossplane.Directive, directive *crossplane.Directive) (bool, error) {
@@ -270,7 +273,7 @@ func updateNginxConfigFileConfig(
 					return true, err
 				}
 			case "ssl_certificate", "proxy_ssl_certificate", "ssl_client_certificate", "ssl_trusted_certificate":
-				if err := updateNginxConfigWithCert(directive.Directive, directive.Args[0], nginxConfig, aux, hostDir, directoryMap, allowedDirectories); err != nil {
+				if err := updateNginxConfigWithCert(directive.Directive, directive.Args[0], nginxConfig, aux, hostDir, directoryMap, allowedDirectories, seenCerts); err != nil {
 					return true, err
 				}
 			case "access_log":
@@ -300,6 +303,7 @@ func updateNginxConfigWithCert(
 	rootDir string,
 	directoryMap *DirectoryMap,
 	allowedDirectories map[string]struct{},
+	seenCerts map[string]*x509.Certificate,
 ) error {
 	if strings.Contains(file, "$") {
 		// cannot process any filepath with variables
@@ -330,52 +334,49 @@ func updateNginxConfigWithCert(
 	}
 
 	if contains(certDirectives, directive) {
-		cert, cErr := LoadCertificate(file)
-		if cErr != nil {
-			return fmt.Errorf("configs: could not load cert(%s): %s", file, cErr)
-		}
-
-		fingerprint := sha256.Sum256(cert.Raw)
-		// check for duplicate fingerprint in the certs slice
-		fingerPrintHex := convertToHexFormat(hex.EncodeToString(fingerprint[:]))
-		for _, e := range nginxConfig.Ssl.SslCerts {
-			if e.Fingerprint == fingerPrintHex {
-				log.Debugf("certs: %s duplicate. Skipping", file)
-				return nil
+		if seenCerts[file] != nil {
+			log.Debugf("certs: %s duplicate. Skipping", file)
+			return nil
+		} else {
+			cert, cErr := LoadCertificate(file)
+			if cErr != nil {
+				return fmt.Errorf("configs: could not load cert(%s): %s", file, cErr)
 			}
+			seenCerts[file] = cert
 		}
 
+		fingerprint := sha256.Sum256(seenCerts[file].Raw)
 		certProto := &proto.SslCertificate{
 			FileName:           file,
-			PublicKeyAlgorithm: cert.PublicKeyAlgorithm.String(),
-			SignatureAlgorithm: cert.SignatureAlgorithm.String(),
+			PublicKeyAlgorithm: seenCerts[file].PublicKeyAlgorithm.String(),
+			SignatureAlgorithm: seenCerts[file].SignatureAlgorithm.String(),
 			Issuer: &proto.CertificateName{
-				CommonName:         cert.Issuer.CommonName,
-				Country:            cert.Issuer.Country,
-				Locality:           cert.Issuer.Locality,
-				Organization:       cert.Issuer.Organization,
-				OrganizationalUnit: cert.Issuer.OrganizationalUnit,
+				CommonName:         seenCerts[file].Issuer.CommonName,
+				Country:            seenCerts[file].Issuer.Country,
+				Locality:           seenCerts[file].Issuer.Locality,
+				Organization:       seenCerts[file].Issuer.Organization,
+				OrganizationalUnit: seenCerts[file].Issuer.OrganizationalUnit,
 			},
 			Subject: &proto.CertificateName{
-				CommonName:         cert.Subject.CommonName,
-				Country:            cert.Subject.Country,
-				Locality:           cert.Subject.Locality,
-				Organization:       cert.Subject.Organization,
-				OrganizationalUnit: cert.Subject.OrganizationalUnit,
-				State:              cert.Subject.Province,
+				CommonName:         seenCerts[file].Subject.CommonName,
+				Country:            seenCerts[file].Subject.Country,
+				Locality:           seenCerts[file].Subject.Locality,
+				Organization:       seenCerts[file].Subject.Organization,
+				OrganizationalUnit: seenCerts[file].Subject.OrganizationalUnit,
+				State:              seenCerts[file].Subject.Province,
 			},
 			Validity: &proto.CertificateDates{
-				NotBefore: cert.NotBefore.Unix(),
-				NotAfter:  cert.NotAfter.Unix(),
+				NotBefore: seenCerts[file].NotBefore.Unix(),
+				NotAfter:  seenCerts[file].NotAfter.Unix(),
 			},
-			SubjAltNames:           cert.DNSNames,
-			SerialNumber:           cert.SerialNumber.String(),
-			OcspUrl:                cert.IssuingCertificateURL,
-			SubjectKeyIdentifier:   convertToHexFormat(hex.EncodeToString(cert.SubjectKeyId)),
+			SubjAltNames:           seenCerts[file].DNSNames,
+			SerialNumber:           seenCerts[file].SerialNumber.String(),
+			OcspUrl:                seenCerts[file].IssuingCertificateURL,
+			SubjectKeyIdentifier:   convertToHexFormat(hex.EncodeToString(seenCerts[file].SubjectKeyId)),
 			Fingerprint:            convertToHexFormat(hex.EncodeToString(fingerprint[:])),
-			FingerprintAlgorithm:   cert.SignatureAlgorithm.String(),
-			Version:                int64(cert.Version),
-			AuthorityKeyIdentifier: convertToHexFormat(hex.EncodeToString(cert.AuthorityKeyId)),
+			FingerprintAlgorithm:   seenCerts[file].SignatureAlgorithm.String(),
+			Version:                int64(seenCerts[file].Version),
+			AuthorityKeyIdentifier: convertToHexFormat(hex.EncodeToString(seenCerts[file].AuthorityKeyId)),
 		}
 		certProto.Mtime = filesSDK.TimeConvert(info.ModTime())
 		certProto.Size_ = info.Size()

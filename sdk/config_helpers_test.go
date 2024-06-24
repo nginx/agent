@@ -187,20 +187,38 @@ var tests = []struct {
 								Permissions: "0644",
 								Lines:       int32(58),
 							},
+						},
+					},
+					{
+						Name:        "/tmp/testdata/nginx/ca",
+						Permissions: "0755",
+						Files: []*proto.File{
 							{
 								Name:        "ca.crt",
 								Permissions: "0644",
 								Lines:       int32(31),
 							},
+						},
+					},
+					{
+						Name:        "/tmp/testdata/nginx/proxy",
+						Permissions: "0755",
+						Files: []*proto.File{
 							{
-								Name:        "trusted.crt",
+								Name:        "ca.crt",
 								Permissions: "0644",
-								Lines:       int32(31),
+								Lines:       int32(32),
 							},
+						},
+					},
+					{
+						Name:        "/tmp/testdata/nginx/trusted",
+						Permissions: "0755",
+						Files: []*proto.File{
 							{
-								Name:        "proxy.crt",
+								Name:        "ca.crt",
 								Permissions: "0644",
-								Lines:       int32(31),
+								Lines:       int32(32),
 							},
 						},
 					},
@@ -272,14 +290,14 @@ var tests = []struct {
 							NotAfter:  1635426204,
 						},
 						Issuer: &proto.CertificateName{
-							CommonName:         "ca.local",
+							CommonName:         "trusted.local",
 							Country:            []string{"IE"},
 							Locality:           []string{"Cork"},
 							Organization:       []string{"NGINX"},
 							OrganizationalUnit: nil,
 						},
 						Subject: &proto.CertificateName{
-							CommonName:         "ca.local",
+							CommonName:         "trusted.local",
 							Country:            []string{"IE"},
 							Locality:           []string{"Cork"},
 							Organization:       []string{"NGINX"},
@@ -304,14 +322,14 @@ var tests = []struct {
 							NotAfter:  1635426204,
 						},
 						Issuer: &proto.CertificateName{
-							CommonName:         "ca.local",
+							CommonName:         "proxy.local",
 							Country:            []string{"IE"},
 							Locality:           []string{"Cork"},
 							Organization:       []string{"NGINX"},
 							OrganizationalUnit: nil,
 						},
 						Subject: &proto.CertificateName{
-							CommonName:         "ca.local",
+							CommonName:         "proxy.local",
 							Country:            []string{"IE"},
 							Locality:           []string{"Cork"},
 							Organization:       []string{"NGINX"},
@@ -337,15 +355,15 @@ var tests = []struct {
 			},
 			Zconfig: &proto.ZippedFile{
 				Contents:      []uint8{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 1, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0},
-				Checksum:      "10a784ba872f62e36fd94fade5d048e6384205bfe39dd06a128aa78a81358931",
+				Checksum:      "731039730aa8dc07ec567bf412c25932bfe125e87234729ae66c6f1e4a139343",
 				RootDirectory: "/tmp/testdata/nginx",
 			},
 		},
 		expectedAuxFiles: map[string]struct{}{
 			"/tmp/testdata/root/test.html":          {},
-			"/tmp/testdata/nginx/ca/ca.crt":            {},
-			"/tmp/testdata/nginx/trusted/ca.crt":       {},
-			"/tmp/testdata/nginx/proxy/ca.crt":         {},
+			"/tmp/testdata/nginx/ca/ca.crt":         {},
+			"/tmp/testdata/nginx/trusted/ca.crt":    {},
+			"/tmp/testdata/nginx/proxy/ca.crt":      {},
 			"/tmp/testdata/root/my-nap-policy.json": {},
 			"/tmp/testdata/root/log-default.json":   {},
 		},
@@ -423,6 +441,12 @@ var tests = []struct {
 								Permissions: "0644",
 								Lines:       int32(46),
 							},
+						},
+					},
+					{
+						Name:        "/tmp/testdata/nginx/ca",
+						Permissions: "0755",
+						Files: []*proto.File{
 							{
 								Name:        "ca.crt",
 								Permissions: "0644",
@@ -483,7 +507,7 @@ var tests = []struct {
 			},
 			Zconfig: &proto.ZippedFile{
 				Contents:      []uint8{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 1, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0},
-				Checksum:      "737493b580f29636e998efd2e85cf552217ad9a22e69c3bf6192eedaec681976",
+				Checksum:      "cc6cee5366d87e85fbf1c05b9621df82996548e0e135f2b4a93e98f88c23d2b9",
 				RootDirectory: "/tmp/testdata/nginx",
 			},
 		},
@@ -700,6 +724,12 @@ var tests = []struct {
 								Permissions: "0644",
 								Lines:       int32(46),
 							},
+						},
+					},
+					{
+						Name:        "/tmp/testdata/nginx/ca",
+						Permissions: "0755",
+						Files: []*proto.File{
 							{
 								Name:        "ca.crt",
 								Permissions: "0644",
@@ -760,7 +790,7 @@ var tests = []struct {
 			},
 			Zconfig: &proto.ZippedFile{
 				Contents:      []uint8{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 1, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0},
-				Checksum:      "737493b580f29636e998efd2e85cf552217ad9a22e69c3bf6192eedaec681976",
+				Checksum:      "cc6cee5366d87e85fbf1c05b9621df82996548e0e135f2b4a93e98f88c23d2b9",
 				RootDirectory: "/tmp/testdata/nginx",
 			},
 		},
@@ -842,7 +872,7 @@ func TestGetNginxConfig(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, test.expected.Action, result.Action)
-		assert.Equal(t, len(test.expected.DirectoryMap.Directories), len(result.DirectoryMap.Directories))
+		require.Equal(t, len(test.expected.DirectoryMap.Directories), len(result.DirectoryMap.Directories))
 		for dirIndex, expectedDirectory := range test.expected.DirectoryMap.Directories {
 			resultDir := result.DirectoryMap.Directories[dirIndex]
 			assert.Equal(t, expectedDirectory.Name, resultDir.Name)
@@ -853,7 +883,7 @@ func TestGetNginxConfig(t *testing.T) {
 				resultFile := resultDir.Files[fileIndex]
 				assert.Equal(t, expectedFile.Name, resultFile.Name)
 				assert.Equal(t, expectedFile.Permissions, resultFile.Permissions)
-				assert.Equal(t, expectedFile.Lines, resultFile.Lines, "unexpected line count for "+expectedFile.Name)
+				assert.Equal(t, expectedFile.Lines, resultFile.Lines, "unexpected line count for " + expectedDirectory.Name + "/" +expectedFile.Name)
 			}
 		}
 
@@ -2089,7 +2119,7 @@ func TestSslDirectives(t *testing.T) {
 				app_protect_policy_file /tmp/testdata/root/my-nap-policy.json;
 				app_protect_security_log_enable on;
 				app_protect_security_log "/tmp/testdata/root/log-default.json" /var/log/app_protect/security.log;
-				proxy_ssl_certificate /tmp/testdata/nginx/proxy.crt;
+				proxy_ssl_certificate /tmp/testdata/nginx/proxy/ca.crt;
 			}
 		}
 	}`
@@ -2127,15 +2157,10 @@ func TestSslDirectives(t *testing.T) {
 										Permissions: "0644",
 										Lines:       int32(37),
 									},
-									{
-										Name:        "ca.crt",
-										Permissions: "0644",
-										Lines:       int32(31),
-									},
 								},
 							},
 							{
-								Name:        "/tmp/testdata/nginx/trusted",
+								Name:        "/tmp/testdata/nginx/ca",
 								Permissions: "0755",
 								Files: []*proto.File{
 									{
@@ -2152,7 +2177,18 @@ func TestSslDirectives(t *testing.T) {
 									{
 										Name:        "ca.crt",
 										Permissions: "0644",
-										Lines:       int32(31),
+										Lines:       int32(32),
+									},
+								},
+							},
+							{
+								Name:        "/tmp/testdata/nginx/trusted",
+								Permissions: "0755",
+								Files: []*proto.File{
+									{
+										Name:        "ca.crt",
+										Permissions: "0644",
+										Lines:       int32(32),
 									},
 								},
 							},
@@ -2183,18 +2219,36 @@ func TestSslDirectives(t *testing.T) {
 										Permissions: "0644",
 										Lines:       int32(37),
 									},
+								},
+							},
+							{
+								Name:        "/tmp/testdata/nginx/ca",
+								Permissions: "0755",
+								Files: []*proto.File{
 									{
 										Name:        "ca.crt",
 										Permissions: "0644",
 										Lines:       int32(44),
 									},
+								},
+							},
+							{
+								Name:        "/tmp/testdata/nginx/proxy",
+								Permissions: "0755",
+								Files: []*proto.File{
 									{
-										Name:        "trusted.crt",
+										Name:        "ca.crt",
 										Permissions: "0644",
 										Lines:       int32(44),
 									},
+								},
+							},
+							{
+								Name:        "/tmp/testdata/nginx/trusted",
+								Permissions: "0755",
+								Files: []*proto.File{
 									{
-										Name:        "proxy.crt",
+										Name:        "ca.crt",
 										Permissions: "0644",
 										Lines:       int32(44),
 									},
@@ -2232,14 +2286,14 @@ func TestSslDirectives(t *testing.T) {
 			assert.Equal(t, len(test.expected.nginxConf.DirectoryMap.Directories), len(result.DirectoryMap.Directories))
 			// Check directories structure
 			for dirIndex, dir := range result.DirectoryMap.Directories {
-				assert.Equal(t, dir.Name, test.expected.nginxConf.DirectoryMap.Directories[dirIndex].Name)
-				assert.Equal(t, dir.Permissions, test.expected.nginxConf.DirectoryMap.Directories[dirIndex].Permissions)
+				assert.Equal(t, test.expected.nginxConf.DirectoryMap.Directories[dirIndex].Name, dir.Name)
+				assert.Equal(t, test.expected.nginxConf.DirectoryMap.Directories[dirIndex].Permissions, dir.Permissions)
 
 				// Check files structure
 				for fileIndex, file := range dir.Files {
-					assert.Equal(t, file.Name, test.expected.nginxConf.DirectoryMap.Directories[dirIndex].Files[fileIndex].Name)
-					assert.Equal(t, file.Permissions, test.expected.nginxConf.DirectoryMap.Directories[dirIndex].Files[fileIndex].Permissions)
-					assert.Equal(t, file.Lines, test.expected.nginxConf.DirectoryMap.Directories[dirIndex].Files[fileIndex].Lines)
+					assert.Equal(t, test.expected.nginxConf.DirectoryMap.Directories[dirIndex].Files[fileIndex].Name, file.Name)
+					assert.Equal(t, test.expected.nginxConf.DirectoryMap.Directories[dirIndex].Files[fileIndex].Permissions, file.Permissions)
+					assert.Equal(t, test.expected.nginxConf.DirectoryMap.Directories[dirIndex].Files[fileIndex].Lines, file.Lines)
 				}
 			}
 
