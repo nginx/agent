@@ -273,6 +273,7 @@ func areInstancesEqual(oldRuntime, currentRuntime *mpi.InstanceRuntime) (equal b
 		for _, currentChild := range currentRuntimeChildren {
 			if oldChild.GetProcessId() == currentChild.GetProcessId() {
 				childFound = true
+				break
 			}
 		}
 
