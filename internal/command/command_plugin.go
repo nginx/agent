@@ -23,7 +23,7 @@ var _ bus.Plugin = (*CommandPlugin)(nil)
 
 type (
 	commandService interface {
-		UpdateDataPlaneStatus(ctx context.Context, resource *mpi.Resource) error
+		UpdateDataPlaneStatus(ctx context.Context, resource *mpi.Resource) (*mpi.CreateConnectionResponse, error)
 		UpdateDataPlaneHealth(ctx context.Context, instanceHealths []*mpi.InstanceHealth) error
 		SendDataPlaneResponse(ctx context.Context, response *mpi.DataPlaneResponse) error
 		CancelSubscription(ctx context.Context)
@@ -83,9 +83,12 @@ func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 
 func (cp *CommandPlugin) processResourceUpdate(ctx context.Context, msg *bus.Message) {
 	if resource, ok := msg.Data.(*mpi.Resource); ok {
-		err := cp.commandService.UpdateDataPlaneStatus(ctx, resource)
+		createConnectionResponse, err := cp.commandService.UpdateDataPlaneStatus(ctx, resource)
 		if err != nil {
 			slog.ErrorContext(ctx, "Unable to update data plane status", "error", err)
+		}
+		if createConnectionResponse != nil {
+			cp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConnectionCreatedTopic, Data: createConnectionResponse})
 		}
 	}
 }

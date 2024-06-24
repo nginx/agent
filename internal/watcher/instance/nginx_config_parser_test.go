@@ -301,7 +301,10 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 
 			test.instance.InstanceRuntime.ConfigPath = file.Name()
 
-			nginxConfig := NewNginxConfigParser(types.AgentConfig())
+			agentConfig := types.AgentConfig()
+			agentConfig.AllowedDirectories = []string{dir}
+
+			nginxConfig := NewNginxConfigParser(agentConfig)
 			result, parseError := nginxConfig.Parse(ctx, test.instance)
 			require.NoError(t, parseError)
 

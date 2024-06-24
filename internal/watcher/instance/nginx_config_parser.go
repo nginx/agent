@@ -57,7 +57,13 @@ func NewNginxConfigParser(agentConfig *config.Config) *NginxConfigParser {
 }
 
 func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *mpi.Instance) (*model.NginxConfigContext, error) {
-	payload, err := crossplane.Parse(instance.GetInstanceRuntime().GetConfigPath(),
+	configPath := instance.GetInstanceRuntime().GetConfigPath()
+
+	if !ncp.agentConfig.IsDirectoryAllowed(configPath) {
+		return nil, fmt.Errorf("config path %s is not in allowed directories", configPath)
+	}
+
+	payload, err := crossplane.Parse(configPath,
 		&crossplane.ParseOptions{
 			SingleFile:         false,
 			StopParsingOnError: true,

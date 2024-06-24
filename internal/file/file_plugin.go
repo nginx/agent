@@ -57,6 +57,8 @@ func (fp *FilePlugin) Info() *bus.Info {
 
 func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
+	case bus.ConnectionCreatedTopic:
+		fp.fileManagerService.SetIsConnected(true)
 	case bus.NginxConfigUpdateTopic:
 		fp.handleNginxConfigUpdate(ctx, msg)
 	case bus.ConfigUploadRequestTopic:
