@@ -518,7 +518,7 @@ func setEnvVariable(t *testing.T, prefix, name, value string) {
 	if value == "" {
 		err = os.Unsetenv(key)
 	} else {
-		err = os.Setenv(key, value)
+		t.Setenv(key, value)
 	}
 	require.NoError(t, err)
 }
