@@ -71,12 +71,18 @@ func NewCommandService(
 	return commandService
 }
 
-func (cs *CommandService) UpdateDataPlaneStatus(ctx context.Context, resource *mpi.Resource) error {
+func (cs *CommandService) UpdateDataPlaneStatus(
+	ctx context.Context,
+	resource *mpi.Resource,
+) (*mpi.CreateConnectionResponse, error) {
+	var createConnectionResponse *mpi.CreateConnectionResponse
 	if !cs.isConnected.Load() {
-		err := cs.createConnection(ctx, resource)
+		response, err := cs.createConnection(ctx, resource)
 		if err != nil {
-			return err
+			return nil, err
 		}
+
+		createConnectionResponse = response
 	}
 
 	correlationID := logger.GetCorrelationID(ctx)
@@ -116,11 +122,11 @@ func (cs *CommandService) UpdateDataPlaneStatus(ctx context.Context, resource *m
 		backoffHelpers.Context(backOffCtx, cs.agentConfig.Common),
 	)
 	if err != nil {
-		return err
+		return createConnectionResponse, err
 	}
 	slog.DebugContext(ctx, "UpdateDataPlaneStatus response", "response", response)
 
-	return err
+	return createConnectionResponse, err
 }
 
 func (cs *CommandService) UpdateDataPlaneHealth(ctx context.Context, instanceHealths []*mpi.InstanceHealth) error {
@@ -177,7 +183,6 @@ func (cs *CommandService) CancelSubscription(ctx context.Context) {
 	cs.subscribeMutex.Unlock()
 }
 
-// nolint: revive,gocognit
 func (cs *CommandService) subscribe(ctx context.Context) {
 	commonSettings := &config.CommonSettings{
 		InitialInterval:     cs.agentConfig.Common.InitialInterval,
@@ -185,12 +190,6 @@ func (cs *CommandService) subscribe(ctx context.Context) {
 		MaxElapsedTime:      createConnectionMaxElapsedTime,
 		RandomizationFactor: cs.agentConfig.Common.RandomizationFactor,
 		Multiplier:          cs.agentConfig.Common.Multiplier,
-	}
-
-	err := backoff.Retry(cs.subscribeCallback(ctx), backoffHelpers.Context(ctx, commonSettings))
-	if err != nil {
-		slog.WarnContext(ctx, "Failed to initialize the subscribe stream", "error", err)
-		return
 	}
 
 	for {
@@ -206,12 +205,15 @@ func (cs *CommandService) subscribe(ctx context.Context) {
 	}
 }
 
-func (cs *CommandService) createConnection(ctx context.Context, resource *mpi.Resource) error {
+func (cs *CommandService) createConnection(
+	ctx context.Context,
+	resource *mpi.Resource,
+) (*mpi.CreateConnectionResponse, error) {
 	correlationID := logger.GetCorrelationID(ctx)
 
 	// Only send a resource update message if instances other than the agent instance are found
 	if len(resource.GetInstances()) <= 1 {
-		return errors.New("waiting for data plane instances to be found before sending create connection request")
+		return nil, errors.New("waiting for data plane instances to be found before sending create connection request")
 	}
 
 	request := &mpi.CreateConnectionRequest{
@@ -236,7 +238,7 @@ func (cs *CommandService) createConnection(ctx context.Context, resource *mpi.Re
 		backoffHelpers.Context(ctx, commonSettings),
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	slog.DebugContext(ctx, "Connection created", "response", response)
@@ -244,7 +246,7 @@ func (cs *CommandService) createConnection(ctx context.Context, resource *mpi.Re
 
 	cs.isConnected.Store(true)
 
-	return nil
+	return response, nil
 }
 
 // Retry callback for sending a data plane response to the Management Plane.
@@ -296,14 +298,15 @@ func (cs *CommandService) dataPlaneHealthCallback(
 	}
 }
 
-// Retry callback for initializing the subscription to the Management Plane.
-func (cs *CommandService) subscribeCallback(ctx context.Context) func() error {
+// Retry callback for receiving messages from the Management Plane subscription.
+// nolint: revive
+func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
 	return func() error {
 		cs.subscribeClientMutex.Lock()
-		defer cs.subscribeClientMutex.Unlock()
 
 		if cs.subscribeClient == nil {
 			if cs.commandServiceClient == nil {
+				cs.subscribeClientMutex.Unlock()
 				return errors.New("command service client is not initialized")
 			}
 
@@ -311,21 +314,18 @@ func (cs *CommandService) subscribeCallback(ctx context.Context) func() error {
 			cs.subscribeClient, err = cs.commandServiceClient.Subscribe(ctx)
 			if err != nil {
 				slog.ErrorContext(ctx, "Failed to create subscribe client", "error", err)
+				cs.subscribeClientMutex.Unlock()
 
 				return err
 			}
+
+			if cs.subscribeClient == nil {
+				cs.subscribeClientMutex.Unlock()
+				return errors.New("subscribe service client not initialized yet")
+			}
 		}
 
-		return nil
-	}
-}
-
-// Retry callback for receiving messages from the Management Plane subscription.
-func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
-	return func() error {
-		if cs.subscribeClient == nil {
-			return errors.New("subscribe service client not initialized yet")
-		}
+		cs.subscribeClientMutex.Unlock()
 
 		request, recvError := cs.subscribeClient.Recv()
 		if recvError != nil {
