@@ -174,8 +174,8 @@ func updateNginxConfigFromPayload(
 
 	// cache the directory map, so we can look up using the base
 	directoryMap := newDirectoryMap()
-	formatMap := map[string]string{}  // map of accessLog/errorLog formats
-	seen := make(map[string]struct{}) // local cache of seen files
+	formatMap := map[string]string{}                // map of accessLog/errorLog formats
+	seen := make(map[string]struct{})               // local cache of seen files
 	seenCerts := make(map[string]*x509.Certificate) // local cache of seen certs
 
 	// Add files to the zipped config in a consistent order.
