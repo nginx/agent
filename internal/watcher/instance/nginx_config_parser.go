@@ -70,13 +70,7 @@ func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *mpi.Instance)
 		},
 	)
 	if err != nil {
-		slog.ErrorContext(
-			ctx,
-			"Parsing instance config",
-			"config_path", instance.GetInstanceRuntime().GetConfigPath(),
-			"instance_id", instance.GetInstanceMeta().GetInstanceId(),
-			"error", err,
-		)
+		return nil, err
 	}
 
 	return ncp.createNginxConfigContext(ctx, instance, payload)
