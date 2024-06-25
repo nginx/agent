@@ -27,9 +27,20 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . fileOperator
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//counterfeiter:generate . fileManagerServiceInterface
+
 type (
 	fileOperator interface {
 		Write(ctx context.Context, fileContent []byte, file *mpi.FileMeta) error
+	}
+
+	fileManagerServiceInterface interface {
+		UpdateOverview(ctx context.Context, instanceID string, filesToUpdate []*mpi.File) error
+		ConfigApply(ctx context.Context, configApplyRequest *mpi.ConfigApplyRequest) (rollbackRequired bool, err error)
+		Rollback(ctx context.Context, instanceID string) error
+		UpdateFile(ctx context.Context, instanceID string, fileToUpdate *mpi.File) error
+		ClearCache()
 	}
 )
 
@@ -159,21 +170,23 @@ func (fms *FileManagerService) UpdateFile(
 	return err
 }
 
-func (fms *FileManagerService) ConfigApply(ctx context.Context, configApplyRequest *mpi.ConfigApplyRequest) error {
+func (fms *FileManagerService) ConfigApply(ctx context.Context,
+	configApplyRequest *mpi.ConfigApplyRequest,
+) (rollbackRequired bool, err error) {
 	fileOverview := configApplyRequest.GetOverview()
 
 	if fileOverview == nil {
-		return fmt.Errorf("fileOverview is nil")
+		return false, fmt.Errorf("fileOverview is nil")
 	}
 
 	allowedErr := fms.checkAllowedDirectory(fileOverview.GetFiles())
 	if allowedErr != nil {
-		return allowedErr
+		return false, allowedErr
 	}
 
-	diffFiles, fileContent, err := files.CompareFileHash(fileOverview)
-	if err != nil {
-		return err
+	diffFiles, fileContent, compareErr := files.CompareFileHash(fileOverview)
+	if compareErr != nil {
+		return false, compareErr
 	}
 
 	fms.fileContentsCache = fileContent
@@ -181,7 +194,40 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context, configApplyReque
 
 	fileErr := fms.fileActions(ctx)
 	if fileErr != nil {
-		return fileErr
+		return true, fileErr
+	}
+
+	return false, nil
+}
+
+func (fms *FileManagerService) ClearCache() {
+	clear(fms.fileContentsCache)
+	clear(fms.filesCache)
+}
+
+func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) error {
+	slog.InfoContext(ctx, "Rolling back config for instance", "instanceid", instanceID)
+	for _, file := range fms.filesCache {
+		switch file.GetAction() {
+		case mpi.File_FILE_ACTION_ADD:
+			if err := os.Remove(file.GetFileMeta().GetName()); err != nil && !os.IsNotExist(err) {
+				return fmt.Errorf("error deleting file: %s error: %w", file.GetFileMeta().GetName(), err)
+			}
+
+			continue
+		case mpi.File_FILE_ACTION_DELETE, mpi.File_FILE_ACTION_UPDATE:
+			content := fms.fileContentsCache[file.GetFileMeta().GetName()]
+
+			err := fms.fileOperator.Write(ctx, content, file.GetFileMeta())
+			if err != nil {
+				return err
+			}
+
+		case mpi.File_FILE_ACTION_UNSPECIFIED, mpi.File_FILE_ACTION_UNCHANGED:
+			fallthrough
+		default:
+			slog.DebugContext(ctx, "File Action not implemented")
+		}
 	}
 
 	return nil

@@ -29,7 +29,7 @@ type FilePlugin struct {
 	messagePipe        bus.MessagePipeInterface
 	config             *config.Config
 	conn               grpc.GrpcConnectionInterface
-	fileManagerService *FileManagerService
+	fileManagerService fileManagerServiceInterface
 }
 
 func NewFilePlugin(agentConfig *config.Config, grpcConnection grpc.GrpcConnectionInterface) *FilePlugin {
@@ -66,6 +66,10 @@ func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 		fp.handleConfigUploadRequest(ctx, msg)
 	case bus.ConfigApplyRequestTopic:
 		fp.handleConfigApplyRequest(ctx, msg)
+	case bus.ConfigApplySuccessfulTopic, bus.RollbackCompleteTopic:
+		fp.clearCache()
+	case bus.ConfigApplyFailedTopic:
+		fp.handleConfigApplyFailedRequest(ctx, msg)
 	default:
 		slog.DebugContext(ctx, "File plugin unknown topic", "topic", msg.Topic)
 	}
@@ -76,7 +80,58 @@ func (fp *FilePlugin) Subscriptions() []string {
 		bus.NginxConfigUpdateTopic,
 		bus.ConfigUploadRequestTopic,
 		bus.ConfigApplyRequestTopic,
+		bus.ConfigApplyFailedTopic,
+		bus.ConfigApplySuccessfulTopic,
+		bus.RollbackCompleteTopic,
 	}
+}
+
+func (fp *FilePlugin) clearCache() {
+	slog.Debug("Clearing cache after config apply")
+	fp.fileManagerService.ClearCache()
+}
+
+func (fp *FilePlugin) handleConfigApplyFailedRequest(ctx context.Context, msg *bus.Message) {
+	correlationID := logger.GetCorrelationID(ctx)
+	instanceID, ok := msg.Data.(string)
+	if instanceID == "" || !ok {
+		slog.ErrorContext(ctx, "Unable to cast message payload to instanceID",
+			"payload", msg.Data)
+
+		rollbackResponse := fp.createDataPlaneResponseError(correlationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
+			"Rollback failed", "unable to cast to message payload")
+
+		applyResponse := fp.createDataPlaneResponseError(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+			"Config apply failed", "unable to cast to message payload")
+
+		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
+		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: applyResponse})
+		fp.fileManagerService.ClearCache()
+
+		return
+	}
+
+	err := fp.fileManagerService.Rollback(ctx, instanceID)
+	if err != nil {
+		rollbackResponse := fp.createDataPlaneResponseError(correlationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
+			fmt.Sprintf("Rollback failed for instanceId: %s", instanceID), err.Error())
+
+		applyResponse := fp.createDataPlaneResponseError(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+			fmt.Sprintf("Config apply failed for instanceId: %s", instanceID), err.Error())
+
+		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
+		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: applyResponse})
+		fp.fileManagerService.ClearCache()
+
+		return
+	}
+
+	// Send WriteConfigSuccessfulTopic with Correlation and Instance ID for use by resource plugin
+	data := model.ConfigApply{
+		CorrelationID: correlationID,
+		InstanceID:    instanceID,
+	}
+	fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.RollbackWriteTopic, Data: data})
 }
 
 func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Message) {
@@ -93,57 +148,48 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest_ConfigApplyRequest",
 			"payload", msg.Data)
 
-		response := &mpi.DataPlaneResponse{
-			MessageMeta: &mpi.MessageMeta{
-				MessageId:     uuid.NewString(),
-				CorrelationId: correlationID,
-				Timestamp:     timestamppb.Now(),
-			},
-			CommandResponse: &mpi.CommandResponse{
-				Status:  mpi.CommandResponse_COMMAND_STATUS_ERROR,
-				Message: "Config apply failed",
-				Error:   "unable to cast to message payload",
-			},
-		}
+		response := fp.createDataPlaneResponseError(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+			"Config apply failed", "unable to cast to message payload")
+
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
 
 		return
 	}
+
 	configApplyRequest := request.ConfigApplyRequest
 	var response *mpi.DataPlaneResponse
 
-	err := fp.fileManagerService.ConfigApply(ctx, configApplyRequest)
+	rollbackRequired, err := fp.fileManagerService.ConfigApply(ctx, configApplyRequest)
 
-	if err != nil {
-		slog.ErrorContext(
-			ctx,
-			"Failed to update file overview",
-			"instance_id", configApplyRequest.GetConfigVersion().GetInstanceId(),
-			"error", err,
-		)
+	if err != nil && !rollbackRequired {
+		response = fp.createDataPlaneResponseError(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+			fmt.Sprintf("Config apply failed for instanceId: %s", configApplyRequest.
+				GetConfigVersion().GetInstanceId()), err.Error())
 
-		response = &mpi.DataPlaneResponse{
-			MessageMeta: &mpi.MessageMeta{
-				MessageId:     uuid.NewString(),
-				CorrelationId: correlationID,
-				Timestamp:     timestamppb.Now(),
-			},
-			CommandResponse: &mpi.CommandResponse{
-				Status: mpi.CommandResponse_COMMAND_STATUS_ERROR,
-				Message: fmt.Sprintf("Config apply failed for instanceId: %s", configApplyRequest.
-					GetConfigVersion().GetInstanceId()),
-				Error: err.Error(),
-			},
-		}
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
-	} else {
-		// Send WriteConfigSuccessfulTopic with Correlation and Instance ID for use by resource plugin
-		data := model.ConfigApply{
-			CorrelationID: correlationID,
-			InstanceID:    configApplyRequest.GetConfigVersion().GetInstanceId(),
-		}
-		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.WriteConfigSuccessfulTopic, Data: data})
+		fp.fileManagerService.ClearCache()
+
+		return
+	} else if rollbackRequired {
+		response = fp.createDataPlaneResponseError(correlationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
+			fmt.Sprintf("Config apply failed for instanceId: %s, rolling back config",
+				configApplyRequest.GetConfigVersion().GetInstanceId()), err.Error())
+
+		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
+		fp.handleConfigApplyFailedRequest(ctx, &bus.Message{
+			Topic: bus.ConfigApplyFailedTopic,
+			Data:  configApplyRequest.GetConfigVersion().GetInstanceId(),
+		})
+
+		return
 	}
+
+	// Send WriteConfigSuccessfulTopic with Correlation and Instance ID for use by resource plugin
+	data := model.ConfigApply{
+		CorrelationID: correlationID,
+		InstanceID:    configApplyRequest.GetConfigVersion().GetInstanceId(),
+	}
+	fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.WriteConfigSuccessfulTopic, Data: data})
 }
 
 func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Message) {
@@ -194,18 +240,8 @@ func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Me
 				"error", err,
 			)
 
-			response := &mpi.DataPlaneResponse{
-				MessageMeta: &mpi.MessageMeta{
-					MessageId:     uuid.NewString(),
-					CorrelationId: correlationID,
-					Timestamp:     timestamppb.Now(),
-				},
-				CommandResponse: &mpi.CommandResponse{
-					Status:  mpi.CommandResponse_COMMAND_STATUS_ERROR,
-					Message: fmt.Sprintf("Failed to update file %s", file.GetFileMeta().GetName()),
-					Error:   err.Error(),
-				},
-			}
+			response := fp.createDataPlaneResponseError(correlationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
+				fmt.Sprintf("Failed to update file %s", file.GetFileMeta().GetName()), err.Error())
 
 			updatingFilesError = err
 
@@ -234,4 +270,21 @@ func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Me
 	}
 
 	fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
+}
+
+func (fp *FilePlugin) createDataPlaneResponseError(correlationID string, status mpi.CommandResponse_CommandStatus,
+	message, err string,
+) *mpi.DataPlaneResponse {
+	return &mpi.DataPlaneResponse{
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     uuid.NewString(),
+			CorrelationId: correlationID,
+			Timestamp:     timestamppb.Now(),
+		},
+		CommandResponse: &mpi.CommandResponse{
+			Status:  status,
+			Message: message,
+			Error:   err,
+		},
+	}
 }

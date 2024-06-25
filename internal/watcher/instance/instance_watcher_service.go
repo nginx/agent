@@ -108,6 +108,7 @@ func (iw *InstanceWatcherService) checkForUpdates(
 	instancesChannel chan<- InstanceUpdatesMessage,
 	nginxConfigContextChannel chan<- NginxConfigContextMessage,
 ) {
+	var instancesToParse []*mpi.Instance
 	correlationID := logger.GenerateCorrelationID()
 	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, correlationID)
 
@@ -116,7 +117,10 @@ func (iw *InstanceWatcherService) checkForUpdates(
 		slog.ErrorContext(newCtx, "Instance watcher updates", "error", err)
 	}
 
-	for _, newInstance := range instanceUpdates.NewInstances {
+	instancesToParse = append(instancesToParse, instanceUpdates.UpdatedInstances...)
+	instancesToParse = append(instancesToParse, instanceUpdates.NewInstances...)
+
+	for _, newInstance := range instancesToParse {
 		instanceType := newInstance.GetInstanceMeta().GetInstanceType()
 
 		if instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX ||

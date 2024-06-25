@@ -8,6 +8,7 @@ package resource
 import (
 	"context"
 	"errors"
+	"sort"
 	"testing"
 
 	"github.com/nginx/agent/v3/internal/model"
@@ -130,7 +131,7 @@ func TestResource_Process_Apply(t *testing.T) {
 				},
 			},
 			applyErr: nil,
-			topic:    []string{bus.DataPlaneResponseTopic, bus.ConfigApplySuccessfulRequestTopic},
+			topic:    []string{bus.DataPlaneResponseTopic, bus.ConfigApplySuccessfulTopic},
 		},
 		{
 			name: "Test 2: Write Config Successful Topic - Fail Status",
@@ -142,7 +143,7 @@ func TestResource_Process_Apply(t *testing.T) {
 				},
 			},
 			applyErr: errors.New("error reloading"),
-			topic:    []string{bus.DataPlaneResponseTopic, bus.ConfigApplyFailedRequestTopic},
+			topic:    []string{bus.DataPlaneResponseTopic, bus.ConfigApplyFailedTopic},
 		},
 	}
 
@@ -168,6 +169,68 @@ func TestResource_Process_Apply(t *testing.T) {
 	}
 }
 
+func TestResource_Process_Rollback(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		name     string
+		message  *bus.Message
+		applyErr error
+		topic    []string
+	}{
+		{
+			name: "Test 1: Rollback Write Topic - Success Status",
+			message: &bus.Message{
+				Topic: bus.RollbackWriteTopic,
+				Data: &model.ConfigApply{
+					CorrelationID: "",
+					InstanceID:    protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				},
+			},
+			applyErr: nil,
+			topic:    []string{bus.RollbackCompleteTopic, bus.DataPlaneResponseTopic, bus.DataPlaneResponseTopic},
+		},
+		{
+			name: "Test 2: Rollback Write Topic - Fail Status",
+			message: &bus.Message{
+				Topic: bus.RollbackWriteTopic,
+				Data: &model.ConfigApply{
+					CorrelationID: "",
+					InstanceID:    protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				},
+			},
+			applyErr: errors.New("error reloading"),
+			topic:    []string{bus.RollbackCompleteTopic, bus.DataPlaneResponseTopic, bus.DataPlaneResponseTopic},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
+			fakeResourceService.ApplyReturns(test.applyErr)
+			messagePipe := bus.NewFakeMessagePipe()
+
+			resourcePlugin := NewResource(types.AgentConfig())
+			resourcePlugin.resourceService = fakeResourceService
+
+			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
+			require.NoError(t, err)
+
+			resourcePlugin.messagePipe = messagePipe
+
+			resourcePlugin.Process(ctx, test.message)
+
+			sort.Slice(messagePipe.GetMessages(), func(i, j int) bool {
+				return messagePipe.GetMessages()[i].Topic > messagePipe.GetMessages()[j].Topic
+			})
+
+			assert.Equal(t, test.topic[0], messagePipe.GetMessages()[0].Topic)
+			assert.Equal(t, test.topic[1], messagePipe.GetMessages()[1].Topic)
+			assert.Equal(t, test.topic[2], messagePipe.GetMessages()[2].Topic)
+		})
+	}
+}
+
 func TestResource_Subscriptions(t *testing.T) {
 	resourcePlugin := NewResource(types.AgentConfig())
 	assert.Equal(t,
@@ -176,6 +239,7 @@ func TestResource_Subscriptions(t *testing.T) {
 			bus.UpdatedInstancesTopic,
 			bus.DeletedInstancesTopic,
 			bus.WriteConfigSuccessfulTopic,
+			bus.RollbackWriteTopic,
 		},
 		resourcePlugin.Subscriptions())
 }

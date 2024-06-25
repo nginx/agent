@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/file/filefakes"
+
 	"github.com/nginx/agent/v3/pkg/files"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -50,6 +52,9 @@ func TestFilePlugin_Subscriptions(t *testing.T) {
 			bus.NginxConfigUpdateTopic,
 			bus.ConfigUploadRequestTopic,
 			bus.ConfigApplyRequestTopic,
+			bus.ConfigApplyFailedTopic,
+			bus.ConfigApplySuccessfulTopic,
+			bus.RollbackCompleteTopic,
 		},
 		filePlugin.Subscriptions(),
 	)
@@ -124,59 +129,74 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 	agentConfig.AllowedDirectories = []string{tempDir}
 
 	tests := []struct {
-		name           string
-		getFileReturns error
+		name                   string
+		configApplyReturnsBool bool
+		configApplyReturnsErr  error
+		message                *mpi.ManagementPlaneRequest
 	}{
 		{
-			name:           "Test 1 - Success",
-			getFileReturns: nil,
+			name:                   "Test 1 - Success",
+			configApplyReturnsErr:  nil,
+			configApplyReturnsBool: false,
+			message:                message,
 		},
 		{
-			name:           "Test 2 - Fail",
-			getFileReturns: fmt.Errorf("something went wrong"),
+			name:                   "Test 2 - Fail, Rollback",
+			configApplyReturnsErr:  fmt.Errorf("something went wrong"),
+			configApplyReturnsBool: true,
+			message:                message,
+		},
+		{
+			name:                   "Test 3 - Fail, No Rollback",
+			configApplyReturnsErr:  fmt.Errorf("something went wrong"),
+			configApplyReturnsBool: false,
+			message:                message,
+		},
+		{
+			name:                   "Test 4 - Fail to cast payload",
+			configApplyReturnsErr:  fmt.Errorf("something went wrong"),
+			configApplyReturnsBool: false,
+			message:                nil,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
-			fakeFileServiceClient.GetFileReturns(&mpi.GetFileResponse{
-				Contents: &mpi.FileContents{
-					Contents: fileContent,
-				},
-			}, test.getFileReturns)
-
-			fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
+			fakeFileManagerService := &filefakes.FakeFileManagerServiceInterface{}
+			fakeFileManagerService.ConfigApplyReturns(test.configApplyReturnsBool, test.configApplyReturnsErr)
 			messagePipe := bus.NewFakeMessagePipe()
 			filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection)
 			err := filePlugin.Init(ctx, messagePipe)
+			filePlugin.fileManagerService = fakeFileManagerService
 			require.NoError(t, err)
 
-			filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigApplyRequestTopic, Data: message})
-
-			assert.Eventually(
-				t,
-				func() bool { return fakeFileServiceClient.GetFileCallCount() == 1 },
-				2*time.Second,
-				10*time.Millisecond,
-			)
+			filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigApplyRequestTopic, Data: test.message})
 
 			messages := messagePipe.GetMessages()
-			assert.Len(t, messages, 1)
-			if test.getFileReturns == nil {
+			if test.configApplyReturnsErr == nil {
 				assert.Equal(t, bus.WriteConfigSuccessfulTopic, messages[0].Topic)
+				assert.Len(t, messages, 1)
 
 				_, ok := messages[0].Data.(model.ConfigApply)
 				assert.True(t, ok)
-				helpers.RemoveFileWithErrorCheck(t, filePath)
-			} else {
+			} else if test.configApplyReturnsBool {
 				assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
-
+				assert.Len(t, messages, 2)
 				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
 				assert.Equal(
 					t,
 					mpi.CommandResponse_COMMAND_STATUS_ERROR,
+					dataPlaneResponse.GetCommandResponse().GetStatus(),
+				)
+			} else {
+				assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
+				assert.Len(t, messages, 1)
+				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
+				assert.True(t, ok)
+				assert.Equal(
+					t,
+					mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 					dataPlaneResponse.GetCommandResponse().GetStatus(),
 				)
 			}
@@ -315,4 +335,66 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic_Failure(t *testing.T) {
 		mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 		dataPlaneResponse.GetCommandResponse().GetStatus(),
 	)
+}
+
+func TestFilePlugin_Process_ConfigApplyFailedTopic(t *testing.T) {
+	ctx := context.Background()
+	instanceID := protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()
+
+	tests := []struct {
+		name            string
+		rollbackReturns error
+		instanceID      string
+	}{
+		{
+			name:            "Test 1 - Rollback Success",
+			rollbackReturns: nil,
+			instanceID:      instanceID,
+		},
+		{
+			name:            "Test 2 - Rollback Fail",
+			rollbackReturns: fmt.Errorf("something went wrong"),
+			instanceID:      instanceID,
+		},
+
+		{
+			name:            "Test 3 - Fail to cast payload",
+			rollbackReturns: fmt.Errorf("something went wrong"),
+			instanceID:      "",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mockFileManager := &filefakes.FakeFileManagerServiceInterface{}
+			mockFileManager.RollbackReturns(test.rollbackReturns)
+
+			fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+			fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+			fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
+
+			messagePipe := bus.NewFakeMessagePipe()
+			agentConfig := types.AgentConfig()
+			filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection)
+
+			err := filePlugin.Init(ctx, messagePipe)
+			require.NoError(t, err)
+			filePlugin.fileManagerService = mockFileManager
+
+			filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigApplyFailedTopic, Data: test.instanceID})
+
+			messages := messagePipe.GetMessages()
+
+			if test.rollbackReturns == nil {
+				assert.Equal(t, bus.RollbackWriteTopic, messages[0].Topic)
+				assert.Len(t, messages, 1)
+			} else {
+				_, ok := messages[0].Data.(*mpi.DataPlaneResponse)
+				assert.True(t, ok)
+				_, ok = messages[1].Data.(*mpi.DataPlaneResponse)
+				assert.True(t, ok)
+				assert.Len(t, messages, 2)
+			}
+		})
+	}
 }
