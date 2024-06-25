@@ -38,7 +38,7 @@ func TestHealthWatcherService_AddHealthWatcher(t *testing.T) {
 		{
 			name: "Test 2: Not Supported Instance",
 			instances: []*mpi.Instance{
-				&mpi.Instance{
+				{
 					InstanceMeta: &mpi.InstanceMeta{
 						InstanceId:   instance.GetInstanceMeta().GetInstanceId(),
 						InstanceType: mpi.InstanceMeta_INSTANCE_TYPE_UNIT,
@@ -57,16 +57,14 @@ func TestHealthWatcherService_AddHealthWatcher(t *testing.T) {
 			healthWatcher.AddHealthWatcher(test.instances)
 
 			if test.numWatchers == 1 {
-
 				assert.Len(t, healthWatcher.watchers, 1)
 				assert.NotNil(t, healthWatcher.watchers[instance.GetInstanceMeta().GetInstanceId()])
 				assert.NotNil(t, healthWatcher.instances[instance.GetInstanceMeta().GetInstanceId()])
 			} else {
-				assert.Len(t, healthWatcher.watchers, 0)
+				assert.Empty(t, healthWatcher.watchers)
 			}
 		})
 	}
-
 }
 
 func TestHealthWatcherService_DeleteHealthWatcher(t *testing.T) {
