@@ -24,7 +24,7 @@ ALMA_ARCHS?=aarch64 x86_64
 AMAZON_VERSIONS?=amazon-2 amazon-2023
 AMAZON_ARCHS?=aarch64 x86_64
 
-UPLOAD_URL         := "https://up-ap.nginx.com/"
+UPLOAD_URL ?= "https://up-ap.nginx.com/"
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Release Packaging                                                                                               #
