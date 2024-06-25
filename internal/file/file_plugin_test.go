@@ -49,6 +49,7 @@ func TestFilePlugin_Subscriptions(t *testing.T) {
 	assert.Equal(
 		t,
 		[]string{
+			bus.ConnectionCreatedTopic,
 			bus.NginxConfigUpdateTopic,
 			bus.ConfigUploadRequestTopic,
 			bus.ConfigApplyRequestTopic,
@@ -83,6 +84,7 @@ func TestFilePlugin_Process_NginxConfigUpdateTopic(t *testing.T) {
 	err := filePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 
+	filePlugin.Process(ctx, &bus.Message{Topic: bus.ConnectionCreatedTopic})
 	filePlugin.Process(ctx, &bus.Message{Topic: bus.NginxConfigUpdateTopic, Data: message})
 
 	assert.Eventually(
@@ -244,6 +246,7 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic(t *testing.T) {
 	err := filePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 
+	filePlugin.Process(ctx, &bus.Message{Topic: bus.ConnectionCreatedTopic})
 	filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigUploadRequestTopic, Data: message})
 
 	assert.Eventually(
@@ -303,6 +306,7 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic_Failure(t *testing.T) {
 	err := filePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 
+	filePlugin.Process(ctx, &bus.Message{Topic: bus.ConnectionCreatedTopic})
 	filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigUploadRequestTopic, Data: message})
 
 	assert.Eventually(

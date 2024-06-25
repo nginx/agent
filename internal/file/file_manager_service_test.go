@@ -31,6 +31,7 @@ func TestFileManagerService_UpdateOverview(t *testing.T) {
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
+	fileManagerService.SetIsConnected(true)
 
 	err := fileManagerService.UpdateOverview(ctx, "123", []*mpi.File{
 		{
@@ -54,6 +55,7 @@ func TestFileManagerService_UpdateFile(t *testing.T) {
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
+	fileManagerService.SetIsConnected(true)
 
 	err := fileManagerService.UpdateFile(ctx, "123", &mpi.File{FileMeta: fileMeta})
 
