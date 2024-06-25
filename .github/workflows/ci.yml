@@ -58,6 +58,8 @@ jobs:
           go-version-file: 'go.mod'
       - name: Run Unit Tests
         run: make unit-test
+      - name: Run Test
+        run: make release
       - name: Upload Test Coverage
         uses: codecov/codecov-action@84508663e988701840491b86de86b666e8a86bed # v4.3.0
         with:

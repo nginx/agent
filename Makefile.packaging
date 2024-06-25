@@ -190,5 +190,5 @@ gpg-key: ## Generate GPG public key
 
 release: ## Publish tarball to the UPLOAD_URL
 	echo "Publishing nginx-agent packages to ${UPLOAD_URL}"; \
-	curl -XPOST -F "file=@$(PACKAGES_DIR)/${PACKAGE_PREFIX}.tar.gz" -H "Token: ${TOKEN}" ${UPLOAD_URL}; \
-	curl -XPOST -F "file=@$(GPG_PUBLIC_KEY)" -H "Token: ${TOKEN}" ${UPLOAD_URL}; \
+	# curl -XPOST -F "file=@$(PACKAGES_DIR)/${PACKAGE_PREFIX}.tar.gz" -H "Token: ${TOKEN}" ${UPLOAD_URL}; \
+	# curl -XPOST -F "file=@$(GPG_PUBLIC_KEY)" -H "Token: ${TOKEN}" ${UPLOAD_URL}; \
