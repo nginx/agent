@@ -121,12 +121,22 @@ func (iw *InstanceWatcherService) checkForUpdates(
 
 		if instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX ||
 			instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
-			nginxConfigContext := iw.parseNginxInstanceConfig(newCtx, newInstance)
-			iw.updateNginxInstanceRuntime(newInstance, nginxConfigContext)
+			nginxConfigContext, parseErr := iw.parseNginxInstanceConfig(newCtx, newInstance)
+			if parseErr != nil {
+				slog.WarnContext(
+					ctx,
+					"Parsing NGINX instance config",
+					"config_path", newInstance.GetInstanceRuntime().GetConfigPath(),
+					"instance_id", newInstance.GetInstanceMeta().GetInstanceId(),
+					"error", parseErr,
+				)
+			} else {
+				iw.updateNginxInstanceRuntime(newInstance, nginxConfigContext)
 
-			nginxConfigContextChannel <- NginxConfigContextMessage{
-				CorrelationID:      correlationID,
-				NginxConfigContext: nginxConfigContext,
+				nginxConfigContextChannel <- NginxConfigContextMessage{
+					CorrelationID:      correlationID,
+					NginxConfigContext: nginxConfigContext,
+				}
 			}
 		}
 	}
@@ -291,21 +301,15 @@ func (iw *InstanceWatcherService) updateNginxInstanceRuntime(
 func (iw *InstanceWatcherService) parseNginxInstanceConfig(
 	ctx context.Context,
 	instance *mpi.Instance,
-) *model.NginxConfigContext {
+) (*model.NginxConfigContext, error) {
 	nginxConfigContext, parseErr := iw.nginxConfigParser.Parse(ctx, instance)
 	if parseErr != nil {
-		slog.WarnContext(
-			ctx,
-			"Parsing NGINX instance config",
-			"config_path", instance.GetInstanceRuntime().GetConfigPath(),
-			"instance_id", instance.GetInstanceMeta().GetInstanceId(),
-			"error", parseErr,
-		)
+		return nil, parseErr
 	}
 
 	iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
 
-	return nginxConfigContext
+	return nginxConfigContext, nil
 }
 
 func convertAccessLogs(accessLogs []*model.AccessLog) (logs []string) {
