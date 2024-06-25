@@ -21,15 +21,52 @@ import (
 
 func TestHealthWatcherService_AddHealthWatcher(t *testing.T) {
 	agentConfig := types.AgentConfig()
-	healthWatcher := NewHealthWatcherService(agentConfig)
 	instance := protos.GetNginxOssInstance([]string{})
 
-	instances := []*mpi.Instance{instance}
-	healthWatcher.AddHealthWatcher(instances)
+	tests := []struct {
+		name        string
+		instances   []*mpi.Instance
+		numWatchers int
+	}{
+		{
+			name: "Test 1: NGINX Instance",
+			instances: []*mpi.Instance{
+				instance,
+			},
+			numWatchers: 1,
+		},
+		{
+			name: "Test 2: Not Supported Instance",
+			instances: []*mpi.Instance{
+				&mpi.Instance{
+					InstanceMeta: &mpi.InstanceMeta{
+						InstanceId:   instance.GetInstanceMeta().GetInstanceId(),
+						InstanceType: mpi.InstanceMeta_INSTANCE_TYPE_UNIT,
+						Version:      "",
+					},
+					InstanceConfig:  nil,
+					InstanceRuntime: nil,
+				},
+			},
+		},
+	}
 
-	assert.Len(t, healthWatcher.watchers, 1)
-	assert.NotNil(t, healthWatcher.watchers[instance.GetInstanceMeta().GetInstanceId()])
-	assert.NotNil(t, healthWatcher.instances[instance.GetInstanceMeta().GetInstanceId()])
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			healthWatcher := NewHealthWatcherService(agentConfig)
+			healthWatcher.AddHealthWatcher(test.instances)
+
+			if test.numWatchers == 1 {
+
+				assert.Len(t, healthWatcher.watchers, 1)
+				assert.NotNil(t, healthWatcher.watchers[instance.GetInstanceMeta().GetInstanceId()])
+				assert.NotNil(t, healthWatcher.instances[instance.GetInstanceMeta().GetInstanceId()])
+			} else {
+				assert.Len(t, healthWatcher.watchers, 0)
+			}
+		})
+	}
+
 }
 
 func TestHealthWatcherService_DeleteHealthWatcher(t *testing.T) {
@@ -68,6 +105,15 @@ func TestHealthWatcherService_health(t *testing.T) {
 	healthWatcher := NewHealthWatcherService(agentConfig)
 	ossInstance := protos.GetNginxOssInstance([]string{})
 	plusInstance := protos.GetNginxPlusInstance([]string{})
+	unspecifiedInstance := &mpi.Instance{
+		InstanceMeta: &mpi.InstanceMeta{
+			InstanceId:   "557cdf06-08fd-31eb-a8e7-daafd3a93db7",
+			InstanceType: mpi.InstanceMeta_INSTANCE_TYPE_NGINX,
+			Version:      "",
+		},
+		InstanceConfig:  nil,
+		InstanceRuntime: nil,
+	}
 	watchers := make(map[string]healthWatcherOperator)
 
 	fakeOSSHealthOp := healthfakes.FakeHealthWatcherOperator{}
@@ -82,8 +128,12 @@ func TestHealthWatcherService_health(t *testing.T) {
 		InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNHEALTHY,
 	}, nil)
 
+	fakeUspecifiedHealthOp := healthfakes.FakeHealthWatcherOperator{}
+	fakeUspecifiedHealthOp.HealthReturns(nil, fmt.Errorf("unable to determine health"))
+
 	watchers[plusInstance.GetInstanceMeta().GetInstanceId()] = &fakePlusHealthOp
 	watchers[ossInstance.GetInstanceMeta().GetInstanceId()] = &fakeOSSHealthOp
+	watchers[unspecifiedInstance.GetInstanceMeta().GetInstanceId()] = &fakeUspecifiedHealthOp
 	healthWatcher.watchers = watchers
 
 	expected := []*mpi.InstanceHealth{
@@ -94,6 +144,10 @@ func TestHealthWatcherService_health(t *testing.T) {
 		{
 			InstanceId:           plusInstance.GetInstanceMeta().GetInstanceId(),
 			InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNHEALTHY,
+		},
+		{
+			InstanceId:           unspecifiedInstance.GetInstanceMeta().GetInstanceId(),
+			InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNSPECIFIED,
 		},
 	}
 
@@ -113,6 +167,10 @@ func TestHealthWatcherService_health(t *testing.T) {
 					InstanceId:           plusInstance.GetInstanceMeta().GetInstanceId(),
 					InstanceHealthStatus: 1,
 				},
+				unspecifiedInstance.GetInstanceMeta().GetInstanceId(): {
+					InstanceId:           unspecifiedInstance.GetInstanceMeta().GetInstanceId(),
+					InstanceHealthStatus: 0,
+				},
 			},
 			isHealthDiff: true,
 		},
@@ -127,6 +185,13 @@ func TestHealthWatcherService_health(t *testing.T) {
 					InstanceId:           plusInstance.GetInstanceMeta().GetInstanceId(),
 					InstanceHealthStatus: 2,
 				},
+
+				unspecifiedInstance.GetInstanceMeta().GetInstanceId(): {
+					InstanceId:           unspecifiedInstance.GetInstanceMeta().GetInstanceId(),
+					InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNSPECIFIED,
+					Description: "failed to get health for instance 557cdf06-08fd-31eb-a8e7-daafd3a93db7," +
+						" error: unable to determine health",
+				},
 			},
 			isHealthDiff: false,
 		},
@@ -136,6 +201,10 @@ func TestHealthWatcherService_health(t *testing.T) {
 				ossInstance.GetInstanceMeta().GetInstanceId(): {
 					InstanceId:           ossInstance.GetInstanceMeta().GetInstanceId(),
 					InstanceHealthStatus: 1,
+				},
+				unspecifiedInstance.GetInstanceMeta().GetInstanceId(): {
+					InstanceId:           unspecifiedInstance.GetInstanceMeta().GetInstanceId(),
+					InstanceHealthStatus: 0,
 				},
 			},
 			isHealthDiff: true,
