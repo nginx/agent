@@ -512,8 +512,8 @@ var tests = []struct {
 			},
 		},
 		expectedAuxFiles: map[string]struct{}{
-			"/tmp/testdata/foo/test.html": {},
-			"/tmp/testdata/nginx/ca/ca.crt":  {},
+			"/tmp/testdata/foo/test.html":   {},
+			"/tmp/testdata/nginx/ca/ca.crt": {},
 		},
 	},
 	{
@@ -795,8 +795,8 @@ var tests = []struct {
 			},
 		},
 		expectedAuxFiles: map[string]struct{}{
-			"/tmp/testdata/foo/test.html": {},
-			"/tmp/testdata/nginx/ca/ca.crt":  {},
+			"/tmp/testdata/foo/test.html":   {},
+			"/tmp/testdata/nginx/ca/ca.crt": {},
 		},
 	},
 }
@@ -883,7 +883,7 @@ func TestGetNginxConfig(t *testing.T) {
 				resultFile := resultDir.Files[fileIndex]
 				assert.Equal(t, expectedFile.Name, resultFile.Name)
 				assert.Equal(t, expectedFile.Permissions, resultFile.Permissions)
-				assert.Equal(t, expectedFile.Lines, resultFile.Lines, "unexpected line count for " + expectedDirectory.Name + "/" +expectedFile.Name)
+				assert.Equal(t, expectedFile.Lines, resultFile.Lines, "unexpected line count for "+expectedDirectory.Name+"/"+expectedFile.Name)
 			}
 		}
 
@@ -1520,9 +1520,9 @@ func getCertMeta(file string) crtMetaFields {
 }
 
 func generateCertificates(algoname string) error {
-	certs := []string { "ca", "proxy", "trusted" }
+	certs := []string{"ca", "proxy", "trusted"}
 	var cmd1 *exec.Cmd
-	
+
 	for _, cert := range certs {
 		local := fmt.Sprintf("'%s.local'", cert)
 		output := fmt.Sprintf("certs/conf/%s/", cert)
