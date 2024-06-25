@@ -1,5 +1,4 @@
-FROM ubuntu:22.04
-
+FROM ubuntu:24.04
 LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
 # Define NGINX versions for NGINX Plus and NGINX Plus modules
@@ -83,57 +82,18 @@ RUN wget https://go.dev/dl/go${GO_VERSION}.linux-${OSARCH}.tar.gz \
     && tar -xvf go${GO_VERSION}.linux-${OSARCH}.tar.gz \
     && mv go /usr/local
 
+ENV DEBIAN_FRONTEND=noninteractive
 ENV GOROOT=/usr/local/go
 ENV CGO_ENABLED=0
 ENV PATH="/usr/local/go/bin:${PATH}" 
-ENV PACKAGE_PATH="/agent/build/${PACKAGE_NAME}.deb"
+ENV PATH=$PATH:/usr/local/go/bin
 
 RUN mv /agent/test/config/agent/nginx-agent-otel-load.conf /agent/test/load/nginx-agent.conf
 
-# Run benchmark tests
-# RUN mkdir -p /data/nginx/
-# ADD test/testdata/configs/bigger/metrics.conf /etc/nginx/nginx.conf
-# WORKDIR "/home/nginx"
-CMD cd /agent/test/load && go test -timeout 30s -run ^TestMetric10kDPS$$ github.com/nginx/agent/v3/test/load
+WORKDIR /agent/
+RUN make install-tools
+RUN make build
 
-# CMD mv -R /agent/test/load/results /agent/build/results && mv /agent/test/load/benchmarks.json /agent/build/results
+RUN chmod -R +x ./build
 
-# ARG BASE_IMAGE
-# FROM ubuntu:22.04 as install-nginx
-# LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
-
-# ARG DEBIAN_FRONTEND=noninteractive
-# ARG ENTRY_POINT
-# ARG PACKAGE_NAME
-# ARG PACKAGES_REPO
-
-# WORKDIR /agent
-# COPY ./build /agent/build
-# COPY ./test/load /agent/test/load 
-# COPY ./test/config/agent/nginx-agent-otel-load.conf /agent/nginx-agent.conf
-
-# # COPY $ENTRY_POINT /agent/entrypoint.sh
-
-# RUN set -x \
-#     && groupadd --system --gid 101 nginx \
-#     && useradd --system --gid nginx --no-create-home --home-dir /nonexistent --uid 101 nginx \
-#     && apt-get update \
-#     && add-apt-repository ppa:longsleep/golang-backports \
-#     && apt-get update \
-#     && apt-get install --no-install-recommends --no-install-suggests -y ca-certificates \
-#                                                                         gnupg2 \
-#                                                                         git \
-#                                                                         make \
-#                                                                         curl \
-#                                                                         lsb-release \
-#                                                                         procps \
-#                                                                         nginx \
-#                                                                         golang-go
-# # Setup nginx agent repository
-
-# # RUN chmod +x /agent/entrypoint.sh
-# STOPSIGNAL SIGTERM
-
-# EXPOSE 80 443
-
-# CMD CGO_ENABLED=0 PACKAGE_PATH=$PACKAGE_NAME go test -timeout 30s -run ^TestMetric10kDPS$$ github.com/nginx/agent/v3/test/load
+CMD ["cd" "/agent/test/load" "&&" "go test -v -timeout 30s ./..."]
