@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"sync/atomic"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/google/uuid"
@@ -36,18 +37,23 @@ type (
 type FileManagerService struct {
 	fileServiceClient mpi.FileServiceClient
 	agentConfig       *config.Config
+	isConnected       *atomic.Bool
 	fileOperator      fileOperator
 	filesCache        map[string]*mpi.File // key is file path
 	fileContentsCache map[string][]byte    // key is file path
 }
 
 func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig *config.Config) *FileManagerService {
+	isConnected := &atomic.Bool{}
+	isConnected.Store(false)
+
 	return &FileManagerService{
 		fileServiceClient: fileServiceClient,
 		agentConfig:       agentConfig,
 		fileOperator:      NewFileOperator(),
 		filesCache:        make(map[string]*mpi.File),
 		fileContentsCache: make(map[string][]byte),
+		isConnected:       isConnected,
 	}
 }
 
@@ -81,6 +87,10 @@ func (fms *FileManagerService) UpdateOverview(
 		slog.DebugContext(ctx, "Sending update overview request", "request", request)
 		if fms.fileServiceClient == nil {
 			return nil, errors.New("file service client is not initialized")
+		}
+
+		if !fms.isConnected.Load() {
+			return nil, errors.New("CreateConnection rpc has not being called yet")
 		}
 
 		response, updateError := fms.fileServiceClient.UpdateOverview(ctx, request)
@@ -136,6 +146,10 @@ func (fms *FileManagerService) UpdateFile(
 			return nil, errors.New("file service client is not initialized")
 		}
 
+		if !fms.isConnected.Load() {
+			return nil, errors.New("CreateConnection rpc has not being called yet")
+		}
+
 		response, updateError := fms.fileServiceClient.UpdateFile(ctx, request)
 
 		validatedError := grpc.ValidateGrpcError(updateError)
@@ -157,6 +171,10 @@ func (fms *FileManagerService) UpdateFile(
 	slog.DebugContext(ctx, "UpdateFile response", "response", response)
 
 	return err
+}
+
+func (fms *FileManagerService) SetIsConnected(isConnected bool) {
+	fms.isConnected.Store(isConnected)
 }
 
 func (fms *FileManagerService) ConfigApply(ctx context.Context, configApplyRequest *mpi.ConfigApplyRequest) error {
@@ -230,7 +248,7 @@ func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) e
 		return writeErr
 	}
 
-	err := fms.compareHash(file.GetFileMeta().GetName())
+	err := fms.validateFileHash(file.GetFileMeta().GetName())
 	if err != nil {
 		return err
 	}
@@ -238,7 +256,7 @@ func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) e
 	return nil
 }
 
-func (fms *FileManagerService) compareHash(filePath string) error {
+func (fms *FileManagerService) validateFileHash(filePath string) error {
 	_, fileHash, err := files.GenerateHashWithReadFile(filePath)
 	if err != nil {
 		return err

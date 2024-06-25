@@ -18,4 +18,5 @@ const (
 	WriteConfigSuccessfulTopic        = "write-config-successful-topic"
 	ConfigApplySuccessfulRequestTopic = "config-apply-successful-topic"
 	ConfigApplyFailedRequestTopic     = "config-apply-failed-topic"
+	ConnectionCreatedTopic            = "connection-created"
 )
