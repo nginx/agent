@@ -11,8 +11,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/test/helpers"
+
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,6 +24,7 @@ func TestFileOperator_Write(t *testing.T) {
 	tempDir := t.TempDir()
 	filePath := filepath.Join(tempDir, "nginx.conf")
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
+	defer helpers.RemoveFileWithErrorCheck(t, filePath)
 	fileOp := NewFileOperator()
 	fileMeta := &mpi.FileMeta{
 		Name:         filePath,
@@ -39,7 +41,4 @@ func TestFileOperator_Write(t *testing.T) {
 	data, err := os.ReadFile(filePath)
 	require.NoError(t, err)
 	assert.Equal(t, fileContent, data)
-
-	helpers.RemoveFileWithErrorCheck(t, filePath)
-	assert.NoFileExists(t, filePath)
 }

@@ -102,7 +102,7 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			CommandResponse: &mpi.CommandResponse{
 				Status:  mpi.CommandResponse_COMMAND_STATUS_ERROR,
 				Message: "Config apply failed",
-				Error:   "unable to cast to message payload",
+				Error:   "Internal server error",
 			},
 		}
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
@@ -117,7 +117,7 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 	if err != nil {
 		slog.ErrorContext(
 			ctx,
-			"Failed to update file overview",
+			"Failed to apply config changes",
 			"instance_id", configApplyRequest.GetConfigVersion().GetInstanceId(),
 			"error", err,
 		)
@@ -166,8 +166,6 @@ func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 			"instance_id", nginxConfigContext.InstanceID,
 			"error", err,
 		)
-
-		return
 	}
 }
 
