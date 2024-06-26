@@ -174,7 +174,7 @@ jobs:
       - name: Set GO_VERSION
         id: vars
         run: |
-          $(cat go.mod | grep toolchain | sed 's/toolchain //; s/go//'") >> $GO_VERSION
+          $(cat go.mod | grep toolchain | sed 's/toolchain //; s/go//') >> $GO_VERSION
       - name: Run Load Tests
         run: |
          GO_VERSION=$GO_VERSION make load-test
