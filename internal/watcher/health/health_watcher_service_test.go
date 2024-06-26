@@ -38,15 +38,7 @@ func TestHealthWatcherService_AddHealthWatcher(t *testing.T) {
 		{
 			name: "Test 2: Not Supported Instance",
 			instances: []*mpi.Instance{
-				{
-					InstanceMeta: &mpi.InstanceMeta{
-						InstanceId:   instance.GetInstanceMeta().GetInstanceId(),
-						InstanceType: mpi.InstanceMeta_INSTANCE_TYPE_UNIT,
-						Version:      "",
-					},
-					InstanceConfig:  nil,
-					InstanceRuntime: nil,
-				},
+				protos.GetUnsupportedInstance(),
 			},
 		},
 	}
