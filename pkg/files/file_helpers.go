@@ -94,24 +94,6 @@ func ReadFile(filePath string) ([]byte, error) {
 	return content.Bytes(), nil
 }
 
-// GenerateHashWithReadFile returns the content of a file and the hash of that file.
-func GenerateHashWithReadFile(filePath string) ([]byte, string, error) {
-	f, openErr := os.Open(filePath)
-	if openErr != nil {
-		return nil, "", openErr
-	}
-
-	content := bytes.NewBuffer([]byte{})
-	_, copyErr := io.Copy(content, f)
-	if copyErr != nil {
-		return nil, "", copyErr
-	}
-
-	hash := GenerateHash(content.Bytes())
-
-	return content.Bytes(), hash, nil
-}
-
 // CompareFileHash compares files from the FileOverview to files on disk and returns a map with the files that have
 // changed and a map with the contents of those files. Key to both maps is file path
 // nolint: revive,cyclop
