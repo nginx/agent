@@ -456,7 +456,7 @@ func TestFileManagerService_fileActions(t *testing.T) {
 
 	fileManagerService.filesCache = filesCache
 
-	actionErr := fileManagerService.fileActions(ctx)
+	actionErr := fileManagerService.executeFileActions(ctx)
 	require.NoError(t, actionErr)
 
 	assert.FileExists(t, addFilePath)

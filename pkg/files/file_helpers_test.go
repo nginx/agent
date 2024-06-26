@@ -27,7 +27,7 @@ func TestGetFileMeta(t *testing.T) {
 	expected := &mpi.FileMeta{
 		Name:        file.Name(),
 		Hash:        "4ae71336-e44b-39bf-b9d2-752e234818a5",
-		Permissions: "0777",
+		Permissions: "0600",
 		Size:        0,
 	}
 
@@ -148,7 +148,7 @@ func TestReadFile(t *testing.T) {
 	err := os.WriteFile(testFile.Name(), expectedFileContent, 0o600)
 	require.NoError(t, err)
 
-	resultContent, _, err := GenerateHashWithReadFile(testFile.Name())
+	resultContent, err := ReadFile(testFile.Name())
 	require.NoError(t, err)
 
 	assert.Equal(t, expectedFileContent, resultContent)

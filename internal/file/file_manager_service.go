@@ -211,7 +211,7 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	fms.fileContentsCache = fileContent
 	fms.filesCache = diffFiles
 
-	fileErr := fms.fileActions(ctx)
+	fileErr := fms.executeFileActions(ctx)
 	if fileErr != nil {
 		return true, fileErr
 	}
@@ -252,7 +252,7 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 	return nil
 }
 
-func (fms *FileManagerService) fileActions(ctx context.Context) error {
+func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 	for _, file := range fms.filesCache {
 		switch file.GetAction() {
 		case mpi.File_FILE_ACTION_DELETE:
@@ -269,7 +269,7 @@ func (fms *FileManagerService) fileActions(ctx context.Context) error {
 		case mpi.File_FILE_ACTION_UNSPECIFIED, mpi.File_FILE_ACTION_UNCHANGED:
 			fallthrough
 		default:
-			slog.DebugContext(ctx, "File Action not implemented")
+			slog.DebugContext(ctx, "File Action not implemented", "action", file.GetAction())
 		}
 	}
 
@@ -304,10 +304,11 @@ func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) e
 }
 
 func (fms *FileManagerService) validateFileHash(filePath string) error {
-	_, fileHash, err := files.GenerateHashWithReadFile(filePath)
+	content, err := files.ReadFile(filePath)
 	if err != nil {
 		return err
 	}
+	fileHash := files.GenerateHash(content)
 
 	if fileHash != fms.filesCache[filePath].GetFileMeta().GetHash() {
 		return fmt.Errorf("error writing file, file hash does not match for file %s", filePath)

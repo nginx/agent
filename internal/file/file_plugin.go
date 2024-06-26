@@ -152,7 +152,7 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			"payload", msg.Data)
 
 		response := fp.createDataPlaneResponseError(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-			"Config apply failed", "unable to cast to message payload")
+			"Config apply failed", "Internal server error")
 
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
 
@@ -165,6 +165,12 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 	rollbackRequired, err := fp.fileManagerService.ConfigApply(ctx, configApplyRequest)
 
 	if err != nil && !rollbackRequired {
+		slog.ErrorContext(
+			ctx,
+			"Failed to apply config changes",
+			"instance_id", configApplyRequest.GetConfigVersion().GetInstanceId(),
+			"error", err,
+		)
 		response = fp.createDataPlaneResponseError(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			fmt.Sprintf("Config apply failed for instanceId: %s", configApplyRequest.
 				GetConfigVersion().GetInstanceId()), err.Error())
@@ -174,6 +180,12 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 
 		return
 	} else if rollbackRequired {
+		slog.ErrorContext(
+			ctx,
+			"Failed to apply config changes, rolling back",
+			"instance_id", configApplyRequest.GetConfigVersion().GetInstanceId(),
+			"error", err,
+		)
 		response = fp.createDataPlaneResponseError(correlationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
 			fmt.Sprintf("Config apply failed for instanceId: %s, rolling back config",
 				configApplyRequest.GetConfigVersion().GetInstanceId()), err.Error())
@@ -209,8 +221,6 @@ func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 			"instance_id", nginxConfigContext.InstanceID,
 			"error", err,
 		)
-
-		return
 	}
 }
 
