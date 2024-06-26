@@ -1,5 +1,5 @@
 # Go parameters
-GO_VERSION = $(shell cat go.mod | grep toolchain | sed 's/toolchain //; s/go//')
+GO_VERSION ?= $(shell cat go.mod | grep toolchain | sed 's/toolchain //; s/go//')
 GOCMD	= go
 GOBUILD	= $(GOCMD) build
 GOTEST	= $(GOCMD) test
