@@ -242,15 +242,14 @@ func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) e
 		return fmt.Errorf("error getting file data for %s: %w", file.GetFileMeta(), getFileErr)
 	}
 
-	if writeErr := fms.fileOperator.Write(ctx, getFileResp.GetContents().GetContents(), file.GetFileMeta()); writeErr != nil {
+	if writeErr := fms.fileOperator.Write(ctx, getFileResp.GetContents().GetContents(),
+		file.GetFileMeta()); writeErr != nil {
 		return writeErr
 	}
-	
-	if validateErr := fms.validateFileHash(file.GetFileMeta().GetName()); validateErr != nil {
-		return validateErr
-	}
 
-	return nil
+	validateErr := fms.validateFileHash(file.GetFileMeta().GetName())
+
+	return validateErr
 }
 
 func (fms *FileManagerService) validateFileHash(filePath string) error {
