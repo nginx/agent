@@ -213,3 +213,26 @@ func getSecondNginxOssInstance(expectedModules []string) *v1.Instance {
 
 	return process2
 }
+
+func GetHealthyInstanceHealth() *v1.InstanceHealth {
+	return &v1.InstanceHealth{
+		InstanceId:           GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+		InstanceHealthStatus: v1.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY,
+	}
+}
+
+func GetUnhealthyInstanceHealth() *v1.InstanceHealth {
+	return &v1.InstanceHealth{
+		InstanceId:           GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+		InstanceHealthStatus: v1.InstanceHealth_INSTANCE_HEALTH_STATUS_UNHEALTHY,
+	}
+}
+
+func GetUnspecifiedInstanceHealth() *v1.InstanceHealth {
+	return &v1.InstanceHealth{
+		InstanceId:           "557cdf06-08fd-31eb-a8e7-daafd3a93db7",
+		InstanceHealthStatus: v1.InstanceHealth_INSTANCE_HEALTH_STATUS_UNSPECIFIED,
+		Description: "failed to get health for instance 557cdf06-08fd-31eb-a8e7-daafd3a93db7," +
+			" error: unable to determine health",
+	}
+}
