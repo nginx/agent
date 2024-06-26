@@ -8,10 +8,8 @@ package protos
 import (
 	"os"
 
-	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -125,65 +123,6 @@ func GetInstancesNoParentProcess(expectedModules []string) []*v1.Instance {
 	process2.GetInstanceRuntime().ProcessId = 0
 
 	return []*v1.Instance{process1, process2}
-}
-
-func CreateInProgressStatus() *instances.ConfigurationStatus {
-	return &instances.ConfigurationStatus{
-		InstanceId:    ossInstanceID,
-		CorrelationId: correlationID,
-		Status:        instances.Status_IN_PROGRESS,
-		Message:       "Instance configuration update in progress",
-		Timestamp:     timestamppb.Now(),
-	}
-}
-
-func CreateSuccessStatus() *instances.ConfigurationStatus {
-	return &instances.ConfigurationStatus{
-		InstanceId:    ossInstanceID,
-		CorrelationId: correlationID,
-		Status:        instances.Status_SUCCESS,
-		Message:       "Config applied successfully",
-		Timestamp:     timestamppb.Now(),
-	}
-}
-
-func CreateFailStatus(err string) *instances.ConfigurationStatus {
-	return &instances.ConfigurationStatus{
-		InstanceId:    ossInstanceID,
-		CorrelationId: correlationID,
-		Status:        instances.Status_FAILED,
-		Message:       err,
-	}
-}
-
-func CreateRollbackSuccessStatus() *instances.ConfigurationStatus {
-	return &instances.ConfigurationStatus{
-		InstanceId:    ossInstanceID,
-		CorrelationId: correlationID,
-		Status:        instances.Status_ROLLBACK_SUCCESS,
-		Timestamp:     timestamppb.Now(),
-		Message:       "Rollback successful",
-	}
-}
-
-func CreateRollbackFailStatus(err string) *instances.ConfigurationStatus {
-	return &instances.ConfigurationStatus{
-		InstanceId:    ossInstanceID,
-		CorrelationId: correlationID,
-		Status:        instances.Status_ROLLBACK_FAILED,
-		Timestamp:     timestamppb.Now(),
-		Message:       err,
-	}
-}
-
-func CreateRollbackInProgressStatus() *instances.ConfigurationStatus {
-	return &instances.ConfigurationStatus{
-		InstanceId:    ossInstanceID,
-		CorrelationId: correlationID,
-		Status:        instances.Status_ROLLBACK_IN_PROGRESS,
-		Timestamp:     timestamppb.Now(),
-		Message:       "Rollback in progress",
-	}
 }
 
 func GetFileCache(files ...*os.File) (map[string]*v1.FileMeta, error) {
