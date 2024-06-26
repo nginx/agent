@@ -28,16 +28,18 @@ func GetFileMeta(filePath string) (*mpi.FileMeta, error) {
 		return nil, err
 	}
 
-	_, hash, err := GenerateHashWithReadFile(filePath)
+	content, err := ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
 
+	fileHash := GenerateHash(content)
+
 	return &mpi.FileMeta{
 		Name:         filePath,
-		Hash:         hash,
+		Hash:         fileHash,
 		ModifiedTime: timestamppb.New(fileInfo.ModTime()),
-		Permissions:  "0777",
+		Permissions:  GetPermissions(fileInfo.Mode()),
 		Size:         fileInfo.Size(),
 	}, nil
 }
@@ -76,6 +78,22 @@ func GenerateHash(b []byte) string {
 	return uuid.NewMD5(uuid.Nil, b).String()
 }
 
+// ReadFile returns the content of a file
+func ReadFile(filePath string) ([]byte, error) {
+	f, openErr := os.Open(filePath)
+	if openErr != nil {
+		return nil, openErr
+	}
+
+	content := bytes.NewBuffer([]byte{})
+	_, copyErr := io.Copy(content, f)
+	if copyErr != nil {
+		return nil, copyErr
+	}
+
+	return content.Bytes(), nil
+}
+
 // GenerateHashWithReadFile returns the content of a file and the hash of that file.
 func GenerateHashWithReadFile(filePath string) ([]byte, string, error) {
 	f, openErr := os.Open(filePath)
@@ -111,14 +129,12 @@ func CompareFileHash(fileOverview *mpi.FileOverview) (fileDiff map[string]*mpi.F
 				// File is already deleted, skip
 				continue
 			}
-			fileContent, _, readErr := GenerateHashWithReadFile(fileName)
+			fileContent, readErr := ReadFile(fileName)
 			if readErr != nil {
 				return nil, nil, fmt.Errorf("error reading file %s, error: %w", fileName, readErr)
 			}
 			fileContents[fileName] = fileContent
 			fileDiff[fileName] = file
-
-			continue
 		case mpi.File_FILE_ACTION_ADD:
 			if _, err = os.Stat(fileName); os.IsNotExist(err) {
 				// file is new, nothing to compare
@@ -131,10 +147,11 @@ func CompareFileHash(fileOverview *mpi.FileOverview) (fileDiff map[string]*mpi.F
 
 			fallthrough
 		case mpi.File_FILE_ACTION_UPDATE:
-			fileContent, fileHash, fileHashErr := GenerateHashWithReadFile(fileName)
-			if fileHashErr != nil {
-				return nil, nil, fmt.Errorf("error generating hash for file %s, error: %w", fileName, fileHashErr)
+			fileContent, readErr := ReadFile(fileName)
+			if readErr != nil {
+				return nil, nil, fmt.Errorf("error generating hash for file %s, error: %w", fileName, readErr)
 			}
+			fileHash := GenerateHash(fileContent)
 
 			if fileHash == file.GetFileMeta().GetHash() {
 				// file is same as on disk, skip
