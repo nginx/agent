@@ -168,7 +168,7 @@ To build an image that contains the latest NGINX Agent and the latest mainline v
 make official-oss-image
 ```
 
-For more information on how to run NGINX Agent containers and how build an image that uses NGINX Plus instead of NGINX OSS see [Docker Images](https://docs.nginx.com/nginx-agent/docker-images/)
+For more information on how to run NGINX Agent containers and how build an image that uses NGINX Plus instead of NGINX OSS see [Docker Images](https://docs.nginx.com/nginx-agent/installation-upgrade/container-environments/docker-images/)
 
 # Getting Started with NGINX Agent
 Follow these steps to configure and run NGINX Agent and a mock interface ("control plane") to which the NGINX Agent will report.
