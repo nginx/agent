@@ -272,7 +272,7 @@ func createFile(fullPath, filePath string) (*v1.File, error) {
 			Name:         filePath,
 			Hash:         fileHash,
 			ModifiedTime: timestamppb.New(fileInfo.ModTime()),
-			Permissions:  "0777",
+			Permissions:  filesHelper.GetPermissions(fileInfo.Mode()),
 			Size:         fileInfo.Size(),
 		},
 	}, nil
