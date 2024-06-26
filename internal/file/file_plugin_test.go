@@ -110,7 +110,7 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 								Name:         filePath,
 								Hash:         fileHash,
 								ModifiedTime: timestamppb.Now(),
-								Permissions:  "0777",
+								Permissions:  "0640",
 								Size:         0,
 							},
 							Action: &addAction,

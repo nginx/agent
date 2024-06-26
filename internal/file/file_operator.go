@@ -21,6 +21,8 @@ type FileOperator struct{}
 
 var _ fileOperator = (*FileOperator)(nil)
 
+// FileOperator only purpose is to write files,
+
 func NewFileOperator() *FileOperator {
 	return &FileOperator{}
 }
