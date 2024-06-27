@@ -6,6 +6,7 @@
 package protos
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/nginx/agent/v3/api/grpc/instances"
@@ -18,7 +19,6 @@ const (
 	ossInstanceID        = "e1374cb1-462d-3b6c-9f3b-f28332b5f10c"
 	plusInstanceID       = "40f9dda0-e45f-34cf-bba7-f173700f50a2"
 	secondOssInstanceID  = "557cdf06-08fd-31eb-a8e7-daafd3a93db7"
-	unpecifiedInstanceID = "c2d4b1ec-03d9-32ae-851a-b940b51bdc81"
 	unsuportedInstanceID = "fcd99f8f-00fb-3097-8d75-32ae269b46c3"
 	correlationID        = "dfsbhj6-bc92-30c1-a9c9-85591422068e"
 	processID            = 1234
@@ -211,9 +211,9 @@ func GetUnhealthyInstanceHealth() *v1.InstanceHealth {
 
 func GetUnspecifiedInstanceHealth() *v1.InstanceHealth {
 	return &v1.InstanceHealth{
-		InstanceId:           unpecifiedInstanceID,
+		InstanceId:           unsuportedInstanceID,
 		InstanceHealthStatus: v1.InstanceHealth_INSTANCE_HEALTH_STATUS_UNSPECIFIED,
-		Description: "failed to get health for instance 557cdf06-08fd-31eb-a8e7-daafd3a93db7," +
-			" error: unable to determine health",
+		Description: fmt.Sprintf("failed to get health for instance %s, error: unable "+
+			"to determine health", unsuportedInstanceID),
 	}
 }

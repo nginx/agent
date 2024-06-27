@@ -8,6 +8,7 @@ package health
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"reflect"
 	"testing"
 
@@ -95,15 +96,7 @@ func TestHealthWatcherService_health(t *testing.T) {
 	healthWatcher := NewHealthWatcherService(agentConfig)
 	ossInstance := protos.GetNginxOssInstance([]string{})
 	plusInstance := protos.GetNginxPlusInstance([]string{})
-	unspecifiedInstance := &mpi.Instance{
-		InstanceMeta: &mpi.InstanceMeta{
-			InstanceId:   "557cdf06-08fd-31eb-a8e7-daafd3a93db7",
-			InstanceType: mpi.InstanceMeta_INSTANCE_TYPE_NGINX,
-			Version:      "",
-		},
-		InstanceConfig:  nil,
-		InstanceRuntime: nil,
-	}
+	unspecifiedInstance := protos.GetUnsupportedInstance()
 	watchers := make(map[string]healthWatcherOperator)
 
 	fakeOSSHealthOp := healthfakes.FakeHealthWatcherOperator{}
@@ -169,6 +162,7 @@ func TestHealthWatcherService_health(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			healthWatcher.updateCache(test.cache)
 			instanceHealth, healthDiff := healthWatcher.health(ctx)
+			slog.Info("Instance Health", "", instanceHealth)
 			assert.Equal(t, test.isHealthDiff, healthDiff)
 
 			reflect.DeepEqual(instanceHealth, expected)
