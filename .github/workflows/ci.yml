@@ -188,7 +188,7 @@ jobs:
             "nginx-key=${{ secrets.NGINX_KEY }}"
           build-args: |
             OSARCH=amd64
-            GO_VERSION=${{ env.GO_VERSION }}
+            GO_VERSION=$GO_VERSION
       - name: Upload Load Test Results
         uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
         with:
