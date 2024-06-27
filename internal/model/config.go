@@ -20,7 +20,7 @@ type NginxConfigContext struct {
 	InstanceID string
 }
 
-type ConfigApply struct {
+type ConfigApplyMessage struct {
 	CorrelationID string
 	InstanceID    string
 }

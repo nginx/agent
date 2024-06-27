@@ -95,85 +95,9 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 
 		return
 	case bus.WriteConfigSuccessfulTopic:
-		data, ok := msg.Data.(model.ConfigApply)
-		if !ok {
-			slog.ErrorContext(ctx, "Unable to cast message payload to instanceID string", "payload", msg.Data)
-		}
-		err := r.resourceService.Apply(ctx, data.InstanceID)
-		if err != nil {
-			slog.Error("errors found during config apply, sending failure status", "err", err)
-
-			response := r.createDataPlaneResponseError(data.CorrelationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
-				fmt.Sprintf("Config apply failed for instanceId: %s, "+
-					"rolling back config", data.CorrelationID), err.Error())
-
-			r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
-			r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyFailedTopic, Data: data.InstanceID})
-
-			return
-		}
-		response := &mpi.DataPlaneResponse{
-			MessageMeta: &mpi.MessageMeta{
-				MessageId:     uuid.NewString(),
-				CorrelationId: data.CorrelationID,
-				Timestamp:     timestamppb.Now(),
-			},
-			CommandResponse: &mpi.CommandResponse{
-				Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
-				Message: fmt.Sprintf("Successful config apply for instanceId: %s", data.CorrelationID),
-			},
-		}
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplySuccessfulTopic})
+		r.handleWriteConfigSuccessful(ctx, msg)
 	case bus.RollbackWriteTopic:
-		data, ok := msg.Data.(model.ConfigApply)
-		if !ok {
-			slog.ErrorContext(ctx, "Unable to cast message payload to instanceID string", "payload", msg.Data)
-		}
-		err := r.resourceService.Apply(ctx, data.InstanceID)
-		if err != nil {
-			slog.Error("errors found during rollback, sending failure status", "err", err)
-
-			applyResponse := r.createDataPlaneResponseError(data.CorrelationID,
-				mpi.CommandResponse_COMMAND_STATUS_ERROR, fmt.Sprintf("Rollback failed for instanceId: %s",
-					data.InstanceID), err.Error())
-
-			rollbackResponse := r.createDataPlaneResponseError(data.CorrelationID,
-				mpi.CommandResponse_COMMAND_STATUS_FAILURE, fmt.Sprintf("Config apply failed for instanceId: %s",
-					data.InstanceID), err.Error())
-
-			r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: applyResponse})
-			r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
-			r.messagePipe.Process(ctx, &bus.Message{Topic: bus.RollbackCompleteTopic})
-
-			return
-		}
-		applyResponse := &mpi.DataPlaneResponse{
-			MessageMeta: &mpi.MessageMeta{
-				MessageId:     uuid.NewString(),
-				CorrelationId: data.CorrelationID,
-				Timestamp:     timestamppb.Now(),
-			},
-			CommandResponse: &mpi.CommandResponse{
-				Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
-				Message: fmt.Sprintf("Rollback successful for instanceId: %s", data.CorrelationID),
-			},
-		}
-		rollbackResponse := &mpi.DataPlaneResponse{
-			MessageMeta: &mpi.MessageMeta{
-				MessageId:     uuid.NewString(),
-				CorrelationId: data.CorrelationID,
-				Timestamp:     timestamppb.Now(),
-			},
-			CommandResponse: &mpi.CommandResponse{
-				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-				Message: fmt.Sprintf("Config apply failed for instanceId: %s, rollback successful", data.CorrelationID),
-			},
-		}
-
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: applyResponse})
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.RollbackCompleteTopic})
+		r.handleRollbackWrite(ctx, msg)
 	default:
 		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)
 	}
@@ -187,6 +111,92 @@ func (*Resource) Subscriptions() []string {
 		bus.WriteConfigSuccessfulTopic,
 		bus.RollbackWriteTopic,
 	}
+}
+
+func (r *Resource) handleWriteConfigSuccessful(ctx context.Context, msg *bus.Message) {
+	data, ok := msg.Data.(model.ConfigApplyMessage)
+	if !ok {
+		slog.ErrorContext(ctx, "Unable to cast message payload to instanceID string", "payload", msg.Data)
+	}
+	err := r.resourceService.Apply(ctx, data.InstanceID)
+	if err != nil {
+		slog.Error("errors found during config apply, sending failure status", "err", err)
+
+		response := r.createDataPlaneResponseError(data.CorrelationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
+			fmt.Sprintf("Config apply failed for instanceId: %s, "+
+				"rolling back config", data.CorrelationID), err.Error())
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyFailedTopic, Data: data})
+
+		return
+	}
+	response := &mpi.DataPlaneResponse{
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     uuid.NewString(),
+			CorrelationId: data.CorrelationID,
+			Timestamp:     timestamppb.Now(),
+		},
+		CommandResponse: &mpi.CommandResponse{
+			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+			Message: fmt.Sprintf("Successful config apply for instanceId: %s", data.CorrelationID),
+		},
+	}
+
+	instance := r.resourceService.Instance(data.InstanceID)
+
+	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
+	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplySuccessfulTopic, Data: instance})
+}
+
+func (r *Resource) handleRollbackWrite(ctx context.Context, msg *bus.Message) {
+	data, ok := msg.Data.(model.ConfigApplyMessage)
+	if !ok {
+		slog.ErrorContext(ctx, "Unable to cast message payload to instanceID string", "payload", msg.Data)
+	}
+	err := r.resourceService.Apply(ctx, data.InstanceID)
+	if err != nil {
+		slog.Error("errors found during rollback, sending failure status", "err", err)
+
+		applyResponse := r.createDataPlaneResponseError(data.CorrelationID,
+			mpi.CommandResponse_COMMAND_STATUS_ERROR, fmt.Sprintf("Rollback failed for instanceId: %s",
+				data.InstanceID), err.Error())
+
+		rollbackResponse := r.createDataPlaneResponseError(data.CorrelationID,
+			mpi.CommandResponse_COMMAND_STATUS_FAILURE, fmt.Sprintf("Config apply failed for instanceId: %s",
+				data.InstanceID), err.Error())
+
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: applyResponse})
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.RollbackCompleteTopic})
+
+		return
+	}
+	applyResponse := &mpi.DataPlaneResponse{
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     uuid.NewString(),
+			CorrelationId: data.CorrelationID,
+			Timestamp:     timestamppb.Now(),
+		},
+		CommandResponse: &mpi.CommandResponse{
+			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+			Message: fmt.Sprintf("Rollback successful for instanceId: %s", data.CorrelationID),
+		},
+	}
+	rollbackResponse := &mpi.DataPlaneResponse{
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     uuid.NewString(),
+			CorrelationId: data.CorrelationID,
+			Timestamp:     timestamppb.Now(),
+		},
+		CommandResponse: &mpi.CommandResponse{
+			Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+			Message: fmt.Sprintf("Config apply failed for instanceId: %s, rollback successful", data.CorrelationID),
+		},
+	}
+
+	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: applyResponse})
+	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
+	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.RollbackCompleteTopic})
 }
 
 func (*Resource) createDataPlaneResponseError(correlationID string, status mpi.CommandResponse_CommandStatus,

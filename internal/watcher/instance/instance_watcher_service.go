@@ -8,7 +8,11 @@ package instance
 import (
 	"context"
 	"log/slog"
+	"reflect"
+	"sync"
 	"time"
+
+	"google.golang.org/protobuf/proto"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
@@ -37,13 +41,16 @@ type (
 	}
 
 	InstanceWatcherService struct {
-		agentConfig       *config.Config
-		processOperator   process.ProcessOperatorInterface
-		processParsers    []processParser
-		nginxConfigParser nginxConfigParser
-		instanceCache     []*mpi.Instance
-		nginxConfigCache  map[string]*model.NginxConfigContext // key is instanceID
-		executer          exec.ExecInterface
+		agentConfig               *config.Config
+		processOperator           process.ProcessOperatorInterface
+		processParsers            []processParser
+		nginxConfigParser         nginxConfigParser
+		instanceCache             map[string]*mpi.Instance
+		cacheMutex                sync.Mutex
+		nginxConfigCache          map[string]*model.NginxConfigContext // key is instanceID
+		executer                  exec.ExecInterface
+		instancesChannel          chan<- InstanceUpdatesMessage
+		nginxConfigContextChannel chan<- NginxConfigContextMessage
 	}
 
 	InstanceUpdates struct {
@@ -71,7 +78,8 @@ func NewInstanceWatcherService(agentConfig *config.Config) *InstanceWatcherServi
 			NewNginxProcessParser(),
 		},
 		nginxConfigParser: NewNginxConfigParser(agentConfig),
-		instanceCache:     []*mpi.Instance{},
+		instanceCache:     make(map[string]*mpi.Instance),
+		cacheMutex:        sync.Mutex{},
 		nginxConfigCache:  make(map[string]*model.NginxConfigContext),
 		executer:          &exec.Exec{},
 	}
@@ -85,6 +93,9 @@ func (iw *InstanceWatcherService) Watch(
 	monitoringFrequency := iw.agentConfig.Watchers.InstanceWatcher.MonitoringFrequency
 	slog.DebugContext(ctx, "Starting instance watcher monitoring", "monitoring_frequency", monitoringFrequency)
 
+	iw.instancesChannel = instancesChannel
+	iw.nginxConfigContextChannel = nginxConfigContextChannel
+
 	instanceWatcherTicker := time.NewTicker(monitoringFrequency)
 	defer instanceWatcherTicker.Stop()
 
@@ -96,16 +107,58 @@ func (iw *InstanceWatcherService) Watch(
 
 			return
 		case <-instanceWatcherTicker.C:
-			iw.checkForUpdates(ctx, instancesChannel, nginxConfigContextChannel)
+			iw.checkForUpdates(ctx)
+		}
+	}
+}
+
+func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instance *mpi.Instance) {
+	iw.cacheMutex.Lock()
+	defer iw.cacheMutex.Unlock()
+	instanceType := instance.GetInstanceMeta().GetInstanceType()
+	correlationID := logger.GenerateCorrelationID()
+
+	if instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX ||
+		instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
+		nginxConfigContext, parseErr := iw.nginxConfigParser.Parse(ctx, instance)
+		if parseErr != nil {
+			slog.WarnContext(
+				ctx,
+				"Parsing NGINX instance config",
+				"config_path", instance.GetInstanceRuntime().GetConfigPath(),
+				"instance_id", instance.GetInstanceMeta().GetInstanceId(),
+				"error", parseErr,
+			)
+		}
+
+		if !reflect.DeepEqual(iw.nginxConfigCache[nginxConfigContext.InstanceID], nginxConfigContext) {
+			iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
+
+			iw.updateNginxInstanceRuntime(instance, nginxConfigContext)
+
+			iw.nginxConfigContextChannel <- NginxConfigContextMessage{
+				CorrelationID:      correlationID,
+				NginxConfigContext: nginxConfigContext,
+			}
+		}
+
+	}
+
+	if !proto.Equal(instance, iw.instanceCache[instance.GetInstanceMeta().GetInstanceId()]) {
+		instanceUpdates := InstanceUpdates{}
+		instanceUpdates.UpdatedInstances = append(instanceUpdates.UpdatedInstances, instance)
+		iw.instancesChannel <- InstanceUpdatesMessage{
+			CorrelationID:   correlationID,
+			InstanceUpdates: instanceUpdates,
 		}
 	}
 }
 
 func (iw *InstanceWatcherService) checkForUpdates(
 	ctx context.Context,
-	instancesChannel chan<- InstanceUpdatesMessage,
-	nginxConfigContextChannel chan<- NginxConfigContextMessage,
 ) {
+	iw.cacheMutex.Lock()
+	defer iw.cacheMutex.Unlock()
 	var instancesToParse []*mpi.Instance
 	correlationID := logger.GenerateCorrelationID()
 	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, correlationID)
@@ -123,7 +176,7 @@ func (iw *InstanceWatcherService) checkForUpdates(
 
 		if instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX ||
 			instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
-			nginxConfigContext, parseErr := iw.parseNginxInstanceConfig(newCtx, newInstance)
+			nginxConfigContext, parseErr := iw.nginxConfigParser.Parse(ctx, newInstance)
 			if parseErr != nil {
 				slog.WarnContext(
 					ctx,
@@ -133,9 +186,10 @@ func (iw *InstanceWatcherService) checkForUpdates(
 					"error", parseErr,
 				)
 			} else {
+				iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
 				iw.updateNginxInstanceRuntime(newInstance, nginxConfigContext)
 
-				nginxConfigContextChannel <- NginxConfigContextMessage{
+				iw.nginxConfigContextChannel <- NginxConfigContextMessage{
 					CorrelationID:      correlationID,
 					NginxConfigContext: nginxConfigContext,
 				}
@@ -145,7 +199,7 @@ func (iw *InstanceWatcherService) checkForUpdates(
 
 	if len(instanceUpdates.NewInstances) > 0 || len(instanceUpdates.DeletedInstances) > 0 ||
 		len(instanceUpdates.UpdatedInstances) > 0 {
-		instancesChannel <- InstanceUpdatesMessage{
+		iw.instancesChannel <- InstanceUpdatesMessage{
 			CorrelationID:   correlationID,
 			InstanceUpdates: instanceUpdates,
 		}
@@ -162,15 +216,16 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 	}
 
 	// NGINX Agent is always the first instance in the list
-	instancesFound := []*mpi.Instance{iw.agentInstance(ctx)}
+	instancesFound := map[string]*mpi.Instance{}
+	agentInstance := iw.agentInstance(ctx)
+	instancesFound[agentInstance.InstanceMeta.InstanceId] = agentInstance
 
-	for _, processParser := range iw.processParsers {
-		instances := processParser.Parse(ctx, processes)
+	for _, parser := range iw.processParsers {
+		instances := parser.Parse(ctx, processes)
 		for _, instance := range instances {
-			instancesFound = append(instancesFound, instance)
+			instancesFound[instance.GetInstanceMeta().GetInstanceId()] = instance
 		}
 	}
-
 	newInstances, updatedInstances, deletedInstances := compareInstances(iw.instanceCache, instancesFound)
 
 	instanceUpdates.NewInstances = newInstances
@@ -178,7 +233,6 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 	instanceUpdates.DeletedInstances = deletedInstances
 
 	iw.instanceCache = instancesFound
-
 	return instanceUpdates, nil
 }
 
@@ -217,21 +271,11 @@ func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *mpi.Instan
 	}
 }
 
-func compareInstances(oldInstances, instances []*mpi.Instance) (
+func compareInstances(oldInstancesMap, instancesMap map[string]*mpi.Instance) (
 	newInstances, updatedInstances, deletedInstances []*mpi.Instance,
 ) {
-	instancesMap := make(map[string]*mpi.Instance)
-	oldInstancesMap := make(map[string]*mpi.Instance)
 	updatedInstancesMap := make(map[string]*mpi.Instance)
 	updatedOldInstancesMap := make(map[string]*mpi.Instance)
-
-	for _, instance := range instances {
-		instancesMap[instance.GetInstanceMeta().GetInstanceId()] = instance
-	}
-
-	for _, oldInstance := range oldInstances {
-		oldInstancesMap[oldInstance.GetInstanceMeta().GetInstanceId()] = oldInstance
-	}
 
 	for instanceID, instance := range instancesMap {
 		_, ok := oldInstancesMap[instanceID]

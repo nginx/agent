@@ -26,6 +26,7 @@ type resourceServiceInterface interface {
 	UpdateInstances(instanceList []*mpi.Instance) *mpi.Resource
 	DeleteInstances(instanceList []*mpi.Instance) *mpi.Resource
 	Apply(ctx context.Context, instanceID string) error
+	Instance(instanceID string) *mpi.Instance
 }
 
 type (
@@ -72,6 +73,16 @@ func (r *ResourceService) AddInstances(instanceList []*mpi.Instance) *mpi.Resour
 	r.AddOperator(instanceList)
 
 	return r.resource
+}
+
+func (r *ResourceService) Instance(instanceID string) *mpi.Instance {
+	for _, instance := range r.resource.GetInstances() {
+		if instance.GetInstanceMeta().GetInstanceId() == instanceID {
+			return instance
+		}
+	}
+
+	return nil
 }
 
 func (r *ResourceService) AddOperator(instanceList []*mpi.Instance) {

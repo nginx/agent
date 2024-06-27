@@ -125,7 +125,7 @@ func TestResource_Process_Apply(t *testing.T) {
 			name: "Test 1: Write Config Successful Topic - Success Status",
 			message: &bus.Message{
 				Topic: bus.WriteConfigSuccessfulTopic,
-				Data: &model.ConfigApply{
+				Data: &model.ConfigApplyMessage{
 					CorrelationID: "",
 					InstanceID:    protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 				},
@@ -137,7 +137,7 @@ func TestResource_Process_Apply(t *testing.T) {
 			name: "Test 2: Write Config Successful Topic - Fail Status",
 			message: &bus.Message{
 				Topic: bus.WriteConfigSuccessfulTopic,
-				Data: &model.ConfigApply{
+				Data: &model.ConfigApplyMessage{
 					CorrelationID: "",
 					InstanceID:    protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 				},
@@ -182,7 +182,7 @@ func TestResource_Process_Rollback(t *testing.T) {
 			name: "Test 1: Rollback Write Topic - Success Status",
 			message: &bus.Message{
 				Topic: bus.RollbackWriteTopic,
-				Data: &model.ConfigApply{
+				Data: &model.ConfigApplyMessage{
 					CorrelationID: "",
 					InstanceID:    protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 				},
@@ -194,7 +194,7 @@ func TestResource_Process_Rollback(t *testing.T) {
 			name: "Test 2: Rollback Write Topic - Fail Status",
 			message: &bus.Message{
 				Topic: bus.RollbackWriteTopic,
-				Data: &model.ConfigApply{
+				Data: &model.ConfigApplyMessage{
 					CorrelationID: "",
 					InstanceID:    protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 				},
