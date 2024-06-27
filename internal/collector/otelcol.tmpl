@@ -50,7 +50,7 @@ exporters:
   {{- if eq .Type "otlp" }}
   otlp:
     endpoint: "{{ .Server.Host -}}:{{- .Server.Port }}"
-    compression: gzip
+    compression: none
     timeout: 10s
     retry_on_failure:
       enabled: true
