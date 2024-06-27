@@ -180,7 +180,7 @@ jobs:
           GO_VERSION: ${{ env.GO_VERSION }}
         with:
           file: scripts/testing/load/Dockerfile 
-          tags: nginx-agent-benchmark:1.0.0
+          tags: nginx-agent-load-test:1.0.0
           context: '.'
           push: false
           load: true
@@ -191,6 +191,8 @@ jobs:
           build-args: |
             OSARCH=amd64
             GO_VERSION=${{ env.GO_VERSION }}
+      - name: Run Performance Tests
+        run: docker run --rm nginx-agent-load-test:1.0.0
       - name: Upload Load Test Results
         uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
         with:
