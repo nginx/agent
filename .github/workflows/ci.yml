@@ -173,7 +173,7 @@ jobs:
       - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - name: Run Load Tests
         run: |
-         mkdir /build/certs/
+         mkdir -p /build/certs/
          echo "$NGINX_CRT" > /build/certs/nginx-repo.crt
          echo "$NGINX_KEY" > /build/certs/nginx-repo.key
          make load-test
