@@ -6,18 +6,13 @@
 package bus
 
 const (
-	InstanceConfigUpdateRequestTopic = "instance-config-update-request"
-	InstanceConfigUpdateStatusTopic  = "instance-config-update-status"
-	InstanceConfigContextTopic       = "instance-config-context"
-	MetricsTopic                     = "metrics"
-	ConfigClientTopic                = "config-client"
-	AddInstancesTopic                = "add-instances"
-	UpdatedInstancesTopic            = "updated-instances"
-	DeletedInstancesTopic            = "deleted-instances"
-	ResourceUpdateTopic              = "resource-update"
-	NginxConfigUpdateTopic           = "nginx-config-update"
-	InstanceHealthTopic              = "instance-health"
-	ConfigUploadRequestTopic         = "config-upload-request"
-	DataPlaneResponseTopic           = "data-plane-response"
-	ConnectionCreatedTopic           = "connection-created"
+	AddInstancesTopic        = "add-instances"
+	UpdatedInstancesTopic    = "updated-instances"
+	DeletedInstancesTopic    = "deleted-instances"
+	ResourceUpdateTopic      = "resource-update"
+	NginxConfigUpdateTopic   = "nginx-config-update"
+	InstanceHealthTopic      = "instance-health"
+	ConfigUploadRequestTopic = "config-upload-request"
+	DataPlaneResponseTopic   = "data-plane-response"
+	ConnectionCreatedTopic   = "connection-created"
 )
