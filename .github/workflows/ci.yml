@@ -174,9 +174,12 @@ jobs:
       - name: Run Load Tests
         run: |
          mkdir /build/certs/
-         printf "${{ secrets.NGINX_CRT }}" >> /build/certs/nginx-repo.crt
-         printf "${{ secrets.NGINX_KEY }}" >> /build/certs/nginx-repo.key
+         echo "$NGINX_CRT" > /build/certs/nginx-repo.crt
+         echo "$NGINX_KEY" > /build/certs/nginx-repo.key
          make load-test
+        env:
+          NGINX_CRT: ${{ secrets.NGINX_CRT }}
+          NGINX_KEY: ${{ secrets.NGINX_KEY }}
       - name: Upload Load Test Results
         uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
         with:
