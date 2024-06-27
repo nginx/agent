@@ -218,4 +218,4 @@ load-test-image: ## Build performance load testing image
 		--build-arg GO_VERSION=${GO_VERSION}
 
 run-load-test-image: ## Run performance load testing image
-	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) run --rm -v ${PWD}/${BUILD_DIR}/:/agent/${BUILD_DIR}/ ${IMAGE_TAG}_load_test
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) run --rm -v ${PWD}/${BUILD_DIR}/:/agent/${BUILD_DIR}/ $(IMAGE_TAG)_load_test
