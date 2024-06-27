@@ -14,14 +14,12 @@ import (
 
 	"github.com/nginx/agent/v3/internal/file/filefakes"
 
-	"github.com/nginx/agent/v3/pkg/files"
-	"google.golang.org/protobuf/types/known/timestamppb"
-
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1/v1fakes"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/grpc/grpcfakes"
 	"github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/pkg/files"
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/nginx/agent/v3/test/types"
@@ -64,8 +62,7 @@ func TestFilePlugin_Subscriptions(t *testing.T) {
 func TestFilePlugin_Process_NginxConfigUpdateTopic(t *testing.T) {
 	ctx := context.Background()
 
-	fileMeta, fileMetaError := protos.GetFileMeta("/etc/nginx/nginx/conf")
-	require.NoError(t, fileMetaError)
+	fileMeta := protos.GetFileMeta("/etc/nginx/nginx/conf", "")
 
 	message := &model.NginxConfigContext{
 		Files: []*mpi.File{
@@ -106,24 +103,7 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 
 	message := &mpi.ManagementPlaneRequest{
 		Request: &mpi.ManagementPlaneRequest_ConfigApplyRequest{
-			ConfigApplyRequest: &mpi.ConfigApplyRequest{
-				ConfigVersion: protos.CreateConfigVersion(),
-				Overview: &mpi.FileOverview{
-					Files: []*mpi.File{
-						{
-							FileMeta: &mpi.FileMeta{
-								Name:         filePath,
-								Hash:         fileHash,
-								ModifiedTime: timestamppb.Now(),
-								Permissions:  "0640",
-								Size:         0,
-							},
-							Action: &addAction,
-						},
-					},
-					ConfigVersion: protos.CreateConfigVersion(),
-				},
-			},
+			ConfigApplyRequest: protos.CreateConfigApplyRequest(protos.FileOverview(filePath, fileHash, &addAction)),
 		},
 	}
 	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
@@ -212,8 +192,7 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic(t *testing.T) {
 	tempDir := os.TempDir()
 	testFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
 	defer helpers.RemoveFileWithErrorCheck(t, testFile.Name())
-	fileMeta, fileMetaError := protos.GetFileMeta(testFile.Name())
-	require.NoError(t, fileMetaError)
+	fileMeta := protos.GetFileMeta(testFile.Name(), "")
 
 	message := &mpi.ManagementPlaneRequest{
 		Request: &mpi.ManagementPlaneRequest_ConfigUploadRequest{
@@ -272,13 +251,12 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic(t *testing.T) {
 func TestFilePlugin_Process_ConfigUploadRequestTopic_Failure(t *testing.T) {
 	ctx := context.Background()
 
-	fileMeta, fileMetaError := protos.GetFileMeta("/unknown/file.conf")
-	require.NoError(t, fileMetaError)
+	fileMeta := protos.GetFileMeta("/unknown/file.conf", "")
 
 	message := &mpi.ManagementPlaneRequest{
 		Request: &mpi.ManagementPlaneRequest_ConfigUploadRequest{
 			ConfigUploadRequest: &mpi.ConfigUploadRequest{
-				InstanceId: "123",
+				InstanceId: protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 				Overview: &mpi.FileOverview{
 					Files: []*mpi.File{
 						{
@@ -288,10 +266,7 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic_Failure(t *testing.T) {
 							FileMeta: fileMeta,
 						},
 					},
-					ConfigVersion: &mpi.ConfigVersion{
-						InstanceId: "123",
-						Version:    "f33ref3d32d3c32d3a",
-					},
+					ConfigVersion: protos.CreateConfigVersion(),
 				},
 			},
 		},

@@ -26,8 +26,7 @@ import (
 func TestFileManagerService_UpdateOverview(t *testing.T) {
 	ctx := context.Background()
 
-	fileMeta, fileMetaError := protos.GetFileMeta("/etc/nginx/nginx.conf")
-	require.NoError(t, fileMetaError)
+	fileMeta := protos.GetFileMeta("/etc/nginx/nginx.conf", "")
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
@@ -50,8 +49,7 @@ func TestFileManagerService_UpdateFile(t *testing.T) {
 	testFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
 	defer helpers.RemoveFileWithErrorCheck(t, testFile.Name())
 
-	fileMeta, fileMetaError := protos.GetFileMeta(testFile.Name())
-	require.NoError(t, fileMetaError)
+	fileMeta := protos.GetFileMeta(testFile.Name(), "")
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
@@ -73,25 +71,11 @@ func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	fileHash := files.GenerateHash(fileContent)
 	defer helpers.RemoveFileWithErrorCheck(t, filePath)
 
-	overview := mpi.FileOverview{
-		Files: []*mpi.File{
-			{
-				FileMeta: &mpi.FileMeta{
-					Name:         filePath,
-					Hash:         fileHash,
-					ModifiedTime: timestamppb.Now(),
-					Permissions:  "0640",
-					Size:         0,
-				},
-				Action: &addAction,
-			},
-		},
-		ConfigVersion: protos.CreateConfigVersion(),
-	}
+	overview := protos.FileOverview(filePath, fileHash, &addAction)
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fakeFileServiceClient.GetOverviewReturns(&mpi.GetOverviewResponse{
-		Overview: &overview,
+		Overview: overview,
 	}, nil)
 	fakeFileServiceClient.GetFileReturns(&mpi.GetFileResponse{
 		Contents: &mpi.FileContents{
@@ -102,11 +86,7 @@ func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	agentConfig.AllowedDirectories = []string{tempDir}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig)
 
-	request := &mpi.ConfigApplyRequest{
-		Overview:      &overview,
-		ConfigVersion: protos.CreateConfigVersion(),
-	}
-
+	request := protos.CreateConfigApplyRequest(overview)
 	rollbackRequired, err := fileManagerService.ConfigApply(ctx, request)
 	require.NoError(t, err)
 	data, readErr := os.ReadFile(filePath)
@@ -129,25 +109,11 @@ func TestFileManagerService_ConfigApply_Update(t *testing.T) {
 	require.NoError(t, writeErr)
 	defer helpers.RemoveFileWithErrorCheck(t, tempFile.Name())
 
-	overview := mpi.FileOverview{
-		Files: []*mpi.File{
-			{
-				FileMeta: &mpi.FileMeta{
-					Name:         tempFile.Name(),
-					Hash:         fileHash,
-					ModifiedTime: timestamppb.Now(),
-					Permissions:  "0640",
-					Size:         0,
-				},
-				Action: &updateAction,
-			},
-		},
-		ConfigVersion: protos.CreateConfigVersion(),
-	}
+	overview := protos.FileOverview(tempFile.Name(), fileHash, &updateAction)
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fakeFileServiceClient.GetOverviewReturns(&mpi.GetOverviewResponse{
-		Overview: &overview,
+		Overview: overview,
 	}, nil)
 	fakeFileServiceClient.GetFileReturns(&mpi.GetFileResponse{
 		Contents: &mpi.FileContents{
@@ -158,10 +124,7 @@ func TestFileManagerService_ConfigApply_Update(t *testing.T) {
 	agentConfig.AllowedDirectories = []string{tempDir}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig)
 
-	request := &mpi.ConfigApplyRequest{
-		Overview:      &overview,
-		ConfigVersion: protos.CreateConfigVersion(),
-	}
+	request := protos.CreateConfigApplyRequest(overview)
 
 	rollbackRequired, err := fileManagerService.ConfigApply(ctx, request)
 	require.NoError(t, err)
@@ -178,37 +141,19 @@ func TestFileManagerService_ConfigApply_Delete(t *testing.T) {
 	tempDir := t.TempDir()
 	deleteAction := mpi.File_FILE_ACTION_DELETE
 
-	fileContent := []byte("some test data")
-	fileHash := files.GenerateHash(fileContent)
+	fileContent := []byte("location /test {\n return 200 \"Test location\\n\";\n}")
 	tempFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
 	_, writeErr := tempFile.Write(fileContent)
 	require.NoError(t, writeErr)
 
-	overview := mpi.FileOverview{
-		Files: []*mpi.File{
-			{
-				FileMeta: &mpi.FileMeta{
-					Name:         tempFile.Name(),
-					Hash:         fileHash,
-					ModifiedTime: timestamppb.Now(),
-					Permissions:  "0640",
-					Size:         0,
-				},
-				Action: &deleteAction,
-			},
-		},
-		ConfigVersion: protos.CreateConfigVersion(),
-	}
+	overview := protos.FileOverview(tempFile.Name(), files.GenerateHash(fileContent), &deleteAction)
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	agentConfig := types.AgentConfig()
 	agentConfig.AllowedDirectories = []string{tempDir}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig)
 
-	request := &mpi.ConfigApplyRequest{
-		Overview:      &overview,
-		ConfigVersion: protos.CreateConfigVersion(),
-	}
+	request := protos.CreateConfigApplyRequest(overview)
 
 	rollbackRequired, err := fileManagerService.ConfigApply(ctx, request)
 	require.NoError(t, err)

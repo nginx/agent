@@ -24,12 +24,7 @@ func TestGetFileMeta(t *testing.T) {
 	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
 	require.NoError(t, err)
 
-	expected := &mpi.FileMeta{
-		Name:        file.Name(),
-		Hash:        "4ae71336-e44b-39bf-b9d2-752e234818a5",
-		Permissions: "0600",
-		Size:        0,
-	}
+	expected := protos.GetFileMeta(file.Name(), GenerateHash([]byte("")))
 
 	fileMeta, err := GetFileMeta(file.Name())
 	require.NoError(t, err)
@@ -159,7 +154,8 @@ func TestCompareFileHash_Delete(t *testing.T) {
 
 	deleteTestFile := helpers.CreateFileWithErrorCheck(t, tempDir, "deleteTestFile")
 	defer helpers.RemoveFileWithErrorCheck(t, deleteTestFile.Name())
-	expectedFileContent := []byte("test data")
+	expectedFileContent, readErr := os.ReadFile("../../test/config/nginx/nginx.conf")
+	require.NoError(t, readErr)
 	err := os.WriteFile(deleteTestFile.Name(), expectedFileContent, 0o600)
 	require.NoError(t, err)
 
@@ -171,14 +167,15 @@ func TestCompareFileHash_Delete(t *testing.T) {
 
 	addTestFile := helpers.CreateFileWithErrorCheck(t, tempDir, "addTestFile")
 	defer helpers.RemoveFileWithErrorCheck(t, addTestFile.Name())
-	expectedAddFileContent := []byte("test data")
-	addErr := os.WriteFile(addTestFile.Name(), expectedAddFileContent, 0o600)
+	addErr := os.WriteFile(addTestFile.Name(), expectedFileContent, 0o600)
 	require.NoError(t, addErr)
 
 	// Go doesn't allow address of numeric constant
 	deleteAction := mpi.File_FILE_ACTION_DELETE
 	updateAction := mpi.File_FILE_ACTION_UPDATE
 	addAction := mpi.File_FILE_ACTION_ADD
+
+	//protos.GetFileMeta(deleteTestFile.Name(), GenerateHash([]byte("")))
 
 	tests := []struct {
 		name             string
@@ -191,34 +188,16 @@ func TestCompareFileHash_Delete(t *testing.T) {
 			fileOverview: &mpi.FileOverview{
 				Files: []*mpi.File{
 					{
-						FileMeta: &mpi.FileMeta{
-							Name:         deleteTestFile.Name(),
-							Hash:         "f0ebf313-853b-3582-b74a-eff115f6e4d3",
-							ModifiedTime: nil,
-							Permissions:  "",
-							Size:         0,
-						},
-						Action: &deleteAction,
+						FileMeta: protos.GetFileMeta(deleteTestFile.Name(), GenerateHash(expectedFileContent)),
+						Action:   &deleteAction,
 					},
 					{
-						FileMeta: &mpi.FileMeta{
-							Name:         updateTestFile.Name(),
-							Hash:         "ff8dcd5d-a12f-3895-a6b9-2ac8c98bfd08",
-							ModifiedTime: nil,
-							Permissions:  "",
-							Size:         0,
-						},
-						Action: &updateAction,
+						FileMeta: protos.GetFileMeta(updateTestFile.Name(), GenerateHash(expectedFileContent)),
+						Action:   &updateAction,
 					},
 					{
-						FileMeta: &mpi.FileMeta{
-							Name:         tempDir + "newFileName",
-							Hash:         "ff8dcd5d-a12f-3895-a6b9-2ac8c98bfd08",
-							ModifiedTime: nil,
-							Permissions:  "",
-							Size:         0,
-						},
-						Action: &addAction,
+						FileMeta: protos.GetFileMeta(tempDir+"random/new/file", GenerateHash(expectedFileContent)),
+						Action:   &addAction,
 					},
 				},
 				ConfigVersion: &mpi.ConfigVersion{
@@ -232,34 +211,16 @@ func TestCompareFileHash_Delete(t *testing.T) {
 			},
 			expectedDiff: map[string]*mpi.File{
 				deleteTestFile.Name(): {
-					FileMeta: &mpi.FileMeta{
-						Name:         deleteTestFile.Name(),
-						Hash:         "f0ebf313-853b-3582-b74a-eff115f6e4d3",
-						ModifiedTime: nil,
-						Permissions:  "",
-						Size:         0,
-					},
-					Action: &deleteAction,
+					FileMeta: protos.GetFileMeta(deleteTestFile.Name(), GenerateHash(expectedFileContent)),
+					Action:   &deleteAction,
 				},
 				updateTestFile.Name(): {
-					FileMeta: &mpi.FileMeta{
-						Name:         updateTestFile.Name(),
-						Hash:         "ff8dcd5d-a12f-3895-a6b9-2ac8c98bfd08",
-						ModifiedTime: nil,
-						Permissions:  "",
-						Size:         0,
-					},
-					Action: &updateAction,
+					FileMeta: protos.GetFileMeta(updateTestFile.Name(), GenerateHash(expectedFileContent)),
+					Action:   &updateAction,
 				},
-				tempDir + "newFileName": {
-					FileMeta: &mpi.FileMeta{
-						Name:         tempDir + "newFileName",
-						Hash:         "ff8dcd5d-a12f-3895-a6b9-2ac8c98bfd08",
-						ModifiedTime: nil,
-						Permissions:  "",
-						Size:         0,
-					},
-					Action: &addAction,
+				tempDir + "random/new/file": {
+					FileMeta: protos.GetFileMeta(tempDir+"random/new/file", GenerateHash(expectedFileContent)),
+					Action:   &addAction,
 				},
 			},
 		},
@@ -268,54 +229,27 @@ func TestCompareFileHash_Delete(t *testing.T) {
 			fileOverview: &mpi.FileOverview{
 				Files: []*mpi.File{
 					{
-						FileMeta: &mpi.FileMeta{
-							Name:         tempDir + "deletedFile",
-							Hash:         "f0ebf313-853b-3582-b74a-eff115f6e4d3",
-							ModifiedTime: nil,
-							Permissions:  "",
-							Size:         0,
-						},
-						Action: &deleteAction,
+						FileMeta: protos.GetFileMeta(tempDir+"deletedFile", GenerateHash(expectedFileContent)),
+						Action:   &deleteAction,
 					},
 					{
-						FileMeta: &mpi.FileMeta{
-							Name:         updateTestFile.Name(),
-							Hash:         "3ea160ae-b15e-3ce6-ac61-5b27f926c8b0",
-							ModifiedTime: nil,
-							Permissions:  "",
-							Size:         0,
-						},
-						Action: &updateAction,
+						FileMeta: protos.GetFileMeta(updateTestFile.Name(), GenerateHash(expectedUpdateFileContent)),
+						Action:   &updateAction,
 					},
 					{
-						FileMeta: &mpi.FileMeta{
-							Name:         addTestFile.Name(),
-							Hash:         "3ea160ae-b15e-3ce6-ac61-5b27f926c8b0",
-							ModifiedTime: nil,
-							Permissions:  "",
-							Size:         0,
-						},
-						Action: &addAction,
+						FileMeta: protos.GetFileMeta(addTestFile.Name(), GenerateHash(expectedUpdateFileContent)),
+						Action:   &addAction,
 					},
 				},
-				ConfigVersion: &mpi.ConfigVersion{
-					InstanceId: protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
-					Version:    "a7d6580c-8ac9-376e-acde-b2cbed21d291",
-				},
+				ConfigVersion: protos.CreateConfigVersion(),
 			},
 			expectedContents: map[string][]byte{
-				addTestFile.Name(): expectedAddFileContent,
+				addTestFile.Name(): expectedFileContent,
 			},
 			expectedDiff: map[string]*mpi.File{
 				addTestFile.Name(): {
-					FileMeta: &mpi.FileMeta{
-						Name:         addTestFile.Name(),
-						Hash:         "3ea160ae-b15e-3ce6-ac61-5b27f926c8b0",
-						ModifiedTime: nil,
-						Permissions:  "",
-						Size:         0,
-					},
-					Action: &updateAction,
+					FileMeta: protos.GetFileMeta(addTestFile.Name(), GenerateHash(expectedUpdateFileContent)),
+					Action:   &updateAction,
 				},
 			},
 		},

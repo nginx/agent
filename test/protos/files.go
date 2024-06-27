@@ -6,32 +6,47 @@
 package protos
 
 import (
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func GetFileMeta(fileName string) (*v1.FileMeta, error) {
-	lastModified, err := CreateProtoTime("2024-01-09T13:22:21Z")
-	if err != nil {
-		return nil, err
-	}
+func GetFileMeta(fileName string, fileHash string) *mpi.FileMeta {
+	lastModified, _ := CreateProtoTime("2024-01-09T13:22:21Z")
 
-	return &v1.FileMeta{
+	return &mpi.FileMeta{
 		ModifiedTime: lastModified,
 		Name:         fileName,
-		Hash:         "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
-	}, err
+		Hash:         fileHash,
+		Permissions:  "0600",
+	}
 }
 
-func GetFileOverview(files ...string) (*v1.FileOverview, error) {
-	fileOverview := &v1.FileOverview{
+func FileOverview(filePath string, fileHash string, action *mpi.File_FileAction) *mpi.FileOverview {
+	return &mpi.FileOverview{
+		Files: []*mpi.File{
+			{
+				FileMeta: &mpi.FileMeta{
+					Name:         filePath,
+					Hash:         fileHash,
+					ModifiedTime: timestamppb.Now(),
+					Permissions:  "0640",
+					Size:         0,
+				},
+				Action: action,
+			},
+		},
+		ConfigVersion: CreateConfigVersion(),
+	}
+}
+
+func GetFileOverview(files ...string) (*mpi.FileOverview, error) {
+	fileOverview := &mpi.FileOverview{
 		ConfigVersion: CreateConfigVersion(),
 	}
 	for _, file := range files {
-		fileMeta, err := GetFileMeta(file)
-		if err != nil {
-			return nil, err
-		}
-		fileOverview.Files = append(fileOverview.GetFiles(), &v1.File{
+		fileMeta := GetFileMeta(file, "")
+
+		fileOverview.Files = append(fileOverview.GetFiles(), &mpi.File{
 			FileMeta: fileMeta,
 		})
 	}
@@ -39,36 +54,8 @@ func GetFileOverview(files ...string) (*v1.FileOverview, error) {
 	return fileOverview, nil
 }
 
-func GetFileContents(content []byte) *v1.FileContents {
-	return &v1.FileContents{
+func GetFileContents(content []byte) *mpi.FileContents {
+	return &mpi.FileContents{
 		Contents: content,
-	}
-}
-
-func CreateGetOverviewRequest() *v1.GetOverviewRequest {
-	return &v1.GetOverviewRequest{
-		MessageMeta:   CreateMessageMeta(),
-		ConfigVersion: CreateConfigVersion(),
-	}
-}
-
-func CreateGetFileRequest(fileName string) (*v1.GetFileRequest, error) {
-	fileMeta, err := GetFileMeta(fileName)
-	return &v1.GetFileRequest{
-		MessageMeta: CreateMessageMeta(),
-		FileMeta:    fileMeta,
-	}, err
-}
-
-func CreateGetOverviewResponse() (*v1.GetOverviewResponse, error) {
-	fileOverview, err := GetFileOverview("nginx.conf")
-	return &v1.GetOverviewResponse{
-		Overview: fileOverview,
-	}, err
-}
-
-func CreateGetFileResponse(content []byte) *v1.GetFileResponse {
-	return &v1.GetFileResponse{
-		Contents: GetFileContents(content),
 	}
 }

@@ -11,6 +11,7 @@ import (
 	"cmp"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"slices"
 	"strconv"
@@ -29,6 +30,7 @@ func GetFileMeta(filePath string) (*mpi.FileMeta, error) {
 	}
 
 	content, err := ReadFile(filePath)
+	slog.Info("content", "", content)
 	if err != nil {
 		return nil, err
 	}
