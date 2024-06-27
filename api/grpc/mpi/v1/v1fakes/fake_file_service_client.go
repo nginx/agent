@@ -10,6 +10,21 @@ import (
 )
 
 type FakeFileServiceClient struct {
+	DownloadFileStub        func(context.Context, *v1.GetFileRequest, ...grpc.CallOption) (v1.FileService_DownloadFileClient, error)
+	downloadFileMutex       sync.RWMutex
+	downloadFileArgsForCall []struct {
+		arg1 context.Context
+		arg2 *v1.GetFileRequest
+		arg3 []grpc.CallOption
+	}
+	downloadFileReturns struct {
+		result1 v1.FileService_DownloadFileClient
+		result2 error
+	}
+	downloadFileReturnsOnCall map[int]struct {
+		result1 v1.FileService_DownloadFileClient
+		result2 error
+	}
 	GetFileStub        func(context.Context, *v1.GetFileRequest, ...grpc.CallOption) (*v1.GetFileResponse, error)
 	getFileMutex       sync.RWMutex
 	getFileArgsForCall []struct {
@@ -70,8 +85,88 @@ type FakeFileServiceClient struct {
 		result1 *v1.UpdateOverviewResponse
 		result2 error
 	}
+	UploadFileStub        func(context.Context, ...grpc.CallOption) (v1.FileService_UploadFileClient, error)
+	uploadFileMutex       sync.RWMutex
+	uploadFileArgsForCall []struct {
+		arg1 context.Context
+		arg2 []grpc.CallOption
+	}
+	uploadFileReturns struct {
+		result1 v1.FileService_UploadFileClient
+		result2 error
+	}
+	uploadFileReturnsOnCall map[int]struct {
+		result1 v1.FileService_UploadFileClient
+		result2 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *FakeFileServiceClient) DownloadFile(arg1 context.Context, arg2 *v1.GetFileRequest, arg3 ...grpc.CallOption) (v1.FileService_DownloadFileClient, error) {
+	fake.downloadFileMutex.Lock()
+	ret, specificReturn := fake.downloadFileReturnsOnCall[len(fake.downloadFileArgsForCall)]
+	fake.downloadFileArgsForCall = append(fake.downloadFileArgsForCall, struct {
+		arg1 context.Context
+		arg2 *v1.GetFileRequest
+		arg3 []grpc.CallOption
+	}{arg1, arg2, arg3})
+	stub := fake.DownloadFileStub
+	fakeReturns := fake.downloadFileReturns
+	fake.recordInvocation("DownloadFile", []interface{}{arg1, arg2, arg3})
+	fake.downloadFileMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeFileServiceClient) DownloadFileCallCount() int {
+	fake.downloadFileMutex.RLock()
+	defer fake.downloadFileMutex.RUnlock()
+	return len(fake.downloadFileArgsForCall)
+}
+
+func (fake *FakeFileServiceClient) DownloadFileCalls(stub func(context.Context, *v1.GetFileRequest, ...grpc.CallOption) (v1.FileService_DownloadFileClient, error)) {
+	fake.downloadFileMutex.Lock()
+	defer fake.downloadFileMutex.Unlock()
+	fake.DownloadFileStub = stub
+}
+
+func (fake *FakeFileServiceClient) DownloadFileArgsForCall(i int) (context.Context, *v1.GetFileRequest, []grpc.CallOption) {
+	fake.downloadFileMutex.RLock()
+	defer fake.downloadFileMutex.RUnlock()
+	argsForCall := fake.downloadFileArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeFileServiceClient) DownloadFileReturns(result1 v1.FileService_DownloadFileClient, result2 error) {
+	fake.downloadFileMutex.Lock()
+	defer fake.downloadFileMutex.Unlock()
+	fake.DownloadFileStub = nil
+	fake.downloadFileReturns = struct {
+		result1 v1.FileService_DownloadFileClient
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeFileServiceClient) DownloadFileReturnsOnCall(i int, result1 v1.FileService_DownloadFileClient, result2 error) {
+	fake.downloadFileMutex.Lock()
+	defer fake.downloadFileMutex.Unlock()
+	fake.DownloadFileStub = nil
+	if fake.downloadFileReturnsOnCall == nil {
+		fake.downloadFileReturnsOnCall = make(map[int]struct {
+			result1 v1.FileService_DownloadFileClient
+			result2 error
+		})
+	}
+	fake.downloadFileReturnsOnCall[i] = struct {
+		result1 v1.FileService_DownloadFileClient
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeFileServiceClient) GetFile(arg1 context.Context, arg2 *v1.GetFileRequest, arg3 ...grpc.CallOption) (*v1.GetFileResponse, error) {
@@ -338,9 +433,76 @@ func (fake *FakeFileServiceClient) UpdateOverviewReturnsOnCall(i int, result1 *v
 	}{result1, result2}
 }
 
+func (fake *FakeFileServiceClient) UploadFile(arg1 context.Context, arg2 ...grpc.CallOption) (v1.FileService_UploadFileClient, error) {
+	fake.uploadFileMutex.Lock()
+	ret, specificReturn := fake.uploadFileReturnsOnCall[len(fake.uploadFileArgsForCall)]
+	fake.uploadFileArgsForCall = append(fake.uploadFileArgsForCall, struct {
+		arg1 context.Context
+		arg2 []grpc.CallOption
+	}{arg1, arg2})
+	stub := fake.UploadFileStub
+	fakeReturns := fake.uploadFileReturns
+	fake.recordInvocation("UploadFile", []interface{}{arg1, arg2})
+	fake.uploadFileMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeFileServiceClient) UploadFileCallCount() int {
+	fake.uploadFileMutex.RLock()
+	defer fake.uploadFileMutex.RUnlock()
+	return len(fake.uploadFileArgsForCall)
+}
+
+func (fake *FakeFileServiceClient) UploadFileCalls(stub func(context.Context, ...grpc.CallOption) (v1.FileService_UploadFileClient, error)) {
+	fake.uploadFileMutex.Lock()
+	defer fake.uploadFileMutex.Unlock()
+	fake.UploadFileStub = stub
+}
+
+func (fake *FakeFileServiceClient) UploadFileArgsForCall(i int) (context.Context, []grpc.CallOption) {
+	fake.uploadFileMutex.RLock()
+	defer fake.uploadFileMutex.RUnlock()
+	argsForCall := fake.uploadFileArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeFileServiceClient) UploadFileReturns(result1 v1.FileService_UploadFileClient, result2 error) {
+	fake.uploadFileMutex.Lock()
+	defer fake.uploadFileMutex.Unlock()
+	fake.UploadFileStub = nil
+	fake.uploadFileReturns = struct {
+		result1 v1.FileService_UploadFileClient
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeFileServiceClient) UploadFileReturnsOnCall(i int, result1 v1.FileService_UploadFileClient, result2 error) {
+	fake.uploadFileMutex.Lock()
+	defer fake.uploadFileMutex.Unlock()
+	fake.UploadFileStub = nil
+	if fake.uploadFileReturnsOnCall == nil {
+		fake.uploadFileReturnsOnCall = make(map[int]struct {
+			result1 v1.FileService_UploadFileClient
+			result2 error
+		})
+	}
+	fake.uploadFileReturnsOnCall[i] = struct {
+		result1 v1.FileService_UploadFileClient
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeFileServiceClient) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.downloadFileMutex.RLock()
+	defer fake.downloadFileMutex.RUnlock()
 	fake.getFileMutex.RLock()
 	defer fake.getFileMutex.RUnlock()
 	fake.getOverviewMutex.RLock()
@@ -349,6 +511,8 @@ func (fake *FakeFileServiceClient) Invocations() map[string][][]interface{} {
 	defer fake.updateFileMutex.RUnlock()
 	fake.updateOverviewMutex.RLock()
 	defer fake.updateOverviewMutex.RUnlock()
+	fake.uploadFileMutex.RLock()
+	defer fake.uploadFileMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

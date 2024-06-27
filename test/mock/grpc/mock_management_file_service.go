@@ -7,6 +7,7 @@ package grpc
 
 import (
 	"context"
+	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -127,33 +128,94 @@ func (mgs *FileService) GetFile(
 	}, nil
 }
 
+func (mgs *FileService) DownloadFile(request *v1.GetFileRequest, server v1.FileService_DownloadFileServer) error {
+	fileName := request.GetFileMeta().GetName()
+	fileHash := request.GetFileMeta().GetHash()
+
+	slog.Info("Downloading file", "name", fileName, "hash", fileHash)
+
+	fileConfigVersions := mgs.getConfigVersions(fileName, fileHash)
+
+	if len(fileConfigVersions) == 0 {
+		slog.Error("File not found", "file_name", fileName)
+		return status.Errorf(codes.NotFound, "File not found")
+	}
+
+	fullFilePath := filepath.Join(mgs.versionDirectories[fileConfigVersions[0]], fileName)
+
+	bytes, err := os.ReadFile(fullFilePath)
+	if err != nil {
+		slog.Error("Failed to get file contents", "full_file_path", fullFilePath, "error", err)
+		return status.Errorf(codes.Internal, "Failed to get file contents")
+	}
+
+	return server.Send(
+		&v1.GetFileResponse{
+			Contents: &v1.FileContents{
+				Contents: bytes,
+			},
+		},
+	)
+}
+
 func (mgs *FileService) UpdateFile(
 	_ context.Context,
 	request *v1.UpdateFileRequest,
 ) (*v1.UpdateFileResponse, error) {
-	fileContents := request.GetContents().GetContents()
-	fileAction := request.GetFile().GetAction()
-	fileMeta := request.GetFile().GetFileMeta()
-	fileName := fileMeta.GetName()
-	fileHash := fileMeta.GetHash()
-	filePermissions := fileMeta.GetPermissions()
+	// fileContents := request.GetContents().GetContents()
+	// fileAction := request.GetFile().GetAction()
+	// fileMeta := request.GetFile().GetFileMeta()
+	// fileName := fileMeta.GetName()
+	// fileHash := fileMeta.GetHash()
+	// filePermissions := fileMeta.GetPermissions()
 
-	slog.Info("Updating file", "name", fileName, "hash", fileHash)
+	// slog.Info("Updating file", "name", fileName, "hash", fileHash)
 
-	fileConfigVersions := mgs.getConfigVersions(fileName, fileHash)
+	// fileConfigVersions := mgs.getConfigVersions(fileName, fileHash)
 
-	for _, fileConfigVersion := range fileConfigVersions {
-		fullFilePath := filepath.Join(mgs.configDirectory, mgs.versionDirectories[fileConfigVersion], fileName)
+	// for _, fileConfigVersion := range fileConfigVersions {
+	// 	fullFilePath := filepath.Join(mgs.configDirectory, mgs.versionDirectories[fileConfigVersion], fileName)
 
-		err := performFileAction(fileAction, fileContents, fullFilePath, filePermissions)
-		if err != nil {
-			return nil, err
-		}
-	}
+	// 	err := performFileAction(fileAction, fileContents, fullFilePath, filePermissions)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// }
 
 	return &v1.UpdateFileResponse{
-		FileMeta: fileMeta,
+		FileMeta: request.GetFile().GetFileMeta(),
 	}, nil
+}
+
+func (mgs *FileService)  UploadFile(uploadFileServer v1.FileService_UploadFileServer) error {
+	for {
+		request, err := uploadFileServer.Recv()
+		if err == io.EOF {
+			return uploadFileServer.SendAndClose(&v1.UpdateFileResponse{FileMeta: request.GetFile().GetFileMeta()})
+		}
+		if err != nil {
+			return err
+		}
+
+		// fileContents := request.GetContents().GetContents()
+		// fileAction := request.GetFile().GetAction()
+		// fileMeta := request.GetFile().GetFileMeta()
+		// fileName := fileMeta.GetName()
+		// fileHash := fileMeta.GetHash()
+		// filePermissions := fileMeta.GetPermissions()
+	
+		// slog.Info("Updating file", "name", fileName, "hash", fileHash)
+
+		// fileConfigVersions := mgs.getConfigVersions(fileName, fileHash)
+		// for _, fileConfigVersion := range fileConfigVersions {
+		// 	fullFilePath := filepath.Join(mgs.configDirectory, mgs.versionDirectories[fileConfigVersion], fileName)
+	
+		// 	err := performFileAction(fileAction, fileContents, fullFilePath, filePermissions)
+		// 	if err != nil {
+		// 		return err
+		// 	}
+		// }
+	}
 }
 
 func (mgs *FileService) getConfigVersions(fileName, fileHash string) []string {

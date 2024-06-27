@@ -27,7 +27,9 @@ const (
 	FileService_GetOverview_FullMethodName    = "/mpi.v1.FileService/GetOverview"
 	FileService_UpdateOverview_FullMethodName = "/mpi.v1.FileService/UpdateOverview"
 	FileService_GetFile_FullMethodName        = "/mpi.v1.FileService/GetFile"
+	FileService_DownloadFile_FullMethodName   = "/mpi.v1.FileService/DownloadFile"
 	FileService_UpdateFile_FullMethodName     = "/mpi.v1.FileService/UpdateFile"
+	FileService_UploadFile_FullMethodName     = "/mpi.v1.FileService/UploadFile"
 )
 
 // FileServiceClient is the client API for FileService service.
@@ -47,8 +49,10 @@ type FileServiceClient interface {
 	UpdateOverview(ctx context.Context, in *UpdateOverviewRequest, opts ...grpc.CallOption) (*UpdateOverviewResponse, error)
 	// Get the file contents for a particular file
 	GetFile(ctx context.Context, in *GetFileRequest, opts ...grpc.CallOption) (*GetFileResponse, error)
+	DownloadFile(ctx context.Context, in *GetFileRequest, opts ...grpc.CallOption) (FileService_DownloadFileClient, error)
 	// Update a file from the Agent to the Server
 	UpdateFile(ctx context.Context, in *UpdateFileRequest, opts ...grpc.CallOption) (*UpdateFileResponse, error)
+	UploadFile(ctx context.Context, opts ...grpc.CallOption) (FileService_UploadFileClient, error)
 }
 
 type fileServiceClient struct {
@@ -89,6 +93,39 @@ func (c *fileServiceClient) GetFile(ctx context.Context, in *GetFileRequest, opt
 	return out, nil
 }
 
+func (c *fileServiceClient) DownloadFile(ctx context.Context, in *GetFileRequest, opts ...grpc.CallOption) (FileService_DownloadFileClient, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &FileService_ServiceDesc.Streams[0], FileService_DownloadFile_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &fileServiceDownloadFileClient{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type FileService_DownloadFileClient interface {
+	Recv() (*GetFileResponse, error)
+	grpc.ClientStream
+}
+
+type fileServiceDownloadFileClient struct {
+	grpc.ClientStream
+}
+
+func (x *fileServiceDownloadFileClient) Recv() (*GetFileResponse, error) {
+	m := new(GetFileResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *fileServiceClient) UpdateFile(ctx context.Context, in *UpdateFileRequest, opts ...grpc.CallOption) (*UpdateFileResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UpdateFileResponse)
@@ -97,6 +134,41 @@ func (c *fileServiceClient) UpdateFile(ctx context.Context, in *UpdateFileReques
 		return nil, err
 	}
 	return out, nil
+}
+
+func (c *fileServiceClient) UploadFile(ctx context.Context, opts ...grpc.CallOption) (FileService_UploadFileClient, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &FileService_ServiceDesc.Streams[1], FileService_UploadFile_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &fileServiceUploadFileClient{ClientStream: stream}
+	return x, nil
+}
+
+type FileService_UploadFileClient interface {
+	Send(*UpdateFileRequest) error
+	CloseAndRecv() (*UpdateFileResponse, error)
+	grpc.ClientStream
+}
+
+type fileServiceUploadFileClient struct {
+	grpc.ClientStream
+}
+
+func (x *fileServiceUploadFileClient) Send(m *UpdateFileRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *fileServiceUploadFileClient) CloseAndRecv() (*UpdateFileResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(UpdateFileResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // FileServiceServer is the server API for FileService service.
@@ -116,8 +188,10 @@ type FileServiceServer interface {
 	UpdateOverview(context.Context, *UpdateOverviewRequest) (*UpdateOverviewResponse, error)
 	// Get the file contents for a particular file
 	GetFile(context.Context, *GetFileRequest) (*GetFileResponse, error)
+	DownloadFile(*GetFileRequest, FileService_DownloadFileServer) error
 	// Update a file from the Agent to the Server
 	UpdateFile(context.Context, *UpdateFileRequest) (*UpdateFileResponse, error)
+	UploadFile(FileService_UploadFileServer) error
 }
 
 // UnimplementedFileServiceServer should be embedded to have forward compatible implementations.
@@ -133,8 +207,14 @@ func (UnimplementedFileServiceServer) UpdateOverview(context.Context, *UpdateOve
 func (UnimplementedFileServiceServer) GetFile(context.Context, *GetFileRequest) (*GetFileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFile not implemented")
 }
+func (UnimplementedFileServiceServer) DownloadFile(*GetFileRequest, FileService_DownloadFileServer) error {
+	return status.Errorf(codes.Unimplemented, "method DownloadFile not implemented")
+}
 func (UnimplementedFileServiceServer) UpdateFile(context.Context, *UpdateFileRequest) (*UpdateFileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateFile not implemented")
+}
+func (UnimplementedFileServiceServer) UploadFile(FileService_UploadFileServer) error {
+	return status.Errorf(codes.Unimplemented, "method UploadFile not implemented")
 }
 
 // UnsafeFileServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -202,6 +282,27 @@ func _FileService_GetFile_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FileService_DownloadFile_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetFileRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(FileServiceServer).DownloadFile(m, &fileServiceDownloadFileServer{ServerStream: stream})
+}
+
+type FileService_DownloadFileServer interface {
+	Send(*GetFileResponse) error
+	grpc.ServerStream
+}
+
+type fileServiceDownloadFileServer struct {
+	grpc.ServerStream
+}
+
+func (x *fileServiceDownloadFileServer) Send(m *GetFileResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 func _FileService_UpdateFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateFileRequest)
 	if err := dec(in); err != nil {
@@ -218,6 +319,32 @@ func _FileService_UpdateFile_Handler(srv interface{}, ctx context.Context, dec f
 		return srv.(FileServiceServer).UpdateFile(ctx, req.(*UpdateFileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
+}
+
+func _FileService_UploadFile_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(FileServiceServer).UploadFile(&fileServiceUploadFileServer{ServerStream: stream})
+}
+
+type FileService_UploadFileServer interface {
+	SendAndClose(*UpdateFileResponse) error
+	Recv() (*UpdateFileRequest, error)
+	grpc.ServerStream
+}
+
+type fileServiceUploadFileServer struct {
+	grpc.ServerStream
+}
+
+func (x *fileServiceUploadFileServer) SendAndClose(m *UpdateFileResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *fileServiceUploadFileServer) Recv() (*UpdateFileRequest, error) {
+	m := new(UpdateFileRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // FileService_ServiceDesc is the grpc.ServiceDesc for FileService service.
@@ -244,6 +371,17 @@ var FileService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _FileService_UpdateFile_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "DownloadFile",
+			Handler:       _FileService_DownloadFile_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "UploadFile",
+			Handler:       _FileService_UploadFile_Handler,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "mpi/v1/files.proto",
 }

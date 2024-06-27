@@ -382,7 +382,9 @@ A SHA256 hash string is 64 bytes, therefore the configured max message size shou
 | GetOverview | [GetOverviewRequest](#mpi-v1-GetOverviewRequest) | [GetOverviewResponse](#mpi-v1-GetOverviewResponse) | Get the overview of files for a particular configuration version of an instance |
 | UpdateOverview | [UpdateOverviewRequest](#mpi-v1-UpdateOverviewRequest) | [UpdateOverviewResponse](#mpi-v1-UpdateOverviewResponse) | Update the overview of files for a particular set of file changes on the data plane |
 | GetFile | [GetFileRequest](#mpi-v1-GetFileRequest) | [GetFileResponse](#mpi-v1-GetFileResponse) | Get the file contents for a particular file |
+| DownloadFile | [GetFileRequest](#mpi-v1-GetFileRequest) | [GetFileResponse](#mpi-v1-GetFileResponse) stream |  |
 | UpdateFile | [UpdateFileRequest](#mpi-v1-UpdateFileRequest) | [UpdateFileResponse](#mpi-v1-UpdateFileResponse) | Update a file from the Agent to the Server |
+| UploadFile | [UpdateFileRequest](#mpi-v1-UpdateFileRequest) stream | [UpdateFileResponse](#mpi-v1-UpdateFileResponse) |  |
 
  
 

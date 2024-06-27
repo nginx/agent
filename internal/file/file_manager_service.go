@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"sync/atomic"
@@ -181,6 +182,160 @@ func (fms *FileManagerService) UpdateFile(
 	}
 
 	slog.DebugContext(ctx, "UpdateFile response", "response", response)
+
+	return err
+}
+
+func (fms *FileManagerService) UploadFile(
+	ctx context.Context,
+	instanceID string,
+	fileToUpdate *mpi.File,
+) error {
+	contents, err := os.ReadFile(fileToUpdate.GetFileMeta().GetName())
+	if err != nil {
+		return err
+	}
+
+	request := &mpi.UpdateFileRequest{
+		File: fileToUpdate,
+		Contents: &mpi.FileContents{
+			Contents: contents,
+		},
+	}
+
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Common.MaxElapsedTime)
+	defer backoffCancel()
+
+	sendUpdateFile := func() (*mpi.UpdateFileResponse, error) {
+		slog.DebugContext(ctx, "Sending update file request", "request", request)
+		if fms.fileServiceClient == nil {
+			return nil, errors.New("file service client is not initialized")
+		}
+
+		if !fms.isConnected.Load() {
+			return nil, errors.New("CreateConnection rpc has not being called yet")
+		}
+
+		client, updateError := fms.fileServiceClient.UploadFile(ctx)
+		client.Send(request)
+		response, err := client.CloseAndRecv()
+		if err != nil {
+			return nil, err
+		}
+
+		validatedError := grpc.ValidateGrpcError(updateError)
+
+		if validatedError != nil {
+			slog.ErrorContext(ctx, "Failed to send upload file", "error", validatedError)
+
+			return nil, validatedError
+		}
+
+		return response, nil
+	}
+
+	response, err := backoff.RetryWithData(sendUpdateFile, backoffHelpers.Context(backOffCtx, fms.agentConfig.Common))
+	if err != nil {
+		return err
+	}
+
+	slog.DebugContext(ctx, "UploadFile response", "response", response)
+
+	return err
+}
+
+func (fms *FileManagerService) GetFile(
+	ctx context.Context,
+	instanceID string,
+	fileToGet *mpi.File,
+) error {
+	request := &mpi.GetFileRequest{
+		FileMeta: fileToGet.GetFileMeta(),
+	}
+
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Common.MaxElapsedTime)
+	defer backoffCancel()
+
+	sendGetFile := func() (*mpi.GetFileResponse, error) {
+		slog.DebugContext(ctx, "Sending get file request", "request", request)
+		if fms.fileServiceClient == nil {
+			return nil, errors.New("file service client is not initialized")
+		}
+
+		if !fms.isConnected.Load() {
+			return nil, errors.New("CreateConnection rpc has not being called yet")
+		}
+
+		response, updateError := fms.fileServiceClient.GetFile(ctx, request)
+
+		validatedError := grpc.ValidateGrpcError(updateError)
+
+		if validatedError != nil {
+			slog.ErrorContext(ctx, "Failed to send get file", "error", validatedError)
+
+			return nil, validatedError
+		}
+
+		return response, nil
+	}
+
+	response, err := backoff.RetryWithData(sendGetFile, backoffHelpers.Context(backOffCtx, fms.agentConfig.Common))
+	if err != nil {
+		return err
+	}
+
+	slog.DebugContext(ctx, "GetFile response", "response", response)
+
+	return err
+}
+
+func (fms *FileManagerService) DownloadFile(
+	ctx context.Context,
+	instanceID string,
+	fileToGet *mpi.File,
+) error {
+	request := &mpi.GetFileRequest{
+		FileMeta: fileToGet.GetFileMeta(),
+	}
+
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Common.MaxElapsedTime)
+	defer backoffCancel()
+
+	sendDownloadFile := func() (*mpi.GetFileResponse, error) {
+		slog.DebugContext(ctx, "Sending download file request", "request", request)
+		if fms.fileServiceClient == nil {
+			return nil, errors.New("file service client is not initialized")
+		}
+
+		if !fms.isConnected.Load() {
+			return nil, errors.New("CreateConnection rpc has not being called yet")
+		}
+
+		client, updateError := fms.fileServiceClient.DownloadFile(ctx, request)
+		for {
+			response, err := client.Recv()
+			if err == io.EOF {
+				validatedError := grpc.ValidateGrpcError(updateError)
+
+				if validatedError != nil {
+					slog.ErrorContext(ctx, "Failed to send download file", "error", validatedError)
+
+					return nil, validatedError
+				}
+				return response, client.CloseSend()
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	response, err := backoff.RetryWithData(sendDownloadFile, backoffHelpers.Context(backOffCtx, fms.agentConfig.Common))
+	if err != nil {
+		return err
+	}
+
+	slog.DebugContext(ctx, "DownloadFile response", "response", response)
 
 	return err
 }
