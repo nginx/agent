@@ -6,6 +6,7 @@
 package protos
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -13,16 +14,17 @@ import (
 )
 
 const (
-	ossInstanceID       = "e1374cb1-462d-3b6c-9f3b-f28332b5f10c"
-	plusInstanceID      = "40f9dda0-e45f-34cf-bba7-f173700f50a2"
-	secondOssInstanceID = "557cdf06-08fd-31eb-a8e7-daafd3a93db7"
-	correlationID       = "dfsbhj6-bc92-30c1-a9c9-85591422068e"
-	processID           = 1234
-	processID2          = 5678
-	childID             = 789
-	childID2            = 567
-	childID3            = 987
-	childID4            = 321
+	ossInstanceID        = "e1374cb1-462d-3b6c-9f3b-f28332b5f10c"
+	plusInstanceID       = "40f9dda0-e45f-34cf-bba7-f173700f50a2"
+	secondOssInstanceID  = "557cdf06-08fd-31eb-a8e7-daafd3a93db7"
+	unsuportedInstanceID = "fcd99f8f-00fb-3097-8d75-32ae269b46c3"
+	correlationID        = "dfsbhj6-bc92-30c1-a9c9-85591422068e"
+	processID            = 1234
+	processID2           = 5678
+	childID              = 789
+	childID2             = 567
+	childID3             = 987
+	childID4             = 321
 )
 
 func GetAgentInstance(processID int32, agentConfig *config.Config) *v1.Instance {
@@ -108,9 +110,28 @@ func GetNginxPlusInstance(expectedModules []string) *v1.Instance {
 	}
 }
 
+func GetUnsupportedInstance() *v1.Instance {
+	return &v1.Instance{
+		InstanceMeta: &v1.InstanceMeta{
+			InstanceId:   unsuportedInstanceID,
+			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_UNIT,
+			Version:      "",
+		},
+		InstanceConfig:  nil,
+		InstanceRuntime: nil,
+	}
+}
+
 func GetMultipleInstances(expectedModules []string) []*v1.Instance {
 	process1 := GetNginxOssInstance(expectedModules)
 	process2 := getSecondNginxOssInstance(expectedModules)
+
+	return []*v1.Instance{process1, process2}
+}
+
+func GetMultipleInstancesWithUnsupportedInstance() []*v1.Instance {
+	process1 := GetNginxOssInstance([]string{})
+	process2 := GetUnsupportedInstance()
 
 	return []*v1.Instance{process1, process2}
 }
@@ -151,4 +172,27 @@ func getSecondNginxOssInstance(expectedModules []string) *v1.Instance {
 	process2.GetInstanceRuntime().InstanceChildren = []*v1.InstanceChild{{ProcessId: childID3}, {ProcessId: childID4}}
 
 	return process2
+}
+
+func GetHealthyInstanceHealth() *v1.InstanceHealth {
+	return &v1.InstanceHealth{
+		InstanceId:           GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+		InstanceHealthStatus: v1.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY,
+	}
+}
+
+func GetUnhealthyInstanceHealth() *v1.InstanceHealth {
+	return &v1.InstanceHealth{
+		InstanceId:           GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+		InstanceHealthStatus: v1.InstanceHealth_INSTANCE_HEALTH_STATUS_UNHEALTHY,
+	}
+}
+
+func GetUnspecifiedInstanceHealth() *v1.InstanceHealth {
+	return &v1.InstanceHealth{
+		InstanceId:           unsuportedInstanceID,
+		InstanceHealthStatus: v1.InstanceHealth_INSTANCE_HEALTH_STATUS_UNSPECIFIED,
+		Description: fmt.Sprintf("failed to get health for instance %s, error: unable "+
+			"to determine health", unsuportedInstanceID),
+	}
 }
