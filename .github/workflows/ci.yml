@@ -171,8 +171,14 @@ jobs:
           name: nginx-agent-unsigned-snapshots
           path: build
       - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+        # with:
+        # secrets:
+        #   nginx-crt: ${{ secrets.NGINX_CRT }}
+        #   nginx-key: ${{ secrets.NGINX_KEY }}
       - name: Run Load Tests
         run: |
+         cat ${{ secrets.NGINX_CRT }} > ./build/certs/nginx-repo.crt
+         cat ${{ secrets.NGINX_KEY }} > ./build/certs/nginx-repo.key
          make load-test
       - name: Upload Load Test Results
         uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
