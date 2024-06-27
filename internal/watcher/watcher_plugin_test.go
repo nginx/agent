@@ -7,10 +7,11 @@ package watcher
 
 import (
 	"context"
-	"github.com/nginx/agent/v3/internal/watcher/instance"
-	"github.com/nginx/agent/v3/internal/watcher/watcherfakes"
 	"testing"
 	"time"
+
+	"github.com/nginx/agent/v3/internal/watcher/instance"
+	"github.com/nginx/agent/v3/internal/watcher/watcherfakes"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"

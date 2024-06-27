@@ -141,7 +141,6 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instance *m
 				NginxConfigContext: nginxConfigContext,
 			}
 		}
-
 	}
 
 	if !proto.Equal(instance, iw.instanceCache[instance.GetInstanceMeta().GetInstanceId()]) {
@@ -216,9 +215,9 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 	}
 
 	// NGINX Agent is always the first instance in the list
-	instancesFound := map[string]*mpi.Instance{}
+	instancesFound := make(map[string]*mpi.Instance)
 	agentInstance := iw.agentInstance(ctx)
-	instancesFound[agentInstance.InstanceMeta.InstanceId] = agentInstance
+	instancesFound[agentInstance.GetInstanceMeta().GetInstanceId()] = agentInstance
 
 	for _, parser := range iw.processParsers {
 		instances := parser.Parse(ctx, processes)
@@ -233,6 +232,7 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 	instanceUpdates.DeletedInstances = deletedInstances
 
 	iw.instanceCache = instancesFound
+
 	return instanceUpdates, nil
 }
 
@@ -363,20 +363,6 @@ func (iw *InstanceWatcherService) updateNginxInstanceRuntime(
 		nginxRuntimeInfo.ErrorLogs = convertErrorLogs(nginxConfigContext.ErrorLogs)
 		nginxRuntimeInfo.StubStatus = nginxConfigContext.StubStatus
 	}
-}
-
-func (iw *InstanceWatcherService) parseNginxInstanceConfig(
-	ctx context.Context,
-	instance *mpi.Instance,
-) (*model.NginxConfigContext, error) {
-	nginxConfigContext, parseErr := iw.nginxConfigParser.Parse(ctx, instance)
-	if parseErr != nil {
-		return nil, parseErr
-	}
-
-	iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
-
-	return nginxConfigContext, nil
 }
 
 func convertAccessLogs(accessLogs []*model.AccessLog) (logs []string) {
