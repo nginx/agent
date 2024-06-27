@@ -7,6 +7,8 @@ package instance
 
 import (
 	"context"
+	"io"
+	"log/slog"
 	"path/filepath"
 	"testing"
 
@@ -24,6 +26,8 @@ var configFilePaths = []string{
 }
 
 func BenchmarkNginxConfigParser_Parse(b *testing.B) {
+	// Discard log messages
+	slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{})))
 	ctx := context.Background()
 	agentConfig := types.AgentConfig()
 
