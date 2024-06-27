@@ -1,23 +1,9 @@
-FROM ubuntu:24.04
+FROM ubuntu:24.04 as base
 LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
-
-# Define NGINX versions for NGINX Plus and NGINX Plus modules
-# Uncomment this block and the versioned nginxPackages block in the main RUN
-# instruction to install a specific release
-# ENV NGINX_VERSION   25
-# ENV NJS_VERSION     0.7.0
-# ENV PKG_RELEASE     1~bullseye
-
-# Download certificate and key from the customer portal (https://account.f5.com)
-# and copy to the build context
 
 # https://askubuntu.com/questions/909277/avoiding-user-interaction-with-tzdata-when-installing-certbot-in-a-docker-contai
 ARG DEBIAN_FRONTEND=noninteractive
 ARG ENTRY_POINT
-ARG PACKAGE_NAME
-ARG PACKAGES_REPO
-ARG GO_VERSION
-ARG OSARCH
 
 WORKDIR /agent
 COPY . /agent
@@ -75,7 +61,13 @@ EXPOSE 80
 
 STOPSIGNAL SIGQUIT
 
-RUN git config --global --add safe.directory /home/nginx
+CMD git config --global --add safe.directory /home/nginx
+
+FROM base as configure-go
+
+ARG PACKAGE_NAME
+ARG GO_VERSION
+ARG OSARCH
 
 # Install Go
 RUN wget https://go.dev/dl/go${GO_VERSION}.linux-${OSARCH}.tar.gz \
@@ -91,9 +83,12 @@ ENV PATH=$PATH:/usr/local/go/bin
 RUN mv /agent/test/config/agent/nginx-agent-otel-load.conf /agent/test/load/nginx-agent.conf
 
 WORKDIR /agent/
-RUN make install-tools
+CMD make install-tools
+
+FROM configure-go as run-tests
+
 RUN make build
-
 RUN chmod -R +x ./build
+WORKDIR /agent/test/load
 
-CMD ["cd" "/agent/test/load" "&&" "go test -v -timeout 30s ./..."]
+CMD ["go", "test", "-v", "-timeout", "30s", "./..."]
