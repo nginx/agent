@@ -91,4 +91,10 @@ RUN make build
 RUN chmod -R +x ./build
 WORKDIR /agent/test/load
 
-CMD ["go", "test", "-v", "-timeout", "30s", "./..."]
+RUN go test -v -timeout 30s ./...
+
+RUN mkdir -p /agent/build/results
+
+RUN mv results/ /agent/build/results
+
+CMD ["mv", "./benchmarks.json", "/agent/build/results/benchmarks.json"]

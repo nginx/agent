@@ -208,12 +208,14 @@ generate-pgo-profile: build-mock-management-plane-grpc
 	rm perf_watcher_cpu.pprof integration_cpu.pprof integration.test profile.pprof
 
 # run under sudo locally
-load-test: ## Perform load testing
+load-test-image: ## Build performance load testing image
 	@echo "🚚 Running load tests"
-	@echo ${GO_VERSION}
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${IMAGE_TAG}_load_test . \
 		--no-cache -f ./scripts/testing/load/Dockerfile \
 		--secret id=nginx-crt,src=${CERTS_DIR}/nginx-repo.crt \
 		--secret id=nginx-key,src=${CERTS_DIR}/nginx-repo.key \
 		--build-arg OSARCH=${OSARCH} \
 		--build-arg GO_VERSION=${GO_VERSION}
+
+run-load-test-image: ## Run performance load testing image
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) run --rm -v ${PWD}/${BUILD_DIR}/:/agent/${BUILD_DIR}/ ${IMAGE_TAG}_load_test

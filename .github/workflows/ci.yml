@@ -192,19 +192,19 @@ jobs:
             OSARCH=amd64
             GO_VERSION=${{ env.GO_VERSION }}
       - name: Run Load Tests
-        run: docker run -v ${PWD}/test/load:/agent/test/load --rm nginx-agent-load-test:1.0.0
+        run: docker run -v ${PWD}/build/:/agent/build/ --rm nginx-agent-load-test:1.0.0
       - name: Upload Load Test Results
         uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
         with:
           name: load-test-results-raw
-          path: ${PWD}/test/load
+          path: ${PWD}/build/results
           retention-days: 1
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@4de1bed97a47495fc4c5404952da0499e31f5c29 # v1.20.3
         with:
           name: Compare Benchmark Results
           tool: 'go'
-          output-file-path: ${PWD}/test/load/benchmarks.json
+          output-file-path: ${PWD}/build/results/benchmarks.json
           benchmark-data-dir-path: ""
           # Set auto-push to false since GitHub API token is not given
           auto-push: false
