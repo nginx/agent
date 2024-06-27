@@ -177,14 +177,11 @@ func (hw *HealthWatcherService) compareCache(healthStatuses []*mpi.InstanceHealt
 // compare current health with cached health to see if the health of an instance has changed
 func (hw *HealthWatcherService) compareHealth(currentHealth map[string]*mpi.InstanceHealth) bool {
 	if len(currentHealth) != len(hw.cache) {
-		slog.Info("Len Diff")
 		return true
 	}
 
 	for key, health := range currentHealth {
 		if !proto.Equal(health, hw.cache[key]) {
-			slog.Info("Health      ", "", health)
-			slog.Info("cache health", "", hw.cache[key])
 			return true
 		}
 	}

@@ -8,7 +8,6 @@ package health
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"reflect"
 	"testing"
 
@@ -162,7 +161,6 @@ func TestHealthWatcherService_health(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			healthWatcher.updateCache(test.cache)
 			instanceHealth, healthDiff := healthWatcher.health(ctx)
-			slog.Info("Instance Health", "", instanceHealth)
 			assert.Equal(t, test.isHealthDiff, healthDiff)
 
 			reflect.DeepEqual(instanceHealth, expected)
