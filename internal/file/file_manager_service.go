@@ -12,6 +12,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"sync"
 	"sync/atomic"
 
 	"github.com/cenkalti/backoff/v4"
@@ -190,6 +191,7 @@ func (fms *FileManagerService) UploadFile(
 	ctx context.Context,
 	instanceID string,
 	fileToUpdate *mpi.File,
+	chunked bool,
 ) error {
 	contents, err := os.ReadFile(fileToUpdate.GetFileMeta().GetName())
 	if err != nil {
@@ -217,7 +219,26 @@ func (fms *FileManagerService) UploadFile(
 		}
 
 		client, updateError := fms.fileServiceClient.UploadFile(ctx)
-		client.Send(request)
+		if chunked {
+			chunks := Chunk(contents, 4 * 1024)
+
+			for _, chunk := range chunks {
+				request := &mpi.UpdateFileRequest{
+					File: fileToUpdate,
+					Contents: &mpi.FileContents{
+						Contents: chunk,
+					},
+				}
+	
+				err := client.Send(request)
+				if err != nil {
+					return nil, err
+				}
+			}
+		} else {
+			client.Send(request)
+		}
+		
 		response, err := client.CloseAndRecv()
 		if err != nil {
 			return nil, err
@@ -242,6 +263,174 @@ func (fms *FileManagerService) UploadFile(
 	slog.DebugContext(ctx, "UploadFile response", "response", response)
 
 	return err
+}
+
+
+func (fms *FileManagerService) UpdateMultipleFiles(
+	ctx context.Context,
+	instanceID string,
+	filesToUpdate []*mpi.File,
+) error {
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Common.MaxElapsedTime)
+	defer backoffCancel()
+
+	sendUpdateFile := func() (*mpi.UpdateFileResponse, error) {
+		if fms.fileServiceClient == nil {
+			return nil, errors.New("file service client is not initialized")
+		}
+
+		if !fms.isConnected.Load() {
+			return nil, errors.New("CreateConnection rpc has not being called yet")
+		}
+
+		var wg sync.WaitGroup
+
+		for _, fileToUpdate := range filesToUpdate {
+			wg.Add(1)
+			go func() {
+
+				slog.InfoContext(ctx, "Updating file", "instance_id", instanceID, "file_name", fileToUpdate.GetFileMeta().GetName())
+				contents, _ := os.ReadFile(fileToUpdate.GetFileMeta().GetName())
+
+				request := &mpi.UpdateFileRequest{
+					File: fileToUpdate,
+					Contents: &mpi.FileContents{
+						Contents: contents,
+					},
+				}
+
+				defer wg.Done()
+				_, updateError := fms.fileServiceClient.UpdateFile(ctx, request)
+
+				validatedError := grpc.ValidateGrpcError(updateError)
+
+				if validatedError != nil {
+					slog.ErrorContext(ctx, "Failed to send update file", "error", validatedError)
+				}
+			} ()
+		}
+		
+		wg.Wait()
+
+		return nil, nil
+	}
+
+	response, err := backoff.RetryWithData(sendUpdateFile, backoffHelpers.Context(backOffCtx, fms.agentConfig.Common))
+	if err != nil {
+		return err
+	}
+
+	slog.DebugContext(ctx, "UpdateFile response", "response", response)
+
+	return err
+}
+
+func (fms *FileManagerService) UploadMultipleFiles(
+	ctx context.Context,
+	instanceID string,
+	filesToUpdate []*mpi.File,
+	chunked bool,
+) error {
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Common.MaxElapsedTime)
+	defer backoffCancel()
+
+	sendUpdateFile := func() (*mpi.UpdateFileResponse, error) {
+		if fms.fileServiceClient == nil {
+			return nil, errors.New("file service client is not initialized")
+		}
+
+		if !fms.isConnected.Load() {
+			return nil, errors.New("CreateConnection rpc has not being called yet")
+		}
+
+		client, uploadFileError := fms.fileServiceClient.UploadFile(ctx)
+		if uploadFileError != nil {
+			return nil, uploadFileError
+		}
+
+		for _, fileToUpdate := range filesToUpdate {
+			contents, _ := os.ReadFile(fileToUpdate.GetFileMeta().GetName())
+			if chunked {
+				chunks := Chunk(contents, 4 * 1024)
+
+				for _, chunk := range chunks {
+					request := &mpi.UpdateFileRequest{
+						File: fileToUpdate,
+						Contents: &mpi.FileContents{
+							Contents: chunk,
+						},
+					}
+		
+					err := client.Send(request)
+					if err != nil {
+						return nil, err
+					}
+				}
+			} else {
+				request := &mpi.UpdateFileRequest{
+					File: fileToUpdate,
+					Contents: &mpi.FileContents{
+						Contents: contents,
+					},
+				}
+
+				err := client.Send(request)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+
+		response, err := client.CloseAndRecv()
+		if err != nil {
+			return nil, err
+		}
+
+		validatedError := grpc.ValidateGrpcError(err)
+
+		if validatedError != nil {
+			slog.ErrorContext(ctx, "Failed to send upload file", "error", validatedError)
+
+			return nil, validatedError
+		}
+
+		return response, nil
+	}
+
+	response, err := backoff.RetryWithData(sendUpdateFile, backoffHelpers.Context(backOffCtx, fms.agentConfig.Common))
+	if err != nil {
+		return err
+	}
+
+	slog.DebugContext(ctx, "UploadFile response", "response", response)
+
+	return err
+}
+
+func Chunk(buf []byte, lim int) [][]byte {
+	var chunk []byte
+	bufSize := len(buf)
+
+	if bufSize == 0 {
+		return [][]byte{}
+	}
+
+	if bufSize <= lim {
+		return [][]byte{buf}
+	}
+
+	chunks := make([][]byte, 0)
+
+	for len(buf) >= lim {
+		chunk, buf = buf[:lim], buf[lim:]
+		chunks = append(chunks, chunk)
+	}
+
+	if len(buf) > 0 {
+		chunks = append(chunks, buf[:])
+	}
+
+	return chunks
 }
 
 func (fms *FileManagerService) GetFile(

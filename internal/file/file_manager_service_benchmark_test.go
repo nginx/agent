@@ -90,6 +90,170 @@ func BenchmarkFileManagerService_UploadFile_Stream(b *testing.B) {
 						&mpi.File{
 							FileMeta: fileMeta,
 						},
+						false,
+					)
+					require.NoError(bb, err)
+				}
+			})
+		}(configFilePath)
+	}
+}
+
+
+func BenchmarkFileManagerService_UploadFile_chunked_Stream(b *testing.B) {
+	slog.SetLogLoggerLevel(slog.LevelError)
+	
+	ctx := context.Background()
+	agentConfig := types.AgentConfig()
+
+	grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig)
+	require.NoError(b, err)
+	
+	fileManagerService := NewFileManagerService(grpcConnection.FileServiceClient(), agentConfig)
+	fileManagerService.isConnected.Store(true)
+
+	for _, configFilePath := range configFilePaths {
+		func(configFilePath string) {
+			absFilePath, err := filepath.Abs(configFilePath)
+			require.NoError(b, err)
+
+			fileMeta, err := files.GetFileMeta(absFilePath)
+			require.NoError(b, err)
+			 
+			b.Run(configFilePath, func(bb *testing.B) {
+				for i := 0; i < bb.N; i++ {
+					err := fileManagerService.UploadFile(
+						ctx,
+						"123",
+						&mpi.File{
+							FileMeta: fileMeta,
+						},
+						true,
+					)
+					require.NoError(bb, err)
+				}
+			})
+		}(configFilePath)
+	}
+}
+
+func BenchmarkFileManagerService_UpdateMultipleFiles_1000_files_RPC(b *testing.B) {
+	slog.SetLogLoggerLevel(slog.LevelError)
+	
+	ctx := context.Background()
+	agentConfig := types.AgentConfig()
+
+	grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig)
+	require.NoError(b, err)
+	
+	fileManagerService := NewFileManagerService(grpcConnection.FileServiceClient(), agentConfig)
+	fileManagerService.isConnected.Store(true)
+
+	for _, configFilePath := range configFilePaths {
+		func(configFilePath string) {
+			absFilePath, err := filepath.Abs(configFilePath)
+			require.NoError(b, err)
+
+			fileMeta, err := files.GetFileMeta(absFilePath)
+			require.NoError(b, err)
+
+			files := []*mpi.File{}
+			for range 1000 {
+				files = append(files, &mpi.File{
+					FileMeta: fileMeta,
+				})
+			}
+			 
+			b.Run(configFilePath, func(bb *testing.B) {
+				for i := 0; i < bb.N; i++ {
+					err := fileManagerService.UpdateMultipleFiles(
+						ctx,
+						"123",
+						files,
+					)
+					require.NoError(bb, err)
+				}
+			})
+		}(configFilePath)
+	}
+}
+
+func BenchmarkFileManagerService_UploadMultipleFiles_1000_files_Stream(b *testing.B) {
+	slog.SetLogLoggerLevel(slog.LevelError)
+	
+	ctx := context.Background()
+	agentConfig := types.AgentConfig()
+
+	grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig)
+	require.NoError(b, err)
+	
+	fileManagerService := NewFileManagerService(grpcConnection.FileServiceClient(), agentConfig)
+	fileManagerService.isConnected.Store(true)
+
+	for _, configFilePath := range configFilePaths {
+		func(configFilePath string) {
+			absFilePath, err := filepath.Abs(configFilePath)
+			require.NoError(b, err)
+
+			fileMeta, err := files.GetFileMeta(absFilePath)
+			require.NoError(b, err)
+
+			files := []*mpi.File{}
+			for range 1000 {
+				files = append(files, &mpi.File{
+					FileMeta: fileMeta,
+				})
+			}
+			 
+			b.Run(configFilePath, func(bb *testing.B) {
+				for i := 0; i < bb.N; i++ {
+					err := fileManagerService.UploadMultipleFiles(
+						ctx,
+						"123",
+						files,
+						false,
+					)
+					require.NoError(bb, err)
+				}
+			})
+		}(configFilePath)
+	}
+}
+
+func BenchmarkFileManagerService_UploadMultipleFiles_1000_files_chunked_Stream(b *testing.B) {
+	slog.SetLogLoggerLevel(slog.LevelError)
+	
+	ctx := context.Background()
+	agentConfig := types.AgentConfig()
+
+	grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig)
+	require.NoError(b, err)
+	
+	fileManagerService := NewFileManagerService(grpcConnection.FileServiceClient(), agentConfig)
+	fileManagerService.isConnected.Store(true)
+
+	for _, configFilePath := range configFilePaths {
+		func(configFilePath string) {
+			absFilePath, err := filepath.Abs(configFilePath)
+			require.NoError(b, err)
+
+			fileMeta, err := files.GetFileMeta(absFilePath)
+			require.NoError(b, err)
+
+			files := []*mpi.File{}
+			for range 1000 {
+				files = append(files, &mpi.File{
+					FileMeta: fileMeta,
+				})
+			}
+			 
+			b.Run(configFilePath, func(bb *testing.B) {
+				for i := 0; i < bb.N; i++ {
+					err := fileManagerService.UploadMultipleFiles(
+						ctx,
+						"123",
+						files,
+						true,
 					)
 					require.NoError(bb, err)
 				}
