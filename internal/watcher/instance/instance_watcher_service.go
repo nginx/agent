@@ -8,16 +8,14 @@ package instance
 import (
 	"context"
 	"log/slog"
-	"reflect"
 	"time"
-
-	"github.com/nginx/agent/v3/internal/watcher/process"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/internal/watcher/process"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -121,12 +119,22 @@ func (iw *InstanceWatcherService) checkForUpdates(
 
 		if instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX ||
 			instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
-			nginxConfigContext := iw.parseNginxInstanceConfig(newCtx, newInstance)
-			iw.updateNginxInstanceRuntime(newInstance, nginxConfigContext)
+			nginxConfigContext, parseErr := iw.parseNginxInstanceConfig(newCtx, newInstance)
+			if parseErr != nil {
+				slog.WarnContext(
+					ctx,
+					"Parsing NGINX instance config",
+					"config_path", newInstance.GetInstanceRuntime().GetConfigPath(),
+					"instance_id", newInstance.GetInstanceMeta().GetInstanceId(),
+					"error", parseErr,
+				)
+			} else {
+				iw.updateNginxInstanceRuntime(newInstance, nginxConfigContext)
 
-			nginxConfigContextChannel <- NginxConfigContextMessage{
-				CorrelationID:      correlationID,
-				NginxConfigContext: nginxConfigContext,
+				nginxConfigContextChannel <- NginxConfigContextMessage{
+					CorrelationID:      correlationID,
+					NginxConfigContext: nginxConfigContext,
+				}
 			}
 		}
 	}
@@ -263,7 +271,28 @@ func areInstancesEqual(oldRuntime, currentRuntime *mpi.InstanceRuntime) (equal b
 		return false
 	}
 
-	return reflect.DeepEqual(oldRuntime.GetInstanceChildren(), currentRuntime.GetInstanceChildren())
+	oldRuntimeChildren := oldRuntime.GetInstanceChildren()
+	currentRuntimeChildren := currentRuntime.GetInstanceChildren()
+
+	if len(oldRuntimeChildren) != len(currentRuntimeChildren) {
+		return false
+	}
+
+	for _, oldChild := range oldRuntimeChildren {
+		childFound := false
+		for _, currentChild := range currentRuntimeChildren {
+			if oldChild.GetProcessId() == currentChild.GetProcessId() {
+				childFound = true
+				break
+			}
+		}
+
+		if !childFound {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (iw *InstanceWatcherService) updateNginxInstanceRuntime(
@@ -291,21 +320,15 @@ func (iw *InstanceWatcherService) updateNginxInstanceRuntime(
 func (iw *InstanceWatcherService) parseNginxInstanceConfig(
 	ctx context.Context,
 	instance *mpi.Instance,
-) *model.NginxConfigContext {
+) (*model.NginxConfigContext, error) {
 	nginxConfigContext, parseErr := iw.nginxConfigParser.Parse(ctx, instance)
 	if parseErr != nil {
-		slog.WarnContext(
-			ctx,
-			"Parsing NGINX instance config",
-			"config_path", instance.GetInstanceRuntime().GetConfigPath(),
-			"instance_id", instance.GetInstanceMeta().GetInstanceId(),
-			"error", parseErr,
-		)
+		return nil, parseErr
 	}
 
 	iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
 
-	return nginxConfigContext
+	return nginxConfigContext, nil
 }
 
 func convertAccessLogs(accessLogs []*model.AccessLog) (logs []string) {

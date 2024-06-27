@@ -155,8 +155,7 @@ integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc
 
 performance-test:
 	@mkdir -p $(TEST_BUILD_DIR)
-	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 2m -bench=. -benchmem -run=^# ./internal/service/config > $(TEST_BUILD_DIR)/benchmark.txt
-	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 2m -bench=. -benchmem -run=^# ./internal/watcher >> $(TEST_BUILD_DIR)/benchmark.txt
+	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 2m -bench=. -benchmem -run=^# ./internal/watcher/instance > $(TEST_BUILD_DIR)/benchmark.txt
 	@cat $(TEST_BUILD_DIR)/benchmark.txt
 
 compare-performance-benchmark-results:
@@ -198,16 +197,15 @@ local-rpm-package: ## Create local rpm package
 	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -pgo=default.pgo -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
 	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager rpm --target $(RPM_PACKAGE);
 
-generate-pgo-profile: build-mock-management-plane-grpc ## Generate pgo profile to optimize calls for binary build
+generate-pgo-profile: build-mock-management-plane-grpc
 	mv default.pgo profile.pprof
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) \
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) \
 	$(GOTEST) -v ./test/integration -cpuprofile integration_cpu.pprof
-	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 5m -bench=. -benchmem -run=^# ./internal/service/config -cpuprofile perf_config_cpu.pprof
-	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 5m -bench=. -benchmem -run=^# ./internal/watcher -cpuprofile perf_watcher_cpu.pprof
-	@$(GOTOOL) pprof -proto perf_config_cpu.pprof perf_watcher_cpu.pprof integration_cpu.pprof > default.pgo
-	rm perf_config_cpu.pprof perf_watcher_cpu.pprof config.test integration_cpu.pprof integration.test profile.pprof
+	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 5m -bench=. -benchmem -run=^# ./internal/watcher/instance -cpuprofile perf_watcher_cpu.pprof
+	@$(GOTOOL) pprof -proto perf_watcher_cpu.pprof integration_cpu.pprof > default.pgo
+	rm perf_watcher_cpu.pprof integration_cpu.pprof integration.test profile.pprof
 
 # run under sudo locally
 load-test: ## Perform load testing
