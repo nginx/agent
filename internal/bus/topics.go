@@ -14,11 +14,11 @@ const (
 	InstanceHealthTopic        = "instance-health"
 	ConfigUploadRequestTopic   = "config-upload-request"
 	DataPlaneResponseTopic     = "data-plane-response"
+	ConnectionCreatedTopic     = "connection-created"
 	ConfigApplyRequestTopic    = "config-apply-request-topic"
 	WriteConfigSuccessfulTopic = "write-config-successful-topic"
 	ConfigApplySuccessfulTopic = "config-apply-successful-topic"
 	ConfigApplyFailedTopic     = "config-apply-failed-topic"
-	ConnectionCreatedTopic     = "connection-created"
 	RollbackCompleteTopic      = "rollback-complete-topic"
 	RollbackWriteTopic         = "rollback-write-topic"
 )

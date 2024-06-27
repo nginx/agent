@@ -175,7 +175,7 @@ func TestCompareFileHash_Delete(t *testing.T) {
 	updateAction := mpi.File_FILE_ACTION_UPDATE
 	addAction := mpi.File_FILE_ACTION_ADD
 
-	//protos.GetFileMeta(deleteTestFile.Name(), GenerateHash([]byte("")))
+	// protos.GetFileMeta(deleteTestFile.Name(), GenerateHash([]byte("")))
 
 	tests := []struct {
 		name             string

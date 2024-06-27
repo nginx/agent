@@ -104,7 +104,8 @@ func (fp *FilePlugin) handleConfigApplyFailedRequest(ctx context.Context, msg *b
 			mpi.CommandResponse_COMMAND_STATUS_ERROR,
 			"Rollback failed", "unable to cast to message payload")
 
-		applyResponse := fp.createDataPlaneResponseWithError(data.CorrelationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+		applyResponse := fp.createDataPlaneResponseWithError(data.CorrelationID,
+			mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"Config apply failed", "unable to cast to message payload")
 
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
@@ -120,7 +121,8 @@ func (fp *FilePlugin) handleConfigApplyFailedRequest(ctx context.Context, msg *b
 			mpi.CommandResponse_COMMAND_STATUS_ERROR,
 			fmt.Sprintf("Rollback failed for instanceId: %s", data.InstanceID), err.Error())
 
-		applyResponse := fp.createDataPlaneResponseWithError(data.CorrelationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+		applyResponse := fp.createDataPlaneResponseWithError(data.CorrelationID,
+			mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			fmt.Sprintf("Config apply failed for instanceId: %s", data.InstanceID), err.Error())
 
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})

@@ -7,11 +7,12 @@ package file
 
 import (
 	"context"
-	"github.com/nginx/agent/v3/pkg/files"
-	"github.com/nginx/agent/v3/test/protos"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/nginx/agent/v3/pkg/files"
+	"github.com/nginx/agent/v3/test/protos"
 
 	"github.com/nginx/agent/v3/test/helpers"
 
