@@ -88,8 +88,8 @@ func BenchmarkNginxConfigParserGeneratedConfig_Parse(b *testing.B) {
 			fileSize: int64(10 * 1024 * 1024), // 10 MB
 		},
 		{
-			name:     "100 MB",
-			fileSize: int64(100 * 1024 * 1024), // 100 MB
+			name:     "50 MB",
+			fileSize: int64(50 * 1024 * 1024), // 50 MB
 		},
 	}
 
