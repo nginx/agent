@@ -15,19 +15,19 @@ import (
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 )
 
-type InstanceOperator struct {
+type NginxInstanceOperator struct {
 	executer exec.ExecInterface
 }
 
-var _ instanceOperator = (*InstanceOperator)(nil)
+var _ instanceOperator = (*NginxInstanceOperator)(nil)
 
-func NewInstanceOperator() *InstanceOperator {
-	return &InstanceOperator{
+func NewInstanceOperator() *NginxInstanceOperator {
+	return &NginxInstanceOperator{
 		executer: &exec.Exec{},
 	}
 }
 
-func (i *InstanceOperator) Validate(ctx context.Context, instance *mpi.Instance) error {
+func (i *NginxInstanceOperator) Validate(ctx context.Context, instance *mpi.Instance) error {
 	slog.DebugContext(ctx, "Validating NGINX config")
 	exePath := instance.GetInstanceRuntime().GetBinaryPath()
 
@@ -46,7 +46,7 @@ func (i *InstanceOperator) Validate(ctx context.Context, instance *mpi.Instance)
 	return nil
 }
 
-func (i *InstanceOperator) validateConfigCheckResponse(out []byte) error {
+func (i *NginxInstanceOperator) validateConfigCheckResponse(out []byte) error {
 	if bytes.Contains(out, []byte("[emerg]")) ||
 		bytes.Contains(out, []byte("[alert]")) ||
 		bytes.Contains(out, []byte("[crit]")) {
@@ -56,7 +56,7 @@ func (i *InstanceOperator) validateConfigCheckResponse(out []byte) error {
 	return nil
 }
 
-func (i *InstanceOperator) Reload(ctx context.Context, instance *mpi.Instance) error {
+func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instance) error {
 	slog.InfoContext(ctx, "Reloading NGINX PID: ", "pid",
 		instance.GetInstanceRuntime().GetProcessId())
 

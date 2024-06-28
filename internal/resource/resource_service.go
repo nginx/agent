@@ -25,7 +25,7 @@ type resourceServiceInterface interface {
 	AddInstances(instanceList []*mpi.Instance) *mpi.Resource
 	UpdateInstances(instanceList []*mpi.Instance) *mpi.Resource
 	DeleteInstances(instanceList []*mpi.Instance) *mpi.Resource
-	Apply(ctx context.Context, instanceID string) error
+	ApplyConfig(ctx context.Context, instanceID string) error
 	Instance(instanceID string) *mpi.Instance
 }
 
@@ -134,7 +134,7 @@ func (r *ResourceService) DeleteInstances(instanceList []*mpi.Instance) *mpi.Res
 	return r.resource
 }
 
-func (r *ResourceService) Apply(ctx context.Context, instanceID string) error {
+func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) error {
 	var instance *mpi.Instance
 	var errorsFound error
 	operator := r.instanceOperators[instanceID]

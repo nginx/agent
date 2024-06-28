@@ -277,14 +277,25 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 }
 
 func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) error {
-	getFileResp, getFileErr := fms.fileServiceClient.GetFile(ctx, &mpi.GetFileRequest{
-		MessageMeta: &mpi.MessageMeta{
-			MessageId:     uuid.NewString(),
-			CorrelationId: logger.GetCorrelationID(ctx),
-			Timestamp:     timestamppb.Now(),
-		},
-		FileMeta: file.GetFileMeta(),
-	})
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Common.MaxElapsedTime)
+	defer backoffCancel()
+
+	getFile := func() (*mpi.GetFileResponse, error) {
+		return fms.fileServiceClient.GetFile(ctx, &mpi.GetFileRequest{
+			MessageMeta: &mpi.MessageMeta{
+				MessageId:     uuid.NewString(),
+				CorrelationId: logger.GetCorrelationID(ctx),
+				Timestamp:     timestamppb.Now(),
+			},
+			FileMeta: file.GetFileMeta(),
+		})
+	}
+
+	getFileResp, getFileErr := backoff.RetryWithData(
+		getFile,
+		backoffHelpers.Context(backOffCtx, fms.agentConfig.Common),
+	)
+
 	if getFileErr != nil {
 		return fmt.Errorf("error getting file data for %s: %w", file.GetFileMeta(), getFileErr)
 	}

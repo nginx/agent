@@ -12,7 +12,7 @@ import (
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )
 
-func BenchmarkGenerateHash(b *testing.B) {
+func BenchmarkGenerateConfigVersion(b *testing.B) {
 	file1 := &mpi.File{
 		FileMeta: &mpi.FileMeta{
 			Name: "file1",

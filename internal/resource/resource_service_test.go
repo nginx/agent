@@ -295,7 +295,7 @@ func TestResourceService_Apply(t *testing.T) {
 			wg.Add(1)
 			go func(expected error) {
 				defer wg.Done()
-				reloadError := resourceService.Apply(ctx,
+				reloadError := resourceService.ApplyConfig(ctx,
 					protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId())
 				assert.Equal(t, expected, reloadError)
 			}(test.expected)

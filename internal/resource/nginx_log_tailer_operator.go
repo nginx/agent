@@ -17,11 +17,11 @@ import (
 
 const logTailerChannelSize = 1024
 
-type LogTailerOperator struct {
+type NginxLogTailerOperator struct {
 	agentConfig *config.Config
 }
 
-var _ logTailerOperator = (*LogTailerOperator)(nil)
+var _ logTailerOperator = (*NginxLogTailerOperator)(nil)
 
 var (
 	reloadErrorList = []*re.Regexp{
@@ -32,13 +32,13 @@ var (
 	warningRegex = re.MustCompile(`.*\[warn\].*`)
 )
 
-func NewLogTailerOperator(agentConfig *config.Config) *LogTailerOperator {
-	return &LogTailerOperator{
+func NewLogTailerOperator(agentConfig *config.Config) *NginxLogTailerOperator {
+	return &NginxLogTailerOperator{
 		agentConfig: agentConfig,
 	}
 }
 
-func (l *LogTailerOperator) Tail(ctx context.Context, errorLog string, errorChannel chan error) {
+func (l *NginxLogTailerOperator) Tail(ctx context.Context, errorLog string, errorChannel chan error) {
 	t, err := nginx.NewTailer(errorLog)
 	if err != nil {
 		slog.ErrorContext(ctx, "Unable to tail error log after NGINX reload", "log_file", errorLog, "error", err)
@@ -70,7 +70,7 @@ func (l *LogTailerOperator) Tail(ctx context.Context, errorLog string, errorChan
 	}
 }
 
-func (l *LogTailerOperator) doesLogLineContainError(line string) bool {
+func (l *NginxLogTailerOperator) doesLogLineContainError(line string) bool {
 	if l.agentConfig.DataPlaneConfig.Nginx.TreatWarningsAsError && warningRegex.MatchString(line) {
 		return true
 	}

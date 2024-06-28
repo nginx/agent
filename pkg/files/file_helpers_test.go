@@ -56,12 +56,12 @@ func Test_GenerateConfigVersion(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "Test with empty file slice",
+			name:     "Test 1: empty file slice",
 			input:    []*mpi.File{},
 			expected: GenerateHash([]byte{}),
 		},
 		{
-			name: "Test with one file",
+			name: "Test 2: one file",
 			input: []*mpi.File{
 				{
 					FileMeta: &mpi.FileMeta{
@@ -74,7 +74,7 @@ func Test_GenerateConfigVersion(t *testing.T) {
 			expected: GenerateHash([]byte("hash1")),
 		},
 		{
-			name: "Test with multiple files",
+			name: "Test 3: multiple files",
 			input: []*mpi.File{
 				{
 					FileMeta: &mpi.FileMeta{
@@ -115,12 +115,12 @@ func TestGenerateHash(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "Test with empty byte slice",
+			name:     "Test 1: empty byte slice",
 			input:    []byte{},
 			expected: uuid.NewMD5(uuid.Nil, []byte("")).String(),
 		},
 		{
-			name:     "Test with non-empty byte slice",
+			name:     "Test 2: non-empty byte slice",
 			input:    []byte("test"),
 			expected: uuid.NewMD5(uuid.Nil, []byte("test")).String(),
 		},

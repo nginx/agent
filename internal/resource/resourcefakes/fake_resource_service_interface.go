@@ -20,16 +20,16 @@ type FakeResourceServiceInterface struct {
 	addInstancesReturnsOnCall map[int]struct {
 		result1 *v1.Resource
 	}
-	ApplyStub        func(context.Context, string) error
-	applyMutex       sync.RWMutex
-	applyArgsForCall []struct {
+	ApplyConfigStub        func(context.Context, string) error
+	applyConfigMutex       sync.RWMutex
+	applyConfigArgsForCall []struct {
 		arg1 context.Context
 		arg2 string
 	}
-	applyReturns struct {
+	applyConfigReturns struct {
 		result1 error
 	}
-	applyReturnsOnCall map[int]struct {
+	applyConfigReturnsOnCall map[int]struct {
 		result1 error
 	}
 	DeleteInstancesStub        func([]*v1.Instance) *v1.Resource
@@ -135,17 +135,17 @@ func (fake *FakeResourceServiceInterface) AddInstancesReturnsOnCall(i int, resul
 	}{result1}
 }
 
-func (fake *FakeResourceServiceInterface) Apply(arg1 context.Context, arg2 string) error {
-	fake.applyMutex.Lock()
-	ret, specificReturn := fake.applyReturnsOnCall[len(fake.applyArgsForCall)]
-	fake.applyArgsForCall = append(fake.applyArgsForCall, struct {
+func (fake *FakeResourceServiceInterface) ApplyConfig(arg1 context.Context, arg2 string) error {
+	fake.applyConfigMutex.Lock()
+	ret, specificReturn := fake.applyConfigReturnsOnCall[len(fake.applyConfigArgsForCall)]
+	fake.applyConfigArgsForCall = append(fake.applyConfigArgsForCall, struct {
 		arg1 context.Context
 		arg2 string
 	}{arg1, arg2})
-	stub := fake.ApplyStub
-	fakeReturns := fake.applyReturns
-	fake.recordInvocation("Apply", []interface{}{arg1, arg2})
-	fake.applyMutex.Unlock()
+	stub := fake.ApplyConfigStub
+	fakeReturns := fake.applyConfigReturns
+	fake.recordInvocation("ApplyConfig", []interface{}{arg1, arg2})
+	fake.applyConfigMutex.Unlock()
 	if stub != nil {
 		return stub(arg1, arg2)
 	}
@@ -155,44 +155,44 @@ func (fake *FakeResourceServiceInterface) Apply(arg1 context.Context, arg2 strin
 	return fakeReturns.result1
 }
 
-func (fake *FakeResourceServiceInterface) ApplyCallCount() int {
-	fake.applyMutex.RLock()
-	defer fake.applyMutex.RUnlock()
-	return len(fake.applyArgsForCall)
+func (fake *FakeResourceServiceInterface) ApplyConfigCallCount() int {
+	fake.applyConfigMutex.RLock()
+	defer fake.applyConfigMutex.RUnlock()
+	return len(fake.applyConfigArgsForCall)
 }
 
-func (fake *FakeResourceServiceInterface) ApplyCalls(stub func(context.Context, string) error) {
-	fake.applyMutex.Lock()
-	defer fake.applyMutex.Unlock()
-	fake.ApplyStub = stub
+func (fake *FakeResourceServiceInterface) ApplyConfigCalls(stub func(context.Context, string) error) {
+	fake.applyConfigMutex.Lock()
+	defer fake.applyConfigMutex.Unlock()
+	fake.ApplyConfigStub = stub
 }
 
-func (fake *FakeResourceServiceInterface) ApplyArgsForCall(i int) (context.Context, string) {
-	fake.applyMutex.RLock()
-	defer fake.applyMutex.RUnlock()
-	argsForCall := fake.applyArgsForCall[i]
+func (fake *FakeResourceServiceInterface) ApplyConfigArgsForCall(i int) (context.Context, string) {
+	fake.applyConfigMutex.RLock()
+	defer fake.applyConfigMutex.RUnlock()
+	argsForCall := fake.applyConfigArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeResourceServiceInterface) ApplyReturns(result1 error) {
-	fake.applyMutex.Lock()
-	defer fake.applyMutex.Unlock()
-	fake.ApplyStub = nil
-	fake.applyReturns = struct {
+func (fake *FakeResourceServiceInterface) ApplyConfigReturns(result1 error) {
+	fake.applyConfigMutex.Lock()
+	defer fake.applyConfigMutex.Unlock()
+	fake.ApplyConfigStub = nil
+	fake.applyConfigReturns = struct {
 		result1 error
 	}{result1}
 }
 
-func (fake *FakeResourceServiceInterface) ApplyReturnsOnCall(i int, result1 error) {
-	fake.applyMutex.Lock()
-	defer fake.applyMutex.Unlock()
-	fake.ApplyStub = nil
-	if fake.applyReturnsOnCall == nil {
-		fake.applyReturnsOnCall = make(map[int]struct {
+func (fake *FakeResourceServiceInterface) ApplyConfigReturnsOnCall(i int, result1 error) {
+	fake.applyConfigMutex.Lock()
+	defer fake.applyConfigMutex.Unlock()
+	fake.ApplyConfigStub = nil
+	if fake.applyConfigReturnsOnCall == nil {
+		fake.applyConfigReturnsOnCall = make(map[int]struct {
 			result1 error
 		})
 	}
-	fake.applyReturnsOnCall[i] = struct {
+	fake.applyConfigReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
 }
@@ -395,8 +395,8 @@ func (fake *FakeResourceServiceInterface) Invocations() map[string][][]interface
 	defer fake.invocationsMutex.RUnlock()
 	fake.addInstancesMutex.RLock()
 	defer fake.addInstancesMutex.RUnlock()
-	fake.applyMutex.RLock()
-	defer fake.applyMutex.RUnlock()
+	fake.applyConfigMutex.RLock()
+	defer fake.applyConfigMutex.RUnlock()
 	fake.deleteInstancesMutex.RLock()
 	defer fake.deleteInstancesMutex.RUnlock()
 	fake.instanceMutex.RLock()

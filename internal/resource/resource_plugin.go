@@ -118,7 +118,7 @@ func (r *Resource) handleWriteConfigSuccessful(ctx context.Context, msg *bus.Mes
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to instanceID string", "payload", msg.Data)
 	}
-	err := r.resourceService.Apply(ctx, data.InstanceID)
+	err := r.resourceService.ApplyConfig(ctx, data.InstanceID)
 	if err != nil {
 		slog.Error("errors found during config apply, sending failure status", "err", err)
 
@@ -144,7 +144,7 @@ func (r *Resource) handleRollbackWrite(ctx context.Context, msg *bus.Message) {
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to instanceID string", "payload", msg.Data)
 	}
-	err := r.resourceService.Apply(ctx, data.InstanceID)
+	err := r.resourceService.ApplyConfig(ctx, data.InstanceID)
 	if err != nil {
 		slog.Error("errors found during rollback, sending failure status", "err", err)
 
