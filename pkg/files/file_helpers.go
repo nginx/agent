@@ -26,7 +26,10 @@ func GetFileMeta(filePath string) (*v1.FileMeta, error) {
 		return nil, err
 	}
 
-	content, _ := ReadFile(filePath)
+	content, err := ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
 	hash := GenerateHash(content)
 
 	return &v1.FileMeta{
@@ -70,7 +73,7 @@ func ReadFile(filePath string) ([]byte, error) {
 	if openErr != nil {
 		return nil, openErr
 	}
-
+	defer f.Close()
 	content := bytes.NewBuffer([]byte{})
 	_, copyErr := io.Copy(content, f)
 	if copyErr != nil {
