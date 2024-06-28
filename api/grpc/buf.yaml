@@ -1,12 +1,7 @@
 version: v1
 deps:
   - buf.build/bufbuild/protovalidate
-build:
-  excludes: [ "instances" ]
 lint:
-  ignore:
-    - instances/configurations.proto
-    - instances/instances.proto
   use:
       - DEFAULT
   except:

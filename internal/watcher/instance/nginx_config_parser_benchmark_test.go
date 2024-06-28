@@ -7,6 +7,9 @@ package instance
 
 import (
 	"context"
+	"io"
+	"log/slog"
+	"path/filepath"
 	"testing"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -15,21 +18,28 @@ import (
 )
 
 var configFilePaths = []string{
-	"../../test/config/nginx/nginx.conf",
-	"../../test/config/nginx/nginx-with-1k-lines.conf",
-	"../../test/config/nginx/nginx-with-2k-lines.conf",
-	"../../test/config/nginx/nginx-with-3k-lines.conf",
-	"../../test/config/nginx/nginx-with-10k-lines.conf",
+	"../../../test/config/nginx/nginx.conf",
+	"../../../test/config/nginx/nginx-with-1k-lines.conf",
+	"../../../test/config/nginx/nginx-with-2k-lines.conf",
+	"../../../test/config/nginx/nginx-with-3k-lines.conf",
+	"../../../test/config/nginx/nginx-with-10k-lines.conf",
 }
 
 func BenchmarkNginxConfigParser_Parse(b *testing.B) {
+	// Discard log messages
+	slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{})))
 	ctx := context.Background()
+	agentConfig := types.AgentConfig()
 
 	for _, configFilePath := range configFilePaths {
 		func(configFilePath string) {
 			b.Run(configFilePath, func(bb *testing.B) {
+				agentConfig.AllowedDirectories = []string{
+					filepath.Dir(configFilePath),
+				}
+
 				nginxConfigParser := NewNginxConfigParser(
-					types.AgentConfig(),
+					agentConfig,
 				)
 
 				for i := 0; i < bb.N; i++ {
