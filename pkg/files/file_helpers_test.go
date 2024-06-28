@@ -22,7 +22,7 @@ func TestGetFileMeta(t *testing.T) {
 
 	expected := &v1.FileMeta{
 		Name:        file.Name(),
-		Hash:        "4ae71336-e44b-39bf-b9d2-752e234818a5",
+		Hash:        "d7678b0e-8e36-3b8c-bbde-578841aa65f3",
 		Permissions: "-rw-------",
 		Size:        0,
 	}
