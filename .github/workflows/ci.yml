@@ -78,6 +78,7 @@ jobs:
               name: nginx-agent-unsigned-snapshots
               path: build
               retention-days: 1
+
   generate-pgo-profile:
     name: Generate Profile
     needs: build-unsigned-snapshot
@@ -126,6 +127,7 @@ jobs:
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
             make integration-test
+  
   performance-tests:
     name: Performance Tests
     runs-on: ubuntu-22.04
@@ -176,9 +178,6 @@ jobs:
       - name: Set up Docker Build
         uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
      
-      # - name: Create results directory
-      #   run: mkdir -p ${PWD}/build/results
-      
       - name: Set env
         run: echo "GO_VERSION=$(cat go.mod | grep toolchain | sed 's/toolchain //; s/go//')" >> $GITHUB_ENV
       
