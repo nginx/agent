@@ -9,10 +9,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nginx/agent/v3/api/grpc/instances"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -146,25 +144,6 @@ func GetInstancesNoParentProcess(expectedModules []string) []*v1.Instance {
 	process2.GetInstanceRuntime().ProcessId = 0
 
 	return []*v1.Instance{process1, process2}
-}
-
-func CreateSuccessStatus() *instances.ConfigurationStatus {
-	return &instances.ConfigurationStatus{
-		InstanceId:    ossInstanceID,
-		CorrelationId: correlationID,
-		Status:        instances.Status_SUCCESS,
-		Message:       "Config applied successfully",
-		Timestamp:     timestamppb.Now(),
-	}
-}
-
-func CreateFailStatus(err string) *instances.ConfigurationStatus {
-	return &instances.ConfigurationStatus{
-		InstanceId:    ossInstanceID,
-		CorrelationId: correlationID,
-		Status:        instances.Status_FAILED,
-		Message:       err,
-	}
 }
 
 func GetFileCache(files ...*os.File) (map[string]*v1.FileMeta, error) {
