@@ -13,6 +13,8 @@ import (
 	"math/big"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -59,49 +61,64 @@ func GenerateConfig(t testing.TB, outputFile string, targetSize int64) (fs.FileI
 	defer file.Close()
 
 	// Write the header
-	if _, err := file.WriteString(headerTemplate); err != nil {
-		return nil, fmt.Errorf("error writing to file %w", err)
+	if _, headerErr := file.WriteString(headerTemplate); headerErr != nil {
+		return nil, fmt.Errorf("error writing to file %w", headerErr)
 	}
 
+	const serverLength = 12
+	const proxyLength = 8
 	// Write server blocks until the file size reaches the target size
 	for {
 		// Generate random values
 		port := generateRandomPort()
-		serverName := fmt.Sprintf("%s.com", generateRandomString(12))
-		proxyPass := fmt.Sprintf("http://%s.com", generateRandomString(8))
+
+		server, serverErr := generateRandomString(serverLength)
+		require.NoError(t, serverErr)
+
+		serverName := fmt.Sprintf("%s.com", server)
+
+		proxy, proxyErr := generateRandomString(proxyLength)
+		require.NoError(t, proxyErr)
+
+		proxyPass := fmt.Sprintf("http://%s.com", proxy)
 
 		// Write the server block to the file
 		block := fmt.Sprintf(serverBlockTemplate, port, serverName, proxyPass)
-		if _, err := file.WriteString(block); err != nil {
-			return nil, fmt.Errorf("error writing server block to file %w", err)
+		if _, blockErr := file.WriteString(block); blockErr != nil {
+			return nil, fmt.Errorf("error writing server block to file %w", blockErr)
 		}
 
 		// Check the file size
-		info, err := file.Stat()
-		if err != nil {
-			return nil, fmt.Errorf("error getting file info %w", err)
+		info, fileStatErr := file.Stat()
+		if fileStatErr != nil {
+			return nil, fmt.Errorf("error getting file info %w", fileStatErr)
 		}
 		if info.Size() >= targetSize {
 			break
 		}
 	}
 
-	if _, err := file.WriteString(footerTemplate); err != nil {
-		return nil, fmt.Errorf("error writing to file %w", err)
+	if _, footerErr := file.WriteString(footerTemplate); footerErr != nil {
+		return nil, fmt.Errorf("error writing to file %w", footerErr)
 	}
 
 	// Verify the file size and adjust if necessary
 	return file.Stat()
-	
 }
 
 func generateRandomPort() int {
 	n, _ := rand.Int(rand.Reader, big.NewInt(65535-49152+1))
-	return int(n.Int64()) + 49152
+	const minPort = 49152
+
+	return int(n.Int64()) + minPort
 }
 
-func generateRandomString(length int) string {
+func generateRandomString(length int) (string, error) {
 	b := make([]byte, length)
-	rand.Read(b)
-	return base64.URLEncoding.EncodeToString(b)[:length]
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+
+	return base64.URLEncoding.EncodeToString(b)[:length], err
 }

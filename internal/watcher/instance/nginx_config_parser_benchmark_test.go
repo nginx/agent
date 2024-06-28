@@ -72,36 +72,35 @@ func BenchmarkNginxConfigParserGeneratedConfig_Parse(b *testing.B) {
 	agentConfig := types.AgentConfig()
 
 	tests := []struct {
-		name        string
-		fileSize    int64
+		name     string
+		fileSize int64
 	}{
 		{
-			name: 	  "100 KB",
+			name:     "100 KB",
 			fileSize: int64(1 * 1024 * 1024 / 10), // 100 KB
 		},
 		{
-			name: 	  "1 MB",
+			name:     "1 MB",
 			fileSize: int64(1 * 1024 * 1024), // 1 MB
 		},
 		{
-			name: 	  "10 MB",
+			name:     "10 MB",
 			fileSize: int64(10 * 1024 * 1024), // 10 MB
 		},
 		{
-			name: 	  "100 MB",
+			name:     "100 MB",
 			fileSize: int64(100 * 1024 * 1024), // 100 MB
 		},
 	}
 
 	for _, test := range tests {
-	
 		b.Run(test.name, func(bb *testing.B) {
 			location := bb.TempDir()
 			fileName := fmt.Sprintf("%s/%d_%s", location, test.fileSize, "nginx.conf")
-		
+
 			file, err := helpers.GenerateConfig(bb, fileName, test.fileSize)
 			require.NoError(b, err)
-	
+
 			bb.Logf("file size is %d", file.Size())
 
 			agentConfig.AllowedDirectories = []string{
@@ -115,7 +114,7 @@ func BenchmarkNginxConfigParserGeneratedConfig_Parse(b *testing.B) {
 			bb.ResetTimer()
 
 			for i := 0; i < bb.N; i++ {
-				_, err := nginxConfigParser.Parse(
+				_, parseErr := nginxConfigParser.Parse(
 					ctx,
 					&mpi.Instance{
 						InstanceMeta: &mpi.InstanceMeta{
@@ -126,7 +125,7 @@ func BenchmarkNginxConfigParserGeneratedConfig_Parse(b *testing.B) {
 						},
 					},
 				)
-				require.NoError(bb, err)
+				require.NoError(bb, parseErr)
 			}
 		})
 	}
