@@ -7,8 +7,8 @@
 package files
 
 import (
-	"bytes"
 	"cmp"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"os"
@@ -74,11 +74,11 @@ func ReadFile(filePath string) ([]byte, error) {
 		return nil, openErr
 	}
 	defer f.Close()
-	content := bytes.NewBuffer([]byte{})
-	_, copyErr := io.Copy(content, f)
-	if copyErr != nil {
+
+	h := sha256.New()
+	if _, copyErr := io.Copy(h, f); copyErr != nil {
 		return nil, copyErr
 	}
 
-	return content.Bytes(), nil
+	return h.Sum(nil), nil
 }
