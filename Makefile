@@ -201,6 +201,6 @@ generate-pgo-profile: build-mock-management-plane-grpc
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) \
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) \
 	$(GOTEST) -v ./test/integration -cpuprofile integration_cpu.pprof
-	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 5m -bench=. -benchmem -run=^$$ ./... -cpuprofile perf_cpu.pprof
-	@$(GOTOOL) pprof -proto perf_cpu.pprof integration_cpu.pprof > default.pgo
-	rm perf_cpu.pprof integration_cpu.pprof integration.test profile.pprof
+	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 5m -bench=. -benchmem -run=^# ./internal/watcher/instance -cpuprofile perf_watcher_cpu.pprof
+	@$(GOTOOL) pprof -proto perf_watcher_cpu.pprof integration_cpu.pprof > default.pgo
+	rm perf_watcher_cpu.pprof integration_cpu.pprof integration.test profile.pprof
