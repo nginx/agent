@@ -97,4 +97,4 @@ WORKDIR /agent/test/load
 
 RUN go test -v -timeout 30s ./...
 
-CMD ["cat", "benchmarks.json", "|", "jq", "-r", "'.[]'"]
+CMD ["sh", "-c", "cat benchmarks.json | jq -r '.[]'"]
