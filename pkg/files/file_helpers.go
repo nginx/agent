@@ -7,16 +7,16 @@
 package files
 
 import (
+	"bytes"
 	"cmp"
-	"crypto/sha256"
-	"encoding/base64"
 	"fmt"
 	"io"
 	"os"
 	"slices"
 
+	"github.com/google/uuid"
+
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/pkg/uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -26,10 +26,8 @@ func GetFileMeta(filePath string) (*v1.FileMeta, error) {
 		return nil, err
 	}
 
-	hash, err := GenerateFileHash(filePath)
-	if err != nil {
-		return nil, err
-	}
+	content, _ := ReadFile(filePath)
+	hash := GenerateHash(content)
 
 	return &v1.FileMeta{
 		Name:         filePath,
@@ -58,21 +56,26 @@ func GenerateConfigVersion(fileSlice []*v1.File) string {
 		hashes += file.GetFileMeta().GetHash()
 	}
 
-	return uuid.Generate("%s", hashes)
+	return GenerateHash([]byte(hashes))
 }
 
-// GenerateFileHash returns the hash value of a file's contents.
-func GenerateFileHash(filePath string) (string, error) {
-	f, err := os.Open(filePath)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
+// GenerateHash returns the hash value of a file's contents.
+func GenerateHash(b []byte) string {
+	return uuid.NewMD5(uuid.Nil, b).String()
+}
 
-	h := sha256.New()
-	if _, copyErr := io.Copy(h, f); copyErr != nil {
-		return "", copyErr
+// ReadFile returns the content of a file
+func ReadFile(filePath string) ([]byte, error) {
+	f, openErr := os.Open(filePath)
+	if openErr != nil {
+		return nil, openErr
 	}
 
-	return base64.StdEncoding.EncodeToString(h.Sum(nil)), nil
+	content := bytes.NewBuffer([]byte{})
+	_, copyErr := io.Copy(content, f)
+	if copyErr != nil {
+		return nil, copyErr
+	}
+
+	return content.Bytes(), nil
 }

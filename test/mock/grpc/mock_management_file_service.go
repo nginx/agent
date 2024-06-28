@@ -251,10 +251,11 @@ func getFileMode(mode string) os.FileMode {
 }
 
 func createFile(fullPath, filePath string) (*v1.File, error) {
-	hash, err := filesHelper.GenerateFileHash(fullPath)
+	content, err := filesHelper.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
+	hash := filesHelper.GenerateHash(content)
 
 	fileInfo, err := os.Stat(fullPath)
 	if err != nil {
