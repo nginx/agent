@@ -197,7 +197,7 @@ jobs:
         run: |
           results=$(docker run --rm nginx-agent-load-test:1.0.0)
           echo "$results" > ${PWD}/build/results/benchmarks.json
-          echo "load_test_results=$results" >> $GITHUB_ENV
+          echo "$results"
       - name: Store output as artifact
         uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
         with:
