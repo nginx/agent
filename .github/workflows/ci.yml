@@ -216,7 +216,7 @@ jobs:
         uses: benchmark-action/github-action-benchmark@4de1bed97a47495fc4c5404952da0499e31f5c29 # v1.20.3
         with:
           name: Compare Benchmark Results
-          tool: 'go'
+          tool: 'customSmallerIsBetter'
           output-file-path: benchmarks.json
           benchmark-data-dir-path: ""
           # Set auto-push to false since GitHub API token is not given
