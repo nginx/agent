@@ -94,10 +94,8 @@ func BenchmarkNginxConfigParserGeneratedConfig_Parse(b *testing.B) {
 			location := bb.TempDir()
 			fileName := fmt.Sprintf("%s/%d_%s", location, test.fileSize, "nginx.conf")
 
-			file, err := helpers.GenerateConfig(bb, fileName, test.fileSize)
+			_, err := helpers.GenerateConfig(bb, fileName, test.fileSize)
 			require.NoError(b, err)
-
-			bb.Logf("file size is %d", file.Size())
 
 			agentConfig.AllowedDirectories = []string{
 				location,
