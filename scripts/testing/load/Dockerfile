@@ -53,6 +53,7 @@ RUN --mount=type=secret,id=nginx-crt,dst=nginx-repo.crt \
                         $nginxPackages \
                         curl \
                         gettext-base \
+                        jq \
     && apt-get remove --purge -y lsb-release \
     && apt-get remove --purge --auto-remove -y && rm -rf /var/lib/apt/lists/* /etc/apt/sources.list.d/nginx-plus.list \
     && rm -rf /etc/apt/apt.conf.d/90nginx /etc/ssl/nginx
@@ -96,4 +97,4 @@ WORKDIR /agent/test/load
 
 RUN go test -v -timeout 30s ./...
 
-CMD ["cat", "benchmarks.json"]
+CMD ["cat", "benchmarks.json", "|", "jq", "-r", "'.[]'"]
