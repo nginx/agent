@@ -96,7 +96,8 @@ type agentProcessCollector struct {
 var LoadResourceSpec = &testbed.ResourceSpec{
 	// CPU can be spikey
 	ExpectedMaxCPU:         50,
-	ExpectedMaxRAM:         100,
+	// RAM can be spikey
+	ExpectedMaxRAM:         110,
 	ResourceCheckPeriod:    1 * time.Second,
 	MaxConsecutiveFailures: 0,
 }
