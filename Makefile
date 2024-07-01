@@ -307,7 +307,17 @@ official-oss-image: ## Build official NGINX OSS with NGINX Agent container image
 	@echo Building image nginx-oss-with-nginx-agent with $(CONTAINER_CLITOOL); \
 	cd scripts/docker/official/nginx-oss-with-nginx-agent/alpine/ \
 	&& $(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx-oss-with-nginx-agent . \
+	    --build-arg NGINX_AGENT_VERSION=$(shell echo ${VERSION} | tr -d 'v') \
 		--no-cache -f ./Dockerfile.mainline
+
+official-oss-stable-image: ## Build official NGINX OSS with NGINX Agent container stable image
+	@echo Building image nginx-oss-with-nginx-agent with $(CONTAINER_CLITOOL); \
+	cd scripts/docker/official/nginx-oss-with-nginx-agent/alpine/ \
+	&& $(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx-oss-with-nginx-agent . \
+	    --build-arg NGINX_AGENT_VERSION=$(shell echo ${VERSION} | tr -d 'v') \
+		--no-cache -f ./Dockerfile.stable
+
+official-oss-mainline-image: official-oss-image ## Build official NGINX OSS with NGINX Agent container mainline image
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Grafana Example Dashboard Targets                                                                               #
