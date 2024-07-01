@@ -32,6 +32,22 @@ NGINX Agent works with all supported versions of NGINX Open Source and NGINX Plu
 Minimum system sizing recommendations for NGINX Agent:
 TBD
 
+## Building Docker Image
+
+To build an image that contains the latest NGINX Agent and the latest NGINX Plus (certificates required) run the following command:
+
+```make
+make image
+```
+
+For the latest NGINX Agent and the latest NGINX Plus run the following command:
+
+```make
+make oss-image
+```
+
+For more information on how to run NGINX Agent containers and how build an image that uses NGINX Plus instead of NGINX OSS see [Docker Images](https://docs.nginx.com/nginx-agent/docker-images/)
+
 ## Community
 
 - Our [Slack channel #nginx-agent](https://nginxcommunity.slack.com/), is the go-to place to start asking questions and sharing your thoughts.

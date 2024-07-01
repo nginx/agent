@@ -204,3 +204,30 @@ generate-pgo-profile: build-mock-management-plane-grpc
 	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 5m -bench=. -benchmem -run=^# ./internal/watcher/instance -cpuprofile perf_watcher_cpu.pprof
 	@$(GOTOOL) pprof -proto perf_watcher_cpu.pprof integration_cpu.pprof > default.pgo
 	rm perf_watcher_cpu.pprof integration_cpu.pprof integration.test profile.pprof
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Container Image Helper Targets                                                                                  #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+image: ## Build agent container image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
+	@echo Building image with $(CONTAINER_CLITOOL); \
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${IMAGE_TAG} . \
+		--no-cache -f ./scripts/docker/nginx-plus/${OS_RELEASE}/Dockerfile \
+		--secret id=nginx-crt,src=${CERTS_DIR}/nginx-repo.crt \
+		--secret id=nginx-key,src=${CERTS_DIR}/nginx-repo.key \
+		--build-arg BASE_IMAGE=${BASE_IMAGE} \
+		--build-arg PACKAGES_REPO=${PLUS_PACKAGES_REPO} \
+		--build-arg OS_RELEASE=${OS_RELEASE} \
+		--build-arg OS_VERSION=${OS_VERSION} \
+		--build-arg CONTAINER_REGISTRY=${CONTAINER_REGISTRY}
+
+oss-image: ## Build agent container image for NGINX OSS
+	@echo Building image with $(CONTAINER_CLITOOL); \
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${IMAGE_TAG} . \
+		--no-cache -f ./scripts/docker/nginx-oss/${CONTAINER_OS_TYPE}/Dockerfile \
+		--target install-agent-local \
+		--build-arg PACKAGE_NAME=${PACKAGE_NAME} \
+		--build-arg PACKAGES_REPO=${OSS_PACKAGES_REPO} \
+		--build-arg BASE_IMAGE=${BASE_IMAGE} \
+		--build-arg OS_RELEASE=${OS_RELEASE} \
+		--build-arg OS_VERSION=${OS_VERSION} \
+		--build-arg ENTRY_POINT=./scripts/docker/entrypoint.sh
