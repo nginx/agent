@@ -7,30 +7,28 @@
 package files
 
 import (
-	"bytes"
 	"cmp"
 	"fmt"
-	"io"
-	"log/slog"
 	"os"
 	"slices"
 	"strconv"
 
 	"github.com/google/uuid"
+
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const permissions = 0o644
 
-func GetFileMeta(filePath string) (*mpi.FileMeta, error) {
+// FileMeta returns a proto FileMeta struct from a given file path.
+func FileMeta(filePath string) (*mpi.FileMeta, error) {
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
 		return nil, err
 	}
 
-	content, err := ReadFile(filePath)
-	slog.Info("content", "", content)
+	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -41,13 +39,13 @@ func GetFileMeta(filePath string) (*mpi.FileMeta, error) {
 		Name:         filePath,
 		Hash:         fileHash,
 		ModifiedTime: timestamppb.New(fileInfo.ModTime()),
-		Permissions:  GetPermissions(fileInfo.Mode()),
+		Permissions:  Permissions(fileInfo.Mode()),
 		Size:         fileInfo.Size(),
 	}, nil
 }
 
-// GetPermissions returns a file's permissions as a string.
-func GetPermissions(fileMode os.FileMode) string {
+// Permissions returns a file's permissions as a string.
+func Permissions(fileMode os.FileMode) string {
 	return fmt.Sprintf("%#o", fileMode.Perm())
 }
 
@@ -76,24 +74,9 @@ func GenerateConfigVersion(fileSlice []*mpi.File) string {
 	return GenerateHash([]byte(hashes))
 }
 
+// GenerateHash returns the hash value of a file's contents.
 func GenerateHash(b []byte) string {
 	return uuid.NewMD5(uuid.Nil, b).String()
-}
-
-// ReadFile returns the content of a file
-func ReadFile(filePath string) ([]byte, error) {
-	f, openErr := os.Open(filePath)
-	if openErr != nil {
-		return nil, openErr
-	}
-
-	content := bytes.NewBuffer([]byte{})
-	_, copyErr := io.Copy(content, f)
-	if copyErr != nil {
-		return nil, copyErr
-	}
-
-	return content.Bytes(), nil
 }
 
 // CompareFileHash compares files from the FileOverview to files on disk and returns a map with the files that have
@@ -113,7 +96,7 @@ func CompareFileHash(fileOverview *mpi.FileOverview) (fileDiff map[string]*mpi.F
 				// File is already deleted, skip
 				continue
 			}
-			fileContent, readErr := ReadFile(fileName)
+			fileContent, readErr := os.ReadFile(fileName)
 			if readErr != nil {
 				return nil, nil, fmt.Errorf("error reading file %s, error: %w", fileName, readErr)
 			}
@@ -131,7 +114,7 @@ func CompareFileHash(fileOverview *mpi.FileOverview) (fileDiff map[string]*mpi.F
 
 			fallthrough
 		case mpi.File_FILE_ACTION_UPDATE:
-			fileContent, readErr := ReadFile(fileName)
+			fileContent, readErr := os.ReadFile(fileName)
 			if readErr != nil {
 				return nil, nil, fmt.Errorf("error generating hash for file %s, error: %w", fileName, readErr)
 			}

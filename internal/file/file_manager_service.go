@@ -311,7 +311,7 @@ func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) e
 }
 
 func (fms *FileManagerService) validateFileHash(filePath string) error {
-	content, err := files.ReadFile(filePath)
+	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
 	}

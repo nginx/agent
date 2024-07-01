@@ -26,7 +26,7 @@ func TestGetFileMeta(t *testing.T) {
 
 	expected := protos.GetFileMeta(file.Name(), GenerateHash([]byte("")))
 
-	fileMeta, err := GetFileMeta(file.Name())
+	fileMeta, err := FileMeta(file.Name())
 	require.NoError(t, err)
 
 	assert.Equal(t, expected.GetName(), fileMeta.GetName())
@@ -44,7 +44,7 @@ func TestGetPermissions(t *testing.T) {
 	info, err := os.Stat(file.Name())
 	require.NoError(t, err)
 
-	permissions := GetPermissions(info.Mode())
+	permissions := Permissions(info.Mode())
 
 	assert.Equal(t, "0600", permissions)
 }
@@ -134,19 +134,6 @@ func TestGenerateHash(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestReadFile(t *testing.T) {
-	testFile := helpers.CreateFileWithErrorCheck(t, os.TempDir(), "testFile")
-	defer helpers.RemoveFileWithErrorCheck(t, testFile.Name())
-	expectedFileContent := []byte("test data")
-	err := os.WriteFile(testFile.Name(), expectedFileContent, 0o600)
-	require.NoError(t, err)
-
-	resultContent, err := ReadFile(testFile.Name())
-	require.NoError(t, err)
-
-	assert.Equal(t, expectedFileContent, resultContent)
 }
 
 func TestCompareFileHash_Delete(t *testing.T) {

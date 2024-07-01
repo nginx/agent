@@ -535,6 +535,7 @@ Reports the status of an associated command. This may be in response to a Manage
 | ----- | ---- | ----- | ----------- |
 | message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
 | command_response | [CommandResponse](#mpi-v1-CommandResponse) |  | The command response with the associated request |
+| instance_id | [string](#string) |  | The instance identifier, if applicable, for this response |
 
 
 
