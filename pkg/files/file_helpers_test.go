@@ -27,7 +27,7 @@ func TestGetFileMeta(t *testing.T) {
 		Size:        0,
 	}
 
-	fileMeta, err := GetFileMeta(file.Name())
+	fileMeta, err := FileMeta(file.Name())
 	require.NoError(t, err)
 
 	assert.Equal(t, expected.GetName(), fileMeta.GetName())
@@ -45,7 +45,7 @@ func TestGetPermissions(t *testing.T) {
 	info, err := os.Stat(file.Name())
 	require.NoError(t, err)
 
-	permissions := GetPermissions(info.Mode())
+	permissions := Permissions(info.Mode())
 
 	assert.Equal(t, "0600", permissions)
 }
