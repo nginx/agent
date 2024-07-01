@@ -128,7 +128,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 			}
 		}
 
-		fileMeta, err := files.GetFileMeta(conf.File)
+		fileMeta, err := files.FileMeta(conf.File)
 		if err != nil {
 			slog.WarnContext(ctx, "Unable to get file metadata", "file_name", conf.File, "error", err)
 		} else {
@@ -162,7 +162,7 @@ func (ncp *NginxConfigParser) accessLog(file, format string, formatMap map[strin
 	info, err := os.Stat(file)
 	if err == nil {
 		accessLog.Readable = true
-		accessLog.Permissions = files.GetPermissions(info.Mode())
+		accessLog.Permissions = files.Permissions(info.Mode())
 	}
 
 	accessLog = ncp.updateLogFormat(format, formatMap, accessLog)
@@ -196,7 +196,7 @@ func (ncp *NginxConfigParser) errorLog(file, level string) *model.ErrorLog {
 	}
 	info, err := os.Stat(file)
 	if err == nil {
-		errorLog.Permissions = files.GetPermissions(info.Mode())
+		errorLog.Permissions = files.Permissions(info.Mode())
 		errorLog.Readable = true
 	}
 
@@ -235,7 +235,7 @@ func (ncp *NginxConfigParser) rootFiles(ctx context.Context, rootDir string) (ro
 				return nil
 			}
 
-			rootFileMeta, fileMetaErr := files.GetFileMeta(path)
+			rootFileMeta, fileMetaErr := files.FileMeta(path)
 			if fileMetaErr != nil {
 				return fileMetaErr
 			}
@@ -265,7 +265,7 @@ func (ncp *NginxConfigParser) sslCert(ctx context.Context, file, rootDir string)
 	if !ncp.agentConfig.IsDirectoryAllowed(file) {
 		slog.DebugContext(ctx, "File not in allowed directories", "file", file)
 	} else {
-		sslCertFileMeta, fileMetaErr := files.GetFileMeta(file)
+		sslCertFileMeta, fileMetaErr := files.FileMeta(file)
 		if fileMetaErr != nil {
 			slog.ErrorContext(ctx, "Unable to get file metadata", "file", file, "error", fileMetaErr)
 		} else {

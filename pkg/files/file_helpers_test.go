@@ -22,12 +22,12 @@ func TestGetFileMeta(t *testing.T) {
 
 	expected := &v1.FileMeta{
 		Name:        file.Name(),
-		Hash:        "47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=",
+		Hash:        "4ae71336-e44b-39bf-b9d2-752e234818a5",
 		Permissions: "-rw-------",
 		Size:        0,
 	}
 
-	fileMeta, err := GetFileMeta(file.Name())
+	fileMeta, err := FileMeta(file.Name())
 	require.NoError(t, err)
 
 	assert.Equal(t, expected.GetName(), fileMeta.GetName())
@@ -45,13 +45,13 @@ func TestGetPermissions(t *testing.T) {
 	info, err := os.Stat(file.Name())
 	require.NoError(t, err)
 
-	permissions := GetPermissions(info.Mode())
+	permissions := Permissions(info.Mode())
 
 	assert.Equal(t, "0600", permissions)
 }
 
 func Test_GenerateConfigVersion(t *testing.T) {
-	expectedConfigVersion := "a7d6580c-8ac9-376e-acde-b2cbed21d291"
+	expectedConfigVersion := "b0fe3bfa-5140-3fb2-aee6-7f458f6dae4e"
 
 	file1 := &v1.File{
 		FileMeta: &v1.FileMeta{
@@ -84,14 +84,16 @@ func Test_GenerateConfigVersion(t *testing.T) {
 	assert.Equal(t, expectedConfigVersion, configVersion)
 }
 
-func Test_GenerateFileHash(t *testing.T) {
+func Test_GenerateHash(t *testing.T) {
 	testFile := helpers.CreateFileWithErrorCheck(t, os.TempDir(), "testFile")
 	defer helpers.RemoveFileWithErrorCheck(t, testFile.Name())
 	err := os.WriteFile(testFile.Name(), []byte("test data"), 0o600)
 	require.NoError(t, err)
 
-	hash, err := GenerateFileHash(testFile.Name())
+	content, err := os.ReadFile(testFile.Name())
+
+	hash := GenerateHash(content)
 	require.NoError(t, err)
 
-	assert.Equal(t, "kW8AJ6V1B0znKjMXd8NHjWUT94alkb2JLaGld78jNfk=", hash)
+	assert.Equal(t, "ff8dcd5d-a12f-3895-a6b9-2ac8c98bfd08", hash)
 }

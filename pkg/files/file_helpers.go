@@ -8,28 +8,29 @@ package files
 
 import (
 	"cmp"
-	"crypto/sha256"
-	"encoding/base64"
 	"fmt"
-	"io"
 	"os"
 	"slices"
 
+	"github.com/google/uuid"
+
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/pkg/uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func GetFileMeta(filePath string) (*v1.FileMeta, error) {
+// FileMeta returns a proto FileMeta struct from a given file path.
+func FileMeta(filePath string) (*v1.FileMeta, error) {
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
 		return nil, err
 	}
 
-	hash, err := GenerateFileHash(filePath)
+	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
+
+	hash := GenerateHash(content)
 
 	return &v1.FileMeta{
 		Name:         filePath,
@@ -40,8 +41,8 @@ func GetFileMeta(filePath string) (*v1.FileMeta, error) {
 	}, nil
 }
 
-// GetPermissions returns a file's permissions as a string.
-func GetPermissions(fileMode os.FileMode) string {
+// Permissions returns a file's permissions as a string.
+func Permissions(fileMode os.FileMode) string {
 	return fmt.Sprintf("%#o", fileMode.Perm())
 }
 
@@ -58,21 +59,10 @@ func GenerateConfigVersion(fileSlice []*v1.File) string {
 		hashes += file.GetFileMeta().GetHash()
 	}
 
-	return uuid.Generate("%s", hashes)
+	return GenerateHash([]byte(hashes))
 }
 
-// GenerateFileHash returns the hash value of a file's contents.
-func GenerateFileHash(filePath string) (string, error) {
-	f, err := os.Open(filePath)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-
-	h := sha256.New()
-	if _, copyErr := io.Copy(h, f); copyErr != nil {
-		return "", copyErr
-	}
-
-	return base64.StdEncoding.EncodeToString(h.Sum(nil)), nil
+// GenerateHash returns the hash value of a file's contents.
+func GenerateHash(b []byte) string {
+	return uuid.NewMD5(uuid.Nil, b).String()
 }
