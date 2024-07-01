@@ -54,11 +54,8 @@ func TestMetric10kDPS(t *testing.T) {
 			agentProc,
 			&testbed.PerfTestValidator{},
 			performanceResultsSummary,
-			testbed.WithResourceLimits(
-				testbed.ResourceSpec{
-					ExpectedMaxCPU: 20,
-					ExpectedMaxRAM: 200,
-				}),
+			// this resource spec is overwritten in the agent process collector
+			testbed.WithResourceLimits(testbed.ResourceSpec{}),
 		)
 
 		t.Cleanup(tc.Stop)

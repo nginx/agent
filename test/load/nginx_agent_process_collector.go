@@ -17,7 +17,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"reflect"
 	"runtime"
 	"sort"
 	"strconv"
@@ -92,11 +91,22 @@ type agentProcessCollector struct {
 	ramMiBMax uint32
 }
 
+var LoadResourceSpec = &testbed.ResourceSpec{
+	// CPU can be spikey
+	ExpectedMaxCPU:         50,
+	ExpectedMaxRAM:         100,
+	ResourceCheckPeriod:    1 * time.Second,
+	MaxConsecutiveFailures: 0,
+}
+
 type NginxAgentProcessOption func(*agentProcessCollector)
 
 // NewNginxAgentProcessCollector creates a new OtelcolRunner as a child process on the same machine executing the test.
 func NewNginxAgentProcessCollector(options ...NginxAgentProcessOption) testbed.OtelcolRunner {
-	col := &agentProcessCollector{additionalEnv: map[string]string{}}
+	col := &agentProcessCollector{
+		additionalEnv: map[string]string{},
+		resourceSpec: LoadResourceSpec,
+	}
 
 	for _, option := range options {
 		option(col)
@@ -184,23 +194,6 @@ func (cp *agentProcessCollector) Start(params testbed.StartParams) error {
 
 	cp.name = params.Name
 	cp.doneSignal = make(chan struct{})
-
-	var resourceSpec *testbed.ResourceSpec
-	val := reflect.ValueOf(params)
-
-	// Ensure the instance is valid and is a struct
-	if val.Kind() == reflect.Struct {
-		field := val.FieldByName("resourceSpec")
-		// Check if the field exists and is a pointer
-		if field.IsValid() && field.Kind() == reflect.Ptr {
-			resourceSpec = field.Interface().(*testbed.ResourceSpec)
-		}
-	}
-	if resourceSpec == nil {
-		return fmt.Errorf("error setting resource spec")
-	} else {
-		cp.resourceSpec = resourceSpec
-	}
 
 	if cp.agentExePath == "" {
 		cp.agentExePath = testbed.GlobalConfig.DefaultAgentExeRelativeFile
@@ -314,8 +307,13 @@ func (cp *agentProcessCollector) Stop() (stopped bool, err error) {
 	return stopped, err
 }
 
+// this is not exported from resource spec so dropped here
+func (cp *agentProcessCollector) isSpecified() bool {
+	return cp.resourceSpec != nil && (cp.resourceSpec.ExpectedMaxCPU != 0 || cp.resourceSpec.ExpectedMaxRAM != 0)
+}
+
 func (cp *agentProcessCollector) WatchResourceConsumption() error {
-	if !cp.resourceSpec.isSpecified() {
+	if !cp.isSpecified() {
 		// Resource monitoring is not enabled.
 		return nil
 	}
@@ -462,7 +460,7 @@ func (cp *agentProcessCollector) checkAllowedResourceUsage() error {
 
 // GetResourceConsumption returns resource consumption as a string
 func (cp *agentProcessCollector) GetResourceConsumption() string {
-	if !cp.resourceSpec.isSpecified() {
+	if !cp.isSpecified() {
 		// Monitoring is not enabled.
 		return ""
 	}
