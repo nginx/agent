@@ -15,7 +15,7 @@ import (
 func TestGoVersion(t *testing.T) {
 	expected := "1.22.2"
 
-	actual, err := GetGoVersion(t, 2)
+	actual, err := GoVersion(t, 2)
 
 	require.NoError(t, err)
 	assert.Equal(t, expected, actual)
@@ -24,7 +24,7 @@ func TestGoVersion(t *testing.T) {
 func TestModuleVersion(t *testing.T) {
 	expected := "1.25.0"
 
-	actual, err := GetRequiredModuleVersion(t, "go.opentelemetry.io/otel/sdk", 2)
+	actual, err := RequiredModuleVersion(t, "go.opentelemetry.io/otel/sdk", 2)
 
 	require.NoError(t, err)
 	assert.Equal(t, expected, actual)

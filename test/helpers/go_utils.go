@@ -11,12 +11,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"golang.org/x/mod/modfile"
 )
 
 const goModuleFileName = "go.mod"
 
-func GetGoVersion(t testing.TB, level int) (string, error) {
+func GoVersion(t testing.TB, level int) (string, error) {
 	t.Helper()
 
 	fileName := goModuleFileName
@@ -33,7 +34,7 @@ func GetGoVersion(t testing.TB, level int) (string, error) {
 	return file.Go.Version, nil
 }
 
-func GetRequiredModuleVersion(t testing.TB, moduleName string, level int) (string, error) {
+func RequiredModuleVersion(t testing.TB, moduleName string, level int) (string, error) {
 	t.Helper()
 
 	fileName := goModuleFileName
@@ -55,6 +56,17 @@ func GetRequiredModuleVersion(t testing.TB, moduleName string, level int) (strin
 	}
 
 	return file.Go.Version, nil
+}
+
+func Env(tb testing.TB, envKey string) string {
+	tb.Helper()
+
+	envValue := os.Getenv(envKey)
+	tb.Logf("Environment variable %s is set to %s", envKey, envValue)
+
+	require.NotEmptyf(tb, envValue, "Environment variable %s should not be empty", envKey)
+
+	return envValue
 }
 
 func normalizeVersion(version string) string {
