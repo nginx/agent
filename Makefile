@@ -3,9 +3,7 @@ include Makefile.tools
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Variable Definitions                                                                                            #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-ifeq ($(VERSION),)
-	VERSION ?= $(shell git describe --match "v[0-9]*" --abbrev=0 --tags)
-endif
+VERSION ?= $(shell git describe --match "v[0-9]*" --abbrev=0 --tags)
 ifeq ($(VERSION),)
 	VERSION ?= $(shell curl https://api.github.com/repos/nginx/agent/releases/latest -s | jq .name -r)
 endif
