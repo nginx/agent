@@ -1,9 +1,9 @@
-ARG NGINX_VERSION=1.25.1-alpine
+ARG NGINX_VERSION=mainline-alpine-slim
 
 FROM nginx:${NGINX_VERSION}
 LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
-ARG NGINX_AGENT_VERSION=2.27.0
+ARG NGINX_AGENT_VERSION
 
 # Unlink symbolic links for access and error logs as the NGINX Agent 
 # requires both files to be able to monitor NGINX and provide metrics.
