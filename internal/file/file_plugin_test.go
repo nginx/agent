@@ -7,6 +7,7 @@ package file
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"testing"
@@ -62,7 +63,7 @@ func TestFilePlugin_Subscriptions(t *testing.T) {
 func TestFilePlugin_Process_NginxConfigUpdateTopic(t *testing.T) {
 	ctx := context.Background()
 
-	fileMeta := protos.GetFileMeta("/etc/nginx/nginx/conf", "")
+	fileMeta := protos.FileMeta("/etc/nginx/nginx/conf", "")
 
 	message := &model.NginxConfigContext{
 		Files: []*mpi.File{
@@ -111,41 +112,37 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 	agentConfig.AllowedDirectories = []string{tempDir}
 
 	tests := []struct {
-		name                   string
-		configApplyReturnsBool bool
-		configApplyReturnsErr  error
-		message                *mpi.ManagementPlaneRequest
+		name                  string
+		configApplyReturnsErr error
+		message               *mpi.ManagementPlaneRequest
 	}{
 		{
-			name:                   "Test 1 - Success",
-			configApplyReturnsErr:  nil,
-			configApplyReturnsBool: false,
-			message:                message,
+			name:                  "Test 1 - Success",
+			configApplyReturnsErr: nil,
+			message:               message,
 		},
 		{
-			name:                   "Test 2 - Fail, Rollback",
-			configApplyReturnsErr:  fmt.Errorf("something went wrong"),
-			configApplyReturnsBool: true,
-			message:                message,
+			name:                  "Test 2 - Fail, Rollback",
+			configApplyReturnsErr: &RollbackRequiredError{Err: fmt.Errorf("something went wrong")},
+			message:               message,
 		},
 		{
-			name:                   "Test 3 - Fail, No Rollback",
-			configApplyReturnsErr:  fmt.Errorf("something went wrong"),
-			configApplyReturnsBool: false,
-			message:                message,
+			name:                  "Test 3 - Fail, No Rollback",
+			configApplyReturnsErr: fmt.Errorf("something went wrong"),
+			message:               message,
 		},
 		{
-			name:                   "Test 4 - Fail to cast payload",
-			configApplyReturnsErr:  fmt.Errorf("something went wrong"),
-			configApplyReturnsBool: false,
-			message:                nil,
+			name:                  "Test 4 - Fail to cast payload",
+			configApplyReturnsErr: fmt.Errorf("something went wrong"),
+			message:               nil,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			var rollbackRequiredError *RollbackRequiredError
 			fakeFileManagerService := &filefakes.FakeFileManagerServiceInterface{}
-			fakeFileManagerService.ConfigApplyReturns(test.configApplyReturnsBool, test.configApplyReturnsErr)
+			fakeFileManagerService.ConfigApplyReturns(test.configApplyReturnsErr)
 			messagePipe := bus.NewFakeMessagePipe()
 			filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection)
 			err := filePlugin.Init(ctx, messagePipe)
@@ -161,7 +158,7 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 
 				_, ok := messages[0].Data.(model.ConfigApplyMessage)
 				assert.True(t, ok)
-			} else if test.configApplyReturnsBool {
+			} else if errors.As(test.configApplyReturnsErr, &rollbackRequiredError) {
 				assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
 				assert.Len(t, messages, 2)
 				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
@@ -192,7 +189,7 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic(t *testing.T) {
 	tempDir := os.TempDir()
 	testFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
 	defer helpers.RemoveFileWithErrorCheck(t, testFile.Name())
-	fileMeta := protos.GetFileMeta(testFile.Name(), "")
+	fileMeta := protos.FileMeta(testFile.Name(), "")
 
 	message := &mpi.ManagementPlaneRequest{
 		Request: &mpi.ManagementPlaneRequest_ConfigUploadRequest{
@@ -251,7 +248,7 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic(t *testing.T) {
 func TestFilePlugin_Process_ConfigUploadRequestTopic_Failure(t *testing.T) {
 	ctx := context.Background()
 
-	fileMeta := protos.GetFileMeta("/unknown/file.conf", "")
+	fileMeta := protos.FileMeta("/unknown/file.conf", "")
 
 	message := &mpi.ManagementPlaneRequest{
 		Request: &mpi.ManagementPlaneRequest_ConfigUploadRequest{

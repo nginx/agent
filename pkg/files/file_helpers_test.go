@@ -24,7 +24,7 @@ func TestGetFileMeta(t *testing.T) {
 	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
 	require.NoError(t, err)
 
-	expected := protos.GetFileMeta(file.Name(), GenerateHash([]byte("")))
+	expected := protos.FileMeta(file.Name(), GenerateHash([]byte("")))
 
 	fileMeta, err := FileMeta(file.Name())
 	require.NoError(t, err)
@@ -162,8 +162,6 @@ func TestCompareFileHash_Delete(t *testing.T) {
 	updateAction := mpi.File_FILE_ACTION_UPDATE
 	addAction := mpi.File_FILE_ACTION_ADD
 
-	// protos.GetFileMeta(deleteTestFile.Name(), GenerateHash([]byte("")))
-
 	tests := []struct {
 		name             string
 		fileOverview     *mpi.FileOverview
@@ -175,15 +173,15 @@ func TestCompareFileHash_Delete(t *testing.T) {
 			fileOverview: &mpi.FileOverview{
 				Files: []*mpi.File{
 					{
-						FileMeta: protos.GetFileMeta(deleteTestFile.Name(), GenerateHash(expectedFileContent)),
+						FileMeta: protos.FileMeta(deleteTestFile.Name(), GenerateHash(expectedFileContent)),
 						Action:   &deleteAction,
 					},
 					{
-						FileMeta: protos.GetFileMeta(updateTestFile.Name(), GenerateHash(expectedFileContent)),
+						FileMeta: protos.FileMeta(updateTestFile.Name(), GenerateHash(expectedFileContent)),
 						Action:   &updateAction,
 					},
 					{
-						FileMeta: protos.GetFileMeta(tempDir+"random/new/file", GenerateHash(expectedFileContent)),
+						FileMeta: protos.FileMeta(tempDir+"random/new/file", GenerateHash(expectedFileContent)),
 						Action:   &addAction,
 					},
 				},
@@ -198,15 +196,15 @@ func TestCompareFileHash_Delete(t *testing.T) {
 			},
 			expectedDiff: map[string]*mpi.File{
 				deleteTestFile.Name(): {
-					FileMeta: protos.GetFileMeta(deleteTestFile.Name(), GenerateHash(expectedFileContent)),
+					FileMeta: protos.FileMeta(deleteTestFile.Name(), GenerateHash(expectedFileContent)),
 					Action:   &deleteAction,
 				},
 				updateTestFile.Name(): {
-					FileMeta: protos.GetFileMeta(updateTestFile.Name(), GenerateHash(expectedFileContent)),
+					FileMeta: protos.FileMeta(updateTestFile.Name(), GenerateHash(expectedFileContent)),
 					Action:   &updateAction,
 				},
 				tempDir + "random/new/file": {
-					FileMeta: protos.GetFileMeta(tempDir+"random/new/file", GenerateHash(expectedFileContent)),
+					FileMeta: protos.FileMeta(tempDir+"random/new/file", GenerateHash(expectedFileContent)),
 					Action:   &addAction,
 				},
 			},
@@ -216,15 +214,15 @@ func TestCompareFileHash_Delete(t *testing.T) {
 			fileOverview: &mpi.FileOverview{
 				Files: []*mpi.File{
 					{
-						FileMeta: protos.GetFileMeta(tempDir+"deletedFile", GenerateHash(expectedFileContent)),
+						FileMeta: protos.FileMeta(tempDir+"deletedFile", GenerateHash(expectedFileContent)),
 						Action:   &deleteAction,
 					},
 					{
-						FileMeta: protos.GetFileMeta(updateTestFile.Name(), GenerateHash(expectedUpdateFileContent)),
+						FileMeta: protos.FileMeta(updateTestFile.Name(), GenerateHash(expectedUpdateFileContent)),
 						Action:   &updateAction,
 					},
 					{
-						FileMeta: protos.GetFileMeta(addTestFile.Name(), GenerateHash(expectedUpdateFileContent)),
+						FileMeta: protos.FileMeta(addTestFile.Name(), GenerateHash(expectedUpdateFileContent)),
 						Action:   &addAction,
 					},
 				},
@@ -235,7 +233,7 @@ func TestCompareFileHash_Delete(t *testing.T) {
 			},
 			expectedDiff: map[string]*mpi.File{
 				addTestFile.Name(): {
-					FileMeta: protos.GetFileMeta(addTestFile.Name(), GenerateHash(expectedUpdateFileContent)),
+					FileMeta: protos.FileMeta(addTestFile.Name(), GenerateHash(expectedUpdateFileContent)),
 					Action:   &updateAction,
 				},
 			},

@@ -10,7 +10,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func GetFileMeta(fileName, fileHash string) *mpi.FileMeta {
+func FileMeta(fileName, fileHash string) *mpi.FileMeta {
 	lastModified, _ := CreateProtoTime("2024-01-09T13:22:21Z")
 
 	return &mpi.FileMeta{
@@ -39,7 +39,7 @@ func FileOverview(filePath, fileHash string, action *mpi.File_FileAction) *mpi.F
 	}
 }
 
-func GetFileContents(content []byte) *mpi.FileContents {
+func FileContents(content []byte) *mpi.FileContents {
 	return &mpi.FileContents{
 		Contents: content,
 	}

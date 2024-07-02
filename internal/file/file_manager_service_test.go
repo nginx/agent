@@ -26,7 +26,7 @@ import (
 func TestFileManagerService_UpdateOverview(t *testing.T) {
 	ctx := context.Background()
 
-	fileMeta := protos.GetFileMeta("/etc/nginx/nginx.conf", "")
+	fileMeta := protos.FileMeta("/etc/nginx/nginx.conf", "")
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
@@ -49,7 +49,7 @@ func TestFileManagerService_UpdateFile(t *testing.T) {
 	testFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
 	defer helpers.RemoveFileWithErrorCheck(t, testFile.Name())
 
-	fileMeta := protos.GetFileMeta(testFile.Name(), "")
+	fileMeta := protos.FileMeta(testFile.Name(), "")
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
@@ -87,12 +87,11 @@ func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig)
 
 	request := protos.CreateConfigApplyRequest(overview)
-	rollbackRequired, err := fileManagerService.ConfigApply(ctx, request)
+	err := fileManagerService.ConfigApply(ctx, request)
 	require.NoError(t, err)
 	data, readErr := os.ReadFile(filePath)
 	require.NoError(t, readErr)
 	assert.Equal(t, fileContent, data)
-	assert.False(t, rollbackRequired)
 	assert.Equal(t, fileManagerService.filesCache[filePath], overview.GetFiles()[0])
 }
 
@@ -126,11 +125,10 @@ func TestFileManagerService_ConfigApply_Update(t *testing.T) {
 
 	request := protos.CreateConfigApplyRequest(overview)
 
-	rollbackRequired, err := fileManagerService.ConfigApply(ctx, request)
+	err := fileManagerService.ConfigApply(ctx, request)
 	require.NoError(t, err)
 	data, readErr := os.ReadFile(tempFile.Name())
 	require.NoError(t, readErr)
-	assert.False(t, rollbackRequired)
 	assert.Equal(t, fileContent, data)
 	assert.Equal(t, fileManagerService.fileContentsCache[tempFile.Name()], previousFileContent)
 	assert.Equal(t, fileManagerService.filesCache[tempFile.Name()], overview.GetFiles()[0])
@@ -155,9 +153,8 @@ func TestFileManagerService_ConfigApply_Delete(t *testing.T) {
 
 	request := protos.CreateConfigApplyRequest(overview)
 
-	rollbackRequired, err := fileManagerService.ConfigApply(ctx, request)
+	err := fileManagerService.ConfigApply(ctx, request)
 	require.NoError(t, err)
-	assert.False(t, rollbackRequired)
 	assert.NoFileExists(t, tempFile.Name())
 	assert.Equal(t, fileManagerService.fileContentsCache[tempFile.Name()], fileContent)
 	assert.Equal(t, fileManagerService.filesCache[tempFile.Name()], overview.GetFiles()[0])

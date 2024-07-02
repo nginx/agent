@@ -30,7 +30,7 @@ func TestFileOperator_Write(t *testing.T) {
 	defer helpers.RemoveFileWithErrorCheck(t, filePath)
 	fileOp := NewFileOperator()
 
-	fileMeta := protos.GetFileMeta(filePath, files.GenerateHash(fileContent))
+	fileMeta := protos.FileMeta(filePath, files.GenerateHash(fileContent))
 
 	writeErr := fileOp.Write(ctx, fileContent, fileMeta)
 	require.NoError(t, writeErr)

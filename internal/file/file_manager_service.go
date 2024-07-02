@@ -36,9 +36,13 @@ type (
 		Write(ctx context.Context, fileContent []byte, file *mpi.FileMeta) error
 	}
 
+	RollbackRequiredError struct {
+		Err error
+	}
+
 	fileManagerServiceInterface interface {
 		UpdateOverview(ctx context.Context, instanceID string, filesToUpdate []*mpi.File) error
-		ConfigApply(ctx context.Context, configApplyRequest *mpi.ConfigApplyRequest) (rollbackRequired bool, err error)
+		ConfigApply(ctx context.Context, configApplyRequest *mpi.ConfigApplyRequest) (err error)
 		Rollback(ctx context.Context, instanceID string) error
 		UpdateFile(ctx context.Context, instanceID string, fileToUpdate *mpi.File) error
 		ClearCache()
@@ -67,6 +71,10 @@ func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig 
 		fileContentsCache: make(map[string][]byte),
 		isConnected:       isConnected,
 	}
+}
+
+func (r *RollbackRequiredError) Error() string {
+	return fmt.Sprintf("rollback required: %v", r.Err)
 }
 
 func (fms *FileManagerService) UpdateOverview(
@@ -191,21 +199,21 @@ func (fms *FileManagerService) SetIsConnected(isConnected bool) {
 
 func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	configApplyRequest *mpi.ConfigApplyRequest,
-) (rollbackRequired bool, err error) {
+) (err error) {
 	fileOverview := configApplyRequest.GetOverview()
 
 	if fileOverview == nil {
-		return false, fmt.Errorf("fileOverview is nil")
+		return fmt.Errorf("fileOverview is nil")
 	}
 
 	allowedErr := fms.checkAllowedDirectory(fileOverview.GetFiles())
 	if allowedErr != nil {
-		return false, allowedErr
+		return allowedErr
 	}
 
 	diffFiles, fileContent, compareErr := files.CompareFileHash(fileOverview)
 	if compareErr != nil {
-		return false, compareErr
+		return compareErr
 	}
 
 	fms.fileContentsCache = fileContent
@@ -213,10 +221,10 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 
 	fileErr := fms.executeFileActions(ctx)
 	if fileErr != nil {
-		return true, fileErr
+		return &RollbackRequiredError{Err: fileErr}
 	}
 
-	return false, nil
+	return nil
 }
 
 func (fms *FileManagerService) ClearCache() {
