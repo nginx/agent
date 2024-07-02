@@ -22,5 +22,6 @@ func OKDataPlaneResponse() *mpi.DataPlaneResponse {
 			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
 			Message: "Success",
 		},
+		InstanceId: ossInstanceID,
 	}
 }

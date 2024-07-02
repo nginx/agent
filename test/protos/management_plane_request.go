@@ -5,18 +5,17 @@
 
 package protos
 
-import "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+import mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 
-func CreateManagementPlaneRequestConfigApplyRequest() *v1.ManagementPlaneRequest_ConfigApplyRequest {
-	return &v1.ManagementPlaneRequest_ConfigApplyRequest{
-		ConfigApplyRequest: &v1.ConfigApplyRequest{
-			ConfigVersion: CreateConfigVersion(),
-		},
+func CreateConfigApplyRequest(overview *mpi.FileOverview) *mpi.ConfigApplyRequest {
+	return &mpi.ConfigApplyRequest{
+		Overview:      overview,
+		ConfigVersion: CreateConfigVersion(),
 	}
 }
 
-func CreateManagementPlaneRequest() *v1.ManagementPlaneRequest {
-	return &v1.ManagementPlaneRequest{
+func CreateManagementPlaneRequest() *mpi.ManagementPlaneRequest {
+	return &mpi.ManagementPlaneRequest{
 		MessageMeta: CreateMessageMeta(),
 	}
 }

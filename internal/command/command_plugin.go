@@ -134,7 +134,9 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 
 			switch message.GetRequest().(type) {
 			case *mpi.ManagementPlaneRequest_ConfigUploadRequest:
-				cp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigUploadRequestTopic, Data: message})
+				cp.messagePipe.Process(newCtx, &bus.Message{Topic: bus.ConfigUploadRequestTopic, Data: message})
+			case *mpi.ManagementPlaneRequest_ConfigApplyRequest:
+				cp.messagePipe.Process(newCtx, &bus.Message{Topic: bus.ConfigApplyRequestTopic, Data: message})
 			default:
 				slog.DebugContext(newCtx, "Management plane request not implemented yet")
 			}

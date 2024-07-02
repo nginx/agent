@@ -9,6 +9,8 @@ import (
 	"context"
 	"log/slog"
 
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+
 	"github.com/nginx/agent/v3/internal/watcher/health"
 	"github.com/nginx/agent/v3/internal/watcher/instance"
 
@@ -17,17 +19,29 @@ import (
 	"github.com/nginx/agent/v3/internal/logger"
 )
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//counterfeiter:generate . instanceWatcherServiceInterface
+
 // nolint
 type (
 	Watcher struct {
 		messagePipe               bus.MessagePipeInterface
 		agentConfig               *config.Config
-		instanceWatcherService    *instance.InstanceWatcherService
+		instanceWatcherService    instanceWatcherServiceInterface
 		healthWatcherService      *health.HealthWatcherService
 		instanceUpdatesChannel    chan instance.InstanceUpdatesMessage
 		nginxConfigContextChannel chan instance.NginxConfigContextMessage
 		instanceHealthChannel     chan health.InstanceHealthMessage
 		cancel                    context.CancelFunc
+	}
+
+	instanceWatcherServiceInterface interface {
+		Watch(
+			ctx context.Context,
+			instancesChannel chan<- instance.InstanceUpdatesMessage,
+			nginxConfigContextChannel chan<- instance.NginxConfigContextMessage,
+		)
+		ReparseConfig(ctx context.Context, instance *mpi.Instance)
 	}
 )
 
@@ -76,10 +90,24 @@ func (*Watcher) Info() *bus.Info {
 	}
 }
 
-func (*Watcher) Process(_ context.Context, _ *bus.Message) {}
+func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
+	switch msg.Topic {
+	case bus.ConfigApplySuccessfulTopic:
+		data, ok := msg.Data.(*mpi.Instance)
+		if !ok {
+			slog.ErrorContext(ctx, "Unable to cast message payload to Instance", "payload", msg.Data)
+			return
+		}
+		w.instanceWatcherService.ReparseConfig(ctx, data)
+	default:
+		slog.DebugContext(ctx, "Watcher plugin unknown topic", "topic", msg.Topic)
+	}
+}
 
 func (*Watcher) Subscriptions() []string {
-	return []string{}
+	return []string{
+		bus.ConfigApplySuccessfulTopic,
+	}
 }
 
 func (w *Watcher) monitorWatchers(ctx context.Context) {
