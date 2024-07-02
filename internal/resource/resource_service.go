@@ -7,9 +7,7 @@ package resource
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"log/slog"
 	"sync"
 
 	"github.com/nginx/agent/v3/internal/config"
@@ -21,6 +19,13 @@ import (
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . resourceServiceInterface
+
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//counterfeiter:generate . logTailerOperator
+
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//counterfeiter:generate . instanceOperator
+
 type resourceServiceInterface interface {
 	AddInstances(instanceList []*mpi.Instance) *mpi.Resource
 	UpdateInstances(instanceList []*mpi.Instance) *mpi.Resource
@@ -46,7 +51,6 @@ type ResourceService struct {
 	resourceMutex     sync.Mutex
 	operatorsMutex    sync.Mutex
 	instanceOperators map[string]instanceOperator // key is instance ID
-	logTailer         logTailerOperator
 	agentConfig       *config.Config
 }
 
@@ -57,7 +61,6 @@ func NewResourceService(ctx context.Context, agentConfig *config.Config) *Resour
 		info:              host.NewInfo(),
 		operatorsMutex:    sync.Mutex{},
 		instanceOperators: make(map[string]instanceOperator),
-		logTailer:         NewLogTailerOperator(agentConfig),
 		agentConfig:       agentConfig,
 	}
 
@@ -89,7 +92,7 @@ func (r *ResourceService) AddOperator(instanceList []*mpi.Instance) {
 	r.operatorsMutex.Lock()
 	defer r.operatorsMutex.Unlock()
 	for _, instance := range instanceList {
-		r.instanceOperators[instance.GetInstanceMeta().GetInstanceId()] = NewInstanceOperator()
+		r.instanceOperators[instance.GetInstanceMeta().GetInstanceId()] = NewInstanceOperator(r.agentConfig)
 	}
 }
 
@@ -136,7 +139,6 @@ func (r *ResourceService) DeleteInstances(instanceList []*mpi.Instance) *mpi.Res
 
 func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) error {
 	var instance *mpi.Instance
-	var errorsFound error
 	operator := r.instanceOperators[instanceID]
 
 	for _, resourceInstance := range r.resource.GetInstances() {
@@ -155,51 +157,7 @@ func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) er
 		return fmt.Errorf("failed to reload NGINX %w", reloadErr)
 	}
 
-	errorLogs := r.errorLogs(instance)
-
-	logErrorChannel := make(chan error, len(errorLogs))
-	defer close(logErrorChannel)
-
-	go r.monitorLogs(ctx, errorLogs, logErrorChannel)
-
-	numberOfExpectedMessages := len(errorLogs)
-
-	for i := 0; i < numberOfExpectedMessages; i++ {
-		err := <-logErrorChannel
-		slog.DebugContext(ctx, "Message received in logErrorChannel", "error", err)
-		if err != nil {
-			errorsFound = errors.Join(errorsFound, err)
-		}
-	}
-
-	slog.InfoContext(ctx, "Finished monitoring post reload")
-
-	if errorsFound != nil {
-		return errorsFound
-	}
-
 	return nil
-}
-
-func (r *ResourceService) errorLogs(instance *mpi.Instance) (errorLogs []string) {
-	if instance.GetInstanceMeta().GetInstanceType() == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
-		errorLogs = instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo().GetErrorLogs()
-	} else if instance.GetInstanceMeta().GetInstanceType() == mpi.InstanceMeta_INSTANCE_TYPE_NGINX {
-		errorLogs = instance.GetInstanceRuntime().GetNginxRuntimeInfo().GetErrorLogs()
-	}
-
-	return errorLogs
-}
-
-func (r *ResourceService) monitorLogs(ctx context.Context, errorLogs []string, errorChannel chan error) {
-	if len(errorLogs) == 0 {
-		slog.InfoContext(ctx, "No NGINX error logs found to monitor")
-		return
-	}
-
-	for _, errorLog := range errorLogs {
-		go r.logTailer.Tail(ctx, errorLog, errorChannel)
-	}
 }
 
 func (r *ResourceService) updateResourceInfo(ctx context.Context) {

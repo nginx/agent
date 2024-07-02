@@ -6,18 +6,11 @@
 package resource
 
 import (
-	"bytes"
 	"context"
-	"errors"
 	"fmt"
-	"sync"
 	"testing"
-	"time"
 
-	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
-	"github.com/nginx/agent/v3/test/helpers"
-	"github.com/stretchr/testify/require"
-
+	"github.com/nginx/agent/v3/internal/resource/resourcefakes"
 	"github.com/nginx/agent/v3/test/types"
 
 	"github.com/nginx/agent/v3/internal/datasource/host/hostfakes"
@@ -199,115 +192,56 @@ func TestResourceService_GetResource(t *testing.T) {
 	}
 }
 
-func TestResourceService_Apply(t *testing.T) {
+func TestResourceService_ApplyConfig(t *testing.T) {
 	ctx := context.Background()
 
-	errorLogFile := helpers.CreateFileWithErrorCheck(t, t.TempDir(), "error.log")
-	defer helpers.RemoveFileWithErrorCheck(t, errorLogFile.Name())
-
 	tests := []struct {
-		name             string
-		out              *bytes.Buffer
-		errorLogs        string
-		errorLogContents string
-		killErr          error
-		cmdError         error
-		expected         error
+		name        string
+		reloadErr   error
+		validateErr error
+		expected    error
 	}{
 		{
-			name:             "Test 1: Successful reload",
-			out:              bytes.NewBufferString(""),
-			errorLogs:        errorLogFile.Name(),
-			errorLogContents: "",
-			killErr:          nil,
-			cmdError:         nil,
-			expected:         nil,
+			name:        "Test 1: Successful reload",
+			reloadErr:   nil,
+			validateErr: nil,
+			expected:    nil,
 		},
 		{
-			name:             "Test 2: Successful reload - unknown error log location",
-			out:              bytes.NewBufferString(""),
-			errorLogs:        errorLogFile.Name(),
-			errorLogContents: "",
-			killErr:          nil,
-			cmdError:         nil,
-			expected:         nil,
+			name:        "Test 2: Failed reload",
+			reloadErr:   fmt.Errorf("something went wrong"),
+			validateErr: nil,
+			expected:    fmt.Errorf("failed to reload NGINX %w", fmt.Errorf("something went wrong")),
 		},
 		{
-			name:     "Test 3: Successful reload - no error logs",
-			out:      bytes.NewBufferString(""),
-			killErr:  nil,
-			cmdError: nil,
-			expected: nil,
-		},
-		{
-			name:     "Test 4: Failed reload",
-			out:      bytes.NewBufferString(""),
-			killErr:  errors.New("error reloading"),
-			cmdError: nil,
-			expected: fmt.Errorf("failed to reload NGINX %w", errors.New("error reloading")),
-		},
-		{
-			name:             "Test 5: Failed reload due to error in error logs",
-			out:              bytes.NewBufferString(""),
-			errorLogs:        errorLogFile.Name(),
-			errorLogContents: errorLogLine,
-			cmdError:         nil,
-			killErr:          nil,
-			expected:         errors.Join(fmt.Errorf(errorLogLine)),
-		},
-		{
-			name:             "Test 6: Failed validating config",
-			out:              bytes.NewBufferString("nginx [emerg]"),
-			errorLogs:        errorLogFile.Name(),
-			errorLogContents: "",
-			cmdError:         nil,
-			killErr:          nil,
-			expected: fmt.Errorf("failed validating config %w",
-				errors.New("error running nginx -t -c:\nnginx [emerg]")),
+			name:        "Test 3: Failed validate",
+			reloadErr:   nil,
+			validateErr: fmt.Errorf("something went wrong"),
+			expected:    fmt.Errorf("failed validating config %w", fmt.Errorf("something went wrong")),
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			mockExec := &execfakes.FakeExecInterface{}
-			mockExec.KillProcessReturns(test.killErr)
-			mockExec.RunCmdReturns(test.out, test.cmdError)
+		t.Run(test.name, func(tt *testing.T) {
+			instanceOp := &resourcefakes.FakeInstanceOperator{}
 
-			instanceOp := NewInstanceOperator()
-			instanceOp.executer = mockExec
-
-			logTailOperator := NewLogTailerOperator(types.AgentConfig())
+			instanceOp.ReloadReturns(test.reloadErr)
+			instanceOp.ValidateReturns(test.validateErr)
 
 			resourceService := NewResourceService(ctx, types.AgentConfig())
 			resourceOpMap := make(map[string]instanceOperator)
 			resourceOpMap[protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()] = instanceOp
 			resourceService.instanceOperators = resourceOpMap
+
 			instance := protos.GetNginxOssInstance([]string{})
-			instance.GetInstanceRuntime().GetNginxRuntimeInfo().ErrorLogs = []string{test.errorLogs}
 			instances := []*v1.Instance{
 				instance,
 			}
 			resourceService.resource.Instances = instances
 
-			resourceService.logTailer = logTailOperator
-
-			var wg sync.WaitGroup
-			wg.Add(1)
-			go func(expected error) {
-				defer wg.Done()
-				reloadError := resourceService.ApplyConfig(ctx,
-					protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId())
-				assert.Equal(t, expected, reloadError)
-			}(test.expected)
-
-			time.Sleep(200 * time.Millisecond)
-
-			if test.errorLogContents != "" {
-				_, err := errorLogFile.WriteString(test.errorLogContents)
-				require.NoError(t, err, "Error writing data to error log file")
-			}
-
-			wg.Wait()
+			reloadError := resourceService.ApplyConfig(ctx,
+				protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId())
+			assert.Equal(t, test.expected, reloadError)
 		})
 	}
 }

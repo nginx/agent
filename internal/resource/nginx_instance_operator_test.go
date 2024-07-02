@@ -10,12 +10,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/protos"
+	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestInstanceOperator_ValidateConfigCheckResponse(t *testing.T) {
@@ -38,7 +42,7 @@ func TestInstanceOperator_ValidateConfigCheckResponse(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			operator := NewInstanceOperator()
+			operator := NewInstanceOperator(types.AgentConfig())
 
 			err := operator.validateConfigCheckResponse([]byte(test.out))
 			assert.Equal(t, test.expected, err)
@@ -82,7 +86,7 @@ func TestInstanceOperator_Validate(t *testing.T) {
 
 			instance := protos.GetNginxOssInstance([]string{})
 
-			operator := NewInstanceOperator()
+			operator := NewInstanceOperator(types.AgentConfig())
 			operator.executer = mockExec
 
 			err := operator.Validate(ctx, instance)
@@ -122,11 +126,78 @@ func TestInstanceOperator_Reload(t *testing.T) {
 
 			instance := protos.GetNginxOssInstance([]string{})
 
-			operator := NewInstanceOperator()
+			operator := NewInstanceOperator(types.AgentConfig())
 			operator.executer = mockExec
 
 			err := operator.Reload(ctx, instance)
 			assert.Equal(t, test.expected, err)
+		})
+	}
+}
+
+func TestInstanceOperator_ReloadAndMonitor(t *testing.T) {
+	ctx := context.Background()
+
+	errorLogFile := helpers.CreateFileWithErrorCheck(t, t.TempDir(), "error.log")
+	defer helpers.RemoveFileWithErrorCheck(t, errorLogFile.Name())
+
+	tests := []struct {
+		name            string
+		errorLogs       string
+		errorLogContent string
+		expectedErr     error
+	}{
+		{
+			name:            "Test 1: Successful reload",
+			errorLogs:       errorLogFile.Name(),
+			errorLogContent: "",
+			expectedErr:     nil,
+		},
+		{
+			name:            "Test 2: Failed reload - error in logs",
+			errorLogs:       errorLogFile.Name(),
+			errorLogContent: errorLogLine,
+			expectedErr:     errors.Join(fmt.Errorf(errorLogLine)),
+		},
+		{
+			name:            "Test 3: Successful reload - no error log",
+			errorLogs:       "",
+			errorLogContent: "",
+			expectedErr:     nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			mockExec := &execfakes.FakeExecInterface{}
+			mockExec.KillProcessReturns(nil)
+
+			instance := protos.GetNginxOssInstance([]string{})
+			if test.errorLogs != "" {
+				instance.GetInstanceRuntime().GetNginxRuntimeInfo().ErrorLogs = []string{test.errorLogs}
+			}
+
+			agentConfig := types.AgentConfig()
+			agentConfig.DataPlaneConfig.Nginx.ReloadMonitoringPeriod = 10 * time.Second
+			operator := NewInstanceOperator(types.AgentConfig())
+			operator.executer = mockExec
+
+			var wg sync.WaitGroup
+			wg.Add(1)
+			go func(expected error) {
+				defer wg.Done()
+				reloadError := operator.Reload(ctx, instance)
+				assert.Equal(tt, expected, reloadError)
+			}(test.expectedErr)
+
+			time.Sleep(200 * time.Millisecond)
+
+			if test.errorLogContent != "" {
+				_, err := errorLogFile.WriteString(test.errorLogContent)
+				require.NoError(tt, err, "Error writing data to error log file")
+			}
+
+			wg.Wait()
 		})
 	}
 }
