@@ -57,6 +57,8 @@ func (fp *FilePlugin) Info() *bus.Info {
 
 func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
+	case bus.ConnectionCreatedTopic:
+		fp.fileManagerService.SetIsConnected(true)
 	case bus.NginxConfigUpdateTopic:
 		fp.handleNginxConfigUpdate(ctx, msg)
 	case bus.ConfigUploadRequestTopic:
@@ -68,6 +70,7 @@ func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 
 func (fp *FilePlugin) Subscriptions() []string {
 	return []string{
+		bus.ConnectionCreatedTopic,
 		bus.NginxConfigUpdateTopic,
 		bus.ConfigUploadRequestTopic,
 	}
@@ -91,10 +94,18 @@ func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 }
 
 func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Message) {
-	configUploadRequest, ok := msg.Data.(*mpi.ConfigUploadRequest)
+	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ConfigUploadRequest", "payload", msg.Data)
+		slog.ErrorContext(
+			ctx,
+			"Unable to cast message payload to *mpi.ManagementPlaneRequest",
+			"payload", msg.Data,
+		)
+
+		return
 	}
+
+	configUploadRequest := managementPlaneRequest.GetConfigUploadRequest()
 
 	correlationID := logger.GetCorrelationID(ctx)
 

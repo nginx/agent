@@ -23,8 +23,9 @@ var _ bus.Plugin = (*CommandPlugin)(nil)
 
 type (
 	commandService interface {
-		UpdateDataPlaneStatus(ctx context.Context, resource *mpi.Resource) error
+		UpdateDataPlaneStatus(ctx context.Context, resource *mpi.Resource) (*mpi.CreateConnectionResponse, error)
 		UpdateDataPlaneHealth(ctx context.Context, instanceHealths []*mpi.InstanceHealth) error
+		SendDataPlaneResponse(ctx context.Context, response *mpi.DataPlaneResponse) error
 		CancelSubscription(ctx context.Context)
 	}
 
@@ -67,25 +68,46 @@ func (cp *CommandPlugin) Info() *bus.Info {
 	}
 }
 
-// nolint: revive
 func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
 	case bus.ResourceUpdateTopic:
-		if resource, ok := msg.Data.(*mpi.Resource); ok {
-			err := cp.commandService.UpdateDataPlaneStatus(ctx, resource)
-			if err != nil {
-				slog.ErrorContext(ctx, "Unable to update data plane status", "error", err)
-			}
-		}
+		cp.processResourceUpdate(ctx, msg)
 	case bus.InstanceHealthTopic:
-		if instances, ok := msg.Data.([]*mpi.InstanceHealth); ok {
-			err := cp.commandService.UpdateDataPlaneHealth(ctx, instances)
-			if err != nil {
-				slog.ErrorContext(ctx, "Unable to update data plane health", "error", err)
-			}
-		}
+		cp.processInstanceHealth(ctx, msg)
+	case bus.DataPlaneResponseTopic:
+		cp.processDataPlaneResponse(ctx, msg)
 	default:
 		slog.DebugContext(ctx, "Command plugin unknown topic", "topic", msg.Topic)
+	}
+}
+
+func (cp *CommandPlugin) processResourceUpdate(ctx context.Context, msg *bus.Message) {
+	if resource, ok := msg.Data.(*mpi.Resource); ok {
+		createConnectionResponse, err := cp.commandService.UpdateDataPlaneStatus(ctx, resource)
+		if err != nil {
+			slog.ErrorContext(ctx, "Unable to update data plane status", "error", err)
+		}
+		if createConnectionResponse != nil {
+			cp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConnectionCreatedTopic, Data: createConnectionResponse})
+		}
+	}
+}
+
+func (cp *CommandPlugin) processInstanceHealth(ctx context.Context, msg *bus.Message) {
+	if instances, ok := msg.Data.([]*mpi.InstanceHealth); ok {
+		err := cp.commandService.UpdateDataPlaneHealth(ctx, instances)
+		if err != nil {
+			slog.ErrorContext(ctx, "Unable to update data plane health", "error", err)
+		}
+	}
+}
+
+func (cp *CommandPlugin) processDataPlaneResponse(ctx context.Context, msg *bus.Message) {
+	if response, ok := msg.Data.(*mpi.DataPlaneResponse); ok {
+		err := cp.commandService.SendDataPlaneResponse(ctx, response)
+		if err != nil {
+			slog.ErrorContext(ctx, "Unable to send data plane response", "error", err)
+		}
 	}
 }
 
@@ -93,6 +115,7 @@ func (cp *CommandPlugin) Subscriptions() []string {
 	return []string{
 		bus.ResourceUpdateTopic,
 		bus.InstanceHealthTopic,
+		bus.DataPlaneResponseTopic,
 	}
 }
 
@@ -108,6 +131,13 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 				slog.Any(logger.CorrelationIDKey, message.GetMessageMeta().GetCorrelationId()),
 			)
 			slog.DebugContext(newCtx, "Received management plane request", "request", message)
+
+			switch message.GetRequest().(type) {
+			case *mpi.ManagementPlaneRequest_ConfigUploadRequest:
+				cp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigUploadRequestTopic, Data: message})
+			default:
+				slog.DebugContext(newCtx, "Management plane request not implemented yet")
+			}
 		}
 	}
 }

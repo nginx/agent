@@ -14,6 +14,18 @@ type FakeCommandService struct {
 	cancelSubscriptionArgsForCall []struct {
 		arg1 context.Context
 	}
+	SendDataPlaneResponseStub        func(context.Context, *v1.DataPlaneResponse) error
+	sendDataPlaneResponseMutex       sync.RWMutex
+	sendDataPlaneResponseArgsForCall []struct {
+		arg1 context.Context
+		arg2 *v1.DataPlaneResponse
+	}
+	sendDataPlaneResponseReturns struct {
+		result1 error
+	}
+	sendDataPlaneResponseReturnsOnCall map[int]struct {
+		result1 error
+	}
 	UpdateDataPlaneHealthStub        func(context.Context, []*v1.InstanceHealth) error
 	updateDataPlaneHealthMutex       sync.RWMutex
 	updateDataPlaneHealthArgsForCall []struct {
@@ -26,17 +38,19 @@ type FakeCommandService struct {
 	updateDataPlaneHealthReturnsOnCall map[int]struct {
 		result1 error
 	}
-	UpdateDataPlaneStatusStub        func(context.Context, *v1.Resource) error
+	UpdateDataPlaneStatusStub        func(context.Context, *v1.Resource) (*v1.CreateConnectionResponse, error)
 	updateDataPlaneStatusMutex       sync.RWMutex
 	updateDataPlaneStatusArgsForCall []struct {
 		arg1 context.Context
 		arg2 *v1.Resource
 	}
 	updateDataPlaneStatusReturns struct {
-		result1 error
+		result1 *v1.CreateConnectionResponse
+		result2 error
 	}
 	updateDataPlaneStatusReturnsOnCall map[int]struct {
-		result1 error
+		result1 *v1.CreateConnectionResponse
+		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
@@ -72,6 +86,68 @@ func (fake *FakeCommandService) CancelSubscriptionArgsForCall(i int) context.Con
 	defer fake.cancelSubscriptionMutex.RUnlock()
 	argsForCall := fake.cancelSubscriptionArgsForCall[i]
 	return argsForCall.arg1
+}
+
+func (fake *FakeCommandService) SendDataPlaneResponse(arg1 context.Context, arg2 *v1.DataPlaneResponse) error {
+	fake.sendDataPlaneResponseMutex.Lock()
+	ret, specificReturn := fake.sendDataPlaneResponseReturnsOnCall[len(fake.sendDataPlaneResponseArgsForCall)]
+	fake.sendDataPlaneResponseArgsForCall = append(fake.sendDataPlaneResponseArgsForCall, struct {
+		arg1 context.Context
+		arg2 *v1.DataPlaneResponse
+	}{arg1, arg2})
+	stub := fake.SendDataPlaneResponseStub
+	fakeReturns := fake.sendDataPlaneResponseReturns
+	fake.recordInvocation("SendDataPlaneResponse", []interface{}{arg1, arg2})
+	fake.sendDataPlaneResponseMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeCommandService) SendDataPlaneResponseCallCount() int {
+	fake.sendDataPlaneResponseMutex.RLock()
+	defer fake.sendDataPlaneResponseMutex.RUnlock()
+	return len(fake.sendDataPlaneResponseArgsForCall)
+}
+
+func (fake *FakeCommandService) SendDataPlaneResponseCalls(stub func(context.Context, *v1.DataPlaneResponse) error) {
+	fake.sendDataPlaneResponseMutex.Lock()
+	defer fake.sendDataPlaneResponseMutex.Unlock()
+	fake.SendDataPlaneResponseStub = stub
+}
+
+func (fake *FakeCommandService) SendDataPlaneResponseArgsForCall(i int) (context.Context, *v1.DataPlaneResponse) {
+	fake.sendDataPlaneResponseMutex.RLock()
+	defer fake.sendDataPlaneResponseMutex.RUnlock()
+	argsForCall := fake.sendDataPlaneResponseArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeCommandService) SendDataPlaneResponseReturns(result1 error) {
+	fake.sendDataPlaneResponseMutex.Lock()
+	defer fake.sendDataPlaneResponseMutex.Unlock()
+	fake.SendDataPlaneResponseStub = nil
+	fake.sendDataPlaneResponseReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeCommandService) SendDataPlaneResponseReturnsOnCall(i int, result1 error) {
+	fake.sendDataPlaneResponseMutex.Lock()
+	defer fake.sendDataPlaneResponseMutex.Unlock()
+	fake.SendDataPlaneResponseStub = nil
+	if fake.sendDataPlaneResponseReturnsOnCall == nil {
+		fake.sendDataPlaneResponseReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.sendDataPlaneResponseReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
 }
 
 func (fake *FakeCommandService) UpdateDataPlaneHealth(arg1 context.Context, arg2 []*v1.InstanceHealth) error {
@@ -141,7 +217,7 @@ func (fake *FakeCommandService) UpdateDataPlaneHealthReturnsOnCall(i int, result
 	}{result1}
 }
 
-func (fake *FakeCommandService) UpdateDataPlaneStatus(arg1 context.Context, arg2 *v1.Resource) error {
+func (fake *FakeCommandService) UpdateDataPlaneStatus(arg1 context.Context, arg2 *v1.Resource) (*v1.CreateConnectionResponse, error) {
 	fake.updateDataPlaneStatusMutex.Lock()
 	ret, specificReturn := fake.updateDataPlaneStatusReturnsOnCall[len(fake.updateDataPlaneStatusArgsForCall)]
 	fake.updateDataPlaneStatusArgsForCall = append(fake.updateDataPlaneStatusArgsForCall, struct {
@@ -156,9 +232,9 @@ func (fake *FakeCommandService) UpdateDataPlaneStatus(arg1 context.Context, arg2
 		return stub(arg1, arg2)
 	}
 	if specificReturn {
-		return ret.result1
+		return ret.result1, ret.result2
 	}
-	return fakeReturns.result1
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FakeCommandService) UpdateDataPlaneStatusCallCount() int {
@@ -167,7 +243,7 @@ func (fake *FakeCommandService) UpdateDataPlaneStatusCallCount() int {
 	return len(fake.updateDataPlaneStatusArgsForCall)
 }
 
-func (fake *FakeCommandService) UpdateDataPlaneStatusCalls(stub func(context.Context, *v1.Resource) error) {
+func (fake *FakeCommandService) UpdateDataPlaneStatusCalls(stub func(context.Context, *v1.Resource) (*v1.CreateConnectionResponse, error)) {
 	fake.updateDataPlaneStatusMutex.Lock()
 	defer fake.updateDataPlaneStatusMutex.Unlock()
 	fake.UpdateDataPlaneStatusStub = stub
@@ -180,27 +256,30 @@ func (fake *FakeCommandService) UpdateDataPlaneStatusArgsForCall(i int) (context
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeCommandService) UpdateDataPlaneStatusReturns(result1 error) {
+func (fake *FakeCommandService) UpdateDataPlaneStatusReturns(result1 *v1.CreateConnectionResponse, result2 error) {
 	fake.updateDataPlaneStatusMutex.Lock()
 	defer fake.updateDataPlaneStatusMutex.Unlock()
 	fake.UpdateDataPlaneStatusStub = nil
 	fake.updateDataPlaneStatusReturns = struct {
-		result1 error
-	}{result1}
+		result1 *v1.CreateConnectionResponse
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *FakeCommandService) UpdateDataPlaneStatusReturnsOnCall(i int, result1 error) {
+func (fake *FakeCommandService) UpdateDataPlaneStatusReturnsOnCall(i int, result1 *v1.CreateConnectionResponse, result2 error) {
 	fake.updateDataPlaneStatusMutex.Lock()
 	defer fake.updateDataPlaneStatusMutex.Unlock()
 	fake.UpdateDataPlaneStatusStub = nil
 	if fake.updateDataPlaneStatusReturnsOnCall == nil {
 		fake.updateDataPlaneStatusReturnsOnCall = make(map[int]struct {
-			result1 error
+			result1 *v1.CreateConnectionResponse
+			result2 error
 		})
 	}
 	fake.updateDataPlaneStatusReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
+		result1 *v1.CreateConnectionResponse
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeCommandService) Invocations() map[string][][]interface{} {
@@ -208,6 +287,8 @@ func (fake *FakeCommandService) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.cancelSubscriptionMutex.RLock()
 	defer fake.cancelSubscriptionMutex.RUnlock()
+	fake.sendDataPlaneResponseMutex.RLock()
+	defer fake.sendDataPlaneResponseMutex.RUnlock()
 	fake.updateDataPlaneHealthMutex.RLock()
 	defer fake.updateDataPlaneHealthMutex.RUnlock()
 	fake.updateDataPlaneStatusMutex.RLock()

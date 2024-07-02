@@ -219,3 +219,91 @@ func TestInstanceWatcherService_updateNginxInstanceRuntime(t *testing.T) {
 		})
 	}
 }
+
+func TestInstanceWatcherService_areInstancesEqual(t *testing.T) {
+	tests := []struct {
+		name           string
+		oldRuntime     *mpi.InstanceRuntime
+		currentRuntime *mpi.InstanceRuntime
+		expected       bool
+	}{
+		{
+			name: "Test 1: Instances are equal",
+			oldRuntime: &mpi.InstanceRuntime{
+				ProcessId: 123,
+				InstanceChildren: []*mpi.InstanceChild{
+					{
+						ProcessId: 111,
+					},
+					{
+						ProcessId: 222,
+					},
+				},
+			},
+			currentRuntime: &mpi.InstanceRuntime{
+				ProcessId: 123,
+				InstanceChildren: []*mpi.InstanceChild{
+					{
+						ProcessId: 222,
+					},
+					{
+						ProcessId: 111,
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Test 2: Different PIDs",
+			oldRuntime: &mpi.InstanceRuntime{
+				ProcessId: 123,
+				InstanceChildren: []*mpi.InstanceChild{
+					{
+						ProcessId: 111,
+					},
+				},
+			},
+			currentRuntime: &mpi.InstanceRuntime{
+				ProcessId: 456,
+				InstanceChildren: []*mpi.InstanceChild{
+					{
+						ProcessId: 111,
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Test 3: Different children PIDs",
+			oldRuntime: &mpi.InstanceRuntime{
+				ProcessId: 123,
+				InstanceChildren: []*mpi.InstanceChild{
+					{
+						ProcessId: 111,
+					},
+					{
+						ProcessId: 333,
+					},
+				},
+			},
+			currentRuntime: &mpi.InstanceRuntime{
+				ProcessId: 123,
+				InstanceChildren: []*mpi.InstanceChild{
+					{
+						ProcessId: 111,
+					},
+					{
+						ProcessId: 222,
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			assert.Equal(t, test.expected, areInstancesEqual(test.oldRuntime, test.currentRuntime))
+		})
+	}
+}

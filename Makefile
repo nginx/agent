@@ -153,8 +153,7 @@ integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc
 
 performance-test:
 	@mkdir -p $(TEST_BUILD_DIR)
-	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 2m -bench=. -benchmem -run=^# ./internal/service/config > $(TEST_BUILD_DIR)/benchmark.txt
-	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 2m -bench=. -benchmem -run=^# ./internal/watcher >> $(TEST_BUILD_DIR)/benchmark.txt
+	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 2m -bench=. -benchmem -run=^$$ ./... > $(TEST_BUILD_DIR)/benchmark.txt
 	@cat $(TEST_BUILD_DIR)/benchmark.txt
 
 compare-performance-benchmark-results:
@@ -202,7 +201,6 @@ generate-pgo-profile: build-mock-management-plane-grpc
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) \
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) \
 	$(GOTEST) -v ./test/integration -cpuprofile integration_cpu.pprof
-	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 5m -bench=. -benchmem -run=^# ./internal/service/config -cpuprofile perf_config_cpu.pprof
-	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 5m -bench=. -benchmem -run=^# ./internal/watcher -cpuprofile perf_watcher_cpu.pprof
-	@$(GOTOOL) pprof -proto perf_config_cpu.pprof perf_watcher_cpu.pprof integration_cpu.pprof > default.pgo
-	rm perf_config_cpu.pprof perf_watcher_cpu.pprof config.test integration_cpu.pprof integration.test profile.pprof
+	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 5m -bench=. -benchmem -run=^# ./internal/watcher/instance -cpuprofile perf_watcher_cpu.pprof
+	@$(GOTOOL) pprof -proto perf_watcher_cpu.pprof integration_cpu.pprof > default.pgo
+	rm perf_watcher_cpu.pprof integration_cpu.pprof integration.test profile.pprof

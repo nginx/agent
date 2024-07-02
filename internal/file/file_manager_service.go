@@ -10,6 +10,7 @@ import (
 	"errors"
 	"log/slog"
 	"os"
+	"sync/atomic"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/google/uuid"
@@ -26,12 +27,17 @@ import (
 type FileManagerService struct {
 	fileServiceClient mpi.FileServiceClient
 	agentConfig       *config.Config
+	isConnected       *atomic.Bool
 }
 
 func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig *config.Config) *FileManagerService {
+	isConnected := &atomic.Bool{}
+	isConnected.Store(false)
+
 	return &FileManagerService{
 		fileServiceClient: fileServiceClient,
 		agentConfig:       agentConfig,
+		isConnected:       isConnected,
 	}
 }
 
@@ -65,6 +71,10 @@ func (fms *FileManagerService) UpdateOverview(
 		slog.DebugContext(ctx, "Sending update overview request", "request", request)
 		if fms.fileServiceClient == nil {
 			return nil, errors.New("file service client is not initialized")
+		}
+
+		if !fms.isConnected.Load() {
+			return nil, errors.New("CreateConnection rpc has not being called yet")
 		}
 
 		response, updateError := fms.fileServiceClient.UpdateOverview(ctx, request)
@@ -120,6 +130,10 @@ func (fms *FileManagerService) UpdateFile(
 			return nil, errors.New("file service client is not initialized")
 		}
 
+		if !fms.isConnected.Load() {
+			return nil, errors.New("CreateConnection rpc has not being called yet")
+		}
+
 		response, updateError := fms.fileServiceClient.UpdateFile(ctx, request)
 
 		validatedError := grpc.ValidateGrpcError(updateError)
@@ -141,4 +155,8 @@ func (fms *FileManagerService) UpdateFile(
 	slog.DebugContext(ctx, "UpdateFile response", "response", response)
 
 	return err
+}
+
+func (fms *FileManagerService) SetIsConnected(isConnected bool) {
+	fms.isConnected.Store(isConnected)
 }
