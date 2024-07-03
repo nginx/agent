@@ -9,6 +9,7 @@ package files
 import (
 	"cmp"
 	"fmt"
+	"log/slog"
 	"os"
 	"slices"
 	"strconv"
@@ -121,6 +122,7 @@ func CompareFileHash(fileOverview *mpi.FileOverview) (fileDiff map[string]*mpi.F
 			fileHash := GenerateHash(fileContent)
 
 			if fileHash == file.GetFileMeta().GetHash() {
+				slog.Debug("file same on disk, skip", "filepath", fileName)
 				// file is same as on disk, skip
 				continue
 			}

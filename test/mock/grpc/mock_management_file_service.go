@@ -255,7 +255,7 @@ func getFileMode(mode string) os.FileMode {
 }
 
 func createFile(fullPath, filePath string) (*v1.File, error) {
-	content, err := os.ReadFile(filePath)
+	content, err := os.ReadFile(fullPath)
 	if err != nil {
 		return nil, err
 	}
