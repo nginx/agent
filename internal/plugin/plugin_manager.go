@@ -23,7 +23,7 @@ import (
 func LoadPlugins(ctx context.Context, agentConfig *config.Config) []bus.Plugin {
 	plugins := make([]bus.Plugin, 0)
 
-	plugins = addResourcePlugin(plugins)
+	plugins = addResourcePlugin(plugins, agentConfig)
 
 	if isGrpcClientConfigured(agentConfig) {
 		grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig)
@@ -43,8 +43,8 @@ func LoadPlugins(ctx context.Context, agentConfig *config.Config) []bus.Plugin {
 	return plugins
 }
 
-func addResourcePlugin(plugins []bus.Plugin) []bus.Plugin {
-	resourcePlugin := resource.NewResource()
+func addResourcePlugin(plugins []bus.Plugin, agentConfig *config.Config) []bus.Plugin {
+	resourcePlugin := resource.NewResource(agentConfig)
 	plugins = append(plugins, resourcePlugin)
 
 	return plugins

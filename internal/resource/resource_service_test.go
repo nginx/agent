@@ -7,7 +7,11 @@ package resource
 
 import (
 	"context"
+	"fmt"
 	"testing"
+
+	"github.com/nginx/agent/v3/internal/resource/resourcefakes"
+	"github.com/nginx/agent/v3/test/types"
 
 	"github.com/nginx/agent/v3/internal/datasource/host/hostfakes"
 
@@ -50,7 +54,7 @@ func TestResourceService_AddInstance(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			resourceService := NewResourceService(ctx)
+			resourceService := NewResourceService(ctx, types.AgentConfig())
 			resource := resourceService.AddInstances(test.instanceList)
 			assert.Equal(tt, test.resource.GetInstances(), resource.GetInstances())
 		})
@@ -93,7 +97,7 @@ func TestResourceService_UpdateInstance(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			resourceService := NewResourceService(ctx)
+			resourceService := NewResourceService(ctx, types.AgentConfig())
 			resourceService.resource.Instances = []*v1.Instance{protos.GetNginxOssInstance([]string{})}
 			resource := resourceService.UpdateInstances(test.instanceList)
 			assert.Equal(tt, test.resource.GetInstances(), resource.GetInstances())
@@ -127,7 +131,7 @@ func TestResourceService_DeleteInstance(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			resourceService := NewResourceService(ctx)
+			resourceService := NewResourceService(ctx, types.AgentConfig())
 			resourceService.resource.Instances = []*v1.Instance{
 				protos.GetNginxOssInstance([]string{}),
 				protos.GetNginxPlusInstance([]string{}),
@@ -172,7 +176,7 @@ func TestResourceService_GetResource(t *testing.T) {
 
 		mockInfo.IsContainerReturns(tc.isContainer)
 
-		resourceService := NewResourceService(ctx)
+		resourceService := NewResourceService(ctx, types.AgentConfig())
 		resourceService.info = mockInfo
 		resourceService.resource = tc.expectedResource
 
@@ -185,5 +189,59 @@ func TestResourceService_GetResource(t *testing.T) {
 		} else {
 			assert.Equal(t, tc.expectedResource.GetHostInfo(), resourceService.resource.GetHostInfo())
 		}
+	}
+}
+
+func TestResourceService_ApplyConfig(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		name        string
+		reloadErr   error
+		validateErr error
+		expected    error
+	}{
+		{
+			name:        "Test 1: Successful reload",
+			reloadErr:   nil,
+			validateErr: nil,
+			expected:    nil,
+		},
+		{
+			name:        "Test 2: Failed reload",
+			reloadErr:   fmt.Errorf("something went wrong"),
+			validateErr: nil,
+			expected:    fmt.Errorf("failed to reload NGINX %w", fmt.Errorf("something went wrong")),
+		},
+		{
+			name:        "Test 3: Failed validate",
+			reloadErr:   nil,
+			validateErr: fmt.Errorf("something went wrong"),
+			expected:    fmt.Errorf("failed validating config %w", fmt.Errorf("something went wrong")),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			instanceOp := &resourcefakes.FakeInstanceOperator{}
+
+			instanceOp.ReloadReturns(test.reloadErr)
+			instanceOp.ValidateReturns(test.validateErr)
+
+			resourceService := NewResourceService(ctx, types.AgentConfig())
+			resourceOpMap := make(map[string]instanceOperator)
+			resourceOpMap[protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()] = instanceOp
+			resourceService.instanceOperators = resourceOpMap
+
+			instance := protos.GetNginxOssInstance([]string{})
+			instances := []*v1.Instance{
+				instance,
+			}
+			resourceService.resource.Instances = instances
+
+			reloadError := resourceService.ApplyConfig(ctx,
+				protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId())
+			assert.Equal(t, test.expected, reloadError)
+		})
 	}
 }

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v3/internal/watcher/instance"
+	"github.com/nginx/agent/v3/internal/watcher/watcherfakes"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
@@ -93,7 +94,23 @@ func TestWatcher_Info(t *testing.T) {
 	assert.Equal(t, &bus.Info{Name: "watcher"}, watcherPlugin.Info())
 }
 
+func TestWatcher_Process(t *testing.T) {
+	ctx := context.Background()
+	message := &bus.Message{
+		Topic: bus.ConfigApplySuccessfulTopic,
+		Data:  protos.GetNginxOssInstance([]string{}),
+	}
+
+	fakeWatcherService := &watcherfakes.FakeInstanceWatcherServiceInterface{}
+	watcherPlugin := NewWatcher(types.AgentConfig())
+	watcherPlugin.instanceWatcherService = fakeWatcherService
+
+	watcherPlugin.Process(ctx, message)
+
+	require.Equal(t, 1, fakeWatcherService.ReparseConfigCallCount())
+}
+
 func TestWatcher_Subscriptions(t *testing.T) {
 	watcherPlugin := NewWatcher(types.AgentConfig())
-	assert.Equal(t, []string{}, watcherPlugin.Subscriptions())
+	assert.Equal(t, []string{bus.ConfigApplySuccessfulTopic}, watcherPlugin.Subscriptions())
 }
