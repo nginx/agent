@@ -123,15 +123,17 @@ Default location in FreeBSD environments: `/var/db/nginx-agent/agent-dynamic.con
 # overwrite the tag values in this file.
 #
 # The agent configuration values that API calls can modify are as follows:
-#    - tags
+# tags:
+#   - dev
+#   - qa
 #
 # The agent configuration value that the agent install script can modify are as follows:
-#    - instance_group
+# instance_group: my-instance-group
 
-instance_group: devenv-group
+instance_group: my-instance-group
 tags:
-  - devenv
-  - test
+  - dev
+  - qa
 ```
 
 </details>
