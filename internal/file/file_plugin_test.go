@@ -158,13 +158,15 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 			filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigApplyRequestTopic, Data: test.message})
 
 			messages := messagePipe.GetMessages()
-			if test.configApplyReturnsErr == nil {
+
+			switch {
+			case test.configApplyReturnsErr == nil:
 				assert.Equal(t, bus.WriteConfigSuccessfulTopic, messages[0].Topic)
 				assert.Len(t, messages, 1)
 
 				_, ok := messages[0].Data.(model.ConfigApplyMessage)
 				assert.True(t, ok)
-			} else if errors.As(test.configApplyReturnsErr, &rollbackRequiredError) {
+			case errors.As(test.configApplyReturnsErr, &rollbackRequiredError):
 				assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
 				assert.Len(t, messages, 2)
 				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
@@ -174,7 +176,7 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 					mpi.CommandResponse_COMMAND_STATUS_ERROR,
 					dataPlaneResponse.GetCommandResponse().GetStatus(),
 				)
-			} else if errors.As(test.configApplyReturnsErr, &noChangeError) {
+			case errors.As(test.configApplyReturnsErr, &noChangeError):
 				assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
 				assert.Len(t, messages, 1)
 				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
@@ -184,7 +186,7 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 					mpi.CommandResponse_COMMAND_STATUS_OK,
 					dataPlaneResponse.GetCommandResponse().GetStatus(),
 				)
-			} else {
+			default:
 				assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
 				assert.Len(t, messages, 1)
 				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)

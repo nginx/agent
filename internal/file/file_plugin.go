@@ -161,9 +161,10 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 	}
 
 	configApplyRequest := request.ConfigApplyRequest
-	var response *mpi.DataPlaneResponse
 
 	err := fp.fileManagerService.ConfigApply(ctx, configApplyRequest)
+
+	var response *mpi.DataPlaneResponse
 	var rollbackRequiredError *RollbackRequiredError
 	var noChangeError *NoChangeError
 
@@ -194,45 +195,6 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 
 		return
 	case errors.As(err, &rollbackRequiredError):
-		slog.ErrorContext(
-			ctx,
-			"Failed to apply config changes, rolling back",
-			"instance_id", configApplyRequest.GetConfigVersion().GetInstanceId(),
-			"error", err,
-		)
-		response = fp.createDataPlaneResponseWithError(correlationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
-			fmt.Sprintf("Config apply failed for instanceId: %s, rolling back config",
-				configApplyRequest.GetConfigVersion().GetInstanceId()), configApplyRequest.
-				GetConfigVersion().GetInstanceId(), err.Error())
-
-		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
-		fp.handleConfigApplyFailedRequest(ctx, &bus.Message{
-			Topic: bus.ConfigApplyFailedTopic,
-			Data: model.ConfigApplyMessage{
-				CorrelationID: correlationID,
-				InstanceID:    configApplyRequest.GetConfigVersion().GetInstanceId(),
-			},
-		})
-
-		return
-	}
-
-	if err != nil && !errors.As(err, &rollbackRequiredError) {
-		slog.ErrorContext(
-			ctx,
-			"Failed to apply config changes",
-			"instance_id", configApplyRequest.GetConfigVersion().GetInstanceId(),
-			"error", err,
-		)
-		response = fp.createDataPlaneResponseWithError(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-			fmt.Sprintf("Config apply failed for instanceId: %s", configApplyRequest.
-				GetConfigVersion().GetInstanceId()), configApplyRequest.GetConfigVersion().GetInstanceId(), err.Error())
-
-		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
-		fp.fileManagerService.ClearCache()
-
-		return
-	} else if errors.As(err, &rollbackRequiredError) {
 		slog.ErrorContext(
 			ctx,
 			"Failed to apply config changes, rolling back",
