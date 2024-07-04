@@ -165,6 +165,57 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 
 	err := fp.fileManagerService.ConfigApply(ctx, configApplyRequest)
 	var rollbackRequiredError *RollbackRequiredError
+	var noChangeError *NoChangeError
+
+	switch {
+	case errors.As(err, &noChangeError):
+		response = fp.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
+			fmt.Sprintf("Successful config apply for instanceId: %s, no files to change",
+				configApplyRequest.GetConfigVersion().
+					GetInstanceId()), configApplyRequest.GetConfigVersion().GetInstanceId())
+
+		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
+		fp.fileManagerService.ClearCache()
+
+		return
+	case err != nil && !errors.As(err, &rollbackRequiredError):
+		slog.ErrorContext(
+			ctx,
+			"Failed to apply config changes",
+			"instance_id", configApplyRequest.GetConfigVersion().GetInstanceId(),
+			"error", err,
+		)
+		response = fp.createDataPlaneResponseWithError(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+			fmt.Sprintf("Config apply failed for instanceId: %s", configApplyRequest.
+				GetConfigVersion().GetInstanceId()), configApplyRequest.GetConfigVersion().GetInstanceId(), err.Error())
+
+		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
+		fp.fileManagerService.ClearCache()
+
+		return
+	case errors.As(err, &rollbackRequiredError):
+		slog.ErrorContext(
+			ctx,
+			"Failed to apply config changes, rolling back",
+			"instance_id", configApplyRequest.GetConfigVersion().GetInstanceId(),
+			"error", err,
+		)
+		response = fp.createDataPlaneResponseWithError(correlationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
+			fmt.Sprintf("Config apply failed for instanceId: %s, rolling back config",
+				configApplyRequest.GetConfigVersion().GetInstanceId()), configApplyRequest.
+				GetConfigVersion().GetInstanceId(), err.Error())
+
+		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
+		fp.handleConfigApplyFailedRequest(ctx, &bus.Message{
+			Topic: bus.ConfigApplyFailedTopic,
+			Data: model.ConfigApplyMessage{
+				CorrelationID: correlationID,
+				InstanceID:    configApplyRequest.GetConfigVersion().GetInstanceId(),
+			},
+		})
+
+		return
+	}
 
 	if err != nil && !errors.As(err, &rollbackRequiredError) {
 		slog.ErrorContext(
@@ -305,6 +356,23 @@ func (fp *FilePlugin) createDataPlaneResponseWithError(correlationID string, sta
 			Status:  status,
 			Message: message,
 			Error:   err,
+		},
+		InstanceId: instanceID,
+	}
+}
+
+func (*FilePlugin) createDataPlaneResponse(correlationID string, status mpi.CommandResponse_CommandStatus,
+	message, instanceID string,
+) *mpi.DataPlaneResponse {
+	return &mpi.DataPlaneResponse{
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     uuid.NewString(),
+			CorrelationId: correlationID,
+			Timestamp:     timestamppb.Now(),
+		},
+		CommandResponse: &mpi.CommandResponse{
+			Status:  status,
+			Message: message,
 		},
 		InstanceId: instanceID,
 	}

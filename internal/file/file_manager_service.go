@@ -40,6 +40,8 @@ type (
 		Err error
 	}
 
+	NoChangeError struct{}
+
 	fileManagerServiceInterface interface {
 		UpdateOverview(ctx context.Context, instanceID string, filesToUpdate []*mpi.File) error
 		ConfigApply(ctx context.Context, configApplyRequest *mpi.ConfigApplyRequest) (err error)
@@ -75,6 +77,10 @@ func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig 
 
 func (r *RollbackRequiredError) Error() string {
 	return fmt.Sprintf("rollback required: %v", r.Err)
+}
+
+func (r *NoChangeError) Error() string {
+	return "no change required"
 }
 
 func (fms *FileManagerService) UpdateOverview(
@@ -214,6 +220,10 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	diffFiles, fileContent, compareErr := files.CompareFileHash(fileOverview)
 	if compareErr != nil {
 		return compareErr
+	}
+
+	if len(diffFiles) == 0 {
+		return &NoChangeError{}
 	}
 
 	fms.fileContentsCache = fileContent

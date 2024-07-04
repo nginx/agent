@@ -136,11 +136,17 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 			configApplyReturnsErr: fmt.Errorf("something went wrong"),
 			message:               nil,
 		},
+		{
+			name:                  "Test 5 - No changes needed",
+			configApplyReturnsErr: &NoChangeError{},
+			message:               message,
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var rollbackRequiredError *RollbackRequiredError
+			var noChangeError *NoChangeError
 			fakeFileManagerService := &filefakes.FakeFileManagerServiceInterface{}
 			fakeFileManagerService.ConfigApplyReturns(test.configApplyReturnsErr)
 			messagePipe := bus.NewFakeMessagePipe()
@@ -166,6 +172,16 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 				assert.Equal(
 					t,
 					mpi.CommandResponse_COMMAND_STATUS_ERROR,
+					dataPlaneResponse.GetCommandResponse().GetStatus(),
+				)
+			} else if errors.As(test.configApplyReturnsErr, &noChangeError) {
+				assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
+				assert.Len(t, messages, 1)
+				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
+				assert.True(t, ok)
+				assert.Equal(
+					t,
+					mpi.CommandResponse_COMMAND_STATUS_OK,
 					dataPlaneResponse.GetCommandResponse().GetStatus(),
 				)
 			} else {
