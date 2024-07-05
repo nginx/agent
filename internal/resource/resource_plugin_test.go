@@ -126,8 +126,9 @@ func TestResource_Process_Apply(t *testing.T) {
 			message: &bus.Message{
 				Topic: bus.WriteConfigSuccessfulTopic,
 				Data: &model.ConfigApplyMessage{
-					CorrelationID: "",
+					CorrelationID: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
 					InstanceID:    protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+					Error:         nil,
 				},
 			},
 			applyErr: nil,
@@ -138,12 +139,13 @@ func TestResource_Process_Apply(t *testing.T) {
 			message: &bus.Message{
 				Topic: bus.WriteConfigSuccessfulTopic,
 				Data: &model.ConfigApplyMessage{
-					CorrelationID: "",
+					CorrelationID: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
 					InstanceID:    protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+					Error:         nil,
 				},
 			},
 			applyErr: errors.New("error reloading"),
-			topic:    []string{bus.DataPlaneResponseTopic, bus.ConfigApplyFailedTopic},
+			topic:    []string{bus.DataPlaneResponseTopic, bus.DataPlaneResponseTopic, bus.ConfigApplyFailedTopic},
 		},
 	}
 
@@ -165,6 +167,10 @@ func TestResource_Process_Apply(t *testing.T) {
 
 			assert.Equal(t, test.topic[0], messagePipe.GetMessages()[0].Topic)
 			assert.Equal(t, test.topic[1], messagePipe.GetMessages()[1].Topic)
+
+			if test.applyErr != nil {
+				assert.Equal(t, test.topic[2], messagePipe.GetMessages()[2].Topic)
+			}
 		})
 	}
 }
@@ -183,8 +189,9 @@ func TestResource_Process_Rollback(t *testing.T) {
 			message: &bus.Message{
 				Topic: bus.RollbackWriteTopic,
 				Data: &model.ConfigApplyMessage{
-					CorrelationID: "",
+					CorrelationID: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
 					InstanceID:    protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+					Error:         nil,
 				},
 			},
 			applyErr: nil,
@@ -226,7 +233,9 @@ func TestResource_Process_Rollback(t *testing.T) {
 
 			assert.Equal(t, test.topic[0], messagePipe.GetMessages()[0].Topic)
 			assert.Equal(t, test.topic[1], messagePipe.GetMessages()[1].Topic)
-			assert.Equal(t, test.topic[2], messagePipe.GetMessages()[2].Topic)
+			if test.applyErr != nil {
+				assert.Equal(t, test.topic[2], messagePipe.GetMessages()[2].Topic)
+			}
 		})
 	}
 }
