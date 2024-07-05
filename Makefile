@@ -4,8 +4,8 @@ include Makefile.tools
 # Variable Definitions                                                                                            #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 VERSION ?= $(shell git describe --match "v[0-9]*" --abbrev=0 --tags)
-ifeq ($(VERSION),)
-	VERSION ?= $(shell curl https://api.github.com/repos/nginx/agent/releases/latest -s | jq .name -r)
+ifeq ($(strip $(VERSION)),)
+	VERSION := $(shell curl https://api.github.com/repos/nginx/agent/releases/latest -s | jq .name -r)
 endif
 COMMIT = $(shell git rev-parse --short HEAD)
 DATE = $(shell date +%F_%H-%M-%S)
