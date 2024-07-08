@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/internal/model"
 )
 
 type FakeFileManagerServiceInterface struct {
@@ -13,17 +14,19 @@ type FakeFileManagerServiceInterface struct {
 	clearCacheMutex       sync.RWMutex
 	clearCacheArgsForCall []struct {
 	}
-	ConfigApplyStub        func(context.Context, *v1.ConfigApplyRequest) error
+	ConfigApplyStub        func(context.Context, *v1.ConfigApplyRequest) (model.WriteStatus, error)
 	configApplyMutex       sync.RWMutex
 	configApplyArgsForCall []struct {
 		arg1 context.Context
 		arg2 *v1.ConfigApplyRequest
 	}
 	configApplyReturns struct {
-		result1 error
+		result1 model.WriteStatus
+		result2 error
 	}
 	configApplyReturnsOnCall map[int]struct {
-		result1 error
+		result1 model.WriteStatus
+		result2 error
 	}
 	RollbackStub        func(context.Context, string) error
 	rollbackMutex       sync.RWMutex
@@ -96,7 +99,7 @@ func (fake *FakeFileManagerServiceInterface) ClearCacheCalls(stub func()) {
 	fake.ClearCacheStub = stub
 }
 
-func (fake *FakeFileManagerServiceInterface) ConfigApply(arg1 context.Context, arg2 *v1.ConfigApplyRequest) error {
+func (fake *FakeFileManagerServiceInterface) ConfigApply(arg1 context.Context, arg2 *v1.ConfigApplyRequest) (model.WriteStatus, error) {
 	fake.configApplyMutex.Lock()
 	ret, specificReturn := fake.configApplyReturnsOnCall[len(fake.configApplyArgsForCall)]
 	fake.configApplyArgsForCall = append(fake.configApplyArgsForCall, struct {
@@ -111,9 +114,9 @@ func (fake *FakeFileManagerServiceInterface) ConfigApply(arg1 context.Context, a
 		return stub(arg1, arg2)
 	}
 	if specificReturn {
-		return ret.result1
+		return ret.result1, ret.result2
 	}
-	return fakeReturns.result1
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FakeFileManagerServiceInterface) ConfigApplyCallCount() int {
@@ -122,7 +125,7 @@ func (fake *FakeFileManagerServiceInterface) ConfigApplyCallCount() int {
 	return len(fake.configApplyArgsForCall)
 }
 
-func (fake *FakeFileManagerServiceInterface) ConfigApplyCalls(stub func(context.Context, *v1.ConfigApplyRequest) error) {
+func (fake *FakeFileManagerServiceInterface) ConfigApplyCalls(stub func(context.Context, *v1.ConfigApplyRequest) (model.WriteStatus, error)) {
 	fake.configApplyMutex.Lock()
 	defer fake.configApplyMutex.Unlock()
 	fake.ConfigApplyStub = stub
@@ -135,27 +138,30 @@ func (fake *FakeFileManagerServiceInterface) ConfigApplyArgsForCall(i int) (cont
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeFileManagerServiceInterface) ConfigApplyReturns(result1 error) {
+func (fake *FakeFileManagerServiceInterface) ConfigApplyReturns(result1 model.WriteStatus, result2 error) {
 	fake.configApplyMutex.Lock()
 	defer fake.configApplyMutex.Unlock()
 	fake.ConfigApplyStub = nil
 	fake.configApplyReturns = struct {
-		result1 error
-	}{result1}
+		result1 model.WriteStatus
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *FakeFileManagerServiceInterface) ConfigApplyReturnsOnCall(i int, result1 error) {
+func (fake *FakeFileManagerServiceInterface) ConfigApplyReturnsOnCall(i int, result1 model.WriteStatus, result2 error) {
 	fake.configApplyMutex.Lock()
 	defer fake.configApplyMutex.Unlock()
 	fake.ConfigApplyStub = nil
 	if fake.configApplyReturnsOnCall == nil {
 		fake.configApplyReturnsOnCall = make(map[int]struct {
-			result1 error
+			result1 model.WriteStatus
+			result2 error
 		})
 	}
 	fake.configApplyReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
+		result1 model.WriteStatus
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeFileManagerServiceInterface) Rollback(arg1 context.Context, arg2 string) error {

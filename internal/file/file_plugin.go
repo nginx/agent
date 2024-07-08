@@ -7,7 +7,6 @@ package file
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 
@@ -36,7 +35,8 @@ type FilePlugin struct {
 func NewFilePlugin(agentConfig *config.Config, grpcConnection grpc.GrpcConnectionInterface) *FilePlugin {
 	return &FilePlugin{
 		config: agentConfig,
-		conn:   grpcConnection,
+		// why?
+		conn: grpcConnection,
 	}
 }
 
@@ -128,8 +128,6 @@ func (fp *FilePlugin) handleConfigApplyFailedRequest(ctx context.Context, msg *b
 
 func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Message) {
 	var response *mpi.DataPlaneResponse
-	var rollbackRequiredError *RollbackRequiredError
-	var noChangeError *NoChangeError
 	correlationID := logger.GetCorrelationID(ctx)
 
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
@@ -150,10 +148,10 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 
 	configApplyRequest := request.ConfigApplyRequest
 
-	err := fp.fileManagerService.ConfigApply(ctx, configApplyRequest)
+	writeStatus, err := fp.fileManagerService.ConfigApply(ctx, configApplyRequest)
 
-	switch {
-	case errors.As(err, &noChangeError):
+	switch writeStatus {
+	case model.NoChange:
 		response = fp.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
 			fmt.Sprintf("Successful config apply for instanceId: %s, no files to change",
 				configApplyRequest.GetConfigVersion().
@@ -163,7 +161,7 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 		fp.fileManagerService.ClearCache()
 
 		return
-	case err != nil && !errors.As(err, &rollbackRequiredError):
+	case model.Error:
 		slog.ErrorContext(
 			ctx,
 			"Failed to apply config changes",
@@ -178,7 +176,7 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 		fp.fileManagerService.ClearCache()
 
 		return
-	case errors.As(err, &rollbackRequiredError):
+	case model.RollbackRequired:
 		slog.ErrorContext(
 			ctx,
 			"Failed to apply config changes, rolling back",
@@ -201,15 +199,15 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 		})
 
 		return
+	case model.OK:
+		// Send WriteConfigSuccessfulTopic with Correlation and Instance ID for use by resource plugin
+		data := model.ConfigApplyMessage{
+			CorrelationID: correlationID,
+			InstanceID:    configApplyRequest.GetConfigVersion().GetInstanceId(),
+			Error:         nil,
+		}
+		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.WriteConfigSuccessfulTopic, Data: data})
 	}
-
-	// Send WriteConfigSuccessfulTopic with Correlation and Instance ID for use by resource plugin
-	data := model.ConfigApplyMessage{
-		CorrelationID: correlationID,
-		InstanceID:    configApplyRequest.GetConfigVersion().GetInstanceId(),
-		Error:         nil,
-	}
-	fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.WriteConfigSuccessfulTopic, Data: data})
 }
 
 func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Message) {

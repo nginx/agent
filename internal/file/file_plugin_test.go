@@ -7,7 +7,6 @@ package file
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"testing"
@@ -114,41 +113,45 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 	tests := []struct {
 		name                  string
 		configApplyReturnsErr error
+		configApplyStatus     model.WriteStatus
 		message               *mpi.ManagementPlaneRequest
 	}{
 		{
 			name:                  "Test 1 - Success",
 			configApplyReturnsErr: nil,
+			configApplyStatus:     model.OK,
 			message:               message,
 		},
 		{
 			name:                  "Test 2 - Fail, Rollback",
-			configApplyReturnsErr: &RollbackRequiredError{Err: fmt.Errorf("something went wrong")},
+			configApplyReturnsErr: fmt.Errorf("something went wrong"),
+			configApplyStatus:     model.RollbackRequired,
 			message:               message,
 		},
 		{
 			name:                  "Test 3 - Fail, No Rollback",
 			configApplyReturnsErr: fmt.Errorf("something went wrong"),
+			configApplyStatus:     model.Error,
 			message:               message,
 		},
 		{
 			name:                  "Test 4 - Fail to cast payload",
 			configApplyReturnsErr: fmt.Errorf("something went wrong"),
+			configApplyStatus:     model.Error,
 			message:               nil,
 		},
 		{
 			name:                  "Test 5 - No changes needed",
-			configApplyReturnsErr: &NoChangeError{},
+			configApplyReturnsErr: nil,
+			configApplyStatus:     model.NoChange,
 			message:               message,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			var rollbackRequiredError *RollbackRequiredError
-			var noChangeError *NoChangeError
 			fakeFileManagerService := &filefakes.FakeFileManagerServiceInterface{}
-			fakeFileManagerService.ConfigApplyReturns(test.configApplyReturnsErr)
+			fakeFileManagerService.ConfigApplyReturns(test.configApplyStatus, test.configApplyReturnsErr)
 			messagePipe := bus.NewFakeMessagePipe()
 			filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection)
 			err := filePlugin.Init(ctx, messagePipe)
@@ -160,13 +163,13 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 			messages := messagePipe.GetMessages()
 
 			switch {
-			case test.configApplyReturnsErr == nil:
+			case test.configApplyStatus == model.OK:
 				assert.Equal(t, bus.WriteConfigSuccessfulTopic, messages[0].Topic)
 				assert.Len(t, messages, 1)
 
 				_, ok := messages[0].Data.(model.ConfigApplyMessage)
 				assert.True(t, ok)
-			case errors.As(test.configApplyReturnsErr, &rollbackRequiredError):
+			case test.configApplyStatus == model.RollbackRequired:
 				assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
 				assert.Len(t, messages, 2)
 				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
@@ -176,7 +179,7 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 					mpi.CommandResponse_COMMAND_STATUS_ERROR,
 					dataPlaneResponse.GetCommandResponse().GetStatus(),
 				)
-			case errors.As(test.configApplyReturnsErr, &noChangeError):
+			case test.configApplyStatus == model.NoChange:
 				assert.Len(t, messages, 1)
 				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)

@@ -35,3 +35,14 @@ type ErrorLog struct {
 	Permissions string
 	Readable    bool
 }
+
+type (
+	WriteStatus int
+)
+
+const (
+	RollbackRequired WriteStatus = iota + 1
+	NoChange
+	Error
+	OK
+)

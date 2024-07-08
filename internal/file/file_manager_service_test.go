@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/nginx/agent/v3/internal/model"
+
 	"github.com/nginx/agent/v3/pkg/files"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -87,8 +89,9 @@ func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig)
 
 	request := protos.CreateConfigApplyRequest(overview)
-	err := fileManagerService.ConfigApply(ctx, request)
+	writeStatus, err := fileManagerService.ConfigApply(ctx, request)
 	require.NoError(t, err)
+	assert.Equal(t, model.OK, writeStatus)
 	data, readErr := os.ReadFile(filePath)
 	require.NoError(t, readErr)
 	assert.Equal(t, fileContent, data)
@@ -125,8 +128,9 @@ func TestFileManagerService_ConfigApply_Update(t *testing.T) {
 
 	request := protos.CreateConfigApplyRequest(overview)
 
-	err := fileManagerService.ConfigApply(ctx, request)
+	writeStatus, err := fileManagerService.ConfigApply(ctx, request)
 	require.NoError(t, err)
+	assert.Equal(t, model.OK, writeStatus)
 	data, readErr := os.ReadFile(tempFile.Name())
 	require.NoError(t, readErr)
 	assert.Equal(t, fileContent, data)
@@ -153,11 +157,12 @@ func TestFileManagerService_ConfigApply_Delete(t *testing.T) {
 
 	request := protos.CreateConfigApplyRequest(overview)
 
-	err := fileManagerService.ConfigApply(ctx, request)
+	writeStatus, err := fileManagerService.ConfigApply(ctx, request)
 	require.NoError(t, err)
 	assert.NoFileExists(t, tempFile.Name())
 	assert.Equal(t, fileManagerService.fileContentsCache[tempFile.Name()], fileContent)
 	assert.Equal(t, fileManagerService.filesCache[tempFile.Name()], overview.GetFiles()[0])
+	assert.Equal(t, model.OK, writeStatus)
 }
 
 func TestFileManagerService_checkAllowedDirectory(t *testing.T) {
