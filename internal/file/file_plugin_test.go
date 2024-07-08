@@ -161,16 +161,15 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 
 			switch {
 			case test.configApplyReturnsErr == nil:
-				assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
-				assert.Equal(t, bus.WriteConfigSuccessfulTopic, messages[1].Topic)
-				assert.Len(t, messages, 2)
+				assert.Equal(t, bus.WriteConfigSuccessfulTopic, messages[0].Topic)
+				assert.Len(t, messages, 1)
 
-				_, ok := messages[1].Data.(model.ConfigApplyMessage)
+				_, ok := messages[0].Data.(model.ConfigApplyMessage)
 				assert.True(t, ok)
 			case errors.As(test.configApplyReturnsErr, &rollbackRequiredError):
 				assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
-				assert.Len(t, messages, 3)
-				dataPlaneResponse, ok := messages[1].Data.(*mpi.DataPlaneResponse)
+				assert.Len(t, messages, 2)
+				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
 				assert.Equal(
 					t,
@@ -178,9 +177,8 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 					dataPlaneResponse.GetCommandResponse().GetStatus(),
 				)
 			case errors.As(test.configApplyReturnsErr, &noChangeError):
-				assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
-				assert.Len(t, messages, 2)
-				dataPlaneResponse, ok := messages[1].Data.(*mpi.DataPlaneResponse)
+				assert.Len(t, messages, 1)
+				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
 				assert.Equal(
 					t,
@@ -190,9 +188,8 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 			case test.message == nil:
 				assert.Empty(t, messages)
 			default:
-				assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
-				assert.Len(t, messages, 2)
-				dataPlaneResponse, ok := messages[1].Data.(*mpi.DataPlaneResponse)
+				assert.Len(t, messages, 1)
+				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
 				assert.Equal(
 					t,

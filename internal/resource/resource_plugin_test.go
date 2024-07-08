@@ -145,7 +145,7 @@ func TestResource_Process_Apply(t *testing.T) {
 				},
 			},
 			applyErr: errors.New("error reloading"),
-			topic:    []string{bus.DataPlaneResponseTopic, bus.DataPlaneResponseTopic, bus.ConfigApplyFailedTopic},
+			topic:    []string{bus.DataPlaneResponseTopic, bus.ConfigApplyFailedTopic},
 		},
 	}
 
@@ -167,10 +167,6 @@ func TestResource_Process_Apply(t *testing.T) {
 
 			assert.Equal(t, test.topic[0], messagePipe.GetMessages()[0].Topic)
 			assert.Equal(t, test.topic[1], messagePipe.GetMessages()[1].Topic)
-
-			if test.applyErr != nil {
-				assert.Equal(t, test.topic[2], messagePipe.GetMessages()[2].Topic)
-			}
 		})
 	}
 }

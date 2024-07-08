@@ -135,11 +135,6 @@ func (r *Resource) handleWriteConfigSuccessful(ctx context.Context, msg *bus.Mes
 				"rolling back config", data.InstanceID), data.InstanceID, err.Error())
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
 
-		response = r.createDataPlaneResponse(data.CorrelationID,
-			mpi.CommandResponse_COMMAND_STATUS_IN_PROGRESS, fmt.Sprintf("Rollback in progress: %s ",
-				data.InstanceID), data.InstanceID, "")
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
-
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyFailedTopic, Data: data})
 
 		return

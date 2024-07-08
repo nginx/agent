@@ -150,12 +150,6 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 
 	configApplyRequest := request.ConfigApplyRequest
 
-	response = fp.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_IN_PROGRESS,
-		fmt.Sprintf("Config apply in progress: %s ",
-			configApplyRequest.GetConfigVersion().GetInstanceId()), configApplyRequest.
-			GetConfigVersion().GetInstanceId(), "")
-	fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
-
 	err := fp.fileManagerService.ConfigApply(ctx, configApplyRequest)
 
 	switch {

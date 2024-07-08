@@ -52,6 +52,8 @@ type (
 	}
 )
 
+const NoChangeResponse = "no change required"
+
 type FileManagerService struct {
 	fileServiceClient mpi.FileServiceClient
 	agentConfig       *config.Config
@@ -80,7 +82,7 @@ func (r *RollbackRequiredError) Error() string {
 }
 
 func (r *NoChangeError) Error() string {
-	return "no change required"
+	return NoChangeResponse
 }
 
 func (fms *FileManagerService) UpdateOverview(
