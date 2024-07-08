@@ -20,9 +20,9 @@ func TestWaitUntil(t *testing.T) {
 	t.Parallel()
 	invocations := 0
 	tests := []struct {
-		name            string
-		operation       backoff.Operation
 		context         context.Context
+		operation       backoff.Operation
+		name            string
 		initialInterval time.Duration
 		maxInterval     time.Duration
 		maxElapsedTime  time.Duration
@@ -103,9 +103,9 @@ func TestWaitUntilWithData(t *testing.T) {
 	t.Parallel()
 	invocations := -1
 	tests := []struct {
-		name            string
-		operation       backoff.OperationWithData[int]
 		context         context.Context
+		operation       backoff.OperationWithData[int]
+		name            string
 		initialInterval time.Duration
 		maxInterval     time.Duration
 		maxElapsedTime  time.Duration

@@ -48,19 +48,19 @@ func parseServerType(str string) (ServerType, bool) {
 
 type (
 	Config struct {
-		UUID               string           `yaml:"-"`
-		Version            string           `yaml:"-"`
-		Path               string           `yaml:"-"`
+		Command            *Command         `yaml:"-" mapstructure:"command"`
 		Log                *Log             `yaml:"-" mapstructure:"log"`
 		DataPlaneConfig    *DataPlaneConfig `yaml:"-" mapstructure:"data_plane_config"`
 		Client             *Client          `yaml:"-" mapstructure:"client"`
-		ConfigDir          string           `yaml:"-" mapstructure:"config-dirs"`
-		AllowedDirectories []string         `yaml:"-"`
 		Collector          *Collector       `yaml:"-" mapstructure:"collector"`
-		Command            *Command         `yaml:"-" mapstructure:"command"`
 		File               *File            `yaml:"-" mapstructure:"file"`
 		Common             *CommonSettings  `yaml:"-"`
 		Watchers           *Watchers        `yaml:"-"`
+		Version            string           `yaml:"-"`
+		Path               string           `yaml:"-"`
+		ConfigDir          string           `yaml:"-" mapstructure:"config-dirs"`
+		UUID               string           `yaml:"-"`
+		AllowedDirectories []string         `yaml:"-"`
 	}
 
 	Log struct {
@@ -93,10 +93,10 @@ type (
 
 	// OTel Collector Exporter configuration.
 	Exporter struct {
-		Type   string        `yaml:"-" mapstructure:"type"`
 		Server *ServerConfig `yaml:"-" mapstructure:"server"`
 		Auth   *AuthConfig   `yaml:"-" mapstructure:"auth"`
 		TLS    *TLSConfig    `yaml:"-" mapstructure:"tls"`
+		Type   string        `yaml:"-" mapstructure:"type"`
 	}
 
 	// OTel Collector Processor configuration.
@@ -106,10 +106,10 @@ type (
 
 	// OTel Collector Receiver configuration.
 	Receiver struct {
-		Type   string        `yaml:"-" mapstructure:"type"`
 		Server *ServerConfig `yaml:"-" mapstructure:"server"`
 		Auth   *AuthConfig   `yaml:"-" mapstructure:"auth"`
 		TLS    *TLSConfig    `yaml:"-" mapstructure:"tls"`
+		Type   string        `yaml:"-" mapstructure:"type"`
 	}
 
 	GRPC struct {
@@ -139,8 +139,8 @@ type (
 		Cert       string `yaml:"-" mapstructure:"cert"`
 		Key        string `yaml:"-" mapstructure:"key"`
 		Ca         string `yaml:"-" mapstructure:"ca"`
-		SkipVerify bool   `yaml:"-" mapstructure:"skip_verify"`
 		ServerName string `yaml:"-" mapstructure:"server_name"`
+		SkipVerify bool   `yaml:"-" mapstructure:"skip_verify"`
 	}
 
 	File struct {

@@ -273,8 +273,8 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 	require.NoError(t, err)
 
 	tests := []struct {
-		name     string
 		instance *mpi.Instance
+		name     string
 	}{
 		{
 			name:     "Test 1: Valid response",
@@ -360,9 +360,9 @@ func TestNginxConfigParser_sslCert(t *testing.T) {
 func TestNginxConfigParser_urlsForLocationDirective(t *testing.T) {
 	tmpDir := t.TempDir()
 	for _, tt := range []struct {
+		conf string
 		oss  []string
 		plus []string
-		conf string
 	}{
 		{
 			plus: []string{

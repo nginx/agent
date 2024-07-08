@@ -111,10 +111,10 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 	agentConfig.AllowedDirectories = []string{tempDir}
 
 	tests := []struct {
-		name                  string
 		configApplyReturnsErr error
 		configApplyStatus     model.WriteStatus
 		message               *mpi.ManagementPlaneRequest
+		name                  string
 	}{
 		{
 			name:                  "Test 1 - Success",

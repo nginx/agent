@@ -8,12 +8,12 @@ package model
 import "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 
 type NginxConfigContext struct {
-	Files      []*v1.File
-	AccessLogs []*AccessLog
-	ErrorLogs  []*ErrorLog
 	StubStatus string
 	PlusAPI    string
 	InstanceID string
+	Files      []*v1.File
+	AccessLogs []*AccessLog
+	ErrorLogs  []*ErrorLog
 }
 
 type ConfigApplyMessage struct {

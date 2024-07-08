@@ -73,9 +73,9 @@ func TestGetLogWriter(t *testing.T) {
 	require.NoError(t, err)
 
 	tests := []struct {
+		expected io.Writer
 		name     string
 		input    string
-		expected io.Writer
 	}{
 		{
 			name:     "Test 1: No log file",

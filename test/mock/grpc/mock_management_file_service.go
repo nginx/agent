@@ -24,9 +24,9 @@ const defaultFilePermissions = 0o644
 
 type FileService struct {
 	v1.UnimplementedFileServiceServer
-	configDirectory    string
 	overviews          map[string][]*v1.File // Key is the config version UID
 	versionDirectories map[string]string     // Key is the version directory name
+	configDirectory    string
 }
 
 func NewFileService(configDirectory string) (*FileService, error) {

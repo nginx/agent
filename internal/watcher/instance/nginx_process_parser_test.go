@@ -118,9 +118,9 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 	}
 
 	tests := []struct {
+		expected                  map[string]*mpi.Instance
 		name                      string
 		nginxVersionCommandOutput string
-		expected                  map[string]*mpi.Instance
 	}{
 		{
 			name: "Test 1: NGINX open source",
@@ -226,9 +226,9 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 	}
 
 	tests := []struct {
+		expected  map[string]*mpi.Instance
 		name      string
 		processes []*model.Process
-		expected  map[string]*mpi.Instance
 	}{
 		{
 			name: "Test 1: 1 master process, 2 workers",
@@ -400,10 +400,10 @@ func TestGetInfo(t *testing.T) {
 	expectedModules := strings.ReplaceAll(filepath.Base(testModule.Name()), ".so", "")
 
 	tests := []struct {
-		name                      string
-		nginxVersionCommandOutput string
 		process                   *model.Process
 		expected                  *Info
+		name                      string
+		nginxVersionCommandOutput string
 	}{
 		{
 			name: "Test 1: NGINX open source",
@@ -567,10 +567,10 @@ func TestNginxProcessParser_GetExe(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name          string
-		commandOutput []byte
 		commandError  error
+		name          string
 		expected      string
+		commandOutput []byte
 	}{
 		{
 			name:          "Test 1: Default exe if error executing command -v nginx",

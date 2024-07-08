@@ -119,8 +119,8 @@ func TestHealthWatcherService_health(t *testing.T) {
 	}
 
 	tests := []struct {
-		name         string
 		cache        map[string]*mpi.InstanceHealth
+		name         string
 		isHealthDiff bool
 	}{
 		{
@@ -185,9 +185,9 @@ func TestHealthWatcherService_compareCache(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		expectedHealth []*mpi.InstanceHealth
 		expectedCache  map[string]*mpi.InstanceHealth
 		instances      map[string]*mpi.Instance
+		expectedHealth []*mpi.InstanceHealth
 	}{
 		{
 			name: "Test 1: Instance was deleted",
