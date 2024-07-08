@@ -39,7 +39,7 @@ require (
 	github.com/go-resty/resty/v2 v2.11.0
 	github.com/nginx/agent/sdk/v2 v2.30.3
 	github.com/prometheus/client_golang v1.19.0
-	github.com/rs/cors v1.10.1
+	github.com/rs/cors v1.11.0
 	go.uber.org/mock v0.4.0
 	golang.org/x/sys v0.19.0
 	golang.org/x/text v0.14.0
