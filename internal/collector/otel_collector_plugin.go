@@ -20,9 +20,9 @@ type (
 	Collector struct {
 		service *otelcol.Collector
 		appDone chan struct{}
-		stopped bool
 		cancel  context.CancelFunc
 		config  *config.Config
+		stopped bool
 	}
 )
 

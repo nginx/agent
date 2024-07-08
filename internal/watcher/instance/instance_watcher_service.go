@@ -41,16 +41,16 @@ type (
 	}
 
 	InstanceWatcherService struct {
-		agentConfig               *config.Config
 		processOperator           process.ProcessOperatorInterface
-		processParsers            []processParser
 		nginxConfigParser         nginxConfigParser
-		instanceCache             map[string]*mpi.Instance
-		cacheMutex                sync.Mutex
-		nginxConfigCache          map[string]*model.NginxConfigContext // key is instanceID
 		executer                  exec.ExecInterface
+		agentConfig               *config.Config
+		instanceCache             map[string]*mpi.Instance
+		nginxConfigCache          map[string]*model.NginxConfigContext
 		instancesChannel          chan<- InstanceUpdatesMessage
 		nginxConfigContextChannel chan<- NginxConfigContextMessage
+		processParsers            []processParser
+		cacheMutex                sync.Mutex
 	}
 
 	InstanceUpdates struct {

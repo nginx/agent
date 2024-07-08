@@ -25,8 +25,8 @@ func TestResourceService_AddInstance(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		instanceList []*v1.Instance
 		resource     *v1.Resource
+		instanceList []*v1.Instance
 	}{
 		{
 			name: "Test 1: Add One Instance",
@@ -77,8 +77,8 @@ func TestResourceService_UpdateInstance(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		instanceList []*v1.Instance
 		resource     *v1.Resource
+		instanceList []*v1.Instance
 	}{
 		{
 			name: "Test 1: Update Instances",
@@ -110,9 +110,9 @@ func TestResourceService_DeleteInstance(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		instanceList []*v1.Instance
-		resource     *v1.Resource
 		err          error
+		resource     *v1.Resource
+		instanceList []*v1.Instance
 	}{
 		{
 			name: "Test 1: Update Instances",
@@ -146,8 +146,8 @@ func TestResourceService_GetResource(t *testing.T) {
 	ctx := context.Background()
 
 	testCases := []struct {
-		isContainer      bool
 		expectedResource *v1.Resource
+		isContainer      bool
 	}{
 		{
 			isContainer:      true,
@@ -196,10 +196,10 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name        string
 		reloadErr   error
 		validateErr error
 		expected    error
+		name        string
 	}{
 		{
 			name:        "Test 1: Successful reload",

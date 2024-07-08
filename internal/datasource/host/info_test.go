@@ -383,8 +383,8 @@ func TestInfo_IsContainer(t *testing.T) {
 
 	tests := []struct {
 		name                   string
-		containerSpecificFiles []string
 		selfCgroupLocation     string
+		containerSpecificFiles []string
 		expected               bool
 	}{
 		{
@@ -543,9 +543,9 @@ func TestInfo_HostInfo(t *testing.T) {
 
 func TestInfo_ParseOsReleaseFile(t *testing.T) {
 	tests := []struct {
+		expect           map[string]string
 		name             string
 		osReleaseContent string
-		expect           map[string]string
 	}{
 		{
 			name:             "Test 1: ubuntu os-release info",

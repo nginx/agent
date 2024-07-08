@@ -33,19 +33,19 @@ func TestLogOperator_Tail(t *testing.T) {
 	defer helpers.RemoveFileWithErrorCheck(t, errorLogFile.Name())
 
 	tests := []struct {
-		name             string
 		out              *bytes.Buffer
+		err              error
+		expected         error
+		name             string
 		errorLogs        string
 		errorLogContents string
-		error            error
-		expected         error
 	}{
 		{
 			name:             "Test 1: No errors in logs",
 			out:              bytes.NewBufferString(""),
 			errorLogs:        errorLogFile.Name(),
 			errorLogContents: "",
-			error:            nil,
+			err:              nil,
 			expected:         nil,
 		},
 		{
@@ -53,7 +53,7 @@ func TestLogOperator_Tail(t *testing.T) {
 			out:              bytes.NewBufferString(""),
 			errorLogs:        errorLogFile.Name(),
 			errorLogContents: errorLogLine,
-			error:            nil,
+			err:              nil,
 			expected:         errors.Join(fmt.Errorf(errorLogLine)),
 		},
 		{
@@ -61,7 +61,7 @@ func TestLogOperator_Tail(t *testing.T) {
 			out:              bytes.NewBufferString(""),
 			errorLogs:        errorLogFile.Name(),
 			errorLogContents: warningLogLine,
-			error:            nil,
+			err:              nil,
 			expected:         errors.Join(fmt.Errorf(warningLogLine)),
 		},
 	}
@@ -80,7 +80,7 @@ func TestLogOperator_Tail(t *testing.T) {
 				defer wg.Done()
 				err := <-logErrorChannel
 				assert.Equal(t, testErr, err)
-			}(test.error)
+			}(test.err)
 
 			time.Sleep(200 * time.Millisecond)
 

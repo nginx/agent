@@ -28,9 +28,9 @@ type CommandService struct {
 	server                       *gin.Engine
 	connectionRequest            *v1.CreateConnectionRequest
 	requestChan                  chan *v1.ManagementPlaneRequest
-	dataPlaneResponses           []*v1.DataPlaneResponse
 	updateDataPlaneStatusRequest *v1.UpdateDataPlaneStatusRequest
 	updateDataPlaneHealthRequest *v1.UpdateDataPlaneHealthRequest
+	dataPlaneResponses           []*v1.DataPlaneResponse
 	dataPlaneResponsesMutex      sync.Mutex
 	updateDataPlaneStatusMutex   sync.Mutex
 	updateDataPlaneHealthMutex   sync.Mutex

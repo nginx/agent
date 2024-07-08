@@ -24,9 +24,9 @@ import (
 
 func TestInstanceOperator_ValidateConfigCheckResponse(t *testing.T) {
 	tests := []struct {
+		expected interface{}
 		name     string
 		out      string
-		expected interface{}
 	}{
 		{
 			name:     "Test 1: Valid response",
@@ -54,27 +54,27 @@ func TestInstanceOperator_Validate(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name     string
 		out      *bytes.Buffer
-		error    error
+		err      error
 		expected error
+		name     string
 	}{
 		{
 			name:     "Test 1: Validate successful",
 			out:      bytes.NewBufferString(""),
-			error:    nil,
+			err:      nil,
 			expected: nil,
 		},
 		{
 			name:     "Test 2: Validate failed",
 			out:      bytes.NewBufferString("[emerg]"),
-			error:    errors.New("error validating"),
+			err:      errors.New("error validating"),
 			expected: fmt.Errorf("NGINX config test failed %w: [emerg]", errors.New("error validating")),
 		},
 		{
 			name:     "Test 3: Validate Config failed",
 			out:      bytes.NewBufferString("nginx [emerg]"),
-			error:    nil,
+			err:      nil,
 			expected: fmt.Errorf("error running nginx -t -c:\nnginx [emerg]"),
 		},
 	}
@@ -82,7 +82,7 @@ func TestInstanceOperator_Validate(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			mockExec := &execfakes.FakeExecInterface{}
-			mockExec.RunCmdReturns(test.out, test.error)
+			mockExec.RunCmdReturns(test.out, test.err)
 
 			instance := protos.GetNginxOssInstance([]string{})
 
@@ -103,18 +103,18 @@ func TestInstanceOperator_Reload(t *testing.T) {
 	defer helpers.RemoveFileWithErrorCheck(t, errorLogFile.Name())
 
 	tests := []struct {
-		name     string
-		error    error
+		err      error
 		expected error
+		name     string
 	}{
 		{
 			name:     "Test 1: Successful reload",
-			error:    nil,
+			err:      nil,
 			expected: nil,
 		},
 		{
 			name:     "Test 2: Failed reload",
-			error:    errors.New("error reloading"),
+			err:      errors.New("error reloading"),
 			expected: errors.New("error reloading"),
 		},
 	}
@@ -122,7 +122,7 @@ func TestInstanceOperator_Reload(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			mockExec := &execfakes.FakeExecInterface{}
-			mockExec.KillProcessReturns(test.error)
+			mockExec.KillProcessReturns(test.err)
 
 			instance := protos.GetNginxOssInstance([]string{})
 
@@ -142,10 +142,10 @@ func TestInstanceOperator_ReloadAndMonitor(t *testing.T) {
 	defer helpers.RemoveFileWithErrorCheck(t, errorLogFile.Name())
 
 	tests := []struct {
+		expectedErr     error
 		name            string
 		errorLogs       string
 		errorLogContent string
-		expectedErr     error
 	}{
 		{
 			name:            "Test 1: Successful reload",

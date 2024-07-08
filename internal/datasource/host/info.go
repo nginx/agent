@@ -81,11 +81,11 @@ type (
 	Info struct {
 		// containerSpecificFiles are files that are only created in containers.
 		// We use this to determine if an instance is running in a container or not
-		containerSpecificFiles []string
+		exec                   exec.ExecInterface
 		selfCgroupLocation     string
 		mountInfoLocation      string
 		osReleaseLocation      string
-		exec                   exec.ExecInterface
+		containerSpecificFiles []string
 	}
 )
 

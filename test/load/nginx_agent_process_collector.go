@@ -37,60 +37,45 @@ import (
 // agentProcessCollector implements the OtelcolRunner interface as a child process on the same machine executing
 // the test. The process can be monitored and the output of which will be written to a log file.
 type agentProcessCollector struct {
+	// Time when process was started.
+	startTime time.Time
+	// Last tick time we monitored the process.
+	lastElapsedTime time.Time
+	// Resource specification that must be monitored for.
+	resourceSpec *testbed.ResourceSpec
+	// Command to execute
+	cmd *exec.Cmd
+	// additional env vars (os.Environ() populated by default)
+	additionalEnv map[string]string
+	// Done channel
+	doneSignal chan struct{}
+	// Process monitoring data.
+	processMon *process.Process
+	// Process times that were fetched on last monitoring tick.
+	lastProcessTimes *cpu.TimesStat
 	// Path to agent executable. If unset the default executable in
 	// Can be set for example to use the unstable executable for a specific test.
 	agentExePath string
-
-	// Descriptive name of the process
-	name string
-
 	// Config file name
 	configFileName string
-
-	// Command to execute
-	cmd *exec.Cmd
-
-	// additional env vars (os.Environ() populated by default)
-	additionalEnv map[string]string
-
-	// Various starting/stopping flags
-	isStarted  bool
-	stopOnce   sync.Once
-	isStopped  bool
-	doneSignal chan struct{}
-
-	// Resource specification that must be monitored for.
-	resourceSpec *testbed.ResourceSpec
-
-	// Process monitoring data.
-	processMon *process.Process
-
-	// Time when process was started.
-	startTime time.Time
-
-	// Last tick time we monitored the process.
-	lastElapsedTime time.Time
-
-	// Process times that were fetched on last monitoring tick.
-	lastProcessTimes *cpu.TimesStat
-
-	// Current RAM RSS in MiBs
-	ramMiBCur atomic.Uint32
-
-	// Current CPU percentage times 1000 (we use scaling since we have to use int for atomic operations).
-	cpuPercentX1000Cur atomic.Uint32
-
-	// Maximum CPU seen
-	cpuPercentMax float64
-
-	// Number of memory measurements
-	memProbeCount int
-
+	// Descriptive name of the process
+	name string
 	// Cumulative RAM RSS in MiBs
 	ramMiBTotal uint64
-
+	// Number of memory measurements
+	memProbeCount int
+	// Maximum CPU seen
+	cpuPercentMax float64
+	// Stop once sync flag
+	stopOnce sync.Once
+	// Current CPU percentage times 1000 (we use scaling since we have to use int for atomic operations).
+	cpuPercentX1000Cur atomic.Uint32
+	ramMiBCur          atomic.Uint32
 	// Maximum RAM seen
 	ramMiBMax uint32
+	// Various starting/stopping flags
+	isStopped bool
+	isStarted bool
 }
 
 var LoadResourceSpec = &testbed.ResourceSpec{

@@ -186,9 +186,9 @@ func TestInstanceWatcherService_updateNginxInstanceRuntime(t *testing.T) {
 	}
 
 	tests := []struct {
-		name               string
 		nginxConfigContext *model.NginxConfigContext
 		instance           *mpi.Instance
+		name               string
 	}{
 		{
 			name:               "Test 1: OSS Instance",
@@ -228,9 +228,9 @@ func TestInstanceWatcherService_updateNginxInstanceRuntime(t *testing.T) {
 
 func TestInstanceWatcherService_areInstancesEqual(t *testing.T) {
 	tests := []struct {
-		name           string
 		oldRuntime     *mpi.InstanceRuntime
 		currentRuntime *mpi.InstanceRuntime
+		name           string
 		expected       bool
 	}{
 		{
@@ -333,8 +333,8 @@ func TestInstanceWatcherService_ReparseConfig(t *testing.T) {
 	updatedInstance.GetInstanceRuntime().ProcessId = 5678
 
 	tests := []struct {
-		name         string
 		parseReturns *model.NginxConfigContext
+		name         string
 	}{
 		{
 			name:         "Test 1: Config Context Different",
