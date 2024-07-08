@@ -35,8 +35,7 @@ type FilePlugin struct {
 func NewFilePlugin(agentConfig *config.Config, grpcConnection grpc.GrpcConnectionInterface) *FilePlugin {
 	return &FilePlugin{
 		config: agentConfig,
-		// why?
-		conn: grpcConnection,
+		conn:   grpcConnection,
 	}
 }
 
