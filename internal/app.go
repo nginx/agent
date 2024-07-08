@@ -49,7 +49,10 @@ func (a *App) Run(ctx context.Context) error {
 		slogger := logger.New(*agentConfig.Log)
 		slog.SetDefault(slogger)
 
-		slog.InfoContext(ctx, "Starting NGINX Agent")
+		slog.InfoContext(ctx, "Starting NGINX Agent",
+			slog.String("version", a.version),
+			slog.String("commit", a.commit),
+		)
 
 		messagePipe := bus.NewMessagePipe(defaultMessagePipeChannelSize)
 		err = messagePipe.Register(defaultQueueSize, plugin.LoadPlugins(ctx, agentConfig))
