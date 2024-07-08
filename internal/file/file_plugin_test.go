@@ -12,11 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nginx/agent/v3/internal/file/filefakes"
-
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1/v1fakes"
 	"github.com/nginx/agent/v3/internal/bus"
+	"github.com/nginx/agent/v3/internal/file/filefakes"
 	"github.com/nginx/agent/v3/internal/grpc/grpcfakes"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/pkg/files"
@@ -111,10 +110,10 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 	agentConfig.AllowedDirectories = []string{tempDir}
 
 	tests := []struct {
-		configApplyReturnsErr error
-		configApplyStatus     model.WriteStatus
 		message               *mpi.ManagementPlaneRequest
+		configApplyReturnsErr error
 		name                  string
+		configApplyStatus     model.WriteStatus
 	}{
 		{
 			name:                  "Test 1 - Success",

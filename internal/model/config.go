@@ -17,9 +17,9 @@ type NginxConfigContext struct {
 }
 
 type ConfigApplyMessage struct {
+	Error         error
 	CorrelationID string
 	InstanceID    string
-	Error         error
 }
 
 type AccessLog struct {
