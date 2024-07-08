@@ -28,11 +28,11 @@ func TestNginxHealthWatcherOperator_Health(t *testing.T) {
 	noChildrenInstance.GetInstanceRuntime().InstanceChildren = []*mpi.InstanceChild{}
 
 	tests := []struct {
-		name     string
-		process  *model.Process
 		expected *mpi.InstanceHealth
-		err      error
 		instance *mpi.Instance
+		process  *model.Process
+		err      error
+		name     string
 	}{
 		{
 			name: "Test 1: Healthy Instance",

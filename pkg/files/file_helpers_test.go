@@ -52,8 +52,8 @@ func TestGetPermissions(t *testing.T) {
 func Test_GenerateConfigVersion(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    []*mpi.File
 		expected string
+		input    []*mpi.File
 	}{
 		{
 			name:     "Test 1: empty file slice",
@@ -111,8 +111,8 @@ func Test_GenerateConfigVersion(t *testing.T) {
 func TestGenerateHash(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    []byte
 		expected string
+		input    []byte
 	}{
 		{
 			name:     "Test 1: empty byte slice",
@@ -163,10 +163,10 @@ func TestCompareFileHash_Delete(t *testing.T) {
 	addAction := mpi.File_FILE_ACTION_ADD
 
 	tests := []struct {
-		name             string
 		fileOverview     *mpi.FileOverview
 		expectedDiff     map[string]*mpi.File
 		expectedContents map[string][]byte
+		name             string
 	}{
 		{
 			name: "Test 1: Delete, Add & Update Files",

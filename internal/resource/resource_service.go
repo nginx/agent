@@ -46,12 +46,12 @@ type (
 )
 
 type ResourceService struct {
-	info              host.InfoInterface
 	resource          *mpi.Resource
+	agentConfig       *config.Config
+	instanceOperators map[string]instanceOperator // key is instance ID
+	info              host.InfoInterface
 	resourceMutex     sync.Mutex
 	operatorsMutex    sync.Mutex
-	instanceOperators map[string]instanceOperator // key is instance ID
-	agentConfig       *config.Config
 }
 
 func NewResourceService(ctx context.Context, agentConfig *config.Config) *ResourceService {

@@ -34,12 +34,12 @@ const (
 type (
 	CommandService struct {
 		commandServiceClient mpi.CommandServiceClient
+		subscribeClient      mpi.CommandService_SubscribeClient
 		agentConfig          *config.Config
 		isConnected          *atomic.Bool
 		subscribeCancel      context.CancelFunc
-		subscribeMutex       sync.Mutex
 		subscribeChannel     chan *mpi.ManagementPlaneRequest
-		subscribeClient      mpi.CommandService_SubscribeClient
+		subscribeMutex       sync.Mutex
 		subscribeClientMutex sync.Mutex
 	}
 )
