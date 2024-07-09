@@ -18,9 +18,46 @@ import (
 )
 
 type BuildOptions struct {
-	Indent int
-	Tabs   bool
-	Header bool
+	Indent      int
+	Tabs        bool
+	Header      bool
+	Builders    []RegisterBuilder // handle specific directives
+	extBuilders map[string]Builder
+}
+
+// RegisterBuilder is an option that can be used to add a builder to build NGINX configuration for custom directives.
+type RegisterBuilder interface {
+	applyBuildOptions(options *BuildOptions)
+}
+
+type registerBuilder struct {
+	b          Builder
+	directives []string
+}
+
+func (rb registerBuilder) applyBuildOptions(o *BuildOptions) {
+	if o.extBuilders == nil {
+		o.extBuilders = make(map[string]Builder)
+	}
+
+	for _, s := range rb.directives {
+		o.extBuilders[s] = rb.b
+	}
+}
+
+// BuildWithBuilder registers a builder to build the NGINX configuration for the given directives.
+func BuildWithBuilder(b Builder, directives ...string) RegisterBuilder { //nolint:ireturn
+	return registerBuilder{b: b, directives: directives}
+}
+
+// Builder is the interface implemented by types that can render a Directive
+// as it appears in NGINX configuration files.
+//
+// Build writes the strings that represent the Directive and it's Block to the
+// io.StringWriter returning any error encountered that caused the write to stop
+// early. Build must not modify the Directive.
+type Builder interface {
+	Build(stmt *Directive) string
 }
 
 const MaxIndent = 100
@@ -46,6 +83,10 @@ func BuildFiles(payload Payload, dir string, options *BuildOptions) error {
 			return err
 		}
 		dir = cwd
+	}
+
+	for _, o := range options.Builders {
+		o.applyBuildOptions(options)
 	}
 
 	for _, config := range payload.Config {
@@ -96,6 +137,12 @@ func Build(w io.Writer, config Config, options *BuildOptions) error {
 		}
 	}
 
+	if options.extBuilders == nil { // might be set if using BuildFiles
+		for _, o := range options.Builders {
+			o.applyBuildOptions(options)
+		}
+	}
+
 	body := strings.Builder{}
 	buildBlock(&body, nil, config.Parsed, 0, 0, options)
 
@@ -108,8 +155,10 @@ func Build(w io.Writer, config Config, options *BuildOptions) error {
 	return err
 }
 
+//nolint:gocognit
 func buildBlock(sb io.StringWriter, parent *Directive, block Directives, depth int, lastLine int, options *BuildOptions) {
 	for i, stmt := range block {
+		directive := Enquote(stmt.Directive)
 		// if the this statement is a comment on the same line as the preview, do not emit EOL for this stmt
 		if stmt.Line == lastLine && stmt.IsComment() {
 			_, _ = sb.WriteString(" #")
@@ -124,11 +173,17 @@ func buildBlock(sb io.StringWriter, parent *Directive, block Directives, depth i
 
 		_, _ = sb.WriteString(margin(options, depth))
 
+		if options.extBuilders != nil {
+			if ext, ok := options.extBuilders[directive]; ok {
+				_, _ = sb.WriteString(ext.Build(stmt))
+				continue
+			}
+		}
+
 		if stmt.IsComment() {
 			_, _ = sb.WriteString("#")
 			_, _ = sb.WriteString(*stmt.Comment)
 		} else {
-			directive := Enquote(stmt.Directive)
 			_, _ = sb.WriteString(directive)
 
 			// special handling for if statements
@@ -159,9 +214,11 @@ func buildBlock(sb io.StringWriter, parent *Directive, block Directives, depth i
 				_, _ = sb.WriteString("}")
 			}
 		}
+
 		lastLine = stmt.Line
 	}
 }
+
 func margin(options *BuildOptions, depth int) string {
 	indent := depth * options.Indent
 	if indent < MaxIndent {
