@@ -38,7 +38,6 @@ func TestFilePlugin_Close(t *testing.T) {
 	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
 	fakeFileManagerService := &filefakes.FakeFileManagerServiceInterface{}
 
-
 	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection)
 	filePlugin.fileManagerService = fakeFileManagerService
 	filePlugin.Close(ctx)
