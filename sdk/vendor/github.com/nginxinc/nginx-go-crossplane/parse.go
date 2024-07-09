@@ -21,7 +21,7 @@ import (
 //nolint:gochecknoglobals
 var (
 	hasMagic           = regexp.MustCompile(`[*?[]`)
-	osOpen             = func(path string) (io.Reader, error) { return os.Open(path) }
+	osOpen             = func(path string) (io.ReadCloser, error) { return os.Open(path) }
 	ErrPrematureLexEnd = errors.New("premature end of file")
 )
 
@@ -53,6 +53,16 @@ type parser struct {
 	includeInDegree map[string]int
 }
 
+// MatchFunc is the signature of the match function used to identify NGINX directives that
+// can be encountered when parsing an NGINX configuration that references dynamic or
+// non-core modules. The argument is the name of a directive found when parsing an NGINX
+// configuration.
+//
+// The return value is a list of bitmasks that indicate the valid contexts in which the
+// directive may appear as well as the number of arguments the directive accepts. The
+// return value must contain at least one non-zero bitmask if matched is true.
+type MatchFunc func(directive string) (masks []uint, matched bool)
+
 // ParseOptions determine the behavior of an NGINX config parse.
 type ParseOptions struct {
 	// An array of directives to skip over and not include in the payload.
@@ -64,7 +74,7 @@ type ParseOptions struct {
 	ErrorCallback func(error) interface{}
 
 	// If specified, use this alternative to open config files
-	Open func(path string) (io.Reader, error)
+	Open func(path string) (io.ReadCloser, error)
 
 	// Glob will return a matching list of files if specified
 	Glob func(path string) ([]string, error)
@@ -93,6 +103,14 @@ type ParseOptions struct {
 
 	// If true, checks that directives have a valid number of arguments.
 	SkipDirectiveArgsCheck bool
+
+	// DirectiveSources is used to indicate the set of directives to be expected
+	// by the parser. DirectiveSources can include different versions of NGINX
+	// and dynamic modules. If DirectiveSources is empty, the parser defaults
+	// to DefaultDirectivesMatchFunc.
+	DirectiveSources []MatchFunc
+
+	LexOptions LexOptions
 }
 
 // Parse parses an NGINX configuration file.
@@ -149,7 +167,9 @@ func Parse(filename string, options *ParseOptions) (*Payload, error) {
 			return nil, err
 		}
 
-		tokens := Lex(file)
+		defer file.Close()
+
+		tokens := LexWithOptions(file, options.LexOptions)
 		config := Config{
 			File:   incl.path,
 			Status: "ok",
@@ -180,7 +200,7 @@ func Parse(filename string, options *ParseOptions) (*Payload, error) {
 	return payload, nil
 }
 
-func (p *parser) openFile(path string) (io.Reader, error) {
+func (p *parser) openFile(path string) (io.ReadCloser, error) {
 	open := osOpen
 	if p.options.Open != nil {
 		open = p.options.Open
@@ -365,6 +385,7 @@ func (p *parser) parse(parsing *Config, tokens <-chan NgxToken, ctx blockCtx, co
 				// if the file pattern was explicit, nginx will check
 				// that the included file can be opened and read
 				if f, err := p.openFile(pattern); err != nil {
+					defer f.Close()
 					perr := &ParseError{
 						What:      err.Error(),
 						File:      &parsing.File,
@@ -378,9 +399,6 @@ func (p *parser) parse(parsing *Config, tokens <-chan NgxToken, ctx blockCtx, co
 						return nil, perr
 					}
 				} else {
-					if c, ok := f.(io.Closer); ok {
-						_ = c.Close()
-					}
 					fnames = []string{pattern}
 				}
 			}
