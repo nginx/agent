@@ -41,20 +41,7 @@ func NewApp(commit, version string) *App {
 }
 
 func (a *App) Run(ctx context.Context) (err error) {
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		select {
-		case <-sigChan:
-			slog.DebugContext(ctx, "NGINX Agent App exiting")
-		case <-ctx.Done():
-			if a.grpcConn != nil {
-				connCloseErr := a.grpcConn.Close(ctx)
-				slog.ErrorContext(ctx, "Issue closing gRPC connection", "error", connCloseErr)
-			}
-		}
-	}()
+	a.handleSignal(ctx)
 
 	config.Init(a.version, a.commit)
 
@@ -94,6 +81,23 @@ func (a *App) Run(ctx context.Context) (err error) {
 	}
 
 	return nil
+}
+
+func (a *App) handleSignal(ctx context.Context) {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		select {
+		case <-sigChan:
+			slog.DebugContext(ctx, "NGINX Agent App exiting")
+		case <-ctx.Done():
+			if a.grpcConn != nil {
+				connCloseErr := a.grpcConn.Close(ctx)
+				slog.ErrorContext(ctx, "Issue closing gRPC connection", "error", connCloseErr)
+			}
+		}
+	}()
 }
 
 func (a *App) loadPlugins(agentConfig *config.Config) []bus.Plugin {
