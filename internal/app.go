@@ -49,8 +49,10 @@ func (a *App) Run(ctx context.Context) (err error) {
 		case <-sigChan:
 			slog.DebugContext(ctx, "NGINX Agent App exiting")
 		case <-ctx.Done():
-			connCloseErr := a.grpcConn.Close(ctx)
-			slog.ErrorContext(ctx, "Issue closing gRPC connection", "error", connCloseErr)
+			if a.grpcConn != nil {
+				connCloseErr := a.grpcConn.Close(ctx)
+				slog.ErrorContext(ctx, "Issue closing gRPC connection", "error", connCloseErr)
+			}
 		}
 	}()
 
