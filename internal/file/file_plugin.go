@@ -95,7 +95,7 @@ func (fp *FilePlugin) clearCache() {
 }
 
 func (fp *FilePlugin) handleConfigApplyFailedRequest(ctx context.Context, msg *bus.Message) {
-	data, ok := msg.Data.(model.ConfigApplyMessage)
+	data, ok := msg.Data.(*model.ConfigApplyMessage)
 	if data.InstanceID == "" || !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplyMessage",
 			"payload", msg.Data)
@@ -190,7 +190,7 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
 		fp.handleConfigApplyFailedRequest(ctx, &bus.Message{
 			Topic: bus.ConfigApplyFailedTopic,
-			Data: model.ConfigApplyMessage{
+			Data: &model.ConfigApplyMessage{
 				CorrelationID: correlationID,
 				InstanceID:    configApplyRequest.GetConfigVersion().GetInstanceId(),
 				Error:         err,
@@ -200,10 +200,9 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 		return
 	case model.OK:
 		// Send WriteConfigSuccessfulTopic with Correlation and Instance ID for use by resource plugin
-		data := model.ConfigApplyMessage{
+		data := &model.ConfigApplyMessage{
 			CorrelationID: correlationID,
 			InstanceID:    configApplyRequest.GetConfigVersion().GetInstanceId(),
-			Error:         nil,
 		}
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.WriteConfigSuccessfulTopic, Data: data})
 	}
