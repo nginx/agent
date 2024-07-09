@@ -36,11 +36,15 @@ func TestFilePlugin_Info(t *testing.T) {
 func TestFilePlugin_Close(t *testing.T) {
 	ctx := context.Background()
 	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+	fakeFileManagerService := &filefakes.FakeFileManagerServiceInterface{}
+
 
 	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection)
+	filePlugin.fileManagerService = fakeFileManagerService
 	filePlugin.Close(ctx)
 
-	assert.Equal(t, 1, fakeGrpcConnection.CloseCallCount())
+	assert.Equal(t, 0, fakeGrpcConnection.CloseCallCount())
+	assert.Equal(t, 1, fakeFileManagerService.ClearCacheCallCount())
 }
 
 func TestFilePlugin_Subscriptions(t *testing.T) {
