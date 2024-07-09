@@ -17,8 +17,8 @@ import (
 const defaultCollectInterval = 10 * time.Second
 
 type Config struct {
-	scraperhelper.ControllerConfig `mapstructure:",squash"`
 	confighttp.ClientConfig        `mapstructure:",squash"`
+	scraperhelper.ControllerConfig `mapstructure:",squash"`
 	MetricsBuilderConfig           metadata.MetricsBuilderConfig `mapstructure:",squash"`
 }
 

@@ -63,29 +63,10 @@ func TestTemplateWrite(t *testing.T) {
 		TLS:    nil,
 	})
 
-	cfg.Collector.Receivers = append(cfg.Collector.Receivers, config.Receiver{
-		Type:   "hostmetrics",
-		Server: nil, // not relevant to hostmetrics receiver.
-		Auth:   nil,
-		TLS:    nil,
-	}, config.Receiver{
-		Type: "prometheus",
-		Server: &config.ServerConfig{
-			Host: "192.168.200.15",
-			Port: 7765,
-			Type: 0,
-		},
-		Auth: nil, // Auth and TLS not supported yet.
-		TLS:  nil,
-	}, config.Receiver{
-		Type: "nginx",
-		Server: &config.ServerConfig{
-			Host: "localhost",
-			Port: 80,
-			Type: 0,
-		},
-		Auth: nil, // Auth and TLS not supported yet.
-		TLS:  nil,
+	cfg.Collector.Receivers.HostMetrics = true
+	cfg.Collector.Receivers.NginxReceivers = append(cfg.Collector.Receivers.NginxReceivers, config.NginxReceiver{
+		InstanceID: "123",
+		StubStatus: "http://localhost:80/status",
 	})
 
 	require.NotNil(t, cfg)

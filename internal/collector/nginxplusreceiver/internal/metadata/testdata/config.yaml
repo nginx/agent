@@ -9,6 +9,12 @@ all_set:
       enabled: true
     nginx.cache.responses:
       enabled: true
+    nginx.config.reloads:
+      enabled: true
+    nginx.http.conn:
+      enabled: true
+    nginx.http.conn.count:
+      enabled: true
     nginx.http.limit_conn.requests:
       enabled: true
     nginx.http.limit_req.requests:
@@ -20,6 +26,8 @@ all_set:
     nginx.http.request.processing.count:
       enabled: true
     nginx.http.requests:
+      enabled: true
+    nginx.http.requests.count:
       enabled: true
     nginx.http.response.status:
       enabled: true
@@ -45,6 +53,8 @@ all_set:
       enabled: true
     nginx.http.upstream.peer.responses:
       enabled: true
+    nginx.http.upstream.peer.state:
+      enabled: true
     nginx.http.upstream.peer.unavailables:
       enabled: true
     nginx.http.upstream.queue.limit:
@@ -52,8 +62,6 @@ all_set:
     nginx.http.upstream.queue.overflows:
       enabled: true
     nginx.http.upstream.queue.usage:
-      enabled: true
-    nginx.http.upstream.state:
       enabled: true
     nginx.http.upstream.zombie.count:
       enabled: true
@@ -70,6 +78,8 @@ all_set:
     nginx.slab.slot.free:
       enabled: true
     nginx.slab.slot.usage:
+      enabled: true
+    nginx.ssl.certificate.verify_failures:
       enabled: true
     nginx.ssl.handshakes:
       enabled: true
@@ -99,11 +109,11 @@ all_set:
       enabled: true
     nginx.stream.upstream.peer.response.time:
       enabled: true
+    nginx.stream.upstream.peer.state:
+      enabled: true
     nginx.stream.upstream.peer.ttfb.time:
       enabled: true
     nginx.stream.upstream.peer.unavailable:
-      enabled: true
-    nginx.stream.upstream.state:
       enabled: true
     nginx.stream.upstream.zombie.count:
       enabled: true
@@ -117,6 +127,12 @@ none_set:
       enabled: false
     nginx.cache.responses:
       enabled: false
+    nginx.config.reloads:
+      enabled: false
+    nginx.http.conn:
+      enabled: false
+    nginx.http.conn.count:
+      enabled: false
     nginx.http.limit_conn.requests:
       enabled: false
     nginx.http.limit_req.requests:
@@ -128,6 +144,8 @@ none_set:
     nginx.http.request.processing.count:
       enabled: false
     nginx.http.requests:
+      enabled: false
+    nginx.http.requests.count:
       enabled: false
     nginx.http.response.status:
       enabled: false
@@ -153,6 +171,8 @@ none_set:
       enabled: false
     nginx.http.upstream.peer.responses:
       enabled: false
+    nginx.http.upstream.peer.state:
+      enabled: false
     nginx.http.upstream.peer.unavailables:
       enabled: false
     nginx.http.upstream.queue.limit:
@@ -160,8 +180,6 @@ none_set:
     nginx.http.upstream.queue.overflows:
       enabled: false
     nginx.http.upstream.queue.usage:
-      enabled: false
-    nginx.http.upstream.state:
       enabled: false
     nginx.http.upstream.zombie.count:
       enabled: false
@@ -178,6 +196,8 @@ none_set:
     nginx.slab.slot.free:
       enabled: false
     nginx.slab.slot.usage:
+      enabled: false
+    nginx.ssl.certificate.verify_failures:
       enabled: false
     nginx.ssl.handshakes:
       enabled: false
@@ -207,11 +227,11 @@ none_set:
       enabled: false
     nginx.stream.upstream.peer.response.time:
       enabled: false
+    nginx.stream.upstream.peer.state:
+      enabled: false
     nginx.stream.upstream.peer.ttfb.time:
       enabled: false
     nginx.stream.upstream.peer.unavailable:
-      enabled: false
-    nginx.stream.upstream.state:
       enabled: false
     nginx.stream.upstream.zombie.count:
       enabled: false

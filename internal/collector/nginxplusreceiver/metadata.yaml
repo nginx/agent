@@ -56,6 +56,7 @@ attributes:
     description: A status code range or bucket for a HTTP response's status code.
     type: string
     enum:
+      - "1xx"
       - "2xx"
       - "3xx"
       - "4xx"
@@ -65,6 +66,9 @@ attributes:
     type: string
   nginx.peer.address:
     description: The address of the peer.
+    type: string
+  nginx.peer.name:
+    description: The name of the peer.
     type: string
   nginx.peer.state:
     description: The current state of an upstream peer.
@@ -88,6 +92,23 @@ attributes:
     enum:
       - "FAILED"
       - "REUSE"
+  nginx.ssl.handshake.reason:
+    description: The reason for a SSL handshake failure.
+    type: string
+    enum:
+      - "NO_COMMON_PROTOCOL"
+      - "NO_COMMON_CIPHER"
+      - "TIMEOUT"
+      - "CERT_REJECTED"
+  nginx.ssl.verify_failure.reason:
+    description: The reason for a SSL certificate verification failure.
+    type: string
+    enum:
+      - "NO_CERT"
+      - "EXPIRED_CERT"
+      - "REVOKED_CERT"
+      - "HOSTNAME_MISMATCH"
+      - "OTHER"
   nginx.slab.slot.allocation.result:
     description: Result of an attempt to allocate memory to a slab slot.
     type: string
@@ -97,8 +118,51 @@ attributes:
   nginx.slab.slot.limit:
     description: The upper limit for a slab slot, used as the identifier for the slot.
     type: int
+  nginx.conn.outcome:
+    description: The outcome of the connection.
+    type: string
+    enum:
+      - "ACCEPTED"
+      - "ACTIVE"
+      - "DROPPED"
+      - "IDLE"
+  nginx.cache.name:
+    description: The name of the cache.
+    type: string
 
 metrics:
+  nginx.config.reloads:
+    enabled: true
+    description: The total number of NGINX config reloads.
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+    unit: "reloads"
+  nginx.http.conn:
+    enabled: true
+    description: The total number of connections.
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+    unit: "connections"
+    attributes:
+      - nginx.conn.outcome
+  nginx.http.conn.count:
+    enabled: true
+    description: The current number of connections.
+    gauge:
+      value_type: int
+    unit: "connections"
+    attributes:
+      - nginx.conn.outcome
+  nginx.http.requests.count:
+    enabled: true
+    description: The current number of client requests received from clients.
+    gauge:
+      value_type: int
+    unit: "requests"
   nginx.cache.bytes:
     enabled: true
     description: The total number of bytes read from the cache or proxied server.
@@ -109,6 +173,7 @@ metrics:
     unit: "bytes"
     attributes:
       - nginx.cache.outcome
+      - nginx.cache.name
   nginx.cache.responses:
     enabled: true
     description: The total number of responses read from the cache or proxied server.
@@ -119,18 +184,23 @@ metrics:
     unit: "responses"
     attributes:
       - nginx.cache.outcome
+      - nginx.cache.name
   nginx.cache.memory.limit:
     enabled: true
     description: The limit on the maximum size of the cache specified in the configuration.
     gauge:
       value_type: int
     unit: "bytes"
+    attributes:
+      - nginx.cache.name
   nginx.cache.memory.usage:
     enabled: true
     description: The current size of the cache.
     gauge:
       value_type: int
     unit: "bytes"
+    attributes:
+      - nginx.cache.name
   nginx.http.limit_conn.requests:
     enabled: true
     description: The total number of connections to an endpoint with a limit_conn directive.
@@ -241,6 +311,7 @@ metrics:
       - nginx.zone.name
       - nginx.upstream.name
       - nginx.peer.address
+      - nginx.peer.name
   nginx.http.upstream.peer.conn.count:
     enabled: true
     description: The average number of active connections per HTTP upstream peer.
@@ -251,6 +322,7 @@ metrics:
       - nginx.zone.name
       - nginx.upstream.name
       - nginx.peer.address
+      - nginx.peer.name
   nginx.http.upstream.peer.count:
     enabled: true
     description: The current count of peers on the HTTP upstream grouped by state.
@@ -271,6 +343,7 @@ metrics:
       - nginx.zone.name
       - nginx.upstream.name
       - nginx.peer.address
+      - nginx.peer.name
   nginx.http.upstream.peer.header.time:
     enabled: true
     description: The average time to get the response header from the HTTP upstream peer.
@@ -281,6 +354,7 @@ metrics:
       - nginx.zone.name
       - nginx.upstream.name
       - nginx.peer.address
+      - nginx.peer.name
   nginx.http.upstream.peer.health_checks:
     enabled: true
     description: The total number of health check requests made to a HTTP upstream peer.
@@ -294,6 +368,7 @@ metrics:
       - nginx.zone.name
       - nginx.upstream.name
       - nginx.peer.address
+      - nginx.peer.name
   nginx.http.upstream.peer.requests:
     enabled: true
     description: The total number of client requests forwarded to the HTTP upstream peer.
@@ -306,6 +381,7 @@ metrics:
       - nginx.zone.name
       - nginx.upstream.name
       - nginx.peer.address
+      - nginx.peer.name
   nginx.http.upstream.peer.response.time:
     enabled: true
     description: The average time to get the full response from the HTTP upstream peer.
@@ -316,6 +392,7 @@ metrics:
       - nginx.zone.name
       - nginx.upstream.name
       - nginx.peer.address
+      - nginx.peer.name
   nginx.http.upstream.peer.responses:
     enabled: true
     description: The total number of responses obtained from the HTTP upstream peer grouped by status range.
@@ -329,6 +406,7 @@ metrics:
       - nginx.zone.name
       - nginx.upstream.name
       - nginx.peer.address
+      - nginx.peer.name
   nginx.http.upstream.peer.unavailables:
     enabled: true
     description: Number of times the server became unavailable for client requests (“unavail”).
@@ -341,6 +419,19 @@ metrics:
       - nginx.zone.name
       - nginx.upstream.name
       - nginx.peer.address
+      - nginx.peer.name
+  nginx.http.upstream.peer.state:
+    enabled: true
+    description: Current state of an upstream peer in deployment.
+    gauge:
+      value_type: int
+    unit: "is_deployed"
+    attributes:
+      - nginx.peer.state
+      - nginx.zone.name
+      - nginx.upstream.name
+      - nginx.peer.address
+      - nginx.peer.name
   nginx.http.upstream.queue.limit:
     enabled: true
     description: The maximum number of requests that can be in the queue at the same time.
@@ -370,17 +461,6 @@ metrics:
     attributes:
       - nginx.zone.name
       - nginx.upstream.name
-  nginx.http.upstream.state:
-    enabled: true
-    description: Current state of upstream peers in deployment. If any of the upstream servers in the deployment are in the given
-      state then the value will be 1. If no upstream server matches the selected state then the value will be 0.
-    gauge:
-      value_type: int
-    unit: "is_deployed"
-    attributes:
-      - nginx.peer.state
-      - nginx.zone.name
-      - nginx.upstream.name
   nginx.http.upstream.zombie.count:
     enabled: true
     description: The current number of upstream peers removed from the group but still processing active client requests.
@@ -388,8 +468,8 @@ metrics:
       value_type: int
     unit: "is_deployed"
     attributes:
-      - nginx.peer.state
       - nginx.zone.name
+      - nginx.upstream.name
   nginx.slab.page.free:
     enabled: true
     description: The current number of free memory pages.
@@ -462,6 +542,17 @@ metrics:
     unit: "handshakes"
     attributes:
       - nginx.ssl.status
+      - nginx.ssl.handshake.reason
+  nginx.ssl.certificate.verify_failures:
+    enabled: true
+    description: The total number of SSL certificate verification failures.
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+    unit: "certificates"
+    attributes:
+      - nginx.ssl.verify_failure.reason
   nginx.stream.byte.io:
     enabled: true
     description: The total number of Stream byte IO.
@@ -525,6 +616,7 @@ metrics:
       - nginx.zone.name
       - nginx.upstream.name
       - nginx.peer.address
+      - nginx.peer.name
   nginx.stream.upstream.peer.conn.count:
     enabled: true
     description: The current number of Stream Upstream Peer connections.
@@ -535,6 +627,7 @@ metrics:
       - nginx.zone.name
       - nginx.upstream.name
       - nginx.peer.address
+      - nginx.peer.name
   nginx.stream.upstream.peer.conn.time:
     enabled: true
     description: The average time to connect to the stream upstream peer.
@@ -545,6 +638,7 @@ metrics:
       - nginx.zone.name
       - nginx.upstream.name
       - nginx.peer.address
+      - nginx.peer.name
   nginx.stream.upstream.peer.conns:
     enabled: true
     description: The total number of client connections forwarded to this stream upstream peer.
@@ -557,6 +651,7 @@ metrics:
       - nginx.zone.name
       - nginx.upstream.name
       - nginx.peer.address
+      - nginx.peer.name
   nginx.stream.upstream.peer.count:
     enabled: true
     description: The total number of stream upstream peers grouped by state.
@@ -594,6 +689,7 @@ metrics:
       - nginx.zone.name
       - nginx.upstream.name
       - nginx.peer.address
+      - nginx.peer.name
   nginx.stream.upstream.peer.response.time:
     enabled: true
     description: The average time to receive the last byte of data for the stream upstream peer.
@@ -604,6 +700,7 @@ metrics:
       - nginx.zone.name
       - nginx.upstream.name
       - nginx.peer.address
+      - nginx.peer.name
   nginx.stream.upstream.peer.ttfb.time:
     enabled: true
     description: The average time to receive the first byte of data for the stream upstream peer.
@@ -614,6 +711,7 @@ metrics:
       - nginx.zone.name
       - nginx.upstream.name
       - nginx.peer.address
+      - nginx.peer.name
   nginx.stream.upstream.peer.unavailable:
     enabled: true
     description: How many times the server became unavailable for client connections (state “unavail”) due to the number of
@@ -627,7 +725,8 @@ metrics:
       - nginx.zone.name
       - nginx.upstream.name
       - nginx.peer.address
-  nginx.stream.upstream.state:
+      - nginx.peer.name
+  nginx.stream.upstream.peer.state:
     enabled: true
     description: Current state of upstream peers in deployment. If any of the upstream peers in the deployment match the
       given state then the value will be 1. If no upstream peer is a match then the value will be 0.
@@ -640,6 +739,8 @@ metrics:
       - nginx.peer.state
       - nginx.zone.name
       - nginx.upstream.name
+      - nginx.peer.address
+      - nginx.peer.name
   nginx.stream.upstream.zombie.count:
     enabled: true
     description: The current number of peers removed from the group but still processing active client connections.

@@ -6,7 +6,9 @@ package nginxplusreceiver
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"go.opentelemetry.io/collector/component"
@@ -18,7 +20,9 @@ import (
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver/internal/metadata"
 )
 
-// NewFactory creates a factory for the NGINX Plus receiver.
+const defaultTimeout = 10 * time.Second
+
+// nolint: ireturn
 func NewFactory() receiver.Factory {
 	return receiver.NewFactory(
 		metadata.Type,
@@ -26,6 +30,7 @@ func NewFactory() receiver.Factory {
 		receiver.WithMetrics(createMetricsReceiver, metadata.MetricsStability))
 }
 
+// nolint: ireturn
 func createDefaultConfig() component.Config {
 	cfg := scraperhelper.NewDefaultControllerConfig()
 	cfg.CollectionInterval = defaultCollectInterval
@@ -34,32 +39,41 @@ func createDefaultConfig() component.Config {
 		ControllerConfig: cfg,
 		ClientConfig: confighttp.ClientConfig{
 			Endpoint: "http://localhost:80/api",
-			Timeout:  10 * time.Second,
+			Timeout:  defaultTimeout,
 		},
 		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
 	}
 }
 
+// nolint: ireturn
 func createMetricsReceiver(
-	_ context.Context,
+	ctx context.Context,
 	params receiver.Settings,
 	rConf component.Config,
-	consumer consumer.Metrics,
+	metricsConsumer consumer.Metrics,
 ) (receiver.Metrics, error) {
-	cfg := rConf.(*Config)
+	slog.DebugContext(ctx, "Creating new NGINX Plus metrics receiver")
+	cfg, ok := rConf.(*Config)
+	if !ok {
+		return nil, errors.New("failed to cast to Config in NGINX Plus metrics receiver")
+	}
 
 	nps, err := newNginxPlusScraper(params, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("new nginx plus scraper: %w", err)
 	}
 
-	scraper, err := scraperhelper.NewScraper(metadata.Type.String(), nps.scrape)
+	scraper, err := scraperhelper.NewScraper(
+		metadata.Type.String(),
+		nps.scrape,
+		scraperhelper.WithShutdown(nps.Shutdown),
+	)
 	if err != nil {
 		return nil, err
 	}
 
 	return scraperhelper.NewScraperControllerReceiver(
-		&cfg.ControllerConfig, params, consumer,
+		&cfg.ControllerConfig, params, metricsConsumer,
 		scraperhelper.AddScraper(scraper),
 	)
 }

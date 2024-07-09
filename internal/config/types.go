@@ -22,13 +22,6 @@ var (
 	supportedProcessors = map[string]struct{}{
 		"batch": {},
 	}
-
-	supportedReceivers = map[string]struct{}{
-		"otlp":        {},
-		"hostmetrics": {},
-		"nginx":       {},
-		"prometheus":  {},
-	}
 )
 
 type ServerType int
@@ -88,7 +81,7 @@ type (
 		Exporters  []Exporter    `yaml:"-" mapstructure:"exporters"`
 		Health     *ServerConfig `yaml:"-" mapstructure:"health"`
 		Processors []Processor   `yaml:"-" mapstructure:"processors"`
-		Receivers  []Receiver    `yaml:"-" mapstructure:"receivers"`
+		Receivers  Receivers     `yaml:"-" mapstructure:"receivers"`
 	}
 
 	// OTel Collector Exporter configuration.
@@ -103,13 +96,29 @@ type (
 	Processor struct {
 		Type string `yaml:"-" mapstructure:"type"`
 	}
-
 	// OTel Collector Receiver configuration.
-	Receiver struct {
+	Receivers struct {
+		OtlpReceivers      []OtlpReceiver      `yaml:"-" mapstructure:"otlp_receivers"`
+		NginxReceivers     []NginxReceiver     `yaml:"-" mapstructure:"nginx_receivers"`
+		NginxPlusReceivers []NginxPlusReceiver `yaml:"-" mapstructure:"nginx_plus_receivers"`
+		HostMetrics        bool                `yaml:"-" mapstructure:"host_metrics"`
+	}
+
+	OtlpReceiver struct {
 		Server *ServerConfig `yaml:"-" mapstructure:"server"`
 		Auth   *AuthConfig   `yaml:"-" mapstructure:"auth"`
 		TLS    *TLSConfig    `yaml:"-" mapstructure:"tls"`
 		Type   string        `yaml:"-" mapstructure:"type"`
+	}
+
+	NginxReceiver struct {
+		InstanceID string `yaml:"-" mapstructure:"instance_id"`
+		StubStatus string `yaml:"-" mapstructure:"stub_status"`
+	}
+
+	NginxPlusReceiver struct {
+		InstanceID string `yaml:"-" mapstructure:"instance_id"`
+		PlusAPI    string `yaml:"-" mapstructure:"plus_api"`
 	}
 
 	GRPC struct {
@@ -195,16 +204,6 @@ func (col *Collector) Validate(allowedDirectories []string) error {
 		}
 
 		proc.Type = t
-	}
-
-	for _, rec := range col.Receivers {
-		t := strings.ToLower(rec.Type)
-
-		if _, ok := supportedReceivers[t]; !ok {
-			return fmt.Errorf("unsupported receiver type: %s", rec.Type)
-		}
-
-		rec.Type = t
 	}
 
 	return nil

@@ -31,12 +31,16 @@ type MetricsConfig struct {
 	NginxCacheMemoryLimit                MetricConfig `mapstructure:"nginx.cache.memory.limit"`
 	NginxCacheMemoryUsage                MetricConfig `mapstructure:"nginx.cache.memory.usage"`
 	NginxCacheResponses                  MetricConfig `mapstructure:"nginx.cache.responses"`
+	NginxConfigReloads                   MetricConfig `mapstructure:"nginx.config.reloads"`
+	NginxHTTPConn                        MetricConfig `mapstructure:"nginx.http.conn"`
+	NginxHTTPConnCount                   MetricConfig `mapstructure:"nginx.http.conn.count"`
 	NginxHTTPLimitConnRequests           MetricConfig `mapstructure:"nginx.http.limit_conn.requests"`
 	NginxHTTPLimitReqRequests            MetricConfig `mapstructure:"nginx.http.limit_req.requests"`
 	NginxHTTPRequestByteIo               MetricConfig `mapstructure:"nginx.http.request.byte.io"`
 	NginxHTTPRequestDiscarded            MetricConfig `mapstructure:"nginx.http.request.discarded"`
 	NginxHTTPRequestProcessingCount      MetricConfig `mapstructure:"nginx.http.request.processing.count"`
 	NginxHTTPRequests                    MetricConfig `mapstructure:"nginx.http.requests"`
+	NginxHTTPRequestsCount               MetricConfig `mapstructure:"nginx.http.requests.count"`
 	NginxHTTPResponseStatus              MetricConfig `mapstructure:"nginx.http.response.status"`
 	NginxHTTPResponses                   MetricConfig `mapstructure:"nginx.http.responses"`
 	NginxHTTPUpstreamKeepaliveCount      MetricConfig `mapstructure:"nginx.http.upstream.keepalive.count"`
@@ -49,11 +53,11 @@ type MetricsConfig struct {
 	NginxHTTPUpstreamPeerRequests        MetricConfig `mapstructure:"nginx.http.upstream.peer.requests"`
 	NginxHTTPUpstreamPeerResponseTime    MetricConfig `mapstructure:"nginx.http.upstream.peer.response.time"`
 	NginxHTTPUpstreamPeerResponses       MetricConfig `mapstructure:"nginx.http.upstream.peer.responses"`
+	NginxHTTPUpstreamPeerState           MetricConfig `mapstructure:"nginx.http.upstream.peer.state"`
 	NginxHTTPUpstreamPeerUnavailables    MetricConfig `mapstructure:"nginx.http.upstream.peer.unavailables"`
 	NginxHTTPUpstreamQueueLimit          MetricConfig `mapstructure:"nginx.http.upstream.queue.limit"`
 	NginxHTTPUpstreamQueueOverflows      MetricConfig `mapstructure:"nginx.http.upstream.queue.overflows"`
 	NginxHTTPUpstreamQueueUsage          MetricConfig `mapstructure:"nginx.http.upstream.queue.usage"`
-	NginxHTTPUpstreamState               MetricConfig `mapstructure:"nginx.http.upstream.state"`
 	NginxHTTPUpstreamZombieCount         MetricConfig `mapstructure:"nginx.http.upstream.zombie.count"`
 	NginxSlabPageFree                    MetricConfig `mapstructure:"nginx.slab.page.free"`
 	NginxSlabPageLimit                   MetricConfig `mapstructure:"nginx.slab.page.limit"`
@@ -62,6 +66,7 @@ type MetricsConfig struct {
 	NginxSlabSlotAllocations             MetricConfig `mapstructure:"nginx.slab.slot.allocations"`
 	NginxSlabSlotFree                    MetricConfig `mapstructure:"nginx.slab.slot.free"`
 	NginxSlabSlotUsage                   MetricConfig `mapstructure:"nginx.slab.slot.usage"`
+	NginxSslCertificateVerifyFailures    MetricConfig `mapstructure:"nginx.ssl.certificate.verify_failures"`
 	NginxSslHandshakes                   MetricConfig `mapstructure:"nginx.ssl.handshakes"`
 	NginxStreamByteIo                    MetricConfig `mapstructure:"nginx.stream.byte.io"`
 	NginxStreamConnectionAccepted        MetricConfig `mapstructure:"nginx.stream.connection.accepted"`
@@ -76,9 +81,9 @@ type MetricsConfig struct {
 	NginxStreamUpstreamPeerFails         MetricConfig `mapstructure:"nginx.stream.upstream.peer.fails"`
 	NginxStreamUpstreamPeerHealthChecks  MetricConfig `mapstructure:"nginx.stream.upstream.peer.health_checks"`
 	NginxStreamUpstreamPeerResponseTime  MetricConfig `mapstructure:"nginx.stream.upstream.peer.response.time"`
+	NginxStreamUpstreamPeerState         MetricConfig `mapstructure:"nginx.stream.upstream.peer.state"`
 	NginxStreamUpstreamPeerTtfbTime      MetricConfig `mapstructure:"nginx.stream.upstream.peer.ttfb.time"`
 	NginxStreamUpstreamPeerUnavailable   MetricConfig `mapstructure:"nginx.stream.upstream.peer.unavailable"`
-	NginxStreamUpstreamState             MetricConfig `mapstructure:"nginx.stream.upstream.state"`
 	NginxStreamUpstreamZombieCount       MetricConfig `mapstructure:"nginx.stream.upstream.zombie.count"`
 }
 
@@ -94,6 +99,15 @@ func DefaultMetricsConfig() MetricsConfig {
 			Enabled: true,
 		},
 		NginxCacheResponses: MetricConfig{
+			Enabled: true,
+		},
+		NginxConfigReloads: MetricConfig{
+			Enabled: true,
+		},
+		NginxHTTPConn: MetricConfig{
+			Enabled: true,
+		},
+		NginxHTTPConnCount: MetricConfig{
 			Enabled: true,
 		},
 		NginxHTTPLimitConnRequests: MetricConfig{
@@ -112,6 +126,9 @@ func DefaultMetricsConfig() MetricsConfig {
 			Enabled: true,
 		},
 		NginxHTTPRequests: MetricConfig{
+			Enabled: true,
+		},
+		NginxHTTPRequestsCount: MetricConfig{
 			Enabled: true,
 		},
 		NginxHTTPResponseStatus: MetricConfig{
@@ -150,6 +167,9 @@ func DefaultMetricsConfig() MetricsConfig {
 		NginxHTTPUpstreamPeerResponses: MetricConfig{
 			Enabled: true,
 		},
+		NginxHTTPUpstreamPeerState: MetricConfig{
+			Enabled: true,
+		},
 		NginxHTTPUpstreamPeerUnavailables: MetricConfig{
 			Enabled: true,
 		},
@@ -160,9 +180,6 @@ func DefaultMetricsConfig() MetricsConfig {
 			Enabled: true,
 		},
 		NginxHTTPUpstreamQueueUsage: MetricConfig{
-			Enabled: true,
-		},
-		NginxHTTPUpstreamState: MetricConfig{
 			Enabled: true,
 		},
 		NginxHTTPUpstreamZombieCount: MetricConfig{
@@ -187,6 +204,9 @@ func DefaultMetricsConfig() MetricsConfig {
 			Enabled: true,
 		},
 		NginxSlabSlotUsage: MetricConfig{
+			Enabled: true,
+		},
+		NginxSslCertificateVerifyFailures: MetricConfig{
 			Enabled: true,
 		},
 		NginxSslHandshakes: MetricConfig{
@@ -231,13 +251,13 @@ func DefaultMetricsConfig() MetricsConfig {
 		NginxStreamUpstreamPeerResponseTime: MetricConfig{
 			Enabled: true,
 		},
+		NginxStreamUpstreamPeerState: MetricConfig{
+			Enabled: true,
+		},
 		NginxStreamUpstreamPeerTtfbTime: MetricConfig{
 			Enabled: true,
 		},
 		NginxStreamUpstreamPeerUnavailable: MetricConfig{
-			Enabled: true,
-		},
-		NginxStreamUpstreamState: MetricConfig{
 			Enabled: true,
 		},
 		NginxStreamUpstreamZombieCount: MetricConfig{

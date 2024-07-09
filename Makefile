@@ -177,12 +177,18 @@ run-mock-management-grpc-server: ## Run mock management plane gRPC server
 	@echo "🖲️ Running mock management plane gRPC server"
 	$(GORUN) test/mock/grpc/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY) -logLevel=$(MOCK_MANAGEMENT_PLANE_LOG_LEVEL) -grpcAddress=$(MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS) -apiAddress=$(MOCK_MANAGEMENT_PLANE_API_ADDRESS)
 
-generate: ## Generate proto files and server and client stubs from OpenAPI specifications
+run-mock-management-otel-collector: ## Run mock management plane OTel collector
+	@echo "🚀 Running mock management plane OTel collector"
+	$(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml up -d
+
+stop-mock-management-otel-collector: ## Stop running mock management plane OTel collector
+	@echo "Stopping mock management plane OTel collector"
+	$(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml down
+
+generate: ## Generate golang code
 	@echo "🗄️ Generating proto files"
 	@cd api/grpc && $(GORUN) $(BUF) generate
-
-generate-mocks: ## Regenerate all needed mocks, in order to add new mocks generation add //go:generate to file from witch mocks should be generated
-	@echo "🗃️ Generating mocks"
+	@echo "🗃️ Generating go files"
 	@$(GOGEN) ./...
 
 local-apk-package: ## Create local apk package

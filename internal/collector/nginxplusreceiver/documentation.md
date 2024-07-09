@@ -25,6 +25,7 @@ The total number of bytes read from the cache or proxied server.
 | Name | Description | Values |
 | ---- | ----------- | ------ |
 | nginx.cache.outcome | The outcome for an attempt to fetch content from NGINX's cache. | Str: ``BYPASS``, ``EXPIRED``, ``HIT``, ``MISS``, ``REVALIDATED``, ``STALE``, ``UPDATING`` |
+| nginx.cache.name | The name of the cache. | Any Str |
 
 ### nginx.cache.memory.limit
 
@@ -34,6 +35,12 @@ The limit on the maximum size of the cache specified in the configuration.
 | ---- | ----------- | ---------- |
 | bytes | Gauge | Int |
 
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| nginx.cache.name | The name of the cache. | Any Str |
+
 ### nginx.cache.memory.usage
 
 The current size of the cache.
@@ -41,6 +48,12 @@ The current size of the cache.
 | Unit | Metric Type | Value Type |
 | ---- | ----------- | ---------- |
 | bytes | Gauge | Int |
+
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| nginx.cache.name | The name of the cache. | Any Str |
 
 ### nginx.cache.responses
 
@@ -55,6 +68,43 @@ The total number of responses read from the cache or proxied server.
 | Name | Description | Values |
 | ---- | ----------- | ------ |
 | nginx.cache.outcome | The outcome for an attempt to fetch content from NGINX's cache. | Str: ``BYPASS``, ``EXPIRED``, ``HIT``, ``MISS``, ``REVALIDATED``, ``STALE``, ``UPDATING`` |
+| nginx.cache.name | The name of the cache. | Any Str |
+
+### nginx.config.reloads
+
+The total number of NGINX config reloads.
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
+| ---- | ----------- | ---------- | ----------------------- | --------- |
+| reloads | Sum | Int | Cumulative | true |
+
+### nginx.http.conn
+
+The total number of connections.
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
+| ---- | ----------- | ---------- | ----------------------- | --------- |
+| connections | Sum | Int | Cumulative | true |
+
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| nginx.conn.outcome | The outcome of the connection. | Str: ``ACCEPTED``, ``ACTIVE``, ``DROPPED``, ``IDLE`` |
+
+### nginx.http.conn.count
+
+The current number of connections.
+
+| Unit | Metric Type | Value Type |
+| ---- | ----------- | ---------- |
+| connections | Gauge | Int |
+
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| nginx.conn.outcome | The outcome of the connection. | Str: ``ACCEPTED``, ``ACTIVE``, ``DROPPED``, ``IDLE`` |
 
 ### nginx.http.limit_conn.requests
 
@@ -147,6 +197,14 @@ The total number of client requests received from clients.
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` |
 
+### nginx.http.requests.count
+
+The current number of client requests received from clients.
+
+| Unit | Metric Type | Value Type |
+| ---- | ----------- | ---------- |
+| requests | Gauge | Int |
+
 ### nginx.http.response.status
 
 The number of responses, grouped by status code range.
@@ -159,7 +217,7 @@ The number of responses, grouped by status code range.
 
 | Name | Description | Values |
 | ---- | ----------- | ------ |
-| nginx.status_range | A status code range or bucket for a HTTP response's status code. | Str: ``2xx``, ``3xx``, ``4xx``, ``5xx`` |
+| nginx.status_range | A status code range or bucket for a HTTP response's status code. | Str: ``1xx``, ``2xx``, ``3xx``, ``4xx``, ``5xx`` |
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` |
 
@@ -209,6 +267,7 @@ The total number of byte IO per HTTP upstream peer.
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.upstream.name | The name of the upstream block. | Any Str |
 | nginx.peer.address | The address of the peer. | Any Str |
+| nginx.peer.name | The name of the peer. | Any Str |
 
 ### nginx.http.upstream.peer.conn.count
 
@@ -225,6 +284,7 @@ The average number of active connections per HTTP upstream peer.
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.upstream.name | The name of the upstream block. | Any Str |
 | nginx.peer.address | The address of the peer. | Any Str |
+| nginx.peer.name | The name of the peer. | Any Str |
 
 ### nginx.http.upstream.peer.count
 
@@ -257,6 +317,7 @@ The total number of unsuccessful attempts to communicate with the HTTP upstream 
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.upstream.name | The name of the upstream block. | Any Str |
 | nginx.peer.address | The address of the peer. | Any Str |
+| nginx.peer.name | The name of the peer. | Any Str |
 
 ### nginx.http.upstream.peer.header.time
 
@@ -273,6 +334,7 @@ The average time to get the response header from the HTTP upstream peer.
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.upstream.name | The name of the upstream block. | Any Str |
 | nginx.peer.address | The address of the peer. | Any Str |
+| nginx.peer.name | The name of the peer. | Any Str |
 
 ### nginx.http.upstream.peer.health_checks
 
@@ -290,6 +352,7 @@ The total number of health check requests made to a HTTP upstream peer.
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.upstream.name | The name of the upstream block. | Any Str |
 | nginx.peer.address | The address of the peer. | Any Str |
+| nginx.peer.name | The name of the peer. | Any Str |
 
 ### nginx.http.upstream.peer.requests
 
@@ -306,6 +369,7 @@ The total number of client requests forwarded to the HTTP upstream peer.
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.upstream.name | The name of the upstream block. | Any Str |
 | nginx.peer.address | The address of the peer. | Any Str |
+| nginx.peer.name | The name of the peer. | Any Str |
 
 ### nginx.http.upstream.peer.response.time
 
@@ -322,6 +386,7 @@ The average time to get the full response from the HTTP upstream peer.
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.upstream.name | The name of the upstream block. | Any Str |
 | nginx.peer.address | The address of the peer. | Any Str |
+| nginx.peer.name | The name of the peer. | Any Str |
 
 ### nginx.http.upstream.peer.responses
 
@@ -335,10 +400,29 @@ The total number of responses obtained from the HTTP upstream peer grouped by st
 
 | Name | Description | Values |
 | ---- | ----------- | ------ |
-| nginx.status_range | A status code range or bucket for a HTTP response's status code. | Str: ``2xx``, ``3xx``, ``4xx``, ``5xx`` |
+| nginx.status_range | A status code range or bucket for a HTTP response's status code. | Str: ``1xx``, ``2xx``, ``3xx``, ``4xx``, ``5xx`` |
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.upstream.name | The name of the upstream block. | Any Str |
 | nginx.peer.address | The address of the peer. | Any Str |
+| nginx.peer.name | The name of the peer. | Any Str |
+
+### nginx.http.upstream.peer.state
+
+Current state of an upstream peer in deployment.
+
+| Unit | Metric Type | Value Type |
+| ---- | ----------- | ---------- |
+| is_deployed | Gauge | Int |
+
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| nginx.peer.state | The current state of an upstream peer. | Str: ``CHECKING``, ``DOWN``, ``DRAINING``, ``UNAVAILABLE``, ``UNHEALTHY``, ``UP`` |
+| nginx.zone.name | The name of the shared memory zone. | Any Str |
+| nginx.upstream.name | The name of the upstream block. | Any Str |
+| nginx.peer.address | The address of the peer. | Any Str |
+| nginx.peer.name | The name of the peer. | Any Str |
 
 ### nginx.http.upstream.peer.unavailables
 
@@ -355,6 +439,7 @@ Number of times the server became unavailable for client requests (“unavail”
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.upstream.name | The name of the upstream block. | Any Str |
 | nginx.peer.address | The address of the peer. | Any Str |
+| nginx.peer.name | The name of the peer. | Any Str |
 
 ### nginx.http.upstream.queue.limit
 
@@ -401,22 +486,6 @@ The current number of requests in the queue.
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.upstream.name | The name of the upstream block. | Any Str |
 
-### nginx.http.upstream.state
-
-Current state of upstream peers in deployment. If any of the upstream servers in the deployment are in the given state then the value will be 1. If no upstream server matches the selected state then the value will be 0.
-
-| Unit | Metric Type | Value Type |
-| ---- | ----------- | ---------- |
-| is_deployed | Gauge | Int |
-
-#### Attributes
-
-| Name | Description | Values |
-| ---- | ----------- | ------ |
-| nginx.peer.state | The current state of an upstream peer. | Str: ``CHECKING``, ``DOWN``, ``DRAINING``, ``UNAVAILABLE``, ``UNHEALTHY``, ``UP`` |
-| nginx.zone.name | The name of the shared memory zone. | Any Str |
-| nginx.upstream.name | The name of the upstream block. | Any Str |
-
 ### nginx.http.upstream.zombie.count
 
 The current number of upstream peers removed from the group but still processing active client requests.
@@ -429,8 +498,8 @@ The current number of upstream peers removed from the group but still processing
 
 | Name | Description | Values |
 | ---- | ----------- | ------ |
-| nginx.peer.state | The current state of an upstream peer. | Str: ``CHECKING``, ``DOWN``, ``DRAINING``, ``UNAVAILABLE``, ``UNHEALTHY``, ``UP`` |
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
+| nginx.upstream.name | The name of the upstream block. | Any Str |
 
 ### nginx.slab.page.free
 
@@ -534,6 +603,20 @@ The current number of used memory slots.
 | nginx.slab.slot.limit | The upper limit for a slab slot, used as the identifier for the slot. | Any Int |
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 
+### nginx.ssl.certificate.verify_failures
+
+The total number of SSL certificate verification failures.
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
+| ---- | ----------- | ---------- | ----------------------- | --------- |
+| certificates | Sum | Int | Cumulative | true |
+
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| nginx.ssl.verify_failure.reason | The reason for a SSL certificate verification failure. | Str: ``NO_CERT``, ``EXPIRED_CERT``, ``REVOKED_CERT``, ``HOSTNAME_MISMATCH``, ``OTHER`` |
+
 ### nginx.ssl.handshakes
 
 The total number of SSL handshakes.
@@ -547,6 +630,7 @@ The total number of SSL handshakes.
 | Name | Description | Values |
 | ---- | ----------- | ------ |
 | nginx.ssl.status | The status of a SSL handshake. | Str: ``FAILED``, ``REUSE`` |
+| nginx.ssl.handshake.reason | The reason for a SSL handshake failure. | Str: ``NO_COMMON_PROTOCOL``, ``NO_COMMON_CIPHER``, ``TIMEOUT``, ``CERT_REJECTED`` |
 
 ### nginx.stream.byte.io
 
@@ -617,7 +701,7 @@ The total number of completed sessions.
 
 | Name | Description | Values |
 | ---- | ----------- | ------ |
-| nginx.status_range | A status code range or bucket for a HTTP response's status code. | Str: ``2xx``, ``3xx``, ``4xx``, ``5xx`` |
+| nginx.status_range | A status code range or bucket for a HTTP response's status code. | Str: ``1xx``, ``2xx``, ``3xx``, ``4xx``, ``5xx`` |
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 
 ### nginx.stream.upstream.peer.byte.io
@@ -636,6 +720,7 @@ The total number of Stream Upstream Peer byte IO.
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.upstream.name | The name of the upstream block. | Any Str |
 | nginx.peer.address | The address of the peer. | Any Str |
+| nginx.peer.name | The name of the peer. | Any Str |
 
 ### nginx.stream.upstream.peer.conn.count
 
@@ -652,6 +737,7 @@ The current number of Stream Upstream Peer connections.
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.upstream.name | The name of the upstream block. | Any Str |
 | nginx.peer.address | The address of the peer. | Any Str |
+| nginx.peer.name | The name of the peer. | Any Str |
 
 ### nginx.stream.upstream.peer.conn.time
 
@@ -668,6 +754,7 @@ The average time to connect to the stream upstream peer.
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.upstream.name | The name of the upstream block. | Any Str |
 | nginx.peer.address | The address of the peer. | Any Str |
+| nginx.peer.name | The name of the peer. | Any Str |
 
 ### nginx.stream.upstream.peer.conns
 
@@ -684,6 +771,7 @@ The total number of client connections forwarded to this stream upstream peer.
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.upstream.name | The name of the upstream block. | Any Str |
 | nginx.peer.address | The address of the peer. | Any Str |
+| nginx.peer.name | The name of the peer. | Any Str |
 
 ### nginx.stream.upstream.peer.count
 
@@ -733,6 +821,7 @@ The total number of health check requests made to the stream upstream peer.
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.upstream.name | The name of the upstream block. | Any Str |
 | nginx.peer.address | The address of the peer. | Any Str |
+| nginx.peer.name | The name of the peer. | Any Str |
 
 ### nginx.stream.upstream.peer.response.time
 
@@ -749,6 +838,25 @@ The average time to receive the last byte of data for the stream upstream peer.
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.upstream.name | The name of the upstream block. | Any Str |
 | nginx.peer.address | The address of the peer. | Any Str |
+| nginx.peer.name | The name of the peer. | Any Str |
+
+### nginx.stream.upstream.peer.state
+
+Current state of upstream peers in deployment. If any of the upstream peers in the deployment match the given state then the value will be 1. If no upstream peer is a match then the value will be 0.
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
+| ---- | ----------- | ---------- | ----------------------- | --------- |
+| deployments | Sum | Int | Cumulative | true |
+
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| nginx.peer.state | The current state of an upstream peer. | Str: ``CHECKING``, ``DOWN``, ``DRAINING``, ``UNAVAILABLE``, ``UNHEALTHY``, ``UP`` |
+| nginx.zone.name | The name of the shared memory zone. | Any Str |
+| nginx.upstream.name | The name of the upstream block. | Any Str |
+| nginx.peer.address | The address of the peer. | Any Str |
+| nginx.peer.name | The name of the peer. | Any Str |
 
 ### nginx.stream.upstream.peer.ttfb.time
 
@@ -765,6 +873,7 @@ The average time to receive the first byte of data for the stream upstream peer.
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.upstream.name | The name of the upstream block. | Any Str |
 | nginx.peer.address | The address of the peer. | Any Str |
+| nginx.peer.name | The name of the peer. | Any Str |
 
 ### nginx.stream.upstream.peer.unavailable
 
@@ -781,22 +890,7 @@ How many times the server became unavailable for client connections (state “un
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.upstream.name | The name of the upstream block. | Any Str |
 | nginx.peer.address | The address of the peer. | Any Str |
-
-### nginx.stream.upstream.state
-
-Current state of upstream peers in deployment. If any of the upstream peers in the deployment match the given state then the value will be 1. If no upstream peer is a match then the value will be 0.
-
-| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
-| ---- | ----------- | ---------- | ----------------------- | --------- |
-| deployments | Sum | Int | Cumulative | true |
-
-#### Attributes
-
-| Name | Description | Values |
-| ---- | ----------- | ------ |
-| nginx.peer.state | The current state of an upstream peer. | Str: ``CHECKING``, ``DOWN``, ``DRAINING``, ``UNAVAILABLE``, ``UNHEALTHY``, ``UP`` |
-| nginx.zone.name | The name of the shared memory zone. | Any Str |
-| nginx.upstream.name | The name of the upstream block. | Any Str |
+| nginx.peer.name | The name of the peer. | Any Str |
 
 ### nginx.stream.upstream.zombie.count
 

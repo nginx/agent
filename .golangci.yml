@@ -1,6 +1,15 @@
 issues:
   exclude-files:
     - ".*gen.go"
+    - ".pb.go"
+    - ".pb.validate.go"
+    - internal/metadata/generated_metrics.go
+    - internal/metadata/generated_config.go
+    - internal/metadata/generated_metrics_test.go
+    - internal/metadata/generated_config_test.go
+    - internal/collector/nginxplusreceiver/generated_component_test.go
+    - internal/collector/nginxplusreceiver/generated_package_test.go
+    - internal/collector/nginxplusreceiver/internal/metadata/generated_status.go
   exclude-dirs:
     - ".*fakes" # Skip mock directories
 run:
@@ -26,7 +35,8 @@ linters:
     - gofumpt
     - goheader
     - gomnd
-    - gomoddirectives
+    # Temporarily removing since a forked version of nginx-plus-go-client is being used
+    # - gomoddirectives
     - gosec
     - grouper
     - importas

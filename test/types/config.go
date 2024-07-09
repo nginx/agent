@@ -64,13 +64,6 @@ func AgentConfig() *config.Config {
 					Auth: &config.AuthConfig{
 						Token: "super-secret-token",
 					},
-					TLS: &config.TLSConfig{
-						Cert:       "/path/to/server-cert.pem",
-						Key:        "/path/to/server-cert.pem",
-						Ca:         "/path/to/server-cert.pem",
-						SkipVerify: true,
-						ServerName: "remote-saas-server",
-					},
 				},
 			},
 			Processors: []config.Processor{
@@ -78,23 +71,17 @@ func AgentConfig() *config.Config {
 					Type: "batch",
 				},
 			},
-			Receivers: []config.Receiver{
-				{
-					Type: "otlp",
-					Server: &config.ServerConfig{
-						Host: "localhost",
-						Port: randomPort2,
-						Type: 0,
-					},
-					Auth: &config.AuthConfig{
-						Token: "even-secreter-token",
-					},
-					TLS: &config.TLSConfig{
-						Cert:       "/path/to/server-cert.pem",
-						Key:        "/path/to/server-cert.pem",
-						Ca:         "/path/to/server-cert.pem",
-						SkipVerify: true,
-						ServerName: "local-dataa-plane-server",
+			Receivers: config.Receivers{
+				OtlpReceivers: []config.OtlpReceiver{
+					{
+						Server: &config.ServerConfig{
+							Host: "localhost",
+							Port: randomPort2,
+							Type: 0,
+						},
+						Auth: &config.AuthConfig{
+							Token: "even-secreter-token",
+						},
 					},
 				},
 			},
