@@ -17,8 +17,8 @@ type (
 	Payload interface{}
 
 	Message struct {
-		Topic string
 		Data  Payload
+		Topic string
 	}
 
 	MessageWithContext struct {

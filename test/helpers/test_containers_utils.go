@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"testing"
 
 	"github.com/docker/docker/api/types"
@@ -35,13 +34,13 @@ func StartContainer(
 ) testcontainers.Container {
 	tb.Helper()
 
-	containerOSType := getEnv(tb, "CONTAINER_OS_TYPE")
-	packageName := getEnv(tb, "PACKAGE_NAME")
-	packageRepo := getEnv(tb, "PACKAGES_REPO")
-	baseImage := getEnv(tb, "BASE_IMAGE")
-	osRelease := getEnv(tb, "OS_RELEASE")
-	osVersion := getEnv(tb, "OS_VERSION")
-	buildTarget := getEnv(tb, "BUILD_TARGET")
+	containerOSType := Env(tb, "CONTAINER_OS_TYPE")
+	packageName := Env(tb, "PACKAGE_NAME")
+	packageRepo := Env(tb, "PACKAGES_REPO")
+	baseImage := Env(tb, "BASE_IMAGE")
+	osRelease := Env(tb, "OS_RELEASE")
+	osVersion := Env(tb, "OS_VERSION")
+	buildTarget := Env(tb, "BUILD_TARGET")
 
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
@@ -170,15 +169,4 @@ func LogAndTerminateContainers(
 
 	err = mockManagementPlaneContainer.Terminate(ctx)
 	require.NoError(tb, err)
-}
-
-func getEnv(tb testing.TB, envKey string) string {
-	tb.Helper()
-
-	envValue := os.Getenv(envKey)
-	tb.Logf("Environment variable %s is set to %s", envKey, envValue)
-
-	require.NotEmptyf(tb, envValue, "Environment variable %s should not be empty", envKey)
-
-	return envValue
 }

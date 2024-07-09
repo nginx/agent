@@ -33,14 +33,14 @@ type (
 	}
 
 	Info struct {
-		ProcessID       int32
+		ConfigureArgs   map[string]interface{}
 		Version         string
 		Prefix          string
 		ConfPath        string
-		ConfigureArgs   map[string]interface{}
 		ExePath         string
 		LoadableModules []string
 		DynamicModules  []string
+		ProcessID       int32
 	}
 )
 

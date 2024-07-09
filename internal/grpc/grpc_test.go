@@ -73,14 +73,14 @@ func Test_GrpcConnection(t *testing.T) {
 
 func Test_GetDialOptions(t *testing.T) {
 	tests := []struct {
-		name        string
 		agentConfig *config.Config
+		name        string
 		expected    int
 		createCerts bool
 	}{
 		{
-			"Test 1: DialOptions insecure",
-			&config.Config{
+			name: "Test 1: DialOptions insecure",
+			agentConfig: &config.Config{
 				Client: types.AgentConfig().Client,
 				Command: &config.Command{
 					Server: types.AgentConfig().Command.Server,
@@ -94,18 +94,18 @@ func Test_GetDialOptions(t *testing.T) {
 					},
 				},
 			},
-			5,
-			false,
+			expected:    5,
+			createCerts: false,
 		},
 		{
-			"Test 2: DialOptions mTLS",
-			types.AgentConfig(),
-			5,
-			true,
+			name:        "Test 2: DialOptions mTLS",
+			agentConfig: types.AgentConfig(),
+			expected:    5,
+			createCerts: true,
 		},
 		{
-			"Test 3: DialOptions TLS",
-			&config.Config{
+			name: "Test 3: DialOptions TLS",
+			agentConfig: &config.Config{
 				Command: &config.Command{
 					Server: types.AgentConfig().Command.Server,
 					Auth:   types.AgentConfig().Command.Auth,
@@ -119,44 +119,44 @@ func Test_GetDialOptions(t *testing.T) {
 				},
 				Client: types.AgentConfig().Client,
 			},
-			5,
-			false,
+			expected:    5,
+			createCerts: false,
 		},
 		{
-			"Test 4: DialOptions No Client",
-			&config.Config{
+			name: "Test 4: DialOptions No Client",
+			agentConfig: &config.Config{
 				Command: &config.Command{
 					Server: types.AgentConfig().Command.Server,
 					Auth:   types.AgentConfig().Command.Auth,
 					TLS:    types.AgentConfig().Command.TLS,
 				},
 			},
-			4,
-			false,
+			expected:    4,
+			createCerts: false,
 		},
 		{
-			"Test 5: DialOptions No Auth",
-			&config.Config{
+			name: "Test 5: DialOptions No Auth",
+			agentConfig: &config.Config{
 				Client: types.AgentConfig().Client,
 				Command: &config.Command{
 					Server: types.AgentConfig().Command.Server,
 					TLS:    types.AgentConfig().Command.TLS,
 				},
 			},
-			5,
-			false,
+			expected:    5,
+			createCerts: false,
 		},
 		{
-			"Test 6: DialOptions No TLS",
-			&config.Config{
+			name: "Test 6: DialOptions No TLS",
+			agentConfig: &config.Config{
 				Client: types.AgentConfig().Client,
 				Command: &config.Command{
 					Server: types.AgentConfig().Command.Server,
 					Auth:   types.AgentConfig().Command.Auth,
 				},
 			},
-			6,
-			false,
+			expected:    6,
+			createCerts: false,
 		},
 	}
 
@@ -204,9 +204,9 @@ func Test_ProtoValidatorUnaryClientInterceptor(t *testing.T) {
 	}
 
 	tests := []struct {
-		name            string
 		request         any
 		reply           any
+		name            string
 		isErrorExpected bool
 	}{
 		{
@@ -243,8 +243,8 @@ func Test_ProtoValidatorStreamClientInterceptor_RecvMsg(t *testing.T) {
 	require.NoError(t, err)
 
 	tests := []struct {
-		name            string
 		receivedMessage any
+		name            string
 		isErrorExpected bool
 	}{
 		{
@@ -274,8 +274,8 @@ func Test_ProtoValidatorStreamClientInterceptor_SendMsg(t *testing.T) {
 	require.NoError(t, err)
 
 	tests := []struct {
-		name            string
 		sentMessage     any
+		name            string
 		isErrorExpected bool
 	}{
 		{

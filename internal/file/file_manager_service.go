@@ -8,6 +8,7 @@ package file
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 	"sync/atomic"
@@ -24,10 +25,38 @@ import (
 	backoffHelpers "github.com/nginx/agent/v3/internal/backoff"
 )
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//counterfeiter:generate . fileOperator
+
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//counterfeiter:generate . fileManagerServiceInterface
+
+type (
+	fileOperator interface {
+		Write(ctx context.Context, fileContent []byte, file *mpi.FileMeta) error
+	}
+
+	RollbackRequiredError struct {
+		Err error
+	}
+
+	fileManagerServiceInterface interface {
+		UpdateOverview(ctx context.Context, instanceID string, filesToUpdate []*mpi.File) error
+		ConfigApply(ctx context.Context, configApplyRequest *mpi.ConfigApplyRequest) (err error)
+		Rollback(ctx context.Context, instanceID string) error
+		UpdateFile(ctx context.Context, instanceID string, fileToUpdate *mpi.File) error
+		ClearCache()
+		SetIsConnected(isConnected bool)
+	}
+)
+
 type FileManagerService struct {
 	fileServiceClient mpi.FileServiceClient
 	agentConfig       *config.Config
 	isConnected       *atomic.Bool
+	fileOperator      fileOperator
+	filesCache        map[string]*mpi.File // key is file path
+	fileContentsCache map[string][]byte    // key is file path
 }
 
 func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig *config.Config) *FileManagerService {
@@ -37,8 +66,15 @@ func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig 
 	return &FileManagerService{
 		fileServiceClient: fileServiceClient,
 		agentConfig:       agentConfig,
+		fileOperator:      NewFileOperator(),
+		filesCache:        make(map[string]*mpi.File),
+		fileContentsCache: make(map[string][]byte),
 		isConnected:       isConnected,
 	}
+}
+
+func (r *RollbackRequiredError) Error() string {
+	return fmt.Sprintf("rollback required: %v", r.Err)
 }
 
 func (fms *FileManagerService) UpdateOverview(
@@ -159,4 +195,150 @@ func (fms *FileManagerService) UpdateFile(
 
 func (fms *FileManagerService) SetIsConnected(isConnected bool) {
 	fms.isConnected.Store(isConnected)
+}
+
+func (fms *FileManagerService) ConfigApply(ctx context.Context,
+	configApplyRequest *mpi.ConfigApplyRequest,
+) (err error) {
+	fileOverview := configApplyRequest.GetOverview()
+
+	if fileOverview == nil {
+		return fmt.Errorf("fileOverview is nil")
+	}
+
+	allowedErr := fms.checkAllowedDirectory(fileOverview.GetFiles())
+	if allowedErr != nil {
+		return allowedErr
+	}
+
+	diffFiles, fileContent, compareErr := files.CompareFileHash(fileOverview)
+	if compareErr != nil {
+		return compareErr
+	}
+
+	fms.fileContentsCache = fileContent
+	fms.filesCache = diffFiles
+
+	fileErr := fms.executeFileActions(ctx)
+	if fileErr != nil {
+		return &RollbackRequiredError{Err: fileErr}
+	}
+
+	return nil
+}
+
+func (fms *FileManagerService) ClearCache() {
+	clear(fms.fileContentsCache)
+	clear(fms.filesCache)
+}
+
+func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) error {
+	slog.InfoContext(ctx, "Rolling back config for instance", "instanceid", instanceID)
+	for _, file := range fms.filesCache {
+		switch file.GetAction() {
+		case mpi.File_FILE_ACTION_ADD:
+			if err := os.Remove(file.GetFileMeta().GetName()); err != nil && !os.IsNotExist(err) {
+				return fmt.Errorf("error deleting file: %s error: %w", file.GetFileMeta().GetName(), err)
+			}
+
+			continue
+		case mpi.File_FILE_ACTION_DELETE, mpi.File_FILE_ACTION_UPDATE:
+			content := fms.fileContentsCache[file.GetFileMeta().GetName()]
+
+			err := fms.fileOperator.Write(ctx, content, file.GetFileMeta())
+			if err != nil {
+				return err
+			}
+
+		case mpi.File_FILE_ACTION_UNSPECIFIED, mpi.File_FILE_ACTION_UNCHANGED:
+			fallthrough
+		default:
+			slog.DebugContext(ctx, "File Action not implemented")
+		}
+	}
+
+	return nil
+}
+
+func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
+	for _, file := range fms.filesCache {
+		switch file.GetAction() {
+		case mpi.File_FILE_ACTION_DELETE:
+			if err := os.Remove(file.GetFileMeta().GetName()); err != nil && !os.IsNotExist(err) {
+				return fmt.Errorf("error deleting file: %s error: %w", file.GetFileMeta().GetName(), err)
+			}
+
+			continue
+		case mpi.File_FILE_ACTION_ADD, mpi.File_FILE_ACTION_UPDATE:
+			updateErr := fms.fileUpdate(ctx, file)
+			if updateErr != nil {
+				return updateErr
+			}
+		case mpi.File_FILE_ACTION_UNSPECIFIED, mpi.File_FILE_ACTION_UNCHANGED:
+			fallthrough
+		default:
+			slog.DebugContext(ctx, "File Action not implemented", "action", file.GetAction())
+		}
+	}
+
+	return nil
+}
+
+func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) error {
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Common.MaxElapsedTime)
+	defer backoffCancel()
+
+	getFile := func() (*mpi.GetFileResponse, error) {
+		return fms.fileServiceClient.GetFile(ctx, &mpi.GetFileRequest{
+			MessageMeta: &mpi.MessageMeta{
+				MessageId:     uuid.NewString(),
+				CorrelationId: logger.GetCorrelationID(ctx),
+				Timestamp:     timestamppb.Now(),
+			},
+			FileMeta: file.GetFileMeta(),
+		})
+	}
+
+	getFileResp, getFileErr := backoff.RetryWithData(
+		getFile,
+		backoffHelpers.Context(backOffCtx, fms.agentConfig.Common),
+	)
+
+	if getFileErr != nil {
+		return fmt.Errorf("error getting file data for %s: %w", file.GetFileMeta(), getFileErr)
+	}
+
+	if writeErr := fms.fileOperator.Write(ctx, getFileResp.GetContents().GetContents(),
+		file.GetFileMeta()); writeErr != nil {
+		return writeErr
+	}
+
+	validateErr := fms.validateFileHash(file.GetFileMeta().GetName())
+
+	return validateErr
+}
+
+func (fms *FileManagerService) validateFileHash(filePath string) error {
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+	fileHash := files.GenerateHash(content)
+
+	if fileHash != fms.filesCache[filePath].GetFileMeta().GetHash() {
+		return fmt.Errorf("error writing file, file hash does not match for file %s", filePath)
+	}
+
+	return nil
+}
+
+func (fms *FileManagerService) checkAllowedDirectory(checkFiles []*mpi.File) error {
+	for _, file := range checkFiles {
+		allowed := fms.agentConfig.IsDirectoryAllowed(file.GetFileMeta().GetName())
+		if !allowed {
+			return fmt.Errorf("file not in allowed directories %s", file.GetFileMeta().GetName())
+		}
+	}
+
+	return nil
 }

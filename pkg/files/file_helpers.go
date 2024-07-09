@@ -8,49 +8,63 @@ package files
 
 import (
 	"cmp"
-	"crypto/sha256"
-	"encoding/base64"
 	"fmt"
-	"io"
+	"log/slog"
 	"os"
 	"slices"
+	"strconv"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/pkg/uuid"
+	"github.com/google/uuid"
+
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func GetFileMeta(filePath string) (*v1.FileMeta, error) {
+const permissions = 0o644
+
+// FileMeta returns a proto FileMeta struct from a given file path.
+func FileMeta(filePath string) (*mpi.FileMeta, error) {
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
 		return nil, err
 	}
 
-	hash, err := GenerateFileHash(filePath)
+	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
 
-	return &v1.FileMeta{
+	fileHash := GenerateHash(content)
+
+	return &mpi.FileMeta{
 		Name:         filePath,
-		Hash:         hash,
+		Hash:         fileHash,
 		ModifiedTime: timestamppb.New(fileInfo.ModTime()),
-		Permissions:  fileInfo.Mode().Perm().String(),
+		Permissions:  Permissions(fileInfo.Mode()),
 		Size:         fileInfo.Size(),
 	}, nil
 }
 
-// GetPermissions returns a file's permissions as a string.
-func GetPermissions(fileMode os.FileMode) string {
+// Permissions returns a file's permissions as a string.
+func Permissions(fileMode os.FileMode) string {
 	return fmt.Sprintf("%#o", fileMode.Perm())
+}
+
+func FileMode(mode string) os.FileMode {
+	result, err := strconv.ParseInt(mode, 8, 32)
+	if err != nil {
+		return os.FileMode(permissions)
+	}
+
+	return os.FileMode(result)
 }
 
 // GenerateConfigVersion returns a unique config version for a set of files.
 // The config version is calculated by joining the file hashes together and generating a unique ID.
-func GenerateConfigVersion(fileSlice []*v1.File) string {
+func GenerateConfigVersion(fileSlice []*mpi.File) string {
 	var hashes string
 
-	slices.SortFunc(fileSlice, func(a, b *v1.File) int {
+	slices.SortFunc(fileSlice, func(a, b *mpi.File) int {
 		return cmp.Compare(a.GetFileMeta().GetName(), b.GetFileMeta().GetName())
 	})
 
@@ -58,21 +72,70 @@ func GenerateConfigVersion(fileSlice []*v1.File) string {
 		hashes += file.GetFileMeta().GetHash()
 	}
 
-	return uuid.Generate("%s", hashes)
+	return GenerateHash([]byte(hashes))
 }
 
-// GenerateFileHash returns the hash value of a file's contents.
-func GenerateFileHash(filePath string) (string, error) {
-	f, err := os.Open(filePath)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
+// GenerateHash returns the hash value of a file's contents.
+func GenerateHash(b []byte) string {
+	return uuid.NewMD5(uuid.Nil, b).String()
+}
 
-	h := sha256.New()
-	if _, copyErr := io.Copy(h, f); copyErr != nil {
-		return "", copyErr
+// CompareFileHash compares files from the FileOverview to files on disk and returns a map with the files that have
+// changed and a map with the contents of those files. Key to both maps is file path
+// nolint: revive,cyclop
+func CompareFileHash(fileOverview *mpi.FileOverview) (fileDiff map[string]*mpi.File,
+	fileContents map[string][]byte, err error,
+) {
+	fileDiff = make(map[string]*mpi.File)
+	fileContents = make(map[string][]byte)
+
+	for _, file := range fileOverview.GetFiles() {
+		fileName := file.GetFileMeta().GetName()
+		switch file.GetAction() {
+		case mpi.File_FILE_ACTION_DELETE:
+			if _, err = os.Stat(fileName); os.IsNotExist(err) {
+				// File is already deleted, skip
+				continue
+			}
+			fileContent, readErr := os.ReadFile(fileName)
+			if readErr != nil {
+				return nil, nil, fmt.Errorf("error reading file %s, error: %w", fileName, readErr)
+			}
+			fileContents[fileName] = fileContent
+			fileDiff[fileName] = file
+		case mpi.File_FILE_ACTION_ADD:
+			if _, err = os.Stat(fileName); os.IsNotExist(err) {
+				// file is new, nothing to compare
+				fileDiff[fileName] = file
+				continue
+			}
+			// file already exists and needs to be updated instead
+			updateAction := mpi.File_FILE_ACTION_UPDATE
+			file.Action = &updateAction
+
+			fallthrough
+		case mpi.File_FILE_ACTION_UPDATE:
+			fileContent, readErr := os.ReadFile(fileName)
+			if readErr != nil {
+				return nil, nil, fmt.Errorf("error generating hash for file %s, error: %w", fileName, readErr)
+			}
+			fileHash := GenerateHash(fileContent)
+
+			if fileHash == file.GetFileMeta().GetHash() {
+				slog.Debug("file same on disk, skip", "filepath", fileName)
+				// file is same as on disk, skip
+				continue
+			}
+
+			fileContents[fileName] = fileContent
+			fileDiff[fileName] = file
+		case mpi.File_FILE_ACTION_UNSPECIFIED, mpi.File_FILE_ACTION_UNCHANGED:
+			// FileAction is UNSPECIFIED or UNCHANGED skipping. Treat UNSPECIFIED as if it is UNCHANGED.
+			fallthrough
+		default:
+			continue
+		}
 	}
 
-	return base64.StdEncoding.EncodeToString(h.Sum(nil)), nil
+	return fileDiff, fileContents, nil
 }

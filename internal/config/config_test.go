@@ -160,10 +160,10 @@ func TestResolveClient(t *testing.T) {
 func TestResolveCollector(t *testing.T) {
 	testDefault := getAgentConfig()
 	tests := []struct {
-		name      string
 		expected  *Collector
-		shouldErr bool
+		name      string
 		errMsg    string
+		shouldErr bool
 	}{
 		{
 			name:     "Test 1: Happy path",

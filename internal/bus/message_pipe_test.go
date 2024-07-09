@@ -43,11 +43,11 @@ func (*testPlugin) Subscriptions() []string {
 
 func TestMessagePipe(t *testing.T) {
 	messages := []*Message{
-		{"test.message", 1},
-		{"test.message", 2},
-		{"test.message", 3},
-		{"test.message", 4},
-		{"test.message", 5},
+		{Topic: "test.message", Data: 1},
+		{Topic: "test.message", Data: 2},
+		{Topic: "test.message", Data: 3},
+		{Topic: "test.message", Data: 4},
+		{Topic: "test.message", Data: 5},
 	}
 
 	plugin := new(testPlugin)

@@ -24,9 +24,9 @@ const defaultFilePermissions = 0o644
 
 type FileService struct {
 	v1.UnimplementedFileServiceServer
-	configDirectory    string
 	overviews          map[string][]*v1.File // Key is the config version UID
 	versionDirectories map[string]string     // Key is the version directory name
+	configDirectory    string
 }
 
 func NewFileService(configDirectory string) (*FileService, error) {
@@ -48,6 +48,7 @@ func NewFileService(configDirectory string) (*FileService, error) {
 		)
 		overviews[configVersion] = versionedFiles
 		versionDirectories[configVersion] = versionDirectory
+		slog.Info("versioned Files", "", versionedFiles)
 	}
 
 	return &FileService{
@@ -198,6 +199,9 @@ func getMapOfVersionedFiles(configDirectory string) (map[string][]*v1.File, erro
 				return fileErr
 			}
 
+			slog.Debug("File found:", "path", file.GetFileMeta().GetName(),
+				"hash", file.GetFileMeta().GetHash())
+
 			files[versionDirectory] = append(files[versionDirectory], file)
 		}
 
@@ -251,10 +255,11 @@ func getFileMode(mode string) os.FileMode {
 }
 
 func createFile(fullPath, filePath string) (*v1.File, error) {
-	hash, err := filesHelper.GenerateFileHash(fullPath)
+	content, err := os.ReadFile(fullPath)
 	if err != nil {
 		return nil, err
 	}
+	fileHash := filesHelper.GenerateHash(content)
 
 	fileInfo, err := os.Stat(fullPath)
 	if err != nil {
@@ -264,9 +269,9 @@ func createFile(fullPath, filePath string) (*v1.File, error) {
 	return &v1.File{
 		FileMeta: &v1.FileMeta{
 			Name:         filePath,
-			Hash:         hash,
+			Hash:         fileHash,
 			ModifiedTime: timestamppb.New(fileInfo.ModTime()),
-			Permissions:  fileInfo.Mode().Perm().String(),
+			Permissions:  filesHelper.Permissions(fileInfo.Mode()),
 			Size:         fileInfo.Size(),
 		},
 	}, nil

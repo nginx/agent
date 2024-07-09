@@ -145,6 +145,8 @@ message DataPlaneResponse {
     mpi.v1.MessageMeta message_meta = 1;
     // The command response with the associated request
     mpi.v1.CommandResponse command_response = 2;
+    // The instance identifier, if applicable, for this response
+    string instance_id = 3;
 }
 
 // A Management Plane request for information, triggers an associated rpc on the Data Plane

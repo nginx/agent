@@ -1,4 +1,5 @@
 # Go parameters
+GO_VERSION ?= $(shell cat go.mod | grep toolchain | sed 's/toolchain //; s/go//')
 GOCMD	= go
 GOBUILD	= $(GOCMD) build
 GOTEST	= $(GOCMD) test
@@ -33,6 +34,7 @@ IMAGE_TAG   = "agent_$(OS_RELEASE)_$(OS_VERSION)"
 
 BUILD_DIR		:= build
 TEST_BUILD_DIR  := build/test
+CERTS_DIR       := build/certs
 DOCS_DIR        := docs
 PROTO_DIR       := proto
 BINARY_NAME		:= nginx-agent
@@ -110,7 +112,7 @@ no-local-changes:
 
 build: ## Build agent executable
 	mkdir -p $(BUILD_DIR)
-	@$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -pgo=default.pgo -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
+	@GOARCH=$(OSARCH) $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -pgo=default.pgo -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
 	@echo "📦 Build Done"
 
 lint: ## Run linter
@@ -153,7 +155,7 @@ integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc
 
 performance-test:
 	@mkdir -p $(TEST_BUILD_DIR)
-	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 2m -bench=. -benchmem -run=^$$ ./... > $(TEST_BUILD_DIR)/benchmark.txt
+	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 6m -bench=. -benchmem -run=^$$ ./... > $(TEST_BUILD_DIR)/benchmark.txt
 	@cat $(TEST_BUILD_DIR)/benchmark.txt
 
 compare-performance-benchmark-results:
@@ -168,19 +170,19 @@ dev: ## Run agent executable
 	$(GORUN) $(PROJECT_DIR)/$(PROJECT_FILE)
 
 race-condition-dev: ## Run agent executable with race condition detection
-	@echo "🚀 Running app with race condition detection enabled"
+	@echo "🏎️ Running app with race condition detection enabled"
 	$(GORUN) -race $(PROJECT_DIR)/$(PROJECT_FILE)
 
 run-mock-management-grpc-server: ## Run mock management plane gRPC server
-	@echo "🚀 Running mock management plane gRPC server"
+	@echo "🖲️ Running mock management plane gRPC server"
 	$(GORUN) test/mock/grpc/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY) -logLevel=$(MOCK_MANAGEMENT_PLANE_LOG_LEVEL) -grpcAddress=$(MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS) -apiAddress=$(MOCK_MANAGEMENT_PLANE_API_ADDRESS)
 
 generate: ## Generate proto files and server and client stubs from OpenAPI specifications
-	@echo "Generating proto files"
+	@echo "🗄️ Generating proto files"
 	@cd api/grpc && $(GORUN) $(BUF) generate
 
 generate-mocks: ## Regenerate all needed mocks, in order to add new mocks generation add //go:generate to file from witch mocks should be generated
-	@echo "Generating mocks"
+	@echo "🗃️ Generating mocks"
 	@$(GOGEN) ./...
 
 local-apk-package: ## Create local apk package
@@ -204,3 +206,16 @@ generate-pgo-profile: build-mock-management-plane-grpc
 	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 5m -bench=. -benchmem -run=^# ./internal/watcher/instance -cpuprofile perf_watcher_cpu.pprof
 	@$(GOTOOL) pprof -proto perf_watcher_cpu.pprof integration_cpu.pprof > default.pgo
 	rm perf_watcher_cpu.pprof integration_cpu.pprof integration.test profile.pprof
+
+# run under sudo locally
+load-test-image: ## Build performance load testing image
+	@echo "🚚 Running load tests"
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${IMAGE_TAG}_load_test . \
+		--no-cache -f ./scripts/testing/load/Dockerfile \
+		--secret id=nginx-crt,src=${CERTS_DIR}/nginx-repo.crt \
+		--secret id=nginx-key,src=${CERTS_DIR}/nginx-repo.key \
+		--build-arg OSARCH=${OSARCH} \
+		--build-arg GO_VERSION=${GO_VERSION}
+
+run-load-test-image: ## Run performance load testing image
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) run --rm -v ${PWD}/${BUILD_DIR}/:/agent/${BUILD_DIR}/ $(IMAGE_TAG)_load_test

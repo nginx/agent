@@ -9,7 +9,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/google/uuid"
+
+	"github.com/nginx/agent/v3/test/protos"
+
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,14 +24,9 @@ func TestGetFileMeta(t *testing.T) {
 	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
 	require.NoError(t, err)
 
-	expected := &v1.FileMeta{
-		Name:        file.Name(),
-		Hash:        "47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=",
-		Permissions: "-rw-------",
-		Size:        0,
-	}
+	expected := protos.FileMeta(file.Name(), GenerateHash([]byte("")))
 
-	fileMeta, err := GetFileMeta(file.Name())
+	fileMeta, err := FileMeta(file.Name())
 	require.NoError(t, err)
 
 	assert.Equal(t, expected.GetName(), fileMeta.GetName())
@@ -45,53 +44,209 @@ func TestGetPermissions(t *testing.T) {
 	info, err := os.Stat(file.Name())
 	require.NoError(t, err)
 
-	permissions := GetPermissions(info.Mode())
+	permissions := Permissions(info.Mode())
 
 	assert.Equal(t, "0600", permissions)
 }
 
 func Test_GenerateConfigVersion(t *testing.T) {
-	expectedConfigVersion := "a7d6580c-8ac9-376e-acde-b2cbed21d291"
-
-	file1 := &v1.File{
-		FileMeta: &v1.FileMeta{
-			Name: "file1",
-			Hash: "3151431543",
+	tests := []struct {
+		name     string
+		expected string
+		input    []*mpi.File
+	}{
+		{
+			name:     "Test 1: empty file slice",
+			input:    []*mpi.File{},
+			expected: GenerateHash([]byte{}),
+		},
+		{
+			name: "Test 2: one file",
+			input: []*mpi.File{
+				{
+					FileMeta: &mpi.FileMeta{
+						Name: "file1",
+						Hash: "hash1",
+					},
+					Action: nil,
+				},
+			},
+			expected: GenerateHash([]byte("hash1")),
+		},
+		{
+			name: "Test 3: multiple files",
+			input: []*mpi.File{
+				{
+					FileMeta: &mpi.FileMeta{
+						Name: "file1",
+						Hash: "hash1",
+					},
+					Action: nil,
+				},
+				{
+					FileMeta: &mpi.FileMeta{
+						Name: "file2",
+						Hash: "hash2",
+					},
+					Action: nil,
+				},
+			},
+			expected: func() string {
+				hashes := "hash1hash2"
+				return GenerateHash([]byte(hashes))
+			}(),
 		},
 	}
-	file2 := &v1.File{
-		FileMeta: &v1.FileMeta{
-			Name: "file2",
-			Hash: "4234235325",
-		},
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := GenerateConfigVersion(tt.input)
+			if result != tt.expected {
+				t.Errorf("GenerateConfigVersion(%v) = %v, want %v", tt.input, result, tt.expected)
+			}
+		})
 	}
-
-	files := []*v1.File{
-		file1,
-		file2,
-	}
-
-	configVersion := GenerateConfigVersion(files)
-	assert.Equal(t, expectedConfigVersion, configVersion)
-
-	// Reorder files to make sure version is still the same
-	files = []*v1.File{
-		file2,
-		file1,
-	}
-
-	configVersion = GenerateConfigVersion(files)
-	assert.Equal(t, expectedConfigVersion, configVersion)
 }
 
-func Test_GenerateFileHash(t *testing.T) {
-	testFile := helpers.CreateFileWithErrorCheck(t, os.TempDir(), "testFile")
-	defer helpers.RemoveFileWithErrorCheck(t, testFile.Name())
-	err := os.WriteFile(testFile.Name(), []byte("test data"), 0o600)
+func TestGenerateHash(t *testing.T) {
+	tests := []struct {
+		name     string
+		expected string
+		input    []byte
+	}{
+		{
+			name:     "Test 1: empty byte slice",
+			input:    []byte{},
+			expected: uuid.NewMD5(uuid.Nil, []byte("")).String(),
+		},
+		{
+			name:     "Test 2: non-empty byte slice",
+			input:    []byte("test"),
+			expected: uuid.NewMD5(uuid.Nil, []byte("test")).String(),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := GenerateHash(tt.input)
+			if result != tt.expected {
+				t.Errorf("GenerateHash(%v) = %v, want %v", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestCompareFileHash_Delete(t *testing.T) {
+	tempDir := os.TempDir()
+
+	deleteTestFile := helpers.CreateFileWithErrorCheck(t, tempDir, "deleteTestFile")
+	defer helpers.RemoveFileWithErrorCheck(t, deleteTestFile.Name())
+	expectedFileContent, readErr := os.ReadFile("../../test/config/nginx/nginx.conf")
+	require.NoError(t, readErr)
+	err := os.WriteFile(deleteTestFile.Name(), expectedFileContent, 0o600)
 	require.NoError(t, err)
 
-	hash, err := GenerateFileHash(testFile.Name())
-	require.NoError(t, err)
+	updateTestFile := helpers.CreateFileWithErrorCheck(t, tempDir, "updateTestFile")
+	defer helpers.RemoveFileWithErrorCheck(t, updateTestFile.Name())
+	expectedUpdateFileContent := []byte("test update data")
+	updateErr := os.WriteFile(updateTestFile.Name(), expectedUpdateFileContent, 0o600)
+	require.NoError(t, updateErr)
 
-	assert.Equal(t, "kW8AJ6V1B0znKjMXd8NHjWUT94alkb2JLaGld78jNfk=", hash)
+	addTestFile := helpers.CreateFileWithErrorCheck(t, tempDir, "addTestFile")
+	defer helpers.RemoveFileWithErrorCheck(t, addTestFile.Name())
+	addErr := os.WriteFile(addTestFile.Name(), expectedFileContent, 0o600)
+	require.NoError(t, addErr)
+
+	// Go doesn't allow address of numeric constant
+	deleteAction := mpi.File_FILE_ACTION_DELETE
+	updateAction := mpi.File_FILE_ACTION_UPDATE
+	addAction := mpi.File_FILE_ACTION_ADD
+
+	tests := []struct {
+		fileOverview     *mpi.FileOverview
+		expectedDiff     map[string]*mpi.File
+		expectedContents map[string][]byte
+		name             string
+	}{
+		{
+			name: "Test 1: Delete, Add & Update Files",
+			fileOverview: &mpi.FileOverview{
+				Files: []*mpi.File{
+					{
+						FileMeta: protos.FileMeta(deleteTestFile.Name(), GenerateHash(expectedFileContent)),
+						Action:   &deleteAction,
+					},
+					{
+						FileMeta: protos.FileMeta(updateTestFile.Name(), GenerateHash(expectedFileContent)),
+						Action:   &updateAction,
+					},
+					{
+						FileMeta: protos.FileMeta(tempDir+"random/new/file", GenerateHash(expectedFileContent)),
+						Action:   &addAction,
+					},
+				},
+				ConfigVersion: &mpi.ConfigVersion{
+					InstanceId: protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+					Version:    "a7d6580c-8ac9-376e-acde-b2cbed21d291",
+				},
+			},
+			expectedContents: map[string][]byte{
+				deleteTestFile.Name(): expectedFileContent,
+				updateTestFile.Name(): expectedUpdateFileContent,
+			},
+			expectedDiff: map[string]*mpi.File{
+				deleteTestFile.Name(): {
+					FileMeta: protos.FileMeta(deleteTestFile.Name(), GenerateHash(expectedFileContent)),
+					Action:   &deleteAction,
+				},
+				updateTestFile.Name(): {
+					FileMeta: protos.FileMeta(updateTestFile.Name(), GenerateHash(expectedFileContent)),
+					Action:   &updateAction,
+				},
+				tempDir + "random/new/file": {
+					FileMeta: protos.FileMeta(tempDir+"random/new/file", GenerateHash(expectedFileContent)),
+					Action:   &addAction,
+				},
+			},
+		},
+		{
+			name: "Test 2: File Already Deleted, File Already Updated, File Already Added",
+			fileOverview: &mpi.FileOverview{
+				Files: []*mpi.File{
+					{
+						FileMeta: protos.FileMeta(tempDir+"deletedFile", GenerateHash(expectedFileContent)),
+						Action:   &deleteAction,
+					},
+					{
+						FileMeta: protos.FileMeta(updateTestFile.Name(), GenerateHash(expectedUpdateFileContent)),
+						Action:   &updateAction,
+					},
+					{
+						FileMeta: protos.FileMeta(addTestFile.Name(), GenerateHash(expectedUpdateFileContent)),
+						Action:   &addAction,
+					},
+				},
+				ConfigVersion: protos.CreateConfigVersion(),
+			},
+			expectedContents: map[string][]byte{
+				addTestFile.Name(): expectedFileContent,
+			},
+			expectedDiff: map[string]*mpi.File{
+				addTestFile.Name(): {
+					FileMeta: protos.FileMeta(addTestFile.Name(), GenerateHash(expectedUpdateFileContent)),
+					Action:   &updateAction,
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			diff, contents, compareErr := CompareFileHash(test.fileOverview)
+
+			assert.Equal(tt, test.expectedDiff, diff)
+			assert.Equal(tt, test.expectedContents, contents)
+			require.NoError(tt, compareErr)
+		})
+	}
 }

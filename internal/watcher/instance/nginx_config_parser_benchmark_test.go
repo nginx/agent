@@ -7,12 +7,14 @@ package instance
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
 	"path/filepath"
 	"testing"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/require"
 )
@@ -42,6 +44,8 @@ func BenchmarkNginxConfigParser_Parse(b *testing.B) {
 					agentConfig,
 				)
 
+				bb.ResetTimer()
+
 				for i := 0; i < bb.N; i++ {
 					_, err := nginxConfigParser.Parse(
 						ctx,
@@ -58,5 +62,65 @@ func BenchmarkNginxConfigParser_Parse(b *testing.B) {
 				}
 			})
 		}(configFilePath)
+	}
+}
+
+// These tests don't exercise the traversal very well, they are more to track the growth of configs in size
+func BenchmarkNginxConfigParserGeneratedConfig_Parse(b *testing.B) {
+	slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{})))
+	ctx := context.Background()
+	agentConfig := types.AgentConfig()
+
+	tests := []struct {
+		name     string
+		fileSize int64
+	}{
+		{
+			name:     "100 KB",
+			fileSize: int64(1 * 1024 * 1024 / 10), // 100 KB
+		},
+		{
+			name:     "1 MB",
+			fileSize: int64(1 * 1024 * 1024), // 1 MB
+		},
+		{
+			name:     "10 MB",
+			fileSize: int64(10 * 1024 * 1024), // 10 MB
+		},
+	}
+
+	for _, test := range tests {
+		b.Run(test.name, func(bb *testing.B) {
+			location := bb.TempDir()
+			fileName := fmt.Sprintf("%s/%d_%s", location, test.fileSize, "nginx.conf")
+
+			_, err := helpers.GenerateConfig(bb, fileName, test.fileSize)
+			require.NoError(b, err)
+
+			agentConfig.AllowedDirectories = []string{
+				location,
+			}
+
+			nginxConfigParser := NewNginxConfigParser(
+				agentConfig,
+			)
+
+			bb.ResetTimer()
+
+			for i := 0; i < bb.N; i++ {
+				_, parseErr := nginxConfigParser.Parse(
+					ctx,
+					&mpi.Instance{
+						InstanceMeta: &mpi.InstanceMeta{
+							InstanceType: mpi.InstanceMeta_INSTANCE_TYPE_NGINX,
+						},
+						InstanceRuntime: &mpi.InstanceRuntime{
+							ConfigPath: location,
+						},
+					},
+				)
+				require.NoError(bb, parseErr)
+			}
+		})
 	}
 }
