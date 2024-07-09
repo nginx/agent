@@ -9,5 +9,7 @@ pre-push:
       run: make lint
     3_format:
       run: make format
-    4_check_local_changes:
+    4_check_mod_change:
+      run: go mod tidy
+    5_check_local_changes:
       run: make no-local-changes
