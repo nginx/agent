@@ -58,8 +58,12 @@ func (cp *CommandPlugin) Init(ctx context.Context, messagePipe bus.MessagePipeIn
 }
 
 func (cp *CommandPlugin) Close(ctx context.Context) error {
-	cp.commandService.CancelSubscription(ctx)
-	return cp.conn.Close(ctx)
+	if cp.commandService != nil {
+		cp.commandService.CancelSubscription(ctx)
+		cp.commandService = nil
+	}
+
+	return nil
 }
 
 func (cp *CommandPlugin) Info() *bus.Info {

@@ -49,8 +49,13 @@ func (fp *FilePlugin) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 	return nil
 }
 
-func (fp *FilePlugin) Close(ctx context.Context) error {
-	return fp.conn.Close(ctx)
+func (fp *FilePlugin) Close(_ context.Context) error {
+	if fp.fileManagerService != nil {
+		fp.fileManagerService.ClearCache()
+		fp.fileManagerService = nil
+	}
+
+	return nil
 }
 
 func (fp *FilePlugin) Info() *bus.Info {
