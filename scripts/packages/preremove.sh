@@ -1,4 +1,6 @@
 #!/bin/sh
+set -e
+
 # Pre Remove Steps
 
 # Determine OS platform
