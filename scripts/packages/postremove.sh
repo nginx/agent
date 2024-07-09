@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 
 # Determine OS platform
 # shellcheck source=/dev/null

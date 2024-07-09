@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 
 # Determine OS platform
 # shellcheck source=/dev/null
@@ -39,7 +40,18 @@ detect_nginx_users() {
 
     if [ -z "${nginx_user}" ]; then
         printf "PostInstall: Reading NGINX process information to determine NGINX user\n"
-        nginx_user=$(ps aux | grep "nginx: master process" | grep -v grep | head -1 | awk '{print $1}')
+        nginx_pid=""
+        for pid in $(ls /proc | grep -E '^[0-9]+$'); do
+            if [ -r /proc/$pid/cmdline ]; then
+                if grep -q "nginx: master process" /proc/$pid/cmdline 2>/dev/null; then
+                    nginx_pid=$pid
+                    break
+                fi
+            fi
+        done 
+        if [ "${nginx_pid}" ]; then
+            nginx_user=$(awk '/^Uid:/ {print $2}' /proc/$nginx_pid/status | xargs -I {} getent passwd {} | cut -d: -f1)
+        fi
 
         if [ -z "${nginx_user}" ]; then
             printf "No NGINX user found\n"
@@ -55,7 +67,18 @@ detect_nginx_users() {
 
     if [ -z "${worker_user}" ]; then
         printf "PostInstall: Reading NGINX process information to determine NGINX user\n"
-        worker_user=$(ps aux | grep "nginx: worker process" | grep -v grep | head -1 | awk '{print $1}')
+        worker_pid=""
+        for pid in $(ls /proc | grep -E '^[0-9]+$'); do
+            if [ -r /proc/$pid/cmdline ]; then
+                if grep -q "nginx: worker process" /proc/$pid/cmdline 2>/dev/null; then
+                    worker_pid=$pid
+                    break
+                fi
+            fi
+        done
+        if [ "${worker_pid}" ]; then
+            worker_user=$(awk '/^Uid:/ {print $2}' /proc/$worker_pid/status | xargs -I {} getent passwd {} | cut -d: -f1)
+        fi
 
         if [ -z "${worker_user}" ]; then
             printf "No NGINX worker user found\n"
@@ -98,7 +121,9 @@ create_agent_group() {
     printf "PostInstall: Adding nginx-agent group %s\n" "${AGENT_GROUP}"
 
     if command -V groupadd >/dev/null 2>&1; then
-        groupadd "${AGENT_GROUP}"
+        if [ ! $(getent group $AGENT_GROUP) ]; then
+            groupadd "${AGENT_GROUP}"
+        fi
 
         printf "PostInstall: Adding NGINX / agent user %s to group %s\n" "${AGENT_USER}" "${AGENT_GROUP}"
         usermod -a -G "${AGENT_GROUP}" "${AGENT_USER}"

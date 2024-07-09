@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 
 NEWVER="$1"
 OLDVER="$2"
