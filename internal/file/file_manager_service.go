@@ -150,10 +150,17 @@ func (fms *FileManagerService) UpdateFile(
 		return err
 	}
 
+	correlationID := logger.GetCorrelationID(ctx)
+
 	request := &mpi.UpdateFileRequest{
 		File: fileToUpdate,
 		Contents: &mpi.FileContents{
 			Contents: contents,
+		},
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     uuid.NewString(),
+			CorrelationId: correlationID,
+			Timestamp:     timestamppb.Now(),
 		},
 	}
 
