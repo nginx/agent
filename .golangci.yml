@@ -3,13 +3,7 @@ issues:
     - ".*gen.go"
     - ".pb.go"
     - ".pb.validate.go"
-    - internal/metadata/generated_metrics.go
-    - internal/metadata/generated_config.go
-    - internal/metadata/generated_metrics_test.go
-    - internal/metadata/generated_config_test.go
-    - internal/collector/nginxplusreceiver/generated_component_test.go
-    - internal/collector/nginxplusreceiver/generated_package_test.go
-    - internal/collector/nginxplusreceiver/internal/metadata/generated_status.go
+    - ".*/generated_[A-Za-z_]*\\.go"
   exclude-dirs:
     - ".*fakes" # Skip mock directories
 run:
