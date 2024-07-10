@@ -108,7 +108,6 @@ type (
 		Server *ServerConfig `yaml:"-" mapstructure:"server"`
 		Auth   *AuthConfig   `yaml:"-" mapstructure:"auth"`
 		TLS    *TLSConfig    `yaml:"-" mapstructure:"tls"`
-		Type   string        `yaml:"-" mapstructure:"type"`
 	}
 
 	NginxReceiver struct {
