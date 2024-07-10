@@ -8,6 +8,7 @@ package resource
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sort"
 	"testing"
 
@@ -187,7 +188,7 @@ func TestResource_Process_Rollback(t *testing.T) {
 				Data: &model.ConfigApplyMessage{
 					CorrelationID: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
 					InstanceID:    protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
-					Error:         nil,
+					Error:         fmt.Errorf("something went wrong with config apply"),
 				},
 			},
 			applyErr: nil,
@@ -200,6 +201,7 @@ func TestResource_Process_Rollback(t *testing.T) {
 				Data: &model.ConfigApplyMessage{
 					CorrelationID: "",
 					InstanceID:    protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+					Error:         fmt.Errorf("something went wrong with config apply"),
 				},
 			},
 			applyErr: errors.New("error reloading"),

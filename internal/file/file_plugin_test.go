@@ -380,7 +380,7 @@ func TestFilePlugin_Process_ConfigApplyFailedTopic(t *testing.T) {
 			data := &model.ConfigApplyMessage{
 				CorrelationID: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
 				InstanceID:    test.instanceID,
-				Error:         nil,
+				Error:         fmt.Errorf("something went wrong with config apply"),
 			}
 
 			filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigApplyFailedTopic, Data: data})
