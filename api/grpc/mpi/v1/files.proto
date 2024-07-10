@@ -131,6 +131,8 @@ message UpdateFileRequest {
     File file = 1;
     // The contents of a file
     FileContents contents = 2;
+    // Meta-information associated with a message
+    mpi.v1.MessageMeta message_meta = 3;
 }
 
 // Represents the response to an update file request

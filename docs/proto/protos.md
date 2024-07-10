@@ -299,6 +299,7 @@ Represents the update file request
 | ----- | ---- | ----- | ----------- |
 | file | [File](#mpi-v1-File) |  | The file requested to be updated |
 | contents | [FileContents](#mpi-v1-FileContents) |  | The contents of a file |
+| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
 
 
 
