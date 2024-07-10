@@ -66,12 +66,10 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 		return fmt.Errorf("write OTel Collector config: %w", err)
 	}
 
-	go func() {
-		bootErr := oc.bootup(runCtx)
-		if bootErr != nil {
-			slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)
-		}
-	}()
+	bootErr := oc.bootup(runCtx)
+	if bootErr != nil {
+		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)
+	}
 
 	return nil
 }
@@ -152,7 +150,7 @@ func (oc *Collector) Process(ctx context.Context, msg *bus.Message) {
 	case bus.NginxConfigUpdateTopic:
 		oc.handleNginxConfigUpdate(ctx, msg)
 	default:
-		slog.DebugContext(ctx, "File plugin unknown topic", "topic", msg.Topic)
+		slog.DebugContext(ctx, "OTel collector plugin unknown topic", "topic", msg.Topic)
 	}
 }
 
@@ -201,12 +199,10 @@ func (oc *Collector) restartCollector(ctx context.Context) {
 	var runCtx context.Context
 	runCtx, oc.cancel = context.WithCancel(ctx)
 
-	go func() {
-		bootErr := oc.bootup(runCtx)
-		if bootErr != nil {
-			slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)
-		}
-	}()
+	bootErr := oc.bootup(runCtx)
+	if bootErr != nil {
+		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)
+	}
 }
 
 func (oc *Collector) checkForNewNginxReceivers(nginxConfigContext *model.NginxConfigContext) bool {
@@ -244,9 +240,6 @@ func (oc *Collector) checkForNewNginxReceivers(nginxConfigContext *model.NginxCo
 func (oc *Collector) updateExistingNginxPlusReceiver(
 	nginxConfigContext *model.NginxConfigContext,
 ) (nginxReceiverFound, reloadCollector bool) {
-	reloadCollector = false
-	nginxReceiverFound = false
-
 	for index, nginxPlusReceiver := range oc.config.Collector.Receivers.NginxPlusReceivers {
 		if nginxPlusReceiver.InstanceID == nginxConfigContext.InstanceID {
 			nginxReceiverFound = true
@@ -278,9 +271,6 @@ func (oc *Collector) updateExistingNginxPlusReceiver(
 func (oc *Collector) updateExistingNginxOSSReceiver(
 	nginxConfigContext *model.NginxConfigContext,
 ) (nginxReceiverFound, reloadCollector bool) {
-	reloadCollector = false
-	nginxReceiverFound = false
-
 	for index, nginxReceiver := range oc.config.Collector.Receivers.NginxReceivers {
 		if nginxReceiver.InstanceID == nginxConfigContext.InstanceID {
 			nginxReceiverFound = true
