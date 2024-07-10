@@ -129,7 +129,6 @@ func (r *Resource) handleWriteConfigSuccessful(ctx context.Context, msg *bus.Mes
 	err := r.resourceService.ApplyConfig(ctx, data.InstanceID)
 	if err != nil {
 		slog.Error("errors found during config apply, sending failure status", "err", err)
-		// data.Error = err
 		response := r.createDataPlaneResponse(data.CorrelationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
 			fmt.Sprintf("Config apply failed for instanceId: %s, "+
 				"rolling back config", data.InstanceID), data.InstanceID, err.Error())
