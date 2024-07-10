@@ -17,6 +17,7 @@ type NginxConfigContext struct {
 }
 
 type ConfigApplyMessage struct {
+	Error         error
 	CorrelationID string
 	InstanceID    string
 }
@@ -34,3 +35,14 @@ type ErrorLog struct {
 	Permissions string
 	Readable    bool
 }
+
+type (
+	WriteStatus int
+)
+
+const (
+	RollbackRequired WriteStatus = iota + 1
+	NoChange
+	Error
+	OK
+)

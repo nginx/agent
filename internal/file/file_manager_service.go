@@ -13,6 +13,8 @@ import (
 	"os"
 	"sync/atomic"
 
+	"github.com/nginx/agent/v3/internal/model"
+
 	"github.com/cenkalti/backoff/v4"
 	"github.com/google/uuid"
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -36,13 +38,10 @@ type (
 		Write(ctx context.Context, fileContent []byte, file *mpi.FileMeta) error
 	}
 
-	RollbackRequiredError struct {
-		Err error
-	}
-
 	fileManagerServiceInterface interface {
 		UpdateOverview(ctx context.Context, instanceID string, filesToUpdate []*mpi.File) error
-		ConfigApply(ctx context.Context, configApplyRequest *mpi.ConfigApplyRequest) (err error)
+		ConfigApply(ctx context.Context, configApplyRequest *mpi.ConfigApplyRequest) (writeStatus model.WriteStatus,
+			err error)
 		Rollback(ctx context.Context, instanceID string) error
 		UpdateFile(ctx context.Context, instanceID string, fileToUpdate *mpi.File) error
 		ClearCache()
@@ -71,10 +70,6 @@ func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig 
 		fileContentsCache: make(map[string][]byte),
 		isConnected:       isConnected,
 	}
-}
-
-func (r *RollbackRequiredError) Error() string {
-	return fmt.Sprintf("rollback required: %v", r.Err)
 }
 
 func (fms *FileManagerService) UpdateOverview(
@@ -206,21 +201,25 @@ func (fms *FileManagerService) SetIsConnected(isConnected bool) {
 
 func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	configApplyRequest *mpi.ConfigApplyRequest,
-) (err error) {
+) (status model.WriteStatus, err error) {
 	fileOverview := configApplyRequest.GetOverview()
 
 	if fileOverview == nil {
-		return fmt.Errorf("fileOverview is nil")
+		return model.Error, fmt.Errorf("fileOverview is nil")
 	}
 
 	allowedErr := fms.checkAllowedDirectory(fileOverview.GetFiles())
 	if allowedErr != nil {
-		return allowedErr
+		return model.Error, allowedErr
 	}
 
 	diffFiles, fileContent, compareErr := files.CompareFileHash(fileOverview)
 	if compareErr != nil {
-		return compareErr
+		return model.Error, compareErr
+	}
+
+	if len(diffFiles) == 0 {
+		return model.NoChange, nil
 	}
 
 	fms.fileContentsCache = fileContent
@@ -228,10 +227,10 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 
 	fileErr := fms.executeFileActions(ctx)
 	if fileErr != nil {
-		return &RollbackRequiredError{Err: fileErr}
+		return model.RollbackRequired, fileErr
 	}
 
-	return nil
+	return model.OK, nil
 }
 
 func (fms *FileManagerService) ClearCache() {

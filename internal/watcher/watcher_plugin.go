@@ -96,6 +96,7 @@ func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
 		data, ok := msg.Data.(*mpi.Instance)
 		if !ok {
 			slog.ErrorContext(ctx, "Unable to cast message payload to Instance", "payload", msg.Data)
+
 			return
 		}
 		w.instanceWatcherService.ReparseConfig(ctx, data)
