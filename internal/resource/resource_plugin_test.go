@@ -174,7 +174,6 @@ func TestResource_Process_Apply(t *testing.T) {
 				assert.True(tt, ok)
 				assert.Equal(tt, test.applyErr.Error(), response.GetCommandResponse().GetError())
 			}
-
 		})
 	}
 }
@@ -247,7 +246,6 @@ func TestResource_Process_Rollback(t *testing.T) {
 				assert.Equal(t, test.topic[2], messagePipe.GetMessages()[2].Topic)
 				assert.Equal(tt, test.rollbackErr.Error(), rollbackResponse.GetCommandResponse().GetError())
 			}
-
 		})
 	}
 }
