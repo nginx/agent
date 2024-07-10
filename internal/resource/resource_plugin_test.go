@@ -16,7 +16,7 @@ import (
 
 	"github.com/nginx/agent/v3/test/types"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/resource/resourcefakes"
 	"github.com/nginx/agent/v3/test/protos"
@@ -27,10 +27,10 @@ import (
 func TestResource_Process(t *testing.T) {
 	ctx := context.Background()
 
-	updatedInstance := &v1.Instance{
+	updatedInstance := &mpi.Instance{
 		InstanceConfig: protos.GetNginxOssInstance([]string{}).GetInstanceConfig(),
 		InstanceMeta:   protos.GetNginxOssInstance([]string{}).GetInstanceMeta(),
-		InstanceRuntime: &v1.InstanceRuntime{
+		InstanceRuntime: &mpi.InstanceRuntime{
 			ProcessId:  56789,
 			BinaryPath: protos.GetNginxOssInstance([]string{}).GetInstanceRuntime().GetBinaryPath(),
 			ConfigPath: protos.GetNginxOssInstance([]string{}).GetInstanceRuntime().GetConfigPath(),
@@ -41,14 +41,14 @@ func TestResource_Process(t *testing.T) {
 	tests := []struct {
 		name     string
 		message  *bus.Message
-		resource *v1.Resource
+		resource *mpi.Resource
 		topic    string
 	}{
 		{
 			name: "Test 1: New Instance Topic",
 			message: &bus.Message{
 				Topic: bus.AddInstancesTopic,
-				Data: []*v1.Instance{
+				Data: []*mpi.Instance{
 					protos.GetNginxOssInstance([]string{}),
 				},
 			},
@@ -59,13 +59,13 @@ func TestResource_Process(t *testing.T) {
 			name: "Test 2: Update Instance Topic",
 			message: &bus.Message{
 				Topic: bus.UpdatedInstancesTopic,
-				Data: []*v1.Instance{
+				Data: []*mpi.Instance{
 					updatedInstance,
 				},
 			},
-			resource: &v1.Resource{
+			resource: &mpi.Resource{
 				ResourceId: protos.GetHostResource().GetResourceId(),
-				Instances: []*v1.Instance{
+				Instances: []*mpi.Instance{
 					updatedInstance,
 				},
 				Info: protos.GetHostResource().GetInfo(),
@@ -76,13 +76,13 @@ func TestResource_Process(t *testing.T) {
 			name: "Test 3: Delete Instance Topic",
 			message: &bus.Message{
 				Topic: bus.DeletedInstancesTopic,
-				Data: []*v1.Instance{
+				Data: []*mpi.Instance{
 					updatedInstance,
 				},
 			},
-			resource: &v1.Resource{
+			resource: &mpi.Resource{
 				ResourceId: protos.GetHostResource().GetResourceId(),
-				Instances:  []*v1.Instance{},
+				Instances:  []*mpi.Instance{},
 				Info:       protos.GetHostResource().GetInfo(),
 			},
 			topic: bus.ResourceUpdateTopic,
@@ -168,6 +168,13 @@ func TestResource_Process_Apply(t *testing.T) {
 
 			assert.Equal(t, test.topic[0], messagePipe.GetMessages()[0].Topic)
 			assert.Equal(t, test.topic[1], messagePipe.GetMessages()[1].Topic)
+
+			if test.applyErr != nil {
+				response, ok := messagePipe.GetMessages()[0].Data.(*mpi.DataPlaneResponse)
+				assert.True(tt, ok)
+				assert.Equal(tt, test.applyErr.Error(), response.GetCommandResponse().GetError())
+			}
+
 		})
 	}
 }
@@ -176,10 +183,10 @@ func TestResource_Process_Rollback(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name     string
-		message  *bus.Message
-		applyErr error
-		topic    []string
+		name        string
+		message     *bus.Message
+		rollbackErr error
+		topic       []string
 	}{
 		{
 			name: "Test 1: Rollback Write Topic - Success Status",
@@ -191,8 +198,8 @@ func TestResource_Process_Rollback(t *testing.T) {
 					Error:         fmt.Errorf("something went wrong with config apply"),
 				},
 			},
-			applyErr: nil,
-			topic:    []string{bus.RollbackCompleteTopic, bus.DataPlaneResponseTopic, bus.DataPlaneResponseTopic},
+			rollbackErr: nil,
+			topic:       []string{bus.RollbackCompleteTopic, bus.DataPlaneResponseTopic},
 		},
 		{
 			name: "Test 2: Rollback Write Topic - Fail Status",
@@ -204,15 +211,15 @@ func TestResource_Process_Rollback(t *testing.T) {
 					Error:         fmt.Errorf("something went wrong with config apply"),
 				},
 			},
-			applyErr: errors.New("error reloading"),
-			topic:    []string{bus.RollbackCompleteTopic, bus.DataPlaneResponseTopic, bus.DataPlaneResponseTopic},
+			rollbackErr: errors.New("error reloading"),
+			topic:       []string{bus.RollbackCompleteTopic, bus.DataPlaneResponseTopic, bus.DataPlaneResponseTopic},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
-			fakeResourceService.ApplyConfigReturns(test.applyErr)
+			fakeResourceService.ApplyConfigReturns(test.rollbackErr)
 			messagePipe := bus.NewFakeMessagePipe()
 
 			resourcePlugin := NewResource(types.AgentConfig())
@@ -229,11 +236,18 @@ func TestResource_Process_Rollback(t *testing.T) {
 				return messagePipe.GetMessages()[i].Topic > messagePipe.GetMessages()[j].Topic
 			})
 
+			assert.Equal(tt, len(test.topic), len(messagePipe.GetMessages()))
+
 			assert.Equal(t, test.topic[0], messagePipe.GetMessages()[0].Topic)
 			assert.Equal(t, test.topic[1], messagePipe.GetMessages()[1].Topic)
-			if test.applyErr != nil {
+
+			if test.rollbackErr != nil {
+				rollbackResponse, ok := messagePipe.GetMessages()[2].Data.(*mpi.DataPlaneResponse)
+				assert.True(tt, ok)
 				assert.Equal(t, test.topic[2], messagePipe.GetMessages()[2].Topic)
+				assert.Equal(tt, test.rollbackErr.Error(), rollbackResponse.GetCommandResponse().GetError())
 			}
+
 		})
 	}
 }
