@@ -6,8 +6,12 @@
 package files
 
 import (
+	"cmp"
 	"os"
+	"slices"
 	"testing"
+
+	"google.golang.org/protobuf/proto"
 
 	"github.com/google/uuid"
 
@@ -136,7 +140,7 @@ func TestGenerateHash(t *testing.T) {
 	}
 }
 
-func TestCompareFileHash_Delete(t *testing.T) {
+func TestCompareFileHash(t *testing.T) {
 	tempDir := os.TempDir()
 
 	deleteTestFile := helpers.CreateFileWithErrorCheck(t, tempDir, "deleteTestFile")
@@ -248,5 +252,79 @@ func TestCompareFileHash_Delete(t *testing.T) {
 			assert.Equal(tt, test.expectedContents, contents)
 			require.NoError(tt, compareErr)
 		})
+	}
+}
+
+func TestDetermineFileAction(t *testing.T) {
+	addAction := mpi.File_FILE_ACTION_ADD
+	updateAction := mpi.File_FILE_ACTION_UPDATE
+	deleteAction := mpi.File_FILE_ACTION_DELETE
+	unchangedAction := mpi.File_FILE_ACTION_UNCHANGED
+
+	tempDir := os.TempDir()
+	deleteFile := tempDir + "deleteFile.conf"
+	addFile := tempDir + "addFile.conf"
+	updateFile := tempDir + "updateFile.conf"
+	unchangedFile := tempDir + "unchangedFile.conf"
+
+	modifiedFileContent := []byte("test update data")
+	currentFileContent, readErr := os.ReadFile("../../test/config/nginx/nginx.conf")
+	require.NoError(t, readErr)
+
+	currentFiles := []*mpi.File{
+		{
+			FileMeta: protos.FileMeta(deleteFile, GenerateHash(currentFileContent)),
+		},
+		{
+			FileMeta: protos.FileMeta(updateFile, GenerateHash(currentFileContent)),
+		},
+		{
+			FileMeta: protos.FileMeta(unchangedFile, GenerateHash(currentFileContent)),
+		},
+	}
+
+	modifiedFiles := []*mpi.File{
+		{
+			FileMeta: protos.FileMeta(updateFile, GenerateHash(modifiedFileContent)),
+		},
+		{
+			FileMeta: protos.FileMeta(unchangedFile, GenerateHash(currentFileContent)),
+		},
+		{
+			FileMeta: protos.FileMeta(addFile, GenerateHash(modifiedFileContent)),
+		},
+	}
+
+	expectedResult := []*mpi.File{
+		{
+			FileMeta: protos.FileMeta(deleteFile, GenerateHash(currentFileContent)),
+			Action:   &deleteAction,
+		},
+		{
+			FileMeta: protos.FileMeta(updateFile, GenerateHash(modifiedFileContent)),
+			Action:   &updateAction,
+		},
+		{
+			FileMeta: protos.FileMeta(unchangedFile, GenerateHash(currentFileContent)),
+			Action:   &unchangedAction,
+		},
+		{
+			FileMeta: protos.FileMeta(addFile, GenerateHash(modifiedFileContent)),
+			Action:   &addAction,
+		},
+	}
+
+	result := DetermineFileAction(currentFiles, modifiedFiles)
+
+	slices.SortFunc(result, func(a, b *mpi.File) int {
+		return cmp.Compare(a.GetFileMeta().GetName(), b.GetFileMeta().GetName())
+	})
+
+	slices.SortFunc(expectedResult, func(a, b *mpi.File) int {
+		return cmp.Compare(a.GetFileMeta().GetName(), b.GetFileMeta().GetName())
+	})
+
+	for key, file := range result {
+		assert.True(t, proto.Equal(expectedResult[key], file))
 	}
 }
