@@ -41,16 +41,17 @@ detect_nginx_users() {
     if [ -z "${nginx_user}" ]; then
         printf "PostInstall: Reading NGINX process information to determine NGINX user\n"
         nginx_pid=""
-        for pid in $(ls /proc | grep -E '^[0-9]+$'); do
-            if [ -r /proc/$pid/cmdline ]; then
-                if grep -q "nginx: master process" /proc/$pid/cmdline 2>/dev/null; then
+        for pid in /proc/[0-9]*; do
+            pid=${pid##*/}
+            if [ -r /proc/"$pid"/cmdline ]; then
+                if grep -q "nginx: master process" /proc/"$pid"/cmdline 2>/dev/null; then
                     nginx_pid=$pid
                     break
                 fi
             fi
         done 
         if [ "${nginx_pid}" ]; then
-            nginx_user=$(awk '/^Uid:/ {print $2}' /proc/$nginx_pid/status | xargs -I {} getent passwd {} | cut -d: -f1)
+            nginx_user=$(awk '/^Uid:/ {print $2}' /proc/"$nginx_pid"/status | xargs -I {} getent passwd {} | cut -d: -f1)
         fi
 
         if [ -z "${nginx_user}" ]; then
@@ -68,16 +69,17 @@ detect_nginx_users() {
     if [ -z "${worker_user}" ]; then
         printf "PostInstall: Reading NGINX process information to determine NGINX user\n"
         worker_pid=""
-        for pid in $(ls /proc | grep -E '^[0-9]+$'); do
-            if [ -r /proc/$pid/cmdline ]; then
-                if grep -q "nginx: worker process" /proc/$pid/cmdline 2>/dev/null; then
+        for pid in /proc/[0-9]*; do
+            pid=${pid##*/}
+            if [ -r /proc/"$pid"/cmdline ]; then
+                if grep -q "nginx: worker process" /proc/"$pid"/cmdline 2>/dev/null; then
                     worker_pid=$pid
                     break
                 fi
             fi
         done
         if [ "${worker_pid}" ]; then
-            worker_user=$(awk '/^Uid:/ {print $2}' /proc/$worker_pid/status | xargs -I {} getent passwd {} | cut -d: -f1)
+            worker_user=$(awk '/^Uid:/ {print $2}' /proc/"$worker_pid"/status | xargs -I {} getent passwd {} | cut -d: -f1)
         fi
 
         if [ -z "${worker_user}" ]; then
@@ -121,7 +123,7 @@ create_agent_group() {
     printf "PostInstall: Adding nginx-agent group %s\n" "${AGENT_GROUP}"
 
     if command -V groupadd >/dev/null 2>&1; then
-        if [ ! $(getent group $AGENT_GROUP) ]; then
+        if [ ! "$(getent group $AGENT_GROUP)" ]; then
             groupadd "${AGENT_GROUP}"
         fi
 
