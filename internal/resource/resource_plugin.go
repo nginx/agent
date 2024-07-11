@@ -127,6 +127,7 @@ func (r *Resource) handleWriteConfigSuccessful(ctx context.Context, msg *bus.Mes
 	}
 	err := r.resourceService.ApplyConfig(ctx, data.InstanceID)
 	if err != nil {
+		data.Error = err
 		slog.Error("errors found during config apply, sending error status, rolling back config", "err", err)
 		response := r.createDataPlaneResponse(data.CorrelationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
 			"Config apply failed, rolling back config", data.InstanceID, err.Error())
@@ -169,6 +170,8 @@ func (r *Resource) handleRollbackWrite(ctx context.Context, msg *bus.Message) {
 
 		return
 	}
+
+	slog.InfoContext(ctx, "--------->>>>", "data", data)
 
 	applyResponse := r.createDataPlaneResponse(data.CorrelationID,
 		mpi.CommandResponse_COMMAND_STATUS_FAILURE,
