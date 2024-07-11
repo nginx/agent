@@ -171,8 +171,6 @@ func (r *Resource) handleRollbackWrite(ctx context.Context, msg *bus.Message) {
 		return
 	}
 
-	slog.InfoContext(ctx, "--------->>>>", "data", data)
-
 	applyResponse := r.createDataPlaneResponse(data.CorrelationID,
 		mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 		"Config apply failed, rollback successful", data.InstanceID, data.Error.Error())
