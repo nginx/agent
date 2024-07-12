@@ -47,10 +47,10 @@ message GetOverviewResponse {
 message UpdateOverviewRequest {
     // Meta-information associated with a message
     mpi.v1.MessageMeta message_meta = 1;
-    // The config version of the overview you are updating
-    ConfigVersion config_version = 2;
     // The file overview of an instance
-    FileOverview overview = 3;
+    FileOverview overview = 2;
+    // The config version of the overview you are updating
+    ConfigVersion config_version = 3;
 }
 
 // Represents a the response from an UpdateOverviewRequest - intentionally left empty
