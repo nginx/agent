@@ -288,7 +288,7 @@ func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Me
 func (fp *FilePlugin) createDataPlaneResponse(correlationID string, status mpi.CommandResponse_CommandStatus,
 	message, instanceID, err string,
 ) *mpi.DataPlaneResponse {
-	response := &mpi.DataPlaneResponse{
+	return &mpi.DataPlaneResponse{
 		MessageMeta: &mpi.MessageMeta{
 			MessageId:     uuid.NewString(),
 			CorrelationId: correlationID,
@@ -297,13 +297,8 @@ func (fp *FilePlugin) createDataPlaneResponse(correlationID string, status mpi.C
 		CommandResponse: &mpi.CommandResponse{
 			Status:  status,
 			Message: message,
+			Error:   err,
 		},
 		InstanceId: instanceID,
 	}
-
-	if err != "" {
-		response.GetCommandResponse().Error = err
-	}
-
-	return response
 }

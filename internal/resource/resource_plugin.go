@@ -182,7 +182,7 @@ func (r *Resource) handleRollbackWrite(ctx context.Context, msg *bus.Message) {
 func (*Resource) createDataPlaneResponse(correlationID string, status mpi.CommandResponse_CommandStatus,
 	message, instanceID, err string,
 ) *mpi.DataPlaneResponse {
-	response := &mpi.DataPlaneResponse{
+	return &mpi.DataPlaneResponse{
 		MessageMeta: &mpi.MessageMeta{
 			MessageId:     uuid.NewString(),
 			CorrelationId: correlationID,
@@ -191,13 +191,8 @@ func (*Resource) createDataPlaneResponse(correlationID string, status mpi.Comman
 		CommandResponse: &mpi.CommandResponse{
 			Status:  status,
 			Message: message,
+			Error:   err,
 		},
 		InstanceId: instanceID,
 	}
-
-	if err != "" {
-		response.GetCommandResponse().Error = err
-	}
-
-	return response
 }
