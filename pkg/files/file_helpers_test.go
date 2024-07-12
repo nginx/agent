@@ -315,6 +315,7 @@ func TestDetermineFileAction(t *testing.T) {
 	}
 
 	result := DetermineFileAction(currentFiles, modifiedFiles)
+	assert.Equal(t, expectedResult, result)
 
 	slices.SortFunc(result, func(a, b *mpi.File) int {
 		return cmp.Compare(a.GetFileMeta().GetName(), b.GetFileMeta().GetName())
