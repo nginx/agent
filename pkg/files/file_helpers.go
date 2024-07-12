@@ -139,3 +139,56 @@ func CompareFileHash(fileOverview *mpi.FileOverview) (fileDiff map[string]*mpi.F
 
 	return fileDiff, fileContents, nil
 }
+
+// DetermineFileAction compares two lists of files, determines which file action is needed for each file,
+// then returns a list of files with the action set for each file
+func DetermineFileAction(currentFiles, modifiedFiles []*mpi.File) []*mpi.File {
+	// Go doesn't allow address of numeric constant
+	addAction := mpi.File_FILE_ACTION_ADD
+	updateAction := mpi.File_FILE_ACTION_UPDATE
+	deleteAction := mpi.File_FILE_ACTION_DELETE
+	unchangedAction := mpi.File_FILE_ACTION_UNCHANGED
+
+	filesWithActions := make([]*mpi.File, 0, len(modifiedFiles))
+	currentFilesMap := convertToMapOfFiles(currentFiles)
+	modifiedFilesMap := convertToMapOfFiles(modifiedFiles)
+
+	// if file is in currentFiles but not in modified files, file has been deleted
+	for _, currentFile := range currentFilesMap {
+		_, ok := modifiedFilesMap[currentFile.GetFileMeta().GetName()]
+		if !ok {
+			currentFile.Action = &deleteAction
+			filesWithActions = append(filesWithActions, currentFile)
+
+			continue
+		}
+	}
+
+	for _, file := range modifiedFilesMap {
+		currentFile, ok := currentFilesMap[file.GetFileMeta().GetName()]
+
+		// default to unchanged action
+		file.Action = &unchangedAction
+		// if file doesn't exist in the current files, file has been added
+		if !ok {
+			file.Action = &addAction
+			// if file currently exists and file hash is different, file has been updated
+		} else if file.GetFileMeta().GetHash() != currentFile.GetFileMeta().GetHash() {
+			file.Action = &updateAction
+		}
+		// if file exists and file hash matches, file is unchanged
+		filesWithActions = append(filesWithActions, file)
+	}
+
+	return filesWithActions
+}
+
+// convertToMapOfFiles converts a list of files to a map of files with the file name as the key
+func convertToMapOfFiles(files []*mpi.File) map[string]*mpi.File {
+	filesMap := make(map[string]*mpi.File)
+	for _, file := range files {
+		filesMap[file.GetFileMeta().GetName()] = file
+	}
+
+	return filesMap
+}
