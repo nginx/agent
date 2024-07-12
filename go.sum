@@ -79,8 +79,8 @@ github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1 h1:NicmruxkeqHjDv03SfSxqmaLuisdd
 github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1/go.mod h1:eyp4DdUJAKkr9tvxR3jWhw2mDK7CWABMG5r9uyaKC7I=
 github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
-github.com/nginxinc/nginx-go-crossplane v0.4.46 h1:QsmhZRHkl2IcPjqjbLB8s55ViH0u5hopSv6DpwgtmOo=
-github.com/nginxinc/nginx-go-crossplane v0.4.46/go.mod h1:UzbZnyFv0vPlt1Urbnp/mrFCzBL4tYCReFuNBpFQEfI=
+github.com/nginxinc/nginx-go-crossplane v0.4.48 h1:Cf8sn8dTLJevtvNjGsla/wwa+rPTjm8eTfwSMqWisoI=
+github.com/nginxinc/nginx-go-crossplane v0.4.48/go.mod h1:fgSibLM12jGRsh7QHpgL8wTKMEbfc594vSLK9ovwM6U=
 github.com/nginxinc/nginx-plus-go-client v1.1.0 h1:J860nVSuF5w+uwDLFEWTGRD7NPJnF67kKqaH/oNAkx4=
 github.com/nginxinc/nginx-plus-go-client v1.1.0/go.mod h1:n8OFLzrJulJ2fur28Cwa1Qp5DZNS2VicLV+Adt30LQ4=
 github.com/nginxinc/nginx-prometheus-exporter v0.11.0 h1:21xjnqNgxtni2jDgAQ90bl15uDnrTreO9sIlu1YsX/U=

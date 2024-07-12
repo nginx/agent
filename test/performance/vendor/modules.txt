@@ -176,7 +176,7 @@ github.com/nginx/agent/v2/src/extensions/prometheus-metrics
 github.com/nginx/agent/v2/src/plugins
 github.com/nginx/agent/v2/test/utils
 github.com/nginx/agent/v2/test/utils/system
-# github.com/nginxinc/nginx-go-crossplane v0.4.46
+# github.com/nginxinc/nginx-go-crossplane v0.4.48
 ## explicit; go 1.19
 github.com/nginxinc/nginx-go-crossplane
 # github.com/nginxinc/nginx-plus-go-client v1.1.0
