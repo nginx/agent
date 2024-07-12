@@ -44,7 +44,7 @@ github.com/maxbrunsfeld/counterfeiter/v6/generator
 # github.com/mitchellh/mapstructure v1.5.0
 ## explicit; go 1.14
 github.com/mitchellh/mapstructure
-# github.com/nginxinc/nginx-go-crossplane v0.4.46
+# github.com/nginxinc/nginx-go-crossplane v0.4.48
 ## explicit; go 1.19
 github.com/nginxinc/nginx-go-crossplane
 # github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
