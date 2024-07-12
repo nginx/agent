@@ -159,30 +159,24 @@ func DetermineFileAction(currentFiles, modifiedFiles []*mpi.File) []*mpi.File {
 		if !ok {
 			currentFile.Action = &deleteAction
 			filesWithActions = append(filesWithActions, currentFile)
-			delete(modifiedFilesMap, currentFile.GetFileMeta().GetName())
 
 			continue
 		}
 	}
 
 	for _, file := range modifiedFilesMap {
-		_, ok := currentFilesMap[file.GetFileMeta().GetName()]
+		currentFile, ok := currentFilesMap[file.GetFileMeta().GetName()]
+
+		// default to unchanged action
+		file.Action = &unchangedAction
 		// if file doesn't exist in the current files, file has been added
 		if !ok {
 			file.Action = &addAction
-			filesWithActions = append(filesWithActions, file)
-
-			continue
 			// if file currently exists and file hash is different, file has been updated
-		} else if file.GetFileMeta().GetHash() != currentFilesMap[file.GetFileMeta().GetName()].
-			GetFileMeta().GetHash() {
+		} else if file.GetFileMeta().GetHash() != currentFile.GetFileMeta().GetHash() {
 			file.Action = &updateAction
-			filesWithActions = append(filesWithActions, file)
-
-			continue
 		}
 		// if file exists and file hash matches, file is unchanged
-		file.Action = &unchangedAction
 		filesWithActions = append(filesWithActions, file)
 	}
 
