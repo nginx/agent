@@ -695,8 +695,8 @@ var ngxPlusLatestDirectives = map[string][]uint{
 		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake12,
 	},
 	"keyval": {
-		ngxHTTPMainConf | ngxConfTake3 | ngxConfTake2,
-		ngxStreamMainConf | ngxConfTake3 | ngxConfTake2,
+		ngxHTTPMainConf | ngxConfTake3 | ngxConfTake4,
+		ngxStreamMainConf | ngxConfTake3 | ngxConfTake4,
 	},
 	"keyval_zone": {
 		ngxHTTPMainConf | ngxConf1More,
@@ -754,7 +754,7 @@ var ngxPlusLatestDirectives = map[string][]uint{
 		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,
 	},
 	"limit_req_zone": {
-		ngxHTTPMainConf | ngxConfTake3 | ngxConfTake2,
+		ngxHTTPMainConf | ngxConfTake3 | ngxConfTake4,
 	},
 	"lingering_close": {
 		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfTake1,

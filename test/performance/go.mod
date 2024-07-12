@@ -44,7 +44,7 @@ require (
 	github.com/nats-io/jwt/v2 v2.5.2 // indirect
 	github.com/nats-io/nkeys v0.4.6 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
-	github.com/nginxinc/nginx-go-crossplane v0.4.46 // indirect
+	github.com/nginxinc/nginx-go-crossplane v0.4.48 // indirect
 	github.com/nginxinc/nginx-plus-go-client v1.1.0 // indirect
 	github.com/nginxinc/nginx-prometheus-exporter v0.11.0 // indirect
 	github.com/nxadm/tail v1.4.11 // indirect
