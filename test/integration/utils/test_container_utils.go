@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"testing"
 	"time"
 
@@ -17,7 +18,10 @@ import (
 	wait "github.com/testcontainers/testcontainers-go/wait"
 )
 
-const agentServiceTimeout = 20 * time.Second
+const (
+	agentServiceTimeout = 20 * time.Second
+	semverRegex         = `v^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-]\d*(?:\.\d*[a-zA-Z-]\d*)*)?))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$`
+)
 
 // SetupTestContainerWithAgent sets up a container with nginx and nginx-agent installed
 func SetupTestContainerWithAgent(t *testing.T, testName string, conf string, waitForLog string) *testcontainers.DockerContainer {
@@ -119,6 +123,14 @@ func TestAgentHasNoErrorLogs(t *testing.T, agentContainer *testcontainers.Docker
 	require.NoError(t, err, "agent log file could not be read")
 
 	assert.NotEmpty(t, agentLogContent, "agent log file empty")
+	assert.Contains(t, string(agentLogContent), "NGINX Agent v", "agent log file contains invalid agent version")
+
+	semverRe := regexp.MustCompile(semverRegex)
+
+	if semverRe.MatchString(string(agentLogContent)) {
+		assert.Fail(t, "failed log content for semver value passed to Agent")
+	}
+
 	assert.NotContains(t, string(agentLogContent), "level=error", "agent log file contains logs at error level")
 	assert.NotContains(t, string(agentLogContent), "level=panic", "agent log file contains logs at panic level")
 	assert.NotContains(t, string(agentLogContent), "level=fatal", "agent log file contains logs at fatal level")
