@@ -178,6 +178,9 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 					mpi.CommandResponse_COMMAND_STATUS_ERROR,
 					dataPlaneResponse.GetCommandResponse().GetStatus(),
 				)
+				assert.Equal(t, "Config apply failed, rolling back config",
+					dataPlaneResponse.GetCommandResponse().GetMessage())
+				assert.Equal(t, test.configApplyReturnsErr.Error(), dataPlaneResponse.GetCommandResponse().GetError())
 			case test.configApplyStatus == model.NoChange:
 				assert.Len(t, messages, 1)
 				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
@@ -198,6 +201,8 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 					mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 					dataPlaneResponse.GetCommandResponse().GetStatus(),
 				)
+				assert.Equal(t, "Config apply failed", dataPlaneResponse.GetCommandResponse().GetMessage())
+				assert.Equal(t, test.configApplyReturnsErr.Error(), dataPlaneResponse.GetCommandResponse().GetError())
 			}
 		})
 	}
@@ -380,7 +385,7 @@ func TestFilePlugin_Process_ConfigApplyFailedTopic(t *testing.T) {
 			data := &model.ConfigApplyMessage{
 				CorrelationID: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
 				InstanceID:    test.instanceID,
-				Error:         nil,
+				Error:         fmt.Errorf("something went wrong with config apply"),
 			}
 
 			filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigApplyFailedTopic, Data: data})
@@ -395,10 +400,15 @@ func TestFilePlugin_Process_ConfigApplyFailedTopic(t *testing.T) {
 			case test.instanceID == "":
 				assert.Empty(t, messages)
 			default:
-				_, ok := messages[0].Data.(*mpi.DataPlaneResponse)
+				rollbackMessage, ok := messages[0].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
-				_, ok = messages[1].Data.(*mpi.DataPlaneResponse)
+				assert.Equal(t, "Rollback failed", rollbackMessage.GetCommandResponse().GetMessage())
+				assert.Equal(t, test.rollbackReturns.Error(), rollbackMessage.GetCommandResponse().GetError())
+				applyMessage, ok := messages[1].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
+				assert.Equal(t, "Config apply failed, rollback failed",
+					applyMessage.GetCommandResponse().GetMessage())
+				assert.Equal(t, data.Error.Error(), applyMessage.GetCommandResponse().GetError())
 				assert.Len(t, messages, 2)
 			}
 		})
