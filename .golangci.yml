@@ -29,8 +29,7 @@ linters:
     - gofumpt
     - goheader
     - gomnd
-    # Temporarily removing since a forked version of nginx-plus-go-client is being used
-    # - gomoddirectives
+    - gomoddirectives
     - gosec
     - grouper
     - importas
