@@ -20,7 +20,7 @@ import (
 
 const (
 	agentServiceTimeout = 20 * time.Second
-	semverRegex = `v^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-]\d*(?:\.\d*[a-zA-Z-]\d*)*)?))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$`
+	semverRegex         = `v^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-]\d*(?:\.\d*[a-zA-Z-]\d*)*)?))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$`
 )
 
 // SetupTestContainerWithAgent sets up a container with nginx and nginx-agent installed
