@@ -123,7 +123,7 @@ func TestAgentHasNoErrorLogs(t *testing.T, agentContainer *testcontainers.Docker
 	require.NoError(t, err, "agent log file could not be read")
 
 	assert.NotEmpty(t, agentLogContent, "agent log file empty")
-	assert.Contains(t, string(agentLogContent), "NGINX Agent v", "agent log file contains logs at error level")
+	assert.Contains(t, string(agentLogContent), "NGINX Agent v", "agent log file contains invalid agent version")
 
 	semverRe := regexp.MustCompile(semverRegex)
 
