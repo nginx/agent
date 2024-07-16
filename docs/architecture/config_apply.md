@@ -63,19 +63,19 @@ flowchart TB
     36 --> 1
     33 -- Yes --> 34
 
-    style 5 fill:#BBDEFB
-    style 12 fill:#BBDEFB
-    style 13 fill:#BBDEFB
-    style 15 fill:#FFE0B2
-    style 16 fill:#FFE0B2
-    style 19 fill:#BBDEFB
-    style 25 fill:#BBDEFB
-    style 26 fill:#FFE0B2
-    style 28 fill:#FFE0B2
-    style 31 fill:#FFE0B2
-    style 35 fill:#BBDEFB
-    style 40 fill:#FFF9C4
-    style 41 fill:#BBDEFB
+    style 5 fill:#BBDEFB,color:#000000
+    style 12 fill:#BBDEFB,color:#000000
+    style 13 fill:#BBDEFB,color:#000000
+    style 15 fill:#FFE0B2,color:#000000
+    style 16 fill:#FFE0B2,color:#000000
+    style 19 fill:#BBDEFB,color:#000000
+    style 25 fill:#BBDEFB,color:#000000
+    style 26 fill:#FFE0B2,color:#000000
+    style 28 fill:#FFE0B2,color:#000000
+    style 31 fill:#FFE0B2,color:#000000
+    style 35 fill:#BBDEFB,color:#000000
+    style 40 fill:#FFF9C4,color:#000000
+    style 41 fill:#BBDEFB,color:#000000
     style subGraph1 stroke:#000000
 
 ```

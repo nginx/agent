@@ -14,20 +14,20 @@ flowchart TB
     8["COMMAND_STATUS_IN_PROGRESS"] --> 9["COMMAND_STATUS_ERROR"]
     9 --> 10["COMMAND_STATUS_IN_PROGRESS"]
     10 --> 11["COMMAND_STATUS_ERROR"]
-    style 0 fill:#FFF9C4
-    style 1 fill:#BBDEFB
-    style 2 fill:#FFF9C4
-    style 3 fill:#BBDEFB
-    style 4 fill:#FFF9C4
-    style 5 fill:#BBDEFB
-    style 6 fill:#FFF9C4
-    style 7 fill:#BBDEFB
-    style 8 fill:#FFF9C4
-    style 9 fill:#BBDEFB
-    style 10 fill:#FFF9C4
-    style 11 fill:#BBDEFB
-    style 12 fill:#FFF9C4
-    style 13 fill:#BBDEFB
+    style 0 fill:#FFF9C4,color:#000000
+    style 1 fill:#BBDEFB,color:#000000
+    style 2 fill:#FFF9C4,color:#000000
+    style 3 fill:#BBDEFB,color:#000000
+    style 4 fill:#FFF9C4,color:#000000
+    style 5 fill:#BBDEFB,color:#000000
+    style 6 fill:#FFF9C4,color:#000000
+    style 7 fill:#BBDEFB,color:#000000
+    style 8 fill:#FFF9C4,color:#000000
+    style 9 fill:#BBDEFB,color:#000000
+    style 10 fill:#FFF9C4,color:#000000
+    style 11 fill:#BBDEFB,color:#000000
+    style 12 fill:#FFF9C4,color:#000000
+    style 13 fill:#BBDEFB,color:#000000
     style subGraph0 stroke:#000000
 
 
