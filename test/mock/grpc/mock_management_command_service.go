@@ -17,33 +17,34 @@ import (
 	"sync"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	sloggin "github.com/samber/slog-gin"
 )
 
 type CommandService struct {
-	v1.UnimplementedCommandServiceServer
+	mpi.UnimplementedCommandServiceServer
 	server                       *gin.Engine
-	connectionRequest            *v1.CreateConnectionRequest
-	requestChan                  chan *v1.ManagementPlaneRequest
-	updateDataPlaneStatusRequest *v1.UpdateDataPlaneStatusRequest
-	updateDataPlaneHealthRequest *v1.UpdateDataPlaneHealthRequest
-	dataPlaneResponses           []*v1.DataPlaneResponse
+	connectionRequest            *mpi.CreateConnectionRequest
+	requestChan                  chan *mpi.ManagementPlaneRequest
+	updateDataPlaneStatusRequest *mpi.UpdateDataPlaneStatusRequest
+	updateDataPlaneHealthRequest *mpi.UpdateDataPlaneHealthRequest
+	dataPlaneResponses           []*mpi.DataPlaneResponse
 	dataPlaneResponsesMutex      sync.Mutex
 	updateDataPlaneStatusMutex   sync.Mutex
 	updateDataPlaneHealthMutex   sync.Mutex
 	connectionMutex              sync.Mutex
+	// fileOverviewCache            []*mpi.File
 }
 
 func init() {
 	gin.SetMode(gin.ReleaseMode)
 }
 
-func NewCommandService() *CommandService {
+func NewCommandService(requestChan chan *mpi.ManagementPlaneRequest) *CommandService {
 	cs := &CommandService{
-		requestChan:                make(chan *v1.ManagementPlaneRequest),
+		requestChan:                requestChan,
 		connectionMutex:            sync.Mutex{},
 		updateDataPlaneStatusMutex: sync.Mutex{},
 		updateDataPlaneHealthMutex: sync.Mutex{},
@@ -74,8 +75,8 @@ func (cs *CommandService) StartServer(listener net.Listener) {
 
 func (cs *CommandService) CreateConnection(
 	ctx context.Context,
-	request *v1.CreateConnectionRequest) (
-	*v1.CreateConnectionResponse,
+	request *mpi.CreateConnectionRequest) (
+	*mpi.CreateConnectionResponse,
 	error,
 ) {
 	slog.DebugContext(ctx, "Create connection request", "request", request)
@@ -88,9 +89,9 @@ func (cs *CommandService) CreateConnection(
 	cs.connectionRequest = request
 	cs.connectionMutex.Unlock()
 
-	return &v1.CreateConnectionResponse{
-		Response: &v1.CommandResponse{
-			Status:  v1.CommandResponse_COMMAND_STATUS_OK,
+	return &mpi.CreateConnectionResponse{
+		Response: &mpi.CommandResponse{
+			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
 			Message: "Success",
 		},
 		AgentConfig: request.GetResource().GetInstances()[0].GetInstanceConfig().GetAgentConfig(),
@@ -99,8 +100,8 @@ func (cs *CommandService) CreateConnection(
 
 func (cs *CommandService) UpdateDataPlaneStatus(
 	_ context.Context,
-	request *v1.UpdateDataPlaneStatusRequest) (
-	*v1.UpdateDataPlaneStatusResponse,
+	request *mpi.UpdateDataPlaneStatusRequest) (
+	*mpi.UpdateDataPlaneStatusResponse,
 	error,
 ) {
 	slog.Debug("Update data plane status request", "request", request)
@@ -113,13 +114,13 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 	cs.updateDataPlaneStatusRequest = request
 	cs.updateDataPlaneStatusMutex.Unlock()
 
-	return &v1.UpdateDataPlaneStatusResponse{}, nil
+	return &mpi.UpdateDataPlaneStatusResponse{}, nil
 }
 
 func (cs *CommandService) UpdateDataPlaneHealth(
 	_ context.Context,
-	request *v1.UpdateDataPlaneHealthRequest) (
-	*v1.UpdateDataPlaneHealthResponse,
+	request *mpi.UpdateDataPlaneHealthRequest) (
+	*mpi.UpdateDataPlaneHealthResponse,
 	error,
 ) {
 	slog.Debug("Update data plane health request", "request", request)
@@ -132,10 +133,10 @@ func (cs *CommandService) UpdateDataPlaneHealth(
 	cs.updateDataPlaneHealthRequest = request
 	cs.updateDataPlaneHealthMutex.Unlock()
 
-	return &v1.UpdateDataPlaneHealthResponse{}, nil
+	return &mpi.UpdateDataPlaneHealthResponse{}, nil
 }
 
-func (cs *CommandService) Subscribe(in v1.CommandService_SubscribeServer) error {
+func (cs *CommandService) Subscribe(in mpi.CommandService_SubscribeServer) error {
 	ctx := in.Context()
 
 	go cs.listenForDataPlaneResponses(ctx, in)
@@ -149,17 +150,22 @@ func (cs *CommandService) Subscribe(in v1.CommandService_SubscribeServer) error 
 		default:
 			request := <-cs.requestChan
 
-			slog.DebugContext(ctx, "Subscribe", "request", request)
+			slog.InfoContext(ctx, "Subscribe", "request", request)
 
-			err := in.Send(request)
-			if err != nil {
-				slog.ErrorContext(ctx, "Failed to send management request", "error", err)
+			if upload, ok := request.GetRequest().(*mpi.ManagementPlaneRequest_ConfigUploadRequest); ok {
+				slog.Info("request", "", upload)
+			} else {
+				err := in.Send(request)
+				if err != nil {
+					slog.ErrorContext(ctx, "Failed to send management request", "error", err)
+				}
 			}
+
 		}
 	}
 }
 
-func (cs *CommandService) listenForDataPlaneResponses(ctx context.Context, in v1.CommandService_SubscribeServer) {
+func (cs *CommandService) listenForDataPlaneResponses(ctx context.Context, in mpi.CommandService_SubscribeServer) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -256,7 +262,7 @@ func (cs *CommandService) addResponseAndRequestEndpoints() {
 	})
 
 	cs.server.POST("/api/v1/requests", func(c *gin.Context) {
-		request := v1.ManagementPlaneRequest{}
+		request := mpi.ManagementPlaneRequest{}
 		body, err := io.ReadAll(c.Request.Body)
 		slog.Debug("Received request", "body", body)
 		if err != nil {
