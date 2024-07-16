@@ -40,13 +40,13 @@ func (c *NginxOSS) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *me
 	c.init.Do(func() {
 		cl := client.NewNginxClient(&http.Client{}, c.stubStatus)
 		if cl == nil {
-			c.logger.Log(fmt.Sprintf("Failed to create oss metrics client, %v", err))
+			c.logger.Log("OSS metrics client is nil")
 			c.prevStats = nil
 			return
 		}
 		c.prevStats, err = cl.GetStubStats()
 		if err != nil {
-			c.logger.Log(fmt.Sprintf("Failed to retrieve oss metrics, %v", err))
+			c.logger.Log("OSS metrics client is nil")
 			c.prevStats = nil
 			return
 		}
