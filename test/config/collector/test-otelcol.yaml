@@ -10,7 +10,7 @@ receivers:
       memory:
       network:
       paging:
-  otlp:
+  otlp/0:
     protocols:
       grpc:
         endpoint: "localhost:4321"
@@ -53,7 +53,7 @@ service:
     metrics:
       receivers:
         - hostmetrics
-        - otlp
+        - otlp/0
         - nginx/123
       processors:
         - batch

@@ -12,8 +12,8 @@ receivers:
       network:
       paging:
 {{- end }}
-{{- range .Receivers.OtlpReceivers }}
-  otlp:
+{{- range $index, $otlpReceiver := .Receivers.OtlpReceivers }}
+  otlp/{{$index}}:
     protocols:
       {{- if eq .Server.Type 0 }}
       grpc:
@@ -88,8 +88,8 @@ service:
         {{- if .Receivers.HostMetrics }}
         - hostmetrics
         {{- end }}
-        {{- range .Receivers.OtlpReceivers }}
-        - otlp
+        {{- range $index, $otlpReceiver := .Receivers.OtlpReceivers }}
+        - otlp/{{$index}}
         {{- end }}
         {{- range .Receivers.NginxReceivers }}
         - nginx/{{- .InstanceID -}}
