@@ -277,7 +277,7 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 						ResponseTime: currentPeer2UpstreamResponseTime,
 					},
 				},
-				Keepalives: 0,
+				Keepalive: 0,
 				Zombies:    0,
 				Zone:       upstreamZoneName,
 				Queue: plusclient.Queue{
