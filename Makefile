@@ -193,7 +193,7 @@ run-mock-management-otel-collector: ## Run mock management plane OTel collector
 
 stop-mock-management-otel-collector: ## Stop running mock management plane OTel collector
 	@echo "Stopping mock management plane OTel collector"
-	$(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml down
+	AGENT_IMAGE=nginx_plus_${IMAGE_TAG}:latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml down
 
 generate: ## Generate golang code
 	@echo "🗄️ Generating proto files"
