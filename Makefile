@@ -7,8 +7,10 @@ VERSION ?= $(shell git describe --match "v[0-9]*" --abbrev=0 --tags)
 ifeq ($(strip $(VERSION)),)
 	VERSION := $(shell curl https://api.github.com/repos/nginx/agent/releases/latest -s | jq .name -r)
 endif
-COMMIT = $(shell git rev-parse --short HEAD)
-DATE = $(shell date +%F_%H-%M-%S)
+# Remove 'v' prefix if it exists.
+VERSION := $(shell echo ${VERSION} | tr -d 'v')
+COMMIT  = $(shell git rev-parse --short HEAD)
+DATE    = $(shell date +%F_%H-%M-%S)
 
 GOCMD   = go
 GOBUILD = $(GOCMD) build
@@ -42,10 +44,9 @@ OS_VERSION  ?= 24.04
 BASE_IMAGE  = "${CONTAINER_REGISTRY}/${OS_RELEASE}:${OS_VERSION}"
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 
-
-LDFLAGS = "-w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
-DEBUG_LDFLAGS = "-X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
-
+VERSION_WITH_V := v${VERSION}
+LDFLAGS = "-w -X main.version=${VERSION_WITH_V} -X main.commit=${COMMIT} -X main.date=${DATE}"
+DEBUG_LDFLAGS = "-X main.version=${VERSION_WITH_V} -X main.commit=${COMMIT} -X main.date=${DATE}"
 
 CERTS_DIR              := ./build/certs
 PACKAGE_PREFIX         := nginx-agent
@@ -68,7 +69,7 @@ endif
 
 VENDOR_LOCATIONS         := sdk test/integration test/performance .
 TEST_BUILD_DIR           := build/test
-PACKAGE_NAME             := "${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}"
+PACKAGE_NAME             := "${PACKAGE_PREFIX}-${VERSION}-SNAPSHOT-${COMMIT}"
 
 CERT_CLIENT_CA_CN  := client-ca.local
 CERT_CLIENT_INT_CN := client-int.local
@@ -142,15 +143,15 @@ launch-swagger-ui: generate-swagger ## Launch Swagger UI
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 local-apk-package: ## Create local apk package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux go build -pgo=auto -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
-	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') $(GORUN) ${NFPM} pkg --config ./scripts/.local-nfpm.yaml --packager apk --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.apk;
+	ARCH=${OSARCH} VERSION=${VERSION} $(GORUN) ${NFPM} pkg --config ./scripts/.local-nfpm.yaml --packager apk --target ./build/${PACKAGE_PREFIX}-${VERSION}-SNAPSHOT-${COMMIT}.apk;
 
 local-deb-package: ## Create local deb package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux go build -pgo=auto -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
-	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') $(GORUN) ${NFPM} pkg --config ./scripts/.local-nfpm.yaml --packager deb --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.deb;
+	ARCH=${OSARCH} VERSION=${VERSION} $(GORUN) ${NFPM} pkg --config ./scripts/.local-nfpm.yaml --packager deb --target ./build/${PACKAGE_PREFIX}-${VERSION}-SNAPSHOT-${COMMIT}.deb;
 
 local-rpm-package: ## Create local rpm package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=linux go build -pgo=auto -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
-	ARCH=${OSARCH} VERSION=$(shell echo ${VERSION} | tr -d 'v') $(GORUN) ${NFPM} pkg --config ./scripts/.local-nfpm.yaml --packager rpm --target ./build/${PACKAGE_PREFIX}-$(shell echo ${VERSION} | tr -d 'v')-SNAPSHOT-${COMMIT}.rpm;
+	ARCH=${OSARCH} VERSION=${VERSION} $(GORUN) ${NFPM} pkg --config ./scripts/.local-nfpm.yaml --packager rpm --target ./build/${PACKAGE_PREFIX}-${VERSION}-SNAPSHOT-${COMMIT}.rpm;
 
 local-txz-package: ## Create local txz package
 	GOWORK=off CGO_ENABLED=0 GOARCH=${OSARCH} GOOS=freebsd go build -pgo=auto -ldflags=${DEBUG_LDFLAGS} -o ./build/nginx-agent
@@ -307,14 +308,14 @@ official-oss-image: ## Build official NGINX OSS with NGINX Agent container image
 	@echo Building image nginx-oss-with-nginx-agent with $(CONTAINER_CLITOOL); \
 	cd scripts/docker/official/nginx-oss-with-nginx-agent/alpine/ \
 	&& $(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx-oss-with-nginx-agent . \
-	    --build-arg NGINX_AGENT_VERSION=$(shell echo ${VERSION} | tr -d 'v') \
+	    --build-arg NGINX_AGENT_VERSION=${VERSION} \
 		--no-cache -f ./Dockerfile.mainline
 
 official-oss-stable-image: ## Build official NGINX OSS with NGINX Agent container stable image
 	@echo Building image nginx-oss-with-nginx-agent with $(CONTAINER_CLITOOL); \
 	cd scripts/docker/official/nginx-oss-with-nginx-agent/alpine/ \
 	&& $(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx-oss-with-nginx-agent . \
-	    --build-arg NGINX_AGENT_VERSION=$(shell echo ${VERSION} | tr -d 'v') \
+	    --build-arg NGINX_AGENT_VERSION=${VERSION} \
 		--no-cache -f ./Dockerfile.stable
 
 official-oss-mainline-image: official-oss-image ## Build official NGINX OSS with NGINX Agent container mainline image
