@@ -46,8 +46,9 @@ jobs:
           script: |
             const semver = require('semver');
             const ref = context.ref.split("/")[2]
-            const version = ref.split("-")[1]
-            console.log(`The release version is v${version}`)
+            const version_number = ref.split("-")[1]
+            const version = "v"+version_number
+            console.log(`The release version is ${version}`)
             
             const releases = (await github.rest.repos.listReleases({
               owner: context.payload.repository.owner.login,
@@ -62,10 +63,10 @@ jobs:
             
             console.log(`The latest release was ${latest_release}`)
 
-            if (latest_release === "v"+version) {
+            if (latest_release === version) {
                 core.setFailed(`A published release already exists for ${latest_release}`)
             } else {
-                const draft = releases.find((r) => r.draft && r.tag_name === "v"+version)
+                const draft = releases.find((r) => r.draft && r.tag_name === version)
                 const draft_found = !(draft === undefined)
                 
                 let release
@@ -81,7 +82,7 @@ jobs:
                 const release_notes = (await github.rest.repos.generateReleaseNotes({
                     owner: context.payload.repository.owner.login,
                     repo: context.payload.repository.name,
-                    tag_name: "v"+version,
+                    tag_name: version,
                     previous_tag_name: latest_release,
                     target_commitish: ref,
                 }))
@@ -94,9 +95,9 @@ jobs:
                 release = (await github.rest.repos.createRelease({
                     owner: context.payload.repository.owner.login,
                     repo: context.payload.repository.name,
-                    tag_name: "v"+version,
+                    tag_name: version,
                     target_commitish: ref,
-                    name: "v"+version,
+                    name: version,
                     body: release_notes.data.body + footer,
                     draft: true,
                 }))
@@ -107,7 +108,7 @@ jobs:
                 console.log(`Release Upload URL: ${release.data.upload_url}`)
                 
                 return {
-                    version: version,
+                    version: version_number,
                     release_id: release.data.id,
                     release_upload_url: release.data.upload_url,
                 }

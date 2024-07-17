@@ -27,7 +27,10 @@ chmod +x /staging/usr/local/etc/rc.d/nginx-agent
 
 # Temporary fix until the follow issue is resolved https://github.com/actions/checkout/issues/1169
 git config --global --add safe.directory /nginx-agent
-VERSION="$(git describe --match 'v[0-9]*' --abbrev=0 | tr -d 'v')-SNAPSHOT-$(git rev-parse --short HEAD)" envsubst < scripts/packages/manifest > /staging/+MANIFEST
+VERSION_NUMBER="$(git describe --match 'v[0-9]*' --abbrev=0 | tr -d 'v')"
+COMMIT="$(git rev-parse --short HEAD)"
+
+VERSION="$VERSION_NUMBER-SNAPSHOT-$COMMIT" envsubst < scripts/packages/manifest > /staging/+MANIFEST
 
 mkdir -p ./build
 
@@ -41,7 +44,7 @@ pkg -o ABI="FreeBSD:13:${ABIARCH}" create --format txz \
 # but since version 1.17.0 pkg will now always create a file with the extesion pkg no matter what the format is.
 # See 1.17.0 release notes for more info: https://cgit.freebsd.org/ports/commit/?id=e497a16a286972bfcab908209b11ee6a13d99dc9
 cd build
-ln -s nginx-agent-"$(git describe --match 'v[0-9]*' --abbrev=0 | tr -d 'v')"-SNAPSHOT-"$(git rev-parse --short HEAD)".pkg nginx-agent-"$(git describe --match 'v[0-9]*' --abbrev=0 | tr -d 'v')"-SNAPSHOT-"$(git rev-parse --short HEAD)".txz
+ln -s "nginx-agent-$VERSION_NUMBER-SNAPSHOT-$COMMIT.pkg" "nginx-agent-$VERSION_NUMBER-SNAPSHOT-$COMMIT.txz"
 cd ../
 
 rm -rf /staging
