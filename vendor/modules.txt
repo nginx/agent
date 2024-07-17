@@ -110,7 +110,7 @@ github.com/nginx/agent/sdk/v2/zip
 # github.com/nginxinc/nginx-go-crossplane v0.4.48
 ## explicit; go 1.19
 github.com/nginxinc/nginx-go-crossplane
-# github.com/nginxinc/nginx-plus-go-client v1.2.1
+# github.com/nginxinc/nginx-plus-go-client v1.2.2
 ## explicit; go 1.21.2
 github.com/nginxinc/nginx-plus-go-client/client
 # github.com/nginxinc/nginx-prometheus-exporter v1.2.0

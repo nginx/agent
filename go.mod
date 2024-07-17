@@ -14,7 +14,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.5
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nginxinc/nginx-plus-go-client v1.2.1
+	github.com/nginxinc/nginx-plus-go-client v1.2.2
 	github.com/nginxinc/nginx-prometheus-exporter v1.2.0
 	github.com/nxadm/tail v1.4.11
 	github.com/orcaman/concurrent-map v1.0.0

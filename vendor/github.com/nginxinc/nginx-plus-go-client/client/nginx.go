@@ -83,9 +83,9 @@ type StreamUpstreamServer struct {
 }
 
 type apiErrorResponse struct {
-	RequestID string `json:"request_id"`
-	Href      string
-	Error     apiError
+	RequestID string   `json:"request_id"`
+	Href      string   `json:"href"`
+	Error     apiError `json:"error"`
 }
 
 func (resp *apiErrorResponse) toString() string {
@@ -94,9 +94,9 @@ func (resp *apiErrorResponse) toString() string {
 }
 
 type apiError struct {
-	Text   string
-	Code   string
-	Status int
+	Text   string `json:"text"`
+	Code   string `json:"code"`
+	Status int    `json:"status"`
 }
 
 type internalError struct {
@@ -358,11 +358,11 @@ type Upstreams map[string]Upstream
 
 // Upstream represents upstream related stats.
 type Upstream struct {
-	Zone       string
-	Peers      []Peer
-	Queue      Queue
-	Keepalives int
-	Zombies    int
+	Zone      string
+	Peers     []Peer
+	Queue     Queue
+	Keepalive int
+	Zombies   int
 }
 
 // StreamUpstreams is a map of stream upstream stats by upstream name.
