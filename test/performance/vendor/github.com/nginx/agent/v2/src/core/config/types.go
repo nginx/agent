@@ -147,5 +147,5 @@ type AgentMetrics struct {
 	ReportInterval     time.Duration `mapstructure:"report_interval" yaml:"-"`
 	CollectionInterval time.Duration `mapstructure:"collection_interval" yaml:"-"`
 	Mode               string        `mapstructure:"mode" yaml:"-"`
-	Backoff 		   Backoff       `mapstructure:"backoff" yaml:"-"`
+	Backoff            Backoff       `mapstructure:"backoff" yaml:"-"`
 }
