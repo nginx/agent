@@ -8,16 +8,16 @@ import (
 	"net/http"
 )
 
-const templateMetrics string = `Active connections: %d 
+const templateMetrics string = `Active connections: %d
 server accepts handled requests
-%d %d %d 
-Reading: %d Writing: %d Waiting: %d 
+%d %d %d
+Reading: %d Writing: %d Waiting: %d
 `
 
 // NginxClient allows you to fetch NGINX metrics from the stub_status page.
 type NginxClient struct {
-	apiEndpoint string
 	httpClient  *http.Client
+	apiEndpoint string
 }
 
 // StubStats represents NGINX stub_status metrics.
@@ -37,14 +37,13 @@ type StubConnections struct {
 }
 
 // NewNginxClient creates an NginxClient.
-func NewNginxClient(httpClient *http.Client, apiEndpoint string) (*NginxClient, error) {
+func NewNginxClient(httpClient *http.Client, apiEndpoint string) *NginxClient {
 	client := &NginxClient{
 		apiEndpoint: apiEndpoint,
 		httpClient:  httpClient,
 	}
 
-	_, err := client.GetStubStats()
-	return client, err
+	return client
 }
 
 // GetStubStats fetches the stub_status metrics.

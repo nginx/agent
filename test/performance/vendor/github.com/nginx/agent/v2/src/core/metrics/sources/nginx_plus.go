@@ -546,7 +546,7 @@ func (c *NginxPlus) httpUpstreamMetrics(stats, prevStats *plusclient.Stats) []*m
 		}
 
 		simpleMetrics := l.convertSamplesToSimpleMetrics(map[string]float64{
-			"upstream.keepalives":                 float64(u.Keepalives),
+			"upstream.keepalives":                 float64(u.Keepalive),
 			"upstream.zombies":                    float64(u.Zombies),
 			"upstream.queue.maxsize":              float64(u.Queue.MaxSize),
 			"upstream.queue.overflows":            float64(upstreamQueueOverflows),

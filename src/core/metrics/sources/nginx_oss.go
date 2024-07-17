@@ -36,24 +36,24 @@ func NewNginxOSS(baseDimensions *metrics.CommonDim, namespace, stubStatus string
 
 func (c *NginxOSS) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
 	defer wg.Done()
+	var err error
 	c.init.Do(func() {
-		cl, err := client.NewNginxClient(&http.Client{}, c.stubStatus)
-		if err != nil {
-			c.logger.Log(fmt.Sprintf("Failed to create oss metrics client, %v", err))
+		cl := client.NewNginxClient(&http.Client{}, c.stubStatus)
+		if cl == nil {
+			c.logger.Log("OSS metrics client is nil")
 			c.prevStats = nil
 			return
 		}
-
 		c.prevStats, err = cl.GetStubStats()
 		if err != nil {
-			c.logger.Log(fmt.Sprintf("Failed to retrieve oss metrics, %v", err))
+			c.logger.Log("OSS metrics client is nil")
 			c.prevStats = nil
 			return
 		}
 	})
 
-	cl, err := client.NewNginxClient(&http.Client{}, c.stubStatus)
-	if err != nil {
+	cl := client.NewNginxClient(&http.Client{}, c.stubStatus)
+	if cl == nil {
 		c.logger.Log(fmt.Sprintf("Failed to create oss metrics client, %v", err))
 		SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 		return
