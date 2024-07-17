@@ -12,7 +12,7 @@ flowchart TB
     9 -- No --> 10["Reload Nginx"]
     10 --> 11{"Reload NGINX Command Error?"}
     11 -- Yes --> 4
-    11 -- Yes --> 12["Monitor Logs"]
+    11 -- No --> 12["Monitor Logs"]
     12 --> 13{"Monitor Logs Error or Errors found?"}
     13 -- Yes --> 4
     13 -- No --> 5
