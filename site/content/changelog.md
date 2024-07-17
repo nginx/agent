@@ -10,6 +10,40 @@ docs: "DOCS-1093"
 See the list of supported Operating Systems and architectures in the [Technical Specifications]({{< relref "./technical-specifications.md" >}}).
 
 ---
+## Release [v2.36.1](https//github.com/nginx/agent/releases/tag/v2.36.1)
+
+### 🌟 Highlights
+
+- Upgrade crossplane version to prevent Agent from rolling back in the case of valid NGINX configurations by [@oliveromahony](https://github.com/oliveromahony) in [#746](https://github.com/nginx/agent/pull/746)
+
+### 🔨 Maintenance
+
+We have made the following maintenance-related minor changes:
+
+- Added version regex to parse the logs to see if matches vsemvar format by [@oliveromahony](https://github.com/oliveromahony) in [#747](https://github.com/nginx/agent/pull/747)
+
+---
+## Release [v2.36.0](https//github.com/nginx/agent/releases/tag/v2.36.0)
+
+### 🐛 Bug Fixes
+
+In this release we have resolved the following issues:
+
+- Fix incorrect bold tag in heading by [@nginx-seanmoloney](https://github.com/nginx-seanmoloney) in [#715](https://github.com/nginx/agent/pull/715)
+- URL fix for building docker image in README.md by [@y82](https://github.com/y82) in [#720](https://github.com/nginx/agent/pull/720)
+- Fix for version by [@oliveromahony](https://github.com/oliveromahony) in [#732](https://github.com/nginx/agent/pull/732)
+
+### 📝 Documentation
+
+We have made the following updates to the documentation:
+
+- More flexible container images for the official images by [@oliveromahony](https://github.com/oliveromahony) in [#729](https://github.com/nginx/agent/pull/729)
+- Update configuration examples by [@nginx-seanmoloney](https://github.com/nginx-seanmoloney) in [#731](https://github.com/nginx/agent/pull/731)
+- updated github.com/rs/cors version by [@oliveromahony](https://github.com/oliveromahony) in [#735](https://github.com/nginx/agent/pull/735)
+- docs: update changelog by [@Jcahilltorre](https://github.com/Jcahilltorre) in [#736](https://github.com/nginx/agent/pull/736)
+- Upgrade crossplane by [@oliveromahony](https://github.com/oliveromahony) in [#737](https://github.com/nginx/agent/pull/737)
+
+---
 ## Release [v2.35.1](https//github.com/nginx/agent/releases/tag/v2.35.1)
 
 ### 🐛 Bug Fixes
@@ -206,51 +240,4 @@ We have made the following maintenance-related minor changes:
 This release introduces the following new features:
 
 - feat: added the new OS support for NGINX R31 by [@oliveromahony](https://github.com/oliveromahony) in [#538](https://github.com/nginx/agent/pull/538)
-
----
-## Release [v2.31.2](https//github.com/nginx/agent/releases/tag/v2.31.2)
-
-### 🐛 Bug Fixes
-
-In this release we have resolved the following issues:
-
-- chore: rename hugo folder to site, fix product naming by [@Jcahilltorre](https://github.com/Jcahilltorre) in [#527](https://github.com/nginx/agent/pull/527)
-
-### 📝 Documentation
-
-We have made the following updates to the documentation:
-
-- Update upgrade documentation by [@dhurley](https://github.com/dhurley) in [#526](https://github.com/nginx/agent/pull/526)
-- Bump the versions of containerd and go-git dependencies by [@dhurley](https://github.com/dhurley) in [#533](https://github.com/nginx/agent/pull/533)
-- updated dependencies by [@oliveromahony](https://github.com/oliveromahony) in [#536](https://github.com/nginx/agent/pull/536)
-
-### 🔨 Maintenance
-
-We have made the following maintenance-related minor changes:
-
-- Bump crypto dependency from 0.14.0 to 0.17.0 by [@dhurley](https://github.com/dhurley) in [#532](https://github.com/nginx/agent/pull/532)
-
----
-## Release [v2.31.1](https//github.com/nginx/agent/releases/tag/v2.31.1)
-
-### 🐛 Bug Fixes
-
-In this release we have resolved the following issues:
-
-- Fix permissions for log file and dynamic config directory by [@aphralG](https://github.com/aphralG) in [#517](https://github.com/nginx/agent/pull/517)
-- Fix server example in sdk to have timeout by [@aphralG](https://github.com/aphralG) in [#518](https://github.com/nginx/agent/pull/518)
-
-### 📝 Documentation
-
-We have made the following updates to the documentation:
-
-- Update SELinux Readme by [@aphralG](https://github.com/aphralG) in [#522](https://github.com/nginx/agent/pull/522)
-
-### 🔨 Maintenance
-
-We have made the following maintenance-related minor changes:
-
-- Replace mockgen by [@oliveromahony](https://github.com/oliveromahony) in [#524](https://github.com/nginx/agent/pull/524)
-- Restrict config apply directory permissions by [@Dean-Coakley](https://github.com/Dean-Coakley) in [#519](https://github.com/nginx/agent/pull/519)
-- Restrict NAP file/dir permissions by [@Dean-Coakley](https://github.com/Dean-Coakley) in [#516](https://github.com/nginx/agent/pull/516)
 
