@@ -191,7 +191,7 @@ const (
 	MetricsReportInterval     = MetricsKey + agent_config.KeyDelimiter + "report_interval"
 	MetricsCollectionInterval = MetricsKey + agent_config.KeyDelimiter + "collection_interval"
 	MetricsMode               = MetricsKey + agent_config.KeyDelimiter + "mode"
-	MetricsBackoff  		  = MetricsKey + agent_config.KeyDelimiter + "backoff"
+	MetricsBackoff            = MetricsKey + agent_config.KeyDelimiter + "backoff"
 	// metrics backoff settings
 	BackoffMetricsInitialInterval     = MetricsKey + agent_config.KeyDelimiter + BackoffKey + agent_config.KeyDelimiter + "initial_interval"
 	BackoffMetricsRandomizationFactor = MetricsKey + agent_config.KeyDelimiter + BackoffKey + agent_config.KeyDelimiter + "randomization_factor"

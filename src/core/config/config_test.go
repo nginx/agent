@@ -272,7 +272,7 @@ func TestGetConfig(t *testing.T) {
 
 		// Everything else should still be default
 		assert.Equal(t, Defaults.AgentMetrics.Mode, config.AgentMetrics.Mode)
-		assert.Equal(t, 10 * time.Minute, config.AgentMetrics.Backoff.MaxInterval)
+		assert.Equal(t, 10*time.Minute, config.AgentMetrics.Backoff.MaxInterval)
 		assert.Equal(t, Defaults.Features, config.Features)
 		assert.Equal(t, []string{}, config.Extensions)
 	})

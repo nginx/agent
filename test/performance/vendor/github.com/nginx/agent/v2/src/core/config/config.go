@@ -322,7 +322,7 @@ func getMetrics() AgentMetrics {
 		ReportInterval:     Viper.GetDuration(MetricsReportInterval),
 		CollectionInterval: Viper.GetDuration(MetricsCollectionInterval),
 		Mode:               Viper.GetString(MetricsMode),
-		Backoff: 			getMetricsBackOff(),
+		Backoff:            getMetricsBackOff(),
 	}
 }
 
