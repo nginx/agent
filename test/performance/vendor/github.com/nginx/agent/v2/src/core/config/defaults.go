@@ -85,6 +85,13 @@ var (
 			ReportInterval:     1 * time.Minute,
 			CollectionInterval: 15 * time.Second,
 			Mode:               "aggregated",
+			Backoff: Backoff{
+				InitialInterval:     client.DefaultBackoffSettings.InitialInterval,
+				RandomizationFactor: client.DefaultBackoffSettings.Jitter,
+				Multiplier:          client.DefaultBackoffSettings.Multiplier,
+				MaxInterval:         client.DefaultBackoffSettings.MaxInterval,
+				MaxElapsedTime:      client.DefaultBackoffSettings.MaxElapsedTime,
+			},
 		},
 		AgentAPI: AgentAPI{
 			Host: "127.0.0.1",
@@ -184,6 +191,13 @@ const (
 	MetricsReportInterval     = MetricsKey + agent_config.KeyDelimiter + "report_interval"
 	MetricsCollectionInterval = MetricsKey + agent_config.KeyDelimiter + "collection_interval"
 	MetricsMode               = MetricsKey + agent_config.KeyDelimiter + "mode"
+	MetricsBackoff  		  = MetricsKey + agent_config.KeyDelimiter + "backoff"
+	// metrics backoff settings
+	BackoffMetricsInitialInterval     = MetricsKey + agent_config.KeyDelimiter + BackoffKey + agent_config.KeyDelimiter + "initial_interval"
+	BackoffMetricsRandomizationFactor = MetricsKey + agent_config.KeyDelimiter + BackoffKey + agent_config.KeyDelimiter + "randomization_factor"
+	BackoffMetricsMultiplier          = MetricsKey + agent_config.KeyDelimiter + BackoffKey + agent_config.KeyDelimiter + "multiplier"
+	BackoffMetricsMaxInterval         = MetricsKey + agent_config.KeyDelimiter + BackoffKey + agent_config.KeyDelimiter + "max_interval"
+	BackoffMetricsMaxElapsedTime      = MetricsKey + agent_config.KeyDelimiter + BackoffKey + agent_config.KeyDelimiter + "max_elapsed_time"
 
 	// DEPRECATED KEYS
 	AdvancedMetricsKey                  = "advanced_metrics"

@@ -51,6 +51,12 @@ server:
   # host of the control plane
   host: <FQDN>
   grpcPort: 443
+  backoff: # note: default values are prepopulated 
+    initial_interval: 100ms # Add the appropriate duration value here, e.g., "100ms" for 100 milliseconds, "5s" for 5 seconds, "1m" for 1 minute, "1h" for 1 hour
+    randomization_factor: 0.10 # Add the appropriate float value here, e.g., 0.10
+    multiplier: 1.5 # Add the appropriate float value here, e.g., 1.5
+    max_interval: 1m # Add the appropriate duration value here, e.g., "100ms" for 100 milliseconds, "5s" for 5 seconds, "1m" for 1 minute, "1h" for 1 hour
+    max_elapsed_time: 0 # Add the appropriate duration value here, e.g., "0" for indefinite "100ms" for 100 milliseconds, "5s" for 5 seconds, "1m" for 1 minute, "1h" for 1 hour
 # tls options
 tls:
   # enable tls in the nginx-agent setup for grpcs
@@ -83,6 +89,12 @@ metrics:
   report_interval: 1m
   collection_interval: 15s
   mode: aggregated
+    backoff: # note: default values are prepopulated 
+      initial_interval: 100ms # Add the appropriate duration value here, e.g., "100ms" for 100 milliseconds, "5s" for 5 seconds, "1m" for 1 minute, "1h" for 1 hour
+      randomization_factor: 0.10 # Add the appropriate float value here, e.g., 0.10
+      multiplier: 1.5 # Add the appropriate float value here, e.g., 1.5
+      max_interval: 1m # Add the appropriate duration value here, e.g., "100ms" for 100 milliseconds, "5s" for 5 seconds, "1m" for 1 minute, "1h" for 1 hour
+      max_elapsed_time: 0 # Add the appropriate duration value here, e.g., "0" for indefinite "100ms" for 100 milliseconds, "5s" for 5 seconds, "1m" for 1 minute, "1h" for 1 hour
 
 # OSS NGINX default config path
 # path to aux file dirs can also be added
