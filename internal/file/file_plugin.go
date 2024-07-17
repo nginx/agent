@@ -153,8 +153,10 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 	case model.NoChange:
 		response = fp.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
 			fmt.Sprintf("Successful config apply for instanceId: %s, no files to change",
-				configApplyRequest.GetConfigVersion().
-					GetInstanceId()), configApplyRequest.GetConfigVersion().GetInstanceId(), "")
+				configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId()),
+			configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId(),
+			"",
+		)
 
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
 		fp.fileManagerService.ClearCache()
@@ -164,12 +166,15 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 		slog.ErrorContext(
 			ctx,
 			"Failed to apply config changes",
-			"instance_id", configApplyRequest.GetConfigVersion().GetInstanceId(),
+			"instance_id", configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId(),
 			"error", err,
 		)
 		response = fp.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-			fmt.Sprintf("Config apply failed for instanceId: %s", configApplyRequest.
-				GetConfigVersion().GetInstanceId()), configApplyRequest.GetConfigVersion().GetInstanceId(), err.Error())
+			fmt.Sprintf("Config apply failed for instanceId: %s",
+				configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId()),
+			configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId(),
+			err.Error(),
+		)
 
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
 		fp.fileManagerService.ClearCache()
@@ -179,20 +184,22 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 		slog.ErrorContext(
 			ctx,
 			"Failed to apply config changes, rolling back",
-			"instance_id", configApplyRequest.GetConfigVersion().GetInstanceId(),
+			"instance_id", configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId(),
 			"error", err,
 		)
 		response = fp.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
 			fmt.Sprintf("Config apply failed for instanceId: %s, rolling back config",
-				configApplyRequest.GetConfigVersion().GetInstanceId()), configApplyRequest.
-				GetConfigVersion().GetInstanceId(), err.Error())
+				configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId()),
+			configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId(),
+			err.Error(),
+		)
 
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
 		fp.handleConfigApplyFailedRequest(ctx, &bus.Message{
 			Topic: bus.ConfigApplyFailedTopic,
 			Data: &model.ConfigApplyMessage{
 				CorrelationID: correlationID,
-				InstanceID:    configApplyRequest.GetConfigVersion().GetInstanceId(),
+				InstanceID:    configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId(),
 				Error:         err,
 			},
 		})
@@ -202,7 +209,7 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 		// Send WriteConfigSuccessfulTopic with Correlation and Instance ID for use by resource plugin
 		data := &model.ConfigApplyMessage{
 			CorrelationID: correlationID,
-			InstanceID:    configApplyRequest.GetConfigVersion().GetInstanceId(),
+			InstanceID:    configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId(),
 		}
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.WriteConfigSuccessfulTopic, Data: data})
 	}
@@ -246,19 +253,25 @@ func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Me
 	var updatingFilesError error
 
 	for _, file := range configUploadRequest.GetOverview().GetFiles() {
-		err := fp.fileManagerService.UpdateFile(ctx, configUploadRequest.GetInstanceId(), file)
+		err := fp.fileManagerService.UpdateFile(
+			ctx,
+			configUploadRequest.GetOverview().GetConfigVersion().GetInstanceId(),
+			file,
+		)
 		if err != nil {
 			slog.ErrorContext(
 				ctx,
 				"Failed to update file",
-				"instance_id", configUploadRequest.GetInstanceId(),
+				"instance_id", configUploadRequest.GetOverview().GetConfigVersion().GetInstanceId(),
 				"file_name", file.GetFileMeta().GetName(),
 				"error", err,
 			)
 
 			response := fp.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
-				fmt.Sprintf("Failed to update file %s", file.GetFileMeta().GetName()), configUploadRequest.
-					GetInstanceId(), err.Error())
+				fmt.Sprintf("Failed to update file %s", file.GetFileMeta().GetName()),
+				configUploadRequest.GetOverview().GetConfigVersion().GetInstanceId(),
+				err.Error(),
+			)
 
 			updatingFilesError = err
 

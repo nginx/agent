@@ -455,8 +455,7 @@ Additional information associated with a ConfigApplyRequest
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| config_version | [ConfigVersion](#mpi-v1-ConfigVersion) |  | the config version |
-| overview | [FileOverview](#mpi-v1-FileOverview) | optional | an optional set of files related to the request |
+| overview | [FileOverview](#mpi-v1-FileOverview) |  | set of files related to the request |
 
 
 
@@ -471,8 +470,7 @@ Additional information associated with a ConfigUploadRequest
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| instance_id | [string](#string) |  | the instance identifier |
-| overview | [FileOverview](#mpi-v1-FileOverview) | optional | an optional set of files related to the request |
+| overview | [FileOverview](#mpi-v1-FileOverview) |  | set of files related to the request |
 
 
 

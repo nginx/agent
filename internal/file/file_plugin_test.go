@@ -214,7 +214,6 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic(t *testing.T) {
 	message := &mpi.ManagementPlaneRequest{
 		Request: &mpi.ManagementPlaneRequest_ConfigUploadRequest{
 			ConfigUploadRequest: &mpi.ConfigUploadRequest{
-				InstanceId: "123",
 				Overview: &mpi.FileOverview{
 					Files: []*mpi.File{
 						{
@@ -273,7 +272,6 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic_Failure(t *testing.T) {
 	message := &mpi.ManagementPlaneRequest{
 		Request: &mpi.ManagementPlaneRequest_ConfigUploadRequest{
 			ConfigUploadRequest: &mpi.ConfigUploadRequest{
-				InstanceId: protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 				Overview: &mpi.FileOverview{
 					Files: []*mpi.File{
 						{
