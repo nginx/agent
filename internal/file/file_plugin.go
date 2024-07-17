@@ -108,11 +108,11 @@ func (fp *FilePlugin) handleConfigApplyFailedRequest(ctx context.Context, msg *b
 	if err != nil {
 		rollbackResponse := fp.createDataPlaneResponse(data.CorrelationID,
 			mpi.CommandResponse_COMMAND_STATUS_ERROR,
-			fmt.Sprintf("Rollback failed for instanceId: %s", data.InstanceID), data.InstanceID, err.Error())
+			"Rollback failed", data.InstanceID, err.Error())
 
 		applyResponse := fp.createDataPlaneResponse(data.CorrelationID,
 			mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-			fmt.Sprintf("Config apply failed for instanceId: %s", data.InstanceID), data.InstanceID, err.Error())
+			"Config apply failed, rollback failed", data.InstanceID, data.Error.Error())
 
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: applyResponse})
@@ -151,9 +151,10 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 
 	switch writeStatus {
 	case model.NoChange:
-		response = fp.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
-			fmt.Sprintf("Successful config apply for instanceId: %s, no files to change",
-				configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId()),
+		response = fp.createDataPlaneResponse(
+			correlationID,
+			mpi.CommandResponse_COMMAND_STATUS_OK,
+			"Config apply successful, no files to change",
 			configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId(),
 			"",
 		)
@@ -169,9 +170,10 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			"instance_id", configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId(),
 			"error", err,
 		)
-		response = fp.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-			fmt.Sprintf("Config apply failed for instanceId: %s",
-				configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId()),
+		response = fp.createDataPlaneResponse(
+			correlationID,
+			mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+			"Config apply failed",
 			configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId(),
 			err.Error(),
 		)
@@ -187,9 +189,10 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			"instance_id", configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId(),
 			"error", err,
 		)
-		response = fp.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
-			fmt.Sprintf("Config apply failed for instanceId: %s, rolling back config",
-				configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId()),
+		response = fp.createDataPlaneResponse(
+			correlationID,
+			mpi.CommandResponse_COMMAND_STATUS_ERROR,
+			"Config apply failed, rolling back config",
 			configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId(),
 			err.Error(),
 		)

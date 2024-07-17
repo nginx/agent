@@ -182,7 +182,7 @@ func getMapOfVersionedFiles(configDirectory string) (map[string][]*v1.File, erro
 			return err
 		}
 
-		if !info.IsDir() {
+		if isValidFile(info, path) {
 			slog.Debug("Found file", "path", path)
 
 			splitPath := strings.SplitN(strings.Split(path, configDirectory)[1], string(filepath.Separator), 3)
@@ -209,6 +209,10 @@ func getMapOfVersionedFiles(configDirectory string) (map[string][]*v1.File, erro
 	})
 
 	return files, err
+}
+
+func isValidFile(info os.FileInfo, path string) bool {
+	return !info.IsDir() && !strings.HasSuffix(path, ".DS_Store")
 }
 
 func performFileAction(fileAction v1.File_FileAction, fileContents []byte, fullFilePath, filePermissions string) error {
