@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1721229174012,
+  "lastUpdate": 1721229487149,
   "repoUrl": "https://github.com/nginx/agent",
   "entries": {
     "Compare Benchmark Results": [
@@ -74756,6 +74756,60 @@ window.BENCHMARK_DATA = {
             "value": 6,
             "unit": "allocs/op",
             "extra": "3191275 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "108004222+aphralG@users.noreply.github.com",
+            "name": "aphralG",
+            "username": "aphralG"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8f497232cd4e38b13cb9070fd17907ff03ef2f5c",
+          "message": "Fix data plane response messages and errors (#743)\n\n* update messages and errors\r\n\r\nCo-authored-by: dhurley <djhurley1990@gmail.com>",
+          "timestamp": "2024-07-15T10:40:40+01:00",
+          "tree_id": "39d9222d85bafffd6df2411ed042757d999c6219",
+          "url": "https://github.com/nginx/agent/commit/8f497232cd4e38b13cb9070fd17907ff03ef2f5c"
+        },
+        "date": 1721229485863,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "cpu_percentage_avg",
+            "value": 15.665168979388188,
+            "unit": "%",
+            "extra": "Metric10kDPS/OTLP-linux-build/nginx-agent - Cpu Percentage"
+          },
+          {
+            "name": "cpu_percentage_max",
+            "value": 18.99516854089129,
+            "unit": "%",
+            "extra": "Metric10kDPS/OTLP-linux-build/nginx-agent - Cpu Percentage"
+          },
+          {
+            "name": "ram_mib_avg",
+            "value": 87,
+            "unit": "MiB",
+            "extra": "Metric10kDPS/OTLP-linux-build/nginx-agent - RAM (MiB)"
+          },
+          {
+            "name": "ram_mib_max",
+            "value": 101,
+            "unit": "MiB",
+            "extra": "Metric10kDPS/OTLP-linux-build/nginx-agent - RAM (MiB)"
+          },
+          {
+            "name": "dropped_span_count",
+            "value": 0,
+            "unit": "spans",
+            "extra": "Metric10kDPS/OTLP-linux-build/nginx-agent - Dropped Span Count"
           }
         ]
       }
