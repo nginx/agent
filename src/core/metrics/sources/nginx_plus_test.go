@@ -278,8 +278,8 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 					},
 				},
 				Keepalive: 0,
-				Zombies:    0,
-				Zone:       upstreamZoneName,
+				Zombies:   0,
+				Zone:      upstreamZoneName,
 				Queue: plusclient.Queue{
 					Size:      0,
 					MaxSize:   upstreamQueueMaxSize,
@@ -504,8 +504,8 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 					},
 				},
 				Keepalive: 0,
-				Zombies:    0,
-				Zone:       upstreamZoneName,
+				Zombies:   0,
+				Zone:      upstreamZoneName,
 				Queue: plusclient.Queue{
 					Size:      0,
 					MaxSize:   upstreamQueueMaxSize,
