@@ -53,24 +53,24 @@ sequenceDiagram
   File Manager Service-->>-File Plugin: writeStatus, error
   
     alt no file changes
-    rect rgb(89, 209, 59)
+    rect rgb(65, 153, 42)
         File Plugin-)Message Bus: DataPlaneResponseTopic Command_Status_OK
         Message Bus-) Command Plugin: DataPlaneResponseTopic Command_Status_OK
     end
     else has error
-    rect rgb(227, 87, 68)
+    rect rgb(209, 80, 63)
         File Plugin-)Message Bus: DataPlaneResponseTopic Command_Status_FAILURE
         Message Bus-) Command Plugin: DataPlaneResponseTopic Command_Status_FAILURE
         end
     else rollback required
-    rect rgb(232, 139, 49)
+    rect rgb(217, 129, 41)
     %% Dunno if this should be here... rollback is a seperate diagram 
         File Plugin-)Message Bus: DataPlaneResponseTopic Command_Status_ERROR
         File Plugin->>File Manager Service: Rollback(ctx, instanceID)
         Message Bus-) Command Plugin: DataPlaneResponseTopic Command_Status_ERROR
         end
     else no error
-    rect rgb(89, 209, 59)
+    rect rgb(65, 153, 42)
         File Plugin-)-Message Bus: WriteConfigSuccessfulTopic
     end
     end 
@@ -90,7 +90,7 @@ end
 Instance Operator-->>-Resource Service: error
 Resource Service-->>-Resource Plugin: error
 alt no error
-rect rgb(89, 209, 59)
+rect rgb(65, 153, 42)
     Resource Plugin-)Message Bus: ConfigApplySuccessfulTopic
     Resource Plugin-)Message Bus: DataPlaneResponseTopic Command_Status_OK
     Message Bus-) Command Plugin: DataPlaneResponseTopic Command_Status_OK
@@ -100,7 +100,7 @@ rect rgb(89, 209, 59)
     Watcher Plugin ->>-Watcher Plugin: Reparse Config
     end
     else error
-    rect rgb(232, 139, 49)
+    rect rgb(217, 129, 41)
     Resource Plugin-)Message Bus: ConfigApplyFailedTopic
     Resource Plugin-)-Message Bus: DataPlaneResponseTopic Command_Status_ERROR
     Message Bus-) Command Plugin: DataPlaneResponseTopic Command_Status_ERROR
