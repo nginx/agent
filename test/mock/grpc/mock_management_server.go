@@ -66,16 +66,14 @@ func NewMockManagementServer(
 	configDirectory *string,
 ) (*MockManagementServer, error) {
 	var err error
-	commandService := serveCommandService(apiAddress, agentConfig)
+	requestChan := make(chan *v1.ManagementPlaneRequest)
+
+	commandService := serveCommandService(apiAddress, agentConfig, requestChan, *configDirectory)
 
 	var fileServer *FileService
 
 	if *configDirectory != "" {
-		fileServer, err = NewFileService(*configDirectory)
-		if err != nil {
-			slog.Error("Failed to create file server", "error", err)
-			return nil, err
-		}
+		fileServer = NewFileService(*configDirectory, requestChan)
 	}
 
 	fileServiceLock.Lock()
@@ -162,8 +160,13 @@ func getServerOptions(agentConfig *config.Config) []grpc.ServerOption {
 	return opts
 }
 
-func serveCommandService(apiAddress string, agentConfig *config.Config) *CommandService {
-	commandServer := NewCommandService()
+func serveCommandService(
+	apiAddress string,
+	agentConfig *config.Config,
+	requestChan chan *v1.ManagementPlaneRequest,
+	configDirectory string,
+) *CommandService {
+	commandServer := NewCommandService(requestChan, configDirectory)
 
 	go func() {
 		cmdListener, listenerErr := createListener(apiAddress, agentConfig)

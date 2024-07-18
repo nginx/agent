@@ -100,7 +100,8 @@ func setupConnectionTest(tb testing.TB) func(tb testing.TB) {
 			params,
 		)
 	} else {
-		server := mockGrpc.NewCommandService()
+		requestChan := make(chan *mpi.ManagementPlaneRequest)
+		server := mockGrpc.NewCommandService(requestChan, os.TempDir())
 
 		go func(tb testing.TB) {
 			tb.Helper()
@@ -198,8 +199,14 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 	unmarshalErr := json.Unmarshal(responseData, &response)
 	require.NoError(t, unmarshalErr)
 
-	assert.Len(t, response, 1)
+	assert.Eventually(
+		t,
+		func() bool { return len(response) == 2 },
+		2*time.Second,
+		10*time.Millisecond,
+	)
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, response[0].GetCommandResponse().GetStatus())
+	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, response[1].GetCommandResponse().GetStatus())
 }
 
 func verifyConnection(t *testing.T) string {
