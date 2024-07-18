@@ -8,7 +8,6 @@ package main
 import (
 	"context"
 	"flag"
-	"io"
 	"log/slog"
 	"net"
 	"os"
@@ -81,39 +80,15 @@ func main() {
 func generateDefaultConfigDirectory() (string, error) {
 	slog.Info("Generating default configs")
 	tempDirectory := os.TempDir()
+	configDirectory := filepath.Join(tempDirectory, "config")
 
-	err := os.MkdirAll(filepath.Join(tempDirectory, "config/1/etc/nginx"), directoryPermissions)
+	err := os.MkdirAll(configDirectory, directoryPermissions)
 	if err != nil {
 		slog.Error("Failed to create directories", "error", err)
 		return "", err
 	}
 
-	source, err := os.Open("test/config/nginx/nginx.conf")
-	if err != nil {
-		slog.Error("Failed to open nginx.conf", "error", err)
-		return "", err
-	}
-	defer CloseFile(source)
+	slog.Info("Created default config directory", "directory", configDirectory)
 
-	destination, err := os.Create(filepath.Join(tempDirectory, "config/1/etc/nginx/nginx.conf"))
-	if err != nil {
-		slog.Error("Failed to create nginx.conf", "error", err)
-		return "", err
-	}
-	defer CloseFile(destination)
-
-	_, err = io.Copy(destination, source)
-	if err != nil {
-		slog.Error("Failed to copy nginx.conf", "error", err)
-		return "", err
-	}
-
-	return filepath.Join(tempDirectory, "config"), nil
-}
-
-func CloseFile(file *os.File) {
-	err := file.Close()
-	if err != nil {
-		slog.Error("Failed to close file", "error", err)
-	}
+	return configDirectory, nil
 }

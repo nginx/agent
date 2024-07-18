@@ -101,7 +101,7 @@ func setupConnectionTest(tb testing.TB) func(tb testing.TB) {
 		)
 	} else {
 		requestChan := make(chan *mpi.ManagementPlaneRequest)
-		server := mockGrpc.NewCommandService(requestChan)
+		server := mockGrpc.NewCommandService(requestChan, os.TempDir())
 
 		go func(tb testing.TB) {
 			tb.Helper()

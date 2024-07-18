@@ -7,7 +7,6 @@ package grpc
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -24,21 +23,16 @@ const defaultFilePermissions = 0o644
 
 type FileService struct {
 	v1.UnimplementedFileServiceServer
-	files            []*v1.File // Key is the config version UID
-	versionDirectory string     // Key is the version directory name
-	configDirectory  string
-	requestChan      chan *v1.ManagementPlaneRequest
+	instanceFiles   map[string][]*v1.File
+	configDirectory string
+	requestChan     chan *v1.ManagementPlaneRequest
 }
 
 func NewFileService(configDirectory string, requestChan chan *v1.ManagementPlaneRequest) (*FileService, error) {
-	files := []*v1.File{}
-	versionDirectory := ""
-
 	return &FileService{
-		configDirectory:  configDirectory,
-		files:            files,
-		versionDirectory: versionDirectory,
-		requestChan:      requestChan,
+		configDirectory: configDirectory,
+		instanceFiles:   make(map[string][]*v1.File),
+		requestChan:     requestChan,
 	}, nil
 }
 
@@ -50,7 +44,7 @@ func (mgs *FileService) GetOverview(
 
 	slog.Info("Getting overview", "config_version", configVersion)
 
-	if mgs.files == nil {
+	if _, ok := mgs.instanceFiles[request.GetConfigVersion().GetInstanceId()]; !ok {
 		slog.Error("Config version not found", "config_version", configVersion)
 		return nil, status.Errorf(codes.NotFound, "Config version not found")
 	}
@@ -58,7 +52,7 @@ func (mgs *FileService) GetOverview(
 	return &v1.GetOverviewResponse{
 		Overview: &v1.FileOverview{
 			ConfigVersion: configVersion,
-			Files:         mgs.files,
+			Files:         mgs.instanceFiles[configVersion.GetInstanceId()],
 		},
 	}, nil
 }
@@ -73,10 +67,7 @@ func (mgs *FileService) UpdateOverview(
 
 	slog.Info("Updating overview", "version", version)
 
-	mgs.files = overview.GetFiles()
-	mgs.versionDirectory = fmt.Sprintf("%s/%s", mgs.configDirectory, overview.GetConfigVersion().GetInstanceId())
-
-	slog.Info("config Dir", "", mgs.versionDirectory)
+	mgs.instanceFiles[overview.GetConfigVersion().GetInstanceId()] = overview.GetFiles()
 
 	configUploadRequest := &v1.ManagementPlaneRequest{
 		MessageMeta: &v1.MessageMeta{
@@ -86,7 +77,7 @@ func (mgs *FileService) UpdateOverview(
 		},
 		Request: &v1.ManagementPlaneRequest_ConfigUploadRequest{
 			ConfigUploadRequest: &v1.ConfigUploadRequest{
-				Overview:   request.GetOverview(),
+				Overview: request.GetOverview(),
 			},
 		},
 	}
@@ -104,12 +95,12 @@ func (mgs *FileService) GetFile(
 
 	slog.Info("Getting file", "name", fileName, "hash", fileHash)
 
-	if mgs.versionDirectory == "" {
+	fullFilePath := mgs.findFile(request.GetFileMeta())
+
+	if fullFilePath == "" {
 		slog.Error("File not found", "file_name", fileName)
 		return nil, status.Errorf(codes.NotFound, "File not found")
 	}
-
-	fullFilePath := filepath.Join(mgs.versionDirectory, fileName)
 
 	bytes, err := os.ReadFile(fullFilePath)
 	if err != nil {
@@ -129,7 +120,6 @@ func (mgs *FileService) UpdateFile(
 	request *v1.UpdateFileRequest,
 ) (*v1.UpdateFileResponse, error) {
 	fileContents := request.GetContents().GetContents()
-	fileAction := request.GetFile().GetAction()
 	fileMeta := request.GetFile().GetFileMeta()
 	fileName := fileMeta.GetName()
 	fileHash := fileMeta.GetHash()
@@ -137,11 +127,20 @@ func (mgs *FileService) UpdateFile(
 
 	slog.Info("Updating file", "name", fileName, "hash", fileHash)
 
-	fullFilePath := filepath.Join(mgs.configDirectory, mgs.versionDirectory, fileName)
+	fullFilePath := mgs.findFile(request.GetFile().GetFileMeta())
 
-	err := performFileAction(fileAction, fileContents, fullFilePath, filePermissions)
+	if _, err := os.Stat(fullFilePath); os.IsNotExist(err) {
+		statErr := os.MkdirAll(filepath.Dir(fullFilePath), os.ModePerm)
+		if statErr != nil {
+			slog.Info("Failed to create/update file", "full_file_path", fullFilePath, "error", statErr)
+			return nil, status.Errorf(codes.Internal, "Failed to create/update file")
+		}
+	}
+
+	err := os.WriteFile(fullFilePath, fileContents, getFileMode(filePermissions))
 	if err != nil {
-		return nil, err
+		slog.Info("Failed to create/update file", "full_file_path", fullFilePath, "error", err)
+		return nil, status.Errorf(codes.Internal, "Failed to create/update file")
 	}
 
 	return &v1.UpdateFileResponse{
@@ -149,38 +148,15 @@ func (mgs *FileService) UpdateFile(
 	}, nil
 }
 
-func performFileAction(fileAction v1.File_FileAction, fileContents []byte, fullFilePath, filePermissions string) error {
-	switch fileAction {
-	case v1.File_FILE_ACTION_ADD, v1.File_FILE_ACTION_UPDATE:
-		// Ensure if file doesn't exist that directories are created before creating the file
-		if _, err := os.Stat(fullFilePath); os.IsNotExist(err) {
-			statErr := os.MkdirAll(filepath.Dir(fullFilePath), os.ModePerm)
-			if statErr != nil {
-				slog.Info("Failed to create/update file", "full_file_path", fullFilePath, "error", statErr)
-				return status.Errorf(codes.Internal, "Failed to create/update file")
+func (mgs *FileService) findFile(fileMeta *v1.FileMeta) (fullFilePath string) {
+	for instanceID, files := range mgs.instanceFiles {
+		for _, file := range files {
+			if file.GetFileMeta().GetName() == fileMeta.GetName() {
+				fullFilePath = filepath.Join(mgs.configDirectory, instanceID, fileMeta.GetName())
 			}
 		}
-
-		err := os.WriteFile(fullFilePath, fileContents, getFileMode(filePermissions))
-		if err != nil {
-			slog.Info("Failed to create/update file", "full_file_path", fullFilePath, "error", err)
-			return status.Errorf(codes.Internal, "Failed to create/update file")
-		}
-	case v1.File_FILE_ACTION_DELETE:
-		err := os.Remove(fullFilePath)
-		if err != nil {
-			slog.Info("Failed to delete file", "full_file_path", fullFilePath, "error", err)
-			return status.Errorf(codes.Internal, "Failed to delete file")
-		}
-	case v1.File_FILE_ACTION_UNSPECIFIED:
-		slog.Info("Nothing to update, file action is unspecified", "full_file_path", fullFilePath)
-	case v1.File_FILE_ACTION_UNCHANGED:
-		slog.Info("Nothing to update, file action is unchanged", "full_file_path", fullFilePath)
-	default:
-		slog.Info("Nothing to update, unknown file action", "full_file_path", fullFilePath)
 	}
-
-	return nil
+	return fullFilePath
 }
 
 func getFileMode(mode string) os.FileMode {

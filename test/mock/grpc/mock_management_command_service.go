@@ -14,11 +14,16 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/pkg/files"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	sloggin "github.com/samber/slog-gin"
 )
@@ -35,20 +40,23 @@ type CommandService struct {
 	updateDataPlaneStatusMutex   sync.Mutex
 	updateDataPlaneHealthMutex   sync.Mutex
 	connectionMutex              sync.Mutex
-	// fileOverviewCache            []*mpi.File
+	configDirectory              string
+	instanceFiles                map[string][]*mpi.File
 }
 
 func init() {
 	gin.SetMode(gin.ReleaseMode)
 }
 
-func NewCommandService(requestChan chan *mpi.ManagementPlaneRequest) *CommandService {
+func NewCommandService(requestChan chan *mpi.ManagementPlaneRequest, configDirectory string) *CommandService {
 	cs := &CommandService{
 		requestChan:                requestChan,
 		connectionMutex:            sync.Mutex{},
 		updateDataPlaneStatusMutex: sync.Mutex{},
 		updateDataPlaneHealthMutex: sync.Mutex{},
 		dataPlaneResponsesMutex:    sync.Mutex{},
+		configDirectory:            configDirectory,
+		instanceFiles:              make(map[string][]*mpi.File),
 	}
 
 	handler := slog.NewTextHandler(
@@ -153,14 +161,16 @@ func (cs *CommandService) Subscribe(in mpi.CommandService_SubscribeServer) error
 			slog.InfoContext(ctx, "Subscribe", "request", request)
 
 			if upload, ok := request.GetRequest().(*mpi.ManagementPlaneRequest_ConfigUploadRequest); ok {
-				slog.Info("request", "", upload)
-			} else {
-				err := in.Send(request)
-				if err != nil {
-					slog.ErrorContext(ctx, "Failed to send management request", "error", err)
-				}
+				instanceID := upload.ConfigUploadRequest.GetOverview().GetConfigVersion().GetInstanceId()
+				files := upload.ConfigUploadRequest.GetOverview().GetFiles()
+
+				cs.instanceFiles[instanceID] = files
 			}
 
+			err := in.Send(request)
+			if err != nil {
+				slog.ErrorContext(ctx, "Failed to send management request", "error", err)
+			}
 		}
 	}
 }
@@ -193,6 +203,7 @@ func (cs *CommandService) createServer(logger *slog.Logger) {
 	cs.addStatusEndpoint()
 	cs.addHealthEndpoint()
 	cs.addResponseAndRequestEndpoints()
+	cs.addConfigApplyEndpoint()
 }
 
 func (cs *CommandService) addConnectionEndpoint() {
@@ -285,4 +296,97 @@ func (cs *CommandService) addResponseAndRequestEndpoints() {
 
 		c.JSON(http.StatusOK, &request)
 	})
+}
+
+func (cs *CommandService) addConfigApplyEndpoint() {
+	cs.server.POST("/api/v1/instance/:instanceID/config/apply", func(c *gin.Context) {
+		instanceID := c.Param("instanceID")
+		configFiles := []*mpi.File{}
+
+		instanceDirectory := filepath.Join(cs.configDirectory, instanceID)
+
+		err := filepath.Walk(instanceDirectory, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if isValidFile(info, path) {
+				slog.Debug("Found file", "path", path)
+
+				filePath := strings.Split(path, instanceDirectory)[1]
+
+				file, fileErr := createFile(path, filePath)
+				if fileErr != nil {
+					return fileErr
+				}
+				file.Action = mpi.File_FILE_ACTION_UPDATE.Enum()
+
+				slog.Debug(
+					"File found:",
+					"path", file.GetFileMeta().GetName(),
+					"hash", file.GetFileMeta().GetHash(),
+				)
+
+				configFiles = append(configFiles, file)
+			}
+
+			return nil
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+
+		cs.instanceFiles[instanceID] = configFiles
+
+		request := mpi.ManagementPlaneRequest{
+			MessageMeta: &mpi.MessageMeta{
+				MessageId:     uuid.NewString(),
+				CorrelationId: uuid.NewString(),
+				Timestamp:     timestamppb.Now(),
+			},
+			Request: &mpi.ManagementPlaneRequest_ConfigApplyRequest{
+				ConfigApplyRequest: &mpi.ConfigApplyRequest{
+					Overview: &mpi.FileOverview{
+						ConfigVersion: &mpi.ConfigVersion{
+							InstanceId: instanceID,
+							Version:    "",
+						},
+						Files: cs.instanceFiles[instanceID],
+					},
+				},
+			},
+		}
+
+		cs.requestChan <- &request
+
+		c.JSON(http.StatusOK, &request)
+	})
+}
+
+func createFile(fullPath, filePath string) (*mpi.File, error) {
+	content, err := os.ReadFile(fullPath)
+	if err != nil {
+		return nil, err
+	}
+	fileHash := files.GenerateHash(content)
+
+	fileInfo, err := os.Stat(fullPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return &mpi.File{
+		FileMeta: &mpi.FileMeta{
+			Name:         filePath,
+			Hash:         fileHash,
+			ModifiedTime: timestamppb.New(fileInfo.ModTime()),
+			Permissions:  files.Permissions(fileInfo.Mode()),
+			Size:         fileInfo.Size(),
+		},
+	}, nil
+}
+
+func isValidFile(info os.FileInfo, path string) bool {
+	return !info.IsDir() && !strings.HasSuffix(path, ".DS_Store")
 }

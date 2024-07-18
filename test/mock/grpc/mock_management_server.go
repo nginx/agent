@@ -68,14 +68,7 @@ func NewMockManagementServer(
 	var err error
 	requestChan := make(chan *v1.ManagementPlaneRequest)
 
-	// TODO: create request channel here pass it to both command service and file service
-	// When file service receives update Overview send back the over view with a ConfigUpload request
-	// Save the overview in command service then send on the upload request
-	// When the upload request is done management server can be used as expected
-	// config endpoint will be added when request is sent create file overview for what mock has currently
-	// compare file overview from upload request to file overview on mock and determine file actions then
-	// send config apply request with the new file overview with actions
-	commandService := serveCommandService(apiAddress, agentConfig, requestChan)
+	commandService := serveCommandService(apiAddress, agentConfig, requestChan, *configDirectory)
 
 	var fileServer *FileService
 
@@ -171,8 +164,8 @@ func getServerOptions(agentConfig *config.Config) []grpc.ServerOption {
 	return opts
 }
 
-func serveCommandService(apiAddress string, agentConfig *config.Config, requestChan chan *v1.ManagementPlaneRequest) *CommandService {
-	commandServer := NewCommandService(requestChan)
+func serveCommandService(apiAddress string, agentConfig *config.Config, requestChan chan *v1.ManagementPlaneRequest, configDirectory string) *CommandService {
+	commandServer := NewCommandService(requestChan, configDirectory)
 
 	go func() {
 		cmdListener, listenerErr := createListener(apiAddress, agentConfig)
