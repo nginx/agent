@@ -60,7 +60,7 @@ sequenceDiagram
             Message Bus-) Command Plugin: DataPlaneResponseTopic Command_Status_FAILURE
         end
     else rollback required
-        rect rgb(144, 143, 217)
+        rect rgb(146, 144, 199)
             File Plugin-)Message Bus: DataPlaneResponseTopic Command_Status_ERROR
             File Plugin->>File Manager Service: Rollback(ctx, instanceID)
             Message Bus-) Command Plugin: DataPlaneResponseTopic Command_Status_ERROR
@@ -96,7 +96,7 @@ sequenceDiagram
             Watcher Plugin ->>-Watcher Plugin: Reparse Config
         end
     else error
-        rect rgb(100, 97, 160)
+        rect rgb(146, 144, 199)
             Resource Plugin-)Message Bus: ConfigApplyFailedTopic
             Resource Plugin-)-Message Bus: DataPlaneResponseTopic Command_Status_ERROR
             Message Bus-) Command Plugin: DataPlaneResponseTopic Command_Status_ERROR
