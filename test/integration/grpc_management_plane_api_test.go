@@ -199,7 +199,12 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 	unmarshalErr := json.Unmarshal(responseData, &response)
 	require.NoError(t, unmarshalErr)
 
-	assert.Len(t, response, 2)
+	assert.Eventually(
+		t,
+		func() bool { return len(response) == 2 },
+		2*time.Second,
+		10*time.Millisecond,
+	)
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, response[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, response[1].GetCommandResponse().GetStatus())
 }
