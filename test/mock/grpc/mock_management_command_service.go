@@ -35,13 +35,13 @@ type CommandService struct {
 	requestChan                  chan *mpi.ManagementPlaneRequest
 	updateDataPlaneStatusRequest *mpi.UpdateDataPlaneStatusRequest
 	updateDataPlaneHealthRequest *mpi.UpdateDataPlaneHealthRequest
+	instanceFiles                map[string][]*mpi.File
+	configDirectory              string
 	dataPlaneResponses           []*mpi.DataPlaneResponse
-	dataPlaneResponsesMutex      sync.Mutex
-	updateDataPlaneStatusMutex   sync.Mutex
 	updateDataPlaneHealthMutex   sync.Mutex
 	connectionMutex              sync.Mutex
-	configDirectory              string
-	instanceFiles                map[string][]*mpi.File
+	updateDataPlaneStatusMutex   sync.Mutex
+	dataPlaneResponsesMutex      sync.Mutex
 }
 
 func init() {
@@ -162,9 +162,9 @@ func (cs *CommandService) Subscribe(in mpi.CommandService_SubscribeServer) error
 
 			if upload, ok := request.GetRequest().(*mpi.ManagementPlaneRequest_ConfigUploadRequest); ok {
 				instanceID := upload.ConfigUploadRequest.GetOverview().GetConfigVersion().GetInstanceId()
-				files := upload.ConfigUploadRequest.GetOverview().GetFiles()
+				overviewFiles := upload.ConfigUploadRequest.GetOverview().GetFiles()
 
-				cs.instanceFiles[instanceID] = files
+				cs.instanceFiles[instanceID] = overviewFiles
 			}
 
 			err := in.Send(request)
@@ -301,37 +301,8 @@ func (cs *CommandService) addResponseAndRequestEndpoints() {
 func (cs *CommandService) addConfigApplyEndpoint() {
 	cs.server.POST("/api/v1/instance/:instanceID/config/apply", func(c *gin.Context) {
 		instanceID := c.Param("instanceID")
-		configFiles := []*mpi.File{}
 
-		instanceDirectory := filepath.Join(cs.configDirectory, instanceID)
-
-		err := filepath.Walk(instanceDirectory, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-
-			if isValidFile(info, path) {
-				slog.Debug("Found file", "path", path)
-
-				filePath := strings.Split(path, instanceDirectory)[1]
-
-				file, fileErr := createFile(path, filePath)
-				if fileErr != nil {
-					return fileErr
-				}
-				file.Action = mpi.File_FILE_ACTION_UPDATE.Enum()
-
-				slog.Debug(
-					"File found:",
-					"path", file.GetFileMeta().GetName(),
-					"hash", file.GetFileMeta().GetHash(),
-				)
-
-				configFiles = append(configFiles, file)
-			}
-
-			return nil
-		})
+		configFiles, err := cs.findInstanceConfigFiles(instanceID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err)
 			return
@@ -362,6 +333,40 @@ func (cs *CommandService) addConfigApplyEndpoint() {
 
 		c.JSON(http.StatusOK, &request)
 	})
+}
+
+func (cs *CommandService) findInstanceConfigFiles(instanceID string) (configFiles []*mpi.File, err error) {
+	instanceDirectory := filepath.Join(cs.configDirectory, instanceID)
+
+	err = filepath.Walk(instanceDirectory, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if isValidFile(info, path) {
+			slog.Debug("Found file", "path", path)
+
+			filePath := strings.Split(path, instanceDirectory)[1]
+
+			file, fileErr := createFile(path, filePath)
+			if fileErr != nil {
+				return fileErr
+			}
+			file.Action = mpi.File_FILE_ACTION_UPDATE.Enum()
+
+			slog.Debug(
+				"File found:",
+				"path", file.GetFileMeta().GetName(),
+				"hash", file.GetFileMeta().GetHash(),
+			)
+
+			configFiles = append(configFiles, file)
+		}
+
+		return nil
+	})
+
+	return configFiles, err
 }
 
 func createFile(fullPath, filePath string) (*mpi.File, error) {

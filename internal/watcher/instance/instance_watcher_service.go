@@ -120,7 +120,6 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instance *m
 
 	if instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX ||
 		instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
-
 		slog.DebugContext(ctx, "Reparsing instance config", "instance_id", instance.GetInstanceMeta().GetInstanceId())
 		nginxConfigContext, parseErr := iw.nginxConfigParser.Parse(ctx, instance)
 		if parseErr != nil {
@@ -179,7 +178,11 @@ func (iw *InstanceWatcherService) checkForUpdates(
 	instancesToParse = append(instancesToParse, instanceUpdates.NewInstances...)
 
 	for _, newInstance := range instancesToParse {
-		slog.DebugContext(newCtx, "Parsing instance config", "instance_id", newInstance.GetInstanceMeta().GetInstanceId())
+		slog.DebugContext(
+			newCtx,
+			"Parsing instance config",
+			"instance_id", newInstance.GetInstanceMeta().GetInstanceId(),
+		)
 		instanceType := newInstance.GetInstanceMeta().GetInstanceType()
 
 		if instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX ||

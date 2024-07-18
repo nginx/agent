@@ -24,16 +24,16 @@ const defaultFilePermissions = 0o644
 type FileService struct {
 	v1.UnimplementedFileServiceServer
 	instanceFiles   map[string][]*v1.File
-	configDirectory string
 	requestChan     chan *v1.ManagementPlaneRequest
+	configDirectory string
 }
 
-func NewFileService(configDirectory string, requestChan chan *v1.ManagementPlaneRequest) (*FileService, error) {
+func NewFileService(configDirectory string, requestChan chan *v1.ManagementPlaneRequest) *FileService {
 	return &FileService{
 		configDirectory: configDirectory,
 		instanceFiles:   make(map[string][]*v1.File),
 		requestChan:     requestChan,
-	}, nil
+	}
 }
 
 func (mgs *FileService) GetOverview(
@@ -156,6 +156,7 @@ func (mgs *FileService) findFile(fileMeta *v1.FileMeta) (fullFilePath string) {
 			}
 		}
 	}
+
 	return fullFilePath
 }
 
