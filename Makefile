@@ -40,7 +40,7 @@ PROTO_DIR       := proto
 BINARY_NAME		:= nginx-agent
 PROJECT_DIR		= cmd/agent
 PROJECT_FILE	= main.go
-DIRS            = $(BUILD_DIR) $(TEST_BUILD_DIR) $(BUILD_DIR)/$(DOCS_DIR) $(BUILD_DIR)/$(DOCS_DIR)/$(PROTO_DIR) $(DOCS_DIR) $(DOCS_DIR)/$(PROTO_DIR)
+DIRS            = $(BUILD_DIR) $(TEST_BUILD_DIR) $(BUILD_DIR)/$(DOCS_DIR) $(BUILD_DIR)/$(DOCS_DIR)/$(PROTO_DIR)
 $(shell mkdir -p $(DIRS))
 
 VERSION 		?= "v3.0.0"
