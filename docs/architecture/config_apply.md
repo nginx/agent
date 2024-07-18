@@ -51,20 +51,28 @@ sequenceDiagram
   File Manager Service->>File Operator: Write()
 %% should this also have the write status ?
   File Manager Service-->>-File Plugin: writeStatus, error
+  
     alt no file changes
+    rect rgb(89, 209, 59)
         File Plugin-)Message Bus: DataPlaneResponseTopic Command_Status_OK
         Message Bus-) Command Plugin: DataPlaneResponseTopic Command_Status_OK
+    end
     else has error
+    rect rgb(227, 87, 68)
         File Plugin-)Message Bus: DataPlaneResponseTopic Command_Status_FAILURE
         Message Bus-) Command Plugin: DataPlaneResponseTopic Command_Status_FAILURE
+        end
     else rollback required
+    rect rgb(232, 139, 49)
     %% Dunno if this should be here... rollback is a seperate diagram 
         File Plugin-)Message Bus: DataPlaneResponseTopic Command_Status_ERROR
         File Plugin->>File Manager Service: Rollback(ctx, instanceID)
         Message Bus-) Command Plugin: DataPlaneResponseTopic Command_Status_ERROR
+        end
     else no error
+    rect rgb(89, 209, 59)
         File Plugin-)-Message Bus: WriteConfigSuccessfulTopic
-
+    end
     end 
 Message Bus-)+Resource Plugin: WriteConfigSuccessfulTopic
 Resource Plugin ->>+Resource Service: ApplyConfig(ctx, instanceID)
@@ -82,6 +90,7 @@ end
 Instance Operator-->>-Resource Service: error
 Resource Service-->>-Resource Plugin: error
 alt no error
+rect rgb(89, 209, 59)
     Resource Plugin-)Message Bus: ConfigApplySuccessfulTopic
     Resource Plugin-)Message Bus: DataPlaneResponseTopic Command_Status_OK
     Message Bus-) Command Plugin: DataPlaneResponseTopic Command_Status_OK
@@ -89,11 +98,14 @@ alt no error
     File Plugin ->>-File Plugin: clearCache()
     Message Bus -)+Watcher Plugin: ConfigApplySuccessfulTopic
     Watcher Plugin ->>-Watcher Plugin: Reparse Config
+    end
     else error
+    rect rgb(232, 139, 49)
     Resource Plugin-)Message Bus: ConfigApplyFailedTopic
     Resource Plugin-)-Message Bus: DataPlaneResponseTopic Command_Status_ERROR
     Message Bus-) Command Plugin: DataPlaneResponseTopic Command_Status_ERROR
     Message Bus-)+File Plugin: ConfigApplyFailedTopic
     File Plugin->>-File Manager Service: Rollback(ctx, instanceID)
+    end
 end
 ```
