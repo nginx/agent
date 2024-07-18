@@ -51,7 +51,7 @@ detect_nginx_users() {
             fi
         done 
         if [ "${nginx_pid}" ]; then
-            nginx_user=$(awk '/^Uid:/ {print $2}' /proc/"$nginx_pid"/status | xargs -I {} getent passwd {} | cut -d: -f1)
+            nginx_user=$(awk '/^Uid:/ {print $2}' /proc/"$nginx_pid"/status | while read -r uid; do getent passwd "$uid"; done | cut -d: -f1)
         fi
 
         if [ -z "${nginx_user}" ]; then
@@ -79,7 +79,7 @@ detect_nginx_users() {
             fi
         done
         if [ "${worker_pid}" ]; then
-            worker_user=$(awk '/^Uid:/ {print $2}' /proc/"$worker_pid"/status | xargs -I {} getent passwd {} | cut -d: -f1)
+            worker_user=$(awk '/^Uid:/ {print $2}' /proc/"$worker_pid"/status | while read -r uid; do getent passwd "$uid"; done | cut -d: -f1)
         fi
 
         if [ -z "${worker_user}" ]; then
@@ -303,9 +303,16 @@ restart_agent_if_required() {
         # https://github.com/freebsd/pkg/pull/2128
         return
     fi
-    if service nginx-agent status; then
-        printf "PostInstall: Restarting nginx agent\n"
-        service nginx-agent restart || true
+    if command -v service; then
+        if service nginx-agent status; then
+            printf "PostInstall: Restarting nginx agent\n"
+            service nginx-agent restart || true
+        fi
+    else
+        if systemctl status nginx-agent; then
+            printf "PostInstall: Restarting nginx agent\n"
+            systemctl restart nginx-agent || true
+        fi
     fi
 }
 
