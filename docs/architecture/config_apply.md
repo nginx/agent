@@ -1,4 +1,5 @@
 # Config Apply Flowchart
+
 ```mermaid
 flowchart TB
     0["Start"] --> 2["Receive Config Apply Request"]
@@ -34,4 +35,65 @@ flowchart TB
     style 17 fill:#BBDEFB,color:#000000
     style 22 fill:#E1BEE7,color:#000000
 
+```
+
+# Config Apply Sequence Diagram 
+```mermaid
+sequenceDiagram
+  Command Plugin-)Message Bus: ConfigApplyRequestTopic
+  Message Bus-)+File Plugin: ConfigApplyRequestTopic
+  File Plugin->>+File Manager Service: ConfigApply(ctx, configApplyRequest)
+  File Manager Service->>File Manager Service: checkAllowedDirectory(checkFiles)
+%%   this is in file helpers should I show that ?
+  File Manager Service->>File Manager Service: CompareFileHash(fileOverview)
+%%   Not sure about the write operation here ?????
+  File Manager Service->>File Manager Service: executeFileActions(ctx)
+  File Manager Service->>File Operator: Write()
+%% should this also have the write status ?
+  File Manager Service-->>-File Plugin: writeStatus, error
+    alt no file changes
+        File Plugin-)Message Bus: DataPlaneResponseTopic Command_Status_OK
+        Message Bus-) Command Plugin: DataPlaneResponseTopic Command_Status_OK
+    else has error
+        File Plugin-)Message Bus: DataPlaneResponseTopic Command_Status_FAILURE
+        Message Bus-) Command Plugin: DataPlaneResponseTopic Command_Status_FAILURE
+    else rollback required
+    %% Dunno if this should be here... rollback is a seperate diagram 
+        File Plugin-)Message Bus: DataPlaneResponseTopic Command_Status_ERROR
+        File Plugin->>File Manager Service: Rollback(ctx, instanceID)
+        Message Bus-) Command Plugin: DataPlaneResponseTopic Command_Status_ERROR
+    else no error
+        File Plugin-)-Message Bus: WriteConfigSuccessfulTopic
+
+    end 
+Message Bus-)+Resource Plugin: WriteConfigSuccessfulTopic
+Resource Plugin ->>+Resource Service: ApplyConfig(ctx, instanceID)
+Resource Service->>+Instance Operator: Validate(ctx, instance)
+Instance Operator->>Instance Operator: validateConfigCheckResponse()
+Instance Operator-->>-Resource Service: error
+Resource Service->>+Instance Operator: Reload(ctx, instance)
+loop monitorLogs()
+    Instance Operator->>+Log Tailer Operator: Tail(ctx, errorLog, errorChannel)
+    loop Tail()
+    Log Tailer Operator->>-Log Tailer Operator: doesLogLineContainError(line)
+    Log Tailer Operator-->>Instance Operator: error
+end 
+end 
+Instance Operator-->>-Resource Service: error
+Resource Service-->>-Resource Plugin: error
+alt no error
+    Resource Plugin-)Message Bus: ConfigApplySuccessfulTopic
+    Resource Plugin-)Message Bus: DataPlaneResponseTopic Command_Status_OK
+    Message Bus-) Command Plugin: DataPlaneResponseTopic Command_Status_OK
+    Message Bus -)+File Plugin: ConfigApplySuccessfulTopic
+    File Plugin ->>-File Plugin: clearCache()
+    Message Bus -)+Watcher Plugin: ConfigApplySuccessfulTopic
+    Watcher Plugin ->>-Watcher Plugin: Reparse Config
+    else error
+    Resource Plugin-)Message Bus: ConfigApplyFailedTopic
+    Resource Plugin-)-Message Bus: DataPlaneResponseTopic Command_Status_ERROR
+    Message Bus-) Command Plugin: DataPlaneResponseTopic Command_Status_ERROR
+    Message Bus-)+File Plugin: ConfigApplyFailedTopic
+    File Plugin->>-File Manager Service: Rollback(ctx, instanceID)
+end
 ```
