@@ -23,7 +23,7 @@ const defaultFilePermissions = 0o644
 
 type FileService struct {
 	v1.UnimplementedFileServiceServer
-	instanceFiles   map[string][]*v1.File
+	instanceFiles   map[string][]*v1.File // key is instanceID
 	requestChan     chan *v1.ManagementPlaneRequest
 	configDirectory string
 }

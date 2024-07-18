@@ -35,7 +35,7 @@ type CommandService struct {
 	requestChan                  chan *mpi.ManagementPlaneRequest
 	updateDataPlaneStatusRequest *mpi.UpdateDataPlaneStatusRequest
 	updateDataPlaneHealthRequest *mpi.UpdateDataPlaneHealthRequest
-	instanceFiles                map[string][]*mpi.File
+	instanceFiles                map[string][]*mpi.File // key is instanceID
 	configDirectory              string
 	dataPlaneResponses           []*mpi.DataPlaneResponse
 	updateDataPlaneHealthMutex   sync.Mutex
