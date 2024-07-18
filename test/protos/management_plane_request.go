@@ -9,8 +9,7 @@ import mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 
 func CreateConfigApplyRequest(overview *mpi.FileOverview) *mpi.ConfigApplyRequest {
 	return &mpi.ConfigApplyRequest{
-		Overview:      overview,
-		ConfigVersion: CreateConfigVersion(),
+		Overview: overview,
 	}
 }
 

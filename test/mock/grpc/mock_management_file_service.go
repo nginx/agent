@@ -86,7 +86,6 @@ func (mgs *FileService) UpdateOverview(
 		},
 		Request: &v1.ManagementPlaneRequest_ConfigUploadRequest{
 			ConfigUploadRequest: &v1.ConfigUploadRequest{
-				InstanceId: request.GetOverview().GetConfigVersion().GetInstanceId(),
 				Overview:   request.GetOverview(),
 			},
 		},
@@ -192,26 +191,3 @@ func getFileMode(mode string) os.FileMode {
 
 	return os.FileMode(result)
 }
-
-//func createFile(fullPath, filePath string) (*v1.File, error) {
-//	content, err := os.ReadFile(fullPath)
-//	if err != nil {
-//		return nil, err
-//	}
-//	fileHash := filesHelper.GenerateHash(content)
-//
-//	fileInfo, err := os.Stat(fullPath)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return &v1.File{
-//		FileMeta: &v1.FileMeta{
-//			Name:         filePath,
-//			Hash:         fileHash,
-//			ModifiedTime: timestamppb.New(fileInfo.ModTime()),
-//			Permissions:  filesHelper.Permissions(fileInfo.Mode()),
-//			Size:         fileInfo.Size(),
-//		},
-//	}, nil
-//}

@@ -2326,11 +2326,11 @@ func (m *ConfigApplyRequest) validate(all bool) error {
 	var errors []error
 
 	if all {
-		switch v := interface{}(m.GetConfigVersion()).(type) {
+		switch v := interface{}(m.GetOverview()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
 				errors = append(errors, ConfigApplyRequestValidationError{
-					field:  "ConfigVersion",
+					field:  "Overview",
 					reason: "embedded message failed validation",
 					cause:  err,
 				})
@@ -2338,53 +2338,20 @@ func (m *ConfigApplyRequest) validate(all bool) error {
 		case interface{ Validate() error }:
 			if err := v.Validate(); err != nil {
 				errors = append(errors, ConfigApplyRequestValidationError{
-					field:  "ConfigVersion",
+					field:  "Overview",
 					reason: "embedded message failed validation",
 					cause:  err,
 				})
 			}
 		}
-	} else if v, ok := interface{}(m.GetConfigVersion()).(interface{ Validate() error }); ok {
+	} else if v, ok := interface{}(m.GetOverview()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
 			return ConfigApplyRequestValidationError{
-				field:  "ConfigVersion",
+				field:  "Overview",
 				reason: "embedded message failed validation",
 				cause:  err,
 			}
 		}
-	}
-
-	if m.Overview != nil {
-
-		if all {
-			switch v := interface{}(m.GetOverview()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, ConfigApplyRequestValidationError{
-						field:  "Overview",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, ConfigApplyRequestValidationError{
-						field:  "Overview",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetOverview()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return ConfigApplyRequestValidationError{
-					field:  "Overview",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
 	}
 
 	if len(errors) > 0 {
@@ -2489,39 +2456,33 @@ func (m *ConfigUploadRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for InstanceId
-
-	if m.Overview != nil {
-
-		if all {
-			switch v := interface{}(m.GetOverview()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, ConfigUploadRequestValidationError{
-						field:  "Overview",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, ConfigUploadRequestValidationError{
-						field:  "Overview",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetOverview()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return ConfigUploadRequestValidationError{
+	if all {
+		switch v := interface{}(m.GetOverview()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ConfigUploadRequestValidationError{
 					field:  "Overview",
 					reason: "embedded message failed validation",
 					cause:  err,
-				}
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ConfigUploadRequestValidationError{
+					field:  "Overview",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
 			}
 		}
-
+	} else if v, ok := interface{}(m.GetOverview()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ConfigUploadRequestValidationError{
+				field:  "Overview",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
 	}
 
 	if len(errors) > 0 {
