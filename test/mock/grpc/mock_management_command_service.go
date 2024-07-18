@@ -321,7 +321,7 @@ func (cs *CommandService) addConfigApplyEndpoint() {
 					Overview: &mpi.FileOverview{
 						ConfigVersion: &mpi.ConfigVersion{
 							InstanceId: instanceID,
-							Version:    "",
+							Version:    files.GenerateConfigVersion(cs.instanceFiles[instanceID]),
 						},
 						Files: cs.instanceFiles[instanceID],
 					},

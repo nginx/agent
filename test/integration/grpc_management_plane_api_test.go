@@ -199,8 +199,9 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 	unmarshalErr := json.Unmarshal(responseData, &response)
 	require.NoError(t, unmarshalErr)
 
-	assert.Len(t, response, 1)
+	assert.Len(t, response, 2)
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, response[0].GetCommandResponse().GetStatus())
+	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, response[1].GetCommandResponse().GetStatus())
 }
 
 func verifyConnection(t *testing.T) string {
