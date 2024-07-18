@@ -40,69 +40,82 @@ flowchart TB
 # Config Apply Sequence Diagram 
 ```mermaid
 sequenceDiagram
-    Command Plugin-)Message Bus: ConfigApplyRequestTopic
-    Message Bus-)+File Plugin: ConfigApplyRequestTopic
-    File Plugin->>+File Manager Service: ConfigApply(ctx, configApplyRequest)
-    File Manager Service->>File Manager Service: checkAllowedDirectory(checkFiles)
-    File Manager Service->>File Manager Service: CompareFileHash(fileOverview)
-    File Manager Service->>File Manager Service: executeFileActions(ctx)
-    File Manager Service->>File Operator: Write()
-    File Manager Service-->>-File Plugin: writeStatus, error
+    participant Command Plugin as Command Plugin
+    participant Message Bus as Message Bus
+    participant File Plugin as File Plugin
+    participant File Manager Service as File Manager Service
+    participant File Operator as File Operator
+    participant Resource Plugin as Resource Plugin
+    participant Resource Service as Resource Service
+    participant Instance Operator as Instance Operator
+    participant Log Tailer Operator as Log Tailer Operator
+    participant Watcher Plugin as Watcher Plugin
 
+    Command Plugin -) Message Bus: ConfigApplyRequestTopic
+    Message Bus -)+ File Plugin: ConfigApplyRequestTopic
+    File Plugin ->>+ File Manager Service: ConfigApply(ctx, configApplyRequest)
+    File Manager Service ->> File Manager Service: checkAllowedDirectory(checkFiles)
+    File Manager Service ->> File Manager Service: CompareFileHash(fileOverview)
+    File Manager Service ->> File Manager Service: executeFileActions(ctx)
+    File Manager Service ->> File Operator: Write()
+    File Operator -->> File Manager Service: error
+    File Manager Service -->>- File Plugin: writeStatus, error
     alt no file changes
         rect rgb(66, 129, 164)
-            File Plugin-)Message Bus: DataPlaneResponseTopic Command_Status_OK
-            Message Bus-) Command Plugin: DataPlaneResponseTopic Command_Status_OK
+            File Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_OK
+            Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_OK
         end
     else has error
         rect rgb(166, 128, 140)
-            File Plugin-)Message Bus: DataPlaneResponseTopic Command_Status_FAILURE
-            Message Bus-) Command Plugin: DataPlaneResponseTopic Command_Status_FAILURE
+            File Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_FAILURE
+            Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_FAILURE
         end
     else rollback required
-        rect rgb(146, 144, 199)
-            File Plugin-)Message Bus: DataPlaneResponseTopic Command_Status_ERROR
-            File Plugin->>File Manager Service: Rollback(ctx, instanceID)
-            Message Bus-) Command Plugin: DataPlaneResponseTopic Command_Status_ERROR
+        rect rgb(144, 143, 217)
+            File Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_ERROR
+            File Plugin ->> File Manager Service: Rollback(ctx, instanceID)
+            Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_ERROR
         end
     else no error
         rect rgb(66, 129, 164)
-            File Plugin-)-Message Bus: WriteConfigSuccessfulTopic
+            File Plugin -)- Message Bus: WriteConfigSuccessfulTopic
         end
     end
-    Message Bus-)+Resource Plugin: WriteConfigSuccessfulTopic
-    Resource Plugin ->>+Resource Service: ApplyConfig(ctx, instanceID)
-    Resource Service->>+Instance Operator: Validate(ctx, instance)
-    Instance Operator->>Instance Operator: validateConfigCheckResponse()
-    Instance Operator-->>-Resource Service: error
-    Resource Service->>+Instance Operator: Reload(ctx, instance)
+    Message Bus -)+ Resource Plugin: WriteConfigSuccessfulTopic
+    Resource Plugin ->>+ Resource Service: ApplyConfig(ctx, instanceID)
+    Resource Service ->>+ Instance Operator: Validate(ctx, instance)
+    Instance Operator ->> Instance Operator: validateConfigCheckResponse()
+    Instance Operator -->>- Resource Service: error
+    Resource Service ->>+ Instance Operator: Reload(ctx, instance)
     loop monitorLogs()
-        Instance Operator->>+Log Tailer Operator: Tail(ctx, errorLog, errorChannel)
+        Instance Operator ->>+ Log Tailer Operator: Tail(ctx, errorLog, errorChannel)
         loop Tail()
-            Log Tailer Operator->>-Log Tailer Operator: doesLogLineContainError(line)
-            Log Tailer Operator-->>Instance Operator: error
+            Log Tailer Operator ->>- Log Tailer Operator: doesLogLineContainError(line)
+            Log Tailer Operator -->> Instance Operator: error
         end
     end
-    Instance Operator-->>-Resource Service: error
-    Resource Service-->>-Resource Plugin: error
+    Instance Operator -->>- Resource Service: error
+    Resource Service -->>- Resource Plugin: error
     alt no error
         rect rgb(66, 129, 164)
-            Resource Plugin-)Message Bus: ConfigApplySuccessfulTopic
-            Resource Plugin-)Message Bus: DataPlaneResponseTopic Command_Status_OK
-            Message Bus-) Command Plugin: DataPlaneResponseTopic Command_Status_OK
-            Message Bus -)+File Plugin: ConfigApplySuccessfulTopic
-            File Plugin ->>-File Plugin: clearCache()
-            Message Bus -)+Watcher Plugin: ConfigApplySuccessfulTopic
-            Watcher Plugin ->>-Watcher Plugin: Reparse Config
+            Resource Plugin -) Message Bus: ConfigApplySuccessfulTopic
+            Resource Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_OK
+            Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_OK
+            Message Bus -)+ File Plugin: ConfigApplySuccessfulTopic
+            File Plugin ->>- File Plugin: clearCache()
+            Message Bus -)+ Watcher Plugin: ConfigApplySuccessfulTopic
+            Watcher Plugin ->>- Watcher Plugin: Reparse Config
         end
     else error
         rect rgb(146, 144, 199)
-            Resource Plugin-)Message Bus: ConfigApplyFailedTopic
-            Resource Plugin-)-Message Bus: DataPlaneResponseTopic Command_Status_ERROR
-            Message Bus-) Command Plugin: DataPlaneResponseTopic Command_Status_ERROR
-            Message Bus-)+File Plugin: ConfigApplyFailedTopic
-            File Plugin->>-File Manager Service: Rollback(ctx, instanceID)
+            Resource Plugin -) Message Bus: ConfigApplyFailedTopic
+            Resource Plugin -)- Message Bus: DataPlaneResponseTopic Command_Status_ERROR
+            Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_ERROR
+            Message Bus -)+ File Plugin: ConfigApplyFailedTopic
+            File Plugin ->>- File Manager Service: Rollback(ctx, instanceID)
         end
     end
+
+
 
 ```
