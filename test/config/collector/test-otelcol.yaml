@@ -1,6 +1,6 @@
 receivers:
   hostmetrics:
-    collection_interval: 1m
+    collection_interval: 1m0s
     initial_delay: 1s
     scrapers:
       cpu:
@@ -10,6 +10,8 @@ receivers:
       memory:
       network:
       paging:
+      processes:
+      process:
   otlp/0:
     protocols:
       grpc:

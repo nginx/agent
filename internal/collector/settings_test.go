@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/test/types"
@@ -63,7 +64,10 @@ func TestTemplateWrite(t *testing.T) {
 		TLS:    nil,
 	})
 
-	cfg.Collector.Receivers.HostMetrics = true
+	cfg.Collector.Receivers.HostMetrics = config.HostMetrics{
+		CollectionInterval: time.Minute,
+		InitialDelay:       time.Second,
+	}
 	cfg.Collector.Receivers.NginxReceivers = append(cfg.Collector.Receivers.NginxReceivers, config.NginxReceiver{
 		InstanceID: "123",
 		StubStatus: "http://localhost:80/status",

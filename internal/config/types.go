@@ -101,7 +101,7 @@ type (
 		OtlpReceivers      []OtlpReceiver      `yaml:"-" mapstructure:"otlp_receivers"`
 		NginxReceivers     []NginxReceiver     `yaml:"-" mapstructure:"nginx_receivers"`
 		NginxPlusReceivers []NginxPlusReceiver `yaml:"-" mapstructure:"nginx_plus_receivers"`
-		HostMetrics        bool                `yaml:"-" mapstructure:"host_metrics"`
+		HostMetrics        HostMetrics         `yaml:"-" mapstructure:"host_metrics"`
 	}
 
 	OtlpReceiver struct {
@@ -118,6 +118,11 @@ type (
 	NginxPlusReceiver struct {
 		InstanceID string `yaml:"-" mapstructure:"instance_id"`
 		PlusAPI    string `yaml:"-" mapstructure:"plus_api"`
+	}
+
+	HostMetrics struct {
+		CollectionInterval time.Duration `yaml:"-" mapstructure:"collection_interval"`
+		InitialDelay       time.Duration `yaml:"-" mapstructure:"initial_delay"`
 	}
 
 	GRPC struct {

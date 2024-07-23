@@ -78,6 +78,10 @@ func TestCollector_Process(t *testing.T) {
 				},
 			},
 			receivers: config.Receivers{
+				HostMetrics: config.HostMetrics{
+					CollectionInterval: time.Minute,
+					InitialDelay:       time.Second,
+				},
 				OtlpReceivers: []config.OtlpReceiver{
 					{
 						Server: &config.ServerConfig{
@@ -108,6 +112,10 @@ func TestCollector_Process(t *testing.T) {
 				},
 			},
 			receivers: config.Receivers{
+				HostMetrics: config.HostMetrics{
+					CollectionInterval: time.Minute,
+					InitialDelay:       time.Second,
+				},
 				OtlpReceivers: []config.OtlpReceiver{
 					{
 						Server: &config.ServerConfig{

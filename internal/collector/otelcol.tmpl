@@ -1,8 +1,8 @@
 receivers:
-{{- if .Receivers.HostMetrics }}
+{{- with .Receivers.HostMetrics }}
   hostmetrics:
-    collection_interval: 1m
-    initial_delay: 1s
+    collection_interval: {{ .CollectionInterval }}
+    initial_delay: {{ .InitialDelay }}
     scrapers:
       cpu:
       disk:
@@ -11,6 +11,8 @@ receivers:
       memory:
       network:
       paging:
+      processes:
+      process:
 {{- end }}
 {{- range $index, $otlpReceiver := .Receivers.OtlpReceivers }}
   otlp/{{$index}}:

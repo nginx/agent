@@ -84,6 +84,10 @@ func AgentConfig() *config.Config {
 						},
 					},
 				},
+				HostMetrics: config.HostMetrics{
+					CollectionInterval: time.Minute,
+					InitialDelay:       time.Second,
+				},
 			},
 			Health: &config.ServerConfig{
 				Host: "localhost",
