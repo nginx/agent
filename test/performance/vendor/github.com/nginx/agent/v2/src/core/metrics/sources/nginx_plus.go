@@ -105,6 +105,7 @@ func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *m
 	c.baseDimensions.NginxVersion = stats.NginxInfo.Version
 
 	c.sendMetrics(ctx, m, c.collectMetrics(stats, c.prevStats)...)
+	log.Debug("NGINX_plus_Collect: metrics sent")
 
 	c.prevStats = stats
 }
@@ -115,13 +116,18 @@ func (c *NginxPlus) Update(dimensions *metrics.CommonDim, collectorConf *metrics
 }
 
 func (c *NginxPlus) Stop() {
-	log.Debugf("Stopping NginxPlus source for nginx id: %v", c.baseDimensions.NginxId)
+	log.Debugf("Stopping NGINX Plus source for NGINX id: %v", c.baseDimensions.NginxId)
 }
 
 func (c *NginxPlus) sendMetrics(ctx context.Context, m chan<- *metrics.StatsEntityWrapper, entries ...*metrics.StatsEntityWrapper) {
 	for _, entry := range entries {
 		select {
 		case <-ctx.Done():
+			err := ctx.Err()
+			if err != nil {
+				log.Errorf("sendMetrics: error in done context %v", err)
+			}
+			log.Debug("sendMetrics: context done")
 			return
 		case m <- entry:
 		}

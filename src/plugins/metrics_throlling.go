@@ -154,6 +154,7 @@ func (r *MetricsThrottle) metricsReportGoroutine(ctx context.Context, wg *sync.W
 			return
 		case <-r.ticker.C:
 			reports := r.getAggregatedReports()
+			log.Debugf("metricsThrottle: metricsReportGoroutine, got %d reports to send", len(reports))
 			if len(reports) > 0 {
 				r.messagePipeline.Process(core.NewMessage(core.CommMetrics, reports))
 			}
