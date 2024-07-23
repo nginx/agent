@@ -21,7 +21,7 @@ WORKER_USER=""
 AGENT_GROUP="nginx-agent"
 
 detect_nginx_users() {
-    if command -v systemctl && [ "$(cat /proc/1/comm)" == "systemd" ]; then
+    if command -V systemctl && [ "$(cat /proc/1/comm)" == "systemd" ]; then
         printf "PostInstall: Reading NGINX systemctl unit file for user information\n"
         nginx_unit_file=$(systemctl status nginx | grep -Po "\(\K\/.*service")
         pid_file=$(grep -Po "PIDFile=\K.*$" "${nginx_unit_file}")
@@ -168,7 +168,7 @@ create_run_dir() {
 
 update_unit_file() {
     # Fill in data to unit file that's acquired post install
-    if command -v systemctl && [ "$(cat /proc/1/comm)" == "systemd" ]; then
+    if command -V systemctl && [ "$(cat /proc/1/comm)" == "systemd" ]; then
         printf "PostInstall: Modifying NGINX Agent unit file with correct locations and user information\n"
         EXE_CMD="s|\${AGENT_EXE}|${AGENT_EXE}|g"
         sed -i -e $EXE_CMD ${AGENT_UNIT_LOCATION}/${AGENT_UNIT_FILE}
@@ -303,7 +303,7 @@ restart_agent_if_required() {
         # https://github.com/freebsd/pkg/pull/2128
         return
     fi
-    if command -v service; then
+    if command -V service; then
         if service nginx-agent status; then
             printf "PostInstall: Restarting nginx agent\n"
             service nginx-agent restart || true
