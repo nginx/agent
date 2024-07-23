@@ -9,7 +9,6 @@ package plugins
 
 import (
 	"context"
-	"math"
 	"sync"
 	"time"
 
@@ -213,7 +212,7 @@ func (m *Metrics) metricsGoroutine() {
 
 func (m *Metrics) collectStats() (stats []*metrics.StatsEntityWrapper) {
 	// set a timeout for a millisecond less than the collection interval
-	ctx, cancel := context.WithTimeout(m.ctx, (m.interval - 1 * time.Millisecond))
+	ctx, cancel := context.WithTimeout(m.ctx, (m.interval - 1*time.Millisecond))
 	defer cancel()
 	// locks the m.collectors to make sure it doesn't get deleted in the middle
 	// of collection, as we will delete the old one if config changes.
