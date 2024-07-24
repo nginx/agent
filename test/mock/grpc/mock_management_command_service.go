@@ -14,40 +14,49 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/google/uuid"
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/pkg/files"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	sloggin "github.com/samber/slog-gin"
 )
 
 type CommandService struct {
-	v1.UnimplementedCommandServiceServer
+	mpi.UnimplementedCommandServiceServer
 	server                       *gin.Engine
-	connectionRequest            *v1.CreateConnectionRequest
-	requestChan                  chan *v1.ManagementPlaneRequest
-	updateDataPlaneStatusRequest *v1.UpdateDataPlaneStatusRequest
-	updateDataPlaneHealthRequest *v1.UpdateDataPlaneHealthRequest
-	dataPlaneResponses           []*v1.DataPlaneResponse
-	dataPlaneResponsesMutex      sync.Mutex
-	updateDataPlaneStatusMutex   sync.Mutex
+	connectionRequest            *mpi.CreateConnectionRequest
+	requestChan                  chan *mpi.ManagementPlaneRequest
+	updateDataPlaneStatusRequest *mpi.UpdateDataPlaneStatusRequest
+	updateDataPlaneHealthRequest *mpi.UpdateDataPlaneHealthRequest
+	instanceFiles                map[string][]*mpi.File // key is instanceID
+	configDirectory              string
+	dataPlaneResponses           []*mpi.DataPlaneResponse
 	updateDataPlaneHealthMutex   sync.Mutex
 	connectionMutex              sync.Mutex
+	updateDataPlaneStatusMutex   sync.Mutex
+	dataPlaneResponsesMutex      sync.Mutex
 }
 
 func init() {
 	gin.SetMode(gin.ReleaseMode)
 }
 
-func NewCommandService() *CommandService {
+func NewCommandService(requestChan chan *mpi.ManagementPlaneRequest, configDirectory string) *CommandService {
 	cs := &CommandService{
-		requestChan:                make(chan *v1.ManagementPlaneRequest),
+		requestChan:                requestChan,
 		connectionMutex:            sync.Mutex{},
 		updateDataPlaneStatusMutex: sync.Mutex{},
 		updateDataPlaneHealthMutex: sync.Mutex{},
 		dataPlaneResponsesMutex:    sync.Mutex{},
+		configDirectory:            configDirectory,
+		instanceFiles:              make(map[string][]*mpi.File),
 	}
 
 	handler := slog.NewTextHandler(
@@ -74,8 +83,8 @@ func (cs *CommandService) StartServer(listener net.Listener) {
 
 func (cs *CommandService) CreateConnection(
 	ctx context.Context,
-	request *v1.CreateConnectionRequest) (
-	*v1.CreateConnectionResponse,
+	request *mpi.CreateConnectionRequest) (
+	*mpi.CreateConnectionResponse,
 	error,
 ) {
 	slog.DebugContext(ctx, "Create connection request", "request", request)
@@ -88,9 +97,9 @@ func (cs *CommandService) CreateConnection(
 	cs.connectionRequest = request
 	cs.connectionMutex.Unlock()
 
-	return &v1.CreateConnectionResponse{
-		Response: &v1.CommandResponse{
-			Status:  v1.CommandResponse_COMMAND_STATUS_OK,
+	return &mpi.CreateConnectionResponse{
+		Response: &mpi.CommandResponse{
+			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
 			Message: "Success",
 		},
 		AgentConfig: request.GetResource().GetInstances()[0].GetInstanceConfig().GetAgentConfig(),
@@ -99,8 +108,8 @@ func (cs *CommandService) CreateConnection(
 
 func (cs *CommandService) UpdateDataPlaneStatus(
 	_ context.Context,
-	request *v1.UpdateDataPlaneStatusRequest) (
-	*v1.UpdateDataPlaneStatusResponse,
+	request *mpi.UpdateDataPlaneStatusRequest) (
+	*mpi.UpdateDataPlaneStatusResponse,
 	error,
 ) {
 	slog.Debug("Update data plane status request", "request", request)
@@ -113,13 +122,13 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 	cs.updateDataPlaneStatusRequest = request
 	cs.updateDataPlaneStatusMutex.Unlock()
 
-	return &v1.UpdateDataPlaneStatusResponse{}, nil
+	return &mpi.UpdateDataPlaneStatusResponse{}, nil
 }
 
 func (cs *CommandService) UpdateDataPlaneHealth(
 	_ context.Context,
-	request *v1.UpdateDataPlaneHealthRequest) (
-	*v1.UpdateDataPlaneHealthResponse,
+	request *mpi.UpdateDataPlaneHealthRequest) (
+	*mpi.UpdateDataPlaneHealthResponse,
 	error,
 ) {
 	slog.Debug("Update data plane health request", "request", request)
@@ -132,10 +141,10 @@ func (cs *CommandService) UpdateDataPlaneHealth(
 	cs.updateDataPlaneHealthRequest = request
 	cs.updateDataPlaneHealthMutex.Unlock()
 
-	return &v1.UpdateDataPlaneHealthResponse{}, nil
+	return &mpi.UpdateDataPlaneHealthResponse{}, nil
 }
 
-func (cs *CommandService) Subscribe(in v1.CommandService_SubscribeServer) error {
+func (cs *CommandService) Subscribe(in mpi.CommandService_SubscribeServer) error {
 	ctx := in.Context()
 
 	go cs.listenForDataPlaneResponses(ctx, in)
@@ -149,7 +158,14 @@ func (cs *CommandService) Subscribe(in v1.CommandService_SubscribeServer) error 
 		default:
 			request := <-cs.requestChan
 
-			slog.DebugContext(ctx, "Subscribe", "request", request)
+			slog.InfoContext(ctx, "Subscribe", "request", request)
+
+			if upload, ok := request.GetRequest().(*mpi.ManagementPlaneRequest_ConfigUploadRequest); ok {
+				instanceID := upload.ConfigUploadRequest.GetOverview().GetConfigVersion().GetInstanceId()
+				overviewFiles := upload.ConfigUploadRequest.GetOverview().GetFiles()
+
+				cs.instanceFiles[instanceID] = overviewFiles
+			}
 
 			err := in.Send(request)
 			if err != nil {
@@ -159,7 +175,7 @@ func (cs *CommandService) Subscribe(in v1.CommandService_SubscribeServer) error 
 	}
 }
 
-func (cs *CommandService) listenForDataPlaneResponses(ctx context.Context, in v1.CommandService_SubscribeServer) {
+func (cs *CommandService) listenForDataPlaneResponses(ctx context.Context, in mpi.CommandService_SubscribeServer) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -187,6 +203,7 @@ func (cs *CommandService) createServer(logger *slog.Logger) {
 	cs.addStatusEndpoint()
 	cs.addHealthEndpoint()
 	cs.addResponseAndRequestEndpoints()
+	cs.addConfigApplyEndpoint()
 }
 
 func (cs *CommandService) addConnectionEndpoint() {
@@ -256,7 +273,7 @@ func (cs *CommandService) addResponseAndRequestEndpoints() {
 	})
 
 	cs.server.POST("/api/v1/requests", func(c *gin.Context) {
-		request := v1.ManagementPlaneRequest{}
+		request := mpi.ManagementPlaneRequest{}
 		body, err := io.ReadAll(c.Request.Body)
 		slog.Debug("Received request", "body", body)
 		if err != nil {
@@ -279,4 +296,102 @@ func (cs *CommandService) addResponseAndRequestEndpoints() {
 
 		c.JSON(http.StatusOK, &request)
 	})
+}
+
+func (cs *CommandService) addConfigApplyEndpoint() {
+	cs.server.POST("/api/v1/instance/:instanceID/config/apply", func(c *gin.Context) {
+		instanceID := c.Param("instanceID")
+
+		configFiles, err := cs.findInstanceConfigFiles(instanceID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+
+		cs.instanceFiles[instanceID] = configFiles
+
+		request := mpi.ManagementPlaneRequest{
+			MessageMeta: &mpi.MessageMeta{
+				MessageId:     uuid.NewString(),
+				CorrelationId: uuid.NewString(),
+				Timestamp:     timestamppb.Now(),
+			},
+			Request: &mpi.ManagementPlaneRequest_ConfigApplyRequest{
+				ConfigApplyRequest: &mpi.ConfigApplyRequest{
+					Overview: &mpi.FileOverview{
+						ConfigVersion: &mpi.ConfigVersion{
+							InstanceId: instanceID,
+							Version:    files.GenerateConfigVersion(cs.instanceFiles[instanceID]),
+						},
+						Files: cs.instanceFiles[instanceID],
+					},
+				},
+			},
+		}
+
+		cs.requestChan <- &request
+
+		c.JSON(http.StatusOK, &request)
+	})
+}
+
+func (cs *CommandService) findInstanceConfigFiles(instanceID string) (configFiles []*mpi.File, err error) {
+	instanceDirectory := filepath.Join(cs.configDirectory, instanceID)
+
+	err = filepath.Walk(instanceDirectory, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if isValidFile(info, path) {
+			slog.Debug("Found file", "path", path)
+
+			filePath := strings.Split(path, instanceDirectory)[1]
+
+			file, fileErr := createFile(path, filePath)
+			if fileErr != nil {
+				return fileErr
+			}
+			file.Action = mpi.File_FILE_ACTION_UPDATE.Enum()
+
+			slog.Debug(
+				"File found:",
+				"path", file.GetFileMeta().GetName(),
+				"hash", file.GetFileMeta().GetHash(),
+			)
+
+			configFiles = append(configFiles, file)
+		}
+
+		return nil
+	})
+
+	return configFiles, err
+}
+
+func createFile(fullPath, filePath string) (*mpi.File, error) {
+	content, err := os.ReadFile(fullPath)
+	if err != nil {
+		return nil, err
+	}
+	fileHash := files.GenerateHash(content)
+
+	fileInfo, err := os.Stat(fullPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return &mpi.File{
+		FileMeta: &mpi.FileMeta{
+			Name:         filePath,
+			Hash:         fileHash,
+			ModifiedTime: timestamppb.New(fileInfo.ModTime()),
+			Permissions:  files.Permissions(fileInfo.Mode()),
+			Size:         fileInfo.Size(),
+		},
+	}, nil
+}
+
+func isValidFile(info os.FileInfo, path string) bool {
+	return !info.IsDir() && !strings.HasSuffix(path, ".DS_Store")
 }

@@ -120,6 +120,7 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instance *m
 
 	if instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX ||
 		instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
+		slog.DebugContext(ctx, "Reparsing instance config", "instance_id", instance.GetInstanceMeta().GetInstanceId())
 		nginxConfigContext, parseErr := iw.nginxConfigParser.Parse(ctx, instance)
 		if parseErr != nil {
 			slog.WarnContext(
@@ -132,6 +133,12 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instance *m
 		}
 
 		if !reflect.DeepEqual(iw.nginxConfigCache[nginxConfigContext.InstanceID], nginxConfigContext) {
+			slog.DebugContext(
+				ctx,
+				"NGINX config context changed",
+				"instance_id", instance.GetInstanceMeta().GetInstanceId(),
+				"nginx_config_context", nginxConfigContext,
+			)
 			iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
 
 			iw.updateNginxInstanceRuntime(instance, nginxConfigContext)
@@ -171,14 +178,19 @@ func (iw *InstanceWatcherService) checkForUpdates(
 	instancesToParse = append(instancesToParse, instanceUpdates.NewInstances...)
 
 	for _, newInstance := range instancesToParse {
+		slog.DebugContext(
+			newCtx,
+			"Parsing instance config",
+			"instance_id", newInstance.GetInstanceMeta().GetInstanceId(),
+		)
 		instanceType := newInstance.GetInstanceMeta().GetInstanceType()
 
 		if instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX ||
 			instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
-			nginxConfigContext, parseErr := iw.nginxConfigParser.Parse(ctx, newInstance)
+			nginxConfigContext, parseErr := iw.nginxConfigParser.Parse(newCtx, newInstance)
 			if parseErr != nil {
 				slog.WarnContext(
-					ctx,
+					newCtx,
 					"Parsing NGINX instance config",
 					"config_path", newInstance.GetInstanceRuntime().GetConfigPath(),
 					"instance_id", newInstance.GetInstanceMeta().GetInstanceId(),
@@ -187,6 +199,13 @@ func (iw *InstanceWatcherService) checkForUpdates(
 			} else {
 				iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
 				iw.updateNginxInstanceRuntime(newInstance, nginxConfigContext)
+
+				slog.DebugContext(
+					newCtx,
+					"New NGINX config context",
+					"instance_id", newInstance.GetInstanceMeta().GetInstanceId(),
+					"nginx_config_context", nginxConfigContext,
+				)
 
 				iw.nginxConfigContextChannel <- NginxConfigContextMessage{
 					CorrelationID:      correlationID,

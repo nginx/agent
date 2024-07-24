@@ -7,7 +7,6 @@ package resource
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 
 	"github.com/google/uuid"
@@ -66,6 +65,8 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 		instanceList, ok := msg.Data.([]*mpi.Instance)
 		if !ok {
 			slog.ErrorContext(ctx, "Unable to cast message payload to []*mpi.Instance", "payload", msg.Data)
+
+			return
 		}
 
 		resource := r.resourceService.AddInstances(instanceList)
@@ -77,6 +78,8 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 		instanceList, ok := msg.Data.([]*mpi.Instance)
 		if !ok {
 			slog.ErrorContext(ctx, "Unable to cast message payload to []*mpi.Instance", "payload", msg.Data)
+
+			return
 		}
 		resource := r.resourceService.UpdateInstances(instanceList)
 
@@ -88,6 +91,8 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 		instanceList, ok := msg.Data.([]*mpi.Instance)
 		if !ok {
 			slog.ErrorContext(ctx, "Unable to cast message payload to []*mpi.Instance", "payload", msg.Data)
+
+			return
 		}
 		resource := r.resourceService.DeleteInstances(instanceList)
 
@@ -114,24 +119,26 @@ func (*Resource) Subscriptions() []string {
 }
 
 func (r *Resource) handleWriteConfigSuccessful(ctx context.Context, msg *bus.Message) {
-	data, ok := msg.Data.(model.ConfigApplyMessage)
+	data, ok := msg.Data.(*model.ConfigApplyMessage)
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to instanceID string", "payload", msg.Data)
+		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplyMessage", "payload", msg.Data)
+
+		return
 	}
 	err := r.resourceService.ApplyConfig(ctx, data.InstanceID)
 	if err != nil {
-		slog.Error("errors found during config apply, sending failure status", "err", err)
-
-		response := r.createDataPlaneResponseWithError(data.CorrelationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
-			fmt.Sprintf("Config apply failed for instanceId: %s, "+
-				"rolling back config", data.InstanceID), data.InstanceID, err.Error())
+		data.Error = err
+		slog.Error("errors found during config apply, sending error status, rolling back config", "err", err)
+		response := r.createDataPlaneResponse(data.CorrelationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
+			"Config apply failed, rolling back config", data.InstanceID, err.Error())
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
+
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyFailedTopic, Data: data})
 
 		return
 	}
 	response := r.createDataPlaneResponse(data.CorrelationID, mpi.CommandResponse_COMMAND_STATUS_OK,
-		fmt.Sprintf("Successful config apply for instanceId: %s", data.InstanceID), data.InstanceID)
+		"Config apply successful", data.InstanceID, "")
 
 	instance := r.resourceService.Instance(data.InstanceID)
 
@@ -140,21 +147,22 @@ func (r *Resource) handleWriteConfigSuccessful(ctx context.Context, msg *bus.Mes
 }
 
 func (r *Resource) handleRollbackWrite(ctx context.Context, msg *bus.Message) {
-	data, ok := msg.Data.(model.ConfigApplyMessage)
+	data, ok := msg.Data.(*model.ConfigApplyMessage)
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to instanceID string", "payload", msg.Data)
+		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplyMessage", "payload", msg.Data)
+
+		return
 	}
 	err := r.resourceService.ApplyConfig(ctx, data.InstanceID)
 	if err != nil {
 		slog.Error("errors found during rollback, sending failure status", "err", err)
 
-		applyResponse := r.createDataPlaneResponseWithError(data.CorrelationID,
-			mpi.CommandResponse_COMMAND_STATUS_ERROR, fmt.Sprintf("Rollback failed for instanceId: %s",
-				data.InstanceID), data.InstanceID, err.Error())
+		rollbackResponse := r.createDataPlaneResponse(data.CorrelationID,
+			mpi.CommandResponse_COMMAND_STATUS_ERROR, "Rollback failed", data.InstanceID, err.Error())
 
-		rollbackResponse := r.createDataPlaneResponseWithError(data.CorrelationID,
-			mpi.CommandResponse_COMMAND_STATUS_FAILURE, fmt.Sprintf("Config apply failed for instanceId: %s",
-				data.InstanceID), data.InstanceID, err.Error())
+		applyResponse := r.createDataPlaneResponse(data.CorrelationID,
+			mpi.CommandResponse_COMMAND_STATUS_FAILURE, "Config apply failed, rollback failed",
+			data.InstanceID, data.Error.Error())
 
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: applyResponse})
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
@@ -162,20 +170,16 @@ func (r *Resource) handleRollbackWrite(ctx context.Context, msg *bus.Message) {
 
 		return
 	}
-	rollbackResponse := r.createDataPlaneResponse(data.CorrelationID, mpi.CommandResponse_COMMAND_STATUS_OK,
-		data.InstanceID, fmt.Sprintf("Rollback successful for instanceId: %s", data.CorrelationID))
 
-	applyResponse := r.createDataPlaneResponseWithError(data.CorrelationID,
+	applyResponse := r.createDataPlaneResponse(data.CorrelationID,
 		mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-		"config apply failed", data.InstanceID, fmt.Sprintf("Config apply failed for instanceId: %s, "+
-			"rollback successful", data.InstanceID))
+		"Config apply failed, rollback successful", data.InstanceID, data.Error.Error())
 
 	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: applyResponse})
-	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
 	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.RollbackCompleteTopic})
 }
 
-func (*Resource) createDataPlaneResponseWithError(correlationID string, status mpi.CommandResponse_CommandStatus,
+func (*Resource) createDataPlaneResponse(correlationID string, status mpi.CommandResponse_CommandStatus,
 	message, instanceID, err string,
 ) *mpi.DataPlaneResponse {
 	return &mpi.DataPlaneResponse{
@@ -188,23 +192,6 @@ func (*Resource) createDataPlaneResponseWithError(correlationID string, status m
 			Status:  status,
 			Message: message,
 			Error:   err,
-		},
-		InstanceId: instanceID,
-	}
-}
-
-func (*Resource) createDataPlaneResponse(correlationID string, status mpi.CommandResponse_CommandStatus,
-	message, instanceID string,
-) *mpi.DataPlaneResponse {
-	return &mpi.DataPlaneResponse{
-		MessageMeta: &mpi.MessageMeta{
-			MessageId:     uuid.NewString(),
-			CorrelationId: correlationID,
-			Timestamp:     timestamppb.Now(),
-		},
-		CommandResponse: &mpi.CommandResponse{
-			Status:  status,
-			Message: message,
 		},
 		InstanceId: instanceID,
 	}

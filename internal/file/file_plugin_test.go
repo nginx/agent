@@ -7,17 +7,15 @@ package file
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/nginx/agent/v3/internal/file/filefakes"
-
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1/v1fakes"
 	"github.com/nginx/agent/v3/internal/bus"
+	"github.com/nginx/agent/v3/internal/file/filefakes"
 	"github.com/nginx/agent/v3/internal/grpc/grpcfakes"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/pkg/files"
@@ -112,37 +110,47 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 	agentConfig.AllowedDirectories = []string{tempDir}
 
 	tests := []struct {
-		configApplyReturnsErr error
 		message               *mpi.ManagementPlaneRequest
+		configApplyReturnsErr error
 		name                  string
+		configApplyStatus     model.WriteStatus
 	}{
 		{
 			name:                  "Test 1 - Success",
 			configApplyReturnsErr: nil,
+			configApplyStatus:     model.OK,
 			message:               message,
 		},
 		{
 			name:                  "Test 2 - Fail, Rollback",
-			configApplyReturnsErr: &RollbackRequiredError{Err: fmt.Errorf("something went wrong")},
+			configApplyReturnsErr: fmt.Errorf("something went wrong"),
+			configApplyStatus:     model.RollbackRequired,
 			message:               message,
 		},
 		{
 			name:                  "Test 3 - Fail, No Rollback",
 			configApplyReturnsErr: fmt.Errorf("something went wrong"),
+			configApplyStatus:     model.Error,
 			message:               message,
 		},
 		{
 			name:                  "Test 4 - Fail to cast payload",
 			configApplyReturnsErr: fmt.Errorf("something went wrong"),
+			configApplyStatus:     model.Error,
 			message:               nil,
+		},
+		{
+			name:                  "Test 5 - No changes needed",
+			configApplyReturnsErr: nil,
+			configApplyStatus:     model.NoChange,
+			message:               message,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			var rollbackRequiredError *RollbackRequiredError
 			fakeFileManagerService := &filefakes.FakeFileManagerServiceInterface{}
-			fakeFileManagerService.ConfigApplyReturns(test.configApplyReturnsErr)
+			fakeFileManagerService.ConfigApplyReturns(test.configApplyStatus, test.configApplyReturnsErr)
 			messagePipe := bus.NewFakeMessagePipe()
 			filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection)
 			err := filePlugin.Init(ctx, messagePipe)
@@ -152,13 +160,15 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 			filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigApplyRequestTopic, Data: test.message})
 
 			messages := messagePipe.GetMessages()
-			if test.configApplyReturnsErr == nil {
+
+			switch {
+			case test.configApplyStatus == model.OK:
 				assert.Equal(t, bus.WriteConfigSuccessfulTopic, messages[0].Topic)
 				assert.Len(t, messages, 1)
 
-				_, ok := messages[0].Data.(model.ConfigApplyMessage)
+				_, ok := messages[0].Data.(*model.ConfigApplyMessage)
 				assert.True(t, ok)
-			} else if errors.As(test.configApplyReturnsErr, &rollbackRequiredError) {
+			case test.configApplyStatus == model.RollbackRequired:
 				assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
 				assert.Len(t, messages, 2)
 				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
@@ -168,8 +178,21 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 					mpi.CommandResponse_COMMAND_STATUS_ERROR,
 					dataPlaneResponse.GetCommandResponse().GetStatus(),
 				)
-			} else {
-				assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
+				assert.Equal(t, "Config apply failed, rolling back config",
+					dataPlaneResponse.GetCommandResponse().GetMessage())
+				assert.Equal(t, test.configApplyReturnsErr.Error(), dataPlaneResponse.GetCommandResponse().GetError())
+			case test.configApplyStatus == model.NoChange:
+				assert.Len(t, messages, 1)
+				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
+				assert.True(t, ok)
+				assert.Equal(
+					t,
+					mpi.CommandResponse_COMMAND_STATUS_OK,
+					dataPlaneResponse.GetCommandResponse().GetStatus(),
+				)
+			case test.message == nil:
+				assert.Empty(t, messages)
+			default:
 				assert.Len(t, messages, 1)
 				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
@@ -178,6 +201,8 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 					mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 					dataPlaneResponse.GetCommandResponse().GetStatus(),
 				)
+				assert.Equal(t, "Config apply failed", dataPlaneResponse.GetCommandResponse().GetMessage())
+				assert.Equal(t, test.configApplyReturnsErr.Error(), dataPlaneResponse.GetCommandResponse().GetError())
 			}
 		})
 	}
@@ -194,7 +219,6 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic(t *testing.T) {
 	message := &mpi.ManagementPlaneRequest{
 		Request: &mpi.ManagementPlaneRequest_ConfigUploadRequest{
 			ConfigUploadRequest: &mpi.ConfigUploadRequest{
-				InstanceId: "123",
 				Overview: &mpi.FileOverview{
 					Files: []*mpi.File{
 						{
@@ -253,7 +277,6 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic_Failure(t *testing.T) {
 	message := &mpi.ManagementPlaneRequest{
 		Request: &mpi.ManagementPlaneRequest_ConfigUploadRequest{
 			ConfigUploadRequest: &mpi.ConfigUploadRequest{
-				InstanceId: protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 				Overview: &mpi.FileOverview{
 					Files: []*mpi.File{
 						{
@@ -357,23 +380,33 @@ func TestFilePlugin_Process_ConfigApplyFailedTopic(t *testing.T) {
 			require.NoError(t, err)
 			filePlugin.fileManagerService = mockFileManager
 
-			data := model.ConfigApplyMessage{
+			data := &model.ConfigApplyMessage{
 				CorrelationID: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
 				InstanceID:    test.instanceID,
+				Error:         fmt.Errorf("something went wrong with config apply"),
 			}
 
 			filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigApplyFailedTopic, Data: data})
 
 			messages := messagePipe.GetMessages()
 
-			if test.rollbackReturns == nil {
+			switch {
+			case test.rollbackReturns == nil:
 				assert.Equal(t, bus.RollbackWriteTopic, messages[0].Topic)
 				assert.Len(t, messages, 1)
-			} else {
-				_, ok := messages[0].Data.(*mpi.DataPlaneResponse)
+
+			case test.instanceID == "":
+				assert.Empty(t, messages)
+			default:
+				rollbackMessage, ok := messages[0].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
-				_, ok = messages[1].Data.(*mpi.DataPlaneResponse)
+				assert.Equal(t, "Rollback failed", rollbackMessage.GetCommandResponse().GetMessage())
+				assert.Equal(t, test.rollbackReturns.Error(), rollbackMessage.GetCommandResponse().GetError())
+				applyMessage, ok := messages[1].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
+				assert.Equal(t, "Config apply failed, rollback failed",
+					applyMessage.GetCommandResponse().GetMessage())
+				assert.Equal(t, data.Error.Error(), applyMessage.GetCommandResponse().GetError())
 				assert.Len(t, messages, 2)
 			}
 		})
