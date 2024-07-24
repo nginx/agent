@@ -95,6 +95,12 @@ func SetDefaults() {
 	Viper.SetDefault(BackoffMultiplier, Defaults.Server.Backoff.Multiplier)
 	Viper.SetDefault(BackoffRandomizationFactor, Defaults.Server.Backoff.RandomizationFactor)
 
+	Viper.SetDefault(BackoffMetricsInitialInterval, Defaults.AgentMetrics.Backoff.InitialInterval)
+	Viper.SetDefault(BackoffMetricsMaxElapsedTime, Defaults.AgentMetrics.Backoff.MaxElapsedTime)
+	Viper.SetDefault(BackoffMetricsMaxInterval, Defaults.AgentMetrics.Backoff.MaxInterval)
+	Viper.SetDefault(BackoffMetricsMultiplier, Defaults.AgentMetrics.Backoff.Multiplier)
+	Viper.SetDefault(BackoffMetricsRandomizationFactor, Defaults.AgentMetrics.Backoff.RandomizationFactor)
+
 	// DATAPLANE DEFAULTS
 	Viper.SetDefault(DataplaneStatusPoll, Defaults.Dataplane.Status.PollInterval)
 
@@ -133,6 +139,7 @@ func deprecateFlags() {
 	setFlagDeprecated("nap-monitoring-processor-buffer-size", "DEPRECATED. No replacement command.")
 	setFlagDeprecated("nap-monitoring-syslog-ip", "DEPRECATED. No replacement command.")
 	setFlagDeprecated("nap-monitoring-syslog-port", "DEPRECATED. No replacement command.")
+	setFlagDeprecated("metrics-bulksize", "DEPRECATED. Use metrics backoff maxElapsedTime instead to set a time period where no successful connection, after time elapsed start dropping oldest metrics from the buffer.")
 }
 
 func RegisterFlags() {
@@ -315,6 +322,7 @@ func getMetrics() AgentMetrics {
 		ReportInterval:     Viper.GetDuration(MetricsReportInterval),
 		CollectionInterval: Viper.GetDuration(MetricsCollectionInterval),
 		Mode:               Viper.GetString(MetricsMode),
+		Backoff:            getMetricsBackOff(),
 	}
 }
 
@@ -363,6 +371,16 @@ func getBackOff() Backoff {
 		Multiplier:          Viper.GetFloat64(BackoffMultiplier),
 		MaxInterval:         Viper.GetDuration(BackoffMaxInterval),
 		MaxElapsedTime:      Viper.GetDuration(BackoffMaxElapsedTime),
+	}
+}
+
+func getMetricsBackOff() Backoff {
+	return Backoff{
+		InitialInterval:     Viper.GetDuration(BackoffMetricsInitialInterval),
+		RandomizationFactor: Viper.GetFloat64(BackoffMetricsRandomizationFactor),
+		Multiplier:          Viper.GetFloat64(BackoffMetricsMultiplier),
+		MaxInterval:         Viper.GetDuration(BackoffMetricsMaxInterval),
+		MaxElapsedTime:      Viper.GetDuration(BackoffMetricsMaxElapsedTime),
 	}
 }
 

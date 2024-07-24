@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	sysutils "github.com/nginx/agent/v2/test/utils/system"
@@ -256,6 +257,7 @@ func TestGetConfig(t *testing.T) {
 		assert.Equal(t, updatedServerGrpcPort, config.Server.GrpcPort)
 		assert.Equal(t, updatedAgentAPIPort, config.AgentAPI.Port)
 		assert.Equal(t, updatedConfTags, config.Tags)
+		assert.Equal(t, time.Hour, config.Server.Backoff.MaxElapsedTime)
 
 		// Check for updated values
 		assert.Equal(t, updatedConfigDirs, config.ConfigDirs)
@@ -270,6 +272,7 @@ func TestGetConfig(t *testing.T) {
 
 		// Everything else should still be default
 		assert.Equal(t, Defaults.AgentMetrics.Mode, config.AgentMetrics.Mode)
+		assert.Equal(t, 10*time.Minute, config.AgentMetrics.Backoff.MaxInterval)
 		assert.Equal(t, Defaults.Features, config.Features)
 		assert.Equal(t, []string{}, config.Extensions)
 	})

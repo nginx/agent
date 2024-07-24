@@ -70,6 +70,16 @@ func (c *Config) GetServerBackoffSettings() backoff.BackoffSettings {
 	}
 }
 
+func (c *Config) GetMetricsBackoffSettings() backoff.BackoffSettings {
+	return backoff.BackoffSettings{
+		InitialInterval: c.AgentMetrics.Backoff.InitialInterval,
+		MaxInterval:     c.AgentMetrics.Backoff.MaxInterval,
+		MaxElapsedTime:  c.AgentMetrics.Backoff.MaxElapsedTime,
+		Multiplier:      c.AgentMetrics.Backoff.Multiplier,
+		Jitter:          c.AgentMetrics.Backoff.RandomizationFactor,
+	}
+}
+
 type Server struct {
 	Host     string `mapstructure:"host" yaml:"-"`
 	GrpcPort int    `mapstructure:"grpcPort" yaml:"-"`
@@ -137,4 +147,5 @@ type AgentMetrics struct {
 	ReportInterval     time.Duration `mapstructure:"report_interval" yaml:"-"`
 	CollectionInterval time.Duration `mapstructure:"collection_interval" yaml:"-"`
 	Mode               string        `mapstructure:"mode" yaml:"-"`
+	Backoff            Backoff       `mapstructure:"backoff" yaml:"-"`
 }
