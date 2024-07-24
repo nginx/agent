@@ -6,16 +6,15 @@ LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
 ARG OS_RELEASE
 ARG OS_VERSION
-ARG CONTAINER_OS_TYPE
 ARG DEBIAN_FRONTEND=noninteractive
 ARG PACKAGE_NAME
 
 WORKDIR /agent
-COPY ./build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE} /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE}
+COPY ./build/${PACKAGE_NAME} /agent/build/${PACKAGE_NAME}
 
 RUN  apt-get update \ 
-    && apt install --no-install-recommends --no-install-suggests -y /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE} \ 
-    &&  rm /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE}
+    && apt install --no-install-recommends --no-install-suggests -y /agent/build/${PACKAGE_NAME} \ 
+    &&  rm /agent/build/${PACKAGE_NAME}
 
 FROM install AS runtime
 COPY --from=0 / /
