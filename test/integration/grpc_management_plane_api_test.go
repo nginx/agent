@@ -180,8 +180,7 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 	responseClient.SetRetryCount(3).SetRetryWaitTime(1 * time.Second).SetRetryMaxWaitTime(3 * time.Second)
 	responseClient.AddRetryCondition(
 		func(r *resty.Response, err error) bool {
-			responseData := resp.Body()
-			t.Logf("Response: %s", string(responseData))
+			responseData := r.Body()
 			assert.True(t, json.Valid(responseData))
 
 			response := []*mpi.DataPlaneResponse{}
