@@ -176,9 +176,9 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 
-	client = resty.New()
-	client.SetRetryCount(3).SetRetryWaitTime(1 * time.Second).SetRetryMaxWaitTime(3 * time.Second)
-	client.AddRetryCondition(
+	responseClient := resty.New()
+	responseClient.SetRetryCount(3).SetRetryWaitTime(1 * time.Second).SetRetryMaxWaitTime(3 * time.Second)
+	responseClient.AddRetryCondition(
 		func(r *resty.Response, err error) bool {
 			responseData := resp.Body()
 			t.Logf("Response: %s", string(responseData))
@@ -193,7 +193,7 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 	)
 
 	url = fmt.Sprintf("http://%s/api/v1/responses", mockManagementPlaneAPIAddress)
-	resp, err = client.R().EnableTrace().Get(url)
+	resp, err = responseClient.R().EnableTrace().Get(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
