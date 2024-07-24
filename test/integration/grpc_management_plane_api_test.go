@@ -177,9 +177,9 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 
-	responseClient := resty.New()
-	responseClient.SetRetryCount(3).SetRetryWaitTime(1 * time.Second).SetRetryMaxWaitTime(3 * time.Second)
-	responseClient.AddRetryCondition(
+	client = resty.New()
+	client.SetRetryCount(3).SetRetryWaitTime(1 * time.Second).SetRetryMaxWaitTime(3 * time.Second)
+	client.AddRetryCondition(
 		func(r *resty.Response, err error) bool {
 			responseData := r.Body()
 			assert.True(t, json.Valid(responseData))
@@ -188,30 +188,25 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 			unmarshalErr := json.Unmarshal(responseData, &response)
 			require.NoError(t, unmarshalErr)
 
-			return len(response) == 0 || r.StatusCode() == http.StatusNotFound
+			return len(response) != 2 || r.StatusCode() == http.StatusNotFound
 		},
 	)
 
 	url = fmt.Sprintf("http://%s/api/v1/responses", mockManagementPlaneAPIAddress)
-	resp, err = responseClient.R().EnableTrace().Get(url)
+	resp, err = client.R().EnableTrace().Get(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 
 	responseData := resp.Body()
-	t.Logf("Response: %s", string(responseData))
+	t.Logf("Responses: %s", string(responseData))
 	assert.True(t, json.Valid(responseData))
 
 	response := []*mpi.DataPlaneResponse{}
 	unmarshalErr := json.Unmarshal(responseData, &response)
 	require.NoError(t, unmarshalErr)
 
-	assert.Eventually(
-		t,
-		func() bool { return len(response) == 2 },
-		2*time.Second,
-		10*time.Millisecond,
-	)
+	assert.Len(t, response, 2)
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, response[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, response[1].GetCommandResponse().GetStatus())
 }
