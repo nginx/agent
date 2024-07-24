@@ -42,7 +42,9 @@ GOVET   = ${GOCMD} vet
 OS_RELEASE  ?= ubuntu
 OS_VERSION  ?= 24.04
 BASE_IMAGE  = "${CONTAINER_REGISTRY}/${OS_RELEASE}:${OS_VERSION}"
+NEW_REGISTRY = "private-registry-test.nginx.com/nginx/agent"
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
+NGINX_TAG   = stable
 
 VERSION_WITH_V := v${VERSION}
 LDFLAGS = "-w -X main.version=${VERSION_WITH_V} -X main.commit=${COMMIT} -X main.date=${DATE}"
@@ -223,6 +225,20 @@ integration-test:
 	    OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
 		${GOTEST} -v ./test/integration/grpc
 
+new-integration-test:
+	PACKAGE_NAME=${PACKAGE_NAME} CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} ARCH=${OSARCH} OS_VERSION=${OS_VERSION} \
+		OS_RELEASE=${OS_RELEASE} TAG=${NGINX_TAG} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
+		${GOTEST} -v ./test/integration/install
+	PACKAGE_NAME=${PACKAGE_NAME} CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} ARCH=${OSARCH} OS_VERSION=${OS_VERSION} \
+	    OS_RELEASE=${OS_RELEASE} TAG=${NGINX_TAG} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
+		${GOTEST} -v ./test/integration/api
+	PACKAGE_NAME=${PACKAGE_NAME} CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} ARCH=${OSARCH} OS_VERSION=${OS_VERSION} \
+	    OS_RELEASE=${OS_RELEASE} TAG=${NGINX_TAG} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
+		${GOTEST} -v ./test/integration/features
+	PACKAGE_NAME=${PACKAGE_NAME} CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} ARCH=${OSARCH} OS_VERSION=${OS_VERSION} \
+	    OS_RELEASE=${OS_RELEASE} TAG=${NGINX_TAG} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
+		${GOTEST} -v ./test/integration/grpc
+
 test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 ${GOTEST} -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go
 	cd test/performance && GOWORK=off CGO_ENABLED=0 ${GOTEST} -mod=vendor -count 1 -bench=. -benchmem user_workflow_test.go
@@ -278,7 +294,6 @@ image: ## Build agent container image for NGINX Plus, need nginx-repo.crt and ng
 		--build-arg PACKAGES_REPO=${PLUS_PACKAGES_REPO} \
 		--build-arg OS_RELEASE=${OS_RELEASE} \
 		--build-arg OS_VERSION=${OS_VERSION} \
-		--build-arg CONTAINER_REGISTRY=${CONTAINER_REGISTRY}
 
 oss-image: ## Build agent container image for NGINX OSS
 	@echo Building image with $(CONTAINER_CLITOOL); \
