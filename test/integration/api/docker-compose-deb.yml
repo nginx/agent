@@ -8,13 +8,12 @@ services:
   agent:
     build:
       context: ../../../
-      dockerfile: ./scripts/docker/nginx-oss/${CONTAINER_OS_TYPE}/Dockerfile
+      dockerfile: ./scripts/docker/nginx-oss/deb/Dockerfile
       target: install-agent-local
       args:
         PACKAGE_NAME: ${PACKAGE_NAME}
         PACKAGES_REPO: ${PACKAGES_REPO}
         BASE_IMAGE: ${BASE_IMAGE}
-        CONTAINER_OS_TYPE: ${CONTAINER_OS_TYPE}
         ENTRY_POINT: "./scripts/docker/entrypoint.sh"
     ports:
       - 9091:9091

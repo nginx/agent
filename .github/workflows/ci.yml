@@ -39,14 +39,14 @@ jobs:
         with:
           version: "${{ env.GOLANGCI_LINT_VERSION }}"
           args: -c ./scripts/.golangci.yml
-          skip-pkg-cache: true
+          skip-cache: true
       - name: Lint SDK Code
         uses: golangci/golangci-lint-action@82d40c283aeb1f2b6595839195e95c2d6a49081b # v5.0.0
         with:
           version: "${{ env.GOLANGCI_LINT_VERSION }}"
           working-directory: sdk
           args: -c ../scripts/.golangci.yml
-          skip-pkg-cache: true
+          skip-cache: true
 
   unit-test:
     name: Unit Tests
