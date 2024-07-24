@@ -1,0 +1,73 @@
+resourceMetrics:
+  - resource: {}
+    scopeMetrics:
+      - metrics:
+          - description: The count of HTTP responses by response status
+            name: nginx.http.status
+            sum:
+              aggregationTemporality: 1
+              isMonotonic: true
+              dataPoints:
+                - asInt: 1
+                  attributes:
+                    - key: status_code
+                      value:
+                        stringValue: "1xx"
+                  timeUnixNano: "1000000"
+                - asInt: 1
+                  attributes:
+                    - key: status_code
+                      value:
+                        stringValue: "1xx"
+                  timeUnixNano: "1000000"
+                - asInt: 1
+                  attributes:
+                    - key: status_code
+                      value:
+                        stringValue: "2xx"
+                  timeUnixNano: "1000000"
+                - asInt: 1
+                  attributes:
+                    - key: status_code
+                      value:
+                        stringValue: "2xx"
+                  timeUnixNano: "1000000"
+                - asInt: 1
+                  attributes:
+                    - key: status_code
+                      value:
+                        stringValue: "3xx"
+                  timeUnixNano: "1000000"
+                - asInt: 1
+                  attributes:
+                    - key: status_code
+                      value:
+                        stringValue: "3xx"
+                  timeUnixNano: "1000000"
+                - asInt: 1
+                  attributes:
+                    - key: status_code
+                      value:
+                        stringValue: "4xx"
+                  timeUnixNano: "1000000"
+                - asInt: 1
+                  attributes:
+                    - key: status_code
+                      value:
+                        stringValue: "4xx"
+                - asInt: 1
+                  attributes:
+                    - key: status_code
+                      value:
+                        stringValue: "5xx"
+                  timeUnixNano: "1000000"
+                - asInt: 1
+                  attributes:
+                    - key: status_code
+                      value:
+                        stringValue: "5xx"
+                  timeUnixNano: "1000000"
+            unit: statuses
+        scope:
+          name: otelcol/nginxreceiver
+          version: latest
