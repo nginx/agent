@@ -1,3 +1,10 @@
+version: '3.9'
+
+networks:
+  monitoring:
+    driver: bridge
+
+services:  
   agent:
     build:
       context: ../../../
