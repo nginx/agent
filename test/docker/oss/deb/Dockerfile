@@ -19,4 +19,4 @@ RUN  apt-get update \
 
 FROM install AS runtime
 
-COPY --from=0 / /
+COPY --from=install /agent /agent
