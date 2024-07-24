@@ -82,18 +82,7 @@ func TestCollector_Process(t *testing.T) {
 					CollectionInterval: time.Minute,
 					InitialDelay:       time.Second,
 				},
-				OtlpReceivers: []config.OtlpReceiver{
-					{
-						Server: &config.ServerConfig{
-							Host: "localhost",
-							Port: 4321,
-							Type: 0,
-						},
-						Auth: &config.AuthConfig{
-							Token: "even-secreter-token",
-						},
-					},
-				},
+				OtlpReceivers: types.OtlpReceivers(),
 				NginxPlusReceivers: []config.NginxPlusReceiver{
 					{
 						InstanceID: "123",
@@ -116,18 +105,7 @@ func TestCollector_Process(t *testing.T) {
 					CollectionInterval: time.Minute,
 					InitialDelay:       time.Second,
 				},
-				OtlpReceivers: []config.OtlpReceiver{
-					{
-						Server: &config.ServerConfig{
-							Host: "localhost",
-							Port: 4321,
-							Type: 0,
-						},
-						Auth: &config.AuthConfig{
-							Token: "even-secreter-token",
-						},
-					},
-				},
+				OtlpReceivers: types.OtlpReceivers(),
 				NginxReceivers: []config.NginxReceiver{
 					{
 						InstanceID: "123",

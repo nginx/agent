@@ -1,8 +1,8 @@
 receivers:
-{{- with .Receivers.HostMetrics }}
+{{- if ne .Receivers.HostMetrics.CollectionInterval 0 }}
   hostmetrics:
-    collection_interval: {{ .CollectionInterval }}
-    initial_delay: {{ .InitialDelay }}
+    collection_interval: {{ .Receivers.HostMetrics.CollectionInterval }}
+    initial_delay: {{ .Receivers.HostMetrics.InitialDelay }}
     scrapers:
       cpu:
       disk:
@@ -87,7 +87,7 @@ service:
   pipelines:
     metrics:
       receivers:
-        {{- if .Receivers.HostMetrics }}
+        {{- if ne .Receivers.HostMetrics.CollectionInterval 0 }}
         - hostmetrics
         {{- end }}
         {{- range $index, $otlpReceiver := .Receivers.OtlpReceivers }}
