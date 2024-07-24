@@ -3,7 +3,6 @@ LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
 # https://askubuntu.com/questions/909277/avoiding-user-interaction-with-tzdata-when-installing-certbot-in-a-docker-contai
 ARG DEBIAN_FRONTEND=noninteractive
-ARG ENTRY_POINT
 
 WORKDIR /agent
 COPY . /agent
@@ -66,7 +65,6 @@ CMD git config --global --add safe.directory /home/nginx
 
 FROM base as configure-go
 
-ARG PACKAGE_NAME
 ARG GO_VERSION
 ARG OSARCH
 
