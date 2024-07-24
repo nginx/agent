@@ -180,7 +180,15 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 	client.SetRetryCount(3).SetRetryWaitTime(1 * time.Second).SetRetryMaxWaitTime(3 * time.Second)
 	client.AddRetryCondition(
 		func(r *resty.Response, err error) bool {
-			return len(r.Body()) == 0 || r.StatusCode() == http.StatusNotFound
+			responseData := resp.Body()
+			t.Logf("Response: %s", string(responseData))
+			assert.True(t, json.Valid(responseData))
+
+			response := []*mpi.DataPlaneResponse{}
+			unmarshalErr := json.Unmarshal(responseData, &response)
+			require.NoError(t, unmarshalErr)
+
+			return len(response) == 0 || r.StatusCode() == http.StatusNotFound
 		},
 	)
 
