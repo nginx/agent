@@ -1,5 +1,7 @@
-// Copyright The OpenTelemetry Authors
-// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package config // import "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/nginxreceiver"
 
@@ -15,25 +17,30 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/input/file"
 )
 
+const (
+	defaultCollectInterval = 10 * time.Second
+	defaultClientTimeout   = 10 * time.Second
+)
+
 type Config struct {
-	scraperhelper.ControllerConfig `mapstructure:",squash"`
 	confighttp.ClientConfig        `mapstructure:",squash"`
+	InputConfig                    file.Config        `mapstructure:",squash"`
+	NginxConfigPath                string             `mapstructure:"nginx_conf_path"`
+	BaseConfig                     adapter.BaseConfig `mapstructure:",squash"`
+	scraperhelper.ControllerConfig `mapstructure:",squash"`
 	MetricsBuilderConfig           metadata.MetricsBuilderConfig `mapstructure:",squash"`
-	// Configures `stanza`
-	BaseConfig      adapter.BaseConfig `mapstructure:",squash"`
-	InputConfig     file.Config        `mapstructure:",squash"`
-	NginxConfigPath string             `mapstructure:"nginx_conf_path"`
 }
 
+// nolint: ireturn
 func CreateDefaultConfig() component.Config {
 	cfg := scraperhelper.NewDefaultControllerConfig()
-	cfg.CollectionInterval = 10 * time.Second
+	cfg.CollectionInterval = defaultCollectInterval
 
 	return &Config{
 		ControllerConfig: cfg,
 		ClientConfig: confighttp.ClientConfig{
 			Endpoint: "http://localhost:80/status",
-			Timeout:  10 * time.Second,
+			Timeout:  defaultClientTimeout,
 		},
 		InputConfig:          *file.NewConfig(),
 		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),

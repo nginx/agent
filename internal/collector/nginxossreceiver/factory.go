@@ -1,7 +1,9 @@
-// Copyright The OpenTelemetry Authors
-// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
-package nginxossreceiver // import "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/nginxossreceiver"
+package nginxossreceiver
 
 import (
 	"context"
@@ -18,7 +20,7 @@ import (
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/scraper/stubstatus"
 )
 
-// NewFactory creates a factory for nginx receiver.
+// nolint: ireturn
 func NewFactory() receiver.Factory {
 	return receiver.NewFactory(
 		metadata.Type,
@@ -26,11 +28,12 @@ func NewFactory() receiver.Factory {
 		receiver.WithMetrics(createMetricsReceiver, metadata.MetricsStability))
 }
 
+// nolint: ireturn
 func createMetricsReceiver(
 	_ context.Context,
 	params receiver.Settings,
 	rConf component.Config,
-	consumer consumer.Metrics,
+	cons consumer.Metrics,
 ) (receiver.Metrics, error) {
 	cfg, ok := rConf.(*config.Config)
 	if !ok {
@@ -54,7 +57,7 @@ func createMetricsReceiver(
 	}
 
 	return scraperhelper.NewScraperControllerReceiver(
-		&cfg.ControllerConfig, params, consumer,
+		&cfg.ControllerConfig, params, cons,
 		scraperOpts...,
 	)
 }

@@ -1,5 +1,7 @@
-// Copyright The OpenTelemetry Authors
-// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package record
 
@@ -22,10 +24,10 @@ const testDataDir = "testdata"
 func TestRecordAccessItem(t *testing.T) {
 	tests := []struct {
 		name         string
-		input        []*model.NginxAccessItem
 		expectedPath string
-		shouldErr    bool
 		expErrMsg    string
+		input        []*model.NginxAccessItem
+		shouldErr    bool
 	}{
 		{
 			name: "basic nginx.http.status case",
@@ -127,7 +129,7 @@ func TestRecordAccessItem(t *testing.T) {
 		},
 	}
 
-	mb := metadata.NewMetricsBuilder(metadata.DefaultMetricsBuilderConfig(), receivertest.NewNopCreateSettings())
+	mb := metadata.NewMetricsBuilder(metadata.DefaultMetricsBuilderConfig(), receivertest.NewNopSettings())
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
@@ -143,8 +145,8 @@ func TestRecordAccessItem(t *testing.T) {
 			} else {
 				require.NoError(tt, err)
 				expectedFile := filepath.Join(testDataDir, test.expectedPath)
-				expected, err := golden.ReadMetrics(expectedFile)
-				require.NoError(t, err)
+				expected, readErr := golden.ReadMetrics(expectedFile)
+				require.NoError(t, readErr)
 
 				actual := mb.Emit()
 				require.NoError(tt, pmetrictest.CompareMetrics(expected, actual,

@@ -1,5 +1,7 @@
-// Copyright The OpenTelemetry Authors
-// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package accesslog
 
@@ -14,6 +16,7 @@ import (
 )
 
 var (
+	//nolint: gocritic
 	formatVariables = map[string]string{
 		"$remote_addr":              "%{IPORHOST:remote_addr}",
 		"$remote_user":              "%{USERNAME:remote_user}",
@@ -46,7 +49,7 @@ var (
 
 func newGrok(logFormat string, logger *zap.SugaredLogger) (*grok.CompiledGrok, error) {
 	if logger == nil {
-		return nil, errors.New("Logger cannot be nil")
+		return nil, errors.New("logger cannot be nil")
 	}
 
 	// The log format can have trailing whitespace which will cause grok to NOT work, so the trim is important.
@@ -76,7 +79,8 @@ func replaceCustomLogVars(logPattern string) string {
 		subMatch := match[1] // Excludes the leading $ in the var name
 
 		replacement := fmt.Sprintf("%%{DATA:%s}", subMatch)
-		logPattern = strings.Replace(logPattern, string(variable), replacement, 1)
+		logPattern = strings.Replace(logPattern, variable, replacement, 1)
 	}
+
 	return logPattern
 }

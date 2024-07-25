@@ -1,6 +1,7 @@
-// Copyright The OpenTelemetry Authors
-// SPDX-License-Identifier: Apache-2.0
-
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 package accesslog
 
 import (
@@ -22,11 +23,11 @@ func TestGrokConstructor(t *testing.T) {
 	logger := newLogger(t)
 
 	tests := []struct {
+		logger    *zap.SugaredLogger
 		name      string
 		logFormat string
-		logger    *zap.SugaredLogger
-		shouldErr bool
 		expErrMsg string
+		shouldErr bool
 	}{
 		{
 			name:      "logger is nil",
@@ -73,20 +74,22 @@ func TestGrokParseString(t *testing.T) {
 	logger := newLogger(t)
 
 	tests := []struct {
+		expOutput     map[string]string
 		name          string
 		logFormat     string
 		inputLogEntry string
-		expOutput     map[string]string
 	}{
 		{
-			name:          "normal log entry",
-			logFormat:     baseformat,
-			inputLogEntry: "127.0.0.1 - - [12/Apr/2024:14:50:06 +0100] \"GET / HTTP/1.1\" 200 615 \"-\" \"PostmanRuntime/7.36.1\" \"-\" \"853\" \"226\" \"0.000\" \"-\" \"HTTP/1.1\" \"-\"\"-\" \"-\" \"-\"",
+			name:      "normal log entry",
+			logFormat: baseformat,
+			inputLogEntry: `127.0.0.1 - - [12/Apr/2024:14:50:06 +0100] "GET / HTTP/1.1" 200 615 "-"` +
+				`"PostmanRuntime/7.36.1" "-" "853" "226" "0.000" "-" "HTTP/1.1" "-""-" "-" "-"`,
 			expOutput: map[string]string{
-				"BASE10NUM":                "853",
-				"body_bytes_sent":          "615",
-				"bytes_sent":               "853",
-				"DEFAULT":                  "127.0.0.1 - - [12/Apr/2024:14:50:06 +0100] \"GET / HTTP/1.1\" 200 615 \"-\" \"PostmanRuntime/7.36.1\" \"-\" \"853\" \"226\" \"0.000\" \"-\" \"HTTP/1.1\" \"-\"\"-\" \"-\" \"-\"",
+				"BASE10NUM":       "853",
+				"body_bytes_sent": "615",
+				"bytes_sent":      "853",
+				"DEFAULT": `127.0.0.1 - - [12/Apr/2024:14:50:06 +0100] "GET / HTTP/1.1" 200 615"+ " ` +
+					`"-" "PostmanRuntime/7.36.1" "-" "853" "226" "0.000" "-" "HTTP/1.1" "-" "-""-" "-"`,
 				"gzip_ratio":               "-",
 				"HOSTNAME":                 "",
 				"http_referer":             "-",
@@ -110,12 +113,14 @@ func TestGrokParseString(t *testing.T) {
 			},
 		},
 		{
-			name:          "normal upstream log entry",
-			logFormat:     baseformat,
-			inputLogEntry: "127.0.0.1 - - [11/Apr/2024:13:39:25 +0100] \"GET /frontend1 HTTP/1.0\" 200 28 \"-\" \"PostmanRuntime/7.36.1\" \"-\" \"185\" \"222\" \"0.000\" \"-\" \"HTTP/1.0\" \"-\"\"-\" \"-\" \"-\"",
+			name:      "normal upstream log entry",
+			logFormat: baseformat,
+			inputLogEntry: `127.0.0.1 - - [11/Apr/2024:13:39:25 +0100] "GET /frontend1 HTTP/1.0" 200 28 "-" ` +
+				`"PostmanRuntime/7.36.1" "-" "185" "222" "0.000" "-" "HTTP/1.0" "-""-" "-" "-"`,
 			expOutput: map[string]string{
-				"BASE10NUM":                "185",
-				"DEFAULT":                  "127.0.0.1 - - [11/Apr/2024:13:39:25 +0100] \"GET /frontend1 HTTP/1.0\" 200 28 \"-\" \"PostmanRuntime/7.36.1\" \"-\" \"185\" \"222\" \"0.000\" \"-\" \"HTTP/1.0\" \"-\"\"-\" \"-\" \"-\"",
+				"BASE10NUM": "185",
+				"DEFAULT": `127.0.0.1 - - [11/Apr/2024:13:39:25 +0100] "GET /frontend1 HTTP/1.0" 200` +
+					`28 "-" "PostmanRuntime/7.36.1" "-" "185" "222" "0.000" "-" "HTTP/1.0" "-""-" "-" "-"`,
 				"HOSTNAME":                 "",
 				"IP":                       "127.0.0.1",
 				"IPV4":                     "127.0.0.1",

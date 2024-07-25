@@ -1,5 +1,7 @@
-// Copyright The OpenTelemetry Authors
-// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package stubstatus
 
@@ -32,7 +34,7 @@ type NginxStubStatusScraper struct {
 var _ scraperhelper.Scraper = (*NginxStubStatusScraper)(nil)
 
 func NewScraper(
-	settings receiver.CreateSettings,
+	settings receiver.Settings,
 	cfg *config.Config,
 ) *NginxStubStatusScraper {
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
@@ -86,5 +88,6 @@ func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error
 	s.mb.RecordNginxConnectionsCurrentDataPoint(now, stats.Connections.Reading, metadata.AttributeStateReading)
 	s.mb.RecordNginxConnectionsCurrentDataPoint(now, stats.Connections.Writing, metadata.AttributeStateWriting)
 	s.mb.RecordNginxConnectionsCurrentDataPoint(now, stats.Connections.Waiting, metadata.AttributeStateWaiting)
+
 	return s.mb.Emit(), nil
 }

@@ -1,6 +1,7 @@
-// Copyright The OpenTelemetry Authors
-// SPDX-License-Identifier: Apache-2.0
-
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 package accesslog
 
 import (
@@ -16,13 +17,15 @@ func TestNginxConfParsing(t *testing.T) {
 		name      string
 		confPath  string
 		expOutput string
-		shouldErr bool
 		expErrMsg string
+		shouldErr bool
 	}{
 		{
-			name:      "basic NGINX config",
-			confPath:  filepath.Join("testdata", "basic.conf"),
-			expOutput: "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\" \"$bytes_sent\" \"$request_length\" \"$request_time\" \"$gzip_ratio\" $server_protocol ",
+			name:     "basic NGINX config",
+			confPath: filepath.Join("testdata", "basic.conf"),
+			expOutput: `$remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer"` +
+				` "$http_user_agent" "$http_x_forwarded_for" "$bytes_sent" "$request_length" "$request_time"` +
+				`"$gzip_ratio" $server_protocol `,
 		},
 		{
 			name:      "no log_format NGINX config",
@@ -38,7 +41,7 @@ func TestNginxConfParsing(t *testing.T) {
 		},
 		{
 			name:      "path to directory",
-			confPath:  filepath.Join("testdata"),
+			confPath:  "testdata",
 			shouldErr: true,
 			expErrMsg: "NGINX config path argument is a directory",
 		},

@@ -1,5 +1,7 @@
-// Copyright The OpenTelemetry Authors
-// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package record
 
@@ -11,6 +13,17 @@ import (
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/metadata"
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/model"
 	"go.opentelemetry.io/collector/pdata/pcommon"
+)
+
+const (
+	// Needed for "magic number" linter.
+	status100 = 100
+	status200 = 200
+	status300 = 300
+	status400 = 400
+	status500 = 500
+
+	percent = 100
 )
 
 // Item extracts data from NGINX Access Items and records them using the given MetricsBuilder.
@@ -36,18 +49,18 @@ func mapCodeRange(statusCode string) (metadata.AttributeStatusCode, error) {
 	}
 
 	// We want to "floor" the response code, so we can map it to the correct range (i.e. to 1xx, 2xx, 4xx or 5xx).
-	codeRange := (number / 100) * 100
+	codeRange := (number / percent) * percent
 
 	switch codeRange {
-	case 100:
+	case status100:
 		return metadata.AttributeStatusCode1xx, nil
-	case 200:
+	case status200:
 		return metadata.AttributeStatusCode2xx, nil
-	case 300:
+	case status300:
 		return metadata.AttributeStatusCode3xx, nil
-	case 400:
+	case status400:
 		return metadata.AttributeStatusCode4xx, nil
-	case 500:
+	case status500:
 		return metadata.AttributeStatusCode5xx, nil
 	default:
 		return 0, fmt.Errorf("unknown code range: %d", codeRange)

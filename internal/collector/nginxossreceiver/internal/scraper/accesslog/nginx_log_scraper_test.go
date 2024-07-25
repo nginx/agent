@@ -1,5 +1,7 @@
-// Copyright The OpenTelemetry Authors
-// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package accesslog
 
@@ -31,11 +33,12 @@ func TestAccessLogScraper(t *testing.T) {
 		testDataFilePath  = filepath.Join(testDataDir, "test-access.log")
 	)
 
-	cfg := config.CreateDefaultConfig().(*config.Config)
+	cfg, ok := config.CreateDefaultConfig().(*config.Config)
+	assert.True(t, ok)
 	cfg.InputConfig.Include = []string{testAccessLogPath}
 	cfg.NginxConfigPath = nginxConfPath
 
-	accessLogScraper, err := NewScraper(receivertest.NewNopCreateSettings(), cfg)
+	accessLogScraper, err := NewScraper(receivertest.NewNopSettings(), cfg)
 	require.NoError(t, err)
 
 	err = accessLogScraper.Start(context.Background(), componenttest.NewNopHost())
@@ -60,7 +63,7 @@ func TestAccessLogScraper(t *testing.T) {
 
 func TestAccessLogScraperError(t *testing.T) {
 	t.Run("include config missing", func(tt *testing.T) {
-		_, err := NewScraper(receivertest.NewNopCreateSettings(), &config.Config{
+		_, err := NewScraper(receivertest.NewNopSettings(), &config.Config{
 			InputConfig: file.Config{},
 		})
 		require.Error(tt, err)
@@ -68,29 +71,32 @@ func TestAccessLogScraperError(t *testing.T) {
 	})
 
 	t.Run("log_format error", func(tt *testing.T) {
-		dc := config.CreateDefaultConfig().(*config.Config)
+		dc, ok := config.CreateDefaultConfig().(*config.Config)
+		assert.True(t, ok)
 		dc.InputConfig.Include = []string{testDataDir}
-		_, err := NewScraper(receivertest.NewNopCreateSettings(), dc)
+		_, err := NewScraper(receivertest.NewNopSettings(), dc)
 		require.Error(tt, err)
 		assert.Contains(tt, err.Error(), "NGINX log format missing")
 	})
 }
 
 // Copies the contents of one file to another with the given delay. Used to simulate writing log entries to a log file.
+// Reason for nolint: we must use testify's
+// nolint: testifylint
 func simulateLogging(t *testing.T, sourcePath, destinationPath string, delay time.Duration) {
 	t.Helper()
 
 	src, err := os.Open(sourcePath)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	defer src.Close()
 
 	var dest *os.File
-	if _, err := os.Stat(destinationPath); os.IsNotExist(err) {
-		dest, err = os.Create(destinationPath)
-		require.NoError(t, err)
+	if _, fileCheckErr := os.Stat(destinationPath); os.IsNotExist(fileCheckErr) {
+		dest, fileCheckErr = os.Create(destinationPath)
+		assert.NoError(t, fileCheckErr)
 	} else {
-		dest, err = os.OpenFile(destinationPath, os.O_RDWR|os.O_APPEND, 0o660)
-		require.NoError(t, err)
+		dest, fileCheckErr = os.OpenFile(destinationPath, os.O_RDWR|os.O_APPEND, 0o660)
+		assert.NoError(t, fileCheckErr)
 	}
 	defer dest.Close()
 
@@ -99,7 +105,7 @@ func simulateLogging(t *testing.T, sourcePath, destinationPath string, delay tim
 		<-time.After(delay)
 
 		logLine := scanner.Text()
-		_, err := dest.WriteString(logLine + "\n")
-		require.NoError(t, err)
+		_, writeErr := dest.WriteString(logLine + "\n")
+		assert.NoError(t, writeErr)
 	}
 }

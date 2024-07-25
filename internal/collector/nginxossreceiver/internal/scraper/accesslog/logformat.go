@@ -1,5 +1,7 @@
-// Copyright The OpenTelemetry Authors
-// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package accesslog
 
@@ -42,9 +44,9 @@ func extractLogFormat(payload *crossplane.Payload, fileName string) (string, err
 	results := make([]*crossplane.Directive, 0, len(searchStrings))
 	for _, conf := range payload.Config {
 		if strings.Contains(conf.File, fileName) {
-
 			tmp := make([]*crossplane.Directive, 0, len(searchStrings))
 			results = append(results, findDirectives(conf.Parsed, searchStrings, tmp)...)
+
 			break
 		}
 	}
@@ -60,7 +62,11 @@ func extractLogFormat(payload *crossplane.Payload, fileName string) (string, err
 }
 
 // Recursive function for finding directives based on their names.
-func findDirectives(nodes crossplane.Directives, searchStrings map[string]struct{}, input []*crossplane.Directive) []*crossplane.Directive {
+func findDirectives(
+	nodes crossplane.Directives,
+	searchStrings map[string]struct{},
+	input []*crossplane.Directive,
+) []*crossplane.Directive {
 	// Copy to avoid operating on the original slice.
 	res := make([]*crossplane.Directive, 0)
 	copy(input, res)

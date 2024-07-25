@@ -1,5 +1,7 @@
-// Copyright The OpenTelemetry Authors
-// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package accesslog
 
@@ -32,16 +34,16 @@ type (
 	}
 
 	NginxLogScraper struct {
-		cancel  context.CancelFunc
-		cfg     *config.Config
-		entries []*entry.Entry
 		grok    grokParser
+		outChan <-chan []*entry.Entry
+		cfg     *config.Config
 		logger  *zap.SugaredLogger
 		mb      *metadata.MetricsBuilder
-		mut     sync.Mutex
-		outChan <-chan []*entry.Entry
 		pipe    *pipeline.DirectedPipeline
 		wg      *sync.WaitGroup
+		cancel  context.CancelFunc
+		entries []*entry.Entry
+		mut     sync.Mutex
 	}
 )
 
@@ -124,7 +126,6 @@ func (nls *NginxLogScraper) Scrape(_ context.Context) (pmetric.Metrics, error) {
 			nls.logger.Debugf("Recording metric failed, %+v", ai)
 			continue
 		}
-
 	}
 	nls.entries = make([]*entry.Entry, 0)
 	nls.mut.Unlock()
@@ -186,5 +187,6 @@ func newNginxAccessItem(v map[string]string) (*model.NginxAccessItem, error) {
 	if err := mapstructure.Decode(v, res); err != nil {
 		return nil, err
 	}
+
 	return res, nil
 }
