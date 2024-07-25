@@ -8,6 +8,7 @@ exporters:
     verbosity: detailed
   prometheus:
     endpoint: "0.0.0.0:9775"
+    add_metric_suffixes: false
 
 processors:
   batch:

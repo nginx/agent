@@ -1,211 +1,112 @@
 {
     "annotations": {
-      "list": [
+        "list": [
         {
-          "builtIn": 1,
-          "datasource": {
+            "builtIn": 1,
+            "datasource": {
             "type": "grafana",
             "uid": "-- Grafana --"
-          },
-          "enable": true,
-          "hide": true,
-          "iconColor": "rgba(0, 211, 255, 1)",
-          "name": "Annotations & Alerts",
-          "type": "dashboard"
+            },
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
         }
-      ]
+        ]
     },
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
     "links": [],
     "panels": [
-      {
+        {
         "datasource": {
-          "type": "prometheus",
-          "uid": "otel-prometheus-scraper"
+            "type": "prometheus",
+            "uid": "otel-prometheus-scraper"
         },
         "fieldConfig": {
-          "defaults": {
+            "defaults": {
             "color": {
-              "mode": "palette-classic"
+                "mode": "palette-classic"
             },
             "custom": {
-              "axisBorderShow": false,
-              "axisCenteredZero": false,
-              "axisColorMode": "text",
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "barAlignment": 0,
-              "drawStyle": "line",
-              "fillOpacity": 0,
-              "gradientMode": "none",
-              "hideFrom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
                 "legend": false,
                 "tooltip": false,
                 "viz": false
-              },
-              "insertNulls": false,
-              "lineInterpolation": "linear",
-              "lineWidth": 1,
-              "pointSize": 5,
-              "scaleDistribution": {
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
                 "type": "linear"
-              },
-              "showPoints": "auto",
-              "spanNulls": false,
-              "stacking": {
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
                 "group": "A",
                 "mode": "none"
-              },
-              "thresholdsStyle": {
+                },
+                "thresholdsStyle": {
                 "mode": "off"
-              }
+                }
             },
             "mappings": [],
             "thresholds": {
-              "mode": "absolute",
-              "steps": [
+                "mode": "absolute",
+                "steps": [
                 {
-                  "color": "green",
-                  "value": null
+                    "color": "green",
+                    "value": null
                 },
                 {
-                  "color": "red",
-                  "value": 80
+                    "color": "red",
+                    "value": 80
                 }
-              ]
+                ]
             }
-          },
-          "overrides": []
+            },
+            "overrides": []
         },
         "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 0,
-          "y": 0
-        },
-        "id": 3,
-        "options": {
-          "legend": {
-            "calcs": [],
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true
-          },
-          "tooltip": {
-            "mode": "single",
-            "sort": "none"
-          }
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "otel-prometheus-scraper"
-            },
-            "disableTextWrap": false,
-            "editorMode": "builder",
-            "expr": "nginx_http_conn_count_connections",
-            "fullMetaSearch": false,
-            "includeNullMetadata": true,
-            "instant": false,
-            "legendFormat": "{{nginx_conn_outcome}}",
-            "range": true,
-            "refId": "A",
-            "useBackend": false
-          }
-        ],
-        "title": "HTTP Connections",
-        "type": "timeseries"
-      },
-      {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "otel-prometheus-scraper"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "palette-classic"
-            },
-            "custom": {
-              "axisBorderShow": false,
-              "axisCenteredZero": false,
-              "axisColorMode": "text",
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "barAlignment": 0,
-              "drawStyle": "line",
-              "fillOpacity": 0,
-              "gradientMode": "none",
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              },
-              "insertNulls": false,
-              "lineInterpolation": "linear",
-              "lineWidth": 1,
-              "pointSize": 5,
-              "scaleDistribution": {
-                "type": "linear"
-              },
-              "showPoints": "auto",
-              "spanNulls": false,
-              "stacking": {
-                "group": "A",
-                "mode": "none"
-              },
-              "thresholdsStyle": {
-                "mode": "off"
-              }
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            }
-          },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 12,
-          "y": 0
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 0
         },
         "id": 2,
         "options": {
-          "legend": {
+            "legend": {
             "calcs": [],
             "displayMode": "list",
             "placement": "bottom",
             "showLegend": true
-          },
-          "tooltip": {
+            },
+            "tooltip": {
             "mode": "single",
             "sort": "none"
-          }
+            }
         },
         "targets": [
-          {
+            {
             "datasource": {
-              "type": "prometheus",
-              "uid": "otel-prometheus-scraper"
+                "type": "prometheus",
+                "uid": "otel-prometheus-scraper"
             },
             "disableTextWrap": false,
             "editorMode": "builder",
-            "expr": "nginx_http_conn_connections_total",
+            "expr": "nginx_http_conn_count",
             "fullMetaSearch": false,
             "includeNullMetadata": false,
             "instant": false,
@@ -213,94 +114,193 @@
             "range": true,
             "refId": "A",
             "useBackend": false
-          }
+            }
         ],
-        "title": "HTTP Connections Total",
+        "title": "HTTP Connections Count",
         "type": "timeseries"
-      },
-      {
+        },
+        {
         "datasource": {
-          "type": "prometheus",
-          "uid": "otel-prometheus-scraper"
+            "type": "prometheus",
+            "uid": "otel-prometheus-scraper"
         },
         "fieldConfig": {
-          "defaults": {
+            "defaults": {
             "color": {
-              "mode": "palette-classic"
+                "mode": "palette-classic"
             },
             "custom": {
-              "axisBorderShow": false,
-              "axisCenteredZero": false,
-              "axisColorMode": "text",
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "barAlignment": 0,
-              "drawStyle": "line",
-              "fillOpacity": 0,
-              "gradientMode": "none",
-              "hideFrom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
                 "legend": false,
                 "tooltip": false,
                 "viz": false
-              },
-              "insertNulls": false,
-              "lineInterpolation": "linear",
-              "lineWidth": 1,
-              "pointSize": 5,
-              "scaleDistribution": {
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
                 "type": "linear"
-              },
-              "showPoints": "auto",
-              "spanNulls": false,
-              "stacking": {
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
                 "group": "A",
                 "mode": "none"
-              },
-              "thresholdsStyle": {
+                },
+                "thresholdsStyle": {
                 "mode": "off"
-              }
+                }
             },
             "mappings": [],
             "thresholds": {
-              "mode": "absolute",
-              "steps": [
+                "mode": "absolute",
+                "steps": [
                 {
-                  "color": "green",
-                  "value": null
+                    "color": "green",
+                    "value": null
                 },
                 {
-                  "color": "red",
-                  "value": 80
+                    "color": "red",
+                    "value": 80
                 }
-              ]
+                ]
             }
-          },
-          "overrides": []
+            },
+            "overrides": []
         },
         "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 0,
-          "y": 8
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 0
         },
-        "id": 4,
+        "id": 3,
         "options": {
-          "legend": {
+            "legend": {
             "calcs": [],
             "displayMode": "list",
             "placement": "bottom",
             "showLegend": true
-          },
-          "tooltip": {
+            },
+            "tooltip": {
             "mode": "single",
             "sort": "none"
-          }
+            }
         },
         "targets": [
-          {
+            {
             "datasource": {
-              "type": "prometheus",
-              "uid": "otel-prometheus-scraper"
+                "type": "prometheus",
+                "uid": "otel-prometheus-scraper"
+            },
+            "disableTextWrap": false,
+            "editorMode": "builder",
+            "expr": "nginx_http_conn",
+            "fullMetaSearch": false,
+            "includeNullMetadata": true,
+            "instant": false,
+            "legendFormat": "{{nginx_conn_outcome}}",
+            "range": true,
+            "refId": "A",
+            "useBackend": false
+            }
+        ],
+        "title": "HTTP Connections",
+        "type": "timeseries"
+        },
+        {
+        "datasource": {
+            "type": "prometheus",
+            "uid": "otel-prometheus-scraper"
+        },
+        "fieldConfig": {
+            "defaults": {
+            "color": {
+                "mode": "palette-classic"
+            },
+            "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                "group": "A",
+                "mode": "none"
+                },
+                "thresholdsStyle": {
+                "mode": "off"
+                }
+            },
+            "mappings": [],
+            "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                {
+                    "color": "green",
+                    "value": null
+                },
+                {
+                    "color": "red",
+                    "value": 80
+                }
+                ]
+            }
+            },
+            "overrides": []
+        },
+        "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 8
+        },
+        "id": 4,
+        "options": {
+            "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+            },
+            "tooltip": {
+            "mode": "single",
+            "sort": "none"
+            }
+        },
+        "targets": [
+            {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "otel-prometheus-scraper"
             },
             "disableTextWrap": false,
             "editorMode": "builder",
@@ -312,197 +312,197 @@
             "range": true,
             "refId": "A",
             "useBackend": false
-          }
+            }
         ],
         "title": "HTTP Request Count",
         "type": "timeseries"
-      },
-      {
+        },
+        {
         "datasource": {
-          "type": "prometheus",
-          "uid": "otel-prometheus-scraper"
+            "type": "prometheus",
+            "uid": "otel-prometheus-scraper"
         },
         "fieldConfig": {
-          "defaults": {
+            "defaults": {
             "color": {
-              "mode": "palette-classic"
+                "mode": "palette-classic"
             },
             "custom": {
-              "axisBorderShow": false,
-              "axisCenteredZero": false,
-              "axisColorMode": "text",
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "barAlignment": 0,
-              "drawStyle": "line",
-              "fillOpacity": 0,
-              "gradientMode": "none",
-              "hideFrom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
                 "legend": false,
                 "tooltip": false,
                 "viz": false
-              },
-              "insertNulls": false,
-              "lineInterpolation": "linear",
-              "lineWidth": 1,
-              "pointSize": 5,
-              "scaleDistribution": {
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
                 "type": "linear"
-              },
-              "showPoints": "auto",
-              "spanNulls": false,
-              "stacking": {
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
                 "group": "A",
                 "mode": "none"
-              },
-              "thresholdsStyle": {
+                },
+                "thresholdsStyle": {
                 "mode": "off"
-              }
+                }
             },
             "mappings": [],
             "thresholds": {
-              "mode": "absolute",
-              "steps": [
+                "mode": "absolute",
+                "steps": [
                 {
-                  "color": "green",
-                  "value": null
+                    "color": "green",
+                    "value": null
                 },
                 {
-                  "color": "red",
-                  "value": 80
+                    "color": "red",
+                    "value": 80
                 }
-              ]
+                ]
             }
-          },
-          "overrides": []
+            },
+            "overrides": []
         },
         "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 12,
-          "y": 8
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 8
         },
         "id": 5,
         "options": {
-          "legend": {
+            "legend": {
             "calcs": [],
             "displayMode": "list",
             "placement": "bottom",
             "showLegend": true
-          },
-          "tooltip": {
+            },
+            "tooltip": {
             "mode": "single",
             "sort": "none"
-          }
+            }
         },
         "targets": [
-          {
+            {
             "datasource": {
-              "type": "prometheus",
-              "uid": "otel-prometheus-scraper"
+                "type": "prometheus",
+                "uid": "otel-prometheus-scraper"
             },
             "disableTextWrap": false,
             "editorMode": "builder",
-            "expr": "nginx_http_requests_total",
+            "expr": "nginx_http_requests",
             "fullMetaSearch": false,
             "includeNullMetadata": false,
             "instant": false,
-            "legendFormat": "Requests",
+            "legendFormat": "__auto",
             "range": true,
             "refId": "A",
             "useBackend": false
-          }
+            }
         ],
         "title": "Total HTTP Requests",
         "type": "timeseries"
-      },
-      {
+        },
+        {
         "datasource": {
-          "type": "prometheus",
-          "uid": "otel-prometheus-scraper"
+            "type": "prometheus",
+            "uid": "otel-prometheus-scraper"
         },
         "fieldConfig": {
-          "defaults": {
+            "defaults": {
             "color": {
-              "mode": "palette-classic"
+                "mode": "palette-classic"
             },
             "custom": {
-              "axisBorderShow": false,
-              "axisCenteredZero": false,
-              "axisColorMode": "text",
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "barAlignment": 0,
-              "drawStyle": "line",
-              "fillOpacity": 0,
-              "gradientMode": "none",
-              "hideFrom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
                 "legend": false,
                 "tooltip": false,
                 "viz": false
-              },
-              "insertNulls": false,
-              "lineInterpolation": "linear",
-              "lineWidth": 1,
-              "pointSize": 5,
-              "scaleDistribution": {
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
                 "type": "linear"
-              },
-              "showPoints": "auto",
-              "spanNulls": false,
-              "stacking": {
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
                 "group": "A",
                 "mode": "none"
-              },
-              "thresholdsStyle": {
+                },
+                "thresholdsStyle": {
                 "mode": "off"
-              }
+                }
             },
             "mappings": [],
             "thresholds": {
-              "mode": "absolute",
-              "steps": [
+                "mode": "absolute",
+                "steps": [
                 {
-                  "color": "green",
-                  "value": null
+                    "color": "green",
+                    "value": null
                 },
                 {
-                  "color": "red",
-                  "value": 80
+                    "color": "red",
+                    "value": 80
                 }
-              ]
+                ]
             }
-          },
-          "overrides": []
+            },
+            "overrides": []
         },
         "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 0,
-          "y": 16
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 16
         },
         "id": 1,
         "options": {
-          "legend": {
+            "legend": {
             "calcs": [],
             "displayMode": "list",
             "placement": "bottom",
             "showLegend": true
-          },
-          "tooltip": {
+            },
+            "tooltip": {
             "mode": "single",
             "sort": "none"
-          }
+            }
         },
         "targets": [
-          {
+            {
             "datasource": {
-              "type": "prometheus",
-              "uid": "otel-prometheus-scraper"
+                "type": "prometheus",
+                "uid": "otel-prometheus-scraper"
             },
             "disableTextWrap": false,
             "editorMode": "builder",
-            "expr": "nginx_config_reloads_total",
+            "expr": "nginx_config_reloads",
             "fullMetaSearch": false,
             "includeNullMetadata": true,
             "instant": false,
@@ -510,26 +510,26 @@
             "range": true,
             "refId": "A",
             "useBackend": false
-          }
+            }
         ],
         "title": "NGINX Config Reloads",
         "type": "timeseries"
-      }
+        }
     ],
     "refresh": "",
     "schemaVersion": 39,
     "tags": [],
     "templating": {
-      "list": []
+        "list": []
     },
     "time": {
-      "from": "now-5m",
-      "to": "now"
+        "from": "now-5m",
+        "to": "now"
     },
     "timepicker": {},
     "timezone": "browser",
     "title": "NGINX Plus",
     "uid": "fdris4hclbqiob",
-    "version": 4,
+    "version": 1,
     "weekStart": ""
 }
