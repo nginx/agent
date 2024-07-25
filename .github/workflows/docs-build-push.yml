@@ -1,0 +1,33 @@
+name: Build and deploy (docs)
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: false
+        default: 'preview'
+        type: choice
+        options:
+        - preview
+        - dev
+        - staging
+        - prod
+  pull_request:
+    branches:
+      - "*"
+    paths:
+      - site/**
+
+jobs:
+  call-docs-build-push:
+    uses: nginxinc/docs-actions/.github/workflows/docs-build-push.yml@main
+    with:
+      production_url_path: "/nginx-agent"
+      preview_url_path: "/previews/nginx-agent"
+      docs_source_path: "/public/nginx-agent"
+      docs_build_path: "./site"
+      doc_type: "hugo"
+      environment: ${{inputs.environment}}
+    secrets:
+      AZURE_CREDENTIALS: ${{secrets.AZURE_CREDENTIALS_DOCS}}
+      AZURE_KEY_VAULT: ${{secrets.AZURE_KEY_VAULT_DOCS}}
