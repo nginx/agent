@@ -20,7 +20,7 @@ on:
 
 jobs:
   call-docs-build-push:
-    uses: nginxinc/docs-actions/.github/workflows/docs-build-push.yml@main
+    uses: nginxinc/docs-actions/.github/workflows/docs-build-push.yml@03a9a3808fcb77cd0c19d7fa5d59b25565dd1d6d # v1.0.2
     with:
       production_url_path: "/nginx-agent"
       preview_url_path: "/previews/nginx-agent"
