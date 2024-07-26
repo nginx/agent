@@ -10,10 +10,12 @@ package sources
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
 	"net/http"
+	"slices"
 	"sync"
 	"time"
 
@@ -48,6 +50,12 @@ type NginxPlus struct {
 	init          sync.Once
 	clientVersion int
 	logger        *MetricSourceLogger
+}
+
+type ExtendedStats struct {
+	*plusclient.Stats
+	endpoints []string
+	streamEndpoints []string
 }
 
 func NewNginxPlus(baseDimensions *metrics.CommonDim, nginxNamespace, plusNamespace, plusAPI string, clientVersion int) *NginxPlus {
@@ -87,7 +95,7 @@ func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *m
 		return
 	}
 
-	stats, err := cl.GetStats()
+	stats, err := c.getStats(cl)
 	if err != nil {
 		c.logger.Log(fmt.Sprintf("Failed to retrieve plus metrics: %v", err))
 		SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
@@ -108,6 +116,159 @@ func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *m
 	log.Debug("NGINX_plus_Collect: metrics sent")
 
 	c.prevStats = stats
+}
+
+func (c *NginxPlus) getStats(client *plusclient.NginxClient ) (*plusclient.Stats, error) {
+	var intialStatsWg sync.WaitGroup
+	stats := &ExtendedStats{}
+
+	intialStats := []struct {
+		target    interface{}
+		fetchFunc interface{}
+	}{
+		{&stats.endpoints, client.GetAvailableEndpoints},
+		// before, we used error on this, if no stream endpoints we will continue and the if condition
+		// lower down should cater for it
+		{&stats.streamEndpoints, client.GetAvailableStreamEndpoints},
+		{&stats.NginxInfo, client.GetNginxInfo},
+		{&stats.Caches, client.GetCaches},
+		{&stats.Processes, client.GetProcesses},
+		{&stats.Slabs, client.GetSlabs},
+		{&stats.Connections, client.GetConnections},
+		{&stats.HTTPRequests, client.GetHTTPRequests},
+		{&stats.SSL, client.GetSSL},
+		{&stats.ServerZones, client.GetServerZones},
+		{&stats.Upstreams, client.GetUpstreams},
+		{&stats.LocationZones, client.GetLocationZones},
+		{&stats.Resolvers, client.GetResolvers},
+		{&stats.HTTPLimitRequests, client.GetHTTPLimitReqs},
+		{&stats.HTTPLimitConnections, client.GetHTTPConnectionsLimit},
+		{&stats.Workers, client.GetWorkers},
+	}
+
+	intialStatsErrChan := make(chan error, len(intialStats))
+
+	// run these functions in parallel
+	for _, stats := range intialStats {
+		intialStatsWg.Add(1)
+		go fetchAndAssign(&intialStatsWg, intialStatsErrChan, stats.target, stats.fetchFunc)
+	}
+
+	intialStatsWg.Wait()
+	close(intialStatsErrChan)
+
+	// only error if all the stats are empty
+	if len(intialStatsErrChan) == len(intialStats) {
+		return nil, errors.New("no useful metrics found")
+	}
+
+	if slices.Contains(stats.endpoints, "stream") {
+		var streamStatsWg sync.WaitGroup
+		// check if these can get added to the client GetStats in a different way
+		endpointStats := []struct {
+			target    interface{}
+			fetchFunc interface{}
+			statType  string
+		}{
+			{&stats.StreamServerZones, client.GetStreamServerZones, "server_zones"},
+			{&stats.StreamUpstreams, client.GetStreamUpstreams, "upstreams"},
+			{&stats.StreamLimitConnections, client.GetStreamConnectionsLimit, "limit_conns"},
+			{&stats.StreamZoneSync, client.GetStreamZoneSync, "zone_sync"},	
+		}
+
+		streamStatsErrChan := make(chan error, len(endpointStats))
+
+		for _, stat := range endpointStats {
+			streamStatsWg.Add(1)
+			if slices.Contains(stats.streamEndpoints, stat.statType) {
+				go fetchAndAssign(&streamStatsWg, streamStatsErrChan, stat.target, stat.fetchFunc)
+			}
+		}
+		close(streamStatsErrChan)
+
+		if len(streamStatsErrChan) == len(endpointStats) {
+			log.Warnf("no useful metrics found in stream stats")
+		}
+	}
+
+	return stats.Stats, nil
+}
+
+
+func fetchData[T any](wg *sync.WaitGroup, errChan chan error, target *T, fetchFunc func() (T, error)) {
+	defer wg.Done()
+	data, err := fetchFunc()
+	if err != nil {
+		errStr := fmt.Errorf("failed to get stats: %w", err)
+		log.Debug(errStr)
+		errChan <- errStr
+		return
+	}
+	*target = data
+}
+
+// this function takes the target type and matches it's function signature
+func fetchAndAssign(wg *sync.WaitGroup, errChan chan error, target interface{}, fetchFunc interface{}) {
+	defer wg.Done()
+
+	switch t := target.(type) {
+	case *plusclient.Upstreams:
+		f := fetchFunc.(func() (plusclient.Upstreams, error))
+		fetchData(wg, errChan, t, f)
+	case *plusclient.ServerZones:
+		f := fetchFunc.(func() (plusclient.ServerZones, error))
+		fetchData(wg, errChan, t, f)
+	case *plusclient.StreamServerZones:
+		f := fetchFunc.(func() (plusclient.StreamServerZones, error))
+		fetchData(wg, errChan, t, f)
+	case *plusclient.StreamUpstreams:
+		f := fetchFunc.(func() (plusclient.StreamUpstreams, error))
+		fetchData(wg, errChan, t, f)
+	case *plusclient.Slabs:
+		f := fetchFunc.(func() (plusclient.Slabs, error))
+		fetchData(wg, errChan, t, f)
+	case *plusclient.Caches:
+		f := fetchFunc.(func() (plusclient.Caches, error))
+		fetchData(wg, errChan, t, f)
+	case *plusclient.HTTPLimitConnections:
+		f := fetchFunc.(func() (plusclient.HTTPLimitConnections, error))
+		fetchData(wg, errChan, t, f)
+	case *plusclient.StreamLimitConnections:
+		f := fetchFunc.(func() (plusclient.StreamLimitConnections, error))
+		fetchData(wg, errChan, t, f)
+	case *plusclient.HTTPLimitRequests:
+		f := fetchFunc.(func() (plusclient.HTTPLimitRequests, error))
+		fetchData(wg, errChan, t, f)
+	case *plusclient.Resolvers:
+		f := fetchFunc.(func() (plusclient.Resolvers, error))
+		fetchData(wg, errChan, t, f)
+	case *plusclient.LocationZones:
+		f := fetchFunc.(func() (plusclient.LocationZones, error))
+		fetchData(wg, errChan, t, f)
+	case **plusclient.StreamZoneSync:
+		f := fetchFunc.(func() (*plusclient.StreamZoneSync, error))
+		fetchData(wg, errChan, t, f)
+	case *[]*Workers:
+		f := fetchFunc.(func() ([]*Workers, error))
+		fetchData(wg, errChan, t, f)
+	case *plusclient.NginxInfo:
+		f := fetchFunc.(func() (plusclient.NginxInfo, error))
+		fetchData(wg, errChan, t, f)
+	case *plusclient.SSL:
+		f := fetchFunc.(func() (plusclient.SSL, error))
+		fetchData(wg, errChan, t, f)
+	case *plusclient.Connections:
+		f := fetchFunc.(func() (plusclient.Connections, error))
+		fetchData(wg, errChan, t, f)
+	case *plusclient.HTTPRequests:
+		f := fetchFunc.(func() (plusclient.HTTPRequests, error))
+		fetchData(wg, errChan, t, f)
+	case *plusclient.Processes:
+		f := fetchFunc.(func() (plusclient.Processes, error))
+		fetchData(wg, errChan, t, f)
+	default:
+		errChan <- fmt.Errorf("unsupported type: %T", target)
+	}
 }
 
 func (c *NginxPlus) Update(dimensions *metrics.CommonDim, collectorConf *metrics.NginxCollectorConfig) {
@@ -167,6 +328,7 @@ func (c *NginxPlus) instanceMetrics(stats, prevStats *plusclient.Stats) *metrics
 	})
 
 	dims := c.baseDimensions.ToDimensions()
+
 	return metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE)
 }
 
@@ -233,6 +395,7 @@ func (c *NginxPlus) sslMetrics(stats, prevStats *plusclient.Stats) *metrics.Stat
 
 func (c *NginxPlus) serverZoneMetrics(stats, prevStats *plusclient.Stats) []*metrics.StatsEntityWrapper {
 	zoneMetrics := make([]*metrics.StatsEntityWrapper, 0)
+
 	for name, sz := range stats.ServerZones {
 		l := &namedMetric{namespace: c.plusNamespace, group: "http"}
 
@@ -311,6 +474,8 @@ func (c *NginxPlus) serverZoneMetrics(stats, prevStats *plusclient.Stats) []*met
 		zoneMetrics = append(zoneMetrics, metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE))
 	}
 
+	log.Debugf("server zone metrics count %d", len(zoneMetrics))
+
 	return zoneMetrics
 }
 
@@ -368,6 +533,8 @@ func (c *NginxPlus) streamServerZoneMetrics(stats, prevStats *plusclient.Stats) 
 		dims = append(dims, &proto.Dimension{Name: "server_zone", Value: name})
 		zoneMetrics = append(zoneMetrics, metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE))
 	}
+	log.Debugf("stream server zone metrics count %d", len(zoneMetrics))
+
 	return zoneMetrics
 }
 
@@ -434,6 +601,7 @@ func (c *NginxPlus) locationZoneMetrics(stats, prevStats *plusclient.Stats) []*m
 		dims = append(dims, &proto.Dimension{Name: "location_zone", Value: name})
 		zoneMetrics = append(zoneMetrics, metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE))
 	}
+	log.Debugf("location zone metrics count %d", len(zoneMetrics))
 
 	return zoneMetrics
 }
@@ -578,6 +746,7 @@ func (c *NginxPlus) httpUpstreamMetrics(stats, prevStats *plusclient.Stats) []*m
 		upstreamDims = append(upstreamDims, &proto.Dimension{Name: "upstream_zone", Value: u.Zone})
 		upstreamMetrics = append(upstreamMetrics, metrics.NewStatsEntityWrapper(upstreamDims, simpleMetrics, proto.MetricsReport_UPSTREAMS))
 	}
+	log.Debugf("upstream metrics count %d", len(upstreamMetrics))
 
 	return upstreamMetrics
 }
@@ -678,6 +847,7 @@ func (c *NginxPlus) streamUpstreamMetrics(stats, prevStats *plusclient.Stats) []
 		upstreamDims = append(upstreamDims, &proto.Dimension{Name: "upstream_zone", Value: u.Zone})
 		upstreamMetrics = append(upstreamMetrics, metrics.NewStatsEntityWrapper(upstreamDims, simpleMetrics, proto.MetricsReport_UPSTREAMS))
 	}
+	log.Debugf("stream upstream metrics count %d", len(upstreamMetrics))
 
 	return upstreamMetrics
 }
@@ -768,6 +938,8 @@ func (c *NginxPlus) cacheMetrics(stats, prevStats *plusclient.Stats) []*metrics.
 		zoneMetrics = append(zoneMetrics, metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_CACHE_ZONE))
 	}
 
+	log.Debugf("cache metrics count %d", len(zoneMetrics))
+
 	return zoneMetrics
 }
 
@@ -805,6 +977,7 @@ func (c *NginxPlus) slabMetrics(stats *plusclient.Stats) []*metrics.StatsEntityW
 			slabMetrics = append(slabMetrics, metrics.NewStatsEntityWrapper(dims, slotSimpleMetrics, proto.MetricsReport_INSTANCE))
 		}
 	}
+	log.Debugf("slab metrics count %d", len(slabMetrics))
 
 	return slabMetrics
 }
@@ -824,6 +997,8 @@ func (c *NginxPlus) httpLimitConnsMetrics(stats, prevStats *plusclient.Stats) []
 		limitConnsMetrics = append(limitConnsMetrics, metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE))
 
 	}
+	log.Debugf("http limit connection metrics count %d", len(limitConnsMetrics))
+
 	return limitConnsMetrics
 }
 
@@ -844,6 +1019,8 @@ func (c *NginxPlus) httpLimitRequestMetrics(stats, prevStats *plusclient.Stats) 
 		limitRequestMetrics = append(limitRequestMetrics, metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE))
 
 	}
+	log.Debugf("http limit request metrics count %d", len(limitRequestMetrics))
+
 	return limitRequestMetrics
 }
 
@@ -877,6 +1054,7 @@ func (c *NginxPlus) workerMetrics(stats, prevStats *plusclient.Stats) []*metrics
 		dims = append(dims, &proto.Dimension{Name: "process_id", Value: fmt.Sprint(w.ProcessID)})
 		workerMetrics = append(workerMetrics, metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE))
 	}
+	log.Debugf("worker metrics count %d", len(workerMetrics))
 
 	return workerMetrics
 }
