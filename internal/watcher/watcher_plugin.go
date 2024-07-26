@@ -140,6 +140,8 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 	data, ok := msg.Data.(*mpi.Instance)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to Instance", "payload", msg.Data)
+
+		return
 	}
 
 	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
@@ -156,6 +158,8 @@ func (w *Watcher) handleRollbackComplete(ctx context.Context, msg *bus.Message) 
 	instanceID, ok := msg.Data.(string)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to string", "payload", msg.Data)
+
+		return
 	}
 
 	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
