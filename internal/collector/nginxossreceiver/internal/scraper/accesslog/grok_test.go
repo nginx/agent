@@ -13,11 +13,11 @@ import (
 	"go.uber.org/zap"
 )
 
-const baseformat = "$remote_addr - $remote_user [$time_local] \"$request\"" +
-	" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\"" +
-	" \"$http_x_forwarded_for\" \"$bytes_sent\" \"$request_length\" \"$request_time\" " +
-	"\"$gzip_ratio\" \"$server_protocol\" \"$upstream_connect_time\"\"$upstream_header_time\"" +
-	" \"$upstream_response_length\" \"$upstream_response_time\""
+const baseformat = `$remote_addr - $remote_user [$time_local] "$request"` +
+	` $status $body_bytes_sent "$http_referer" "$http_user_agent"` +
+	` "$http_x_forwarded_for" "$bytes_sent" "$request_length" "$request_time"` +
+	` "$gzip_ratio" "$server_protocol" "$upstream_connect_time""$upstream_header_time"` +
+	` "$upstream_response_length" "$upstream_response_time"`
 
 func TestGrokConstructor(t *testing.T) {
 	logger := newLogger(t)
@@ -30,26 +30,26 @@ func TestGrokConstructor(t *testing.T) {
 		shouldErr bool
 	}{
 		{
-			name:      "logger is nil",
+			name:      "Test 1: logger is nil",
 			logger:    nil,
 			shouldErr: true,
-			expErrMsg: "Logger cannot be nil",
+			expErrMsg: "logger cannot be nil",
 		},
 		{
-			name:      "valid log format",
+			name:      "Test 2: valid log format",
 			logFormat: baseformat,
 			logger:    logger,
 			shouldErr: false,
 		},
 		{
-			name:      "empty log format",
+			name:      "Test 3: empty log format",
 			logFormat: "",
 			logger:    logger,
 			shouldErr: false,
 		},
 		{
-			name:      "unknown log variable",
-			logFormat: "$remote_addr - $remote_user [$time_local] \"$unknown_variable\" ",
+			name:      "Test 4: unknown log variable",
+			logFormat: `$remote_addr - $remote_user [$time_local] "$unknown_variable" `,
 			logger:    logger,
 			shouldErr: false,
 		},
@@ -80,16 +80,16 @@ func TestGrokParseString(t *testing.T) {
 		inputLogEntry string
 	}{
 		{
-			name:      "normal log entry",
+			name:      "Test 1: normal log entry",
 			logFormat: baseformat,
-			inputLogEntry: `127.0.0.1 - - [12/Apr/2024:14:50:06 +0100] "GET / HTTP/1.1" 200 615 "-"` +
+			inputLogEntry: `127.0.0.1 - - [12/Apr/2024:14:50:06 +0100] "GET / HTTP/1.1" 200 615 "-" ` +
 				`"PostmanRuntime/7.36.1" "-" "853" "226" "0.000" "-" "HTTP/1.1" "-""-" "-" "-"`,
 			expOutput: map[string]string{
 				"BASE10NUM":       "853",
 				"body_bytes_sent": "615",
 				"bytes_sent":      "853",
-				"DEFAULT": `127.0.0.1 - - [12/Apr/2024:14:50:06 +0100] "GET / HTTP/1.1" 200 615"+ " ` +
-					`"-" "PostmanRuntime/7.36.1" "-" "853" "226" "0.000" "-" "HTTP/1.1" "-" "-""-" "-"`,
+				"DEFAULT": `127.0.0.1 - - [12/Apr/2024:14:50:06 +0100] "GET / HTTP/1.1" 200 615 ` +
+					`"-" "PostmanRuntime/7.36.1" "-" "853" "226" "0.000" "-" "HTTP/1.1" "-""-" "-" "-"`,
 				"gzip_ratio":               "-",
 				"HOSTNAME":                 "",
 				"http_referer":             "-",
@@ -113,13 +113,13 @@ func TestGrokParseString(t *testing.T) {
 			},
 		},
 		{
-			name:      "normal upstream log entry",
+			name:      "Test 2: normal upstream log entry",
 			logFormat: baseformat,
 			inputLogEntry: `127.0.0.1 - - [11/Apr/2024:13:39:25 +0100] "GET /frontend1 HTTP/1.0" 200 28 "-" ` +
 				`"PostmanRuntime/7.36.1" "-" "185" "222" "0.000" "-" "HTTP/1.0" "-""-" "-" "-"`,
 			expOutput: map[string]string{
 				"BASE10NUM": "185",
-				"DEFAULT": `127.0.0.1 - - [11/Apr/2024:13:39:25 +0100] "GET /frontend1 HTTP/1.0" 200` +
+				"DEFAULT": `127.0.0.1 - - [11/Apr/2024:13:39:25 +0100] "GET /frontend1 HTTP/1.0" 200 ` +
 					`28 "-" "PostmanRuntime/7.36.1" "-" "185" "222" "0.000" "-" "HTTP/1.0" "-""-" "-" "-"`,
 				"HOSTNAME":                 "",
 				"IP":                       "127.0.0.1",

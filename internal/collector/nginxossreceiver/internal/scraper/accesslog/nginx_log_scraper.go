@@ -16,10 +16,13 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/helper"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/pipeline"
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/config/configtelemetry"
 	"go.opentelemetry.io/collector/extension/experimental/storage"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
+	"go.opentelemetry.io/otel"
+	metricSdk "go.opentelemetry.io/otel/sdk/metric"
 	"go.uber.org/zap"
 
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/config"
@@ -148,7 +151,18 @@ func initStanzaPipeline(
 ) (*pipeline.DirectedPipeline, <-chan []*entry.Entry, error) {
 	operators := append([]operator.Config{opCfg}, baseCfg.BaseConfig.Operators...)
 
-	settings := component.TelemetrySettings{Logger: logger}
+	// The
+	mp := otel.GetMeterProvider()
+	if mp == nil {
+		mp = metricSdk.NewMeterProvider()
+		otel.SetMeterProvider(mp)
+	}
+
+	settings := component.TelemetrySettings{
+		Logger:        logger,
+		MeterProvider: mp,
+		MetricsLevel:  configtelemetry.LevelNone,
+	}
 
 	emitter := helper.NewLogEmitter(settings)
 	pipe, err := pipeline.Config{

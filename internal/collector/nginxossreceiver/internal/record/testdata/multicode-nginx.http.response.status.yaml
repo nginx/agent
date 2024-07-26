@@ -2,72 +2,72 @@ resourceMetrics:
   - resource: {}
     scopeMetrics:
       - metrics:
-          - description: The count of HTTP responses by response status
-            name: nginx.http.status
+          - description: The number of responses, grouped by status code range.
+            name: nginx.http.response.status
             sum:
-              aggregationTemporality: 1
+              aggregationTemporality: 2 # Cumulative
               isMonotonic: true
               dataPoints:
                 - asInt: 1
                   attributes:
-                    - key: status_code
+                    - key: nginx.status_range
                       value:
                         stringValue: "1xx"
                   timeUnixNano: "1000000"
                 - asInt: 1
                   attributes:
-                    - key: status_code
+                    - key: nginx.status_range
                       value:
                         stringValue: "1xx"
                   timeUnixNano: "1000000"
                 - asInt: 1
                   attributes:
-                    - key: status_code
+                    - key: nginx.status_range
                       value:
                         stringValue: "2xx"
                   timeUnixNano: "1000000"
                 - asInt: 1
                   attributes:
-                    - key: status_code
+                    - key: nginx.status_range
                       value:
                         stringValue: "2xx"
                   timeUnixNano: "1000000"
                 - asInt: 1
                   attributes:
-                    - key: status_code
+                    - key: nginx.status_range
                       value:
                         stringValue: "3xx"
                   timeUnixNano: "1000000"
                 - asInt: 1
                   attributes:
-                    - key: status_code
+                    - key: nginx.status_range
                       value:
                         stringValue: "3xx"
                   timeUnixNano: "1000000"
                 - asInt: 1
                   attributes:
-                    - key: status_code
+                    - key: nginx.status_range
                       value:
                         stringValue: "4xx"
                   timeUnixNano: "1000000"
                 - asInt: 1
                   attributes:
-                    - key: status_code
+                    - key: nginx.status_range
                       value:
                         stringValue: "4xx"
                 - asInt: 1
                   attributes:
-                    - key: status_code
+                    - key: nginx.status_range
                       value:
                         stringValue: "5xx"
                   timeUnixNano: "1000000"
                 - asInt: 1
                   attributes:
-                    - key: status_code
+                    - key: nginx.status_range
                       value:
                         stringValue: "5xx"
                   timeUnixNano: "1000000"
-            unit: statuses
+            unit: responses
         scope:
           name: otelcol/nginxreceiver
           version: latest

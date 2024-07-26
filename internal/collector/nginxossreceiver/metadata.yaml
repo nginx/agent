@@ -18,15 +18,15 @@ attributes:
     - reading
     - writing
     - waiting
-  status_code:
-    description: A status code range
+  nginx.status_range:
+    description: A status code range or bucket for a HTTP response's status code.
     type: string
     enum:
-    - 1xx
-    - 2xx
-    - 3xx
-    - 4xx
-    - 5xx
+      - "1xx"
+      - "2xx"
+      - "3xx"
+      - "4xx"
+      - "5xx"
 
 metrics:
   nginx.requests:
@@ -65,12 +65,13 @@ metrics:
       monotonic: false
       aggregation_temporality: cumulative
     attributes: [state]
-  nginx.http.status:
+  nginx.http.response.status:
     enabled: true
-    description: The count of HTTP responses by response status
-    unit: statuses
+    description: The number of responses, grouped by status code range.
     sum:
       value_type: int
       monotonic: true
-      aggregation_temporality: delta
-    attributes: [status_code]
+      aggregation_temporality: cumulative
+    unit: "responses"
+    attributes:
+      - nginx.status_range

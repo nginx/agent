@@ -7,7 +7,7 @@ all_set:
       enabled: true
     nginx.connections_handled:
       enabled: true
-    nginx.http.status:
+    nginx.http.response.status:
       enabled: true
     nginx.requests:
       enabled: true
@@ -19,7 +19,7 @@ none_set:
       enabled: false
     nginx.connections_handled:
       enabled: false
-    nginx.http.status:
+    nginx.http.response.status:
       enabled: false
     nginx.requests:
       enabled: false

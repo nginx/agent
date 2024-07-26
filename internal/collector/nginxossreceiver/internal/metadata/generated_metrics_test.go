@@ -73,7 +73,7 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordNginxHTTPStatusDataPoint(ts, 1, AttributeStatusCode1xx)
+			mb.RecordNginxHTTPResponseStatusDataPoint(ts, 1, AttributeNginxStatusRange1xx)
 
 			defaultMetricsCount++
 			allMetricsCount++
@@ -146,21 +146,21 @@ func TestMetricsBuilder(t *testing.T) {
 					assert.Equal(t, ts, dp.Timestamp())
 					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
 					assert.Equal(t, int64(1), dp.IntValue())
-				case "nginx.http.status":
-					assert.False(t, validatedMetrics["nginx.http.status"], "Found a duplicate in the metrics slice: nginx.http.status")
-					validatedMetrics["nginx.http.status"] = true
+				case "nginx.http.response.status":
+					assert.False(t, validatedMetrics["nginx.http.response.status"], "Found a duplicate in the metrics slice: nginx.http.response.status")
+					validatedMetrics["nginx.http.response.status"] = true
 					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
 					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
-					assert.Equal(t, "The count of HTTP responses by response status", ms.At(i).Description())
-					assert.Equal(t, "statuses", ms.At(i).Unit())
+					assert.Equal(t, "The number of responses, grouped by status code range.", ms.At(i).Description())
+					assert.Equal(t, "responses", ms.At(i).Unit())
 					assert.Equal(t, true, ms.At(i).Sum().IsMonotonic())
-					assert.Equal(t, pmetric.AggregationTemporalityDelta, ms.At(i).Sum().AggregationTemporality())
+					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
 					dp := ms.At(i).Sum().DataPoints().At(0)
 					assert.Equal(t, start, dp.StartTimestamp())
 					assert.Equal(t, ts, dp.Timestamp())
 					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
 					assert.Equal(t, int64(1), dp.IntValue())
-					attrVal, ok := dp.Attributes().Get("status_code")
+					attrVal, ok := dp.Attributes().Get("nginx.status_range")
 					assert.True(t, ok)
 					assert.EqualValues(t, "1xx", attrVal.Str())
 				case "nginx.requests":

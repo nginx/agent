@@ -33,16 +33,16 @@ func Item(ai *model.NginxAccessItem, mb *metadata.MetricsBuilder) error {
 	if ai.Status != "" {
 		codeRange, err := mapCodeRange(ai.Status)
 		if err != nil {
-			return fmt.Errorf("code range parse: %w", err)
+			return fmt.Errorf("parse status range: %w", err)
 		}
 
-		mb.RecordNginxHTTPStatusDataPoint(now, 1, codeRange)
+		mb.RecordNginxHTTPResponseStatusDataPoint(now, 1, codeRange)
 	}
 
 	return nil
 }
 
-func mapCodeRange(statusCode string) (metadata.AttributeStatusCode, error) {
+func mapCodeRange(statusCode string) (metadata.AttributeNginxStatusRange, error) {
 	number, err := strconv.Atoi(statusCode)
 	if err != nil {
 		return 0, fmt.Errorf("cast status code to int: %w", err)
@@ -53,15 +53,15 @@ func mapCodeRange(statusCode string) (metadata.AttributeStatusCode, error) {
 
 	switch codeRange {
 	case status100:
-		return metadata.AttributeStatusCode1xx, nil
+		return metadata.AttributeNginxStatusRange1xx, nil
 	case status200:
-		return metadata.AttributeStatusCode2xx, nil
+		return metadata.AttributeNginxStatusRange2xx, nil
 	case status300:
-		return metadata.AttributeStatusCode3xx, nil
+		return metadata.AttributeNginxStatusRange3xx, nil
 	case status400:
-		return metadata.AttributeStatusCode4xx, nil
+		return metadata.AttributeNginxStatusRange4xx, nil
 	case status500:
-		return metadata.AttributeStatusCode5xx, nil
+		return metadata.AttributeNginxStatusRange5xx, nil
 	default:
 		return 0, fmt.Errorf("unknown code range: %d", codeRange)
 	}

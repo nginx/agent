@@ -29,7 +29,7 @@ func TestAccessLogScraper(t *testing.T) {
 	tempDir := t.TempDir()
 	var (
 		testAccessLogPath = filepath.Join(tempDir, "test.log")
-		nginxConfPath     = filepath.Join("..", "..", "..", testDataDir, "integration", "default.conf")
+		nginxConfPath     = filepath.Join(testDataDir, "default.conf")
 		testDataFilePath  = filepath.Join(testDataDir, "test-access.log")
 	)
 
@@ -81,7 +81,8 @@ func TestAccessLogScraperError(t *testing.T) {
 }
 
 // Copies the contents of one file to another with the given delay. Used to simulate writing log entries to a log file.
-// Reason for nolint: we must use testify's
+// Reason for nolint: we must use testify's assert instead of require,
+// for more info see https://github.com/stretchr/testify/issues/772#issuecomment-945166599
 // nolint: testifylint
 func simulateLogging(t *testing.T, sourcePath, destinationPath string, delay time.Duration) {
 	t.Helper()

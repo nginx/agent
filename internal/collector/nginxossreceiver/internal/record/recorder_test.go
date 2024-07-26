@@ -30,7 +30,7 @@ func TestRecordAccessItem(t *testing.T) {
 		shouldErr    bool
 	}{
 		{
-			name: "basic nginx.http.status case",
+			name: "Test 1: basic nginx.http.response.status case",
 			input: []*model.NginxAccessItem{
 				{
 					BodyBytesSent:          "615",
@@ -69,12 +69,12 @@ func TestRecordAccessItem(t *testing.T) {
 					UpstreamCacheStatus:    "",
 				},
 			},
-			expectedPath: "basic-nginx.http.status.yaml",
+			expectedPath: "basic-nginx.http.response.status.yaml",
 		},
 		{
-			name: "all nginx.http.status status codes",
+			name: "Test 2: all nginx.http.response.status status codes",
 			input: []*model.NginxAccessItem{
-				{ // The recorder only parses the status code for nginx.http.status, omitting other fields for brevity.
+				{ // The recorder only parses the status code for this metric, omitting other fields for brevity.
 					Status: "100",
 				},
 				{
@@ -105,10 +105,10 @@ func TestRecordAccessItem(t *testing.T) {
 					Status: "502",
 				},
 			},
-			expectedPath: "multicode-nginx.http.status.yaml",
+			expectedPath: "multicode-nginx.http.response.status.yaml",
 		},
 		{
-			name: "random string in status code",
+			name: "Test 3: random string in status code",
 			input: []*model.NginxAccessItem{
 				{
 					Status: "not-a-status-code",
@@ -118,7 +118,7 @@ func TestRecordAccessItem(t *testing.T) {
 			expErrMsg: "cast status code to int",
 		},
 		{
-			name: "non-existent status code range",
+			name: "Test 4: non-existent status code range",
 			input: []*model.NginxAccessItem{
 				{
 					Status: "700",
