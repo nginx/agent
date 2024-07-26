@@ -79,7 +79,7 @@ func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *m
 			return
 		}
 
-		c.prevStats, err = cl.GetStats()
+		c.prevStats, err = c.getStats(cl)
 		if err != nil {
 			c.logger.Log(fmt.Sprintf("Failed to retrieve plus metrics: %v", err))
 			SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
