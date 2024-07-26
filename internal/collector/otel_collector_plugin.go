@@ -77,7 +77,6 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 func (oc *Collector) bootup(ctx context.Context) error {
 	errChan := make(chan error)
 
-	oc.stopped = false
 	go func() {
 		appErr := oc.service.Run(ctx)
 		if appErr != nil {
@@ -98,8 +97,11 @@ func (oc *Collector) bootup(ctx context.Context) error {
 				// NoOp
 				continue
 			case otelcol.StateRunning:
+				oc.stopped = false
 				return nil
-			case otelcol.StateClosing, otelcol.StateClosed:
+			case otelcol.StateClosing:
+			case otelcol.StateClosed:
+				oc.stopped = true
 			default:
 				return fmt.Errorf("unable to start, otelcol state is %s", state)
 			}
@@ -120,7 +122,6 @@ func (oc *Collector) Close(ctx context.Context) error {
 
 	if !oc.stopped {
 		slog.InfoContext(ctx, "Shutting down OTel Collector", "state", oc.service.GetState())
-		oc.stopped = true
 		oc.service.Shutdown()
 		oc.cancel()
 
@@ -165,6 +166,7 @@ func (oc *Collector) handleNginxConfigUpdate(ctx context.Context, msg *bus.Messa
 	nginxConfigContext, ok := msg.Data.(*model.NginxConfigContext)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *model.NginxConfigContext", "payload", msg.Data)
+		return
 	}
 
 	reloadCollector := oc.checkForNewNginxReceivers(nginxConfigContext)
