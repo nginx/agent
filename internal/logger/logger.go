@@ -122,11 +122,15 @@ func GenerateCorrelationID() slog.Attr {
 }
 
 func GetCorrelationID(ctx context.Context) string {
+	return GetCorrelationIDAttr(ctx).Value.String()
+}
+
+func GetCorrelationIDAttr(ctx context.Context) slog.Attr {
 	value, ok := ctx.Value(CorrelationIDContextKey).(slog.Attr)
 	if !ok {
 		slog.Debug("Correlation ID not found in context")
-		return ""
+		return slog.Attr{}
 	}
 
-	return value.Value.String()
+	return value
 }
