@@ -54,7 +54,7 @@ type NginxPlus struct {
 
 type ExtendedStats struct {
 	*plusclient.Stats
-	endpoints []string
+	endpoints       []string
 	streamEndpoints []string
 }
 
@@ -118,7 +118,7 @@ func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *m
 	c.prevStats = stats
 }
 
-func (c *NginxPlus) getStats(client *plusclient.NginxClient ) (*plusclient.Stats, error) {
+func (c *NginxPlus) getStats(client *plusclient.NginxClient) (*plusclient.Stats, error) {
 	var intialStatsWg sync.WaitGroup
 	stats := &ExtendedStats{}
 
@@ -173,7 +173,7 @@ func (c *NginxPlus) getStats(client *plusclient.NginxClient ) (*plusclient.Stats
 			{&stats.StreamServerZones, client.GetStreamServerZones, "server_zones"},
 			{&stats.StreamUpstreams, client.GetStreamUpstreams, "upstreams"},
 			{&stats.StreamLimitConnections, client.GetStreamConnectionsLimit, "limit_conns"},
-			{&stats.StreamZoneSync, client.GetStreamZoneSync, "zone_sync"},	
+			{&stats.StreamZoneSync, client.GetStreamZoneSync, "zone_sync"},
 		}
 
 		streamStatsErrChan := make(chan error, len(endpointStats))
@@ -193,7 +193,6 @@ func (c *NginxPlus) getStats(client *plusclient.NginxClient ) (*plusclient.Stats
 
 	return stats.Stats, nil
 }
-
 
 func fetchData[T any](wg *sync.WaitGroup, errChan chan error, target *T, fetchFunc func() (T, error)) {
 	defer wg.Done()
