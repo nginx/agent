@@ -386,6 +386,17 @@ Before you install NGINX Agent for the first time on your system, you need to se
     gpgcheck=0
     enabled=1
     ```
+    {{<note>}} For Amazon Linux 2023 you can use the configuration shown below. {{</note>}}
+    
+    ```
+    [nginx-agent]
+    name=nginx-agent repo
+    baseurl=https://pkgs.nginx.com/nginx-agent/amzn/2023/$releasever/$basearch
+    sslclientcert=/etc/ssl/nginx/nginx-repo.crt
+    sslclientkey=/etc/ssl/nginx/nginx-repo.key
+    gpgcheck=0
+    enabled=1
+    ```
 
 1. To install `nginx-agent`, run the following command:
 
