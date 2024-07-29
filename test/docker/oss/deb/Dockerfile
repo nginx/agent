@@ -1,7 +1,6 @@
 ARG CONTAINER_NGINX_IMAGE_REGISTRY
-ARG ARCH
 ARG TAG
-FROM --platform=${ARCH} ${CONTAINER_NGINX_IMAGE_REGISTRY}/nginx/agent:${TAG} AS install
+FROM ${CONTAINER_NGINX_IMAGE_REGISTRY}/nginx/agent:${TAG} AS install
 LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
 ARG OS_RELEASE

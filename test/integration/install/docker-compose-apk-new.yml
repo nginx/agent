@@ -13,7 +13,6 @@ services:
       args:
         PACKAGE_NAME: ${PACKAGE_NAME}
         TAG: ${TAG}
-        ARCH: ${OS_ARCH}
         CONTAINER_NGINX_IMAGE_REGISTRY: ${CONTAINER_NGINX_IMAGE_REGISTRY}
         CONTAINER_OS_TYPE: ${CONTAINER_OS_TYPE}
     ports:
