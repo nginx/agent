@@ -557,8 +557,7 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 
 var _ Client = (*MockClient)(nil)
 
-type MockClient struct{
-}
+type MockClient struct{}
 
 func (m *MockClient) GetAvailableEndpoints() ([]string, error) {
 	return []string{"stream"}, nil

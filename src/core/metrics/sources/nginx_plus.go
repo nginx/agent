@@ -42,23 +42,23 @@ const (
 type Client interface {
 	GetAvailableEndpoints() ([]string, error)
 	GetAvailableStreamEndpoints() ([]string, error)
-    GetStreamServerZones() (*plusclient.StreamServerZones, error) 
+	GetStreamServerZones() (*plusclient.StreamServerZones, error)
 	GetStreamUpstreams() (*plusclient.StreamUpstreams, error)
-	GetStreamConnectionsLimit() (*plusclient.StreamLimitConnections, error) 
-	GetStreamZoneSync() (*plusclient.StreamZoneSync, error) 
-	GetNginxInfo() (*plusclient.NginxInfo, error) 
-	GetCaches() (*plusclient.Caches, error) 
-	GetProcesses() (*plusclient.Processes, error) 
-	GetSlabs() (*plusclient.Slabs, error) 
-	GetConnections() (*plusclient.Connections, error) 
-	GetHTTPRequests() (*plusclient.HTTPRequests, error) 
-	GetSSL() (*plusclient.SSL, error) 
-	GetServerZones() (*plusclient.ServerZones, error) 
+	GetStreamConnectionsLimit() (*plusclient.StreamLimitConnections, error)
+	GetStreamZoneSync() (*plusclient.StreamZoneSync, error)
+	GetNginxInfo() (*plusclient.NginxInfo, error)
+	GetCaches() (*plusclient.Caches, error)
+	GetProcesses() (*plusclient.Processes, error)
+	GetSlabs() (*plusclient.Slabs, error)
+	GetConnections() (*plusclient.Connections, error)
+	GetHTTPRequests() (*plusclient.HTTPRequests, error)
+	GetSSL() (*plusclient.SSL, error)
+	GetServerZones() (*plusclient.ServerZones, error)
 	GetUpstreams() (*plusclient.Upstreams, error)
 	GetLocationZones() (*plusclient.LocationZones, error)
-	GetResolvers() (*plusclient.Resolvers, error) 
+	GetResolvers() (*plusclient.Resolvers, error)
 	GetHTTPLimitReqs() (*plusclient.HTTPLimitRequests, error)
-	GetHTTPConnectionsLimit() (*plusclient.HTTPLimitConnections, error) 
+	GetHTTPConnectionsLimit() (*plusclient.HTTPLimitConnections, error)
 	GetWorkers() ([]*plusclient.Workers, error)
 }
 
@@ -141,7 +141,7 @@ func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *m
 	c.prevStats = stats
 }
 
-func (c *NginxPlus) defatultStats() (*plusclient.Stats) {
+func (c *NginxPlus) defatultStats() *plusclient.Stats {
 	return &plusclient.Stats{
 		Upstreams:              map[string]plusclient.Upstream{},
 		ServerZones:            map[string]plusclient.ServerZone{},
@@ -270,7 +270,6 @@ func fetchDataVal[T any](
 	//nolint:ineffassign
 	target = data
 }
-
 
 // this function takes the target type and matches it's function signature
 func fetchAndAssign(wg *sync.WaitGroup, errChan chan error, target interface{}, fetchFunc interface{}) {
