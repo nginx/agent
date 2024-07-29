@@ -48,7 +48,7 @@ VERSION_WITH_V := v${VERSION}
 LDFLAGS = "-w -X main.version=${VERSION_WITH_V} -X main.commit=${COMMIT} -X main.date=${DATE}"
 DEBUG_LDFLAGS = "-X main.version=${VERSION_WITH_V} -X main.commit=${COMMIT} -X main.date=${DATE}"
 
-CERTS_DIR              := ./build/certs
+CERTS_DIR              := ../nginx-certs
 PACKAGE_PREFIX         := nginx-agent
 OSS_PACKAGES_REPO      := "packages.nginx.org"
 PLUS_PACKAGES_REPO     := "pkgs.nginx.com"
