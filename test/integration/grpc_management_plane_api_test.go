@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"slices"
 	"sort"
 	"testing"
 	"time"
@@ -236,6 +237,7 @@ func TestGrpc_ConfigApply(t *testing.T) {
 
 	responses = getManagementPlaneResponses(t, 5)
 	t.Logf("Config apply responses: %v", responses)
+
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
@@ -296,6 +298,10 @@ func getManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int) []
 	require.NoError(t, unmarshalErr)
 
 	assert.Len(t, response, numberOfExpectedResponses)
+
+	slices.SortFunc(response, func(a, b *mpi.DataPlaneResponse) int {
+		return a.GetMessageMeta().GetTimestamp().AsTime().Compare(b.GetMessageMeta().GetTimestamp().AsTime())
+	})
 
 	return response
 }
