@@ -9,15 +9,12 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG PACKAGE_NAME
 
 WORKDIR /agent
-RUN ls \
-    ls ./build
-
-COPY ./build/${PACKAGE_NAME} /agent/build/${PACKAGE_NAME}
+COPY ./build/${PACKAGE_NAME}.deb /agent/build/${PACKAGE_NAME}.deb
 COPY ./ /agent
 
 RUN  apt-get update \ 
-    && apt install --no-install-recommends --no-install-suggests -y /agent/build/${PACKAGE_NAME} \ 
-    &&  rm /agent/build/${PACKAGE_NAME}
+    && apt install --no-install-recommends --no-install-suggests -y /agent/build/${PACKAGE_NAME}.deb \ 
+    &&  rm /agent/build/${PACKAGE_NAME}.deb
 
 FROM install AS runtime
 
