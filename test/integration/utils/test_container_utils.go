@@ -36,12 +36,15 @@ func SetupTestContainerWithAgent(t *testing.T, testName string, conf string, wai
 	require.NoError(t,
 		comp.WaitForService("agent", wait.ForLog(waitForLog)).WithEnv(
 			map[string]string{
-				"PACKAGE_NAME":  os.Getenv("PACKAGE_NAME"),
-				"PACKAGES_REPO": os.Getenv("PACKAGES_REPO"),
-				"BASE_IMAGE":    os.Getenv("BASE_IMAGE"),
-				"OS_RELEASE":    os.Getenv("OS_RELEASE"),
-				"OS_VERSION":    os.Getenv("OS_VERSION"),
-				"CONF_FILE":     conf,
+				"PACKAGE_NAME":                   os.Getenv("PACKAGE_NAME"),
+				"PACKAGES_REPO":                  os.Getenv("PACKAGES_REPO"),
+				"BASE_IMAGE":                     os.Getenv("BASE_IMAGE"),
+				"OS_RELEASE":                     os.Getenv("OS_RELEASE"),
+				"OS_VERSION":                     os.Getenv("OS_VERSION"),
+				"CONTAINER_OS_TYPE":              os.Getenv("CONTAINER_OS_TYPE"),
+				"CONTAINER_NGINX_IMAGE_REGISTRY": os.Getenv("CONTAINER_NGINX_IMAGE_REGISTRY"),
+				"TAG":                            os.Getenv("TAG"),
+				"CONF_FILE":                      conf,
 			},
 		).Up(ctxCancel, compose.Wait(true)), "compose.Up()")
 
