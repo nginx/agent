@@ -10,7 +10,7 @@ ARG PACKAGE_NAME
 
 WORKDIR /agent
 RUN ls \
-    pwd
+    ls ./build
 
 COPY ./build/${PACKAGE_NAME} /agent/build/${PACKAGE_NAME}
 COPY ./ /agent

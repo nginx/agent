@@ -141,8 +141,7 @@ jobs:
       - name: Test
         run: |
             ls
-            cd /build
-            ls
+            ls ./build
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
