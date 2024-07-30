@@ -57,7 +57,7 @@ func CreateGrpcClients(ctx context.Context, loadedConfig *config.Config) (client
 	commander.WithDialOptions(append(grpcDialOptions, secureCmdDialOpts)...)
 
 	reporter := client.NewMetricReporterClient()
-	reporter.WithBackoffSettings(loadedConfig.GetServerBackoffSettings())
+	reporter.WithBackoffSettings(loadedConfig.GetMetricsBackoffSettings())
 	reporter.WithServer(loadedConfig.Server.Target)
 	reporter.WithDialOptions(append(grpcDialOptions, secureMetricsDialOpts)...)
 
