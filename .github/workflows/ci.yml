@@ -141,8 +141,7 @@ jobs:
       - name: Test
         run: |
             ls
-            pwd
-            cd /agent
+            cd /build
             ls
       - name: Run Integration Tests
         run: |
