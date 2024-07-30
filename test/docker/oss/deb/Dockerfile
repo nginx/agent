@@ -9,6 +9,9 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG PACKAGE_NAME
 
 WORKDIR /agent
+RUN ls \
+    pwd
+
 COPY ./build/${PACKAGE_NAME} /agent/build/${PACKAGE_NAME}
 COPY ./ /agent
 
