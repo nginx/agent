@@ -69,8 +69,9 @@ func TestTemplateWrite(t *testing.T) {
 		InitialDelay:       time.Second,
 	}
 	cfg.Collector.Receivers.NginxReceivers = append(cfg.Collector.Receivers.NginxReceivers, config.NginxReceiver{
-		InstanceID: "123",
-		StubStatus: "http://localhost:80/status",
+		InstanceID:    "123",
+		StubStatus:    "http://localhost:80/status",
+		NginxConfPath: "/etc/nginx/nginx-custom.conf",
 	})
 
 	require.NotNil(t, cfg)

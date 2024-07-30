@@ -151,7 +151,6 @@ func initStanzaPipeline(
 ) (*pipeline.DirectedPipeline, <-chan []*entry.Entry, error) {
 	operators := append([]operator.Config{opCfg}, baseCfg.BaseConfig.Operators...)
 
-	// The
 	mp := otel.GetMeterProvider()
 	if mp == nil {
 		mp = metricSdk.NewMeterProvider()

@@ -6,10 +6,13 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 var (
@@ -111,8 +114,9 @@ type (
 	}
 
 	NginxReceiver struct {
-		InstanceID string `yaml:"-" mapstructure:"instance_id"`
-		StubStatus string `yaml:"-" mapstructure:"stub_status"`
+		InstanceID    string `yaml:"-" mapstructure:"instance_id"`
+		StubStatus    string `yaml:"-" mapstructure:"stub_status"`
+		NginxConfPath string `yaml:"-" mapstructure:"nginx_config_path"`
 	}
 
 	NginxPlusReceiver struct {
@@ -183,17 +187,23 @@ type (
 )
 
 func (col *Collector) Validate(allowedDirectories []string) error {
+	var err error
 	cleaned := filepath.Clean(col.ConfigPath)
 
 	if !isAllowedDir(cleaned, allowedDirectories) {
-		return fmt.Errorf("collector path %s not allowed", col.ConfigPath)
+		err = errors.Join(err, fmt.Errorf("collector path %s not allowed", col.ConfigPath))
+	}
+
+	for _, nginxReceiver := range col.Receivers.NginxReceivers {
+		err = errors.Join(err, nginxReceiver.Validate(allowedDirectories))
 	}
 
 	for _, exp := range col.Exporters {
 		t := strings.ToLower(exp.Type)
 
 		if _, ok := supportedExporters[t]; !ok {
-			return fmt.Errorf("unsupported exporter type: %s", exp.Type)
+			err = errors.Join(err, fmt.Errorf("unsupported exporter type: %s", exp.Type))
+			continue
 		}
 
 		// normalize field too
@@ -204,13 +214,27 @@ func (col *Collector) Validate(allowedDirectories []string) error {
 		t := strings.ToLower(proc.Type)
 
 		if _, ok := supportedProcessors[t]; !ok {
-			return fmt.Errorf("unsupported processor type: %s", proc.Type)
+			err = errors.Join(err, fmt.Errorf("unsupported processor type: %s", proc.Type))
+			continue
 		}
 
 		proc.Type = t
 	}
 
-	return nil
+	return err
+}
+
+func (nr *NginxReceiver) Validate(allowedDirectories []string) error {
+	var err error
+	if _, uuidErr := uuid.Parse(nr.InstanceID); uuidErr != nil {
+		err = errors.Join(err, errors.New("invalid nginx receiver instance ID"))
+	}
+
+	if !isAllowedDir(nr.NginxConfPath, allowedDirectories) {
+		err = errors.Join(err, fmt.Errorf("invalid nginx receiver NGINX config path: %s", nr.NginxConfPath))
+	}
+
+	return err
 }
 
 func (c *Config) IsDirectoryAllowed(directory string) bool {

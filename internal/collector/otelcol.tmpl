@@ -28,6 +28,7 @@ receivers:
   nginx/{{- .InstanceID -}}:
     endpoint: "{{- .StubStatus -}}"
     collection_interval: 10s
+    nginx_conf_path: "{{- .NginxConfPath -}}"
 {{- end }}
 {{- range .Receivers.NginxPlusReceivers }}
   nginxplus/{{- .InstanceID -}}:

@@ -342,6 +342,13 @@ func getAgentConfig() *Config {
 						},
 					},
 				},
+				NginxReceivers: []NginxReceiver{
+					{
+						InstanceID:    "cd7b8911-c2c5-4daf-b311-dbead151d938",
+						StubStatus:    "http://localhost:4321/status",
+						NginxConfPath: "/etc/nginx/nginx-custom.conf",
+					},
+				},
 			},
 			Health: &ServerConfig{
 				Host: "localhost",
