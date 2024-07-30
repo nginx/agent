@@ -1,22 +1,21 @@
 version: '3.9'
 
 networks:
-  monitoring:
-    driver: bridge
+    monitoring:
+        driver: bridge
 
 services:
-  agent:
-    build:
-      context: ../../../
-      dockerfile: ./test/docker/oss/${CONTAINER_OS_TYPE}/Dockerfile
-      target: install-agent-local
-      args:
-        PACKAGE_NAME: ${PACKAGE_NAME}
-        TAG: ${TAG}
-        ARCH: ${OS_ARCH}
-        CONTAINER_NGINX_IMAGE_REGISTRY: ${CONTAINER_NGINX_IMAGE_REGISTRY}
-        CONTAINER_OS_TYPE: ${CONTAINER_OS_TYPE}
-    ports:
-      - 9091:9091
-    networks:
-      - monitoring
+    agent:
+        build:
+            context: ../../../
+            dockerfile: ./test/docker/oss/deb/Dockerfile
+            target: install-agent-local
+            args:
+                PACKAGE_NAME: ${PACKAGE_NAME}
+                TAG: ${TAG}
+                CONTAINER_NGINX_IMAGE_REGISTRY: ${CONTAINER_NGINX_IMAGE_REGISTRY}
+                CONTAINER_OS_TYPE: ${CONTAINER_OS_TYPE}
+        ports:
+            - 9091:9091
+        networks:
+            - monitoring
