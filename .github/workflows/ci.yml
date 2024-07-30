@@ -138,11 +138,11 @@ jobs:
           registry: ${{ secrets.REGISTRY_URL }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Test
+        run: ls
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-          ls 
-          pwd
           CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
             make new-integration-test
       - name: Container Output Logs 
