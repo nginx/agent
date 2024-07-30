@@ -4,7 +4,7 @@ networks:
   monitoring:
     driver: bridge
 
-services:  
+services:
   agent:
     build:
       context: ../../../
