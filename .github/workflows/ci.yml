@@ -170,8 +170,6 @@ jobs:
       fail-fast: false
       matrix:
         container:
-        - image: "ubuntu"
-          version: "24.04"
         - image: "debian"
           version: "bullseye-slim"
         - image: "debian"
