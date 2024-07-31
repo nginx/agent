@@ -139,7 +139,6 @@ func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *m
 	c.baseDimensions.NginxBuild = stats.NginxInfo.Build
 	c.baseDimensions.NginxVersion = stats.NginxInfo.Version
 
-	log.Debugf("NGINX_plus_Collect: collecting stats %v", stats)
 	c.sendMetrics(ctx, m, c.collectMetrics(stats, c.prevStats)...)
 	log.Debug("NGINX_plus_Collect: metrics sent")
 
