@@ -226,8 +226,8 @@ integration-test:
 
 new-integration-test:
 	PACKAGE_NAME=${PACKAGE_NAME} CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} ARCH=${OSARCH} OS_VERSION=${OS_VERSION} \
-		OS_RELEASE=${OS_RELEASE} TAG=${NGINX_TAG} CONTAINER_OS_TYPE=${CONTAINER_OS_TYPE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}-new.yml" \
-		${GOTEST} -v ./test/integration/install
+	    OS_RELEASE=${OS_RELEASE} TAG=${NGINX_TAG} CONTAINER_OS_TYPE=${CONTAINER_OS_TYPE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}-new.yml" \
+		${GOTEST} -v ./test/integration/api
 
 test-bench: ## Run benchmark tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 ${GOTEST} -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go

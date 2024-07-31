@@ -34,7 +34,7 @@ func SetupTestContainerWithAgent(t *testing.T, testName string, conf string, wai
 	t.Cleanup(cancel)
 
 	require.NoError(t,
-		comp.WaitForService("agent", wait.ForLog(waitForLog).WithStartupTimeout(time.Minute*1)).WithEnv(
+		comp.WaitForService("agent", wait.ForLog(waitForLog)).WithEnv(
 			map[string]string{
 				"PACKAGE_NAME":                   os.Getenv("PACKAGE_NAME"),
 				"PACKAGES_REPO":                  os.Getenv("PACKAGES_REPO"),
@@ -90,7 +90,7 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 			"TAG":                            os.Getenv("TAG"),
 			"CONTAINER_OS_TYPE":              os.Getenv("CONTAINER_OS_TYPE"),
 		}).
-		WaitForService("agent", wait.NewLogStrategy("nginx_pid").WithOccurrence(1).WithStartupTimeout(time.Minute*1)).
+		WaitForService("agent", wait.NewLogStrategy("nginx_pid").WithOccurrence(1)).
 		Up(ctx, compose.Wait(true))
 
 	assert.NoError(t, err, "compose.Up()")
