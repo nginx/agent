@@ -23,6 +23,6 @@ RUN  apt-get update \
 FROM install AS runtime
 RUN ls /var/log/nginx
 RUN unlink /var/log/nginx/access.log
-RUN unlink /var/log/nginx/access.log
+RUN unlink /var/log/nginx/error.log
 
 COPY --from=install /agent /agent
