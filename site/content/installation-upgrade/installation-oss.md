@@ -292,6 +292,38 @@ Before you install NGINX Agent for the first time on your system, you need to se
     sudo nginx-agent -v
     ```
 
+### Installing NGINX Agent on Amazon Linux 2023
+
+1. Install the prerequisites:
+
+    ```shell
+    sudo yum install yum-utils procps
+    ```
+
+1. To set up the yum repository for Amazon Linux 2, create the file named `/etc/yum.repos.d/nginx-agent.repo` with the following contents:
+    ```
+    [nginx-agent]
+    name=nginx agent repo
+    baseurl=https://packages.nginx.org/nginx-agent/amzn/2023/$basearch/
+    gpgcheck=1
+    enabled=1
+    gpgkey=https://nginx.org/keys/nginx_signing.key
+    module_hotfixes=true
+    ```
+
+1. To install `nginx-agent`, run the following command:
+
+    ```shell
+    sudo yum install nginx-agent
+    ```
+
+1. When prompted to accept the GPG key, verify that the fingerprint matches `573B FD6B 3D8F BC64 1079 A6AB ABF5 BD82 7BD9 BF62`, and if so, accept it.
+
+1. Verify the installation:
+
+    ```shell
+    sudo nginx-agent -v
+    ```
 ### Installing NGINX Agent on Amazon Linux
 
 1. Install the prerequisites:
@@ -309,18 +341,6 @@ Before you install NGINX Agent for the first time on your system, you need to se
     enabled=1
     gpgkey=https://nginx.org/keys/nginx_signing.key
     module_hotfixes=true
-    ```
-    
-    {{<note>}} For Amazon Linux 2023 you can use the configuration shown below. {{</note>}}
-    
-    ```
-    [nginx-agent]
-    name=nginx-agent repo
-    baseurl=http://packages.nginx.org/nginx-agent/amzn/2023/$releasever/$basearch
-    sslclientcert=/etc/ssl/nginx/nginx-repo.crt
-    sslclientkey=/etc/ssl/nginx/nginx-repo.key
-    gpgcheck=0
-    enabled=1
     ```
 
 1. To install `nginx-agent`, run the following command:
