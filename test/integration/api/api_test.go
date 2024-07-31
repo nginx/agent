@@ -1,13 +1,15 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/nginx/agent/sdk/v2/proto"
 	"net/http"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/nginx/agent/sdk/v2/proto"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/nginx/agent/test/integration/utils"
