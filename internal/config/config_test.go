@@ -39,8 +39,10 @@ func TestRegisterConfigFile(t *testing.T) {
 }
 
 func TestResolveConfig(t *testing.T) {
-	allowedDir := []string{"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx",
-		"/usr/share/nginx/modules", "/var/log/nginx"}
+	allowedDir := []string{
+		"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx",
+		"/usr/share/nginx/modules", "/var/log/nginx",
+	}
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	err := loadPropertiesFromFile("./testdata/nginx-agent.conf")
 	require.NoError(t, err)
