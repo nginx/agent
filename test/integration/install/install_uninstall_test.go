@@ -3,8 +3,8 @@ package install
 import (
 	"context"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io"
-	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -120,9 +120,9 @@ func installAgent(ctx context.Context, container *testcontainers.DockerContainer
 	start := time.Now()
 
 	_, out, err := container.Exec(ctx, []string{"ls"})
-	slog.Info("Output: ", out)
+	log.Infof("Output: %v", out)
 	if err != nil {
-		slog.Info("Error", err)
+		log.Infof("Error %v", err)
 	}
 	exitCode, cmdOut, err := container.Exec(ctx, installCmd)
 	if err != nil {
