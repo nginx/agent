@@ -16,7 +16,7 @@ RUN cat /etc/nginx-agent/nginx-agent.conf
 
 RUN cat /etc/nginx/nginx.conf
 
-RUN cat /var/log/nginx/access.log
+RUN tail -10 /var/log/nginx/access.log
 
 RUN  apt-get update \ 
     && apt install --no-install-recommends --no-install-suggests -y /agent/build/${PACKAGE_NAME}.deb \ 
