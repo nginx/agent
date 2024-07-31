@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"sync"
 	"testing"
 
@@ -99,6 +98,25 @@ const (
 var (
 	availableZones = []string{"server_zones", "upstreams", "limit_conns", "zone_sync"}
 	stats          = plusclient.Stats{
+		StreamZoneSync: &plusclient.StreamZoneSync{
+			Zones:  map[string]plusclient.SyncZone{
+				"0": {
+					RecordsPending: 1,
+					RecordsTotal:   2,
+				},
+				"1": {
+					RecordsPending: 3,
+					RecordsTotal:   4,
+				},
+			},
+			Status: plusclient.StreamZoneSyncStatus{
+				BytesIn:     1,
+				MsgsIn:      2,
+				MsgsOut:     3,
+				BytesOut:    4,
+				NodesOnline: 5,
+			},
+		},
 		HTTPRequests: plusclient.HTTPRequests{
 			Total:   currentHTTPRequestTotal,
 			Current: currentHTTPRequestCurrent,
@@ -649,153 +667,13 @@ func TestGetStats(t *testing.T) {
 	client := &MockClient{}
 
 	source := NewNginxPlus(nil, "", "", "", 9)
-	expectedStats := source.defatultStats()
 
-	stats, err := source.getStats(client)
+	testStats, err := source.getStats(client)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	if !reflect.DeepEqual(stats, expectedStats) {
-		t.Fatalf("expected %v, got %v", expectedStats, stats)
-	}
-}
-
-func TestFetchData(t *testing.T) {
-	type TestCase[T any] struct {
-		name          string
-		fetchFunc     func() (T, error)
-		expectedValue T
-		expectError   bool
-	}
-
-	pointerCases := []TestCase[*plusclient.Upstreams]{
-		{
-			name: "Successful fetch",
-			fetchFunc: func() (*plusclient.Upstreams, error) {
-				return &stats.Upstreams, nil
-			},
-			expectedValue: &stats.Upstreams,
-			expectError:   false,
-		},
-		{
-			name: "Fetch error",
-			fetchFunc: func() (*plusclient.Upstreams, error) {
-				return nil, fmt.Errorf("fetch error")
-			},
-			expectedValue: nil,
-			expectError:   true,
-		},
-	}
-
-	stats := &plusclient.Stats{}
-	for _, tc := range pointerCases {
-		t.Run(tc.name, func(t *testing.T) {
-			errChan := make(chan error, 1)
-
-			fetchData(errChan, &stats.Upstreams, tc.fetchFunc)
-			close(errChan)
-
-			if tc.expectError {
-				if len(errChan) == 0 {
-					t.Errorf("Expected an error, but got none")
-				}
-			} else {
-				if len(errChan) != 0 {
-					t.Errorf("Expected no errors, but got %d", len(errChan))
-				}
-				if len(stats.Upstreams) == 0 {
-					t.Errorf("Expected target to be '%v', but got '%v'", tc.expectedValue, stats.Upstreams)
-				}
-				assert.Equal(t, stats.Upstreams, tc.expectedValue)
-			}
-		})
-	}
-}
-
-func TestFetchAndAssign(t *testing.T) {
-	type TestCase struct {
-		name          string
-		target        interface{}
-		fetchFunc     interface{}
-		expectedValue interface{}
-		expectError   bool
-	}
-	client := MockClient{}
-	// Define the test cases
-	testCases := []TestCase{
-		{
-			name:          "Fetch Upstreams",
-			target:        new(plusclient.Upstreams),
-			fetchFunc:     client.GetUpstreams,
-			expectedValue: stats.Upstreams,
-			expectError:   false,
-		},
-		// {
-		// 	name: "Fetch ServerZones",
-		// 	target: new(plusclient.ServerZones),
-		// 	fetchFunc: client.GetServerZones,
-		// 	expectedValue: stats.ServerZones,
-		// 	expectError: false,
-		// },
-		{
-			name:          "Fetch Available Stream Endpoints",
-			target:        []string{},
-			fetchFunc:     client.GetAvailableStreamEndpoints,
-			expectedValue: availableZones,
-			expectError:   false,
-		},
-		{
-			name:          "Unsupported Type",
-			target:        new(int),
-			fetchFunc:     func() (int, error) { return 0, nil },
-			expectedValue: 0,
-			expectError:   true,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			var wg sync.WaitGroup
-			errChan := make(chan error, 1)
-
-			wg.Add(1)
-			go fetchAndAssign(&wg, errChan, tc.target, tc.fetchFunc)
-			wg.Wait()
-			close(errChan)
-
-			if tc.expectError {
-				if len(errChan) == 0 {
-					t.Errorf("Expected an error, but got none")
-				}
-			} else {
-				if len(errChan) != 0 {
-					t.Errorf("Expected no errors, but got %d", len(errChan))
-				}
-
-				targetValue := tc.target
-				expectedValue := tc.expectedValue
-
-				switch target := targetValue.(type) {
-				case *plusclient.Upstreams:
-					if *target != nil {
-						t.Errorf("Expected target to be '%v', but got '%v'", expectedValue, *target)
-					}
-					assert.Equal(t, target, tc.expectedValue)
-				case *plusclient.ServerZones:
-					if *target != nil {
-						t.Errorf("Expected target to be '%v', but got '%v'", expectedValue, *target)
-					}
-					assert.Equal(t, target, tc.expectedValue)
-				case []string:
-					if target != nil {
-						t.Errorf("Expected target to be '%v', but got '%v'", expectedValue, target)
-					}
-					assert.Equal(t, target, tc.expectedValue)
-				}
-			}
-		})
-	}
+	assert.Equal(t, stats, *testStats)
 }
 
 func TestNginxPlusUpdate(t *testing.T) {
