@@ -21,5 +21,8 @@ RUN  apt-get update \
     &&  rm /agent/build/${PACKAGE_NAME}.deb
 
 FROM install AS runtime
+RUN ls /var/log/nginx
+RUN unlink /var/log/nginx/access.log
+RUN unlink /var/log/nginx/access.log
 
 COPY --from=install /agent /agent
