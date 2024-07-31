@@ -9,7 +9,7 @@ services:
     build:
       context: ../../../
       dockerfile: ./test/docker/oss/${CONTAINER_OS_TYPE}/Dockerfile
-      target: install-agent-local
+      target: runtime
       args:
         PACKAGE_NAME: ${PACKAGE_NAME}
         TAG: ${TAG}
