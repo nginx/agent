@@ -117,7 +117,7 @@ func installAgent(ctx context.Context, container *testcontainers.DockerContainer
 	installCmd := createInstallCommand(osReleaseContent, agentPackageFilePath)
 
 	start := time.Now()
-	
+
 	exitCode, cmdOut, err := container.Exec(ctx, installCmd)
 	if err != nil {
 		return "", time.Since(start), fmt.Errorf("failed to install agent: %v", err)
