@@ -11,8 +11,6 @@ import (
 	"testing"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/nginx/agent/test/integration/utils"
 
 	"github.com/stretchr/testify/assert"
@@ -119,12 +117,7 @@ func installAgent(ctx context.Context, container *testcontainers.DockerContainer
 	installCmd := createInstallCommand(osReleaseContent, agentPackageFilePath)
 
 	start := time.Now()
-
-	_, out, err := container.Exec(ctx, []string{"ls"})
-	log.Infof("Output: %v", out)
-	if err != nil {
-		log.Infof("Error %v", err)
-	}
+	
 	exitCode, cmdOut, err := container.Exec(ctx, installCmd)
 	if err != nil {
 		return "", time.Since(start), fmt.Errorf("failed to install agent: %v", err)

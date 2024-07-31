@@ -34,7 +34,7 @@ func SetupTestContainerWithAgent(t *testing.T, testName string, conf string, wai
 	t.Cleanup(cancel)
 
 	require.NoError(t,
-		comp.WaitForService("agent", wait.ForLog(waitForLog)).WithEnv(
+		comp.WaitForService("agent", wait.ForLog(waitForLog).WithStartupTimeout(time.Minute*1)).WithEnv(
 			map[string]string{
 				"PACKAGE_NAME":                   os.Getenv("PACKAGE_NAME"),
 				"PACKAGES_REPO":                  os.Getenv("PACKAGES_REPO"),
