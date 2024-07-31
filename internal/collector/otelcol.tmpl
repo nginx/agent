@@ -28,7 +28,15 @@ receivers:
   nginx/{{- .InstanceID -}}:
     endpoint: "{{- .StubStatus -}}"
     collection_interval: 10s
-    nginx_conf_path: "{{- .NginxConfPath -}}"
+    {{- if eq (len .AccessLogs) 1 }}
+    {{- range .AccessLogs }}
+    access_log_format: "{{- .LogFormat -}}"
+    operators:
+      - type: file_input
+        include:
+          - "{{- .FilePath -}}"
+    {{- end }}
+    {{- end }}
 {{- end }}
 {{- range .Receivers.NginxPlusReceivers }}
   nginxplus/{{- .InstanceID -}}:
@@ -57,7 +65,7 @@ exporters:
       max_elapsed_time: 10m
     tls:
       insecure: {{ if .TLS -}}false{{ else -}}true{{- end }}
-      {{ if .TLS -}}
+      {{- if .TLS }}
       {{ if gt (len .TLS.Ca) 0 -}}ca_file: "{{- .TLS.Ca -}}"{{- end }}
       {{ if gt (len .TLS.Cert) 0 -}}cert_file: "{{- .TLS.Cert -}}"{{- end }}
       {{ if gt (len .TLS.Key) 0 -}}key_file: "{{- .TLS.Key -}}"{{- end }}

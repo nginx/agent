@@ -114,9 +114,14 @@ type (
 	}
 
 	NginxReceiver struct {
-		InstanceID    string `yaml:"-" mapstructure:"instance_id"`
-		StubStatus    string `yaml:"-" mapstructure:"stub_status"`
-		NginxConfPath string `yaml:"-" mapstructure:"nginx_config_path"`
+		InstanceID string      `yaml:"-" mapstructure:"instance_id"`
+		StubStatus string      `yaml:"-" mapstructure:"stub_status"`
+		AccessLogs []AccessLog `yaml:"-" mapstructure:"access_logs"`
+	}
+
+	AccessLog struct {
+		FilePath  string `yaml:"-" mapstructure:"file_path"`
+		LogFormat string `yaml:"-" mapstructure:"log_format"`
 	}
 
 	NginxPlusReceiver struct {
@@ -230,8 +235,16 @@ func (nr *NginxReceiver) Validate(allowedDirectories []string) error {
 		err = errors.Join(err, errors.New("invalid nginx receiver instance ID"))
 	}
 
-	if !isAllowedDir(nr.NginxConfPath, allowedDirectories) {
-		err = errors.Join(err, fmt.Errorf("invalid nginx receiver NGINX config path: %s", nr.NginxConfPath))
+	for _, al := range nr.AccessLogs {
+		if !isAllowedDir(al.FilePath, allowedDirectories) {
+			err = errors.Join(err, fmt.Errorf("invalid nginx receiver access log path: %s", al.FilePath))
+		}
+
+		if len(al.FilePath) != 0 {
+			// The log format's double quotes must be escaped so that
+			// valid YAML is produced when executing the Go template.
+			al.LogFormat = strings.ReplaceAll(al.LogFormat, `"`, `\"`)
+		}
 	}
 
 	return err

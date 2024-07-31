@@ -19,6 +19,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const accessLogFormat = `$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent ` +
+	`\"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\"\"$upstream_cache_status\"`
+
 func TestRegisterConfigFile(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	file, err := os.Create("nginx-agent.conf")
@@ -344,9 +347,14 @@ func getAgentConfig() *Config {
 				},
 				NginxReceivers: []NginxReceiver{
 					{
-						InstanceID:    "cd7b8911-c2c5-4daf-b311-dbead151d938",
-						StubStatus:    "http://localhost:4321/status",
-						NginxConfPath: "/etc/nginx/nginx-custom.conf",
+						InstanceID: "cd7b8911-c2c5-4daf-b311-dbead151d938",
+						StubStatus: "http://localhost:4321/status",
+						AccessLogs: []AccessLog{
+							{
+								LogFormat: accessLogFormat,
+								FilePath:  "/var/log/nginx/access-custom.conf",
+							},
+						},
 					},
 				},
 			},

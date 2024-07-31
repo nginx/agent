@@ -25,7 +25,7 @@ const (
 type Config struct {
 	confighttp.ClientConfig        `mapstructure:",squash"`
 	InputConfig                    file.Config        `mapstructure:",squash"`
-	NginxConfigPath                string             `mapstructure:"nginx_conf_path"`
+	AccessLogFormat                string             `mapstructure:"access_log_format"`
 	BaseConfig                     adapter.BaseConfig `mapstructure:",squash"`
 	scraperhelper.ControllerConfig `mapstructure:",squash"`
 	MetricsBuilderConfig           metadata.MetricsBuilderConfig `mapstructure:",squash"`
@@ -44,6 +44,6 @@ func CreateDefaultConfig() component.Config {
 		},
 		InputConfig:          *file.NewConfig(),
 		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
-		NginxConfigPath:      "",
+		AccessLogFormat:      "",
 	}
 }

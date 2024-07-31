@@ -65,13 +65,13 @@ func NewScraper(
 		return nil, fmt.Errorf("init stanza pipeline: %w", err)
 	}
 
-	logFormat, err := logFormatFromNginxConf(cfg.NginxConfigPath)
-	if err != nil {
+	if len(cfg.AccessLogFormat) == 0 {
 		return nil, fmt.Errorf("NGINX log format missing: %w", err)
 	}
-	logger.Debugf("Using log format: %s", logFormat)
 
-	grok, err := newGrok(logFormat, logger)
+	logger.Debugf("Using log format: %s", cfg.AccessLogFormat)
+
+	grok, err := newGrok(cfg.AccessLogFormat, logger)
 	if err != nil {
 		return nil, fmt.Errorf("grok init: %w", err)
 	}

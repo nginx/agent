@@ -184,12 +184,24 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 			nginxConfigContext: &model.NginxConfigContext{
 				InstanceID: "123",
 				StubStatus: "http://new-test-host:8080/api",
+				AccessLogs: []*model.AccessLog{
+					{
+						Name:   "/etc/nginx/test.log",
+						Format: `$remote_addr [$time_local] "$request" $status`,
+					},
+				},
 			},
 			existingReceivers: config.Receivers{
 				NginxReceivers: []config.NginxReceiver{
 					{
 						InstanceID: "123",
 						StubStatus: "http://test.com:8080/api",
+						AccessLogs: []config.AccessLog{
+							{
+								FilePath:  "/etc/nginx/existing.log",
+								LogFormat: `$remote_addr [$time_local] "$request"`,
+							},
+						},
 					},
 				},
 			},
@@ -198,6 +210,12 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 					{
 						InstanceID: "123",
 						StubStatus: "http://new-test-host:8080/api",
+						AccessLogs: []config.AccessLog{
+							{
+								FilePath:  "/etc/nginx/test.log",
+								LogFormat: `$remote_addr [$time_local] "$request" $status`,
+							},
+						},
 					},
 				},
 			},

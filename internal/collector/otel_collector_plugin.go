@@ -229,6 +229,7 @@ func (oc *Collector) checkForNewNginxReceivers(nginxConfigContext *model.NginxCo
 				config.NginxReceiver{
 					InstanceID: nginxConfigContext.InstanceID,
 					StubStatus: nginxConfigContext.StubStatus,
+					AccessLogs: toConfigAccessLog(nginxConfigContext.AccessLogs),
 				},
 			)
 
@@ -277,13 +278,14 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 		if nginxReceiver.InstanceID == nginxConfigContext.InstanceID {
 			nginxReceiverFound = true
 
-			if nginxReceiver.StubStatus != nginxConfigContext.StubStatus {
+			if isOSSReceiverChanged(nginxReceiver, nginxConfigContext) {
 				oc.config.Collector.Receivers.NginxReceivers = append(
 					oc.config.Collector.Receivers.NginxReceivers[:index],
 					oc.config.Collector.Receivers.NginxReceivers[index+1:]...,
 				)
 				if nginxConfigContext.StubStatus != "" {
 					nginxReceiver.StubStatus = nginxConfigContext.StubStatus
+					nginxReceiver.AccessLogs = toConfigAccessLog(nginxConfigContext.AccessLogs)
 					oc.config.Collector.Receivers.NginxReceivers = append(
 						oc.config.Collector.Receivers.NginxReceivers,
 						nginxReceiver,
@@ -299,4 +301,25 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 	}
 
 	return nginxReceiverFound, reloadCollector
+}
+
+func isOSSReceiverChanged(nginxReceiver config.NginxReceiver, nginxConfigContext *model.NginxConfigContext) bool {
+	return nginxReceiver.StubStatus != nginxConfigContext.StubStatus ||
+		len(nginxReceiver.AccessLogs) != len(nginxConfigContext.AccessLogs)
+}
+
+func toConfigAccessLog(al []*model.AccessLog) []config.AccessLog {
+	if al == nil {
+		return nil
+	}
+
+	results := make([]config.AccessLog, 0, len(al))
+	for _, ctxAccessLog := range al {
+		results = append(results, config.AccessLog{
+			LogFormat: ctxAccessLog.Format,
+			FilePath:  ctxAccessLog.Name,
+		})
+	}
+
+	return results
 }

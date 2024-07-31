@@ -23,20 +23,26 @@ import (
 	"go.opentelemetry.io/collector/receiver/receivertest"
 )
 
-const testDataDir = "testdata"
+const (
+	testDataDir = "testdata"
+	baseformat  = `$remote_addr - $remote_user [$time_local] "$request"` +
+		` $status $body_bytes_sent "$http_referer" "$http_user_agent"` +
+		` "$http_x_forwarded_for" "$bytes_sent" "$request_length" "$request_time"` +
+		` "$gzip_ratio" "$server_protocol" "$upstream_connect_time""$upstream_header_time"` +
+		` "$upstream_response_length" "$upstream_response_time"`
+)
 
 func TestAccessLogScraper(t *testing.T) {
 	tempDir := t.TempDir()
 	var (
 		testAccessLogPath = filepath.Join(tempDir, "test.log")
-		nginxConfPath     = filepath.Join(testDataDir, "default.conf")
 		testDataFilePath  = filepath.Join(testDataDir, "test-access.log")
 	)
 
 	cfg, ok := config.CreateDefaultConfig().(*config.Config)
 	assert.True(t, ok)
 	cfg.InputConfig.Include = []string{testAccessLogPath}
-	cfg.NginxConfigPath = nginxConfPath
+	cfg.AccessLogFormat = baseformat
 
 	accessLogScraper, err := NewScraper(receivertest.NewNopSettings(), cfg)
 	require.NoError(t, err)
@@ -84,7 +90,7 @@ func TestAccessLogScraperError(t *testing.T) {
 // Reason for nolint: we must use testify's assert instead of require,
 // for more info see https://github.com/stretchr/testify/issues/772#issuecomment-945166599
 // nolint: testifylint
-func simulateLogging(t *testing.T, sourcePath, destinationPath string, delay time.Duration) {
+func simulateLogging(t *testing.T, sourcePath, destinationPath string, writeDelay time.Duration) {
 	t.Helper()
 
 	src, err := os.Open(sourcePath)
@@ -103,7 +109,7 @@ func simulateLogging(t *testing.T, sourcePath, destinationPath string, delay tim
 
 	scanner := bufio.NewScanner(src)
 	for scanner.Scan() {
-		<-time.After(delay)
+		<-time.After(writeDelay)
 
 		logLine := scanner.Text()
 		_, writeErr := dest.WriteString(logLine + "\n")
