@@ -7,3 +7,8 @@ ARG OS_RELEASE
 ARG OS_VERSION
 ARG DEBIAN_FRONTEND=noninteractive
 ARG PACKAGE_NAME
+
+WORKDIR /agent
+COPY ./build/${PACKAGE_NAME}.deb /agent/build/${PACKAGE_NAME}.deb
+COPY ./ /agent
+RUN ls

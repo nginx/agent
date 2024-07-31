@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -118,6 +119,11 @@ func installAgent(ctx context.Context, container *testcontainers.DockerContainer
 
 	start := time.Now()
 
+	_, out, err := container.Exec(ctx, []string{"ls"})
+	slog.Info("Output: ", out)
+	if err != nil {
+		slog.Info("Error", err)
+	}
 	exitCode, cmdOut, err := container.Exec(ctx, installCmd)
 	if err != nil {
 		return "", time.Since(start), fmt.Errorf("failed to install agent: %v", err)
