@@ -118,12 +118,16 @@ func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *m
 		return
 	}
 
+	log.Debug("NGINX_plus_Collect: getting stats")
+
 	stats, err := c.getStats(cl)
 	if err != nil {
 		c.logger.Log(fmt.Sprintf("Failed to retrieve plus metrics: %v", err))
 		SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 		return
 	}
+
+	log.Debug("NGINX_plus_Collect: got stats")
 
 	if c.prevStats == nil {
 		c.prevStats = stats
@@ -135,6 +139,7 @@ func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *m
 	c.baseDimensions.NginxBuild = stats.NginxInfo.Build
 	c.baseDimensions.NginxVersion = stats.NginxInfo.Version
 
+	log.Debugf("NGINX_plus_Collect: collecting stats %v", stats)
 	c.sendMetrics(ctx, m, c.collectMetrics(stats, c.prevStats)...)
 	log.Debug("NGINX_plus_Collect: metrics sent")
 
@@ -197,10 +202,9 @@ func (c *NginxPlus) getStats(client Client) (*plusclient.Stats, error) {
 	initialStatsErrChan := make(chan error, len(initialStats)*2)
 
 	// run these functions in parallel
-	for idx, stats := range initialStats {
+	for _, stats := range initialStats {
 		initialStatsWg.Add(1)
 		go fetchAndAssign(&initialStatsWg, initialStatsErrChan, stats.target, stats.fetchFunc)
-		log.Print(idx)
 	}
 
 	initialStatsWg.Wait()
@@ -253,8 +257,10 @@ func fetchData[T any](
 		errChan <- fmt.Errorf("failed to get stats: %w", err)
 		return
 	}
-	//nolint:ineffassign
+	// nolint:ineffassign
 	target = data
+	log.Printf("target %v", target)
+	log.Printf("data %v", data)
 }
 
 func fetchDataVal[T any](
@@ -267,8 +273,10 @@ func fetchDataVal[T any](
 		errChan <- fmt.Errorf("failed to get stats: %w", err)
 		return
 	}
-	//nolint:ineffassign
+	// nolint:ineffassign
 	target = data
+	log.Printf("target %v", target)
+	log.Printf("data %v", data)
 }
 
 // this function takes the target type and matches it's function signature
@@ -282,57 +290,57 @@ func fetchAndAssign(wg *sync.WaitGroup, errChan chan error, target interface{}, 
 	case *plusclient.Upstreams:
 		f := fetchFunc.(func() (*plusclient.Upstreams, error))
 		fetchData(errChan, t, f)
-	case *plusclient.ServerZones:
-		f := fetchFunc.(func() (*plusclient.ServerZones, error))
-		fetchData(errChan, t, f)
-	case *plusclient.StreamServerZones:
-		f := fetchFunc.(func() (*plusclient.StreamServerZones, error))
-		fetchData(errChan, t, f)
-	case *plusclient.StreamUpstreams:
-		f := fetchFunc.(func() (*plusclient.StreamUpstreams, error))
-		fetchData(errChan, t, f)
-	case *plusclient.Slabs:
-		f := fetchFunc.(func() (*plusclient.Slabs, error))
-		fetchData(errChan, t, f)
-	case *plusclient.Caches:
-		f := fetchFunc.(func() (*plusclient.Caches, error))
-		fetchData(errChan, t, f)
-	case *plusclient.HTTPLimitConnections:
-		f := fetchFunc.(func() (*plusclient.HTTPLimitConnections, error))
-		fetchData(errChan, t, f)
-	case *plusclient.StreamLimitConnections:
-		f := fetchFunc.(func() (*plusclient.StreamLimitConnections, error))
-		fetchData(errChan, t, f)
-	case *plusclient.HTTPLimitRequests:
-		f := fetchFunc.(func() (*plusclient.HTTPLimitRequests, error))
-		fetchData(errChan, t, f)
-	case *plusclient.Resolvers:
-		f := fetchFunc.(func() (*plusclient.Resolvers, error))
-		fetchData(errChan, t, f)
-	case *plusclient.LocationZones:
-		f := fetchFunc.(func() (*plusclient.LocationZones, error))
-		fetchData(errChan, t, f)
-	case *plusclient.StreamZoneSync:
-		f := fetchFunc.(func() (*plusclient.StreamZoneSync, error))
-		fetchData(errChan, t, f)
-	case []*plusclient.Workers:
-		f := fetchFunc.(func() (*[]*plusclient.Workers, error))
-		fetchData(errChan, &t, f)
-	case *plusclient.NginxInfo:
-		f := fetchFunc.(func() (*plusclient.NginxInfo, error))
-		fetchData(errChan, t, f)
-	case *plusclient.SSL:
-		f := fetchFunc.(func() (*plusclient.SSL, error))
-		fetchData(errChan, t, f)
-	case *plusclient.Connections:
-		f := fetchFunc.(func() (*plusclient.Connections, error))
-		fetchData(errChan, t, f)
-	case *plusclient.HTTPRequests:
-		f := fetchFunc.(func() (*plusclient.HTTPRequests, error))
-		fetchData(errChan, t, f)
-	case *plusclient.Processes:
-		f := fetchFunc.(func() (*plusclient.Processes, error))
-		fetchData(errChan, t, f)
+	// case *plusclient.ServerZones:
+	// 	f := fetchFunc.(func() (plusclient.ServerZones, error))
+	// 	fetchData(errChan, t, f)
+	// case *plusclient.StreamServerZones:
+	// 	f := fetchFunc.(func() (plusclient.StreamServerZones, error))
+	// 	fetchData(errChan, t, f)
+	// case *plusclient.StreamUpstreams:
+	// 	f := fetchFunc.(func() (plusclient.StreamUpstreams, error))
+	// 	fetchData(errChan, t, f)
+	// case *plusclient.Slabs:
+	// 	f := fetchFunc.(func() (plusclient.Slabs, error))
+	// 	fetchData(errChan, t, f)
+	// case *plusclient.Caches:
+	// 	f := fetchFunc.(func() (plusclient.Caches, error))
+	// 	fetchData(errChan, t, f)
+	// case *plusclient.HTTPLimitConnections:
+	// 	f := fetchFunc.(func() (plusclient.HTTPLimitConnections, error))
+	// 	fetchData(errChan, t, f)
+	// case *plusclient.StreamLimitConnections:
+	// 	f := fetchFunc.(func() (plusclient.StreamLimitConnections, error))
+	// 	fetchData(errChan, t, f)
+	// case *plusclient.HTTPLimitRequests:
+	// 	f := fetchFunc.(func() (plusclient.HTTPLimitRequests, error))
+	// 	fetchData(errChan, t, f)
+	// case *plusclient.Resolvers:
+	// 	f := fetchFunc.(func() (plusclient.Resolvers, error))
+	// 	fetchData(errChan, t, f)
+	// case *plusclient.LocationZones:
+	// 	f := fetchFunc.(func() (plusclient.LocationZones, error))
+	// 	fetchData(errChan, t, f)
+	// case *plusclient.StreamZoneSync:
+	// 	f := fetchFunc.(func() (plusclient.StreamZoneSync, error))
+	// 	fetchData(errChan, t, f)
+	// case []*plusclient.Workers:
+	// 	f := fetchFunc.(func() ([]*plusclient.Workers, error))
+	// 	fetchData(errChan, &t, f)
+	// case *plusclient.NginxInfo:
+	// 	f := fetchFunc.(func() (plusclient.NginxInfo, error))
+	// 	fetchData(errChan, t, f)
+	// case *plusclient.SSL:
+	// 	f := fetchFunc.(func() (plusclient.SSL, error))
+	// 	fetchData(errChan, t, f)
+	// case *plusclient.Connections:
+	// 	f := fetchFunc.(func() (plusclient.Connections, error))
+	// 	fetchData(errChan, t, f)
+	// case *plusclient.HTTPRequests:
+	// 	f := fetchFunc.(func() (plusclient.HTTPRequests, error))
+	// 	fetchData(errChan, t, f)
+	// case *plusclient.Processes:
+	// 	f := fetchFunc.(func() (plusclient.Processes, error))
+	// 	fetchData(errChan, t, f)
 	default:
 		errChan <- fmt.Errorf("unsupported type: %T", target)
 	}

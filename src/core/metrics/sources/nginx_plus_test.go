@@ -96,14 +96,9 @@ const (
 	workerProcessID                  = 12345
 )
 
-type FakeNginxPlus struct {
-	*NginxPlus
-}
-
-// Collect is fake collector that hard codes a stats struct response to avoid dependency on external NGINX Plus api
-func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
-	defer wg.Done()
-	stats := plusclient.Stats{
+var (
+	availableZones = []string{"server_zones", "upstreams", "limit_conns", "zone_sync"}
+	stats = plusclient.Stats{
 		HTTPRequests: plusclient.HTTPRequests{
 			Total:   currentHTTPRequestTotal,
 			Current: currentHTTPRequestCurrent,
@@ -386,8 +381,7 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 			},
 		},
 	}
-
-	prevStats := plusclient.Stats{
+	prevStats = plusclient.Stats{
 		HTTPRequests: plusclient.HTTPRequests{
 			Total:   previousHTTPRequestTotal,
 			Current: previousHTTPRequestCurrent,
@@ -546,6 +540,15 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 			},
 		},
 	}
+)
+
+type FakeNginxPlus struct {
+	*NginxPlus
+}
+
+// Collect is fake collector that hard codes a stats struct response to avoid dependency on external NGINX Plus api
+func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
+	defer wg.Done()
 
 	f.baseDimensions.NginxType = "plus"
 	f.baseDimensions.PublishedAPI = f.plusAPI
@@ -564,79 +567,82 @@ func (m *MockClient) GetAvailableEndpoints() ([]string, error) {
 }
 
 func (m *MockClient) GetAvailableStreamEndpoints() ([]string, error) {
-	return []string{"server_zones", "upstreams", "limit_conns", "zone_sync"}, nil
+	return availableZones, nil
 }
 
 func (m *MockClient) GetStreamServerZones() (*plusclient.StreamServerZones, error) {
-	return &plusclient.StreamServerZones{}, nil
+	return &stats.StreamServerZones, nil
 }
 
 func (m *MockClient) GetStreamUpstreams() (*plusclient.StreamUpstreams, error) {
-	return &plusclient.StreamUpstreams{}, nil
+	return &stats.StreamUpstreams, nil
 }
 
 func (m *MockClient) GetStreamConnectionsLimit() (*plusclient.StreamLimitConnections, error) {
-	return &plusclient.StreamLimitConnections{}, nil
+	return &stats.StreamLimitConnections, nil
 }
 
 func (m *MockClient) GetStreamZoneSync() (*plusclient.StreamZoneSync, error) {
-	return &plusclient.StreamZoneSync{}, nil
+	return &plusclient.StreamZoneSync{
+		Zones:  stats.StreamZoneSync.Zones,
+		Status: stats.StreamZoneSync.Status,
+	}, nil
 }
 
 func (m *MockClient) GetNginxInfo() (*plusclient.NginxInfo, error) {
-	return &plusclient.NginxInfo{}, nil
+	return &stats.NginxInfo, nil
 }
 
 func (m *MockClient) GetCaches() (*plusclient.Caches, error) {
-	return &plusclient.Caches{}, nil
+	return &stats.Caches, nil
 }
 
 func (m *MockClient) GetProcesses() (*plusclient.Processes, error) {
-	return &plusclient.Processes{}, nil
+	return &stats.Processes, nil
 }
 
 func (m *MockClient) GetSlabs() (*plusclient.Slabs, error) {
-	return &plusclient.Slabs{}, nil
+	return &stats.Slabs, nil
 }
 
 func (m *MockClient) GetConnections() (*plusclient.Connections, error) {
-	return &plusclient.Connections{}, nil
+	return &stats.Connections, nil
 }
 
 func (m *MockClient) GetHTTPRequests() (*plusclient.HTTPRequests, error) {
-	return &plusclient.HTTPRequests{}, nil
+	return &stats.HTTPRequests, nil
 }
 
 func (m *MockClient) GetSSL() (*plusclient.SSL, error) {
-	return &plusclient.SSL{}, nil
+	return &stats.SSL, nil
 }
 
 func (m *MockClient) GetServerZones() (*plusclient.ServerZones, error) {
-	return &plusclient.ServerZones{}, nil
+	return &stats.ServerZones, nil
 }
 
 func (m *MockClient) GetUpstreams() (*plusclient.Upstreams, error) {
-	return &plusclient.Upstreams{}, nil
+	return &stats.Upstreams, nil
 }
 
 func (m *MockClient) GetLocationZones() (*plusclient.LocationZones, error) {
-	return &plusclient.LocationZones{}, nil
+	return &stats.LocationZones, nil
 }
 
 func (m *MockClient) GetResolvers() (*plusclient.Resolvers, error) {
-	return &plusclient.Resolvers{}, nil
+	return &stats.Resolvers, nil
 }
 
 func (m *MockClient) GetHTTPLimitReqs() (*plusclient.HTTPLimitRequests, error) {
-	return &plusclient.HTTPLimitRequests{}, nil
+	return &stats.HTTPLimitRequests, nil
 }
 
 func (m *MockClient) GetHTTPConnectionsLimit() (*plusclient.HTTPLimitConnections, error) {
-	return &plusclient.HTTPLimitConnections{}, nil
+	return &stats.HTTPLimitConnections, nil
 }
 
 func (m *MockClient) GetWorkers() ([]*plusclient.Workers, error) {
-	return []*plusclient.Workers{}, nil
+	return stats.Workers, nil
 }
 
 func TestGetStats(t *testing.T) {
@@ -652,6 +658,143 @@ func TestGetStats(t *testing.T) {
 
 	if !reflect.DeepEqual(stats, expectedStats) {
 		t.Fatalf("expected %v, got %v", expectedStats, stats)
+	}
+}
+
+func TestFetchData(t *testing.T) {
+	type TestCase[T any] struct {
+		name          string
+		fetchFunc     func() (T, error)
+		expectedValue T
+		expectError   bool
+	}
+
+	pointerCases := []TestCase[*plusclient.Upstreams]{
+		{
+			name: "Successful fetch",
+			fetchFunc: func() (*plusclient.Upstreams, error) {
+				return &stats.Upstreams, nil
+			},
+			expectedValue: &stats.Upstreams,
+			expectError:   false,
+		},
+		{
+			name: "Fetch error",
+			fetchFunc: func() (*plusclient.Upstreams, error) {
+				return nil, fmt.Errorf("fetch error")
+			},
+			expectedValue: nil,
+			expectError:   true,
+		},
+	}
+
+	stats := &plusclient.Stats{}
+	for _, tc := range pointerCases {
+		t.Run(tc.name, func(t *testing.T) {
+			errChan := make(chan error, 1)
+
+			fetchData(errChan, &stats.Upstreams, tc.fetchFunc)
+			close(errChan)
+
+			if tc.expectError {
+				if len(errChan) == 0 {
+					t.Errorf("Expected an error, but got none")
+				}
+			} else {
+				if len(errChan) != 0 {
+					t.Errorf("Expected no errors, but got %d", len(errChan))
+				}
+				if len(stats.Upstreams) == 0 {
+					t.Errorf("Expected target to be '%v', but got '%v'", tc.expectedValue, stats.Upstreams)
+				}
+				assert.Equal(t, stats.Upstreams, tc.expectedValue)
+			}
+		})
+	}
+}
+
+func TestFetchAndAssign(t *testing.T) {
+	type TestCase struct {
+		name          string
+		target        interface{}
+		fetchFunc     interface{}
+		expectedValue interface{}
+		expectError   bool
+	}
+	client := MockClient{}
+	// Define the test cases
+	testCases := []TestCase{
+		{
+			name:          "Fetch Upstreams",
+			target:        new(plusclient.Upstreams),
+			fetchFunc:     client.GetUpstreams,
+			expectedValue: stats.Upstreams,
+			expectError:   false,
+		},
+		// {
+		// 	name: "Fetch ServerZones",
+		// 	target: new(plusclient.ServerZones),
+		// 	fetchFunc: client.GetServerZones,
+		// 	expectedValue: stats.ServerZones,
+		// 	expectError: false,
+		// },
+		{
+			name: "Fetch Available Stream Endpoints",
+			target: []string{},
+			fetchFunc: client.GetAvailableStreamEndpoints,
+			expectedValue: availableZones,
+			expectError: false,
+		},
+		{
+			name: "Unsupported Type",
+			target: new(int),
+			fetchFunc: func() (int, error) { return 0, nil },
+			expectedValue: 0,
+			expectError: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var wg sync.WaitGroup
+			errChan := make(chan error, 1)
+
+			wg.Add(1)
+			go fetchAndAssign(&wg, errChan, tc.target, tc.fetchFunc)
+			wg.Wait()
+			close(errChan)
+
+			if tc.expectError {
+				if len(errChan) == 0 {
+					t.Errorf("Expected an error, but got none")
+				}
+			} else {
+				if len(errChan) != 0 {
+					t.Errorf("Expected no errors, but got %d", len(errChan))
+				}
+
+				targetValue := tc.target
+				expectedValue := tc.expectedValue
+
+				switch target := targetValue.(type) {
+				case *plusclient.Upstreams:
+					if *target != nil {
+						t.Errorf("Expected target to be '%v', but got '%v'", expectedValue, *target)
+					}
+					assert.Equal(t, target, tc.expectedValue)
+				case *plusclient.ServerZones:
+					if *target != nil {
+						t.Errorf("Expected target to be '%v', but got '%v'", expectedValue, *target)
+					}
+					assert.Equal(t, target, tc.expectedValue)
+				case []string:
+					if target != nil {
+						t.Errorf("Expected target to be '%v', but got '%v'", expectedValue, target)
+					}
+					assert.Equal(t, target, tc.expectedValue)
+				}
+			}
+		})
 	}
 }
 
