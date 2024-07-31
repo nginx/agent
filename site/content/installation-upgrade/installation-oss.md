@@ -297,7 +297,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
 1. Install the prerequisites:
 
     ```shell
-    sudo yum install yum-utils procps
+    sudo dnf install yum-utils procps
     ```
 
 1. To set up the yum repository for Amazon Linux 2, create the file named `/etc/yum.repos.d/nginx-agent.repo` with the following contents:
@@ -314,7 +314,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
 1. To install `nginx-agent`, run the following command:
 
     ```shell
-    sudo yum install nginx-agent
+    sudo dnf install nginx-agent
     ```
 
 1. When prompted to accept the GPG key, verify that the fingerprint matches
