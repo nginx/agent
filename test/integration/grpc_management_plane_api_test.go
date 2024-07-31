@@ -211,6 +211,14 @@ func TestGrpc_ConfigApply(t *testing.T) {
 
 	performConfigApply(t, nginxInstanceID)
 
+	responses = getManagementPlaneResponses(t, 2)
+	t.Logf("Config apply responses: %v", responses)
+
+	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
+	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
+	assert.Equal(t, "Config apply successful, no files to change", responses[1].GetCommandResponse().GetMessage())
+
 	// Valid config
 
 	err := mockManagementPlaneGrpcContainer.CopyFileToContainer(
@@ -222,6 +230,16 @@ func TestGrpc_ConfigApply(t *testing.T) {
 	require.NoError(t, err)
 
 	performConfigApply(t, nginxInstanceID)
+
+	responses = getManagementPlaneResponses(t, 3)
+	t.Logf("Config apply responses: %v", responses)
+
+	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
+	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
+	assert.Equal(t, "Config apply successful, no files to change", responses[1].GetCommandResponse().GetMessage())
+	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[2].GetCommandResponse().GetStatus())
+	assert.Equal(t, "Config apply successful", responses[2].GetCommandResponse().GetMessage())
 
 	// Invalid config
 
