@@ -146,7 +146,7 @@ func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *m
 	c.prevStats = stats
 }
 
-func (c *NginxPlus) defatultStats() *plusclient.Stats {
+func (c *NginxPlus) defaultStats() *plusclient.Stats {
 	return &plusclient.Stats{
 		Upstreams:              map[string]plusclient.Upstream{},
 		ServerZones:            map[string]plusclient.ServerZone{},
@@ -171,179 +171,264 @@ func (c *NginxPlus) defatultStats() *plusclient.Stats {
 
 func (c *NginxPlus) getStats(client Client) (*plusclient.Stats, error) {
 	var initialStatsWg sync.WaitGroup
+	initialStatsErrChan := make(chan error, 16)
 	stats := &ExtendedStats{
-		Stats: c.defatultStats(),
+		Stats: c.defaultStats(),
 	}
 
-	initialStats := []struct {
-		target    interface{}
-		fetchFunc interface{}
-	}{
-		{&stats.endpoints, client.GetAvailableEndpoints},
-		// before, we used error on this, if no stream endpoints we will continue and the if condition
-		// lower down should cater for it
-		{&stats.streamEndpoints, client.GetAvailableStreamEndpoints},
-		{&stats.Stats.NginxInfo, client.GetNginxInfo},
-		{&stats.Stats.Caches, client.GetCaches},
-		{&stats.Stats.Processes, client.GetProcesses},
-		{&stats.Stats.Slabs, client.GetSlabs},
-		{&stats.Stats.Connections, client.GetConnections},
-		{&stats.Stats.HTTPRequests, client.GetHTTPRequests},
-		{&stats.Stats.SSL, client.GetSSL},
-		{&stats.Stats.ServerZones, client.GetServerZones},
-		{&stats.Stats.Upstreams, client.GetUpstreams},
-		{&stats.Stats.LocationZones, client.GetLocationZones},
-		{&stats.Stats.Resolvers, client.GetResolvers},
-		{&stats.Stats.HTTPLimitRequests, client.GetHTTPLimitReqs},
-		{&stats.Stats.HTTPLimitConnections, client.GetHTTPConnectionsLimit},
-		{&stats.Stats.Workers, client.GetWorkers},
-	}
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		endpoints, err := client.GetAvailableEndpoints()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get Available Endpoints: %w", err)
+			return
+		}
+		stats.endpoints = endpoints
+	}()
 
-	initialStatsErrChan := make(chan error, len(initialStats)*2)
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		streamEndpoints, err := client.GetAvailableStreamEndpoints()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get Available Stream Endpoints: %w", err)
+			return
+		}
+		stats.streamEndpoints = streamEndpoints
+	}()
 
-	// run these functions in parallel
-	for _, stats := range initialStats {
-		initialStatsWg.Add(1)
-		go fetchAndAssign(&initialStatsWg, initialStatsErrChan, stats.target, stats.fetchFunc)
-	}
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		nginxInfo, err := client.GetNginxInfo()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get NGINX info: %w", err)
+			return
+		}
+		stats.NginxInfo = *nginxInfo
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		caches, err := client.GetCaches()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get NGINX info: %w", err)
+			return
+		}
+		stats.Caches = *caches
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		processes, err := client.GetProcesses()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get processes: %w", err)
+			return
+		}
+		stats.Processes = *processes
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		slabs, err := client.GetSlabs()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get processes: %w", err)
+			return
+		}
+		stats.Slabs = *slabs
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		connections, err := client.GetConnections()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get connections: %w", err)
+			return
+		}
+		stats.Connections = *connections
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		httpRequests, err := client.GetHTTPRequests()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get HTTPRequests: %w", err)
+			return
+		}
+		stats.HTTPRequests = *httpRequests
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		ssl, err := client.GetSSL()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get SSL: %w", err)
+			return
+		}
+		stats.SSL = *ssl
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		serverZones, err := client.GetServerZones()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get ServerZones: %w", err)
+			return
+		}
+		stats.ServerZones = *serverZones
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		upstreams, err := client.GetUpstreams()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get Upstreams: %w", err)
+			return
+		}
+		stats.Upstreams = *upstreams
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		locationZones, err := client.GetLocationZones()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get LocationZones: %w", err)
+			return
+		}
+		stats.LocationZones = *locationZones
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		resolvers, err := client.GetResolvers()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get Resolvers: %w", err)
+			return
+		}
+		stats.Resolvers = *resolvers
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		httpLimitRequests, err := client.GetHTTPLimitReqs()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get HTTPLimitRequests: %w", err)
+			return
+		}
+		stats.HTTPLimitRequests = *httpLimitRequests
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		httpLimitConnections, err := client.GetHTTPConnectionsLimit()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get HTTPLimitConnections: %w", err)
+			return
+		}
+		stats.HTTPLimitConnections = *httpLimitConnections
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		workers, err := client.GetWorkers()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get Workers: %w", err)
+			return
+		}
+		stats.Workers = workers
+	}()
 
 	initialStatsWg.Wait()
 	close(initialStatsErrChan)
 
 	// only error if all the stats are empty
-	if len(initialStatsErrChan) == len(initialStats) {
+	if len(initialStatsErrChan) == 16 {
 		return nil, errors.New("no useful metrics found")
 	}
 
 	if slices.Contains(stats.endpoints, "stream") {
 		var streamStatsWg sync.WaitGroup
-		// check if these can get added to the client GetStats in a different way
-		endpointStats := []struct {
-			target    interface{}
-			fetchFunc interface{}
-			statType  string
-		}{
-			{&stats.StreamServerZones, client.GetStreamServerZones, "server_zones"},
-			{&stats.StreamUpstreams, client.GetStreamUpstreams, "upstreams"},
-			{&stats.StreamLimitConnections, client.GetStreamConnectionsLimit, "limit_conns"},
-			{&stats.StreamZoneSync, client.GetStreamZoneSync, "zone_sync"},
-		}
+		// this may never be 4 depending on the if conditions
+		streamStatsErrChan := make(chan error, 4)
 
-		streamStatsErrChan := make(chan error, len(endpointStats)*2)
-
-		for _, stat := range endpointStats {
+		if slices.Contains(stats.streamEndpoints, "server_zones") {
 			streamStatsWg.Add(1)
-			if slices.Contains(stats.streamEndpoints, stat.statType) {
-				go fetchAndAssign(&streamStatsWg, streamStatsErrChan, stat.target, stat.fetchFunc)
-			}
+			go func() {
+				defer streamStatsWg.Done()
+				streamServerZones, err := client.GetStreamServerZones()
+				if err != nil {
+					streamStatsErrChan <- fmt.Errorf("failed to get streamServerZones: %w", err)
+					return
+				}
+				stats.StreamServerZones = *streamServerZones
+			}()
 		}
+
+		if slices.Contains(stats.streamEndpoints, "upstreams") {
+			streamStatsWg.Add(1)
+			go func() {
+				defer streamStatsWg.Done()
+				streamUpstreams, err := client.GetStreamUpstreams()
+				if err != nil {
+					streamStatsErrChan <- fmt.Errorf("failed to get StreamUpstreams: %w", err)
+					return
+				}
+				stats.StreamUpstreams = *streamUpstreams
+			}()
+		}
+
+		if slices.Contains(stats.streamEndpoints, "limit_conns") {
+
+			streamStatsWg.Add(1)
+			go func() {
+				defer streamStatsWg.Done()
+				streamConnectionsLimit, err := client.GetStreamConnectionsLimit()
+				if err != nil {
+					streamStatsErrChan <- fmt.Errorf("failed to get StreamLimitConnections: %w", err)
+					return
+				}
+				stats.StreamLimitConnections = *streamConnectionsLimit
+			}()
+
+		}
+
+		if slices.Contains(stats.streamEndpoints, "limit_conns") {
+
+			streamStatsWg.Add(1)
+			go func() {
+				defer streamStatsWg.Done()
+				streamZoneSync, err := client.GetStreamZoneSync()
+				if err != nil {
+					streamStatsErrChan <- fmt.Errorf("failed to get StreamZoneSync: %w", err)
+					return
+				}
+				stats.StreamZoneSync = streamZoneSync
+			}()
+
+		}
+		streamStatsWg.Wait()
 		close(streamStatsErrChan)
 
-		if len(streamStatsErrChan) == len(endpointStats) {
+		if len(streamStatsErrChan) > 0 {
 			log.Warnf("no useful metrics found in stream stats")
 		}
 	}
 
 	return stats.Stats, nil
-}
-
-func fetchData[T any](
-	errChan chan error,
-	target *T,
-	fetchFunc func() (*T, error),
-) {
-	data, err := fetchFunc()
-	if err != nil {
-		errChan <- fmt.Errorf("failed to get stats: %w", err)
-		return
-	}
-	// nolint:ineffassign
-	target = data
-	log.Printf("target %v", target)
-	log.Printf("data %v", data)
-}
-
-func fetchDataVal[T any](
-	errChan chan error,
-	target T,
-	fetchFunc func() (T, error),
-) {
-	data, err := fetchFunc()
-	if err != nil {
-		errChan <- fmt.Errorf("failed to get stats: %w", err)
-		return
-	}
-	// nolint:ineffassign
-	target = data
-	log.Printf("target %v", target)
-	log.Printf("data %v", data)
-}
-
-// this function takes the target type and matches it's function signature
-func fetchAndAssign(wg *sync.WaitGroup, errChan chan error, target interface{}, fetchFunc interface{}) {
-	defer wg.Done()
-
-	switch t := target.(type) {
-	case []string:
-		f := fetchFunc.(func() ([]string, error))
-		fetchDataVal(errChan, t, f)
-	case *plusclient.Upstreams:
-		f := fetchFunc.(func() (*plusclient.Upstreams, error))
-		fetchData(errChan, t, f)
-	// case *plusclient.ServerZones:
-	// 	f := fetchFunc.(func() (plusclient.ServerZones, error))
-	// 	fetchData(errChan, t, f)
-	// case *plusclient.StreamServerZones:
-	// 	f := fetchFunc.(func() (plusclient.StreamServerZones, error))
-	// 	fetchData(errChan, t, f)
-	// case *plusclient.StreamUpstreams:
-	// 	f := fetchFunc.(func() (plusclient.StreamUpstreams, error))
-	// 	fetchData(errChan, t, f)
-	// case *plusclient.Slabs:
-	// 	f := fetchFunc.(func() (plusclient.Slabs, error))
-	// 	fetchData(errChan, t, f)
-	// case *plusclient.Caches:
-	// 	f := fetchFunc.(func() (plusclient.Caches, error))
-	// 	fetchData(errChan, t, f)
-	// case *plusclient.HTTPLimitConnections:
-	// 	f := fetchFunc.(func() (plusclient.HTTPLimitConnections, error))
-	// 	fetchData(errChan, t, f)
-	// case *plusclient.StreamLimitConnections:
-	// 	f := fetchFunc.(func() (plusclient.StreamLimitConnections, error))
-	// 	fetchData(errChan, t, f)
-	// case *plusclient.HTTPLimitRequests:
-	// 	f := fetchFunc.(func() (plusclient.HTTPLimitRequests, error))
-	// 	fetchData(errChan, t, f)
-	// case *plusclient.Resolvers:
-	// 	f := fetchFunc.(func() (plusclient.Resolvers, error))
-	// 	fetchData(errChan, t, f)
-	// case *plusclient.LocationZones:
-	// 	f := fetchFunc.(func() (plusclient.LocationZones, error))
-	// 	fetchData(errChan, t, f)
-	// case *plusclient.StreamZoneSync:
-	// 	f := fetchFunc.(func() (plusclient.StreamZoneSync, error))
-	// 	fetchData(errChan, t, f)
-	// case []*plusclient.Workers:
-	// 	f := fetchFunc.(func() ([]*plusclient.Workers, error))
-	// 	fetchData(errChan, &t, f)
-	// case *plusclient.NginxInfo:
-	// 	f := fetchFunc.(func() (plusclient.NginxInfo, error))
-	// 	fetchData(errChan, t, f)
-	// case *plusclient.SSL:
-	// 	f := fetchFunc.(func() (plusclient.SSL, error))
-	// 	fetchData(errChan, t, f)
-	// case *plusclient.Connections:
-	// 	f := fetchFunc.(func() (plusclient.Connections, error))
-	// 	fetchData(errChan, t, f)
-	// case *plusclient.HTTPRequests:
-	// 	f := fetchFunc.(func() (plusclient.HTTPRequests, error))
-	// 	fetchData(errChan, t, f)
-	// case *plusclient.Processes:
-	// 	f := fetchFunc.(func() (plusclient.Processes, error))
-	// 	fetchData(errChan, t, f)
-	default:
-		errChan <- fmt.Errorf("unsupported type: %T", target)
-	}
 }
 
 func (c *NginxPlus) Update(dimensions *metrics.CommonDim, collectorConf *metrics.NginxCollectorConfig) {

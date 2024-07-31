@@ -364,7 +364,7 @@ func (c *NginxPlus) getStats(client Client) (*plusclient.Stats, error) {
 		var streamStatsWg sync.WaitGroup
 		// this may never be 4 depending on the if conditions
 		streamStatsErrChan := make(chan error, 4)
-		
+
 		if slices.Contains(stats.streamEndpoints, "server_zones") {
 			streamStatsWg.Add(1)
 			go func() {

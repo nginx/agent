@@ -99,7 +99,7 @@ var (
 	availableZones = []string{"server_zones", "upstreams", "limit_conns", "zone_sync"}
 	stats          = plusclient.Stats{
 		StreamZoneSync: &plusclient.StreamZoneSync{
-			Zones:  map[string]plusclient.SyncZone{
+			Zones: map[string]plusclient.SyncZone{
 				"0": {
 					RecordsPending: 1,
 					RecordsTotal:   2,
@@ -668,12 +668,19 @@ func TestGetStats(t *testing.T) {
 
 	source := NewNginxPlus(nil, "", "", "", 9)
 
-	testStats, err := source.getStats(client)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
+	tests := []struct {
+		stats plusclient.Stats
+	}{
+		{
+			stats: stats,
+		},
 	}
 
-	assert.Equal(t, stats, *testStats)
+	for _, test := range tests {
+		resultStats, err := source.getStats(client)
+		require.NoError(t, err)
+		assert.Equal(t, test.stats, *resultStats)
+	}
 }
 
 func TestNginxPlusUpdate(t *testing.T) {
