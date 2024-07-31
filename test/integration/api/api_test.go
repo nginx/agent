@@ -75,8 +75,6 @@ func TestAPI_Metrics(t *testing.T) {
 		},
 	)
 
-	time.Sleep(5 * time.Second)
-
 	resp, err := client.R().EnableTrace().Get(url)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
