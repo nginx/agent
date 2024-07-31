@@ -1,0 +1,21 @@
+version: '3.9'
+
+networks:
+    monitoring:
+        driver: bridge
+
+services:
+    agent:
+        build:
+            context: ../../../
+            dockerfile: ./test/docker/oss/deb/Dockerfile
+            target: install-agent-local
+            args:
+                PACKAGE_NAME: ${PACKAGE_NAME}
+                TAG: ${TAG}
+                CONTAINER_NGINX_IMAGE_REGISTRY: ${CONTAINER_NGINX_IMAGE_REGISTRY}
+                CONTAINER_OS_TYPE: ${CONTAINER_OS_TYPE}
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+        volumes:
+            - ./nginx-agent.conf:/etc/nginx-agent/nginx-agent.conf
