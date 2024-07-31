@@ -98,7 +98,7 @@ const (
 
 var (
 	availableZones = []string{"server_zones", "upstreams", "limit_conns", "zone_sync"}
-	stats = plusclient.Stats{
+	stats          = plusclient.Stats{
 		HTTPRequests: plusclient.HTTPRequests{
 			Total:   currentHTTPRequestTotal,
 			Current: currentHTTPRequestCurrent,
@@ -739,18 +739,18 @@ func TestFetchAndAssign(t *testing.T) {
 		// 	expectError: false,
 		// },
 		{
-			name: "Fetch Available Stream Endpoints",
-			target: []string{},
-			fetchFunc: client.GetAvailableStreamEndpoints,
+			name:          "Fetch Available Stream Endpoints",
+			target:        []string{},
+			fetchFunc:     client.GetAvailableStreamEndpoints,
 			expectedValue: availableZones,
-			expectError: false,
+			expectError:   false,
 		},
 		{
-			name: "Unsupported Type",
-			target: new(int),
-			fetchFunc: func() (int, error) { return 0, nil },
+			name:          "Unsupported Type",
+			target:        new(int),
+			fetchFunc:     func() (int, error) { return 0, nil },
 			expectedValue: 0,
-			expectError: true,
+			expectError:   true,
 		},
 	}
 
