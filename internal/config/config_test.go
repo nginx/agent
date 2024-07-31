@@ -39,7 +39,8 @@ func TestRegisterConfigFile(t *testing.T) {
 }
 
 func TestResolveConfig(t *testing.T) {
-	allowedDir := []string{"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx", "/usr/share/nginx/modules"}
+	allowedDir := []string{"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx",
+		"/usr/share/nginx/modules", "/var/log/nginx"}
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	err := loadPropertiesFromFile("./testdata/nginx-agent.conf")
 	require.NoError(t, err)
@@ -70,8 +71,10 @@ func TestResolveConfig(t *testing.T) {
 
 	assert.Equal(t, 10*time.Second, actual.Client.Timeout)
 
-	assert.Equal(t, "/etc/nginx:/usr/local/etc/nginx:/var/run/nginx:/usr/share/nginx/modules:invalid/path",
-		actual.ConfigDir)
+	assert.Equal(t,
+		"/etc/nginx:/usr/local/etc/nginx:/var/run/nginx:/usr/share/nginx/modules:/var/log/nginx:invalid/path",
+		actual.ConfigDir,
+	)
 
 	assert.Equal(t, allowedDir, actual.AllowedDirectories)
 }
@@ -296,7 +299,7 @@ func getAgentConfig() *Config {
 		},
 		ConfigDir: "",
 		AllowedDirectories: []string{
-			"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx", "/usr/share/nginx/modules",
+			"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx", "/var/log/nginx", "/usr/share/nginx/modules",
 		},
 		Collector: &Collector{
 			ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
