@@ -19,3 +19,6 @@ services:
       - 9091:9091
     networks:
       - monitoring
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx-agent.conf:/etc/nginx-agent/nginx-agent.conf
