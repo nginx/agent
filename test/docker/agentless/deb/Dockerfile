@@ -1,6 +1,7 @@
 ARG CONTAINER_NGINX_IMAGE_REGISTRY
 ARG TAG
 ARG IMAGE_PATH
+ARG CONTAINER_OS_TYPE
 FROM ${CONTAINER_NGINX_IMAGE_REGISTRY}${IMAGE_PATH}:${TAG} AS install
 LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
@@ -10,7 +11,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG PACKAGE_NAME
 
 WORKDIR /agent
-COPY ./build/${PACKAGE_NAME}.deb /agent/build/${PACKAGE_NAME}.deb
+COPY ./build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE} /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE}
 COPY ./ /agent
 
 FROM install AS runtime

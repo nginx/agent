@@ -120,7 +120,6 @@ jobs:
         container:
         - image: "ubuntu"
           version: "24.04"
-          path: "/nginx-plus/base"
     steps:
       - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
         with:
@@ -142,7 +141,7 @@ jobs:
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" IMAGE_PATH=${{matrix.container.path}}\
+          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}"\
             make new-integration-test
       - name: Container Output Logs 
         if: failure()
@@ -169,8 +168,6 @@ jobs:
         container:
         - image: "debian"
           version: "bullseye-slim"
-        - image: "debian"
-          version: "bookworm-slim"
     steps:
       - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
         with:
