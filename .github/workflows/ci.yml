@@ -120,7 +120,7 @@ jobs:
         container:
         - image: "ubuntu"
           version: "24.04"
-          path: "/nginx/agent"
+          path: "/nginx-plus/agent"
     steps:
       - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
         with:
@@ -139,10 +139,6 @@ jobs:
           registry: ${{ secrets.REGISTRY_URL }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
-      - name: Test
-        run: |
-            ls
-            ls ./build
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}

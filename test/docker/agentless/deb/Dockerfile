@@ -1,6 +1,6 @@
 ARG CONTAINER_NGINX_IMAGE_REGISTRY
 ARG TAG
-FROM ${CONTAINER_NGINX_IMAGE_REGISTRY}/nginx:${TAG} AS install
+FROM ${CONTAINER_NGINX_IMAGE_REGISTRY}/nginx-plus:${TAG} AS install
 LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
 ARG OS_RELEASE
