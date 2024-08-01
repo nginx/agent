@@ -25,18 +25,18 @@ type FakeCommandServiceClient struct {
 		result1 *v1.CreateConnectionResponse
 		result2 error
 	}
-	SubscribeStub        func(context.Context, ...grpc.CallOption) (v1.CommandService_SubscribeClient, error)
+	SubscribeStub        func(context.Context, ...grpc.CallOption) (grpc.BidiStreamingClient[v1.DataPlaneResponse, v1.ManagementPlaneRequest], error)
 	subscribeMutex       sync.RWMutex
 	subscribeArgsForCall []struct {
 		arg1 context.Context
 		arg2 []grpc.CallOption
 	}
 	subscribeReturns struct {
-		result1 v1.CommandService_SubscribeClient
+		result1 grpc.BidiStreamingClient[v1.DataPlaneResponse, v1.ManagementPlaneRequest]
 		result2 error
 	}
 	subscribeReturnsOnCall map[int]struct {
-		result1 v1.CommandService_SubscribeClient
+		result1 grpc.BidiStreamingClient[v1.DataPlaneResponse, v1.ManagementPlaneRequest]
 		result2 error
 	}
 	UpdateDataPlaneHealthStub        func(context.Context, *v1.UpdateDataPlaneHealthRequest, ...grpc.CallOption) (*v1.UpdateDataPlaneHealthResponse, error)
@@ -139,7 +139,7 @@ func (fake *FakeCommandServiceClient) CreateConnectionReturnsOnCall(i int, resul
 	}{result1, result2}
 }
 
-func (fake *FakeCommandServiceClient) Subscribe(arg1 context.Context, arg2 ...grpc.CallOption) (v1.CommandService_SubscribeClient, error) {
+func (fake *FakeCommandServiceClient) Subscribe(arg1 context.Context, arg2 ...grpc.CallOption) (grpc.BidiStreamingClient[v1.DataPlaneResponse, v1.ManagementPlaneRequest], error) {
 	fake.subscribeMutex.Lock()
 	ret, specificReturn := fake.subscribeReturnsOnCall[len(fake.subscribeArgsForCall)]
 	fake.subscribeArgsForCall = append(fake.subscribeArgsForCall, struct {
@@ -165,7 +165,7 @@ func (fake *FakeCommandServiceClient) SubscribeCallCount() int {
 	return len(fake.subscribeArgsForCall)
 }
 
-func (fake *FakeCommandServiceClient) SubscribeCalls(stub func(context.Context, ...grpc.CallOption) (v1.CommandService_SubscribeClient, error)) {
+func (fake *FakeCommandServiceClient) SubscribeCalls(stub func(context.Context, ...grpc.CallOption) (grpc.BidiStreamingClient[v1.DataPlaneResponse, v1.ManagementPlaneRequest], error)) {
 	fake.subscribeMutex.Lock()
 	defer fake.subscribeMutex.Unlock()
 	fake.SubscribeStub = stub
@@ -178,28 +178,28 @@ func (fake *FakeCommandServiceClient) SubscribeArgsForCall(i int) (context.Conte
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeCommandServiceClient) SubscribeReturns(result1 v1.CommandService_SubscribeClient, result2 error) {
+func (fake *FakeCommandServiceClient) SubscribeReturns(result1 grpc.BidiStreamingClient[v1.DataPlaneResponse, v1.ManagementPlaneRequest], result2 error) {
 	fake.subscribeMutex.Lock()
 	defer fake.subscribeMutex.Unlock()
 	fake.SubscribeStub = nil
 	fake.subscribeReturns = struct {
-		result1 v1.CommandService_SubscribeClient
+		result1 grpc.BidiStreamingClient[v1.DataPlaneResponse, v1.ManagementPlaneRequest]
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeCommandServiceClient) SubscribeReturnsOnCall(i int, result1 v1.CommandService_SubscribeClient, result2 error) {
+func (fake *FakeCommandServiceClient) SubscribeReturnsOnCall(i int, result1 grpc.BidiStreamingClient[v1.DataPlaneResponse, v1.ManagementPlaneRequest], result2 error) {
 	fake.subscribeMutex.Lock()
 	defer fake.subscribeMutex.Unlock()
 	fake.SubscribeStub = nil
 	if fake.subscribeReturnsOnCall == nil {
 		fake.subscribeReturnsOnCall = make(map[int]struct {
-			result1 v1.CommandService_SubscribeClient
+			result1 grpc.BidiStreamingClient[v1.DataPlaneResponse, v1.ManagementPlaneRequest]
 			result2 error
 		})
 	}
 	fake.subscribeReturnsOnCall[i] = struct {
-		result1 v1.CommandService_SubscribeClient
+		result1 grpc.BidiStreamingClient[v1.DataPlaneResponse, v1.ManagementPlaneRequest]
 		result2 error
 	}{result1, result2}
 }
