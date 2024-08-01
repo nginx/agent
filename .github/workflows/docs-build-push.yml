@@ -27,7 +27,7 @@ jobs:
     with:
       production_url_path: "/nginx-agent"
       preview_url_path: "/previews/nginx-agent"
-      docs_source_path: "/public/nginx-agent"
+      docs_source_path: "public/nginx-agent"
       docs_build_path: "./site"
       doc_type: "hugo"
       environment: ${{inputs.environment}}
