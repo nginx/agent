@@ -733,7 +733,7 @@ func TestWriteFilesNotAllowed(t *testing.T) {
 			Permissions: "0644",
 		},
 		{
-			Name:        "/etc/shadow/multiple1.conf",
+			Name:        "/etc/shadow",
 			Contents:    []byte("shadowfile1"),
 			Permissions: "0644",
 		},
