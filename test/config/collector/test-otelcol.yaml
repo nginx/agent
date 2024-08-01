@@ -19,6 +19,11 @@ receivers:
   nginx/123:
     endpoint: "http://localhost:80/status"
     collection_interval: 10s
+    access_log_format: "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\"\"$upstream_cache_status\""
+    operators:
+      - type: file_input
+        include:
+          - "/var/log/nginx/access-custom.conf"
 
 processors:
   batch:
@@ -35,7 +40,6 @@ exporters:
       max_elapsed_time: 10m
     tls:
       insecure: true
-      
   prometheus:
     endpoint: "localhost:9876"
     namespace: "nginx-agent"
