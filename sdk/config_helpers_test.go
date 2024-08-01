@@ -799,6 +799,52 @@ var tests = []struct {
 			"/tmp/testdata/nginx/ca/ca.crt": {},
 		},
 	},
+	{
+		fileName: "/tmp/testdata/nginx/nginx3.conf",
+		config: `daemon            off;
+		worker_processes  2;
+		user              www-data;
+		
+		events {
+			use           epoll;
+			worker_connections  128;
+		}
+		
+		include /hello.html
+		
+		}`,
+		plusApi: "",
+		expected: &proto.NginxConfig{
+			Action: proto.NginxConfigAction_APPLY,
+			DirectoryMap: &proto.DirectoryMap{
+				Directories: []*proto.Directory{
+					{
+						Name:        "/",
+						Permissions: "0755",
+						Files: []*proto.File{
+							{
+								Name:        "test.html",
+								Permissions: "0644",
+							},
+						},
+					},
+				},
+			},
+			// using RootDirectory for allowed in the tests, but the "root" directive is /tmp/testdata/foo, so
+			// should have an empty file list from the aux
+			Zaux: &proto.ZippedFile{
+				Checksum:      "51c05b653bc43deb5ec497988692fc5dec05ab8b6a0b78e908e4628b3d9e0d4c",
+				RootDirectory: "/test.html",
+			},
+			Zconfig: &proto.ZippedFile{
+				Contents:      []uint8{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 1, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0},
+				Checksum:      "cc6cee5366d87e85fbf1c05b9621df82996548e0e135f2b4a93e98f88c23d2b9",
+				RootDirectory: "/tmp/testdata/nginx",
+			},
+		},
+		// aux file not included after test runs
+		expectedAuxFiles: map[string]struct{}{},
+	},
 }
 
 func TestGetNginxConfigFiles(t *testing.T) {

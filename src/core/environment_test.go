@@ -732,6 +732,21 @@ func TestWriteFilesNotAllowed(t *testing.T) {
 			Contents:    []byte("multi"),
 			Permissions: "0644",
 		},
+		{
+			Name:        "/etc/shadow/multiple1.conf",
+			Contents:    []byte("shadowfile1"),
+			Permissions: "0644",
+		},
+		{
+			Name:        "etc/shadow/multiple1.conf",
+			Contents:    []byte("shadowfile2"),
+			Permissions: "0644",
+		},
+		{
+			Name:        "/hello.conf",
+			Contents:    []byte("rootfile"),
+			Permissions: "0644",
+		},
 	}
 	backup, err := sdk.NewConfigApplyWithIgnoreDirectives("", nil, []string{})
 	assert.NoError(t, err)
