@@ -44,6 +44,7 @@ func SetupTestContainerWithAgent(t *testing.T, testName string, conf string, wai
 				"CONTAINER_OS_TYPE":              os.Getenv("CONTAINER_OS_TYPE"),
 				"CONTAINER_NGINX_IMAGE_REGISTRY": os.Getenv("CONTAINER_NGINX_IMAGE_REGISTRY"),
 				"TAG":                            os.Getenv("TAG"),
+				"IMAGE_PATH":                     os.Getenv("IMAGE_PATH"),
 				"CONF_FILE":                      conf,
 			},
 		).Up(ctxCancel, compose.Wait(true)), "compose.Up()")
@@ -89,6 +90,7 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 			"CONTAINER_NGINX_IMAGE_REGISTRY": os.Getenv("CONTAINER_NGINX_IMAGE_REGISTRY"),
 			"TAG":                            os.Getenv("TAG"),
 			"CONTAINER_OS_TYPE":              os.Getenv("CONTAINER_OS_TYPE"),
+			"IMAGE_PATH":                     os.Getenv("IMAGE_PATH"),
 		}).
 		WaitForService("agent", wait.NewLogStrategy("nginx_pid").WithOccurrence(1)).
 		Up(ctx, compose.Wait(true))
