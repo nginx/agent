@@ -11,6 +11,7 @@ services:
                 TAG: ${TAG}
                 CONTAINER_NGINX_IMAGE_REGISTRY: ${CONTAINER_NGINX_IMAGE_REGISTRY}
                 CONTAINER_OS_TYPE: ${CONTAINER_OS_TYPE}
+                IMAGE_PATH: ${IMAGE_PATH}
         extra_hosts:
             - "host.docker.internal:host-gateway"
         volumes:
