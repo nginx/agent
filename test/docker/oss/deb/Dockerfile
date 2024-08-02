@@ -11,6 +11,7 @@ ARG PACKAGE_NAME
 
 WORKDIR /agent
 COPY ./build/${PACKAGE_NAME}.deb /agent/build/${PACKAGE_NAME}.deb
+COPY ./test/integration/api/nginx.conf /etc/nginx/nginx.conf
 COPY ./ /agent
 
 RUN  apt-get update \ 
