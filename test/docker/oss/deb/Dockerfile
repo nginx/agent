@@ -13,7 +13,7 @@ WORKDIR /agent
 COPY ./build/${PACKAGE_NAME}.deb /agent/build/${PACKAGE_NAME}.deb
 COPY ./ /agent
 
-RUN systemctl reload nginx 
+RUN service nginx reload
 
 RUN cat /etc/nginx-agent/nginx-agent.conf
 
