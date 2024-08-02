@@ -13,9 +13,6 @@ WORKDIR /agent
 COPY ./build/${PACKAGE_NAME}.deb /agent/build/${PACKAGE_NAME}.deb
 COPY ./ /agent
 
-RUN cat /etc/nginx-agent/nginx-agent.conf
-RUN cat /etc/nginx/nginx.conf
-
 RUN  apt-get update \ 
     && apt install --no-install-recommends --no-install-suggests -y /agent/build/${PACKAGE_NAME}.deb \ 
     &&  rm /agent/build/${PACKAGE_NAME}.deb
@@ -23,3 +20,5 @@ RUN  apt-get update \
 RUN unlink /var/log/nginx/access.log
 RUN unlink /var/log/nginx/error.log
 
+RUN cat /etc/nginx-agent/nginx-agent.conf
+RUN cat /etc/nginx/nginx.conf
