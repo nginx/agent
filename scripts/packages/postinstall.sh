@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
 
+# Note: >/dev/null 2>&1 is used in multiple if statements in this file. 
+# This is to hide expected error messages from being outputted.
+
 # Determine OS platform
 # shellcheck source=/dev/null
 . /etc/os-release
@@ -21,7 +24,7 @@ WORKER_USER=""
 AGENT_GROUP="nginx-agent"
 
 detect_nginx_users() {
-    if command -V systemctl && [ "$(cat /proc/1/comm)" == "systemd" ]; then
+    if command -V systemctl >/dev/null 2>&1 && [ "$(cat /proc/1/comm)" = "systemd" ]; then
         printf "PostInstall: Reading NGINX systemctl unit file for user information\n"
         nginx_unit_file=$(systemctl status nginx | grep -Po "\(\K\/.*service")
         pid_file=$(grep -Po "PIDFile=\K.*$" "${nginx_unit_file}")
@@ -38,8 +41,17 @@ detect_nginx_users() {
         fi
     fi
 
-    if [ -z "${nginx_user}" ]; then
+    if command -V ps >/dev/null 2>&1 && [ -z "${nginx_user}" ]; then
         printf "PostInstall: Reading NGINX process information to determine NGINX user\n"
+        nginx_user=$(ps aux | grep "nginx: master process" | grep -v grep | head -1 | awk '{print $1}')
+
+        if [ -z "${nginx_user}" ]; then
+            printf "No NGINX user found\n"
+        fi
+    fi
+
+    if [ -z "${nginx_user}" ]; then
+        printf "PostInstall: Reading NGINX process files to determine NGINX user\n"
         nginx_pid=""
         for pid in /proc/[0-9]*; do
             pid=${pid##*/}
@@ -66,8 +78,17 @@ detect_nginx_users() {
         echo "WARNING: No NGINX processes detected."
     fi
 
+    if command -V ps >/dev/null 2>&1 && [ -z "${worker_user}" ]; then
+        printf "PostInstall: Reading NGINX process information to determine NGINX worker user\n"
+        worker_user=$(ps aux | grep "nginx: worker process" | grep -v grep | head -1 | awk '{print $1}')
+
+        if [ -z "${worker_user}" ]; then
+            printf "No NGINX worker user found\n"
+        fi
+    fi
+
     if [ -z "${worker_user}" ]; then
-        printf "PostInstall: Reading NGINX process information to determine NGINX user\n"
+        printf "PostInstall: Reading NGINX process files to determine NGINX worker user\n"
         worker_pid=""
         for pid in /proc/[0-9]*; do
             pid=${pid##*/}
@@ -88,7 +109,7 @@ detect_nginx_users() {
     fi
 
     if [ "${worker_user}" ]; then
-        echo "NGINX processes running as user '${worker_user}'. nginx-agent will try add that user to '${AGENT_GROUP}'"
+        echo "NGINX worker processes running as user '${worker_user}'. nginx-agent will try add that user to '${AGENT_GROUP}'"
         WORKER_USER=${worker_user}
     else
         echo "WARNING: No NGINX worker processes detected."
@@ -122,7 +143,7 @@ ensure_agent_path() {
 create_agent_group() {
     printf "PostInstall: Adding nginx-agent group %s\n" "${AGENT_GROUP}"
 
-    if command -V groupadd; then
+    if command -V groupadd >/dev/null 2>&1; then
         if [ ! "$(getent group $AGENT_GROUP)" ]; then
             groupadd "${AGENT_GROUP}"
         fi
@@ -168,7 +189,7 @@ create_run_dir() {
 
 update_unit_file() {
     # Fill in data to unit file that's acquired post install
-    if command -V systemctl && [ "$(cat /proc/1/comm)" == "systemd" ]; then
+    if command -V systemctl >/dev/null 2>&1 && [ "$(cat /proc/1/comm)" = "systemd" ]; then
         printf "PostInstall: Modifying NGINX Agent unit file with correct locations and user information\n"
         EXE_CMD="s|\${AGENT_EXE}|${AGENT_EXE}|g"
         sed -i -e $EXE_CMD ${AGENT_UNIT_LOCATION}/${AGENT_UNIT_FILE}
@@ -303,13 +324,13 @@ restart_agent_if_required() {
         # https://github.com/freebsd/pkg/pull/2128
         return
     fi
-    if command -V service; then
-        if service nginx-agent status; then
+    if command -V service >/dev/null 2>&1; then
+        if service nginx-agent status >/dev/null 2>&1; then
             printf "PostInstall: Restarting nginx agent\n"
             service nginx-agent restart || true
         fi
     else
-        if systemctl status nginx-agent; then
+        if systemctl status nginx-agent >/dev/null 2>&1; then
             printf "PostInstall: Restarting nginx agent\n"
             systemctl restart nginx-agent || true
         fi
