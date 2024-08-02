@@ -20,9 +20,6 @@ RUN  apt-get update \
     && apt install --no-install-recommends --no-install-suggests -y /agent/build/${PACKAGE_NAME}.deb \ 
     &&  rm /agent/build/${PACKAGE_NAME}.deb
 
-FROM install AS runtime
-RUN ls /var/log/nginx
 RUN unlink /var/log/nginx/access.log
 RUN unlink /var/log/nginx/error.log
 
-COPY --from=install /agent /agent
