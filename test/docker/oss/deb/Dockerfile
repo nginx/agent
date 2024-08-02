@@ -9,11 +9,11 @@ ARG OS_VERSION
 ARG DEBIAN_FRONTEND=noninteractive
 ARG PACKAGE_NAME
 
-RUN nginx -s reload
-
 WORKDIR /agent
 COPY ./build/${PACKAGE_NAME}.deb /agent/build/${PACKAGE_NAME}.deb
 COPY ./ /agent
+
+RUN systemctl reload nginx 
 
 RUN cat /etc/nginx-agent/nginx-agent.conf
 
