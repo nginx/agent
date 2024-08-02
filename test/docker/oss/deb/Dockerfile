@@ -9,6 +9,8 @@ ARG OS_VERSION
 ARG DEBIAN_FRONTEND=noninteractive
 ARG PACKAGE_NAME
 
+RUN nginx -s reload
+
 WORKDIR /agent
 COPY ./build/${PACKAGE_NAME}.deb /agent/build/${PACKAGE_NAME}.deb
 COPY ./ /agent
@@ -16,8 +18,6 @@ COPY ./ /agent
 RUN cat /etc/nginx-agent/nginx-agent.conf
 
 RUN cat /etc/nginx/nginx.conf
-
-RUN nginx -s reload
 
 RUN  apt-get update \ 
     && apt install --no-install-recommends --no-install-suggests -y /agent/build/${PACKAGE_NAME}.deb \ 
