@@ -301,7 +301,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
     sudo dnf install yum-utils procps
     ```
 
-1. To set up the yum repository for Amazon Linux 2023, create the file named `/etc/yum.repos.d/nginx-agent.repo` with the following contents:
+1. To set up the dnf repository for Amazon Linux 2023, create the file named `/etc/yum.repos.d/nginx-agent.repo` with the following contents:
     ```
     [nginx-agent]
     name=nginx agent repo
