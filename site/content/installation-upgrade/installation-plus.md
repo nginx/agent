@@ -31,6 +31,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
 - [Installing NGINX Agent on Debian](#installing-nginx-agent-on-debian)
 - [Installing NGINX Agent on SLES](#installing-nginx-agent-on-sles)
 - [Installing NGINX Agent on Alpine Linux](#installing-nginx-agent-on-alpine-linux)
+- [Installing NGINX Agent on Amazon Linux 2023](#installing-nginx-agent-on-amazon-linux-2023)
 - [Installing NGINX Agent on Amazon Linux](#installing-nginx-agent-on-amazon-linux)
 - [Installing NGINX Agent on FreeBSD](#installing-nginx-agent-on-freebsd)
 
@@ -375,7 +376,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
     sudo dnf install yum-utils procps ca-certificates
     ```
 
-1. To set up the yum repository for Amazon Linux 2, create the file named `/etc/yum.repos.d/nginx-agent.repo` with the following contents:
+1. To set up the yum repository for Amazon Linux 2023, create the file named `/etc/yum.repos.d/nginx-agent.repo` with the following contents:
 
     ```
     [nginx-agent]
