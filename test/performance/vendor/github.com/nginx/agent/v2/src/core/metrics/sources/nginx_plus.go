@@ -170,7 +170,7 @@ func (c *NginxPlus) defaultStats() *plusclient.Stats {
 
 func (c *NginxPlus) getStats(client Client) (*plusclient.Stats, error) {
 	var initialStatsWg sync.WaitGroup
-	initialStatsErrChan := make(chan error, 16)
+	initialStatsErrChan := make(chan error, 15)
 	stats := &ExtendedStats{
 		Stats: c.defaultStats(),
 	}
@@ -239,17 +239,6 @@ func (c *NginxPlus) getStats(client Client) (*plusclient.Stats, error) {
 			return
 		}
 		stats.Slabs = *slabs
-	}()
-
-	initialStatsWg.Add(1)
-	go func() {
-		defer initialStatsWg.Done()
-		connections, err := client.GetConnections()
-		if err != nil {
-			initialStatsErrChan <- fmt.Errorf("failed to get connections: %w", err)
-			return
-		}
-		stats.Connections = *connections
 	}()
 
 	initialStatsWg.Add(1)
@@ -425,6 +414,28 @@ func (c *NginxPlus) getStats(client Client) (*plusclient.Stats, error) {
 		if len(streamStatsErrChan) > 0 {
 			log.Warnf("no useful metrics found in stream stats")
 		}
+	}
+
+	// report connection metrics separately so it does not influence the results (all http requests show in the metrics)
+	var connectionsWg sync.WaitGroup
+	connectionsErrChan := make(chan error, 1)
+
+	connectionsWg.Add(1)
+	go func() {
+		defer connectionsWg.Done()
+		connections, err := client.GetConnections()
+		if err != nil {
+			connectionsErrChan <- fmt.Errorf("failed to get connections: %w", err)
+			return
+		}
+		stats.Connections = *connections
+	}()
+
+	connectionsWg.Wait()
+	close(connectionsErrChan)
+
+	if len(connectionsErrChan) > 0 {
+		log.Warnf("connections metrics not found")
 	}
 
 	return stats.Stats, nil
