@@ -20,7 +20,7 @@ import (
 
 var tailConfig = tail.Config{
 	Follow:    true,
-	ReOpen:    true,
+	ReOpen:    false,
 	MustExist: true,
 	Poll:      true,
 	Location: &tail.SeekInfo{
