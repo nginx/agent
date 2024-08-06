@@ -15,7 +15,6 @@ COPY ./test/integration/api/nginx.conf /etc/nginx/nginx.conf
 COPY ./ /agent
 
 RUN nginx -t
-RUN ps -ef | grep nginx
 RUN systemctl status nginx
 
 RUN  apt-get update \ 
