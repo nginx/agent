@@ -66,3 +66,6 @@ jobs:
       createPullRequest: ${{ inputs.createPullRequest }}
       releaseBranch: ${{ inputs.releaseBranch }}
     secrets: inherit
+    permissions:
+      contents: read
+      id-token: write
