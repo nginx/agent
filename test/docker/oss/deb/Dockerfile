@@ -16,7 +16,7 @@ COPY ./ /agent
 
 RUN apt-get update \
         && apt-get install --no-install-recommends --no-install-suggests -y procps
-RUN nginx -t
+RUN nginx -T
 RUN ps -ef | grep nginx
 
 RUN  apt-get update \ 
