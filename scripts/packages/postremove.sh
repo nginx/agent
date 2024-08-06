@@ -1,7 +1,11 @@
 #!/bin/sh
+set -e
+
+# Note: >/dev/null 2>&1 is used in multiple if statements in this file. 
+# This is to hide expected error messages from being outputted.
 
 # Determine OS platform
-# shellcheck source=/dev/null
+
 . /etc/os-release
 
 stop_agent_freebsd() {
@@ -30,6 +34,17 @@ systemd_daemon_reload() {
 }
 
 cleanup() {
+    echo "Removing nginx-agent group"
+    if command -V groupdel >/dev/null 2>&1; then
+        if [ "$(getent group nginx-agent)" ]; then
+            groupdel nginx-agent
+        fi
+    fi
+
+    if [ "$ID" = "freebsd" ]; then
+        pw groupdel nginx-agent
+    fi
+
     echo "Removing /var/run/nginx-agent directory"
     rm -rf "/var/run/nginx-agent"
 }
