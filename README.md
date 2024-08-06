@@ -1,3 +1,9 @@
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/nginx/agent)
+![GitHub Release](https://img.shields.io/github/v/release/nginx/agent)
+![GitHub License](https://img.shields.io/github/license/nginx/agent)
+![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)
+[![Slack](https://img.shields.io/badge/slack-join%20us-brightgreen.svg?logo=slack)](https://nginxcommunity.slack.com/channels/nginx-agent)
+
 ![NGINX Agent Banner](docs/agent-banner.png "NGINX Agent Banner")
 
 NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus instance. It enables:
