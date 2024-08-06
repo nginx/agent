@@ -10,8 +10,10 @@ ARG OS_VERSION
 ARG DEBIAN_FRONTEND=noninteractive
 ARG PACKAGE_NAME
 
+RUN echo ${CONTAINER_OS_TYPE}
+
 WORKDIR /agent
-COPY ./build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE} /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE}
+COPY ./build/${PACKAGE_NAME}.deb /agent/build/${PACKAGE_NAME}.deb
 COPY ./ /agent
 
 FROM install AS runtime
