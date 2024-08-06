@@ -7,6 +7,7 @@ package collector
 import (
 	"errors"
 
+	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/exceptionsconnector"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/grafanacloudconnector"
@@ -179,6 +180,7 @@ func createReceiverFactories() (map[component.Type]receiver.Factory, error) {
 		syslogreceiver.NewFactory(),
 		tcplogreceiver.NewFactory(),
 		udplogreceiver.NewFactory(),
+		nginxplusreceiver.NewFactory(),
 	}
 
 	return receiver.MakeFactoryMap(receiverList...)

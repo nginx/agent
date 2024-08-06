@@ -303,7 +303,7 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 		err         error
 		exporters   []Exporter
 		processors  []Processor
-		receivers   []Receiver
+		receivers   Receivers
 		healthCheck ServerConfig
 	)
 

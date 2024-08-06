@@ -1,0 +1,52 @@
+
+networks:
+  metrics:
+    driver: bridge
+
+volumes:
+  grafana-storage:
+
+services:
+  agent-with-nginx-plus:
+    image: ${AGENT_IMAGE}
+    volumes:
+      - ./nginx-agent.conf:/etc/nginx-agent/nginx-agent.conf
+      - ./nginx:/etc/nginx/
+    networks:
+      - metrics
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.99.0
+    restart: on-failure
+    command: [ "--config=/etc/otel-collector.yaml" ]
+    ports:
+      - 4320:4317
+      - 9775:9090
+    volumes:
+      - ./otel-collector.yaml:/etc/otel-collector.yaml
+    networks:
+      - metrics
+
+  prometheus:
+      image: prom/prometheus:latest
+      restart: unless-stopped
+      ports:
+        - "9090:9090"
+      volumes:
+        - ./prometheus.yaml:/etc/prometheus/prometheus.yml
+      command:
+        - '--config.file=/etc/prometheus/prometheus.yml'
+      networks:
+        - metrics
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    ports:
+      - "3002:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/provisioning/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - metrics

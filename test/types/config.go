@@ -29,16 +29,14 @@ const (
 	commonMultiplier          = 0.2
 
 	reloadMonitoringPeriod = 400 * time.Millisecond
+
+	randomPort1 = 1234
+	randomPort2 = 4321
+	randomPort3 = 1337
 )
 
 // Produces a populated Agent Config for testing usage.
 func AgentConfig() *config.Config {
-	var (
-		randomPort1 = 1234
-		randomPort2 = 4321
-		randomPort3 = 1337
-	)
-
 	return &config.Config{
 		Version: "test-version",
 		UUID:    "75442486-0878-440c-9db1-a7006c25a39f",
@@ -64,13 +62,6 @@ func AgentConfig() *config.Config {
 					Auth: &config.AuthConfig{
 						Token: "super-secret-token",
 					},
-					TLS: &config.TLSConfig{
-						Cert:       "/path/to/server-cert.pem",
-						Key:        "/path/to/server-cert.pem",
-						Ca:         "/path/to/server-cert.pem",
-						SkipVerify: true,
-						ServerName: "remote-saas-server",
-					},
 				},
 			},
 			Processors: []config.Processor{
@@ -78,24 +69,11 @@ func AgentConfig() *config.Config {
 					Type: "batch",
 				},
 			},
-			Receivers: []config.Receiver{
-				{
-					Type: "otlp",
-					Server: &config.ServerConfig{
-						Host: "localhost",
-						Port: randomPort2,
-						Type: 0,
-					},
-					Auth: &config.AuthConfig{
-						Token: "even-secreter-token",
-					},
-					TLS: &config.TLSConfig{
-						Cert:       "/path/to/server-cert.pem",
-						Key:        "/path/to/server-cert.pem",
-						Ca:         "/path/to/server-cert.pem",
-						SkipVerify: true,
-						ServerName: "local-dataa-plane-server",
-					},
+			Receivers: config.Receivers{
+				OtlpReceivers: OtlpReceivers(),
+				HostMetrics: config.HostMetrics{
+					CollectionInterval: time.Minute,
+					InitialDelay:       time.Second,
 				},
 			},
 			Health: &config.ServerConfig{
@@ -154,4 +132,19 @@ func OTelConfig(t *testing.T) *config.Config {
 	ac.Collector.ConfigPath = filepath.Join(t.TempDir(), "otel-collector-config.yaml")
 
 	return ac
+}
+
+func OtlpReceivers() []config.OtlpReceiver {
+	return []config.OtlpReceiver{
+		{
+			Server: &config.ServerConfig{
+				Host: "localhost",
+				Port: randomPort2,
+				Type: 0,
+			},
+			Auth: &config.AuthConfig{
+				Token: "even-secreter-token",
+			},
+		},
+	}
 }

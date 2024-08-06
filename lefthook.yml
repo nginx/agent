@@ -4,7 +4,7 @@ pre-push:
   piped: true # Stop if one of the steps fail
   commands:
     1_generate:
-      run: make generate generate-mocks
+      run: make generate
     2_lint:
       run: make lint
     3_format:

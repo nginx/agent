@@ -1,0 +1,237 @@
+default:
+all_set:
+  metrics:
+    nginx.cache.bytes:
+      enabled: true
+    nginx.cache.memory.limit:
+      enabled: true
+    nginx.cache.memory.usage:
+      enabled: true
+    nginx.cache.responses:
+      enabled: true
+    nginx.config.reloads:
+      enabled: true
+    nginx.http.conn:
+      enabled: true
+    nginx.http.conn.count:
+      enabled: true
+    nginx.http.limit_conn.requests:
+      enabled: true
+    nginx.http.limit_req.requests:
+      enabled: true
+    nginx.http.request.byte.io:
+      enabled: true
+    nginx.http.request.discarded:
+      enabled: true
+    nginx.http.request.processing.count:
+      enabled: true
+    nginx.http.requests:
+      enabled: true
+    nginx.http.requests.count:
+      enabled: true
+    nginx.http.response.status:
+      enabled: true
+    nginx.http.responses:
+      enabled: true
+    nginx.http.upstream.keepalive.count:
+      enabled: true
+    nginx.http.upstream.peer.byte.io:
+      enabled: true
+    nginx.http.upstream.peer.conn.count:
+      enabled: true
+    nginx.http.upstream.peer.count:
+      enabled: true
+    nginx.http.upstream.peer.fails:
+      enabled: true
+    nginx.http.upstream.peer.header.time:
+      enabled: true
+    nginx.http.upstream.peer.health_checks:
+      enabled: true
+    nginx.http.upstream.peer.requests:
+      enabled: true
+    nginx.http.upstream.peer.response.time:
+      enabled: true
+    nginx.http.upstream.peer.responses:
+      enabled: true
+    nginx.http.upstream.peer.state:
+      enabled: true
+    nginx.http.upstream.peer.unavailables:
+      enabled: true
+    nginx.http.upstream.queue.limit:
+      enabled: true
+    nginx.http.upstream.queue.overflows:
+      enabled: true
+    nginx.http.upstream.queue.usage:
+      enabled: true
+    nginx.http.upstream.zombie.count:
+      enabled: true
+    nginx.slab.page.free:
+      enabled: true
+    nginx.slab.page.limit:
+      enabled: true
+    nginx.slab.page.usage:
+      enabled: true
+    nginx.slab.page.utilization:
+      enabled: true
+    nginx.slab.slot.allocations:
+      enabled: true
+    nginx.slab.slot.free:
+      enabled: true
+    nginx.slab.slot.usage:
+      enabled: true
+    nginx.ssl.certificate.verify_failures:
+      enabled: true
+    nginx.ssl.handshakes:
+      enabled: true
+    nginx.stream.byte.io:
+      enabled: true
+    nginx.stream.connection.accepted:
+      enabled: true
+    nginx.stream.connection.discarded:
+      enabled: true
+    nginx.stream.connection.processing.count:
+      enabled: true
+    nginx.stream.session.status:
+      enabled: true
+    nginx.stream.upstream.peer.byte.io:
+      enabled: true
+    nginx.stream.upstream.peer.conn.count:
+      enabled: true
+    nginx.stream.upstream.peer.conn.time:
+      enabled: true
+    nginx.stream.upstream.peer.conns:
+      enabled: true
+    nginx.stream.upstream.peer.count:
+      enabled: true
+    nginx.stream.upstream.peer.fails:
+      enabled: true
+    nginx.stream.upstream.peer.health_checks:
+      enabled: true
+    nginx.stream.upstream.peer.response.time:
+      enabled: true
+    nginx.stream.upstream.peer.state:
+      enabled: true
+    nginx.stream.upstream.peer.ttfb.time:
+      enabled: true
+    nginx.stream.upstream.peer.unavailable:
+      enabled: true
+    nginx.stream.upstream.zombie.count:
+      enabled: true
+none_set:
+  metrics:
+    nginx.cache.bytes:
+      enabled: false
+    nginx.cache.memory.limit:
+      enabled: false
+    nginx.cache.memory.usage:
+      enabled: false
+    nginx.cache.responses:
+      enabled: false
+    nginx.config.reloads:
+      enabled: false
+    nginx.http.conn:
+      enabled: false
+    nginx.http.conn.count:
+      enabled: false
+    nginx.http.limit_conn.requests:
+      enabled: false
+    nginx.http.limit_req.requests:
+      enabled: false
+    nginx.http.request.byte.io:
+      enabled: false
+    nginx.http.request.discarded:
+      enabled: false
+    nginx.http.request.processing.count:
+      enabled: false
+    nginx.http.requests:
+      enabled: false
+    nginx.http.requests.count:
+      enabled: false
+    nginx.http.response.status:
+      enabled: false
+    nginx.http.responses:
+      enabled: false
+    nginx.http.upstream.keepalive.count:
+      enabled: false
+    nginx.http.upstream.peer.byte.io:
+      enabled: false
+    nginx.http.upstream.peer.conn.count:
+      enabled: false
+    nginx.http.upstream.peer.count:
+      enabled: false
+    nginx.http.upstream.peer.fails:
+      enabled: false
+    nginx.http.upstream.peer.header.time:
+      enabled: false
+    nginx.http.upstream.peer.health_checks:
+      enabled: false
+    nginx.http.upstream.peer.requests:
+      enabled: false
+    nginx.http.upstream.peer.response.time:
+      enabled: false
+    nginx.http.upstream.peer.responses:
+      enabled: false
+    nginx.http.upstream.peer.state:
+      enabled: false
+    nginx.http.upstream.peer.unavailables:
+      enabled: false
+    nginx.http.upstream.queue.limit:
+      enabled: false
+    nginx.http.upstream.queue.overflows:
+      enabled: false
+    nginx.http.upstream.queue.usage:
+      enabled: false
+    nginx.http.upstream.zombie.count:
+      enabled: false
+    nginx.slab.page.free:
+      enabled: false
+    nginx.slab.page.limit:
+      enabled: false
+    nginx.slab.page.usage:
+      enabled: false
+    nginx.slab.page.utilization:
+      enabled: false
+    nginx.slab.slot.allocations:
+      enabled: false
+    nginx.slab.slot.free:
+      enabled: false
+    nginx.slab.slot.usage:
+      enabled: false
+    nginx.ssl.certificate.verify_failures:
+      enabled: false
+    nginx.ssl.handshakes:
+      enabled: false
+    nginx.stream.byte.io:
+      enabled: false
+    nginx.stream.connection.accepted:
+      enabled: false
+    nginx.stream.connection.discarded:
+      enabled: false
+    nginx.stream.connection.processing.count:
+      enabled: false
+    nginx.stream.session.status:
+      enabled: false
+    nginx.stream.upstream.peer.byte.io:
+      enabled: false
+    nginx.stream.upstream.peer.conn.count:
+      enabled: false
+    nginx.stream.upstream.peer.conn.time:
+      enabled: false
+    nginx.stream.upstream.peer.conns:
+      enabled: false
+    nginx.stream.upstream.peer.count:
+      enabled: false
+    nginx.stream.upstream.peer.fails:
+      enabled: false
+    nginx.stream.upstream.peer.health_checks:
+      enabled: false
+    nginx.stream.upstream.peer.response.time:
+      enabled: false
+    nginx.stream.upstream.peer.state:
+      enabled: false
+    nginx.stream.upstream.peer.ttfb.time:
+      enabled: false
+    nginx.stream.upstream.peer.unavailable:
+      enabled: false
+    nginx.stream.upstream.zombie.count:
+      enabled: false

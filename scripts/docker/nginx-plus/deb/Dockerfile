@@ -1,11 +1,15 @@
-FROM ubuntu:24.04 as base
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE} as install-nginx
 LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
-# https://askubuntu.com/questions/909277/avoiding-user-interaction-with-tzdata-when-installing-certbot-in-a-docker-contai
 ARG DEBIAN_FRONTEND=noninteractive
+ARG ENTRY_POINT
+ARG PACKAGE_NAME
+ARG PACKAGES_REPO
 
 WORKDIR /agent
-COPY . /agent
+COPY ./build /agent/build
+COPY $ENTRY_POINT /agent/entrypoint.sh
 
 RUN --mount=type=secret,id=nginx-crt,dst=nginx-repo.crt \
     --mount=type=secret,id=nginx-key,dst=nginx-repo.key \
@@ -53,6 +57,7 @@ RUN --mount=type=secret,id=nginx-crt,dst=nginx-repo.crt \
                         curl \
                         gettext-base \
                         jq \
+                        gnupg2 \
     && apt-get remove --purge -y lsb-release \
     && apt-get remove --purge --auto-remove -y && rm -rf /var/lib/apt/lists/* /etc/apt/sources.list.d/nginx-plus.list \
     && rm -rf /etc/apt/apt.conf.d/90nginx /etc/ssl/nginx
@@ -61,39 +66,11 @@ EXPOSE 80
 
 STOPSIGNAL SIGQUIT
 
-CMD git config --global --add safe.directory /home/nginx
+RUN chmod +x /agent/entrypoint.sh
+RUN apt install -y /agent/build/${PACKAGE_NAME}.deb
 
-FROM base as configure-go
+STOPSIGNAL SIGTERM
 
-ARG GO_VERSION
-ARG OSARCH
+EXPOSE 80 443
 
-# Install Go
-RUN wget https://go.dev/dl/go${GO_VERSION}.linux-${OSARCH}.tar.gz \
-    && tar -xvf go${GO_VERSION}.linux-${OSARCH}.tar.gz \
-    && mv go /usr/local
-
-ENV DEBIAN_FRONTEND=noninteractive
-ENV GOROOT=/usr/local/go
-ENV CGO_ENABLED=0
-ENV PATH="/usr/local/go/bin:${PATH}" 
-ENV PATH=$PATH:/usr/local/go/bin
-
-RUN mv /agent/test/config/agent/nginx-agent-otel-load.conf /agent/test/load/nginx-agent.conf
-RUN mkdir /var/run/nginx-agent/
-
-WORKDIR /agent/
-CMD make install-tools
-
-FROM configure-go as run-tests
-
-WORKDIR /agent/
-
-RUN make build
-RUN chmod -R +x ./build
-
-WORKDIR /agent/test/load
-
-RUN go test -v -timeout 30s ./...
-
-CMD ["sh", "-c", "cat benchmarks.json"]
+ENTRYPOINT ["/agent/entrypoint.sh"]
