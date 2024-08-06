@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
- package cgroup
+package cgroup
 
 import (
 	"testing"

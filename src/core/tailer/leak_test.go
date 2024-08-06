@@ -5,15 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
- package tailer
+package tailer
 
- import (
-	 "testing"
- 
-	 "go.uber.org/goleak"
- )
- 
- func TestMain(m *testing.M) {
-	 goleak.VerifyTestMain(m)
- }
- 
+import (
+	"testing"
+
+	"go.uber.org/goleak"
+)
+
+func TestMain(m *testing.M) {
+	goleak.VerifyTestMain(m)
+}
