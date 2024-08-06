@@ -45,7 +45,7 @@ BASE_IMAGE  = "${CONTAINER_REGISTRY}/${OS_RELEASE}:${OS_VERSION}"
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 NGINX_TAG   = stable
 NGINX_PLUS_TAG = r32-debian-bookworm
-AGENT_IMAGE_PATH = "/nginx-plus/agent"
+AGENT_IMAGE_PATH = "/nginx/agent"
 AGENTLESS_IMAGE_PATH = "/nginx-plus/base"
 
 VERSION_WITH_V := v${VERSION}
