@@ -11,12 +11,12 @@ ARG PACKAGE_NAME
 ARG CONTAINER_OS_TYPE
 
 WORKDIR /agent
-COPY ./build/${PACKAGE_NAME}.deb /agent/build/${PACKAGE_NAME}.deb
+COPY ./build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE} /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE}
 COPY ./ /agent
 
 RUN  apt-get update \ 
-    && apt install --no-install-recommends --no-install-suggests -y /agent/build/${PACKAGE_NAME}.deb \ 
-    &&  rm /agent/build/${PACKAGE_NAME}.deb
+    && apt install --no-install-recommends --no-install-suggests -y /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE} \ 
+    &&  rm /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE}
 
 RUN unlink /var/log/nginx/access.log
 RUN unlink /var/log/nginx/error.log

@@ -10,10 +10,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG PACKAGE_NAME
 ARG CONTAINER_OS_TYPE
 
-RUN echo ${CONTAINER_OS_TYPE}
-
 WORKDIR /agent
-COPY ./build/${PACKAGE_NAME}.deb /agent/build/${PACKAGE_NAME}.deb
 COPY ./ /agent
 
 RUN unlink /var/log/nginx/access.log
