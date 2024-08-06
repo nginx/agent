@@ -13,7 +13,7 @@ CONTAINER_BUILDENV ?= DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain
 ifeq ($(shell docker-compose -v >/dev/null 2>&1 || echo FAIL),)
 CONTAINER_COMPOSE = docker-compose
 else ifeq ($(shell docker compose -v >/dev/null 2>&1 || echo FAIL),)
-CONTAINER_COMPOSE = "docker compose"
+CONTAINER_COMPOSE = docker compose
 endif
 else ifeq ($(CONTAINER_CLITOOL), podman)
 ifeq ($(shell podman-compose -v >/dev/null 2>&1 || echo FAIL),)
