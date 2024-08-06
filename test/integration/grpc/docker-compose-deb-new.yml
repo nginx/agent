@@ -5,7 +5,7 @@ services:
         build:
             context: ../../../
             dockerfile: ./test/docker/oss/deb/Dockerfile
-            target: runtime
+            target: install
             args:
                 PACKAGE_NAME: ${PACKAGE_NAME}
                 TAG: ${TAG}

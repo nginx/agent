@@ -9,7 +9,7 @@ services:
     build:
       context: ../../../
       dockerfile: ./test/docker/agentless/deb/Dockerfile
-      target: runtime
+      target: install
       args:
         PACKAGE_NAME: ${PACKAGE_NAME}
         TAG: ${TAG}
