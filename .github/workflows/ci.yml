@@ -110,7 +110,7 @@ jobs:
           path: build
           retention-days: 1
 
-  integration-tests-new:
+  integration-tests:
     name: Integration Tests New
     needs: build-unsigned-snapshot
     runs-on: ubuntu-24.04
