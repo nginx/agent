@@ -14,7 +14,6 @@ COPY ./build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE} /agent/build/${PACKAGE_NAME}.$
 COPY ./ /agent
 
 RUN apk add --allow-untrusted /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE}
-RUN apk add nginx-agent@nginx-agent
 
 RUN unlink /var/log/nginx/access.log
 RUN unlink /var/log/nginx/error.log
