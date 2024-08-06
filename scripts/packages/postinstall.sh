@@ -43,7 +43,11 @@ detect_nginx_users() {
 
     if command -V ps >/dev/null 2>&1 && [ -z "${nginx_user}" ]; then
         printf "PostInstall: Reading NGINX process information to determine NGINX user\n"
-        nginx_user=$(ps aux | grep "nginx: master process" | grep -v grep | head -1 | awk '{print $1}')
+        if [ "$ID" = "alpine" ]; then
+            nginx_user=$(ps aux | grep "nginx: master process" | grep -v grep | head -1 | awk '{print $2}')
+        else
+            nginx_user=$(ps aux | grep "nginx: master process" | grep -v grep | head -1 | awk '{print $1}')
+        fi
 
         if [ -z "${nginx_user}" ]; then
             printf "No NGINX user found\n"
@@ -80,7 +84,11 @@ detect_nginx_users() {
 
     if command -V ps >/dev/null 2>&1 && [ -z "${worker_user}" ]; then
         printf "PostInstall: Reading NGINX process information to determine NGINX worker user\n"
-        worker_user=$(ps aux | grep "nginx: worker process" | grep -v grep | head -1 | awk '{print $1}')
+        if [ "$ID" = "alpine" ]; then
+            worker_user=$(ps aux | grep "nginx: worker process" | grep -v grep | head -1 | awk '{print $2}')
+        else
+            worker_user=$(ps aux | grep "nginx: worker process" | grep -v grep | head -1 | awk '{print $1}')
+        fi
 
         if [ -z "${worker_user}" ]; then
             printf "No NGINX worker user found\n"
