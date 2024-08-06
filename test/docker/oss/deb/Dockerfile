@@ -14,6 +14,9 @@ COPY ./build/${PACKAGE_NAME}.deb /agent/build/${PACKAGE_NAME}.deb
 COPY ./test/integration/api/nginx.conf /etc/nginx/nginx.conf
 COPY ./ /agent
 
+RUN nginx -t
+RUN nginx -s reload
+
 RUN  apt-get update \ 
     && apt install --no-install-recommends --no-install-suggests -y /agent/build/${PACKAGE_NAME}.deb \ 
     &&  rm /agent/build/${PACKAGE_NAME}.deb
