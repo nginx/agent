@@ -2,6 +2,7 @@ package collectors
 
 import (
 	"testing"
+
 	"go.uber.org/goleak"
 )
 

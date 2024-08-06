@@ -2,6 +2,7 @@ package sources
 
 import (
 	"testing"
+
 	"go.uber.org/goleak"
 )
 
