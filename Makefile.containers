@@ -31,7 +31,7 @@ else
 CONTAINER_VOLUME_FLAGS =
 endif
 else
-CONTAINER_COMPOSETOOL = $(error Neither docker-compose, docker c0mpose or podman-compose were found)
+CONTAINER_COMPOSETOOL = $(error Neither docker-compose, docker compose or podman-compose were found)
 endif
 
 ifeq ($(OS_RELEASE), ubuntu)
