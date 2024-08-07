@@ -115,6 +115,10 @@ func (nc *NginxCounter) Close() {
 	if err := os.RemoveAll(nc.serverAddress[1]); err != nil {
 		log.Warn("Error removing socket")
 	}
+
+	nc.processMutex.RLock()
+	nc.nginxes = nil
+	nc.processMutex.RUnlock()
 }
 
 func (nc *NginxCounter) Info() *core.Info {
