@@ -110,7 +110,7 @@ jobs:
           path: build
           retention-days: 1
 
-  integration-tests:
+  integration-tests-new:
     name: Integration Tests New
     needs: build-unsigned-snapshot
     runs-on: ubuntu-24.04
@@ -118,14 +118,14 @@ jobs:
       fail-fast: false
       matrix:
         container:
-        - image: "ubuntu"
-          version: "24.04"
         - image: "debian"
-          version: "bullseye-slim"
+          version: "stable"
         - image: "debian"
-          version: "bookworm-slim"
+          version: "mainline"
         - image: "alpine"
-          version: "3.20"
+          version: "stable"
+        - image: "alpine"
+          version: "mainline"
     steps:
       - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
         with:
@@ -147,7 +147,7 @@ jobs:
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}"\
+          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" TAG="${{ matrix.container.version }}-${{ matrix.container.image }}"\
             make new-integration-test
       - name: Container Output Logs 
         if: failure()
@@ -160,7 +160,7 @@ jobs:
         if: success() || failure()
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
-          name: integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}
+          name: integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}-new
           path: /tmp/integration-test-logs/
           retention-days: 3
 
