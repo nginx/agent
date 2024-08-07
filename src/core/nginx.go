@@ -47,7 +47,7 @@ type NginxBinary interface {
 	Start(nginxId, bin string) error
 	Stop(processId, bin string) error
 	Reload(processId, bin string) error
-	ValidateConfig(processId, bin, configLocation string, config *proto.NginxConfig, configApply *sdk.ConfigApply) error
+	ValidateConfig(processId, bin, configLocation, errorLogPath string, config *proto.NginxConfig, configApply *sdk.ConfigApply) error
 	GetNginxDetailsFromProcess(nginxProcess *Process) *proto.NginxDetails
 	GetNginxDetailsByID(nginxID string) *proto.NginxDetails
 	GetNginxIDForProcess(nginxProcess *Process) string
@@ -209,6 +209,10 @@ func (n *NginxBinaryType) GetNginxDetailsFromProcess(nginxProcess *Process) *pro
 		log.Tracef("Custom conf path set: %v", path)
 		nginxDetailsFacade.ConfPath = path
 	}
+	if errorLogPath := getErrorLogPathFromCommand(nginxProcess.Command); errorLogPath != "" {
+		log.Tracef("Custom error log path set: %v", errorLogPath)
+		nginxDetailsFacade.ErrorLogPath = errorLogPath
+	}
 
 	n.statusUrlMutex.RLock()
 	urlsLength := len(n.statusUrls)
@@ -290,15 +294,25 @@ func (n *NginxBinaryType) Reload(processId, bin string) error {
 }
 
 // ValidateConfig tests the config with nginx -t -c configLocation.
-func (n *NginxBinaryType) ValidateConfig(processId, bin, configLocation string, config *proto.NginxConfig, configApply *sdk.ConfigApply) error {
-	log.Debugf("Validating config, %s for nginx process, %s", configLocation, processId)
-	response, err := runCmd(bin, "-t", "-c", configLocation)
+func (n *NginxBinaryType) ValidateConfig(processId, bin, configLocation, errorLogPath string, config *proto.NginxConfig, configApply *sdk.ConfigApply) error {
+	log.Debugf("Validating config, %s for nginx process, %s, with custom error path %v", configLocation, processId, errorLogPath)
+	var response *bytes.Buffer
+	var err error
+	if len(errorLogPath) > 0 {
+		response, err = runCmd(bin, "-t", "-c", configLocation, "-e", errorLogPath)
+	} else {
+		response, err = runCmd(bin, "-t", "-c", configLocation)
+	}
 	if err != nil {
 		confFiles, auxFiles, getNginxConfigFilesErr := sdk.GetNginxConfigFiles(config)
 		if getNginxConfigFilesErr == nil {
 			n.writeBackup(config, confFiles, auxFiles)
 		}
-		return fmt.Errorf("error running nginx -t -c %v:\n%s", configLocation, response)
+		if len(errorLogPath) > 0 {
+			return fmt.Errorf("error running nginx -t -c %v -e %v:\n%s", configLocation, errorLogPath, response)
+		} else {
+			return fmt.Errorf("error running nginx -t -c %v:\n%s", configLocation, response)
+		}
 	}
 
 	err = n.validateConfigCheckResponse(response, configLocation)
@@ -745,6 +759,19 @@ func getConfPathFromCommand(command string) string {
 
 	for i, command := range commands {
 		if command == "-c" {
+			if i < len(commands)-1 {
+				return commands[i+1]
+			}
+		}
+	}
+	return ""
+}
+
+func getErrorLogPathFromCommand(command string) string {
+	commands := strings.Split(command, " ")
+
+	for i, command := range commands {
+		if command == "-e" {
 			if i < len(commands)-1 {
 				return commands[i+1]
 			}

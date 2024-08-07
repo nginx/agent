@@ -109,8 +109,8 @@ func (m *MockNginxBinary) Reload(processId, bin string) error {
 	return nil
 }
 
-func (m *MockNginxBinary) ValidateConfig(processId, bin, configLocation string, config *proto.NginxConfig, configApply *sdk.ConfigApply) error {
-	args := m.Called(processId, bin, configLocation, config, configApply)
+func (m *MockNginxBinary) ValidateConfig(processId, bin, configLocation, errorLogPath string, config *proto.NginxConfig, configApply *sdk.ConfigApply) error {
+	args := m.Called(processId, bin, configLocation, errorLogPath, config, configApply)
 	return args.Error(0)
 }
 
