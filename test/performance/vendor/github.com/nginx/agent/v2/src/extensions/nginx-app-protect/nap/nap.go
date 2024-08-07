@@ -34,6 +34,7 @@ var (
 	processCheckFunc    = core.CheckForProcesses
 	mu                  = sync.Mutex{}
 )
+
 // NewNginxAppProtect returns the object NginxAppProtect, which contains information related
 // to the Nginx App Protect installed on the system. If Nginx App Protect is NOT installed on
 // the system then a NginxAppProtect object is still returned, the status field will be set
