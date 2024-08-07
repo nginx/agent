@@ -82,7 +82,7 @@ message AgentDetails {
   string alias = 4 [(gogoproto.jsontag) = "alias"];
   // Server setting for the agent
   Server server = 5 [(gogoproto.jsontag) = "server"];
-  // List of allowed directories in the Agent Config
+  // List of allowed directories that the Agent can write to
   repeated string allowed_directories = 6 [(gogoproto.jsontag) = "allowed_directories"];
 }
 

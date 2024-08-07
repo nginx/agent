@@ -424,7 +424,7 @@ type AgentDetails struct {
 	Alias string `protobuf:"bytes,4,opt,name=alias,proto3" json:"alias"`
 	// Server setting for the agent
 	Server *Server `protobuf:"bytes,5,opt,name=server,proto3" json:"server"`
-	// List of allowed directories in the Agent Config
+	// List of allowed directories that the Agent can write to
 	AllowedDirectories   []string `protobuf:"bytes,6,rep,name=allowed_directories,json=allowedDirectories,proto3" json:"allowed_directories"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

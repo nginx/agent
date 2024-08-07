@@ -215,7 +215,7 @@ Represents agent details. This message is sent from the management server to the
 | tags | [string](#string) | repeated | List of tags |
 | alias | [string](#string) |  | Alias name for the agent |
 | server | [Server](#f5-nginx-agent-sdk-Server) |  | Server setting for the agent |
-| allowed_directories | [string](#string) | repeated | List of allowed directories in the Agent Config |
+| allowed_directories | [string](#string) | repeated | List of allowed directories that the Agent can write to |
 
 
 
