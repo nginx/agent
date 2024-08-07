@@ -24,7 +24,7 @@ WORKER_USER=""
 AGENT_GROUP="nginx-agent"
 
 detect_nginx_users() {
-    if command -V systemctl >/dev/null 2>&1 && [ "$(cat /proc/1/comm)" = "systemd" ]; then
+    if command -V systemctl >/dev/null 2>&1 && systemctl status nginx >/dev/null 2>&1 && [ "$(cat /proc/1/comm)" = "systemd" ]; then
         printf "PostInstall: Reading NGINX systemctl unit file for user information\n"
         nginx_unit_file=$(systemctl status nginx | grep -Po "\(\K\/.*service")
         pid_file=$(grep -Po "PIDFile=\K.*$" "${nginx_unit_file}")
