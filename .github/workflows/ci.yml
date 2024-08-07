@@ -188,14 +188,18 @@ jobs:
       fail-fast: false
       matrix:
         container:
-        - image: "debian"
+        - image: "bookworm"
           version: "stable"
-        - image: "debian"
+          release: "debian"
+        - image: "bookworm"
           version: "mainline"
+          release: "debian"
         - image: "alpine"
           version: "stable"
+          release: "alpine"
         - image: "alpine"
           version: "mainline"
+          release: "alpine"
     steps:
       - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
         with:
@@ -217,7 +221,7 @@ jobs:
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" TAG="${{ matrix.container.version }}-${{ matrix.container.image }}"\
+          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" TAG="${{ matrix.container.version }}-${{ matrix.container.image }}" OS_RELEASE="${{ matrix.container.release }}"\
             make new-integration-test
       - name: Container Output Logs 
         if: failure()

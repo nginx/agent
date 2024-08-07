@@ -92,7 +92,7 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 			"CONTAINER_OS_TYPE":              os.Getenv("CONTAINER_OS_TYPE"),
 			"IMAGE_PATH":                     os.Getenv("IMAGE_PATH"),
 		}).
-		WaitForService("agent", wait.NewLogStrategy("'nginx' with pid").WithOccurrence(1)).
+		WaitForService("agent", wait.NewLogStrategy("nginx_pid").WithOccurrence(1)).
 		Up(ctx, compose.Wait(true))
 
 	assert.NoError(t, err, "compose.Up()")
