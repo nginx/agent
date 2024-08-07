@@ -818,8 +818,6 @@ github.com/open-telemetry/opentelemetry-collector-contrib/receiver/dockerstatsre
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/dockerstatsreceiver v0.102.0/go.mod h1:WbkG6SPeesheMtvjXwRg6PIk2jIKK20kEEPMr36MYrE=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.102.0 h1:czJBjI4rZ+FNrdq/MkLQP4f6tsB3XIwN3mVXZOiIYcM=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.102.0/go.mod h1:eRViM57aYPXdI8bH1gMcpc02gIP4+QW5bXPjZiJLwgU=
-github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filestatsreceiver v0.100.0 h1:pW4LWiNZqvlIEkCEDHWVAYq3qcbLlJ941j+X7UmvP24=
-github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filestatsreceiver v0.100.0/go.mod h1:C4Eh50L6w0S6gBz/y2eIZdp7zg7cJpzeVOop2of3mzo=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.102.0 h1:2JxSNc2Tw+JTsNqEuUM4fKJLBSSxhbQYRgLoasvkTH0=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.102.0/go.mod h1:JjaTMPGUbc2OhwocO/xj5HLXO99tdmNYnsXOqie01kg=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/httpcheckreceiver v0.102.0 h1:F7k0rUgsPemwpOWxZOOTxvCK4ojY5AA6IiroQZahrsg=
