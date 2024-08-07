@@ -106,6 +106,8 @@ func (c *NginxOSS) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *me
 
 	simpleMetrics = append(simpleMetrics, &proto.SimpleMetric{Name: "nginx.status", Value: 1.0})
 
+	log.Debugf("oss metrics count %d", len(simpleMetrics))
+
 	select {
 	case <-ctx.Done():
 	case m <- metrics.NewStatsEntityWrapper(c.baseDimensions.ToDimensions(), simpleMetrics, proto.MetricsReport_INSTANCE):

@@ -378,6 +378,8 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 			httpCounters, upstreamCounters, upstreamCacheCounters = map[string]float64{}, map[string]float64{}, map[string]float64{}
 			gzipRatios, requestLengths, requestTimes, upstreamResponseLength, upstreamResponseTimes, upstreamConnectTimes, upstreamHeaderTimes = []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}
 
+			log.Debugf("access log stats count: %d", len(simpleMetrics))
+
 			c.buf = append(c.buf, metrics.NewStatsEntityWrapper(c.baseDimensions.ToDimensions(), simpleMetrics, proto.MetricsReport_INSTANCE))
 
 			mu.Unlock()

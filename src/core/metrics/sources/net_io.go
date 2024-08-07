@@ -16,6 +16,7 @@ import (
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/shirou/gopsutil/v3/net"
+	log "github.com/sirupsen/logrus"
 )
 
 const NETWORK_INTERFACE = "network_interface"
@@ -82,6 +83,8 @@ func (nio *NetIO) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *met
 		}
 
 		simpleMetrics := nio.convertSamplesToSimpleMetrics(v)
+		log.Debugf("net IO stats count: %d", len(simpleMetrics))
+
 		select {
 		case <-ctx.Done():
 			return

@@ -52,6 +52,7 @@ func (dio *DiskIO) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *me
 
 	for k, v := range diffDiskIOStats {
 		simpleMetrics := dio.convertSamplesToSimpleMetrics(v)
+		log.Debugf("disk io metrics collected: %v", len(simpleMetrics))
 
 		select {
 		case <-ctx.Done():

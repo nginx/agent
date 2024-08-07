@@ -262,6 +262,8 @@ func (client *NginxWorkerClient) GetWorkerStats(childProcs []*proto.NginxDetails
 	stats.Workers.KbsW = kbsw
 	stats.Workers.FdsCount = fdSum
 
+	log.Debugf("worker stats for number of workers: %f", stats.Workers.Count)
+
 	return stats, nil
 }
 
