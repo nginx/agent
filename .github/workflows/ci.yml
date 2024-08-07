@@ -111,6 +111,76 @@ jobs:
           retention-days: 1
 
   integration-tests:
+      name: Integration Tests
+      needs: build-unsigned-snapshot
+      runs-on: ubuntu-24.04
+      strategy:
+          fail-fast: false
+          matrix:
+              container:
+                  - image: "rockylinux"
+                    version: "8"
+                  - image: "rockylinux"
+                    version: "9"
+                  - image: "almalinux"
+                    version: "8"
+                  - image: "almalinux"
+                    version: "9"
+                  - image: "amazonlinux"
+                    version: "2"
+                  - image: "amazonlinux"
+                    version: "2023"
+                  - image: "oraclelinux"
+                    version: "8"
+                  - image: "oraclelinux"
+                    version: "9"
+                  - image: "ubuntu"
+                    version: "24.04"
+                  - image: "alpine"
+                    version: "3.17"
+                  - image: "alpine"
+                    version: "3.18"
+                  - image: "alpine"
+                    version: "3.19"
+                  - image: "alpine"
+                    version: "3.20"
+                  - image: "debian"
+                    version: "bullseye-slim"
+                  - image: "debian"
+                    version: "bookworm-slim"
+      steps:
+          - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+            with:
+                fetch-depth: 0
+          - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+            with:
+                go-version-file: 'go.mod'
+          - name: Download Packages
+            uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+            with:
+                name: nginx-agent-unsigned-snapshots
+                path: build
+          - name: Run Integration Tests
+            run: |
+                go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
+                OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
+                  make integration-test
+          - name: Container Output Logs
+            if: failure()
+            run: |
+                docker ps -a
+                dockerid=$(docker ps -a --format "{{.ID}}")
+                docker logs "$dockerid"
+
+          - name: Archive integration test logs
+            if: success() || failure()
+            uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+            with:
+                name: integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}
+                path: /tmp/integration-test-logs/
+                retention-days: 3
+
+  integration-tests-new:
     name: Integration Tests New
     needs: build-unsigned-snapshot
     runs-on: ubuntu-24.04
