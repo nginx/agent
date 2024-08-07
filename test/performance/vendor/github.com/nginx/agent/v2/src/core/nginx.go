@@ -502,6 +502,11 @@ func (n *NginxBinaryType) writeConfigWithWithFileActions(
 		return nil, err
 	}
 
+	confDir := filepath.Dir(details.ConfPath)
+	if err := ensureFilesAllowed(confFiles, n.config.AllowedDirectoriesMap, confDir); err != nil {
+		return configApply, err
+	}
+
 	for _, file := range confFiles {
 		rootDirectoryPath := filepath.Dir(details.ConfPath)
 		fileFullPath := file.Name
@@ -517,6 +522,10 @@ func (n *NginxBinaryType) writeConfigWithWithFileActions(
 			log.Warnf("configuration write failed: %s", err)
 			return configApply, err
 		}
+	}
+
+	if err := ensureFilesAllowed(auxFiles, n.config.AllowedDirectoriesMap, confDir); err != nil {
+		return configApply, err
 	}
 
 	for _, file := range auxFiles {
