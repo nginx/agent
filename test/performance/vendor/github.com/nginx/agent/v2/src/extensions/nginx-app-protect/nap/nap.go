@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/nginx/agent/v2/src/core"
@@ -31,7 +32,7 @@ var (
 	requiredNAPFiles    = []string{NAP_VERSION_FILE, NAP_RELEASE_FILE}
 	requireNAPProcesses = []string{BD_SOCKET_PLUGIN_PROCESS}
 	processCheckFunc    = core.CheckForProcesses
-)
+	mu                  = sync.Mutex{}
 
 // NewNginxAppProtect returns the object NginxAppProtect, which contains information related
 // to the Nginx App Protect installed on the system. If Nginx App Protect is NOT installed on
@@ -106,14 +107,14 @@ func (nap *NginxAppProtect) Monitor(pollInterval time.Duration) chan NAPReportBu
 // a report message sent via the channel provided to it.
 func (nap *NginxAppProtect) monitor(msgChannel chan NAPReportBundle, pollInterval time.Duration) {
 	// Initial symlink sync
-	nap.mu.Lock()
+	mu.Lock()
 	if nap.Release.VersioningDetails.NAPRelease != "" {
 		err := nap.syncSymLink("", nap.Release.VersioningDetails.NAPBuild)
 		if err != nil {
 			log.Errorf("Error occurred while performing initial sync for NAP symlink  - %v", err)
 		}
 	}
-	nap.mu.Unlock()
+	mu.Unlock()
 
 	ticker := time.NewTicker(pollInterval)
 
@@ -129,10 +130,10 @@ func (nap *NginxAppProtect) monitor(msgChannel chan NAPReportBundle, pollInterva
 			newNAPReport := newNap.GenerateNAPReport()
 
 			// Check if there has been any change in the NAP report
-			nap.mu.Lock()
+			mu.Lock()
 			if nap.napReportIsEqual(newNAPReport) {
 				log.Debugf("No change in NAP detected... Checking NAP again in %v seconds", pollInterval.Seconds())
-				nap.mu.Unlock()
+				mu.Unlock()
 				break
 			}
 
@@ -144,7 +145,7 @@ func (nap *NginxAppProtect) monitor(msgChannel chan NAPReportBundle, pollInterva
 			err = nap.syncSymLink(nap.Release.VersioningDetails.NAPBuild, newNAPReport.NAPVersion)
 			if err != nil {
 				log.Errorf("Got the following error syncing NAP symlink - %v", err)
-				nap.mu.Unlock()
+				mu.Unlock()
 				break
 			}
 
@@ -153,7 +154,7 @@ func (nap *NginxAppProtect) monitor(msgChannel chan NAPReportBundle, pollInterva
 			nap.Release = newNap.Release
 			nap.AttackSignaturesVersion = newNap.AttackSignaturesVersion
 			nap.ThreatCampaignsVersion = newNap.ThreatCampaignsVersion
-			nap.mu.Unlock()
+			mu.Unlock()
 
 			// Send the update message through the channel
 			msgChannel <- NAPReportBundle{
@@ -242,8 +243,8 @@ func (nap *NginxAppProtect) removeNAPSymlinks(symlinkPatternToIgnore string) err
 // function has NOT called the Monitor function that is responsible for updating its values
 // to be in sync with the current system NAP values.
 func (nap *NginxAppProtect) GenerateNAPReport() NAPReport {
-	nap.mu.Lock()
-	defer nap.mu.Unlock()
+	mu.Lock()
+	defer mu.Unlock()
 	return NAPReport{
 		NAPVersion:              nap.Release.VersioningDetails.NAPBuild,
 		NAPRelease:              nap.Release.VersioningDetails.NAPRelease,

@@ -7,8 +7,6 @@
 
 package nap
 
-import "sync"
-
 // Status is an Enum that represents the status of NAP.
 type Status int
 
@@ -21,7 +19,6 @@ type NginxAppProtect struct {
 	ThreatCampaignsVersion  string
 	optDirPath              string
 	symLinkDir              string
-	mu                      sync.Mutex // Protects the fields above
 }
 
 // NAPReport is a collection of information on the current systems NAP details.
