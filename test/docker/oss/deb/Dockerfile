@@ -12,7 +12,6 @@ ARG CONTAINER_OS_TYPE
 
 WORKDIR /agent
 COPY ./build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE} /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE}
-RUN ls
 
 RUN  apt-get update \ 
     && apt install --no-install-recommends --no-install-suggests -y /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE} \ 
