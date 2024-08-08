@@ -7,10 +7,6 @@ on:
         description: 'Setup release in github'
         type: boolean
         default: false
-      buildPackages:
-        description: 'Build packages'
-        default: true
-        type: boolean
       packageVersion:
         description: 'Package version number'
         default: "3.0.0"
@@ -56,7 +52,6 @@ jobs:
     runs-on: ubuntu-22.04
     outputs:
       github_release: ${{steps.vars.outputs.github_release }}
-      build_packages: ${{steps.vars.outputs.build_packages }}
       upload_azure: ${{steps.vars.outputs.upload_azure }}
       publish_packages: ${{steps.vars.outputs.publish_packages }}
       tag_release: ${{steps.vars.outputs.tag_release }}
@@ -71,7 +66,6 @@ jobs:
         id: vars
         run: |
           echo "github_release=${{ inputs.githubRelease }}" >> $GITHUB_OUTPUT
-          echo "build_packages=${{ inputs.buildPackages }}" >> $GITHUB_OUTPUT
           echo "upload_azure=${{ inputs.uploadAzure }}" >> $GITHUB_OUTPUT
           echo "publish_packages=${{ inputs.publishPackages }}" >> $GITHUB_OUTPUT
           echo "tag_release=${{ inputs.tagRelease }}" >> $GITHUB_OUTPUT
@@ -238,7 +232,7 @@ jobs:
 
       - name: Build Packages
         env:
-          GPG_KEY: ${{ secrets.gpg-key }}
+          GPG_KEY: ${{ secrets.INDIGO_GPG_AGENT }}
           NFPM_SIGNING_KEY_FILE: .key.asc
           VERSION: ${{ inputs.packageVersion }}
         run: |
@@ -316,7 +310,7 @@ jobs:
 
   merge-release:
     if: ${{ needs.vars.outputs.create_pull_request == 'true' }}
-    name: Publish packages
+    name: Merge release branch back into V3 branch
     runs-on: ubuntu-22.04
     needs: [vars,tag-release]
     steps:
