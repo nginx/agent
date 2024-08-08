@@ -45,6 +45,8 @@ func FilesExists(filePaths []string) (bool, error) {
 	return true, nil
 }
 
+// EnableWritePermissionForSocket attempts to set the write permissions for a socket file located at the specified path.
+// The function continuously attempts the operation until either it succeeds or the timeout period elapses.
 func EnableWritePermissionForSocket(path string) error {
 	timeout := time.After(time.Second * 1)
 	var lastError error

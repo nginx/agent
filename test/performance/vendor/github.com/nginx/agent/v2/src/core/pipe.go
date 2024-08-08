@@ -36,20 +36,18 @@ type MessagePipe struct {
 	plugins          []Plugin
 	extensionPlugins []ExtensionPlugin
 	ctx              context.Context
-	cancel           context.CancelFunc
 	mu               sync.RWMutex
 	bus              message_bus.MessageBus
 }
 
 func NewMessagePipe(ctx context.Context, size int) *MessagePipe {
-	pipeContext, pipeCancel := context.WithCancel(ctx)
 	return &MessagePipe{
 		messageChannel:   make(chan *Message, size),
 		plugins:          make([]Plugin, 0, MaxPlugins),
 		extensionPlugins: make([]ExtensionPlugin, 0, MaxExtensionPlugins),
-		ctx:              pipeContext,
-		cancel:           pipeCancel,
+		ctx:              ctx,
 		mu:               sync.RWMutex{},
+		bus:              message_bus.New(size),
 	}
 }
 
@@ -64,6 +62,7 @@ func InitializePipe(ctx context.Context, corePlugins []Plugin, extensionPlugins 
 
 func (p *MessagePipe) Register(size int, plugins []Plugin, extensionPlugins []ExtensionPlugin) error {
 	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	p.plugins = append(p.plugins, plugins...)
 	p.extensionPlugins = append(p.extensionPlugins, extensionPlugins...)
@@ -91,25 +90,26 @@ func (p *MessagePipe) Register(size int, plugins []Plugin, extensionPlugins []Ex
 		}
 		extensionPluginsRegistered = append(extensionPluginsRegistered, *plugin.Info().name)
 	}
-	log.Infof("The following core plugins have being registered: %q", pluginsRegistered)
-	log.Infof("The following extension plugins have being registered: %q", extensionPluginsRegistered)
-	p.mu.Unlock()
+	log.Infof("The following core plugins have been registered: %q", pluginsRegistered)
+	log.Infof("The following extension plugins have been registered: %q", extensionPluginsRegistered)
+
 	return nil
 }
 
 func (p *MessagePipe) DeRegister(pluginNames []string) error {
 	p.mu.Lock()
+	defer p.mu.Unlock()
 
-	var plugins []Plugin
+	var pluginsToRemove []Plugin
 	for _, name := range pluginNames {
 		for _, plugin := range p.plugins {
 			if plugin.Info().Name() == name {
-				plugins = append(plugins, plugin)
+				pluginsToRemove = append(pluginsToRemove, plugin)
 			}
 		}
 	}
 
-	for _, plugin := range plugins {
+	for _, plugin := range pluginsToRemove {
 		index := getIndex(plugin.Info().Name(), p.plugins)
 
 		if index != -1 {
@@ -124,10 +124,8 @@ func (p *MessagePipe) DeRegister(pluginNames []string) error {
 				}
 			}
 		}
-
 	}
 
-	p.mu.Unlock()
 	return nil
 }
 
@@ -140,11 +138,15 @@ func getIndex(pluginName string, plugins []Plugin) int {
 	return -1
 }
 
+
 func (p *MessagePipe) Process(messages ...*Message) {
 	for _, m := range messages {
 		select {
-		case p.messageChannel <- m:
 		case <-p.ctx.Done():
+			p.cleanup()
+			return
+		case p.messageChannel <- m:
+		default:
 			return
 		}
 	}
@@ -156,21 +158,14 @@ func (p *MessagePipe) Run() {
 	for {
 		select {
 		case <-p.ctx.Done():
-			for _, r := range p.plugins {
-				r.Close()
-			}
-
-			for _, r := range p.extensionPlugins {
-				r.Close()
-			}
-
-			close(p.messageChannel)
-
+			p.cleanup()
 			return
 		case m := <-p.messageChannel:
 			p.mu.Lock()
 			p.bus.Publish(m.Topic(), m)
 			p.mu.Unlock()
+		default:
+			return
 		}
 	}
 }
@@ -179,16 +174,34 @@ func (p *MessagePipe) Context() context.Context {
 	return p.ctx
 }
 
-func (p *MessagePipe) Cancel() context.CancelFunc {
-	return p.cancel
-}
-
 func (p *MessagePipe) GetPlugins() []Plugin {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 	return p.plugins
 }
 
 func (p *MessagePipe) GetExtensionPlugins() []ExtensionPlugin {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 	return p.extensionPlugins
+}
+
+func (p *MessagePipe) cleanup() {
+	for _, r := range p.plugins {
+		for _, subscription := range r.Subscriptions() {
+			p.bus.Close(subscription)
+		}
+		r.Close()
+	}
+
+	for _, r := range p.extensionPlugins {
+		for _, subscription := range r.Subscriptions() {
+			p.bus.Close(subscription)
+		}
+		r.Close()
+	}
+
+	close(p.messageChannel) 
 }
 
 func (p *MessagePipe) initPlugins() {
@@ -202,11 +215,13 @@ func (p *MessagePipe) initPlugins() {
 }
 
 func (p *MessagePipe) IsPluginAlreadyRegistered(pluginName string) bool {
-	pluginAlreadyRegistered := false
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
 	for _, plugin := range p.GetPlugins() {
 		if plugin.Info().Name() == pluginName {
-			pluginAlreadyRegistered = true
+			return true
 		}
 	}
-	return pluginAlreadyRegistered
+	return false
 }
