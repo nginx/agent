@@ -229,6 +229,7 @@ func (r *OneTimeRegistration) registerAgent() {
 								MaxElapsedTime:      r.config.Server.Backoff.MaxElapsedTime.Milliseconds(),
 							},
 						},
+						AllowedDirectories: r.config.AllowedDirectories(),
 					},
 				},
 				Details:                  details,
