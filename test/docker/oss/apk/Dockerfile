@@ -7,15 +7,12 @@ LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 ARG OS_RELEASE
 ARG OS_VERSION
 ARG PACKAGE_NAME
-ARG CONTAINER_OS_TYPE
-
-RUN echo ${IMAGE_PATH}
 
 WORKDIR /agent
-COPY ./build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE} /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE}
+COPY ./build/${PACKAGE_NAME}.apk /agent/build/${PACKAGE_NAME}.apk
 COPY ./ /agent
 
-RUN apk add --allow-untrusted /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE}
+RUN apk add --allow-untrusted /agent/build/${PACKAGE_NAME}.apk
 
 RUN unlink /var/log/nginx/access.log
 RUN unlink /var/log/nginx/error.log
