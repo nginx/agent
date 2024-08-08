@@ -40,6 +40,9 @@ func StartContainer(
 	osVersion := Env(tb, "OS_VERSION")
 	buildTarget := Env(tb, "BUILD_TARGET")
 	dockerfilePath := Env(tb, "DOCKERFILE_PATH")
+	containerRegistry := Env(tb, "CONTAINER_NGINX_IMAGE_REGISTRY")
+	tag := Env(tb, "TAG")
+	imagePath := Env(tb, "IMAGE_PATH")
 
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
@@ -48,12 +51,15 @@ func StartContainer(
 			KeepImage:     false,
 			PrintBuildLog: true,
 			BuildArgs: map[string]*string{
-				"PACKAGE_NAME":  ToPtr(packageName),
-				"PACKAGES_REPO": ToPtr(packageRepo),
-				"BASE_IMAGE":    ToPtr(baseImage),
-				"OS_RELEASE":    ToPtr(osRelease),
-				"OS_VERSION":    ToPtr(osVersion),
-				"ENTRY_POINT":   ToPtr("./scripts/docker/entrypoint.sh"),
+				"PACKAGE_NAME":                   ToPtr(packageName),
+				"PACKAGES_REPO":                  ToPtr(packageRepo),
+				"BASE_IMAGE":                     ToPtr(baseImage),
+				"OS_RELEASE":                     ToPtr(osRelease),
+				"OS_VERSION":                     ToPtr(osVersion),
+				"ENTRY_POINT":                    ToPtr("./scripts/docker/entrypoint.sh"),
+				"CONTAINER_NGINX_IMAGE_REGISTRY": ToPtr(containerRegistry),
+				"IMAGE_PATH":                     ToPtr(imagePath),
+				"TAG":                            ToPtr(tag),
 			},
 			BuildOptionsModifier: func(buildOptions *types.ImageBuildOptions) {
 				buildOptions.Target = buildTarget
