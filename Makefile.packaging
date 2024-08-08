@@ -8,8 +8,7 @@ GITHUB_PACKAGES_DIR := ./build/github/packages
 AZURE_PACKAGES_DIR  := ./build/azure/packages
 BINARY_PATH         := $(BUILD_DIR)/$(BINARY_NAME)
 GPG_PUBLIC_KEY      := .key
-PACKAGE_BUILD       ?= 1
-PACKAGE_VERSION     := $(shell echo ${VERSION} | tr -d 'v')-$(PACKAGE_BUILD)
+PACKAGE_VERSION     := $(shell echo ${VERSION} | tr -d 'v')
 TARBALL_NAME        := $(PACKAGE_PREFIX)v3.tar.gz
 
 DEB_DISTROS         ?= ubuntu-jammy-22.04 ubuntu-focal-20.04 debian-bookworm-12 debian-bullseye-11

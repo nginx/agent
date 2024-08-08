@@ -15,10 +15,6 @@ on:
         description: 'Package version number'
         default: "3.0.0"
         type: string
-      packageBuildNo:
-        description: 'Package Build number'
-        default: "1"
-        type: string
       uploadAzure:
         description: 'Publish packages Azure storage'
         default: true
@@ -244,8 +240,7 @@ jobs:
         env:
           GPG_KEY: ${{ secrets.gpg-key }}
           NFPM_SIGNING_KEY_FILE: .key.asc
-          VERSION: ${{ inputs.version }}
-          PACKAGE_BUILD: ${{ inputs.build }}
+          VERSION: ${{ inputs.packageVersion }}
         run: |
           export PATH=$PATH:~/go/bin
           echo "$GPG_KEY" | base64 --decode > ${NFPM_SIGNING_KEY_FILE}
