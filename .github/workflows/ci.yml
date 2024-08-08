@@ -157,11 +157,17 @@ jobs:
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
+      - name: Login to Docker Registry
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
+        with:
+          registry: ${{ secrets.REGISTRY_URL }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" \
-          TAG="${{ matrix.container.version }}-${{ matrix.container.image }}" \
+          TAG="${{ matrix.container.version }}-${{ matrix.container.image }}" ${{ secrets.REGISTRY_URL }} \
           OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
             make official-image-integration-test
 

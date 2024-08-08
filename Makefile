@@ -32,7 +32,7 @@ OS_VERSION  ?= 22.04
 BASE_IMAGE  = "docker.io/$(OS_RELEASE):$(OS_VERSION)"
 IMAGE_TAG   = "agent_$(OS_RELEASE)_$(OS_VERSION)"
 DOCKERFILE_PATH = "./scripts/docker/nginx-oss/$(CONTAINER_OS_TYPE)/Dockerfile"
-OFFICIAL_IMAGE_DOCKERFILE_PATH = "./test/docker/nginx-oss/$(CONTAINER_OS_TYPE)/Dockerfile"
+OFFICIAL_IMAGE_DOCKERFILE_PATH = "/test/docker/nginx-oss/$(CONTAINER_OS_TYPE)/Dockerfile"
 AGENT_IMAGE_PATH = "/nginx/agent"
 
 BUILD_DIR		:= build
@@ -157,13 +157,12 @@ integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc
 	go test -v ./test/integration
 	
 official-image-integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc
-	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} BUILD_TARGET="runtime" \
+	TEST_ENV="" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} BUILD_TARGET="runtime" \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) TAG=${TAG} PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) DOCKERFILE_PATH=$(OFFICIAL_IMAGE_DOCKERFILE_PATH) \
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) IMAGE_PATH=$(AGENT_IMAGE_PATH) \
 	go test -v ./test/integration
 
 performance-test:
-	DOCKERFILE_PATH=$(DOCKERFILE_PATH)
 	@mkdir -p $(TEST_BUILD_DIR)
 	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 6m -bench=. -benchmem -run=^$$ ./... > $(TEST_BUILD_DIR)/benchmark.txt
 	@cat $(TEST_BUILD_DIR)/benchmark.txt
@@ -230,7 +229,7 @@ generate-pgo-profile: build-mock-management-plane-grpc
 	mv default.pgo profile.pprof
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) \
-	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) \
+	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) DOCKERFILE_PATH=$(DOCKERFILE_PATH) \
 	$(GOTEST) -v ./test/integration -cpuprofile integration_cpu.pprof
 	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 5m -bench=. -benchmem -run=^# ./internal/watcher/instance -cpuprofile perf_watcher_cpu.pprof
 	@$(GOTOOL) pprof -proto perf_watcher_cpu.pprof integration_cpu.pprof > default.pgo
