@@ -168,7 +168,7 @@ jobs:
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" \
           TAG="${{ matrix.container.version }}-${{ matrix.container.image }}" ${{ secrets.REGISTRY_URL }} \
-          OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
+          OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" \
             make official-image-integration-test
 
   performance-tests:
