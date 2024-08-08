@@ -8,14 +8,13 @@ ARG OS_RELEASE
 ARG OS_VERSION
 ARG DEBIAN_FRONTEND=noninteractive
 ARG PACKAGE_NAME
-ARG CONTAINER_OS_TYPE
 
 WORKDIR /agent
-COPY ./build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE} /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE}
+COPY ./build/${PACKAGE_NAME}.deb /agent/build/${PACKAGE_NAME}.deb
 
 RUN  apt-get update \ 
-    && apt install --no-install-recommends --no-install-suggests -y /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE} \ 
-    &&  rm /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE}
+    && apt install --no-install-recommends --no-install-suggests -y /agent/build/${PACKAGE_NAME}.deb \ 
+    &&  rm /agent/build/${PACKAGE_NAME}.deb
 
 RUN unlink /var/log/nginx/access.log
 RUN unlink /var/log/nginx/error.log
