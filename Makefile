@@ -224,7 +224,7 @@ integration-test:
 	    OS_VERSION=${OS_VERSION} OS_RELEASE=${OS_RELEASE} DOCKER_COMPOSE_FILE="docker-compose-${CONTAINER_OS_TYPE}.yml" \
 		${GOTEST} -v ./test/integration/grpc
 
-new-integration-test:
+official-image-integration-test:
 	PACKAGE_NAME=${PACKAGE_NAME} CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} ARCH=${OSARCH} OS_VERSION=${OS_VERSION} \
 	    OS_RELEASE=${OS_RELEASE} TAG=${TAG} CONTAINER_OS_TYPE=${CONTAINER_OS_TYPE} IMAGE_PATH=${AGENT_IMAGE_PATH} DOCKER_COMPOSE_FILE="docker-compose-new.yml" \
 		${GOTEST} -v ./test/integration/api

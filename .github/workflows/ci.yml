@@ -180,8 +180,8 @@ jobs:
                 path: /tmp/integration-test-logs/
                 retention-days: 3
 
-  integration-tests-new:
-    name: Integration Tests New
+  official-image-integration-tests:
+    name: Integration Tests - Official Images
     needs: build-unsigned-snapshot
     runs-on: ubuntu-24.04
     strategy:
@@ -222,7 +222,7 @@ jobs:
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" TAG="${{ matrix.container.version }}-${{ matrix.container.image }}" OS_RELEASE="${{ matrix.container.release }}"\
-            make new-integration-test
+            make official-image-integration-test
       - name: Container Output Logs 
         if: failure()
         run: |
