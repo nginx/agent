@@ -31,6 +31,7 @@ OS_RELEASE  ?= ubuntu
 OS_VERSION  ?= 22.04
 BASE_IMAGE  = "docker.io/$(OS_RELEASE):$(OS_VERSION)"
 IMAGE_TAG   = "agent_$(OS_RELEASE)_$(OS_VERSION)"
+DOCKERFILE_PATH = "./scripts/docker/nginx-oss/$(CONTAINER_OS_TYPE)/Dockerfile"
 
 BUILD_DIR		:= build
 TEST_BUILD_DIR  := build/test
@@ -150,7 +151,7 @@ build-mock-management-plane-grpc:
 integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) \
-	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) \
+	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) DOCKERFILE_PATH=$(DOCKERFILE_PATH)\
 	go test -v ./test/integration
 
 performance-test:

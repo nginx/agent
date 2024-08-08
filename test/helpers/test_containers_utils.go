@@ -7,7 +7,6 @@ package helpers
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"testing"
 
@@ -34,18 +33,18 @@ func StartContainer(
 ) testcontainers.Container {
 	tb.Helper()
 
-	containerOSType := Env(tb, "CONTAINER_OS_TYPE")
 	packageName := Env(tb, "PACKAGE_NAME")
 	packageRepo := Env(tb, "PACKAGES_REPO")
 	baseImage := Env(tb, "BASE_IMAGE")
 	osRelease := Env(tb, "OS_RELEASE")
 	osVersion := Env(tb, "OS_VERSION")
 	buildTarget := Env(tb, "BUILD_TARGET")
+	dockerfilePath := Env(tb, "DOCKERFILE_PATH")
 
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:       "../../",
-			Dockerfile:    fmt.Sprintf("./scripts/docker/nginx-oss/%s/Dockerfile", containerOSType),
+			Dockerfile:    dockerfilePath,
 			KeepImage:     false,
 			PrintBuildLog: true,
 			BuildArgs: map[string]*string{
