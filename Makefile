@@ -34,6 +34,7 @@ IMAGE_TAG   = "agent_$(OS_RELEASE)_$(OS_VERSION)"
 DOCKERFILE_PATH = "./scripts/docker/nginx-oss/$(CONTAINER_OS_TYPE)/Dockerfile"
 OFFICIAL_IMAGE_DOCKERFILE_PATH = "/test/docker/nginx-oss/$(CONTAINER_OS_TYPE)/Dockerfile"
 AGENT_IMAGE_PATH = "/nginx/agent"
+TAG = ""
 
 BUILD_DIR		:= build
 TEST_BUILD_DIR  := build/test
@@ -151,8 +152,8 @@ build-mock-management-plane-grpc:
 	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/mock-management-plane-grpc/server test/mock/grpc/cmd/main.go
 
 integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc
-	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" \
-	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) DOCKERFILE_PATH=$(DOCKERFILE_PATH) \
+	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} \
+	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) DOCKERFILE_PATH=$(DOCKERFILE_PATH) IMAGE_PATH=$(AGENT_IMAGE_PATH) TAG=${TAG} \
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) \
 	go test -v ./test/integration
 	
