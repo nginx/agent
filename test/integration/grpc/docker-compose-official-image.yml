@@ -4,7 +4,7 @@ services:
     agent:
         build:
             context: ../../../
-            dockerfile: ./test/docker/oss/${CONTAINER_OS_TYPE}/Dockerfile
+            dockerfile: ./test/docker/oss-official-images/${CONTAINER_OS_TYPE}/Dockerfile
             target: install
             args:
                 PACKAGE_NAME: ${PACKAGE_NAME}
