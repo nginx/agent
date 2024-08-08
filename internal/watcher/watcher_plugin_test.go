@@ -94,23 +94,71 @@ func TestWatcher_Info(t *testing.T) {
 	assert.Equal(t, &bus.Info{Name: "watcher"}, watcherPlugin.Info())
 }
 
-func TestWatcher_Process(t *testing.T) {
+func TestWatcher_Process_ConfigApplyRequestTopic(t *testing.T) {
 	ctx := context.Background()
+	data := &mpi.ManagementPlaneRequest{
+		Request: &mpi.ManagementPlaneRequest_ConfigApplyRequest{
+			ConfigApplyRequest: protos.CreateConfigApplyRequest(&mpi.FileOverview{
+				ConfigVersion: protos.CreateConfigVersion(),
+			}),
+		},
+	}
+	message := &bus.Message{
+		Topic: bus.ConfigApplyRequestTopic,
+		Data:  data,
+	}
+
+	watcherPlugin := NewWatcher(types.AgentConfig())
+
+	watcherPlugin.Process(ctx, message)
+
+	assert.Len(t, watcherPlugin.instancesWithConfigApplyInProgress, 1)
+}
+
+func TestWatcher_Process_ConfigApplySuccessfulTopic(t *testing.T) {
+	ctx := context.Background()
+	data := protos.GetNginxOssInstance([]string{})
 	message := &bus.Message{
 		Topic: bus.ConfigApplySuccessfulTopic,
-		Data:  protos.GetNginxOssInstance([]string{}),
+		Data:  data,
 	}
 
 	fakeWatcherService := &watcherfakes.FakeInstanceWatcherServiceInterface{}
 	watcherPlugin := NewWatcher(types.AgentConfig())
 	watcherPlugin.instanceWatcherService = fakeWatcherService
+	watcherPlugin.instancesWithConfigApplyInProgress = []string{data.GetInstanceMeta().GetInstanceId()}
 
 	watcherPlugin.Process(ctx, message)
 
-	require.Equal(t, 1, fakeWatcherService.ReparseConfigCallCount())
+	assert.Equal(t, 1, fakeWatcherService.ReparseConfigCallCount())
+	assert.Empty(t, watcherPlugin.instancesWithConfigApplyInProgress)
+}
+
+func TestWatcher_Process_RollbackCompleteTopic(t *testing.T) {
+	ctx := context.Background()
+	instanceID := "123"
+	message := &bus.Message{
+		Topic: bus.RollbackCompleteTopic,
+		Data:  instanceID,
+	}
+
+	watcherPlugin := NewWatcher(types.AgentConfig())
+	watcherPlugin.instancesWithConfigApplyInProgress = []string{instanceID}
+
+	watcherPlugin.Process(ctx, message)
+
+	assert.Empty(t, watcherPlugin.instancesWithConfigApplyInProgress)
 }
 
 func TestWatcher_Subscriptions(t *testing.T) {
 	watcherPlugin := NewWatcher(types.AgentConfig())
-	assert.Equal(t, []string{bus.ConfigApplySuccessfulTopic}, watcherPlugin.Subscriptions())
+	assert.Equal(
+		t,
+		[]string{
+			bus.ConfigApplyRequestTopic,
+			bus.ConfigApplySuccessfulTopic,
+			bus.RollbackCompleteTopic,
+		},
+		watcherPlugin.Subscriptions(),
+	)
 }

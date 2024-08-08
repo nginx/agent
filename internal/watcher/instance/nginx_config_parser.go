@@ -63,6 +63,13 @@ func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *mpi.Instance)
 		return nil, fmt.Errorf("config path %s is not in allowed directories", configPath)
 	}
 
+	slog.DebugContext(
+		ctx,
+		"Parsing NGINX config",
+		"file_path", configPath,
+		"instance_id", instance.GetInstanceMeta().GetInstanceId(),
+	)
+
 	payload, err := crossplane.Parse(configPath,
 		&crossplane.ParseOptions{
 			SingleFile:         false,
@@ -368,6 +375,9 @@ func (ncp *NginxConfigParser) hasAdditionArguments(args []string) bool {
 
 func (ncp *NginxConfigParser) stubStatusAPICallback(ctx context.Context, parent, current *crossplane.Directive) string {
 	urls := ncp.urlsForLocationDirective(parent, current, stubStatusAPIDirective)
+	if len(urls) > 0 {
+		slog.DebugContext(ctx, "Potential stub_status urls", "urls", urls)
+	}
 
 	for _, url := range urls {
 		if ncp.pingStubStatusAPIEndpoint(ctx, url) {
@@ -421,6 +431,9 @@ func (ncp *NginxConfigParser) pingStubStatusAPIEndpoint(ctx context.Context, sta
 
 func (ncp *NginxConfigParser) plusAPICallback(ctx context.Context, parent, current *crossplane.Directive) string {
 	urls := ncp.urlsForLocationDirective(parent, current, plusAPIDirective)
+	if len(urls) > 0 {
+		slog.DebugContext(ctx, "Potential Plus API urls", "urls", urls)
+	}
 
 	for _, url := range urls {
 		if ncp.pingPlusAPIEndpoint(ctx, url) {

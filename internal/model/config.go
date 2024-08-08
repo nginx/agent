@@ -5,7 +5,11 @@
 
 package model
 
-import "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+import (
+	"reflect"
+
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+)
 
 type NginxConfigContext struct {
 	StubStatus string
@@ -14,6 +18,34 @@ type NginxConfigContext struct {
 	Files      []*v1.File
 	AccessLogs []*AccessLog
 	ErrorLogs  []*ErrorLog
+}
+
+func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext) bool {
+	if ncc.StubStatus != otherNginxConfigContext.StubStatus {
+		return false
+	}
+
+	if ncc.PlusAPI != otherNginxConfigContext.PlusAPI {
+		return false
+	}
+
+	if ncc.InstanceID != otherNginxConfigContext.InstanceID {
+		return false
+	}
+
+	if len(ncc.Files) != len(otherNginxConfigContext.Files) {
+		return false
+	}
+
+	if !reflect.DeepEqual(ncc.AccessLogs, otherNginxConfigContext.AccessLogs) {
+		return false
+	}
+
+	if !reflect.DeepEqual(ncc.ErrorLogs, otherNginxConfigContext.ErrorLogs) {
+		return false
+	}
+
+	return true
 }
 
 type ConfigApplyMessage struct {
