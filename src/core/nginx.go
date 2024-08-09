@@ -296,19 +296,15 @@ func (n *NginxBinaryType) Reload(processId, bin string) error {
 // ValidateConfig tests the config with nginx -t -c configLocation.
 func (n *NginxBinaryType) ValidateConfig(processId, bin, configLocation string, errorLogPaths []string, config *proto.NginxConfig, configApply *sdk.ConfigApply) error {
 	log.Debugf("Validating config, %s for nginx process, %s, with custom error path %v", configLocation, processId, errorLogPaths)
-	var response *bytes.Buffer
-	var err error
 	cmdArgs := make([]string, 0)
 	cmdArgs = append(cmdArgs, "-t")
 	cmdArgs = append(cmdArgs, "-c")
 	cmdArgs = append(cmdArgs, configLocation)
-	if len(errorLogPaths) > 0 {
-		for _, path := range errorLogPaths {
-			cmdArgs = append(cmdArgs, "-e")
-			cmdArgs = append(cmdArgs, path)
-		}
+	for _, path := range errorLogPaths {
+		cmdArgs = append(cmdArgs, "-e")
+		cmdArgs = append(cmdArgs, path)
 	}
-	response, err = runCmd(bin, cmdArgs...)
+	response, err := runCmd(bin, cmdArgs...)
 	if err != nil {
 		confFiles, auxFiles, getNginxConfigFilesErr := sdk.GetNginxConfigFiles(config)
 		if getNginxConfigFilesErr == nil {

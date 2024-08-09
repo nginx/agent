@@ -1439,7 +1439,7 @@ Represents NGINX details about a single NGINX instance
 | ssl | [NginxSslMetaData](#f5-nginx-agent-sdk-NginxSslMetaData) |  | NGINX SSL metadata. |
 | status_url | [string](#string) |  | Status URL. Example: http://localhost:8080/api |
 | configure_args | [string](#string) | repeated | Command line arguments that were used when the NGINX instance was started. Example: [ &#34;&#34;, &#34;with-http_stub_status_module&#34; ] |
-| error_log_paths | [string](#string) | repeated | Error log path.ErrorLog. Example: -e /home/ubuntu/nplus/var/log/error.log -e /home/ubuntu/nplus/var/log/error1.log |
+| error_log_paths | [string](#string) | repeated | Error log path. Example: -e /home/ubuntu/nplus/var/log/error.log -e /home/ubuntu/nplus/var/log/error1.log |
 
 
 

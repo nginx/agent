@@ -167,7 +167,7 @@ type NginxDetails struct {
 	// Command line arguments that were used when the NGINX instance was started.
 	// Example: [ "", "with-http_stub_status_module" ]
 	ConfigureArgs []string `protobuf:"bytes,13,rep,name=configure_args,json=configureArgs,proto3" json:"configure_args"`
-	// Error log path.ErrorLog.
+	// Error log path.
 	// Example: -e /home/ubuntu/nplus/var/log/error.log -e /home/ubuntu/nplus/var/log/error1.log
 	ErrorLogPaths        []string `protobuf:"bytes,14,rep,name=error_log_paths,json=errorLogPaths,proto3" json:"error_log_paths"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
