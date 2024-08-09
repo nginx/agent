@@ -148,5 +148,4 @@ func (p *MockMessagePipe) IsPluginAlreadyRegistered(pluginName string) bool {
 }
 
 func (p *MockMessagePipe) Close() {
-
 }

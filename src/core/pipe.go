@@ -142,7 +142,6 @@ func getIndex(pluginName string, plugins []Plugin) int {
 	return -1
 }
 
-
 func (p *MessagePipe) Process(messages ...*Message) {
 	for _, m := range messages {
 		select {

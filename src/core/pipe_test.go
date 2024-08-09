@@ -72,7 +72,7 @@ func TestMessagePipe_Run(t *testing.T) {
 
 	plugin := new(testPlugin)
 	plugin.On("Init").Times(1)
-    plugin.On("Process").Times(len(messages))
+	plugin.On("Process").Times(len(messages))
 	plugin.On("Close").Times(1)
 
 	err := pipe.Register(10, []Plugin{plugin}, nil)
@@ -83,7 +83,7 @@ func TestMessagePipe_Run(t *testing.T) {
 	pipe.Process(messages...)
 
 	time.Sleep(100 * time.Millisecond)
-	
+
 	cancel()
 
 	pipe.Close()
