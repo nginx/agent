@@ -1,4 +1,4 @@
-name: Release Agent V3
+name: Release Agent
 
 on:
   workflow_dispatch:
