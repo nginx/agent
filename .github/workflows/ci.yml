@@ -273,7 +273,7 @@ jobs:
             run: |
                 go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
                 CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
-                OS_RELEASE="${{ matrix.container.release }}" IMAGE_PATH="{{ matrix.container.path }}" \
+                OS_RELEASE="${{ matrix.container.release }}" IMAGE_PATH="${{ matrix.container.path }}" \
                   make official-image-integration-test
           - name: Container Output Logs
             if: failure()
