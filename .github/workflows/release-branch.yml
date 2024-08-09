@@ -16,7 +16,7 @@ on:
         default: true
         type: boolean
       publishPackages:
-        description: 'Publish packages to up-ap.nginx.com'
+        description: 'Publish packages to nginx repo'
         default: true
         type: boolean
       tagRelease:
