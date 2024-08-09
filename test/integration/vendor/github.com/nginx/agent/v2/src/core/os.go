@@ -9,8 +9,11 @@ package core
 
 import (
 	"os"
+	"sync"
 	"time"
 )
+
+var chmodMutex sync.Mutex
 
 // FileExists determines if the specified file given by the file path exists on the system.
 // If the file does NOT exist on the system the bool will be false and the error will be nil,
@@ -42,6 +45,8 @@ func FilesExists(filePaths []string) (bool, error) {
 	return true, nil
 }
 
+// EnableWritePermissionForSocket attempts to set the write permissions for a socket file located at the specified path.
+// The function continuously attempts the operation until either it succeeds or the timeout period elapses.
 func EnableWritePermissionForSocket(path string) error {
 	timeout := time.After(time.Second * 1)
 	var lastError error
@@ -50,11 +55,13 @@ func EnableWritePermissionForSocket(path string) error {
 		case <-timeout:
 			return lastError
 		default:
+			chmodMutex.Lock()
 			lastError = os.Chmod(path, 0o660)
+			chmodMutex.Unlock()
 			if lastError == nil {
 				return nil
 			}
 		}
-		<-time.After(time.Microsecond * 100)
+		time.Sleep(time.Microsecond * 100)
 	}
 }

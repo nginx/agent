@@ -15,6 +15,7 @@ import (
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/shirou/gopsutil/v3/load"
+	log "github.com/sirupsen/logrus"
 )
 
 type Load struct {
@@ -40,6 +41,8 @@ func (c *Load) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metric
 		"5":  loadStats.Load5,
 		"15": loadStats.Load15,
 	})
+
+	log.Debugf("load metrics collected: %v", len(simpleMetrics))
 
 	select {
 	case <-ctx.Done():

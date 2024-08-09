@@ -63,6 +63,7 @@ func HandleSignals(
 			}
 
 			log.Warn("NGINX Agent exiting")
+			pipe.Close()
 			cancel()
 
 			timeout := time.Second * 5
