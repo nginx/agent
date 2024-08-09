@@ -52,6 +52,8 @@ func (c *NginxProcess) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<-
 		"instance.count": c.getNginxCount(),
 	})
 
+	log.Debugf("instance metrics count %d", len(countSimpleMetric))
+
 	select {
 	case <-ctx.Done():
 	case m <- metrics.NewStatsEntityWrapper(c.baseDimensions.ToDimensions(), countSimpleMetric, proto.MetricsReport_INSTANCE):

@@ -40,6 +40,7 @@ require (
 	github.com/nginx/agent/sdk/v2 v2.30.3
 	github.com/prometheus/client_golang v1.19.1
 	github.com/rs/cors v1.11.0
+	go.uber.org/goleak v1.3.0
 	go.uber.org/mock v0.4.0
 	golang.org/x/sys v0.22.0
 	golang.org/x/text v0.16.0

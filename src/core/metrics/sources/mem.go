@@ -61,7 +61,7 @@ func (c *VirtualMemory) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 		"available": float64(memstats.Available),
 	})
 
-	log.Debugf("Memory metrics collected: %v", simpleMetrics)
+	log.Debugf("Memory metrics collected: %v", len(simpleMetrics))
 
 	select {
 	case <-ctx.Done():

@@ -94,6 +94,8 @@ func TestNginxCounter(t *testing.T) {
 			assert.NotEqual(t, result, tt.expectedPayload)
 
 			wg.Wait()
+
+			nginxCounter.Close()
 		})
 	}
 }

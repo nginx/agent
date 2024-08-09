@@ -4,7 +4,6 @@
  * This source code is licensed under the Apache License, Version 2.0 license found in the
  * LICENSE file in the root directory of this source tree.
  */
-
 package plugins
 
 import (
@@ -37,11 +36,12 @@ type MetricsThrottle struct {
 	metricsAggregation bool
 	metricsCollections map[proto.MetricsReport_Type]*metrics.Collections
 	ctx                context.Context
+	cancel             context.CancelFunc
 	wg                 sync.WaitGroup
-	mu                 sync.Mutex
-	env                core.Environment
-	conf               *config.Config
-	errors             chan error
+	// mu                 sync.Mutex
+	env    core.Environment
+	conf   *config.Config
+	errors chan error
 }
 
 func NewMetricsThrottle(conf *config.Config, env core.Environment) *MetricsThrottle {
@@ -53,7 +53,6 @@ func NewMetricsThrottle(conf *config.Config, env core.Environment) *MetricsThrot
 		collectorsUpdate:   atomic.NewBool(false),
 		metricsAggregation: conf.AgentMetrics.Mode == "aggregated",
 		metricsCollections: make(map[proto.MetricsReport_Type]*metrics.Collections, 0),
-		wg:                 sync.WaitGroup{},
 		env:                env,
 		conf:               conf,
 		errors:             make(chan error),
@@ -62,10 +61,10 @@ func NewMetricsThrottle(conf *config.Config, env core.Environment) *MetricsThrot
 
 func (r *MetricsThrottle) Init(pipeline core.MessagePipeInterface) {
 	r.messagePipeline = pipeline
-	r.ctx = pipeline.Context()
+	r.ctx, r.cancel = context.WithCancel(pipeline.Context())
 	if r.metricsAggregation {
 		r.wg.Add(1)
-		go r.metricsReportGoroutine(r.ctx, &r.wg)
+		go r.metricsReportGoroutine()
 	}
 	log.Info("MetricsThrottle initializing")
 }
@@ -73,6 +72,8 @@ func (r *MetricsThrottle) Init(pipeline core.MessagePipeInterface) {
 func (r *MetricsThrottle) Close() {
 	log.Info("MetricsThrottle is wrapping up")
 	r.reportsReady.Store(false) // allow metricsReportGoroutine to shutdown gracefully
+	r.cancel()
+	r.wg.Wait()
 	r.ticker.Stop()
 }
 
@@ -93,7 +94,7 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 			switch bundle := msg.Data().(type) {
 			case *metrics.MetricsReportBundle:
 				if len(bundle.Data) > 0 {
-					r.mu.Lock()
+					// r.mu.Lock()
 					for _, report := range bundle.Data {
 						if len(report.Data) > 0 {
 							if _, ok := r.metricsCollections[report.Type]; !ok {
@@ -107,7 +108,7 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 							log.Debugf("MetricsThrottle: Metrics collection saved [Type: %d]", report.Type)
 						}
 					}
-					r.mu.Unlock()
+					// r.mu.Unlock()
 					r.reportsReady.Store(true)
 				}
 			}
@@ -136,19 +137,29 @@ func (r *MetricsThrottle) Subscriptions() []string {
 	return []string{core.MetricReport, core.AgentConfigChanged}
 }
 
-func (r *MetricsThrottle) metricsReportGoroutine(ctx context.Context, wg *sync.WaitGroup) {
-	defer wg.Done()
+func (r *MetricsThrottle) metricsReportGoroutine() {
+	defer r.wg.Done()
 	defer r.ticker.Stop()
+	defer close(r.errors)
 	log.Info("MetricsThrottle waiting for report ready")
 	for {
-		if !r.reportsReady.Load() {
-			continue
+		select {
+		case <-r.ctx.Done():
+			err := r.ctx.Err()
+			if err != nil && err != context.Canceled {
+				log.Errorf("error in done context metricsReportGoroutine %v", err)
+			}
+			return
+		default:
+			if !r.reportsReady.Load() {
+				continue
+			}
 		}
 
 		select {
-		case <-ctx.Done():
+		case <-r.ctx.Done():
 			err := r.ctx.Err()
-			if err != nil {
+			if err != nil && err != context.Canceled {
 				log.Errorf("error in done context metricsReportGoroutine %v", err)
 			}
 			return
@@ -167,7 +178,9 @@ func (r *MetricsThrottle) metricsReportGoroutine(ctx context.Context, wg *sync.W
 				r.collectorsUpdate.Store(false)
 			}
 		case err := <-r.errors:
-			log.Errorf("Error in metricsReportGoroutine %v", err)
+			if err != nil {
+				log.Errorf("Error in metricsReportGoroutine %v", err)
+			}
 		}
 	}
 }
@@ -188,8 +201,10 @@ func (r *MetricsThrottle) syncAgentConfigChange() {
 }
 
 func (r *MetricsThrottle) getAggregatedReports() (reports []core.Payload) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	// r.mu.Lock()
+	// localMetricsCollections := r.metricsCollections
+	// r.metricsCollections = make(map[proto.MetricsReport_Type]*metrics.Collections)
+	// r.mu.Unlock()
 
 	for reportType, collection := range r.metricsCollections {
 		reports = append(reports, &proto.MetricsReport{
@@ -199,11 +214,6 @@ func (r *MetricsThrottle) getAggregatedReports() (reports []core.Payload) {
 			Type: reportType,
 			Data: metrics.GenerateMetrics(*collection),
 		})
-		r.metricsCollections[reportType] = &metrics.Collections{
-			Count: 0,
-			Data:  make(map[string]metrics.PerDimension),
-		}
 	}
-
 	return reports
 }

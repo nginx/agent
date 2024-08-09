@@ -15,6 +15,7 @@ import (
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/metrics"
+	log "github.com/sirupsen/logrus"
 )
 
 const MOUNT_POINT = "mount_point"
@@ -49,6 +50,8 @@ func (c *Disk) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metric
 			"free":   float64(usage.Free),
 			"in_use": float64(usage.UsedPercentage),
 		})
+
+		log.Debugf("disk metrics collected: %v", len(simpleMetrics))
 
 		select {
 		case <-ctx.Done():

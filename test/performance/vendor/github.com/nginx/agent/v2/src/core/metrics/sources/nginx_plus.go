@@ -533,6 +533,8 @@ func (c *NginxPlus) commonMetrics(stats, prevStats *plusclient.Stats) *metrics.S
 		"request.count":   float64(requestCount),
 	})
 
+	log.Debugf("common metrics count %d", len(simpleMetrics))
+
 	dims := c.baseDimensions.ToDimensions()
 	return metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE)
 }
@@ -558,6 +560,8 @@ func (c *NginxPlus) sslMetrics(stats, prevStats *plusclient.Stats) *metrics.Stat
 		"ssl.failed":     float64(sslFailed),
 		"ssl.reuses":     float64(sslReuses),
 	})
+
+	log.Debugf("SSL metrics count %d", len(simpleMetrics))
 
 	dims := c.baseDimensions.ToDimensions()
 	return metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE)
