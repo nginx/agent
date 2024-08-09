@@ -4,24 +4,21 @@ LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
 ARG PACKAGES_REPO
 
-RUN echo $PACKAGES_REPO
 WORKDIR /agent
-COPY ./scripts/docker/entrypoint.sh /agent/entrypoint.sh
+COPY ./test/docker/entrypoint.sh /agent/entrypoint.sh
 COPY ./nginx-agent.conf /agent/nginx-agent.conf
 
 RUN --mount=type=secret,id=nginx-crt,dst=/nginx-repo.crt \
     --mount=type=secret,id=nginx-key,dst=/nginx-repo.key \
     set -x \
+# Create nginx user/group first, to be consistent throughout Docker variants
     && groupadd --system --gid 101 nginx \
     && useradd --system --gid nginx --no-create-home --home-dir /nonexistent --uid 101 nginx \
     && apt-get update \
     && apt-get install --no-install-recommends --no-install-suggests -y \
                         ca-certificates \
-                        gnupg1 \
+                        gnupg \
                         lsb-release \
-                        git \
-                        wget \
-                        make \
     && \
     NGINX_GPGKEY=573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62; \
     found=''; \
@@ -34,27 +31,35 @@ RUN --mount=type=secret,id=nginx-crt,dst=/nginx-repo.crt \
     done; \
     test -z "$found" && echo >&2 "error: failed to fetch GPG key $NGINX_GPGKEY" && exit 1; \
     apt-get remove --purge --auto-remove -y gnupg1 && rm -rf /var/lib/apt/lists/* \
-    # Install the latest release of NGINX Plus and/or NGINX Plus modules and NGINX Agent
+# Install the latest release of NGINX Plus and/or NGINX Plus modules
+# Uncomment individual modules if necessary
+# Use versioned packages over defaults to specify a release
     && nginxPackages=" \
         nginx-plus \
         nginx-agent \
-    " \
+       " \
     && echo "Acquire::https::$PACKAGES_REPO::Verify-Peer \"true\";" > /etc/apt/apt.conf.d/90nginx \
     && echo "Acquire::https::$PACKAGES_REPO::Verify-Host \"true\";" >> /etc/apt/apt.conf.d/90nginx \
     && echo "Acquire::https::$PACKAGES_REPO::SslCert     \"/etc/ssl/nginx/nginx-repo.crt\";" >> /etc/apt/apt.conf.d/90nginx \
     && echo "Acquire::https::$PACKAGES_REPO::SslKey      \"/etc/ssl/nginx/nginx-repo.key\";" >> /etc/apt/apt.conf.d/90nginx \
-    && apt-get install apt-transport-https lsb-release ca-certificates \
-    && apt-cache policy | awk '{print $2" "$3}' | sort -u \
-    && printf "deb https://$PACKAGES_REPO/plus/ubuntu/ `lsb_release -cs` nginx-plus\n" > /etc/apt/sources.list.d/nginx-plus.list \
-    && printf "deb https://$PACKAGES_REPO/nginx-agent/ubuntu/ `lsb_release -cs` nginx-plus\n" > /etc/apt/sources.list.d/nginx-agent.list \
+    && printf "deb https://$PACKAGES_REPO/plus/debian/ `lsb_release -cs` nginx-plus\n" > /etc/apt/sources.list.d/nginx-plus.list \
+    && printf "deb https://$PACKAGES_REPO/nginx-agent/debian/ `lsb_release -cs` nginx-plus\n" > /etc/apt/sources.list.d/nginx-agent.list \
     && mkdir -p /etc/ssl/nginx \
-    && cat /nginx-repo.crt >> /etc/ssl/nginx/nginx-repo.crt \
-    && cat /nginx-repo.key >> /etc/ssl/nginx/nginx-repo.key \
+    && cat /nginx-repo.crt > /etc/ssl/nginx/nginx-repo.crt \
+    && cat /nginx-repo.key > /etc/ssl/nginx/nginx-repo.key \
     && apt-get update \
-    && apt-get install $nginxPackages -y  \
-    && rm /etc/ssl/nginx/nginx-repo.crt /etc/ssl/nginx/nginx-repo.key
+    && apt-get install --no-install-recommends --no-install-suggests -y \
+                        $nginxPackages \
+                        curl \
+                        gettext-base \
+    && apt-get autoremove --purge -y \
+       gnupg \
+       lsb-release \
+    && rm -rf /root/.gnupg \
+    && apt-get remove --purge --auto-remove -y && rm -rf /var/lib/apt/lists/* /etc/apt/sources.list.d/nginx-plus.list \
+    && rm -rf /etc/apt/apt.conf.d/90nginx /etc/ssl/nginx
 
-# run the nginx and agent
+# run the nginx and agent
 FROM install as runtime
 
 COPY --from=install /agent/entrypoint.sh /agent/entrypoint.sh

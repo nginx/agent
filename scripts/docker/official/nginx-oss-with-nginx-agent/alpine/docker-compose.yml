@@ -1,9 +1,0 @@
-version: '3.9'
-
-services: 
-  nginx-oss-with-nginx-agent:
-    image: nginx-oss-with-nginx-agent:latest
-    volumes:
-      - ../../../../../nginx-agent.conf:/etc/nginx-agent/nginx-agent.conf
-    ports:
-      - 8038:8038

@@ -5,7 +5,7 @@ LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 ARG PACKAGES_REPO
 
 WORKDIR /agent
-COPY ./scripts/docker/entrypoint.sh /agent/entrypoint.sh
+COPY ./test/docker/entrypoint.sh /agent/entrypoint.sh
 COPY ./nginx-agent.conf /agent/nginx-agent.conf
 
 RUN --mount=type=secret,id=nginx-crt,dst=/etc/apk/cert.pem \

@@ -162,17 +162,17 @@ If you need to make changes to the default configuration you can update the file
 
 For more detail on logrotate configuration see [Logrotate Configuration Options](https://linux.die.net/man/8/logrotate)
 
-## Building Docker Image
-To build an image that contains the latest NGINX Agent, the latest mainline version of NGINX OSS on latest Alpine run the following command:
+## NGINX Agent Docker Image
+To pull an image that contains the latest NGINX Agent, the latest mainline version of NGINX OSS on latest Alpine run the following command:
 
 ```make
-make official-oss-image
+docker pull registry.nginx.com/nginx/agent:mainline
 ```
 
-To build an image that contains the latest NGINX Agent, the latest stable version of NGINX OSS on latest Alpine run the following command:
+To pull an image that contains the latest NGINX Agent, the latest stable version of NGINX OSS on latest Alpine run the following command:
 
 ```make
-make official-oss-stable-image
+docker pull registry.nginx.com/nginx/agent:stable
 ```
 
 For more information on how to run NGINX Agent containers and how build an image that uses NGINX Plus instead of NGINX OSS see [Docker Images](https://docs.nginx.com/nginx-agent/installation-upgrade/container-environments/docker-images/)
