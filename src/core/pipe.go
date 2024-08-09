@@ -29,6 +29,7 @@ type MessagePipeInterface interface {
 	GetPlugins() []Plugin
 	GetExtensionPlugins() []ExtensionPlugin
 	IsPluginAlreadyRegistered(string) bool
+	Close()
 }
 
 type MessagePipe struct {
@@ -66,7 +67,6 @@ func (p *MessagePipe) Register(size int, plugins []Plugin, extensionPlugins []Ex
 
 	p.plugins = append(p.plugins, plugins...)
 	p.extensionPlugins = append(p.extensionPlugins, extensionPlugins...)
-	p.bus = message_bus.New(size)
 
 	pluginsRegistered := []string{}
 	extensionPluginsRegistered := []string{}
@@ -129,6 +129,10 @@ func (p *MessagePipe) DeRegister(pluginNames []string) error {
 	return nil
 }
 
+func (p *MessagePipe) Close() {
+	p.cleanup()
+}
+
 func getIndex(pluginName string, plugins []Plugin) int {
 	for index, plugin := range plugins {
 		if pluginName == plugin.Info().Name() {
@@ -162,7 +166,9 @@ func (p *MessagePipe) Run() {
 			return
 		case m := <-p.messageChannel:
 			p.mu.Lock()
-			p.bus.Publish(m.Topic(), m)
+			if p.bus != nil {
+				p.bus.Publish(m.Topic(), m)
+			}
 			p.mu.Unlock()
 		default:
 			return
@@ -201,7 +207,12 @@ func (p *MessagePipe) cleanup() {
 		r.Close()
 	}
 
-	close(p.messageChannel) 
+	p.bus = nil
+	p.plugins = nil
+	if p.messageChannel != nil {
+		close(p.messageChannel)
+	}
+	p.messageChannel = nil
 }
 
 func (p *MessagePipe) initPlugins() {

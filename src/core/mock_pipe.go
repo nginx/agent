@@ -146,3 +146,7 @@ func (p *MockMessagePipe) IsPluginAlreadyRegistered(pluginName string) bool {
 	}
 	return pluginAlreadyRegistered
 }
+
+func (p *MockMessagePipe) Close() {
+
+}
