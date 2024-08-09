@@ -279,7 +279,7 @@ jobs:
         if: ${{ inputs.publishPackages == true }}
         env:
           TOKEN: ${{ steps.idtoken.outputs.id_token }}
-          UPLOAD_URL: ${{ secrets.V3_UPLOAD_URL }}
+          UPLOAD_URL: ${{ secrets.UPLOAD_URL }}
         run: |
           make release
 
