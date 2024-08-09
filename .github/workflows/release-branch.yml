@@ -276,11 +276,8 @@ jobs:
         if: ${{ inputs.publishPackages == true }}
         env:
           TOKEN: ${{ steps.idtoken.outputs.id_token }}
-          GPG_KEY: ${{ secrets.INDIGO_GPG_AGENT }}
-          NFPM_SIGNING_KEY_FILE: .key.asc
+          UPLOAD_URL: ${{ secrets.V3_UPLOAD_URL }}
         run: |
-          echo "${GPG_KEY}" | base64 --decode > ${NFPM_SIGNING_KEY_FILE}
-          make gpg-key
           make release
 
       - name: Upload Release Assets
