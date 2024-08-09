@@ -440,7 +440,7 @@ func (n *Nginx) writeConfigAndReloadNginx(correlationId string, config *proto.Ng
 func (n *Nginx) validateConfig(nginx *proto.NginxDetails, correlationId string, config *proto.NginxConfig, configApply *sdk.ConfigApply) {
 	start := time.Now()
 
-	err := n.nginxBinary.ValidateConfig(nginx.NginxId, nginx.ProcessPath, nginx.ConfPath, config, configApply)
+	err := n.nginxBinary.ValidateConfig(nginx.NginxId, nginx.ProcessPath, nginx.ConfPath, nginx.ErrorLogPaths, config, configApply)
 	if err == nil {
 		_, err = n.nginxBinary.ReadConfig(nginx.GetConfPath(), config.GetConfigData().GetNginxId(), n.env.GetSystemUUID())
 	}
