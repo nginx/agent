@@ -87,8 +87,13 @@ func setupConnectionTest(tb testing.TB) func(tb testing.TB) {
 		mockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9093/tcp"][0].HostPort)
 		tb.Logf("Mock management API server running on %s", mockManagementPlaneAPIAddress)
 
+		nginxConfPath := "../config/nginx/nginx.conf"
+		if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+			nginxConfPath = "../config/nginx/nginx-plus.conf"
+		}
+
 		params := &helpers.Parameters{
-			NginxConfigPath:      "../config/nginx/nginx.conf",
+			NginxConfigPath:      nginxConfPath,
 			NginxAgentConfigPath: "../config/agent/nginx-config-with-grpc-client.conf",
 			LogMessage:           "Agent connected",
 		}
@@ -328,7 +333,11 @@ func verifyUpdateDataPlaneStatus(t *testing.T) {
 
 	// Verify NGINX instance metadata
 	assert.NotEmpty(t, instances[1].GetInstanceMeta().GetInstanceId())
-	assert.Equal(t, mpi.InstanceMeta_INSTANCE_TYPE_NGINX, instances[1].GetInstanceMeta().GetInstanceType())
+	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+		assert.Equal(t, mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS, instances[1].GetInstanceMeta().GetInstanceType())
+	} else {
+		assert.Equal(t, mpi.InstanceMeta_INSTANCE_TYPE_NGINX, instances[1].GetInstanceMeta().GetInstanceType())
+	}
 	assert.NotEmpty(t, instances[1].GetInstanceMeta().GetVersion())
 
 	// Verify NGINX instance configuration
