@@ -258,11 +258,6 @@ jobs:
                     path: "/nginx-plus/agent"
                   - image: "alpine"
                     version: "3.19"
-                    plus: "r32"
-                    release: "alpine"
-                    path: "/nginx-plus/agent"
-                  - image: "alpine"
-                    version: "3.19"
                     plus: "r31"
                     release: "alpine"
                     path: "/nginx-plus/agent"
@@ -297,7 +292,7 @@ jobs:
           - name: Run Integration Tests
             run: |
                 go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-                CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
+                CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.plus }}" \
                 OS_RELEASE="${{ matrix.container.release }}" IMAGE_PATH="${{ matrix.container.path }}" \
                   make official-image-integration-test
           - name: Container Output Logs
@@ -311,7 +306,7 @@ jobs:
             if: success() || failure()
             uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
             with:
-                name: official-plus-integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}
+                name: official-plus-integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}-${{ matrix.container.version }}
                 path: /tmp/integration-test-logs/
                 retention-days: 3
 
