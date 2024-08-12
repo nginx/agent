@@ -1,8 +1,10 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -78,6 +80,10 @@ func TestAPI_Metrics(t *testing.T) {
 	resp, err := client.R().EnableTrace().Get(url)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
+	ctx := context.Background()
+	_, config, err := testContainer.Exec(ctx, []string{"nginx", "-T"})
+	configBytes, err := io.ReadAll(config)
+	t.Logf("config: %s", string(configBytes))
 	assert.Contains(t, resp.String(), "system_cpu_system")
 	assert.NotContains(t, resp.String(), "test_fail_metric")
 	// Validate that the agent can call the stub status API
