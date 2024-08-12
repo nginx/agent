@@ -9,7 +9,6 @@ package sources
 
 import (
 	"context"
-
 	"testing"
 
 	"github.com/nginx/agent/sdk/v2/proto"

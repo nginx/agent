@@ -10,7 +10,6 @@ package sources
 import (
 	"context"
 	"sort"
-
 	"testing"
 
 	"github.com/nginx/agent/v2/src/core/metrics"

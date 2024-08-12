@@ -11,7 +11,6 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
-
 	"testing"
 
 	"github.com/nginx/agent/sdk/v2/proto"

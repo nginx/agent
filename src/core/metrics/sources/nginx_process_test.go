@@ -9,7 +9,6 @@ package sources
 
 import (
 	"context"
-
 	"testing"
 	"time"
 
