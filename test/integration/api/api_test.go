@@ -81,7 +81,7 @@ func TestAPI_Metrics(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 	ctx := context.Background()
-	_, config, err := testContainer.Exec(ctx, []string{"nginx", "-T"})
+	_, config, err := testContainer.Exec(ctx, []string{"tail", "-50", "/var/log/nginx/access.log"})
 	configBytes, err := io.ReadAll(config)
 	t.Logf("config: %s", string(configBytes))
 	assert.Contains(t, resp.String(), "system_cpu_system")
