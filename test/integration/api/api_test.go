@@ -87,7 +87,6 @@ func TestAPI_Metrics(t *testing.T) {
 	if os.Getenv("IMAGE_PATH") == "/nginx/agent" {
 		// Validate that the agent can read the NGINX access logs
 		assert.Contains(t, resp.String(), "nginx_http_status_2xx")
-
 	}
 
 	metrics := tutils.ProcessResponse(resp)
