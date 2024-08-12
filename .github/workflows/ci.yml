@@ -234,7 +234,7 @@ jobs:
         if: success() || failure()
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
-          name: integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}-new
+          name: official-oss-integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}
           path: /tmp/integration-test-logs/
           retention-days: 3
           
@@ -286,7 +286,7 @@ jobs:
             if: success() || failure()
             uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
             with:
-                name: integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}-new
+                name: official-plus-integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}
                 path: /tmp/integration-test-logs/
                 retention-days: 3
 
