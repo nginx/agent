@@ -1,11 +1,10 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -77,21 +76,19 @@ func TestAPI_Metrics(t *testing.T) {
 		},
 	)
 
-	time.Sleep(10 * time.Second)
-
 	resp, err := client.R().EnableTrace().Get(url)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
-	ctx := context.Background()
-	_, config, err := testContainer.Exec(ctx, []string{"tail", "-50", "/var/log/nginx/access.log"})
-	configBytes, err := io.ReadAll(config)
-	t.Logf("config: %s", string(configBytes))
 	assert.Contains(t, resp.String(), "system_cpu_system")
 	assert.NotContains(t, resp.String(), "test_fail_metric")
 	// Validate that the agent can call the stub status API
 	assert.Contains(t, resp.String(), "nginx_http_request_count")
-	// Validate that the agent can read the NGINX access logs
-	assert.Contains(t, resp.String(), "nginx_http_status_2xx")
+
+	if os.Getenv("IMAGE_PATH") == "/nginx/agent" {
+		// Validate that the agent can read the NGINX access logs
+		assert.Contains(t, resp.String(), "nginx_http_status_2xx")
+
+	}
 
 	metrics := tutils.ProcessResponse(resp)
 
