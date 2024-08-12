@@ -10,7 +10,6 @@ package manager
 import (
 	"context"
 	"runtime"
-	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"

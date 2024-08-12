@@ -12,7 +12,6 @@ import (
 	"context"
 	"os"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
