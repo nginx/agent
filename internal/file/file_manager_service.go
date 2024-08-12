@@ -23,6 +23,7 @@ import (
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/pkg/files"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	google_grpc "google.golang.org/grpc"
 
 	backoffHelpers "github.com/nginx/agent/v3/internal/backoff"
 )
@@ -289,7 +290,7 @@ func (fms *FileManagerService) UpdateMultipleFiles(
 			wg.Add(1)
 			go func() {
 
-				slog.InfoContext(ctx, "Updating file", "instance_id", instanceID, "file_name", fileToUpdate.GetFileMeta().GetName())
+				slog.ErrorContext(ctx, "Updating file", "instance_id", instanceID, "file_name", fileToUpdate.GetFileMeta().GetName())
 				contents, _ := os.ReadFile(fileToUpdate.GetFileMeta().GetName())
 
 				request := &mpi.UpdateFileRequest{
@@ -348,38 +349,46 @@ func (fms *FileManagerService) UploadMultipleFiles(
 			return nil, uploadFileError
 		}
 
-		for _, fileToUpdate := range filesToUpdate {
-			contents, _ := os.ReadFile(fileToUpdate.GetFileMeta().GetName())
-			if chunked {
-				chunks := Chunk(contents, 4 * 1024)
+		var wg sync.WaitGroup
 
-				for _, chunk := range chunks {
+		for _, fileToUpdate := range filesToUpdate {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				contents, _ := os.ReadFile(fileToUpdate.GetFileMeta().GetName())
+				if chunked {
+					chunks := Chunk(contents, 4 * 1024)
+
+					for _, chunk := range chunks {
+						request := &mpi.UpdateFileRequest{
+							File: fileToUpdate,
+							Contents: &mpi.FileContents{
+								Contents: chunk,
+							},
+						}
+			
+						err := client.Send(request)
+						if err != nil {
+							return
+						}
+					}
+				} else {
 					request := &mpi.UpdateFileRequest{
 						File: fileToUpdate,
 						Contents: &mpi.FileContents{
-							Contents: chunk,
+							Contents: contents,
 						},
 					}
-		
+
 					err := client.Send(request)
 					if err != nil {
-						return nil, err
+						return
 					}
 				}
-			} else {
-				request := &mpi.UpdateFileRequest{
-					File: fileToUpdate,
-					Contents: &mpi.FileContents{
-						Contents: contents,
-					},
-				}
-
-				err := client.Send(request)
-				if err != nil {
-					return nil, err
-				}
-			}
+			}()
 		}
+
+		wg.Wait()
 
 		response, err := client.CloseAndRecv()
 		if err != nil {
@@ -455,7 +464,7 @@ func (fms *FileManagerService) GetFile(
 			return nil, errors.New("CreateConnection rpc has not being called yet")
 		}
 
-		response, updateError := fms.fileServiceClient.GetFile(ctx, request)
+		response, updateError := fms.fileServiceClient.GetFile(ctx, request, google_grpc.MaxCallRecvMsgSize(110000000))
 
 		validatedError := grpc.ValidateGrpcError(updateError)
 

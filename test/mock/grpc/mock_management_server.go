@@ -142,6 +142,8 @@ func getServerOptions(agentConfig *config.Config) []grpc.ServerOption {
 		),
 		grpc.KeepaliveEnforcementPolicy(keepAliveEnforcementPolicy),
 		grpc.KeepaliveParams(keepAliveServerParameters),
+		grpc.MaxRecvMsgSize(110000000),
+		grpc.MaxSendMsgSize(110000000),
 	}
 
 	if agentConfig.Command.Auth == nil || agentConfig.Command.Auth.Token == "" {
