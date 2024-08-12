@@ -9,7 +9,7 @@ package sources
 
 import (
 	"context"
-	"sync"
+
 	"testing"
 	"time"
 
@@ -58,10 +58,10 @@ func TestNginxProcessCollector_Collect_Process(t *testing.T) {
 	// tell the mock nginx binary to return something
 	ctx := context.TODO()
 
-	wg := sync.WaitGroup{}
-	wg.Add(1)
+	// wg := sync.WaitGroup{}
+	// wg.Add(1)
 	m := make(chan *metrics.StatsEntityWrapper)
-	go n.Collect(ctx, &wg, m)
+	go n.Collect(ctx, nil, m)
 
 	time.Sleep(100 * time.Millisecond)
 	mockBinary.AssertNumberOfCalls(t, "GetNginxDetailsByID", 1)
@@ -102,10 +102,10 @@ func TestNginxProcessCollector_Collect_NoProcess(t *testing.T) {
 	// tell the mock nginx binary to return something
 	ctx := context.TODO()
 
-	wg := sync.WaitGroup{}
-	wg.Add(1)
+	// wg := sync.WaitGroup{}
+	// wg.Add(1)
 	m := make(chan *metrics.StatsEntityWrapper)
-	go n.Collect(ctx, &wg, m)
+	go n.Collect(ctx, nil, m)
 
 	time.Sleep(100 * time.Millisecond)
 	mockBinary.AssertNumberOfCalls(t, "GetNginxDetailsByID", 1)
@@ -149,10 +149,10 @@ func TestNginxProcessCollector_Collect_NotPlus(t *testing.T) {
 	// tell the mock nginx binary to return something
 	ctx := context.TODO()
 
-	wg := sync.WaitGroup{}
-	wg.Add(1)
+	// wg := sync.WaitGroup{}
+	// wg.Add(1)
 	m := make(chan *metrics.StatsEntityWrapper)
-	go n.Collect(ctx, &wg, m)
+	go n.Collect(ctx, nil, m)
 
 	time.Sleep(100 * time.Millisecond)
 	mockBinary.AssertNumberOfCalls(t, "GetNginxDetailsByID", 1)

@@ -10,7 +10,7 @@ package sources
 import (
 	"context"
 	"sort"
-	"sync"
+
 	"testing"
 
 	"github.com/nginx/agent/v2/src/core/metrics"
@@ -39,11 +39,11 @@ func TestDiskIOCollect(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
+	// wg := &sync.WaitGroup{}
+	// wg.Add(1)
 	channel := make(chan *metrics.StatsEntityWrapper, 100)
-	diskio.Collect(ctx, wg, channel)
-	wg.Wait()
+	diskio.Collect(ctx, nil, channel)
+	// wg.Wait()
 
 	actual := <-channel
 

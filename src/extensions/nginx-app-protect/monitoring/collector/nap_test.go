@@ -13,7 +13,6 @@ import (
 	"log/syslog"
 	"strconv"
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/sirupsen/logrus"
@@ -88,10 +87,10 @@ func TestNAPCollect(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
+	// wg := &sync.WaitGroup{}
+	// wg.Add(1)
 
-	go waf.Collect(ctx, wg, collect)
+	go waf.Collect(ctx, nil, collect)
 
 	logwriter, err = syslog.Dial("tcp4", testIP+":"+strconv.Itoa(testPort), syslog.LOG_INFO|syslog.LOG_USER, "test")
 	if err != nil {

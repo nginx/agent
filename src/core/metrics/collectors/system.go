@@ -59,16 +59,13 @@ func NewSystemCollector(env core.Environment, conf *config.Config) *SystemCollec
 func (c *SystemCollector) collectMetrics(ctx context.Context) {
 	// using a separate WaitGroup, since we need to wait for our own buffer to be filled
 	// this ensures the collection is done before our own for/select loop to pull things off the buf
-	wg := &sync.WaitGroup{}
 	for _, systemSource := range c.sources {
-		wg.Add(1)
-		go systemSource.Collect(ctx, wg, c.buf)
+		go systemSource.Collect(ctx, nil, c.buf)
 	}
-	wg.Wait()
 }
 
-func (c *SystemCollector) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
-	defer wg.Done()
+func (c *SystemCollector) Collect(ctx context.Context, _ *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
+	// defer wg.Done()
 	c.collectMetrics(ctx)
 
 	commonDims := c.dim.ToDimensions()

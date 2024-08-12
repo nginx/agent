@@ -11,7 +11,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
-	"sync"
+
 	"testing"
 
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -110,10 +110,10 @@ Reading: 0 Writing: 1 Waiting: 0
 				logger:         NewMetricSourceLogger(),
 			}
 			ctx := context.TODO()
-			wg := &sync.WaitGroup{}
-			wg.Add(1)
-			go c.Collect(ctx, wg, test.m)
-			wg.Wait()
+			// wg := &sync.WaitGroup{}
+			// wg.Add(1)
+			go c.Collect(ctx, nil, test.m)
+			// wg.Wait()
 			statEntity := <-test.m
 			assert.Len(tt, statEntity.Data.Simplemetrics, len(test.expectedMetrics))
 			for _, metric := range statEntity.Data.Simplemetrics {

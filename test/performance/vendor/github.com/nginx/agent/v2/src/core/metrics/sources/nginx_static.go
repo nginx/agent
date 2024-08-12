@@ -26,8 +26,8 @@ func NewNginxStatic(baseDimensions *metrics.CommonDim, namespace string) *NginxS
 	return &NginxStatic{baseDimensions: baseDimensions, namedMetric: &namedMetric{namespace: namespace}}
 }
 
-func (c *NginxStatic) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
-	defer wg.Done()
+func (c *NginxStatic) Collect(ctx context.Context, _ *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
+	// defer wg.Done()
 
 	SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 }

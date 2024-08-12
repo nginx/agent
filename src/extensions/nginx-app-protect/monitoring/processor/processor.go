@@ -76,7 +76,7 @@ func GetClient(cfg *Config) (*Client, error) {
 
 // processorWorker is a worker process to process events.
 func (c *Client) processorWorker(ctx context.Context, wg *sync.WaitGroup, id int, collected <-chan *monitoring.RawLog, processed chan<- *pb.Event) {
-	defer wg.Done()
+	// defer wg.Done()
 
 	c.logger.Debugf("Setting up Processor Worker: %d", id)
 
@@ -121,14 +121,14 @@ func (c *Client) processorWorker(ctx context.Context, wg *sync.WaitGroup, id int
 }
 
 // Process processes the raw log entries from collected chan into Security Events on processed chan.
-func (c *Client) Process(ctx context.Context, wg *sync.WaitGroup, collected <-chan *monitoring.RawLog, processed chan<- *pb.Event) {
-	defer wg.Done()
+func (c *Client) Process(ctx context.Context, _ *sync.WaitGroup, collected <-chan *monitoring.RawLog, processed chan<- *pb.Event) {
+	// defer wg.Done()
 
 	c.logger.Info("Setting up Processor")
 
 	for id := 1; id <= c.workers; id++ {
-		wg.Add(1)
-		go c.processorWorker(ctx, wg, id, collected, processed)
+		// wg.Add(1)
+		go c.processorWorker(ctx, nil, id, collected, processed)
 	}
 
 	c.logger.Infof("Done setting up %v Processor Workers", c.workers)

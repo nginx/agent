@@ -37,8 +37,8 @@ func NewDiskIOSource(namespace string, env core.Environment) *DiskIO {
 	return &DiskIO{namedMetric: &namedMetric{namespace, "io"}, env: env, diskIOStatsFunc: disk.IOCountersWithContext}
 }
 
-func (dio *DiskIO) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
-	defer wg.Done()
+func (dio *DiskIO) Collect(ctx context.Context, _ *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
+	// defer wg.Done()
 	dio.init.Do(func() {
 		dio.diskDevs, _ = dio.env.DiskDevices()
 		dio.diskIOStats = dio.newDiskIOCounters(ctx, dio.diskDevs)

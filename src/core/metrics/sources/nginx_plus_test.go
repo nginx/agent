@@ -565,8 +565,8 @@ type FakeNginxPlus struct {
 }
 
 // Collect is fake collector that hard codes a stats struct response to avoid dependency on external NGINX Plus api
-func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
-	defer wg.Done()
+func (f *FakeNginxPlus) Collect(ctx context.Context, _ *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
+	// defer wg.Done()
 
 	f.baseDimensions.NginxType = "plus"
 	f.baseDimensions.PublishedAPI = f.plusAPI
@@ -982,10 +982,10 @@ func TestNginxPlus_Collect(t *testing.T) {
 		ctx := context.TODO()
 
 		f := &FakeNginxPlus{NewNginxPlus(test.baseDimensions, "nginx", "plus", "", 6)}
-		wg := &sync.WaitGroup{}
-		wg.Add(1)
-		go f.Collect(ctx, wg, test.m)
-		wg.Wait()
+		// wg := &sync.WaitGroup{}
+		// wg.Add(1)
+		go f.Collect(ctx, nil, test.m)
+		// wg.Wait()
 
 		instanceMetrics := <-test.m
 		assert.Len(t, instanceMetrics.Data.Simplemetrics, len(expectedInstanceMetrics))

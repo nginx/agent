@@ -10,7 +10,6 @@ package collectors
 import (
 	"context"
 	"reflect"
-	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -62,11 +61,11 @@ func TestContainerCollector_Collect(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
+	// wg := &sync.WaitGroup{}
+	// wg.Add(1)
 
 	channel := make(chan *metrics.StatsEntityWrapper)
-	go containerCollector.Collect(ctx, wg, channel)
+	go containerCollector.Collect(ctx, nil, channel)
 
 	containerCollector.buf <- &metrics.StatsEntityWrapper{Type: proto.MetricsReport_SYSTEM, Data: &proto.StatsEntity{Dimensions: []*proto.Dimension{{Name: "new_dim", Value: "123"}}}}
 	actual := <-channel

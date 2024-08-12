@@ -38,8 +38,8 @@ func NewVirtualMemorySource(namespace string, env core.Environment) *VirtualMemo
 	return &VirtualMemory{NewMetricSourceLogger(), &namedMetric{namespace, MemoryGroup}, statFunc}
 }
 
-func (c *VirtualMemory) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
-	defer wg.Done()
+func (c *VirtualMemory) Collect(ctx context.Context, _ *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
+	// defer wg.Done()
 	memstats, err := c.statFunc(ctx)
 	if err != nil {
 		if e, ok := err.(*os.PathError); ok {

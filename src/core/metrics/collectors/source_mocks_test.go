@@ -26,8 +26,8 @@ type NginxSourceMock struct {
 }
 
 func (m *NginxSourceMock) Collect(ctx context.Context, wg *sync.WaitGroup, statsChannel chan<- *metrics.StatsEntityWrapper) {
-	m.Called(ctx, wg, statsChannel)
-	wg.Done()
+	m.Called(ctx)
+	// wg.Done()
 }
 
 func (m *NginxSourceMock) Update(dimensions *metrics.CommonDim, collectorConf *metrics.NginxCollectorConfig) {
@@ -43,6 +43,6 @@ type SourceMock struct {
 }
 
 func (m *SourceMock) Collect(ctx context.Context, wg *sync.WaitGroup, statsChannel chan<- *metrics.StatsEntityWrapper) {
-	m.Called(ctx, wg, statsChannel)
-	wg.Done()
+	m.Called(ctx)
+	// wg.Done()
 }

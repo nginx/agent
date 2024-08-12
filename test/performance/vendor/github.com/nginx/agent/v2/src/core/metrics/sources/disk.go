@@ -32,8 +32,8 @@ func NewDiskSource(namespace string, env core.Environment) *Disk {
 	return &Disk{NewMetricSourceLogger(), &namedMetric{namespace, "disk"}, disks, env}
 }
 
-func (c *Disk) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
-	defer wg.Done()
+func (c *Disk) Collect(ctx context.Context, _ *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
+	// defer wg.Done()
 	for _, part := range c.disks {
 		if part.Device == "" || part.FsType == "" {
 			continue

@@ -152,16 +152,16 @@ func (s *Manager) Run(ctx context.Context) {
 	chtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	waitGroup := &sync.WaitGroup{}
-	waitGroup.Add(2)
+	// waitGroup := &sync.WaitGroup{}
+	// waitGroup.Add(2)
 
-	go s.collector.Collect(chtx, waitGroup, s.collectChan)
-	go s.processor.Process(chtx, waitGroup, s.collectChan, s.processorChan)
+	go s.collector.Collect(chtx, nil, s.collectChan)
+	go s.processor.Process(chtx, nil, s.collectChan, s.processorChan)
 
 	<-ctx.Done()
 	s.logger.Infof("Received Context cancellation, %s is wrapping up...", componentName)
 
-	waitGroup.Wait()
+	// waitGroup.Wait()
 
 	s.logger.Infof("Context cancellation, %s wrapped up...", componentName)
 }

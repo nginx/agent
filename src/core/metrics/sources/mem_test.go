@@ -10,7 +10,6 @@ package sources
 import (
 	"context"
 	"sort"
-	"sync"
 	"testing"
 
 	"github.com/nginx/agent/v2/src/core/metrics"
@@ -57,11 +56,11 @@ func TestVirtualMemoryCollect(t *testing.T) {
 	virtualMemorySource := NewVirtualMemorySource("test", env)
 
 	ctx := context.TODO()
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
+	// wg := &sync.WaitGroup{}
+	// wg.Add(1)
 	channel := make(chan *metrics.StatsEntityWrapper, 1)
-	go virtualMemorySource.Collect(ctx, wg, channel)
-	wg.Wait()
+	go virtualMemorySource.Collect(ctx, nil, channel)
+	// wg.Wait()
 
 	actual := <-channel
 

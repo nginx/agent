@@ -1215,11 +1215,11 @@ func TestNAPProcess(t *testing.T) {
 				t.Fatalf("Could not get a Processor Client: %s", err)
 			}
 
-			wg := &sync.WaitGroup{}
+			// wg := &sync.WaitGroup{}
 
-			wg.Add(1)
+			// wg.Add(1)
 			// Start Processor
-			go p.Process(ctx, wg, collect, processed)
+			go p.Process(ctx, nil, collect, processed)
 
 			// Briefly sleep so map can be reconciled before event is collected
 			// and processed
