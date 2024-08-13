@@ -398,25 +398,6 @@ jobs:
               --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/${GIT_BRANCH}/${i##*/}
             done
 
-
-  build-example:
-    name: Build Grafana Dashboard Example
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
-      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
-        with:
-          go-version-file: 'go.mod'
-      - name: Setup build environment
-        run: |
-          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-      - name: Build Grafana example
-        run: make build-grafana-example
-      - name: Clean Grafana example
-        run: |
-            CONTAINER_COMPOSE="docker compose"
-            make clean-grafana-example
-
   trigger-release-workflow:
     if: ${{ startsWith(github.ref_name, 'release-') && !github.event.pull_request.head.repo.fork }}
     needs: [ lint, unit-test, component-test, performance-test, integration-tests]
