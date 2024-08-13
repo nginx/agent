@@ -152,6 +152,7 @@ func TestGrpc_StartUp(t *testing.T) {
 	defer teardownTest(t)
 
 	verifyConnection(t)
+	assert.False(t, t.Failed())
 	verifyUpdateDataPlaneStatus(t)
 	verifyUpdateDataPlaneHealth(t)
 }
@@ -161,6 +162,7 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 	defer teardownTest(t)
 
 	nginxInstanceID := verifyConnection(t)
+	assert.False(t, t.Failed())
 
 	request := fmt.Sprintf(`{
 	"message_meta": {
@@ -270,8 +272,17 @@ func verifyConnection(t *testing.T) string {
 			assert.NotEmpty(t, instance.GetInstanceRuntime().GetBinaryPath())
 
 			assert.Equal(t, "/etc/nginx/nginx.conf", instance.GetInstanceRuntime().GetConfigPath())
-		case mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS,
-			mpi.InstanceMeta_INSTANCE_TYPE_UNIT,
+		case mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS:
+			nginxInstanceMeta := instance.GetInstanceMeta()
+
+			nginxInstanceID = nginxInstanceMeta.GetInstanceId()
+			assert.NotEmpty(t, nginxInstanceID)
+			assert.NotEmpty(t, nginxInstanceMeta.GetVersion())
+
+			assert.NotEmpty(t, instance.GetInstanceRuntime().GetBinaryPath())
+
+			assert.Equal(t, "/etc/nginx/nginx.conf", instance.GetInstanceRuntime().GetConfigPath())
+		case mpi.InstanceMeta_INSTANCE_TYPE_UNIT,
 			mpi.InstanceMeta_INSTANCE_TYPE_UNSPECIFIED:
 			fallthrough
 		default:

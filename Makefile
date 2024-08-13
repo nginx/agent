@@ -34,6 +34,7 @@ IMAGE_TAG   = "agent_$(OS_RELEASE)_$(OS_VERSION)"
 DOCKERFILE_PATH = "./scripts/docker/nginx-oss/$(CONTAINER_OS_TYPE)/Dockerfile"
 OFFICIAL_IMAGE_DOCKERFILE_PATH = "./test/docker/oss/$(CONTAINER_OS_TYPE)/Dockerfile"
 IMAGE_PATH ?= "/nginx/agent"
+TAG ?= ""
 
 BUILD_DIR		:= build
 TEST_BUILD_DIR  := build/test
