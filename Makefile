@@ -44,7 +44,6 @@ OS_VERSION  ?= 24.04
 BASE_IMAGE  = "${CONTAINER_REGISTRY}/${OS_RELEASE}:${OS_VERSION}"
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 IMAGE_PATH ?= "/nginx/agent"
-CONTAINER_COMPOSE = docker-compose
 
 VERSION_WITH_V := v${VERSION}
 LDFLAGS = "-w -X main.version=${VERSION_WITH_V} -X main.commit=${COMMIT} -X main.date=${DATE}"
@@ -336,10 +335,10 @@ official-oss-mainline-image: official-oss-image ## Build official NGINX OSS with
 # Grafana Example Dashboard Targets                                                                               #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 clean-grafana-example: clean ## Clean example packages and docker
-	cd ./examples/grafana-metrics/ && BASE_IMAGE= PACKAGE_NAME= ${CONTAINER_COMPOSE} down
+	cd ./examples/grafana-metrics/ && BASE_IMAGE= PACKAGE_NAME= $(CONTAINER_COMPOSE) down
 
 build-grafana-example: local-deb-package ## Build the example of nginx-agent
-	cd ./examples/grafana-metrics/ && BASE_IMAGE=${BASE_IMAGE} PACKAGE_NAME=${PACKAGE_NAME} ${CONTAINER_COMPOSE} build
+	cd ./examples/grafana-metrics/ && BASE_IMAGE=${BASE_IMAGE} PACKAGE_NAME=${PACKAGE_NAME} $(CONTAINER_COMPOSE) build
 
 run-grafana-example: ## Start the example of nginx-agent
-	cd ./examples/grafana-metrics/ && BASE_IMAGE=${BASE_IMAGE} PACKAGE_NAME=${PACKAGE_NAME} ${CONTAINER_COMPOSE} up
+	cd ./examples/grafana-metrics/ && BASE_IMAGE=${BASE_IMAGE} PACKAGE_NAME=${PACKAGE_NAME} $(CONTAINER_COMPOSE) up
