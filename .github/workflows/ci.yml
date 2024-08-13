@@ -413,7 +413,9 @@ jobs:
       - name: Build Grafana example
         run: make build-grafana-example
       - name: Clean Grafana example
-        run: make clean-grafana-example
+        run: |
+            CONTAINER_COMPOSE="docker compose"
+            make clean-grafana-example
 
   trigger-release-workflow:
     if: ${{ startsWith(github.ref_name, 'release-') && !github.event.pull_request.head.repo.fork }}
