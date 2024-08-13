@@ -44,6 +44,7 @@ OS_VERSION  ?= 24.04
 BASE_IMAGE  = "${CONTAINER_REGISTRY}/${OS_RELEASE}:${OS_VERSION}"
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 IMAGE_PATH ?= "/nginx/agent"
+CONTAINER_COMPOSE = docker-compose
 
 VERSION_WITH_V := v${VERSION}
 LDFLAGS = "-w -X main.version=${VERSION_WITH_V} -X main.commit=${COMMIT} -X main.date=${DATE}"
