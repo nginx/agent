@@ -28,6 +28,9 @@ on:
         description: "Github cache key for the packages built"
         value: "agent-v3-packages-${{ jobs.vars.outputs.package_build_md5 }}"
 
+env:
+  NFPM_VERSION: 'v2.35.3'
+
 defaults:
   run:
     shell: bash
@@ -76,7 +79,7 @@ jobs:
           path: build
           key: agent-v3-packages-${{ steps.vars.outputs.package_build_md5 }}
         if: ${{ ! inputs.force_build }}
-      
+
       - name: Display contents of release tarball
         run: tar -tzf build/packages/nginx-agentv3.tar.gz
         if: ${{ steps.package-cache.outputs.cache-hit == 'true' }}
@@ -92,10 +95,16 @@ jobs:
         with:
           ref: ${{ inputs.branch }}
 
+      - name: Setup go
+        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        with:
+            go-version-file: 'go.mod'
+
       - name: Setup package build environment
         run: |
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           sudo apt-get update
-          sudo apt-get install -y gpgv1 monkeysphere 
+          sudo apt-get install -y gpgv1 monkeysphere
           make install-tools
           export PATH=$PATH:~/go/bin
           nfpm --version

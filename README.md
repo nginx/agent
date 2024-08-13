@@ -1,3 +1,7 @@
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/nginx/agent)
+![GitHub License](https://img.shields.io/github/license/nginx/agent)
+![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)
+[![Slack](https://img.shields.io/badge/slack-join%20us-brightgreen.svg?logo=slack)](https://nginxcommunity.slack.com/channels/nginx-agent)
 ![coverage](https://raw.githubusercontent.com/nginx/agent/badges/.badges/v3/coverage.svg)
 
 # NGINX Agent

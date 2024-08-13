@@ -358,7 +358,7 @@ func getManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int) []
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 
 	responseData := resp.Body()
-	t.Logf("Response: %s", string(responseData))
+	t.Logf("Responses: %s", string(responseData))
 	assert.True(t, json.Valid(responseData))
 
 	response := []*mpi.DataPlaneResponse{}

@@ -204,20 +204,6 @@ func TestResolveCollector(t *testing.T) {
 			shouldErr: true,
 			errMsg:    "unsupported processor type: custom-processor",
 		},
-		{
-			name: "Test 5: Unsupported Receiver",
-			expected: &Collector{
-				ConfigPath: testDefault.Collector.ConfigPath,
-				Exporters:  testDefault.Collector.Exporters,
-				Receivers: []Receiver{
-					{
-						Type: "not-allowed",
-					},
-				},
-			},
-			shouldErr: true,
-			errMsg:    "unsupported receiver type: not-allowed",
-		},
 	}
 
 	for _, test := range tests {
@@ -336,23 +322,24 @@ func getAgentConfig() *Config {
 					Type: "batch",
 				},
 			},
-			Receivers: []Receiver{
-				{
-					Type: "otlp",
-					Server: &ServerConfig{
-						Host: "localhost",
-						Port: 4321,
-						Type: 0,
-					},
-					Auth: &AuthConfig{
-						Token: "even-secreter-token",
-					},
-					TLS: &TLSConfig{
-						Cert:       "/path/to/server-cert.pem",
-						Key:        "/path/to/server-cert.pem",
-						Ca:         "/path/to/server-cert.pem",
-						SkipVerify: true,
-						ServerName: "local-dataa-plane-server",
+			Receivers: Receivers{
+				OtlpReceivers: []OtlpReceiver{
+					{
+						Server: &ServerConfig{
+							Host: "localhost",
+							Port: 4321,
+							Type: 0,
+						},
+						Auth: &AuthConfig{
+							Token: "even-secreter-token",
+						},
+						TLS: &TLSConfig{
+							Cert:       "/path/to/server-cert.pem",
+							Key:        "/path/to/server-cert.pem",
+							Ca:         "/path/to/server-cert.pem",
+							SkipVerify: true,
+							ServerName: "local-dataa-plane-server",
+						},
 					},
 				},
 			},

@@ -1,18 +1,8 @@
 receivers:
-  {{- range .Receivers }}
-  {{- if eq .Type "otlp" }}
-  otlp:
-    protocols:
-      {{- if eq .Server.Type 0 }}
-      grpc:
-      {{- else }}
-      http:
-      {{- end }}
-        endpoint: "{{- .Server.Host -}}:{{- .Server.Port -}}"
-  {{- else if eq .Type "hostmetrics" }}
+{{- if ne .Receivers.HostMetrics.CollectionInterval 0 }}
   hostmetrics:
-    collection_interval: 1m
-    initial_delay: 1s
+    collection_interval: {{ .Receivers.HostMetrics.CollectionInterval }}
+    initial_delay: {{ .Receivers.HostMetrics.InitialDelay }}
     scrapers:
       cpu:
       disk:
@@ -23,20 +13,27 @@ receivers:
       paging:
       processes:
       process:
-  {{- else if eq .Type "prometheus" }}
-  prometheus:
-    config:
-      scrape_configs:
-        - job_name: 'nginx-agent-otelcol'
-          scrape_interval: 5s
-          static_configs:
-            - targets: ['{{- .Server.Host -}}:{{- .Server.Port -}}']
-  {{- else if eq .Type "nginx" }}
-  nginx:
-    endpoint: "http://{{- .Server.Host -}}:{{- .Server.Port -}}/status"
+{{- end }}
+{{- range $index, $otlpReceiver := .Receivers.OtlpReceivers }}
+  otlp/{{$index}}:
+    protocols:
+      {{- if eq .Server.Type 0 }}
+      grpc:
+      {{- else }}
+      http:
+      {{- end }}
+        endpoint: "{{- .Server.Host -}}:{{- .Server.Port -}}"
+{{- end }}
+{{- range .Receivers.NginxReceivers }}
+  nginx/{{- .InstanceID -}}:
+    endpoint: "{{- .StubStatus -}}"
     collection_interval: 10s
-  {{- end }}
-  {{- end }}
+{{- end }}
+{{- range .Receivers.NginxPlusReceivers }}
+  nginxplus/{{- .InstanceID -}}:
+    endpoint: "{{- .PlusAPI -}}"
+    collection_interval: 10s
+{{- end }}
 
 {{ if gt (len .Processors) 0 -}}
 processors:
@@ -46,8 +43,8 @@ processors:
 {{- end }}
 
 exporters:
-  {{- range .Exporters }}
-  {{- if eq .Type "otlp" }}
+{{- range .Exporters }}
+{{- if eq .Type "otlp" }}
   otlp:
     endpoint: "{{ .Server.Host -}}:{{- .Server.Port }}"
     compression: none
@@ -64,18 +61,18 @@ exporters:
       {{ if gt (len .TLS.Cert) 0 -}}cert_file: "{{- .TLS.Cert -}}"{{- end }}
       {{ if gt (len .TLS.Key) 0 -}}key_file: "{{- .TLS.Key -}}"{{- end }}
       {{- end }}
-  {{- else if eq .Type "prometheus" }}
+{{- else if eq .Type "prometheus" }}
   prometheus:
     endpoint: "{{ .Server.Host -}}:{{- .Server.Port }}"
     namespace: "nginx-agent"
-  {{- else if eq .Type "debug" }}
+{{- else if eq .Type "debug" }}
   debug:
     verbosity: detailed
     sampling_initial: 5
     sampling_thereafter: 200
-  {{- end }}
-  {{- end }}
-  
+{{- end }}
+{{- end }}
+
 extensions:
   health_check:
     {{- if .Health }}
@@ -90,8 +87,17 @@ service:
   pipelines:
     metrics:
       receivers:
-        {{- range .Receivers }}
-        - {{ .Type }}
+        {{- if ne .Receivers.HostMetrics.CollectionInterval 0 }}
+        - hostmetrics
+        {{- end }}
+        {{- range $index, $otlpReceiver := .Receivers.OtlpReceivers }}
+        - otlp/{{$index}}
+        {{- end }}
+        {{- range .Receivers.NginxReceivers }}
+        - nginx/{{- .InstanceID -}}
+        {{- end }}
+        {{- range .Receivers.NginxPlusReceivers }}
+        - nginxplus/{{- .InstanceID -}}
         {{- end }}
       processors:
         - batch

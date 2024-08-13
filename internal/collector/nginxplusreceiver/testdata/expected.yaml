@@ -1,0 +1,2133 @@
+resourceMetrics:
+  - resource: {}
+    scopeMetrics:
+      - metrics:
+          - description: The total number of NGINX config reloads.
+            name: nginx.config.reloads
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "1"
+              isMonotonic: true
+            unit: reloads
+          - description: The total number of connections.
+            name: nginx.http.conn
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "11"
+                  attributes:
+                    - key: nginx.conn.outcome
+                      value:
+                        stringValue: ACCEPTED
+                - asInt: "5"
+                  attributes:
+                    - key: nginx.conn.outcome
+                      value:
+                        stringValue: DROPPED
+              isMonotonic: true
+            unit: connections
+          - description: The current number of connections.
+            name: nginx.http.conn.count
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "1"
+                  attributes:
+                    - key: nginx.conn.outcome
+                      value:
+                        stringValue: IDLE
+                - asInt: "2"
+                  attributes:
+                    - key: nginx.conn.outcome
+                      value:
+                        stringValue: ACTIVE
+              isMonotonic: true
+            unit: connections
+          - description: The number of responses, grouped by status code range.
+            name: nginx.http.response.status
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "5"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 1xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: SERVER
+                - asInt: "29"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 2xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: SERVER
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 3xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: SERVER
+                - asInt: "2"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 4xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: SERVER
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 5xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: SERVER
+                - asInt: "7"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 1xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: location_test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: LOCATION
+                - asInt: "31"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 2xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: location_test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: LOCATION
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 3xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: location_test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: LOCATION
+                - asInt: "3"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 4xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: location_test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: LOCATION
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 5xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: location_test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: LOCATION
+              isMonotonic: true
+            unit: responses
+          - description: The total number of requests completed without sending a response.
+            name: nginx.http.request.discarded
+            sum:
+              aggregationTemporality: 2
+              isMonotonic: true
+              dataPoints:
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: location_test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: LOCATION
+                  timeUnixNano: "1000000"
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: SERVER
+                  timeUnixNano: "1000000"
+            unit: requests
+          - description: The number of client requests that are currently being processed.
+            name: nginx.http.request.processing.count
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "1"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: SERVER
+                  timeUnixNano: "1000000"
+              isMonotonic: true
+            unit: requests
+          - description: The total number of HTTP byte IO.
+            name: nginx.http.request.byte.io
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "21860"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: SERVER
+                    - key: nginx.byte.io.direction
+                      value:
+                        stringValue: TX
+                - asInt: "3312"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: SERVER
+                    - key: nginx.byte.io.direction
+                      value:
+                        stringValue: RX
+                - asInt: "23265"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: location_test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: LOCATION
+                    - key: nginx.byte.io.direction
+                      value:
+                        stringValue: TX
+                - asInt: "3609"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: location_test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: LOCATION
+                    - key: nginx.byte.io.direction
+                      value:
+                        stringValue: RX
+                  timeUnixNano: "1000000"
+              isMonotonic: true
+            unit: bytes
+          - description: The total number of client requests received from clients.
+            name: nginx.http.requests
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "32"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: SERVER
+                - asInt: "34"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: location_test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: LOCATION
+                - asInt: "47"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue:
+                    - key: nginx.zone.type
+                      value:
+                        stringValue:
+                  timeUnixNano: "1000000"
+              isMonotonic: true
+            unit: requests
+          - description: The current number of client requests received from clients.
+            name: nginx.http.requests.count
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "3"
+                  timeUnixNano: "1000000"
+              isMonotonic: true
+            unit: requests
+          - description: The total number of bytes read from the cache or proxied server.
+            name: nginx.cache.bytes
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "244"
+                  attributes:
+                    - key: nginx.cache.name
+                      value:
+                        stringValue: http_cache
+                    - key: nginx.cache.outcome
+                      value:
+                        stringValue: BYPASS
+                - asInt: "44"
+                  attributes:
+                    - key: nginx.cache.name
+                      value:
+                        stringValue: http_cache
+                    - key: nginx.cache.outcome
+                      value:
+                        stringValue: MISS
+                - asInt: "324"
+                  attributes:
+                    - key: nginx.cache.name
+                      value:
+                        stringValue: http_cache
+                    - key: nginx.cache.outcome
+                      value:
+                        stringValue: UPDATING
+                - asInt: "432"
+                  attributes:
+                    - key: nginx.cache.name
+                      value:
+                        stringValue: http_cache
+                    - key: nginx.cache.outcome
+                      value:
+                        stringValue: HIT
+                - asInt: "10"
+                  attributes:
+                    - key: nginx.cache.name
+                      value:
+                        stringValue: http_cache
+                    - key: nginx.cache.outcome
+                      value:
+                        stringValue: EXPIRED
+                - asInt: "421"
+                  attributes:
+                    - key: nginx.cache.name
+                      value:
+                        stringValue: http_cache
+                    - key: nginx.cache.outcome
+                      value:
+                        stringValue: STALE
+                - asInt: "42142"
+                  attributes:
+                    - key: nginx.cache.name
+                      value:
+                        stringValue: http_cache
+                    - key: nginx.cache.outcome
+                      value:
+                        stringValue: REVALIDATED
+              isMonotonic: true
+            unit: bytes
+          - description: The limit on the maximum size of the cache specified in the configuration.
+            name: nginx.cache.memory.limit
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "104857600"
+                  attributes:
+                    - key: nginx.cache.name
+                      value:
+                        stringValue: http_cache
+              isMonotonic: true
+            unit: bytes
+          - description: The current size of the cache.
+            name: nginx.cache.memory.usage
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "432"
+                  attributes:
+                    - key: nginx.cache.name
+                      value:
+                        stringValue: http_cache
+              isMonotonic: true
+            unit: bytes
+          - description: The total number of responses read from the cache or proxied server.
+            name: nginx.cache.responses
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "76"
+                  attributes:
+                    - key: nginx.cache.name
+                      value:
+                        stringValue: http_cache
+                    - key: nginx.cache.outcome
+                      value:
+                        stringValue: BYPASS
+                - asInt: "421"
+                  attributes:
+                    - key: nginx.cache.name
+                      value:
+                        stringValue: http_cache
+                    - key: nginx.cache.outcome
+                      value:
+                        stringValue: MISS
+                - asInt: "2"
+                  attributes:
+                    - key: nginx.cache.name
+                      value:
+                        stringValue: http_cache
+                    - key: nginx.cache.outcome
+                      value:
+                        stringValue: UPDATING
+                - asInt: "11"
+                  attributes:
+                    - key: nginx.cache.name
+                      value:
+                        stringValue: http_cache
+                    - key: nginx.cache.outcome
+                      value:
+                        stringValue: HIT
+                - asInt: "24"
+                  attributes:
+                    - key: nginx.cache.name
+                      value:
+                        stringValue: http_cache
+                    - key: nginx.cache.outcome
+                      value:
+                        stringValue: EXPIRED
+                - asInt: "21"
+                  attributes:
+                    - key: nginx.cache.name
+                      value:
+                        stringValue: http_cache
+                    - key: nginx.cache.outcome
+                      value:
+                        stringValue: STALE
+                - asInt: "56"
+                  attributes:
+                    - key: nginx.cache.name
+                      value:
+                        stringValue: http_cache
+                    - key: nginx.cache.outcome
+                      value:
+                        stringValue: REVALIDATED
+              isMonotonic: true
+            unit: responses
+          - description: The total number of connections to an endpoint with a limit_conn directive.
+            name: nginx.http.limit_conn.requests
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "43"
+                  attributes:
+                    - key: nginx.limit_conn.outcome
+                      value:
+                        stringValue: REJECTED
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: addr
+                - asInt: "22"
+                  attributes:
+                    - key: nginx.limit_conn.outcome
+                      value:
+                        stringValue: REJECTED_DRY_RUN
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: addr
+                - asInt: "38"
+                  attributes:
+                    - key: nginx.limit_conn.outcome
+                      value:
+                        stringValue: PASSED
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: addr
+              isMonotonic: true
+            unit: connections
+          - description: The total number of requests to an endpoint with a limit_req directive.
+            name: nginx.http.limit_req.requests
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "10"
+                  attributes:
+                    - key: nginx.limit_req.outcome
+                      value:
+                        stringValue: DELAYED_DRY_RUN
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: one
+                - asInt: "3"
+                  attributes:
+                    - key: nginx.limit_req.outcome
+                      value:
+                        stringValue: REJECTED_DRY_RUN
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: one
+                - asInt: "10"
+                  attributes:
+                    - key: nginx.limit_req.outcome
+                      value:
+                        stringValue: DELAYED
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: one
+                - asInt: "22"
+                  attributes:
+                    - key: nginx.limit_req.outcome
+                      value:
+                        stringValue: REJECTED
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: one
+                - asInt: "27"
+                  attributes:
+                    - key: nginx.limit_req.outcome
+                      value:
+                        stringValue: PASSED
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: one
+              isMonotonic: true
+            unit: requests
+          - description: The current number of idle keepalive connections per HTTP upstream.
+            name: nginx.http.upstream.keepalive.count
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "43"
+                  attributes:
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+                - asInt: "3"
+                  attributes:
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-zone
+              isMonotonic: true
+            unit: connections
+          - description: The total number of byte IO per HTTP upstream peer.
+            name: nginx.http.upstream.peer.byte.io
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "432"
+                  attributes:
+                    - key: nginx.byte.io.direction
+                      value:
+                        stringValue: RX
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+                - asInt: "121"
+                  attributes:
+                    - key: nginx.byte.io.direction
+                      value:
+                        stringValue: TX
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+              isMonotonic: true
+            unit: bytes
+          - description: The average number of active connections per HTTP upstream peer.
+            name: nginx.http.upstream.peer.conn.count
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "879"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+              isMonotonic: true
+            unit: connections
+          - description: The total number of unsuccessful attempts to communicate with the HTTP upstream peer.
+            name: nginx.http.upstream.peer.fails
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "87"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+              isMonotonic: true
+            unit: attempts
+          - description: The average time to get the response header from the HTTP upstream peer.
+            name: nginx.http.upstream.peer.header.time
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "20"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+              isMonotonic: true
+            unit: ms
+          - description: The total number of health check requests made to a HTTP upstream peer.
+            name: nginx.http.upstream.peer.health_checks
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "321"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+                    - key: nginx.health_check
+                      value:
+                        stringValue:
+                - asInt: "22"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+                    - key: nginx.health_check
+                      value:
+                        stringValue: FAIL
+                - asInt: "11"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+                    - key: nginx.health_check
+                      value:
+                        stringValue: UNHEALTHY
+              isMonotonic: true
+            unit: requests
+          - description: The total number of client requests forwarded to the HTTP upstream peer.
+            name: nginx.http.upstream.peer.requests
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "432"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+              isMonotonic: true
+            unit: requests
+          - description: The average time to get the full response from the HTTP upstream peer.
+            name: nginx.http.upstream.peer.response.time
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "36"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+              isMonotonic: true
+            unit: ms
+          - description: The total number of responses obtained from the HTTP upstream peer grouped by status range.
+            name: nginx.http.upstream.peer.responses
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "32"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+                    - key: nginx.status_range
+                      value:
+                        stringValue:
+                - asInt: "2"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 1xx
+                - asInt: "3"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 2xx
+                - asInt: "4"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 3xx
+                - asInt: "5"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 4xx
+                - asInt: "6"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 5xx
+              isMonotonic: true
+            unit: responses
+          - description: Number of times the server became unavailable for client requests (“unavail”).
+            name: nginx.http.upstream.peer.unavailables
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "99"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+              isMonotonic: true
+            unit: requests
+          - description: Current state of an upstream peer in deployment.
+            name: nginx.http.upstream.peer.state
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "1"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: DRAINING
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: UP
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: UNHEALTHY
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: CHECKING
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: DOWN
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 127.0.0.1:9001
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: UNAVAILABLE
+              isMonotonic: true
+            unit: is_deployed
+          - description: The current count of peers on the HTTP upstream grouped by state.
+            name: nginx.http.upstream.peer.count
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: UNAVAILABLE
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: UNHEALTHY
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: DOWN
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: UP
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: CHECKING
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+                - asInt: "1"
+                  attributes:
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: DRAINING
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: UNAVAILABLE
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-zone
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: UNHEALTHY
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-zone
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: DOWN
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-zone
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: UP
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-zone
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: CHECKING
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-zone
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: DRAINING
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-zone
+              isMonotonic: true
+            unit: peers
+          - description: The maximum number of requests that can be in the queue at the same time.
+            name: nginx.http.upstream.queue.limit
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-zone
+                - asInt: "324324"
+                  attributes:
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+              isMonotonic: true
+            unit: requests
+          - description: The total number of requests rejected due to the queue overflow.
+            name: nginx.http.upstream.queue.overflows
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-zone
+                - asInt: "321"
+                  attributes:
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+              isMonotonic: true
+            unit: responses
+          - description: The current number of requests in the queue.
+            name: nginx.http.upstream.queue.usage
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-zone
+                - asInt: "23412"
+                  attributes:
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+              isMonotonic: true
+            unit: requests
+          - description: The current number of upstream peers removed from the group but still processing active client requests.
+            name: nginx.http.upstream.zombie.count
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "56"
+                  attributes:
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-zone
+                - asInt: "11"
+                  attributes:
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: test-drain
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test-drain-zone
+              isMonotonic: true
+            unit: is_deployed
+          - description: The current number of free memory pages.
+            name: nginx.slab.page.free
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "11"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                - asInt: "5"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: zone_one
+                - asInt: "2542"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: http_cache
+              isMonotonic: true
+            unit: pages
+          - description: The current number of used memory pages.
+            name: nginx.slab.page.usage
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "3"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                - asInt: "4"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: zone_one
+                - asInt: "2"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: http_cache
+              isMonotonic: true
+            unit: pages
+          - description: The current number of used memory slots.
+            name: nginx.slab.slot.usage
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: zone_one
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 8
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: zone_one
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 16
+                - asInt: "2"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 8
+                - asInt: "1"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 16
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: http_cache
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 8
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: http_cache
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 16
+              isMonotonic: true
+            unit: slots
+          - description: The current number of free memory slots.
+            name: nginx.slab.slot.free
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: zone_one
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 8
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: zone_one
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 16
+                - asInt: "502"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 8
+                - asInt: "253"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 16
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: http_cache
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 8
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: http_cache
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 16
+              isMonotonic: true
+            unit: slots
+          - description: The number of attempts to allocate memory of specified size.
+            name: nginx.slab.slot.allocations
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: zone_one
+                    - key: nginx.slab.slot.allocation.result
+                      value:
+                        stringValue: SUCCESS
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 8
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: zone_one
+                    - key: nginx.slab.slot.allocation.result
+                      value:
+                        stringValue: FAILURE
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 8
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: zone_one
+                    - key: nginx.slab.slot.allocation.result
+                      value:
+                        stringValue: SUCCESS
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 16
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: zone_one
+                    - key: nginx.slab.slot.allocation.result
+                      value:
+                        stringValue: FAILURE
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 16
+                - asInt: "2"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.slab.slot.allocation.result
+                      value:
+                        stringValue: SUCCESS
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 8
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.slab.slot.allocation.result
+                      value:
+                        stringValue: FAILURE
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 8
+                - asInt: "1"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.slab.slot.allocation.result
+                      value:
+                        stringValue: SUCCESS
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 16
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.slab.slot.allocation.result
+                      value:
+                        stringValue: FAILURE
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 16
+                - asInt: "52"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: http_cache
+                    - key: nginx.slab.slot.allocation.result
+                      value:
+                        stringValue: SUCCESS
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 8
+                - asInt: "22"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: http_cache
+                    - key: nginx.slab.slot.allocation.result
+                      value:
+                        stringValue: FAILURE
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 8
+                - asInt: "11"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: http_cache
+                    - key: nginx.slab.slot.allocation.result
+                      value:
+                        stringValue: SUCCESS
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 16
+                - asInt: "44"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: http_cache
+                    - key: nginx.slab.slot.allocation.result
+                      value:
+                        stringValue: FAILURE
+                    - key: nginx.slab.slot.limit
+                      value:
+                        intValue: 16
+              isMonotonic: true
+            unit: allocations
+          - description: The total number of SSL handshakes.
+            name: nginx.ssl.handshakes
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "45"
+                  attributes:
+                    - key: nginx.ssl.handshake.reason
+                      value:
+                        stringValue:
+                    - key: nginx.ssl.status
+                      value:
+                        stringValue:
+                - asInt: "3"
+                  attributes:
+                    - key: nginx.ssl.handshake.reason
+                      value:
+                        stringValue: NO_COMMON_CIPHER
+                    - key: nginx.ssl.status
+                      value:
+                        stringValue: FAILED
+                - asInt: "7"
+                  attributes:
+                    - key: nginx.ssl.handshake.reason
+                      value:
+                        stringValue:
+                    - key: nginx.ssl.status
+                      value:
+                        stringValue: FAILED
+                - asInt: "2"
+                  attributes:
+                    - key: nginx.ssl.handshake.reason
+                      value:
+                        stringValue: NO_COMMON_PROTOCOL
+                    - key: nginx.ssl.status
+                      value:
+                        stringValue: FAILED
+                - asInt: "6"
+                  attributes:
+                    - key: nginx.ssl.handshake.reason
+                      value:
+                        stringValue:
+                    - key: nginx.ssl.status
+                      value:
+                        stringValue: REUSE
+                - asInt: "5"
+                  attributes:
+                    - key: nginx.ssl.handshake.reason
+                      value:
+                        stringValue: CERT_REJECTED
+                    - key: nginx.ssl.status
+                      value:
+                        stringValue: FAILED
+                - asInt: "4"
+                  attributes:
+                    - key: nginx.ssl.handshake.reason
+                      value:
+                        stringValue: TIMEOUT
+                    - key: nginx.ssl.status
+                      value:
+                        stringValue: FAILED
+              isMonotonic: true
+            unit: handshakes
+          - description: The total number of SSL certificate verification failures.
+            name: nginx.ssl.certificate.verify_failures
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "5"
+                  attributes:
+                    - key: nginx.ssl.verify_failure.reason
+                      value:
+                        stringValue: HOSTNAME_MISMATCH
+                - asInt: "2"
+                  attributes:
+                    - key: nginx.ssl.verify_failure.reason
+                      value:
+                        stringValue: NO_CERT
+                - asInt: "6"
+                  attributes:
+                    - key: nginx.ssl.verify_failure.reason
+                      value:
+                        stringValue: OTHER
+                - asInt: "3"
+                  attributes:
+                    - key: nginx.ssl.verify_failure.reason
+                      value:
+                        stringValue: EXPIRED_CERT
+                - asInt: "4"
+                  attributes:
+                    - key: nginx.ssl.verify_failure.reason
+                      value:
+                        stringValue: REVOKED_CERT
+              isMonotonic: true
+            unit: certificates
+          - description: The total number of Stream byte IO.
+            name: nginx.stream.byte.io
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "11"
+                  attributes:
+                    - key: nginx.byte.io.direction
+                      value:
+                        stringValue: TX
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: stream_test
+                - asInt: "22"
+                  attributes:
+                    - key: nginx.byte.io.direction
+                      value:
+                        stringValue: RX
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: stream_test
+              isMonotonic: true
+            unit: bytes
+          - description: The total number of connections accepted from clients.
+            name: nginx.stream.connection.accepted
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "22"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: stream_test
+              isMonotonic: true
+            unit: connections
+          - description: Total number of connections completed without creating a session.
+            name: nginx.stream.connection.discarded
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "43"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: stream_test
+              isMonotonic: true
+            unit: connections
+          - description: The number of client connections that are currently being processed.
+            name: nginx.stream.connection.processing.count
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "44"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: stream_test
+              isMonotonic: true
+            unit: connections
+          - description: The total number of completed sessions.
+            name: nginx.stream.session.status
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "6"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: stream_test
+                    - key: nginx.status_range
+                      value:
+                        stringValue:
+                - asInt: "1"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: stream_test
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 2xx
+                - asInt: "2"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: stream_test
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 4xx
+                - asInt: "3"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: stream_test
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 5xx
+              isMonotonic: true
+            unit: sessions
+          - description: The total number of Stream Upstream Peer byte IO.
+            name: nginx.stream.upstream.peer.byte.io
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "251946292"
+                  attributes:
+                    - key: nginx.byte.io.direction
+                      value:
+                        stringValue: TX
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+                - asInt: "19222475454"
+                  attributes:
+                    - key: nginx.byte.io.direction
+                      value:
+                        stringValue: RX
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+              isMonotonic: true
+            unit: bytes
+          - description: The current number of Stream Upstream Peer connections.
+            name: nginx.stream.upstream.peer.conn.count
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "22"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+              isMonotonic: true
+            unit: connections
+          - description: The average time to connect to the stream upstream peer.
+            name: nginx.stream.upstream.peer.conn.time
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "432"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+              isMonotonic: true
+            unit: ms
+          - description: The total number of client connections forwarded to this stream upstream peer.
+            name: nginx.stream.upstream.peer.conns
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "667231"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+              isMonotonic: true
+            unit: connections
+          - description: The total number of health check requests made to the stream upstream peer.
+            name: nginx.stream.upstream.peer.health_checks
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "26214"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+                    - key: nginx.health_check
+                      value:
+                        stringValue:
+                - asInt: "23"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+                    - key: nginx.health_check
+                      value:
+                        stringValue: FAIL
+                - asInt: "2"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+                    - key: nginx.health_check
+                      value:
+                        stringValue: UNHEALTHY
+              isMonotonic: true
+            unit: requests
+          - description: The average time to receive the last byte of data for the stream upstream peer.
+            name: nginx.stream.upstream.peer.response.time
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "54325"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+              isMonotonic: true
+            unit: ms
+          - description: The average time to receive the first byte of data for the stream upstream peer.
+            name: nginx.stream.upstream.peer.ttfb.time
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "4322"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+              isMonotonic: true
+            unit: ms
+          - description: How many times the server became unavailable for client connections (state “unavail”) due to the number of unsuccessful attempts reaching the max_fails threshold.
+            name: nginx.stream.upstream.peer.unavailable
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "45"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+              isMonotonic: true
+            unit: requests
+          - description: Current state of upstream peers in deployment. If any of the upstream peers in the deployment match the given state then the value will be 1. If no upstream peer is a match then the value will be 0.
+            name: nginx.stream.upstream.peer.state
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "1"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: UP
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: DOWN
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: CHECKING
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: UNAVAILABLE
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: UNHEALTHY
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.peer.address
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.peer.name
+                      value:
+                        stringValue: 10.0.0.1:12347
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: DRAINING
+              isMonotonic: true
+            unit: deployments
+          - description: The total number of stream upstream peers grouped by state.
+            name: nginx.stream.upstream.peer.count
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: DRAINING
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: DOWN
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: UNAVAILABLE
+                - asInt: "1"
+                  attributes:
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: UP
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: CHECKING
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+                    - key: nginx.peer.state
+                      value:
+                        stringValue: UNHEALTHY
+              isMonotonic: true
+            unit: peers
+          - description: The current number of peers removed from the group but still processing active client connections.
+            name: nginx.stream.upstream.zombie.count
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "4"
+                  attributes:
+                    - key: nginx.upstream.name
+                      value:
+                        stringValue: upstream_test
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: upstream_test_zone
+              isMonotonic: true
+            unit: deployments
+        scope:
+          name: otelcol/nginxplusreceiver
+          version: latest

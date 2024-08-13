@@ -1,6 +1,9 @@
 issues:
   exclude-files:
     - ".*gen.go"
+    - ".pb.go"
+    - ".pb.validate.go"
+    - ".*/generated_[A-Za-z_]*\\.go"
   exclude-dirs:
     - ".*fakes" # Skip mock directories
 run:

@@ -3,7 +3,6 @@ LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
 # https://askubuntu.com/questions/909277/avoiding-user-interaction-with-tzdata-when-installing-certbot-in-a-docker-contai
 ARG DEBIAN_FRONTEND=noninteractive
-ARG ENTRY_POINT
 
 WORKDIR /agent
 COPY . /agent
@@ -66,7 +65,6 @@ CMD git config --global --add safe.directory /home/nginx
 
 FROM base as configure-go
 
-ARG PACKAGE_NAME
 ARG GO_VERSION
 ARG OSARCH
 
@@ -82,6 +80,7 @@ ENV PATH="/usr/local/go/bin:${PATH}"
 ENV PATH=$PATH:/usr/local/go/bin
 
 RUN mv /agent/test/config/agent/nginx-agent-otel-load.conf /agent/test/load/nginx-agent.conf
+RUN mkdir /var/run/nginx-agent/
 
 WORKDIR /agent/
 CMD make install-tools

@@ -177,12 +177,31 @@ run-mock-management-grpc-server: ## Run mock management plane gRPC server
 	@echo "🖲️ Running mock management plane gRPC server"
 	$(GORUN) test/mock/grpc/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY) -logLevel=$(MOCK_MANAGEMENT_PLANE_LOG_LEVEL) -grpcAddress=$(MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS) -apiAddress=$(MOCK_MANAGEMENT_PLANE_API_ADDRESS)
 
-generate: ## Generate proto files and server and client stubs from OpenAPI specifications
+.PHONY: build-test-plus-image
+build-test-plus-image: local-deb-package
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx_plus_$(IMAGE_TAG) . \
+		--no-cache -f ./scripts/docker/nginx-plus/deb/Dockerfile \
+		--secret id=nginx-crt,src=$(CERTS_DIR)/nginx-repo.crt \
+		--secret id=nginx-key,src=$(CERTS_DIR)/nginx-repo.key \
+		--build-arg PACKAGE_NAME=$(PACKAGE_NAME) \
+		--build-arg PACKAGES_REPO=$(OSS_PACKAGES_REPO) \
+		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
+		--build-arg ENTRY_POINT=./scripts/docker/entrypoint.sh
+
+.PHONY: run-mock-management-otel-collector
+run-mock-management-otel-collector: ## Run mock management plane OTel collector
+	@echo "🚀 Running mock management plane OTel collector"
+	AGENT_IMAGE=nginx_plus_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml up -d
+
+.PHONY: stop-mock-management-otel-collector
+stop-mock-management-otel-collector: ## Stop running mock management plane OTel collector
+	@echo "Stopping mock management plane OTel collector"
+	AGENT_IMAGE=nginx_plus_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml down
+
+generate: ## Generate golang code
 	@echo "🗄️ Generating proto files"
 	@cd api/grpc && $(GORUN) $(BUF) generate
-
-generate-mocks: ## Regenerate all needed mocks, in order to add new mocks generation add //go:generate to file from witch mocks should be generated
-	@echo "🗃️ Generating mocks"
+	@echo "🗃️ Generating go files"
 	@$(GOGEN) ./...
 
 local-apk-package: ## Create local apk package
@@ -210,12 +229,12 @@ generate-pgo-profile: build-mock-management-plane-grpc
 # run under sudo locally
 load-test-image: ## Build performance load testing image
 	@echo "🚚 Running load tests"
-	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${IMAGE_TAG}_load_test . \
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t $(IMAGE_TAG)_load_test . \
 		--no-cache -f ./scripts/testing/load/Dockerfile \
-		--secret id=nginx-crt,src=${CERTS_DIR}/nginx-repo.crt \
-		--secret id=nginx-key,src=${CERTS_DIR}/nginx-repo.key \
-		--build-arg OSARCH=${OSARCH} \
-		--build-arg GO_VERSION=${GO_VERSION}
+		--secret id=nginx-crt,src=$(CERTS_DIR)/nginx-repo.crt \
+		--secret id=nginx-key,src=$(CERTS_DIR)/nginx-repo.key \
+		--build-arg OSARCH=$(OSARCH) \
+		--build-arg GO_VERSION=$(GO_VERSION)
 
 run-load-test-image: ## Run performance load testing image
-	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) run --rm -v ${PWD}/${BUILD_DIR}/:/agent/${BUILD_DIR}/ $(IMAGE_TAG)_load_test
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) run --rm -v $(PWD)/$(BUILD_DIR)/:/agent/$(BUILD_DIR)/ $(IMAGE_TAG)_load_test

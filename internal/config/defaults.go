@@ -13,7 +13,7 @@ const (
 	DefNginxReloadMonitoringPeriod = 10 * time.Second
 	DefTreatErrorsAsWarnings       = true
 
-	DefCollectorConfigPath = "/var/run/nginx-agent-otelcol.yaml"
+	DefCollectorConfigPath = "/var/run/nginx-agent/otelcol.yaml"
 
 	DefCommandServerHostKey    = ""
 	DefCommandServerPortKey    = 0

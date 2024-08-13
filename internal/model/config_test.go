@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/test/protos"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,19 +19,10 @@ var nginxConfigContext = &NginxConfigContext{
 	InstanceID: "12333",
 	Files: []*mpi.File{
 		{
-			FileMeta: &mpi.FileMeta{
-				Name:        "test2",
-				Hash:        "1323",
-				Permissions: "0644",
-				Size:        123,
-			},
-		}, {
-			FileMeta: &mpi.FileMeta{
-				Name:        "test",
-				Hash:        "1323",
-				Permissions: "0644",
-				Size:        123,
-			},
+			FileMeta: protos.FileMeta("test1", "fef4e"),
+		},
+		{
+			FileMeta: protos.FileMeta("test2", "vre8e"),
 		},
 	},
 	AccessLogs: []*AccessLog{

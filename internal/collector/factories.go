@@ -7,6 +7,7 @@ package collector
 import (
 	"errors"
 
+	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/exceptionsconnector"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/grafanacloudconnector"
@@ -50,7 +51,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/bigipreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/dockerstatsreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filestatsreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/httpcheckreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
@@ -165,7 +165,6 @@ func createReceiverFactories() (map[component.Type]receiver.Factory, error) {
 		bigipreceiver.NewFactory(),
 		dockerstatsreceiver.NewFactory(),
 		filelogreceiver.NewFactory(),
-		filestatsreceiver.NewFactory(),
 		hostmetricsreceiver.NewFactory(),
 		httpcheckreceiver.NewFactory(),
 		k8sclusterreceiver.NewFactory(),
@@ -179,6 +178,7 @@ func createReceiverFactories() (map[component.Type]receiver.Factory, error) {
 		syslogreceiver.NewFactory(),
 		tcplogreceiver.NewFactory(),
 		udplogreceiver.NewFactory(),
+		nginxplusreceiver.NewFactory(),
 	}
 
 	return receiver.MakeFactoryMap(receiverList...)
