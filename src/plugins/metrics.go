@@ -208,7 +208,7 @@ func (m *Metrics) drainBuffer(ctx context.Context) {
 					m.pipeline.Process(core.NewMessage(core.MetricReport, bundlePayload))
 				} else {
 					metricBuffer := make([]core.Payload, 0)
-		
+
 					switch bundle := bundlePayload.(type) {
 					case *metrics.MetricsReportBundle:
 						if len(bundle.Data) > 0 {

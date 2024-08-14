@@ -67,6 +67,7 @@ func (m *Metrics) Init(pipeline core.MessagePipeInterface) {
 	m.pipeline = pipeline
 	m.ctx = pipeline.Context()
 	go m.metricsGoroutine()
+	go m.drainBuffer(m.ctx)
 }
 
 func (m *Metrics) Close() {
@@ -176,8 +177,33 @@ func (m *Metrics) metricsGoroutine() {
 			}
 			return
 		case <-m.ticker.C:
-			stats := m.collectStats()
-			if bundlePayload := metrics.GenerateMetricsReportBundle(stats); bundlePayload != nil {
+			m.collectStats()
+
+			if m.collectorsUpdate.Load() {
+				m.ticker = time.NewTicker(m.conf.AgentMetrics.CollectionInterval)
+				m.collectorsUpdate.Store(false)
+			}
+
+		case err := <-m.errors:
+			log.Errorf("Error in metricsGoroutine %v", err)
+		}
+	}
+}
+
+func (m *Metrics) drainBuffer(ctx context.Context) {
+	for {
+		// drain the buf, since our sources/collectors are all done, we can rely on buffer length
+		select {
+		case <-ctx.Done():
+			log.Debug("context done in drainBuffer")
+
+			err := ctx.Err()
+			if err != nil {
+				log.Errorf("error in done context collectStats %v", err)
+			}
+			return
+		case stats := <-m.buf:
+			if bundlePayload := metrics.GenerateMetricsReportBundle([]*metrics.StatsEntityWrapper{stats}); bundlePayload != nil {
 				if m.conf.IsFeatureEnabled(agent_config.FeatureMetrics) || m.conf.IsFeatureEnabled(agent_config.FeatureMetricsThrottle) {
 					m.pipeline.Process(core.NewMessage(core.MetricReport, bundlePayload))
 				} else {
@@ -198,19 +224,11 @@ func (m *Metrics) metricsGoroutine() {
 					}
 				}
 			}
-
-			if m.collectorsUpdate.Load() {
-				m.ticker = time.NewTicker(m.conf.AgentMetrics.CollectionInterval)
-				m.collectorsUpdate.Store(false)
-			}
-
-		case err := <-m.errors:
-			log.Errorf("Error in metricsGoroutine %v", err)
 		}
 	}
 }
 
-func (m *Metrics) collectStats() (stats []*metrics.StatsEntityWrapper) {
+func (m *Metrics) collectStats() (stats chan *metrics.StatsEntityWrapper) {
 	// set a timeout for a millisecond less than the collection interval
 	ctx, cancel := context.WithTimeout(m.ctx, (m.interval - 1*time.Millisecond))
 	defer cancel()
@@ -227,22 +245,6 @@ func (m *Metrics) collectStats() (stats []*metrics.StatsEntityWrapper) {
 	}
 	// wait until all the collection go routines are done, which either context timeout or exit
 	// wg.Wait()
-
-	for len(m.buf) > 0 {
-		// drain the buf, since our sources/collectors are all done, we can rely on buffer length
-		select {
-		case <-ctx.Done():
-			log.Debugf("context done in %s collectStats", time.Since(start))
-
-			err := ctx.Err()
-			if err != nil {
-				log.Errorf("error in done context collectStats %v", err)
-			}
-			return
-		case stat := <-m.buf:
-			stats = append(stats, stat)
-		}
-	}
 
 	log.Debugf("collected %d entries in %s (ctx error=%t)", len(stats), time.Since(start), ctx.Err() != nil)
 	return
