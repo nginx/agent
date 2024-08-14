@@ -169,8 +169,6 @@ func (p *MessagePipe) Run() {
 				p.bus.Publish(m.Topic(), m)
 			}
 			p.mu.Unlock()
-		default:
-			return
 		}
 	}
 }
