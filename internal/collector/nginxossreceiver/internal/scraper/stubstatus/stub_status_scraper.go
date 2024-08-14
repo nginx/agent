@@ -66,12 +66,7 @@ func (s *NginxStubStatusScraper) Shutdown(_ context.Context) error {
 func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error) {
 	// Init client in scrape method in case there are transient errors in the constructor.
 	if s.client == nil {
-		var err error
-		s.client, err = client.NewNginxClient(s.httpClient, s.cfg.ClientConfig.Endpoint)
-		if err != nil {
-			s.client = nil
-			return pmetric.Metrics{}, err
-		}
+		s.client = client.NewNginxClient(s.httpClient, s.cfg.ClientConfig.Endpoint)
 	}
 
 	stats, err := s.client.GetStubStats()

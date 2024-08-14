@@ -17,7 +17,7 @@ func TestOTelComponentFactories(t *testing.T) {
 	require.NoError(t, err, "OTelComponentFactories should not return an error")
 	assert.NotNil(t, factories, "factories should not be nil")
 
-	assert.Len(t, factories.Receivers, 20)
+	assert.Len(t, factories.Receivers, 19)
 	assert.Len(t, factories.Processors, 20)
 	assert.Len(t, factories.Exporters, 4)
 	assert.Len(t, factories.Extensions, 15)

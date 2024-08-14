@@ -42,6 +42,7 @@ func TestCreateMetricsReceiver(t *testing.T) {
 				CollectionInterval: 10 * time.Second,
 				InitialDelay:       time.Second,
 			},
+			AccessLogFormat: "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent ",
 		},
 		consumertest.NewNop(),
 	)

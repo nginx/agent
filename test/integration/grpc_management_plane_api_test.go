@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"slices"
 	"sort"
 	"testing"
 	"time"
@@ -28,6 +29,10 @@ import (
 	"github.com/testcontainers/testcontainers-go/network"
 	"google.golang.org/protobuf/encoding/protojson"
 )
+
+const configApplyErrorMessage = "failed validating config NGINX config test failed exit status 1:" +
+	" nginx: [emerg] unexpected end of file, expecting \";\" or \"}\" in /etc/nginx/nginx.conf:2\nnginx: " +
+	"configuration file /etc/nginx/nginx.conf test failed\n"
 
 var (
 	mockManagementPlaneGrpcContainer testcontainers.Container
@@ -52,7 +57,7 @@ type (
 	}
 )
 
-func setupConnectionTest(tb testing.TB) func(tb testing.TB) {
+func setupConnectionTest(tb testing.TB, expectNoErrorsInLogs bool) func(tb testing.TB) {
 	tb.Helper()
 	var container testcontainers.Container
 	ctx := context.Background()
@@ -136,14 +141,20 @@ func setupConnectionTest(tb testing.TB) func(tb testing.TB) {
 		tb.Helper()
 
 		if os.Getenv("TEST_ENV") == "Container" {
-			helpers.LogAndTerminateContainers(ctx, tb, mockManagementPlaneGrpcContainer, container)
+			helpers.LogAndTerminateContainers(
+				ctx,
+				tb,
+				mockManagementPlaneGrpcContainer,
+				container,
+				expectNoErrorsInLogs,
+			)
 		}
 	}
 }
 
 // Verify that the agent sends a connection request and an update data plane status request
 func TestGrpc_StartUp(t *testing.T) {
-	teardownTest := setupConnectionTest(t)
+	teardownTest := setupConnectionTest(t, true)
 	defer teardownTest(t)
 
 	verifyConnection(t)
@@ -152,7 +163,7 @@ func TestGrpc_StartUp(t *testing.T) {
 }
 
 func TestGrpc_ConfigUpload(t *testing.T) {
-	teardownTest := setupConnectionTest(t)
+	teardownTest := setupConnectionTest(t, true)
 	defer teardownTest(t)
 
 	nginxInstanceID := verifyConnection(t)
@@ -177,7 +188,155 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 
-	client = resty.New()
+	responses := getManagementPlaneResponses(t, 2)
+
+	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
+	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
+	assert.Equal(t, "Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
+}
+
+func TestGrpc_ConfigApply(t *testing.T) {
+	ctx := context.Background()
+	teardownTest := setupConnectionTest(t, false)
+	defer teardownTest(t)
+
+	nginxInstanceID := verifyConnection(t)
+
+	responses := getManagementPlaneResponses(t, 1)
+	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
+
+	t.Run("Test 1: No config changes", func(t *testing.T) {
+		performConfigApply(t, nginxInstanceID)
+
+		responses = getManagementPlaneResponses(t, 2)
+		t.Logf("Config apply responses: %v", responses)
+
+		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
+		assert.Equal(t, "Config apply successful, no files to change", responses[1].GetCommandResponse().GetMessage())
+	})
+
+	t.Run("Test 2: Valid config", func(t *testing.T) {
+		err := mockManagementPlaneGrpcContainer.CopyFileToContainer(
+			ctx,
+			"../config/nginx/nginx-with-test-location.conf",
+			fmt.Sprintf("/mock-management-plane-grpc/config/%s/etc/nginx/nginx.conf", nginxInstanceID),
+			0o666,
+		)
+		require.NoError(t, err)
+
+		performConfigApply(t, nginxInstanceID)
+
+		responses = getManagementPlaneResponses(t, 3)
+		t.Logf("Config apply responses: %v", responses)
+
+		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[2].GetCommandResponse().GetStatus())
+		assert.Equal(t, "Config apply successful", responses[2].GetCommandResponse().GetMessage())
+	})
+
+	t.Run("Test 3: Invalid config", func(t *testing.T) {
+		err := mockManagementPlaneGrpcContainer.CopyFileToContainer(
+			ctx,
+			"../config/nginx/invalid-nginx.conf",
+			fmt.Sprintf("/mock-management-plane-grpc/config/%s/etc/nginx/nginx.conf", nginxInstanceID),
+			0o666,
+		)
+		require.NoError(t, err)
+
+		performConfigApply(t, nginxInstanceID)
+
+		responses = getManagementPlaneResponses(t, 5)
+		t.Logf("Config apply responses: %v", responses)
+
+		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_ERROR, responses[3].GetCommandResponse().GetStatus())
+		assert.Equal(t, "Config apply failed, rolling back config", responses[3].GetCommandResponse().GetMessage())
+		assert.Equal(t, configApplyErrorMessage, responses[3].GetCommandResponse().GetError())
+		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE, responses[4].GetCommandResponse().GetStatus())
+		assert.Equal(t, "Config apply failed, rollback successful", responses[4].GetCommandResponse().GetMessage())
+		assert.Equal(t, configApplyErrorMessage, responses[4].GetCommandResponse().GetError())
+	})
+
+	t.Run("Test 4: File not in allowed directory", func(t *testing.T) {
+		performInvalidConfigApply(t, nginxInstanceID)
+
+		responses = getManagementPlaneResponses(t, 6)
+		t.Logf("Config apply responses: %v", responses)
+
+		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE, responses[5].GetCommandResponse().GetStatus())
+		assert.Equal(t, "Config apply failed", responses[5].GetCommandResponse().GetMessage())
+		assert.Equal(
+			t,
+			"file not in allowed directories /unknown/nginx.conf",
+			responses[5].GetCommandResponse().GetError(),
+		)
+	})
+}
+
+func performConfigApply(t *testing.T, nginxInstanceID string) {
+	t.Helper()
+
+	client := resty.New()
+	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
+
+	url := fmt.Sprintf("http://%s/api/v1/instance/%s/config/apply", mockManagementPlaneAPIAddress, nginxInstanceID)
+	resp, err := client.R().EnableTrace().Post(url)
+
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode())
+}
+
+func performInvalidConfigApply(t *testing.T, nginxInstanceID string) {
+	t.Helper()
+
+	client := resty.New()
+	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
+
+	body := fmt.Sprintf(`{
+			"message_meta": {
+				"message_id": "e2254df9-8edd-4900-91ce-88782473bcb9",
+				"correlation_id": "9673f3b4-bf33-4d98-ade1-ded9266f6818",
+				"timestamp": "2023-01-15T01:30:15.01Z"
+			},
+			"config_apply_request": {
+				"overview": {
+					"files": [{
+						"file_meta": {
+							"name": "/etc/nginx/nginx.conf",
+							"hash": "ea57e443-e968-3a50-b842-f37112acde71",
+							"modifiedTime": "2023-01-15T01:30:15.01Z",
+							"permissions": "0644",
+							"size": 0
+						},
+						"action": "FILE_ACTION_UPDATE"
+					}, 
+					{
+						"file_meta": {
+							"name": "/unknown/nginx.conf",
+							"hash": "bd1f337d-6874-35ea-9d4d-2b543efd42cf",
+							"modifiedTime": "2023-01-15T01:30:15.01Z",
+							"permissions": "0644",
+							"size": 0
+						},
+						"action": "FILE_ACTION_ADD"
+					}],
+					"config_version": {
+						"instance_id": "%s",
+						"version": "6f343257-55e3-309e-a2eb-bb13af5f80f4"
+					}
+				}
+			}
+		}`, nginxInstanceID)
+	url := fmt.Sprintf("http://%s/api/v1/requests", mockManagementPlaneAPIAddress)
+	resp, err := client.R().EnableTrace().SetBody(body).Post(url)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode())
+}
+
+func getManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int) []*mpi.DataPlaneResponse {
+	t.Helper()
+
+	client := resty.New()
 	client.SetRetryCount(3).SetRetryWaitTime(1 * time.Second).SetRetryMaxWaitTime(3 * time.Second)
 	client.AddRetryCondition(
 		func(r *resty.Response, err error) bool {
@@ -188,12 +347,12 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 			unmarshalErr := json.Unmarshal(responseData, &response)
 			require.NoError(t, unmarshalErr)
 
-			return len(response) != 2 || r.StatusCode() == http.StatusNotFound
+			return len(response) != numberOfExpectedResponses || r.StatusCode() == http.StatusNotFound
 		},
 	)
 
-	url = fmt.Sprintf("http://%s/api/v1/responses", mockManagementPlaneAPIAddress)
-	resp, err = client.R().EnableTrace().Get(url)
+	url := fmt.Sprintf("http://%s/api/v1/responses", mockManagementPlaneAPIAddress)
+	resp, err := client.R().EnableTrace().Get(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
@@ -206,9 +365,13 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 	unmarshalErr := json.Unmarshal(responseData, &response)
 	require.NoError(t, unmarshalErr)
 
-	assert.Len(t, response, 2)
-	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, response[0].GetCommandResponse().GetStatus())
-	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, response[1].GetCommandResponse().GetStatus())
+	assert.Len(t, response, numberOfExpectedResponses)
+
+	slices.SortFunc(response, func(a, b *mpi.DataPlaneResponse) int {
+		return a.GetMessageMeta().GetTimestamp().AsTime().Compare(b.GetMessageMeta().GetTimestamp().AsTime())
+	})
+
+	return response
 }
 
 func verifyConnection(t *testing.T) string {

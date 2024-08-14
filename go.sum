@@ -651,8 +651,8 @@ github.com/nginxinc/nginx-go-crossplane v0.4.46 h1:QsmhZRHkl2IcPjqjbLB8s55ViH0u5
 github.com/nginxinc/nginx-go-crossplane v0.4.46/go.mod h1:UzbZnyFv0vPlt1Urbnp/mrFCzBL4tYCReFuNBpFQEfI=
 github.com/nginxinc/nginx-plus-go-client v1.2.2 h1:sl7HqNDDZq2EVu0eQQVoZ6PKYGa4h2dB/Qr5Ib0YKGw=
 github.com/nginxinc/nginx-plus-go-client v1.2.2/go.mod h1:n8OFLzrJulJ2fur28Cwa1Qp5DZNS2VicLV+Adt30LQ4=
-github.com/nginxinc/nginx-prometheus-exporter v0.11.0 h1:21xjnqNgxtni2jDgAQ90bl15uDnrTreO9sIlu1YsX/U=
-github.com/nginxinc/nginx-prometheus-exporter v0.11.0/go.mod h1:GdyHnWAb8q8OW1Pssrrqbcqra0SH0Vn6UXICMmyWkw8=
+github.com/nginxinc/nginx-prometheus-exporter v1.3.0 h1:1JtdxsZH0Uwhu1nL/j/QyOXytP5V5j68AEo2X+DFWb0=
+github.com/nginxinc/nginx-prometheus-exporter v1.3.0/go.mod h1:hXoH+X6aIKSyQuO6QTIiPKH3eZyxqy/wW8GYiE3dflU=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nxadm/tail v1.4.11 h1:8feyoE3OzPrcshW5/MJ4sGESc5cqmGkGCWlco4l0bqY=
 github.com/nxadm/tail v1.4.11/go.mod h1:OTaG3NK980DZzxbRq6lEuzgU+mug70nY11sMd4JXXHc=
@@ -816,8 +816,6 @@ github.com/open-telemetry/opentelemetry-collector-contrib/receiver/dockerstatsre
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/dockerstatsreceiver v0.102.0/go.mod h1:WbkG6SPeesheMtvjXwRg6PIk2jIKK20kEEPMr36MYrE=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.102.0 h1:czJBjI4rZ+FNrdq/MkLQP4f6tsB3XIwN3mVXZOiIYcM=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.102.0/go.mod h1:eRViM57aYPXdI8bH1gMcpc02gIP4+QW5bXPjZiJLwgU=
-github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filestatsreceiver v0.100.0 h1:pW4LWiNZqvlIEkCEDHWVAYq3qcbLlJ941j+X7UmvP24=
-github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filestatsreceiver v0.100.0/go.mod h1:C4Eh50L6w0S6gBz/y2eIZdp7zg7cJpzeVOop2of3mzo=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.102.0 h1:2JxSNc2Tw+JTsNqEuUM4fKJLBSSxhbQYRgLoasvkTH0=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.102.0/go.mod h1:JjaTMPGUbc2OhwocO/xj5HLXO99tdmNYnsXOqie01kg=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/httpcheckreceiver v0.102.0 h1:F7k0rUgsPemwpOWxZOOTxvCK4ojY5AA6IiroQZahrsg=

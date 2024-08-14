@@ -110,6 +110,7 @@ func (nls *NginxLogScraper) Start(parentCtx context.Context, _ component.Host) e
 
 func (nls *NginxLogScraper) Scrape(_ context.Context) (pmetric.Metrics, error) {
 	nls.mut.Lock()
+	defer nls.mut.Unlock()
 	for _, ent := range nls.entries {
 		strBody, ok := ent.Body.(string)
 		if !ok {
@@ -131,7 +132,6 @@ func (nls *NginxLogScraper) Scrape(_ context.Context) (pmetric.Metrics, error) {
 		}
 	}
 	nls.entries = make([]*entry.Entry, 0)
-	nls.mut.Unlock()
 
 	return nls.mb.Emit(), nil
 }

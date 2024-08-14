@@ -16,7 +16,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c
 	github.com/nginxinc/nginx-plus-go-client v1.2.2
-	github.com/nginxinc/nginx-prometheus-exporter v0.11.0
+	github.com/nginxinc/nginx-prometheus-exporter v1.3.0
 	github.com/nxadm/tail v1.4.11
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector v0.102.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/exceptionsconnector v0.102.0
@@ -64,7 +64,6 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/bigipreceiver v0.102.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/dockerstatsreceiver v0.102.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.102.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filestatsreceiver v0.100.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.102.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/httpcheckreceiver v0.102.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver v0.102.0

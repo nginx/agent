@@ -32,7 +32,13 @@ const (
 		` "$upstream_response_length" "$upstream_response_time"`
 )
 
+func TestAccessLogScraper_ID(t *testing.T) {
+	nls := &NginxLogScraper{}
+	assert.Equal(t, "nginx", nls.ID().Type().String())
+}
+
 func TestAccessLogScraper(t *testing.T) {
+	ctx := context.Background()
 	tempDir := t.TempDir()
 	var (
 		testAccessLogPath = filepath.Join(tempDir, "test.log")
@@ -46,6 +52,10 @@ func TestAccessLogScraper(t *testing.T) {
 
 	accessLogScraper, err := NewScraper(receivertest.NewNopSettings(), cfg)
 	require.NoError(t, err)
+	defer func() {
+		shutdownError := accessLogScraper.Shutdown(ctx)
+		require.NoError(t, shutdownError)
+	}()
 
 	err = accessLogScraper.Start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
