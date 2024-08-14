@@ -298,8 +298,10 @@ func (n *NginxBinaryType) ValidateConfig(processId, bin, configLocation string, 
 	log.Debugf("Validating config, %s for nginx process, %s, with custom error path %v", configLocation, processId, errorLogPaths)
 	cmdArgs := make([]string, 0)
 	cmdArgs = append(cmdArgs, "-t")
-	cmdArgs = append(cmdArgs, "-c")
-	cmdArgs = append(cmdArgs, configLocation)
+	if len(configLocation) > 0 {
+		cmdArgs = append(cmdArgs, "-c")
+		cmdArgs = append(cmdArgs, configLocation)
+	}
 	for _, path := range errorLogPaths {
 		cmdArgs = append(cmdArgs, "-e")
 		cmdArgs = append(cmdArgs, path)
