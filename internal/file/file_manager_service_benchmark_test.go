@@ -10,7 +10,7 @@ import (
 	"log/slog"
 	"path/filepath"
 	"testing"
-	// "time"
+	"time"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/grpc"
@@ -65,43 +65,43 @@ func BenchmarkFileManagerService_UpdateFile_RPC(b *testing.B) {
 	}
 }
 
-// func BenchmarkFileManagerService_UploadFile_Stream(b *testing.B) {
-// 	slog.SetLogLoggerLevel(slog.LevelError)
+func BenchmarkFileManagerService_UploadFile_Stream(b *testing.B) {
+	slog.SetLogLoggerLevel(slog.LevelError)
 
-// 	ctx := context.Background()
-// 	agentConfig := types.AgentConfig()
-// 	agentConfig.Common.MaxElapsedTime = time.Hour
+	ctx := context.Background()
+	agentConfig := types.AgentConfig()
+	agentConfig.Common.MaxElapsedTime = time.Hour
 
-// 	grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig)
-// 	require.NoError(b, err)
+	grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig)
+	require.NoError(b, err)
 	
-// 	fileManagerService := NewFileManagerService(grpcConnection.FileServiceClient(), agentConfig)
-// 	fileManagerService.isConnected.Store(true)
+	fileManagerService := NewFileManagerService(grpcConnection.FileServiceClient(), agentConfig)
+	fileManagerService.isConnected.Store(true)
 
-// 	for _, configFilePath := range configFilePaths {
-// 		func(configFilePath string) {
-// 			absFilePath, err := filepath.Abs(configFilePath)
-// 			require.NoError(b, err)
+	for _, configFilePath := range configFilePaths {
+		func(configFilePath string) {
+			absFilePath, err := filepath.Abs(configFilePath)
+			require.NoError(b, err)
 
-// 			fileMeta, err := files.GetFileMeta(absFilePath)
-// 			require.NoError(b, err)
+			fileMeta, err := files.GetFileMeta(absFilePath)
+			require.NoError(b, err)
 			 
-// 			b.Run(configFilePath, func(bb *testing.B) {
-// 				for i := 0; i < bb.N; i++ {
-// 					err := fileManagerService.UploadFile(
-// 						ctx,
-// 						"123",
-// 						&mpi.File{
-// 							FileMeta: fileMeta,
-// 						},
-// 						false,
-// 					)
-// 					require.NoError(bb, err)
-// 				}
-// 			})
-// 		}(configFilePath)
-// 	}
-// }
+			b.Run(configFilePath, func(bb *testing.B) {
+				for i := 0; i < bb.N; i++ {
+					err := fileManagerService.UploadFile(
+						ctx,
+						"123",
+						&mpi.File{
+							FileMeta: fileMeta,
+						},
+						false,
+					)
+					require.NoError(bb, err)
+				}
+			})
+		}(configFilePath)
+	}
+}
 
 
 func BenchmarkFileManagerService_UploadFile_chunked_Stream(b *testing.B) {
@@ -182,47 +182,47 @@ func BenchmarkFileManagerService_UpdateMultipleFiles_1000_files_RPC(b *testing.B
 	}
 }
 
-// func BenchmarkFileManagerService_UploadMultipleFiles_1000_files_Stream(b *testing.B) {
-// 	slog.SetLogLoggerLevel(slog.LevelError)
+func BenchmarkFileManagerService_UploadMultipleFiles_1000_files_Stream(b *testing.B) {
+	slog.SetLogLoggerLevel(slog.LevelError)
 	
-// 	ctx := context.Background()
-// 	agentConfig := types.AgentConfig()
+	ctx := context.Background()
+	agentConfig := types.AgentConfig()
 
-// 	grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig)
-// 	require.NoError(b, err)
+	grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig)
+	require.NoError(b, err)
 	
-// 	fileManagerService := NewFileManagerService(grpcConnection.FileServiceClient(), agentConfig)
-// 	fileManagerService.isConnected.Store(true)
+	fileManagerService := NewFileManagerService(grpcConnection.FileServiceClient(), agentConfig)
+	fileManagerService.isConnected.Store(true)
 
-// 	for _, configFilePath := range configFilePaths {
-// 		func(configFilePath string) {
-// 			absFilePath, err := filepath.Abs(configFilePath)
-// 			require.NoError(b, err)
+	for _, configFilePath := range configFilePaths {
+		func(configFilePath string) {
+			absFilePath, err := filepath.Abs(configFilePath)
+			require.NoError(b, err)
 
-// 			fileMeta, err := files.GetFileMeta(absFilePath)
-// 			require.NoError(b, err)
+			fileMeta, err := files.GetFileMeta(absFilePath)
+			require.NoError(b, err)
 
-// 			files := []*mpi.File{}
-// 			for range 1000 {
-// 				files = append(files, &mpi.File{
-// 					FileMeta: fileMeta,
-// 				})
-// 			}
+			files := []*mpi.File{}
+			for range 1000 {
+				files = append(files, &mpi.File{
+					FileMeta: fileMeta,
+				})
+			}
 			 
-// 			b.Run(configFilePath, func(bb *testing.B) {
-// 				for i := 0; i < bb.N; i++ {
-// 					err := fileManagerService.UploadMultipleFiles(
-// 						ctx,
-// 						"123",
-// 						files,
-// 						false,
-// 					)
-// 					require.NoError(bb, err)
-// 				}
-// 			})
-// 		}(configFilePath)
-// 	}
-// }
+			b.Run(configFilePath, func(bb *testing.B) {
+				for i := 0; i < bb.N; i++ {
+					err := fileManagerService.UploadMultipleFiles(
+						ctx,
+						"123",
+						files,
+						false,
+					)
+					require.NoError(bb, err)
+				}
+			})
+		}(configFilePath)
+	}
+}
 
 func BenchmarkFileManagerService_UploadMultipleFiles_1000_files_chunked_Stream(b *testing.B) {
 	slog.SetLogLoggerLevel(slog.LevelError)
@@ -303,40 +303,40 @@ func BenchmarkFileManagerService_GetFile_RPC(b *testing.B) {
 	}
 }
 
-// func BenchmarkFileManagerService_DownloadFile_Stream(b *testing.B) {
-// 	slog.SetLogLoggerLevel(slog.LevelError)
+func BenchmarkFileManagerService_DownloadFile_Stream(b *testing.B) {
+	slog.SetLogLoggerLevel(slog.LevelError)
 	
-// 	ctx := context.Background()
-// 	agentConfig := types.AgentConfig()
-// 	agentConfig.Common.MaxElapsedTime = time.Hour
+	ctx := context.Background()
+	agentConfig := types.AgentConfig()
+	agentConfig.Common.MaxElapsedTime = time.Hour
 
-// 	grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig)
-// 	require.NoError(b, err)
+	grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig)
+	require.NoError(b, err)
 	
-// 	fileManagerService := NewFileManagerService(grpcConnection.FileServiceClient(), agentConfig)
-// 	fileManagerService.isConnected.Store(true)
+	fileManagerService := NewFileManagerService(grpcConnection.FileServiceClient(), agentConfig)
+	fileManagerService.isConnected.Store(true)
 
-// 	for _, configFilePath := range configFilePaths {
-// 		func(configFilePath string) {
-// 			absFilePath, err := filepath.Abs(configFilePath)
-// 			require.NoError(b, err)
+	for _, configFilePath := range configFilePaths {
+		func(configFilePath string) {
+			absFilePath, err := filepath.Abs(configFilePath)
+			require.NoError(b, err)
 
-// 			fileMeta, err := files.GetFileMeta(absFilePath)
-// 			fileMeta.Name = filepath.Join("/", filepath.Base(configFilePath))
-// 			require.NoError(b, err)
+			fileMeta, err := files.GetFileMeta(absFilePath)
+			fileMeta.Name = filepath.Join("/", filepath.Base(configFilePath))
+			require.NoError(b, err)
 			 
-// 			b.Run(configFilePath, func(bb *testing.B) {
-// 				for i := 0; i < bb.N; i++ {
-// 					err := fileManagerService.DownloadFile(
-// 						ctx,
-// 						"123",
-// 						&mpi.File{
-// 							FileMeta: fileMeta,
-// 						},
-// 					)
-// 					require.NoError(bb, err)
-// 				}
-// 			})
-// 		}(configFilePath)
-// 	}
-// }
+			b.Run(configFilePath, func(bb *testing.B) {
+				for i := 0; i < bb.N; i++ {
+					err := fileManagerService.DownloadFile(
+						ctx,
+						"123",
+						&mpi.File{
+							FileMeta: fileMeta,
+						},
+					)
+					require.NoError(bb, err)
+				}
+			})
+		}(configFilePath)
+	}
+}

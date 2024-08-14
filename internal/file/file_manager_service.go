@@ -22,8 +22,8 @@ import (
 	"github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/pkg/files"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	google_grpc "google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	backoffHelpers "github.com/nginx/agent/v3/internal/backoff"
 )
@@ -56,6 +56,7 @@ type FileManagerService struct {
 	fileOperator      fileOperator
 	filesCache        map[string]*mpi.File // key is file path
 	fileContentsCache map[string][]byte    // key is file path
+	fileSize          int
 }
 
 func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig *config.Config) *FileManagerService {
@@ -69,6 +70,7 @@ func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig 
 		filesCache:        make(map[string]*mpi.File),
 		fileContentsCache: make(map[string][]byte),
 		isConnected:       isConnected,
+		fileSize:          660000000,
 	}
 }
 
@@ -221,7 +223,7 @@ func (fms *FileManagerService) UploadFile(
 
 		client, updateError := fms.fileServiceClient.UploadFile(ctx)
 		if chunked {
-			chunks := Chunk(contents, 4 * 1024)
+			chunks := Chunk(contents, 4*1024)
 
 			for _, chunk := range chunks {
 				request := &mpi.UpdateFileRequest{
@@ -230,7 +232,7 @@ func (fms *FileManagerService) UploadFile(
 						Contents: chunk,
 					},
 				}
-	
+
 				err := client.Send(request)
 				if err != nil {
 					return nil, err
@@ -239,7 +241,7 @@ func (fms *FileManagerService) UploadFile(
 		} else {
 			client.Send(request)
 		}
-		
+
 		response, err := client.CloseAndRecv()
 		if err != nil {
 			return nil, err
@@ -266,7 +268,6 @@ func (fms *FileManagerService) UploadFile(
 	return err
 }
 
-
 func (fms *FileManagerService) UpdateMultipleFiles(
 	ctx context.Context,
 	instanceID string,
@@ -289,7 +290,6 @@ func (fms *FileManagerService) UpdateMultipleFiles(
 		for _, fileToUpdate := range filesToUpdate {
 			wg.Add(1)
 			go func() {
-
 				slog.ErrorContext(ctx, "Updating file", "instance_id", instanceID, "file_name", fileToUpdate.GetFileMeta().GetName())
 				contents, _ := os.ReadFile(fileToUpdate.GetFileMeta().GetName())
 
@@ -308,9 +308,9 @@ func (fms *FileManagerService) UpdateMultipleFiles(
 				if validatedError != nil {
 					slog.ErrorContext(ctx, "Failed to send update file", "error", validatedError)
 				}
-			} ()
+			}()
 		}
-		
+
 		wg.Wait()
 
 		return nil, nil
@@ -357,7 +357,7 @@ func (fms *FileManagerService) UploadMultipleFiles(
 				defer wg.Done()
 				contents, _ := os.ReadFile(fileToUpdate.GetFileMeta().GetName())
 				if chunked {
-					chunks := Chunk(contents, 4 * 1024)
+					chunks := Chunk(contents, 4*1024)
 
 					for _, chunk := range chunks {
 						request := &mpi.UpdateFileRequest{
@@ -366,7 +366,7 @@ func (fms *FileManagerService) UploadMultipleFiles(
 								Contents: chunk,
 							},
 						}
-			
+
 						err := client.Send(request)
 						if err != nil {
 							return
@@ -464,7 +464,7 @@ func (fms *FileManagerService) GetFile(
 			return nil, errors.New("CreateConnection rpc has not being called yet")
 		}
 
-		response, updateError := fms.fileServiceClient.GetFile(ctx, request, google_grpc.MaxCallRecvMsgSize(110000000))
+		response, updateError := fms.fileServiceClient.GetFile(ctx, request, google_grpc.MaxCallRecvMsgSize(fms.fileSize))
 
 		validatedError := grpc.ValidateGrpcError(updateError)
 
@@ -509,7 +509,7 @@ func (fms *FileManagerService) DownloadFile(
 			return nil, errors.New("CreateConnection rpc has not being called yet")
 		}
 
-		client, updateError := fms.fileServiceClient.DownloadFile(ctx, request)
+		client, updateError := fms.fileServiceClient.DownloadFile(ctx, request, google_grpc.MaxCallRecvMsgSize(fms.fileSize))
 		for {
 			response, err := client.Recv()
 			if err == io.EOF {
