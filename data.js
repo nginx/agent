@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1723627805373,
+  "lastUpdate": 1723628191818,
   "repoUrl": "https://github.com/nginx/agent",
   "entries": {
     "Compare Benchmark Results": [
@@ -97136,6 +97136,60 @@ window.BENCHMARK_DATA = {
             "value": 6,
             "unit": "allocs/op",
             "extra": "3218458 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "djhurley1990@gmail.com",
+            "name": "Donal Hurley",
+            "username": "dhurley"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "17932e16b6035b8dbbc039e1a4a7ba5b1388390a",
+          "message": "Update v3 release workflow (#780)",
+          "timestamp": "2024-08-14T10:26:18+01:00",
+          "tree_id": "d0b6e922580eab638a56ffc7164f370b9a204afc",
+          "url": "https://github.com/nginx/agent/commit/17932e16b6035b8dbbc039e1a4a7ba5b1388390a"
+        },
+        "date": 1723628190849,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "cpu_percentage_avg",
+            "value": 16.065243098700286,
+            "unit": "%",
+            "extra": "Metric10kDPS/OTLP-linux-build/nginx-agent - Cpu Percentage"
+          },
+          {
+            "name": "cpu_percentage_max",
+            "value": 19.994968306215675,
+            "unit": "%",
+            "extra": "Metric10kDPS/OTLP-linux-build/nginx-agent - Cpu Percentage"
+          },
+          {
+            "name": "ram_mib_avg",
+            "value": 87,
+            "unit": "MiB",
+            "extra": "Metric10kDPS/OTLP-linux-build/nginx-agent - RAM (MiB)"
+          },
+          {
+            "name": "ram_mib_max",
+            "value": 101,
+            "unit": "MiB",
+            "extra": "Metric10kDPS/OTLP-linux-build/nginx-agent - RAM (MiB)"
+          },
+          {
+            "name": "dropped_span_count",
+            "value": 0,
+            "unit": "spans",
+            "extra": "Metric10kDPS/OTLP-linux-build/nginx-agent - Dropped Span Count"
           }
         ]
       }
