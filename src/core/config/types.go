@@ -38,6 +38,16 @@ type Config struct {
 	QueueSize             int                 `mapstructure:"queue_size" yaml:"queue_size,omitempty"`
 }
 
+func (c *Config) AllowedDirectories() []string {
+	values := []string{}
+
+	// Iterate through the map and append keys to the slice
+	for key := range c.AllowedDirectoriesMap {
+		values = append(values, key)
+	}
+	return values
+}
+
 func (c *Config) IsGrpcServerConfigured() bool {
 	return c.Server.Host != "" && c.Server.GrpcPort != 0
 }

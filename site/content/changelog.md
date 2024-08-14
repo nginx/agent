@@ -10,7 +10,7 @@ docs: "DOCS-1093"
 See the list of supported Operating Systems and architectures in the [Technical Specifications]({{< relref "./technical-specifications.md" >}}).
 
 ---
-## Release [v2.36.1](https//github.com/nginx/agent/releases/tag/v2.36.1)
+## Release [v2.36.1](https://github.com/nginx/agent/releases/tag/v2.36.1)
 
 ### 🌟 Highlights
 
@@ -23,7 +23,7 @@ We have made the following maintenance-related minor changes:
 - Added version regex to parse the logs to see if matches vsemvar format by [@oliveromahony](https://github.com/oliveromahony) in [#747](https://github.com/nginx/agent/pull/747)
 
 ---
-## Release [v2.36.0](https//github.com/nginx/agent/releases/tag/v2.36.0)
+## Release [v2.36.0](https://github.com/nginx/agent/releases/tag/v2.36.0)
 
 ### 🐛 Bug Fixes
 
@@ -44,7 +44,7 @@ We have made the following updates to the documentation:
 - Upgrade crossplane by [@oliveromahony](https://github.com/oliveromahony) in [#737](https://github.com/nginx/agent/pull/737)
 
 ---
-## Release [v2.35.1](https//github.com/nginx/agent/releases/tag/v2.35.1)
+## Release [v2.35.1](https://github.com/nginx/agent/releases/tag/v2.35.1)
 
 ### 🐛 Bug Fixes
 
@@ -68,7 +68,7 @@ We have made the following maintenance-related minor changes:
 - More detailed test for env variables migration by [@oliveromahony](https://github.com/oliveromahony) in [#709](https://github.com/nginx/agent/pull/709)
 
 ---
-## Release [v2.35.0](https//github.com/nginx/agent/releases/tag/v2.35.0)
+## Release [v2.35.0](https://github.com/nginx/agent/releases/tag/v2.35.0)
 
 ### 🌟 Highlights
 
@@ -88,7 +88,7 @@ We have made the following updates to the documentation:
 - Add Ubuntu Noble 24.04 LTS support by [@Dean-Coakley](https://github.com/Dean-Coakley) in [#682](https://github.com/nginx/agent/pull/682)
 
 ---
-## Release [v2.34.1](https//github.com/nginx/agent/releases/tag/v2.34.1)
+## Release [v2.34.1](https://github.com/nginx/agent/releases/tag/v2.34.1)
 
 ### 🐛 Bug Fixes
 
@@ -103,7 +103,7 @@ We have made the following updates to the documentation:
 - Update changelog for release 2.34 by [@ADubhlaoich](https://github.com/ADubhlaoich) in [#693](https://github.com/nginx/agent/pull/693)
 
 ---
-## Release [v2.34.0](https//github.com/nginx/agent/releases/tag/v2.34.0)
+## Release [v2.34.0](https://github.com/nginx/agent/releases/tag/v2.34.0)
 
 ### 🌟 Highlights
 
@@ -139,7 +139,7 @@ We have made the following maintenance-related minor changes:
 - Add additional checks in chunking functionality by [@dhurley](https://github.com/dhurley) in [#671](https://github.com/nginx/agent/pull/671)
 
 ---
-## Release [v2.33.0](https//github.com/nginx/agent/releases/tag/v2.33.0)
+## Release [v2.33.0](https://github.com/nginx/agent/releases/tag/v2.33.0)
 
 ### 🌟 Highlights
 
@@ -175,7 +175,7 @@ We have made the following maintenance-related minor changes:
 - Add logging to NGINX API http requests by [@dhurley](https://github.com/dhurley) in [#605](https://github.com/nginx/agent/pull/605)
 
 ---
-## Release [v2.32.2](https//github.com/nginx/agent/releases/tag/v2.32.2)
+## Release [v2.32.2](https://github.com/nginx/agent/releases/tag/v2.32.2)
 
 ### 🌟 Highlights
 
@@ -202,7 +202,7 @@ We have made the following updates to the documentation:
 - fix: add additional container checks during instance registration by [@mattdesmarais](https://github.com/mattdesmarais) in [#592](https://github.com/nginx/agent/pull/592)
 
 ---
-## Release [v2.32.1](https//github.com/nginx/agent/releases/tag/v2.32.1)
+## Release [v2.32.1](https://github.com/nginx/agent/releases/tag/v2.32.1)
 
 ### 🚀 Features
 
@@ -233,7 +233,7 @@ We have made the following maintenance-related minor changes:
 - bump vulnerable version of buildkit by [@oliveromahony](https://github.com/oliveromahony) in [#564](https://github.com/nginx/agent/pull/564)
 
 ---
-## Release [v2.32.0](https//github.com/nginx/agent/releases/tag/v2.32.0)
+## Release [v2.32.0](https://github.com/nginx/agent/releases/tag/v2.32.0)
 
 ### 🚀 Features
 
