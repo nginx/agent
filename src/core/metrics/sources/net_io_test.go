@@ -48,11 +48,8 @@ func TestNetIOCollect(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	// wg := &sync.WaitGroup{}
-	// wg.Add(1)
 	channel := make(chan *metrics.StatsEntityWrapper, 100)
 	nioSource.Collect(ctx, channel)
-	// wg.Wait()
 
 	actual := <-channel
 

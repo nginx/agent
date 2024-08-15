@@ -77,8 +77,6 @@ func TestNginxWorkerCollector(t *testing.T) {
 	// tell the mock nginx binary to return something
 	ctx := context.TODO()
 
-	// wg := sync.WaitGroup{}
-	// wg.Add(1)
 	m := make(chan *metrics.StatsEntityWrapper)
 	go n.Collect(ctx, m)
 
@@ -120,8 +118,6 @@ func TestNginxWorkerCollector(t *testing.T) {
 			assert.Fail(t, "saw an unknown metric in test")
 		}
 	}
-
-	// wg.Add(1)
 
 	go n.Collect(ctx, m)
 

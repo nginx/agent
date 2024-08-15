@@ -109,10 +109,7 @@ Reading: 0 Writing: 1 Waiting: 0
 				logger:         NewMetricSourceLogger(),
 			}
 			ctx := context.TODO()
-			// wg := &sync.WaitGroup{}
-			// wg.Add(1)
 			go c.Collect(ctx, test.m)
-			// wg.Wait()
 			statEntity := <-test.m
 			assert.Len(tt, statEntity.Data.Simplemetrics, len(test.expectedMetrics))
 			for _, metric := range statEntity.Data.Simplemetrics {

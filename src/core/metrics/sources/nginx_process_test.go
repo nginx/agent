@@ -57,8 +57,6 @@ func TestNginxProcessCollector_Collect_Process(t *testing.T) {
 	// tell the mock nginx binary to return something
 	ctx := context.TODO()
 
-	// wg := sync.WaitGroup{}
-	// wg.Add(1)
 	m := make(chan *metrics.StatsEntityWrapper)
 	go n.Collect(ctx, m)
 
@@ -101,8 +99,6 @@ func TestNginxProcessCollector_Collect_NoProcess(t *testing.T) {
 	// tell the mock nginx binary to return something
 	ctx := context.TODO()
 
-	// wg := sync.WaitGroup{}
-	// wg.Add(1)
 	m := make(chan *metrics.StatsEntityWrapper)
 	go n.Collect(ctx, m)
 
@@ -148,8 +144,6 @@ func TestNginxProcessCollector_Collect_NotPlus(t *testing.T) {
 	// tell the mock nginx binary to return something
 	ctx := context.TODO()
 
-	// wg := sync.WaitGroup{}
-	// wg.Add(1)
 	m := make(chan *metrics.StatsEntityWrapper)
 	go n.Collect(ctx, m)
 
