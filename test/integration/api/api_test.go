@@ -79,7 +79,6 @@ func TestAPI_Metrics(t *testing.T) {
 
 	url := fmt.Sprintf("http://%s:%d/metrics/", API_HOST, API_PORT)
 
-	time.Sleep(delay)
 	client.SetRetryCount(5).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(5 * time.Second)
 	client.AddRetryCondition(
 		func(r *resty.Response, err error) bool {
