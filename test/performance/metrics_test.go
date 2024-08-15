@@ -75,22 +75,28 @@ type (
 )
 
 func (m *MetricsServer) Stream(stream proto.MetricsService_StreamServer) error {
+	wg := &sync.WaitGroup{}
 	h := m.ensureHandler()
+	wg.Add(1)
 	hf := h.metricHandlerFunc
 	if hf == nil {
 		hf = h.metricsHandle
 	}
-	go hf(stream, nil)
+	go hf(stream, wg)
+	wg.Wait()
 	return nil
 }
 
 func (m *MetricsServer) StreamEvents(stream proto.MetricsService_StreamEventsServer) error {
+	wg := &sync.WaitGroup{}
 	h := m.ensureHandler()
+	wg.Add(1)
 	hf := h.eventReportHandlerFunc
 	if hf == nil {
 		hf = h.eventReportHandle
 	}
-	go hf(stream, nil)
+	go hf(stream, wg)
+	wg.Wait()
 	return nil
 }
 
@@ -151,12 +157,15 @@ type cmdService struct {
 }
 
 func (c *cmdService) CommandChannel(server proto.Commander_CommandChannelServer) error {
+	wg := &sync.WaitGroup{}
 	h := c.ensureHandler()
+	wg.Add(1)
 	hf := h.handleFunc
 	if hf == nil {
 		hf = h.handle
 	}
-	go hf(server, nil)
+	go hf(server, wg)
+	wg.Wait()
 	return nil
 }
 
