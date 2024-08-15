@@ -86,7 +86,6 @@ func NewNginxPlus(baseDimensions *metrics.CommonDim, nginxNamespace, plusNamespa
 }
 
 func (c *NginxPlus) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
-	// defer wg.Done()
 	c.init.Do(func() {
 		latestAPIVersion, err := c.getLatestAPIVersion(ctx, c.plusAPI)
 		if err != nil {

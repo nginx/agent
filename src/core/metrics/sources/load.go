@@ -28,7 +28,6 @@ func NewLoadSource(namespace string) *Load {
 }
 
 func (c *Load) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
-	// defer wg.Done()
 	loadStats, err := c.avgStatsFunc()
 	if err != nil {
 		c.logger.Log(fmt.Sprintf("Failed to collect Load metrics, %v", err))

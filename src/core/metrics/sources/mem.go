@@ -38,7 +38,6 @@ func NewVirtualMemorySource(namespace string, env core.Environment) *VirtualMemo
 }
 
 func (c *VirtualMemory) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
-	// defer wg.Done()
 	memstats, err := c.statFunc(ctx)
 	if err != nil {
 		if e, ok := err.(*os.PathError); ok {

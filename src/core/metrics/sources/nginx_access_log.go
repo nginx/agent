@@ -109,7 +109,6 @@ func NewNginxAccessLog(
 }
 
 func (c *NginxAccessLog) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
-	// defer wg.Done()
 	c.collectLogStats(ctx, m)
 }
 

@@ -44,8 +44,6 @@ func (c *NginxProcess) getNginxCount() float64 {
 }
 
 func (c *NginxProcess) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
-	// defer wg.Done()
-
 	l := &namedMetric{namespace: PlusNamespace, group: ""}
 	countSimpleMetric := l.convertSamplesToSimpleMetrics(map[string]float64{
 		"instance.count": c.getNginxCount(),

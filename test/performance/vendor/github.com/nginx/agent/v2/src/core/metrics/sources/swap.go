@@ -49,7 +49,6 @@ func NewSwapSource(namespace string, env core.Environment) *Swap {
 }
 
 func (c *Swap) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
-	// defer wg.Done()
 	swapStats, err := c.statFunc()
 	if err != nil {
 		if e, ok := err.(*os.PathError); ok {

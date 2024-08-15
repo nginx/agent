@@ -565,8 +565,6 @@ type FakeNginxPlus struct {
 
 // Collect is fake collector that hard codes a stats struct response to avoid dependency on external NGINX Plus api
 func (f *FakeNginxPlus) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
-
-
 	f.baseDimensions.NginxType = "plus"
 	f.baseDimensions.PublishedAPI = f.plusAPI
 	f.baseDimensions.NginxBuild = stats.NginxInfo.Build

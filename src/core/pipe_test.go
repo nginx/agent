@@ -112,26 +112,6 @@ func TestMessagePipe_Process(t *testing.T) {
 	pipe.Close()
 }
 
-// func TestPipe_DeRegister(t *testing.T) {
-// 	plugin := new(testPlugin)
-// 	plugin.On("Close").Times(1)
-
-// 	ctx, cancel := context.WithCancel(context.Background())
-// 	defer cancel()
-
-// 	messagePipe := NewMessagePipe(ctx, 10)
-// 	messagePipe.Register(10, []Plugin{plugin}, nil)
-
-// 	err := messagePipe.DeRegister([]string{*plugin.Info().name})
-// 	require.NoError(t, err)
-
-// 	assert.Equal(t, 0, len(messagePipe.GetPlugins()))
-
-// 	cancel()
-// 	messagePipe.Close()
-// 	plugin.AssertExpectations(t)
-// }
-
 func TestPipe_IsPluginAlreadyRegistered(t *testing.T) {
 	plugin := new(testPlugin)
 	plugin.On("Close").Times(1)

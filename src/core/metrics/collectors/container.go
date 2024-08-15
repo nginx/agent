@@ -51,7 +51,6 @@ func (c *ContainerCollector) collectMetrics(ctx context.Context) {
 }
 
 func (c *ContainerCollector) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
-	// defer wg.Done()
 	c.collectMetrics(ctx)
 
 	commonDims := c.dim.ToDimensions()

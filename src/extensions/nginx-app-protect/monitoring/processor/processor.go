@@ -76,8 +76,6 @@ func GetClient(cfg *Config) (*Client, error) {
 
 // processorWorker is a worker process to process events.
 func (c *Client) processorWorker(ctx context.Context, wg *sync.WaitGroup, id int, collected <-chan *monitoring.RawLog, processed chan<- *pb.Event) {
-	// defer wg.Done()
-
 	c.logger.Debugf("Setting up Processor Worker: %d", id)
 
 	for {

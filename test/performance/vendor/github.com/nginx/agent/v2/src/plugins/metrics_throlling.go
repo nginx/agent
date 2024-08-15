@@ -201,11 +201,6 @@ func (r *MetricsThrottle) syncAgentConfigChange() {
 }
 
 func (r *MetricsThrottle) getAggregatedReports() (reports []core.Payload) {
-	// r.mu.Lock()
-	// localMetricsCollections := r.metricsCollections
-	// r.metricsCollections = make(map[proto.MetricsReport_Type]*metrics.Collections)
-	// r.mu.Unlock()
-
 	for reportType, collection := range r.metricsCollections {
 		reports = append(reports, &proto.MetricsReport{
 			Meta: &proto.Metadata{

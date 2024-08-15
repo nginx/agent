@@ -151,13 +151,11 @@ func (s *Manager) Run(ctx context.Context) {
 	chtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-
 	go s.collector.Collect(chtx, s.collectChan)
 	go s.processor.Process(chtx, s.collectChan, s.processorChan)
 
 	<-ctx.Done()
 	s.logger.Infof("Received Context cancellation, %s is wrapping up...", componentName)
-
 
 	s.logger.Infof("Context cancellation, %s wrapped up...", componentName)
 }
