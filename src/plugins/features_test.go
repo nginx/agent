@@ -9,6 +9,9 @@ package plugins
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/agent/events"
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -17,8 +20,6 @@ import (
 	tutils "github.com/nginx/agent/v2/test/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"testing"
-	"time"
 )
 
 func TestFeatures_Process(t *testing.T) {
