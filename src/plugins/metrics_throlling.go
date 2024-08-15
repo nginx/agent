@@ -38,7 +38,6 @@ type MetricsThrottle struct {
 	ctx                context.Context
 	cancel             context.CancelFunc
 	wg                 sync.WaitGroup
-	// mu                 sync.Mutex
 	env    core.Environment
 	conf   *config.Config
 	errors chan error

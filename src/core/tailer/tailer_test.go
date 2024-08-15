@@ -10,6 +10,7 @@ package tailer
 import (
 	"context"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -70,11 +71,17 @@ func TestTailer(t *testing.T) {
 	timeoutDuration := time.Millisecond * 300
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeoutDuration)
-	defer cancel()
 
 	data := make(chan string, 100)
-	go tailer.Tail(ctx, data)
+	
+	wg := sync.WaitGroup{}
+	wg.Add(1)
 
+	go func () {
+		tailer.Tail(ctx, data)
+		wg.Done()
+	}()
+	
 	time.Sleep(time.Millisecond * 100)
 	_, err = errorLogFile.WriteString(logLine)
 	if err != nil {
@@ -95,9 +102,14 @@ T:
 			break T
 		}
 	}
+	cancel()
+
+	wg.Wait()
 
 	os.Remove(errorLogFile.Name())
 	assert.Equal(t, 1, count)
+
+	time.Sleep(500 * time.Millisecond)
 }
 
 func TestPatternTailer(t *testing.T) {

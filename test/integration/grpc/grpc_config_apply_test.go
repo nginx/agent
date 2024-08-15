@@ -94,7 +94,7 @@ func TestRegistrationAndConfigApply(t *testing.T) {
 		t,
 		"grpc-registration-and-config-apply",
 		"./nginx-agent.conf:/etc/nginx-agent/nginx-agent.conf",
-		"The following core plugins have being registered",
+		"The following core plugins have been registered",
 	)
 
 	// Validate that registration is complete

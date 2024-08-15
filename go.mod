@@ -42,7 +42,7 @@ require (
 	github.com/rs/cors v1.11.0
 	go.uber.org/goleak v1.3.0
 	go.uber.org/mock v0.4.0
-	golang.org/x/sys v0.22.0
+	golang.org/x/sys v0.24.0
 	golang.org/x/text v0.16.0
 	gopkg.in/yaml.v2 v2.4.0
 )

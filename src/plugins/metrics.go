@@ -231,7 +231,6 @@ func (m *Metrics) drainBuffer(ctx context.Context) {
 func (m *Metrics) collectStats() (stats chan *metrics.StatsEntityWrapper) {
 	// set a timeout for a millisecond less than the collection interval
 	ctx := context.Background()
-	// defer cancel()
 	// locks the m.collectors to make sure it doesn't get deleted in the middle
 	// of collection, as we will delete the old one if config changes.
 	// maybe we can fine tune the lock later, but the collection has been very quick so far.

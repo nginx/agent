@@ -20,7 +20,7 @@ import (
 
 var tailConfig = tail.Config{
 	Follow:    true,
-	ReOpen:    false,
+	ReOpen:    true,
 	MustExist: true,
 	Poll:      true,
 	Location: &tail.SeekInfo{
@@ -127,6 +127,8 @@ func (t *Tailer) Tail(ctx context.Context, data chan<- string) {
 			case context.Canceled:
 				log.Tracef("Tailer forcibly cancelled, %v", ctxErr)
 			}
+			t.handle.Stop()
+			t.handle.Cleanup()
 			log.Trace("Tailer is done")
 			return
 		}
@@ -156,6 +158,7 @@ func (t *PatternTailer) Tail(ctx context.Context, data chan<- map[string]string)
 			case context.Canceled:
 				log.Tracef("Tailer forcibly cancelled, %v", ctxErr)
 			}
+			t.handle.Cleanup()
 			log.Tracef("Tailer is done")
 			return
 		}
@@ -185,6 +188,7 @@ func (t *LTSVTailer) Tail(ctx context.Context, data chan<- map[string]string) {
 				log.Tracef("Tailer forcibly cancelled, %v", ctxErr)
 			}
 			log.Tracef("Tailer is done")
+			t.handle.Cleanup()
 			return
 		}
 	}
