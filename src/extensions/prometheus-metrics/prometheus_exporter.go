@@ -23,6 +23,8 @@ func (e *Exporter) SetLatestMetricReport(latest *metrics.MetricsReportBundle) {
 }
 
 func (e *Exporter) SetLatestMetricReports(data []core.Payload) {
+	e.latestMetricReports.Data = nil
+
 	for _, report := range data {
 		e.latestMetricReports.Data = append(e.latestMetricReports.Data, report.(*proto.MetricsReport))
 	}
