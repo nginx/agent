@@ -22,6 +22,7 @@ import (
 	"github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/pkg/files"
+	"golang.org/x/sync/errgroup"
 	google_grpc "google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -194,25 +195,20 @@ func (fms *FileManagerService) UploadFile(
 	ctx context.Context,
 	instanceID string,
 	fileToUpdate *mpi.File,
-	chunked bool,
+	chunksize int,
 ) error {
-	contents, err := os.ReadFile(fileToUpdate.GetFileMeta().GetName())
+	filename := fileToUpdate.GetFileMeta().GetName()
+	fd, err := os.Open(filename)
 	if err != nil {
 		return err
 	}
-
-	request := &mpi.UpdateFileRequest{
-		File: fileToUpdate,
-		Contents: &mpi.FileContents{
-			Contents: contents,
-		},
-	}
+	defer fd.Close()
 
 	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Common.MaxElapsedTime)
 	defer backoffCancel()
 
 	sendUpdateFile := func() (*mpi.UpdateFileResponse, error) {
-		slog.DebugContext(ctx, "Sending update file request", "request", request)
+		slog.DebugContext(ctx, "Sending update file request", "filename", filename)
 		if fms.fileServiceClient == nil {
 			return nil, errors.New("file service client is not initialized")
 		}
@@ -222,10 +218,31 @@ func (fms *FileManagerService) UploadFile(
 		}
 
 		client, updateError := fms.fileServiceClient.UploadFile(ctx)
-		if chunked {
-			chunks := Chunk(contents, 4*1024)
+		if chunksize == 0 {
+			// no chunking send the entire thing at once
+			contents, _ := os.ReadFile(filename)
+			request := &mpi.UpdateFileRequest{
+				File: fileToUpdate,
+				Contents: &mpi.FileContents{
+					Contents: contents,
+				},
+			}
+			client.Send(request)
+		} else {
+			st, _ := fd.Stat()
+			var chunk []byte
+			if chunksize > int(st.Size()) {
+				chunk = make([]byte, st.Size())
+			} else {
+				chunk = make([]byte, chunksize)
+			}
 
-			for _, chunk := range chunks {
+			for {
+				_, err := fd.Read(chunk)
+				if err == io.EOF {
+					break
+				}
+
 				request := &mpi.UpdateFileRequest{
 					File: fileToUpdate,
 					Contents: &mpi.FileContents{
@@ -233,13 +250,11 @@ func (fms *FileManagerService) UploadFile(
 					},
 				}
 
-				err := client.Send(request)
+				err = client.Send(request)
 				if err != nil {
 					return nil, err
 				}
 			}
-		} else {
-			client.Send(request)
 		}
 
 		response, err := client.CloseAndRecv()
@@ -330,7 +345,7 @@ func (fms *FileManagerService) UploadMultipleFiles(
 	ctx context.Context,
 	instanceID string,
 	filesToUpdate []*mpi.File,
-	chunked bool,
+	chunksize int,
 ) error {
 	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Common.MaxElapsedTime)
 	defer backoffCancel()
@@ -349,17 +364,28 @@ func (fms *FileManagerService) UploadMultipleFiles(
 			return nil, uploadFileError
 		}
 
-		var wg sync.WaitGroup
+		g := errgroup.Group{}
 
 		for _, fileToUpdate := range filesToUpdate {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				contents, _ := os.ReadFile(fileToUpdate.GetFileMeta().GetName())
-				if chunked {
-					chunks := Chunk(contents, 4*1024)
+			fileToUpdate := fileToUpdate
+			filename := fileToUpdate.GetFileMeta().GetName()
 
-					for _, chunk := range chunks {
+			g.Go(func() error {
+				if chunksize > 0 {
+					fd, _ := os.Open(filename)
+					defer fd.Close()
+					st, _ := fd.Stat()
+					var chunk []byte
+					if chunksize > int(st.Size()) {
+						chunk = make([]byte, st.Size())
+					} else {
+						chunk = make([]byte, chunksize)
+					}
+
+					for {
+						if _, err := fd.Read(chunk); err == io.EOF {
+							break
+						}
 						request := &mpi.UpdateFileRequest{
 							File: fileToUpdate,
 							Contents: &mpi.FileContents{
@@ -367,12 +393,12 @@ func (fms *FileManagerService) UploadMultipleFiles(
 							},
 						}
 
-						err := client.Send(request)
-						if err != nil {
-							return
+						if err := client.Send(request); err != nil {
+							return err
 						}
 					}
 				} else {
+					contents, _ := os.ReadFile(filename)
 					request := &mpi.UpdateFileRequest{
 						File: fileToUpdate,
 						Contents: &mpi.FileContents{
@@ -380,15 +406,14 @@ func (fms *FileManagerService) UploadMultipleFiles(
 						},
 					}
 
-					err := client.Send(request)
-					if err != nil {
-						return
-					}
+					return client.Send(request)
+
 				}
-			}()
+				return nil
+			})
 		}
 
-		wg.Wait()
+		g.Wait()
 
 		response, err := client.CloseAndRecv()
 		if err != nil {
@@ -414,32 +439,6 @@ func (fms *FileManagerService) UploadMultipleFiles(
 	slog.DebugContext(ctx, "UploadFile response", "response", response)
 
 	return err
-}
-
-func Chunk(buf []byte, lim int) [][]byte {
-	var chunk []byte
-	bufSize := len(buf)
-
-	if bufSize == 0 {
-		return [][]byte{}
-	}
-
-	if bufSize <= lim {
-		return [][]byte{buf}
-	}
-
-	chunks := make([][]byte, 0)
-
-	for len(buf) >= lim {
-		chunk, buf = buf[:lim], buf[lim:]
-		chunks = append(chunks, chunk)
-	}
-
-	if len(buf) > 0 {
-		chunks = append(chunks, buf[:])
-	}
-
-	return chunks
 }
 
 func (fms *FileManagerService) GetFile(
