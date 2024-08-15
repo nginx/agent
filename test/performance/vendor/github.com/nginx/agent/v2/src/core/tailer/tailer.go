@@ -127,8 +127,11 @@ func (t *Tailer) Tail(ctx context.Context, data chan<- string) {
 			case context.Canceled:
 				log.Tracef("Tailer forcibly cancelled, %v", ctxErr)
 			}
-			t.handle.Stop()
-			t.handle.Cleanup()
+			stopErr := t.handle.Stop()
+			if stopErr != nil {
+				log.Tracef("Unable to stop tailer, %v", stopErr)
+				return
+			}
 			log.Trace("Tailer is done")
 			return
 		}
@@ -158,7 +161,13 @@ func (t *PatternTailer) Tail(ctx context.Context, data chan<- map[string]string)
 			case context.Canceled:
 				log.Tracef("Tailer forcibly cancelled, %v", ctxErr)
 			}
-			t.handle.Cleanup()
+
+			stopErr := t.handle.Stop()
+			if stopErr != nil {
+				log.Tracef("Unable to stop tailer, %v", stopErr)
+				return
+			}
+
 			log.Tracef("Tailer is done")
 			return
 		}
@@ -187,8 +196,14 @@ func (t *LTSVTailer) Tail(ctx context.Context, data chan<- map[string]string) {
 			case context.Canceled:
 				log.Tracef("Tailer forcibly cancelled, %v", ctxErr)
 			}
+			
+			stopErr := t.handle.Stop()
+			if stopErr != nil {
+				log.Tracef("Unable to stop tailer, %v", stopErr)
+				return
+			}
+
 			log.Tracef("Tailer is done")
-			t.handle.Cleanup()
 			return
 		}
 	}

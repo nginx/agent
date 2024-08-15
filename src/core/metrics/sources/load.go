@@ -40,7 +40,7 @@ func (c *Load) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper
 		"15": loadStats.Load15,
 	})
 
-	log.Debugf("load metrics collected: %v", len(simpleMetrics))
+	log.Debugf("load metrics count: %v", len(simpleMetrics))
 
 	select {
 	case <-ctx.Done():
