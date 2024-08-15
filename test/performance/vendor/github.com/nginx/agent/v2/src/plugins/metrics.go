@@ -44,7 +44,7 @@ type Metrics struct {
 }
 
 func NewMetrics(config *config.Config, env core.Environment, binary core.NginxBinary, processes []*core.Process) *Metrics {
-	collectorConfigsMap := createCollectorConfigsMap(config, env, binary, processes)
+	collectorConfigsMap := createCollectorConfigsMap(config, binary, processes)
 	return &Metrics{
 		collectorsUpdate:         atomic.NewBool(false),
 		ticker:                   time.NewTicker(config.AgentMetrics.CollectionInterval),
@@ -81,7 +81,7 @@ func (m *Metrics) Process(msg *core.Message) {
 	case msg.Exact(core.AgentConfigChanged), msg.Exact(core.NginxConfigApplySucceeded):
 		// If the agent config on disk changed or the NGINX statusAPI was updated
 		// Then update Metrics with relevant config info
-		collectorConfigsMap := createCollectorConfigsMap(m.conf, m.env, m.binary, m.getNginxProccessInfo())
+		collectorConfigsMap := createCollectorConfigsMap(m.conf, m.binary, m.getNginxProccessInfo())
 		m.collectorConfigsMapMutex.Lock()
 		m.collectorConfigsMap = collectorConfigsMap
 		m.collectorConfigsMapMutex.Unlock()
@@ -102,7 +102,7 @@ func (m *Metrics) Process(msg *core.Message) {
 
 	case msg.Exact(core.NginxDetailProcUpdate):
 		m.syncProcessInfo(msg.Data().([]*core.Process))
-		collectorConfigsMap := createCollectorConfigsMap(m.conf, m.env, m.binary, m.getNginxProccessInfo())
+		collectorConfigsMap := createCollectorConfigsMap(m.conf, m.binary, m.getNginxProccessInfo())
 		for key, collectorConfig := range collectorConfigsMap {
 			if _, ok := m.collectorConfigsMap[key]; !ok {
 				log.Debugf("Adding new nginx collector for nginx id: %s", collectorConfig.NginxId)
@@ -301,7 +301,7 @@ func (m *Metrics) syncAgentConfigChange() {
 	m.conf = conf
 }
 
-func createCollectorConfigsMap(config *config.Config, env core.Environment, binary core.NginxBinary, processes []*core.Process) map[string]*metrics.NginxCollectorConfig {
+func createCollectorConfigsMap(config *config.Config, binary core.NginxBinary, processes []*core.Process) map[string]*metrics.NginxCollectorConfig {
 	collectorConfigsMap := make(map[string]*metrics.NginxCollectorConfig)
 
 	for _, p := range processes {

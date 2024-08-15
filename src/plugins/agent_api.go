@@ -204,7 +204,7 @@ func (a *AgentAPI) Process(message *core.Message) {
 		default:
 			log.Warnf("Unknown Command_NginxConfigResponse type: %T(%v)", message.Data(), message.Data())
 		}
-	case core.MetricReport:
+	case core.CommMetrics:
 		switch response := message.Data().(type) {
 		case *metrics.MetricsReportBundle:
 			a.exporter.SetLatestMetricReport(response)
@@ -240,7 +240,6 @@ func (a *AgentAPI) Info() *core.Info {
 func (a *AgentAPI) Subscriptions() []string {
 	return []string{
 		core.AgentAPIConfigApplyResponse,
-		core.MetricReport,
 		core.NginxConfigValidationPending,
 		core.NginxConfigApplyFailed,
 		core.NginxConfigApplySucceeded,
@@ -248,6 +247,7 @@ func (a *AgentAPI) Subscriptions() []string {
 		core.AgentConnected,
 		core.CommandSent,
 		core.MetricReportSent,
+		core.CommMetrics,
 	}
 }
 
