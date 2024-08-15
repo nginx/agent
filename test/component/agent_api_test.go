@@ -148,7 +148,7 @@ func TestMetrics(t *testing.T) {
 
 	agentAPI := plugins.NewAgentAPI(conf, mockEnvironment, mockNginxBinary, []*core.Process{})
 	agentAPI.Init(core.NewMockMessagePipe(context.TODO()))
-	agentAPI.Process(core.NewMessage(core.MetricReport, &metrics.MetricsReportBundle{Data: []*proto.MetricsReport{
+	agentAPI.Process(core.NewMessage(core.CommMetrics, &metrics.MetricsReportBundle{Data: []*proto.MetricsReport{
 		{
 			Type: proto.MetricsReport_SYSTEM,
 			Meta: &proto.Metadata{
