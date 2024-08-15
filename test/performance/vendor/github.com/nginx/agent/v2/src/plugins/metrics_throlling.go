@@ -93,7 +93,6 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 			switch bundle := msg.Data().(type) {
 			case *metrics.MetricsReportBundle:
 				if len(bundle.Data) > 0 {
-					// r.mu.Lock()
 					for _, report := range bundle.Data {
 						if len(report.Data) > 0 {
 							if _, ok := r.metricsCollections[report.Type]; !ok {
@@ -107,7 +106,6 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 							log.Debugf("MetricsThrottle: Metrics collection saved [Type: %d]", report.Type)
 						}
 					}
-					// r.mu.Unlock()
 					r.reportsReady.Store(true)
 				}
 			}
