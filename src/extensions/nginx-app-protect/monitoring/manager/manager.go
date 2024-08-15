@@ -149,17 +149,11 @@ func (s *Manager) initProcessor(commonDims *metrics.CommonDim) error {
 func (s *Manager) Run(ctx context.Context) {
 	s.logger.Infof("Starting to run %s", componentName)
 
-	chtx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
 	waitGroup := &sync.WaitGroup{}
 	waitGroup.Add(2)
 
-	go s.collector.Collect(chtx, waitGroup, s.collectChan)
-	go s.processor.Process(chtx, waitGroup, s.collectChan, s.processorChan)
-
-	<-ctx.Done()
-	s.logger.Infof("Received Context cancellation, %s is wrapping up...", componentName)
+	go s.collector.Collect(ctx, waitGroup, s.collectChan)
+	go s.processor.Process(ctx, waitGroup, s.collectChan, s.processorChan)
 
 	waitGroup.Wait()
 

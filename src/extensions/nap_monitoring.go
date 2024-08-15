@@ -9,6 +9,7 @@ package extensions
 
 import (
 	"context"
+	"github.com/nginx/agent/v2/src/core/metrics"
 	"time"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
@@ -16,7 +17,6 @@ import (
 	models "github.com/nginx/agent/sdk/v2/proto/events"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
-	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/nginx/agent/v2/src/core/payloads"
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring/manager"
 
@@ -41,16 +41,18 @@ var nginxAppProtectMonitoringDefault = &manager.NginxAppProtectMonitoringConfig{
 }
 
 type NAPMonitoring struct {
-	monitorMgr      *manager.Manager
-	messagePipeline core.MessagePipeInterface
-	reportInterval  time.Duration
-	reportCount     int
-	ctx             context.Context
-	ctxCancel       context.CancelFunc
+	monitorMgr                      *manager.Manager
+	messagePipeline                 core.MessagePipeInterface
+	reportInterval                  time.Duration
+	reportCount                     int
+	ctx                             context.Context
+	ctxCancel                       context.CancelFunc
+	nginxAppProtectMonitoringConfig *manager.NginxAppProtectMonitoringConfig
+	env                             core.Environment
+	cfg                             *config.Config
 }
 
 func NewNAPMonitoring(env core.Environment, cfg *config.Config, nginxAppProtectMonitoringConf interface{}) (*NAPMonitoring, error) {
-	commonDims := metrics.NewCommonDim(env.NewHostInfo("agentVersion", &cfg.Tags, cfg.ConfigDirs, false), cfg, "")
 	nginxAppProtectMonitoringConfig := nginxAppProtectMonitoringDefault
 
 	if nginxAppProtectMonitoringConf != nil {
@@ -60,11 +62,6 @@ func NewNAPMonitoring(env core.Environment, cfg *config.Config, nginxAppProtectM
 			log.Errorf("Error decoding configuration for extension plugin %s, %v", napMonitoringPluginName, err)
 			return nil, err
 		}
-	}
-
-	m, err := manager.NewManager(nginxAppProtectMonitoringConfig, commonDims)
-	if err != nil {
-		return nil, err
 	}
 
 	if !(nginxAppProtectMonitoringConfig.ReportInterval > minReportIntervalDelimiter) {
@@ -83,9 +80,11 @@ func NewNAPMonitoring(env core.Environment, cfg *config.Config, nginxAppProtectM
 	}
 
 	return &NAPMonitoring{
-		monitorMgr:     m,
-		reportInterval: nginxAppProtectMonitoringConfig.ReportInterval,
-		reportCount:    nginxAppProtectMonitoringConfig.ReportCount,
+		cfg:                             cfg,
+		nginxAppProtectMonitoringConfig: nginxAppProtectMonitoringConfig,
+		env:                             env,
+		reportInterval:                  nginxAppProtectMonitoringConfig.ReportInterval,
+		reportCount:                     nginxAppProtectMonitoringConfig.ReportCount,
 	}, nil
 }
 
@@ -94,6 +93,15 @@ func (n *NAPMonitoring) Info() *core.Info {
 }
 
 func (n *NAPMonitoring) Init(pipeline core.MessagePipeInterface) {
+	commonDims := metrics.NewCommonDim(n.env.NewHostInfo("agentVersion", &n.cfg.Tags, n.cfg.ConfigDirs, false), n.cfg, "")
+
+	m, err := manager.NewManager(n.nginxAppProtectMonitoringConfig, commonDims)
+	if err != nil {
+		log.Errorf("Could not initialize nginx-app-protect-monitoring: %v", err)
+		return
+	}
+
+	n.monitorMgr = m
 	log.Infof("%s initializing", napMonitoringPluginName)
 	n.messagePipeline = pipeline
 	ctx, cancel := context.WithCancel(n.messagePipeline.Context())

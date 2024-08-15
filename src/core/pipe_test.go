@@ -57,7 +57,7 @@ func TestMessagePipe_Register(t *testing.T) {
 	plugin.AssertExpectations(t)
 }
 
-func TestMessagePipe_Run(t *testing.T) {
+func TestMessagePipe(t *testing.T) {
 	messages := []*Message{
 		NewMessage("test.message", 1),
 		NewMessage("test.message", 2),
@@ -67,6 +67,7 @@ func TestMessagePipe_Run(t *testing.T) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
+	pipelineDone := make(chan bool)
 
 	pipe := NewMessagePipe(ctx, 10)
 
@@ -76,17 +77,20 @@ func TestMessagePipe_Run(t *testing.T) {
 	plugin.On("Close").Times(1)
 
 	err := pipe.Register(10, []Plugin{plugin}, nil)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
-	go pipe.Run()
+	go func() {
+		pipe.Run()
+		pipelineDone <- true
+	}()
 
 	pipe.Process(messages...)
 
 	time.Sleep(100 * time.Millisecond)
 
 	cancel()
+	<-pipelineDone
 
-	pipe.Close()
 	plugin.AssertExpectations(t)
 }
 
@@ -110,6 +114,23 @@ func TestMessagePipe_Process(t *testing.T) {
 
 	cancel()
 	pipe.Close()
+}
+
+func TestPipe_DeRegister(t *testing.T) {
+	plugin := new(testPlugin)
+	plugin.On("Init").Times(1)
+	plugin.On("Close").Times(1)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	messagePipe := SetupMockMessagePipe(t, ctx, []Plugin{plugin}, []ExtensionPlugin{})
+
+	err := messagePipe.DeRegister([]string{*plugin.Info().name})
+	require.NoError(t, err)
+
+	assert.Equal(t, 0, len(messagePipe.GetPlugins()))
+
 }
 
 // func TestPipe_DeRegister(t *testing.T) {

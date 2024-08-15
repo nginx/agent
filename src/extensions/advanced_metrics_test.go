@@ -9,16 +9,14 @@ package extensions
 
 import (
 	"context"
-	"testing"
-
+	"github.com/gogo/protobuf/types"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/publisher"
 	tutils "github.com/nginx/agent/v2/test/utils"
-
-	"github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestAppCentricMetric_toMetricReport(t *testing.T) {
@@ -202,10 +200,8 @@ func TestAppCentricMetricClose(t *testing.T) {
 	defer cancelCTX()
 
 	messagePipe := core.SetupMockMessagePipe(t, ctx, []core.Plugin{}, []core.ExtensionPlugin{pluginUnderTest})
-
 	pluginUnderTest.Init(messagePipe)
 	pluginUnderTest.Close()
-
 	env.AssertExpectations(t)
 }
 
