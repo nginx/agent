@@ -63,12 +63,9 @@ func TestContainerMemorySource(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			actual := make(chan *metrics.StatsEntityWrapper, 1)
 			ctx := context.TODO()
-			// wg := &sync.WaitGroup{}
-			// wg.Add(1)
 
 			containerMemorySource := NewContainerMemorySource("container", test.basePath)
-			go containerMemorySource.Collect(ctx, nil, actual)
-			// wg.Wait()
+			go containerMemorySource.Collect(ctx, actual)
 
 			select {
 			case result := <-actual:

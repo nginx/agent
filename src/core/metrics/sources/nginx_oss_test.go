@@ -111,7 +111,7 @@ Reading: 0 Writing: 1 Waiting: 0
 			ctx := context.TODO()
 			// wg := &sync.WaitGroup{}
 			// wg.Add(1)
-			go c.Collect(ctx, nil, test.m)
+			go c.Collect(ctx, test.m)
 			// wg.Wait()
 			statEntity := <-test.m
 			assert.Len(tt, statEntity.Data.Simplemetrics, len(test.expectedMetrics))

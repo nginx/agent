@@ -80,7 +80,7 @@ func TestNginxWorkerCollector(t *testing.T) {
 	// wg := sync.WaitGroup{}
 	// wg.Add(1)
 	m := make(chan *metrics.StatsEntityWrapper)
-	go n.Collect(ctx, nil, m)
+	go n.Collect(ctx, m)
 
 	time.Sleep(100 * time.Millisecond)
 	mockClient.AssertNumberOfCalls(t, "GetWorkerStats", 2)
@@ -123,7 +123,7 @@ func TestNginxWorkerCollector(t *testing.T) {
 
 	// wg.Add(1)
 
-	go n.Collect(ctx, nil, m)
+	go n.Collect(ctx, m)
 
 	time.Sleep(100 * time.Millisecond)
 	mockClient.AssertNumberOfCalls(t, "GetWorkerStats", 3)

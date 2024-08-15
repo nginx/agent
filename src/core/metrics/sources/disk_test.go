@@ -34,11 +34,8 @@ func TestDiskCollect(t *testing.T) {
 	disk := NewDiskSource(namespace, env)
 
 	ctx := context.TODO()
-	// wg := &sync.WaitGroup{}
-	// wg.Add(1)
 	channel := make(chan *metrics.StatsEntityWrapper, 100)
-	disk.Collect(ctx, nil, channel)
-	// wg.Wait()
+	disk.Collect(ctx, channel)
 
 	actual := <-channel
 

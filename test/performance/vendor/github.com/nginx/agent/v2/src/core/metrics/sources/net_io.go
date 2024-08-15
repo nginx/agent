@@ -46,7 +46,7 @@ func NewNetIOSource(namespace string, env core.Environment) *NetIO {
 	}
 }
 
-func (nio *NetIO) Collect(ctx context.Context, _ *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
+func (nio *NetIO) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	// defer wg.Done()
 	nio.init.Do(func() {
 		ifs, err := nio.newNetInterfaces(ctx)

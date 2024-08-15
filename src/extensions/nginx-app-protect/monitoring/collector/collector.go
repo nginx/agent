@@ -9,7 +9,6 @@ package collector
 
 import (
 	"context"
-	"sync"
 
 	"github.com/nginx/agent/v2/src/extensions/nginx-app-protect/monitoring"
 )
@@ -18,5 +17,5 @@ import (
 // collect Raw Log data from WAF Instances.
 type Collector interface {
 	// Collect starts collecting on collect chan until ctx.Done() chan gets a signal
-	Collect(ctx context.Context, _ *sync.WaitGroup, collect chan<- *monitoring.RawLog)
+	Collect(ctx context.Context, collect chan<- *monitoring.RawLog)
 }

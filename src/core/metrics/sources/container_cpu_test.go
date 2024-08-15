@@ -121,7 +121,7 @@ func TestContainerCPUSource(t *testing.T) {
 			ctx := context.TODO()
 
 			containerCPUSource := NewContainerCPUSource("container", test.basePath)
-			go containerCPUSource.Collect(ctx, nil, actual)
+			go containerCPUSource.Collect(ctx, actual)
 
 			select {
 			case result := <-actual:

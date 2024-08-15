@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"math/big"
 	"os"
-	"sync"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
@@ -49,7 +48,7 @@ func NewSwapSource(namespace string, env core.Environment) *Swap {
 	return &Swap{NewMetricSourceLogger(), &namedMetric{namespace, "swap"}, statFunc}
 }
 
-func (c *Swap) Collect(ctx context.Context, _ *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
+func (c *Swap) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	// defer wg.Done()
 	swapStats, err := c.statFunc()
 	if err != nil {

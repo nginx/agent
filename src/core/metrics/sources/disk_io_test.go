@@ -38,11 +38,8 @@ func TestDiskIOCollect(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	// wg := &sync.WaitGroup{}
-	// wg.Add(1)
 	channel := make(chan *metrics.StatsEntityWrapper, 100)
-	diskio.Collect(ctx, nil, channel)
-	// wg.Wait()
+	diskio.Collect(ctx, channel)
 
 	actual := <-channel
 

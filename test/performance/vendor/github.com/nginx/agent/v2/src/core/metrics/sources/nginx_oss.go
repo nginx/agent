@@ -34,7 +34,7 @@ func NewNginxOSS(baseDimensions *metrics.CommonDim, namespace, stubStatus string
 	return &NginxOSS{baseDimensions: baseDimensions, stubStatus: stubStatus, namedMetric: &namedMetric{namespace: namespace}, logger: NewMetricSourceLogger()}
 }
 
-func (c *NginxOSS) Collect(ctx context.Context, _ *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
+func (c *NginxOSS) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	// defer wg.Done()
 	var err error
 	c.init.Do(func() {

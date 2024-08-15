@@ -35,11 +35,8 @@ func TestLoadCollect(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	// wg := &sync.WaitGroup{}
-	// wg.Add(1)
 	channel := make(chan *metrics.StatsEntityWrapper, 100)
-	loadSource.Collect(ctx, nil, channel)
-	// wg.Wait()
+	loadSource.Collect(ctx, channel)
 
 	actual := <-channel
 

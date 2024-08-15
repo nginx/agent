@@ -9,7 +9,6 @@ package collectors
 
 import (
 	"context"
-	"sync"
 
 	log "github.com/sirupsen/logrus"
 
@@ -46,17 +45,12 @@ func NewContainerCollector(env core.Environment, conf *config.Config) *Container
 }
 
 func (c *ContainerCollector) collectMetrics(ctx context.Context) {
-	// using a separate WaitGroup, since we need to wait for our own buffer to be filled
-	// this ensures the collection is done before our own for/select loop to pull things off the buf
-	// wg := &sync.WaitGroup{}
 	for _, containerSource := range c.sources {
-		// wg.Add(1)
-		go containerSource.Collect(ctx, nil, c.buf)
+		go containerSource.Collect(ctx, c.buf)
 	}
-	// wg.Wait()
 }
 
-func (c *ContainerCollector) Collect(ctx context.Context, _ *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
+func (c *ContainerCollector) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	// defer wg.Done()
 	c.collectMetrics(ctx)
 

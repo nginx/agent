@@ -11,7 +11,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"sync"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
@@ -38,7 +37,7 @@ func NewVirtualMemorySource(namespace string, env core.Environment) *VirtualMemo
 	return &VirtualMemory{NewMetricSourceLogger(), &namedMetric{namespace, MemoryGroup}, statFunc}
 }
 
-func (c *VirtualMemory) Collect(ctx context.Context, _ *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
+func (c *VirtualMemory) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	// defer wg.Done()
 	memstats, err := c.statFunc(ctx)
 	if err != nil {

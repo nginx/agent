@@ -103,11 +103,8 @@ func TestCPUTimesCollect_VM(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	// wg := &sync.WaitGroup{}
-	// wg.Add(1)
 	channel := make(chan *metrics.StatsEntityWrapper, 1)
-	cpuTimes.Collect(ctx, nil, channel)
-	// wg.Wait()
+	cpuTimes.Collect(ctx, channel)
 
 	actual := <-channel
 
@@ -146,11 +143,9 @@ func TestCPUTimesCollect_VM(t *testing.T) {
 	}
 
 	ctx = context.TODO()
-	// wg = &sync.WaitGroup{}
-	// wg.Add(1)
+
 	channel = make(chan *metrics.StatsEntityWrapper, 1)
-	cpuTimes.Collect(ctx, nil, channel)
-	// wg.Wait()
+	cpuTimes.Collect(ctx, channel)
 
 	actual = <-channel
 
@@ -189,11 +184,10 @@ func TestCPUTimesCollect_Container(t *testing.T) {
 	cgroup.CpuStatsPath = localDirectory + "/testdata/proc/stat"
 
 	ctx := context.TODO()
-	// wg := &sync.WaitGroup{}
-	// wg.Add(1)
+
 	channel := make(chan *metrics.StatsEntityWrapper, 1)
-	cpuTimes.Collect(ctx, nil, channel)
-	// wg.Wait()
+	cpuTimes.Collect(ctx, channel)
+
 	actual := <-channel
 
 	actualMetricNames := []string{}

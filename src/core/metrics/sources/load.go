@@ -10,7 +10,6 @@ package sources
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/metrics"
@@ -28,7 +27,7 @@ func NewLoadSource(namespace string) *Load {
 	return &Load{logger: NewMetricSourceLogger(), namedMetric: &namedMetric{namespace, "load"}, avgStatsFunc: load.Avg}
 }
 
-func (c *Load) Collect(ctx context.Context, _ *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
+func (c *Load) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	// defer wg.Done()
 	loadStats, err := c.avgStatsFunc()
 	if err != nil {

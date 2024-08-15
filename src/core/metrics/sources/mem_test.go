@@ -59,7 +59,7 @@ func TestVirtualMemoryCollect(t *testing.T) {
 	// wg := &sync.WaitGroup{}
 	// wg.Add(1)
 	channel := make(chan *metrics.StatsEntityWrapper, 1)
-	go virtualMemorySource.Collect(ctx, nil, channel)
+	go virtualMemorySource.Collect(ctx, channel)
 	// wg.Wait()
 
 	actual := <-channel

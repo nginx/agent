@@ -237,14 +237,10 @@ func (m *Metrics) collectStats() (stats chan *metrics.StatsEntityWrapper) {
 	// maybe we can fine tune the lock later, but the collection has been very quick so far.
 	m.collectorsMutex.Lock()
 	defer m.collectorsMutex.Unlock()
-	// wg := &sync.WaitGroup{}
 	start := time.Now()
 	for _, s := range m.collectors {
-		// wg.Add(1)
-		go s.Collect(ctx, nil, m.buf)
+		go s.Collect(ctx, m.buf)
 	}
-	// wait until all the collection go routines are done, which either context timeout or exit
-	// wg.Wait()
 
 	log.Debugf("collected %d entries in %s (ctx error=%t)", len(stats), time.Since(start), ctx.Err() != nil)
 	return

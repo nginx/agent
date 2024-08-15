@@ -13,7 +13,6 @@ import (
 	"path"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/metrics"
@@ -40,9 +39,8 @@ func NewContainerMemorySource(namespace string, basePath string) *ContainerMemor
 	return &ContainerMemory{basePath, cgroup.IsCgroupV2(basePath), NewMetricSourceLogger(), &namedMetric{namespace, MemoryGroup}}
 }
 
-func (c *ContainerMemory) Collect(ctx context.Context, _ *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
+func (c *ContainerMemory) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	log.Trace("Collecting container memory metrics")
-	// defer wg.Done()
 
 	var containerStats map[string]float64
 

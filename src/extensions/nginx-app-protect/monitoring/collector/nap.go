@@ -10,7 +10,6 @@ package collector
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/sirupsen/logrus"
 	"gopkg.in/mcuadros/go-syslog.v2"
@@ -84,7 +83,7 @@ func newSyslogServer(logger *logrus.Entry, ip string, port int) (*syslogServer, 
 }
 
 // Collect starts collecting on collect chan until done chan gets a signal.
-func (nap *NAPCollector) Collect(ctx context.Context, _ *sync.WaitGroup, collect chan<- *monitoring.RawLog) {
+func (nap *NAPCollector) Collect(ctx context.Context, collect chan<- *monitoring.RawLog) {
 	// defer wg.Done()
 
 	nap.logger.Infof("Starting collection for %s", monitoring.NAP)

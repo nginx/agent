@@ -11,7 +11,6 @@ import (
 	"context"
 	"math"
 	"sort"
-	"sync"
 	"time"
 
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -22,16 +21,16 @@ import (
 )
 
 type Collector interface {
-	Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *StatsEntityWrapper)
+	Collect(ctx context.Context, m chan<- *StatsEntityWrapper)
 	UpdateConfig(config *config.Config)
 }
 
 type Source interface {
-	Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *StatsEntityWrapper)
+	Collect(ctx context.Context, m chan<- *StatsEntityWrapper)
 }
 
 type NginxSource interface {
-	Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *StatsEntityWrapper)
+	Collect(ctx context.Context, m chan<- *StatsEntityWrapper)
 	Update(dimensions *CommonDim, collectorConf *NginxCollectorConfig)
 	Stop()
 }

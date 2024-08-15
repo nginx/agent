@@ -60,7 +60,7 @@ func TestNginxProcessCollector_Collect_Process(t *testing.T) {
 	// wg := sync.WaitGroup{}
 	// wg.Add(1)
 	m := make(chan *metrics.StatsEntityWrapper)
-	go n.Collect(ctx, nil, m)
+	go n.Collect(ctx, m)
 
 	time.Sleep(100 * time.Millisecond)
 	mockBinary.AssertNumberOfCalls(t, "GetNginxDetailsByID", 1)
@@ -104,7 +104,7 @@ func TestNginxProcessCollector_Collect_NoProcess(t *testing.T) {
 	// wg := sync.WaitGroup{}
 	// wg.Add(1)
 	m := make(chan *metrics.StatsEntityWrapper)
-	go n.Collect(ctx, nil, m)
+	go n.Collect(ctx, m)
 
 	time.Sleep(100 * time.Millisecond)
 	mockBinary.AssertNumberOfCalls(t, "GetNginxDetailsByID", 1)
@@ -151,7 +151,7 @@ func TestNginxProcessCollector_Collect_NotPlus(t *testing.T) {
 	// wg := sync.WaitGroup{}
 	// wg.Add(1)
 	m := make(chan *metrics.StatsEntityWrapper)
-	go n.Collect(ctx, nil, m)
+	go n.Collect(ctx, m)
 
 	time.Sleep(100 * time.Millisecond)
 	mockBinary.AssertNumberOfCalls(t, "GetNginxDetailsByID", 1)

@@ -9,7 +9,6 @@ package collectors
 
 import (
 	"context"
-	"sync"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/v2/src/core"
@@ -73,14 +72,12 @@ func buildSources(dimensions *metrics.CommonDim, binary core.NginxBinary, collec
 }
 
 func (c *NginxCollector) collectMetrics(ctx context.Context) {
-	// using a separate WaitGroup, since we need to wait for our own buffer to be filled
-	// this ensures the collection is done before our own for/select loop to pull things off the buf
 	for _, nginxSource := range c.sources {
-		go nginxSource.Collect(ctx, nil, c.buf)
+		go nginxSource.Collect(ctx, c.buf)
 	}
 }
 
-func (c *NginxCollector) Collect(ctx context.Context, _ *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
+func (c *NginxCollector) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	c.collectMetrics(ctx)
 	for {
 		select {
