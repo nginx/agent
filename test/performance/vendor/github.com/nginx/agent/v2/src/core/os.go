@@ -9,10 +9,11 @@ package core
 
 import (
 	"context"
-	"github.com/nginx/agent/sdk/v2/backoff"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/nginx/agent/sdk/v2/backoff"
 )
 
 var chmodMutex sync.Mutex
@@ -50,7 +51,6 @@ func FilesExists(filePaths []string) (bool, error) {
 // EnableWritePermissionForSocket attempts to set the write permissions for a socket file located at the specified path.
 // The function continuously attempts the operation until either it succeeds or the timeout period elapses.
 func EnableWritePermissionForSocket(ctx context.Context, path string) error {
-
 	err := backoff.WaitUntil(ctx, backoff.BackoffSettings{
 		InitialInterval: time.Microsecond * 100,
 		MaxInterval:     time.Microsecond * 100,

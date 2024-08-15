@@ -9,8 +9,9 @@ package extensions
 
 import (
 	"context"
-	"github.com/nginx/agent/v2/src/core/metrics"
 	"time"
+
+	"github.com/nginx/agent/v2/src/core/metrics"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"

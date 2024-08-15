@@ -9,6 +9,8 @@ package extensions
 
 import (
 	"context"
+	"testing"
+
 	"github.com/gogo/protobuf/types"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
@@ -16,7 +18,6 @@ import (
 	"github.com/nginx/agent/v2/src/extensions/advanced-metrics/pkg/publisher"
 	tutils "github.com/nginx/agent/v2/test/utils"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestAppCentricMetric_toMetricReport(t *testing.T) {

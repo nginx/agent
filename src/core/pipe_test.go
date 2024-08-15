@@ -130,7 +130,6 @@ func TestPipe_DeRegister(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, 0, len(messagePipe.GetPlugins()))
-
 }
 
 // func TestPipe_DeRegister(t *testing.T) {
