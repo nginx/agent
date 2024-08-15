@@ -33,12 +33,6 @@ var (
 func main() {
 	config.InitFlags(version, commit)
 
-	defer func() {
-		if err := recover(); err != nil {
-			log.Printf("Recovered: %v", err)
-		}
-	}()
-
 	config.RegisterRunner(func(cmd *cobra.Command, _ []string) {
 		config.InitConfigurationFiles()
 
