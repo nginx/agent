@@ -8,6 +8,7 @@
 package plugins
 
 import (
+	"context"
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/agent/events"
 	"github.com/nginx/agent/sdk/v2/proto"
