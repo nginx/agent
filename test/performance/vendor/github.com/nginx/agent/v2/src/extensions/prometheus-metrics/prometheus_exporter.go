@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/nginx/agent/sdk/v2/proto"
+	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/metrics"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -21,10 +22,14 @@ func (e *Exporter) SetLatestMetricReport(latest *metrics.MetricsReportBundle) {
 	e.latestMetricReports = latest
 }
 
-func (e *Exporter) GetLatestMetricReports() (reports []*proto.MetricsReport) {
-	for _, report := range e.latestMetricReports.Data {
-		reports = append(reports, report)
+func (e *Exporter) SetLatestMetricReports(data []core.Payload) {
+	for _, report := range data {
+		e.latestMetricReports.Data = append(e.latestMetricReports.Data, report.(*proto.MetricsReport))
 	}
+}
+
+func (e *Exporter) GetLatestMetricReports() (reports []*proto.MetricsReport) {
+	reports = append(reports, e.latestMetricReports.Data...)
 	return
 }
 

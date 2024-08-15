@@ -208,6 +208,8 @@ func (a *AgentAPI) Process(message *core.Message) {
 		switch response := message.Data().(type) {
 		case *metrics.MetricsReportBundle:
 			a.exporter.SetLatestMetricReport(response)
+		case []core.Payload:
+			a.exporter.SetLatestMetricReports(response)
 		default:
 			log.Warnf("Unknown MetricReportBundle type: %T(%v)", message.Data(), message.Data())
 		}
