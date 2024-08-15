@@ -133,7 +133,7 @@ func (f *Features) Process(msg *core.Message) {
 	}
 }
 
-func (f *Features) enableMetricsFeature(data string) []core.Plugin {
+func (f *Features) enableMetricsFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) {
 
 		conf, err := config.GetConfig(f.conf.ClientID)
@@ -151,7 +151,7 @@ func (f *Features) enableMetricsFeature(data string) []core.Plugin {
 	return []core.Plugin{}
 }
 
-func (f *Features) enableMetricsCollectionFeature(data string) []core.Plugin {
+func (f *Features) enableMetricsCollectionFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) &&
 		!f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsCollection) {
 
@@ -168,7 +168,7 @@ func (f *Features) enableMetricsCollectionFeature(data string) []core.Plugin {
 	return []core.Plugin{}
 }
 
-func (f *Features) enableMetricsThrottleFeature(data string) []core.Plugin {
+func (f *Features) enableMetricsThrottleFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) &&
 		!f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsThrottle) {
 
@@ -185,7 +185,7 @@ func (f *Features) enableMetricsThrottleFeature(data string) []core.Plugin {
 	return []core.Plugin{}
 }
 
-func (f *Features) enableMetricsSenderFeature(data string) []core.Plugin {
+func (f *Features) enableMetricsSenderFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) &&
 		!f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsSender) {
 
@@ -202,7 +202,7 @@ func (f *Features) enableMetricsSenderFeature(data string) []core.Plugin {
 	return []core.Plugin{}
 }
 
-func (f *Features) enableAgentAPIFeature(data string) []core.Plugin {
+func (f *Features) enableAgentAPIFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureAgentAPI) {
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
@@ -217,7 +217,7 @@ func (f *Features) enableAgentAPIFeature(data string) []core.Plugin {
 	return []core.Plugin{}
 }
 
-func (f *Features) enableRegistrationFeature(data string) []core.Plugin {
+func (f *Features) enableRegistrationFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureRegistration) {
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
@@ -232,7 +232,7 @@ func (f *Features) enableRegistrationFeature(data string) []core.Plugin {
 	return []core.Plugin{}
 }
 
-func (f *Features) enableDataPlaneStatusFeature(data string) []core.Plugin {
+func (f *Features) enableDataPlaneStatusFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureDataPlaneStatus) {
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
@@ -247,7 +247,7 @@ func (f *Features) enableDataPlaneStatusFeature(data string) []core.Plugin {
 	return []core.Plugin{}
 }
 
-func (f *Features) enableProcessWatcherFeature(data string) []core.Plugin {
+func (f *Features) enableProcessWatcherFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureProcessWatcher) {
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
@@ -262,7 +262,7 @@ func (f *Features) enableProcessWatcherFeature(data string) []core.Plugin {
 	return []core.Plugin{}
 }
 
-func (f *Features) enableActivityEventsFeature(data string) []core.Plugin {
+func (f *Features) enableActivityEventsFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureActivityEvents) {
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
@@ -277,7 +277,7 @@ func (f *Features) enableActivityEventsFeature(data string) []core.Plugin {
 	return []core.Plugin{}
 }
 
-func (f *Features) enableFileWatcherFeature(data string) []core.Plugin {
+func (f *Features) enableFileWatcherFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureFileWatcher) {
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
@@ -293,7 +293,7 @@ func (f *Features) enableFileWatcherFeature(data string) []core.Plugin {
 	return []core.Plugin{}
 }
 
-func (f *Features) enableNginxCountingFeature(data string) []core.Plugin {
+func (f *Features) enableNginxCountingFeature(_ string) []core.Plugin {
 	countingPlugins := []core.Plugin{}
 	if len(f.conf.Nginx.NginxCountingSocket) > 0 {
 		if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureNginxCounting) {

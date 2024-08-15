@@ -29,7 +29,6 @@ type MessagePipeInterface interface {
 	GetPlugins() []Plugin
 	GetExtensionPlugins() []ExtensionPlugin
 	IsPluginAlreadyRegistered(string) bool
-	Close()
 }
 
 type MessagePipe struct {
@@ -129,10 +128,6 @@ func (p *MessagePipe) DeRegister(pluginNames []string) error {
 	return nil
 }
 
-func (p *MessagePipe) Close() {
-	p.cleanup()
-}
-
 func getIndex(pluginName string, plugins []Plugin) int {
 	for index, plugin := range plugins {
 		if pluginName == plugin.Info().Name() {
@@ -146,7 +141,6 @@ func (p *MessagePipe) Process(messages ...*Message) {
 	for _, m := range messages {
 		select {
 		case <-p.ctx.Done():
-			p.cleanup()
 			return
 		case p.messageChannel <- m:
 		default:
@@ -190,16 +184,22 @@ func (p *MessagePipe) GetExtensionPlugins() []ExtensionPlugin {
 }
 
 func (p *MessagePipe) cleanup() {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 	for _, r := range p.plugins {
 		for _, subscription := range r.Subscriptions() {
-			p.bus.Close(subscription)
+			if p.bus != nil {
+				p.bus.Close(subscription)
+			}
 		}
 		r.Close()
 	}
 
 	for _, r := range p.extensionPlugins {
 		for _, subscription := range r.Subscriptions() {
-			p.bus.Close(subscription)
+			if p.bus != nil {
+				p.bus.Close(subscription)
+			}
 		}
 		r.Close()
 	}

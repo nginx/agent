@@ -383,7 +383,7 @@ func (h *NginxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 //
 //	200: []NginxDetails
 //	500
-func (h *NginxHandler) sendInstanceDetailsPayload(w http.ResponseWriter, r *http.Request) error {
+func (h *NginxHandler) sendInstanceDetailsPayload(w http.ResponseWriter, _ *http.Request) error {
 	nginxDetails := h.getNginxDetails()
 	w.WriteHeader(http.StatusOK)
 

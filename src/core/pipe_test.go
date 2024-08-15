@@ -41,22 +41,6 @@ func (p *testPlugin) Subscriptions() []string {
 	return []string{"test.message"}
 }
 
-func TestMessagePipe_Register(t *testing.T) {
-	plugin := new(testPlugin)
-	plugin.On("Close").Times(1)
-
-	ctx, cancel := context.WithCancel(context.Background())
-
-	messagePipe := NewMessagePipe(ctx, 100)
-	err := messagePipe.Register(10, []Plugin{plugin}, nil)
-
-	require.NoError(t, err)
-
-	cancel()
-	messagePipe.Close()
-	plugin.AssertExpectations(t)
-}
-
 func TestMessagePipe_Run(t *testing.T) {
 	messages := []*Message{
 		NewMessage("test.message", 1),
@@ -86,7 +70,8 @@ func TestMessagePipe_Run(t *testing.T) {
 
 	cancel()
 
-	pipe.Close()
+	time.Sleep(200 * time.Millisecond)
+
 	plugin.AssertExpectations(t)
 }
 
@@ -109,24 +94,29 @@ func TestMessagePipe_Process(t *testing.T) {
 	}
 
 	cancel()
-	pipe.Close()
+	time.Sleep(200 * time.Millisecond)
 }
 
 func TestPipe_IsPluginAlreadyRegistered(t *testing.T) {
 	plugin := new(testPlugin)
+	plugin.On("Init").Times(1)
 	plugin.On("Close").Times(1)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	messagePipe := NewMessagePipe(ctx, 100)
 	err := messagePipe.Register(10, []Plugin{plugin}, nil)
 
 	require.NoError(t, err)
 
+	go messagePipe.Run()
+
 	assert.True(t, messagePipe.IsPluginAlreadyRegistered(*plugin.Info().name))
 	assert.False(t, messagePipe.IsPluginAlreadyRegistered("metrics"))
 
-	messagePipe.Close()
+	cancel()
+
+	time.Sleep(200 * time.Millisecond)
+
 	plugin.AssertExpectations(t)
 }
