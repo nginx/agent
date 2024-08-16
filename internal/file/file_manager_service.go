@@ -290,15 +290,14 @@ func (fms *FileManagerService) UpdateMultipleFiles(
 	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Common.MaxElapsedTime)
 	defer backoffCancel()
 
+	if fms.fileServiceClient == nil {
+		return errors.New("file service client is not initialized")
+	}
+
+	if !fms.isConnected.Load() {
+		return errors.New("CreateConnection rpc has not being called yet")
+	}
 	sendUpdateFile := func() (*mpi.UpdateFileResponse, error) {
-		if fms.fileServiceClient == nil {
-			return nil, errors.New("file service client is not initialized")
-		}
-
-		if !fms.isConnected.Load() {
-			return nil, errors.New("CreateConnection rpc has not being called yet")
-		}
-
 		g := errgroup.Group{}
 
 		for _, fileToUpdate := range filesToUpdate {
@@ -345,15 +344,14 @@ func (fms *FileManagerService) UploadMultipleFiles(
 	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Common.MaxElapsedTime)
 	defer backoffCancel()
 
+	if fms.fileServiceClient == nil {
+		errors.New("file service client is not initialized")
+	}
+
+	if !fms.isConnected.Load() {
+		errors.New("CreateConnection rpc has not being called yet")
+	}
 	sendUpdateFile := func() (*mpi.UpdateFileResponse, error) {
-		if fms.fileServiceClient == nil {
-			return nil, errors.New("file service client is not initialized")
-		}
-
-		if !fms.isConnected.Load() {
-			return nil, errors.New("CreateConnection rpc has not being called yet")
-		}
-
 		client, uploadFileError := fms.fileServiceClient.UploadFile(ctx)
 		if uploadFileError != nil {
 			return nil, uploadFileError
