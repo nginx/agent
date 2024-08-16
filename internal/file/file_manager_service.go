@@ -12,7 +12,6 @@ import (
 	"io"
 	"log/slog"
 	"os"
-	"sync"
 	"sync/atomic"
 
 	"github.com/cenkalti/backoff/v4"
@@ -300,11 +299,10 @@ func (fms *FileManagerService) UpdateMultipleFiles(
 			return nil, errors.New("CreateConnection rpc has not being called yet")
 		}
 
-		var wg sync.WaitGroup
+		g := errgroup.Group{}
 
 		for _, fileToUpdate := range filesToUpdate {
-			wg.Add(1)
-			go func() {
+			g.Go(func() error {
 				slog.ErrorContext(ctx, "Updating file", "instance_id", instanceID, "file_name", fileToUpdate.GetFileMeta().GetName())
 				contents, _ := os.ReadFile(fileToUpdate.GetFileMeta().GetName())
 
@@ -315,20 +313,17 @@ func (fms *FileManagerService) UpdateMultipleFiles(
 					},
 				}
 
-				defer wg.Done()
 				_, updateError := fms.fileServiceClient.UpdateFile(ctx, request)
 
 				validatedError := grpc.ValidateGrpcError(updateError)
-
 				if validatedError != nil {
 					slog.ErrorContext(ctx, "Failed to send update file", "error", validatedError)
 				}
-			}()
+				return validatedError
+			})
 		}
 
-		wg.Wait()
-
-		return nil, nil
+		return nil, g.Wait()
 	}
 
 	response, err := backoff.RetryWithData(sendUpdateFile, backoffHelpers.Context(backOffCtx, fms.agentConfig.Common))
