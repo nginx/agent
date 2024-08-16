@@ -302,7 +302,6 @@ func (fms *FileManagerService) UpdateMultipleFiles(
 
 		for _, fileToUpdate := range filesToUpdate {
 			g.Go(func() error {
-				slog.ErrorContext(ctx, "Updating file", "instance_id", instanceID, "file_name", fileToUpdate.GetFileMeta().GetName())
 				contents, _ := os.ReadFile(fileToUpdate.GetFileMeta().GetName())
 
 				request := &mpi.UpdateFileRequest{
@@ -351,62 +350,56 @@ func (fms *FileManagerService) UploadMultipleFiles(
 	if !fms.isConnected.Load() {
 		errors.New("CreateConnection rpc has not being called yet")
 	}
+
 	sendUpdateFile := func() (*mpi.UpdateFileResponse, error) {
 		client, uploadFileError := fms.fileServiceClient.UploadFile(ctx)
 		if uploadFileError != nil {
 			return nil, uploadFileError
 		}
 
-		g := errgroup.Group{}
-
 		for _, fileToUpdate := range filesToUpdate {
 			fileToUpdate := fileToUpdate
 			filename := fileToUpdate.GetFileMeta().GetName()
 
-			g.Go(func() error {
-				if chunksize > 0 {
-					fd, _ := os.Open(filename)
-					defer fd.Close()
-					st, _ := fd.Stat()
-					var chunk []byte
-					if chunksize > int(st.Size()) {
-						chunk = make([]byte, st.Size())
-					} else {
-						chunk = make([]byte, chunksize)
-					}
-
-					for {
-						if _, err := fd.Read(chunk); err == io.EOF {
-							break
-						}
-						request := &mpi.UpdateFileRequest{
-							File: fileToUpdate,
-							Contents: &mpi.FileContents{
-								Contents: chunk,
-							},
-						}
-
-						if err := client.Send(request); err != nil {
-							return err
-						}
-					}
+			if chunksize == 0 {
+				contents, _ := os.ReadFile(filename)
+				request := &mpi.UpdateFileRequest{
+					File: fileToUpdate,
+					Contents: &mpi.FileContents{
+						Contents: contents,
+					},
+				}
+				if err := client.Send(request); err != nil {
+					return nil, err
+				}
+			} else {
+				fd, _ := os.Open(filename)
+				defer fd.Close()
+				st, _ := fd.Stat()
+				var chunk []byte
+				if chunksize > int(st.Size()) {
+					chunk = make([]byte, st.Size())
 				} else {
-					contents, _ := os.ReadFile(filename)
+					chunk = make([]byte, chunksize)
+				}
+
+				for {
+					if _, err := fd.Read(chunk); err == io.EOF {
+						break
+					}
 					request := &mpi.UpdateFileRequest{
 						File: fileToUpdate,
 						Contents: &mpi.FileContents{
-							Contents: contents,
+							Contents: chunk,
 						},
 					}
 
-					return client.Send(request)
-
+					if err := client.Send(request); err != nil {
+						return nil, err
+					}
 				}
-				return nil
-			})
+			}
 		}
-
-		g.Wait()
 
 		response, err := client.CloseAndRecv()
 		if err != nil {
