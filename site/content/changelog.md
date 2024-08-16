@@ -10,24 +10,6 @@ docs: "DOCS-1093"
 See the list of supported Operating Systems and architectures in the [Technical Specifications]({{< relref "./technical-specifications.md" >}}).
 
 ---
-## Release [vundefined](https//github.com/nginx/agent/releases/tag/vundefined)
-
-### 📝 Documentation
-
-We have made the following updates to the documentation:
-
-- docs: update GPG keys by [@Jcahilltorre](https://github.com/Jcahilltorre) in [agent#776](https://github.com/nginx/agent/pull/776)
-
----
-## Release [vchangelog](https//github.com/nginx/agent/releases/tag/vchangelog)
-
-### 📝 Documentation
-
-We have made the following updates to the documentation:
-
-- docs: update GPG keys by [@Jcahilltorre](https://github.com/Jcahilltorre) in [agent#776](https://github.com/nginx/agent/pull/776)
-
----
 ## Release [v2.37.0](https//github.com/nginx/agent/releases/tag/v2.37.0)
 
 ### 🚀 Features
@@ -41,7 +23,7 @@ This release introduces the following new features:
 In this release we have resolved the following issues:
 
 - Prevent writing outside allowed directories list from a config payload with actions by [@oliveromahony](https://github.com/oliveromahony) in [agent#766](https://github.com/nginx/agent/pull/766)
-- The letter v is now always prepended to output of -v by [@olli](https://github.com/olli)-holmala in [agent#751](https://github.com/nginx/agent/pull/751)
+- The letter v is now always prepended to output of -v by [@olli-holmala](https://github.com/olli-holmala) in [agent#751](https://github.com/nginx/agent/pull/751)
 - Fix backoff to drop Metrics Reports from buffer after max_elapsed_time has been reached by [@oliveromahony](https://github.com/oliveromahony) in [agent#752](https://github.com/nginx/agent/pull/752)
 - Fix Post Install Script Issues by [@spencerugbo](https://github.com/spencerugbo) in [agent#739](https://github.com/nginx/agent/pull/739)
 - docs: fix github links in changelog by [@Jcahilltorre](https://github.com/Jcahilltorre) in [agent#770](https://github.com/nginx/agent/pull/770)
@@ -53,8 +35,8 @@ We have made the following updates to the documentation:
 
 - Upgrade prometheus exporter version to latest by [@oliveromahony](https://github.com/oliveromahony) in [agent#749](https://github.com/nginx/agent/pull/749)
 - Add badges for Go version, release, license, contributions, and Slack… by [@oCHRISo](https://github.com/oCHRISo) in [agent#763](https://github.com/nginx/agent/pull/763)
-- Add instructions for Amazon Linux 2023 by [@nginx](https://github.com/nginx)-seanmoloney in [agent#759](https://github.com/nginx/agent/pull/759)
-- Add docs-build-push github workflow by [@nginx](https://github.com/nginx)-jack in [agent#765](https://github.com/nginx/agent/pull/765)
+- Add instructions for Amazon Linux 2023 by [@nginx-seanmoloney](https://github.com/nginx-seanmoloney) in [agent#759](https://github.com/nginx/agent/pull/759)
+- Add docs-build-push github workflow by [@nginx-jack](https://github.com/nginx-jack) in [agent#765](https://github.com/nginx/agent/pull/765)
 
 ### 🔨 Maintenance
 
@@ -82,7 +64,7 @@ We have made the following maintenance-related minor changes:
 
 In this release we have resolved the following issues:
 
-- Fix incorrect bold tag in heading by [@nginx](https://github.com/nginx)-seanmoloney in [agent#715](https://github.com/nginx/agent/pull/715)
+- Fix incorrect bold tag in heading by [@nginx-seanmoloney](https://github.com/nginx-seanmoloney) in [agent#715](https://github.com/nginx/agent/pull/715)
 - URL fix for building docker image in README.md by [@y82](https://github.com/y82) in [agent#720](https://github.com/nginx/agent/pull/720)
 - Fix for version by [@oliveromahony](https://github.com/oliveromahony) in [agent#732](https://github.com/nginx/agent/pull/732)
 
@@ -91,7 +73,7 @@ In this release we have resolved the following issues:
 We have made the following updates to the documentation:
 
 - More flexible container images for the official images by [@oliveromahony](https://github.com/oliveromahony) in [agent#729](https://github.com/nginx/agent/pull/729)
-- Update configuration examples by [@nginx](https://github.com/nginx)-seanmoloney in [agent#731](https://github.com/nginx/agent/pull/731)
+- Update configuration examples by [@nginx-seanmoloney](https://github.com/nginx-seanmoloney) in [agent#731](https://github.com/nginx/agent/pull/731)
 - updated github.com/rs/cors version by [@oliveromahony](https://github.com/oliveromahony) in [agent#735](https://github.com/nginx/agent/pull/735)
 - docs: update changelog by [@Jcahilltorre](https://github.com/Jcahilltorre) in [agent#736](https://github.com/nginx/agent/pull/736)
 - Upgrade crossplane by [@oliveromahony](https://github.com/oliveromahony) in [agent#737](https://github.com/nginx/agent/pull/737)
@@ -138,7 +120,7 @@ In this release we have resolved the following issues:
 We have made the following updates to the documentation:
 
 - Consolidated CLI flag and Env Var sections by [@travisamartin](https://github.com/travisamartin) in [agent#701](https://github.com/nginx/agent/pull/701)
-- Add Ubuntu Noble 24.04 LTS support by [@Dean](https://github.com/Dean)-Coakley in [agent#682](https://github.com/nginx/agent/pull/682)
+- Add Ubuntu Noble 24.04 LTS support by [@Dean-Coakley](https://github.com/Dean-Coakley) in [agent#682](https://github.com/nginx/agent/pull/682)
 
 ---
 ## Release [v2.34.1](https//github.com/nginx/agent/releases/tag/v2.34.1)
@@ -222,4 +204,62 @@ We have made the following maintenance-related minor changes:
 - Bump the version of protobuf by [@oliveromahony](https://github.com/oliveromahony) in [agent#602](https://github.com/nginx/agent/pull/602)
 - replace duplicate isContainer call by [@oliveromahony](https://github.com/oliveromahony) in [agent#596](https://github.com/nginx/agent/pull/596)
 - Add logging to NGINX API http requests by [@dhurley](https://github.com/dhurley) in [agent#605](https://github.com/nginx/agent/pull/605)
+
+---
+## Release [v2.32.2](https//github.com/nginx/agent/releases/tag/v2.32.2)
+
+### 🌟 Highlights
+
+- This release fixes an issue where certain container runtimes were reporting as bare-metal hosts.
+
+### 🚀 Features
+
+This release introduces the following new features:
+
+- feat: improve docker docs by [@Jcahilltorre](https://github.com/Jcahilltorre) in [agent#587](https://github.com/nginx/agent/pull/587)
+
+### 🐛 Bug Fixes
+
+In this release we have resolved the following issues:
+
+- Fix install-tools by [@Dean-Coakley](https://github.com/Dean-Coakley) in [agent#581](https://github.com/nginx/agent/pull/581)
+
+### 📝 Documentation
+
+We have made the following updates to the documentation:
+
+- change log updated for last release by [@oliveromahony](https://github.com/oliveromahony) in [agent#583](https://github.com/nginx/agent/pull/583)
+- Restore agent container information from nms docs  by [@jputrino](https://github.com/jputrino) in [agent#584](https://github.com/nginx/agent/pull/584)
+- fix: add additional container checks during instance registration by [@mattdesmarais](https://github.com/mattdesmarais) in [agent#592](https://github.com/nginx/agent/pull/592)
+
+---
+## Release [v2.32.1](https//github.com/nginx/agent/releases/tag/v2.32.1)
+
+### 🚀 Features
+
+This release introduces the following new features:
+
+- feat: Agent Docs IA refactor by [@Jcahilltorre](https://github.com/Jcahilltorre) in [agent#548](https://github.com/nginx/agent/pull/548)
+- feat: move NMS agent docs by [@Jcahilltorre](https://github.com/Jcahilltorre) in [agent#553](https://github.com/nginx/agent/pull/553)
+- feat: import changelog from github by [@Jcahilltorre](https://github.com/Jcahilltorre) in [agent#570](https://github.com/nginx/agent/pull/570)
+
+### 🐛 Bug Fixes
+
+In this release we have resolved the following issues:
+
+- fix runners and bump go version by [@oliveromahony](https://github.com/oliveromahony) in [agent#550](https://github.com/nginx/agent/pull/550)
+- Fix artifact name by [@oliveromahony](https://github.com/oliveromahony) in [agent#558](https://github.com/nginx/agent/pull/558)
+- fix: add missing catalog entry by [@Jcahilltorre](https://github.com/Jcahilltorre) in [agent#572](https://github.com/nginx/agent/pull/572)
+
+### 📝 Documentation
+
+We have made the following updates to the documentation:
+
+- Runc bump by [@oliveromahony](https://github.com/oliveromahony) in [agent#565](https://github.com/nginx/agent/pull/565)
+
+### 🔨 Maintenance
+
+We have made the following maintenance-related minor changes:
+
+- bump vulnerable version of buildkit by [@oliveromahony](https://github.com/oliveromahony) in [agent#564](https://github.com/nginx/agent/pull/564)
 
