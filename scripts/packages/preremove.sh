@@ -1,8 +1,10 @@
 #!/bin/sh
+set -e
+
 # Pre Remove Steps
 
 # Determine OS platform
-# shellcheck source=/dev/null
+
 . /etc/os-release
 
 stop_agent_openrc() {

@@ -1,4 +1,8 @@
 #!/bin/sh
+set -e
+
+# Note: >/dev/null 2>&1 is used in multiple if statements in this file. 
+# This is to hide expected error messages from being outputted.
 
 NEWVER="$1"
 OLDVER="$2"
@@ -11,7 +15,7 @@ restart_agent_if_required() {
 }
 
 # Determine OS platform
-# shellcheck source=/dev/null
+
 . /etc/os-release
 
 case "$ID" in

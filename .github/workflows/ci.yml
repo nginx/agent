@@ -321,7 +321,6 @@ jobs:
               --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/${GIT_BRANCH}/${i##*/}
             done
 
-
   build-example:
     name: Build Grafana Dashboard Example
     runs-on: ubuntu-22.04

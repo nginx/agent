@@ -2,7 +2,7 @@
 
 This directory contains all of the user documentation for NGINX Agent, as well as the requirements for linting, building, and publishing the documentation.
 
-Docs are written in Markdown. We build the docs using [Hugo](https://gohugo.io) and host them on [Netlify](https://www.netlify.com/).
+Docs are written in Markdown. We build the docs using [Hugo](https://gohugo.io). Previews and deployments are handled by the [docs-actions](https://github.com/nginxinc/docs-actions?tab=readme-ov-file#docs-actions) workflow.
 
 ## Setup
 
