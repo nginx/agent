@@ -22,9 +22,7 @@ const (
 	API_HOST = "0.0.0.0"
 )
 
-var (
-	delay = time.Duration(5 * time.Second)
-)
+var delay = time.Duration(5 * time.Second)
 
 func TestAPI_Nginx(t *testing.T) {
 	testContainer := utils.SetupTestContainerWithAgent(
@@ -71,7 +69,7 @@ func TestAPI_Metrics(t *testing.T) {
 		"./nginx-agent.conf:/etc/nginx-agent/nginx-agent.conf",
 		"Starting Agent API HTTP server with port from config and TLS disabled",
 	)
-	
+
 	// wait for report interval to send metrics
 	time.Sleep(delay)
 

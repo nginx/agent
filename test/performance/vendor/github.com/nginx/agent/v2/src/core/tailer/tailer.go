@@ -196,7 +196,7 @@ func (t *LTSVTailer) Tail(ctx context.Context, data chan<- map[string]string) {
 			case context.Canceled:
 				log.Tracef("Tailer forcibly cancelled, %v", ctxErr)
 			}
-			
+
 			stopErr := t.handle.Stop()
 			if stopErr != nil {
 				log.Tracef("Unable to stop tailer, %v", stopErr)

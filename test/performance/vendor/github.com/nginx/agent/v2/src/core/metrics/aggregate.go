@@ -10,8 +10,9 @@ package metrics
 import (
 	"encoding/json"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"regexp"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/nginx/agent/sdk/v2/checksum"
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -31,9 +32,9 @@ type PerDimension struct {
 type MetricsHandler func(float64, int) float64
 
 type Collections struct {
-	Count int // this is the number of collections run.  Will use this to calculate the average.
+	Count        int // this is the number of collections run.  Will use this to calculate the average.
 	MetricsCount map[string]PerDimension
-	Data  map[string]PerDimension
+	Data         map[string]PerDimension
 }
 
 func dimChecksum(stats *proto.StatsEntity) string {

@@ -72,9 +72,9 @@ func TestTailer(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeoutDuration)
 
 	data := make(chan string, 100)
-	
+
 	go tailer.Tail(ctx, data)
-	
+
 	time.Sleep(time.Millisecond * 100)
 	_, err = errorLogFile.WriteString(logLine)
 	if err != nil {
@@ -115,9 +115,9 @@ func TestPatternTailer(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeoutDuration)
 
 	data := make(chan map[string]string, 100)
-	
+
 	go tailer.Tail(ctx, data)
-	
+
 	time.Sleep(time.Millisecond * 100)
 	_, err = accessLogFile.WriteString(logLine)
 	if err != nil {

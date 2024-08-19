@@ -39,9 +39,9 @@ type MetricsThrottle struct {
 	cancel             context.CancelFunc
 	wg                 sync.WaitGroup
 	mu                 sync.Mutex
-	env    core.Environment
-	conf   *config.Config
-	errors chan error
+	env                core.Environment
+	conf               *config.Config
+	errors             chan error
 }
 
 func NewMetricsThrottle(conf *config.Config, env core.Environment) *MetricsThrottle {
@@ -99,9 +99,9 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 						if len(report.Data) > 0 {
 							if _, ok := r.metricsCollections[report.Type]; !ok {
 								r.metricsCollections[report.Type] = &metrics.Collections{
-									Count: 0,
+									Count:        0,
 									MetricsCount: map[string]metrics.PerDimension{},
-									Data:  make(map[string]metrics.PerDimension),
+									Data:         make(map[string]metrics.PerDimension),
 								}
 							}
 							collection := metrics.SaveCollections(*r.metricsCollections[report.Type], report)
@@ -220,11 +220,11 @@ func (r *MetricsThrottle) getAggregatedReports() (reports []core.Payload) {
 		}
 
 		reports = append(reports, report)
-		
+
 		r.metricsCollections[reportType] = &metrics.Collections{
-			Count: 0,
-			MetricsCount: map[string]metrics.PerDimension{}, 
-			Data:  make(map[string]metrics.PerDimension),
+			Count:        0,
+			MetricsCount: map[string]metrics.PerDimension{},
+			Data:         make(map[string]metrics.PerDimension),
 		}
 	}
 
