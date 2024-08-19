@@ -10,6 +10,41 @@ docs: "DOCS-1093"
 See the list of supported Operating Systems and architectures in the [Technical Specifications]({{< relref "./technical-specifications.md" >}}).
 
 ---
+## Release [v2.37.0](https://github.com/nginx/agent/releases/tag/v2.37.0)
+
+### 🚀 Features
+
+This release introduces the following new features:
+
+- feat: Update the changelog by [@ADubhlaoich](https://github.com/ADubhlaoich) in [#753](https://github.com/nginx/agent/pull/753)
+
+### 🐛 Bug Fixes
+
+In this release we have resolved the following issues:
+
+- Prevent writing outside allowed directories list from a config payload with actions by [@oliveromahony](https://github.com/oliveromahony) in [#766](https://github.com/nginx/agent/pull/766)
+- The letter v is now always prepended to output of -v by [@olli-holmala](https://github.com/olli-holmala) in [#751](https://github.com/nginx/agent/pull/751)
+- Fix backoff to drop Metrics Reports from buffer after max_elapsed_time has been reached by [@oliveromahony](https://github.com/oliveromahony) in [#752](https://github.com/nginx/agent/pull/752)
+- Fix Post Install Script Issues by [@spencerugbo](https://github.com/spencerugbo) in [#739](https://github.com/nginx/agent/pull/739)
+- docs: fix github links in changelog by [@Jcahilltorre](https://github.com/Jcahilltorre) in [#770](https://github.com/nginx/agent/pull/770)
+- Fix post install script for when no nginx instance is installed by [@dhurley](https://github.com/dhurley) in [#773](https://github.com/nginx/agent/pull/773)
+
+### 📝 Documentation
+
+We have made the following updates to the documentation:
+
+- Upgrade prometheus exporter version to latest by [@oliveromahony](https://github.com/oliveromahony) in [#749](https://github.com/nginx/agent/pull/749)
+- Add badges for Go version, release, license, contributions, and Slack… by [@oCHRISo](https://github.com/oCHRISo) in [#763](https://github.com/nginx/agent/pull/763)
+- Add instructions for Amazon Linux 2023 by [@nginx-seanmoloney](https://github.com/nginx-seanmoloney) in [#759](https://github.com/nginx/agent/pull/759)
+- Add docs-build-push github workflow by [@nginx-jack](https://github.com/nginx-jack) in [#765](https://github.com/nginx/agent/pull/765)
+
+### 🔨 Maintenance
+
+We have made the following maintenance-related minor changes:
+
+- Increase timeout period for collecting metrics by [@oliveromahony](https://github.com/oliveromahony) in [#755](https://github.com/nginx/agent/pull/755)
+
+---
 ## Release [v2.36.1](https://github.com/nginx/agent/releases/tag/v2.36.1)
 
 ### 🌟 Highlights
@@ -231,13 +266,4 @@ We have made the following updates to the documentation:
 We have made the following maintenance-related minor changes:
 
 - bump vulnerable version of buildkit by [@oliveromahony](https://github.com/oliveromahony) in [#564](https://github.com/nginx/agent/pull/564)
-
----
-## Release [v2.32.0](https://github.com/nginx/agent/releases/tag/v2.32.0)
-
-### 🚀 Features
-
-This release introduces the following new features:
-
-- feat: added the new OS support for NGINX R31 by [@oliveromahony](https://github.com/oliveromahony) in [#538](https://github.com/nginx/agent/pull/538)
 
