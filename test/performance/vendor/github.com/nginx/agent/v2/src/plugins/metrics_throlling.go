@@ -38,6 +38,7 @@ type MetricsThrottle struct {
 	ctx                context.Context
 	cancel             context.CancelFunc
 	wg                 sync.WaitGroup
+	mu                 sync.Mutex
 	env    core.Environment
 	conf   *config.Config
 	errors chan error
@@ -93,11 +94,13 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 			switch bundle := msg.Data().(type) {
 			case *metrics.MetricsReportBundle:
 				if len(bundle.Data) > 0 {
+					r.mu.Lock()
 					for _, report := range bundle.Data {
 						if len(report.Data) > 0 {
 							if _, ok := r.metricsCollections[report.Type]; !ok {
 								r.metricsCollections[report.Type] = &metrics.Collections{
 									Count: 0,
+									MetricsCount: map[string]metrics.PerDimension{},
 									Data:  make(map[string]metrics.PerDimension),
 								}
 							}
@@ -106,6 +109,7 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 							log.Debugf("MetricsThrottle: Metrics collection saved [Type: %d]", report.Type)
 						}
 					}
+					r.mu.Unlock()
 					r.reportsReady.Store(true)
 				}
 			}
@@ -198,14 +202,31 @@ func (r *MetricsThrottle) syncAgentConfigChange() {
 }
 
 func (r *MetricsThrottle) getAggregatedReports() (reports []core.Payload) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	for reportType, collection := range r.metricsCollections {
-		reports = append(reports, &proto.MetricsReport{
+		report := &proto.MetricsReport{
 			Meta: &proto.Metadata{
 				Timestamp: types.TimestampNow(),
 			},
 			Type: reportType,
 			Data: metrics.GenerateMetrics(*collection),
-		})
+		}
+
+		log.Infof("%v report created with %d stats entities", report.Type, len(report.Data))
+		for _, entity := range report.GetData() {
+			log.Infof("%v", entity)
+		}
+
+		reports = append(reports, report)
+		
+		r.metricsCollections[reportType] = &metrics.Collections{
+			Count: 0,
+			MetricsCount: map[string]metrics.PerDimension{}, 
+			Data:  make(map[string]metrics.PerDimension),
+		}
 	}
+
 	return reports
 }
