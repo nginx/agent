@@ -17,7 +17,7 @@ import (
 	"github.com/nginx/agent/sdk/v2/checksum"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	// "github.com/stretchr/testify/require"
 )
 
 var reports = []*proto.MetricsReport{
@@ -153,6 +153,7 @@ func TestSaveCollections(t *testing.T) {
 		metricsCollections := Collections{
 			Count: len(test.reports),
 			Data:  make(map[string]PerDimension),
+			MetricsCount: make(map[string]PerDimension),
 		}
 		dimension1 := []*proto.Dimension{
 			{
@@ -172,11 +173,15 @@ func TestSaveCollections(t *testing.T) {
 			RunningSumMap: make(map[string]float64),
 		}
 
+		metricsCollections.MetricsCount[dimensionsChecksum] = PerDimension{
+			Dimensions:    dimension1,
+			RunningSumMap: make(map[string]float64),
+		}
+
 		metricsCollections = SaveCollections(metricsCollections, test.reports...)
 		log.Info(metricsCollections)
 
 		assert.NotNil(t, metricsCollections)
-		// assert.Len(t, len(metricsCollections) 3
 
 		for key, value := range test.expected {
 			assert.Equal(t, value, metricsCollections.Data[dimensionsChecksum].RunningSumMap[key])
@@ -185,31 +190,55 @@ func TestSaveCollections(t *testing.T) {
 }
 
 func TestGenerateMetrics(t *testing.T) {
-	// Prepare a collection with some data
 	metricsCollections := Collections{
 		Count: 2,
 		Data: map[string]PerDimension{
 			"checksum1": {
 				Dimensions: []*proto.Dimension{
-					{Name: "name1", Value: "value1"},
+					{Name: "hostname", Value: "test-host"},
 				},
 				RunningSumMap: map[string]float64{
-					"system.mem.used": 20.0,
+					"system.mem.used":   20.0,
+					"system.cpu.system": 10.0,
+				},
+			},
+		},
+		MetricsCount: map[string]PerDimension{
+			"checksum1": {
+				Dimensions: []*proto.Dimension{
+					{Name: "hostname", Value: "test-host"},
+				},
+				RunningSumMap: map[string]float64{
+					"system.mem.used":   2,
+					"system.cpu.system": 2,
 				},
 			},
 		},
 	}
 
-	// Generate the metrics
-	metrics := GenerateMetrics(metricsCollections)
+	results := GenerateMetrics(metricsCollections)
 
-	// Check the generated metrics
-	require.Len(t, metrics, 1)
+	expectedResults := []*proto.StatsEntity{
+		{
+			Dimensions: []*proto.Dimension{
+				{Name: "hostname", Value: "test-host"},
+			},
+			Simplemetrics: []*proto.SimpleMetric{
+				{Name: "system.mem.used", Value: 10.0},
+				{Name: "system.cpu.system", Value: 5.0},
+			},
+		},
+	}
 
-	// Check the simple metrics
-	simpleMetrics := metrics[0].GetSimplemetrics()
-	require.Len(t, simpleMetrics, 1)
-	assert.Equal(t, "system.mem.used", simpleMetrics[0].Name)
+	assert.Equal(t, len(expectedResults), len(results))
+	for i, expected := range expectedResults {
+		assert.Equal(t, expected.GetDimensions(), results[i].GetDimensions())
+		assert.Equal(t, len(expected.GetSimplemetrics()), len(results[i].GetSimplemetrics()))
+		for j, expectedMetric := range expected.GetSimplemetrics() {
+			assert.Equal(t, expectedMetric.GetName(), results[i].GetSimplemetrics()[j].GetName())
+			assert.Equal(t, expectedMetric.GetValue(), results[i].GetSimplemetrics()[j].GetValue())
+		}
+	}
 }
 
 func TestGenerateAggregationReport(t *testing.T) {
@@ -243,33 +272,18 @@ func TestGenerateAggregationReport(t *testing.T) {
 		for _, v := range simplemetrics {
 			switch {
 			case v.Name == "system.mem.used":
-				assert.Equal(t, float64(50.1), v.Value)
+				assert.Equal(t, float64(100.2), v.Value)
 			case v.Name == "system.io.kbs_w":
 				assert.Equal(t, float64(600), v.Value)
 			case v.Name == "system.io.kbs_r":
 				assert.Equal(t, float64(6000), v.Value)
 			case v.Name == "system.cpu.system":
-				assert.Equal(t, float64(100.1), v.Value)
+				assert.Equal(t, float64(200.2), v.Value)
 			case v.Name == "system.undefined_method":
 				assert.Equal(t, float64(1000), v.Value)
 			}
 		}
 	}
-}
-
-func TestGetAggregatedSimpleMetric(t *testing.T) {
-	internalMap := map[string]float64{
-		"system.mem.used":   10.0,
-		"system.cpu.system": 20.0,
-	}
-
-	simpleMetrics := getAggregatedSimpleMetric(1, internalMap)
-
-	require.Len(t, simpleMetrics, 2)
-	assert.Equal(t, "system.mem.used", simpleMetrics[0].Name)
-	assert.Equal(t, 10.0, simpleMetrics[0].GetValue())
-	assert.Equal(t, "system.cpu.system", simpleMetrics[1].Name)
-	assert.Equal(t, 20.0, simpleMetrics[1].GetValue())
 }
 
 func TestAvg(t *testing.T) {

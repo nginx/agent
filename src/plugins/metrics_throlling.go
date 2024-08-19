@@ -100,7 +100,7 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 							if _, ok := r.metricsCollections[report.Type]; !ok {
 								r.metricsCollections[report.Type] = &metrics.Collections{
 									Count:        0,
-									MetricsCount: map[string]metrics.PerDimension{},
+									MetricsCount: make(map[string]metrics.PerDimension),
 									Data:         make(map[string]metrics.PerDimension),
 								}
 							}

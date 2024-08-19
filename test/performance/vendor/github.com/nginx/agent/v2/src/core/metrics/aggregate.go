@@ -60,6 +60,9 @@ func SaveCollections(metricsCollections Collections, reports ...*proto.MetricsRe
 					Dimensions:    stats.GetDimensions(),
 					RunningSumMap: make(map[string]float64),
 				}
+			}
+
+			if _, ok := metricsCollections.MetricsCount[dimensionsChecksum]; !ok {
 				metricsCollections.MetricsCount[dimensionsChecksum] = PerDimension{
 					Dimensions:    stats.GetDimensions(),
 					RunningSumMap: make(map[string]float64),
@@ -68,15 +71,13 @@ func SaveCollections(metricsCollections Collections, reports ...*proto.MetricsRe
 
 			simpleMetrics := stats.GetSimplemetrics()
 
-			if simpleMetrics != nil {
-				for _, simpleMetric := range simpleMetrics {
-					if metrics, ok := metricsCollections.Data[dimensionsChecksum].RunningSumMap[simpleMetric.Name]; ok {
-						metricsCollections.MetricsCount[dimensionsChecksum].RunningSumMap[simpleMetric.Name]++
-						metricsCollections.Data[dimensionsChecksum].RunningSumMap[simpleMetric.Name] = metrics + simpleMetric.GetValue()
-					} else {
-						metricsCollections.MetricsCount[dimensionsChecksum].RunningSumMap[simpleMetric.Name] = 1
-						metricsCollections.Data[dimensionsChecksum].RunningSumMap[simpleMetric.Name] = simpleMetric.GetValue()
-					}
+			for _, simpleMetric := range simpleMetrics {
+				if metrics, ok := metricsCollections.Data[dimensionsChecksum].RunningSumMap[simpleMetric.Name]; ok {
+					metricsCollections.MetricsCount[dimensionsChecksum].RunningSumMap[simpleMetric.Name]++
+					metricsCollections.Data[dimensionsChecksum].RunningSumMap[simpleMetric.Name] = metrics + simpleMetric.GetValue()
+				} else {
+					metricsCollections.MetricsCount[dimensionsChecksum].RunningSumMap[simpleMetric.Name] = 1
+					metricsCollections.Data[dimensionsChecksum].RunningSumMap[simpleMetric.Name] = simpleMetric.GetValue()
 				}
 			}
 		}
