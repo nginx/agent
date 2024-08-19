@@ -110,10 +110,7 @@ func getAggregatedSimpleMetric(count PerDimension, internalMap map[string]float6
 
 	calMap := GetCalculationMap()
 
-	log.Infof("\n\nCount: %v", count)
-
 	for name, value := range internalMap {
-		log.Infof("%s: %v", name, value)
 		if valueType, ok := calMap[name]; ok {
 			var aggregatedValue float64
 			switch valueType {

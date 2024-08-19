@@ -17,7 +17,6 @@ import (
 	"github.com/nginx/agent/sdk/v2/checksum"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/stretchr/testify/assert"
-	// "github.com/stretchr/testify/require"
 )
 
 var reports = []*proto.MetricsReport{
