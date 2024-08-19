@@ -12,8 +12,6 @@ import (
 	"fmt"
 	"regexp"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/nginx/agent/sdk/v2/checksum"
 	"github.com/nginx/agent/sdk/v2/proto"
 )
