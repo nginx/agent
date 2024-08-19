@@ -1,4 +1,6 @@
 name: Release Branch
+env:
+  NFPM_VERSION: 'v2.35.3'
 
 on:
   workflow_dispatch:
@@ -123,7 +125,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y gpgv1 monkeysphere 
-          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.35.3
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
       - name: Tag release
         run: |
           git config --global user.name 'github-actions'
