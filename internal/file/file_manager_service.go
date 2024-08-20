@@ -102,7 +102,8 @@ func (fms *FileManagerService) UpdateOverview(
 	defer backoffCancel()
 
 	sendUpdateOverview := func() (*mpi.UpdateOverviewResponse, error) {
-		slog.DebugContext(newCtx, "Sending update overview request", "request", request, "parent_correlation_id", correlationID)
+		slog.DebugContext(newCtx, "Sending update overview request", "request", request,
+			"parent_correlation_id", correlationID)
 		if fms.fileServiceClient == nil {
 			return nil, errors.New("file service client is not initialized")
 		}
@@ -166,7 +167,7 @@ func (fms *FileManagerService) UpdateFile(
 	defer backoffCancel()
 
 	sendUpdateFile := func() (*mpi.UpdateFileResponse, error) {
-		slog.DebugContext(ctx, "Sending update file request", "request", request.MessageMeta.CorrelationId)
+		slog.DebugContext(ctx, "Sending update file request", "request", request)
 		if fms.fileServiceClient == nil {
 			return nil, errors.New("file service client is not initialized")
 		}

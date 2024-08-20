@@ -103,7 +103,8 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 	defer backoffCancel()
 
 	sendDataPlaneStatus := func() (*mpi.UpdateDataPlaneStatusResponse, error) {
-		slog.DebugContext(newCtx, "Sending data plane status update request", "request", request, "parent_correlation_id", correlationID)
+		slog.DebugContext(newCtx, "Sending data plane status update request", "request", request,
+			"parent_correlation_id", correlationID)
 		if cs.commandServiceClient == nil {
 			return nil, errors.New("command service client is not initialized")
 		}
