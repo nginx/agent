@@ -15,7 +15,7 @@ Follow these steps to configure and run NGINX Agent and a mock interface ("contr
 
 ## Install NGINX
 
-Follow the steps in the [Installation]({{< relref "/previous-versions/NGINX-agent-v2/installation-upgrade/installation-github.md" >}}) section to download, install, and run NGINX.
+Follow the steps in the [Installation]({{< ref "/v2/installation-upgrade/installation-github.md" >}}) section to download, install, and run NGINX.
 
 ## Clone the NGINX Agent Repository
 

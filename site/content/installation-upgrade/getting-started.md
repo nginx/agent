@@ -1,11 +1,8 @@
 ---
 title: "Getting started"
-draft: false
-weight: 100
 toc: true
-tags: [ "docs" ]
-categories: ["configuration"]
-doctypes: ["task"]
+weight: 100
+docs: DOCS-000
 ---
 
 ## Overview
@@ -16,7 +13,7 @@ Follow these steps to configure and run NGINX Agent and a mock interface ("contr
 
 Follow the steps in the [Installation]({{< relref "/installation-upgrade/installation-github.md" >}}) section to download, install, and run NGINX.
 
-## Clone the NGINX Agent Repository
+## Clone the NGINX Agent repository
 
 Using your preferred method, clone the NGINX Agent repository into your development directory. See [Cloning a GitHub Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for additional help.
 
@@ -24,7 +21,7 @@ Using your preferred method, clone the NGINX Agent repository into your developm
 
 NGINX Agent and the Mock Control Plane are written in Go. Go 1.22.2 or higher is required to build and run either application from the source code directory. You can [download Go from the official website](https://go.dev/dl/).
 
-## Start the gRPC Mock Control Plane
+## Start the gRPC mock control plane
 
 Start the mock control plane by running the following command from the `agent` source code root directory:
 
@@ -36,7 +33,7 @@ INFO[0000] http listening at 54790 # mock control plane port
 INFO[0000] grpc listening at 54789 # grpc control plane port which NGINX Agent will report to
 ```
 
-## NGINX Agent Settings
+## NGINX Agent settings
 
 If it doesn't already exist, create the `/etc/nginx-agent/` directory and copy the `nginx-agent.conf` file into it from the project root directory.
 
@@ -121,8 +118,9 @@ Open another terminal window and start NGINX Agent. Issue the following command 
 
 ```shell
 sudo make run
+```
 
-# Command Output snippet
+```text
 WARN[0000] Log level is info
 INFO[0000] setting displayName to XXX
 INFO[0000] NGINX Agent at with pid 12345, clientID=XXXXXX-XXXXXX-XXXXXX-XXXXXX-XXXXXX name=XXX
@@ -155,7 +153,7 @@ Open a web browser to view the mock control plane at [http://localhost:54790](ht
 
 For more NGINX Agent use cases, refer to the [NGINX Agent SDK examples](https://github.com/nginx/agent/tree/main/sdk/examples).
 
-## Start and Enable Start on Boot
+## Start and enable start on boot
 
 To start NGINX Agent on `systemd` systems, run the following command:
 

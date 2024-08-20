@@ -1,18 +1,17 @@
 ---
 title: "Installation from NGINX Plus repository"
-draft: false
-weight: 400
 toc: true
-tags: [ "docs" ]
-categories: ["configuration"]
-doctypes: ["task"]
+weight: 400
+docs: DOCS-000
 ---
 
 ## Overview
 
 Learn how to install NGINX Agent from NGINX Plus repository
 
-## Prerequisites
+## Before you begin
+
+### Prerequisites
 
 - An NGINX Plus subscription (purchased or trial)
 - NGINX Plus installed. Once installed, ensure it is running. If you don't have it installed already, follow these steps to install [NGINX Plus](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-plus/)
@@ -25,15 +24,15 @@ Learn how to install NGINX Agent from NGINX Plus repository
 
 Before you install NGINX Agent for the first time on your system, you need to set up the `nginx-agent` packages repository. Afterward, you can install and update NGINX Agent from the repository.
 
-- [Installing NGINX Agent on RHEL, CentOS, Rocky Linux, AlmaLinux, and Oracle Linux](#installing-nginx-agent-on-rhel-centos-rocky-linux-almalinux-and-oracle-linux)
-- [Installing NGINX Agent on Ubuntu](#installing-nginx-agent-on-ubuntu)
-- [Installing NGINX Agent on Debian](#installing-nginx-agent-on-debian)
-- [Installing NGINX Agent on SLES](#installing-nginx-agent-on-sles)
-- [Installing NGINX Agent on Alpine Linux](#installing-nginx-agent-on-alpine-linux)
-- [Installing NGINX Agent on Amazon Linux](#installing-nginx-agent-on-amazon-linux)
-- [Installing NGINX Agent on FreeBSD](#installing-nginx-agent-on-freebsd)
+- [Install NGINX Agent on RHEL, CentOS, Rocky Linux, AlmaLinux, and Oracle Linux](#install-nginx-agent-on-rhel-centos-rocky-linux-almalinux-and-oracle-linux)
+- [Install NGINX Agent on Ubuntu](#install-nginx-agent-on-ubuntu)
+- [Install NGINX Agent on Debian](#install-nginx-agent-on-debian)
+- [Install NGINX Agent on SLES](#install-nginx-agent-on-sles)
+- [Install NGINX Agent on Alpine Linux](#install-nginx-agent-on-alpine-linux)
+- [Install NGINX Agent on Amazon Linux](#install-nginx-agent-on-amazon-linux)
+- [Install NGINX Agent on FreeBSD](#install-nginx-agent-on-freebsd)
 
-### Installing NGINX Agent on RHEL, CentOS, Rocky Linux, AlmaLinux, and Oracle Linux
+### Install NGINX Agent on RHEL, CentOS, Rocky Linux, AlmaLinux, and Oracle Linux
 
 1. Create the `/etc/ssl/nginx` directory:
 
@@ -87,7 +86,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
     sudo nginx-agent -v
     ```
 
-### Installing NGINX Agent on Ubuntu
+### Install NGINX Agent on Ubuntu
 
 1. Create the `/etc/ssl/nginx` directory:
 
@@ -145,7 +144,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
     ```
 
 
-### Installing NGINX Agent on Debian
+### Install NGINX Agent on Debian
 
 1. Create the `/etc/ssl/nginx` directory:
 
@@ -196,7 +195,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
     sudo nginx-agent -v
     ```
 
-### Installing NGINX Agent on SLES
+### Install NGINX Agent on SLES
 
 1. Create the `/etc/ssl/nginx` directory:
 
@@ -269,7 +268,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
     sudo nginx-agent -v
     ```
 
-### Installing NGINX Agent on Alpine Linux
+### Install NGINX Agent on Alpine Linux
 
 1. Log in to [MyF5 Customer Portal](https://account.f5.com/myf5/) and download your `nginx-repo.crt` and `nginx-repo.key` files.
 
@@ -352,7 +351,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
     sudo nginx-agent -v
     ```
 
-### Installing NGINX Agent on Amazon Linux
+### Install NGINX Agent on Amazon Linux
 
 1. Create the `/etc/ssl/nginx` directory:
 
@@ -400,7 +399,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
     sudo nginx-agent -v
     ```
 
-### Installing NGINX Agent on FreeBSD
+### Install NGINX Agent on FreeBSD
 
 1. Create the `/etc/ssl/nginx` directory:
 

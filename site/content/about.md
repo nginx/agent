@@ -1,11 +1,8 @@
 ---
-title: "Overview"
-draft: false
+title: "About"
 weight: 100
 toc: true
-tags: [ "docs" ]
-categories: ["configuration"]
-doctypes: ["task"]
+docs: DOCS-000
 ---
 
 ## Overview
@@ -17,20 +14,20 @@ NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus insta
 - Notifications of NGINX events
 
 
-{{< img src="grafana-dashboard-example.png" caption="Grafana  dashboard showing metrics reported by NGINX Agent" alt="Grafana dashboard showing metrics reported by NGINX Agent" width="99%">}}
+{{< img src="grafana-dashboard-example.png" caption="A Grafana dashboard displaying metrics reported by NGINX Agent." alt="A Grafana dashboard displaying metrics reported by NGINX Agent." width="99%">}}
 
-## How it Works
+## How it works
 
 NGINX Agent runs as a companion process on a system running NGINX. It provides gRPC and REST interfaces for configuration management and metrics collection from the NGINX process and operating system. NGINX Agent enables remote interaction with NGINX using common Linux tools and unlocks the ability to build sophisticated monitoring and control systems that can manage large collections of NGINX instances.
 
 {{< img src="agent-flow.png" caption="How Agent works" alt="How NGINX Agent works" width="99%">}}
 
 
-## Configuration Management
+## Configuration management
 
 NGINX Agent provides an API interface for submission of updated configuration files. Upon receipt of a new file, it checks the output of `nginx -V` to determine the location of existing configurations. It then validates the new configuration with `nginx -t` before applying it via a signal HUP to the NGINX master process.
 
-## Collecting Metrics
+## Collecting metrics
 
 NGINX Agent interfaces with NGINX process information and parses NGINX logs to calculate and report metrics. When interfacing with NGINX Plus, NGINX Agent pulls relevant information from the NGINX Plus API. Reported metrics may be aggregated by [Prometheus](https://prometheus.io/) and visualized with tools like [Grafana](https://grafana.com/).
 
@@ -40,9 +37,9 @@ When running alongside an open source instance of NGINX, NGINX Agent requires th
 
 ### NGINX Plus
 
-For NGINX Agent to work properly with an NGINX Plus instance, the API needs to be configured in that instance's nginx.conf. See [Instance Metrics Overview](https://docs.nginx.com/nginx-management-suite/nim/about/overview-metrics/) for more details. Once NGINX Plus is configured with the `/api/` endpoint, the Agent will automatically use it on startup.
+For NGINX Agent to work properly with an NGINX Plus instance, the API needs to be configured in that instance's nginx.conf. View the [Instance Metrics Overview](https://docs.nginx.com/nginx-management-suite/nim/about/overview-metrics/) topic for more details. Once NGINX Plus is configured with the `/api/` endpoint, the Agent will automatically use it on startup.
 
-## Event Notifications
+## Event notifications
 
 NGINX Agent allows a gRPC connected control system to register a listener for a specific event. The control mechanism is then invoked when NGINX Agent sends an associated system signal. The source of a notification can be either the NGINX instance or NGINX Agent itself. Here's a list of currently supported events:
 
