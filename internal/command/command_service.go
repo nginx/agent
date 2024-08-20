@@ -76,6 +76,8 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 	resource *mpi.Resource,
 ) (*mpi.CreateConnectionResponse, error) {
 	var createConnectionResponse *mpi.CreateConnectionResponse
+	correlationID := logger.GetCorrelationID(ctx)
+
 	if !cs.isConnected.Load() {
 		response, err := cs.createConnection(ctx, resource)
 		if err != nil {
@@ -85,31 +87,32 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 		createConnectionResponse = response
 	}
 
-	correlationID := logger.GetCorrelationID(ctx)
+	requestCorrelationID := logger.GenerateCorrelationID()
+	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, requestCorrelationID)
 
 	request := &mpi.UpdateDataPlaneStatusRequest{
 		MessageMeta: &mpi.MessageMeta{
 			MessageId:     uuid.NewString(),
-			CorrelationId: correlationID,
+			CorrelationId: requestCorrelationID.Value.String(),
 			Timestamp:     timestamppb.Now(),
 		},
 		Resource: resource,
 	}
 
-	backOffCtx, backoffCancel := context.WithTimeout(ctx, cs.agentConfig.Common.MaxElapsedTime)
+	backOffCtx, backoffCancel := context.WithTimeout(newCtx, cs.agentConfig.Common.MaxElapsedTime)
 	defer backoffCancel()
 
 	sendDataPlaneStatus := func() (*mpi.UpdateDataPlaneStatusResponse, error) {
-		slog.DebugContext(ctx, "Sending data plane status update request", "request", request)
+		slog.DebugContext(newCtx, "Sending data plane status update request", "request", request, "parent_correlation_id", correlationID)
 		if cs.commandServiceClient == nil {
 			return nil, errors.New("command service client is not initialized")
 		}
 
-		response, updateError := cs.commandServiceClient.UpdateDataPlaneStatus(ctx, request)
+		response, updateError := cs.commandServiceClient.UpdateDataPlaneStatus(newCtx, request)
 
 		validatedError := grpc.ValidateGrpcError(updateError)
 		if validatedError != nil {
-			slog.ErrorContext(ctx, "Failed to send update data plane status", "error", validatedError)
+			slog.ErrorContext(newCtx, "Failed to send update data plane status", "error", validatedError)
 
 			return nil, validatedError
 		}
@@ -124,7 +127,7 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 	if err != nil {
 		return createConnectionResponse, err
 	}
-	slog.DebugContext(ctx, "UpdateDataPlaneStatus response", "response", response)
+	slog.DebugContext(newCtx, "UpdateDataPlaneStatus response", "response", response)
 
 	return createConnectionResponse, err
 }
@@ -211,6 +214,9 @@ func (cs *CommandService) createConnection(
 ) (*mpi.CreateConnectionResponse, error) {
 	correlationID := logger.GetCorrelationID(ctx)
 
+	connectionCorrelationID := logger.GenerateCorrelationID()
+	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, connectionCorrelationID)
+
 	// Only send a resource update message if instances other than the agent instance are found
 	if len(resource.GetInstances()) <= 1 {
 		return nil, errors.New("waiting for data plane instances to be found before sending create connection request")
@@ -219,7 +225,7 @@ func (cs *CommandService) createConnection(
 	request := &mpi.CreateConnectionRequest{
 		MessageMeta: &mpi.MessageMeta{
 			MessageId:     uuid.NewString(),
-			CorrelationId: correlationID,
+			CorrelationId: connectionCorrelationID.Value.String(),
 			Timestamp:     timestamppb.Now(),
 		},
 		Resource: resource,
@@ -234,15 +240,15 @@ func (cs *CommandService) createConnection(
 	}
 
 	response, err := backoff.RetryWithData(
-		cs.connectCallback(ctx, request),
-		backoffHelpers.Context(ctx, commonSettings),
+		cs.connectCallback(newCtx, request),
+		backoffHelpers.Context(newCtx, commonSettings),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	slog.DebugContext(ctx, "Connection created", "response", response)
-	slog.DebugContext(ctx, "Agent connected")
+	slog.DebugContext(newCtx, "Connection created", "response", response, "parent_correlation_id", correlationID)
+	slog.DebugContext(newCtx, "Agent connected")
 
 	cs.isConnected.Store(true)
 
