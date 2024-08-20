@@ -23,8 +23,8 @@ PermissionsStartOnly=true
 PIDFile=${AGENT_RUN_DIR}/nginx-agent.pid
 Environment=
 
-StandardOutput=syslog
-StandardError=syslog
+StandardOutput=journal
+StandardError=journal
 SyslogIdentifier=nginx-agent
 
 ExecStop=/bin/kill -2 $MAINPID

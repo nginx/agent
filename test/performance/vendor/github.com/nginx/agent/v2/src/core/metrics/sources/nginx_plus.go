@@ -10,10 +10,12 @@ package sources
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
 	"net/http"
+	"slices"
 	"sync"
 	"time"
 
@@ -37,6 +39,29 @@ const (
 	valueFloat64Zero = float64(0)
 )
 
+type Client interface {
+	GetAvailableEndpoints() ([]string, error)
+	GetAvailableStreamEndpoints() ([]string, error)
+	GetStreamServerZones() (*plusclient.StreamServerZones, error)
+	GetStreamUpstreams() (*plusclient.StreamUpstreams, error)
+	GetStreamConnectionsLimit() (*plusclient.StreamLimitConnections, error)
+	GetStreamZoneSync() (*plusclient.StreamZoneSync, error)
+	GetNginxInfo() (*plusclient.NginxInfo, error)
+	GetCaches() (*plusclient.Caches, error)
+	GetProcesses() (*plusclient.Processes, error)
+	GetSlabs() (*plusclient.Slabs, error)
+	GetConnections() (*plusclient.Connections, error)
+	GetHTTPRequests() (*plusclient.HTTPRequests, error)
+	GetSSL() (*plusclient.SSL, error)
+	GetServerZones() (*plusclient.ServerZones, error)
+	GetUpstreams() (*plusclient.Upstreams, error)
+	GetLocationZones() (*plusclient.LocationZones, error)
+	GetResolvers() (*plusclient.Resolvers, error)
+	GetHTTPLimitReqs() (*plusclient.HTTPLimitRequests, error)
+	GetHTTPConnectionsLimit() (*plusclient.HTTPLimitConnections, error)
+	GetWorkers() ([]*plusclient.Workers, error)
+}
+
 // NginxPlus generates metrics from NGINX Plus API
 type NginxPlus struct {
 	baseDimensions *metrics.CommonDim
@@ -48,6 +73,12 @@ type NginxPlus struct {
 	init          sync.Once
 	clientVersion int
 	logger        *MetricSourceLogger
+}
+
+type ExtendedStats struct {
+	*plusclient.Stats
+	endpoints       []string
+	streamEndpoints []string
 }
 
 func NewNginxPlus(baseDimensions *metrics.CommonDim, nginxNamespace, plusNamespace, plusAPI string, clientVersion int) *NginxPlus {
@@ -71,7 +102,7 @@ func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *m
 			return
 		}
 
-		c.prevStats, err = cl.GetStats()
+		c.prevStats, err = c.getStats(cl)
 		if err != nil {
 			c.logger.Log(fmt.Sprintf("Failed to retrieve plus metrics: %v", err))
 			SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
@@ -87,12 +118,16 @@ func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *m
 		return
 	}
 
-	stats, err := cl.GetStats()
+	log.Debug("NGINX_plus_Collect: getting stats")
+
+	stats, err := c.getStats(cl)
 	if err != nil {
 		c.logger.Log(fmt.Sprintf("Failed to retrieve plus metrics: %v", err))
 		SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 		return
 	}
+
+	log.Debug("NGINX_plus_Collect: got stats")
 
 	if c.prevStats == nil {
 		c.prevStats = stats
@@ -105,8 +140,305 @@ func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *m
 	c.baseDimensions.NginxVersion = stats.NginxInfo.Version
 
 	c.sendMetrics(ctx, m, c.collectMetrics(stats, c.prevStats)...)
+	log.Debug("NGINX_plus_Collect: metrics sent")
 
 	c.prevStats = stats
+}
+
+func (c *NginxPlus) defaultStats() *plusclient.Stats {
+	return &plusclient.Stats{
+		Upstreams:              map[string]plusclient.Upstream{},
+		ServerZones:            map[string]plusclient.ServerZone{},
+		StreamServerZones:      map[string]plusclient.StreamServerZone{},
+		StreamUpstreams:        map[string]plusclient.StreamUpstream{},
+		Slabs:                  map[string]plusclient.Slab{},
+		Caches:                 map[string]plusclient.HTTPCache{},
+		HTTPLimitConnections:   map[string]plusclient.LimitConnection{},
+		StreamLimitConnections: map[string]plusclient.LimitConnection{},
+		HTTPLimitRequests:      map[string]plusclient.HTTPLimitRequest{},
+		Resolvers:              map[string]plusclient.Resolver{},
+		LocationZones:          map[string]plusclient.LocationZone{},
+		StreamZoneSync:         &plusclient.StreamZoneSync{},
+		Workers:                []*plusclient.Workers{},
+		NginxInfo:              plusclient.NginxInfo{},
+		SSL:                    plusclient.SSL{},
+		Connections:            plusclient.Connections{},
+		HTTPRequests:           plusclient.HTTPRequests{},
+		Processes:              plusclient.Processes{},
+	}
+}
+
+func (c *NginxPlus) getStats(client Client) (*plusclient.Stats, error) {
+	var initialStatsWg sync.WaitGroup
+	initialStatsErrChan := make(chan error, 15)
+	stats := &ExtendedStats{
+		Stats: c.defaultStats(),
+	}
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		endpoints, err := client.GetAvailableEndpoints()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get Available Endpoints: %w", err)
+			return
+		}
+		stats.endpoints = endpoints
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		streamEndpoints, err := client.GetAvailableStreamEndpoints()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get Available Stream Endpoints: %w", err)
+			return
+		}
+		stats.streamEndpoints = streamEndpoints
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		nginxInfo, err := client.GetNginxInfo()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get NGINX info: %w", err)
+			return
+		}
+		stats.NginxInfo = *nginxInfo
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		caches, err := client.GetCaches()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get NGINX info: %w", err)
+			return
+		}
+		stats.Caches = *caches
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		processes, err := client.GetProcesses()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get processes: %w", err)
+			return
+		}
+		stats.Processes = *processes
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		slabs, err := client.GetSlabs()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get processes: %w", err)
+			return
+		}
+		stats.Slabs = *slabs
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		httpRequests, err := client.GetHTTPRequests()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get HTTPRequests: %w", err)
+			return
+		}
+		stats.HTTPRequests = *httpRequests
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		ssl, err := client.GetSSL()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get SSL: %w", err)
+			return
+		}
+		stats.SSL = *ssl
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		serverZones, err := client.GetServerZones()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get ServerZones: %w", err)
+			return
+		}
+		stats.ServerZones = *serverZones
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		upstreams, err := client.GetUpstreams()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get Upstreams: %w", err)
+			return
+		}
+		stats.Upstreams = *upstreams
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		locationZones, err := client.GetLocationZones()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get LocationZones: %w", err)
+			return
+		}
+		stats.LocationZones = *locationZones
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		resolvers, err := client.GetResolvers()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get Resolvers: %w", err)
+			return
+		}
+		stats.Resolvers = *resolvers
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		httpLimitRequests, err := client.GetHTTPLimitReqs()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get HTTPLimitRequests: %w", err)
+			return
+		}
+		stats.HTTPLimitRequests = *httpLimitRequests
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		httpLimitConnections, err := client.GetHTTPConnectionsLimit()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get HTTPLimitConnections: %w", err)
+			return
+		}
+		stats.HTTPLimitConnections = *httpLimitConnections
+	}()
+
+	initialStatsWg.Add(1)
+	go func() {
+		defer initialStatsWg.Done()
+		workers, err := client.GetWorkers()
+		if err != nil {
+			initialStatsErrChan <- fmt.Errorf("failed to get Workers: %w", err)
+			return
+		}
+		stats.Workers = workers
+	}()
+
+	initialStatsWg.Wait()
+	close(initialStatsErrChan)
+
+	// only error if all the stats are empty
+	if len(initialStatsErrChan) == 16 {
+		return nil, errors.New("no useful metrics found")
+	}
+
+	if slices.Contains(stats.endpoints, "stream") {
+		var streamStatsWg sync.WaitGroup
+		// this may never be 4 depending on the if conditions
+		streamStatsErrChan := make(chan error, 4)
+
+		if slices.Contains(stats.streamEndpoints, "server_zones") {
+			streamStatsWg.Add(1)
+			go func() {
+				defer streamStatsWg.Done()
+				streamServerZones, err := client.GetStreamServerZones()
+				if err != nil {
+					streamStatsErrChan <- fmt.Errorf("failed to get streamServerZones: %w", err)
+					return
+				}
+				stats.StreamServerZones = *streamServerZones
+			}()
+		}
+
+		if slices.Contains(stats.streamEndpoints, "upstreams") {
+			streamStatsWg.Add(1)
+			go func() {
+				defer streamStatsWg.Done()
+				streamUpstreams, err := client.GetStreamUpstreams()
+				if err != nil {
+					streamStatsErrChan <- fmt.Errorf("failed to get StreamUpstreams: %w", err)
+					return
+				}
+				stats.StreamUpstreams = *streamUpstreams
+			}()
+		}
+
+		if slices.Contains(stats.streamEndpoints, "limit_conns") {
+
+			streamStatsWg.Add(1)
+			go func() {
+				defer streamStatsWg.Done()
+				streamConnectionsLimit, err := client.GetStreamConnectionsLimit()
+				if err != nil {
+					streamStatsErrChan <- fmt.Errorf("failed to get StreamLimitConnections: %w", err)
+					return
+				}
+				stats.StreamLimitConnections = *streamConnectionsLimit
+			}()
+
+		}
+
+		if slices.Contains(stats.streamEndpoints, "limit_conns") {
+
+			streamStatsWg.Add(1)
+			go func() {
+				defer streamStatsWg.Done()
+				streamZoneSync, err := client.GetStreamZoneSync()
+				if err != nil {
+					streamStatsErrChan <- fmt.Errorf("failed to get StreamZoneSync: %w", err)
+					return
+				}
+				stats.StreamZoneSync = streamZoneSync
+			}()
+
+		}
+		streamStatsWg.Wait()
+		close(streamStatsErrChan)
+
+		if len(streamStatsErrChan) > 0 {
+			log.Warnf("no useful metrics found in stream stats")
+		}
+	}
+
+	// report connection metrics separately so it does not influence the results (all http requests show in the metrics)
+	var connectionsWg sync.WaitGroup
+	connectionsErrChan := make(chan error, 1)
+
+	connectionsWg.Add(1)
+	go func() {
+		defer connectionsWg.Done()
+		connections, err := client.GetConnections()
+		if err != nil {
+			connectionsErrChan <- fmt.Errorf("failed to get connections: %w", err)
+			return
+		}
+		stats.Connections = *connections
+	}()
+
+	connectionsWg.Wait()
+	close(connectionsErrChan)
+
+	if len(connectionsErrChan) > 0 {
+		log.Warnf("connections metrics not found")
+	}
+
+	return stats.Stats, nil
 }
 
 func (c *NginxPlus) Update(dimensions *metrics.CommonDim, collectorConf *metrics.NginxCollectorConfig) {
@@ -115,13 +447,18 @@ func (c *NginxPlus) Update(dimensions *metrics.CommonDim, collectorConf *metrics
 }
 
 func (c *NginxPlus) Stop() {
-	log.Debugf("Stopping NginxPlus source for nginx id: %v", c.baseDimensions.NginxId)
+	log.Debugf("Stopping NGINX Plus source for NGINX id: %v", c.baseDimensions.NginxId)
 }
 
 func (c *NginxPlus) sendMetrics(ctx context.Context, m chan<- *metrics.StatsEntityWrapper, entries ...*metrics.StatsEntityWrapper) {
 	for _, entry := range entries {
 		select {
 		case <-ctx.Done():
+			err := ctx.Err()
+			if err != nil {
+				log.Errorf("sendMetrics: error in done context %v", err)
+			}
+			log.Debug("sendMetrics: context done")
 			return
 		case m <- entry:
 		}
@@ -161,6 +498,7 @@ func (c *NginxPlus) instanceMetrics(stats, prevStats *plusclient.Stats) *metrics
 	})
 
 	dims := c.baseDimensions.ToDimensions()
+
 	return metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE)
 }
 
@@ -227,6 +565,7 @@ func (c *NginxPlus) sslMetrics(stats, prevStats *plusclient.Stats) *metrics.Stat
 
 func (c *NginxPlus) serverZoneMetrics(stats, prevStats *plusclient.Stats) []*metrics.StatsEntityWrapper {
 	zoneMetrics := make([]*metrics.StatsEntityWrapper, 0)
+
 	for name, sz := range stats.ServerZones {
 		l := &namedMetric{namespace: c.plusNamespace, group: "http"}
 
@@ -305,6 +644,8 @@ func (c *NginxPlus) serverZoneMetrics(stats, prevStats *plusclient.Stats) []*met
 		zoneMetrics = append(zoneMetrics, metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE))
 	}
 
+	log.Debugf("server zone metrics count %d", len(zoneMetrics))
+
 	return zoneMetrics
 }
 
@@ -362,6 +703,8 @@ func (c *NginxPlus) streamServerZoneMetrics(stats, prevStats *plusclient.Stats) 
 		dims = append(dims, &proto.Dimension{Name: "server_zone", Value: name})
 		zoneMetrics = append(zoneMetrics, metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE))
 	}
+	log.Debugf("stream server zone metrics count %d", len(zoneMetrics))
+
 	return zoneMetrics
 }
 
@@ -428,6 +771,7 @@ func (c *NginxPlus) locationZoneMetrics(stats, prevStats *plusclient.Stats) []*m
 		dims = append(dims, &proto.Dimension{Name: "location_zone", Value: name})
 		zoneMetrics = append(zoneMetrics, metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE))
 	}
+	log.Debugf("location zone metrics count %d", len(zoneMetrics))
 
 	return zoneMetrics
 }
@@ -572,6 +916,7 @@ func (c *NginxPlus) httpUpstreamMetrics(stats, prevStats *plusclient.Stats) []*m
 		upstreamDims = append(upstreamDims, &proto.Dimension{Name: "upstream_zone", Value: u.Zone})
 		upstreamMetrics = append(upstreamMetrics, metrics.NewStatsEntityWrapper(upstreamDims, simpleMetrics, proto.MetricsReport_UPSTREAMS))
 	}
+	log.Debugf("upstream metrics count %d", len(upstreamMetrics))
 
 	return upstreamMetrics
 }
@@ -672,6 +1017,7 @@ func (c *NginxPlus) streamUpstreamMetrics(stats, prevStats *plusclient.Stats) []
 		upstreamDims = append(upstreamDims, &proto.Dimension{Name: "upstream_zone", Value: u.Zone})
 		upstreamMetrics = append(upstreamMetrics, metrics.NewStatsEntityWrapper(upstreamDims, simpleMetrics, proto.MetricsReport_UPSTREAMS))
 	}
+	log.Debugf("stream upstream metrics count %d", len(upstreamMetrics))
 
 	return upstreamMetrics
 }
@@ -762,6 +1108,8 @@ func (c *NginxPlus) cacheMetrics(stats, prevStats *plusclient.Stats) []*metrics.
 		zoneMetrics = append(zoneMetrics, metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_CACHE_ZONE))
 	}
 
+	log.Debugf("cache metrics count %d", len(zoneMetrics))
+
 	return zoneMetrics
 }
 
@@ -799,6 +1147,7 @@ func (c *NginxPlus) slabMetrics(stats *plusclient.Stats) []*metrics.StatsEntityW
 			slabMetrics = append(slabMetrics, metrics.NewStatsEntityWrapper(dims, slotSimpleMetrics, proto.MetricsReport_INSTANCE))
 		}
 	}
+	log.Debugf("slab metrics count %d", len(slabMetrics))
 
 	return slabMetrics
 }
@@ -818,6 +1167,8 @@ func (c *NginxPlus) httpLimitConnsMetrics(stats, prevStats *plusclient.Stats) []
 		limitConnsMetrics = append(limitConnsMetrics, metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE))
 
 	}
+	log.Debugf("http limit connection metrics count %d", len(limitConnsMetrics))
+
 	return limitConnsMetrics
 }
 
@@ -838,6 +1189,8 @@ func (c *NginxPlus) httpLimitRequestMetrics(stats, prevStats *plusclient.Stats) 
 		limitRequestMetrics = append(limitRequestMetrics, metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE))
 
 	}
+	log.Debugf("http limit request metrics count %d", len(limitRequestMetrics))
+
 	return limitRequestMetrics
 }
 
@@ -871,6 +1224,7 @@ func (c *NginxPlus) workerMetrics(stats, prevStats *plusclient.Stats) []*metrics
 		dims = append(dims, &proto.Dimension{Name: "process_id", Value: fmt.Sprint(w.ProcessID)})
 		workerMetrics = append(workerMetrics, metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE))
 	}
+	log.Debugf("worker metrics count %d", len(workerMetrics))
 
 	return workerMetrics
 }

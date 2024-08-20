@@ -31,6 +31,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
 - [Installing NGINX Agent on Debian](#installing-nginx-agent-on-debian)
 - [Installing NGINX Agent on SLES](#installing-nginx-agent-on-sles)
 - [Installing NGINX Agent on Alpine Linux](#installing-nginx-agent-on-alpine-linux)
+- [Installing NGINX Agent on Amazon Linux 2023](#installing-nginx-agent-on-amazon-linux-2023)
 - [Installing NGINX Agent on Amazon Linux](#installing-nginx-agent-on-amazon-linux)
 - [Installing NGINX Agent on FreeBSD](#installing-nginx-agent-on-freebsd)
 
@@ -80,7 +81,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
     sudo yum install nginx-agent
     ```
 
-    When prompted to accept the GPG key, verify that the fingerprint matches `573B FD6B 3D8F BC64 1079 A6AB ABF5 BD82 7BD9 BF62`, and if so, accept it.
+    When prompted to accept the GPG key, verify that the fingerprint matches `8540 A6F1 8833 A80E 9C16 53A4 2FD2 1310 B49F 6B46`, `573B FD6B 3D8F BC64 1079 A6AB ABF5 BD82 7BD9 BF62`, `9E9B E90E ACBC DE69 FE9B 204C BCDC D8A3 8D88 A2B3`, and if so, accept it.
 
 1. Verify the installation:
 
@@ -244,12 +245,20 @@ Before you install NGINX Agent for the first time on your system, you need to se
     gpg --with-fingerprint --dry-run --quiet --no-keyring --import --import-options import-show /tmp/nginx_signing.key
     ```
 
-1. The output should contain the full fingerprint `573B FD6B 3D8F BC64 1079 A6AB ABF5 BD82 7BD9 BF62` as follows:
+1. The output should contain the full fingerprints `8540 A6F1 8833 A80E 9C16 53A4 2FD2 1310 B49F 6B46`, `573B FD6B 3D8F BC64 1079 A6AB ABF5 BD82 7BD9 BF62`, `9E9B E90E ACBC DE69 FE9B 204C BCDC D8A3 8D88 A2B3` as follows:
 
     ```
-    pub   rsa2048 2011-08-19 [SC] [expires: 2024-06-14]
-        573B FD6B 3D8F BC64 1079  A6AB ABF5 BD82 7BD9 BF62
-    uid                      nginx signing key <signing-key@nginx.com>
+      pub   rsa4096 2024-05-29 [SC]
+            8540A6F18833A80E9C1653A42FD21310B49F6B46
+      uid                      nginx signing key <signing-key-2@nginx.com>
+
+      pub   rsa2048 2011-08-19 [SC] [expires: 2027-05-24]
+            573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62
+      uid                      nginx signing key <signing-key@nginx.com>
+
+      pub   rsa4096 2024-05-29 [SC]
+            9E9BE90EACBCDE69FE9B204CBCDCD8A38D88A2B3
+      uid                      nginx signing key <signing-key-3@nginx.com>
     ```
 
 1. Finally, import the key to the rpm database:
@@ -353,7 +362,55 @@ Before you install NGINX Agent for the first time on your system, you need to se
     sudo nginx-agent -v
     ```
 
-### Installing NGINX Agent on Amazon Linux
+### Installing NGINX Agent on Amazon Linux 2023
+
+1. Create the `/etc/ssl/nginx` directory:
+
+    ```shell
+    sudo mkdir -p /etc/ssl/nginx
+    ```
+
+1. Log in to [MyF5 Customer Portal](https://account.f5.com/myf5/) and download your `nginx-repo.crt` and `nginx-repo.key` files.
+
+1. Copy the `nginx-repo.crt` and `nginx-repo.key` files to the `/etc/ssl/nginx/` directory:
+
+    ```shell
+    sudo cp nginx-repo.crt nginx-repo.key /etc/ssl/nginx/
+    ```
+
+1. Install the prerequisites:
+
+    ```shell
+    sudo dnf install yum-utils procps-ng ca-certificates
+    ```
+
+1. To set up the dnf repository for Amazon Linux 2023, create the file named `/etc/yum.repos.d/nginx-agent.repo` with the following contents:
+
+    ```
+    [nginx-agent]
+    name=nginx-agent repo
+    baseurl=https://packages.nginx.org/nginx-agent/amzn/2023/$basearch/
+    sslclientcert=/etc/ssl/nginx/nginx-repo.crt
+    sslclientkey=/etc/ssl/nginx/nginx-repo.key
+    gpgcheck=0
+    enabled=1
+    ```
+
+1. To install `nginx-agent`, run the following command:
+
+    ```shell
+    sudo dnf install nginx-agent
+    ```
+
+1. When prompted to accept the GPG key, verify that the fingerprint matches `8540 A6F1 8833 A80E 9C16 53A4 2FD2 1310 B49F 6B46`, `573B FD6B 3D8F BC64 1079 A6AB ABF5 BD82 7BD9 BF62`, `9E9B E90E ACBC DE69 FE9B 204C BCDC D8A3 8D88 A2B3`, and if so, accept it.
+
+1. Verify the installation:
+
+    ```shell
+    sudo nginx-agent -v
+    ```
+
+### Installing NGINX Agent on Amazon Linux 2
 
 1. Create the `/etc/ssl/nginx` directory:
 
@@ -380,7 +437,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
     ```
     [nginx-agent]
     name=nginx-agent repo
-    baseurl=https://pkgs.nginx.com/nginx-agent/amzn2/$releasever/$basearch
+    baseurl=https://pkgs.nginx.com/nginx-agent/amzn/2023/$releasever/$basearch
     sslclientcert=/etc/ssl/nginx/nginx-repo.crt
     sslclientkey=/etc/ssl/nginx/nginx-repo.key
     gpgcheck=0
@@ -393,7 +450,7 @@ Before you install NGINX Agent for the first time on your system, you need to se
     sudo yum install nginx-agent
     ```
 
-1. When prompted to accept the GPG key, verify that the fingerprint matches `573B FD6B 3D8F BC64 1079 A6AB ABF5 BD82 7BD9 BF62`, and if so, accept it.
+1. When prompted to accept the GPG key, verify that the fingerprint matches `8540 A6F1 8833 A80E 9C16 53A4 2FD2 1310 B49F 6B46`, `573B FD6B 3D8F BC64 1079 A6AB ABF5 BD82 7BD9 BF62`, `9E9B E90E ACBC DE69 FE9B 204C BCDC D8A3 8D88 A2B3`, and if so, accept it.
 
 1. Verify the installation:
 

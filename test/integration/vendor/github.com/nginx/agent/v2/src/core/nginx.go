@@ -218,7 +218,7 @@ func (n *NginxBinaryType) GetNginxDetailsFromProcess(nginxProcess *Process) *pro
 	if urlsLength == 0 || nginxStatus == "" {
 		stubStatusApiUrl, err := sdk.GetStubStatusApiUrl(nginxDetailsFacade.ConfPath, n.config.IgnoreDirectives)
 		if err != nil {
-			log.Tracef("Unable to get Stub Status API URL from the configuration: NGINX OSS metrics will be unavailable for this system. please configure aStub Status API to get NGINX OSS metrics: %v", err)
+			log.Tracef("Unable to get Stub Status API URL from the configuration: NGINX OSS metrics will be unavailable for this system. please configure a Stub Status API to get NGINX OSS metrics: %v", err)
 		}
 
 		nginxPlusApiUrl, err := sdk.GetNginxPlusApiUrl(nginxDetailsFacade.ConfPath, n.config.IgnoreDirectives)
@@ -502,6 +502,11 @@ func (n *NginxBinaryType) writeConfigWithWithFileActions(
 		return nil, err
 	}
 
+	confDir := filepath.Dir(details.ConfPath)
+	if err := ensureFilesAllowed(confFiles, n.config.AllowedDirectoriesMap, confDir); err != nil {
+		return configApply, err
+	}
+
 	for _, file := range confFiles {
 		rootDirectoryPath := filepath.Dir(details.ConfPath)
 		fileFullPath := file.Name
@@ -517,6 +522,10 @@ func (n *NginxBinaryType) writeConfigWithWithFileActions(
 			log.Warnf("configuration write failed: %s", err)
 			return configApply, err
 		}
+	}
+
+	if err := ensureFilesAllowed(auxFiles, n.config.AllowedDirectoriesMap, confDir); err != nil {
+		return configApply, err
 	}
 
 	for _, file := range auxFiles {

@@ -177,10 +177,11 @@ $(TEST_BUILD_DIR):
 
 # Unit tests
 unit-test: $(TEST_BUILD_DIR) test-core test-plugins test-sdk test-extensions ## Run unit tests
-	echo 'mode: atomic' > $(TEST_BUILD_DIR)/coverage.out
-	tail -q -n +2 $(TEST_BUILD_DIR)/*_coverage.out >> $(TEST_BUILD_DIR)/coverage.out
-	go tool cover -html=$(TEST_BUILD_DIR)/coverage.out -o $(TEST_BUILD_DIR)/coverage.html
-	@printf "\nTotal code coverage: " && go tool cover -func=$(TEST_BUILD_DIR)/coverage.out | grep 'total:' | awk '{print $$3}'
+	@tail -q -n +2 $(TEST_BUILD_DIR)/*_coverage.out >> $(TEST_BUILD_DIR)/tmp_coverage.out
+	@echo 'mode: atomic' > $(TEST_BUILD_DIR)/coverage.out
+	@cat $(TEST_BUILD_DIR)/tmp_coverage.out | grep -v ".pb.go" | grep -v ".gen.go" | grep -v ".pb.validate.go" | grep -v "fake_" | grep -v "_mock.go" | grep -v "_stub.go" >> $(TEST_BUILD_DIR)/coverage.out
+	@go tool cover -html=$(TEST_BUILD_DIR)/coverage.out -o $(TEST_BUILD_DIR)/coverage.html
+	@printf "\nTotal code coverage: " && $(GOTOOL) cover -func=$(TEST_BUILD_DIR)/coverage.out | grep 'total:' | awk '{print $$3}'
 
 test-core: $(TEST_BUILD_DIR) ## Run core unit tests
 	GOWORK=off CGO_ENABLED=0 go test -count=1 -coverprofile=$(TEST_BUILD_DIR)/core_coverage.out -covermode count ./src/core/...
@@ -335,10 +336,10 @@ official-oss-mainline-image: official-oss-image ## Build official NGINX OSS with
 # Grafana Example Dashboard Targets                                                                               #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 clean-grafana-example: clean ## Clean example packages and docker
-	cd ./examples/grafana-metrics/ && BASE_IMAGE= PACKAGE_NAME= $(CONTAINER_COMPOSE) down
+	cd ./examples/grafana-metrics/ && BASE_IMAGE= PACKAGE_NAME= ${CONTAINER_COMPOSE} down
 
 build-grafana-example: local-deb-package ## Build the example of nginx-agent
-	cd ./examples/grafana-metrics/ && BASE_IMAGE=${BASE_IMAGE} PACKAGE_NAME=${PACKAGE_NAME} $(CONTAINER_COMPOSE) build
+	cd ./examples/grafana-metrics/ && BASE_IMAGE=${BASE_IMAGE} PACKAGE_NAME=${PACKAGE_NAME} ${CONTAINER_COMPOSE} build
 
 run-grafana-example: ## Start the example of nginx-agent
-	cd ./examples/grafana-metrics/ && BASE_IMAGE=${BASE_IMAGE} PACKAGE_NAME=${PACKAGE_NAME} $(CONTAINER_COMPOSE) up
+	cd ./examples/grafana-metrics/ && BASE_IMAGE=${BASE_IMAGE} PACKAGE_NAME=${PACKAGE_NAME} ${CONTAINER_COMPOSE} up

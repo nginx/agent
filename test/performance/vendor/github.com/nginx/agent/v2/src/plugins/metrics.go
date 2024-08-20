@@ -211,8 +211,8 @@ func (m *Metrics) metricsGoroutine() {
 }
 
 func (m *Metrics) collectStats() (stats []*metrics.StatsEntityWrapper) {
-	// setups a collect duration of half-time of the poll interval
-	ctx, cancel := context.WithTimeout(m.ctx, m.interval/2)
+	// set a timeout for a millisecond less than the collection interval
+	ctx, cancel := context.WithTimeout(m.ctx, (m.interval - 1*time.Millisecond))
 	defer cancel()
 	// locks the m.collectors to make sure it doesn't get deleted in the middle
 	// of collection, as we will delete the old one if config changes.
@@ -232,7 +232,9 @@ func (m *Metrics) collectStats() (stats []*metrics.StatsEntityWrapper) {
 		// drain the buf, since our sources/collectors are all done, we can rely on buffer length
 		select {
 		case <-ctx.Done():
-			err := m.ctx.Err()
+			log.Debugf("context done in %s collectStats", time.Since(start))
+
+			err := ctx.Err()
 			if err != nil {
 				log.Errorf("error in done context collectStats %v", err)
 			}

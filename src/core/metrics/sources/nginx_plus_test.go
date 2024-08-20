@@ -54,8 +54,6 @@ const (
 	currentPeer2UpstreamHeaderTime   = 80
 	currentPeer1UpstreamResponseTime = 100
 	currentPeer2UpstreamResponseTime = 80
-	currentUpstreamResponseTime      = 100
-	currentUpstreamConnectTime       = 80
 	currentUpstreamFirstByteTime     = 50
 	previousUpstreamHeaderTime       = 98
 	previousUpstreamResponseTime     = 98
@@ -97,14 +95,28 @@ const (
 	workerProcessID                  = 12345
 )
 
-type FakeNginxPlus struct {
-	*NginxPlus
-}
-
-// Collect is fake collector that hard codes a stats struct response to avoid dependency on external NGINX Plus api
-func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
-	defer wg.Done()
-	stats := plusclient.Stats{
+var (
+	availableZones = []string{"server_zones", "upstreams", "limit_conns", "zone_sync"}
+	stats          = plusclient.Stats{
+		StreamZoneSync: &plusclient.StreamZoneSync{
+			Zones: map[string]plusclient.SyncZone{
+				"0": {
+					RecordsPending: 1,
+					RecordsTotal:   2,
+				},
+				"1": {
+					RecordsPending: 3,
+					RecordsTotal:   4,
+				},
+			},
+			Status: plusclient.StreamZoneSyncStatus{
+				BytesIn:     1,
+				MsgsIn:      2,
+				MsgsOut:     3,
+				BytesOut:    4,
+				NodesOnline: 5,
+			},
+		},
 		HTTPRequests: plusclient.HTTPRequests{
 			Total:   currentHTTPRequestTotal,
 			Current: currentHTTPRequestCurrent,
@@ -387,8 +399,7 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 			},
 		},
 	}
-
-	prevStats := plusclient.Stats{
+	prevStats = plusclient.Stats{
 		HTTPRequests: plusclient.HTTPRequests{
 			Total:   previousHTTPRequestTotal,
 			Current: previousHTTPRequestCurrent,
@@ -547,6 +558,15 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 			},
 		},
 	}
+)
+
+type FakeNginxPlus struct {
+	*NginxPlus
+}
+
+// Collect is fake collector that hard codes a stats struct response to avoid dependency on external NGINX Plus api
+func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
+	defer wg.Done()
 
 	f.baseDimensions.NginxType = "plus"
 	f.baseDimensions.PublishedAPI = f.plusAPI
@@ -554,6 +574,113 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 	f.baseDimensions.NginxVersion = stats.NginxInfo.Version
 
 	f.sendMetrics(ctx, m, f.collectMetrics(&stats, &prevStats)...)
+}
+
+var _ Client = (*MockClient)(nil)
+
+type MockClient struct{}
+
+func (m *MockClient) GetAvailableEndpoints() ([]string, error) {
+	return []string{"stream"}, nil
+}
+
+func (m *MockClient) GetAvailableStreamEndpoints() ([]string, error) {
+	return availableZones, nil
+}
+
+func (m *MockClient) GetStreamServerZones() (*plusclient.StreamServerZones, error) {
+	return &stats.StreamServerZones, nil
+}
+
+func (m *MockClient) GetStreamUpstreams() (*plusclient.StreamUpstreams, error) {
+	return &stats.StreamUpstreams, nil
+}
+
+func (m *MockClient) GetStreamConnectionsLimit() (*plusclient.StreamLimitConnections, error) {
+	return &stats.StreamLimitConnections, nil
+}
+
+func (m *MockClient) GetStreamZoneSync() (*plusclient.StreamZoneSync, error) {
+	return &plusclient.StreamZoneSync{
+		Zones:  stats.StreamZoneSync.Zones,
+		Status: stats.StreamZoneSync.Status,
+	}, nil
+}
+
+func (m *MockClient) GetNginxInfo() (*plusclient.NginxInfo, error) {
+	return &stats.NginxInfo, nil
+}
+
+func (m *MockClient) GetCaches() (*plusclient.Caches, error) {
+	return &stats.Caches, nil
+}
+
+func (m *MockClient) GetProcesses() (*plusclient.Processes, error) {
+	return &stats.Processes, nil
+}
+
+func (m *MockClient) GetSlabs() (*plusclient.Slabs, error) {
+	return &stats.Slabs, nil
+}
+
+func (m *MockClient) GetConnections() (*plusclient.Connections, error) {
+	return &stats.Connections, nil
+}
+
+func (m *MockClient) GetHTTPRequests() (*plusclient.HTTPRequests, error) {
+	return &stats.HTTPRequests, nil
+}
+
+func (m *MockClient) GetSSL() (*plusclient.SSL, error) {
+	return &stats.SSL, nil
+}
+
+func (m *MockClient) GetServerZones() (*plusclient.ServerZones, error) {
+	return &stats.ServerZones, nil
+}
+
+func (m *MockClient) GetUpstreams() (*plusclient.Upstreams, error) {
+	return &stats.Upstreams, nil
+}
+
+func (m *MockClient) GetLocationZones() (*plusclient.LocationZones, error) {
+	return &stats.LocationZones, nil
+}
+
+func (m *MockClient) GetResolvers() (*plusclient.Resolvers, error) {
+	return &stats.Resolvers, nil
+}
+
+func (m *MockClient) GetHTTPLimitReqs() (*plusclient.HTTPLimitRequests, error) {
+	return &stats.HTTPLimitRequests, nil
+}
+
+func (m *MockClient) GetHTTPConnectionsLimit() (*plusclient.HTTPLimitConnections, error) {
+	return &stats.HTTPLimitConnections, nil
+}
+
+func (m *MockClient) GetWorkers() ([]*plusclient.Workers, error) {
+	return stats.Workers, nil
+}
+
+func TestGetStats(t *testing.T) {
+	client := &MockClient{}
+
+	source := NewNginxPlus(nil, "", "", "", 9)
+
+	tests := []struct {
+		stats plusclient.Stats
+	}{
+		{
+			stats: stats,
+		},
+	}
+
+	for _, test := range tests {
+		resultStats, err := source.getStats(client)
+		require.NoError(t, err)
+		assert.Equal(t, test.stats, *resultStats)
+	}
 }
 
 func TestNginxPlusUpdate(t *testing.T) {
