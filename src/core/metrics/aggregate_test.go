@@ -10,6 +10,7 @@ package metrics
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"testing"
 
 	log "github.com/sirupsen/logrus"
@@ -233,6 +234,12 @@ func TestGenerateMetrics(t *testing.T) {
 	for i, expected := range expectedResults {
 		assert.Equal(t, expected.GetDimensions(), results[i].GetDimensions())
 		assert.Equal(t, len(expected.GetSimplemetrics()), len(results[i].GetSimplemetrics()))
+
+		metrics := results[i].GetSimplemetrics()
+		sort.Slice(metrics, func(k, l int) bool {
+			return metrics[k].GetName() > metrics[l].GetName()
+		})
+
 		for j, expectedMetric := range expected.GetSimplemetrics() {
 			assert.Equal(t, expectedMetric.GetName(), results[i].GetSimplemetrics()[j].GetName())
 			assert.Equal(t, expectedMetric.GetValue(), results[i].GetSimplemetrics()[j].GetValue())
