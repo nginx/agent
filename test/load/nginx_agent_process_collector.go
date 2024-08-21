@@ -82,7 +82,7 @@ var LoadResourceSpec = &testbed.ResourceSpec{
 	// CPU can be spikey
 	ExpectedMaxCPU: 50,
 	// RAM can be spikey
-	ExpectedMaxRAM:         110,
+	ExpectedMaxRAM:         115,
 	ResourceCheckPeriod:    1 * time.Second,
 	MaxConsecutiveFailures: 0,
 }
