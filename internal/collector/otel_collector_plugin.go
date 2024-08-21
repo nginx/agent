@@ -66,6 +66,14 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 		return fmt.Errorf("write OTel Collector config: %w", err)
 	}
 
+	if oc.config.Collector.Receivers.OtlpReceivers != nil {
+		for _, receiver := range oc.config.Collector.Receivers.OtlpReceivers {
+			if receiver.OtlpTLSConfig != nil && receiver.OtlpTLSConfig.GenerateSelfSignedCert {
+				slog.Warn("Self-signed certificate for OTEL receiver in use")
+			}
+		}
+	}
+
 	bootErr := oc.bootup(runCtx)
 	if bootErr != nil {
 		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)

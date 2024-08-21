@@ -12,9 +12,11 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
+	selfsignedcerts "github.com/nginx/agent/v3/pkg/tls"
 	uuidLibrary "github.com/nginx/agent/v3/pkg/uuid"
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
@@ -326,12 +328,52 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 		Health:     &healthCheck,
 	}
 
+	// Check for self-signed certificate true in Agent conf
+	if err = handleSelfSignedCertificates(col); err != nil {
+		return nil, err
+	}
+
 	err = col.Validate(allowedDirs)
 	if err != nil {
 		return nil, fmt.Errorf("collector config: %w", err)
 	}
 
 	return col, nil
+}
+
+// generate self-signed certificate for OTEL receiver
+// nolint: revive
+func handleSelfSignedCertificates(col *Collector) error {
+	sanNames := []string{"127.0.0.1", "::1", "localhost"}
+
+	if col.Receivers.OtlpReceivers != nil {
+		for _, receiver := range col.Receivers.OtlpReceivers {
+			if receiver.OtlpTLSConfig != nil && receiver.OtlpTLSConfig.GenerateSelfSignedCert {
+				if !slices.Contains(sanNames, receiver.Server.Host) {
+					sanNames = append(sanNames, receiver.Server.Host)
+				}
+
+				// Update viper's TLS paths with defaults
+				receiver.OtlpTLSConfig.Ca = DefCollectorTLSCAPath
+				receiver.OtlpTLSConfig.Cert = DefCollectorTLSCertPath
+				receiver.OtlpTLSConfig.Key = DefCollectorTLSKeyPath
+			}
+		}
+	}
+
+	if len(sanNames) > 0 {
+		err := selfsignedcerts.GenerateServerCert(
+			sanNames,
+			DefCollectorTLSCAPath,
+			DefCollectorTLSCertPath,
+			DefCollectorTLSKeyPath,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to generate self-signed certificate: %w", err)
+		}
+	}
+
+	return nil
 }
 
 func resolveCommand() *Command {

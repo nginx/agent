@@ -105,9 +105,9 @@ type (
 	}
 
 	OtlpReceiver struct {
-		Server *ServerConfig `yaml:"-" mapstructure:"server"`
-		Auth   *AuthConfig   `yaml:"-" mapstructure:"auth"`
-		TLS    *TLSConfig    `yaml:"-" mapstructure:"tls"`
+		Server        *ServerConfig  `yaml:"-" mapstructure:"server"`
+		Auth          *AuthConfig    `yaml:"-" mapstructure:"auth"`
+		OtlpTLSConfig *OtlpTLSConfig `yaml:"-" mapstructure:"tls"`
 	}
 
 	NginxReceiver struct {
@@ -154,6 +154,16 @@ type (
 		Ca         string `yaml:"-" mapstructure:"ca"`
 		ServerName string `yaml:"-" mapstructure:"server_name"`
 		SkipVerify bool   `yaml:"-" mapstructure:"skip_verify"`
+	}
+
+	// Specialized TLS configuration for OtlpReceiver with self-signed cert generation.
+	OtlpTLSConfig struct {
+		Cert                   string `yaml:"-" mapstructure:"cert"`
+		Key                    string `yaml:"-" mapstructure:"key"`
+		Ca                     string `yaml:"-" mapstructure:"ca"`
+		ServerName             string `yaml:"-" mapstructure:"server_name"`
+		SkipVerify             bool   `yaml:"-" mapstructure:"skip_verify"`
+		GenerateSelfSignedCert bool   `yaml:"-" mapstructure:"generate_self_signed_cert"`
 	}
 
 	File struct {

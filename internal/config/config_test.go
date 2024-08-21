@@ -333,7 +333,7 @@ func getAgentConfig() *Config {
 						Auth: &AuthConfig{
 							Token: "even-secreter-token",
 						},
-						TLS: &TLSConfig{
+						OtlpTLSConfig: &OtlpTLSConfig{
 							Cert:       "/path/to/server-cert.pem",
 							Key:        "/path/to/server-cert.pem",
 							Ca:         "/path/to/server-cert.pem",

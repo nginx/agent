@@ -19,10 +19,35 @@ receivers:
     protocols:
       {{- if eq .Server.Type 0 }}
       grpc:
+        endpoint: "{{ .Server.Host }}:{{ .Server.Port }}"
+        {{- if and .OtlpTLSConfig (or (gt (len .OtlpTLSConfig.Key) 0) (gt (len .OtlpTLSConfig.Cert) 0) (gt (len .OtlpTLSConfig.Key) 0)) }}
+        tls:
+          {{ if gt (len .OtlpTLSConfig.Cert) 0 -}}
+          cert_file: {{ .OtlpTLSConfig.Cert }}
+          {{- end }}
+          {{ if gt (len .OtlpTLSConfig.Key) 0 -}}
+          key_file: {{ .OtlpTLSConfig.Key }}
+          {{- end }}
+          {{ if gt (len .OtlpTLSConfig.Ca) 0 -}}
+          ca_file: {{ .OtlpTLSConfig.Ca }}
+          {{- end }}
+        {{- end }}
       {{- else }}
       http:
-      {{- end }}
         endpoint: "{{- .Server.Host -}}:{{- .Server.Port -}}"
+        {{- if .OtlpTLSConfig }}
+        tls:
+          {{ if gt (len .OtlpTLSConfig.Cert) 0 -}}
+          cert_file: {{ .OtlpTLSConfig.Cert }}
+          {{- end }}
+          {{ if gt (len .OtlpTLSConfig.Key) 0 -}}
+          key_file: {{ .OtlpTLSConfig.Key }}
+          {{- end }}
+          {{ if gt (len .OtlpTLSConfig.Ca) 0 -}}
+          ca_file: {{ .OtlpTLSConfig.Ca }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
 {{- end }}
 {{- range .Receivers.NginxReceivers }}
   nginx/{{- .InstanceID -}}:
