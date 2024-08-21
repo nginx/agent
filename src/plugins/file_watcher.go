@@ -51,7 +51,6 @@ const (
 )
 
 func NewFileWatcher(config *config.Config, env core.Environment) *FileWatcher {
-
 	fw := &FileWatcher{
 		config:   config,
 		watching: &sync.Map{},
