@@ -1,16 +1,13 @@
 ---
-title: "Technical Specifications"
-draft: false
-description: "This document describes the requirements for NGINX Agent."
-weight: 200
+title: "Technical specifications"
+weight: 100
 toc: true
-tags: [ "docs" ]
 docs: "DOCS-1092"
-categories: ["development"]
-doctypes: ["task"]
 ---
 
-## Supported Distributions
+This document describes the requirements for NGINX Agent v2.
+
+## Supported distributions
 
 NGINX Agent can run in most environments. We support the following distributions:
 
@@ -29,7 +26,7 @@ NGINX Agent can run in most environments. We support the following distributions
 {{< /bootstrap-table >}}
 
 
-## Supported Deployment Environments 
+## Supported deployment environments 
 
 NGINX Agent can be deployed in the following environments:
 
@@ -38,12 +35,12 @@ NGINX Agent can be deployed in the following environments:
 - Public Cloud: AWS, Google Cloud Platform, and Microsoft Azure
 - Virtual Machine
 
-## Supported NGINX Versions 
+## Supported NGINX versions 
 
 NGINX Agent works with all supported versions of NGINX Open Source and NGINX Plus.
 
 
-## Sizing Recommendations
+## Sizing recommendations
 
 Minimum system sizing recommendations for NGINX Agent:
 {{< bootstrap-table "table table-striped table-bordered" >}}

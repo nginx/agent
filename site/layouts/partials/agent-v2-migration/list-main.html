@@ -1,0 +1,53 @@
+<div class="list-page">
+    <div class="col-md-12 col-xl-12 py-md-3 pl-md-5">
+        <div class="page-header list">
+            <h1 class="bd-title">
+                {{ .Title }}
+            </h1>
+            {{ if .Description }}
+                <p>
+                    {{ .Description | markdownify }}
+                </p>
+            {{ end}}
+            <blockquote class="tip">
+                <div>
+                  <i class="fa-solid fa-triangle-exclamation"></i><strong> NGINX Agent v3 is available!</strong><br><br>
+                  This documentation is for NGINX Agent v2. We suggest reading the <a href="#">Migrate from NGINX Agent v2 to v3</a> topic to learn the differences between the two versions, and learn how to upgrade your instances.
+                </div>
+              </blockquote> 
+            {{ if .Content }}
+                <p>
+                    {{ .Content | markdownify }}
+                </p>
+            {{ end }}
+        </div>
+    </div>
+
+    <section>
+        <div class="row">
+            <div class="card-deck">
+        {{ range .Pages.GroupBy "Section" }}
+            
+            {{ range .Pages.ByWeight }}
+            <div class="col-md-5 card">
+                <div class="card-body">
+                    <h3 class="card-title">
+                        <i class="fas fa-{{if eq .Kind "page"}}file-alt{{else}}book{{end}} fa-2x card-img-top"></i>
+                        <a href="{{ if .Params.url}}{{ .Params.url}}{{else}}{{ .Permalink }}{{end}}">{{ .Title }}</a>
+                    </h3>
+                    {{/*}}<p class="card-text">
+                        {{ if .Description }}{{ .Description | markdownify }}{{ end }}    
+                    </p>{{*/}}
+            
+            </div>
+            </div>
+
+            {{ end }}
+        </div> 
+    </div>  
+        {{ end }}
+
+
+    </section>
+    
+</div>

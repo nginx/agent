@@ -1,6 +1,5 @@
 ---
-title: "Installation and upgrade"
+title: "Install and upgrade"
 description: "Learn how to install, upgrade, and uninstall NGINX Agent."
-menu: docs
-weight: 300
+weight: 400
 ---
