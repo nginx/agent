@@ -2,7 +2,7 @@
 //
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
-package accesslog
+package file
 
 import (
 	"fmt"
@@ -13,11 +13,17 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestGrokConstructor(t *testing.T) {
+const baseformat = `$remote_addr - $remote_user [$time_local] "$request"` +
+	` $status $body_bytes_sent "$http_referer" "$http_user_agent"` +
+	` "$http_x_forwarded_for" "$bytes_sent" "$request_length" "$request_time"` +
+	` "$gzip_ratio" "$server_protocol" "$upstream_connect_time""$upstream_header_time"` +
+	` "$upstream_response_length" "$upstream_response_time"`
+
+func TestGrok_Constructor(t *testing.T) {
 	logger := newLogger(t)
 
 	tests := []struct {
-		logger    *zap.SugaredLogger
+		logger    *zap.Logger
 		name      string
 		logFormat string
 		expErrMsg string
@@ -52,7 +58,7 @@ func TestGrokConstructor(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			fmt.Printf(test.logFormat)
-			grok, err := newGrok(test.logFormat, test.logger)
+			grok, err := NewCompiledGrok(test.logFormat, test.logger)
 			if test.shouldErr {
 				require.Error(tt, err)
 				assert.Contains(tt, err.Error(), test.expErrMsg)
@@ -64,7 +70,7 @@ func TestGrokConstructor(t *testing.T) {
 	}
 }
 
-func TestGrokParseString(t *testing.T) {
+func TestGrok_ParseString(t *testing.T) {
 	logger := newLogger(t)
 
 	tests := []struct {
@@ -143,7 +149,7 @@ func TestGrokParseString(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			grok, err := newGrok(test.logFormat, logger)
+			grok, err := NewCompiledGrok(test.logFormat, logger)
 			require.NoError(tt, err)
 			// Our code only uses ParseString(), so we will ignore other methods in the Grok API.
 			actualOutput := grok.ParseString(test.inputLogEntry)
@@ -154,7 +160,7 @@ func TestGrokParseString(t *testing.T) {
 	}
 }
 
-func newLogger(t *testing.T) *zap.SugaredLogger {
+func newLogger(t *testing.T) *zap.Logger {
 	t.Helper()
 	logCfg := zap.NewDevelopmentConfig()
 	logCfg.OutputPaths = []string{"stdout"}
@@ -162,7 +168,7 @@ func newLogger(t *testing.T) *zap.SugaredLogger {
 	logger, err := logCfg.Build()
 	require.NoError(t, err)
 
-	return logger.Sugar()
+	return logger
 }
 
 // Omit time entries, as they will vary depending on when the test will be run.

@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/entry"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/helper"
@@ -29,18 +28,14 @@ import (
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/metadata"
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/model"
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/record"
+	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/scraper/accesslog/operator/input/file"
 )
 
 type (
-	grokParser interface {
-		ParseString(text string) map[string]string
-	}
-
 	NginxLogScraper struct {
-		grok    grokParser
 		outChan <-chan []*entry.Entry
 		cfg     *config.Config
-		logger  *zap.SugaredLogger
+		logger  *zap.Logger
 		mb      *metadata.MetricsBuilder
 		pipe    *pipeline.DirectedPipeline
 		wg      *sync.WaitGroup
@@ -56,29 +51,29 @@ func NewScraper(
 	settings receiver.Settings,
 	cfg *config.Config,
 ) (*NginxLogScraper, error) {
+	logger := settings.Logger
+	logger.Info("Creating NGINX access log scraper")
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
-	inputCfg := operator.NewConfig(&cfg.InputConfig)
-	logger := settings.Logger.Sugar()
 
-	stanzaPipeline, outChan, err := initStanzaPipeline(cfg, inputCfg, settings.Logger)
+	operators := []operator.Config{}
+
+	for _, accessLog := range cfg.AccessLogs {
+		logger.Info("Adding access log file operator", zap.String("file_path", accessLog.FilePath))
+		fileInputConfig := file.NewConfig()
+		fileInputConfig.AccessLogFormat = accessLog.LogFormat
+		fileInputConfig.Include = append(fileInputConfig.Include, accessLog.FilePath)
+
+		inputCfg := operator.NewConfig(fileInputConfig)
+		operators = append(operators, inputCfg)
+	}
+
+	stanzaPipeline, outChan, err := initStanzaPipeline(operators, settings.Logger)
 	if err != nil {
 		return nil, fmt.Errorf("init stanza pipeline: %w", err)
 	}
 
-	if len(cfg.AccessLogFormat) == 0 {
-		return nil, fmt.Errorf("NGINX log format missing: %w", err)
-	}
-
-	logger.Debugf("Using log format: %s", cfg.AccessLogFormat)
-
-	grok, err := newGrok(cfg.AccessLogFormat, logger)
-	if err != nil {
-		return nil, fmt.Errorf("grok init: %w", err)
-	}
-
 	return &NginxLogScraper{
 		cfg:     cfg,
-		grok:    grok,
 		logger:  logger,
 		mb:      mb,
 		mut:     sync.Mutex{},
@@ -93,7 +88,7 @@ func (nls *NginxLogScraper) ID() component.ID {
 }
 
 func (nls *NginxLogScraper) Start(parentCtx context.Context, _ component.Host) error {
-	nls.logger.Debug("NGINX access log scraper started")
+	nls.logger.Info("NGINX access log scraper started")
 	ctx, cancel := context.WithCancel(parentCtx)
 	nls.cancel = cancel
 
@@ -112,22 +107,16 @@ func (nls *NginxLogScraper) Scrape(_ context.Context) (pmetric.Metrics, error) {
 	nls.mut.Lock()
 	defer nls.mut.Unlock()
 	for _, ent := range nls.entries {
-		strBody, ok := ent.Body.(string)
+		nls.logger.Info("Scraping NGINX access log", zap.Any("entity", ent))
+		item, ok := ent.Body.(*model.NginxAccessItem)
 		if !ok {
-			nls.logger.Debugf("Failed to cast log entry to string, %v", ent.Body)
+			nls.logger.Info("Failed to cast log entry to *model.NginxAccessItem", zap.Any("entry", ent.Body))
 			continue
 		}
 
-		mappedResults := nls.grok.ParseString(strBody)
-
-		ai, err := newNginxAccessItem(mappedResults)
+		err := record.Item(item, nls.mb)
 		if err != nil {
-			return pmetric.Metrics{}, fmt.Errorf("cast grok map to access item: %w", err)
-		}
-
-		err = record.Item(ai, nls.mb)
-		if err != nil {
-			nls.logger.Debugf("Recording metric failed, %+v", ai)
+			nls.logger.Info("Recording metric failed", zap.Any("item", item), zap.Error(err))
 			continue
 		}
 	}
@@ -145,12 +134,9 @@ func (nls *NginxLogScraper) Shutdown(_ context.Context) error {
 }
 
 func initStanzaPipeline(
-	baseCfg *config.Config,
-	opCfg operator.Config,
+	operators []operator.Config,
 	logger *zap.Logger,
 ) (*pipeline.DirectedPipeline, <-chan []*entry.Entry, error) {
-	operators := append([]operator.Config{opCfg}, baseCfg.BaseConfig.Operators...)
-
 	mp := otel.GetMeterProvider()
 	if mp == nil {
 		mp = metricSdk.NewMeterProvider()
@@ -173,18 +159,18 @@ func initStanzaPipeline(
 }
 
 func (nls *NginxLogScraper) runConsumer(ctx context.Context) {
-	nls.logger.Debug("Starting NGINX access log receiver's consumer")
+	nls.logger.Info("Starting NGINX access log receiver's consumer")
 	defer nls.wg.Done()
 
 	entryChan := nls.outChan
 	for {
 		select {
 		case <-ctx.Done():
-			nls.logger.Debug("Closing NGINX access log receiver consumer")
+			nls.logger.Info("Closing NGINX access log receiver consumer")
 			return
 		case entries, ok := <-entryChan:
 			if !ok {
-				nls.logger.Debug("Emitter channel closed, shutting down NGINX access log consumer")
+				nls.logger.Info("Emitter channel closed, shutting down NGINX access log consumer")
 				return
 			}
 
@@ -193,13 +179,4 @@ func (nls *NginxLogScraper) runConsumer(ctx context.Context) {
 			nls.mut.Unlock()
 		}
 	}
-}
-
-func newNginxAccessItem(v map[string]string) (*model.NginxAccessItem, error) {
-	res := &model.NginxAccessItem{}
-	if err := mapstructure.Decode(v, res); err != nil {
-		return nil, err
-	}
-
-	return res, nil
 }

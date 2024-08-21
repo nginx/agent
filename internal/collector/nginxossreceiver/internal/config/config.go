@@ -13,8 +13,6 @@ import (
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
 
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/metadata"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/adapter"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/input/file"
 )
 
 const (
@@ -24,11 +22,14 @@ const (
 
 type Config struct {
 	confighttp.ClientConfig        `mapstructure:",squash"`
-	InputConfig                    file.Config        `mapstructure:",squash"`
-	AccessLogFormat                string             `mapstructure:"access_log_format"`
-	BaseConfig                     adapter.BaseConfig `mapstructure:",squash"`
+	AccessLogs                     []AccessLog `mapstructure:"access_logs"`
 	scraperhelper.ControllerConfig `mapstructure:",squash"`
 	MetricsBuilderConfig           metadata.MetricsBuilderConfig `mapstructure:",squash"`
+}
+
+type AccessLog struct {
+	LogFormat string `mapstructure:"log_format"`
+	FilePath  string `mapstructure:"file_path"`
 }
 
 // nolint: ireturn
@@ -42,8 +43,7 @@ func CreateDefaultConfig() component.Config {
 			Endpoint: "http://localhost:80/status",
 			Timeout:  defaultClientTimeout,
 		},
-		InputConfig:          *file.NewConfig(),
 		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
-		AccessLogFormat:      "",
+		AccessLogs:           []AccessLog{},
 	}
 }

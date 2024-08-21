@@ -98,6 +98,12 @@ func TestCollector_Process(t *testing.T) {
 				Data: &model.NginxConfigContext{
 					InstanceID: "123",
 					StubStatus: "http://test.com:8080/stub_status",
+					AccessLogs: []*model.AccessLog{
+						{
+							Name:   "/var/log/nginx/access.log",
+							Format: "$remote_addr - $remote_user [$time_local] \"$request\"",
+						},
+					},
 				},
 			},
 			receivers: config.Receivers{
@@ -110,6 +116,12 @@ func TestCollector_Process(t *testing.T) {
 					{
 						InstanceID: "123",
 						StubStatus: "http://test.com:8080/stub_status",
+						AccessLogs: []config.AccessLog{
+							{
+								FilePath:  "/var/log/nginx/access.log",
+								LogFormat: "$$remote_addr - $$remote_user [$$time_local] \\\"$$request\\\"",
+							},
+						},
 					},
 				},
 				NginxPlusReceivers: []config.NginxPlusReceiver{},
@@ -213,7 +225,7 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 						AccessLogs: []config.AccessLog{
 							{
 								FilePath:  "/etc/nginx/test.log",
-								LogFormat: `$remote_addr [$time_local] "$request" $status`,
+								LogFormat: "$$remote_addr [$$time_local] \\\"$$request\\\" $$status",
 							},
 						},
 					},

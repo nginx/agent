@@ -7,7 +7,7 @@ status:
     beta: [metrics]
   distributions: [contrib]
   codeowners:
-    active: [djaglowski]
+    active: [olli-holmala, oliveromahony, apgralG, dhurley, craigell]
 
 attributes:
   state:

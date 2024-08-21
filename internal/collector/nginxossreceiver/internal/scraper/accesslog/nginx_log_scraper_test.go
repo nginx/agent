@@ -16,7 +16,6 @@ import (
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/config"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest/pmetrictest"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/input/file"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"
@@ -47,8 +46,12 @@ func TestAccessLogScraper(t *testing.T) {
 
 	cfg, ok := config.CreateDefaultConfig().(*config.Config)
 	assert.True(t, ok)
-	cfg.InputConfig.Include = []string{testAccessLogPath}
-	cfg.AccessLogFormat = baseformat
+	cfg.AccessLogs = []config.AccessLog{
+		{
+			LogFormat: baseformat,
+			FilePath:  testAccessLogPath,
+		},
+	}
 
 	accessLogScraper, err := NewScraper(receivertest.NewNopSettings(), cfg)
 	require.NoError(t, err)
@@ -79,20 +82,9 @@ func TestAccessLogScraper(t *testing.T) {
 
 func TestAccessLogScraperError(t *testing.T) {
 	t.Run("include config missing", func(tt *testing.T) {
-		_, err := NewScraper(receivertest.NewNopSettings(), &config.Config{
-			InputConfig: file.Config{},
-		})
+		_, err := NewScraper(receivertest.NewNopSettings(), &config.Config{})
 		require.Error(tt, err)
 		assert.Contains(tt, err.Error(), "init stanza pipeline")
-	})
-
-	t.Run("log_format error", func(tt *testing.T) {
-		dc, ok := config.CreateDefaultConfig().(*config.Config)
-		assert.True(t, ok)
-		dc.InputConfig.Include = []string{testDataDir}
-		_, err := NewScraper(receivertest.NewNopSettings(), dc)
-		require.Error(tt, err)
-		assert.Contains(tt, err.Error(), "NGINX log format missing")
 	})
 }
 

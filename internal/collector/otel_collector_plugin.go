@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/nginx/agent/v3/internal/backoff"
@@ -82,7 +83,7 @@ func (oc *Collector) bootup(ctx context.Context) error {
 		if appErr != nil {
 			errChan <- appErr
 		}
-		slog.InfoContext(ctx, "Run Finished")
+		slog.InfoContext(ctx, "OTel collector run finished")
 	}()
 
 	for {
@@ -316,10 +317,17 @@ func toConfigAccessLog(al []*model.AccessLog) []config.AccessLog {
 	results := make([]config.AccessLog, 0, len(al))
 	for _, ctxAccessLog := range al {
 		results = append(results, config.AccessLog{
-			LogFormat: ctxAccessLog.Format,
+			LogFormat: escapeString(ctxAccessLog.Format),
 			FilePath:  ctxAccessLog.Name,
 		})
 	}
 
 	return results
+}
+
+func escapeString(input string) string {
+	output := strings.ReplaceAll(input, "$", "$$")
+	output = strings.ReplaceAll(output, "\"", "\\\"")
+
+	return output
 }

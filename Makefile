@@ -178,7 +178,7 @@ run-mock-management-grpc-server: ## Run mock management plane gRPC server
 	$(GORUN) test/mock/grpc/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY) -logLevel=$(MOCK_MANAGEMENT_PLANE_LOG_LEVEL) -grpcAddress=$(MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS) -apiAddress=$(MOCK_MANAGEMENT_PLANE_API_ADDRESS)
 
 .PHONY: build-test-plus-image
-build-test-plus-image: local-deb-package
+build-test-plus-image:
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx_plus_$(IMAGE_TAG) . \
 		--no-cache -f ./scripts/docker/nginx-plus/deb/Dockerfile \
 		--secret id=nginx-crt,src=$(CERTS_DIR)/nginx-repo.crt \
@@ -188,10 +188,20 @@ build-test-plus-image: local-deb-package
 		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
 		--build-arg ENTRY_POINT=./scripts/docker/entrypoint.sh
 
+.PHONY: build-test-oss-image
+build-test-oss-image:
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx_oss_$(IMAGE_TAG) . \
+		--no-cache -f ./scripts/docker/nginx-oss/deb/Dockerfile \
+		--target install-agent-local \
+		--build-arg PACKAGE_NAME=$(PACKAGE_NAME) \
+		--build-arg PACKAGES_REPO=$(OSS_PACKAGES_REPO) \
+		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
+		--build-arg ENTRY_POINT=./scripts/docker/entrypoint.sh
+
 .PHONY: run-mock-management-otel-collector
 run-mock-management-otel-collector: ## Run mock management plane OTel collector
 	@echo "🚀 Running mock management plane OTel collector"
-	AGENT_IMAGE=nginx_plus_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml up -d
+	AGENT_IMAGE_WITH_NGINX_PLUS=nginx_plus_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_OSS=nginx_oss_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml up -d
 
 .PHONY: stop-mock-management-otel-collector
 stop-mock-management-otel-collector: ## Stop running mock management plane OTel collector

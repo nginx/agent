@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package accesslog
+package file
 
 import (
 	"errors"
@@ -47,7 +47,7 @@ var (
 	logVarRegex = regexp.MustCompile(`\$([a-zA-Z]+[_[a-zA-Z]+]*)`)
 )
 
-func newGrok(logFormat string, logger *zap.SugaredLogger) (*grok.CompiledGrok, error) {
+func NewCompiledGrok(logFormat string, logger *zap.Logger) (*grok.CompiledGrok, error) {
 	if logger == nil {
 		return nil, errors.New("logger cannot be nil")
 	}
@@ -58,7 +58,7 @@ func newGrok(logFormat string, logger *zap.SugaredLogger) (*grok.CompiledGrok, e
 		grokPattern = strings.ReplaceAll(grokPattern, key, value)
 	}
 	grokPattern = replaceCustomLogVars(grokPattern)
-	logger.Debugf("Using Grok pattern: %s", grokPattern)
+	logger.Info("Setting Grok pattern", zap.String("grokPattern", grokPattern))
 
 	g, err := grok.New(grok.Config{
 		NamedCapturesOnly: false,

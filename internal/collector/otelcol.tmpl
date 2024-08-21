@@ -11,8 +11,6 @@ receivers:
       memory:
       network:
       paging:
-      processes:
-      process:
 {{- end }}
 {{- range $index, $otlpReceiver := .Receivers.OtlpReceivers }}
   otlp/{{$index}}:
@@ -28,13 +26,11 @@ receivers:
   nginx/{{- .InstanceID -}}:
     endpoint: "{{- .StubStatus -}}"
     collection_interval: 10s
-    {{- if eq (len .AccessLogs) 1 }}
+    {{- if gt (len .AccessLogs) 0 }}
+    access_logs:
     {{- range .AccessLogs }}
-    access_log_format: "{{- .LogFormat -}}"
-    operators:
-      - type: file_input
-        include:
-          - "{{- .FilePath -}}"
+      - log_format: "{{- .LogFormat -}}"
+        file_path: "{{- .FilePath -}}"
     {{- end }}
     {{- end }}
 {{- end }}
