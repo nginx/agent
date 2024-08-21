@@ -101,9 +101,7 @@ func NewNginxErrorLog(
 	return nginxErrorLog
 }
 
-func (c *NginxErrorLog) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
-	defer wg.Done()
-
+func (c *NginxErrorLog) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	c.collectLogStats(ctx, m)
 }
 

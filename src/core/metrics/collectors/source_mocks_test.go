@@ -9,7 +9,6 @@ package collectors
 
 import (
 	"context"
-	"sync"
 
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/stretchr/testify/mock"
@@ -17,7 +16,7 @@ import (
 
 func GetNginxSourceMock() *NginxSourceMock {
 	mockSource := new(NginxSourceMock)
-	mockSource.On("Collect", mock.Anything, mock.Anything, mock.Anything).Once()
+	mockSource.On("Collect", mock.Anything, mock.Anything).Once()
 	return mockSource
 }
 
@@ -25,9 +24,8 @@ type NginxSourceMock struct {
 	mock.Mock
 }
 
-func (m *NginxSourceMock) Collect(ctx context.Context, wg *sync.WaitGroup, statsChannel chan<- *metrics.StatsEntityWrapper) {
-	m.Called(ctx, wg, statsChannel)
-	wg.Done()
+func (m *NginxSourceMock) Collect(ctx context.Context, statsChannel chan<- *metrics.StatsEntityWrapper) {
+	m.Called(ctx, statsChannel)
 }
 
 func (m *NginxSourceMock) Update(dimensions *metrics.CommonDim, collectorConf *metrics.NginxCollectorConfig) {
@@ -42,7 +40,6 @@ type SourceMock struct {
 	mock.Mock
 }
 
-func (m *SourceMock) Collect(ctx context.Context, wg *sync.WaitGroup, statsChannel chan<- *metrics.StatsEntityWrapper) {
-	m.Called(ctx, wg, statsChannel)
-	wg.Done()
+func (m *SourceMock) Collect(ctx context.Context, statsChannel chan<- *metrics.StatsEntityWrapper) {
+	m.Called(ctx, statsChannel)
 }

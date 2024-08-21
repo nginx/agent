@@ -70,9 +70,9 @@ func TestTailer(t *testing.T) {
 	timeoutDuration := time.Millisecond * 300
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeoutDuration)
-	defer cancel()
 
 	data := make(chan string, 100)
+
 	go tailer.Tail(ctx, data)
 
 	time.Sleep(time.Millisecond * 100)
@@ -95,23 +95,27 @@ T:
 			break T
 		}
 	}
+	cancel()
 
 	os.Remove(errorLogFile.Name())
 	assert.Equal(t, 1, count)
+
+	time.Sleep(500 * time.Millisecond)
 }
 
 func TestPatternTailer(t *testing.T) {
 	accessLogFile, _ := os.CreateTemp(os.TempDir(), "access.log")
-	logLine := "127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"GET /nginx_status HTTP/1.1\" 500 98 \"-\" \"Go-http-client/1.1\" \"-\"\n"
+	logLine := "127.0.0.1 - - [19/May/2022:09:30:39 +0000] \"GET /nginx_status HTTP/1.1\" 500 98 \"-\" \"Go-http-client/1.1\""
 
 	tailer, err := NewPatternTailer(accessLogFile.Name(), defaultPatterns)
 	require.Nil(t, err)
 
 	timeoutDuration := time.Millisecond * 300
+
 	ctx, cancel := context.WithTimeout(context.Background(), timeoutDuration)
-	defer cancel()
 
 	data := make(chan map[string]string, 100)
+
 	go tailer.Tail(ctx, data)
 
 	time.Sleep(time.Millisecond * 100)
@@ -125,7 +129,8 @@ func TestPatternTailer(t *testing.T) {
 T:
 	for {
 		select {
-		case <-data:
+		case d := <-data:
+			assert.Equal(t, logLine, d["DEFAULT"])
 			count++
 		case <-time.After(timeoutDuration):
 			break T
@@ -133,9 +138,12 @@ T:
 			break T
 		}
 	}
+	cancel()
 
 	os.Remove(accessLogFile.Name())
 	assert.Equal(t, 1, count)
+
+	time.Sleep(500 * time.Millisecond)
 }
 
 func TestLTSVTailer(t *testing.T) {

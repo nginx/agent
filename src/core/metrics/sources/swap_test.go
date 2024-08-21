@@ -9,7 +9,6 @@ package sources
 
 import (
 	"context"
-	"sync"
 	"testing"
 
 	"github.com/nginx/agent/v2/src/core/metrics"
@@ -91,10 +90,7 @@ func TestSwapSource_Collect(t *testing.T) {
 					UsedPercent: 30,
 				}, nil
 			}
-			wg := &sync.WaitGroup{}
-			wg.Add(1)
-			go c.Collect(ctx, wg, test.m)
-			wg.Wait()
+			go c.Collect(ctx, test.m)
 
 			statsEntity := <-test.m
 			assert.Len(tt, statsEntity.Data.Simplemetrics, len(expectedMetrics))

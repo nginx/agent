@@ -9,7 +9,6 @@ package sources
 
 import (
 	"context"
-	"sync"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
@@ -44,9 +43,7 @@ func (c *NginxProcess) getNginxCount() float64 {
 	return 0.0
 }
 
-func (c *NginxProcess) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
-	defer wg.Done()
-
+func (c *NginxProcess) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	l := &namedMetric{namespace: PlusNamespace, group: ""}
 	countSimpleMetric := l.convertSamplesToSimpleMetrics(map[string]float64{
 		"instance.count": c.getNginxCount(),

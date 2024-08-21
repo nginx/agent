@@ -10,7 +10,6 @@ package manager
 import (
 	"context"
 	"runtime"
-	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -149,13 +148,14 @@ func (s *Manager) initProcessor(commonDims *metrics.CommonDim) error {
 func (s *Manager) Run(ctx context.Context) {
 	s.logger.Infof("Starting to run %s", componentName)
 
-	waitGroup := &sync.WaitGroup{}
-	waitGroup.Add(2)
+	chtx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
-	go s.collector.Collect(ctx, waitGroup, s.collectChan)
-	go s.processor.Process(ctx, waitGroup, s.collectChan, s.processorChan)
+	go s.collector.Collect(chtx, s.collectChan)
+	go s.processor.Process(chtx, s.collectChan, s.processorChan)
 
-	waitGroup.Wait()
+	<-ctx.Done()
+	s.logger.Infof("Received Context cancellation, %s is wrapping up...", componentName)
 
 	s.logger.Infof("Context cancellation, %s wrapped up...", componentName)
 }

@@ -22,6 +22,8 @@ const (
 	API_HOST = "0.0.0.0"
 )
 
+var delay = time.Duration(5 * time.Second)
+
 func TestAPI_Nginx(t *testing.T) {
 	testContainer := utils.SetupTestContainerWithAgent(
 		t,
@@ -29,6 +31,9 @@ func TestAPI_Nginx(t *testing.T) {
 		"./nginx-agent.conf:/etc/nginx-agent/nginx-agent.conf",
 		"Starting Agent API HTTP server with port from config and TLS disabled",
 	)
+
+	// wait for report interval to send metrics
+	time.Sleep(delay)
 
 	client := resty.New()
 	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
@@ -65,9 +70,13 @@ func TestAPI_Metrics(t *testing.T) {
 		"Starting Agent API HTTP server with port from config and TLS disabled",
 	)
 
+	// wait for report interval to send metrics
+	time.Sleep(delay)
+
 	client := resty.New()
 
 	url := fmt.Sprintf("http://%s:%d/metrics/", API_HOST, API_PORT)
+
 	client.SetRetryCount(5).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(5 * time.Second)
 	client.AddRetryCondition(
 		func(r *resty.Response, err error) bool {
