@@ -12,6 +12,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"math"
 	"os"
 	"time"
 
@@ -42,6 +43,10 @@ var (
 			Timeout:             60 * time.Second,
 			PermitWithoutStream: true,
 		}),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(math.MaxInt),
+			grpc.MaxCallSendMsgSize(math.MaxInt),
+		),
 	}
 
 	DefaultServerDialOptions = []grpc.ServerOption{
@@ -51,6 +56,8 @@ var (
 			MinTime:             60 * time.Second,
 			PermitWithoutStream: true,
 		}),
+		grpc.MaxSendMsgSize(math.MaxInt),
+		grpc.MaxRecvMsgSize(math.MaxInt),
 	}
 )
 
