@@ -131,7 +131,7 @@ func (n *NginxAppProtect) monitor() {
 	)
 
 	napUpdateChannel := n.nap.Monitor(n.ctx, n.reportInterval)
-	// defer close(napUpdateChannel)
+	defer close(napUpdateChannel)
 	for {
 		select {
 		case updateMsg := <-napUpdateChannel:
