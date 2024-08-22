@@ -220,7 +220,7 @@ You can pass the following arguments when running the **make** command to build 
 | OS_VERSION      | The version of the Linux distribution to use as the base image. <br>Can also be set in the repo Makefile.|
 {{</bootstrap-table>}}
 
-Refer to the [Supported distributions](technical-specifications.md/#supported-distributions) table to find out which base images you can use.
+Refer to the [Supported distributions]({{< relref "/technical-specifications.md#supported-distributions" >}}) table to find out which base images you can use.
 You can find the official images and versions for each distribution on [Docker Hub](https://hub.docker.com/search?image_filter=official&q=&type=image).
 
 Keep the following information in mind when using the NGINX Agent [Dockerfiles](https://github.com/nginx/agent/tree/main/scripts/docker) to build container images:
