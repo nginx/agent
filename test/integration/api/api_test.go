@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -82,8 +83,11 @@ func TestAPI_Metrics(t *testing.T) {
 	assert.NotContains(t, resp.String(), "test_fail_metric")
 	// Validate that the agent can call the stub status API
 	assert.Contains(t, resp.String(), "nginx_http_request_count")
-	// Validate that the agent can read the NGINX access logs
-	assert.Contains(t, resp.String(), "nginx_http_status_2xx")
+
+	if os.Getenv("IMAGE_PATH") == "/nginx/agent" {
+		// Validate that the agent can read the NGINX access logs
+		assert.Contains(t, resp.String(), "nginx_http_status_2xx")
+	}
 
 	metrics := tutils.ProcessResponse(resp)
 

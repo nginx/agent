@@ -22,5 +22,5 @@ services:
     networks:
       - monitoring
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ${CONF_FILE}
+      - ${NGINX_CONF_FILE}
+      - ${AGENT_CONF_FILE}

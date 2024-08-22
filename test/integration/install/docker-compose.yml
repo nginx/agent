@@ -17,4 +17,4 @@ services:
     ports:
       - 80
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf # default nginx apk conf does not listen on localhost
+      - ${NGINX_CONF_FILE} # default nginx apk conf does not listen on localhost

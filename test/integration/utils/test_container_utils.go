@@ -24,7 +24,7 @@ const (
 )
 
 // SetupTestContainerWithAgent sets up a container with nginx and nginx-agent installed
-func SetupTestContainerWithAgent(t *testing.T, testName string, conf string, waitForLog string) *testcontainers.DockerContainer {
+func SetupTestContainerWithAgent(t *testing.T, testName string, agentConf string, waitForLog string) *testcontainers.DockerContainer {
 	comp, err := compose.NewDockerCompose(os.Getenv("DOCKER_COMPOSE_FILE"))
 	assert.NoError(t, err, "NewDockerComposeAPI()")
 
@@ -32,6 +32,12 @@ func SetupTestContainerWithAgent(t *testing.T, testName string, conf string, wai
 
 	ctxCancel, cancel := context.WithCancel(ctx)
 	t.Cleanup(cancel)
+
+	nginxConf := "./nginx-oss.conf:/etc/nginx/nginx.conf"
+
+	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+		nginxConf = "./nginx-plus.conf:/etc/nginx/nginx.conf"
+	}
 
 	require.NoError(t,
 		comp.WaitForService("agent", wait.ForLog(waitForLog)).WithEnv(
@@ -45,7 +51,8 @@ func SetupTestContainerWithAgent(t *testing.T, testName string, conf string, wai
 				"CONTAINER_NGINX_IMAGE_REGISTRY": os.Getenv("CONTAINER_NGINX_IMAGE_REGISTRY"),
 				"TAG":                            os.Getenv("TAG"),
 				"IMAGE_PATH":                     os.Getenv("IMAGE_PATH"),
-				"CONF_FILE":                      conf,
+				"AGENT_CONF_FILE":                agentConf,
+				"NGINX_CONF_FILE":                nginxConf,
 			},
 		).Up(ctxCancel, compose.Wait(true)), "compose.Up()")
 
@@ -79,6 +86,14 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 
+	nginxConf := "./nginx-oss.conf:/etc/nginx/nginx.conf"
+
+	log := "nginx_pid"
+
+	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+		nginxConf = "./nginx-plus.conf:/etc/nginx/nginx.conf"
+	}
+
 	err = comp.
 		WithEnv(map[string]string{
 			"PACKAGE_NAME":                   os.Getenv("PACKAGE_NAME"),
@@ -91,8 +106,9 @@ func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContaine
 			"TAG":                            os.Getenv("TAG"),
 			"CONTAINER_OS_TYPE":              os.Getenv("CONTAINER_OS_TYPE"),
 			"IMAGE_PATH":                     os.Getenv("IMAGE_PATH"),
+			"NGINX_CONF_FILE":                nginxConf,
 		}).
-		WaitForService("agent", wait.NewLogStrategy("nginx_pid").WithOccurrence(1)).
+		WaitForService("agent", wait.NewLogStrategy(log).WithOccurrence(1)).
 		Up(ctx, compose.Wait(true))
 
 	assert.NoError(t, err, "compose.Up()")
