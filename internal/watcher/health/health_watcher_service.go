@@ -98,12 +98,11 @@ func (hw *HealthWatcherService) Watch(ctx context.Context, ch chan<- InstanceHea
 
 			healthStatuses, isHealthDiff := hw.health(ctx)
 			if isHealthDiff && len(healthStatuses) > 0 {
+				slog.DebugContext(newCtx, "Instance health watcher found health updates")
 				ch <- InstanceHealthMessage{
 					CorrelationID:  correlationID,
 					InstanceHealth: healthStatuses,
 				}
-			} else {
-				slog.DebugContext(newCtx, "Instance health watcher found no health updates")
 			}
 		}
 	}

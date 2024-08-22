@@ -8,6 +8,7 @@ package watcher
 import (
 	"context"
 	"log/slog"
+	"slices"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 
@@ -25,14 +26,15 @@ import (
 // nolint
 type (
 	Watcher struct {
-		messagePipe               bus.MessagePipeInterface
-		agentConfig               *config.Config
-		instanceWatcherService    instanceWatcherServiceInterface
-		healthWatcherService      *health.HealthWatcherService
-		instanceUpdatesChannel    chan instance.InstanceUpdatesMessage
-		nginxConfigContextChannel chan instance.NginxConfigContextMessage
-		instanceHealthChannel     chan health.InstanceHealthMessage
-		cancel                    context.CancelFunc
+		messagePipe                        bus.MessagePipeInterface
+		agentConfig                        *config.Config
+		instanceWatcherService             instanceWatcherServiceInterface
+		healthWatcherService               *health.HealthWatcherService
+		instanceUpdatesChannel             chan instance.InstanceUpdatesMessage
+		nginxConfigContextChannel          chan instance.NginxConfigContextMessage
+		instanceHealthChannel              chan health.InstanceHealthMessage
+		cancel                             context.CancelFunc
+		instancesWithConfigApplyInProgress []string
 	}
 
 	instanceWatcherServiceInterface interface {
@@ -49,12 +51,13 @@ var _ bus.Plugin = (*Watcher)(nil)
 
 func NewWatcher(agentConfig *config.Config) *Watcher {
 	return &Watcher{
-		agentConfig:               agentConfig,
-		instanceWatcherService:    instance.NewInstanceWatcherService(agentConfig),
-		healthWatcherService:      health.NewHealthWatcherService(agentConfig),
-		instanceUpdatesChannel:    make(chan instance.InstanceUpdatesMessage),
-		nginxConfigContextChannel: make(chan instance.NginxConfigContextMessage),
-		instanceHealthChannel:     make(chan health.InstanceHealthMessage),
+		agentConfig:                        agentConfig,
+		instanceWatcherService:             instance.NewInstanceWatcherService(agentConfig),
+		healthWatcherService:               health.NewHealthWatcherService(agentConfig),
+		instanceUpdatesChannel:             make(chan instance.InstanceUpdatesMessage),
+		nginxConfigContextChannel:          make(chan instance.NginxConfigContextMessage),
+		instanceHealthChannel:              make(chan health.InstanceHealthMessage),
+		instancesWithConfigApplyInProgress: []string{},
 	}
 }
 
@@ -92,14 +95,12 @@ func (*Watcher) Info() *bus.Info {
 
 func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
+	case bus.ConfigApplyRequestTopic:
+		w.handleConfigApplyRequest(ctx, msg)
 	case bus.ConfigApplySuccessfulTopic:
-		data, ok := msg.Data.(*mpi.Instance)
-		if !ok {
-			slog.ErrorContext(ctx, "Unable to cast message payload to Instance", "payload", msg.Data)
-
-			return
-		}
-		w.instanceWatcherService.ReparseConfig(ctx, data)
+		w.handleConfigApplySuccess(ctx, msg)
+	case bus.RollbackCompleteTopic:
+		w.handleRollbackComplete(ctx, msg)
 	default:
 		slog.DebugContext(ctx, "Watcher plugin unknown topic", "topic", msg.Topic)
 	}
@@ -107,8 +108,66 @@ func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
 
 func (*Watcher) Subscriptions() []string {
 	return []string{
+		bus.ConfigApplyRequestTopic,
 		bus.ConfigApplySuccessfulTopic,
+		bus.RollbackCompleteTopic,
 	}
+}
+
+func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message) {
+	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
+	if !ok {
+		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest",
+			"payload", msg.Data)
+
+		return
+	}
+
+	request, requestOk := managementPlaneRequest.GetRequest().(*mpi.ManagementPlaneRequest_ConfigApplyRequest)
+	if !requestOk {
+		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest_ConfigApplyRequest",
+			"payload", msg.Data)
+
+		return
+	}
+
+	instanceID := request.ConfigApplyRequest.GetOverview().GetConfigVersion().GetInstanceId()
+
+	w.instancesWithConfigApplyInProgress = append(w.instancesWithConfigApplyInProgress, instanceID)
+}
+
+func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message) {
+	data, ok := msg.Data.(*mpi.Instance)
+	if !ok {
+		slog.ErrorContext(ctx, "Unable to cast message payload to Instance", "payload", msg.Data)
+
+		return
+	}
+
+	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
+		w.instancesWithConfigApplyInProgress,
+		func(element string) bool {
+			return element == data.GetInstanceMeta().GetInstanceId()
+		},
+	)
+
+	w.instanceWatcherService.ReparseConfig(ctx, data)
+}
+
+func (w *Watcher) handleRollbackComplete(ctx context.Context, msg *bus.Message) {
+	instanceID, ok := msg.Data.(string)
+	if !ok {
+		slog.ErrorContext(ctx, "Unable to cast message payload to string", "payload", msg.Data)
+
+		return
+	}
+
+	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
+		w.instancesWithConfigApplyInProgress,
+		func(element string) bool {
+			return element == instanceID
+		},
+	)
 }
 
 func (w *Watcher) monitorWatchers(ctx context.Context) {
@@ -120,16 +179,18 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 			w.handleInstanceUpdates(newCtx, message)
 		case message := <-w.nginxConfigContextChannel:
-			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
-			slog.DebugContext(
-				newCtx,
-				"Updated NGINX config context",
-				"nginx_config_context", message.NginxConfigContext,
-			)
-			w.messagePipe.Process(
-				newCtx,
-				&bus.Message{Topic: bus.NginxConfigUpdateTopic, Data: message.NginxConfigContext},
-			)
+			if !slices.Contains(w.instancesWithConfigApplyInProgress, message.NginxConfigContext.InstanceID) {
+				newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
+				slog.DebugContext(
+					newCtx,
+					"Updated NGINX config context",
+					"nginx_config_context", message.NginxConfigContext,
+				)
+				w.messagePipe.Process(
+					newCtx,
+					&bus.Message{Topic: bus.NginxConfigUpdateTopic, Data: message.NginxConfigContext},
+				)
+			}
 		case message := <-w.instanceHealthChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 			w.messagePipe.Process(newCtx, &bus.Message{

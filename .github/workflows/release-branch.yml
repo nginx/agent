@@ -1,16 +1,12 @@
-name: Release Agent V3
+name: Release Agent
 
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
       githubRelease:
-        description: 'Perform release in github'
+        description: 'Setup release in github'
         type: boolean
-        default: true
-      buildPackages:
-        description: 'Build packages'
-        required: true
-        type: boolean
+        default: false
       packageVersion:
         description: 'Package version number'
         default: "3.0.0"
@@ -21,24 +17,27 @@ on:
         type: string
       uploadAzure:
         description: 'Publish packages Azure storage'
-        required: true
+        default: true
         type: boolean
       publishPackages:
-        description: 'Publish packages to up-ap.nginx.com'
-        required: true
+        description: 'Publish packages to nginx repo'
+        default: true
         type: boolean
       tagRelease:
         description: 'Add tag to release branch'
-        required: true
+        default: false
         type: boolean
       createPullRequest:
-        description: 'Create pull request back into main'
-        required: true
+        description: 'Create pull request back into v3'
+        default: false
         type: boolean
       releaseBranch:
         description: 'Release branch to build & publish from'
         required: true
         type: string
+
+env:
+  NFPM_VERSION: 'v2.35.3'
 
 defaults:
   run:
@@ -57,7 +56,6 @@ jobs:
     runs-on: ubuntu-22.04
     outputs:
       github_release: ${{steps.vars.outputs.github_release }}
-      build_packages: ${{steps.vars.outputs.build_packages }}
       upload_azure: ${{steps.vars.outputs.upload_azure }}
       publish_packages: ${{steps.vars.outputs.publish_packages }}
       tag_release: ${{steps.vars.outputs.tag_release }}
@@ -72,7 +70,6 @@ jobs:
         id: vars
         run: |
           echo "github_release=${{ inputs.githubRelease }}" >> $GITHUB_OUTPUT
-          echo "build_packages=${{ inputs.buildPackages }}" >> $GITHUB_OUTPUT
           echo "upload_azure=${{ inputs.uploadAzure }}" >> $GITHUB_OUTPUT
           echo "publish_packages=${{ inputs.publishPackages }}" >> $GITHUB_OUTPUT
           echo "tag_release=${{ inputs.tagRelease }}" >> $GITHUB_OUTPUT
@@ -104,18 +101,18 @@ jobs:
           script: |
             const {version} = process.env
             console.log(`The release version is v${version}`)
-            
+
             const releases = (await github.rest.repos.listReleases({
               owner: context.payload.repository.owner.login,
               repo: context.payload.repository.name,
               per_page: 100,
             })).data
-            
+
             const latest_release = (await github.rest.repos.getLatestRelease({
                 owner: context.payload.repository.owner.login,
                 repo: context.payload.repository.name,
             })).data.tag_name
-            
+
             console.log(`The latest release was ${latest_release}`)
 
             if (latest_release === "v"+version) {
@@ -123,7 +120,7 @@ jobs:
             } else {
                 const draft = releases.find((r) => r.draft && r.tag_name === "v"+version)
                 const draft_found = !(draft === undefined)
-                
+
                 let release
                 if (draft_found){
                 console.log("Draft release already exists. Deleting current draft release and recreating it")
@@ -133,7 +130,7 @@ jobs:
                     release_id: draft.id,
                 }))
                 }
-                
+
                 const release_notes = (await github.rest.repos.generateReleaseNotes({
                     owner: context.payload.repository.owner.login,
                     repo: context.payload.repository.name,
@@ -141,12 +138,12 @@ jobs:
                     previous_tag_name: latest_release,
                     target_commitish: ref,
                 }))
-                
+
                 const footer = `
             ## Resources
             - Documentation -- https://github.com/nginx/agent#readme
                 `
-                
+
                 release = (await github.rest.repos.createRelease({
                     owner: context.payload.repository.owner.login,
                     repo: context.payload.repository.name,
@@ -156,12 +153,12 @@ jobs:
                     body: release_notes.data.body + footer,
                     draft: true,
                 }))
-                
+
                 console.log(`Release created: ${release.data.html_url}`)
                 console.log(`Release ID: ${release.data.id}`)
                 console.log(`Release notes: ${release_notes.data.body}`)
                 console.log(`Release Upload URL: ${release.data.upload_url}`)
-                
+
                 return {
                     version: version,
                     release_id: release.data.id,
@@ -197,42 +194,68 @@ jobs:
         run: |
           git push origin "v${{ inputs.packageVersion }}"
 
-  build-packages:
-    if: ${{ needs.vars.outputs.build_packages == 'true' }}
-    name: Build packages
-    needs: [vars,release-draft]
-    uses: ./.github/workflows/build-package.yml
-    with:
-      version: ${{ inputs.packageVersion }}
-      build: ${{ inputs.packageBuildNo }}
-      branch: ${{ inputs.releaseBranch }}
-    secrets:
-      gpg-key: ${{ secrets.INDIGO_GPG_AGENT }}
-
-  azure-upload:
-    if: ${{ needs.vars.outputs.upload_azure == 'true' }}
-    name: Upload packages to Azure
+  upload-packages:
+    name: Upload packages
     runs-on: ubuntu-22.04
-    needs: [vars,build-packages,release-draft]
+    needs: [vars,release-draft,tag-release]
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: Checkout Repository
         uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
         with:
           ref: ${{ inputs.releaseBranch }}
 
-      - name: Fetch Cached Package Artifacts
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+      - name: Setup go
+        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
-          key: ${{ needs.build-packages.outputs.package_cache_key }}
-          path: build
-          fail-on-cache-miss: true
+            go-version-file: 'go.mod'
+
+      - name: Setup package build environment
+        run: |
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
+          sudo apt-get update
+          sudo apt-get install -y gpgv1 monkeysphere
+          make install-tools
+          export PATH=$PATH:~/go/bin
+          nfpm --version
+
+      - name: Docker Buildx
+        uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
+
+      - name: Build Docker Image
+        uses: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0 # v5.3.0
+        with:
+          file: scripts/packages/packager/Dockerfile
+          tags: build-signed-packager:1.0.0
+          context: '.'
+          push: false
+          load: true
+          cache-from: type=gha,scope=build-signed-packager
+          cache-to: type=gha,scope=build-signed-packager,mode=max
+          build-args: |
+            package_type=signed-package
+
+      - name: Build Packages
+        env:
+          GPG_KEY: ${{ secrets.INDIGO_GPG_AGENT }}
+          NFPM_SIGNING_KEY_FILE: .key.asc
+          VERSION: ${{ inputs.packageVersion }}
+          PACKAGE_BUILD: ${{ inputs.packageBuildNo }}
+        run: |
+          export PATH=$PATH:~/go/bin
+          echo "$GPG_KEY" | base64 --decode > ${NFPM_SIGNING_KEY_FILE}
+          make package
 
       - name: Azure Login
+        if: ${{ inputs.uploadAzure == true }}
         uses: azure/login@8c334a195cbb38e46038007b304988d888bf676a # v2.0.0
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Azure Upload Release Packages
+        if: ${{ inputs.uploadAzure == true }}
         uses: azure/CLI@965c8d7571d2231a54e321ddd07f7b10317f34d9 # v2.0.0
         with:
           inlineScript: |
@@ -240,35 +263,16 @@ jobs:
               echo "Uploading ${i} to nginx-agent/${GITHUB_REF##*/}/${i##*/}"
               az storage blob upload --auth-mode=login -f "$i" -c ${{ secrets.AZURE_CONTAINER_NAME }} \
               --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/${GITHUB_REF##*/}/${i##*/}
-            done 
-
-  nginx-upload:
-    if: ${{ needs.vars.outputs.publish_packages == 'true' }}
-    name: Upload packages to NGINX package repository
-    runs-on: ubuntu-22.04
-    permissions:
-      contents: read
-      id-token: write
-    needs: [vars,build-packages,release-draft]
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
-        with:
-          ref: ${{ inputs.releaseBranch }}
-
-      - name: Fetch Cached Package Artifacts
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
-        with:
-          key: ${{ needs.build-packages.outputs.package_cache_key }}
-          path: build
-          fail-on-cache-miss: true
+            done
 
       - name: Install GPG tools
+        if: ${{ inputs.publishPackages == true }}
         run: |
           sudo apt-get update
           sudo apt-get install -y gpgv1 monkeysphere
 
       - name: Get Id Token
+        if: ${{ inputs.publishPackages == true }}
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         id: idtoken
         with:
@@ -277,34 +281,15 @@ jobs:
             core.setOutput('id_token', id_token)
 
       - name: Publish Release Packages
+        if: ${{ inputs.publishPackages == true }}
         env:
           TOKEN: ${{ steps.idtoken.outputs.id_token }}
-          GPG_KEY: ${{ secrets.INDIGO_GPG_AGENT }}
-          NFPM_SIGNING_KEY_FILE: .key.asc
+          UPLOAD_URL: ${{ secrets.UPLOAD_URL }}
         run: |
-          echo "${GPG_KEY}" | base64 --decode > ${NFPM_SIGNING_KEY_FILE}
-          make gpg-key
           make release
 
-  github-release:
-    if: ${{ needs.vars.outputs.github_release == 'true' }}
-    name: Publish packages
-    runs-on: ubuntu-22.04
-    needs: [vars,build-packages,release-draft]
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
-        with:
-          ref: ${{ inputs.releaseBranch }}
-
-      - name: Fetch Cached Package Artifacts
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
-        with:
-          key: ${{ needs.build-packages.outputs.package_cache_key }}
-          path: build
-          fail-on-cache-miss: true
-
       - name: Upload Release Assets
+        if: ${{ needs.vars.outputs.github_release == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # clobber overwrites existing assets of the same name
@@ -313,6 +298,7 @@ jobs:
             $(find ./build/github/packages -type f \( -name "*.deb" -o -name "*.rpm" -o -name "*.pkg" -o -name "*.apk" \))
 
       - name: Publish Github Release
+        if: ${{ needs.vars.outputs.github_release == 'true' }}
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
@@ -329,7 +315,7 @@ jobs:
 
   merge-release:
     if: ${{ needs.vars.outputs.create_pull_request == 'true' }}
-    name: Publish packages
+    name: Merge release branch back into V3 branch
     runs-on: ubuntu-22.04
     needs: [vars,tag-release]
     steps:
