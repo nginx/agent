@@ -8,9 +8,12 @@
 package core
 
 import (
+	"context"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/nginx/agent/sdk/v2/backoff"
 )
 
 var chmodMutex sync.Mutex
@@ -47,21 +50,19 @@ func FilesExists(filePaths []string) (bool, error) {
 
 // EnableWritePermissionForSocket attempts to set the write permissions for a socket file located at the specified path.
 // The function continuously attempts the operation until either it succeeds or the timeout period elapses.
-func EnableWritePermissionForSocket(path string) error {
-	timeout := time.After(time.Second * 1)
-	var lastError error
-	for {
-		select {
-		case <-timeout:
-			return lastError
-		default:
-			chmodMutex.Lock()
-			lastError = os.Chmod(path, 0o660)
-			chmodMutex.Unlock()
-			if lastError == nil {
-				return nil
-			}
-		}
-		time.Sleep(time.Microsecond * 100)
-	}
+func EnableWritePermissionForSocket(ctx context.Context, path string) error {
+	err := backoff.WaitUntil(ctx, backoff.BackoffSettings{
+		InitialInterval: time.Microsecond * 100,
+		MaxInterval:     time.Microsecond * 100,
+		MaxElapsedTime:  time.Second * 1,
+		Jitter:          backoff.BACKOFF_JITTER,
+		Multiplier:      backoff.BACKOFF_MULTIPLIER,
+	}, func() error {
+		chmodMutex.Lock()
+		lastError := os.Chmod(path, 0o660)
+		chmodMutex.Unlock()
+		return lastError
+	})
+
+	return err
 }

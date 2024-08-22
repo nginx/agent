@@ -130,7 +130,7 @@ func (n *NginxAppProtect) monitor() {
 		),
 	)
 
-	napUpdateChannel := n.nap.Monitor(n.reportInterval)
+	napUpdateChannel := n.nap.Monitor(n.ctx, n.reportInterval)
 	defer close(napUpdateChannel)
 	for {
 		select {

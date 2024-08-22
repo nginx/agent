@@ -8,6 +8,7 @@
 package nap
 
 import (
+	"context"
 	"fmt"
 	"io/fs"
 	"os"
@@ -98,15 +99,15 @@ func NewNginxAppProtect(optDirPath, symLinkDir string) (*NginxAppProtect, error)
 //   - NAP version changed
 //   - Attack signature installed/version changed
 //   - Threat campaign installed/version changed
-func (nap *NginxAppProtect) Monitor(pollInterval time.Duration) chan NAPReportBundle {
+func (nap *NginxAppProtect) Monitor(ctx context.Context, pollInterval time.Duration) chan NAPReportBundle {
 	msgChannel := make(chan NAPReportBundle)
-	go nap.monitor(msgChannel, pollInterval)
+	go nap.monitor(ctx, msgChannel, pollInterval)
 	return msgChannel
 }
 
 // monitor checks the system for any NAP related changes and communicates those changes with
 // a report message sent via the channel provided to it.
-func (nap *NginxAppProtect) monitor(msgChannel chan NAPReportBundle, pollInterval time.Duration) {
+func (nap *NginxAppProtect) monitor(ctx context.Context, msgChannel chan NAPReportBundle, pollInterval time.Duration) {
 	// Initial symlink sync
 	mu.Lock()
 	if nap.Release.VersioningDetails.NAPRelease != "" {
@@ -118,7 +119,7 @@ func (nap *NginxAppProtect) monitor(msgChannel chan NAPReportBundle, pollInterva
 	mu.Unlock()
 
 	ticker := time.NewTicker(pollInterval)
-
+	defer ticker.Stop()
 	for {
 		select {
 		case <-ticker.C:
@@ -162,6 +163,8 @@ func (nap *NginxAppProtect) monitor(msgChannel chan NAPReportBundle, pollInterva
 				PreviousReport: previousReport,
 				UpdatedReport:  newNAPReport,
 			}
+		case <-ctx.Done():
+			return
 		}
 	}
 }

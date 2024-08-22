@@ -10,6 +10,7 @@ package metrics
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"testing"
 
 	log "github.com/sirupsen/logrus"
@@ -104,7 +105,7 @@ func TestSaveCollections(t *testing.T) {
 			},
 		},
 		{
-			name:    "save collection test with duplicates",
+			name: "save collection test with duplicates",
 			reports: append(reports, &proto.MetricsReport{
 				Meta: &proto.Metadata{},
 				Type: proto.MetricsReport_SYSTEM,
@@ -136,7 +137,7 @@ func TestSaveCollections(t *testing.T) {
 						},
 					},
 				},
-			}), 
+			}),
 			expected: map[string]float64{
 				"system.mem.used":   12,
 				"system.io.kbs_w":   9.6,
@@ -150,8 +151,8 @@ func TestSaveCollections(t *testing.T) {
 	for _, test := range tests {
 
 		metricsCollections := Collections{
-			Count: len(test.reports),
-			Data:  make(map[string]PerDimension),
+			Count:        len(test.reports),
+			Data:         make(map[string]PerDimension),
 			MetricsCount: make(map[string]PerDimension),
 		}
 		dimension1 := []*proto.Dimension{
@@ -233,6 +234,12 @@ func TestGenerateMetrics(t *testing.T) {
 	for i, expected := range expectedResults {
 		assert.Equal(t, expected.GetDimensions(), results[i].GetDimensions())
 		assert.Equal(t, len(expected.GetSimplemetrics()), len(results[i].GetSimplemetrics()))
+
+		metrics := results[i].GetSimplemetrics()
+		sort.Slice(metrics, func(k, l int) bool {
+			return metrics[k].GetName() > metrics[l].GetName()
+		})
+
 		for j, expectedMetric := range expected.GetSimplemetrics() {
 			assert.Equal(t, expectedMetric.GetName(), results[i].GetSimplemetrics()[j].GetName())
 			assert.Equal(t, expectedMetric.GetValue(), results[i].GetSimplemetrics()[j].GetValue())

@@ -429,12 +429,11 @@ func LoadPropertiesFromFile(cfg string) error {
 		if err != nil {
 			return fmt.Errorf("error attempting to open dynamic config (%s): %v", dynamicCfgPath, err)
 		}
-
+		defer dynCfg.Close()
 		featuresAreSet, cleanDynCfgContent, err := removeFeatures(dynCfg)
 		if err != nil {
 			return fmt.Errorf("error updating dynamic config with features removed (%s): %v", dynamicCfgPath, err)
 		}
-		dynCfg.Close()
 
 		if featuresAreSet {
 			err = os.WriteFile(dynamicCfgPath, cleanDynCfgContent, 0o640)

@@ -84,7 +84,7 @@ func (nc *NginxCounter) agentServer(serverAddress []string) {
 		log.Warn("failed to start NGINX counter listener")
 	}
 
-	err = core.EnableWritePermissionForSocket(serverAddress[1])
+	err = core.EnableWritePermissionForSocket(nc.ctx, serverAddress[1])
 	if err != nil {
 		log.Warn("unable to set correct write permissions for NGINX counter socket")
 	}
