@@ -214,11 +214,6 @@ func (r *MetricsThrottle) getAggregatedReports() (reports []core.Payload) {
 			Data: metrics.GenerateMetrics(*collection),
 		}
 
-		log.Infof("%v report created with %d stats entities", report.Type, len(report.Data))
-		for _, entity := range report.GetData() {
-			log.Infof("%v", entity)
-		}
-
 		reports = append(reports, report)
 
 		r.metricsCollections[reportType] = &metrics.Collections{
