@@ -176,11 +176,26 @@ func GetDialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOp
 		unaryClientInterceptors = append(unaryClientInterceptors, protoValidatorUnaryClientInterceptor)
 	}
 
+	sendRecOpts := []grpc.DialOption{}
+	if agentConfig.Client.MaxMessageSize != 0 {
+		sendRecOpts = append(sendRecOpts, grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(agentConfig.Client.MaxMessageSize),
+			grpc.MaxCallSendMsgSize(agentConfig.Client.MaxMessageSize),
+		))
+	} else {
+		sendRecOpts = append(sendRecOpts, grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(agentConfig.Client.MaxMessageRecieveSize),
+			grpc.MaxCallSendMsgSize(agentConfig.Client.MaxMessageSendSize),
+		))
+	}
+
 	opts := []grpc.DialOption{
 		grpc.WithChainStreamInterceptor(streamClientInterceptors...),
 		grpc.WithChainUnaryInterceptor(unaryClientInterceptors...),
 		grpc.WithDefaultServiceConfig(serviceConfig),
 	}
+
+	opts = append(opts, sendRecOpts...)
 
 	if agentConfig.Client != nil {
 		keepAlive := keepalive.ClientParameters{

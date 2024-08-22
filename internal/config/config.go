@@ -207,6 +207,24 @@ func registerFlags() {
 		"The path to the Opentelemetry Collector configuration file.",
 	)
 
+	fs.Int(
+		ClientMaxMessageSizeKey,
+		DefMaxMessageSize,
+		"The value used, if not 0, for both max_message_send_size and max_message_receive_size",
+	)
+
+	fs.Int(
+		ClientMaxMessageRecieveSizeKey,
+		DefMaxMessageRecieveSize,
+		"Updates the client grpc setting MaxRecvMsgSize with the specific value in MB.",
+	)
+
+	fs.Int(
+		ClientMaxMessageSendSizeKey,
+		DefMaxMessageSendSize,
+		"Updates the client grpc setting MaxSendMsgSize with the specific value in MB.",
+	)
+
 	fs.SetNormalizeFunc(normalizeFunc)
 
 	fs.VisitAll(func(flag *flag.Flag) {
@@ -285,9 +303,12 @@ func resolveDataPlaneConfig() *DataPlaneConfig {
 
 func resolveClient() *Client {
 	return &Client{
-		Timeout:             viperInstance.GetDuration(ClientTimeoutKey),
-		Time:                viperInstance.GetDuration(ClientTimeKey),
-		PermitWithoutStream: viperInstance.GetBool(ClientPermitWithoutStreamKey),
+		Timeout:               viperInstance.GetDuration(ClientTimeoutKey),
+		Time:                  viperInstance.GetDuration(ClientTimeKey),
+		PermitWithoutStream:   viperInstance.GetBool(ClientPermitWithoutStreamKey),
+		MaxMessageSize:        viperInstance.GetInt(ClientMaxMessageSizeKey),
+		MaxMessageRecieveSize: viperInstance.GetInt(ClientMaxMessageRecieveSizeKey),
+		MaxMessageSendSize:    viperInstance.GetInt(ClientMaxMessageSendSizeKey),
 	}
 }
 

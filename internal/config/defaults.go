@@ -5,6 +5,7 @@
 package config
 
 import (
+	"math"
 	"time"
 )
 
@@ -33,4 +34,11 @@ const (
 
 	DefInstanceWatcherMonitoringFrequency       = 5 * time.Second
 	DefInstanceHealthWatcherMonitoringFrequency = 5 * time.Second
+
+	// 0 = unset
+	DefMaxMessageSize = 0
+	// default 4 MB
+	DefMaxMessageRecieveSize = 4194304
+	// math.MaxInt32
+	DefMaxMessageSendSize = math.MaxInt32
 )

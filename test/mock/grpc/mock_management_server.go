@@ -157,6 +157,19 @@ func getServerOptions(agentConfig *config.Config) []grpc.ServerOption {
 		)
 	}
 
+	if agentConfig.Client.MaxMessageSize != 0 {
+		opts = append(opts, grpc.MaxSendMsgSize(agentConfig.Client.MaxMessageSize),
+			grpc.MaxRecvMsgSize(agentConfig.Client.MaxMessageSize),
+		)
+	} else {
+		// this looked strange because they are client settings used,
+		// would have expected them to be reversed but
+		// followed the docs and MaxSendMsgSize was defaulted to math.MaxInt32 for ServerOption
+		opts = append(opts, grpc.MaxSendMsgSize(agentConfig.Client.MaxMessageSendSize),
+			grpc.MaxRecvMsgSize(agentConfig.Client.MaxMessageRecieveSize),
+		)
+	}
+
 	return opts
 }
 
