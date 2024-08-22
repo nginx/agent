@@ -177,16 +177,18 @@ func GetDialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOp
 	}
 
 	sendRecOpts := []grpc.DialOption{}
-	if agentConfig.Client.MaxMessageSize != 0 {
-		sendRecOpts = append(sendRecOpts, grpc.WithDefaultCallOptions(
-			grpc.MaxCallRecvMsgSize(agentConfig.Client.MaxMessageSize),
-			grpc.MaxCallSendMsgSize(agentConfig.Client.MaxMessageSize),
-		))
-	} else {
-		sendRecOpts = append(sendRecOpts, grpc.WithDefaultCallOptions(
-			grpc.MaxCallRecvMsgSize(agentConfig.Client.MaxMessageRecieveSize),
-			grpc.MaxCallSendMsgSize(agentConfig.Client.MaxMessageSendSize),
-		))
+	if agentConfig.Client != nil {
+		if agentConfig.Client.MaxMessageSize != 0 {
+			sendRecOpts = append(sendRecOpts, grpc.WithDefaultCallOptions(
+				grpc.MaxCallRecvMsgSize(agentConfig.Client.MaxMessageSize),
+				grpc.MaxCallSendMsgSize(agentConfig.Client.MaxMessageSize),
+			))
+		} else {
+			sendRecOpts = append(sendRecOpts, grpc.WithDefaultCallOptions(
+				grpc.MaxCallRecvMsgSize(agentConfig.Client.MaxMessageRecieveSize),
+				grpc.MaxCallSendMsgSize(agentConfig.Client.MaxMessageSendSize),
+			))
+		}
 	}
 
 	opts := []grpc.DialOption{
