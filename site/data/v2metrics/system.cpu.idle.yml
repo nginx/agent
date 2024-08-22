@@ -1,0 +1,36 @@
+#
+# Copyright (C) F5 2022
+# All rights reserved.
+#
+# No part of the software may be reproduced or transmitted in any
+# form or by any means, electronic or mechanical, for any purpose,
+# without express written permission of F5, Inc.
+#
+
+---
+name: system.cpu.idle
+categories:
+- system
+description: System CPU utilization.
+type: gauge
+counted: true
+source: psutil
+unit: percent
+visible: true
+compound_payload: "false"
+modules:
+- platform
+aggregations:
+- MIN
+- MAX
+- SUM
+- AVG
+- COUNT
+- RATE
+dimensions:
+- system_id
+- hostname
+- display_name
+- nginx_id
+- instance_group
+- system.tags

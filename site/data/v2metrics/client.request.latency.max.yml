@@ -1,0 +1,65 @@
+#
+# Copyright (C) F5 2023
+# All rights reserved.
+#
+# No part of the software may be reproduced or transmitted in any
+# form or by any means, electronic or mechanical, for any purpose,
+# without express written permission of F5, Inc.
+#
+
+---
+name: client.request.latency.max
+categories:
+  - advanced-metrics
+description: 
+  Maximal request latency on the client-side derived from HTTP(S) requests.
+  If `family` dimension is set to `web`, the request was `http` type
+  and if the `family` is set to `tcp-udp`, the request was `stream` type.
+type: gauge
+source: advanced-metrics-module
+unit: milliseconds
+rate: ""
+visible: true
+compound_payload: "false"
+modules:
+  - adm
+  - acm
+aggregations:
+  - MIN
+  - MAX
+  - SUM
+  - AVG
+  - COUNT
+  - RATE
+dimensions:
+  - app
+  - environment
+  - component
+  - gateway
+  - http.hostname
+  - http.request_method
+  - http.response_code
+  - http.upstream_addr
+  - http.uri
+  - http.version_schema
+  - system_id
+  - hostname
+  - display_name
+  - nginx_id
+  - instance_group
+  - system.tags
+  - acm_api_proxy_hostname
+  - acm_api_proxy_name
+  - acm_api_proxy_version
+  - acm_environments_name
+  - acm_environments_type
+  - acm_infra_workspaces_name
+  - acm_service_workspaces_name
+  - family
+  - proxied_protocol
+  - site
+  - environment_name
+  - gateway_name
+  - component_name
+  - app_name
+  - site_name

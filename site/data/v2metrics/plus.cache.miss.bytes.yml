@@ -1,0 +1,45 @@
+#
+# Copyright (C) F5 2022
+# All rights reserved.
+#
+# No part of the software may be reproduced or transmitted in any
+# form or by any means, electronic or mechanical, for any purpose,
+# without express written permission of F5, Inc.
+#
+
+---
+name: plus.cache.miss.bytes
+categories:
+- nginx
+description: The total number of bytes read from the proxied server.
+type: counter
+source: plus_status
+unit: bytes
+visible: true
+compound_payload: "false"
+modules:
+- platform
+- adm
+aggregations:
+- MIN
+- MAX
+- SUM
+- AVG
+- COUNT
+- RATE
+dimensions:
+- system_id
+- hostname
+- display_name
+- nginx_id
+- instance_group
+- system.tags
+- cache_zone
+- app
+- environment
+- component
+- site
+- environment_name
+- component_name
+- app_name
+- site_name

@@ -1,0 +1,36 @@
+#
+# Copyright (C) F5 2023
+# All rights reserved.
+#
+# No part of the software may be reproduced or transmitted in any
+# form or by any means, electronic or mechanical, for any purpose,
+# without express written permission of F5, Inc.
+#
+
+---
+name: plus.http.limit_conns.rejected_dry_run
+categories:
+  - nginx
+description: "The total number of connections accounted as rejected in the dry run mode."
+type: counter
+source: plus_status
+unit: integer
+visible: true
+compound_payload: "false"
+modules:
+  - platform
+aggregations:
+  - MIN
+  - MAX
+  - SUM
+  - AVG
+  - COUNT
+  - RATE
+dimensions:
+  - system_id
+  - hostname
+  - display_name
+  - nginx_id
+  - system.tags
+  - instance_group
+  - limit_conn_zone
