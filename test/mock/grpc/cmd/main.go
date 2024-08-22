@@ -69,7 +69,7 @@ func main() {
 		}
 	}
 
-	slog.DebugContext(ctx, "Config directory", "directory", configDirectory)
+	slog.DebugContext(ctx, "Config directory", "directory", *configDirectory)
 
 	_, err = grpc.NewMockManagementServer(*apiAddress, agentConfig, configDirectory)
 	if err != nil {

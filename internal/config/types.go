@@ -171,6 +171,7 @@ type (
 	Watchers struct {
 		InstanceWatcher       InstanceWatcher       `yaml:"-" mapstructure:"instance_watcher"`
 		InstanceHealthWatcher InstanceHealthWatcher `yaml:"-" mapstructure:"instance_health_watcher"`
+		FileWatcher           FileWatcher           `yaml:"-" mapstructure:"file_watcher"`
 	}
 
 	InstanceWatcher struct {
@@ -178,6 +179,10 @@ type (
 	}
 
 	InstanceHealthWatcher struct {
+		MonitoringFrequency time.Duration `yaml:"-" mapstructure:"monitoring_frequency"`
+	}
+
+	FileWatcher struct {
 		MonitoringFrequency time.Duration `yaml:"-" mapstructure:"monitoring_frequency"`
 	}
 )

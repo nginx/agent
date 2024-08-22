@@ -201,6 +201,13 @@ func registerFlags() {
 		DefInstanceHealthWatcherMonitoringFrequency,
 		"How often the NGINX Agent will check for instance health changes.",
 	)
+
+	fs.Duration(
+		FileWatcherMonitoringFrequencyKey,
+		DefFileWatcherMonitoringFrequency,
+		"How often the NGINX Agent will check for file changes.",
+	)
+
 	fs.String(
 		CollectorConfigPathKey,
 		DefCollectorConfigPath,
@@ -393,6 +400,9 @@ func resolveWatchers() *Watchers {
 		},
 		InstanceHealthWatcher: InstanceHealthWatcher{
 			MonitoringFrequency: DefInstanceHealthWatcherMonitoringFrequency,
+		},
+		FileWatcher: FileWatcher{
+			MonitoringFrequency: DefFileWatcherMonitoringFrequency,
 		},
 	}
 }

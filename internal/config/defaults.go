@@ -33,4 +33,5 @@ const (
 
 	DefInstanceWatcherMonitoringFrequency       = 5 * time.Second
 	DefInstanceHealthWatcherMonitoringFrequency = 5 * time.Second
+	DefFileWatcherMonitoringFrequency           = 5 * time.Second
 )

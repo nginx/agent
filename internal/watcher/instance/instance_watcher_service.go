@@ -111,6 +111,14 @@ func (iw *InstanceWatcherService) Watch(
 	}
 }
 
+func (iw *InstanceWatcherService) ReparseConfigs(ctx context.Context) {
+	slog.DebugContext(ctx, "Reparsing all instance configurations")
+	for _, instance := range iw.instanceCache {
+		iw.ReparseConfig(ctx, instance)
+	}
+	slog.DebugContext(ctx, "Finished reparsing all instance configurations")
+}
+
 func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instance *mpi.Instance) {
 	iw.cacheMutex.Lock()
 	defer iw.cacheMutex.Unlock()
@@ -119,12 +127,17 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instance *m
 
 	if instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX ||
 		instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
-		slog.DebugContext(ctx, "Reparsing instance config", "instance_id", instance.GetInstanceMeta().GetInstanceId())
+		slog.DebugContext(
+			ctx,
+			"Reparsing NGINX instance config",
+			"instance_id", instance.GetInstanceMeta().GetInstanceId(),
+		)
+
 		nginxConfigContext, parseErr := iw.nginxConfigParser.Parse(ctx, instance)
 		if parseErr != nil {
 			slog.WarnContext(
 				ctx,
-				"Parsing NGINX instance config",
+				"Unable to parse NGINX instance config",
 				"config_path", instance.GetInstanceRuntime().GetConfigPath(),
 				"instance_id", instance.GetInstanceMeta().GetInstanceId(),
 				"error", parseErr,
@@ -164,12 +177,13 @@ func (iw *InstanceWatcherService) checkForUpdates(
 	instancesToParse = append(instancesToParse, instanceUpdates.NewInstances...)
 
 	for _, newInstance := range instancesToParse {
+		instanceType := newInstance.GetInstanceMeta().GetInstanceType()
 		slog.DebugContext(
 			newCtx,
 			"Parsing instance config",
 			"instance_id", newInstance.GetInstanceMeta().GetInstanceId(),
+			"instance_type", instanceType,
 		)
-		instanceType := newInstance.GetInstanceMeta().GetInstanceType()
 
 		if instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX ||
 			instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
@@ -177,9 +191,10 @@ func (iw *InstanceWatcherService) checkForUpdates(
 			if parseErr != nil {
 				slog.WarnContext(
 					newCtx,
-					"Parsing NGINX instance config",
+					"Unable to parse NGINX instance config",
 					"config_path", newInstance.GetInstanceRuntime().GetConfigPath(),
 					"instance_id", newInstance.GetInstanceMeta().GetInstanceId(),
+					"instance_type", instanceType,
 					"error", parseErr,
 				)
 			} else {
