@@ -71,49 +71,43 @@ func NewCommandService(
 	return commandService
 }
 
+func (cs *CommandService) CheckConnection() bool {
+	return cs.isConnected.Load()
+}
+
 func (cs *CommandService) UpdateDataPlaneStatus(
 	ctx context.Context,
 	resource *mpi.Resource,
-) (*mpi.CreateConnectionResponse, error) {
-	var createConnectionResponse *mpi.CreateConnectionResponse
+) error {
 	correlationID := logger.GetCorrelationID(ctx)
-
 	if !cs.isConnected.Load() {
-		response, err := cs.createConnection(ctx, resource)
-		if err != nil {
-			return nil, err
-		}
-
-		createConnectionResponse = response
+		return errors.New("command service client not connected yet")
 	}
-
-	requestCorrelationID := logger.GenerateCorrelationID()
-	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, requestCorrelationID)
 
 	request := &mpi.UpdateDataPlaneStatusRequest{
 		MessageMeta: &mpi.MessageMeta{
 			MessageId:     uuid.NewString(),
-			CorrelationId: requestCorrelationID.Value.String(),
+			CorrelationId: correlationID,
 			Timestamp:     timestamppb.Now(),
 		},
 		Resource: resource,
 	}
 
-	backOffCtx, backoffCancel := context.WithTimeout(newCtx, cs.agentConfig.Common.MaxElapsedTime)
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, cs.agentConfig.Common.MaxElapsedTime)
 	defer backoffCancel()
 
 	sendDataPlaneStatus := func() (*mpi.UpdateDataPlaneStatusResponse, error) {
-		slog.DebugContext(newCtx, "Sending data plane status update request", "request", request,
+		slog.DebugContext(ctx, "Sending data plane status update request", "request", request,
 			"parent_correlation_id", correlationID)
 		if cs.commandServiceClient == nil {
 			return nil, errors.New("command service client is not initialized")
 		}
 
-		response, updateError := cs.commandServiceClient.UpdateDataPlaneStatus(newCtx, request)
+		response, updateError := cs.commandServiceClient.UpdateDataPlaneStatus(ctx, request)
 
 		validatedError := grpc.ValidateGrpcError(updateError)
 		if validatedError != nil {
-			slog.ErrorContext(newCtx, "Failed to send update data plane status", "error", validatedError)
+			slog.ErrorContext(ctx, "Failed to send update data plane status", "error", validatedError)
 
 			return nil, validatedError
 		}
@@ -126,11 +120,11 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 		backoffHelpers.Context(backOffCtx, cs.agentConfig.Common),
 	)
 	if err != nil {
-		return createConnectionResponse, err
+		return err
 	}
-	slog.DebugContext(newCtx, "UpdateDataPlaneStatus response", "response", response)
+	slog.DebugContext(ctx, "UpdateDataPlaneStatus response", "response", response)
 
-	return createConnectionResponse, err
+	return err
 }
 
 func (cs *CommandService) UpdateDataPlaneHealth(ctx context.Context, instanceHealths []*mpi.InstanceHealth) error {
@@ -209,14 +203,11 @@ func (cs *CommandService) subscribe(ctx context.Context) {
 	}
 }
 
-func (cs *CommandService) createConnection(
+func (cs *CommandService) CreateConnection(
 	ctx context.Context,
 	resource *mpi.Resource,
 ) (*mpi.CreateConnectionResponse, error) {
 	correlationID := logger.GetCorrelationID(ctx)
-
-	connectionCorrelationID := logger.GenerateCorrelationID()
-	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, connectionCorrelationID)
 
 	// Only send a resource update message if instances other than the agent instance are found
 	if len(resource.GetInstances()) <= 1 {
@@ -226,7 +217,7 @@ func (cs *CommandService) createConnection(
 	request := &mpi.CreateConnectionRequest{
 		MessageMeta: &mpi.MessageMeta{
 			MessageId:     uuid.NewString(),
-			CorrelationId: connectionCorrelationID.Value.String(),
+			CorrelationId: correlationID,
 			Timestamp:     timestamppb.Now(),
 		},
 		Resource: resource,
@@ -241,15 +232,15 @@ func (cs *CommandService) createConnection(
 	}
 
 	response, err := backoff.RetryWithData(
-		cs.connectCallback(newCtx, request),
-		backoffHelpers.Context(newCtx, commonSettings),
+		cs.connectCallback(ctx, request),
+		backoffHelpers.Context(ctx, commonSettings),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	slog.DebugContext(newCtx, "Connection created", "response", response, "parent_correlation_id", correlationID)
-	slog.DebugContext(newCtx, "Agent connected")
+	slog.DebugContext(ctx, "Connection created", "response", response)
+	slog.DebugContext(ctx, "Agent connected")
 
 	cs.isConnected.Store(true)
 
