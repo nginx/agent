@@ -139,11 +139,13 @@ func ToPtr[T any](value T) *T {
 	return &value
 }
 
+// nolint: revive
 func LogAndTerminateContainers(
 	ctx context.Context,
 	tb testing.TB,
 	mockManagementPlaneContainer testcontainers.Container,
 	agentContainer testcontainers.Container,
+	expectNoErrorsInLogs bool,
 ) {
 	tb.Helper()
 
@@ -156,7 +158,9 @@ func LogAndTerminateContainers(
 	logs := string(buf)
 
 	tb.Log(logs)
-	assert.NotContains(tb, logs, "level=ERROR", "agent log file contains logs at error level")
+	if expectNoErrorsInLogs {
+		assert.NotContains(tb, logs, "level=ERROR", "agent log file contains logs at error level")
+	}
 
 	err = agentContainer.Terminate(ctx)
 	require.NoError(tb, err)
