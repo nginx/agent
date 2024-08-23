@@ -1,6 +1,6 @@
 ---
-title: Migrate from NGINX Agent v2 to v3
-weight: 900
+title: "Export metrics data"
+weight: 600
 docs: DOCS-000
 ---
 
@@ -26,9 +26,10 @@ To begin this task, you will require the following:
 -
 -
 
+
 ---
 
-## Migrate from NGINX Agent v2 to v3
+## Export metrics data
 
 
 ---
@@ -38,5 +39,5 @@ To begin this task, you will require the following:
 [//]: # "Examples of additional topics users might want to read include:"
 [//]: # "Relevant reference information, configuration options and more complex use cases."
 
--
+- [OpenTelemetry metrics]({{< ref "/metrics.md" >}})
 -
