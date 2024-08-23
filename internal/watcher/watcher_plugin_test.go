@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/watcher/health"
 	"github.com/nginx/agent/v3/internal/watcher/instance"
 	"github.com/nginx/agent/v3/internal/watcher/watcherfakes"
 
@@ -61,10 +62,16 @@ func TestWatcher_Init(t *testing.T) {
 		NginxConfigContext: model.GetConfigContext(),
 	}
 
+	instanceHealthMessage := health.InstanceHealthMessage{
+		CorrelationID:  logger.GenerateCorrelationID(),
+		InstanceHealth: []*mpi.InstanceHealth{},
+	}
+
 	watcherPlugin.instanceUpdatesChannel <- instanceUpdatesMessage
 	watcherPlugin.nginxConfigContextChannel <- nginxConfigContextMessage
+	watcherPlugin.instanceHealthChannel <- instanceHealthMessage
 
-	assert.Eventually(t, func() bool { return len(messagePipe.GetMessages()) == 4 }, 2*time.Second, 10*time.Millisecond)
+	assert.Eventually(t, func() bool { return len(messagePipe.GetMessages()) == 5 }, 2*time.Second, 10*time.Millisecond)
 	messages = messagePipe.GetMessages()
 
 	assert.Equal(
@@ -86,6 +93,11 @@ func TestWatcher_Init(t *testing.T) {
 		t,
 		&bus.Message{Topic: bus.NginxConfigUpdateTopic, Data: nginxConfigContextMessage.NginxConfigContext},
 		messages[3],
+	)
+	assert.Equal(
+		t,
+		&bus.Message{Topic: bus.InstanceHealthTopic, Data: instanceHealthMessage.InstanceHealth},
+		messages[4],
 	)
 }
 

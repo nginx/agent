@@ -178,10 +178,6 @@ func (fws *FileWatcherService) handleEvent(ctx context.Context, event fsnotify.E
 			fws.addWatcher(ctx, event.Name, info)
 		case event.Op&Remove == Remove, event.Op&Rename == Rename:
 			fws.removeWatcher(ctx, event.Name)
-		default:
-			// We want to skip sending messages if it is not a write, create, or remove event.
-			slog.DebugContext(ctx, "Skipping unsupported FSNotify event operation", "event", event)
-			return
 		}
 
 		slog.DebugContext(ctx, "Processing FSNotify event", "event", event)
