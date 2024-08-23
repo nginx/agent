@@ -189,6 +189,15 @@ func GetDialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOp
 				grpc.MaxCallSendMsgSize(agentConfig.Client.MaxMessageSendSize),
 			))
 		}
+		keepAlive := keepalive.ClientParameters{
+			Time:                agentConfig.Client.Time,
+			Timeout:             agentConfig.Client.Timeout,
+			PermitWithoutStream: agentConfig.Client.PermitWithoutStream,
+		}
+
+		sendRecOpts = append(sendRecOpts,
+			grpc.WithKeepaliveParams(keepAlive),
+		)
 	}
 
 	opts := []grpc.DialOption{
@@ -198,18 +207,6 @@ func GetDialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOp
 	}
 
 	opts = append(opts, sendRecOpts...)
-
-	if agentConfig.Client != nil {
-		keepAlive := keepalive.ClientParameters{
-			Time:                agentConfig.Client.Time,
-			Timeout:             agentConfig.Client.Timeout,
-			PermitWithoutStream: agentConfig.Client.PermitWithoutStream,
-		}
-
-		opts = append(opts,
-			grpc.WithKeepaliveParams(keepAlive),
-		)
-	}
 
 	transportCredentials, err := getTransportCredentials(agentConfig)
 	if err == nil {

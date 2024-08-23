@@ -9,6 +9,7 @@ import (
 	"context"
 	"flag"
 	"log/slog"
+	"math"
 	"net"
 	"os"
 	"path/filepath"
@@ -54,6 +55,8 @@ func main() {
 	agentConfig.Command.Auth = nil
 	agentConfig.Command.TLS = nil
 	agentConfig.Common.MaxElapsedTime = *sleepDuration
+	agentConfig.Client.MaxMessageRecieveSize = math.MaxInt
+	agentConfig.Client.MaxMessageSendSize = math.MaxInt
 
 	newLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
 		Level: logger.GetLogLevel(*logLevel),
