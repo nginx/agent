@@ -8,6 +8,7 @@ package file
 import (
 	"context"
 	"os"
+	"path"
 	"testing"
 	"time"
 
@@ -48,7 +49,7 @@ func TestFileWatcherService_addWatcher(t *testing.T) {
 	fileWatcherService.watcher = watcher
 
 	tempDir := os.TempDir()
-	testDirectory := tempDir + "test_dir"
+	testDirectory := path.Join(tempDir, "test_dir")
 	err = os.Mkdir(testDirectory, directoryPermissions)
 	require.NoError(t, err)
 	defer os.Remove(testDirectory)
@@ -73,7 +74,7 @@ func TestFileWatcherService_addWatcher_Error(t *testing.T) {
 	fileWatcherService.watcher = watcher
 
 	tempDir := os.TempDir()
-	testDirectory := tempDir + "test_dir"
+	testDirectory := path.Join(tempDir, "test_dir")
 	err = os.Mkdir(testDirectory, directoryPermissions)
 	require.NoError(t, err)
 	info, err := os.Stat(testDirectory)
@@ -101,7 +102,7 @@ func TestFileWatcherService_removeWatcher(t *testing.T) {
 	fileWatcherService.watcher = watcher
 
 	tempDir := os.TempDir()
-	testDirectory := tempDir + "test_dir"
+	testDirectory := path.Join(tempDir, "test_dir")
 	err = os.Mkdir(testDirectory, directoryPermissions)
 	require.NoError(t, err)
 	defer os.Remove(testDirectory)
@@ -129,7 +130,7 @@ func TestFileWatcherService_Watch(t *testing.T) {
 	defer cancel()
 
 	tempDir := os.TempDir()
-	testDirectory := tempDir + "test_dir"
+	testDirectory := path.Join(tempDir, "test_dir")
 	os.RemoveAll(testDirectory)
 	err := os.Mkdir(testDirectory, directoryPermissions)
 	require.NoError(t, err)
@@ -150,17 +151,21 @@ func TestFileWatcherService_Watch(t *testing.T) {
 	require.NoError(t, err)
 	defer os.Remove(file.Name())
 
-	fileUpdate := <-channel
-	assert.NotNil(t, fileUpdate.CorrelationID)
+	t.Run("Test 1: File updated", func(t *testing.T) {
+		fileUpdate := <-channel
+		assert.NotNil(t, fileUpdate.CorrelationID)
+	})
 
-	skippableFile, err := os.CreateTemp(testDirectory, "*test.conf.swp")
-	require.NoError(t, err)
-	defer os.Remove(skippableFile.Name())
+	t.Run("Test 2: Skippable file updated", func(t *testing.T) {
+		skippableFile, skippableFileError := os.CreateTemp(testDirectory, "*test.conf.swp")
+		require.NoError(t, skippableFileError)
+		defer os.Remove(skippableFile.Name())
 
-	select {
-	case <-channel:
-		t.Fatalf("Expected file to be skipped")
-	case <-time.After(150 * time.Millisecond):
-		return
-	}
+		select {
+		case <-channel:
+			t.Fatalf("Expected file to be skipped")
+		case <-time.After(150 * time.Millisecond):
+			return
+		}
+	})
 }
