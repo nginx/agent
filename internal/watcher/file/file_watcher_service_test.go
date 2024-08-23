@@ -138,7 +138,7 @@ func TestFileWatcherService_Watch(t *testing.T) {
 
 	agentConfig := types.AgentConfig()
 	agentConfig.Watchers.FileWatcher.MonitoringFrequency = 100 * time.Millisecond
-	agentConfig.AllowedDirectories = []string{testDirectory}
+	agentConfig.AllowedDirectories = []string{testDirectory, "/unknown/directory"}
 
 	channel := make(chan FileUpdateMessage)
 
