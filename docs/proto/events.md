@@ -67,6 +67,7 @@ Represents an event
 | Metadata | [Metadata](#f5-nginx-agent-sdk-events-Metadata) |  | Event metadata |
 | ActivityEvent | [ActivityEvent](#f5-nginx-agent-sdk-events-ActivityEvent) |  | Activity event |
 | SecurityViolationEvent | [SecurityViolationEvent](#f5-nginx-agent-sdk-events-SecurityViolationEvent) |  | Security violation event |
+| SecurityViolationEventRaw | [bytes](#bytes) |  | Raw security violation event as collected from syslog and compressed for transport |
 
 
 

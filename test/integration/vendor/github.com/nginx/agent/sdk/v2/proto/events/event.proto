@@ -47,6 +47,9 @@ message Event {
      */
 
     SecurityViolationEvent SecurityViolationEvent = 3 [(gogoproto.jsontag) = "security_violation_event"]; // Security violation event
+
+    // Raw security violation event as collected from syslog and compressed for transport
+    bytes SecurityViolationEventRaw = 4 [(gogoproto.jsontag) = "security_violation_event_raw"];
   }
 }
 
