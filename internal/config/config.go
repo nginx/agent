@@ -145,7 +145,8 @@ func registerFlags() {
 	)
 
 	fs.Duration(ClientTimeoutKey, time.Minute, "Client timeout")
-	fs.String(ConfigDirectoriesKey, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules",
+	fs.String(ConfigDirectoriesKey,
+		DefConfigDirectories,
 		"Defines the paths that you want to grant NGINX Agent read/write access to."+
 			" This key is formatted as a string and follows Unix PATH format")
 

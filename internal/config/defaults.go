@@ -15,6 +15,7 @@ const (
 	DefTreatErrorsAsWarnings       = true
 
 	DefCollectorConfigPath = "/var/run/nginx-agent/otelcol.yaml"
+	DefConfigDirectories   = "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules"
 
 	DefCommandServerHostKey    = ""
 	DefCommandServerPortKey    = 0

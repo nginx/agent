@@ -55,7 +55,7 @@ func main() {
 	agentConfig.Command.Auth = nil
 	agentConfig.Command.TLS = nil
 	agentConfig.Common.MaxElapsedTime = *sleepDuration
-	agentConfig.Client.MaxMessageRecieveSize = math.MaxInt
+	agentConfig.Client.MaxMessageRecieveSize = 4194304
 	agentConfig.Client.MaxMessageSendSize = math.MaxInt
 
 	newLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
