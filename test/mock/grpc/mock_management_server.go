@@ -168,9 +168,9 @@ func getServerOptions(agentConfig *config.Config) []grpc.ServerOption {
 			opts = append(opts, grpc.MaxSendMsgSize(agentConfig.Client.MaxMessageSendSize),
 				grpc.MaxRecvMsgSize(agentConfig.Client.MaxMessageRecieveSize),
 			)
-		}	
+		}
 	}
-	
+
 	return opts
 }
 
