@@ -252,7 +252,6 @@ func TestGrpc_ConfigApply(t *testing.T) {
 			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[2].GetCommandResponse().GetStatus())
 			assert.Equal(t, "Config apply successful", responses[2].GetCommandResponse().GetMessage())
 		}
-
 	})
 
 	t.Run("Test 3: Invalid config", func(t *testing.T) {
@@ -276,7 +275,6 @@ func TestGrpc_ConfigApply(t *testing.T) {
 			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE, responses[4].GetCommandResponse().GetStatus())
 			assert.Equal(t, "Config apply failed, rollback successful", responses[4].GetCommandResponse().GetMessage())
 			assert.Equal(t, configApplyErrorMessage, responses[4].GetCommandResponse().GetError())
-
 		} else {
 			responses = getManagementPlaneResponses(t, 7)
 			t.Logf("Config apply responses: %v", len(responses))
@@ -288,7 +286,6 @@ func TestGrpc_ConfigApply(t *testing.T) {
 			assert.Equal(t, "Config apply failed, rollback successful", responses[6].GetCommandResponse().GetMessage())
 			assert.Equal(t, configApplyErrorMessage, responses[6].GetCommandResponse().GetError())
 		}
-
 	})
 
 	t.Run("Test 4: File not in allowed directory", func(t *testing.T) {
