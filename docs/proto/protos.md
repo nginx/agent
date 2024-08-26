@@ -277,7 +277,7 @@ Represents a request payload for a file overview
 <a name="mpi-v1-GetOverviewResponse"></a>
 
 ### GetOverviewResponse
-Represents a response payload for an overview of files for a particular configuration version of an instance
+Represents the response payload to a GetOverviewRequest, requesting a list of logically grouped files e.g. configuration payload
 
 
 | Field | Type | Label | Description |
@@ -324,7 +324,7 @@ Represents the response to an update file request
 <a name="mpi-v1-UpdateOverviewRequest"></a>
 
 ### UpdateOverviewRequest
-Represents a the payload for an overview an update of  files for a particular configuration version of an instance
+Represents a list of logically grouped files that have changed e.g. configuration payload
 
 
 | Field | Type | Label | Description |
