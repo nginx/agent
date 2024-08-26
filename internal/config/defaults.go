@@ -14,6 +14,8 @@ const (
 	DefTreatErrorsAsWarnings       = true
 
 	DefCollectorConfigPath = "/var/run/nginx-agent/otelcol.yaml"
+	DefCollectorLogLevel   = "INFO"
+	DefCollectorLogPath    = "/var/log/nginx-agent/otelcol.log"
 
 	DefCommandServerHostKey    = ""
 	DefCommandServerPortKey    = 0

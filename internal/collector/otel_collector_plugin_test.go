@@ -29,6 +29,8 @@ func TestCollector_New(t *testing.T) {
 
 func TestCollector_InitAndClose(t *testing.T) {
 	conf := types.OTelConfig(t)
+	conf.Collector.Log.Path = ""
+
 	collector, err := New(conf)
 	require.NoError(t, err, "NewCollector should not return an error with valid config")
 
@@ -62,6 +64,7 @@ func TestCollector_Process(t *testing.T) {
 	defer nginxPlusMock.Close()
 
 	conf := types.OTelConfig(t)
+	conf.Collector.Log.Path = ""
 
 	tests := []struct {
 		name      string

@@ -81,6 +81,10 @@ func AgentConfig() *config.Config {
 				Port: randomPort3,
 				Type: 0,
 			},
+			Log: &config.Log{
+				Level: "INFO",
+				Path:  "/var/log/nginx-agent/otelcol.log",
+			},
 		},
 		Command: &config.Command{
 			Server: &config.ServerConfig{

@@ -49,6 +49,11 @@ extensions:
     endpoint: "localhost:1337"
 
 service:
+  telemetry:
+    logs:
+      level: INFO
+      output_paths: ["/var/log/nginx-agent/otelcol.log"]
+      error_output_paths: ["/var/log/nginx-agent/otelcol.log"]
   extensions:
     - health_check
   pipelines:
