@@ -416,9 +416,6 @@ func getContainerID(mountInfo string) (string, error) {
 	for fileScanner.Scan() {
 		lines = append(lines, fileScanner.Text())
 	}
-	if err != nil {
-		return "", fmt.Errorf("unable to close file %s: %v", mountInfo, err)
-	}
 
 	for _, line := range lines {
 		splitLine := strings.Split(line, " ")
