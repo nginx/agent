@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724765611659,
+  "lastUpdate": 1724766906154,
   "repoUrl": "https://github.com/nginx/agent",
   "entries": {
     "Compare Benchmark Results": [
@@ -103904,6 +103904,2190 @@ window.BENCHMARK_DATA = {
             "value": 0,
             "unit": "spans",
             "extra": "Metric10kDPS/OTLP-linux-build/nginx-agent - Dropped Span Count"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "108004222+aphralG@users.noreply.github.com",
+            "name": "aphralG",
+            "username": "aphralG"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "611112412b28b6d937ac1cfb151c7e4d5d72eb8c",
+          "message": "Fix CorrelationID's for CreateConnection, UpdateDataPlaneStatus & UpdateOverview (#792)\n\n* fix correlation IDs",
+          "timestamp": "2024-08-27T14:51:40+01:00",
+          "tree_id": "07431ac8cadedfe9e10d28d69e91727966c5e167",
+          "url": "https://github.com/nginx/agent/commit/611112412b28b6d937ac1cfb151c7e4d5d72eb8c"
+        },
+        "date": 1724766905196,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf",
+            "value": 822767,
+            "unit": "ns/op\t  269314 B/op\t    1335 allocs/op",
+            "extra": "1453 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - ns/op",
+            "value": 822767,
+            "unit": "ns/op",
+            "extra": "1453 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - B/op",
+            "value": 269314,
+            "unit": "B/op",
+            "extra": "1453 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - allocs/op",
+            "value": 1335,
+            "unit": "allocs/op",
+            "extra": "1453 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf",
+            "value": 816910,
+            "unit": "ns/op\t  269281 B/op\t    1335 allocs/op",
+            "extra": "1460 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - ns/op",
+            "value": 816910,
+            "unit": "ns/op",
+            "extra": "1460 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - B/op",
+            "value": 269281,
+            "unit": "B/op",
+            "extra": "1460 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - allocs/op",
+            "value": 1335,
+            "unit": "allocs/op",
+            "extra": "1460 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf",
+            "value": 846960,
+            "unit": "ns/op\t  269010 B/op\t    1335 allocs/op",
+            "extra": "1441 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - ns/op",
+            "value": 846960,
+            "unit": "ns/op",
+            "extra": "1441 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - B/op",
+            "value": 269010,
+            "unit": "B/op",
+            "extra": "1441 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - allocs/op",
+            "value": 1335,
+            "unit": "allocs/op",
+            "extra": "1441 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf",
+            "value": 815707,
+            "unit": "ns/op\t  268966 B/op\t    1335 allocs/op",
+            "extra": "1458 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - ns/op",
+            "value": 815707,
+            "unit": "ns/op",
+            "extra": "1458 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - B/op",
+            "value": 268966,
+            "unit": "B/op",
+            "extra": "1458 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - allocs/op",
+            "value": 1335,
+            "unit": "allocs/op",
+            "extra": "1458 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf",
+            "value": 818043,
+            "unit": "ns/op\t  268625 B/op\t    1335 allocs/op",
+            "extra": "1462 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - ns/op",
+            "value": 818043,
+            "unit": "ns/op",
+            "extra": "1462 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - B/op",
+            "value": 268625,
+            "unit": "B/op",
+            "extra": "1462 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - allocs/op",
+            "value": 1335,
+            "unit": "allocs/op",
+            "extra": "1462 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf",
+            "value": 817003,
+            "unit": "ns/op\t  268653 B/op\t    1334 allocs/op",
+            "extra": "1464 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - ns/op",
+            "value": 817003,
+            "unit": "ns/op",
+            "extra": "1464 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - B/op",
+            "value": 268653,
+            "unit": "B/op",
+            "extra": "1464 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - allocs/op",
+            "value": 1334,
+            "unit": "allocs/op",
+            "extra": "1464 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf",
+            "value": 816970,
+            "unit": "ns/op\t  268377 B/op\t    1335 allocs/op",
+            "extra": "1455 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - ns/op",
+            "value": 816970,
+            "unit": "ns/op",
+            "extra": "1455 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - B/op",
+            "value": 268377,
+            "unit": "B/op",
+            "extra": "1455 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - allocs/op",
+            "value": 1335,
+            "unit": "allocs/op",
+            "extra": "1455 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf",
+            "value": 816267,
+            "unit": "ns/op\t  269538 B/op\t    1335 allocs/op",
+            "extra": "1458 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - ns/op",
+            "value": 816267,
+            "unit": "ns/op",
+            "extra": "1458 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - B/op",
+            "value": 269538,
+            "unit": "B/op",
+            "extra": "1458 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - allocs/op",
+            "value": 1335,
+            "unit": "allocs/op",
+            "extra": "1458 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf",
+            "value": 819930,
+            "unit": "ns/op\t  269217 B/op\t    1335 allocs/op",
+            "extra": "1459 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - ns/op",
+            "value": 819930,
+            "unit": "ns/op",
+            "extra": "1459 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - B/op",
+            "value": 269217,
+            "unit": "B/op",
+            "extra": "1459 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - allocs/op",
+            "value": 1335,
+            "unit": "allocs/op",
+            "extra": "1459 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf",
+            "value": 822134,
+            "unit": "ns/op\t  268454 B/op\t    1334 allocs/op",
+            "extra": "1454 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - ns/op",
+            "value": 822134,
+            "unit": "ns/op",
+            "extra": "1454 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - B/op",
+            "value": 268454,
+            "unit": "B/op",
+            "extra": "1454 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx.conf - allocs/op",
+            "value": 1334,
+            "unit": "allocs/op",
+            "extra": "1454 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf",
+            "value": 2147661,
+            "unit": "ns/op\t  531693 B/op\t    8890 allocs/op",
+            "extra": "555 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - ns/op",
+            "value": 2147661,
+            "unit": "ns/op",
+            "extra": "555 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - B/op",
+            "value": 531693,
+            "unit": "B/op",
+            "extra": "555 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - allocs/op",
+            "value": 8890,
+            "unit": "allocs/op",
+            "extra": "555 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf",
+            "value": 2152382,
+            "unit": "ns/op\t  533705 B/op\t    8890 allocs/op",
+            "extra": "561 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - ns/op",
+            "value": 2152382,
+            "unit": "ns/op",
+            "extra": "561 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - B/op",
+            "value": 533705,
+            "unit": "B/op",
+            "extra": "561 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - allocs/op",
+            "value": 8890,
+            "unit": "allocs/op",
+            "extra": "561 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf",
+            "value": 2143168,
+            "unit": "ns/op\t  530967 B/op\t    8890 allocs/op",
+            "extra": "548 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - ns/op",
+            "value": 2143168,
+            "unit": "ns/op",
+            "extra": "548 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - B/op",
+            "value": 530967,
+            "unit": "B/op",
+            "extra": "548 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - allocs/op",
+            "value": 8890,
+            "unit": "allocs/op",
+            "extra": "548 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf",
+            "value": 2146479,
+            "unit": "ns/op\t  531658 B/op\t    8889 allocs/op",
+            "extra": "549 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - ns/op",
+            "value": 2146479,
+            "unit": "ns/op",
+            "extra": "549 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - B/op",
+            "value": 531658,
+            "unit": "B/op",
+            "extra": "549 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - allocs/op",
+            "value": 8889,
+            "unit": "allocs/op",
+            "extra": "549 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf",
+            "value": 2272870,
+            "unit": "ns/op\t  532125 B/op\t    8890 allocs/op",
+            "extra": "564 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - ns/op",
+            "value": 2272870,
+            "unit": "ns/op",
+            "extra": "564 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - B/op",
+            "value": 532125,
+            "unit": "B/op",
+            "extra": "564 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - allocs/op",
+            "value": 8890,
+            "unit": "allocs/op",
+            "extra": "564 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf",
+            "value": 2149153,
+            "unit": "ns/op\t  531677 B/op\t    8889 allocs/op",
+            "extra": "546 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - ns/op",
+            "value": 2149153,
+            "unit": "ns/op",
+            "extra": "546 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - B/op",
+            "value": 531677,
+            "unit": "B/op",
+            "extra": "546 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - allocs/op",
+            "value": 8889,
+            "unit": "allocs/op",
+            "extra": "546 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf",
+            "value": 2153278,
+            "unit": "ns/op\t  531472 B/op\t    8890 allocs/op",
+            "extra": "556 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - ns/op",
+            "value": 2153278,
+            "unit": "ns/op",
+            "extra": "556 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - B/op",
+            "value": 531472,
+            "unit": "B/op",
+            "extra": "556 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - allocs/op",
+            "value": 8890,
+            "unit": "allocs/op",
+            "extra": "556 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf",
+            "value": 2159884,
+            "unit": "ns/op\t  533013 B/op\t    8890 allocs/op",
+            "extra": "550 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - ns/op",
+            "value": 2159884,
+            "unit": "ns/op",
+            "extra": "550 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - B/op",
+            "value": 533013,
+            "unit": "B/op",
+            "extra": "550 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - allocs/op",
+            "value": 8890,
+            "unit": "allocs/op",
+            "extra": "550 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf",
+            "value": 2147936,
+            "unit": "ns/op\t  532118 B/op\t    8890 allocs/op",
+            "extra": "547 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - ns/op",
+            "value": 2147936,
+            "unit": "ns/op",
+            "extra": "547 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - B/op",
+            "value": 532118,
+            "unit": "B/op",
+            "extra": "547 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - allocs/op",
+            "value": 8890,
+            "unit": "allocs/op",
+            "extra": "547 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf",
+            "value": 2148686,
+            "unit": "ns/op\t  530926 B/op\t    8890 allocs/op",
+            "extra": "562 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - ns/op",
+            "value": 2148686,
+            "unit": "ns/op",
+            "extra": "562 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - B/op",
+            "value": 530926,
+            "unit": "B/op",
+            "extra": "562 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-1k-lines.conf - allocs/op",
+            "value": 8890,
+            "unit": "allocs/op",
+            "extra": "562 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf",
+            "value": 3909858,
+            "unit": "ns/op\t  822329 B/op\t   16974 allocs/op",
+            "extra": "306 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - ns/op",
+            "value": 3909858,
+            "unit": "ns/op",
+            "extra": "306 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - B/op",
+            "value": 822329,
+            "unit": "B/op",
+            "extra": "306 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - allocs/op",
+            "value": 16974,
+            "unit": "allocs/op",
+            "extra": "306 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf",
+            "value": 3915462,
+            "unit": "ns/op\t  824946 B/op\t   16974 allocs/op",
+            "extra": "304 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - ns/op",
+            "value": 3915462,
+            "unit": "ns/op",
+            "extra": "304 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - B/op",
+            "value": 824946,
+            "unit": "B/op",
+            "extra": "304 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - allocs/op",
+            "value": 16974,
+            "unit": "allocs/op",
+            "extra": "304 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf",
+            "value": 3906924,
+            "unit": "ns/op\t  824343 B/op\t   16975 allocs/op",
+            "extra": "303 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - ns/op",
+            "value": 3906924,
+            "unit": "ns/op",
+            "extra": "303 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - B/op",
+            "value": 824343,
+            "unit": "B/op",
+            "extra": "303 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - allocs/op",
+            "value": 16975,
+            "unit": "allocs/op",
+            "extra": "303 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf",
+            "value": 3882585,
+            "unit": "ns/op\t  821906 B/op\t   16975 allocs/op",
+            "extra": "297 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - ns/op",
+            "value": 3882585,
+            "unit": "ns/op",
+            "extra": "297 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - B/op",
+            "value": 821906,
+            "unit": "B/op",
+            "extra": "297 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - allocs/op",
+            "value": 16975,
+            "unit": "allocs/op",
+            "extra": "297 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf",
+            "value": 3933954,
+            "unit": "ns/op\t  823950 B/op\t   16974 allocs/op",
+            "extra": "294 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - ns/op",
+            "value": 3933954,
+            "unit": "ns/op",
+            "extra": "294 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - B/op",
+            "value": 823950,
+            "unit": "B/op",
+            "extra": "294 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - allocs/op",
+            "value": 16974,
+            "unit": "allocs/op",
+            "extra": "294 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf",
+            "value": 3955040,
+            "unit": "ns/op\t  822600 B/op\t   16974 allocs/op",
+            "extra": "303 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - ns/op",
+            "value": 3955040,
+            "unit": "ns/op",
+            "extra": "303 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - B/op",
+            "value": 822600,
+            "unit": "B/op",
+            "extra": "303 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - allocs/op",
+            "value": 16974,
+            "unit": "allocs/op",
+            "extra": "303 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf",
+            "value": 3946071,
+            "unit": "ns/op\t  825135 B/op\t   16975 allocs/op",
+            "extra": "308 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - ns/op",
+            "value": 3946071,
+            "unit": "ns/op",
+            "extra": "308 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - B/op",
+            "value": 825135,
+            "unit": "B/op",
+            "extra": "308 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - allocs/op",
+            "value": 16975,
+            "unit": "allocs/op",
+            "extra": "308 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf",
+            "value": 3901976,
+            "unit": "ns/op\t  825329 B/op\t   16975 allocs/op",
+            "extra": "304 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - ns/op",
+            "value": 3901976,
+            "unit": "ns/op",
+            "extra": "304 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - B/op",
+            "value": 825329,
+            "unit": "B/op",
+            "extra": "304 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - allocs/op",
+            "value": 16975,
+            "unit": "allocs/op",
+            "extra": "304 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf",
+            "value": 3921967,
+            "unit": "ns/op\t  824343 B/op\t   16975 allocs/op",
+            "extra": "309 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - ns/op",
+            "value": 3921967,
+            "unit": "ns/op",
+            "extra": "309 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - B/op",
+            "value": 824343,
+            "unit": "B/op",
+            "extra": "309 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - allocs/op",
+            "value": 16975,
+            "unit": "allocs/op",
+            "extra": "309 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf",
+            "value": 3897477,
+            "unit": "ns/op\t  823764 B/op\t   16975 allocs/op",
+            "extra": "307 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - ns/op",
+            "value": 3897477,
+            "unit": "ns/op",
+            "extra": "307 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - B/op",
+            "value": 823764,
+            "unit": "B/op",
+            "extra": "307 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-2k-lines.conf - allocs/op",
+            "value": 16975,
+            "unit": "allocs/op",
+            "extra": "307 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf",
+            "value": 5705023,
+            "unit": "ns/op\t 1110298 B/op\t   25012 allocs/op",
+            "extra": "210 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - ns/op",
+            "value": 5705023,
+            "unit": "ns/op",
+            "extra": "210 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - B/op",
+            "value": 1110298,
+            "unit": "B/op",
+            "extra": "210 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - allocs/op",
+            "value": 25012,
+            "unit": "allocs/op",
+            "extra": "210 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf",
+            "value": 5779365,
+            "unit": "ns/op\t 1110533 B/op\t   25011 allocs/op",
+            "extra": "207 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - ns/op",
+            "value": 5779365,
+            "unit": "ns/op",
+            "extra": "207 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - B/op",
+            "value": 1110533,
+            "unit": "B/op",
+            "extra": "207 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - allocs/op",
+            "value": 25011,
+            "unit": "allocs/op",
+            "extra": "207 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf",
+            "value": 5695644,
+            "unit": "ns/op\t 1106920 B/op\t   25011 allocs/op",
+            "extra": "211 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - ns/op",
+            "value": 5695644,
+            "unit": "ns/op",
+            "extra": "211 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - B/op",
+            "value": 1106920,
+            "unit": "B/op",
+            "extra": "211 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - allocs/op",
+            "value": 25011,
+            "unit": "allocs/op",
+            "extra": "211 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf",
+            "value": 5631548,
+            "unit": "ns/op\t 1110937 B/op\t   25012 allocs/op",
+            "extra": "207 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - ns/op",
+            "value": 5631548,
+            "unit": "ns/op",
+            "extra": "207 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - B/op",
+            "value": 1110937,
+            "unit": "B/op",
+            "extra": "207 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - allocs/op",
+            "value": 25012,
+            "unit": "allocs/op",
+            "extra": "207 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf",
+            "value": 5710125,
+            "unit": "ns/op\t 1110721 B/op\t   25011 allocs/op",
+            "extra": "208 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - ns/op",
+            "value": 5710125,
+            "unit": "ns/op",
+            "extra": "208 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - B/op",
+            "value": 1110721,
+            "unit": "B/op",
+            "extra": "208 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - allocs/op",
+            "value": 25011,
+            "unit": "allocs/op",
+            "extra": "208 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf",
+            "value": 5646870,
+            "unit": "ns/op\t 1106340 B/op\t   25010 allocs/op",
+            "extra": "212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - ns/op",
+            "value": 5646870,
+            "unit": "ns/op",
+            "extra": "212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - B/op",
+            "value": 1106340,
+            "unit": "B/op",
+            "extra": "212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - allocs/op",
+            "value": 25010,
+            "unit": "allocs/op",
+            "extra": "212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf",
+            "value": 5723089,
+            "unit": "ns/op\t 1110815 B/op\t   25011 allocs/op",
+            "extra": "212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - ns/op",
+            "value": 5723089,
+            "unit": "ns/op",
+            "extra": "212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - B/op",
+            "value": 1110815,
+            "unit": "B/op",
+            "extra": "212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - allocs/op",
+            "value": 25011,
+            "unit": "allocs/op",
+            "extra": "212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf",
+            "value": 5592391,
+            "unit": "ns/op\t 1107610 B/op\t   25011 allocs/op",
+            "extra": "212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - ns/op",
+            "value": 5592391,
+            "unit": "ns/op",
+            "extra": "212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - B/op",
+            "value": 1107610,
+            "unit": "B/op",
+            "extra": "212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - allocs/op",
+            "value": 25011,
+            "unit": "allocs/op",
+            "extra": "212 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf",
+            "value": 5765393,
+            "unit": "ns/op\t 1108154 B/op\t   25011 allocs/op",
+            "extra": "210 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - ns/op",
+            "value": 5765393,
+            "unit": "ns/op",
+            "extra": "210 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - B/op",
+            "value": 1108154,
+            "unit": "B/op",
+            "extra": "210 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - allocs/op",
+            "value": 25011,
+            "unit": "allocs/op",
+            "extra": "210 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf",
+            "value": 5723900,
+            "unit": "ns/op\t 1108486 B/op\t   25011 allocs/op",
+            "extra": "210 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - ns/op",
+            "value": 5723900,
+            "unit": "ns/op",
+            "extra": "210 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - B/op",
+            "value": 1108486,
+            "unit": "B/op",
+            "extra": "210 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-3k-lines.conf - allocs/op",
+            "value": 25011,
+            "unit": "allocs/op",
+            "extra": "210 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf",
+            "value": 16525841,
+            "unit": "ns/op\t 2887344 B/op\t   74311 allocs/op",
+            "extra": "74 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - ns/op",
+            "value": 16525841,
+            "unit": "ns/op",
+            "extra": "74 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - B/op",
+            "value": 2887344,
+            "unit": "B/op",
+            "extra": "74 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - allocs/op",
+            "value": 74311,
+            "unit": "allocs/op",
+            "extra": "74 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf",
+            "value": 16759846,
+            "unit": "ns/op\t 2887546 B/op\t   74311 allocs/op",
+            "extra": "80 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - ns/op",
+            "value": 16759846,
+            "unit": "ns/op",
+            "extra": "80 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - B/op",
+            "value": 2887546,
+            "unit": "B/op",
+            "extra": "80 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - allocs/op",
+            "value": 74311,
+            "unit": "allocs/op",
+            "extra": "80 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf",
+            "value": 16387371,
+            "unit": "ns/op\t 2883949 B/op\t   74310 allocs/op",
+            "extra": "64 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - ns/op",
+            "value": 16387371,
+            "unit": "ns/op",
+            "extra": "64 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - B/op",
+            "value": 2883949,
+            "unit": "B/op",
+            "extra": "64 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - allocs/op",
+            "value": 74310,
+            "unit": "allocs/op",
+            "extra": "64 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf",
+            "value": 16725892,
+            "unit": "ns/op\t 2891403 B/op\t   74311 allocs/op",
+            "extra": "67 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - ns/op",
+            "value": 16725892,
+            "unit": "ns/op",
+            "extra": "67 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - B/op",
+            "value": 2891403,
+            "unit": "B/op",
+            "extra": "67 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - allocs/op",
+            "value": 74311,
+            "unit": "allocs/op",
+            "extra": "67 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf",
+            "value": 16605037,
+            "unit": "ns/op\t 2899831 B/op\t   74312 allocs/op",
+            "extra": "64 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - ns/op",
+            "value": 16605037,
+            "unit": "ns/op",
+            "extra": "64 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - B/op",
+            "value": 2899831,
+            "unit": "B/op",
+            "extra": "64 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - allocs/op",
+            "value": 74312,
+            "unit": "allocs/op",
+            "extra": "64 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf",
+            "value": 16658343,
+            "unit": "ns/op\t 2882489 B/op\t   74310 allocs/op",
+            "extra": "78 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - ns/op",
+            "value": 16658343,
+            "unit": "ns/op",
+            "extra": "78 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - B/op",
+            "value": 2882489,
+            "unit": "B/op",
+            "extra": "78 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - allocs/op",
+            "value": 74310,
+            "unit": "allocs/op",
+            "extra": "78 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf",
+            "value": 16891936,
+            "unit": "ns/op\t 2891387 B/op\t   74310 allocs/op",
+            "extra": "69 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - ns/op",
+            "value": 16891936,
+            "unit": "ns/op",
+            "extra": "69 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - B/op",
+            "value": 2891387,
+            "unit": "B/op",
+            "extra": "69 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - allocs/op",
+            "value": 74310,
+            "unit": "allocs/op",
+            "extra": "69 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf",
+            "value": 16656929,
+            "unit": "ns/op\t 2886098 B/op\t   74309 allocs/op",
+            "extra": "63 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - ns/op",
+            "value": 16656929,
+            "unit": "ns/op",
+            "extra": "63 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - B/op",
+            "value": 2886098,
+            "unit": "B/op",
+            "extra": "63 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - allocs/op",
+            "value": 74309,
+            "unit": "allocs/op",
+            "extra": "63 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf",
+            "value": 16778588,
+            "unit": "ns/op\t 2885621 B/op\t   74310 allocs/op",
+            "extra": "74 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - ns/op",
+            "value": 16778588,
+            "unit": "ns/op",
+            "extra": "74 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - B/op",
+            "value": 2885621,
+            "unit": "B/op",
+            "extra": "74 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - allocs/op",
+            "value": 74310,
+            "unit": "allocs/op",
+            "extra": "74 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf",
+            "value": 16498295,
+            "unit": "ns/op\t 2888985 B/op\t   74311 allocs/op",
+            "extra": "75 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - ns/op",
+            "value": 16498295,
+            "unit": "ns/op",
+            "extra": "75 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - B/op",
+            "value": 2888985,
+            "unit": "B/op",
+            "extra": "75 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParser_Parse/../../../test/config/nginx/nginx-with-10k-lines.conf - allocs/op",
+            "value": 74311,
+            "unit": "allocs/op",
+            "extra": "75 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB",
+            "value": 51916,
+            "unit": "ns/op\t  110081 B/op\t      38 allocs/op",
+            "extra": "22707 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - ns/op",
+            "value": 51916,
+            "unit": "ns/op",
+            "extra": "22707 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - B/op",
+            "value": 110081,
+            "unit": "B/op",
+            "extra": "22707 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "22707 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB",
+            "value": 52503,
+            "unit": "ns/op\t  110079 B/op\t      38 allocs/op",
+            "extra": "22437 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - ns/op",
+            "value": 52503,
+            "unit": "ns/op",
+            "extra": "22437 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - B/op",
+            "value": 110079,
+            "unit": "B/op",
+            "extra": "22437 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "22437 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB",
+            "value": 52937,
+            "unit": "ns/op\t  110078 B/op\t      38 allocs/op",
+            "extra": "22954 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - ns/op",
+            "value": 52937,
+            "unit": "ns/op",
+            "extra": "22954 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - B/op",
+            "value": 110078,
+            "unit": "B/op",
+            "extra": "22954 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "22954 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB",
+            "value": 52187,
+            "unit": "ns/op\t  110081 B/op\t      38 allocs/op",
+            "extra": "22731 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - ns/op",
+            "value": 52187,
+            "unit": "ns/op",
+            "extra": "22731 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - B/op",
+            "value": 110081,
+            "unit": "B/op",
+            "extra": "22731 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "22731 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB",
+            "value": 52595,
+            "unit": "ns/op\t  110079 B/op\t      38 allocs/op",
+            "extra": "23242 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - ns/op",
+            "value": 52595,
+            "unit": "ns/op",
+            "extra": "23242 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - B/op",
+            "value": 110079,
+            "unit": "B/op",
+            "extra": "23242 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "23242 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB",
+            "value": 51981,
+            "unit": "ns/op\t  110077 B/op\t      38 allocs/op",
+            "extra": "23205 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - ns/op",
+            "value": 51981,
+            "unit": "ns/op",
+            "extra": "23205 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - B/op",
+            "value": 110077,
+            "unit": "B/op",
+            "extra": "23205 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "23205 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB",
+            "value": 52647,
+            "unit": "ns/op\t  110078 B/op\t      38 allocs/op",
+            "extra": "23112 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - ns/op",
+            "value": 52647,
+            "unit": "ns/op",
+            "extra": "23112 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - B/op",
+            "value": 110078,
+            "unit": "B/op",
+            "extra": "23112 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "23112 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB",
+            "value": 52555,
+            "unit": "ns/op\t  110079 B/op\t      38 allocs/op",
+            "extra": "23349 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - ns/op",
+            "value": 52555,
+            "unit": "ns/op",
+            "extra": "23349 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - B/op",
+            "value": 110079,
+            "unit": "B/op",
+            "extra": "23349 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "23349 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB",
+            "value": 52379,
+            "unit": "ns/op\t  110079 B/op\t      38 allocs/op",
+            "extra": "22653 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - ns/op",
+            "value": 52379,
+            "unit": "ns/op",
+            "extra": "22653 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - B/op",
+            "value": 110079,
+            "unit": "B/op",
+            "extra": "22653 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "22653 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB",
+            "value": 51631,
+            "unit": "ns/op\t  110077 B/op\t      38 allocs/op",
+            "extra": "22704 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - ns/op",
+            "value": 51631,
+            "unit": "ns/op",
+            "extra": "22704 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - B/op",
+            "value": 110077,
+            "unit": "B/op",
+            "extra": "22704 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/100_KB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "22704 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB",
+            "value": 52331,
+            "unit": "ns/op\t  110080 B/op\t      38 allocs/op",
+            "extra": "22876 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - ns/op",
+            "value": 52331,
+            "unit": "ns/op",
+            "extra": "22876 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - B/op",
+            "value": 110080,
+            "unit": "B/op",
+            "extra": "22876 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "22876 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB",
+            "value": 52827,
+            "unit": "ns/op\t  110078 B/op\t      38 allocs/op",
+            "extra": "23450 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - ns/op",
+            "value": 52827,
+            "unit": "ns/op",
+            "extra": "23450 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - B/op",
+            "value": 110078,
+            "unit": "B/op",
+            "extra": "23450 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "23450 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB",
+            "value": 51893,
+            "unit": "ns/op\t  110079 B/op\t      38 allocs/op",
+            "extra": "22351 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - ns/op",
+            "value": 51893,
+            "unit": "ns/op",
+            "extra": "22351 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - B/op",
+            "value": 110079,
+            "unit": "B/op",
+            "extra": "22351 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "22351 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB",
+            "value": 52298,
+            "unit": "ns/op\t  110074 B/op\t      38 allocs/op",
+            "extra": "22862 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - ns/op",
+            "value": 52298,
+            "unit": "ns/op",
+            "extra": "22862 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - B/op",
+            "value": 110074,
+            "unit": "B/op",
+            "extra": "22862 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "22862 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB",
+            "value": 52211,
+            "unit": "ns/op\t  110077 B/op\t      38 allocs/op",
+            "extra": "22779 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - ns/op",
+            "value": 52211,
+            "unit": "ns/op",
+            "extra": "22779 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - B/op",
+            "value": 110077,
+            "unit": "B/op",
+            "extra": "22779 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "22779 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB",
+            "value": 52555,
+            "unit": "ns/op\t  110079 B/op\t      38 allocs/op",
+            "extra": "22860 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - ns/op",
+            "value": 52555,
+            "unit": "ns/op",
+            "extra": "22860 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - B/op",
+            "value": 110079,
+            "unit": "B/op",
+            "extra": "22860 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "22860 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB",
+            "value": 51800,
+            "unit": "ns/op\t  110079 B/op\t      38 allocs/op",
+            "extra": "22670 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - ns/op",
+            "value": 51800,
+            "unit": "ns/op",
+            "extra": "22670 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - B/op",
+            "value": 110079,
+            "unit": "B/op",
+            "extra": "22670 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "22670 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB",
+            "value": 52339,
+            "unit": "ns/op\t  110079 B/op\t      38 allocs/op",
+            "extra": "22958 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - ns/op",
+            "value": 52339,
+            "unit": "ns/op",
+            "extra": "22958 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - B/op",
+            "value": 110079,
+            "unit": "B/op",
+            "extra": "22958 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "22958 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB",
+            "value": 53149,
+            "unit": "ns/op\t  110080 B/op\t      38 allocs/op",
+            "extra": "23019 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - ns/op",
+            "value": 53149,
+            "unit": "ns/op",
+            "extra": "23019 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - B/op",
+            "value": 110080,
+            "unit": "B/op",
+            "extra": "23019 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "23019 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB",
+            "value": 51808,
+            "unit": "ns/op\t  110081 B/op\t      38 allocs/op",
+            "extra": "23164 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - ns/op",
+            "value": 51808,
+            "unit": "ns/op",
+            "extra": "23164 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - B/op",
+            "value": 110081,
+            "unit": "B/op",
+            "extra": "23164 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/1_MB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "23164 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB",
+            "value": 52713,
+            "unit": "ns/op\t  110082 B/op\t      38 allocs/op",
+            "extra": "22834 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - ns/op",
+            "value": 52713,
+            "unit": "ns/op",
+            "extra": "22834 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - B/op",
+            "value": 110082,
+            "unit": "B/op",
+            "extra": "22834 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "22834 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB",
+            "value": 52429,
+            "unit": "ns/op\t  110081 B/op\t      38 allocs/op",
+            "extra": "22558 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - ns/op",
+            "value": 52429,
+            "unit": "ns/op",
+            "extra": "22558 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - B/op",
+            "value": 110081,
+            "unit": "B/op",
+            "extra": "22558 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "22558 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB",
+            "value": 51869,
+            "unit": "ns/op\t  110079 B/op\t      38 allocs/op",
+            "extra": "22551 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - ns/op",
+            "value": 51869,
+            "unit": "ns/op",
+            "extra": "22551 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - B/op",
+            "value": 110079,
+            "unit": "B/op",
+            "extra": "22551 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "22551 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB",
+            "value": 52795,
+            "unit": "ns/op\t  110080 B/op\t      38 allocs/op",
+            "extra": "22490 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - ns/op",
+            "value": 52795,
+            "unit": "ns/op",
+            "extra": "22490 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - B/op",
+            "value": 110080,
+            "unit": "B/op",
+            "extra": "22490 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "22490 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB",
+            "value": 52486,
+            "unit": "ns/op\t  110078 B/op\t      38 allocs/op",
+            "extra": "23187 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - ns/op",
+            "value": 52486,
+            "unit": "ns/op",
+            "extra": "23187 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - B/op",
+            "value": 110078,
+            "unit": "B/op",
+            "extra": "23187 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "23187 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB",
+            "value": 52186,
+            "unit": "ns/op\t  110077 B/op\t      38 allocs/op",
+            "extra": "22496 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - ns/op",
+            "value": 52186,
+            "unit": "ns/op",
+            "extra": "22496 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - B/op",
+            "value": 110077,
+            "unit": "B/op",
+            "extra": "22496 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "22496 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB",
+            "value": 53801,
+            "unit": "ns/op\t  110080 B/op\t      38 allocs/op",
+            "extra": "21745 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - ns/op",
+            "value": 53801,
+            "unit": "ns/op",
+            "extra": "21745 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - B/op",
+            "value": 110080,
+            "unit": "B/op",
+            "extra": "21745 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "21745 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB",
+            "value": 52316,
+            "unit": "ns/op\t  110079 B/op\t      38 allocs/op",
+            "extra": "22611 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - ns/op",
+            "value": 52316,
+            "unit": "ns/op",
+            "extra": "22611 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - B/op",
+            "value": 110079,
+            "unit": "B/op",
+            "extra": "22611 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "22611 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB",
+            "value": 51497,
+            "unit": "ns/op\t  110081 B/op\t      38 allocs/op",
+            "extra": "22738 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - ns/op",
+            "value": 51497,
+            "unit": "ns/op",
+            "extra": "22738 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - B/op",
+            "value": 110081,
+            "unit": "B/op",
+            "extra": "22738 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "22738 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB",
+            "value": 52239,
+            "unit": "ns/op\t  110079 B/op\t      38 allocs/op",
+            "extra": "23224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - ns/op",
+            "value": 52239,
+            "unit": "ns/op",
+            "extra": "23224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - B/op",
+            "value": 110079,
+            "unit": "B/op",
+            "extra": "23224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkNginxConfigParserGeneratedConfig_Parse/10_MB - allocs/op",
+            "value": 38,
+            "unit": "allocs/op",
+            "extra": "23224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion",
+            "value": 381.5,
+            "unit": "ns/op\t     224 B/op\t       6 allocs/op",
+            "extra": "3092413 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - ns/op",
+            "value": 381.5,
+            "unit": "ns/op",
+            "extra": "3092413 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - B/op",
+            "value": 224,
+            "unit": "B/op",
+            "extra": "3092413 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - allocs/op",
+            "value": 6,
+            "unit": "allocs/op",
+            "extra": "3092413 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion",
+            "value": 397.1,
+            "unit": "ns/op\t     224 B/op\t       6 allocs/op",
+            "extra": "3170886 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - ns/op",
+            "value": 397.1,
+            "unit": "ns/op",
+            "extra": "3170886 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - B/op",
+            "value": 224,
+            "unit": "B/op",
+            "extra": "3170886 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - allocs/op",
+            "value": 6,
+            "unit": "allocs/op",
+            "extra": "3170886 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion",
+            "value": 380.1,
+            "unit": "ns/op\t     224 B/op\t       6 allocs/op",
+            "extra": "3173113 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - ns/op",
+            "value": 380.1,
+            "unit": "ns/op",
+            "extra": "3173113 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - B/op",
+            "value": 224,
+            "unit": "B/op",
+            "extra": "3173113 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - allocs/op",
+            "value": 6,
+            "unit": "allocs/op",
+            "extra": "3173113 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion",
+            "value": 380.3,
+            "unit": "ns/op\t     224 B/op\t       6 allocs/op",
+            "extra": "3146203 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - ns/op",
+            "value": 380.3,
+            "unit": "ns/op",
+            "extra": "3146203 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - B/op",
+            "value": 224,
+            "unit": "B/op",
+            "extra": "3146203 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - allocs/op",
+            "value": 6,
+            "unit": "allocs/op",
+            "extra": "3146203 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion",
+            "value": 379,
+            "unit": "ns/op\t     224 B/op\t       6 allocs/op",
+            "extra": "3164137 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - ns/op",
+            "value": 379,
+            "unit": "ns/op",
+            "extra": "3164137 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - B/op",
+            "value": 224,
+            "unit": "B/op",
+            "extra": "3164137 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - allocs/op",
+            "value": 6,
+            "unit": "allocs/op",
+            "extra": "3164137 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion",
+            "value": 379.8,
+            "unit": "ns/op\t     224 B/op\t       6 allocs/op",
+            "extra": "3148507 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - ns/op",
+            "value": 379.8,
+            "unit": "ns/op",
+            "extra": "3148507 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - B/op",
+            "value": 224,
+            "unit": "B/op",
+            "extra": "3148507 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - allocs/op",
+            "value": 6,
+            "unit": "allocs/op",
+            "extra": "3148507 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion",
+            "value": 378.2,
+            "unit": "ns/op\t     224 B/op\t       6 allocs/op",
+            "extra": "3165061 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - ns/op",
+            "value": 378.2,
+            "unit": "ns/op",
+            "extra": "3165061 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - B/op",
+            "value": 224,
+            "unit": "B/op",
+            "extra": "3165061 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - allocs/op",
+            "value": 6,
+            "unit": "allocs/op",
+            "extra": "3165061 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion",
+            "value": 380.3,
+            "unit": "ns/op\t     224 B/op\t       6 allocs/op",
+            "extra": "3172195 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - ns/op",
+            "value": 380.3,
+            "unit": "ns/op",
+            "extra": "3172195 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - B/op",
+            "value": 224,
+            "unit": "B/op",
+            "extra": "3172195 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - allocs/op",
+            "value": 6,
+            "unit": "allocs/op",
+            "extra": "3172195 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion",
+            "value": 379.5,
+            "unit": "ns/op\t     224 B/op\t       6 allocs/op",
+            "extra": "3163198 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - ns/op",
+            "value": 379.5,
+            "unit": "ns/op",
+            "extra": "3163198 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - B/op",
+            "value": 224,
+            "unit": "B/op",
+            "extra": "3163198 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - allocs/op",
+            "value": 6,
+            "unit": "allocs/op",
+            "extra": "3163198 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion",
+            "value": 378.9,
+            "unit": "ns/op\t     224 B/op\t       6 allocs/op",
+            "extra": "3173090 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - ns/op",
+            "value": 378.9,
+            "unit": "ns/op",
+            "extra": "3173090 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - B/op",
+            "value": 224,
+            "unit": "B/op",
+            "extra": "3173090 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkGenerateConfigVersion - allocs/op",
+            "value": 6,
+            "unit": "allocs/op",
+            "extra": "3173090 times\n4 procs"
           }
         ]
       }
