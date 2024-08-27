@@ -247,6 +247,8 @@ func TestGrpc_ConfigApply(t *testing.T) {
 			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[2].GetCommandResponse().GetStatus())
 			assert.Equal(t, "Config apply successful", responses[2].GetCommandResponse().GetMessage())
 		} else {
+			// NGINX Plus contains two extra Successfully updated all files responses as the NginxConfigContext is updated, 
+			// and the file overview is then updated
 			responses = getManagementPlaneResponses(t, 5)
 			t.Logf("Config apply responses: %v", responses)
 			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[2].GetCommandResponse().GetStatus())
