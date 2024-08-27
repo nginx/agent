@@ -27,14 +27,14 @@ GOBIN 	?= $$(go env GOPATH)/bin
 # | oraclelinux      | 7, 8, 9                                   |                                                                |
 # | suse             | sles12sp5, sle15                          |                                                                |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-OS_RELEASE  ?= alpine
-OS_VERSION  ?= 3.20
+OS_RELEASE  ?= ubuntu
+OS_VERSION  ?= 22.04
 BASE_IMAGE  = "docker.io/$(OS_RELEASE):$(OS_VERSION)"
 IMAGE_TAG   = "agent_$(OS_RELEASE)_$(OS_VERSION)"
 DOCKERFILE_PATH = "./scripts/docker/nginx-oss/$(CONTAINER_OS_TYPE)/Dockerfile"
 OFFICIAL_IMAGE_DOCKERFILE_PATH = "./test/docker/oss/$(CONTAINER_OS_TYPE)/Dockerfile"
-IMAGE_PATH ?= "/nginx-plus/agent"
-TAG ?= "r32-alpine-3.20"
+IMAGE_PATH ?= "/nginx/agent"
+TAG ?= ""
 
 BUILD_DIR		:= build
 TEST_BUILD_DIR  := build/test
