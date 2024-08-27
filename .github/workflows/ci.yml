@@ -128,8 +128,8 @@ jobs:
           OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
             make integration-test
 
-  official-image-integration-tests:
-    name: Integration Tests
+  official-oss-image-integration-tests:
+    name: Integration Tests - Official OSS Images
     needs: build-unsigned-snapshot
     runs-on: ubuntu-22.04
     strategy:
@@ -169,6 +169,67 @@ jobs:
           CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" \
           TAG="${{ matrix.container.version }}-${{ matrix.container.image }}" \
           OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" \
+            make official-image-integration-test
+
+  official-plus-image-integration-tests:
+    name: Integration Tests - Official Plus Images
+    needs: build-unsigned-snapshot
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        container:
+        - image: "alpine"
+          version: "3.18"
+          plus: "r30"
+          release: "alpine"
+          path: "/nginx-plus/agent"
+        - image: "alpine"
+          version: "3.20"
+          plus: "r32"
+          release: "alpine"
+          path: "/nginx-plus/agent"
+        - image: "alpine"
+          version: "3.19"
+          plus: "r31"
+          release: "alpine"
+          path: "/nginx-plus/agent"
+        - image: "debian"
+          version: "bookworm"
+          plus: "r32"
+          release: "debian"
+          path: "/nginx-plus/agent"
+        - image: "debian"
+          version: "bookworm"
+          plus: "r31"
+          release: "debian"
+          path: "/nginx-plus/agent"
+        - image: "debian"
+          version: "bookworm"
+          plus: "r30"
+          release: "debian"
+          path: "/nginx-plus/agent"
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        with:
+          go-version-file: 'go.mod'
+      - name: Download Packages
+        uses: actions/download-artifact@eaceaf801fd36c7dee90939fad912460b18a1ffe # v4.1.2
+        with:
+          name: nginx-agent-unsigned-snapshots
+          path: build
+      - name: Login to Docker Registry
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        with:
+          registry: ${{ secrets.REGISTRY_URL }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Run Integration Tests
+        run: |
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
+          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" \
+          TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
+          OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" IMAGE_PATH="${{ matrix.container.path }}" \
             make official-image-integration-test
 
   performance-tests:
