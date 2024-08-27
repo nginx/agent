@@ -239,7 +239,7 @@ func (m *Metrics) collectStats() (stats chan *metrics.StatsEntityWrapper) {
 		go s.Collect(m.ctx, m.buf)
 	}
 
-	log.Debugf("collected %d entries in %s (ctx error=%t)", len(stats), time.Since(start), ctx.Err() != nil)
+	log.Debugf("collected %d entries in %s (ctx error=%t)", len(stats), time.Since(start), m.ctx.Err() != nil)
 	return
 }
 
