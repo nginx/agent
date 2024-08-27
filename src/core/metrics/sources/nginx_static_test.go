@@ -9,7 +9,6 @@ package sources
 
 import (
 	"context"
-	"sync"
 	"testing"
 
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -65,10 +64,7 @@ func TestNginxStatic_Collect(t *testing.T) {
 				namedMetric:    test.namedMetric,
 			}
 			ctx := context.TODO()
-			wg := &sync.WaitGroup{}
-			wg.Add(1)
-			go c.Collect(ctx, wg, test.m)
-			wg.Wait()
+			go c.Collect(ctx, test.m)
 			statEntity := <-test.m
 			assert.Len(tt, statEntity.Data.Simplemetrics, len(expectedMetrics))
 			for _, metric := range statEntity.Data.Simplemetrics {

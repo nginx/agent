@@ -13,7 +13,6 @@ import (
 	"path"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/metrics"
@@ -47,9 +46,8 @@ func NewContainerCPUSource(namespace string, basePath string) *ContainerCPU {
 	return &ContainerCPU{basePath, cgroup.IsCgroupV2(basePath), NewMetricSourceLogger(), &namedMetric{namespace, CpuGroup}}
 }
 
-func (c *ContainerCPU) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
+func (c *ContainerCPU) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	log.Trace("Collecting container CPU metrics")
-	defer wg.Done()
 
 	containerStats := map[string]float64{}
 

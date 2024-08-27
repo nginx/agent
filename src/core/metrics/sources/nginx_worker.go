@@ -49,9 +49,8 @@ func NewNginxWorker(baseDimensions *metrics.CommonDim,
 	}
 }
 
-func (c *NginxWorker) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
+func (c *NginxWorker) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	var err error
-	defer wg.Done()
 	childProcs := c.binary.GetChildProcesses()
 	c.init.Do(func() {
 		for pid, children := range childProcs {
@@ -261,6 +260,8 @@ func (client *NginxWorkerClient) GetWorkerStats(childProcs []*proto.NginxDetails
 	stats.Workers.KbsR = kbsr
 	stats.Workers.KbsW = kbsw
 	stats.Workers.FdsCount = fdSum
+
+	log.Debugf("worker stats for number of workers: %f", stats.Workers.Count)
 
 	return stats, nil
 }

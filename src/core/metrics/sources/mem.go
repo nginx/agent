@@ -11,7 +11,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"sync"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
@@ -38,8 +37,7 @@ func NewVirtualMemorySource(namespace string, env core.Environment) *VirtualMemo
 	return &VirtualMemory{NewMetricSourceLogger(), &namedMetric{namespace, MemoryGroup}, statFunc}
 }
 
-func (c *VirtualMemory) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
-	defer wg.Done()
+func (c *VirtualMemory) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	memstats, err := c.statFunc(ctx)
 	if err != nil {
 		if e, ok := err.(*os.PathError); ok {
@@ -61,7 +59,7 @@ func (c *VirtualMemory) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<
 		"available": float64(memstats.Available),
 	})
 
-	log.Debugf("Memory metrics collected: %v", simpleMetrics)
+	log.Debugf("Memory metrics count: %v", len(simpleMetrics))
 
 	select {
 	case <-ctx.Done():

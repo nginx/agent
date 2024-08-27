@@ -44,7 +44,7 @@ type Metrics struct {
 }
 
 func NewMetrics(config *config.Config, env core.Environment, binary core.NginxBinary, processes []*core.Process) *Metrics {
-	collectorConfigsMap := createCollectorConfigsMap(config, env, binary, processes)
+	collectorConfigsMap := createCollectorConfigsMap(config, binary, processes)
 	return &Metrics{
 		collectorsUpdate:         atomic.NewBool(false),
 		ticker:                   time.NewTicker(config.AgentMetrics.CollectionInterval),
@@ -67,6 +67,7 @@ func (m *Metrics) Init(pipeline core.MessagePipeInterface) {
 	m.pipeline = pipeline
 	m.ctx = pipeline.Context()
 	go m.metricsGoroutine()
+	go m.drainBuffer(m.ctx)
 }
 
 func (m *Metrics) Close() {
@@ -80,7 +81,7 @@ func (m *Metrics) Process(msg *core.Message) {
 	case msg.Exact(core.AgentConfigChanged), msg.Exact(core.NginxConfigApplySucceeded):
 		// If the agent config on disk changed or the NGINX statusAPI was updated
 		// Then update Metrics with relevant config info
-		collectorConfigsMap := createCollectorConfigsMap(m.conf, m.env, m.binary, m.getNginxProccessInfo())
+		collectorConfigsMap := createCollectorConfigsMap(m.conf, m.binary, m.getNginxProccessInfo())
 		m.collectorConfigsMapMutex.Lock()
 		m.collectorConfigsMap = collectorConfigsMap
 		m.collectorConfigsMapMutex.Unlock()
@@ -101,7 +102,7 @@ func (m *Metrics) Process(msg *core.Message) {
 
 	case msg.Exact(core.NginxDetailProcUpdate):
 		m.syncProcessInfo(msg.Data().([]*core.Process))
-		collectorConfigsMap := createCollectorConfigsMap(m.conf, m.env, m.binary, m.getNginxProccessInfo())
+		collectorConfigsMap := createCollectorConfigsMap(m.conf, m.binary, m.getNginxProccessInfo())
 		for key, collectorConfig := range collectorConfigsMap {
 			if _, ok := m.collectorConfigsMap[key]; !ok {
 				log.Debugf("Adding new nginx collector for nginx id: %s", collectorConfig.NginxId)
@@ -176,8 +177,33 @@ func (m *Metrics) metricsGoroutine() {
 			}
 			return
 		case <-m.ticker.C:
-			stats := m.collectStats()
-			if bundlePayload := metrics.GenerateMetricsReportBundle(stats); bundlePayload != nil {
+			m.collectStats()
+
+			if m.collectorsUpdate.Load() {
+				m.ticker = time.NewTicker(m.conf.AgentMetrics.CollectionInterval)
+				m.collectorsUpdate.Store(false)
+			}
+
+		case err := <-m.errors:
+			log.Errorf("Error in metricsGoroutine %v", err)
+		}
+	}
+}
+
+func (m *Metrics) drainBuffer(ctx context.Context) {
+	for {
+		// drain the buf, since our sources/collectors are all done, we can rely on buffer length
+		select {
+		case <-ctx.Done():
+			log.Debug("context done in drainBuffer")
+
+			err := ctx.Err()
+			if err != nil {
+				log.Errorf("error in done context collectStats %v", err)
+			}
+			return
+		case stats := <-m.buf:
+			if bundlePayload := metrics.GenerateMetricsReportBundle([]*metrics.StatsEntityWrapper{stats}); bundlePayload != nil {
 				if m.conf.IsFeatureEnabled(agent_config.FeatureMetrics) || m.conf.IsFeatureEnabled(agent_config.FeatureMetricsThrottle) {
 					m.pipeline.Process(core.NewMessage(core.MetricReport, bundlePayload))
 				} else {
@@ -198,53 +224,22 @@ func (m *Metrics) metricsGoroutine() {
 					}
 				}
 			}
-
-			if m.collectorsUpdate.Load() {
-				m.ticker = time.NewTicker(m.conf.AgentMetrics.CollectionInterval)
-				m.collectorsUpdate.Store(false)
-			}
-
-		case err := <-m.errors:
-			log.Errorf("Error in metricsGoroutine %v", err)
 		}
 	}
 }
 
-func (m *Metrics) collectStats() (stats []*metrics.StatsEntityWrapper) {
-	// set a timeout for a millisecond less than the collection interval
-	ctx, cancel := context.WithTimeout(m.ctx, (m.interval - 1*time.Millisecond))
-	defer cancel()
+func (m *Metrics) collectStats() (stats chan *metrics.StatsEntityWrapper) {
 	// locks the m.collectors to make sure it doesn't get deleted in the middle
 	// of collection, as we will delete the old one if config changes.
 	// maybe we can fine tune the lock later, but the collection has been very quick so far.
 	m.collectorsMutex.Lock()
 	defer m.collectorsMutex.Unlock()
-	wg := &sync.WaitGroup{}
 	start := time.Now()
 	for _, s := range m.collectors {
-		wg.Add(1)
-		go s.Collect(ctx, wg, m.buf)
-	}
-	// wait until all the collection go routines are done, which either context timeout or exit
-	wg.Wait()
-
-	for len(m.buf) > 0 {
-		// drain the buf, since our sources/collectors are all done, we can rely on buffer length
-		select {
-		case <-ctx.Done():
-			log.Debugf("context done in %s collectStats", time.Since(start))
-
-			err := ctx.Err()
-			if err != nil {
-				log.Errorf("error in done context collectStats %v", err)
-			}
-			return
-		case stat := <-m.buf:
-			stats = append(stats, stat)
-		}
+		go s.Collect(m.ctx, m.buf)
 	}
 
-	log.Debugf("collected %d entries in %s (ctx error=%t)", len(stats), time.Since(start), ctx.Err() != nil)
+	log.Debugf("collected %d entries in %s (ctx error=%t)", len(stats), time.Since(start), m.ctx.Err() != nil)
 	return
 }
 
@@ -304,7 +299,7 @@ func (m *Metrics) syncAgentConfigChange() {
 	m.conf = conf
 }
 
-func createCollectorConfigsMap(config *config.Config, env core.Environment, binary core.NginxBinary, processes []*core.Process) map[string]*metrics.NginxCollectorConfig {
+func createCollectorConfigsMap(config *config.Config, binary core.NginxBinary, processes []*core.Process) map[string]*metrics.NginxCollectorConfig {
 	collectorConfigsMap := make(map[string]*metrics.NginxCollectorConfig)
 
 	for _, p := range processes {

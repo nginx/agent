@@ -85,8 +85,7 @@ func NewNginxPlus(baseDimensions *metrics.CommonDim, nginxNamespace, plusNamespa
 	return &NginxPlus{baseDimensions: baseDimensions, nginxNamespace: nginxNamespace, plusNamespace: plusNamespace, plusAPI: plusAPI, clientVersion: clientVersion, logger: NewMetricSourceLogger()}
 }
 
-func (c *NginxPlus) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
-	defer wg.Done()
+func (c *NginxPlus) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	c.init.Do(func() {
 		latestAPIVersion, err := c.getLatestAPIVersion(ctx, c.plusAPI)
 		if err != nil {
@@ -533,6 +532,8 @@ func (c *NginxPlus) commonMetrics(stats, prevStats *plusclient.Stats) *metrics.S
 		"request.count":   float64(requestCount),
 	})
 
+	log.Debugf("common metrics count %d", len(simpleMetrics))
+
 	dims := c.baseDimensions.ToDimensions()
 	return metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE)
 }
@@ -558,6 +559,8 @@ func (c *NginxPlus) sslMetrics(stats, prevStats *plusclient.Stats) *metrics.Stat
 		"ssl.failed":     float64(sslFailed),
 		"ssl.reuses":     float64(sslReuses),
 	})
+
+	log.Debugf("SSL metrics count %d", len(simpleMetrics))
 
 	dims := c.baseDimensions.ToDimensions()
 	return metrics.NewStatsEntityWrapper(dims, simpleMetrics, proto.MetricsReport_INSTANCE)

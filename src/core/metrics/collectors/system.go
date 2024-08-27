@@ -9,7 +9,6 @@ package collectors
 
 import (
 	"context"
-	"sync"
 
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -57,18 +56,12 @@ func NewSystemCollector(env core.Environment, conf *config.Config) *SystemCollec
 }
 
 func (c *SystemCollector) collectMetrics(ctx context.Context) {
-	// using a separate WaitGroup, since we need to wait for our own buffer to be filled
-	// this ensures the collection is done before our own for/select loop to pull things off the buf
-	wg := &sync.WaitGroup{}
 	for _, systemSource := range c.sources {
-		wg.Add(1)
-		go systemSource.Collect(ctx, wg, c.buf)
+		go systemSource.Collect(ctx, c.buf)
 	}
-	wg.Wait()
 }
 
-func (c *SystemCollector) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
-	defer wg.Done()
+func (c *SystemCollector) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	c.collectMetrics(ctx)
 
 	commonDims := c.dim.ToDimensions()

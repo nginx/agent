@@ -10,11 +10,11 @@ package sources
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/metrics"
+	log "github.com/sirupsen/logrus"
 )
 
 const MOUNT_POINT = "mount_point"
@@ -31,8 +31,7 @@ func NewDiskSource(namespace string, env core.Environment) *Disk {
 	return &Disk{NewMetricSourceLogger(), &namedMetric{namespace, "disk"}, disks, env}
 }
 
-func (c *Disk) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
-	defer wg.Done()
+func (c *Disk) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	for _, part := range c.disks {
 		if part.Device == "" || part.FsType == "" {
 			continue
@@ -49,6 +48,8 @@ func (c *Disk) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metric
 			"free":   float64(usage.Free),
 			"in_use": float64(usage.UsedPercentage),
 		})
+
+		log.Debugf("disk metrics collected: %v", len(simpleMetrics))
 
 		select {
 		case <-ctx.Done():

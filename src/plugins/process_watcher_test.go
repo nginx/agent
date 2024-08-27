@@ -11,6 +11,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -24,6 +26,7 @@ func TestProcessWatcher_getProcUpdates(t *testing.T) {
 		seenMasterProcs     map[int32]*core.Process
 		seenWorkerProcs     map[int32]*core.Process
 		seenNginxDetails    map[int32]*proto.NginxDetails
+		nginxDetails        []*proto.NginxDetails
 		nginxProcs          []*core.Process
 		expectedProcUpdates map[string]string
 		expectedMasterPids  []int32
@@ -34,6 +37,32 @@ func TestProcessWatcher_getProcUpdates(t *testing.T) {
 			seenMasterProcs:  map[int32]*core.Process{},
 			seenWorkerProcs:  map[int32]*core.Process{},
 			seenNginxDetails: map[int32]*proto.NginxDetails{},
+			nginxDetails: []*proto.NginxDetails{
+				{
+					NginxId: "1", Version: "21", ConfPath: "/etc/yo", ProcessId: "1", StartTime: 1238043824,
+					BuiltFromSource: false,
+					LoadableModules: []string{},
+					RuntimeModules:  []string{},
+					Plus:            &proto.NginxPlusMetaData{Enabled: true},
+					ConfigureArgs:   []string{},
+				},
+				{
+					NginxId: "2", Version: "21", ConfPath: "/etc/yo", ProcessId: "2", StartTime: 1238043824,
+					BuiltFromSource: false,
+					LoadableModules: []string{},
+					RuntimeModules:  []string{},
+					Plus:            &proto.NginxPlusMetaData{Enabled: true},
+					ConfigureArgs:   []string{},
+				},
+				{
+					NginxId: "3", Version: "21", ConfPath: "/etc/yo", ProcessId: "3", StartTime: 1238043824,
+					BuiltFromSource: false,
+					LoadableModules: []string{},
+					RuntimeModules:  []string{},
+					Plus:            &proto.NginxPlusMetaData{Enabled: true},
+					ConfigureArgs:   []string{},
+				},
+			},
 			nginxProcs: []*core.Process{
 				tutils.GetProcesses()[0],
 				tutils.GetProcesses()[1],
@@ -60,6 +89,24 @@ func TestProcessWatcher_getProcUpdates(t *testing.T) {
 				1: {ProcessId: "1"},
 				2: {ProcessId: "2"},
 				3: {ProcessId: "3"},
+			},
+			nginxDetails: []*proto.NginxDetails{
+				{
+					NginxId: "4", Version: "21", ConfPath: "/etc/yo", ProcessId: "4", StartTime: 1238043824,
+					BuiltFromSource: false,
+					LoadableModules: []string{},
+					RuntimeModules:  []string{},
+					Plus:            &proto.NginxPlusMetaData{Enabled: true},
+					ConfigureArgs:   []string{},
+				},
+				{
+					NginxId: "5", Version: "21", ConfPath: "/etc/yo", ProcessId: "5", StartTime: 1238043824,
+					BuiltFromSource: false,
+					LoadableModules: []string{},
+					RuntimeModules:  []string{},
+					Plus:            &proto.NginxPlusMetaData{Enabled: true},
+					ConfigureArgs:   []string{},
+				},
 			},
 			nginxProcs: []*core.Process{
 				tutils.GetProcesses()[0],
@@ -93,6 +140,56 @@ func TestProcessWatcher_getProcUpdates(t *testing.T) {
 				{Pid: 6, Name: "master", IsMaster: true},
 				{Pid: 7, ParentPid: 6, Name: "worker-1", IsMaster: false},
 				{Pid: 8, ParentPid: 6, Name: "worker-2", IsMaster: false},
+			},
+			nginxDetails: []*proto.NginxDetails{
+				{
+					NginxId: "6", Version: "21", ConfPath: "/etc/yo", ProcessId: "6", StartTime: 1238043824,
+					BuiltFromSource: false,
+					LoadableModules: []string{},
+					RuntimeModules:  []string{},
+					Plus:            &proto.NginxPlusMetaData{Enabled: true},
+					ConfigureArgs:   []string{},
+				},
+				{
+					NginxId: "7", Version: "21", ConfPath: "/etc/yo", ProcessId: "7", StartTime: 1238043824,
+					BuiltFromSource: false,
+					LoadableModules: []string{},
+					RuntimeModules:  []string{},
+					Plus:            &proto.NginxPlusMetaData{Enabled: true},
+					ConfigureArgs:   []string{},
+				},
+				{
+					NginxId: "8", Version: "21", ConfPath: "/etc/yo", ProcessId: "8", StartTime: 1238043824,
+					BuiltFromSource: false,
+					LoadableModules: []string{},
+					RuntimeModules:  []string{},
+					Plus:            &proto.NginxPlusMetaData{Enabled: true},
+					ConfigureArgs:   []string{},
+				},
+				{
+					NginxId: "1", Version: "21", ConfPath: "/etc/yo", ProcessId: "1", StartTime: 1238043824,
+					BuiltFromSource: false,
+					LoadableModules: []string{},
+					RuntimeModules:  []string{},
+					Plus:            &proto.NginxPlusMetaData{Enabled: true},
+					ConfigureArgs:   []string{},
+				},
+				{
+					NginxId: "2", Version: "21", ConfPath: "/etc/yo", ProcessId: "2", StartTime: 1238043824,
+					BuiltFromSource: false,
+					LoadableModules: []string{},
+					RuntimeModules:  []string{},
+					Plus:            &proto.NginxPlusMetaData{Enabled: true},
+					ConfigureArgs:   []string{},
+				},
+				{
+					NginxId: "3", Version: "21", ConfPath: "/etc/yo", ProcessId: "3", StartTime: 1238043824,
+					BuiltFromSource: false,
+					LoadableModules: []string{},
+					RuntimeModules:  []string{},
+					Plus:            &proto.NginxPlusMetaData{Enabled: true},
+					ConfigureArgs:   []string{},
+				},
 			},
 			expectedProcUpdates: map[string]string{
 				"6": "nginx.master.created",
@@ -133,7 +230,11 @@ func TestProcessWatcher_getProcUpdates(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			env := tutils.NewMockEnvironment()
-			binary := core.NewNginxBinary(env, &config.Config{})
+			binary := &tutils.MockNginxBinary{}
+
+			for _, nginxDetail := range tt.nginxDetails {
+				binary.On("GetNginxDetailsFromProcess", mock.Anything).Return(nginxDetail).Once()
+			}
 
 			pw := NewProcessWatcher(env, binary, tt.nginxProcs, &config.Config{})
 			pw.seenMasterProcs = tt.seenMasterProcs

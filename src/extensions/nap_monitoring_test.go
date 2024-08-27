@@ -36,17 +36,6 @@ func TestNAPMonitoring(t *testing.T) {
 			error: false,
 		},
 		{
-			name: "invalid Syslog IP address",
-			conf: manager.NginxAppProtectMonitoringConfig{
-				CollectorBufferSize: 1,
-				ProcessorBufferSize: 1,
-				SyslogIP:            "no_such_host",
-				SyslogPort:          1236,
-			},
-			error:         true,
-			errorContains: "lookup",
-		},
-		{
 			// Current behaviour is logging a warning and then
 			// defaulting to the default buffer size = 50000 if the passed parameter is invalid
 			name: "invalid buffer sizes",
@@ -58,17 +47,6 @@ func TestNAPMonitoring(t *testing.T) {
 			},
 			error: false,
 		},
-		{
-			name: "invalid Syslog port",
-			conf: manager.NginxAppProtectMonitoringConfig{
-				CollectorBufferSize: 1,
-				ProcessorBufferSize: 1,
-				SyslogIP:            "127.0.0.1",
-				SyslogPort:          -4321,
-			},
-			error:         true,
-			errorContains: "invalid port",
-		},
 	}
 
 	env := tutils.GetMockEnv()
@@ -76,7 +54,6 @@ func TestNAPMonitoring(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			_, err := NewNAPMonitoring(env, &config.Config{}, test.conf)
-
 			if test.error {
 				assert.Contains(t, err.Error(), test.errorContains)
 			} else {

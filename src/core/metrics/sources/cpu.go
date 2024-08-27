@@ -69,8 +69,7 @@ func diffTimeStat(t1, t2 cpu.TimesStat) cpu.TimesStat {
 	}
 }
 
-func (c *CPUTimes) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
-	defer wg.Done()
+func (c *CPUTimes) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	var simpleMetrics []*proto.SimpleMetric
 	if c.isDocker {
 		dockerCpuPercentages, err := c.cgroupCPUSource.Percentages()

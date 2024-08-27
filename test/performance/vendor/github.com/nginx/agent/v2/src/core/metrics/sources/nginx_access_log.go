@@ -108,8 +108,7 @@ func NewNginxAccessLog(
 	return nginxAccessLog
 }
 
-func (c *NginxAccessLog) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
-	defer wg.Done()
+func (c *NginxAccessLog) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	c.collectLogStats(ctx, m)
 }
 
@@ -377,6 +376,8 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 			// reset the counters
 			httpCounters, upstreamCounters, upstreamCacheCounters = map[string]float64{}, map[string]float64{}, map[string]float64{}
 			gzipRatios, requestLengths, requestTimes, upstreamResponseLength, upstreamResponseTimes, upstreamConnectTimes, upstreamHeaderTimes = []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}
+
+			log.Debugf("access log stats count: %d", len(simpleMetrics))
 
 			c.buf = append(c.buf, metrics.NewStatsEntityWrapper(c.baseDimensions.ToDimensions(), simpleMetrics, proto.MetricsReport_INSTANCE))
 

@@ -41,7 +41,7 @@ func WaitUntil(
 
 	expoBackoffWithContext := backoff.WithContext(exponentialBackoff, ctx)
 
-	err := backoff.Retry(backoff.Operation(operation), expoBackoffWithContext)
+	err := backoff.Retry(operation, expoBackoffWithContext)
 	if err != nil {
 		return err
 	}
