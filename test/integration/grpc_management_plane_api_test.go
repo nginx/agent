@@ -158,15 +158,15 @@ func setupConnectionTest(tb testing.TB, expectNoErrorsInLogs bool) func(tb testi
 }
 
 // Verify that the agent sends a connection request and an update data plane status request
-//func TestGrpc_StartUp(t *testing.T) {
-//	teardownTest := setupConnectionTest(t, true)
-//	defer teardownTest(t)
-//
-//	verifyConnection(t)
-//	assert.False(t, t.Failed())
-//	verifyUpdateDataPlaneStatus(t)
-//	verifyUpdateDataPlaneHealth(t)
-//}
+func TestGrpc_StartUp(t *testing.T) {
+	teardownTest := setupConnectionTest(t, true)
+	defer teardownTest(t)
+
+	verifyConnection(t)
+	assert.False(t, t.Failed())
+	verifyUpdateDataPlaneStatus(t)
+	verifyUpdateDataPlaneHealth(t)
+}
 
 func TestGrpc_ConfigUpload(t *testing.T) {
 	teardownTest := setupConnectionTest(t, true)
