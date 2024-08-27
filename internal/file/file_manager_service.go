@@ -77,11 +77,12 @@ func (fms *FileManagerService) UpdateOverview(
 	instanceID string,
 	filesToUpdate []*mpi.File,
 ) error {
-	slog.InfoContext(ctx, "Updating file overview", "instance_id", instanceID)
 	correlationID := logger.GetCorrelationID(ctx)
-
 	requestCorrelationID := logger.GenerateCorrelationID()
 	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, requestCorrelationID)
+
+	slog.InfoContext(newCtx, "Updating file overview", "instance_id", instanceID,
+		"parent_correlation_id", correlationID)
 
 	request := &mpi.UpdateOverviewRequest{
 		MessageMeta: &mpi.MessageMeta{
