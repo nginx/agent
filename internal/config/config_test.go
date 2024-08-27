@@ -282,6 +282,28 @@ func TestMissingServerTLS(t *testing.T) {
 	assert.Nil(t, result.TLS)
 }
 
+func TestClient(t *testing.T) {
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
+	expected := getAgentConfig().Client
+
+	viperInstance.Set(ClientMaxMessageSizeKey, expected.MaxMessageSize)
+	viperInstance.Set(ClientPermitWithoutStreamKey, expected.PermitWithoutStream)
+	viperInstance.Set(ClientTimeKey, expected.Time)
+	viperInstance.Set(ClientTimeoutKey, expected.Timeout)
+
+	// root keys for sections are set appropriately
+	assert.True(t, viperInstance.IsSet(ClientMaxMessageSizeKey))
+	assert.False(t, viperInstance.IsSet(ClientMaxMessageRecieveSizeKey))
+	assert.False(t, viperInstance.IsSet(ClientMaxMessageSendSizeKey))
+
+	viperInstance.Set(ClientMaxMessageRecieveSizeKey, expected.MaxMessageRecieveSize)
+	viperInstance.Set(ClientMaxMessageSendSizeKey, expected.MaxMessageSendSize)
+
+	result := resolveClient()
+
+	assert.Equal(t, expected, result)
+}
+
 func getAgentConfig() *Config {
 	return &Config{
 		UUID:    "",
@@ -289,7 +311,12 @@ func getAgentConfig() *Config {
 		Path:    "",
 		Log:     &Log{},
 		Client: &Client{
-			Timeout: 5 * time.Second,
+			Timeout:               5 * time.Second,
+			Time:                  4 * time.Second,
+			PermitWithoutStream:   true,
+			MaxMessageSize:        1,
+			MaxMessageRecieveSize: 20,
+			MaxMessageSendSize:    40,
 		},
 		ConfigDir: "",
 		AllowedDirectories: []string{

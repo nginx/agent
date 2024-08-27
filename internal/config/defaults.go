@@ -5,6 +5,7 @@
 package config
 
 import (
+	"math"
 	"time"
 )
 
@@ -14,6 +15,7 @@ const (
 	DefTreatErrorsAsWarnings       = true
 
 	DefCollectorConfigPath = "/var/run/nginx-agent/otelcol.yaml"
+	DefConfigDirectories   = "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules"
 
 	DefCommandServerHostKey    = ""
 	DefCommandServerPortKey    = 0
@@ -33,4 +35,11 @@ const (
 
 	DefInstanceWatcherMonitoringFrequency       = 5 * time.Second
 	DefInstanceHealthWatcherMonitoringFrequency = 5 * time.Second
+
+	// 0 = unset
+	DefMaxMessageSize = 0
+	// default 4 MB
+	DefMaxMessageRecieveSize = 4194304
+	// math.MaxInt32
+	DefMaxMessageSendSize = math.MaxInt32
 )
