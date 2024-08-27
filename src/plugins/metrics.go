@@ -229,8 +229,6 @@ func (m *Metrics) drainBuffer(ctx context.Context) {
 }
 
 func (m *Metrics) collectStats() (stats chan *metrics.StatsEntityWrapper) {
-	// set a timeout for a millisecond less than the collection interval
-	ctx := context.Background()
 	// locks the m.collectors to make sure it doesn't get deleted in the middle
 	// of collection, as we will delete the old one if config changes.
 	// maybe we can fine tune the lock later, but the collection has been very quick so far.
@@ -238,7 +236,7 @@ func (m *Metrics) collectStats() (stats chan *metrics.StatsEntityWrapper) {
 	defer m.collectorsMutex.Unlock()
 	start := time.Now()
 	for _, s := range m.collectors {
-		go s.Collect(ctx, m.buf)
+		go s.Collect(m.ctx, m.buf)
 	}
 
 	log.Debugf("collected %d entries in %s (ctx error=%t)", len(stats), time.Since(start), ctx.Err() != nil)
