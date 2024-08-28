@@ -184,6 +184,7 @@ jobs:
     name: Integration Tests - Official OSS Images
     needs: build-unsigned-snapshot
     runs-on: ubuntu-24.04
+    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
     strategy:
       fail-fast: false
       matrix:
@@ -242,6 +243,7 @@ jobs:
       name: Integration Tests - Official Plus Images
       needs: build-unsigned-snapshot
       runs-on: ubuntu-24.04
+      if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
       strategy:
           fail-fast: false
           matrix:
