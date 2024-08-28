@@ -906,8 +906,6 @@ func (n *NginxBinaryType) parseModulePath(dir string) ([]string, error) {
 }
 
 func (n *NginxBinaryType) UpdateLogs(existingLogs map[string]string, newLogs map[string]string) bool {
-	logMutex.Lock()
-	defer logMutex.Unlock()
 	logUpdated := false
 
 	for logFile, logFormat := range newLogs {
