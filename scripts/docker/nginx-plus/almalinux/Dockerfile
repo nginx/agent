@@ -6,6 +6,7 @@ ARG BASE_IMAGE
 ARG PACKAGES_REPO
 ARG OS_RELEASE
 ARG OS_VERSION
+ARG NGINX_AGENT_VERSION
 
 WORKDIR /agent
 COPY ./scripts/docker/entrypoint.sh /agent/entrypoint.sh
@@ -41,11 +42,14 @@ enabled=1 \n\
 sslverify=true \n\
 gpgkey=https://nginx.org/keys/nginx_signing.key" > /etc/yum.repos.d/nginx-agent.repo \
     && nginxPackages=" \
-        nginx-agent \
         nginx-plus \
        " \
-    && yum install -y $nginxPackages \
-    && yum clean all \
+    && yum install -y $nginxPackages 
+
+
+RUN if [ -z "$NGINX_AGENT_VERSION" ]; then yum install -y nginx-agent; else yum install -y nginx-agent-${NGINX_AGENT_VERSION}; fi
+
+RUN yum clean all \
     && rm -rf /var/cache/yum /etc/yum.repos.d/* /etc/ssl/nginx
 
 FROM install as runtime

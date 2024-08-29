@@ -92,6 +92,9 @@ RUN yum localinstall -y /agent/build/${PACKAGE_NAME}.rpm
 
 FROM install-nginx as install-agent-repo
 
-RUN yum install -y nginx-agent \
-    && yum clean all \
+ARG NGINX_AGENT_VERSION
+
+RUN if [ -z "$NGINX_AGENT_VERSION" ]; then yum install -y nginx-agent; else yum install -y nginx-agent-${NGINX_AGENT_VERSION}; fi
+
+RUN yum clean all \
     && rm -rf /var/cache/yum /etc/yum.repos.d/* /etc/ssl/nginx

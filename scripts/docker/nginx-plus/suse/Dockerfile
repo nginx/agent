@@ -7,6 +7,7 @@ LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
 ARG OS_VERSION
 ARG PACKAGES_REPO
+ARG NGINX_AGENT_VERSION
 
 WORKDIR /agent
 COPY ./scripts/docker/entrypoint.sh /agent/entrypoint.sh
@@ -22,7 +23,6 @@ RUN --mount=type=secret,id=nginx-crt,dst=/nginx-repo.crt \
     && zypper install ca-certificates \
     && nginxPackages=" \
         nginx-plus \
-        nginx-agent \
        " \
     &&  if [ "$OS_VERSION" = "sles12sp5" ]; then \
             zypper addrepo -G -c "https://$PACKAGES_REPO/plus/sles/12?ssl_clientcert=/etc/ssl/nginx/nginx-repo-bundle.crt&ssl_verify=peer" nginx-plus \
@@ -32,8 +32,10 @@ RUN --mount=type=secret,id=nginx-crt,dst=/nginx-repo.crt \
             && zypper addrepo -G -c "https://$PACKAGES_REPO/nginx-agent/sles/15?ssl_clientcert=/etc/ssl/nginx/nginx-repo-bundle.crt&ssl_verify=peer" nginx-agent; \
         fi \
     && zypper refresh \
-    && zypper install -y $nginxPackages \
-    && rm -rf /etc/ssl/nginx/nginx-repo-bundle.crt /etc/ssl/nginx
+    && zypper install -y $nginxPackages 
+
+RUN if [ -z "$NGINX_AGENT_VERSION" ]; then zypper install -y nginx-agent; else zypper install -y nginx-agent=${NGINX_AGENT_VERSION}; fi
+RUN rm -rf /etc/ssl/nginx/nginx-repo-bundle.crt /etc/ssl/nginx
 
 FROM install as runtime
 
