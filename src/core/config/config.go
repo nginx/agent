@@ -139,7 +139,7 @@ func deprecateFlags() {
 	setFlagDeprecated("nap-monitoring-processor-buffer-size", "DEPRECATED. No replacement command.")
 	setFlagDeprecated("nap-monitoring-syslog-ip", "DEPRECATED. No replacement command.")
 	setFlagDeprecated("nap-monitoring-syslog-port", "DEPRECATED. No replacement command.")
-	setFlagDeprecated("metrics-bulksize", "DEPRECATED. Use metrics backoff maxElapsedTime instead to set a time period where no successful connection, after time elapsed start dropping oldest metrics from the buffer.")
+	setFlagDeprecated("metrics-bulk-size", "DEPRECATED. Use metrics backoff maxElapsedTime instead to set a time period where no successful connection, after time elapsed start dropping oldest metrics from the buffer.")
 }
 
 func RegisterFlags() {
