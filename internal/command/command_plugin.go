@@ -23,10 +23,12 @@ var _ bus.Plugin = (*CommandPlugin)(nil)
 
 type (
 	commandService interface {
-		UpdateDataPlaneStatus(ctx context.Context, resource *mpi.Resource) (*mpi.CreateConnectionResponse, error)
+		UpdateDataPlaneStatus(ctx context.Context, resource *mpi.Resource) error
 		UpdateDataPlaneHealth(ctx context.Context, instanceHealths []*mpi.InstanceHealth) error
 		SendDataPlaneResponse(ctx context.Context, response *mpi.DataPlaneResponse) error
 		CancelSubscription(ctx context.Context)
+		CheckConnection() bool
+		CreateConnection(ctx context.Context, resource *mpi.Resource) (*mpi.CreateConnectionResponse, error)
 	}
 
 	CommandPlugin struct {
@@ -83,13 +85,27 @@ func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 
 func (cp *CommandPlugin) processResourceUpdate(ctx context.Context, msg *bus.Message) {
 	if resource, ok := msg.Data.(*mpi.Resource); ok {
-		createConnectionResponse, err := cp.commandService.UpdateDataPlaneStatus(ctx, resource)
-		if err != nil {
-			slog.ErrorContext(ctx, "Unable to update data plane status", "error", err)
+		if !cp.commandService.CheckConnection() {
+			cp.createConnection(ctx, resource)
+		} else {
+			statusErr := cp.commandService.UpdateDataPlaneStatus(ctx, resource)
+			if statusErr != nil {
+				slog.ErrorContext(ctx, "Unable to update data plane status", "error", statusErr)
+			}
 		}
-		if createConnectionResponse != nil {
-			cp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConnectionCreatedTopic, Data: createConnectionResponse})
-		}
+	}
+}
+
+func (cp *CommandPlugin) createConnection(ctx context.Context, resource *mpi.Resource) {
+	createConnectionResponse, err := cp.commandService.CreateConnection(ctx, resource)
+	if err != nil {
+		slog.ErrorContext(ctx, "Unable to create connection", "error", err)
+	}
+	if createConnectionResponse != nil {
+		cp.messagePipe.Process(ctx, &bus.Message{
+			Topic: bus.ConnectionCreatedTopic,
+			Data:  createConnectionResponse,
+		})
 	}
 }
 

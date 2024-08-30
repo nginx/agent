@@ -127,7 +127,111 @@ jobs:
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
             make integration-test
-  
+
+  official-oss-image-integration-tests:
+    name: Integration Tests - Official OSS Images
+    needs: build-unsigned-snapshot
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        container:
+          - image: "bookworm"
+            version: "stable"
+            release: "debian"
+          - image: "bookworm"
+            version: "mainline"
+            release: "debian"
+          - image: "alpine"
+            version: "stable"
+            release: "alpine"
+          - image: "alpine"
+            version: "mainline"
+            release: "alpine"
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        with:
+          go-version-file: 'go.mod'
+      - name: Download Packages
+        uses: actions/download-artifact@eaceaf801fd36c7dee90939fad912460b18a1ffe # v4.1.2
+        with:
+          name: nginx-agent-unsigned-snapshots
+          path: build
+      - name: Login to Docker Registry
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        with:
+          registry: ${{ secrets.REGISTRY_URL }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Run Integration Tests
+        run: |
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
+          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" \
+          TAG="${{ matrix.container.version }}-${{ matrix.container.image }}" \
+          OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" \
+            make official-image-integration-test
+
+  official-plus-image-integration-tests:
+    name: Integration Tests - Official Plus Images
+    needs: build-unsigned-snapshot
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        container:
+        - image: "alpine"
+          version: "3.18"
+          plus: "r30"
+          release: "alpine"
+          path: "/nginx-plus/agent"
+        - image: "alpine"
+          version: "3.20"
+          plus: "r32"
+          release: "alpine"
+          path: "/nginx-plus/agent"
+        - image: "alpine"
+          version: "3.19"
+          plus: "r31"
+          release: "alpine"
+          path: "/nginx-plus/agent"
+        - image: "debian"
+          version: "bookworm"
+          plus: "r32"
+          release: "debian"
+          path: "/nginx-plus/agent"
+        - image: "debian"
+          version: "bookworm"
+          plus: "r31"
+          release: "debian"
+          path: "/nginx-plus/agent"
+        - image: "debian"
+          version: "bookworm"
+          plus: "r30"
+          release: "debian"
+          path: "/nginx-plus/agent"
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        with:
+          go-version-file: 'go.mod'
+      - name: Download Packages
+        uses: actions/download-artifact@eaceaf801fd36c7dee90939fad912460b18a1ffe # v4.1.2
+        with:
+          name: nginx-agent-unsigned-snapshots
+          path: build
+      - name: Login to Docker Registry
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        with:
+          registry: ${{ secrets.REGISTRY_URL }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Run Integration Tests
+        run: |
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
+          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" \
+          TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
+          OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" IMAGE_PATH="${{ matrix.container.path }}" \
+            make official-image-integration-test
+
   performance-tests:
     name: Performance Tests
     runs-on: ubuntu-22.04
@@ -156,37 +260,37 @@ jobs:
       - name: Push benchmark result
         if:  ${{ success() && github.ref_name == 'v3'}}
         run: git push 'https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/nginx/agent.git' benchmark-results:benchmark-results
-  
+
   load-tests:
     name: Load Tests
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
     runs-on: ubuntu-22.04
     needs: build-unsigned-snapshot
-    
+
     steps:
       - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version-file: 'go.mod'
-    
+
       - name: Download Packages
         uses: actions/download-artifact@eaceaf801fd36c7dee90939fad912460b18a1ffe # v4.1.2
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
-      
+
       - name: Set up Docker Build
         uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
-     
+
       - name: Set env
         run: echo "GO_VERSION=$(cat go.mod | grep toolchain | sed 's/toolchain //; s/go//')" >> $GITHUB_ENV
-      
+
       - name: Build Docker Image
         uses: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0 # v5.3.0
         env:
           GO_VERSION: ${{ env.GO_VERSION }}
         with:
-          file: scripts/testing/load/Dockerfile 
+          file: scripts/testing/load/Dockerfile
           tags: nginx-agent-load-test:1.0.0
           context: '.'
           push: false
@@ -198,7 +302,7 @@ jobs:
           build-args: |
             OSARCH=amd64
             GO_VERSION=${{ env.GO_VERSION }}
-      
+
       - name: Run Load Tests
         run: |
           results=$(docker run --rm nginx-agent-load-test:1.0.0)
@@ -224,7 +328,7 @@ jobs:
           alert-threshold: '125%'
           gh-pages-branch: "benchmark-results"
           fail-on-alert: true
-      
+
       - name: Push load test result
         if:  ${{ success() && github.ref_name == 'v3'}}
         run: git push 'https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/nginx/agent.git' benchmark-results:benchmark-results

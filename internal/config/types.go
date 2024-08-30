@@ -74,6 +74,11 @@ type (
 		Timeout             time.Duration `yaml:"-" mapstructure:"timeout"`
 		Time                time.Duration `yaml:"-" mapstructure:"time"`
 		PermitWithoutStream bool          `yaml:"-" mapstructure:"permit_without_stream"`
+		// if MaxMessageSize is size set then we use that value,
+		// otherwise MaxMessageRecieveSize and MaxMessageSendSize for individual settings
+		MaxMessageSize        int `yaml:"-" mapstructure:"max_message_size"`
+		MaxMessageRecieveSize int `yaml:"-" mapstructure:"max_message_receive_size"`
+		MaxMessageSendSize    int `yaml:"-" mapstructure:"max_message_send_size"`
 	}
 
 	Collector struct {
