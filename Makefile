@@ -44,6 +44,8 @@ OS_VERSION  ?= 24.04
 BASE_IMAGE  = "${CONTAINER_REGISTRY}/${OS_RELEASE}:${OS_VERSION}"
 IMAGE_TAG   = "agent_${OS_RELEASE}_${OS_VERSION}"
 IMAGE_PATH ?= "/nginx/agent"
+IMAGE_BUILD_TARGET ?= install-agent-local
+NGINX_AGENT_VERSION ?= ""
 
 VERSION_WITH_V := v${VERSION}
 LDFLAGS = "-w -X main.version=${VERSION_WITH_V} -X main.commit=${COMMIT} -X main.date=${DATE}"
@@ -287,21 +289,24 @@ image: ## Build agent container image for NGINX Plus, need nginx-repo.crt and ng
 		--no-cache -f ./scripts/docker/nginx-plus/${OS_RELEASE}/Dockerfile \
 		--secret id=nginx-crt,src=${CERTS_DIR}/nginx-repo.crt \
 		--secret id=nginx-key,src=${CERTS_DIR}/nginx-repo.key \
+		--build-arg CONTAINER_REGISTRY=${CONTAINER_REGISTRY} \
 		--build-arg BASE_IMAGE=${BASE_IMAGE} \
 		--build-arg PACKAGES_REPO=${PLUS_PACKAGES_REPO} \
 		--build-arg OS_RELEASE=${OS_RELEASE} \
 		--build-arg OS_VERSION=${OS_VERSION} \
+		--build-arg NGINX_AGENT_VERSION=${NGINX_AGENT_VERSION}
 
 oss-image: ## Build agent container image for NGINX OSS
 	@echo Building image with $(CONTAINER_CLITOOL); \
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${IMAGE_TAG} . \
 		--no-cache -f ./scripts/docker/nginx-oss/${CONTAINER_OS_TYPE}/Dockerfile \
-		--target install-agent-local \
+		--target ${IMAGE_BUILD_TARGET} \
 		--build-arg PACKAGE_NAME=${PACKAGE_NAME} \
 		--build-arg PACKAGES_REPO=${OSS_PACKAGES_REPO} \
 		--build-arg BASE_IMAGE=${BASE_IMAGE} \
 		--build-arg OS_RELEASE=${OS_RELEASE} \
 		--build-arg OS_VERSION=${OS_VERSION} \
+		--build-arg NGINX_AGENT_VERSION=${NGINX_AGENT_VERSION} \
 		--build-arg ENTRY_POINT=./scripts/docker/entrypoint.sh
 
 run-container: ## Run container from specified IMAGE_TAG

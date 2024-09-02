@@ -43,5 +43,6 @@ RUN apk add --allow-untrusted /agent/build/${PACKAGE_NAME}.apk
 
 FROM install-nginx as install-agent-repo
 
-RUN apk add nginx-agent@nginx-agent
+ARG NGINX_AGENT_VERSION
 
+RUN if [ -z "$NGINX_AGENT_VERSION" ]; then apk add nginx-agent; else apk add "nginx-agent=${NGINX_AGENT_VERSION}"; fi
