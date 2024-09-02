@@ -142,6 +142,8 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instance *m
 				"instance_id", instance.GetInstanceMeta().GetInstanceId(),
 				"error", parseErr,
 			)
+
+			return
 		}
 
 		iw.sendNginxConfigContextUpdate(ctx, nginxConfigContext)
@@ -150,6 +152,7 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instance *m
 	}
 
 	if !proto.Equal(instance, iw.instanceCache[instance.GetInstanceMeta().GetInstanceId()]) {
+		iw.instanceCache[instance.GetInstanceMeta().GetInstanceId()] = instance
 		instanceUpdates := InstanceUpdates{}
 		instanceUpdates.UpdatedInstances = append(instanceUpdates.UpdatedInstances, instance)
 		iw.instancesChannel <- InstanceUpdatesMessage{
@@ -201,6 +204,7 @@ func (iw *InstanceWatcherService) checkForUpdates(
 				iw.sendNginxConfigContextUpdate(newCtx, nginxConfigContext)
 				iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
 				iw.updateNginxInstanceRuntime(newInstance, nginxConfigContext)
+				iw.instanceCache[newInstance.GetInstanceMeta().GetInstanceId()] = newInstance
 			}
 		}
 	}

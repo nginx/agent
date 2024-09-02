@@ -14,6 +14,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"sort"
 	"strings"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -336,6 +337,8 @@ func getLoadableModules(nginxInfo *Info) (modules []string) {
 			return modules
 		}
 
+		sort.Strings(modules)
+
 		return modules
 	}
 
@@ -349,6 +352,8 @@ func getDynamicModules(nginxInfo *Info) (modules []string) {
 			modules = append(modules, strings.TrimPrefix(arg, withWithPrefix))
 		}
 	}
+
+	sort.Strings(modules)
 
 	return modules
 }
