@@ -34,6 +34,8 @@ message CommandResponse {
         COMMAND_STATUS_IN_PROGRESS = 3;
         // Command failure
         COMMAND_STATUS_FAILURE = 4;
+        // Command status of upload has completed
+        COMMAND_STATUS_UPLOAD_COMPLETE = 5;
     }
 
     // Command status

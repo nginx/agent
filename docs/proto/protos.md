@@ -128,6 +128,7 @@ Command status enum
 | COMMAND_STATUS_ERROR | 2 | Command error |
 | COMMAND_STATUS_IN_PROGRESS | 3 | Command in-progress |
 | COMMAND_STATUS_FAILURE | 4 | Command failure |
+| COMMAND_STATUS_UPLOAD_COMPLETE | 5 | Command status of upload has completed |
 
 
  
