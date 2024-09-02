@@ -27,6 +27,7 @@ type ConfigReader struct {
 	messagePipeline core.MessagePipeInterface
 	config          *config.Config
 	mu              sync.RWMutex
+	detailsMu       sync.RWMutex
 }
 
 func NewConfigReader(config *config.Config) *ConfigReader {
@@ -85,7 +86,10 @@ func (r *ConfigReader) Subscriptions() []string {
 }
 
 func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) {
-	if payloadAgentConfig != nil && payloadAgentConfig.Details != nil {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if payloadAgentConfig.Details != nil {
 		onDiskAgentConfig, err := config.GetConfig(r.config.ClientID)
 		if err != nil {
 			log.Errorf("Failed to update Agent config - %v", err)
@@ -96,21 +100,29 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 		synchronizeTags := false
 
 		if payloadAgentConfig.Details.Features != nil {
-
+			r.detailsMu.Lock()
 			for index, feature := range payloadAgentConfig.Details.Features {
 				payloadAgentConfig.Details.Features[index] = strings.Replace(feature, "features_", "", 1)
 			}
 
 			sort.Strings(onDiskAgentConfig.Features)
 			sort.Strings(payloadAgentConfig.Details.Features)
+			r.detailsMu.Unlock()
+
+			r.detailsMu.RLock()
 			synchronizeFeatures = !reflect.DeepEqual(payloadAgentConfig.Details.Features, onDiskAgentConfig.Features)
+			r.detailsMu.RUnlock()
 
 		} else {
+			r.detailsMu.Lock()
 			payloadAgentConfig.Details.Features = onDiskAgentConfig.Features
+			r.detailsMu.Unlock()
 		}
 
 		if payloadAgentConfig.Details.Tags == nil {
+			r.detailsMu.Lock()
 			payloadAgentConfig.Details.Tags = []string{}
+			r.detailsMu.Unlock()
 		}
 
 		sort.Strings(onDiskAgentConfig.Tags)
@@ -118,7 +130,9 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 		synchronizeTags = !reflect.DeepEqual(payloadAgentConfig.Details.Tags, onDiskAgentConfig.Tags)
 
 		if synchronizeFeatures || synchronizeTags {
-			configUpdated, err := config.UpdateAgentConfig(r.config.ClientID, payloadAgentConfig.Details.Tags, payloadAgentConfig.Details.Features)
+			tags := payloadAgentConfig.Details.Tags
+			features := payloadAgentConfig.Details.Features
+			configUpdated, err := config.UpdateAgentConfig(r.config.ClientID, tags, features)
 			if err != nil {
 				log.Errorf("Failed updating Agent config - %v", err)
 			}
@@ -141,13 +155,13 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 			r.synchronizeFeatures(payloadAgentConfig)
 		}
 
-		r.messagePipeline.Process(core.NewMessage(core.AgentConfigChanged, payloadAgentConfig))
-
+		r.messagePipeline.Process(core.NewMessage(core.AgentConfigChanged, &payloadAgentConfig))
 	}
 }
 
 func (r *ConfigReader) synchronizeFeatures(agtCfg *proto.AgentConfig) {
 	if r.config != nil {
+		r.detailsMu.RLock()
 		for _, feature := range r.config.Features {
 			if feature != agent_config.FeatureRegistration && feature != agent_config.FeatureNginxConfigAsync {
 				r.mu.Lock()
@@ -155,6 +169,7 @@ func (r *ConfigReader) synchronizeFeatures(agtCfg *proto.AgentConfig) {
 				r.mu.Unlock()
 			}
 		}
+		r.detailsMu.Unlock()
 	}
 
 	if agtCfg.Details != nil {
