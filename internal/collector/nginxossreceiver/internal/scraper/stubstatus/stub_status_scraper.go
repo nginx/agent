@@ -76,13 +76,40 @@ func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error
 	}
 
 	now := pcommon.NewTimestampFromTime(time.Now())
-	s.mb.RecordNginxRequestsDataPoint(now, stats.Requests)
-	s.mb.RecordNginxConnectionsAcceptedDataPoint(now, stats.Connections.Accepted)
-	s.mb.RecordNginxConnectionsHandledDataPoint(now, stats.Connections.Handled)
-	s.mb.RecordNginxConnectionsCurrentDataPoint(now, stats.Connections.Active, metadata.AttributeStateActive)
-	s.mb.RecordNginxConnectionsCurrentDataPoint(now, stats.Connections.Reading, metadata.AttributeStateReading)
-	s.mb.RecordNginxConnectionsCurrentDataPoint(now, stats.Connections.Writing, metadata.AttributeStateWriting)
-	s.mb.RecordNginxConnectionsCurrentDataPoint(now, stats.Connections.Waiting, metadata.AttributeStateWaiting)
+
+	s.mb.RecordNginxHTTPRequestsDataPoint(now, stats.Requests)
+
+	s.mb.RecordNginxHTTPConnDataPoint(
+		now,
+		stats.Connections.Accepted,
+		metadata.AttributeNginxConnOutcomeACCEPTED,
+	)
+	s.mb.RecordNginxHTTPConnDataPoint(
+		now,
+		stats.Connections.Handled,
+		metadata.AttributeNginxConnOutcomeHANDLED,
+	)
+
+	s.mb.RecordNginxHTTPConnCountDataPoint(
+		now,
+		stats.Connections.Active,
+		metadata.AttributeNginxConnOutcomeACTIVE,
+	)
+	s.mb.RecordNginxHTTPConnCountDataPoint(
+		now,
+		stats.Connections.Reading,
+		metadata.AttributeNginxConnOutcomeREADING,
+	)
+	s.mb.RecordNginxHTTPConnCountDataPoint(
+		now,
+		stats.Connections.Writing,
+		metadata.AttributeNginxConnOutcomeWRITING,
+	)
+	s.mb.RecordNginxHTTPConnCountDataPoint(
+		now,
+		stats.Connections.Waiting,
+		metadata.AttributeNginxConnOutcomeWAITING,
+	)
 
 	return s.mb.Emit(), nil
 }

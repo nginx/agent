@@ -27,28 +27,24 @@ func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
 
 // MetricsConfig provides config for nginx metrics.
 type MetricsConfig struct {
-	NginxConnectionsAccepted MetricConfig `mapstructure:"nginx.connections_accepted"`
-	NginxConnectionsCurrent  MetricConfig `mapstructure:"nginx.connections_current"`
-	NginxConnectionsHandled  MetricConfig `mapstructure:"nginx.connections_handled"`
-	NginxHTTPResponseStatus  MetricConfig `mapstructure:"nginx.http.response.status"`
-	NginxRequests            MetricConfig `mapstructure:"nginx.requests"`
+	NginxHTTPConn           MetricConfig `mapstructure:"nginx.http.conn"`
+	NginxHTTPConnCount      MetricConfig `mapstructure:"nginx.http.conn.count"`
+	NginxHTTPRequests       MetricConfig `mapstructure:"nginx.http.requests"`
+	NginxHTTPResponseStatus MetricConfig `mapstructure:"nginx.http.response.status"`
 }
 
 func DefaultMetricsConfig() MetricsConfig {
 	return MetricsConfig{
-		NginxConnectionsAccepted: MetricConfig{
+		NginxHTTPConn: MetricConfig{
 			Enabled: true,
 		},
-		NginxConnectionsCurrent: MetricConfig{
+		NginxHTTPConnCount: MetricConfig{
 			Enabled: true,
 		},
-		NginxConnectionsHandled: MetricConfig{
+		NginxHTTPRequests: MetricConfig{
 			Enabled: true,
 		},
 		NginxHTTPResponseStatus: MetricConfig{
-			Enabled: true,
-		},
-		NginxRequests: MetricConfig{
 			Enabled: true,
 		},
 	}

@@ -1,25 +1,21 @@
 default:
 all_set:
   metrics:
-    nginx.connections_accepted:
+    nginx.http.conn:
       enabled: true
-    nginx.connections_current:
+    nginx.http.conn.count:
       enabled: true
-    nginx.connections_handled:
+    nginx.http.requests:
       enabled: true
     nginx.http.response.status:
-      enabled: true
-    nginx.requests:
       enabled: true
 none_set:
   metrics:
-    nginx.connections_accepted:
+    nginx.http.conn:
       enabled: false
-    nginx.connections_current:
+    nginx.http.conn.count:
       enabled: false
-    nginx.connections_handled:
+    nginx.http.requests:
       enabled: false
     nginx.http.response.status:
-      enabled: false
-    nginx.requests:
       enabled: false

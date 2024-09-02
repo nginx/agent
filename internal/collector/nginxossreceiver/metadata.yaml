@@ -10,14 +10,16 @@ status:
     active: [olli-holmala, oliveromahony, apgralG, dhurley, craigell]
 
 attributes:
-  state:
-    description: The state of a connection
+  nginx.conn.outcome:
+    description: The outcome of the connection.
     type: string
     enum:
-    - active
-    - reading
-    - writing
-    - waiting
+      - "ACCEPTED"
+      - "ACTIVE"
+      - "HANDLED"
+      - "READING"
+      - "WRITING"
+      - "WAITING"
   nginx.status_range:
     description: A status code range or bucket for a HTTP response's status code.
     type: string
@@ -29,42 +31,32 @@ attributes:
       - "5xx"
 
 metrics:
-  nginx.requests:
+  nginx.http.requests:
     enabled: true
-    description: Total number of requests made to the server since it started
-    unit: requests
+    description: The total number of client requests received from clients.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    attributes: []
-  nginx.connections_accepted:
+    unit: "requests"
+  nginx.http.conn:
     enabled: true
-    description: The total number of accepted client connections
-    unit: connections
+    description: The total number of connections.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    attributes: []
-  nginx.connections_handled:
+    unit: "connections"
+    attributes:
+      - nginx.conn.outcome
+  nginx.http.conn.count:
     enabled: true
-    description: The total number of handled connections. Generally, the parameter value is the same as nginx.connections_accepted unless some resource limits have been reached (for example, the worker_connections limit).
-    unit: connections
-    sum:
+    description: The current number of connections.
+    gauge:
       value_type: int
-      monotonic: true
-      aggregation_temporality: cumulative
-    attributes: []
-  nginx.connections_current:
-    enabled: true
-    description: The current number of nginx connections by state
-    unit: connections
-    sum:
-      value_type: int
-      monotonic: false
-      aggregation_temporality: cumulative
-    attributes: [state]
+    unit: "connections"
+    attributes:
+      - nginx.conn.outcome
   nginx.http.response.status:
     enabled: true
     description: The number of responses, grouped by status code range.
