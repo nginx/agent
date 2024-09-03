@@ -8,6 +8,7 @@ package instance
 import (
 	"context"
 	"log/slog"
+	"slices"
 	"sync"
 	"time"
 
@@ -122,6 +123,7 @@ func (iw *InstanceWatcherService) ReparseConfigs(ctx context.Context) {
 func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instance *mpi.Instance) {
 	iw.cacheMutex.Lock()
 	defer iw.cacheMutex.Unlock()
+
 	instanceType := instance.GetInstanceMeta().GetInstanceType()
 	correlationID := logger.GetCorrelationIDAttr(ctx)
 
@@ -167,6 +169,7 @@ func (iw *InstanceWatcherService) checkForUpdates(
 ) {
 	iw.cacheMutex.Lock()
 	defer iw.cacheMutex.Unlock()
+
 	var instancesToParse []*mpi.Instance
 	correlationID := logger.GenerateCorrelationID()
 	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, correlationID)
@@ -264,7 +267,13 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 	instanceUpdates.UpdatedInstances = updatedInstances
 	instanceUpdates.DeletedInstances = deletedInstances
 
-	iw.instanceCache = instancesFound
+	for _, instance := range slices.Concat[[]*mpi.Instance](newInstances, updatedInstances) {
+		iw.instanceCache[instance.GetInstanceMeta().GetInstanceId()] = instance
+	}
+
+	for _, instance := range deletedInstances {
+		delete(iw.instanceCache, instance.GetInstanceMeta().GetInstanceId())
+	}
 
 	return instanceUpdates, nil
 }
