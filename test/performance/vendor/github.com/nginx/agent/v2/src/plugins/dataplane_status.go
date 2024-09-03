@@ -42,6 +42,7 @@ type DataPlaneStatus struct {
 	softwareDetails             map[string]*proto.DataplaneSoftwareDetails
 	nginxConfigActivityStatuses map[string]*proto.AgentActivityStatus
 	softwareDetailsMutex        sync.RWMutex
+	hostInfoMu                  sync.Mutex
 	processes                   []*core.Process
 }
 
@@ -67,7 +68,6 @@ func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core
 		tags:                        &config.Tags,
 		configDirs:                  config.ConfigDirs,
 		reportInterval:              config.Dataplane.Status.ReportInterval,
-		softwareDetailsMutex:        sync.RWMutex{},
 		nginxConfigActivityStatuses: make(map[string]*proto.AgentActivityStatus),
 		softwareDetails:             make(map[string]*proto.DataplaneSoftwareDetails),
 		processes:                   processes,
@@ -214,6 +214,8 @@ func (dps *DataPlaneStatus) dataplaneStatus(forceDetails bool) *proto.DataplaneS
 
 func (dps *DataPlaneStatus) hostInfo(send bool) (info *proto.HostInfo) {
 	// this sets send if we are forcing details, or it has been 24 hours since the last send
+	dps.hostInfoMu.Lock()
+	defer dps.hostInfoMu.Unlock()
 	hostInfo := dps.env.NewHostInfo(dps.version, dps.tags, dps.configDirs, send)
 	if !send && cmp.Equal(dps.envHostInfo, hostInfo) {
 		return nil
@@ -221,6 +223,7 @@ func (dps *DataPlaneStatus) hostInfo(send bool) (info *proto.HostInfo) {
 
 	dps.envHostInfo = hostInfo
 	log.Tracef("hostInfo: %v", hostInfo)
+
 
 	return hostInfo
 }
