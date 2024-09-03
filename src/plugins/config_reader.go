@@ -155,7 +155,7 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 			r.synchronizeFeatures(payloadAgentConfig)
 		}
 
-		r.messagePipeline.Process(core.NewMessage(core.AgentConfigChanged, &payloadAgentConfig))
+		r.messagePipeline.Process(core.NewMessage(core.AgentConfigChanged, payloadAgentConfig))
 	}
 }
 
@@ -173,9 +173,7 @@ func (r *ConfigReader) synchronizeFeatures(agtCfg *proto.AgentConfig) {
 	}
 
 	if agtCfg.Details != nil {
-		r.mu.Lock()
 		r.messagePipeline.Process(core.NewMessage(core.EnableFeature, agtCfg.Details.Features))
-		r.mu.Unlock()
 	}
 }
 

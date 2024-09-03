@@ -198,7 +198,7 @@ func RegisterRunner(r func(cmd *cobra.Command, args []string)) {
 }
 
 func GetConfig(clientId string) (*Config, error) {
-	extensions := []string{}
+	var extensions []string
 
 	for _, extension := range Viper.GetStringSlice(agent_config.ExtensionsKey) {
 		if agent_config.IsKnownExtension(extension) {
