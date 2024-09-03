@@ -131,6 +131,7 @@ jobs:
   official-oss-image-integration-tests:
     name: Integration Tests - Official OSS Images
     needs: build-unsigned-snapshot
+    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
     runs-on: ubuntu-22.04
     strategy:
       matrix:
@@ -174,6 +175,7 @@ jobs:
   official-plus-image-integration-tests:
     name: Integration Tests - Official Plus Images
     needs: build-unsigned-snapshot
+    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
     runs-on: ubuntu-22.04
     strategy:
       matrix:

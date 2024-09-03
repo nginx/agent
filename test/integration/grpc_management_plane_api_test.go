@@ -29,9 +29,15 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-const configApplyErrorMessage = "failed validating config NGINX config test failed exit status 1:" +
-	" nginx: [emerg] unexpected end of file, expecting \";\" or \"}\" in /etc/nginx/nginx.conf:2\nnginx: " +
-	"configuration file /etc/nginx/nginx.conf test failed\n"
+const (
+	configApplyErrorMessage = "failed validating config NGINX config test failed exit status 1:" +
+		" nginx: [emerg] unexpected end of file, expecting \";\" or \"}\" in /etc/nginx/nginx.conf:2\nnginx: " +
+		"configuration file /etc/nginx/nginx.conf test failed\n"
+
+	retryCount       = 5
+	retryWaitTime    = 2 * time.Second
+	retryMaxWaitTime = 3 * time.Second
+)
 
 var (
 	mockManagementPlaneGrpcContainer testcontainers.Container
@@ -185,7 +191,7 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 }`, nginxInstanceID)
 
 	client := resty.New()
-	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
+	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
 
 	url := fmt.Sprintf("http://%s/api/v1/requests", mockManagementPlaneAPIAddress)
 	resp, err := client.R().EnableTrace().SetBody(request).Post(url)
@@ -282,7 +288,7 @@ func performConfigApply(t *testing.T, nginxInstanceID string) {
 	t.Helper()
 
 	client := resty.New()
-	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
+	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
 
 	url := fmt.Sprintf("http://%s/api/v1/instance/%s/config/apply", mockManagementPlaneAPIAddress, nginxInstanceID)
 	resp, err := client.R().EnableTrace().Post(url)
@@ -295,7 +301,7 @@ func performInvalidConfigApply(t *testing.T, nginxInstanceID string) {
 	t.Helper()
 
 	client := resty.New()
-	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
+	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
 
 	body := fmt.Sprintf(`{
 			"message_meta": {
@@ -342,7 +348,7 @@ func getManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int) []
 	t.Helper()
 
 	client := resty.New()
-	client.SetRetryCount(5).SetRetryWaitTime(2 * time.Second).SetRetryMaxWaitTime(3 * time.Second)
+	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
 	client.AddRetryCondition(
 		func(r *resty.Response, err error) bool {
 			responseData := r.Body()
@@ -383,7 +389,7 @@ func verifyConnection(t *testing.T) string {
 	t.Helper()
 
 	client := resty.New()
-	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
+	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
 
 	url := fmt.Sprintf("http://%s/api/v1/connection", mockManagementPlaneAPIAddress)
 	resp, err := client.R().EnableTrace().Get(url)
@@ -458,7 +464,7 @@ func verifyUpdateDataPlaneHealth(t *testing.T) {
 	t.Helper()
 
 	client := resty.New()
-	client.SetRetryCount(3).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(15 * time.Second)
+	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
 	client.AddRetryCondition(
 		func(r *resty.Response, err error) bool {
 			return r.StatusCode() == http.StatusNotFound
