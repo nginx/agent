@@ -42,6 +42,7 @@ type DataPlaneStatus struct {
 	softwareDetails             map[string]*proto.DataplaneSoftwareDetails
 	nginxConfigActivityStatuses map[string]*proto.AgentActivityStatus
 	softwareDetailsMutex        sync.RWMutex
+	structMu                    sync.RWMutex
 	hostInfoMu                  sync.Mutex
 	processes                   []*core.Process
 }
@@ -76,8 +77,12 @@ func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core
 
 func (dps *DataPlaneStatus) Init(pipeline core.MessagePipeInterface) {
 	log.Info("DataPlaneStatus initializing")
+	
+	dps.structMu.Lock()
 	dps.messagePipeline = pipeline
 	dps.ctx = dps.messagePipeline.Context()
+	dps.structMu.Unlock()
+
 	dps.healthGoRoutine(pipeline)
 }
 
@@ -132,7 +137,9 @@ func (dps *DataPlaneStatus) Process(msg *core.Message) {
 			log.Errorf("Expected the type %T but got %T", &proto.AgentActivityStatus{}, data)
 		}
 	case msg.Exact(core.NginxDetailProcUpdate):
+		dps.structMu.Lock()
 		dps.processes = msg.Data().([]*core.Process)
+		dps.structMu.Unlock()
 	}
 }
 
@@ -187,6 +194,7 @@ func (dps *DataPlaneStatus) healthGoRoutine(pipeline core.MessagePipeInterface) 
 }
 
 func (dps *DataPlaneStatus) dataplaneStatus(forceDetails bool) *proto.DataplaneStatus {
+	dps.structMu.RLock()
 	forceDetails = forceDetails || time.Now().UTC().Add(-dps.reportInterval).After(dps.lastSendDetails)
 
 	agentActivityStatuses := []*proto.AgentActivityStatus{}
@@ -209,21 +217,23 @@ func (dps *DataPlaneStatus) dataplaneStatus(forceDetails bool) *proto.DataplaneS
 		DataplaneSoftwareDetails: dataplaneSoftwareDetails,
 		AgentActivityStatus:      agentActivityStatuses,
 	}
+	dps.structMu.RUnlock()
 	return dataplaneStatus
 }
 
 func (dps *DataPlaneStatus) hostInfo(send bool) (info *proto.HostInfo) {
 	// this sets send if we are forcing details, or it has been 24 hours since the last send
-	dps.hostInfoMu.Lock()
-	defer dps.hostInfoMu.Unlock()
+	dps.structMu.RLock()
+	defer dps.structMu.RUnlock()
 	hostInfo := dps.env.NewHostInfo(dps.version, dps.tags, dps.configDirs, send)
 	if !send && cmp.Equal(dps.envHostInfo, hostInfo) {
 		return nil
 	}
 
+	dps.hostInfoMu.Lock()
 	dps.envHostInfo = hostInfo
 	log.Tracef("hostInfo: %v", hostInfo)
-
+	dps.hostInfoMu.Unlock()
 
 	return hostInfo
 }
@@ -239,17 +249,21 @@ func (dps *DataPlaneStatus) detailsForProcess(processes []*core.Process, send bo
 		}
 		details = append(details, dps.binary.GetNginxDetailsFromProcess(p))
 		// spec says process CreateTime is unix UTC in MS
+		dps.structMu.RLock()
 		if time.UnixMilli(p.CreateTime).After(dps.lastSendDetails) {
 			// set send because this process has started since the last send
 			send = true
 		}
+		dps.structMu.RUnlock()
 	}
 
 	if !send {
 		return nil
 	}
 
+	dps.structMu.Lock()
 	dps.lastSendDetails = nowUTC
+	dps.structMu.Unlock()
 
 	return details
 }
@@ -317,7 +331,9 @@ func (dps *DataPlaneStatus) syncAgentConfigChange() {
 	}
 
 	// Update DataPlaneStatus with relevant config info
+	dps.structMu.Lock()
 	dps.interval = pollInt
 	dps.tags = &conf.Tags
 	dps.configDirs = conf.ConfigDirs
+	dps.structMu.Unlock()
 }
