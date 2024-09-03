@@ -164,12 +164,10 @@ func (r *ConfigReader) synchronizeFeatures(agtCfg *proto.AgentConfig) {
 		r.detailsMu.RLock()
 		for _, feature := range r.config.Features {
 			if feature != agent_config.FeatureRegistration && feature != agent_config.FeatureNginxConfigAsync {
-				r.mu.Lock()
 				r.deRegisterPlugin(feature)
-				r.mu.Unlock()
 			}
 		}
-		r.detailsMu.Unlock()
+		r.detailsMu.RUnlock()
 	}
 
 	if agtCfg.Details != nil {
