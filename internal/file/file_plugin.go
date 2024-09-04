@@ -209,8 +209,10 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 				configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId(),
 				err.Error(),
 			)
+			fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
+			return
 		}
-		
+
 		response = fp.createDataPlaneResponse(
 			correlationID,
 			mpi.CommandResponse_COMMAND_STATUS_FAILURE,
