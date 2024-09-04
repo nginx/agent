@@ -8,11 +8,10 @@ package instance
 import (
 	"context"
 	"log/slog"
+	"reflect"
 	"slices"
 	"sync"
 	"time"
-
-	"google.golang.org/protobuf/proto"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
@@ -115,15 +114,17 @@ func (iw *InstanceWatcherService) Watch(
 func (iw *InstanceWatcherService) ReparseConfigs(ctx context.Context) {
 	slog.DebugContext(ctx, "Reparsing all instance configurations")
 	for _, instance := range iw.instanceCache {
-		iw.ReparseConfig(ctx, instance)
+		iw.ReparseConfig(ctx, instance.GetInstanceMeta().GetInstanceId())
 	}
 	slog.DebugContext(ctx, "Finished reparsing all instance configurations")
 }
 
-func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instance *mpi.Instance) {
+func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instanceID string) {
 	iw.cacheMutex.Lock()
 	defer iw.cacheMutex.Unlock()
 
+	updatesRequired := false
+	instance := iw.instanceCache[instanceID]
 	instanceType := instance.GetInstanceMeta().GetInstanceType()
 	correlationID := logger.GetCorrelationIDAttr(ctx)
 
@@ -132,7 +133,7 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instance *m
 		slog.DebugContext(
 			ctx,
 			"Reparsing NGINX instance config",
-			"instance_id", instance.GetInstanceMeta().GetInstanceId(),
+			"instance_id", instanceID,
 		)
 
 		nginxConfigContext, parseErr := iw.nginxConfigParser.Parse(ctx, instance)
@@ -141,7 +142,7 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instance *m
 				ctx,
 				"Unable to parse NGINX instance config",
 				"config_path", instance.GetInstanceRuntime().GetConfigPath(),
-				"instance_id", instance.GetInstanceMeta().GetInstanceId(),
+				"instance_id", instanceID,
 				"error", parseErr,
 			)
 
@@ -150,11 +151,10 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instance *m
 
 		iw.sendNginxConfigContextUpdate(ctx, nginxConfigContext)
 		iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
-		iw.updateNginxInstanceRuntime(instance, nginxConfigContext)
+		updatesRequired = iw.updateNginxInstanceRuntime(instance, nginxConfigContext)
 	}
 
-	if !proto.Equal(instance, iw.instanceCache[instance.GetInstanceMeta().GetInstanceId()]) {
-		iw.instanceCache[instance.GetInstanceMeta().GetInstanceId()] = instance
+	if updatesRequired {
 		instanceUpdates := InstanceUpdates{}
 		instanceUpdates.UpdatedInstances = append(instanceUpdates.UpdatedInstances, instance)
 		iw.instancesChannel <- InstanceUpdatesMessage{
@@ -388,23 +388,39 @@ func areInstancesEqual(oldRuntime, currentRuntime *mpi.InstanceRuntime) (equal b
 func (iw *InstanceWatcherService) updateNginxInstanceRuntime(
 	instance *mpi.Instance,
 	nginxConfigContext *model.NginxConfigContext,
-) {
+) (updatesRequired bool) {
 	instanceType := instance.GetInstanceMeta().GetInstanceType()
+
+	accessLogs := convertAccessLogs(nginxConfigContext.AccessLogs)
+	errorLogs := convertErrorLogs(nginxConfigContext.ErrorLogs)
 
 	if instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
 		nginxPlusRuntimeInfo := instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo()
 
-		nginxPlusRuntimeInfo.AccessLogs = convertAccessLogs(nginxConfigContext.AccessLogs)
-		nginxPlusRuntimeInfo.ErrorLogs = convertErrorLogs(nginxConfigContext.ErrorLogs)
-		nginxPlusRuntimeInfo.StubStatus = nginxConfigContext.StubStatus
-		nginxPlusRuntimeInfo.PlusApi = nginxConfigContext.PlusAPI
+		if reflect.DeepEqual(nginxPlusRuntimeInfo.GetAccessLogs(), accessLogs) ||
+			reflect.DeepEqual(nginxPlusRuntimeInfo.GetErrorLogs(), errorLogs) ||
+			nginxPlusRuntimeInfo.GetStubStatus() != nginxConfigContext.StubStatus ||
+			nginxPlusRuntimeInfo.GetPlusApi() != nginxConfigContext.PlusAPI {
+			nginxPlusRuntimeInfo.AccessLogs = accessLogs
+			nginxPlusRuntimeInfo.ErrorLogs = errorLogs
+			nginxPlusRuntimeInfo.StubStatus = nginxConfigContext.StubStatus
+			nginxPlusRuntimeInfo.PlusApi = nginxConfigContext.PlusAPI
+			updatesRequired = true
+		}
 	} else {
 		nginxRuntimeInfo := instance.GetInstanceRuntime().GetNginxRuntimeInfo()
 
-		nginxRuntimeInfo.AccessLogs = convertAccessLogs(nginxConfigContext.AccessLogs)
-		nginxRuntimeInfo.ErrorLogs = convertErrorLogs(nginxConfigContext.ErrorLogs)
-		nginxRuntimeInfo.StubStatus = nginxConfigContext.StubStatus
+		if reflect.DeepEqual(nginxRuntimeInfo.GetAccessLogs(), accessLogs) ||
+			reflect.DeepEqual(nginxRuntimeInfo.GetAccessLogs(), errorLogs) ||
+			nginxRuntimeInfo.GetStubStatus() != nginxConfigContext.StubStatus {
+			nginxRuntimeInfo.AccessLogs = accessLogs
+			nginxRuntimeInfo.ErrorLogs = errorLogs
+			nginxRuntimeInfo.StubStatus = nginxConfigContext.StubStatus
+			updatesRequired = true
+		}
 	}
+
+	return updatesRequired
 }
 
 func convertAccessLogs(accessLogs []*model.AccessLog) (logs []string) {

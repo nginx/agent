@@ -132,7 +132,7 @@ func TestWatcher_Process_ConfigApplySuccessfulTopic(t *testing.T) {
 	data := protos.GetNginxOssInstance([]string{})
 	message := &bus.Message{
 		Topic: bus.ConfigApplySuccessfulTopic,
-		Data:  data,
+		Data:  data.GetInstanceMeta().GetInstanceId(),
 	}
 
 	fakeWatcherService := &watcherfakes.FakeInstanceWatcherServiceInterface{}

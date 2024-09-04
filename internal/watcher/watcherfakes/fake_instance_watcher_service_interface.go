@@ -5,16 +5,15 @@ import (
 	"context"
 	"sync"
 
-	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/watcher/instance"
 )
 
 type FakeInstanceWatcherServiceInterface struct {
-	ReparseConfigStub        func(context.Context, *v1.Instance)
+	ReparseConfigStub        func(context.Context, string)
 	reparseConfigMutex       sync.RWMutex
 	reparseConfigArgsForCall []struct {
 		arg1 context.Context
-		arg2 *v1.Instance
+		arg2 string
 	}
 	ReparseConfigsStub        func(context.Context)
 	reparseConfigsMutex       sync.RWMutex
@@ -32,11 +31,11 @@ type FakeInstanceWatcherServiceInterface struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeInstanceWatcherServiceInterface) ReparseConfig(arg1 context.Context, arg2 *v1.Instance) {
+func (fake *FakeInstanceWatcherServiceInterface) ReparseConfig(arg1 context.Context, arg2 string) {
 	fake.reparseConfigMutex.Lock()
 	fake.reparseConfigArgsForCall = append(fake.reparseConfigArgsForCall, struct {
 		arg1 context.Context
-		arg2 *v1.Instance
+		arg2 string
 	}{arg1, arg2})
 	stub := fake.ReparseConfigStub
 	fake.recordInvocation("ReparseConfig", []interface{}{arg1, arg2})
@@ -52,13 +51,13 @@ func (fake *FakeInstanceWatcherServiceInterface) ReparseConfigCallCount() int {
 	return len(fake.reparseConfigArgsForCall)
 }
 
-func (fake *FakeInstanceWatcherServiceInterface) ReparseConfigCalls(stub func(context.Context, *v1.Instance)) {
+func (fake *FakeInstanceWatcherServiceInterface) ReparseConfigCalls(stub func(context.Context, string)) {
 	fake.reparseConfigMutex.Lock()
 	defer fake.reparseConfigMutex.Unlock()
 	fake.ReparseConfigStub = stub
 }
 
-func (fake *FakeInstanceWatcherServiceInterface) ReparseConfigArgsForCall(i int) (context.Context, *v1.Instance) {
+func (fake *FakeInstanceWatcherServiceInterface) ReparseConfigArgsForCall(i int) (context.Context, string) {
 	fake.reparseConfigMutex.RLock()
 	defer fake.reparseConfigMutex.RUnlock()
 	argsForCall := fake.reparseConfigArgsForCall[i]

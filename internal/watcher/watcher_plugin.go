@@ -46,7 +46,7 @@ type (
 			instancesChannel chan<- instance.InstanceUpdatesMessage,
 			nginxConfigContextChannel chan<- instance.NginxConfigContextMessage,
 		)
-		ReparseConfig(ctx context.Context, instance *mpi.Instance)
+		ReparseConfig(ctx context.Context, instanceID string)
 		ReparseConfigs(ctx context.Context)
 	}
 )
@@ -125,7 +125,7 @@ func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest",
-			"payload", msg.Data)
+			"payload", msg.Data, "topic", msg.Topic)
 
 		return
 	}
@@ -133,7 +133,7 @@ func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message
 	request, requestOk := managementPlaneRequest.GetRequest().(*mpi.ManagementPlaneRequest_ConfigApplyRequest)
 	if !requestOk {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest_ConfigApplyRequest",
-			"payload", msg.Data)
+			"payload", msg.Data, "topic", msg.Topic)
 
 		return
 	}
@@ -145,9 +145,9 @@ func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message
 }
 
 func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message) {
-	data, ok := msg.Data.(*mpi.Instance)
+	data, ok := msg.Data.(string)
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to Instance", "payload", msg.Data)
+		slog.ErrorContext(ctx, "Unable to cast message payload to string", "payload", msg.Data, "topic", msg.Topic)
 
 		return
 	}
@@ -155,7 +155,7 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
 		w.instancesWithConfigApplyInProgress,
 		func(element string) bool {
-			return element == data.GetInstanceMeta().GetInstanceId()
+			return element == data
 		},
 	)
 	w.fileWatcherService.SetEnabled(true)
@@ -166,7 +166,7 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 func (w *Watcher) handleRollbackComplete(ctx context.Context, msg *bus.Message) {
 	instanceID, ok := msg.Data.(string)
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to string", "payload", msg.Data)
+		slog.ErrorContext(ctx, "Unable to cast message payload to string", "payload", msg.Data, "topic", msg.Topic)
 
 		return
 	}
