@@ -32,7 +32,7 @@ ifeq (, $(shell docker version 2> /dev/null))
     $(error Docker and markdown-link-check are not installed. markdown-link-check or Docker are required to check links.)
 endif
 else
-    MARKDOWNLINKCHECK=docker run --rm -it -v ${CURDIR}:/docs --workdir /docs ${MARKDOWNLINKCHECK_IMG}
+    MARKDOWNLINKCHECK=docker run --rm -it -v ${CURDIR}:/site --workdir /site ${MARKDOWNLINKCHECK_IMG}
 endif
 endif
 
