@@ -8,11 +8,6 @@ on:
         required: true
         type: boolean
         default: false
-      createPullRequest:
-        description: 'Create pull request back into main'
-        required: true
-        type: boolean
-        default: false
       uploadJWT:
         description: 'Temporary JWT to publish packages to up-ap.nginx.com'
         required: true
@@ -128,7 +123,7 @@ jobs:
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git clone https://github.com/spencerugbo/agent-changelog.git
+          git clone https://github.com/nginx/agent-changelog.git
           cd ./agent-changelog/source
           pip install -r requirements.txt
           python agent.py
@@ -213,7 +208,7 @@ jobs:
             }))
             console.log(`Release published: ${release.data.html_url}`)
       - name: Create Pull Request
-        if: ${{ inputs.publishPackages == true && inputs.createPullRequest == true }}
+        if: ${{ inputs.publishPackages == true }}
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
