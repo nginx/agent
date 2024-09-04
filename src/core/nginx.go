@@ -37,8 +37,8 @@ const (
 )
 
 var (
-	re          = regexp.MustCompile(`(?P<name>\S+)/(?P<version>\S+)`)
-	plusre      = regexp.MustCompile(`(?P<name>\S+)/(?P<version>\S+).\((?P<plus>\S+plus\S+)\)`)
+	re     = regexp.MustCompile(`(?P<name>\S+)/(?P<version>\S+)`)
+	plusre = regexp.MustCompile(`(?P<name>\S+)/(?P<version>\S+).\((?P<plus>\S+plus\S+)\)`)
 )
 
 type NginxBinary interface {
@@ -62,10 +62,10 @@ type NginxBinary interface {
 type NginxBinaryType struct {
 	detailsMapMutex   sync.Mutex
 	workersMapMutex   sync.Mutex
-	logMutex    	  sync.Mutex
+	logMutex          sync.Mutex
 	logWriteMutex     sync.Mutex
-	unpackMutex 	  sync.Mutex
-	mapMutex    	  sync.Mutex
+	unpackMutex       sync.Mutex
+	mapMutex          sync.Mutex
 	statusUrlMutex    sync.RWMutex
 	env               Environment
 	config            *config.Config
@@ -671,38 +671,17 @@ func (n *NginxBinaryType) ReadConfig(confFile, nginxId, systemId string) (*proto
 	n.errorLogsUpdated = n.UpdateLogs(n.GetErrorLogs(), ErrorLogs(configPayload))
 	n.logWriteMutex.Unlock()
 
-
-
 	return configPayload, nil
 }
 
 func (n *NginxBinaryType) GetAccessLogs() map[string]string {
-	n.logMutex.Lock()
-	// Create a new map with the same size as the original
-	copiedLogs := make(map[string]string, len(n.accessLogs))
-	// Copy each key-value pair from the original map to the new map
-	for logFile, logFormat := range n.accessLogs {
-		copiedLogs[logFile] = logFormat
-	}
-	n.logMutex.Unlock()
-		
-	// Return the new map
-	return copiedLogs
+	return n.accessLogs
 }
 
 func (n *NginxBinaryType) GetErrorLogs() map[string]string {
 	n.logMutex.Lock()
-	// Create a new map with the same size as the original
-	copiedLogs := make(map[string]string, len(n.errorLogs))
-	
-	// Copy each key-value pair from the original map to the new map
-	for logFile, logFormat := range n.errorLogs {
-		copiedLogs[logFile] = logFormat
-	}
-	n.logMutex.Unlock()
-
-	// Return the new map
-	return copiedLogs
+	defer n.logMutex.Unlock()
+	return n.errorLogs
 }
 
 // SkipLog checks if a logfile should be omitted from analysis
@@ -927,25 +906,33 @@ func (n *NginxBinaryType) parseModulePath(dir string) ([]string, error) {
 }
 
 func (n *NginxBinaryType) UpdateLogs(existingLogs map[string]string, newLogs map[string]string) bool {
-    
+	log.Debug("UpdateLogs")
 	logUpdated := false
+
+	copiedLogs := make(map[string]string, len(existingLogs))
+	// Copy each key-value pair from the original map to the new map
+	for logFile, logFormat := range existingLogs {
+		copiedLogs[logFile] = logFormat
+	}
 
 	for logFile, logFormat := range newLogs {
 		if !(strings.HasPrefix(logFile, "syslog:") || n.SkipLog(logFile)) {
-			if _, found := existingLogs[logFile]; !found || existingLogs[logFile] != logFormat {
+			if _, found := copiedLogs[logFile]; !found || copiedLogs[logFile] != logFormat {
 				logUpdated = true
 			}
-			existingLogs[logFile] = logFormat
+			copiedLogs[logFile] = logFormat
 		}
 	}
 
 	// delete old logs
-	for logFile := range existingLogs {
+	for logFile := range copiedLogs {
 		if _, found := newLogs[logFile]; !found {
-			delete(existingLogs, logFile)
+			delete(copiedLogs, logFile)
 			logUpdated = true
 		}
 	}
+
+	existingLogs = copiedLogs
 
 	return logUpdated
 }
