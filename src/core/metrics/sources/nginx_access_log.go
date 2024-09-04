@@ -182,7 +182,6 @@ func (c *NginxAccessLog) Stop() {
 		fn()
 		delete(c.logs, f)
 	}
-	log.Debugf("Stopping NginxAccessLog source for nginx id: %v", c.baseDimensions.NginxId)
 }
 
 func (c *NginxAccessLog) collectLogStats(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {

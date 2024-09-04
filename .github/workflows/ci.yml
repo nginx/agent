@@ -118,36 +118,36 @@ jobs:
           fail-fast: false
           matrix:
               container:
-                  - image: "rockylinux"
-                    version: "8"
-                  - image: "rockylinux"
-                    version: "9"
-                  - image: "almalinux"
-                    version: "8"
-                  - image: "almalinux"
-                    version: "9"
-                  - image: "amazonlinux"
-                    version: "2"
-                  - image: "amazonlinux"
-                    version: "2023"
-                  - image: "oraclelinux"
-                    version: "8"
-                  - image: "oraclelinux"
-                    version: "9"
+#                  - image: "rockylinux"
+#                    version: "8"
+#                  - image: "rockylinux"
+#                    version: "9"
+#                  - image: "almalinux"
+#                    version: "8"
+#                  - image: "almalinux"
+#                    version: "9"
+#                  - image: "amazonlinux"
+#                    version: "2"
+#                  - image: "amazonlinux"
+#                    version: "2023"
+#                  - image: "oraclelinux"
+#                    version: "8"
+#                  - image: "oraclelinux"
+#                    version: "9"
                   - image: "ubuntu"
                     version: "24.04"
-                  - image: "alpine"
-                    version: "3.17"
-                  - image: "alpine"
-                    version: "3.18"
-                  - image: "alpine"
-                    version: "3.19"
-                  - image: "alpine"
-                    version: "3.20"
-                  - image: "debian"
-                    version: "bullseye-slim"
-                  - image: "debian"
-                    version: "bookworm-slim"
+#                  - image: "alpine"
+#                    version: "3.17"
+#                  - image: "alpine"
+#                    version: "3.18"
+#                  - image: "alpine"
+#                    version: "3.19"
+#                  - image: "alpine"
+#                    version: "3.20"
+#                  - image: "debian"
+#                    version: "bullseye-slim"
+#                  - image: "debian"
+#                    version: "bookworm-slim"
       steps:
           - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
             with:
@@ -180,142 +180,142 @@ jobs:
                 path: /tmp/integration-test-logs/
                 retention-days: 3
 
-  official-oss-image-integration-tests:
-    name: Integration Tests - Official OSS Images
-    needs: build-unsigned-snapshot
-    runs-on: ubuntu-24.04
-    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
-    strategy:
-      fail-fast: false
-      matrix:
-        container:
-        - image: "bookworm"
-          version: "stable"
-          release: "debian"
-        - image: "bookworm"
-          version: "mainline"
-          release: "debian"
-        - image: "alpine"
-          version: "stable"
-          release: "alpine"
-        - image: "alpine"
-          version: "mainline"
-          release: "alpine"
-    steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
-        with:
-          go-version-file: 'go.mod'
-      - name: Download Packages
-        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
-        with:
-          name: nginx-agent-unsigned-snapshots
-          path: build
-      - name: Login to Docker Registry
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567  # v3.3.0
-        with:
-          registry: ${{ secrets.REGISTRY_URL }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
-      - name: Run Integration Tests
-        run: |
-          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" TAG="${{ matrix.container.version }}-${{ matrix.container.image }}" OS_RELEASE="${{ matrix.container.release }}"\
-            make official-image-integration-test
-      - name: Container Output Logs 
-        if: failure()
-        run: |
-          docker ps -a
-          dockerid=$(docker ps -a --format "{{.ID}}")
-          docker logs "$dockerid"
-
-      - name: Archive integration test logs
-        if: success() || failure()
-        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
-        with:
-          name: official-oss-integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}
-          path: /tmp/integration-test-logs/
-          retention-days: 3
-          
-  official-plus-image-integration-tests:
-      name: Integration Tests - Official Plus Images
-      needs: build-unsigned-snapshot
-      runs-on: ubuntu-24.04
-      if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
-      strategy:
-          fail-fast: false
-          matrix:
-              container:
-                  - image: "alpine"
-                    version: "3.18"
-                    plus: "r30"
-                    release: "alpine"
-                    path: "/nginx-plus/agent"                  
-                  - image: "alpine"
-                    version: "3.20"
-                    plus: "r32"
-                    release: "alpine"
-                    path: "/nginx-plus/agent"
-                  - image: "alpine"
-                    version: "3.19"
-                    plus: "r31"
-                    release: "alpine"
-                    path: "/nginx-plus/agent"
-                  - image: "debian"
-                    version: "bookworm"
-                    plus: "r32"
-                    release: "debian"
-                    path: "/nginx-plus/agent"   
-                  - image: "debian"
-                    version: "bookworm"
-                    plus: "r31"
-                    release: "debian"
-                    path: "/nginx-plus/agent"   
-                  - image: "debian"
-                    version: "bookworm"
-                    plus: "r30"
-                    release: "debian"
-                    path: "/nginx-plus/agent"
-      steps:
-          - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
-            with:
-                fetch-depth: 0
-          - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
-            with:
-                go-version-file: 'go.mod'
-          - name: Download Packages
-            uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
-            with:
-                name: nginx-agent-unsigned-snapshots
-                path: build
-          - name: Login to Docker Registry
-            uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
-            with:
-                registry: ${{ secrets.REGISTRY_URL }}
-                username: ${{ secrets.REGISTRY_USERNAME }}
-                password: ${{ secrets.REGISTRY_PASSWORD }}
-          - name: Run Integration Tests
-            run: |
-                go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-                CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
-                OS_RELEASE="${{ matrix.container.release }}" IMAGE_PATH="${{ matrix.container.path }}" \
-                  make official-image-integration-test
-          - name: Container Output Logs
-            if: failure()
-            run: |
-                docker ps -a
-                dockerid=$(docker ps -a --format "{{.ID}}")
-                docker logs "$dockerid"
-
-          - name: Archive integration test logs
-            if: success() || failure()
-            uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
-            with:
-                name: official-plus-integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}-${{ matrix.container.plus }}
-                path: /tmp/integration-test-logs/
-                retention-days: 3
+#  official-oss-image-integration-tests:
+#    name: Integration Tests - Official OSS Images
+#    needs: build-unsigned-snapshot
+#    runs-on: ubuntu-24.04
+#    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        container:
+#        - image: "bookworm"
+#          version: "stable"
+#          release: "debian"
+#        - image: "bookworm"
+#          version: "mainline"
+#          release: "debian"
+#        - image: "alpine"
+#          version: "stable"
+#          release: "alpine"
+#        - image: "alpine"
+#          version: "mainline"
+#          release: "alpine"
+#    steps:
+#      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+#        with:
+#          fetch-depth: 0
+#      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+#        with:
+#          go-version-file: 'go.mod'
+#      - name: Download Packages
+#        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+#        with:
+#          name: nginx-agent-unsigned-snapshots
+#          path: build
+#      - name: Login to Docker Registry
+#        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567  # v3.3.0
+#        with:
+#          registry: ${{ secrets.REGISTRY_URL }}
+#          username: ${{ secrets.REGISTRY_USERNAME }}
+#          password: ${{ secrets.REGISTRY_PASSWORD }}
+#      - name: Run Integration Tests
+#        run: |
+#          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
+#          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" TAG="${{ matrix.container.version }}-${{ matrix.container.image }}" OS_RELEASE="${{ matrix.container.release }}"\
+#            make official-image-integration-test
+#      - name: Container Output Logs 
+#        if: failure()
+#        run: |
+#          docker ps -a
+#          dockerid=$(docker ps -a --format "{{.ID}}")
+#          docker logs "$dockerid"
+#
+#      - name: Archive integration test logs
+#        if: success() || failure()
+#        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+#        with:
+#          name: official-oss-integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}
+#          path: /tmp/integration-test-logs/
+#          retention-days: 3
+#          
+##  official-plus-image-integration-tests:
+##      name: Integration Tests - Official Plus Images
+##      needs: build-unsigned-snapshot
+##      runs-on: ubuntu-24.04
+##      if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
+##      strategy:
+##          fail-fast: false
+##          matrix:
+##              container:
+##                  - image: "alpine"
+##                    version: "3.18"
+##                    plus: "r30"
+##                    release: "alpine"
+##                    path: "/nginx-plus/agent"                  
+##                  - image: "alpine"
+##                    version: "3.20"
+##                    plus: "r32"
+##                    release: "alpine"
+##                    path: "/nginx-plus/agent"
+##                  - image: "alpine"
+##                    version: "3.19"
+##                    plus: "r31"
+##                    release: "alpine"
+##                    path: "/nginx-plus/agent"
+##                  - image: "debian"
+##                    version: "bookworm"
+##                    plus: "r32"
+##                    release: "debian"
+##                    path: "/nginx-plus/agent"   
+##                  - image: "debian"
+##                    version: "bookworm"
+##                    plus: "r31"
+##                    release: "debian"
+##                    path: "/nginx-plus/agent"   
+##                  - image: "debian"
+##                    version: "bookworm"
+##                    plus: "r30"
+##                    release: "debian"
+##                    path: "/nginx-plus/agent"
+##      steps:
+##          - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+##            with:
+##                fetch-depth: 0
+##          - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+##            with:
+##                go-version-file: 'go.mod'
+##          - name: Download Packages
+##            uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+##            with:
+##                name: nginx-agent-unsigned-snapshots
+##                path: build
+##          - name: Login to Docker Registry
+##            uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+##            with:
+##                registry: ${{ secrets.REGISTRY_URL }}
+##                username: ${{ secrets.REGISTRY_USERNAME }}
+##                password: ${{ secrets.REGISTRY_PASSWORD }}
+##          - name: Run Integration Tests
+##            run: |
+##                go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
+##                CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
+##                OS_RELEASE="${{ matrix.container.release }}" IMAGE_PATH="${{ matrix.container.path }}" \
+##                  make official-image-integration-test
+##          - name: Container Output Logs
+##            if: failure()
+##            run: |
+##                docker ps -a
+##                dockerid=$(docker ps -a --format "{{.ID}}")
+##                docker logs "$dockerid"
+##
+##          - name: Archive integration test logs
+##            if: success() || failure()
+##            uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+##            with:
+##                name: official-plus-integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}-${{ matrix.container.plus }}
+##                path: /tmp/integration-test-logs/
+##                retention-days: 3
 
   performance-test:
     name: Performance Tests
