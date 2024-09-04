@@ -411,7 +411,7 @@ func (iw *InstanceWatcherService) updateNginxInstanceRuntime(
 		nginxRuntimeInfo := instance.GetInstanceRuntime().GetNginxRuntimeInfo()
 
 		if !reflect.DeepEqual(nginxRuntimeInfo.GetAccessLogs(), accessLogs) ||
-			!reflect.DeepEqual(nginxRuntimeInfo.GetAccessLogs(), errorLogs) ||
+			!reflect.DeepEqual(nginxRuntimeInfo.GetErrorLogs(), errorLogs) ||
 			nginxRuntimeInfo.GetStubStatus() != nginxConfigContext.StubStatus {
 			nginxRuntimeInfo.AccessLogs = accessLogs
 			nginxRuntimeInfo.ErrorLogs = errorLogs
