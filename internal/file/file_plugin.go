@@ -210,8 +210,7 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 				err.Error(),
 			)
 		}
-
-		// what to do?
+		
 		response = fp.createDataPlaneResponse(
 			correlationID,
 			mpi.CommandResponse_COMMAND_STATUS_FAILURE,
