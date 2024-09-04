@@ -12,12 +12,12 @@ MDATAGEN        = go.opentelemetry.io/collector/cmd/mdatagen
 
 install-tools: ## Install tool dependencies
 	@echo "Installing Tools"
-
-    // Workaround because of this issue https://github.com/open-telemetry/opentelemetry-collector/issues/9281
+	
+	# Workaround because of this issue https://github.com/open-telemetry/opentelemetry-collector/issues/9281
 	@go get $(MDATAGEN)
 	@$(GOINST) $(MDATAGEN)
 	@go mod tidy
-
+	
 	@$(GOINST) $(OAPICODEGEN)
 	@$(GOINST) $(LEFTHOOK)
 	@$(GOINST) $(GOLANGCILINT)
