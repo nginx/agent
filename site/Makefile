@@ -17,7 +17,6 @@ MARKDOWNLINT_IMG?=ghcr.io/igorshubovych/markdownlint-cli:latest
 
 ifeq (, $(shell ${MARKDOWNLINT} version 2> /dev/null))
 ifeq (, $(shell docker version 2> /dev/null))
-ifneq (, $(shell $(NETLIFY) "true"))
     $(error Docker and markdownlint are not installed. markdownlint or Docker are required to lint.)
 endif
 else
@@ -30,7 +29,6 @@ MARKDOWNLINKCHECK_IMG?=ghcr.io/tcort/markdown-link-check:stable
 
 ifeq (, $(shell ${MARKDOWNLINKCHECK} --version 2> /dev/null))
 ifeq (, $(shell docker version 2> /dev/null))
-ifneq (, $(shell $(NETLIFY) "true"))
     $(error Docker and markdown-link-check are not installed. markdown-link-check or Docker are required to check links.)
 endif
 else
