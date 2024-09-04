@@ -37,8 +37,6 @@ const (
 )
 
 var (
-	logMutex    sync.Mutex
-	unpackMutex sync.Mutex
 	re          = regexp.MustCompile(`(?P<name>\S+)/(?P<version>\S+)`)
 	plusre      = regexp.MustCompile(`(?P<name>\S+)/(?P<version>\S+).\((?P<plus>\S+plus\S+)\)`)
 )
@@ -64,6 +62,10 @@ type NginxBinary interface {
 type NginxBinaryType struct {
 	detailsMapMutex   sync.Mutex
 	workersMapMutex   sync.Mutex
+	logMutex    	  sync.Mutex
+	logWriteMutex     sync.Mutex
+	unpackMutex 	  sync.Mutex
+	mapMutex    	  sync.Mutex
 	statusUrlMutex    sync.RWMutex
 	env               Environment
 	config            *config.Config
@@ -408,8 +410,8 @@ func (n *NginxBinaryType) WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApp
 		return nil, fmt.Errorf("config directory %s not allowed", filepath.Dir(details.ConfPath))
 	}
 
-	unpackMutex.Lock()
-	defer unpackMutex.Unlock()
+	n.unpackMutex.Lock()
+	defer n.unpackMutex.Unlock()
 
 	log.Info("Updating NGINX config")
 	var configApply *sdk.ConfigApply
@@ -661,30 +663,46 @@ func (n *NginxBinaryType) ReadConfig(confFile, nginxId, systemId string) (*proto
 		return nil, err
 	}
 
-	// get access logs list for analysis
-	accessLogs := AccessLogs(configPayload)
-	// get error logs list for analysis
-	errorLogs := ErrorLogs(configPayload)
+	n.logWriteMutex.Lock()
+	n.accessLogsUpdated = n.UpdateLogs(n.GetAccessLogs(), AccessLogs(configPayload))
+	n.logWriteMutex.Unlock()
 
-	logMutex.Lock()
-	defer logMutex.Unlock()
+	n.logWriteMutex.Lock()
+	n.errorLogsUpdated = n.UpdateLogs(n.GetErrorLogs(), ErrorLogs(configPayload))
+	n.logWriteMutex.Unlock()
 
-	n.accessLogsUpdated = n.UpdateLogs(n.accessLogs, accessLogs)
-	n.errorLogsUpdated = n.UpdateLogs(n.errorLogs, errorLogs)
+
 
 	return configPayload, nil
 }
 
 func (n *NginxBinaryType) GetAccessLogs() map[string]string {
-	logMutex.Lock()
-	defer logMutex.Unlock()
-	return n.accessLogs
+	n.logMutex.Lock()
+	// Create a new map with the same size as the original
+	copiedLogs := make(map[string]string, len(n.accessLogs))
+	// Copy each key-value pair from the original map to the new map
+	for logFile, logFormat := range n.accessLogs {
+		copiedLogs[logFile] = logFormat
+	}
+	n.logMutex.Unlock()
+		
+	// Return the new map
+	return copiedLogs
 }
 
 func (n *NginxBinaryType) GetErrorLogs() map[string]string {
-	logMutex.Lock()
-	defer logMutex.Unlock()
-	return n.errorLogs
+	n.logMutex.Lock()
+	// Create a new map with the same size as the original
+	copiedLogs := make(map[string]string, len(n.errorLogs))
+	
+	// Copy each key-value pair from the original map to the new map
+	for logFile, logFormat := range n.errorLogs {
+		copiedLogs[logFile] = logFormat
+	}
+	n.logMutex.Unlock()
+
+	// Return the new map
+	return copiedLogs
 }
 
 // SkipLog checks if a logfile should be omitted from analysis
@@ -802,6 +820,9 @@ func parseConfigureArguments(line string) (result map[string]interface{}, flags 
 }
 
 func (n *NginxBinaryType) getNginxInfoFrom(ngxExe string) *nginxInfo {
+	// n.mapMutex.Lock()
+	// defer n.mapMutex.Unlock()
+
 	if ngxExe == "" {
 		return &nginxInfo{}
 	}
@@ -906,6 +927,7 @@ func (n *NginxBinaryType) parseModulePath(dir string) ([]string, error) {
 }
 
 func (n *NginxBinaryType) UpdateLogs(existingLogs map[string]string, newLogs map[string]string) bool {
+    
 	logUpdated := false
 
 	for logFile, logFormat := range newLogs {

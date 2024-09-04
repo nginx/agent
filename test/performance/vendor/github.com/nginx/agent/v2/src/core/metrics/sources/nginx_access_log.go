@@ -329,10 +329,10 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 			mu.Unlock()
 
 		case <-tick.C:
+			mu.Lock()
+
 			c.baseDimensions.NginxType = c.nginxType
 			c.baseDimensions.PublishedAPI = logFile
-
-			mu.Lock()
 
 			if len(requestLengths) > 0 {
 				httpCounters["request.length"] = getAverageMetricValue(requestLengths)
