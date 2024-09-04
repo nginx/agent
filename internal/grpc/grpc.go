@@ -176,23 +176,37 @@ func GetDialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOp
 		unaryClientInterceptors = append(unaryClientInterceptors, protoValidatorUnaryClientInterceptor)
 	}
 
-	opts := []grpc.DialOption{
-		grpc.WithChainStreamInterceptor(streamClientInterceptors...),
-		grpc.WithChainUnaryInterceptor(unaryClientInterceptors...),
-		grpc.WithDefaultServiceConfig(serviceConfig),
-	}
-
+	sendRecOpts := []grpc.DialOption{}
 	if agentConfig.Client != nil {
+		if agentConfig.Client.MaxMessageSize != 0 {
+			sendRecOpts = append(sendRecOpts, grpc.WithDefaultCallOptions(
+				grpc.MaxCallRecvMsgSize(agentConfig.Client.MaxMessageSize),
+				grpc.MaxCallSendMsgSize(agentConfig.Client.MaxMessageSize),
+			))
+		} else {
+			sendRecOpts = append(sendRecOpts, grpc.WithDefaultCallOptions(
+				grpc.MaxCallRecvMsgSize(agentConfig.Client.MaxMessageRecieveSize),
+				grpc.MaxCallSendMsgSize(agentConfig.Client.MaxMessageSendSize),
+			))
+		}
 		keepAlive := keepalive.ClientParameters{
 			Time:                agentConfig.Client.Time,
 			Timeout:             agentConfig.Client.Timeout,
 			PermitWithoutStream: agentConfig.Client.PermitWithoutStream,
 		}
 
-		opts = append(opts,
+		sendRecOpts = append(sendRecOpts,
 			grpc.WithKeepaliveParams(keepAlive),
 		)
 	}
+
+	opts := []grpc.DialOption{
+		grpc.WithChainStreamInterceptor(streamClientInterceptors...),
+		grpc.WithChainUnaryInterceptor(unaryClientInterceptors...),
+		grpc.WithDefaultServiceConfig(serviceConfig),
+	}
+
+	opts = append(opts, sendRecOpts...)
 
 	transportCredentials, err := getTransportCredentials(agentConfig)
 	if err == nil {

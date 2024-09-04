@@ -7,7 +7,6 @@ package helpers
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"testing"
 
@@ -34,27 +33,33 @@ func StartContainer(
 ) testcontainers.Container {
 	tb.Helper()
 
-	containerOSType := Env(tb, "CONTAINER_OS_TYPE")
 	packageName := Env(tb, "PACKAGE_NAME")
 	packageRepo := Env(tb, "PACKAGES_REPO")
 	baseImage := Env(tb, "BASE_IMAGE")
 	osRelease := Env(tb, "OS_RELEASE")
 	osVersion := Env(tb, "OS_VERSION")
 	buildTarget := Env(tb, "BUILD_TARGET")
+	dockerfilePath := Env(tb, "DOCKERFILE_PATH")
+	containerRegistry := Env(tb, "CONTAINER_NGINX_IMAGE_REGISTRY")
+	tag := Env(tb, "TAG")
+	imagePath := Env(tb, "IMAGE_PATH")
 
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:       "../../",
-			Dockerfile:    fmt.Sprintf("./scripts/docker/nginx-oss/%s/Dockerfile", containerOSType),
+			Dockerfile:    dockerfilePath,
 			KeepImage:     false,
 			PrintBuildLog: true,
 			BuildArgs: map[string]*string{
-				"PACKAGE_NAME":  ToPtr(packageName),
-				"PACKAGES_REPO": ToPtr(packageRepo),
-				"BASE_IMAGE":    ToPtr(baseImage),
-				"OS_RELEASE":    ToPtr(osRelease),
-				"OS_VERSION":    ToPtr(osVersion),
-				"ENTRY_POINT":   ToPtr("./scripts/docker/entrypoint.sh"),
+				"PACKAGE_NAME":                   ToPtr(packageName),
+				"PACKAGES_REPO":                  ToPtr(packageRepo),
+				"BASE_IMAGE":                     ToPtr(baseImage),
+				"OS_RELEASE":                     ToPtr(osRelease),
+				"OS_VERSION":                     ToPtr(osVersion),
+				"ENTRY_POINT":                    ToPtr("./scripts/docker/entrypoint.sh"),
+				"CONTAINER_NGINX_IMAGE_REGISTRY": ToPtr(containerRegistry),
+				"IMAGE_PATH":                     ToPtr(imagePath),
+				"TAG":                            ToPtr(tag),
 			},
 			BuildOptionsModifier: func(buildOptions *types.ImageBuildOptions) {
 				buildOptions.Target = buildTarget
