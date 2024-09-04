@@ -85,16 +85,8 @@ service:
   telemetry:
     logs:
       level: {{ .Log.Level -}}
-      {{- if .Log.Path}}
       output_paths: ["{{ .Log.Path -}}"]
-      {{- else }}
-      output_paths: ["stderr"]
-      {{- end }}
-      {{- if .Log.Path}}
       error_output_paths: ["{{ .Log.Path -}}"]
-      {{- else }}
-      error_output_paths: ["stderr"]
-      {{- end }}
   extensions:
     - health_check
   pipelines:

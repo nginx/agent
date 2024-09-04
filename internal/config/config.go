@@ -336,6 +336,14 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 		return nil, fmt.Errorf("unmarshal collector config: %w", err)
 	}
 
+	if log.Level == "" {
+		log.Level = DefCollectorLogLevel
+	}
+
+	if log.Path == "" {
+		log.Path = DefCollectorLogPath
+	}
+
 	col := &Collector{
 		ConfigPath: viperInstance.GetString(CollectorConfigPathKey),
 		Exporters:  exporters,
