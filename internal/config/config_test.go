@@ -71,6 +71,10 @@ func TestResolveConfig(t *testing.T) {
 		actual.ConfigDir)
 
 	assert.Equal(t, allowedDir, actual.AllowedDirectories)
+
+	assert.Equal(t, 5*time.Second, actual.Watchers.InstanceWatcher.MonitoringFrequency)
+	assert.Equal(t, 5*time.Second, actual.Watchers.InstanceHealthWatcher.MonitoringFrequency)
+	assert.Equal(t, 5*time.Second, actual.Watchers.FileWatcher.MonitoringFrequency)
 }
 
 func TestSetVersion(t *testing.T) {

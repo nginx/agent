@@ -20,6 +20,7 @@ const (
 	UUIDKey                                     = "uuid"
 	InstanceWatcherMonitoringFrequencyKey       = "watchers_instance_watcher_monitoring_frequency"
 	InstanceHealthWatcherMonitoringFrequencyKey = "watchers_instance_health_watcher_monitoring_frequency"
+	FileWatcherMonitoringFrequencyKey           = "watchers_file_watcher_monitoring_frequency"
 )
 
 var (

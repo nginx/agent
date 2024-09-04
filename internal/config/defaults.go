@@ -35,6 +35,7 @@ const (
 
 	DefInstanceWatcherMonitoringFrequency       = 5 * time.Second
 	DefInstanceHealthWatcherMonitoringFrequency = 5 * time.Second
+	DefFileWatcherMonitoringFrequency           = 5 * time.Second
 
 	// 0 = unset
 	DefMaxMessageSize = 0
