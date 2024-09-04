@@ -932,7 +932,7 @@ func (n *NginxBinaryType) UpdateLogs(existingLogs map[string]string, newLogs map
 		}
 	}
 
-	existingLogs = copiedLogs
+	//existingLogs = copiedLogs
 
 	return logUpdated
 }
