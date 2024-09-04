@@ -397,8 +397,8 @@ func (iw *InstanceWatcherService) updateNginxInstanceRuntime(
 	if instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
 		nginxPlusRuntimeInfo := instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo()
 
-		if reflect.DeepEqual(nginxPlusRuntimeInfo.GetAccessLogs(), accessLogs) ||
-			reflect.DeepEqual(nginxPlusRuntimeInfo.GetErrorLogs(), errorLogs) ||
+		if !reflect.DeepEqual(nginxPlusRuntimeInfo.GetAccessLogs(), accessLogs) ||
+			!reflect.DeepEqual(nginxPlusRuntimeInfo.GetErrorLogs(), errorLogs) ||
 			nginxPlusRuntimeInfo.GetStubStatus() != nginxConfigContext.StubStatus ||
 			nginxPlusRuntimeInfo.GetPlusApi() != nginxConfigContext.PlusAPI {
 			nginxPlusRuntimeInfo.AccessLogs = accessLogs
@@ -410,8 +410,8 @@ func (iw *InstanceWatcherService) updateNginxInstanceRuntime(
 	} else {
 		nginxRuntimeInfo := instance.GetInstanceRuntime().GetNginxRuntimeInfo()
 
-		if reflect.DeepEqual(nginxRuntimeInfo.GetAccessLogs(), accessLogs) ||
-			reflect.DeepEqual(nginxRuntimeInfo.GetAccessLogs(), errorLogs) ||
+		if !reflect.DeepEqual(nginxRuntimeInfo.GetAccessLogs(), accessLogs) ||
+			!reflect.DeepEqual(nginxRuntimeInfo.GetAccessLogs(), errorLogs) ||
 			nginxRuntimeInfo.GetStubStatus() != nginxConfigContext.StubStatus {
 			nginxRuntimeInfo.AccessLogs = accessLogs
 			nginxRuntimeInfo.ErrorLogs = errorLogs
