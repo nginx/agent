@@ -46,7 +46,7 @@ detect_nginx_users() {
         if [ "$ID" = "alpine" ]; then
             nginx_user=$(ps aux | grep "nginx: master process" | grep -v grep | head -1 | awk '{print $2}')
         else
-            nginx_user=$(ps aux | grep "nginx: master process" | grep -v grep | head -1 | awk '{print $1}')
+            nginx_user=$(ps aux | grep "nginx: master process" | grep -v grep | head -1 | cut -f1 -d " ")
         fi
 
         if [ -z "${nginx_user}" ]; then
@@ -87,7 +87,7 @@ detect_nginx_users() {
         if [ "$ID" = "alpine" ]; then
             worker_user=$(ps aux | grep "nginx: worker process" | grep -v grep | head -1 | awk '{print $2}')
         else
-            worker_user=$(ps aux | grep "nginx: worker process" | grep -v grep | head -1 | awk '{print $1}')
+            worker_user=$(ps aux | grep "nginx: worker process" | grep -v grep | head -1 | cut -f1 -d " ")
         fi
 
         if [ -z "${worker_user}" ]; then

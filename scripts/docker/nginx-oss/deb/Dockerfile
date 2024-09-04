@@ -6,6 +6,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG ENTRY_POINT
 ARG PACKAGE_NAME
 ARG PACKAGES_REPO
+ARG OS_RELEASE
 
 WORKDIR /agent
 COPY ./build /agent/build
@@ -26,7 +27,7 @@ RUN set -x \
 
 # Setup nginx agent repository
 RUN curl https://nginx.org/keys/nginx_signing.key | gpg --dearmor | tee /usr/share/keyrings/nginx-archive-keyring.gpg >/dev/null \
-    && printf "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] http://${PACKAGES_REPO}/nginx-agent/ubuntu/ `lsb_release -cs` agent\n" > /etc/apt/sources.list.d/nginx-agent.list
+    && printf "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] http://${PACKAGES_REPO}/nginx-agent/${OS_RELEASE}/ `lsb_release -cs` agent\n" > /etc/apt/sources.list.d/nginx-agent.list
 
 RUN chmod +x /agent/entrypoint.sh
 STOPSIGNAL SIGTERM
@@ -43,4 +44,7 @@ RUN apt install -y /agent/build/$PACKAGE_NAME.deb
 
 FROM install-nginx as install-agent-repo
 
-RUN apt-get update && apt-get install -y nginx-agent
+ARG NGINX_AGENT_VERSION
+
+RUN apt-get update
+RUN if [ -z "$NGINX_AGENT_VERSION" ]; then apt-get install -y nginx-agent; else apt-get install -y nginx-agent=${NGINX_AGENT_VERSION}; fi
