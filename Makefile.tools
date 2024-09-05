@@ -15,7 +15,7 @@ install-tools: ## Install tool dependencies
 	
 	# Workaround because of this issue https://github.com/open-telemetry/opentelemetry-collector/issues/9281
 	@go get $(MDATAGEN)
-	@$(GOINST) $(MDATAGEN)
+	@$(GOINST) -mod=readonly $(MDATAGEN)
 	@go mod tidy
 	
 	@$(GOINST) $(OAPICODEGEN)
