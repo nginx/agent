@@ -42,7 +42,7 @@ tls:
     skip_verify: true
 
 log:
-    level: debug
+    level: info
     path: /var/log/nginx-agent/
 
 nginx:
