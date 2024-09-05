@@ -3,14 +3,10 @@ receivers:
   hostmetrics:
     collection_interval: {{ .Receivers.HostMetrics.CollectionInterval }}
     initial_delay: {{ .Receivers.HostMetrics.InitialDelay }}
-    scrapers:
-      cpu:
-      disk:
-      load:
-      filesystem:
-      memory:
-      network:
-      paging:
+    scrapers: 
+    {{- range $key, $value := .Receivers.HostMetrics.Scrapers }}
+      {{ $key }}:
+    {{- end }}
 {{- end }}
 {{- range $index, $otlpReceiver := .Receivers.OtlpReceivers }}
   otlp/{{$index}}:

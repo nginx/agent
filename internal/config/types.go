@@ -136,8 +136,9 @@ type (
 	}
 
 	HostMetrics struct {
-		CollectionInterval time.Duration `yaml:"-" mapstructure:"collection_interval"`
-		InitialDelay       time.Duration `yaml:"-" mapstructure:"initial_delay"`
+		CollectionInterval time.Duration       `yaml:"-" mapstructure:"collection_interval"`
+		InitialDelay       time.Duration       `yaml:"-" mapstructure:"initial_delay"`
+		Scrapers           map[string]struct{} `yaml:"-" mapstructure:"scrapers"`
 	}
 
 	GRPC struct {
