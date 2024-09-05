@@ -79,15 +79,16 @@ func TestCommandService_UpdateDataPlaneStatus(t *testing.T) {
 	defer commandService.CancelSubscription(ctx)
 
 	// Fail first time since there are no other instances besides the agent
-	_, err := commandService.UpdateDataPlaneStatus(ctx, protos.GetHostResource())
+	err := commandService.UpdateDataPlaneStatus(ctx, protos.GetHostResource())
 	require.Error(t, err)
 
 	resource := protos.GetHostResource()
 	resource.Instances = append(resource.Instances, protos.GetNginxOssInstance([]string{}))
-	_, err = commandService.UpdateDataPlaneStatus(ctx, resource)
+	_, connectionErr := commandService.CreateConnection(ctx, resource)
+	require.NoError(t, connectionErr)
+	err = commandService.UpdateDataPlaneStatus(ctx, resource)
 
 	require.NoError(t, err)
-	assert.Equal(t, 1, commandServiceClient.CreateConnectionCallCount())
 	assert.Equal(t, 1, commandServiceClient.UpdateDataPlaneStatusCallCount())
 }
 
@@ -118,7 +119,7 @@ func TestCommandService_UpdateDataPlaneStatusSubscribeError(t *testing.T) {
 
 	commandService.isConnected.Store(true)
 
-	_, err := commandService.UpdateDataPlaneStatus(ctx, protos.GetHostResource())
+	err := commandService.UpdateDataPlaneStatus(ctx, protos.GetHostResource())
 	require.Error(t, err)
 
 	if s := logBuf.String(); !strings.Contains(s, "Failed to send update data plane status") {
@@ -146,7 +147,7 @@ func TestCommandService_UpdateDataPlaneHealth(t *testing.T) {
 	// connection created
 	resource := protos.GetHostResource()
 	resource.Instances = append(resource.Instances, protos.GetNginxOssInstance([]string{}))
-	_, err = commandService.createConnection(ctx, resource)
+	_, err = commandService.CreateConnection(ctx, resource)
 	require.NoError(t, err)
 	assert.Equal(t, 1, commandServiceClient.CreateConnectionCallCount())
 

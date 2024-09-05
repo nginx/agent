@@ -74,7 +74,17 @@ func TestCommandPlugin_Process(t *testing.T) {
 	require.NoError(t, err)
 	defer commandPlugin.Close(ctx)
 
+	// Check CreateConnection
+	fakeCommandService.CheckConnectionReturnsOnCall(0, false)
+
+	// Check UpdateDataPlaneStatus
+	fakeCommandService.CheckConnectionReturnsOnCall(1, true)
+	fakeCommandService.CheckConnectionReturnsOnCall(2, true)
+
 	commandPlugin.commandService = fakeCommandService
+
+	commandPlugin.Process(ctx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: protos.GetHostResource()})
+	require.Equal(t, 1, fakeCommandService.CreateConnectionCallCount())
 
 	commandPlugin.Process(ctx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: protos.GetHostResource()})
 	require.Equal(t, 1, fakeCommandService.UpdateDataPlaneStatusCallCount())

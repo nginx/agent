@@ -9,6 +9,7 @@ import (
 	"context"
 	"flag"
 	"log/slog"
+	"math"
 	"net"
 	"os"
 	"path/filepath"
@@ -54,6 +55,8 @@ func main() {
 	agentConfig.Command.Auth = nil
 	agentConfig.Command.TLS = nil
 	agentConfig.Common.MaxElapsedTime = *sleepDuration
+	agentConfig.Client.MaxMessageRecieveSize = 4194304
+	agentConfig.Client.MaxMessageSendSize = math.MaxInt
 
 	newLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
 		Level: logger.GetLogLevel(*logLevel),
@@ -69,7 +72,7 @@ func main() {
 		}
 	}
 
-	slog.DebugContext(ctx, "Config directory", "directory", configDirectory)
+	slog.DebugContext(ctx, "Config directory", "directory", *configDirectory)
 
 	_, err = grpc.NewMockManagementServer(*apiAddress, agentConfig, configDirectory)
 	if err != nil {

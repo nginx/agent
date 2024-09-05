@@ -71,21 +71,18 @@ func NewCommandService(
 	return commandService
 }
 
+func (cs *CommandService) CheckConnection() bool {
+	return cs.isConnected.Load()
+}
+
 func (cs *CommandService) UpdateDataPlaneStatus(
 	ctx context.Context,
 	resource *mpi.Resource,
-) (*mpi.CreateConnectionResponse, error) {
-	var createConnectionResponse *mpi.CreateConnectionResponse
-	if !cs.isConnected.Load() {
-		response, err := cs.createConnection(ctx, resource)
-		if err != nil {
-			return nil, err
-		}
-
-		createConnectionResponse = response
-	}
-
+) error {
 	correlationID := logger.GetCorrelationID(ctx)
+	if !cs.isConnected.Load() {
+		return errors.New("command service client not connected yet")
+	}
 
 	request := &mpi.UpdateDataPlaneStatusRequest{
 		MessageMeta: &mpi.MessageMeta{
@@ -100,7 +97,8 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 	defer backoffCancel()
 
 	sendDataPlaneStatus := func() (*mpi.UpdateDataPlaneStatusResponse, error) {
-		slog.DebugContext(ctx, "Sending data plane status update request", "request", request)
+		slog.DebugContext(ctx, "Sending data plane status update request", "request", request,
+			"parent_correlation_id", correlationID)
 		if cs.commandServiceClient == nil {
 			return nil, errors.New("command service client is not initialized")
 		}
@@ -122,11 +120,11 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 		backoffHelpers.Context(backOffCtx, cs.agentConfig.Common),
 	)
 	if err != nil {
-		return createConnectionResponse, err
+		return err
 	}
 	slog.DebugContext(ctx, "UpdateDataPlaneStatus response", "response", response)
 
-	return createConnectionResponse, err
+	return err
 }
 
 func (cs *CommandService) UpdateDataPlaneHealth(ctx context.Context, instanceHealths []*mpi.InstanceHealth) error {
@@ -205,7 +203,7 @@ func (cs *CommandService) subscribe(ctx context.Context) {
 	}
 }
 
-func (cs *CommandService) createConnection(
+func (cs *CommandService) CreateConnection(
 	ctx context.Context,
 	resource *mpi.Resource,
 ) (*mpi.CreateConnectionResponse, error) {

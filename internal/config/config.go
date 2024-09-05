@@ -145,7 +145,8 @@ func registerFlags() {
 	)
 
 	fs.Duration(ClientTimeoutKey, time.Minute, "Client timeout")
-	fs.String(ConfigDirectoriesKey, "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules",
+	fs.String(ConfigDirectoriesKey,
+		DefConfigDirectories,
 		"Defines the paths that you want to grant NGINX Agent read/write access to."+
 			" This key is formatted as a string and follows Unix PATH format")
 
@@ -202,6 +203,12 @@ func registerFlags() {
 		"How often the NGINX Agent will check for instance health changes.",
 	)
 
+	fs.Duration(
+		FileWatcherMonitoringFrequencyKey,
+		DefFileWatcherMonitoringFrequency,
+		"How often the NGINX Agent will check for file changes.",
+	)
+
 	fs.String(
 		CollectorConfigPathKey,
 		DefCollectorConfigPath,
@@ -221,6 +228,24 @@ func registerFlags() {
 		DefCollectorLogPath,
 		`The path to output OTel collector log messages to. 
 		If the default path doesn't exist, log messages are output to stdout/stderr.`,
+	)
+
+	fs.Int(
+		ClientMaxMessageSizeKey,
+		DefMaxMessageSize,
+		"The value used, if not 0, for both max_message_send_size and max_message_receive_size",
+	)
+
+	fs.Int(
+		ClientMaxMessageRecieveSizeKey,
+		DefMaxMessageRecieveSize,
+		"Updates the client grpc setting MaxRecvMsgSize with the specific value in MB.",
+	)
+
+	fs.Int(
+		ClientMaxMessageSendSizeKey,
+		DefMaxMessageSendSize,
+		"Updates the client grpc setting MaxSendMsgSize with the specific value in MB.",
 	)
 
 	fs.SetNormalizeFunc(normalizeFunc)
@@ -301,9 +326,12 @@ func resolveDataPlaneConfig() *DataPlaneConfig {
 
 func resolveClient() *Client {
 	return &Client{
-		Timeout:             viperInstance.GetDuration(ClientTimeoutKey),
-		Time:                viperInstance.GetDuration(ClientTimeKey),
-		PermitWithoutStream: viperInstance.GetBool(ClientPermitWithoutStreamKey),
+		Timeout:               viperInstance.GetDuration(ClientTimeoutKey),
+		Time:                  viperInstance.GetDuration(ClientTimeKey),
+		PermitWithoutStream:   viperInstance.GetBool(ClientPermitWithoutStreamKey),
+		MaxMessageSize:        viperInstance.GetInt(ClientMaxMessageSizeKey),
+		MaxMessageRecieveSize: viperInstance.GetInt(ClientMaxMessageRecieveSizeKey),
+		MaxMessageSendSize:    viperInstance.GetInt(ClientMaxMessageSendSizeKey),
 	}
 }
 
@@ -420,6 +448,9 @@ func resolveWatchers() *Watchers {
 		},
 		InstanceHealthWatcher: InstanceHealthWatcher{
 			MonitoringFrequency: DefInstanceHealthWatcherMonitoringFrequency,
+		},
+		FileWatcher: FileWatcher{
+			MonitoringFrequency: DefFileWatcherMonitoringFrequency,
 		},
 	}
 }

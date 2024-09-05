@@ -20,6 +20,7 @@ const (
 	UUIDKey                                     = "uuid"
 	InstanceWatcherMonitoringFrequencyKey       = "watchers_instance_watcher_monitoring_frequency"
 	InstanceHealthWatcherMonitoringFrequencyKey = "watchers_instance_health_watcher_monitoring_frequency"
+	FileWatcherMonitoringFrequencyKey           = "watchers_file_watcher_monitoring_frequency"
 )
 
 var (
@@ -27,6 +28,9 @@ var (
 	ClientPermitWithoutStreamKey   = pre(ClientRootKey) + "permit_without_stream"
 	ClientTimeKey                  = pre(ClientRootKey) + "time"
 	ClientTimeoutKey               = pre(ClientRootKey) + "timeout"
+	ClientMaxMessageSendSizeKey    = pre(ClientRootKey) + "max_message_send_size"
+	ClientMaxMessageRecieveSizeKey = pre(ClientRootKey) + "max_message_receive_size"
+	ClientMaxMessageSizeKey        = pre(ClientRootKey) + "max_message_size"
 	CollectorConfigPathKey         = pre(CollectorRootKey) + "config_path"
 	CollectorExportersKey          = pre(CollectorRootKey) + "exporters"
 	CollectorProcessorsKey         = pre(CollectorRootKey) + "processors"

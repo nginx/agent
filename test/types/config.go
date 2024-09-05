@@ -124,6 +124,9 @@ func AgentConfig() *config.Config {
 			InstanceHealthWatcher: config.InstanceHealthWatcher{
 				MonitoringFrequency: config.DefInstanceWatcherMonitoringFrequency,
 			},
+			FileWatcher: config.FileWatcher{
+				MonitoringFrequency: config.DefFileWatcherMonitoringFrequency,
+			},
 		},
 	}
 }
