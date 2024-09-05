@@ -53,30 +53,28 @@ type NginxBinary interface {
 	UpdateNginxDetailsFromProcesses(nginxProcesses []*Process)
 	WriteConfig(config *proto.NginxConfig) (*sdk.ConfigApply, error)
 	ReadConfig(path, nginxId, systemId string) (*proto.NginxConfig, error)
-	UpdateLogs(existingLogs map[string]string, newLogs map[string]string) bool
+	UpdateLogs(existingLogs map[string]string, newLogs map[string]string) map[string]string
 	GetAccessLogs() map[string]string
 	GetErrorLogs() map[string]string
 	GetChildProcesses() map[string][]*proto.NginxDetails
 }
 
 type NginxBinaryType struct {
-	detailsMapMutex   sync.Mutex
-	workersMapMutex   sync.Mutex
-	logMutex          sync.Mutex
-	logWriteMutex     sync.Mutex
-	unpackMutex       sync.Mutex
-	mapMutex          sync.Mutex
-	statusUrlMutex    sync.RWMutex
-	env               Environment
-	config            *config.Config
-	nginxDetailsMap   map[string]*proto.NginxDetails
-	nginxWorkersMap   map[string][]*proto.NginxDetails
-	nginxInfoMap      map[string]*nginxInfo
-	accessLogs        map[string]string
-	errorLogs         map[string]string
-	statusUrls        map[string]string
-	accessLogsUpdated bool
-	errorLogsUpdated  bool
+	detailsMapMutex sync.Mutex
+	workersMapMutex sync.Mutex
+	logMutex        sync.Mutex
+	logWriteMutex   sync.Mutex
+	unpackMutex     sync.Mutex
+	mapMutex        sync.Mutex
+	statusUrlMutex  sync.RWMutex
+	env             Environment
+	config          *config.Config
+	nginxDetailsMap map[string]*proto.NginxDetails
+	nginxWorkersMap map[string][]*proto.NginxDetails
+	nginxInfoMap    map[string]*nginxInfo
+	accessLogs      map[string]string
+	errorLogs       map[string]string
+	statusUrls      map[string]string
 }
 
 type nginxInfo struct {
@@ -664,12 +662,10 @@ func (n *NginxBinaryType) ReadConfig(confFile, nginxId, systemId string) (*proto
 	}
 
 	n.logWriteMutex.Lock()
-	n.accessLogsUpdated = n.UpdateLogs(n.GetAccessLogs(), AccessLogs(configPayload))
-	n.logWriteMutex.Unlock()
+	defer n.logWriteMutex.Unlock()
+	n.accessLogs = n.UpdateLogs(n.GetAccessLogs(), AccessLogs(configPayload))
 
-	n.logWriteMutex.Lock()
-	n.errorLogsUpdated = n.UpdateLogs(n.GetErrorLogs(), ErrorLogs(configPayload))
-	n.logWriteMutex.Unlock()
+	n.errorLogs = n.UpdateLogs(n.GetErrorLogs(), ErrorLogs(configPayload))
 
 	return configPayload, nil
 }
@@ -799,8 +795,8 @@ func parseConfigureArguments(line string) (result map[string]interface{}, flags 
 }
 
 func (n *NginxBinaryType) getNginxInfoFrom(ngxExe string) *nginxInfo {
-	// n.mapMutex.Lock()
-	// defer n.mapMutex.Unlock()
+	n.mapMutex.Lock()
+	defer n.mapMutex.Unlock()
 
 	if ngxExe == "" {
 		return &nginxInfo{}
@@ -905,9 +901,8 @@ func (n *NginxBinaryType) parseModulePath(dir string) ([]string, error) {
 	return result, nil
 }
 
-func (n *NginxBinaryType) UpdateLogs(existingLogs map[string]string, newLogs map[string]string) bool {
+func (n *NginxBinaryType) UpdateLogs(existingLogs map[string]string, newLogs map[string]string) map[string]string {
 	log.Debug("UpdateLogs")
-	logUpdated := false
 
 	copiedLogs := make(map[string]string, len(existingLogs))
 	// Copy each key-value pair from the original map to the new map
@@ -917,9 +912,6 @@ func (n *NginxBinaryType) UpdateLogs(existingLogs map[string]string, newLogs map
 
 	for logFile, logFormat := range newLogs {
 		if !(strings.HasPrefix(logFile, "syslog:") || n.SkipLog(logFile)) {
-			if _, found := copiedLogs[logFile]; !found || copiedLogs[logFile] != logFormat {
-				logUpdated = true
-			}
 			copiedLogs[logFile] = logFormat
 		}
 	}
@@ -928,13 +920,10 @@ func (n *NginxBinaryType) UpdateLogs(existingLogs map[string]string, newLogs map
 	for logFile := range copiedLogs {
 		if _, found := newLogs[logFile]; !found {
 			delete(copiedLogs, logFile)
-			logUpdated = true
 		}
 	}
 
-	// existingLogs = copiedLogs
-
-	return logUpdated
+	return copiedLogs
 }
 
 func parseNginxVersion(line string) (version, plusVersion string) {
