@@ -215,9 +215,10 @@ You can pass the following arguments when running the **make** command to build 
 {{<bootstrap-table "table table-striped table-border">}}
 | Argument | Definition |
 | ---------------- | -------------------------|
-| PACKAGE_NAME     | **Required.** The full path to the downloaded [agent binary package](#agent-binary). <br>Must precede the **make** command. |
 | OS_RELEASE      | The Linux distribution to use as the base image. <br>Can also be set in the repo Makefile.|
 | OS_VERSION      | The version of the Linux distribution to use as the base image. <br>Can also be set in the repo Makefile.|
+| AGENT_VERSION      | fill in later.|
+
 {{</bootstrap-table>}}
 
 Refer to the [Supported distributions]({{< relref "/technical-specifications.md#supported-distributions" >}}) table to find out which base images you can use.
@@ -364,9 +365,11 @@ PACKAGE_NAME=[PATH-TO-PACKAGE] make official-plus-image
 ## Supported OS Versions
 
 The following OS versions for Alpine Linux are supported:
-- 8
-- 9
-IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=alpine OS_VERSION=8 make official-plus-image
+ - 3.17 
+ - 3.18 
+ - 3.19 
+ - 3.20      
+IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.38.0 OS_RELEASE=alpine OS_VERSION=3.20 make official-plus-image
 ```
 
 {{% /tab %}}
