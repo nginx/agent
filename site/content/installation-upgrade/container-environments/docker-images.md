@@ -217,7 +217,7 @@ You can pass the following arguments when running the **make** command to build 
 | ---------------- | -------------------------|
 | OS_RELEASE      | The Linux distribution to use as the base image. <br>Can also be set in the repo Makefile.|
 | OS_VERSION      | The version of the Linux distribution to use as the base image. <br>Can also be set in the repo Makefile.|
-| AGENT_VERSION      | fill in later.|
+| AGENT_VERSION      | The versions of NGINX agent that you want installed on the image.|
 
 {{</bootstrap-table>}}
 
@@ -231,119 +231,18 @@ Keep the following information in mind when using the NGINX Agent [Dockerfiles](
 
 ### Build NGINX open source images
 
-Run the following **make** command to build the default image, which uses Alpine 3.19 as the base image.
+Run the following **make** command to build the default image, which uses Alpine as the base image.
 
 ```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] make official-oss-image
+PACKAGE_NAME=install-agent-repo make official-oss-image
 ```
 
-### Example build commands by distribution
-
-{{<tabs name="build-oss-image">}}
-
-{{%tab name="alma linux"%}}
-
+To build an image with debian and older version of the NGINX Agent you can run the following command.
 ```shell
-## Supported OS Versions
-
-The following OS versions for Alma Linux are supported:
-- 8
-- 9
-IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=almalinux OS_VERSION=8 make oss-image
+Bug: agent not found
+IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=v2.37.0 OS_RELEASE=debian OS_VERSION=bullseye-slim make oss-image
 ```
 
-{{% /tab %}}
-
-{{%tab name="alpine linux"%}}
-
-```shell
-## Supported OS Versions
-
-The following OS versions for Alpine Linux are supported:
-- 8
-- 9
-IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=almalinux OS_VERSION=8 make oss-image
-```
-
-{{% /tab %}}
-
-{{%tab name="amazon linux"%}}
-
-```shell
-## Supported OS Versions
-
-The following OS versions for Amazon Linux are supported:
-
-- 3.17
-- 3.18
-- 3.19
-- 3.20
-
-IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=amazonlinux OS_VERSION=3.17 make oss-image
-```
-
-{{% /tab %}}
-
-{{%tab name="debian"%}}
-
-```shell
-## Supported OS Versions
-
-The following OS versions for Debian are supported:
-- bullseye-slim
-- bookworm-slim  
-
-IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=debian OS_VERSION=bullseye-slim make oss-image
-```
-
-{{% /tab %}}
-
-{{%tab name="oracle linux"%}}
-
-```shell
-## Supported OS Versions
-
-The following OS versions for Debian are supported:
-- 8
-- 9      
-
-IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=oraclelinux OS_VERSION=8 make oss-image
-```
-
-{{% /tab %}}
-
-{{%tab name="rocky linux"%}}
-
-```shell
-## Supported OS Versions
-
-The following OS versions for Debian are supported:
-- 8
-- 9      
-
-IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=rockylinux OS_VERSION=8 make oss-image
-```
-
-{{% /tab %}}
-
-{{%tab name="ubuntu"%}}
-
-The command below creates a base image using the most recent LTS version of Ubuntu as the base image:
-
-```shell
-## Supported OS Versions
-
-The following OS versions for Ubuntu are supported:
-- 20.04
-- 22.04
-- 24.04         
-
-IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=ubuntu OS_VERSION=8 make oss-image
-```
-
-{{% /tab %}}
-
-{{% /tabs %}}
 
 ### Build NGINX Plus images
 
@@ -352,116 +251,11 @@ IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=ubun
 Run the following `make` command to build the default image, which uses Ubuntu 24.04 (Noble) as the base image.
 
 ```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] make official-plus-image
+PACKAGE_NAME=install-agent-repo make official-plus-image
 ```
 
-### Example NGINX Plus build commands by distribution
-
-{{<tabs name="build-image">}}
-
-{{%tab name="alpine linux"%}}
-
+To build an image with debian and older version of the NGINX Agent you can run the following command.
 ```shell
-## Supported OS Versions
-
-The following OS versions for Alpine Linux are supported:
- - 3.17 
- - 3.18 
- - 3.19 
- - 3.20      
-IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.38.0 OS_RELEASE=alpine OS_VERSION=3.20 make official-plus-image
+Bug: agent not found still showing as Alpine Linux
+IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=v2.37.0 OS_RELEASE=debian OS_VERSION=bullseye-slim make official-plus-image
 ```
-
-{{% /tab %}}
-
-{{%tab name="amazon linux"%}}
-
-```shell
-## Supported OS Versions
-
-The following OS versions for Amazon Linux are supported:
-- 3.17
-- 3.18
-- 3.19
-- 3.20
-IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=amazonlinux OS_VERSION=3.17 make official-plus-image
-
-```
-
-{{% /tab %}}
-
-{{%tab name="centos"%}}
-
-```shell
-IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=centos OS_VERSION=7 make official-plus-image
-```
-
-{{% /tab %}}
-
-{{%tab name="debian"%}}
-
-```shell
-## Supported OS Versions
-
-The following OS versions for Debian are supported:
-- bullseye-slim
-- bookworm-slim
-IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=debian OS_VERSION=bullseye-slim make official-plus-image
-```
-
-{{% /tab %}}
-
-{{%tab name="oracle linux"%}}
-
-```shell
-## Supported OS Versions
-
-The following OS versions for Oracle Linux are supported:
-- 8
-- 9
-IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=oraclelinux OS_VERSION=bullseye-slim make official-plus-image
-```
-
-{{% /tab %}}
-
-{{%tab name="rhel"%}}
-
-```shell
-## Supported OS Versions
-
-The following OS versions for Red Hat Linux are supported:
-- 8
-- 9
-IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=redhatenterprise OS_VERSION=bullseye-slim make official-plus-image
-```
-
-{{% /tab %}}
-
-{{%tab name="suse"%}}
-
-```shell
-## Supported OS Versions
-
-The following OS versions for Suse Linux are supported:
-- sles12sp5
-- sle15
-IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=suse OS_VERSION=sles12sp5 make official-plus-image
-```
-
-{{% /tab %}}
-
-{{%tab name="ubuntu"%}}
-
-```shell
-## Supported OS Versions
-
-The following OS versions for Ubuntu Linux are supported:
-- 20.04
-- 22.04 
-- 24.04   
-IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=ubuntu OS_VERSION=20.04 make official-plus-image
-```
-
-{{% /tab %}}
-
-{{% /tabs %}}
