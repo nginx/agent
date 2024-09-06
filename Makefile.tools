@@ -8,15 +8,9 @@ NFPM            = github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.36.1
 GOTESTCOVERAGE  = github.com/vladopajic/go-test-coverage/v2@v2.10.1
 BENCHSTAT       = golang.org/x/perf/cmd/benchstat@v0.0.0-20240404204407-f3e401e020e4
 BUF             = github.com/bufbuild/buf/cmd/buf@v1.30.1
-MDATAGEN        = go.opentelemetry.io/collector/cmd/mdatagen
 
 install-tools: ## Install tool dependencies
 	@echo "Installing Tools"
-	
-	# Workaround because of this issue https://github.com/open-telemetry/opentelemetry-collector/issues/9281
-	@go get $(MDATAGEN)
-	@$(GOINST) -mod=readonly $(MDATAGEN)
-	@go mod tidy
 	
 	@$(GOINST) $(OAPICODEGEN)
 	@$(GOINST) $(LEFTHOOK)

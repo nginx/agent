@@ -28,8 +28,8 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/shirou/gopsutil/v4/cpu"
-	"github.com/shirou/gopsutil/v4/process"
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/process"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/testbed/testbed"
 )
@@ -82,7 +82,7 @@ var LoadResourceSpec = &testbed.ResourceSpec{
 	// CPU can be spikey
 	ExpectedMaxCPU: 50,
 	// RAM can be spikey
-	ExpectedMaxRAM:         135,
+	ExpectedMaxRAM:         110,
 	ResourceCheckPeriod:    1 * time.Second,
 	MaxConsecutiveFailures: 0,
 }
