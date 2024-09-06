@@ -15,18 +15,11 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/ackextension"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/asapauthextension"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/awsproxy"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/headerssetterextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/httpforwarderextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/dockerobserver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/hostobserver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/k8sobserver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/oidcauthextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/sigv4authextension"
@@ -138,17 +131,10 @@ func createConnectorFactories() (map[component.Type]connector.Factory, error) {
 
 func createExtensionFactories() (map[component.Type]extension.Factory, error) {
 	extensionsList := []extension.Factory{
-		ackextension.NewFactory(),
-		asapauthextension.NewFactory(),
-		awsproxy.NewFactory(),
 		basicauthextension.NewFactory(),
 		bearertokenauthextension.NewFactory(),
-		dockerobserver.NewFactory(),
 		headerssetterextension.NewFactory(),
 		healthcheckextension.NewFactory(),
-		hostobserver.NewFactory(),
-		httpforwarderextension.NewFactory(),
-		k8sobserver.NewFactory(),
 		oauth2clientauthextension.NewFactory(),
 		oidcauthextension.NewFactory(),
 		pprofextension.NewFactory(),

@@ -25,7 +25,7 @@ Before starting development on the NGINX Agent, it is important to download and 
 make install-tools
 ```
 
-## Building NGINX Agent from Source Code
+### Building NGINX Agent from Source Code
 Run the following commands to build and run NGINX Agent:
 ```
 make build
