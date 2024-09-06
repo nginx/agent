@@ -20,6 +20,6 @@ func TestOTelComponentFactories(t *testing.T) {
 	assert.Len(t, factories.Receivers, 19)
 	assert.Len(t, factories.Processors, 20)
 	assert.Len(t, factories.Exporters, 4)
-	assert.Len(t, factories.Extensions, 8)
+	assert.Len(t, factories.Extensions, 9)
 	assert.Len(t, factories.Connectors, 7)
 }

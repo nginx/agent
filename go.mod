@@ -29,6 +29,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/headerssetterextension v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.108.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/httpforwarderextension v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/oidcauthextension v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.108.0
