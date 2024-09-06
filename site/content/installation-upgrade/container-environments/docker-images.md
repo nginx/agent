@@ -243,7 +243,12 @@ PACKAGE_NAME=[PATH-TO-PACKAGE] make official-oss-image
 {{%tab name="alma linux"%}}
 
 ```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=almalinux make oss-image
+## Supported OS Versions
+
+The following OS versions for Alma Linux are supported:
+- 8
+- 9
+IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=almalinux OS_VERSION=8 make oss-image
 ```
 
 {{% /tab %}}
@@ -251,7 +256,12 @@ PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=almalinux make oss-image
 {{%tab name="alpine linux"%}}
 
 ```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=alpine make oss-image
+## Supported OS Versions
+
+The following OS versions for Alpine Linux are supported:
+- 8
+- 9
+IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=almalinux OS_VERSION=8 make oss-image
 ```
 
 {{% /tab %}}
@@ -259,7 +269,16 @@ PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=alpine make oss-image
 {{%tab name="amazon linux"%}}
 
 ```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=amazonlinux make oss-image
+## Supported OS Versions
+
+The following OS versions for Amazon Linux are supported:
+
+- 3.17
+- 3.18
+- 3.19
+- 3.20
+
+IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=amazonlinux OS_VERSION=3.17 make oss-image
 ```
 
 {{% /tab %}}
@@ -267,7 +286,13 @@ PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=amazonlinux make oss-image
 {{%tab name="debian"%}}
 
 ```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=debian make oss-image
+## Supported OS Versions
+
+The following OS versions for Debian are supported:
+- bullseye-slim
+- bookworm-slim  
+
+IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=debian OS_VERSION=bullseye-slim make oss-image
 ```
 
 {{% /tab %}}
@@ -275,7 +300,13 @@ PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=debian make oss-image
 {{%tab name="oracle linux"%}}
 
 ```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=oraclelinux make oss-image
+## Supported OS Versions
+
+The following OS versions for Debian are supported:
+- 8
+- 9      
+
+IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=oraclelinux OS_VERSION=8 make oss-image
 ```
 
 {{% /tab %}}
@@ -283,7 +314,13 @@ PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=oraclelinux make oss-image
 {{%tab name="rocky linux"%}}
 
 ```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=rockylinux make oss-image
+## Supported OS Versions
+
+The following OS versions for Debian are supported:
+- 8
+- 9      
+
+IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=rockylinux OS_VERSION=8 make oss-image
 ```
 
 {{% /tab %}}
@@ -293,7 +330,14 @@ PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=rockylinux make oss-image
 The command below creates a base image using the most recent LTS version of Ubuntu as the base image:
 
 ```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] make oss-image OS_RELEASE=ubuntu
+## Supported OS Versions
+
+The following OS versions for Ubuntu are supported:
+- 20.04
+- 22.04
+- 24.04         
+
+IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=ubuntu OS_VERSION=8 make oss-image
 ```
 
 {{% /tab %}}
@@ -317,7 +361,12 @@ PACKAGE_NAME=[PATH-TO-PACKAGE] make official-plus-image
 {{%tab name="alpine linux"%}}
 
 ```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=alpine make official-plus-image
+## Supported OS Versions
+
+The following OS versions for Alpine Linux are supported:
+- 8
+- 9
+IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=alpine OS_VERSION=8 make official-plus-image
 ```
 
 {{% /tab %}}
@@ -325,7 +374,15 @@ PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=alpine make official-plus-image
 {{%tab name="amazon linux"%}}
 
 ```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=amazonlinux make official-plus-image
+## Supported OS Versions
+
+The following OS versions for Amazon Linux are supported:
+- 3.17
+- 3.18
+- 3.19
+- 3.20
+IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=amazonlinux OS_VERSION=3.17 make official-plus-image
+
 ```
 
 {{% /tab %}}
@@ -333,7 +390,7 @@ PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=amazonlinux make official-plus-image
 {{%tab name="centos"%}}
 
 ```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=centos OS_VERSION=7 make official-plus-image
+IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=centos OS_VERSION=7 make official-plus-image
 ```
 
 {{% /tab %}}
@@ -341,7 +398,12 @@ PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=centos OS_VERSION=7 make official-plus
 {{%tab name="debian"%}}
 
 ```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=debian OS_VERSION=bullseye-slim make official-plus-image
+## Supported OS Versions
+
+The following OS versions for Debian are supported:
+- bullseye-slim
+- bookworm-slim
+IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=debian OS_VERSION=bullseye-slim make official-plus-image
 ```
 
 {{% /tab %}}
@@ -349,7 +411,12 @@ PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=debian OS_VERSION=bullseye-slim make o
 {{%tab name="oracle linux"%}}
 
 ```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=oraclelinux make official-plus-image
+## Supported OS Versions
+
+The following OS versions for Oracle Linux are supported:
+- 8
+- 9
+IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=oraclelinux OS_VERSION=bullseye-slim make official-plus-image
 ```
 
 {{% /tab %}}
@@ -357,7 +424,12 @@ PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=oraclelinux make official-plus-image
 {{%tab name="rhel"%}}
 
 ```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=redhatenterprise make official-plus-image
+## Supported OS Versions
+
+The following OS versions for Red Hat Linux are supported:
+- 8
+- 9
+IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=redhatenterprise OS_VERSION=bullseye-slim make official-plus-image
 ```
 
 {{% /tab %}}
@@ -365,7 +437,12 @@ PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=redhatenterprise make official-plus-im
 {{%tab name="suse"%}}
 
 ```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=suse OS_VERSION=sle15 make official-plus-image
+## Supported OS Versions
+
+The following OS versions for Suse Linux are supported:
+- sles12sp5
+- sle15
+IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=suse OS_VERSION=sles12sp5 make official-plus-image
 ```
 
 {{% /tab %}}
@@ -373,7 +450,13 @@ PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=suse OS_VERSION=sle15 make official-pl
 {{%tab name="ubuntu"%}}
 
 ```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=ubuntu make official-plus-image
+## Supported OS Versions
+
+The following OS versions for Ubuntu Linux are supported:
+- 20.04
+- 22.04 
+- 24.04   
+IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0 OS_RELEASE=ubuntu OS_VERSION=20.04 make official-plus-image
 ```
 
 {{% /tab %}}
