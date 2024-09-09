@@ -7,6 +7,7 @@ package collector
 import (
 	"errors"
 
+	nginxreceiver "github.com/nginx/agent/v3/internal/collector/nginxossreceiver"
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/exceptionsconnector"
@@ -57,7 +58,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8seventsreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sobjectsreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/nginxreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/podmanreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/simpleprometheusreceiver"
