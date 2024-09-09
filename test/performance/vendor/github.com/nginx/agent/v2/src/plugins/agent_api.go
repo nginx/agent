@@ -204,10 +204,12 @@ func (a *AgentAPI) Process(message *core.Message) {
 		default:
 			log.Warnf("Unknown Command_NginxConfigResponse type: %T(%v)", message.Data(), message.Data())
 		}
-	case core.MetricReport:
+	case core.CommMetrics:
 		switch response := message.Data().(type) {
 		case *metrics.MetricsReportBundle:
 			a.exporter.SetLatestMetricReport(response)
+		case []core.Payload:
+			a.exporter.SetLatestMetricReports(response)
 		default:
 			log.Warnf("Unknown MetricReportBundle type: %T(%v)", message.Data(), message.Data())
 		}
@@ -240,7 +242,6 @@ func (a *AgentAPI) Info() *core.Info {
 func (a *AgentAPI) Subscriptions() []string {
 	return []string{
 		core.AgentAPIConfigApplyResponse,
-		core.MetricReport,
 		core.NginxConfigValidationPending,
 		core.NginxConfigApplyFailed,
 		core.NginxConfigApplySucceeded,
@@ -248,6 +249,7 @@ func (a *AgentAPI) Subscriptions() []string {
 		core.AgentConnected,
 		core.CommandSent,
 		core.MetricReportSent,
+		core.CommMetrics,
 	}
 }
 
@@ -383,7 +385,7 @@ func (h *NginxHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 //
 //	200: []NginxDetails
 //	500
-func (h *NginxHandler) sendInstanceDetailsPayload(w http.ResponseWriter, r *http.Request) error {
+func (h *NginxHandler) sendInstanceDetailsPayload(w http.ResponseWriter, _ *http.Request) error {
 	nginxDetails := h.getNginxDetails()
 	w.WriteHeader(http.StatusOK)
 

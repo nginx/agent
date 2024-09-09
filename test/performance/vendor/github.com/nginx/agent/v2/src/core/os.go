@@ -8,9 +8,15 @@
 package core
 
 import (
+	"context"
 	"os"
+	"sync"
 	"time"
+
+	"github.com/nginx/agent/sdk/v2/backoff"
 )
+
+var chmodMutex sync.Mutex
 
 // FileExists determines if the specified file given by the file path exists on the system.
 // If the file does NOT exist on the system the bool will be false and the error will be nil,
@@ -42,19 +48,21 @@ func FilesExists(filePaths []string) (bool, error) {
 	return true, nil
 }
 
-func EnableWritePermissionForSocket(path string) error {
-	timeout := time.After(time.Second * 1)
-	var lastError error
-	for {
-		select {
-		case <-timeout:
-			return lastError
-		default:
-			lastError = os.Chmod(path, 0o660)
-			if lastError == nil {
-				return nil
-			}
-		}
-		<-time.After(time.Microsecond * 100)
-	}
+// EnableWritePermissionForSocket attempts to set the write permissions for a socket file located at the specified path.
+// The function continuously attempts the operation until either it succeeds or the timeout period elapses.
+func EnableWritePermissionForSocket(ctx context.Context, path string) error {
+	err := backoff.WaitUntil(ctx, backoff.BackoffSettings{
+		InitialInterval: time.Microsecond * 100,
+		MaxInterval:     time.Microsecond * 100,
+		MaxElapsedTime:  time.Second * 1,
+		Jitter:          backoff.BACKOFF_JITTER,
+		Multiplier:      backoff.BACKOFF_MULTIPLIER,
+	}, func() error {
+		chmodMutex.Lock()
+		lastError := os.Chmod(path, 0o660)
+		chmodMutex.Unlock()
+		return lastError
+	})
+
+	return err
 }

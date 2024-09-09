@@ -4,13 +4,17 @@ services:
   agent:
     build:
       context: ../../../
-      dockerfile: ./scripts/docker/nginx-oss/deb/Dockerfile
+      dockerfile: ./scripts/docker/nginx-oss/${CONTAINER_OS_TYPE}/Dockerfile
       target: install-nginx
       args:
         PACKAGE_NAME: ${PACKAGE_NAME}
         PACKAGES_REPO: ${PACKAGES_REPO}
         INSTALL_FROM_REPO: ${INSTALL_FROM_REPO}
         BASE_IMAGE: ${BASE_IMAGE}
+        OS_RELEASE: ${OS_RELEASE}
+        OS_VERSION: ${OS_VERSION}
         ENTRY_POINT: "./scripts/docker/agentless-entrypoint.sh"
     ports:
       - 80
+    volumes:
+      - ${NGINX_CONF_FILE} # default nginx apk conf does not listen on localhost

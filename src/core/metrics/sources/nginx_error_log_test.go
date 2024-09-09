@@ -73,6 +73,7 @@ func TestErrorLogStats(t *testing.T) {
 		name          string
 		logLines      []string
 		expectedStats *proto.StatsEntity
+		timeout       time.Duration
 	}{
 		{
 			"default_error_log_test",
@@ -103,6 +104,7 @@ func TestErrorLogStats(t *testing.T) {
 					},
 				},
 			},
+			time.Second,
 		},
 	}
 
@@ -113,9 +115,10 @@ func TestErrorLogStats(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			errorLogFile, _ := os.CreateTemp(os.TempDir(), "error.log")
-
+			ctx, cncl := context.WithTimeout(context.Background(), test.timeout)
+			defer cncl()
 			nginxErrorLog := NewNginxErrorLog(&metrics.CommonDim{}, OSSNamespace, binary, OSSNginxType, collectionDuration)
-			go nginxErrorLog.logStats(context.TODO(), errorLogFile.Name())
+			go nginxErrorLog.logStats(ctx, errorLogFile.Name())
 
 			time.Sleep(sleepDuration)
 

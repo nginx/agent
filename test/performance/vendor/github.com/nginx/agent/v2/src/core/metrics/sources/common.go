@@ -13,6 +13,7 @@ import (
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/metrics"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -90,6 +91,8 @@ func Delta(current, previous map[string]map[string]float64) map[string]map[strin
 
 func SendNginxDownStatus(ctx context.Context, dims []*proto.Dimension, m chan<- *metrics.StatsEntityWrapper) {
 	simpleMetrics := []*proto.SimpleMetric{newFloatMetric("nginx.status", float64(0))}
+
+	log.Debugf("nginx down status %d", len(simpleMetrics))
 
 	select {
 	case <-ctx.Done():

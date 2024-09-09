@@ -3,6 +3,7 @@ FROM ${BASE_IMAGE} as install
 LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
 ARG PACKAGES_REPO
+ARG NGINX_AGENT_VERSION
 
 RUN echo $PACKAGES_REPO
 WORKDIR /agent
@@ -37,7 +38,6 @@ RUN --mount=type=secret,id=nginx-crt,dst=/nginx-repo.crt \
     # Install the latest release of NGINX Plus and/or NGINX Plus modules and NGINX Agent
     && nginxPackages=" \
         nginx-plus \
-        nginx-agent \
     " \
     && echo "Acquire::https::$PACKAGES_REPO::Verify-Peer \"true\";" > /etc/apt/apt.conf.d/90nginx \
     && echo "Acquire::https::$PACKAGES_REPO::Verify-Host \"true\";" >> /etc/apt/apt.conf.d/90nginx \
@@ -51,8 +51,10 @@ RUN --mount=type=secret,id=nginx-crt,dst=/nginx-repo.crt \
     && cat /nginx-repo.crt >> /etc/ssl/nginx/nginx-repo.crt \
     && cat /nginx-repo.key >> /etc/ssl/nginx/nginx-repo.key \
     && apt-get update \
-    && apt-get install $nginxPackages -y  \
-    && rm /etc/ssl/nginx/nginx-repo.crt /etc/ssl/nginx/nginx-repo.key
+    && apt-get install $nginxPackages -y 
+    
+RUN if [ -z "$NGINX_AGENT_VERSION" ]; then apt-get install -y nginx-agent; else apt-get install -y nginx-agent=${NGINX_AGENT_VERSION}; fi
+RUN rm /etc/ssl/nginx/nginx-repo.crt /etc/ssl/nginx/nginx-repo.key
 
 # run the nginx and agent
 FROM install as runtime

@@ -743,6 +743,7 @@ func TestAccessLogStats(t *testing.T) {
 		logFormat     string
 		logLines      []string
 		expectedStats *proto.StatsEntity
+		timeout       time.Duration
 	}{
 		{
 			"default_access_log_test",
@@ -771,6 +772,7 @@ func TestAccessLogStats(t *testing.T) {
 					},
 				},
 			},
+			time.Minute,
 		},
 		{
 			"invalid_access_log",
@@ -803,6 +805,7 @@ func TestAccessLogStats(t *testing.T) {
 					},
 				},
 			},
+			time.Second,
 		},
 		{
 			"full_access_log_test",
@@ -1047,6 +1050,7 @@ func TestAccessLogStats(t *testing.T) {
 					},
 				},
 			},
+			time.Second,
 		},
 		{
 			"custom_access_log_test",
@@ -1075,6 +1079,7 @@ func TestAccessLogStats(t *testing.T) {
 					},
 				},
 			},
+			time.Second,
 		},
 	}
 
@@ -1085,9 +1090,10 @@ func TestAccessLogStats(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			accessLogFile, _ := os.CreateTemp(os.TempDir(), "access.log")
-
+			ctx, cncl := context.WithTimeout(context.Background(), test.timeout)
+			defer cncl()
 			nginxAccessLog := NewNginxAccessLog(&metrics.CommonDim{}, OSSNamespace, binary, OSSNginxType, collectionDuration)
-			go nginxAccessLog.logStats(context.TODO(), accessLogFile.Name(), test.logFormat)
+			go nginxAccessLog.logStats(ctx, accessLogFile.Name(), test.logFormat)
 
 			time.Sleep(sleepDuration)
 

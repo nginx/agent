@@ -148,7 +148,7 @@ func (r *OneTimeRegistration) areDataplaneSoftwareDetailsReady() error {
 
 	for _, extension := range r.config.Extensions {
 		if _, ok := r.dataplaneSoftwareDetails[extension]; !ok {
-			return fmt.Errorf("Registration max retries has been met before the extension %s was ready for registration", extension)
+			return fmt.Errorf("registration max retries has been met before the extension %s was ready for registration", extension)
 		}
 	}
 

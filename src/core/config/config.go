@@ -139,7 +139,7 @@ func deprecateFlags() {
 	setFlagDeprecated("nap-monitoring-processor-buffer-size", "DEPRECATED. No replacement command.")
 	setFlagDeprecated("nap-monitoring-syslog-ip", "DEPRECATED. No replacement command.")
 	setFlagDeprecated("nap-monitoring-syslog-port", "DEPRECATED. No replacement command.")
-	setFlagDeprecated("metrics-bulksize", "DEPRECATED. Use metrics backoff maxElapsedTime instead to set a time period where no successful connection, after time elapsed start dropping oldest metrics from the buffer.")
+	setFlagDeprecated("metrics-bulk-size", "DEPRECATED. Use metrics backoff maxElapsedTime instead to set a time period where no successful connection, after time elapsed start dropping oldest metrics from the buffer.")
 }
 
 func RegisterFlags() {
@@ -429,12 +429,11 @@ func LoadPropertiesFromFile(cfg string) error {
 		if err != nil {
 			return fmt.Errorf("error attempting to open dynamic config (%s): %v", dynamicCfgPath, err)
 		}
-
+		defer dynCfg.Close()
 		featuresAreSet, cleanDynCfgContent, err := removeFeatures(dynCfg)
 		if err != nil {
 			return fmt.Errorf("error updating dynamic config with features removed (%s): %v", dynamicCfgPath, err)
 		}
-		dynCfg.Close()
 
 		if featuresAreSet {
 			err = os.WriteFile(dynamicCfgPath, cleanDynCfgContent, 0o640)

@@ -10,7 +10,6 @@ package sources
 import (
 	"context"
 	"sort"
-	"sync"
 	"testing"
 
 	"github.com/nginx/agent/v2/src/core/metrics"
@@ -49,11 +48,8 @@ func TestNetIOCollect(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
 	channel := make(chan *metrics.StatsEntityWrapper, 100)
-	nioSource.Collect(ctx, wg, channel)
-	wg.Wait()
+	nioSource.Collect(ctx, channel)
 
 	actual := <-channel
 

@@ -3,6 +3,7 @@ FROM ${BASE_IMAGE} as install
 LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
 ARG PACKAGES_REPO
+ARG NGINX_AGENT_VERSION
 
 WORKDIR /agent
 COPY ./scripts/docker/entrypoint.sh /agent/entrypoint.sh
@@ -36,7 +37,6 @@ RUN --mount=type=secret,id=nginx-crt,dst=/nginx-repo.crt \
 # Use versioned packages over defaults to specify a release
     && nginxPackages=" \
         nginx-plus \
-        nginx-agent \
        " \
     && echo "Acquire::https::$PACKAGES_REPO::Verify-Peer \"true\";" > /etc/apt/apt.conf.d/90nginx \
     && echo "Acquire::https::$PACKAGES_REPO::Verify-Host \"true\";" >> /etc/apt/apt.conf.d/90nginx \
@@ -51,10 +51,13 @@ RUN --mount=type=secret,id=nginx-crt,dst=/nginx-repo.crt \
     && apt-get install --no-install-recommends --no-install-suggests -y \
                         $nginxPackages \
                         curl \
-                        gettext-base \
-    && apt-get autoremove --purge -y \
-       gnupg \
-       lsb-release \
+                        gettext-base 
+
+RUN if [ -z "$NGINX_AGENT_VERSION" ]; then apt-get install -y nginx-agent; else apt-get install -y nginx-agent=${NGINX_AGENT_VERSION}; fi
+
+RUN apt-get autoremove --purge -y \
+        gnupg \
+        lsb-release \
     && rm -rf /root/.gnupg \
     && apt-get remove --purge --auto-remove -y && rm -rf /var/lib/apt/lists/* /etc/apt/sources.list.d/nginx-plus.list \
     && rm -rf /etc/apt/apt.conf.d/90nginx /etc/ssl/nginx

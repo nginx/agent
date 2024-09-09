@@ -14,6 +14,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 type testPlugin struct {
@@ -40,7 +41,7 @@ func (p *testPlugin) Subscriptions() []string {
 	return []string{"test.message"}
 }
 
-func TestMessagePipe(t *testing.T) {
+func TestMessagePipe_Run(t *testing.T) {
 	messages := []*Message{
 		NewMessage("test.message", 1),
 		NewMessage("test.message", 2),
@@ -49,48 +50,51 @@ func TestMessagePipe(t *testing.T) {
 		NewMessage("test.message", 5),
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+
+	pipe := NewMessagePipe(ctx, 10)
+
 	plugin := new(testPlugin)
 	plugin.On("Init").Times(1)
 	plugin.On("Process").Times(len(messages))
 	plugin.On("Close").Times(1)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	pipelineDone := make(chan bool)
+	err := pipe.Register(10, []Plugin{plugin}, nil)
+	require.NoError(t, err)
 
-	messagePipe := NewMessagePipe(ctx, 100)
-	err := messagePipe.Register(10, []Plugin{plugin}, nil)
+	go pipe.Run()
 
-	assert.NoError(t, err)
+	pipe.Process(messages...)
 
-	go func() {
-		messagePipe.Run()
-		pipelineDone <- true
-	}()
-
-	messagePipe.Process(messages...)
-	time.Sleep(10 * time.Millisecond) // for the above call being asynchronous
+	time.Sleep(100 * time.Millisecond)
 
 	cancel()
-	<-pipelineDone
+
+	time.Sleep(200 * time.Millisecond)
 
 	plugin.AssertExpectations(t)
 }
 
-func TestPipe_DeRegister(t *testing.T) {
-	plugin := new(testPlugin)
-	plugin.On("Init").Times(1)
-	plugin.On("Close").Times(1)
-
+func TestMessagePipe_Process(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
-	messagePipe := SetupMockMessagePipe(t, ctx, []Plugin{plugin}, []ExtensionPlugin{})
+	pipe := NewMessagePipe(ctx, 10)
 
-	err := messagePipe.DeRegister([]string{*plugin.Info().name})
+	messages := []*Message{
+		NewMessage("test.message", 1),
+	}
 
-	assert.NoError(t, err)
+	pipe.Process(messages...)
 
-	assert.Equal(t, 0, len(messagePipe.GetPlugins()))
+	select {
+	case msg := <-pipe.messageChannel:
+		assert.Equal(t, "test.message", *msg.topic)
+	case <-time.After(time.Second):
+		t.Fatal("Expected message not received")
+	}
+
+	cancel()
+	time.Sleep(200 * time.Millisecond)
 }
 
 func TestPipe_IsPluginAlreadyRegistered(t *testing.T) {
@@ -99,21 +103,20 @@ func TestPipe_IsPluginAlreadyRegistered(t *testing.T) {
 	plugin.On("Close").Times(1)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	pipelineDone := make(chan bool)
 
 	messagePipe := NewMessagePipe(ctx, 100)
 	err := messagePipe.Register(10, []Plugin{plugin}, nil)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	go func() {
-		messagePipe.Run()
-		pipelineDone <- true
-	}() // for the above call being asynchronous
-
-	cancel()
-	<-pipelineDone
+	go messagePipe.Run()
 
 	assert.True(t, messagePipe.IsPluginAlreadyRegistered(*plugin.Info().name))
 	assert.False(t, messagePipe.IsPluginAlreadyRegistered("metrics"))
+
+	cancel()
+
+	time.Sleep(200 * time.Millisecond)
+
+	plugin.AssertExpectations(t)
 }

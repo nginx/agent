@@ -10,8 +10,8 @@ package collectors
 import (
 	"context"
 	"reflect"
-	"sync"
 	"testing"
+	"time"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
@@ -173,10 +173,9 @@ func TestNginxCollector_Collect(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	go nginxCollector.Collect(ctx, wg, make(chan<- *metrics.StatsEntityWrapper))
-	wg.Wait()
+	go nginxCollector.Collect(ctx, make(chan<- *metrics.StatsEntityWrapper))
+
+	time.Sleep(100 * time.Millisecond)
 
 	mockNginxSource1.AssertExpectations(t)
 	mockNginxSource2.AssertExpectations(t)

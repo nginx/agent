@@ -47,6 +47,9 @@ message NginxDetails {
   // Command line arguments that were used when the NGINX instance was started.
   // Example: [ "", "with-http_stub_status_module" ]
   repeated string configure_args = 13 [(gogoproto.jsontag) = "configure_args"];
+  // Error log path.
+  // Example: -e /home/ubuntu/nplus/var/log/error.log -e /home/ubuntu/nplus/var/log/error1.log
+  repeated string error_log_paths = 14 [(gogoproto.jsontag) = "error_log_paths"];
 }
 
 // swagger:model NginxPlusMetaData

@@ -9,7 +9,6 @@ package sources
 
 import (
 	"context"
-	"sync"
 	"testing"
 	"time"
 
@@ -78,10 +77,8 @@ func TestNginxWorkerCollector(t *testing.T) {
 	// tell the mock nginx binary to return something
 	ctx := context.TODO()
 
-	wg := sync.WaitGroup{}
-	wg.Add(1)
 	m := make(chan *metrics.StatsEntityWrapper)
-	go n.Collect(ctx, &wg, m)
+	go n.Collect(ctx, m)
 
 	time.Sleep(100 * time.Millisecond)
 	mockClient.AssertNumberOfCalls(t, "GetWorkerStats", 2)
@@ -122,9 +119,7 @@ func TestNginxWorkerCollector(t *testing.T) {
 		}
 	}
 
-	wg.Add(1)
-
-	go n.Collect(ctx, &wg, m)
+	go n.Collect(ctx, m)
 
 	time.Sleep(100 * time.Millisecond)
 	mockClient.AssertNumberOfCalls(t, "GetWorkerStats", 3)

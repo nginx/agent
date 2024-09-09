@@ -408,17 +408,13 @@ func getContainerID(mountInfo string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("could not read %s: %v", mountInfo, err)
 	}
-
+	defer mInfoFile.Close()
 	fileScanner := bufio.NewScanner(mInfoFile)
 	fileScanner.Split(bufio.ScanLines)
 
 	var lines []string
 	for fileScanner.Scan() {
 		lines = append(lines, fileScanner.Text())
-	}
-	err = mInfoFile.Close()
-	if err != nil {
-		return "", fmt.Errorf("unable to close file %s: %v", mountInfo, err)
 	}
 
 	for _, line := range lines {

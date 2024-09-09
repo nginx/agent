@@ -18,7 +18,6 @@ import (
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	tutils "github.com/nginx/agent/v2/test/utils"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -86,6 +85,7 @@ func TestFeatures_Process(t *testing.T) {
 	env := tutils.NewMockEnvironment()
 
 	env.Mock.On("IsContainer").Return(true)
+	env.Mock.On("FileStat", "/usr/local/etc/nginx").Return(env.FileStat)
 	env.On("NewHostInfo", "agentVersion", &[]string{"locally-tagged", "tagged-locally"}).Return(&proto.HostInfo{})
 
 	binary.On("GetNginxDetailsFromProcess", &core.Process{Name: "12345", IsMaster: true}).Return(detailsMap[processID])
@@ -121,6 +121,10 @@ func TestFeatures_Process(t *testing.T) {
 		assert.GreaterOrEqual(t, len(processedMessages), 1)
 		assert.Equal(t, core.EnableFeature, processedMessages[0].Topic())
 		assert.Equal(t, tc.pluginName, messagePipe.GetPlugins()[1].Info().Name())
+
+		for _, plugin := range messagePipe.GetPlugins() {
+			plugin.Close()
+		}
 	}
 
 	cancelCTX()

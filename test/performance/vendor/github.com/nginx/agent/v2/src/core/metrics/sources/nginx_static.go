@@ -9,7 +9,6 @@ package sources
 
 import (
 	"context"
-	"sync"
 
 	"github.com/nginx/agent/v2/src/core/metrics"
 	log "github.com/sirupsen/logrus"
@@ -26,9 +25,7 @@ func NewNginxStatic(baseDimensions *metrics.CommonDim, namespace string) *NginxS
 	return &NginxStatic{baseDimensions: baseDimensions, namedMetric: &namedMetric{namespace: namespace}}
 }
 
-func (c *NginxStatic) Collect(ctx context.Context, wg *sync.WaitGroup, m chan<- *metrics.StatsEntityWrapper) {
-	defer wg.Done()
-
+func (c *NginxStatic) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 }
 

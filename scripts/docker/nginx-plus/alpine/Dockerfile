@@ -3,6 +3,7 @@ FROM ${BASE_IMAGE} as install
 LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
 ARG PACKAGES_REPO
+ARG NGINX_AGENT_VERSION
 
 WORKDIR /agent
 COPY ./scripts/docker/entrypoint.sh /agent/entrypoint.sh
@@ -58,10 +59,11 @@ RUN --mount=type=secret,id=nginx-crt,dst=/etc/apk/cert.pem \
     && printf "https://$PACKAGES_REPO/nginx-agent/alpine/v`egrep -o '^[0-9]+\.[0-9]+' /etc/alpine-release`/main/\n" | tee -a /etc/apk/repositories \
     && nginxPackages=" \
         nginx-plus \
-        nginx-agent \
     " \
     && apk update \
     && apk add $nginxPackages
+
+RUN if [ -z "$NGINX_AGENT_VERSION" ]; then apk add nginx-agent; else apk add "nginx-agent=${NGINX_AGENT_VERSION}"; fi
 
 # run the nginx and agent
 FROM install as runtime

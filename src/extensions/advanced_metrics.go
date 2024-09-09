@@ -259,9 +259,9 @@ func (m *AdvancedMetrics) run() {
 		}
 	}()
 	defer m.ctxCancel()
-	err := core.EnableWritePermissionForSocket(m.cfg.Address)
+	err := core.EnableWritePermissionForSocket(m.ctx, m.cfg.Address)
 	if err != nil {
-		log.Error("App centric metric plugin failed to change socket permissions")
+		log.Errorf("App centric metric plugin failed to change socket permissions: %v", err)
 	}
 	commonDimensions := append(m.commonDims.ToDimensions(), &proto.Dimension{
 		Name:  aggregationDurationDimension,

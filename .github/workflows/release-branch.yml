@@ -1,4 +1,6 @@
 name: Release Branch
+env:
+  NFPM_VERSION: 'v2.35.3'
 
 on:
   workflow_dispatch:

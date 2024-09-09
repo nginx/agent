@@ -51,7 +51,6 @@ func TestAgentAPI_Info(t *testing.T) {
 func TestAgentAPI_Subscriptions(t *testing.T) {
 	expectedSubscriptions := []string{
 		core.AgentAPIConfigApplyResponse,
-		core.MetricReport,
 		core.NginxConfigValidationPending,
 		core.NginxConfigApplyFailed,
 		core.NginxConfigApplySucceeded,
@@ -59,6 +58,7 @@ func TestAgentAPI_Subscriptions(t *testing.T) {
 		core.AgentConnected,
 		core.CommandSent,
 		core.MetricReportSent,
+		core.CommMetrics,
 	}
 
 	agentAPI := AgentAPI{}
@@ -420,7 +420,7 @@ func TestProcess_metricReport(t *testing.T) {
 	// Check that latest metric report isn't set
 	assert.NotEqual(t, metricReport, agentAPI.exporter.GetLatestMetricReports()[0])
 
-	agentAPI.Process(core.NewMessage(core.MetricReport, metricReportBundle))
+	agentAPI.Process(core.NewMessage(core.CommMetrics, metricReportBundle))
 
 	// Check that latest metric report matches the report that was processed
 	assert.Equal(t, metricReport, agentAPI.exporter.GetLatestMetricReports()[0])

@@ -51,15 +51,9 @@ const (
 )
 
 func NewFileWatcher(config *config.Config, env core.Environment) *FileWatcher {
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		log.Errorf("Error creating file watcher: %v", err)
-	}
-
 	fw := &FileWatcher{
 		config:   config,
 		watching: &sync.Map{},
-		watcher:  watcher,
 		wg:       sync.WaitGroup{},
 		env:      env,
 		enabled:  true,
@@ -70,6 +64,14 @@ func NewFileWatcher(config *config.Config, env core.Environment) *FileWatcher {
 
 func (fw *FileWatcher) Init(pipeline core.MessagePipeInterface) {
 	log.Info("FileWatcher initializing")
+
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Errorf("Error creating file watcher: %v", err)
+		return
+	}
+
+	fw.watcher = watcher
 
 	fw.messagePipeline = pipeline
 	fw.ctx, fw.cancelFunction = context.WithCancel(fw.messagePipeline.Context())

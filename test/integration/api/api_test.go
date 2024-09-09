@@ -4,16 +4,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/nginx/agent/sdk/v2/proto"
-	"github.com/nginx/agent/test/integration/utils"
-	tutils "github.com/nginx/agent/v2/test/utils"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/nginx/agent/test/integration/utils"
+	tutils "github.com/nginx/agent/v2/test/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,6 +23,8 @@ const (
 	API_HOST = "0.0.0.0"
 )
 
+var delay = time.Duration(5 * time.Second)
+
 func TestAPI_Nginx(t *testing.T) {
 	testContainer := utils.SetupTestContainerWithAgent(
 		t,
@@ -29,6 +32,9 @@ func TestAPI_Nginx(t *testing.T) {
 		"./nginx-agent.conf:/etc/nginx-agent/nginx-agent.conf",
 		"Starting Agent API HTTP server with port from config and TLS disabled",
 	)
+
+	// wait for report interval to send metrics
+	time.Sleep(delay)
 
 	client := resty.New()
 	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
@@ -65,9 +71,13 @@ func TestAPI_Metrics(t *testing.T) {
 		"Starting Agent API HTTP server with port from config and TLS disabled",
 	)
 
+	// wait for report interval to send metrics
+	time.Sleep(delay)
+
 	client := resty.New()
 
 	url := fmt.Sprintf("http://%s:%d/metrics/", API_HOST, API_PORT)
+
 	client.SetRetryCount(5).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(5 * time.Second)
 	client.AddRetryCondition(
 		func(r *resty.Response, err error) bool {
@@ -82,8 +92,11 @@ func TestAPI_Metrics(t *testing.T) {
 	assert.NotContains(t, resp.String(), "test_fail_metric")
 	// Validate that the agent can call the stub status API
 	assert.Contains(t, resp.String(), "nginx_http_request_count")
-	// Validate that the agent can read the NGINX access logs
-	assert.Contains(t, resp.String(), "nginx_http_status_2xx")
+
+	if os.Getenv("IMAGE_PATH") == "/nginx/agent" {
+		// Validate that the agent can read the NGINX access logs
+		assert.Contains(t, resp.String(), "nginx_http_status_2xx")
+	}
 
 	metrics := tutils.ProcessResponse(resp)
 

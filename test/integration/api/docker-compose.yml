@@ -4,21 +4,23 @@ networks:
   monitoring:
     driver: bridge
 
-services:
+services:  
   agent:
     build:
       context: ../../../
-      dockerfile: ./scripts/docker/nginx-oss/apk/Dockerfile
+      dockerfile: ./scripts/docker/nginx-oss/${CONTAINER_OS_TYPE}/Dockerfile
       target: install-agent-local
       args:
         PACKAGE_NAME: ${PACKAGE_NAME}
         PACKAGES_REPO: ${PACKAGES_REPO}
         BASE_IMAGE: ${BASE_IMAGE}
+        OS_RELEASE: ${OS_RELEASE}
+        OS_VERSION: ${OS_VERSION}
         ENTRY_POINT: "./scripts/docker/entrypoint.sh"
     ports:
       - 9091:9091
     networks:
       - monitoring
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./nginx-agent.conf:/etc/nginx-agent/nginx-agent.conf
+      - ${NGINX_CONF_FILE}
+      - ${AGENT_CONF_FILE}
