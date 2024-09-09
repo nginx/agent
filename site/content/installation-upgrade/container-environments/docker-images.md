@@ -17,11 +17,9 @@ If you want to use NGINX Agent with NGINX Plus, you need to purchase an NGINX Pl
 
 See the requirements and supported operating systems in the [NGINX Agent Technical Specifications]({{< relref "technical-specifications.md" >}}) topic.
 
-## Deploying NGINX and NGINX Plus on Docker
+## Deploy NGINX and NGINX Plus on Docker
 
-You can access container images by visiting the following page: 
-
-[Deploying NGINX and NGINX Plus on Docker](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-docker/) 
+Docker images are available in the [Deploying NGINX and NGINX Plus on Docker](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-docker/) NGINX documentation. 
 
 This page provides instructions on how to build images with the NGINX agent and NGINX packaged together. It includes steps for downloading the necessary Docker images, configuring your Docker environment, and deploying NGINX and NGINX Plus containers.
 
