@@ -25,12 +25,17 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter v0.108.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/ackextension v0.108.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/asapauthextension v0.108.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/awsproxy v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/headerssetterextension v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/httpforwarderextension v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.108.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/dockerobserver v0.108.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/hostobserver v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/k8sobserver v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/oidcauthextension v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.108.0
@@ -110,6 +115,7 @@ require (
 )
 
 require (
+	bitbucket.org/atlassian/go-asap/v2 v2.9.0 // indirect
 	cloud.google.com/go/auth v0.7.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.2 // indirect
 	cloud.google.com/go/compute/metadata v0.5.0 // indirect
@@ -126,6 +132,7 @@ require (
 	github.com/GehirnInc/crypt v0.0.0-20200316065508-bb7000b8a962 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.24.1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
+	github.com/SermoDigital/jose v0.9.2-0.20180104203859-803625baeddc // indirect
 	github.com/Showmax/go-fqdn v1.0.0 // indirect
 	github.com/alecthomas/participle/v2 v2.1.1 // indirect
 	github.com/alecthomas/units v0.0.0-20240626203959-61d1e3462e30 // indirect
@@ -276,6 +283,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/zipkinexporter v0.108.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer v0.108.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/ecsutil v0.108.0 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/proxy v0.108.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.108.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal v0.108.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/docker v0.108.0 // indirect
@@ -310,6 +318,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
+	github.com/pquerna/cachecontrol v0.1.0 // indirect
 	github.com/prometheus-community/windows_exporter v0.27.2 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.55.0 // indirect
@@ -338,6 +347,7 @@ require (
 	github.com/ua-parser/uap-go v0.0.0-20240611065828-3a4781585db6 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	github.com/valyala/fastjson v1.6.4 // indirect
+	github.com/vincent-petithory/dataurl v1.0.0 // indirect
 	github.com/vultr/govultr/v2 v2.17.2 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
