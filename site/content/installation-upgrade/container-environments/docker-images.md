@@ -21,7 +21,7 @@ See the requirements and supported operating systems in the [NGINX Agent Technic
 
 Docker images are available in the [Deploying NGINX and NGINX Plus on Docker](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-docker/) NGINX documentation. 
 
-This page provides instructions on how to build images with the NGINX agent and NGINX packaged together. It includes steps for downloading the necessary Docker images, configuring your Docker environment, and deploying NGINX and NGINX Plus containers.
+The document provides instructions on how to build images with NGINX Agent and NGINX packaged together. It includes steps for downloading the necessary Docker images, configuring your Docker environment, and deploying NGINX and NGINX Plus containers.
 
 ## Set up your environment
 
@@ -204,7 +204,8 @@ docker run --name nginx-agent -d \
   nginx-agent
 ```
 
-To ensure that the REST Interface is correctly configured, you can curl the following endpoint from your terminal:
+To ensure that the REST Interface is correctly configured, you can use the `curl` command targeting the following endpoint from your terminal:
+
 ```shell
 curl 0.0.0.0:8038/nginx/
 ```
@@ -241,13 +242,13 @@ Keep the following information in mind when using the NGINX Agent [Dockerfiles](
 
 ### Build NGINX open source images
 
-Run the following **make** command to build the default image, which uses Alpine as the base image.
+Run the following `make` command to build the default image, which uses Alpine as the base image:
 
 ```shell
 IMAGE_BUILD_TARGET=install-agent-repo make oss-image
 ```
 
-To build an image with debian and older version of the NGINX Agent you can run the following command.
+To build an image with Debian and an older version of NGINX Agent you can run the following command:
 
 ```shell
 IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0~bullseye OS_RELEASE=debian OS_VERSION=bullseye-slim make oss-image
@@ -264,7 +265,7 @@ Run the following `make` command to build the default image, which uses Ubuntu 2
 IMAGE_BUILD_TARGET=install-agent-repo make image
 ```
 
-To build an image with debian and older version of the NGINX Agent you can run the following command.
+To build an image with Debian and an older version of NGINX Agent you can run the following command:
 
 ```shell
 IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0~bullseye OS_RELEASE=debian OS_VERSION=bullseye-slim make image
