@@ -11,8 +11,6 @@ receivers:
       memory:
       network:
       paging:
-      processes:
-      process:
 {{- end }}
 {{- range $index, $otlpReceiver := .Receivers.OtlpReceivers }}
   otlp/{{$index}}:
@@ -28,6 +26,13 @@ receivers:
   nginx/{{- .InstanceID -}}:
     endpoint: "{{- .StubStatus -}}"
     collection_interval: 10s
+    {{- if gt (len .AccessLogs) 0 }}
+    access_logs:
+    {{- range .AccessLogs }}
+      - log_format: "{{- .LogFormat -}}"
+        file_path: "{{- .FilePath -}}"
+    {{- end }}
+    {{- end }}
 {{- end }}
 {{- range .Receivers.NginxPlusReceivers }}
   nginxplus/{{- .InstanceID -}}:
@@ -56,7 +61,7 @@ exporters:
       max_elapsed_time: 10m
     tls:
       insecure: {{ if .TLS -}}false{{ else -}}true{{- end }}
-      {{ if .TLS -}}
+      {{- if .TLS }}
       {{ if gt (len .TLS.Ca) 0 -}}ca_file: "{{- .TLS.Ca -}}"{{- end }}
       {{ if gt (len .TLS.Cert) 0 -}}cert_file: "{{- .TLS.Cert -}}"{{- end }}
       {{ if gt (len .TLS.Key) 0 -}}key_file: "{{- .TLS.Key -}}"{{- end }}

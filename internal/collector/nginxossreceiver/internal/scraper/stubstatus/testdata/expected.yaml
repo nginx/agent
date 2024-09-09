@@ -1,0 +1,60 @@
+resourceMetrics:
+  - resource: {}
+    scopeMetrics:
+      - metrics:
+          - description: The total number of connections.
+            name: nginx.http.conn
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "16630948"
+                  attributes:
+                    - key: nginx.conn.outcome
+                      value:
+                        stringValue: ACCEPTED
+                - asInt: "16630946"
+                  attributes:
+                    - key: nginx.conn.outcome
+                      value:
+                        stringValue: HANDLED
+              isMonotonic: true
+            unit: connections
+          - description: The current number of connections.
+            name: nginx.http.conn.count
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "291"
+                  attributes:
+                    - key: nginx.conn.outcome
+                      value:
+                        stringValue: ACTIVE
+                - asInt: "6"
+                  attributes:
+                    - key: nginx.conn.outcome
+                      value:
+                        stringValue: READING
+                - asInt: "179"
+                  attributes:
+                    - key: nginx.conn.outcome
+                      value:
+                        stringValue: WRITING
+                - asInt: "106"
+                  attributes:
+                    - key: nginx.conn.outcome
+                      value:
+                        stringValue: WAITING
+              isMonotonic: true
+            unit: connections
+          - description: The total number of client requests received from clients.
+            name: nginx.http.requests
+            sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "31070465"
+                  timeUnixNano: "1000000"
+              isMonotonic: true
+            unit: requests
+        scope:
+          name: otelcol/nginxreceiver
+          version: latest
