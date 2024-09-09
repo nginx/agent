@@ -19,7 +19,7 @@ See the requirements and supported operating systems in the [NGINX Agent Technic
 
 ## Deploy NGINX and NGINX Plus on Docker
 
-Docker images are available in the [Deploying NGINX and NGINX Plus on Docker](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-docker/) NGINX documentation. 
+Docker images are available in the [Deploying NGINX and NGINX Plus on Docker](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-docker/) NGINX documentation.
 
 The document provides instructions on how to build images with NGINX Agent and NGINX packaged together. It includes steps for downloading the necessary Docker images, configuring your Docker environment, and deploying NGINX and NGINX Plus containers.
 
@@ -218,8 +218,8 @@ curl 0.0.0.0:8038/nginx/
 
 The NGINX Agent GitHub repo has a set of Make commands that you can use to build a container image for an specific operating system and version:
 
-- `make official-oss-image` builds an image containing NGINX Agent and NGINX open source.
-- `make official-plus-image` builds an image containing NGINX Agent and NGINX Plus.
+- `make oss-image` builds an image containing NGINX Agent and NGINX open source.
+- `make image` builds an image containing NGINX Agent and NGINX Plus.
 
 You can pass the following arguments when running the **make** command to build an NGINX Agent container image.
 
