@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"os"
 	"time"
 
 	"github.com/nginx/agent/v3/internal/backoff"
@@ -18,7 +19,10 @@ import (
 	"go.opentelemetry.io/collector/otelcol"
 )
 
-const maxTimeToWaitForShutdown = 30 * time.Second
+const (
+	maxTimeToWaitForShutdown = 30 * time.Second
+	filePermission           = 0o600
+)
 
 type (
 	// Collector The OTel collector plugin start an embedded OTel collector for metrics collection in the OTel format.
@@ -40,6 +44,13 @@ func New(conf *config.Config) (*Collector, error) {
 
 	if conf.Collector == nil {
 		return nil, errors.New("nil collector config")
+	}
+
+	if conf.Collector.Log != nil && conf.Collector.Log.Path != "" {
+		err := os.WriteFile(conf.Collector.Log.Path, []byte{}, filePermission)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	settings := OTelCollectorSettings(conf)

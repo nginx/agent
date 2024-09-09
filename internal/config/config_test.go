@@ -381,7 +381,7 @@ func getAgentConfig() *Config {
 			},
 			Log: &Log{
 				Level: "INFO",
-				Path:  "/var/log/nginx-agent/otelcol.log",
+				Path:  "/var/log/nginx-agent/opentelemetry-collector-agent.log",
 			},
 		},
 		Command: &Command{

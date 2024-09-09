@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const expectedTemplatePath = "../../test/config/collector/test-otelcol.yaml"
+const expectedTemplatePath = "../../test/config/collector/test-opentelemetry-collector-agent.yaml"
 
 func TestOTelCollectorSettings(t *testing.T) {
 	cfg := types.AgentConfig()
