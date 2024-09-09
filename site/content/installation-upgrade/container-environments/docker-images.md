@@ -17,6 +17,13 @@ If you want to use NGINX Agent with NGINX Plus, you need to purchase an NGINX Pl
 
 See the requirements and supported operating systems in the [NGINX Agent Technical Specifications]({{< relref "technical-specifications.md" >}}) topic.
 
+## Deploying NGINX and NGINX Plus on Docker
+
+You can access container images by visiting the following page: 
+
+[Deploying NGINX and NGINX Plus on Docker](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-docker/) 
+
+This page provides instructions on how to build images with the NGINX agent and NGINX packaged together. It includes steps for downloading the necessary Docker images, configuring your Docker environment, and deploying NGINX and NGINX Plus containers.
 
 ## Set up your environment
 
@@ -199,6 +206,11 @@ docker run --name nginx-agent -d \
   nginx-agent
 ```
 
+To ensure that the REST Interface is correctly configured, you can curl the following endpoint from your terminal:
+```shell
+curl 0.0.0.0:8038/nginx/
+```
+
 <hr>
 
 ## Build the NGINX Agent images for specific OS targets
@@ -238,9 +250,9 @@ PACKAGE_NAME=install-agent-repo make official-oss-image
 ```
 
 To build an image with debian and older version of the NGINX Agent you can run the following command.
+
 ```shell
-Bug: agent not found
-IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=v2.37.0 OS_RELEASE=debian OS_VERSION=bullseye-slim make oss-image
+IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0~bullseye OS_RELEASE=debian OS_VERSION=bullseye-slim make oss-image
 ```
 
 
@@ -255,7 +267,8 @@ PACKAGE_NAME=install-agent-repo make official-plus-image
 ```
 
 To build an image with debian and older version of the NGINX Agent you can run the following command.
+
 ```shell
-Bug: agent not found still showing as Alpine Linux
-IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=v2.37.0 OS_RELEASE=debian OS_VERSION=bullseye-slim make official-plus-image
+IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0~bullseye OS_RELEASE=debian OS_VERSION=bullseye-slim make image
 ```
+
