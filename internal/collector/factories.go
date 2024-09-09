@@ -9,28 +9,10 @@ import (
 
 	nginxreceiver "github.com/nginx/agent/v3/internal/collector/nginxossreceiver"
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/exceptionsconnector"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/grafanacloudconnector"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/ackextension"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/asapauthextension"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/awsproxy"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/headerssetterextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/httpforwarderextension"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/dockerobserver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/hostobserver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/k8sobserver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/oidcauthextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/sigv4authextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/cumulativetodeltaprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatorateprocessor"
@@ -49,24 +31,9 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/bigipreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/dockerstatsreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/httpcheckreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8seventsreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sobjectsreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/podmanreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/simpleprometheusreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/syslogreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/tcplogreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/udplogreceiver"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/connector"
-	"go.opentelemetry.io/collector/connector/forwardconnector"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/debugexporter"
 	"go.opentelemetry.io/collector/exporter/otlpexporter"
@@ -77,7 +44,6 @@ import (
 	"go.opentelemetry.io/collector/processor/batchprocessor"
 	"go.opentelemetry.io/collector/processor/memorylimiterprocessor"
 	"go.opentelemetry.io/collector/receiver"
-	"go.opentelemetry.io/collector/receiver/nopreceiver"
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
 )
 
@@ -123,36 +89,16 @@ func OTelComponentFactories() (otelcol.Factories, error) {
 }
 
 func createConnectorFactories() (map[component.Type]connector.Factory, error) {
-	connectorsList := []connector.Factory{
-		forwardconnector.NewFactory(),
-		countconnector.NewFactory(),
-		exceptionsconnector.NewFactory(),
-		grafanacloudconnector.NewFactory(),
-		routingconnector.NewFactory(),
-		servicegraphconnector.NewFactory(),
-		spanmetricsconnector.NewFactory(),
-	}
+	connectorsList := []connector.Factory{}
 
 	return connector.MakeFactoryMap(connectorsList...)
 }
 
 func createExtensionFactories() (map[component.Type]extension.Factory, error) {
 	extensionsList := []extension.Factory{
-		ackextension.NewFactory(),
-		asapauthextension.NewFactory(),
-		awsproxy.NewFactory(),
-		basicauthextension.NewFactory(),
-		bearertokenauthextension.NewFactory(),
-		dockerobserver.NewFactory(),
 		headerssetterextension.NewFactory(),
 		healthcheckextension.NewFactory(),
-		hostobserver.NewFactory(),
-		httpforwarderextension.NewFactory(),
-		k8sobserver.NewFactory(),
-		oauth2clientauthextension.NewFactory(),
-		oidcauthextension.NewFactory(),
 		pprofextension.NewFactory(),
-		sigv4authextension.NewFactory(),
 	}
 
 	return extension.MakeFactoryMap(extensionsList...)
@@ -160,24 +106,9 @@ func createExtensionFactories() (map[component.Type]extension.Factory, error) {
 
 func createReceiverFactories() (map[component.Type]receiver.Factory, error) {
 	receiverList := []receiver.Factory{
-		nopreceiver.NewFactory(),
 		otlpreceiver.NewFactory(),
-		bigipreceiver.NewFactory(),
-		dockerstatsreceiver.NewFactory(),
-		filelogreceiver.NewFactory(),
 		hostmetricsreceiver.NewFactory(),
-		httpcheckreceiver.NewFactory(),
-		k8sclusterreceiver.NewFactory(),
-		k8seventsreceiver.NewFactory(),
-		k8sobjectsreceiver.NewFactory(),
-		kubeletstatsreceiver.NewFactory(),
 		nginxreceiver.NewFactory(),
-		podmanreceiver.NewFactory(),
-		prometheusreceiver.NewFactory(),
-		simpleprometheusreceiver.NewFactory(),
-		syslogreceiver.NewFactory(),
-		tcplogreceiver.NewFactory(),
-		udplogreceiver.NewFactory(),
 		nginxplusreceiver.NewFactory(),
 	}
 
