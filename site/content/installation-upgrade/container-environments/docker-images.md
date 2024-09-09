@@ -246,7 +246,7 @@ Keep the following information in mind when using the NGINX Agent [Dockerfiles](
 Run the following **make** command to build the default image, which uses Alpine as the base image.
 
 ```shell
-PACKAGE_NAME=install-agent-repo make official-oss-image
+IMAGE_BUILD_TARGET=install-agent-repo make oss-image
 ```
 
 To build an image with debian and older version of the NGINX Agent you can run the following command.
@@ -263,7 +263,7 @@ IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0~bullseye OS_REL
 Run the following `make` command to build the default image, which uses Ubuntu 24.04 (Noble) as the base image.
 
 ```shell
-PACKAGE_NAME=install-agent-repo make official-plus-image
+IMAGE_BUILD_TARGET=install-agent-repo make image
 ```
 
 To build an image with debian and older version of the NGINX Agent you can run the following command.
