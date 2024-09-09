@@ -13,7 +13,6 @@ import (
 
 	"github.com/nginx/agent/v3/internal/config"
 	"go.opentelemetry.io/collector/confmap"
-	"go.opentelemetry.io/collector/confmap/converter/expandconverter"
 	"go.opentelemetry.io/collector/confmap/provider/envprovider"
 	"go.opentelemetry.io/collector/confmap/provider/fileprovider"
 	"go.opentelemetry.io/collector/confmap/provider/httpprovider"
@@ -65,9 +64,7 @@ func createProviderFactories() []confmap.ProviderFactory {
 }
 
 func createConverterFactories() []confmap.ConverterFactory {
-	converterConfig := []confmap.ConverterFactory{
-		expandconverter.NewFactory(),
-	}
+	converterConfig := []confmap.ConverterFactory{}
 
 	return converterConfig
 }

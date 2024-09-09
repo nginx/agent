@@ -14,7 +14,7 @@ import (
 	"syscall"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/shirou/gopsutil/v3/host"
+	"github.com/shirou/gopsutil/v4/host"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate

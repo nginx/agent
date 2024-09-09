@@ -8,14 +8,26 @@ volumes:
 
 services:
   agent-with-nginx-plus:
-    image: ${AGENT_IMAGE}
+    image: ${AGENT_IMAGE_WITH_NGINX_PLUS}
+    container_name: mock-collector-agent-with-nginx-plus
     volumes:
       - ./nginx-agent.conf:/etc/nginx-agent/nginx-agent.conf
-      - ./nginx:/etc/nginx/
+      - ./nginx-plus:/etc/nginx/
     networks:
       - metrics
+
+  agent-with-nginx-oss:
+    image: ${AGENT_IMAGE_WITH_NGINX_OSS}
+    container_name: mock-collector-agent-with-nginx-oss
+    volumes:
+      - ./nginx-agent.conf:/etc/nginx-agent/nginx-agent.conf
+      - ./nginx-oss:/etc/nginx/
+    networks:
+      - metrics
+
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.99.0
+    container_name: mock-collector-otel-collector
     restart: on-failure
     command: [ "--config=/etc/otel-collector.yaml" ]
     ports:
@@ -27,19 +39,21 @@ services:
       - metrics
 
   prometheus:
-      image: prom/prometheus:latest
-      restart: unless-stopped
-      ports:
-        - "9090:9090"
-      volumes:
-        - ./prometheus.yaml:/etc/prometheus/prometheus.yml
-      command:
-        - '--config.file=/etc/prometheus/prometheus.yml'
-      networks:
-        - metrics
+    image: prom/prometheus:latest
+    container_name: mock-collector-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    networks:
+      - metrics
 
   grafana:
     image: grafana/grafana:latest
+    container_name: mock-collector-grafana
     restart: unless-stopped
     ports:
       - "3002:3000"
