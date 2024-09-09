@@ -33,7 +33,7 @@ func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext
 		return false
 	}
 
-	if len(ncc.Files) != len(otherNginxConfigContext.Files) {
+	if !ncc.areFileEqual(otherNginxConfigContext.Files) {
 		return false
 	}
 
@@ -43,6 +43,23 @@ func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext
 
 	if !reflect.DeepEqual(ncc.ErrorLogs, otherNginxConfigContext.ErrorLogs) {
 		return false
+	}
+
+	return true
+}
+
+func (ncc *NginxConfigContext) areFileEqual(files []*v1.File) bool {
+	if len(ncc.Files) != len(files) {
+		return false
+	}
+
+	for _, file := range ncc.Files {
+		for _, otherFile := range files {
+			if file.GetFileMeta().GetName() == otherFile.GetFileMeta().GetName() &&
+				file.GetFileMeta().GetHash() != otherFile.GetFileMeta().GetHash() {
+				return false
+			}
+		}
 	}
 
 	return true

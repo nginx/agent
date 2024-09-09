@@ -182,13 +182,21 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 					dataPlaneResponse.GetCommandResponse().GetMessage())
 				assert.Equal(t, test.configApplyReturnsErr.Error(), dataPlaneResponse.GetCommandResponse().GetError())
 			case test.configApplyStatus == model.NoChange:
-				assert.Len(t, messages, 1)
+				assert.Len(t, messages, 2)
 				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
 				assert.Equal(
 					t,
 					mpi.CommandResponse_COMMAND_STATUS_OK,
 					dataPlaneResponse.GetCommandResponse().GetStatus(),
+				)
+
+				instanceID, ok := messages[1].Data.(string)
+				assert.True(t, ok)
+				assert.Equal(
+					t,
+					test.message.GetConfigApplyRequest().GetOverview().GetConfigVersion().GetInstanceId(),
+					instanceID,
 				)
 			case test.message == nil:
 				assert.Empty(t, messages)

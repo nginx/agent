@@ -12,6 +12,7 @@ import (
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 
+	"github.com/nginx/agent/v3/internal/watcher/file"
 	"github.com/nginx/agent/v3/internal/watcher/health"
 	"github.com/nginx/agent/v3/internal/watcher/instance"
 
@@ -30,9 +31,11 @@ type (
 		agentConfig                        *config.Config
 		instanceWatcherService             instanceWatcherServiceInterface
 		healthWatcherService               *health.HealthWatcherService
+		fileWatcherService                 *file.FileWatcherService
 		instanceUpdatesChannel             chan instance.InstanceUpdatesMessage
 		nginxConfigContextChannel          chan instance.NginxConfigContextMessage
 		instanceHealthChannel              chan health.InstanceHealthMessage
+		fileUpdatesChannel                 chan file.FileUpdateMessage
 		cancel                             context.CancelFunc
 		instancesWithConfigApplyInProgress []string
 	}
@@ -43,7 +46,8 @@ type (
 			instancesChannel chan<- instance.InstanceUpdatesMessage,
 			nginxConfigContextChannel chan<- instance.NginxConfigContextMessage,
 		)
-		ReparseConfig(ctx context.Context, instance *mpi.Instance)
+		ReparseConfig(ctx context.Context, instanceID string)
+		ReparseConfigs(ctx context.Context)
 	}
 )
 
@@ -54,9 +58,11 @@ func NewWatcher(agentConfig *config.Config) *Watcher {
 		agentConfig:                        agentConfig,
 		instanceWatcherService:             instance.NewInstanceWatcherService(agentConfig),
 		healthWatcherService:               health.NewHealthWatcherService(agentConfig),
+		fileWatcherService:                 file.NewFileWatcherService(agentConfig),
 		instanceUpdatesChannel:             make(chan instance.InstanceUpdatesMessage),
 		nginxConfigContextChannel:          make(chan instance.NginxConfigContextMessage),
 		instanceHealthChannel:              make(chan health.InstanceHealthMessage),
+		fileUpdatesChannel:                 make(chan file.FileUpdateMessage),
 		instancesWithConfigApplyInProgress: []string{},
 	}
 }
@@ -72,6 +78,7 @@ func (w *Watcher) Init(ctx context.Context, messagePipe bus.MessagePipeInterface
 
 	go w.instanceWatcherService.Watch(watcherContext, w.instanceUpdatesChannel, w.nginxConfigContextChannel)
 	go w.healthWatcherService.Watch(watcherContext, w.instanceHealthChannel)
+	go w.fileWatcherService.Watch(watcherContext, w.fileUpdatesChannel)
 	go w.monitorWatchers(watcherContext)
 
 	return nil
@@ -118,7 +125,7 @@ func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest",
-			"payload", msg.Data)
+			"payload", msg.Data, "topic", msg.Topic)
 
 		return
 	}
@@ -126,7 +133,7 @@ func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message
 	request, requestOk := managementPlaneRequest.GetRequest().(*mpi.ManagementPlaneRequest_ConfigApplyRequest)
 	if !requestOk {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest_ConfigApplyRequest",
-			"payload", msg.Data)
+			"payload", msg.Data, "topic", msg.Topic)
 
 		return
 	}
@@ -134,12 +141,13 @@ func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message
 	instanceID := request.ConfigApplyRequest.GetOverview().GetConfigVersion().GetInstanceId()
 
 	w.instancesWithConfigApplyInProgress = append(w.instancesWithConfigApplyInProgress, instanceID)
+	w.fileWatcherService.SetEnabled(false)
 }
 
 func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message) {
-	data, ok := msg.Data.(*mpi.Instance)
+	data, ok := msg.Data.(string)
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to Instance", "payload", msg.Data)
+		slog.ErrorContext(ctx, "Unable to cast message payload to string", "payload", msg.Data, "topic", msg.Topic)
 
 		return
 	}
@@ -147,9 +155,10 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
 		w.instancesWithConfigApplyInProgress,
 		func(element string) bool {
-			return element == data.GetInstanceMeta().GetInstanceId()
+			return element == data
 		},
 	)
+	w.fileWatcherService.SetEnabled(true)
 
 	w.instanceWatcherService.ReparseConfig(ctx, data)
 }
@@ -157,7 +166,7 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 func (w *Watcher) handleRollbackComplete(ctx context.Context, msg *bus.Message) {
 	instanceID, ok := msg.Data.(string)
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to string", "payload", msg.Data)
+		slog.ErrorContext(ctx, "Unable to cast message payload to string", "payload", msg.Data, "topic", msg.Topic)
 
 		return
 	}
@@ -168,6 +177,7 @@ func (w *Watcher) handleRollbackComplete(ctx context.Context, msg *bus.Message) 
 			return element == instanceID
 		},
 	)
+	w.fileWatcherService.SetEnabled(true)
 }
 
 func (w *Watcher) monitorWatchers(ctx context.Context) {
@@ -179,8 +189,9 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 			w.handleInstanceUpdates(newCtx, message)
 		case message := <-w.nginxConfigContextChannel:
+			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
+
 			if !slices.Contains(w.instancesWithConfigApplyInProgress, message.NginxConfigContext.InstanceID) {
-				newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 				slog.DebugContext(
 					newCtx,
 					"Updated NGINX config context",
@@ -190,12 +201,24 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 					newCtx,
 					&bus.Message{Topic: bus.NginxConfigUpdateTopic, Data: message.NginxConfigContext},
 				)
+			} else {
+				slog.DebugContext(
+					newCtx,
+					"Not sending updated NGINX config context since config apply is in progress",
+					"nginx_config_context", message.NginxConfigContext,
+				)
 			}
 		case message := <-w.instanceHealthChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 			w.messagePipe.Process(newCtx, &bus.Message{
 				Topic: bus.InstanceHealthTopic, Data: message.InstanceHealth,
 			})
+
+		case message := <-w.fileUpdatesChannel:
+			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
+			// Running this in a separate go routine otherwise we get into a deadlock
+			// since the ReparseConfigs function could add new messages to one of the other watcher channels
+			go w.instanceWatcherService.ReparseConfigs(newCtx)
 		}
 	}
 }

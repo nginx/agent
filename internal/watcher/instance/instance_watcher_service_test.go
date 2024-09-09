@@ -326,11 +326,12 @@ func TestInstanceWatcherService_ReparseConfig(t *testing.T) {
 	}
 
 	instance := protos.GetNginxOssInstance([]string{})
-	instance.InstanceRuntime.GetNginxRuntimeInfo().AccessLogs = []string{"access.logs"}
-	instance.InstanceRuntime.GetNginxRuntimeInfo().ErrorLogs = []string{"error.log"}
+	instance.GetInstanceRuntime().GetNginxRuntimeInfo().AccessLogs = []string{"access.logs"}
+	instance.GetInstanceRuntime().GetNginxRuntimeInfo().ErrorLogs = []string{"error.log"}
 
 	updatedInstance := protos.GetNginxOssInstance([]string{})
-	updatedInstance.GetInstanceRuntime().ProcessId = 5678
+	updatedInstance.GetInstanceRuntime().GetNginxRuntimeInfo().AccessLogs = []string{"access2.log"}
+	updatedInstance.GetInstanceRuntime().GetNginxRuntimeInfo().ErrorLogs = []string{"error.log"}
 
 	tests := []struct {
 		parseReturns *model.NginxConfigContext
@@ -362,7 +363,7 @@ func TestInstanceWatcherService_ReparseConfig(t *testing.T) {
 				instance.GetInstanceMeta().GetInstanceId(): instance,
 			}
 
-			instanceWatcherService.ReparseConfig(ctx, updatedInstance)
+			instanceWatcherService.ReparseConfig(ctx, updatedInstance.GetInstanceMeta().GetInstanceId())
 
 			nginxConfigContextMessage := <-nginxConfigContextChannel
 			assert.Equal(t, updateNginxConfigContext, nginxConfigContextMessage.NginxConfigContext)

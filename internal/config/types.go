@@ -77,6 +77,11 @@ type (
 		Timeout             time.Duration `yaml:"-" mapstructure:"timeout"`
 		Time                time.Duration `yaml:"-" mapstructure:"time"`
 		PermitWithoutStream bool          `yaml:"-" mapstructure:"permit_without_stream"`
+		// if MaxMessageSize is size set then we use that value,
+		// otherwise MaxMessageRecieveSize and MaxMessageSendSize for individual settings
+		MaxMessageSize        int `yaml:"-" mapstructure:"max_message_size"`
+		MaxMessageRecieveSize int `yaml:"-" mapstructure:"max_message_receive_size"`
+		MaxMessageSendSize    int `yaml:"-" mapstructure:"max_message_send_size"`
 	}
 
 	Collector struct {
@@ -180,6 +185,7 @@ type (
 	Watchers struct {
 		InstanceWatcher       InstanceWatcher       `yaml:"-" mapstructure:"instance_watcher"`
 		InstanceHealthWatcher InstanceHealthWatcher `yaml:"-" mapstructure:"instance_health_watcher"`
+		FileWatcher           FileWatcher           `yaml:"-" mapstructure:"file_watcher"`
 	}
 
 	InstanceWatcher struct {
@@ -187,6 +193,10 @@ type (
 	}
 
 	InstanceHealthWatcher struct {
+		MonitoringFrequency time.Duration `yaml:"-" mapstructure:"monitoring_frequency"`
+	}
+
+	FileWatcher struct {
 		MonitoringFrequency time.Duration `yaml:"-" mapstructure:"monitoring_frequency"`
 	}
 )
