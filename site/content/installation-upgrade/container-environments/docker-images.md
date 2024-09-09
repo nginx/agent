@@ -210,6 +210,14 @@ To ensure that the REST Interface is correctly configured, you can use the `curl
 curl 0.0.0.0:8038/nginx/
 ```
 
+If the REST Interface is configured correctly, then you should see a JSON object ouputted to the terminal containing metadata such as NGINX version, path to the NGINX conf, and runtime modules.
+
+**Sample Output:**
+
+```code
+[{"nginx_id":"b636d4376dea15405589692d3c5d3869ff3a9b26b0e7bb4bb1aa7e658ace1437","version":"1.27.1","conf_path":"/etc/nginx/nginx.conf","process_id":"7","process_path":"/usr/sbin/nginx","start_time":1725878806000,"built_from_source":false,"loadable_modules":null,"runtime_modules":["http_addition_module","http_auth_request_module","http_dav_module","http_flv_module","http_gunzip_module","http_gzip_static_module","http_mp4_module","http_random_index_module","http_realip_module","http_secure_link_module","http_slice_module","http_ssl_module","http_stub_status_module","http_sub_module","http_v2_module","http_v3_module","mail_ssl_module","stream_realip_module","stream_ssl_module","stream_ssl_preread_module"],"plus":{"enabled":false,"release":""},"ssl":{"ssl_type":0,"details":["OpenSSL","3.3.0","9 Apr 2024 (running with OpenSSL 3.3.1 4 Jun 2024)"]},"status_url":"","configure_args":["","prefix=/etc/nginx","sbin-path=/usr/sbin/nginx","modules-path=/usr/lib/nginx/modules","conf-path=/etc/nginx/nginx.conf","error-log-path=/var/log/nginx/error.log","http-log-path=/var/log/nginx/access.log","pid-path=/var/run/nginx.pid","lock-path=/var/run/nginx.lock","http-client-body-temp-path=/var/cache/nginx/client_temp","http-proxy-temp-path=/var/cache/nginx/proxy_temp","http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp","http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp","http-scgi-temp-path=/var/cache/nginx/scgi_temp","with-perl_modules_path=/usr/lib/perl5/vendor_perl","user=nginx","group=nginx","with-compat","with-file-aio","with-threads","with-http_addition_module","with-http_auth_request_module","with-http_dav_module","with-http_flv_module","with-http_gunzip_module","with-http_gzip_static_module","with-http_mp4_module","with-http_random_index_module","with-http_realip_module","with-http_secure_link_module","with-http_slice_module","with-http_ssl_module","with-http_stub_status_module","with-http_sub_module","with-http_v2_module","with-http_v3_module","with-mail","with-mail_ssl_module","with-stream","with-stream_realip_module","with-stream_ssl_module","with-stream_ssl_preread_module","with-cc-opt='-Os -fstack-clash-protection -Wformat -Werror=format-security -g'","with-ld-opt=-Wl,--as-needed,-O1,--sort-common"],"error_log_paths":null}]
+```
+
 <hr>
 
 ## Build the NGINX Agent images for specific OS targets
@@ -270,4 +278,5 @@ To build an image with Debian and an older version of NGINX Agent you can run th
 ```shell
 IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0~bullseye OS_RELEASE=debian OS_VERSION=bullseye-slim make image
 ```
+
 
