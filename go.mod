@@ -31,6 +31,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/httpforwarderextension v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.108.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/k8sobserver v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/oidcauthextension v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/sigv4authextension v0.108.0
@@ -273,6 +274,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/opencensusexporter v0.108.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/syslogexporter v0.108.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/zipkinexporter v0.108.0 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer v0.108.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/ecsutil v0.108.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.108.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal v0.108.0 // indirect

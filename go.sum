@@ -695,6 +695,10 @@ github.com/open-telemetry/opentelemetry-collector-contrib/extension/httpforwarde
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/httpforwarderextension v0.108.0/go.mod h1:Kr3Ve9PUu0EiLdniQCTRrhxYQPiiCFyqEYZ0OXkuzUE=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.108.0 h1:IOvhYjLDG/Kcak9OQmtI9SBdKPttEsujoFZUoYydtxc=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.108.0/go.mod h1:GGaNaqKogh9ukeiDFXAzm3Z4C1NuYO4PIjrEykUlqTk=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer v0.108.0 h1:zs0lLwZlCueFLU6J4Q70vn9skWTlTp2H6m78v6ZhPKY=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer v0.108.0/go.mod h1:betAqGGfDFb8SLyMYBwH9BQyB9wzxWOWXXC/Ht6/kas=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/k8sobserver v0.108.0 h1:MDXQX0zaAeCG2GfbyhL0aOF2AIysKIyIOcCT/ixW0Cg=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/k8sobserver v0.108.0/go.mod h1:9gDsB5rMckZVNQe6a7Hq5YgEiDZQQSosOfVcVszxuWA=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/oidcauthextension v0.108.0 h1:ESphGL9bV0/djrnW8dTW+B9IERUYjoic0F3Wnir/sDs=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/oidcauthextension v0.108.0/go.mod h1:6qi4d/sQLDYUJbky19EKds0/FHHM6RoWG5Ak7NZfJkQ=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.108.0 h1:M+yWJwPQwg8HcYwFk0tKJHZs67zHBVSO33c5NPqYKdk=
