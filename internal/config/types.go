@@ -86,6 +86,7 @@ type (
 
 	Collector struct {
 		ConfigPath string        `yaml:"-" mapstructure:"config_path"`
+		Log        *Log          `yaml:"-" mapstructure:"log"`
 		Exporters  []Exporter    `yaml:"-" mapstructure:"exporters"`
 		Health     *ServerConfig `yaml:"-" mapstructure:"health"`
 		Processors []Processor   `yaml:"-" mapstructure:"processors"`

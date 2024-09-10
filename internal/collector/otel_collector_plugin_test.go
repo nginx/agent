@@ -23,12 +23,16 @@ import (
 
 func TestCollector_New(t *testing.T) {
 	conf := types.OTelConfig(t)
+	conf.Collector.Log.Path = ""
+
 	_, err := New(conf)
 	require.NoError(t, err, "NewCollector should not return an error with valid config")
 }
 
 func TestCollector_InitAndClose(t *testing.T) {
 	conf := types.OTelConfig(t)
+	conf.Collector.Log.Path = ""
+
 	collector, err := New(conf)
 	require.NoError(t, err, "NewCollector should not return an error with valid config")
 
@@ -62,6 +66,7 @@ func TestCollector_Process(t *testing.T) {
 	defer nginxPlusMock.Close()
 
 	conf := types.OTelConfig(t)
+	conf.Collector.Log.Path = ""
 
 	tests := []struct {
 		name      string
@@ -184,6 +189,7 @@ func TestCollector_Process(t *testing.T) {
 // nolint: dupl
 func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 	conf := types.OTelConfig(t)
+	conf.Collector.Log.Path = ""
 
 	tests := []struct {
 		name               string
@@ -270,6 +276,7 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 // nolint: dupl
 func TestCollector_updateExistingNginxPlusReceiver(t *testing.T) {
 	conf := types.OTelConfig(t)
+	conf.Collector.Log.Path = ""
 
 	tests := []struct {
 		name               string

@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	expectedTemplatePath = "../../test/config/collector/test-otelcol.yaml"
+	expectedTemplatePath = "../../test/config/collector/test-opentelemetry-collector-agent.yaml"
 	// The log format's double quotes must be escaped so that valid YAML is produced when executing the template.
 	accessLogFormat = `$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent ` +
 		`\"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\"\"$upstream_cache_status\"`

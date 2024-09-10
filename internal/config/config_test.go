@@ -221,12 +221,12 @@ func TestResolveCollector(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
-			viperInstance.Set(CollectorRootKey, "set")
 			viperInstance.Set(CollectorConfigPathKey, test.expected.ConfigPath)
 			viperInstance.Set(CollectorReceiversKey, test.expected.Receivers)
 			viperInstance.Set(CollectorProcessorsKey, test.expected.Processors)
 			viperInstance.Set(CollectorExportersKey, test.expected.Exporters)
 			viperInstance.Set(CollectorHealthKey, test.expected.Health)
+			viperInstance.Set(CollectorLogKey, test.expected.Log)
 
 			actual, err := resolveCollector(testDefault.AllowedDirectories)
 			if test.shouldErr {
@@ -398,6 +398,10 @@ func getAgentConfig() *Config {
 				Host: "localhost",
 				Port: 1337,
 				Type: 0,
+			},
+			Log: &Log{
+				Level: "INFO",
+				Path:  "/var/log/nginx-agent/opentelemetry-collector-agent.log",
 			},
 		},
 		Command: &Command{

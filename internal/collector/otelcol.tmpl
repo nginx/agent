@@ -87,6 +87,13 @@ extensions:
     {{- end }}
 
 service:
+  {{- if .Log.Path}}
+  telemetry:
+    logs:
+      level: {{ .Log.Level }}
+      output_paths: ["{{ .Log.Path -}}"]
+      error_output_paths: ["{{ .Log.Path -}}"]
+  {{- end}}
   extensions:
     - health_check
   pipelines:
