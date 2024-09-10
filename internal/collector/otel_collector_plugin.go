@@ -76,6 +76,7 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 }
 
 func (oc *Collector) bootup(ctx context.Context) error {
+	slog.InfoContext(ctx, "Starting OTel collector")
 	errChan := make(chan error)
 
 	go func() {
