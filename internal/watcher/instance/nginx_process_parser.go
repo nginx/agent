@@ -289,7 +289,7 @@ func getNginxPrefix(ctx context.Context, nginxInfo *Info) string {
 		var ok bool
 		prefix, ok = nginxInfo.ConfigureArgs["prefix"].(string)
 		if !ok {
-			slog.WarnContext(ctx, "Failed to cast nginxInfo prefix to string")
+			slog.DebugContext(ctx, "Failed to cast nginxInfo prefix to string")
 		}
 	} else {
 		prefix = "/usr/local/nginx"
@@ -305,7 +305,7 @@ func getNginxConfPath(ctx context.Context, nginxInfo *Info) string {
 		var ok bool
 		confPath, ok = nginxInfo.ConfigureArgs["conf-path"].(string)
 		if !ok {
-			slog.WarnContext(ctx, "failed to cast nginxInfo conf-path to string")
+			slog.DebugContext(ctx, "failed to cast nginxInfo conf-path to string")
 		}
 	} else {
 		confPath = path.Join(nginxInfo.Prefix, "/conf/nginx.conf")
@@ -328,12 +328,12 @@ func getLoadableModules(nginxInfo *Info) (modules []string) {
 	if mp, ok := nginxInfo.ConfigureArgs["modules-path"]; ok {
 		modulePath, pathOK := mp.(string)
 		if !pathOK {
-			slog.Warn("Error parsing modules-path")
+			slog.Debug("Error parsing modules-path")
 			return modules
 		}
 		modules, err = readDirectory(modulePath, ".so")
 		if err != nil {
-			slog.Warn("Error reading module dir", "dir", modulePath, "error", err)
+			slog.Debug("Error reading module dir", "dir", modulePath, "error", err)
 			return modules
 		}
 
