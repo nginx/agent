@@ -80,8 +80,7 @@ ENV PATH="/usr/local/go/bin:${PATH}"
 ENV PATH=$PATH:/usr/local/go/bin
 
 RUN mv /agent/test/config/agent/nginx-agent-otel-load.conf /agent/test/load/nginx-agent.conf
-RUN mkdir /var/run/nginx-agent/
-RUN mkdir /var/log/nginx-agent/
+RUN mkdir /var/run/nginx-agent/ /var/log/nginx-agent/
 
 WORKDIR /agent/
 CMD make install-tools
