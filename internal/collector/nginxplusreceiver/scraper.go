@@ -7,9 +7,10 @@ package nginxplusreceiver
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"strconv"
 	"time"
+
+	"go.uber.org/zap"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -34,10 +35,10 @@ const (
 
 type nginxPlusScraper struct {
 	plusClient *plusapi.NginxClient
-
-	settings component.TelemetrySettings
-	cfg      *Config
-	mb       *metadata.MetricsBuilder
+	settings   component.TelemetrySettings
+	cfg        *Config
+	mb         *metadata.MetricsBuilder
+	logger     *zap.Logger
 }
 
 func newNginxPlusScraper(
@@ -58,23 +59,24 @@ func newNginxPlusScraper(
 		settings:   settings.TelemetrySettings,
 		cfg:        cfg,
 		mb:         mb,
+		logger:     settings.Logger,
 	}, nil
 }
 
-func (nps *nginxPlusScraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
+func (nps *nginxPlusScraper) scrape(_ context.Context) (pmetric.Metrics, error) {
 	stats, err := nps.plusClient.GetStats()
 	if err != nil {
 		return pmetric.Metrics{}, fmt.Errorf("GET stats: %w", err)
 	}
 
-	slog.DebugContext(ctx, "NGINX Plus stats", "stats", stats)
+	nps.logger.Debug("NGINX Plus stats", zap.Any("stats", stats))
 
-	nps.recordMetrics(ctx, stats)
+	nps.recordMetrics(stats)
 
 	return nps.mb.Emit(), nil
 }
 
-func (nps *nginxPlusScraper) recordMetrics(ctx context.Context, stats *plusapi.Stats) {
+func (nps *nginxPlusScraper) recordMetrics(stats *plusapi.Stats) {
 	now := pcommon.NewTimestampFromTime(time.Now())
 
 	// NGINX config reloads
@@ -107,7 +109,7 @@ func (nps *nginxPlusScraper) recordMetrics(ctx context.Context, stats *plusapi.S
 	nps.recordLocationZoneMetrics(stats, now)
 	nps.recordServerZoneMetrics(stats, now)
 	nps.recordHTTPUpstreamPeerMetrics(stats, now)
-	nps.recordSlabPageMetrics(ctx, stats, now)
+	nps.recordSlabPageMetrics(stats, now)
 	nps.recordSSLMetrics(now, stats)
 	nps.recordStreamMetrics(stats, now)
 }
@@ -421,7 +423,7 @@ func (nps *nginxPlusScraper) recordSSLMetrics(now pcommon.Timestamp, stats *plus
 	)
 }
 
-func (nps *nginxPlusScraper) recordSlabPageMetrics(ctx context.Context, stats *plusapi.Stats, now pcommon.Timestamp) {
+func (nps *nginxPlusScraper) recordSlabPageMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
 	for name, slab := range stats.Slabs {
 		nps.mb.RecordNginxSlabPageFreeDataPoint(now, int64(slab.Pages.Free), name)
 		nps.mb.RecordNginxSlabPageUsageDataPoint(now, int64(slab.Pages.Used), name)
@@ -429,7 +431,7 @@ func (nps *nginxPlusScraper) recordSlabPageMetrics(ctx context.Context, stats *p
 		for slotName, slot := range slab.Slots {
 			slotNumber, err := strconv.ParseInt(slotName, 10, 64)
 			if err != nil {
-				slog.WarnContext(ctx, "Invalid slot name for NGINX Plus slab metrics", "error", err)
+				nps.logger.Warn("Invalid slot name for NGINX Plus slab metrics", zap.Error(err))
 			}
 
 			nps.mb.RecordNginxSlabSlotUsageDataPoint(now, int64(slot.Used), slotNumber, name)
