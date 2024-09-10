@@ -73,10 +73,11 @@ func TestTemplateWrite(t *testing.T) {
 		CollectionInterval: time.Minute,
 		InitialDelay:       time.Second,
 		Scrapers: map[string]struct{}{
-			"cpu":     {},
-			"disk":    {},
-			"memory":  {},
-			"network": {},
+			"cpu":        {},
+			"disk":       {},
+			"filesystem": {},
+			"memory":     {},
+			"network":    {},
 		},
 	}
 	cfg.Collector.Receivers.NginxReceivers = append(cfg.Collector.Receivers.NginxReceivers, config.NginxReceiver{
