@@ -114,7 +114,6 @@ In order to build a container image with NGINX Plus, you must provide the SSL ce
 
 Here is an example of how to run the NGINX Agent container using Docker:
 
-#### Pull the image from docker-registry.nginx.com
 ```shell
 docker pull docker-registry.nginx.com/nginx/agent:mainline
 ```
