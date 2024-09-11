@@ -17,7 +17,7 @@ If you want to use NGINX Agent with NGINX Plus, you need to purchase an NGINX Pl
 
 See the requirements and supported operating systems in the [NGINX Agent Technical Specifications]({{< relref "technical-specifications.md" >}}) topic.
 
-## Deploy NGINX and NGINX Plus on Docker
+## Deploy Offical NGINX and NGINX Plus Containers
 
 Docker images are available in the [Deploying NGINX and NGINX Plus on Docker](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-docker/) NGINX documentation.
 
@@ -110,61 +110,18 @@ In order to build a container image with NGINX Plus, you must provide the SSL ce
    - Be sure to replace the example certificate and key filenames shown in the example command with your actual file names.
    - The file names in the *build/certs* directory must match those shown in the example.
 
-## Build the official NGINX Agent image with Docker
-
-{{<tabs name="build-image">}}
-
-{{%tab name="NGINX Open Source"%}}
-
-Change to the directory where the Dockerfile is located:
-
-```shell
-$ cd scripts/docker/official/nginx-oss-with-nginx-agent/alpine/
-```
-
-- To build an image that contains the latest NGINX Agent and the latest mainline version of NGINX run the following command:
-
-   ```shell
-   $ docker build -t nginx-agent . --no-cache -f ./Dockerfile.mainline
-   ```
-
-- To build an image that contains the latest NGINX Agent and the latest stable version of NGINX run the following command:
-
-   ```shell
-   $ docker build -t nginx-agent . --no-cache -f ./Dockerfile.stable
-   ```
-
-{{% /tab %}}
-
-{{%tab name="NGINX Plus"%}}
-
-1. Log in to [MyF5 Customer Portal](https://account.f5.com/myf5) and download your "nginx-repo.crt" and "nginx-repo.key" files. These files are also provided with the NGINX Plus trial package.
-
-1. Copy the files to the directory where the Dockerfile is located **scripts/docker/official/nginx-plus-with-nginx-agent/alpine/**.
-
-1. To build an image that contains the latest NGINX Agent and the latest version of NGINX Plus change to the directory where the Dockerfile is located:
-
-```shell
-$ cd scripts/docker/official/nginx-plus-with-nginx-agent/alpine/
-```
-
-1. Run the following command to build the image:
-
-```shell
-$ docker build -t nginx-agent . \
-  --no-cache -f ./Dockerfile \
-  --secret id=nginx-crt,src=nginx-repo.crt \
-  --secret id=nginx-key,src=nginx-repo.key
-```
-{{% /tab %}}
-{{% /tabs %}}
-
-
 ## Run the NGINX Agent container
 
 Here is an example of how to run the NGINX Agent container using Docker:
 
-```console
+#### Pull the image from docker-registry.nginx.com
+```shell
+docker pull docker-registry.nginx.com/nginx/agent:mainline
+```
+```shell
+docker tag docker-registry.nginx.com/nginx/agent:mainline nginx-agent
+```
+```shell
 docker run --name nginx-agent -d nginx-agent
 ```
 
