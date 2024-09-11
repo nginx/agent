@@ -12,11 +12,12 @@ import (
 	"fmt"
 	"sync"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/metrics"
 	"github.com/shirou/gopsutil/v3/net"
-	log "github.com/sirupsen/logrus"
 )
 
 const NETWORK_INTERFACE = "network_interface"
@@ -82,7 +83,6 @@ func (nio *NetIO) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrap
 		}
 
 		simpleMetrics := nio.convertSamplesToSimpleMetrics(v)
-		log.Debugf("net IO stats count: %d", len(simpleMetrics))
 
 		select {
 		case <-ctx.Done():
@@ -109,6 +109,7 @@ func (nio *NetIO) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrap
 	simpleMetrics := nio.convertSamplesToSimpleMetrics(totalStats)
 	m <- metrics.NewStatsEntityWrapper([]*proto.Dimension{}, simpleMetrics, proto.MetricsReport_SYSTEM)
 
+	log.Debugf("net IO stats: %v", currentNetIOStats)
 	nio.netIOStats = currentNetIOStats
 }
 

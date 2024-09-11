@@ -19,6 +19,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
@@ -50,6 +51,7 @@ const (
 var (
 	Viper       = viper.NewWithOptions(viper.KeyDelimiter(agent_config.KeyDelimiter))
 	MigratedEnv = false
+	cfgMu       = sync.Mutex{}
 )
 
 func SetVersion(version, commit string) {
@@ -196,7 +198,7 @@ func RegisterRunner(r func(cmd *cobra.Command, args []string)) {
 }
 
 func GetConfig(clientId string) (*Config, error) {
-	extensions := []string{}
+	var extensions []string
 
 	for _, extension := range Viper.GetStringSlice(agent_config.ExtensionsKey) {
 		if agent_config.IsKnownExtension(extension) {
@@ -247,6 +249,8 @@ func GetConfig(clientId string) (*Config, error) {
 // overwritten or not.
 func UpdateAgentConfig(systemId string, updateTags []string, updateFeatures []string) (bool, error) {
 	// Get current config on disk
+	cfgMu.Lock()
+	defer cfgMu.Unlock()
 	config, err := GetConfig(systemId)
 	if err != nil {
 		log.Errorf("Failed to register config: %v", err)

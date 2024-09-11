@@ -182,7 +182,6 @@ func (c *NginxAccessLog) Stop() {
 		fn()
 		delete(c.logs, f)
 	}
-	log.Debugf("Stopping NginxAccessLog source for nginx id: %v", c.baseDimensions.NginxId)
 }
 
 func (c *NginxAccessLog) collectLogStats(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
@@ -329,10 +328,10 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 			mu.Unlock()
 
 		case <-tick.C:
+			mu.Lock()
+
 			c.baseDimensions.NginxType = c.nginxType
 			c.baseDimensions.PublishedAPI = logFile
-
-			mu.Lock()
 
 			if len(requestLengths) > 0 {
 				httpCounters["request.length"] = getAverageMetricValue(requestLengths)
