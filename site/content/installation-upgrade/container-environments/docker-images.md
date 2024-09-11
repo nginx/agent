@@ -21,7 +21,7 @@ See the requirements and supported operating systems in the [NGINX Agent Technic
 
 Docker images are available in the [Deploying NGINX and NGINX Plus on Docker](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-docker/) NGINX documentation.
 
-The document provides instructions on how to build images with NGINX Agent and NGINX packaged together. It includes steps for downloading the necessary Docker images, configuring your Docker environment, and deploying NGINX and NGINX Plus containers.
+This guide provides instructions on how to build images with NGINX Agent and NGINX packaged together. It includes steps for downloading the necessary Docker images, configuring your Docker environment, and deploying NGINX and NGINX Plus containers.
 
 ## Set up your environment
 
