@@ -1,17 +1,15 @@
 # NGINX Receiver
 
-This receiver can fetch stats from a NGINX instance by using two different ways of scraping:  
-* Scarping metrics from the `ngx_http_stub_status_module` module's `status` endpoint.
-* Scraping metrics from the NGINX access logs.
+This receiver can fetch stats from a NGINX instance via two sources:  
+* The `ngx_http_stub_status_module` module's `status` endpoint.
+* The NGINX access logs.
 
 ## Configuration
 
 ### NGINX Module
 
-You must configure NGINX to expose status information by editing the NGINX
-configuration.  Please see
-[ngx_http_stub_status_module](http://nginx.org/en/docs/http/ngx_http_stub_status_module.html)
-for a guide to configuring the NGINX stats module `ngx_http_stub_status_module`.
+You must configure NGINX to expose status information by editing the NGINX configuration.  
+Please see [ngx_http_stub_status_module](http://nginx.org/en/docs/http/ngx_http_stub_status_module.html) for a guide to configuring the NGINX stats module `ngx_http_stub_status_module`.
 
 You must also configure an access log as well. Please see [Setting Up the Access Log](https://docs.nginx.com/nginx/admin-guide/monitoring/logging/#setting-up-the-access-log) for a guide to configuring an access log.
 

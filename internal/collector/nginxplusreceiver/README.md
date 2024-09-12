@@ -1,15 +1,13 @@
 # NGINX Plus Receiver
 
-This receiver can fetch stats from a NGINX Plus instance from the `ngx_http_api_module` module's `api` endpoint.
+This receiver can fetch stats from a NGINX Plus instance via the `ngx_http_api_module` module's `api` endpoint.
 
 ## Configuration
 
 ### NGINX Module
 
-You must configure NGINX Plus to expose api information by editing the NGINX
-configuration.  Please see
-[ngx_http_api_module](https://nginx.org/en/docs/http/ngx_http_api_module.html)
-for a guide to configuring the NGINX stats module `ngx_http_api_module`.
+You must configure NGINX Plus to expose api information by editing the NGINX configuration.  
+Please see [ngx_http_api_module](https://nginx.org/en/docs/http/ngx_http_api_module.html) for a guide to configuring the NGINX stats module `ngx_http_api_module`.
 
 ### Receiver Config
 
