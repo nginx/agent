@@ -25,8 +25,8 @@ const accessLogFormat = `$remote_addr - $remote_user [$time_local] \"$request\" 
 func TestRegisterConfigFile(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	file, err := os.Create("nginx-agent.conf")
-	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
 	require.NoError(t, err)
+	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
 
 	currentDirectory, err := os.Getwd()
 	require.NoError(t, err)
@@ -67,7 +67,7 @@ func TestResolveConfig(t *testing.T) {
 	require.NotNil(t, actual.Collector)
 	assert.Equal(t, "/etc/nginx-agent/nginx-agent-otelcol.yaml", actual.Collector.ConfigPath)
 	assert.NotEmpty(t, actual.Collector.Receivers)
-	assert.NotEmpty(t, actual.Collector.Processors)
+	assert.Equal(t, Processors{Batch: Batch{}}, actual.Collector.Processors)
 	assert.NotEmpty(t, actual.Collector.Exporters)
 	assert.NotEmpty(t, actual.Collector.Health)
 
@@ -189,33 +189,6 @@ func TestResolveCollector(t *testing.T) {
 			shouldErr: true,
 			errMsg:    "collector path /path/to/secret not allowed",
 		},
-		{
-			name: "Test 3: Unsupported Exporter",
-			expected: &Collector{
-				ConfigPath: testDefault.Collector.ConfigPath,
-				Exporters: []Exporter{
-					{
-						Type: "not-allowed",
-					},
-				},
-			},
-			shouldErr: true,
-			errMsg:    "unsupported exporter type: not-allowed",
-		},
-		{
-			name: "Test 4: Unsupported Processor",
-			expected: &Collector{
-				ConfigPath: testDefault.Collector.ConfigPath,
-				Exporters:  testDefault.Collector.Exporters,
-				Processors: []Processor{
-					{
-						Type: "custom-processor",
-					},
-				},
-			},
-			shouldErr: true,
-			errMsg:    "unsupported processor type: custom-processor",
-		},
 	}
 
 	for _, test := range tests {
@@ -336,30 +309,28 @@ func getAgentConfig() *Config {
 		},
 		Collector: &Collector{
 			ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
-			Exporters: []Exporter{
-				{
-					Type: "otlp",
-					Server: &ServerConfig{
-						Host: "127.0.0.1",
-						Port: 1234,
-						Type: 0,
-					},
-					Auth: &AuthConfig{
-						Token: "super-secret-token",
-					},
-					TLS: &TLSConfig{
-						Cert:       "/path/to/server-cert.pem",
-						Key:        "/path/to/server-cert.pem",
-						Ca:         "/path/to/server-cert.pem",
-						SkipVerify: true,
-						ServerName: "remote-saas-server",
+			Exporters: Exporters{
+				OtlpExporters: []OtlpExporter{
+					{
+						Server: &ServerConfig{
+							Host: "127.0.0.1",
+							Port: 1234,
+						},
+						Auth: &AuthConfig{
+							Token: "super-secret-token",
+						},
+						TLS: &TLSConfig{
+							Cert:       "/path/to/server-cert.pem",
+							Key:        "/path/to/server-cert.pem",
+							Ca:         "/path/to/server-cert.pem",
+							SkipVerify: true,
+							ServerName: "remote-saas-server",
+						},
 					},
 				},
 			},
-			Processors: []Processor{
-				{
-					Type: "batch",
-				},
+			Processors: Processors{
+				Batch: struct{}{},
 			},
 			Receivers: Receivers{
 				OtlpReceivers: []OtlpReceiver{

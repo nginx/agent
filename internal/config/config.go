@@ -298,7 +298,7 @@ func loadPropertiesFromFile(cfg string) error {
 	return nil
 }
 
-func normalizeFunc(f *flag.FlagSet, name string) flag.NormalizedName {
+func normalizeFunc(_ *flag.FlagSet, name string) flag.NormalizedName {
 	from := []string{"_", "."}
 	to := "-"
 	for _, sep := range from {
@@ -345,8 +345,8 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 
 	var (
 		err         error
-		exporters   []Exporter
-		processors  []Processor
+		exporters   Exporters
+		processors  Processors
 		receivers   Receivers
 		healthCheck ServerConfig
 		log         Log

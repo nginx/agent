@@ -15,18 +15,6 @@ import (
 	"github.com/google/uuid"
 )
 
-var (
-	supportedExporters = map[string]struct{}{
-		"debug":      {},
-		"otlp":       {},
-		"prometheus": {},
-	}
-
-	supportedProcessors = map[string]struct{}{
-		"batch": {},
-	}
-)
-
 type ServerType int
 
 const (
@@ -87,24 +75,38 @@ type (
 	Collector struct {
 		ConfigPath string        `yaml:"-" mapstructure:"config_path"`
 		Log        *Log          `yaml:"-" mapstructure:"log"`
-		Exporters  []Exporter    `yaml:"-" mapstructure:"exporters"`
+		Exporters  Exporters     `yaml:"-" mapstructure:"exporters"`
 		Health     *ServerConfig `yaml:"-" mapstructure:"health"`
-		Processors []Processor   `yaml:"-" mapstructure:"processors"`
+		Processors Processors    `yaml:"-" mapstructure:"processors"`
 		Receivers  Receivers     `yaml:"-" mapstructure:"receivers"`
 	}
 
-	// OTel Collector Exporter configuration.
-	Exporter struct {
+	Exporters struct {
+		OtlpExporters       []OtlpExporter       `yaml:"-" mapstructure:"otlp_exporters"`
+		Debug               DebugExporter        `yaml:"-" mapstructure:"debug"`
+		PrometheusExporters []PrometheusExporter `yaml:"-" mapstructure:"prometheus_exporters"`
+	}
+
+	OtlpExporter struct {
 		Server *ServerConfig `yaml:"-" mapstructure:"server"`
 		Auth   *AuthConfig   `yaml:"-" mapstructure:"auth"`
 		TLS    *TLSConfig    `yaml:"-" mapstructure:"tls"`
-		Type   string        `yaml:"-" mapstructure:"type"`
 	}
 
-	// OTel Collector Processor configuration.
-	Processor struct {
-		Type string `yaml:"-" mapstructure:"type"`
+	DebugExporter struct{}
+
+	PrometheusExporter struct {
+		Server *ServerConfig `yaml:"-" mapstructure:"server"`
+		TLS    *TLSConfig    `yaml:"-" mapstructure:"tls"`
 	}
+
+	// OTel Collector Processors configuration.
+	Processors struct {
+		Batch Batch `yaml:"-" mapstructure:"batch"`
+	}
+
+	Batch struct{}
+
 	// OTel Collector Receiver configuration.
 	Receivers struct {
 		OtlpReceivers      []OtlpReceiver      `yaml:"-" mapstructure:"otlp_receivers"`
@@ -212,29 +214,6 @@ func (col *Collector) Validate(allowedDirectories []string) error {
 
 	for _, nginxReceiver := range col.Receivers.NginxReceivers {
 		err = errors.Join(err, nginxReceiver.Validate(allowedDirectories))
-	}
-
-	for _, exp := range col.Exporters {
-		t := strings.ToLower(exp.Type)
-
-		if _, ok := supportedExporters[t]; !ok {
-			err = errors.Join(err, fmt.Errorf("unsupported exporter type: %s", exp.Type))
-			continue
-		}
-
-		// normalize field too
-		exp.Type = t
-	}
-
-	for _, proc := range col.Processors {
-		t := strings.ToLower(proc.Type)
-
-		if _, ok := supportedProcessors[t]; !ok {
-			err = errors.Join(err, fmt.Errorf("unsupported processor type: %s", proc.Type))
-			continue
-		}
-
-		proc.Type = t
 	}
 
 	return err

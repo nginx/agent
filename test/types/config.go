@@ -14,9 +14,7 @@ import (
 )
 
 const (
-	apiPort     = 8980
 	commandPort = 8981
-	metricsPort = 8982
 
 	clientPermitWithoutStream = true
 	clientTime                = 50 * time.Second
@@ -51,23 +49,21 @@ func AgentConfig() *config.Config {
 		AllowedDirectories: []string{"/tmp/"},
 		Collector: &config.Collector{
 			ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
-			Exporters: []config.Exporter{
-				{
-					Type: "otlp",
-					Server: &config.ServerConfig{
-						Host: "127.0.0.1",
-						Port: randomPort1,
-						Type: 0,
-					},
-					Auth: &config.AuthConfig{
-						Token: "super-secret-token",
+			Exporters: config.Exporters{
+				OtlpExporters: []config.OtlpExporter{
+					{
+						Server: &config.ServerConfig{
+							Host: "127.0.0.1",
+							Port: randomPort1,
+						},
+						Auth: &config.AuthConfig{
+							Token: "super-secret-token",
+						},
 					},
 				},
 			},
-			Processors: []config.Processor{
-				{
-					Type: "batch",
-				},
+			Processors: config.Processors{
+				Batch: struct{}{},
 			},
 			Receivers: config.Receivers{
 				OtlpReceivers: OtlpReceivers(),

@@ -53,21 +53,18 @@ func TestTemplateWrite(t *testing.T) {
 	actualConfPath := filepath.Join("/tmp/", "nginx-agent-otelcol-test.yaml")
 	cfg.Collector.ConfigPath = actualConfPath
 
-	cfg.Collector.Exporters = append(cfg.Collector.Exporters, config.Exporter{
-		Type: "prometheus",
-		Server: &config.ServerConfig{
-			Host: "localhost",
-			Port: 9876,
-			Type: 0,
-		},
-		Auth: nil, // Auth and TLS not supported yet.
-		TLS:  nil,
-	}, config.Exporter{
-		Type:   "debug",
-		Server: nil, // not relevant to the debug exporter
-		Auth:   nil,
-		TLS:    nil,
-	})
+	cfg.Collector.Exporters.PrometheusExporters = append(
+		cfg.Collector.Exporters.PrometheusExporters,
+		config.PrometheusExporter{
+			Server: &config.ServerConfig{
+				Host: "localhost",
+				Port: 9876,
+				Type: 0,
+			},
+			TLS: nil,
+		})
+
+	cfg.Collector.Exporters.Debug = config.DebugExporter{}
 
 	cfg.Collector.Receivers.HostMetrics = config.HostMetrics{
 		CollectionInterval: time.Minute,

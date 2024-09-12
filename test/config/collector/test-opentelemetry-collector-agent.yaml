@@ -25,7 +25,7 @@ processors:
   batch:
 
 exporters:
-  otlp:
+  otlp/0:
     endpoint: "127.0.0.1:1234"
     compression: none
     timeout: 10s
@@ -36,7 +36,7 @@ exporters:
       max_elapsed_time: 10m
     tls:
       insecure: true
-  prometheus:
+  prometheus/0:
     endpoint: "localhost:9876"
     namespace: "nginx-agent"
   debug:
@@ -65,6 +65,6 @@ service:
       processors:
         - batch
       exporters:
-        - otlp
-        - prometheus
+        - otlp/0
+        - prometheus/0
         - debug
