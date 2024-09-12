@@ -72,7 +72,6 @@ func setupConnectionTest(tb testing.TB, expectNoErrorsInLogs bool) func(tb testi
 
 		containerNetwork, err := network.New(
 			ctx,
-			network.WithCheckDuplicate(),
 			network.WithAttachable(),
 		)
 		require.NoError(tb, err)

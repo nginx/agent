@@ -16,7 +16,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const expectedTemplatePath = "../../test/config/collector/test-otelcol.yaml"
+const (
+	expectedTemplatePath = "../../test/config/collector/test-opentelemetry-collector-agent.yaml"
+	// The log format's double quotes must be escaped so that valid YAML is produced when executing the template.
+	accessLogFormat = `$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent ` +
+		`\"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\"\"$upstream_cache_status\"`
+)
 
 func TestOTelCollectorSettings(t *testing.T) {
 	cfg := types.AgentConfig()
@@ -37,7 +42,7 @@ func TestConfigProviderSettings(t *testing.T) {
 
 	assert.NotNil(t, settings.ResolverSettings, "ResolverSettings should not be nil")
 	assert.Len(t, settings.ResolverSettings.ProviderFactories, 5, "There should be 5 provider factories")
-	assert.Len(t, settings.ResolverSettings.ConverterFactories, 1, "There should be 1 converter factory")
+	assert.Empty(t, settings.ResolverSettings.ConverterFactories, "There should be 0 converter factory")
 	assert.NotEmpty(t, settings.ResolverSettings.URIs, "URIs should not be empty")
 	assert.Equal(t, "/etc/nginx-agent/nginx-agent-otelcol.yaml", settings.ResolverSettings.URIs[0],
 		"Default URI should match")
@@ -45,7 +50,7 @@ func TestConfigProviderSettings(t *testing.T) {
 
 func TestTemplateWrite(t *testing.T) {
 	cfg := types.AgentConfig()
-	actualConfPath := filepath.Join(t.TempDir(), "nginx-agent-otelcol-test.yaml")
+	actualConfPath := filepath.Join("/tmp/", "nginx-agent-otelcol-test.yaml")
 	cfg.Collector.ConfigPath = actualConfPath
 
 	cfg.Collector.Exporters = append(cfg.Collector.Exporters, config.Exporter{
@@ -71,6 +76,12 @@ func TestTemplateWrite(t *testing.T) {
 	cfg.Collector.Receivers.NginxReceivers = append(cfg.Collector.Receivers.NginxReceivers, config.NginxReceiver{
 		InstanceID: "123",
 		StubStatus: "http://localhost:80/status",
+		AccessLogs: []config.AccessLog{
+			{
+				LogFormat: accessLogFormat,
+				FilePath:  "/var/log/nginx/access-custom.conf",
+			},
+		},
 	})
 
 	require.NotNil(t, cfg)

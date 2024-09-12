@@ -10,8 +10,6 @@ receivers:
       memory:
       network:
       paging:
-      processes:
-      process:
   otlp/0:
     protocols:
       grpc:
@@ -19,6 +17,9 @@ receivers:
   nginx/123:
     endpoint: "http://localhost:80/status"
     collection_interval: 10s
+    access_logs:
+      - log_format: "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\"\"$upstream_cache_status\""
+        file_path: "/var/log/nginx/access-custom.conf"
 
 processors:
   batch:
@@ -35,7 +36,6 @@ exporters:
       max_elapsed_time: 10m
     tls:
       insecure: true
-      
   prometheus:
     endpoint: "localhost:9876"
     namespace: "nginx-agent"
@@ -49,6 +49,11 @@ extensions:
     endpoint: "localhost:1337"
 
 service:
+  telemetry:
+    logs:
+      level: INFO
+      output_paths: ["/var/log/nginx-agent/opentelemetry-collector-agent.log"]
+      error_output_paths: ["/var/log/nginx-agent/opentelemetry-collector-agent.log"]
   extensions:
     - health_check
   pipelines:
