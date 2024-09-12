@@ -77,16 +77,6 @@ git clone git@github.com:nginx/agent.git
 
 {{% /tabs %}}
 
-### Download the agent binary {#agent-binary}
-
-Before you can build a container image with NGINX, you must build or download the **agent** binary.
-
-The **agent** binary packages are available from the [NGINX Agent Releases](https://github.com/nginx/agent/releases) page on GitHub.
-
-Download the binary package for the operating system that you will use in the container image.
-
-Note the location and name of the downloaded package. You will need to use this when running the **make** command to build the image (referred to as `[PATH-TO-PACKAGE]` in the example commands below).
-
 ### Download the NGINX Plus certificate and key {#myf5-download}
 
 {{< fa "circle-info" "text-muted" >}} **This step is required if you are using NGINX Plus. If you are using NGINX open source, you can skip this section.**
