@@ -8,12 +8,13 @@ package file
 import (
 	"bytes"
 	"context"
-	"github.com/nginx/agent/v3/test/stub"
 	"os"
 	"path"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/nginx/agent/v3/test/stub"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/nginx/agent/v3/test/types"
