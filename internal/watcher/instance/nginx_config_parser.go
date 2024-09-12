@@ -163,7 +163,7 @@ func (ncp *NginxConfigParser) ignoreLog(logPath string) bool {
 	for _, path := range strings.Split(ncp.agentConfig.DataPlaneConfig.Nginx.ExcludeLogs, ",") {
 		ok, err := filepath.Match(path, logPath)
 		if err != nil {
-			slog.Error("invalid path for excluding log", "log_path", path)
+			slog.Error("Invalid path for excluding log", "log_path", path)
 		} else if ok {
 			slog.Info("Excluding log as specified in config", "log_path", logPath)
 			return true
