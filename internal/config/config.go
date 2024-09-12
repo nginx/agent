@@ -144,6 +144,13 @@ func registerFlags() {
 		"Warning messages in the NGINX errors logs after a NGINX reload will be treated as an error.",
 	)
 
+	fs.String(
+		NginxExcludeLogsKey,
+		"",
+		"One or more NGINX log paths that you want to exclude from metrics collection or error monitoring "+
+			"This key is formatted as a string and multiple values should be provided as a comma-separated list.",
+	)
+
 	fs.Duration(ClientTimeoutKey, time.Minute, "Client timeout")
 	fs.String(ConfigDirectoriesKey,
 		DefConfigDirectories,
@@ -297,7 +304,8 @@ func resolveDataPlaneConfig() *DataPlaneConfig {
 	return &DataPlaneConfig{
 		Nginx: &NginxDataPlaneConfig{
 			ReloadMonitoringPeriod: viperInstance.GetDuration(NginxReloadMonitoringPeriodKey),
-			TreatWarningsAsError:   viperInstance.GetBool(NginxTreatWarningsAsErrorsKey),
+			TreatWarningsAsErrors:  viperInstance.GetBool(NginxTreatWarningsAsErrorsKey),
+			ExcludeLogs:            viperInstance.GetString(NginxExcludeLogsKey),
 		},
 	}
 }

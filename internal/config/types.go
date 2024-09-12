@@ -66,8 +66,9 @@ type (
 	}
 
 	NginxDataPlaneConfig struct {
+		ExcludeLogs            string        `yaml:"-" mapstructure:"exclude_logs"`
 		ReloadMonitoringPeriod time.Duration `yaml:"-" mapstructure:"reload_monitoring_period"`
-		TreatWarningsAsError   bool          `yaml:"-" mapstructure:"treat_warnings_as_error"`
+		TreatWarningsAsErrors  bool          `yaml:"-" mapstructure:"treat_warnings_as_errors"`
 	}
 
 	Client struct {

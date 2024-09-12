@@ -6,12 +6,16 @@
 package instance
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
+
+	"github.com/nginx/agent/v3/test/stub"
 
 	"github.com/google/go-cmp/cmp"
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -643,6 +647,97 @@ Reading: 0 Writing: 1 Waiting: 1
 			statusAPI := fmt.Sprintf("%s%s", fakeServer.URL, test.endpoint)
 			result := nginxConfigParser.pingStubStatusAPIEndpoint(ctx, statusAPI)
 			assert.Equal(t, test.expected, result)
+		})
+	}
+}
+
+func TestNginxConfigParser_ignoreLog(t *testing.T) {
+	tests := []struct {
+		name        string
+		logPath     string
+		excludeLogs string
+		expectedLog string
+		expected    bool
+	}{
+		{
+			name:        "Test 1: allowed log path",
+			logPath:     "/tmp/var/log/nginx/access.log",
+			excludeLogs: "",
+			expected:    false,
+			expectedLog: "",
+		},
+		{
+			name:        "Test 2: syslog",
+			logPath:     "syslog:server=unix:/var/log/nginx.sock,nohostname;",
+			excludeLogs: "",
+			expected:    true,
+			expectedLog: "",
+		},
+		{
+			name:        "Test 3: log off",
+			logPath:     "off",
+			excludeLogs: "",
+			expected:    true,
+			expectedLog: "",
+		},
+		{
+			name:        "Test 4: log /dev/stderr",
+			logPath:     "/dev/stderr",
+			excludeLogs: "",
+			expected:    true,
+			expectedLog: "",
+		},
+		{
+			name:        "Test 5: log /dev/stdout",
+			logPath:     "/dev/stdout",
+			excludeLogs: "",
+			expected:    true,
+			expectedLog: "",
+		},
+		{
+			name:        "Test 6: log /dev/null",
+			logPath:     "/dev/null",
+			excludeLogs: "",
+			expected:    true,
+			expectedLog: "",
+		},
+		{
+			name:        "Test 7: exclude logs set, log path should be excluded",
+			logPath:     "/tmp/var/log/nginx/alert.log",
+			excludeLogs: "/tmp/var/log/nginx/[^ace]*,/tmp/var/log/nginx/a[^c]*",
+			expected:    true,
+			expectedLog: "",
+		},
+		{
+			name:        "Test 8: exclude logs set, log path is allowed",
+			logPath:     "/tmp/var/log/nginx/access.log",
+			excludeLogs: "/tmp/var/log/nginx/[^ace]*,/tmp/var/log/nginx/a[^c]*",
+			expected:    false,
+			expectedLog: "",
+		},
+		{
+			name:        "Test 9: log path outside allowed dir",
+			logPath:     "/var/log/nginx/access.log",
+			excludeLogs: "/var/log/nginx/[^ace]*,/var/log/nginx/a[^c]*",
+			expected:    false,
+			expectedLog: "Log being read is outside of allowed directories",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			logBuf := &bytes.Buffer{}
+			stub.StubLoggerWith(logBuf)
+
+			agentConfig := types.AgentConfig()
+			agentConfig.DataPlaneConfig.Nginx.ExcludeLogs = test.excludeLogs
+
+			ncp := NewNginxConfigParser(agentConfig)
+			assert.Equal(t, test.expected, ncp.ignoreLog(test.logPath))
+
+			if s := logBuf.String(); !strings.Contains(s, test.expectedLog) {
+				t.Errorf("Expected to receive log: %s", test.expectedLog)
+			}
 		})
 	}
 }

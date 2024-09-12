@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -83,7 +84,7 @@ func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *mpi.Instance)
 	return ncp.createNginxConfigContext(ctx, instance, payload)
 }
 
-// nolint: cyclop,revive
+// nolint: cyclop,revive,gocognit
 func (ncp *NginxConfigParser) createNginxConfigContext(
 	ctx context.Context,
 	instance *mpi.Instance,
@@ -103,11 +104,16 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 				case "log_format":
 					formatMap = ncp.formatMap(directive)
 				case "access_log":
-					accessLog := ncp.accessLog(directive.Args[0], ncp.accessLogDirectiveFormat(directive), formatMap)
-					nginxConfigContext.AccessLogs = append(nginxConfigContext.AccessLogs, accessLog)
+					if !ncp.ignoreLog(directive.Args[0]) {
+						accessLog := ncp.accessLog(directive.Args[0], ncp.accessLogDirectiveFormat(directive),
+							formatMap)
+						nginxConfigContext.AccessLogs = append(nginxConfigContext.AccessLogs, accessLog)
+					}
 				case "error_log":
-					errorLog := ncp.errorLog(directive.Args[0], ncp.errorLogDirectiveLevel(directive))
-					nginxConfigContext.ErrorLogs = append(nginxConfigContext.ErrorLogs, errorLog)
+					if !ncp.ignoreLog(directive.Args[0]) {
+						errorLog := ncp.errorLog(directive.Args[0], ncp.errorLogDirectiveLevel(directive))
+						nginxConfigContext.ErrorLogs = append(nginxConfigContext.ErrorLogs, errorLog)
+					}
 				case "root":
 					rootFiles := ncp.rootFiles(ctx, directive.Args[0])
 					nginxConfigContext.Files = append(nginxConfigContext.Files, rootFiles...)
@@ -144,6 +150,31 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 	}
 
 	return nginxConfigContext, nil
+}
+
+func (ncp *NginxConfigParser) ignoreLog(logPath string) bool {
+	logLower := strings.ToLower(logPath)
+	ignoreLogs := []string{"off", "/dev/stderr", "/dev/stdout", "/dev/null"}
+
+	if strings.HasPrefix(logLower, "syslog:") || slices.Contains(ignoreLogs, logLower) {
+		return true
+	}
+
+	for _, path := range strings.Split(ncp.agentConfig.DataPlaneConfig.Nginx.ExcludeLogs, ",") {
+		ok, err := filepath.Match(path, logPath)
+		if err != nil {
+			slog.Error("invalid path for excluding log", "log_path", path)
+		} else if ok {
+			slog.Info("Excluding log as specified in config", "log_path", logPath)
+			return true
+		}
+	}
+
+	if !ncp.agentConfig.IsDirectoryAllowed(logLower) {
+		slog.Warn("Log being read is outside of allowed directories", "log_path", logPath)
+	}
+
+	return false
 }
 
 func (ncp *NginxConfigParser) formatMap(directive *crossplane.Directive) map[string]string {

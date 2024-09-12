@@ -71,7 +71,7 @@ func (l *NginxLogTailerOperator) Tail(ctx context.Context, errorLog string, erro
 }
 
 func (l *NginxLogTailerOperator) doesLogLineContainError(line string) bool {
-	if l.agentConfig.DataPlaneConfig.Nginx.TreatWarningsAsError && warningRegex.MatchString(line) {
+	if l.agentConfig.DataPlaneConfig.Nginx.TreatWarningsAsErrors && warningRegex.MatchString(line) {
 		return true
 	}
 
