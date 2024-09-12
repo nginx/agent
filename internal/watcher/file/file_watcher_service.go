@@ -116,6 +116,7 @@ func (fws *FileWatcherService) watchDirectories(ctx context.Context) {
 				return nil
 			}
 			fws.addWatcher(ctx, path, info)
+
 			return nil
 		})
 		if err != nil {
