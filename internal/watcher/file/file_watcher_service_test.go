@@ -6,9 +6,12 @@
 package file
 
 import (
+	"bytes"
 	"context"
+	"github.com/nginx/agent/v3/test/stub"
 	"os"
 	"path"
+	"strings"
 	"testing"
 	"time"
 
@@ -116,6 +119,16 @@ func TestFileWatcherService_removeWatcher(t *testing.T) {
 	value, ok := fileWatcherService.directoriesBeingWatched.Load(testDirectory)
 	assert.Nil(t, value)
 	assert.False(t, ok)
+
+	logBuf := &bytes.Buffer{}
+	stub.StubLoggerWith(logBuf)
+
+	fileWatcherService.directoriesBeingWatched.Store(testDirectory, true)
+	fileWatcherService.removeWatcher(ctx, testDirectory)
+
+	if s := logBuf.String(); !strings.Contains(s, "Failed to remove file watcher") {
+		t.Errorf("Unexpected log %s", s)
+	}
 }
 
 func TestFileWatcherService_isEventSkippable(t *testing.T) {
