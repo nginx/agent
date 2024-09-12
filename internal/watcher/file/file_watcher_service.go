@@ -111,10 +111,11 @@ func (fws *FileWatcherService) watchDirectories(ctx context.Context) {
 		slog.DebugContext(ctx, "Creating file watchers", "directory", dir)
 
 		err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-			if err == nil {
-				fws.addWatcher(ctx, path, info)
+			if err != nil {
+				slog.Error("Failed to add file watcher", "path", path, "error", err)
+				return nil
 			}
-
+			fws.addWatcher(ctx, path, info)
 			return nil
 		})
 		if err != nil {
