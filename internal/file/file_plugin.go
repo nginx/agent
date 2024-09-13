@@ -151,15 +151,17 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 
 	switch writeStatus {
 	case model.NoChange:
+		instanceID := configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId()
 		response = fp.createDataPlaneResponse(
 			correlationID,
 			mpi.CommandResponse_COMMAND_STATUS_OK,
 			"Config apply successful, no files to change",
-			configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId(),
+			instanceID,
 			"",
 		)
 
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
+		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplySuccessfulTopic, Data: instanceID})
 		fp.fileManagerService.ClearCache()
 
 		return

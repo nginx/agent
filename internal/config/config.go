@@ -124,7 +124,7 @@ func registerFlags() {
 		"info",
 		`The desired verbosity level for logging messages from nginx-agent. 
 		Available options, in order of severity from highest to lowest, are: 
-		panic, fatal, error, info, debug, and trace.`,
+		panic, fatal, error, info and debug.`,
 	)
 	fs.String(
 		LogPathKey,
@@ -209,10 +209,32 @@ func registerFlags() {
 		DefInstanceHealthWatcherMonitoringFrequency,
 		"How often the NGINX Agent will check for instance health changes.",
 	)
+
+	fs.Duration(
+		FileWatcherMonitoringFrequencyKey,
+		DefFileWatcherMonitoringFrequency,
+		"How often the NGINX Agent will check for file changes.",
+	)
+
 	fs.String(
 		CollectorConfigPathKey,
 		DefCollectorConfigPath,
 		"The path to the Opentelemetry Collector configuration file.",
+	)
+
+	fs.String(
+		CollectorLogLevelKey,
+		DefCollectorLogLevel,
+		`The desired verbosity level for logging messages from nginx-agent OTel collector. 
+		Available options, in order of severity from highest to lowest, are: 
+		ERROR, WARN, INFO and DEBUG.`,
+	)
+
+	fs.String(
+		CollectorLogPathKey,
+		DefCollectorLogPath,
+		`The path to output OTel collector log messages to. 
+		If the default path doesn't exist, log messages are output to stdout/stderr.`,
 	)
 
 	fs.Int(
@@ -335,6 +357,7 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 		processors  []Processor
 		receivers   Receivers
 		healthCheck ServerConfig
+		log         Log
 	)
 
 	err = errors.Join(
@@ -343,9 +366,18 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 		resolveMapStructure(CollectorProcessorsKey, &processors),
 		resolveMapStructure(CollectorReceiversKey, &receivers),
 		resolveMapStructure(CollectorHealthKey, &healthCheck),
+		resolveMapStructure(CollectorLogKey, &log),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal collector config: %w", err)
+	}
+
+	if log.Level == "" {
+		log.Level = DefCollectorLogLevel
+	}
+
+	if log.Path == "" {
+		log.Path = DefCollectorLogPath
 	}
 
 	col := &Collector{
@@ -354,6 +386,7 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 		Processors: processors,
 		Receivers:  receivers,
 		Health:     &healthCheck,
+		Log:        &log,
 	}
 
 	err = col.Validate(allowedDirs)
@@ -423,6 +456,9 @@ func resolveWatchers() *Watchers {
 		},
 		InstanceHealthWatcher: InstanceHealthWatcher{
 			MonitoringFrequency: DefInstanceHealthWatcherMonitoringFrequency,
+		},
+		FileWatcher: FileWatcher{
+			MonitoringFrequency: DefFileWatcherMonitoringFrequency,
 		},
 	}
 }

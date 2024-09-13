@@ -81,6 +81,10 @@ func AgentConfig() *config.Config {
 				Port: randomPort3,
 				Type: 0,
 			},
+			Log: &config.Log{
+				Level: "INFO",
+				Path:  "/var/log/nginx-agent/opentelemetry-collector-agent.log",
+			},
 		},
 		Command: &config.Command{
 			Server: &config.ServerConfig{
@@ -120,6 +124,9 @@ func AgentConfig() *config.Config {
 			},
 			InstanceHealthWatcher: config.InstanceHealthWatcher{
 				MonitoringFrequency: config.DefInstanceWatcherMonitoringFrequency,
+			},
+			FileWatcher: config.FileWatcher{
+				MonitoringFrequency: config.DefFileWatcherMonitoringFrequency,
 			},
 		},
 	}

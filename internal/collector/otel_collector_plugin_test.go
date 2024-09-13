@@ -23,12 +23,16 @@ import (
 
 func TestCollector_New(t *testing.T) {
 	conf := types.OTelConfig(t)
+	conf.Collector.Log.Path = ""
+
 	_, err := New(conf)
 	require.NoError(t, err, "NewCollector should not return an error with valid config")
 }
 
 func TestCollector_InitAndClose(t *testing.T) {
 	conf := types.OTelConfig(t)
+	conf.Collector.Log.Path = ""
+
 	collector, err := New(conf)
 	require.NoError(t, err, "NewCollector should not return an error with valid config")
 
@@ -62,6 +66,7 @@ func TestCollector_Process(t *testing.T) {
 	defer nginxPlusMock.Close()
 
 	conf := types.OTelConfig(t)
+	conf.Collector.Log.Path = ""
 
 	tests := []struct {
 		name      string
@@ -98,6 +103,12 @@ func TestCollector_Process(t *testing.T) {
 				Data: &model.NginxConfigContext{
 					InstanceID: "123",
 					StubStatus: "http://test.com:8080/stub_status",
+					AccessLogs: []*model.AccessLog{
+						{
+							Name:   "/var/log/nginx/access.log",
+							Format: "$remote_addr - $remote_user [$time_local] \"$request\"",
+						},
+					},
 				},
 			},
 			receivers: config.Receivers{
@@ -110,6 +121,12 @@ func TestCollector_Process(t *testing.T) {
 					{
 						InstanceID: "123",
 						StubStatus: "http://test.com:8080/stub_status",
+						AccessLogs: []config.AccessLog{
+							{
+								FilePath:  "/var/log/nginx/access.log",
+								LogFormat: "$$remote_addr - $$remote_user [$$time_local] \\\"$$request\\\"",
+							},
+						},
 					},
 				},
 				NginxPlusReceivers: []config.NginxPlusReceiver{},
@@ -172,6 +189,7 @@ func TestCollector_Process(t *testing.T) {
 // nolint: dupl
 func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 	conf := types.OTelConfig(t)
+	conf.Collector.Log.Path = ""
 
 	tests := []struct {
 		name               string
@@ -184,12 +202,24 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 			nginxConfigContext: &model.NginxConfigContext{
 				InstanceID: "123",
 				StubStatus: "http://new-test-host:8080/api",
+				AccessLogs: []*model.AccessLog{
+					{
+						Name:   "/etc/nginx/test.log",
+						Format: `$remote_addr [$time_local] "$request" $status`,
+					},
+				},
 			},
 			existingReceivers: config.Receivers{
 				NginxReceivers: []config.NginxReceiver{
 					{
 						InstanceID: "123",
 						StubStatus: "http://test.com:8080/api",
+						AccessLogs: []config.AccessLog{
+							{
+								FilePath:  "/etc/nginx/existing.log",
+								LogFormat: `$remote_addr [$time_local] "$request"`,
+							},
+						},
 					},
 				},
 			},
@@ -198,6 +228,12 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 					{
 						InstanceID: "123",
 						StubStatus: "http://new-test-host:8080/api",
+						AccessLogs: []config.AccessLog{
+							{
+								FilePath:  "/etc/nginx/test.log",
+								LogFormat: "$$remote_addr [$$time_local] \\\"$$request\\\" $$status",
+							},
+						},
 					},
 				},
 			},
@@ -240,6 +276,7 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 // nolint: dupl
 func TestCollector_updateExistingNginxPlusReceiver(t *testing.T) {
 	conf := types.OTelConfig(t)
+	conf.Collector.Log.Path = ""
 
 	tests := []struct {
 		name               string

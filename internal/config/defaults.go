@@ -14,7 +14,9 @@ const (
 	DefNginxReloadMonitoringPeriod = 10 * time.Second
 	DefTreatErrorsAsWarnings       = true
 
-	DefCollectorConfigPath = "/var/run/nginx-agent/otelcol.yaml"
+	DefCollectorConfigPath = "/var/run/nginx-agent/opentelemetry-collector-agent.yaml"
+	DefCollectorLogLevel   = "INFO"
+	DefCollectorLogPath    = "/var/log/nginx-agent/opentelemetry-collector-agent.log"
 	DefConfigDirectories   = "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules"
 
 	DefCommandServerHostKey    = ""
@@ -35,6 +37,7 @@ const (
 
 	DefInstanceWatcherMonitoringFrequency       = 5 * time.Second
 	DefInstanceHealthWatcherMonitoringFrequency = 5 * time.Second
+	DefFileWatcherMonitoringFrequency           = 5 * time.Second
 
 	// 0 = unset
 	DefMaxMessageSize = 0
