@@ -72,12 +72,12 @@ func TestTemplateWrite(t *testing.T) {
 	cfg.Collector.Receivers.HostMetrics = config.HostMetrics{
 		CollectionInterval: time.Minute,
 		InitialDelay:       time.Second,
-		Scrapers: map[string]struct{}{
-			"cpu":        {},
-			"disk":       {},
-			"filesystem": {},
-			"memory":     {},
-			"network":    {},
+		Scrapers: &config.HostMetricsScrapers{
+			CPU:        &config.CpuScraper{},
+			Disk:       &config.DiskScraper{},
+			Filesystem: &config.FilesystemScraper{},
+			Memory:     &config.MemoryScraper{},
+			Network:    &config.NetworkScraper{},
 		},
 	}
 	cfg.Collector.Receivers.NginxReceivers = append(cfg.Collector.Receivers.NginxReceivers, config.NginxReceiver{

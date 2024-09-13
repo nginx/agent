@@ -74,11 +74,12 @@ func AgentConfig() *config.Config {
 				HostMetrics: config.HostMetrics{
 					CollectionInterval: time.Minute,
 					InitialDelay:       time.Second,
-					Scrapers: map[string]struct{}{
-						"cpu":     {},
-						"disk":    {},
-						"memory":  {},
-						"network": {},
+					Scrapers: &config.HostMetricsScrapers{
+						CPU:        &config.CpuScraper{},
+						Disk:       &config.DiskScraper{},
+						Filesystem: &config.FilesystemScraper{},
+						Memory:     &config.MemoryScraper{},
+						Network:    &config.NetworkScraper{},
 					},
 				},
 			},

@@ -86,11 +86,12 @@ func TestCollector_Process(t *testing.T) {
 				HostMetrics: config.HostMetrics{
 					CollectionInterval: time.Minute,
 					InitialDelay:       time.Second,
-					Scrapers: map[string]struct{}{
-						"cpu":     {},
-						"disk":    {},
-						"memory":  {},
-						"network": {},
+					Scrapers: &config.HostMetricsScrapers{
+						CPU:        &config.CpuScraper{},
+						Disk:       &config.DiskScraper{},
+						Filesystem: &config.FilesystemScraper{},
+						Memory:     &config.MemoryScraper{},
+						Network:    &config.NetworkScraper{},
 					},
 				},
 				OtlpReceivers: types.OtlpReceivers(),
@@ -121,11 +122,12 @@ func TestCollector_Process(t *testing.T) {
 				HostMetrics: config.HostMetrics{
 					CollectionInterval: time.Minute,
 					InitialDelay:       time.Second,
-					Scrapers: map[string]struct{}{
-						"cpu":     {},
-						"disk":    {},
-						"memory":  {},
-						"network": {},
+					Scrapers: &config.HostMetricsScrapers{
+						CPU:        &config.CpuScraper{},
+						Disk:       &config.DiskScraper{},
+						Filesystem: &config.FilesystemScraper{},
+						Memory:     &config.MemoryScraper{},
+						Network:    &config.NetworkScraper{},
 					},
 				},
 				OtlpReceivers: types.OtlpReceivers(),
