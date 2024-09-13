@@ -200,7 +200,7 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 		)
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
 
-		err := fp.fileManagerService.Rollback(ctx, configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId())
+		err = fp.fileManagerService.Rollback(ctx, configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId())
 		if err != nil {
 			rollbackResponse := fp.createDataPlaneResponse(
 				correlationID,
