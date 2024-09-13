@@ -142,13 +142,13 @@ type (
 	}
 
 	HostMetricsScrapers struct {
-		CPU        *CpuScraper        `yaml:"-" mapstructure:"cpu"`
+		CPU        *CPUScraper        `yaml:"-" mapstructure:"cpu"`
 		Disk       *DiskScraper       `yaml:"-" mapstructure:"disk"`
 		Filesystem *FilesystemScraper `yaml:"-" mapstructure:"filesystem"`
 		Memory     *MemoryScraper     `yaml:"-" mapstructure:"memory"`
 		Network    *NetworkScraper    `yaml:"-" mapstructure:"network"`
 	}
-	CpuScraper        struct{}
+	CPUScraper        struct{}
 	DiskScraper       struct{}
 	FilesystemScraper struct{}
 	MemoryScraper     struct{}
