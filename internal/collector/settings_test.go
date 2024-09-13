@@ -64,7 +64,7 @@ func TestTemplateWrite(t *testing.T) {
 			TLS: nil,
 		})
 
-	cfg.Collector.Exporters.Debug = config.DebugExporter{}
+	cfg.Collector.Exporters.Debug = &config.DebugExporter{}
 
 	cfg.Collector.Receivers.HostMetrics = config.HostMetrics{
 		CollectionInterval: time.Minute,

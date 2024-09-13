@@ -63,7 +63,7 @@ func AgentConfig() *config.Config {
 				},
 			},
 			Processors: config.Processors{
-				Batch: struct{}{},
+				Batch: &config.Batch{},
 			},
 			Receivers: config.Receivers{
 				OtlpReceivers: OtlpReceivers(),

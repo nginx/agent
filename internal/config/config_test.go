@@ -67,7 +67,7 @@ func TestResolveConfig(t *testing.T) {
 	require.NotNil(t, actual.Collector)
 	assert.Equal(t, "/etc/nginx-agent/nginx-agent-otelcol.yaml", actual.Collector.ConfigPath)
 	assert.NotEmpty(t, actual.Collector.Receivers)
-	assert.Equal(t, Processors{Batch: Batch{}}, actual.Collector.Processors)
+	assert.Equal(t, Processors{Batch: &Batch{}}, actual.Collector.Processors)
 	assert.NotEmpty(t, actual.Collector.Exporters)
 	assert.NotEmpty(t, actual.Collector.Health)
 
@@ -330,7 +330,7 @@ func getAgentConfig() *Config {
 				},
 			},
 			Processors: Processors{
-				Batch: struct{}{},
+				Batch: &Batch{},
 			},
 			Receivers: Receivers{
 				OtlpReceivers: []OtlpReceiver{

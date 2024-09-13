@@ -83,7 +83,7 @@ type (
 
 	Exporters struct {
 		OtlpExporters       []OtlpExporter       `yaml:"-" mapstructure:"otlp_exporters"`
-		Debug               DebugExporter        `yaml:"-" mapstructure:"debug"`
+		Debug               *DebugExporter       `yaml:"-" mapstructure:"debug"`
 		PrometheusExporters []PrometheusExporter `yaml:"-" mapstructure:"prometheus_exporters"`
 	}
 
@@ -102,7 +102,7 @@ type (
 
 	// OTel Collector Processors configuration.
 	Processors struct {
-		Batch Batch `yaml:"-" mapstructure:"batch"`
+		Batch *Batch `yaml:"-" mapstructure:"batch"`
 	}
 
 	Batch struct{}

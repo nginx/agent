@@ -41,7 +41,7 @@ receivers:
 {{- end }}
 
 processors:
-{{- if .Processors.Batch }}
+{{- if ne .Processors.Batch nil }}
   batch:
 {{- end }}
 
@@ -69,7 +69,7 @@ exporters:
     endpoint: "{{ .Server.Host -}}:{{- .Server.Port }}"
     namespace: "nginx-agent"
 {{- end }}
-{{- if .Exporters.Debug }}
+{{- if ne .Exporters.Debug nil }}
   debug:
     verbosity: detailed
     sampling_initial: 5
@@ -110,7 +110,9 @@ service:
         - nginxplus/{{- .InstanceID -}}
         {{- end }}
       processors:
+        {{- if ne .Processors.Batch nil }}
         - batch
+        {{- end }}
       exporters:
         {{- range $index, $otlpExporter := .Exporters.OtlpExporters }}
         - otlp/{{$index}}
@@ -118,6 +120,6 @@ service:
         {{- range $index, $prometheusExporter := .Exporters.PrometheusExporters }}
         - prometheus/{{$index}}
         {{- end }}
-        {{- if .Exporters.Debug }}
+        {{- if ne .Exporters.Debug nil }}
         - debug
         {{- end  }}
