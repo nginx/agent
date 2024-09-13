@@ -4,7 +4,6 @@
  * This source code is licensed under the Apache License, Version 2.0 license found in the
  * LICENSE file in the root directory of this source tree.
  */
-
 package plugins
 
 import (
@@ -15,13 +14,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
-
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/payloads"
+	log "github.com/sirupsen/logrus"
 )
 
 type DataPlaneStatus struct {
@@ -42,6 +40,7 @@ type DataPlaneStatus struct {
 	softwareDetails             map[string]*proto.DataplaneSoftwareDetails
 	nginxConfigActivityStatuses map[string]*proto.AgentActivityStatus
 	softwareDetailsMutex        sync.RWMutex
+	structMu                    sync.RWMutex
 	processes                   []*core.Process
 }
 
@@ -67,7 +66,6 @@ func NewDataPlaneStatus(config *config.Config, meta *proto.Metadata, binary core
 		tags:                        &config.Tags,
 		configDirs:                  config.ConfigDirs,
 		reportInterval:              config.Dataplane.Status.ReportInterval,
-		softwareDetailsMutex:        sync.RWMutex{},
 		nginxConfigActivityStatuses: make(map[string]*proto.AgentActivityStatus),
 		softwareDetails:             make(map[string]*proto.DataplaneSoftwareDetails),
 		processes:                   processes,
@@ -84,11 +82,9 @@ func (dps *DataPlaneStatus) Init(pipeline core.MessagePipeInterface) {
 func (dps *DataPlaneStatus) Close() {
 	log.Info("DataPlaneStatus is wrapping up")
 	dps.nginxConfigActivityStatuses = nil
-
 	dps.softwareDetailsMutex.Lock()
 	dps.softwareDetails = nil
 	dps.softwareDetailsMutex.Unlock()
-
 	dps.healthTicker.Stop()
 	dps.sendStatus <- true
 }
@@ -103,7 +99,6 @@ func (dps *DataPlaneStatus) Process(msg *core.Message) {
 		log.Tracef("DataplaneStatus: %T message from topic %s received", msg.Data(), msg.Topic())
 		// If the agent config on disk changed update DataPlaneStatus with relevant config info
 		dps.syncAgentConfigChange()
-
 	case msg.Exact(core.DataplaneSoftwareDetailsUpdated):
 		log.Tracef("DataplaneStatus: %T message from topic %s received", msg.Data(), msg.Topic())
 		switch data := msg.Data().(type) {
@@ -112,7 +107,6 @@ func (dps *DataPlaneStatus) Process(msg *core.Message) {
 			dps.softwareDetails[data.GetPluginName()] = data.GetDataplaneSoftwareDetails()
 			dps.softwareDetailsMutex.Unlock()
 		}
-
 	case msg.Exact(core.NginxConfigValidationPending):
 		log.Tracef("DataplaneStatus: %T message from topic %s received", msg.Data(), msg.Topic())
 		switch data := msg.Data().(type) {
@@ -121,7 +115,6 @@ func (dps *DataPlaneStatus) Process(msg *core.Message) {
 		default:
 			log.Errorf("Expected the type %T but got %T", &proto.AgentActivityStatus{}, data)
 		}
-
 	case msg.Exact(core.NginxConfigApplyFailed) || msg.Exact(core.NginxConfigApplySucceeded):
 		log.Tracef("DataplaneStatus: %T message from topic %s received", msg.Data(), msg.Topic())
 		switch data := msg.Data().(type) {
@@ -132,7 +125,9 @@ func (dps *DataPlaneStatus) Process(msg *core.Message) {
 			log.Errorf("Expected the type %T but got %T", &proto.AgentActivityStatus{}, data)
 		}
 	case msg.Exact(core.NginxDetailProcUpdate):
+		dps.structMu.Lock()
 		dps.processes = msg.Data().([]*core.Process)
+		dps.structMu.Unlock()
 	}
 }
 
@@ -193,15 +188,12 @@ func (dps *DataPlaneStatus) dataplaneStatus(forceDetails bool) *proto.DataplaneS
 	for _, nginxConfigActivityStatus := range dps.nginxConfigActivityStatuses {
 		agentActivityStatuses = append(agentActivityStatuses, nginxConfigActivityStatus)
 	}
-
 	dps.softwareDetailsMutex.Lock()
 	defer dps.softwareDetailsMutex.Unlock()
-
 	dataplaneSoftwareDetails := []*proto.DataplaneSoftwareDetails{}
 	for _, softwareDetail := range dps.softwareDetails {
 		dataplaneSoftwareDetails = append(dataplaneSoftwareDetails, softwareDetail)
 	}
-
 	dataplaneStatus := &proto.DataplaneStatus{
 		Host:                     dps.hostInfo(forceDetails),
 		Details:                  dps.detailsForProcess(dps.processes, forceDetails),
@@ -214,6 +206,8 @@ func (dps *DataPlaneStatus) dataplaneStatus(forceDetails bool) *proto.DataplaneS
 
 func (dps *DataPlaneStatus) hostInfo(send bool) (info *proto.HostInfo) {
 	// this sets send if we are forcing details, or it has been 24 hours since the last send
+	dps.structMu.Lock()
+	defer dps.structMu.Unlock()
 	hostInfo := dps.env.NewHostInfo(dps.version, dps.tags, dps.configDirs, send)
 	if !send && cmp.Equal(dps.envHostInfo, hostInfo) {
 		return nil
@@ -227,7 +221,6 @@ func (dps *DataPlaneStatus) hostInfo(send bool) (info *proto.HostInfo) {
 
 func (dps *DataPlaneStatus) detailsForProcess(processes []*core.Process, send bool) (details []*proto.NginxDetails) {
 	log.Tracef("detailsForProcess processes: %v", processes)
-
 	nowUTC := time.Now().UTC()
 	// this sets send if we are forcing details, or it has been 24 hours since the last send
 	for _, p := range processes {
@@ -246,7 +239,9 @@ func (dps *DataPlaneStatus) detailsForProcess(processes []*core.Process, send bo
 		return nil
 	}
 
+	dps.structMu.Lock()
 	dps.lastSendDetails = nowUTC
+	dps.structMu.Unlock()
 
 	return details
 }
@@ -255,7 +250,6 @@ func (dps *DataPlaneStatus) healthForProcess(processes []*core.Process) (healths
 	heathDetails := make(map[string]*proto.NginxHealth)
 	instanceProcessCount := make(map[string]int)
 	log.Tracef("healthForProcess processes: %v", processes)
-
 	for _, p := range processes {
 		instanceID := dps.binary.GetNginxIDForProcess(p)
 		log.Tracef("Process: %v instanceID %s", p, instanceID)
@@ -277,10 +271,8 @@ func (dps *DataPlaneStatus) healthForProcess(processes []*core.Process) (healths
 			heathDetails[instanceID].NginxStatus = proto.NginxHealth_DEGRADED
 		}
 	}
-
 	for instanceID, health := range heathDetails {
 		log.Tracef("instanceID: %s health: %s", instanceID, health)
-
 		if instanceProcessCount[instanceID] <= 1 {
 			reason := "does not have enough children"
 			if heathDetails[instanceID].NginxStatus == proto.NginxHealth_DEGRADED {
@@ -301,20 +293,22 @@ func (dps *DataPlaneStatus) syncAgentConfigChange() {
 		return
 	}
 	log.Debugf("DataPlaneStatus is updating to a new config - %v", conf)
-
 	pollInt := conf.Dataplane.Status.PollInterval
 	if pollInt < defaultMinInterval {
 		pollInt = defaultMinInterval
 		log.Warnf("interval set to %s, provided value (%s) less than minimum", pollInt, conf.Dataplane.Status.PollInterval)
 	}
-
 	if conf.DisplayName == "" {
 		conf.DisplayName = dps.env.GetHostname()
 		log.Infof("setting displayName to %s", conf.DisplayName)
 	}
 
 	// Update DataPlaneStatus with relevant config info
+	dps.structMu.Lock()
+
 	dps.interval = pollInt
 	dps.tags = &conf.Tags
 	dps.configDirs = conf.ConfigDirs
+
+	dps.structMu.Unlock()
 }

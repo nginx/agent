@@ -133,9 +133,9 @@ func (m *MockNginxBinary) GetNginxDetailsFromProcess(nginxProcess *core.Process)
 	return args.Get(0).(*proto.NginxDetails)
 }
 
-func (m *MockNginxBinary) UpdateLogs(existing map[string]string, newLogs map[string]string) bool {
+func (m *MockNginxBinary) UpdateLogs(existing map[string]string, newLogs map[string]string) map[string]string {
 	args := m.Called(existing, newLogs)
-	return args.Bool(0)
+	return args.Get(0).(map[string]string)
 }
 
 func (m *MockNginxBinary) GetAccessLogs() map[string]string {

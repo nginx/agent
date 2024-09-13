@@ -71,7 +71,9 @@ func (m *Metrics) Init(pipeline core.MessagePipeInterface) {
 }
 
 func (m *Metrics) Close() {
+	m.collectorsMutex.Lock()
 	m.collectors = nil
+	m.collectorsMutex.Unlock()
 	log.Info("Metrics is wrapping up")
 }
 
@@ -336,6 +338,8 @@ func createCollectorConfigsMap(config *config.Config, binary core.NginxBinary, p
 }
 
 func (m *Metrics) updateCollectorsConfig() {
+	m.collectorsMutex.Lock()
+	defer m.collectorsMutex.Unlock()
 	log.Trace("Updating collector config")
 	for _, collector := range m.collectors {
 		if nginxCollector, ok := collector.(*collectors.NginxCollector); ok {
