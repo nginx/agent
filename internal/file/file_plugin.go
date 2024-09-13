@@ -191,6 +191,7 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			"instance_id", configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId(),
 			"error", err,
 		)
+
 		response = fp.createDataPlaneResponse(
 			correlationID,
 			mpi.CommandResponse_COMMAND_STATUS_ERROR,
@@ -200,18 +201,27 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 		)
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
 
-		err = fp.fileManagerService.Rollback(ctx, configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId())
-		if err != nil {
+		rollbackErr := fp.fileManagerService.Rollback(ctx, configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId())
+		if rollbackErr != nil {
 			rollbackResponse := fp.createDataPlaneResponse(
 				correlationID,
 				mpi.CommandResponse_COMMAND_STATUS_ERROR,
 				"Rollback failed",
 				configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId(),
-				err.Error())
+				rollbackErr.Error())
 
 			fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
-			fp.fileManagerService.ClearCache()
 		}
+
+		response = fp.createDataPlaneResponse(
+			correlationID,
+			mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+			"Rollback failed",
+			configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId(),
+			err.Error())
+
+		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
+		fp.fileManagerService.ClearCache()
 
 		return
 	case model.OK:
