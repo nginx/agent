@@ -169,8 +169,11 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 				_, ok := messages[0].Data.(*model.ConfigApplyMessage)
 				assert.True(t, ok)
 			case test.configApplyStatus == model.RollbackRequired:
+				for _, m := range messages {
+					fmt.Println(m)
+				}
 				assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
-				assert.Len(t, messages, 2)
+				assert.Len(t, messages, 1)
 				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
 				assert.Equal(
