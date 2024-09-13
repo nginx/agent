@@ -17,6 +17,11 @@ If you want to use NGINX Agent with NGINX Plus, you need to purchase an NGINX Pl
 
 See the requirements and supported operating systems in the [NGINX Agent Technical Specifications]({{< relref "technical-specifications.md" >}}) topic.
 
+## Deploy Offical NGINX and NGINX Plus Containers
+
+Docker images are available in the [Deploying NGINX and NGINX Plus on Docker](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-docker/) NGINX documentation.
+
+This guide provides instructions on how to build images with NGINX Agent and NGINX packaged together. It includes steps for downloading the necessary Docker images, configuring your Docker environment, and deploying NGINX and NGINX Plus containers.
 
 ## Set up your environment
 
@@ -72,16 +77,6 @@ git clone git@github.com:nginx/agent.git
 
 {{% /tabs %}}
 
-### Download the agent binary {#agent-binary}
-
-Before you can build a container image with NGINX, you must build or download the **agent** binary.
-
-The **agent** binary packages are available from the [NGINX Agent Releases](https://github.com/nginx/agent/releases) page on GitHub.
-
-Download the binary package for the operating system that you will use in the container image.
-
-Note the location and name of the downloaded package. You will need to use this when running the **make** command to build the image (referred to as `[PATH-TO-PACKAGE]` in the example commands below).
-
 ### Download the NGINX Plus certificate and key {#myf5-download}
 
 {{< fa "circle-info" "text-muted" >}} **This step is required if you are using NGINX Plus. If you are using NGINX open source, you can skip this section.**
@@ -105,61 +100,17 @@ In order to build a container image with NGINX Plus, you must provide the SSL ce
    - Be sure to replace the example certificate and key filenames shown in the example command with your actual file names.
    - The file names in the *build/certs* directory must match those shown in the example.
 
-## Build the official NGINX Agent image with Docker
-
-{{<tabs name="build-image">}}
-
-{{%tab name="NGINX Open Source"%}}
-
-Change to the directory where the Dockerfile is located:
-
-```shell
-$ cd scripts/docker/official/nginx-oss-with-nginx-agent/alpine/
-```
-
-- To build an image that contains the latest NGINX Agent and the latest mainline version of NGINX run the following command:
-
-   ```shell
-   $ docker build -t nginx-agent . --no-cache -f ./Dockerfile.mainline
-   ```
-
-- To build an image that contains the latest NGINX Agent and the latest stable version of NGINX run the following command:
-
-   ```shell
-   $ docker build -t nginx-agent . --no-cache -f ./Dockerfile.stable
-   ```
-
-{{% /tab %}}
-
-{{%tab name="NGINX Plus"%}}
-
-1. Log in to [MyF5 Customer Portal](https://account.f5.com/myf5) and download your "nginx-repo.crt" and "nginx-repo.key" files. These files are also provided with the NGINX Plus trial package.
-
-1. Copy the files to the directory where the Dockerfile is located **scripts/docker/official/nginx-plus-with-nginx-agent/alpine/**.
-
-1. To build an image that contains the latest NGINX Agent and the latest version of NGINX Plus change to the directory where the Dockerfile is located:
-
-```shell
-$ cd scripts/docker/official/nginx-plus-with-nginx-agent/alpine/
-```
-
-1. Run the following command to build the image:
-
-```shell
-$ docker build -t nginx-agent . \
-  --no-cache -f ./Dockerfile \
-  --secret id=nginx-crt,src=nginx-repo.crt \
-  --secret id=nginx-key,src=nginx-repo.key
-```
-{{% /tab %}}
-{{% /tabs %}}
-
-
 ## Run the NGINX Agent container
 
-Here is an example of how to run the NGINX Agent container using Docker:
+To run NGINX Agent container using Docker use the following command:
 
-```console
+```shell
+docker pull docker-registry.nginx.com/nginx/agent:mainline
+```
+```shell
+docker tag docker-registry.nginx.com/nginx/agent:mainline nginx-agent
+```
+```shell
 docker run --name nginx-agent -d nginx-agent
 ```
 
@@ -199,6 +150,20 @@ docker run --name nginx-agent -d \
   nginx-agent
 ```
 
+To ensure that the REST Interface is correctly configured, you can use the `curl` command targeting the following endpoint from your terminal:
+
+```shell
+curl 0.0.0.0:8038/nginx/
+```
+
+If the REST Interface is configured correctly, then you should see a JSON object ouputted to the terminal containing metadata such as NGINX version, path to the NGINX conf, and runtime modules.
+
+**Sample Output:**
+
+```code
+[{"nginx_id":"b636d4376dea15405589692d3c5d3869ff3a9b26b0e7bb4bb1aa7e658ace1437","version":"1.27.1","conf_path":"/etc/nginx/nginx.conf","process_id":"7","process_path":"/usr/sbin/nginx","start_time":1725878806000,"built_from_source":false,"loadable_modules":null,"runtime_modules":["http_addition_module","http_auth_request_module","http_dav_module","http_flv_module","http_gunzip_module","http_gzip_static_module","http_mp4_module","http_random_index_module","http_realip_module","http_secure_link_module","http_slice_module","http_ssl_module","http_stub_status_module","http_sub_module","http_v2_module","http_v3_module","mail_ssl_module","stream_realip_module","stream_ssl_module","stream_ssl_preread_module"],"plus":{"enabled":false,"release":""},"ssl":{"ssl_type":0,"details":["OpenSSL","3.3.0","9 Apr 2024 (running with OpenSSL 3.3.1 4 Jun 2024)"]},"status_url":"","configure_args":["","prefix=/etc/nginx","sbin-path=/usr/sbin/nginx","modules-path=/usr/lib/nginx/modules","conf-path=/etc/nginx/nginx.conf","error-log-path=/var/log/nginx/error.log","http-log-path=/var/log/nginx/access.log","pid-path=/var/run/nginx.pid","lock-path=/var/run/nginx.lock","http-client-body-temp-path=/var/cache/nginx/client_temp","http-proxy-temp-path=/var/cache/nginx/proxy_temp","http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp","http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp","http-scgi-temp-path=/var/cache/nginx/scgi_temp","with-perl_modules_path=/usr/lib/perl5/vendor_perl","user=nginx","group=nginx","with-compat","with-file-aio","with-threads","with-http_addition_module","with-http_auth_request_module","with-http_dav_module","with-http_flv_module","with-http_gunzip_module","with-http_gzip_static_module","with-http_mp4_module","with-http_random_index_module","with-http_realip_module","with-http_secure_link_module","with-http_slice_module","with-http_ssl_module","with-http_stub_status_module","with-http_sub_module","with-http_v2_module","with-http_v3_module","with-mail","with-mail_ssl_module","with-stream","with-stream_realip_module","with-stream_ssl_module","with-stream_ssl_preread_module","with-cc-opt='-Os -fstack-clash-protection -Wformat -Werror=format-security -g'","with-ld-opt=-Wl,--as-needed,-O1,--sort-common"],"error_log_paths":null}]
+```
+
 <hr>
 
 ## Build the NGINX Agent images for specific OS targets
@@ -207,17 +172,18 @@ docker run --name nginx-agent -d \
 
 The NGINX Agent GitHub repo has a set of Make commands that you can use to build a container image for an specific operating system and version:
 
-- `make official-oss-image` builds an image containing NGINX Agent and NGINX open source.
-- `make official-plus-image` builds an image containing NGINX Agent and NGINX Plus.
+- `make oss-image` builds an image containing NGINX Agent and NGINX open source.
+- `make image` builds an image containing NGINX Agent and NGINX Plus.
 
 You can pass the following arguments when running the **make** command to build an NGINX Agent container image.
 
 {{<bootstrap-table "table table-striped table-border">}}
 | Argument | Definition |
 | ---------------- | -------------------------|
-| PACKAGE_NAME     | **Required.** The full path to the downloaded [agent binary package](#agent-binary). <br>Must precede the **make** command. |
 | OS_RELEASE      | The Linux distribution to use as the base image. <br>Can also be set in the repo Makefile.|
 | OS_VERSION      | The version of the Linux distribution to use as the base image. <br>Can also be set in the repo Makefile.|
+| AGENT_VERSION      | The versions of NGINX agent that you want installed on the image.|
+
 {{</bootstrap-table>}}
 
 Refer to the [Supported distributions]({{< relref "/technical-specifications.md#supported-distributions" >}}) table to find out which base images you can use.
@@ -230,75 +196,18 @@ Keep the following information in mind when using the NGINX Agent [Dockerfiles](
 
 ### Build NGINX open source images
 
-Run the following **make** command to build the default image, which uses Alpine 3.19 as the base image.
+Run the following `make` command to build the default image, which uses Alpine as the base image:
 
 ```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] make official-oss-image
+IMAGE_BUILD_TARGET=install-agent-repo make oss-image
 ```
 
-### Example build commands by distribution
-
-{{<tabs name="build-oss-image">}}
-
-{{%tab name="alma linux"%}}
+To build an image with Debian and an older version of NGINX Agent you can run the following command:
 
 ```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=almalinux make oss-image
+IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0~bullseye OS_RELEASE=debian OS_VERSION=bullseye-slim make oss-image
 ```
 
-{{% /tab %}}
-
-{{%tab name="alpine linux"%}}
-
-```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=alpine make oss-image
-```
-
-{{% /tab %}}
-
-{{%tab name="amazon linux"%}}
-
-```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=amazonlinux make oss-image
-```
-
-{{% /tab %}}
-
-{{%tab name="debian"%}}
-
-```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=debian make oss-image
-```
-
-{{% /tab %}}
-
-{{%tab name="oracle linux"%}}
-
-```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=oraclelinux make oss-image
-```
-
-{{% /tab %}}
-
-{{%tab name="rocky linux"%}}
-
-```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=rockylinux make oss-image
-```
-
-{{% /tab %}}
-
-{{%tab name="ubuntu"%}}
-
-The command below creates a base image using the most recent LTS version of Ubuntu as the base image:
-
-```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] make oss-image OS_RELEASE=ubuntu
-```
-
-{{% /tab %}}
-
-{{% /tabs %}}
 
 ### Build NGINX Plus images
 
@@ -307,75 +216,14 @@ PACKAGE_NAME=[PATH-TO-PACKAGE] make oss-image OS_RELEASE=ubuntu
 Run the following `make` command to build the default image, which uses Ubuntu 24.04 (Noble) as the base image.
 
 ```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] make official-plus-image
+IMAGE_BUILD_TARGET=install-agent-repo make image
 ```
 
-### Example NGINX Plus build commands by distribution
-
-{{<tabs name="build-image">}}
-
-{{%tab name="alpine linux"%}}
+To build an image with Debian and an older version of NGINX Agent you can run the following command:
 
 ```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=alpine make official-plus-image
+IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0~bullseye OS_RELEASE=debian OS_VERSION=bullseye-slim make image
 ```
 
-{{% /tab %}}
 
-{{%tab name="amazon linux"%}}
 
-```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=amazonlinux make official-plus-image
-```
-
-{{% /tab %}}
-
-{{%tab name="centos"%}}
-
-```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=centos OS_VERSION=7 make official-plus-image
-```
-
-{{% /tab %}}
-
-{{%tab name="debian"%}}
-
-```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=debian OS_VERSION=bullseye-slim make official-plus-image
-```
-
-{{% /tab %}}
-
-{{%tab name="oracle linux"%}}
-
-```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=oraclelinux make official-plus-image
-```
-
-{{% /tab %}}
-
-{{%tab name="rhel"%}}
-
-```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=redhatenterprise make official-plus-image
-```
-
-{{% /tab %}}
-
-{{%tab name="suse"%}}
-
-```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=suse OS_VERSION=sle15 make official-plus-image
-```
-
-{{% /tab %}}
-
-{{%tab name="ubuntu"%}}
-
-```shell
-PACKAGE_NAME=[PATH-TO-PACKAGE] OS_RELEASE=ubuntu make official-plus-image
-```
-
-{{% /tab %}}
-
-{{% /tabs %}}
