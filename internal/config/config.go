@@ -148,7 +148,7 @@ func registerFlags() {
 		NginxExcludeLogsKey,
 		"",
 		"One or more NGINX log paths that you want to exclude from metrics collection or error monitoring "+
-			"This key is formatted as a string and multiple values should be provided as a comma-separated list.",
+			"This key is formatted as a string and follows Unix PATH format",
 	)
 
 	fs.Duration(ClientTimeoutKey, time.Minute, "Client timeout")

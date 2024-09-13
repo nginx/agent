@@ -63,7 +63,7 @@ func TestResolveConfig(t *testing.T) {
 
 	assert.Equal(t, 30*time.Second, actual.DataPlaneConfig.Nginx.ReloadMonitoringPeriod)
 	assert.False(t, actual.DataPlaneConfig.Nginx.TreatWarningsAsErrors)
-	assert.Equal(t, "/var/log/nginx/error.log,/var/log/nginx/access.log", actual.DataPlaneConfig.Nginx.ExcludeLogs)
+	assert.Equal(t, "/var/log/nginx/error.log:/var/log/nginx/access.log", actual.DataPlaneConfig.Nginx.ExcludeLogs)
 
 	require.NotNil(t, actual.Collector)
 	assert.Equal(t, "/etc/nginx-agent/nginx-agent-otelcol.yaml", actual.Collector.ConfigPath)
