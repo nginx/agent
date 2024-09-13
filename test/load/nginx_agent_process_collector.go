@@ -227,6 +227,12 @@ func (cp *agentProcessCollector) Start(params testbed.StartParams) error {
 	cp.startTime = time.Now()
 	cp.isStarted = true
 
+	contents, err := os.ReadFile("/var/run/nginx-agent/opentelemetry-collector-agent.yaml")
+	if err != nil {
+		return err
+	}
+
+	log.Printf("OTel collector config: %s", string(contents))
 	log.Printf("%s running, pid=%d", cp.name, cp.cmd.Process.Pid)
 
 	return err

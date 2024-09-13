@@ -95,6 +95,5 @@ RUN chmod -R +x ./build
 WORKDIR /agent/test/load
 
 RUN go test -v -timeout 30s ./...
-RUN cat /var/run/nginx-agent/opentelemetry-collector-agent.yaml
 
 CMD ["sh", "-c", "cat benchmarks.json"]
