@@ -20,6 +20,7 @@ RUN --mount=type=secret,id=nginx-crt,dst=/nginx-repo.crt \
                         ca-certificates \
                         gnupg \
                         lsb-release \
+			procps \
     && \
     NGINX_GPGKEY=573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62; \
     found=''; \
