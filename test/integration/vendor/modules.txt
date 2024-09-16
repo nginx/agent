@@ -656,7 +656,7 @@ github.com/morikuni/aec
 ## explicit
 github.com/munnerz/goautoneg
 # github.com/nginx/agent/sdk/v2 v2.30.3 => ./../../sdk
-## explicit; go 1.22
+## explicit; go 1.22.0
 github.com/nginx/agent/sdk/v2
 github.com/nginx/agent/sdk/v2/agent/config
 github.com/nginx/agent/sdk/v2/agent/events
@@ -671,7 +671,7 @@ github.com/nginx/agent/sdk/v2/proto/common
 github.com/nginx/agent/sdk/v2/proto/events
 github.com/nginx/agent/sdk/v2/zip
 # github.com/nginx/agent/v2 v2.0.0-00010101000000-000000000000 => ./../../
-## explicit; go 1.22
+## explicit; go 1.22.0
 github.com/nginx/agent/v2/src/core
 github.com/nginx/agent/v2/src/core/config
 github.com/nginx/agent/v2/src/core/network
