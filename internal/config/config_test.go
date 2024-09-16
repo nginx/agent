@@ -53,7 +53,7 @@ func TestResolveConfig(t *testing.T) {
 	assert.True(t, viperInstance.IsSet(CollectorExportersKey))
 	assert.True(t, viperInstance.IsSet(CollectorProcessorsKey))
 	assert.True(t, viperInstance.IsSet(CollectorReceiversKey))
-	assert.True(t, viperInstance.IsSet(CollectorHealthKey))
+	assert.True(t, viperInstance.IsSet(CollectorExtensionsKey))
 
 	actual, err := ResolveConfig()
 	require.NoError(t, err)
@@ -69,7 +69,7 @@ func TestResolveConfig(t *testing.T) {
 	assert.NotEmpty(t, actual.Collector.Receivers)
 	assert.NotEmpty(t, actual.Collector.Processors)
 	assert.NotEmpty(t, actual.Collector.Exporters)
-	assert.NotEmpty(t, actual.Collector.Health)
+	assert.NotEmpty(t, actual.Collector.Extensions)
 
 	assert.Equal(t, 10*time.Second, actual.Client.Timeout)
 
@@ -225,7 +225,7 @@ func TestResolveCollector(t *testing.T) {
 			viperInstance.Set(CollectorReceiversKey, test.expected.Receivers)
 			viperInstance.Set(CollectorProcessorsKey, test.expected.Processors)
 			viperInstance.Set(CollectorExportersKey, test.expected.Exporters)
-			viperInstance.Set(CollectorHealthKey, test.expected.Health)
+			viperInstance.Set(CollectorExtensionsKey, test.expected.Extensions)
 			viperInstance.Set(CollectorLogKey, test.expected.Log)
 
 			actual, err := resolveCollector(testDefault.AllowedDirectories)
@@ -394,10 +394,14 @@ func getAgentConfig() *Config {
 					},
 				},
 			},
-			Health: &ServerConfig{
-				Host: "localhost",
-				Port: 1337,
-				Type: 0,
+			Extensions: Extensions{
+				Health: Health{
+					Server: &ServerConfig{
+						Host: "localhost",
+						Port: 1337,
+						Type: 0,
+					},
+				},
 			},
 			Log: &Log{
 				Level: "INFO",

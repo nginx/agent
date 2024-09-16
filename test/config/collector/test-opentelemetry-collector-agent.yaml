@@ -43,7 +43,6 @@ exporters:
     verbosity: detailed
     sampling_initial: 5
     sampling_thereafter: 200
-
 extensions:
   health_check:
     endpoint: "localhost:1337"

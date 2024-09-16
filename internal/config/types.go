@@ -85,12 +85,22 @@ type (
 	}
 
 	Collector struct {
-		ConfigPath string        `yaml:"-" mapstructure:"config_path"`
-		Log        *Log          `yaml:"-" mapstructure:"log"`
-		Exporters  []Exporter    `yaml:"-" mapstructure:"exporters"`
-		Health     *ServerConfig `yaml:"-" mapstructure:"health"`
-		Processors []Processor   `yaml:"-" mapstructure:"processors"`
-		Receivers  Receivers     `yaml:"-" mapstructure:"receivers"`
+		ConfigPath string      `yaml:"-" mapstructure:"config_path"`
+		Log        *Log        `yaml:"-" mapstructure:"log"`
+		Exporters  []Exporter  `yaml:"-" mapstructure:"exporters"`
+		Extensions Extensions  `yaml:"-" mapstructure:"extensions"`
+		Processors []Processor `yaml:"-" mapstructure:"processors"`
+		Receivers  Receivers   `yaml:"-" mapstructure:"receivers"`
+	}
+
+	Extensions struct {
+		Health Health `yaml:"-" mapstructure:"health"`
+	}
+
+	Health struct {
+		Server *ServerConfig `yaml:"-" mapstructure:"server"`
+		TLS    *TLSConfig    `yaml:"-" mapstructure:"tls"`
+		Path   string        `yaml:"-" mapstructure:"path"`
 	}
 
 	// OTel Collector Exporter configuration.

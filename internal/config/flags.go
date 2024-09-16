@@ -34,7 +34,7 @@ var (
 	CollectorConfigPathKey         = pre(CollectorRootKey) + "config_path"
 	CollectorExportersKey          = pre(CollectorRootKey) + "exporters"
 	CollectorProcessorsKey         = pre(CollectorRootKey) + "processors"
-	CollectorHealthKey             = pre(CollectorRootKey) + "health"
+	CollectorExtensionsKey         = pre(CollectorRootKey) + "extensions"
 	CollectorReceiversKey          = pre(CollectorRootKey) + "receivers"
 	CollectorLogKey                = pre(CollectorRootKey) + "log"
 	CollectorLogLevelKey           = pre(CollectorLogKey) + "level"

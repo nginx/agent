@@ -78,13 +78,22 @@ exporters:
 {{- end }}
 {{- end }}
 
+{{- if ne .Extensions nil }}
 extensions:
+  {{- if ne .Extensions.Health nil }}
   health_check:
-    {{- if .Health }}
-    endpoint: "{{ .Health.Host -}}:{{- .Health.Port }}"
-    {{- else }}
-    endpoint: "localhost:13133"
+    endpoint: "{{ .Extensions.Health.Server.Host -}}:{{- .Extensions.Health.Server.Port }}"
+    {{- if ne .Extensions.Health.Path "" }}
+    path: "{{ .Extensions.Health.Path -}}"
     {{- end }}
+    {{- if ne .Extensions.Health.TLS nil }}
+    tls: 
+       ca_cert: "{{ .Extensions.Health.Server.TLS.Ca -}}"
+       cert_file: "{{ .Extensions.Health.Server.TLS.Cert -}}"
+       key_file: "{{ .Extensions.Health.Server.TLS.Key -}}"
+    {{- end }}
+  {{- end }}
+{{- end }}
 
 service:
   {{- if .Log.Path}}
