@@ -21,7 +21,7 @@ receivers:
       network:
       {{- end }}
       {{- end }}
-    {{- end }}  
+{{- end }}  
 {{- range $index, $otlpReceiver := .Receivers.OtlpReceivers }}
   otlp/{{$index}}:
     protocols:
