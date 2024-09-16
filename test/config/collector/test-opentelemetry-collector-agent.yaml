@@ -5,11 +5,9 @@ receivers:
     scrapers:
       cpu:
       disk:
-      load:
       filesystem:
       memory:
       network:
-      paging:
   otlp/0:
     protocols:
       grpc:

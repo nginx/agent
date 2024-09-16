@@ -137,9 +137,23 @@ type (
 	}
 
 	HostMetrics struct {
-		CollectionInterval time.Duration `yaml:"-" mapstructure:"collection_interval"`
-		InitialDelay       time.Duration `yaml:"-" mapstructure:"initial_delay"`
+		Scrapers           *HostMetricsScrapers `yaml:"-" mapstructure:"scrapers"`
+		CollectionInterval time.Duration        `yaml:"-" mapstructure:"collection_interval"`
+		InitialDelay       time.Duration        `yaml:"-" mapstructure:"initial_delay"`
 	}
+
+	HostMetricsScrapers struct {
+		CPU        *CPUScraper        `yaml:"-" mapstructure:"cpu"`
+		Disk       *DiskScraper       `yaml:"-" mapstructure:"disk"`
+		Filesystem *FilesystemScraper `yaml:"-" mapstructure:"filesystem"`
+		Memory     *MemoryScraper     `yaml:"-" mapstructure:"memory"`
+		Network    *NetworkScraper    `yaml:"-" mapstructure:"network"`
+	}
+	CPUScraper        struct{}
+	DiskScraper       struct{}
+	FilesystemScraper struct{}
+	MemoryScraper     struct{}
+	NetworkScraper    struct{}
 
 	GRPC struct {
 		Target         string        `yaml:"-" mapstructure:"target"`
