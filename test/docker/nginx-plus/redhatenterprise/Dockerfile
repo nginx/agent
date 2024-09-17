@@ -1,15 +1,16 @@
-ARG BASE_IMAGE
-FROM ${BASE_IMAGE} as install
+ARG OS_VERSION
+ARG CONTAINER_REGISTRY
+
+FROM ${CONTAINER_REGISTRY}/ubi${OS_VERSION}/ubi:latest as install
+
 LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
-ARG BASE_IMAGE
 ARG PACKAGES_REPO
-ARG OS_RELEASE
 ARG OS_VERSION
 ARG NGINX_AGENT_VERSION
 
 WORKDIR /agent
-COPY ./scripts/docker/entrypoint.sh /agent/entrypoint.sh
+COPY ./test/docker/entrypoint.sh /agent/entrypoint.sh
 COPY ./nginx-agent.conf /agent/nginx-agent.conf
 
 RUN --mount=type=secret,id=nginx-crt,dst=/nginx-repo.crt \
@@ -23,9 +24,12 @@ RUN --mount=type=secret,id=nginx-crt,dst=/nginx-repo.crt \
     && adduser -g nginx --system --no-create-home --home /nonexistent --shell /bin/false --uid 101 nginx \
     && usermod -s /sbin/nologin nginx \
     && usermod -L nginx \
+    && nginxPackages=" \
+        nginx-plus \
+       " \
     && printf "[nginx-plus] \n\
 name=nginx-plus repo \n\
-baseurl=https://$PACKAGES_REPO/plus/$OS_RELEASE/$OS_VERSION/\$basearch \n\
+baseurl=https://$PACKAGES_REPO/plus/centos/$OS_VERSION/\$basearch \n\
 sslclientcert=/etc/ssl/nginx/nginx-repo.crt \n\
 sslclientkey=/etc/ssl/nginx/nginx-repo.key \n\
 gpgcheck=1 \n\
@@ -34,17 +38,14 @@ sslverify=true \n\
 gpgkey=https://nginx.org/keys/nginx_signing.key" >> /etc/yum.repos.d/nginx-plus.repo \
     && printf "[nginx-agent] \n\
 name=nginx-agent repo \n\
-baseurl=https://$PACKAGES_REPO/nginx-agent/$OS_RELEASE/$OS_VERSION/\$basearch \n\
+baseurl=https://$PACKAGES_REPO/nginx-agent/centos/$OS_VERSION/\$basearch \n\
 sslclientcert=/etc/ssl/nginx/nginx-repo.crt \n\
 sslclientkey=/etc/ssl/nginx/nginx-repo.key \n\
 gpgcheck=1 \n\
 enabled=1 \n\
 sslverify=true \n\
-gpgkey=https://nginx.org/keys/nginx_signing.key">> /etc/yum.repos.d/nginx-agent.repo \
-    && nginxPackages=" \
-        nginx-plus \
-       " \
-    && yum install -y $nginxPackages 
+gpgkey=https://nginx.org/keys/nginx_signing.key" >> /etc/yum.repos.d/nginx-agent.repo \
+    && yum install -y $nginxPackages
 
 RUN if [ -z "$NGINX_AGENT_VERSION" ]; then yum install -y nginx-agent; else yum install -y nginx-agent-${NGINX_AGENT_VERSION}; fi
 
