@@ -14,7 +14,7 @@ const (
 	DefNginxReloadMonitoringPeriod = 10 * time.Second
 	DefTreatErrorsAsWarnings       = true
 
-	DefCollectorConfigPath = "/var/run/nginx-agent/opentelemetry-collector-agent.yaml"
+	DefCollectorConfigPath = "/etc/nginx-agent/opentelemetry-collector-agent.yaml"
 	DefCollectorLogLevel   = "INFO"
 	DefCollectorLogPath    = "/var/log/nginx-agent/opentelemetry-collector-agent.log"
 	DefConfigDirectories   = "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules"
