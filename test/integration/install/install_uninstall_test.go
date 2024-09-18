@@ -89,6 +89,12 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
+	// Check agent version
+	versionOutput, err := checkAgentVersion(ctx, testContainer)
+	t.Logf("--------- Version Command Output, %s", versionOutput)
+
+	t.Logf("--------- Package Name: %s", os.Getenv("PACKAGE_NAME"))
+
 	uninstallLog, err := uninstallAgent(ctx, testContainer, osReleaseContent)
 	require.NoError(t, err)
 
@@ -191,6 +197,19 @@ func createUninstallCommand(osReleaseContent string) []string {
 	} else {
 		return []string{"yum", "remove", "-y", agentPackageName}
 	}
+}
+
+func checkAgentVersion(ctx context.Context, container *testcontainers.DockerContainer) (string, error) {
+	exitCode, cmdOut, err := container.Exec(ctx, []string{"nginx-agent", "--version"})
+	if err != nil {
+		return "", fmt.Errorf("failed to check agent version: %v", err)
+	}
+	stdoutStderr, _ := io.ReadAll(cmdOut)
+	if exitCode != 0 {
+		return "", fmt.Errorf("expected error code of 0 from cmd got: %v\n %s", exitCode, stdoutStderr)
+	}
+
+	return string(stdoutStderr), nil
 }
 
 func nginxIsRunning(ctx context.Context, container *testcontainers.DockerContainer) bool {
