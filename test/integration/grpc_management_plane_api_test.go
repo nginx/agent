@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -76,7 +77,9 @@ func setupConnectionTest(tb testing.TB, expectNoErrorsInLogs bool) func(tb testi
 		)
 		require.NoError(tb, err)
 		tb.Cleanup(func() {
-			require.NoError(tb, containerNetwork.Remove(ctx))
+			networkErr := containerNetwork.Remove(ctx)
+			slog.Info("Network Error", "err", networkErr)
+			require.NoError(tb, networkErr)
 		})
 
 		mockManagementPlaneGrpcContainer = helpers.StartMockManagementPlaneGrpcContainer(
