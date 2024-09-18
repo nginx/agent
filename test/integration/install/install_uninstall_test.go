@@ -88,17 +88,15 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 		_, err = testContainer.CopyFileFromContainer(ctx, path)
 		assert.NoError(t, err)
 	}
+
 	replacer := strings.NewReplacer("nginx-agent-", "v", "SNAPSHOT-", "")
 	packageVersion := replacer.Replace(os.Getenv("PACKAGE_NAME"))
 
-	// Check agent version
+	expectedVersionOutput := fmt.Sprintf("nginx-agent version %s", packageVersion)
+
+	// Check agent version command output
 	versionOutput, err := checkAgentVersion(ctx, testContainer)
-
-	t.Logf("--------- Version Command Output, %s", versionOutput)
-
-	t.Logf("--------- Package Name: %s", os.Getenv("PACKAGE_NAME"))
-
-	t.Logf("--------- Package Version: %s", packageVersion)
+	assert.Equal(t, expectedVersionOutput, versionOutput)
 
 	uninstallLog, err := uninstallAgent(ctx, testContainer, osReleaseContent)
 	require.NoError(t, err)
