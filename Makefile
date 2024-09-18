@@ -31,6 +31,10 @@ OS_RELEASE  ?= ubuntu
 OS_VERSION  ?= 22.04
 BASE_IMAGE  = "docker.io/$(OS_RELEASE):$(OS_VERSION)"
 IMAGE_TAG   = "agent_$(OS_RELEASE)_$(OS_VERSION)"
+DOCKERFILE_PATH = "./scripts/docker/nginx-oss/$(CONTAINER_OS_TYPE)/Dockerfile"
+OFFICIAL_IMAGE_DOCKERFILE_PATH = "./test/docker/oss/$(CONTAINER_OS_TYPE)/Dockerfile"
+IMAGE_PATH ?= "/nginx/agent"
+TAG ?= ""
 
 BUILD_DIR		:= build
 TEST_BUILD_DIR  := build/test
@@ -148,9 +152,15 @@ build-mock-management-plane-grpc:
 	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/mock-management-plane-grpc/server test/mock/grpc/cmd/main.go
 
 integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc
-	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" \
-	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) \
+	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} \
+	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) DOCKERFILE_PATH=$(DOCKERFILE_PATH) IMAGE_PATH=$(IMAGE_PATH) TAG=${IMAGE_TAG} \
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) \
+	go test -v ./test/integration
+	
+official-image-integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc
+	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} BUILD_TARGET="install" \
+	PACKAGES_REPO=$(OSS_PACKAGES_REPO) TAG=${TAG} PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) DOCKERFILE_PATH=$(OFFICIAL_IMAGE_DOCKERFILE_PATH) \
+	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) IMAGE_PATH=$(IMAGE_PATH) \
 	go test -v ./test/integration
 
 performance-test:
@@ -178,7 +188,7 @@ run-mock-management-grpc-server: ## Run mock management plane gRPC server
 	$(GORUN) test/mock/grpc/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY) -logLevel=$(MOCK_MANAGEMENT_PLANE_LOG_LEVEL) -grpcAddress=$(MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS) -apiAddress=$(MOCK_MANAGEMENT_PLANE_API_ADDRESS)
 
 .PHONY: build-test-plus-image
-build-test-plus-image: local-deb-package
+build-test-plus-image:
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx_plus_$(IMAGE_TAG) . \
 		--no-cache -f ./scripts/docker/nginx-plus/deb/Dockerfile \
 		--secret id=nginx-crt,src=$(CERTS_DIR)/nginx-repo.crt \
@@ -188,10 +198,20 @@ build-test-plus-image: local-deb-package
 		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
 		--build-arg ENTRY_POINT=./scripts/docker/entrypoint.sh
 
+.PHONY: build-test-oss-image
+build-test-oss-image:
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx_oss_$(IMAGE_TAG) . \
+		--no-cache -f ./scripts/docker/nginx-oss/deb/Dockerfile \
+		--target install-agent-local \
+		--build-arg PACKAGE_NAME=$(PACKAGE_NAME) \
+		--build-arg PACKAGES_REPO=$(OSS_PACKAGES_REPO) \
+		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
+		--build-arg ENTRY_POINT=./scripts/docker/entrypoint.sh
+
 .PHONY: run-mock-management-otel-collector
 run-mock-management-otel-collector: ## Run mock management plane OTel collector
 	@echo "🚀 Running mock management plane OTel collector"
-	AGENT_IMAGE=nginx_plus_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml up -d
+	AGENT_IMAGE_WITH_NGINX_PLUS=nginx_plus_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_OSS=nginx_oss_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml up -d
 
 .PHONY: stop-mock-management-otel-collector
 stop-mock-management-otel-collector: ## Stop running mock management plane OTel collector
@@ -220,7 +240,8 @@ generate-pgo-profile: build-mock-management-plane-grpc
 	mv default.pgo profile.pprof
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) \
-	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) \
+	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) DOCKERFILE_PATH=$(DOCKERFILE_PATH) \
+	IMAGE_PATH=$(IMAGE_PATH) TAG=${IMAGE_TAG} CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} \
 	$(GOTEST) -v ./test/integration -cpuprofile integration_cpu.pprof
 	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 5m -bench=. -benchmem -run=^# ./internal/watcher/instance -cpuprofile perf_watcher_cpu.pprof
 	@$(GOTOOL) pprof -proto perf_watcher_cpu.pprof integration_cpu.pprof > default.pgo

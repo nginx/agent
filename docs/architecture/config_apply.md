@@ -18,7 +18,7 @@ flowchart TB
     11 -- No --> 15["Validate NGINX Config"]
     15 --> 16{"Validate Config Command Error?"}
     16 -- Yes --> 17["Send Data Plane Response <br> COMMAND_STATUS_ERROR"]
-    17 --> 22[<a href='https://github.com/nginx/agent/blob/config-apply-diagrams/docs/architecture/config_apply_rollback.md'>Rollback Config</a>]
+    17 --> 22[<a href='https://github.com/nginx/agent/blob/v3/docs/architecture/config_apply_rollback.md'>Rollback Config</a>]
     16 -- No --> 18["Reload Nginx"]
     18 --> 19{"Reload NGINX Command Error?"}
     19 -- Yes --> 17

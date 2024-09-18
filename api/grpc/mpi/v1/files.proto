@@ -37,13 +37,13 @@ message GetOverviewRequest {
     ConfigVersion config_version = 2;
 }
 
-// Represents a response payload for an overview of files for a particular configuration version of an instance
+// Represents the response payload to a GetOverviewRequest, requesting a list of logically grouped files e.g. configuration payload
 message GetOverviewResponse {
     // The file overview of an instance
     FileOverview overview = 1;
 }
 
-// Represents a the payload for an overview an update of  files for a particular configuration version of an instance
+// Represents a list of logically grouped files that have changed e.g. configuration payload
 message UpdateOverviewRequest {
     // Meta-information associated with a message
     mpi.v1.MessageMeta message_meta = 1;

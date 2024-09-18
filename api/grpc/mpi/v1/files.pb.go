@@ -146,7 +146,7 @@ func (x *GetOverviewRequest) GetConfigVersion() *ConfigVersion {
 	return nil
 }
 
-// Represents a response payload for an overview of files for a particular configuration version of an instance
+// Represents the response payload to a GetOverviewRequest, requesting a list of logically grouped files e.g. configuration payload
 type GetOverviewResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -195,7 +195,7 @@ func (x *GetOverviewResponse) GetOverview() *FileOverview {
 	return nil
 }
 
-// Represents a the payload for an overview an update of  files for a particular configuration version of an instance
+// Represents a list of logically grouped files that have changed e.g. configuration payload
 type UpdateOverviewRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

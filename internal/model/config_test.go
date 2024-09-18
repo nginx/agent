@@ -53,6 +53,16 @@ func TestNginxConfigContext_Equal(t *testing.T) {
 	nginxConfigContextWithDifferentNumberOfFiles := *nginxConfigContext
 	nginxConfigContextWithDifferentNumberOfFiles.Files = []*mpi.File{}
 
+	nginxConfigContextWithDifferentFileHashes := *nginxConfigContext
+	nginxConfigContextWithDifferentFileHashes.Files = []*mpi.File{
+		{
+			FileMeta: protos.FileMeta("test1", "fgregreger"),
+		},
+		{
+			FileMeta: protos.FileMeta("test2", "vre8e"),
+		},
+	}
+
 	nginxConfigContextWithDifferentAccessLogs := *nginxConfigContext
 	nginxConfigContextWithDifferentAccessLogs.AccessLogs = []*AccessLog{}
 
@@ -64,6 +74,7 @@ func TestNginxConfigContext_Equal(t *testing.T) {
 	assert.False(t, nginxConfigContext.Equal(&nginxConfigContextWithDifferentPlusAPI))
 	assert.False(t, nginxConfigContext.Equal(&nginxConfigContextWithDifferentInstanceID))
 	assert.False(t, nginxConfigContext.Equal(&nginxConfigContextWithDifferentNumberOfFiles))
+	assert.False(t, nginxConfigContext.Equal(&nginxConfigContextWithDifferentFileHashes))
 	assert.False(t, nginxConfigContext.Equal(&nginxConfigContextWithDifferentAccessLogs))
 	assert.False(t, nginxConfigContext.Equal(&nginxConfigContextWithDifferentErrorLogs))
 }

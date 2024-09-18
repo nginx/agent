@@ -25,7 +25,6 @@
           "type": "prometheus",
           "uid": "otel-prometheus-scraper"
         },
-        "description": "",
         "fieldConfig": {
           "defaults": {
             "color": {
@@ -86,7 +85,7 @@
           "x": 0,
           "y": 0
         },
-        "id": 1,
+        "id": 5,
         "options": {
           "legend": {
             "calcs": [],
@@ -95,7 +94,6 @@
             "showLegend": true
           },
           "tooltip": {
-            "maxHeight": 600,
             "mode": "single",
             "sort": "none"
           }
@@ -108,7 +106,7 @@
             },
             "disableTextWrap": false,
             "editorMode": "builder",
-            "expr": "nginx_requests_total",
+            "expr": "nginx_http_response_status",
             "fullMetaSearch": false,
             "includeNullMetadata": true,
             "instant": false,
@@ -118,7 +116,7 @@
             "useBackend": false
           }
         ],
-        "title": "NGINX Requests Total",
+        "title": "HTTP Response Status",
         "type": "timeseries"
       },
       {
@@ -226,6 +224,7 @@
           "type": "prometheus",
           "uid": "otel-prometheus-scraper"
         },
+        "description": "",
         "fieldConfig": {
           "defaults": {
             "color": {
@@ -286,7 +285,7 @@
           "x": 0,
           "y": 8
         },
-        "id": 2,
+        "id": 1,
         "options": {
           "legend": {
             "calcs": [],
@@ -308,7 +307,7 @@
             },
             "disableTextWrap": false,
             "editorMode": "builder",
-            "expr": "nginx_connections_handled_total",
+            "expr": "nginx_http_requests",
             "fullMetaSearch": false,
             "includeNullMetadata": true,
             "instant": false,
@@ -318,7 +317,7 @@
             "useBackend": false
           }
         ],
-        "title": "NGINX Connections Handled Total",
+        "title": "NGINX Requests Total",
         "type": "timeseries"
       },
       {
@@ -408,7 +407,7 @@
             },
             "disableTextWrap": false,
             "editorMode": "builder",
-            "expr": "nginx_connections_accepted_total",
+            "expr": "nginx_http_conn_count",
             "fullMetaSearch": false,
             "includeNullMetadata": true,
             "instant": false,
@@ -418,7 +417,107 @@
             "useBackend": false
           }
         ],
-        "title": "NGINX Connections Accepted Total",
+        "title": "NGINX Connections Current Count",
+        "type": "timeseries"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "otel-prometheus-scraper"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 16
+        },
+        "id": 2,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "maxHeight": 600,
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "otel-prometheus-scraper"
+            },
+            "disableTextWrap": false,
+            "editorMode": "builder",
+            "expr": "nginx_http_conn",
+            "fullMetaSearch": false,
+            "includeNullMetadata": true,
+            "instant": false,
+            "legendFormat": "__auto",
+            "range": true,
+            "refId": "A",
+            "useBackend": false
+          }
+        ],
+        "title": "NGINX Connection Totals",
         "type": "timeseries"
       }
     ],
@@ -429,7 +528,7 @@
       "list": []
     },
     "time": {
-      "from": "now-1h",
+      "from": "now-5m",
       "to": "now"
     },
     "timepicker": {},

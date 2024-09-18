@@ -1,0 +1,69 @@
+type: nginx
+scope_name: otelcol/nginxreceiver
+
+status:
+  class: receiver
+  stability:
+    beta: [metrics]
+  distributions: [contrib]
+  codeowners:
+    active: [olli-holmala, oliveromahony, apgralG, dhurley, craigell]
+
+attributes:
+  nginx.conn.outcome:
+    description: The outcome of the connection.
+    type: string
+    enum:
+      - "ACCEPTED"
+      - "ACTIVE"
+      - "HANDLED"
+      - "READING"
+      - "WRITING"
+      - "WAITING"
+  nginx.status_range:
+    description: A status code range or bucket for a HTTP response's status code.
+    type: string
+    enum:
+      - "1xx"
+      - "2xx"
+      - "3xx"
+      - "4xx"
+      - "5xx"
+
+metrics:
+  nginx.http.requests:
+    enabled: true
+    description: The total number of client requests received from clients.
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+    unit: "requests"
+  nginx.http.conn:
+    enabled: true
+    description: The total number of connections.
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+    unit: "connections"
+    attributes:
+      - nginx.conn.outcome
+  nginx.http.conn.count:
+    enabled: true
+    description: The current number of connections.
+    gauge:
+      value_type: int
+    unit: "connections"
+    attributes:
+      - nginx.conn.outcome
+  nginx.http.response.status:
+    enabled: true
+    description: The number of responses, grouped by status code range.
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+    unit: "responses"
+    attributes:
+      - nginx.status_range

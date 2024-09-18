@@ -4,16 +4,24 @@ receivers:
     collection_interval: {{ .Receivers.HostMetrics.CollectionInterval }}
     initial_delay: {{ .Receivers.HostMetrics.InitialDelay }}
     scrapers:
+      {{- if .Receivers.HostMetrics.Scrapers }}
+      {{- if .Receivers.HostMetrics.Scrapers.CPU }}
       cpu:
+      {{- end }}
+      {{- if .Receivers.HostMetrics.Scrapers.Disk }}
       disk:
-      load:
+      {{- end }}
+      {{- if .Receivers.HostMetrics.Scrapers.Filesystem }}
       filesystem:
+      {{- end }}
+      {{- if .Receivers.HostMetrics.Scrapers.Memory }}
       memory:
+      {{- end }}
+      {{- if .Receivers.HostMetrics.Scrapers.Network }}
       network:
-      paging:
-      processes:
-      process:
-{{- end }}
+      {{- end }}
+      {{- end }}
+{{- end }}  
 {{- range $index, $otlpReceiver := .Receivers.OtlpReceivers }}
   otlp/{{$index}}:
     protocols:
@@ -53,6 +61,13 @@ receivers:
   nginx/{{- .InstanceID -}}:
     endpoint: "{{- .StubStatus -}}"
     collection_interval: 10s
+    {{- if gt (len .AccessLogs) 0 }}
+    access_logs:
+    {{- range .AccessLogs }}
+      - log_format: "{{- .LogFormat -}}"
+        file_path: "{{- .FilePath -}}"
+    {{- end }}
+    {{- end }}
 {{- end }}
 {{- range .Receivers.NginxPlusReceivers }}
   nginxplus/{{- .InstanceID -}}:
@@ -81,7 +96,7 @@ exporters:
       max_elapsed_time: 10m
     tls:
       insecure: {{ if .TLS -}}false{{ else -}}true{{- end }}
-      {{ if .TLS -}}
+      {{- if .TLS }}
       {{ if gt (len .TLS.Ca) 0 -}}ca_file: "{{- .TLS.Ca -}}"{{- end }}
       {{ if gt (len .TLS.Cert) 0 -}}cert_file: "{{- .TLS.Cert -}}"{{- end }}
       {{ if gt (len .TLS.Key) 0 -}}key_file: "{{- .TLS.Key -}}"{{- end }}
@@ -107,6 +122,13 @@ extensions:
     {{- end }}
 
 service:
+  {{- if .Log.Path}}
+  telemetry:
+    logs:
+      level: {{ .Log.Level }}
+      output_paths: ["{{ .Log.Path -}}"]
+      error_output_paths: ["{{ .Log.Path -}}"]
+  {{- end}}
   extensions:
     - health_check
   pipelines:

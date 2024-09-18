@@ -20,7 +20,7 @@ import (
 const (
 	headerTemplate = `worker_processes  1;
 
-error_log  /opt/homebrew/var/log/nginx/error.log;
+error_log  /var/log/nginx/error.log;
 
 events {
     worker_connections  1024;
@@ -34,7 +34,7 @@ http {
                   '"$bytes_sent" "$request_length" "$request_time" '
                   '"$gzip_ratio" $server_protocol ';
 
-    access_log  /opt/homebrew/var/log/nginx/access.log main;
+    access_log  /var/log/nginx/access.log main;
 
     sendfile        on;
 
