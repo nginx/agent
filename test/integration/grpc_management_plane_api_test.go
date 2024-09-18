@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"slices"
+	"sort"
 	"testing"
 	"time"
 
@@ -40,6 +41,7 @@ const (
 )
 
 var (
+	container                        testcontainers.Container
 	mockManagementPlaneGrpcContainer testcontainers.Container
 	mockManagementPlaneGrpcAddress   string
 	mockManagementPlaneAPIAddress    string
@@ -64,7 +66,6 @@ type (
 
 func setupConnectionTest(tb testing.TB, expectNoErrorsInLogs bool) func(tb testing.TB) {
 	tb.Helper()
-	var container testcontainers.Container
 	ctx := context.Background()
 
 	if os.Getenv("TEST_ENV") == "Container" {
@@ -326,6 +327,31 @@ func TestGrpc_ConfigApply(t *testing.T) {
 	})
 }
 
+func TestGrpc_FileWatcher(t *testing.T) {
+	ctx := context.Background()
+	teardownTest := setupConnectionTest(t, true)
+	defer teardownTest(t)
+
+	verifyConnection(t)
+	assert.False(t, t.Failed())
+
+	err := container.CopyFileToContainer(
+		ctx,
+		"../config/nginx/nginx-with-server-block-access-log.conf",
+		"/etc/nginx/nginx.conf",
+		0o666,
+	)
+	require.NoError(t, err)
+
+	responses := getManagementPlaneResponses(t, 2)
+	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
+	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
+	assert.Equal(t, "Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
+
+	verifyUpdateDataPlaneStatus(t)
+}
+
 func performConfigApply(t *testing.T, nginxInstanceID string) {
 	t.Helper()
 
@@ -544,4 +570,69 @@ func verifyUpdateDataPlaneHealth(t *testing.T) {
 	// Verify health metadata
 	assert.NotEmpty(t, healths[0].GetInstanceId())
 	assert.Equal(t, mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY, healths[0].GetInstanceHealthStatus())
+}
+
+func verifyUpdateDataPlaneStatus(t *testing.T) {
+	t.Helper()
+
+	client := resty.New()
+	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
+
+	url := fmt.Sprintf("http://%s/api/v1/status", mockManagementPlaneAPIAddress)
+	resp, err := client.R().EnableTrace().Get(url)
+
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode())
+
+	updateDataPlaneStatusRequest := mpi.UpdateDataPlaneStatusRequest{}
+
+	responseData := resp.Body()
+	t.Logf("Response: %s", string(responseData))
+	assert.True(t, json.Valid(responseData))
+
+	pb := protojson.UnmarshalOptions{DiscardUnknown: true}
+	unmarshalErr := pb.Unmarshal(responseData, &updateDataPlaneStatusRequest)
+	require.NoError(t, unmarshalErr)
+
+	t.Logf("UpdateDataPlaneStatusRequest: %v", &updateDataPlaneStatusRequest)
+
+	assert.NotNil(t, &updateDataPlaneStatusRequest)
+
+	// Verify message metadata
+	messageMeta := updateDataPlaneStatusRequest.GetMessageMeta()
+	assert.NotEmpty(t, messageMeta.GetCorrelationId())
+	assert.NotEmpty(t, messageMeta.GetMessageId())
+	assert.NotEmpty(t, messageMeta.GetTimestamp())
+
+	instances := updateDataPlaneStatusRequest.GetResource().GetInstances()
+	sort.Slice(instances, func(i, j int) bool {
+		return instances[i].GetInstanceMeta().GetInstanceType() < instances[j].GetInstanceMeta().GetInstanceType()
+	})
+	assert.Len(t, instances, 2)
+
+	// Verify agent instance metadata
+	assert.NotEmpty(t, instances[0].GetInstanceMeta().GetInstanceId())
+	assert.Equal(t, mpi.InstanceMeta_INSTANCE_TYPE_AGENT, instances[0].GetInstanceMeta().GetInstanceType())
+	assert.NotEmpty(t, instances[0].GetInstanceMeta().GetVersion())
+
+	// Verify agent instance configuration
+	assert.Empty(t, instances[0].GetInstanceConfig().GetActions())
+	assert.NotEmpty(t, instances[0].GetInstanceRuntime().GetProcessId())
+	assert.Equal(t, "/usr/bin/nginx-agent", instances[0].GetInstanceRuntime().GetBinaryPath())
+	assert.Equal(t, "/etc/nginx-agent/nginx-agent.conf", instances[0].GetInstanceRuntime().GetConfigPath())
+
+	// Verify NGINX instance metadata
+	assert.NotEmpty(t, instances[1].GetInstanceMeta().GetInstanceId())
+	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+		assert.Equal(t, mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS, instances[1].GetInstanceMeta().GetInstanceType())
+	} else {
+		assert.Equal(t, mpi.InstanceMeta_INSTANCE_TYPE_NGINX, instances[1].GetInstanceMeta().GetInstanceType())
+	}
+	assert.NotEmpty(t, instances[1].GetInstanceMeta().GetVersion())
+
+	// Verify NGINX instance configuration
+	assert.Empty(t, instances[1].GetInstanceConfig().GetActions())
+	assert.NotEmpty(t, instances[1].GetInstanceRuntime().GetProcessId())
+	assert.Equal(t, "/usr/sbin/nginx", instances[1].GetInstanceRuntime().GetBinaryPath())
+	assert.Equal(t, "/etc/nginx/nginx.conf", instances[1].GetInstanceRuntime().GetConfigPath())
 }
