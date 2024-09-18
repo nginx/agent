@@ -15,7 +15,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go"
 )
 
 const (
@@ -212,7 +211,7 @@ func checkAgentVersion(ctx context.Context, container *testcontainers.DockerCont
 		return "", fmt.Errorf("expected error code of 0 from cmd got: %v\n %s", exitCode, stdoutStderr)
 	}
 
-	return string(stdoutStderr), nil
+	return strings.Trim(string(stdoutStderr), "%/n"), nil
 }
 
 func nginxIsRunning(ctx context.Context, container *testcontainers.DockerContainer) bool {
