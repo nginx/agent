@@ -120,8 +120,9 @@ func AgentConfig() *config.Config {
 		},
 		DataPlaneConfig: &config.DataPlaneConfig{
 			Nginx: &config.NginxDataPlaneConfig{
-				TreatWarningsAsError:   true,
+				TreatWarningsAsErrors:  true,
 				ReloadMonitoringPeriod: reloadMonitoringPeriod,
+				ExcludeLogs:            "",
 			},
 		},
 		Watchers: &config.Watchers{

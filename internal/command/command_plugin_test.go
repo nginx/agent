@@ -159,7 +159,6 @@ func TestMonitorSubscribeChannel(t *testing.T) {
 
 	// Verify the logger was called
 	if s := logBuf.String(); !strings.Contains(s, "Received management plane request") {
-		// defer wg.Done()
 		t.Errorf("Unexpected log %s", s)
 	}
 
