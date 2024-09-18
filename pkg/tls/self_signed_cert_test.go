@@ -154,7 +154,7 @@ func TestGenerateSelfSignedCert(t *testing.T) {
 			certPath:      certPath,
 			keyPath:       keyPath,
 			hostNames:     hostNames,
-			expectedError: "error reading existing certificate file",
+			expectedError: "error decoding certificate PEM block",
 		},
 		{
 			name: "Test case 7: Error reading existing key file",

@@ -16,9 +16,9 @@ const (
 
 	DefCollectorConfigPath           = "/var/run/nginx-agent/opentelemetry-collector-agent.yaml"
 	DefCollectorTLSGenSelfSignedCert = false
-  DefCollectorLogLevel             = "INFO"
-  DefCollectorLogPath              = "/var/log/nginx-agent/opentelemetry-collector-agent.log"
-  DefConfigDirectories             = "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules"
+	DefCollectorLogLevel             = "INFO"
+	DefCollectorLogPath              = "/var/log/nginx-agent/opentelemetry-collector-agent.log"
+	DefConfigDirectories             = "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules"
 	DefCollectorTLSCertPath          = "/var/lib/nginx-agent/cert.pem"
 	DefCollectorTLSKeyPath           = "/var/lib/nginx-agent/key.pem"
 	DefCollectorTLSCAPath            = "/var/lib/nginx-agent/ca.pem"
