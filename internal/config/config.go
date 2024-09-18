@@ -407,29 +407,42 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 // generate self-signed certificate for OTEL receiver
 // nolint: revive
 func handleSelfSignedCertificates(col *Collector) error {
-	sanNames := []string{"127.0.0.1", "::1", "localhost"}
-
 	if col.Receivers.OtlpReceivers != nil {
 		for _, receiver := range col.Receivers.OtlpReceivers {
 			if receiver.OtlpTLSConfig != nil && receiver.OtlpTLSConfig.GenerateSelfSignedCert {
-				if !slices.Contains(sanNames, receiver.Server.Host) {
-					sanNames = append(sanNames, receiver.Server.Host)
+				err := processOtlpReceivers(receiver.OtlpTLSConfig)
+				if err != nil {
+					return fmt.Errorf("failed to generate self-signed certificate: %w", err)
 				}
-
-				// Update viper's TLS paths with defaults
-				receiver.OtlpTLSConfig.Ca = DefCollectorTLSCAPath
-				receiver.OtlpTLSConfig.Cert = DefCollectorTLSCertPath
-				receiver.OtlpTLSConfig.Key = DefCollectorTLSKeyPath
 			}
 		}
 	}
 
+	return nil
+}
+
+func processOtlpReceivers(tlsConfig *OtlpTLSConfig) error {
+	sanNames := []string{"127.0.0.1", "::1", "localhost"}
+
+	if tlsConfig.Ca == "" {
+		tlsConfig.Ca = DefCollectorTLSCAPath
+	}
+	if tlsConfig.Cert == "" {
+		tlsConfig.Cert = DefCollectorTLSCertPath
+	}
+	if tlsConfig.Key == "" {
+		tlsConfig.Key = DefCollectorTLSKeyPath
+	}
+
+	if !slices.Contains(sanNames, tlsConfig.ServerName) {
+		sanNames = append(sanNames, tlsConfig.ServerName)
+	}
 	if len(sanNames) > 0 {
 		err := selfsignedcerts.GenerateServerCert(
 			sanNames,
-			DefCollectorTLSCAPath,
-			DefCollectorTLSCertPath,
-			DefCollectorTLSKeyPath,
+			tlsConfig.Ca,
+			tlsConfig.Cert,
+			tlsConfig.Key,
 		)
 		if err != nil {
 			return fmt.Errorf("failed to generate self-signed certificate: %w", err)

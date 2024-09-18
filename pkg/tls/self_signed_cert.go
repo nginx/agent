@@ -116,11 +116,11 @@ func GenerateServerCert(hostnames []string, caPath, certPath, keyPath string) er
 	}
 
 	// Get the local time zone
-	location_currentzone, locErr := time.LoadLocation("Local")
+	locationCurrentzone, locErr := time.LoadLocation("Local")
 	if locErr != nil {
 		return fmt.Errorf("error detecting local timezone: %w", locErr)
 	}
-	now := time.Now().In(location_currentzone)
+	now := time.Now().In(locationCurrentzone)
 
 	// Create CA first
 	caCert, caKeyPair, caErr := GenerateCA(now, caPath)
