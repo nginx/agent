@@ -8,7 +8,7 @@ services:
     agent:
         build:
             context: ../../../
-            dockerfile: ./test/docker/oss/${CONTAINER_OS_TYPE}/Dockerfile
+            dockerfile: ./test/docker/nginx-official-image/${CONTAINER_OS_TYPE}/Dockerfile
             target: install
             args:
                 PACKAGE_NAME: ${PACKAGE_NAME}
