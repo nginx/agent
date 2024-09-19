@@ -213,14 +213,12 @@ func checkAgentVersion(ctx context.Context, container *testcontainers.DockerCont
 		return "", fmt.Errorf("expected error code of 0 from cmd got: %v\n %s", exitCode, stdoutStderr)
 	}
 
-	version := strings.Trim(string(stdoutStderr), " %\n")
-	slog.Info("Version", "version", version)
-
-	return version, nil
+	return strings.Trim(string(stdoutStderr), "%\x00\x01\n"), nil
 }
 
 func nginxIsRunning(ctx context.Context, container *testcontainers.DockerContainer) bool {
 	exitCode, _, err := container.Exec(ctx, []string{"pgrep", "nginx"})
+
 	if err != nil || exitCode != 0 {
 		return false
 	}
