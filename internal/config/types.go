@@ -82,9 +82,9 @@ type (
 	}
 
 	Exporters struct {
-		OtlpExporters       []OtlpExporter       `yaml:"-" mapstructure:"otlp_exporters"`
-		Debug               *DebugExporter       `yaml:"-" mapstructure:"debug"`
-		PrometheusExporters []PrometheusExporter `yaml:"-" mapstructure:"prometheus_exporters"`
+		Debug              *DebugExporter      `yaml:"-" mapstructure:"debug"`
+		PrometheusExporter *PrometheusExporter `yaml:"-" mapstructure:"prometheus_exporter"`
+		OtlpExporters      []OtlpExporter      `yaml:"-" mapstructure:"otlp_exporters"`
 	}
 
 	OtlpExporter struct {

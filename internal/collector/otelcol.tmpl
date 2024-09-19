@@ -64,10 +64,9 @@ exporters:
       {{ if gt (len .TLS.Key) 0 -}}key_file: "{{- .TLS.Key -}}"{{- end }}
       {{- end }}
 {{- end }}
-{{- range $index, $prometheusExporter := .Exporters.PrometheusExporters }}
-  prometheus/{{$index}}:
-    endpoint: "{{ .Server.Host -}}:{{- .Server.Port }}"
-    namespace: "nginx-agent"
+{{- if ne .Exporters.PrometheusExporter nil }}
+  prometheus:
+    endpoint: "{{ .Exporters.PrometheusExporter.Server.Host -}}:{{- .Exporters.PrometheusExporter.Server.Port }}"
 {{- end }}
 {{- if ne .Exporters.Debug nil }}
   debug:
@@ -117,8 +116,8 @@ service:
         {{- range $index, $otlpExporter := .Exporters.OtlpExporters }}
         - otlp/{{$index}}
         {{- end }}
-        {{- range $index, $prometheusExporter := .Exporters.PrometheusExporters }}
-        - prometheus/{{$index}}
+        {{- if ne .Exporters.PrometheusExporter nil }}
+        - prometheus
         {{- end }}
         {{- if ne .Exporters.Debug nil }}
         - debug

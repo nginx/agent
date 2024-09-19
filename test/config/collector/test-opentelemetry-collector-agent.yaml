@@ -36,9 +36,8 @@ exporters:
       max_elapsed_time: 10m
     tls:
       insecure: true
-  prometheus/0:
+  prometheus:
     endpoint: "localhost:9876"
-    namespace: "nginx-agent"
   debug:
     verbosity: detailed
     sampling_initial: 5
@@ -66,5 +65,5 @@ service:
         - batch
       exporters:
         - otlp/0
-        - prometheus/0
+        - prometheus
         - debug
