@@ -56,7 +56,7 @@ func StartContainer(
 				"BASE_IMAGE":                     ToPtr(baseImage),
 				"OS_RELEASE":                     ToPtr(osRelease),
 				"OS_VERSION":                     ToPtr(osVersion),
-				"ENTRY_POINT":                    ToPtr("./scripts/docker/entrypoint.sh"),
+				"ENTRY_POINT":                    ToPtr("./test/docker/entrypoint.sh"),
 				"CONTAINER_NGINX_IMAGE_REGISTRY": ToPtr(containerRegistry),
 				"IMAGE_PATH":                     ToPtr(imagePath),
 				"TAG":                            ToPtr(tag),
