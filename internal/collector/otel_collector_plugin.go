@@ -82,7 +82,10 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 	if oc.config.Collector.Receivers.OtlpReceivers != nil {
 		for _, receiver := range oc.config.Collector.Receivers.OtlpReceivers {
 			if receiver.OtlpTLSConfig != nil && receiver.OtlpTLSConfig.GenerateSelfSignedCert {
-				slog.WarnContext(ctx, "Self-signed certificate for OTEL receiver requested")
+				slog.WarnContext(ctx,
+					"Self-signed certificate for OTEL receiver requested, "+
+						"this is not recommended for production environments.",
+				)
 				if receiver.OtlpTLSConfig.ExistingCert {
 					slog.WarnContext(
 						ctx,

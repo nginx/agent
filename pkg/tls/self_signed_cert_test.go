@@ -219,7 +219,7 @@ func TestGenerateSelfSignedCert(t *testing.T) {
 			err := tc.setup()
 			require.NoError(t, err)
 
-			existingCert, genCertErr := GenerateServerCert(tc.hostNames, tc.caPath, tc.certPath, tc.keyPath)
+			existingCert, genCertErr := GenerateServerCerts(tc.hostNames, tc.caPath, tc.certPath, tc.keyPath)
 
 			// Check the results
 			if tc.expectedError != "" {

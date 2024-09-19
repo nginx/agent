@@ -422,7 +422,7 @@ func handleSelfSignedCertificates(col *Collector) error {
 }
 
 func processOtlpReceivers(tlsConfig *OtlpTLSConfig) error {
-	sanNames := []string{"127.0.0.1", "::1", "localhost"}
+	sanNames := strings.Split(DefCollectorTLSSANNames, ",")
 
 	if tlsConfig.Ca == "" {
 		tlsConfig.Ca = DefCollectorTLSCAPath
@@ -438,7 +438,7 @@ func processOtlpReceivers(tlsConfig *OtlpTLSConfig) error {
 		sanNames = append(sanNames, tlsConfig.ServerName)
 	}
 	if len(sanNames) > 0 {
-		existingCert, err := selfsignedcerts.GenerateServerCert(
+		existingCert, err := selfsignedcerts.GenerateServerCerts(
 			sanNames,
 			tlsConfig.Ca,
 			tlsConfig.Cert,

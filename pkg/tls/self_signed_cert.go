@@ -15,7 +15,6 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"log/slog"
 	"math/big"
 	"os"
 	"time"
@@ -35,7 +34,8 @@ type certReq struct {
 	privateKey *ecdsa.PrivateKey
 }
 
-func genCert(req *certReq) (*x509.Certificate, []byte) {
+// Returns x509 Certificate object and bytes in PEM format
+func genCert(req *certReq) (*x509.Certificate, []byte, error) {
 	certBytes, createCertErr := x509.CreateCertificate(
 		rand.Reader,
 		req.template,
@@ -45,22 +45,21 @@ func genCert(req *certReq) (*x509.Certificate, []byte) {
 	)
 
 	if createCertErr != nil {
-		slog.Error("Failed to generate certificate", "error", createCertErr)
-		return &x509.Certificate{}, []byte{}
+		return &x509.Certificate{}, []byte{}, fmt.Errorf("error generating certificate: %w", createCertErr)
 	}
 
 	cert, parseCertErr := x509.ParseCertificate(certBytes)
 	if parseCertErr != nil {
-		slog.Error("Failed to parse certificate")
-		return &x509.Certificate{}, []byte{}
+		return &x509.Certificate{}, []byte{}, fmt.Errorf("error parsing certificate: %w", parseCertErr)
 	}
 
 	b := pem.Block{Type: "CERTIFICATE", Bytes: certBytes}
 	certPEM := pem.EncodeToMemory(&b)
 
-	return cert, certPEM
+	return cert, certPEM, nil
 }
 
+// Generates a CA, returns x509 Certificate and private key for signing server certificates
 func GenerateCA(now time.Time, caCertPath string) (*x509.Certificate, *ecdsa.PrivateKey, error) {
 	// Generate key pair for the CA
 	caKeyPair, caKeyErr := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -89,13 +88,14 @@ func GenerateCA(now time.Time, caCertPath string) (*x509.Certificate, *ecdsa.Pri
 		privateKey: caKeyPair,
 	}
 
-	caCert, caCertPEM := genCert(&caRequest)
-	if len(caCertPEM) == 0 {
-		slog.Error("Error generating certificate authority")
+	caCert, caCertPEM, caErr := genCert(&caRequest)
+	if caErr != nil {
+		return &x509.Certificate{}, &ecdsa.PrivateKey{}, fmt.Errorf(
+			"error generating certificate authority: %w",
+			caErr)
 	}
 
 	// Write the CA certificate to a file
-	slog.Debug("About to write CA file", "path", caCertPath)
 	writeCAErr := os.WriteFile(caCertPath, caCertPEM, certFilePermissions)
 	if writeCAErr != nil {
 		return &x509.Certificate{}, &ecdsa.PrivateKey{}, fmt.Errorf(
@@ -107,10 +107,11 @@ func GenerateCA(now time.Time, caCertPath string) (*x509.Certificate, *ecdsa.Pri
 	return caCert, caKeyPair, nil
 }
 
+// Writes CA, Cert, Key to specified destinations. If cert files are already present, does nothing, returns true
 // nolint: revive
-func GenerateServerCert(hostnames []string, caPath, certPath, keyPath string) (existingCert bool, err error) {
+func GenerateServerCerts(hostnames []string, caPath, certPath, keyPath string) (existingCert bool, err error) {
 	// Check for and return existing cert if it already exists
-	existingCert, existingCertErr := ReturnExistingCert(certPath)
+	existingCert, existingCertErr := DoesCertAlreadyExist(certPath)
 	if existingCertErr != nil {
 		return false, fmt.Errorf("error reading existing certificate data: %w", existingCertErr)
 	}
@@ -157,9 +158,9 @@ func GenerateServerCert(hostnames []string, caPath, certPath, keyPath string) (e
 	}
 
 	// Generate server certficated signed by the CA
-	_, servCertPEM := genCert(&servRequest)
-	if len(servCertPEM) == 0 {
-		return false, errors.New("error generating server certificate")
+	_, servCertPEM, servCertErr := genCert(&servRequest)
+	if servCertErr != nil {
+		return false, fmt.Errorf("error generating server certificate: %w", servCertErr)
 	}
 
 	// Write the certificate to a file
@@ -183,7 +184,8 @@ func GenerateServerCert(hostnames []string, caPath, certPath, keyPath string) (e
 	return false, nil
 }
 
-func ReturnExistingCert(certPath string) (bool, error) {
+// Returns true if a valid certificate is found at certPath
+func DoesCertAlreadyExist(certPath string) (bool, error) {
 	if _, certErr := os.Stat(certPath); certErr == nil {
 		certBytes, certReadErr := os.ReadFile(certPath)
 		if certReadErr != nil {
