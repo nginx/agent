@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -212,7 +213,10 @@ func checkAgentVersion(ctx context.Context, container *testcontainers.DockerCont
 		return "", fmt.Errorf("expected error code of 0 from cmd got: %v\n %s", exitCode, stdoutStderr)
 	}
 
-	return strings.Trim(string(stdoutStderr), " %\n"), nil
+	version := strings.Trim(string(stdoutStderr), " %\n")
+	slog.Info("Version", "version", version)
+
+	return version, nil
 }
 
 func nginxIsRunning(ctx context.Context, container *testcontainers.DockerContainer) bool {
