@@ -438,7 +438,7 @@ func processOtlpReceivers(tlsConfig *OtlpTLSConfig) error {
 		sanNames = append(sanNames, tlsConfig.ServerName)
 	}
 	if len(sanNames) > 0 {
-		err := selfsignedcerts.GenerateServerCert(
+		existingCert, err := selfsignedcerts.GenerateServerCert(
 			sanNames,
 			tlsConfig.Ca,
 			tlsConfig.Cert,
@@ -446,6 +446,9 @@ func processOtlpReceivers(tlsConfig *OtlpTLSConfig) error {
 		)
 		if err != nil {
 			return fmt.Errorf("failed to generate self-signed certificate: %w", err)
+		}
+		if existingCert {
+			tlsConfig.ExistingCert = true
 		}
 	}
 

@@ -8,6 +8,7 @@ package tls
 
 import (
 	"encoding/pem"
+	"fmt"
 	"os"
 	"testing"
 
@@ -38,6 +39,7 @@ func TestGenerateSelfSignedCert(t *testing.T) {
 		expectedError string
 		setup         func() error
 		hostNames     []string
+		existingCert  bool
 	}
 
 	tests := []testCase{
@@ -67,6 +69,7 @@ func TestGenerateSelfSignedCert(t *testing.T) {
 			certPath:      certPath,
 			keyPath:       keyPath,
 			hostNames:     hostNames,
+			existingCert:  true,
 			expectedError: "",
 		},
 		{
@@ -90,6 +93,7 @@ func TestGenerateSelfSignedCert(t *testing.T) {
 			certPath:      certPath,
 			keyPath:       keyPath,
 			hostNames:     hostNames,
+			existingCert:  false,
 			expectedError: "error decoding certificate PEM block",
 		},
 		{
@@ -106,6 +110,7 @@ func TestGenerateSelfSignedCert(t *testing.T) {
 			certPath:      "/dev/null/cert.pem", // Path that is guaranteed to fail
 			keyPath:       keyPath,
 			hostNames:     hostNames,
+			existingCert:  false,
 			expectedError: "failed to write certificate file",
 		},
 		{
@@ -117,6 +122,7 @@ func TestGenerateSelfSignedCert(t *testing.T) {
 			certPath:      certPath,
 			keyPath:       "/dev/null/key/pem", // Path that is guaranteed to fail
 			hostNames:     hostNames,
+			existingCert:  false,
 			expectedError: "failed to write key file",
 		},
 		{
@@ -133,6 +139,7 @@ func TestGenerateSelfSignedCert(t *testing.T) {
 			certPath:      certPath,
 			keyPath:       keyPath,
 			hostNames:     hostNames,
+			existingCert:  false,
 			expectedError: "",
 		},
 		{
@@ -154,6 +161,7 @@ func TestGenerateSelfSignedCert(t *testing.T) {
 			certPath:      certPath,
 			keyPath:       keyPath,
 			hostNames:     hostNames,
+			existingCert:  false,
 			expectedError: "error reading existing certificate data",
 		},
 		{
@@ -174,6 +182,7 @@ func TestGenerateSelfSignedCert(t *testing.T) {
 			certPath:      certPath,
 			keyPath:       keyPath,
 			hostNames:     hostNames,
+			existingCert:  false,
 			expectedError: "error decoding certificate PEM block",
 		},
 		{
@@ -200,6 +209,7 @@ func TestGenerateSelfSignedCert(t *testing.T) {
 			certPath:      certPath,
 			keyPath:       keyPath,
 			hostNames:     hostNames,
+			existingCert:  false,
 			expectedError: "error decoding certificate PEM block",
 		},
 	}
@@ -209,7 +219,7 @@ func TestGenerateSelfSignedCert(t *testing.T) {
 			err := tc.setup()
 			require.NoError(t, err)
 
-			genCertErr := GenerateServerCert(tc.hostNames, tc.caPath, tc.certPath, tc.keyPath)
+			existingCert, genCertErr := GenerateServerCert(tc.hostNames, tc.caPath, tc.certPath, tc.keyPath)
 
 			// Check the results
 			if tc.expectedError != "" {
@@ -221,6 +231,10 @@ func TestGenerateSelfSignedCert(t *testing.T) {
 				require.NoError(t, err)
 				_, err = os.Stat(tc.keyPath)
 				require.NoError(t, err)
+			}
+			fmt.Printf("tc.ExistingCert is %t\n", tc.existingCert)
+			if tc.existingCert {
+				require.True(t, existingCert)
 			}
 		})
 	}

@@ -67,6 +67,7 @@ func New(conf *config.Config) (*Collector, error) {
 }
 
 // Init initializes and starts the plugin
+// nolint: revive
 func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) error {
 	slog.InfoContext(ctx, "Starting OTel Collector plugin")
 
@@ -81,7 +82,13 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 	if oc.config.Collector.Receivers.OtlpReceivers != nil {
 		for _, receiver := range oc.config.Collector.Receivers.OtlpReceivers {
 			if receiver.OtlpTLSConfig != nil && receiver.OtlpTLSConfig.GenerateSelfSignedCert {
-				slog.Warn("Self-signed certificate for OTEL receiver in use")
+				slog.WarnContext(ctx, "Self-signed certificate for OTEL receiver requested")
+				if receiver.OtlpTLSConfig.ExistingCert {
+					slog.WarnContext(
+						ctx,
+						"Certificate file already exists, skipping self-signed certificate generation",
+					)
+				}
 			}
 		}
 	}

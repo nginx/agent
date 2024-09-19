@@ -108,30 +108,33 @@ func GenerateCA(now time.Time, caCertPath string) (*x509.Certificate, *ecdsa.Pri
 }
 
 // nolint: revive
-func GenerateServerCert(hostnames []string, caPath, certPath, keyPath string) error {
+func GenerateServerCert(hostnames []string, caPath, certPath, keyPath string) (existingCert bool, err error) {
 	// Check for and return existing cert if it already exists
-	existingCertErr := ReturnExistingCert(certPath)
+	existingCert, existingCertErr := ReturnExistingCert(certPath)
 	if existingCertErr != nil {
-		return fmt.Errorf("error reading existing certificate data: %w", existingCertErr)
+		return false, fmt.Errorf("error reading existing certificate data: %w", existingCertErr)
+	}
+	if existingCert {
+		return true, nil
 	}
 
 	// Get the local time zone
 	locationCurrentzone, locErr := time.LoadLocation("Local")
 	if locErr != nil {
-		return fmt.Errorf("error detecting local timezone: %w", locErr)
+		return false, fmt.Errorf("error detecting local timezone: %w", locErr)
 	}
 	now := time.Now().In(locationCurrentzone)
 
 	// Create CA first
 	caCert, caKeyPair, caErr := GenerateCA(now, caPath)
 	if caErr != nil {
-		return fmt.Errorf("error generating certificate authority: %w", caErr)
+		return false, fmt.Errorf("error generating certificate authority: %w", caErr)
 	}
 
 	// Generate key pair for the server certficate
 	servKeyPair, servKeyErr := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if servKeyErr != nil {
-		return fmt.Errorf("failed to generate server keypair: %w", servKeyErr)
+		return false, fmt.Errorf("failed to generate server keypair: %w", servKeyErr)
 	}
 
 	servTemplate := x509.Certificate{
@@ -156,48 +159,47 @@ func GenerateServerCert(hostnames []string, caPath, certPath, keyPath string) er
 	// Generate server certficated signed by the CA
 	_, servCertPEM := genCert(&servRequest)
 	if len(servCertPEM) == 0 {
-		return errors.New("error generating server certificate")
+		return false, errors.New("error generating server certificate")
 	}
 
 	// Write the certificate to a file
 	writeCertErr := os.WriteFile(certPath, servCertPEM, certFilePermissions)
 	if writeCertErr != nil {
-		return fmt.Errorf("failed to write certificate file: %w", writeCertErr)
+		return false, fmt.Errorf("failed to write certificate file: %w", writeCertErr)
 	}
 
 	// Write the private key to a file
 	servKeyBytes, marshalErr := x509.MarshalECPrivateKey(servKeyPair)
 	if marshalErr != nil {
-		return fmt.Errorf("failed to marshal private key file: %w", marshalErr)
+		return false, fmt.Errorf("failed to marshal private key file: %w", marshalErr)
 	}
 	b := pem.Block{Type: "EC PRIVATE KEY", Bytes: servKeyBytes}
 	servKeyPEM := pem.EncodeToMemory(&b)
 	writeKeyErr := os.WriteFile(keyPath, servKeyPEM, keyFilePermissions)
 	if writeKeyErr != nil {
-		return fmt.Errorf("failed to write key file: %w", writeKeyErr)
+		return false, fmt.Errorf("failed to write key file: %w", writeKeyErr)
 	}
 
-	return nil
+	return false, nil
 }
 
-func ReturnExistingCert(certPath string) error {
+func ReturnExistingCert(certPath string) (bool, error) {
 	if _, certErr := os.Stat(certPath); certErr == nil {
 		certBytes, certReadErr := os.ReadFile(certPath)
 		if certReadErr != nil {
-			return fmt.Errorf("error reading existing certificate file")
+			return false, fmt.Errorf("error reading existing certificate file")
 		}
 		certPEM, _ := pem.Decode(certBytes)
 		if certPEM == nil {
-			return errors.New("error decoding certificate PEM block")
+			return false, errors.New("error decoding certificate PEM block")
 		}
 		_, parseErr := x509.ParseCertificate(certPEM.Bytes)
 		if parseErr == nil {
-			slog.Warn("Certificate file already exists, skipping self-signed certificate generation")
-			return nil
+			return true, nil
 		}
 
-		return fmt.Errorf("error parsing existing certificate: %w", parseErr)
+		return false, fmt.Errorf("error parsing existing certificate: %w", parseErr)
 	}
 
-	return nil
+	return false, nil
 }

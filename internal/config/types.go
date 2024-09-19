@@ -192,6 +192,7 @@ type (
 		Key                    string `yaml:"-" mapstructure:"key"`
 		Ca                     string `yaml:"-" mapstructure:"ca"`
 		ServerName             string `yaml:"-" mapstructure:"server_name"`
+		ExistingCert           bool   `yaml:"-"`
 		SkipVerify             bool   `yaml:"-" mapstructure:"skip_verify"`
 		GenerateSelfSignedCert bool   `yaml:"-" mapstructure:"generate_self_signed_cert"`
 	}
