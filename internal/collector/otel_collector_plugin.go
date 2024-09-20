@@ -67,7 +67,6 @@ func New(conf *config.Config) (*Collector, error) {
 }
 
 // Init initializes and starts the plugin
-// nolint: revive
 func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) error {
 	slog.InfoContext(ctx, "Starting OTel Collector plugin")
 
@@ -80,8 +79,23 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 	}
 
 	if oc.config.Collector.Receivers.OtlpReceivers != nil {
-		for _, receiver := range oc.config.Collector.Receivers.OtlpReceivers {
-			if receiver.OtlpTLSConfig != nil && receiver.OtlpTLSConfig.GenerateSelfSignedCert {
+		oc.processReceivers(ctx, oc.config.Collector.Receivers.OtlpReceivers)
+	}
+
+	bootErr := oc.bootup(runCtx)
+	if bootErr != nil {
+		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)
+	}
+
+	return nil
+}
+
+// Process receivers and log warning for sub-optimal configurations
+// nolint: revive
+func (oc *Collector) processReceivers(ctx context.Context, receivers []config.OtlpReceiver) {
+	for _, receiver := range receivers {
+		if receiver.OtlpTLSConfig != nil {
+			if receiver.OtlpTLSConfig.GenerateSelfSignedCert {
 				slog.WarnContext(ctx,
 					"Self-signed certificate for OTEL receiver requested, "+
 						"this is not recommended for production environments.",
@@ -93,15 +107,10 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 					)
 				}
 			}
+		} else {
+			slog.WarnContext(ctx, "OTEL receiver is configured without TLS. Connections are unencrypted.")
 		}
 	}
-
-	bootErr := oc.bootup(runCtx)
-	if bootErr != nil {
-		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)
-	}
-
-	return nil
 }
 
 func (oc *Collector) bootup(ctx context.Context) error {
