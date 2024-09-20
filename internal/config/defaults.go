@@ -22,7 +22,7 @@ const (
 	DefCollectorTLSCertPath          = "/var/lib/nginx-agent/cert.pem"
 	DefCollectorTLSKeyPath           = "/var/lib/nginx-agent/key.pem"
 	DefCollectorTLSCAPath            = "/var/lib/nginx-agent/ca.pem"
-	DefCollectorTLSSANNames          = "127.0.0.1, ::1, localhost"
+	DefCollectorTLSSANNames          = "127.0.0.1,::1,localhost"
 
 	DefCommandServerHostKey    = ""
 	DefCommandServerPortKey    = 0

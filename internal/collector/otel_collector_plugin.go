@@ -91,21 +91,23 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 }
 
 // Process receivers and log warning for sub-optimal configurations
-// nolint: revive
 func (oc *Collector) processReceivers(ctx context.Context, receivers []config.OtlpReceiver) {
 	for _, receiver := range receivers {
-		if receiver.OtlpTLSConfig != nil {
-			if receiver.OtlpTLSConfig.GenerateSelfSignedCert {
+		if receiver.OtlpTLSConfig == nil {
+			slog.WarnContext(ctx, "OTEL receiver is configured without TLS. Connections are unencrypted.")
+			continue
+		}
+
+		if receiver.OtlpTLSConfig.GenerateSelfSignedCert {
+			slog.WarnContext(ctx,
+				"Self-signed certificate for OTEL receiver requested, "+
+					"this is not recommended for production environments.",
+			)
+
+			if receiver.OtlpTLSConfig.ExistingCert {
 				slog.WarnContext(ctx,
-					"Self-signed certificate for OTEL receiver requested, "+
-						"this is not recommended for production environments.",
+					"Certificate file already exists, skipping self-signed certificate generation",
 				)
-				if receiver.OtlpTLSConfig.ExistingCert {
-					slog.WarnContext(
-						ctx,
-						"Certificate file already exists, skipping self-signed certificate generation",
-					)
-				}
 			}
 		} else {
 			slog.WarnContext(ctx, "OTEL receiver is configured without TLS. Connections are unencrypted.")
