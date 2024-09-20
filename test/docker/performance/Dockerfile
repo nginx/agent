@@ -98,4 +98,4 @@ ENV PATH="/usr/local/go/bin:${PATH}"
 RUN mkdir -p /data/nginx/
 ADD test/testdata/configs/bigger/metrics.conf /etc/nginx/nginx.conf
 WORKDIR "/home/nginx"
-CMD nginx; make test-bench
+CMD nginx; make test-performance-run

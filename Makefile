@@ -238,18 +238,17 @@ official-image-integration-test:
         OS_RELEASE=${OS_RELEASE} TAG=${TAG} CONTAINER_OS_TYPE=${CONTAINER_OS_TYPE} IMAGE_PATH=${IMAGE_PATH} DOCKER_COMPOSE_FILE="docker-compose-official-image.yml" \
         ${GOTEST} -v ./test/integration/api
 
-test-bench: ## Run benchmark tests
+test-performance-run: ## Run benchmark performance tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 ${GOTEST} -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go
 	cd test/performance && GOWORK=off CGO_ENABLED=0 ${GOTEST} -mod=vendor -count 1 -bench=. -benchmem user_workflow_test.go
 	cd test/performance && GOWORK=off CGO_ENABLED=0 ${GOTEST} -mod=vendor -count 5 -timeout 2m -bench=. -benchmem plugins_test.go
-	cd test/performance && GOWORK=off CGO_ENABLED=0 ${GOTEST} -mod=vendor -count 5 -timeout 2m -bench=. -benchmem environment_test.go	
+	cd test/performance && GOWORK=off CGO_ENABLED=0 ${GOTEST} -mod=vendor -count 5 -timeout 2m -bench=. -benchmem environment_test.go
 
-benchmark-image: ## Build benchmark test container image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
+performance-image: ## Build benchmark test container image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build --no-cache -t nginx-agent-benchmark:1.0.0 \
 		--secret id=nginx-crt,src=${CERTS_DIR}/nginx-repo.crt \
 		--secret id=nginx-key,src=${CERTS_DIR}/nginx-repo.key \
-		-f test/docker/Dockerfile .
-
+		-f test/docker/performance/Dockerfile .
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Cert Generation                                                                                                 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
