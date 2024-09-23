@@ -367,18 +367,19 @@ func getAgentConfig() *Config {
 					{
 						Server: &ServerConfig{
 							Host: "localhost",
-							Port: 4321,
+							Port: 4317,
 							Type: 0,
 						},
 						Auth: &AuthConfig{
 							Token: "even-secreter-token",
 						},
-						TLS: &TLSConfig{
-							Cert:       "/path/to/server-cert.pem",
-							Key:        "/path/to/server-cert.pem",
-							Ca:         "/path/to/server-cert.pem",
-							SkipVerify: true,
-							ServerName: "local-dataa-plane-server",
+						OtlpTLSConfig: &OtlpTLSConfig{
+							GenerateSelfSignedCert: false,
+							Cert:                   "/path/to/server-cert.pem",
+							Key:                    "/path/to/server-cert.pem",
+							Ca:                     "/path/to/server-cert.pem",
+							SkipVerify:             true,
+							ServerName:             "local-data-plane-server",
 						},
 					},
 				},
