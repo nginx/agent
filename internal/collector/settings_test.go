@@ -90,6 +90,20 @@ func TestTemplateWrite(t *testing.T) {
 			},
 		},
 	})
+	// Clear default config and test collector with TLS enabled
+	cfg.Collector.Receivers.OtlpReceivers = []config.OtlpReceiver{}
+	cfg.Collector.Receivers.OtlpReceivers = append(cfg.Collector.Receivers.OtlpReceivers, config.OtlpReceiver{
+		Server: &config.ServerConfig{
+			Host: "localhost",
+			Port: 4317,
+			Type: 0,
+		},
+		OtlpTLSConfig: &config.OtlpTLSConfig{
+			Cert: "/tmp/cert.pem",
+			Key:  "/tmp/key.pem",
+			Ca:   "/tmp/ca.pem",
+		},
+	})
 
 	require.NotNil(t, cfg)
 

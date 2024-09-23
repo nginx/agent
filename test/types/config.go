@@ -31,7 +31,7 @@ const (
 	reloadMonitoringPeriod = 400 * time.Millisecond
 
 	randomPort1 = 1234
-	randomPort2 = 4321
+	randomPort2 = 4317
 	randomPort3 = 1337
 )
 
