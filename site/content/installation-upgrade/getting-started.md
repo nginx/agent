@@ -1,21 +1,25 @@
 ---
 title: "Getting started"
 toc: true
-weight: 100
+weight: 200
 docs: DOCS-000
 ---
 
 ## Overview
 
-Follow these steps to configure and run NGINX Agent and a mock interface ("control plane") to which NGINX Agent will report.
+This document describes how to configure and run NGINX Agent using a mock interface ("control plane") for NGINX Agent to report to.
 
 ## Install NGINX
 
-Follow the steps in the [Installation]({{< relref "/installation-upgrade/installation-github.md" >}}) section to download, install, and run NGINX.
+Follow the [Install NGINX Agent]({{< relref "/installation-upgrade/" >}}) topic to download and install NGINX Agent.
 
 ## Clone the NGINX Agent repository
 
-Using your preferred method, clone the NGINX Agent repository into your development directory. See [Cloning a GitHub Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for additional help.
+```shell
+git clone git@github.com:nginx/agent.git
+```
+
+Read [Cloning a GitHub Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for more information
 
 ## Install Go
 
@@ -98,28 +102,15 @@ To launch the Swagger UI for the REST interface run the following command:
 make launch-swagger-ui
 ```
 
-## Extensions
+## Apply new NGINX Agent configuration
 
-An extension is a piece of code, not critical to the main functionality that NGINX agent is responsible for. This generally falls outside the remit of managing NGINX Configuration and reporting NGINX metrics.
-
-To enable an extension, it must be added to the extensions list in the `/etc/nginx-agent/nginx-agent.conf`.
-Here is an example of enabling the advanced metrics extension:
-
-```yaml
-extensions:
-  - advanced-metrics
-```
-
-## Start NGINX Agent
-
-If already running, restart NGINX Agent to apply the new configuration. Alternatively, if NGINX Agent is not running, you may run it from the source code root directory.
+Start or restart NGINX Agent to apply the new configuration.
 
 Open another terminal window and start NGINX Agent. Issue the following command from the `agent` source code root directory.
 
 ```shell
 sudo make run
 ```
-
 ```text
 WARN[0000] Log level is info
 INFO[0000] setting displayName to XXX
@@ -153,7 +144,7 @@ Open a web browser to view the mock control plane at [http://localhost:54790](ht
 
 For more NGINX Agent use cases, refer to the [NGINX Agent SDK examples](https://github.com/nginx/agent/tree/main/sdk/examples).
 
-## Start and enable start on boot
+## systemd environments
 
 To start NGINX Agent on `systemd` systems, run the following command:
 
@@ -176,3 +167,15 @@ Without log rotation or storage on a separate partition, log files could use up 
 
 For more information, see [NGINX Agent Log Rotation]({{< relref "configuration/configuration-overview.md#nginx-agent-log-rotation" >}}).
 {{< /important >}}
+
+## Extensions
+
+An extension is a piece of code, not critical to the main functionality that NGINX agent is responsible for. This generally falls outside the remit of managing NGINX Configuration and reporting NGINX metrics.
+
+To enable an extension, it must be added to the extensions list in the `/etc/nginx-agent/nginx-agent.conf`.
+Here is an example of enabling the advanced metrics extension:
+
+```yaml
+extensions:
+  - advanced-metrics
+```

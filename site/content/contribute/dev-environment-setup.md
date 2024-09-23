@@ -18,7 +18,7 @@ While most Linux or FreeBSD operating systems can be used to contribute to the N
 
 ## Install NGINX
 
-Follow the steps in the [Installation]({{< relref "/installation-upgrade/installation-github.md" >}}) section to download, install, and run NGINX and NGINX Agent.
+Follow the steps in the [Installation]({{< relref "/installation-upgrade/" >}}) section to download, install, and run NGINX and NGINX Agent.
 
 ## Clone the NGINX Agent Repository
 

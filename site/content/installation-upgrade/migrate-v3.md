@@ -1,6 +1,6 @@
 ---
 title: Migrate from NGINX Agent v2 to v3
-weight: 900
+weight: 600
 docs: DOCS-000
 ---
 

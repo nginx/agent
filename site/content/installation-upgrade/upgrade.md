@@ -1,7 +1,7 @@
 ---
-title: "Upgrade NGINX Agent package"
+title: "Upgrade NGINX Agent"
 toc: true
-weight: 600
+weight: 300
 docs: DOCS-000
 ---
 
@@ -37,8 +37,6 @@ To upgrade NGINX Agent, follow these steps:
         sudo apt-get update
         sudo apt-get install -y --only-upgrade nginx-agent -o Dpkg::Options::="--force-confold"
         ```
-
-
 
 ## Upgrade NGINX Agent from a version less than v2.31.0
 

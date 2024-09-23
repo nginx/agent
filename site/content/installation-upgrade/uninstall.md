@@ -1,7 +1,7 @@
 ---
-title: "Uninstall NGINX Agent package"
+title: "Uninstall NGINX Agent"
 toc: true
-weight: 600
+weight: 400
 docs: DOCS-000
 ---
 
