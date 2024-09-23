@@ -89,6 +89,15 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
+	replacer := strings.NewReplacer("nginx-agent-", "v", "SNAPSHOT-", "")
+	packageVersion := replacer.Replace(os.Getenv("PACKAGE_NAME"))
+
+	expectedVersionOutput := fmt.Sprintf("nginx-agent version %s", packageVersion)
+
+	// Check agent version command output
+	versionOutput, err := checkAgentVersion(ctx, testContainer)
+	assert.Equal(t, expectedVersionOutput, versionOutput)
+
 	uninstallLog, err := uninstallAgent(ctx, testContainer, osReleaseContent)
 	require.NoError(t, err)
 
@@ -193,8 +202,22 @@ func createUninstallCommand(osReleaseContent string) []string {
 	}
 }
 
+func checkAgentVersion(ctx context.Context, container *testcontainers.DockerContainer) (string, error) {
+	exitCode, cmdOut, err := container.Exec(ctx, []string{"nginx-agent", "--version"})
+	if err != nil {
+		return "", fmt.Errorf("failed to check agent version: %v", err)
+	}
+	stdoutStderr, _ := io.ReadAll(cmdOut)
+	if exitCode != 0 {
+		return "", fmt.Errorf("expected error code of 0 from cmd got: %v\n %s", exitCode, stdoutStderr)
+	}
+
+	return strings.Trim(string(stdoutStderr), "%\x00\x01\n"), nil
+}
+
 func nginxIsRunning(ctx context.Context, container *testcontainers.DockerContainer) bool {
 	exitCode, _, err := container.Exec(ctx, []string{"pgrep", "nginx"})
+
 	if err != nil || exitCode != 0 {
 		return false
 	}
