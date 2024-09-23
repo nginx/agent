@@ -1,0 +1,29 @@
+
+---
+name: nginx.http.request.body_bytes_sent
+categories:
+- nginx
+description: Number of bytes sent to clients, not counting response headers.
+type: counter
+counted: true
+source: access_combined
+unit: bytes
+rate: net_io_rate
+visible: true
+compound_payload: "false"
+modules:
+- platform
+aggregations:
+- MIN
+- MAX
+- SUM
+- AVG
+- COUNT
+- RATE
+dimensions:
+- system_id
+- hostname
+- display_name
+- nginx_id
+- instance_group
+- system.tags

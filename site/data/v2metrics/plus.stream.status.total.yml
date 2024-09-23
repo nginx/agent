@@ -1,0 +1,29 @@
+
+---
+name: plus.stream.status.total
+categories:
+- nginx
+description: The total number of completed client sessions.
+type: counter
+source: plus_status
+unit: integer
+rate: double
+visible: true
+compound_payload: "false"
+modules:
+- platform
+aggregations:
+- MIN
+- MAX
+- SUM
+- AVG
+- COUNT
+- RATE
+dimensions:
+- system_id
+- hostname
+- display_name
+- nginx_id
+- instance_group
+- system.tags
+- server_zone

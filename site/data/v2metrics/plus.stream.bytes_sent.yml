@@ -1,0 +1,29 @@
+
+---
+name: plus.stream.bytes_sent
+categories:
+- nginx
+description: The total number of bytes sent to clients.
+type: counter
+source: plus_status
+unit: bytes
+rate: net_io_rate
+visible: true
+compound_payload: "false"
+modules:
+- platform
+aggregations:
+- MIN
+- MAX
+- SUM
+- AVG
+- COUNT
+- RATE
+dimensions:
+- system_id
+- hostname
+- display_name
+- nginx_id
+- instance_group
+- system.tags
+- server_zone

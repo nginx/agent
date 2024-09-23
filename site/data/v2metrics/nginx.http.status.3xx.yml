@@ -1,0 +1,29 @@
+
+---
+name: nginx.http.status.3xx
+categories:
+- nginx
+description: Number of requests with HTTP status codes 3xx.
+type: counter
+counted: true
+source: access_combined
+unit: integer
+rate: double
+visible: true
+compound_payload: "false"
+modules:
+- platform
+aggregations:
+- MIN
+- MAX
+- SUM
+- AVG
+- COUNT
+- RATE
+dimensions:
+- system_id
+- hostname
+- display_name
+- nginx_id
+- instance_group
+- system.tags

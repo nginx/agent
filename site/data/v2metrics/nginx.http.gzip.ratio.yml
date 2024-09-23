@@ -1,0 +1,27 @@
+
+---
+name: nginx.http.gzip.ratio
+categories:
+  - nginx
+description: "The compression ratio achieved on responses using `gzip,` computed as the ratio between the original and compressed response sizes."
+type: gauge
+source: access_log
+unit: integer
+visible: true
+compound_payload: "false"
+modules:
+  - platform
+aggregations:
+  - MIN
+  - MAX
+  - SUM
+  - AVG
+  - COUNT
+  - RATE
+dimensions:
+  - system_id
+  - hostname
+  - display_name
+  - nginx_id
+  - system.tags
+  - instance_group

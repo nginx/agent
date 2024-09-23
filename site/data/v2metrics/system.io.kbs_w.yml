@@ -1,0 +1,30 @@
+
+---
+name: system.io.kbs_w
+categories:
+- system
+description: Number of kilobytes written.
+type: counter
+counted: true
+source: psutil
+unit: kilobytes
+rate: disk_io_rate
+visible: true
+compound_payload: "false"
+modules:
+- platform
+aggregations:
+- MIN
+- MAX
+- SUM
+- AVG
+- COUNT
+- RATE
+dimensions:
+- system_id
+- hostname
+- display_name
+- nginx_id
+- mount_point
+- instance_group
+- system.tags

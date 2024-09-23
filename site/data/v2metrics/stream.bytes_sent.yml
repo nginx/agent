@@ -1,0 +1,49 @@
+
+---
+name: stream.bytes_sent
+categories:
+  - advanced-metrics
+description: The total number of bytes sent from clients.
+type: counter
+source: advanced-metrics-module
+unit: bytes
+rate: net_io_rate
+visible: true
+compound_payload: "false"
+modules:
+  - adm
+  - acm
+aggregations:
+  - MIN
+  - MAX
+  - SUM
+  - AVG
+  - COUNT
+  - RATE
+dimensions:
+  - system_id
+  - hostname
+  - system.tags
+  - instance_group
+  - display_name
+  - nginx_id
+  - http.upstream_addr
+  - family
+  - proxied_protocol
+  - app
+  - environment
+  - component
+  - gateway
+  - acm_api_proxy_hostname
+  - acm_api_proxy_name
+  - acm_api_proxy_version
+  - acm_environments_name
+  - acm_environments_type
+  - acm_infra_workspaces_name
+  - acm_service_workspaces_name
+  - site
+  - environment_name
+  - gateway_name
+  - component_name
+  - app_name
+  - site_name

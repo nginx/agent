@@ -1,0 +1,28 @@
+
+---
+name: system.mem.free
+categories:
+- system
+description: Statistics about system memory usage.
+type: gauge
+counted: true
+source: psutil
+unit: bytes
+visible: true
+compound_payload: "false"
+modules:
+- platform
+aggregations:
+- MIN
+- MAX
+- SUM
+- AVG
+- COUNT
+- RATE
+dimensions:
+- system_id
+- hostname
+- display_name
+- nginx_id
+- instance_group
+- system.tags

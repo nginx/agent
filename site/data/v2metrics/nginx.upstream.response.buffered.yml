@@ -1,0 +1,27 @@
+
+---
+name: nginx.upstream.response.buffered
+categories:
+  - nginx
+description: "The total number of HTTP requests with responses buffered."
+type: counter
+source: error_log
+unit: integer
+visible: true
+compound_payload: "false"
+modules:
+  - platform
+aggregations:
+  - MIN
+  - MAX
+  - SUM
+  - AVG
+  - COUNT
+  - RATE
+dimensions:
+  - system_id
+  - hostname
+  - display_name
+  - nginx_id
+  - system.tags
+  - instance_group

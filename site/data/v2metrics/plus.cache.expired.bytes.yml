@@ -1,0 +1,37 @@
+
+---
+name: plus.cache.expired.bytes
+categories:
+- nginx
+description: The total number of bytes read from the proxied server.
+type: counter
+source: plus_status
+unit: bytes
+visible: true
+compound_payload: "false"
+modules:
+- platform
+- adm
+aggregations:
+- MIN
+- MAX
+- SUM
+- AVG
+- COUNT
+- RATE
+dimensions:
+- system_id
+- hostname
+- display_name
+- nginx_id
+- instance_group
+- system.tags
+- cache_zone
+- app
+- environment
+- component
+- site
+- environment_name
+- component_name
+- app_name
+- site_name

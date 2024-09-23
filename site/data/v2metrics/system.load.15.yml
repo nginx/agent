@@ -1,0 +1,29 @@
+
+---
+name: system.load.15
+categories:
+- system
+description: Number of processes in the system run queue, averaged over the last 15
+  min.
+type: gauge
+counted: true
+source: psutil
+unit: float
+visible: true
+compound_payload: "false"
+modules:
+- platform
+aggregations:
+- MIN
+- MAX
+- SUM
+- AVG
+- COUNT
+- RATE
+dimensions:
+- system_id
+- hostname
+- display_name
+- nginx_id
+- instance_group
+- system.tags

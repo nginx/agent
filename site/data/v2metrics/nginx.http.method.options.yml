@@ -1,0 +1,27 @@
+
+---
+name: nginx.http.method.options
+categories:
+  - nginx
+description: "The total number of requests with the method - OPTIONS."
+type: counter
+source: access_log
+unit: integer
+visible: true
+compound_payload: "false"
+modules:
+  - platform
+aggregations:
+  - MIN
+  - MAX
+  - SUM
+  - AVG
+  - COUNT
+  - RATE
+dimensions:
+  - system_id
+  - hostname
+  - display_name
+  - nginx_id
+  - system.tags
+  - instance_group

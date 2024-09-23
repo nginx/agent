@@ -1,0 +1,32 @@
+
+---
+name: plus.slab.pages.total
+categories:
+- nginx
+description: The total number of memory pages (free and used).
+type: gauge
+source: plus_status
+unit: integer
+rate: double
+visible: true
+compound_payload: "false"
+modules:
+- platform
+aggregations:
+- MIN
+- MAX
+- SUM
+- AVG
+- COUNT
+- RATE
+dimensions:
+- system_id
+- hostname
+- display_name
+- nginx_id
+- instance_group
+- system.tags
+- upstream
+- upstream_zone
+- peer.name
+- peer.address

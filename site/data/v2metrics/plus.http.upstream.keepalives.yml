@@ -1,0 +1,39 @@
+
+---
+name: plus.http.upstream.keepalives
+categories:
+- nginx
+description: The current number of idle keepalive connections.
+type: gauge
+source: plus_status
+unit: integer
+rate: double
+visible: true
+compound_payload: "false"
+modules:
+- platform
+- adm
+aggregations:
+- MIN
+- MAX
+- SUM
+- AVG
+- COUNT
+- RATE
+dimensions:
+- system_id
+- hostname
+- display_name
+- nginx_id
+- instance_group
+- system.tags
+- upstream
+- upstream_zone
+- site
+- environment
+- app
+- component
+- environment_name
+- component_name
+- app_name
+- site_name

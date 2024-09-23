@@ -1,0 +1,38 @@
+
+---
+name: plus.cache.expired.responses
+categories:
+- nginx
+description: The total number of expired responses not taken from the cache.
+type: counter
+source: plus_status
+unit: integer
+rate: double
+visible: true
+compound_payload: "false"
+modules:
+- platform
+- adm
+aggregations:
+- MIN
+- MAX
+- SUM
+- AVG
+- COUNT
+- RATE
+dimensions:
+- system_id
+- hostname
+- display_name
+- nginx_id
+- instance_group
+- system.tags
+- cache_zone
+- app
+- environment
+- component
+- site
+- environment_name
+- component_name
+- app_name
+- site_name
