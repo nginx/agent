@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/nginx/agent/v3/internal/backoff"
@@ -18,7 +20,10 @@ import (
 	"go.opentelemetry.io/collector/otelcol"
 )
 
-const maxTimeToWaitForShutdown = 30 * time.Second
+const (
+	maxTimeToWaitForShutdown = 30 * time.Second
+	filePermission           = 0o600
+)
 
 type (
 	// Collector The OTel collector plugin start an embedded OTel collector for metrics collection in the OTel format.
@@ -40,6 +45,13 @@ func New(conf *config.Config) (*Collector, error) {
 
 	if conf.Collector == nil {
 		return nil, errors.New("nil collector config")
+	}
+
+	if conf.Collector.Log != nil && conf.Collector.Log.Path != "" {
+		err := os.WriteFile(conf.Collector.Log.Path, []byte{}, filePermission)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	settings := OTelCollectorSettings(conf)
@@ -75,6 +87,7 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 }
 
 func (oc *Collector) bootup(ctx context.Context) error {
+	slog.InfoContext(ctx, "Starting OTel collector")
 	errChan := make(chan error)
 
 	go func() {
@@ -82,7 +95,7 @@ func (oc *Collector) bootup(ctx context.Context) error {
 		if appErr != nil {
 			errChan <- appErr
 		}
-		slog.InfoContext(ctx, "Run Finished")
+		slog.InfoContext(ctx, "OTel collector run finished")
 	}()
 
 	for {
@@ -229,6 +242,7 @@ func (oc *Collector) checkForNewNginxReceivers(nginxConfigContext *model.NginxCo
 				config.NginxReceiver{
 					InstanceID: nginxConfigContext.InstanceID,
 					StubStatus: nginxConfigContext.StubStatus,
+					AccessLogs: toConfigAccessLog(nginxConfigContext.AccessLogs),
 				},
 			)
 
@@ -277,13 +291,14 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 		if nginxReceiver.InstanceID == nginxConfigContext.InstanceID {
 			nginxReceiverFound = true
 
-			if nginxReceiver.StubStatus != nginxConfigContext.StubStatus {
+			if isOSSReceiverChanged(nginxReceiver, nginxConfigContext) {
 				oc.config.Collector.Receivers.NginxReceivers = append(
 					oc.config.Collector.Receivers.NginxReceivers[:index],
 					oc.config.Collector.Receivers.NginxReceivers[index+1:]...,
 				)
 				if nginxConfigContext.StubStatus != "" {
 					nginxReceiver.StubStatus = nginxConfigContext.StubStatus
+					nginxReceiver.AccessLogs = toConfigAccessLog(nginxConfigContext.AccessLogs)
 					oc.config.Collector.Receivers.NginxReceivers = append(
 						oc.config.Collector.Receivers.NginxReceivers,
 						nginxReceiver,
@@ -299,4 +314,32 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 	}
 
 	return nginxReceiverFound, reloadCollector
+}
+
+func isOSSReceiverChanged(nginxReceiver config.NginxReceiver, nginxConfigContext *model.NginxConfigContext) bool {
+	return nginxReceiver.StubStatus != nginxConfigContext.StubStatus ||
+		len(nginxReceiver.AccessLogs) != len(nginxConfigContext.AccessLogs)
+}
+
+func toConfigAccessLog(al []*model.AccessLog) []config.AccessLog {
+	if al == nil {
+		return nil
+	}
+
+	results := make([]config.AccessLog, 0, len(al))
+	for _, ctxAccessLog := range al {
+		results = append(results, config.AccessLog{
+			LogFormat: escapeString(ctxAccessLog.Format),
+			FilePath:  ctxAccessLog.Name,
+		})
+	}
+
+	return results
+}
+
+func escapeString(input string) string {
+	output := strings.ReplaceAll(input, "$", "$$")
+	output = strings.ReplaceAll(output, "\"", "\\\"")
+
+	return output
 }

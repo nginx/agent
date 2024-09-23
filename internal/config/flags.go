@@ -20,6 +20,7 @@ const (
 	UUIDKey                                     = "uuid"
 	InstanceWatcherMonitoringFrequencyKey       = "watchers_instance_watcher_monitoring_frequency"
 	InstanceHealthWatcherMonitoringFrequencyKey = "watchers_instance_health_watcher_monitoring_frequency"
+	FileWatcherMonitoringFrequencyKey           = "watchers_file_watcher_monitoring_frequency"
 )
 
 var (
@@ -35,6 +36,9 @@ var (
 	CollectorProcessorsKey         = pre(CollectorRootKey) + "processors"
 	CollectorHealthKey             = pre(CollectorRootKey) + "health"
 	CollectorReceiversKey          = pre(CollectorRootKey) + "receivers"
+	CollectorLogKey                = pre(CollectorRootKey) + "log"
+	CollectorLogLevelKey           = pre(CollectorLogKey) + "level"
+	CollectorLogPathKey            = pre(CollectorLogKey) + "path"
 	CommandAuthKey                 = pre(CommandRootKey) + "auth"
 	CommandAuthTokenKey            = pre(CommandAuthKey) + "token"
 	CommandServerHostKey           = pre(CommandServerKey) + "host"
@@ -50,7 +54,8 @@ var (
 	LogLevelKey                    = pre(LogLevelRootKey) + "level"
 	LogPathKey                     = pre(LogLevelRootKey) + "path"
 	NginxReloadMonitoringPeriodKey = pre(DataPlaneConfigRootKey, "nginx") + "reload_monitoring_period"
-	NginxTreatWarningsAsErrorsKey  = pre(DataPlaneConfigRootKey, "nginx") + "treat_warnings_as_error"
+	NginxTreatWarningsAsErrorsKey  = pre(DataPlaneConfigRootKey, "nginx") + "treat_warnings_as_errors"
+	NginxExcludeLogsKey            = pre(DataPlaneConfigRootKey, "nginx") + "exclude_logs"
 	OTLPExportURLKey               = pre(CollectorRootKey) + "otlp_export_url"
 	OTLPReceiverURLKey             = pre(CollectorRootKey) + "otlp_receiver_url"
 )

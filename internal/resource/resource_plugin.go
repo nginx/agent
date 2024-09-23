@@ -143,7 +143,13 @@ func (r *Resource) handleWriteConfigSuccessful(ctx context.Context, msg *bus.Mes
 	instance := r.resourceService.Instance(data.InstanceID)
 
 	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
-	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplySuccessfulTopic, Data: instance})
+	r.messagePipe.Process(
+		ctx,
+		&bus.Message{
+			Topic: bus.ConfigApplySuccessfulTopic,
+			Data:  instance.GetInstanceMeta().GetInstanceId(),
+		},
+	)
 }
 
 func (r *Resource) handleRollbackWrite(ctx context.Context, msg *bus.Message) {

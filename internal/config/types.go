@@ -6,10 +6,13 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 var (
@@ -66,8 +69,9 @@ type (
 	}
 
 	NginxDataPlaneConfig struct {
+		ExcludeLogs            string        `yaml:"-" mapstructure:"exclude_logs"`
 		ReloadMonitoringPeriod time.Duration `yaml:"-" mapstructure:"reload_monitoring_period"`
-		TreatWarningsAsError   bool          `yaml:"-" mapstructure:"treat_warnings_as_error"`
+		TreatWarningsAsErrors  bool          `yaml:"-" mapstructure:"treat_warnings_as_errors"`
 	}
 
 	Client struct {
@@ -83,6 +87,7 @@ type (
 
 	Collector struct {
 		ConfigPath string        `yaml:"-" mapstructure:"config_path"`
+		Log        *Log          `yaml:"-" mapstructure:"log"`
 		Exporters  []Exporter    `yaml:"-" mapstructure:"exporters"`
 		Health     *ServerConfig `yaml:"-" mapstructure:"health"`
 		Processors []Processor   `yaml:"-" mapstructure:"processors"`
@@ -116,8 +121,14 @@ type (
 	}
 
 	NginxReceiver struct {
-		InstanceID string `yaml:"-" mapstructure:"instance_id"`
-		StubStatus string `yaml:"-" mapstructure:"stub_status"`
+		InstanceID string      `yaml:"-" mapstructure:"instance_id"`
+		StubStatus string      `yaml:"-" mapstructure:"stub_status"`
+		AccessLogs []AccessLog `yaml:"-" mapstructure:"access_logs"`
+	}
+
+	AccessLog struct {
+		FilePath  string `yaml:"-" mapstructure:"file_path"`
+		LogFormat string `yaml:"-" mapstructure:"log_format"`
 	}
 
 	NginxPlusReceiver struct {
@@ -126,9 +137,23 @@ type (
 	}
 
 	HostMetrics struct {
-		CollectionInterval time.Duration `yaml:"-" mapstructure:"collection_interval"`
-		InitialDelay       time.Duration `yaml:"-" mapstructure:"initial_delay"`
+		Scrapers           *HostMetricsScrapers `yaml:"-" mapstructure:"scrapers"`
+		CollectionInterval time.Duration        `yaml:"-" mapstructure:"collection_interval"`
+		InitialDelay       time.Duration        `yaml:"-" mapstructure:"initial_delay"`
 	}
+
+	HostMetricsScrapers struct {
+		CPU        *CPUScraper        `yaml:"-" mapstructure:"cpu"`
+		Disk       *DiskScraper       `yaml:"-" mapstructure:"disk"`
+		Filesystem *FilesystemScraper `yaml:"-" mapstructure:"filesystem"`
+		Memory     *MemoryScraper     `yaml:"-" mapstructure:"memory"`
+		Network    *NetworkScraper    `yaml:"-" mapstructure:"network"`
+	}
+	CPUScraper        struct{}
+	DiskScraper       struct{}
+	FilesystemScraper struct{}
+	MemoryScraper     struct{}
+	NetworkScraper    struct{}
 
 	GRPC struct {
 		Target         string        `yaml:"-" mapstructure:"target"`
@@ -176,6 +201,7 @@ type (
 	Watchers struct {
 		InstanceWatcher       InstanceWatcher       `yaml:"-" mapstructure:"instance_watcher"`
 		InstanceHealthWatcher InstanceHealthWatcher `yaml:"-" mapstructure:"instance_health_watcher"`
+		FileWatcher           FileWatcher           `yaml:"-" mapstructure:"file_watcher"`
 	}
 
 	InstanceWatcher struct {
@@ -185,20 +211,30 @@ type (
 	InstanceHealthWatcher struct {
 		MonitoringFrequency time.Duration `yaml:"-" mapstructure:"monitoring_frequency"`
 	}
+
+	FileWatcher struct {
+		MonitoringFrequency time.Duration `yaml:"-" mapstructure:"monitoring_frequency"`
+	}
 )
 
 func (col *Collector) Validate(allowedDirectories []string) error {
+	var err error
 	cleaned := filepath.Clean(col.ConfigPath)
 
 	if !isAllowedDir(cleaned, allowedDirectories) {
-		return fmt.Errorf("collector path %s not allowed", col.ConfigPath)
+		err = errors.Join(err, fmt.Errorf("collector path %s not allowed", col.ConfigPath))
+	}
+
+	for _, nginxReceiver := range col.Receivers.NginxReceivers {
+		err = errors.Join(err, nginxReceiver.Validate(allowedDirectories))
 	}
 
 	for _, exp := range col.Exporters {
 		t := strings.ToLower(exp.Type)
 
 		if _, ok := supportedExporters[t]; !ok {
-			return fmt.Errorf("unsupported exporter type: %s", exp.Type)
+			err = errors.Join(err, fmt.Errorf("unsupported exporter type: %s", exp.Type))
+			continue
 		}
 
 		// normalize field too
@@ -209,13 +245,35 @@ func (col *Collector) Validate(allowedDirectories []string) error {
 		t := strings.ToLower(proc.Type)
 
 		if _, ok := supportedProcessors[t]; !ok {
-			return fmt.Errorf("unsupported processor type: %s", proc.Type)
+			err = errors.Join(err, fmt.Errorf("unsupported processor type: %s", proc.Type))
+			continue
 		}
 
 		proc.Type = t
 	}
 
-	return nil
+	return err
+}
+
+func (nr *NginxReceiver) Validate(allowedDirectories []string) error {
+	var err error
+	if _, uuidErr := uuid.Parse(nr.InstanceID); uuidErr != nil {
+		err = errors.Join(err, errors.New("invalid nginx receiver instance ID"))
+	}
+
+	for _, al := range nr.AccessLogs {
+		if !isAllowedDir(al.FilePath, allowedDirectories) {
+			err = errors.Join(err, fmt.Errorf("invalid nginx receiver access log path: %s", al.FilePath))
+		}
+
+		if len(al.FilePath) != 0 {
+			// The log format's double quotes must be escaped so that
+			// valid YAML is produced when executing the Go template.
+			al.LogFormat = strings.ReplaceAll(al.LogFormat, `"`, `\"`)
+		}
+	}
+
+	return err
 }
 
 func (c *Config) IsDirectoryAllowed(directory string) bool {

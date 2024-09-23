@@ -14,6 +14,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -161,10 +162,7 @@ func (cs *CommandService) Subscribe(in mpi.CommandService_SubscribeServer) error
 			slog.InfoContext(ctx, "Subscribe", "request", request)
 
 			if upload, ok := request.GetRequest().(*mpi.ManagementPlaneRequest_ConfigUploadRequest); ok {
-				instanceID := upload.ConfigUploadRequest.GetOverview().GetConfigVersion().GetInstanceId()
-				overviewFiles := upload.ConfigUploadRequest.GetOverview().GetFiles()
-
-				cs.instanceFiles[instanceID] = overviewFiles
+				cs.handleConfigUploadRequest(ctx, upload)
 			}
 
 			err := in.Send(request)
@@ -173,6 +171,48 @@ func (cs *CommandService) Subscribe(in mpi.CommandService_SubscribeServer) error
 			}
 		}
 	}
+}
+
+func (cs *CommandService) handleConfigUploadRequest(
+	ctx context.Context,
+	upload *mpi.ManagementPlaneRequest_ConfigUploadRequest,
+) {
+	instanceID := upload.ConfigUploadRequest.GetOverview().GetConfigVersion().GetInstanceId()
+	overviewFiles := upload.ConfigUploadRequest.GetOverview().GetFiles()
+
+	if cs.instanceFiles[instanceID] == nil {
+		cs.instanceFiles[instanceID] = overviewFiles
+	} else {
+		filesToDelete := cs.checkForDeletedFiles(instanceID, overviewFiles)
+		for _, fileToDelete := range filesToDelete {
+			err := os.Remove(fileToDelete)
+			if err != nil {
+				slog.ErrorContext(ctx, "Failed to delete file", "error", err, "path", fileToDelete)
+			}
+		}
+	}
+}
+
+func (cs *CommandService) checkForDeletedFiles(instanceID string, overviewFiles []*mpi.File) []string {
+	filesToDelete := []string{}
+
+	for _, diskfile := range cs.instanceFiles[instanceID] {
+		fileIsDeleted := true
+
+		for _, overviewFile := range overviewFiles {
+			if diskfile.GetFileMeta().GetName() == overviewFile.GetFileMeta().GetName() {
+				fileIsDeleted = false
+				break
+			}
+		}
+
+		if fileIsDeleted {
+			fullFilePath := path.Join(cs.configDirectory, instanceID, diskfile.GetFileMeta().GetName())
+			filesToDelete = append(filesToDelete, fullFilePath)
+		}
+	}
+
+	return filesToDelete
 }
 
 func (cs *CommandService) listenForDataPlaneResponses(ctx context.Context, in mpi.CommandService_SubscribeServer) {
@@ -392,6 +432,6 @@ func createFile(fullPath, filePath string) (*mpi.File, error) {
 	}, nil
 }
 
-func isValidFile(info os.FileInfo, path string) bool {
-	return !info.IsDir() && !strings.HasSuffix(path, ".DS_Store")
+func isValidFile(info os.FileInfo, fileFullPath string) bool {
+	return !info.IsDir() && !strings.HasSuffix(fileFullPath, ".DS_Store")
 }

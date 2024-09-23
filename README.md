@@ -14,6 +14,27 @@ NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus insta
 
 > **Note**: There is a separate [README for Agent version 2](README_v2.md) and earlier.
 
+## Development Environment Setup
+
+### Installing Prerequisite Packages
+The following packages need to be installed:
+ - make
+ - golang (https://go.dev/doc/install)
+ - protoc (https://grpc.io/docs/protoc-installation/)
+ - mdatagen (There is a workaround for installing mdatagen that can be found here: https://github.com/open-telemetry/opentelemetry-collector/issues/9281#issuecomment-2276407679)
+
+Before starting development on the NGINX Agent, it is important to download and install the necessary tool and dependencies required by the NGINX Agent. You can do this by running the following `make` command:
+```
+make install-tools
+```
+
+### Building NGINX Agent from Source Code
+Run the following commands to build and run NGINX Agent:
+```
+make build
+sudo make run
+```
+
 ## NGINX Agent Technical Specifications
 
 ## Supported Distributions
