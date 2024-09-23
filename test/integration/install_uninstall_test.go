@@ -161,7 +161,7 @@ func verifyAgentVersion(ctx context.Context, tb testing.TB, testContainer testco
 	assert.Equal(tb, 0, exitCode)
 	stdoutStderr, _ := io.ReadAll(cmdOut)
 
-	versionOutput := strings.Trim(string(stdoutStderr), "$%\x00\x01\n")
+	versionOutput := strings.Trim(string(stdoutStderr), "#$%\x00\x01\n")
 	require.NoError(tb, err)
 	assert.Equal(tb, expectedVersionOutput, versionOutput)
 }
