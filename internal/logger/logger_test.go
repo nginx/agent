@@ -90,12 +90,12 @@ func TestGetLogWriter(t *testing.T) {
 		{
 			name:     "Test 3: Log file exists",
 			input:    file.Name(),
-			expected: &os.File{},
+			expected: io.MultiWriter(),
 		},
 		{
 			name:     "Test 4: Log directory",
 			input:    ".",
-			expected: &os.File{},
+			expected: io.MultiWriter(),
 		},
 	}
 

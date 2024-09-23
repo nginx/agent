@@ -88,10 +88,10 @@ func getLogWriter(logFile string) io.Writer {
 
 			return os.Stderr
 		}
-    
+
 		// Use io.MultiWriter to log to both Stdout and the file
-    	multiWriter := io.MultiWriter(os.Stdout, logFileHandle)
-		
+		multiWriter := io.MultiWriter(os.Stdout, logFileHandle)
+
 		return multiWriter
 	}
 
