@@ -11,7 +11,11 @@ receivers:
   otlp/0:
     protocols:
       grpc:
-        endpoint: "localhost:4321"
+        endpoint: "localhost:4317"
+        tls:
+          cert_file: /tmp/cert.pem
+          key_file: /tmp/key.pem
+          ca_file: /tmp/ca.pem
   nginx/123:
     endpoint: "http://localhost:80/status"
     collection_interval: 10s

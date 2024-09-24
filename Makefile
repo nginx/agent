@@ -31,8 +31,8 @@ OS_RELEASE  ?= ubuntu
 OS_VERSION  ?= 22.04
 BASE_IMAGE  = "docker.io/$(OS_RELEASE):$(OS_VERSION)"
 IMAGE_TAG   = "agent_$(OS_RELEASE)_$(OS_VERSION)"
-DOCKERFILE_PATH = "./scripts/docker/nginx-oss/$(CONTAINER_OS_TYPE)/Dockerfile"
-OFFICIAL_IMAGE_DOCKERFILE_PATH = "./test/docker/oss/$(CONTAINER_OS_TYPE)/Dockerfile"
+DOCKERFILE_PATH = "./test/docker/nginx-oss/$(CONTAINER_OS_TYPE)/Dockerfile"
+OFFICIAL_IMAGE_DOCKERFILE_PATH = "./test/docker/nginx-official-image/$(CONTAINER_OS_TYPE)/Dockerfile"
 IMAGE_PATH ?= "/nginx/agent"
 TAG ?= ""
 
@@ -190,23 +190,23 @@ run-mock-management-grpc-server: ## Run mock management plane gRPC server
 .PHONY: build-test-plus-image
 build-test-plus-image:
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx_plus_$(IMAGE_TAG) . \
-		--no-cache -f ./scripts/docker/nginx-plus/deb/Dockerfile \
+		--no-cache -f ./test/docker/nginx-plus/deb/Dockerfile \
 		--secret id=nginx-crt,src=$(CERTS_DIR)/nginx-repo.crt \
 		--secret id=nginx-key,src=$(CERTS_DIR)/nginx-repo.key \
 		--build-arg PACKAGE_NAME=$(PACKAGE_NAME) \
 		--build-arg PACKAGES_REPO=$(OSS_PACKAGES_REPO) \
 		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
-		--build-arg ENTRY_POINT=./scripts/docker/entrypoint.sh
+		--build-arg ENTRY_POINT=./test/docker/entrypoint.sh
 
 .PHONY: build-test-oss-image
 build-test-oss-image:
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx_oss_$(IMAGE_TAG) . \
-		--no-cache -f ./scripts/docker/nginx-oss/deb/Dockerfile \
+		--no-cache -f ./test/docker/nginx-oss/deb/Dockerfile \
 		--target install-agent-local \
 		--build-arg PACKAGE_NAME=$(PACKAGE_NAME) \
 		--build-arg PACKAGES_REPO=$(OSS_PACKAGES_REPO) \
 		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
-		--build-arg ENTRY_POINT=./scripts/docker/entrypoint.sh
+		--build-arg ENTRY_POINT=./test/docker/entrypoint.sh
 
 .PHONY: run-mock-management-otel-collector
 run-mock-management-otel-collector: ## Run mock management plane OTel collector

@@ -78,12 +78,41 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 		return fmt.Errorf("write OTel Collector config: %w", err)
 	}
 
+	if oc.config.Collector.Receivers.OtlpReceivers != nil {
+		oc.processReceivers(ctx, oc.config.Collector.Receivers.OtlpReceivers)
+	}
+
 	bootErr := oc.bootup(runCtx)
 	if bootErr != nil {
 		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)
 	}
 
 	return nil
+}
+
+// Process receivers and log warning for sub-optimal configurations
+func (oc *Collector) processReceivers(ctx context.Context, receivers []config.OtlpReceiver) {
+	for _, receiver := range receivers {
+		if receiver.OtlpTLSConfig == nil {
+			slog.WarnContext(ctx, "OTEL receiver is configured without TLS. Connections are unencrypted.")
+			continue
+		}
+
+		if receiver.OtlpTLSConfig.GenerateSelfSignedCert {
+			slog.WarnContext(ctx,
+				"Self-signed certificate for OTEL receiver requested, "+
+					"this is not recommended for production environments.",
+			)
+
+			if receiver.OtlpTLSConfig.ExistingCert {
+				slog.WarnContext(ctx,
+					"Certificate file already exists, skipping self-signed certificate generation",
+				)
+			}
+		} else {
+			slog.WarnContext(ctx, "OTEL receiver is configured without TLS. Connections are unencrypted.")
+		}
+	}
 }
 
 func (oc *Collector) bootup(ctx context.Context) error {
