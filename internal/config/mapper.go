@@ -11,9 +11,11 @@ import (
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )
 
-// FromCommandProto maps the Protobuf CommandServer message to the AgentConfig struct
+// FromCommandProto maps the AgentConfig Command struct to the Command proto message
 func FromCommandProto(config *mpi.CommandServer) *Command {
 	cmd := &Command{}
+
+	// Map ServerSettings to the ServerConfig
 	if config.GetServer() != nil && config.GetServer().GetHost() != "" && config.GetServer().GetPort() != 0 {
 		cmd.Server = &ServerConfig{
 			Host: config.GetServer().GetHost(),
@@ -26,6 +28,7 @@ func FromCommandProto(config *mpi.CommandServer) *Command {
 		cmd.Server = nil
 	}
 
+	// Map AuthSettings to AuthConfig
 	if config.GetAuth() != nil && config.GetAuth().GetToken() != "" {
 		cmd.Auth = &AuthConfig{
 			Token: config.GetAuth().GetToken(),
@@ -34,6 +37,7 @@ func FromCommandProto(config *mpi.CommandServer) *Command {
 		cmd.Auth = nil
 	}
 
+	// Map TLSSettings to TLSConfig
 	if config.GetTls() != nil {
 		cmd.TLS = &TLSConfig{
 			Cert:       config.GetTls().GetCert(),
@@ -43,7 +47,7 @@ func FromCommandProto(config *mpi.CommandServer) *Command {
 			SkipVerify: config.GetTls().GetSkipVerify(),
 		}
 		if cmd.TLS.SkipVerify {
-			slog.Warn("SkipVerify is true, this accepts any certificate presented by the server and any host name in that certificate.")
+			slog.Warn("Insecure setting SkipVerify, this tells the server to accept a certificate with any hostname.")
 		}
 	} else {
 		cmd.TLS = nil
@@ -52,11 +56,11 @@ func FromCommandProto(config *mpi.CommandServer) *Command {
 	return cmd
 }
 
-// ToCommandProto maps the Go Command struct back to the Protobuf CommandServer message
+// ToCommandProto maps the AgentConfig Command struct back to the Command proto message
 func ToCommandProto(cmd *Command) *mpi.CommandServer {
 	protoConfig := &mpi.CommandServer{}
 
-	// Map ServerConfig to the Protobuf ServerConfigProto
+	// Map ServerConfig to the ServerSettings
 	if cmd.Server != nil {
 		protoConfig.Server = &mpi.ServerSettings{
 			Host: cmd.Server.Host,
@@ -65,14 +69,14 @@ func ToCommandProto(cmd *Command) *mpi.CommandServer {
 		}
 	}
 
-	// Map AuthConfig to the Protobuf AuthConfigProto
+	// Map AuthConfig to AuthSettings
 	if cmd.Auth != nil {
 		protoConfig.Auth = &mpi.AuthSettings{
 			Token: cmd.Auth.Token,
 		}
 	}
 
-	// Map TLSConfig to the Protobuf TLSConfigProto
+	// Map TLSConfig to TLSSettings
 	if cmd.TLS != nil {
 		protoConfig.Tls = &mpi.TLSSettings{
 			Cert:       cmd.TLS.Cert,
