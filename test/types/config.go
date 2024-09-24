@@ -29,7 +29,7 @@ const (
 	reloadMonitoringPeriod = 400 * time.Millisecond
 
 	randomPort1 = 1234
-	randomPort2 = 4321
+	randomPort2 = 4317
 	randomPort3 = 1337
 )
 
@@ -74,6 +74,13 @@ func AgentConfig() *config.Config {
 				HostMetrics: config.HostMetrics{
 					CollectionInterval: time.Minute,
 					InitialDelay:       time.Second,
+					Scrapers: &config.HostMetricsScrapers{
+						CPU:        &config.CPUScraper{},
+						Disk:       &config.DiskScraper{},
+						Filesystem: &config.FilesystemScraper{},
+						Memory:     &config.MemoryScraper{},
+						Network:    &config.NetworkScraper{},
+					},
 				},
 			},
 			Health: &config.ServerConfig{
@@ -113,8 +120,9 @@ func AgentConfig() *config.Config {
 		},
 		DataPlaneConfig: &config.DataPlaneConfig{
 			Nginx: &config.NginxDataPlaneConfig{
-				TreatWarningsAsError:   true,
+				TreatWarningsAsErrors:  true,
 				ReloadMonitoringPeriod: reloadMonitoringPeriod,
+				ExcludeLogs:            "",
 			},
 		},
 		Watchers: &config.Watchers{

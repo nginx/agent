@@ -4,23 +4,58 @@ receivers:
     collection_interval: {{ .Receivers.HostMetrics.CollectionInterval }}
     initial_delay: {{ .Receivers.HostMetrics.InitialDelay }}
     scrapers:
+      {{- if .Receivers.HostMetrics.Scrapers }}
+      {{- if .Receivers.HostMetrics.Scrapers.CPU }}
       cpu:
+      {{- end }}
+      {{- if .Receivers.HostMetrics.Scrapers.Disk }}
       disk:
-      load:
+      {{- end }}
+      {{- if .Receivers.HostMetrics.Scrapers.Filesystem }}
       filesystem:
+      {{- end }}
+      {{- if .Receivers.HostMetrics.Scrapers.Memory }}
       memory:
+      {{- end }}
+      {{- if .Receivers.HostMetrics.Scrapers.Network }}
       network:
-      paging:
-{{- end }}
+      {{- end }}
+      {{- end }}
+{{- end }}  
 {{- range $index, $otlpReceiver := .Receivers.OtlpReceivers }}
   otlp/{{$index}}:
     protocols:
       {{- if eq .Server.Type 0 }}
       grpc:
+        endpoint: "{{ .Server.Host }}:{{ .Server.Port }}"
+        {{- if and .OtlpTLSConfig (or (gt (len .OtlpTLSConfig.Key) 0) (gt (len .OtlpTLSConfig.Cert) 0) (gt (len .OtlpTLSConfig.Key) 0)) }}
+        tls:
+          {{ if gt (len .OtlpTLSConfig.Cert) 0 -}}
+          cert_file: {{ .OtlpTLSConfig.Cert }}
+          {{- end }}
+          {{ if gt (len .OtlpTLSConfig.Key) 0 -}}
+          key_file: {{ .OtlpTLSConfig.Key }}
+          {{- end }}
+          {{ if gt (len .OtlpTLSConfig.Ca) 0 -}}
+          ca_file: {{ .OtlpTLSConfig.Ca }}
+          {{- end }}
+        {{- end }}
       {{- else }}
       http:
-      {{- end }}
         endpoint: "{{- .Server.Host -}}:{{- .Server.Port -}}"
+        {{- if .OtlpTLSConfig }}
+        tls:
+          {{ if gt (len .OtlpTLSConfig.Cert) 0 -}}
+          cert_file: {{ .OtlpTLSConfig.Cert }}
+          {{- end }}
+          {{ if gt (len .OtlpTLSConfig.Key) 0 -}}
+          key_file: {{ .OtlpTLSConfig.Key }}
+          {{- end }}
+          {{ if gt (len .OtlpTLSConfig.Ca) 0 -}}
+          ca_file: {{ .OtlpTLSConfig.Ca }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
 {{- end }}
 {{- range .Receivers.NginxReceivers }}
   nginx/{{- .InstanceID -}}:

@@ -57,8 +57,9 @@ type (
 	}
 
 	NginxDataPlaneConfig struct {
+		ExcludeLogs            string        `yaml:"-" mapstructure:"exclude_logs"`
 		ReloadMonitoringPeriod time.Duration `yaml:"-" mapstructure:"reload_monitoring_period"`
-		TreatWarningsAsError   bool          `yaml:"-" mapstructure:"treat_warnings_as_error"`
+		TreatWarningsAsErrors  bool          `yaml:"-" mapstructure:"treat_warnings_as_errors"`
 	}
 
 	Client struct {
@@ -120,9 +121,9 @@ type (
 	}
 
 	OtlpReceiver struct {
-		Server *ServerConfig `yaml:"-" mapstructure:"server"`
-		Auth   *AuthConfig   `yaml:"-" mapstructure:"auth"`
-		TLS    *TLSConfig    `yaml:"-" mapstructure:"tls"`
+		Server        *ServerConfig  `yaml:"-" mapstructure:"server"`
+		Auth          *AuthConfig    `yaml:"-" mapstructure:"auth"`
+		OtlpTLSConfig *OtlpTLSConfig `yaml:"-" mapstructure:"tls"`
 	}
 
 	NginxReceiver struct {
@@ -142,9 +143,23 @@ type (
 	}
 
 	HostMetrics struct {
-		CollectionInterval time.Duration `yaml:"-" mapstructure:"collection_interval"`
-		InitialDelay       time.Duration `yaml:"-" mapstructure:"initial_delay"`
+		Scrapers           *HostMetricsScrapers `yaml:"-" mapstructure:"scrapers"`
+		CollectionInterval time.Duration        `yaml:"-" mapstructure:"collection_interval"`
+		InitialDelay       time.Duration        `yaml:"-" mapstructure:"initial_delay"`
 	}
+
+	HostMetricsScrapers struct {
+		CPU        *CPUScraper        `yaml:"-" mapstructure:"cpu"`
+		Disk       *DiskScraper       `yaml:"-" mapstructure:"disk"`
+		Filesystem *FilesystemScraper `yaml:"-" mapstructure:"filesystem"`
+		Memory     *MemoryScraper     `yaml:"-" mapstructure:"memory"`
+		Network    *NetworkScraper    `yaml:"-" mapstructure:"network"`
+	}
+	CPUScraper        struct{}
+	DiskScraper       struct{}
+	FilesystemScraper struct{}
+	MemoryScraper     struct{}
+	NetworkScraper    struct{}
 
 	GRPC struct {
 		Target         string        `yaml:"-" mapstructure:"target"`
@@ -175,6 +190,17 @@ type (
 		Ca         string `yaml:"-" mapstructure:"ca"`
 		ServerName string `yaml:"-" mapstructure:"server_name"`
 		SkipVerify bool   `yaml:"-" mapstructure:"skip_verify"`
+	}
+
+	// Specialized TLS configuration for OtlpReceiver with self-signed cert generation.
+	OtlpTLSConfig struct {
+		Cert                   string `yaml:"-" mapstructure:"cert"`
+		Key                    string `yaml:"-" mapstructure:"key"`
+		Ca                     string `yaml:"-" mapstructure:"ca"`
+		ServerName             string `yaml:"-" mapstructure:"server_name"`
+		ExistingCert           bool   `yaml:"-"`
+		SkipVerify             bool   `yaml:"-" mapstructure:"skip_verify"`
+		GenerateSelfSignedCert bool   `yaml:"-" mapstructure:"generate_self_signed_cert"`
 	}
 
 	File struct {

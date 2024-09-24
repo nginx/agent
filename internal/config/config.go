@@ -12,9 +12,11 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
+	selfsignedcerts "github.com/nginx/agent/v3/pkg/tls"
 	uuidLibrary "github.com/nginx/agent/v3/pkg/uuid"
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
@@ -142,6 +144,13 @@ func registerFlags() {
 		NginxTreatWarningsAsErrorsKey,
 		DefTreatErrorsAsWarnings,
 		"Warning messages in the NGINX errors logs after a NGINX reload will be treated as an error.",
+	)
+
+	fs.String(
+		NginxExcludeLogsKey,
+		"",
+		"One or more NGINX log paths that you want to exclude from metrics collection or error monitoring "+
+			"This key is formatted as a string and follows Unix PATH format",
 	)
 
 	fs.Duration(ClientTimeoutKey, time.Minute, "Client timeout")
@@ -320,7 +329,7 @@ func loadPropertiesFromFile(cfg string) error {
 	return nil
 }
 
-func normalizeFunc(_ *flag.FlagSet, name string) flag.NormalizedName {
+func normalizeFunc(f *flag.FlagSet, name string) flag.NormalizedName {
 	from := []string{"_", "."}
 	to := "-"
 	for _, sep := range from {
@@ -341,7 +350,8 @@ func resolveDataPlaneConfig() *DataPlaneConfig {
 	return &DataPlaneConfig{
 		Nginx: &NginxDataPlaneConfig{
 			ReloadMonitoringPeriod: viperInstance.GetDuration(NginxReloadMonitoringPeriodKey),
-			TreatWarningsAsError:   viperInstance.GetBool(NginxTreatWarningsAsErrorsKey),
+			TreatWarningsAsErrors:  viperInstance.GetBool(NginxTreatWarningsAsErrorsKey),
+			ExcludeLogs:            viperInstance.GetString(NginxExcludeLogsKey),
 		},
 	}
 }
@@ -401,6 +411,11 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 		Log:        &log,
 	}
 
+	// Check for self-signed certificate true in Agent conf
+	if err = handleSelfSignedCertificates(col); err != nil {
+		return nil, err
+	}
+
 	err = col.Validate(allowedDirs)
 	if err != nil {
 		return nil, fmt.Errorf("collector config: %w", err)
@@ -420,6 +435,57 @@ func resolveProcessors() Processors {
 	}
 
 	return processors
+}
+
+// generate self-signed certificate for OTEL receiver
+// nolint: revive
+func handleSelfSignedCertificates(col *Collector) error {
+	if col.Receivers.OtlpReceivers != nil {
+		for _, receiver := range col.Receivers.OtlpReceivers {
+			if receiver.OtlpTLSConfig != nil && receiver.OtlpTLSConfig.GenerateSelfSignedCert {
+				err := processOtlpReceivers(receiver.OtlpTLSConfig)
+				if err != nil {
+					return fmt.Errorf("failed to generate self-signed certificate: %w", err)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func processOtlpReceivers(tlsConfig *OtlpTLSConfig) error {
+	sanNames := strings.Split(DefCollectorTLSSANNames, ",")
+
+	if tlsConfig.Ca == "" {
+		tlsConfig.Ca = DefCollectorTLSCAPath
+	}
+	if tlsConfig.Cert == "" {
+		tlsConfig.Cert = DefCollectorTLSCertPath
+	}
+	if tlsConfig.Key == "" {
+		tlsConfig.Key = DefCollectorTLSKeyPath
+	}
+
+	if !slices.Contains(sanNames, tlsConfig.ServerName) {
+		sanNames = append(sanNames, tlsConfig.ServerName)
+	}
+	if len(sanNames) > 0 {
+		existingCert, err := selfsignedcerts.GenerateServerCerts(
+			sanNames,
+			tlsConfig.Ca,
+			tlsConfig.Cert,
+			tlsConfig.Key,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to generate self-signed certificate: %w", err)
+		}
+		if existingCert {
+			tlsConfig.ExistingCert = true
+		}
+	}
+
+	return nil
 }
 
 func resolveCommand() *Command {

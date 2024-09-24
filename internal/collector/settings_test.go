@@ -67,6 +67,13 @@ func TestTemplateWrite(t *testing.T) {
 	cfg.Collector.Receivers.HostMetrics = config.HostMetrics{
 		CollectionInterval: time.Minute,
 		InitialDelay:       time.Second,
+		Scrapers: &config.HostMetricsScrapers{
+			CPU:        &config.CPUScraper{},
+			Disk:       &config.DiskScraper{},
+			Filesystem: &config.FilesystemScraper{},
+			Memory:     &config.MemoryScraper{},
+			Network:    &config.NetworkScraper{},
+		},
 	}
 	cfg.Collector.Receivers.NginxReceivers = append(cfg.Collector.Receivers.NginxReceivers, config.NginxReceiver{
 		InstanceID: "123",
@@ -76,6 +83,20 @@ func TestTemplateWrite(t *testing.T) {
 				LogFormat: accessLogFormat,
 				FilePath:  "/var/log/nginx/access-custom.conf",
 			},
+		},
+	})
+	// Clear default config and test collector with TLS enabled
+	cfg.Collector.Receivers.OtlpReceivers = []config.OtlpReceiver{}
+	cfg.Collector.Receivers.OtlpReceivers = append(cfg.Collector.Receivers.OtlpReceivers, config.OtlpReceiver{
+		Server: &config.ServerConfig{
+			Host: "localhost",
+			Port: 4317,
+			Type: 0,
+		},
+		OtlpTLSConfig: &config.OtlpTLSConfig{
+			Cert: "/tmp/cert.pem",
+			Key:  "/tmp/key.pem",
+			Ca:   "/tmp/ca.pem",
 		},
 	})
 
