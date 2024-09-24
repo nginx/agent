@@ -82,7 +82,6 @@ jobs:
               name: nginx-agent-unsigned-snapshots
               path: build
               retention-days: 1
-
   generate-pgo-profile:
     name: Generate Profile
     needs: build-unsigned-snapshot
@@ -261,7 +260,6 @@ jobs:
       - name: Push benchmark result
         if:  ${{ success() && github.ref_name == 'v3'}}
         run: git push 'https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/nginx/agent.git' benchmark-results:benchmark-results
-
   load-tests:
     name: Load Tests
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
@@ -334,3 +332,19 @@ jobs:
       - name: Push load test result
         if:  ${{ success() && github.ref_name == 'v3'}}
         run: git push 'https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/nginx/agent.git' benchmark-results:benchmark-results
+  publish-packages:
+    name: Publish NGINX Agent v3 packages
+    if: ${{ github.event_name =='pull_request' &&
+      github.base_ref == 'v3' &&
+      github.event.pull_request.merged == true && !github.event.pull_request.head.repo.fork }}
+    needs: [ lint, unit-test, component-test, performance-test,
+             loads-tests, official-oss-image-integration-tests,
+             official-oss-image-integration-tests,
+             race-condition-test ]
+    uses: ./.github/workflows/release-branch.yml
+    with:
+      packageVersion: "3.0.0"
+      packageBuildNo: "${{ env.PACKAGE_BUILD_NO }}"
+      uploadAzure: true
+      publishPackages: true
+      releaseBranch: "v3"
