@@ -273,10 +273,10 @@ func TestClient(t *testing.T) {
 
 	// root keys for sections are set appropriately
 	assert.True(t, viperInstance.IsSet(ClientMaxMessageSizeKey))
-	assert.False(t, viperInstance.IsSet(ClientMaxMessageRecieveSizeKey))
+	assert.False(t, viperInstance.IsSet(ClientMaxMessageReceiveSizeKey))
 	assert.False(t, viperInstance.IsSet(ClientMaxMessageSendSizeKey))
 
-	viperInstance.Set(ClientMaxMessageRecieveSizeKey, expected.MaxMessageRecieveSize)
+	viperInstance.Set(ClientMaxMessageReceiveSizeKey, expected.MaxMessageRecieveSize)
 	viperInstance.Set(ClientMaxMessageSendSizeKey, expected.MaxMessageSendSize)
 
 	result := resolveClient()

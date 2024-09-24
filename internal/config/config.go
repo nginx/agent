@@ -225,7 +225,7 @@ func registerFlags() {
 	)
 
 	fs.Int(
-		ClientMaxMessageRecieveSizeKey,
+		ClientMaxMessageReceiveSizeKey,
 		DefMaxMessageRecieveSize,
 		"Updates the client grpc setting MaxRecvMsgSize with the specific value in MB.",
 	)
@@ -362,7 +362,7 @@ func resolveClient() *Client {
 		Time:                  viperInstance.GetDuration(ClientTimeKey),
 		PermitWithoutStream:   viperInstance.GetBool(ClientPermitWithoutStreamKey),
 		MaxMessageSize:        viperInstance.GetInt(ClientMaxMessageSizeKey),
-		MaxMessageRecieveSize: viperInstance.GetInt(ClientMaxMessageRecieveSizeKey),
+		MaxMessageRecieveSize: viperInstance.GetInt(ClientMaxMessageReceiveSizeKey),
 		MaxMessageSendSize:    viperInstance.GetInt(ClientMaxMessageSendSizeKey),
 	}
 }

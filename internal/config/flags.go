@@ -29,7 +29,7 @@ var (
 	ClientTimeKey                              = pre(ClientRootKey) + "time"
 	ClientTimeoutKey                           = pre(ClientRootKey) + "timeout"
 	ClientMaxMessageSendSizeKey                = pre(ClientRootKey) + "max_message_send_size"
-	ClientMaxMessageRecieveSizeKey             = pre(ClientRootKey) + "max_message_receive_size"
+	ClientMaxMessageReceiveSizeKey             = pre(ClientRootKey) + "max_message_receive_size"
 	ClientMaxMessageSizeKey                    = pre(ClientRootKey) + "max_message_size"
 	CollectorConfigPathKey                     = pre(CollectorRootKey) + "config_path"
 	CollectorExportersKey                      = pre(CollectorRootKey) + "exporters"
