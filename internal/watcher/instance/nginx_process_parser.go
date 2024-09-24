@@ -318,7 +318,6 @@ func isFlag(vals []string) bool {
 	return len(vals) == 1 && vals[0] != ""
 }
 
-// nolint: gomnd
 func isKeyValueFlag(vals []string) bool {
 	return len(vals) == 2
 }
