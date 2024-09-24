@@ -23,6 +23,9 @@ receivers:
 
 processors:
   batch:
+    send_batch_size: 8192
+    timeout: 200ms
+    send_batch_max_size: 0
 
 exporters:
   otlp/0:

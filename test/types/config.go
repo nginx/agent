@@ -63,7 +63,11 @@ func AgentConfig() *config.Config {
 				},
 			},
 			Processors: config.Processors{
-				Batch: &config.Batch{},
+				Batch: &config.Batch{
+					SendBatchSize:    config.DefCollectorBatchProcessorSendBatchSize,
+					SendBatchMaxSize: config.DefCollectorBatchProcessorSendBatchMaxSize,
+					Timeout:          config.DefCollectorBatchProcessorTimeout,
+				},
 			},
 			Receivers: config.Receivers{
 				OtlpReceivers: OtlpReceivers(),

@@ -43,6 +43,9 @@ receivers:
 processors:
 {{- if ne .Processors.Batch nil }}
   batch:
+    send_batch_size: {{ .Processors.Batch.SendBatchSize }}
+    timeout: {{ .Processors.Batch.Timeout }}
+    send_batch_max_size: {{ .Processors.Batch.SendBatchMaxSize }}
 {{- end }}
 
 exporters:

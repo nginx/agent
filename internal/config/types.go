@@ -105,7 +105,11 @@ type (
 		Batch *Batch `yaml:"-" mapstructure:"batch"`
 	}
 
-	Batch struct{}
+	Batch struct {
+		SendBatchSize    uint32        `yaml:"-" mapstructure:"send_batch_size"`
+		SendBatchMaxSize uint32        `yaml:"-" mapstructure:"send_batch_max_size"`
+		Timeout          time.Duration `yaml:"-" mapstructure:"timeout"`
+	}
 
 	// OTel Collector Receiver configuration.
 	Receivers struct {

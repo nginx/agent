@@ -171,46 +171,40 @@ func TestResolveClient(t *testing.T) {
 
 func TestResolveCollector(t *testing.T) {
 	testDefault := getAgentConfig()
-	tests := []struct {
-		expected  *Collector
-		name      string
-		errMsg    string
-		shouldErr bool
-	}{
-		{
-			name:     "Test 1: Happy path",
-			expected: testDefault.Collector,
-		},
-		{
-			name: "Test 2: Non allowed path",
-			expected: &Collector{
-				ConfigPath: "/path/to/secret",
-			},
-			shouldErr: true,
-			errMsg:    "collector path /path/to/secret not allowed",
-		},
-	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
-			viperInstance.Set(CollectorConfigPathKey, test.expected.ConfigPath)
-			viperInstance.Set(CollectorReceiversKey, test.expected.Receivers)
-			viperInstance.Set(CollectorProcessorsKey, test.expected.Processors)
-			viperInstance.Set(CollectorExportersKey, test.expected.Exporters)
-			viperInstance.Set(CollectorHealthKey, test.expected.Health)
-			viperInstance.Set(CollectorLogKey, test.expected.Log)
+	t.Run("Test 1: Happy path", func(t *testing.T) {
+		expected := testDefault.Collector
 
-			actual, err := resolveCollector(testDefault.AllowedDirectories)
-			if test.shouldErr {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), test.errMsg)
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, test.expected, actual)
-			}
-		})
-	}
+		viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
+		viperInstance.Set(CollectorConfigPathKey, expected.ConfigPath)
+		viperInstance.Set(CollectorReceiversKey, expected.Receivers)
+		viperInstance.Set(CollectorBatchProcessorKey, expected.Processors.Batch)
+		viperInstance.Set(CollectorBatchProcessorSendBatchSizeKey, expected.Processors.Batch.SendBatchSize)
+		viperInstance.Set(CollectorBatchProcessorSendBatchMaxSizeKey, expected.Processors.Batch.SendBatchMaxSize)
+		viperInstance.Set(CollectorBatchProcessorTimeoutKey, expected.Processors.Batch.Timeout)
+		viperInstance.Set(CollectorExportersKey, expected.Exporters)
+		viperInstance.Set(CollectorHealthKey, expected.Health)
+		viperInstance.Set(CollectorLogKey, expected.Log)
+
+		actual, err := resolveCollector(testDefault.AllowedDirectories)
+		require.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("Test 2: Non allowed path", func(t *testing.T) {
+		expected := &Collector{
+			ConfigPath: "/path/to/secret",
+		}
+		errMsg := "collector path /path/to/secret not allowed"
+
+		viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
+		viperInstance.Set(CollectorConfigPathKey, expected.ConfigPath)
+
+		_, err := resolveCollector(testDefault.AllowedDirectories)
+
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), errMsg)
+	})
 }
 
 func TestCommand(t *testing.T) {
@@ -330,7 +324,11 @@ func getAgentConfig() *Config {
 				},
 			},
 			Processors: Processors{
-				Batch: &Batch{},
+				Batch: &Batch{
+					SendBatchMaxSize: DefCollectorBatchProcessorSendBatchMaxSize,
+					SendBatchSize:    DefCollectorBatchProcessorSendBatchSize,
+					Timeout:          DefCollectorBatchProcessorTimeout,
+				},
 			},
 			Receivers: Receivers{
 				OtlpReceivers: []OtlpReceiver{

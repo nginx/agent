@@ -45,4 +45,8 @@ const (
 	DefMaxMessageRecieveSize = 4194304
 	// math.MaxInt32
 	DefMaxMessageSendSize = math.MaxInt32
+
+	DefCollectorBatchProcessorSendBatchSize    = 8192
+	DefCollectorBatchProcessorSendBatchMaxSize = 0
+	DefCollectorBatchProcessorTimeout          = 200 * time.Millisecond
 )
