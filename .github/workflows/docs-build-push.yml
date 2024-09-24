@@ -17,6 +17,9 @@ on:
       - "*"
     paths:
       - site/**
+  push:
+    branches:
+      - "main"
 
 permissions:
   contents: read
@@ -34,6 +37,8 @@ jobs:
       docs_build_path: "./site"
       doc_type: "hugo"
       environment: ${{inputs.environment}}
+      auto_deploy_branch: "main"
+      auto_deploy_env: "staging"
     secrets:
       AZURE_CREDENTIALS: ${{secrets.AZURE_CREDENTIALS_DOCS}}
       AZURE_KEY_VAULT: ${{secrets.AZURE_KEY_VAULT_DOCS}}
