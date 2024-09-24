@@ -295,7 +295,7 @@ func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *mpi.Instan
 			Actions: []*mpi.InstanceAction{},
 			Config: &mpi.InstanceConfig_AgentConfig{
 				AgentConfig: &mpi.AgentConfig{
-					Command:           &mpi.CommandServer{},
+					Command:           config.ToCommandProto(iw.agentConfig.Command),
 					Metrics:           &mpi.MetricsServer{},
 					File:              &mpi.FileServer{},
 					Labels:            []*structpb.Struct{},

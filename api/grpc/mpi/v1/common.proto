@@ -43,3 +43,41 @@ message CommandResponse {
     // Provides an error message of why the command failed, only populated when CommandStatus is COMMAND_STATUS_ERROR
     string error = 3;
 }
+
+// The top-level configuration for the command server
+message ServerSettings {
+    // Command server host
+    string host = 1;
+    // Command server port
+    int32 port = 2 [(buf.validate.field).int32 = {gte: 1, lte: 65535}];
+    // Server type (enum for gRPC, HTTP, etc.)
+    ServerType type = 3;   
+    enum ServerType {
+        // Undefined server type
+        SERVER_SETTINGS_TYPE_UNDEFINED = 0;
+        // gRPC server type
+        SERVER_SETTINGS_TYPE_GRPC = 1;
+        // HTTP server type
+        SERVER_SETTINGS_TYPE_HTTP = 2;
+    }
+}
+
+// Defines the authentication configuration
+message AuthSettings {
+    // Authentication token for server
+    string token = 1 [(buf.validate.field).string = {min_len: 1}];
+}
+  
+message TLSSettings {
+    // TLS certificate for the command server (e.g., "/path/to/cert.pem")
+    string cert = 1;
+    // TLS key for the command server (e.g., "/path/to/key.pem")
+    string key = 2;        
+    // CA certificate for the command server (e.g., "/path/to/ca.pem")
+    string ca = 3;
+    // Controls whether a client verifies the server's certificate chain and host name. 
+    // If skip_verify is true, accepts any certificate presented by the server and any host name in that certificate.    
+    bool skip_verify = 4;
+    // Server name for TLS
+    string server_name = 5;
+}

@@ -321,8 +321,15 @@ message AgentConfig {
     string message_buffer_size = 6;
 }
 
-// The command settings, associated with messaging from an external source 
-message CommandServer {}
+// The command server settings, associated with messaging from an external source
+message CommandServer {
+    // Server configuration (e.g., host, port, type)
+    mpi.v1.ServerSettings server = 1;
+    // Authentication configuration (e.g., token)
+    mpi.v1.AuthSettings auth = 2;
+    // TLS configuration for secure communication
+    mpi.v1.TLSSettings tls = 3;
+}
 
 // The metrics settings associated with origins (sources) of the metrics and destinations (exporter)
 message MetricsServer {}

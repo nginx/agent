@@ -88,6 +88,58 @@ func (CommandResponse_CommandStatus) EnumDescriptor() ([]byte, []int) {
 	return file_mpi_v1_common_proto_rawDescGZIP(), []int{1, 0}
 }
 
+type ServerSettings_ServerType int32
+
+const (
+	// Undefined server type
+	ServerSettings_SERVER_SETTINGS_TYPE_UNDEFINED ServerSettings_ServerType = 0
+	// gRPC server type
+	ServerSettings_SERVER_SETTINGS_TYPE_GRPC ServerSettings_ServerType = 1
+	// HTTP server type
+	ServerSettings_SERVER_SETTINGS_TYPE_HTTP ServerSettings_ServerType = 2
+)
+
+// Enum value maps for ServerSettings_ServerType.
+var (
+	ServerSettings_ServerType_name = map[int32]string{
+		0: "SERVER_SETTINGS_TYPE_UNDEFINED",
+		1: "SERVER_SETTINGS_TYPE_GRPC",
+		2: "SERVER_SETTINGS_TYPE_HTTP",
+	}
+	ServerSettings_ServerType_value = map[string]int32{
+		"SERVER_SETTINGS_TYPE_UNDEFINED": 0,
+		"SERVER_SETTINGS_TYPE_GRPC":      1,
+		"SERVER_SETTINGS_TYPE_HTTP":      2,
+	}
+)
+
+func (x ServerSettings_ServerType) Enum() *ServerSettings_ServerType {
+	p := new(ServerSettings_ServerType)
+	*p = x
+	return p
+}
+
+func (x ServerSettings_ServerType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ServerSettings_ServerType) Descriptor() protoreflect.EnumDescriptor {
+	return file_mpi_v1_common_proto_enumTypes[1].Descriptor()
+}
+
+func (ServerSettings_ServerType) Type() protoreflect.EnumType {
+	return &file_mpi_v1_common_proto_enumTypes[1]
+}
+
+func (x ServerSettings_ServerType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ServerSettings_ServerType.Descriptor instead.
+func (ServerSettings_ServerType) EnumDescriptor() ([]byte, []int) {
+	return file_mpi_v1_common_proto_rawDescGZIP(), []int{2, 0}
+}
+
 // Meta-information associated with a message
 type MessageMeta struct {
 	state         protoimpl.MessageState
@@ -222,6 +274,207 @@ func (x *CommandResponse) GetError() string {
 	return ""
 }
 
+// The top-level configuration for the command server
+type ServerSettings struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Command server host
+	Host string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
+	// Command server port
+	Port int32 `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
+	// Server type (enum for gRPC, HTTP, etc.)
+	Type ServerSettings_ServerType `protobuf:"varint,3,opt,name=type,proto3,enum=mpi.v1.ServerSettings_ServerType" json:"type,omitempty"`
+}
+
+func (x *ServerSettings) Reset() {
+	*x = ServerSettings{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_mpi_v1_common_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ServerSettings) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ServerSettings) ProtoMessage() {}
+
+func (x *ServerSettings) ProtoReflect() protoreflect.Message {
+	mi := &file_mpi_v1_common_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ServerSettings.ProtoReflect.Descriptor instead.
+func (*ServerSettings) Descriptor() ([]byte, []int) {
+	return file_mpi_v1_common_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ServerSettings) GetHost() string {
+	if x != nil {
+		return x.Host
+	}
+	return ""
+}
+
+func (x *ServerSettings) GetPort() int32 {
+	if x != nil {
+		return x.Port
+	}
+	return 0
+}
+
+func (x *ServerSettings) GetType() ServerSettings_ServerType {
+	if x != nil {
+		return x.Type
+	}
+	return ServerSettings_SERVER_SETTINGS_TYPE_UNDEFINED
+}
+
+// Defines the authentication configuration
+type AuthSettings struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Authentication token for server
+	Token string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+}
+
+func (x *AuthSettings) Reset() {
+	*x = AuthSettings{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_mpi_v1_common_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *AuthSettings) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AuthSettings) ProtoMessage() {}
+
+func (x *AuthSettings) ProtoReflect() protoreflect.Message {
+	mi := &file_mpi_v1_common_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AuthSettings.ProtoReflect.Descriptor instead.
+func (*AuthSettings) Descriptor() ([]byte, []int) {
+	return file_mpi_v1_common_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *AuthSettings) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+type TLSSettings struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// TLS certificate for the command server (e.g., "/path/to/cert.pem")
+	Cert string `protobuf:"bytes,1,opt,name=cert,proto3" json:"cert,omitempty"`
+	// TLS key for the command server (e.g., "/path/to/key.pem")
+	Key string `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
+	// CA certificate for the command server (e.g., "/path/to/ca.pem")
+	Ca string `protobuf:"bytes,3,opt,name=ca,proto3" json:"ca,omitempty"`
+	// Controls whether a client verifies the server's certificate chain and host name.
+	// If skip_verify is true, accepts any certificate presented by the server and any host name in that certificate.
+	SkipVerify bool `protobuf:"varint,4,opt,name=skip_verify,json=skipVerify,proto3" json:"skip_verify,omitempty"`
+	// Server name for TLS
+	ServerName string `protobuf:"bytes,5,opt,name=server_name,json=serverName,proto3" json:"server_name,omitempty"`
+}
+
+func (x *TLSSettings) Reset() {
+	*x = TLSSettings{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_mpi_v1_common_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TLSSettings) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TLSSettings) ProtoMessage() {}
+
+func (x *TLSSettings) ProtoReflect() protoreflect.Message {
+	mi := &file_mpi_v1_common_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TLSSettings.ProtoReflect.Descriptor instead.
+func (*TLSSettings) Descriptor() ([]byte, []int) {
+	return file_mpi_v1_common_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *TLSSettings) GetCert() string {
+	if x != nil {
+		return x.Cert
+	}
+	return ""
+}
+
+func (x *TLSSettings) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *TLSSettings) GetCa() string {
+	if x != nil {
+		return x.Ca
+	}
+	return ""
+}
+
+func (x *TLSSettings) GetSkipVerify() bool {
+	if x != nil {
+		return x.SkipVerify
+	}
+	return false
+}
+
+func (x *TLSSettings) GetServerName() string {
+	if x != nil {
+		return x.ServerName
+	}
+	return ""
+}
+
 var File_mpi_v1_common_proto protoreflect.FileDescriptor
 
 var file_mpi_v1_common_proto_rawDesc = []byte{
@@ -257,8 +510,35 @@ var file_mpi_v1_common_proto_rawDesc = []byte{
 	0x02, 0x12, 0x1e, 0x0a, 0x1a, 0x43, 0x4f, 0x4d, 0x4d, 0x41, 0x4e, 0x44, 0x5f, 0x53, 0x54, 0x41,
 	0x54, 0x55, 0x53, 0x5f, 0x49, 0x4e, 0x5f, 0x50, 0x52, 0x4f, 0x47, 0x52, 0x45, 0x53, 0x53, 0x10,
 	0x03, 0x12, 0x1a, 0x0a, 0x16, 0x43, 0x4f, 0x4d, 0x4d, 0x41, 0x4e, 0x44, 0x5f, 0x53, 0x54, 0x41,
-	0x54, 0x55, 0x53, 0x5f, 0x46, 0x41, 0x49, 0x4c, 0x55, 0x52, 0x45, 0x10, 0x04, 0x42, 0x08, 0x5a,
-	0x06, 0x6d, 0x70, 0x69, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x54, 0x55, 0x53, 0x5f, 0x46, 0x41, 0x49, 0x4c, 0x55, 0x52, 0x45, 0x10, 0x04, 0x22, 0xec, 0x01,
+	0x0a, 0x0e, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73,
+	0x12, 0x12, 0x0a, 0x04, 0x68, 0x6f, 0x73, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04,
+	0x68, 0x6f, 0x73, 0x74, 0x12, 0x1f, 0x0a, 0x04, 0x70, 0x6f, 0x72, 0x74, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x05, 0x42, 0x0b, 0xba, 0x48, 0x08, 0x1a, 0x06, 0x18, 0xff, 0xff, 0x03, 0x28, 0x01, 0x52,
+	0x04, 0x70, 0x6f, 0x72, 0x74, 0x12, 0x35, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18, 0x03, 0x20,
+	0x01, 0x28, 0x0e, 0x32, 0x21, 0x2e, 0x6d, 0x70, 0x69, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x72,
+	0x76, 0x65, 0x72, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x2e, 0x53, 0x65, 0x72, 0x76,
+	0x65, 0x72, 0x54, 0x79, 0x70, 0x65, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x22, 0x6e, 0x0a, 0x0a,
+	0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x54, 0x79, 0x70, 0x65, 0x12, 0x22, 0x0a, 0x1e, 0x53, 0x45,
+	0x52, 0x56, 0x45, 0x52, 0x5f, 0x53, 0x45, 0x54, 0x54, 0x49, 0x4e, 0x47, 0x53, 0x5f, 0x54, 0x59,
+	0x50, 0x45, 0x5f, 0x55, 0x4e, 0x44, 0x45, 0x46, 0x49, 0x4e, 0x45, 0x44, 0x10, 0x00, 0x12, 0x1d,
+	0x0a, 0x19, 0x53, 0x45, 0x52, 0x56, 0x45, 0x52, 0x5f, 0x53, 0x45, 0x54, 0x54, 0x49, 0x4e, 0x47,
+	0x53, 0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x47, 0x52, 0x50, 0x43, 0x10, 0x01, 0x12, 0x1d, 0x0a,
+	0x19, 0x53, 0x45, 0x52, 0x56, 0x45, 0x52, 0x5f, 0x53, 0x45, 0x54, 0x54, 0x49, 0x4e, 0x47, 0x53,
+	0x5f, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x48, 0x54, 0x54, 0x50, 0x10, 0x02, 0x22, 0x2d, 0x0a, 0x0c,
+	0x41, 0x75, 0x74, 0x68, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x12, 0x1d, 0x0a, 0x05,
+	0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x07, 0xba, 0x48, 0x04,
+	0x72, 0x02, 0x10, 0x01, 0x52, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x22, 0x85, 0x01, 0x0a, 0x0b,
+	0x54, 0x4c, 0x53, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x12, 0x12, 0x0a, 0x04, 0x63,
+	0x65, 0x72, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x63, 0x65, 0x72, 0x74, 0x12,
+	0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65,
+	0x79, 0x12, 0x0e, 0x0a, 0x02, 0x63, 0x61, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x63,
+	0x61, 0x12, 0x1f, 0x0a, 0x0b, 0x73, 0x6b, 0x69, 0x70, 0x5f, 0x76, 0x65, 0x72, 0x69, 0x66, 0x79,
+	0x18, 0x04, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0a, 0x73, 0x6b, 0x69, 0x70, 0x56, 0x65, 0x72, 0x69,
+	0x66, 0x79, 0x12, 0x1f, 0x0a, 0x0b, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x5f, 0x6e, 0x61, 0x6d,
+	0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x4e,
+	0x61, 0x6d, 0x65, 0x42, 0x08, 0x5a, 0x06, 0x6d, 0x70, 0x69, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -273,22 +553,27 @@ func file_mpi_v1_common_proto_rawDescGZIP() []byte {
 	return file_mpi_v1_common_proto_rawDescData
 }
 
-var file_mpi_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_mpi_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_mpi_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_mpi_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_mpi_v1_common_proto_goTypes = []any{
 	(CommandResponse_CommandStatus)(0), // 0: mpi.v1.CommandResponse.CommandStatus
-	(*MessageMeta)(nil),                // 1: mpi.v1.MessageMeta
-	(*CommandResponse)(nil),            // 2: mpi.v1.CommandResponse
-	(*timestamppb.Timestamp)(nil),      // 3: google.protobuf.Timestamp
+	(ServerSettings_ServerType)(0),     // 1: mpi.v1.ServerSettings.ServerType
+	(*MessageMeta)(nil),                // 2: mpi.v1.MessageMeta
+	(*CommandResponse)(nil),            // 3: mpi.v1.CommandResponse
+	(*ServerSettings)(nil),             // 4: mpi.v1.ServerSettings
+	(*AuthSettings)(nil),               // 5: mpi.v1.AuthSettings
+	(*TLSSettings)(nil),                // 6: mpi.v1.TLSSettings
+	(*timestamppb.Timestamp)(nil),      // 7: google.protobuf.Timestamp
 }
 var file_mpi_v1_common_proto_depIdxs = []int32{
-	3, // 0: mpi.v1.MessageMeta.timestamp:type_name -> google.protobuf.Timestamp
+	7, // 0: mpi.v1.MessageMeta.timestamp:type_name -> google.protobuf.Timestamp
 	0, // 1: mpi.v1.CommandResponse.status:type_name -> mpi.v1.CommandResponse.CommandStatus
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	1, // 2: mpi.v1.ServerSettings.type:type_name -> mpi.v1.ServerSettings.ServerType
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_mpi_v1_common_proto_init() }
@@ -321,14 +606,50 @@ func file_mpi_v1_common_proto_init() {
 				return nil
 			}
 		}
+		file_mpi_v1_common_proto_msgTypes[2].Exporter = func(v any, i int) any {
+			switch v := v.(*ServerSettings); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_mpi_v1_common_proto_msgTypes[3].Exporter = func(v any, i int) any {
+			switch v := v.(*AuthSettings); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_mpi_v1_common_proto_msgTypes[4].Exporter = func(v any, i int) any {
+			switch v := v.(*TLSSettings); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_mpi_v1_common_proto_rawDesc,
-			NumEnums:      1,
-			NumMessages:   2,
+			NumEnums:      2,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
