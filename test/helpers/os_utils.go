@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	filePermission = 0o600
+	filePermission = 0o700
 )
 
 func CreateDirWithErrorCheck(t testing.TB, dirName string) {
