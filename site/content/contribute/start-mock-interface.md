@@ -1,28 +1,29 @@
 ---
 title: Start mock control plane interface
-weight: 100
+toc: true
+weight: 300
 docs: DOCS-000
 ---
 
-## Overview
+This document describes how to configure and run NGINX Agent using a mock interface ("control plane") for NGINX Agent to report to. 
 
-This document describes how to configure and run NGINX Agent using a mock interface ("control plane") for NGINX Agent to report to.
+The mock interface is useful when developing NGINX Agent, as it allows you to view what metrics are being reported.
 
-## Install NGINX
+## Before you begin
 
-Follow the [Install NGINX Agent]({{< relref "/installation-upgrade/" >}}) topic to download and install NGINX Agent.
+To begin this task, you will require the following:
 
-## Clone the NGINX Agent repository
+- A [working NGINX Agent instance]({{< ref "/installation-upgrade/install.md" >}}).
+- A [Go installation](https://go.dev/dl/) of version 1.22.2 or newer.
+- A [go-swagger](https://goswagger.io/go-swagger/install/) installation.
+
+You will also need a copy of the NGINX Agent repository, which you can clone using `git`:
 
 ```shell
 git clone git@github.com:nginx/agent.git
 ```
 
-Read [Cloning a GitHub Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for more information
-
-## Install Go
-
-NGINX Agent and the Mock Control Plane are written in Go. Go 1.22.2 or higher is required to build and run either application from the source code directory. You can [download Go from the official website](https://go.dev/dl/).
+Read [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for more information
 
 ## Start the gRPC mock control plane
 
@@ -38,9 +39,9 @@ INFO[0000] grpc listening at 54789 # grpc control plane port which NGINX Agent w
 
 The mock control plane can use either gRPC or REST protocols to communicate with NGINX Agent.
 
-## Launch Swagger UI
+To enable them, view the [Enable gRPC and REST interfaces]({{< relref "/how-to/enable-interfaces.md" >}}) topic.
 
-Swagger UI requires goswagger be installed. See [instructions for installing goswagger](https://goswagger.io/install.html) for additional help.
+## Launch Swagger UI
 
 To launch the Swagger UI for the REST interface run the following command:
 
@@ -89,25 +90,3 @@ Open a web browser to view the mock control plane at [http://localhost:54790](ht
 - **metrics** - shows a buffer of metrics sent to the management plane (similar to what will be sent back in the REST API)
 
 For more NGINX Agent use cases, refer to the [NGINX Agent SDK examples](https://github.com/nginx/agent/tree/main/sdk/examples).
-
-## Logs
-
-NGINX Agent uses formatted log files to collect metrics. Expanding log formats and instance counts will also increase the size of the NGINX Agent log files. We recommend adding a separate partition for `/var/log/nginx-agent`.
-
-{{< important >}}
-Without log rotation or storage on a separate partition, log files could use up all the free drive space and cause your system to become unresponsive to certain services.
-
-For more information, see [NGINX Agent Log Rotation]({{< relref "configuration/configuration-overview.md#nginx-agent-log-rotation" >}}).
-{{< /important >}}
-
-## Extensions
-
-An extension is a piece of code, not critical to the main functionality that NGINX agent is responsible for. This generally falls outside the remit of managing NGINX Configuration and reporting NGINX metrics.
-
-To enable an extension, it must be added to the extensions list in the `/etc/nginx-agent/nginx-agent.conf`.
-Here is an example of enabling the advanced metrics extension:
-
-```yaml
-extensions:
-  - advanced-metrics
-```

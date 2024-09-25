@@ -1,7 +1,7 @@
 ---
 title: Encrypt communication
 toc: true
-weight: 400
+weight: 500
 docs: DOCS-000
 ---
 
@@ -39,7 +39,7 @@ The `cert-sni-name` value should match the SubjectAltName of the server certific
 
 To enable mTLS for the NGINX Agent from the command line, run the following command:
 
-```bash
+```shell
 nginx-agent --tls-cert "path-to-cert" --tls-key "path-to-key" --tls-ca "path-to-ca-cert" --tls-enable
 ```
 
@@ -47,7 +47,7 @@ nginx-agent --tls-cert "path-to-cert" --tls-key "path-to-key" --tls-ca "path-to-
 
 To enable mTLS for NGINX Agent using environment variables, run the following commands:
 
-```bash
+```shell
 NMS_TLS_CA="my-env-ca"
 NMS_TLS_KEY="my-env-key"
 NMS_TLS_CERT="my-env-cert"
@@ -66,7 +66,7 @@ To enable server-side TLS you must have TLS enabled. See the following examples 
 
 You can edit the `/etc/nginx-agent/nginx-agent.conf` file to enable server-side TLS. Make the following changes:
 
-```bash
+```shell
 tls:
   enable: true
   skip_verify: false
@@ -76,7 +76,7 @@ tls:
 
 To enable server-side TLS from the command line, run the following command:
 
-```bash
+```shell
 nginx-agent --tls-enable
 ```
 
@@ -84,7 +84,7 @@ nginx-agent --tls-enable
 
 To enable server-side TLS using environment variables, run the following commands:
 
-```bash
+```shell
 NMS_TLS_ENABLE=true
 ```
 
@@ -98,7 +98,7 @@ NMS_TLS_ENABLE=true
 
 To enable server-side TLS with a self-signed certificate, you must have TLS enabled and set `skip_verify` to `true`, which disables hostname validation. Setting `skip_verify` can be done done only by updating the configuration file. See the following example:
 
-```bash
+```shell
 tls:
   enable: true
   skip_verify: true
@@ -112,7 +112,7 @@ To enable insecure mode, you simply need to set `tls:enable` to `false`. Setting
 
 You can edit the `/etc/nginx-agent/nginx-agent.conf` file to enable insecure mode. Make the following changes:
 
-```bash
+```shell
 tls:
   enable: false
 ```
@@ -121,6 +121,6 @@ tls:
 
 To enable insecure mode using environment variables, run the following commands:
 
-```bash
+```shell
 NMS_TLS_ENABLE=false
 ```

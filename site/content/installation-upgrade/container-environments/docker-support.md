@@ -58,7 +58,7 @@ If no memory limit is set when starting the Docker container, then the memory li
 
 If a warning message similar to the following example is seen in the NGINX Agent logs, the swap memory limit for the Docker container is greater than the swap memory for the Docker host system:
 
-```bash
+```shell
 Swap memory limit specified for the container, ... is greater than the host system swap memory ...
 ```
 
@@ -66,7 +66,7 @@ The `system.swap.total` metric for the container matches the total swap memory f
 
 If a warning message similar to the following example is seen in the NGINX Agent logs, the Docker host system does not have cgroup swap limit capabilities enabled. To enable these capabilities, follow the steps below.
 
-```bash
+```shell
 Unable to collect Swap metrics because the file ... was not found
 ```
 
@@ -74,7 +74,7 @@ Unable to collect Swap metrics because the file ... was not found
 
 Run the following command to see if the cgroup swap limit capabilities are enabled:
 
-```bash
+```shell
 $ docker info | grep swap
 WARNING: No swap limit support
 ```

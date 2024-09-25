@@ -233,7 +233,15 @@ Default location in FreeBSD environments: `/var/db/nginx-agent/agent-dynamic.con
 
 {{</note>}}
 
-## Log rotation
+## Logs
+
+NGINX Agent uses formatted log files to collect metrics. Expanding log formats and instance counts will also increase the size of the NGINX Agent log files. 
+
+We recommend adding a separate partition for `/var/log/nginx-agent`.
+
+{{< important >}}
+Without log rotation or storage on a separate partition, log files could use up all the free drive space and cause your system to become unresponsive to certain services.
+{{< /important >}}
 
 By default, NGINX Agent rotates logs daily using logrotate with the following configuration:
 
@@ -266,3 +274,17 @@ By default, NGINX Agent rotates logs daily using logrotate with the following co
 If you need to change the default configuration, update the file at `/etc/logrotate.d/nginx-agent`.
 
 For more details on logrotate configuration, see [Logrotate Configuration Options](https://linux.die.net/man/8/logrotate).
+
+
+## Extensions
+
+An extension is noncritical code to the main functionality of NGINX Agent. They generally cover functionality outside of managing NGINX configuration and reporting metrics.
+
+To enable an extension, it must be added to the extensions list in the `/etc/nginx-agent/nginx-agent.conf`. 
+
+This example enables the advanced metrics extension:
+
+```yaml
+extensions:
+  - advanced-metrics
+```

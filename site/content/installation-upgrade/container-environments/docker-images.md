@@ -158,47 +158,36 @@ $ docker build -t nginx-agent . \
 
 Here is an example of how to run the NGINX Agent container using Docker:
 
-```console
+```shell
 docker run --name nginx-agent -d nginx-agent
 ```
 
-{{<note>}}To learn more about the configuration options, refer to the NGINX Agent [Configuration Overview]({{< relref "/configuration/configuration-overview" >}}).{{</note>}}
+{{< note >}} To learn more about the configuration options, refer to the [Configuration overview]({{< relref "/how-to/configuration-overview" >}}) topic. {{</ note >}}
+
+---
 
 ### Enable the gRPC interface
 
-To connect your NGINX Agent container to your NGINX One or NGINX Instance Manager instance, you must enable the gRPC interface. To do this, you must edit the NGINX Agent configuration file, *nginx-agent.conf*. For example:
+To connect your NGINX Agent container to your NGINX One or NGINX Instance Manager instance, you must enable the gRPC interface. 
 
-```yaml
-erver:
-  host: 127.0.0.1 # mock control plane host
-  grpcPort: 54789 # mock control plane gRPC port
+The configuration required is explained in the [Enable the gRPC interface]({{< relref "/how-to/enable-interfaces.md#enable-the-grpc-interface" >}})
 
-# gRPC TLS options - DISABLING TLS IS NOT RECOMMENDED FOR PRODUCTION
-tls:
-  enable: false
-  skip_verify: true
-```
+---
 
 ### Enable the REST interface
 
-If your control plane requires REST API, you can expose NGINX Agent's REST API by editing the NGINX Agent configuration file, *nginx-agent.conf*. For example:
-
-```yaml
-api:
-  host: 0.0.0.0
-  port: 8038
-```
+If your control plane requires a REST API, you can [Enable the REST interface]({{< relref "/how-to/enable-interfaces.md#enable-the-rest-interfacee" >}}) for NGINX Agent.
 
 Once you have updated the *nginx-agent.conf* file, you can run the container with the updated **nginx-agent.conf** mounted and the port **8038** exposed with the following command:
 
-```console
+```shell
 docker run --name nginx-agent -d \
   --mount type=bind,source="$(pwd)"/nginx-agent.conf,target=/etc/nginx-agent/nginx-agent.conf,readonly \
   -p 127.0.0.1:8038:8038/tcp \
   nginx-agent
 ```
 
-<hr>
+--- 
 
 ## Build the NGINX Agent images for specific OS targets
 

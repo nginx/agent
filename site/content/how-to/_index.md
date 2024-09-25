@@ -1,5 +1,5 @@
 ---
-title: "Configuration"
+title: "How-to guides"
 weight: 500
 ---
 

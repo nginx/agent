@@ -1,6 +1,6 @@
 ---
 title: "Export metrics data"
-weight: 600
+weight: 300
 docs: DOCS-000
 ---
 
@@ -26,10 +26,10 @@ To begin this task, you will require the following:
 -
 -
 
-
 ---
 
 ## Export metrics data
+
 
 
 ---

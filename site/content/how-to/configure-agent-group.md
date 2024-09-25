@@ -1,7 +1,7 @@
 ---
 title: "Add users to nginx-agent group"
 toc: true
-weight: 300
+weight: 400
 docs: DOCS-000
 ---
 
@@ -13,8 +13,9 @@ If you change the NGINX username after installing the NGINX Agent, you'll need t
 
 A failure to update the `nginx-agent` group when the NGINX username changes may result in non-compliance errors for NGINX Plus.
 
+---
 
-## NGINX Socket
+## NGINX socket
 
 NGINX Agent creates a socket in the default location `/var/run/nginx-agent/nginx.sock`. You can customize this location by editing the `nginx-agent.conf` file and setting the path similar to the following example:
 
@@ -26,57 +27,58 @@ nginx:
 
 The socket server starts when the NGINX socket configuration is enabled; the socket configuration is enabled by default.
 
+---
 
-## Add NGINX Users to nginx-agent Group
+## Add NGINX Users to nginx-agent group
 
 To manually add NGINX users to the `nginx-agent` group, take the following steps:
 
 1. Verify the `nginx-agent` group exists:
 
-    ```bash
+    ```shell
     sudo getent group | grep nginx-agent
     ```
 
     The output looks similar to the following example:
 
-    ```bash
+    ```shell
     nginx-agent:x:1001:root,nginx
     ```
 
     If the group doesn't exist, create it by running the following command:
 
-    ```bash
+    ```shell
     sudo groupadd nginx-agent
     ```
 
 2. Verify the ownership of `/var/run/nginx-agent` directory:
 
-    ```bash
+    ```shell
     ls -l /var/run/nginx-agent
     ```
 
     The output looks similar to the following:
 
-    ```bash
+    ```shell
     total 0
     srwxrwxr-x 1 root nginx-agent 0 Jun 13 10:51 nginx.sockvv
     ```
 
     If the group ownership is not `nginx-agent`, change the ownership by running the following command:
 
-    ```bash
+    ```shell
     sudo chown :nginx-agent /var/run/nginx-agent
     ```
 
 3. To add NGINX user(s) to the `nginx-agent` group, run the following command:
 
-    ```bash
+    ```shell
     sudo usermod -a -G nginx-agent <username>
     ```
 
     For example to add the `nginx` user, take the following step:
 
-    ```bash
+    ```shell
     sudo usermod -a -G nginx-agent nginx
     ```
 

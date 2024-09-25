@@ -1,5 +1,5 @@
 ---
-title: Enable gRPC and REST interfaces
+title: "Enable gRPC and REST interfaces"
 toc: true
 weight: 200
 docs: DOCS-000 
@@ -7,9 +7,9 @@ docs: DOCS-000
 
 This document describes how to enable the gRPC and REST interfaces for NGINX Agent.
 
-## NGINX Agent settings
+## Before you begin
 
-If it doesn't already exist, create the `/etc/nginx-agent/` directory and copy the `nginx-agent.conf` file into it from the project root directory.
+If it doesn't already exist, create the directory `/etc/nginx-agent/`and copy the `nginx-agent.conf` file into it from the project root directory.
 
 ```shell
 sudo mkdir /etc/nginx-agent
@@ -28,6 +28,8 @@ In FreeBSD environments:
 sudo touch /var/db/nginx-agent/agent-dynamic.conf
 ```
 
+---
+
 ## Enable the gRPC interface
 
 Add the the following settings to `/etc/nginx-agent/nginx-agent.conf`:
@@ -44,6 +46,8 @@ tls:
 ```
 
 For more information, see [Agent Protocol Definitions and Documentation](https://github.com/nginx/agent/tree/main/docs/proto/README.md).
+
+---
 
 ## Enable the REST interface
 

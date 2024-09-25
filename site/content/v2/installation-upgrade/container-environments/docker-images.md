@@ -163,7 +163,7 @@ Here is an example of how to run the NGINX Agent container using Docker:
 docker run --name nginx-agent -d nginx-agent
 ```
 
-{{<note>}}To learn more about the configuration options, refer to the NGINX Agent [Configuration Overview]({{< relref "/configuration/configuration-overview" >}}).{{</note>}}
+{{<note>}}To learn more about the configuration options, refer to the NGINX Agent [Configuration Overview]({{< relref "/how-to/configuration-overview.md" >}}).{{</note>}}
 
 ### Enable the gRPC interface
 

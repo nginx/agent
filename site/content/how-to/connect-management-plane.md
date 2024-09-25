@@ -1,7 +1,7 @@
 ---
 title: "Connect to management plane"
 toc: true
-weight: 500
+weight: 600
 docs: DOCS-000
 ---
 
@@ -50,7 +50,7 @@ To establish a mTLS connection between the NGINX Agent and the management plane 
    ```
 2. Restart the NGINX Agent service:
 
-   ```bash
+   ```shell
    sudo systemctl restart nginx-agent
    ```
 
@@ -84,7 +84,7 @@ To establish a TLS connection between the NGINX Agent and the management plane s
 
 2. Restart the NGINX Agent service:
 
-   ```bash
+   ```shell
    sudo systemctl restart nginx-agent
    ```
    
@@ -109,6 +109,6 @@ To establish an insecure connection between the NGINX Agent and the management p
 
 2. Restart the NGINX Agent service:
 
-   ```bash
+   ```shell
    sudo systemctl restart nginx-agent
    ```
