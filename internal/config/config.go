@@ -102,6 +102,7 @@ func ResolveConfig() (*Config, error) {
 		Command:            resolveCommand(),
 		Common:             resolveCommon(),
 		Watchers:           resolveWatchers(),
+		Features:           viperInstance.GetStringSlice(FeaturesKey),
 	}
 
 	slog.Debug("Agent config", "config", config)
@@ -255,6 +256,12 @@ func registerFlags() {
 		ClientMaxMessageSendSizeKey,
 		DefMaxMessageSendSize,
 		"Updates the client grpc setting MaxSendMsgSize with the specific value in MB.",
+	)
+
+	fs.StringSlice(
+		FeaturesKey,
+		GetDefaultFeatures(),
+		"A comma-separated list of features enabled for the agent.",
 	)
 
 	fs.SetNormalizeFunc(normalizeFunc)

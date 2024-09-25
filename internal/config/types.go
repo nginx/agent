@@ -57,6 +57,7 @@ type (
 		ConfigDir          string           `yaml:"-" mapstructure:"config-dirs"`
 		UUID               string           `yaml:"-"`
 		AllowedDirectories []string         `yaml:"-"`
+		Features           []string         `yaml:"-"`
 	}
 
 	Log struct {

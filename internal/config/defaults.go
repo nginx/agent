@@ -7,6 +7,8 @@ package config
 import (
 	"math"
 	"time"
+
+	pkg "github.com/nginx/agent/v3/pkg/config"
 )
 
 const (
@@ -51,3 +53,12 @@ const (
 	// math.MaxInt32
 	DefMaxMessageSendSize = math.MaxInt32
 )
+
+func GetDefaultFeatures() []string {
+	return []string{
+		pkg.FeatureConfiguration,
+		pkg.FeatureConnection,
+		pkg.FeatureMetrics,
+		pkg.FeatureFileWatcher,
+	}
+}
