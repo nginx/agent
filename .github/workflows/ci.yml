@@ -338,9 +338,9 @@ jobs:
             github.base_ref == 'v3' &&
             github.event.pull_request.merged == true &&
             !github.event.pull_request.head.repo.fork }}
-    needs: [ lint, unit-test, component-test, performance-test,
+    needs: [ lint, unit-test, performance-test,
              loads-tests, official-oss-image-integration-tests,
-             official-oss-image-integration-tests,
+             official-plus-image-integration-tests,
              race-condition-test ]
     uses: ./.github/workflows/release-branch.yml
     with:
