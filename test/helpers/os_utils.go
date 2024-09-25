@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	filePermission = 0o700
+	filePermission = 0o600
 )
 
 func CreateDirWithErrorCheck(t testing.TB, dirName string) {
@@ -51,13 +51,13 @@ func CreateCacheFiles(t testing.TB, cachePath string, cacheData map[string]*v1.F
 	cache, err := json.MarshalIndent(cacheData, "", "  ")
 	require.NoError(t, err)
 
-	err = os.MkdirAll(path.Dir(cachePath), os.ModePerm)
+	err = os.MkdirAll(path.Dir(cachePath), filePermission)
 	require.NoError(t, err)
 
 	for _, file := range cacheData {
 		CreateFileWithErrorCheck(t, filepath.Dir(file.GetName()), filepath.Base(file.GetName()))
 	}
 
-	err = os.WriteFile(cachePath, cache, os.ModePerm)
+	err = os.WriteFile(cachePath, cache, filePermission)
 	require.NoError(t, err)
 }
