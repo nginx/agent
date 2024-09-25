@@ -13,8 +13,15 @@ NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus insta
 - Collection and reporting of real-time NGINX performance and operating system metrics
 - Notifications of NGINX events
 
+[OpenTelemetry](https://opentelemetry.io/) support comes with NGINX Agent v3, and the ability to [export the metrics data](http://localhost:1313/nginx-agent/export-metrics/) for use in other applications. 
 
-{{< img src="grafana-dashboard-example.png" caption="A Grafana dashboard displaying metrics reported by NGINX Agent." alt="A Grafana dashboard displaying metrics reported by NGINX Agent." width="99%">}}
+For an overview of the metrics available from NGINX Agent, read the following topics:
+
+- [OpenTelemetry metrics]({{< relref "/metrics.md" >}}) (Agent v3)
+- [Metrics]({{< relref "/v2/metrics.md" >}}) (Agent v2)
+
+
+{{< img src="grafana-dashboard-example.png" caption="A Grafana dashboard displaying metrics reported by NGINX Agent." alt="A Grafana dashboard displaying metrics reported by NGINX Agent.">}}
 
 ## How it works
 
@@ -42,7 +49,6 @@ For NGINX Agent to work properly with an NGINX Plus instance, the API needs to b
 ## Event notifications
 
 NGINX Agent allows a gRPC connected control system to register a listener for a specific event. The control mechanism is then invoked when NGINX Agent sends an associated system signal. The source of a notification can be either the NGINX instance or NGINX Agent itself. Here's a list of currently supported events:
-
 
 {{< raw-html>}}<div class="table-responsive">{{</raw-html>}}
 {{<bootstrap-table "table table-striped table-bordered">}}
