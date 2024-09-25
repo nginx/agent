@@ -5,6 +5,8 @@ weight: 400
 docs: DOCS-000
 ---
 
+This page describes how the NGINX Agent process interacts with the NGINX user on a system, and how to add users to the NGINX Agent group.
+
 ## Overview
 
 During installation, NGINX Agent detects the NGINX user (typically `nginx`) for the master and worker processes and adds this user to a group called `nginx-agent`.

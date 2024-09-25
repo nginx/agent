@@ -776,3 +776,9 @@ Once you have installed NGINX Agent, you can verify that it is running with the 
 ```shell
 sudo nginx-agent -v
 ```
+
+## Enable interfaces
+
+Once NGINX Agent is successfully running, you can enable the required interfaces, which is described in the [Enable gRPC and REST interfaces]({{< relref "/how-to/enable-interfaces.md" >}}) topic.
+
+You may also be interested in the [Start mock control plane interface]({{< relref "/contribute/start-mock-interface.md" >}}) topic for development work.
