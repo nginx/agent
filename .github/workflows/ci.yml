@@ -339,7 +339,7 @@ jobs:
             github.event.pull_request.merged == true &&
             !github.event.pull_request.head.repo.fork }}
     needs: [ lint, unit-test, performance-tests,
-             loads-tests, official-oss-image-integration-tests,
+             load-tests, official-oss-image-integration-tests,
              official-plus-image-integration-tests,
              race-condition-test ]
     uses: ./.github/workflows/release-branch.yml
