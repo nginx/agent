@@ -1,7 +1,7 @@
 ---
 title: "Upgrade NGINX Agent"
 toc: true
-weight: 300
+weight: 200
 docs: DOCS-000
 ---
 

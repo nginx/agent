@@ -1,6 +1,6 @@
 ---
 title: "Container environments"
-weight: 500
+weight: 400
 ---
 
 Learn how to build and run NGINX Agent docker images.

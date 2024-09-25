@@ -1,7 +1,6 @@
 ---
-title: "Getting started"
-toc: true
-weight: 200
+title: Start mock control plane interface
+weight: 100
 docs: DOCS-000
 ---
 
@@ -35,59 +34,6 @@ go run sdk/examples/server.go
 # Command Output
 INFO[0000] http listening at 54790 # mock control plane port
 INFO[0000] grpc listening at 54789 # grpc control plane port which NGINX Agent will report to
-```
-
-## NGINX Agent settings
-
-If it doesn't already exist, create the `/etc/nginx-agent/` directory and copy the `nginx-agent.conf` file into it from the project root directory.
-
-```shell
-sudo mkdir /etc/nginx-agent
-sudo cp <project_root_directory>/nginx-agent.conf /etc/nginx-agent/
-```
-
-Create the `agent-dynamic.conf` file, which is required for NGINX Agent to run.
-
-In Linux environments:
-```shell
-sudo touch /var/lib/nginx-agent/agent-dynamic.conf
-```
-
-In FreeBSD environments:
-```shell
-sudo touch /var/db/nginx-agent/agent-dynamic.conf
-```
-
-### Enable the gRPC interface
-
-Add the the following settings to `/etc/nginx-agent/nginx-agent.conf`:
-
-```yaml
-server:
-  host: 127.0.0.1 # mock control plane host
-  grpcPort: 54789 # mock control plane gRPC port
-
-# gRPC TLS options - DISABLING TLS IS NOT RECOMMENDED FOR PRODUCTION
-tls:
-  enable: false
-  skip_verify: true
-```
-
-For more information, see [Agent Protocol Definitions and Documentation](https://github.com/nginx/agent/tree/main/docs/proto/README.md).
-
-### Enable the REST interface
-
-The NGINX Agent REST interface can be exposed by validating the following lines in the `/etc/nginx-agent/nginx-agent.conf` file are present:
-
-```yaml
-api:
-  # Set API address to allow remote management
-  host: 127.0.0.1
-  # Set this value to a secure port number to prevent information leaks
-  port: 8038
-  # REST TLS parameters
-  cert: "<TLS-CERTIFICATE>.crt"
-  key: "<PRIVATE-KEY>.key"
 ```
 
 The mock control plane can use either gRPC or REST protocols to communicate with NGINX Agent.
@@ -143,20 +89,6 @@ Open a web browser to view the mock control plane at [http://localhost:54790](ht
 - **metrics** - shows a buffer of metrics sent to the management plane (similar to what will be sent back in the REST API)
 
 For more NGINX Agent use cases, refer to the [NGINX Agent SDK examples](https://github.com/nginx/agent/tree/main/sdk/examples).
-
-## systemd environments
-
-To start NGINX Agent on `systemd` systems, run the following command:
-
-```shell
-sudo systemctl start nginx-agent
-```
-
-To enable NGINX Agent to start on boot, run the following command:
-
-```shell
-sudo systemctl enable nginx-agent
-```
 
 ## Logs
 

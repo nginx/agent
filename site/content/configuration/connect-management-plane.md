@@ -1,10 +1,8 @@
 ---
 title: "Connect to management plane"
-weight: 400
 toc: true
-tags: [ "docs" ]
-categories: ["configuration"]
-doctypes: ["task"]
+weight: 500
+docs: DOCS-000
 ---
 
 ## Overview

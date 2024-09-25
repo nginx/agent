@@ -1,6 +1,6 @@
 ---
 title: Migrate from NGINX Agent v2 to v3
-weight: 600
+weight: 500
 docs: DOCS-000
 ---
 
@@ -22,7 +22,7 @@ docs: DOCS-000
 
 To begin this task, you will require the following:
 
-- A [working NGINX Agent instance]({{< ref "/installation-upgrade/getting-started.md" >}}).
+- A [working NGINX Agent instance]({{< ref "/installation-upgrade/install.md" >}}).
 -
 -
 

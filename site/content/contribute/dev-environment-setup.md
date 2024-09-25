@@ -1,11 +1,8 @@
 ---
-title: "Development environment Setup"
-draft: false
-weight: 200
+title: "Development environment setup"
 toc: true
-tags: [ "docs" ]
-categories: ["development"]
-doctypes: ["task"]
+weight: 200
+docs: DOCS-000
 ---
 
 ## Overview

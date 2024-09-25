@@ -755,6 +755,20 @@ Use your system's package manager to install the package. Some examples:
   sudo pkg add nginx-agent-<agent-version>.pkg
   ```
 
+## systemd environments
+
+To start NGINX Agent on `systemd` systems, run the following command:
+
+```shell
+sudo systemctl start nginx-agent
+```
+
+To enable NGINX Agent to start on boot, run the following command:
+
+```shell
+sudo systemctl enable nginx-agent
+```
+
 ## Verify that NGINX Agent is running
 
 Once you have installed NGINX Agent, you can verify that it is running with the following command:
