@@ -335,22 +335,17 @@ jobs:
   publish-packages:
     name: Publish NGINX Agent v3 packages
     if: ${{ github.event_name =='pull_request' &&
-      github.base_ref == 'v3' &&
-      github.event.pull_request.merged == true && !github.event.pull_request.head.repo.fork }}
+            github.base_ref == 'v3' &&
+            github.event.pull_request.merged == true &&
+            !github.event.pull_request.head.repo.fork }}
     needs: [ lint, unit-test, component-test, performance-test,
              loads-tests, official-oss-image-integration-tests,
              official-oss-image-integration-tests,
              race-condition-test ]
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Set Package Build Number
-        run: echo "PACKAGE_BUILD_NO=${{ github.run_number }}" >> $GITHUB_ENV
-
-      - name: Call the Release Workflow
-        uses: ./.github/workflows/release-branch.yml
-        with:
-          packageVersion: "3.0.0"
-          packageBuildNo: "${{ env.PACKAGE_BUILD_NO }}"
-          uploadAzure: true
-          publishPackages: true
-          releaseBranch: "v3"
+    uses: ./.github/workflows/release-branch.yml
+    with:
+      packageVersion: "3.0.0"
+      packageBuildNo: "${{ github.run_number }}"
+      uploadAzure: true
+      publishPackages: true
+      releaseBranch: "v3"
