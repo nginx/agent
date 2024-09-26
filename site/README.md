@@ -21,10 +21,11 @@ Docs are written in Markdown. We build the docs using [Hugo](https://gohugo.io).
 To build the docs locally, run the desired `make` command from the docs directory:
 
 ```text
+make docs           -   builds the docs to the default output path `public`
+make watch          -   runs a local hugo server so you can view docs in your browser while you work
+make hugo-update    -   cleans the Hugo module cache and fetches the latest version of the theme module
+make drafts         -   runs the local hugo server and includes all docs marked with `draft: true`
 make clean          -   removes the local `public` directory, which is the default output path used by Hugo
-make docs           -   runs a local hugo server so you can view docs in your browser while you work
-make hugo-mod       -   cleans the Hugo module cache and fetches the latest version of the theme module
-make docs-drafts    -   runs the local hugo server and includes all docs marked with `draft: true`
 ```
 
 ## Linting
