@@ -8,48 +8,27 @@ resourceMetrics:
               aggregationTemporality: 2 # Cumulative
               isMonotonic: true
               dataPoints:
-                - asInt: 1
+                - asInt: 0
                   attributes:
                     - key: nginx.status_range
                       value:
-                        stringValue: 2xx
-                  timeUnixNano: "1000000"
-                - asInt: 1
+                        stringValue: "1xx"
+                - asInt: 4
                   attributes:
                     - key: nginx.status_range
                       value:
                         stringValue: "2xx"
-                - asInt: 1
+                - asInt: 2
                   attributes:
                     - key: nginx.status_range
                       value:
                         stringValue: "3xx"
-                - asInt: 1
-                  attributes:
-                    - key: nginx.status_range
-                      value:
-                        stringValue: "3xx"
-                - asInt: 1
+                - asInt: 6
                   attributes:
                     - key: nginx.status_range
                       value:
                         stringValue: "4xx"
-                - asInt: 1
-                  attributes:
-                    - key: nginx.status_range
-                      value:
-                        stringValue: "4xx"
-                - asInt: 1
-                  attributes:
-                    - key: nginx.status_range
-                      value:
-                        stringValue: "5xx"
-                - asInt: 1
-                  attributes:
-                    - key: nginx.status_range
-                      value:
-                        stringValue: "5xx"
-                - asInt: 1
+                - asInt: 3
                   attributes:
                     - key: nginx.status_range
                       value:

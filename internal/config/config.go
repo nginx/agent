@@ -218,6 +218,40 @@ func registerFlags() {
 		"How often the NGINX Agent will check for file changes.",
 	)
 
+	fs.Int(
+		ClientMaxMessageSizeKey,
+		DefMaxMessageSize,
+		"The value used, if not 0, for both max_message_send_size and max_message_receive_size",
+	)
+
+	fs.Int(
+		ClientMaxMessageReceiveSizeKey,
+		DefMaxMessageRecieveSize,
+		"Updates the client grpc setting MaxRecvMsgSize with the specific value in MB.",
+	)
+
+	fs.Int(
+		ClientMaxMessageSendSizeKey,
+		DefMaxMessageSendSize,
+		"Updates the client grpc setting MaxSendMsgSize with the specific value in MB.",
+	)
+
+	registerCollectorFlags(fs)
+
+	fs.SetNormalizeFunc(normalizeFunc)
+
+	fs.VisitAll(func(flag *flag.Flag) {
+		if err := viperInstance.BindPFlag(strings.ReplaceAll(flag.Name, "-", "_"), fs.Lookup(flag.Name)); err != nil {
+			return
+		}
+		err := viperInstance.BindEnv(flag.Name)
+		if err != nil {
+			slog.Warn("Error occurred binding env", "env", flag.Name, "error", err)
+		}
+	})
+}
+
+func registerCollectorFlags(fs *flag.FlagSet) {
 	fs.String(
 		CollectorConfigPathKey,
 		DefCollectorConfigPath,
@@ -239,35 +273,23 @@ func registerFlags() {
 		If the default path doesn't exist, log messages are output to stdout/stderr.`,
 	)
 
-	fs.Int(
-		ClientMaxMessageSizeKey,
-		DefMaxMessageSize,
-		"The value used, if not 0, for both max_message_send_size and max_message_receive_size",
+	fs.Uint32(
+		CollectorBatchProcessorSendBatchSizeKey,
+		DefCollectorBatchProcessorSendBatchSize,
+		`Number of metric data points after which a batch will be sent regardless of the timeout.`,
 	)
 
-	fs.Int(
-		ClientMaxMessageRecieveSizeKey,
-		DefMaxMessageRecieveSize,
-		"Updates the client grpc setting MaxRecvMsgSize with the specific value in MB.",
+	fs.Uint32(
+		CollectorBatchProcessorSendBatchMaxSizeKey,
+		DefCollectorBatchProcessorSendBatchMaxSize,
+		`The upper limit of the batch size.`,
 	)
 
-	fs.Int(
-		ClientMaxMessageSendSizeKey,
-		DefMaxMessageSendSize,
-		"Updates the client grpc setting MaxSendMsgSize with the specific value in MB.",
+	fs.Duration(
+		CollectorBatchProcessorTimeoutKey,
+		DefCollectorBatchProcessorTimeout,
+		`Time duration after which a batch will be sent regardless of size.`,
 	)
-
-	fs.SetNormalizeFunc(normalizeFunc)
-
-	fs.VisitAll(func(flag *flag.Flag) {
-		if err := viperInstance.BindPFlag(strings.ReplaceAll(flag.Name, "-", "_"), fs.Lookup(flag.Name)); err != nil {
-			return
-		}
-		err := viperInstance.BindEnv(flag.Name)
-		if err != nil {
-			slog.Warn("Error occurred binding env", "env", flag.Name, "error", err)
-		}
-	})
 }
 
 func seekFileInPaths(fileName string, directories ...string) (string, error) {
@@ -340,7 +362,7 @@ func resolveClient() *Client {
 		Time:                  viperInstance.GetDuration(ClientTimeKey),
 		PermitWithoutStream:   viperInstance.GetBool(ClientPermitWithoutStreamKey),
 		MaxMessageSize:        viperInstance.GetInt(ClientMaxMessageSizeKey),
-		MaxMessageRecieveSize: viperInstance.GetInt(ClientMaxMessageRecieveSizeKey),
+		MaxMessageRecieveSize: viperInstance.GetInt(ClientMaxMessageReceiveSizeKey),
 		MaxMessageSendSize:    viperInstance.GetInt(ClientMaxMessageSendSizeKey),
 	}
 }
@@ -354,20 +376,18 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 	}
 
 	var (
-		err         error
-		exporters   []Exporter
-		processors  []Processor
-		receivers   Receivers
-		healthCheck ServerConfig
-		log         Log
+		err        error
+		exporters  Exporters
+		receivers  Receivers
+		extensions Extensions
+		log        Log
 	)
 
 	err = errors.Join(
 		err,
 		resolveMapStructure(CollectorExportersKey, &exporters),
-		resolveMapStructure(CollectorProcessorsKey, &processors),
 		resolveMapStructure(CollectorReceiversKey, &receivers),
-		resolveMapStructure(CollectorHealthKey, &healthCheck),
+		resolveMapStructure(CollectorExtensionsKey, &extensions),
 		resolveMapStructure(CollectorLogKey, &log),
 	)
 	if err != nil {
@@ -385,9 +405,9 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 	col := &Collector{
 		ConfigPath: viperInstance.GetString(CollectorConfigPathKey),
 		Exporters:  exporters,
-		Processors: processors,
+		Processors: resolveProcessors(),
 		Receivers:  receivers,
-		Health:     &healthCheck,
+		Extensions: extensions,
 		Log:        &log,
 	}
 
@@ -402,6 +422,19 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 	}
 
 	return col, nil
+}
+
+func resolveProcessors() Processors {
+	processors := Processors{}
+
+	if viperInstance.IsSet(CollectorBatchProcessorKey) {
+		processors.Batch = &Batch{}
+		processors.Batch.SendBatchSize = viperInstance.GetUint32(CollectorBatchProcessorSendBatchSizeKey)
+		processors.Batch.SendBatchMaxSize = viperInstance.GetUint32(CollectorBatchProcessorSendBatchMaxSizeKey)
+		processors.Batch.Timeout = viperInstance.GetDuration(CollectorBatchProcessorTimeoutKey)
+	}
+
+	return processors
 }
 
 // generate self-signed certificate for OTEL receiver
