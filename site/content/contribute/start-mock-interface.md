@@ -23,7 +23,7 @@ You will also need a copy of the NGINX Agent repository, which you can clone usi
 git clone git@github.com:nginx/agent.git
 ```
 
-Read [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for more information
+Read [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) for more information.
 
 ## Start the gRPC mock control plane
 
@@ -31,8 +31,8 @@ Start the mock control plane by running the following command from the `agent` s
 
 ```shell
 go run sdk/examples/server.go
-
-# Command Output
+```
+```text
 INFO[0000] http listening at 54790 # mock control plane port
 INFO[0000] grpc listening at 54789 # grpc control plane port which NGINX Agent will report to
 ```
@@ -49,9 +49,7 @@ To launch the Swagger UI for the REST interface run the following command:
 make launch-swagger-ui
 ```
 
-## Apply new NGINX Agent configuration
-
-Start or restart NGINX Agent to apply the new configuration.
+## Start NGINX Agent
 
 Open another terminal window and start NGINX Agent. Issue the following command from the `agent` source code root directory.
 

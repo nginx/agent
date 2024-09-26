@@ -63,3 +63,9 @@ api:
   cert: "<TLS-CERTIFICATE>.crt"
   key: "<PRIVATE-KEY>.key"
 ```
+
+## Start NGINX Agent
+
+To apply the new configuration, NGINX Agent must be started or restarted.
+
+You may want to view the [Start mock control plane interface]({{< relref "/contribute/start-mock-interface.md" >}}) topic to test NGINX Agent, or view the [Configuration overview]({{< relref "/how-to/configuration-overview.md" >}}) for more options.
