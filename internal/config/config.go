@@ -237,6 +237,12 @@ func registerFlags() {
 		"Updates the client grpc setting MaxSendMsgSize with the specific value in MB.",
 	)
 
+	fs.StringSlice(
+		FeaturesKey,
+		GetDefaultFeatures(),
+		"A comma-separated list of features enabled for the agent.",
+	)
+
 	registerCollectorFlags(fs)
 
 	fs.SetNormalizeFunc(normalizeFunc)
@@ -291,24 +297,6 @@ func registerCollectorFlags(fs *flag.FlagSet) {
 		DefCollectorBatchProcessorTimeout,
 		`Time duration after which a batch will be sent regardless of size.`,
 	)
-
-	fs.StringSlice(
-		FeaturesKey,
-		GetDefaultFeatures(),
-		"A comma-separated list of features enabled for the agent.",
-	)
-
-	fs.SetNormalizeFunc(normalizeFunc)
-
-	fs.VisitAll(func(flag *flag.Flag) {
-		if err := viperInstance.BindPFlag(strings.ReplaceAll(flag.Name, "-", "_"), fs.Lookup(flag.Name)); err != nil {
-			return
-		}
-		err := viperInstance.BindEnv(flag.Name)
-		if err != nil {
-			slog.Warn("Error occurred binding env", "env", flag.Name, "error", err)
-		}
-	})
 }
 
 func seekFileInPaths(fileName string, directories ...string) (string, error) {
