@@ -343,9 +343,14 @@ jobs:
              official-plus-image-integration-tests,
              race-condition-test ]
     uses: ./.github/workflows/release-branch.yml
+    secrets: inherit
+    permissions:
+      id-token: write
+      contents: read
     with:
       packageVersion: "3.0.0"
       packageBuildNo: "${{ github.run_number }}"
       uploadAzure: true
       publishPackages: true
       releaseBranch: "v3"
+
