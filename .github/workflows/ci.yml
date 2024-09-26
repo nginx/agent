@@ -349,7 +349,7 @@ jobs:
       contents: read
     with:
       packageVersion: "3.0.0"
-      packageBuildNo: "${{ github.run_number }}"
+      packageBuildNo: "${{ github.run_number }}-${{ github.sha.substring(0,7) }}"
       uploadAzure: true
       publishPackages: true
       releaseBranch: "v3"
