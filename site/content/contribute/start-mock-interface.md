@@ -5,7 +5,7 @@ weight: 300
 docs: DOCS-000
 ---
 
-This document describes how to configure and run NGINX Agent using a mock interface ("control plane") for NGINX Agent to report to. 
+This document describes how to configure and run F5 NGINX Agent using a mock interface ("control plane") for NGINX Agent to report to. 
 
 The mock interface is useful when developing NGINX Agent, as it allows you to view what metrics are being reported.
 

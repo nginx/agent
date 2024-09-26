@@ -1,16 +1,13 @@
 ---
 title: "Technical specifications"
-draft: false
-weight: 200
 toc: true
-tags: [ "docs" ]
-categories: ["development"]
-doctypes: ["task"]
+weight: 200
+docs: DOCS-000
 ---
 
 ## Overview
 
-This document provides technical specifications for NGINX Agent. It includes information on supported distributions, deployment environments, NGINX versions, sizing recommendations, and logging.
+This document provides technical specifications for F5 NGINX Agent. It includes information on supported distributions, deployment environments, NGINX versions, sizing recommendations, and logging.
 
 ## Supported distributions
 

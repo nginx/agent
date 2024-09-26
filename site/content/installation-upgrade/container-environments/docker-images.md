@@ -1,21 +1,17 @@
 ---
 title: "Build container images"
-draft: false
-weight: 100
 toc: true
-tags: [ "docs" ]
-categories: ["configuration"]
-doctypes: ["task"]
+weight: 100
+docs: DOCS-000
 ---
 
 ## Overview
 
-NGINX Agent is a companion daemon for NGINX Open Source or NGINX Plus instances and must run in the same container to work. The NGINX Agent GitHub repository includes [Dockerfiles](https://github.com/nginx/agent/tree/main/scripts/docker) that you can use to build custom container images that bundle NGINX Agent with NGINX or NGINX Plus.
+F5 NGINX Agent is a companion daemon for NGINX Open Source or NGINX Plus instances and must run in the same container to work. The NGINX Agent GitHub repository includes [Dockerfiles](https://github.com/nginx/agent/tree/main/scripts/docker) that you can use to build custom container images that bundle NGINX Agent with NGINX or NGINX Plus.
 
 If you want to use NGINX Agent with NGINX Plus, you need to purchase an NGINX Plus license. Contact your F5 Sales representative for assistance.
 
 See the requirements and supported operating systems in the [NGINX Agent Technical Specifications]({{< relref "technical-specifications.md" >}}) topic.
-
 
 ## Set up your environment
 

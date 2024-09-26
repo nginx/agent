@@ -1,5 +1,5 @@
 ---
-title: Encrypt communication
+title: "Encrypt communication"
 toc: true
 weight: 500
 docs: DOCS-000
@@ -7,7 +7,7 @@ docs: DOCS-000
 
 ## Overview
 
-Follow the steps in this guide to encrypt communication between NGINX Agent and Instance Manager with TLS.
+Follow the steps in this guide to encrypt communication between F5 NGINX Agent and Instance Manager with TLS.
 
 ## Before You Begin
 

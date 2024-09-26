@@ -5,7 +5,7 @@ weight: 200
 docs: DOCS-000 
 ---
 
-This document describes how to enable the gRPC and REST interfaces for NGINX Agent.
+This document describes how to enable the gRPC and REST interfaces for F5 NGINX Agent.
 
 ## Before you begin
 

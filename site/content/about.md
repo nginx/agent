@@ -5,7 +5,7 @@ toc: true
 docs: DOCS-000
 ---
 
-This page provides a brief overview of what NGINX Agent is, and how it works.
+This page provides a brief overview of what F5 NGINX Agent is, and how it works.
 
 ## Overview
 

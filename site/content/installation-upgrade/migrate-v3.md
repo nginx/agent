@@ -4,6 +4,8 @@ weight: 500
 docs: DOCS-000
 ---
 
+This topic describes how to migrate from F5 NGINX Agent v2 to NGINX Agent v3.
+
 [//]: # "These are Markdown comments to guide you through document structure."
 [//]: # "Remove them as you go, as well as unnecessary sections for this use case."
 

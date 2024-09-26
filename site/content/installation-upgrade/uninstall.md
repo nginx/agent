@@ -7,8 +7,7 @@ docs: DOCS-000
 
 ## Overview
 
-Learn how to uninstall NGINX Agent from your system.
-
+Learn how to uninstall F5 NGINX Agent from your system.
 
 ## Before you begin
 

@@ -7,7 +7,7 @@ docs: DOCS-000
 
 ## Overview
 
-To monitor and manage all your NGINX Agent instances from a central management plane server, you first need to connect your instances and the server. You can configure the connection by making the required changes to the NGINX Agent configuration file.
+To monitor and manage all your F5 NGINX Agent instances from a central management plane server, you first need to connect your instances and the server. You can configure the connection by making the required changes to the NGINX Agent configuration file.
 
 There are three types of connections you can establish between the NGINX Agent and the management plane server:
 

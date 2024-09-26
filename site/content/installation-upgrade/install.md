@@ -5,7 +5,7 @@ weight: 100
 docs: DOCS-000
 ---
 
-This document describes the three main ways to install NGINX agent:
+This document describes the three main ways to install F5 NGINX agent:
 
 - Using the NGINX Open Source repository
 - Using the NGINX Plus repository

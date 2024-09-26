@@ -2,10 +2,10 @@
 title: "Configuration overview"
 toc: true
 weight: 100
-docs: "DOCS-1229"
+docs: DOCS-1229
 ---
 
-This page describes how to configure NGINX Agent using configuration files, CLI (Command line interface) flags, and environment variables.
+This page describes how to configure F5 NGINX Agent using configuration files, CLI (Command line interface) flags, and environment variables.
 
 {{<note>}}
 

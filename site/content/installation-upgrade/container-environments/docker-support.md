@@ -1,17 +1,13 @@
 ---
-title: Container support and troubleshooting
-categories:
-- installation
-draft: false
-tags:
-- docs
+title: "Container support and troubleshooting"
 toc: true
 weight: 200
+docs: DOCS-000
 ---
 
 ## Overview
 
-The NGINX Agent repository includes [Dockerfiles](https://github.com/nginx/agent/tree/main/scripts/docker) that can be used to [build custom container images]({{< relref "installation-upgrade/container-environments/docker-images.md" >}}). Images are created with an NGINX Open Source or NGINX Plus instance and are available for various operating systems.
+The F5 NGINX Agent repository includes [Dockerfiles](https://github.com/nginx/agent/tree/main/scripts/docker) that can be used to [build custom container images]({{< relref "installation-upgrade/container-environments/docker-images.md" >}}). Images are created with an NGINX Open Source or NGINX Plus instance and are available for various operating systems.
 
 See the [Technical Specifications]({{< relref "/technical-specifications.md#container-support" >}}) for a list of supported operationg systems.
 

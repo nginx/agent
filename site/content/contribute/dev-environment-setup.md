@@ -7,7 +7,7 @@ docs: DOCS-000
 
 ## Overview
 
-This page describes how to configure a development environment for NGINX Agent.
+This page describes how to configure a development environment for F5 NGINX Agent.
 
 While most Linux or FreeBSD operating systems can be used to contribute to the NGINX Agent project, the following steps have been designed for Ubuntu. 
 

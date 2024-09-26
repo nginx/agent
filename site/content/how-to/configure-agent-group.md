@@ -5,7 +5,7 @@ weight: 400
 docs: DOCS-000
 ---
 
-This page describes how the NGINX Agent process interacts with the NGINX user on a system, and how to add users to the NGINX Agent group.
+This page describes how the F5 NGINX Agent process interacts with the NGINX user on a system, and how to add users to the NGINX Agent group.
 
 ## Overview
 

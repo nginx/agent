@@ -4,6 +4,8 @@ weight: 300
 docs: DOCS-000
 ---
 
+This document describes how to export the metrics data from F5 NGINX Agent.
+
 [//]: # "These are Markdown comments to guide you through document structure."
 [//]: # "Remove them as you go, as well as unnecessary sections for this use case."
 

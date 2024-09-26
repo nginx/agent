@@ -7,7 +7,7 @@ docs: DOCS-000
 
 ## Overview
 
-Learn how to upgrade NGINX Agent.
+Learn how to upgrade F5 NGINX Agent.
 
 ## Upgrade NGINX Agent from version v2.31.0 or greater
 
