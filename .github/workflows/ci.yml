@@ -307,30 +307,30 @@ jobs:
 
       - name: Run Load Tests
         run: |
-          results=$(docker run --rm nginx-agent-load-test:1.0.0)
-          echo "$results" > benchmarks.json
-          echo "$results"
+          docker run --rm nginx-agent-load-test:1.0.0
+          ls
+          ls build
 
-      - name: Upload Load Test Results
-        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
-        with:
-          name: load-test-results
-          path: benchmarks.json
-          if-no-files-found: error
-
-      - name: Store benchmark result
-        uses: benchmark-action/github-action-benchmark@4de1bed97a47495fc4c5404952da0499e31f5c29 # v1.20.3
-        with:
-          name: Compare Benchmark Results
-          tool: 'customSmallerIsBetter'
-          output-file-path: benchmarks.json
-          benchmark-data-dir-path: ""
-          # Set auto-push to false since GitHub API token is not given
-          auto-push: false
-          alert-threshold: '125%'
-          gh-pages-branch: "benchmark-results"
-          fail-on-alert: true
-
-      - name: Push load test result
-        if:  ${{ success() && github.ref_name == 'v3'}}
-        run: git push 'https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/nginx/agent.git' benchmark-results:benchmark-results
+#      - name: Upload Load Test Results
+#        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
+#        with:
+#          name: load-test-results
+#          path: benchmarks.json
+#          if-no-files-found: error
+#
+#      - name: Store benchmark result
+#        uses: benchmark-action/github-action-benchmark@4de1bed97a47495fc4c5404952da0499e31f5c29 # v1.20.3
+#        with:
+#          name: Compare Benchmark Results
+#          tool: 'customSmallerIsBetter'
+#          output-file-path: benchmarks.json
+#          benchmark-data-dir-path: ""
+#          # Set auto-push to false since GitHub API token is not given
+#          auto-push: false
+#          alert-threshold: '125%'
+#          gh-pages-branch: "benchmark-results"
+#          fail-on-alert: true
+#
+#      - name: Push load test result
+#        if:  ${{ success() && github.ref_name == 'v3'}}
+#        run: git push 'https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/nginx/agent.git' benchmark-results:benchmark-results
