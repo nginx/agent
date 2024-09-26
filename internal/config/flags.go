@@ -34,6 +34,7 @@ var (
 	CollectorConfigPathKey                     = pre(CollectorRootKey) + "config_path"
 	CollectorExportersKey                      = pre(CollectorRootKey) + "exporters"
 	CollectorProcessorsKey                     = pre(CollectorRootKey) + "processors"
+	CollectorAttributeProcessorKey             = pre(CollectorProcessorsKey) + "attribute"
 	CollectorBatchProcessorKey                 = pre(CollectorProcessorsKey) + "batch"
 	CollectorBatchProcessorSendBatchSizeKey    = pre(CollectorBatchProcessorKey) + "send_batch_size"
 	CollectorBatchProcessorSendBatchMaxSizeKey = pre(CollectorBatchProcessorKey) + "send_batch_max_size"

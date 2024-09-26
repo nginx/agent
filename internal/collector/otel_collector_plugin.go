@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/backoff"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
@@ -192,6 +193,8 @@ func (oc *Collector) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
 	case bus.NginxConfigUpdateTopic:
 		oc.handleNginxConfigUpdate(ctx, msg)
+	case bus.ResourceUpdateTopic:
+		oc.handleResourceUpdate(ctx, msg)
 	default:
 		slog.DebugContext(ctx, "OTel collector plugin unknown topic", "topic", msg.Topic)
 	}
@@ -200,6 +203,7 @@ func (oc *Collector) Process(ctx context.Context, msg *bus.Message) {
 // Subscriptions returns the list of topics the plugin is subscribed to
 func (oc *Collector) Subscriptions() []string {
 	return []string{
+		bus.ResourceUpdateTopic,
 		bus.NginxConfigUpdateTopic,
 	}
 }
@@ -223,6 +227,17 @@ func (oc *Collector) handleNginxConfigUpdate(ctx context.Context, msg *bus.Messa
 
 		oc.restartCollector(ctx)
 	}
+}
+
+func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message) {
+	resourceUpdateContext, ok := msg.Data.(*v1.Resource)
+	if !ok {
+		slog.ErrorContext(ctx, "Unable to cast message payload to *v1.Resource", "payload", msg.Data)
+		return
+	}
+
+	oc.config.Collector.Processors.Attribute.ResourceId = resourceUpdateContext.ResourceId
+	oc.restartCollector(ctx)
 }
 
 func (oc *Collector) restartCollector(ctx context.Context) {

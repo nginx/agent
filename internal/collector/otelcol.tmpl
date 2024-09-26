@@ -76,6 +76,13 @@ receivers:
 {{- end }}
 
 processors:
+{{- if ne .Processors.Attribute.ResourceId "" }}
+  attributes:
+    actions:
+      - key: resource-id
+        action: insert
+        value: {{ .Processors.Attribute.ResourceId }}
+{{- end }}
 {{- if ne .Processors.Batch nil }}
   batch:
     send_batch_size: {{ .Processors.Batch.SendBatchSize }}
@@ -106,11 +113,11 @@ exporters:
   prometheus:
     endpoint: "{{ .Exporters.PrometheusExporter.Server.Host -}}:{{- .Exporters.PrometheusExporter.Server.Port }}"
 {{- end }}
-{{- if ne .Exporters.Debug nil }}
   debug:
     verbosity: detailed
     sampling_initial: 5
     sampling_thereafter: 200
+{{- if ne .Exporters.Debug nil }}
 {{- end }}
 
 {{- if ne .Extensions nil }}
@@ -159,6 +166,9 @@ service:
         {{- if ne .Processors.Batch nil }}
         - batch
         {{- end }}
+        {{- if ne .Processors.Attribute.ResourceId "" }}
+        - attributes
+        {{- end }}
       exporters:
         {{- range $index, $otlpExporter := .Exporters.OtlpExporters }}
         - otlp/{{$index}}
@@ -166,6 +176,6 @@ service:
         {{- if ne .Exporters.PrometheusExporter nil }}
         - prometheus
         {{- end }}
-        {{- if ne .Exporters.Debug nil }}
         - debug
+        {{- if ne .Exporters.Debug nil }}
         {{- end  }}
