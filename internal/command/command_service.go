@@ -239,8 +239,8 @@ func (cs *CommandService) CreateConnection(
 		return nil, err
 	}
 
-	slog.DebugContext(ctx, "Connection created", "response", response)
-	slog.DebugContext(ctx, "Agent connected")
+	slog.InfoContext(ctx, "Connection created", "response", response)
+	slog.InfoContext(ctx, "Agent connected")
 
 	cs.isConnected.Store(true)
 
