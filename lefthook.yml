@@ -1,15 +1,15 @@
-# # see https://github.com/evilmartians/lefthook for references
-# pre-push:
-#   follow: true
-#   piped: true # Stop if one of the steps fail
-#   commands:
-#     1_generate:
-#       run: make generate
-#     2_lint:
-#       run: make lint
-#     3_format:
-#       run: make format
-#     4_check_mod_change:
-#       run: go mod tidy
-#     5_check_local_changes:
-#       run: make no-local-changes
+# see https://github.com/evilmartians/lefthook for references
+pre-push:
+  follow: true
+  piped: true # Stop if one of the steps fail
+  commands:
+    1_generate:
+      run: make generate
+    2_lint:
+      run: make lint
+    3_format:
+      run: make format
+    4_check_mod_change:
+      run: go mod tidy
+    5_check_local_changes:
+      run: make no-local-changes
