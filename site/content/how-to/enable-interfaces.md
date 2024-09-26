@@ -64,6 +64,8 @@ api:
   key: "<PRIVATE-KEY>.key"
 ```
 
+---
+
 ## Start NGINX Agent
 
 To apply the new configuration, NGINX Agent must be started or restarted.
