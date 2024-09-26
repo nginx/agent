@@ -209,7 +209,7 @@
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
-                    "legendFormat": "{{nginx_conn_outcome}}",
+                    "legendFormat": "__auto",
                     "range": true,
                     "refId": "A",
                     "useBackend": false
@@ -308,7 +308,7 @@
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
-                    "legendFormat": "Requests",
+                    "legendFormat": "__auto",
                     "range": true,
                     "refId": "A",
                     "useBackend": false

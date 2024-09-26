@@ -75,17 +75,17 @@ receivers:
     collection_interval: 10s
 {{- end }}
 
-{{ if gt (len .Processors) 0 -}}
 processors:
-{{- range .Processors }}
-  {{ .Type }}:
-{{- end }}
+{{- if ne .Processors.Batch nil }}
+  batch:
+    send_batch_size: {{ .Processors.Batch.SendBatchSize }}
+    timeout: {{ .Processors.Batch.Timeout }}
+    send_batch_max_size: {{ .Processors.Batch.SendBatchMaxSize }}
 {{- end }}
 
 exporters:
-{{- range .Exporters }}
-{{- if eq .Type "otlp" }}
-  otlp:
+{{- range $index, $otlpExporter := .Exporters.OtlpExporters }}
+  otlp/{{$index}}:
     endpoint: "{{ .Server.Host -}}:{{- .Server.Port }}"
     compression: none
     timeout: 10s
@@ -101,25 +101,34 @@ exporters:
       {{ if gt (len .TLS.Cert) 0 -}}cert_file: "{{- .TLS.Cert -}}"{{- end }}
       {{ if gt (len .TLS.Key) 0 -}}key_file: "{{- .TLS.Key -}}"{{- end }}
       {{- end }}
-{{- else if eq .Type "prometheus" }}
+{{- end }}
+{{- if ne .Exporters.PrometheusExporter nil }}
   prometheus:
-    endpoint: "{{ .Server.Host -}}:{{- .Server.Port }}"
-    namespace: "nginx-agent"
-{{- else if eq .Type "debug" }}
+    endpoint: "{{ .Exporters.PrometheusExporter.Server.Host -}}:{{- .Exporters.PrometheusExporter.Server.Port }}"
+{{- end }}
+{{- if ne .Exporters.Debug nil }}
   debug:
     verbosity: detailed
     sampling_initial: 5
     sampling_thereafter: 200
 {{- end }}
-{{- end }}
 
+{{- if ne .Extensions nil }}
 extensions:
+  {{- if ne .Extensions.Health nil }}
   health_check:
-    {{- if .Health }}
-    endpoint: "{{ .Health.Host -}}:{{- .Health.Port }}"
-    {{- else }}
-    endpoint: "localhost:13133"
+    endpoint: "{{ .Extensions.Health.Server.Host -}}:{{- .Extensions.Health.Server.Port }}"
+    {{- if ne .Extensions.Health.Path "" }}
+    path: "{{ .Extensions.Health.Path -}}"
     {{- end }}
+    {{- if ne .Extensions.Health.TLS nil }}
+    tls: 
+       ca_cert: "{{ .Extensions.Health.Server.TLS.Ca -}}"
+       cert_file: "{{ .Extensions.Health.Server.TLS.Cert -}}"
+       key_file: "{{ .Extensions.Health.Server.TLS.Key -}}"
+    {{- end }}
+  {{- end }}
+{{- end }}
 
 service:
   {{- if .Log.Path}}
@@ -147,8 +156,16 @@ service:
         - nginxplus/{{- .InstanceID -}}
         {{- end }}
       processors:
+        {{- if ne .Processors.Batch nil }}
         - batch
-      exporters:
-        {{- range .Exporters }}
-        - {{ .Type }}
         {{- end }}
+      exporters:
+        {{- range $index, $otlpExporter := .Exporters.OtlpExporters }}
+        - otlp/{{$index}}
+        {{- end }}
+        {{- if ne .Exporters.PrometheusExporter nil }}
+        - prometheus
+        {{- end }}
+        {{- if ne .Exporters.Debug nil }}
+        - debug
+        {{- end  }}
