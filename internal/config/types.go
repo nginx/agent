@@ -74,12 +74,12 @@ type (
 	}
 
 	Collector struct {
-		ConfigPath string        `yaml:"-" mapstructure:"config_path"`
-		Log        *Log          `yaml:"-" mapstructure:"log"`
-		Exporters  Exporters     `yaml:"-" mapstructure:"exporters"`
-		Health     *ServerConfig `yaml:"-" mapstructure:"health"`
-		Processors Processors    `yaml:"-" mapstructure:"processors"`
-		Receivers  Receivers     `yaml:"-" mapstructure:"receivers"`
+		ConfigPath string     `yaml:"-" mapstructure:"config_path"`
+		Log        *Log       `yaml:"-" mapstructure:"log"`
+		Exporters  Exporters  `yaml:"-" mapstructure:"exporters"`
+		Extensions Extensions `yaml:"-" mapstructure:"extensions"`
+		Processors Processors `yaml:"-" mapstructure:"processors"`
+		Receivers  Receivers  `yaml:"-" mapstructure:"receivers"`
 	}
 
 	Exporters struct {
@@ -92,6 +92,16 @@ type (
 		Server *ServerConfig `yaml:"-" mapstructure:"server"`
 		Auth   *AuthConfig   `yaml:"-" mapstructure:"auth"`
 		TLS    *TLSConfig    `yaml:"-" mapstructure:"tls"`
+	}
+
+	Extensions struct {
+		Health Health `yaml:"-" mapstructure:"health"`
+	}
+
+	Health struct {
+		Server *ServerConfig `yaml:"-" mapstructure:"server"`
+		TLS    *TLSConfig    `yaml:"-" mapstructure:"tls"`
+		Path   string        `yaml:"-" mapstructure:"path"`
 	}
 
 	DebugExporter struct{}

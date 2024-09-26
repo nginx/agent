@@ -376,18 +376,18 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 	}
 
 	var (
-		err         error
-		exporters   Exporters
-		receivers   Receivers
-		healthCheck ServerConfig
-		log         Log
+		err        error
+		exporters  Exporters
+		receivers  Receivers
+		extensions Extensions
+		log        Log
 	)
 
 	err = errors.Join(
 		err,
 		resolveMapStructure(CollectorExportersKey, &exporters),
 		resolveMapStructure(CollectorReceiversKey, &receivers),
-		resolveMapStructure(CollectorHealthKey, &healthCheck),
+		resolveMapStructure(CollectorExtensionsKey, &extensions),
 		resolveMapStructure(CollectorLogKey, &log),
 	)
 	if err != nil {
@@ -407,7 +407,7 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 		Exporters:  exporters,
 		Processors: resolveProcessors(),
 		Receivers:  receivers,
-		Health:     &healthCheck,
+		Extensions: extensions,
 		Log:        &log,
 	}
 
