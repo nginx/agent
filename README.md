@@ -26,10 +26,17 @@ make install-tools
 ```
 
 ### Building NGINX Agent from Source Code
-Run the following commands to build and run NGINX Agent:
+Build NGINX Agent deb package:
 ```
-make build
-sudo make run
+OSARCH=<operating system archiecture> make local-deb-packge
+```
+Build NGINX Agent rpm package:
+```
+OSARCH=<operating system archiecture> make local-rpm-packge
+```
+Build NGINX Agent apk package:
+```
+OSARCH=<operating system archiecture> make local-apk-packge
 ```
 
 ## NGINX Agent Technical Specifications
