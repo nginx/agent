@@ -3,9 +3,11 @@ LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
 # https://askubuntu.com/questions/909277/avoiding-user-interaction-with-tzdata-when-installing-certbot-in-a-docker-contai
 ARG DEBIAN_FRONTEND=noninteractive
+ARG ENTRY_POINT
 
 WORKDIR /agent
 COPY . /agent
+COPY $ENTRY_POINT /agent/entrypoint.sh
 
 RUN --mount=type=secret,id=nginx-crt,dst=nginx-repo.crt \
     --mount=type=secret,id=nginx-key,dst=nginx-repo.key \
@@ -91,9 +93,8 @@ WORKDIR /agent/
 
 RUN make build
 RUN chmod -R +x ./build
+RUN chmod +x /agent/entrypoint.sh
 
 WORKDIR /agent/test/load
 
-RUN go test -v -timeout 30s ./...
-
-CMD ["sh", "-c", "cat benchmarks.json"]
+ENTRYPOINT ["/agent/entrypoint.sh"]

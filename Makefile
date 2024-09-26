@@ -236,7 +236,7 @@ local-rpm-package: ## Create local rpm package
 	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -pgo=default.pgo -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
 	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager rpm --target $(RPM_PACKAGE);
 
-generate-pgo-profile: build-mock-management-plane-grpc
+generate-pgo-profile: build-mock-management-plane-grpc load-test-image run-load-test-image
 	mv default.pgo profile.pprof
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) \
@@ -244,8 +244,8 @@ generate-pgo-profile: build-mock-management-plane-grpc
 	IMAGE_PATH=$(IMAGE_PATH) TAG=${IMAGE_TAG} CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} \
 	$(GOTEST) -v ./test/integration -cpuprofile integration_cpu.pprof
 	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 5m -bench=. -benchmem -run=^# ./internal/watcher/instance -cpuprofile perf_watcher_cpu.pprof
-	@$(GOTOOL) pprof -proto perf_watcher_cpu.pprof integration_cpu.pprof > default.pgo
-	rm perf_watcher_cpu.pprof integration_cpu.pprof integration.test profile.pprof
+	@$(GOTOOL) pprof -proto perf_watcher_cpu.pprof integration_cpu.pprof ./build/load_cpu.pprof cpu.out > default.pgo
+	rm perf_watcher_cpu.pprof integration_cpu.pprof integration.test profile.pprof cpu.out ./build/load_cpu.pprof
 
 # run under sudo locally
 load-test-image: ## Build performance load testing image
@@ -255,7 +255,8 @@ load-test-image: ## Build performance load testing image
 		--secret id=nginx-crt,src=$(CERTS_DIR)/nginx-repo.crt \
 		--secret id=nginx-key,src=$(CERTS_DIR)/nginx-repo.key \
 		--build-arg OSARCH=$(OSARCH) \
-		--build-arg GO_VERSION=$(GO_VERSION)
+		--build-arg GO_VERSION=$(GO_VERSION) \
+		--build-arg ENTRY_POINT=./scripts/testing/load/entrypoint.sh
 
 run-load-test-image: ## Run performance load testing image
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) run --rm -v $(PWD)/$(BUILD_DIR)/:/agent/$(BUILD_DIR)/ $(IMAGE_TAG)_load_test
