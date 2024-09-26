@@ -1,30 +1,17 @@
 # NGINX Agent Features
 
-- [Introduction](#NGINXAgentFeatures-Introduction)
-
-- [Feature Flags Overview](#NGINXAgentFeatures-FeatureFlagsOverview)
-
-- [Conflicting Combinations](#NGINXAgentFeatures-ConflictingCombinati)
-
-- [Configuration Sources](#NGINXAgentFeatures-ConfigurationSources)
-
-- [Cobra CLI Parameters](#NGINXAgentFeatures-CobraCLIParameters)
-
-- [Environment Variables](#NGINXAgentFeatures-EnvironmentVariables)
-
-- [Configuration File](#NGINXAgentFeatures-ConfigurationFile)
-
-- [Dynamic Updates via gRPC](#NGINXAgentFeatures-DynamicUpdatesviagRP)
-
-- [Internal State Management](#NGINXAgentFeatures-InternalStateManagem)
-
-- [Code Path Management](#NGINXAgentFeatures-CodePathManagement)
-
-- [Dynamic Feature Toggling](#NGINXAgentFeatures-DynamicFeatureToggli)
-
-- [Security Considerations](#NGINXAgentFeatures-SecurityConsideratio)
-
--  [Conclusion](#NGINXAgentFeatures-Conclusion)
+- [Introduction](#introduction)
+- [Feature Flags Overview](#feature-flags-overview)
+- [Conflicting Combinations](#conflicting-combinations)
+- [Cobra CLI Parameters](#cobra-cli-parameters)
+- [Environment Variables](#environment-variables)
+- [Configuration File](#configuration-file)
+- [Dynamic Updates via gRPC](#dynamic-updates-via-grpc)
+- [Internal State Management](#internal-state-management)
+- [Code Path Management](#code-path-management)
+- [Dynamic Feature Toggling](#dynamic-feature-toggling)
+- [Security Considerations](#security-considerations)
+- [Conclusion](#conclusion)
 
 ## Introduction
 
@@ -44,6 +31,7 @@ The ultimate goal of this design is to delegate fine-grained control of
 high-level feature sets to the configuration.
 
 The system manages the following feature flags:
+
 | Feature Flag  | Sub Category 1    | Description                                                                                                  | Default            |
 |---------------|-------------------|--------------------------------------------------------------------------------------------------------------|--------------------|
 | configuration |                   | Full read/write management of configurations toggled by DataPlaneConfig ConfigMode                            | On                 |
@@ -56,7 +44,6 @@ The system manages the following feature flags:
 |               | metrics-container  | Container-level metrics read from cgroup information                                                          | On (inherited)     |
 |               | metrics-instance   | All OSS and Plus Metrics, depending on what instance is present                                               | On (if instance present e.g. NGINX) |
 
-
 ## Conflicting Combinations
 
 **config-certificates** being read-only and reporting ssl under
@@ -66,8 +53,6 @@ instances may conflict.
 inherited specification). If fine-grained metrics are required, this
 needs to be absent from the list. If there is a feature flag enabled and
 conflicting
-
-## Configuration Sources
 
 ### Cobra CLI Parameters
 
@@ -118,7 +103,7 @@ features:
 
 ### Dynamic Updates via gRPC
 
-- Through the MPI 
+- Through the MPI
     send an updated AgentConfig message with a different list of
     features.
 
@@ -147,7 +132,7 @@ features:
     }
 ```
 
--   **Abstraction**: Encapsulate feature checks within helper functions
+- **Abstraction**: Encapsulate feature checks within helper functions
     or middleware to streamline conditional logic across the codebase.
 
 ## Dynamic Feature Toggling
@@ -217,3 +202,6 @@ running application.
 
 Proper security measures and validation ensure the integrity and
 reliability of the feature management process.
+
+
+[def]: #conflictingcombinations
