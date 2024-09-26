@@ -95,7 +95,7 @@ type (
 	}
 
 	Extensions struct {
-		Health Health `yaml:"-" mapstructure:"health"`
+		Health *Health `yaml:"-" mapstructure:"health"`
 	}
 
 	Health struct {
