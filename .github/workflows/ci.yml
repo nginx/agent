@@ -334,9 +334,7 @@ jobs:
         run: git push 'https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/nginx/agent.git' benchmark-results:benchmark-results
   publish-packages-vars:
     name: Set workflow variables
-    if: ${{ github.event_name == 'pull_request' &&
-      github.base_ref == 'v3' &&
-      github.event.pull_request.merged == true &&
+    if: ${{ github.ref_name == 'v3' &&
       !github.event.pull_request.head.repo.fork }}
     runs-on: ubuntu-22.04
     outputs:
@@ -348,10 +346,8 @@ jobs:
 
   publish-packages:
     name: Publish NGINX Agent v3 packages
-    if: ${{ github.event_name == 'pull_request' &&
-            github.base_ref == 'v3' &&
-            github.event.pull_request.merged == true &&
-            !github.event.pull_request.head.repo.fork }}
+    if: ${{ github.ref_name == 'v3' &&
+      !github.event.pull_request.head.repo.fork }}
     needs: [ lint, unit-test, performance-tests,
              load-tests, official-oss-image-integration-tests,
              official-plus-image-integration-tests,
