@@ -332,16 +332,30 @@ jobs:
       - name: Push load test result
         if:  ${{ success() && github.ref_name == 'v3'}}
         run: git push 'https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/nginx/agent.git' benchmark-results:benchmark-results
+  publish-packages-vars:
+    name: Set workflow variables
+    if: ${{ github.event_name == 'pull_request' &&
+      github.base_ref == 'v3' &&
+      github.event.pull_request.merged == true &&
+      !github.event.pull_request.head.repo.fork }}
+    runs-on: ubuntu-22.04
+    outputs:
+      package_build_num: ${{ steps.get_build_num.outputs.build_num }}
+    steps:
+      - name: Get the build number
+        id: get_build_num
+        run: echo "build_num=${{ github.run_number }}-$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+
   publish-packages:
     name: Publish NGINX Agent v3 packages
-    if: ${{ github.event_name =='pull_request' &&
+    if: ${{ github.event_name == 'pull_request' &&
             github.base_ref == 'v3' &&
             github.event.pull_request.merged == true &&
             !github.event.pull_request.head.repo.fork }}
     needs: [ lint, unit-test, performance-tests,
              load-tests, official-oss-image-integration-tests,
              official-plus-image-integration-tests,
-             race-condition-test ]
+             race-condition-test, publish-packages-vars ]
     uses: ./.github/workflows/release-branch.yml
     secrets: inherit
     permissions:
@@ -349,8 +363,7 @@ jobs:
       contents: read
     with:
       packageVersion: "3.0.0"
-      packageBuildNo: "${{ github.run_number }}-${{ github.sha.substring(0,7) }}"
+      packageBuildNo: "${{ needs.publish-packages-vars.outputs.package_build_num }}"
       uploadAzure: true
       publishPackages: true
       releaseBranch: "v3"
-
