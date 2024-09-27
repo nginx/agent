@@ -364,7 +364,7 @@ func getAgentConfig() *Config {
 				},
 			},
 			Extensions: Extensions{
-				Health: Health{
+				Health: &Health{
 					Server: &ServerConfig{
 						Host: "localhost",
 						Port: 1337,
