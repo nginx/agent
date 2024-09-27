@@ -519,9 +519,6 @@ func resolveCommand() *Command {
 			Port: viperInstance.GetInt(CommandServerPortKey),
 			Type: serverType,
 		},
-		Auth: &AuthConfig{
-			Token: viperInstance.GetString(CommandAuthTokenKey),
-		},
 		TLS: &TLSConfig{
 			Cert:       viperInstance.GetString(CommandTLSCertKey),
 			Key:        viperInstance.GetString(CommandTLSKeyKey),
@@ -531,7 +528,31 @@ func resolveCommand() *Command {
 		},
 	}
 
+	if viperInstance.IsSet(CommandAuthTokenKey) {
+		command.Auth = &AuthConfig{
+			Token: viperInstance.GetString(CommandAuthTokenKey),
+		}
+	}
+
+	if areTLSSettingsSet() {
+		command.TLS = &TLSConfig{
+			Cert:       viperInstance.GetString(CommandTLSCertKey),
+			Key:        viperInstance.GetString(CommandTLSKeyKey),
+			Ca:         viperInstance.GetString(CommandTLSCaKey),
+			SkipVerify: viperInstance.GetBool(CommandTLSSkipVerifyKey),
+			ServerName: viperInstance.GetString(CommandTLSServerNameKey),
+		}
+	}
+
 	return command
+}
+
+func areTLSSettingsSet() bool {
+	return viperInstance.IsSet(CommandTLSCertKey) ||
+		viperInstance.IsSet(CommandTLSKeyKey) ||
+		viperInstance.IsSet(CommandTLSCaKey) ||
+		viperInstance.IsSet(CommandTLSSkipVerifyKey) ||
+		viperInstance.IsSet(CommandTLSServerNameKey)
 }
 
 func resolveCommon() *CommonSettings {
