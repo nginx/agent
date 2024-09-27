@@ -519,13 +519,6 @@ func resolveCommand() *Command {
 			Port: viperInstance.GetInt(CommandServerPortKey),
 			Type: serverType,
 		},
-		TLS: &TLSConfig{
-			Cert:       viperInstance.GetString(CommandTLSCertKey),
-			Key:        viperInstance.GetString(CommandTLSKeyKey),
-			Ca:         viperInstance.GetString(CommandTLSCaKey),
-			SkipVerify: viperInstance.GetBool(CommandTLSSkipVerifyKey),
-			ServerName: viperInstance.GetString(CommandTLSServerNameKey),
-		},
 	}
 
 	if viperInstance.IsSet(CommandAuthTokenKey) {
