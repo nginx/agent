@@ -335,7 +335,7 @@ jobs:
   publish-packages-vars:
     name: Set workflow variables
     if: ${{ github.ref_name == 'v3' &&
-      !github.event.repository.fork }}
+      !github.event.pull_request.head.repo.fork }}
     runs-on: ubuntu-22.04
     outputs:
       package_build_num: ${{ steps.get_build_num.outputs.build_num }}
@@ -347,7 +347,7 @@ jobs:
   publish-packages:
     name: Publish NGINX Agent v3 packages
     if: ${{ github.ref_name == 'v3' &&
-      !github.event.repository.fork }}
+      !github.event.pull_request.head.repo.fork }}
     needs: [ lint, unit-test, performance-tests,
              load-tests, official-oss-image-integration-tests,
              official-plus-image-integration-tests,
