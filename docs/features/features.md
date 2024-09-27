@@ -32,27 +32,31 @@ high-level feature sets to the configuration.
 
 The system manages the following feature flags:
 
-| Feature Flag  | Sub Category 1    | Description                                                                                                  | Default            |
-|---------------|-------------------|--------------------------------------------------------------------------------------------------------------|--------------------|
-| configuration |                   | Full read/write management of configurations toggled by DataPlaneConfig ConfigMode                            | On                 |
-| certificates  |                   | Inclusion of public keys and other certificates in the configurations toggled by DataPlaneConfig CertMode      | Off                |
-| connection    |                   | Sends an initial connection message reporting instance information on presence of Command ServerConfig Host and Port | On            |
-| file-watcher  |                   | Monitoring of file changes in allowed directories; may trigger DP => MP sync of files configured by Watchers   | On                 |
-| agent-api     |                   | REST API for NGINX Agent                                                                                       | Off                |
-| metrics       |                   | Full metrics reporting                                                                                        | On                 |
-|               | metrics-host       | All host-level metrics                                                                                        | On (inherited)     |
-|               | metrics-container  | Container-level metrics read from cgroup information                                                          | On (inherited)     |
-|               | metrics-instance   | All OSS and Plus Metrics, depending on what instance is present                                               | On (if instance present e.g. NGINX) |
+| Feature Flag  | Sub Category 1     | Description                                                                                                                                      | Default                                       |
+|---------------|--------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------|
+| configuration |                    | Full read/write management of configurations toggled by DataPlaneConfig ConfigMode                                                               | On                                            |
+| certificates  |                    | Inclusion of public keys and other certificates in the configurations toggled by DataPlaneConfig CertMode                                        | Off                                           |
+| connection    |                    | Sends an initial connection message reporting instance information on presence of Command ServerConfig Host and Port                             | On                                            |
+| file-watcher  |                    | Monitoring of file changes in allowed directories; may trigger DataPlane (DP) => ManagementPlane synchronisation of files configured by Watchers | On                                            |
+| agent-api     |                    | REST Application Programming Interface (API) for NGINX Agent                                                                                     | Off                                           |
+| metrics       |                    | Full metrics reporting                                                                                                                           | On                                            |
+|               | metrics-host       | All host-level metrics                                                                                                                           | On (if running in a host, virtualised or not) |
+|               | metrics-container  | Container-level metrics read from cgroup information                                                                                             | On (if running in a container)                |
+|               | metrics-instance   | All OSS and Plus Metrics, depending on what instance is present                                                                                  | On (if instance present e.g. NGINX)           |
 
 ## Conflicting Combinations
+
+If there is a feature flag enabled and conflicting features are
+enabled, the more specific feature flag takes precedence. If the
+feature flag is set e.g. metrics-container in a non-containerised
+execution environment, then no useful metrics will be reported.
 
 **config-certificates** being read-only and reporting ssl under
 instances may conflict.
 
 **metrics** will include every specified metrics category (hence the
 inherited specification). If fine-grained metrics are required, this
-needs to be absent from the list. If there is a feature flag enabled and
-conflicting
+needs to be absent from the list. 
 
 ### Cobra CLI Parameters
 
@@ -111,7 +115,7 @@ features:
 
 - **Singleton Pattern**: Implement a singleton FeaturePlugin to
     maintain the state of all feature flags. On configuration change,
-    use the message bus to notify throughout the application, any
+    use the message bus to notify throughout the application of any
     changes.
 
 - **Thread-Safety**: Use synchronisation mechanisms to ensure safe
