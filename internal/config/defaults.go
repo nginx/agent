@@ -7,6 +7,8 @@ package config
 import (
 	"math"
 	"time"
+
+	pkg "github.com/nginx/agent/v3/pkg/config"
 )
 
 const (
@@ -54,3 +56,12 @@ const (
 	DefCollectorBatchProcessorSendBatchMaxSize = 0
 	DefCollectorBatchProcessorTimeout          = 200 * time.Millisecond
 )
+
+func GetDefaultFeatures() []string {
+	return []string{
+		pkg.FeatureConfiguration,
+		pkg.FeatureConnection,
+		pkg.FeatureMetrics,
+		pkg.FeatureFileWatcher,
+	}
+}

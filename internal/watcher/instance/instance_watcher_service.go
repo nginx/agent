@@ -299,7 +299,7 @@ func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *mpi.Instan
 					Metrics:           &mpi.MetricsServer{},
 					File:              &mpi.FileServer{},
 					Labels:            []*structpb.Struct{},
-					Features:          []string{},
+					Features:          iw.agentConfig.Features,
 					MessageBufferSize: "",
 				},
 			},
