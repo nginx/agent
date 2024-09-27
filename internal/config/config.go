@@ -160,47 +160,6 @@ func registerFlags() {
 		"Defines the paths that you want to grant NGINX Agent read/write access to."+
 			" This key is formatted as a string and follows Unix PATH format")
 
-	fs.String(
-		CommandServerHostKey,
-		DefCommandServerHostKey,
-		"The target hostname of the command server endpoint for command and control.",
-	)
-	fs.Int32(
-		CommandServerPortKey,
-		DefCommandServerPortKey,
-		"The target port of the command server endpoint for command and control.",
-	)
-	fs.String(
-		CommandServerTypeKey,
-		DefCommandServerTypeKey,
-		"The target protocol (gRPC or HTTP) the command server endpoint for command and control.",
-	)
-	fs.String(
-		CommandAuthTokenKey,
-		DefCommandAuthTokenKey,
-		"The token used in the authentication handshake with the command server endpoint for command and control.",
-	)
-	fs.String(
-		CommandTLSCertKey,
-		DefCommandTLSCertKey,
-		"The path to the certificate file to use for TLS communication with the command server.",
-	)
-	fs.String(
-		CommandTLSKeyKey,
-		DefCommandTLSKeyKey,
-		"The path to the certificate key file to use for TLS communication with the command server.",
-	)
-	fs.String(
-		CommandTLSCaKey,
-		DefCommandTLSCaKey,
-		"The path to CA certificate file to use for TLS communication with the command server.",
-	)
-	fs.Bool(
-		CommandTLSSkipVerifyKey,
-		DefCommandTLSSkipVerifyKey,
-		"Testing only. SkipVerify controls client verification of a server's certificate chain and host name.",
-	)
-
 	fs.Duration(
 		InstanceWatcherMonitoringFrequencyKey,
 		DefInstanceWatcherMonitoringFrequency,
@@ -243,6 +202,7 @@ func registerFlags() {
 		"A comma-separated list of features enabled for the agent.",
 	)
 
+	registerCommandFlags(fs)
 	registerCollectorFlags(fs)
 
 	fs.SetNormalizeFunc(normalizeFunc)
@@ -256,6 +216,54 @@ func registerFlags() {
 			slog.Warn("Error occurred binding env", "env", flag.Name, "error", err)
 		}
 	})
+}
+
+func registerCommandFlags(fs *flag.FlagSet) {
+	fs.String(
+		CommandServerHostKey,
+		DefCommandServerHostKey,
+		"The target hostname of the command server endpoint for command and control.",
+	)
+	fs.Int32(
+		CommandServerPortKey,
+		DefCommandServerPortKey,
+		"The target port of the command server endpoint for command and control.",
+	)
+	fs.String(
+		CommandServerTypeKey,
+		DefCommandServerTypeKey,
+		"The target protocol (gRPC or HTTP) the command server endpoint for command and control.",
+	)
+	fs.String(
+		CommandAuthTokenKey,
+		DefCommandAuthTokenKey,
+		"The token used in the authentication handshake with the command server endpoint for command and control.",
+	)
+	fs.String(
+		CommandTLSCertKey,
+		DefCommandTLSCertKey,
+		"The path to the certificate file to use for TLS communication with the command server.",
+	)
+	fs.String(
+		CommandTLSKeyKey,
+		DefCommandTLSKeyKey,
+		"The path to the certificate key file to use for TLS communication with the command server.",
+	)
+	fs.String(
+		CommandTLSCaKey,
+		DefCommandTLSCaKey,
+		"The path to CA certificate file to use for TLS communication with the command server.",
+	)
+	fs.Bool(
+		CommandTLSSkipVerifyKey,
+		DefCommandTLSSkipVerifyKey,
+		"Testing only. SkipVerify controls client verification of a server's certificate chain and host name.",
+	)
+	fs.String(
+		CommandTLSServerNameKey,
+		DefCommandTLServerNameKey,
+		"Specifies the name of the server sent in the TLS configuration.",
+	)
 }
 
 func registerCollectorFlags(fs *flag.FlagSet) {
@@ -496,42 +504,31 @@ func processOtlpReceivers(tlsConfig *OtlpTLSConfig) error {
 }
 
 func resolveCommand() *Command {
-	if !viperInstance.IsSet(CommandRootKey) {
-		return nil
+	serverType, ok := parseServerType(viperInstance.GetString(CommandServerTypeKey))
+	if !ok {
+		serverType = Grpc
+		slog.Error(
+			"Invalid value for command server type, defaulting to gRPC server type",
+			"server_type", viperInstance.GetString(CommandServerTypeKey),
+		)
 	}
-	command := &Command{}
 
-	if viperInstance.IsSet(CommandServerKey) {
-		serverType, ok := parseServerType(viperInstance.GetString(CommandServerTypeKey))
-		if !ok {
-			serverType = Grpc
-			slog.Error(
-				"Invalid value for command server type, defaulting to gRPC server type",
-				"server_type", viperInstance.GetString(CommandServerTypeKey),
-			)
-		}
-
-		command.Server = &ServerConfig{
+	command := &Command{
+		Server: &ServerConfig{
 			Host: viperInstance.GetString(CommandServerHostKey),
 			Port: viperInstance.GetInt(CommandServerPortKey),
 			Type: serverType,
-		}
-	}
-
-	if viperInstance.IsSet(CommandAuthKey) {
-		command.Auth = &AuthConfig{
+		},
+		Auth: &AuthConfig{
 			Token: viperInstance.GetString(CommandAuthTokenKey),
-		}
-	}
-
-	if viperInstance.IsSet(CommandTLSKey) {
-		command.TLS = &TLSConfig{
+		},
+		TLS: &TLSConfig{
 			Cert:       viperInstance.GetString(CommandTLSCertKey),
 			Key:        viperInstance.GetString(CommandTLSKeyKey),
 			Ca:         viperInstance.GetString(CommandTLSCaKey),
 			SkipVerify: viperInstance.GetBool(CommandTLSSkipVerifyKey),
 			ServerName: viperInstance.GetString(CommandTLSServerNameKey),
-		}
+		},
 	}
 
 	return command

@@ -25,14 +25,15 @@ const (
 	DefCollectorTLSCAPath   = "/var/lib/nginx-agent/ca.pem"
 	DefCollectorTLSSANNames = "127.0.0.1,::1,localhost"
 
-	DefCommandServerHostKey    = ""
-	DefCommandServerPortKey    = 0
+	DefCommandServerHostKey    = "127.0.0.1"
+	DefCommandServerPortKey    = 8080
 	DefCommandServerTypeKey    = "grpc"
 	DefCommandAuthTokenKey     = ""
 	DefCommandTLSCertKey       = ""
 	DefCommandTLSKeyKey        = ""
 	DefCommandTLSCaKey         = ""
 	DefCommandTLSSkipVerifyKey = false
+	DefCommandTLServerNameKey  = ""
 
 	DefBackoffInitialInterval = 50 * time.Millisecond
 	// the value is 0 <= and < 1

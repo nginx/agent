@@ -244,7 +244,7 @@ func TestMissingServerTLS(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 
 	expected := getAgentConfig().Command
-	expected.TLS = nil
+	expected.TLS = &TLSConfig{}
 
 	viperInstance.Set(CommandServerHostKey, expected.Server.Host)
 	viperInstance.Set(CommandServerPortKey, expected.Server.Port)
@@ -259,7 +259,7 @@ func TestMissingServerTLS(t *testing.T) {
 	result := resolveCommand()
 	assert.Equal(t, expected.Server, result.Server)
 	assert.Equal(t, expected.Auth, result.Auth)
-	assert.Nil(t, result.TLS)
+	assert.Equal(t, expected.TLS, result.TLS)
 }
 
 func TestClient(t *testing.T) {

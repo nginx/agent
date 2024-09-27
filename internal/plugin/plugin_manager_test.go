@@ -9,6 +9,8 @@ import (
 	"context"
 	"testing"
 
+	pkgConfig "github.com/nginx/agent/v3/pkg/config"
+
 	"github.com/nginx/agent/v3/internal/collector"
 	"github.com/nginx/agent/v3/internal/command"
 	"github.com/nginx/agent/v3/internal/file"
@@ -20,7 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLoadPLugins(t *testing.T) {
+func TestLoadPlugins(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
@@ -45,6 +47,9 @@ func TestLoadPLugins(t *testing.T) {
 						Type: config.Grpc,
 					},
 				},
+				Features: []string{
+					pkgConfig.FeatureConfiguration,
+				},
 			},
 			expected: []bus.Plugin{
 				&resource.Resource{},
@@ -53,7 +58,23 @@ func TestLoadPLugins(t *testing.T) {
 				&watcher.Watcher{},
 			},
 		}, {
-			name: "Test 3: Load metrics collector plugin",
+			name: "Test 3: Do not load command plugins when configuration feature disabled",
+			input: &config.Config{
+				Command: &config.Command{
+					Server: &config.ServerConfig{
+						Host: "127.0.0.1",
+						Port: 443,
+						Type: config.Grpc,
+					},
+				},
+				Features: []string{},
+			},
+			expected: []bus.Plugin{
+				&resource.Resource{},
+				&watcher.Watcher{},
+			},
+		}, {
+			name: "Test 4: Load metrics collector plugin",
 			input: &config.Config{
 				Collector: &config.Collector{},
 			},

@@ -19,6 +19,7 @@ import (
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/logger"
+	pkgConfig "github.com/nginx/agent/v3/pkg/config"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
@@ -78,7 +79,11 @@ func (w *Watcher) Init(ctx context.Context, messagePipe bus.MessagePipeInterface
 
 	go w.instanceWatcherService.Watch(watcherContext, w.instanceUpdatesChannel, w.nginxConfigContextChannel)
 	go w.healthWatcherService.Watch(watcherContext, w.instanceHealthChannel)
-	go w.fileWatcherService.Watch(watcherContext, w.fileUpdatesChannel)
+
+	if w.agentConfig.IsFeatureEnabled(pkgConfig.FeatureFileWatcher) {
+		go w.fileWatcherService.Watch(watcherContext, w.fileUpdatesChannel)
+	}
+
 	go w.monitorWatchers(watcherContext)
 
 	return nil
