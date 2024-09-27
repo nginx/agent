@@ -33,10 +33,10 @@ Example:
 
 ```yaml
 receivers:
-  nginx:
+  nginx_receivers:
     endpoint: "http://localhost:80/status"
     collection_interval: 10s
     access_logs:
       - log_format: "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\"\"$upstream_cache_status\""
-        file_path: "/var/log/nginx/access-custom.conf"
+        file_path: "/var/log/nginx/access-custom.log"
 ```

@@ -25,7 +25,7 @@ Example:
 
 ```yaml
 receivers:
-  nginxplus:
+  nginx_plus_receivers:
     endpoint: "http://localhost:80/api"
     collection_interval: 10s
 ```
