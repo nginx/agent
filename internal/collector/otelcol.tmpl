@@ -76,12 +76,14 @@ receivers:
 {{- end }}
 
 processors:
+{{- if ne .Processors.Attribute nil }}
 {{- if ne .Processors.Attribute.ResourceId "" }}
   attributes:
     actions:
       - key: resource-id
         action: insert
         value: {{ .Processors.Attribute.ResourceId }}
+{{- end }}
 {{- end }}
 {{- if ne .Processors.Batch nil }}
   batch:
@@ -166,8 +168,10 @@ service:
         {{- if ne .Processors.Batch nil }}
         - batch
         {{- end }}
+        {{- if ne .Processors.Attribute nil }}
         {{- if ne .Processors.Attribute.ResourceId "" }}
         - attributes
+        {{- end }}
         {{- end }}
       exporters:
         {{- range $index, $otlpExporter := .Exporters.OtlpExporters }}
