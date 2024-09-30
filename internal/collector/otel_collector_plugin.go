@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/backoff"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
@@ -238,8 +238,8 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 
 	if oc.config.Collector.Processors.Attribute != nil {
 		// update resource id in config, write new + reload
-		if resourceUpdateContext.ResourceId != "" {
-			oc.config.Collector.Processors.Attribute.ResourceId = resourceUpdateContext.ResourceId
+		if resourceUpdateContext.GetResourceId() != "" {
+			oc.config.Collector.Processors.Attribute.ResourceID = resourceUpdateContext.GetResourceId()
 			slog.InfoContext(ctx, "Reloading OTel collector config")
 			err := writeCollectorConfig(oc.config.Collector)
 			if err != nil {
@@ -249,7 +249,6 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 			oc.restartCollector(ctx)
 		}
 	}
-
 }
 
 func (oc *Collector) restartCollector(ctx context.Context) {

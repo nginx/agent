@@ -118,8 +118,7 @@ type (
 	}
 
 	Attribute struct {
-		ResourceId string
-		InstanceId string
+		ResourceID string
 	}
 
 	Batch struct {
