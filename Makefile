@@ -244,8 +244,8 @@ generate-pgo-profile: build-mock-management-plane-grpc
 	IMAGE_PATH=$(IMAGE_PATH) TAG=${IMAGE_TAG} CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} \
 	$(GOTEST) -v ./test/integration -cpuprofile integration_cpu.pprof
 	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 5m -bench=. -benchmem -run=^# ./internal/watcher/instance -cpuprofile perf_watcher_cpu.pprof
-	@$(GOTOOL) pprof -proto perf_watcher_cpu.pprof integration_cpu.pprof cpu.out > default.pgo
-	rm perf_watcher_cpu.pprof integration_cpu.pprof integration.test profile.pprof cpu.out
+	@$(GOTOOL) pprof -proto perf_watcher_cpu.pprof integration_cpu.pprof > default.pgo
+	rm perf_watcher_cpu.pprof integration_cpu.pprof integration.test profile.pprof
 
 # run under sudo locally
 load-test-image: ## Build performance load testing image
