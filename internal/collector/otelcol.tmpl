@@ -178,6 +178,6 @@ service:
         {{- if ne .Exporters.PrometheusExporter nil }}
         - prometheus
         {{- end }}
-        - debug
         {{- if ne .Exporters.Debug nil }}
+        - debug
         {{- end  }}
