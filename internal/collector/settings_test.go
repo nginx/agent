@@ -53,21 +53,16 @@ func TestTemplateWrite(t *testing.T) {
 	actualConfPath := filepath.Join("/tmp/", "nginx-agent-otelcol-test.yaml")
 	cfg.Collector.ConfigPath = actualConfPath
 
-	cfg.Collector.Exporters = append(cfg.Collector.Exporters, config.Exporter{
-		Type: "prometheus",
+	cfg.Collector.Exporters.PrometheusExporter = &config.PrometheusExporter{
 		Server: &config.ServerConfig{
 			Host: "localhost",
 			Port: 9876,
 			Type: 0,
 		},
-		Auth: nil, // Auth and TLS not supported yet.
-		TLS:  nil,
-	}, config.Exporter{
-		Type:   "debug",
-		Server: nil, // not relevant to the debug exporter
-		Auth:   nil,
-		TLS:    nil,
-	})
+		TLS: nil,
+	}
+
+	cfg.Collector.Exporters.Debug = &config.DebugExporter{}
 
 	cfg.Collector.Receivers.HostMetrics = config.HostMetrics{
 		CollectionInterval: time.Minute,
@@ -88,6 +83,20 @@ func TestTemplateWrite(t *testing.T) {
 				LogFormat: accessLogFormat,
 				FilePath:  "/var/log/nginx/access-custom.conf",
 			},
+		},
+	})
+	// Clear default config and test collector with TLS enabled
+	cfg.Collector.Receivers.OtlpReceivers = []config.OtlpReceiver{}
+	cfg.Collector.Receivers.OtlpReceivers = append(cfg.Collector.Receivers.OtlpReceivers, config.OtlpReceiver{
+		Server: &config.ServerConfig{
+			Host: "localhost",
+			Port: 4317,
+			Type: 0,
+		},
+		OtlpTLSConfig: &config.OtlpTLSConfig{
+			Cert: "/tmp/cert.pem",
+			Key:  "/tmp/key.pem",
+			Ca:   "/tmp/ca.pem",
 		},
 	})
 

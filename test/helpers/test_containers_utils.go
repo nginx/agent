@@ -56,7 +56,7 @@ func StartContainer(
 				"BASE_IMAGE":                     ToPtr(baseImage),
 				"OS_RELEASE":                     ToPtr(osRelease),
 				"OS_VERSION":                     ToPtr(osVersion),
-				"ENTRY_POINT":                    ToPtr("./scripts/docker/entrypoint.sh"),
+				"ENTRY_POINT":                    ToPtr("./test/docker/entrypoint.sh"),
 				"CONTAINER_NGINX_IMAGE_REGISTRY": ToPtr(containerRegistry),
 				"IMAGE_PATH":                     ToPtr(imagePath),
 				"TAG":                            ToPtr(tag),
@@ -81,6 +81,65 @@ func StartContainer(
 				ContainerFilePath: "/etc/nginx-agent/nginx-agent.conf",
 				FileMode:          configFilePermissions,
 			},
+			{
+				HostFilePath:      parameters.NginxConfigPath,
+				ContainerFilePath: "/etc/nginx/nginx.conf",
+				FileMode:          configFilePermissions,
+			},
+		},
+	}
+
+	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          true,
+	})
+
+	require.NoError(tb, err)
+
+	return container
+}
+
+func StartAgentlessContainer(
+	ctx context.Context,
+	tb testing.TB,
+	parameters *Parameters,
+) testcontainers.Container {
+	tb.Helper()
+
+	packageName := Env(tb, "PACKAGE_NAME")
+	packageRepo := Env(tb, "PACKAGES_REPO")
+	baseImage := Env(tb, "BASE_IMAGE")
+	osRelease := Env(tb, "OS_RELEASE")
+	osVersion := Env(tb, "OS_VERSION")
+	dockerfilePath := Env(tb, "DOCKERFILE_PATH")
+	containerRegistry := Env(tb, "CONTAINER_NGINX_IMAGE_REGISTRY")
+	tag := Env(tb, "TAG")
+	imagePath := Env(tb, "IMAGE_PATH")
+
+	req := testcontainers.ContainerRequest{
+		FromDockerfile: testcontainers.FromDockerfile{
+			Context:       "../../",
+			Dockerfile:    dockerfilePath,
+			KeepImage:     false,
+			PrintBuildLog: true,
+			BuildArgs: map[string]*string{
+				"PACKAGE_NAME":                   ToPtr(packageName),
+				"PACKAGES_REPO":                  ToPtr(packageRepo),
+				"BASE_IMAGE":                     ToPtr(baseImage),
+				"OS_RELEASE":                     ToPtr(osRelease),
+				"OS_VERSION":                     ToPtr(osVersion),
+				"ENTRY_POINT":                    ToPtr("./test/docker/agentless-entrypoint.sh"),
+				"CONTAINER_NGINX_IMAGE_REGISTRY": ToPtr(containerRegistry),
+				"IMAGE_PATH":                     ToPtr(imagePath),
+				"TAG":                            ToPtr(tag),
+			},
+			BuildOptionsModifier: func(buildOptions *types.ImageBuildOptions) {
+				buildOptions.Target = "install-nginx"
+			},
+		},
+		ExposedPorts: []string{"9091/tcp"},
+		WaitingFor:   wait.ForLog(parameters.LogMessage),
+		Files: []testcontainers.ContainerFile{
 			{
 				HostFilePath:      parameters.NginxConfigPath,
 				ContainerFilePath: "/etc/nginx/nginx.conf",
@@ -165,17 +224,18 @@ func LogAndTerminateContainers(
 	err = agentContainer.Terminate(ctx)
 	require.NoError(tb, err)
 
-	tb.Log("Logging mock management container logs")
+	if mockManagementPlaneContainer != nil {
+		tb.Log("Logging mock management container logs")
+		logReader, err = mockManagementPlaneContainer.Logs(ctx)
+		require.NoError(tb, err)
 
-	logReader, err = mockManagementPlaneContainer.Logs(ctx)
-	require.NoError(tb, err)
+		buf, err = io.ReadAll(logReader)
+		require.NoError(tb, err)
+		logs = string(buf)
 
-	buf, err = io.ReadAll(logReader)
-	require.NoError(tb, err)
-	logs = string(buf)
+		tb.Log(logs)
 
-	tb.Log(logs)
-
-	err = mockManagementPlaneContainer.Terminate(ctx)
-	require.NoError(tb, err)
+		err = mockManagementPlaneContainer.Terminate(ctx)
+		require.NoError(tb, err)
+	}
 }

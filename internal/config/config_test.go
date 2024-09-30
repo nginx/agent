@@ -25,8 +25,8 @@ const accessLogFormat = `$remote_addr - $remote_user [$time_local] \"$request\" 
 func TestRegisterConfigFile(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	file, err := os.Create("nginx-agent.conf")
-	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
 	require.NoError(t, err)
+	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
 
 	currentDirectory, err := os.Getwd()
 	require.NoError(t, err)
@@ -53,7 +53,7 @@ func TestResolveConfig(t *testing.T) {
 	assert.True(t, viperInstance.IsSet(CollectorExportersKey))
 	assert.True(t, viperInstance.IsSet(CollectorProcessorsKey))
 	assert.True(t, viperInstance.IsSet(CollectorReceiversKey))
-	assert.True(t, viperInstance.IsSet(CollectorHealthKey))
+	assert.True(t, viperInstance.IsSet(CollectorExtensionsKey))
 
 	actual, err := ResolveConfig()
 	require.NoError(t, err)
@@ -68,9 +68,9 @@ func TestResolveConfig(t *testing.T) {
 	require.NotNil(t, actual.Collector)
 	assert.Equal(t, "/etc/nginx-agent/nginx-agent-otelcol.yaml", actual.Collector.ConfigPath)
 	assert.NotEmpty(t, actual.Collector.Receivers)
-	assert.NotEmpty(t, actual.Collector.Processors)
+	assert.Equal(t, Processors{Batch: &Batch{}}, actual.Collector.Processors)
 	assert.NotEmpty(t, actual.Collector.Exporters)
-	assert.NotEmpty(t, actual.Collector.Health)
+	assert.NotEmpty(t, actual.Collector.Extensions)
 
 	assert.Equal(t, 10*time.Second, actual.Client.Timeout)
 
@@ -172,73 +172,40 @@ func TestResolveClient(t *testing.T) {
 
 func TestResolveCollector(t *testing.T) {
 	testDefault := getAgentConfig()
-	tests := []struct {
-		expected  *Collector
-		name      string
-		errMsg    string
-		shouldErr bool
-	}{
-		{
-			name:     "Test 1: Happy path",
-			expected: testDefault.Collector,
-		},
-		{
-			name: "Test 2: Non allowed path",
-			expected: &Collector{
-				ConfigPath: "/path/to/secret",
-			},
-			shouldErr: true,
-			errMsg:    "collector path /path/to/secret not allowed",
-		},
-		{
-			name: "Test 3: Unsupported Exporter",
-			expected: &Collector{
-				ConfigPath: testDefault.Collector.ConfigPath,
-				Exporters: []Exporter{
-					{
-						Type: "not-allowed",
-					},
-				},
-			},
-			shouldErr: true,
-			errMsg:    "unsupported exporter type: not-allowed",
-		},
-		{
-			name: "Test 4: Unsupported Processor",
-			expected: &Collector{
-				ConfigPath: testDefault.Collector.ConfigPath,
-				Exporters:  testDefault.Collector.Exporters,
-				Processors: []Processor{
-					{
-						Type: "custom-processor",
-					},
-				},
-			},
-			shouldErr: true,
-			errMsg:    "unsupported processor type: custom-processor",
-		},
-	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
-			viperInstance.Set(CollectorConfigPathKey, test.expected.ConfigPath)
-			viperInstance.Set(CollectorReceiversKey, test.expected.Receivers)
-			viperInstance.Set(CollectorProcessorsKey, test.expected.Processors)
-			viperInstance.Set(CollectorExportersKey, test.expected.Exporters)
-			viperInstance.Set(CollectorHealthKey, test.expected.Health)
-			viperInstance.Set(CollectorLogKey, test.expected.Log)
+	t.Run("Test 1: Happy path", func(t *testing.T) {
+		expected := testDefault.Collector
 
-			actual, err := resolveCollector(testDefault.AllowedDirectories)
-			if test.shouldErr {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), test.errMsg)
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, test.expected, actual)
-			}
-		})
-	}
+		viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
+		viperInstance.Set(CollectorConfigPathKey, expected.ConfigPath)
+		viperInstance.Set(CollectorReceiversKey, expected.Receivers)
+		viperInstance.Set(CollectorBatchProcessorKey, expected.Processors.Batch)
+		viperInstance.Set(CollectorBatchProcessorSendBatchSizeKey, expected.Processors.Batch.SendBatchSize)
+		viperInstance.Set(CollectorBatchProcessorSendBatchMaxSizeKey, expected.Processors.Batch.SendBatchMaxSize)
+		viperInstance.Set(CollectorBatchProcessorTimeoutKey, expected.Processors.Batch.Timeout)
+		viperInstance.Set(CollectorExportersKey, expected.Exporters)
+		viperInstance.Set(CollectorExtensionsKey, expected.Extensions)
+		viperInstance.Set(CollectorLogKey, expected.Log)
+
+		actual, err := resolveCollector(testDefault.AllowedDirectories)
+		require.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("Test 2: Non allowed path", func(t *testing.T) {
+		expected := &Collector{
+			ConfigPath: "/path/to/secret",
+		}
+		errMsg := "collector path /path/to/secret not allowed"
+
+		viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
+		viperInstance.Set(CollectorConfigPathKey, expected.ConfigPath)
+
+		_, err := resolveCollector(testDefault.AllowedDirectories)
+
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), errMsg)
+	})
 }
 
 func TestCommand(t *testing.T) {
@@ -306,10 +273,10 @@ func TestClient(t *testing.T) {
 
 	// root keys for sections are set appropriately
 	assert.True(t, viperInstance.IsSet(ClientMaxMessageSizeKey))
-	assert.False(t, viperInstance.IsSet(ClientMaxMessageRecieveSizeKey))
+	assert.False(t, viperInstance.IsSet(ClientMaxMessageReceiveSizeKey))
 	assert.False(t, viperInstance.IsSet(ClientMaxMessageSendSizeKey))
 
-	viperInstance.Set(ClientMaxMessageRecieveSizeKey, expected.MaxMessageRecieveSize)
+	viperInstance.Set(ClientMaxMessageReceiveSizeKey, expected.MaxMessageRecieveSize)
 	viperInstance.Set(ClientMaxMessageSendSizeKey, expected.MaxMessageSendSize)
 
 	result := resolveClient()
@@ -337,29 +304,31 @@ func getAgentConfig() *Config {
 		},
 		Collector: &Collector{
 			ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
-			Exporters: []Exporter{
-				{
-					Type: "otlp",
-					Server: &ServerConfig{
-						Host: "127.0.0.1",
-						Port: 1234,
-						Type: 0,
-					},
-					Auth: &AuthConfig{
-						Token: "super-secret-token",
-					},
-					TLS: &TLSConfig{
-						Cert:       "/path/to/server-cert.pem",
-						Key:        "/path/to/server-cert.pem",
-						Ca:         "/path/to/server-cert.pem",
-						SkipVerify: true,
-						ServerName: "remote-saas-server",
+			Exporters: Exporters{
+				OtlpExporters: []OtlpExporter{
+					{
+						Server: &ServerConfig{
+							Host: "127.0.0.1",
+							Port: 1234,
+						},
+						Auth: &AuthConfig{
+							Token: "super-secret-token",
+						},
+						TLS: &TLSConfig{
+							Cert:       "/path/to/server-cert.pem",
+							Key:        "/path/to/server-cert.pem",
+							Ca:         "/path/to/server-cert.pem",
+							SkipVerify: true,
+							ServerName: "remote-saas-server",
+						},
 					},
 				},
 			},
-			Processors: []Processor{
-				{
-					Type: "batch",
+			Processors: Processors{
+				Batch: &Batch{
+					SendBatchMaxSize: DefCollectorBatchProcessorSendBatchMaxSize,
+					SendBatchSize:    DefCollectorBatchProcessorSendBatchSize,
+					Timeout:          DefCollectorBatchProcessorTimeout,
 				},
 			},
 			Receivers: Receivers{
@@ -367,18 +336,19 @@ func getAgentConfig() *Config {
 					{
 						Server: &ServerConfig{
 							Host: "localhost",
-							Port: 4321,
+							Port: 4317,
 							Type: 0,
 						},
 						Auth: &AuthConfig{
 							Token: "even-secreter-token",
 						},
-						TLS: &TLSConfig{
-							Cert:       "/path/to/server-cert.pem",
-							Key:        "/path/to/server-cert.pem",
-							Ca:         "/path/to/server-cert.pem",
-							SkipVerify: true,
-							ServerName: "local-dataa-plane-server",
+						OtlpTLSConfig: &OtlpTLSConfig{
+							GenerateSelfSignedCert: false,
+							Cert:                   "/path/to/server-cert.pem",
+							Key:                    "/path/to/server-cert.pem",
+							Ca:                     "/path/to/server-cert.pem",
+							SkipVerify:             true,
+							ServerName:             "local-data-plane-server",
 						},
 					},
 				},
@@ -395,10 +365,14 @@ func getAgentConfig() *Config {
 					},
 				},
 			},
-			Health: &ServerConfig{
-				Host: "localhost",
-				Port: 1337,
-				Type: 0,
+			Extensions: Extensions{
+				Health: &Health{
+					Server: &ServerConfig{
+						Host: "localhost",
+						Port: 1337,
+						Type: 0,
+					},
+				},
 			},
 			Log: &Log{
 				Level: "INFO",

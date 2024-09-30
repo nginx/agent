@@ -11,7 +11,11 @@ receivers:
   otlp/0:
     protocols:
       grpc:
-        endpoint: "localhost:4321"
+        endpoint: "localhost:4317"
+        tls:
+          cert_file: /tmp/cert.pem
+          key_file: /tmp/key.pem
+          ca_file: /tmp/ca.pem
   nginx/123:
     endpoint: "http://localhost:80/status"
     collection_interval: 10s
@@ -21,9 +25,12 @@ receivers:
 
 processors:
   batch:
+    send_batch_size: 8192
+    timeout: 200ms
+    send_batch_max_size: 0
 
 exporters:
-  otlp:
+  otlp/0:
     endpoint: "127.0.0.1:1234"
     compression: none
     timeout: 10s
@@ -36,12 +43,10 @@ exporters:
       insecure: true
   prometheus:
     endpoint: "localhost:9876"
-    namespace: "nginx-agent"
   debug:
     verbosity: detailed
     sampling_initial: 5
     sampling_thereafter: 200
-
 extensions:
   health_check:
     endpoint: "localhost:1337"
@@ -63,6 +68,6 @@ service:
       processors:
         - batch
       exporters:
-        - otlp
+        - otlp/0
         - prometheus
         - debug

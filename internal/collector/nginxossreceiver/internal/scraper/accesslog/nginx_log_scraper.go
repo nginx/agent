@@ -8,7 +8,11 @@ package accesslog
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"sync"
+	"time"
+
+	"go.opentelemetry.io/collector/pdata/pcommon"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/entry"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator"
@@ -27,9 +31,10 @@ import (
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/config"
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/metadata"
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/model"
-	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/record"
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/scraper/accesslog/operator/input/file"
 )
+
+const Percentage = 100
 
 type (
 	NginxLogScraper struct {
@@ -43,6 +48,18 @@ type (
 		entries []*entry.Entry
 		mut     sync.Mutex
 	}
+
+	NginxMetrics struct {
+		responseStatuses ResponseStatuses
+	}
+
+	ResponseStatuses struct {
+		oneHundredStatusRange   int64
+		twoHundredStatusRange   int64
+		threeHundredStatusRange int64
+		fourHundredStatusRange  int64
+		fiveHundredStatusRange  int64
+	}
 )
 
 var _ scraperhelper.Scraper = (*NginxLogScraper)(nil)
@@ -55,7 +72,7 @@ func NewScraper(
 	logger.Info("Creating NGINX access log scraper")
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
 
-	operators := []operator.Config{}
+	operators := make([]operator.Config, 0)
 
 	for _, accessLog := range cfg.AccessLogs {
 		logger.Info("Adding access log file operator", zap.String("file_path", accessLog.FilePath))
@@ -106,21 +123,66 @@ func (nls *NginxLogScraper) Start(parentCtx context.Context, _ component.Host) e
 func (nls *NginxLogScraper) Scrape(_ context.Context) (pmetric.Metrics, error) {
 	nls.mut.Lock()
 	defer nls.mut.Unlock()
+
+	nginxMetrics := NginxMetrics{}
+
 	for _, ent := range nls.entries {
-		nls.logger.Info("Scraping NGINX access log", zap.Any("entity", ent))
+		nls.logger.Debug("Scraping NGINX access log", zap.Any("entity", ent))
 		item, ok := ent.Body.(*model.NginxAccessItem)
 		if !ok {
-			nls.logger.Info("Failed to cast log entry to *model.NginxAccessItem", zap.Any("entry", ent.Body))
+			nls.logger.Warn("Failed to cast log entry to *model.NginxAccessItem", zap.Any("entry", ent.Body))
 			continue
 		}
 
-		err := record.Item(item, nls.mb)
-		if err != nil {
-			nls.logger.Info("Recording metric failed", zap.Any("item", item), zap.Error(err))
-			continue
+		if v, err := strconv.Atoi(item.Status); err == nil {
+			codeRange := fmt.Sprintf("%dxx", v/Percentage)
+
+			switch codeRange {
+			case "1xx":
+				nginxMetrics.responseStatuses.oneHundredStatusRange++
+			case "2xx":
+				nginxMetrics.responseStatuses.twoHundredStatusRange++
+			case "3xx":
+				nginxMetrics.responseStatuses.threeHundredStatusRange++
+			case "4xx":
+				nginxMetrics.responseStatuses.fourHundredStatusRange++
+			case "5xx":
+				nginxMetrics.responseStatuses.fiveHundredStatusRange++
+			default:
+				nls.logger.Error("Unknown status range", zap.String("codeRange", codeRange))
+				continue
+			}
 		}
 	}
+
 	nls.entries = make([]*entry.Entry, 0)
+	timeNow := pcommon.NewTimestampFromTime(time.Now())
+
+	nls.mb.RecordNginxHTTPResponseStatusDataPoint(
+		timeNow,
+		nginxMetrics.responseStatuses.oneHundredStatusRange,
+		metadata.AttributeNginxStatusRange1xx,
+	)
+	nls.mb.RecordNginxHTTPResponseStatusDataPoint(
+		timeNow,
+		nginxMetrics.responseStatuses.twoHundredStatusRange,
+		metadata.AttributeNginxStatusRange2xx,
+	)
+	nls.mb.RecordNginxHTTPResponseStatusDataPoint(
+		timeNow,
+		nginxMetrics.responseStatuses.threeHundredStatusRange,
+		metadata.AttributeNginxStatusRange3xx,
+	)
+	nls.mb.RecordNginxHTTPResponseStatusDataPoint(
+		timeNow,
+		nginxMetrics.responseStatuses.fourHundredStatusRange,
+		metadata.AttributeNginxStatusRange4xx,
+	)
+	nls.mb.RecordNginxHTTPResponseStatusDataPoint(
+		timeNow,
+		nginxMetrics.responseStatuses.fiveHundredStatusRange,
+		metadata.AttributeNginxStatusRange5xx,
+	)
 
 	return nls.mb.Emit(), nil
 }
