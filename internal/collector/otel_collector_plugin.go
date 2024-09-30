@@ -236,15 +236,20 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 		return
 	}
 
-	oc.config.Collector.Processors.Attribute.ResourceId = resourceUpdateContext.ResourceId
-	slog.InfoContext(ctx, "Reloading OTel collector config")
-	err := writeCollectorConfig(oc.config.Collector)
-	if err != nil {
-		slog.ErrorContext(ctx, "Failed to write OTel Collector config", "error", err)
-		return
+	if oc.config.Collector.Processors.Attribute != nil {
+		// update resource id in config, write new + reload
+		if resourceUpdateContext.ResourceId != "" {
+			oc.config.Collector.Processors.Attribute.ResourceId = resourceUpdateContext.ResourceId
+			slog.InfoContext(ctx, "Reloading OTel collector config")
+			err := writeCollectorConfig(oc.config.Collector)
+			if err != nil {
+				slog.ErrorContext(ctx, "Failed to write OTel Collector config", "error", err)
+				return
+			}
+			oc.restartCollector(ctx)
+		}
 	}
 
-	oc.restartCollector(ctx)
 }
 
 func (oc *Collector) restartCollector(ctx context.Context) {

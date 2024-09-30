@@ -168,10 +168,8 @@ service:
         {{- if ne .Processors.Batch nil }}
         - batch
         {{- end }}
-        {{- if ne .Processors.Attribute nil }}
         {{- if ne .Processors.Attribute.ResourceId "" }}
         - attributes
-        {{- end }}
         {{- end }}
       exporters:
         {{- range $index, $otlpExporter := .Exporters.OtlpExporters }}
