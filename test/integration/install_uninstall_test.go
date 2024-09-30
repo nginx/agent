@@ -164,6 +164,8 @@ func verifyAgentVersion(ctx context.Context, tb testing.TB, testContainer testco
 	versionOutput := strings.Trim(string(stdoutStderr), "#$%\x00\x01\n")
 	require.NoError(tb, err)
 	assert.Equal(tb, expectedVersionOutput, versionOutput)
+	tb.Logf("expectedVersionOutput: %s", expectedVersionOutput)
+	tb.Logf("versionOutput: %s", versionOutput)
 }
 
 func installAgent(ctx context.Context, tb testing.TB, container testcontainers.Container, osReleaseContent,
