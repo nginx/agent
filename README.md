@@ -28,15 +28,15 @@ make install-tools
 ### Building NGINX Agent from Source Code
 Build NGINX Agent deb package:
 ```
-OSARCH=<operating system archiecture> make local-deb-packge
+OSARCH=<operating system archiecture> make local-deb-package
 ```
 Build NGINX Agent rpm package:
 ```
-OSARCH=<operating system archiecture> make local-rpm-packge
+OSARCH=<operating system archiecture> make local-rpm-package
 ```
 Build NGINX Agent apk package:
 ```
-OSARCH=<operating system archiecture> make local-apk-packge
+OSARCH=<operating system archiecture> make local-apk-package
 ```
 
 ## NGINX Agent Technical Specifications
