@@ -11,7 +11,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 )
 
 const endpointRootPath = "/api/9/"
@@ -474,7 +474,9 @@ func NewMockNGINXPlusAPIServer(t *testing.T) *httptest.Server {
 		if payload != "" {
 			rw.WriteHeader(http.StatusOK)
 			_, err := rw.Write([]byte(payload))
-			require.NoError(t, err)
+
+			// go-require: do not use require in http handlers (testifylint), using assert instead
+			assert.NoError(t, err)
 
 			return
 		}
