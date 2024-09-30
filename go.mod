@@ -1,8 +1,8 @@
 module github.com/nginx/agent/v2
 
-go 1.22.0
+go 1.22.6
 
-toolchain go1.22.4
+toolchain go1.22.7
 
 require (
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
@@ -14,7 +14,6 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.5
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nginxinc/nginx-plus-go-client v1.2.2
 	github.com/nginxinc/nginx-prometheus-exporter v1.2.0
 	github.com/nxadm/tail v1.4.11
 	github.com/orcaman/concurrent-map v1.0.0
@@ -38,6 +37,7 @@ require (
 require (
 	github.com/go-resty/resty/v2 v2.11.0
 	github.com/nginx/agent/sdk/v2 v2.30.3
+	github.com/nginxinc/nginx-plus-go-client/v2 v2.0.1
 	github.com/prometheus/client_golang v1.19.1
 	github.com/rs/cors v1.11.0
 	go.uber.org/goleak v1.3.0
