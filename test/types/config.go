@@ -84,7 +84,7 @@ func AgentConfig() *config.Config {
 				},
 			},
 			Extensions: config.Extensions{
-				Health: config.Health{
+				Health: &config.Health{
 					Server: &config.ServerConfig{
 						Host: "localhost",
 						Port: randomPort3,

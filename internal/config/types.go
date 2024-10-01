@@ -45,6 +45,7 @@ type (
 		ConfigDir          string           `yaml:"-" mapstructure:"config-dirs"`
 		UUID               string           `yaml:"-"`
 		AllowedDirectories []string         `yaml:"-"`
+		Features           []string         `yaml:"-"`
 	}
 
 	Log struct {
@@ -95,7 +96,7 @@ type (
 	}
 
 	Extensions struct {
-		Health Health `yaml:"-" mapstructure:"health"`
+		Health *Health `yaml:"-" mapstructure:"health"`
 	}
 
 	Health struct {

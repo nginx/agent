@@ -149,8 +149,13 @@ service:
       output_paths: ["{{ .Log.Path -}}"]
       error_output_paths: ["{{ .Log.Path -}}"]
   {{- end}}
+  
+  {{- if ne .Extensions nil }}
   extensions:
+    {{- if ne .Extensions.Health nil }}
     - health_check
+    {{- end}}
+  {{- end}}
   pipelines:
     metrics:
       receivers:
