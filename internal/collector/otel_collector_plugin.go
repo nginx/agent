@@ -236,10 +236,17 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 		return
 	}
 
-	if oc.config.Collector.Processors.Attribute != nil {
+	if oc.config.Collector.Processors.Attribute != nil { // attribute processor is enabled
 		// update resource id in config, write new + reload
 		if resourceUpdateContext.GetResourceId() != "" {
-			oc.config.Collector.Processors.Attribute.ResourceID = resourceUpdateContext.GetResourceId()
+			oc.config.Collector.Processors.Attribute.Actions = append(
+				oc.config.Collector.Processors.Attribute.Actions,
+				config.Action{
+					Key:    "resource-id",
+					Action: "insert",
+					Value:  resourceUpdateContext.GetResourceId(),
+				})
+
 			slog.InfoContext(ctx, "Reloading OTel collector config")
 			err := writeCollectorConfig(oc.config.Collector)
 			if err != nil {

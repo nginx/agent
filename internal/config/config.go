@@ -435,7 +435,9 @@ func resolveProcessors() Processors {
 	}
 
 	if viperInstance.IsSet(CollectorAttributeProcessorKey) {
-		processors.Attribute = &Attribute{}
+		processors.Attribute = &Attribute{
+			Actions: make([]Action, 0),
+		}
 	}
 
 	return processors
