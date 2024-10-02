@@ -14,7 +14,7 @@ import (
 const (
 	DefGracefulShutdownPeriod      = 5 * time.Second
 	DefNginxReloadMonitoringPeriod = 10 * time.Second
-	DefTreatErrorsAsWarnings       = true
+	DefTreatErrorsAsWarnings       = false
 
 	DefCollectorConfigPath  = "/etc/nginx-agent/opentelemetry-collector-agent.yaml"
 	DefCollectorLogLevel    = "INFO"
