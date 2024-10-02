@@ -15,18 +15,6 @@ import (
 	"github.com/google/uuid"
 )
 
-var (
-	supportedExporters = map[string]struct{}{
-		"debug":      {},
-		"otlp":       {},
-		"prometheus": {},
-	}
-
-	supportedProcessors = map[string]struct{}{
-		"batch": {},
-	}
-)
-
 type ServerType int
 
 const (
@@ -57,6 +45,7 @@ type (
 		ConfigDir          string           `yaml:"-" mapstructure:"config-dirs"`
 		UUID               string           `yaml:"-"`
 		AllowedDirectories []string         `yaml:"-"`
+		Features           []string         `yaml:"-"`
 	}
 
 	Log struct {
@@ -86,26 +75,54 @@ type (
 	}
 
 	Collector struct {
-		ConfigPath string        `yaml:"-" mapstructure:"config_path"`
-		Log        *Log          `yaml:"-" mapstructure:"log"`
-		Exporters  []Exporter    `yaml:"-" mapstructure:"exporters"`
-		Health     *ServerConfig `yaml:"-" mapstructure:"health"`
-		Processors []Processor   `yaml:"-" mapstructure:"processors"`
-		Receivers  Receivers     `yaml:"-" mapstructure:"receivers"`
+		ConfigPath string     `yaml:"-" mapstructure:"config_path"`
+		Log        *Log       `yaml:"-" mapstructure:"log"`
+		Exporters  Exporters  `yaml:"-" mapstructure:"exporters"`
+		Extensions Extensions `yaml:"-" mapstructure:"extensions"`
+		Processors Processors `yaml:"-" mapstructure:"processors"`
+		Receivers  Receivers  `yaml:"-" mapstructure:"receivers"`
 	}
 
-	// OTel Collector Exporter configuration.
-	Exporter struct {
+	Exporters struct {
+		Debug              *DebugExporter      `yaml:"-" mapstructure:"debug"`
+		PrometheusExporter *PrometheusExporter `yaml:"-" mapstructure:"prometheus_exporter"`
+		OtlpExporters      []OtlpExporter      `yaml:"-" mapstructure:"otlp_exporters"`
+	}
+
+	OtlpExporter struct {
 		Server *ServerConfig `yaml:"-" mapstructure:"server"`
 		Auth   *AuthConfig   `yaml:"-" mapstructure:"auth"`
 		TLS    *TLSConfig    `yaml:"-" mapstructure:"tls"`
-		Type   string        `yaml:"-" mapstructure:"type"`
 	}
 
-	// OTel Collector Processor configuration.
-	Processor struct {
-		Type string `yaml:"-" mapstructure:"type"`
+	Extensions struct {
+		Health *Health `yaml:"-" mapstructure:"health"`
 	}
+
+	Health struct {
+		Server *ServerConfig `yaml:"-" mapstructure:"server"`
+		TLS    *TLSConfig    `yaml:"-" mapstructure:"tls"`
+		Path   string        `yaml:"-" mapstructure:"path"`
+	}
+
+	DebugExporter struct{}
+
+	PrometheusExporter struct {
+		Server *ServerConfig `yaml:"-" mapstructure:"server"`
+		TLS    *TLSConfig    `yaml:"-" mapstructure:"tls"`
+	}
+
+	// OTel Collector Processors configuration.
+	Processors struct {
+		Batch *Batch `yaml:"-" mapstructure:"batch"`
+	}
+
+	Batch struct {
+		SendBatchSize    uint32        `yaml:"-" mapstructure:"send_batch_size"`
+		SendBatchMaxSize uint32        `yaml:"-" mapstructure:"send_batch_max_size"`
+		Timeout          time.Duration `yaml:"-" mapstructure:"timeout"`
+	}
+
 	// OTel Collector Receiver configuration.
 	Receivers struct {
 		OtlpReceivers      []OtlpReceiver      `yaml:"-" mapstructure:"otlp_receivers"`
@@ -238,29 +255,6 @@ func (col *Collector) Validate(allowedDirectories []string) error {
 
 	for _, nginxReceiver := range col.Receivers.NginxReceivers {
 		err = errors.Join(err, nginxReceiver.Validate(allowedDirectories))
-	}
-
-	for _, exp := range col.Exporters {
-		t := strings.ToLower(exp.Type)
-
-		if _, ok := supportedExporters[t]; !ok {
-			err = errors.Join(err, fmt.Errorf("unsupported exporter type: %s", exp.Type))
-			continue
-		}
-
-		// normalize field too
-		exp.Type = t
-	}
-
-	for _, proc := range col.Processors {
-		t := strings.ToLower(proc.Type)
-
-		if _, ok := supportedProcessors[t]; !ok {
-			err = errors.Join(err, fmt.Errorf("unsupported processor type: %s", proc.Type))
-			continue
-		}
-
-		proc.Type = t
 	}
 
 	return err

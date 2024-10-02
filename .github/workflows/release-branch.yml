@@ -35,6 +35,32 @@ on:
         description: 'Release branch to build & publish from'
         required: true
         type: string
+  workflow_call:
+    inputs:
+      githubRelease:
+        type: boolean
+        default: false
+      packageVersion:
+        type: string
+        default: "3.0.0"
+      packageBuildNo:
+        type: string
+        default: "1"
+      uploadAzure:
+        type: boolean
+        default: true
+      publishPackages:
+        type: boolean
+        default: true
+      tagRelease:
+        type: boolean
+        default: false
+      createPullRequest:
+        type: boolean
+        default: false
+      releaseBranch:
+        type: string
+        required: true
 
 env:
   NFPM_VERSION: 'v2.35.3'
@@ -238,11 +264,14 @@ jobs:
           build-args: |
             package_type=signed-package
 
+      - name: Set the VERSION environment variable
+        run: echo VERSION=v${{ inputs.packageVersion }} >> $GITHUB_ENV
+
       - name: Build Packages
         env:
           GPG_KEY: ${{ secrets.INDIGO_GPG_AGENT }}
           NFPM_SIGNING_KEY_FILE: .key.asc
-          VERSION: ${{ inputs.packageVersion }}
+          VERSION: ${{ env.VERSION }}
           PACKAGE_BUILD: ${{ inputs.packageBuildNo }}
         run: |
           export PATH=$PATH:~/go/bin
