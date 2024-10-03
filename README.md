@@ -18,7 +18,7 @@ The following packages need to be installed:
  - make
  - golang (https://go.dev/doc/install)
  - protoc (https://grpc.io/docs/protoc-installation/)
- - mdatagen (There is currently an issue installing mdatagen https://github.com/open-telemetry/opentelemetry-collector/issues/9281. See instruction below for workaround.)
+ - mdatagen (There is currently an issue installing mdatagen https://github.com/open-telemetry/opentelemetry-collector/issues/9281. See instructions below for workaround.)
 
 #### Workaround to install mdatagen
 ```
