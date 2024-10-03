@@ -21,6 +21,7 @@ permissions:
 env:
   GOLANGCI_LINT_VERSION: 'v1.55.1'
   NFPM_VERSION: 'v2.35.3'
+  NGINX_OSS_REGISTRY: 'docker-registry.nginx.com'
 
 jobs:
   lint:
@@ -213,16 +214,10 @@ jobs:
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
-      - name: Login to Docker Registry
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567  # v3.3.0
-        with:
-          registry: ${{ secrets.REGISTRY_URL }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" TAG="${{ matrix.container.version }}-${{ matrix.container.image }}" OS_RELEASE="${{ matrix.container.release }}"\
+          CONTAINER_NGINX_IMAGE_REGISTRY="${{ env.NGINX_OSS_REGISTRY }}" TAG="${{ matrix.container.version }}-${{ matrix.container.image }}" OS_RELEASE="${{ matrix.container.release }}"\
             make official-image-integration-test
       - name: Container Output Logs 
         if: failure()
