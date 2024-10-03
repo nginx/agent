@@ -23,8 +23,9 @@ The following packages need to be installed:
 #### Workaround to install mdatagen
 ```
 git clone https://github.com/open-telemetry/opentelemetry-collector.git
+cd opentelemetry-collector
 git checkout v0.108.1
-cd opentelemetry-collector/cmd/mdatagen
+cd cmd/mdatagen
 go install
 ```
 
