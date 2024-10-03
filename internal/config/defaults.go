@@ -68,6 +68,9 @@ func DefaultFeatures() []string {
 func DefaultAllowedDirectories() []string {
 	return []string{
 		"/etc/nginx",
-		"/usr/local/etc/nginx", "/usr/share/nginx/modules",
+		"/usr/local/etc/nginx",
+		"/usr/share/nginx/modules",
+		"/var/run/nginx",
+		"/var/log/nginx",
 	}
 }
