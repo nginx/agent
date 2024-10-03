@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/test/protos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/otelcol"
@@ -61,7 +62,7 @@ func TestCollector_InitAndClose(t *testing.T) {
 }
 
 // nolint: revive
-func TestCollector_Process(t *testing.T) {
+func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 	nginxPlusMock := helpers.NewMockNGINXPlusAPIServer(t)
 	defer nginxPlusMock.Close()
 
@@ -196,6 +197,71 @@ func TestCollector_Process(t *testing.T) {
 			}
 
 			assert.Equal(tt, test.receivers, collector.config.Collector.Receivers)
+		})
+	}
+}
+
+func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
+	conf := types.OTelConfig(t)
+	conf.Collector.Log.Path = ""
+	conf.Collector.Processors.Batch = nil
+	conf.Collector.Processors.Attribute = &config.Attribute{Actions: make([]config.Action, 0)}
+
+	tests := []struct {
+		message    *bus.Message
+		processors config.Processors
+		name       string
+	}{
+		{
+			name: "Test 1: Resource update adds resource id action",
+			message: &bus.Message{
+				Topic: bus.ResourceUpdateTopic,
+				Data:  protos.GetHostResource(),
+			},
+			processors: config.Processors{
+				Attribute: &config.Attribute{
+					Actions: []config.Action{
+						{
+							Key:    "resource-id",
+							Action: "insert",
+							Value:  "1234",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			collector, err := New(conf)
+			require.NoError(tt, err, "NewCollector should not return an error with valid config")
+
+			ctx := context.Background()
+			messagePipe := bus.NewMessagePipe(10)
+			err = messagePipe.Register(10, []bus.Plugin{collector})
+
+			require.NoError(tt, err)
+			require.NoError(tt, collector.Init(ctx, messagePipe), "Init should not return an error")
+			defer collector.Close(ctx)
+
+			assert.Eventually(
+				tt,
+				func() bool { return collector.service.GetState() == otelcol.StateRunning },
+				5*time.Second,
+				100*time.Millisecond,
+			)
+
+			collector.Process(ctx, test.message)
+
+			assert.Eventually(
+				tt,
+				func() bool { return collector.service.GetState() == otelcol.StateRunning },
+				5*time.Second,
+				100*time.Millisecond,
+			)
+
+			assert.Equal(tt, test.processors, collector.config.Collector.Processors)
 		})
 	}
 }
