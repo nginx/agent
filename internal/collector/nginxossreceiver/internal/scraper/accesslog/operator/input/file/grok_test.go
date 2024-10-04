@@ -5,7 +5,6 @@
 package file
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -57,7 +56,6 @@ func TestGrok_Constructor(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			fmt.Printf(test.logFormat)
 			grok, err := NewCompiledGrok(test.logFormat, test.logger)
 			if test.shouldErr {
 				require.Error(tt, err)

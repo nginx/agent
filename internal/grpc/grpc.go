@@ -324,7 +324,7 @@ func validateMessage(validator *protovalidate.Validator, message any) error {
 
 	validationErr := validator.Validate(protoMessage)
 	if validationErr != nil {
-		return status.Errorf(codes.InvalidArgument, validationErr.Error())
+		return status.Error(codes.InvalidArgument, validationErr.Error())
 	}
 
 	return nil

@@ -157,7 +157,7 @@ func TestInstanceOperator_ReloadAndMonitor(t *testing.T) {
 			name:            "Test 2: Failed reload - error in logs",
 			errorLogs:       errorLogFile.Name(),
 			errorLogContent: errorLogLine,
-			expectedErr:     errors.Join(fmt.Errorf(errorLogLine)),
+			expectedErr:     errors.Join(fmt.Errorf("%s", errorLogLine)),
 		},
 		{
 			name:            "Test 3: Successful reload - no error log",

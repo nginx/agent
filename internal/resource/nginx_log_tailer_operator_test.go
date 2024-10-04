@@ -54,7 +54,7 @@ func TestLogOperator_Tail(t *testing.T) {
 			errorLogs:        errorLogFile.Name(),
 			errorLogContents: errorLogLine,
 			err:              nil,
-			expected:         errors.Join(fmt.Errorf(errorLogLine)),
+			expected:         errors.Join(fmt.Errorf("%s", errorLogLine)),
 		},
 		{
 			name:             "Test 3: Warning in error logs",
@@ -62,7 +62,7 @@ func TestLogOperator_Tail(t *testing.T) {
 			errorLogs:        errorLogFile.Name(),
 			errorLogContents: warningLogLine,
 			err:              nil,
-			expected:         errors.Join(fmt.Errorf(warningLogLine)),
+			expected:         errors.Join(fmt.Errorf("%s", warningLogLine)),
 		},
 	}
 

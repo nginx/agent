@@ -116,7 +116,8 @@ server accepts handled requests
  16630948 16630946 31070465
 Reading: 6 Writing: 179 Waiting: 106
 `))
-			require.NoError(t, err)
+			// go-require: do not use require in http handlers (testifylint), using assert instead
+			assert.NoError(t, err)
 
 			return
 		}

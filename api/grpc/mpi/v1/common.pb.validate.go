@@ -272,3 +272,319 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = CommandResponseValidationError{}
+
+// Validate checks the field values on ServerSettings with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *ServerSettings) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ServerSettings with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in ServerSettingsMultiError,
+// or nil if none found.
+func (m *ServerSettings) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ServerSettings) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Host
+
+	// no validation rules for Port
+
+	// no validation rules for Type
+
+	if len(errors) > 0 {
+		return ServerSettingsMultiError(errors)
+	}
+
+	return nil
+}
+
+// ServerSettingsMultiError is an error wrapping multiple validation errors
+// returned by ServerSettings.ValidateAll() if the designated constraints
+// aren't met.
+type ServerSettingsMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ServerSettingsMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ServerSettingsMultiError) AllErrors() []error { return m }
+
+// ServerSettingsValidationError is the validation error returned by
+// ServerSettings.Validate if the designated constraints aren't met.
+type ServerSettingsValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ServerSettingsValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ServerSettingsValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ServerSettingsValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ServerSettingsValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ServerSettingsValidationError) ErrorName() string { return "ServerSettingsValidationError" }
+
+// Error satisfies the builtin error interface
+func (e ServerSettingsValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sServerSettings.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ServerSettingsValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ServerSettingsValidationError{}
+
+// Validate checks the field values on AuthSettings with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *AuthSettings) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on AuthSettings with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in AuthSettingsMultiError, or
+// nil if none found.
+func (m *AuthSettings) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *AuthSettings) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Token
+
+	if len(errors) > 0 {
+		return AuthSettingsMultiError(errors)
+	}
+
+	return nil
+}
+
+// AuthSettingsMultiError is an error wrapping multiple validation errors
+// returned by AuthSettings.ValidateAll() if the designated constraints aren't met.
+type AuthSettingsMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m AuthSettingsMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m AuthSettingsMultiError) AllErrors() []error { return m }
+
+// AuthSettingsValidationError is the validation error returned by
+// AuthSettings.Validate if the designated constraints aren't met.
+type AuthSettingsValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e AuthSettingsValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e AuthSettingsValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e AuthSettingsValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e AuthSettingsValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e AuthSettingsValidationError) ErrorName() string { return "AuthSettingsValidationError" }
+
+// Error satisfies the builtin error interface
+func (e AuthSettingsValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sAuthSettings.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = AuthSettingsValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = AuthSettingsValidationError{}
+
+// Validate checks the field values on TLSSettings with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *TLSSettings) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on TLSSettings with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in TLSSettingsMultiError, or
+// nil if none found.
+func (m *TLSSettings) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *TLSSettings) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Cert
+
+	// no validation rules for Key
+
+	// no validation rules for Ca
+
+	// no validation rules for SkipVerify
+
+	// no validation rules for ServerName
+
+	if len(errors) > 0 {
+		return TLSSettingsMultiError(errors)
+	}
+
+	return nil
+}
+
+// TLSSettingsMultiError is an error wrapping multiple validation errors
+// returned by TLSSettings.ValidateAll() if the designated constraints aren't met.
+type TLSSettingsMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m TLSSettingsMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m TLSSettingsMultiError) AllErrors() []error { return m }
+
+// TLSSettingsValidationError is the validation error returned by
+// TLSSettings.Validate if the designated constraints aren't met.
+type TLSSettingsValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e TLSSettingsValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e TLSSettingsValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e TLSSettingsValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e TLSSettingsValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e TLSSettingsValidationError) ErrorName() string { return "TLSSettingsValidationError" }
+
+// Error satisfies the builtin error interface
+func (e TLSSettingsValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sTLSSettings.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = TLSSettingsValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = TLSSettingsValidationError{}

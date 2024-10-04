@@ -178,8 +178,8 @@ func installAgent(ctx context.Context, tb testing.TB, container testcontainers.C
 	require.NoError(tb, err)
 	stdoutStderr, err := io.ReadAll(cmdOut)
 	require.NoError(tb, err)
-	assert.Equal(tb, 0, exitCode, fmt.Sprintf("expected error code of 0 from cmd %q. Got:"+
-		" %v\n %s", installCmd, exitCode, stdoutStderr))
+	msg := fmt.Sprintf("expected error code of 0 from cmd %q. Got: %v\n %s", installCmd, exitCode, stdoutStderr)
+	assert.Equal(tb, 0, exitCode, msg)
 
 	return string(stdoutStderr), time.Since(start)
 }
@@ -192,8 +192,8 @@ func uninstallAgent(ctx context.Context, tb testing.TB, container testcontainers
 
 	exitCode, cmdOut, err := container.Exec(ctx, uninstallCmd)
 	require.NoError(tb, err)
-	assert.Equal(tb, 0, exitCode, fmt.Sprintf("expected error code of 0 from cmd %q. Got:"+
-		" %v", uninstallCmd, exitCode))
+	msg := fmt.Sprintf("expected error code of 0 from cmd %q. Got: %v", uninstallCmd, exitCode)
+	assert.Equal(tb, 0, exitCode, msg)
 
 	stdoutStderr, err := io.ReadAll(cmdOut)
 	require.NoError(tb, err)
@@ -207,7 +207,8 @@ func updateDebRepo(tb testing.TB, testContainer testcontainers.Container) {
 
 	exitCode, _, err := testContainer.Exec(context.Background(), updateCmd)
 	require.NoError(tb, err)
-	assert.Equal(tb, 0, exitCode, fmt.Sprintf("expected error code of 0 from cmd %q", exitCode))
+	msg := fmt.Sprintf("expected error code of 0 from cmd %q", exitCode)
+	assert.Equal(tb, 0, exitCode, msg)
 }
 
 func nginxIsRunning(ctx context.Context, container testcontainers.Container) bool {
