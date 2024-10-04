@@ -131,7 +131,7 @@ no-local-changes:
 lint: ## Run linter
 	GOWORK=off go vet ./...
 	GOWORK=off $(GORUN) $(GOLANGCI_LINT) run -c ./scripts/.golangci.yml
-	cd sdk && make lint
+	cd sdk && make lint GOLANGCI_LINT=$(GOLANGCI_LINT)
 
 format: ## Format code
 	$(GORUN) ${GOFUMPT} -l -w .
