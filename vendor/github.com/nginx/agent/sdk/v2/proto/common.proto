@@ -1,0 +1,146 @@
+syntax = "proto3";
+package f5.nginx.agent.sdk;
+
+import "gogo.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/nginx/agent/sdk/v2/proto;proto";
+
+// Represents the metadata for a message
+message Metadata {
+  // timestamp defines the time of message creation
+  google.protobuf.Timestamp timestamp = 1 [(gogoproto.jsontag) = "timestamp"];
+  // Client ID
+  string client_id = 2 [(gogoproto.jsontag) = "client_id"];
+  // Message ID
+  string message_id = 3 [(gogoproto.jsontag) = "message_id"];
+  // Cloud Account ID (e.g. AWS/Azure/GCP account ID)
+  string cloud_account_id = 4 [(gogoproto.jsontag) = "cloud_account_id"];
+}
+
+// Represents a map of directories & files on the system
+message DirectoryMap {
+  // List of directories
+  repeated Directory directories = 1;
+}
+
+// Represents a file
+message File {
+  // Name of the file
+  string name = 1 [(gogoproto.jsontag) = "name"];
+  // Number of lines in the file
+  int32 lines = 2 [(gogoproto.jsontag) = "lines"];
+  // When the file was last modified
+  google.protobuf.Timestamp mtime = 3 [(gogoproto.jsontag) = "mtime"];
+  // File permissions (e.g. 0644)
+  string permissions = 4 [(gogoproto.jsontag) = "permissions"];
+  // Size of the file in bytes
+  int64 size = 5 [(gogoproto.jsontag) = "size"];
+  // The contents of the file in bytes
+  bytes contents = 6 [(gogoproto.jsontag) = "contents"];
+  // Action enum
+  enum Action {
+    // Default value
+    unset = 0;
+    // No changes to the file
+    unchanged = 1;
+    // New file
+    add = 2;
+    // Updated file
+    update = 3;
+    // File deleted
+    delete = 4;
+  }
+  // Action to take on the file (e.g. update, delete, etc)
+  Action action = 7;
+}
+
+// Represents a directory
+message Directory {
+  // Name of the directory
+  string name = 1;
+  // When the directory was last modified
+  google.protobuf.Timestamp mtime = 2;
+  // Directory permissions (e.g. 0644)
+  string permissions = 3;
+  // Size of the directory in bytes
+  int64 size = 4;
+  // List of files in the directory
+  repeated File files = 5;
+}
+
+// Represents a list of SSL certificates files
+message SslCertificates {
+  // List of SSL certificates
+  repeated SslCertificate ssl_certs = 1;
+}
+
+// Represents a SSL certificate file
+message SslCertificate {
+  // Name of the file
+  string file_name = 1 [(gogoproto.jsontag) = "fileName"];
+  // Size of the file in bytes
+  int64 size = 2 [(gogoproto.jsontag) = "size"];
+  // When the file was last modified
+  google.protobuf.Timestamp mtime = 3 [(gogoproto.jsontag) = "mtime"];
+  // A time when the certificate is valid
+  CertificateDates validity = 4 [(gogoproto.jsontag) = "validity"];
+  // This field contains the distinguished name (DN) of the certificate issuer
+  CertificateName issuer = 5 [(gogoproto.jsontag) = "issuer"];
+  // This dedicated object name associated with the public key, for which the certificate is issued
+  CertificateName subject = 6 [(gogoproto.jsontag) = "subject"];
+  // Subject alternative names that allows users to specify additional host names for the SSL certificate
+  repeated string subj_alt_names = 7 [(gogoproto.jsontag) = "subjectAltName"];
+  // Online Certificate Status Protocol URL
+  repeated string ocsp_url = 8 [(gogoproto.jsontag) = "ocspURL"];
+  // Public key encryption algorithm (e.g. RSA)
+  string public_key_algorithm = 9 [(gogoproto.jsontag) = "publicKeyAlgorithm"];
+  // The signature algorithm contain a hashing algorithm and an encryption algorithm (e.g. sha256RSA where sha256 is the hashing algorithm and RSA is the encryption algorithm)
+  string signature_algorithm = 10 [(gogoproto.jsontag) = "signatureAlgorithm"];
+  // Used to uniquely identify the certificate within a CA's systems
+  string serial_number = 11 [(gogoproto.jsontag) = "serialNumber"];
+  // The subject key identifier extension provides a means of identifying certificates that contain a particular public key
+  string subject_key_identifier = 12 [(gogoproto.jsontag) = "subjectKeyIdentifier"];
+  // SSL certificate fingerprint
+  string fingerprint = 13 [(gogoproto.jsontag) = "fingerprint"];
+  // SSL certificate fingerprint algorithm
+  string fingerprint_algorithm = 14 [(gogoproto.jsontag) = "fingerprintAlgorithm"];
+  // There are three versions of certificates: 1, 2 and 3, numbered as 0, 1 and 2. Version 1 supports only the basic fields; Version 2 adds unique identifiers, which represent two additional fields; Version 3 adds extensions.
+  int64 version = 15 [(gogoproto.jsontag) = "version"];
+  // The authority key identifier extension provides a means of identifying the Public Key corresponding to the Private Key used to sign a certificate
+  string authority_key_identifier = 16 [(gogoproto.jsontag) = "authorityKeyIdentifier"];
+}
+
+// Represents the dates for which a certificate is valid
+message CertificateDates {
+  // The start date that for when the certificate is valid
+  int64 not_before = 1 [(gogoproto.jsontag) = "notBefore"];
+  // The end date that for when the certificate is valid
+  int64 not_after = 2 [(gogoproto.jsontag) = "notAfter"];
+}
+
+// Represents a Distinguished Name (DN)
+message CertificateName {
+  // The fully qualified domain name (e.g. www.example.com)
+  string common_name = 1 [(gogoproto.jsontag) = "commonName"];
+  // Country
+  repeated string country = 2 [(gogoproto.jsontag) = "country"];
+  // State
+  repeated string state = 3 [(gogoproto.jsontag) = "state"];
+  // Locality
+  repeated string locality = 4 [(gogoproto.jsontag) = "locality"];
+  // Organization
+  repeated string organization = 5 [(gogoproto.jsontag) = "organization"];
+  // Organizational Unit
+  repeated string organizational_unit = 6 [(gogoproto.jsontag) = "organizationalUnit"];
+}
+
+// Represents a zipped file
+message ZippedFile {
+  // The contents of the file in bytes
+  bytes contents = 1 [(gogoproto.jsontag) = "contents"];
+  // File checksum
+  string checksum = 2 [(gogoproto.jsontag) = "checksum"];
+  // The directory where the file is located
+  string root_directory = 3 [(gogoproto.jsontag) = "root_directory"];
+}

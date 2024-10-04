@@ -1,0 +1,43 @@
+syntax = "proto3";
+package f5.nginx.agent.sdk;
+
+import "gogo.proto";
+
+option go_package = "github.com/nginx/agent/sdk/v2/proto;proto";
+
+// Represents App Protect WAF details
+message AppProtectWAFDetails {
+  // WAF version
+  string waf_version = 1 [(gogoproto.jsontag) = "waf_version"];
+  // Attack signatures version (This is being deprecated and will be removed in a future release)
+  string attack_signatures_version = 2 [(gogoproto.jsontag) = "attack_signatures_version"];
+  // Threat signatures version (This is being deprecated and will be removed in a future release)
+  string threat_campaigns_version = 3 [(gogoproto.jsontag) = "threat_campaigns_version"];
+  // App Protect Health details (This is being deprecated and will be removed in a future release)
+  AppProtectWAFHealth health = 4 [(gogoproto.jsontag) = "health"];
+  // Location of WAF metadata file
+  string waf_location = 5 [(gogoproto.jsontag) = "waf_location"];
+  // Determines whether the publication of NGINX App Protect pre-compiled content from an external source is supported
+  bool precompiled_publication = 6 [(gogoproto.jsontag) = "precompiled_publication"];
+  // WAF release
+  string waf_release = 7 [(gogoproto.jsontag) = "waf_release"];
+}
+
+// Represents the health of App Protect WAF
+message AppProtectWAFHealth {
+  // Status enum
+  enum AppProtectWAFStatus {
+    // Unknown status
+    UNKNOWN = 0;
+    // Active status
+    ACTIVE = 1;
+    // Degraded status
+    DEGRADED = 2;
+  }
+  // System ID
+  string system_id = 1 [(gogoproto.jsontag) = "system_id"];
+  // App Protect WAF status
+  AppProtectWAFStatus app_protect_waf_status = 2 [(gogoproto.jsontag) = "app_protect_waf_status"];
+  // Provides an error message of why App Protect WAF is degraded
+  string degraded_reason = 3 [(gogoproto.jsontag) = "degraded_reason"];
+}

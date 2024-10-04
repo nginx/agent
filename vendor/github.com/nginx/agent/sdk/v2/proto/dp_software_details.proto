@@ -1,0 +1,21 @@
+syntax = "proto3";
+package f5.nginx.agent.sdk;
+
+import "gogo.proto";
+import "nap.proto";
+import "nginx.proto";
+import "phpfpm.proto";
+
+option go_package = "github.com/nginx/agent/sdk/v2/proto;proto";
+
+// Represents dataplane software details which contains details for additional software running on the dataplane that pertains to NGINX Agent
+message DataplaneSoftwareDetails {
+  oneof data {
+    // App Protect WAF software details
+    AppProtectWAFDetails app_protect_waf_details = 1 [(gogoproto.jsontag) = "app_protect_waf_details"];
+    // NGINX software details
+    NginxDetails nginx_details = 2 [(gogoproto.jsontag) = "nginx_details"];
+    // PhpFpmDetails software details
+    PhpFpmDetails php_fpm_details = 3 [(gogoproto.jsontag) = "php_fpm_details"];
+  }
+}

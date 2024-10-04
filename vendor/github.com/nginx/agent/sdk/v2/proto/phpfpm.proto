@@ -1,0 +1,96 @@
+syntax = "proto3";
+package f5.nginx.agent.sdk;
+
+import "gogo.proto";
+
+option go_package = "github.com/nginx/agent/sdk/v2/proto;proto";
+
+// PhpFpmDetails registers a phpfpm master process + child pools
+message PhpFpmDetails {
+  // PhpFpm process type
+  PhpFpmProcessType type = 1 [(gogoproto.jsontag) = "type"];
+  // System ID
+  string uuid = 2 [(gogoproto.jsontag) = "uuid"];
+  // PhpFpm ID
+  string php_id = 3 [(gogoproto.jsontag) = "php_id"];
+  // PhpFpm process name
+  string name = 4 [(gogoproto.jsontag) = "name"];
+  // PhpFpm process descpription
+  // Example: php-fpm: master process (/etc/php/7.4/fpm/php-fpm.conf)
+  string cmd = 5 [(gogoproto.jsontag) = "cmd"];
+  // Location of PhpFpm config path
+  // Example: /etc/php/7.4/fpm/php-fpm.conf
+  string conf_path = 6 [(gogoproto.jsontag) = "conf_path"];
+  // Location of PhpFpm binary path
+  // Example: /usr/sbin/php-fpm7.4
+  string process_path = 7 [(gogoproto.jsontag) = "process_path"];
+  // PhpFpm version
+  string version = 8 [(gogoproto.jsontag) = "version"];
+  // PhpFpm version line
+  // Example: PHP 7.4.33 (fpm-fcgi) (built: Feb 14 2023 18:31:23)
+  string version_line = 9 [(gogoproto.jsontag) = "version_line"];
+  // PhpFpm process id
+  int32 pid = 10 [(gogoproto.jsontag) = "pid"];
+  // NGINX agent version
+  string agent = 11 [(gogoproto.jsontag) = "agent"];
+  // PhpFpm children process
+  repeated PhpFpmPool children = 12 [(gogoproto.jsontag) = "children"];
+  // PhpFpm master process total workers/children
+  int32 workers = 13 [(gogoproto.jsontag) = "workers"];
+  // PhpFpm master process health
+  PhpFpmHealth health = 14 [(gogoproto.jsontag) = "health"];
+}
+
+// PhpFpmPool registers one of the worker pools of a Php-Fpm master process
+message PhpFpmPool {
+  // PhpFpm process type (e.g. phpfpm-pool)
+  PhpFpmProcessType type = 1 [(gogoproto.jsontag) = "type"];
+  // System ID
+  string uuid = 2 [(gogoproto.jsontag) = "uuid"];
+  // PhpFpm ID
+  string php_id = 3 [(gogoproto.jsontag) = "php_id"];
+  // PhpFpm process name
+  string name = 4 [(gogoproto.jsontag) = "name"];
+  // PhpFpm display name
+  // Example: phpfpm master @ Ubuntu
+  string display_name = 5 [(gogoproto.jsontag) = "display_name"];
+  // Phpfpm master process ID
+  string parent_php_id = 6 [(gogoproto.jsontag) = "parent_php_id"];
+  // Location for PhpFpm process to listen to connections
+  string listen = 7 [(gogoproto.jsontag) = "listen"];
+  // PhpFpm formatted listen
+  string flisten = 8 [(gogoproto.jsontag) = "flisten"];
+  // PhpFpm status path
+  string status_path = 9 [(gogoproto.jsontag) = "status_path"];
+  // Provides info on if PhpFpm process can have child
+  bool can_have_children = 10 [(gogoproto.jsontag) = "can_have_children"];
+  // NGINX agent version
+  string agent = 11 [(gogoproto.jsontag) = "agent"];
+}
+
+// PhpFpmHealth reports the health details of PHPFPM process
+message PhpFpmHealth {
+  // Status enum
+  enum PhpFpmHealthStatus {
+    // Unknown status
+    UNKNOWN = 0;
+    // Active status
+    ACTIVE = 1;
+    // Degraded status
+    DEGRADED = 2;
+  }
+  // System ID
+  string system_id = 1 [(gogoproto.jsontag) = "system_id"];
+  // PhpFpm health status
+  PhpFpmHealthStatus phpfpm_health_status = 2 [(gogoproto.jsontag) = "phpfpm_health_status"];
+  // Provides an error message of why PhpFpm is degraded
+  string degraded_reason = 3 [(gogoproto.jsontag) = "degraded_reason"];
+}
+
+// Represents PhpFpm process type
+enum PhpFpmProcessType {
+  // Master
+  PHPFPM = 0;
+  // Child
+  PHPFPM_POOL = 1;
+}

@@ -1,0 +1,168 @@
+syntax = "proto3";
+package f5.nginx.agent.sdk;
+
+import "config.proto";
+import "dp_software_details.proto";
+import "gogo.proto";
+import "google/protobuf/timestamp.proto";
+import "host.proto";
+import "nginx.proto";
+
+option go_package = "github.com/nginx/agent/sdk/v2/proto;proto";
+
+// Represents an agent connect request that is sent from the agent to the management server
+message AgentConnectRequest {
+  // DEPRECATED
+  reserved 1;
+  reserved "identity";
+  // Provides meta information about the agent
+  AgentMeta meta = 2 [(gogoproto.jsontag) = "meta"];
+  // Provides information about the NGINX instances that are present.
+  // This data will be moving to dataplane_software_details in a future release
+  repeated NginxDetails details = 3 [(gogoproto.jsontag) = "details"];
+  // Provides information about the host system
+  HostInfo host = 4 [(gogoproto.jsontag) = "host"];
+  // Provides information about software installed in the system (e.g. App Protect WAF, NGINX, etc.)
+  repeated DataplaneSoftwareDetails dataplane_software_details = 5 [(gogoproto.jsontag) = "dataplane_software_details"];
+}
+
+// Represents an agent connect status
+message AgentConnectStatus {
+  // Different status codes for agent connect response
+  enum StatusCode {
+    // Unknown status of the agent connect request
+    CONNECT_UNKNOWN = 0;
+    // Agent connect request was successful
+    CONNECT_OK = 1;
+    // Agent connect request was rejected
+    CONNECT_REJECTED_OTHER = 2;
+    // Agent connect request was rejected because an agent with the same ID is already registered
+    CONNECT_REJECTED_DUP_ID = 3;
+  }
+  // Provides a status of the agent connect response
+  StatusCode statusCode = 1 [(gogoproto.jsontag) = "status_code"];
+  // Provides a user friendly message to describe the response
+  string message = 2 [(gogoproto.jsontag) = "message"];
+  // Provides an error message of why the agent connect request was rejected
+  string error = 3 [(gogoproto.jsontag) = "error"];
+}
+
+// Represents an agent connect response that is sent from the management server to the agent
+message AgentConnectResponse {
+  // Agent configuration
+  AgentConfig agent_config = 1 [(gogoproto.jsontag) = "agent_config"];
+  // Agent connect request status
+  AgentConnectStatus status = 2 [(gogoproto.jsontag) = "status"];
+}
+
+// Represents an agent config request that is sent from the agent to the management server.
+// This is used by the agent to request the agent configuration from the management server.
+message AgentConfigRequest {}
+
+// Represents an agent's configuration. The message is sent from the management server to the agent.
+message AgentConfig {
+  // Provides information about the agent
+  AgentDetails details = 1 [(gogoproto.jsontag) = "details"];
+  // Provides information about the agent logging.
+  // This is will be implemented in a future release.
+  AgentLogging loggers = 2 [(gogoproto.jsontag) = "loggers"];
+  // Provides meta information about the nginx configurations
+  ConfigReport configs = 3 [(gogoproto.jsontag) = "configs"];
+}
+
+// Represents agent details. This message is sent from the management server to the agent.
+message AgentDetails {
+  // List of agent feature that are enabled
+  repeated string features = 1 [(gogoproto.jsontag) = "features"];
+  // List of agent extensions that are enabled
+  repeated string extensions = 2 [(gogoproto.jsontag) = "extensions"];
+  // List of tags
+  repeated string tags = 3 [(gogoproto.jsontag) = "tags"];
+  // Alias name for the agent
+  string alias = 4 [(gogoproto.jsontag) = "alias"];
+  // Server setting for the agent
+  Server server = 5 [(gogoproto.jsontag) = "server"];
+  // List of allowed directories that the Agent can write to
+  repeated string allowed_directories = 6 [(gogoproto.jsontag) = "allowed_directories"];
+}
+
+message Server {
+  // Host name or IP of the host to connect to
+  string host = 1 [(gogoproto.jsontag) = "host"];
+  // Grpc port to connect to
+  int32 grpc_port = 2 [(gogoproto.jsontag) = "grpc_port"];
+  // Shared secrect between the server and client
+  string token = 3 [(gogoproto.jsontag) = "token"];
+  // Metrics server name
+  string metrics = 4 [(gogoproto.jsontag) = "metrics"];
+  // Command server name
+  string command = 5 [(gogoproto.jsontag) = "command"];
+  // Backoff settings for exponential retry and backoff
+  Backoff backoff = 6 [(gogoproto.jsontag) = "backoff"];
+}
+
+message Backoff {
+  // First backoff time interval in seconds
+  int64 initial_interval = 1 [(gogoproto.jsontag) = "initial_interval"];
+  // Random value used to create range around next backoff interval
+  double randomization_factor = 2 [(gogoproto.jsontag) = "randomization_factor"];
+  // Value to be multiplied with current backoff interval
+  double multiplier = 3 [(gogoproto.jsontag) = "multiplier"];
+  // Max interval in seconds between two retries
+  int64 max_interval = 4 [(gogoproto.jsontag) = "max_interval"];
+  // Elapsed time in seconds after which backoff stops.
+  // It never stops if max_elapsed_time == 0.
+  int64 max_elapsed_time = 5 [(gogoproto.jsontag) = "max_elapsed_time"];
+}
+
+// Represents agent logging details
+message AgentLogging {
+  // Log level enum
+  enum Level {
+    // info level
+    INFO = 0;
+    // debug level
+    DEBUG = 1;
+    // warn level
+    WARN = 2;
+    // error level
+    ERROR = 3;
+    // fatal level
+    FATAL = 4;
+  }
+  // Log level
+  Level level = 1 [(gogoproto.jsontag) = "level"];
+  // Directory where the logs are located
+  string dir = 2 [(gogoproto.jsontag) = "dir"];
+  // Name of the log file
+  string file = 3 [(gogoproto.jsontag) = "file"];
+  // Max size of the log file in MB
+  uint32 max_size = 4 [(gogoproto.jsontag) = "max_size"];
+  // Max number of backups
+  uint32 max_backups = 5 [(gogoproto.jsontag) = "max_backups"];
+  // Max age of a log file in days
+  uint32 max_age = 6 [(gogoproto.jsontag) = "max_age"];
+  // Is the log file compressed
+  bool compress = 7 [(gogoproto.jsontag) = "compress"];
+}
+
+// Represents agent metadata
+message AgentMeta {
+  // Version of the agent
+  string version = 1 [(gogoproto.jsontag) = "version"];
+  // User friendly name for the agent
+  string display_name = 2 [(gogoproto.jsontag) = "display_name"];
+  // List of tags
+  repeated string tag = 3 [(gogoproto.jsontag) = "tag"];
+  // DEPRECATED
+  reserved 4;
+  reserved "instance_name";
+  // Instance group name used to group NGINX instances
+  string instance_group = 5 [(gogoproto.jsontag) = "instance_group"];
+  // Last time agent was updated
+  google.protobuf.Timestamp updated = 6 [(gogoproto.jsontag) = "updated"];
+  // ID of the system where the agent is installed
+  string system_uid = 7 [(gogoproto.jsontag) = "system_uid"];
+  // Provides other agent information
+  AgentDetails agent_details = 8 [(gogoproto.jsontag) = "agent_details"];
+}

@@ -1,0 +1,173 @@
+syntax = "proto3";
+package f5.nginx.agent.sdk;
+
+import "common.proto";
+import "config.proto";
+import "gogo.proto";
+
+option go_package = "github.com/nginx/agent/sdk/v2/proto;proto";
+
+// swagger:model NginxDetails
+// Represents NGINX details about a single NGINX instance
+message NginxDetails {
+  // NGINX ID.
+  // Example: b636d4376dea15405589692d3c5d3869ff3a9b26b0e7bb4bb1aa7e658ace1437
+  string nginx_id = 1 [(gogoproto.jsontag) = "nginx_id"];
+  // NGINX version.
+  // Example: 1.23.2
+  string version = 2 [(gogoproto.jsontag) = "version"];
+  // Path to NGINX configuration.
+  // Example: /usr/local/nginx/conf/nginx.conf
+  string conf_path = 3 [(gogoproto.jsontag) = "conf_path"];
+  // Process ID of NGINX instance.
+  // Example: 8
+  string process_id = 4 [(gogoproto.jsontag) = "process_id"];
+  // The path to the NGINX executable.
+  // Example: /usr/local/nginx/sbin/nginx
+  string process_path = 5 [(gogoproto.jsontag) = "process_path"];
+  // The start time of the NGINX instance.
+  // Example: 1670429190000
+  int64 start_time = 6 [(gogoproto.jsontag) = "start_time"];
+  // Determines if the NGINX instance was built from the source code in github or not.
+  // Example: false
+  bool built_from_source = 7 [(gogoproto.jsontag) = "built_from_source"];
+  // List of NGINX loadable modules.
+  // Example: []
+  repeated string loadable_modules = 8 [(gogoproto.jsontag) = "loadable_modules"];
+  // List of NGINX runtime modules.
+  // Example: [ "http_stub_status_module" ]
+  repeated string runtime_modules = 9 [(gogoproto.jsontag) = "runtime_modules"];
+  // NGINX Plus metadata.
+  NginxPlusMetaData plus = 10 [(gogoproto.jsontag) = "plus"];
+  // NGINX SSL metadata.
+  NginxSslMetaData ssl = 11 [(gogoproto.jsontag) = "ssl"];
+  // Status URL.
+  // Example: http://localhost:8080/api
+  string status_url = 12 [(gogoproto.jsontag) = "status_url"];
+  // Command line arguments that were used when the NGINX instance was started.
+  // Example: [ "", "with-http_stub_status_module" ]
+  repeated string configure_args = 13 [(gogoproto.jsontag) = "configure_args"];
+  // Error log path.
+  // Example: -e /home/ubuntu/nplus/var/log/error.log -e /home/ubuntu/nplus/var/log/error1.log
+  repeated string error_log_paths = 14 [(gogoproto.jsontag) = "error_log_paths"];
+}
+
+// swagger:model NginxPlusMetaData
+// Represents NGINX Plus metadata
+message NginxPlusMetaData {
+  // Determines if its a plus instance or not.
+  // Example: true
+  bool enabled = 1 [(gogoproto.jsontag) = "enabled"];
+  // NGINX Plus version.
+  // Example: R27
+  string release = 2 [(gogoproto.jsontag) = "release"];
+}
+
+// swagger:model NginxSslMetaData
+// Represents NGINX SSL metadata
+message NginxSslMetaData {
+  // SSL type enum
+  enum NginxSslType {
+    // SSL complied with NGINX
+    BUILT = 0;
+    // SSL not complied with NGINX
+    RUN = 1;
+  }
+  // SSL Type.
+  // Example: 0
+  NginxSslType ssl_type = 1 [(gogoproto.jsontag) = "ssl_type"];
+  // List of SSL information (e.g. version, type, etc).
+  // Example: null
+  repeated string details = 2 [(gogoproto.jsontag) = "details"];
+}
+
+// Represents the health of a NGINX instance
+message NginxHealth {
+  // NGINX status enum
+  enum NginxStatus {
+    // Unknown status
+    UNKNOWN = 0;
+    // Active status
+    ACTIVE = 1;
+    // Degraded status
+    DEGRADED = 2;
+  }
+  // NGINX ID
+  string nginx_id = 1 [(gogoproto.jsontag) = "nginx_id"];
+  // NGINX status
+  NginxStatus nginx_status = 2 [(gogoproto.jsontag) = "nginx_status"];
+  // Provides an error message of why a NGINX instance is degraded
+  string degraded_reason = 3 [(gogoproto.jsontag) = "degraded_reason"];
+}
+
+// NGINX config action enum
+enum NginxConfigAction {
+  // Unknown action
+  UNKNOWN = 0;
+  // Apply config action
+  APPLY = 1;
+  // Test config action (This will be implemented in a future release)
+  TEST = 2;
+  // Rollback config action (This will be implemented in a future release)
+  ROLLBACK = 3;
+  // Return config action (This will be implemented in a future release)
+  RETURN = 4;
+  // Force config apply action
+  FORCE = 5;
+}
+
+// Represents a NGINX config
+message NginxConfig {
+  // NGINX config action
+  NginxConfigAction action = 1 [(gogoproto.jsontag) = "action"];
+  // Metadata information about the configuration
+  ConfigDescriptor config_data = 2 [(gogoproto.jsontag) = "config_data"];
+  // Zipped file of all NGINX config files
+  ZippedFile zconfig = 3 [(gogoproto.jsontag) = "zconfig"];
+  // Zipped file of all auxiliary files
+  ZippedFile zaux = 4 [(gogoproto.jsontag) = "zaux"];
+  // Information about all access log files
+  AccessLogs access_logs = 5 [(gogoproto.jsontag) = "access_logs"];
+  // Information about all error log files
+  ErrorLogs error_logs = 6 [(gogoproto.jsontag) = "error_logs"];
+  // Information about all SSL certificates files
+  SslCertificates ssl = 7 [(gogoproto.jsontag) = "ssl"];
+  // Directory map of all config and aux files
+  DirectoryMap directory_map = 8 [(gogoproto.jsontag) = "directory_map"];
+}
+
+// Represents access log files
+message AccessLogs {
+  // List of access log files
+  repeated AccessLog access_log = 1 [(gogoproto.jsontag) = "access_log"];
+}
+
+// Represents an access log file
+message AccessLog {
+  // Name of file
+  string name = 1 [(gogoproto.jsontag) = "name"];
+  // Format of the file
+  string format = 2 [(gogoproto.jsontag) = "format"];
+  // File Permissions
+  string permissions = 3 [(gogoproto.jsontag) = "permissions"];
+  // Determines if the file is readable or not
+  bool readable = 4 [(gogoproto.jsontag) = "readable"];
+}
+
+// Represents error log files
+message ErrorLogs {
+  // List of error log files
+  repeated ErrorLog error_log = 1 [(gogoproto.jsontag) = "error_log"];
+}
+
+// Represents an error log file
+message ErrorLog {
+  // Name of file
+  string name = 1 [(gogoproto.jsontag) = "name"];
+  // Log level
+  string log_level = 2 [(gogoproto.jsontag) = "log_level"];
+  // File Permissions
+  string permissions = 3 [(gogoproto.jsontag) = "permissions"];
+  // Determines if the file is readable or not
+  bool readable = 4 [(gogoproto.jsontag) = "readable"];
+}
