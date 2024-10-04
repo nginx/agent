@@ -10,7 +10,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/nats-io/nats-server/v2 v2.10.4
 	github.com/nats-io/nats.go v1.31.0
-	github.com/nginx/agent/sdk/v2 v2.30.3
+	github.com/nginx/agent/sdk/v2 v2.38.0
 	github.com/nginx/agent/v2 v2.30.3
 	github.com/prometheus/client_golang v1.19.1
 	github.com/sanity-io/litter v1.5.5

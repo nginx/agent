@@ -266,7 +266,7 @@ func TestDPSSyncAgentConfigChange(t *testing.T) {
 			// based off of it, clean up when done.
 			_, _, cleanupFunc, err := tutils.CreateTestAgentConfigEnv()
 			if err != nil {
-				t.Fatalf(err.Error())
+				t.Fatal(err.Error())
 			}
 			defer cleanupFunc()
 

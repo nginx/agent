@@ -21,6 +21,8 @@ GOINST  = ${GOCMD} install
 GOGET   = ${GOCMD} get
 GOGEN   = ${GOCMD} generate
 GOVET   = ${GOCMD} vet
+GOMOD   = ${GOCMD} mod
+GOTIDY  = ${GOMOD} tidy
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # https://docs.nginx.com/nginx/releases/                                                                                          #

@@ -16,8 +16,8 @@ Reading: %d Writing: %d Waiting: %d
 
 // NginxClient allows you to fetch NGINX metrics from the stub_status page.
 type NginxClient struct {
-	httpClient  *http.Client
 	apiEndpoint string
+	httpClient  *http.Client
 }
 
 // StubStats represents NGINX stub_status metrics.

@@ -371,15 +371,15 @@ github.com/go-logr/stdr
 ## explicit; go 1.12
 github.com/go-ole/go-ole
 github.com/go-ole/go-ole/oleutil
-# github.com/go-openapi/jsonpointer v0.20.0
-## explicit; go 1.18
+# github.com/go-openapi/jsonpointer v0.20.2
+## explicit; go 1.19
 github.com/go-openapi/jsonpointer
-# github.com/go-openapi/jsonreference v0.20.2
-## explicit; go 1.13
+# github.com/go-openapi/jsonreference v0.20.4
+## explicit; go 1.19
 github.com/go-openapi/jsonreference
 github.com/go-openapi/jsonreference/internal
-# github.com/go-openapi/swag v0.22.4
-## explicit; go 1.18
+# github.com/go-openapi/swag v0.22.8
+## explicit; go 1.19
 github.com/go-openapi/swag
 # github.com/go-resty/resty/v2 v2.11.0
 ## explicit; go 1.16
@@ -655,7 +655,7 @@ github.com/morikuni/aec
 # github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
 ## explicit
 github.com/munnerz/goautoneg
-# github.com/nginx/agent/sdk/v2 v2.30.3 => ./../../sdk
+# github.com/nginx/agent/sdk/v2 v2.38.0 => ./../../sdk
 ## explicit; go 1.23
 github.com/nginx/agent/sdk/v2
 github.com/nginx/agent/sdk/v2/agent/config

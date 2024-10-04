@@ -23,7 +23,7 @@ func NewMetricSourceLogger() *MetricSourceLogger {
 
 func (m *MetricSourceLogger) Log(message string) {
 	m.once.Do(func() {
-		log.Warnf(message)
+		log.Warn(message)
 	})
-	log.Tracef(message)
+	log.Trace(message)
 }

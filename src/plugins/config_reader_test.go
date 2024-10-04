@@ -132,7 +132,7 @@ func TestUpdateAgentConfig(t *testing.T) {
 	// Get the current config so we can correctly set a few test case variables
 	_, _, _, err := tutils.CreateTestAgentConfigEnv()
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 	curConf, err := config.GetConfig("12345")
 	if err != nil {
@@ -256,7 +256,7 @@ func TestUpdateAgentConfig(t *testing.T) {
 			// based off of it, clean up when done.
 			_, _, cleanupFunc, err := tutils.CreateTestAgentConfigEnv()
 			if err != nil {
-				t.Fatalf(err.Error())
+				t.Fatal(err.Error())
 			}
 			defer cleanupFunc()
 
