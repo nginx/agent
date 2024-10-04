@@ -106,6 +106,7 @@ func ResolveConfig() (*Config, error) {
 	}
 
 	slog.Debug("Agent config", "config", config)
+	slog.Info("Enabled features", "features", config.Features)
 
 	return config, nil
 }

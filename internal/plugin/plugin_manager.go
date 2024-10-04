@@ -18,7 +18,6 @@ import (
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/watcher"
-	pkgConfig "github.com/nginx/agent/v3/pkg/config"
 )
 
 func LoadPlugins(ctx context.Context, agentConfig *config.Config) []bus.Plugin {
@@ -40,7 +39,7 @@ func addResourcePlugin(plugins []bus.Plugin, agentConfig *config.Config) []bus.P
 }
 
 func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentConfig *config.Config) []bus.Plugin {
-	if agentConfig.IsFeatureEnabled(pkgConfig.FeatureConfiguration) && isGrpcClientConfigured(agentConfig) {
+	if isGrpcClientConfigured(agentConfig) {
 		grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig)
 		if err != nil {
 			slog.WarnContext(ctx, "Failed to create gRPC connection", "error", err)

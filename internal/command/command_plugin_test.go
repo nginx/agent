@@ -75,11 +75,11 @@ func TestCommandPlugin_Process(t *testing.T) {
 	defer commandPlugin.Close(ctx)
 
 	// Check CreateConnection
-	fakeCommandService.CheckConnectionReturnsOnCall(0, false)
+	fakeCommandService.IsConnectedReturnsOnCall(0, false)
 
 	// Check UpdateDataPlaneStatus
-	fakeCommandService.CheckConnectionReturnsOnCall(1, true)
-	fakeCommandService.CheckConnectionReturnsOnCall(2, true)
+	fakeCommandService.IsConnectedReturnsOnCall(1, true)
+	fakeCommandService.IsConnectedReturnsOnCall(2, true)
 
 	commandPlugin.commandService = fakeCommandService
 
