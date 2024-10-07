@@ -93,7 +93,7 @@ func TestMessagePipe_DeRegister(t *testing.T) {
 	err = messagePipe.DeRegister(ctx, []string{plugin.Info().Name})
 
 	require.NoError(t, err)
-	assert.Empty(t, len(messagePipe.GetPlugins()))
+	assert.Empty(t, messagePipe.GetPlugins())
 	plugin.AssertExpectations(t)
 }
 

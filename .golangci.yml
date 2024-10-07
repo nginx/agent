@@ -14,11 +14,11 @@ linters:
   enable:
     - bodyclose
     - cyclop
+    - copyloopvar
     - contextcheck
     - dupl
     - errorlint
     - exhaustive
-    - exportloopref
     - forcetypeassert
     - gocheckcompilerdirectives
     - gocognit
@@ -28,7 +28,6 @@ linters:
     - godox
     - gofumpt
     - goheader
-    - gomnd
     - gomoddirectives
     - gosec
     - grouper
@@ -40,6 +39,7 @@ linters:
     - makezero
     - mirror
     - misspell
+    - mnd
     - musttag
     - nakedret
     - nestif
@@ -201,27 +201,6 @@ linters-settings:
 
       This source code is licensed under the Apache License, Version 2.0 license found in the
       LICENSE file in the root directory of this source tree.
-  gomnd:
-    # List of enabled checks, see https://github.com/tommy-muehle/go-mnd/#checks for description.
-    # Default: ["argument", "case", "condition", "operation", "return", "assign"]
-    checks:
-      - argument
-      - case
-      - condition
-      - operation
-      - return
-      - assign
-    # List of numbers to exclude from analysis. The numbers should be written as string.
-    # Values always ignored: "1", "1.0", "0" and "0.0". Default: []
-    ignored-numbers: []
-    # List of file patterns to exclude from analysis. Values always ignored: `.+_test.go`. Default: []
-    ignored-files: []
-    # List of function patterns to exclude from analysis.
-    # Following functions are always ignored: `time.Date`,
-    # `strconv.FormatInt`, `strconv.FormatUint`, `strconv.FormatFloat`,
-    # `strconv.ParseInt`, `strconv.ParseUint`, `strconv.ParseFloat`.
-    # Default: []
-    ignored-functions: []
   gomoddirectives:
     # Allow local `replace` directives. Default: false
     replace-local: false
