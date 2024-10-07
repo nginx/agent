@@ -1,8 +1,8 @@
 module github.com/nginx/agent/v2
 
-go 1.22.0
+go 1.23
 
-toolchain go1.22.4
+toolchain go1.23.2
 
 require (
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
@@ -37,7 +37,7 @@ require (
 
 require (
 	github.com/go-resty/resty/v2 v2.11.0
-	github.com/nginx/agent/sdk/v2 v2.30.3
+	github.com/nginx/agent/sdk/v2 v2.38.0
 	github.com/prometheus/client_golang v1.19.1
 	github.com/rs/cors v1.11.0
 	go.uber.org/goleak v1.3.0

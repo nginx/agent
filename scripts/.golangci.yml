@@ -1,9 +1,8 @@
 run:
   timeout: 3m
-  go: '1.22.4'
+  go: '1.23.2'
 linters:
   disable:
     - gosimple
     - staticcheck
     - unused
-    - structcheck

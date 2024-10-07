@@ -317,7 +317,7 @@ func (c *commander) Upload(ctx context.Context, cfg *proto.NginxConfig, messageI
 		}
 
 		if status.Status != proto.UploadStatus_OK {
-			return fmt.Errorf(status.Reason)
+			return fmt.Errorf("%s", status.Reason)
 		}
 
 		return nil

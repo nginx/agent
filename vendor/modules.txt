@@ -92,8 +92,8 @@ github.com/mitchellh/mapstructure
 # github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
 ## explicit
 github.com/munnerz/goautoneg
-# github.com/nginx/agent/sdk/v2 v2.30.3 => ./sdk
-## explicit; go 1.22.0
+# github.com/nginx/agent/sdk/v2 v2.38.0 => ./sdk
+## explicit; go 1.23
 github.com/nginx/agent/sdk/v2
 github.com/nginx/agent/sdk/v2/agent/config
 github.com/nginx/agent/sdk/v2/agent/events
