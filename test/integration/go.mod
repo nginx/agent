@@ -1,12 +1,12 @@
 module github.com/nginx/agent/test/integration
 
-go 1.22.6
+go 1.23
 
-toolchain go1.22.7
+toolchain go1.23.2
 
 require (
 	github.com/go-resty/resty/v2 v2.11.0
-	github.com/nginx/agent/sdk/v2 v2.30.3
+	github.com/nginx/agent/sdk/v2 v2.38.0
 	github.com/nginx/agent/v2 v2.0.0-00010101000000-000000000000
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
@@ -67,9 +67,9 @@ require (
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
-	github.com/go-openapi/jsonpointer v0.20.0 // indirect
-	github.com/go-openapi/jsonreference v0.20.2 // indirect
-	github.com/go-openapi/swag v0.22.4 // indirect
+	github.com/go-openapi/jsonpointer v0.20.2 // indirect
+	github.com/go-openapi/jsonreference v0.20.4 // indirect
+	github.com/go-openapi/swag v0.22.8 // indirect
 	github.com/go-sql-driver/mysql v1.7.1 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/gogo/googleapis v1.4.1 // indirect
