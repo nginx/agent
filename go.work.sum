@@ -2672,6 +2672,7 @@ github.com/ncw/swift v1.0.47 h1:4DQRPj35Y41WogBxyhOXlrI37nzGlyEcsforeudyYPQ=
 github.com/ncw/swift v1.0.47/go.mod h1:23YIA4yWVnGwv2dQlN4bB7egfYX6YLn0Yo/S6zZO/ZM=
 github.com/networkplumbing/go-nft v0.2.0/go.mod h1:HnnM+tYvlGAsMU7yoYwXEVLLiDW9gdMmb5HoGcwpuQs=
 github.com/nginxinc/nginx-go-crossplane v0.4.24/go.mod h1:UzbZnyFv0vPlt1Urbnp/mrFCzBL4tYCReFuNBpFQEfI=
+github.com/nginxinc/nginx-plus-go-client v1.2.0 h1:NVfRsHbMJ7lOhkqMG52uvODiDBhQZNp20c0tV2lU3wg=
 github.com/nginxinc/nginx-plus-go-client v1.2.0/go.mod h1:n8OFLzrJulJ2fur28Cwa1Qp5DZNS2VicLV+Adt30LQ4=
 github.com/nginxinc/nginx-prometheus-exporter v1.1.2/go.mod h1:A1Fy5uLQonVGmwLC5xNxBX+vPFgYzBOvPjNRs8msT0k=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e h1:fD57ERR4JtEqsWbfPhv4DMiApHyliiK5xCTNVSPiaAs=

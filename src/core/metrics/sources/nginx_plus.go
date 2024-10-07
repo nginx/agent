@@ -9,20 +9,14 @@ package sources
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
 	"math"
-	"net/http"
-	"slices"
 	"sync"
-	"time"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/metrics"
 
-	plusclient "github.com/nginxinc/nginx-plus-go-client/client"
+	plusclient "github.com/nginxinc/nginx-plus-go-client/v2/client"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -87,21 +81,14 @@ func NewNginxPlus(baseDimensions *metrics.CommonDim, nginxNamespace, plusNamespa
 
 func (c *NginxPlus) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	c.init.Do(func() {
-		latestAPIVersion, err := c.getLatestAPIVersion(ctx, c.plusAPI)
-		if err != nil {
-			c.logger.Log(fmt.Sprintf("Failed to check available api versions: %v", err))
-		} else {
-			c.clientVersion = latestAPIVersion
-		}
-
-		cl, err := plusclient.NewNginxClient(c.plusAPI, plusclient.WithAPIVersion(c.clientVersion))
+		cl, err := plusclient.NewNginxClient(c.plusAPI, plusclient.WithMaxAPIVersion())
 		if err != nil {
 			c.logger.Log(fmt.Sprintf("Failed to create plus metrics client: %v", err))
 			SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
 			return
 		}
 
-		c.prevStats, err = c.getStats(cl)
+		c.prevStats, err = cl.GetStats(ctx)
 		if err != nil {
 			c.logger.Log(fmt.Sprintf("Failed to retrieve plus metrics: %v", err))
 			SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
@@ -110,7 +97,7 @@ func (c *NginxPlus) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWr
 		}
 	})
 
-	cl, err := plusclient.NewNginxClient(c.plusAPI, plusclient.WithAPIVersion(c.clientVersion))
+	cl, err := plusclient.NewNginxClient(c.plusAPI, plusclient.WithMaxAPIVersion())
 	if err != nil {
 		c.logger.Log(fmt.Sprintf("Failed to create plus metrics client: %v", err))
 		SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
@@ -119,7 +106,7 @@ func (c *NginxPlus) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWr
 
 	log.Debug("NGINX_plus_Collect: getting stats")
 
-	stats, err := c.getStats(cl)
+	stats, err := cl.GetStats(ctx)
 	if err != nil {
 		c.logger.Log(fmt.Sprintf("Failed to retrieve plus metrics: %v", err))
 		SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)
@@ -142,302 +129,6 @@ func (c *NginxPlus) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWr
 	log.Debug("NGINX_plus_Collect: metrics sent")
 
 	c.prevStats = stats
-}
-
-func (c *NginxPlus) defaultStats() *plusclient.Stats {
-	return &plusclient.Stats{
-		Upstreams:              map[string]plusclient.Upstream{},
-		ServerZones:            map[string]plusclient.ServerZone{},
-		StreamServerZones:      map[string]plusclient.StreamServerZone{},
-		StreamUpstreams:        map[string]plusclient.StreamUpstream{},
-		Slabs:                  map[string]plusclient.Slab{},
-		Caches:                 map[string]plusclient.HTTPCache{},
-		HTTPLimitConnections:   map[string]plusclient.LimitConnection{},
-		StreamLimitConnections: map[string]plusclient.LimitConnection{},
-		HTTPLimitRequests:      map[string]plusclient.HTTPLimitRequest{},
-		Resolvers:              map[string]plusclient.Resolver{},
-		LocationZones:          map[string]plusclient.LocationZone{},
-		StreamZoneSync:         &plusclient.StreamZoneSync{},
-		Workers:                []*plusclient.Workers{},
-		NginxInfo:              plusclient.NginxInfo{},
-		SSL:                    plusclient.SSL{},
-		Connections:            plusclient.Connections{},
-		HTTPRequests:           plusclient.HTTPRequests{},
-		Processes:              plusclient.Processes{},
-	}
-}
-
-func (c *NginxPlus) getStats(client Client) (*plusclient.Stats, error) {
-	var initialStatsWg sync.WaitGroup
-	initialStatsErrChan := make(chan error, 15)
-	stats := &ExtendedStats{
-		Stats: c.defaultStats(),
-	}
-
-	initialStatsWg.Add(1)
-	go func() {
-		defer initialStatsWg.Done()
-		endpoints, err := client.GetAvailableEndpoints()
-		if err != nil {
-			initialStatsErrChan <- fmt.Errorf("failed to get Available Endpoints: %w", err)
-			return
-		}
-		stats.endpoints = endpoints
-	}()
-
-	initialStatsWg.Add(1)
-	go func() {
-		defer initialStatsWg.Done()
-		streamEndpoints, err := client.GetAvailableStreamEndpoints()
-		if err != nil {
-			initialStatsErrChan <- fmt.Errorf("failed to get Available Stream Endpoints: %w", err)
-			return
-		}
-		stats.streamEndpoints = streamEndpoints
-	}()
-
-	initialStatsWg.Add(1)
-	go func() {
-		defer initialStatsWg.Done()
-		nginxInfo, err := client.GetNginxInfo()
-		if err != nil {
-			initialStatsErrChan <- fmt.Errorf("failed to get NGINX info: %w", err)
-			return
-		}
-		stats.NginxInfo = *nginxInfo
-	}()
-
-	initialStatsWg.Add(1)
-	go func() {
-		defer initialStatsWg.Done()
-		caches, err := client.GetCaches()
-		if err != nil {
-			initialStatsErrChan <- fmt.Errorf("failed to get NGINX info: %w", err)
-			return
-		}
-		stats.Caches = *caches
-	}()
-
-	initialStatsWg.Add(1)
-	go func() {
-		defer initialStatsWg.Done()
-		processes, err := client.GetProcesses()
-		if err != nil {
-			initialStatsErrChan <- fmt.Errorf("failed to get processes: %w", err)
-			return
-		}
-		stats.Processes = *processes
-	}()
-
-	initialStatsWg.Add(1)
-	go func() {
-		defer initialStatsWg.Done()
-		slabs, err := client.GetSlabs()
-		if err != nil {
-			initialStatsErrChan <- fmt.Errorf("failed to get processes: %w", err)
-			return
-		}
-		stats.Slabs = *slabs
-	}()
-
-	initialStatsWg.Add(1)
-	go func() {
-		defer initialStatsWg.Done()
-		httpRequests, err := client.GetHTTPRequests()
-		if err != nil {
-			initialStatsErrChan <- fmt.Errorf("failed to get HTTPRequests: %w", err)
-			return
-		}
-		stats.HTTPRequests = *httpRequests
-	}()
-
-	initialStatsWg.Add(1)
-	go func() {
-		defer initialStatsWg.Done()
-		ssl, err := client.GetSSL()
-		if err != nil {
-			initialStatsErrChan <- fmt.Errorf("failed to get SSL: %w", err)
-			return
-		}
-		stats.SSL = *ssl
-	}()
-
-	initialStatsWg.Add(1)
-	go func() {
-		defer initialStatsWg.Done()
-		serverZones, err := client.GetServerZones()
-		if err != nil {
-			initialStatsErrChan <- fmt.Errorf("failed to get ServerZones: %w", err)
-			return
-		}
-		stats.ServerZones = *serverZones
-	}()
-
-	initialStatsWg.Add(1)
-	go func() {
-		defer initialStatsWg.Done()
-		upstreams, err := client.GetUpstreams()
-		if err != nil {
-			initialStatsErrChan <- fmt.Errorf("failed to get Upstreams: %w", err)
-			return
-		}
-		stats.Upstreams = *upstreams
-	}()
-
-	initialStatsWg.Add(1)
-	go func() {
-		defer initialStatsWg.Done()
-		locationZones, err := client.GetLocationZones()
-		if err != nil {
-			initialStatsErrChan <- fmt.Errorf("failed to get LocationZones: %w", err)
-			return
-		}
-		stats.LocationZones = *locationZones
-	}()
-
-	initialStatsWg.Add(1)
-	go func() {
-		defer initialStatsWg.Done()
-		resolvers, err := client.GetResolvers()
-		if err != nil {
-			initialStatsErrChan <- fmt.Errorf("failed to get Resolvers: %w", err)
-			return
-		}
-		stats.Resolvers = *resolvers
-	}()
-
-	initialStatsWg.Add(1)
-	go func() {
-		defer initialStatsWg.Done()
-		httpLimitRequests, err := client.GetHTTPLimitReqs()
-		if err != nil {
-			initialStatsErrChan <- fmt.Errorf("failed to get HTTPLimitRequests: %w", err)
-			return
-		}
-		stats.HTTPLimitRequests = *httpLimitRequests
-	}()
-
-	initialStatsWg.Add(1)
-	go func() {
-		defer initialStatsWg.Done()
-		httpLimitConnections, err := client.GetHTTPConnectionsLimit()
-		if err != nil {
-			initialStatsErrChan <- fmt.Errorf("failed to get HTTPLimitConnections: %w", err)
-			return
-		}
-		stats.HTTPLimitConnections = *httpLimitConnections
-	}()
-
-	initialStatsWg.Add(1)
-	go func() {
-		defer initialStatsWg.Done()
-		workers, err := client.GetWorkers()
-		if err != nil {
-			initialStatsErrChan <- fmt.Errorf("failed to get Workers: %w", err)
-			return
-		}
-		stats.Workers = workers
-	}()
-
-	initialStatsWg.Wait()
-	close(initialStatsErrChan)
-
-	// only error if all the stats are empty
-	if len(initialStatsErrChan) == 16 {
-		return nil, errors.New("no useful metrics found")
-	}
-
-	if slices.Contains(stats.endpoints, "stream") {
-		var streamStatsWg sync.WaitGroup
-		// this may never be 4 depending on the if conditions
-		streamStatsErrChan := make(chan error, 4)
-
-		if slices.Contains(stats.streamEndpoints, "server_zones") {
-			streamStatsWg.Add(1)
-			go func() {
-				defer streamStatsWg.Done()
-				streamServerZones, err := client.GetStreamServerZones()
-				if err != nil {
-					streamStatsErrChan <- fmt.Errorf("failed to get streamServerZones: %w", err)
-					return
-				}
-				stats.StreamServerZones = *streamServerZones
-			}()
-		}
-
-		if slices.Contains(stats.streamEndpoints, "upstreams") {
-			streamStatsWg.Add(1)
-			go func() {
-				defer streamStatsWg.Done()
-				streamUpstreams, err := client.GetStreamUpstreams()
-				if err != nil {
-					streamStatsErrChan <- fmt.Errorf("failed to get StreamUpstreams: %w", err)
-					return
-				}
-				stats.StreamUpstreams = *streamUpstreams
-			}()
-		}
-
-		if slices.Contains(stats.streamEndpoints, "limit_conns") {
-
-			streamStatsWg.Add(1)
-			go func() {
-				defer streamStatsWg.Done()
-				streamConnectionsLimit, err := client.GetStreamConnectionsLimit()
-				if err != nil {
-					streamStatsErrChan <- fmt.Errorf("failed to get StreamLimitConnections: %w", err)
-					return
-				}
-				stats.StreamLimitConnections = *streamConnectionsLimit
-			}()
-
-		}
-
-		if slices.Contains(stats.streamEndpoints, "limit_conns") {
-
-			streamStatsWg.Add(1)
-			go func() {
-				defer streamStatsWg.Done()
-				streamZoneSync, err := client.GetStreamZoneSync()
-				if err != nil {
-					streamStatsErrChan <- fmt.Errorf("failed to get StreamZoneSync: %w", err)
-					return
-				}
-				stats.StreamZoneSync = streamZoneSync
-			}()
-
-		}
-		streamStatsWg.Wait()
-		close(streamStatsErrChan)
-
-		if len(streamStatsErrChan) > 0 {
-			log.Warnf("no useful metrics found in stream stats")
-		}
-	}
-
-	// report connection metrics separately so it does not influence the results (all http requests show in the metrics)
-	var connectionsWg sync.WaitGroup
-	connectionsErrChan := make(chan error, 1)
-
-	connectionsWg.Add(1)
-	go func() {
-		defer connectionsWg.Done()
-		connections, err := client.GetConnections()
-		if err != nil {
-			connectionsErrChan <- fmt.Errorf("failed to get connections: %w", err)
-			return
-		}
-		stats.Connections = *connections
-	}()
-
-	connectionsWg.Wait()
-	close(connectionsErrChan)
-
-	if len(connectionsErrChan) > 0 {
-		log.Warnf("connections metrics not found")
-	}
-
-	return stats.Stats, nil
 }
 
 func (c *NginxPlus) Update(dimensions *metrics.CommonDim, collectorConf *metrics.NginxCollectorConfig) {
@@ -1264,44 +955,4 @@ func boolToFloat64(myBool bool) float64 {
 	} else {
 		return valueFloat64Zero
 	}
-}
-
-func (c *NginxPlus) getLatestAPIVersion(ctx context.Context, endpoint string) (int, error) {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		return 0, fmt.Errorf("failed to create a get request: %w", err)
-	}
-
-	httpClient := &http.Client{}
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return 0, fmt.Errorf("%v is not accessible: %w", endpoint, err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return 0, fmt.Errorf("%v is not accessible: expected %v response, got %v", endpoint, http.StatusOK, resp.StatusCode)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return 0, fmt.Errorf("error while reading body of the response: %w", err)
-	}
-
-	var vers []int
-	err = json.Unmarshal(body, &vers)
-	if err != nil {
-		return 0, fmt.Errorf("error unmarshalling versions, got %q response: %w", string(body), err)
-	}
-
-	latestAPIVer := vers[len(vers)-1]
-	if latestAPIVer < c.clientVersion {
-		return 0, fmt.Errorf("%s/%v does not have a supported api version. Must be at least version %v", endpoint, latestAPIVer, c.clientVersion)
-	}
-
-	return latestAPIVer, nil
 }
