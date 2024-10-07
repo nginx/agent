@@ -26,6 +26,8 @@ import (
 const (
 	withWithPrefix   = "with-"
 	withModuleSuffix = "module"
+	keyValueLen      = 2
+	flagLen          = 1
 )
 
 type (
@@ -315,12 +317,11 @@ func getNginxConfPath(ctx context.Context, nginxInfo *Info) string {
 }
 
 func isFlag(vals []string) bool {
-	return len(vals) == 1 && vals[0] != ""
+	return len(vals) == flagLen && vals[0] != ""
 }
 
-// nolint: gomnd
 func isKeyValueFlag(vals []string) bool {
-	return len(vals) == 2
+	return len(vals) == keyValueLen
 }
 
 func getLoadableModules(nginxInfo *Info) (modules []string) {

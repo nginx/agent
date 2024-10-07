@@ -540,16 +540,19 @@ func TestNginxConfigParser_pingPlusAPIEndpoint(t *testing.T) {
 		if req.URL.String() == "/good_api" {
 			data := []byte("[1,2,3,4,5,6,7,8]")
 			_, err := rw.Write(data)
-			require.NoError(t, err)
+			// go-require: do not use require in http handlers (testifylint), using assert instead
+			assert.NoError(t, err)
 		} else if req.URL.String() == "/invalid_body_api" {
 			data := []byte("Invalid")
 			_, err := rw.Write(data)
-			require.NoError(t, err)
+			// go-require: do not use require in http handlers (testifylint), using assert instead
+			assert.NoError(t, err)
 		} else {
 			rw.WriteHeader(http.StatusInternalServerError)
 			data := []byte("")
 			_, err := rw.Write(data)
-			require.NoError(t, err)
+			// go-require: do not use require in http handlers (testifylint), using assert instead
+			assert.NoError(t, err)
 		}
 	})
 
@@ -601,16 +604,22 @@ server accepts handled requests
 Reading: 0 Writing: 1 Waiting: 1
 			`)
 			_, err := rw.Write(data)
-			require.NoError(t, err)
+
+			// go-require: do not use require in http handlers (testifylint), using assert instead
+			assert.NoError(t, err)
 		} else if req.URL.String() == "/invalid_body_api" {
 			data := []byte("Invalid")
 			_, err := rw.Write(data)
-			require.NoError(t, err)
+
+			// go-require: do not use require in http handlers (testifylint), using assert instead
+			assert.NoError(t, err)
 		} else {
 			rw.WriteHeader(http.StatusInternalServerError)
 			data := []byte("")
 			_, err := rw.Write(data)
-			require.NoError(t, err)
+
+			// go-require: do not use require in http handlers (testifylint), using assert instead
+			assert.NoError(t, err)
 		}
 	})
 

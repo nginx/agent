@@ -60,7 +60,7 @@ func (l *NginxLogTailerOperator) Tail(ctx context.Context, errorLog string, erro
 		select {
 		case d := <-data:
 			if l.doesLogLineContainError(d) {
-				errorChannel <- fmt.Errorf(d)
+				errorChannel <- fmt.Errorf("%s", d)
 				return
 			}
 		case <-ctxWithTimeout.Done():
