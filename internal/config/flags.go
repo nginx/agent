@@ -10,7 +10,7 @@ import (
 
 const (
 	ClientRootKey                               = "client"
-	ConfigDirectoriesKey                        = "config_dirs"
+	AllowedDirectoriesKey                       = "allowed_directories"
 	ConfigPathKey                               = "path"
 	CommandRootKey                              = "command"
 	DataPlaneConfigRootKey                      = "data_plane_config"
