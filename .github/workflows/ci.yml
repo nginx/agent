@@ -51,6 +51,16 @@ jobs:
               git-token: ${{ github.ref_name == 'v3' && secrets.GITHUB_TOKEN || '' }}
               ## name of orphaned branch where badges are stored
               git-branch: badges
+  pr-title-check:
+    name: Validate PR Title
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Validate PR Title and Description
+        uses: amannn/action-semantic-pull-request@v5.0.0
+        with:
+          types: "feat,fix,chore,docs,style,refactor,test,ci,perf"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   race-condition-test:
       name: Unit tests with race condition detection
       runs-on: ubuntu-22.04
