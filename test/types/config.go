@@ -45,7 +45,6 @@ func AgentConfig() *config.Config {
 			Time:                clientTime,
 			PermitWithoutStream: clientPermitWithoutStream,
 		},
-		ConfigDir:          "",
 		AllowedDirectories: []string{"/tmp/"},
 		Collector: &config.Collector{
 			ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
@@ -126,7 +125,7 @@ func AgentConfig() *config.Config {
 			Nginx: &config.NginxDataPlaneConfig{
 				TreatWarningsAsErrors:  true,
 				ReloadMonitoringPeriod: reloadMonitoringPeriod,
-				ExcludeLogs:            "",
+				ExcludeLogs:            []string{},
 			},
 		},
 		Watchers: &config.Watchers{

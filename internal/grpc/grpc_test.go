@@ -28,6 +28,7 @@ import (
 type ClientStream struct{}
 
 func (*ClientStream) Header() (metadata.MD, error) {
+	// nolint: nilnil
 	return nil, nil
 }
 
