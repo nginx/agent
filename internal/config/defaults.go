@@ -25,8 +25,8 @@ const (
 	DefCollectorTLSCAPath   = "/var/lib/nginx-agent/ca.pem"
 	DefCollectorTLSSANNames = "127.0.0.1,::1,localhost"
 
-	DefCommandServerHostKey    = "127.0.0.1"
-	DefCommandServerPortKey    = 8080
+	DefCommandServerHostKey    = ""
+	DefCommandServerPortKey    = 0
 	DefCommandServerTypeKey    = "grpc"
 	DefCommandAuthTokenKey     = ""
 	DefCommandTLSCertKey       = ""

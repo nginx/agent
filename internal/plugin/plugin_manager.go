@@ -49,6 +49,9 @@ func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentCo
 			filePlugin := file.NewFilePlugin(agentConfig, grpcConnection)
 			plugins = append(plugins, filePlugin)
 		}
+	} else {
+		slog.InfoContext(ctx, "Agent is not connected to a management plane. "+
+			"Configure a command server to establish a connection with a management plane.")
 	}
 
 	return plugins
@@ -77,5 +80,7 @@ func addWatcherPlugin(plugins []bus.Plugin, agentConfig *config.Config) []bus.Pl
 func isGrpcClientConfigured(agentConfig *config.Config) bool {
 	return agentConfig.Command != nil &&
 		agentConfig.Command.Server != nil &&
+		agentConfig.Command.Server.Host != "" &&
+		agentConfig.Command.Server.Port != 0 &&
 		agentConfig.Command.Server.Type == config.Grpc
 }
