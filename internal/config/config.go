@@ -440,6 +440,12 @@ func resolveProcessors() Processors {
 		processors.Batch.Timeout = viperInstance.GetDuration(CollectorBatchProcessorTimeoutKey)
 	}
 
+	if viperInstance.IsSet(CollectorAttributeProcessorKey) {
+		processors.Attribute = &Attribute{
+			Actions: make([]Action, 0),
+		}
+	}
+
 	return processors
 }
 
