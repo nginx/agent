@@ -45,7 +45,7 @@ func TestLoadPlugins(t *testing.T) {
 						Type: config.Grpc,
 					},
 				},
-				Features: config.GetDefaultFeatures(),
+				Features: config.DefaultFeatures(),
 			},
 			expected: []bus.Plugin{
 				&resource.Resource{},
