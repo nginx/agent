@@ -305,6 +305,88 @@ func registerCollectorFlags(fs *flag.FlagSet) {
 		DefCollectorBatchProcessorTimeout,
 		`Time duration after which a batch will be sent regardless of size.`,
 	)
+
+	fs.String(
+		CollectorExtensionsHealthServerHostKey,
+		DefCollectorExtensionsHealthServerHost,
+		`The hostname of the address to publish the OTel collector health check status.`,
+	)
+
+	fs.Int32(
+		CollectorExtensionsHealthServerPortKey,
+		DefCollectorExtensionsHealthServerPort,
+		`The port of the address to publish the OTel collector health check status.`,
+	)
+
+	fs.String(
+		CollectorExtensionsHealthPathKey,
+		DefCollectorExtensionsHealthPath,
+		`The path to be configured for the OTel collector health check server`,
+	)
+
+	fs.String(
+		CollectorExtensionsHealthTLSCertKey,
+		DefCollectorExtensionsHealthTLSCertPath,
+		"The path to the certificate file to use for TLS communication with the OTel collector health check server.",
+	)
+	fs.String(
+		CollectorExtensionsHealthTLSKeyKey,
+		DefCollectorExtensionsHealthTLSKeyPath,
+		`The path to the certificate key file to use for TLS communication " +
+		with the OTel collector health check server.`,
+	)
+	fs.String(
+		CollectorExtensionsHealthTLSCaKey,
+		DefCollectorExtensionsHealthTLSCAPath,
+		"The path to CA certificate file to use for TLS communication with the OTel collector health check server.",
+	)
+	fs.Bool(
+		CollectorExtensionsHealthTLSSkipVerifyKey,
+		DefCollectorExtensionsHealthTLSSkipVerify,
+		"Testing only. SkipVerify controls client verification of a server's certificate chain and host name.",
+	)
+	fs.String(
+		CollectorExtensionsHealthTLSServerNameKey,
+		DefCollectorExtensionsHealthTLServerNameKey,
+		"Specifies the name of the server sent in the TLS configuration.",
+	)
+
+	fs.String(
+		CollectorPrometheusExporterServerHostKey,
+		DefCollectorPrometheusExporterServerHost,
+		`The hostname of the address to publish prometheus metrics.`,
+	)
+	fs.Int32(
+		CollectorPrometheusExporterServerPortKey,
+		DefCollectorPrometheusExporterServerPort,
+		`The port of the address to publish prometheus metrics.`,
+	)
+	fs.String(
+		CollectorPrometheusExporterTLSCertKey,
+		DefCollectorPrometheusExporterTLSCertPath,
+		"The path to the certificate file to use for TLS communication with the prometheus metrics server.",
+	)
+	fs.String(
+		CollectorPrometheusExporterTLSKeyKey,
+		DefCollectorPrometheusExporterTLSKeyPath,
+		`The path to the certificate key file to use for TLS communication " +
+		with the prometheus metrics server.`,
+	)
+	fs.String(
+		CollectorPrometheusExporterTLSCaKey,
+		DefCollectorPrometheusExporterTLSCAPath,
+		"The path to CA certificate file to use for TLS communication with the prometheus metrics server.",
+	)
+	fs.Bool(
+		CollectorPrometheusExporterTLSSkipVerifyKey,
+		DefCollectorPrometheusExporterTLSSkipVerify,
+		"Testing only. SkipVerify controls client verification of a server's certificate chain and host name.",
+	)
+	fs.String(
+		CollectorPrometheusExporterTLSServerNameKey,
+		DefCollectorPrometheusExporterTLServerNameKey,
+		"Specifies the name of the server sent in the TLS configuration.",
+	)
 }
 
 func seekFileInPaths(fileName string, directories ...string) (string, error) {
@@ -383,38 +465,16 @@ func resolveClient() *Client {
 }
 
 func resolveCollector(allowedDirs []string) (*Collector, error) {
-	// We do not want to return a sentinel error because we are joining all returned errors
-	// from config resolution and returning them without pattern matching.
-	// nolint: nilnil
-	if !viperInstance.IsSet(CollectorRootKey) {
-		return nil, nil
-	}
+	var receivers Receivers
 
-	var (
-		err        error
-		exporters  Exporters
-		receivers  Receivers
-		extensions Extensions
-		log        Log
-	)
-
-	err = errors.Join(
-		err,
-		resolveMapStructure(CollectorExportersKey, &exporters),
-		resolveMapStructure(CollectorReceiversKey, &receivers),
-		resolveMapStructure(CollectorExtensionsKey, &extensions),
-		resolveMapStructure(CollectorLogKey, &log),
-	)
+	err := resolveMapStructure(CollectorReceiversKey, &receivers)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshal collector config: %w", err)
+		return nil, fmt.Errorf("unmarshal collector receivers config: %w", err)
 	}
 
-	if log.Level == "" {
-		log.Level = DefCollectorLogLevel
-	}
-
-	if log.Path == "" {
-		log.Path = DefCollectorLogPath
+	exporters, err := resolveExporters()
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal collector exporters config: %w", err)
 	}
 
 	col := &Collector{
@@ -422,8 +482,8 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 		Exporters:  exporters,
 		Processors: resolveProcessors(),
 		Receivers:  receivers,
-		Extensions: extensions,
-		Log:        &log,
+		Extensions: resolveExtensions(),
+		Log:        resolveCollectorLog(),
 	}
 
 	// Check for self-signed certificate true in Agent conf
@@ -439,17 +499,66 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 	return col, nil
 }
 
-func resolveProcessors() Processors {
-	processors := Processors{}
+func resolveExporters() (Exporters, error) {
+	var otlpExporters []OtlpExporter
+	exporters := Exporters{}
 
-	if viperInstance.IsSet(CollectorBatchProcessorKey) {
-		processors.Batch = &Batch{}
-		processors.Batch.SendBatchSize = viperInstance.GetUint32(CollectorBatchProcessorSendBatchSizeKey)
-		processors.Batch.SendBatchMaxSize = viperInstance.GetUint32(CollectorBatchProcessorSendBatchMaxSizeKey)
-		processors.Batch.Timeout = viperInstance.GetDuration(CollectorBatchProcessorTimeoutKey)
+	if viperInstance.IsSet(CollectorDebugExporterKey) {
+		exporters.Debug = &DebugExporter{}
 	}
 
-	return processors
+	if isPrometheusExporterSet() {
+		exporters.PrometheusExporter = &PrometheusExporter{
+			Server: &ServerConfig{
+				Host: viperInstance.GetString(CollectorPrometheusExporterServerHostKey),
+				Port: viperInstance.GetInt(CollectorPrometheusExporterServerPortKey),
+			},
+		}
+
+		if arePrometheusExportTLSSettingsSet() {
+			exporters.PrometheusExporter.TLS = &TLSConfig{
+				Cert:       viperInstance.GetString(CollectorPrometheusExporterTLSCertKey),
+				Key:        viperInstance.GetString(CollectorPrometheusExporterTLSKeyKey),
+				Ca:         viperInstance.GetString(CollectorPrometheusExporterTLSCaKey),
+				SkipVerify: viperInstance.GetBool(CollectorPrometheusExporterTLSSkipVerifyKey),
+				ServerName: viperInstance.GetString(CollectorPrometheusExporterTLSServerNameKey),
+			}
+		}
+	}
+
+	err := resolveMapStructure(CollectorOtlpExportersKey, &otlpExporters)
+	if err != nil {
+		return exporters, err
+	}
+
+	if len(otlpExporters) == 0 {
+		otlpExporters = append(otlpExporters, OtlpExporter{
+			Server: &ServerConfig{
+				Host: DefCollectorOtlpExporterServerHostKey,
+				Port: DefCollectorOtlpExporterServerPortKey,
+			},
+		})
+	}
+
+	exporters.OtlpExporters = otlpExporters
+
+	return exporters, nil
+}
+
+func isPrometheusExporterSet() bool {
+	return viperInstance.IsSet(CollectorPrometheusExporterKey) ||
+		(viperInstance.IsSet(CollectorPrometheusExporterServerHostKey) &&
+			viperInstance.IsSet(CollectorPrometheusExporterServerPortKey))
+}
+
+func resolveProcessors() Processors {
+	return Processors{
+		Batch: &Batch{
+			SendBatchSize:    viperInstance.GetUint32(CollectorBatchProcessorSendBatchSizeKey),
+			SendBatchMaxSize: viperInstance.GetUint32(CollectorBatchProcessorSendBatchMaxSizeKey),
+			Timeout:          viperInstance.GetDuration(CollectorBatchProcessorTimeoutKey),
+		},
+	}
 }
 
 // generate self-signed certificate for OTEL receiver
@@ -503,6 +612,47 @@ func processOtlpReceivers(tlsConfig *OtlpTLSConfig) error {
 	return nil
 }
 
+func resolveExtensions() Extensions {
+	if isHealthExtensionSet() {
+		health := &Health{
+			Server: &ServerConfig{
+				Host: viperInstance.GetString(CollectorExtensionsHealthServerHostKey),
+				Port: viperInstance.GetInt(CollectorExtensionsHealthServerPortKey),
+			},
+			Path: viperInstance.GetString(CollectorExtensionsHealthPathKey),
+		}
+
+		if areHealthExtensionTLSSettingsSet() {
+			health.TLS = &TLSConfig{
+				Cert:       viperInstance.GetString(CollectorExtensionsHealthTLSCertKey),
+				Key:        viperInstance.GetString(CollectorExtensionsHealthTLSKeyKey),
+				Ca:         viperInstance.GetString(CollectorExtensionsHealthTLSCaKey),
+				SkipVerify: viperInstance.GetBool(CollectorExtensionsHealthTLSSkipVerifyKey),
+				ServerName: viperInstance.GetString(CollectorExtensionsHealthTLSServerNameKey),
+			}
+		}
+
+		return Extensions{
+			Health: health,
+		}
+	}
+
+	return Extensions{}
+}
+
+func isHealthExtensionSet() bool {
+	return viperInstance.IsSet(CollectorExtensionsHealthKey) ||
+		(viperInstance.IsSet(CollectorExtensionsHealthServerHostKey) &&
+			viperInstance.IsSet(CollectorExtensionsHealthServerPortKey))
+}
+
+func resolveCollectorLog() *Log {
+	return &Log{
+		Level: viperInstance.GetString(CollectorLogLevelKey),
+		Path:  viperInstance.GetString(CollectorLogPathKey),
+	}
+}
+
 func resolveCommand() *Command {
 	serverType, ok := parseServerType(viperInstance.GetString(CommandServerTypeKey))
 	if !ok {
@@ -546,6 +696,22 @@ func areTLSSettingsSet() bool {
 		viperInstance.IsSet(CommandTLSCaKey) ||
 		viperInstance.IsSet(CommandTLSSkipVerifyKey) ||
 		viperInstance.IsSet(CommandTLSServerNameKey)
+}
+
+func areHealthExtensionTLSSettingsSet() bool {
+	return viperInstance.IsSet(CollectorExtensionsHealthTLSCertKey) ||
+		viperInstance.IsSet(CollectorExtensionsHealthTLSKeyKey) ||
+		viperInstance.IsSet(CollectorExtensionsHealthTLSCaKey) ||
+		viperInstance.IsSet(CollectorExtensionsHealthTLSSkipVerifyKey) ||
+		viperInstance.IsSet(CollectorExtensionsHealthTLSServerNameKey)
+}
+
+func arePrometheusExportTLSSettingsSet() bool {
+	return viperInstance.IsSet(CollectorPrometheusExporterTLSCertKey) ||
+		viperInstance.IsSet(CollectorPrometheusExporterTLSKeyKey) ||
+		viperInstance.IsSet(CollectorPrometheusExporterTLSCaKey) ||
+		viperInstance.IsSet(CollectorPrometheusExporterTLSSkipVerifyKey) ||
+		viperInstance.IsSet(CollectorPrometheusExporterTLSServerNameKey)
 }
 
 func resolveCommon() *CommonSettings {
