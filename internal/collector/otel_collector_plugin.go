@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -33,6 +34,7 @@ type (
 		cancel  context.CancelFunc
 		config  *config.Config
 		stopped bool
+		mu      *sync.Mutex
 	}
 )
 
@@ -64,6 +66,7 @@ func New(conf *config.Config) (*Collector, error) {
 	return &Collector{
 		config:  conf,
 		service: oTelCollector,
+		mu:      &sync.Mutex{},
 	}, nil
 }
 
@@ -259,6 +262,8 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 }
 
 func (oc *Collector) restartCollector(ctx context.Context) {
+	oc.mu.Lock()
+	defer oc.mu.Unlock()
 	err := oc.Close(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to shutdown OTel Collector", "error", err)
