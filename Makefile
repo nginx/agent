@@ -21,6 +21,8 @@ GOINST  = ${GOCMD} install
 GOGET   = ${GOCMD} get
 GOGEN   = ${GOCMD} generate
 GOVET   = ${GOCMD} vet
+GOMOD   = ${GOCMD} mod
+GOTIDY  = ${GOMOD} tidy
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # https://docs.nginx.com/nginx/releases/                                                                                          #
@@ -129,7 +131,7 @@ no-local-changes:
 lint: ## Run linter
 	GOWORK=off go vet ./...
 	GOWORK=off $(GORUN) $(GOLANGCI_LINT) run -c ./scripts/.golangci.yml
-	cd sdk && make lint
+	cd sdk && make lint GOLANGCI_LINT=$(GOLANGCI_LINT)
 
 format: ## Format code
 	$(GORUN) ${GOFUMPT} -l -w .
@@ -238,18 +240,17 @@ official-image-integration-test:
         OS_RELEASE=${OS_RELEASE} TAG=${TAG} CONTAINER_OS_TYPE=${CONTAINER_OS_TYPE} IMAGE_PATH=${IMAGE_PATH} DOCKER_COMPOSE_FILE="docker-compose-official-image.yml" \
         ${GOTEST} -v ./test/integration/api
 
-test-bench: ## Run benchmark tests
+test-performance-run: ## Run benchmark performance tests
 	cd test/performance && GOWORK=off CGO_ENABLED=0 ${GOTEST} -mod=vendor -count 5 -timeout 2m -bench=. -benchmem metrics_test.go
 	cd test/performance && GOWORK=off CGO_ENABLED=0 ${GOTEST} -mod=vendor -count 1 -bench=. -benchmem user_workflow_test.go
 	cd test/performance && GOWORK=off CGO_ENABLED=0 ${GOTEST} -mod=vendor -count 5 -timeout 2m -bench=. -benchmem plugins_test.go
-	cd test/performance && GOWORK=off CGO_ENABLED=0 ${GOTEST} -mod=vendor -count 5 -timeout 2m -bench=. -benchmem environment_test.go	
+	cd test/performance && GOWORK=off CGO_ENABLED=0 ${GOTEST} -mod=vendor -count 5 -timeout 2m -bench=. -benchmem environment_test.go
 
-benchmark-image: ## Build benchmark test container image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
+performance-image: ## Build benchmark test container image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build --no-cache -t nginx-agent-benchmark:1.0.0 \
 		--secret id=nginx-crt,src=${CERTS_DIR}/nginx-repo.crt \
 		--secret id=nginx-key,src=${CERTS_DIR}/nginx-repo.key \
-		-f test/docker/Dockerfile .
-
+		-f test/docker/performance/Dockerfile .
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Cert Generation                                                                                                 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -286,7 +287,7 @@ certs: ## Generate TLS certificates
 image: ## Build agent container image for NGINX Plus, need nginx-repo.crt and nginx-repo.key in build directory
 	@echo Building image with $(CONTAINER_CLITOOL); \
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${IMAGE_TAG} . \
-		--no-cache -f ./scripts/docker/nginx-plus/${OS_RELEASE}/Dockerfile \
+		--no-cache -f ./test/docker/nginx-plus/${OS_RELEASE}/Dockerfile \
 		--secret id=nginx-crt,src=${CERTS_DIR}/nginx-repo.crt \
 		--secret id=nginx-key,src=${CERTS_DIR}/nginx-repo.key \
 		--build-arg CONTAINER_REGISTRY=${CONTAINER_REGISTRY} \
@@ -299,7 +300,7 @@ image: ## Build agent container image for NGINX Plus, need nginx-repo.crt and ng
 oss-image: ## Build agent container image for NGINX OSS
 	@echo Building image with $(CONTAINER_CLITOOL); \
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t ${IMAGE_TAG} . \
-		--no-cache -f ./scripts/docker/nginx-oss/${CONTAINER_OS_TYPE}/Dockerfile \
+		--no-cache -f ./test/docker/nginx-oss/${CONTAINER_OS_TYPE}/Dockerfile \
 		--target ${IMAGE_BUILD_TARGET} \
 		--build-arg PACKAGE_NAME=${PACKAGE_NAME} \
 		--build-arg PACKAGES_REPO=${OSS_PACKAGES_REPO} \
@@ -307,36 +308,12 @@ oss-image: ## Build agent container image for NGINX OSS
 		--build-arg OS_RELEASE=${OS_RELEASE} \
 		--build-arg OS_VERSION=${OS_VERSION} \
 		--build-arg NGINX_AGENT_VERSION=${NGINX_AGENT_VERSION} \
-		--build-arg ENTRY_POINT=./scripts/docker/entrypoint.sh
+		--build-arg ENTRY_POINT=./test/docker/entrypoint.sh
 
 run-container: ## Run container from specified IMAGE_TAG
 	@echo Running ${IMAGE_TAG} with $(CONTAINER_CLITOOL); \
 		$(CONTAINER_CLITOOL) run -p 127.0.0.1:8081:8081/tcp --mount type=bind,source=${PWD}/nginx-agent.conf,target=/etc/nginx-agent/nginx-agent.conf ${IMAGE_TAG}
-
-official-plus-image: ## Build official NGINX Plus with NGINX Agent container image, need nginx-repo.crt and nginx-repo.key in build directory
-	@echo Building image nginx-plus-with-nginx-agent with $(CONTAINER_CLITOOL); \
-	cd scripts/docker/official/nginx-plus-with-nginx-agent/alpine/ \
-	&& $(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx-plus-with-nginx-agent . \
-		--no-cache -f ./Dockerfile \
-		--secret id=nginx-crt,src=../../../../../${CERTS_DIR}/nginx-repo.crt \
-		--secret id=nginx-key,src=../../../../../${CERTS_DIR}/nginx-repo.key
-
-official-oss-image: ## Build official NGINX OSS with NGINX Agent container image
-	@echo Building image nginx-oss-with-nginx-agent with $(CONTAINER_CLITOOL); \
-	cd scripts/docker/official/nginx-oss-with-nginx-agent/alpine/ \
-	&& $(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx-oss-with-nginx-agent . \
-	    --build-arg NGINX_AGENT_VERSION=${VERSION} \
-		--no-cache -f ./Dockerfile.mainline
-
-official-oss-stable-image: ## Build official NGINX OSS with NGINX Agent container stable image
-	@echo Building image nginx-oss-with-nginx-agent with $(CONTAINER_CLITOOL); \
-	cd scripts/docker/official/nginx-oss-with-nginx-agent/alpine/ \
-	&& $(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx-oss-with-nginx-agent . \
-	    --build-arg NGINX_AGENT_VERSION=${VERSION} \
-		--no-cache -f ./Dockerfile.stable
-
-official-oss-mainline-image: official-oss-image ## Build official NGINX OSS with NGINX Agent container mainline image
-
+		
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Grafana Example Dashboard Targets                                                                               #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

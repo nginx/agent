@@ -116,7 +116,6 @@ func (c *NginxErrorLog) Stop() {
 
 func (c *NginxErrorLog) Update(dimensions *metrics.CommonDim, collectorConf *metrics.NginxCollectorConfig) {
 	c.mu.Lock()
-	defer c.mu.Unlock()
 
 	c.baseDimensions = dimensions
 
@@ -129,6 +128,7 @@ func (c *NginxErrorLog) Update(dimensions *metrics.CommonDim, collectorConf *met
 		// add, remove or update existing log trailers
 		c.syncLogs()
 	}
+	c.mu.Unlock()
 }
 
 func (c *NginxErrorLog) recreateLogs() {
@@ -178,7 +178,7 @@ func (c *NginxErrorLog) stopTailer(logFile string, cancelFunction context.Cancel
 	delete(c.logFormats, logFile)
 }
 
-func (c *NginxErrorLog) collectLogStats(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
+func (c *NginxErrorLog) collectLogStats(_ context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -227,10 +227,10 @@ func (c *NginxErrorLog) logStats(ctx context.Context, logFile string) {
 			mu.Unlock()
 
 		case <-tick.C:
+			mu.Lock()
 			c.baseDimensions.NginxType = c.nginxType
 			c.baseDimensions.PublishedAPI = logFile
 
-			mu.Lock()
 			simpleMetrics := c.convertSamplesToSimpleMetrics(counters)
 			log.Tracef("Error log metrics collected: %v", simpleMetrics)
 

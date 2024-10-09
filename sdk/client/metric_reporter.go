@@ -122,6 +122,8 @@ func (r *metricReporter) createClient() error {
 }
 
 func (r *metricReporter) Close() (err error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	return r.closeConnection()
 }
 

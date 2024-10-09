@@ -189,7 +189,7 @@ func (n *Nginx) Process(message *core.Message) {
 			n.rollbackConfigApply(response.correlationId, response.config.GetConfigData().GetNginxId(), response.nginxDetails, response.configApply, response.err, false)
 			status := &proto.Command_NginxConfigResponse{
 				NginxConfigResponse: &proto.NginxConfigResponse{
-					Status:     newErrStatus(fmt.Sprintf("Config apply failed (write): " + response.err.Error())).CmdStatus,
+					Status:     newErrStatus(fmt.Sprintf("Config apply failed (write): %s", response.err.Error())).CmdStatus,
 					Action:     proto.NginxConfigAction_APPLY,
 					ConfigData: response.config.ConfigData,
 				},
@@ -416,7 +416,7 @@ func (n *Nginx) writeConfigAndReloadNginx(correlationId string, config *proto.Ng
 			n.messagePipeline.Process(core.NewMessage(core.ConfigRollbackResponse, configRollbackResponse))
 		}
 
-		message := fmt.Sprintf("Config apply failed (write): " + err.Error())
+		message := fmt.Sprintf("Config apply failed (write): %s", err.Error())
 		return n.handleErrorStatus(status, message)
 	}
 
@@ -654,7 +654,7 @@ func (n *Nginx) rollbackConfigApply(correlationId string, nginxId string, nginxD
 			reloadErr := n.nginxBinary.Reload(nginxDetails.ProcessId, nginxDetails.ProcessPath)
 			if reloadErr != nil {
 				nginxConfigStatusMessage = fmt.Sprintf("Config rollback failed: %v", reloadErr)
-				log.Errorf(nginxConfigStatusMessage)
+				log.Error(nginxConfigStatusMessage)
 				succeeded = false
 			}
 		}

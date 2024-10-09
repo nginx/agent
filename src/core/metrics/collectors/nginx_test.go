@@ -141,7 +141,7 @@ func TestNewNginxCollector(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			_, _, cleanupFunc, err := tutils.CreateTestAgentConfigEnv()
 			if err != nil {
-				t.Fatalf(err.Error())
+				t.Fatal(err.Error())
 			}
 			defer cleanupFunc()
 

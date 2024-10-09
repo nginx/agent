@@ -37,6 +37,7 @@ type MessagePipe struct {
 	extensionPlugins []ExtensionPlugin
 	ctx              context.Context
 	mu               sync.RWMutex
+	regMu            sync.Mutex
 	bus              message_bus.MessageBus
 }
 
@@ -72,7 +73,9 @@ func (p *MessagePipe) Register(size int, plugins []Plugin, extensionPlugins []Ex
 
 	for _, plugin := range p.plugins {
 		for _, subscription := range plugin.Subscriptions() {
+			p.regMu.Lock()
 			err := p.bus.Subscribe(subscription, plugin.Process)
+			p.regMu.Unlock()
 			if err != nil {
 				return err
 			}
@@ -82,7 +85,9 @@ func (p *MessagePipe) Register(size int, plugins []Plugin, extensionPlugins []Ex
 
 	for _, plugin := range p.extensionPlugins {
 		for _, subscription := range plugin.Subscriptions() {
+			p.regMu.Lock()
 			err := p.bus.Subscribe(subscription, plugin.Process)
+			p.regMu.Unlock()
 			if err != nil {
 				return err
 			}

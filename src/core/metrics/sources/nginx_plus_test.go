@@ -9,18 +9,14 @@ package sources
 
 import (
 	"context"
-	"fmt"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/core/metrics"
 
-	plusclient "github.com/nginxinc/nginx-plus-go-client/client"
+	plusclient "github.com/nginxinc/nginx-plus-go-client/v2/client"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -571,113 +567,6 @@ func (f *FakeNginxPlus) Collect(ctx context.Context, m chan<- *metrics.StatsEnti
 	f.baseDimensions.NginxVersion = stats.NginxInfo.Version
 
 	f.sendMetrics(ctx, m, f.collectMetrics(&stats, &prevStats)...)
-}
-
-var _ Client = (*MockClient)(nil)
-
-type MockClient struct{}
-
-func (m *MockClient) GetAvailableEndpoints() ([]string, error) {
-	return []string{"stream"}, nil
-}
-
-func (m *MockClient) GetAvailableStreamEndpoints() ([]string, error) {
-	return availableZones, nil
-}
-
-func (m *MockClient) GetStreamServerZones() (*plusclient.StreamServerZones, error) {
-	return &stats.StreamServerZones, nil
-}
-
-func (m *MockClient) GetStreamUpstreams() (*plusclient.StreamUpstreams, error) {
-	return &stats.StreamUpstreams, nil
-}
-
-func (m *MockClient) GetStreamConnectionsLimit() (*plusclient.StreamLimitConnections, error) {
-	return &stats.StreamLimitConnections, nil
-}
-
-func (m *MockClient) GetStreamZoneSync() (*plusclient.StreamZoneSync, error) {
-	return &plusclient.StreamZoneSync{
-		Zones:  stats.StreamZoneSync.Zones,
-		Status: stats.StreamZoneSync.Status,
-	}, nil
-}
-
-func (m *MockClient) GetNginxInfo() (*plusclient.NginxInfo, error) {
-	return &stats.NginxInfo, nil
-}
-
-func (m *MockClient) GetCaches() (*plusclient.Caches, error) {
-	return &stats.Caches, nil
-}
-
-func (m *MockClient) GetProcesses() (*plusclient.Processes, error) {
-	return &stats.Processes, nil
-}
-
-func (m *MockClient) GetSlabs() (*plusclient.Slabs, error) {
-	return &stats.Slabs, nil
-}
-
-func (m *MockClient) GetConnections() (*plusclient.Connections, error) {
-	return &stats.Connections, nil
-}
-
-func (m *MockClient) GetHTTPRequests() (*plusclient.HTTPRequests, error) {
-	return &stats.HTTPRequests, nil
-}
-
-func (m *MockClient) GetSSL() (*plusclient.SSL, error) {
-	return &stats.SSL, nil
-}
-
-func (m *MockClient) GetServerZones() (*plusclient.ServerZones, error) {
-	return &stats.ServerZones, nil
-}
-
-func (m *MockClient) GetUpstreams() (*plusclient.Upstreams, error) {
-	return &stats.Upstreams, nil
-}
-
-func (m *MockClient) GetLocationZones() (*plusclient.LocationZones, error) {
-	return &stats.LocationZones, nil
-}
-
-func (m *MockClient) GetResolvers() (*plusclient.Resolvers, error) {
-	return &stats.Resolvers, nil
-}
-
-func (m *MockClient) GetHTTPLimitReqs() (*plusclient.HTTPLimitRequests, error) {
-	return &stats.HTTPLimitRequests, nil
-}
-
-func (m *MockClient) GetHTTPConnectionsLimit() (*plusclient.HTTPLimitConnections, error) {
-	return &stats.HTTPLimitConnections, nil
-}
-
-func (m *MockClient) GetWorkers() ([]*plusclient.Workers, error) {
-	return stats.Workers, nil
-}
-
-func TestGetStats(t *testing.T) {
-	client := &MockClient{}
-
-	source := NewNginxPlus(nil, "", "", "", 9)
-
-	tests := []struct {
-		stats plusclient.Stats
-	}{
-		{
-			stats: stats,
-		},
-	}
-
-	for _, test := range tests {
-		resultStats, err := source.getStats(client)
-		require.NoError(t, err)
-		assert.Equal(t, test.stats, *resultStats)
-	}
 }
 
 func TestNginxPlusUpdate(t *testing.T) {
@@ -1242,81 +1131,5 @@ func TestNginxPlus_Collect(t *testing.T) {
 		}
 
 		assert.Len(t, extraMetrics, 0, "metrics returned but not tested")
-	}
-}
-
-func TestGetLatestAPIVersion(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		switch req.URL.String() {
-		case "/api":
-			data := []byte("[1,2,3,4,5,6,7,8,9]")
-			_, err := rw.Write(data)
-			require.NoError(t, err)
-		case "/oldapi":
-			data := []byte("[1,2,3,4,5]")
-			_, err := rw.Write(data)
-			require.NoError(t, err)
-		case "/api25":
-			data := []byte("[1,2,3,4,5,6,7]")
-			_, err := rw.Write(data)
-			require.NoError(t, err)
-		default:
-			rw.WriteHeader(http.StatusInternalServerError)
-			data := []byte("")
-			_, err := rw.Write(data)
-			require.NoError(t, err)
-		}
-	}))
-	defer server.Close()
-
-	tests := []struct {
-		name               string
-		clientVersion      int
-		endpoint           string
-		expectedAPIVersion int
-		expectErr          bool
-	}{
-		{
-			name:               "NGINX Plus R30",
-			clientVersion:      7,
-			endpoint:           "/api",
-			expectedAPIVersion: 9,
-			expectErr:          false,
-		},
-		{
-			name:               "NGINX Plus R25",
-			clientVersion:      7,
-			endpoint:           "/api25",
-			expectedAPIVersion: 7,
-			expectErr:          false,
-		},
-		{
-			name:               "old nginx plus",
-			clientVersion:      7,
-			endpoint:           "/oldapi",
-			expectedAPIVersion: 0,
-			expectErr:          true,
-		},
-		{
-			name:               "invalid path",
-			clientVersion:      7,
-			endpoint:           "/notexisting",
-			expectedAPIVersion: 0,
-			expectErr:          true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			c := &NginxPlus{
-				clientVersion: tt.clientVersion,
-			}
-			got, err := c.getLatestAPIVersion(context.Background(), fmt.Sprintf("%s%s", server.URL, tt.endpoint))
-			if tt.expectErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-			assert.Equal(t, tt.expectedAPIVersion, got)
-		})
 	}
 }

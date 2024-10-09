@@ -44,7 +44,7 @@ func TestExtensions_Process(t *testing.T) {
 	// Need to either not run parallel or properly lock the code.
 	_, _, cleanupFunc, err := tutils.CreateTestAgentConfigEnv()
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 	defer cleanupFunc()
 

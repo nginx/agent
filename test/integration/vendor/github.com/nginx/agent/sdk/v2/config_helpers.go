@@ -24,6 +24,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/nginx/agent/sdk/v2/backoff"
@@ -42,6 +43,8 @@ const (
 	predefinedAccessLogFormat = "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\""
 	httpClientTimeout         = 1 * time.Second
 )
+
+var readLock = sync.Mutex{}
 
 type DirectoryMap struct {
 	paths map[string]*proto.Directory
@@ -113,6 +116,7 @@ func GetNginxConfigWithIgnoreDirectives(
 	allowedDirectories map[string]struct{},
 	ignoreDirectives []string,
 ) (*proto.NginxConfig, error) {
+	readLock.Lock()
 	payload, err := crossplane.Parse(confFile,
 		&crossplane.ParseOptions{
 			IgnoreDirectives:   ignoreDirectives,
@@ -142,6 +146,7 @@ func GetNginxConfigWithIgnoreDirectives(
 	if err != nil {
 		return nil, fmt.Errorf("error assemble payload from %s, error: %s", confFile, err)
 	}
+	readLock.Unlock()
 
 	return nginxConfig, nil
 }

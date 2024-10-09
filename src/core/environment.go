@@ -20,6 +20,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/google/uuid"
@@ -43,7 +44,6 @@ import (
 //go:generate mv fake_environment_fixed.go fake_environment_test.go
 type Environment interface {
 	NewHostInfo(agentVersion string, tags *[]string, configDirs string, clearCache bool) *proto.HostInfo
-	// NewHostInfoWithContext(agentVersion string, tags *[]string, configDirs string, clearCache bool) *proto.HostInfo
 	GetHostname() (hostname string)
 	GetSystemUUID() (hostId string)
 	ReadDirectory(dir string, ext string) ([]string, error)
@@ -70,6 +70,7 @@ type EnvironmentType struct {
 	host               *proto.HostInfo
 	virtualizationFunc func(ctx context.Context) (string, string, error)
 	isContainerFunc    func() bool
+	hostMu             sync.Mutex
 }
 
 type Process struct {
@@ -106,6 +107,7 @@ const (
 	IsContainerKey      = "isContainer"
 	GetContainerIDKey   = "GetContainerID"
 	GetSystemUUIDKey    = "GetSystemUUIDKey"
+	ReleaseInfoFile     = "/etc/os-release"
 )
 
 var (
@@ -125,6 +127,8 @@ func (env *EnvironmentType) NewHostInfo(agentVersion string, tags *[]string, con
 
 func (env *EnvironmentType) NewHostInfoWithContext(ctx context.Context, agentVersion string, tags *[]string, configDirs string, clearCache bool) *proto.HostInfo {
 	defer ctx.Done()
+	env.hostMu.Lock()
+	defer env.hostMu.Unlock()
 	// temp cache measure
 	if env.host == nil || clearCache {
 		hostInformation, err := host.InfoWithContext(ctx)
@@ -154,7 +158,7 @@ func (env *EnvironmentType) NewHostInfoWithContext(ctx context.Context, agentVer
 			Partitons:           disks,
 			Network:             env.networks(),
 			Processor:           env.processors(hostInformation.KernelArch),
-			Release:             releaseInfo("/etc/os-release"),
+			Release:             releaseInfo(ReleaseInfoFile),
 			Tags:                *tags,
 			AgentAccessibleDirs: configDirs,
 		}
