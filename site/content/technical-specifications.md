@@ -53,4 +53,8 @@ Minimum system sizing recommendations for NGINX Agent:
 
 ## Logging
 
-NGINX Agent utilizes log files and formats to collect metrics. Increasing the log formats and instance counts will result in increased log file sizes. To prevent system storage issues due to a growing log directory, it is recommended to add a separate partition for `/var/log/nginx-agent` and enable [log rotation](http://nginx.org/en/docs/control.html#logs).
+NGINX Agent utilizes log files and formats to collect metrics. Increasing the log formats and instance counts will result in increased log file sizes. 
+
+To prevent system storage issues due to a growing log directory, it is recommended to add a separate partition for `/var/log/nginx-agent` and enable [log rotation](http://nginx.org/en/docs/control.html#logs).
+
+More information is available in the [Configuration overview]({{< ref "/how-to/configuration-overview.md#logs" >}})
