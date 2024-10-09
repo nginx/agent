@@ -24,7 +24,7 @@ This topic describes how to migrate from F5 NGINX Agent v2 to NGINX Agent v3.
 
 To begin this task, you will require the following:
 
-- A [working NGINX Agent instance]({{< ref "/installation-upgrade/install.md" >}}).
+- A [working NGINX Agent instance]({{< ref "/install-upgrade/install.md" >}}).
 -
 -
 

@@ -24,7 +24,7 @@ This document describes how to export the metrics data from F5 NGINX Agent.
 
 To begin this task, you will require the following:
 
-- A [working NGINX Agent instance]({{< ref "/installation-upgrade/install.md" >}}).
+- A [working NGINX Agent instance]({{< ref "/install-upgrade/install.md" >}}).
 -
 -
 
