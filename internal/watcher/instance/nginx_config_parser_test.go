@@ -540,16 +540,19 @@ func TestNginxConfigParser_pingPlusAPIEndpoint(t *testing.T) {
 		if req.URL.String() == "/good_api" {
 			data := []byte("[1,2,3,4,5,6,7,8]")
 			_, err := rw.Write(data)
-			require.NoError(t, err)
+			// go-require: do not use require in http handlers (testifylint), using assert instead
+			assert.NoError(t, err)
 		} else if req.URL.String() == "/invalid_body_api" {
 			data := []byte("Invalid")
 			_, err := rw.Write(data)
-			require.NoError(t, err)
+			// go-require: do not use require in http handlers (testifylint), using assert instead
+			assert.NoError(t, err)
 		} else {
 			rw.WriteHeader(http.StatusInternalServerError)
 			data := []byte("")
 			_, err := rw.Write(data)
-			require.NoError(t, err)
+			// go-require: do not use require in http handlers (testifylint), using assert instead
+			assert.NoError(t, err)
 		}
 	})
 
@@ -601,16 +604,22 @@ server accepts handled requests
 Reading: 0 Writing: 1 Waiting: 1
 			`)
 			_, err := rw.Write(data)
-			require.NoError(t, err)
+
+			// go-require: do not use require in http handlers (testifylint), using assert instead
+			assert.NoError(t, err)
 		} else if req.URL.String() == "/invalid_body_api" {
 			data := []byte("Invalid")
 			_, err := rw.Write(data)
-			require.NoError(t, err)
+
+			// go-require: do not use require in http handlers (testifylint), using assert instead
+			assert.NoError(t, err)
 		} else {
 			rw.WriteHeader(http.StatusInternalServerError)
 			data := []byte("")
 			_, err := rw.Write(data)
-			require.NoError(t, err)
+
+			// go-require: do not use require in http handlers (testifylint), using assert instead
+			assert.NoError(t, err)
 		}
 	})
 
@@ -655,70 +664,70 @@ func TestNginxConfigParser_ignoreLog(t *testing.T) {
 	tests := []struct {
 		name        string
 		logPath     string
-		excludeLogs string
 		expectedLog string
+		excludeLogs []string
 		expected    bool
 	}{
 		{
 			name:        "Test 1: allowed log path",
 			logPath:     "/tmp/var/log/nginx/access.log",
-			excludeLogs: "",
+			excludeLogs: []string{},
 			expected:    false,
 			expectedLog: "",
 		},
 		{
 			name:        "Test 2: syslog",
 			logPath:     "syslog:server=unix:/var/log/nginx.sock,nohostname;",
-			excludeLogs: "",
+			excludeLogs: []string{},
 			expected:    true,
 			expectedLog: "",
 		},
 		{
 			name:        "Test 3: log off",
 			logPath:     "off",
-			excludeLogs: "",
+			excludeLogs: []string{},
 			expected:    true,
 			expectedLog: "",
 		},
 		{
 			name:        "Test 4: log /dev/stderr",
 			logPath:     "/dev/stderr",
-			excludeLogs: "",
+			excludeLogs: []string{},
 			expected:    true,
 			expectedLog: "",
 		},
 		{
 			name:        "Test 5: log /dev/stdout",
 			logPath:     "/dev/stdout",
-			excludeLogs: "",
+			excludeLogs: []string{},
 			expected:    true,
 			expectedLog: "",
 		},
 		{
 			name:        "Test 6: log /dev/null",
 			logPath:     "/dev/null",
-			excludeLogs: "",
+			excludeLogs: []string{},
 			expected:    true,
 			expectedLog: "",
 		},
 		{
 			name:        "Test 7: exclude logs set, log path should be excluded",
 			logPath:     "/tmp/var/log/nginx/alert.log",
-			excludeLogs: "/tmp/var/log/nginx/[^ace]*:/tmp/var/log/nginx/a[^c]*",
+			excludeLogs: []string{"/tmp/var/log/nginx/[^ace]*", "/tmp/var/log/nginx/a[^c]*"},
 			expected:    true,
 			expectedLog: "",
 		},
 		{
 			name:        "Test 8: exclude logs set, log path is allowed",
 			logPath:     "/tmp/var/log/nginx/access.log",
-			excludeLogs: "/tmp/var/log/nginx/[^ace]*:/tmp/var/log/nginx/a[^c]*",
+			excludeLogs: []string{"/tmp/var/log/nginx/[^ace]*", "/tmp/var/log/nginx/a[^c]*"},
 			expected:    false,
 			expectedLog: "",
 		},
 		{
 			name:        "Test 9: log path outside allowed dir",
 			logPath:     "/var/log/nginx/access.log",
-			excludeLogs: "/var/log/nginx/[^ace]*:/var/log/nginx/a[^c]*",
+			excludeLogs: []string{"/var/log/nginx/[^ace]*", "/var/log/nginx/a[^c]*"},
 			expected:    false,
 			expectedLog: "Log being read is outside of allowed directories",
 		},

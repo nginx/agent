@@ -21,7 +21,17 @@ The following packages need to be installed:
  - make
  - golang (https://go.dev/doc/install)
  - protoc (https://grpc.io/docs/protoc-installation/)
- - mdatagen (There is a workaround for installing mdatagen that can be found here: https://github.com/open-telemetry/opentelemetry-collector/issues/9281#issuecomment-2276407679)
+ - mdatagen (There is currently an issue installing mdatagen https://github.com/open-telemetry/opentelemetry-collector/issues/9281. See instructions below for workaround.)
+
+#### Workaround to install mdatagen
+```
+git clone https://github.com/open-telemetry/opentelemetry-collector.git
+cd opentelemetry-collector
+git checkout v0.108.1
+cd cmd/mdatagen
+go install
+```
+
 
 Before starting development on the NGINX Agent, it is important to download and install the necessary tool and dependencies required by the NGINX Agent. You can do this by running the following `make` command:
 ```
@@ -31,15 +41,15 @@ make install-tools
 ### Building NGINX Agent from Source Code
 Build NGINX Agent deb package:
 ```
-OSARCH=<operating system archiecture> make local-deb-packge
+OSARCH=<operating system archiecture> make local-deb-package
 ```
 Build NGINX Agent rpm package:
 ```
-OSARCH=<operating system archiecture> make local-rpm-packge
+OSARCH=<operating system archiecture> make local-rpm-package
 ```
 Build NGINX Agent apk package:
 ```
-OSARCH=<operating system archiecture> make local-apk-packge
+OSARCH=<operating system archiecture> make local-apk-package
 ```
 
 ## NGINX Agent Technical Specifications

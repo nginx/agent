@@ -10,7 +10,7 @@ import (
 
 const (
 	ClientRootKey                               = "client"
-	ConfigDirectoriesKey                        = "config_dirs"
+	AllowedDirectoriesKey                       = "allowed_directories"
 	ConfigPathKey                               = "path"
 	CommandRootKey                              = "command"
 	DataPlaneConfigRootKey                      = "data_plane_config"
@@ -18,6 +18,7 @@ const (
 	CollectorRootKey                            = "collector"
 	VersionKey                                  = "version"
 	UUIDKey                                     = "uuid"
+	FeaturesKey                                 = "features"
 	InstanceWatcherMonitoringFrequencyKey       = "watchers_instance_watcher_monitoring_frequency"
 	InstanceHealthWatcherMonitoringFrequencyKey = "watchers_instance_health_watcher_monitoring_frequency"
 	FileWatcherMonitoringFrequencyKey           = "watchers_file_watcher_monitoring_frequency"

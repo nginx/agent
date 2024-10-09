@@ -7,17 +7,18 @@ package config
 import (
 	"math"
 	"time"
+
+	pkg "github.com/nginx/agent/v3/pkg/config"
 )
 
 const (
 	DefGracefulShutdownPeriod      = 5 * time.Second
 	DefNginxReloadMonitoringPeriod = 10 * time.Second
-	DefTreatErrorsAsWarnings       = true
+	DefTreatErrorsAsWarnings       = false
 
 	DefCollectorConfigPath  = "/etc/nginx-agent/opentelemetry-collector-agent.yaml"
 	DefCollectorLogLevel    = "INFO"
 	DefCollectorLogPath     = "/var/log/nginx-agent/opentelemetry-collector-agent.log"
-	DefConfigDirectories    = "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules"
 	DefCollectorTLSCertPath = "/var/lib/nginx-agent/cert.pem"
 	DefCollectorTLSKeyPath  = "/var/lib/nginx-agent/key.pem"
 	DefCollectorTLSCAPath   = "/var/lib/nginx-agent/ca.pem"
@@ -54,3 +55,22 @@ const (
 	DefCollectorBatchProcessorSendBatchMaxSize = 0
 	DefCollectorBatchProcessorTimeout          = 200 * time.Millisecond
 )
+
+func DefaultFeatures() []string {
+	return []string{
+		pkg.FeatureConfiguration,
+		pkg.FeatureConnection,
+		pkg.FeatureMetrics,
+		pkg.FeatureFileWatcher,
+	}
+}
+
+func DefaultAllowedDirectories() []string {
+	return []string{
+		"/etc/nginx",
+		"/usr/local/etc/nginx",
+		"/usr/share/nginx/modules",
+		"/var/run/nginx",
+		"/var/log/nginx",
+	}
+}

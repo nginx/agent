@@ -1,10 +1,9 @@
 ---
-title: "Getting Started"
+title: "Getting started"
 draft: false
 weight: 100
 toc: true
 tags: [ "docs" ]
-docs: "DOCS-1089"
 categories: ["configuration"]
 doctypes: ["task"]
 ---
@@ -15,7 +14,7 @@ Follow these steps to configure and run NGINX Agent and a mock interface ("contr
 
 ## Install NGINX
 
-Follow the steps in the [Installation]({{< ref "/v2/installation-upgrade/installation-github.md" >}}) section to download, install, and run NGINX.
+Follow the steps in the [Installation]({{< relref "/installation-upgrade/installation-github.md" >}}) section to download, install, and run NGINX.
 
 ## Clone the NGINX Agent Repository
 
@@ -177,5 +176,5 @@ NGINX Agent uses formatted log files to collect metrics. Expanding log formats a
 {{< important >}}
 Without log rotation or storage on a separate partition, log files could use up all the free drive space and cause your system to become unresponsive to certain services.
 
-For more information, see [NGINX Agent Log Rotation]({{< relref "/how-to/configuration-overview.md#nginx-agent-log-rotation" >}}).
+For more information, see [NGINX Agent Log Rotation]({{< relref "configuration/configuration-overview.md#nginx-agent-log-rotation" >}}).
 {{< /important >}}

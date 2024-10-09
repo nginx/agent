@@ -18,12 +18,10 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver/internal/metadata"
-	plusapi "github.com/nginxinc/nginx-plus-go-client/client"
+	plusapi "github.com/nginxinc/nginx-plus-go-client/v2/client"
 )
 
 const (
-	plusAPIVersion = 9
-
 	// Peer state is one of “up”, “draining”, “down”, “unavail”, “checking”, and “unhealthy”.
 	peerStateUp        = "up"
 	peerStateDraining  = "draining"
@@ -48,7 +46,7 @@ func newNginxPlusScraper(
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
 
 	plusClient, err := plusapi.NewNginxClient(cfg.Endpoint,
-		plusapi.WithAPIVersion(plusAPIVersion),
+		plusapi.WithMaxAPIVersion(),
 	)
 	if err != nil {
 		return nil, err
@@ -63,8 +61,8 @@ func newNginxPlusScraper(
 	}, nil
 }
 
-func (nps *nginxPlusScraper) scrape(_ context.Context) (pmetric.Metrics, error) {
-	stats, err := nps.plusClient.GetStats()
+func (nps *nginxPlusScraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
+	stats, err := nps.plusClient.GetStats(ctx)
 	if err != nil {
 		return pmetric.Metrics{}, fmt.Errorf("GET stats: %w", err)
 	}

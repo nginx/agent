@@ -70,9 +70,11 @@ func RegisterConfigFile() error {
 
 func ResolveConfig() (*Config, error) {
 	// Collect allowed directories, so that paths in the config can be validated.
-	configDir := viperInstance.GetString(ConfigDirectoriesKey)
+	directories := viperInstance.GetStringSlice(AllowedDirectoriesKey)
 	allowedDirs := make([]string, 0)
-	for _, dir := range strings.Split(configDir, ":") {
+
+	// Check directories in allowed_directories are valid
+	for _, dir := range directories {
 		if dir != "" && filepath.IsAbs(dir) {
 			allowedDirs = append(allowedDirs, dir)
 		} else {
@@ -96,12 +98,12 @@ func ResolveConfig() (*Config, error) {
 		Log:                resolveLog(),
 		DataPlaneConfig:    resolveDataPlaneConfig(),
 		Client:             resolveClient(),
-		ConfigDir:          configDir,
 		AllowedDirectories: allowedDirs,
 		Collector:          collector,
 		Command:            resolveCommand(),
 		Common:             resolveCommon(),
 		Watchers:           resolveWatchers(),
+		Features:           viperInstance.GetStringSlice(FeaturesKey),
 	}
 
 	slog.Debug("Agent config", "config", config)
@@ -146,18 +148,16 @@ func registerFlags() {
 		"Warning messages in the NGINX errors logs after a NGINX reload will be treated as an error.",
 	)
 
-	fs.String(
-		NginxExcludeLogsKey,
-		"",
-		"One or more NGINX log paths that you want to exclude from metrics collection or error monitoring "+
-			"This key is formatted as a string and follows Unix PATH format",
+	fs.StringSlice(
+		NginxExcludeLogsKey, []string{},
+		"A comma-separated list of one or more NGINX log paths that you want to exclude from metrics "+
+			"collection or error monitoring",
 	)
 
 	fs.Duration(ClientTimeoutKey, time.Minute, "Client timeout")
-	fs.String(ConfigDirectoriesKey,
-		DefConfigDirectories,
-		"Defines the paths that you want to grant NGINX Agent read/write access to."+
-			" This key is formatted as a string and follows Unix PATH format")
+	fs.StringSlice(AllowedDirectoriesKey,
+		DefaultAllowedDirectories(),
+		"A comma-separated list of paths that you want to grant NGINX Agent read/write access to")
 
 	fs.String(
 		CommandServerHostKey,
@@ -234,6 +234,12 @@ func registerFlags() {
 		ClientMaxMessageSendSizeKey,
 		DefMaxMessageSendSize,
 		"Updates the client grpc setting MaxSendMsgSize with the specific value in MB.",
+	)
+
+	fs.StringSlice(
+		FeaturesKey,
+		DefaultFeatures(),
+		"A comma-separated list of features enabled for the agent.",
 	)
 
 	registerCollectorFlags(fs)
@@ -351,7 +357,7 @@ func resolveDataPlaneConfig() *DataPlaneConfig {
 		Nginx: &NginxDataPlaneConfig{
 			ReloadMonitoringPeriod: viperInstance.GetDuration(NginxReloadMonitoringPeriodKey),
 			TreatWarningsAsErrors:  viperInstance.GetBool(NginxTreatWarningsAsErrorsKey),
-			ExcludeLogs:            viperInstance.GetString(NginxExcludeLogsKey),
+			ExcludeLogs:            viperInstance.GetStringSlice(NginxExcludeLogsKey),
 		},
 	}
 }
