@@ -24,20 +24,20 @@ pr_body = response.json().get("body", "")
 print("PR Body:", pr_body)
 
 # Check for 'Proposed changes' section
-proposed_changes_match = re.search(r"### Proposed changes\s+(.+)", pr_body, re.DOTALL)
+proposed_changes_match = re.search(r"### Proposed changes\s*(.+?)\s*(### Checklist|$)", pr_body, re.DOTALL)
 if proposed_changes_match:
     proposed_changes_text = proposed_changes_match.group(1).strip()
+    print(f"Extracted 'Proposed changes' text: {proposed_changes_text}")  # Debugging line
     word_count = len(proposed_changes_text.split())
     
     if word_count <= 10:
         print(f"Error: 'Proposed changes' section should have more than 10 words. Found {word_count} words.")
         sys.exit(1)
 else:
-    print("Error: 'Proposed changes' section is missing.")
+    print("Error: 'Proposed changes' section is missing or not detected correctly.")
     sys.exit(1)
 
 # Check if the first two checklist items are selected
-# Use simpler patterns: "I have read" and "I have run"
 contrib_checked = re.search(r"- \[\s*[xX]\s*\] I have read", pr_body)
 install_checked = re.search(r"- \[\s*[xX]\s*\] I have run", pr_body)
 
