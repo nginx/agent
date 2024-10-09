@@ -9,7 +9,7 @@ categories: ["configuration"]
 doctypes: ["task"]
 ---
 
-## Overview DOCS TEST
+## Overview
 
 NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus instance. It enables:
 
