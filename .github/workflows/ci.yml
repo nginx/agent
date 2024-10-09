@@ -32,6 +32,20 @@ jobs:
         run: make install-tools
       - name: run lint
         run: make lint
+  pr-description-checklist-check:
+    name: Validate PR Description and Checklist
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4.1.4
+        
+      - name: Validate PR description and checklist
+        run: |
+          python3 .github/scripts/validate_pr.py
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   unit-test:
       name: Unit Tests
       runs-on: ubuntu-22.04
