@@ -21,13 +21,13 @@ if response.status_code != 200:
 pr_body = response.json().get("body", "")
 
 # Print the PR body for debugging (optional)
-print("PR Body:", pr_body)
+#print("PR Body:", pr_body)
 
 # Adjusted regex to only capture the text between "Proposed changes" and "Checklist"
 proposed_changes_match = re.search(r"### Proposed changes\s+([\s\S]*?)\s*### Checklist", pr_body)
 if proposed_changes_match:
     proposed_changes_text = proposed_changes_match.group(1).strip()
-    print(f"Extracted 'Proposed changes' text: {proposed_changes_text}")  # Debugging line
+    #print(f"Extracted 'Proposed changes' text: {proposed_changes_text}")  # Debugging line
     word_count = len(proposed_changes_text.split())
     
     if word_count <= 10:
