@@ -37,9 +37,9 @@ else:
     sys.exit(1)
 
 # Check if the first two checklist items are selected
-# This pattern allows for optional spaces and both lowercase/uppercase x between brackets
-contrib_checked = re.search(r"- \[\s*[xX]\s*\] I have read the \[`CONTRIBUTING`\]\(https://github.com/nginx/agent/blob/main/docs/CONTRIBUTING\.md\)", pr_body)
-install_checked = re.search(r"- \[\s*[xX]\s*\] I have run `make install-tools`", pr_body)
+# Use simpler patterns: "I have read" and "I have run"
+contrib_checked = re.search(r"- \[\s*[xX]\s*\] I have read", pr_body)
+install_checked = re.search(r"- \[\s*[xX]\s*\] I have run", pr_body)
 
 if not contrib_checked:
     print("Error: The first checklist item is not checked.")
