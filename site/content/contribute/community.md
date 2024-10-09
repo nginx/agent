@@ -1,12 +1,11 @@
 ---
 title: "Community and contribution"
-draft: false
-weight: 100
 toc: true
-tags: [ "docs" ]
-categories: ["configuration"]
-doctypes: ["task"]
+weight: 100
+docs: DOCS-000
 ---
+
+This topic describes the various ways you can get involved with the F5 NGINX Agent project.
 
 # Community
 

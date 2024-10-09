@@ -1,18 +1,15 @@
 ---
 title: "Technical specifications"
-draft: false
-weight: 200
 toc: true
-tags: [ "docs" ]
-categories: ["development"]
-doctypes: ["task"]
+weight: 200
+docs: DOCS-000
 ---
 
 ## Overview
 
-This document provides technical specifications for NGINX Agent. It includes information on supported distributions, deployment environments, NGINX versions, sizing recommendations, and logging.
+This document provides technical specifications for F5 NGINX Agent. It includes information on supported distributions, deployment environments, NGINX versions, sizing recommendations, and logging.
 
-## Supported Distributions
+## Supported distributions
 
 NGINX Agent can run in most environments. We support the following distributions:
 
@@ -31,7 +28,7 @@ NGINX Agent can run in most environments. We support the following distributions
 {{< /bootstrap-table >}}
 
 
-## Supported Deployment Environments
+## Supported deployment environments
 
 NGINX Agent can be deployed in the following environments:
 
@@ -40,12 +37,12 @@ NGINX Agent can be deployed in the following environments:
 - Public Cloud: AWS, Google Cloud Platform, and Microsoft Azure
 - Virtual Machine
 
-## Supported NGINX Versions
+## Supported NGINX versions
 
 NGINX Agent works with all supported versions of NGINX Open Source and NGINX Plus.
 
 
-## Sizing Recommendations
+## Sizing recommendations
 
 Minimum system sizing recommendations for NGINX Agent:
 {{< bootstrap-table "table table-striped table-bordered" >}}
@@ -56,4 +53,8 @@ Minimum system sizing recommendations for NGINX Agent:
 
 ## Logging
 
-NGINX Agent utilizes log files and formats to collect metrics. Increasing the log formats and instance counts will result in increased log file sizes. To prevent system storage issues due to a growing log directory, it is recommended to add a separate partition for `/var/log/nginx-agent` and enable [log rotation](http://nginx.org/en/docs/control.html#logs).
+NGINX Agent utilizes log files and formats to collect metrics. Increasing the log formats and instance counts will result in increased log file sizes. 
+
+To prevent system storage issues due to a growing log directory, it is recommended to add a separate partition for `/var/log/nginx-agent` and enable [log rotation](http://nginx.org/en/docs/control.html#logs).
+
+More information is available in the [Configuration overview]({{< ref "/how-to/configuration-overview.md#logs" >}})
