@@ -33,11 +33,15 @@ else:
     sys.exit(1)
 
 # Check if the first two checklist items are selected
-if not re.search(r"- \[x\] I have read the \[`CONTRIBUTING`\]", pr_body):
+# This pattern allows for optional spaces and formatting differences like multiple spaces or alternative dash characters
+contrib_checked = re.search(r"- \[\s*[xX]\s*\] I have read the \[`CONTRIBUTING`\] document", pr_body)
+install_checked = re.search(r"- \[\s*[xX]\s*\] I have run `make install-tools`", pr_body)
+
+if not contrib_checked:
     print("Error: The first checklist item is not checked.")
     sys.exit(1)
 
-if not re.search(r"- \[x\] I have run `make install-tools`", pr_body):
+if not install_checked:
     print("Error: The second checklist item is not checked.")
     sys.exit(1)
 
