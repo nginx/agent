@@ -63,7 +63,8 @@ func TestResolveConfig(t *testing.T) {
 
 	assert.Equal(t, 30*time.Second, actual.DataPlaneConfig.Nginx.ReloadMonitoringPeriod)
 	assert.False(t, actual.DataPlaneConfig.Nginx.TreatWarningsAsErrors)
-	assert.Equal(t, "/var/log/nginx/error.log:/var/log/nginx/access.log", actual.DataPlaneConfig.Nginx.ExcludeLogs)
+	assert.Equal(t, []string{"/var/log/nginx/error.log", "/var/log/nginx/access.log"},
+		actual.DataPlaneConfig.Nginx.ExcludeLogs)
 
 	require.NotNil(t, actual.Collector)
 	assert.Equal(t, "/etc/nginx-agent/nginx-agent-otelcol.yaml", actual.Collector.ConfigPath)
@@ -75,8 +76,8 @@ func TestResolveConfig(t *testing.T) {
 	assert.Equal(t, 10*time.Second, actual.Client.Timeout)
 
 	assert.Equal(t,
-		"/etc/nginx:/usr/local/etc/nginx:/var/run/nginx:/usr/share/nginx/modules:/var/log/nginx:invalid/path",
-		actual.ConfigDir,
+		allowedDir,
+		actual.AllowedDirectories,
 	)
 
 	assert.Equal(t, allowedDir, actual.AllowedDirectories)
@@ -299,7 +300,6 @@ func getAgentConfig() *Config {
 			MaxMessageRecieveSize: 20,
 			MaxMessageSendSize:    40,
 		},
-		ConfigDir: "",
 		AllowedDirectories: []string{
 			"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx", "/var/log/nginx", "/usr/share/nginx/modules",
 		},

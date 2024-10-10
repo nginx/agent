@@ -12,10 +12,9 @@ import (
 )
 
 const (
-	DefConfigDirectories           = "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules"
 	DefGracefulShutdownPeriod      = 5 * time.Second
 	DefNginxReloadMonitoringPeriod = 10 * time.Second
-	DefTreatErrorsAsWarnings       = true
+	DefTreatErrorsAsWarnings       = false
 
 	// Command defaults
 	DefCommandServerHostKey    = "127.0.0.1"
@@ -78,11 +77,21 @@ const (
 	DefCollectorOtlpExporterServerPortKey = 5643
 )
 
-func GetDefaultFeatures() []string {
+func DefaultFeatures() []string {
 	return []string{
 		pkg.FeatureConfiguration,
 		pkg.FeatureConnection,
 		pkg.FeatureMetrics,
 		pkg.FeatureFileWatcher,
+	}
+}
+
+func DefaultAllowedDirectories() []string {
+	return []string{
+		"/etc/nginx",
+		"/usr/local/etc/nginx",
+		"/usr/share/nginx/modules",
+		"/var/run/nginx",
+		"/var/log/nginx",
 	}
 }

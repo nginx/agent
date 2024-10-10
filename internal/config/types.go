@@ -42,9 +42,8 @@ type (
 		Watchers           *Watchers        `yaml:"-"`
 		Version            string           `yaml:"-"`
 		Path               string           `yaml:"-"`
-		ConfigDir          string           `yaml:"-" mapstructure:"config-dirs"`
 		UUID               string           `yaml:"-"`
-		AllowedDirectories []string         `yaml:"-"`
+		AllowedDirectories []string         `yaml:"-" mapstructure:"allowed_directories"`
 		Features           []string         `yaml:"-"`
 	}
 
@@ -58,7 +57,7 @@ type (
 	}
 
 	NginxDataPlaneConfig struct {
-		ExcludeLogs            string        `yaml:"-" mapstructure:"exclude_logs"`
+		ExcludeLogs            []string      `yaml:"-" mapstructure:"exclude_logs"`
 		ReloadMonitoringPeriod time.Duration `yaml:"-" mapstructure:"reload_monitoring_period"`
 		TreatWarningsAsErrors  bool          `yaml:"-" mapstructure:"treat_warnings_as_errors"`
 	}
