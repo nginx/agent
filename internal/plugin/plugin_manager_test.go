@@ -76,7 +76,11 @@ func TestLoadPlugins(t *testing.T) {
 		}, {
 			name: "Test 4: Load metrics collector plugin",
 			input: &config.Config{
-				Collector: &config.Collector{},
+				Collector: &config.Collector{
+					Exporters: config.Exporters{
+						Debug: &config.DebugExporter{},
+					},
+				},
 			},
 			expected: []bus.Plugin{
 				&resource.Resource{},

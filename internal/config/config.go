@@ -126,15 +126,15 @@ func registerFlags() {
 	fs.String(
 		LogLevelKey,
 		"info",
-		`The desired verbosity level for logging messages from nginx-agent. 
-		Available options, in order of severity from highest to lowest, are: 
-		panic, fatal, error, info and debug.`,
+		"The desired verbosity level for logging messages from nginx-agent. "+
+			"Available options, in order of severity from highest to lowest, are: "+
+			"panic, fatal, error, info and debug.",
 	)
 	fs.String(
 		LogPathKey,
 		"",
-		`The path to output log messages to. 
-		If the default path doesn't exist, log messages are output to stdout/stderr.`,
+		"The path to output log messages to. "+
+			"If the default path doesn't exist, log messages are output to stdout/stderr.",
 	)
 
 	fs.Duration(
@@ -256,7 +256,7 @@ func registerCommandFlags(fs *flag.FlagSet) {
 	fs.Bool(
 		CommandTLSSkipVerifyKey,
 		DefCommandTLSSkipVerifyKey,
-		"Testing only. SkipVerify controls client verification of a server's certificate chain and host name.",
+		"Testing only. Skip verify controls client verification of a server's certificate chain and host name.",
 	)
 	fs.String(
 		CommandTLSServerNameKey,
@@ -275,16 +275,16 @@ func registerCollectorFlags(fs *flag.FlagSet) {
 	fs.String(
 		CollectorLogLevelKey,
 		DefCollectorLogLevel,
-		`The desired verbosity level for logging messages from nginx-agent OTel collector. 
-		Available options, in order of severity from highest to lowest, are: 
-		ERROR, WARN, INFO and DEBUG.`,
+		"The desired verbosity level for logging messages from nginx-agent OTel collector. "+
+			"Available options, in order of severity from highest to lowest, are: "+
+			"ERROR, WARN, INFO and DEBUG.",
 	)
 
 	fs.String(
 		CollectorLogPathKey,
 		DefCollectorLogPath,
-		`The path to output OTel collector log messages to. 
-		If the default path doesn't exist, log messages are output to stdout/stderr.`,
+		"The path to output OTel collector log messages to. "+
+			"If the default path doesn't exist, log messages are output to stdout/stderr.",
 	)
 
 	fs.Uint32(
@@ -331,8 +331,8 @@ func registerCollectorFlags(fs *flag.FlagSet) {
 	fs.String(
 		CollectorExtensionsHealthTLSKeyKey,
 		DefCollectorExtensionsHealthTLSKeyPath,
-		`The path to the certificate key file to use for TLS communication " +
-		with the OTel collector health check server.`,
+		"The path to the certificate key file to use for TLS communication "+
+			"with the OTel collector health check server.",
 	)
 	fs.String(
 		CollectorExtensionsHealthTLSCaKey,
@@ -342,48 +342,11 @@ func registerCollectorFlags(fs *flag.FlagSet) {
 	fs.Bool(
 		CollectorExtensionsHealthTLSSkipVerifyKey,
 		DefCollectorExtensionsHealthTLSSkipVerify,
-		"Testing only. SkipVerify controls client verification of a server's certificate chain and host name.",
+		"Testing only. Skip verify controls client verification of a server's certificate chain and host name.",
 	)
 	fs.String(
 		CollectorExtensionsHealthTLSServerNameKey,
 		DefCollectorExtensionsHealthTLServerNameKey,
-		"Specifies the name of the server sent in the TLS configuration.",
-	)
-
-	fs.String(
-		CollectorPrometheusExporterServerHostKey,
-		DefCollectorPrometheusExporterServerHost,
-		`The hostname of the address to publish prometheus metrics.`,
-	)
-	fs.Int32(
-		CollectorPrometheusExporterServerPortKey,
-		DefCollectorPrometheusExporterServerPort,
-		`The port of the address to publish prometheus metrics.`,
-	)
-	fs.String(
-		CollectorPrometheusExporterTLSCertKey,
-		DefCollectorPrometheusExporterTLSCertPath,
-		"The path to the certificate file to use for TLS communication with the prometheus metrics server.",
-	)
-	fs.String(
-		CollectorPrometheusExporterTLSKeyKey,
-		DefCollectorPrometheusExporterTLSKeyPath,
-		`The path to the certificate key file to use for TLS communication " +
-		with the prometheus metrics server.`,
-	)
-	fs.String(
-		CollectorPrometheusExporterTLSCaKey,
-		DefCollectorPrometheusExporterTLSCAPath,
-		"The path to CA certificate file to use for TLS communication with the prometheus metrics server.",
-	)
-	fs.Bool(
-		CollectorPrometheusExporterTLSSkipVerifyKey,
-		DefCollectorPrometheusExporterTLSSkipVerify,
-		"Testing only. SkipVerify controls client verification of a server's certificate chain and host name.",
-	)
-	fs.String(
-		CollectorPrometheusExporterTLSServerNameKey,
-		DefCollectorPrometheusExporterTLServerNameKey,
 		"Specifies the name of the server sent in the TLS configuration.",
 	)
 }
@@ -528,15 +491,6 @@ func resolveExporters() (Exporters, error) {
 	err := resolveMapStructure(CollectorOtlpExportersKey, &otlpExporters)
 	if err != nil {
 		return exporters, err
-	}
-
-	if len(otlpExporters) == 0 {
-		otlpExporters = append(otlpExporters, OtlpExporter{
-			Server: &ServerConfig{
-				Host: DefCollectorOtlpExporterServerHostKey,
-				Port: DefCollectorOtlpExporterServerPortKey,
-			},
-		})
 	}
 
 	exporters.OtlpExporters = otlpExporters

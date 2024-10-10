@@ -72,9 +72,6 @@ const (
 	DefCollectorPrometheusExporterTLSCAPath       = ""
 	DefCollectorPrometheusExporterTLSSkipVerify   = false
 	DefCollectorPrometheusExporterTLServerNameKey = ""
-
-	DefCollectorOtlpExporterServerHostKey = "127.0.0.1"
-	DefCollectorOtlpExporterServerPortKey = 5643
 )
 
 func DefaultFeatures() []string {

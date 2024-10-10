@@ -187,6 +187,7 @@ func TestResolveCollector(t *testing.T) {
 		viperInstance.Set(CollectorBatchProcessorSendBatchMaxSizeKey, expected.Processors.Batch.SendBatchMaxSize)
 		viperInstance.Set(CollectorBatchProcessorTimeoutKey, expected.Processors.Batch.Timeout)
 		viperInstance.Set(CollectorExportersKey, expected.Exporters)
+		viperInstance.Set(CollectorOtlpExportersKey, expected.Exporters.OtlpExporters)
 		viperInstance.Set(CollectorExtensionsHealthServerHostKey, expected.Extensions.Health.Server.Host)
 		viperInstance.Set(CollectorExtensionsHealthServerPortKey, expected.Extensions.Health.Server.Port)
 		viperInstance.Set(CollectorExtensionsHealthPathKey, expected.Extensions.Health.Path)
