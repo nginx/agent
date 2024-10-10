@@ -284,6 +284,16 @@ func (c *Config) IsDirectoryAllowed(directory string) bool {
 	return isAllowedDir(directory, c.AllowedDirectories)
 }
 
+func (c *Config) IsFeatureEnabled(feature string) bool {
+	for _, enabledFeature := range c.Features {
+		if enabledFeature == feature {
+			return true
+		}
+	}
+
+	return false
+}
+
 func isAllowedDir(dir string, allowedDirs []string) bool {
 	for _, allowedDirectory := range allowedDirs {
 		if strings.HasPrefix(dir, allowedDirectory) {
