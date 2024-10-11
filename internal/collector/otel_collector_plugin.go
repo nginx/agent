@@ -33,8 +33,8 @@ type (
 		service *otelcol.Collector
 		cancel  context.CancelFunc
 		config  *config.Config
-		stopped bool
 		mu      *sync.Mutex
+		stopped bool
 	}
 )
 
