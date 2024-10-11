@@ -222,7 +222,7 @@ func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
 				Attribute: &config.Attribute{
 					Actions: []config.Action{
 						{
-							Key:    "resource-id",
+							Key:    "resource.id",
 							Action: "insert",
 							Value:  "1234",
 						},
