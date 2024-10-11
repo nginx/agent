@@ -16,9 +16,8 @@ const (
 	DefNginxReloadMonitoringPeriod = 10 * time.Second
 	DefTreatErrorsAsWarnings       = false
 
-	// Command defaults
-	DefCommandServerHostKey    = "127.0.0.1"
-	DefCommandServerPortKey    = 8080
+	DefCommandServerHostKey    = ""
+	DefCommandServerPortKey    = 0
 	DefCommandServerTypeKey    = "grpc"
 	DefCommandAuthTokenKey     = ""
 	DefCommandTLSCertKey       = ""

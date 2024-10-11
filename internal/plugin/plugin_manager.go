@@ -18,7 +18,6 @@ import (
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/watcher"
-	pkgConfig "github.com/nginx/agent/v3/pkg/config"
 )
 
 func LoadPlugins(ctx context.Context, agentConfig *config.Config) []bus.Plugin {
@@ -40,7 +39,7 @@ func addResourcePlugin(plugins []bus.Plugin, agentConfig *config.Config) []bus.P
 }
 
 func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentConfig *config.Config) []bus.Plugin {
-	if agentConfig.IsFeatureEnabled(pkgConfig.FeatureConfiguration) && isGrpcClientConfigured(agentConfig) {
+	if isGrpcClientConfigured(agentConfig) {
 		grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig)
 		if err != nil {
 			slog.WarnContext(ctx, "Failed to create gRPC connection", "error", err)
@@ -50,6 +49,9 @@ func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentCo
 			filePlugin := file.NewFilePlugin(agentConfig, grpcConnection)
 			plugins = append(plugins, filePlugin)
 		}
+	} else {
+		slog.InfoContext(ctx, "Agent is not connected to a management plane. "+
+			"Configure a command server to establish a connection with a management plane.")
 	}
 
 	return plugins
@@ -81,5 +83,7 @@ func addWatcherPlugin(plugins []bus.Plugin, agentConfig *config.Config) []bus.Pl
 func isGrpcClientConfigured(agentConfig *config.Config) bool {
 	return agentConfig.Command != nil &&
 		agentConfig.Command.Server != nil &&
+		agentConfig.Command.Server.Host != "" &&
+		agentConfig.Command.Server.Port != 0 &&
 		agentConfig.Command.Server.Type == config.Grpc
 }
