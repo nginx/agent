@@ -245,7 +245,7 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 			oc.config.Collector.Processors.Attribute.Actions = append(
 				oc.config.Collector.Processors.Attribute.Actions,
 				config.Action{
-					Key:    "resource-id",
+					Key:    "resource.id",
 					Action: "insert",
 					Value:  resourceUpdateContext.GetResourceId(),
 				})
