@@ -1432,6 +1432,52 @@ func (m *FileMeta) validate(all bool) error {
 
 	// no validation rules for Size
 
+	switch v := m.FileType.(type) {
+	case *FileMeta_CertificateMeta:
+		if v == nil {
+			err := FileMetaValidationError{
+				field:  "FileType",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetCertificateMeta()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, FileMetaValidationError{
+						field:  "CertificateMeta",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, FileMetaValidationError{
+						field:  "CertificateMeta",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetCertificateMeta()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return FileMetaValidationError{
+					field:  "CertificateMeta",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	default:
+		_ = v // ensures v is used
+	}
+
 	if len(errors) > 0 {
 		return FileMetaMultiError(errors)
 	}
@@ -1828,3 +1874,377 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = UpdateFileResponseValidationError{}
+
+// Validate checks the field values on CertificateMeta with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *CertificateMeta) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CertificateMeta with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// CertificateMetaMultiError, or nil if none found.
+func (m *CertificateMeta) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CertificateMeta) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for SerialNumber
+
+	// no validation rules for Issuer
+
+	// no validation rules for Subject
+
+	if all {
+		switch v := interface{}(m.GetSans()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, CertificateMetaValidationError{
+					field:  "Sans",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, CertificateMetaValidationError{
+					field:  "Sans",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetSans()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return CertificateMetaValidationError{
+				field:  "Sans",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetDates()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, CertificateMetaValidationError{
+					field:  "Dates",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, CertificateMetaValidationError{
+					field:  "Dates",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetDates()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return CertificateMetaValidationError{
+				field:  "Dates",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	// no validation rules for SignatureAlgorithm
+
+	// no validation rules for PublicKeyAlgorithm
+
+	if len(errors) > 0 {
+		return CertificateMetaMultiError(errors)
+	}
+
+	return nil
+}
+
+// CertificateMetaMultiError is an error wrapping multiple validation errors
+// returned by CertificateMeta.ValidateAll() if the designated constraints
+// aren't met.
+type CertificateMetaMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CertificateMetaMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CertificateMetaMultiError) AllErrors() []error { return m }
+
+// CertificateMetaValidationError is the validation error returned by
+// CertificateMeta.Validate if the designated constraints aren't met.
+type CertificateMetaValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CertificateMetaValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CertificateMetaValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CertificateMetaValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CertificateMetaValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CertificateMetaValidationError) ErrorName() string { return "CertificateMetaValidationError" }
+
+// Error satisfies the builtin error interface
+func (e CertificateMetaValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCertificateMeta.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CertificateMetaValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CertificateMetaValidationError{}
+
+// Validate checks the field values on CertificateDates with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *CertificateDates) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CertificateDates with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// CertificateDatesMultiError, or nil if none found.
+func (m *CertificateDates) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CertificateDates) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for NotBefore
+
+	// no validation rules for NotAfter
+
+	if len(errors) > 0 {
+		return CertificateDatesMultiError(errors)
+	}
+
+	return nil
+}
+
+// CertificateDatesMultiError is an error wrapping multiple validation errors
+// returned by CertificateDates.ValidateAll() if the designated constraints
+// aren't met.
+type CertificateDatesMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CertificateDatesMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CertificateDatesMultiError) AllErrors() []error { return m }
+
+// CertificateDatesValidationError is the validation error returned by
+// CertificateDates.Validate if the designated constraints aren't met.
+type CertificateDatesValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CertificateDatesValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CertificateDatesValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CertificateDatesValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CertificateDatesValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CertificateDatesValidationError) ErrorName() string { return "CertificateDatesValidationError" }
+
+// Error satisfies the builtin error interface
+func (e CertificateDatesValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCertificateDates.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CertificateDatesValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CertificateDatesValidationError{}
+
+// Validate checks the field values on SubjectAlternativeNames with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *SubjectAlternativeNames) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on SubjectAlternativeNames with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// SubjectAlternativeNamesMultiError, or nil if none found.
+func (m *SubjectAlternativeNames) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *SubjectAlternativeNames) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return SubjectAlternativeNamesMultiError(errors)
+	}
+
+	return nil
+}
+
+// SubjectAlternativeNamesMultiError is an error wrapping multiple validation
+// errors returned by SubjectAlternativeNames.ValidateAll() if the designated
+// constraints aren't met.
+type SubjectAlternativeNamesMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m SubjectAlternativeNamesMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m SubjectAlternativeNamesMultiError) AllErrors() []error { return m }
+
+// SubjectAlternativeNamesValidationError is the validation error returned by
+// SubjectAlternativeNames.Validate if the designated constraints aren't met.
+type SubjectAlternativeNamesValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e SubjectAlternativeNamesValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e SubjectAlternativeNamesValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e SubjectAlternativeNamesValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e SubjectAlternativeNamesValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e SubjectAlternativeNamesValidationError) ErrorName() string {
+	return "SubjectAlternativeNamesValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e SubjectAlternativeNamesValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sSubjectAlternativeNames.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = SubjectAlternativeNamesValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = SubjectAlternativeNamesValidationError{}

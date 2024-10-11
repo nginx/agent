@@ -10,6 +10,8 @@
     - [CommandResponse.CommandStatus](#mpi-v1-CommandResponse-CommandStatus)
   
 - [mpi/v1/files.proto](#mpi_v1_files-proto)
+    - [CertificateDates](#mpi-v1-CertificateDates)
+    - [CertificateMeta](#mpi-v1-CertificateMeta)
     - [ConfigVersion](#mpi-v1-ConfigVersion)
     - [File](#mpi-v1-File)
     - [FileContents](#mpi-v1-FileContents)
@@ -19,12 +21,14 @@
     - [GetFileResponse](#mpi-v1-GetFileResponse)
     - [GetOverviewRequest](#mpi-v1-GetOverviewRequest)
     - [GetOverviewResponse](#mpi-v1-GetOverviewResponse)
+    - [SubjectAlternativeNames](#mpi-v1-SubjectAlternativeNames)
     - [UpdateFileRequest](#mpi-v1-UpdateFileRequest)
     - [UpdateFileResponse](#mpi-v1-UpdateFileResponse)
     - [UpdateOverviewRequest](#mpi-v1-UpdateOverviewRequest)
     - [UpdateOverviewResponse](#mpi-v1-UpdateOverviewResponse)
   
     - [File.FileAction](#mpi-v1-File-FileAction)
+    - [SignatureAlgorithm](#mpi-v1-SignatureAlgorithm)
   
     - [FileService](#mpi-v1-FileService)
   
@@ -145,6 +149,44 @@ Command status enum
 
 
 
+<a name="mpi-v1-CertificateDates"></a>
+
+### CertificateDates
+Represents the dates for which a certificate is valid
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| not_before | [int64](#int64) |  | The start date that for when the certificate is valid |
+| not_after | [int64](#int64) |  | The end date that for when the certificate is valid |
+
+
+
+
+
+
+<a name="mpi-v1-CertificateMeta"></a>
+
+### CertificateMeta
+Define the certificate message based on https://pkg.go.dev/crypto/x509#Certificate 
+and https://github.com/googleapis/googleapis/blob/005df4681b89bd204a90b76168a6dc9d9e7bf4fe/google/cloud/iot/v1/resources.proto#L341
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| serial_number | [bytes](#bytes) |  | Serial number of the certificate, usually a unique identifier, RFC5280 states the upper limit for serial number is 20 octets |
+| issuer | [string](#string) |  | Issuer details (who issued the certificate) |
+| subject | [string](#string) |  | Subject details (to whom the certificate is issued) |
+| sans | [SubjectAlternativeNames](#mpi-v1-SubjectAlternativeNames) |  | Subject Alternative Names (SAN) including DNS names and IP addresses |
+| dates | [CertificateDates](#mpi-v1-CertificateDates) |  | Timestamps representing the start of certificate validity (Not Before, Not After) |
+| signature_algorithm | [SignatureAlgorithm](#mpi-v1-SignatureAlgorithm) |  | The algorithm used to sign the certificate (e.g., SHA256-RSA) |
+| public_key_algorithm | [string](#string) |  | The type of public key in the certificate. |
+
+
+
+
+
+
 <a name="mpi-v1-ConfigVersion"></a>
 
 ### ConfigVersion
@@ -205,6 +247,7 @@ Meta information about the file, the name (including path) and hash
 | modified_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | Last modified time of the file (created time if never modified) |
 | permissions | [string](#string) |  | The permission set associated with a particular file |
 | size | [int64](#int64) |  | The size of the file in bytes |
+| certificate_meta | [CertificateMeta](#mpi-v1-CertificateMeta) |  |  |
 
 
 
@@ -289,6 +332,22 @@ Represents the response payload to a GetOverviewRequest, requesting a list of lo
 
 
 
+<a name="mpi-v1-SubjectAlternativeNames"></a>
+
+### SubjectAlternativeNames
+Represents the Subject Alternative Names for a certificate
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| dns_names | [string](#string) | repeated | List of DNS names in the Subject Alternative Name (SAN) extension |
+| ip_addresses | [string](#string) | repeated | List of ip addresses in the SAN extension |
+
+
+
+
+
+
 <a name="mpi-v1-UpdateFileRequest"></a>
 
 ### UpdateFileRequest
@@ -361,6 +420,33 @@ Action enumeration
 | FILE_ACTION_ADD | 2 | New file |
 | FILE_ACTION_UPDATE | 3 | Updated file |
 | FILE_ACTION_DELETE | 4 | File deleted |
+
+
+
+<a name="mpi-v1-SignatureAlgorithm"></a>
+
+### SignatureAlgorithm
+Enum to represent the possible signature algorithms used for certificates
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| SIGNATURE_ALGORITHM_UNKNOWN | 0 | Default, unknown or unsupported algorithm |
+| MD2_WITH_RSA | 1 | MD2 with RSA (Unsupported) |
+| MD5_WITH_RSA | 2 | MD5 with RSA (Only supported for signing, not verification) |
+| SHA1_WITH_RSA | 3 | SHA-1 with RSA (Only supported for signing and for verification of CRLs, CSRs, and OCSP responses) |
+| SHA256_WITH_RSA | 4 | SHA-256 with RSA |
+| SHA384_WITH_RSA | 5 | SHA-384 with RSA |
+| SHA512_WITH_RSA | 6 | SHA-512 with RSA |
+| DSA_WITH_SHA1 | 7 | DSA with SHA-1 (Unsupported) |
+| DSA_WITH_SHA256 | 8 | DSA with SHA-256 (Unsupported) |
+| ECDSA_WITH_SHA1 | 9 | ECDSA with SHA-1 (Only supported for signing and for verification of CRLs, CSRs, and OCSP responses) |
+| ECDSA_WITH_SHA256 | 10 | ECDSA with SHA-256 |
+| ECDSA_WITH_SHA384 | 11 | ECDSA with SHA-384 |
+| ECDSA_WITH_SHA512 | 12 | ECDSA with SHA-512 |
+| SHA256_WITH_RSA_PSS | 13 | SHA-256 with RSA-PSS |
+| SHA384_WITH_RSA_PSS | 14 | SHA-384 with RSA-PSS |
+| SHA512_WITH_RSA_PSS | 15 | SHA-512 with RSA-PSS |
+| PURE_ED25519 | 16 | Pure Ed25519 |
 
 
  
