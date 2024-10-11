@@ -70,6 +70,7 @@ func NewScraper(
 ) (*NginxLogScraper, error) {
 	logger := settings.Logger
 	logger.Info("Creating NGINX access log scraper")
+
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
 
 	operators := make([]operator.Config, 0)
