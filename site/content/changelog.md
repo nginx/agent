@@ -10,6 +10,37 @@ docs: "DOCS-1093"
 See the list of supported Operating Systems and architectures in the [Technical Specifications]({{< relref "./technical-specifications.md" >}}).
 
 ---
+## Release [v2.38.0](https://github.com/nginx/agent/releases/tag/v2.38.0)
+
+### 🐛 Bug Fixes
+
+In this release we have resolved the following issues:
+
+- Fix broken URLS in docs by [@nginx-aoife](https://github.com/nginx-aoife) in [#796](https://github.com/nginx/agent/pull/796)
+- fix name of deprecated flag by [@aphralG](https://github.com/aphralG) in [#811](https://github.com/nginx/agent/pull/811)
+- Fix make image targets by [@dhurley](https://github.com/dhurley) in [#812](https://github.com/nginx/agent/pull/812)
+- Fix debian oss image by [@dhurley](https://github.com/dhurley) in [#819](https://github.com/nginx/agent/pull/819)
+
+### 📝 Documentation
+
+We have made the following updates to the documentation:
+
+- docs: update GPG keys by [@Jcahilltorre](https://github.com/Jcahilltorre) in [#776](https://github.com/nginx/agent/pull/776)
+- Add new docker images to v2 pipeline for integration testing by [@oliveromahony](https://github.com/oliveromahony) in [#756](https://github.com/nginx/agent/pull/756)
+- Update website changelog for v2.37.0 by [@ADubhlaoich](https://github.com/ADubhlaoich) in [#790](https://github.com/nginx/agent/pull/790)
+- Pass on custom error log path at the time of validating config by [@achawla2012](https://github.com/achawla2012) in [#774](https://github.com/nginx/agent/pull/774)
+- Remove blocking calls in metrics framework by [@oliveromahony](https://github.com/oliveromahony) in [#788](https://github.com/nginx/agent/pull/788)
+- Update broken URL in installation-plus.md by [@nginx-aoife](https://github.com/nginx-aoife) in [#808](https://github.com/nginx/agent/pull/808)
+
+### 🔨 Maintenance
+
+We have made the following maintenance-related minor changes:
+
+- add new plus docker images to v2 pipeline by [@aphralG](https://github.com/aphralG) in [#779](https://github.com/nginx/agent/pull/779)
+- Add MaxRecvMsgSize and MaxSendMsgSize to client and server options by [@oliveromahony](https://github.com/oliveromahony) in [#795](https://github.com/nginx/agent/pull/795)
+- added leak tests for agent v2 by [@oliveromahony](https://github.com/oliveromahony) in [#807](https://github.com/nginx/agent/pull/807)
+
+---
 ## Release [v2.37.0](https://github.com/nginx/agent/releases/tag/v2.37.0)
 
 ### 🚀 Features
@@ -176,10 +207,6 @@ We have made the following maintenance-related minor changes:
 ---
 ## Release [v2.33.0](https://github.com/nginx/agent/releases/tag/v2.33.0)
 
-### 🌟 Highlights
-
-- feat: Add Support for NAP 5 by [@edarzins](https://github.com/edarzins) in [#604](https://github.com/nginx/agent/pull/604)
-
 ### 🚀 Features
 
 This release introduces the following new features:
@@ -235,35 +262,4 @@ We have made the following updates to the documentation:
 - change log updated for last release by [@oliveromahony](https://github.com/oliveromahony) in [#583](https://github.com/nginx/agent/pull/583)
 - Restore agent container information from nms docs  by [@jputrino](https://github.com/jputrino) in [#584](https://github.com/nginx/agent/pull/584)
 - fix: add additional container checks during instance registration by [@mattdesmarais](https://github.com/mattdesmarais) in [#592](https://github.com/nginx/agent/pull/592)
-
----
-## Release [v2.32.1](https://github.com/nginx/agent/releases/tag/v2.32.1)
-
-### 🚀 Features
-
-This release introduces the following new features:
-
-- feat: Agent Docs IA refactor by [@Jcahilltorre](https://github.com/Jcahilltorre) in [#548](https://github.com/nginx/agent/pull/548)
-- feat: move NMS agent docs by [@Jcahilltorre](https://github.com/Jcahilltorre) in [#553](https://github.com/nginx/agent/pull/553)
-- feat: import changelog from github by [@Jcahilltorre](https://github.com/Jcahilltorre) in [#570](https://github.com/nginx/agent/pull/570)
-
-### 🐛 Bug Fixes
-
-In this release we have resolved the following issues:
-
-- fix runners and bump go version by [@oliveromahony](https://github.com/oliveromahony) in [#550](https://github.com/nginx/agent/pull/550)
-- Fix artifact name by [@oliveromahony](https://github.com/oliveromahony) in [#558](https://github.com/nginx/agent/pull/558)
-- fix: add missing catalog entry by [@Jcahilltorre](https://github.com/Jcahilltorre) in [#572](https://github.com/nginx/agent/pull/572)
-
-### 📝 Documentation
-
-We have made the following updates to the documentation:
-
-- Runc bump by [@oliveromahony](https://github.com/oliveromahony) in [#565](https://github.com/nginx/agent/pull/565)
-
-### 🔨 Maintenance
-
-We have made the following maintenance-related minor changes:
-
-- bump vulnerable version of buildkit by [@oliveromahony](https://github.com/oliveromahony) in [#564](https://github.com/nginx/agent/pull/564)
 
