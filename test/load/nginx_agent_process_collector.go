@@ -244,6 +244,12 @@ func (cp *agentProcessCollector) Stop() (stopped bool, err error) {
 
 		cp.isStopped = true
 
+		out, catError := exec.Command("cat", "/var/log/nginx-agent/agent.log").Output()
+		if catError != nil {
+			log.Println("Error reading /var/log/nginx-agent/agent.log: %w", catError)
+		}
+		log.Printf("\nNGINX agent logs:\n%s\n", out)
+
 		log.Printf("Gracefully terminating %s pid=%d, sending SIGTEM...", cp.name, cp.cmd.Process.Pid)
 
 		// Notify resource monitor to stop.
