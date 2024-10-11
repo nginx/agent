@@ -264,7 +264,6 @@ func registerCommandFlags(fs *flag.FlagSet) {
 		DefCommandTLServerNameKey,
 		"Specifies the name of the server sent in the TLS configuration.",
 	)
-
 }
 
 func registerCollectorFlags(fs *flag.FlagSet) {
