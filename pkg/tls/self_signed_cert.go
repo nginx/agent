@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-// Package gencert generates self-signed TLS certificates.
+// Package gencert generates a certificate authority (CA) and a server certificate signed by it.
 package tls
 
 import (
@@ -20,28 +20,32 @@ import (
 	"time"
 )
 
+// Predefined constants for Org and file permissions
 const (
-	caOrganization      = "F5 Inc. CA"
-	certOrganization    = "F5 Inc."
-	certFilePermissions = 0o600
-	keyFilePermissions  = 0o600
+	CaOrganization      = "F5 Inc. CA"
+	CertOrganization    = "F5 Inc."
+	CertFilePermissions = 0o600
+	KeyFilePermissions  = 0o600
 )
 
-type certReq struct {
-	template   *x509.Certificate
-	parent     *x509.Certificate
-	publicKey  *ecdsa.PublicKey
-	privateKey *ecdsa.PrivateKey
+// CertReq contains a ECDSA key pair and 2 x509.Certificate templates, a server and parent.
+// When generating a CA, template and parent are identical, making the CA "self-signed".
+// When generating a server certificate, the `parent` is the CA template and `template` is the server.
+type CertReq struct {
+	Template   *x509.Certificate
+	Parent     *x509.Certificate
+	PublicKey  *ecdsa.PublicKey
+	PrivateKey *ecdsa.PrivateKey
 }
 
 // Returns x509 Certificate object and bytes in PEM format
-func genCert(req *certReq) (*x509.Certificate, []byte, error) {
+func GenCert(req *CertReq) (*x509.Certificate, []byte, error) {
 	certBytes, createCertErr := x509.CreateCertificate(
 		rand.Reader,
-		req.template,
-		req.parent,
-		req.publicKey,
-		req.privateKey,
+		req.Template,
+		req.Parent,
+		req.PublicKey,
+		req.PrivateKey,
 	)
 
 	if createCertErr != nil {
@@ -70,7 +74,7 @@ func GenerateCA(now time.Time, caCertPath string) (*x509.Certificate, *ecdsa.Pri
 	// Create CA certificate template
 	caTemplate := x509.Certificate{
 		SerialNumber:          big.NewInt(1),
-		Subject:               pkix.Name{Organization: []string{certOrganization}},
+		Subject:               pkix.Name{Organization: []string{CertOrganization}},
 		NotBefore:             now.Add(-time.Minute),
 		NotAfter:              now.AddDate(1, 0, 0), // 1 year
 		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
@@ -81,14 +85,14 @@ func GenerateCA(now time.Time, caCertPath string) (*x509.Certificate, *ecdsa.Pri
 	}
 
 	// CA is self signed
-	caRequest := certReq{
-		template:   &caTemplate,
-		parent:     &caTemplate,
-		publicKey:  &caKeyPair.PublicKey,
-		privateKey: caKeyPair,
+	caRequest := CertReq{
+		Template:   &caTemplate,
+		Parent:     &caTemplate,
+		PublicKey:  &caKeyPair.PublicKey,
+		PrivateKey: caKeyPair,
 	}
 
-	caCert, caCertPEM, caErr := genCert(&caRequest)
+	caCert, caCertPEM, caErr := GenCert(&caRequest)
 	if caErr != nil {
 		return &x509.Certificate{}, &ecdsa.PrivateKey{}, fmt.Errorf(
 			"error generating certificate authority: %w",
@@ -96,7 +100,7 @@ func GenerateCA(now time.Time, caCertPath string) (*x509.Certificate, *ecdsa.Pri
 	}
 
 	// Write the CA certificate to a file
-	writeCAErr := os.WriteFile(caCertPath, caCertPEM, certFilePermissions)
+	writeCAErr := os.WriteFile(caCertPath, caCertPEM, CertFilePermissions)
 	if writeCAErr != nil {
 		return &x509.Certificate{}, &ecdsa.PrivateKey{}, fmt.Errorf(
 			"failed to write ca file: %w",
@@ -107,7 +111,9 @@ func GenerateCA(now time.Time, caCertPath string) (*x509.Certificate, *ecdsa.Pri
 	return caCert, caKeyPair, nil
 }
 
-// Writes CA, Cert, Key to specified destinations. If cert files are already present, does nothing, returns true
+// Writes CA, Cert, Key to specified destinations.
+// Hostnames are a list of subject alternative names.
+// If cert files are already present, does nothing, returns true.
 // nolint: revive
 func GenerateServerCerts(hostnames []string, caPath, certPath, keyPath string) (existingCert bool, err error) {
 	// Check for and return existing cert if it already exists
@@ -141,7 +147,7 @@ func GenerateServerCerts(hostnames []string, caPath, certPath, keyPath string) (
 	servTemplate := x509.Certificate{
 		SerialNumber: big.NewInt(1),
 		Subject: pkix.Name{
-			Organization: []string{caOrganization},
+			Organization: []string{CaOrganization},
 		},
 		NotBefore:   now.Add(-time.Minute),
 		NotAfter:    now.AddDate(1, 0, 0), // 1 year
@@ -150,21 +156,21 @@ func GenerateServerCerts(hostnames []string, caPath, certPath, keyPath string) (
 		DNSNames:    hostnames,
 	}
 
-	servRequest := certReq{
-		template:   &servTemplate,
-		parent:     caCert,
-		publicKey:  &servKeyPair.PublicKey,
-		privateKey: caKeyPair,
+	servRequest := CertReq{
+		Template:   &servTemplate,
+		Parent:     caCert,
+		PublicKey:  &servKeyPair.PublicKey,
+		PrivateKey: caKeyPair,
 	}
 
 	// Generate server certficated signed by the CA
-	_, servCertPEM, servCertErr := genCert(&servRequest)
+	_, servCertPEM, servCertErr := GenCert(&servRequest)
 	if servCertErr != nil {
 		return false, fmt.Errorf("error generating server certificate: %w", servCertErr)
 	}
 
 	// Write the certificate to a file
-	writeCertErr := os.WriteFile(certPath, servCertPEM, certFilePermissions)
+	writeCertErr := os.WriteFile(certPath, servCertPEM, CertFilePermissions)
 	if writeCertErr != nil {
 		return false, fmt.Errorf("failed to write certificate file: %w", writeCertErr)
 	}
@@ -176,7 +182,7 @@ func GenerateServerCerts(hostnames []string, caPath, certPath, keyPath string) (
 	}
 	b := pem.Block{Type: "EC PRIVATE KEY", Bytes: servKeyBytes}
 	servKeyPEM := pem.EncodeToMemory(&b)
-	writeKeyErr := os.WriteFile(keyPath, servKeyPEM, keyFilePermissions)
+	writeKeyErr := os.WriteFile(keyPath, servKeyPEM, KeyFilePermissions)
 	if writeKeyErr != nil {
 		return false, fmt.Errorf("failed to write key file: %w", writeKeyErr)
 	}
