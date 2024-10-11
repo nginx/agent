@@ -32,6 +32,7 @@ const (
 	DefCommandTLSKeyKey        = ""
 	DefCommandTLSCaKey         = ""
 	DefCommandTLSSkipVerifyKey = false
+	DefCommandTLServerNameKey  = ""
 
 	DefBackoffInitialInterval = 50 * time.Millisecond
 	// the value is 0 <= and < 1

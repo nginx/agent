@@ -14,6 +14,7 @@ import (
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/logger"
+	pkgConfig "github.com/nginx/agent/v3/pkg/config"
 )
 
 var _ bus.Plugin = (*CommandPlugin)(nil)
@@ -27,7 +28,7 @@ type (
 		UpdateDataPlaneHealth(ctx context.Context, instanceHealths []*mpi.InstanceHealth) error
 		SendDataPlaneResponse(ctx context.Context, response *mpi.DataPlaneResponse) error
 		CancelSubscription(ctx context.Context)
-		CheckConnection() bool
+		IsConnected() bool
 		CreateConnection(ctx context.Context, resource *mpi.Resource) (*mpi.CreateConnectionResponse, error)
 	}
 
@@ -85,7 +86,7 @@ func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 
 func (cp *CommandPlugin) processResourceUpdate(ctx context.Context, msg *bus.Message) {
 	if resource, ok := msg.Data.(*mpi.Resource); ok {
-		if !cp.commandService.CheckConnection() {
+		if !cp.commandService.IsConnected() && cp.config.IsFeatureEnabled(pkgConfig.FeatureConnection) {
 			cp.createConnection(ctx, resource)
 		} else {
 			statusErr := cp.commandService.UpdateDataPlaneStatus(ctx, resource)
@@ -150,12 +151,62 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 
 			switch message.GetRequest().(type) {
 			case *mpi.ManagementPlaneRequest_ConfigUploadRequest:
-				cp.messagePipe.Process(newCtx, &bus.Message{Topic: bus.ConfigUploadRequestTopic, Data: message})
+				cp.handleConfigUploadRequest(newCtx, message)
 			case *mpi.ManagementPlaneRequest_ConfigApplyRequest:
-				cp.messagePipe.Process(newCtx, &bus.Message{Topic: bus.ConfigApplyRequestTopic, Data: message})
+				cp.handleConfigApplyRequest(newCtx, message)
 			default:
 				slog.DebugContext(newCtx, "Management plane request not implemented yet")
 			}
+		}
+	}
+}
+
+func (cp *CommandPlugin) handleConfigApplyRequest(newCtx context.Context, message *mpi.ManagementPlaneRequest) {
+	if cp.config.IsFeatureEnabled(pkgConfig.FeatureConfiguration) {
+		cp.messagePipe.Process(newCtx, &bus.Message{Topic: bus.ConfigApplyRequestTopic, Data: message})
+	} else {
+		slog.WarnContext(
+			newCtx,
+			"Configuration feature disabled. Unable to process config apply request",
+			"request", message,
+		)
+
+		err := cp.commandService.SendDataPlaneResponse(newCtx, &mpi.DataPlaneResponse{
+			MessageMeta: message.GetMessageMeta(),
+			CommandResponse: &mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "Config apply failed",
+				Error:   "Configuration feature is disabled",
+			},
+			InstanceId: message.GetConfigUploadRequest().GetOverview().GetConfigVersion().GetInstanceId(),
+		})
+		if err != nil {
+			slog.ErrorContext(newCtx, "Unable to send data plane response", "error", err)
+		}
+	}
+}
+
+func (cp *CommandPlugin) handleConfigUploadRequest(newCtx context.Context, message *mpi.ManagementPlaneRequest) {
+	if cp.config.IsFeatureEnabled(pkgConfig.FeatureConfiguration) {
+		cp.messagePipe.Process(newCtx, &bus.Message{Topic: bus.ConfigUploadRequestTopic, Data: message})
+	} else {
+		slog.WarnContext(
+			newCtx,
+			"Configuration feature disabled. Unable to process config upload request",
+			"request", message,
+		)
+
+		err := cp.commandService.SendDataPlaneResponse(newCtx, &mpi.DataPlaneResponse{
+			MessageMeta: message.GetMessageMeta(),
+			CommandResponse: &mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "Config upload failed",
+				Error:   "Configuration feature is disabled",
+			},
+			InstanceId: message.GetConfigUploadRequest().GetOverview().GetConfigVersion().GetInstanceId(),
+		})
+		if err != nil {
+			slog.ErrorContext(newCtx, "Unable to send data plane response", "error", err)
 		}
 	}
 }
