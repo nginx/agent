@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLoadPLugins(t *testing.T) {
+func TestLoadPlugins(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
@@ -45,6 +45,7 @@ func TestLoadPLugins(t *testing.T) {
 						Type: config.Grpc,
 					},
 				},
+				Features: config.DefaultFeatures(),
 			},
 			expected: []bus.Plugin{
 				&resource.Resource{},

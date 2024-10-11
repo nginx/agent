@@ -71,7 +71,7 @@ func NewCommandService(
 	return commandService
 }
 
-func (cs *CommandService) CheckConnection() bool {
+func (cs *CommandService) IsConnected() bool {
 	return cs.isConnected.Load()
 }
 
