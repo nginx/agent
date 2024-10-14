@@ -266,6 +266,65 @@ func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
 	}
 }
 
+func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
+	conf := types.OTelConfig(t)
+	conf.Collector.Log.Path = ""
+	conf.Collector.Processors.Batch = nil
+	conf.Collector.Processors.Attribute = nil
+
+	tests := []struct {
+		message    *bus.Message
+		processors config.Processors
+		name       string
+	}{
+		{
+			name: "Test 1: Message cannot be parsed to v1.Resource",
+			message: &bus.Message{
+				Topic: bus.ResourceUpdateTopic,
+				Data:  struct{}{},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			collector, err := New(conf)
+			require.NoError(tt, err, "NewCollector should not return an error with valid config")
+
+			ctx := context.Background()
+			messagePipe := bus.NewMessagePipe(10)
+			err = messagePipe.Register(10, []bus.Plugin{collector})
+
+			require.NoError(tt, err)
+			require.NoError(tt, collector.Init(ctx, messagePipe), "Init should not return an error")
+			defer collector.Close(ctx)
+
+			assert.Eventually(
+				tt,
+				func() bool { return collector.service.GetState() == otelcol.StateRunning },
+				5*time.Second,
+				100*time.Millisecond,
+			)
+
+			collector.Process(ctx, test.message)
+
+			assert.Eventually(
+				tt,
+				func() bool { return collector.service.GetState() == otelcol.StateRunning },
+				5*time.Second,
+				100*time.Millisecond,
+			)
+
+			assert.Equal(tt,
+				config.Processors{
+					Batch:     nil,
+					Attribute: nil,
+				},
+				collector.config.Collector.Processors)
+		})
+	}
+}
+
 // nolint: dupl
 func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 	conf := types.OTelConfig(t)
