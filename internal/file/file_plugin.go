@@ -69,7 +69,7 @@ func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 	case bus.ConfigApplyRequestTopic:
 		fp.handleConfigApplyRequest(ctx, msg)
 	case bus.ConfigApplySuccessfulTopic, bus.RollbackCompleteTopic:
-		fp.clearCache()
+		fp.handleConfigApplyRollbackComplete(ctx, msg)
 	case bus.ConfigApplyFailedTopic:
 		fp.handleConfigApplyFailedRequest(ctx, msg)
 	default:
@@ -89,9 +89,17 @@ func (fp *FilePlugin) Subscriptions() []string {
 	}
 }
 
-func (fp *FilePlugin) clearCache() {
-	slog.Debug("Clearing cache after config apply")
+func (fp *FilePlugin) handleConfigApplyRollbackComplete(ctx context.Context, msg *bus.Message) {
+	response, ok := msg.Data.(*mpi.DataPlaneResponse)
+
+	if !ok {
+		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.DataPlaneResponse", "payload", msg.Data)
+		return
+	}
+
+	slog.Info("Data Plane Response", "data", response)
 	fp.fileManagerService.ClearCache()
+	fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
 }
 
 func (fp *FilePlugin) handleConfigApplyFailedRequest(ctx context.Context, msg *bus.Message) {
@@ -114,9 +122,9 @@ func (fp *FilePlugin) handleConfigApplyFailedRequest(ctx context.Context, msg *b
 			mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"Config apply failed, rollback failed", data.InstanceID, data.Error.Error())
 
+		fp.fileManagerService.ClearCache()
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: applyResponse})
-		fp.fileManagerService.ClearCache()
 
 		return
 	}
@@ -160,9 +168,9 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			"",
 		)
 
+		fp.fileManagerService.ClearCache()
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplySuccessfulTopic, Data: instanceID})
-		fp.fileManagerService.ClearCache()
 
 		return
 	case model.Error:
@@ -180,8 +188,8 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			err.Error(),
 		)
 
-		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
 		fp.fileManagerService.ClearCache()
+		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
 
 		return
 	case model.RollbackRequired:
@@ -212,8 +220,8 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 				"Config apply failed, rollback failed",
 				configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId(),
 				rollbackErr.Error())
-			fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
 			fp.fileManagerService.ClearCache()
+			fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
 
 			return
 		}
@@ -224,8 +232,8 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			"Config apply failed, rollback successful",
 			configApplyRequest.GetOverview().GetConfigVersion().GetInstanceId(),
 			err.Error())
-		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
 		fp.fileManagerService.ClearCache()
+		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
 
 		return
 	case model.OK:
