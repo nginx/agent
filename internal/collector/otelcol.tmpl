@@ -117,11 +117,11 @@ exporters:
   prometheus:
     endpoint: "{{ .Exporters.PrometheusExporter.Server.Host -}}:{{- .Exporters.PrometheusExporter.Server.Port }}"
 {{- end }}
+{{- if ne .Exporters.Debug nil }}
   debug:
     verbosity: detailed
     sampling_initial: 5
     sampling_thereafter: 200
-{{- if ne .Exporters.Debug nil }}
 {{- end }}
 
 {{- if ne .Extensions nil }}

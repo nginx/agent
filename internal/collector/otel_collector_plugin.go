@@ -239,9 +239,27 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 		return
 	}
 
-	if oc.config.Collector.Processors.Attribute != nil { // attribute processor is enabled
-		// update resource id in config, write new + reload
+	reloadRequired := true
+	if oc.config.Collector.Processors.Attribute == nil {
 		if resourceUpdateContext.GetResourceId() != "" {
+			oc.config.Collector.Processors.Attribute = &config.Attribute{
+				Actions: []config.Action{
+					{
+						Key:    "resource.id",
+						Action: "insert",
+						Value:  resourceUpdateContext.GetResourceId(),
+					},
+				},
+			}
+		}
+	} else {
+		for _, v := range oc.config.Collector.Processors.Attribute.Actions {
+			if v.Key == "resource.id" {
+				reloadRequired = false
+				break
+			}
+		}
+		if reloadRequired {
 			oc.config.Collector.Processors.Attribute.Actions = append(
 				oc.config.Collector.Processors.Attribute.Actions,
 				config.Action{
@@ -249,15 +267,17 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 					Action: "insert",
 					Value:  resourceUpdateContext.GetResourceId(),
 				})
-
-			slog.InfoContext(ctx, "Reloading OTel collector config")
-			err := writeCollectorConfig(oc.config.Collector)
-			if err != nil {
-				slog.ErrorContext(ctx, "Failed to write OTel Collector config", "error", err)
-				return
-			}
-			oc.restartCollector(ctx)
 		}
+	}
+
+	if reloadRequired {
+		slog.InfoContext(ctx, "Reloading OTel collector config")
+		err := writeCollectorConfig(oc.config.Collector)
+		if err != nil {
+			slog.ErrorContext(ctx, "Failed to write OTel Collector config", "error", err)
+			return
+		}
+		oc.restartCollector(ctx)
 	}
 }
 

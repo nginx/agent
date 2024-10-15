@@ -205,7 +205,7 @@ func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
 	conf := types.OTelConfig(t)
 	conf.Collector.Log.Path = ""
 	conf.Collector.Processors.Batch = nil
-	conf.Collector.Processors.Attribute = &config.Attribute{Actions: make([]config.Action, 0)}
+	conf.Collector.Processors.Attribute = nil
 
 	tests := []struct {
 		message    *bus.Message
