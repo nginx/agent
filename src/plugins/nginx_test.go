@@ -1171,6 +1171,18 @@ func TestNginx_monitorLog(t *testing.T) {
 			treatWarningsAsErrors: false,
 			expected:              "",
 		},
+		{
+			name:                  "ignore usage report test",
+			errorLog:              "2023/06/20 11:01:56 [emerg] 4138#4138: usage report",
+			treatWarningsAsErrors: false,
+			expected:              "",
+		},
+		{
+			name:                  "ignore license expired test",
+			errorLog:              "2023/06/20 11:01:56 [emerg] 4138#4138: license expired",
+			treatWarningsAsErrors: false,
+			expected:              "",
+		},
 	}
 
 	for _, test := range tests {
