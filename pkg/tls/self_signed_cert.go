@@ -39,7 +39,7 @@ type CertReq struct {
 }
 
 // Returns x509 Certificate object and bytes in PEM format
-func GenCert(req *CertReq) (*x509.Certificate, []byte, error) {
+func GenerateCertificate(req *CertReq) (*x509.Certificate, []byte, error) {
 	certBytes, createCertErr := x509.CreateCertificate(
 		rand.Reader,
 		req.Template,
