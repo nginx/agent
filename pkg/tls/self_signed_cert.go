@@ -92,7 +92,7 @@ func GenerateCA(now time.Time, caCertPath string) (*x509.Certificate, *ecdsa.Pri
 		PrivateKey: caKeyPair,
 	}
 
-	caCert, caCertPEM, caErr := GenCert(&caRequest)
+	caCert, caCertPEM, caErr := GenerateCertificate(&caRequest)
 	if caErr != nil {
 		return &x509.Certificate{}, &ecdsa.PrivateKey{}, fmt.Errorf(
 			"error generating certificate authority: %w",
@@ -164,7 +164,7 @@ func GenerateServerCerts(hostnames []string, caPath, certPath, keyPath string) (
 	}
 
 	// Generate server certficated signed by the CA
-	_, servCertPEM, servCertErr := GenCert(&servRequest)
+	_, servCertPEM, servCertErr := GenerateCertificate(&servRequest)
 	if servCertErr != nil {
 		return false, fmt.Errorf("error generating server certificate: %w", servCertErr)
 	}
