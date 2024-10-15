@@ -96,7 +96,7 @@ func (fp *FilePlugin) handleConfigApplyRollbackComplete(ctx context.Context, msg
 		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.DataPlaneResponse", "payload", msg.Data)
 		return
 	}
-	
+
 	fp.fileManagerService.ClearCache()
 	fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
 }
