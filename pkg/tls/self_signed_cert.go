@@ -111,7 +111,7 @@ func GenerateCA(now time.Time, caCertPath string) (*x509.Certificate, *ecdsa.Pri
 	return caCert, caKeyPair, nil
 }
 
-// Writes CA, Cert, Key to specified destinations.
+// GenerateServerCerts creates a server CA, Cert and Key and writes them to specified destinations.
 // Hostnames are a list of subject alternative names.
 // If cert files are already present, does nothing, returns true.
 // nolint: revive
