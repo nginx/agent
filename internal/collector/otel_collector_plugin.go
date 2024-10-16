@@ -394,7 +394,7 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 	return nginxReceiverFound, reloadCollector
 }
 
-// nolint: cognitive-complexity
+// nolint: revive
 func (oc *Collector) updateResourceAttributes(
 	actionsToAdd []config.Action,
 ) (reloadCollector bool) {
