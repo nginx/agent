@@ -248,7 +248,7 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 	var reloadCollector bool
 	if oc.config.Collector.Processors.Attribute != nil {
 		if resourceUpdateContext.GetResourceId() != "" {
-			reloadCollector = oc.updateResourceAttributes(
+			reloadCollector = oc.updateAttributeActions(
 				[]config.Action{
 					{
 						Key:    "resource.id",
@@ -395,30 +395,24 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 }
 
 // nolint: revive
-func (oc *Collector) updateResourceAttributes(
+func (oc *Collector) updateAttributeActions(
 	actionsToAdd []config.Action,
 ) (reloadCollector bool) {
 	reloadCollector = false
 
 	if oc.config.Collector.Processors.Attribute.Actions != nil {
+	OUTER:
 		for _, toAdd := range actionsToAdd {
-			duplicateKey := false
-			for _, a := range oc.config.Collector.Processors.Attribute.Actions {
-				// check for key name collision
-				if a.Key == toAdd.Key {
-					duplicateKey = true
-					reloadCollector = true
-
-					break
+			for _, action := range oc.config.Collector.Processors.Attribute.Actions {
+				if action.Key == toAdd.Key {
+					continue OUTER
 				}
 			}
-			if !duplicateKey {
-				oc.config.Collector.Processors.Attribute.Actions = append(
-					oc.config.Collector.Processors.Attribute.Actions,
-					toAdd,
-				)
-				reloadCollector = true
-			}
+			oc.config.Collector.Processors.Attribute.Actions = append(
+				oc.config.Collector.Processors.Attribute.Actions,
+				toAdd,
+			)
+			reloadCollector = true
 		}
 	}
 

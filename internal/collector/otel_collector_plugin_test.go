@@ -524,7 +524,7 @@ func TestCollector_updateResourceAttributes(t *testing.T) {
 			// set up Actions
 			conf.Collector.Processors.Attribute = &config.Attribute{Actions: test.setupActions}
 
-			reloadRequired := collector.updateResourceAttributes(test.actions)
+			reloadRequired := collector.updateAttributeActions(test.actions)
 			assert.Equal(tt,
 				test.expectedAttribs,
 				conf.Collector.Processors.Attribute.Actions)
