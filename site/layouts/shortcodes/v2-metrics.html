@@ -1,0 +1,56 @@
+<main class="content col-xl-6 d-block align-top" role="main">
+    {{ range .Site.Data.v2metrics }}
+    <a name="{{.name}}"></a>
+    <h2 id={{.name}}>{{.name}}
+        <a class="headerlink float-right" href="#{{.name}}" title="{{.name}}"><i class="fas fa-link fa-xs"
+            aria-hidden="true"></i></a>
+      </h2>
+      <table>
+        <tbody>
+          <tr>
+            <td style="width: 200px; padding-bottom:5px">description</td>
+            <td>{{.description}}</td>
+          </tr>
+          <tr>
+            <td style="width: 200px; padding-bottom:5px">type</td>
+            <td>{{.type}}</td>
+          </tr>
+          <tr>
+            <td style="width: 200px; padding-bottom:5px">categories</td>
+            <td>{{.categories}}</td>
+          </tr>
+          <tr>
+            <td style="width: 200px; padding-bottom:5px">source</td>
+            <td>{{.source}}</td>
+          </tr>
+          <tr>
+            <td style="width: 200px; padding-bottom:5px">rollup_aggregate</td>
+            <td>{{.rollup_aggregate}}</td>
+          </tr>
+          <tr>
+            <td style="width: 200px; padding-bottom:5px">unit</td>
+            <td>{{.unit}}</td>
+          </tr>
+          <tr>
+            <td style="width: 200px; padding-bottom:5px">aggregations</td>
+            <td>
+              {{ range .aggregations }}
+              {{ . }};
+              {{end}}
+            </td>
+          </tr>
+          <tr>
+            <td style="width: 200px; padding-bottom:5px">dimensions</td>
+            <td>
+              {{ range sort .dimensions }}
+              <li>
+                {{ . }}
+              </li>
+              {{end}}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <hr>
+      {{ end }}
+    </main>

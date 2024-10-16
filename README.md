@@ -12,7 +12,10 @@ NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus insta
 - Collection and reporting of real-time NGINX performance and operating system metrics
 - Notifications of NGINX events
 
+> **Note**: There is a separate [README for Agent version 2](README_v2.md) and earlier.
+
 ## Development Environment Setup
+
 ### Installing Prerequisite Packages
 The following packages need to be installed:
  - make

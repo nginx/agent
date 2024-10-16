@@ -1,0 +1,31 @@
+
+---
+name: system.net.drops_in.count
+categories:
+- system
+description: Network I/O statistics. Total number of inbound packets dropped per network
+  interface.
+type: counter
+counted: true
+source: psutil
+unit: integer
+rate: double
+visible: true
+compound_payload: "false"
+modules:
+- platform
+aggregations:
+- MIN
+- MAX
+- SUM
+- AVG
+- COUNT
+- RATE
+dimensions:
+- system_id
+- hostname
+- display_name
+- nginx_id
+- network_interface
+- instance_group
+- system.tags

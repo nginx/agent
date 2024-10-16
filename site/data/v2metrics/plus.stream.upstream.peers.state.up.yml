@@ -1,0 +1,43 @@
+
+---
+name: plus.stream.upstream.peers.state.up
+categories:
+- nginx
+description: Current state of upstream servers in deployment. If any of the upstream
+  servers in the deployment are up then the value will be 1. If no upstream server
+  is up then the value will be 0.
+type: gauge
+source: plus_status
+unit: integer
+rate: double
+visible: true
+compound_payload: "false"
+modules:
+- platform
+- adm
+aggregations:
+- MIN
+- MAX
+- SUM
+- AVG
+- COUNT
+- RATE
+dimensions:
+- system_id
+- hostname
+- display_name
+- nginx_id
+- instance_group
+- system.tags
+- upstream
+- upstream_zone
+- peer.name
+- peer.address
+- environment
+- app
+- component
+- site
+- environment_name
+- component_name
+- app_name
+- site_name

@@ -1,0 +1,29 @@
+
+---
+name: nginx.workers.mem.vms
+categories:
+- nginx
+description: Memory utilized by NGINX worker processes (Virtual Memory Size).
+type: counter
+counted: true
+source: psutil
+unit: integer
+rate: double
+visible: true
+compound_payload: "false"
+modules:
+- platform
+aggregations:
+- MIN
+- MAX
+- SUM
+- AVG
+- COUNT
+- RATE
+dimensions:
+- system_id
+- hostname
+- display_name
+- nginx_id
+- instance_group
+- system.tags
