@@ -3,6 +3,8 @@ receivers:
     protocols:
       grpc:
         endpoint: 0.0.0.0:4317
+        auth:
+          authenticator: headers_check
 exporters:
   debug:
     verbosity: detailed
@@ -13,11 +15,17 @@ exporters:
 processors:
   batch:
 
+extensions:
+  headers_check:
+
 service:
+  telemetry:
+    logs:
+      level: "debug"
+      output_paths: ["/mock-collector/collector.log"]
+      error_output_paths: ["/mock-collector/collector.log"]
+  extensions: [ headers_check ]
   pipelines:
-    traces:
-      receivers: [otlp]
-      exporters: [debug]
     metrics:
       receivers: [otlp]
       processors: [batch]

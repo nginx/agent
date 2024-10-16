@@ -309,9 +309,6 @@ func getAgentConfig() *Config {
 							Host: "127.0.0.1",
 							Port: 1234,
 						},
-						Auth: &AuthConfig{
-							Token: "super-secret-token",
-						},
 						TLS: &TLSConfig{
 							Cert:       "/path/to/server-cert.pem",
 							Key:        "/path/to/server-cert.pem",
