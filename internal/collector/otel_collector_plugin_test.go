@@ -488,10 +488,10 @@ func TestCollector_updateResourceAttributes(t *testing.T) {
 
 	tests := []struct {
 		name                   string
-		expectedReloadRequired bool
 		setupActions           []config.Action
 		actions                []config.Action
 		expectedAttribs        []config.Action
+		expectedReloadRequired bool
 	}{
 		{
 			name:                   "Test 1: No Actions returns false",

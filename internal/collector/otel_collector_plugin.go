@@ -394,12 +394,12 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 	return nginxReceiverFound, reloadCollector
 }
 
-// Updates the metrics attributes by inserting an array of config.Action
+// nolint: cognitive-complexity
 func (oc *Collector) updateResourceAttributes(
 	actionsToAdd []config.Action,
 ) (reloadCollector bool) {
-
 	reloadCollector = false
+
 	if oc.config.Collector.Processors.Attribute.Actions != nil {
 		for _, toAdd := range actionsToAdd {
 			duplicateKey := false
