@@ -468,8 +468,5 @@ func TestFilePlugin_Process_ConfigApllyRollbackCompleteTopic(t *testing.T) {
 	assert.Equal(t, expectedResponse.GetCommandResponse().GetMessage(), response.GetCommandResponse().GetMessage())
 	assert.Equal(t, expectedResponse.GetCommandResponse().GetError(), response.GetCommandResponse().GetError())
 	assert.Equal(t, expectedResponse.GetMessageMeta().GetCorrelationId(), response.GetMessageMeta().GetCorrelationId())
-
 	assert.Equal(t, expectedResponse.GetInstanceId(), response.GetInstanceId())
-
-	t.Logf("Messages: %v", messages)
 }
