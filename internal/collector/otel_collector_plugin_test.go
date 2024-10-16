@@ -480,3 +480,55 @@ func TestCollector_updateExistingNginxPlusReceiver(t *testing.T) {
 		})
 	}
 }
+
+func TestCollector_updateResourceAttributes(t *testing.T) {
+	conf := types.OTelConfig(t)
+	conf.Collector.Log.Path = ""
+	conf.Collector.Processors.Batch = nil
+
+	tests := []struct {
+		name                   string
+		expectedReloadRequired bool
+		setupActions           []config.Action
+		actions                []config.Action
+		expectedAttribs        []config.Action
+	}{
+		{
+			name:                   "Test 1: No Actions returns false",
+			setupActions:           []config.Action{},
+			actions:                []config.Action{},
+			expectedReloadRequired: false,
+			expectedAttribs:        []config.Action{},
+		},
+		{
+			name:                   "Test 2: Adding an action returns true",
+			setupActions:           []config.Action{},
+			actions:                []config.Action{{Key: "test", Action: "insert", Value: "test value"}},
+			expectedReloadRequired: true,
+			expectedAttribs:        []config.Action{{Key: "test", Action: "insert", Value: "test value"}},
+		},
+		{
+			name:                   "Test 3: Adding a duplicate key doesn't append",
+			setupActions:           []config.Action{{Key: "test", Action: "insert", Value: "test value 1"}},
+			actions:                []config.Action{{Key: "test", Action: "insert", Value: "updated value 2"}},
+			expectedReloadRequired: true,
+			expectedAttribs:        []config.Action{{Key: "test", Action: "insert", Value: "test value 1"}},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			collector, err := New(conf)
+			require.NoError(tt, err, "NewCollector should not return an error with valid config")
+
+			// set up Actions
+			conf.Collector.Processors.Attribute = &config.Attribute{Actions: test.setupActions}
+
+			reloadRequired := collector.updateResourceAttributes(test.actions)
+			assert.Equal(tt,
+				test.expectedAttribs,
+				conf.Collector.Processors.Attribute.Actions)
+			assert.Equal(tt, test.expectedReloadRequired, reloadRequired)
+		})
+	}
+}

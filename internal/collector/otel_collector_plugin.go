@@ -239,44 +239,35 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 		return
 	}
 
-	reloadRequired := true
 	if oc.config.Collector.Processors.Attribute == nil {
+		oc.config.Collector.Processors.Attribute = &config.Attribute{
+			Actions: make([]config.Action, 0),
+		}
+	}
+
+	var reloadCollector bool
+	if oc.config.Collector.Processors.Attribute != nil {
 		if resourceUpdateContext.GetResourceId() != "" {
-			oc.config.Collector.Processors.Attribute = &config.Attribute{
-				Actions: []config.Action{
+			reloadCollector = oc.updateResourceAttributes(
+				[]config.Action{
 					{
 						Key:    "resource.id",
 						Action: "insert",
 						Value:  resourceUpdateContext.GetResourceId(),
 					},
 				},
-			}
-		}
-	} else {
-		for _, v := range oc.config.Collector.Processors.Attribute.Actions {
-			if v.Key == "resource.id" {
-				reloadRequired = false
-				break
-			}
-		}
-		if reloadRequired {
-			oc.config.Collector.Processors.Attribute.Actions = append(
-				oc.config.Collector.Processors.Attribute.Actions,
-				config.Action{
-					Key:    "resource.id",
-					Action: "insert",
-					Value:  resourceUpdateContext.GetResourceId(),
-				})
+			)
 		}
 	}
 
-	if reloadRequired {
+	if reloadCollector {
 		slog.InfoContext(ctx, "Reloading OTel collector config")
 		err := writeCollectorConfig(oc.config.Collector)
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to write OTel Collector config", "error", err)
 			return
 		}
+
 		oc.restartCollector(ctx)
 	}
 }
@@ -401,6 +392,37 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 	}
 
 	return nginxReceiverFound, reloadCollector
+}
+
+// Updates the metrics attributes by inserting an array of config.Action
+func (oc *Collector) updateResourceAttributes(
+	actionsToAdd []config.Action,
+) (reloadCollector bool) {
+
+	reloadCollector = false
+	if oc.config.Collector.Processors.Attribute.Actions != nil {
+		for _, toAdd := range actionsToAdd {
+			duplicateKey := false
+			for _, a := range oc.config.Collector.Processors.Attribute.Actions {
+				// check for key name collision
+				if a.Key == toAdd.Key {
+					duplicateKey = true
+					reloadCollector = true
+
+					break
+				}
+			}
+			if !duplicateKey {
+				oc.config.Collector.Processors.Attribute.Actions = append(
+					oc.config.Collector.Processors.Attribute.Actions,
+					toAdd,
+				)
+				reloadCollector = true
+			}
+		}
+	}
+
+	return reloadCollector
 }
 
 func isOSSReceiverChanged(nginxReceiver config.NginxReceiver, nginxConfigContext *model.NginxConfigContext) bool {
