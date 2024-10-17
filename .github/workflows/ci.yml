@@ -322,7 +322,7 @@ jobs:
       contents: read
     with:
       packageVersion: "3.0.0"
-      packageBuildNo: "${{ github.run_number }}}"
+      packageBuildNo: "${{ github.run_number }}"
       uploadAzure: true
       publishPackages: true
       releaseBranch: "v3"
