@@ -251,7 +251,7 @@ api:
 The mock control plane can use either gRPC or REST protocols to communicate with NGINX Agent.
 
 ### Launching Swagger UI
-Swagger UI requires goswagger be installed. See [instructions for installing goswagger](https://goswagger.io/install.html) for additional help.
+Swagger UI requires goswagger be installed. See [instructions for installing goswagger](https://goswagger.io/go-swagger/install/) for additional help.
 
 To launch the Swagger UI for the REST interface run the following command
 
