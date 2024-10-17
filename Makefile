@@ -207,6 +207,11 @@ build-test-oss-image:
 		--build-arg PACKAGES_REPO=$(OSS_PACKAGES_REPO) \
 		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
 		--build-arg ENTRY_POINT=./test/docker/entrypoint.sh
+		
+.PHONY: build-mock-collector-image
+build-mock-collector-image:
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t mock-collector . \
+		--no-cache -f ./test/mock/collector/mock-collector/Dockerfile
 
 .PHONY: run-mock-management-otel-collector
 run-mock-management-otel-collector: ## Run mock management plane OTel collector

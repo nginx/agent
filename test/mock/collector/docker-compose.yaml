@@ -26,10 +26,8 @@ services:
       - metrics
 
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.99.0
+    image: mock-collector
     container_name: mock-collector-otel-collector
-    restart: on-failure
-    command: [ "--config=/etc/otel-collector.yaml" ]
     ports:
       - 4320:4317
       - 9775:9090
