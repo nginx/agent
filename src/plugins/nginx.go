@@ -47,7 +47,8 @@ var (
 		re.MustCompile(`.*\[alert\].*`),
 		re.MustCompile(`.*\[crit\].*`),
 	}
-	warningRegex = re.MustCompile(`.*\[warn\].*`)
+	warningRegex    = re.MustCompile(`.*\[warn\].*`)
+	ignoreErrorList = re.MustCompile(`.*(usage report| license expired).*`)
 )
 
 // Nginx is the metadata of our nginx binary
@@ -619,13 +620,13 @@ func (n *Nginx) tailLog(logFile string, errorChannel chan string) {
 	for {
 		select {
 		case d := <-data:
-			if warningRegex.MatchString(d) && n.config.Nginx.TreatWarningsAsErrors {
+			if warningRegex.MatchString(d) && n.config.Nginx.TreatWarningsAsErrors && !ignoreErrorList.MatchString(d) {
 				errorChannel <- d
 				return
 			}
 
 			for _, errorRegex := range reloadErrorList {
-				if errorRegex.MatchString(d) {
+				if errorRegex.MatchString(d) && !ignoreErrorList.MatchString(d) {
 					errorChannel <- d
 					return
 				}

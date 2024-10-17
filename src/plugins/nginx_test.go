@@ -1171,6 +1171,24 @@ func TestNginx_monitorLog(t *testing.T) {
 			treatWarningsAsErrors: false,
 			expected:              "",
 		},
+		{
+			name:                  "ignore error log: usage report ",
+			errorLog:              "2025/06/25 15:08:04 [error] 123456#123456: certificate verify error: (10:certificate has expired) during usage report",
+			treatWarningsAsErrors: false,
+			expected:              "",
+		},
+		{
+			name:                  "ignore error log: license expired ",
+			errorLog:              "2025/06/25 15:07:24 [alert] 123456#123456: license expired; the grace period will end in 71 days",
+			treatWarningsAsErrors: false,
+			expected:              "",
+		},
+		{
+			name:                  "ignore error log: usaage report 400",
+			errorLog:              "2024/12/25 15:00:04 [error] 123456#123456: server returned 400 during usage report",
+			treatWarningsAsErrors: false,
+			expected:              "",
+		},
 	}
 
 	for _, test := range tests {
