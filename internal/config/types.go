@@ -135,10 +135,10 @@ type (
 
 	// OTel Collector Receiver configuration.
 	Receivers struct {
+		HostMetrics        *HostMetrics        `yaml:"-" mapstructure:"host_metrics"`
 		OtlpReceivers      []OtlpReceiver      `yaml:"-" mapstructure:"otlp_receivers"`
 		NginxReceivers     []NginxReceiver     `yaml:"-" mapstructure:"nginx_receivers"`
 		NginxPlusReceivers []NginxPlusReceiver `yaml:"-" mapstructure:"nginx_plus_receivers"`
-		HostMetrics        HostMetrics         `yaml:"-" mapstructure:"host_metrics"`
 	}
 
 	OtlpReceiver struct {
@@ -303,6 +303,27 @@ func (c *Config) IsFeatureEnabled(feature string) bool {
 	}
 
 	return false
+}
+
+func (c *Config) IsACollectorExporterConfigured() bool {
+	if c.Collector == nil {
+		return false
+	}
+
+	return c.Collector.Exporters.PrometheusExporter != nil ||
+		c.Collector.Exporters.OtlpExporters != nil ||
+		c.Collector.Exporters.Debug != nil
+}
+
+func (c *Config) AreReceiversConfigured() bool {
+	if c.Collector == nil {
+		return false
+	}
+
+	return c.Collector.Receivers.NginxPlusReceivers != nil ||
+		c.Collector.Receivers.OtlpReceivers != nil ||
+		c.Collector.Receivers.NginxReceivers != nil ||
+		c.Collector.Receivers.HostMetrics != nil
 }
 
 func isAllowedDir(dir string, allowedDirs []string) bool {

@@ -66,6 +66,7 @@ func New(conf *config.Config) (*Collector, error) {
 	return &Collector{
 		config:  conf,
 		service: oTelCollector,
+		stopped: true,
 		mu:      &sync.Mutex{},
 	}, nil
 }
@@ -76,6 +77,13 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 
 	var runCtx context.Context
 	runCtx, oc.cancel = context.WithCancel(ctx)
+
+	if !oc.config.AreReceiversConfigured() {
+		slog.InfoContext(runCtx, "No receivers configured for OTel Collector. "+
+			"Waiting to discover a receiver before starting OTel collector.")
+
+		return nil
+	}
 
 	err := writeCollectorConfig(oc.config.Collector)
 	if err != nil {

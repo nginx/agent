@@ -58,13 +58,16 @@ func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentCo
 }
 
 func addCollectorPlugin(ctx context.Context, agentConfig *config.Config, plugins []bus.Plugin) []bus.Plugin {
-	if agentConfig.Collector != nil {
+	if agentConfig.IsACollectorExporterConfigured() {
 		oTelCollector, err := collector.New(agentConfig)
 		if err == nil {
 			plugins = append(plugins, oTelCollector)
 		} else {
-			slog.ErrorContext(ctx, "init collector plugin", "error", err)
+			slog.ErrorContext(ctx, "Failed to initialize collector plugin", "error", err)
 		}
+	} else {
+		slog.InfoContext(ctx, "Agent OTel collector isn't started. "+
+			"Configure a collector to begin collecting metrics.")
 	}
 
 	return plugins
