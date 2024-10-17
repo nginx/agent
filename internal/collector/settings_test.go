@@ -64,7 +64,7 @@ func TestTemplateWrite(t *testing.T) {
 
 	cfg.Collector.Exporters.Debug = &config.DebugExporter{}
 
-	cfg.Collector.Receivers.HostMetrics = config.HostMetrics{
+	cfg.Collector.Receivers.HostMetrics = &config.HostMetrics{
 		CollectionInterval: time.Minute,
 		InitialDelay:       time.Second,
 		Scrapers: &config.HostMetricsScrapers{
