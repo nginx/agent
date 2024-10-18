@@ -34,6 +34,7 @@ var (
 	ClientMaxMessageSizeKey                     = pre(ClientRootKey) + "max_message_size"
 	CollectorConfigPathKey                      = pre(CollectorRootKey) + "config_path"
 	CollectorExportersKey                       = pre(CollectorRootKey) + "exporters"
+	CollectorAttributeProcessorKey              = pre(CollectorProcessorsKey) + "attribute"
 	CollectorDebugExporterKey                   = pre(CollectorExportersKey) + "debug"
 	CollectorPrometheusExporterKey              = pre(CollectorExportersKey) + "prometheus_exporter"
 	CollectorPrometheusExporterServerHostKey    = pre(CollectorPrometheusExporterKey) + "server_host"
