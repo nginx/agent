@@ -1,0 +1,14 @@
+{{ define "main" }}
+<div class="row flex-xl-nowrap">
+  <nav class="sidenav overflow-auto col-md-3 d-none d-xl-block d-print-none align-top">
+    {{ partial "sidebar.html" . }}
+  </nav>
+  
+    {{ .Content }}
+
+{{if .Params.script}}
+  {{ $script := (delimit (slice "scripts" .Params.script) "/")}}
+  {{ partial (string $script) .}}
+{{end }}
+
+{{ end }}

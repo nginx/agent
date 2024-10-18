@@ -1,0 +1,28 @@
+
+---
+name: plus.http.limit_reqs.rejected
+categories:
+  - nginx
+description: "The total number of requests that were rejected."
+type: counter
+source: plus_status
+unit: integer
+visible: true
+compound_payload: "false"
+modules:
+  - platform
+aggregations:
+  - MIN
+  - MAX
+  - SUM
+  - AVG
+  - COUNT
+  - RATE
+dimensions:
+  - system_id
+  - hostname
+  - display_name
+  - nginx_id
+  - system.tags
+  - instance_group
+  - limit_req_zone

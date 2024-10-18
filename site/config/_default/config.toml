@@ -1,5 +1,5 @@
 title = "NGINX Agent"
-enableGitInfo = false
+enableGitInfo = true
 baseURL = "/"
 publishDir = "public/nginx-agent"
 staticDir = ["static"]
