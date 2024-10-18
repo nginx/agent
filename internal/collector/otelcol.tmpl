@@ -1,5 +1,5 @@
 receivers:
-{{- if ne .Receivers.HostMetrics.CollectionInterval 0 }}
+{{- if ne .Receivers.HostMetrics nil }}
   hostmetrics:
     collection_interval: {{ .Receivers.HostMetrics.CollectionInterval }}
     initial_delay: {{ .Receivers.HostMetrics.InitialDelay }}
@@ -148,7 +148,7 @@ service:
   pipelines:
     metrics:
       receivers:
-        {{- if ne .Receivers.HostMetrics.CollectionInterval 0 }}
+        {{- if ne .Receivers.HostMetrics nil }}
         - hostmetrics
         {{- end }}
         {{- range $index, $otlpReceiver := .Receivers.OtlpReceivers }}
