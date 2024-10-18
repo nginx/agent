@@ -100,6 +100,22 @@ func TestTemplateWrite(t *testing.T) {
 		},
 	})
 
+	cfg.Collector.Extensions.HeadersSetter = &config.HeadersSetter{
+		Headers: []config.Header{
+			{
+				Action: "insert",
+				Key:    "authorization",
+				Value:  "key1",
+			}, {
+				Action: "upsert",
+				Key:    "uuid",
+				Value:  "1234",
+			},
+		},
+	}
+
+	cfg.Collector.Exporters.OtlpExporters[0].Authenticator = "headers_setter"
+
 	require.NotNil(t, cfg)
 
 	err := writeCollectorConfig(cfg.Collector)
