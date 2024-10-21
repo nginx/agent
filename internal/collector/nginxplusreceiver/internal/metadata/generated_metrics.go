@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/filter"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
@@ -3560,6 +3561,8 @@ type MetricsBuilder struct {
 	metricsCapacity                            int                  // maximum observed number of metrics per resource.
 	metricsBuffer                              pmetric.Metrics      // accumulates metrics data before emitting.
 	buildInfo                                  component.BuildInfo  // contains version information.
+	resourceAttributeIncludeFilter             map[string]filter.Filter
+	resourceAttributeExcludeFilter             map[string]filter.Filter
 	metricNginxCacheBytes                      metricNginxCacheBytes
 	metricNginxCacheMemoryLimit                metricNginxCacheMemoryLimit
 	metricNginxCacheMemoryUsage                metricNginxCacheMemoryUsage
@@ -3702,12 +3705,25 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, opt
 		metricNginxStreamUpstreamPeerTtfbTime:      newMetricNginxStreamUpstreamPeerTtfbTime(mbc.Metrics.NginxStreamUpstreamPeerTtfbTime),
 		metricNginxStreamUpstreamPeerUnavailable:   newMetricNginxStreamUpstreamPeerUnavailable(mbc.Metrics.NginxStreamUpstreamPeerUnavailable),
 		metricNginxStreamUpstreamZombieCount:       newMetricNginxStreamUpstreamZombieCount(mbc.Metrics.NginxStreamUpstreamZombieCount),
+		resourceAttributeIncludeFilter:             make(map[string]filter.Filter),
+		resourceAttributeExcludeFilter:             make(map[string]filter.Filter),
+	}
+	if mbc.ResourceAttributes.NginxInstanceID.MetricsInclude != nil {
+		mb.resourceAttributeIncludeFilter["nginx.instance.id"] = filter.CreateFilter(mbc.ResourceAttributes.NginxInstanceID.MetricsInclude)
+	}
+	if mbc.ResourceAttributes.NginxInstanceID.MetricsExclude != nil {
+		mb.resourceAttributeExcludeFilter["nginx.instance.id"] = filter.CreateFilter(mbc.ResourceAttributes.NginxInstanceID.MetricsExclude)
 	}
 
 	for _, op := range options {
 		op.apply(mb)
 	}
 	return mb
+}
+
+// NewResourceBuilder returns a new resource builder that should be used to build a resource associated with for the emitted metrics.
+func (mb *MetricsBuilder) NewResourceBuilder() *ResourceBuilder {
+	return NewResourceBuilder(mb.config.ResourceAttributes)
 }
 
 // updateCapacity updates max length of metrics and resource attributes that will be used for the slice capacity.
@@ -3828,6 +3844,16 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 
 	for _, op := range options {
 		op.apply(rm)
+	}
+	for attr, filter := range mb.resourceAttributeIncludeFilter {
+		if val, ok := rm.Resource().Attributes().Get(attr); ok && !filter.Matches(val.AsString()) {
+			return
+		}
+	}
+	for attr, filter := range mb.resourceAttributeExcludeFilter {
+		if val, ok := rm.Resource().Attributes().Get(attr); ok && filter.Matches(val.AsString()) {
+			return
+		}
 	}
 
 	if ils.Metrics().Len() > 0 {

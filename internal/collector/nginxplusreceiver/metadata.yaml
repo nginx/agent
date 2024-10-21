@@ -7,7 +7,13 @@ status:
     beta: [metrics]
   distributions: [contrib]
   codeowners:
-    active: [olli-holmala, oliveromahony, apgralG, dhurley, craigell]
+    active: [olli-holmala, oliveromahony, apgralG, dhurley, craigell, sean-breen]
+
+resource_attributes:
+  nginx.instance.id:
+    enabled: true
+    description: The nginx instance id.
+    type: string
 
 attributes:
   nginx.cache.outcome:

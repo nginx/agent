@@ -42,6 +42,15 @@ func TestMetricsBuilder(t *testing.T) {
 			resAttrsSet: testDataSetNone,
 			expectEmpty: true,
 		},
+		{
+			name:        "filter_set_include",
+			resAttrsSet: testDataSetAll,
+		},
+		{
+			name:        "filter_set_exclude",
+			resAttrsSet: testDataSetAll,
+			expectEmpty: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -291,7 +300,9 @@ func TestMetricsBuilder(t *testing.T) {
 			allMetricsCount++
 			mb.RecordNginxStreamUpstreamZombieCountDataPoint(ts, 1, "nginx.zone.name-val", "nginx.upstream.name-val")
 
-			res := pcommon.NewResource()
+			rb := mb.NewResourceBuilder()
+			rb.SetNginxInstanceID("nginx.instance.id-val")
+			res := rb.Emit()
 			metrics := mb.Emit(WithResource(res))
 
 			if tt.expectEmpty {

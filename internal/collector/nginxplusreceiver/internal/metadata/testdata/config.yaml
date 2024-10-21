@@ -117,6 +117,9 @@ all_set:
       enabled: true
     nginx.stream.upstream.zombie.count:
       enabled: true
+  resource_attributes:
+    nginx.instance.id:
+      enabled: true
 none_set:
   metrics:
     nginx.cache.bytes:
@@ -235,3 +238,18 @@ none_set:
       enabled: false
     nginx.stream.upstream.zombie.count:
       enabled: false
+  resource_attributes:
+    nginx.instance.id:
+      enabled: false
+filter_set_include:
+  resource_attributes:
+    nginx.instance.id:
+      enabled: true
+      metrics_include:
+        - regexp: ".*"
+filter_set_exclude:
+  resource_attributes:
+    nginx.instance.id:
+      enabled: true
+      metrics_exclude:
+        - strict: "nginx.instance.id-val"

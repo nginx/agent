@@ -8,11 +8,8 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/sdk/resource"
 	"go.uber.org/zap"
 
 	"go.opentelemetry.io/collector/component"
@@ -40,7 +37,6 @@ type nginxPlusScraper struct {
 	cfg        *Config
 	mb         *metadata.MetricsBuilder
 	logger     *zap.Logger
-	resource   *resource.Resource
 }
 
 func newNginxPlusScraper(
@@ -51,24 +47,7 @@ func newNginxPlusScraper(
 	logger := settings.Logger
 	logger.Info("Creating NGINX Plus scraper")
 
-	instanceNameType := strings.Split(settings.ID.Name(), "/") // nginxplus/1c3245-...
-	plusResource, err := resource.New(
-		context.Background(),
-		resource.WithHost(),
-		resource.WithAttributes(
-			attribute.String("ngx.instance.type", "nginxplus"),
-			attribute.String("ngx.instance.id", instanceNameType[0]),
-		),
-	)
-	if err != nil {
-		return nil, err
-	}
-
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
-	settings.Logger.Info("N+ scraper: ",
-		zap.Any("type", "nginxplus"),
-		zap.Any("id", instanceNameType[0]),
-		zap.Any("plusResource", plusResource))
 
 	plusClient, err := plusapi.NewNginxClient(cfg.Endpoint,
 		plusapi.WithMaxAPIVersion(),
@@ -83,7 +62,6 @@ func newNginxPlusScraper(
 		cfg:        cfg,
 		mb:         mb,
 		logger:     settings.Logger,
-		resource:   plusResource,
 	}, nil
 }
 
@@ -93,10 +71,15 @@ func (nps *nginxPlusScraper) scrape(ctx context.Context) (pmetric.Metrics, error
 		return pmetric.Metrics{}, fmt.Errorf("GET stats: %w", err)
 	}
 
-	nps.logger.Debug("NGINX Plus stats", zap.Any("stats", stats))
+	rac := metadata.DefaultResourceAttributesConfig()
+	rb := metadata.NewResourceBuilder(rac)
+	rb.SetNginxInstanceID("666666666")
+	nps.logger.Debug("NGINX Plus resource info: ", zap.Any("resource", rb))
 
+	nps.logger.Debug("NGINX Plus stats", zap.Any("stats", stats))
 	nps.recordMetrics(stats)
 
+	nps.mb.EmitForResource(metadata.WithResource(rb.Emit()))
 	return nps.mb.Emit(), nil
 }
 
