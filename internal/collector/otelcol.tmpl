@@ -76,6 +76,17 @@ receivers:
 {{- end }}
 
 processors:
+{{- if ne .Processors.Attribute nil }}
+{{- if .Processors.Attribute.Actions }}
+  attributes:
+    actions:
+{{- range .Processors.Attribute.Actions }}
+      - key: {{ .Key }}
+        action: {{ .Action }}
+        value: {{ .Value }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- if ne .Processors.Batch nil }}
   batch:
     send_batch_size: {{ .Processors.Batch.SendBatchSize }}
@@ -163,6 +174,11 @@ service:
       processors:
         {{- if ne .Processors.Batch nil }}
         - batch
+        {{- end }}
+        {{- if ne .Processors.Attribute nil }}
+        {{- if .Processors.Attribute.Actions }}
+        - attributes
+        {{- end }}
         {{- end }}
       exporters:
         {{- range $index, $otlpExporter := .Exporters.OtlpExporters }}

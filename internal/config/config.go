@@ -506,13 +506,22 @@ func isPrometheusExporterSet() bool {
 }
 
 func resolveProcessors() Processors {
-	return Processors{
+	processors := Processors{
 		Batch: &Batch{
 			SendBatchSize:    viperInstance.GetUint32(CollectorBatchProcessorSendBatchSizeKey),
 			SendBatchMaxSize: viperInstance.GetUint32(CollectorBatchProcessorSendBatchMaxSizeKey),
 			Timeout:          viperInstance.GetDuration(CollectorBatchProcessorTimeoutKey),
 		},
 	}
+
+	if viperInstance.IsSet(CollectorAttributeProcessorKey) {
+		err := resolveMapStructure(CollectorAttributeProcessorKey, &processors.Attribute)
+		if err != nil {
+			return processors
+		}
+	}
+
+	return processors
 }
 
 // generate self-signed certificate for OTEL receiver
