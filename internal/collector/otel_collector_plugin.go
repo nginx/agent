@@ -241,6 +241,7 @@ func (oc *Collector) handleNginxConfigUpdate(ctx context.Context, msg *bus.Messa
 }
 
 func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message) {
+	var reloadCollector bool
 	resourceUpdateContext, ok := msg.Data.(*v1.Resource)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *v1.Resource", "payload", msg.Data)
@@ -253,19 +254,17 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 		}
 	}
 
-	var reloadCollector bool
-	if oc.config.Collector.Processors.Attribute != nil {
-		if resourceUpdateContext.GetResourceId() != "" {
-			reloadCollector = oc.updateAttributeActions(
-				[]config.Action{
-					{
-						Key:    "resource.id",
-						Action: "insert",
-						Value:  resourceUpdateContext.GetResourceId(),
-					},
+	if oc.config.Collector.Processors.Attribute != nil &&
+		resourceUpdateContext.GetResourceId() != "" {
+		reloadCollector = oc.updateAttributeActions(
+			[]config.Action{
+				{
+					Key:    "resource.id",
+					Action: "insert",
+					Value:  resourceUpdateContext.GetResourceId(),
 				},
-			)
-		}
+			},
+		)
 	}
 
 	if reloadCollector {
