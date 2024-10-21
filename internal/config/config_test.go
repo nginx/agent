@@ -63,7 +63,8 @@ func TestResolveConfig(t *testing.T) {
 
 	assert.Equal(t, 30*time.Second, actual.DataPlaneConfig.Nginx.ReloadMonitoringPeriod)
 	assert.False(t, actual.DataPlaneConfig.Nginx.TreatWarningsAsErrors)
-	assert.Equal(t, "/var/log/nginx/error.log:/var/log/nginx/access.log", actual.DataPlaneConfig.Nginx.ExcludeLogs)
+	assert.Equal(t, []string{"/var/log/nginx/error.log", "/var/log/nginx/access.log"},
+		actual.DataPlaneConfig.Nginx.ExcludeLogs)
 
 	require.NotNil(t, actual.Collector)
 	assert.Equal(t, "/etc/nginx-agent/nginx-agent-otelcol.yaml", actual.Collector.ConfigPath)
@@ -75,8 +76,8 @@ func TestResolveConfig(t *testing.T) {
 	assert.Equal(t, 10*time.Second, actual.Client.Timeout)
 
 	assert.Equal(t,
-		"/etc/nginx:/usr/local/etc/nginx:/var/run/nginx:/usr/share/nginx/modules:/var/log/nginx:invalid/path",
-		actual.ConfigDir,
+		allowedDir,
+		actual.AllowedDirectories,
 	)
 
 	assert.Equal(t, allowedDir, actual.AllowedDirectories)
@@ -178,14 +179,18 @@ func TestResolveCollector(t *testing.T) {
 
 		viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 		viperInstance.Set(CollectorConfigPathKey, expected.ConfigPath)
+		viperInstance.Set(CollectorLogPathKey, expected.Log.Path)
+		viperInstance.Set(CollectorLogLevelKey, expected.Log.Level)
 		viperInstance.Set(CollectorReceiversKey, expected.Receivers)
 		viperInstance.Set(CollectorBatchProcessorKey, expected.Processors.Batch)
 		viperInstance.Set(CollectorBatchProcessorSendBatchSizeKey, expected.Processors.Batch.SendBatchSize)
 		viperInstance.Set(CollectorBatchProcessorSendBatchMaxSizeKey, expected.Processors.Batch.SendBatchMaxSize)
 		viperInstance.Set(CollectorBatchProcessorTimeoutKey, expected.Processors.Batch.Timeout)
 		viperInstance.Set(CollectorExportersKey, expected.Exporters)
-		viperInstance.Set(CollectorExtensionsKey, expected.Extensions)
-		viperInstance.Set(CollectorLogKey, expected.Log)
+		viperInstance.Set(CollectorOtlpExportersKey, expected.Exporters.OtlpExporters)
+		viperInstance.Set(CollectorExtensionsHealthServerHostKey, expected.Extensions.Health.Server.Host)
+		viperInstance.Set(CollectorExtensionsHealthServerPortKey, expected.Extensions.Health.Server.Port)
+		viperInstance.Set(CollectorExtensionsHealthPathKey, expected.Extensions.Health.Path)
 
 		actual, err := resolveCollector(testDefault.AllowedDirectories)
 		require.NoError(t, err)
@@ -244,7 +249,6 @@ func TestMissingServerTLS(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 
 	expected := getAgentConfig().Command
-	expected.TLS = nil
 
 	viperInstance.Set(CommandServerHostKey, expected.Server.Host)
 	viperInstance.Set(CommandServerPortKey, expected.Server.Port)
@@ -254,7 +258,6 @@ func TestMissingServerTLS(t *testing.T) {
 	assert.True(t, viperInstance.IsSet(CommandRootKey))
 	assert.True(t, viperInstance.IsSet(CommandServerKey))
 	assert.True(t, viperInstance.IsSet(CommandAuthKey))
-	assert.False(t, viperInstance.IsSet(CommandTLSKey))
 
 	result := resolveCommand()
 	assert.Equal(t, expected.Server, result.Server)
@@ -298,7 +301,6 @@ func getAgentConfig() *Config {
 			MaxMessageRecieveSize: 20,
 			MaxMessageSendSize:    40,
 		},
-		ConfigDir: "",
 		AllowedDirectories: []string{
 			"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx", "/var/log/nginx", "/usr/share/nginx/modules",
 		},
@@ -372,6 +374,7 @@ func getAgentConfig() *Config {
 						Port: 1337,
 						Type: 0,
 					},
+					Path: "/",
 				},
 			},
 			Log: &Log{

@@ -5,10 +5,14 @@
 package collector
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/nginx/agent/v3/test/stub"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,6 +31,27 @@ func TestCollector_New(t *testing.T) {
 
 	_, err := New(conf)
 	require.NoError(t, err, "NewCollector should not return an error with valid config")
+}
+
+func TestCollector_Init(t *testing.T) {
+	conf := types.OTelConfig(t)
+	conf.Collector = &config.Collector{}
+
+	logBuf := &bytes.Buffer{}
+	stub.StubLoggerWith(logBuf)
+
+	collector, err := New(conf)
+	require.NoError(t, err, "NewCollector should not return an error with valid config")
+
+	initError := collector.Init(context.Background(), nil)
+	require.NoError(t, initError)
+
+	if s := logBuf.String(); !strings.Contains(s, "No receivers configured for OTel Collector. "+
+		"Waiting to discover a receiver before starting OTel collector.") {
+		t.Errorf("Unexpected log %s", s)
+	}
+
+	assert.True(t, collector.stopped)
 }
 
 func TestCollector_InitAndClose(t *testing.T) {
@@ -83,7 +108,7 @@ func TestCollector_Process(t *testing.T) {
 				},
 			},
 			receivers: config.Receivers{
-				HostMetrics: config.HostMetrics{
+				HostMetrics: &config.HostMetrics{
 					CollectionInterval: time.Minute,
 					InitialDelay:       time.Second,
 					Scrapers: &config.HostMetricsScrapers{
@@ -119,7 +144,7 @@ func TestCollector_Process(t *testing.T) {
 				},
 			},
 			receivers: config.Receivers{
-				HostMetrics: config.HostMetrics{
+				HostMetrics: &config.HostMetrics{
 					CollectionInterval: time.Minute,
 					InitialDelay:       time.Second,
 					Scrapers: &config.HostMetricsScrapers{

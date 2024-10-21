@@ -82,26 +82,6 @@ jobs:
               name: nginx-agent-unsigned-snapshots
               path: build
               retention-days: 1
-  generate-pgo-profile:
-    name: Generate Profile
-    needs: build-unsigned-snapshot
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
-        with:
-          go-version-file: 'go.mod'
-          cache: false
-      - name: Download Packages
-        uses: actions/download-artifact@eaceaf801fd36c7dee90939fad912460b18a1ffe # v4.1.2
-        with:
-          name: nginx-agent-unsigned-snapshots
-          path: build
-      - name: Generate pgo profile
-        run: |
-          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-          OS_RELEASE="ubuntu" OS_VERSION="22.04" \
-          make generate-pgo-profile
 
   integration-tests:
     name: Integration Tests
@@ -164,16 +144,10 @@ jobs:
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
-      - name: Login to Docker Registry
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
-        with:
-          registry: ${{ secrets.REGISTRY_URL }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" \
+          CONTAINER_NGINX_IMAGE_REGISTRY="docker-registry.nginx.com" \
           TAG="${{ matrix.container.version }}-${{ matrix.container.image }}" \
           OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" \
             make official-image-integration-test
@@ -332,17 +306,6 @@ jobs:
       - name: Push load test result
         if:  ${{ success() && github.ref_name == 'v3'}}
         run: git push 'https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/nginx/agent.git' benchmark-results:benchmark-results
-  publish-packages-vars:
-    name: Set workflow variables
-    if: ${{ github.ref_name == 'v3' &&
-      !github.event.pull_request.head.repo.fork }}
-    runs-on: ubuntu-22.04
-    outputs:
-      package_build_num: ${{ steps.get_build_num.outputs.build_num }}
-    steps:
-      - name: Get the build number
-        id: get_build_num
-        run: echo "build_num=${{ github.run_number }}-$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
 
   publish-packages:
     name: Publish NGINX Agent v3 packages
@@ -351,7 +314,7 @@ jobs:
     needs: [ lint, unit-test, performance-tests,
              load-tests, official-oss-image-integration-tests,
              official-plus-image-integration-tests,
-             race-condition-test, publish-packages-vars ]
+             race-condition-test ]
     uses: ./.github/workflows/release-branch.yml
     secrets: inherit
     permissions:
@@ -359,7 +322,7 @@ jobs:
       contents: read
     with:
       packageVersion: "3.0.0"
-      packageBuildNo: "${{ needs.publish-packages-vars.outputs.package_build_num }}"
+      packageBuildNo: "${{ github.run_number }}"
       uploadAzure: true
       publishPackages: true
       releaseBranch: "v3"

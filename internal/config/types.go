@@ -42,9 +42,8 @@ type (
 		Watchers           *Watchers        `yaml:"-"`
 		Version            string           `yaml:"-"`
 		Path               string           `yaml:"-"`
-		ConfigDir          string           `yaml:"-" mapstructure:"config-dirs"`
 		UUID               string           `yaml:"-"`
-		AllowedDirectories []string         `yaml:"-"`
+		AllowedDirectories []string         `yaml:"-" mapstructure:"allowed_directories"`
 		Features           []string         `yaml:"-"`
 	}
 
@@ -58,7 +57,7 @@ type (
 	}
 
 	NginxDataPlaneConfig struct {
-		ExcludeLogs            string        `yaml:"-" mapstructure:"exclude_logs"`
+		ExcludeLogs            []string      `yaml:"-" mapstructure:"exclude_logs"`
 		ReloadMonitoringPeriod time.Duration `yaml:"-" mapstructure:"reload_monitoring_period"`
 		TreatWarningsAsErrors  bool          `yaml:"-" mapstructure:"treat_warnings_as_errors"`
 	}
@@ -125,10 +124,10 @@ type (
 
 	// OTel Collector Receiver configuration.
 	Receivers struct {
+		HostMetrics        *HostMetrics        `yaml:"-" mapstructure:"host_metrics"`
 		OtlpReceivers      []OtlpReceiver      `yaml:"-" mapstructure:"otlp_receivers"`
 		NginxReceivers     []NginxReceiver     `yaml:"-" mapstructure:"nginx_receivers"`
 		NginxPlusReceivers []NginxPlusReceiver `yaml:"-" mapstructure:"nginx_plus_receivers"`
-		HostMetrics        HostMetrics         `yaml:"-" mapstructure:"host_metrics"`
 	}
 
 	OtlpReceiver struct {
@@ -283,6 +282,37 @@ func (nr *NginxReceiver) Validate(allowedDirectories []string) error {
 
 func (c *Config) IsDirectoryAllowed(directory string) bool {
 	return isAllowedDir(directory, c.AllowedDirectories)
+}
+
+func (c *Config) IsFeatureEnabled(feature string) bool {
+	for _, enabledFeature := range c.Features {
+		if enabledFeature == feature {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (c *Config) IsACollectorExporterConfigured() bool {
+	if c.Collector == nil {
+		return false
+	}
+
+	return c.Collector.Exporters.PrometheusExporter != nil ||
+		c.Collector.Exporters.OtlpExporters != nil ||
+		c.Collector.Exporters.Debug != nil
+}
+
+func (c *Config) AreReceiversConfigured() bool {
+	if c.Collector == nil {
+		return false
+	}
+
+	return c.Collector.Receivers.NginxPlusReceivers != nil ||
+		c.Collector.Receivers.OtlpReceivers != nil ||
+		c.Collector.Receivers.NginxReceivers != nil ||
+		c.Collector.Receivers.HostMetrics != nil
 }
 
 func isAllowedDir(dir string, allowedDirs []string) bool {
