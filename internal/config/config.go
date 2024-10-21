@@ -70,9 +70,11 @@ func RegisterConfigFile() error {
 
 func ResolveConfig() (*Config, error) {
 	// Collect allowed directories, so that paths in the config can be validated.
-	configDir := viperInstance.GetString(ConfigDirectoriesKey)
+	directories := viperInstance.GetStringSlice(AllowedDirectoriesKey)
 	allowedDirs := make([]string, 0)
-	for _, dir := range strings.Split(configDir, ":") {
+
+	// Check directories in allowed_directories are valid
+	for _, dir := range directories {
 		if dir != "" && filepath.IsAbs(dir) {
 			allowedDirs = append(allowedDirs, dir)
 		} else {
@@ -96,7 +98,6 @@ func ResolveConfig() (*Config, error) {
 		Log:                resolveLog(),
 		DataPlaneConfig:    resolveDataPlaneConfig(),
 		Client:             resolveClient(),
-		ConfigDir:          configDir,
 		AllowedDirectories: allowedDirs,
 		Collector:          collector,
 		Command:            resolveCommand(),
@@ -106,6 +107,7 @@ func ResolveConfig() (*Config, error) {
 	}
 
 	slog.Debug("Agent config", "config", config)
+	slog.Info("Enabled features", "features", config.Features)
 
 	return config, nil
 }
@@ -125,15 +127,15 @@ func registerFlags() {
 	fs.String(
 		LogLevelKey,
 		"info",
-		`The desired verbosity level for logging messages from nginx-agent. 
-		Available options, in order of severity from highest to lowest, are: 
-		panic, fatal, error, info and debug.`,
+		"The desired verbosity level for logging messages from nginx-agent. "+
+			"Available options, in order of severity from highest to lowest, are: "+
+			"panic, fatal, error, info and debug.",
 	)
 	fs.String(
 		LogPathKey,
 		"",
-		`The path to output log messages to. 
-		If the default path doesn't exist, log messages are output to stdout/stderr.`,
+		"The path to output log messages to. "+
+			"If the default path doesn't exist, log messages are output to stdout/stderr.",
 	)
 
 	fs.Duration(
@@ -147,59 +149,16 @@ func registerFlags() {
 		"Warning messages in the NGINX errors logs after a NGINX reload will be treated as an error.",
 	)
 
-	fs.String(
-		NginxExcludeLogsKey,
-		"",
-		"One or more NGINX log paths that you want to exclude from metrics collection or error monitoring "+
-			"This key is formatted as a string and follows Unix PATH format",
+	fs.StringSlice(
+		NginxExcludeLogsKey, []string{},
+		"A comma-separated list of one or more NGINX log paths that you want to exclude from metrics "+
+			"collection or error monitoring",
 	)
 
 	fs.Duration(ClientTimeoutKey, time.Minute, "Client timeout")
-	fs.String(ConfigDirectoriesKey,
-		DefConfigDirectories,
-		"Defines the paths that you want to grant NGINX Agent read/write access to."+
-			" This key is formatted as a string and follows Unix PATH format")
-
-	fs.String(
-		CommandServerHostKey,
-		DefCommandServerHostKey,
-		"The target hostname of the command server endpoint for command and control.",
-	)
-	fs.Int32(
-		CommandServerPortKey,
-		DefCommandServerPortKey,
-		"The target port of the command server endpoint for command and control.",
-	)
-	fs.String(
-		CommandServerTypeKey,
-		DefCommandServerTypeKey,
-		"The target protocol (gRPC or HTTP) the command server endpoint for command and control.",
-	)
-	fs.String(
-		CommandAuthTokenKey,
-		DefCommandAuthTokenKey,
-		"The token used in the authentication handshake with the command server endpoint for command and control.",
-	)
-	fs.String(
-		CommandTLSCertKey,
-		DefCommandTLSCertKey,
-		"The path to the certificate file to use for TLS communication with the command server.",
-	)
-	fs.String(
-		CommandTLSKeyKey,
-		DefCommandTLSKeyKey,
-		"The path to the certificate key file to use for TLS communication with the command server.",
-	)
-	fs.String(
-		CommandTLSCaKey,
-		DefCommandTLSCaKey,
-		"The path to CA certificate file to use for TLS communication with the command server.",
-	)
-	fs.Bool(
-		CommandTLSSkipVerifyKey,
-		DefCommandTLSSkipVerifyKey,
-		"Testing only. SkipVerify controls client verification of a server's certificate chain and host name.",
-	)
+	fs.StringSlice(AllowedDirectoriesKey,
+		DefaultAllowedDirectories(),
+		"A comma-separated list of paths that you want to grant NGINX Agent read/write access to")
 
 	fs.Duration(
 		InstanceWatcherMonitoringFrequencyKey,
@@ -239,10 +198,11 @@ func registerFlags() {
 
 	fs.StringSlice(
 		FeaturesKey,
-		GetDefaultFeatures(),
+		DefaultFeatures(),
 		"A comma-separated list of features enabled for the agent.",
 	)
 
+	registerCommandFlags(fs)
 	registerCollectorFlags(fs)
 
 	fs.SetNormalizeFunc(normalizeFunc)
@@ -258,6 +218,54 @@ func registerFlags() {
 	})
 }
 
+func registerCommandFlags(fs *flag.FlagSet) {
+	fs.String(
+		CommandServerHostKey,
+		DefCommandServerHostKey,
+		"The target hostname of the command server endpoint for command and control.",
+	)
+	fs.Int32(
+		CommandServerPortKey,
+		DefCommandServerPortKey,
+		"The target port of the command server endpoint for command and control.",
+	)
+	fs.String(
+		CommandServerTypeKey,
+		DefCommandServerTypeKey,
+		"The target protocol (gRPC or HTTP) the command server endpoint for command and control.",
+	)
+	fs.String(
+		CommandAuthTokenKey,
+		DefCommandAuthTokenKey,
+		"The token used in the authentication handshake with the command server endpoint for command and control.",
+	)
+	fs.String(
+		CommandTLSCertKey,
+		DefCommandTLSCertKey,
+		"The path to the certificate file to use for TLS communication with the command server.",
+	)
+	fs.String(
+		CommandTLSKeyKey,
+		DefCommandTLSKeyKey,
+		"The path to the certificate key file to use for TLS communication with the command server.",
+	)
+	fs.String(
+		CommandTLSCaKey,
+		DefCommandTLSCaKey,
+		"The path to CA certificate file to use for TLS communication with the command server.",
+	)
+	fs.Bool(
+		CommandTLSSkipVerifyKey,
+		DefCommandTLSSkipVerifyKey,
+		"Testing only. Skip verify controls client verification of a server's certificate chain and host name.",
+	)
+	fs.String(
+		CommandTLSServerNameKey,
+		DefCommandTLServerNameKey,
+		"Specifies the name of the server sent in the TLS configuration.",
+	)
+}
+
 func registerCollectorFlags(fs *flag.FlagSet) {
 	fs.String(
 		CollectorConfigPathKey,
@@ -268,16 +276,16 @@ func registerCollectorFlags(fs *flag.FlagSet) {
 	fs.String(
 		CollectorLogLevelKey,
 		DefCollectorLogLevel,
-		`The desired verbosity level for logging messages from nginx-agent OTel collector. 
-		Available options, in order of severity from highest to lowest, are: 
-		ERROR, WARN, INFO and DEBUG.`,
+		"The desired verbosity level for logging messages from nginx-agent OTel collector. "+
+			"Available options, in order of severity from highest to lowest, are: "+
+			"ERROR, WARN, INFO and DEBUG.",
 	)
 
 	fs.String(
 		CollectorLogPathKey,
 		DefCollectorLogPath,
-		`The path to output OTel collector log messages to. 
-		If the default path doesn't exist, log messages are output to stdout/stderr.`,
+		"The path to output OTel collector log messages to. "+
+			"If the default path doesn't exist, log messages are output to stdout/stderr.",
 	)
 
 	fs.Uint32(
@@ -296,6 +304,51 @@ func registerCollectorFlags(fs *flag.FlagSet) {
 		CollectorBatchProcessorTimeoutKey,
 		DefCollectorBatchProcessorTimeout,
 		`Time duration after which a batch will be sent regardless of size.`,
+	)
+
+	fs.String(
+		CollectorExtensionsHealthServerHostKey,
+		DefCollectorExtensionsHealthServerHost,
+		`The hostname of the address to publish the OTel collector health check status.`,
+	)
+
+	fs.Int32(
+		CollectorExtensionsHealthServerPortKey,
+		DefCollectorExtensionsHealthServerPort,
+		`The port of the address to publish the OTel collector health check status.`,
+	)
+
+	fs.String(
+		CollectorExtensionsHealthPathKey,
+		DefCollectorExtensionsHealthPath,
+		`The path to be configured for the OTel collector health check server`,
+	)
+
+	fs.String(
+		CollectorExtensionsHealthTLSCertKey,
+		DefCollectorExtensionsHealthTLSCertPath,
+		"The path to the certificate file to use for TLS communication with the OTel collector health check server.",
+	)
+	fs.String(
+		CollectorExtensionsHealthTLSKeyKey,
+		DefCollectorExtensionsHealthTLSKeyPath,
+		"The path to the certificate key file to use for TLS communication "+
+			"with the OTel collector health check server.",
+	)
+	fs.String(
+		CollectorExtensionsHealthTLSCaKey,
+		DefCollectorExtensionsHealthTLSCAPath,
+		"The path to CA certificate file to use for TLS communication with the OTel collector health check server.",
+	)
+	fs.Bool(
+		CollectorExtensionsHealthTLSSkipVerifyKey,
+		DefCollectorExtensionsHealthTLSSkipVerify,
+		"Testing only. Skip verify controls client verification of a server's certificate chain and host name.",
+	)
+	fs.String(
+		CollectorExtensionsHealthTLSServerNameKey,
+		DefCollectorExtensionsHealthTLServerNameKey,
+		"Specifies the name of the server sent in the TLS configuration.",
 	)
 }
 
@@ -358,7 +411,7 @@ func resolveDataPlaneConfig() *DataPlaneConfig {
 		Nginx: &NginxDataPlaneConfig{
 			ReloadMonitoringPeriod: viperInstance.GetDuration(NginxReloadMonitoringPeriodKey),
 			TreatWarningsAsErrors:  viperInstance.GetBool(NginxTreatWarningsAsErrorsKey),
-			ExcludeLogs:            viperInstance.GetString(NginxExcludeLogsKey),
+			ExcludeLogs:            viperInstance.GetStringSlice(NginxExcludeLogsKey),
 		},
 	}
 }
@@ -375,38 +428,16 @@ func resolveClient() *Client {
 }
 
 func resolveCollector(allowedDirs []string) (*Collector, error) {
-	// We do not want to return a sentinel error because we are joining all returned errors
-	// from config resolution and returning them without pattern matching.
-	// nolint: nilnil
-	if !viperInstance.IsSet(CollectorRootKey) {
-		return nil, nil
-	}
+	var receivers Receivers
 
-	var (
-		err        error
-		exporters  Exporters
-		receivers  Receivers
-		extensions Extensions
-		log        Log
-	)
-
-	err = errors.Join(
-		err,
-		resolveMapStructure(CollectorExportersKey, &exporters),
-		resolveMapStructure(CollectorReceiversKey, &receivers),
-		resolveMapStructure(CollectorExtensionsKey, &extensions),
-		resolveMapStructure(CollectorLogKey, &log),
-	)
+	err := resolveMapStructure(CollectorReceiversKey, &receivers)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshal collector config: %w", err)
+		return nil, fmt.Errorf("unmarshal collector receivers config: %w", err)
 	}
 
-	if log.Level == "" {
-		log.Level = DefCollectorLogLevel
-	}
-
-	if log.Path == "" {
-		log.Path = DefCollectorLogPath
+	exporters, err := resolveExporters()
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal collector exporters config: %w", err)
 	}
 
 	col := &Collector{
@@ -414,8 +445,8 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 		Exporters:  exporters,
 		Processors: resolveProcessors(),
 		Receivers:  receivers,
-		Extensions: extensions,
-		Log:        &log,
+		Extensions: resolveExtensions(),
+		Log:        resolveCollectorLog(),
 	}
 
 	// Check for self-signed certificate true in Agent conf
@@ -431,17 +462,57 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 	return col, nil
 }
 
-func resolveProcessors() Processors {
-	processors := Processors{}
+func resolveExporters() (Exporters, error) {
+	var otlpExporters []OtlpExporter
+	exporters := Exporters{}
 
-	if viperInstance.IsSet(CollectorBatchProcessorKey) {
-		processors.Batch = &Batch{}
-		processors.Batch.SendBatchSize = viperInstance.GetUint32(CollectorBatchProcessorSendBatchSizeKey)
-		processors.Batch.SendBatchMaxSize = viperInstance.GetUint32(CollectorBatchProcessorSendBatchMaxSizeKey)
-		processors.Batch.Timeout = viperInstance.GetDuration(CollectorBatchProcessorTimeoutKey)
+	if viperInstance.IsSet(CollectorDebugExporterKey) {
+		exporters.Debug = &DebugExporter{}
 	}
 
-	return processors
+	if isPrometheusExporterSet() {
+		exporters.PrometheusExporter = &PrometheusExporter{
+			Server: &ServerConfig{
+				Host: viperInstance.GetString(CollectorPrometheusExporterServerHostKey),
+				Port: viperInstance.GetInt(CollectorPrometheusExporterServerPortKey),
+			},
+		}
+
+		if arePrometheusExportTLSSettingsSet() {
+			exporters.PrometheusExporter.TLS = &TLSConfig{
+				Cert:       viperInstance.GetString(CollectorPrometheusExporterTLSCertKey),
+				Key:        viperInstance.GetString(CollectorPrometheusExporterTLSKeyKey),
+				Ca:         viperInstance.GetString(CollectorPrometheusExporterTLSCaKey),
+				SkipVerify: viperInstance.GetBool(CollectorPrometheusExporterTLSSkipVerifyKey),
+				ServerName: viperInstance.GetString(CollectorPrometheusExporterTLSServerNameKey),
+			}
+		}
+	}
+
+	err := resolveMapStructure(CollectorOtlpExportersKey, &otlpExporters)
+	if err != nil {
+		return exporters, err
+	}
+
+	exporters.OtlpExporters = otlpExporters
+
+	return exporters, nil
+}
+
+func isPrometheusExporterSet() bool {
+	return viperInstance.IsSet(CollectorPrometheusExporterKey) ||
+		(viperInstance.IsSet(CollectorPrometheusExporterServerHostKey) &&
+			viperInstance.IsSet(CollectorPrometheusExporterServerPortKey))
+}
+
+func resolveProcessors() Processors {
+	return Processors{
+		Batch: &Batch{
+			SendBatchSize:    viperInstance.GetUint32(CollectorBatchProcessorSendBatchSizeKey),
+			SendBatchMaxSize: viperInstance.GetUint32(CollectorBatchProcessorSendBatchMaxSizeKey),
+			Timeout:          viperInstance.GetDuration(CollectorBatchProcessorTimeoutKey),
+		},
+	}
 }
 
 // generate self-signed certificate for OTEL receiver
@@ -495,36 +566,72 @@ func processOtlpReceivers(tlsConfig *OtlpTLSConfig) error {
 	return nil
 }
 
-func resolveCommand() *Command {
-	if !viperInstance.IsSet(CommandRootKey) {
-		return nil
-	}
-	command := &Command{}
-
-	if viperInstance.IsSet(CommandServerKey) {
-		serverType, ok := parseServerType(viperInstance.GetString(CommandServerTypeKey))
-		if !ok {
-			serverType = Grpc
-			slog.Error(
-				"Invalid value for command server type, defaulting to gRPC server type",
-				"server_type", viperInstance.GetString(CommandServerTypeKey),
-			)
+func resolveExtensions() Extensions {
+	if isHealthExtensionSet() {
+		health := &Health{
+			Server: &ServerConfig{
+				Host: viperInstance.GetString(CollectorExtensionsHealthServerHostKey),
+				Port: viperInstance.GetInt(CollectorExtensionsHealthServerPortKey),
+			},
+			Path: viperInstance.GetString(CollectorExtensionsHealthPathKey),
 		}
 
-		command.Server = &ServerConfig{
+		if areHealthExtensionTLSSettingsSet() {
+			health.TLS = &TLSConfig{
+				Cert:       viperInstance.GetString(CollectorExtensionsHealthTLSCertKey),
+				Key:        viperInstance.GetString(CollectorExtensionsHealthTLSKeyKey),
+				Ca:         viperInstance.GetString(CollectorExtensionsHealthTLSCaKey),
+				SkipVerify: viperInstance.GetBool(CollectorExtensionsHealthTLSSkipVerifyKey),
+				ServerName: viperInstance.GetString(CollectorExtensionsHealthTLSServerNameKey),
+			}
+		}
+
+		return Extensions{
+			Health: health,
+		}
+	}
+
+	return Extensions{}
+}
+
+func isHealthExtensionSet() bool {
+	return viperInstance.IsSet(CollectorExtensionsHealthKey) ||
+		(viperInstance.IsSet(CollectorExtensionsHealthServerHostKey) &&
+			viperInstance.IsSet(CollectorExtensionsHealthServerPortKey))
+}
+
+func resolveCollectorLog() *Log {
+	return &Log{
+		Level: viperInstance.GetString(CollectorLogLevelKey),
+		Path:  viperInstance.GetString(CollectorLogPathKey),
+	}
+}
+
+func resolveCommand() *Command {
+	serverType, ok := parseServerType(viperInstance.GetString(CommandServerTypeKey))
+	if !ok {
+		serverType = Grpc
+		slog.Error(
+			"Invalid value for command server type, defaulting to gRPC server type",
+			"server_type", viperInstance.GetString(CommandServerTypeKey),
+		)
+	}
+
+	command := &Command{
+		Server: &ServerConfig{
 			Host: viperInstance.GetString(CommandServerHostKey),
 			Port: viperInstance.GetInt(CommandServerPortKey),
 			Type: serverType,
-		}
+		},
 	}
 
-	if viperInstance.IsSet(CommandAuthKey) {
+	if viperInstance.IsSet(CommandAuthTokenKey) {
 		command.Auth = &AuthConfig{
 			Token: viperInstance.GetString(CommandAuthTokenKey),
 		}
 	}
 
-	if viperInstance.IsSet(CommandTLSKey) {
+	if areTLSSettingsSet() {
 		command.TLS = &TLSConfig{
 			Cert:       viperInstance.GetString(CommandTLSCertKey),
 			Key:        viperInstance.GetString(CommandTLSKeyKey),
@@ -535,6 +642,30 @@ func resolveCommand() *Command {
 	}
 
 	return command
+}
+
+func areTLSSettingsSet() bool {
+	return viperInstance.IsSet(CommandTLSCertKey) ||
+		viperInstance.IsSet(CommandTLSKeyKey) ||
+		viperInstance.IsSet(CommandTLSCaKey) ||
+		viperInstance.IsSet(CommandTLSSkipVerifyKey) ||
+		viperInstance.IsSet(CommandTLSServerNameKey)
+}
+
+func areHealthExtensionTLSSettingsSet() bool {
+	return viperInstance.IsSet(CollectorExtensionsHealthTLSCertKey) ||
+		viperInstance.IsSet(CollectorExtensionsHealthTLSKeyKey) ||
+		viperInstance.IsSet(CollectorExtensionsHealthTLSCaKey) ||
+		viperInstance.IsSet(CollectorExtensionsHealthTLSSkipVerifyKey) ||
+		viperInstance.IsSet(CollectorExtensionsHealthTLSServerNameKey)
+}
+
+func arePrometheusExportTLSSettingsSet() bool {
+	return viperInstance.IsSet(CollectorPrometheusExporterTLSCertKey) ||
+		viperInstance.IsSet(CollectorPrometheusExporterTLSKeyKey) ||
+		viperInstance.IsSet(CollectorPrometheusExporterTLSCaKey) ||
+		viperInstance.IsSet(CollectorPrometheusExporterTLSSkipVerifyKey) ||
+		viperInstance.IsSet(CollectorPrometheusExporterTLSServerNameKey)
 }
 
 func resolveCommon() *CommonSettings {

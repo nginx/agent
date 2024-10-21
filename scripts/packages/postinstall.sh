@@ -239,8 +239,11 @@ metrics:
 
 # OSS NGINX default config path
 # path to aux file dirs can also be added
-config_dirs: "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules:/etc/nms"
-
+allowed_directories: 
+    - /etc/nginx
+    - /usr/local/etc/nginx
+    - /usr/share/nginx/modules
+    - /etc/nms
 api:
   # default port for NGINX Agent API, this is for the server configuration of the REST API
   port: 8081

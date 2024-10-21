@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLoadPLugins(t *testing.T) {
+func TestLoadPlugins(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
@@ -45,6 +45,7 @@ func TestLoadPLugins(t *testing.T) {
 						Type: config.Grpc,
 					},
 				},
+				Features: config.DefaultFeatures(),
 			},
 			expected: []bus.Plugin{
 				&resource.Resource{},
@@ -55,7 +56,11 @@ func TestLoadPLugins(t *testing.T) {
 		}, {
 			name: "Test 3: Load metrics collector plugin",
 			input: &config.Config{
-				Collector: &config.Collector{},
+				Collector: &config.Collector{
+					Exporters: config.Exporters{
+						Debug: &config.DebugExporter{},
+					},
+				},
 			},
 			expected: []bus.Plugin{
 				&resource.Resource{},
