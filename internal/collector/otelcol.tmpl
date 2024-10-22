@@ -1,5 +1,5 @@
 receivers:
-{{- if ne .Receivers.HostMetrics.CollectionInterval 0 }}
+{{- if ne .Receivers.HostMetrics nil }}
   hostmetrics:
     collection_interval: {{ .Receivers.HostMetrics.CollectionInterval }}
     initial_delay: {{ .Receivers.HostMetrics.InitialDelay }}
@@ -76,6 +76,17 @@ receivers:
 {{- end }}
 
 processors:
+{{- if ne .Processors.Attribute nil }}
+{{- if .Processors.Attribute.Actions }}
+  attributes:
+    actions:
+{{- range .Processors.Attribute.Actions }}
+      - key: {{ .Key }}
+        action: {{ .Action }}
+        value: {{ .Value }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- if ne .Processors.Batch nil }}
   batch:
     send_batch_size: {{ .Processors.Batch.SendBatchSize }}
@@ -173,7 +184,7 @@ service:
   pipelines:
     metrics:
       receivers:
-        {{- if ne .Receivers.HostMetrics.CollectionInterval 0 }}
+        {{- if ne .Receivers.HostMetrics nil }}
         - hostmetrics
         {{- end }}
         {{- range $index, $otlpReceiver := .Receivers.OtlpReceivers }}
@@ -188,6 +199,11 @@ service:
       processors:
         {{- if ne .Processors.Batch nil }}
         - batch
+        {{- end }}
+        {{- if ne .Processors.Attribute nil }}
+        {{- if .Processors.Attribute.Actions }}
+        - attributes
+        {{- end }}
         {{- end }}
       exporters:
         {{- range $index, $otlpExporter := .Exporters.OtlpExporters }}
