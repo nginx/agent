@@ -11,9 +11,13 @@ status:
 
 resource_attributes:
   nginx.instance.id:
-    enabled: true
     description: The nginx instance id.
     type: string
+    enabled: true
+  nginx.instance.type:
+    description: The nginx instance type (nginx, nginxplus)
+    type: string
+    enabled: true
 
 attributes:
   nginx.cache.outcome:

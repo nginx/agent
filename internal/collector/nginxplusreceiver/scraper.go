@@ -36,6 +36,7 @@ type nginxPlusScraper struct {
 	settings   component.TelemetrySettings
 	cfg        *Config
 	mb         *metadata.MetricsBuilder
+	rb         *metadata.ResourceBuilder
 	logger     *zap.Logger
 }
 
@@ -48,7 +49,6 @@ func newNginxPlusScraper(
 	logger.Info("Creating NGINX Plus scraper")
 
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
-
 	plusClient, err := plusapi.NewNginxClient(cfg.Endpoint,
 		plusapi.WithMaxAPIVersion(),
 	)
@@ -56,11 +56,17 @@ func newNginxPlusScraper(
 		return nil, err
 	}
 
+	rb := mb.NewResourceBuilder()
+	rb.SetNginxInstanceID(settings.ID.Name())
+	rb.SetNginxInstanceType("nginxplus")
+	logger.Debug("NGINX Plus resource info: ", zap.Any("resource", rb))
+
 	return &nginxPlusScraper{
 		plusClient: plusClient,
 		settings:   settings.TelemetrySettings,
 		cfg:        cfg,
 		mb:         mb,
+		rb:         rb,
 		logger:     settings.Logger,
 	}, nil
 }
@@ -71,16 +77,10 @@ func (nps *nginxPlusScraper) scrape(ctx context.Context) (pmetric.Metrics, error
 		return pmetric.Metrics{}, fmt.Errorf("GET stats: %w", err)
 	}
 
-	rac := metadata.DefaultResourceAttributesConfig()
-	rb := metadata.NewResourceBuilder(rac)
-	rb.SetNginxInstanceID("666666666")
-	nps.logger.Debug("NGINX Plus resource info: ", zap.Any("resource", rb))
-
 	nps.logger.Debug("NGINX Plus stats", zap.Any("stats", stats))
 	nps.recordMetrics(stats)
 
-	nps.mb.EmitForResource(metadata.WithResource(rb.Emit()))
-	return nps.mb.Emit(), nil
+	return nps.mb.Emit(metadata.WithResource(nps.rb.Emit())), nil
 }
 
 func (nps *nginxPlusScraper) recordMetrics(stats *plusapi.Stats) {

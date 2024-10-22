@@ -14,15 +14,16 @@ func TestResourceBuilder(t *testing.T) {
 			cfg := loadResourceAttributesConfig(t, tt)
 			rb := NewResourceBuilder(cfg)
 			rb.SetNginxInstanceID("nginx.instance.id-val")
+			rb.SetNginxInstanceType("nginx.instance.type-val")
 
 			res := rb.Emit()
 			assert.Equal(t, 0, rb.Emit().Attributes().Len()) // Second call should return empty Resource
 
 			switch tt {
 			case "default":
-				assert.Equal(t, 0, res.Attributes().Len())
+				assert.Equal(t, 2, res.Attributes().Len())
 			case "all_set":
-				assert.Equal(t, 1, res.Attributes().Len())
+				assert.Equal(t, 2, res.Attributes().Len())
 			case "none_set":
 				assert.Equal(t, 0, res.Attributes().Len())
 				return
@@ -31,9 +32,14 @@ func TestResourceBuilder(t *testing.T) {
 			}
 
 			val, ok := res.Attributes().Get("nginx.instance.id")
-			assert.Equal(t, tt == "all_set", ok)
+			assert.True(t, ok)
 			if ok {
 				assert.EqualValues(t, "nginx.instance.id-val", val.Str())
+			}
+			val, ok = res.Attributes().Get("nginx.instance.type")
+			assert.True(t, ok)
+			if ok {
+				assert.EqualValues(t, "nginx.instance.type-val", val.Str())
 			}
 		})
 	}

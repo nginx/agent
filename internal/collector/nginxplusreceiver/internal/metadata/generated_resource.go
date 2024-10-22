@@ -28,6 +28,13 @@ func (rb *ResourceBuilder) SetNginxInstanceID(val string) {
 	}
 }
 
+// SetNginxInstanceType sets provided value as "nginx.instance.type" attribute.
+func (rb *ResourceBuilder) SetNginxInstanceType(val string) {
+	if rb.config.NginxInstanceType.Enabled {
+		rb.res.Attributes().PutStr("nginx.instance.type", val)
+	}
+}
+
 // Emit returns the built resource and resets the internal builder state.
 func (rb *ResourceBuilder) Emit() pcommon.Resource {
 	r := rb.res

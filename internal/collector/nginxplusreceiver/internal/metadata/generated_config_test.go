@@ -85,7 +85,8 @@ func TestMetricsBuilderConfig(t *testing.T) {
 					NginxStreamUpstreamZombieCount:       MetricConfig{Enabled: true},
 				},
 				ResourceAttributes: ResourceAttributesConfig{
-					NginxInstanceID: ResourceAttributeConfig{Enabled: true},
+					NginxInstanceID:   ResourceAttributeConfig{Enabled: true},
+					NginxInstanceType: ResourceAttributeConfig{Enabled: true},
 				},
 			},
 		},
@@ -153,7 +154,8 @@ func TestMetricsBuilderConfig(t *testing.T) {
 					NginxStreamUpstreamZombieCount:       MetricConfig{Enabled: false},
 				},
 				ResourceAttributes: ResourceAttributesConfig{
-					NginxInstanceID: ResourceAttributeConfig{Enabled: false},
+					NginxInstanceID:   ResourceAttributeConfig{Enabled: false},
+					NginxInstanceType: ResourceAttributeConfig{Enabled: false},
 				},
 			},
 		},
@@ -190,13 +192,15 @@ func TestResourceAttributesConfig(t *testing.T) {
 		{
 			name: "all_set",
 			want: ResourceAttributesConfig{
-				NginxInstanceID: ResourceAttributeConfig{Enabled: true},
+				NginxInstanceID:   ResourceAttributeConfig{Enabled: true},
+				NginxInstanceType: ResourceAttributeConfig{Enabled: true},
 			},
 		},
 		{
 			name: "none_set",
 			want: ResourceAttributesConfig{
-				NginxInstanceID: ResourceAttributeConfig{Enabled: false},
+				NginxInstanceID:   ResourceAttributeConfig{Enabled: false},
+				NginxInstanceType: ResourceAttributeConfig{Enabled: false},
 			},
 		},
 	}
