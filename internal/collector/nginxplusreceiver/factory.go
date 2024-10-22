@@ -59,8 +59,7 @@ func createMetricsReceiver(
 	if !ok {
 		return nil, errors.New("failed to cast to Config in NGINX Plus metrics receiver")
 	}
-
-	// create new instance id here and pass as part of cfg?
+	
 	nps, err := newNginxPlusScraper(params, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("new nginx plus scraper: %w", err)
