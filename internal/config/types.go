@@ -135,7 +135,7 @@ type (
 	ResourceAttribute struct {
 		Key    string `yaml:"key"    mapstructure:"key"`
 		Action string `yaml:"action" mapstructure:"action"`
-		Value  string `yaml:"value" mapstructure:"value"`
+		Value  string `yaml:"value"  mapstructure:"value"`
 	}
 
 	Batch struct {

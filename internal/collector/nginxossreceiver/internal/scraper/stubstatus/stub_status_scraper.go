@@ -16,7 +16,6 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
-	"go.opentelemetry.io/otel/sdk/resource"
 	"go.uber.org/zap"
 
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/config"
@@ -31,7 +30,6 @@ type NginxStubStatusScraper struct {
 	cfg      *config.Config
 	mb       *metadata.MetricsBuilder
 	rb       *metadata.ResourceBuilder
-	resource *resource.Resource
 }
 
 var _ scraperhelper.Scraper = (*NginxStubStatusScraper)(nil)

@@ -44,7 +44,6 @@ func newNginxPlusScraper(
 	settings receiver.Settings,
 	cfg *Config,
 ) (*nginxPlusScraper, error) {
-
 	logger := settings.Logger
 	logger.Info("Creating NGINX Plus scraper")
 
