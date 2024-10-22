@@ -3720,6 +3720,12 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, opt
 	if mbc.ResourceAttributes.NginxInstanceType.MetricsExclude != nil {
 		mb.resourceAttributeExcludeFilter["nginx.instance.type"] = filter.CreateFilter(mbc.ResourceAttributes.NginxInstanceType.MetricsExclude)
 	}
+	if mbc.ResourceAttributes.ResourceID.MetricsInclude != nil {
+		mb.resourceAttributeIncludeFilter["resource.id"] = filter.CreateFilter(mbc.ResourceAttributes.ResourceID.MetricsInclude)
+	}
+	if mbc.ResourceAttributes.ResourceID.MetricsExclude != nil {
+		mb.resourceAttributeExcludeFilter["resource.id"] = filter.CreateFilter(mbc.ResourceAttributes.ResourceID.MetricsExclude)
+	}
 
 	for _, op := range options {
 		op.apply(mb)

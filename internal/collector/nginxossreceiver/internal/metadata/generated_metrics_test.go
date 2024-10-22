@@ -42,6 +42,15 @@ func TestMetricsBuilder(t *testing.T) {
 			resAttrsSet: testDataSetNone,
 			expectEmpty: true,
 		},
+		{
+			name:        "filter_set_include",
+			resAttrsSet: testDataSetAll,
+		},
+		{
+			name:        "filter_set_exclude",
+			resAttrsSet: testDataSetAll,
+			expectEmpty: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -75,7 +84,11 @@ func TestMetricsBuilder(t *testing.T) {
 			allMetricsCount++
 			mb.RecordNginxHTTPResponseStatusDataPoint(ts, 1, AttributeNginxStatusRange1xx)
 
-			res := pcommon.NewResource()
+			rb := mb.NewResourceBuilder()
+			rb.SetNginxInstanceID("nginx.instance.id-val")
+			rb.SetNginxInstanceType("nginx.instance.type-val")
+			rb.SetResourceID("resource.id-val")
+			res := rb.Emit()
 			metrics := mb.Emit(WithResource(res))
 
 			if tt.expectEmpty {

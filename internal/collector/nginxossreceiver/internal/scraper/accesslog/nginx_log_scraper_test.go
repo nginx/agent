@@ -77,7 +77,9 @@ func TestAccessLogScraper(t *testing.T) {
 		pmetrictest.IgnoreStartTimestamp(),
 		pmetrictest.IgnoreMetricDataPointsOrder(),
 		pmetrictest.IgnoreTimestamp(),
-		pmetrictest.IgnoreMetricsOrder()))
+		pmetrictest.IgnoreMetricsOrder(),
+		pmetrictest.IgnoreResourceAttributeValue("resource.id"),
+		pmetrictest.IgnoreResourceAttributeValue("nginx.instance.id")))
 }
 
 func TestAccessLogScraperError(t *testing.T) {

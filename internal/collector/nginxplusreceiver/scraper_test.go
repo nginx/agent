@@ -44,6 +44,7 @@ func TestScraper(t *testing.T) {
 		pmetrictest.IgnoreMetricDataPointsOrder(),
 		pmetrictest.IgnoreTimestamp(),
 		pmetrictest.IgnoreMetricsOrder(),
-	),
+		pmetrictest.IgnoreResourceAttributeValue("resource.id"),
+		pmetrictest.IgnoreResourceAttributeValue("nginx.instance.id")),
 	)
 }

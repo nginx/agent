@@ -297,6 +297,7 @@ func (rac *ResourceAttributeConfig) Unmarshal(parser *confmap.Conf) error {
 type ResourceAttributesConfig struct {
 	NginxInstanceID   ResourceAttributeConfig `mapstructure:"nginx.instance.id"`
 	NginxInstanceType ResourceAttributeConfig `mapstructure:"nginx.instance.type"`
+	ResourceID        ResourceAttributeConfig `mapstructure:"resource.id"`
 }
 
 func DefaultResourceAttributesConfig() ResourceAttributesConfig {
@@ -305,6 +306,9 @@ func DefaultResourceAttributesConfig() ResourceAttributesConfig {
 			Enabled: true,
 		},
 		NginxInstanceType: ResourceAttributeConfig{
+			Enabled: true,
+		},
+		ResourceID: ResourceAttributeConfig{
 			Enabled: true,
 		},
 	}

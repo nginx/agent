@@ -303,6 +303,7 @@ func TestMetricsBuilder(t *testing.T) {
 			rb := mb.NewResourceBuilder()
 			rb.SetNginxInstanceID("nginx.instance.id-val")
 			rb.SetNginxInstanceType("nginx.instance.type-val")
+			rb.SetResourceID("resource.id-val")
 			res := rb.Emit()
 			metrics := mb.Emit(WithResource(res))
 

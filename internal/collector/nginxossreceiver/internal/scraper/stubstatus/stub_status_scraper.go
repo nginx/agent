@@ -8,7 +8,6 @@ package stubstatus
 import (
 	"context"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/nginxinc/nginx-prometheus-exporter/client"
@@ -17,7 +16,6 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.uber.org/zap"
 
@@ -32,6 +30,7 @@ type NginxStubStatusScraper struct {
 	settings component.TelemetrySettings
 	cfg      *config.Config
 	mb       *metadata.MetricsBuilder
+	rb       *metadata.ResourceBuilder
 	resource *resource.Resource
 }
 
@@ -44,30 +43,17 @@ func NewScraper(
 	logger := settings.Logger
 	logger.Info("Creating NGINX stub status scraper")
 
-	instanceNameType := strings.Split(settings.ID.Name(), "/") // nginxplus/1c3245-...
-	stubResource, err := resource.New(
-		context.Background(),
-		resource.WithHost(),
-		resource.WithAttributes(
-			attribute.String("ngx.instance.type", "nginx"),
-			attribute.String("ngx.instance.id", instanceNameType[0]),
-		),
-	)
-	if err != nil {
-		return nil
-	}
-
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
-	settings.Logger.Info("N+ scraper: ",
-		zap.Any("type", "nginx"),
-		zap.Any("id", instanceNameType[0]),
-		zap.Any("stubResource", stubResource))
+	rb := mb.NewResourceBuilder()
+	rb.SetNginxInstanceID(settings.ID.Name())
+	rb.SetNginxInstanceType("nginx")
+	logger.Debug("NGINX OSS resource info: ", zap.Any("resource", rb))
 
 	return &NginxStubStatusScraper{
 		settings: settings.TelemetrySettings,
 		cfg:      cfg,
 		mb:       mb,
-		resource: stubResource,
+		rb:       rb,
 	}
 }
 
@@ -137,5 +123,5 @@ func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error
 		metadata.AttributeNginxConnOutcomeWAITING,
 	)
 
-	return s.mb.Emit(), nil
+	return s.mb.Emit(metadata.WithResource(s.rb.Emit())), nil
 }

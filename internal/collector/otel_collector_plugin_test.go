@@ -231,6 +231,7 @@ func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
 	conf.Collector.Log.Path = ""
 	conf.Collector.Processors.Batch = nil
 	conf.Collector.Processors.Attribute = nil
+	conf.Collector.Processors.Resource = nil
 
 	tests := []struct {
 		message    *bus.Message
@@ -238,14 +239,14 @@ func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
 		name       string
 	}{
 		{
-			name: "Test 1: Resource update adds resource id action",
+			name: "Test 1: Resource update adds resource id attribute",
 			message: &bus.Message{
 				Topic: bus.ResourceUpdateTopic,
 				Data:  protos.GetHostResource(),
 			},
 			processors: config.Processors{
-				Attribute: &config.Attribute{
-					Actions: []config.Action{
+				Resource: &config.Resource{
+					Attributes: []config.ResourceAttribute{
 						{
 							Key:    "resource.id",
 							Action: "insert",
@@ -296,6 +297,7 @@ func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
 	conf.Collector.Log.Path = ""
 	conf.Collector.Processors.Batch = nil
 	conf.Collector.Processors.Attribute = nil
+	conf.Collector.Processors.Resource = nil
 
 	tests := []struct {
 		message    *bus.Message
@@ -344,6 +346,7 @@ func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
 				config.Processors{
 					Batch:     nil,
 					Attribute: nil,
+					Resource:  nil,
 				},
 				collector.config.Collector.Processors)
 		})
@@ -510,34 +513,36 @@ func TestCollector_updateResourceAttributes(t *testing.T) {
 	conf := types.OTelConfig(t)
 	conf.Collector.Log.Path = ""
 	conf.Collector.Processors.Batch = nil
+	conf.Collector.Processors.Attribute = nil
+	conf.Collector.Processors.Resource = nil
 
 	tests := []struct {
 		name                   string
-		setupActions           []config.Action
-		actions                []config.Action
-		expectedAttribs        []config.Action
+		setup                  []config.ResourceAttribute
+		attributes             []config.ResourceAttribute
+		expectedAttribs        []config.ResourceAttribute
 		expectedReloadRequired bool
 	}{
 		{
 			name:                   "Test 1: No Actions returns false",
-			setupActions:           []config.Action{},
-			actions:                []config.Action{},
+			setup:                  []config.ResourceAttribute{},
+			attributes:             []config.ResourceAttribute{},
 			expectedReloadRequired: false,
-			expectedAttribs:        []config.Action{},
+			expectedAttribs:        []config.ResourceAttribute{},
 		},
 		{
 			name:                   "Test 2: Adding an action returns true",
-			setupActions:           []config.Action{},
-			actions:                []config.Action{{Key: "test", Action: "insert", Value: "test value"}},
+			setup:                  []config.ResourceAttribute{},
+			attributes:             []config.ResourceAttribute{{Key: "test", Action: "insert", Value: "test value"}},
 			expectedReloadRequired: true,
-			expectedAttribs:        []config.Action{{Key: "test", Action: "insert", Value: "test value"}},
+			expectedAttribs:        []config.ResourceAttribute{{Key: "test", Action: "insert", Value: "test value"}},
 		},
 		{
 			name:                   "Test 3: Adding a duplicate key doesn't append",
-			setupActions:           []config.Action{{Key: "test", Action: "insert", Value: "test value 1"}},
-			actions:                []config.Action{{Key: "test", Action: "insert", Value: "updated value 2"}},
+			setup:                  []config.ResourceAttribute{{Key: "test", Action: "insert", Value: "test value 1"}},
+			attributes:             []config.ResourceAttribute{{Key: "test", Action: "insert", Value: "updated value 2"}},
 			expectedReloadRequired: false,
-			expectedAttribs:        []config.Action{{Key: "test", Action: "insert", Value: "test value 1"}},
+			expectedAttribs:        []config.ResourceAttribute{{Key: "test", Action: "insert", Value: "test value 1"}},
 		},
 	}
 
@@ -547,12 +552,12 @@ func TestCollector_updateResourceAttributes(t *testing.T) {
 			require.NoError(tt, err, "NewCollector should not return an error with valid config")
 
 			// set up Actions
-			conf.Collector.Processors.Attribute = &config.Attribute{Actions: test.setupActions}
+			conf.Collector.Processors.Resource = &config.Resource{Attributes: test.setup}
 
-			reloadRequired := collector.updateAttributeActions(test.actions)
+			reloadRequired := collector.updateResourceAttributes(test.attributes)
 			assert.Equal(tt,
 				test.expectedAttribs,
-				conf.Collector.Processors.Attribute.Actions)
+				conf.Collector.Processors.Resource.Attributes)
 			assert.Equal(tt, test.expectedReloadRequired, reloadRequired)
 		})
 	}

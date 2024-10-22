@@ -87,6 +87,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 				ResourceAttributes: ResourceAttributesConfig{
 					NginxInstanceID:   ResourceAttributeConfig{Enabled: true},
 					NginxInstanceType: ResourceAttributeConfig{Enabled: true},
+					ResourceID:        ResourceAttributeConfig{Enabled: true},
 				},
 			},
 		},
@@ -156,6 +157,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 				ResourceAttributes: ResourceAttributesConfig{
 					NginxInstanceID:   ResourceAttributeConfig{Enabled: false},
 					NginxInstanceType: ResourceAttributeConfig{Enabled: false},
+					ResourceID:        ResourceAttributeConfig{Enabled: false},
 				},
 			},
 		},
@@ -194,6 +196,7 @@ func TestResourceAttributesConfig(t *testing.T) {
 			want: ResourceAttributesConfig{
 				NginxInstanceID:   ResourceAttributeConfig{Enabled: true},
 				NginxInstanceType: ResourceAttributeConfig{Enabled: true},
+				ResourceID:        ResourceAttributeConfig{Enabled: true},
 			},
 		},
 		{
@@ -201,6 +204,7 @@ func TestResourceAttributesConfig(t *testing.T) {
 			want: ResourceAttributesConfig{
 				NginxInstanceID:   ResourceAttributeConfig{Enabled: false},
 				NginxInstanceType: ResourceAttributeConfig{Enabled: false},
+				ResourceID:        ResourceAttributeConfig{Enabled: false},
 			},
 		},
 	}

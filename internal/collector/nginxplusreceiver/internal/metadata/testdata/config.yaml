@@ -122,6 +122,8 @@ all_set:
       enabled: true
     nginx.instance.type:
       enabled: true
+    resource.id:
+      enabled: true
 none_set:
   metrics:
     nginx.cache.bytes:
@@ -245,6 +247,8 @@ none_set:
       enabled: false
     nginx.instance.type:
       enabled: false
+    resource.id:
+      enabled: false
 filter_set_include:
   resource_attributes:
     nginx.instance.id:
@@ -252,6 +256,10 @@ filter_set_include:
       metrics_include:
         - regexp: ".*"
     nginx.instance.type:
+      enabled: true
+      metrics_include:
+        - regexp: ".*"
+    resource.id:
       enabled: true
       metrics_include:
         - regexp: ".*"
@@ -265,3 +273,7 @@ filter_set_exclude:
       enabled: true
       metrics_exclude:
         - strict: "nginx.instance.type-val"
+    resource.id:
+      enabled: true
+      metrics_exclude:
+        - strict: "resource.id-val"
