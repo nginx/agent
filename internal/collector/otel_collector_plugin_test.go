@@ -541,7 +541,8 @@ func TestCollector_updateResourceAttributes(t *testing.T) {
 			name:  "Test 3: Adding a duplicate key doesn't append",
 			setup: []config.ResourceAttribute{{Key: "test", Action: "insert", Value: "test value 1"}},
 			attributes: []config.ResourceAttribute{
-				{Key: "test", Action: "insert", Value: "updated value 2"}},
+				{Key: "test", Action: "insert", Value: "updated value 2"},
+			},
 			expectedReloadRequired: false,
 			expectedAttribs:        []config.ResourceAttribute{{Key: "test", Action: "insert", Value: "test value 1"}},
 		},
