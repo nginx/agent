@@ -113,7 +113,18 @@ type (
 
 	// OTel Collector Processors configuration.
 	Processors struct {
-		Batch *Batch `yaml:"-" mapstructure:"batch"`
+		Attribute *Attribute `yaml:"-" mapstructure:"attribute"`
+		Batch     *Batch     `yaml:"-" mapstructure:"batch"`
+	}
+
+	Attribute struct {
+		Actions []Action `yaml:"-" mapstructure:"actions"`
+	}
+
+	Action struct {
+		Key    string `yaml:"key"    mapstructure:"key"`
+		Action string `yaml:"action" mapstructure:"action"`
+		Value  string `yaml:"value"  mapstructure:"value"`
 	}
 
 	Batch struct {
