@@ -170,6 +170,7 @@ func TestWatcher_Subscriptions(t *testing.T) {
 			bus.ConfigApplyRequestTopic,
 			bus.ConfigApplySuccessfulTopic,
 			bus.RollbackCompleteTopic,
+			bus.DataplaneHealthTopic,
 		},
 		watcherPlugin.Subscriptions(),
 	)

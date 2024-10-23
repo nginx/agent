@@ -39,6 +39,7 @@ func TestCommandPlugin_Subscriptions(t *testing.T) {
 		[]string{
 			bus.ResourceUpdateTopic,
 			bus.InstanceHealthTopic,
+			bus.DataplaneHealthProcessTopic,
 			bus.DataPlaneResponseTopic,
 		},
 		subscriptions,
