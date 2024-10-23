@@ -125,13 +125,13 @@ func (cp *CommandPlugin) processDataplaneHealth(ctx context.Context, msg *bus.Me
 			cp.messagePipe.Process(ctx, &bus.Message{
 				Topic: bus.DataPlaneResponseTopic,
 				Data: cp.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-					"Failed to send the health status update", instances[0].GetInstanceId(), err.Error()),
+					"Failed to send the health status update", err.Error()),
 			})
 		}
 		cp.messagePipe.Process(ctx, &bus.Message{
 			Topic: bus.DataPlaneResponseTopic,
 			Data: cp.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
-				"Successfully sent the health status update", instances[0].GetInstanceId(), ""),
+				"Successfully sent the health status update", ""),
 		})
 	}
 }
@@ -245,7 +245,7 @@ func (cp *CommandPlugin) handleHealthRequest(newCtx context.Context) {
 }
 
 func (cp *CommandPlugin) createDataPlaneResponse(correlationID string, status mpi.CommandResponse_CommandStatus,
-	message, instanceID, err string,
+	message, err string,
 ) *mpi.DataPlaneResponse {
 	return &mpi.DataPlaneResponse{
 		MessageMeta: &mpi.MessageMeta{
@@ -258,6 +258,5 @@ func (cp *CommandPlugin) createDataPlaneResponse(correlationID string, status mp
 			Message: message,
 			Error:   err,
 		},
-		InstanceId: instanceID,
 	}
 }

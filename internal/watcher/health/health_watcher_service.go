@@ -40,16 +40,6 @@ type (
 	}
 )
 
-func (hw *HealthWatcherService) GetCache() []*mpi.InstanceHealth {
-	healthList := make([]*mpi.InstanceHealth, 0, len(hw.cache))
-
-	for _, health := range hw.cache {
-		healthList = append(healthList, health)
-	}
-
-	return healthList
-}
-
 func NewHealthWatcherService(agentConfig *config.Config) *HealthWatcherService {
 	return &HealthWatcherService{
 		watchers:    make(map[string]healthWatcherOperator),
@@ -88,6 +78,16 @@ func (hw *HealthWatcherService) DeleteHealthWatcher(instances []*mpi.Instance) {
 		delete(hw.watchers, instance.GetInstanceMeta().GetInstanceId())
 		delete(hw.instances, instance.GetInstanceMeta().GetInstanceId())
 	}
+}
+
+func (hw *HealthWatcherService) GetInstancesHealth() []*mpi.InstanceHealth {
+	healthList := make([]*mpi.InstanceHealth, 0, len(hw.cache))
+
+	for _, health := range hw.cache {
+		healthList = append(healthList, health)
+	}
+
+	return healthList
 }
 
 func (hw *HealthWatcherService) Watch(ctx context.Context, ch chan<- InstanceHealthMessage) {
