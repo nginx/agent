@@ -17,14 +17,13 @@ GOBIN 	?= $$(go env GOPATH)/bin
 # | OS_RELEASE       | OS_VERSION                                | NOTES                                                          |
 # | ---------------- | ----------------------------------------- | -------------------------------------------------------------- |
 # | amazonlinux      | 2, 2023                                   |                                                                |
-# | ubuntu           | 20.04, 22.04                              |                                                                |
+# | ubuntu           | 20.04, 22.04 24.04                        |                                                                |
 # | debian           | bullseye-slim, bookworm-slim 			 |                                                                |
-# | centos           | 7                                         |                                                                |
-# | redhatenterprise | 7, 8, 9                                   |                                                                |
+# | redhatenterprise | 8, 9                                  	 |                                                                |
 # | rockylinux       | 8, 9                                      |                                                                |
 # | almalinux        | 8, 9                                      |                                                                |
 # | alpine           | 3.17, 3.18, 3.19, 3.20                    |                                                                |
-# | oraclelinux      | 7, 8, 9                                   |                                                                |
+# | oraclelinux      | 8, 9                                		 |                                                                |
 # | suse             | sles12sp5, sle15                          |                                                                |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 OS_RELEASE  ?= ubuntu
