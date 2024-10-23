@@ -21,17 +21,17 @@ func NewResourceBuilder(rac ResourceAttributesConfig) *ResourceBuilder {
 	}
 }
 
-// SetNginxInstanceID sets provided value as "nginx.instance.id" attribute.
-func (rb *ResourceBuilder) SetNginxInstanceID(val string) {
-	if rb.config.NginxInstanceID.Enabled {
-		rb.res.Attributes().PutStr("nginx.instance.id", val)
+// SetInstanceID sets provided value as "instance.id" attribute.
+func (rb *ResourceBuilder) SetInstanceID(val string) {
+	if rb.config.InstanceID.Enabled {
+		rb.res.Attributes().PutStr("instance.id", val)
 	}
 }
 
-// SetNginxInstanceType sets provided value as "nginx.instance.type" attribute.
-func (rb *ResourceBuilder) SetNginxInstanceType(val string) {
-	if rb.config.NginxInstanceType.Enabled {
-		rb.res.Attributes().PutStr("nginx.instance.type", val)
+// SetInstanceType sets provided value as "instance.type" attribute.
+func (rb *ResourceBuilder) SetInstanceType(val string) {
+	if rb.config.InstanceType.Enabled {
+		rb.res.Attributes().PutStr("instance.type", val)
 	}
 }
 

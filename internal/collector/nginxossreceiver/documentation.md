@@ -66,6 +66,6 @@ The number of responses, grouped by status code range.
 
 | Name | Description | Values | Enabled |
 | ---- | ----------- | ------ | ------- |
-| nginx.instance.id | The nginx instance id. | Any Str | true |
-| nginx.instance.type | The nginx instance type (nginx, nginxplus). | Any Str | true |
+| instance.id | The nginx instance id. | Any Str | true |
+| instance.type | The nginx instance type (nginx, nginxplus). | Any Str | true |
 | resource.id | The host machine id. | Any Str | true |

@@ -74,8 +74,8 @@ func NewScraper(
 
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
 	rb := mb.NewResourceBuilder()
-	rb.SetNginxInstanceID(settings.ID.Name())
-	rb.SetNginxInstanceType("nginx")
+	rb.SetInstanceID(settings.ID.Name())
+	rb.SetInstanceType("nginx")
 	logger.Debug("NGINX OSS resource info: ", zap.Any("resource", rb))
 
 	operators := make([]operator.Config, 0)

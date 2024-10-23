@@ -13,8 +13,8 @@ func TestResourceBuilder(t *testing.T) {
 		t.Run(tt, func(t *testing.T) {
 			cfg := loadResourceAttributesConfig(t, tt)
 			rb := NewResourceBuilder(cfg)
-			rb.SetNginxInstanceID("nginx.instance.id-val")
-			rb.SetNginxInstanceType("nginx.instance.type-val")
+			rb.SetInstanceID("instance.id-val")
+			rb.SetInstanceType("instance.type-val")
 			rb.SetResourceID("resource.id-val")
 
 			res := rb.Emit()
@@ -32,15 +32,15 @@ func TestResourceBuilder(t *testing.T) {
 				assert.Failf(t, "unexpected test case: %s", tt)
 			}
 
-			val, ok := res.Attributes().Get("nginx.instance.id")
+			val, ok := res.Attributes().Get("instance.id")
 			assert.True(t, ok)
 			if ok {
-				assert.EqualValues(t, "nginx.instance.id-val", val.Str())
+				assert.EqualValues(t, "instance.id-val", val.Str())
 			}
-			val, ok = res.Attributes().Get("nginx.instance.type")
+			val, ok = res.Attributes().Get("instance.type")
 			assert.True(t, ok)
 			if ok {
-				assert.EqualValues(t, "nginx.instance.type-val", val.Str())
+				assert.EqualValues(t, "instance.type-val", val.Str())
 			}
 			val, ok = res.Attributes().Get("resource.id")
 			assert.True(t, ok)

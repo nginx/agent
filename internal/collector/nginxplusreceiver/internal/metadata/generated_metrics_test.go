@@ -301,8 +301,8 @@ func TestMetricsBuilder(t *testing.T) {
 			mb.RecordNginxStreamUpstreamZombieCountDataPoint(ts, 1, "nginx.zone.name-val", "nginx.upstream.name-val")
 
 			rb := mb.NewResourceBuilder()
-			rb.SetNginxInstanceID("nginx.instance.id-val")
-			rb.SetNginxInstanceType("nginx.instance.type-val")
+			rb.SetInstanceID("instance.id-val")
+			rb.SetInstanceType("instance.type-val")
 			rb.SetResourceID("resource.id-val")
 			res := rb.Emit()
 			metrics := mb.Emit(WithResource(res))

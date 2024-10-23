@@ -3708,17 +3708,17 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, opt
 		resourceAttributeIncludeFilter:             make(map[string]filter.Filter),
 		resourceAttributeExcludeFilter:             make(map[string]filter.Filter),
 	}
-	if mbc.ResourceAttributes.NginxInstanceID.MetricsInclude != nil {
-		mb.resourceAttributeIncludeFilter["nginx.instance.id"] = filter.CreateFilter(mbc.ResourceAttributes.NginxInstanceID.MetricsInclude)
+	if mbc.ResourceAttributes.InstanceID.MetricsInclude != nil {
+		mb.resourceAttributeIncludeFilter["instance.id"] = filter.CreateFilter(mbc.ResourceAttributes.InstanceID.MetricsInclude)
 	}
-	if mbc.ResourceAttributes.NginxInstanceID.MetricsExclude != nil {
-		mb.resourceAttributeExcludeFilter["nginx.instance.id"] = filter.CreateFilter(mbc.ResourceAttributes.NginxInstanceID.MetricsExclude)
+	if mbc.ResourceAttributes.InstanceID.MetricsExclude != nil {
+		mb.resourceAttributeExcludeFilter["instance.id"] = filter.CreateFilter(mbc.ResourceAttributes.InstanceID.MetricsExclude)
 	}
-	if mbc.ResourceAttributes.NginxInstanceType.MetricsInclude != nil {
-		mb.resourceAttributeIncludeFilter["nginx.instance.type"] = filter.CreateFilter(mbc.ResourceAttributes.NginxInstanceType.MetricsInclude)
+	if mbc.ResourceAttributes.InstanceType.MetricsInclude != nil {
+		mb.resourceAttributeIncludeFilter["instance.type"] = filter.CreateFilter(mbc.ResourceAttributes.InstanceType.MetricsInclude)
 	}
-	if mbc.ResourceAttributes.NginxInstanceType.MetricsExclude != nil {
-		mb.resourceAttributeExcludeFilter["nginx.instance.type"] = filter.CreateFilter(mbc.ResourceAttributes.NginxInstanceType.MetricsExclude)
+	if mbc.ResourceAttributes.InstanceType.MetricsExclude != nil {
+		mb.resourceAttributeExcludeFilter["instance.type"] = filter.CreateFilter(mbc.ResourceAttributes.InstanceType.MetricsExclude)
 	}
 	if mbc.ResourceAttributes.ResourceID.MetricsInclude != nil {
 		mb.resourceAttributeIncludeFilter["resource.id"] = filter.CreateFilter(mbc.ResourceAttributes.ResourceID.MetricsInclude)

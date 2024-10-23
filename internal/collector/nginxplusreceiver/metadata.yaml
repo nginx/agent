@@ -14,11 +14,11 @@ resource_attributes:
     description: The host machine id.
     type: string
     enabled: true
-  nginx.instance.id:
+  instance.id:
     description: The nginx instance id.
     type: string
     enabled: true
-  nginx.instance.type:
+  instance.type:
     description: The nginx instance type (nginx, nginxplus)
     type: string
     enabled: true

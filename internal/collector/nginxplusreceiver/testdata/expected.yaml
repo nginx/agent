@@ -1,7 +1,7 @@
 resourceMetrics:
   - resource:
       attributes:
-        - key: nginx.instance.type
+        - key: instance.type
           value:
             stringValue: nginxplus
     scopeMetrics:

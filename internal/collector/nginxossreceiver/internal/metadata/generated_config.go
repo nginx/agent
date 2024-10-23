@@ -79,17 +79,17 @@ func (rac *ResourceAttributeConfig) Unmarshal(parser *confmap.Conf) error {
 
 // ResourceAttributesConfig provides config for nginx resource attributes.
 type ResourceAttributesConfig struct {
-	NginxInstanceID   ResourceAttributeConfig `mapstructure:"nginx.instance.id"`
-	NginxInstanceType ResourceAttributeConfig `mapstructure:"nginx.instance.type"`
-	ResourceID        ResourceAttributeConfig `mapstructure:"resource.id"`
+	InstanceID   ResourceAttributeConfig `mapstructure:"instance.id"`
+	InstanceType ResourceAttributeConfig `mapstructure:"instance.type"`
+	ResourceID   ResourceAttributeConfig `mapstructure:"resource.id"`
 }
 
 func DefaultResourceAttributesConfig() ResourceAttributesConfig {
 	return ResourceAttributesConfig{
-		NginxInstanceID: ResourceAttributeConfig{
+		InstanceID: ResourceAttributeConfig{
 			Enabled: true,
 		},
-		NginxInstanceType: ResourceAttributeConfig{
+		InstanceType: ResourceAttributeConfig{
 			Enabled: true,
 		},
 		ResourceID: ResourceAttributeConfig{
