@@ -79,6 +79,7 @@ func DefaultFeatures() []string {
 		pkg.FeatureConnection,
 		pkg.FeatureMetrics,
 		pkg.FeatureFileWatcher,
+		pkg.FeatureDataplaneHealth,
 	}
 }
 

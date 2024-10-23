@@ -40,6 +40,16 @@ type (
 	}
 )
 
+func (hw *HealthWatcherService) GetCache() []*mpi.InstanceHealth {
+	healthList := make([]*mpi.InstanceHealth, 0, len(hw.cache))
+
+	for _, health := range hw.cache {
+		healthList = append(healthList, health)
+	}
+
+	return healthList
+}
+
 func NewHealthWatcherService(agentConfig *config.Config) *HealthWatcherService {
 	return &HealthWatcherService{
 		watchers:    make(map[string]healthWatcherOperator),
