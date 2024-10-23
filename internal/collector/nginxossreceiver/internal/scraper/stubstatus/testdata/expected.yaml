@@ -1,6 +1,9 @@
 resourceMetrics:
   - resource:
-      nginx.instance.type: nginx
+      attributes:
+        - key: nginx.instance.type
+          value:
+            stringValue: nginx
     scopeMetrics:
       - metrics:
           - description: The total number of connections.
