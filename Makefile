@@ -23,7 +23,7 @@ GOBIN 	?= $$(go env GOPATH)/bin
 # | redhatenterprise | 7, 8, 9                                   |                                                                |
 # | rockylinux       | 8, 9                                      |                                                                |
 # | almalinux        | 8, 9                                      |                                                                |
-# | alpine           | 3.16, 3.17, 3.18, 3.19                    |                                                                |
+# | alpine           | 3.17, 3.18, 3.19, 3.20                    |                                                                |
 # | oraclelinux      | 7, 8, 9                                   |                                                                |
 # | suse             | sles12sp5, sle15                          |                                                                |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
