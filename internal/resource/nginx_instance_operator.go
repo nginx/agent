@@ -18,16 +18,18 @@ import (
 )
 
 type NginxInstanceOperator struct {
-	executer  exec.ExecInterface
-	logTailer logTailerOperator
+	executer              exec.ExecInterface
+	logTailer             logTailerOperator
+	treatWarningsAsErrors bool
 }
 
 var _ instanceOperator = (*NginxInstanceOperator)(nil)
 
 func NewInstanceOperator(agentConfig *config.Config) *NginxInstanceOperator {
 	return &NginxInstanceOperator{
-		executer:  &exec.Exec{},
-		logTailer: NewLogTailerOperator(agentConfig),
+		executer:              &exec.Exec{},
+		logTailer:             NewLogTailerOperator(agentConfig),
+		treatWarningsAsErrors: agentConfig.DataPlaneConfig.Nginx.TreatWarningsAsErrors,
 	}
 }
 
@@ -54,6 +56,10 @@ func (i *NginxInstanceOperator) validateConfigCheckResponse(out []byte) error {
 	if bytes.Contains(out, []byte("[emerg]")) ||
 		bytes.Contains(out, []byte("[alert]")) ||
 		bytes.Contains(out, []byte("[crit]")) {
+		return fmt.Errorf("error running nginx -t -c:\n%s", out)
+	}
+
+	if i.treatWarningsAsErrors && bytes.Contains(out, []byte("[warn]")) {
 		return fmt.Errorf("error running nginx -t -c:\n%s", out)
 	}
 
