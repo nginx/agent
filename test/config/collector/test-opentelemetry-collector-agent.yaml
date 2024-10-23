@@ -41,6 +41,8 @@ exporters:
       max_elapsed_time: 10m
     tls:
       insecure: true
+    auth:
+      authenticator: headers_setter
   prometheus:
     endpoint: "localhost:9876"
   debug:
@@ -50,6 +52,14 @@ exporters:
 extensions:
   health_check:
     endpoint: "localhost:1337"
+  headers_setter:
+    headers:
+      - action: "insert"
+        key: "authorization"
+        value: "key1"
+      - action: "upsert"
+        key: "uuid"
+        value: "1234"
 
 service:
   telemetry:
@@ -59,6 +69,7 @@ service:
       error_output_paths: ["/var/log/nginx-agent/opentelemetry-collector-agent.log"]
   extensions:
     - health_check
+    - headers_setter
   pipelines:
     metrics:
       receivers:

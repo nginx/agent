@@ -89,19 +89,32 @@ type (
 	}
 
 	OtlpExporter struct {
-		Server *ServerConfig `yaml:"-" mapstructure:"server"`
-		Auth   *AuthConfig   `yaml:"-" mapstructure:"auth"`
-		TLS    *TLSConfig    `yaml:"-" mapstructure:"tls"`
+		Server        *ServerConfig `yaml:"-" mapstructure:"server"`
+		TLS           *TLSConfig    `yaml:"-" mapstructure:"tls"`
+		Authenticator string        `yaml:"-" mapstructure:"authenticator"`
 	}
 
 	Extensions struct {
-		Health *Health `yaml:"-" mapstructure:"health"`
+		Health        *Health        `yaml:"-" mapstructure:"health"`
+		HeadersSetter *HeadersSetter `yaml:"-" mapstructure:"headers_setter"`
 	}
 
 	Health struct {
 		Server *ServerConfig `yaml:"-" mapstructure:"server"`
 		TLS    *TLSConfig    `yaml:"-" mapstructure:"tls"`
 		Path   string        `yaml:"-" mapstructure:"path"`
+	}
+
+	HeadersSetter struct {
+		Headers []Header `yaml:"-" mapstructure:"headers"`
+	}
+
+	Header struct {
+		Action       string `yaml:"-" mapstructure:"action"`
+		Key          string `yaml:"-" mapstructure:"key"`
+		Value        string `yaml:"-" mapstructure:"value"`
+		DefaultValue string `yaml:"-" mapstructure:"default_value"`
+		FromContext  string `yaml:"-" mapstructure:"from_context"`
 	}
 
 	DebugExporter struct{}

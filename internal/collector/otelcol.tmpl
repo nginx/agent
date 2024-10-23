@@ -112,6 +112,10 @@ exporters:
       {{ if gt (len .TLS.Cert) 0 -}}cert_file: "{{- .TLS.Cert -}}"{{- end }}
       {{ if gt (len .TLS.Key) 0 -}}key_file: "{{- .TLS.Key -}}"{{- end }}
       {{- end }}
+    {{- if .Authenticator }}
+    auth:
+      authenticator: {{ .Authenticator -}}
+    {{- end }} 
 {{- end }}
 {{- if ne .Exporters.PrometheusExporter nil }}
   prometheus:
@@ -139,6 +143,24 @@ extensions:
        key_file: "{{ .Extensions.Health.Server.TLS.Key -}}"
     {{- end }}
   {{- end }}
+  
+  {{- if ne .Extensions.HeadersSetter nil }}
+  headers_setter:
+    headers:
+    {{- range $index, $header := .Extensions.HeadersSetter.Headers }}
+      - action: "{{ .Action -}}"
+        key: "{{ .Key -}}"
+        {{- if .Value }}
+        value: "{{ .Value -}}"
+        {{- end }}
+        {{- if .DefaultValue }}
+        default_value: "{{ .DefaultValue -}}"
+        {{- end }}
+        {{- if .FromContext }}
+        from_context: "{{ .FromContext -}}"
+        {{- end }}
+    {{- end }}
+  {{- end }}
 {{- end }}
 
 service:
@@ -154,6 +176,9 @@ service:
   extensions:
     {{- if ne .Extensions.Health nil }}
     - health_check
+    {{- end}}
+    {{- if ne .Extensions.HeadersSetter nil }}
+    - headers_setter
     {{- end}}
   {{- end}}
   pipelines:
