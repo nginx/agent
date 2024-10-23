@@ -913,4 +913,3 @@ The current number of peers removed from the group but still processing active c
 | ---- | ----------- | ------ | ------- |
 | instance.id | The nginx instance id. | Any Str | true |
 | instance.type | The nginx instance type (nginx, nginxplus) | Any Str | true |
-| resource.id | The host machine id. | Any Str | true |

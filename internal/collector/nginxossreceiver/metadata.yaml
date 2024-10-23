@@ -10,10 +10,6 @@ status:
     active: [olli-holmala, oliveromahony, apgralG, dhurley, craigell, sean-breen]
 
 resource_attributes:
-  resource.id:
-    description: The host machine id.
-    type: string
-    enabled: true
   instance.id:
     description: The nginx instance id.
     type: string

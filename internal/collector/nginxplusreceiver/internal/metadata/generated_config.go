@@ -297,7 +297,6 @@ func (rac *ResourceAttributeConfig) Unmarshal(parser *confmap.Conf) error {
 type ResourceAttributesConfig struct {
 	InstanceID   ResourceAttributeConfig `mapstructure:"instance.id"`
 	InstanceType ResourceAttributeConfig `mapstructure:"instance.type"`
-	ResourceID   ResourceAttributeConfig `mapstructure:"resource.id"`
 }
 
 func DefaultResourceAttributesConfig() ResourceAttributesConfig {
@@ -306,9 +305,6 @@ func DefaultResourceAttributesConfig() ResourceAttributesConfig {
 			Enabled: true,
 		},
 		InstanceType: ResourceAttributeConfig{
-			Enabled: true,
-		},
-		ResourceID: ResourceAttributeConfig{
 			Enabled: true,
 		},
 	}

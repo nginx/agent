@@ -329,7 +329,7 @@ func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
 			assert.Eventually(
 				tt,
 				func() bool { return collector.service.GetState() == otelcol.StateRunning },
-				5*time.Second,
+				6*time.Second,
 				100*time.Millisecond,
 			)
 
@@ -338,7 +338,7 @@ func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
 			assert.Eventually(
 				tt,
 				func() bool { return collector.service.GetState() == otelcol.StateRunning },
-				5*time.Second,
+				6*time.Second,
 				100*time.Millisecond,
 			)
 

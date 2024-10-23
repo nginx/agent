@@ -53,7 +53,6 @@ func TestStubStatusScraper(t *testing.T) {
 		pmetrictest.IgnoreMetricDataPointsOrder(),
 		pmetrictest.IgnoreTimestamp(),
 		pmetrictest.IgnoreMetricsOrder(),
-		pmetrictest.IgnoreResourceAttributeValue("resource.id"),
 		pmetrictest.IgnoreResourceAttributeValue("instance.id")))
 }
 

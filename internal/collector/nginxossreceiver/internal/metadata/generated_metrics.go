@@ -359,12 +359,6 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, opt
 	if mbc.ResourceAttributes.InstanceType.MetricsExclude != nil {
 		mb.resourceAttributeExcludeFilter["instance.type"] = filter.CreateFilter(mbc.ResourceAttributes.InstanceType.MetricsExclude)
 	}
-	if mbc.ResourceAttributes.ResourceID.MetricsInclude != nil {
-		mb.resourceAttributeIncludeFilter["resource.id"] = filter.CreateFilter(mbc.ResourceAttributes.ResourceID.MetricsInclude)
-	}
-	if mbc.ResourceAttributes.ResourceID.MetricsExclude != nil {
-		mb.resourceAttributeExcludeFilter["resource.id"] = filter.CreateFilter(mbc.ResourceAttributes.ResourceID.MetricsExclude)
-	}
 
 	for _, op := range options {
 		op.apply(mb)

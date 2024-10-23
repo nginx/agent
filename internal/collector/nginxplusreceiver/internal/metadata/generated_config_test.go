@@ -87,7 +87,6 @@ func TestMetricsBuilderConfig(t *testing.T) {
 				ResourceAttributes: ResourceAttributesConfig{
 					InstanceID:   ResourceAttributeConfig{Enabled: true},
 					InstanceType: ResourceAttributeConfig{Enabled: true},
-					ResourceID:   ResourceAttributeConfig{Enabled: true},
 				},
 			},
 		},
@@ -157,7 +156,6 @@ func TestMetricsBuilderConfig(t *testing.T) {
 				ResourceAttributes: ResourceAttributesConfig{
 					InstanceID:   ResourceAttributeConfig{Enabled: false},
 					InstanceType: ResourceAttributeConfig{Enabled: false},
-					ResourceID:   ResourceAttributeConfig{Enabled: false},
 				},
 			},
 		},
@@ -196,7 +194,6 @@ func TestResourceAttributesConfig(t *testing.T) {
 			want: ResourceAttributesConfig{
 				InstanceID:   ResourceAttributeConfig{Enabled: true},
 				InstanceType: ResourceAttributeConfig{Enabled: true},
-				ResourceID:   ResourceAttributeConfig{Enabled: true},
 			},
 		},
 		{
@@ -204,7 +201,6 @@ func TestResourceAttributesConfig(t *testing.T) {
 			want: ResourceAttributesConfig{
 				InstanceID:   ResourceAttributeConfig{Enabled: false},
 				InstanceType: ResourceAttributeConfig{Enabled: false},
-				ResourceID:   ResourceAttributeConfig{Enabled: false},
 			},
 		},
 	}

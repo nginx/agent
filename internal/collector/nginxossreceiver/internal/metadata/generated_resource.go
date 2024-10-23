@@ -35,13 +35,6 @@ func (rb *ResourceBuilder) SetInstanceType(val string) {
 	}
 }
 
-// SetResourceID sets provided value as "resource.id" attribute.
-func (rb *ResourceBuilder) SetResourceID(val string) {
-	if rb.config.ResourceID.Enabled {
-		rb.res.Attributes().PutStr("resource.id", val)
-	}
-}
-
 // Emit returns the built resource and resets the internal builder state.
 func (rb *ResourceBuilder) Emit() pcommon.Resource {
 	r := rb.res

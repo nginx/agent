@@ -87,7 +87,6 @@ func TestMetricsBuilder(t *testing.T) {
 			rb := mb.NewResourceBuilder()
 			rb.SetInstanceID("instance.id-val")
 			rb.SetInstanceType("instance.type-val")
-			rb.SetResourceID("resource.id-val")
 			res := rb.Emit()
 			metrics := mb.Emit(WithResource(res))
 

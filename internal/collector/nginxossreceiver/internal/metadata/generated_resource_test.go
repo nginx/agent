@@ -15,16 +15,15 @@ func TestResourceBuilder(t *testing.T) {
 			rb := NewResourceBuilder(cfg)
 			rb.SetInstanceID("instance.id-val")
 			rb.SetInstanceType("instance.type-val")
-			rb.SetResourceID("resource.id-val")
 
 			res := rb.Emit()
 			assert.Equal(t, 0, rb.Emit().Attributes().Len()) // Second call should return empty Resource
 
 			switch tt {
 			case "default":
-				assert.Equal(t, 3, res.Attributes().Len())
+				assert.Equal(t, 2, res.Attributes().Len())
 			case "all_set":
-				assert.Equal(t, 3, res.Attributes().Len())
+				assert.Equal(t, 2, res.Attributes().Len())
 			case "none_set":
 				assert.Equal(t, 0, res.Attributes().Len())
 				return
@@ -41,11 +40,6 @@ func TestResourceBuilder(t *testing.T) {
 			assert.True(t, ok)
 			if ok {
 				assert.EqualValues(t, "instance.type-val", val.Str())
-			}
-			val, ok = res.Attributes().Get("resource.id")
-			assert.True(t, ok)
-			if ok {
-				assert.EqualValues(t, "resource.id-val", val.Str())
 			}
 		})
 	}
