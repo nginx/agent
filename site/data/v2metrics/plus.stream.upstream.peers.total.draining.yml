@@ -1,0 +1,39 @@
+
+---
+name: plus.stream.upstream.peers.total.draining
+categories:
+- nginx
+description: The total number of peers with a state of "draining".
+type: gauge
+source: plus_status
+unit: integer
+rate: double
+visible: true
+compound_payload: "false"
+modules:
+- platform
+- adm
+aggregations:
+- MIN
+- MAX
+- SUM
+- AVG
+- COUNT
+- RATE
+dimensions:
+- system_id
+- hostname
+- display_name
+- nginx_id
+- instance_group
+- system.tags
+- upstream
+- upstream_zone
+- environment
+- app
+- component
+- site
+- environment_name
+- component_name
+- app_name
+- site_name
