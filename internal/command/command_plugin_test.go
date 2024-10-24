@@ -39,6 +39,7 @@ func TestCommandPlugin_Subscriptions(t *testing.T) {
 		[]string{
 			bus.ResourceUpdateTopic,
 			bus.InstanceHealthTopic,
+			bus.DataplaneHealthProcessTopic,
 			bus.DataPlaneResponseTopic,
 		},
 		subscriptions,
@@ -94,6 +95,13 @@ func TestCommandPlugin_Process(t *testing.T) {
 
 	commandPlugin.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: protos.OKDataPlaneResponse()})
 	require.Equal(t, 1, fakeCommandService.SendDataPlaneResponseCallCount())
+
+	commandPlugin.Process(ctx, &bus.Message{
+		Topic: bus.DataplaneHealthProcessTopic,
+		Data:  protos.GetHealthyInstanceHealth(),
+	})
+	require.Equal(t, 1, fakeCommandService.UpdateDataPlaneHealthCallCount())
+	require.Equal(t, 1, fakeCommandService.SendDataPlaneResponseCallCount())
 }
 
 func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
@@ -129,6 +137,37 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 	request, ok := messages[0].Data.(*mpi.ManagementPlaneRequest)
 	assert.True(t, ok)
 	require.NotNil(t, request.GetConfigUploadRequest())
+}
+
+func TestCommandPlugin_monitorHealthRequest(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	messagePipe := bus.NewFakeMessagePipe()
+
+	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	err := commandPlugin.Init(ctx, messagePipe)
+	require.NoError(t, err)
+	defer commandPlugin.Close(ctx)
+
+	go commandPlugin.monitorSubscribeChannel(ctx)
+
+	commandPlugin.subscribeChannel <- &mpi.ManagementPlaneRequest{
+		Request: &mpi.ManagementPlaneRequest_HealthRequest{
+			HealthRequest: &mpi.HealthRequest{},
+		},
+	}
+
+	assert.Eventually(
+		t,
+		func() bool { return len(messagePipe.GetMessages()) == 1 },
+		2*time.Second,
+		10*time.Millisecond,
+	)
+
+	messages := messagePipe.GetMessages()
+	assert.Len(t, messages, 1)
+	assert.Equal(t, bus.DataplaneHealthTopic, messages[0].Topic)
 }
 
 func TestMonitorSubscribeChannel(t *testing.T) {

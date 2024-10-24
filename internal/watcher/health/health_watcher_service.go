@@ -80,6 +80,16 @@ func (hw *HealthWatcherService) DeleteHealthWatcher(instances []*mpi.Instance) {
 	}
 }
 
+func (hw *HealthWatcherService) GetInstancesHealth() []*mpi.InstanceHealth {
+	healthList := make([]*mpi.InstanceHealth, 0, len(hw.cache))
+
+	for _, health := range hw.cache {
+		healthList = append(healthList, health)
+	}
+
+	return healthList
+}
+
 func (hw *HealthWatcherService) Watch(ctx context.Context, ch chan<- InstanceHealthMessage) {
 	monitoringFrequency := hw.agentConfig.Watchers.InstanceHealthWatcher.MonitoringFrequency
 	slog.DebugContext(ctx, "Starting health watcher monitoring", "monitoring_frequency", monitoringFrequency)
