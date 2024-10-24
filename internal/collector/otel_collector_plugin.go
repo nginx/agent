@@ -253,10 +253,10 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 		return
 	}
 
-	attributeProcessorUpdated := oc.updateAttributeProcessor(resourceUpdateContext)
+	resourceProcessorUpdated := oc.updateResourceProcessor(resourceUpdateContext)
 	headersSetterExtensionUpdated := oc.updateHeadersSetterExtension(ctx, resourceUpdateContext)
 
-	if attributeProcessorUpdated || headersSetterExtensionUpdated {
+	if resourceProcessorUpdated || headersSetterExtensionUpdated {
 		slog.InfoContext(ctx, "Reloading OTel collector config")
 		err := writeCollectorConfig(oc.config.Collector)
 		if err != nil {
@@ -268,19 +268,19 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 	}
 }
 
-func (oc *Collector) updateAttributeProcessor(resourceUpdateContext *v1.Resource) bool {
-	attributeProcessorUpdated := false
+func (oc *Collector) updateResourceProcessor(resourceUpdateContext *v1.Resource) bool {
+	resourceProcessorUpdated := false
 
-	if oc.config.Collector.Processors.Attribute == nil {
-		oc.config.Collector.Processors.Attribute = &config.Attribute{
-			Actions: make([]config.Action, 0),
+	if oc.config.Collector.Processors.Resource == nil {
+		oc.config.Collector.Processors.Resource = &config.Resource{
+			Attributes: make([]config.ResourceAttribute, 0),
 		}
 	}
 
-	if oc.config.Collector.Processors.Attribute != nil &&
+	if oc.config.Collector.Processors.Resource != nil &&
 		resourceUpdateContext.GetResourceId() != "" {
-		attributeProcessorUpdated = oc.updateAttributeActions(
-			[]config.Action{
+		resourceProcessorUpdated = oc.updateResourceAttributes(
+			[]config.ResourceAttribute{
 				{
 					Key:    "resource.id",
 					Action: "insert",
@@ -290,7 +290,7 @@ func (oc *Collector) updateAttributeProcessor(resourceUpdateContext *v1.Resource
 		)
 	}
 
-	return attributeProcessorUpdated
+	return resourceProcessorUpdated
 }
 
 func (oc *Collector) updateHeadersSetterExtension(
@@ -451,21 +451,21 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 }
 
 // nolint: revive
-func (oc *Collector) updateAttributeActions(
-	actionsToAdd []config.Action,
+func (oc *Collector) updateResourceAttributes(
+	attributesToAdd []config.ResourceAttribute,
 ) (actionUpdated bool) {
 	actionUpdated = false
 
-	if oc.config.Collector.Processors.Attribute.Actions != nil {
+	if oc.config.Collector.Processors.Resource.Attributes != nil {
 	OUTER:
-		for _, toAdd := range actionsToAdd {
-			for _, action := range oc.config.Collector.Processors.Attribute.Actions {
+		for _, toAdd := range attributesToAdd {
+			for _, action := range oc.config.Collector.Processors.Resource.Attributes {
 				if action.Key == toAdd.Key {
 					continue OUTER
 				}
 			}
-			oc.config.Collector.Processors.Attribute.Actions = append(
-				oc.config.Collector.Processors.Attribute.Actions,
+			oc.config.Collector.Processors.Resource.Attributes = append(
+				oc.config.Collector.Processors.Resource.Attributes,
 				toAdd,
 			)
 			actionUpdated = true

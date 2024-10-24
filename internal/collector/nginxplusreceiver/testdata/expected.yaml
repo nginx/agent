@@ -1,5 +1,9 @@
 resourceMetrics:
-  - resource: {}
+  - resource:
+      attributes:
+        - key: instance.type
+          value:
+            stringValue: nginxplus
     scopeMetrics:
       - metrics:
           - description: The total number of NGINX config reloads.

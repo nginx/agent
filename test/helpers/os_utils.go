@@ -6,13 +6,8 @@
 package helpers
 
 import (
-	"encoding/json"
 	"os"
-	"path"
-	"path/filepath"
 	"testing"
-
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 
 	"github.com/stretchr/testify/require"
 )
@@ -43,21 +38,5 @@ func RemoveFileWithErrorCheck(t testing.TB, fileName string) {
 
 	err := os.Remove(fileName)
 
-	require.NoError(t, err)
-}
-
-func CreateCacheFiles(t testing.TB, cachePath string, cacheData map[string]*v1.FileMeta) {
-	t.Helper()
-	cache, err := json.MarshalIndent(cacheData, "", "  ")
-	require.NoError(t, err)
-
-	err = os.MkdirAll(path.Dir(cachePath), filePermission)
-	require.NoError(t, err)
-
-	for _, file := range cacheData {
-		CreateFileWithErrorCheck(t, filepath.Dir(file.GetName()), filepath.Base(file.GetName()))
-	}
-
-	err = os.WriteFile(cachePath, cache, filePermission)
 	require.NoError(t, err)
 }

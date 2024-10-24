@@ -29,6 +29,7 @@ type NginxStubStatusScraper struct {
 	settings component.TelemetrySettings
 	cfg      *config.Config
 	mb       *metadata.MetricsBuilder
+	rb       *metadata.ResourceBuilder
 }
 
 var _ scraperhelper.Scraper = (*NginxStubStatusScraper)(nil)
@@ -37,11 +38,20 @@ func NewScraper(
 	settings receiver.Settings,
 	cfg *config.Config,
 ) *NginxStubStatusScraper {
+	logger := settings.Logger
+	logger.Info("Creating NGINX stub status scraper")
+
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
+	rb := mb.NewResourceBuilder()
+	rb.SetInstanceID(settings.ID.Name())
+	rb.SetInstanceType("nginx")
+	logger.Debug("NGINX OSS resource info", zap.Any("resource", rb))
+
 	return &NginxStubStatusScraper{
 		settings: settings.TelemetrySettings,
 		cfg:      cfg,
 		mb:       mb,
+		rb:       rb,
 	}
 }
 
@@ -111,5 +121,5 @@ func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error
 		metadata.AttributeNginxConnOutcomeWAITING,
 	)
 
-	return s.mb.Emit(), nil
+	return s.mb.Emit(metadata.WithResource(s.rb.Emit())), nil
 }

@@ -76,6 +76,17 @@ receivers:
 {{- end }}
 
 processors:
+{{- if ne .Processors.Resource nil }}
+{{- if .Processors.Resource.Attributes }}
+  resource:
+    attributes:
+{{- range .Processors.Resource.Attributes }}
+      - key: {{ .Key }}
+        action: {{ .Action }}
+        value: {{ .Value }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- if ne .Processors.Attribute nil }}
 {{- if .Processors.Attribute.Actions }}
   attributes:
@@ -120,6 +131,8 @@ exporters:
 {{- if ne .Exporters.PrometheusExporter nil }}
   prometheus:
     endpoint: "{{ .Exporters.PrometheusExporter.Server.Host -}}:{{- .Exporters.PrometheusExporter.Server.Port }}"
+    resource_to_telemetry_conversion:
+      enabled: true
 {{- end }}
 {{- if ne .Exporters.Debug nil }}
   debug:
@@ -197,13 +210,18 @@ service:
         - nginxplus/{{- .InstanceID -}}
         {{- end }}
       processors:
-        {{- if ne .Processors.Batch nil }}
-        - batch
+        {{- if ne .Processors.Resource nil }}
+        {{- if .Processors.Resource.Attributes }}
+        - resource
+        {{- end }}
         {{- end }}
         {{- if ne .Processors.Attribute nil }}
         {{- if .Processors.Attribute.Actions }}
         - attributes
         {{- end }}
+        {{- end }}
+        {{- if ne .Processors.Batch nil }}
+        - batch
         {{- end }}
       exporters:
         {{- range $index, $otlpExporter := .Exporters.OtlpExporters }}

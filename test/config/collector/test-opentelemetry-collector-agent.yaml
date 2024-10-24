@@ -45,6 +45,8 @@ exporters:
       authenticator: headers_setter
   prometheus:
     endpoint: "localhost:9876"
+    resource_to_telemetry_conversion:
+      enabled: true
   debug:
     verbosity: detailed
     sampling_initial: 5
