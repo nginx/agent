@@ -55,7 +55,7 @@ func TestFilePlugin_Subscriptions(t *testing.T) {
 			bus.ConfigApplyRequestTopic,
 			bus.ConfigApplyFailedTopic,
 			bus.ConfigApplySuccessfulTopic,
-			bus.RollbackCompleteTopic,
+			bus.ConfigApplyCompleteTopic,
 		},
 		filePlugin.Subscriptions(),
 	)
@@ -97,7 +97,6 @@ func TestFilePlugin_Process_NginxConfigUpdateTopic(t *testing.T) {
 func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 	ctx := context.Background()
 	tempDir := t.TempDir()
-	addAction := mpi.File_FILE_ACTION_ADD
 
 	filePath := fmt.Sprintf("%s/nginx.conf", tempDir)
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
@@ -105,7 +104,7 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 
 	message := &mpi.ManagementPlaneRequest{
 		Request: &mpi.ManagementPlaneRequest_ConfigApplyRequest{
-			ConfigApplyRequest: protos.CreateConfigApplyRequest(protos.FileOverview(filePath, fileHash, &addAction)),
+			ConfigApplyRequest: protos.CreateConfigApplyRequest(protos.FileOverview(filePath, fileHash)),
 		},
 	}
 	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
@@ -173,7 +172,7 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 				assert.True(t, ok)
 			case test.configApplyStatus == model.RollbackRequired:
 				assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
-				assert.Len(t, messages, 2)
+				assert.Len(t, messages, 3)
 				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
 				assert.Equal(
@@ -192,25 +191,28 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 					dataPlaneResponse.GetCommandResponse().GetStatus())
 			case test.configApplyStatus == model.NoChange:
 				assert.Len(t, messages, 2)
+
 				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
+				assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
 				assert.Equal(
 					t,
 					mpi.CommandResponse_COMMAND_STATUS_OK,
 					dataPlaneResponse.GetCommandResponse().GetStatus(),
 				)
 
-				instanceID, ok := messages[1].Data.(string)
+				response, ok := messages[1].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
+				assert.Equal(t, bus.ConfigApplySuccessfulTopic, messages[1].Topic)
 				assert.Equal(
 					t,
-					test.message.GetConfigApplyRequest().GetOverview().GetConfigVersion().GetInstanceId(),
-					instanceID,
+					mpi.CommandResponse_COMMAND_STATUS_OK,
+					response.GetCommandResponse().GetStatus(),
 				)
 			case test.message == nil:
 				assert.Empty(t, messages)
 			default:
-				assert.Len(t, messages, 1)
+				assert.Len(t, messages, 2)
 				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
 				assert.Equal(
@@ -430,7 +432,7 @@ func TestFilePlugin_Process_ConfigApplyFailedTopic(t *testing.T) {
 	}
 }
 
-func TestFilePlugin_Process_ConfigApllyRollbackCompleteTopic(t *testing.T) {
+func TestFilePlugin_Process_ConfigApplyRollbackCompleteTopic(t *testing.T) {
 	ctx := context.Background()
 	instance := protos.GetNginxOssInstance([]string{})
 	mockFileManager := &filefakes.FakeFileManagerServiceInterface{}
@@ -470,6 +472,4 @@ func TestFilePlugin_Process_ConfigApllyRollbackCompleteTopic(t *testing.T) {
 	assert.Equal(t, expectedResponse.GetMessageMeta().GetCorrelationId(), response.GetMessageMeta().GetCorrelationId())
 
 	assert.Equal(t, expectedResponse.GetInstanceId(), response.GetInstanceId())
-
-	t.Logf("Messages: %v", messages)
 }

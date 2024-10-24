@@ -111,7 +111,7 @@ func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
 		w.handleConfigApplyRequest(ctx, msg)
 	case bus.ConfigApplySuccessfulTopic:
 		w.handleConfigApplySuccess(ctx, msg)
-	case bus.RollbackCompleteTopic:
+	case bus.ConfigApplyCompleteTopic:
 		w.handleRollbackComplete(ctx, msg)
 	default:
 		slog.DebugContext(ctx, "Watcher plugin unknown topic", "topic", msg.Topic)
@@ -122,7 +122,7 @@ func (*Watcher) Subscriptions() []string {
 	return []string{
 		bus.ConfigApplyRequestTopic,
 		bus.ConfigApplySuccessfulTopic,
-		bus.RollbackCompleteTopic,
+		bus.ConfigApplyCompleteTopic,
 	}
 }
 

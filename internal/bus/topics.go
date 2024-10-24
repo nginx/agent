@@ -19,6 +19,6 @@ const (
 	WriteConfigSuccessfulTopic = "write-config-successful"
 	ConfigApplySuccessfulTopic = "config-apply-successful"
 	ConfigApplyFailedTopic     = "config-apply-failed"
-	RollbackCompleteTopic      = "rollback-complete"
+	ConfigApplyCompleteTopic   = "config-apply-complete"
 	RollbackWriteTopic         = "rollback-write"
 )

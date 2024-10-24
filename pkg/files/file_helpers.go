@@ -9,7 +9,6 @@ package files
 import (
 	"cmp"
 	"fmt"
-	"log/slog"
 	"os"
 	"slices"
 	"strconv"
@@ -80,111 +79,8 @@ func GenerateHash(b []byte) string {
 	return uuid.NewMD5(uuid.Nil, b).String()
 }
 
-// CompareFileHash compares files from the FileOverview to files on disk and returns a map with the files that have
-// changed and a map with the contents of those files. Key to both maps is file path
-// nolint: revive,cyclop
-func CompareFileHash(fileOverview *mpi.FileOverview) (fileDiff map[string]*mpi.File,
-	fileContents map[string][]byte, err error,
-) {
-	fileDiff = make(map[string]*mpi.File)
-	fileContents = make(map[string][]byte)
-
-	for _, file := range fileOverview.GetFiles() {
-		fileName := file.GetFileMeta().GetName()
-		switch file.GetAction() {
-		case mpi.File_FILE_ACTION_DELETE:
-			if _, err = os.Stat(fileName); os.IsNotExist(err) {
-				// File is already deleted, skip
-				continue
-			}
-			fileContent, readErr := os.ReadFile(fileName)
-			if readErr != nil {
-				return nil, nil, fmt.Errorf("error reading file %s, error: %w", fileName, readErr)
-			}
-			fileContents[fileName] = fileContent
-			fileDiff[fileName] = file
-		case mpi.File_FILE_ACTION_ADD:
-			if _, err = os.Stat(fileName); os.IsNotExist(err) {
-				// file is new, nothing to compare
-				fileDiff[fileName] = file
-				continue
-			}
-			// file already exists and needs to be updated instead
-			updateAction := mpi.File_FILE_ACTION_UPDATE
-			file.Action = &updateAction
-
-			fallthrough
-		case mpi.File_FILE_ACTION_UPDATE:
-			fileContent, readErr := os.ReadFile(fileName)
-			if readErr != nil {
-				return nil, nil, fmt.Errorf("error generating hash for file %s, error: %w", fileName, readErr)
-			}
-			fileHash := GenerateHash(fileContent)
-
-			if fileHash == file.GetFileMeta().GetHash() {
-				slog.Debug("file same on disk, skip", "filepath", fileName)
-				// file is same as on disk, skip
-				continue
-			}
-
-			fileContents[fileName] = fileContent
-			fileDiff[fileName] = file
-		case mpi.File_FILE_ACTION_UNSPECIFIED, mpi.File_FILE_ACTION_UNCHANGED:
-			// FileAction is UNSPECIFIED or UNCHANGED skipping. Treat UNSPECIFIED as if it is UNCHANGED.
-			fallthrough
-		default:
-			continue
-		}
-	}
-
-	return fileDiff, fileContents, nil
-}
-
-// DetermineFileAction compares two lists of files, determines which file action is needed for each file,
-// then returns a list of files with the action set for each file
-func DetermineFileAction(currentFiles, modifiedFiles []*mpi.File) []*mpi.File {
-	// Go doesn't allow address of numeric constant
-	addAction := mpi.File_FILE_ACTION_ADD
-	updateAction := mpi.File_FILE_ACTION_UPDATE
-	deleteAction := mpi.File_FILE_ACTION_DELETE
-	unchangedAction := mpi.File_FILE_ACTION_UNCHANGED
-
-	filesWithActions := make([]*mpi.File, 0, len(modifiedFiles))
-	currentFilesMap := convertToMapOfFiles(currentFiles)
-	modifiedFilesMap := convertToMapOfFiles(modifiedFiles)
-
-	// if file is in currentFiles but not in modified files, file has been deleted
-	for _, currentFile := range currentFilesMap {
-		_, ok := modifiedFilesMap[currentFile.GetFileMeta().GetName()]
-		if !ok {
-			currentFile.Action = &deleteAction
-			filesWithActions = append(filesWithActions, currentFile)
-
-			continue
-		}
-	}
-
-	for _, file := range modifiedFilesMap {
-		currentFile, ok := currentFilesMap[file.GetFileMeta().GetName()]
-
-		// default to unchanged action
-		file.Action = &unchangedAction
-		// if file doesn't exist in the current files, file has been added
-		if !ok {
-			file.Action = &addAction
-			// if file currently exists and file hash is different, file has been updated
-		} else if file.GetFileMeta().GetHash() != currentFile.GetFileMeta().GetHash() {
-			file.Action = &updateAction
-		}
-		// if file exists and file hash matches, file is unchanged
-		filesWithActions = append(filesWithActions, file)
-	}
-
-	return filesWithActions
-}
-
-// convertToMapOfFiles converts a list of files to a map of files with the file name as the key
-func convertToMapOfFiles(files []*mpi.File) map[string]*mpi.File {
+// ConvertToMapOfFiles converts a list of files to a map of files with the file name as the key
+func ConvertToMapOfFiles(files []*mpi.File) map[string]*mpi.File {
 	filesMap := make(map[string]*mpi.File)
 	for _, file := range files {
 		filesMap[file.GetFileMeta().GetName()] = file
