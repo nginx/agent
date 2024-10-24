@@ -78,9 +78,7 @@ func setupConnectionTest(tb testing.TB, expectNoErrorsInLogs bool) func(tb testi
 		require.NoError(tb, err)
 		tb.Cleanup(func() {
 			networkErr := containerNetwork.Remove(ctx)
-			if networkErr != nil {
-				tb.Logf("Error removing container network: %v", networkErr)
-			}
+			tb.Logf("Error removing container network: %v", networkErr)
 			require.NoError(tb, networkErr)
 		})
 
@@ -308,29 +306,16 @@ func TestGrpc_ConfigApply(t *testing.T) {
 		clearManagementPlaneResponses(t)
 		performInvalidConfigApply(t, nginxInstanceID)
 
-		if instanceType == "OSS" {
-			responses = getManagementPlaneResponses(t, 1)
-			t.Logf("Config apply responses: %v", responses)
+		responses = getManagementPlaneResponses(t, 1)
+		t.Logf("Config apply responses: %v", responses)
 
-			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE, responses[0].GetCommandResponse().GetStatus())
-			assert.Equal(t, "Config apply failed", responses[0].GetCommandResponse().GetMessage())
-			assert.Equal(
-				t,
-				"file not in allowed directories /unknown/nginx.conf",
-				responses[0].GetCommandResponse().GetError(),
-			)
-		} else {
-			responses = getManagementPlaneResponses(t, 1)
-			t.Logf("Config apply responses: %v", responses)
-
-			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE, responses[0].GetCommandResponse().GetStatus())
-			assert.Equal(t, "Config apply failed", responses[0].GetCommandResponse().GetMessage())
-			assert.Equal(
-				t,
-				"file not in allowed directories /unknown/nginx.conf",
-				responses[0].GetCommandResponse().GetError(),
-			)
-		}
+		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE, responses[0].GetCommandResponse().GetStatus())
+		assert.Equal(t, "Config apply failed", responses[0].GetCommandResponse().GetMessage())
+		assert.Equal(
+			t,
+			"file not in allowed directories /unknown/nginx.conf",
+			responses[0].GetCommandResponse().GetError(),
+		)
 	})
 }
 
