@@ -58,7 +58,7 @@ func newNginxPlusScraper(
 	rb := mb.NewResourceBuilder()
 	rb.SetInstanceID(settings.ID.Name())
 	rb.SetInstanceType("nginxplus")
-	logger.Debug("NGINX Plus resource info: ", zap.Any("resource", rb))
+	logger.Debug("NGINX Plus resource info", zap.Any("resource", rb))
 
 	return &nginxPlusScraper{
 		plusClient: plusClient,
