@@ -96,7 +96,8 @@ func TestCommandPlugin_Process(t *testing.T) {
 	commandPlugin.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: protos.OKDataPlaneResponse()})
 	require.Equal(t, 1, fakeCommandService.SendDataPlaneResponseCallCount())
 
-	commandPlugin.Process(ctx, &bus.Message{Topic: bus.DataplaneHealthProcessTopic, Data: protos.OKDataPlaneResponse()})
+	commandPlugin.Process(ctx, &bus.Message{Topic: bus.DataplaneHealthProcessTopic, Data: protos.GetHealthyInstanceHealth()})
+	require.Equal(t, 1, fakeCommandService.UpdateDataPlaneHealthCallCount())
 	require.Equal(t, 1, fakeCommandService.SendDataPlaneResponseCallCount())
 }
 
