@@ -196,7 +196,10 @@ func (nls *NginxLogScraper) Scrape(_ context.Context) (pmetric.Metrics, error) {
 
 func (nls *NginxLogScraper) Shutdown(_ context.Context) error {
 	nls.logger.Info("Shutting down NGINX access log scraper")
-	nls.cancel()
+
+	if nls.cancel != nil {
+		nls.cancel()
+	}
 	nls.wg.Wait()
 
 	return nls.pipe.Stop()

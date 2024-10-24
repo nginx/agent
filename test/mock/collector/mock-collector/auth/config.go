@@ -17,6 +17,7 @@ type Config struct {
 	AuthenticatorID component.ID `mapstructure:",squash"`
 }
 
+// nolint: ireturn
 func CreateDefaultConfig() component.Config {
 	return &Config{
 		AuthenticatorID: HeadersCheckID,
