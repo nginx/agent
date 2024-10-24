@@ -257,5 +257,5 @@ func TestHealthWatcherService_getCache(t *testing.T) {
 
 	result := healthWatcher.GetInstancesHealth()
 
-	assert.Equal(t, expectedInstancesHealth, result)
+	assert.ElementsMatch(t, expectedInstancesHealth, result)
 }
