@@ -239,20 +239,17 @@ func TestHealthWatcherService_compareCache(t *testing.T) {
 func TestHealthWatcherService_getCache(t *testing.T) {
 	ossInstance := protos.GetNginxOssInstance([]string{})
 	plusInstance := protos.GetNginxPlusInstance([]string{})
+	ossInstanceHealth := protos.GetHealthyInstanceHealth()
+	plusInstanceHealth := protos.GetUnhealthyInstanceHealth()
+
 	healthCache := map[string]*mpi.InstanceHealth{
-		ossInstance.GetInstanceMeta().GetInstanceId(): protos.GetHealthyInstanceHealth(),
-		plusInstance.GetInstanceMeta().GetInstanceId(): {
-			InstanceId:           plusInstance.GetInstanceMeta().GetInstanceId(),
-			InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY,
-		},
+		ossInstance.GetInstanceMeta().GetInstanceId():  ossInstanceHealth,
+		plusInstance.GetInstanceMeta().GetInstanceId(): plusInstanceHealth,
 	}
 
 	expectedInstancesHealth := []*mpi.InstanceHealth{
-		protos.GetHealthyInstanceHealth(),
-		{
-			InstanceId:           plusInstance.GetInstanceMeta().GetInstanceId(),
-			InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY,
-		},
+		ossInstanceHealth,
+		plusInstanceHealth,
 	}
 	agentConfig := types.AgentConfig()
 	healthWatcher := NewHealthWatcherService(agentConfig)
