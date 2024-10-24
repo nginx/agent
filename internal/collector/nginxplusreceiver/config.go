@@ -18,8 +18,8 @@ const defaultCollectInterval = 10 * time.Second
 
 type Config struct {
 	confighttp.ClientConfig        `mapstructure:",squash"`
-	scraperhelper.ControllerConfig `mapstructure:",squash"`
 	MetricsBuilderConfig           metadata.MetricsBuilderConfig `mapstructure:",squash"`
+	scraperhelper.ControllerConfig `mapstructure:",squash"`
 }
 
 // Validate checks if the receiver configuration is valid

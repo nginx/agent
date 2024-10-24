@@ -10,6 +10,8 @@ exporters:
     verbosity: detailed
   prometheus:
     endpoint: "0.0.0.0:9775"
+    resource_to_telemetry_conversion:
+      enabled: true
     add_metric_suffixes: false
 
 processors:

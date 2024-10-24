@@ -1,5 +1,9 @@
 resourceMetrics:
-  - resource: {}
+  - resource:
+      attributes:
+        - key: instance.type
+          value:
+            stringValue: nginx
     scopeMetrics:
       - metrics:
           - description: The total number of accepted client connections

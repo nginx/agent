@@ -9,6 +9,11 @@ all_set:
       enabled: true
     nginx.http.response.status:
       enabled: true
+  resource_attributes:
+    instance.id:
+      enabled: true
+    instance.type:
+      enabled: true
 none_set:
   metrics:
     nginx.http.conn:
@@ -19,3 +24,28 @@ none_set:
       enabled: false
     nginx.http.response.status:
       enabled: false
+  resource_attributes:
+    instance.id:
+      enabled: false
+    instance.type:
+      enabled: false
+filter_set_include:
+  resource_attributes:
+    instance.id:
+      enabled: true
+      metrics_include:
+        - regexp: ".*"
+    instance.type:
+      enabled: true
+      metrics_include:
+        - regexp: ".*"
+filter_set_exclude:
+  resource_attributes:
+    instance.id:
+      enabled: true
+      metrics_exclude:
+        - strict: "instance.id-val"
+    instance.type:
+      enabled: true
+      metrics_exclude:
+        - strict: "instance.type-val"
