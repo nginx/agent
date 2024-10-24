@@ -381,7 +381,7 @@ func TestGrpc_DataplaneHealthRequest(t *testing.T) {
 
 	responses := getManagementPlaneResponses(t, 2)
 
-	var allMessages []string
+	allMessages := make([]string, 0, 2)
 	for _, response := range responses {
 		message := response.GetCommandResponse().GetMessage()
 		allMessages = append(allMessages, message)
