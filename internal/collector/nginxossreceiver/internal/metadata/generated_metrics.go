@@ -303,15 +303,17 @@ func newMetricNginxHTTPResponseStatus(cfg MetricConfig) metricNginxHTTPResponseS
 // MetricsBuilder provides an interface for scrapers to report metrics while taking care of all the transformations
 // required to produce metric representation defined in metadata and user config.
 type MetricsBuilder struct {
-	config                        MetricsBuilderConfig // config of the metrics builder.
-	startTime                     pcommon.Timestamp    // start time that will be applied to all recorded data points.
-	metricsCapacity               int                  // maximum observed number of metrics per resource.
-	metricsBuffer                 pmetric.Metrics      // accumulates metrics data before emitting.
-	buildInfo                     component.BuildInfo  // contains version information.
-	metricNginxHTTPConn           metricNginxHTTPConn
-	metricNginxHTTPConnCount      metricNginxHTTPConnCount
-	metricNginxHTTPRequests       metricNginxHTTPRequests
-	metricNginxHTTPResponseStatus metricNginxHTTPResponseStatus
+	config                         MetricsBuilderConfig // config of the metrics builder.
+	startTime                      pcommon.Timestamp    // start time that will be applied to all recorded data points.
+	metricsCapacity                int                  // maximum observed number of metrics per resource.
+	metricsBuffer                  pmetric.Metrics      // accumulates metrics data before emitting.
+	buildInfo                      component.BuildInfo  // contains version information.
+	resourceAttributeIncludeFilter map[string]filter.Filter
+	resourceAttributeExcludeFilter map[string]filter.Filter
+	metricNginxHTTPConn            metricNginxHTTPConn
+	metricNginxHTTPConnCount       metricNginxHTTPConnCount
+	metricNginxHTTPRequests        metricNginxHTTPRequests
+	metricNginxHTTPResponseStatus  metricNginxHTTPResponseStatus
 }
 
 // metricBuilderOption applies changes to default metrics builder.
@@ -369,22 +371,14 @@ func (mb *MetricsBuilder) updateCapacity(rm pmetric.ResourceMetrics) {
 }
 
 // ResourceMetricsOption applies changes to provided resource metrics.
-type ResourceMetricsOption interface {
-	apply(pmetric.ResourceMetrics)
-}
-
-type resourceMetricsOptionFunc func(pmetric.ResourceMetrics)
-
-func (rmof resourceMetricsOptionFunc) apply(rm pmetric.ResourceMetrics) {
-	rmof(rm)
-}
+type ResourceMetricsOption func(pmetric.ResourceMetrics)
 
 // WithResource sets the provided resource on the emitted ResourceMetrics.
 // It's recommended to use ResourceBuilder to create the resource.
 func WithResource(res pcommon.Resource) ResourceMetricsOption {
-	return resourceMetricsOptionFunc(func(rm pmetric.ResourceMetrics) {
+	return func(rm pmetric.ResourceMetrics) {
 		res.CopyTo(rm.Resource())
-	})
+	}
 }
 
 // WithStartTimeOverride overrides start time for all the resource metrics data points.
