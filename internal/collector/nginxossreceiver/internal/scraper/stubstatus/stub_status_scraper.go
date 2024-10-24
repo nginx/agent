@@ -45,7 +45,7 @@ func NewScraper(
 	rb := mb.NewResourceBuilder()
 	rb.SetInstanceID(settings.ID.Name())
 	rb.SetInstanceType("nginx")
-	logger.Debug("NGINX OSS resource info: ", zap.Any("resource", rb))
+	logger.Debug("NGINX OSS resource info", zap.Any("resource", rb))
 
 	return &NginxStubStatusScraper{
 		settings: settings.TelemetrySettings,
