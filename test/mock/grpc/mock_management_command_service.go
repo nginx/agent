@@ -319,7 +319,6 @@ func (cs *CommandService) addResponseAndRequestEndpoints() {
 		cs.dataPlaneResponses = make([]*mpi.DataPlaneResponse, 0)
 
 		c.JSON(http.StatusOK, "cleared responses")
-
 	})
 
 	cs.server.POST("/api/v1/requests", func(c *gin.Context) {
