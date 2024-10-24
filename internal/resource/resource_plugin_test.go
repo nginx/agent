@@ -133,7 +133,7 @@ func TestResource_Process_Apply(t *testing.T) {
 				},
 			},
 			applyErr: nil,
-			topic:    []string{bus.DataPlaneResponseTopic, bus.ConfigApplySuccessfulTopic},
+			topic:    []string{bus.ConfigApplySuccessfulTopic},
 		},
 		{
 			name: "Test 2: Write Config Successful Topic - Fail Status",
@@ -167,7 +167,10 @@ func TestResource_Process_Apply(t *testing.T) {
 			resourcePlugin.Process(ctx, test.message)
 
 			assert.Equal(t, test.topic[0], messagePipe.GetMessages()[0].Topic)
-			assert.Equal(t, test.topic[1], messagePipe.GetMessages()[1].Topic)
+
+			if len(test.topic) > 1 {
+				assert.Equal(t, test.topic[1], messagePipe.GetMessages()[1].Topic)
+			}
 
 			if test.applyErr != nil {
 				response, ok := messagePipe.GetMessages()[0].Data.(*mpi.DataPlaneResponse)
@@ -198,7 +201,7 @@ func TestResource_Process_Rollback(t *testing.T) {
 				},
 			},
 			rollbackErr: nil,
-			topic:       []string{bus.RollbackCompleteTopic, bus.DataPlaneResponseTopic},
+			topic:       []string{bus.RollbackCompleteTopic},
 		},
 		{
 			name: "Test 2: Rollback Write Topic - Fail Status",
@@ -211,7 +214,7 @@ func TestResource_Process_Rollback(t *testing.T) {
 				},
 			},
 			rollbackErr: errors.New("error reloading"),
-			topic:       []string{bus.RollbackCompleteTopic, bus.DataPlaneResponseTopic, bus.DataPlaneResponseTopic},
+			topic:       []string{bus.RollbackCompleteTopic, bus.DataPlaneResponseTopic},
 		},
 	}
 
@@ -238,12 +241,15 @@ func TestResource_Process_Rollback(t *testing.T) {
 			assert.Equal(tt, len(test.topic), len(messagePipe.GetMessages()))
 
 			assert.Equal(t, test.topic[0], messagePipe.GetMessages()[0].Topic)
-			assert.Equal(t, test.topic[1], messagePipe.GetMessages()[1].Topic)
+
+			if len(test.topic) > 1 {
+				assert.Equal(t, test.topic[1], messagePipe.GetMessages()[1].Topic)
+			}
 
 			if test.rollbackErr != nil {
-				rollbackResponse, ok := messagePipe.GetMessages()[2].Data.(*mpi.DataPlaneResponse)
+				rollbackResponse, ok := messagePipe.GetMessages()[1].Data.(*mpi.DataPlaneResponse)
 				assert.True(tt, ok)
-				assert.Equal(t, test.topic[2], messagePipe.GetMessages()[2].Topic)
+				assert.Equal(t, test.topic[1], messagePipe.GetMessages()[1].Topic)
 				assert.Equal(tt, test.rollbackErr.Error(), rollbackResponse.GetCommandResponse().GetError())
 			}
 		})
