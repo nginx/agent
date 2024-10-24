@@ -248,16 +248,16 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 		return
 	}
 
-	if oc.config.Collector.Processors.Attribute == nil {
-		oc.config.Collector.Processors.Attribute = &config.Attribute{
-			Actions: make([]config.Action, 0),
+	if oc.config.Collector.Processors.Resource == nil {
+		oc.config.Collector.Processors.Resource = &config.Resource{
+			Attributes: make([]config.ResourceAttribute, 0),
 		}
 	}
 
-	if oc.config.Collector.Processors.Attribute != nil &&
+	if oc.config.Collector.Processors.Resource != nil &&
 		resourceUpdateContext.GetResourceId() != "" {
-		reloadCollector = oc.updateAttributeActions(
-			[]config.Action{
+		reloadCollector = oc.updateResourceAttributes(
+			[]config.ResourceAttribute{
 				{
 					Key:    "resource.id",
 					Action: "insert",
@@ -402,21 +402,21 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 }
 
 // nolint: revive
-func (oc *Collector) updateAttributeActions(
-	actionsToAdd []config.Action,
+func (oc *Collector) updateResourceAttributes(
+	attributesToAdd []config.ResourceAttribute,
 ) (reloadCollector bool) {
 	reloadCollector = false
 
-	if oc.config.Collector.Processors.Attribute.Actions != nil {
+	if oc.config.Collector.Processors.Resource.Attributes != nil {
 	OUTER:
-		for _, toAdd := range actionsToAdd {
-			for _, action := range oc.config.Collector.Processors.Attribute.Actions {
+		for _, toAdd := range attributesToAdd {
+			for _, action := range oc.config.Collector.Processors.Resource.Attributes {
 				if action.Key == toAdd.Key {
 					continue OUTER
 				}
 			}
-			oc.config.Collector.Processors.Attribute.Actions = append(
-				oc.config.Collector.Processors.Attribute.Actions,
+			oc.config.Collector.Processors.Resource.Attributes = append(
+				oc.config.Collector.Processors.Resource.Attributes,
 				toAdd,
 			)
 			reloadCollector = true
