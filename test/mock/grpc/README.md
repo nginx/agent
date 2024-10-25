@@ -5,10 +5,13 @@ To start the server, run the following command
 make run-mock-management-grpc-server
 ```
 
-By default, this will start a HTTP and gRPC server on a random port. To override this behaviour the following environment variables can be set to override them
+By default, this will start a HTTP and gRPC server on a random port. \
+It will also sabe config files to the `/tmp` by default. \
+To override these behaviours the following environment variables can be set to override them
 ```
 MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS=127.0.0.1:9091
 MOCK_MANAGEMENT_PLANE_API_ADDRESS=127.0.0.1:9092
+MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY=/tmp/
 ```
 
 Before starting the NGINX Agent, update the agent configuration with the following command config block
@@ -31,7 +34,7 @@ GET http://127.0.0.1:9092/api/v1/responses
 
 POST http://127.0.0.1:9092/api/v1/requests
 
-POST http://127.0.0.1:9092/api/v1/instance/<instance ID>/config/apply
+POST http://127.0.0.1:9092/api/v1/instance/<instance id>/config/apply
 ```
 
 # Endpoints
@@ -289,5 +292,14 @@ Example request body:
     "health_request": {}
 }
 ```
-## POST /api/v1/instance/{instance ID}/config/apply
+## POST /api/v1/instance/\<instance id\>/config/apply
 Used to send management plane config apply request over the Subscribe rpc stream to the NGINX Agent for a particular data plane instance.
+
+The config files that you need to change to perform a config apply are located here `/tmp/config/<instance id>/<location of nginx files>`.
+
+The `<instance id>` and `<location of nginx files>` can be determined from the response of the `/api/v1/connection` endpoint. \
+In the example above the `instance id` would be `6cb1a2bc-7552-33b1-9e7c-cb6658b82ebb` and the `<location of nginx files>` would be `/etc/nginx-agent/nginx-agent.conf`. \
+So the full path to the file used by the mock management plane would be `/tmp/config/6cb1a2bc-7552-33b1-9e7c-cb6658b82ebb/etc/nginx-agent/nginx.conf`.
+
+Simply edit this file and then perform a POST request against the `/api/v1/instance/<instance id>/config/apply` endpoint to execute a config apply request.
+
