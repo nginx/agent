@@ -64,21 +64,22 @@ sequenceDiagram
     File Manager Service -->>- File Plugin: writeStatus, error
     alt no file changes
         rect rgb(66, 129, 164)
-            File Plugin ->> File Plugin: ClearCache()
             File Plugin -) Message Bus: ConfigApplySuccessfulTopic
-            Message Bus -) File Plugin: ConfigApplySuccessfulTopic
             Message Bus -) Watcher Plugin: ConfigApplySuccessfulTopic
             Watcher Plugin ->> Watcher Plugin: FileWatcherService.SetEnabled(true)
 
+            Message Bus -) File Plugin: ConfigApplySuccessfulTopic
+            File Plugin ->> File Plugin: ClearCache()
             File Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_OK
             Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_OK
         end
     else has error
         rect rgb(166, 128, 140)
-            File Plugin ->> File Plugin: ClearCache()
             File Plugin -) Message Bus: ConfigApplyCompleteTopic
             Message Bus -) Watcher Plugin: ConfigApplyCompleteTopic
             Watcher Plugin ->> Watcher Plugin: FileWatcherService.SetEnabled(true)
+            Message Bus -) File Plugin: ConfigApplyCompleteTopic
+            File Plugin ->> File Plugin: ClearCache()
             File Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_FAILURE
             Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_FAILURE
         end
@@ -87,10 +88,11 @@ sequenceDiagram
             File Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_ERROR
             Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_ERROR
             File Plugin ->> File Manager Service: Rollback(ctx, instanceID)
-            File Plugin ->> File Plugin: ClearCache()
             File Plugin -) Message Bus: ConfigApplyCompleteTopic
             Message Bus -) Watcher Plugin: ConfigApplyCompleteTopic
             Watcher Plugin ->> Watcher Plugin: FileWatcherService.SetEnabled(true)
+            Message Bus -) File Plugin: ConfigApplyCompleteTopic
+            File Plugin ->> File Plugin: ClearCache()
             File Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_FAILURE
             Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_FAILURE
         end
@@ -134,6 +136,7 @@ sequenceDiagram
             File Plugin ->>- File Manager Service: Rollback(ctx, instanceID)
         end
     end
+
 
 
 
