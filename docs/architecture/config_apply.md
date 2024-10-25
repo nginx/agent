@@ -37,7 +37,7 @@ flowchart TB
 
 ```
 
-# Config Apply Sequence Diagram 
+# Config Apply Sequence Diagram
 ```mermaid
 sequenceDiagram
     participant Command Plugin as Command Plugin
@@ -52,29 +52,47 @@ sequenceDiagram
     participant Watcher Plugin as Watcher Plugin
 
     Command Plugin -) Message Bus: ConfigApplyRequestTopic
+    Message Bus -)+ Watcher Plugin: ConfigApplyRequestTopic
+    Watcher Plugin ->> Watcher Plugin: FileWatcherService.SetEnabled(false)
     Message Bus -)+ File Plugin: ConfigApplyRequestTopic
     File Plugin ->>+ File Manager Service: ConfigApply(ctx, configApplyRequest)
     File Manager Service ->> File Manager Service: checkAllowedDirectory(checkFiles)
-    File Manager Service ->> File Manager Service: CompareFileHash(fileOverview)
+    File Manager Service ->> File Manager Service: DetermineFileActions(currentFilesOnDisk, modifiedFiles)
     File Manager Service ->> File Manager Service: executeFileActions(ctx)
     File Manager Service ->> File Operator: Write()
     File Operator -->> File Manager Service: error
     File Manager Service -->>- File Plugin: writeStatus, error
     alt no file changes
         rect rgb(66, 129, 164)
+            File Plugin ->> File Plugin: ClearCache()
+            File Plugin -) Message Bus: ConfigApplySuccessfulTopic
+            Message Bus -) File Plugin: ConfigApplySuccessfulTopic
+            Message Bus -) Watcher Plugin: ConfigApplySuccessfulTopic
+            Watcher Plugin ->> Watcher Plugin: FileWatcherService.SetEnabled(true)
+
             File Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_OK
             Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_OK
         end
     else has error
         rect rgb(166, 128, 140)
+            File Plugin ->> File Plugin: ClearCache()
+            File Plugin -) Message Bus: ConfigApplyCompleteTopic
+            Message Bus -) Watcher Plugin: ConfigApplyCompleteTopic
+            Watcher Plugin ->> Watcher Plugin: FileWatcherService.SetEnabled(true)
             File Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_FAILURE
             Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_FAILURE
         end
     else rollback required
         rect rgb(144, 143, 217)
             File Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_ERROR
-            File Plugin ->> File Manager Service: Rollback(ctx, instanceID)
             Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_ERROR
+            File Plugin ->> File Manager Service: Rollback(ctx, instanceID)
+            File Plugin ->> File Plugin: ClearCache()
+            File Plugin -) Message Bus: ConfigApplyCompleteTopic
+            Message Bus -) Watcher Plugin: ConfigApplyCompleteTopic
+            Watcher Plugin ->> Watcher Plugin: FileWatcherService.SetEnabled(true)
+            File Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_FAILURE
+            Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_FAILURE
         end
     else no error
         rect rgb(66, 129, 164)
@@ -99,12 +117,13 @@ sequenceDiagram
     alt no error
         rect rgb(66, 129, 164)
             Resource Plugin -) Message Bus: ConfigApplySuccessfulTopic
-            Resource Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_OK
-            Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_OK
             Message Bus -)+ File Plugin: ConfigApplySuccessfulTopic
             File Plugin ->>- File Plugin: clearCache()
+            File Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_OK
+            Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_OK
             Message Bus -)+ Watcher Plugin: ConfigApplySuccessfulTopic
             Watcher Plugin ->>- Watcher Plugin: Reparse Config
+            Watcher Plugin ->> Watcher Plugin: FileWatcherService.SetEnabled(true)
         end
     else error
         rect rgb(146, 144, 199)
