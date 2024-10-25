@@ -5,10 +5,10 @@ flowchart TB
     0["Start"] --> 2["Receive Config Apply Request"]
     2 --> 3{"File in allowed directory list?"}
     3 -- No --> 4["Send Data Plane Response <br> COMMAND_STATUS_FAILURE"]
-    3 -- Yes --> 5["Compare File Hash"]
+    3 -- Yes --> 5["Determine File Actions"]
     4 --> 6["Clear File Cache"]
     6 --> 1["End"]
-    5 --> 7{"Error Reading Files to Compare Hashes?"}
+    5 --> 7{"Error Determining File Actions?"}
     7 -- Yes --> 4
     7 -- No --> 8["File Action Write, Add, Delete"]
     8 --> 10{"File Changes ?"}
