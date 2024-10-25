@@ -289,5 +289,5 @@ Example request body:
     "health_request": {}
 }
 ```
-## POST /api/v1/instance/<instance ID>/config/apply
+## POST /api/v1/instance/{instance ID}/config/apply
 Used to send management plane config apply request over the Subscribe rpc stream to the NGINX Agent for a particular data plane instance.
