@@ -78,8 +78,8 @@ sequenceDiagram
             Message Bus -) Watcher Plugin: ConfigApplyCompleteTopic
             Watcher Plugin ->> Watcher Plugin: FileWatcherService.SetEnabled(true)
             Message Bus -)+ File Plugin: ConfigApplyCompleteTopic
-            File Plugin ->>- File Plugin: clearCache()
-            File Plugin -) Message Bus: DataPlaneResponseTopic Command_Status_FAILURE
+            File Plugin ->> File Plugin: clearCache()
+            File Plugin -)- Message Bus: DataPlaneResponseTopic Command_Status_FAILURE
             Message Bus -) Command Plugin: DataPlaneResponseTopic Command_Status_FAILURE
         end
     else error
