@@ -208,8 +208,6 @@ func (cs *CommandService) CreateConnection(
 	resource *mpi.Resource,
 ) (*mpi.CreateConnectionResponse, error) {
 	correlationID := logger.GetCorrelationID(ctx)
-
-	// Only send a resource update message if instances other than the agent instance are found
 	if len(resource.GetInstances()) <= 1 {
 		slog.InfoContext(ctx, "No Data Plane Instance found")
 	}
