@@ -906,3 +906,10 @@ The current number of peers removed from the group but still processing active c
 | ---- | ----------- | ------ |
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.upstream.name | The name of the upstream block. | Any Str |
+
+## Resource Attributes
+
+| Name | Description | Values | Enabled |
+| ---- | ----------- | ------ | ------- |
+| instance.id | The nginx instance id. | Any Str | true |
+| instance.type | The nginx instance type (nginx, nginxplus) | Any Str | true |

@@ -1,5 +1,5 @@
 receivers:
-{{- if ne .Receivers.HostMetrics.CollectionInterval 0 }}
+{{- if ne .Receivers.HostMetrics nil }}
   hostmetrics:
     collection_interval: {{ .Receivers.HostMetrics.CollectionInterval }}
     initial_delay: {{ .Receivers.HostMetrics.InitialDelay }}
@@ -76,6 +76,28 @@ receivers:
 {{- end }}
 
 processors:
+{{- if ne .Processors.Resource nil }}
+{{- if .Processors.Resource.Attributes }}
+  resource:
+    attributes:
+{{- range .Processors.Resource.Attributes }}
+      - key: {{ .Key }}
+        action: {{ .Action }}
+        value: {{ .Value }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if ne .Processors.Attribute nil }}
+{{- if .Processors.Attribute.Actions }}
+  attributes:
+    actions:
+{{- range .Processors.Attribute.Actions }}
+      - key: {{ .Key }}
+        action: {{ .Action }}
+        value: {{ .Value }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- if ne .Processors.Batch nil }}
   batch:
     send_batch_size: {{ .Processors.Batch.SendBatchSize }}
@@ -101,10 +123,16 @@ exporters:
       {{ if gt (len .TLS.Cert) 0 -}}cert_file: "{{- .TLS.Cert -}}"{{- end }}
       {{ if gt (len .TLS.Key) 0 -}}key_file: "{{- .TLS.Key -}}"{{- end }}
       {{- end }}
+    {{- if .Authenticator }}
+    auth:
+      authenticator: {{ .Authenticator -}}
+    {{- end }} 
 {{- end }}
 {{- if ne .Exporters.PrometheusExporter nil }}
   prometheus:
     endpoint: "{{ .Exporters.PrometheusExporter.Server.Host -}}:{{- .Exporters.PrometheusExporter.Server.Port }}"
+    resource_to_telemetry_conversion:
+      enabled: true
 {{- end }}
 {{- if ne .Exporters.Debug nil }}
   debug:
@@ -128,6 +156,24 @@ extensions:
        key_file: "{{ .Extensions.Health.Server.TLS.Key -}}"
     {{- end }}
   {{- end }}
+  
+  {{- if ne .Extensions.HeadersSetter nil }}
+  headers_setter:
+    headers:
+    {{- range $index, $header := .Extensions.HeadersSetter.Headers }}
+      - action: "{{ .Action -}}"
+        key: "{{ .Key -}}"
+        {{- if .Value }}
+        value: "{{ .Value -}}"
+        {{- end }}
+        {{- if .DefaultValue }}
+        default_value: "{{ .DefaultValue -}}"
+        {{- end }}
+        {{- if .FromContext }}
+        from_context: "{{ .FromContext -}}"
+        {{- end }}
+    {{- end }}
+  {{- end }}
 {{- end }}
 
 service:
@@ -144,11 +190,14 @@ service:
     {{- if ne .Extensions.Health nil }}
     - health_check
     {{- end}}
+    {{- if ne .Extensions.HeadersSetter nil }}
+    - headers_setter
+    {{- end}}
   {{- end}}
   pipelines:
     metrics:
       receivers:
-        {{- if ne .Receivers.HostMetrics.CollectionInterval 0 }}
+        {{- if ne .Receivers.HostMetrics nil }}
         - hostmetrics
         {{- end }}
         {{- range $index, $otlpReceiver := .Receivers.OtlpReceivers }}
@@ -161,6 +210,16 @@ service:
         - nginxplus/{{- .InstanceID -}}
         {{- end }}
       processors:
+        {{- if ne .Processors.Resource nil }}
+        {{- if .Processors.Resource.Attributes }}
+        - resource
+        {{- end }}
+        {{- end }}
+        {{- if ne .Processors.Attribute nil }}
+        {{- if .Processors.Attribute.Actions }}
+        - attributes
+        {{- end }}
+        {{- end }}
         {{- if ne .Processors.Batch nil }}
         - batch
         {{- end }}

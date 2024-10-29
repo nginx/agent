@@ -179,14 +179,18 @@ func TestResolveCollector(t *testing.T) {
 
 		viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 		viperInstance.Set(CollectorConfigPathKey, expected.ConfigPath)
+		viperInstance.Set(CollectorLogPathKey, expected.Log.Path)
+		viperInstance.Set(CollectorLogLevelKey, expected.Log.Level)
 		viperInstance.Set(CollectorReceiversKey, expected.Receivers)
 		viperInstance.Set(CollectorBatchProcessorKey, expected.Processors.Batch)
 		viperInstance.Set(CollectorBatchProcessorSendBatchSizeKey, expected.Processors.Batch.SendBatchSize)
 		viperInstance.Set(CollectorBatchProcessorSendBatchMaxSizeKey, expected.Processors.Batch.SendBatchMaxSize)
 		viperInstance.Set(CollectorBatchProcessorTimeoutKey, expected.Processors.Batch.Timeout)
 		viperInstance.Set(CollectorExportersKey, expected.Exporters)
-		viperInstance.Set(CollectorExtensionsKey, expected.Extensions)
-		viperInstance.Set(CollectorLogKey, expected.Log)
+		viperInstance.Set(CollectorOtlpExportersKey, expected.Exporters.OtlpExporters)
+		viperInstance.Set(CollectorExtensionsHealthServerHostKey, expected.Extensions.Health.Server.Host)
+		viperInstance.Set(CollectorExtensionsHealthServerPortKey, expected.Extensions.Health.Server.Port)
+		viperInstance.Set(CollectorExtensionsHealthPathKey, expected.Extensions.Health.Path)
 
 		actual, err := resolveCollector(testDefault.AllowedDirectories)
 		require.NoError(t, err)
@@ -309,9 +313,6 @@ func getAgentConfig() *Config {
 							Host: "127.0.0.1",
 							Port: 1234,
 						},
-						Auth: &AuthConfig{
-							Token: "super-secret-token",
-						},
 						TLS: &TLSConfig{
 							Cert:       "/path/to/server-cert.pem",
 							Key:        "/path/to/server-cert.pem",
@@ -370,6 +371,7 @@ func getAgentConfig() *Config {
 						Port: 1337,
 						Type: 0,
 					},
+					Path: "/",
 				},
 			},
 			Log: &Log{

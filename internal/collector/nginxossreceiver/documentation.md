@@ -61,3 +61,10 @@ The number of responses, grouped by status code range.
 | Name | Description | Values |
 | ---- | ----------- | ------ |
 | nginx.status_range | A status code range or bucket for a HTTP response's status code. | Str: ``1xx``, ``2xx``, ``3xx``, ``4xx``, ``5xx`` |
+
+## Resource Attributes
+
+| Name | Description | Values | Enabled |
+| ---- | ----------- | ------ | ------- |
+| instance.id | The nginx instance id. | Any Str | true |
+| instance.type | The nginx instance type (nginx, nginxplus). | Any Str | true |

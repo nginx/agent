@@ -150,31 +150,37 @@ func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message
 }
 
 func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message) {
-	data, ok := msg.Data.(string)
+	response, ok := msg.Data.(*mpi.DataPlaneResponse)
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to string", "payload", msg.Data, "topic", msg.Topic)
+		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.DataPlaneResponse", "payload",
+			msg.Data, "topic", msg.Topic)
 
 		return
 	}
+
+	instanceID := response.GetInstanceId()
 
 	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
 		w.instancesWithConfigApplyInProgress,
 		func(element string) bool {
-			return element == data
+			return element == instanceID
 		},
 	)
 	w.fileWatcherService.SetEnabled(true)
 
-	w.instanceWatcherService.ReparseConfig(ctx, data)
+	w.instanceWatcherService.ReparseConfig(ctx, instanceID)
 }
 
 func (w *Watcher) handleRollbackComplete(ctx context.Context, msg *bus.Message) {
-	instanceID, ok := msg.Data.(string)
+	response, ok := msg.Data.(*mpi.DataPlaneResponse)
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to string", "payload", msg.Data, "topic", msg.Topic)
+		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.DataPlaneResponse", "payload",
+			msg.Data, "topic", msg.Topic)
 
 		return
 	}
+
+	instanceID := response.GetInstanceId()
 
 	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
 		w.instancesWithConfigApplyInProgress,

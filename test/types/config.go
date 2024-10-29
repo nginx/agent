@@ -55,9 +55,6 @@ func AgentConfig() *config.Config {
 							Host: "127.0.0.1",
 							Port: randomPort1,
 						},
-						Auth: &config.AuthConfig{
-							Token: "super-secret-token",
-						},
 					},
 				},
 			},
@@ -70,7 +67,7 @@ func AgentConfig() *config.Config {
 			},
 			Receivers: config.Receivers{
 				OtlpReceivers: OtlpReceivers(),
-				HostMetrics: config.HostMetrics{
+				HostMetrics: &config.HostMetrics{
 					CollectionInterval: time.Minute,
 					InitialDelay:       time.Second,
 					Scrapers: &config.HostMetricsScrapers{

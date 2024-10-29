@@ -89,19 +89,32 @@ type (
 	}
 
 	OtlpExporter struct {
-		Server *ServerConfig `yaml:"-" mapstructure:"server"`
-		Auth   *AuthConfig   `yaml:"-" mapstructure:"auth"`
-		TLS    *TLSConfig    `yaml:"-" mapstructure:"tls"`
+		Server        *ServerConfig `yaml:"-" mapstructure:"server"`
+		TLS           *TLSConfig    `yaml:"-" mapstructure:"tls"`
+		Authenticator string        `yaml:"-" mapstructure:"authenticator"`
 	}
 
 	Extensions struct {
-		Health *Health `yaml:"-" mapstructure:"health"`
+		Health        *Health        `yaml:"-" mapstructure:"health"`
+		HeadersSetter *HeadersSetter `yaml:"-" mapstructure:"headers_setter"`
 	}
 
 	Health struct {
 		Server *ServerConfig `yaml:"-" mapstructure:"server"`
 		TLS    *TLSConfig    `yaml:"-" mapstructure:"tls"`
 		Path   string        `yaml:"-" mapstructure:"path"`
+	}
+
+	HeadersSetter struct {
+		Headers []Header `yaml:"-" mapstructure:"headers"`
+	}
+
+	Header struct {
+		Action       string `yaml:"-" mapstructure:"action"`
+		Key          string `yaml:"-" mapstructure:"key"`
+		Value        string `yaml:"-" mapstructure:"value"`
+		DefaultValue string `yaml:"-" mapstructure:"default_value"`
+		FromContext  string `yaml:"-" mapstructure:"from_context"`
 	}
 
 	DebugExporter struct{}
@@ -113,7 +126,29 @@ type (
 
 	// OTel Collector Processors configuration.
 	Processors struct {
-		Batch *Batch `yaml:"-" mapstructure:"batch"`
+		Attribute *Attribute `yaml:"-" mapstructure:"attribute"`
+		Resource  *Resource  `yaml:"-" mapstructure:"resource"`
+		Batch     *Batch     `yaml:"-" mapstructure:"batch"`
+	}
+
+	Attribute struct {
+		Actions []Action `yaml:"-" mapstructure:"actions"`
+	}
+
+	Action struct {
+		Key    string `yaml:"key"    mapstructure:"key"`
+		Action string `yaml:"action" mapstructure:"action"`
+		Value  string `yaml:"value"  mapstructure:"value"`
+	}
+
+	Resource struct {
+		Attributes []ResourceAttribute `yaml:"-" mapstructure:"attributes"`
+	}
+
+	ResourceAttribute struct {
+		Key    string `yaml:"key"    mapstructure:"key"`
+		Action string `yaml:"action" mapstructure:"action"`
+		Value  string `yaml:"value"  mapstructure:"value"`
 	}
 
 	Batch struct {
@@ -124,10 +159,10 @@ type (
 
 	// OTel Collector Receiver configuration.
 	Receivers struct {
+		HostMetrics        *HostMetrics        `yaml:"-" mapstructure:"host_metrics"`
 		OtlpReceivers      []OtlpReceiver      `yaml:"-" mapstructure:"otlp_receivers"`
 		NginxReceivers     []NginxReceiver     `yaml:"-" mapstructure:"nginx_receivers"`
 		NginxPlusReceivers []NginxPlusReceiver `yaml:"-" mapstructure:"nginx_plus_receivers"`
-		HostMetrics        HostMetrics         `yaml:"-" mapstructure:"host_metrics"`
 	}
 
 	OtlpReceiver struct {
@@ -292,6 +327,27 @@ func (c *Config) IsFeatureEnabled(feature string) bool {
 	}
 
 	return false
+}
+
+func (c *Config) IsACollectorExporterConfigured() bool {
+	if c.Collector == nil {
+		return false
+	}
+
+	return c.Collector.Exporters.PrometheusExporter != nil ||
+		c.Collector.Exporters.OtlpExporters != nil ||
+		c.Collector.Exporters.Debug != nil
+}
+
+func (c *Config) AreReceiversConfigured() bool {
+	if c.Collector == nil {
+		return false
+	}
+
+	return c.Collector.Receivers.NginxPlusReceivers != nil ||
+		c.Collector.Receivers.OtlpReceivers != nil ||
+		c.Collector.Receivers.NginxReceivers != nil ||
+		c.Collector.Receivers.HostMetrics != nil
 }
 
 func isAllowedDir(dir string, allowedDirs []string) bool {
