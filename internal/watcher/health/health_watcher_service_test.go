@@ -236,7 +236,7 @@ func TestHealthWatcherService_compareCache(t *testing.T) {
 	}
 }
 
-func TestHealthWatcherService_getCache(t *testing.T) {
+func TestHealthWatcherService_GetInstancesHealth(t *testing.T) {
 	ossInstance := protos.GetNginxOssInstance([]string{})
 	plusInstance := protos.GetNginxPlusInstance([]string{})
 	ossInstanceHealth := protos.GetHealthyInstanceHealth()

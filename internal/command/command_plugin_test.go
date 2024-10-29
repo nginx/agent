@@ -39,7 +39,7 @@ func TestCommandPlugin_Subscriptions(t *testing.T) {
 		[]string{
 			bus.ResourceUpdateTopic,
 			bus.InstanceHealthTopic,
-			bus.DataplaneHealthProcessTopic,
+			bus.DataPlaneHealthResponseTopic,
 			bus.DataPlaneResponseTopic,
 		},
 		subscriptions,
@@ -97,7 +97,7 @@ func TestCommandPlugin_Process(t *testing.T) {
 	require.Equal(t, 1, fakeCommandService.SendDataPlaneResponseCallCount())
 
 	commandPlugin.Process(ctx, &bus.Message{
-		Topic: bus.DataplaneHealthProcessTopic,
+		Topic: bus.DataPlaneHealthResponseTopic,
 		Data:  protos.GetHealthyInstanceHealth(),
 	})
 	require.Equal(t, 1, fakeCommandService.UpdateDataPlaneHealthCallCount())
@@ -106,15 +106,15 @@ func TestCommandPlugin_Process(t *testing.T) {
 
 func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 	tests := []struct {
-		mpiRequest      *mpi.ManagementPlaneRequest
-		expectedTopic   *bus.Message
-		name            string
-		isUploadRequest bool
-		isApplyRequest  bool
+		managementPlaneRequest *mpi.ManagementPlaneRequest
+		expectedTopic          *bus.Message
+		name                   string
+		isUploadRequest        bool
+		isApplyRequest         bool
 	}{
 		{
 			name: "Test 1: Config Upload Request",
-			mpiRequest: &mpi.ManagementPlaneRequest{
+			managementPlaneRequest: &mpi.ManagementPlaneRequest{
 				Request: &mpi.ManagementPlaneRequest_ConfigUploadRequest{
 					ConfigUploadRequest: &mpi.ConfigUploadRequest{},
 				},
@@ -124,7 +124,7 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 		},
 		{
 			name: "Test 2: Config Apply Request",
-			mpiRequest: &mpi.ManagementPlaneRequest{
+			managementPlaneRequest: &mpi.ManagementPlaneRequest{
 				Request: &mpi.ManagementPlaneRequest_ConfigApplyRequest{
 					ConfigApplyRequest: &mpi.ConfigApplyRequest{},
 				},
@@ -133,13 +133,13 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 			isApplyRequest: true,
 		},
 		{
-			name: "Test 3: Config Health Request",
-			mpiRequest: &mpi.ManagementPlaneRequest{
+			name: "Test 3: Health Request",
+			managementPlaneRequest: &mpi.ManagementPlaneRequest{
 				Request: &mpi.ManagementPlaneRequest_HealthRequest{
 					HealthRequest: &mpi.HealthRequest{},
 				},
 			},
-			expectedTopic: &bus.Message{Topic: bus.DataplaneHealthTopic},
+			expectedTopic: &bus.Message{Topic: bus.DataPlaneHealthRequestTopic},
 		},
 	}
 
@@ -156,7 +156,7 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 
 			go commandPlugin.monitorSubscribeChannel(ctx)
 
-			commandPlugin.subscribeChannel <- test.mpiRequest
+			commandPlugin.subscribeChannel <- test.managementPlaneRequest
 
 			assert.Eventually(
 				t,
@@ -173,11 +173,11 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 
 			if test.isUploadRequest {
 				assert.True(t, ok)
-				require.NotNil(t, test.mpiRequest.GetConfigUploadRequest())
+				require.NotNil(t, test.managementPlaneRequest.GetConfigUploadRequest())
 			}
 			if test.isApplyRequest {
 				assert.True(t, ok)
-				require.NotNil(t, test.mpiRequest.GetConfigApplyRequest())
+				require.NotNil(t, test.managementPlaneRequest.GetConfigApplyRequest())
 			}
 		})
 	}

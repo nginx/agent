@@ -81,8 +81,8 @@ func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 		cp.processResourceUpdate(ctx, msg)
 	case bus.InstanceHealthTopic:
 		cp.processInstanceHealth(ctx, msg)
-	case bus.DataplaneHealthProcessTopic:
-		cp.processDataplaneHealth(ctx, msg)
+	case bus.DataPlaneHealthResponseTopic:
+		cp.processDataPlaneHealth(ctx, msg)
 	case bus.DataPlaneResponseTopic:
 		cp.processDataPlaneResponse(ctx, msg)
 	default:
@@ -116,7 +116,7 @@ func (cp *CommandPlugin) createConnection(ctx context.Context, resource *mpi.Res
 	}
 }
 
-func (cp *CommandPlugin) processDataplaneHealth(ctx context.Context, msg *bus.Message) {
+func (cp *CommandPlugin) processDataPlaneHealth(ctx context.Context, msg *bus.Message) {
 	if instances, ok := msg.Data.([]*mpi.InstanceHealth); ok {
 		err := cp.commandService.UpdateDataPlaneHealth(ctx, instances)
 		correlationID := logger.GetCorrelationID(ctx)
@@ -158,7 +158,7 @@ func (cp *CommandPlugin) Subscriptions() []string {
 	return []string{
 		bus.ResourceUpdateTopic,
 		bus.InstanceHealthTopic,
-		bus.DataplaneHealthProcessTopic,
+		bus.DataPlaneHealthResponseTopic,
 		bus.DataPlaneResponseTopic,
 	}
 }
@@ -241,7 +241,7 @@ func (cp *CommandPlugin) handleConfigUploadRequest(newCtx context.Context, messa
 }
 
 func (cp *CommandPlugin) handleHealthRequest(newCtx context.Context) {
-	cp.messagePipe.Process(newCtx, &bus.Message{Topic: bus.DataplaneHealthTopic})
+	cp.messagePipe.Process(newCtx, &bus.Message{Topic: bus.DataPlaneHealthRequestTopic})
 }
 
 func (cp *CommandPlugin) createDataPlaneResponse(correlationID string, status mpi.CommandResponse_CommandStatus,

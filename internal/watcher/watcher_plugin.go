@@ -113,7 +113,7 @@ func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
 		w.handleConfigApplySuccess(ctx, msg)
 	case bus.RollbackCompleteTopic:
 		w.handleRollbackComplete(ctx, msg)
-	case bus.DataplaneHealthTopic:
+	case bus.DataPlaneHealthRequestTopic:
 		w.handleHealthRequest(ctx)
 	default:
 		slog.DebugContext(ctx, "Watcher plugin unknown topic", "topic", msg.Topic)
@@ -125,7 +125,7 @@ func (*Watcher) Subscriptions() []string {
 		bus.ConfigApplyRequestTopic,
 		bus.ConfigApplySuccessfulTopic,
 		bus.RollbackCompleteTopic,
-		bus.DataplaneHealthTopic,
+		bus.DataPlaneHealthRequestTopic,
 	}
 }
 
@@ -173,7 +173,7 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 
 func (w *Watcher) handleHealthRequest(ctx context.Context) {
 	w.messagePipe.Process(ctx, &bus.Message{
-		Topic: bus.DataplaneHealthProcessTopic, Data: w.healthWatcherService.GetInstancesHealth(),
+		Topic: bus.DataPlaneHealthResponseTopic, Data: w.healthWatcherService.GetInstancesHealth(),
 	})
 }
 
