@@ -211,7 +211,7 @@ func (cs *CommandService) CreateConnection(
 
 	// Only send a resource update message if instances other than the agent instance are found
 	if len(resource.GetInstances()) <= 1 {
-		return nil, errors.New("waiting for data plane instances to be found before sending create connection request")
+		slog.InfoContext(ctx, "No Data Plane Instance found")
 	}
 
 	request := &mpi.CreateConnectionRequest{
