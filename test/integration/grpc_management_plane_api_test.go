@@ -359,6 +359,11 @@ func TestGrpc_DataplaneHealthRequest(t *testing.T) {
 	defer teardownTest(t)
 
 	verifyConnection(t)
+
+	responses := getManagementPlaneResponses(t, 1)
+	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
+
 	assert.False(t, t.Failed())
 
 	request := `{
@@ -379,17 +384,10 @@ func TestGrpc_DataplaneHealthRequest(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 
-	responses := getManagementPlaneResponses(t, 2)
+	responses = getManagementPlaneResponses(t, 2)
 
-	allMessages := make([]string, 0, 2)
-	for _, response := range responses {
-		message := response.GetCommandResponse().GetMessage()
-		allMessages = append(allMessages, message)
-	}
-
-	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
-	assert.Contains(t, allMessages, "Successfully sent the health status update")
+	assert.Equal(t, "Successfully sent the health status update", responses[1].GetCommandResponse().GetMessage())
 }
 
 func performConfigApply(t *testing.T, nginxInstanceID string) {
