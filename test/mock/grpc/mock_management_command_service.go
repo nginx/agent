@@ -312,7 +312,7 @@ func (cs *CommandService) addResponseAndRequestEndpoints() {
 		}
 	})
 
-	cs.server.GET("/api/v1/responses/delete", func(c *gin.Context) {
+	cs.server.DELETE("/api/v1/responses", func(c *gin.Context) {
 		cs.dataPlaneResponsesMutex.Lock()
 		defer cs.dataPlaneResponsesMutex.Unlock()
 
