@@ -112,7 +112,7 @@ func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
 	case bus.ConfigApplySuccessfulTopic:
 		w.handleConfigApplySuccess(ctx, msg)
 	case bus.ConfigApplyCompleteTopic:
-		w.handleRollbackComplete(ctx, msg)
+		w.handleConfigApplyComplete(ctx, msg)
 	default:
 		slog.DebugContext(ctx, "Watcher plugin unknown topic", "topic", msg.Topic)
 	}
@@ -171,7 +171,7 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 	w.instanceWatcherService.ReparseConfig(ctx, instanceID)
 }
 
-func (w *Watcher) handleRollbackComplete(ctx context.Context, msg *bus.Message) {
+func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Message) {
 	response, ok := msg.Data.(*mpi.DataPlaneResponse)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.DataPlaneResponse", "payload",

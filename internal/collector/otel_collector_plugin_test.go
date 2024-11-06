@@ -237,6 +237,7 @@ func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
 		message    *bus.Message
 		processors config.Processors
 		name       string
+		headers    []config.Header
 	}{
 		{
 			name: "Test 1: Resource update adds resource id attribute",
@@ -253,6 +254,18 @@ func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
 							Value:  "1234",
 						},
 					},
+				},
+			},
+			headers: []config.Header{
+				{
+					Action: "insert",
+					Key:    "authorization",
+					Value:  "fake-authorization",
+				},
+				{
+					Action: "insert",
+					Key:    "uuid",
+					Value:  "1234",
 				},
 			},
 		},
@@ -288,6 +301,7 @@ func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
 			)
 
 			assert.Equal(tt, test.processors, collector.config.Collector.Processors)
+			assert.Equal(tt, test.headers, collector.config.Collector.Extensions.HeadersSetter.Headers)
 		})
 	}
 }

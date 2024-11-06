@@ -450,8 +450,8 @@ func clearManagementPlaneResponses(t *testing.T) {
 
 	client := resty.New()
 
-	url := fmt.Sprintf("http://%s/api/v1/responses/delete", mockManagementPlaneAPIAddress)
-	resp, err := client.R().EnableTrace().Get(url)
+	url := fmt.Sprintf("http://%s/api/v1/responses", mockManagementPlaneAPIAddress)
+	resp, err := client.R().EnableTrace().Delete(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())

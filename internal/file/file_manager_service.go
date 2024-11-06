@@ -426,7 +426,7 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles, modifiedFiles 
 		} else if file.GetFileMeta().GetHash() != currentFile.GetFileMeta().GetHash() {
 			fileContent, readErr := os.ReadFile(fileName)
 			if readErr != nil {
-				return nil, nil, fmt.Errorf("error generating hash for file %s, error: %w", fileName, readErr)
+				return nil, nil, fmt.Errorf("error reading file %s, error: %w", fileName, readErr)
 			}
 			file.Action = &updateAction
 			fileContents[fileName] = fileContent

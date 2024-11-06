@@ -24,8 +24,8 @@ var (
 )
 
 type HeadersCheck struct {
-	AuthenticatorID component.ID `mapstructure:"authenticator"`
 	logger          *zap.SugaredLogger
+	AuthenticatorID component.ID `mapstructure:"authenticator"`
 }
 
 type Option func(*HeadersCheck)
@@ -33,6 +33,7 @@ type Option func(*HeadersCheck)
 // Ensure that the authenticator implements the auth.Server interface.
 var _ auth.Server = (*HeadersCheck)(nil)
 
+// nolint: ireturn
 func NewFactory() extension.Factory {
 	return extension.NewFactory(
 		aType,
@@ -55,6 +56,7 @@ func (a *HeadersCheck) Authenticate(ctx context.Context, headers map[string][]st
 	return ctx, nil
 }
 
+// nolint: ireturn
 func CreateAuthExtensionFunc(
 	_ context.Context,
 	setting extension.Settings,

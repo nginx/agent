@@ -172,7 +172,7 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 				assert.True(t, ok)
 			case test.configApplyStatus == model.RollbackRequired:
 				assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
-				assert.Len(t, messages, 3)
+				assert.Len(t, messages, 2)
 				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
 				assert.Equal(
@@ -190,20 +190,11 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 				assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 					dataPlaneResponse.GetCommandResponse().GetStatus())
 			case test.configApplyStatus == model.NoChange:
-				assert.Len(t, messages, 2)
+				assert.Len(t, messages, 1)
 
-				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
+				response, ok := messages[0].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
-				assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
-				assert.Equal(
-					t,
-					mpi.CommandResponse_COMMAND_STATUS_OK,
-					dataPlaneResponse.GetCommandResponse().GetStatus(),
-				)
-
-				response, ok := messages[1].Data.(*mpi.DataPlaneResponse)
-				assert.True(t, ok)
-				assert.Equal(t, bus.ConfigApplySuccessfulTopic, messages[1].Topic)
+				assert.Equal(t, bus.ConfigApplySuccessfulTopic, messages[0].Topic)
 				assert.Equal(
 					t,
 					mpi.CommandResponse_COMMAND_STATUS_OK,
@@ -212,7 +203,7 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 			case test.message == nil:
 				assert.Empty(t, messages)
 			default:
-				assert.Len(t, messages, 2)
+				assert.Len(t, messages, 1)
 				dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
 				assert.Equal(
