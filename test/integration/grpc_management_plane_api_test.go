@@ -64,7 +64,7 @@ type (
 	}
 )
 
-func setupConnectionTest(tb testing.TB, expectNoErrorsInLogs bool) func(tb testing.TB) {
+func setupConnectionTest(tb testing.TB, expectNoErrorsInLogs, nginxless bool) func(tb testing.TB) {
 	tb.Helper()
 	ctx := context.Background()
 
@@ -99,23 +99,32 @@ func setupConnectionTest(tb testing.TB, expectNoErrorsInLogs bool) func(tb testi
 		mockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9093/tcp"][0].HostPort)
 		tb.Logf("Mock management API server running on %s", mockManagementPlaneAPIAddress)
 
-		nginxConfPath := "../config/nginx/nginx.conf"
-		if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
-			nginxConfPath = "../config/nginx/nginx-plus.conf"
-		}
-
 		params := &helpers.Parameters{
-			NginxConfigPath:      nginxConfPath,
 			NginxAgentConfigPath: "../config/agent/nginx-config-with-grpc-client.conf",
 			LogMessage:           "Agent connected",
 		}
+		if !nginxless {
+			nginxConfPath := "../config/nginx/nginx.conf"
+			if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+				nginxConfPath = "../config/nginx/nginx-plus.conf"
+			}
 
-		container = helpers.StartContainer(
-			ctx,
-			tb,
-			containerNetwork,
-			params,
-		)
+			params.NginxConfigPath = nginxConfPath
+
+			container = helpers.StartContainer(
+				ctx,
+				tb,
+				containerNetwork,
+				params,
+			)
+		} else {
+			container = helpers.StartNginxLessContainer(
+				ctx,
+				tb,
+				containerNetwork,
+				params,
+			)
+		}
 	} else {
 		requestChan := make(chan *mpi.ManagementPlaneRequest)
 		server := mockGrpc.NewCommandService(requestChan, os.TempDir())
@@ -166,19 +175,28 @@ func setupConnectionTest(tb testing.TB, expectNoErrorsInLogs bool) func(tb testi
 
 // Verify that the agent sends a connection request and an update data plane status request
 func TestGrpc_StartUp(t *testing.T) {
-	teardownTest := setupConnectionTest(t, true)
+	teardownTest := setupConnectionTest(t, true, false)
 	defer teardownTest(t)
 
-	verifyConnection(t)
+	verifyConnection(t, false)
 	assert.False(t, t.Failed())
 	verifyUpdateDataPlaneHealth(t)
 }
 
-func TestGrpc_ConfigUpload(t *testing.T) {
-	teardownTest := setupConnectionTest(t, true)
+// Verify that the agent sends a connection request to Management Plane even when Nginx is not present
+func TestNginxLessGrpc_Connection(t *testing.T) {
+	teardownTest := setupConnectionTest(t, true, true)
 	defer teardownTest(t)
 
-	nginxInstanceID := verifyConnection(t)
+	verifyConnection(t, true)
+	assert.False(t, t.Failed())
+}
+
+func TestGrpc_ConfigUpload(t *testing.T) {
+	teardownTest := setupConnectionTest(t, true, false)
+	defer teardownTest(t)
+
+	nginxInstanceID := verifyConnection(t, false)
 	assert.False(t, t.Failed())
 
 	request := fmt.Sprintf(`{
@@ -211,7 +229,7 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 
 func TestGrpc_ConfigApply(t *testing.T) {
 	ctx := context.Background()
-	teardownTest := setupConnectionTest(t, false)
+	teardownTest := setupConnectionTest(t, false, false)
 	defer teardownTest(t)
 
 	instanceType := "OSS"
@@ -219,7 +237,7 @@ func TestGrpc_ConfigApply(t *testing.T) {
 		instanceType = "PLUS"
 	}
 
-	nginxInstanceID := verifyConnection(t)
+	nginxInstanceID := verifyConnection(t, false)
 
 	responses := getManagementPlaneResponses(t, 1)
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
@@ -331,10 +349,10 @@ func TestGrpc_ConfigApply(t *testing.T) {
 
 func TestGrpc_FileWatcher(t *testing.T) {
 	ctx := context.Background()
-	teardownTest := setupConnectionTest(t, true)
+	teardownTest := setupConnectionTest(t, true, false)
 	defer teardownTest(t)
 
-	verifyConnection(t)
+	verifyConnection(t, false)
 	assert.False(t, t.Failed())
 
 	err := container.CopyFileToContainer(
@@ -455,7 +473,7 @@ func getManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int) []
 	return response
 }
 
-func verifyConnection(t *testing.T) string {
+func verifyConnection(t *testing.T, nginxLess bool) string {
 	t.Helper()
 
 	client := resty.New()
@@ -484,7 +502,11 @@ func verifyConnection(t *testing.T) string {
 	assert.NotNil(t, resource.GetResourceId())
 	assert.NotNil(t, resource.GetContainerInfo().GetContainerId())
 
-	assert.Len(t, resource.GetInstances(), 2)
+	if !nginxLess {
+		assert.Len(t, resource.GetInstances(), 2)
+	} else {
+		assert.Len(t, resource.GetInstances(), 1)
+	}
 
 	var nginxInstanceID string
 
