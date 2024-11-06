@@ -59,12 +59,13 @@ func TestFileManagerService_UpdateFile(t *testing.T) {
 		},
 	}
 
+	tempDir := os.TempDir()
+
 	for _, test := range tests {
 		ctx := context.Background()
 
-		tempDir := os.TempDir()
 		testFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
-		defer helpers.RemoveFileWithErrorCheck(t, testFile.Name())
+
 		var fileMeta *mpi.FileMeta
 		if test.isCert {
 			fileMeta = protos.CertMeta(testFile.Name(), "")
@@ -80,6 +81,8 @@ func TestFileManagerService_UpdateFile(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.Equal(t, 1, fakeFileServiceClient.UpdateFileCallCount())
+
+		helpers.RemoveFileWithErrorCheck(t, testFile.Name())
 	}
 }
 
