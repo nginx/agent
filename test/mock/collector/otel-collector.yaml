@@ -6,10 +6,10 @@ receivers:
         auth:
           authenticator: headers_check
 exporters:
-  debug:
-    verbosity: detailed
   prometheus:
     endpoint: "0.0.0.0:9775"
+    resource_to_telemetry_conversion:
+      enabled: true
     add_metric_suffixes: false
 
 processors:
@@ -22,11 +22,9 @@ service:
   telemetry:
     logs:
       level: "debug"
-      output_paths: ["/mock-collector/collector.log"]
-      error_output_paths: ["/mock-collector/collector.log"]
   extensions: [ headers_check ]
   pipelines:
     metrics:
       receivers: [otlp]
       processors: [batch]
-      exporters: [debug, prometheus]
+      exporters: [prometheus]

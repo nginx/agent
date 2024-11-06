@@ -10,6 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/nginx/agent/v3/internal/watcher/health"
 	"github.com/nginx/agent/v3/internal/watcher/instance"
 	"github.com/nginx/agent/v3/internal/watcher/watcherfakes"
@@ -130,9 +133,24 @@ func TestWatcher_Process_ConfigApplyRequestTopic(t *testing.T) {
 func TestWatcher_Process_ConfigApplySuccessfulTopic(t *testing.T) {
 	ctx := context.Background()
 	data := protos.GetNginxOssInstance([]string{})
+
+	response := &mpi.DataPlaneResponse{
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     uuid.NewString(),
+			CorrelationId: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
+			Timestamp:     timestamppb.Now(),
+		},
+		CommandResponse: &mpi.CommandResponse{
+			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+			Message: "Config apply successful",
+			Error:   "",
+		},
+		InstanceId: data.GetInstanceMeta().GetInstanceId(),
+	}
+
 	message := &bus.Message{
 		Topic: bus.ConfigApplySuccessfulTopic,
-		Data:  data.GetInstanceMeta().GetInstanceId(),
+		Data:  response,
 	}
 
 	fakeWatcherService := &watcherfakes.FakeInstanceWatcherServiceInterface{}
@@ -148,14 +166,29 @@ func TestWatcher_Process_ConfigApplySuccessfulTopic(t *testing.T) {
 
 func TestWatcher_Process_RollbackCompleteTopic(t *testing.T) {
 	ctx := context.Background()
-	instanceID := "123"
+	ossInstance := protos.GetNginxOssInstance([]string{})
+
+	response := &mpi.DataPlaneResponse{
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     uuid.NewString(),
+			CorrelationId: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
+			Timestamp:     timestamppb.Now(),
+		},
+		CommandResponse: &mpi.CommandResponse{
+			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+			Message: "Config apply successful",
+			Error:   "",
+		},
+		InstanceId: ossInstance.GetInstanceMeta().GetInstanceId(),
+	}
+
 	message := &bus.Message{
 		Topic: bus.RollbackCompleteTopic,
-		Data:  instanceID,
+		Data:  response,
 	}
 
 	watcherPlugin := NewWatcher(types.AgentConfig())
-	watcherPlugin.instancesWithConfigApplyInProgress = []string{instanceID}
+	watcherPlugin.instancesWithConfigApplyInProgress = []string{ossInstance.GetInstanceMeta().GetInstanceId()}
 
 	watcherPlugin.Process(ctx, message)
 

@@ -12,6 +12,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1/v1fakes"
 	"github.com/nginx/agent/v3/internal/bus"
@@ -425,4 +428,45 @@ func TestFilePlugin_Process_ConfigApplyFailedTopic(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFilePlugin_Process_ConfigApllyRollbackCompleteTopic(t *testing.T) {
+	ctx := context.Background()
+	instance := protos.GetNginxOssInstance([]string{})
+	mockFileManager := &filefakes.FakeFileManagerServiceInterface{}
+
+	messagePipe := bus.NewFakeMessagePipe()
+	agentConfig := types.AgentConfig()
+	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+	filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection)
+
+	err := filePlugin.Init(ctx, messagePipe)
+	require.NoError(t, err)
+	filePlugin.fileManagerService = mockFileManager
+
+	expectedResponse := &mpi.DataPlaneResponse{
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     uuid.NewString(),
+			CorrelationId: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
+			Timestamp:     timestamppb.Now(),
+		},
+		CommandResponse: &mpi.CommandResponse{
+			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+			Message: "Config apply successful",
+			Error:   "",
+		},
+		InstanceId: instance.GetInstanceMeta().GetInstanceId(),
+	}
+
+	filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigApplySuccessfulTopic, Data: expectedResponse})
+
+	messages := messagePipe.GetMessages()
+	response, ok := messages[0].Data.(*mpi.DataPlaneResponse)
+	assert.True(t, ok)
+
+	assert.Equal(t, expectedResponse.GetCommandResponse().GetStatus(), response.GetCommandResponse().GetStatus())
+	assert.Equal(t, expectedResponse.GetCommandResponse().GetMessage(), response.GetCommandResponse().GetMessage())
+	assert.Equal(t, expectedResponse.GetCommandResponse().GetError(), response.GetCommandResponse().GetError())
+	assert.Equal(t, expectedResponse.GetMessageMeta().GetCorrelationId(), response.GetMessageMeta().GetCorrelationId())
+	assert.Equal(t, expectedResponse.GetInstanceId(), response.GetInstanceId())
 }

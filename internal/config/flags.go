@@ -62,6 +62,7 @@ var (
 	CollectorExtensionsHealthTLSKeyKey          = pre(CollectorExtensionsHealthTLSKey) + "key"
 	CollectorExtensionsHealthTLSServerNameKey   = pre(CollectorExtensionsHealthTLSKey) + "server_name"
 	CollectorExtensionsHealthTLSSkipVerifyKey   = pre(CollectorExtensionsHealthTLSKey) + "skip_verify"
+	CollectorExtensionsHeadersSetterKey         = pre(CollectorExtensionsKey) + "headers_setter"
 	CollectorReceiversKey                       = pre(CollectorRootKey) + "receivers"
 	CollectorLogKey                             = pre(CollectorRootKey) + "log"
 	CollectorLogLevelKey                        = pre(CollectorLogKey) + "level"

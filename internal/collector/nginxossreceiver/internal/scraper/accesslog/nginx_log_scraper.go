@@ -42,6 +42,7 @@ type (
 		cfg     *config.Config
 		logger  *zap.Logger
 		mb      *metadata.MetricsBuilder
+		rb      *metadata.ResourceBuilder
 		pipe    *pipeline.DirectedPipeline
 		wg      *sync.WaitGroup
 		cancel  context.CancelFunc
@@ -70,7 +71,12 @@ func NewScraper(
 ) (*NginxLogScraper, error) {
 	logger := settings.Logger
 	logger.Info("Creating NGINX access log scraper")
+
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
+	rb := mb.NewResourceBuilder()
+	rb.SetInstanceID(settings.ID.Name())
+	rb.SetInstanceType("nginx")
+	logger.Debug("NGINX OSS resource info", zap.Any("resource", rb))
 
 	operators := make([]operator.Config, 0)
 
@@ -93,6 +99,7 @@ func NewScraper(
 		cfg:     cfg,
 		logger:  logger,
 		mb:      mb,
+		rb:      rb,
 		mut:     sync.Mutex{},
 		outChan: outChan,
 		pipe:    stanzaPipeline,
@@ -184,12 +191,15 @@ func (nls *NginxLogScraper) Scrape(_ context.Context) (pmetric.Metrics, error) {
 		metadata.AttributeNginxStatusRange5xx,
 	)
 
-	return nls.mb.Emit(), nil
+	return nls.mb.Emit(metadata.WithResource(nls.rb.Emit())), nil
 }
 
 func (nls *NginxLogScraper) Shutdown(_ context.Context) error {
 	nls.logger.Info("Shutting down NGINX access log scraper")
-	nls.cancel()
+
+	if nls.cancel != nil {
+		nls.cancel()
+	}
 	nls.wg.Wait()
 
 	return nls.pipe.Stop()
