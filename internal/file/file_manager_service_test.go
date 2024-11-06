@@ -46,15 +46,15 @@ func TestFileManagerService_UpdateOverview(t *testing.T) {
 
 func TestFileManagerService_UpdateFile(t *testing.T) {
 	tests := []struct {
-		name     string
-		isCert   bool
+		name   string
+		isCert bool
 	}{
 		{
-			name: "non-cert",
+			name:   "non-cert",
 			isCert: false,
 		},
 		{
-			name: "cert",
+			name:   "cert",
 			isCert: true,
 		},
 	}
@@ -66,7 +66,7 @@ func TestFileManagerService_UpdateFile(t *testing.T) {
 		testFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
 		defer helpers.RemoveFileWithErrorCheck(t, testFile.Name())
 		var fileMeta *mpi.FileMeta
-		if test.isCert {	
+		if test.isCert {
 			fileMeta = protos.CertMeta(testFile.Name(), "")
 		} else {
 			fileMeta = protos.FileMeta(testFile.Name(), "")
