@@ -21,6 +21,41 @@ func FileMeta(fileName, fileHash string) *mpi.FileMeta {
 	}
 }
 
+func CertMeta(fileName, fileHash string) *mpi.FileMeta {
+	lastModified, _ := CreateProtoTime("2024-01-09T13:22:21Z")
+
+	return &mpi.FileMeta{
+		Name:         fileName,
+		Hash:         fileHash,
+		ModifiedTime: lastModified,
+		Permissions:  "0600",
+		FileType:     &mpi.FileMeta_CertificateMeta{
+			CertificateMeta: &mpi.CertificateMeta{
+				Issuer: &mpi.X509Name{
+					Country:           []string{"IE"},
+					Organization:      []string{"F5"},
+					OrganizationalUnit: []string{"NGINX"},
+					Locality:          []string{"Cork"},
+					Province:          []string{"Munster"},
+					StreetAddress:     []string{"90 South Mall"},
+					PostalCode:        []string{"T12 KXV9"},
+					SerialNumber:      "12345-67890",
+					CommonName:        "Example Name",
+					Names: []*mpi.AttributeTypeAndValue{
+						{Type: "email", Value: "noreply@nginx.com"},
+						{Type: "phone", Value: "+353217355700"},
+					},
+					ExtraNames: []*mpi.AttributeTypeAndValue{
+						{Type: "customID", Value: "98765"},
+					},	
+				},
+				SignatureAlgorithm: mpi.SignatureAlgorithm_SIGNATURE_ALGORITHM_UNKNOWN,
+				PublicKeyAlgorithm: "",
+			},
+		},
+	}
+}
+
 func FileOverview(filePath, fileHash string, action *mpi.File_FileAction) *mpi.FileOverview {
 	return &mpi.FileOverview{
 		Files: []*mpi.File{
