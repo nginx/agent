@@ -32,11 +32,11 @@ const (
 
 type nginxPlusScraper struct {
 	plusClient *plusapi.NginxClient
-	settings   receiver.Settings
 	cfg        *Config
 	mb         *metadata.MetricsBuilder
 	rb         *metadata.ResourceBuilder
 	logger     *zap.Logger
+	settings   receiver.Settings
 }
 
 func newNginxPlusScraper(

@@ -25,11 +25,10 @@ import (
 type NginxStubStatusScraper struct {
 	httpClient *http.Client
 	client     *client.NginxClient
-
-	settings receiver.Settings
-	cfg      *config.Config
-	mb       *metadata.MetricsBuilder
-	rb       *metadata.ResourceBuilder
+	cfg        *config.Config
+	mb         *metadata.MetricsBuilder
+	rb         *metadata.ResourceBuilder
+	settings   receiver.Settings
 }
 
 var _ scraperhelper.Scraper = (*NginxStubStatusScraper)(nil)
