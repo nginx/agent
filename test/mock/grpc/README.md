@@ -6,7 +6,7 @@ make run-mock-management-grpc-server
 ```
 
 By default, this will start a HTTP and gRPC server on a random port. \
-It will also sabe config files to the `/tmp` by default. \
+It will also save config files to the `/tmp` by default. \
 To override these behaviours the following environment variables can be set to override them
 ```
 MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS=127.0.0.1:9091
