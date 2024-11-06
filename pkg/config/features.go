@@ -15,5 +15,4 @@ const (
 	FeatureMetricsInstance  = "metrics-instance"
 	FeatureFileWatcher      = "file-watcher"
 	FeatureAgentAPI         = "agent-api"
-	FeatureDataplaneHealth  = "dataplane-health"
 )
