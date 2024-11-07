@@ -19,7 +19,7 @@ const (
 	WriteConfigSuccessfulTopic   = "write-config-successful"
 	ConfigApplySuccessfulTopic   = "config-apply-successful"
 	ConfigApplyFailedTopic       = "config-apply-failed"
-	ConfigApplyCompleteTopic   = "config-apply-complete"
+	ConfigApplyCompleteTopic     = "config-apply-complete"
 	RollbackWriteTopic           = "rollback-write"
 	DataPlaneHealthRequestTopic  = "data-plane-health-request"
 	DataPlaneHealthResponseTopic = "data-plane-health-response"
