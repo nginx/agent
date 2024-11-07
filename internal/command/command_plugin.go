@@ -9,6 +9,10 @@ import (
 	"context"
 	"log/slog"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/google/uuid"
+
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
@@ -77,6 +81,8 @@ func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 		cp.processResourceUpdate(ctx, msg)
 	case bus.InstanceHealthTopic:
 		cp.processInstanceHealth(ctx, msg)
+	case bus.DataPlaneHealthResponseTopic:
+		cp.processDataPlaneHealth(ctx, msg)
 	case bus.DataPlaneResponseTopic:
 		cp.processDataPlaneResponse(ctx, msg)
 	default:
@@ -110,6 +116,26 @@ func (cp *CommandPlugin) createConnection(ctx context.Context, resource *mpi.Res
 	}
 }
 
+func (cp *CommandPlugin) processDataPlaneHealth(ctx context.Context, msg *bus.Message) {
+	if instances, ok := msg.Data.([]*mpi.InstanceHealth); ok {
+		err := cp.commandService.UpdateDataPlaneHealth(ctx, instances)
+		correlationID := logger.GetCorrelationID(ctx)
+		if err != nil {
+			slog.ErrorContext(ctx, "Unable to update data plane health", "error", err)
+			cp.messagePipe.Process(ctx, &bus.Message{
+				Topic: bus.DataPlaneResponseTopic,
+				Data: cp.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+					"Failed to send the health status update", err.Error()),
+			})
+		}
+		cp.messagePipe.Process(ctx, &bus.Message{
+			Topic: bus.DataPlaneResponseTopic,
+			Data: cp.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
+				"Successfully sent the health status update", ""),
+		})
+	}
+}
+
 func (cp *CommandPlugin) processInstanceHealth(ctx context.Context, msg *bus.Message) {
 	if instances, ok := msg.Data.([]*mpi.InstanceHealth); ok {
 		err := cp.commandService.UpdateDataPlaneHealth(ctx, instances)
@@ -132,6 +158,7 @@ func (cp *CommandPlugin) Subscriptions() []string {
 	return []string{
 		bus.ResourceUpdateTopic,
 		bus.InstanceHealthTopic,
+		bus.DataPlaneHealthResponseTopic,
 		bus.DataPlaneResponseTopic,
 	}
 }
@@ -154,6 +181,8 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 				cp.handleConfigUploadRequest(newCtx, message)
 			case *mpi.ManagementPlaneRequest_ConfigApplyRequest:
 				cp.handleConfigApplyRequest(newCtx, message)
+			case *mpi.ManagementPlaneRequest_HealthRequest:
+				cp.handleHealthRequest(newCtx)
 			default:
 				slog.DebugContext(newCtx, "Management plane request not implemented yet")
 			}
@@ -208,5 +237,26 @@ func (cp *CommandPlugin) handleConfigUploadRequest(newCtx context.Context, messa
 		if err != nil {
 			slog.ErrorContext(newCtx, "Unable to send data plane response", "error", err)
 		}
+	}
+}
+
+func (cp *CommandPlugin) handleHealthRequest(newCtx context.Context) {
+	cp.messagePipe.Process(newCtx, &bus.Message{Topic: bus.DataPlaneHealthRequestTopic})
+}
+
+func (cp *CommandPlugin) createDataPlaneResponse(correlationID string, status mpi.CommandResponse_CommandStatus,
+	message, err string,
+) *mpi.DataPlaneResponse {
+	return &mpi.DataPlaneResponse{
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     uuid.NewString(),
+			CorrelationId: correlationID,
+			Timestamp:     timestamppb.Now(),
+		},
+		CommandResponse: &mpi.CommandResponse{
+			Status:  status,
+			Message: message,
+			Error:   err,
+		},
 	}
 }

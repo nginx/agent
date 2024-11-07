@@ -208,7 +208,7 @@ func TestHealthWatcherService_compareCache(t *testing.T) {
 			},
 		},
 		{
-			name: "Test 1: No change to instance list",
+			name: "Test 2: No change to instance list",
 			expectedHealth: []*mpi.InstanceHealth{
 				protos.GetHealthyInstanceHealth(),
 			},
@@ -234,4 +234,28 @@ func TestHealthWatcherService_compareCache(t *testing.T) {
 			assert.Equal(t, test.expectedCache, healthWatcher.cache)
 		})
 	}
+}
+
+func TestHealthWatcherService_GetInstancesHealth(t *testing.T) {
+	ossInstance := protos.GetNginxOssInstance([]string{})
+	plusInstance := protos.GetNginxPlusInstance([]string{})
+	ossInstanceHealth := protos.GetHealthyInstanceHealth()
+	plusInstanceHealth := protos.GetUnhealthyInstanceHealth()
+
+	healthCache := map[string]*mpi.InstanceHealth{
+		ossInstance.GetInstanceMeta().GetInstanceId():  ossInstanceHealth,
+		plusInstance.GetInstanceMeta().GetInstanceId(): plusInstanceHealth,
+	}
+
+	expectedInstancesHealth := []*mpi.InstanceHealth{
+		ossInstanceHealth,
+		plusInstanceHealth,
+	}
+	agentConfig := types.AgentConfig()
+	healthWatcher := NewHealthWatcherService(agentConfig)
+	healthWatcher.cache = healthCache
+
+	result := healthWatcher.GetInstancesHealth()
+
+	assert.ElementsMatch(t, expectedInstancesHealth, result)
 }
