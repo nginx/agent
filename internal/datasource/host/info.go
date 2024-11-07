@@ -74,7 +74,7 @@ type (
 	InfoInterface interface {
 		IsContainer() bool
 		ResourceID(ctx context.Context) string
-		ContainerInfo() *v1.Resource_ContainerInfo
+		ContainerInfo(ctx context.Context) *v1.Resource_ContainerInfo
 		HostInfo(ctx context.Context) *v1.Resource_HostInfo
 	}
 
@@ -134,10 +134,16 @@ func (i *Info) ResourceID(ctx context.Context) string {
 	return i.getHostID(ctx)
 }
 
-func (i *Info) ContainerInfo() *v1.Resource_ContainerInfo {
+func (i *Info) ContainerInfo(ctx context.Context) *v1.Resource_ContainerInfo {
+	hostname, err := i.exec.Hostname()
+	if err != nil {
+		slog.WarnContext(ctx, "Unable to get hostname", "error", err)
+	}
+	
 	return &v1.Resource_ContainerInfo{
 		ContainerInfo: &v1.ContainerInfo{
 			ContainerId: i.getContainerID(),
+			Hostname:    hostname,
 		},
 	}
 }
