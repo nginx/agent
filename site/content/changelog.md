@@ -10,6 +10,50 @@ docs: "DOCS-1093"
 See the list of supported Operating Systems and architectures in the [Technical Specifications]({{< relref "./technical-specifications.md" >}}).
 
 ---
+## Release [v2.39.0](https://github.com/nginx/agent/releases/tag/v2.39.0)
+
+### 🌟 Highlights
+
+- Remove official docker images & move testing images to test folder by [@aphralG](https://github.com/aphralG) in [#838](https://github.com/nginx/agent/pull/838)
+
+### 🐛 Bug Fixes
+
+In this release we have resolved the following issues:
+
+- Race conditions fixes by [@oliveromahony](https://github.com/oliveromahony) in [#810](https://github.com/nginx/agent/pull/810)
+- fix r30 pipeline failures by [@oliveromahony](https://github.com/oliveromahony) in [#844](https://github.com/nginx/agent/pull/844)
+- Fixed make target pointing at wrong Dockerfile and renamed others to be consistent by [@oliveromahony](https://github.com/oliveromahony) in [#857](https://github.com/nginx/agent/pull/857)
+- Fix broken links causing deployment failures by [@ADubhlaoich](https://github.com/ADubhlaoich) in [#863](https://github.com/nginx/agent/pull/863)
+- Fix NGINX OSS integration tests by [@dhurley](https://github.com/dhurley) in [#888](https://github.com/nginx/agent/pull/888)
+- Fix docs docker failing without git context by [@nginx-jack](https://github.com/nginx-jack) in [#892](https://github.com/nginx/agent/pull/892)
+
+### 📝 Documentation
+
+We have made the following updates to the documentation:
+
+- Add automatic changelog generation in release workflow by [@spencerugbo](https://github.com/spencerugbo) in [#784](https://github.com/nginx/agent/pull/784)
+- Add CLA bot workflow by [@lucacome](https://github.com/lucacome) in [#828](https://github.com/nginx/agent/pull/828)
+- Refactor docker images by [@nginx-seanmoloney](https://github.com/nginx-seanmoloney) in [#841](https://github.com/nginx/agent/pull/841)
+- Docs: Add hugo version check and theme update to Makefile by [@nginx-jack](https://github.com/nginx-jack) in [#869](https://github.com/nginx/agent/pull/869)
+- Change casing of docs makefile to Makefile by [@nginx-jack](https://github.com/nginx-jack) in [#884](https://github.com/nginx/agent/pull/884)
+- docs: enableGitInfo config and docs-action bump by [@nginx-jack](https://github.com/nginx-jack) in [#886](https://github.com/nginx/agent/pull/886)
+- Change go version to latest go 1.23.2 by [@oliveromahony](https://github.com/oliveromahony) in [#889](https://github.com/nginx/agent/pull/889)
+- Remove link to github dockerfiles by [@nginx-seanmoloney](https://github.com/nginx-seanmoloney) in [#897](https://github.com/nginx/agent/pull/897)
+- Docs: Update link to 3rd party site by [@nginx-aoife](https://github.com/nginx-aoife) in [#898](https://github.com/nginx/agent/pull/898)
+- Update the changelog for v2.38 by [@ADubhlaoich](https://github.com/ADubhlaoich) in [#901](https://github.com/nginx/agent/pull/901)
+
+### 🔨 Maintenance
+
+We have made the following maintenance-related minor changes:
+
+- Set log level to debug for inetegration tests by [@aphralG](https://github.com/aphralG) in [#826](https://github.com/nginx/agent/pull/826)
+- updated runc dependency highlighted in security scan scan by [@oliveromahony](https://github.com/oliveromahony) in [#842](https://github.com/nginx/agent/pull/842)
+- Update CODEOWNERS by [@oCHRISo](https://github.com/oCHRISo) in [#851](https://github.com/nginx/agent/pull/851)
+- Check version command output by [@aphralG](https://github.com/aphralG) in [#853](https://github.com/nginx/agent/pull/853)
+- Bump NGINX plus go client version from v1 to v2 by [@dhurley](https://github.com/dhurley) in [#879](https://github.com/nginx/agent/pull/879)
+- Allowlist Error Messages by [@aphralG](https://github.com/aphralG) in [#907](https://github.com/nginx/agent/pull/907)
+
+---
 ## Release [v2.38.0](https://github.com/nginx/agent/releases/tag/v2.38.0)
 
 ### 🐛 Bug Fixes
@@ -235,31 +279,4 @@ We have made the following maintenance-related minor changes:
 - Bump the version of protobuf by [@oliveromahony](https://github.com/oliveromahony) in [#602](https://github.com/nginx/agent/pull/602)
 - replace duplicate isContainer call by [@oliveromahony](https://github.com/oliveromahony) in [#596](https://github.com/nginx/agent/pull/596)
 - Add logging to NGINX API http requests by [@dhurley](https://github.com/dhurley) in [#605](https://github.com/nginx/agent/pull/605)
-
----
-## Release [v2.32.2](https://github.com/nginx/agent/releases/tag/v2.32.2)
-
-### 🌟 Highlights
-
-- This release fixes an issue where certain container runtimes were reporting as bare-metal hosts.
-
-### 🚀 Features
-
-This release introduces the following new features:
-
-- feat: improve docker docs by [@Jcahilltorre](https://github.com/Jcahilltorre) in [#587](https://github.com/nginx/agent/pull/587)
-
-### 🐛 Bug Fixes
-
-In this release we have resolved the following issues:
-
-- Fix install-tools by [@Dean-Coakley](https://github.com/Dean-Coakley) in [#581](https://github.com/nginx/agent/pull/581)
-
-### 📝 Documentation
-
-We have made the following updates to the documentation:
-
-- change log updated for last release by [@oliveromahony](https://github.com/oliveromahony) in [#583](https://github.com/nginx/agent/pull/583)
-- Restore agent container information from nms docs  by [@jputrino](https://github.com/jputrino) in [#584](https://github.com/nginx/agent/pull/584)
-- fix: add additional container checks during instance registration by [@mattdesmarais](https://github.com/mattdesmarais) in [#592](https://github.com/nginx/agent/pull/592)
 
