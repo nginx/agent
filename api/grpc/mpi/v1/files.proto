@@ -245,7 +245,7 @@ enum SignatureAlgorithm {
 message X509Name {
     // Country name (C): Two-letter country code as per ISO 3166.
     // Must be exactly 2 characters.
-    repeated string country = 1 [(buf.validate.field).repeated.items.string = {min_len: 2, max_len: 2}];
+    repeated string country = 1 [(buf.validate.field).string = {min_len: 2, max_len: 2}];
     
     // Organization name (O): Name of the organization.
     repeated string organization = 2 [(buf.validate.field).string.min_len = 1];
