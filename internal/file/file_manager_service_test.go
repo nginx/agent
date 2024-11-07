@@ -89,14 +89,13 @@ func TestFileManagerService_UpdateFile(t *testing.T) {
 func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	ctx := context.Background()
 	tempDir := t.TempDir()
-	addAction := mpi.File_FILE_ACTION_ADD
 
 	filePath := filepath.Join(tempDir, "nginx.conf")
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 	fileHash := files.GenerateHash(fileContent)
 	defer helpers.RemoveFileWithErrorCheck(t, filePath)
 
-	overview := protos.FileOverview(filePath, fileHash, &addAction)
+	overview := protos.FileOverview(filePath, fileHash)
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fakeFileServiceClient.GetOverviewReturns(&mpi.GetOverviewResponse{
@@ -118,23 +117,35 @@ func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	data, readErr := os.ReadFile(filePath)
 	require.NoError(t, readErr)
 	assert.Equal(t, fileContent, data)
-	assert.Equal(t, fileManagerService.filesCache[filePath], overview.GetFiles()[0])
+	assert.Equal(t, fileManagerService.fileActions[filePath], overview.GetFiles()[0])
 }
 
 func TestFileManagerService_ConfigApply_Update(t *testing.T) {
 	ctx := context.Background()
 	tempDir := t.TempDir()
-	updateAction := mpi.File_FILE_ACTION_UPDATE
 
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 	previousFileContent := []byte("some test data")
+	previousFileHash := files.GenerateHash(previousFileContent)
 	fileHash := files.GenerateHash(fileContent)
 	tempFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
 	_, writeErr := tempFile.Write(previousFileContent)
 	require.NoError(t, writeErr)
 	defer helpers.RemoveFileWithErrorCheck(t, tempFile.Name())
 
-	overview := protos.FileOverview(tempFile.Name(), fileHash, &updateAction)
+	filesOnDisk := map[string]*mpi.File{
+		tempFile.Name(): {
+			FileMeta: &mpi.FileMeta{
+				Name:         tempFile.Name(),
+				Hash:         previousFileHash,
+				ModifiedTime: timestamppb.Now(),
+				Permissions:  "0640",
+				Size:         0,
+			},
+		},
+	}
+
+	overview := protos.FileOverview(tempFile.Name(), fileHash)
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fakeFileServiceClient.GetOverviewReturns(&mpi.GetOverviewResponse{
@@ -148,6 +159,7 @@ func TestFileManagerService_ConfigApply_Update(t *testing.T) {
 	agentConfig := types.AgentConfig()
 	agentConfig.AllowedDirectories = []string{tempDir}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig)
+	fileManagerService.UpdateCurrentFilesOnDisk(filesOnDisk)
 
 	request := protos.CreateConfigApplyRequest(overview)
 
@@ -157,34 +169,56 @@ func TestFileManagerService_ConfigApply_Update(t *testing.T) {
 	data, readErr := os.ReadFile(tempFile.Name())
 	require.NoError(t, readErr)
 	assert.Equal(t, fileContent, data)
-	assert.Equal(t, fileManagerService.fileContentsCache[tempFile.Name()], previousFileContent)
-	assert.Equal(t, fileManagerService.filesCache[tempFile.Name()], overview.GetFiles()[0])
+	assert.Equal(t, fileManagerService.rollbackFileContents[tempFile.Name()], previousFileContent)
+	assert.Equal(t, fileManagerService.fileActions[tempFile.Name()], overview.GetFiles()[0])
 }
 
 func TestFileManagerService_ConfigApply_Delete(t *testing.T) {
 	ctx := context.Background()
 	tempDir := t.TempDir()
-	deleteAction := mpi.File_FILE_ACTION_DELETE
 
 	fileContent := []byte("location /test {\n return 200 \"Test location\\n\";\n}")
 	tempFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
 	_, writeErr := tempFile.Write(fileContent)
 	require.NoError(t, writeErr)
 
-	overview := protos.FileOverview(tempFile.Name(), files.GenerateHash(fileContent), &deleteAction)
+	tempFile2 := helpers.CreateFileWithErrorCheck(t, tempDir, "test.conf")
+	overview := protos.FileOverview(tempFile2.Name(), files.GenerateHash(fileContent))
+
+	filesOnDisk := map[string]*mpi.File{
+		tempFile.Name(): {
+			FileMeta: &mpi.FileMeta{
+				Name:         tempFile.Name(),
+				Hash:         files.GenerateHash(fileContent),
+				ModifiedTime: timestamppb.Now(),
+				Permissions:  "0640",
+				Size:         0,
+			},
+		},
+	}
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	agentConfig := types.AgentConfig()
 	agentConfig.AllowedDirectories = []string{tempDir}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig)
+	fileManagerService.UpdateCurrentFilesOnDisk(filesOnDisk)
 
 	request := protos.CreateConfigApplyRequest(overview)
+
+	fakeFileServiceClient.GetOverviewReturns(&mpi.GetOverviewResponse{
+		Overview: overview,
+	}, nil)
+	fakeFileServiceClient.GetFileReturns(&mpi.GetFileResponse{
+		Contents: &mpi.FileContents{
+			Contents: fileContent,
+		},
+	}, nil)
 
 	writeStatus, err := fileManagerService.ConfigApply(ctx, request)
 	require.NoError(t, err)
 	assert.NoFileExists(t, tempFile.Name())
-	assert.Equal(t, fileManagerService.fileContentsCache[tempFile.Name()], fileContent)
-	assert.Equal(t, fileManagerService.filesCache[tempFile.Name()], overview.GetFiles()[0])
+	assert.Equal(t, fileManagerService.rollbackFileContents[tempFile.Name()], fileContent)
+	assert.Equal(t, fileManagerService.fileActions[tempFile.Name()], filesOnDisk[tempFile.Name()])
 	assert.Equal(t, model.OK, writeStatus)
 }
 
@@ -244,15 +278,15 @@ func TestFileManagerService_ClearCache(t *testing.T) {
 		"file/path/test.conf": []byte("some test data"),
 	}
 
-	fileManagerService.filesCache = filesCache
-	fileManagerService.fileContentsCache = contentsCache
-	assert.NotEmpty(t, fileManagerService.filesCache)
-	assert.NotEmpty(t, fileManagerService.fileContentsCache)
+	fileManagerService.fileActions = filesCache
+	fileManagerService.rollbackFileContents = contentsCache
+	assert.NotEmpty(t, fileManagerService.fileActions)
+	assert.NotEmpty(t, fileManagerService.rollbackFileContents)
 
 	fileManagerService.ClearCache()
 
-	assert.Empty(t, fileManagerService.filesCache)
-	assert.Empty(t, fileManagerService.fileContentsCache)
+	assert.Empty(t, fileManagerService.fileActions)
+	assert.Empty(t, fileManagerService.rollbackFileContents)
 }
 
 func TestFileManagerService_Rollback(t *testing.T) {
@@ -329,8 +363,8 @@ func TestFileManagerService_Rollback(t *testing.T) {
 	instanceID := protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
-	fileManagerService.fileContentsCache = fileContentCache
-	fileManagerService.filesCache = filesCache
+	fileManagerService.rollbackFileContents = fileContentCache
+	fileManagerService.fileActions = filesCache
 
 	err := fileManagerService.Rollback(ctx, instanceID)
 	require.NoError(t, err)
@@ -347,6 +381,120 @@ func TestFileManagerService_Rollback(t *testing.T) {
 
 	defer helpers.RemoveFileWithErrorCheck(t, updateFile.Name())
 	defer helpers.RemoveFileWithErrorCheck(t, deleteFilePath)
+}
+
+func TestFileManagerService_DetermineFileActions(t *testing.T) {
+	// Go doesn't allow address of numeric constant
+	addAction := mpi.File_FILE_ACTION_ADD
+	updateAction := mpi.File_FILE_ACTION_UPDATE
+	deleteAction := mpi.File_FILE_ACTION_DELETE
+	// unchangedAction := mpi.File_FILE_ACTION_UNCHANGED
+
+	tempDir := os.TempDir()
+
+	deleteTestFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx_delete.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, deleteTestFile.Name())
+	fileContent, readErr := os.ReadFile("../../test/config/nginx/nginx.conf")
+	require.NoError(t, readErr)
+	err := os.WriteFile(deleteTestFile.Name(), fileContent, 0o600)
+	require.NoError(t, err)
+
+	updateTestFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx_update.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, updateTestFile.Name())
+	updatedFileContent := []byte("test update file")
+	updateErr := os.WriteFile(updateTestFile.Name(), updatedFileContent, 0o600)
+	require.NoError(t, updateErr)
+
+	addTestFileName := tempDir + "/nginx_add.conf"
+
+	tests := []struct {
+		expectedError   error
+		modifiedFiles   map[string]*mpi.File
+		currentFiles    map[string]*mpi.File
+		expectedCache   map[string]*mpi.File
+		expectedContent map[string][]byte
+		name            string
+	}{
+		{
+			name: "Test 1: Add, Update & Delete Files",
+			modifiedFiles: map[string]*mpi.File{
+				addTestFileName: {
+					FileMeta: protos.FileMeta(addTestFileName, files.GenerateHash(fileContent)),
+				},
+				updateTestFile.Name(): {
+					FileMeta: protos.FileMeta(updateTestFile.Name(), files.GenerateHash(updatedFileContent)),
+				},
+			},
+			currentFiles: map[string]*mpi.File{
+				deleteTestFile.Name(): {
+					FileMeta: protos.FileMeta(deleteTestFile.Name(), files.GenerateHash(fileContent)),
+				},
+				updateTestFile.Name(): {
+					FileMeta: protos.FileMeta(updateTestFile.Name(), files.GenerateHash(fileContent)),
+				},
+			},
+			expectedCache: map[string]*mpi.File{
+				deleteTestFile.Name(): {
+					FileMeta: protos.FileMeta(deleteTestFile.Name(), files.GenerateHash(fileContent)),
+					Action:   &deleteAction,
+				},
+				updateTestFile.Name(): {
+					FileMeta: protos.FileMeta(updateTestFile.Name(), files.GenerateHash(updatedFileContent)),
+					Action:   &updateAction,
+				},
+				addTestFileName: {
+					FileMeta: protos.FileMeta(addTestFileName, files.GenerateHash(fileContent)),
+					Action:   &addAction,
+				},
+			},
+			expectedContent: map[string][]byte{
+				deleteTestFile.Name(): fileContent,
+				updateTestFile.Name(): updatedFileContent,
+			},
+			expectedError: nil,
+		},
+		{
+			name: "Test 2: Files same as on disk",
+			modifiedFiles: map[string]*mpi.File{
+				addTestFileName: {
+					FileMeta: protos.FileMeta(addTestFileName, files.GenerateHash(fileContent)),
+				},
+				updateTestFile.Name(): {
+					FileMeta: protos.FileMeta(updateTestFile.Name(), files.GenerateHash(fileContent)),
+				},
+				deleteTestFile.Name(): {
+					FileMeta: protos.FileMeta(deleteTestFile.Name(), files.GenerateHash(fileContent)),
+				},
+			},
+			currentFiles: map[string]*mpi.File{
+				deleteTestFile.Name(): {
+					FileMeta: protos.FileMeta(deleteTestFile.Name(), files.GenerateHash(fileContent)),
+				},
+				updateTestFile.Name(): {
+					FileMeta: protos.FileMeta(updateTestFile.Name(), files.GenerateHash(fileContent)),
+				},
+				addTestFileName: {
+					FileMeta: protos.FileMeta(addTestFileName, files.GenerateHash(fileContent)),
+				},
+			},
+			expectedCache:   make(map[string]*mpi.File),
+			expectedContent: make(map[string][]byte),
+			expectedError:   nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+			fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
+			diff, contents, fileActionErr := fileManagerService.DetermineFileActions(test.currentFiles,
+				test.modifiedFiles)
+
+			require.NoError(tt, fileActionErr)
+			assert.Equal(tt, test.expectedContent, contents)
+			assert.Equal(tt, test.expectedCache, diff)
+		})
+	}
 }
 
 func TestFileManagerService_fileActions(t *testing.T) {
@@ -424,7 +572,7 @@ func TestFileManagerService_fileActions(t *testing.T) {
 	}, nil)
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
 
-	fileManagerService.filesCache = filesCache
+	fileManagerService.fileActions = filesCache
 
 	actionErr := fileManagerService.executeFileActions(ctx)
 	require.NoError(t, actionErr)

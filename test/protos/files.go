@@ -56,7 +56,7 @@ func CertMeta(fileName, fileHash string) *mpi.FileMeta {
 	}
 }
 
-func FileOverview(filePath, fileHash string, action *mpi.File_FileAction) *mpi.FileOverview {
+func FileOverview(filePath, fileHash string) *mpi.FileOverview {
 	return &mpi.FileOverview{
 		Files: []*mpi.File{
 			{
@@ -67,7 +67,6 @@ func FileOverview(filePath, fileHash string, action *mpi.File_FileAction) *mpi.F
 					Permissions:  "0640",
 					Size:         0,
 				},
-				Action: action,
 			},
 		},
 		ConfigVersion: CreateConfigVersion(),

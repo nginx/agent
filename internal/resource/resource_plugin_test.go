@@ -201,7 +201,7 @@ func TestResource_Process_Rollback(t *testing.T) {
 				},
 			},
 			rollbackErr: nil,
-			topic:       []string{bus.RollbackCompleteTopic},
+			topic:       []string{bus.ConfigApplyCompleteTopic},
 		},
 		{
 			name: "Test 2: Rollback Write Topic - Fail Status",
@@ -214,7 +214,7 @@ func TestResource_Process_Rollback(t *testing.T) {
 				},
 			},
 			rollbackErr: errors.New("error reloading"),
-			topic:       []string{bus.RollbackCompleteTopic, bus.DataPlaneResponseTopic},
+			topic:       []string{bus.ConfigApplyCompleteTopic, bus.DataPlaneResponseTopic},
 		},
 	}
 
@@ -235,7 +235,7 @@ func TestResource_Process_Rollback(t *testing.T) {
 			resourcePlugin.Process(ctx, test.message)
 
 			sort.Slice(messagePipe.GetMessages(), func(i, j int) bool {
-				return messagePipe.GetMessages()[i].Topic > messagePipe.GetMessages()[j].Topic
+				return messagePipe.GetMessages()[i].Topic < messagePipe.GetMessages()[j].Topic
 			})
 
 			assert.Equal(tt, len(test.topic), len(messagePipe.GetMessages()))

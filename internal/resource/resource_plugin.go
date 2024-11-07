@@ -169,7 +169,7 @@ func (r *Resource) handleRollbackWrite(ctx context.Context, msg *bus.Message) {
 			data.InstanceID, data.Error.Error())
 
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.RollbackCompleteTopic, Data: applyResponse})
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: applyResponse})
 
 		return
 	}
@@ -178,7 +178,7 @@ func (r *Resource) handleRollbackWrite(ctx context.Context, msg *bus.Message) {
 		mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 		"Config apply failed, rollback successful", data.InstanceID, data.Error.Error())
 
-	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.RollbackCompleteTopic, Data: applyResponse})
+	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: applyResponse})
 }
 
 func (*Resource) createDataPlaneResponse(correlationID string, status mpi.CommandResponse_CommandStatus,
