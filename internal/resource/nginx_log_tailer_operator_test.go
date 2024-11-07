@@ -64,6 +64,32 @@ func TestLogOperator_Tail(t *testing.T) {
 			err:              nil,
 			expected:         errors.Join(fmt.Errorf("%s", warningLogLine)),
 		},
+		{
+			name:      "Test 4: ignore error log: usage report ",
+			out:       bytes.NewBufferString(""),
+			errorLogs: errorLogFile.Name(),
+			errorLogContents: "2025/06/25 15:08:04 [error] 123456#123456: certificate verify error: " +
+				"(10:certificate has expired) during usage report",
+			err:      nil,
+			expected: nil,
+		},
+		{
+			name:      "Test 5: ignore error log: license expired ",
+			out:       bytes.NewBufferString(""),
+			errorLogs: errorLogFile.Name(),
+			errorLogContents: "2025/06/25 15:07:24 [alert] 123456#123456: license expired; the grace period " +
+				"will end in 71 days",
+			err:      nil,
+			expected: nil,
+		},
+		{
+			name:             "Test 6: ignore error log: license expired ",
+			out:              bytes.NewBufferString(""),
+			errorLogs:        errorLogFile.Name(),
+			errorLogContents: "2024/12/25 15:00:04 [error] 123456#123456: server returned 400 during usage report",
+			err:              nil,
+			expected:         nil,
+		},
 	}
 
 	for _, test := range tests {
