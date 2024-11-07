@@ -111,8 +111,8 @@ func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
 		w.handleConfigApplyRequest(ctx, msg)
 	case bus.ConfigApplySuccessfulTopic:
 		w.handleConfigApplySuccess(ctx, msg)
-	case bus.RollbackCompleteTopic:
-		w.handleRollbackComplete(ctx, msg)
+	case bus.ConfigApplyCompleteTopic:
+		w.handleConfigApplyComplete(ctx, msg)
 	case bus.DataPlaneHealthRequestTopic:
 		w.handleHealthRequest(ctx)
 	default:
@@ -124,7 +124,7 @@ func (*Watcher) Subscriptions() []string {
 	return []string{
 		bus.ConfigApplyRequestTopic,
 		bus.ConfigApplySuccessfulTopic,
-		bus.RollbackCompleteTopic,
+		bus.ConfigApplyCompleteTopic,
 		bus.DataPlaneHealthRequestTopic,
 	}
 }
@@ -180,7 +180,7 @@ func (w *Watcher) handleHealthRequest(ctx context.Context) {
 	})
 }
 
-func (w *Watcher) handleRollbackComplete(ctx context.Context, msg *bus.Message) {
+func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Message) {
 	response, ok := msg.Data.(*mpi.DataPlaneResponse)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.DataPlaneResponse", "payload",
