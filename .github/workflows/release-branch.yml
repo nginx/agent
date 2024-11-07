@@ -185,6 +185,8 @@ jobs:
           az logout
         if: always()
       - name: Upload Release Assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # clobber overwrites existing assets of the same name
         run: |
           gh release upload --clobber v${{env.VERSION}} \
