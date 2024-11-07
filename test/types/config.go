@@ -55,6 +55,7 @@ func AgentConfig() *config.Config {
 							Host: "127.0.0.1",
 							Port: randomPort1,
 						},
+						Compression: "none",
 					},
 				},
 			},
