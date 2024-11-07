@@ -231,6 +231,21 @@ func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
 	conf.Collector.Processors.Batch = nil
 	conf.Collector.Processors.Attribute = nil
 	conf.Collector.Processors.Resource = nil
+	conf.Collector.Exporters.OtlpExporters = nil
+	conf.Collector.Exporters.PrometheusExporter = &config.PrometheusExporter{
+		Server: &config.ServerConfig{
+			Host: "",
+			Port: 0,
+			Type: 0,
+		},
+		TLS: &config.TLSConfig{
+			Cert:       "",
+			Key:        "",
+			Ca:         "",
+			ServerName: "",
+			SkipVerify: false,
+		},
+	}
 
 	tests := []struct {
 		message    *bus.Message
@@ -317,6 +332,21 @@ func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
 	conf.Collector.Processors.Batch = nil
 	conf.Collector.Processors.Attribute = nil
 	conf.Collector.Processors.Resource = nil
+	conf.Collector.Exporters.OtlpExporters = nil
+	conf.Collector.Exporters.PrometheusExporter = &config.PrometheusExporter{
+		Server: &config.ServerConfig{
+			Host: "",
+			Port: 0,
+			Type: 0,
+		},
+		TLS: &config.TLSConfig{
+			Cert:       "",
+			Key:        "",
+			Ca:         "",
+			ServerName: "",
+			SkipVerify: false,
+		},
+	}
 
 	tests := []struct {
 		message    *bus.Message
