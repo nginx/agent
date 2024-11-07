@@ -169,10 +169,10 @@ func StartNginxLessContainer(
 	packageName := Env(tb, "PACKAGE_NAME")
 	packageRepo := Env(tb, "PACKAGES_REPO")
 	baseImage := Env(tb, "BASE_IMAGE")
+	buildTarget := Env(tb, "BUILD_TARGET")
 	osRelease := Env(tb, "OS_RELEASE")
 	osVersion := Env(tb, "OS_VERSION")
 	dockerfilePath := Env(tb, "DOCKERFILE_PATH")
-	containerRegistry := Env(tb, "CONTAINER_NGINX_IMAGE_REGISTRY")
 	tag := Env(tb, "TAG")
 	imagePath := Env(tb, "IMAGE_PATH")
 
@@ -183,18 +183,17 @@ func StartNginxLessContainer(
 			KeepImage:     false,
 			PrintBuildLog: true,
 			BuildArgs: map[string]*string{
-				"PACKAGE_NAME":                   ToPtr(packageName),
-				"PACKAGES_REPO":                  ToPtr(packageRepo),
-				"BASE_IMAGE":                     ToPtr(baseImage),
-				"OS_RELEASE":                     ToPtr(osRelease),
-				"OS_VERSION":                     ToPtr(osVersion),
-				"ENTRY_POINT":                    ToPtr("./test/docker/nginxless-entrypoint.sh"),
-				"CONTAINER_NGINX_IMAGE_REGISTRY": ToPtr(containerRegistry),
-				"IMAGE_PATH":                     ToPtr(imagePath),
-				"TAG":                            ToPtr(tag),
+				"PACKAGE_NAME":  ToPtr(packageName),
+				"PACKAGES_REPO": ToPtr(packageRepo),
+				"BASE_IMAGE":    ToPtr(baseImage),
+				"OS_RELEASE":    ToPtr(osRelease),
+				"OS_VERSION":    ToPtr(osVersion),
+				"ENTRY_POINT":   ToPtr("./test/docker/nginxless-entrypoint.sh"),
+				"IMAGE_PATH":    ToPtr(imagePath),
+				"TAG":           ToPtr(tag),
 			},
 			BuildOptionsModifier: func(buildOptions *types.ImageBuildOptions) {
-				buildOptions.Target = "install-agent-local"
+				buildOptions.Target = buildTarget
 			},
 		},
 		ExposedPorts: []string{"9094/tcp"},
