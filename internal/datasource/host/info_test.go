@@ -429,67 +429,67 @@ func TestInfo_ContainerInfo(t *testing.T) {
 	tests := []struct {
 		name              string
 		mountInfo         string
-		expectContainerId string
+		expectContainerID string
 		expectHostname    string
 	}{
 		{
 			name:              "unknown cgroups format",
 			mountInfo:         envMountInfo[0],
-			expectContainerId: "",
+			expectContainerID: "",
 			expectHostname:    "",
 		},
 		{
 			name:              "cgroups v1",
 			mountInfo:         envMountInfo[1],
-			expectContainerId: "d72eb414-1e7f-3167-923c-d56301d3e332",
+			expectContainerID: "d72eb414-1e7f-3167-923c-d56301d3e332",
 			expectHostname:    "3fa0af905021",
 		},
 		{
 			name:              "cgroups v2",
 			mountInfo:         envMountInfo[2],
-			expectContainerId: "3d7b26ba-e8d1-35ae-8566-aed826a5208d",
+			expectContainerID: "3d7b26ba-e8d1-35ae-8566-aed826a5208d",
 			expectHostname:    "3fa0af905021",
 		},
 		{
 			name:              "k8s container",
 			mountInfo:         envMountInfo[3],
-			expectContainerId: "17796e3d-8f28-3382-aa3c-130ee065d8ff",
+			expectContainerID: "17796e3d-8f28-3382-aa3c-130ee065d8ff",
 			expectHostname:    "3fa0af905021",
 		},
 		{
 			name:              "k8s container 1",
 			mountInfo:         envMountInfo[4],
-			expectContainerId: "b4ce7348-b10c-385c-afa2-ee304de31f54",
+			expectContainerID: "b4ce7348-b10c-385c-afa2-ee304de31f54",
 			expectHostname:    "3fa0af905021",
 		},
 		{
 			name:              "k8s container 2",
 			mountInfo:         envMountInfo[5],
-			expectContainerId: "abb646ab-09af-3181-95c0-f647586e3094",
+			expectContainerID: "abb646ab-09af-3181-95c0-f647586e3094",
 			expectHostname:    "3fa0af905021",
 		},
 		{
 			name:              "cro-i container",
 			mountInfo:         envMountInfo[6],
-			expectContainerId: "9bda56cc-8270-337c-abc8-a0286b3ac4c8",
+			expectContainerID: "9bda56cc-8270-337c-abc8-a0286b3ac4c8",
 			expectHostname:    "3fa0af905021",
 		},
 		{
 			name:              "different var folder location",
 			mountInfo:         envMountInfo[7],
-			expectContainerId: "1848a019-fd07-38ce-beaa-64a8eb55309c",
+			expectContainerID: "1848a019-fd07-38ce-beaa-64a8eb55309c",
 			expectHostname:    "3fa0af905021",
 		},
 		{
 			name:              "minikube containerd",
 			mountInfo:         envMountInfo[8],
-			expectContainerId: "a140fdb0-d7d0-3c8c-825d-24453be5636a",
+			expectContainerID: "a140fdb0-d7d0-3c8c-825d-24453be5636a",
 			expectHostname:    "3fa0af905021",
 		},
 		{
 			name:              "minikube docker",
 			mountInfo:         envMountInfo[9],
-			expectContainerId: "811983f7-66bf-3c3c-9658-41a484d71449",
+			expectContainerID: "811983f7-66bf-3c3c-9658-41a484d71449",
 			expectHostname:    "3fa0af905021",
 		},
 	}
@@ -513,7 +513,7 @@ func TestInfo_ContainerInfo(t *testing.T) {
 			info.exec = execMock
 			containerInfo := info.ContainerInfo(ctx)
 
-			assert.Equal(tt, test.expectContainerId, containerInfo.ContainerInfo.GetContainerId())
+			assert.Equal(tt, test.expectContainerID, containerInfo.ContainerInfo.GetContainerId())
 			assert.Equal(tt, test.expectHostname, containerInfo.ContainerInfo.GetHostname())
 		})
 	}

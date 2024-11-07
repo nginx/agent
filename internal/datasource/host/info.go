@@ -139,7 +139,7 @@ func (i *Info) ContainerInfo(ctx context.Context) *v1.Resource_ContainerInfo {
 	if err != nil {
 		slog.WarnContext(ctx, "Unable to get hostname", "error", err)
 	}
-	
+
 	return &v1.Resource_ContainerInfo{
 		ContainerInfo: &v1.ContainerInfo{
 			ContainerId: i.getContainerID(),
