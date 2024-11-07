@@ -183,7 +183,7 @@ func TestWatcher_Process_RollbackCompleteTopic(t *testing.T) {
 	}
 
 	message := &bus.Message{
-		Topic: bus.RollbackCompleteTopic,
+		Topic: bus.ConfigApplyCompleteTopic,
 		Data:  response,
 	}
 
@@ -202,7 +202,8 @@ func TestWatcher_Subscriptions(t *testing.T) {
 		[]string{
 			bus.ConfigApplyRequestTopic,
 			bus.ConfigApplySuccessfulTopic,
-			bus.RollbackCompleteTopic,
+			bus.ConfigApplyCompleteTopic,
+			bus.DataPlaneHealthRequestTopic,
 		},
 		watcherPlugin.Subscriptions(),
 	)

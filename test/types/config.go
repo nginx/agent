@@ -87,6 +87,15 @@ func AgentConfig() *config.Config {
 						Type: 0,
 					},
 				},
+				HeadersSetter: &config.HeadersSetter{
+					Headers: []config.Header{
+						{
+							Action: "insert",
+							Key:    "authorization",
+							Value:  "fake-authorization",
+						},
+					},
+				},
 			},
 			Log: &config.Log{
 				Level: "INFO",

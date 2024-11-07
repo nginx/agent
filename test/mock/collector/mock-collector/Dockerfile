@@ -1,6 +1,6 @@
 FROM golang:bookworm
 
-WORKDIR /mock-collector
-COPY ./test/mock/collector/mock-collector/ ./
+WORKDIR /mock-management-plane-collector
+COPY ./build/mock-management-plane-collector ./
 
-CMD ["go", "run", "main.go"]
+CMD ["/mock-management-plane-collector/collector"]

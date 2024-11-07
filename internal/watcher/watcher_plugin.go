@@ -111,8 +111,10 @@ func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
 		w.handleConfigApplyRequest(ctx, msg)
 	case bus.ConfigApplySuccessfulTopic:
 		w.handleConfigApplySuccess(ctx, msg)
-	case bus.RollbackCompleteTopic:
-		w.handleRollbackComplete(ctx, msg)
+	case bus.ConfigApplyCompleteTopic:
+		w.handleConfigApplyComplete(ctx, msg)
+	case bus.DataPlaneHealthRequestTopic:
+		w.handleHealthRequest(ctx)
 	default:
 		slog.DebugContext(ctx, "Watcher plugin unknown topic", "topic", msg.Topic)
 	}
@@ -122,7 +124,8 @@ func (*Watcher) Subscriptions() []string {
 	return []string{
 		bus.ConfigApplyRequestTopic,
 		bus.ConfigApplySuccessfulTopic,
-		bus.RollbackCompleteTopic,
+		bus.ConfigApplyCompleteTopic,
+		bus.DataPlaneHealthRequestTopic,
 	}
 }
 
@@ -171,7 +174,13 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 	w.instanceWatcherService.ReparseConfig(ctx, instanceID)
 }
 
-func (w *Watcher) handleRollbackComplete(ctx context.Context, msg *bus.Message) {
+func (w *Watcher) handleHealthRequest(ctx context.Context) {
+	w.messagePipe.Process(ctx, &bus.Message{
+		Topic: bus.DataPlaneHealthResponseTopic, Data: w.healthWatcherService.GetInstancesHealth(),
+	})
+}
+
+func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Message) {
 	response, ok := msg.Data.(*mpi.DataPlaneResponse)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.DataPlaneResponse", "payload",
