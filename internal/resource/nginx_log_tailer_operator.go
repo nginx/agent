@@ -29,7 +29,8 @@ var (
 		re.MustCompile(`.*\[alert\].*`),
 		re.MustCompile(`.*\[crit\].*`),
 	}
-	warningRegex = re.MustCompile(`.*\[warn\].*`)
+	warningRegex    = re.MustCompile(`.*\[warn\].*`)
+	ignoreErrorList = re.MustCompile(`.*(usage report| license expired).*`)
 )
 
 func NewLogTailerOperator(agentConfig *config.Config) *NginxLogTailerOperator {
@@ -71,12 +72,13 @@ func (l *NginxLogTailerOperator) Tail(ctx context.Context, errorLog string, erro
 }
 
 func (l *NginxLogTailerOperator) doesLogLineContainError(line string) bool {
-	if l.agentConfig.DataPlaneConfig.Nginx.TreatWarningsAsErrors && warningRegex.MatchString(line) {
+	if l.agentConfig.DataPlaneConfig.Nginx.TreatWarningsAsErrors && warningRegex.MatchString(line) &&
+		!ignoreErrorList.MatchString(line) {
 		return true
 	}
 
 	for _, errorRegex := range reloadErrorList {
-		if errorRegex.MatchString(line) {
+		if errorRegex.MatchString(line) && !ignoreErrorList.MatchString(line) {
 			return true
 		}
 	}
