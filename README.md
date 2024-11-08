@@ -29,7 +29,6 @@ cd cmd/mdatagen
 go install
 ```
 
-
 Before starting development on the NGINX Agent, it is important to download and install the necessary tool and dependencies required by the NGINX Agent. You can do this by running the following `make` command:
 ```
 make install-tools
@@ -49,13 +48,36 @@ Build NGINX Agent apk package:
 OSARCH=<operating system archiecture> make local-apk-package
 ```
 
+### Testing NGINX Agent
+
+#### Unit tests
+To run unit tests and check that there is enough test coverage run the following
+```
+make unit-test coverge
+```
+To check for race conditions, the unit tests can also be run with a race condition detector
+```
+make race-condition-test
+```
+
+#### Integration tests
+To run integration tests, run the following
+```
+make integration-test
+```
+
+#### Testing with a mock management plane
+For testing command operations, there is a mock management gRPC server that can be used. See here: [mock management gRPC server](test/mock/grpc/README.md) \
+For testing metrics, there is a mock management OTel collector that can be used. See here: [mock management OTel collector](test/mock/collector/README.md)
+
+
 ## NGINX Agent Technical Specifications
 
-## Supported Distributions
+### Supported Distributions
 
 NGINX Agent can run in most environments. For a list of supported distributions, see the [NGINX Technical Specs](https://docs.nginx.com/nginx/technical-specs/#supported-distributions) guide.
 
-## Supported Deployment Environments
+### Supported Deployment Environments
 
 NGINX Agent can be deployed in the following environments:
 
@@ -64,11 +86,11 @@ NGINX Agent can be deployed in the following environments:
 - Public Cloud: AWS, Google Cloud Platform, and Microsoft Azure
 - Virtual Machine
 
-## Supported NGINX Product Versions
+### Supported NGINX Product Versions
 
 NGINX Agent works with all supported versions of NGINX Open Source and NGINX Plus.
 
-## Sizing Recommendations
+### Sizing Recommendations
 
 Minimum system sizing recommendations for NGINX Agent:
 TBD
