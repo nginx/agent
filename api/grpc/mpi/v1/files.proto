@@ -245,26 +245,26 @@ enum SignatureAlgorithm {
 message X509Name {
     // Country name (C): Two-letter country code as per ISO 3166.
     // Must be exactly 2 characters.
-    repeated string country = 1 [(buf.validate.field).string = {min_len: 2, max_len: 2}];
+    repeated string country = 1 [(buf.validate.field).repeated.items.string = {min_len: 2, max_len: 2}];
     
     // Organization name (O): Name of the organization.
-    repeated string organization = 2 [(buf.validate.field).string.min_len = 1];
+    repeated string organization = 2 [(buf.validate.field).repeated.items.string.min_len = 1];
     
     // Organizational Unit name (OU): Name of a subdivision or unit within the organization.
-    repeated string organizational_unit = 3 [(buf.validate.field).string.min_len = 1];
+    repeated string organizational_unit = 3 [(buf.validate.field).repeated.items.string.min_len = 1];
     
     // Locality name (L): Name of the city or locality.
     // Must be non-empty and a reasonable length (e.g., max 100 characters).
-    repeated string locality = 4 [(buf.validate.field).string.min_len = 1];
+    repeated string locality = 4 [(buf.validate.field).repeated.items.string.min_len = 1];
     
     // State or Province name (ST): Name of the state or province.
-    repeated string province = 5 [(buf.validate.field).string.min_len = 1];
+    repeated string province = 5 [(buf.validate.field).repeated.items.string.min_len = 1];
     
     // Street Address (STREET): Physical street address.
-    repeated string street_address = 6 [(buf.validate.field).string.min_len = 1];
+    repeated string street_address = 6 [(buf.validate.field).repeated.items.string.min_len = 1];
     
     // Postal Code (PC): Postal or ZIP code for the address.
-    repeated string postal_code = 7 [(buf.validate.field).string.min_len = 1];
+    repeated string postal_code = 7 [(buf.validate.field).repeated.items.string.min_len = 1];
     
     // Serial Number (SN): Unique identifier or serial number.
     // Must be non-empty.
