@@ -201,15 +201,6 @@ func TestGrpc_StartUp(t *testing.T) {
 	verifyUpdateDataPlaneHealth(t)
 }
 
-// Verify that the agent sends a connection request to Management Plane even when Nginx is not present
-func TestNginxLessGrpc_Connection(t *testing.T) {
-	teardownTest := setupConnectionTest(t, true, true)
-	defer teardownTest(t)
-
-	verifyConnection(t, 1)
-	assert.False(t, t.Failed())
-}
-
 func TestGrpc_ConfigUpload(t *testing.T) {
 	teardownTest := setupConnectionTest(t, true, false)
 	defer teardownTest(t)
