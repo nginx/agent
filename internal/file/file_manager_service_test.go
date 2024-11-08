@@ -45,22 +45,45 @@ func TestFileManagerService_UpdateOverview(t *testing.T) {
 }
 
 func TestFileManagerService_UpdateFile(t *testing.T) {
-	ctx := context.Background()
+	tests := []struct {
+		name   string
+		isCert bool
+	}{
+		{
+			name:   "non-cert",
+			isCert: false,
+		},
+		{
+			name:   "cert",
+			isCert: true,
+		},
+	}
 
 	tempDir := os.TempDir()
-	testFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
-	defer helpers.RemoveFileWithErrorCheck(t, testFile.Name())
 
-	fileMeta := protos.FileMeta(testFile.Name(), "")
+	for _, test := range tests {
+		ctx := context.Background()
 
-	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
-	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
-	fileManagerService.SetIsConnected(true)
+		testFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
 
-	err := fileManagerService.UpdateFile(ctx, "123", &mpi.File{FileMeta: fileMeta})
+		var fileMeta *mpi.FileMeta
+		if test.isCert {
+			fileMeta = protos.CertMeta(testFile.Name(), "")
+		} else {
+			fileMeta = protos.FileMeta(testFile.Name(), "")
+		}
 
-	require.NoError(t, err)
-	assert.Equal(t, 1, fakeFileServiceClient.UpdateFileCallCount())
+		fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+		fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
+		fileManagerService.SetIsConnected(true)
+
+		err := fileManagerService.UpdateFile(ctx, "123", &mpi.File{FileMeta: fileMeta})
+
+		require.NoError(t, err)
+		assert.Equal(t, 1, fakeFileServiceClient.UpdateFileCallCount())
+
+		helpers.RemoveFileWithErrorCheck(t, testFile.Name())
+	}
 }
 
 func TestFileManagerService_ConfigApply_Add(t *testing.T) {

@@ -152,10 +152,10 @@ message CertificateMeta {
     bytes serial_number = 1 [(buf.validate.field).bytes.min_len = 1, (buf.validate.field).bytes.max_len = 21];
     
     // Issuer details (who issued the certificate)
-    string issuer = 2 [(buf.validate.field).string.min_len = 1];
+    X509Name issuer = 2;
 
     // Subject details (to whom the certificate is issued)
-    string subject = 3 [(buf.validate.field).string.min_len = 1];
+    X509Name subject = 3;
 
     // Subject Alternative Names (SAN) including DNS names and IP addresses
     SubjectAlternativeNames sans = 4;
@@ -239,4 +239,53 @@ enum SignatureAlgorithm {
 
     // Pure Ed25519
     PURE_ED25519 = 16;
+}
+
+// Represents the dates for which a certificate is valid as seen at https://pkg.go.dev/crypto/x509/pkix#Name
+message X509Name {
+    // Country name (C): Two-letter country code as per ISO 3166.
+    // Must be exactly 2 characters.
+    repeated string country = 1 [(buf.validate.field).repeated.items.string = {min_len: 2, max_len: 2}];
+    
+    // Organization name (O): Name of the organization.
+    repeated string organization = 2 [(buf.validate.field).repeated.items.string.min_len = 1];
+    
+    // Organizational Unit name (OU): Name of a subdivision or unit within the organization.
+    repeated string organizational_unit = 3 [(buf.validate.field).repeated.items.string.min_len = 1];
+    
+    // Locality name (L): Name of the city or locality.
+    // Must be non-empty and a reasonable length (e.g., max 100 characters).
+    repeated string locality = 4 [(buf.validate.field).repeated.items.string.min_len = 1];
+    
+    // State or Province name (ST): Name of the state or province.
+    repeated string province = 5 [(buf.validate.field).repeated.items.string.min_len = 1];
+    
+    // Street Address (STREET): Physical street address.
+    repeated string street_address = 6 [(buf.validate.field).repeated.items.string.min_len = 1];
+    
+    // Postal Code (PC): Postal or ZIP code for the address.
+    repeated string postal_code = 7 [(buf.validate.field).repeated.items.string.min_len = 1];
+    
+    // Serial Number (SN): Unique identifier or serial number.
+    // Must be non-empty.
+    string serial_number = 8 [(buf.validate.field).string.min_len = 1];
+    
+    // Common Name (CN): Typically the person’s or entity's full name.
+    string common_name = 9 [(buf.validate.field).string.min_len = 1];
+    
+    // Parsed attributes including any non-standard attributes, as specified in RFC 2253.
+    // These attributes are parsed but not marshaled by this package.
+    repeated AttributeTypeAndValue names = 10;
+    
+    // Additional attributes to be included in the marshaled distinguished names.
+    // These override any attributes with the same OID in `names`.
+    repeated AttributeTypeAndValue extra_names = 11;
+}
+    
+message AttributeTypeAndValue {
+    // The type (or identifier) of the attribute (e.g., OID).
+    string type = 1 [(buf.validate.field).string.min_len = 1];
+  
+    // The value associated with the attribute.
+    string value = 2 [(buf.validate.field).string.min_len = 1];
 }
