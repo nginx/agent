@@ -90,11 +90,6 @@ LICENSE file in the root directory of this source tree.
 Defines the authentication configuration
 
 
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| token | [string](#string) |  | Authentication token for server |
-
-
 
 
 

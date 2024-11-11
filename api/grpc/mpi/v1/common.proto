@@ -64,8 +64,6 @@ message ServerSettings {
 
 // Defines the authentication configuration
 message AuthSettings {
-    // Authentication token for server
-    string token = 1 [(buf.validate.field).string = {min_len: 1}];
 }
   
 message TLSSettings {
