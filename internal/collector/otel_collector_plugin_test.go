@@ -14,7 +14,6 @@ import (
 
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/nginx/agent/v3/test/stub"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/otelcol"
@@ -232,6 +231,21 @@ func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
 	conf.Collector.Processors.Batch = nil
 	conf.Collector.Processors.Attribute = nil
 	conf.Collector.Processors.Resource = nil
+	conf.Collector.Exporters.OtlpExporters = nil
+	conf.Collector.Exporters.PrometheusExporter = &config.PrometheusExporter{
+		Server: &config.ServerConfig{
+			Host: "",
+			Port: 0,
+			Type: 0,
+		},
+		TLS: &config.TLSConfig{
+			Cert:       "",
+			Key:        "",
+			Ca:         "",
+			ServerName: "",
+			SkipVerify: false,
+		},
+	}
 
 	tests := []struct {
 		message    *bus.Message
@@ -286,8 +300,11 @@ func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
 
 			assert.Eventually(
 				tt,
-				func() bool { return collector.service.GetState() == otelcol.StateRunning },
-				6*time.Second,
+				func() bool {
+					tt.Logf("Collector state is %+v", collector.service.GetState())
+					return collector.service.GetState() == otelcol.StateRunning
+				},
+				5*time.Second,
 				100*time.Millisecond,
 			)
 
@@ -295,8 +312,11 @@ func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
 
 			assert.Eventually(
 				tt,
-				func() bool { return collector.service.GetState() == otelcol.StateRunning },
-				6*time.Second,
+				func() bool {
+					tt.Logf("Collector state is %+v", collector.service.GetState())
+					return collector.service.GetState() == otelcol.StateRunning
+				},
+				5*time.Second,
 				100*time.Millisecond,
 			)
 
@@ -312,6 +332,21 @@ func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
 	conf.Collector.Processors.Batch = nil
 	conf.Collector.Processors.Attribute = nil
 	conf.Collector.Processors.Resource = nil
+	conf.Collector.Exporters.OtlpExporters = nil
+	conf.Collector.Exporters.PrometheusExporter = &config.PrometheusExporter{
+		Server: &config.ServerConfig{
+			Host: "",
+			Port: 0,
+			Type: 0,
+		},
+		TLS: &config.TLSConfig{
+			Cert:       "",
+			Key:        "",
+			Ca:         "",
+			ServerName: "",
+			SkipVerify: false,
+		},
+	}
 
 	tests := []struct {
 		message    *bus.Message
@@ -342,8 +377,11 @@ func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
 
 			assert.Eventually(
 				tt,
-				func() bool { return collector.service.GetState() == otelcol.StateRunning },
-				6*time.Second,
+				func() bool {
+					tt.Logf("Collector state is %+v", collector.service.GetState())
+					return collector.service.GetState() == otelcol.StateRunning
+				},
+				5*time.Second,
 				100*time.Millisecond,
 			)
 
@@ -351,8 +389,11 @@ func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
 
 			assert.Eventually(
 				tt,
-				func() bool { return collector.service.GetState() == otelcol.StateRunning },
-				6*time.Second,
+				func() bool {
+					tt.Logf("Collector state is %+v", collector.service.GetState())
+					return collector.service.GetState() == otelcol.StateRunning
+				},
+				5*time.Second,
 				100*time.Millisecond,
 			)
 
