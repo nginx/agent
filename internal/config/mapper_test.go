@@ -25,9 +25,7 @@ func TestFromCommandProto(t *testing.T) {
 					Port: int32(getAgentConfig().Command.Server.Port),
 					Type: 1,
 				},
-				Auth: &mpi.AuthSettings{
-					Token: getAgentConfig().Command.Auth.Token,
-				},
+				Auth: &mpi.AuthSettings{},
 				Tls: &mpi.TLSSettings{
 					Cert:       getAgentConfig().Command.TLS.Cert,
 					Key:        getAgentConfig().Command.TLS.Key,
@@ -45,9 +43,7 @@ func TestFromCommandProto(t *testing.T) {
 		{
 			name: "Test 2: Missing server",
 			protoConfig: &mpi.CommandServer{
-				Auth: &mpi.AuthSettings{
-					Token: getAgentConfig().Command.Auth.Token,
-				},
+				Auth: &mpi.AuthSettings{},
 				Tls: &mpi.TLSSettings{
 					Cert:       getAgentConfig().Command.TLS.Cert,
 					Key:        getAgentConfig().Command.TLS.Key,
@@ -92,9 +88,7 @@ func TestFromCommandProto(t *testing.T) {
 					Port: int32(getAgentConfig().Command.Server.Port),
 					Type: 1, // Change to HTTP when supported
 				},
-				Auth: &mpi.AuthSettings{
-					Token: getAgentConfig().Command.Auth.Token,
-				},
+				Auth: &mpi.AuthSettings{},
 			},
 			expected: &Command{
 				Server: getAgentConfig().Command.Server,
@@ -140,9 +134,7 @@ func TestToCommandProto(t *testing.T) {
 					Port: int32(getAgentConfig().Command.Server.Port),
 					Type: 2,
 				},
-				Auth: &mpi.AuthSettings{
-					Token: getAgentConfig().Command.Auth.Token,
-				},
+				Auth: &mpi.AuthSettings{},
 				Tls: &mpi.TLSSettings{
 					Cert:       getAgentConfig().Command.TLS.Cert,
 					Key:        getAgentConfig().Command.TLS.Key,
@@ -161,9 +153,7 @@ func TestToCommandProto(t *testing.T) {
 			},
 			expected: &mpi.CommandServer{
 				Server: nil,
-				Auth: &mpi.AuthSettings{
-					Token: getAgentConfig().Command.Auth.Token,
-				},
+				Auth:   &mpi.AuthSettings{},
 				Tls: &mpi.TLSSettings{
 					Cert:       getAgentConfig().Command.TLS.Cert,
 					Key:        getAgentConfig().Command.TLS.Key,
@@ -208,9 +198,7 @@ func TestToCommandProto(t *testing.T) {
 					Port: int32(getAgentConfig().Command.Server.Port),
 					Type: 2,
 				},
-				Auth: &mpi.AuthSettings{
-					Token: getAgentConfig().Command.Auth.Token,
-				},
+				Auth: &mpi.AuthSettings{},
 			},
 		},
 		{
