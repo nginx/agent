@@ -38,16 +38,17 @@ const Percentage = 100
 
 type (
 	NginxLogScraper struct {
-		outChan <-chan []*entry.Entry
-		cfg     *config.Config
-		logger  *zap.Logger
-		mb      *metadata.MetricsBuilder
-		rb      *metadata.ResourceBuilder
-		pipe    *pipeline.DirectedPipeline
-		wg      *sync.WaitGroup
-		cancel  context.CancelFunc
-		entries []*entry.Entry
-		mut     sync.Mutex
+		outChan  <-chan []*entry.Entry
+		cfg      *config.Config
+		settings receiver.Settings
+		logger   *zap.Logger
+		mb       *metadata.MetricsBuilder
+		rb       *metadata.ResourceBuilder
+		pipe     *pipeline.DirectedPipeline
+		wg       *sync.WaitGroup
+		cancel   context.CancelFunc
+		entries  []*entry.Entry
+		mut      sync.Mutex
 	}
 
 	NginxMetrics struct {
@@ -74,9 +75,6 @@ func NewScraper(
 
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
 	rb := mb.NewResourceBuilder()
-	rb.SetInstanceID(settings.ID.Name())
-	rb.SetInstanceType("nginx")
-	logger.Debug("NGINX OSS resource info", zap.Any("resource", rb))
 
 	operators := make([]operator.Config, 0)
 
@@ -96,14 +94,15 @@ func NewScraper(
 	}
 
 	return &NginxLogScraper{
-		cfg:     cfg,
-		logger:  logger,
-		mb:      mb,
-		rb:      rb,
-		mut:     sync.Mutex{},
-		outChan: outChan,
-		pipe:    stanzaPipeline,
-		wg:      &sync.WaitGroup{},
+		cfg:      cfg,
+		logger:   logger,
+		settings: settings,
+		mb:       mb,
+		rb:       rb,
+		mut:      sync.Mutex{},
+		outChan:  outChan,
+		pipe:     stanzaPipeline,
+		wg:       &sync.WaitGroup{},
 	}, nil
 }
 
@@ -164,6 +163,10 @@ func (nls *NginxLogScraper) Scrape(_ context.Context) (pmetric.Metrics, error) {
 
 	nls.entries = make([]*entry.Entry, 0)
 	timeNow := pcommon.NewTimestampFromTime(time.Now())
+
+	nls.rb.SetInstanceID(nls.settings.ID.Name())
+	nls.rb.SetInstanceType("nginx")
+	nls.logger.Debug("NGINX OSS access log resource info", zap.Any("resource", nls.rb))
 
 	nls.mb.RecordNginxHTTPResponseStatusDataPoint(
 		timeNow,

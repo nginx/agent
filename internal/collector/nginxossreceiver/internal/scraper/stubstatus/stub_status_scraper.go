@@ -25,11 +25,10 @@ import (
 type NginxStubStatusScraper struct {
 	httpClient *http.Client
 	client     *client.NginxClient
-
-	settings component.TelemetrySettings
-	cfg      *config.Config
-	mb       *metadata.MetricsBuilder
-	rb       *metadata.ResourceBuilder
+	cfg        *config.Config
+	mb         *metadata.MetricsBuilder
+	rb         *metadata.ResourceBuilder
+	settings   receiver.Settings
 }
 
 var _ scraperhelper.Scraper = (*NginxStubStatusScraper)(nil)
@@ -43,12 +42,9 @@ func NewScraper(
 
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
 	rb := mb.NewResourceBuilder()
-	rb.SetInstanceID(settings.ID.Name())
-	rb.SetInstanceType("nginx")
-	logger.Debug("NGINX OSS resource info", zap.Any("resource", rb))
 
 	return &NginxStubStatusScraper{
-		settings: settings.TelemetrySettings,
+		settings: settings,
 		cfg:      cfg,
 		mb:       mb,
 		rb:       rb,
@@ -60,7 +56,7 @@ func (s *NginxStubStatusScraper) ID() component.ID {
 }
 
 func (s *NginxStubStatusScraper) Start(ctx context.Context, host component.Host) error {
-	httpClient, err := s.cfg.ToClient(ctx, host, s.settings)
+	httpClient, err := s.cfg.ToClient(ctx, host, s.settings.TelemetrySettings)
 	if err != nil {
 		return err
 	}
@@ -84,6 +80,10 @@ func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error
 		s.settings.Logger.Error("fetch nginx stats", zap.Error(err))
 		return pmetric.Metrics{}, err
 	}
+
+	s.rb.SetInstanceID(s.settings.ID.Name())
+	s.rb.SetInstanceType("nginx")
+	s.settings.Logger.Debug("NGINX OSS stub status resource info", zap.Any("resource", s.rb))
 
 	now := pcommon.NewTimestampFromTime(time.Now())
 
