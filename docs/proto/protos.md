@@ -615,6 +615,7 @@ Container information
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | container_id | [string](#string) |  | The identifier of the container |
+| hostname | [string](#string) |  | The name of the host |
 
 
 
