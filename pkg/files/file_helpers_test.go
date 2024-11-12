@@ -6,8 +6,16 @@
 package files
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
+	"math/big"
+	"net"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -20,26 +28,47 @@ import (
 )
 
 func TestGetFileMeta(t *testing.T) {
-	file, err := os.CreateTemp(t.TempDir(), "get_file_meta.txt")
-	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
-	require.NoError(t, err)
+	tests := []struct {
+		name   string
+		isCert bool
+	}{
+		{"Test 1: conf file", false},
+		{"Test 2: cert file", true},
+	}
 
-	expected := protos.FileMeta(file.Name(), GenerateHash([]byte("")))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tempDir := t.TempDir()
 
-	fileMeta, err := FileMeta(file.Name())
-	require.NoError(t, err)
+			var err error
+			var fileMeta, expected *mpi.FileMeta
+			var file *os.File
 
-	assert.Equal(t, expected.GetName(), fileMeta.GetName())
-	assert.Equal(t, expected.GetHash(), fileMeta.GetHash())
-	assert.Equal(t, expected.GetPermissions(), fileMeta.GetPermissions())
-	assert.Equal(t, expected.GetSize(), fileMeta.GetSize())
-	assert.NotNil(t, fileMeta.GetModifiedTime())
+			if tt.isCert {
+				file, expected = createCertFile(t, tempDir)
+				fileMeta, err = FileMetaWithCertificate(file.Name())
+			} else {
+				file, expected = setupTestFile(t, tempDir)
+				fileMeta, err = FileMeta(file.Name())
+			}
+
+			require.NoError(t, err)
+
+			// Validate metadata
+			assert.Equal(t, expected.GetName(), fileMeta.GetName())
+			assert.NotEmpty(t, fileMeta.GetHash())
+			assert.Equal(t, expected.GetPermissions(), fileMeta.GetPermissions())
+			assert.Equal(t, expected.GetSize(), fileMeta.GetSize())
+			assert.NotNil(t, fileMeta.GetModifiedTime())
+
+			helpers.RemoveFileWithErrorCheck(t, file.Name())
+		})
+	}
 }
 
 func TestGetPermissions(t *testing.T) {
-	file, err := os.CreateTemp(t.TempDir(), "get_permissions_test.txt")
+	file := helpers.CreateFileWithErrorCheck(t, os.TempDir(), "get_permissions_test.txt")
 	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
-	require.NoError(t, err)
 
 	info, err := os.Stat(file.Name())
 	require.NoError(t, err)
@@ -134,4 +163,113 @@ func TestGenerateHash(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestConvertIpBytes(t *testing.T) {
+	tests := []struct {
+		input    []net.IP
+		expected []string
+	}{
+		{
+			input: []net.IP{net.IPv4(192, 168, 0, 1), net.IPv4(10, 0, 0, 1)},
+			expected: []string{
+				"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xc0\xa8\x00\x01",
+				"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\n\x00\x00\x01",
+			},
+		},
+		{
+			input:    []net.IP{net.ParseIP("2001:0db8::68")},
+			expected: []string{" \x01\r\xb8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h"},
+		},
+		{
+			input:    []net.IP{},
+			expected: []string{},
+		},
+	}
+
+	for _, test := range tests {
+		result := convertIPBytes(test.input)
+		for i := range result {
+			assert.Equal(t, test.expected[i], result[i])
+		}
+	}
+}
+
+func TestConvertX509SignatureAlgorithm(t *testing.T) {
+	tests := []struct {
+		input    x509.SignatureAlgorithm
+		expected mpi.SignatureAlgorithm
+	}{
+		{x509.MD2WithRSA, mpi.SignatureAlgorithm_MD2_WITH_RSA},
+		{x509.MD5WithRSA, mpi.SignatureAlgorithm_MD5_WITH_RSA},
+		{x509.SHA1WithRSA, mpi.SignatureAlgorithm_SHA1_WITH_RSA},
+		{x509.SHA256WithRSA, mpi.SignatureAlgorithm_SHA256_WITH_RSA},
+		{x509.SHA384WithRSA, mpi.SignatureAlgorithm_SHA384_WITH_RSA},
+		{x509.SHA512WithRSA, mpi.SignatureAlgorithm_SHA512_WITH_RSA},
+		{x509.DSAWithSHA1, mpi.SignatureAlgorithm_DSA_WITH_SHA1},
+		{x509.DSAWithSHA256, mpi.SignatureAlgorithm_DSA_WITH_SHA256},
+		{x509.ECDSAWithSHA1, mpi.SignatureAlgorithm_ECDSA_WITH_SHA1},
+		{x509.ECDSAWithSHA256, mpi.SignatureAlgorithm_ECDSA_WITH_SHA256},
+		{x509.ECDSAWithSHA384, mpi.SignatureAlgorithm_ECDSA_WITH_SHA384},
+		{x509.ECDSAWithSHA512, mpi.SignatureAlgorithm_ECDSA_WITH_SHA512},
+		{x509.SHA256WithRSAPSS, mpi.SignatureAlgorithm_SHA256_WITH_RSA_PSS},
+		{x509.SHA384WithRSAPSS, mpi.SignatureAlgorithm_SHA384_WITH_RSA_PSS},
+		{x509.SHA512WithRSAPSS, mpi.SignatureAlgorithm_SHA512_WITH_RSA_PSS},
+		{x509.PureEd25519, mpi.SignatureAlgorithm_PURE_ED25519},
+		{x509.UnknownSignatureAlgorithm, mpi.SignatureAlgorithm_SIGNATURE_ALGORITHM_UNKNOWN},
+	}
+
+	for _, test := range tests {
+		t.Run(test.input.String(), func(t *testing.T) {
+			assert.Equal(t, test.expected, convertX509SignatureAlgorithm(test.input))
+		})
+	}
+}
+
+func setupTestFile(t *testing.T, tempDir string) (*os.File, *mpi.FileMeta) {
+	t.Helper()
+
+	file := helpers.CreateFileWithErrorCheck(t, tempDir, "get_file_meta.txt")
+
+	return file, protos.FileMeta(file.Name(), "")
+}
+
+func createCertFile(t *testing.T, tempDir string) (*os.File, *mpi.FileMeta) {
+	t.Helper()
+
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+
+	tmpl := x509.Certificate{
+		NotBefore:    time.Now(),
+		NotAfter:     time.Now().AddDate(5, 0, 0),
+		SerialNumber: big.NewInt(123123),
+		Subject: pkix.Name{
+			CommonName:   "New Name",
+			Organization: []string{"New Org."},
+		},
+		Issuer: pkix.Name{
+			CommonName:   "New Name",
+			Organization: []string{"New Org."},
+		},
+		BasicConstraintsValid: true,
+	}
+
+	cert, err := x509.CreateCertificate(rand.Reader, &tmpl, &tmpl, &key.PublicKey, key)
+	require.NoError(t, err)
+
+	certPem := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert})
+	file, err := os.CreateTemp(tempDir, "cert.pem")
+	require.NoError(t, err)
+
+	err = os.WriteFile(file.Name(), certPem, 0o600)
+	require.NoError(t, err)
+
+	fileInfo, err := file.Stat()
+	require.NoError(t, err)
+
+	expected := protos.CertMeta(file.Name(), "")
+	expected.Size = fileInfo.Size()
+
+	return file, expected
 }
