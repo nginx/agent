@@ -229,6 +229,8 @@ func (cs *CommandService) CreateConnection(
 		Multiplier:          cs.agentConfig.Common.Multiplier,
 	}
 
+	slog.DebugContext(ctx, "Sending create connection request", "request", request)
+
 	response, err := backoff.RetryWithData(
 		cs.connectCallback(ctx, request),
 		backoffHelpers.Context(ctx, commonSettings),
