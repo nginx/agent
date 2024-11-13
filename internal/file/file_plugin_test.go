@@ -75,6 +75,10 @@ func TestFilePlugin_Process_NginxConfigUpdateTopic(t *testing.T) {
 	}
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+	fakeFileServiceClient.UpdateOverviewReturns(&mpi.UpdateOverviewResponse{
+		Overview: nil,
+	}, nil)
+
 	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
 	fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
 	messagePipe := bus.NewFakeMessagePipe()
