@@ -22,9 +22,9 @@ const (
 
 type Config struct {
 	confighttp.ClientConfig        `mapstructure:",squash"`
-	AccessLogs                     []AccessLog `mapstructure:"access_logs"`
-	scraperhelper.ControllerConfig `mapstructure:",squash"`
+	AccessLogs                     []AccessLog                   `mapstructure:"access_logs"`
 	MetricsBuilderConfig           metadata.MetricsBuilderConfig `mapstructure:",squash"`
+	scraperhelper.ControllerConfig `mapstructure:",squash"`
 }
 
 type AccessLog struct {

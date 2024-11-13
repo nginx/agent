@@ -506,13 +506,22 @@ func isPrometheusExporterSet() bool {
 }
 
 func resolveProcessors() Processors {
-	return Processors{
+	processors := Processors{
 		Batch: &Batch{
 			SendBatchSize:    viperInstance.GetUint32(CollectorBatchProcessorSendBatchSizeKey),
 			SendBatchMaxSize: viperInstance.GetUint32(CollectorBatchProcessorSendBatchMaxSizeKey),
 			Timeout:          viperInstance.GetDuration(CollectorBatchProcessorTimeoutKey),
 		},
 	}
+
+	if viperInstance.IsSet(CollectorAttributeProcessorKey) {
+		err := resolveMapStructure(CollectorAttributeProcessorKey, &processors.Attribute)
+		if err != nil {
+			return processors
+		}
+	}
+
+	return processors
 }
 
 // generate self-signed certificate for OTEL receiver
@@ -567,8 +576,11 @@ func processOtlpReceivers(tlsConfig *OtlpTLSConfig) error {
 }
 
 func resolveExtensions() Extensions {
+	var health *Health
+	var headersSetter *HeadersSetter
+
 	if isHealthExtensionSet() {
-		health := &Health{
+		health = &Health{
 			Server: &ServerConfig{
 				Host: viperInstance.GetString(CollectorExtensionsHealthServerHostKey),
 				Port: viperInstance.GetInt(CollectorExtensionsHealthServerPortKey),
@@ -585,13 +597,19 @@ func resolveExtensions() Extensions {
 				ServerName: viperInstance.GetString(CollectorExtensionsHealthTLSServerNameKey),
 			}
 		}
+	}
 
-		return Extensions{
-			Health: health,
+	if viperInstance.IsSet(CollectorExtensionsHeadersSetterKey) {
+		err := resolveMapStructure(CollectorExtensionsHeadersSetterKey, &headersSetter)
+		if err != nil {
+			headersSetter = nil
 		}
 	}
 
-	return Extensions{}
+	return Extensions{
+		Health:        health,
+		HeadersSetter: headersSetter,
+	}
 }
 
 func isHealthExtensionSet() bool {

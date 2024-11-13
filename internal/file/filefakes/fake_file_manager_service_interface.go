@@ -28,6 +28,22 @@ type FakeFileManagerServiceInterface struct {
 		result1 model.WriteStatus
 		result2 error
 	}
+	DetermineFileActionsStub        func(map[string]*v1.File, map[string]*v1.File) (map[string]*v1.File, map[string][]byte, error)
+	determineFileActionsMutex       sync.RWMutex
+	determineFileActionsArgsForCall []struct {
+		arg1 map[string]*v1.File
+		arg2 map[string]*v1.File
+	}
+	determineFileActionsReturns struct {
+		result1 map[string]*v1.File
+		result2 map[string][]byte
+		result3 error
+	}
+	determineFileActionsReturnsOnCall map[int]struct {
+		result1 map[string]*v1.File
+		result2 map[string][]byte
+		result3 error
+	}
 	RollbackStub        func(context.Context, string) error
 	rollbackMutex       sync.RWMutex
 	rollbackArgsForCall []struct {
@@ -44,6 +60,11 @@ type FakeFileManagerServiceInterface struct {
 	setIsConnectedMutex       sync.RWMutex
 	setIsConnectedArgsForCall []struct {
 		arg1 bool
+	}
+	UpdateCurrentFilesOnDiskStub        func(map[string]*v1.File)
+	updateCurrentFilesOnDiskMutex       sync.RWMutex
+	updateCurrentFilesOnDiskArgsForCall []struct {
+		arg1 map[string]*v1.File
 	}
 	UpdateFileStub        func(context.Context, string, *v1.File) error
 	updateFileMutex       sync.RWMutex
@@ -164,6 +185,74 @@ func (fake *FakeFileManagerServiceInterface) ConfigApplyReturnsOnCall(i int, res
 	}{result1, result2}
 }
 
+func (fake *FakeFileManagerServiceInterface) DetermineFileActions(arg1 map[string]*v1.File, arg2 map[string]*v1.File) (map[string]*v1.File, map[string][]byte, error) {
+	fake.determineFileActionsMutex.Lock()
+	ret, specificReturn := fake.determineFileActionsReturnsOnCall[len(fake.determineFileActionsArgsForCall)]
+	fake.determineFileActionsArgsForCall = append(fake.determineFileActionsArgsForCall, struct {
+		arg1 map[string]*v1.File
+		arg2 map[string]*v1.File
+	}{arg1, arg2})
+	stub := fake.DetermineFileActionsStub
+	fakeReturns := fake.determineFileActionsReturns
+	fake.recordInvocation("DetermineFileActions", []interface{}{arg1, arg2})
+	fake.determineFileActionsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2, ret.result3
+	}
+	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
+}
+
+func (fake *FakeFileManagerServiceInterface) DetermineFileActionsCallCount() int {
+	fake.determineFileActionsMutex.RLock()
+	defer fake.determineFileActionsMutex.RUnlock()
+	return len(fake.determineFileActionsArgsForCall)
+}
+
+func (fake *FakeFileManagerServiceInterface) DetermineFileActionsCalls(stub func(map[string]*v1.File, map[string]*v1.File) (map[string]*v1.File, map[string][]byte, error)) {
+	fake.determineFileActionsMutex.Lock()
+	defer fake.determineFileActionsMutex.Unlock()
+	fake.DetermineFileActionsStub = stub
+}
+
+func (fake *FakeFileManagerServiceInterface) DetermineFileActionsArgsForCall(i int) (map[string]*v1.File, map[string]*v1.File) {
+	fake.determineFileActionsMutex.RLock()
+	defer fake.determineFileActionsMutex.RUnlock()
+	argsForCall := fake.determineFileActionsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeFileManagerServiceInterface) DetermineFileActionsReturns(result1 map[string]*v1.File, result2 map[string][]byte, result3 error) {
+	fake.determineFileActionsMutex.Lock()
+	defer fake.determineFileActionsMutex.Unlock()
+	fake.DetermineFileActionsStub = nil
+	fake.determineFileActionsReturns = struct {
+		result1 map[string]*v1.File
+		result2 map[string][]byte
+		result3 error
+	}{result1, result2, result3}
+}
+
+func (fake *FakeFileManagerServiceInterface) DetermineFileActionsReturnsOnCall(i int, result1 map[string]*v1.File, result2 map[string][]byte, result3 error) {
+	fake.determineFileActionsMutex.Lock()
+	defer fake.determineFileActionsMutex.Unlock()
+	fake.DetermineFileActionsStub = nil
+	if fake.determineFileActionsReturnsOnCall == nil {
+		fake.determineFileActionsReturnsOnCall = make(map[int]struct {
+			result1 map[string]*v1.File
+			result2 map[string][]byte
+			result3 error
+		})
+	}
+	fake.determineFileActionsReturnsOnCall[i] = struct {
+		result1 map[string]*v1.File
+		result2 map[string][]byte
+		result3 error
+	}{result1, result2, result3}
+}
+
 func (fake *FakeFileManagerServiceInterface) Rollback(arg1 context.Context, arg2 string) error {
 	fake.rollbackMutex.Lock()
 	ret, specificReturn := fake.rollbackReturnsOnCall[len(fake.rollbackArgsForCall)]
@@ -255,6 +344,38 @@ func (fake *FakeFileManagerServiceInterface) SetIsConnectedArgsForCall(i int) bo
 	fake.setIsConnectedMutex.RLock()
 	defer fake.setIsConnectedMutex.RUnlock()
 	argsForCall := fake.setIsConnectedArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeFileManagerServiceInterface) UpdateCurrentFilesOnDisk(arg1 map[string]*v1.File) {
+	fake.updateCurrentFilesOnDiskMutex.Lock()
+	fake.updateCurrentFilesOnDiskArgsForCall = append(fake.updateCurrentFilesOnDiskArgsForCall, struct {
+		arg1 map[string]*v1.File
+	}{arg1})
+	stub := fake.UpdateCurrentFilesOnDiskStub
+	fake.recordInvocation("UpdateCurrentFilesOnDisk", []interface{}{arg1})
+	fake.updateCurrentFilesOnDiskMutex.Unlock()
+	if stub != nil {
+		fake.UpdateCurrentFilesOnDiskStub(arg1)
+	}
+}
+
+func (fake *FakeFileManagerServiceInterface) UpdateCurrentFilesOnDiskCallCount() int {
+	fake.updateCurrentFilesOnDiskMutex.RLock()
+	defer fake.updateCurrentFilesOnDiskMutex.RUnlock()
+	return len(fake.updateCurrentFilesOnDiskArgsForCall)
+}
+
+func (fake *FakeFileManagerServiceInterface) UpdateCurrentFilesOnDiskCalls(stub func(map[string]*v1.File)) {
+	fake.updateCurrentFilesOnDiskMutex.Lock()
+	defer fake.updateCurrentFilesOnDiskMutex.Unlock()
+	fake.UpdateCurrentFilesOnDiskStub = stub
+}
+
+func (fake *FakeFileManagerServiceInterface) UpdateCurrentFilesOnDiskArgsForCall(i int) map[string]*v1.File {
+	fake.updateCurrentFilesOnDiskMutex.RLock()
+	defer fake.updateCurrentFilesOnDiskMutex.RUnlock()
+	argsForCall := fake.updateCurrentFilesOnDiskArgsForCall[i]
 	return argsForCall.arg1
 }
 
@@ -396,10 +517,14 @@ func (fake *FakeFileManagerServiceInterface) Invocations() map[string][][]interf
 	defer fake.clearCacheMutex.RUnlock()
 	fake.configApplyMutex.RLock()
 	defer fake.configApplyMutex.RUnlock()
+	fake.determineFileActionsMutex.RLock()
+	defer fake.determineFileActionsMutex.RUnlock()
 	fake.rollbackMutex.RLock()
 	defer fake.rollbackMutex.RUnlock()
 	fake.setIsConnectedMutex.RLock()
 	defer fake.setIsConnectedMutex.RUnlock()
+	fake.updateCurrentFilesOnDiskMutex.RLock()
+	defer fake.updateCurrentFilesOnDiskMutex.RUnlock()
 	fake.updateFileMutex.RLock()
 	defer fake.updateFileMutex.RUnlock()
 	fake.updateOverviewMutex.RLock()

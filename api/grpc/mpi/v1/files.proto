@@ -123,6 +123,10 @@ message FileMeta {
     string permissions = 4 [(buf.validate.field).string.pattern = "0[0-7]{3}"];
     // The size of the file in bytes
     int64 size = 5;
+    // additional file information
+    oneof file_type {
+       CertificateMeta certificate_meta = 6;
+    }
 }
 
 // Represents the update file request
@@ -139,4 +143,149 @@ message UpdateFileRequest {
 message UpdateFileResponse {
     // Meta-information associated with the updated file
     FileMeta file_meta = 1;
+}
+
+// Define the certificate message based on https://pkg.go.dev/crypto/x509#Certificate 
+// and https://github.com/googleapis/googleapis/blob/005df4681b89bd204a90b76168a6dc9d9e7bf4fe/google/cloud/iot/v1/resources.proto#L341
+message CertificateMeta {
+    // Serial number of the certificate, usually a unique identifier, RFC5280 states the upper limit for serial number is 20 octets
+    bytes serial_number = 1 [(buf.validate.field).bytes.min_len = 1, (buf.validate.field).bytes.max_len = 21];
+    
+    // Issuer details (who issued the certificate)
+    X509Name issuer = 2;
+
+    // Subject details (to whom the certificate is issued)
+    X509Name subject = 3;
+
+    // Subject Alternative Names (SAN) including DNS names and IP addresses
+    SubjectAlternativeNames sans = 4;
+    
+    // Timestamps representing the start of certificate validity (Not Before, Not After)
+    CertificateDates dates = 5;
+
+    // The algorithm used to sign the certificate (e.g., SHA256-RSA)
+    SignatureAlgorithm signature_algorithm = 6;
+
+    // The type of public key in the certificate.
+    string public_key_algorithm = 7;
+}
+
+// Represents the dates for which a certificate is valid
+message CertificateDates {
+    // The start date that for when the certificate is valid
+    int64 not_before = 1;
+    // The end date that for when the certificate is valid
+    int64 not_after = 2;
+}
+
+// Represents the Subject Alternative Names for a certificate
+message SubjectAlternativeNames {
+    // List of DNS names in the Subject Alternative Name (SAN) extension
+    repeated string dns_names = 1;
+
+    // List of ip addresses in the SAN extension
+    repeated string ip_addresses = 2;
+}
+
+// Enum to represent the possible signature algorithms used for certificates
+enum SignatureAlgorithm {
+    // Default, unknown or unsupported algorithm
+    SIGNATURE_ALGORITHM_UNKNOWN = 0;
+
+    // MD2 with RSA (Unsupported)
+    MD2_WITH_RSA = 1;
+
+    // MD5 with RSA (Only supported for signing, not verification)
+    MD5_WITH_RSA = 2;
+
+    // SHA-1 with RSA (Only supported for signing and for verification of CRLs, CSRs, and OCSP responses)
+    SHA1_WITH_RSA = 3;
+
+    // SHA-256 with RSA
+    SHA256_WITH_RSA = 4;
+
+    // SHA-384 with RSA
+    SHA384_WITH_RSA = 5;
+
+    // SHA-512 with RSA
+    SHA512_WITH_RSA = 6;
+
+    // DSA with SHA-1 (Unsupported)
+    DSA_WITH_SHA1 = 7;
+
+    // DSA with SHA-256 (Unsupported)
+    DSA_WITH_SHA256 = 8;
+
+    // ECDSA with SHA-1 (Only supported for signing and for verification of CRLs, CSRs, and OCSP responses)
+    ECDSA_WITH_SHA1 = 9;
+
+    // ECDSA with SHA-256
+    ECDSA_WITH_SHA256 = 10;
+
+    // ECDSA with SHA-384
+    ECDSA_WITH_SHA384 = 11;
+
+    // ECDSA with SHA-512
+    ECDSA_WITH_SHA512 = 12;
+
+    // SHA-256 with RSA-PSS
+    SHA256_WITH_RSA_PSS = 13;
+
+    // SHA-384 with RSA-PSS
+    SHA384_WITH_RSA_PSS = 14;
+
+    // SHA-512 with RSA-PSS
+    SHA512_WITH_RSA_PSS = 15;
+
+    // Pure Ed25519
+    PURE_ED25519 = 16;
+}
+
+// Represents the dates for which a certificate is valid as seen at https://pkg.go.dev/crypto/x509/pkix#Name
+message X509Name {
+    // Country name (C): Two-letter country code as per ISO 3166.
+    // Must be exactly 2 characters.
+    repeated string country = 1 [(buf.validate.field).repeated.items.string = {min_len: 2, max_len: 2}];
+    
+    // Organization name (O): Name of the organization.
+    repeated string organization = 2 [(buf.validate.field).repeated.items.string.min_len = 1];
+    
+    // Organizational Unit name (OU): Name of a subdivision or unit within the organization.
+    repeated string organizational_unit = 3 [(buf.validate.field).repeated.items.string.min_len = 1];
+    
+    // Locality name (L): Name of the city or locality.
+    // Must be non-empty and a reasonable length (e.g., max 100 characters).
+    repeated string locality = 4 [(buf.validate.field).repeated.items.string.min_len = 1];
+    
+    // State or Province name (ST): Name of the state or province.
+    repeated string province = 5 [(buf.validate.field).repeated.items.string.min_len = 1];
+    
+    // Street Address (STREET): Physical street address.
+    repeated string street_address = 6 [(buf.validate.field).repeated.items.string.min_len = 1];
+    
+    // Postal Code (PC): Postal or ZIP code for the address.
+    repeated string postal_code = 7 [(buf.validate.field).repeated.items.string.min_len = 1];
+    
+    // Serial Number (SN): Unique identifier or serial number.
+    // Must be non-empty.
+    string serial_number = 8 [(buf.validate.field).string.min_len = 1];
+    
+    // Common Name (CN): Typically the person’s or entity's full name.
+    string common_name = 9 [(buf.validate.field).string.min_len = 1];
+    
+    // Parsed attributes including any non-standard attributes, as specified in RFC 2253.
+    // These attributes are parsed but not marshaled by this package.
+    repeated AttributeTypeAndValue names = 10;
+    
+    // Additional attributes to be included in the marshaled distinguished names.
+    // These override any attributes with the same OID in `names`.
+    repeated AttributeTypeAndValue extra_names = 11;
+}
+    
+message AttributeTypeAndValue {
+    // The type (or identifier) of the attribute (e.g., OID).
+    string type = 1 [(buf.validate.field).string.min_len = 1];
+  
+    // The value associated with the attribute.
+    string value = 2 [(buf.validate.field).string.min_len = 1];
 }

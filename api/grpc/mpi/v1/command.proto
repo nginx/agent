@@ -88,6 +88,8 @@ message ReleaseInfo {
 message ContainerInfo {
     // The identifier of the container
     string container_id = 1 [(buf.validate.field).string.uuid = true];
+    // The name of the host
+    string hostname = 2 [(buf.validate.field).string.address = true];
 }
 
 // A response to a CreateConnectionRequest

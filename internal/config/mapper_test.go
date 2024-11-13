@@ -36,7 +36,7 @@ func TestFromCommandProto(t *testing.T) {
 			},
 			expected: &Command{
 				Server: getAgentConfig().Command.Server,
-				Auth:   getAgentConfig().Command.Auth,
+				Auth:   &AuthConfig{Token: ""},
 				TLS:    getAgentConfig().Command.TLS,
 			},
 		},
@@ -54,7 +54,7 @@ func TestFromCommandProto(t *testing.T) {
 			},
 			expected: &Command{
 				Server: nil,
-				Auth:   getAgentConfig().Command.Auth,
+				Auth:   &AuthConfig{Token: ""},
 				TLS:    getAgentConfig().Command.TLS,
 			},
 		},
@@ -76,7 +76,7 @@ func TestFromCommandProto(t *testing.T) {
 			},
 			expected: &Command{
 				Server: getAgentConfig().Command.Server,
-				Auth:   nil,
+				Auth:   &AuthConfig{Token: ""},
 				TLS:    getAgentConfig().Command.TLS,
 			},
 		},
@@ -92,7 +92,7 @@ func TestFromCommandProto(t *testing.T) {
 			},
 			expected: &Command{
 				Server: getAgentConfig().Command.Server,
-				Auth:   getAgentConfig().Command.Auth,
+				Auth:   &AuthConfig{Token: ""},
 				TLS:    nil,
 			},
 		},
@@ -101,7 +101,7 @@ func TestFromCommandProto(t *testing.T) {
 			protoConfig: &mpi.CommandServer{},
 			expected: &Command{
 				Server: nil,
-				Auth:   nil,
+				Auth:   &AuthConfig{Token: ""},
 				TLS:    nil,
 			},
 		},

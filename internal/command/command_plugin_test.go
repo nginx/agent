@@ -39,6 +39,7 @@ func TestCommandPlugin_Subscriptions(t *testing.T) {
 		[]string{
 			bus.ResourceUpdateTopic,
 			bus.InstanceHealthTopic,
+			bus.DataPlaneHealthResponseTopic,
 			bus.DataPlaneResponseTopic,
 		},
 		subscriptions,
@@ -94,41 +95,92 @@ func TestCommandPlugin_Process(t *testing.T) {
 
 	commandPlugin.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: protos.OKDataPlaneResponse()})
 	require.Equal(t, 1, fakeCommandService.SendDataPlaneResponseCallCount())
+
+	commandPlugin.Process(ctx, &bus.Message{
+		Topic: bus.DataPlaneHealthResponseTopic,
+		Data:  protos.GetHealthyInstanceHealth(),
+	})
+	require.Equal(t, 1, fakeCommandService.UpdateDataPlaneHealthCallCount())
+	require.Equal(t, 1, fakeCommandService.SendDataPlaneResponseCallCount())
 }
 
 func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	messagePipe := bus.NewFakeMessagePipe()
-
-	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
-	err := commandPlugin.Init(ctx, messagePipe)
-	require.NoError(t, err)
-	defer commandPlugin.Close(ctx)
-
-	go commandPlugin.monitorSubscribeChannel(ctx)
-
-	commandPlugin.subscribeChannel <- &mpi.ManagementPlaneRequest{
-		Request: &mpi.ManagementPlaneRequest_ConfigUploadRequest{
-			ConfigUploadRequest: &mpi.ConfigUploadRequest{},
+	tests := []struct {
+		managementPlaneRequest *mpi.ManagementPlaneRequest
+		expectedTopic          *bus.Message
+		name                   string
+		isUploadRequest        bool
+		isApplyRequest         bool
+	}{
+		{
+			name: "Test 1: Config Upload Request",
+			managementPlaneRequest: &mpi.ManagementPlaneRequest{
+				Request: &mpi.ManagementPlaneRequest_ConfigUploadRequest{
+					ConfigUploadRequest: &mpi.ConfigUploadRequest{},
+				},
+			},
+			expectedTopic:   &bus.Message{Topic: bus.ConfigUploadRequestTopic},
+			isUploadRequest: true,
+		},
+		{
+			name: "Test 2: Config Apply Request",
+			managementPlaneRequest: &mpi.ManagementPlaneRequest{
+				Request: &mpi.ManagementPlaneRequest_ConfigApplyRequest{
+					ConfigApplyRequest: &mpi.ConfigApplyRequest{},
+				},
+			},
+			expectedTopic:  &bus.Message{Topic: bus.ConfigApplyRequestTopic},
+			isApplyRequest: true,
+		},
+		{
+			name: "Test 3: Health Request",
+			managementPlaneRequest: &mpi.ManagementPlaneRequest{
+				Request: &mpi.ManagementPlaneRequest_HealthRequest{
+					HealthRequest: &mpi.HealthRequest{},
+				},
+			},
+			expectedTopic: &bus.Message{Topic: bus.DataPlaneHealthRequestTopic},
 		},
 	}
 
-	assert.Eventually(
-		t,
-		func() bool { return len(messagePipe.GetMessages()) == 1 },
-		2*time.Second,
-		10*time.Millisecond,
-	)
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			messagePipe := bus.NewFakeMessagePipe()
 
-	messages := messagePipe.GetMessages()
-	assert.Len(t, messages, 1)
-	assert.Equal(t, bus.ConfigUploadRequestTopic, messages[0].Topic)
+			commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+			err := commandPlugin.Init(ctx, messagePipe)
+			require.NoError(t, err)
+			defer commandPlugin.Close(ctx)
 
-	request, ok := messages[0].Data.(*mpi.ManagementPlaneRequest)
-	assert.True(t, ok)
-	require.NotNil(t, request.GetConfigUploadRequest())
+			go commandPlugin.monitorSubscribeChannel(ctx)
+
+			commandPlugin.subscribeChannel <- test.managementPlaneRequest
+
+			assert.Eventually(
+				t,
+				func() bool { return len(messagePipe.GetMessages()) == 1 },
+				2*time.Second,
+				10*time.Millisecond,
+			)
+
+			messages := messagePipe.GetMessages()
+			assert.Len(t, messages, 1)
+			assert.Equal(t, test.expectedTopic.Topic, messages[0].Topic)
+
+			_, ok := messages[0].Data.(*mpi.ManagementPlaneRequest)
+
+			if test.isUploadRequest {
+				assert.True(t, ok)
+				require.NotNil(t, test.managementPlaneRequest.GetConfigUploadRequest())
+			}
+			if test.isApplyRequest {
+				assert.True(t, ok)
+				require.NotNil(t, test.managementPlaneRequest.GetConfigApplyRequest())
+			}
+		})
+	}
 }
 
 func TestMonitorSubscribeChannel(t *testing.T) {

@@ -12,7 +12,6 @@ import (
 
 	"go.uber.org/zap"
 
-	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
@@ -33,17 +32,22 @@ const (
 
 type nginxPlusScraper struct {
 	plusClient *plusapi.NginxClient
-	settings   component.TelemetrySettings
 	cfg        *Config
 	mb         *metadata.MetricsBuilder
+	rb         *metadata.ResourceBuilder
 	logger     *zap.Logger
+	settings   receiver.Settings
 }
 
 func newNginxPlusScraper(
 	settings receiver.Settings,
 	cfg *Config,
 ) (*nginxPlusScraper, error) {
+	logger := settings.Logger
+	logger.Info("Creating NGINX Plus scraper")
+
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
+	rb := mb.NewResourceBuilder()
 
 	plusClient, err := plusapi.NewNginxClient(cfg.Endpoint,
 		plusapi.WithMaxAPIVersion(),
@@ -54,9 +58,10 @@ func newNginxPlusScraper(
 
 	return &nginxPlusScraper{
 		plusClient: plusClient,
-		settings:   settings.TelemetrySettings,
+		settings:   settings,
 		cfg:        cfg,
 		mb:         mb,
+		rb:         rb,
 		logger:     settings.Logger,
 	}, nil
 }
@@ -67,11 +72,14 @@ func (nps *nginxPlusScraper) scrape(ctx context.Context) (pmetric.Metrics, error
 		return pmetric.Metrics{}, fmt.Errorf("GET stats: %w", err)
 	}
 
-	nps.logger.Debug("NGINX Plus stats", zap.Any("stats", stats))
+	nps.rb.SetInstanceID(nps.settings.ID.Name())
+	nps.rb.SetInstanceType("nginxplus")
+	nps.logger.Debug("NGINX Plus resource info", zap.Any("resource", nps.rb))
 
+	nps.logger.Debug("NGINX Plus stats", zap.Any("stats", stats))
 	nps.recordMetrics(stats)
 
-	return nps.mb.Emit(), nil
+	return nps.mb.Emit(metadata.WithResource(nps.rb.Emit())), nil
 }
 
 func (nps *nginxPlusScraper) recordMetrics(stats *plusapi.Stats) {

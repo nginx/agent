@@ -11,8 +11,10 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/backoff"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
@@ -31,6 +33,7 @@ type (
 		service *otelcol.Collector
 		cancel  context.CancelFunc
 		config  *config.Config
+		mu      *sync.Mutex
 		stopped bool
 	}
 )
@@ -64,6 +67,7 @@ func New(conf *config.Config) (*Collector, error) {
 		config:  conf,
 		service: oTelCollector,
 		stopped: true,
+		mu:      &sync.Mutex{},
 	}, nil
 }
 
@@ -200,6 +204,8 @@ func (oc *Collector) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
 	case bus.NginxConfigUpdateTopic:
 		oc.handleNginxConfigUpdate(ctx, msg)
+	case bus.ResourceUpdateTopic:
+		oc.handleResourceUpdate(ctx, msg)
 	default:
 		slog.DebugContext(ctx, "OTel collector plugin unknown topic", "topic", msg.Topic)
 	}
@@ -208,11 +214,15 @@ func (oc *Collector) Process(ctx context.Context, msg *bus.Message) {
 // Subscriptions returns the list of topics the plugin is subscribed to
 func (oc *Collector) Subscriptions() []string {
 	return []string{
+		bus.ResourceUpdateTopic,
 		bus.NginxConfigUpdateTopic,
 	}
 }
 
 func (oc *Collector) handleNginxConfigUpdate(ctx context.Context, msg *bus.Message) {
+	oc.mu.Lock()
+	defer oc.mu.Unlock()
+
 	nginxConfigContext, ok := msg.Data.(*model.NginxConfigContext)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *model.NginxConfigContext", "payload", msg.Data)
@@ -231,6 +241,93 @@ func (oc *Collector) handleNginxConfigUpdate(ctx context.Context, msg *bus.Messa
 
 		oc.restartCollector(ctx)
 	}
+}
+
+func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message) {
+	oc.mu.Lock()
+	defer oc.mu.Unlock()
+
+	resourceUpdateContext, ok := msg.Data.(*v1.Resource)
+	if !ok {
+		slog.ErrorContext(ctx, "Unable to cast message payload to *v1.Resource", "payload", msg.Data)
+		return
+	}
+
+	resourceProcessorUpdated := oc.updateResourceProcessor(resourceUpdateContext)
+	headersSetterExtensionUpdated := oc.updateHeadersSetterExtension(ctx, resourceUpdateContext)
+
+	if resourceProcessorUpdated || headersSetterExtensionUpdated {
+		slog.InfoContext(ctx, "Reloading OTel collector config")
+		err := writeCollectorConfig(oc.config.Collector)
+		if err != nil {
+			slog.ErrorContext(ctx, "Failed to write OTel Collector config", "error", err)
+			return
+		}
+
+		oc.restartCollector(ctx)
+	}
+}
+
+func (oc *Collector) updateResourceProcessor(resourceUpdateContext *v1.Resource) bool {
+	resourceProcessorUpdated := false
+
+	if oc.config.Collector.Processors.Resource == nil {
+		oc.config.Collector.Processors.Resource = &config.Resource{
+			Attributes: make([]config.ResourceAttribute, 0),
+		}
+	}
+
+	if oc.config.Collector.Processors.Resource != nil &&
+		resourceUpdateContext.GetResourceId() != "" {
+		resourceProcessorUpdated = oc.updateResourceAttributes(
+			[]config.ResourceAttribute{
+				{
+					Key:    "resource.id",
+					Action: "insert",
+					Value:  resourceUpdateContext.GetResourceId(),
+				},
+			},
+		)
+	}
+
+	return resourceProcessorUpdated
+}
+
+func (oc *Collector) updateHeadersSetterExtension(
+	ctx context.Context,
+	resourceUpdateContext *v1.Resource,
+) bool {
+	headersSetterExtensionUpdated := false
+
+	if oc.config.Collector.Extensions.HeadersSetter != nil &&
+		oc.config.Collector.Extensions.HeadersSetter.Headers != nil {
+		isUUIDHeaderSet := false
+		for _, header := range oc.config.Collector.Extensions.HeadersSetter.Headers {
+			if header.Key == "uuid" {
+				isUUIDHeaderSet = true
+				break
+			}
+		}
+
+		if !isUUIDHeaderSet {
+			slog.DebugContext(
+				ctx, "Adding uuid header to OTel collector",
+				"uuid", resourceUpdateContext.GetResourceId(),
+			)
+			oc.config.Collector.Extensions.HeadersSetter.Headers = append(
+				oc.config.Collector.Extensions.HeadersSetter.Headers,
+				config.Header{
+					Action: "insert",
+					Key:    "uuid",
+					Value:  resourceUpdateContext.GetResourceId(),
+				},
+			)
+
+			headersSetterExtensionUpdated = true
+		}
+	}
+
+	return headersSetterExtensionUpdated
 }
 
 func (oc *Collector) restartCollector(ctx context.Context) {
@@ -351,6 +448,31 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 	}
 
 	return nginxReceiverFound, reloadCollector
+}
+
+// nolint: revive
+func (oc *Collector) updateResourceAttributes(
+	attributesToAdd []config.ResourceAttribute,
+) (actionUpdated bool) {
+	actionUpdated = false
+
+	if oc.config.Collector.Processors.Resource.Attributes != nil {
+	OUTER:
+		for _, toAdd := range attributesToAdd {
+			for _, action := range oc.config.Collector.Processors.Resource.Attributes {
+				if action.Key == toAdd.Key {
+					continue OUTER
+				}
+			}
+			oc.config.Collector.Processors.Resource.Attributes = append(
+				oc.config.Collector.Processors.Resource.Attributes,
+				toAdd,
+			)
+			actionUpdated = true
+		}
+	}
+
+	return actionUpdated
 }
 
 func isOSSReceiverChanged(nginxReceiver config.NginxReceiver, nginxConfigContext *model.NginxConfigContext) bool {

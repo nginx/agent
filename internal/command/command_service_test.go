@@ -127,6 +127,23 @@ func TestCommandService_UpdateDataPlaneStatusSubscribeError(t *testing.T) {
 	}
 }
 
+func TestCommandService_CreateConnection(t *testing.T) {
+	ctx := context.Background()
+	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
+
+	commandService := NewCommandService(
+		ctx,
+		commandServiceClient,
+		types.AgentConfig(),
+		make(chan *mpi.ManagementPlaneRequest),
+	)
+
+	// connection created when no nginx instance found
+	resource := protos.GetHostResource()
+	_, err := commandService.CreateConnection(ctx, resource)
+	require.NoError(t, err)
+}
+
 func TestCommandService_UpdateDataPlaneHealth(t *testing.T) {
 	ctx := context.Background()
 	commandServiceClient := &v1fakes.FakeCommandServiceClient{}

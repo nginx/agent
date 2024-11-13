@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/test/protos"
 	"github.com/nginx/agent/v3/test/stub"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/otelcol"
@@ -86,7 +86,7 @@ func TestCollector_InitAndClose(t *testing.T) {
 }
 
 // nolint: revive
-func TestCollector_Process(t *testing.T) {
+func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 	nginxPlusMock := helpers.NewMockNGINXPlusAPIServer(t)
 	defer nginxPlusMock.Close()
 
@@ -221,6 +221,189 @@ func TestCollector_Process(t *testing.T) {
 			}
 
 			assert.Equal(tt, test.receivers, collector.config.Collector.Receivers)
+		})
+	}
+}
+
+func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
+	conf := types.OTelConfig(t)
+	conf.Collector.Log.Path = ""
+	conf.Collector.Processors.Batch = nil
+	conf.Collector.Processors.Attribute = nil
+	conf.Collector.Processors.Resource = nil
+	conf.Collector.Exporters.OtlpExporters = nil
+	conf.Collector.Exporters.PrometheusExporter = &config.PrometheusExporter{
+		Server: &config.ServerConfig{
+			Host: "",
+			Port: 0,
+			Type: 0,
+		},
+		TLS: &config.TLSConfig{
+			Cert:       "",
+			Key:        "",
+			Ca:         "",
+			ServerName: "",
+			SkipVerify: false,
+		},
+	}
+
+	tests := []struct {
+		message    *bus.Message
+		processors config.Processors
+		name       string
+		headers    []config.Header
+	}{
+		{
+			name: "Test 1: Resource update adds resource id attribute",
+			message: &bus.Message{
+				Topic: bus.ResourceUpdateTopic,
+				Data:  protos.GetHostResource(),
+			},
+			processors: config.Processors{
+				Resource: &config.Resource{
+					Attributes: []config.ResourceAttribute{
+						{
+							Key:    "resource.id",
+							Action: "insert",
+							Value:  "1234",
+						},
+					},
+				},
+			},
+			headers: []config.Header{
+				{
+					Action: "insert",
+					Key:    "authorization",
+					Value:  "fake-authorization",
+				},
+				{
+					Action: "insert",
+					Key:    "uuid",
+					Value:  "1234",
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			collector, err := New(conf)
+			require.NoError(tt, err, "NewCollector should not return an error with valid config")
+
+			ctx := context.Background()
+			messagePipe := bus.NewMessagePipe(10)
+			err = messagePipe.Register(10, []bus.Plugin{collector})
+
+			require.NoError(tt, err)
+			require.NoError(tt, collector.Init(ctx, messagePipe), "Init should not return an error")
+			defer collector.Close(ctx)
+
+			assert.Eventually(
+				tt,
+				func() bool {
+					tt.Logf("Collector state is %+v", collector.service.GetState())
+					return collector.service.GetState() == otelcol.StateRunning
+				},
+				5*time.Second,
+				100*time.Millisecond,
+			)
+
+			collector.Process(ctx, test.message)
+
+			assert.Eventually(
+				tt,
+				func() bool {
+					tt.Logf("Collector state is %+v", collector.service.GetState())
+					return collector.service.GetState() == otelcol.StateRunning
+				},
+				5*time.Second,
+				100*time.Millisecond,
+			)
+
+			assert.Equal(tt, test.processors, collector.config.Collector.Processors)
+			assert.Equal(tt, test.headers, collector.config.Collector.Extensions.HeadersSetter.Headers)
+		})
+	}
+}
+
+func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
+	conf := types.OTelConfig(t)
+	conf.Collector.Log.Path = ""
+	conf.Collector.Processors.Batch = nil
+	conf.Collector.Processors.Attribute = nil
+	conf.Collector.Processors.Resource = nil
+	conf.Collector.Exporters.OtlpExporters = nil
+	conf.Collector.Exporters.PrometheusExporter = &config.PrometheusExporter{
+		Server: &config.ServerConfig{
+			Host: "",
+			Port: 0,
+			Type: 0,
+		},
+		TLS: &config.TLSConfig{
+			Cert:       "",
+			Key:        "",
+			Ca:         "",
+			ServerName: "",
+			SkipVerify: false,
+		},
+	}
+
+	tests := []struct {
+		message    *bus.Message
+		processors config.Processors
+		name       string
+	}{
+		{
+			name: "Test 1: Message cannot be parsed to v1.Resource",
+			message: &bus.Message{
+				Topic: bus.ResourceUpdateTopic,
+				Data:  struct{}{},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			collector, err := New(conf)
+			require.NoError(tt, err, "NewCollector should not return an error with valid config")
+
+			ctx := context.Background()
+			messagePipe := bus.NewMessagePipe(10)
+			err = messagePipe.Register(10, []bus.Plugin{collector})
+
+			require.NoError(tt, err)
+			require.NoError(tt, collector.Init(ctx, messagePipe), "Init should not return an error")
+			defer collector.Close(ctx)
+
+			assert.Eventually(
+				tt,
+				func() bool {
+					tt.Logf("Collector state is %+v", collector.service.GetState())
+					return collector.service.GetState() == otelcol.StateRunning
+				},
+				5*time.Second,
+				100*time.Millisecond,
+			)
+
+			collector.Process(ctx, test.message)
+
+			assert.Eventually(
+				tt,
+				func() bool {
+					tt.Logf("Collector state is %+v", collector.service.GetState())
+					return collector.service.GetState() == otelcol.StateRunning
+				},
+				5*time.Second,
+				100*time.Millisecond,
+			)
+
+			assert.Equal(tt,
+				config.Processors{
+					Batch:     nil,
+					Attribute: nil,
+					Resource:  nil,
+				},
+				collector.config.Collector.Processors)
 		})
 	}
 }
@@ -377,6 +560,62 @@ func TestCollector_updateExistingNginxPlusReceiver(t *testing.T) {
 			assert.True(tt, nginxReceiverFound)
 			assert.True(tt, reloadCollector)
 			assert.Equal(tt, test.expectedReceivers, collector.config.Collector.Receivers)
+		})
+	}
+}
+
+func TestCollector_updateResourceAttributes(t *testing.T) {
+	conf := types.OTelConfig(t)
+	conf.Collector.Log.Path = ""
+	conf.Collector.Processors.Batch = nil
+	conf.Collector.Processors.Attribute = nil
+	conf.Collector.Processors.Resource = nil
+
+	tests := []struct {
+		name                   string
+		setup                  []config.ResourceAttribute
+		attributes             []config.ResourceAttribute
+		expectedAttribs        []config.ResourceAttribute
+		expectedReloadRequired bool
+	}{
+		{
+			name:                   "Test 1: No Actions returns false",
+			setup:                  []config.ResourceAttribute{},
+			attributes:             []config.ResourceAttribute{},
+			expectedReloadRequired: false,
+			expectedAttribs:        []config.ResourceAttribute{},
+		},
+		{
+			name:                   "Test 2: Adding an action returns true",
+			setup:                  []config.ResourceAttribute{},
+			attributes:             []config.ResourceAttribute{{Key: "test", Action: "insert", Value: "test value"}},
+			expectedReloadRequired: true,
+			expectedAttribs:        []config.ResourceAttribute{{Key: "test", Action: "insert", Value: "test value"}},
+		},
+		{
+			name:  "Test 3: Adding a duplicate key doesn't append",
+			setup: []config.ResourceAttribute{{Key: "test", Action: "insert", Value: "test value 1"}},
+			attributes: []config.ResourceAttribute{
+				{Key: "test", Action: "insert", Value: "updated value 2"},
+			},
+			expectedReloadRequired: false,
+			expectedAttribs:        []config.ResourceAttribute{{Key: "test", Action: "insert", Value: "test value 1"}},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			collector, err := New(conf)
+			require.NoError(tt, err, "NewCollector should not return an error with valid config")
+
+			// set up Actions
+			conf.Collector.Processors.Resource = &config.Resource{Attributes: test.setup}
+
+			reloadRequired := collector.updateResourceAttributes(test.attributes)
+			assert.Equal(tt,
+				test.expectedAttribs,
+				conf.Collector.Processors.Resource.Attributes)
+			assert.Equal(tt, test.expectedReloadRequired, reloadRequired)
 		})
 	}
 }

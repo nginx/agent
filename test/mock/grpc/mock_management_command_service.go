@@ -312,6 +312,15 @@ func (cs *CommandService) addResponseAndRequestEndpoints() {
 		}
 	})
 
+	cs.server.DELETE("/api/v1/responses", func(c *gin.Context) {
+		cs.dataPlaneResponsesMutex.Lock()
+		defer cs.dataPlaneResponsesMutex.Unlock()
+
+		cs.dataPlaneResponses = make([]*mpi.DataPlaneResponse, 0)
+
+		c.JSON(http.StatusOK, "cleared responses")
+	})
+
 	cs.server.POST("/api/v1/requests", func(c *gin.Context) {
 		request := mpi.ManagementPlaneRequest{}
 		body, err := io.ReadAll(c.Request.Body)
@@ -392,7 +401,6 @@ func (cs *CommandService) findInstanceConfigFiles(instanceID string) (configFile
 			if fileErr != nil {
 				return fileErr
 			}
-			file.Action = mpi.File_FILE_ACTION_UPDATE.Enum()
 
 			slog.Debug(
 				"File found:",

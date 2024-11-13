@@ -55,9 +55,6 @@ func AgentConfig() *config.Config {
 							Host: "127.0.0.1",
 							Port: randomPort1,
 						},
-						Auth: &config.AuthConfig{
-							Token: "super-secret-token",
-						},
 					},
 				},
 			},
@@ -88,6 +85,15 @@ func AgentConfig() *config.Config {
 						Host: "localhost",
 						Port: randomPort3,
 						Type: 0,
+					},
+				},
+				HeadersSetter: &config.HeadersSetter{
+					Headers: []config.Header{
+						{
+							Action: "insert",
+							Key:    "authorization",
+							Value:  "fake-authorization",
+						},
 					},
 				},
 			},

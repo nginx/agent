@@ -38,15 +38,17 @@ const Percentage = 100
 
 type (
 	NginxLogScraper struct {
-		outChan <-chan []*entry.Entry
-		cfg     *config.Config
-		logger  *zap.Logger
-		mb      *metadata.MetricsBuilder
-		pipe    *pipeline.DirectedPipeline
-		wg      *sync.WaitGroup
-		cancel  context.CancelFunc
-		entries []*entry.Entry
-		mut     sync.Mutex
+		outChan  <-chan []*entry.Entry
+		cfg      *config.Config
+		settings receiver.Settings
+		logger   *zap.Logger
+		mb       *metadata.MetricsBuilder
+		rb       *metadata.ResourceBuilder
+		pipe     *pipeline.DirectedPipeline
+		wg       *sync.WaitGroup
+		cancel   context.CancelFunc
+		entries  []*entry.Entry
+		mut      sync.Mutex
 	}
 
 	NginxMetrics struct {
@@ -70,7 +72,9 @@ func NewScraper(
 ) (*NginxLogScraper, error) {
 	logger := settings.Logger
 	logger.Info("Creating NGINX access log scraper")
+
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
+	rb := mb.NewResourceBuilder()
 
 	operators := make([]operator.Config, 0)
 
@@ -90,13 +94,15 @@ func NewScraper(
 	}
 
 	return &NginxLogScraper{
-		cfg:     cfg,
-		logger:  logger,
-		mb:      mb,
-		mut:     sync.Mutex{},
-		outChan: outChan,
-		pipe:    stanzaPipeline,
-		wg:      &sync.WaitGroup{},
+		cfg:      cfg,
+		logger:   logger,
+		settings: settings,
+		mb:       mb,
+		rb:       rb,
+		mut:      sync.Mutex{},
+		outChan:  outChan,
+		pipe:     stanzaPipeline,
+		wg:       &sync.WaitGroup{},
 	}, nil
 }
 
@@ -158,6 +164,10 @@ func (nls *NginxLogScraper) Scrape(_ context.Context) (pmetric.Metrics, error) {
 	nls.entries = make([]*entry.Entry, 0)
 	timeNow := pcommon.NewTimestampFromTime(time.Now())
 
+	nls.rb.SetInstanceID(nls.settings.ID.Name())
+	nls.rb.SetInstanceType("nginx")
+	nls.logger.Debug("NGINX OSS access log resource info", zap.Any("resource", nls.rb))
+
 	nls.mb.RecordNginxHTTPResponseStatusDataPoint(
 		timeNow,
 		nginxMetrics.responseStatuses.oneHundredStatusRange,
@@ -184,12 +194,15 @@ func (nls *NginxLogScraper) Scrape(_ context.Context) (pmetric.Metrics, error) {
 		metadata.AttributeNginxStatusRange5xx,
 	)
 
-	return nls.mb.Emit(), nil
+	return nls.mb.Emit(metadata.WithResource(nls.rb.Emit())), nil
 }
 
 func (nls *NginxLogScraper) Shutdown(_ context.Context) error {
 	nls.logger.Info("Shutting down NGINX access log scraper")
-	nls.cancel()
+
+	if nls.cancel != nil {
+		nls.cancel()
+	}
 	nls.wg.Wait()
 
 	return nls.pipe.Stop()

@@ -682,6 +682,8 @@ func (m *ContainerInfo) validate(all bool) error {
 
 	// no validation rules for ContainerId
 
+	// no validation rules for Hostname
+
 	if len(errors) > 0 {
 		return ContainerInfoMultiError(errors)
 	}
