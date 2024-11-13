@@ -6,16 +6,10 @@
 package files
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
 	"crypto/x509"
-	"crypto/x509/pkix"
-	"encoding/pem"
-	"math/big"
 	"net"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -45,10 +39,16 @@ func TestGetFileMeta(t *testing.T) {
 			var file *os.File
 
 			if tt.isCert {
-				file, expected = createCertFile(t, tempDir)
+				file = helpers.CreateCertFileWithErrorCheck(t, tempDir, "cert.pem")
+				fileInfo, err := file.Stat()
+				require.NoError(t, err)
+				expected := protos.CertMeta(file.Name(), "")
+				expected.Size = fileInfo.Size()
 				fileMeta, err = FileMetaWithCertificate(file.Name())
+				
 			} else {
-				file, expected = setupTestFile(t, tempDir)
+				file := helpers.CreateFileWithErrorCheck(t, tempDir, "get_file_meta.txt")
+				expected = protos.FileMeta(file.Name(), "")
 				fileMeta, err = FileMeta(file.Name())
 			}
 
@@ -226,50 +226,3 @@ func TestConvertX509SignatureAlgorithm(t *testing.T) {
 	}
 }
 
-func setupTestFile(t *testing.T, tempDir string) (*os.File, *mpi.FileMeta) {
-	t.Helper()
-
-	file := helpers.CreateFileWithErrorCheck(t, tempDir, "get_file_meta.txt")
-
-	return file, protos.FileMeta(file.Name(), "")
-}
-
-func createCertFile(t *testing.T, tempDir string) (*os.File, *mpi.FileMeta) {
-	t.Helper()
-
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	require.NoError(t, err)
-
-	tmpl := x509.Certificate{
-		NotBefore:    time.Now(),
-		NotAfter:     time.Now().AddDate(5, 0, 0),
-		SerialNumber: big.NewInt(123123),
-		Subject: pkix.Name{
-			CommonName:   "New Name",
-			Organization: []string{"New Org."},
-		},
-		Issuer: pkix.Name{
-			CommonName:   "New Name",
-			Organization: []string{"New Org."},
-		},
-		BasicConstraintsValid: true,
-	}
-
-	cert, err := x509.CreateCertificate(rand.Reader, &tmpl, &tmpl, &key.PublicKey, key)
-	require.NoError(t, err)
-
-	certPem := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert})
-	file, err := os.CreateTemp(tempDir, "cert.pem")
-	require.NoError(t, err)
-
-	err = os.WriteFile(file.Name(), certPem, 0o600)
-	require.NoError(t, err)
-
-	fileInfo, err := file.Stat()
-	require.NoError(t, err)
-
-	expected := protos.CertMeta(file.Name(), "")
-	expected.Size = fileInfo.Size()
-
-	return file, expected
-}
