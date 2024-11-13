@@ -133,6 +133,14 @@ func (fms *FileManagerService) UpdateOverview(
 			return nil, validatedError
 		}
 
+		response.Overview = &mpi.FileOverview{
+			Files: filesToUpdate,
+			ConfigVersion: &mpi.ConfigVersion{
+				InstanceId: instanceID,
+				Version:    files.GenerateConfigVersion(filesToUpdate),
+			},
+		}
+
 		return response, nil
 	}
 

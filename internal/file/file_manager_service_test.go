@@ -28,9 +28,19 @@ import (
 func TestFileManagerService_UpdateOverview(t *testing.T) {
 	ctx := context.Background()
 
-	fileMeta := protos.FileMeta("/etc/nginx/nginx.conf", "")
+	filePath := filepath.Join(t.TempDir(), "nginx.conf")
+	fileMeta := protos.FileMeta(filePath, "")
+
+	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
+	fileHash := files.GenerateHash(fileContent)
+
+	overview := protos.FileOverview(filePath, fileHash)
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+	fakeFileServiceClient.UpdateOverviewReturns(&mpi.UpdateOverviewResponse{
+		Overview: overview,
+	}, nil)
+
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
 	fileManagerService.SetIsConnected(true)
 

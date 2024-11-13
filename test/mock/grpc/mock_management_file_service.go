@@ -83,7 +83,9 @@ func (mgs *FileService) UpdateOverview(
 	}
 	mgs.requestChan <- configUploadRequest
 
-	return &v1.UpdateOverviewResponse{}, nil
+	return &v1.UpdateOverviewResponse{
+		Overview: request.GetOverview(),
+	}, nil
 }
 
 func (mgs *FileService) GetFile(
