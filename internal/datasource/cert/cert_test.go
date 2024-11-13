@@ -84,6 +84,9 @@ func TestLoadCertificate(t *testing.T) {
 
 	certFile := helpers.WriteCertFiles(t, tmpDir, certContents)
 	nonPEMFile := helpers.WriteCertFiles(t, tmpDir, certNonPemContents)
+	require.NotEmpty(t, nonPEMFile)
+
+	helpers.CreateFileWithErrorCheck(t, tmpDir, nonPemCertFileName)
 
 	testCases := []struct {
 		testName string
@@ -102,7 +105,7 @@ func TestLoadCertificate(t *testing.T) {
 		},
 		{
 			testName: "non-PEM cert file",
-			certFile: nonPEMFile,
+			certFile: "",
 			isError:  true,
 		},
 	}
