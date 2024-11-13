@@ -15,7 +15,7 @@ Follow these steps to configure and run NGINX Agent and a mock interface ("contr
 
 ## Install NGINX
 
-Follow the steps in the [Installation]({{< relref "/installation-upgrade/" >}}) section to download, install, and run NGINX.
+Follow the steps in the [Installation](https://docs.nginx.com/nginx/admin-guide/installing-nginx/) section to download, install, and run NGINX.
 
 ## Clone the NGINX Agent Repository
 
