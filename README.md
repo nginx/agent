@@ -66,7 +66,7 @@ The NGINX Agent keeps a connection open to the NGINX Plus API and queries based 
 When running alongside an open source instance of NGINX, NGINX Agent requires that NGINX Access and Error logs are turned on and contain all default variables.
 
 ### NGINX Plus
-For NGINX Agent to work properly with an NGINX Plus instance, the API needs to be configured in that instance's nginx.conf. See [Instance Metrics Overview](https://docs.nginx.com/nginx-management-suite/nim/about/overview-metrics/) for more details. Once NGINX Plus is configured with the `/api/` endpoint, NGINX Agent will automatically use it on startup.
+For NGINX Agent to work properly with an NGINX Plus instance, the API needs to be configured in that instance's nginx.conf. See [Instance Metrics Overview](https://docs.nginx.com/nginx-instance-manager/monitoring/overview-metrics/) for more details. Once NGINX Plus is configured with the `/api/` endpoint, NGINX Agent will automatically use it on startup.
 
 ## Event Notifications
 NGINX Agent allows a gRPC connected control system to register a listener for a specific event. The control mechanism is then invoked when NGINX Agent sends an associated system signal. The source of a notification can be either the NGINX instance or NGINX Agent itself. Here's a list of currently supported events:

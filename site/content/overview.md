@@ -41,7 +41,7 @@ When running alongside an open source instance of NGINX, NGINX Agent requires th
 
 ### NGINX Plus
 
-For NGINX Agent to work properly with an NGINX Plus instance, the API needs to be configured in that instance's nginx.conf. See [Instance Metrics Overview](https://docs.nginx.com/nginx-management-suite/nim/about/overview-metrics/) for more details. Once NGINX Plus is configured with the `/api/` endpoint, the Agent will automatically use it on startup.
+For NGINX Agent to work properly with an NGINX Plus instance, the API needs to be configured in that instance's nginx.conf. See [Instance Metrics Overview](https://docs.nginx.com/nginx-instance-manager/monitoring/overview-metrics/) for more details. Once NGINX Plus is configured with the `/api/` endpoint, the Agent will automatically use it on startup.
 
 ## Event Notifications
 
