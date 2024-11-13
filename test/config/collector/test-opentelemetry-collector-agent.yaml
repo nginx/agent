@@ -1,7 +1,7 @@
 receivers:
   syslog:
     tcp:
-      listen_address: "127.0.0.1:515"
+      listen_address: "127.0.0.1:1515"
     protocol: rfc5424
   hostmetrics:
     collection_interval: 1m0s

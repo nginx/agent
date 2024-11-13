@@ -122,7 +122,7 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 				},
 				SyslogReceiver: &config.SyslogReceiver{
 					Host:     "127.0.0.1",
-					Port:     "515",
+					Port:     "1515",
 					Protocol: "rfc5424",
 				},
 				OtlpReceivers: types.OtlpReceivers(),
@@ -164,7 +164,7 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 				OtlpReceivers: types.OtlpReceivers(),
 				SyslogReceiver: &config.SyslogReceiver{
 					Host:     "127.0.0.1",
-					Port:     "515",
+					Port:     "1515",
 					Protocol: "rfc5424",
 				},
 				NginxReceivers: []config.NginxReceiver{
