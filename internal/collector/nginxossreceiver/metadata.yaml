@@ -20,7 +20,7 @@ resource_attributes:
     enabled: true
 
 attributes:
-  nginx.conn.outcome:
+  nginx.connection.outcome:
     description: The outcome of the connection.
     type: string
     enum:
@@ -49,7 +49,7 @@ metrics:
       monotonic: true
       aggregation_temporality: cumulative
     unit: "requests"
-  nginx.http.conn:
+  nginx.http.connections:
     enabled: true
     description: The total number of connections.
     sum:
@@ -58,15 +58,15 @@ metrics:
       aggregation_temporality: cumulative
     unit: "connections"
     attributes:
-      - nginx.conn.outcome
-  nginx.http.conn.count:
+      - nginx.connection.outcome
+  nginx.http.connections.count:
     enabled: true
     description: The current number of connections.
     gauge:
       value_type: int
     unit: "connections"
     attributes:
-      - nginx.conn.outcome
+      - nginx.connection.outcome
   nginx.http.response.status:
     enabled: true
     description: The number of responses, grouped by status code range.
