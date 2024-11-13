@@ -13,7 +13,7 @@ Follow the steps in this guide to encrypt communication between NGINX Agent and 
 
 ## Before You Begin
 
-To enable mTLS, you must have TLS enabled and supply a key, cert, and a CA cert on both the client and server. TSee the [Secure Traffic with Certificates](https://docs.nginx.com/nginx-management-suite/admin-guides/configuration/secure-traffic/) topic for instructions on how to generate keys and set them in the specific values in the NGINX Agent configuration.
+To enable mTLS, you must have TLS enabled and supply a key, cert, and a CA cert on both the client and server. See the [Secure Traffic with Certificates](https://docs.nginx.com/nginx-instance-manager/system-configuration/secure-traffic/) topic for instructions on how to generate keys and set them in the specific values in the NGINX Agent configuration.
 
 ## Enabling mTLS
 
