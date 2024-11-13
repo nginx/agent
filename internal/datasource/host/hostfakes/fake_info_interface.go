@@ -10,9 +10,10 @@ import (
 )
 
 type FakeInfoInterface struct {
-	ContainerInfoStub        func() *v1.Resource_ContainerInfo
+	ContainerInfoStub        func(context.Context) *v1.Resource_ContainerInfo
 	containerInfoMutex       sync.RWMutex
 	containerInfoArgsForCall []struct {
+		arg1 context.Context
 	}
 	containerInfoReturns struct {
 		result1 *v1.Resource_ContainerInfo
@@ -56,17 +57,18 @@ type FakeInfoInterface struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeInfoInterface) ContainerInfo() *v1.Resource_ContainerInfo {
+func (fake *FakeInfoInterface) ContainerInfo(arg1 context.Context) *v1.Resource_ContainerInfo {
 	fake.containerInfoMutex.Lock()
 	ret, specificReturn := fake.containerInfoReturnsOnCall[len(fake.containerInfoArgsForCall)]
 	fake.containerInfoArgsForCall = append(fake.containerInfoArgsForCall, struct {
-	}{})
+		arg1 context.Context
+	}{arg1})
 	stub := fake.ContainerInfoStub
 	fakeReturns := fake.containerInfoReturns
-	fake.recordInvocation("ContainerInfo", []interface{}{})
+	fake.recordInvocation("ContainerInfo", []interface{}{arg1})
 	fake.containerInfoMutex.Unlock()
 	if stub != nil {
-		return stub()
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
@@ -80,10 +82,17 @@ func (fake *FakeInfoInterface) ContainerInfoCallCount() int {
 	return len(fake.containerInfoArgsForCall)
 }
 
-func (fake *FakeInfoInterface) ContainerInfoCalls(stub func() *v1.Resource_ContainerInfo) {
+func (fake *FakeInfoInterface) ContainerInfoCalls(stub func(context.Context) *v1.Resource_ContainerInfo) {
 	fake.containerInfoMutex.Lock()
 	defer fake.containerInfoMutex.Unlock()
 	fake.ContainerInfoStub = stub
+}
+
+func (fake *FakeInfoInterface) ContainerInfoArgsForCall(i int) context.Context {
+	fake.containerInfoMutex.RLock()
+	defer fake.containerInfoMutex.RUnlock()
+	argsForCall := fake.containerInfoArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakeInfoInterface) ContainerInfoReturns(result1 *v1.Resource_ContainerInfo) {
