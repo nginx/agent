@@ -1,7 +1,7 @@
 # https://github.com/open-telemetry/opentelemetry-collector/blob/main/receiver/otlpreceiver/README.md
 receivers:
   otlp/2:
-    compression: gzip
+    compression: snappy
     protocols:
       grpc:
         endpoint: 0.0.0.0:4317
