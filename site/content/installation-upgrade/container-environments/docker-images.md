@@ -186,14 +186,6 @@ You can pass the following arguments when running the **make** command to build 
 
 {{</bootstrap-table>}}
 
-Refer to the [Supported distributions]({{< relref "/technical-specifications.md#supported-distributions" >}}) table to find out which base images you can use.
-You can find the official images and versions for each distribution on [Docker Hub](https://hub.docker.com/search?image_filter=official&q=&type=image).
-
-Keep the following information in mind when using the NGINX Agent [Dockerfiles](https://github.com/nginx/agent/tree/main/scripts/docker) to build container images:
-
-- On some operating systems, you need root privileges (**sudo**) to run **make** commands.
-- If you choose to run the **docker build** or **podman build** command instead of using the **make** commands provided, you must do so from the nginx-agent repository's root directory.
-
 ### Build NGINX open source images
 
 Run the following `make` command to build the default image, which uses Alpine as the base image:
@@ -207,7 +199,6 @@ To build an image with Debian and an older version of NGINX Agent you can run th
 ```shell
 IMAGE_BUILD_TARGET=install-agent-repo NGINX_AGENT_VERSION=2.37.0~bullseye OS_RELEASE=debian OS_VERSION=bullseye-slim make oss-image
 ```
-
 
 ### Build NGINX Plus images
 
