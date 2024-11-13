@@ -163,12 +163,19 @@ type (
 		OtlpReceivers      []OtlpReceiver      `yaml:"-" mapstructure:"otlp_receivers"`
 		NginxReceivers     []NginxReceiver     `yaml:"-" mapstructure:"nginx_receivers"`
 		NginxPlusReceivers []NginxPlusReceiver `yaml:"-" mapstructure:"nginx_plus_receivers"`
+		SyslogReceiver     *SyslogReceiver     `yaml:"-" mapstructure:"syslog_receiver"`
 	}
 
 	OtlpReceiver struct {
 		Server        *ServerConfig  `yaml:"-" mapstructure:"server"`
 		Auth          *AuthConfig    `yaml:"-" mapstructure:"auth"`
 		OtlpTLSConfig *OtlpTLSConfig `yaml:"-" mapstructure:"tls"`
+	}
+
+	SyslogReceiver struct {
+		Host     string `yaml:"-" mapstructure:"host"`
+		Port     string `yaml:"-" mapstructure:"port"`
+		Protocol string `yaml:"-" mapstructure:"protocol"`
 	}
 
 	NginxReceiver struct {

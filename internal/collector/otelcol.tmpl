@@ -1,4 +1,10 @@
 receivers:
+{{- if ne .Receivers.SyslogReceiver nil }}
+  syslog:
+    tcp:
+      listen_address: "{{- .Receivers.SyslogReceiver.Host -}}:{{- .Receivers.SyslogReceiver.Port -}}"
+    protocol: {{ .Receivers.SyslogReceiver.Protocol }}
+{{- end }}
 {{- if ne .Receivers.HostMetrics nil }}
   hostmetrics:
     collection_interval: {{ .Receivers.HostMetrics.CollectionInterval }}
@@ -229,6 +235,22 @@ service:
         {{- end }}
         {{- if ne .Exporters.PrometheusExporter nil }}
         - prometheus
+        {{- end }}
+        {{- if ne .Exporters.Debug nil }}
+        - debug
+        {{- end  }}
+    logs:
+      receivers:
+        {{- if ne .Receivers.SyslogReceiver nil }}
+        - syslog
+        {{- end }}
+      processors:
+        {{- if ne .Processors.Batch nil }}
+        - batch
+        {{- end }}
+      exporters:
+        {{- range $index, $otlpExporter := .Exporters.OtlpExporters }}
+        - otlp/{{$index}}
         {{- end }}
         {{- if ne .Exporters.Debug nil }}
         - debug
