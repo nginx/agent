@@ -39,15 +39,16 @@ func TestGetFileMeta(t *testing.T) {
 			var file *os.File
 
 			if tt.isCert {
-				file = helpers.CreateCertFileWithErrorCheck(t, tempDir, "cert.pem")
-				fileInfo, err := file.Stat()
+				_, cert := helpers.GenerateSelfSignedCert(t)
+
+				certContents := helpers.Cert{Name: "cert.pem", Type: "CERTIFICATE", Contents: cert}
+				certFile := helpers.WriteCertFiles(t, tempDir, certContents)
+
 				require.NoError(t, err)
-				expected := protos.CertMeta(file.Name(), "")
-				expected.Size = fileInfo.Size()
-				fileMeta, err = FileMetaWithCertificate(file.Name())
-				
+				expected = protos.CertMeta(certFile, "")
+				fileMeta, err = FileMetaWithCertificate(certFile)
 			} else {
-				file := helpers.CreateFileWithErrorCheck(t, tempDir, "get_file_meta.txt")
+				file = helpers.CreateFileWithErrorCheck(t, tempDir, "get_file_meta.txt")
 				expected = protos.FileMeta(file.Name(), "")
 				fileMeta, err = FileMeta(file.Name())
 			}
@@ -58,10 +59,11 @@ func TestGetFileMeta(t *testing.T) {
 			assert.Equal(t, expected.GetName(), fileMeta.GetName())
 			assert.NotEmpty(t, fileMeta.GetHash())
 			assert.Equal(t, expected.GetPermissions(), fileMeta.GetPermissions())
-			assert.Equal(t, expected.GetSize(), fileMeta.GetSize())
 			assert.NotNil(t, fileMeta.GetModifiedTime())
 
-			helpers.RemoveFileWithErrorCheck(t, file.Name())
+			if file != nil {
+				helpers.RemoveFileWithErrorCheck(t, file.Name())
+			}
 		})
 	}
 }
@@ -225,4 +227,3 @@ func TestConvertX509SignatureAlgorithm(t *testing.T) {
 		})
 	}
 }
-

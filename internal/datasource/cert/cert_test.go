@@ -5,63 +5,32 @@
 package cert
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
-	"crypto/x509/pkix"
-	"encoding/pem"
-	"math/big"
-	"os"
 	"testing"
-	"time"
 
+	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	keyFileName        = "key.pem"
+	certFileName       = "cert.pem"
+	caFileName         = "ca.pem"
+	nonPemCertFileName = "cert.nonpem"
+	certificateType    = "CERTIFICATE"
+	privateKeyType     = "RSA PRIVATE KEY"
+)
+
 func TestLoadCertificates(t *testing.T) {
 	tmpDir := t.TempDir()
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		t.Fatalf("Failed generate key, %v", err)
-	}
 
-	tml := x509.Certificate{
-		NotBefore:    time.Now(),
-		NotAfter:     time.Now().AddDate(5, 0, 0),
-		SerialNumber: big.NewInt(123123),
-		Subject: pkix.Name{
-			CommonName:   "New Name",
-			Organization: []string{"New Org."},
-		},
-		BasicConstraintsValid: true,
-	}
-	cert, err := x509.CreateCertificate(rand.Reader, &tml, &tml, &key.PublicKey, key)
-	if err != nil {
-		t.Fatalf("Failed create cert, %v", err)
-	}
+	key, cert := helpers.GenerateSelfSignedCert(t)
 
-	certPem := pem.EncodeToMemory(&pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: cert,
-	})
+	keyContents := helpers.Cert{Name: keyFileName, Type: privateKeyType, Contents: key}
+	certContents := helpers.Cert{Name: certFileName, Type: certificateType, Contents: cert}
 
-	keyPem := pem.EncodeToMemory(&pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(key),
-	})
-
-	certFile := tmpDir + "/cert.pem"
-	err = os.WriteFile(certFile, certPem, 0o600)
-	if err != nil {
-		t.Fatalf("Failed create cert file, %v", err)
-	}
-
-	keyFile := tmpDir + "/key.pem"
-	err = os.WriteFile(keyFile, keyPem, 0o600)
-	if err != nil {
-		t.Fatalf("Failed create key file, %v", err)
-	}
+	keyFile := helpers.WriteCertFiles(t, tmpDir, keyContents)
+	certFile := helpers.WriteCertFiles(t, tmpDir, certContents)
 
 	testCases := []struct {
 		testName string
@@ -107,44 +76,14 @@ func TestLoadCertificates(t *testing.T) {
 
 func TestLoadCertificate(t *testing.T) {
 	tmpDir := t.TempDir()
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		t.Fatalf("Failed generate key, %v", err)
-	}
 
-	tml := x509.Certificate{
-		NotBefore:    time.Now(),
-		NotAfter:     time.Now().AddDate(5, 0, 0),
-		SerialNumber: big.NewInt(123123),
-		Subject: pkix.Name{
-			CommonName:   "New Name",
-			Organization: []string{"New Org."},
-		},
-		BasicConstraintsValid: true,
-	}
-	cert, err := x509.CreateCertificate(rand.Reader, &tml, &tml, &key.PublicKey, key)
-	if err != nil {
-		t.Fatalf("Failed create cert, %v", err)
-	}
+	_, cert := helpers.GenerateSelfSignedCert(t)
 
-	certPem := pem.EncodeToMemory(&pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: cert,
-	})
+	certContents := helpers.Cert{Name: certFileName, Type: certificateType, Contents: cert}
+	certNonPemContents := helpers.Cert{Name: nonPemCertFileName, Type: "", Contents: cert}
 
-	// write valid PEM certificate to file
-	certFile := tmpDir + "/cert.pem"
-	err = os.WriteFile(certFile, certPem, 0o600)
-	if err != nil {
-		t.Fatalf("Failed create cert file, %v", err)
-	}
-
-	// write non-PEM data to file
-	nonPEMFile := tmpDir + "/cert.nonpem"
-	err = os.WriteFile(nonPEMFile, cert, 0o600)
-	if err != nil {
-		t.Fatalf("Failed create cert file, %v", err)
-	}
+	certFile := helpers.WriteCertFiles(t, tmpDir, certContents)
+	nonPEMFile := helpers.WriteCertFiles(t, tmpDir, certNonPemContents)
 
 	testCases := []struct {
 		testName string
