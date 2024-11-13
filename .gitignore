@@ -20,5 +20,8 @@ __debug_bin
 
 *tar.gz
 
+# macOS
+.DS_Store
+
 # Local Netlify folder
 .netlify
