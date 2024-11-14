@@ -12,7 +12,7 @@ metrics:
     enabled: false
 ```
 
-### nginx.http.conn
+### nginx.http.connections
 
 The total number of connections.
 
@@ -24,9 +24,9 @@ The total number of connections.
 
 | Name | Description | Values |
 | ---- | ----------- | ------ |
-| nginx.conn.outcome | The outcome of the connection. | Str: ``ACCEPTED``, ``ACTIVE``, ``HANDLED``, ``READING``, ``WRITING``, ``WAITING`` |
+| nginx.connections.outcome | The outcome of the connection. | Str: ``ACCEPTED``, ``ACTIVE``, ``HANDLED``, ``READING``, ``WRITING``, ``WAITING`` |
 
-### nginx.http.conn.count
+### nginx.http.connections.count
 
 The current number of connections.
 
@@ -38,7 +38,7 @@ The current number of connections.
 
 | Name | Description | Values |
 | ---- | ----------- | ------ |
-| nginx.conn.outcome | The outcome of the connection. | Str: ``ACCEPTED``, ``ACTIVE``, ``HANDLED``, ``READING``, ``WRITING``, ``WAITING`` |
+| nginx.connections.outcome | The outcome of the connection. | Str: ``ACCEPTED``, ``ACTIVE``, ``HANDLED``, ``READING``, ``WRITING``, ``WAITING`` |
 
 ### nginx.http.requests
 

@@ -15,35 +15,35 @@ resourceMetrics:
               isMonotonic: true
             unit: reloads
           - description: The total number of connections.
-            name: nginx.http.conn
+            name: nginx.http.connections
             sum:
               aggregationTemporality: 2
               dataPoints:
                 - asInt: "11"
                   attributes:
-                    - key: nginx.conn.outcome
+                    - key: nginx.connections.outcome
                       value:
                         stringValue: ACCEPTED
                 - asInt: "5"
                   attributes:
-                    - key: nginx.conn.outcome
+                    - key: nginx.connections.outcome
                       value:
                         stringValue: DROPPED
               isMonotonic: true
             unit: connections
           - description: The current number of connections.
-            name: nginx.http.conn.count
+            name: nginx.http.connections.count
             gauge:
               aggregationTemporality: 2
               dataPoints:
                 - asInt: "1"
                   attributes:
-                    - key: nginx.conn.outcome
+                    - key: nginx.connections.outcome
                       value:
                         stringValue: IDLE
                 - asInt: "2"
                   attributes:
-                    - key: nginx.conn.outcome
+                    - key: nginx.connections.outcome
                       value:
                         stringValue: ACTIVE
               isMonotonic: true

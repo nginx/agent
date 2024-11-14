@@ -128,7 +128,7 @@ attributes:
   nginx.slab.slot.limit:
     description: The upper limit for a slab slot, used as the identifier for the slot.
     type: int
-  nginx.connection.outcome:
+  nginx.connections.outcome:
     description: The outcome of the connection.
     type: string
     enum:
@@ -158,7 +158,7 @@ metrics:
       aggregation_temporality: cumulative
     unit: "connections"
     attributes:
-      - nginx.connection.outcome
+      - nginx.connections.outcome
   nginx.http.connections.count:
     enabled: true
     description: The current number of connections.
@@ -166,7 +166,7 @@ metrics:
       value_type: int
     unit: "connections"
     attributes:
-      - nginx.connection.outcome
+      - nginx.connections.outcome
   nginx.http.requests.count:
     enabled: true
     description: The current number of client requests received from clients.
