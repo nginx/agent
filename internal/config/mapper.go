@@ -27,8 +27,8 @@ func FromCommandProto(config *mpi.CommandServer) *Command {
 	} else {
 		cmd.Server = nil
 	}
-	// Map AuthSettings to AuthConfig
-	cmd.Auth = &AuthConfig{}
+	// Set Auth to be nil
+	cmd.Auth = nil
 
 	// Map TLSSettings to TLSConfig
 	if config.GetTls() != nil {
