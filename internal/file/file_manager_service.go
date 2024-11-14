@@ -10,7 +10,9 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"os"
+	"slices"
 	"sync"
 	"sync/atomic"
 
@@ -133,14 +135,6 @@ func (fms *FileManagerService) UpdateOverview(
 			return nil, validatedError
 		}
 
-		response.Overview = &mpi.FileOverview{
-			Files: filesToUpdate,
-			ConfigVersion: &mpi.ConfigVersion{
-				InstanceId: instanceID,
-				Version:    files.GenerateConfigVersion(filesToUpdate),
-			},
-		}
-
 		return response, nil
 	}
 
@@ -153,6 +147,19 @@ func (fms *FileManagerService) UpdateOverview(
 	}
 
 	slog.DebugContext(newCtx, "UpdateOverview response", "response", response)
+
+	// calculate the response.Overview delta vs what is on disk
+	delta, _, compareErr := fms.DetermineFileActions(fms.currentFilesOnDisk,
+		files.ConvertToMapOfFiles(response.GetOverview().GetFiles()))
+
+	if compareErr != nil {
+		return compareErr
+	}
+
+	if len(delta) != 0 {
+		diffFiles := slices.Collect(maps.Values(delta))
+		return fms.UpdateOverview(ctx, instanceID, diffFiles)
+	}
 
 	return err
 }

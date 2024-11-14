@@ -37,9 +37,11 @@ func TestFileManagerService_UpdateOverview(t *testing.T) {
 	overview := protos.FileOverview(filePath, fileHash)
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
-	fakeFileServiceClient.UpdateOverviewReturns(&mpi.UpdateOverviewResponse{
+	fakeFileServiceClient.UpdateOverviewReturnsOnCall(0, &mpi.UpdateOverviewResponse{
 		Overview: overview,
 	}, nil)
+
+	fakeFileServiceClient.UpdateOverviewReturnsOnCall(1, &mpi.UpdateOverviewResponse{}, nil)
 
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
 	fileManagerService.SetIsConnected(true)
@@ -51,7 +53,7 @@ func TestFileManagerService_UpdateOverview(t *testing.T) {
 	})
 
 	require.NoError(t, err)
-	assert.Equal(t, 1, fakeFileServiceClient.UpdateOverviewCallCount())
+	assert.Equal(t, 2, fakeFileServiceClient.UpdateOverviewCallCount())
 }
 
 func TestFileManagerService_UpdateFile(t *testing.T) {
