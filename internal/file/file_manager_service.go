@@ -157,11 +157,27 @@ func (fms *FileManagerService) UpdateOverview(
 	}
 
 	if len(delta) != 0 {
-		diffFiles := slices.Collect(maps.Values(delta))
-		return fms.UpdateOverview(ctx, instanceID, diffFiles)
+		return fms.checkFileDiffs(ctx, delta, instanceID)
 	}
 
 	return err
+}
+
+func (fms *FileManagerService) checkFileDiffs(
+	ctx context.Context,
+	delta map[string]*mpi.File,
+	instanceID string,
+) error {
+	diffFiles := slices.Collect(maps.Values(delta))
+
+	for _, file := range diffFiles {
+		updateErr := fms.UpdateFile(ctx, instanceID, file)
+		if updateErr != nil {
+			return updateErr
+		}
+	}
+
+	return fms.UpdateOverview(ctx, instanceID, diffFiles)
 }
 
 func (fms *FileManagerService) UpdateFile(
