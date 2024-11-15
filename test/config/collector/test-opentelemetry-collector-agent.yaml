@@ -32,7 +32,7 @@ processors:
 exporters:
   otlp/0:
     endpoint: "127.0.0.1:1234"
-    compression: none
+    compression: gzip
     timeout: 10s
     retry_on_failure:
       enabled: true
