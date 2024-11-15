@@ -33,7 +33,7 @@ func TestMetric10kDPS(t *testing.T) {
 	name := fmt.Sprintf("OTLP-%s-%s", runtime.GOOS, binary)
 	sender := testbed.NewOTLPMetricDataSender(testbed.DefaultHost, 4317)
 	receiver := testbed.NewOTLPDataReceiver(5643)
-	receiver = receiver.WithCompression("gzip")
+	receiver = receiver.WithCompression("none")
 
 	t.Run(name, func(t *testing.T) {
 		require.NoError(t, err)
