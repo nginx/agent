@@ -35,6 +35,7 @@ const (
 	plusAPIDirective                  = "api"
 	stubStatusAPIDirective            = "stub_status"
 	apiFormat                         = "http://%s%s"
+	unixAPIFormat                     = "http://config-status%s"
 	locationDirective                 = "location"
 )
 
@@ -47,8 +48,9 @@ type (
 var _ nginxConfigParser = (*NginxConfigParser)(nil)
 
 type (
-	crossplaneTraverseCallback    = func(ctx context.Context, parent, current *crossplane.Directive) error
-	crossplaneTraverseCallbackStr = func(ctx context.Context, parent, current *crossplane.Directive) string
+	crossplaneTraverseCallback           = func(ctx context.Context, parent, current *crossplane.Directive) error
+	crossplaneTraverseCallbackStr        = func(ctx context.Context, parent, current *crossplane.Directive) string
+	crossplaneTraverseCallbackAPIDetails = func(ctx context.Context, parent, current *crossplane.Directive) *model.APIDetails
 )
 
 func NewNginxConfigParser(agentConfig *config.Config) *NginxConfigParser {
@@ -129,10 +131,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 			return nginxConfigContext, fmt.Errorf("traverse nginx config: %w", err)
 		}
 
-		stubStatus := ncp.crossplaneConfigTraverseStr(ctx, &conf, ncp.stubStatusAPICallback)
-		if stubStatus != "" {
-			nginxConfigContext.StubStatus = stubStatus
-		}
+		nginxConfigContext.StubStatus = ncp.crossplaneConfigTraverseAPIDetails(ctx, &conf, ncp.stubStatusAPICallback)
 
 		if instance.GetInstanceMeta().GetInstanceType() == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
 			plusAPIURL := ncp.crossplaneConfigTraverseStr(ctx, &conf, ncp.plusAPICallback)
@@ -355,6 +354,61 @@ func (ncp *NginxConfigParser) crossplaneConfigTraverseStr(
 	return response
 }
 
+func (ncp *NginxConfigParser) crossplaneConfigTraverseAPIDetails(
+	ctx context.Context,
+	root *crossplane.Config,
+	callback crossplaneTraverseCallbackAPIDetails,
+) *model.APIDetails {
+	stop := false
+	response := &model.APIDetails{
+		URL:      "",
+		Location: "",
+	}
+	for _, dir := range root.Parsed {
+		response = callback(ctx, nil, dir)
+		if response.URL != "" {
+			return response
+		}
+		response = traverseAPIDetails(ctx, dir, callback, &stop)
+		if response.URL != "" {
+			return response
+		}
+	}
+
+	return response
+}
+
+func traverseAPIDetails(
+	ctx context.Context,
+	root *crossplane.Directive,
+	callback crossplaneTraverseCallbackAPIDetails,
+	stop *bool,
+) *model.APIDetails {
+	response := &model.APIDetails{
+		URL:      "",
+		Location: "",
+	}
+	if *stop {
+		return &model.APIDetails{
+			URL:      "",
+			Location: "",
+		}
+	}
+	for _, child := range root.Block {
+		response = callback(ctx, root, child)
+		if response.URL != "" {
+			*stop = true
+			return response
+		}
+		response = traverseAPIDetails(ctx, child, callback, stop)
+		if *stop {
+			return response
+		}
+	}
+
+	return response
+}
+
 func traverseStr(
 	ctx context.Context,
 	root *crossplane.Directive,
@@ -404,8 +458,8 @@ func (ncp *NginxConfigParser) hasAdditionArguments(args []string) bool {
 	return len(args) >= defaultNumberOfDirectiveArguments
 }
 
-func (ncp *NginxConfigParser) stubStatusAPICallback(ctx context.Context, parent, current *crossplane.Directive) string {
-	urls := ncp.urlsForLocationDirective(parent, current, stubStatusAPIDirective)
+func (ncp *NginxConfigParser) stubStatusAPICallback(ctx context.Context, parent, current *crossplane.Directive) *model.APIDetails {
+	urls := ncp.urlsForLocationDirectiveAPIDetails(parent, current, stubStatusAPIDirective)
 	if len(urls) > 0 {
 		slog.DebugContext(ctx, "Potential stub_status urls", "urls", urls)
 	}
@@ -418,11 +472,22 @@ func (ncp *NginxConfigParser) stubStatusAPICallback(ctx context.Context, parent,
 		slog.DebugContext(ctx, "Stub_status is not reachable", "url", url)
 	}
 
-	return ""
+	return &model.APIDetails{
+		URL:      "",
+		Location: "",
+	}
 }
 
-func (ncp *NginxConfigParser) pingStubStatusAPIEndpoint(ctx context.Context, statusAPI string) bool {
-	httpClient := http.Client{Timeout: ncp.agentConfig.Client.Timeout}
+func (ncp *NginxConfigParser) pingStubStatusAPIEndpoint(ctx context.Context, statusAPIDetail *model.APIDetails) bool {
+	httpClient := http.Client{}
+	location := statusAPIDetail.Location
+	statusAPI := statusAPIDetail.URL
+
+	if strings.HasPrefix(location, "unix:") {
+		httpClient = SocketClient(strings.TrimPrefix(location, "unix:"))
+	} else {
+		httpClient = http.Client{Timeout: ncp.agentConfig.Client.Timeout}
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, statusAPI, nil)
 	if err != nil {
 		slog.WarnContext(ctx, "Unable to create Stub Status API GET request", "error", err)
@@ -516,6 +581,45 @@ func (ncp *NginxConfigParser) pingPlusAPIEndpoint(ctx context.Context, statusAPI
 	return true
 }
 
+func (ncp *NginxConfigParser) urlsForLocationDirectiveAPIDetails(
+	parent, current *crossplane.Directive,
+	locationDirectiveName string,
+) []*model.APIDetails {
+	var urls []*model.APIDetails
+	// process from the location block
+	if current.Directive != locationDirective {
+		return urls
+	}
+
+	for _, locChild := range current.Block {
+		if locChild.Directive != plusAPIDirective && locChild.Directive != stubStatusAPIDirective {
+			continue
+		}
+
+		addresses := ncp.parseAddressesFromServerDirective(parent)
+
+		for _, address := range addresses {
+			path := ncp.parsePathFromLocationDirective(current)
+
+			if locChild.Directive == locationDirectiveName {
+				if strings.HasPrefix(address, "unix:") {
+					urls = append(urls, &model.APIDetails{
+						URL:      fmt.Sprintf(unixAPIFormat, path),
+						Location: address,
+					})
+				} else {
+					urls = append(urls, &model.APIDetails{
+						URL:      fmt.Sprintf(apiFormat, address, path),
+						Location: address,
+					})
+				}
+			}
+		}
+	}
+
+	return urls
+}
+
 func (ncp *NginxConfigParser) urlsForLocationDirective(
 	parent, current *crossplane.Directive,
 	locationDirectiveName string,
@@ -537,7 +641,11 @@ func (ncp *NginxConfigParser) urlsForLocationDirective(
 			path := ncp.parsePathFromLocationDirective(current)
 
 			if locChild.Directive == locationDirectiveName {
-				urls = append(urls, fmt.Sprintf(apiFormat, address, path))
+				if strings.HasPrefix(address, "unix:") {
+					urls = append(urls, fmt.Sprintf(unixAPIFormat, path))
+				} else {
+					urls = append(urls, fmt.Sprintf(apiFormat, address, path))
+				}
 			}
 		}
 	}
@@ -632,4 +740,14 @@ func (ncp *NginxConfigParser) isPort(value string) bool {
 	port, err := strconv.Atoi(value)
 
 	return err == nil && port >= 1 && port <= 65535
+}
+
+func SocketClient(socketPath string) http.Client {
+	return http.Client{
+		Transport: &http.Transport{
+			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+				return net.Dial("unix", socketPath)
+			},
+		},
+	}
 }

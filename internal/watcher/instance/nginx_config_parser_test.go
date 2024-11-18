@@ -15,6 +15,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nginx/agent/v3/internal/model"
+
 	"github.com/nginx/agent/v3/test/stub"
 
 	"github.com/google/go-cmp/cmp"
@@ -653,7 +655,10 @@ Reading: 0 Writing: 1 Waiting: 1
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ctx := context.Background()
-			statusAPI := fmt.Sprintf("%s%s", fakeServer.URL, test.endpoint)
+			statusAPI := &model.APIDetails{
+				URL:      fmt.Sprintf("%s%s", fakeServer.URL, test.endpoint),
+				Location: "",
+			}
 			result := nginxConfigParser.pingStubStatusAPIEndpoint(ctx, statusAPI)
 			assert.Equal(t, test.expected, result)
 		})

@@ -168,7 +168,10 @@ func TestInstanceWatcherService_updateNginxInstanceRuntime(t *testing.T) {
 				Name: "/usr/local/var/log/nginx/error.log",
 			},
 		},
-		StubStatus: "http://127.0.0.1:8081/api",
+		StubStatus: &model.APIDetails{
+			URL:      "http://127.0.0.1:8081/api",
+			Location: "",
+		},
 	}
 
 	nginxPlusConfigContext := &model.NginxConfigContext{

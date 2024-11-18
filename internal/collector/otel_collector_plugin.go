@@ -370,12 +370,12 @@ func (oc *Collector) checkForNewNginxReceivers(nginxConfigContext *model.NginxCo
 	} else if nginxConfigContext.PlusAPI == "" {
 		nginxReceiverFound, reloadCollector = oc.updateExistingNginxOSSReceiver(nginxConfigContext)
 
-		if !nginxReceiverFound && nginxConfigContext.StubStatus != "" {
+		if !nginxReceiverFound && nginxConfigContext.StubStatus.URL != "" {
 			oc.config.Collector.Receivers.NginxReceivers = append(
 				oc.config.Collector.Receivers.NginxReceivers,
 				config.NginxReceiver{
 					InstanceID: nginxConfigContext.InstanceID,
-					StubStatus: nginxConfigContext.StubStatus,
+					StubStatus: nginxConfigContext.StubStatus.URL,
 					AccessLogs: toConfigAccessLog(nginxConfigContext.AccessLogs),
 				},
 			)
@@ -430,8 +430,8 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 					oc.config.Collector.Receivers.NginxReceivers[:index],
 					oc.config.Collector.Receivers.NginxReceivers[index+1:]...,
 				)
-				if nginxConfigContext.StubStatus != "" {
-					nginxReceiver.StubStatus = nginxConfigContext.StubStatus
+				if nginxConfigContext.StubStatus.URL != "" {
+					nginxReceiver.StubStatus = nginxConfigContext.StubStatus.URL
 					nginxReceiver.AccessLogs = toConfigAccessLog(nginxConfigContext.AccessLogs)
 					oc.config.Collector.Receivers.NginxReceivers = append(
 						oc.config.Collector.Receivers.NginxReceivers,
@@ -476,7 +476,7 @@ func (oc *Collector) updateResourceAttributes(
 }
 
 func isOSSReceiverChanged(nginxReceiver config.NginxReceiver, nginxConfigContext *model.NginxConfigContext) bool {
-	return nginxReceiver.StubStatus != nginxConfigContext.StubStatus ||
+	return nginxReceiver.StubStatus != nginxConfigContext.StubStatus.URL ||
 		len(nginxReceiver.AccessLogs) != len(nginxConfigContext.AccessLogs)
 }
 

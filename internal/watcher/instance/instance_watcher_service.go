@@ -399,11 +399,11 @@ func (iw *InstanceWatcherService) updateNginxInstanceRuntime(
 
 		if !reflect.DeepEqual(nginxPlusRuntimeInfo.GetAccessLogs(), accessLogs) ||
 			!reflect.DeepEqual(nginxPlusRuntimeInfo.GetErrorLogs(), errorLogs) ||
-			nginxPlusRuntimeInfo.GetStubStatus() != nginxConfigContext.StubStatus ||
+			nginxPlusRuntimeInfo.GetStubStatus() != nginxConfigContext.StubStatus.URL ||
 			nginxPlusRuntimeInfo.GetPlusApi() != nginxConfigContext.PlusAPI {
 			nginxPlusRuntimeInfo.AccessLogs = accessLogs
 			nginxPlusRuntimeInfo.ErrorLogs = errorLogs
-			nginxPlusRuntimeInfo.StubStatus = nginxConfigContext.StubStatus
+			nginxPlusRuntimeInfo.StubStatus = nginxConfigContext.StubStatus.URL
 			nginxPlusRuntimeInfo.PlusApi = nginxConfigContext.PlusAPI
 			updatesRequired = true
 		}
@@ -412,10 +412,10 @@ func (iw *InstanceWatcherService) updateNginxInstanceRuntime(
 
 		if !reflect.DeepEqual(nginxRuntimeInfo.GetAccessLogs(), accessLogs) ||
 			!reflect.DeepEqual(nginxRuntimeInfo.GetErrorLogs(), errorLogs) ||
-			nginxRuntimeInfo.GetStubStatus() != nginxConfigContext.StubStatus {
+			nginxRuntimeInfo.GetStubStatus() != nginxConfigContext.StubStatus.URL {
 			nginxRuntimeInfo.AccessLogs = accessLogs
 			nginxRuntimeInfo.ErrorLogs = errorLogs
-			nginxRuntimeInfo.StubStatus = nginxConfigContext.StubStatus
+			nginxRuntimeInfo.StubStatus = nginxConfigContext.StubStatus.URL
 			updatesRequired = true
 		}
 	}

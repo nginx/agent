@@ -12,12 +12,18 @@ import (
 )
 
 type NginxConfigContext struct {
-	StubStatus string
+	StubStatus *APIDetails
 	PlusAPI    string
 	InstanceID string
 	Files      []*v1.File
 	AccessLogs []*AccessLog
 	ErrorLogs  []*ErrorLog
+}
+
+type APIDetails struct {
+	URL string
+	// TODO: socket is the only one who needs this? should this be socket and check if "" ?
+	Location string
 }
 
 func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext) bool {

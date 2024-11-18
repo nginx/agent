@@ -14,7 +14,10 @@ import (
 )
 
 var nginxConfigContext = &NginxConfigContext{
-	StubStatus: "",
+	StubStatus: &APIDetails{
+		URL:      "",
+		Location: "",
+	},
 	PlusAPI:    "",
 	InstanceID: "12333",
 	Files: []*mpi.File{
@@ -42,7 +45,10 @@ func TestNginxConfigContext_Equal(t *testing.T) {
 	nginxConfigContextWithSameValues := *nginxConfigContext
 
 	nginxConfigContextWithDifferentStubStatus := *nginxConfigContext
-	nginxConfigContextWithDifferentStubStatus.StubStatus = "http://localhost:8080/stub_status"
+	nginxConfigContextWithDifferentStubStatus.StubStatus = &APIDetails{
+		URL:      "http://localhost:8080/stub_status",
+		Location: "",
+	}
 
 	nginxConfigContextWithDifferentPlusAPI := *nginxConfigContext
 	nginxConfigContextWithDifferentPlusAPI.PlusAPI = "http://localhost:8080/api"

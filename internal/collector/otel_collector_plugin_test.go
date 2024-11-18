@@ -134,7 +134,10 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 				Topic: bus.NginxConfigUpdateTopic,
 				Data: &model.NginxConfigContext{
 					InstanceID: "123",
-					StubStatus: "http://test.com:8080/stub_status",
+					StubStatus: &model.APIDetails{
+						URL:      "http://test.com:8080/stub_status",
+						Location: "",
+					},
 					AccessLogs: []*model.AccessLog{
 						{
 							Name:   "/var/log/nginx/access.log",
@@ -423,7 +426,10 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 			name: "Test 1: Existing NGINX Receiver",
 			nginxConfigContext: &model.NginxConfigContext{
 				InstanceID: "123",
-				StubStatus: "http://new-test-host:8080/api",
+				StubStatus: &model.APIDetails{
+					URL:      "http://new-test-host:8080/api",
+					Location: "",
+				},
 				AccessLogs: []*model.AccessLog{
 					{
 						Name:   "/etc/nginx/test.log",
@@ -464,7 +470,7 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 			name: "Test 2: Removing NGINX Receiver",
 			nginxConfigContext: &model.NginxConfigContext{
 				InstanceID: "123",
-				StubStatus: "",
+				StubStatus: &model.APIDetails{},
 			},
 			existingReceivers: config.Receivers{
 				NginxReceivers: []config.NginxReceiver{
