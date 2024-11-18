@@ -124,7 +124,6 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 					sslCertFile := ncp.sslCert(ctx, directive.Args[0], rootDir)
 					nginxConfigContext.Files = append(nginxConfigContext.Files, sslCertFile)
 				case "app_protect_security_log":
-					// Extract the syslog:server part of the app_protect_security_log directive
 					if len(directive.Args) > 1 {
 						syslogArg := directive.Args[1]
 						re := regexp.MustCompile(`syslog:server=([\S]+)`)

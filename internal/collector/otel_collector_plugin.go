@@ -397,7 +397,7 @@ func (oc *Collector) checkForNewNginxReceivers(nginxConfigContext *model.NginxCo
 	return reloadCollector
 }
 
-// need to update new syslogreceivers
+// Todo: consider update scenario for new syslogreceivers
 func (oc *Collector) updateExistingNginxPlusReceiver(
 	nginxConfigContext *model.NginxConfigContext,
 ) (nginxReceiverFound, reloadCollector bool) {

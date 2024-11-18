@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	// Add default nap parameter
+	//Todo: Add default Protocol for nap
 	DefGracefulShutdownPeriod      = 5 * time.Second
 	DefNginxReloadMonitoringPeriod = 10 * time.Second
 	DefTreatErrorsAsWarnings       = false
