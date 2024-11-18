@@ -18,6 +18,7 @@ type NginxConfigContext struct {
 	Files      []*v1.File
 	AccessLogs []*AccessLog
 	ErrorLogs  []*ErrorLog
+	Syslog     *NAP
 }
 
 func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext) bool {
@@ -83,6 +84,12 @@ type ErrorLog struct {
 	LogLevel    string
 	Permissions string
 	Readable    bool
+}
+
+type NAP struct {
+	Enable       bool
+	Syslog       bool
+	SyslogServer string
 }
 
 type (

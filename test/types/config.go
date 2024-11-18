@@ -67,10 +67,12 @@ func AgentConfig() *config.Config {
 			},
 			Receivers: config.Receivers{
 				OtlpReceivers: OtlpReceivers(),
-				SyslogReceiver: &config.SyslogReceiver{
-					Host:     "127.0.0.1",
-					Port:     "1515",
-					Protocol: "rfc5424",
+				SyslogReceivers: []config.SyslogReceiver{
+					{
+						Server:     "127.0.0.1:1515",
+						InstanceID: "1",
+						Protocol:   "rfc3164",
+					},
 				},
 				HostMetrics: &config.HostMetrics{
 					CollectionInterval: time.Minute,

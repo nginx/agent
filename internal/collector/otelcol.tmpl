@@ -1,9 +1,9 @@
 receivers:
-{{- if ne .Receivers.SyslogReceiver nil }}
-  syslog:
+{{- range .Receivers.SyslogReceivers }}
+  syslog/{{- .InstanceID -}}:
     tcp:
-      listen_address: "{{- .Receivers.SyslogReceiver.Host -}}:{{- .Receivers.SyslogReceiver.Port -}}"
-    protocol: {{ .Receivers.SyslogReceiver.Protocol }}
+      listen_address: "{{- .Server -}}"
+    protocol: rfc3164
 {{- end }}
 {{- if ne .Receivers.HostMetrics nil }}
   hostmetrics:
@@ -241,8 +241,8 @@ service:
         {{- end  }}
     logs:
       receivers:
-        {{- if ne .Receivers.SyslogReceiver nil }}
-        - syslog
+        {{- range .Receivers.SyslogReceivers }}
+        - syslog/{{- .InstanceID -}}
         {{- end }}
       processors:
         {{- if ne .Processors.Batch nil }}

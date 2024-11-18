@@ -1,8 +1,8 @@
 receivers:
-  syslog:
+  syslog/1:
     tcp:
       listen_address: "127.0.0.1:1515"
-    protocol: rfc5424
+    protocol: rfc3164
   hostmetrics:
     collection_interval: 1m0s
     initial_delay: 1s
@@ -90,7 +90,7 @@ service:
         - debug
     logs:
       receivers:
-        - syslog
+        - syslog/1
       processors:
         - batch
       exporters:

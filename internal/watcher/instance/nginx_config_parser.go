@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -36,6 +37,7 @@ const (
 	stubStatusAPIDirective            = "stub_status"
 	apiFormat                         = "http://%s%s"
 	locationDirective                 = "location"
+	napDirective                      = "app_protect_security_log"
 )
 
 type (
@@ -104,6 +106,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 				case "log_format":
 					formatMap = ncp.formatMap(directive)
 				case "access_log":
+					fmt.Println("am here")
 					if !ncp.ignoreLog(directive.Args[0]) {
 						accessLog := ncp.accessLog(directive.Args[0], ncp.accessLogDirectiveFormat(directive),
 							formatMap)
@@ -120,6 +123,20 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 				case "ssl_certificate", "proxy_ssl_certificate", "ssl_client_certificate", "ssl_trusted_certificate":
 					sslCertFile := ncp.sslCert(ctx, directive.Args[0], rootDir)
 					nginxConfigContext.Files = append(nginxConfigContext.Files, sslCertFile)
+				case "app_protect_security_log":
+					// Extract the syslog:server part of the app_protect_security_log directive
+					if len(directive.Args) > 1 {
+						syslogArg := directive.Args[1]
+						re := regexp.MustCompile(`syslog:server=([\S]+)`)
+						matches := re.FindStringSubmatch(syslogArg)
+						if len(matches) > 1 {
+							syslogServer := matches[1]
+							nginxConfigContext.Syslog.SyslogServer = syslogServer
+							slog.InfoContext(ctx, "Captured syslog server", "syslog_server", syslogServer)
+							fmt.Println("syslogServer")
+							fmt.Println(syslogServer)
+						}
+					}
 				}
 
 				return nil
