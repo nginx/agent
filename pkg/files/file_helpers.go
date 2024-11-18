@@ -8,7 +8,9 @@ package files
 
 import (
 	"cmp"
+	"crypto/x509"
 	"fmt"
+	"net"
 	"os"
 	"slices"
 	"strconv"
@@ -16,10 +18,11 @@ import (
 	"github.com/google/uuid"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/internal/datasource/cert"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-const permissions = 0o644
+const permissions = 0o600
 
 // FileMeta returns a proto FileMeta struct from a given file path.
 func FileMeta(filePath string) (*mpi.FileMeta, error) {
@@ -34,14 +37,70 @@ func FileMeta(filePath string) (*mpi.FileMeta, error) {
 	}
 
 	fileHash := GenerateHash(content)
-
-	return &mpi.FileMeta{
+	fileMeta := &mpi.FileMeta{
 		Name:         filePath,
 		Hash:         fileHash,
 		ModifiedTime: timestamppb.New(fileInfo.ModTime()),
 		Permissions:  Permissions(fileInfo.Mode()),
 		Size:         fileInfo.Size(),
-	}, nil
+	}
+
+	return fileMeta, nil
+}
+
+// FileMetaWithCertificate returns a FileMeta struct with certificate metadata if applicable.
+func FileMetaWithCertificate(filePath string) (*mpi.FileMeta, error) {
+	fileMeta, err := FileMeta(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	loadedCert, certErr := cert.LoadCertificate(filePath)
+	if certErr != nil {
+		// If it's not a certificate, just return the base file metadata.
+		return fileMeta, certErr
+	}
+
+	// Populate certificate-specific metadata
+	fileMeta.FileType = &mpi.FileMeta_CertificateMeta{
+		CertificateMeta: &mpi.CertificateMeta{
+			SerialNumber: []byte{},
+			Issuer: &mpi.X509Name{
+				Country:            loadedCert.Issuer.Country,
+				Organization:       loadedCert.Issuer.Organization,
+				OrganizationalUnit: loadedCert.Issuer.OrganizationalUnit,
+				Locality:           loadedCert.Issuer.Locality,
+				Province:           loadedCert.Issuer.Province,
+				StreetAddress:      loadedCert.Issuer.StreetAddress,
+				PostalCode:         loadedCert.Issuer.PostalCode,
+				SerialNumber:       loadedCert.Issuer.SerialNumber,
+				CommonName:         loadedCert.Issuer.CommonName,
+			},
+			Subject: &mpi.X509Name{
+				Country:            loadedCert.Subject.Country,
+				Organization:       loadedCert.Subject.Organization,
+				OrganizationalUnit: loadedCert.Subject.OrganizationalUnit,
+				Locality:           loadedCert.Subject.Locality,
+				Province:           loadedCert.Subject.Province,
+				StreetAddress:      loadedCert.Subject.StreetAddress,
+				PostalCode:         loadedCert.Subject.PostalCode,
+				SerialNumber:       loadedCert.Subject.SerialNumber,
+				CommonName:         loadedCert.Subject.CommonName,
+			},
+			Sans: &mpi.SubjectAlternativeNames{
+				DnsNames:    loadedCert.DNSNames,
+				IpAddresses: convertIPBytes(loadedCert.IPAddresses),
+			},
+			Dates: &mpi.CertificateDates{
+				NotBefore: loadedCert.NotBefore.Unix(),
+				NotAfter:  loadedCert.NotAfter.Unix(),
+			},
+			SignatureAlgorithm: convertX509SignatureAlgorithm(loadedCert.SignatureAlgorithm),
+			PublicKeyAlgorithm: loadedCert.PublicKeyAlgorithm.String(),
+		},
+	}
+
+	return fileMeta, nil
 }
 
 // Permissions returns a file's permissions as a string.
@@ -87,4 +146,41 @@ func ConvertToMapOfFiles(files []*mpi.File) map[string]*mpi.File {
 	}
 
 	return filesMap
+}
+
+func convertIPBytes(ips []net.IP) []string {
+	stringArray := make([]string, len(ips))
+
+	for i, byteArray := range ips {
+		stringArray[i] = string(byteArray)
+	}
+
+	return stringArray
+}
+
+func convertX509SignatureAlgorithm(alg x509.SignatureAlgorithm) mpi.SignatureAlgorithm {
+	x509ToMpiSignatureMap := map[x509.SignatureAlgorithm]mpi.SignatureAlgorithm{
+		x509.MD2WithRSA:                mpi.SignatureAlgorithm_MD2_WITH_RSA,
+		x509.MD5WithRSA:                mpi.SignatureAlgorithm_MD5_WITH_RSA,
+		x509.SHA1WithRSA:               mpi.SignatureAlgorithm_SHA1_WITH_RSA,
+		x509.SHA256WithRSA:             mpi.SignatureAlgorithm_SHA256_WITH_RSA,
+		x509.SHA384WithRSA:             mpi.SignatureAlgorithm_SHA384_WITH_RSA,
+		x509.SHA512WithRSA:             mpi.SignatureAlgorithm_SHA512_WITH_RSA,
+		x509.DSAWithSHA1:               mpi.SignatureAlgorithm_DSA_WITH_SHA1,
+		x509.DSAWithSHA256:             mpi.SignatureAlgorithm_DSA_WITH_SHA256,
+		x509.ECDSAWithSHA1:             mpi.SignatureAlgorithm_ECDSA_WITH_SHA1,
+		x509.ECDSAWithSHA256:           mpi.SignatureAlgorithm_ECDSA_WITH_SHA256,
+		x509.ECDSAWithSHA384:           mpi.SignatureAlgorithm_ECDSA_WITH_SHA384,
+		x509.ECDSAWithSHA512:           mpi.SignatureAlgorithm_ECDSA_WITH_SHA512,
+		x509.SHA256WithRSAPSS:          mpi.SignatureAlgorithm_SHA256_WITH_RSA_PSS,
+		x509.SHA384WithRSAPSS:          mpi.SignatureAlgorithm_SHA384_WITH_RSA_PSS,
+		x509.SHA512WithRSAPSS:          mpi.SignatureAlgorithm_SHA512_WITH_RSA_PSS,
+		x509.PureEd25519:               mpi.SignatureAlgorithm_PURE_ED25519,
+		x509.UnknownSignatureAlgorithm: mpi.SignatureAlgorithm_SIGNATURE_ALGORITHM_UNKNOWN,
+	}
+	if mappedAlg, exists := x509ToMpiSignatureMap[alg]; exists {
+		return mappedAlg
+	}
+
+	return mpi.SignatureAlgorithm_SIGNATURE_ALGORITHM_UNKNOWN
 }
