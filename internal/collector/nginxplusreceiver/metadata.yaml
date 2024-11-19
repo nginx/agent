@@ -128,7 +128,7 @@ attributes:
   nginx.slab.slot.limit:
     description: The upper limit for a slab slot, used as the identifier for the slot.
     type: int
-  nginx.conn.outcome:
+  nginx.connections.outcome:
     description: The outcome of the connection.
     type: string
     enum:
@@ -149,7 +149,7 @@ metrics:
       monotonic: true
       aggregation_temporality: cumulative
     unit: "reloads"
-  nginx.http.conn:
+  nginx.http.connections:
     enabled: true
     description: The total number of connections.
     sum:
@@ -158,15 +158,15 @@ metrics:
       aggregation_temporality: cumulative
     unit: "connections"
     attributes:
-      - nginx.conn.outcome
-  nginx.http.conn.count:
+      - nginx.connections.outcome
+  nginx.http.connections.count:
     enabled: true
     description: The current number of connections.
     gauge:
       value_type: int
     unit: "connections"
     attributes:
-      - nginx.conn.outcome
+      - nginx.connections.outcome
   nginx.http.requests.count:
     enabled: true
     description: The current number of client requests received from clients.
@@ -322,7 +322,7 @@ metrics:
       - nginx.upstream.name
       - nginx.peer.address
       - nginx.peer.name
-  nginx.http.upstream.peer.conn.count:
+  nginx.http.upstream.peer.connections.count:
     enabled: true
     description: The average number of active connections per HTTP upstream peer.
     gauge:
@@ -574,7 +574,7 @@ metrics:
     attributes:
       - nginx.byte.io.direction
       - nginx.zone.name
-  nginx.stream.connection.accepted:
+  nginx.stream.connections.accepted:
     enabled: true
     description: The total number of connections accepted from clients.
     sum:
@@ -584,7 +584,7 @@ metrics:
     unit: "connections"
     attributes:
       - nginx.zone.name
-  nginx.stream.connection.discarded:
+  nginx.stream.connections.discarded:
     enabled: true
     description: Total number of connections completed without creating a session.
     sum:
@@ -594,7 +594,7 @@ metrics:
     unit: "connections"
     attributes:
       - nginx.zone.name
-  nginx.stream.connection.processing.count:
+  nginx.stream.connections.processing.count:
     enabled: true
     description: The number of client connections that are currently being processed.
     gauge:
@@ -627,7 +627,7 @@ metrics:
       - nginx.upstream.name
       - nginx.peer.address
       - nginx.peer.name
-  nginx.stream.upstream.peer.conn.count:
+  nginx.stream.upstream.peer.connections.count:
     enabled: true
     description: The current number of Stream Upstream Peer connections.
     gauge:
@@ -638,7 +638,7 @@ metrics:
       - nginx.upstream.name
       - nginx.peer.address
       - nginx.peer.name
-  nginx.stream.upstream.peer.conn.time:
+  nginx.stream.upstream.peer.connections.time:
     enabled: true
     description: The average time to connect to the stream upstream peer.
     gauge:
@@ -649,7 +649,7 @@ metrics:
       - nginx.upstream.name
       - nginx.peer.address
       - nginx.peer.name
-  nginx.stream.upstream.peer.conns:
+  nginx.stream.upstream.peer.connections:
     enabled: true
     description: The total number of client connections forwarded to this stream upstream peer.
     sum:

@@ -89,36 +89,36 @@ func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error
 
 	s.mb.RecordNginxHTTPRequestsDataPoint(now, stats.Requests)
 
-	s.mb.RecordNginxHTTPConnDataPoint(
+	s.mb.RecordNginxHTTPConnectionsDataPoint(
 		now,
 		stats.Connections.Accepted,
-		metadata.AttributeNginxConnOutcomeACCEPTED,
+		metadata.AttributeNginxConnectionsOutcomeACCEPTED,
 	)
-	s.mb.RecordNginxHTTPConnDataPoint(
+	s.mb.RecordNginxHTTPConnectionsDataPoint(
 		now,
 		stats.Connections.Handled,
-		metadata.AttributeNginxConnOutcomeHANDLED,
+		metadata.AttributeNginxConnectionsOutcomeHANDLED,
 	)
 
-	s.mb.RecordNginxHTTPConnCountDataPoint(
+	s.mb.RecordNginxHTTPConnectionsCountDataPoint(
 		now,
 		stats.Connections.Active,
-		metadata.AttributeNginxConnOutcomeACTIVE,
+		metadata.AttributeNginxConnectionsOutcomeACTIVE,
 	)
-	s.mb.RecordNginxHTTPConnCountDataPoint(
+	s.mb.RecordNginxHTTPConnectionsCountDataPoint(
 		now,
 		stats.Connections.Reading,
-		metadata.AttributeNginxConnOutcomeREADING,
+		metadata.AttributeNginxConnectionsOutcomeREADING,
 	)
-	s.mb.RecordNginxHTTPConnCountDataPoint(
+	s.mb.RecordNginxHTTPConnectionsCountDataPoint(
 		now,
 		stats.Connections.Writing,
-		metadata.AttributeNginxConnOutcomeWRITING,
+		metadata.AttributeNginxConnectionsOutcomeWRITING,
 	)
-	s.mb.RecordNginxHTTPConnCountDataPoint(
+	s.mb.RecordNginxHTTPConnectionsCountDataPoint(
 		now,
 		stats.Connections.Waiting,
-		metadata.AttributeNginxConnOutcomeWAITING,
+		metadata.AttributeNginxConnectionsOutcomeWAITING,
 	)
 
 	return s.mb.Emit(metadata.WithResource(s.rb.Emit())), nil

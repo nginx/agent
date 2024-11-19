@@ -348,19 +348,23 @@ func TestNginxConfigParser_sslCert(t *testing.T) {
 	ctx := context.Background()
 	dir := t.TempDir()
 
-	file1 := helpers.CreateFileWithErrorCheck(t, dir, "nginx-1.conf")
-	defer helpers.RemoveFileWithErrorCheck(t, file1.Name())
+	_, cert := helpers.GenerateSelfSignedCert(t)
+
+	certContents := helpers.Cert{Name: "nginx.cert", Type: "", Contents: cert}
+
+	certFile := helpers.WriteCertFiles(t, dir, certContents)
+	require.NotNil(t, certFile)
 
 	// Not in allowed directory
 	nginxConfig := NewNginxConfigParser(types.AgentConfig())
 	nginxConfig.agentConfig.AllowedDirectories = []string{}
-	sslCert := nginxConfig.sslCert(ctx, file1.Name(), dir)
+	sslCert := nginxConfig.sslCert(ctx, certFile, dir)
 	assert.Nil(t, sslCert)
 
 	// In allowed directory
 	nginxConfig.agentConfig.AllowedDirectories = []string{dir}
-	sslCert = nginxConfig.sslCert(ctx, file1.Name(), dir)
-	assert.Equal(t, file1.Name(), sslCert.GetFileMeta().GetName())
+	sslCert = nginxConfig.sslCert(ctx, certFile, dir)
+	assert.Equal(t, certFile, sslCert.GetFileMeta().GetName())
 }
 
 func TestNginxConfigParser_urlsForLocationDirective(t *testing.T) {

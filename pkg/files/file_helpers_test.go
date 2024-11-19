@@ -6,6 +6,8 @@
 package files
 
 import (
+	"crypto/x509"
+	"net"
 	"os"
 	"testing"
 
@@ -20,26 +22,55 @@ import (
 )
 
 func TestGetFileMeta(t *testing.T) {
-	file, err := os.CreateTemp(t.TempDir(), "get_file_meta.txt")
-	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
-	require.NoError(t, err)
+	tests := []struct {
+		name   string
+		isCert bool
+	}{
+		{"Test 1: conf file", false},
+		{"Test 2: cert file", true},
+	}
 
-	expected := protos.FileMeta(file.Name(), GenerateHash([]byte("")))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tempDir := t.TempDir()
 
-	fileMeta, err := FileMeta(file.Name())
-	require.NoError(t, err)
+			var err error
+			var fileMeta, expected *mpi.FileMeta
+			var file *os.File
 
-	assert.Equal(t, expected.GetName(), fileMeta.GetName())
-	assert.Equal(t, expected.GetHash(), fileMeta.GetHash())
-	assert.Equal(t, expected.GetPermissions(), fileMeta.GetPermissions())
-	assert.Equal(t, expected.GetSize(), fileMeta.GetSize())
-	assert.NotNil(t, fileMeta.GetModifiedTime())
+			if tt.isCert {
+				_, cert := helpers.GenerateSelfSignedCert(t)
+
+				certContents := helpers.Cert{Name: "cert.pem", Type: "CERTIFICATE", Contents: cert}
+				certFile := helpers.WriteCertFiles(t, tempDir, certContents)
+
+				require.NoError(t, err)
+				expected = protos.CertMeta(certFile, "")
+				fileMeta, err = FileMetaWithCertificate(certFile)
+			} else {
+				file = helpers.CreateFileWithErrorCheck(t, tempDir, "get_file_meta.txt")
+				expected = protos.FileMeta(file.Name(), "")
+				fileMeta, err = FileMeta(file.Name())
+			}
+
+			require.NoError(t, err)
+
+			// Validate metadata
+			assert.Equal(t, expected.GetName(), fileMeta.GetName())
+			assert.NotEmpty(t, fileMeta.GetHash())
+			assert.Equal(t, expected.GetPermissions(), fileMeta.GetPermissions())
+			assert.NotNil(t, fileMeta.GetModifiedTime())
+
+			if file != nil {
+				helpers.RemoveFileWithErrorCheck(t, file.Name())
+			}
+		})
+	}
 }
 
 func TestGetPermissions(t *testing.T) {
-	file, err := os.CreateTemp(t.TempDir(), "get_permissions_test.txt")
+	file := helpers.CreateFileWithErrorCheck(t, os.TempDir(), "get_permissions_test.txt")
 	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
-	require.NoError(t, err)
 
 	info, err := os.Stat(file.Name())
 	require.NoError(t, err)
@@ -132,6 +163,67 @@ func TestGenerateHash(t *testing.T) {
 			if result != tt.expected {
 				t.Errorf("GenerateHash(%v) = %v, want %v", tt.input, result, tt.expected)
 			}
+		})
+	}
+}
+
+func TestConvertIpBytes(t *testing.T) {
+	tests := []struct {
+		input    []net.IP
+		expected []string
+	}{
+		{
+			input: []net.IP{net.IPv4(192, 168, 0, 1), net.IPv4(10, 0, 0, 1)},
+			expected: []string{
+				"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xc0\xa8\x00\x01",
+				"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\n\x00\x00\x01",
+			},
+		},
+		{
+			input:    []net.IP{net.ParseIP("2001:0db8::68")},
+			expected: []string{" \x01\r\xb8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h"},
+		},
+		{
+			input:    []net.IP{},
+			expected: []string{},
+		},
+	}
+
+	for _, test := range tests {
+		result := convertIPBytes(test.input)
+		for i := range result {
+			assert.Equal(t, test.expected[i], result[i])
+		}
+	}
+}
+
+func TestConvertX509SignatureAlgorithm(t *testing.T) {
+	tests := []struct {
+		input    x509.SignatureAlgorithm
+		expected mpi.SignatureAlgorithm
+	}{
+		{x509.MD2WithRSA, mpi.SignatureAlgorithm_MD2_WITH_RSA},
+		{x509.MD5WithRSA, mpi.SignatureAlgorithm_MD5_WITH_RSA},
+		{x509.SHA1WithRSA, mpi.SignatureAlgorithm_SHA1_WITH_RSA},
+		{x509.SHA256WithRSA, mpi.SignatureAlgorithm_SHA256_WITH_RSA},
+		{x509.SHA384WithRSA, mpi.SignatureAlgorithm_SHA384_WITH_RSA},
+		{x509.SHA512WithRSA, mpi.SignatureAlgorithm_SHA512_WITH_RSA},
+		{x509.DSAWithSHA1, mpi.SignatureAlgorithm_DSA_WITH_SHA1},
+		{x509.DSAWithSHA256, mpi.SignatureAlgorithm_DSA_WITH_SHA256},
+		{x509.ECDSAWithSHA1, mpi.SignatureAlgorithm_ECDSA_WITH_SHA1},
+		{x509.ECDSAWithSHA256, mpi.SignatureAlgorithm_ECDSA_WITH_SHA256},
+		{x509.ECDSAWithSHA384, mpi.SignatureAlgorithm_ECDSA_WITH_SHA384},
+		{x509.ECDSAWithSHA512, mpi.SignatureAlgorithm_ECDSA_WITH_SHA512},
+		{x509.SHA256WithRSAPSS, mpi.SignatureAlgorithm_SHA256_WITH_RSA_PSS},
+		{x509.SHA384WithRSAPSS, mpi.SignatureAlgorithm_SHA384_WITH_RSA_PSS},
+		{x509.SHA512WithRSAPSS, mpi.SignatureAlgorithm_SHA512_WITH_RSA_PSS},
+		{x509.PureEd25519, mpi.SignatureAlgorithm_PURE_ED25519},
+		{x509.UnknownSignatureAlgorithm, mpi.SignatureAlgorithm_SIGNATURE_ALGORITHM_UNKNOWN},
+	}
+
+	for _, test := range tests {
+		t.Run(test.input.String(), func(t *testing.T) {
+			assert.Equal(t, test.expected, convertX509SignatureAlgorithm(test.input))
 		})
 	}
 }

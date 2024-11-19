@@ -11,9 +11,9 @@ all_set:
       enabled: true
     nginx.config.reloads:
       enabled: true
-    nginx.http.conn:
+    nginx.http.connections:
       enabled: true
-    nginx.http.conn.count:
+    nginx.http.connections.count:
       enabled: true
     nginx.http.limit_conn.requests:
       enabled: true
@@ -37,7 +37,7 @@ all_set:
       enabled: true
     nginx.http.upstream.peer.byte.io:
       enabled: true
-    nginx.http.upstream.peer.conn.count:
+    nginx.http.upstream.peer.connections.count:
       enabled: true
     nginx.http.upstream.peer.count:
       enabled: true
@@ -85,21 +85,21 @@ all_set:
       enabled: true
     nginx.stream.byte.io:
       enabled: true
-    nginx.stream.connection.accepted:
+    nginx.stream.connections.accepted:
       enabled: true
-    nginx.stream.connection.discarded:
+    nginx.stream.connections.discarded:
       enabled: true
-    nginx.stream.connection.processing.count:
+    nginx.stream.connections.processing.count:
       enabled: true
     nginx.stream.session.status:
       enabled: true
     nginx.stream.upstream.peer.byte.io:
       enabled: true
-    nginx.stream.upstream.peer.conn.count:
+    nginx.stream.upstream.peer.connections:
       enabled: true
-    nginx.stream.upstream.peer.conn.time:
+    nginx.stream.upstream.peer.connections.count:
       enabled: true
-    nginx.stream.upstream.peer.conns:
+    nginx.stream.upstream.peer.connections.time:
       enabled: true
     nginx.stream.upstream.peer.count:
       enabled: true
@@ -134,9 +134,9 @@ none_set:
       enabled: false
     nginx.config.reloads:
       enabled: false
-    nginx.http.conn:
+    nginx.http.connections:
       enabled: false
-    nginx.http.conn.count:
+    nginx.http.connections.count:
       enabled: false
     nginx.http.limit_conn.requests:
       enabled: false
@@ -160,7 +160,7 @@ none_set:
       enabled: false
     nginx.http.upstream.peer.byte.io:
       enabled: false
-    nginx.http.upstream.peer.conn.count:
+    nginx.http.upstream.peer.connections.count:
       enabled: false
     nginx.http.upstream.peer.count:
       enabled: false
@@ -208,21 +208,21 @@ none_set:
       enabled: false
     nginx.stream.byte.io:
       enabled: false
-    nginx.stream.connection.accepted:
+    nginx.stream.connections.accepted:
       enabled: false
-    nginx.stream.connection.discarded:
+    nginx.stream.connections.discarded:
       enabled: false
-    nginx.stream.connection.processing.count:
+    nginx.stream.connections.processing.count:
       enabled: false
     nginx.stream.session.status:
       enabled: false
     nginx.stream.upstream.peer.byte.io:
       enabled: false
-    nginx.stream.upstream.peer.conn.count:
+    nginx.stream.upstream.peer.connections:
       enabled: false
-    nginx.stream.upstream.peer.conn.time:
+    nginx.stream.upstream.peer.connections.count:
       enabled: false
-    nginx.stream.upstream.peer.conns:
+    nginx.stream.upstream.peer.connections.time:
       enabled: false
     nginx.stream.upstream.peer.count:
       enabled: false

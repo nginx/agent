@@ -15,35 +15,35 @@ resourceMetrics:
               isMonotonic: true
             unit: reloads
           - description: The total number of connections.
-            name: nginx.http.conn
+            name: nginx.http.connections
             sum:
               aggregationTemporality: 2
               dataPoints:
                 - asInt: "11"
                   attributes:
-                    - key: nginx.conn.outcome
+                    - key: nginx.connections.outcome
                       value:
                         stringValue: ACCEPTED
                 - asInt: "5"
                   attributes:
-                    - key: nginx.conn.outcome
+                    - key: nginx.connections.outcome
                       value:
                         stringValue: DROPPED
               isMonotonic: true
             unit: connections
           - description: The current number of connections.
-            name: nginx.http.conn.count
+            name: nginx.http.connections.count
             gauge:
               aggregationTemporality: 2
               dataPoints:
                 - asInt: "1"
                   attributes:
-                    - key: nginx.conn.outcome
+                    - key: nginx.connections.outcome
                       value:
                         stringValue: IDLE
                 - asInt: "2"
                   attributes:
-                    - key: nginx.conn.outcome
+                    - key: nginx.connections.outcome
                       value:
                         stringValue: ACTIVE
               isMonotonic: true
@@ -592,7 +592,7 @@ resourceMetrics:
               isMonotonic: true
             unit: bytes
           - description: The average number of active connections per HTTP upstream peer.
-            name: nginx.http.upstream.peer.conn.count
+            name: nginx.http.upstream.peer.connections.count
             gauge:
               aggregationTemporality: 2
               dataPoints:
@@ -1636,7 +1636,7 @@ resourceMetrics:
               isMonotonic: true
             unit: bytes
           - description: The total number of connections accepted from clients.
-            name: nginx.stream.connection.accepted
+            name: nginx.stream.connections.accepted
             sum:
               aggregationTemporality: 2
               dataPoints:
@@ -1648,7 +1648,7 @@ resourceMetrics:
               isMonotonic: true
             unit: connections
           - description: Total number of connections completed without creating a session.
-            name: nginx.stream.connection.discarded
+            name: nginx.stream.connections.discarded
             sum:
               aggregationTemporality: 2
               dataPoints:
@@ -1660,7 +1660,7 @@ resourceMetrics:
               isMonotonic: true
             unit: connections
           - description: The number of client connections that are currently being processed.
-            name: nginx.stream.connection.processing.count
+            name: nginx.stream.connections.processing.count
             gauge:
               aggregationTemporality: 2
               dataPoints:
@@ -1752,7 +1752,7 @@ resourceMetrics:
               isMonotonic: true
             unit: bytes
           - description: The current number of Stream Upstream Peer connections.
-            name: nginx.stream.upstream.peer.conn.count
+            name: nginx.stream.upstream.peer.connections.count
             gauge:
               aggregationTemporality: 2
               dataPoints:
@@ -1773,7 +1773,7 @@ resourceMetrics:
               isMonotonic: true
             unit: connections
           - description: The average time to connect to the stream upstream peer.
-            name: nginx.stream.upstream.peer.conn.time
+            name: nginx.stream.upstream.peer.connections.time
             gauge:
               aggregationTemporality: 2
               dataPoints:
@@ -1794,7 +1794,7 @@ resourceMetrics:
               isMonotonic: true
             unit: ms
           - description: The total number of client connections forwarded to this stream upstream peer.
-            name: nginx.stream.upstream.peer.conns
+            name: nginx.stream.upstream.peer.connections
             sum:
               aggregationTemporality: 2
               dataPoints:

@@ -24,12 +24,11 @@ type NginxLogTailerOperator struct {
 var _ logTailerOperator = (*NginxLogTailerOperator)(nil)
 
 var (
-	reloadErrorList = []*re.Regexp{
-		re.MustCompile(`.*\[emerg\].*`),
-		re.MustCompile(`.*\[alert\].*`),
-		re.MustCompile(`.*\[crit\].*`),
-	}
-	warningRegex    = re.MustCompile(`.*\[warn\].*`)
+	// Line is over 120 characters long, regex needs to be on one line so needs to be ignored by linter
+	// nolint: lll
+	reloadErrorList = re.MustCompile(`\d{1,4}\/\d{1,2}\/\d{1,2} ([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9] ?(nginx\:|) (\[emerg\]|\[alert\]|\[crit\])`)
+	// nolint: lll
+	warningRegex    = re.MustCompile(`\d{1,4}\/\d{1,2}\/\d{1,2} ([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9] ?(nginx\:|) (\[warn\])`)
 	ignoreErrorList = re.MustCompile(`.*(usage report| license expired).*`)
 )
 
@@ -72,15 +71,11 @@ func (l *NginxLogTailerOperator) Tail(ctx context.Context, errorLog string, erro
 }
 
 func (l *NginxLogTailerOperator) doesLogLineContainError(line string) bool {
-	if l.agentConfig.DataPlaneConfig.Nginx.TreatWarningsAsErrors && warningRegex.MatchString(line) &&
-		!ignoreErrorList.MatchString(line) {
+	if ignoreErrorList.MatchString(line) {
+		return false
+	} else if (l.agentConfig.DataPlaneConfig.Nginx.TreatWarningsAsErrors && warningRegex.MatchString(line)) ||
+		reloadErrorList.MatchString(line) {
 		return true
-	}
-
-	for _, errorRegex := range reloadErrorList {
-		if errorRegex.MatchString(line) && !ignoreErrorList.MatchString(line) {
-			return true
-		}
 	}
 
 	return false
