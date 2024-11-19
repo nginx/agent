@@ -115,7 +115,7 @@ func TestTemplateWrite(t *testing.T) {
 	}
 
 	cfg.Collector.Exporters.OtlpExporters[0].Authenticator = "headers_setter"
-	cfg.Collector.Exporters.OtlpExporters[0].Compression = "gzip"
+	cfg.Collector.Exporters.OtlpExporters[0].Compression = "none"
 
 	require.NotNil(t, cfg)
 
