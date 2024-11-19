@@ -21,8 +21,7 @@ type NginxConfigContext struct {
 }
 
 type APIDetails struct {
-	URL string
-	// TODO: socket is the only one who needs this? should this be socket and check if "" ?
+	URL      string
 	Location string
 }
 
