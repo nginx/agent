@@ -50,7 +50,8 @@ var _ nginxConfigParser = (*NginxConfigParser)(nil)
 type (
 	crossplaneTraverseCallback           = func(ctx context.Context, parent, current *crossplane.Directive) error
 	crossplaneTraverseCallbackStr        = func(ctx context.Context, parent, current *crossplane.Directive) string
-	crossplaneTraverseCallbackAPIDetails = func(ctx context.Context, parent, current *crossplane.Directive) *model.APIDetails
+	crossplaneTraverseCallbackAPIDetails = func(ctx context.Context, parent,
+		current *crossplane.Directive) *model.APIDetails
 )
 
 func NewNginxConfigParser(agentConfig *config.Config) *NginxConfigParser {
@@ -458,7 +459,9 @@ func (ncp *NginxConfigParser) hasAdditionArguments(args []string) bool {
 	return len(args) >= defaultNumberOfDirectiveArguments
 }
 
-func (ncp *NginxConfigParser) stubStatusAPICallback(ctx context.Context, parent, current *crossplane.Directive) *model.APIDetails {
+func (ncp *NginxConfigParser) stubStatusAPICallback(ctx context.Context, parent,
+	current *crossplane.Directive,
+) *model.APIDetails {
 	urls := ncp.urlsForLocationDirectiveAPIDetails(parent, current, stubStatusAPIDirective)
 	if len(urls) > 0 {
 		slog.DebugContext(ctx, "Potential stub_status urls", "urls", urls)
@@ -581,6 +584,7 @@ func (ncp *NginxConfigParser) pingPlusAPIEndpoint(ctx context.Context, statusAPI
 	return true
 }
 
+// nolint: revive
 func (ncp *NginxConfigParser) urlsForLocationDirectiveAPIDetails(
 	parent, current *crossplane.Directive,
 	locationDirectiveName string,
@@ -641,11 +645,7 @@ func (ncp *NginxConfigParser) urlsForLocationDirective(
 			path := ncp.parsePathFromLocationDirective(current)
 
 			if locChild.Directive == locationDirectiveName {
-				if strings.HasPrefix(address, "unix:") {
-					urls = append(urls, fmt.Sprintf(unixAPIFormat, path))
-				} else {
-					urls = append(urls, fmt.Sprintf(apiFormat, address, path))
-				}
+				urls = append(urls, fmt.Sprintf(apiFormat, address, path))
 			}
 		}
 	}
