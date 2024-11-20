@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/test/helpers"
+	"github.com/stretchr/testify/require"
 )
 
 const (
-	commandPort = 8981
-
 	clientPermitWithoutStream = true
 	clientTime                = 50 * time.Second
 	clientTimeout             = 5 * time.Second
@@ -27,10 +27,6 @@ const (
 	commonMultiplier          = 0.2
 
 	reloadMonitoringPeriod = 400 * time.Millisecond
-
-	randomPort1 = 1234
-	randomPort2 = 4317
-	randomPort3 = 1337
 )
 
 // Produces a populated Agent Config for testing usage.
@@ -53,7 +49,7 @@ func AgentConfig() *config.Config {
 					{
 						Server: &config.ServerConfig{
 							Host: "127.0.0.1",
-							Port: randomPort1,
+							Port: 0,
 						},
 						Compression: "none",
 					},
@@ -67,7 +63,18 @@ func AgentConfig() *config.Config {
 				},
 			},
 			Receivers: config.Receivers{
-				OtlpReceivers: OtlpReceivers(),
+				OtlpReceivers: []config.OtlpReceiver{
+					{
+						Server: &config.ServerConfig{
+							Host: "127.0.0.1",
+							Port: 0,
+							Type: 0,
+						},
+						Auth: &config.AuthConfig{
+							Token: "even-secreter-token",
+						},
+					},
+				},
 				HostMetrics: &config.HostMetrics{
 					CollectionInterval: time.Minute,
 					InitialDelay:       time.Second,
@@ -83,8 +90,8 @@ func AgentConfig() *config.Config {
 			Extensions: config.Extensions{
 				Health: &config.Health{
 					Server: &config.ServerConfig{
-						Host: "localhost",
-						Port: randomPort3,
+						Host: "127.0.0.1",
+						Port: 0,
 						Type: 0,
 					},
 				},
@@ -106,7 +113,7 @@ func AgentConfig() *config.Config {
 		Command: &config.Command{
 			Server: &config.ServerConfig{
 				Host: "127.0.0.1",
-				Port: commandPort,
+				Port: 0,
 				Type: config.Grpc,
 			},
 			Auth: &config.AuthConfig{
@@ -157,20 +164,21 @@ func OTelConfig(t *testing.T) *config.Config {
 	ac := AgentConfig()
 	ac.Collector.ConfigPath = filepath.Join(t.TempDir(), "otel-collector-config.yaml")
 
-	return ac
-}
+	exporterPort, expErr := helpers.GetRandomPort(t)
+	require.NoError(t, expErr)
+	ac.Collector.Exporters.OtlpExporters[0].Server.Port = exporterPort
 
-func OtlpReceivers() []config.OtlpReceiver {
-	return []config.OtlpReceiver{
-		{
-			Server: &config.ServerConfig{
-				Host: "localhost",
-				Port: randomPort2,
-				Type: 0,
-			},
-			Auth: &config.AuthConfig{
-				Token: "even-secreter-token",
-			},
-		},
-	}
+	receiverPort, recErr := helpers.GetRandomPort(t)
+	require.NoError(t, recErr)
+	ac.Collector.Receivers.OtlpReceivers[0].Server.Port = receiverPort
+
+	healthPort, healthErr := helpers.GetRandomPort(t)
+	require.NoError(t, healthErr)
+	ac.Collector.Extensions.Health.Server.Port = healthPort
+
+	commandPort, commandErr := helpers.GetRandomPort(t)
+	require.NoError(t, commandErr)
+	ac.Command.Server.Port = commandPort
+
+	return ac
 }
