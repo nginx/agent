@@ -9,7 +9,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	// "os"
 	"strings"
 	"testing"
 	"time"
@@ -130,7 +129,7 @@ func validateLog(t *testing.T, expectedLog string, logBuf *bytes.Buffer) {
 	t.Helper()
 
 	if expectedLog != "" {
-		if strings.Contains(logBuf.String(), expectedLog) {
+		if !strings.Contains(logBuf.String(), expectedLog) {
 			t.Errorf("Expected log to contain %q, but got %q", expectedLog, logBuf.String())
 		}
 	}
