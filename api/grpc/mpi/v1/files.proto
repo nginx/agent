@@ -268,7 +268,7 @@ message X509Name {
     
     // Serial Number (SN): Unique identifier or serial number.
     // Must be non-empty.
-    string serial_number = 8 [(buf.validate.field).string.min_len = 1];
+    string serial_number = 8;
     
     // Common Name (CN): Typically the person’s or entity's full name.
     string common_name = 9 [(buf.validate.field).string.min_len = 1];
