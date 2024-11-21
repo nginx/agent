@@ -11,7 +11,7 @@ import (
 	"go.opentelemetry.io/collector/otelcol"
 )
 
-// Define an interface with the methods you need for mocking
+// CollectorInterface The high-level collector interface
 type CollectorInterface interface {
 	Run(ctx context.Context) error
 	GetState() otelcol.State

@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/nginx/agent/v3/internal/bus/busfakes"
 	"sort"
 	"testing"
 
@@ -95,7 +96,7 @@ func TestResource_Process(t *testing.T) {
 			fakeResourceService.AddInstancesReturns(protos.GetHostResource())
 			fakeResourceService.UpdateInstancesReturns(test.resource)
 			fakeResourceService.DeleteInstancesReturns(test.resource)
-			messagePipe := bus.NewFakeMessagePipe()
+			messagePipe := busfakes.NewFakeMessagePipe()
 
 			resourcePlugin := NewResource(types.AgentConfig())
 			resourcePlugin.resourceService = fakeResourceService
@@ -154,7 +155,7 @@ func TestResource_Process_Apply(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
 			fakeResourceService.ApplyConfigReturns(test.applyErr)
-			messagePipe := bus.NewFakeMessagePipe()
+			messagePipe := busfakes.NewFakeMessagePipe()
 
 			resourcePlugin := NewResource(types.AgentConfig())
 			resourcePlugin.resourceService = fakeResourceService
@@ -222,7 +223,7 @@ func TestResource_Process_Rollback(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
 			fakeResourceService.ApplyConfigReturns(test.rollbackErr)
-			messagePipe := bus.NewFakeMessagePipe()
+			messagePipe := busfakes.NewFakeMessagePipe()
 
 			resourcePlugin := NewResource(types.AgentConfig())
 			resourcePlugin.resourceService = fakeResourceService
@@ -278,7 +279,7 @@ func TestResource_Init(t *testing.T) {
 	ctx := context.Background()
 	resourceService := resourcefakes.FakeResourceServiceInterface{}
 
-	messagePipe := bus.NewFakeMessagePipe()
+	messagePipe := busfakes.NewFakeMessagePipe()
 	messagePipe.RunWithoutInit(ctx)
 
 	resourcePlugin := NewResource(types.AgentConfig())

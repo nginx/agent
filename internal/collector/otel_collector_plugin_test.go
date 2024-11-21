@@ -7,7 +7,9 @@ package collector
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	// "os"
 	"strings"
 	"testing"
 	"time"
@@ -27,36 +29,113 @@ import (
 )
 
 func TestCollector_New(t *testing.T) {
-	conf := types.OTelConfig(t)
-	conf.Collector.Log.Path = ""
+	tests := []struct {
+		name          string
+		config        *config.Config
+		expectedError error
+	}{
+		{
+			name:          "Nil agent config",
+			config:        nil,
+			expectedError: errors.New("nil agent config"),
+		},
+		{
+			name: "Nil collector config",
+			config: &config.Config{
+				Collector: nil,
+			},
+			expectedError: errors.New("nil collector config"),
+		},
+		{
+			name: "File write error",
+			config: &config.Config{
+				Collector: &config.Collector{
+					Log: &config.Log{Path: "/invalid/path"},
+				},
+			},
+			expectedError: errors.New("open /invalid/path: no such file or directory"),
+		},
+		{
+			name: "Successful initialization",
+			config: &config.Config{
+				Collector: &config.Collector{
+					Log: &config.Log{Path: "/tmp/test.log"},
+				},
+			},
+			expectedError: nil,
+		},
+	}
 
-	collector, err := New(conf)
-	require.NoError(t, err, "NewCollector should not return an error with valid config")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			collector, err := New(tt.config)
 
-	collector.Close(context.TODO())
+			if tt.expectedError != nil {
+				assert.Error(t, err)
+				assert.Equal(t, tt.expectedError.Error(), err.Error())
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, collector)
+			}
+		})
+	}
 }
 
 func TestCollector_Init(t *testing.T) {
-	conf := types.OTelConfig(t)
-	conf.Collector = &config.Collector{}
-
-	logBuf := &bytes.Buffer{}
-	stub.StubLoggerWith(logBuf)
-
-	collector, err := New(conf)
-	require.NoError(t, err, "NewCollector should not return an error with valid config")
-
-	initError := collector.Init(context.Background(), nil)
-	require.NoError(t, initError)
-
-	if s := logBuf.String(); !strings.Contains(s, "No receivers configured for OTel Collector. "+
-		"Waiting to discover a receiver before starting OTel collector.") {
-		t.Errorf("Unexpected log %s", s)
+	tests := []struct {
+		name          string
+		expectedError bool
+	}{
+		{
+			name:          "Default configured",
+			expectedError: false,
+		},
+		{
+			name:          "No receivers set in config",
+			expectedError: true,
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			conf := types.OTelConfig(t)
 
-	assert.True(t, collector.stopped)
+			var collector *Collector
+			var err error
+			logBuf := &bytes.Buffer{}
+			stub.StubLoggerWith(logBuf)
 
-	collector.Close(context.TODO())
+			conf.Collector.Log = &config.Log{Path: "/tmp/test.log"}
+
+			if tt.expectedError {
+				conf.Collector.Receivers = config.Receivers{}
+
+				collector, err = New(conf)
+				require.NoError(t, err, "NewCollector should not return an error with valid config")
+
+				initError := collector.Init(context.Background(), nil)
+				require.NoError(t, initError)
+
+				if s := logBuf.String(); !strings.Contains(s, "No receivers configured for OTel Collector") {
+					t.Errorf("Unexpected log %s", s)
+					t.Fail()
+				}
+			} else {
+				collector, err = New(conf)
+				require.NoError(t, err, "NewCollector should not return an error with valid config")
+
+				initError := collector.Init(context.Background(), nil)
+				require.NoError(t, initError)
+
+				s := logBuf.String()
+				if strings.Contains(s, "No receivers configured for OTel Collector") {
+					t.Errorf("Unexpected log %s", s)
+					t.Fail()
+				}
+			}
+
+			require.NoError(t, collector.Close(context.TODO()))
+		})
+	}
 }
 
 func TestCollector_InitAndClose(t *testing.T) {

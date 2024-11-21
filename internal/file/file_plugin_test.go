@@ -8,6 +8,7 @@ package file
 import (
 	"context"
 	"fmt"
+	"github.com/nginx/agent/v3/internal/bus/busfakes"
 	"os"
 	"testing"
 	"time"
@@ -77,7 +78,7 @@ func TestFilePlugin_Process_NginxConfigUpdateTopic(t *testing.T) {
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
 	fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
-	messagePipe := bus.NewFakeMessagePipe()
+	messagePipe := busfakes.NewFakeMessagePipe()
 
 	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection)
 	err := filePlugin.Init(ctx, messagePipe)
@@ -153,7 +154,7 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			fakeFileManagerService := &filefakes.FakeFileManagerServiceInterface{}
 			fakeFileManagerService.ConfigApplyReturns(test.configApplyStatus, test.configApplyReturnsErr)
-			messagePipe := bus.NewFakeMessagePipe()
+			messagePipe := busfakes.NewFakeMessagePipe()
 			filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection)
 			err := filePlugin.Init(ctx, messagePipe)
 			filePlugin.fileManagerService = fakeFileManagerService
@@ -250,7 +251,7 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic(t *testing.T) {
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
 	fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
-	messagePipe := bus.NewFakeMessagePipe()
+	messagePipe := busfakes.NewFakeMessagePipe()
 
 	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection)
 	err := filePlugin.Init(ctx, messagePipe)
@@ -305,7 +306,7 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic_Failure(t *testing.T) {
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
 	fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
-	messagePipe := bus.NewFakeMessagePipe()
+	messagePipe := busfakes.NewFakeMessagePipe()
 
 	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection)
 	err := filePlugin.Init(ctx, messagePipe)
@@ -382,7 +383,7 @@ func TestFilePlugin_Process_ConfigApplyFailedTopic(t *testing.T) {
 			fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
 			fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
 
-			messagePipe := bus.NewFakeMessagePipe()
+			messagePipe := busfakes.NewFakeMessagePipe()
 			agentConfig := types.AgentConfig()
 			filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection)
 
@@ -428,7 +429,7 @@ func TestFilePlugin_Process_ConfigApplyRollbackCompleteTopic(t *testing.T) {
 	instance := protos.GetNginxOssInstance([]string{})
 	mockFileManager := &filefakes.FakeFileManagerServiceInterface{}
 
-	messagePipe := bus.NewFakeMessagePipe()
+	messagePipe := busfakes.NewFakeMessagePipe()
 	agentConfig := types.AgentConfig()
 	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
 	filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection)

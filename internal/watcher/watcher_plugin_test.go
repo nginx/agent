@@ -7,6 +7,7 @@ package watcher
 
 import (
 	"context"
+	"github.com/nginx/agent/v3/internal/bus/busfakes"
 	"testing"
 	"time"
 
@@ -32,7 +33,7 @@ func TestWatcher_Init(t *testing.T) {
 
 	watcherPlugin := NewWatcher(types.AgentConfig())
 
-	messagePipe := bus.NewFakeMessagePipe()
+	messagePipe := busfakes.NewFakeMessagePipe()
 
 	err := watcherPlugin.Init(ctx, messagePipe)
 	defer func() {
