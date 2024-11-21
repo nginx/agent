@@ -1,5 +1,5 @@
 ---
-title: "Uninstall NGINX Agent Package"
+title: "Uninstall NGINX Agent package"
 draft: false
 weight: 700
 toc: true
@@ -96,7 +96,7 @@ Complete the following steps on each host where you've installed NGINX Agent:
 
    ```bash
    sudo zypper remove nginx-agent
-   ``` 
+   ```
 
 ### Uninstalling NGINX Agent on Alpine Linux
 
@@ -112,9 +112,9 @@ Complete the following steps on each host where you've installed NGINX agent:
 
    ```bash
    sudo apk del nginx-agent
-   ``` 
+   ```
 
-### Uninstalling NGINX Agent on Amazon Linux
+### Uninstalling NGINX Agent on Amazon Linux 2
 
 Complete the following steps on each host where you've installed NGINX agent:
 
@@ -128,10 +128,25 @@ Complete the following steps on each host where you've installed NGINX agent:
 
    ```bash
    sudo yum remove nginx-agent
-   ``` 
+   ```
 
+### Uninstalling NGINX Agent on Amazon Linux 2023
+
+Complete the following steps on each host where you've installed NGINX agent:
+
+1. Stop NGINX agent:
+
+   ```bash
+   sudo systemctl stop nginx-agent
+   ```
+
+2. To uninstall NGINX agent, run the following command:
+
+   ```bash
+   sudo dnf remove nginx-agent
+   ```
 ### Uninstalling NGINX Agent on FreeBSD
- 
+
 Complete the following steps on each host where you've installed NGINX agent:
 
 1. Stop NGINX agent:
@@ -144,4 +159,4 @@ Complete the following steps on each host where you've installed NGINX agent:
 
    ```bash
    sudo pkg delete nginx-agent
-   ``` 
+   ```

@@ -1,5 +1,5 @@
 ---
-title: Encrypt Communication 
+title: Encrypt communication
 tags:
 - docs
 toc: true
@@ -13,7 +13,7 @@ Follow the steps in this guide to encrypt communication between NGINX Agent and 
 
 ## Before You Begin
 
-To enable mTLS, you must have TLS enabled and supply a key, cert, and a CA cert on both the client and server. TSee the [Secure Traffic with Certificates](https://docs.nginx.com/nginx-management-suite/admin-guides/configuration/secure-traffic/) topic for instructions on how to generate keys and set them in the specific values in the NGINX Agent configuration.
+To enable mTLS, you must have TLS enabled and supply a key, cert, and a CA cert on both the client and server. See the [Secure Traffic with Certificates](https://docs.nginx.com/nginx-instance-manager/system-configuration/secure-traffic/) topic for instructions on how to generate keys and set them in the specific values in the NGINX Agent configuration.
 
 ## Enabling mTLS
 
@@ -50,10 +50,10 @@ nginx-agent --tls-cert "path-to-cert" --tls-key "path-to-key" --tls-ca "path-to-
 To enable mTLS for NGINX Agent using environment variables, run the following commands:
 
 ```bash
-NMS_TLS_CA="my-env-ca"
-NMS_TLS_KEY="my-env-key"
-NMS_TLS_CERT="my-env-cert"
-NMS_TLS_ENABLE=true
+NGINX_AGENT_TLS_CA="my-env-ca"
+NGINX_AGENT_TLS_KEY="my-env-key"
+NGINX_AGENT_TLS_CERT="my-env-cert"
+NGINX_AGENT_TLS_ENABLE=true
 ```
 
 <br>
@@ -87,7 +87,7 @@ nginx-agent --tls-enable
 To enable server-side TLS using environment variables, run the following commands:
 
 ```bash
-NMS_TLS_ENABLE=true
+NGINX_AGENT_TLS_ENABLE=true
 ```
 
 <br>
@@ -110,7 +110,7 @@ tls:
 
 To enable insecure mode, you simply need to set `tls:enable` to `false`. Setting this value to `false` can be done only by updating the configuration file or with environment variables. See the following examples:
 
-### Enabling Insecure Mode via Config Values**
+### Enabling Insecure Mode via Config Values
 
 You can edit the `/etc/nginx-agent/nginx-agent.conf` file to enable insecure mode. Make the following changes:
 
@@ -119,10 +119,10 @@ tls:
   enable: false
 ```
 
-### Enabling Insecure Mode with Environment Variables**
+### Enabling Insecure Mode with Environment Variables
 
 To enable insecure mode using environment variables, run the following commands:
 
 ```bash
-NMS_TLS_ENABLE=false
+NGINX_AGENT_TLS_ENABLE=false
 ```

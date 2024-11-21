@@ -1,5 +1,5 @@
 ---
-title: "Getting Started"
+title: "Getting started"
 draft: false
 weight: 100
 toc: true
@@ -15,7 +15,7 @@ Follow these steps to configure and run NGINX Agent and a mock interface ("contr
 
 ## Install NGINX
 
-Follow the steps in the [Installation]({{< ref "/v2/installation-upgrade/installation-github.md" >}}) section to download, install, and run NGINX.
+Follow the steps in the [Installation](https://docs.nginx.com/nginx/admin-guide/installing-nginx/) section to download, install, and run NGINX.
 
 ## Clone the NGINX Agent Repository
 
@@ -23,7 +23,7 @@ Using your preferred method, clone the NGINX Agent repository into your developm
 
 ## Install Go
 
-NGINX Agent and the Mock Control Plane are written in Go. Go 1.23.0 or higher is required to build and run either application from the source code directory. You can [download Go from the official website](https://go.dev/dl/).
+NGINX Agent and the Mock Control Plane are written in Go. Go 1.23 or higher is required to build and run either application from the source code directory. You can [download Go from the official website](https://go.dev/dl/).
 
 ## Start the gRPC Mock Control Plane
 
@@ -94,7 +94,7 @@ The mock control plane can use either gRPC or REST protocols to communicate with
 
 ## Launch Swagger UI
 
-Swagger UI requires goswagger be installed. See [instructions for installing goswagger](https://goswagger.io/install.html) for additional help.
+Swagger UI requires goswagger be installed. See [instructions for installing goswagger](https://goswagger.io/go-swagger/install/) for additional help.
 
 To launch the Swagger UI for the REST interface run the following command:
 
@@ -177,5 +177,5 @@ NGINX Agent uses formatted log files to collect metrics. Expanding log formats a
 {{< important >}}
 Without log rotation or storage on a separate partition, log files could use up all the free drive space and cause your system to become unresponsive to certain services.
 
-For more information, see [NGINX Agent Log Rotation]({{< relref "/how-to/configuration-overview.md#nginx-agent-log-rotation" >}}).
+For more information, see [NGINX Agent Log Rotation]({{< relref "/v2/configuration/configuration-overview.md#nginx-agent-log-rotation" >}}).
 {{< /important >}}

@@ -1,5 +1,5 @@
 ---
-title: Container Support and Troubleshooting
+title: Container support and troubleshooting
 categories:
 - installation
 draft: false
@@ -24,8 +24,8 @@ To collect metrics about the Docker container that the NGINX Agent is running in
 
 NGINX Agent supports both versions of cgroups.
 
-- https://www.kernel.org/doc/Documentation/cgroup-v1/ 
-- https://www.kernel.org/doc/Documentation/cgroup-v2.txt 
+- https://www.kernel.org/doc/Documentation/cgroup-v1/
+- https://www.kernel.org/doc/Documentation/cgroup-v2.txt
 
 ## Metrics
 
