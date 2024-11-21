@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/nginx/agent/v3/test/stub"
@@ -115,6 +114,8 @@ func TestCollector_Init(t *testing.T) {
 			collector, err = New(conf)
 			require.NoError(t, err, "NewCollector should not return an error with valid config")
 
+			collector.service = createFakeCollector()
+
 			initError := collector.Init(context.Background(), nil)
 			require.NoError(t, initError)
 
@@ -149,21 +150,13 @@ func TestCollector_InitAndClose(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, collector.Init(ctx, messagePipe), "Init should not return an error")
 
-	assert.Eventually(
-		t,
-		func() bool { return collector.GetState() == otelcol.StateRunning },
-		2*time.Second,
-		100*time.Millisecond,
-	)
+	collector.service = createFakeCollector()
+
+	assert.Equal(t, otelcol.StateRunning, collector.GetState())
 
 	require.NoError(t, collector.Close(ctx), "Close should not return an error")
 
-	assert.Eventually(
-		t,
-		func() bool { return collector.GetState() == otelcol.StateClosed },
-		2*time.Second,
-		100*time.Millisecond,
-	)
+	assert.Equal(t, otelcol.StateClosed, collector.GetState())
 }
 
 // nolint: revive
@@ -287,11 +280,7 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 
 			assert.Equal(tt, test.receivers, collector.config.Collector.Receivers)
 
-			closeFunc := func() {
-				collector.Close(ctx)
-			}
-
-			time.AfterFunc(5*time.Second, closeFunc)
+			defer collector.Close(ctx)
 		})
 	}
 }
