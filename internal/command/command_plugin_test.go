@@ -8,10 +8,11 @@ package command
 import (
 	"bytes"
 	"context"
-	"github.com/nginx/agent/v3/internal/bus/busfakes"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/nginx/agent/v3/internal/bus/busfakes"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"

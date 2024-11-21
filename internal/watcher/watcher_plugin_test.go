@@ -7,9 +7,10 @@ package watcher
 
 import (
 	"context"
-	"github.com/nginx/agent/v3/internal/bus/busfakes"
 	"testing"
 	"time"
+
+	"github.com/nginx/agent/v3/internal/bus/busfakes"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"

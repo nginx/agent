@@ -157,9 +157,9 @@ func (p *MessagePipe) unsubscribePlugin(ctx context.Context, index int, plugin P
 		}
 
 		for _, subscription := range plugin.Subscriptions() {
-			err := p.bus.Unsubscribe(subscription, plugin.Process)
-			if err != nil {
-				return err
+			unsubErr := p.bus.Unsubscribe(subscription, plugin.Process)
+			if unsubErr != nil {
+				return unsubErr
 			}
 		}
 	}

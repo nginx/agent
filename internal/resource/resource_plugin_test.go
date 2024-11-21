@@ -9,9 +9,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/nginx/agent/v3/internal/bus/busfakes"
 	"sort"
 	"testing"
+
+	"github.com/nginx/agent/v3/internal/bus/busfakes"
 
 	"github.com/nginx/agent/v3/internal/model"
 

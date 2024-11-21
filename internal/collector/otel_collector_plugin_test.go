@@ -30,9 +30,9 @@ import (
 
 func TestCollector_New(t *testing.T) {
 	tests := []struct {
-		name          string
 		config        *config.Config
 		expectedError error
+		name          string
 	}{
 		{
 			name:          "Nil agent config",
@@ -71,10 +71,10 @@ func TestCollector_New(t *testing.T) {
 			collector, err := New(tt.config)
 
 			if tt.expectedError != nil {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Equal(t, tt.expectedError.Error(), err.Error())
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, collector)
 			}
 		})
@@ -84,15 +84,18 @@ func TestCollector_New(t *testing.T) {
 func TestCollector_Init(t *testing.T) {
 	tests := []struct {
 		name          string
+		expectedLog   string
 		expectedError bool
 	}{
 		{
 			name:          "Default configured",
 			expectedError: false,
+			expectedLog:   "",
 		},
 		{
 			name:          "No receivers set in config",
 			expectedError: true,
+			expectedLog:   "No receivers configured for OTel Collector",
 		},
 	}
 	for _, tt := range tests {
@@ -108,33 +111,28 @@ func TestCollector_Init(t *testing.T) {
 
 			if tt.expectedError {
 				conf.Collector.Receivers = config.Receivers{}
-
-				collector, err = New(conf)
-				require.NoError(t, err, "NewCollector should not return an error with valid config")
-
-				initError := collector.Init(context.Background(), nil)
-				require.NoError(t, initError)
-
-				if s := logBuf.String(); !strings.Contains(s, "No receivers configured for OTel Collector") {
-					t.Errorf("Unexpected log %s", s)
-					t.Fail()
-				}
-			} else {
-				collector, err = New(conf)
-				require.NoError(t, err, "NewCollector should not return an error with valid config")
-
-				initError := collector.Init(context.Background(), nil)
-				require.NoError(t, initError)
-
-				s := logBuf.String()
-				if strings.Contains(s, "No receivers configured for OTel Collector") {
-					t.Errorf("Unexpected log %s", s)
-					t.Fail()
-				}
 			}
+
+			collector, err = New(conf)
+			require.NoError(t, err, "NewCollector should not return an error with valid config")
+
+			initError := collector.Init(context.Background(), nil)
+			require.NoError(t, initError)
+
+			validateLog(t, tt.expectedLog, logBuf)
 
 			require.NoError(t, collector.Close(context.TODO()))
 		})
+	}
+}
+
+func validateLog(t *testing.T, expectedLog string, logBuf *bytes.Buffer) {
+	t.Helper()
+
+	if expectedLog != "" {
+		if strings.Contains(logBuf.String(), expectedLog) {
+			t.Errorf("Expected log to contain %q, but got %q", expectedLog, logBuf.String())
+		}
 	}
 }
 

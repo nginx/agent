@@ -7,8 +7,9 @@ package busfakes
 
 import (
 	"context"
-	"github.com/nginx/agent/v3/internal/bus"
 	"sync"
+
+	"github.com/nginx/agent/v3/internal/bus"
 )
 
 // FakeMessagePipe is a mock message pipe
