@@ -18,7 +18,10 @@ var nginxConfigContext = &NginxConfigContext{
 		URL:      "",
 		Location: "",
 	},
-	PlusAPI:    "",
+	PlusAPI: &APIDetails{
+		URL:      "",
+		Location: "",
+	},
 	InstanceID: "12333",
 	Files: []*mpi.File{
 		{
@@ -51,7 +54,10 @@ func TestNginxConfigContext_Equal(t *testing.T) {
 	}
 
 	nginxConfigContextWithDifferentPlusAPI := *nginxConfigContext
-	nginxConfigContextWithDifferentPlusAPI.PlusAPI = "http://localhost:8080/api"
+	nginxConfigContextWithDifferentPlusAPI.PlusAPI = &APIDetails{
+		URL:      "http://localhost:8080/api",
+		Location: "",
+	}
 
 	nginxConfigContextWithDifferentInstanceID := *nginxConfigContext
 	nginxConfigContextWithDifferentInstanceID.InstanceID = "567"

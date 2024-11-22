@@ -400,11 +400,11 @@ func (iw *InstanceWatcherService) updateNginxInstanceRuntime(
 		if !reflect.DeepEqual(nginxPlusRuntimeInfo.GetAccessLogs(), accessLogs) ||
 			!reflect.DeepEqual(nginxPlusRuntimeInfo.GetErrorLogs(), errorLogs) ||
 			nginxPlusRuntimeInfo.GetStubStatus() != nginxConfigContext.StubStatus.URL ||
-			nginxPlusRuntimeInfo.GetPlusApi() != nginxConfigContext.PlusAPI {
+			nginxPlusRuntimeInfo.GetPlusApi() != nginxConfigContext.PlusAPI.URL {
 			nginxPlusRuntimeInfo.AccessLogs = accessLogs
 			nginxPlusRuntimeInfo.ErrorLogs = errorLogs
 			nginxPlusRuntimeInfo.StubStatus = nginxConfigContext.StubStatus.URL
-			nginxPlusRuntimeInfo.PlusApi = nginxConfigContext.PlusAPI
+			nginxPlusRuntimeInfo.PlusApi = nginxConfigContext.PlusAPI.URL
 			updatesRequired = true
 		}
 	} else {

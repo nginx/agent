@@ -185,7 +185,14 @@ func TestInstanceWatcherService_updateNginxInstanceRuntime(t *testing.T) {
 				Name: "/usr/local/var/log/nginx/error.log",
 			},
 		},
-		PlusAPI: "http://127.0.0.1:8081/api",
+		PlusAPI: &model.APIDetails{
+			URL:      "http://127.0.0.1:8081/api",
+			Location: "",
+		},
+		StubStatus: &model.APIDetails{
+			URL:      "http://127.0.0.1:8081/api",
+			Location: "",
+		},
 	}
 
 	tests := []struct {
@@ -213,16 +220,16 @@ func TestInstanceWatcherService_updateNginxInstanceRuntime(t *testing.T) {
 					GetNginxPlusRuntimeInfo().GetAccessLogs()[0])
 				assert.Equal(t, test.nginxConfigContext.ErrorLogs[0].Name, test.instance.GetInstanceRuntime().
 					GetNginxPlusRuntimeInfo().GetErrorLogs()[0])
-				assert.Equal(t, test.nginxConfigContext.StubStatus, test.instance.GetInstanceRuntime().
+				assert.Equal(t, test.nginxConfigContext.StubStatus.URL, test.instance.GetInstanceRuntime().
 					GetNginxPlusRuntimeInfo().GetStubStatus())
-				assert.Equal(t, test.nginxConfigContext.PlusAPI, test.instance.GetInstanceRuntime().
+				assert.Equal(t, test.nginxConfigContext.PlusAPI.URL, test.instance.GetInstanceRuntime().
 					GetNginxPlusRuntimeInfo().GetPlusApi())
 			} else {
 				assert.Equal(t, test.nginxConfigContext.AccessLogs[0].Name, test.instance.GetInstanceRuntime().
 					GetNginxRuntimeInfo().GetAccessLogs()[0])
 				assert.Equal(t, test.nginxConfigContext.ErrorLogs[0].Name, test.instance.GetInstanceRuntime().
 					GetNginxRuntimeInfo().GetErrorLogs()[0])
-				assert.Equal(t, test.nginxConfigContext.StubStatus, test.instance.GetInstanceRuntime().
+				assert.Equal(t, test.nginxConfigContext.StubStatus.URL, test.instance.GetInstanceRuntime().
 					GetNginxRuntimeInfo().GetStubStatus())
 			}
 		})

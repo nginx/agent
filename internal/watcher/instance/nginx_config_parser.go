@@ -35,7 +35,8 @@ const (
 	plusAPIDirective                  = "api"
 	stubStatusAPIDirective            = "stub_status"
 	apiFormat                         = "http://%s%s"
-	unixAPIFormat                     = "http://config-status%s"
+	unixStubStatusFormat              = "http://config-status%s"
+	unixPlusAPIFormat                 = "http://nginx-plus-api%s"
 	locationDirective                 = "location"
 )
 
@@ -49,9 +50,8 @@ var _ nginxConfigParser = (*NginxConfigParser)(nil)
 
 type (
 	crossplaneTraverseCallback           = func(ctx context.Context, parent, current *crossplane.Directive) error
-	crossplaneTraverseCallbackStr        = func(ctx context.Context, parent, current *crossplane.Directive) string
 	crossplaneTraverseCallbackAPIDetails = func(ctx context.Context, parent,
-		current *crossplane.Directive) *model.APIDetails
+		current *crossplane.Directive, apiType string) *model.APIDetails
 )
 
 func NewNginxConfigParser(agentConfig *config.Config) *NginxConfigParser {
@@ -132,15 +132,12 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 			return nginxConfigContext, fmt.Errorf("traverse nginx config: %w", err)
 		}
 
-		nginxConfigContext.StubStatus = ncp.crossplaneConfigTraverseAPIDetails(ctx, &conf, ncp.stubStatusAPICallback)
+		nginxConfigContext.StubStatus = ncp.crossplaneConfigTraverseAPIDetails(ctx, &conf, ncp.apiCallback,
+			stubStatusAPIDirective)
 
-		if instance.GetInstanceMeta().GetInstanceType() == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
-			plusAPIURL := ncp.crossplaneConfigTraverseStr(ctx, &conf, ncp.plusAPICallback)
-			if plusAPIURL != "" {
-				nginxConfigContext.PlusAPI = plusAPIURL
-			}
-		}
-
+		nginxConfigContext.PlusAPI = ncp.crossplaneConfigTraverseAPIDetails(ctx, &conf, ncp.apiCallback,
+			plusAPIDirective)
+		
 		fileMeta, err := files.FileMeta(conf.File)
 		if err != nil {
 			slog.WarnContext(ctx, "Unable to get file metadata", "file_name", conf.File, "error", err)
@@ -334,31 +331,11 @@ func (ncp *NginxConfigParser) crossplaneConfigTraverse(
 	return nil
 }
 
-func (ncp *NginxConfigParser) crossplaneConfigTraverseStr(
-	ctx context.Context,
-	root *crossplane.Config,
-	callback crossplaneTraverseCallbackStr,
-) string {
-	stop := false
-	response := ""
-	for _, dir := range root.Parsed {
-		response = callback(ctx, nil, dir)
-		if response != "" {
-			return response
-		}
-		response = traverseStr(ctx, dir, callback, &stop)
-		if response != "" {
-			return response
-		}
-	}
-
-	return response
-}
-
 func (ncp *NginxConfigParser) crossplaneConfigTraverseAPIDetails(
 	ctx context.Context,
 	root *crossplane.Config,
 	callback crossplaneTraverseCallbackAPIDetails,
+	apiType string,
 ) *model.APIDetails {
 	stop := false
 	response := &model.APIDetails{
@@ -366,11 +343,11 @@ func (ncp *NginxConfigParser) crossplaneConfigTraverseAPIDetails(
 		Location: "",
 	}
 	for _, dir := range root.Parsed {
-		response = callback(ctx, nil, dir)
+		response = callback(ctx, nil, dir, apiType)
 		if response.URL != "" {
 			return response
 		}
-		response = traverseAPIDetails(ctx, dir, callback, &stop)
+		response = traverseAPIDetails(ctx, dir, callback, &stop, apiType)
 		if response.URL != "" {
 			return response
 		}
@@ -384,6 +361,7 @@ func traverseAPIDetails(
 	root *crossplane.Directive,
 	callback crossplaneTraverseCallbackAPIDetails,
 	stop *bool,
+	apiType string,
 ) *model.APIDetails {
 	response := &model.APIDetails{
 		URL:      "",
@@ -396,37 +374,12 @@ func traverseAPIDetails(
 		}
 	}
 	for _, child := range root.Block {
-		response = callback(ctx, root, child)
+		response = callback(ctx, root, child, apiType)
 		if response.URL != "" {
 			*stop = true
 			return response
 		}
-		response = traverseAPIDetails(ctx, child, callback, stop)
-		if *stop {
-			return response
-		}
-	}
-
-	return response
-}
-
-func traverseStr(
-	ctx context.Context,
-	root *crossplane.Directive,
-	callback crossplaneTraverseCallbackStr,
-	stop *bool,
-) string {
-	response := ""
-	if *stop {
-		return ""
-	}
-	for _, child := range root.Block {
-		response = callback(ctx, root, child)
-		if response != "" {
-			*stop = true
-			return response
-		}
-		response = traverseStr(ctx, child, callback, stop)
+		response = traverseAPIDetails(ctx, child, callback, stop, apiType)
 		if *stop {
 			return response
 		}
@@ -459,20 +412,20 @@ func (ncp *NginxConfigParser) hasAdditionArguments(args []string) bool {
 	return len(args) >= defaultNumberOfDirectiveArguments
 }
 
-func (ncp *NginxConfigParser) stubStatusAPICallback(ctx context.Context, parent,
-	current *crossplane.Directive,
+func (ncp *NginxConfigParser) apiCallback(ctx context.Context, parent,
+	current *crossplane.Directive, apiType string,
 ) *model.APIDetails {
-	urls := ncp.urlsForLocationDirectiveAPIDetails(parent, current, stubStatusAPIDirective)
+	urls := ncp.urlsForLocationDirectiveAPIDetails(parent, current, apiType)
 	if len(urls) > 0 {
-		slog.DebugContext(ctx, "Potential stub_status urls", "urls", urls)
+		slog.DebugContext(ctx, fmt.Sprintf("Potential %s urls", apiType), "urls", urls)
 	}
 
 	for _, url := range urls {
-		if ncp.pingStubStatusAPIEndpoint(ctx, url) {
-			slog.DebugContext(ctx, "Stub_status found", "url", url)
+		if ncp.pingAPIEndpoint(ctx, url, apiType) {
+			slog.DebugContext(ctx, fmt.Sprintf("%s found", apiType), "url", url)
 			return url
 		}
-		slog.DebugContext(ctx, "Stub_status is not reachable", "url", url)
+		slog.DebugContext(ctx, fmt.Sprintf("%s is not reachable", apiType), "url", url)
 	}
 
 	return &model.APIDetails{
@@ -481,7 +434,8 @@ func (ncp *NginxConfigParser) stubStatusAPICallback(ctx context.Context, parent,
 	}
 }
 
-func (ncp *NginxConfigParser) pingStubStatusAPIEndpoint(ctx context.Context, statusAPIDetail *model.APIDetails) bool {
+func (ncp *NginxConfigParser) pingAPIEndpoint(ctx context.Context, statusAPIDetail *model.APIDetails,
+	apiType string) bool {
 	httpClient := http.Client{}
 	location := statusAPIDetail.Location
 	statusAPI := statusAPIDetail.URL
@@ -493,18 +447,18 @@ func (ncp *NginxConfigParser) pingStubStatusAPIEndpoint(ctx context.Context, sta
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, statusAPI, nil)
 	if err != nil {
-		slog.WarnContext(ctx, "Unable to create Stub Status API GET request", "error", err)
+		slog.WarnContext(ctx, fmt.Sprintf("Unable to create %s API GET request", apiType), "error", err)
 		return false
 	}
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		slog.WarnContext(ctx, "Unable to GET Stub Status from API request", "error", err)
+		slog.WarnContext(ctx, fmt.Sprintf("Unable to GET %s from API request", apiType), "error", err)
 		return false
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		slog.DebugContext(ctx, "Stub Status API responded with unexpected status code", "status_code",
+		slog.DebugContext(ctx, fmt.Sprintf("%s API responded with unexpected status code", apiType), "status_code",
 			resp.StatusCode, "expected", http.StatusOK)
 
 		return false
@@ -512,7 +466,7 @@ func (ncp *NginxConfigParser) pingStubStatusAPIEndpoint(ctx context.Context, sta
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		slog.WarnContext(ctx, "Unable to read Stub Status API response body", "error", err)
+		slog.WarnContext(ctx, fmt.Sprintf("Unable to read %s API response body", apiType), "error", err)
 		return false
 	}
 
@@ -522,66 +476,25 @@ func (ncp *NginxConfigParser) pingStubStatusAPIEndpoint(ctx context.Context, sta
 	// server accepts handled requests
 	//  18 18 3266
 	// Reading: 0 Writing: 1 Waiting: 1
-	body := string(bodyBytes)
-	defer resp.Body.Close()
 
-	return strings.Contains(body, "Active connections") && strings.Contains(body, "server accepts handled requests")
-}
+	if apiType == stubStatusAPIDirective {
+		body := string(bodyBytes)
+		defer resp.Body.Close()
 
-func (ncp *NginxConfigParser) plusAPICallback(ctx context.Context, parent, current *crossplane.Directive) string {
-	urls := ncp.urlsForLocationDirective(parent, current, plusAPIDirective)
-	if len(urls) > 0 {
-		slog.DebugContext(ctx, "Potential Plus API urls", "urls", urls)
-	}
-
-	for _, url := range urls {
-		if ncp.pingPlusAPIEndpoint(ctx, url) {
-			slog.DebugContext(ctx, "Plus API found", "url", url)
-			return url
+		return strings.Contains(body, "Active connections") && strings.Contains(body, "server accepts handled requests")
+	} else {
+		// Expecting API to return the API versions in an array of positive integers
+		// subset example: [ ... 6,7,8,9 ...]
+		var responseBody []int
+		err = json.Unmarshal(bodyBytes, &responseBody)
+		defer resp.Body.Close()
+		if err != nil {
+			slog.DebugContext(ctx, "Unable to unmarshal NGINX Plus API response body", "error", err)
+			return false
 		}
-		slog.DebugContext(ctx, "Plus API is not reachable", "url", url)
+
+		return true
 	}
-
-	return ""
-}
-
-func (ncp *NginxConfigParser) pingPlusAPIEndpoint(ctx context.Context, statusAPI string) bool {
-	httpClient := http.Client{Timeout: ncp.agentConfig.Client.Timeout}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, statusAPI, nil)
-	if err != nil {
-		slog.WarnContext(ctx, "Unable to create NGINX Plus API GET request", "error", err)
-		return false
-	}
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		slog.WarnContext(ctx, "Unable to GET NGINX Plus API from API request", "error", err)
-		return false
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		slog.DebugContext(ctx, "NGINX Plus API responded with unexpected status code", "status_code",
-			resp.StatusCode, "expected", http.StatusOK)
-
-		return false
-	}
-
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		slog.WarnContext(ctx, "Unable to read NGINX Plus API response body", "error", err)
-		return false
-	}
-
-	// Expecting API to return the API versions in an array of positive integers
-	// subset example: [ ... 6,7,8,9 ...]
-	var responseBody []int
-	err = json.Unmarshal(bodyBytes, &responseBody)
-	defer resp.Body.Close()
-	if err != nil {
-		slog.DebugContext(ctx, "Unable to unmarshal NGINX Plus API response body", "error", err)
-		return false
-	}
-
-	return true
 }
 
 // nolint: revive
@@ -603,12 +516,18 @@ func (ncp *NginxConfigParser) urlsForLocationDirectiveAPIDetails(
 		addresses := ncp.parseAddressesFromServerDirective(parent)
 
 		for _, address := range addresses {
+			format := unixStubStatusFormat
+
+			if locChild.Directive == plusAPIDirective {
+				format = unixPlusAPIFormat
+			}
+
 			path := ncp.parsePathFromLocationDirective(current)
 
 			if locChild.Directive == locationDirectiveName {
 				if strings.HasPrefix(address, "unix:") {
 					urls = append(urls, &model.APIDetails{
-						URL:      fmt.Sprintf(unixAPIFormat, path),
+						URL:      fmt.Sprintf(format, path),
 						Location: address,
 					})
 				} else {
