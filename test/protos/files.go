@@ -31,6 +31,7 @@ func CertMeta(fileName, fileHash string) *mpi.FileMeta {
 		Permissions:  "0600",
 		FileType: &mpi.FileMeta_CertificateMeta{
 			CertificateMeta: &mpi.CertificateMeta{
+				SerialNumber:       	[]byte("12345-67890"),
 				Issuer: &mpi.X509Name{
 					Country:            []string{"IE"},
 					Organization:       []string{"F5"},
@@ -39,7 +40,6 @@ func CertMeta(fileName, fileHash string) *mpi.FileMeta {
 					Province:           []string{"Munster"},
 					StreetAddress:      []string{"90 South Mall"},
 					PostalCode:         []string{"T12 KXV9"},
-					SerialNumber:       "12345-67890",
 					CommonName:         "Example Name",
 					Names: []*mpi.AttributeTypeAndValue{
 						{Type: "email", Value: "noreply@nginx.com"},

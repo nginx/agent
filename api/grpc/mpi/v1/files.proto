@@ -267,8 +267,7 @@ message X509Name {
     repeated string postal_code = 7 [(buf.validate.field).repeated.items.string.min_len = 1];
     
     // Serial Number (SN): Unique identifier or serial number.
-    // Must be non-empty.
-    string serial_number = 8;
+    string serial_number = 8 [(buf.validate.field).bytes.min_len = 0, (buf.validate.field).bytes.max_len = 21];
     
     // Common Name (CN): Typically the person’s or entity's full name.
     string common_name = 9 [(buf.validate.field).string.min_len = 1];
