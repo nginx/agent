@@ -115,6 +115,11 @@ func TestTemplateWrite(t *testing.T) {
 	}
 
 	cfg.Collector.Exporters.OtlpExporters[0].Authenticator = "headers_setter"
+	// nolint: lll
+	cfg.Collector.Exporters.OtlpExporters[0].Compression = types.AgentConfig().Collector.Exporters.OtlpExporters[0].Compression
+	cfg.Collector.Exporters.OtlpExporters[0].Server.Port = 1234
+	cfg.Collector.Receivers.OtlpReceivers[0].Server.Port = 4317
+	cfg.Collector.Extensions.Health.Server.Port = 1337
 
 	require.NotNil(t, cfg)
 
