@@ -174,7 +174,7 @@ type (
 
 	SyslogReceiver struct {
 		InstanceID string `yaml:"-" mapstructure:"instance_id"`
-		Server     string `yaml:"-" mapstructure:"host"`
+		Server     string `yaml:"-" mapstructure:"server"`
 		Protocol   string `yaml:"-" mapstructure:"protocol"`
 	}
 

@@ -106,7 +106,6 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 				case "log_format":
 					formatMap = ncp.formatMap(directive)
 				case "access_log":
-					fmt.Println("am here")
 					if !ncp.ignoreLog(directive.Args[0]) {
 						accessLog := ncp.accessLog(directive.Args[0], ncp.accessLogDirectiveFormat(directive),
 							formatMap)
@@ -132,12 +131,9 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 							syslogServer := matches[1]
 							nginxConfigContext.Syslog.SyslogServer = syslogServer
 							slog.InfoContext(ctx, "Captured syslog server", "syslog_server", syslogServer)
-							fmt.Println("syslogServer")
-							fmt.Println(syslogServer)
 						}
 					}
 				}
-
 				return nil
 			},
 		)

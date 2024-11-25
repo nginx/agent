@@ -239,6 +239,7 @@ service:
         {{- if ne .Exporters.Debug nil }}
         - debug
         {{- end  }}
+    {{- if and (ne .Receivers.SyslogReceivers nil) (ne .Exporters.OtlpExporters nil) }}
     logs:
       receivers:
         {{- range .Receivers.SyslogReceivers }}
@@ -255,3 +256,4 @@ service:
         {{- if ne .Exporters.Debug nil }}
         - debug
         {{- end  }}
+    {{- end  }}
