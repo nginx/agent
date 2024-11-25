@@ -1,5 +1,5 @@
 receivers:
-  syslog/1:
+  syslog/00:
     tcp:
       listen_address: "127.0.0.1:1515"
     protocol: rfc3164
@@ -90,7 +90,7 @@ service:
         - debug
     logs:
       receivers:
-        - syslog/1
+        - syslog/00
       processors:
         - batch
       exporters:

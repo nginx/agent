@@ -100,6 +100,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 
 	for _, conf := range payload.Config {
 		formatMap := make(map[string]string)
+		syslogMap := make(map[string]bool)
 		err := ncp.crossplaneConfigTraverse(ctx, &conf,
 			func(ctx context.Context, parent, directive *crossplane.Directive) error {
 				switch directive.Directive {
@@ -129,7 +130,10 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 						matches := re.FindStringSubmatch(syslogArg)
 						if len(matches) > 1 {
 							syslogServer := matches[1]
-							nginxConfigContext.Syslog.SyslogServer = syslogServer
+							if !syslogMap[syslogServer] {
+								nginxConfigContext.Syslog = append(nginxConfigContext.Syslog, syslogServer)
+								syslogMap[syslogServer] = true
+							}
 							slog.InfoContext(ctx, "Captured syslog server", "syslog_server", syslogServer)
 						}
 					}

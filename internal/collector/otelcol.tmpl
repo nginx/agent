@@ -1,9 +1,12 @@
 receivers:
-{{- range .Receivers.SyslogReceivers }}
-  syslog/{{- .InstanceID -}}:
+{{- range $index, $otlpReceiver := .Receivers.SyslogReceivers }}
+  {{- $instanceID := .InstanceID }}
+  {{- range $serverIndex, $server := .Server }}
+  syslog/{{$index}}{{$serverIndex}}:
     tcp:
-      listen_address: "{{- .Server -}}"
+      listen_address: "{{ $server }}"
     protocol: rfc3164
+  {{- end }}
 {{- end }}
 {{- if ne .Receivers.HostMetrics nil }}
   hostmetrics:

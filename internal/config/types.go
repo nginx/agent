@@ -173,9 +173,9 @@ type (
 	}
 
 	SyslogReceiver struct {
-		InstanceID string `yaml:"-" mapstructure:"instance_id"`
-		Server     string `yaml:"-" mapstructure:"server"`
-		Protocol   string `yaml:"-" mapstructure:"protocol"`
+		InstanceID string   `yaml:"-" mapstructure:"instance_id"`
+		Server     []string `yaml:"-" mapstructure:"server"`
+		Protocol   string   `yaml:"-" mapstructure:"protocol"`
 	}
 
 	NginxReceiver struct {

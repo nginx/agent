@@ -20,6 +20,7 @@ func GetConfigContextWithNames(
 	ltsvAccessLogName,
 	errorLogName string,
 	instanceID string,
+	syslog []string,
 ) *model.NginxConfigContext {
 	return &model.NginxConfigContext{
 		AccessLogs: []*model.AccessLog{
@@ -52,5 +53,6 @@ func GetConfigContextWithNames(
 			},
 		},
 		InstanceID: instanceID,
+		Syslog:     syslog,
 	}
 }

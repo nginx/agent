@@ -18,7 +18,7 @@ type NginxConfigContext struct {
 	Files      []*v1.File
 	AccessLogs []*AccessLog
 	ErrorLogs  []*ErrorLog
-	Syslog     *NAP
+	Syslog     []string
 }
 
 func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext) bool {

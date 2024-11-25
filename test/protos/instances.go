@@ -102,6 +102,9 @@ func GetNginxPlusInstance(expectedModules []string) *v1.Instance {
 						"stream_proxy_protocol_vendor_module", "stream_realip_module", "stream_ssl_module",
 						"stream_ssl_preread_module",
 					},
+					AppProtectDirectives: []string{
+						`app_protect_security_log "/etc/app_protect/conf/log_default.json" syslog:server=127.0.0.1:514`,
+					},
 					PlusApi: "",
 				},
 			},

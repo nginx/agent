@@ -365,16 +365,19 @@ func (oc *Collector) checkForNewNginxReceivers(nginxConfigContext *model.NginxCo
 				PlusAPI:    nginxConfigContext.PlusAPI,
 			},
 		)
-		if nginxConfigContext.Syslog != nil && nginxConfigContext.Syslog.SyslogServer != "" {
+
+		if nginxConfigContext.Syslog != nil {
 			oc.config.Collector.Receivers.SyslogReceivers = append(
 				oc.config.Collector.Receivers.SyslogReceivers,
 				config.SyslogReceiver{
 					InstanceID: nginxConfigContext.InstanceID,
-					Server:     nginxConfigContext.Syslog.SyslogServer,
+					Server:     nginxConfigContext.Syslog,
 					Protocol:   "rfc3164", // default value, need to get from the agent conf
 				},
 			)
 		}
+
+		//	slog.Error("hello", oc.config.Collector.Receivers)
 
 		reloadCollector = true
 	} else if nginxConfigContext.PlusAPI == "" {

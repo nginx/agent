@@ -69,8 +69,8 @@ func AgentConfig() *config.Config {
 				OtlpReceivers: OtlpReceivers(),
 				SyslogReceivers: []config.SyslogReceiver{
 					{
-						Server:     "127.0.0.1:1515",
-						InstanceID: "1",
+						Server:     []string{"127.0.0.1:1515"},
+						InstanceID: "00",
 						Protocol:   "rfc3164",
 					},
 				},

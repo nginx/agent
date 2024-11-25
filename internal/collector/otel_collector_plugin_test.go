@@ -122,8 +122,8 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 				},
 				SyslogReceivers: []config.SyslogReceiver{
 					{
-						Server:     "127.0.0.1:1515",
-						InstanceID: "1",
+						Server:     []string{"127.0.0.1:1515"},
+						InstanceID: "00",
 						Protocol:   "rfc3164"},
 				},
 				OtlpReceivers: types.OtlpReceivers(),
@@ -165,8 +165,8 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 				OtlpReceivers: types.OtlpReceivers(),
 				SyslogReceivers: []config.SyslogReceiver{
 					{
-						Server:     "127.0.0.1:1515",
-						InstanceID: "1",
+						Server:     []string{"127.0.0.1:1515"},
+						InstanceID: "00",
 						Protocol:   "rfc3164"},
 				},
 				NginxReceivers: []config.NginxReceiver{
