@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/bus/busfakes"
+
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -32,7 +34,7 @@ func TestWatcher_Init(t *testing.T) {
 
 	watcherPlugin := NewWatcher(types.AgentConfig())
 
-	messagePipe := bus.NewFakeMessagePipe()
+	messagePipe := busfakes.NewFakeMessagePipe()
 
 	err := watcherPlugin.Init(ctx, messagePipe)
 	defer func() {

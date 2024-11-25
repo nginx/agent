@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/bus/busfakes"
+
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/command/commandfakes"
@@ -48,7 +50,7 @@ func TestCommandPlugin_Subscriptions(t *testing.T) {
 
 func TestCommandPlugin_Init(t *testing.T) {
 	ctx := context.Background()
-	messagePipe := bus.NewFakeMessagePipe()
+	messagePipe := busfakes.NewFakeMessagePipe()
 	fakeCommandService := &commandfakes.FakeCommandService{}
 
 	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
@@ -67,7 +69,7 @@ func TestCommandPlugin_Init(t *testing.T) {
 
 func TestCommandPlugin_Process(t *testing.T) {
 	ctx := context.Background()
-	messagePipe := bus.NewFakeMessagePipe()
+	messagePipe := busfakes.NewFakeMessagePipe()
 	fakeCommandService := &commandfakes.FakeCommandService{}
 
 	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
@@ -147,7 +149,7 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			messagePipe := bus.NewFakeMessagePipe()
+			messagePipe := busfakes.NewFakeMessagePipe()
 
 			commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
 			err := commandPlugin.Init(ctx, messagePipe)
