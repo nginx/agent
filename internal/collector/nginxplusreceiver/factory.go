@@ -66,7 +66,7 @@ func createMetricsReceiver(
 	}
 
 	scraper, err := scraperhelper.NewScraper(
-		metadata.Type.String(),
+		metadata.Type,
 		nps.scrape,
 		scraperhelper.WithShutdown(nps.Shutdown),
 	)

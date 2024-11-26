@@ -88,22 +88,24 @@ func NewScraper(
 		operators = append(operators, inputCfg)
 	}
 
-	stanzaPipeline, outChan, err := initStanzaPipeline(operators, settings.Logger)
-	if err != nil {
-		return nil, fmt.Errorf("init stanza pipeline: %w", err)
-	}
-
-	return &NginxLogScraper{
+	nls := &NginxLogScraper{
 		cfg:      cfg,
 		logger:   logger,
 		settings: settings,
 		mb:       mb,
 		rb:       rb,
 		mut:      sync.Mutex{},
-		outChan:  outChan,
-		pipe:     stanzaPipeline,
 		wg:       &sync.WaitGroup{},
-	}, nil
+	}
+
+	stanzaPipeline, err := nls.initStanzaPipeline(operators, settings.Logger)
+	if err != nil {
+		return nil, fmt.Errorf("init stanza pipeline: %w", err)
+	}
+
+	nls.pipe = stanzaPipeline
+
+	return nls, nil
 }
 
 func (nls *NginxLogScraper) ID() component.ID {
@@ -208,10 +210,10 @@ func (nls *NginxLogScraper) Shutdown(_ context.Context) error {
 	return nls.pipe.Stop()
 }
 
-func initStanzaPipeline(
+func (nls *NginxLogScraper) initStanzaPipeline(
 	operators []operator.Config,
 	logger *zap.Logger,
-) (*pipeline.DirectedPipeline, <-chan []*entry.Entry, error) {
+) (*pipeline.DirectedPipeline, error) {
 	mp := otel.GetMeterProvider()
 	if mp == nil {
 		mp = metricSdk.NewMeterProvider()
@@ -224,13 +226,19 @@ func initStanzaPipeline(
 		MetricsLevel:  configtelemetry.LevelNone,
 	}
 
-	emitter := helper.NewLogEmitter(settings)
+	emitter := helper.NewLogEmitter(settings, nls.ConsumerCallback)
 	pipe, err := pipeline.Config{
 		Operators:     operators,
 		DefaultOutput: emitter,
 	}.Build(settings)
 
-	return pipe, emitter.OutChannel(), err
+	return pipe, err
+}
+
+func (nls *NginxLogScraper) ConsumerCallback(_ context.Context, entries []*entry.Entry) {
+	nls.mut.Lock()
+	nls.entries = append(nls.entries, entries...)
+	nls.mut.Unlock()
 }
 
 func (nls *NginxLogScraper) runConsumer(ctx context.Context) {

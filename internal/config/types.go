@@ -173,8 +173,13 @@ type (
 
 	NginxReceiver struct {
 		InstanceID string      `yaml:"-" mapstructure:"instance_id"`
-		StubStatus string      `yaml:"-" mapstructure:"stub_status"`
+		StubStatus APIDetails  `yaml:"-" mapstructure:"api_details"`
 		AccessLogs []AccessLog `yaml:"-" mapstructure:"access_logs"`
+	}
+
+	APIDetails struct {
+		URL      string `yaml:"-" mapstructure:"url"`
+		Location string `yaml:"-" mapstructure:"location"`
 	}
 
 	AccessLog struct {

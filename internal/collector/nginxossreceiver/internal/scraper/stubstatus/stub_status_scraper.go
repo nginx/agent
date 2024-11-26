@@ -7,7 +7,9 @@ package stubstatus
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/nginxinc/nginx-prometheus-exporter/client"
@@ -56,6 +58,8 @@ func (s *NginxStubStatusScraper) ID() component.ID {
 }
 
 func (s *NginxStubStatusScraper) Start(ctx context.Context, host component.Host) error {
+	s.cfg.Network = "unix"
+	s.cfg.Endpoint = strings.TrimPrefix(s.cfg.APIDetails.Location, "unix:")
 	httpClient, err := s.cfg.ToClient(ctx, host, s.settings.TelemetrySettings)
 	if err != nil {
 		return err
@@ -72,9 +76,10 @@ func (s *NginxStubStatusScraper) Shutdown(_ context.Context) error {
 func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error) {
 	// Init client in scrape method in case there are transient errors in the constructor.
 	if s.client == nil {
-		s.client = client.NewNginxClient(s.httpClient, s.cfg.ClientConfig.Endpoint)
+		s.client = client.NewNginxClient(s.httpClient, s.cfg.APIDetails.URL)
 	}
 
+	slog.Info("API Details", "", s.cfg.APIDetails)
 	stats, err := s.client.GetStubStats()
 	if err != nil {
 		s.settings.Logger.Error("fetch nginx stats", zap.Error(err))

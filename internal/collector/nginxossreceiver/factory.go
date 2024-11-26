@@ -8,6 +8,7 @@ package nginxossreceiver
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
@@ -22,6 +23,7 @@ import (
 
 // nolint: ireturn
 func NewFactory() receiver.Factory {
+	slog.Info("New OSS Receiver Factory")
 	return receiver.NewFactory(
 		metadata.Type,
 		config.CreateDefaultConfig,
@@ -35,6 +37,7 @@ func createMetricsReceiver(
 	rConf component.Config,
 	cons consumer.Metrics,
 ) (receiver.Metrics, error) {
+	slog.Info("----------------- createMetricsReceiver ------------------")
 	cfg, ok := rConf.(*config.Config)
 	if !ok {
 		return nil, errors.New("cast to metrics receiver config")

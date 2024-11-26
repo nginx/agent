@@ -22,9 +22,15 @@ const (
 
 type Config struct {
 	confighttp.ClientConfig        `mapstructure:",squash"`
+	APIDetails                     APIDetails                    `mapstructure:"api_details"`
 	AccessLogs                     []AccessLog                   `mapstructure:"access_logs"`
 	MetricsBuilderConfig           metadata.MetricsBuilderConfig `mapstructure:",squash"`
 	scraperhelper.ControllerConfig `mapstructure:",squash"`
+}
+
+type APIDetails struct {
+	URL      string `mapstructure:"url"`
+	Location string `mapstructure:"location"`
 }
 
 type AccessLog struct {
@@ -40,10 +46,13 @@ func CreateDefaultConfig() component.Config {
 	return &Config{
 		ControllerConfig: cfg,
 		ClientConfig: confighttp.ClientConfig{
-			Endpoint: "http://localhost:80/status",
-			Timeout:  defaultClientTimeout,
+			Timeout: defaultClientTimeout,
 		},
 		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
 		AccessLogs:           []AccessLog{},
+		APIDetails: APIDetails{
+			URL:      "http://localhost:80/status",
+			Location: "localhost:80",
+		},
 	}
 }

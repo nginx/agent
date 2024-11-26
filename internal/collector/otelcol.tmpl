@@ -59,7 +59,9 @@ receivers:
 {{- end }}
 {{- range .Receivers.NginxReceivers }}
   nginx/{{- .InstanceID -}}:
-    endpoint: "{{- .StubStatus -}}"
+    api_details:
+      url: "{{- .StubStatus.URL -}}"
+      location: "{{- .StubStatus.Location -}}"
     collection_interval: 10s
     {{- if gt (len .AccessLogs) 0 }}
     access_logs:

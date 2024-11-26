@@ -169,7 +169,10 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 				NginxReceivers: []config.NginxReceiver{
 					{
 						InstanceID: "123",
-						StubStatus: "http://test.com:8080/stub_status",
+						StubStatus: config.APIDetails{
+							URL:      "http://test.com:8080/stub_status",
+							Location: "",
+						},
 						AccessLogs: []config.AccessLog{
 							{
 								FilePath:  "/var/log/nginx/access.log",
@@ -448,7 +451,10 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 				NginxReceivers: []config.NginxReceiver{
 					{
 						InstanceID: "123",
-						StubStatus: "http://test.com:8080/api",
+						StubStatus: config.APIDetails{
+							URL:      "http://test.com:8080/api",
+							Location: "",
+						},
 						AccessLogs: []config.AccessLog{
 							{
 								FilePath:  "/etc/nginx/existing.log",
@@ -462,7 +468,10 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 				NginxReceivers: []config.NginxReceiver{
 					{
 						InstanceID: "123",
-						StubStatus: "http://new-test-host:8080/api",
+						StubStatus: config.APIDetails{
+							URL:      "http://new-test-host:8080/api",
+							Location: "",
+						},
 						AccessLogs: []config.AccessLog{
 							{
 								FilePath:  "/etc/nginx/test.log",
@@ -483,7 +492,10 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 				NginxReceivers: []config.NginxReceiver{
 					{
 						InstanceID: "123",
-						StubStatus: "http://test.com:8080/api",
+						StubStatus: config.APIDetails{
+							URL:      "http://test.com:8080/api",
+							Location: "",
+						},
 					},
 				},
 			},
