@@ -9,6 +9,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer/emit"
+
 	"go.uber.org/zap"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/entry"
@@ -36,17 +38,17 @@ func (i *Input) Stop() error {
 	return i.fileConsumer.Stop()
 }
 
-func (i *Input) emit(ctx context.Context, token []byte, attrs map[string]any) error {
-	if len(token) == 0 {
+func (i *Input) emit(ctx context.Context, token emit.Token) error {
+	if len(token.Body) == 0 {
 		return nil
 	}
 
-	ent, err := i.NewEntry(i.toBody(token))
+	ent, err := i.NewEntry(i.toBody(token.Body))
 	if err != nil {
 		return fmt.Errorf("create entry: %w", err)
 	}
 
-	for k, v := range attrs {
+	for k, v := range token.Attributes {
 		if setError := ent.Set(entry.NewAttributeField(k), v); setError != nil {
 			i.Logger().Error("Set attribute", zap.Error(setError))
 		}

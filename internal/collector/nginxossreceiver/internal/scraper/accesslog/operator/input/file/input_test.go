@@ -9,6 +9,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer/emit"
+
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -37,10 +39,16 @@ func TestInput_emit(t *testing.T) {
 
 	token := []byte(accessLogLine)
 
-	err := input.emit(context.Background(), token, map[string]any{"attribute1": "test"})
+	err := input.emit(context.Background(), emit.Token{
+		Body:       token,
+		Attributes: map[string]any{"attribute1": "test"},
+	})
 	require.NoError(t, err)
 
 	// nil token check
-	err = input.emit(context.Background(), nil, map[string]any{"attribute1": "test"})
+	err = input.emit(context.Background(), emit.Token{
+		Body:       nil,
+		Attributes: map[string]any{"attribute1": "test"},
+	})
 	require.NoError(t, err)
 }
