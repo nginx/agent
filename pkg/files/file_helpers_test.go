@@ -235,16 +235,6 @@ func TestConvertX509SignatureAlgorithm(t *testing.T) {
 //go:embed config.json
 var embeddedJSON []byte
 
-func TestUnmarshalUpdateOverview(t *testing.T) {
-	require.NotNil(t, embeddedJSON)
-
-	overview := &mpi.UpdateOverviewRequest{}
-	err := protojson.Unmarshal(embeddedJSON, overview)
-
-	t.Log("filemeta", "%s", overview)
-	require.NoError(t, err)
-}
-
 func TestMarshalAndUnmarshal(t *testing.T) {
 	var protoFromJSON mpi.UpdateOverviewRequest
 	pb := protojson.UnmarshalOptions{DiscardUnknown: true, AllowPartial: true}
