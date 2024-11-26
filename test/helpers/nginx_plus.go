@@ -6,7 +6,6 @@
 package helpers
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -20,8 +19,6 @@ const endpointRootPath = "/api/9/"
 func NewMockNGINXPlusAPIServer(t *testing.T) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		fmt.Printf("got path %s\n", req.URL.Path)
-
 		var payload string
 		switch req.URL.Path {
 		case "/api/":

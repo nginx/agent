@@ -17,6 +17,7 @@ import (
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/backoff"
 	"github.com/nginx/agent/v3/internal/bus"
+	"github.com/nginx/agent/v3/internal/collector/types"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/model"
 	"go.opentelemetry.io/collector/otelcol"
@@ -30,7 +31,7 @@ const (
 type (
 	// Collector The OTel collector plugin start an embedded OTel collector for metrics collection in the OTel format.
 	Collector struct {
-		service *otelcol.Collector
+		service types.CollectorInterface
 		cancel  context.CancelFunc
 		config  *config.Config
 		mu      *sync.Mutex
@@ -71,6 +72,13 @@ func New(conf *config.Config) (*Collector, error) {
 	}, nil
 }
 
+func (oc *Collector) GetState() otelcol.State {
+	oc.mu.Lock()
+	defer oc.mu.Unlock()
+
+	return oc.service.GetState()
+}
+
 // Init initializes and starts the plugin
 func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) error {
 	slog.InfoContext(ctx, "Starting OTel Collector plugin")
@@ -106,13 +114,13 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 func (oc *Collector) processReceivers(ctx context.Context, receivers []config.OtlpReceiver) {
 	for _, receiver := range receivers {
 		if receiver.OtlpTLSConfig == nil {
-			slog.WarnContext(ctx, "OTEL receiver is configured without TLS. Connections are unencrypted.")
+			slog.WarnContext(ctx, "OTel receiver is configured without TLS. Connections are unencrypted.")
 			continue
 		}
 
 		if receiver.OtlpTLSConfig.GenerateSelfSignedCert {
 			slog.WarnContext(ctx,
-				"Self-signed certificate for OTEL receiver requested, "+
+				"Self-signed certificate for OTel receiver requested, "+
 					"this is not recommended for production environments.",
 			)
 
@@ -122,7 +130,7 @@ func (oc *Collector) processReceivers(ctx context.Context, receivers []config.Ot
 				)
 			}
 		} else {
-			slog.WarnContext(ctx, "OTEL receiver is configured without TLS. Connections are unencrypted.")
+			slog.WarnContext(ctx, "OTel receiver is configured without TLS. Connections are unencrypted.")
 		}
 	}
 }
