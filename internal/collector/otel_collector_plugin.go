@@ -39,7 +39,7 @@ type (
 	}
 )
 
-var _ bus.Plugin  = (*Collector)(nil)
+var _ bus.Plugin = (*Collector)(nil)
 
 // NewCollector is the constructor for the Collector plugin.
 func New(conf *config.Config) (*Collector, error) {
