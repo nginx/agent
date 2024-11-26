@@ -239,22 +239,22 @@ func TestUnmarshalUpdateOverview(t *testing.T) {
 	require.NotNil(t, embeddedJSON)
 
 	overview := &mpi.UpdateOverviewRequest{}
-	err := protojson.Unmarshal([]byte(embeddedJSON), overview)
+	err := protojson.Unmarshal(embeddedJSON, overview)
 
 	t.Log("filemeta", "%s", overview)
 	require.NoError(t, err)
 }
 
 func TestMarshalAndUnmarshal(t *testing.T) {
-	var protoFromJson mpi.UpdateOverviewRequest
+	var protoFromJSON mpi.UpdateOverviewRequest
 	pb := protojson.UnmarshalOptions{DiscardUnknown: true, AllowPartial: true}
-	unmarshalErr := pb.Unmarshal(embeddedJSON, &protoFromJson)
+	unmarshalErr := pb.Unmarshal(embeddedJSON, &protoFromJSON)
 	if unmarshalErr != nil {
 		t.Fatalf("Failed to unmarshal embedded JSON: %v", unmarshalErr)
 	}
 
 	// Re-marshal to ensure consistency
-	marshaledJSON, errMarshaledJSON := protojson.Marshal(&protoFromJson)
+	marshaledJSON, errMarshaledJSON := protojson.Marshal(&protoFromJSON)
 	if errMarshaledJSON != nil {
 		t.Fatalf("Failed to marshal struct back to JSON: %v", errMarshaledJSON)
 	}
@@ -266,7 +266,7 @@ func TestMarshalAndUnmarshal(t *testing.T) {
 	}
 
 	// Compare structs to ensure equality
-	if diff := cmp.Diff(&protoFromJson, &parsedBack, protocmp.Transform()); diff != "" {
+	if diff := cmp.Diff(&protoFromJSON, &parsedBack, protocmp.Transform()); diff != "" {
 		t.Errorf("Round-trip parsing mismatch (-want +got):\n%s", diff)
 	}
 }
