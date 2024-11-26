@@ -65,8 +65,7 @@ func createMetricsReceiver(
 		return nil, fmt.Errorf("new nginx plus scraper: %w", err)
 	}
 
-	scraper, err := scraperhelper.NewScraper(
-		metadata.Type,
+	scraper, err := scraperhelper.NewScraperWithoutType(
 		nps.scrape,
 		scraperhelper.WithShutdown(nps.Shutdown),
 	)
