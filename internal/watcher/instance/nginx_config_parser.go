@@ -137,7 +137,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 
 		nginxConfigContext.PlusAPI = ncp.crossplaneConfigTraverseAPIDetails(ctx, &conf, ncp.apiCallback,
 			plusAPIDirective)
-		
+
 		fileMeta, err := files.FileMeta(conf.File)
 		if err != nil {
 			slog.WarnContext(ctx, "Unable to get file metadata", "file_name", conf.File, "error", err)
@@ -435,7 +435,8 @@ func (ncp *NginxConfigParser) apiCallback(ctx context.Context, parent,
 }
 
 func (ncp *NginxConfigParser) pingAPIEndpoint(ctx context.Context, statusAPIDetail *model.APIDetails,
-	apiType string) bool {
+	apiType string,
+) bool {
 	httpClient := http.Client{}
 	location := statusAPIDetail.Location
 	statusAPI := statusAPIDetail.URL

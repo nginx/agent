@@ -34,7 +34,7 @@ func TestValidConfig(t *testing.T) {
 
 func TestCreateMetricsReceiver(t *testing.T) {
 	factory := NewFactory()
-	metricsReceiver, err := factory.CreateMetricsReceiver(
+	metricsReceiver, err := factory.CreateMetrics(
 		context.Background(),
 		receivertest.NewNopSettings(),
 		&config.Config{

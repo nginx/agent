@@ -8,6 +8,7 @@ package file
 import (
 	"context"
 	"fmt"
+
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer/emit"
 
 	"go.uber.org/zap"
