@@ -7,11 +7,15 @@ package files
 
 import (
 	"crypto/x509"
+	_ "embed"
 	"net"
 	"os"
 	"testing"
 
 	"github.com/google/uuid"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/testing/protocmp"
+	"github.com/google/go-cmp/cmp"
 
 	"github.com/nginx/agent/v3/test/protos"
 
@@ -225,5 +229,44 @@ func TestConvertX509SignatureAlgorithm(t *testing.T) {
 		t.Run(test.input.String(), func(t *testing.T) {
 			assert.Equal(t, test.expected, convertX509SignatureAlgorithm(test.input))
 		})
+	}
+}
+
+//go:embed config.json
+var embeddedJSON []byte
+
+func TestUnmarshalUpdateOverview(t *testing.T) {
+	require.NotNil(t, embeddedJSON)
+
+	overview := &mpi.UpdateOverviewRequest{}
+	err := protojson.Unmarshal([]byte(embeddedJSON), overview)
+
+	t.Log("filemeta", "%s", overview)
+	require.NoError(t, err)
+}
+
+func TestMarshalAndUnmarshal(t *testing.T) {
+	var protoFromJson mpi.UpdateOverviewRequest
+	pb := protojson.UnmarshalOptions{DiscardUnknown: true, AllowPartial: true}
+	err := pb.Unmarshal(embeddedJSON, &protoFromJson)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal embedded JSON: %v", err)
+	}
+
+	// Re-marshal to ensure consistency
+	marshaledJSON, err := protojson.Marshal(&protoFromJson)
+	if err != nil {
+		t.Fatalf("Failed to marshal struct back to JSON: %v", err)
+	}
+
+	// Re-parse marshaled JSON to validate round-trip correctness
+	var parsedBack mpi.UpdateOverviewRequest
+	if err := protojson.Unmarshal(marshaledJSON, &parsedBack); err != nil {
+		t.Fatalf("Failed to parse back marshaled JSON: %v", err)
+	}
+
+	// Compare structs to ensure equality
+	if diff := cmp.Diff(&protoFromJson, &parsedBack, protocmp.Transform()); diff != "" {
+		t.Errorf("Round-trip parsing mismatch (-want +got):\n%s", diff)
 	}
 }
