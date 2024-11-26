@@ -12,10 +12,10 @@ import (
 	"os"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/testing/protocmp"
-	"github.com/google/go-cmp/cmp"
 
 	"github.com/nginx/agent/v3/test/protos"
 
@@ -248,21 +248,21 @@ func TestUnmarshalUpdateOverview(t *testing.T) {
 func TestMarshalAndUnmarshal(t *testing.T) {
 	var protoFromJson mpi.UpdateOverviewRequest
 	pb := protojson.UnmarshalOptions{DiscardUnknown: true, AllowPartial: true}
-	err := pb.Unmarshal(embeddedJSON, &protoFromJson)
-	if err != nil {
-		t.Fatalf("Failed to unmarshal embedded JSON: %v", err)
+	unmarshalErr := pb.Unmarshal(embeddedJSON, &protoFromJson)
+	if unmarshalErr != nil {
+		t.Fatalf("Failed to unmarshal embedded JSON: %v", unmarshalErr)
 	}
 
 	// Re-marshal to ensure consistency
-	marshaledJSON, err := protojson.Marshal(&protoFromJson)
-	if err != nil {
-		t.Fatalf("Failed to marshal struct back to JSON: %v", err)
+	marshaledJSON, errMarshaledJSON := protojson.Marshal(&protoFromJson)
+	if errMarshaledJSON != nil {
+		t.Fatalf("Failed to marshal struct back to JSON: %v", errMarshaledJSON)
 	}
 
 	// Re-parse marshaled JSON to validate round-trip correctness
 	var parsedBack mpi.UpdateOverviewRequest
-	if err := protojson.Unmarshal(marshaledJSON, &parsedBack); err != nil {
-		t.Fatalf("Failed to parse back marshaled JSON: %v", err)
+	if parsedBackErr := protojson.Unmarshal(marshaledJSON, &parsedBack); parsedBackErr != nil {
+		t.Fatalf("Failed to parse back marshaled JSON: %v", parsedBackErr)
 	}
 
 	// Compare structs to ensure equality
