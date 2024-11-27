@@ -12,7 +12,6 @@ import (
 
 	"go.uber.org/zap"
 
-	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
@@ -33,11 +32,11 @@ const (
 
 type nginxPlusScraper struct {
 	plusClient *plusapi.NginxClient
-	settings   component.TelemetrySettings
 	cfg        *Config
 	mb         *metadata.MetricsBuilder
 	rb         *metadata.ResourceBuilder
 	logger     *zap.Logger
+	settings   receiver.Settings
 }
 
 func newNginxPlusScraper(
@@ -48,6 +47,8 @@ func newNginxPlusScraper(
 	logger.Info("Creating NGINX Plus scraper")
 
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
+	rb := mb.NewResourceBuilder()
+
 	plusClient, err := plusapi.NewNginxClient(cfg.Endpoint,
 		plusapi.WithMaxAPIVersion(),
 	)
@@ -55,14 +56,9 @@ func newNginxPlusScraper(
 		return nil, err
 	}
 
-	rb := mb.NewResourceBuilder()
-	rb.SetInstanceID(settings.ID.Name())
-	rb.SetInstanceType("nginxplus")
-	logger.Debug("NGINX Plus resource info", zap.Any("resource", rb))
-
 	return &nginxPlusScraper{
 		plusClient: plusClient,
-		settings:   settings.TelemetrySettings,
+		settings:   settings,
 		cfg:        cfg,
 		mb:         mb,
 		rb:         rb,
@@ -75,6 +71,10 @@ func (nps *nginxPlusScraper) scrape(ctx context.Context) (pmetric.Metrics, error
 	if err != nil {
 		return pmetric.Metrics{}, fmt.Errorf("GET stats: %w", err)
 	}
+
+	nps.rb.SetInstanceID(nps.settings.ID.Name())
+	nps.rb.SetInstanceType("nginxplus")
+	nps.logger.Debug("NGINX Plus resource info", zap.Any("resource", nps.rb))
 
 	nps.logger.Debug("NGINX Plus stats", zap.Any("stats", stats))
 	nps.recordMetrics(stats)
@@ -89,22 +89,26 @@ func (nps *nginxPlusScraper) recordMetrics(stats *plusapi.Stats) {
 	nps.mb.RecordNginxConfigReloadsDataPoint(now, int64(stats.NginxInfo.Generation))
 
 	// Connections
-	nps.mb.RecordNginxHTTPConnDataPoint(
+	nps.mb.RecordNginxHTTPConnectionsDataPoint(
 		now,
 		int64(stats.Connections.Accepted),
-		metadata.AttributeNginxConnOutcomeACCEPTED,
+		metadata.AttributeNginxConnectionsOutcomeACCEPTED,
 	)
-	nps.mb.RecordNginxHTTPConnDataPoint(
+	nps.mb.RecordNginxHTTPConnectionsDataPoint(
 		now,
 		int64(stats.Connections.Dropped),
-		metadata.AttributeNginxConnOutcomeDROPPED,
+		metadata.AttributeNginxConnectionsOutcomeDROPPED,
 	)
-	nps.mb.RecordNginxHTTPConnCountDataPoint(
+	nps.mb.RecordNginxHTTPConnectionsCountDataPoint(
 		now,
 		int64(stats.Connections.Active),
-		metadata.AttributeNginxConnOutcomeACTIVE,
+		metadata.AttributeNginxConnectionsOutcomeACTIVE,
 	)
-	nps.mb.RecordNginxHTTPConnCountDataPoint(now, int64(stats.Connections.Idle), metadata.AttributeNginxConnOutcomeIDLE)
+	nps.mb.RecordNginxHTTPConnectionsCountDataPoint(
+		now,
+		int64(stats.Connections.Idle),
+		metadata.AttributeNginxConnectionsOutcomeIDLE,
+	)
 
 	// HTTP Requests
 	nps.mb.RecordNginxHTTPRequestsDataPoint(now, int64(stats.HTTPRequests.Total), "", 0)
@@ -134,9 +138,9 @@ func (nps *nginxPlusScraper) recordStreamMetrics(stats *plusapi.Stats, now pcomm
 			metadata.AttributeNginxByteIoDirectionTX,
 			name,
 		)
-		nps.mb.RecordNginxStreamConnectionAcceptedDataPoint(now, int64(streamServerZone.Connections), name)
-		nps.mb.RecordNginxStreamConnectionDiscardedDataPoint(now, int64(streamServerZone.Discarded), name)
-		nps.mb.RecordNginxStreamConnectionProcessingCountDataPoint(now, int64(streamServerZone.Processing), name)
+		nps.mb.RecordNginxStreamConnectionsAcceptedDataPoint(now, int64(streamServerZone.Connections), name)
+		nps.mb.RecordNginxStreamConnectionsDiscardedDataPoint(now, int64(streamServerZone.Discarded), name)
+		nps.mb.RecordNginxStreamConnectionsProcessingCountDataPoint(now, int64(streamServerZone.Processing), name)
 		nps.mb.RecordNginxStreamSessionStatusDataPoint(
 			now,
 			int64(streamServerZone.Sessions.Sessions2xx),
@@ -180,7 +184,7 @@ func (nps *nginxPlusScraper) recordStreamMetrics(stats *plusapi.Stats, now pcomm
 				peer.Server,
 				peer.Name,
 			)
-			nps.mb.RecordNginxStreamUpstreamPeerConnCountDataPoint(
+			nps.mb.RecordNginxStreamUpstreamPeerConnectionsCountDataPoint(
 				now,
 				int64(peer.Active),
 				upstream.Zone,
@@ -188,7 +192,7 @@ func (nps *nginxPlusScraper) recordStreamMetrics(stats *plusapi.Stats, now pcomm
 				peer.Server,
 				peer.Name,
 			)
-			nps.mb.RecordNginxStreamUpstreamPeerConnTimeDataPoint(
+			nps.mb.RecordNginxStreamUpstreamPeerConnectionsTimeDataPoint(
 				now,
 				int64(peer.ConnectTime),
 				upstream.Zone,
@@ -196,7 +200,8 @@ func (nps *nginxPlusScraper) recordStreamMetrics(stats *plusapi.Stats, now pcomm
 				peer.Server,
 				peer.Name,
 			)
-			nps.mb.RecordNginxStreamUpstreamPeerConnsDataPoint(
+
+			nps.mb.RecordNginxStreamUpstreamPeerConnectionsDataPoint(
 				now,
 				int64(peer.Connections),
 				upstream.Zone,
@@ -486,7 +491,7 @@ func (nps *nginxPlusScraper) recordHTTPUpstreamPeerMetrics(stats *plusapi.Stats,
 				peer.Name,
 			)
 
-			nps.mb.RecordNginxHTTPUpstreamPeerConnCountDataPoint(
+			nps.mb.RecordNginxHTTPUpstreamPeerConnectionsCountDataPoint(
 				now,
 				int64(peer.Active),
 				upstream.Zone,

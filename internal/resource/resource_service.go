@@ -165,7 +165,7 @@ func (r *ResourceService) updateResourceInfo(ctx context.Context) {
 	defer r.resourceMutex.Unlock()
 
 	if r.info.IsContainer() {
-		r.resource.Info = r.info.ContainerInfo()
+		r.resource.Info = r.info.ContainerInfo(ctx)
 		r.resource.ResourceId = r.resource.GetContainerInfo().GetContainerId()
 		r.resource.Instances = []*mpi.Instance{}
 	} else {

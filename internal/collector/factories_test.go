@@ -7,11 +7,12 @@ package collector
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func TestOTelComponentFactories(t *testing.T) {
+func TestOTelComponentFactoriesDefault(t *testing.T) {
 	factories, err := OTelComponentFactories()
 
 	require.NoError(t, err, "OTelComponentFactories should not return an error")

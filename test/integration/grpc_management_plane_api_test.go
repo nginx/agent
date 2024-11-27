@@ -64,89 +64,14 @@ type (
 	}
 )
 
-func setupConnectionTest(tb testing.TB, expectNoErrorsInLogs bool) func(tb testing.TB) {
+func setupConnectionTest(tb testing.TB, expectNoErrorsInLogs, nginxless bool) func(tb testing.TB) {
 	tb.Helper()
 	ctx := context.Background()
 
 	if os.Getenv("TEST_ENV") == "Container" {
-		tb.Log("Running tests in a container environment")
-
-		containerNetwork, err := network.New(
-			ctx,
-			network.WithAttachable(),
-		)
-		require.NoError(tb, err)
-		tb.Cleanup(func() {
-			networkErr := containerNetwork.Remove(ctx)
-			tb.Logf("Error removing container network: %v", networkErr)
-			require.NoError(tb, networkErr)
-		})
-
-		mockManagementPlaneGrpcContainer = helpers.StartMockManagementPlaneGrpcContainer(
-			ctx,
-			tb,
-			containerNetwork,
-		)
-
-		mockManagementPlaneGrpcAddress = "managementPlane:9092"
-		tb.Logf("Mock management gRPC server running on %s", mockManagementPlaneGrpcAddress)
-
-		ipAddress, err := mockManagementPlaneGrpcContainer.Host(ctx)
-		require.NoError(tb, err)
-		ports, err := mockManagementPlaneGrpcContainer.Ports(ctx)
-		require.NoError(tb, err)
-
-		mockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9093/tcp"][0].HostPort)
-		tb.Logf("Mock management API server running on %s", mockManagementPlaneAPIAddress)
-
-		nginxConfPath := "../config/nginx/nginx.conf"
-		if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
-			nginxConfPath = "../config/nginx/nginx-plus.conf"
-		}
-
-		params := &helpers.Parameters{
-			NginxConfigPath:      nginxConfPath,
-			NginxAgentConfigPath: "../config/agent/nginx-config-with-grpc-client.conf",
-			LogMessage:           "Agent connected",
-		}
-
-		container = helpers.StartContainer(
-			ctx,
-			tb,
-			containerNetwork,
-			params,
-		)
+		setupContainerEnvironment(ctx, tb, nginxless)
 	} else {
-		requestChan := make(chan *mpi.ManagementPlaneRequest)
-		server := mockGrpc.NewCommandService(requestChan, os.TempDir())
-
-		go func(tb testing.TB) {
-			tb.Helper()
-
-			listener, err := net.Listen("tcp", "localhost:0")
-			assert.NoError(tb, err)
-
-			mockManagementPlaneAPIAddress = listener.Addr().String()
-
-			server.StartServer(listener)
-		}(tb)
-
-		go func(tb testing.TB) {
-			tb.Helper()
-
-			listener, err := net.Listen("tcp", "localhost:0")
-			assert.NoError(tb, err)
-			var opts []grpc.ServerOption
-
-			grpcServer := grpc.NewServer(opts...)
-			mpi.RegisterCommandServiceServer(grpcServer, server)
-			err = grpcServer.Serve(listener)
-			assert.NoError(tb, err)
-
-			mockManagementPlaneGrpcAddress = listener.Addr().String()
-		}(tb)
-
-		tb.Log("Running tests on local machine")
+		setupLocalEnvironment(tb)
 	}
 
 	return func(tb testing.TB) {
@@ -164,21 +89,122 @@ func setupConnectionTest(tb testing.TB, expectNoErrorsInLogs bool) func(tb testi
 	}
 }
 
+// setupContainerEnvironment sets up the container environment for testing.
+func setupContainerEnvironment(ctx context.Context, tb testing.TB, nginxless bool) {
+	tb.Helper()
+	tb.Log("Running tests in a container environment")
+
+	containerNetwork := createContainerNetwork(ctx, tb)
+	setupMockManagementPlaneGrpc(ctx, tb, containerNetwork)
+
+	params := &helpers.Parameters{
+		NginxAgentConfigPath: "../config/agent/nginx-config-with-grpc-client.conf",
+		LogMessage:           "Agent connected",
+	}
+	switch nginxless {
+	case true:
+		container = helpers.StartNginxLessContainer(ctx, tb, containerNetwork, params)
+	case false:
+		setupNginxContainer(ctx, tb, containerNetwork, params)
+	}
+}
+
+// createContainerNetwork creates and configures a container network.
+func createContainerNetwork(ctx context.Context, tb testing.TB) *testcontainers.DockerNetwork {
+	tb.Helper()
+	containerNetwork, err := network.New(ctx, network.WithAttachable())
+	require.NoError(tb, err)
+	tb.Cleanup(func() {
+		networkErr := containerNetwork.Remove(ctx)
+		tb.Logf("Error removing container network: %v", networkErr)
+	})
+
+	return containerNetwork
+}
+
+// setupMockManagementPlaneGrpc initializes the mock management plane gRPC container.
+func setupMockManagementPlaneGrpc(ctx context.Context, tb testing.TB, containerNetwork *testcontainers.DockerNetwork) {
+	tb.Helper()
+	mockManagementPlaneGrpcContainer = helpers.StartMockManagementPlaneGrpcContainer(ctx, tb, containerNetwork)
+	mockManagementPlaneGrpcAddress = "managementPlane:9092"
+	tb.Logf("Mock management gRPC server running on %s", mockManagementPlaneGrpcAddress)
+
+	ipAddress, err := mockManagementPlaneGrpcContainer.Host(ctx)
+	require.NoError(tb, err)
+	ports, err := mockManagementPlaneGrpcContainer.Ports(ctx)
+	require.NoError(tb, err)
+
+	mockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9093/tcp"][0].HostPort)
+	tb.Logf("Mock management API server running on %s", mockManagementPlaneAPIAddress)
+}
+
+// setupNginxContainer configures and starts the NGINX container.
+func setupNginxContainer(
+	ctx context.Context,
+	tb testing.TB,
+	containerNetwork *testcontainers.DockerNetwork,
+	params *helpers.Parameters,
+) {
+	tb.Helper()
+	nginxConfPath := "../config/nginx/nginx.conf"
+	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+		nginxConfPath = "../config/nginx/nginx-plus.conf"
+	}
+	params.NginxConfigPath = nginxConfPath
+
+	container = helpers.StartContainer(ctx, tb, containerNetwork, params)
+}
+
+// setupLocalEnvironment configures the local testing environment.
+func setupLocalEnvironment(tb testing.TB) {
+	tb.Helper()
+	tb.Log("Running tests on local machine")
+
+	requestChan := make(chan *mpi.ManagementPlaneRequest)
+	server := mockGrpc.NewCommandService(requestChan, os.TempDir())
+
+	go func(tb testing.TB) {
+		tb.Helper()
+
+		listener, err := net.Listen("tcp", "localhost:0")
+		assert.NoError(tb, err)
+
+		mockManagementPlaneAPIAddress = listener.Addr().String()
+
+		server.StartServer(listener)
+	}(tb)
+
+	go func(tb testing.TB) {
+		tb.Helper()
+
+		listener, err := net.Listen("tcp", "localhost:0")
+		assert.NoError(tb, err)
+		var opts []grpc.ServerOption
+
+		grpcServer := grpc.NewServer(opts...)
+		mpi.RegisterCommandServiceServer(grpcServer, server)
+		err = grpcServer.Serve(listener)
+		assert.NoError(tb, err)
+
+		mockManagementPlaneGrpcAddress = listener.Addr().String()
+	}(tb)
+}
+
 // Verify that the agent sends a connection request and an update data plane status request
 func TestGrpc_StartUp(t *testing.T) {
-	teardownTest := setupConnectionTest(t, true)
+	teardownTest := setupConnectionTest(t, true, false)
 	defer teardownTest(t)
 
-	verifyConnection(t)
+	verifyConnection(t, 2)
 	assert.False(t, t.Failed())
 	verifyUpdateDataPlaneHealth(t)
 }
 
 func TestGrpc_ConfigUpload(t *testing.T) {
-	teardownTest := setupConnectionTest(t, true)
+	teardownTest := setupConnectionTest(t, true, false)
 	defer teardownTest(t)
 
-	nginxInstanceID := verifyConnection(t)
+	nginxInstanceID := verifyConnection(t, 2)
 	assert.False(t, t.Failed())
 
 	request := fmt.Sprintf(`{
@@ -211,7 +237,7 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 
 func TestGrpc_ConfigApply(t *testing.T) {
 	ctx := context.Background()
-	teardownTest := setupConnectionTest(t, false)
+	teardownTest := setupConnectionTest(t, false, false)
 	defer teardownTest(t)
 
 	instanceType := "OSS"
@@ -219,7 +245,7 @@ func TestGrpc_ConfigApply(t *testing.T) {
 		instanceType = "PLUS"
 	}
 
-	nginxInstanceID := verifyConnection(t)
+	nginxInstanceID := verifyConnection(t, 2)
 
 	responses := getManagementPlaneResponses(t, 1)
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
@@ -321,10 +347,10 @@ func TestGrpc_ConfigApply(t *testing.T) {
 
 func TestGrpc_FileWatcher(t *testing.T) {
 	ctx := context.Background()
-	teardownTest := setupConnectionTest(t, true)
+	teardownTest := setupConnectionTest(t, true, false)
 	defer teardownTest(t)
 
-	verifyConnection(t)
+	verifyConnection(t, 2)
 	assert.False(t, t.Failed())
 
 	err := container.CopyFileToContainer(
@@ -345,10 +371,10 @@ func TestGrpc_FileWatcher(t *testing.T) {
 }
 
 func TestGrpc_DataplaneHealthRequest(t *testing.T) {
-	teardownTest := setupConnectionTest(t, true)
+	teardownTest := setupConnectionTest(t, true, false)
 	defer teardownTest(t)
 
-	verifyConnection(t)
+	verifyConnection(t, 2)
 
 	responses := getManagementPlaneResponses(t, 1)
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
@@ -493,7 +519,7 @@ func clearManagementPlaneResponses(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 }
 
-func verifyConnection(t *testing.T) string {
+func verifyConnection(t *testing.T, instancesLength int) string {
 	t.Helper()
 
 	client := resty.New()
@@ -522,7 +548,7 @@ func verifyConnection(t *testing.T) string {
 	assert.NotNil(t, resource.GetResourceId())
 	assert.NotNil(t, resource.GetContainerInfo().GetContainerId())
 
-	assert.Len(t, resource.GetInstances(), 2)
+	assert.Len(t, resource.GetInstances(), instancesLength)
 
 	var nginxInstanceID string
 

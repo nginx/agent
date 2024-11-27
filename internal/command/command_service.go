@@ -208,10 +208,8 @@ func (cs *CommandService) CreateConnection(
 	resource *mpi.Resource,
 ) (*mpi.CreateConnectionResponse, error) {
 	correlationID := logger.GetCorrelationID(ctx)
-
-	// Only send a resource update message if instances other than the agent instance are found
 	if len(resource.GetInstances()) <= 1 {
-		return nil, errors.New("waiting for data plane instances to be found before sending create connection request")
+		slog.InfoContext(ctx, "No Data Plane Instance found")
 	}
 
 	request := &mpi.CreateConnectionRequest{
@@ -230,6 +228,8 @@ func (cs *CommandService) CreateConnection(
 		RandomizationFactor: cs.agentConfig.Common.RandomizationFactor,
 		Multiplier:          cs.agentConfig.Common.Multiplier,
 	}
+
+	slog.DebugContext(ctx, "Sending create connection request", "request", request)
 
 	response, err := backoff.RetryWithData(
 		cs.connectCallback(ctx, request),

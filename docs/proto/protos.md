@@ -10,6 +10,7 @@
     - [CommandResponse.CommandStatus](#mpi-v1-CommandResponse-CommandStatus)
   
 - [mpi/v1/files.proto](#mpi_v1_files-proto)
+    - [AttributeTypeAndValue](#mpi-v1-AttributeTypeAndValue)
     - [CertificateDates](#mpi-v1-CertificateDates)
     - [CertificateMeta](#mpi-v1-CertificateMeta)
     - [ConfigVersion](#mpi-v1-ConfigVersion)
@@ -26,6 +27,7 @@
     - [UpdateFileResponse](#mpi-v1-UpdateFileResponse)
     - [UpdateOverviewRequest](#mpi-v1-UpdateOverviewRequest)
     - [UpdateOverviewResponse](#mpi-v1-UpdateOverviewResponse)
+    - [X509Name](#mpi-v1-X509Name)
   
     - [File.FileAction](#mpi-v1-File-FileAction)
     - [SignatureAlgorithm](#mpi-v1-SignatureAlgorithm)
@@ -149,6 +151,22 @@ Command status enum
 
 
 
+<a name="mpi-v1-AttributeTypeAndValue"></a>
+
+### AttributeTypeAndValue
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [string](#string) |  | The type (or identifier) of the attribute (e.g., OID). |
+| value | [string](#string) |  | The value associated with the attribute. |
+
+
+
+
+
+
 <a name="mpi-v1-CertificateDates"></a>
 
 ### CertificateDates
@@ -175,8 +193,8 @@ and https://github.com/googleapis/googleapis/blob/005df4681b89bd204a90b76168a6dc
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | serial_number | [bytes](#bytes) |  | Serial number of the certificate, usually a unique identifier, RFC5280 states the upper limit for serial number is 20 octets |
-| issuer | [string](#string) |  | Issuer details (who issued the certificate) |
-| subject | [string](#string) |  | Subject details (to whom the certificate is issued) |
+| issuer | [X509Name](#mpi-v1-X509Name) |  | Issuer details (who issued the certificate) |
+| subject | [X509Name](#mpi-v1-X509Name) |  | Subject details (to whom the certificate is issued) |
 | sans | [SubjectAlternativeNames](#mpi-v1-SubjectAlternativeNames) |  | Subject Alternative Names (SAN) including DNS names and IP addresses |
 | dates | [CertificateDates](#mpi-v1-CertificateDates) |  | Timestamps representing the start of certificate validity (Not Before, Not After) |
 | signature_algorithm | [SignatureAlgorithm](#mpi-v1-SignatureAlgorithm) |  | The algorithm used to sign the certificate (e.g., SHA256-RSA) |
@@ -405,6 +423,31 @@ Represents a the response from an UpdateOverviewRequest - intentionally left emp
 
 
 
+
+<a name="mpi-v1-X509Name"></a>
+
+### X509Name
+Represents the dates for which a certificate is valid as seen at https://pkg.go.dev/crypto/x509/pkix#Name
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| country | [string](#string) | repeated | Country name (C): Two-letter country code as per ISO 3166. Must be exactly 2 characters. |
+| organization | [string](#string) | repeated | Organization name (O): Name of the organization. |
+| organizational_unit | [string](#string) | repeated | Organizational Unit name (OU): Name of a subdivision or unit within the organization. |
+| locality | [string](#string) | repeated | Locality name (L): Name of the city or locality. Must be non-empty and a reasonable length (e.g., max 100 characters). |
+| province | [string](#string) | repeated | State or Province name (ST): Name of the state or province. |
+| street_address | [string](#string) | repeated | Street Address (STREET): Physical street address. |
+| postal_code | [string](#string) | repeated | Postal Code (PC): Postal or ZIP code for the address. |
+| serial_number | [string](#string) |  | Serial Number (SN): Unique identifier or serial number. Must be non-empty. |
+| common_name | [string](#string) |  | Common Name (CN): Typically the person’s or entity&#39;s full name. |
+| names | [AttributeTypeAndValue](#mpi-v1-AttributeTypeAndValue) | repeated | Parsed attributes including any non-standard attributes, as specified in RFC 2253. These attributes are parsed but not marshaled by this package. |
+| extra_names | [AttributeTypeAndValue](#mpi-v1-AttributeTypeAndValue) | repeated | Additional attributes to be included in the marshaled distinguished names. These override any attributes with the same OID in `names`. |
+
+
+
+
+
  
 
 
@@ -572,6 +615,7 @@ Container information
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | container_id | [string](#string) |  | The identifier of the container |
+| hostname | [string](#string) |  | The name of the host |
 
 
 

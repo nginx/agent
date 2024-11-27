@@ -425,60 +425,72 @@ func TestInfo_IsContainer(t *testing.T) {
 }
 
 func TestInfo_ContainerInfo(t *testing.T) {
+	ctx := context.Background()
 	tests := []struct {
-		name      string
-		mountInfo string
-		expect    string
+		name              string
+		mountInfo         string
+		expectContainerID string
+		expectHostname    string
 	}{
 		{
-			name:      "unknown cgroups format",
-			mountInfo: envMountInfo[0],
-			expect:    "",
+			name:              "unknown cgroups format",
+			mountInfo:         envMountInfo[0],
+			expectContainerID: "",
+			expectHostname:    "",
 		},
 		{
-			name:      "cgroups v1",
-			mountInfo: envMountInfo[1],
-			expect:    "d72eb414-1e7f-3167-923c-d56301d3e332",
+			name:              "cgroups v1",
+			mountInfo:         envMountInfo[1],
+			expectContainerID: "d72eb414-1e7f-3167-923c-d56301d3e332",
+			expectHostname:    "3fa0af905021",
 		},
 		{
-			name:      "cgroups v2",
-			mountInfo: envMountInfo[2],
-			expect:    "3d7b26ba-e8d1-35ae-8566-aed826a5208d",
+			name:              "cgroups v2",
+			mountInfo:         envMountInfo[2],
+			expectContainerID: "3d7b26ba-e8d1-35ae-8566-aed826a5208d",
+			expectHostname:    "3fa0af905021",
 		},
 		{
-			name:      "k8s container",
-			mountInfo: envMountInfo[3],
-			expect:    "17796e3d-8f28-3382-aa3c-130ee065d8ff",
+			name:              "k8s container",
+			mountInfo:         envMountInfo[3],
+			expectContainerID: "17796e3d-8f28-3382-aa3c-130ee065d8ff",
+			expectHostname:    "3fa0af905021",
 		},
 		{
-			name:      "k8s container 1",
-			mountInfo: envMountInfo[4],
-			expect:    "b4ce7348-b10c-385c-afa2-ee304de31f54",
+			name:              "k8s container 1",
+			mountInfo:         envMountInfo[4],
+			expectContainerID: "b4ce7348-b10c-385c-afa2-ee304de31f54",
+			expectHostname:    "3fa0af905021",
 		},
 		{
-			name:      "k8s container 2",
-			mountInfo: envMountInfo[5],
-			expect:    "abb646ab-09af-3181-95c0-f647586e3094",
+			name:              "k8s container 2",
+			mountInfo:         envMountInfo[5],
+			expectContainerID: "abb646ab-09af-3181-95c0-f647586e3094",
+			expectHostname:    "3fa0af905021",
 		},
 		{
-			name:      "cro-i container",
-			mountInfo: envMountInfo[6],
-			expect:    "9bda56cc-8270-337c-abc8-a0286b3ac4c8",
+			name:              "cro-i container",
+			mountInfo:         envMountInfo[6],
+			expectContainerID: "9bda56cc-8270-337c-abc8-a0286b3ac4c8",
+			expectHostname:    "3fa0af905021",
 		},
 		{
-			name:      "different var folder location",
-			mountInfo: envMountInfo[7],
-			expect:    "1848a019-fd07-38ce-beaa-64a8eb55309c",
+			name:              "different var folder location",
+			mountInfo:         envMountInfo[7],
+			expectContainerID: "1848a019-fd07-38ce-beaa-64a8eb55309c",
+			expectHostname:    "3fa0af905021",
 		},
 		{
-			name:      "minikube containerd",
-			mountInfo: envMountInfo[8],
-			expect:    "a140fdb0-d7d0-3c8c-825d-24453be5636a",
+			name:              "minikube containerd",
+			mountInfo:         envMountInfo[8],
+			expectContainerID: "a140fdb0-d7d0-3c8c-825d-24453be5636a",
+			expectHostname:    "3fa0af905021",
 		},
 		{
-			name:      "minikube docker",
-			mountInfo: envMountInfo[9],
-			expect:    "811983f7-66bf-3c3c-9658-41a484d71449",
+			name:              "minikube docker",
+			mountInfo:         envMountInfo[9],
+			expectContainerID: "811983f7-66bf-3c3c-9658-41a484d71449",
+			expectHostname:    "3fa0af905021",
 		},
 	}
 
@@ -486,6 +498,9 @@ func TestInfo_ContainerInfo(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			mountInfoFile := helpers.CreateFileWithErrorCheck(t, os.TempDir(), "mountInfo-")
 			defer helpers.RemoveFileWithErrorCheck(tt, mountInfoFile.Name())
+
+			execMock := &execfakes.FakeExecInterface{}
+			execMock.HostnameReturns(test.expectHostname, nil)
 
 			_, err := mountInfoFile.WriteString(test.mountInfo)
 			require.NoError(tt, err)
@@ -495,9 +510,11 @@ func TestInfo_ContainerInfo(t *testing.T) {
 
 			info := NewInfo()
 			info.mountInfoLocation = mountInfoFile.Name()
-			containerInfo := info.ContainerInfo()
+			info.exec = execMock
+			containerInfo := info.ContainerInfo(ctx)
 
-			assert.Equal(tt, test.expect, containerInfo.ContainerInfo.GetContainerId())
+			assert.Equal(tt, test.expectContainerID, containerInfo.ContainerInfo.GetContainerId())
+			assert.Equal(tt, test.expectHostname, containerInfo.ContainerInfo.GetHostname())
 		})
 	}
 }

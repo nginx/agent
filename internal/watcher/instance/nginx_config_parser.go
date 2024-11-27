@@ -319,7 +319,7 @@ func (ncp *NginxConfigParser) sslCert(ctx context.Context, file, rootDir string)
 	if !ncp.agentConfig.IsDirectoryAllowed(file) {
 		slog.DebugContext(ctx, "File not in allowed directories", "file", file)
 	} else {
-		sslCertFileMeta, fileMetaErr := files.FileMeta(file)
+		sslCertFileMeta, fileMetaErr := files.FileMetaWithCertificate(file)
 		if fileMetaErr != nil {
 			slog.ErrorContext(ctx, "Unable to get file metadata", "file", file, "error", fileMetaErr)
 		} else {

@@ -118,7 +118,9 @@ exporters:
 {{- range $index, $otlpExporter := .Exporters.OtlpExporters }}
   otlp/{{$index}}:
     endpoint: "{{ .Server.Host -}}:{{- .Server.Port }}"
-    compression: none
+    {{- if .Compression }}
+    compression: {{ .Compression }}
+    {{- end }}
     timeout: 10s
     retry_on_failure:
       enabled: true
