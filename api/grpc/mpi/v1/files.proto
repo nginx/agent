@@ -149,7 +149,7 @@ message UpdateFileResponse {
 // and https://github.com/googleapis/googleapis/blob/005df4681b89bd204a90b76168a6dc9d9e7bf4fe/google/cloud/iot/v1/resources.proto#L341
 message CertificateMeta {
     // Serial number of the certificate, usually a unique identifier, RFC5280 states the upper limit for serial number is 20 octets
-    bytes serial_number = 1 [(buf.validate.field).bytes.min_len = 1, (buf.validate.field).bytes.max_len = 21];
+    bytes serial_number = 1 [(buf.validate.field).bytes.min_len = 0, (buf.validate.field).bytes.max_len = 21];
     
     // Issuer details (who issued the certificate)
     X509Name issuer = 2;
