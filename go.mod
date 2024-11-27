@@ -30,6 +30,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatorateprocessor v0.114.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.114.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/redactionprocessor v0.114.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor v0.114.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.114.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.114.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/testbed v0.114.0

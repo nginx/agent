@@ -6,7 +6,6 @@ package collector
 
 import (
 	"errors"
-
 	nginxreceiver "github.com/nginx/agent/v3/internal/collector/nginxossreceiver"
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter"
@@ -17,6 +16,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatorateprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/redactionprocessor"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver"
 	"go.opentelemetry.io/collector/component"
@@ -110,6 +110,7 @@ func createProcessorFactories() (map[component.Type]processor.Factory, error) {
 		filterprocessor.NewFactory(),
 		memorylimiterprocessor.NewFactory(),
 		redactionprocessor.NewFactory(),
+		resourceprocessor.NewFactory(),
 		transformprocessor.NewFactory(),
 	}
 
