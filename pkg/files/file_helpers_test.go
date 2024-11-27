@@ -8,6 +8,7 @@ package files
 import (
 	"crypto/x509"
 	_ "embed"
+	"encoding/json"
 	"net"
 	"os"
 	"testing"
@@ -232,31 +233,101 @@ func TestConvertX509SignatureAlgorithm(t *testing.T) {
 	}
 }
 
-//go:embed config.json
-var embeddedJSON []byte
+//go:embed update_overview_request.json
+var embedded []byte
 
 func TestMarshalAndUnmarshal(t *testing.T) {
-	var protoFromJSON mpi.UpdateOverviewRequest
-	pb := protojson.UnmarshalOptions{DiscardUnknown: true, AllowPartial: true}
-	unmarshalErr := pb.Unmarshal(embeddedJSON, &protoFromJSON)
-	if unmarshalErr != nil {
-		t.Fatalf("Failed to unmarshal embedded JSON: %v", unmarshalErr)
+	tests := []struct {
+		name       string
+		types      interface{}
+		file       []byte
+	}{
+		{ 
+			name: "Test 1: Update Overview Request", 
+			types: mpi.UpdateOverviewRequest{},
+			file: embedded,
+		},
+		
 	}
 
-	// Re-marshal to ensure consistency
-	marshaledJSON, errMarshaledJSON := protojson.Marshal(&protoFromJSON)
-	if errMarshaledJSON != nil {
-		t.Fatalf("Failed to marshal struct back to JSON: %v", errMarshaledJSON)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var protoFromJSON mpi.UpdateOverviewRequest
+			pb := protojson.UnmarshalOptions{DiscardUnknown: true, AllowPartial: true}
+			unmarshalErr := pb.Unmarshal(test.file, &protoFromJSON)
+			if unmarshalErr != nil {
+				t.Fatalf("Failed to unmarshal embedded JSON: %v", unmarshalErr)
+			}
+
+			// Re-marshal to ensure consistency
+			marshaledJSON, errMarshaledJSON := protojson.Marshal(&protoFromJSON)
+			if errMarshaledJSON != nil {
+				t.Fatalf("Failed to marshal struct back to JSON: %v", errMarshaledJSON)
+			}
+
+			// Re-parse marshaled JSON to validate round-trip correctness
+			var parsedBack mpi.UpdateOverviewRequest
+			if parsedBackErr := protojson.Unmarshal(marshaledJSON, &parsedBack); parsedBackErr != nil {
+				t.Fatalf("Failed to parse back marshaled JSON: %v", parsedBackErr)
+			}
+
+			// Compare structs to ensure equality
+			if diff := cmp.Diff(&protoFromJSON, &parsedBack, protocmp.Transform()); diff != "" {
+				t.Errorf("Round-trip parsing mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestMarshal(t *testing.T) {
+	tests := []struct {
+		name       string
+		types      interface{}
+		file       []byte
+	}{
+		{ 
+			name: "Test 1: Update Overview Request", 
+			types: mpi.UpdateOverviewRequest{},
+			file: embedded,
+		},
+		
 	}
 
-	// Re-parse marshaled JSON to validate round-trip correctness
-	var parsedBack mpi.UpdateOverviewRequest
-	if parsedBackErr := protojson.Unmarshal(marshaledJSON, &parsedBack); parsedBackErr != nil {
-		t.Fatalf("Failed to parse back marshaled JSON: %v", parsedBackErr)
-	}
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			t.Run("encoding/json", func(ttt *testing.T) {
+				types := mpi.UpdateOverviewRequest{}
+				data, err := json.Marshal(test.file)
+				require.NoError(ttt, err)
+				assert.Equal(ttt, test.file, data)
 
-	// Compare structs to ensure equality
-	if diff := cmp.Diff(&protoFromJSON, &parsedBack, protocmp.Transform()); diff != "" {
-		t.Errorf("Round-trip parsing mismatch (-want +got):\n%s", diff)
+				unMarshalErr := json.Unmarshal(data, &types)
+				require.NoError(ttt, unMarshalErr)
+
+				require.NotNil(ttt, types)
+			})
+
+			// // Test google.golang.org/protobuf/encoding/protojson
+			// t.Run("protojson", func(t *testing.T) {
+			// 	data, err := protojson.Marshal(tt.message)
+			// 	assert.NoError(t, err)
+			// 	assert.JSONEq(t, tt.jsonData, string(data))
+			// })
+
+			// // Test github.com/gogo/protobuf
+			// t.Run("gogo/protobuf", func(t *testing.T) {
+			// 	data, err := gogopb.Marshal(tt.gogoMsg)
+			// 	assert.NoError(t, err)
+
+			// 	// Decode back to JSON for comparison
+			// 	var decoded gogopb.Message
+			// 	err = gogopb.Unmarshal(data, &decoded)
+			// 	assert.NoError(t, err)
+
+			// 	decodedJSON, err := json.Marshal(decoded)
+			// 	assert.NoError(t, err)
+			// 	assert.JSONEq(t, tt.jsonData, string(decodedJSON))
+			// })
+		})
 	}
 }
