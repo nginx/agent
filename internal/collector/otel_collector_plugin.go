@@ -43,6 +43,10 @@ var _ bus.Plugin = (*Collector)(nil)
 
 // NewCollector is the constructor for the Collector plugin.
 func New(conf *config.Config) (*Collector, error) {
+	initMutex := &sync.Mutex{}
+	initMutex.Lock()
+	
+	defer initMutex.Unlock()
 	if conf == nil {
 		return nil, errors.New("nil agent config")
 	}
