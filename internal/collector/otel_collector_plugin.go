@@ -39,10 +39,12 @@ type (
 	}
 )
 
-var _ bus.Plugin = (*Collector)(nil)
-var initMutex    = &sync.Mutex{}
+var (
+	_         bus.Plugin = (*Collector)(nil)
+	initMutex            = &sync.Mutex{}
+)
 
-// NewCollector is the constructor for the Collector plugin.
+// NewCollector is the constructor for the Collector plugin.make
 func New(conf *config.Config) (*Collector, error) {
 	initMutex.Lock()
 
