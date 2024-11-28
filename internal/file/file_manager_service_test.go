@@ -7,6 +7,7 @@ package file
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -586,4 +587,72 @@ func TestFileManagerService_fileActions(t *testing.T) {
 
 	defer helpers.RemoveFileWithErrorCheck(t, updateFile.Name())
 	defer helpers.RemoveFileWithErrorCheck(t, addFilePath)
+}
+
+func TestParseX509Certificates(t *testing.T) {
+	tests := []struct {
+		certName       string
+		certContent    string
+		name           string
+		expectedSerial []byte
+	}{
+		{
+			name:           "Test 1: generated cert",
+			certName:       "public_cert",
+			certContent:    "",
+			expectedSerial: []byte{0x1, 0xe0, 0xf3},
+		},
+		{
+			name:     "Test 2: open ssl cert",
+			certName: "open_ssl_cert",
+			certContent: `-----BEGIN CERTIFICATE-----
+MIIDazCCAlOgAwIBAgIUR+YGgRHhYwotFyBOvSc1KD9d45kwDQYJKoZIhvcNAQEL
+BQAwRTELMAkGA1UEBhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM
+GEludGVybmV0IFdpZGdpdHMgUHR5IEx0ZDAeFw0yNDExMjcxNTM0MDZaFw0yNDEy
+MjcxNTM0MDZaMEUxCzAJBgNVBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEw
+HwYDVQQKDBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwggEiMA0GCSqGSIb3DQEB
+AQUAA4IBDwAwggEKAoIBAQDnDDVGflbZ3dmuQJj+8QuJIQ8lWjVGYhlsFI4AGFTX
+9VfYOqJEPyuMRuSj2eN7C/mR4yTJSggnv0kFtjmeGh2keNdmb4R/0CjYWZVl/Na6
+cAfldB8v2+sm0LZ/OD9F9CbnYB95takPOZq3AP5kUA+qlFYzroqXsxJKvZF6dUuI
++kTOn5pWD+eFmueFedOz1aucOvblUJLueVZnvAbIrBoyaulw3f2kjk0J1266nFMb
+s72AvjyYbOXbyur3BhPThCaOeqMGggDmFslZ4pBgQFWUeFvmqJMFzf1atKTWlbj7
+Mj+bNKNs4xvUuNhqd/F99Pz2Fe0afKbTHK83hqgSHKbtAgMBAAGjUzBRMB0GA1Ud
+DgQWBBQq0Bzde0bl9CFb81LrvFfdWlY7hzAfBgNVHSMEGDAWgBQq0Bzde0bl9CFb
+81LrvFfdWlY7hzAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQAo
+8GXvwRa0M0D4x4Lrj2K57FxH4ECNBnAqWlh3Ce9LEioL2CYaQQw6I2/FsnTk8TYY
+WgGgXMEyA6OeOXvwxWjSllK9+D2ueTMhNRO0tYMUi0kDJqd9EpmnEcSWIL2G2SNo
+BWQjqEoEKFjvrgx6h13AtsFlpdURoVtodrtnUrXp1r4wJvljC2qexoNfslhpbqsT
+X/vYrzgKRoKSUWUt1ejKTntrVuaJK4NMxANOTTjIXgxyoV3YcgEmL9KzribCqILi
+p79Nno9d+kovtX5VKsJ5FCcPw9mEATgZDOQ4nLTk/HHG6bwtpubp6Zb7H1AjzBkz
+rQHX6DP4w6IwZY8JB8LS
+-----END CERTIFICATE-----`,
+			expectedSerial: []byte{0x1, 0xe0, 0xf3},
+		},
+	}
+
+	tempDir := os.TempDir()
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var certBytes []byte
+
+			if test.certContent == "" {
+				_, certBytes = helpers.GenerateSelfSignedCert(t)
+			} else {
+				certBytes = []byte(test.certContent)
+			}
+
+			certContents := helpers.Cert{
+				Name:     fmt.Sprintf("%s.pem", test.certName),
+				Type:     "CERTIFICATE",
+				Contents: certBytes,
+			}
+			certFile := helpers.WriteCertFiles(t, tempDir, certContents)
+
+			certFileMeta, certFileMetaErr := files.FileMetaWithCertificate(certFile)
+			require.NoError(t, certFileMetaErr)
+
+			assert.Equal(t, test.expectedSerial, certFileMeta.GetCertificateMeta().GetSerialNumber())
+		})
+	}
 }

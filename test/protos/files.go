@@ -49,6 +49,7 @@ func CertMeta(fileName, fileHash string) *mpi.FileMeta {
 						{Type: "customID", Value: "98765"},
 					},
 				},
+
 				SignatureAlgorithm: mpi.SignatureAlgorithm_SIGNATURE_ALGORITHM_UNKNOWN,
 				PublicKeyAlgorithm: "",
 			},
