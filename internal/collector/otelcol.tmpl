@@ -253,6 +253,11 @@ service:
         - tcplog/{{$index}}
         {{- end }}
       processors:
+        {{- if ne .Processors.Resource nil }}
+        {{- if .Processors.Resource.Attributes }}
+        - resource
+        {{- end }}
+        {{- end }}
         {{- if ne .Processors.Batch nil }}
         - batch
         {{- end }}

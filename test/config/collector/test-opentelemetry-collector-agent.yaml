@@ -32,6 +32,11 @@ receivers:
         field: attributes.message
 
 processors:
+  resource:
+    attributes:
+      - key: resource.id
+        action: add
+        value: 12345
   batch:
     send_batch_size: 8192
     timeout: 200ms
@@ -87,6 +92,7 @@ service:
         - otlp/0
         - nginx/123
       processors:
+        - resource
         - batch
       exporters:
         - otlp/0
@@ -96,6 +102,7 @@ service:
       receivers:
         - tcplog/0
       processors:
+        - resource
         - batch
       exporters:
         - otlp/0

@@ -54,6 +54,15 @@ func TestTemplateWrite(t *testing.T) {
 	cfg := types.AgentConfig()
 	actualConfPath := filepath.Join(tmpDir, "nginx-agent-otelcol-test.yaml")
 	cfg.Collector.ConfigPath = actualConfPath
+	cfg.Collector.Processors.Resource = &config.Resource{
+		Attributes: []config.ResourceAttribute{
+			{
+				Key:    "resource.id",
+				Action: "add",
+				Value:  "12345",
+			},
+		},
+	}
 
 	cfg.Collector.Exporters.PrometheusExporter = &config.PrometheusExporter{
 		Server: &config.ServerConfig{
