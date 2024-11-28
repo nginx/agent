@@ -8,8 +8,6 @@ package nginxossreceiver
 import (
 	"context"
 	"errors"
-	"log/slog"
-
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/receiver"
@@ -23,7 +21,6 @@ import (
 
 // nolint: ireturn
 func NewFactory() receiver.Factory {
-	slog.Info("New OSS Receiver Factory")
 	return receiver.NewFactory(
 		metadata.Type,
 		config.CreateDefaultConfig,
