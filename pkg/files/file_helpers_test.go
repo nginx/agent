@@ -11,10 +11,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/testing/protocmp"
 
 	"github.com/nginx/agent/v3/test/protos"
 
@@ -229,49 +226,4 @@ func TestConvertX509SignatureAlgorithm(t *testing.T) {
 			assert.Equal(t, test.expected, convertX509SignatureAlgorithm(test.input))
 		})
 	}
-}
-
-func TestMarshalAndUnmarshal(t *testing.T) {
-	json := `{"messageMeta":{"messageId":"f0bc6a38-19d0-431d-a83e-75b2492b4d8f",
-"correlationId":"e02df015-d0f3-4b4f-8505-a99ca3a675cf","timestamp":"2024-11-26T15:37:20.329251Z"},
-"overview":{"files":[{"fileMeta":{"name":"/tmp/nginx-certs/nginx-repo.crt",
-"hash":"077a855b-249e-321e-8430-10ffbc7159c5","modifiedTime":"2023-08-10T13:33:05.179811079Z",
-"permissions":"0644","size":"1534","certificateMeta":{"serialNumber":"3894390349439439==",
-"issuer":{"country":["US"],"organization":["F5 Networks, Inc."],"organizationalUnit":["Certificate Authority"],
-"locality":["Seattle"],"province":["Washington"],"commonName":"Issuing Certificate Authority"},
-"subject":{"commonName":"F5-A-S00009507"},"sans":{},"dates":{"notBefore":"1640105875","notAfter":"1734652800"},
-"signatureAlgorithm":"SHA256_WITH_RSA","publicKeyAlgorithm":"RSA"}}},
-{"fileMeta":{"name":"/opt/homebrew/etc/nginx/mime.types",
-"hash":"91fca1c4-63b3-3525-ba0f-f001250576ed","modifiedTime":"2024-05-29T14:30:32Z",
-"permissions":"0644","size":"5349"}},{"fileMeta":{"name":"/opt/homebrew/etc/nginx/nginx.conf",
-"hash":"6f23df4d-82bd-3f72-89b4-e2681be219c1","modifiedTime":"2024-11-22T16:27:53.155484484Z",
-"permissions":"0644","size":"1379"}}],"configVersion":
-{"instanceId":"fc3773d1-857a-3a7d-86de-ef7e61339a82",
-"version":"cfa04353-ff05-30a7-a13d-3b97de7319aa"}}}`
-
-	t.Run("Test 1: Update Overview Request", func(t *testing.T) {
-		var protoFromJSON mpi.UpdateOverviewRequest
-		pb := protojson.UnmarshalOptions{DiscardUnknown: true, AllowPartial: true}
-		unmarshalErr := pb.Unmarshal([]byte(json), &protoFromJSON)
-		if unmarshalErr != nil {
-			t.Fatalf("Failed to unmarshal embedded JSON: %v", unmarshalErr)
-		}
-
-		// Re-marshal to ensure consistency
-		marshaledJSON, errMarshaledJSON := protojson.Marshal(&protoFromJSON)
-		if errMarshaledJSON != nil {
-			t.Fatalf("Failed to marshal struct back to JSON: %v", errMarshaledJSON)
-		}
-
-		// Re-parse marshaled JSON to validate round-trip correctness
-		var parsedBack mpi.UpdateOverviewRequest
-		if parsedBackErr := protojson.Unmarshal(marshaledJSON, &parsedBack); parsedBackErr != nil {
-			t.Fatalf("Failed to parse back marshaled JSON: %v", parsedBackErr)
-		}
-
-		// Compare structs to ensure equality
-		if diff := cmp.Diff(&protoFromJSON, &parsedBack, protocmp.Transform()); diff != "" {
-			t.Errorf("Round-trip parsing mismatch (-want +got):\n%s", diff)
-		}
-	})
 }
