@@ -7,7 +7,6 @@ package nginxplusreceiver
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"net"
 	"net/http"
 	"strconv"
@@ -50,7 +49,6 @@ func newNginxPlusScraper(
 	cfg.Endpoint = strings.TrimPrefix(cfg.APIDetails.URL, "unix:")
 	logger := settings.Logger
 	logger.Info("Creating NGINX Plus scraper")
-	slog.Info("New Plus Scraper", "details", cfg.APIDetails)
 	httpClient := http.DefaultClient
 
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)

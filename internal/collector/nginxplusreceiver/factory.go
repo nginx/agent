@@ -8,7 +8,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"time"
 
 	"go.opentelemetry.io/collector/component"
@@ -41,7 +40,6 @@ func createMetricsReceiver(
 	logger.Info("Creating new NGINX Plus metrics receiver")
 
 	cfg, ok := rConf.(*Config)
-	slog.Info("Config", "", cfg)
 	if !ok {
 		return nil, errors.New("failed to cast to Config in NGINX Plus metrics receiver")
 	}

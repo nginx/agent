@@ -37,7 +37,6 @@ func createMetricsReceiver(
 	rConf component.Config,
 	cons consumer.Metrics,
 ) (receiver.Metrics, error) {
-	slog.Info("----------------- createMetricsReceiver ------------------")
 	cfg, ok := rConf.(*config.Config)
 	if !ok {
 		return nil, errors.New("cast to metrics receiver config")

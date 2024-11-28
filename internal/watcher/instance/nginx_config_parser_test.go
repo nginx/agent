@@ -313,8 +313,6 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			result, parseError := nginxConfig.Parse(ctx, test.instance)
 			require.NoError(t, parseError)
 
-			// nolint
-			// TODO: Temp fix so this test can pass
 			if diff := cmp.Diff(expectedConfigContext.AccessLogs, result.AccessLogs, protocmp.Transform()); diff != "" {
 				t.Errorf("\n%v", diff)
 			}
