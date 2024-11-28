@@ -509,7 +509,7 @@ func (oc *Collector) updateTcplogReceivers(nginxConfigContext *model.NginxConfig
 						{
 							Type: "add",
 							Fields: map[string]string{
-								"field": "resource.instance.id",
+								"field": "resource[\"instance.id\"]",
 								"value": nginxConfigContext.InstanceID,
 							},
 						},
