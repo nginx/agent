@@ -68,10 +68,16 @@ func GenerateSelfSignedCert(t testing.TB) (keyBytes, certBytes []byte) {
 
 func WriteCertFiles(t *testing.T, location string, cert Cert) string {
 	t.Helper()
-	pemContents := pem.EncodeToMemory(&pem.Block{
-		Type:  cert.Type,
-		Bytes: cert.Contents,
-	})
+	var pemContents []byte
+
+	if strings.HasPrefix(string(cert.Contents), "-----") {
+		pemContents = cert.Contents
+	} else {
+		pemContents = pem.EncodeToMemory(&pem.Block{
+			Type:  cert.Type,
+			Bytes: cert.Contents,
+		})
+	}
 
 	var certFile string
 	if strings.HasSuffix(location, string(os.PathSeparator)) {

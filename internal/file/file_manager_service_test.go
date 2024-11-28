@@ -626,7 +626,15 @@ X/vYrzgKRoKSUWUt1ejKTntrVuaJK4NMxANOTTjIXgxyoV3YcgEmL9KzribCqILi
 p79Nno9d+kovtX5VKsJ5FCcPw9mEATgZDOQ4nLTk/HHG6bwtpubp6Zb7H1AjzBkz
 rQHX6DP4w6IwZY8JB8LS
 -----END CERTIFICATE-----`,
-			expectedSerial: []byte{0x1, 0xe0, 0xf3},
+			expectedSerial: []byte{
+				0x47, 0xe6, 0x6,
+				0x81, 0x11, 0xe1,
+				0x63, 0xa, 0x2d,
+				0x17, 0x20, 0x4e,
+				0xbd, 0x27, 0x35,
+				0x28, 0x3f, 0x5d,
+				0xe3, 0x99,
+			},
 		},
 	}
 
@@ -635,21 +643,23 @@ rQHX6DP4w6IwZY8JB8LS
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var certBytes []byte
+			var certPath string
 
 			if test.certContent == "" {
 				_, certBytes = helpers.GenerateSelfSignedCert(t)
+				certContents := helpers.Cert{
+					Name:     fmt.Sprintf("%s.pem", test.certName),
+					Type:     "CERTIFICATE",
+					Contents: certBytes,
+				}
+				certPath = helpers.WriteCertFiles(t, tempDir, certContents)
 			} else {
-				certBytes = []byte(test.certContent)
+				certPath = fmt.Sprintf("%s%c%s", tempDir, os.PathSeparator, test.certName)
+				err := os.WriteFile(certPath, []byte(test.certContent), 0o600)
+				require.NoError(t, err)
 			}
 
-			certContents := helpers.Cert{
-				Name:     fmt.Sprintf("%s.pem", test.certName),
-				Type:     "CERTIFICATE",
-				Contents: certBytes,
-			}
-			certFile := helpers.WriteCertFiles(t, tempDir, certContents)
-
-			certFileMeta, certFileMetaErr := files.FileMetaWithCertificate(certFile)
+			certFileMeta, certFileMetaErr := files.FileMetaWithCertificate(certPath)
 			require.NoError(t, certFileMetaErr)
 
 			assert.Equal(t, test.expectedSerial, certFileMeta.GetCertificateMeta().GetSerialNumber())
