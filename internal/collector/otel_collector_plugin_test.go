@@ -126,7 +126,10 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 				NginxPlusReceivers: []config.NginxPlusReceiver{
 					{
 						InstanceID: "123",
-						PlusAPI:    fmt.Sprintf("%s/api", nginxPlusMock.URL),
+						PlusAPI: config.APIDetails{
+							URL:      fmt.Sprintf("%s/api", nginxPlusMock.URL),
+							Location: "",
+						},
 					},
 				},
 			},
@@ -544,7 +547,10 @@ func TestCollector_updateExistingNginxPlusReceiver(t *testing.T) {
 				NginxPlusReceivers: []config.NginxPlusReceiver{
 					{
 						InstanceID: "123",
-						PlusAPI:    "http://test.com:8080/api",
+						PlusAPI: config.APIDetails{
+							URL:      "http://test.com:8080/api",
+							Location: "",
+						},
 					},
 				},
 			},
@@ -552,7 +558,10 @@ func TestCollector_updateExistingNginxPlusReceiver(t *testing.T) {
 				NginxPlusReceivers: []config.NginxPlusReceiver{
 					{
 						InstanceID: "123",
-						PlusAPI:    "http://new-test-host:8080/api",
+						PlusAPI: config.APIDetails{
+							URL:      "http://new-test-host:8080/api",
+							Location: "",
+						},
 					},
 				},
 			},
@@ -570,7 +579,10 @@ func TestCollector_updateExistingNginxPlusReceiver(t *testing.T) {
 				NginxPlusReceivers: []config.NginxPlusReceiver{
 					{
 						InstanceID: "123",
-						PlusAPI:    "http://test.com:8080/api",
+						PlusAPI: config.APIDetails{
+							URL:      "http://test.com:8080/api",
+							Location: "",
+						},
 					},
 				},
 			},

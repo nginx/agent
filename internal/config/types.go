@@ -188,8 +188,8 @@ type (
 	}
 
 	NginxPlusReceiver struct {
-		InstanceID string `yaml:"-" mapstructure:"instance_id"`
-		PlusAPI    string `yaml:"-" mapstructure:"plus_api"`
+		InstanceID string     `yaml:"-" mapstructure:"instance_id"`
+		PlusAPI    APIDetails `yaml:"-" mapstructure:"api_details"`
 	}
 
 	HostMetrics struct {

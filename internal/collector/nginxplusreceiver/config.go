@@ -8,6 +8,8 @@ import (
 	"errors"
 	"time"
 
+	"go.opentelemetry.io/collector/component"
+
 	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
 
@@ -18,8 +20,14 @@ const defaultCollectInterval = 10 * time.Second
 
 type Config struct {
 	confighttp.ClientConfig        `mapstructure:",squash"`
+	APIDetails                     APIDetails                    `mapstructure:"api_details"`
 	MetricsBuilderConfig           metadata.MetricsBuilderConfig `mapstructure:",squash"`
 	scraperhelper.ControllerConfig `mapstructure:",squash"`
+}
+
+type APIDetails struct {
+	URL      string `mapstructure:"url"`
+	Location string `mapstructure:"location"`
 }
 
 // Validate checks if the receiver configuration is valid
@@ -33,4 +41,19 @@ func (cfg *Config) Validate() error {
 	}
 
 	return nil
+}
+
+// nolint: ireturn
+func createDefaultConfig() component.Config {
+	cfg := scraperhelper.NewDefaultControllerConfig()
+	cfg.CollectionInterval = defaultCollectInterval
+
+	return &Config{
+		ControllerConfig: cfg,
+		ClientConfig: confighttp.ClientConfig{
+			Endpoint: "http://localhost:80/api",
+			Timeout:  defaultTimeout,
+		},
+		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+	}
 }

@@ -73,7 +73,9 @@ receivers:
 {{- end }}
 {{- range .Receivers.NginxPlusReceivers }}
   nginxplus/{{- .InstanceID -}}:
-    endpoint: "{{- .PlusAPI -}}"
+    api_details:
+        url: "{{- .PlusAPI.URL -}}"
+        location: "{{- .PlusAPI.Location -}}"
     collection_interval: 10s
 {{- end }}
 

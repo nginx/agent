@@ -8,10 +8,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
@@ -30,21 +30,6 @@ func NewFactory() receiver.Factory {
 }
 
 // nolint: ireturn
-func createDefaultConfig() component.Config {
-	cfg := scraperhelper.NewDefaultControllerConfig()
-	cfg.CollectionInterval = defaultCollectInterval
-
-	return &Config{
-		ControllerConfig: cfg,
-		ClientConfig: confighttp.ClientConfig{
-			Endpoint: "http://localhost:80/api",
-			Timeout:  defaultTimeout,
-		},
-		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
-	}
-}
-
-// nolint: ireturn
 func createMetricsReceiver(
 	ctx context.Context,
 	params receiver.Settings,
@@ -56,6 +41,7 @@ func createMetricsReceiver(
 	logger.Info("Creating new NGINX Plus metrics receiver")
 
 	cfg, ok := rConf.(*Config)
+	slog.Info("Config", "", cfg)
 	if !ok {
 		return nil, errors.New("failed to cast to Config in NGINX Plus metrics receiver")
 	}

@@ -362,7 +362,10 @@ func (oc *Collector) checkForNewNginxReceivers(nginxConfigContext *model.NginxCo
 			oc.config.Collector.Receivers.NginxPlusReceivers,
 			config.NginxPlusReceiver{
 				InstanceID: nginxConfigContext.InstanceID,
-				PlusAPI:    nginxConfigContext.PlusAPI.URL,
+				PlusAPI: config.APIDetails{
+					URL:      nginxConfigContext.PlusAPI.URL,
+					Location: nginxConfigContext.PlusAPI.Location,
+				},
 			},
 		)
 
@@ -397,13 +400,13 @@ func (oc *Collector) updateExistingNginxPlusReceiver(
 		if nginxPlusReceiver.InstanceID == nginxConfigContext.InstanceID {
 			nginxReceiverFound = true
 
-			if nginxPlusReceiver.PlusAPI != nginxConfigContext.PlusAPI.URL {
+			if nginxPlusReceiver.PlusAPI.URL != nginxConfigContext.PlusAPI.URL {
 				oc.config.Collector.Receivers.NginxPlusReceivers = append(
 					oc.config.Collector.Receivers.NginxPlusReceivers[:index],
 					oc.config.Collector.Receivers.NginxPlusReceivers[index+1:]...,
 				)
 				if nginxConfigContext.PlusAPI.URL != "" {
-					nginxPlusReceiver.PlusAPI = nginxConfigContext.PlusAPI.URL
+					nginxPlusReceiver.PlusAPI.URL = nginxConfigContext.PlusAPI.URL
 					oc.config.Collector.Receivers.NginxPlusReceivers = append(
 						oc.config.Collector.Receivers.NginxPlusReceivers,
 						nginxPlusReceiver,

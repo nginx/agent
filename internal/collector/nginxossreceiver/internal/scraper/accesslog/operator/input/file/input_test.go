@@ -5,34 +5,50 @@
 
 package file
 
-// TODO:fix this
-//func TestInput_emit(t *testing.T) {
-//	input := Input{
-//		fileConsumer: &fileconsumer.Manager{},
-//		toBody: func(token []byte) any {
-//			grok, err := NewCompiledGrok(accessLogPattern, zap.L())
-//			if err != nil {
-//				t.Errorf("Failed to create new grok, %v", err)
-//				return nil
-//			}
-//			mappedResults := grok.ParseString(string(token))
-//
-//			item, newNginxAccessItemError := newNginxAccessItem(mappedResults)
-//			if newNginxAccessItemError != nil {
-//				t.Errorf("Failed to cast grok map to access item, %v", newNginxAccessItemError)
-//				return nil
-//			}
-//
-//			return item
-//		},
-//	}
-//
-//	token := []byte(accessLogLine)
-//
-//	err := input.emit(context.Background(), token, map[string]any{"attribute1": "test"})
-//	require.NoError(t, err)
-//
-//	// nil token check
-//	err = input.emit(context.Background(), nil, map[string]any{"attribute1": "test"})
-//	require.NoError(t, err)
-//}
+import (
+	"context"
+	"testing"
+
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer/emit"
+
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+)
+
+func TestInput_emit(t *testing.T) {
+	input := Input{
+		fileConsumer: &fileconsumer.Manager{},
+		toBody: func(token []byte) any {
+			grok, err := NewCompiledGrok(accessLogPattern, zap.L())
+			if err != nil {
+				t.Errorf("Failed to create new grok, %v", err)
+				return nil
+			}
+			mappedResults := grok.ParseString(string(token))
+
+			item, newNginxAccessItemError := newNginxAccessItem(mappedResults)
+			if newNginxAccessItemError != nil {
+				t.Errorf("Failed to cast grok map to access item, %v", newNginxAccessItemError)
+				return nil
+			}
+
+			return item
+		},
+	}
+
+	token := []byte(accessLogLine)
+
+	err := input.emit(context.Background(), emit.Token{
+		Body:       token,
+		Attributes: map[string]any{"attribute1": "test"},
+	})
+	require.NoError(t, err)
+
+	// nil token check
+	err = input.emit(context.Background(), emit.Token{
+		Body:       nil,
+		Attributes: map[string]any{"attribute1": "test"},
+	})
+	require.NoError(t, err)
+}

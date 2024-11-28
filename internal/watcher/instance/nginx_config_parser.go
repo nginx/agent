@@ -495,19 +495,18 @@ func (ncp *NginxConfigParser) pingAPIEndpoint(ctx context.Context, statusAPIDeta
 		defer resp.Body.Close()
 
 		return strings.Contains(body, "Active connections") && strings.Contains(body, "server accepts handled requests")
-	} else {
-		// Expecting API to return the API versions in an array of positive integers
-		// subset example: [ ... 6,7,8,9 ...]
-		var responseBody []int
-		err = json.Unmarshal(bodyBytes, &responseBody)
-		defer resp.Body.Close()
-		if err != nil {
-			slog.DebugContext(ctx, "Unable to unmarshal NGINX Plus API response body", "error", err)
-			return false
-		}
-
-		return true
 	}
+	// Expecting API to return the API versions in an array of positive integers
+	// subset example: [ ... 6,7,8,9 ...]
+	var responseBody []int
+	err = json.Unmarshal(bodyBytes, &responseBody)
+	defer resp.Body.Close()
+	if err != nil {
+		slog.DebugContext(ctx, "Unable to unmarshal NGINX Plus API response body", "error", err)
+		return false
+	}
+
+	return true
 }
 
 // nolint: revive

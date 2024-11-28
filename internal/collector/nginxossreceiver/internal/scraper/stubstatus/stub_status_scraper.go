@@ -7,7 +7,6 @@ package stubstatus
 
 import (
 	"context"
-	"log/slog"
 	"net"
 	"net/http"
 	"strings"
@@ -59,13 +58,11 @@ func (s *NginxStubStatusScraper) ID() component.ID {
 }
 
 func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) error {
-	s.cfg.Endpoint = strings.TrimPrefix(s.cfg.APIDetails.Location, "unix:")
-
 	httpClient := http.DefaultClient
 	if strings.HasPrefix(s.cfg.APIDetails.Location, "unix:") {
 		httpClient.Transport = &http.Transport{
 			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-				return net.Dial("unix", s.cfg.Endpoint)
+				return net.Dial("unix", strings.TrimPrefix(s.cfg.APIDetails.Location, "unix:"))
 			},
 		}
 	}
@@ -84,7 +81,6 @@ func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error
 		s.client = client.NewNginxClient(s.httpClient, s.cfg.APIDetails.URL)
 	}
 
-	slog.Info("API Details", "", s.cfg.APIDetails)
 	stats, err := s.client.GetStubStats()
 	if err != nil {
 		s.settings.Logger.Error("fetch nginx stats", zap.Error(err))

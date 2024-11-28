@@ -18,8 +18,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
-	"go.opentelemetry.io/collector/config/confighttp"
-	"go.opentelemetry.io/collector/config/configtls"
 	"go.opentelemetry.io/collector/receiver/receivertest"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden"
@@ -33,7 +31,7 @@ func TestStubStatusScraper(t *testing.T) {
 	defer nginxMock.Close()
 	cfg, ok := config.CreateDefaultConfig().(*config.Config)
 	assert.True(t, ok)
-	cfg.Endpoint = nginxMock.URL + "/status"
+	cfg.APIDetails.URL = nginxMock.URL + "/status"
 	require.NoError(t, component.ValidateConfig(cfg))
 
 	stubStatusScraper := NewScraper(receivertest.NewNopSettings(), cfg)
@@ -68,8 +66,9 @@ func TestStubStatusScraperError(t *testing.T) {
 	}))
 	t.Run("404", func(t *testing.T) {
 		sc := NewScraper(receivertest.NewNopSettings(), &config.Config{
-			ClientConfig: confighttp.ClientConfig{
-				Endpoint: nginxMock.URL + "/badpath",
+			APIDetails: config.APIDetails{
+				URL:      nginxMock.URL + "/badpath",
+				Location: "",
 			},
 		})
 		err := sc.Start(context.Background(), componenttest.NewNopHost())
@@ -80,8 +79,9 @@ func TestStubStatusScraperError(t *testing.T) {
 
 	t.Run("parse error", func(t *testing.T) {
 		sc := NewScraper(receivertest.NewNopSettings(), &config.Config{
-			ClientConfig: confighttp.ClientConfig{
-				Endpoint: nginxMock.URL + "/status",
+			APIDetails: config.APIDetails{
+				URL:      nginxMock.URL + "/status",
+				Location: "",
 			},
 		})
 		err := sc.Start(context.Background(), componenttest.NewNopHost())
@@ -90,21 +90,6 @@ func TestStubStatusScraperError(t *testing.T) {
 		require.ErrorContains(t, err, "Bad status page")
 	})
 	nginxMock.Close()
-}
-
-func TestScraperFailedStart(t *testing.T) {
-	sc := NewScraper(receivertest.NewNopSettings(), &config.Config{
-		ClientConfig: confighttp.ClientConfig{
-			Endpoint: "localhost:8080",
-			TLSSetting: configtls.ClientConfig{
-				Config: configtls.Config{
-					CAFile: "/non/existent",
-				},
-			},
-		},
-	})
-	err := sc.Start(context.Background(), componenttest.NewNopHost())
-	require.Error(t, err)
 }
 
 func newMockServer(t *testing.T) *httptest.Server {
