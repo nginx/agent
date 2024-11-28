@@ -7,7 +7,6 @@ package files
 
 import (
 	"crypto/x509"
-	_ "embed"
 	"net"
 	"os"
 	"testing"
