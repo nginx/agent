@@ -466,10 +466,14 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 }
 
 func (oc *Collector) updateTcplogReceivers(nginxConfigContext *model.NginxConfigContext) bool {
-	oc.config.Collector.Receivers.TcplogReceivers = make([]config.TcplogReceiver, 0)
-
+	newTcplogReceiverAdded := false
 	if nginxConfigContext.NAPSysLogServers != nil {
+	napLoop:
 		for _, napSysLogServer := range nginxConfigContext.NAPSysLogServers {
+			if oc.doesTcplogReceiverAlreadyExist(napSysLogServer) {
+				continue napLoop
+			}
+
 			oc.config.Collector.Receivers.TcplogReceivers = append(
 				oc.config.Collector.Receivers.TcplogReceivers,
 				config.TcplogReceiver{
@@ -512,10 +516,22 @@ func (oc *Collector) updateTcplogReceivers(nginxConfigContext *model.NginxConfig
 					},
 				},
 			)
+
+			newTcplogReceiverAdded = true
 		}
 	}
 
-	return len(oc.config.Collector.Receivers.TcplogReceivers) > 0
+	return newTcplogReceiverAdded
+}
+
+func (oc *Collector) doesTcplogReceiverAlreadyExist(listenAddress string) bool {
+	for _, tcplogReceiver := range oc.config.Collector.Receivers.TcplogReceivers {
+		if listenAddress == tcplogReceiver.ListenAddress {
+			return true
+		}
+	}
+
+	return false
 }
 
 // nolint: revive

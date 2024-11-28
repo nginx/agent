@@ -189,7 +189,6 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 						PlusAPI:    "",
 					},
 				},
-				TcplogReceivers: make([]config.TcplogReceiver, 0),
 			},
 		},
 		{
@@ -222,7 +221,6 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 						},
 					},
 				},
-				TcplogReceivers: make([]config.TcplogReceiver, 0),
 			},
 		},
 	}
@@ -650,6 +648,44 @@ func TestCollector_updateResourceAttributes(t *testing.T) {
 			assert.Equal(tt, test.expectedReloadRequired, reloadRequired)
 		})
 	}
+}
+
+func TestCollector_updateTcplogReceivers(t *testing.T) {
+	conf := types.OTelConfig(t)
+	conf.Collector.Log.Path = ""
+	conf.Collector.Processors.Batch = nil
+	conf.Collector.Processors.Attribute = nil
+	conf.Collector.Processors.Resource = nil
+
+	collector, err := New(conf)
+	require.NoError(t, err)
+
+	nginxConfigContext := &model.NginxConfigContext{
+		NAPSysLogServers: []string{
+			"localhost:151",
+		},
+	}
+
+	assert.Empty(t, conf.Collector.Receivers.TcplogReceivers)
+
+	t.Run("Test 1: New TcplogReceiver added", func(tt *testing.T) {
+		tcplogReceiverAdded := collector.updateTcplogReceivers(nginxConfigContext)
+
+		assert.True(tt, tcplogReceiverAdded)
+		assert.Len(tt, conf.Collector.Receivers.TcplogReceivers, 1)
+		assert.Equal(tt, "localhost:151", conf.Collector.Receivers.TcplogReceivers[0].ListenAddress)
+		assert.Len(tt, conf.Collector.Receivers.TcplogReceivers[0].Operators, 5)
+	})
+
+	// Calling updateTcplogReceivers shouldn't update the TcplogReceivers slice
+	// since there is already a receiver with the same ListenAddress
+	t.Run("Test 2: TcplogReceiver already exists", func(tt *testing.T) {
+		tcplogReceiverAdded := collector.updateTcplogReceivers(nginxConfigContext)
+		assert.False(t, tcplogReceiverAdded)
+		assert.Len(t, conf.Collector.Receivers.TcplogReceivers, 1)
+		assert.Equal(t, "localhost:151", conf.Collector.Receivers.TcplogReceivers[0].ListenAddress)
+		assert.Len(t, conf.Collector.Receivers.TcplogReceivers[0].Operators, 5)
+	})
 }
 
 func createFakeCollector() *typesfakes.FakeCollectorInterface {
