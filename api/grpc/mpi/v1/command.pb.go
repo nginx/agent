@@ -1746,8 +1746,6 @@ type NGINXPlusRuntimeInfo struct {
 	DynamicModules []string `protobuf:"bytes,5,rep,name=dynamic_modules,json=dynamicModules,proto3" json:"dynamic_modules,omitempty"`
 	// the plus API location
 	PlusApi string `protobuf:"bytes,6,opt,name=plus_api,json=plusApi,proto3" json:"plus_api,omitempty"`
-	// a list of App Protect directives
-	AppProtectDirectives []string `protobuf:"bytes,7,rep,name=app_protect_directives,json=appProtectDirectives,proto3" json:"app_protect_directives,omitempty"`
 }
 
 func (x *NGINXPlusRuntimeInfo) Reset() {

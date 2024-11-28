@@ -24,8 +24,10 @@ import (
 )
 
 const (
-	maxTimeToWaitForShutdown = 30 * time.Second
-	filePermission           = 0o600
+	maxTimeToWaitForShutdown      = 30 * time.Second
+	filePermission                = 0o600
+	timestampConversionExpression = `EXPR(split(body, ">")[0] + ">" + ` +
+		`date(split(split(body, ">")[1], " ")[0]).Format("Jan 02 15:04:05") + " " + split(body, " ", 2)[1])`
 )
 
 type (
@@ -237,7 +239,7 @@ func (oc *Collector) handleNginxConfigUpdate(ctx context.Context, msg *bus.Messa
 		return
 	}
 
-	reloadCollector := oc.checkForNewNginxReceivers(nginxConfigContext)
+	reloadCollector := oc.checkForNewReceivers(nginxConfigContext)
 
 	if reloadCollector {
 		slog.InfoContext(ctx, "Reloading OTel collector config")
@@ -362,7 +364,7 @@ func (oc *Collector) restartCollector(ctx context.Context) {
 	}
 }
 
-func (oc *Collector) checkForNewNginxReceivers(nginxConfigContext *model.NginxConfigContext) bool {
+func (oc *Collector) checkForNewReceivers(nginxConfigContext *model.NginxConfigContext) bool {
 	nginxReceiverFound, reloadCollector := oc.updateExistingNginxPlusReceiver(nginxConfigContext)
 
 	if !nginxReceiverFound && nginxConfigContext.PlusAPI != "" {
@@ -373,19 +375,6 @@ func (oc *Collector) checkForNewNginxReceivers(nginxConfigContext *model.NginxCo
 				PlusAPI:    nginxConfigContext.PlusAPI,
 			},
 		)
-
-		if nginxConfigContext.Syslog != nil {
-			oc.config.Collector.Receivers.SyslogReceivers = append(
-				oc.config.Collector.Receivers.SyslogReceivers,
-				config.SyslogReceiver{
-					InstanceID: nginxConfigContext.InstanceID,
-					Server:     nginxConfigContext.Syslog,
-					Protocol:   "rfc3164", // default value, need to get from the agent conf
-				},
-			)
-		}
-
-		//	slog.Error("hello", oc.config.Collector.Receivers)
 
 		reloadCollector = true
 	} else if nginxConfigContext.PlusAPI == "" {
@@ -405,10 +394,14 @@ func (oc *Collector) checkForNewNginxReceivers(nginxConfigContext *model.NginxCo
 		}
 	}
 
+	tcplogReceiversFound := oc.updateTcplogReceivers(nginxConfigContext)
+	if tcplogReceiversFound {
+		reloadCollector = true
+	}
+
 	return reloadCollector
 }
 
-// Todo: consider update scenario for new syslogreceivers
 func (oc *Collector) updateExistingNginxPlusReceiver(
 	nginxConfigContext *model.NginxConfigContext,
 ) (nginxReceiverFound, reloadCollector bool) {
@@ -470,6 +463,52 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 	}
 
 	return nginxReceiverFound, reloadCollector
+}
+
+func (oc *Collector) updateTcplogReceivers(nginxConfigContext *model.NginxConfigContext) bool {
+	oc.config.Collector.Receivers.TcplogReceivers = make([]config.TcplogReceiver, 0)
+
+	if nginxConfigContext.NAPSysLogServers != nil {
+		for _, napSysLogServer := range nginxConfigContext.NAPSysLogServers {
+			oc.config.Collector.Receivers.TcplogReceivers = append(
+				oc.config.Collector.Receivers.TcplogReceivers,
+				config.TcplogReceiver{
+					ListenAddress: napSysLogServer,
+					Operators: []config.Operator{
+						{
+							Type: "add",
+							Fields: map[string]string{
+								"field": "body",
+								"value": timestampConversionExpression,
+							},
+						},
+						{
+							Type: "syslog_parser",
+							Fields: map[string]string{
+								"protocol": "rfc3164",
+							},
+						},
+						{
+							Type: "key_value_parser",
+							Fields: map[string]string{
+								"parse_from":     "attributes.message",
+								"parse_to":       "body",
+								"pair_delimiter": "\",\"",
+							},
+						},
+						{
+							Type: "remove",
+							Fields: map[string]string{
+								"field": "attributes.message",
+							},
+						},
+					},
+				},
+			)
+		}
+	}
+
+	return len(oc.config.Collector.Receivers.TcplogReceivers) > 0
 }
 
 // nolint: revive

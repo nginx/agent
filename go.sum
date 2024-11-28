@@ -693,6 +693,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusrec
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.108.0/go.mod h1:VUCVWsYWUlxut3MQbH3ADOz7bQBrtC3NlzJl9PQpKAk=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/syslogreceiver v0.108.0 h1:FyiVuycmSmI4pg5PKvRjpUT0qaBVdFW9AeX1giolQG8=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/syslogreceiver v0.108.0/go.mod h1:bmgqS6N2W31oEVg82zAkCJxmMrVamkODmZWr9qpCdK8=
+github.com/open-telemetry/opentelemetry-collector-contrib/receiver/tcplogreceiver v0.108.0 h1:zm8uZlzIgK/QajEte0ccj9LZhgSAakhy0P+WPDo5DVc=
+github.com/open-telemetry/opentelemetry-collector-contrib/receiver/tcplogreceiver v0.108.0/go.mod h1:KQshgnBLGVFaRtmEiCIEzYa+DFHTzfDxRjzMx5KIH2Y=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver v0.108.0 h1:fR/TiCF1jkTSLIpvxJ8ycBYx3wAIMo5sOjyna28qNPc=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver v0.108.0/go.mod h1:VdIAkr+2oTSwkl+CQ9UW3ZiV0TXobqOznSV5I5CB7Rc=
 github.com/open-telemetry/opentelemetry-collector-contrib/testbed v0.108.0 h1:rZlnwqE9x/MX+13+tgqx5tizLoRpJ4m3qD6ww1hdf5k=

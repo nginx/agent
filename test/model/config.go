@@ -14,13 +14,14 @@ func GetConfigContext() *model.NginxConfigContext {
 	}
 }
 
+// nolint: revive
 func GetConfigContextWithNames(
 	accessLogName,
 	combinedAccessLogName,
 	ltsvAccessLogName,
 	errorLogName string,
 	instanceID string,
-	syslog []string,
+	syslogServers []string,
 ) *model.NginxConfigContext {
 	return &model.NginxConfigContext{
 		AccessLogs: []*model.AccessLog{
@@ -52,7 +53,7 @@ func GetConfigContextWithNames(
 				Permissions: "0600",
 			},
 		},
-		InstanceID: instanceID,
-		Syslog:     syslog,
+		InstanceID:       instanceID,
+		NAPSysLogServers: syslogServers,
 	}
 }

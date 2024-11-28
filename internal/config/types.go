@@ -164,7 +164,7 @@ type (
 		OtlpReceivers      []OtlpReceiver      `yaml:"-" mapstructure:"otlp_receivers"`
 		NginxReceivers     []NginxReceiver     `yaml:"-" mapstructure:"nginx_receivers"`
 		NginxPlusReceivers []NginxPlusReceiver `yaml:"-" mapstructure:"nginx_plus_receivers"`
-		SyslogReceivers    []SyslogReceiver    `yaml:"-" mapstructure:"syslog_receiver"`
+		TcplogReceivers    []TcplogReceiver    `yaml:"-" mapstructure:"tcplog_receivers"`
 	}
 
 	OtlpReceiver struct {
@@ -173,10 +173,17 @@ type (
 		OtlpTLSConfig *OtlpTLSConfig `yaml:"-" mapstructure:"tls"`
 	}
 
-	SyslogReceiver struct {
-		InstanceID string   `yaml:"-" mapstructure:"instance_id"`
-		Server     []string `yaml:"-" mapstructure:"server"`
-		Protocol   string   `yaml:"-" mapstructure:"protocol"`
+	TcplogReceiver struct {
+		ListenAddress string     `yaml:"-" mapstructure:"listen_address"`
+		Operators     []Operator `yaml:"-" mapstructure:"operators"`
+	}
+
+	// There are many types of operators with different field names so we use a generic map to store the fields.
+	// See here for more info:
+	// https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/stanza/docs/operators/README.md
+	Operator struct {
+		Fields map[string]string `yaml:"-" mapstructure:"fields"`
+		Type   string            `yaml:"-" mapstructure:"type"`
 	}
 
 	NginxReceiver struct {

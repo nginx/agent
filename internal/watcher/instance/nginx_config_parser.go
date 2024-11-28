@@ -37,7 +37,6 @@ const (
 	stubStatusAPIDirective            = "stub_status"
 	apiFormat                         = "http://%s%s"
 	locationDirective                 = "location"
-	napDirective                      = "app_protect_security_log"
 )
 
 type (
@@ -92,6 +91,8 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 	instance *mpi.Instance,
 	payload *crossplane.Payload,
 ) (*model.NginxConfigContext, error) {
+	napSyslogServersFound := make(map[string]bool)
+
 	nginxConfigContext := &model.NginxConfigContext{
 		InstanceID: instance.GetInstanceMeta().GetInstanceId(),
 	}
@@ -100,7 +101,6 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 
 	for _, conf := range payload.Config {
 		formatMap := make(map[string]string)
-		syslogMap := make(map[string]bool)
 		err := ncp.crossplaneConfigTraverse(ctx, &conf,
 			func(ctx context.Context, parent, directive *crossplane.Directive) error {
 				switch directive.Directive {
@@ -130,14 +130,18 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 						matches := re.FindStringSubmatch(syslogArg)
 						if len(matches) > 1 {
 							syslogServer := matches[1]
-							if !syslogMap[syslogServer] {
-								nginxConfigContext.Syslog = append(nginxConfigContext.Syslog, syslogServer)
-								syslogMap[syslogServer] = true
+							if !napSyslogServersFound[syslogServer] {
+								nginxConfigContext.NAPSysLogServers = append(
+									nginxConfigContext.NAPSysLogServers,
+									syslogServer,
+								)
+								napSyslogServersFound[syslogServer] = true
+								slog.DebugContext(ctx, "Found NAP syslog server", "address", syslogServer)
 							}
-							slog.InfoContext(ctx, "Captured syslog server", "syslog_server", syslogServer)
 						}
 					}
 				}
+
 				return nil
 			},
 		)

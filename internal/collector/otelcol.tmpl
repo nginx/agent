@@ -1,13 +1,4 @@
 receivers:
-{{- range $index, $otlpReceiver := .Receivers.SyslogReceivers }}
-  {{- $instanceID := .InstanceID }}
-  {{- range $serverIndex, $server := .Server }}
-  syslog/{{$index}}{{$serverIndex}}:
-    tcp:
-      listen_address: "{{ $server }}"
-    protocol: rfc3164
-  {{- end }}
-{{- end }}
 {{- if ne .Receivers.HostMetrics nil }}
   hostmetrics:
     collection_interval: {{ .Receivers.HostMetrics.CollectionInterval }}
@@ -82,6 +73,17 @@ receivers:
   nginxplus/{{- .InstanceID -}}:
     endpoint: "{{- .PlusAPI -}}"
     collection_interval: 10s
+{{- end }}
+{{- range $index, $tcplogReceiver := .Receivers.TcplogReceivers }}
+  tcplog/{{$index}}:
+    listen_address: "{{- .ListenAddress -}}"
+    operators:
+{{- range $index, $operator := .Operators }}
+      - type: {{.Type}}
+{{- range $key, $value := .Fields }}
+        {{$key}}: {{$value}}
+{{- end }}
+{{- end }}
 {{- end }}
 
 processors:
@@ -244,11 +246,11 @@ service:
         {{- if ne .Exporters.Debug nil }}
         - debug
         {{- end  }}
-    {{- if and (ne .Receivers.SyslogReceivers nil) (ne .Exporters.OtlpExporters nil) }}
+    {{- if ne .Receivers.TcplogReceivers nil }}
     logs:
       receivers:
-        {{- range .Receivers.SyslogReceivers }}
-        - syslog/{{- .InstanceID -}}
+        {{- range $index, $tcplogReceiver := .Receivers.TcplogReceivers }}
+        - tcplog/{{$index}}
         {{- end }}
       processors:
         {{- if ne .Processors.Batch nil }}

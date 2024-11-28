@@ -178,18 +178,13 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 			receivers: config.Receivers{
 				HostMetrics:   nil,
 				OtlpReceivers: nil,
-				SyslogReceivers: []config.SyslogReceiver{
-					{
-						Server:     []string{"127.0.0.1:1515"},
-						InstanceID: "00",
-						Protocol:   "rfc3164"},
-				},
 				NginxPlusReceivers: []config.NginxPlusReceiver{
 					{
 						InstanceID: "123",
 						PlusAPI:    "",
 					},
 				},
+				TcplogReceivers: make([]config.TcplogReceiver, 0),
 			},
 		},
 		{
@@ -210,12 +205,6 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 			receivers: config.Receivers{
 				HostMetrics:   nil,
 				OtlpReceivers: nil,
-				SyslogReceivers: []config.SyslogReceiver{
-					{
-						Server:     []string{"127.0.0.1:1515"},
-						InstanceID: "00",
-						Protocol:   "rfc3164"},
-				},
 				NginxReceivers: []config.NginxReceiver{
 					{
 						InstanceID: "123",
@@ -228,6 +217,7 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 						},
 					},
 				},
+				TcplogReceivers: make([]config.TcplogReceiver, 0),
 			},
 		},
 	}

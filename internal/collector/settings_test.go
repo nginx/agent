@@ -100,6 +100,27 @@ func TestTemplateWrite(t *testing.T) {
 		},
 	})
 
+	cfg.Collector.Receivers.TcplogReceivers = []config.TcplogReceiver{
+		{
+			ListenAddress: "localhost:151",
+			Operators: []config.Operator{
+				{
+					Type: "add",
+					Fields: map[string]string{
+						"field": "body",
+						"value": `EXPR(split(body, ",")[0])`,
+					},
+				},
+				{
+					Type: "remove",
+					Fields: map[string]string{
+						"field": "attributes.message",
+					},
+				},
+			},
+		},
+	}
+
 	cfg.Collector.Extensions.HeadersSetter = &config.HeadersSetter{
 		Headers: []config.Header{
 			{

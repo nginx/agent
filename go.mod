@@ -45,6 +45,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.108.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/tcplogreceiver v0.108.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/testbed v0.108.0
 	github.com/shirou/gopsutil/v4 v4.24.7
 	github.com/spf13/pflag v1.0.5

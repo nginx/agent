@@ -12,7 +12,6 @@ import (
 )
 
 const (
-	//Todo: Add default Protocol for nap
 	DefGracefulShutdownPeriod      = 5 * time.Second
 	DefNginxReloadMonitoringPeriod = 10 * time.Second
 	DefTreatErrorsAsWarnings       = false
@@ -64,14 +63,6 @@ const (
 	DefCollectorExtensionsHealthTLSCAPath       = ""
 	DefCollectorExtensionsHealthTLSSkipVerify   = false
 	DefCollectorExtensionsHealthTLServerNameKey = ""
-
-	DefCollectorPrometheusExporterServerHost      = ""
-	DefCollectorPrometheusExporterServerPort      = 0
-	DefCollectorPrometheusExporterTLSCertPath     = ""
-	DefCollectorPrometheusExporterTLSKeyPath      = ""
-	DefCollectorPrometheusExporterTLSCAPath       = ""
-	DefCollectorPrometheusExporterTLSSkipVerify   = false
-	DefCollectorPrometheusExporterTLServerNameKey = ""
 )
 
 func DefaultFeatures() []string {

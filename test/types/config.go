@@ -75,13 +75,6 @@ func AgentConfig() *config.Config {
 						},
 					},
 				},
-				SyslogReceivers: []config.SyslogReceiver{
-					{
-						Server:     []string{"127.0.0.1:1515"},
-						InstanceID: "00",
-						Protocol:   "rfc3164",
-					},
-				},
 				HostMetrics: &config.HostMetrics{
 					CollectionInterval: time.Minute,
 					InitialDelay:       time.Second,

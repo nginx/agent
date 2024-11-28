@@ -32,7 +32,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/syslogreceiver"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/tcplogreceiver"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/connector"
 	"go.opentelemetry.io/collector/exporter"
@@ -111,7 +111,7 @@ func createReceiverFactories() (map[component.Type]receiver.Factory, error) {
 		hostmetricsreceiver.NewFactory(),
 		nginxreceiver.NewFactory(),
 		nginxplusreceiver.NewFactory(),
-		syslogreceiver.NewFactory(),
+		tcplogreceiver.NewFactory(),
 	}
 
 	return receiver.MakeFactoryMap(receiverList...)
