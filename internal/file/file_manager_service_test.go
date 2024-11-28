@@ -389,7 +389,6 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 	addAction := mpi.File_FILE_ACTION_ADD
 	updateAction := mpi.File_FILE_ACTION_UPDATE
 	deleteAction := mpi.File_FILE_ACTION_DELETE
-	// unchangedAction := mpi.File_FILE_ACTION_UNCHANGED
 
 	tempDir := os.TempDir()
 
