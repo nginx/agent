@@ -31,7 +31,7 @@ const (
 	permission          = 0o600
 	serialNumber        = 123123
 	years, months, days = 5, 0, 0
-	bits                = 2048
+	bits                = 4096
 )
 
 func GenerateSelfSignedCert(t testing.TB) (keyBytes, certBytes []byte) {
@@ -69,8 +69,8 @@ func GenerateSelfSignedCert(t testing.TB) (keyBytes, certBytes []byte) {
 func WriteCertFiles(t *testing.T, location string, cert Cert) string {
 	t.Helper()
 	pemContents := pem.EncodeToMemory(&pem.Block{
-			Type:  cert.Type,
-			Bytes: cert.Contents,
+		Type:  cert.Type,
+		Bytes: cert.Contents,
 	})
 
 	var certFile string
