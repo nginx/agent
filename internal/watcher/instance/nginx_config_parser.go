@@ -95,6 +95,14 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 ) (*model.NginxConfigContext, error) {
 	nginxConfigContext := &model.NginxConfigContext{
 		InstanceID: instance.GetInstanceMeta().GetInstanceId(),
+		PlusAPI: &model.APIDetails{
+			URL:      "",
+			Location: "",
+		},
+		StubStatus: &model.APIDetails{
+			URL:      "",
+			Location: "",
+		},
 	}
 
 	rootDir := filepath.Dir(instance.GetInstanceRuntime().GetConfigPath())
@@ -132,11 +140,15 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 			return nginxConfigContext, fmt.Errorf("traverse nginx config: %w", err)
 		}
 
-		nginxConfigContext.StubStatus = ncp.crossplaneConfigTraverseAPIDetails(ctx, &conf, ncp.apiCallback,
-			stubStatusAPIDirective)
+		stubStatus := ncp.crossplaneConfigTraverseAPIDetails(ctx, &conf, ncp.apiCallback, stubStatusAPIDirective)
+		if stubStatus.URL != "" {
+			nginxConfigContext.StubStatus = stubStatus
+		}
 
-		nginxConfigContext.PlusAPI = ncp.crossplaneConfigTraverseAPIDetails(ctx, &conf, ncp.apiCallback,
-			plusAPIDirective)
+		plusAPI := ncp.crossplaneConfigTraverseAPIDetails(ctx, &conf, ncp.apiCallback, plusAPIDirective)
+		if plusAPI.URL != "" {
+			nginxConfigContext.PlusAPI = plusAPI
+		}
 
 		fileMeta, err := files.FileMeta(conf.File)
 		if err != nil {
@@ -442,7 +454,7 @@ func (ncp *NginxConfigParser) pingAPIEndpoint(ctx context.Context, statusAPIDeta
 	statusAPI := statusAPIDetail.URL
 
 	if strings.HasPrefix(location, "unix:") {
-		httpClient = SocketClient(strings.TrimPrefix(location, "unix:"))
+		httpClient = ncp.SocketClient(strings.TrimPrefix(location, "unix:"))
 	} else {
 		httpClient = http.Client{Timeout: ncp.agentConfig.Client.Timeout}
 	}
@@ -662,8 +674,9 @@ func (ncp *NginxConfigParser) isPort(value string) bool {
 	return err == nil && port >= 1 && port <= 65535
 }
 
-func SocketClient(socketPath string) http.Client {
+func (ncp *NginxConfigParser) SocketClient(socketPath string) http.Client {
 	return http.Client{
+		Timeout: ncp.agentConfig.Client.Timeout,
 		Transport: &http.Transport{
 			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
 				return net.Dial("unix", socketPath)

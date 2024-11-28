@@ -579,8 +579,6 @@ github.com/nginxinc/nginx-prometheus-exporter v1.3.0/go.mod h1:hXoH+X6aIKSyQuO6Q
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nxadm/tail v1.4.11 h1:8feyoE3OzPrcshW5/MJ4sGESc5cqmGkGCWlco4l0bqY=
 github.com/nxadm/tail v1.4.11/go.mod h1:OTaG3NK980DZzxbRq6lEuzgU+mug70nY11sMd4JXXHc=
-github.com/oliveromahony/opentelemetry-collector/config/confighttp v0.0.0-20241125101759-eb9c32dc5800 h1:Usz3NDSBB6OKRinQPoaDBHdtcGLMcWkOPL6EyyhbVaw=
-github.com/oliveromahony/opentelemetry-collector/config/confighttp v0.0.0-20241125101759-eb9c32dc5800/go.mod h1:/Yro17tfIb73nVU/0jp19yOuP1LUxA4DB4FGB+atsrk=
 github.com/onsi/ginkgo v0.0.0-20170829012221-11459a886d9c/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.11.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
@@ -834,8 +832,8 @@ github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.7.2/go.mod h1:R6va5+xMeoiuVRoj+gSkQ7d3FALtqAAGI1FQKckRals=
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
-github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
-github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
+github.com/stretchr/testify v1.10.0 h1:Xv5erBjTwe/5IxqUQTdXv5kgmIvbHo3QQyRwhJsOfJA=
+github.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/subosito/gotenv v1.6.0 h1:9NlTDc1FTs4qu0DDq7AEtTPNw6SVm7uBMsUCUjABIf8=
 github.com/subosito/gotenv v1.6.0/go.mod h1:Dk4QP5c2W3ibzajGcXpNraDfq2IrhjMIvMSWPKKo0FU=
 github.com/testcontainers/testcontainers-go v0.34.0 h1:5fbgF0vIN5u+nD3IWabQwRybuB4GY8G2HHgCkbMzMHo=
@@ -890,6 +888,8 @@ go.opentelemetry.io/collector/config/configcompression v1.20.0 h1:H/mvz7J/5z+O74
 go.opentelemetry.io/collector/config/configcompression v1.20.0/go.mod h1:pnxkFCLUZLKWzYJvfSwZnPrnm0twX14CYj2ADth5xiU=
 go.opentelemetry.io/collector/config/configgrpc v0.114.0 h1:3kGI9CljNtzClF+9sg7NWZ5qUoy4qZvGxv9q3phDn7k=
 go.opentelemetry.io/collector/config/configgrpc v0.114.0/go.mod h1:IHSyqSdjPXW34aif/8BhNlXxRcIVV6026jVi0/+ituY=
+go.opentelemetry.io/collector/config/confighttp v0.114.0 h1:DjGsBvVm+mGK3IpJBaXianWhwcxEC1fF33cpuC1LY/I=
+go.opentelemetry.io/collector/config/confighttp v0.114.0/go.mod h1:nrlNLxOZ+4JQaV9j0TiqQV7LOHhrRivPrT8nQRHED3Q=
 go.opentelemetry.io/collector/config/confignet v1.20.0 h1:LrM6AuiY8N/woTP4SWhL2V0562JXwJs9MRNFZJFLtRY=
 go.opentelemetry.io/collector/config/confignet v1.20.0/go.mod h1:o3v4joAEjvLwntqexg5ixMqRrU1+Vst+jWuCUaBNgOg=
 go.opentelemetry.io/collector/config/configopaque v1.20.0 h1:2I48zKiyyyYqjm7y0B9OLp24ku2ZSX3nCHG0r5FdWOQ=

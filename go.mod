@@ -48,7 +48,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/testbed v0.114.0
 	github.com/shirou/gopsutil/v4 v4.24.10
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/testcontainers/testcontainers-go v0.34.0
 	github.com/trivago/grok v1.0.0
 	go.opentelemetry.io/collector/component v0.114.0
@@ -346,8 +346,6 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
-
-replace go.opentelemetry.io/collector/config/confighttp v0.114.0 => github.com/oliveromahony/opentelemetry-collector/config/confighttp v0.0.0-20241125101759-eb9c32dc5800
 
 require (
 	github.com/gin-gonic/gin v1.9.1
