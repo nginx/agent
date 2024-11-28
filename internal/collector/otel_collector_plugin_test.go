@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -27,6 +28,8 @@ import (
 )
 
 func TestCollector_New(t *testing.T) {
+	tmpDir := t.TempDir()
+
 	tests := []struct {
 		config        *config.Config
 		expectedError error
@@ -57,7 +60,7 @@ func TestCollector_New(t *testing.T) {
 			name: "Successful initialization",
 			config: &config.Config{
 				Collector: &config.Collector{
-					Log: &config.Log{Path: "/tmp/test.log"},
+					Log: &config.Log{Path: filepath.Join(tmpDir, "test.log")},
 				},
 			},
 			expectedError: nil,
@@ -80,6 +83,8 @@ func TestCollector_New(t *testing.T) {
 }
 
 func TestCollector_Init(t *testing.T) {
+	tmpDir := t.TempDir()
+
 	tests := []struct {
 		name          string
 		expectedLog   string
@@ -105,7 +110,7 @@ func TestCollector_Init(t *testing.T) {
 			logBuf := &bytes.Buffer{}
 			stub.StubLoggerWith(logBuf)
 
-			conf.Collector.Log = &config.Log{Path: "/tmp/test.log"}
+			conf.Collector.Log = &config.Log{Path: filepath.Join(tmpDir, "test.log")}
 
 			if tt.expectedError {
 				conf.Collector.Receivers = config.Receivers{}

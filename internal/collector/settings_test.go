@@ -49,8 +49,10 @@ func TestConfigProviderSettings(t *testing.T) {
 }
 
 func TestTemplateWrite(t *testing.T) {
+	tmpDir := t.TempDir()
+
 	cfg := types.AgentConfig()
-	actualConfPath := filepath.Join("/tmp/", "nginx-agent-otelcol-test.yaml")
+	actualConfPath := filepath.Join(tmpDir, "nginx-agent-otelcol-test.yaml")
 	cfg.Collector.ConfigPath = actualConfPath
 
 	cfg.Collector.Exporters.PrometheusExporter = &config.PrometheusExporter{
