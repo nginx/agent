@@ -55,7 +55,6 @@ require (
 	go.opentelemetry.io/collector/component/componenttest v0.114.0
 	go.opentelemetry.io/collector/config/confighttp v0.114.0
 	go.opentelemetry.io/collector/config/configtelemetry v0.114.0
-	go.opentelemetry.io/collector/config/configtls v1.20.0
 	go.opentelemetry.io/collector/confmap v1.20.0
 	go.opentelemetry.io/collector/confmap/provider/envprovider v1.20.0
 	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.20.0
@@ -274,6 +273,7 @@ require (
 	go.opentelemetry.io/collector/config/confignet v1.20.0 // indirect
 	go.opentelemetry.io/collector/config/configopaque v1.20.0 // indirect
 	go.opentelemetry.io/collector/config/configretry v1.20.0 // indirect
+	go.opentelemetry.io/collector/config/configtls v1.20.0 // indirect
 	go.opentelemetry.io/collector/config/internal v0.114.0 // indirect
 	go.opentelemetry.io/collector/connector/connectorprofiles v0.114.0 // indirect
 	go.opentelemetry.io/collector/connector/connectortest v0.114.0 // indirect
