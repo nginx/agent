@@ -45,7 +45,7 @@ func GenerateSelfSignedCert(t testing.TB) (keyBytes, certBytes []byte) {
 	keyBytes = x509.MarshalPKCS1PrivateKey(key)
 
 	tmpl := x509.Certificate{
-		NotBefore:    time.Now().Add(-10 * time.Minute), // Allow for clock skew
+		NotBefore:    time.Now(),
 		NotAfter:     time.Now().AddDate(years, months, days),
 		SerialNumber: big.NewInt(serialNumber),
 		Subject: pkix.Name{
