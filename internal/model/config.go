@@ -26,11 +26,13 @@ type APIDetails struct {
 }
 
 func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext) bool {
-	if ncc.StubStatus != otherNginxConfigContext.StubStatus {
+	if ncc.StubStatus.URL != otherNginxConfigContext.StubStatus.URL || ncc.StubStatus.Location !=
+		otherNginxConfigContext.StubStatus.Location {
 		return false
 	}
 
-	if ncc.PlusAPI != otherNginxConfigContext.PlusAPI {
+	if ncc.PlusAPI.URL != otherNginxConfigContext.PlusAPI.URL || ncc.PlusAPI.Location !=
+		otherNginxConfigContext.PlusAPI.Location {
 		return false
 	}
 
