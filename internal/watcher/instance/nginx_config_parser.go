@@ -555,35 +555,6 @@ func (ncp *NginxConfigParser) urlsForLocationDirectiveAPIDetails(
 	return urls
 }
 
-func (ncp *NginxConfigParser) urlsForLocationDirective(
-	parent, current *crossplane.Directive,
-	locationDirectiveName string,
-) []string {
-	var urls []string
-	// process from the location block
-	if current.Directive != locationDirective {
-		return urls
-	}
-
-	for _, locChild := range current.Block {
-		if locChild.Directive != plusAPIDirective && locChild.Directive != stubStatusAPIDirective {
-			continue
-		}
-
-		addresses := ncp.parseAddressesFromServerDirective(parent)
-
-		for _, address := range addresses {
-			path := ncp.parsePathFromLocationDirective(current)
-
-			if locChild.Directive == locationDirectiveName {
-				urls = append(urls, fmt.Sprintf(apiFormat, address, path))
-			}
-		}
-	}
-
-	return urls
-}
-
 func (ncp *NginxConfigParser) parsePathFromLocationDirective(location *crossplane.Directive) string {
 	path := "/"
 	if len(location.Args) > 0 {
