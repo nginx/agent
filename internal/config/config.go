@@ -524,7 +524,7 @@ func resolveProcessors() Processors {
 	return processors
 }
 
-// generate self-signed certificate for OTEL receiver
+// generate self-signed certificate for OTel receiver
 // nolint: revive
 func handleSelfSignedCertificates(col *Collector) error {
 	if col.Receivers.OtlpReceivers != nil {

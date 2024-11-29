@@ -91,6 +91,7 @@ type (
 	OtlpExporter struct {
 		Server        *ServerConfig `yaml:"-" mapstructure:"server"`
 		TLS           *TLSConfig    `yaml:"-" mapstructure:"tls"`
+		Compression   string        `yaml:"-" mapstructure:"compression"`
 		Authenticator string        `yaml:"-" mapstructure:"authenticator"`
 	}
 

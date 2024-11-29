@@ -11,6 +11,8 @@ WORKDIR /agent
 COPY ./build /agent/build
 COPY $ENTRY_POINT /agent/entrypoint.sh
 
+ENV PLUS_VERSION=R32
+
 RUN --mount=type=secret,id=nginx-crt,dst=nginx-repo.crt \
     --mount=type=secret,id=nginx-key,dst=nginx-repo.key \
     set -x \
@@ -47,7 +49,7 @@ RUN --mount=type=secret,id=nginx-crt,dst=nginx-repo.crt \
     && echo "Acquire::https::pkgs.nginx.com::Verify-Host \"true\";" >> /etc/apt/apt.conf.d/90nginx \
     && echo "Acquire::https::pkgs.nginx.com::SslCert     \"/etc/ssl/nginx/nginx-repo.crt\";" >> /etc/apt/apt.conf.d/90nginx \
     && echo "Acquire::https::pkgs.nginx.com::SslKey      \"/etc/ssl/nginx/nginx-repo.key\";" >> /etc/apt/apt.conf.d/90nginx \
-    && printf "deb https://pkgs.nginx.com/plus/R32/ubuntu `lsb_release -cs` nginx-plus\n" > /etc/apt/sources.list.d/nginx-plus.list \
+    && printf "deb https://pkgs.nginx.com/plus/${PLUS_VERSION}/ubuntu/ `lsb_release -cs` nginx-plus\n" > /etc/apt/sources.list.d/nginx-plus.list \
     && mkdir -p /etc/ssl/nginx \
     && cat nginx-repo.crt > /etc/ssl/nginx/nginx-repo.crt \
     && cat nginx-repo.key > /etc/ssl/nginx/nginx-repo.key \

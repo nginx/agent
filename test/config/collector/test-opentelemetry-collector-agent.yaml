@@ -55,7 +55,7 @@ exporters:
     sampling_thereafter: 200
 extensions:
   health_check:
-    endpoint: "localhost:1337"
+    endpoint: "127.0.0.1:1337"
   headers_setter:
     headers:
       - action: "insert"

@@ -89,7 +89,7 @@ func OTelComponentFactories() (otelcol.Factories, error) {
 }
 
 func createConnectorFactories() (map[component.Type]connector.Factory, error) {
-	connectorsList := []connector.Factory{}
+	var connectorsList []connector.Factory
 
 	return connector.MakeFactoryMap(connectorsList...)
 }
