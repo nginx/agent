@@ -44,7 +44,7 @@ func createMetricsReceiver(
 
 	ns := stubstatus.NewScraper(params, cfg)
 	scraperOpts := []scraperhelper.ScraperControllerOption{
-		scraperhelper.AddScraper(ns),
+		scraperhelper.AddScraperWithType(metadata.Type, ns),
 	}
 
 	if len(cfg.AccessLogs) > 0 {
@@ -52,7 +52,7 @@ func createMetricsReceiver(
 		if err != nil {
 			logger.Errorf("Failed to initialize NGINX Access Log scraper: %s", err.Error())
 		} else {
-			scraperOpts = append(scraperOpts, scraperhelper.AddScraper(nals))
+			scraperOpts = append(scraperOpts, scraperhelper.AddScraperWithType(metadata.Type, nals))
 		}
 	}
 
