@@ -98,12 +98,11 @@ func NewScraper(
 		wg:       &sync.WaitGroup{},
 	}
 
-	stanzaPipeline, err := nls.initStanzaPipeline(operators, settings.Logger)
+	var err error
+	nls.pipe, err = nls.initStanzaPipeline(operators, settings.Logger)
 	if err != nil {
 		return nil, fmt.Errorf("init stanza pipeline: %w", err)
 	}
-
-	nls.pipe = stanzaPipeline
 
 	return nls, nil
 }
