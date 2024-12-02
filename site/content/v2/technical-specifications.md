@@ -1,20 +1,18 @@
 ---
 title: "Technical specifications"
+weight: 100
 toc: true
-weight: 200
-docs: DOCS-000
+docs: "DOCS-1092"
 ---
 
-## Overview
-
-This document provides technical specifications for F5 NGINX Agent. It includes information on supported distributions, deployment environments, NGINX versions, sizing recommendations, and logging.
+This document describes the requirements for NGINX Agent v2.
 
 ## Supported distributions
 
 NGINX Agent can run in most environments. We support the following distributions:
 
 {{< bootstrap-table "table table-striped table-bordered" >}}
-| | AlmaLinux | Alpine Linux | Amazon Linux | Amazon Linux 2 | CentOS | Debian |
+| | AlmaLinux | Alpine Linux | Amazon Linux | Amazon Linux 2 | CentOS | Debian | 
 |-|-----------|--------------|--------------|----------------|--------|--------|
 |**Version**|8 <br><hr>9 |  3.16<br><hr>3.17<br><hr> 3.18<br><hr> 3.19|  2023|  LTS|  7.4+|  11<br><hr> 12|
 |**Architecture**| x86_84<br><hr>aarch64| x86_64<br><hr>aarch64 | x86_64<br><hr>aarch64 | x86_64<br><hr>aarch64 | x86_64<br><hr>aarch64 | x86_64<br><hr>aarch64 |
@@ -28,7 +26,7 @@ NGINX Agent can run in most environments. We support the following distributions
 {{< /bootstrap-table >}}
 
 
-## Supported deployment environments
+## Supported deployment environments 
 
 NGINX Agent can be deployed in the following environments:
 
@@ -37,7 +35,7 @@ NGINX Agent can be deployed in the following environments:
 - Public Cloud: AWS, Google Cloud Platform, and Microsoft Azure
 - Virtual Machine
 
-## Supported NGINX versions
+## Supported NGINX versions 
 
 NGINX Agent works with all supported versions of NGINX Open Source and NGINX Plus.
 
@@ -53,8 +51,4 @@ Minimum system sizing recommendations for NGINX Agent:
 
 ## Logging
 
-NGINX Agent utilizes log files and formats to collect metrics. Increasing the log formats and instance counts will result in increased log file sizes. 
-
-To prevent system storage issues due to a growing log directory, it is recommended to add a separate partition for `/var/log/nginx-agent` and enable [log rotation](http://nginx.org/en/docs/control.html#logs).
-
-More information is available in the [Configuration overview]({{< ref "/how-to/configuration-overview.md#logs" >}})
+NGINX Agent utilizes log files and formats to collect metrics. Increasing the log formats and instance counts will result in increased log file sizes. To prevent system storage issues due to a growing log directory, it is recommended to add a separate partition for `/var/log/nginx-agent` and enable [log rotation](http://nginx.org/en/docs/control.html#logs).
