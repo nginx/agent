@@ -41,9 +41,9 @@ func NewConfigWithID(operatorID string) *Config {
 
 // Config is the configuration of a file input operator
 type Config struct {
-	fileconsumer.Config `mapstructure:",squash"`
-	AccessLogFormat     string `mapstructure:"access_log_format"`
 	helper.InputConfig  `mapstructure:",squash"`
+	AccessLogFormat     string `mapstructure:"access_log_format"`
+	fileconsumer.Config `mapstructure:",squash"`
 }
 
 // Build will build a file input operator from the supplied configuration
