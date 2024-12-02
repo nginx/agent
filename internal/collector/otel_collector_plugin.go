@@ -44,7 +44,7 @@ var (
 	initMutex            = &sync.Mutex{}
 )
 
-// NewCollector is the constructor for the Collector plugin.make
+// NewCollector is the constructor for the Collector plugin.
 func New(conf *config.Config) (*Collector, error) {
 	initMutex.Lock()
 
