@@ -35,12 +35,12 @@ func LoadCertificate(certPath string) (*x509.Certificate, error) {
 		return nil, err
 	}
 
-	certPEMBlock, _ := pem.Decode(fileContents)
-	if certPEMBlock == nil {
-		return nil, fmt.Errorf("could not decode: cert was not PEM format")
+	block, _ := pem.Decode(fileContents)
+	if block == nil || block.Type != "CERTIFICATE" {
+		return nil, fmt.Errorf("failed to decode PEM block containing the certificate")
 	}
 
-	cert, err := x509.ParseCertificate(certPEMBlock.Bytes)
+	cert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
 		return nil, err
 	}

@@ -24,7 +24,7 @@ The following packages need to be installed:
 ```
 git clone https://github.com/open-telemetry/opentelemetry-collector.git
 cd opentelemetry-collector
-git checkout v0.108.1
+git checkout v0.114.0
 cd cmd/mdatagen
 go install
 ```

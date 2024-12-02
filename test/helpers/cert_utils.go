@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -51,7 +52,10 @@ func GenerateSelfSignedCert(t testing.TB) (keyBytes, certBytes []byte) {
 			CommonName:   "New Name",
 			Organization: []string{"New Org."},
 		},
+		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
+		IsCA:                  true,
 	}
 	certBytes, err = x509.CreateCertificate(rand.Reader, &tmpl, &tmpl, &key.PublicKey, key)
 	if err != nil {
@@ -69,7 +73,13 @@ func WriteCertFiles(t *testing.T, location string, cert Cert) string {
 		Bytes: cert.Contents,
 	})
 
-	certFile := fmt.Sprintf("%s%s%s", location, string(os.PathSeparator), cert.Name)
+	var certFile string
+	if strings.HasSuffix(location, string(os.PathSeparator)) {
+		certFile = fmt.Sprintf("%s%s", location, cert.Name)
+	} else {
+		certFile = fmt.Sprintf("%s%s%s", location, string(os.PathSeparator), cert.Name)
+	}
+
 	err := os.WriteFile(certFile, pemContents, permission)
 	require.NoError(t, err)
 

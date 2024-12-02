@@ -439,7 +439,7 @@ Represents the dates for which a certificate is valid as seen at https://pkg.go.
 | province | [string](#string) | repeated | State or Province name (ST): Name of the state or province. |
 | street_address | [string](#string) | repeated | Street Address (STREET): Physical street address. |
 | postal_code | [string](#string) | repeated | Postal Code (PC): Postal or ZIP code for the address. |
-| serial_number | [string](#string) |  | Serial Number (SN): Unique identifier or serial number. Must be non-empty. |
+| serial_number | [string](#string) |  | Serial Number (SN): Unique identifier or serial number. |
 | common_name | [string](#string) |  | Common Name (CN): Typically the person’s or entity&#39;s full name. |
 | names | [AttributeTypeAndValue](#mpi-v1-AttributeTypeAndValue) | repeated | Parsed attributes including any non-standard attributes, as specified in RFC 2253. These attributes are parsed but not marshaled by this package. |
 | extra_names | [AttributeTypeAndValue](#mpi-v1-AttributeTypeAndValue) | repeated | Additional attributes to be included in the marshaled distinguished names. These override any attributes with the same OID in `names`. |

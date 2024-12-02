@@ -353,7 +353,7 @@ func TestNginxConfigParser_sslCert(t *testing.T) {
 
 	_, cert := helpers.GenerateSelfSignedCert(t)
 
-	certContents := helpers.Cert{Name: "nginx.cert", Type: "", Contents: cert}
+	certContents := helpers.Cert{Name: "nginx.cert", Type: "CERTIFICATE", Contents: cert}
 
 	certFile := helpers.WriteCertFiles(t, dir, certContents)
 	require.NotNil(t, certFile)
