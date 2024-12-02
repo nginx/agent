@@ -236,6 +236,7 @@ func (cs *CommandService) listenForDataPlaneResponses(ctx context.Context, in mp
 
 func (cs *CommandService) createServer(logger *slog.Logger) {
 	cs.server = gin.New()
+	cs.server.Use(gin.Recovery())
 	cs.server.UseRawPath = true
 	cs.server.Use(sloggin.NewWithConfig(logger, sloggin.Config{DefaultLevel: slog.LevelDebug}))
 

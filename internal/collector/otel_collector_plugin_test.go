@@ -511,6 +511,8 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 			collector, err := New(conf)
 			require.NoError(tt, err, "NewCollector should not return an error with valid config")
 
+			collector.service = createFakeCollector()
+
 			nginxReceiverFound, reloadCollector := collector.updateExistingNginxOSSReceiver(test.nginxConfigContext)
 
 			assert.True(tt, nginxReceiverFound)
@@ -580,6 +582,8 @@ func TestCollector_updateExistingNginxPlusReceiver(t *testing.T) {
 			collector, err := New(conf)
 			require.NoError(tt, err, "NewCollector should not return an error with valid config")
 
+			collector.service = createFakeCollector()
+
 			nginxReceiverFound, reloadCollector := collector.updateExistingNginxPlusReceiver(test.nginxConfigContext)
 
 			assert.True(tt, nginxReceiverFound)
@@ -632,6 +636,8 @@ func TestCollector_updateResourceAttributes(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			collector, err := New(conf)
 			require.NoError(tt, err, "NewCollector should not return an error with valid config")
+
+			collector.service = createFakeCollector()
 
 			// set up Actions
 			conf.Collector.Processors.Resource = &config.Resource{Attributes: test.setup}
