@@ -64,7 +64,7 @@ func FileMetaWithCertificate(filePath string) (*mpi.FileMeta, error) {
 	// Populate certificate-specific metadata
 	fileMeta.FileType = &mpi.FileMeta_CertificateMeta{
 		CertificateMeta: &mpi.CertificateMeta{
-			SerialNumber: []byte{},
+			SerialNumber: loadedCert.SerialNumber.Bytes(),
 			Issuer: &mpi.X509Name{
 				Country:            loadedCert.Issuer.Country,
 				Organization:       loadedCert.Issuer.Organization,
