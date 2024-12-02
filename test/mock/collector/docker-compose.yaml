@@ -12,7 +12,8 @@ services:
     container_name: mock-collector-agent-with-nginx-plus
     volumes:
       - ./nginx-agent.conf:/etc/nginx-agent/nginx-agent.conf
-      - ./nginx-plus:/etc/nginx/
+      - ./nginx-plus/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx-plus/conf.d/default.conf:/etc/nginx/conf.d/default.conf
     networks:
       - metrics
 
@@ -59,6 +60,19 @@ services:
       - grafana-storage:/var/lib/grafana
       - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
       - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/provisioning/plugins:/etc/grafana/provisioning/plugins
       - ./grafana/provisioning/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - metrics
+
+  loki:
+    image: grafana/loki:latest
+    container_name: mock-collector-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yaml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
     networks:
       - metrics
