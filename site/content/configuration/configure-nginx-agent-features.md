@@ -14,7 +14,7 @@ This guide describes the NGINX Agent features, and how to enable and disable fea
 
 ## Before you begin
 
-Before you begin ensure:
+Before you start, make sure that you have:
 
 - NGINX Agent has been installed. 
 - Access to the NGINX Agent configuration file.
