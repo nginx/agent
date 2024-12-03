@@ -16,7 +16,7 @@ This guide describes the F5 NGINX Agent features, and how to enable and disable 
 
 Before you start, make sure that you have:
 
-- NGINX Agent has been installed. 
+- NGINX Agent installed in your system.
 - Access to the NGINX Agent configuration file.
 
 
