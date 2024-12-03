@@ -530,7 +530,7 @@ func (oc *Collector) updateTcplogReceivers(nginxConfigContext *model.NginxConfig
 }
 
 func (oc *Collector) isNapReceiversDeleted(nginxConfigContext *model.NginxConfigContext) bool {
-	listenAddressesToBeDeleted := oc.getDeletedNapReceivers(nginxConfigContext)
+	listenAddressesToBeDeleted := oc.getConfigDeletedNapReceivers(nginxConfigContext)
 	if len(listenAddressesToBeDeleted) != 0 {
 		oc.deleteNapReceivers(listenAddressesToBeDeleted)
 		return true
@@ -549,7 +549,7 @@ func (oc *Collector) deleteNapReceivers(listenAddressesToBeDeleted map[string]bo
 	oc.config.Collector.Receivers.TcplogReceivers = filteredReceivers
 }
 
-func (oc *Collector) getDeletedNapReceivers(nginxConfigContext *model.NginxConfigContext) map[string]bool {
+func (oc *Collector) getConfigDeletedNapReceivers(nginxConfigContext *model.NginxConfigContext) map[string]bool {
 	elements := make(map[string]bool)
 
 	for _, tcplogReceiver := range oc.config.Collector.Receivers.TcplogReceivers {
@@ -563,6 +563,7 @@ func (oc *Collector) getDeletedNapReceivers(nginxConfigContext *model.NginxConfi
 				addressesToDelete[napAddress] = true
 			}
 		}
+
 		return addressesToDelete
 	}
 
