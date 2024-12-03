@@ -24,6 +24,7 @@ Before you start, make sure that you have:
 
 The following table lists the NGINX Agent features.
 
+{{<bootstrap-table "table table-striped table-bordered">}}
 | **Feature Name**      | **Description**      |
 | ------------- | ------------- |
 | registration | Registering the NGINX Agent with the management plane.|
