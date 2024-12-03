@@ -686,6 +686,22 @@ func TestCollector_updateTcplogReceivers(t *testing.T) {
 		assert.Equal(t, "localhost:151", conf.Collector.Receivers.TcplogReceivers[0].ListenAddress)
 		assert.Len(t, conf.Collector.Receivers.TcplogReceivers[0].Operators, 4)
 	})
+
+	t.Run("Test 3: TcplogReceiver deleted", func(tt *testing.T) {
+		tcplogReceiverDeleted := collector.updateTcplogReceivers(&model.NginxConfigContext{})
+		assert.True(t, tcplogReceiverDeleted)
+		assert.Empty(t, conf.Collector.Receivers.TcplogReceivers)
+	})
+
+	t.Run("Test 4: New tcplogReceiver added and deleted another", func(tt *testing.T) {
+		tcplogReceiverDeleted := collector.updateTcplogReceivers(&model.NginxConfigContext{NAPSysLogServers: []string{
+			"localhost:152",
+		}})
+		assert.True(t, tcplogReceiverDeleted)
+		assert.Len(t, conf.Collector.Receivers.TcplogReceivers, 1)
+		assert.Equal(t, "localhost:152", conf.Collector.Receivers.TcplogReceivers[0].ListenAddress)
+		assert.Len(t, conf.Collector.Receivers.TcplogReceivers[0].Operators, 5)
+	})
 }
 
 func createFakeCollector() *typesfakes.FakeCollectorInterface {
