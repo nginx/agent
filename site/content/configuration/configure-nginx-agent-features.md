@@ -54,12 +54,34 @@ The following table lists the NGINX Agent features.
 
 ```
     features:
-    - metrics
-    - metrics-throttle
-    - dataplane-status
+      - metrics
+      - metrics-throttle
+      - dataplane-status
 ``` 
 
 4. **Restart the NGINX Agent service:** Restart the NGINX Agent service to enable changes.
 
 Once the steps have been completed, users will be able to view metrics data being sent but will not have the capability to push NGINX configuration changes.
+
+#### Enable the publishing of NGINX configurations and disable the collection of metrics.
+1. **Access the NGINX Instance:** SSH to the virtual machine/server where NGINX Agent is running.
+```
+    ssh user@your-nginx-instance
+```
+2. **Edit NGINX Agent configuration:** 
+```
+    sudo vim /etc/nginx-agent/nginx-agent.conf
+```
+3. **Add Features section:** Add the following yaml to the end of the file:
+
+```
+    features:
+      - nginx-config-async
+      - dataplane-status
+      - file-watcher
+``` 
+
+4. **Restart the NGINX Agent service:** Restart the NGINX Agent service to enable changes.
+
+Once the steps have been completed, users will be able to publish NGINX configurations but metrics data will not be collected by the NGINX Agent. 
 
