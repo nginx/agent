@@ -44,19 +44,19 @@ The following table lists the NGINX Agent features.
 #### Enable metrics only
 1. **Access the NGINX Instance:** SSH to the virtual machine/server where NGINX Agent is running.
 ```
-ssh user@your-nginx-instance
+    ssh user@your-nginx-instance
 ```
 2. **Edit NGINX Agent configuration:** 
 ```
-sudo vim /etc/nginx-agent/nginx-agent.conf
+    sudo vim /etc/nginx-agent/nginx-agent.conf
 ```
 3. **Add Features section:** Add the following yaml to the end of the file:
 
 ```
-features:
-  - metrics
-  - metrics-throttle
-  - dataplane-status
+    features:
+    - metrics
+    - metrics-throttle
+    - dataplane-status
 ``` 
 
 4. **Restart the NGINX Agent service:** Restart the NGINX Agent service to enable changes.
