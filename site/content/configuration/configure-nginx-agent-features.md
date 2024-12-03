@@ -61,5 +61,5 @@ The following table lists the NGINX Agent features.
 
 4. **Restart the NGINX Agent service:** Restart the NGINX Agent service to enable changes.
 
-At this stage, users will be able to view metrics data being sent, but will not have the capability to push NGINX configuration changes.
+Once the steps have been completed, users will be able to view metrics data being sent but will not have the capability to push NGINX configuration changes.
 
