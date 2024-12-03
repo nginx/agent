@@ -674,7 +674,7 @@ func TestCollector_updateTcplogReceivers(t *testing.T) {
 		assert.True(tt, tcplogReceiverAdded)
 		assert.Len(tt, conf.Collector.Receivers.TcplogReceivers, 1)
 		assert.Equal(tt, "localhost:151", conf.Collector.Receivers.TcplogReceivers[0].ListenAddress)
-		assert.Len(tt, conf.Collector.Receivers.TcplogReceivers[0].Operators, 5)
+		assert.Len(tt, conf.Collector.Receivers.TcplogReceivers[0].Operators, 4)
 	})
 
 	// Calling updateTcplogReceivers shouldn't update the TcplogReceivers slice
@@ -684,7 +684,7 @@ func TestCollector_updateTcplogReceivers(t *testing.T) {
 		assert.False(t, tcplogReceiverAdded)
 		assert.Len(t, conf.Collector.Receivers.TcplogReceivers, 1)
 		assert.Equal(t, "localhost:151", conf.Collector.Receivers.TcplogReceivers[0].ListenAddress)
-		assert.Len(t, conf.Collector.Receivers.TcplogReceivers[0].Operators, 5)
+		assert.Len(t, conf.Collector.Receivers.TcplogReceivers[0].Operators, 4)
 	})
 }
 

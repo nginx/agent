@@ -493,14 +493,6 @@ func (oc *Collector) updateTcplogReceivers(nginxConfigContext *model.NginxConfig
 							},
 						},
 						{
-							Type: "key_value_parser",
-							Fields: map[string]string{
-								"parse_from":     "attributes.message",
-								"parse_to":       "body",
-								"pair_delimiter": "\",\"",
-							},
-						},
-						{
 							Type: "remove",
 							Fields: map[string]string{
 								"field": "attributes.message",
