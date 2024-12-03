@@ -80,6 +80,7 @@ func TestTemplateWrite(t *testing.T) {
 		StubStatus: config.APIDetails{
 			URL:      "http://localhost:80/status",
 			Location: "",
+			Listen:   "",
 		},
 		AccessLogs: []config.AccessLog{
 			{

@@ -36,6 +36,7 @@
   
 - [mpi/v1/command.proto](#mpi_v1_command-proto)
     - [APIActionRequest](#mpi-v1-APIActionRequest)
+    - [APIDetails](#mpi-v1-APIDetails)
     - [AgentConfig](#mpi-v1-AgentConfig)
     - [CommandServer](#mpi-v1-CommandServer)
     - [CommandStatusRequest](#mpi-v1-CommandStatusRequest)
@@ -536,6 +537,22 @@ Perform an associated API action on an instance
 
 
 
+<a name="mpi-v1-APIDetails"></a>
+
+### APIDetails
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| location | [string](#string) |  | the API location directive |
+| listen | [string](#string) |  | the API listen directive |
+
+
+
+
+
+
 <a name="mpi-v1-AgentConfig"></a>
 
 ### AgentConfig
@@ -859,12 +876,12 @@ A set of runtime NGINX Plus settings
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| stub_status | [string](#string) |  | the stub status API URL |
+| stub_status | [APIDetails](#mpi-v1-APIDetails) |  | the stub status API details |
 | access_logs | [string](#string) | repeated | a list of access_logs |
 | error_logs | [string](#string) | repeated | a list of error_logs |
 | loadable_modules | [string](#string) | repeated | List of NGINX potentially loadable modules (installed but not loaded). |
 | dynamic_modules | [string](#string) | repeated | List of NGINX dynamic modules. |
-| plus_api | [string](#string) |  | the plus API location |
+| plus_api | [APIDetails](#mpi-v1-APIDetails) |  | the plus API details |
 
 
 
@@ -879,7 +896,7 @@ A set of runtime NGINX OSS settings
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| stub_status | [string](#string) |  | the stub status API URL |
+| stub_status | [APIDetails](#mpi-v1-APIDetails) |  | the stub status API details |
 | access_logs | [string](#string) | repeated | a list of access_logs |
 | error_logs | [string](#string) | repeated | a list of error_logs |
 | loadable_modules | [string](#string) | repeated | List of NGINX potentially loadable modules (installed but not loaded). |

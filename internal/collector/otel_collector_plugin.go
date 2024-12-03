@@ -372,6 +372,7 @@ func (oc *Collector) checkForNewNginxReceivers(nginxConfigContext *model.NginxCo
 				InstanceID: nginxConfigContext.InstanceID,
 				PlusAPI: config.APIDetails{
 					URL:      nginxConfigContext.PlusAPI.URL,
+					Listen:   nginxConfigContext.PlusAPI.Listen,
 					Location: nginxConfigContext.PlusAPI.Location,
 				},
 			},
@@ -388,6 +389,7 @@ func (oc *Collector) checkForNewNginxReceivers(nginxConfigContext *model.NginxCo
 					InstanceID: nginxConfigContext.InstanceID,
 					StubStatus: config.APIDetails{
 						URL:      nginxConfigContext.StubStatus.URL,
+						Listen:   nginxConfigContext.StubStatus.Listen,
 						Location: nginxConfigContext.StubStatus.Location,
 					},
 					AccessLogs: toConfigAccessLog(nginxConfigContext.AccessLogs),
@@ -447,6 +449,7 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 				if nginxConfigContext.StubStatus.URL != "" {
 					nginxReceiver.StubStatus = config.APIDetails{
 						URL:      nginxConfigContext.StubStatus.URL,
+						Listen:   nginxConfigContext.StubStatus.Listen,
 						Location: nginxConfigContext.StubStatus.Location,
 					}
 					nginxReceiver.AccessLogs = toConfigAccessLog(nginxConfigContext.AccessLogs)

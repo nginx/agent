@@ -27,12 +27,13 @@ type Config struct {
 
 type APIDetails struct {
 	URL      string `mapstructure:"url"`
+	Listen   string `mapstructure:"listen"`
 	Location string `mapstructure:"location"`
 }
 
 // Validate checks if the receiver configuration is valid
 func (cfg *Config) Validate() error {
-	if cfg.Endpoint == "" {
+	if cfg.APIDetails.URL == "" {
 		return errors.New("endpoint cannot be empty for nginxplusreceiver")
 	}
 
@@ -51,8 +52,12 @@ func createDefaultConfig() component.Config {
 	return &Config{
 		ControllerConfig: cfg,
 		ClientConfig: confighttp.ClientConfig{
-			Endpoint: "http://localhost:80/api",
-			Timeout:  defaultTimeout,
+			Timeout: defaultTimeout,
+		},
+		APIDetails: APIDetails{
+			URL:      "http://localhost:80/api",
+			Listen:   "localhost:80",
+			Location: "/api",
 		},
 		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
 	}

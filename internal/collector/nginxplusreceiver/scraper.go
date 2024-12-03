@@ -46,7 +46,7 @@ func newNginxPlusScraper(
 	settings receiver.Settings,
 	cfg *Config,
 ) (*nginxPlusScraper, error) {
-	cfg.Endpoint = strings.TrimPrefix(cfg.APIDetails.URL, "unix:")
+	endpoint := strings.TrimPrefix(cfg.APIDetails.URL, "unix:")
 	logger := settings.Logger
 	logger.Info("Creating NGINX Plus scraper")
 	httpClient := http.DefaultClient
@@ -54,11 +54,11 @@ func newNginxPlusScraper(
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
 	rb := mb.NewResourceBuilder()
 
-	if strings.HasPrefix(cfg.APIDetails.Location, "unix:") {
-		httpClient = socketClient(strings.TrimPrefix(cfg.APIDetails.Location, "unix:"))
+	if strings.HasPrefix(cfg.APIDetails.Listen, "unix:") {
+		httpClient = socketClient(strings.TrimPrefix(cfg.APIDetails.Listen, "unix:"))
 	}
 
-	plusClient, err := plusapi.NewNginxClient(cfg.Endpoint,
+	plusClient, err := plusapi.NewNginxClient(endpoint,
 		plusapi.WithMaxAPIVersion(), plusapi.WithHTTPClient(httpClient),
 	)
 	if err != nil {

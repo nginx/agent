@@ -169,8 +169,8 @@ func TestInstanceWatcherService_updateNginxInstanceRuntime(t *testing.T) {
 			},
 		},
 		StubStatus: &model.APIDetails{
-			URL:      "http://127.0.0.1:8081/api",
-			Location: "",
+			URL:    "http://127.0.0.1:8081/api",
+			Listen: "",
 		},
 	}
 
@@ -186,12 +186,12 @@ func TestInstanceWatcherService_updateNginxInstanceRuntime(t *testing.T) {
 			},
 		},
 		PlusAPI: &model.APIDetails{
-			URL:      "http://127.0.0.1:8081/api",
-			Location: "",
+			URL:    "http://127.0.0.1:8081/api",
+			Listen: "",
 		},
 		StubStatus: &model.APIDetails{
-			URL:      "http://127.0.0.1:8081/api",
-			Location: "",
+			URL:    "http://127.0.0.1:8081/api",
+			Listen: "",
 		},
 	}
 
@@ -220,17 +220,23 @@ func TestInstanceWatcherService_updateNginxInstanceRuntime(t *testing.T) {
 					GetNginxPlusRuntimeInfo().GetAccessLogs()[0])
 				assert.Equal(t, test.nginxConfigContext.ErrorLogs[0].Name, test.instance.GetInstanceRuntime().
 					GetNginxPlusRuntimeInfo().GetErrorLogs()[0])
-				assert.Equal(t, test.nginxConfigContext.StubStatus.URL, test.instance.GetInstanceRuntime().
-					GetNginxPlusRuntimeInfo().GetStubStatus())
-				assert.Equal(t, test.nginxConfigContext.PlusAPI.URL, test.instance.GetInstanceRuntime().
-					GetNginxPlusRuntimeInfo().GetPlusApi())
+				assert.Equal(t, test.nginxConfigContext.StubStatus.Location, test.instance.GetInstanceRuntime().
+					GetNginxPlusRuntimeInfo().GetStubStatus().GetLocation())
+				assert.Equal(t, test.nginxConfigContext.PlusAPI.Location, test.instance.GetInstanceRuntime().
+					GetNginxPlusRuntimeInfo().GetPlusApi().GetLocation())
+				assert.Equal(t, test.nginxConfigContext.StubStatus.Listen, test.instance.GetInstanceRuntime().
+					GetNginxPlusRuntimeInfo().GetStubStatus().GetListen())
+				assert.Equal(t, test.nginxConfigContext.PlusAPI.Listen, test.instance.GetInstanceRuntime().
+					GetNginxPlusRuntimeInfo().GetPlusApi().GetListen())
 			} else {
 				assert.Equal(t, test.nginxConfigContext.AccessLogs[0].Name, test.instance.GetInstanceRuntime().
 					GetNginxRuntimeInfo().GetAccessLogs()[0])
 				assert.Equal(t, test.nginxConfigContext.ErrorLogs[0].Name, test.instance.GetInstanceRuntime().
 					GetNginxRuntimeInfo().GetErrorLogs()[0])
-				assert.Equal(t, test.nginxConfigContext.StubStatus.URL, test.instance.GetInstanceRuntime().
-					GetNginxRuntimeInfo().GetStubStatus())
+				assert.Equal(t, test.nginxConfigContext.StubStatus.Location, test.instance.GetInstanceRuntime().
+					GetNginxRuntimeInfo().GetStubStatus().GetLocation())
+				assert.Equal(t, test.nginxConfigContext.StubStatus.Listen, test.instance.GetInstanceRuntime().
+					GetNginxRuntimeInfo().GetStubStatus().GetListen())
 			}
 		})
 	}

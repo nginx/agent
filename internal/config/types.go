@@ -180,6 +180,7 @@ type (
 
 	APIDetails struct {
 		URL      string `yaml:"-" mapstructure:"url"`
+		Listen   string `yaml:"-" mapstructure:"listen"`
 		Location string `yaml:"-" mapstructure:"location"`
 	}
 

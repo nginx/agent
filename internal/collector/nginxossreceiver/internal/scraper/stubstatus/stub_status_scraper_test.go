@@ -68,6 +68,7 @@ func TestStubStatusScraperError(t *testing.T) {
 		sc := NewScraper(receivertest.NewNopSettings(), &config.Config{
 			APIDetails: config.APIDetails{
 				URL:      nginxMock.URL + "/badpath",
+				Listen:   "",
 				Location: "",
 			},
 		})
@@ -81,6 +82,7 @@ func TestStubStatusScraperError(t *testing.T) {
 		sc := NewScraper(receivertest.NewNopSettings(), &config.Config{
 			APIDetails: config.APIDetails{
 				URL:      nginxMock.URL + "/status",
+				Listen:   "",
 				Location: "",
 			},
 		})

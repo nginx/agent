@@ -355,8 +355,8 @@ func getAgentConfig() *Config {
 					{
 						InstanceID: "cd7b8911-c2c5-4daf-b311-dbead151d938",
 						StubStatus: APIDetails{
-							URL:      "http://localhost:4321/status",
-							Location: "",
+							URL:    "http://localhost:4321/status",
+							Listen: "",
 						},
 						AccessLogs: []AccessLog{
 							{

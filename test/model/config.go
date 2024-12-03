@@ -11,6 +11,7 @@ func GetConfigContext() *model.NginxConfigContext {
 	return &model.NginxConfigContext{
 		StubStatus: &model.APIDetails{
 			URL:      "",
+			Listen:   "",
 			Location: "",
 		},
 		AccessLogs: []*model.AccessLog{{Name: "access.logs"}},
@@ -28,6 +29,7 @@ func GetConfigContextWithNames(
 	return &model.NginxConfigContext{
 		StubStatus: &model.APIDetails{
 			URL:      "",
+			Listen:   "",
 			Location: "",
 		},
 		AccessLogs: []*model.AccessLog{

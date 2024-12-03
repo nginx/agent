@@ -97,10 +97,12 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 		InstanceID: instance.GetInstanceMeta().GetInstanceId(),
 		PlusAPI: &model.APIDetails{
 			URL:      "",
+			Listen:   "",
 			Location: "",
 		},
 		StubStatus: &model.APIDetails{
 			URL:      "",
+			Listen:   "",
 			Location: "",
 		},
 	}
@@ -352,6 +354,7 @@ func (ncp *NginxConfigParser) crossplaneConfigTraverseAPIDetails(
 	stop := false
 	response := &model.APIDetails{
 		URL:      "",
+		Listen:   "",
 		Location: "",
 	}
 	for _, dir := range root.Parsed {
@@ -377,11 +380,13 @@ func traverseAPIDetails(
 ) *model.APIDetails {
 	response := &model.APIDetails{
 		URL:      "",
+		Listen:   "",
 		Location: "",
 	}
 	if *stop {
 		return &model.APIDetails{
 			URL:      "",
+			Listen:   "",
 			Location: "",
 		}
 	}
@@ -442,6 +447,7 @@ func (ncp *NginxConfigParser) apiCallback(ctx context.Context, parent,
 
 	return &model.APIDetails{
 		URL:      "",
+		Listen:   "",
 		Location: "",
 	}
 }
@@ -450,11 +456,11 @@ func (ncp *NginxConfigParser) pingAPIEndpoint(ctx context.Context, statusAPIDeta
 	apiType string,
 ) bool {
 	httpClient := http.Client{}
-	location := statusAPIDetail.Location
+	listen := statusAPIDetail.Listen
 	statusAPI := statusAPIDetail.URL
 
-	if strings.HasPrefix(location, "unix:") {
-		httpClient = ncp.SocketClient(strings.TrimPrefix(location, "unix:"))
+	if strings.HasPrefix(listen, "unix:") {
+		httpClient = ncp.SocketClient(strings.TrimPrefix(listen, "unix:"))
 	} else {
 		httpClient = http.Client{Timeout: ncp.agentConfig.Client.Timeout}
 	}
@@ -540,12 +546,14 @@ func (ncp *NginxConfigParser) urlsForLocationDirectiveAPIDetails(
 				if strings.HasPrefix(address, "unix:") {
 					urls = append(urls, &model.APIDetails{
 						URL:      fmt.Sprintf(format, path),
-						Location: address,
+						Listen:   address,
+						Location: path,
 					})
 				} else {
 					urls = append(urls, &model.APIDetails{
 						URL:      fmt.Sprintf(apiFormat, address, path),
-						Location: address,
+						Listen:   address,
+						Location: path,
 					})
 				}
 			}

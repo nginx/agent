@@ -61,6 +61,7 @@ receivers:
   nginx/{{- .InstanceID -}}:
     api_details:
       url: "{{- .StubStatus.URL -}}"
+      listen: "{{- .StubStatus.Listen -}}"
       location: "{{- .StubStatus.Location -}}"
     collection_interval: 10s
     {{- if gt (len .AccessLogs) 0 }}
@@ -75,6 +76,7 @@ receivers:
   nginxplus/{{- .InstanceID -}}:
     api_details:
         url: "{{- .PlusAPI.URL -}}"
+        listen: "{{- .PlusAPI.Listen -}}"
         location: "{{- .PlusAPI.Location -}}"
     collection_interval: 10s
 {{- end }}

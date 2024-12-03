@@ -19,6 +19,7 @@ receivers:
   nginx/123:
     api_details:
       url: "http://localhost:80/status"
+      listen: ""
       location: ""
     collection_interval: 10s
     access_logs:
