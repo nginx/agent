@@ -43,13 +43,17 @@ The following table lists the NGINX Agent features.
 
 #### Enable metrics only
 1. **Access the NGINX Instance:** SSH to the virtual machine/server where NGINX Agent is running.
+
 ```
     ssh user@your-nginx-instance
 ```
+
 2. **Edit NGINX Agent configuration:** 
+
 ```
     sudo vim /etc/nginx-agent/nginx-agent.conf
 ```
+
 3. **Add Features section:** Add the following yaml to the end of the file:
 
 ```
@@ -65,13 +69,17 @@ Once the steps have been completed, users will be able to view metrics data bein
 
 #### Enable the publishing of NGINX configurations and disable the collection of metrics.
 1. **Access the NGINX Instance:** SSH to the virtual machine/server where NGINX Agent is running.
+
 ```
     ssh user@your-nginx-instance
 ```
+
 2. **Edit NGINX Agent configuration:** 
+
 ```
     sudo vim /etc/nginx-agent/nginx-agent.conf
 ```
+
 3. **Add Features section:** Add the following yaml to the end of the file:
 
 ```
