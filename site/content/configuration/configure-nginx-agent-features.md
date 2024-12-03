@@ -37,7 +37,7 @@ The following table lists the NGINX Agent features.
 | file-watcher | Observe changes to the NGINX configuration or any changes to files on disk.|
 | activity-events | Send NGINX or NGINX Agent related events to the management plane.|
 | agent-api | Enable the NGINX Agent REST API.|
-
+{{</bootstrap-table>}}
 
 ### Use Cases
 
