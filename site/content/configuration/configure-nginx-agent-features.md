@@ -1,8 +1,17 @@
-# Configure NGINX Agent Features
+---
+title: "Configure NGINX Agent Features"
+draft: false
+weight: 300
+toc: true
+tags: [ "docs" ]
+docs: "DOCS-933"
+categories: ["configuration"]
+doctypes: ["task"]
+---
 
 ## Overview
 
-This guide explains how to enable or disable NGINX Agent features. 
+This guide describes the NGINX Agent features, and how to enable and disable features using the NGINX Agent configuration file.
 
 ## Before you begin
 
@@ -16,7 +25,7 @@ Before you begin ensure:
 
 The following table details the NGINX Agent features available. 
 
-| Feature Name      | Description      |
+| **Feature Name**      | **Description**      |
 | ------------- | ------------- |
 | registration | Registering the NGINX Agent with the management plane.|
 | nginx-config-async | Enable the publishing and uploading of NGINX configurations from the management plane.|
@@ -28,12 +37,6 @@ The following table details the NGINX Agent features available.
 | file-watcher | Observe changes to the NGINX configuration or any changes to files on disk.|
 | activity-events | Send NGINX or NGINX Agent related events to the management plane.|
 | agent-api | Enable the NGINX Agent REST API.|
-
-
-
-
-
-
 
 
 ### Use Cases
@@ -58,5 +61,5 @@ features:
 
 4. **Restart the NGINX Agent service:** Restart the NGINX Agent service to enable changes.
 
-
+At this stage, users will be able to view metrics data being sent, but will not have the capability to push NGINX configuration changes.
 
