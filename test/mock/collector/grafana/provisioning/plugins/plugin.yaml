@@ -1,7 +1,5 @@
 apiVersion: 1
 
 apps:
-  - type: "grafana-lokiexplore-app"
+  - type: grafana-lokiexplore-app
     org_id: 1
-    org_name: "Grafana"
-    disabled: false

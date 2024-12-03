@@ -54,6 +54,8 @@ services:
     image: grafana/grafana:latest
     container_name: mock-collector-grafana
     restart: unless-stopped
+    environment:
+      GF_INSTALL_PLUGINS: "grafana-lokiexplore-app"
     ports:
       - "3002:3000"
     volumes:
