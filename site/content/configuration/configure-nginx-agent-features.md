@@ -22,7 +22,7 @@ Before you start, make sure that you have:
 
 ## Features
 
-The following table details the NGINX Agent features available. 
+The following table lists the NGINX Agent features.
 
 | **Feature Name**      | **Description**      |
 | ------------- | ------------- |
