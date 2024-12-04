@@ -1,7 +1,7 @@
 ---
-title: "Configure NGINX Agent Features"
+title: "Features configuration"
 draft: false
-weight: 300
+weight: 150
 toc: true
 tags: [ "docs" ]
 categories: ["configuration"]
@@ -25,23 +25,23 @@ Before you start, make sure that you have:
 The following table lists the NGINX Agent features.
 
 {{<bootstrap-table "table table-striped table-bordered">}}
-| **Feature Name**      | **Description**      |
-| ------------- | ------------- |
-| registration | Registering the NGINX Agent with the management plane.|
-| nginx-config-async | Enable the publishing and uploading of NGINX configurations from the management plane.|
-| metrics | Enable collecting of NGINX metrics.|
-| metrics-throttle | Batch metrics before sending.|
-| metrics-sender | Reports metrics over the gRPC connection.|
-| dataplane-status | Report the health of the NGINX Instance.|
-| process-watcher | Observe changes to the NGINX process.|
-| file-watcher | Observe changes to the NGINX configuration or any changes to files on disk.|
-| activity-events | Send NGINX or NGINX Agent related events to the management plane.|
-| agent-api | Enable the NGINX Agent REST API.|
+| **Feature Name**      | **Description**      | **Default/Non-default**      |
+| ------------- | ------------- | ------------- |
+| registration | Registering the NGINX Agent with the management plane.| Default |
+| nginx-config-async | Enable the publishing and uploading of NGINX configurations from the management plane.| Default |
+| metrics | Enable collecting of NGINX metrics.| Default |
+| metrics-throttle | Batch metrics before sending.| Non-default |
+| metrics-sender | Reports metrics over the gRPC connection.| Non-default |
+| dataplane-status | Report the health of the NGINX Instance.| Default |
+| process-watcher | Observe changes to the NGINX process.| Default |
+| file-watcher | Observe changes to the NGINX configuration or any changes to files on disk.| Default |
+| activity-events | Send NGINX or NGINX Agent related events to the management plane.| Default |
+| agent-api | Enable the NGINX Agent REST API.| Default |
 {{</bootstrap-table>}}
 
-### Use Cases
+## Use Cases
 
-#### Enable metrics only
+### Enable metrics only
 1. **Access the NGINX Instance:** SSH to the virtual machine/server where NGINX Agent is running.
 
 ```
@@ -67,7 +67,7 @@ The following table lists the NGINX Agent features.
 
 Once the steps have been completed, users will be able to view metrics data being sent but will not have the capability to push NGINX configuration changes.
 
-#### Enable the publishing of NGINX configurations and disable the collection of metrics.
+### Enable the publishing of NGINX configurations and disable the collection of metrics.
 1. **Access the NGINX Instance:** SSH to the virtual machine/server where NGINX Agent is running.
 
 ```
