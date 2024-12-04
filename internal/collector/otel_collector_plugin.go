@@ -24,10 +24,18 @@ import (
 )
 
 const (
-	maxTimeToWaitForShutdown      = 30 * time.Second
-	filePermission                = 0o600
-	timestampConversionExpression = `EXPR(split(body, ">")[0] + ">" + ` +
-		`date(split(split(body, ">")[1], " ")[0]).Format("Jan 02 15:04:05") + " " + split(body, " ", 2)[1])`
+	maxTimeToWaitForShutdown = 30 * time.Second
+	filePermission           = 0o600
+	// To conform to the rfc3164 spec the timestamp in the logs need to be formatted correctly.
+	// Here are some examples of what the timestamp conversions look like.
+	// Notice how if the day begins with a zero that the zero is replaced with an empty space.
+
+	// 2024-11-06T17:19:24+00:00 ---> Nov  6 17:19:24
+	// 2024-11-16T17:19:24+00:00 ---> Nov 16 17:19:24
+	timestampConversionExpression = `'EXPR(let timestamp = split(split(body, ">")[1], " ")[0]; ` +
+		`let newTimestamp = timestamp matches "(\\d{4})-(\\d{2})-(0\\d{1})T(\\d{2}):(\\d{2}):(\\d{2}).*" ` +
+		`? date(timestamp).Format("Jan  2 15:04:05") : date(timestamp).Format("Jan 02 15:04:05"); ` +
+		`split(body, ">")[0] + ">" + newTimestamp + " " + split(body, " ", 2)[1])'`
 )
 
 type (
