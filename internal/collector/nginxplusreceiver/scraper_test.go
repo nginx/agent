@@ -24,7 +24,7 @@ func TestScraper(t *testing.T) {
 
 	cfg, ok := createDefaultConfig().(*Config)
 	assert.True(t, ok)
-	cfg.Endpoint = nginxPlusMock.URL + "/api"
+	cfg.APIDetails.URL = nginxPlusMock.URL + "/api"
 	require.NoError(t, component.ValidateConfig(cfg))
 
 	scraper, err := newNginxPlusScraper(receivertest.NewNopSettings(), cfg)

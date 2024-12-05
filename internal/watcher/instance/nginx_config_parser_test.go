@@ -15,19 +15,20 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/pkg/files"
+	"google.golang.org/protobuf/testing/protocmp"
+
 	"github.com/nginx/agent/v3/test/stub"
 
-	"github.com/google/go-cmp/cmp"
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/pkg/files"
 	testconfig "github.com/nginx/agent/v3/test/config"
 	"github.com/nginx/agent/v3/test/helpers"
 	modelHelpers "github.com/nginx/agent/v3/test/model"
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/nginx/agent/v3/test/types"
 	crossplane "github.com/nginxinc/nginx-go-crossplane"
-	"google.golang.org/protobuf/testing/protocmp"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -242,6 +243,23 @@ var (
 		api;
 	}
 }`
+
+	testConf20 = `server {
+    listen       unix:/var/run/nginx/nginx-status.sock;
+    location /stub_status {
+        stub_status;
+    }
+}
+`
+	testConf21 = `server {
+    listen unix:/var/run/nginx/nginx-plus-api.sock;
+    access_log off;
+
+    location /api {
+        api write=on;
+    }
+  }
+`
 )
 
 func TestNginxConfigParser_Parse(t *testing.T) {
@@ -312,7 +330,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			result, parseError := nginxConfig.Parse(ctx, test.instance)
 			require.NoError(t, parseError)
 
-			if diff := cmp.Diff(expectedConfigContext, result, protocmp.Transform()); diff != "" {
+			if diff := cmp.Diff(expectedConfigContext.AccessLogs, result.AccessLogs, protocmp.Transform()); diff != "" {
 				t.Errorf("\n%v", diff)
 			}
 		})
@@ -365,139 +383,302 @@ func TestNginxConfigParser_sslCert(t *testing.T) {
 	assert.Equal(t, certFile, sslCert.GetFileMeta().GetName())
 }
 
+// nolint: maintidx
 func TestNginxConfigParser_urlsForLocationDirective(t *testing.T) {
 	tmpDir := t.TempDir()
 	for _, tt := range []struct {
+		name string
 		conf string
-		oss  []string
-		plus []string
+		oss  []*model.APIDetails
+		plus []*model.APIDetails
 	}{
 		{
-			plus: []string{
-				"http://127.0.0.1:80/api/",
-				"http://localhost:80/api/",
+			plus: []*model.APIDetails{
+				{
+					URL:      "http://127.0.0.1:80/api/",
+					Listen:   "127.0.0.1:80",
+					Location: "/api/",
+				},
+				{
+					URL:      "http://localhost:80/api/",
+					Listen:   "localhost:80",
+					Location: "/api/",
+				},
 			},
+			name: "Test 1: listen localhost 80, allow 127.0.0.1 - Plus",
 			conf: testConf01,
 		},
 		{
-			plus: []string{
-				"http://127.0.0.1:80/api/",
+			plus: []*model.APIDetails{
+				{
+					URL:      "http://127.0.0.1:80/api/",
+					Listen:   "127.0.0.1:80",
+					Location: "/api/",
+				},
 			},
+			name: "Test 2: listen *:80 - Plus",
 			conf: testConf02,
 		},
 		{
-			plus: []string{
-				"http://127.0.0.1:80/api/",
+			plus: []*model.APIDetails{
+				{
+					URL:      "http://127.0.0.1:80/api/",
+					Listen:   "127.0.0.1:80",
+					Location: "/api/",
+				},
 			},
+			name: "Test 3: server_name _ - Plus",
 			conf: testConf03,
 		},
 		{
-			plus: []string{
-				"http://127.0.0.1:8888/api/",
-				"http://status.internal.com:8888/api/",
+			plus: []*model.APIDetails{
+				{
+					URL:      "http://127.0.0.1:8888/api/",
+					Listen:   "127.0.0.1:8888",
+					Location: "/api/",
+				},
+				{
+					URL:      "http://status.internal.com:8888/api/",
+					Listen:   "status.internal.com:8888",
+					Location: "/api/",
+				},
 			},
+			name: "Test 4:  server_name status.internal.com - Plus",
 			conf: testConf04,
 		},
 		{
-			plus: []string{
-				"http://127.0.0.1:8080/privateapi",
+			plus: []*model.APIDetails{
+				{
+					URL:      "http://127.0.0.1:8080/privateapi",
+					Listen:   "127.0.0.1:8080",
+					Location: "/privateapi",
+				},
 			},
+			name: "Test 5:  location /privateapi - Plus",
 			conf: testConf05,
 		},
 		{
-			plus: []string{
-				"http://127.0.0.1:80/api/",
-				"http://[::1]:80/api/",
+			plus: []*model.APIDetails{
+				{
+					URL:      "http://127.0.0.1:80/api/",
+					Listen:   "127.0.0.1:80",
+					Location: "/api/",
+				},
+				{
+					URL:      "http://[::1]:80/api/",
+					Listen:   "[::1]:80",
+					Location: "/api/",
+				},
 			},
+			name: "Test 6:  listen [::]:80 default_server - Plus",
 			conf: testConf06,
 		},
 		{
-			plus: []string{
-				"http://127.0.0.1:80/api/",
+			plus: []*model.APIDetails{
+				{
+					URL:      "http://127.0.0.1:80/api/",
+					Listen:   "127.0.0.1:80",
+					Location: "/api/",
+				},
 			},
+			name: "Test 7:  listen 127.0.0.1, server_name _ - Plus",
 			conf: testConf07,
 		},
 		{
-			plus: []string{
-				"http://127.0.0.1:80/api/",
+			plus: []*model.APIDetails{
+				{
+					URL:      "http://127.0.0.1:80/api/",
+					Listen:   "127.0.0.1:80",
+					Location: "/api/",
+				},
 			},
+			name: "Test 8: location = /api/, listen 127.0.0.1 - Plus",
 			conf: testConf08,
 		},
 		{
-			plus: []string{
-				"http://127.0.0.1:80/api/",
+			plus: []*model.APIDetails{
+				{
+					URL:      "http://127.0.0.1:80/api/",
+					Listen:   "127.0.0.1:80",
+					Location: "/api/",
+				},
 			},
+			name: "Test 9:  location = /api/ , listen 80 - Plus",
 			conf: testConf09,
 		},
 		{
-			plus: []string{
-				"http://127.0.0.1:80/api/",
+			plus: []*model.APIDetails{
+				{
+					URL:      "http://127.0.0.1:80/api/",
+					Listen:   "127.0.0.1:80",
+					Location: "/api/",
+				},
 			},
+			name: "Test 10: listen :80 - Plus",
 			conf: testConf10,
 		},
 		{
-			plus: []string{
-				"http://localhost:80/api/",
+			plus: []*model.APIDetails{
+				{
+					URL:      "http://localhost:80/api/",
+					Listen:   "localhost:80",
+					Location: "/api/",
+				},
 			},
+			name: "Test 11: listen localhost - Plus",
 			conf: testConf11,
 		},
 		{
-			plus: []string{
-				"http://[::1]:80/api/",
+			plus: []*model.APIDetails{
+				{
+					URL:      "http://[::1]:80/api/",
+					Listen:   "[::1]:80",
+					Location: "/api/",
+				},
 			},
+			name: "Test 12: listen [::1] - Plus",
 			conf: testConf12,
 		},
 		{
-			plus: []string{
-				"http://[::1]:8000/api/",
+			plus: []*model.APIDetails{
+				{
+					URL:      "http://[::1]:8000/api/",
+					Listen:   "[::1]:8000",
+					Location: "/api/",
+				},
 			},
+			name: "Test 13: listen [::]:8000 - Plus",
 			conf: testConf13,
 		},
 		{
-			oss: []string{
-				"http://localhost:80/stub_status",
-				"http://127.0.0.1:80/stub_status",
+			oss: []*model.APIDetails{
+				{
+					URL:      "http://localhost:80/stub_status",
+					Listen:   "localhost:80",
+					Location: "/stub_status",
+				},
+				{
+					URL:      "http://127.0.0.1:80/stub_status",
+					Listen:   "127.0.0.1:80",
+					Location: "/stub_status",
+				},
 			},
+			name: "Test 14: listen 127.0.0.1:80, server_name localhost - OSS",
 			conf: testConf14,
 		},
 		{
-			oss: []string{
-				"http://localhost:80/stub_status",
-				"http://127.0.0.1:80/stub_status",
+			oss: []*model.APIDetails{
+				{
+					URL:      "http://localhost:80/stub_status",
+					Listen:   "localhost:80",
+					Location: "/stub_status",
+				},
+				{
+					URL:      "http://127.0.0.1:80/stub_status",
+					Listen:   "127.0.0.1:80",
+					Location: "/stub_status",
+				},
 			},
+			name: "Test 15: listen :80, server_name localhost - OSS",
 			conf: testConf15,
 		},
 		{
-			oss: []string{
-				"http://localhost:80/stub_status",
-				"http://127.0.0.1:80/stub_status",
+			oss: []*model.APIDetails{
+				{
+					URL:      "http://localhost:80/stub_status",
+					Listen:   "localhost:80",
+					Location: "/stub_status",
+				},
+				{
+					URL:      "http://127.0.0.1:80/stub_status",
+					Listen:   "127.0.0.1:80",
+					Location: "/stub_status",
+				},
 			},
+			name: "Test 16: listen 80, server_name localhost - OSS",
 			conf: testConf16,
 		},
 		{
-			oss: []string{
-				"http://localhost:80/stub_status",
-				"http://127.0.0.1:80/stub_status",
+			oss: []*model.APIDetails{
+				{
+					URL:      "http://localhost:80/stub_status",
+					Listen:   "localhost:80",
+					Location: "/stub_status",
+				},
+				{
+					URL:      "http://127.0.0.1:80/stub_status",
+					Listen:   "127.0.0.1:80",
+					Location: "/stub_status",
+				},
 			},
+			name: "Test 17: location = /stub_status - OSS",
 			conf: testConf17,
 		},
 		{
-			oss: []string{
-				"http://localhost:80/stub_status",
-				"http://127.0.0.1:80/stub_status",
+			oss: []*model.APIDetails{
+				{
+					URL:      "http://localhost:80/stub_status",
+					Listen:   "localhost:80",
+					Location: "/stub_status",
+				},
+				{
+					URL:      "http://127.0.0.1:80/stub_status",
+					Listen:   "127.0.0.1:80",
+					Location: "/stub_status",
+				},
 			},
-			plus: []string{
-				"http://localhost:80/api/",
-				"http://127.0.0.1:80/api/",
+			plus: []*model.APIDetails{
+				{
+					URL:      "http://localhost:80/api/",
+					Listen:   "localhost:80",
+					Location: "/api/",
+				},
+				{
+					URL:      "http://127.0.0.1:80/api/",
+					Listen:   "127.0.0.1:80",
+					Location: "/api/",
+				},
 			},
+			name: "Test 18: listen 80 - OSS & Plus",
 			conf: testConf18,
 		},
 		{
-			plus: []string{
-				"http://127.0.0.1:49151/api",
-				"http://127.0.0.1:49151/api",
+			plus: []*model.APIDetails{
+				{
+					URL:      "http://127.0.0.1:49151/api",
+					Listen:   "127.0.0.1:49151",
+					Location: "/api",
+				},
+				{
+					URL:      "http://127.0.0.1:49151/api",
+					Listen:   "127.0.0.1:49151",
+					Location: "/api",
+				},
 			},
+			name: "Test 19: listen 127.0.0.1:49151 - Plus",
 			conf: testConf19,
+		},
+		{
+			oss: []*model.APIDetails{
+				{
+					URL:      "http://config-status/stub_status",
+					Listen:   "unix:/var/run/nginx/nginx-status.sock",
+					Location: "/stub_status",
+				},
+			},
+			name: "Test 20: unix:/var/run/nginx/nginx-status.sock - OSS Unix Socket",
+			conf: testConf20,
+		},
+		{
+			plus: []*model.APIDetails{
+				{
+					URL:      "http://nginx-plus-api/api",
+					Listen:   "unix:/var/run/nginx/nginx-plus-api.sock",
+					Location: "/api",
+				},
+			},
+			name: "Test 21: listen unix:/var/run/nginx/nginx-plus-api.sock- Plus Unix Socket",
+			conf: testConf21,
 		},
 	} {
 		ctx := context.Background()
@@ -513,17 +694,18 @@ func TestNginxConfigParser_urlsForLocationDirective(t *testing.T) {
 
 		payload, err := crossplane.Parse(f.Name(), parseOptions)
 		require.NoError(t, err)
-		nginxConfigParser := NewNginxConfigParser(types.AgentConfig())
+		ncp := NewNginxConfigParser(types.AgentConfig())
 
-		var oss, plus []string
+		var oss, plus []*model.APIDetails
 
 		assert.Len(t, payload.Config, 1)
 		for _, xpConf := range payload.Config {
 			assert.Len(t, xpConf.Parsed, 1)
-			err = nginxConfigParser.crossplaneConfigTraverse(ctx, &xpConf,
+			err = ncp.crossplaneConfigTraverse(ctx, &xpConf,
 				func(ctx context.Context, parent, directive *crossplane.Directive) error {
-					_oss := nginxConfigParser.urlsForLocationDirective(parent, directive, stubStatusAPIDirective)
-					_plus := nginxConfigParser.urlsForLocationDirective(parent, directive, plusAPIDirective)
+					_oss := ncp.urlsForLocationDirectiveAPIDetails(parent, directive,
+						stubStatusAPIDirective)
+					_plus := ncp.urlsForLocationDirectiveAPIDetails(parent, directive, plusAPIDirective)
 					oss = append(oss, _oss...)
 					plus = append(plus, _plus...)
 
@@ -539,7 +721,7 @@ func TestNginxConfigParser_urlsForLocationDirective(t *testing.T) {
 
 // linter doesn't like the duplicate handler and server function
 // nolint: dupl
-func TestNginxConfigParser_pingPlusAPIEndpoint(t *testing.T) {
+func TestNginxConfigParser_pingAPIEndpoint_PlusAPI(t *testing.T) {
 	handler := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		if req.URL.String() == "/good_api" {
 			data := []byte("[1,2,3,4,5,6,7,8]")
@@ -590,7 +772,10 @@ func TestNginxConfigParser_pingPlusAPIEndpoint(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ctx := context.Background()
-			result := nginxConfigParser.pingPlusAPIEndpoint(ctx, fmt.Sprintf("%s%s", fakeServer.URL, test.endpoint))
+			result := nginxConfigParser.pingAPIEndpoint(ctx, &model.APIDetails{
+				URL:    fmt.Sprintf("%s%s", fakeServer.URL, test.endpoint),
+				Listen: "",
+			}, "api")
 			assert.Equal(t, test.expected, result)
 		})
 	}
@@ -598,7 +783,7 @@ func TestNginxConfigParser_pingPlusAPIEndpoint(t *testing.T) {
 
 // linter doesn't like the duplicate handler and server function
 // nolint: dupl
-func TestNginxConfigParser_pingStubStatusAPIEndpoint(t *testing.T) {
+func TestNginxConfigParser_pingAPIEndpoint_StubStatus(t *testing.T) {
 	handler := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		if req.URL.String() == "/good_api" {
 			data := []byte(`
@@ -657,8 +842,11 @@ Reading: 0 Writing: 1 Waiting: 1
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ctx := context.Background()
-			statusAPI := fmt.Sprintf("%s%s", fakeServer.URL, test.endpoint)
-			result := nginxConfigParser.pingStubStatusAPIEndpoint(ctx, statusAPI)
+			statusAPI := &model.APIDetails{
+				URL:    fmt.Sprintf("%s%s", fakeServer.URL, test.endpoint),
+				Listen: "",
+			}
+			result := nginxConfigParser.pingAPIEndpoint(ctx, statusAPI, "stub_status")
 			assert.Equal(t, test.expected, result)
 		})
 	}

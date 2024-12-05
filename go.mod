@@ -36,14 +36,13 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/testbed v0.114.0
 	github.com/shirou/gopsutil/v4 v4.24.10
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/testcontainers/testcontainers-go v0.34.0
 	github.com/trivago/grok v1.0.0
 	go.opentelemetry.io/collector/component v0.114.0
 	go.opentelemetry.io/collector/component/componenttest v0.114.0
 	go.opentelemetry.io/collector/config/confighttp v0.114.0
 	go.opentelemetry.io/collector/config/configtelemetry v0.114.0
-	go.opentelemetry.io/collector/config/configtls v1.20.0
 	go.opentelemetry.io/collector/confmap v1.20.0
 	go.opentelemetry.io/collector/confmap/provider/envprovider v1.20.0
 	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.20.0
@@ -233,6 +232,7 @@ require (
 	go.opentelemetry.io/collector/config/confignet v1.20.0 // indirect
 	go.opentelemetry.io/collector/config/configopaque v1.20.0 // indirect
 	go.opentelemetry.io/collector/config/configretry v1.20.0 // indirect
+	go.opentelemetry.io/collector/config/configtls v1.20.0 // indirect
 	go.opentelemetry.io/collector/config/internal v0.114.0 // indirect
 	go.opentelemetry.io/collector/connector/connectorprofiles v0.114.0 // indirect
 	go.opentelemetry.io/collector/connector/connectortest v0.114.0 // indirect

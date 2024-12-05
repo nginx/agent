@@ -371,25 +371,33 @@ func (oc *Collector) restartCollector(ctx context.Context) {
 func (oc *Collector) checkForNewNginxReceivers(nginxConfigContext *model.NginxConfigContext) bool {
 	nginxReceiverFound, reloadCollector := oc.updateExistingNginxPlusReceiver(nginxConfigContext)
 
-	if !nginxReceiverFound && nginxConfigContext.PlusAPI != "" {
+	if !nginxReceiverFound && nginxConfigContext.PlusAPI.URL != "" {
 		oc.config.Collector.Receivers.NginxPlusReceivers = append(
 			oc.config.Collector.Receivers.NginxPlusReceivers,
 			config.NginxPlusReceiver{
 				InstanceID: nginxConfigContext.InstanceID,
-				PlusAPI:    nginxConfigContext.PlusAPI,
+				PlusAPI: config.APIDetails{
+					URL:      nginxConfigContext.PlusAPI.URL,
+					Listen:   nginxConfigContext.PlusAPI.Listen,
+					Location: nginxConfigContext.PlusAPI.Location,
+				},
 			},
 		)
 
 		reloadCollector = true
-	} else if nginxConfigContext.PlusAPI == "" {
+	} else if nginxConfigContext.PlusAPI.URL == "" {
 		nginxReceiverFound, reloadCollector = oc.updateExistingNginxOSSReceiver(nginxConfigContext)
 
-		if !nginxReceiverFound && nginxConfigContext.StubStatus != "" {
+		if !nginxReceiverFound && nginxConfigContext.StubStatus.URL != "" {
 			oc.config.Collector.Receivers.NginxReceivers = append(
 				oc.config.Collector.Receivers.NginxReceivers,
 				config.NginxReceiver{
 					InstanceID: nginxConfigContext.InstanceID,
-					StubStatus: nginxConfigContext.StubStatus,
+					StubStatus: config.APIDetails{
+						URL:      nginxConfigContext.StubStatus.URL,
+						Listen:   nginxConfigContext.StubStatus.Listen,
+						Location: nginxConfigContext.StubStatus.Location,
+					},
 					AccessLogs: toConfigAccessLog(nginxConfigContext.AccessLogs),
 				},
 			)
@@ -408,13 +416,13 @@ func (oc *Collector) updateExistingNginxPlusReceiver(
 		if nginxPlusReceiver.InstanceID == nginxConfigContext.InstanceID {
 			nginxReceiverFound = true
 
-			if nginxPlusReceiver.PlusAPI != nginxConfigContext.PlusAPI {
+			if nginxPlusReceiver.PlusAPI.URL != nginxConfigContext.PlusAPI.URL {
 				oc.config.Collector.Receivers.NginxPlusReceivers = append(
 					oc.config.Collector.Receivers.NginxPlusReceivers[:index],
 					oc.config.Collector.Receivers.NginxPlusReceivers[index+1:]...,
 				)
-				if nginxConfigContext.PlusAPI != "" {
-					nginxPlusReceiver.PlusAPI = nginxConfigContext.PlusAPI
+				if nginxConfigContext.PlusAPI.URL != "" {
+					nginxPlusReceiver.PlusAPI.URL = nginxConfigContext.PlusAPI.URL
 					oc.config.Collector.Receivers.NginxPlusReceivers = append(
 						oc.config.Collector.Receivers.NginxPlusReceivers,
 						nginxPlusReceiver,
@@ -444,8 +452,12 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 					oc.config.Collector.Receivers.NginxReceivers[:index],
 					oc.config.Collector.Receivers.NginxReceivers[index+1:]...,
 				)
-				if nginxConfigContext.StubStatus != "" {
-					nginxReceiver.StubStatus = nginxConfigContext.StubStatus
+				if nginxConfigContext.StubStatus.URL != "" {
+					nginxReceiver.StubStatus = config.APIDetails{
+						URL:      nginxConfigContext.StubStatus.URL,
+						Listen:   nginxConfigContext.StubStatus.Listen,
+						Location: nginxConfigContext.StubStatus.Location,
+					}
 					nginxReceiver.AccessLogs = toConfigAccessLog(nginxConfigContext.AccessLogs)
 					oc.config.Collector.Receivers.NginxReceivers = append(
 						oc.config.Collector.Receivers.NginxReceivers,
@@ -490,7 +502,7 @@ func (oc *Collector) updateResourceAttributes(
 }
 
 func isOSSReceiverChanged(nginxReceiver config.NginxReceiver, nginxConfigContext *model.NginxConfigContext) bool {
-	return nginxReceiver.StubStatus != nginxConfigContext.StubStatus ||
+	return nginxReceiver.StubStatus.URL != nginxConfigContext.StubStatus.URL ||
 		len(nginxReceiver.AccessLogs) != len(nginxConfigContext.AccessLogs)
 }
 

@@ -9,6 +9,11 @@ import "github.com/nginx/agent/v3/internal/model"
 
 func GetConfigContext() *model.NginxConfigContext {
 	return &model.NginxConfigContext{
+		StubStatus: &model.APIDetails{
+			URL:      "",
+			Listen:   "",
+			Location: "",
+		},
 		AccessLogs: []*model.AccessLog{{Name: "access.logs"}},
 		ErrorLogs:  []*model.ErrorLog{{Name: "error.log"}},
 	}
@@ -22,6 +27,11 @@ func GetConfigContextWithNames(
 	instanceID string,
 ) *model.NginxConfigContext {
 	return &model.NginxConfigContext{
+		StubStatus: &model.APIDetails{
+			URL:      "",
+			Listen:   "",
+			Location: "",
+		},
 		AccessLogs: []*model.AccessLog{
 			{
 				Name:        accessLogName,

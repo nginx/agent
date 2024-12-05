@@ -172,7 +172,11 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 				Topic: bus.NginxConfigUpdateTopic,
 				Data: &model.NginxConfigContext{
 					InstanceID: "123",
-					PlusAPI:    "",
+					PlusAPI: &model.APIDetails{
+						URL:      "",
+						Listen:   "",
+						Location: "",
+					},
 				},
 			},
 			receivers: config.Receivers{
@@ -181,7 +185,11 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 				NginxPlusReceivers: []config.NginxPlusReceiver{
 					{
 						InstanceID: "123",
-						PlusAPI:    "",
+						PlusAPI: config.APIDetails{
+							URL:      "",
+							Listen:   "",
+							Location: "",
+						},
 					},
 				},
 			},
@@ -192,7 +200,16 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 				Topic: bus.NginxConfigUpdateTopic,
 				Data: &model.NginxConfigContext{
 					InstanceID: "123",
-					StubStatus: "",
+					StubStatus: &model.APIDetails{
+						URL:      "",
+						Listen:   "",
+						Location: "",
+					},
+					PlusAPI: &model.APIDetails{
+						URL:      "",
+						Listen:   "",
+						Location: "",
+					},
 					AccessLogs: []*model.AccessLog{
 						{
 							Name:   "/var/log/nginx/access.log",
@@ -207,7 +224,11 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 				NginxReceivers: []config.NginxReceiver{
 					{
 						InstanceID: "123",
-						StubStatus: "",
+						StubStatus: config.APIDetails{
+							URL:      "",
+							Listen:   "",
+							Location: "",
+						},
 						AccessLogs: []config.AccessLog{
 							{
 								FilePath:  "/var/log/nginx/access.log",
@@ -234,8 +255,13 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 			conf.Collector.Receivers.OtlpReceivers = nil
 
 			if len(test.receivers.NginxPlusReceivers) == 1 {
-				url := fmt.Sprintf("%s/api", nginxPlusMock.URL)
-				test.receivers.NginxPlusReceivers[0].PlusAPI = url
+				apiDetails := config.APIDetails{
+					URL:      fmt.Sprintf("%s/api", nginxPlusMock.URL),
+					Listen:   "",
+					Location: "",
+				}
+
+				test.receivers.NginxPlusReceivers[0].PlusAPI = apiDetails
 
 				model, ok := test.message.Data.(*model.NginxConfigContext)
 				if !ok {
@@ -243,10 +269,16 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 					t.Fail()
 				}
 
-				model.PlusAPI = url
+				model.PlusAPI.URL = apiDetails.URL
+				model.PlusAPI.Listen = apiDetails.Listen
+				model.PlusAPI.Location = apiDetails.Location
 			} else {
-				url := fmt.Sprintf("%s/stub_status", nginxPlusMock.URL)
-				test.receivers.NginxReceivers[0].StubStatus = url
+				apiDetails := config.APIDetails{
+					URL:      fmt.Sprintf("%s/stub_status", nginxPlusMock.URL),
+					Listen:   "",
+					Location: "",
+				}
+				test.receivers.NginxReceivers[0].StubStatus = apiDetails
 
 				model, ok := test.message.Data.(*model.NginxConfigContext)
 				if !ok {
@@ -254,7 +286,9 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 					t.Fail()
 				}
 
-				model.StubStatus = url
+				model.StubStatus.URL = apiDetails.URL
+				model.PlusAPI.Listen = apiDetails.Listen
+				model.PlusAPI.Location = apiDetails.Location
 			}
 
 			conf.Collector.Processors.Batch = nil
@@ -448,7 +482,11 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 			name: "Test 1: Existing NGINX Receiver",
 			nginxConfigContext: &model.NginxConfigContext{
 				InstanceID: "123",
-				StubStatus: "http://new-test-host:8080/api",
+				StubStatus: &model.APIDetails{
+					URL:      "http://new-test-host:8080/api",
+					Listen:   "",
+					Location: "",
+				},
 				AccessLogs: []*model.AccessLog{
 					{
 						Name:   "/etc/nginx/test.log",
@@ -460,7 +498,11 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 				NginxReceivers: []config.NginxReceiver{
 					{
 						InstanceID: "123",
-						StubStatus: "http://test.com:8080/api",
+						StubStatus: config.APIDetails{
+							URL:      "http://test.com:8080/api",
+							Listen:   "",
+							Location: "",
+						},
 						AccessLogs: []config.AccessLog{
 							{
 								FilePath:  "/etc/nginx/existing.log",
@@ -474,7 +516,11 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 				NginxReceivers: []config.NginxReceiver{
 					{
 						InstanceID: "123",
-						StubStatus: "http://new-test-host:8080/api",
+						StubStatus: config.APIDetails{
+							URL:      "http://new-test-host:8080/api",
+							Listen:   "",
+							Location: "",
+						},
 						AccessLogs: []config.AccessLog{
 							{
 								FilePath:  "/etc/nginx/test.log",
@@ -489,13 +535,21 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 			name: "Test 2: Removing NGINX Receiver",
 			nginxConfigContext: &model.NginxConfigContext{
 				InstanceID: "123",
-				StubStatus: "",
+				StubStatus: &model.APIDetails{
+					URL:      "",
+					Listen:   "",
+					Location: "",
+				},
 			},
 			existingReceivers: config.Receivers{
 				NginxReceivers: []config.NginxReceiver{
 					{
 						InstanceID: "123",
-						StubStatus: "http://test.com:8080/api",
+						StubStatus: config.APIDetails{
+							URL:      "http://test.com:8080/api",
+							Listen:   "",
+							Location: "",
+						},
 					},
 				},
 			},
@@ -537,13 +591,21 @@ func TestCollector_updateExistingNginxPlusReceiver(t *testing.T) {
 			name: "Test 1: Existing NGINX Plus Receiver",
 			nginxConfigContext: &model.NginxConfigContext{
 				InstanceID: "123",
-				PlusAPI:    "http://new-test-host:8080/api",
+				PlusAPI: &model.APIDetails{
+					URL:      "http://new-test-host:8080/api",
+					Listen:   "",
+					Location: "",
+				},
 			},
 			existingReceivers: config.Receivers{
 				NginxPlusReceivers: []config.NginxPlusReceiver{
 					{
 						InstanceID: "123",
-						PlusAPI:    "http://test.com:8080/api",
+						PlusAPI: config.APIDetails{
+							URL:      "http://test.com:8080/api",
+							Listen:   "",
+							Location: "",
+						},
 					},
 				},
 			},
@@ -551,7 +613,11 @@ func TestCollector_updateExistingNginxPlusReceiver(t *testing.T) {
 				NginxPlusReceivers: []config.NginxPlusReceiver{
 					{
 						InstanceID: "123",
-						PlusAPI:    "http://new-test-host:8080/api",
+						PlusAPI: config.APIDetails{
+							URL:      "http://new-test-host:8080/api",
+							Listen:   "",
+							Location: "",
+						},
 					},
 				},
 			},
@@ -560,13 +626,21 @@ func TestCollector_updateExistingNginxPlusReceiver(t *testing.T) {
 			name: "Test 2: Removing NGINX Plus Receiver",
 			nginxConfigContext: &model.NginxConfigContext{
 				InstanceID: "123",
-				PlusAPI:    "",
+				PlusAPI: &model.APIDetails{
+					URL:      "",
+					Listen:   "",
+					Location: "",
+				},
 			},
 			existingReceivers: config.Receivers{
 				NginxPlusReceivers: []config.NginxPlusReceiver{
 					{
 						InstanceID: "123",
-						PlusAPI:    "http://test.com:8080/api",
+						PlusAPI: config.APIDetails{
+							URL:      "http://test.com:8080/api",
+							Listen:   "",
+							Location: "",
+						},
 					},
 				},
 			},

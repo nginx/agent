@@ -12,20 +12,32 @@ import (
 )
 
 type NginxConfigContext struct {
-	StubStatus string
-	PlusAPI    string
+	StubStatus *APIDetails
+	PlusAPI    *APIDetails
 	InstanceID string
 	Files      []*v1.File
 	AccessLogs []*AccessLog
 	ErrorLogs  []*ErrorLog
 }
 
+type APIDetails struct {
+	URL      string
+	Listen   string
+	Location string
+}
+
+// Complexity is 11, allowed is 10
+// nolint: revive, cyclop
 func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext) bool {
-	if ncc.StubStatus != otherNginxConfigContext.StubStatus {
+	if ncc.StubStatus.URL != otherNginxConfigContext.StubStatus.URL || ncc.StubStatus.Listen !=
+		otherNginxConfigContext.StubStatus.Listen || ncc.StubStatus.Location !=
+		otherNginxConfigContext.StubStatus.Location {
 		return false
 	}
 
-	if ncc.PlusAPI != otherNginxConfigContext.PlusAPI {
+	if ncc.PlusAPI.URL != otherNginxConfigContext.PlusAPI.URL || ncc.PlusAPI.Listen !=
+		otherNginxConfigContext.PlusAPI.Listen || ncc.PlusAPI.Location !=
+		otherNginxConfigContext.PlusAPI.Location {
 		return false
 	}
 
