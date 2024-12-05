@@ -34,6 +34,9 @@ func TestFileManagerService_UpdateOverview(t *testing.T) {
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 	fileHash := files.GenerateHash(fileContent)
 
+	fileWriteErr := os.WriteFile(filePath, fileContent, 0o600)
+	require.NoError(t, fileWriteErr)
+
 	overview := protos.FileOverview(filePath, fileHash)
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
@@ -43,6 +46,8 @@ func TestFileManagerService_UpdateOverview(t *testing.T) {
 
 	fakeFileServiceClient.UpdateOverviewReturnsOnCall(1, &mpi.UpdateOverviewResponse{}, nil)
 
+	fakeFileServiceClient.UpdateFileReturns(&mpi.UpdateFileResponse{}, nil)
+
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
 	fileManagerService.SetIsConnected(true)
 
@@ -50,10 +55,48 @@ func TestFileManagerService_UpdateOverview(t *testing.T) {
 		{
 			FileMeta: fileMeta,
 		},
-	})
+	}, 0)
 
 	require.NoError(t, err)
 	assert.Equal(t, 2, fakeFileServiceClient.UpdateOverviewCallCount())
+}
+
+func TestFileManagerService_UpdateOverview_MaxIterations(t *testing.T) {
+	ctx := context.Background()
+
+	filePath := filepath.Join(t.TempDir(), "nginx.conf")
+	fileMeta := protos.FileMeta(filePath, "")
+
+	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
+	fileHash := files.GenerateHash(fileContent)
+
+	fileWriteErr := os.WriteFile(filePath, fileContent, 0o600)
+	require.NoError(t, fileWriteErr)
+
+	overview := protos.FileOverview(filePath, fileHash)
+
+	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+
+	// do 5 iterations
+	for i := 0; i <= 5; i++ {
+		fakeFileServiceClient.UpdateOverviewReturnsOnCall(i, &mpi.UpdateOverviewResponse{
+			Overview: overview,
+		}, nil)
+	}
+
+	fakeFileServiceClient.UpdateFileReturns(&mpi.UpdateFileResponse{}, nil)
+
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
+	fileManagerService.SetIsConnected(true)
+
+	err := fileManagerService.UpdateOverview(ctx, "123", []*mpi.File{
+		{
+			FileMeta: fileMeta,
+		},
+	}, 0)
+
+	require.Error(t, err)
+	assert.Equal(t, "too many UpdateOverview attempts", err.Error())
 }
 
 func TestFileManagerService_UpdateFile(t *testing.T) {

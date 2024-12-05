@@ -42,7 +42,7 @@ type (
 	}
 
 	fileManagerServiceInterface interface {
-		UpdateOverview(ctx context.Context, instanceID string, filesToUpdate []*mpi.File) error
+		UpdateOverview(ctx context.Context, instanceID string, filesToUpdate []*mpi.File, iteration int) error
 		ConfigApply(ctx context.Context, configApplyRequest *mpi.ConfigApplyRequest) (writeStatus model.WriteStatus,
 			err error)
 		Rollback(ctx context.Context, instanceID string) error
@@ -88,13 +88,18 @@ func (fms *FileManagerService) UpdateOverview(
 	ctx context.Context,
 	instanceID string,
 	filesToUpdate []*mpi.File,
+	iteration int,
 ) error {
+	const maxAttempts = 5
 	correlationID := logger.GetCorrelationID(ctx)
-	requestCorrelationID := logger.GenerateCorrelationID()
-	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, requestCorrelationID)
+	var requestCorrelationID slog.Attr
 
-	slog.InfoContext(newCtx, "Updating file overview", "instance_id", instanceID,
-		"parent_correlation_id", correlationID)
+	// error case for the UpdateOverview attempts
+	if iteration > maxAttempts {
+		return errors.New("too many UpdateOverview attempts")
+	}
+
+	newCtx, correlationID := fms.setupContext(ctx, iteration)
 
 	request := &mpi.UpdateOverviewRequest{
 		MessageMeta: &mpi.MessageMeta{
@@ -148,25 +153,41 @@ func (fms *FileManagerService) UpdateOverview(
 
 	slog.DebugContext(newCtx, "UpdateOverview response", "response", response)
 
-	// calculate the response.Overview delta vs what is on disk
-	delta, _, compareErr := fms.DetermineFileActions(fms.currentFilesOnDisk,
-		files.ConvertToMapOfFiles(response.GetOverview().GetFiles()))
-
-	if compareErr != nil {
-		return compareErr
+	if response.GetOverview() == nil {
+		slog.Debug("UpdateOverview response is empty")
+		return nil
 	}
+	delta := files.ConvertToMapOfFiles(response.GetOverview().GetFiles())
 
 	if len(delta) != 0 {
-		return fms.checkFileDiffs(ctx, delta, instanceID)
+		return fms.checkFileDiffs(ctx, delta, instanceID, iteration)
 	}
 
 	return err
+}
+
+func (fms *FileManagerService) setupContext(ctx context.Context, iteration int) (context.Context, string) {
+	correlationID := logger.GetCorrelationID(ctx)
+	var requestCorrelationID slog.Attr
+
+	if iteration == 0 {
+		requestCorrelationID = logger.GenerateCorrelationID()
+	} else {
+		requestCorrelationID = logger.GetCorrelationIDAttr(ctx)
+	}
+
+	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, requestCorrelationID)
+	slog.InfoContext(newCtx, "Updating file overview", "instance_id", logger.GetCorrelationIDAttr(ctx),
+		"parent_correlation_id", correlationID)
+
+	return newCtx, correlationID
 }
 
 func (fms *FileManagerService) checkFileDiffs(
 	ctx context.Context,
 	delta map[string]*mpi.File,
 	instanceID string,
+	iteration int,
 ) error {
 	diffFiles := slices.Collect(maps.Values(delta))
 
@@ -177,7 +198,10 @@ func (fms *FileManagerService) checkFileDiffs(
 		}
 	}
 
-	return fms.UpdateOverview(ctx, instanceID, diffFiles)
+	iteration++
+	slog.Debug("iteration value", "iteration", iteration)
+
+	return fms.UpdateOverview(ctx, instanceID, diffFiles, iteration)
 }
 
 func (fms *FileManagerService) UpdateFile(

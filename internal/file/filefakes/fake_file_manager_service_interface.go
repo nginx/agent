@@ -79,12 +79,13 @@ type FakeFileManagerServiceInterface struct {
 	updateFileReturnsOnCall map[int]struct {
 		result1 error
 	}
-	UpdateOverviewStub        func(context.Context, string, []*v1.File) error
+	UpdateOverviewStub        func(context.Context, string, []*v1.File, int) error
 	updateOverviewMutex       sync.RWMutex
 	updateOverviewArgsForCall []struct {
 		arg1 context.Context
 		arg2 string
 		arg3 []*v1.File
+		arg4 int
 	}
 	updateOverviewReturns struct {
 		result1 error
@@ -442,7 +443,7 @@ func (fake *FakeFileManagerServiceInterface) UpdateFileReturnsOnCall(i int, resu
 	}{result1}
 }
 
-func (fake *FakeFileManagerServiceInterface) UpdateOverview(arg1 context.Context, arg2 string, arg3 []*v1.File) error {
+func (fake *FakeFileManagerServiceInterface) UpdateOverview(arg1 context.Context, arg2 string, arg3 []*v1.File, arg4 int) error {
 	var arg3Copy []*v1.File
 	if arg3 != nil {
 		arg3Copy = make([]*v1.File, len(arg3))
@@ -454,13 +455,14 @@ func (fake *FakeFileManagerServiceInterface) UpdateOverview(arg1 context.Context
 		arg1 context.Context
 		arg2 string
 		arg3 []*v1.File
-	}{arg1, arg2, arg3Copy})
+		arg4 int
+	}{arg1, arg2, arg3Copy, arg4})
 	stub := fake.UpdateOverviewStub
 	fakeReturns := fake.updateOverviewReturns
-	fake.recordInvocation("UpdateOverview", []interface{}{arg1, arg2, arg3Copy})
+	fake.recordInvocation("UpdateOverview", []interface{}{arg1, arg2, arg3Copy, arg4})
 	fake.updateOverviewMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3)
+		return stub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1
@@ -474,17 +476,17 @@ func (fake *FakeFileManagerServiceInterface) UpdateOverviewCallCount() int {
 	return len(fake.updateOverviewArgsForCall)
 }
 
-func (fake *FakeFileManagerServiceInterface) UpdateOverviewCalls(stub func(context.Context, string, []*v1.File) error) {
+func (fake *FakeFileManagerServiceInterface) UpdateOverviewCalls(stub func(context.Context, string, []*v1.File, int) error) {
 	fake.updateOverviewMutex.Lock()
 	defer fake.updateOverviewMutex.Unlock()
 	fake.UpdateOverviewStub = stub
 }
 
-func (fake *FakeFileManagerServiceInterface) UpdateOverviewArgsForCall(i int) (context.Context, string, []*v1.File) {
+func (fake *FakeFileManagerServiceInterface) UpdateOverviewArgsForCall(i int) (context.Context, string, []*v1.File, int) {
 	fake.updateOverviewMutex.RLock()
 	defer fake.updateOverviewMutex.RUnlock()
 	argsForCall := fake.updateOverviewArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
 }
 
 func (fake *FakeFileManagerServiceInterface) UpdateOverviewReturns(result1 error) {
