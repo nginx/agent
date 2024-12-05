@@ -4,10 +4,14 @@
 ## Table of Contents
 
 - [mpi/v1/common.proto](#mpi_v1_common-proto)
+    - [AuthSettings](#mpi-v1-AuthSettings)
     - [CommandResponse](#mpi-v1-CommandResponse)
     - [MessageMeta](#mpi-v1-MessageMeta)
+    - [ServerSettings](#mpi-v1-ServerSettings)
+    - [TLSSettings](#mpi-v1-TLSSettings)
   
     - [CommandResponse.CommandStatus](#mpi-v1-CommandResponse-CommandStatus)
+    - [ServerSettings.ServerType](#mpi-v1-ServerSettings-ServerType)
   
 - [mpi/v1/files.proto](#mpi_v1_files-proto)
     - [AttributeTypeAndValue](#mpi-v1-AttributeTypeAndValue)
@@ -87,6 +91,16 @@ This source code is licensed under the Apache License, Version 2.0 license found
 LICENSE file in the root directory of this source tree.
 
 
+<a name="mpi-v1-AuthSettings"></a>
+
+### AuthSettings
+Defines the authentication configuration
+
+
+
+
+
+
 <a name="mpi-v1-CommandResponse"></a>
 
 ### CommandResponse
@@ -120,6 +134,42 @@ Meta-information associated with a message
 
 
 
+
+<a name="mpi-v1-ServerSettings"></a>
+
+### ServerSettings
+The top-level configuration for the command server
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| host | [string](#string) |  | Command server host |
+| port | [int32](#int32) |  | Command server port |
+| type | [ServerSettings.ServerType](#mpi-v1-ServerSettings-ServerType) |  | Server type (enum for gRPC, HTTP, etc.) |
+
+
+
+
+
+
+<a name="mpi-v1-TLSSettings"></a>
+
+### TLSSettings
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| cert | [string](#string) |  | TLS certificate for the command server (e.g., &#34;/path/to/cert.pem&#34;) |
+| key | [string](#string) |  | TLS key for the command server (e.g., &#34;/path/to/key.pem&#34;) |
+| ca | [string](#string) |  | CA certificate for the command server (e.g., &#34;/path/to/ca.pem&#34;) |
+| skip_verify | [bool](#bool) |  | Controls whether a client verifies the server&#39;s certificate chain and host name. If skip_verify is true, accepts any certificate presented by the server and any host name in that certificate. |
+| server_name | [string](#string) |  | Server name for TLS |
+
+
+
+
+
  
 
 
@@ -135,6 +185,19 @@ Command status enum
 | COMMAND_STATUS_ERROR | 2 | Command error |
 | COMMAND_STATUS_IN_PROGRESS | 3 | Command in-progress |
 | COMMAND_STATUS_FAILURE | 4 | Command failure |
+
+
+
+<a name="mpi-v1-ServerSettings-ServerType"></a>
+
+### ServerSettings.ServerType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| SERVER_SETTINGS_TYPE_UNDEFINED | 0 | Undefined server type |
+| SERVER_SETTINGS_TYPE_GRPC | 1 | gRPC server type |
+| SERVER_SETTINGS_TYPE_HTTP | 2 | HTTP server type |
 
 
  
@@ -576,7 +639,14 @@ This contains a series of NGINX Agent configurations
 <a name="mpi-v1-CommandServer"></a>
 
 ### CommandServer
-The command settings, associated with messaging from an external source
+The command server settings, associated with messaging from an external source
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| server | [ServerSettings](#mpi-v1-ServerSettings) |  | Server configuration (e.g., host, port, type) |
+| auth | [AuthSettings](#mpi-v1-AuthSettings) |  | Authentication configuration (e.g., token) |
+| tls | [TLSSettings](#mpi-v1-TLSSettings) |  | TLS configuration for secure communication |
 
 
 
