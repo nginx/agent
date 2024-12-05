@@ -63,14 +63,6 @@ const (
 	DefCollectorExtensionsHealthTLSCAPath       = ""
 	DefCollectorExtensionsHealthTLSSkipVerify   = false
 	DefCollectorExtensionsHealthTLServerNameKey = ""
-
-	DefCollectorPrometheusExporterServerHost      = ""
-	DefCollectorPrometheusExporterServerPort      = 0
-	DefCollectorPrometheusExporterTLSCertPath     = ""
-	DefCollectorPrometheusExporterTLSKeyPath      = ""
-	DefCollectorPrometheusExporterTLSCAPath       = ""
-	DefCollectorPrometheusExporterTLSSkipVerify   = false
-	DefCollectorPrometheusExporterTLServerNameKey = ""
 )
 
 func DefaultFeatures() []string {

@@ -12,12 +12,13 @@ import (
 )
 
 type NginxConfigContext struct {
-	StubStatus string
-	PlusAPI    string
-	InstanceID string
-	Files      []*v1.File
-	AccessLogs []*AccessLog
-	ErrorLogs  []*ErrorLog
+	StubStatus       string
+	PlusAPI          string
+	InstanceID       string
+	Files            []*v1.File
+	AccessLogs       []*AccessLog
+	ErrorLogs        []*ErrorLog
+	NAPSysLogServers []string
 }
 
 func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext) bool {
@@ -42,6 +43,10 @@ func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext
 	}
 
 	if !reflect.DeepEqual(ncc.ErrorLogs, otherNginxConfigContext.ErrorLogs) {
+		return false
+	}
+
+	if !reflect.DeepEqual(ncc.NAPSysLogServers, otherNginxConfigContext.NAPSysLogServers) {
 		return false
 	}
 
