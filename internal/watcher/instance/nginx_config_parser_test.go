@@ -677,7 +677,7 @@ func TestNginxConfigParser_urlsForLocationDirective(t *testing.T) {
 					Location: "/api",
 				},
 			},
-			name: "Test 20: listen unix:/var/run/nginx/nginx-plus-api.sock- Plus Unix Socket",
+			name: "Test 21: listen unix:/var/run/nginx/nginx-plus-api.sock- Plus Unix Socket",
 			conf: testConf21,
 		},
 	} {
