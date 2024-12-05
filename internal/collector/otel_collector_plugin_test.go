@@ -700,7 +700,7 @@ func TestCollector_updateTcplogReceivers(t *testing.T) {
 		assert.True(t, tcplogReceiverDeleted)
 		assert.Len(t, conf.Collector.Receivers.TcplogReceivers, 1)
 		assert.Equal(t, "localhost:152", conf.Collector.Receivers.TcplogReceivers[0].ListenAddress)
-		assert.Len(t, conf.Collector.Receivers.TcplogReceivers[0].Operators, 5)
+		assert.Len(t, conf.Collector.Receivers.TcplogReceivers[0].Operators, 4)
 	})
 }
 
