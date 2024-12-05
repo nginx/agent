@@ -101,7 +101,7 @@ include Makefile.tools
 include Makefile.containers
 include Makefile.packaging
 
-.PHONY: help clean no-local-changes build lint format unit-test integration-test run dev run-mock-management-server generate generate-mocks local-apk-package local-deb-package local-rpm-package
+.PHONY: help clean no-local-changes build lint format unit-test integration-test run dev run-mock-management-grpc-server generate generate-mocks local-apk-package local-deb-package local-rpm-package
 
 help: ## Show help message
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\033[36m\033[0m\n"} /^[$$()% 0-9a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-24s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
