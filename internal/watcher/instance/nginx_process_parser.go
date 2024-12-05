@@ -204,7 +204,10 @@ func convertInfoToInstance(nginxInfo Info) *mpi.Instance {
 			ConfigPath: nginxInfo.ConfPath,
 			Details: &mpi.InstanceRuntime_NginxRuntimeInfo{
 				NginxRuntimeInfo: &mpi.NGINXRuntimeInfo{
-					StubStatus:      "",
+					StubStatus: &mpi.APIDetails{
+						Location: "",
+						Listen:   "",
+					},
 					AccessLogs:      []string{},
 					ErrorLogs:       []string{},
 					LoadableModules: nginxInfo.LoadableModules,
@@ -219,12 +222,18 @@ func convertInfoToInstance(nginxInfo Info) *mpi.Instance {
 			ConfigPath: nginxInfo.ConfPath,
 			Details: &mpi.InstanceRuntime_NginxPlusRuntimeInfo{
 				NginxPlusRuntimeInfo: &mpi.NGINXPlusRuntimeInfo{
-					StubStatus:      "",
+					StubStatus: &mpi.APIDetails{
+						Location: "",
+						Listen:   "",
+					},
 					AccessLogs:      []string{},
 					ErrorLogs:       []string{},
 					LoadableModules: nginxInfo.LoadableModules,
 					DynamicModules:  nginxInfo.DynamicModules,
-					PlusApi:         "",
+					PlusApi: &mpi.APIDetails{
+						Location: "",
+						Listen:   "",
+					},
 				},
 			},
 		}

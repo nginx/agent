@@ -7,10 +7,10 @@ package collector
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/nginx/agent/v3/test/stub"
@@ -19,6 +19,7 @@ import (
 	"go.opentelemetry.io/collector/otelcol"
 
 	"github.com/nginx/agent/v3/internal/bus"
+	"github.com/nginx/agent/v3/internal/collector/types/typesfakes"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/test/helpers"
@@ -26,32 +27,113 @@ import (
 )
 
 func TestCollector_New(t *testing.T) {
-	conf := types.OTelConfig(t)
-	conf.Collector.Log.Path = ""
+	tests := []struct {
+		config        *config.Config
+		expectedError error
+		name          string
+	}{
+		{
+			name:          "Nil agent config",
+			config:        nil,
+			expectedError: errors.New("nil agent config"),
+		},
+		{
+			name: "Nil collector config",
+			config: &config.Config{
+				Collector: nil,
+			},
+			expectedError: errors.New("nil collector config"),
+		},
+		{
+			name: "File write error",
+			config: &config.Config{
+				Collector: &config.Collector{
+					Log: &config.Log{Path: "/invalid/path"},
+				},
+			},
+			expectedError: errors.New("open /invalid/path: no such file or directory"),
+		},
+		{
+			name: "Successful initialization",
+			config: &config.Config{
+				Collector: &config.Collector{
+					Log: &config.Log{Path: "/tmp/test.log"},
+				},
+			},
+			expectedError: nil,
+		},
+	}
 
-	_, err := New(conf)
-	require.NoError(t, err, "NewCollector should not return an error with valid config")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			collector, err := New(tt.config)
+
+			if tt.expectedError != nil {
+				require.Error(t, err)
+				assert.Equal(t, tt.expectedError.Error(), err.Error())
+			} else {
+				require.NoError(t, err)
+				assert.NotNil(t, collector)
+			}
+		})
+	}
 }
 
 func TestCollector_Init(t *testing.T) {
-	conf := types.OTelConfig(t)
-	conf.Collector = &config.Collector{}
-
-	logBuf := &bytes.Buffer{}
-	stub.StubLoggerWith(logBuf)
-
-	collector, err := New(conf)
-	require.NoError(t, err, "NewCollector should not return an error with valid config")
-
-	initError := collector.Init(context.Background(), nil)
-	require.NoError(t, initError)
-
-	if s := logBuf.String(); !strings.Contains(s, "No receivers configured for OTel Collector. "+
-		"Waiting to discover a receiver before starting OTel collector.") {
-		t.Errorf("Unexpected log %s", s)
+	tests := []struct {
+		name          string
+		expectedLog   string
+		expectedError bool
+	}{
+		{
+			name:          "Default configured",
+			expectedError: false,
+			expectedLog:   "",
+		},
+		{
+			name:          "No receivers set in config",
+			expectedError: true,
+			expectedLog:   "No receivers configured for OTel Collector",
+		},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			conf := types.OTelConfig(t)
 
-	assert.True(t, collector.stopped)
+			var collector *Collector
+			var err error
+			logBuf := &bytes.Buffer{}
+			stub.StubLoggerWith(logBuf)
+
+			conf.Collector.Log = &config.Log{Path: "/tmp/test.log"}
+
+			if tt.expectedError {
+				conf.Collector.Receivers = config.Receivers{}
+			}
+
+			collector, err = New(conf)
+			require.NoError(t, err, "NewCollector should not return an error with valid config")
+
+			collector.service = createFakeCollector()
+
+			initError := collector.Init(context.Background(), nil)
+			require.NoError(t, initError)
+
+			validateLog(t, tt.expectedLog, logBuf)
+
+			require.NoError(t, collector.Close(context.TODO()))
+		})
+	}
+}
+
+func validateLog(t *testing.T, expectedLog string, logBuf *bytes.Buffer) {
+	t.Helper()
+
+	if expectedLog != "" {
+		if !strings.Contains(logBuf.String(), expectedLog) {
+			t.Errorf("Expected log to contain %q, but got %q", expectedLog, logBuf.String())
+		}
+	}
 }
 
 func TestCollector_InitAndClose(t *testing.T) {
@@ -68,31 +150,17 @@ func TestCollector_InitAndClose(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, collector.Init(ctx, messagePipe), "Init should not return an error")
 
-	assert.Eventually(
-		t,
-		func() bool { return collector.service.GetState() == otelcol.StateRunning },
-		2*time.Second,
-		100*time.Millisecond,
-	)
+	collector.service = createFakeCollector()
+
+	assert.Equal(t, otelcol.StateRunning, collector.GetState())
 
 	require.NoError(t, collector.Close(ctx), "Close should not return an error")
 
-	assert.Eventually(
-		t,
-		func() bool { return collector.service.GetState() == otelcol.StateClosed },
-		2*time.Second,
-		100*time.Millisecond,
-	)
+	assert.Equal(t, otelcol.StateClosed, collector.GetState())
 }
 
 // nolint: revive
 func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
-	nginxPlusMock := helpers.NewMockNGINXPlusAPIServer(t)
-	defer nginxPlusMock.Close()
-
-	conf := types.OTelConfig(t)
-	conf.Collector.Log.Path = ""
-
 	tests := []struct {
 		name      string
 		message   *bus.Message
@@ -104,26 +172,24 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 				Topic: bus.NginxConfigUpdateTopic,
 				Data: &model.NginxConfigContext{
 					InstanceID: "123",
-					PlusAPI:    fmt.Sprintf("%s/api", nginxPlusMock.URL),
+					PlusAPI: &model.APIDetails{
+						URL:      "",
+						Listen:   "",
+						Location: "",
+					},
 				},
 			},
 			receivers: config.Receivers{
-				HostMetrics: &config.HostMetrics{
-					CollectionInterval: time.Minute,
-					InitialDelay:       time.Second,
-					Scrapers: &config.HostMetricsScrapers{
-						CPU:        &config.CPUScraper{},
-						Disk:       &config.DiskScraper{},
-						Filesystem: &config.FilesystemScraper{},
-						Memory:     &config.MemoryScraper{},
-						Network:    &config.NetworkScraper{},
-					},
-				},
-				OtlpReceivers: types.OtlpReceivers(),
+				HostMetrics:   nil,
+				OtlpReceivers: nil,
 				NginxPlusReceivers: []config.NginxPlusReceiver{
 					{
 						InstanceID: "123",
-						PlusAPI:    fmt.Sprintf("%s/api", nginxPlusMock.URL),
+						PlusAPI: config.APIDetails{
+							URL:      "",
+							Listen:   "",
+							Location: "",
+						},
 					},
 				},
 			},
@@ -134,7 +200,16 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 				Topic: bus.NginxConfigUpdateTopic,
 				Data: &model.NginxConfigContext{
 					InstanceID: "123",
-					StubStatus: "http://test.com:8080/stub_status",
+					StubStatus: &model.APIDetails{
+						URL:      "",
+						Listen:   "",
+						Location: "",
+					},
+					PlusAPI: &model.APIDetails{
+						URL:      "",
+						Listen:   "",
+						Location: "",
+					},
 					AccessLogs: []*model.AccessLog{
 						{
 							Name:   "/var/log/nginx/access.log",
@@ -144,22 +219,16 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 				},
 			},
 			receivers: config.Receivers{
-				HostMetrics: &config.HostMetrics{
-					CollectionInterval: time.Minute,
-					InitialDelay:       time.Second,
-					Scrapers: &config.HostMetricsScrapers{
-						CPU:        &config.CPUScraper{},
-						Disk:       &config.DiskScraper{},
-						Filesystem: &config.FilesystemScraper{},
-						Memory:     &config.MemoryScraper{},
-						Network:    &config.NetworkScraper{},
-					},
-				},
-				OtlpReceivers: types.OtlpReceivers(),
+				HostMetrics:   nil,
+				OtlpReceivers: nil,
 				NginxReceivers: []config.NginxReceiver{
 					{
 						InstanceID: "123",
-						StubStatus: "http://test.com:8080/stub_status",
+						StubStatus: config.APIDetails{
+							URL:      "",
+							Listen:   "",
+							Location: "",
+						},
 						AccessLogs: []config.AccessLog{
 							{
 								FilePath:  "/var/log/nginx/access.log",
@@ -168,15 +237,71 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 						},
 					},
 				},
-				NginxPlusReceivers: []config.NginxPlusReceiver{},
 			},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
+			nginxPlusMock := helpers.NewMockNGINXPlusAPIServer(t)
+			defer nginxPlusMock.Close()
+
+			conf := types.OTelConfig(t)
+
+			conf.Command = nil
+
+			conf.Collector.Log.Path = ""
+			conf.Collector.Receivers.HostMetrics = nil
+			conf.Collector.Receivers.OtlpReceivers = nil
+
+			if len(test.receivers.NginxPlusReceivers) == 1 {
+				apiDetails := config.APIDetails{
+					URL:      fmt.Sprintf("%s/api", nginxPlusMock.URL),
+					Listen:   "",
+					Location: "",
+				}
+
+				test.receivers.NginxPlusReceivers[0].PlusAPI = apiDetails
+
+				model, ok := test.message.Data.(*model.NginxConfigContext)
+				if !ok {
+					t.Logf("Can't cast type")
+					t.Fail()
+				}
+
+				model.PlusAPI.URL = apiDetails.URL
+				model.PlusAPI.Listen = apiDetails.Listen
+				model.PlusAPI.Location = apiDetails.Location
+			} else {
+				apiDetails := config.APIDetails{
+					URL:      fmt.Sprintf("%s/stub_status", nginxPlusMock.URL),
+					Listen:   "",
+					Location: "",
+				}
+				test.receivers.NginxReceivers[0].StubStatus = apiDetails
+
+				model, ok := test.message.Data.(*model.NginxConfigContext)
+				if !ok {
+					t.Logf("Can't cast type")
+					t.Fail()
+				}
+
+				model.StubStatus.URL = apiDetails.URL
+				model.PlusAPI.Listen = apiDetails.Listen
+				model.PlusAPI.Location = apiDetails.Location
+			}
+
+			conf.Collector.Processors.Batch = nil
+			conf.Collector.Processors.Attribute = nil
+			conf.Collector.Processors.Resource = nil
+			conf.Collector.Extensions.Health = nil
+			conf.Collector.Extensions.HeadersSetter = nil
+			conf.Collector.Exporters.PrometheusExporter = nil
+
 			collector, err := New(conf)
 			require.NoError(tt, err, "NewCollector should not return an error with valid config")
+
+			collector.service = createFakeCollector()
 
 			ctx := context.Background()
 			messagePipe := bus.NewMessagePipe(10)
@@ -184,43 +309,12 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 
 			require.NoError(tt, err)
 			require.NoError(tt, collector.Init(ctx, messagePipe), "Init should not return an error")
-			defer collector.Close(ctx)
-
-			assert.Eventually(
-				tt,
-				func() bool { return collector.service.GetState() == otelcol.StateRunning },
-				5*time.Second,
-				100*time.Millisecond,
-			)
 
 			collector.Process(ctx, test.message)
 
-			assert.Eventually(
-				tt,
-				func() bool { return collector.service.GetState() == otelcol.StateRunning },
-				5*time.Second,
-				100*time.Millisecond,
-			)
-
-			if len(test.receivers.NginxPlusReceivers) > 0 {
-				assert.Eventually(
-					tt,
-					func() bool { return len(collector.config.Collector.Receivers.NginxPlusReceivers) > 0 },
-					5*time.Second,
-					100*time.Millisecond,
-				)
-			}
-
-			if len(test.receivers.NginxReceivers) > 0 {
-				assert.Eventually(
-					tt,
-					func() bool { return len(collector.config.Collector.Receivers.NginxReceivers) > 0 },
-					5*time.Second,
-					100*time.Millisecond,
-				)
-			}
-
 			assert.Equal(tt, test.receivers, collector.config.Collector.Receivers)
+
+			defer collector.Close(ctx)
 		})
 	}
 }
@@ -290,38 +384,21 @@ func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
 			collector, err := New(conf)
 			require.NoError(tt, err, "NewCollector should not return an error with valid config")
 
+			collector.service = createFakeCollector()
+
 			ctx := context.Background()
 			messagePipe := bus.NewMessagePipe(10)
 			err = messagePipe.Register(10, []bus.Plugin{collector})
 
 			require.NoError(tt, err)
 			require.NoError(tt, collector.Init(ctx, messagePipe), "Init should not return an error")
-			defer collector.Close(ctx)
-
-			assert.Eventually(
-				tt,
-				func() bool {
-					tt.Logf("Collector state is %+v", collector.service.GetState())
-					return collector.service.GetState() == otelcol.StateRunning
-				},
-				5*time.Second,
-				100*time.Millisecond,
-			)
 
 			collector.Process(ctx, test.message)
 
-			assert.Eventually(
-				tt,
-				func() bool {
-					tt.Logf("Collector state is %+v", collector.service.GetState())
-					return collector.service.GetState() == otelcol.StateRunning
-				},
-				5*time.Second,
-				100*time.Millisecond,
-			)
-
 			assert.Equal(tt, test.processors, collector.config.Collector.Processors)
 			assert.Equal(tt, test.headers, collector.config.Collector.Extensions.HeadersSetter.Headers)
+
+			defer collector.Close(ctx)
 		})
 	}
 }
@@ -367,6 +444,8 @@ func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
 			collector, err := New(conf)
 			require.NoError(tt, err, "NewCollector should not return an error with valid config")
 
+			collector.service = createFakeCollector()
+
 			ctx := context.Background()
 			messagePipe := bus.NewMessagePipe(10)
 			err = messagePipe.Register(10, []bus.Plugin{collector})
@@ -375,27 +454,7 @@ func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
 			require.NoError(tt, collector.Init(ctx, messagePipe), "Init should not return an error")
 			defer collector.Close(ctx)
 
-			assert.Eventually(
-				tt,
-				func() bool {
-					tt.Logf("Collector state is %+v", collector.service.GetState())
-					return collector.service.GetState() == otelcol.StateRunning
-				},
-				5*time.Second,
-				100*time.Millisecond,
-			)
-
 			collector.Process(ctx, test.message)
-
-			assert.Eventually(
-				tt,
-				func() bool {
-					tt.Logf("Collector state is %+v", collector.service.GetState())
-					return collector.service.GetState() == otelcol.StateRunning
-				},
-				5*time.Second,
-				100*time.Millisecond,
-			)
 
 			assert.Equal(tt,
 				config.Processors{
@@ -423,7 +482,11 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 			name: "Test 1: Existing NGINX Receiver",
 			nginxConfigContext: &model.NginxConfigContext{
 				InstanceID: "123",
-				StubStatus: "http://new-test-host:8080/api",
+				StubStatus: &model.APIDetails{
+					URL:      "http://new-test-host:8080/api",
+					Listen:   "",
+					Location: "",
+				},
 				AccessLogs: []*model.AccessLog{
 					{
 						Name:   "/etc/nginx/test.log",
@@ -435,7 +498,11 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 				NginxReceivers: []config.NginxReceiver{
 					{
 						InstanceID: "123",
-						StubStatus: "http://test.com:8080/api",
+						StubStatus: config.APIDetails{
+							URL:      "http://test.com:8080/api",
+							Listen:   "",
+							Location: "",
+						},
 						AccessLogs: []config.AccessLog{
 							{
 								FilePath:  "/etc/nginx/existing.log",
@@ -449,7 +516,11 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 				NginxReceivers: []config.NginxReceiver{
 					{
 						InstanceID: "123",
-						StubStatus: "http://new-test-host:8080/api",
+						StubStatus: config.APIDetails{
+							URL:      "http://new-test-host:8080/api",
+							Listen:   "",
+							Location: "",
+						},
 						AccessLogs: []config.AccessLog{
 							{
 								FilePath:  "/etc/nginx/test.log",
@@ -464,13 +535,21 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 			name: "Test 2: Removing NGINX Receiver",
 			nginxConfigContext: &model.NginxConfigContext{
 				InstanceID: "123",
-				StubStatus: "",
+				StubStatus: &model.APIDetails{
+					URL:      "",
+					Listen:   "",
+					Location: "",
+				},
 			},
 			existingReceivers: config.Receivers{
 				NginxReceivers: []config.NginxReceiver{
 					{
 						InstanceID: "123",
-						StubStatus: "http://test.com:8080/api",
+						StubStatus: config.APIDetails{
+							URL:      "http://test.com:8080/api",
+							Listen:   "",
+							Location: "",
+						},
 					},
 				},
 			},
@@ -485,6 +564,8 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 			conf.Collector.Receivers = test.existingReceivers
 			collector, err := New(conf)
 			require.NoError(tt, err, "NewCollector should not return an error with valid config")
+
+			collector.service = createFakeCollector()
 
 			nginxReceiverFound, reloadCollector := collector.updateExistingNginxOSSReceiver(test.nginxConfigContext)
 
@@ -510,13 +591,21 @@ func TestCollector_updateExistingNginxPlusReceiver(t *testing.T) {
 			name: "Test 1: Existing NGINX Plus Receiver",
 			nginxConfigContext: &model.NginxConfigContext{
 				InstanceID: "123",
-				PlusAPI:    "http://new-test-host:8080/api",
+				PlusAPI: &model.APIDetails{
+					URL:      "http://new-test-host:8080/api",
+					Listen:   "",
+					Location: "",
+				},
 			},
 			existingReceivers: config.Receivers{
 				NginxPlusReceivers: []config.NginxPlusReceiver{
 					{
 						InstanceID: "123",
-						PlusAPI:    "http://test.com:8080/api",
+						PlusAPI: config.APIDetails{
+							URL:      "http://test.com:8080/api",
+							Listen:   "",
+							Location: "",
+						},
 					},
 				},
 			},
@@ -524,7 +613,11 @@ func TestCollector_updateExistingNginxPlusReceiver(t *testing.T) {
 				NginxPlusReceivers: []config.NginxPlusReceiver{
 					{
 						InstanceID: "123",
-						PlusAPI:    "http://new-test-host:8080/api",
+						PlusAPI: config.APIDetails{
+							URL:      "http://new-test-host:8080/api",
+							Listen:   "",
+							Location: "",
+						},
 					},
 				},
 			},
@@ -533,13 +626,21 @@ func TestCollector_updateExistingNginxPlusReceiver(t *testing.T) {
 			name: "Test 2: Removing NGINX Plus Receiver",
 			nginxConfigContext: &model.NginxConfigContext{
 				InstanceID: "123",
-				PlusAPI:    "",
+				PlusAPI: &model.APIDetails{
+					URL:      "",
+					Listen:   "",
+					Location: "",
+				},
 			},
 			existingReceivers: config.Receivers{
 				NginxPlusReceivers: []config.NginxPlusReceiver{
 					{
 						InstanceID: "123",
-						PlusAPI:    "http://test.com:8080/api",
+						PlusAPI: config.APIDetails{
+							URL:      "http://test.com:8080/api",
+							Listen:   "",
+							Location: "",
+						},
 					},
 				},
 			},
@@ -554,6 +655,8 @@ func TestCollector_updateExistingNginxPlusReceiver(t *testing.T) {
 			conf.Collector.Receivers = test.existingReceivers
 			collector, err := New(conf)
 			require.NoError(tt, err, "NewCollector should not return an error with valid config")
+
+			collector.service = createFakeCollector()
 
 			nginxReceiverFound, reloadCollector := collector.updateExistingNginxPlusReceiver(test.nginxConfigContext)
 
@@ -608,6 +711,8 @@ func TestCollector_updateResourceAttributes(t *testing.T) {
 			collector, err := New(conf)
 			require.NoError(tt, err, "NewCollector should not return an error with valid config")
 
+			collector.service = createFakeCollector()
+
 			// set up Actions
 			conf.Collector.Processors.Resource = &config.Resource{Attributes: test.setup}
 
@@ -618,4 +723,16 @@ func TestCollector_updateResourceAttributes(t *testing.T) {
 			assert.Equal(tt, test.expectedReloadRequired, reloadRequired)
 		})
 	}
+}
+
+func createFakeCollector() *typesfakes.FakeCollectorInterface {
+	fakeCollector := &typesfakes.FakeCollectorInterface{}
+	fakeCollector.RunStub = func(ctx context.Context) error { return nil }
+	fakeCollector.GetStateReturnsOnCall(0, otelcol.StateRunning)
+	fakeCollector.GetStateReturnsOnCall(1, otelcol.StateClosing)
+	fakeCollector.ShutdownCalls(func() {
+		fakeCollector.GetStateReturns(otelcol.StateClosed)
+	})
+
+	return fakeCollector
 }

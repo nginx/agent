@@ -14,22 +14,10 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/cumulativetodeltaprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatorateprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbyattrsprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbytraceprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/k8sattributesprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/metricsgenerationprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/metricstransformprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/redactionprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/remotetapprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/routingprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver"
 	"go.opentelemetry.io/collector/component"
@@ -89,7 +77,7 @@ func OTelComponentFactories() (otelcol.Factories, error) {
 }
 
 func createConnectorFactories() (map[component.Type]connector.Factory, error) {
-	connectorsList := []connector.Factory{}
+	var connectorsList []connector.Factory
 
 	return connector.MakeFactoryMap(connectorsList...)
 }
@@ -119,23 +107,11 @@ func createProcessorFactories() (map[component.Type]processor.Factory, error) {
 	processorList := []processor.Factory{
 		attributesprocessor.NewFactory(),
 		batchprocessor.NewFactory(),
-		cumulativetodeltaprocessor.NewFactory(),
 		deltatorateprocessor.NewFactory(),
 		filterprocessor.NewFactory(),
-		groupbyattrsprocessor.NewFactory(),
-		groupbytraceprocessor.NewFactory(),
-		k8sattributesprocessor.NewFactory(),
 		memorylimiterprocessor.NewFactory(),
-		metricsgenerationprocessor.NewFactory(),
-		metricstransformprocessor.NewFactory(),
-		probabilisticsamplerprocessor.NewFactory(),
 		redactionprocessor.NewFactory(),
-		remotetapprocessor.NewFactory(),
-		resourcedetectionprocessor.NewFactory(),
 		resourceprocessor.NewFactory(),
-		routingprocessor.NewFactory(),
-		spanprocessor.NewFactory(),
-		tailsamplingprocessor.NewFactory(),
 		transformprocessor.NewFactory(),
 	}
 

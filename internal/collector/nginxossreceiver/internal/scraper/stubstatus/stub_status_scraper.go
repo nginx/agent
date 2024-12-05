@@ -7,7 +7,9 @@ package stubstatus
 
 import (
 	"context"
+	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/nginxinc/nginx-prometheus-exporter/client"
@@ -55,10 +57,14 @@ func (s *NginxStubStatusScraper) ID() component.ID {
 	return component.NewID(metadata.Type)
 }
 
-func (s *NginxStubStatusScraper) Start(ctx context.Context, host component.Host) error {
-	httpClient, err := s.cfg.ToClient(ctx, host, s.settings.TelemetrySettings)
-	if err != nil {
-		return err
+func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) error {
+	httpClient := http.DefaultClient
+	if strings.HasPrefix(s.cfg.APIDetails.Listen, "unix:") {
+		httpClient.Transport = &http.Transport{
+			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+				return net.Dial("unix", strings.TrimPrefix(s.cfg.APIDetails.Listen, "unix:"))
+			},
+		}
 	}
 	s.httpClient = httpClient
 
@@ -72,7 +78,7 @@ func (s *NginxStubStatusScraper) Shutdown(_ context.Context) error {
 func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error) {
 	// Init client in scrape method in case there are transient errors in the constructor.
 	if s.client == nil {
-		s.client = client.NewNginxClient(s.httpClient, s.cfg.ClientConfig.Endpoint)
+		s.client = client.NewNginxClient(s.httpClient, s.cfg.APIDetails.URL)
 	}
 
 	stats, err := s.client.GetStubStats()
@@ -89,36 +95,36 @@ func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error
 
 	s.mb.RecordNginxHTTPRequestsDataPoint(now, stats.Requests)
 
-	s.mb.RecordNginxHTTPConnDataPoint(
+	s.mb.RecordNginxHTTPConnectionsDataPoint(
 		now,
 		stats.Connections.Accepted,
-		metadata.AttributeNginxConnOutcomeACCEPTED,
+		metadata.AttributeNginxConnectionsOutcomeACCEPTED,
 	)
-	s.mb.RecordNginxHTTPConnDataPoint(
+	s.mb.RecordNginxHTTPConnectionsDataPoint(
 		now,
 		stats.Connections.Handled,
-		metadata.AttributeNginxConnOutcomeHANDLED,
+		metadata.AttributeNginxConnectionsOutcomeHANDLED,
 	)
 
-	s.mb.RecordNginxHTTPConnCountDataPoint(
+	s.mb.RecordNginxHTTPConnectionsCountDataPoint(
 		now,
 		stats.Connections.Active,
-		metadata.AttributeNginxConnOutcomeACTIVE,
+		metadata.AttributeNginxConnectionsOutcomeACTIVE,
 	)
-	s.mb.RecordNginxHTTPConnCountDataPoint(
+	s.mb.RecordNginxHTTPConnectionsCountDataPoint(
 		now,
 		stats.Connections.Reading,
-		metadata.AttributeNginxConnOutcomeREADING,
+		metadata.AttributeNginxConnectionsOutcomeREADING,
 	)
-	s.mb.RecordNginxHTTPConnCountDataPoint(
+	s.mb.RecordNginxHTTPConnectionsCountDataPoint(
 		now,
 		stats.Connections.Writing,
-		metadata.AttributeNginxConnOutcomeWRITING,
+		metadata.AttributeNginxConnectionsOutcomeWRITING,
 	)
-	s.mb.RecordNginxHTTPConnCountDataPoint(
+	s.mb.RecordNginxHTTPConnectionsCountDataPoint(
 		now,
 		stats.Connections.Waiting,
-		metadata.AttributeNginxConnOutcomeWAITING,
+		metadata.AttributeNginxConnectionsOutcomeWAITING,
 	)
 
 	return s.mb.Emit(metadata.WithResource(s.rb.Emit())), nil

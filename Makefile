@@ -101,7 +101,7 @@ include Makefile.tools
 include Makefile.containers
 include Makefile.packaging
 
-.PHONY: help clean no-local-changes build lint format unit-test integration-test run dev run-mock-management-server generate generate-mocks local-apk-package local-deb-package local-rpm-package
+.PHONY: help clean no-local-changes build lint format unit-test integration-test run dev run-mock-management-grpc-server generate generate-mocks local-apk-package local-deb-package local-rpm-package
 
 help: ## Show help message
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\033[36m\033[0m\n"} /^[$$()% 0-9a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-24s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
@@ -130,7 +130,7 @@ format: ## Format code
 
 unit-test: $(TEST_BUILD_DIR) ## Run unit tests
 	@CGO_ENABLED=0 $(GOTEST) -count=1 -coverprofile=$(TEST_BUILD_DIR)/tmp_coverage.out -coverpkg=./... -covermode count ./internal/... ./api/... ./cmd/... ./pkg/...
-	@cat $(TEST_BUILD_DIR)/tmp_coverage.out | grep -v ".pb.go" | grep -v ".gen.go" | grep -v ".pb.validate.go" | grep -v "fake_" | grep -v "github.com/nginx/agent/v3/test/" > $(TEST_BUILD_DIR)/coverage.out
+	@cat $(TEST_BUILD_DIR)/tmp_coverage.out | grep -v ".pb.go" | grep -v ".gen.go" | grep -v ".pb.validate.go" | grep -v "fake_" | grep -v "_utils.go" | grep -v "github.com/nginx/agent/v3/test/" > $(TEST_BUILD_DIR)/coverage.out
 	@rm $(TEST_BUILD_DIR)/tmp_coverage.out
 	@$(GOTOOL) cover -html=$(TEST_BUILD_DIR)/coverage.out -o $(TEST_BUILD_DIR)/coverage.html
 	@printf "\nTotal code coverage: " && $(GOTOOL) cover -func=$(TEST_BUILD_DIR)/coverage.out | grep 'total:' | awk '{print $$3}'

@@ -3591,7 +3591,34 @@ func (m *NGINXRuntimeInfo) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for StubStatus
+	if all {
+		switch v := interface{}(m.GetStubStatus()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, NGINXRuntimeInfoValidationError{
+					field:  "StubStatus",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, NGINXRuntimeInfoValidationError{
+					field:  "StubStatus",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetStubStatus()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return NGINXRuntimeInfoValidationError{
+				field:  "StubStatus",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
 
 	if len(errors) > 0 {
 		return NGINXRuntimeInfoMultiError(errors)
@@ -3693,9 +3720,63 @@ func (m *NGINXPlusRuntimeInfo) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for StubStatus
+	if all {
+		switch v := interface{}(m.GetStubStatus()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, NGINXPlusRuntimeInfoValidationError{
+					field:  "StubStatus",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, NGINXPlusRuntimeInfoValidationError{
+					field:  "StubStatus",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetStubStatus()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return NGINXPlusRuntimeInfoValidationError{
+				field:  "StubStatus",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
 
-	// no validation rules for PlusApi
+	if all {
+		switch v := interface{}(m.GetPlusApi()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, NGINXPlusRuntimeInfoValidationError{
+					field:  "PlusApi",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, NGINXPlusRuntimeInfoValidationError{
+					field:  "PlusApi",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetPlusApi()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return NGINXPlusRuntimeInfoValidationError{
+				field:  "PlusApi",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
 
 	if len(errors) > 0 {
 		return NGINXPlusRuntimeInfoMultiError(errors)
@@ -3776,6 +3857,109 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = NGINXPlusRuntimeInfoValidationError{}
+
+// Validate checks the field values on APIDetails with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *APIDetails) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on APIDetails with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in APIDetailsMultiError, or
+// nil if none found.
+func (m *APIDetails) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *APIDetails) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Location
+
+	// no validation rules for Listen
+
+	if len(errors) > 0 {
+		return APIDetailsMultiError(errors)
+	}
+
+	return nil
+}
+
+// APIDetailsMultiError is an error wrapping multiple validation errors
+// returned by APIDetails.ValidateAll() if the designated constraints aren't met.
+type APIDetailsMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m APIDetailsMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m APIDetailsMultiError) AllErrors() []error { return m }
+
+// APIDetailsValidationError is the validation error returned by
+// APIDetails.Validate if the designated constraints aren't met.
+type APIDetailsValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e APIDetailsValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e APIDetailsValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e APIDetailsValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e APIDetailsValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e APIDetailsValidationError) ErrorName() string { return "APIDetailsValidationError" }
+
+// Error satisfies the builtin error interface
+func (e APIDetailsValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sAPIDetails.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = APIDetailsValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = APIDetailsValidationError{}
 
 // Validate checks the field values on InstanceAction with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
@@ -4120,6 +4304,93 @@ func (m *CommandServer) validate(all bool) error {
 	}
 
 	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetServer()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, CommandServerValidationError{
+					field:  "Server",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, CommandServerValidationError{
+					field:  "Server",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetServer()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return CommandServerValidationError{
+				field:  "Server",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetAuth()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, CommandServerValidationError{
+					field:  "Auth",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, CommandServerValidationError{
+					field:  "Auth",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetAuth()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return CommandServerValidationError{
+				field:  "Auth",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetTls()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, CommandServerValidationError{
+					field:  "Tls",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, CommandServerValidationError{
+					field:  "Tls",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetTls()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return CommandServerValidationError{
+				field:  "Tls",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
 
 	if len(errors) > 0 {
 		return CommandServerMultiError(errors)

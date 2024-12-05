@@ -77,7 +77,11 @@ func TestTemplateWrite(t *testing.T) {
 	}
 	cfg.Collector.Receivers.NginxReceivers = append(cfg.Collector.Receivers.NginxReceivers, config.NginxReceiver{
 		InstanceID: "123",
-		StubStatus: "http://localhost:80/status",
+		StubStatus: config.APIDetails{
+			URL:      "http://localhost:80/status",
+			Location: "",
+			Listen:   "",
+		},
 		AccessLogs: []config.AccessLog{
 			{
 				LogFormat: accessLogFormat,
@@ -115,6 +119,11 @@ func TestTemplateWrite(t *testing.T) {
 	}
 
 	cfg.Collector.Exporters.OtlpExporters[0].Authenticator = "headers_setter"
+	// nolint: lll
+	cfg.Collector.Exporters.OtlpExporters[0].Compression = types.AgentConfig().Collector.Exporters.OtlpExporters[0].Compression
+	cfg.Collector.Exporters.OtlpExporters[0].Server.Port = 1234
+	cfg.Collector.Receivers.OtlpReceivers[0].Server.Port = 4317
+	cfg.Collector.Extensions.Health.Server.Port = 1337
 
 	require.NotNil(t, cfg)
 

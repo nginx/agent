@@ -1,0 +1,49 @@
+{{ define "main" }}
+<div class="row flex-xl-nowrap">
+  <nav class="sidenav overflow-auto col-md-3 d-none d-xl-block d-print-none align-top" style="width: 25%;">
+    {{ partial "sidebar.html" . }}
+  </nav>
+
+  {{if (.Params.catalog) }}
+  <main class="content content-has-toc" role="main">
+  {{ else if and (gt .WordCount 200 ) (.Params.toc) }}
+  <main class="content col-xl-6 d-block align-top" role="main">
+  {{ else }}
+  <main class="content col d-block align-top content-no-toc" role="main">
+  {{ end }}
+
+    <blockquote class="tip">
+      <div>
+        <i class="fa-solid fa-triangle-exclamation"></i><strong> NGINX Agent v3 is available!</strong><br><br>
+        This documentation is for NGINX Agent v2. We suggest reading the <a href="{{ absURL "/nginx-agent/installation-upgrade/migrate-v3/" }}">Migrate from NGINX Agent v2 to v3</a> topic to learn the differences between the two versions, and learn how to upgrade your instances.
+      </div>
+    </blockquote>
+
+    <h1>{{ .Title }}</h1>
+
+      {{ if eq .Page.Draft true }}{{ partial "draft-badge.html" . }}{{ end }}
+      {{ if .Description }}<p>{{ .Description | markdownify }}</p>{{ end}}
+
+      {{ if in .Params.doctypes "beta" }}{{ partial "beta-badge" . }}{{ end }}
+
+    {{ .Content }}
+    {{ partial "version-list" . }}
+  <hr>
+    {{ partial "previous-next-links-in-section-with-title.html" . }}
+
+  </main>
+  {{ if and (gt .WordCount 200 ) (.Params.toc) }}
+    {{ if (add  (len (findRE "<h3" .Content)) (len (findRE "<h2" .Content))) }}
+      <div class="col-md-3 d-none d-xl-block d-print-none nginx-toc align-top" style="width: 25%;">
+      {{ partial "toc.html" . }}
+      </div>
+    {{ end }}
+  {{ end }}
+</div>
+<!-- If there is a script defined in the page metadata, load it  -->
+{{if .Params.script}}
+  {{ $script := (delimit (slice "scripts" .Params.script) "/")}}
+  {{ partial (string $script) .}}
+{{end }}
+
+{{ end }}

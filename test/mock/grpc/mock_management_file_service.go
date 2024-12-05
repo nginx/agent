@@ -7,6 +7,7 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -16,6 +17,7 @@ import (
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -63,9 +65,12 @@ func (mgs *FileService) UpdateOverview(
 	request *v1.UpdateOverviewRequest,
 ) (*v1.UpdateOverviewResponse, error) {
 	overview := request.GetOverview()
-	version := overview.GetConfigVersion().GetVersion()
 
-	slog.Info("Updating overview", "version", version)
+	marshaledJSON, errMarshaledJSON := protojson.Marshal(request)
+	if errMarshaledJSON != nil {
+		return nil, fmt.Errorf("failed to marshal struct back to JSON: %w", errMarshaledJSON)
+	}
+	slog.Info("Updating overview JSON", "overview", marshaledJSON)
 
 	mgs.instanceFiles[overview.GetConfigVersion().GetInstanceId()] = overview.GetFiles()
 

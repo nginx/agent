@@ -264,12 +264,8 @@ message InstanceChild {
 
 // A set of runtime NGINX OSS settings
 message NGINXRuntimeInfo {
-    // the stub status API URL
-    string stub_status = 1 [(buf.validate.field).cel = {
-        id:  "string.uri",
-        message: "value must be a valid URI or can be empty",
-        expression: "this == \'\' || this.isUri()"
-    }];
+    // the stub status API details
+    APIDetails stub_status = 1;
     // a list of access_logs
     repeated string access_logs = 2; 
     // a list of error_logs
@@ -282,12 +278,8 @@ message NGINXRuntimeInfo {
 
 // A set of runtime NGINX Plus settings
 message NGINXPlusRuntimeInfo {
-    // the stub status API URL
-    string stub_status = 1 [(buf.validate.field).cel = {
-        id:  "string.uri",
-        message: "value must be a valid URI or can be empty",
-        expression: "this == \'\' || this.isUri()"
-    }];
+    // the stub status API details
+    APIDetails stub_status = 1;
     // a list of access_logs
     repeated string access_logs = 2;
     // a list of error_logs
@@ -296,12 +288,15 @@ message NGINXPlusRuntimeInfo {
     repeated string loadable_modules = 4;
     // List of NGINX dynamic modules.
     repeated string dynamic_modules = 5;
-    // the plus API location
-    string plus_api = 6 [(buf.validate.field).cel = {
-        id:  "string.uri",
-        message: "value must be a valid URI or can be empty",
-        expression: "this == \'\' || this.isUri()"
-    }];
+    // the plus API details
+    APIDetails plus_api = 6;
+}
+
+message APIDetails {
+    // the API location directive
+    string location = 1;
+    // the API listen directive
+    string listen =  2;
 }
 
 // A set of actions that can be performed on an instance
@@ -323,8 +318,15 @@ message AgentConfig {
     string message_buffer_size = 6;
 }
 
-// The command settings, associated with messaging from an external source 
-message CommandServer {}
+// The command server settings, associated with messaging from an external source
+message CommandServer {
+    // Server configuration (e.g., host, port, type)
+    mpi.v1.ServerSettings server = 1;
+    // Authentication configuration (e.g., token)
+    mpi.v1.AuthSettings auth = 2;
+    // TLS configuration for secure communication
+    mpi.v1.TLSSettings tls = 3;
+}
 
 // The metrics settings associated with origins (sources) of the metrics and destinations (exporter)
 message MetricsServer {}

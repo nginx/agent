@@ -17,7 +17,10 @@ receivers:
           key_file: /tmp/key.pem
           ca_file: /tmp/ca.pem
   nginx/123:
-    endpoint: "http://localhost:80/status"
+    api_details:
+      url: "http://localhost:80/status"
+      listen: ""
+      location: ""
     collection_interval: 10s
     access_logs:
       - log_format: "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\"\"$upstream_cache_status\""
@@ -53,7 +56,7 @@ exporters:
     sampling_thereafter: 200
 extensions:
   health_check:
-    endpoint: "localhost:1337"
+    endpoint: "127.0.0.1:1337"
   headers_setter:
     headers:
       - action: "insert"
