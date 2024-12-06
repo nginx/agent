@@ -92,7 +92,6 @@ func (fms *FileManagerService) UpdateOverview(
 ) error {
 	const maxAttempts = 5
 	correlationID := logger.GetCorrelationID(ctx)
-	var requestCorrelationID slog.Attr
 
 	// error case for the UpdateOverview attempts
 	if iteration > maxAttempts {
@@ -104,7 +103,7 @@ func (fms *FileManagerService) UpdateOverview(
 	request := &mpi.UpdateOverviewRequest{
 		MessageMeta: &mpi.MessageMeta{
 			MessageId:     uuid.NewString(),
-			CorrelationId: requestCorrelationID.Value.String(),
+			CorrelationId: correlationID,
 			Timestamp:     timestamppb.Now(),
 		},
 		Overview: &mpi.FileOverview{
