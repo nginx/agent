@@ -14,7 +14,6 @@ import (
 
 	"github.com/nginx/agent/v3/internal/bus/busfakes"
 
-	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -24,6 +23,7 @@ import (
 	"github.com/nginx/agent/v3/internal/grpc/grpcfakes"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/pkg/files"
+	"github.com/nginx/agent/v3/pkg/uuid"
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/nginx/agent/v3/test/types"
@@ -441,7 +441,7 @@ func TestFilePlugin_Process_ConfigApplyRollbackCompleteTopic(t *testing.T) {
 
 	expectedResponse := &mpi.DataPlaneResponse{
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     uuid.NewString(),
+			MessageId:     uuid.GenerateUUIDV7(),
 			CorrelationId: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
 			Timestamp:     timestamppb.Now(),
 		},

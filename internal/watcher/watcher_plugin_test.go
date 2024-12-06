@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v3/internal/bus/busfakes"
+	"github.com/nginx/agent/v3/pkg/uuid"
 
-	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/nginx/agent/v3/internal/watcher/health"
@@ -138,7 +138,7 @@ func TestWatcher_Process_ConfigApplySuccessfulTopic(t *testing.T) {
 
 	response := &mpi.DataPlaneResponse{
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     uuid.NewString(),
+			MessageId:     uuid.GenerateUUIDV7(),
 			CorrelationId: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
 			Timestamp:     timestamppb.Now(),
 		},
@@ -172,7 +172,7 @@ func TestWatcher_Process_RollbackCompleteTopic(t *testing.T) {
 
 	response := &mpi.DataPlaneResponse{
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     uuid.NewString(),
+			MessageId:     uuid.GenerateUUIDV7(),
 			CorrelationId: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
 			Timestamp:     timestamppb.Now(),
 		},

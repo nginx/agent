@@ -11,8 +11,8 @@ import (
 	"log/slog"
 
 	"github.com/nginx/agent/v3/pkg/files"
+	"github.com/nginx/agent/v3/pkg/uuid"
 
-	"github.com/google/uuid"
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
@@ -319,7 +319,7 @@ func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Me
 
 	response := &mpi.DataPlaneResponse{
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     uuid.NewString(),
+			MessageId:     uuid.GenerateUUIDV7(),
 			CorrelationId: correlationID,
 			Timestamp:     timestamppb.Now(),
 		},
@@ -343,7 +343,7 @@ func (fp *FilePlugin) createDataPlaneResponse(correlationID string, status mpi.C
 ) *mpi.DataPlaneResponse {
 	return &mpi.DataPlaneResponse{
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     uuid.NewString(),
+			MessageId:     uuid.GenerateUUIDV7(),
 			CorrelationId: correlationID,
 			Timestamp:     timestamppb.Now(),
 		},

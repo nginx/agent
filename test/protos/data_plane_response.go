@@ -6,16 +6,16 @@
 package protos
 
 import (
-	"github.com/google/uuid"
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/pkg/uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func OKDataPlaneResponse() *mpi.DataPlaneResponse {
 	return &mpi.DataPlaneResponse{
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     uuid.NewString(),
-			CorrelationId: uuid.NewString(),
+			MessageId:     uuid.GenerateUUIDV7(),
+			CorrelationId: uuid.GenerateUUIDV7(),
 			Timestamp:     timestamppb.Now(),
 		},
 		CommandResponse: &mpi.CommandResponse{
