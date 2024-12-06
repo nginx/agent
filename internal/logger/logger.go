@@ -125,7 +125,11 @@ func GenerateCorrelationID() slog.Attr {
 }
 
 func GetCorrelationID(ctx context.Context) string {
-	return GetCorrelationIDAttr(ctx).Value.String()
+	correlationID := GetCorrelationIDAttr(ctx).Value.String()
+	if correlationID == "<nil>" {
+		correlationID = GetCorrelationID(ctx)
+	}
+	return correlationID
 }
 
 func GetCorrelationIDAttr(ctx context.Context) slog.Attr {

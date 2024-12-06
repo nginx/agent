@@ -74,20 +74,6 @@ func (mgs *FileService) UpdateOverview(
 
 	mgs.instanceFiles[overview.GetConfigVersion().GetInstanceId()] = overview.GetFiles()
 
-	configUploadRequest := &v1.ManagementPlaneRequest{
-		MessageMeta: &v1.MessageMeta{
-			MessageId:     uuid.NewString(),
-			CorrelationId: request.GetMessageMeta().GetCorrelationId(),
-			Timestamp:     timestamppb.Now(),
-		},
-		Request: &v1.ManagementPlaneRequest_ConfigUploadRequest{
-			ConfigUploadRequest: &v1.ConfigUploadRequest{
-				Overview: request.GetOverview(),
-			},
-		},
-	}
-	mgs.requestChan <- configUploadRequest
-
 	return &v1.UpdateOverviewResponse{
 		Overview: nil,
 	}, nil

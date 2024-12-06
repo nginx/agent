@@ -160,13 +160,13 @@ func (fms *FileManagerService) UpdateOverview(
 	delta := files.ConvertToMapOfFiles(response.GetOverview().GetFiles())
 
 	if len(delta) != 0 {
-		return fms.checkFileDiffs(ctx, delta, instanceID, iteration)
+		return fms.updateFiles(ctx, delta, instanceID, iteration)
 	}
 
 	return err
 }
 
-func (fms *FileManagerService) setupContext(ctx context.Context, iteration int) (context.Context, string) {
+func (fms *FileManagerService) setupIdentifiers(ctx context.Context, iteration int) (context.Context, string) {
 	correlationID := logger.GetCorrelationID(ctx)
 	var requestCorrelationID slog.Attr
 
@@ -183,7 +183,7 @@ func (fms *FileManagerService) setupContext(ctx context.Context, iteration int) 
 	return newCtx, correlationID
 }
 
-func (fms *FileManagerService) checkFileDiffs(
+func (fms *FileManagerService) updateFiles(
 	ctx context.Context,
 	delta map[string]*mpi.File,
 	instanceID string,
