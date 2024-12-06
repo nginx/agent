@@ -583,6 +583,15 @@ func verifyConnection(t *testing.T, instancesLength int) string {
 			assert.NotEmpty(t, instance.GetInstanceRuntime().GetBinaryPath())
 
 			assert.Equal(t, "/etc/nginx/nginx.conf", instance.GetInstanceRuntime().GetConfigPath())
+		case mpi.InstanceMeta_INSTANCE_TYPE_NGINX_APP_PROTECT:
+			instanceMeta := instance.GetInstanceMeta()
+			assert.NotEmpty(t, instanceMeta.GetInstanceId())
+			assert.NotEmpty(t, instanceMeta.GetVersion())
+
+			instanceRuntimeInfo := instance.GetInstanceRuntime().GetNginxAppProtectRuntimeInfo()
+			assert.NotEmpty(t, instanceRuntimeInfo.GetRelease())
+			assert.NotEmpty(t, instanceRuntimeInfo.GetAttackSignatureVersion())
+			assert.NotEmpty(t, instanceRuntimeInfo.GetThreatCampaignVersion())
 		case mpi.InstanceMeta_INSTANCE_TYPE_UNIT,
 			mpi.InstanceMeta_INSTANCE_TYPE_UNSPECIFIED:
 			fallthrough

@@ -57,6 +57,7 @@
     - [InstanceRuntime](#mpi-v1-InstanceRuntime)
     - [ManagementPlaneRequest](#mpi-v1-ManagementPlaneRequest)
     - [MetricsServer](#mpi-v1-MetricsServer)
+    - [NGINXAppProtectRuntimeInfo](#mpi-v1-NGINXAppProtectRuntimeInfo)
     - [NGINXPlusRuntimeInfo](#mpi-v1-NGINXPlusRuntimeInfo)
     - [NGINXRuntimeInfo](#mpi-v1-NGINXRuntimeInfo)
     - [ReleaseInfo](#mpi-v1-ReleaseInfo)
@@ -813,6 +814,7 @@ Meta-information relating to the reported instance
 | config_path | [string](#string) |  | the config path location |
 | nginx_runtime_info | [NGINXRuntimeInfo](#mpi-v1-NGINXRuntimeInfo) |  | NGINX runtime configuration settings like stub_status, usually read from the NGINX config or NGINX process |
 | nginx_plus_runtime_info | [NGINXPlusRuntimeInfo](#mpi-v1-NGINXPlusRuntimeInfo) |  | NGINX Plus runtime configuration settings like api value, usually read from the NGINX config, NGINX process or NGINX Plus API |
+| nginx_app_protect_runtime_info | [NGINXAppProtectRuntimeInfo](#mpi-v1-NGINXAppProtectRuntimeInfo) |  | NGINX App Protect runtime information |
 | instance_children | [InstanceChild](#mpi-v1-InstanceChild) | repeated | List of worker processes |
 
 
@@ -845,6 +847,23 @@ A Management Plane request for information, triggers an associated rpc on the Da
 
 ### MetricsServer
 The metrics settings associated with origins (sources) of the metrics and destinations (exporter)
+
+
+
+
+
+
+<a name="mpi-v1-NGINXAppProtectRuntimeInfo"></a>
+
+### NGINXAppProtectRuntimeInfo
+A set of runtime NGINX App Protect settings
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| release | [string](#string) |  | NGINX App Protect Release |
+| attack_signature_version | [string](#string) |  | Attack signature version |
+| threat_campaign_version | [string](#string) |  | Threat campaign version |
 
 
 
@@ -1017,6 +1036,7 @@ the types of instances possible
 | INSTANCE_TYPE_NGINX | 2 | NGINX |
 | INSTANCE_TYPE_NGINX_PLUS | 3 | NGINX Plus |
 | INSTANCE_TYPE_UNIT | 4 | NGINX Unit |
+| INSTANCE_TYPE_NGINX_APP_PROTECT | 5 | NGINX App Protect |
 
 
  
