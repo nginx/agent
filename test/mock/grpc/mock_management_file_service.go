@@ -13,12 +13,10 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const defaultFilePermissions = 0o644

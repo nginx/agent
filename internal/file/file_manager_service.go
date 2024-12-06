@@ -99,7 +99,7 @@ func (fms *FileManagerService) UpdateOverview(
 		return errors.New("too many UpdateOverview attempts")
 	}
 
-	newCtx, correlationID := fms.setupContext(ctx, iteration)
+	newCtx, correlationID := fms.setupIdentifiers(ctx, iteration)
 
 	request := &mpi.UpdateOverviewRequest{
 		MessageMeta: &mpi.MessageMeta{
