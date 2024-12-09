@@ -1,5 +1,5 @@
 ---
-title: "How to configure NGINX Agent"
+title: "Basic configuration"
 draft: false
 weight: 100
 toc: true
