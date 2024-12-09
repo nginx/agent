@@ -9,15 +9,16 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/nginx/agent/v3/pkg/uuid"
+	"github.com/google/uuid"
+	agentUuid "github.com/nginx/agent/v3/pkg/uuid"
 )
 
 func GenerateMessageID() string {
-	uuidv7, err := uuid.GenerateUUIDV7()
+	uuidv7, err := uuid.NewUUID()
 	if err != nil {
-		slog.Debug("issue generating uuidv7, using sha256 and timestamp instead", "error", err)
-		return uuid.Generate("%s", time.Now().String())
+		slog.Debug("Issue generating uuidv7, using sha256 and timestamp instead", "error", err)
+		return agentUuid.Generate("%s", time.Now().String())
 	}
 
-	return uuidv7
+	return uuidv7.String()
 }

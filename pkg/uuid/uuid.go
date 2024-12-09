@@ -35,26 +35,3 @@ func Generate(format string, a ...interface{}) string {
 
 	return uuid.NewMD5(uuid.Nil, []byte(id)).String()
 }
-
-// GenerateUUIDV7 generates a UUID using the UUIDv7 standard.
-//
-// UUIDv7 is designed to be time-ordered and unique, making it suitable for systems requiring
-// high scalability and reliable uniqueness across distributed systems.
-//
-// Process:
-//  1. Attempts to generate a UUIDv7 using the `uuid.NewV7()` function.
-//  2. If UUIDv7 generation fails, logs the error using `slog` and falls back to a SHA-256-based UUID
-//     generated with the current timestamp.
-//
-// Returns:
-//
-//		A string representation of the generated UUID if successful. An empty string if unsuccessful
-//	 An error
-func GenerateUUIDV7() (string, error) {
-	id, err := uuid.NewV7()
-	if err != nil {
-		return "", err
-	}
-
-	return id.String(), err
-}

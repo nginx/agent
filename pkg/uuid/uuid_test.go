@@ -16,8 +16,3 @@ func TestGenerate(t *testing.T) {
 	expected := "02be9e7f-a802-35d4-9e4a-6c677259a87d"
 	assert.Equal(t, expected, result)
 }
-
-func TestGenerateUUIDV7_Success(t *testing.T) {
-	_, err := GenerateUUIDV7()
-	assert.NoError(t, err, "Generated UUIDv7 should be valid")
-}
