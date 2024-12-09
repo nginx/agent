@@ -22,8 +22,8 @@ import (
 	"github.com/gin-gonic/gin"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/internal/datasource/proto"
 	"github.com/nginx/agent/v3/pkg/files"
-	"github.com/nginx/agent/v3/pkg/uuid"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -363,8 +363,8 @@ func (cs *CommandService) addConfigApplyEndpoint() {
 
 		request := mpi.ManagementPlaneRequest{
 			MessageMeta: &mpi.MessageMeta{
-				MessageId:     uuid.GenerateUUIDV7(),
-				CorrelationId: uuid.GenerateUUIDV7(),
+				MessageId:     proto.GenerateMessageID(),
+				CorrelationId: proto.GenerateMessageID(),
 				Timestamp:     timestamppb.Now(),
 			},
 			Request: &mpi.ManagementPlaneRequest_ConfigApplyRequest{

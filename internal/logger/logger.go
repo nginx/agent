@@ -14,7 +14,7 @@ import (
 	"strings"
 
 	"github.com/nginx/agent/v3/internal/config"
-	"github.com/nginx/agent/v3/pkg/uuid"
+	"github.com/nginx/agent/v3/internal/datasource/proto"
 )
 
 const (
@@ -121,7 +121,7 @@ func (h contextHandler) observe(ctx context.Context) (as []slog.Attr) {
 }
 
 func GenerateCorrelationID() slog.Attr {
-	return slog.Any(CorrelationIDKey, uuid.GenerateUUIDV7())
+	return slog.Any(CorrelationIDKey, proto.GenerateMessageID())
 }
 
 func GetCorrelationID(ctx context.Context) string {

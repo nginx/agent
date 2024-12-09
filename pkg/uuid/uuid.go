@@ -8,8 +8,6 @@ package uuid
 import (
 	"crypto/sha256"
 	"fmt"
-	"log/slog"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -50,13 +48,13 @@ func Generate(format string, a ...interface{}) string {
 //
 // Returns:
 //
-//	A string representation of the generated UUID.
-func GenerateUUIDV7() string {
+//		A string representation of the generated UUID if successful. An empty string if unsuccessful
+//	 An error
+func GenerateUUIDV7() (string, error) {
 	id, err := uuid.NewV7()
 	if err != nil {
-		slog.Debug("issuing generating uuidv7, using sha256 and timestamp instead", "error", err)
-		return Generate("%s", time.Now().String())
+		return "", err
 	}
 
-	return id.String()
+	return id.String(), err
 }

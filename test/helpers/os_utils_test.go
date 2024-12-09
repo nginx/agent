@@ -45,6 +45,11 @@ func TestRemoveASCIIControlSignals(t *testing.T) {
 			name: "Agent version example",
 			input: "nginx-agent version v3.0.0-4a64a94", expected: "nginx-agent version v3.0.0-4a64a94",
 		},
+		{
+			name:     "Agent version example alpine",
+			input:    "#nginx-agent version v3.0.0-f94d93a",
+			expected: "nginx-agent version v3.0.0-f94d93a",
+		},
 	}
 
 	for _, test := range tests {

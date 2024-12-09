@@ -8,7 +8,6 @@ package uuid
 import (
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,7 +18,6 @@ func TestGenerate(t *testing.T) {
 }
 
 func TestGenerateUUIDV7_Success(t *testing.T) {
-	result := GenerateUUIDV7()
-	_, err := uuid.Parse(result)
+	_, err := GenerateUUIDV7()
 	assert.NoError(t, err, "Generated UUIDv7 should be valid")
 }

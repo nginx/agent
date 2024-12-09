@@ -14,6 +14,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/nginx/agent/v3/internal/datasource/proto"
 	"github.com/nginx/agent/v3/internal/model"
 
 	"github.com/cenkalti/backoff/v4"
@@ -23,7 +24,6 @@ import (
 	"github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/pkg/files"
-	"github.com/nginx/agent/v3/pkg/uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	backoffHelpers "github.com/nginx/agent/v3/internal/backoff"
@@ -97,7 +97,7 @@ func (fms *FileManagerService) UpdateOverview(
 
 	request := &mpi.UpdateOverviewRequest{
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     uuid.GenerateUUIDV7(),
+			MessageId:     proto.GenerateMessageID(),
 			CorrelationId: requestCorrelationID.Value.String(),
 			Timestamp:     timestamppb.Now(),
 		},
@@ -169,7 +169,7 @@ func (fms *FileManagerService) UpdateFile(
 			Contents: contents,
 		},
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     uuid.GenerateUUIDV7(),
+			MessageId:     proto.GenerateMessageID(),
 			CorrelationId: correlationID,
 			Timestamp:     timestamppb.Now(),
 		},
@@ -326,7 +326,7 @@ func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) e
 	getFile := func() (*mpi.GetFileResponse, error) {
 		return fms.fileServiceClient.GetFile(ctx, &mpi.GetFileRequest{
 			MessageMeta: &mpi.MessageMeta{
-				MessageId:     uuid.GenerateUUIDV7(),
+				MessageId:     proto.GenerateMessageID(),
 				CorrelationId: logger.GetCorrelationID(ctx),
 				Timestamp:     timestamppb.Now(),
 			},
