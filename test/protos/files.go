@@ -31,7 +31,7 @@ func CertMeta(fileName, fileHash string) *mpi.FileMeta {
 		Permissions:  "0600",
 		FileType: &mpi.FileMeta_CertificateMeta{
 			CertificateMeta: &mpi.CertificateMeta{
-				SerialNumber: []byte("12345-67890"),
+				SerialNumber: "12345-67890",
 				Issuer: &mpi.X509Name{
 					Country:            []string{"IE"},
 					Organization:       []string{"F5"},
