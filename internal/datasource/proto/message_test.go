@@ -6,10 +6,16 @@
 package proto
 
 import (
+	"errors"
+	"log/slog"
 	"regexp"
 	"testing"
 
+	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/google/uuid"
 )
 
 func TestUUIDv7Regex(t *testing.T) {
@@ -61,4 +67,66 @@ func TestUUIDv7Regex(t *testing.T) {
 			assert.Equal(t, tt.expectMatch, match, "Regex match result did not match expectation")
 		})
 	}
+}
+
+func TestGenerateMessageID(t *testing.T) {
+	tests := []struct {
+		name        string
+		mockFunc    func() (uuid.UUID, error)
+		expected    string
+		expectError bool
+	}{
+		{
+			name: "Valid UUID generation",
+			mockFunc: func() (uuid.UUID, error) {
+				return uuid.UUID{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}, nil
+			},
+			expected:    "01020304-0506-0708-090a-0b0c0d0e0f10",
+			expectError: false,
+		},
+		{
+			name: "Fallback UUID generation due to error",
+			mockFunc: func() (uuid.UUID, error) {
+				return uuid.Nil, errors.New("mock error")
+			},
+			expected:    "", // Fallback UUIDs don't follow a fixed prefix but should not be empty
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defaultUUIDGenerator = tt.mockFunc
+
+			if tt.expectError {
+				logHandler := helpers.NewTestLogHandler()
+				logger := slog.New(logHandler)
+				slog.SetDefault(logger)
+
+				got := GenerateMessageID()
+				assert.NotEmpty(t, got)
+
+				// Inspect logs
+				logs := logHandler.Logs()
+				require.NotEmpty(t, logs, "Expected log entries but got none")
+				assert.Equal(t,
+					"Issue generating uuidv7, using sha256 and timestamp instead",
+					logs[0].Message,
+					"Expected specific log message")
+			} else {
+				got := GenerateMessageID()
+
+				assert.Equal(t, tt.expected, got, "Expected UUID string to match")
+			}
+
+			// reset
+			defaultUUIDGenerator = uuid.NewUUID
+		})
+	}
+	defaultUUIDGenerator = func() (uuid.UUID, error) {
+		return uuid.UUID{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}, nil
+	}
+
+	got := GenerateMessageID()
+	assert.Equal(t, "01020304-0506-0708-090a-0b0c0d0e0f10", got, "Expected correct UUID string")
 }
