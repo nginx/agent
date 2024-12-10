@@ -51,8 +51,11 @@ message UpdateOverviewRequest {
     FileOverview overview = 2;
 }
 
-// Represents a the response from an UpdateOverviewRequest - intentionally left empty
-message UpdateOverviewResponse {}
+// Represents a the response from an UpdateOverviewRequest
+message UpdateOverviewResponse {
+    // The file overview with the list of files that were uploaded
+    FileOverview overview = 1;
+}
 
 // Represents a specific configuration version associated with an instance
 message ConfigVersion {

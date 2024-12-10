@@ -481,7 +481,12 @@ Represents a list of logically grouped files that have changed e.g. configuratio
 <a name="mpi-v1-UpdateOverviewResponse"></a>
 
 ### UpdateOverviewResponse
-Represents a the response from an UpdateOverviewRequest - intentionally left empty
+Represents a the response from an UpdateOverviewRequest
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| overview | [FileOverview](#mpi-v1-FileOverview) |  | The file overview with the list of files that were uploaded |
 
 
 
