@@ -6,68 +6,43 @@
 package helpers
 
 import (
-	"context"
-	"log/slog"
-	"sync"
+	"bytes"
+	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
-// LogEntry represents a single log entry.
-type LogEntry struct {
-	Message string      // string, 16 bytes
-	Attrs   []slog.Attr // slice, 24 bytes
-	Level   slog.Level  // 8 bytes
-}
+// ValidateLog checks if the expected log message is present in the provided log buffer.
+// If the expected log message is not found, it reports an error to the testing framework.
+//
+// Parameters:
+//   - t (*testing.T): The testing object used to report errors.
+//   - expectedLog (string): The expected log message to validate against the log buffer.
+//     If empty, no validation is performed.
+//   - logBuf (*bytes.Buffer): The log buffer that contains the actual log messages.
+//
+// Behavior:
+// - If the expected log message is not an empty string:
+//   - The function checks whether the log buffer contains the expected log message.
+//   - If the log message is missing, an error is reported using t.Errorf.
+//
+// Usage:
+// - Use this function within test cases to validate that a specific log message was produced.
+//
+// Example:
+//
+//	var logBuffer bytes.Buffer
+//	logBuffer.WriteString("App started successfully")
+//	ValidateLog(t, "App started successfully", &logBuffer)
+func ValidateLog(t *testing.T, expectedLog string, logBuf *bytes.Buffer) {
+	t.Helper()
 
-// TestLogHandler is a custom slog.Handler that captures log entries.
-type TestLogHandler struct {
-	entries []LogEntry
-	mu      sync.Mutex
-}
+	if expectedLog != "" {
+		require.NotEmpty(t, logBuf)
 
-// NewTestLogHandler creates a new TestLogHandler instance.
-func NewTestLogHandler() *TestLogHandler {
-	return &TestLogHandler{}
-}
-
-// Handle captures the log record.
-func (h *TestLogHandler) Handle(ctx context.Context, record slog.Record) error {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	attrs := make([]slog.Attr, 0, record.NumAttrs())
-	record.Attrs(func(attr slog.Attr) bool {
-		attrs = append(attrs, attr)
-		return true
-	})
-
-	h.entries = append(h.entries, LogEntry{
-		Level:   record.Level,
-		Message: record.Message,
-		Attrs:   attrs,
-	})
-
-	return nil
-}
-
-// Logs returns the captured log entries.
-func (h *TestLogHandler) Logs() []LogEntry {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	return append([]LogEntry(nil), h.entries...)
-}
-
-// Enabled implements the slog.Handler interface (always enabled).
-func (h *TestLogHandler) Enabled(context.Context, slog.Level) bool {
-	return true
-}
-
-// WithAttrs implements the slog.Handler interface (no-op for testing).
-func (h *TestLogHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return h
-}
-
-// WithGroup implements the slog.Handler interface (no-op for testing).
-func (h *TestLogHandler) WithGroup(name string) slog.Handler {
-	return h
+		if !strings.Contains(logBuf.String(), expectedLog) {
+			t.Errorf("Expected log to contain %q, but got %q", expectedLog, logBuf.String())
+		}
+	}
 }

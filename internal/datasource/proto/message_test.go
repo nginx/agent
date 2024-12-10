@@ -6,14 +6,14 @@
 package proto
 
 import (
+	"bytes"
 	"errors"
-	"log/slog"
 	"regexp"
 	"testing"
 
 	"github.com/nginx/agent/v3/test/helpers"
+	"github.com/nginx/agent/v3/test/stub"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/google/uuid"
 )
@@ -99,20 +99,16 @@ func TestGenerateMessageID(t *testing.T) {
 			defaultUUIDGenerator = tt.mockFunc
 
 			if tt.expectError {
-				logHandler := helpers.NewTestLogHandler()
-				logger := slog.New(logHandler)
-				slog.SetDefault(logger)
+				logBuf := &bytes.Buffer{}
+				stub.StubLoggerWith(logBuf)
 
 				got := GenerateMessageID()
 				assert.NotEmpty(t, got)
 
 				// Inspect logs
-				logs := logHandler.Logs()
-				require.NotEmpty(t, logs, "Expected log entries but got none")
-				assert.Equal(t,
-					"Issue generating uuidv7, using sha256 and timestamp instead",
-					logs[0].Message,
-					"Expected specific log message")
+				helpers.ValidateLog(t, "Issue generating uuidv7, using sha256 and timestamp instead", logBuf)
+
+				logBuf.Reset()
 			} else {
 				got := GenerateMessageID()
 
