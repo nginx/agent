@@ -9,7 +9,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/nginx/agent/v3/test/protos"
@@ -119,20 +118,10 @@ func TestCollector_Init(t *testing.T) {
 			initError := collector.Init(context.Background(), nil)
 			require.NoError(t, initError)
 
-			validateLog(t, tt.expectedLog, logBuf)
+			helpers.ValidateLog(t, tt.expectedLog, logBuf)
 
 			require.NoError(t, collector.Close(context.TODO()))
 		})
-	}
-}
-
-func validateLog(t *testing.T, expectedLog string, logBuf *bytes.Buffer) {
-	t.Helper()
-
-	if expectedLog != "" {
-		if !strings.Contains(logBuf.String(), expectedLog) {
-			t.Errorf("Expected log to contain %q, but got %q", expectedLog, logBuf.String())
-		}
 	}
 }
 

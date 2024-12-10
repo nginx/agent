@@ -10,10 +10,10 @@ import (
 	"context"
 	"os"
 	"path"
-	"strings"
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/stub"
 
 	"github.com/fsnotify/fsnotify"
@@ -127,9 +127,9 @@ func TestFileWatcherService_removeWatcher(t *testing.T) {
 	fileWatcherService.directoriesBeingWatched.Store(testDirectory, true)
 	fileWatcherService.removeWatcher(ctx, testDirectory)
 
-	if s := logBuf.String(); !strings.Contains(s, "Failed to remove file watcher") {
-		t.Errorf("Unexpected log %s", s)
-	}
+	helpers.ValidateLog(t, "Failed to remove file watcher", logBuf)
+
+	logBuf.Reset()
 }
 
 func TestFileWatcherService_isEventSkippable(t *testing.T) {
