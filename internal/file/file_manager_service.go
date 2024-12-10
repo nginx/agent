@@ -16,10 +16,11 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/nginx/agent/v3/internal/datasource/proto"
 	"github.com/nginx/agent/v3/internal/model"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/google/uuid"
+
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/grpc"
@@ -102,7 +103,7 @@ func (fms *FileManagerService) UpdateOverview(
 
 	request := &mpi.UpdateOverviewRequest{
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     uuid.NewString(),
+			MessageId:     proto.GenerateMessageID(),
 			CorrelationId: correlationID,
 			Timestamp:     timestamppb.Now(),
 		},
@@ -222,7 +223,7 @@ func (fms *FileManagerService) UpdateFile(
 			Contents: contents,
 		},
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     uuid.NewString(),
+			MessageId:     proto.GenerateMessageID(),
 			CorrelationId: correlationID,
 			Timestamp:     timestamppb.Now(),
 		},
@@ -379,7 +380,7 @@ func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) e
 	getFile := func() (*mpi.GetFileResponse, error) {
 		return fms.fileServiceClient.GetFile(ctx, &mpi.GetFileRequest{
 			MessageMeta: &mpi.MessageMeta{
-				MessageId:     uuid.NewString(),
+				MessageId:     proto.GenerateMessageID(),
 				CorrelationId: logger.GetCorrelationID(ctx),
 				Timestamp:     timestamppb.Now(),
 			},

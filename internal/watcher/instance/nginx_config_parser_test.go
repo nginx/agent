@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -936,9 +935,9 @@ func TestNginxConfigParser_ignoreLog(t *testing.T) {
 			ncp := NewNginxConfigParser(agentConfig)
 			assert.Equal(t, test.expected, ncp.ignoreLog(test.logPath))
 
-			if s := logBuf.String(); !strings.Contains(s, test.expectedLog) {
-				t.Errorf("Expected to receive log: %s", test.expectedLog)
-			}
+			helpers.ValidateLog(t, test.expectedLog, logBuf)
+
+			logBuf.Reset()
 		})
 	}
 }
