@@ -14,11 +14,13 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/google/uuid"
+
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/datasource/proto"
 	"github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/logger"
+
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	backoffHelpers "github.com/nginx/agent/v3/internal/backoff"
@@ -86,7 +88,7 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 
 	request := &mpi.UpdateDataPlaneStatusRequest{
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     uuid.NewString(),
+			MessageId:     proto.GenerateMessageID(),
 			CorrelationId: correlationID,
 			Timestamp:     timestamppb.Now(),
 		},
@@ -136,7 +138,7 @@ func (cs *CommandService) UpdateDataPlaneHealth(ctx context.Context, instanceHea
 
 	request := &mpi.UpdateDataPlaneHealthRequest{
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     uuid.NewString(),
+			MessageId:     proto.GenerateMessageID(),
 			CorrelationId: correlationID,
 			Timestamp:     timestamppb.Now(),
 		},
@@ -214,7 +216,7 @@ func (cs *CommandService) CreateConnection(
 
 	request := &mpi.CreateConnectionRequest{
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     uuid.NewString(),
+			MessageId:     proto.GenerateMessageID(),
 			CorrelationId: correlationID,
 			Timestamp:     timestamppb.Now(),
 		},

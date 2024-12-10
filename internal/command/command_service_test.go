@@ -10,7 +10,6 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"strings"
 	"testing"
 	"time"
 
@@ -122,9 +121,9 @@ func TestCommandService_UpdateDataPlaneStatusSubscribeError(t *testing.T) {
 	err := commandService.UpdateDataPlaneStatus(ctx, protos.GetHostResource())
 	require.Error(t, err)
 
-	if s := logBuf.String(); !strings.Contains(s, "Failed to send update data plane status") {
-		t.Errorf("Unexpected log %s", s)
-	}
+	helpers.ValidateLog(t, "Failed to send update data plane status", logBuf)
+
+	logBuf.Reset()
 }
 
 func TestCommandService_CreateConnection(t *testing.T) {
