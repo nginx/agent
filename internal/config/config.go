@@ -7,6 +7,7 @@ package config
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -422,29 +423,64 @@ func resolveLabels() map[string]interface{} {
 	result := make(map[string]interface{})
 
 	for key, value := range input {
-		// Try to parse as an integer
-		if intValue, err := strconv.Atoi(value); err == nil {
-			result[key] = intValue
-			continue
-		}
+		trimmedValue := strings.TrimSpace(value)
 
-		// Try to parse as a float
-		if floatValue, err := strconv.ParseFloat(value, 64); err == nil {
-			result[key] = floatValue
-			continue
-		}
+		switch {
+		case trimmedValue == "" || trimmedValue == "nil": // Handle empty values as nil
+			result[key] = nil
 
-		// Try to parse as a boolean
-		if boolValue, err := strconv.ParseBool(value); err == nil {
-			result[key] = boolValue
-			continue
-		}
+		case parseInt(trimmedValue) != nil: // Integer
+			result[key] = parseInt(trimmedValue)
 
-		// If no conversion was possible, keep it as a string
-		result[key] = value
+		case parseFloat(trimmedValue) != nil: // Float
+			result[key] = parseFloat(trimmedValue)
+
+		case parseBool(trimmedValue) != nil: // Boolean
+			result[key] = parseBool(trimmedValue)
+
+		case parseJSON(trimmedValue) != nil: // JSON object/array
+			result[key] = parseJSON(trimmedValue)
+
+		default: // String
+			result[key] = trimmedValue
+		}
 	}
 
 	return result
+}
+
+// Parsing helper functions return the parsed value or nil if parsing fails
+func parseInt(value string) interface{} {
+	if intValue, err := strconv.Atoi(value); err == nil {
+		return intValue
+	}
+
+	return nil
+}
+
+func parseFloat(value string) interface{} {
+	if floatValue, err := strconv.ParseFloat(value, 64); err == nil {
+		return floatValue
+	}
+
+	return nil
+}
+
+func parseBool(value string) interface{} {
+	if boolValue, err := strconv.ParseBool(value); err == nil {
+		return boolValue
+	}
+
+	return nil
+}
+
+func parseJSON(value string) interface{} {
+	var jsonValue interface{}
+	if err := json.Unmarshal([]byte(value), &jsonValue); err == nil {
+		return jsonValue
+	}
+
+	return nil
 }
 
 func resolveDataPlaneConfig() *DataPlaneConfig {

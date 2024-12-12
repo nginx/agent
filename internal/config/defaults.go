@@ -93,5 +93,5 @@ func DefaultAllowedDirectories() []string {
 }
 
 func DefaultLabels() map[string]string {
-	return map[string]string{}
+	return make(map[string]string)
 }
