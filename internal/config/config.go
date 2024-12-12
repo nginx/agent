@@ -7,12 +7,14 @@ package config
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -104,6 +106,7 @@ func ResolveConfig() (*Config, error) {
 		Common:             resolveCommon(),
 		Watchers:           resolveWatchers(),
 		Features:           viperInstance.GetStringSlice(FeaturesKey),
+		Labels:             resolveLabels(),
 	}
 
 	slog.Debug("Agent config", "config", config)
@@ -202,6 +205,7 @@ func registerFlags() {
 		"A comma-separated list of features enabled for the agent.",
 	)
 
+	registerCommonFlags(fs)
 	registerCommandFlags(fs)
 	registerCollectorFlags(fs)
 
@@ -216,6 +220,14 @@ func registerFlags() {
 			slog.Warn("Error occurred binding env", "env", flag.Name, "error", err)
 		}
 	})
+}
+
+func registerCommonFlags(fs *flag.FlagSet) {
+	fs.StringToString(
+		LabelsRootKey,
+		DefaultLabels(),
+		"A list of labels associated with these instances",
+	)
 }
 
 func registerCommandFlags(fs *flag.FlagSet) {
@@ -404,6 +416,71 @@ func resolveLog() *Log {
 		Level: viperInstance.GetString(LogLevelKey),
 		Path:  viperInstance.GetString(LogPathKey),
 	}
+}
+
+func resolveLabels() map[string]interface{} {
+	input := viperInstance.GetStringMapString(LabelsRootKey)
+	result := make(map[string]interface{})
+
+	for key, value := range input {
+		trimmedValue := strings.TrimSpace(value)
+
+		switch {
+		case trimmedValue == "" || trimmedValue == "nil": // Handle empty values as nil
+			result[key] = nil
+
+		case parseInt(trimmedValue) != nil: // Integer
+			result[key] = parseInt(trimmedValue)
+
+		case parseFloat(trimmedValue) != nil: // Float
+			result[key] = parseFloat(trimmedValue)
+
+		case parseBool(trimmedValue) != nil: // Boolean
+			result[key] = parseBool(trimmedValue)
+
+		case parseJSON(trimmedValue) != nil: // JSON object/array
+			result[key] = parseJSON(trimmedValue)
+
+		default: // String
+			result[key] = trimmedValue
+		}
+	}
+
+	return result
+}
+
+// Parsing helper functions return the parsed value or nil if parsing fails
+func parseInt(value string) interface{} {
+	if intValue, err := strconv.Atoi(value); err == nil {
+		return intValue
+	}
+
+	return nil
+}
+
+func parseFloat(value string) interface{} {
+	if floatValue, err := strconv.ParseFloat(value, 64); err == nil {
+		return floatValue
+	}
+
+	return nil
+}
+
+func parseBool(value string) interface{} {
+	if boolValue, err := strconv.ParseBool(value); err == nil {
+		return boolValue
+	}
+
+	return nil
+}
+
+func parseJSON(value string) interface{} {
+	var jsonValue interface{}
+	if err := json.Unmarshal([]byte(value), &jsonValue); err == nil {
+		return jsonValue
+	}
+
+	return nil
 }
 
 func resolveDataPlaneConfig() *DataPlaneConfig {
