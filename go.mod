@@ -27,7 +27,7 @@ require (
 	github.com/trivago/grok v1.0.0
 	github.com/vardius/message-bus v1.1.5
 	go.uber.org/atomic v1.11.0
-	golang.org/x/sync v0.8.0
+	golang.org/x/sync v0.10.0
 	google.golang.org/grpc v1.60.1
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
@@ -42,8 +42,8 @@ require (
 	github.com/rs/cors v1.11.0
 	go.uber.org/goleak v1.3.0
 	go.uber.org/mock v0.4.0
-	golang.org/x/sys v0.25.0
-	golang.org/x/text v0.18.0
+	golang.org/x/sys v0.28.0
+	golang.org/x/text v0.21.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
