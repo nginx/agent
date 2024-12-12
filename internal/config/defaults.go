@@ -91,3 +91,7 @@ func DefaultAllowedDirectories() []string {
 		"/var/log/nginx",
 	}
 }
+
+func DefaultLabels() map[string]string {
+	return map[string]string{}
+}

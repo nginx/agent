@@ -107,6 +107,7 @@ func TestRegisterFlags(t *testing.T) {
 	assert.Equal(t, "warn", viperInstance.GetString(LogLevelKey))
 	assert.Equal(t, "/var/log/test/agent.log", viperInstance.GetString(LogPathKey))
 	assert.Equal(t, 10*time.Second, viperInstance.GetDuration(ClientTimeoutKey))
+	assert.Equal(t, map[string]string{}, viperInstance.GetStringMapString(LabelsRootKey))
 }
 
 func TestSeekFileInPaths(t *testing.T) {

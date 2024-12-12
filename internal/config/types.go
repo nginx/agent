@@ -45,6 +45,7 @@ type (
 		UUID               string           `yaml:"-"`
 		AllowedDirectories []string         `yaml:"-" mapstructure:"allowed_directories"`
 		Features           []string         `yaml:"-"`
+		Labels             map[string]any   `yaml:"-" mapstructure:"labels"`
 	}
 
 	Log struct {

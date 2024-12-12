@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -104,6 +105,7 @@ func ResolveConfig() (*Config, error) {
 		Common:             resolveCommon(),
 		Watchers:           resolveWatchers(),
 		Features:           viperInstance.GetStringSlice(FeaturesKey),
+		Labels:             resolveLabels(),
 	}
 
 	slog.Debug("Agent config", "config", config)
@@ -202,6 +204,7 @@ func registerFlags() {
 		"A comma-separated list of features enabled for the agent.",
 	)
 
+	registerCommonFlags(fs)
 	registerCommandFlags(fs)
 	registerCollectorFlags(fs)
 
@@ -216,6 +219,14 @@ func registerFlags() {
 			slog.Warn("Error occurred binding env", "env", flag.Name, "error", err)
 		}
 	})
+}
+
+func registerCommonFlags(fs *flag.FlagSet) {
+	fs.StringToString(
+		LabelsRootKey,
+		DefaultLabels(),
+		"A list of labels associated with these instances",
+	)
 }
 
 func registerCommandFlags(fs *flag.FlagSet) {
@@ -404,6 +415,36 @@ func resolveLog() *Log {
 		Level: viperInstance.GetString(LogLevelKey),
 		Path:  viperInstance.GetString(LogPathKey),
 	}
+}
+
+func resolveLabels() map[string]interface{} {
+	input := viperInstance.GetStringMapString(LabelsRootKey)
+	result := make(map[string]interface{})
+
+	for key, value := range input {
+		// Try to parse as an integer
+		if intValue, err := strconv.Atoi(value); err == nil {
+			result[key] = intValue
+			continue
+		}
+
+		// Try to parse as a float
+		if floatValue, err := strconv.ParseFloat(value, 64); err == nil {
+			result[key] = floatValue
+			continue
+		}
+
+		// Try to parse as a boolean
+		if boolValue, err := strconv.ParseBool(value); err == nil {
+			result[key] = boolValue
+			continue
+		}
+
+		// If no conversion was possible, keep it as a string
+		result[key] = value
+	}
+
+	return result
 }
 
 func resolveDataPlaneConfig() *DataPlaneConfig {
