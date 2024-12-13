@@ -66,6 +66,16 @@ type (
 	}
 )
 
+func setupClient() *resty.Client {
+	client := resty.New()
+	client.SetRetryCount(retryCount)
+	client.SetRetryWaitTime(retryWaitTime)
+	client.SetRetryMaxWaitTime(retryMaxWaitTime)
+	client.SetRetryAfter(retryAfter)
+
+	return client
+}
+
 func retryAfter(_ *resty.Client, _ *resty.Response) (time.Duration, error) {
 	nBig, err := rand.Int(rand.Reader, big.NewInt(100))
 	if err != nil {
@@ -231,7 +241,7 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 }`, nginxInstanceID)
 
 	url := fmt.Sprintf("http://%s/api/v1/requests", mockManagementPlaneAPIAddress)
-	resp, err := Client().R().EnableTrace().SetBody(request).Post(url)
+	resp, err := setupClient().R().EnableTrace().SetBody(request).Post(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
@@ -242,16 +252,6 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
-}
-
-func Client() *resty.Client {
-	client := resty.New()
-	client.SetRetryCount(retryCount)
-	client.SetRetryWaitTime(retryWaitTime)
-	client.SetRetryMaxWaitTime(retryMaxWaitTime)
-	client.SetRetryAfter(retryAfter)
-
-	return client
 }
 
 func TestGrpc_ConfigApply(t *testing.T) {
@@ -411,7 +411,7 @@ func TestGrpc_DataplaneHealthRequest(t *testing.T) {
 		}`
 
 	url := fmt.Sprintf("http://%s/api/v1/requests", mockManagementPlaneAPIAddress)
-	resp, err := Client().R().EnableTrace().SetBody(request).Post(url)
+	resp, err := setupClient().R().EnableTrace().SetBody(request).Post(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
@@ -426,7 +426,7 @@ func performConfigApply(t *testing.T, nginxInstanceID string) {
 	t.Helper()
 
 	url := fmt.Sprintf("http://%s/api/v1/instance/%s/config/apply", mockManagementPlaneAPIAddress, nginxInstanceID)
-	resp, err := Client().R().EnableTrace().Post(url)
+	resp, err := setupClient().R().EnableTrace().Post(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
@@ -471,7 +471,7 @@ func performInvalidConfigApply(t *testing.T, nginxInstanceID string) {
 			}
 		}`, nginxInstanceID)
 	url := fmt.Sprintf("http://%s/api/v1/requests", mockManagementPlaneAPIAddress)
-	resp, err := Client().R().EnableTrace().SetBody(body).Post(url)
+	resp, err := setupClient().R().EnableTrace().SetBody(body).Post(url)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 }
@@ -479,7 +479,7 @@ func performInvalidConfigApply(t *testing.T, nginxInstanceID string) {
 func getManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int) []*mpi.DataPlaneResponse {
 	t.Helper()
 
-	client := Client()
+	client := setupClient()
 	client.AddRetryCondition(
 		func(r *resty.Response, err error) bool {
 			responseData := r.Body()
@@ -521,7 +521,7 @@ func clearManagementPlaneResponses(t *testing.T) {
 	t.Helper()
 
 	url := fmt.Sprintf("http://%s/api/v1/responses", mockManagementPlaneAPIAddress)
-	resp, err := Client().R().EnableTrace().Delete(url)
+	resp, err := setupClient().R().EnableTrace().Delete(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
@@ -531,7 +531,7 @@ func verifyConnection(t *testing.T, instancesLength int) string {
 	t.Helper()
 
 	url := fmt.Sprintf("http://%s/api/v1/connection", mockManagementPlaneAPIAddress)
-	resp, err := Client().R().EnableTrace().Get(url)
+	resp, err := setupClient().R().EnableTrace().Get(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
@@ -602,7 +602,7 @@ func verifyConnection(t *testing.T, instancesLength int) string {
 func verifyUpdateDataPlaneHealth(t *testing.T) {
 	t.Helper()
 
-	client := Client()
+	client := setupClient()
 	client.AddRetryCondition(
 		func(r *resty.Response, err error) bool {
 			return r.StatusCode() == http.StatusNotFound
@@ -646,7 +646,7 @@ func verifyUpdateDataPlaneStatus(t *testing.T) {
 	t.Helper()
 
 	url := fmt.Sprintf("http://%s/api/v1/status", mockManagementPlaneAPIAddress)
-	resp, err := Client().R().EnableTrace().Get(url)
+	resp, err := setupClient().R().EnableTrace().Get(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
