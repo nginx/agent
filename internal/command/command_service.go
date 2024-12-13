@@ -300,7 +300,6 @@ func (cs *CommandService) handleConfigApplyResponse(
 		}
 	}
 
-	// TODO: fix this
 	if isConfigApplyResponse {
 		err := cs.sendResponseForQueuedConfigApplyRequests(ctx, response, indexOfConfigApplyRequest)
 		if err != nil {

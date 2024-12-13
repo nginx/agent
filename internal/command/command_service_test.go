@@ -56,6 +56,7 @@ func (*FakeConfigApplySubscribeClient) Send(*mpi.DataPlaneResponse) error {
 
 // nolint: nilnil
 func (*FakeConfigApplySubscribeClient) Recv() (*mpi.ManagementPlaneRequest, error) {
+	protos.CreateManagementPlaneRequest()
 	return &mpi.ManagementPlaneRequest{
 		MessageMeta: &mpi.MessageMeta{
 			MessageId:     "1",
@@ -65,7 +66,6 @@ func (*FakeConfigApplySubscribeClient) Recv() (*mpi.ManagementPlaneRequest, erro
 		Request: &mpi.ManagementPlaneRequest_ConfigApplyRequest{
 			ConfigApplyRequest: &mpi.ConfigApplyRequest{
 				Overview: &mpi.FileOverview{
-					Files: []*mpi.File{},
 					ConfigVersion: &mpi.ConfigVersion{
 						InstanceId: "12314",
 						Version:    "4215432",
@@ -104,14 +104,25 @@ func TestCommandService_receiveCallback_configApplyRequest(t *testing.T) {
 	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
 	commandServiceClient.SubscribeReturns(fakeSubscribeClient, nil)
 
+	subscribeChannel := make(chan *mpi.ManagementPlaneRequest)
+
 	commandService := NewCommandService(
 		ctx,
 		commandServiceClient,
 		types.AgentConfig(),
-		make(chan *mpi.ManagementPlaneRequest),
+		subscribeChannel,
 	)
 
 	defer commandService.CancelSubscription(ctx)
+
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		requestFromChannel := <-subscribeChannel
+		assert.NotNil(t, requestFromChannel)
+		wg.Done()
+	}()
 
 	assert.Eventually(
 		t,
@@ -120,7 +131,10 @@ func TestCommandService_receiveCallback_configApplyRequest(t *testing.T) {
 		10*time.Millisecond,
 	)
 
+	commandService.configApplyRequestQueueMutex.Lock()
+	defer commandService.configApplyRequestQueueMutex.Unlock()
 	assert.Len(t, commandService.configApplyRequestQueue, 1)
+	wg.Wait()
 }
 
 func TestCommandService_UpdateDataPlaneStatus(t *testing.T) {
@@ -269,6 +283,8 @@ func TestCommandService_SendDataPlaneResponse_configApplyRequest(t *testing.T) {
 		subscribeChannel,
 	)
 
+	defer commandService.CancelSubscription(ctx)
+
 	request1 := &mpi.ManagementPlaneRequest{
 		MessageMeta: &mpi.MessageMeta{
 			MessageId:     "1",
@@ -367,6 +383,8 @@ func TestCommandService_SendDataPlaneResponse_configApplyRequest(t *testing.T) {
 
 	require.NoError(t, err)
 
+	commandService.configApplyRequestQueueMutex.Lock()
+	defer commandService.configApplyRequestQueueMutex.Unlock()
 	assert.Len(t, commandService.configApplyRequestQueue, 1)
 	assert.Equal(t, request3, commandService.configApplyRequestQueue["12314"][0])
 	wg.Wait()
