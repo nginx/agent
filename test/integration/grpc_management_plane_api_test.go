@@ -7,8 +7,10 @@ package integration
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"net"
 	"net/http"
 	"os"
@@ -63,6 +65,26 @@ type (
 		UpdateDataPlaneStatusRequest NginxUpdateDataPlaneHealthRequest `json:"updateDataPlaneStatusRequest"`
 	}
 )
+
+func setupClient() *resty.Client {
+	client := resty.New()
+	client.SetRetryCount(retryCount)
+	client.SetRetryWaitTime(retryWaitTime)
+	client.SetRetryMaxWaitTime(retryMaxWaitTime)
+	client.SetRetryAfter(retryAfter)
+
+	return client
+}
+
+func retryAfter(_ *resty.Client, _ *resty.Response) (time.Duration, error) {
+	nBig, err := rand.Int(rand.Reader, big.NewInt(100))
+	if err != nil {
+		return 0, err
+	}
+	n := nBig.Int64()
+
+	return time.Duration(n) * time.Millisecond, nil
+}
 
 func setupConnectionTest(tb testing.TB, expectNoErrorsInLogs, nginxless bool) func(tb testing.TB) {
 	tb.Helper()
@@ -218,11 +240,8 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 	}
 }`, nginxInstanceID)
 
-	client := resty.New()
-	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
-
 	url := fmt.Sprintf("http://%s/api/v1/requests", mockManagementPlaneAPIAddress)
-	resp, err := client.R().EnableTrace().SetBody(request).Post(url)
+	resp, err := setupClient().R().EnableTrace().SetBody(request).Post(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
@@ -391,11 +410,8 @@ func TestGrpc_DataplaneHealthRequest(t *testing.T) {
 			"health_request": {}
 		}`
 
-	client := resty.New()
-	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
-
 	url := fmt.Sprintf("http://%s/api/v1/requests", mockManagementPlaneAPIAddress)
-	resp, err := client.R().EnableTrace().SetBody(request).Post(url)
+	resp, err := setupClient().R().EnableTrace().SetBody(request).Post(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
@@ -409,11 +425,8 @@ func TestGrpc_DataplaneHealthRequest(t *testing.T) {
 func performConfigApply(t *testing.T, nginxInstanceID string) {
 	t.Helper()
 
-	client := resty.New()
-	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
-
 	url := fmt.Sprintf("http://%s/api/v1/instance/%s/config/apply", mockManagementPlaneAPIAddress, nginxInstanceID)
-	resp, err := client.R().EnableTrace().Post(url)
+	resp, err := setupClient().R().EnableTrace().Post(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
@@ -421,9 +434,6 @@ func performConfigApply(t *testing.T, nginxInstanceID string) {
 
 func performInvalidConfigApply(t *testing.T, nginxInstanceID string) {
 	t.Helper()
-
-	client := resty.New()
-	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
 
 	body := fmt.Sprintf(`{
 			"message_meta": {
@@ -461,7 +471,7 @@ func performInvalidConfigApply(t *testing.T, nginxInstanceID string) {
 			}
 		}`, nginxInstanceID)
 	url := fmt.Sprintf("http://%s/api/v1/requests", mockManagementPlaneAPIAddress)
-	resp, err := client.R().EnableTrace().SetBody(body).Post(url)
+	resp, err := setupClient().R().EnableTrace().SetBody(body).Post(url)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 }
@@ -469,8 +479,7 @@ func performInvalidConfigApply(t *testing.T, nginxInstanceID string) {
 func getManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int) []*mpi.DataPlaneResponse {
 	t.Helper()
 
-	client := resty.New()
-	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
+	client := setupClient()
 	client.AddRetryCondition(
 		func(r *resty.Response, err error) bool {
 			responseData := r.Body()
@@ -478,9 +487,10 @@ func getManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int) []
 
 			response := []*mpi.DataPlaneResponse{}
 			unmarshalErr := json.Unmarshal(responseData, &response)
-			require.NoError(t, unmarshalErr)
 
-			return len(response) != numberOfExpectedResponses || r.StatusCode() == http.StatusNotFound
+			return unmarshalErr != nil ||
+				len(response) != numberOfExpectedResponses ||
+				r.StatusCode() == http.StatusNotFound
 		},
 	)
 
@@ -510,10 +520,8 @@ func getManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int) []
 func clearManagementPlaneResponses(t *testing.T) {
 	t.Helper()
 
-	client := resty.New()
-
 	url := fmt.Sprintf("http://%s/api/v1/responses", mockManagementPlaneAPIAddress)
-	resp, err := client.R().EnableTrace().Delete(url)
+	resp, err := setupClient().R().EnableTrace().Delete(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
@@ -522,11 +530,8 @@ func clearManagementPlaneResponses(t *testing.T) {
 func verifyConnection(t *testing.T, instancesLength int) string {
 	t.Helper()
 
-	client := resty.New()
-	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
-
 	url := fmt.Sprintf("http://%s/api/v1/connection", mockManagementPlaneAPIAddress)
-	resp, err := client.R().EnableTrace().Get(url)
+	resp, err := setupClient().R().EnableTrace().Get(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
@@ -597,8 +602,7 @@ func verifyConnection(t *testing.T, instancesLength int) string {
 func verifyUpdateDataPlaneHealth(t *testing.T) {
 	t.Helper()
 
-	client := resty.New()
-	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
+	client := setupClient()
 	client.AddRetryCondition(
 		func(r *resty.Response, err error) bool {
 			return r.StatusCode() == http.StatusNotFound
@@ -641,11 +645,8 @@ func verifyUpdateDataPlaneHealth(t *testing.T) {
 func verifyUpdateDataPlaneStatus(t *testing.T) {
 	t.Helper()
 
-	client := resty.New()
-	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
-
 	url := fmt.Sprintf("http://%s/api/v1/status", mockManagementPlaneAPIAddress)
-	resp, err := client.R().EnableTrace().Get(url)
+	resp, err := setupClient().R().EnableTrace().Get(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
