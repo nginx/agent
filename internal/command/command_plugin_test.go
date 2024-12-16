@@ -8,7 +8,6 @@ package command
 import (
 	"bytes"
 	"context"
-	"strings"
 	"testing"
 	"time"
 
@@ -21,6 +20,7 @@ import (
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/command/commandfakes"
 	"github.com/nginx/agent/v3/internal/grpc/grpcfakes"
+	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/nginx/agent/v3/test/stub"
 	"github.com/nginx/agent/v3/test/types"
@@ -233,10 +233,7 @@ func TestMonitorSubscribeChannel(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 
-	// Verify the logger was called
-	if s := logBuf.String(); !strings.Contains(s, "Received management plane request") {
-		t.Errorf("Unexpected log %s", s)
-	}
+	helpers.ValidateLog(t, "Received management plane request", logBuf)
 
 	// Clear the log buffer
 	logBuf.Reset()

@@ -13,8 +13,8 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/internal/datasource/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -76,7 +76,7 @@ func (mgs *FileService) UpdateOverview(
 
 	configUploadRequest := &v1.ManagementPlaneRequest{
 		MessageMeta: &v1.MessageMeta{
-			MessageId:     uuid.NewString(),
+			MessageId:     proto.GenerateMessageID(),
 			CorrelationId: request.GetMessageMeta().GetCorrelationId(),
 			Timestamp:     timestamppb.Now(),
 		},
