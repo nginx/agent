@@ -70,6 +70,12 @@ func setupClient() *resty.Client {
 	client.SetRetryWaitTime(retryWaitTime)
 	client.SetRetryMaxWaitTime(retryMaxWaitTime)
 
+	client.AddRetryCondition(
+		func(r *resty.Response, err error) bool {
+			return r.StatusCode() == http.StatusNotFound
+		},
+	)
+
 	return client
 }
 
@@ -201,19 +207,21 @@ func setupLocalEnvironment(tb testing.TB) {
 
 // Verify that the agent sends a connection request and an update data plane status request
 func TestGrpc_StartUp(t *testing.T) {
+	client := setupClient()
 	teardownTest := setupConnectionTest(t, true, false)
 	defer teardownTest(t)
 
-	verifyConnection(t, 2)
+	verifyConnection(t, client, 2)
 	assert.False(t, t.Failed())
-	verifyUpdateDataPlaneHealth(t)
+	verifyUpdateDataPlaneHealth(t, client)
 }
 
 func TestGrpc_ConfigUpload(t *testing.T) {
+	client := setupClient()
 	teardownTest := setupConnectionTest(t, true, false)
 	defer teardownTest(t)
 
-	nginxInstanceID := verifyConnection(t, 2)
+	nginxInstanceID := verifyConnection(t, client, 2)
 	assert.False(t, t.Failed())
 
 	request := fmt.Sprintf(`{
@@ -228,12 +236,12 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 }`, nginxInstanceID)
 
 	url := fmt.Sprintf("http://%s/api/v1/requests", mockManagementPlaneAPIAddress)
-	resp, err := setupClient().R().EnableTrace().SetBody(request).Post(url)
+	resp, err := client.R().EnableTrace().SetBody(request).Post(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 
-	responses := getManagementPlaneResponses(t, 2)
+	responses := getManagementPlaneResponses(t, client, 2)
 
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
@@ -242,6 +250,7 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 }
 
 func TestGrpc_ConfigApply(t *testing.T) {
+	client := setupClient()
 	ctx := context.Background()
 	teardownTest := setupConnectionTest(t, false, false)
 	defer teardownTest(t)
@@ -251,16 +260,16 @@ func TestGrpc_ConfigApply(t *testing.T) {
 		instanceType = "PLUS"
 	}
 
-	nginxInstanceID := verifyConnection(t, 2)
+	nginxInstanceID := verifyConnection(t, client, 2)
 
-	responses := getManagementPlaneResponses(t, 1)
+	responses := getManagementPlaneResponses(t, client, 1)
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 
 	t.Run("Test 1: No config changes", func(t *testing.T) {
-		clearManagementPlaneResponses(t)
-		performConfigApply(t, nginxInstanceID)
-		responses = getManagementPlaneResponses(t, 1)
+		clearManagementPlaneResponses(t, client)
+		performConfigApply(t, client, nginxInstanceID)
+		responses = getManagementPlaneResponses(t, client, 1)
 		t.Logf("Config apply responses: %v", responses)
 
 		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
@@ -268,7 +277,7 @@ func TestGrpc_ConfigApply(t *testing.T) {
 	})
 
 	t.Run("Test 2: Valid config", func(t *testing.T) {
-		clearManagementPlaneResponses(t)
+		clearManagementPlaneResponses(t, client)
 		err := mockManagementPlaneGrpcContainer.CopyFileToContainer(
 			ctx,
 			"../config/nginx/nginx-with-test-location.conf",
@@ -277,10 +286,10 @@ func TestGrpc_ConfigApply(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		performConfigApply(t, nginxInstanceID)
+		performConfigApply(t, client, nginxInstanceID)
 
 		if instanceType == "OSS" {
-			responses = getManagementPlaneResponses(t, 1)
+			responses = getManagementPlaneResponses(t, client, 1)
 			t.Logf("Config apply responses: %v", responses)
 
 			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
@@ -288,7 +297,7 @@ func TestGrpc_ConfigApply(t *testing.T) {
 		} else {
 			// NGINX Plus contains two extra Successfully updated all files responses as the NginxConfigContext
 			// is updated, and the file overview is then updated
-			responses = getManagementPlaneResponses(t, 3)
+			responses = getManagementPlaneResponses(t, client, 3)
 			t.Logf("Config apply responses: %v", responses)
 			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 			assert.Equal(t, "Config apply successful", responses[0].GetCommandResponse().GetMessage())
@@ -300,7 +309,7 @@ func TestGrpc_ConfigApply(t *testing.T) {
 	})
 
 	t.Run("Test 3: Invalid config", func(t *testing.T) {
-		clearManagementPlaneResponses(t)
+		clearManagementPlaneResponses(t, client)
 		err := mockManagementPlaneGrpcContainer.CopyFileToContainer(
 			ctx,
 			"../config/nginx/invalid-nginx.conf",
@@ -309,10 +318,10 @@ func TestGrpc_ConfigApply(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		performConfigApply(t, nginxInstanceID)
+		performConfigApply(t, client, nginxInstanceID)
 
 		if instanceType == "OSS" {
-			responses = getManagementPlaneResponses(t, 2)
+			responses = getManagementPlaneResponses(t, client, 2)
 			t.Logf("Config apply responses: %v", responses)
 
 			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_ERROR, responses[0].GetCommandResponse().GetStatus())
@@ -322,7 +331,7 @@ func TestGrpc_ConfigApply(t *testing.T) {
 			assert.Equal(t, "Config apply failed, rollback successful", responses[1].GetCommandResponse().GetMessage())
 			assert.Equal(t, configApplyErrorMessage, responses[1].GetCommandResponse().GetError())
 		} else {
-			responses = getManagementPlaneResponses(t, 2)
+			responses = getManagementPlaneResponses(t, client, 2)
 			t.Logf("Config apply responses: %v", len(responses))
 
 			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_ERROR, responses[0].GetCommandResponse().GetStatus())
@@ -335,10 +344,10 @@ func TestGrpc_ConfigApply(t *testing.T) {
 	})
 
 	t.Run("Test 4: File not in allowed directory", func(t *testing.T) {
-		clearManagementPlaneResponses(t)
-		performInvalidConfigApply(t, nginxInstanceID)
+		clearManagementPlaneResponses(t, client)
+		performInvalidConfigApply(t, client, nginxInstanceID)
 
-		responses = getManagementPlaneResponses(t, 1)
+		responses = getManagementPlaneResponses(t, client, 1)
 		t.Logf("Config apply responses: %v", responses)
 
 		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE, responses[0].GetCommandResponse().GetStatus())
@@ -352,11 +361,12 @@ func TestGrpc_ConfigApply(t *testing.T) {
 }
 
 func TestGrpc_FileWatcher(t *testing.T) {
+	client := setupClient()
 	ctx := context.Background()
 	teardownTest := setupConnectionTest(t, true, false)
 	defer teardownTest(t)
 
-	verifyConnection(t, 2)
+	verifyConnection(t, client, 2)
 	assert.False(t, t.Failed())
 
 	err := container.CopyFileToContainer(
@@ -367,24 +377,25 @@ func TestGrpc_FileWatcher(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	responses := getManagementPlaneResponses(t, 2)
+	responses := getManagementPlaneResponses(t, client, 2)
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
 
-	verifyUpdateDataPlaneStatus(t)
+	verifyUpdateDataPlaneStatus(t, client)
 }
 
 func TestGrpc_DataplaneHealthRequest(t *testing.T) {
+	client := setupClient()
 	teardownTest := setupConnectionTest(t, true, false)
 	defer teardownTest(t)
 
-	verifyConnection(t, 2)
+	verifyConnection(t, client, 2)
 
-	responses := getManagementPlaneResponses(t, 1)
-	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
-	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
+	commandResponses := getManagementPlaneResponses(t, client, 1)
+	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, commandResponses[0].GetCommandResponse().GetStatus())
+	assert.Equal(t, "Successfully updated all files", commandResponses[0].GetCommandResponse().GetMessage())
 
 	assert.False(t, t.Failed())
 
@@ -398,30 +409,33 @@ func TestGrpc_DataplaneHealthRequest(t *testing.T) {
 		}`
 
 	url := fmt.Sprintf("http://%s/api/v1/requests", mockManagementPlaneAPIAddress)
-	client := resty.New()
-	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
+
 	resp, err := client.R().EnableTrace().SetBody(request).Post(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 
-	responses = getManagementPlaneResponses(t, 2)
+	healthRequestResponse := getManagementPlaneResponses(t, client, 2)
 
-	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
-	assert.Equal(t, "Successfully sent the health status update", responses[1].GetCommandResponse().GetMessage())
+	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, healthRequestResponse[1].GetCommandResponse().GetStatus())
+	assert.Equal(
+		t,
+		"Successfully sent the health status update",
+		healthRequestResponse[1].GetCommandResponse().GetMessage(),
+	)
 }
 
-func performConfigApply(t *testing.T, nginxInstanceID string) {
+func performConfigApply(t *testing.T, client *resty.Client, nginxInstanceID string) {
 	t.Helper()
 
 	url := fmt.Sprintf("http://%s/api/v1/instance/%s/config/apply", mockManagementPlaneAPIAddress, nginxInstanceID)
-	resp, err := setupClient().R().EnableTrace().Post(url)
+	resp, err := client.R().EnableTrace().Post(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 }
 
-func performInvalidConfigApply(t *testing.T, nginxInstanceID string) {
+func performInvalidConfigApply(t *testing.T, client *resty.Client, nginxInstanceID string) {
 	t.Helper()
 
 	body := fmt.Sprintf(`{
@@ -460,15 +474,22 @@ func performInvalidConfigApply(t *testing.T, nginxInstanceID string) {
 			}
 		}`, nginxInstanceID)
 	url := fmt.Sprintf("http://%s/api/v1/requests", mockManagementPlaneAPIAddress)
-	resp, err := setupClient().R().EnableTrace().SetBody(body).Post(url)
+	resp, err := client.R().EnableTrace().SetBody(body).Post(url)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 }
 
-func getManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int) []*mpi.DataPlaneResponse {
+func getManagementPlaneResponses(
+	t *testing.T,
+	client *resty.Client,
+	numberOfExpectedResponses int,
+) []*mpi.DataPlaneResponse {
 	t.Helper()
 
-	client := setupClient()
+	if client == nil {
+		client = setupClient()
+	}
+
 	client.AddRetryCondition(
 		func(r *resty.Response, err error) bool {
 			responseData := r.Body()
@@ -506,21 +527,25 @@ func getManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int) []
 	return response
 }
 
-func clearManagementPlaneResponses(t *testing.T) {
+func clearManagementPlaneResponses(t *testing.T, client *resty.Client) {
 	t.Helper()
 
 	url := fmt.Sprintf("http://%s/api/v1/responses", mockManagementPlaneAPIAddress)
-	resp, err := setupClient().R().EnableTrace().Delete(url)
+	resp, err := client.R().EnableTrace().Delete(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 }
 
-func verifyConnection(t *testing.T, instancesLength int) string {
+func verifyConnection(t *testing.T, client *resty.Client, instancesLength int) string {
 	t.Helper()
 
+	if client == nil {
+		client = setupClient()
+	}
+
 	url := fmt.Sprintf("http://%s/api/v1/connection", mockManagementPlaneAPIAddress)
-	resp, err := setupClient().R().EnableTrace().Get(url)
+	resp, err := client.R().EnableTrace().Get(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
@@ -588,15 +613,8 @@ func verifyConnection(t *testing.T, instancesLength int) string {
 	return nginxInstanceID
 }
 
-func verifyUpdateDataPlaneHealth(t *testing.T) {
+func verifyUpdateDataPlaneHealth(t *testing.T, client *resty.Client) {
 	t.Helper()
-
-	client := setupClient()
-	client.AddRetryCondition(
-		func(r *resty.Response, err error) bool {
-			return r.StatusCode() == http.StatusNotFound
-		},
-	)
 
 	url := fmt.Sprintf("http://%s/api/v1/health", mockManagementPlaneAPIAddress)
 	resp, err := client.R().EnableTrace().Get(url)
@@ -631,11 +649,11 @@ func verifyUpdateDataPlaneHealth(t *testing.T) {
 	assert.Equal(t, mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY, healths[0].GetInstanceHealthStatus())
 }
 
-func verifyUpdateDataPlaneStatus(t *testing.T) {
+func verifyUpdateDataPlaneStatus(t *testing.T, client *resty.Client) {
 	t.Helper()
 
 	url := fmt.Sprintf("http://%s/api/v1/status", mockManagementPlaneAPIAddress)
-	resp, err := setupClient().R().EnableTrace().Get(url)
+	resp, err := client.R().EnableTrace().Get(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())

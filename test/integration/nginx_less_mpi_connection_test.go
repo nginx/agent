@@ -16,6 +16,6 @@ func TestNginxLessGrpc_Connection(t *testing.T) {
 	teardownTest := setupConnectionTest(t, true, true)
 	defer teardownTest(t)
 
-	verifyConnection(t, 1)
+	verifyConnection(t, nil, 1)
 	assert.False(t, t.Failed())
 }
