@@ -7,14 +7,27 @@ package resource
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
+	"net"
+	"net/http"
+	"strings"
 	"sync"
+
+	"github.com/nginxinc/nginx-plus-go-client/v2/client"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/nginx/agent/v3/internal/config"
 
 	"github.com/nginx/agent/v3/internal/datasource/host"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+)
+
+const (
+	apiFormat         = "http://%s%s"
+	unixPlusAPIFormat = "http://nginx-plus-api%s"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
@@ -32,6 +45,9 @@ type resourceServiceInterface interface {
 	DeleteInstances(instanceList []*mpi.Instance) *mpi.Resource
 	ApplyConfig(ctx context.Context, instanceID string) error
 	Instance(instanceID string) *mpi.Instance
+	GetUpstreams(ctx context.Context, instance *mpi.Instance, upstreams string) ([]client.UpstreamServer, error)
+	UpdateHTTPUpstreams(ctx context.Context, instance *mpi.Instance, upstream string,
+		upstreams []*structpb.Struct) (added, updated, deleted []client.UpstreamServer, err error)
 }
 
 type (
@@ -160,6 +176,90 @@ func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) er
 	return nil
 }
 
+func (r *ResourceService) GetUpstreams(ctx context.Context, instance *mpi.Instance,
+	upstream string,
+) ([]client.UpstreamServer, error) {
+	plusClient, err := r.createPlusClient(instance)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to create plus client ", "err", err)
+		return nil, err
+	}
+
+	return plusClient.GetHTTPServers(ctx, upstream)
+}
+
+// max number of returns from function is 3
+// nolint: revive
+func (r *ResourceService) UpdateHTTPUpstreams(ctx context.Context, instance *mpi.Instance, upstream string,
+	upstreams []*structpb.Struct,
+) (added, updated, deleted []client.UpstreamServer, err error) {
+	plusClient, err := r.createPlusClient(instance)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to create plus client ", "err", err)
+		return nil, nil, nil, err
+	}
+
+	servers := convertToUpstreamServer(upstreams)
+
+	return plusClient.UpdateHTTPServers(ctx, upstream, servers)
+}
+
+func convertToUpstreamServer(upstreams []*structpb.Struct) []client.UpstreamServer {
+	servers := make([]client.UpstreamServer, 0)
+
+	for _, upstream := range upstreams {
+		upstreamMap := upstream.GetFields()
+		maxConn := int(upstreamMap["max_conns"].GetNumberValue())
+		maxFails := int(upstreamMap["max_fails"].GetNumberValue())
+		backup := upstreamMap["backup"].GetBoolValue()
+		down := upstreamMap["down"].GetBoolValue()
+		weight := int(upstreamMap["weight"].GetNumberValue())
+
+		server := client.UpstreamServer{
+			MaxConns:    &maxConn,
+			MaxFails:    &maxFails,
+			Backup:      &backup,
+			Down:        &down,
+			Weight:      &weight,
+			Server:      upstreamMap["server"].GetStringValue(),
+			FailTimeout: upstreamMap["fail_timeout"].GetStringValue(),
+			SlowStart:   upstreamMap["slow_start"].GetStringValue(),
+			Route:       upstreamMap["route"].GetStringValue(),
+			Service:     upstreamMap["service"].GetStringValue(),
+			ID:          int(upstreamMap["id"].GetNumberValue()),
+			Drain:       upstreamMap["drain"].GetBoolValue(),
+		}
+
+		servers = append(servers, server)
+	}
+
+	return servers
+}
+
+func (r *ResourceService) createPlusClient(instance *mpi.Instance) (*client.NginxClient, error) {
+	plusAPI := instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo().GetPlusApi()
+	var endpoint string
+
+	if plusAPI.GetLocation() == "" || plusAPI.GetListen() == "" {
+		return nil, errors.New("failed to preform API action, NGINX Plus API is not configured")
+	}
+
+	if strings.HasPrefix(plusAPI.GetListen(), "unix:") {
+		endpoint = fmt.Sprintf(unixPlusAPIFormat, plusAPI.GetLocation())
+	} else {
+		endpoint = fmt.Sprintf(apiFormat, plusAPI.GetListen(), plusAPI.GetLocation())
+	}
+
+	httpClient := http.DefaultClient
+	if strings.HasPrefix(plusAPI.GetListen(), "unix:") {
+		httpClient = socketClient(strings.TrimPrefix(plusAPI.GetListen(), "unix:"))
+	}
+
+	return client.NewNginxClient(endpoint,
+		client.WithMaxAPIVersion(), client.WithHTTPClient(httpClient),
+	)
+}
+
 func (r *ResourceService) updateResourceInfo(ctx context.Context) {
 	r.resourceMutex.Lock()
 	defer r.resourceMutex.Unlock()
@@ -172,5 +272,15 @@ func (r *ResourceService) updateResourceInfo(ctx context.Context) {
 		r.resource.Info = r.info.HostInfo(ctx)
 		r.resource.ResourceId = r.resource.GetHostInfo().GetHostId()
 		r.resource.Instances = []*mpi.Instance{}
+	}
+}
+
+func socketClient(socketPath string) *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{
+			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+				return net.Dial("unix", socketPath)
+			},
+		},
 	}
 }

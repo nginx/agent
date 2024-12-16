@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"testing"
 
+	"google.golang.org/protobuf/types/known/structpb"
+
 	"github.com/nginx/agent/v3/internal/resource/resourcefakes"
 	"github.com/nginx/agent/v3/test/types"
 
@@ -19,6 +21,25 @@ import (
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestResourceService_convertToUpstreamServer(t *testing.T) {
+	upstream := []*structpb.Struct{
+		{
+			Fields: map[string]*structpb.Value{
+				"max_conns": structpb.NewNumberValue(10),
+				"max_fails": nil,
+				"backup":    nil,
+				"server":    structpb.NewStringValue("test_server"),
+				"id":        structpb.NewNumberValue(12345),
+				"drain":     structpb.NewBoolValue(false),
+			},
+		},
+	}
+
+	result := convertToUpstreamServer(upstream)
+
+	t.Logf("Results: %v", result[0])
+}
 
 func TestResourceService_AddInstance(t *testing.T) {
 	ctx := context.Background()

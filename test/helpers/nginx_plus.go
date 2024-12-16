@@ -10,6 +10,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/nginxinc/nginx-plus-go-client/v2/client"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -480,4 +482,26 @@ func NewMockNGINXPlusAPIServer(t *testing.T) *httptest.Server {
 
 		rw.WriteHeader(http.StatusNotFound)
 	}))
+}
+
+// max number of arguments from function is 5
+// nolint: lll, revive
+func CreateNginxPlusUpstreamServer(t *testing.T, maxConns, maxFails, weight, id int, backup, down, drain bool, server, timeout,
+	slowStart, route, service string,
+) client.UpstreamServer {
+	t.Helper()
+	return client.UpstreamServer{
+		MaxConns:    &maxConns,
+		MaxFails:    &maxFails,
+		Backup:      &backup,
+		Down:        &down,
+		Weight:      &weight,
+		Server:      server,
+		FailTimeout: timeout,
+		SlowStart:   slowStart,
+		Route:       route,
+		Service:     service,
+		ID:          id,
+		Drain:       drain,
+	}
 }

@@ -12,6 +12,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/config"
+	pkg "github.com/nginx/agent/v3/pkg/config"
+
 	"github.com/nginx/agent/v3/internal/bus/busfakes"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -111,8 +114,7 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 		managementPlaneRequest *mpi.ManagementPlaneRequest
 		expectedTopic          *bus.Message
 		name                   string
-		isUploadRequest        bool
-		isApplyRequest         bool
+		request                string
 	}{
 		{
 			name: "Test 1: Config Upload Request",
@@ -121,8 +123,8 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 					ConfigUploadRequest: &mpi.ConfigUploadRequest{},
 				},
 			},
-			expectedTopic:   &bus.Message{Topic: bus.ConfigUploadRequestTopic},
-			isUploadRequest: true,
+			expectedTopic: &bus.Message{Topic: bus.ConfigUploadRequestTopic},
+			request:       "UploadRequest",
 		},
 		{
 			name: "Test 2: Config Apply Request",
@@ -131,8 +133,8 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 					ConfigApplyRequest: &mpi.ConfigApplyRequest{},
 				},
 			},
-			expectedTopic:  &bus.Message{Topic: bus.ConfigApplyRequestTopic},
-			isApplyRequest: true,
+			expectedTopic: &bus.Message{Topic: bus.ConfigApplyRequestTopic},
+			request:       "ApplyRequest",
 		},
 		{
 			name: "Test 3: Health Request",
@@ -143,6 +145,18 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 			},
 			expectedTopic: &bus.Message{Topic: bus.DataPlaneHealthRequestTopic},
 		},
+		{
+			name: "Test 4: API Action Request Request",
+			managementPlaneRequest: &mpi.ManagementPlaneRequest{
+				Request: &mpi.ManagementPlaneRequest_ActionRequest{
+					ActionRequest: &mpi.APIActionRequest{
+						Action: &mpi.APIActionRequest_NginxPlusAction{},
+					},
+				},
+			},
+			expectedTopic: &bus.Message{Topic: bus.APIActionRequestTopic},
+			request:       "APIActionRequest",
+		},
 	}
 
 	for _, test := range tests {
@@ -151,9 +165,14 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 			defer cancel()
 			messagePipe := busfakes.NewFakeMessagePipe()
 
-			commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+			agentConfig := types.AgentConfig()
+
+			if test.request == "APIActionRequest" {
+				agentConfig.Features = append(config.DefaultFeatures(), pkg.FeatureAPIAction)
+			}
+			commandPlugin := NewCommandPlugin(agentConfig, &grpcfakes.FakeGrpcConnectionInterface{})
 			err := commandPlugin.Init(ctx, messagePipe)
-			require.NoError(t, err)
+			require.NoError(tt, err)
 			defer commandPlugin.Close(ctx)
 
 			go commandPlugin.monitorSubscribeChannel(ctx)
@@ -168,18 +187,21 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 			)
 
 			messages := messagePipe.GetMessages()
-			assert.Len(t, messages, 1)
-			assert.Equal(t, test.expectedTopic.Topic, messages[0].Topic)
+			assert.Len(tt, messages, 1)
+			assert.Equal(tt, test.expectedTopic.Topic, messages[0].Topic)
 
 			_, ok := messages[0].Data.(*mpi.ManagementPlaneRequest)
 
-			if test.isUploadRequest {
-				assert.True(t, ok)
-				require.NotNil(t, test.managementPlaneRequest.GetConfigUploadRequest())
-			}
-			if test.isApplyRequest {
-				assert.True(t, ok)
-				require.NotNil(t, test.managementPlaneRequest.GetConfigApplyRequest())
+			switch test.request {
+			case "UploadRequest":
+				assert.True(tt, ok)
+				require.NotNil(tt, test.managementPlaneRequest.GetConfigUploadRequest())
+			case "ApplyRequest":
+				assert.True(tt, ok)
+				require.NotNil(tt, test.managementPlaneRequest.GetConfigApplyRequest())
+			case "APIActionRequest":
+				assert.True(tt, ok)
+				require.NotNil(tt, test.managementPlaneRequest.GetActionRequest())
 			}
 		})
 	}

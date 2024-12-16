@@ -191,7 +191,28 @@ message ConfigUploadRequest {
 }
 
 // Perform an associated API action on an instance
-message APIActionRequest {}
+message APIActionRequest {
+    string instance_id = 1;
+    oneof action {
+        NGINXPlusAction nginx_plus_action = 2;
+    }
+}
+
+message NGINXPlusAction {
+    oneof action {
+        UpdateHTTPUpstreamServers update_http_upstream_servers = 2;
+        GetHTTPUpstreamServers get_http_upstream_servers = 3;
+    }
+}
+
+message UpdateHTTPUpstreamServers {
+    string http_upstream_name = 1;
+    repeated google.protobuf.Struct servers = 2;
+}
+
+message GetHTTPUpstreamServers {
+    string http_upstream_name = 1;
+}
 
 // Request an update on a particular command
 message CommandStatusRequest {}

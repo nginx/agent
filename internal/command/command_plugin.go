@@ -183,9 +183,36 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 				cp.handleConfigApplyRequest(newCtx, message)
 			case *mpi.ManagementPlaneRequest_HealthRequest:
 				cp.handleHealthRequest(newCtx)
+			case *mpi.ManagementPlaneRequest_ActionRequest:
+				cp.handleAPIActionRequest(newCtx, message)
 			default:
 				slog.DebugContext(newCtx, "Management plane request not implemented yet")
 			}
+		}
+	}
+}
+
+func (cp *CommandPlugin) handleAPIActionRequest(ctx context.Context, message *mpi.ManagementPlaneRequest) {
+	if cp.config.IsFeatureEnabled(pkgConfig.FeatureAPIAction) {
+		cp.messagePipe.Process(ctx, &bus.Message{Topic: bus.APIActionRequestTopic, Data: message})
+	} else {
+		slog.WarnContext(
+			ctx,
+			"API Action Request feature disabled. Unable to process API action request",
+			"request", message,
+		)
+
+		err := cp.commandService.SendDataPlaneResponse(ctx, &mpi.DataPlaneResponse{
+			MessageMeta: message.GetMessageMeta(),
+			CommandResponse: &mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "API action failed",
+				Error:   "API action feature is disabled",
+			},
+			InstanceId: message.GetActionRequest().GetInstanceId(),
+		})
+		if err != nil {
+			slog.ErrorContext(ctx, "Unable to send data plane response", "error", err)
 		}
 	}
 }
@@ -207,7 +234,7 @@ func (cp *CommandPlugin) handleConfigApplyRequest(newCtx context.Context, messag
 				Message: "Config apply failed",
 				Error:   "Configuration feature is disabled",
 			},
-			InstanceId: message.GetConfigUploadRequest().GetOverview().GetConfigVersion().GetInstanceId(),
+			InstanceId: message.GetConfigApplyRequest().GetOverview().GetConfigVersion().GetInstanceId(),
 		})
 		if err != nil {
 			slog.ErrorContext(newCtx, "Unable to send data plane response", "error", err)

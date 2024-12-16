@@ -18,3 +18,23 @@ func CreateManagementPlaneRequest() *mpi.ManagementPlaneRequest {
 		MessageMeta: CreateMessageMeta(),
 	}
 }
+
+func CreatAPIActionRequestNginxPlusGetHTTPServers(upstream, instanceID string) *mpi.ManagementPlaneRequest {
+	return &mpi.ManagementPlaneRequest{
+		MessageMeta: CreateMessageMeta(),
+		Request: &mpi.ManagementPlaneRequest_ActionRequest{
+			ActionRequest: &mpi.APIActionRequest{
+				InstanceId: instanceID,
+				Action: &mpi.APIActionRequest_NginxPlusAction{
+					NginxPlusAction: &mpi.NGINXPlusAction{
+						Action: &mpi.NGINXPlusAction_GetHttpUpstreamServers{
+							GetHttpUpstreamServers: &mpi.GetHTTPUpstreamServers{
+								HttpUpstreamName: upstream,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
