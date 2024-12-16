@@ -7,10 +7,8 @@ package integration
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"net"
 	"net/http"
 	"os"
@@ -71,19 +69,8 @@ func setupClient() *resty.Client {
 	client.SetRetryCount(retryCount)
 	client.SetRetryWaitTime(retryWaitTime)
 	client.SetRetryMaxWaitTime(retryMaxWaitTime)
-	client.SetRetryAfter(retryAfter)
 
 	return client
-}
-
-func retryAfter(_ *resty.Client, _ *resty.Response) (time.Duration, error) {
-	nBig, err := rand.Int(rand.Reader, big.NewInt(100))
-	if err != nil {
-		return 0, err
-	}
-	n := nBig.Int64()
-
-	return time.Duration(n) * time.Millisecond, nil
 }
 
 func setupConnectionTest(tb testing.TB, expectNoErrorsInLogs, nginxless bool) func(tb testing.TB) {
@@ -411,7 +398,9 @@ func TestGrpc_DataplaneHealthRequest(t *testing.T) {
 		}`
 
 	url := fmt.Sprintf("http://%s/api/v1/requests", mockManagementPlaneAPIAddress)
-	resp, err := setupClient().R().EnableTrace().SetBody(request).Post(url)
+	client := resty.New()
+	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
+	resp, err := client.R().EnableTrace().SetBody(request).Post(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
