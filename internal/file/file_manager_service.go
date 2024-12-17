@@ -37,6 +37,8 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . fileManagerServiceInterface
 
+const maxAttempts = 5
+
 type (
 	fileOperator interface {
 		Write(ctx context.Context, fileContent []byte, file *mpi.FileMeta) error
@@ -91,7 +93,6 @@ func (fms *FileManagerService) UpdateOverview(
 	filesToUpdate []*mpi.File,
 	iteration int,
 ) error {
-	const maxAttempts = 5
 	correlationID := logger.GetCorrelationID(ctx)
 
 	// error case for the UpdateOverview attempts
@@ -199,7 +200,7 @@ func (fms *FileManagerService) updateFiles(
 	}
 
 	iteration++
-	slog.Debug("iteration value", "iteration", iteration)
+	slog.Debug("Updating file overview", "attempt_number", iteration)
 
 	return fms.UpdateOverview(ctx, instanceID, diffFiles, iteration)
 }
