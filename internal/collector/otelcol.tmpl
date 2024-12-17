@@ -80,6 +80,17 @@ receivers:
         location: "{{- .PlusAPI.Location -}}"
     collection_interval: 10s
 {{- end }}
+{{- range $index, $tcplogReceiver := .Receivers.TcplogReceivers }}
+  tcplog/{{$index}}:
+    listen_address: "{{- .ListenAddress -}}"
+    operators:
+{{- range $index, $operator := .Operators }}
+      - type: {{.Type}}
+{{- range $key, $value := .Fields }}
+        {{$key}}: {{$value}}
+{{- end }}
+{{- end }}
+{{- end }}
 
 processors:
 {{- if ne .Processors.Resource nil }}
@@ -241,3 +252,26 @@ service:
         {{- if ne .Exporters.Debug nil }}
         - debug
         {{- end  }}
+    {{- if ne .Receivers.TcplogReceivers nil }}
+    logs:
+      receivers:
+        {{- range $index, $tcplogReceiver := .Receivers.TcplogReceivers }}
+        - tcplog/{{$index}}
+        {{- end }}
+      processors:
+        {{- if ne .Processors.Resource nil }}
+        {{- if .Processors.Resource.Attributes }}
+        - resource
+        {{- end }}
+        {{- end }}
+        {{- if ne .Processors.Batch nil }}
+        - batch
+        {{- end }}
+      exporters:
+        {{- range $index, $otlpExporter := .Exporters.OtlpExporters }}
+        - otlp/{{$index}}
+        {{- end }}
+        {{- if ne .Exporters.Debug nil }}
+        - debug
+        {{- end  }}
+    {{- end  }}

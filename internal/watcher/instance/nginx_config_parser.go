@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -93,6 +94,8 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 	instance *mpi.Instance,
 	payload *crossplane.Payload,
 ) (*model.NginxConfigContext, error) {
+	napSyslogServersFound := make(map[string]bool)
+
 	nginxConfigContext := &model.NginxConfigContext{
 		InstanceID: instance.GetInstanceMeta().GetInstanceId(),
 		PlusAPI: &model.APIDetails{
@@ -133,6 +136,23 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 				case "ssl_certificate", "proxy_ssl_certificate", "ssl_client_certificate", "ssl_trusted_certificate":
 					sslCertFile := ncp.sslCert(ctx, directive.Args[0], rootDir)
 					nginxConfigContext.Files = append(nginxConfigContext.Files, sslCertFile)
+				case "app_protect_security_log":
+					if len(directive.Args) > 1 {
+						syslogArg := directive.Args[1]
+						re := regexp.MustCompile(`syslog:server=([\S]+)`)
+						matches := re.FindStringSubmatch(syslogArg)
+						if len(matches) > 1 {
+							syslogServer := matches[1]
+							if !napSyslogServersFound[syslogServer] {
+								nginxConfigContext.NAPSysLogServers = append(
+									nginxConfigContext.NAPSysLogServers,
+									syslogServer,
+								)
+								napSyslogServersFound[syslogServer] = true
+								slog.DebugContext(ctx, "Found NAP syslog server", "address", syslogServer)
+							}
+						}
+					}
 				}
 
 				return nil
