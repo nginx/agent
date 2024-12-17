@@ -1,5 +1,5 @@
 ARG BASE_IMAGE
-FROM ${BASE_IMAGE} as install-nginx
+FROM --platform=linux/amd64 ${BASE_IMAGE} as install-nginx
 LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
 ARG DEBIAN_FRONTEND=noninteractive
