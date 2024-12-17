@@ -648,13 +648,13 @@ func TestParseX509Certificates(t *testing.T) {
 		certName       string
 		certContent    string
 		name           string
-		expectedSerial []byte
+		expectedSerial string
 	}{
 		{
 			name:           "Test 1: generated cert",
 			certName:       "public_cert",
 			certContent:    "",
-			expectedSerial: []byte{0x1, 0xe0, 0xf3},
+			expectedSerial: "123123",
 		},
 		{
 			name:     "Test 2: open ssl cert",
@@ -680,15 +680,7 @@ X/vYrzgKRoKSUWUt1ejKTntrVuaJK4NMxANOTTjIXgxyoV3YcgEmL9KzribCqILi
 p79Nno9d+kovtX5VKsJ5FCcPw9mEATgZDOQ4nLTk/HHG6bwtpubp6Zb7H1AjzBkz
 rQHX6DP4w6IwZY8JB8LS
 -----END CERTIFICATE-----`,
-			expectedSerial: []byte{
-				0x47, 0xe6, 0x6,
-				0x81, 0x11, 0xe1,
-				0x63, 0xa, 0x2d,
-				0x17, 0x20, 0x4e,
-				0xbd, 0x27, 0x35,
-				0x28, 0x3f, 0x5d,
-				0xe3, 0x99,
-			},
+			expectedSerial: "410468082718062724391949173062901619571168240537",
 		},
 	}
 
