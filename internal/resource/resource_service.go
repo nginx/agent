@@ -7,6 +7,7 @@ package resource
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -185,7 +186,9 @@ func (r *ResourceService) GetUpstreams(ctx context.Context, instance *mpi.Instan
 		return nil, err
 	}
 
-	return plusClient.GetHTTPServers(ctx, upstream)
+	servers, getServersErr := plusClient.GetHTTPServers(ctx, upstream)
+
+	return servers, createPlusAPIError(getServersErr)
 }
 
 // max number of returns from function is 3
@@ -283,4 +286,36 @@ func socketClient(socketPath string) *http.Client {
 			},
 		},
 	}
+}
+
+// createPlusAPIError converts the error returned by the plus go client into the json format used by the NGINX Plus API
+func createPlusAPIError(apiErr error) error {
+	if apiErr == nil {
+		return nil
+	}
+	_, after, _ := strings.Cut(apiErr.Error(), "error.status")
+	errorSlice := strings.Split(after, ";")
+
+	for i, errStr := range errorSlice {
+		_, value, _ := strings.Cut(errStr, "=")
+		errorSlice[i] = value
+	}
+
+	plusErr := plusAPIErr{
+		Error: errResponse{
+			Status: errorSlice[0],
+			Test:   errorSlice[1],
+			Code:   errorSlice[2],
+		},
+		RequestID: errorSlice[3],
+		Href:      errorSlice[4],
+	}
+
+	r, err := json.Marshal(plusErr)
+	if err != nil {
+		slog.Error("error marshaling error", "err", err)
+		return apiErr
+	}
+
+	return errors.New(string(r))
 }

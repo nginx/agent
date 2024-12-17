@@ -6,11 +6,15 @@
 package resource
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
 	"testing"
+
+	"github.com/nginx/agent/v3/test/stub"
 
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginxinc/nginx-plus-go-client/v2/client"
@@ -186,6 +190,28 @@ func TestResource_Process_Apply(t *testing.T) {
 	}
 }
 
+func TestResource_createPlusAPIError(t *testing.T) {
+	s := "failed to get the HTTP servers of upstream nginx1: expected 200 response, got 404. error.status=404;" +
+		" error.text=upstream not found; error.code=UpstreamNotFound; request_id=b534bdab5cb5e321e8b41b431828b270; " +
+		"href=https://nginx.org/en/docs/http/ngx_http_api_module.html"
+
+	expectedErr := plusAPIErr{
+		Error: errResponse{
+			Status: "404",
+			Test:   "upstream not found",
+			Code:   "UpstreamNotFound",
+		},
+		RequestID: "b534bdab5cb5e321e8b41b431828b270",
+		Href:      "https://nginx.org/en/docs/http/ngx_http_api_module.html",
+	}
+	expectedJSON, err := json.Marshal(expectedErr)
+	require.NoError(t, err)
+
+	result := createPlusAPIError(errors.New(s))
+
+	assert.Equal(t, errors.New(string(expectedJSON)), result)
+}
+
 func TestResource_Process_APIAction(t *testing.T) {
 	ctx := context.Background()
 
@@ -198,7 +224,7 @@ func TestResource_Process_APIAction(t *testing.T) {
 		upstreams []client.UpstreamServer
 	}{
 		{
-			name: "Test 1: Get HTTP Server API Action",
+			name: "Test 1: Success, Get HTTP Server API Action",
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
@@ -214,7 +240,7 @@ func TestResource_Process_APIAction(t *testing.T) {
 		},
 
 		{
-			name: "Test 2: Get HTTP Server API Action, Failure ",
+			name: "Test 2: Fail, Get HTTP Server API Action",
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
@@ -229,7 +255,7 @@ func TestResource_Process_APIAction(t *testing.T) {
 			instance: protos.GetNginxPlusInstance([]string{}),
 		},
 		{
-			name: "Test 3: Fail, OSS Instance  ",
+			name: "Test 3: Fail, OSS Instance",
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
@@ -243,12 +269,32 @@ func TestResource_Process_APIAction(t *testing.T) {
 			topic:    []string{bus.DataPlaneResponseTopic},
 			instance: protos.GetNginxOssInstance([]string{}),
 		},
+		// {
+		//	name: "Test 4: Success, Update Http Upstream Servers",
+		//	message: &bus.Message{
+		//		Topic: bus.APIActionRequestTopic,
+		//		Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
+		//			protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+		//	},
+		//	err: errors.New("failed to preform API action, instance is not NGINX Plus"),
+		//	upstreams: []client.UpstreamServer{
+		//		helpers.CreateNginxPlusUpstreamServer(t, 10, 2, 0, 1234, true, false,
+		//			false, "test_server", "", "", "", ""),
+		//	},
+		//	topic:    []string{bus.DataPlaneResponseTopic},
+		//	instance: protos.GetNginxPlusInstance([]string{}),
+		// },
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
+			logBuf := &bytes.Buffer{}
+			stub.StubLoggerWith(logBuf)
+
 			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
 			fakeResourceService.GetUpstreamsReturns(test.upstreams, test.err)
+			fakeResourceService.UpdateHTTPUpstreamsReturns(test.upstreams, []client.UpstreamServer{},
+				[]client.UpstreamServer{}, test.err)
 			fakeResourceService.InstanceReturns(test.instance)
 
 			messagePipe := busfakes.NewFakeMessagePipe()

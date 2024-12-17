@@ -31,6 +31,18 @@ type Resource struct {
 	agentConfig     *config.Config
 }
 
+type errResponse struct {
+	Status string `json:"status"`
+	Test   string `json:"test"`
+	Code   string `json:"code"`
+}
+
+type plusAPIErr struct {
+	Error     errResponse `json:"error"`
+	RequestID string      `json:"request_id"`
+	Href      string      `json:"href"`
+}
+
 var _ bus.Plugin = (*Resource)(nil)
 
 func NewResource(agentConfig *config.Config) *Resource {
@@ -168,10 +180,12 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 
 	switch action.GetAction().(type) {
 	case *mpi.NGINXPlusAction_UpdateHttpUpstreamServers:
+		slog.DebugContext(ctx, "Updating http upstream servers")
 		add, update, del, err := r.resourceService.UpdateHTTPUpstreams(ctx, instance,
 			action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(),
 			action.GetUpdateHttpUpstreamServers().GetServers())
 		if err != nil {
+			slog.ErrorContext(ctx, "Unable to update HTTP servers of upstream", "err", err)
 			resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 				"", instanceID, err.Error())
 			r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
@@ -186,12 +200,12 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 
-		slog.DebugContext(ctx, "Updating http upstream servers", "", err)
 	case *mpi.NGINXPlusAction_GetHttpUpstreamServers:
-		slog.DebugContext(ctx, "Get http upstream servers")
+		slog.DebugContext(ctx, "Getting http upstream servers")
 		upstreams, err := r.resourceService.GetUpstreams(ctx, instance,
 			action.GetGetHttpUpstreamServers().GetHttpUpstreamName())
 		if err != nil {
+			slog.ErrorContext(ctx, "Unable to get HTTP servers of upstream", "err", err)
 			resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 				"", instanceID, err.Error())
 			r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
