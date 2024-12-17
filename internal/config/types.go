@@ -360,9 +360,14 @@ func (c *Config) AreReceiversConfigured() bool {
 	}
 
 	return c.Collector.Receivers.NginxPlusReceivers != nil ||
+		len(c.Collector.Receivers.NginxPlusReceivers) > 0 ||
 		c.Collector.Receivers.OtlpReceivers != nil ||
+		len(c.Collector.Receivers.OtlpReceivers) > 0 ||
 		c.Collector.Receivers.NginxReceivers != nil ||
-		c.Collector.Receivers.HostMetrics != nil
+		len(c.Collector.Receivers.NginxReceivers) > 0 ||
+		c.Collector.Receivers.HostMetrics != nil ||
+		c.Collector.Receivers.TcplogReceivers != nil ||
+		len(c.Collector.Receivers.TcplogReceivers) > 0
 }
 
 func isAllowedDir(dir string, allowedDirs []string) bool {

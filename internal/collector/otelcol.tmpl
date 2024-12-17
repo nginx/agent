@@ -208,6 +208,7 @@ service:
     {{- end}}
   {{- end}}
   pipelines:
+    {{- if or (ne .Receivers.HostMetrics nil) (gt (len .Receivers.OtlpReceivers) 0) (gt (len .Receivers.NginxReceivers) 0) (gt (len .Receivers.NginxPlusReceivers) 0) }}
     metrics:
       receivers:
         {{- if ne .Receivers.HostMetrics nil }}
@@ -246,7 +247,8 @@ service:
         {{- if ne .Exporters.Debug nil }}
         - debug
         {{- end  }}
-    {{- if ne .Receivers.TcplogReceivers nil }}
+    {{- end }}    
+    {{- if gt (len .Receivers.TcplogReceivers) 0 }}
     logs:
       receivers:
         {{- range $index, $tcplogReceiver := .Receivers.TcplogReceivers }}
