@@ -10,8 +10,12 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"sync"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/test/helpers"
@@ -37,7 +41,39 @@ func (*FakeSubscribeClient) Send(*mpi.DataPlaneResponse) error {
 
 // nolint: nilnil
 func (*FakeSubscribeClient) Recv() (*mpi.ManagementPlaneRequest, error) {
+	time.Sleep(1 * time.Second)
+
 	return nil, nil
+}
+
+type FakeConfigApplySubscribeClient struct {
+	grpc.ClientStream
+}
+
+func (*FakeConfigApplySubscribeClient) Send(*mpi.DataPlaneResponse) error {
+	return nil
+}
+
+// nolint: nilnil
+func (*FakeConfigApplySubscribeClient) Recv() (*mpi.ManagementPlaneRequest, error) {
+	protos.CreateManagementPlaneRequest()
+	return &mpi.ManagementPlaneRequest{
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     "1",
+			CorrelationId: "123",
+			Timestamp:     timestamppb.Now(),
+		},
+		Request: &mpi.ManagementPlaneRequest_ConfigApplyRequest{
+			ConfigApplyRequest: &mpi.ConfigApplyRequest{
+				Overview: &mpi.FileOverview{
+					ConfigVersion: &mpi.ConfigVersion{
+						InstanceId: "12314",
+						Version:    "4215432",
+					},
+				},
+			},
+		},
+	}, nil
 }
 
 func TestCommandService_NewCommandService(t *testing.T) {
@@ -59,6 +95,46 @@ func TestCommandService_NewCommandService(t *testing.T) {
 		2*time.Second,
 		10*time.Millisecond,
 	)
+}
+
+func TestCommandService_receiveCallback_configApplyRequest(t *testing.T) {
+	ctx := context.Background()
+	fakeSubscribeClient := &FakeConfigApplySubscribeClient{}
+
+	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
+	commandServiceClient.SubscribeReturns(fakeSubscribeClient, nil)
+
+	subscribeChannel := make(chan *mpi.ManagementPlaneRequest)
+
+	commandService := NewCommandService(
+		ctx,
+		commandServiceClient,
+		types.AgentConfig(),
+		subscribeChannel,
+	)
+
+	defer commandService.CancelSubscription(ctx)
+
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		requestFromChannel := <-subscribeChannel
+		assert.NotNil(t, requestFromChannel)
+		wg.Done()
+	}()
+
+	assert.Eventually(
+		t,
+		func() bool { return commandServiceClient.SubscribeCallCount() > 0 },
+		2*time.Second,
+		10*time.Millisecond,
+	)
+
+	commandService.configApplyRequestQueueMutex.Lock()
+	defer commandService.configApplyRequestQueueMutex.Unlock()
+	assert.Len(t, commandService.configApplyRequestQueue, 1)
+	wg.Wait()
 }
 
 func TestCommandService_UpdateDataPlaneStatus(t *testing.T) {
@@ -192,4 +268,124 @@ func TestCommandService_SendDataPlaneResponse(t *testing.T) {
 	err := commandService.SendDataPlaneResponse(ctx, protos.OKDataPlaneResponse())
 
 	require.NoError(t, err)
+}
+
+func TestCommandService_SendDataPlaneResponse_configApplyRequest(t *testing.T) {
+	ctx := context.Background()
+	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
+	subscribeClient := &FakeSubscribeClient{}
+	subscribeChannel := make(chan *mpi.ManagementPlaneRequest)
+
+	commandService := NewCommandService(
+		ctx,
+		commandServiceClient,
+		types.AgentConfig(),
+		subscribeChannel,
+	)
+
+	defer commandService.CancelSubscription(ctx)
+
+	request1 := &mpi.ManagementPlaneRequest{
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     "1",
+			CorrelationId: "123",
+			Timestamp:     timestamppb.Now(),
+		},
+		Request: &mpi.ManagementPlaneRequest_ConfigApplyRequest{
+			ConfigApplyRequest: &mpi.ConfigApplyRequest{
+				Overview: &mpi.FileOverview{
+					Files: []*mpi.File{},
+					ConfigVersion: &mpi.ConfigVersion{
+						InstanceId: "12314",
+						Version:    "4215432",
+					},
+				},
+			},
+		},
+	}
+
+	request2 := &mpi.ManagementPlaneRequest{
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     "2",
+			CorrelationId: "1232",
+			Timestamp:     timestamppb.Now(),
+		},
+		Request: &mpi.ManagementPlaneRequest_ConfigApplyRequest{
+			ConfigApplyRequest: &mpi.ConfigApplyRequest{
+				Overview: &mpi.FileOverview{
+					Files: []*mpi.File{},
+					ConfigVersion: &mpi.ConfigVersion{
+						InstanceId: "12314",
+						Version:    "4215432",
+					},
+				},
+			},
+		},
+	}
+
+	request3 := &mpi.ManagementPlaneRequest{
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     "3",
+			CorrelationId: "1233",
+			Timestamp:     timestamppb.Now(),
+		},
+		Request: &mpi.ManagementPlaneRequest_ConfigApplyRequest{
+			ConfigApplyRequest: &mpi.ConfigApplyRequest{
+				Overview: &mpi.FileOverview{
+					Files: []*mpi.File{},
+					ConfigVersion: &mpi.ConfigVersion{
+						InstanceId: "12314",
+						Version:    "4215432",
+					},
+				},
+			},
+		},
+	}
+
+	commandService.configApplyRequestQueueMutex.Lock()
+	commandService.configApplyRequestQueue = map[string][]*mpi.ManagementPlaneRequest{
+		"12314": {
+			request1,
+			request2,
+			request3,
+		},
+	}
+	commandService.configApplyRequestQueueMutex.Unlock()
+
+	commandService.subscribeClientMutex.Lock()
+	commandService.subscribeClient = subscribeClient
+	commandService.subscribeClientMutex.Unlock()
+
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		requestFromChannel := <-subscribeChannel
+		assert.Equal(t, request3, requestFromChannel)
+		wg.Done()
+	}()
+
+	err := commandService.SendDataPlaneResponse(
+		ctx,
+		&mpi.DataPlaneResponse{
+			MessageMeta: &mpi.MessageMeta{
+				MessageId:     uuid.NewString(),
+				CorrelationId: "1232",
+				Timestamp:     timestamppb.Now(),
+			},
+			CommandResponse: &mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+				Message: "Success",
+			},
+			InstanceId: "12314",
+		},
+	)
+
+	require.NoError(t, err)
+
+	commandService.configApplyRequestQueueMutex.Lock()
+	defer commandService.configApplyRequestQueueMutex.Unlock()
+	assert.Len(t, commandService.configApplyRequestQueue, 1)
+	assert.Equal(t, request3, commandService.configApplyRequestQueue["12314"][0])
+	wg.Wait()
 }
