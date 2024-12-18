@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/nginx/agent/v3/test/stub"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginxinc/nginx-plus-go-client/v2/client"
@@ -212,7 +213,7 @@ func TestResource_createPlusAPIError(t *testing.T) {
 	assert.Equal(t, errors.New(string(expectedJSON)), result)
 }
 
-func TestResource_Process_APIAction(t *testing.T) {
+func TestResource_Process_APIAction_GetHTTPServers(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
@@ -269,32 +270,12 @@ func TestResource_Process_APIAction(t *testing.T) {
 			topic:    []string{bus.DataPlaneResponseTopic},
 			instance: protos.GetNginxOssInstance([]string{}),
 		},
-		// {
-		//	name: "Test 4: Success, Update Http Upstream Servers",
-		//	message: &bus.Message{
-		//		Topic: bus.APIActionRequestTopic,
-		//		Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
-		//			protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
-		//	},
-		//	err: errors.New("failed to preform API action, instance is not NGINX Plus"),
-		//	upstreams: []client.UpstreamServer{
-		//		helpers.CreateNginxPlusUpstreamServer(t, 10, 2, 0, 1234, true, false,
-		//			false, "test_server", "", "", "", ""),
-		//	},
-		//	topic:    []string{bus.DataPlaneResponseTopic},
-		//	instance: protos.GetNginxPlusInstance([]string{}),
-		// },
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			logBuf := &bytes.Buffer{}
-			stub.StubLoggerWith(logBuf)
-
 			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
 			fakeResourceService.GetUpstreamsReturns(test.upstreams, test.err)
-			fakeResourceService.UpdateHTTPUpstreamsReturns(test.upstreams, []client.UpstreamServer{},
-				[]client.UpstreamServer{}, test.err)
 			fakeResourceService.InstanceReturns(test.instance)
 
 			messagePipe := busfakes.NewFakeMessagePipe()
@@ -321,6 +302,79 @@ func TestResource_Process_APIAction(t *testing.T) {
 				assert.Empty(t, response.GetCommandResponse().GetError())
 				assert.Equal(tt, mpi.CommandResponse_COMMAND_STATUS_OK, response.GetCommandResponse().GetStatus())
 			}
+		})
+	}
+}
+
+func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
+	ctx := context.Background()
+	tests := []struct {
+		instance    *mpi.Instance
+		name        string
+		expectedLog string
+		message     *bus.Message
+		err         error
+		topic       []string
+		upstreams   []client.UpstreamServer
+	}{
+		{
+			name: "Test 1: Success, Update Http Upstream Servers",
+			message: &bus.Message{
+				Topic: bus.APIActionRequestTopic,
+				Data: protos.CreatAPIActionRequestNginxPlusUpdateHTTPServers("test_upstream",
+					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(), []*structpb.Struct{
+						{
+							Fields: map[string]*structpb.Value{
+								"max_cons":  structpb.NewNumberValue(8),
+								"max_fails": structpb.NewNumberValue(0),
+								"backup":    structpb.NewBoolValue(true),
+								"service":   structpb.NewStringValue("test_server"),
+							},
+						},
+					}),
+			},
+			err: nil,
+			upstreams: []client.UpstreamServer{
+				helpers.CreateNginxPlusUpstreamServer(t, 10, 2, 0, 1234, true, false,
+					false, "test_server", "", "", "", ""),
+			},
+			topic:       []string{bus.DataPlaneResponseTopic},
+			instance:    protos.GetNginxPlusInstance([]string{}),
+			expectedLog: "successfully updated http upstreams",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			logBuf := &bytes.Buffer{}
+			stub.StubLoggerWith(logBuf)
+
+			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
+			fakeResourceService.InstanceReturns(test.instance)
+			fakeResourceService.UpdateHTTPUpstreamsReturns(test.upstreams, []client.UpstreamServer{},
+				[]client.UpstreamServer{}, test.err)
+
+			messagePipe := busfakes.NewFakeMessagePipe()
+
+			resourcePlugin := NewResource(types.AgentConfig())
+			resourcePlugin.resourceService = fakeResourceService
+
+			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
+			require.NoError(tt, err)
+
+			resourcePlugin.messagePipe = messagePipe
+
+			resourcePlugin.Process(ctx, test.message)
+
+			assert.Equal(tt, test.topic[0], messagePipe.GetMessages()[0].Topic)
+
+			response, ok := messagePipe.GetMessages()[0].Data.(*mpi.DataPlaneResponse)
+			assert.True(tt, ok)
+
+			assert.Empty(tt, response.GetCommandResponse().GetError())
+			assert.Equal(tt, mpi.CommandResponse_COMMAND_STATUS_OK, response.GetCommandResponse().GetStatus())
+
+			helpers.ValidateLog(tt, test.expectedLog, logBuf)
 		})
 	}
 }

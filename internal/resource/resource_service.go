@@ -208,32 +208,14 @@ func (r *ResourceService) UpdateHTTPUpstreams(ctx context.Context, instance *mpi
 }
 
 func convertToUpstreamServer(upstreams []*structpb.Struct) []client.UpstreamServer {
-	servers := make([]client.UpstreamServer, 0)
-
-	for _, upstream := range upstreams {
-		upstreamMap := upstream.GetFields()
-		maxConn := int(upstreamMap["max_conns"].GetNumberValue())
-		maxFails := int(upstreamMap["max_fails"].GetNumberValue())
-		backup := upstreamMap["backup"].GetBoolValue()
-		down := upstreamMap["down"].GetBoolValue()
-		weight := int(upstreamMap["weight"].GetNumberValue())
-
-		server := client.UpstreamServer{
-			MaxConns:    &maxConn,
-			MaxFails:    &maxFails,
-			Backup:      &backup,
-			Down:        &down,
-			Weight:      &weight,
-			Server:      upstreamMap["server"].GetStringValue(),
-			FailTimeout: upstreamMap["fail_timeout"].GetStringValue(),
-			SlowStart:   upstreamMap["slow_start"].GetStringValue(),
-			Route:       upstreamMap["route"].GetStringValue(),
-			Service:     upstreamMap["service"].GetStringValue(),
-			ID:          int(upstreamMap["id"].GetNumberValue()),
-			Drain:       upstreamMap["drain"].GetBoolValue(),
-		}
-
-		servers = append(servers, server)
+	var servers []client.UpstreamServer
+	res, err := json.Marshal(upstreams)
+	if err != nil {
+		slog.Error("", "", err)
+	}
+	err = json.Unmarshal(res, &servers)
+	if err != nil {
+		slog.Error("", "", err)
 	}
 
 	return servers
