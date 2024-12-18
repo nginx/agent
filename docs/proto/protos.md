@@ -259,7 +259,7 @@ and https://github.com/googleapis/googleapis/blob/005df4681b89bd204a90b76168a6dc
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| serial_number | [bytes](#bytes) |  | Serial number of the certificate, usually a unique identifier, RFC5280 states the upper limit for serial number is 20 octets |
+| serial_number | [string](#string) |  | Serial number of the certificate, usually a unique identifier, the max length is the length of an interger |
 | issuer | [X509Name](#mpi-v1-X509Name) |  | Issuer details (who issued the certificate) |
 | subject | [X509Name](#mpi-v1-X509Name) |  | Subject details (to whom the certificate is issued) |
 | sans | [SubjectAlternativeNames](#mpi-v1-SubjectAlternativeNames) |  | Subject Alternative Names (SAN) including DNS names and IP addresses |
@@ -484,7 +484,12 @@ Represents a list of logically grouped files that have changed e.g. configuratio
 <a name="mpi-v1-UpdateOverviewResponse"></a>
 
 ### UpdateOverviewResponse
-Represents a the response from an UpdateOverviewRequest - intentionally left empty
+Represents a the response from an UpdateOverviewRequest
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| overview | [FileOverview](#mpi-v1-FileOverview) |  | The file overview with the list of files that were uploaded |
 
 
 
