@@ -166,7 +166,7 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 	correlationID := logger.GetCorrelationID(ctx)
 	instance := r.resourceService.Instance(instanceID)
 	if instance == nil {
-		slog.Info("Unable to find instance with ID", "id", instanceID)
+		slog.ErrorContext(ctx, "Unable to find instance with ID", "id", instanceID)
 		resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"", instanceID, fmt.Sprintf("failed to preform API "+
 				"action, could not find instance with ID: %s", instanceID))
@@ -175,7 +175,7 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 	}
 
 	if instance.GetInstanceMeta().GetInstanceType() != mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
-		slog.ErrorContext(ctx, "", "err", errors.New("failed to preform API action, instance is not NGINX Plus"))
+		slog.ErrorContext(ctx, "Failed to preform API action", "error", errors.New("instance is not NGINX Plus"))
 		resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"", instanceID, "failed to preform API action, instance is not NGINX Plus")
 
