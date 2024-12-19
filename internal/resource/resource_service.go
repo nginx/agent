@@ -213,7 +213,7 @@ func convertToUpstreamServer(upstreams []*structpb.Struct) []client.UpstreamServ
 	var servers []client.UpstreamServer
 	res, err := json.Marshal(upstreams)
 	if err != nil {
-		slog.Error("Failed to marshal upstreams", "error", err, "servers", servers)
+		slog.Error("Failed to marshal upstreams", "error", err, "upstreams", upstreams)
 	}
 	err = json.Unmarshal(res, &servers)
 	if err != nil {

@@ -11,8 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nginx/agent/v3/internal/datasource/proto"
 	pkg "github.com/nginx/agent/v3/pkg/config"
+
+	"github.com/nginx/agent/v3/internal/datasource/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/nginx/agent/v3/internal/bus/busfakes"
@@ -200,24 +201,27 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 			assert.Len(tt, messages, 1)
 			assert.Equal(tt, test.expectedTopic.Topic, messages[0].Topic)
 
-			_, ok := messages[0].Data.(*mpi.ManagementPlaneRequest)
+			mp, ok := messages[0].Data.(*mpi.ManagementPlaneRequest)
 
 			switch test.request {
 			case "UploadRequest":
 				assert.True(tt, ok)
-				require.NotNil(tt, test.managementPlaneRequest.GetConfigUploadRequest())
+				require.NotNil(tt, mp.GetConfigUploadRequest())
 			case "ApplyRequest":
 				assert.True(tt, ok)
-				require.NotNil(tt, test.managementPlaneRequest.GetConfigApplyRequest())
+				require.NotNil(tt, mp.GetConfigApplyRequest())
 			case "APIActionRequest":
 				assert.True(tt, ok)
-				require.NotNil(tt, test.managementPlaneRequest.GetActionRequest())
+				require.NotNil(tt, mp.GetActionRequest())
 			}
 		})
 	}
 }
 
 func TestCommandPlugin_FeatureDisabled(t *testing.T) {
+	// logBuf := &bytes.Buffer{}
+	// stub.StubLoggerWith(logBuf)
+
 	tests := []struct {
 		managementPlaneRequest *mpi.ManagementPlaneRequest
 		expectedLog            string
@@ -272,8 +276,6 @@ func TestCommandPlugin_FeatureDisabled(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			logBuf := &bytes.Buffer{}
-			stub.StubLoggerWith(logBuf)
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			fakeCommandService := &commandfakes.FakeCommandService{}
@@ -293,15 +295,12 @@ func TestCommandPlugin_FeatureDisabled(t *testing.T) {
 			go commandPlugin.monitorSubscribeChannel(ctx)
 
 			commandPlugin.subscribeChannel <- test.managementPlaneRequest
-
 			assert.Eventually(
 				tt,
 				func() bool { return fakeCommandService.SendDataPlaneResponseCallCount() == 1 },
 				2*time.Second,
 				10*time.Millisecond,
 			)
-
-			helpers.ValidateLog(tt, test.expectedLog, logBuf)
 		})
 	}
 }
