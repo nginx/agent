@@ -270,16 +270,15 @@ func (x *CommandResponse) GetError() string {
 
 // The top-level configuration for the command server
 type ServerSettings struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state protoimpl.MessageState `protogen:"open.v1"`
 	// Command server host
 	Host string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
 	// Command server port
 	Port int32 `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
 	// Server type (enum for gRPC, HTTP, etc.)
-	Type ServerSettings_ServerType `protobuf:"varint,3,opt,name=type,proto3,enum=mpi.v1.ServerSettings_ServerType" json:"type,omitempty"`
+	Type          ServerSettings_ServerType `protobuf:"varint,3,opt,name=type,proto3,enum=mpi.v1.ServerSettings_ServerType" json:"type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ServerSettings) Reset() {
@@ -335,9 +334,9 @@ func (x *ServerSettings) GetType() ServerSettings_ServerType {
 
 // Defines the authentication configuration
 type AuthSettings struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *AuthSettings) Reset() {
@@ -371,10 +370,7 @@ func (*AuthSettings) Descriptor() ([]byte, []int) {
 }
 
 type TLSSettings struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state protoimpl.MessageState `protogen:"open.v1"`
 	// TLS certificate for the command server (e.g., "/path/to/cert.pem")
 	Cert string `protobuf:"bytes,1,opt,name=cert,proto3" json:"cert,omitempty"`
 	// TLS key for the command server (e.g., "/path/to/key.pem")
@@ -385,7 +381,9 @@ type TLSSettings struct {
 	// If skip_verify is true, accepts any certificate presented by the server and any host name in that certificate.
 	SkipVerify bool `protobuf:"varint,4,opt,name=skip_verify,json=skipVerify,proto3" json:"skip_verify,omitempty"`
 	// Server name for TLS
-	ServerName string `protobuf:"bytes,5,opt,name=server_name,json=serverName,proto3" json:"server_name,omitempty"`
+	ServerName    string `protobuf:"bytes,5,opt,name=server_name,json=serverName,proto3" json:"server_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TLSSettings) Reset() {

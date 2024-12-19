@@ -1651,10 +1651,7 @@ func (x *InstanceChild) GetProcessId() int32 {
 
 // A set of runtime NGINX OSS settings
 type NGINXRuntimeInfo struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state protoimpl.MessageState `protogen:"open.v1"`
 	// the stub status API details
 	StubStatus *APIDetails `protobuf:"bytes,1,opt,name=stub_status,json=stubStatus,proto3" json:"stub_status,omitempty"`
 	// a list of access_logs
@@ -1736,10 +1733,7 @@ func (x *NGINXRuntimeInfo) GetDynamicModules() []string {
 
 // A set of runtime NGINX Plus settings
 type NGINXPlusRuntimeInfo struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state protoimpl.MessageState `protogen:"open.v1"`
 	// the stub status API details
 	StubStatus *APIDetails `protobuf:"bytes,1,opt,name=stub_status,json=stubStatus,proto3" json:"stub_status,omitempty"`
 	// a list of access_logs
@@ -1751,7 +1745,9 @@ type NGINXPlusRuntimeInfo struct {
 	// List of NGINX dynamic modules.
 	DynamicModules []string `protobuf:"bytes,5,rep,name=dynamic_modules,json=dynamicModules,proto3" json:"dynamic_modules,omitempty"`
 	// the plus API details
-	PlusApi *APIDetails `protobuf:"bytes,6,opt,name=plus_api,json=plusApi,proto3" json:"plus_api,omitempty"`
+	PlusApi       *APIDetails `protobuf:"bytes,6,opt,name=plus_api,json=plusApi,proto3" json:"plus_api,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NGINXPlusRuntimeInfo) Reset() {
@@ -1827,14 +1823,13 @@ func (x *NGINXPlusRuntimeInfo) GetPlusApi() *APIDetails {
 }
 
 type APIDetails struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state protoimpl.MessageState `protogen:"open.v1"`
 	// the API location directive
 	Location string `protobuf:"bytes,1,opt,name=location,proto3" json:"location,omitempty"`
 	// the API listen directive
-	Listen string `protobuf:"bytes,2,opt,name=listen,proto3" json:"listen,omitempty"`
+	Listen        string `protobuf:"bytes,2,opt,name=listen,proto3" json:"listen,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *APIDetails) Reset() {
@@ -2011,15 +2006,15 @@ func (x *AgentConfig) GetMessageBufferSize() string {
 
 // The command server settings, associated with messaging from an external source
 type CommandServer struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-
+	state protoimpl.MessageState `protogen:"open.v1"`
 	// Server configuration (e.g., host, port, type)
 	Server *ServerSettings `protobuf:"bytes,1,opt,name=server,proto3" json:"server,omitempty"`
 	// Authentication configuration (e.g., token)
 	Auth *AuthSettings `protobuf:"bytes,2,opt,name=auth,proto3" json:"auth,omitempty"`
 	// TLS configuration for secure communication
-	Tls *TLSSettings `protobuf:"bytes,3,opt,name=tls,proto3" json:"tls,omitempty"`
+	Tls           *TLSSettings `protobuf:"bytes,3,opt,name=tls,proto3" json:"tls,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CommandServer) Reset() {
