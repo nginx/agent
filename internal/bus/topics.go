@@ -23,4 +23,5 @@ const (
 	RollbackWriteTopic           = "rollback-write"
 	DataPlaneHealthRequestTopic  = "data-plane-health-request"
 	DataPlaneHealthResponseTopic = "data-plane-health-response"
+	APIActionRequestTopic        = "api-action-request"
 )

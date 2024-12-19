@@ -6,6 +6,8 @@ import (
 	"sync"
 
 	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginxinc/nginx-plus-go-client/v2/client"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 type FakeResourceServiceInterface struct {
@@ -43,6 +45,21 @@ type FakeResourceServiceInterface struct {
 	deleteInstancesReturnsOnCall map[int]struct {
 		result1 *v1.Resource
 	}
+	GetUpstreamsStub        func(context.Context, *v1.Instance, string) ([]client.UpstreamServer, error)
+	getUpstreamsMutex       sync.RWMutex
+	getUpstreamsArgsForCall []struct {
+		arg1 context.Context
+		arg2 *v1.Instance
+		arg3 string
+	}
+	getUpstreamsReturns struct {
+		result1 []client.UpstreamServer
+		result2 error
+	}
+	getUpstreamsReturnsOnCall map[int]struct {
+		result1 []client.UpstreamServer
+		result2 error
+	}
 	InstanceStub        func(string) *v1.Instance
 	instanceMutex       sync.RWMutex
 	instanceArgsForCall []struct {
@@ -53,6 +70,26 @@ type FakeResourceServiceInterface struct {
 	}
 	instanceReturnsOnCall map[int]struct {
 		result1 *v1.Instance
+	}
+	UpdateHTTPUpstreamsStub        func(context.Context, *v1.Instance, string, []*structpb.Struct) ([]client.UpstreamServer, []client.UpstreamServer, []client.UpstreamServer, error)
+	updateHTTPUpstreamsMutex       sync.RWMutex
+	updateHTTPUpstreamsArgsForCall []struct {
+		arg1 context.Context
+		arg2 *v1.Instance
+		arg3 string
+		arg4 []*structpb.Struct
+	}
+	updateHTTPUpstreamsReturns struct {
+		result1 []client.UpstreamServer
+		result2 []client.UpstreamServer
+		result3 []client.UpstreamServer
+		result4 error
+	}
+	updateHTTPUpstreamsReturnsOnCall map[int]struct {
+		result1 []client.UpstreamServer
+		result2 []client.UpstreamServer
+		result3 []client.UpstreamServer
+		result4 error
 	}
 	UpdateInstancesStub        func([]*v1.Instance) *v1.Resource
 	updateInstancesMutex       sync.RWMutex
@@ -263,6 +300,72 @@ func (fake *FakeResourceServiceInterface) DeleteInstancesReturnsOnCall(i int, re
 	}{result1}
 }
 
+func (fake *FakeResourceServiceInterface) GetUpstreams(arg1 context.Context, arg2 *v1.Instance, arg3 string) ([]client.UpstreamServer, error) {
+	fake.getUpstreamsMutex.Lock()
+	ret, specificReturn := fake.getUpstreamsReturnsOnCall[len(fake.getUpstreamsArgsForCall)]
+	fake.getUpstreamsArgsForCall = append(fake.getUpstreamsArgsForCall, struct {
+		arg1 context.Context
+		arg2 *v1.Instance
+		arg3 string
+	}{arg1, arg2, arg3})
+	stub := fake.GetUpstreamsStub
+	fakeReturns := fake.getUpstreamsReturns
+	fake.recordInvocation("GetUpstreams", []interface{}{arg1, arg2, arg3})
+	fake.getUpstreamsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeResourceServiceInterface) GetUpstreamsCallCount() int {
+	fake.getUpstreamsMutex.RLock()
+	defer fake.getUpstreamsMutex.RUnlock()
+	return len(fake.getUpstreamsArgsForCall)
+}
+
+func (fake *FakeResourceServiceInterface) GetUpstreamsCalls(stub func(context.Context, *v1.Instance, string) ([]client.UpstreamServer, error)) {
+	fake.getUpstreamsMutex.Lock()
+	defer fake.getUpstreamsMutex.Unlock()
+	fake.GetUpstreamsStub = stub
+}
+
+func (fake *FakeResourceServiceInterface) GetUpstreamsArgsForCall(i int) (context.Context, *v1.Instance, string) {
+	fake.getUpstreamsMutex.RLock()
+	defer fake.getUpstreamsMutex.RUnlock()
+	argsForCall := fake.getUpstreamsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeResourceServiceInterface) GetUpstreamsReturns(result1 []client.UpstreamServer, result2 error) {
+	fake.getUpstreamsMutex.Lock()
+	defer fake.getUpstreamsMutex.Unlock()
+	fake.GetUpstreamsStub = nil
+	fake.getUpstreamsReturns = struct {
+		result1 []client.UpstreamServer
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeResourceServiceInterface) GetUpstreamsReturnsOnCall(i int, result1 []client.UpstreamServer, result2 error) {
+	fake.getUpstreamsMutex.Lock()
+	defer fake.getUpstreamsMutex.Unlock()
+	fake.GetUpstreamsStub = nil
+	if fake.getUpstreamsReturnsOnCall == nil {
+		fake.getUpstreamsReturnsOnCall = make(map[int]struct {
+			result1 []client.UpstreamServer
+			result2 error
+		})
+	}
+	fake.getUpstreamsReturnsOnCall[i] = struct {
+		result1 []client.UpstreamServer
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeResourceServiceInterface) Instance(arg1 string) *v1.Instance {
 	fake.instanceMutex.Lock()
 	ret, specificReturn := fake.instanceReturnsOnCall[len(fake.instanceArgsForCall)]
@@ -322,6 +425,84 @@ func (fake *FakeResourceServiceInterface) InstanceReturnsOnCall(i int, result1 *
 	fake.instanceReturnsOnCall[i] = struct {
 		result1 *v1.Instance
 	}{result1}
+}
+
+func (fake *FakeResourceServiceInterface) UpdateHTTPUpstreams(arg1 context.Context, arg2 *v1.Instance, arg3 string, arg4 []*structpb.Struct) ([]client.UpstreamServer, []client.UpstreamServer, []client.UpstreamServer, error) {
+	var arg4Copy []*structpb.Struct
+	if arg4 != nil {
+		arg4Copy = make([]*structpb.Struct, len(arg4))
+		copy(arg4Copy, arg4)
+	}
+	fake.updateHTTPUpstreamsMutex.Lock()
+	ret, specificReturn := fake.updateHTTPUpstreamsReturnsOnCall[len(fake.updateHTTPUpstreamsArgsForCall)]
+	fake.updateHTTPUpstreamsArgsForCall = append(fake.updateHTTPUpstreamsArgsForCall, struct {
+		arg1 context.Context
+		arg2 *v1.Instance
+		arg3 string
+		arg4 []*structpb.Struct
+	}{arg1, arg2, arg3, arg4Copy})
+	stub := fake.UpdateHTTPUpstreamsStub
+	fakeReturns := fake.updateHTTPUpstreamsReturns
+	fake.recordInvocation("UpdateHTTPUpstreams", []interface{}{arg1, arg2, arg3, arg4Copy})
+	fake.updateHTTPUpstreamsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2, ret.result3, ret.result4
+	}
+	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3, fakeReturns.result4
+}
+
+func (fake *FakeResourceServiceInterface) UpdateHTTPUpstreamsCallCount() int {
+	fake.updateHTTPUpstreamsMutex.RLock()
+	defer fake.updateHTTPUpstreamsMutex.RUnlock()
+	return len(fake.updateHTTPUpstreamsArgsForCall)
+}
+
+func (fake *FakeResourceServiceInterface) UpdateHTTPUpstreamsCalls(stub func(context.Context, *v1.Instance, string, []*structpb.Struct) ([]client.UpstreamServer, []client.UpstreamServer, []client.UpstreamServer, error)) {
+	fake.updateHTTPUpstreamsMutex.Lock()
+	defer fake.updateHTTPUpstreamsMutex.Unlock()
+	fake.UpdateHTTPUpstreamsStub = stub
+}
+
+func (fake *FakeResourceServiceInterface) UpdateHTTPUpstreamsArgsForCall(i int) (context.Context, *v1.Instance, string, []*structpb.Struct) {
+	fake.updateHTTPUpstreamsMutex.RLock()
+	defer fake.updateHTTPUpstreamsMutex.RUnlock()
+	argsForCall := fake.updateHTTPUpstreamsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeResourceServiceInterface) UpdateHTTPUpstreamsReturns(result1 []client.UpstreamServer, result2 []client.UpstreamServer, result3 []client.UpstreamServer, result4 error) {
+	fake.updateHTTPUpstreamsMutex.Lock()
+	defer fake.updateHTTPUpstreamsMutex.Unlock()
+	fake.UpdateHTTPUpstreamsStub = nil
+	fake.updateHTTPUpstreamsReturns = struct {
+		result1 []client.UpstreamServer
+		result2 []client.UpstreamServer
+		result3 []client.UpstreamServer
+		result4 error
+	}{result1, result2, result3, result4}
+}
+
+func (fake *FakeResourceServiceInterface) UpdateHTTPUpstreamsReturnsOnCall(i int, result1 []client.UpstreamServer, result2 []client.UpstreamServer, result3 []client.UpstreamServer, result4 error) {
+	fake.updateHTTPUpstreamsMutex.Lock()
+	defer fake.updateHTTPUpstreamsMutex.Unlock()
+	fake.UpdateHTTPUpstreamsStub = nil
+	if fake.updateHTTPUpstreamsReturnsOnCall == nil {
+		fake.updateHTTPUpstreamsReturnsOnCall = make(map[int]struct {
+			result1 []client.UpstreamServer
+			result2 []client.UpstreamServer
+			result3 []client.UpstreamServer
+			result4 error
+		})
+	}
+	fake.updateHTTPUpstreamsReturnsOnCall[i] = struct {
+		result1 []client.UpstreamServer
+		result2 []client.UpstreamServer
+		result3 []client.UpstreamServer
+		result4 error
+	}{result1, result2, result3, result4}
 }
 
 func (fake *FakeResourceServiceInterface) UpdateInstances(arg1 []*v1.Instance) *v1.Resource {
@@ -399,8 +580,12 @@ func (fake *FakeResourceServiceInterface) Invocations() map[string][][]interface
 	defer fake.applyConfigMutex.RUnlock()
 	fake.deleteInstancesMutex.RLock()
 	defer fake.deleteInstancesMutex.RUnlock()
+	fake.getUpstreamsMutex.RLock()
+	defer fake.getUpstreamsMutex.RUnlock()
 	fake.instanceMutex.RLock()
 	defer fake.instanceMutex.RUnlock()
+	fake.updateHTTPUpstreamsMutex.RLock()
+	defer fake.updateHTTPUpstreamsMutex.RUnlock()
 	fake.updateInstancesMutex.RLock()
 	defer fake.updateInstancesMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
