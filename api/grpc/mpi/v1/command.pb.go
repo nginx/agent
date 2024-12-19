@@ -1278,6 +1278,7 @@ type APIActionRequest_NginxPlusAction struct {
 
 func (*APIActionRequest_NginxPlusAction) isAPIActionRequest_Action() {}
 
+// Perform an action using the NGINX Plus API on an instance
 type NGINXPlusAction struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Action:
@@ -1360,6 +1361,7 @@ func (*NGINXPlusAction_UpdateHttpUpstreamServers) isNGINXPlusAction_Action() {}
 
 func (*NGINXPlusAction_GetHttpUpstreamServers) isNGINXPlusAction_Action() {}
 
+// Update HTTP Upstream Servers for an instance
 type UpdateHTTPUpstreamServers struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	HttpUpstreamName string                 `protobuf:"bytes,1,opt,name=http_upstream_name,json=httpUpstreamName,proto3" json:"http_upstream_name,omitempty"`
@@ -1412,6 +1414,7 @@ func (x *UpdateHTTPUpstreamServers) GetServers() []*structpb.Struct {
 	return nil
 }
 
+// Get HTTP Upstream Servers for an instance
 type GetHTTPUpstreamServers struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	HttpUpstreamName string                 `protobuf:"bytes,1,opt,name=http_upstream_name,json=httpUpstreamName,proto3" json:"http_upstream_name,omitempty"`

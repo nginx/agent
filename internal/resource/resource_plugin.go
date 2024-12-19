@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -162,11 +163,16 @@ func (r *Resource) handleAPIActionRequest(ctx context.Context, msg *bus.Message)
 }
 
 func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi.NGINXPlusAction, instanceID string) {
+	correlationID := logger.GetCorrelationID(ctx)
 	instance := r.resourceService.Instance(instanceID)
 	if instance == nil {
 		slog.Info("Unable to find instance with ID", "id", instanceID)
+		resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+			"", instanceID, fmt.Sprintf("failed to preform API "+
+				"action, could not find instance with ID: %s", instanceID))
+
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 	}
-	correlationID := logger.GetCorrelationID(ctx)
 
 	if instance.GetInstanceMeta().GetInstanceType() != mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
 		slog.ErrorContext(ctx, "", "err", errors.New("failed to preform API action, instance is not NGINX Plus"))
@@ -180,12 +186,14 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 
 	switch action.GetAction().(type) {
 	case *mpi.NGINXPlusAction_UpdateHttpUpstreamServers:
-		slog.DebugContext(ctx, "Updating http upstream servers")
+		slog.DebugContext(ctx, "Updating http upstream servers",
+			"request", action.GetUpdateHttpUpstreamServers())
 		add, update, del, err := r.resourceService.UpdateHTTPUpstreams(ctx, instance,
 			action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(),
 			action.GetUpdateHttpUpstreamServers().GetServers())
 		if err != nil {
-			slog.ErrorContext(ctx, "Unable to update HTTP servers of upstream", "err", err)
+			slog.ErrorContext(ctx, "Unable to update HTTP servers of upstream", "request",
+				action.GetUpdateHttpUpstreamServers(), "error", err)
 			resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 				"", instanceID, err.Error())
 			r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
@@ -193,19 +201,20 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 			return
 		}
 
-		slog.DebugContext(ctx, "successfully updated http upstreams", "add", len(add),
-			"update", len(update), "delete", len(del))
+		slog.DebugContext(ctx, "Successfully updated http upstream servers", "http_upstream_name",
+			action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(), "add", len(add), "update", len(update),
+			"delete", len(del))
 		resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
 			"Successfully updated HTTP Upstreams", instanceID, "")
 
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 
 	case *mpi.NGINXPlusAction_GetHttpUpstreamServers:
-		slog.DebugContext(ctx, "Getting http upstream servers")
+		slog.DebugContext(ctx, "Getting http upstream servers", "request", action.GetGetHttpUpstreamServers())
 		upstreams, err := r.resourceService.GetUpstreams(ctx, instance,
 			action.GetGetHttpUpstreamServers().GetHttpUpstreamName())
 		if err != nil {
-			slog.ErrorContext(ctx, "Unable to get HTTP servers of upstream", "err", err)
+			slog.ErrorContext(ctx, "Unable to get HTTP servers of upstream", "error", err)
 			resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 				"", instanceID, err.Error())
 			r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})

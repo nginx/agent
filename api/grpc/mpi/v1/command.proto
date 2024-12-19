@@ -198,6 +198,7 @@ message APIActionRequest {
     }
 }
 
+// Perform an action using the NGINX Plus API on an instance
 message NGINXPlusAction {
     oneof action {
         UpdateHTTPUpstreamServers update_http_upstream_servers = 2;
@@ -205,11 +206,13 @@ message NGINXPlusAction {
     }
 }
 
+// Update HTTP Upstream Servers for an instance 
 message UpdateHTTPUpstreamServers {
     string http_upstream_name = 1;
     repeated google.protobuf.Struct servers = 2;
 }
 
+// Get HTTP Upstream Servers for an instance 
 message GetHTTPUpstreamServers {
     string http_upstream_name = 1;
 }

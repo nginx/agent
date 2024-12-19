@@ -182,7 +182,7 @@ func (r *ResourceService) GetUpstreams(ctx context.Context, instance *mpi.Instan
 ) ([]client.UpstreamServer, error) {
 	plusClient, err := r.createPlusClient(instance)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to create plus client ", "err", err)
+		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
 		return nil, err
 	}
 
@@ -198,24 +198,26 @@ func (r *ResourceService) UpdateHTTPUpstreams(ctx context.Context, instance *mpi
 ) (added, updated, deleted []client.UpstreamServer, err error) {
 	plusClient, err := r.createPlusClient(instance)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to create plus client ", "err", err)
+		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
 		return nil, nil, nil, err
 	}
 
 	servers := convertToUpstreamServer(upstreams)
 
-	return plusClient.UpdateHTTPServers(ctx, upstream, servers)
+	added, updated, deleted, updateError := plusClient.UpdateHTTPServers(ctx, upstream, servers)
+
+	return added, updated, deleted, createPlusAPIError(updateError)
 }
 
 func convertToUpstreamServer(upstreams []*structpb.Struct) []client.UpstreamServer {
 	var servers []client.UpstreamServer
 	res, err := json.Marshal(upstreams)
 	if err != nil {
-		slog.Error("", "", err)
+		slog.Error("Failed to marshal upstreams", "error", err, "upstreams", upstreams)
 	}
 	err = json.Unmarshal(res, &servers)
 	if err != nil {
-		slog.Error("", "", err)
+		slog.Error("Failed to unmarshal upstreams", "error", err, "upstreams", upstreams)
 	}
 
 	return servers
@@ -295,7 +297,7 @@ func createPlusAPIError(apiErr error) error {
 
 	r, err := json.Marshal(plusErr)
 	if err != nil {
-		slog.Error("error marshaling error", "err", err)
+		slog.Error("Unable to marshal NGINX Plus API error", "error", err)
 		return apiErr
 	}
 

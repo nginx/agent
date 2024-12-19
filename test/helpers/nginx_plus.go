@@ -15,7 +15,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const endpointRootPath = "/api/9/"
+const (
+	endpointRootPath = "/api/9/"
+	serverID         = 1234
+)
 
 // nolint: gocyclo,revive,cyclop,maintidx
 func NewMockNGINXPlusAPIServer(t *testing.T) *httptest.Server {
@@ -484,24 +487,27 @@ func NewMockNGINXPlusAPIServer(t *testing.T) *httptest.Server {
 	}))
 }
 
-// max number of arguments from function is 5
-// nolint: lll, revive
-func CreateNginxPlusUpstreamServer(t *testing.T, maxConns, maxFails, weight, id int, backup, down, drain bool, server, timeout,
-	slowStart, route, service string,
-) client.UpstreamServer {
+func CreateNginxPlusUpstreamServer(t *testing.T) client.UpstreamServer {
 	t.Helper()
+
+	maxConns := 10
+	maxFails := 2
+	weight := 0
+	down := false
+	backup := true
+
 	return client.UpstreamServer{
 		MaxConns:    &maxConns,
 		MaxFails:    &maxFails,
 		Backup:      &backup,
 		Down:        &down,
 		Weight:      &weight,
-		Server:      server,
-		FailTimeout: timeout,
-		SlowStart:   slowStart,
-		Route:       route,
-		Service:     service,
-		ID:          id,
-		Drain:       drain,
+		Server:      "test_server",
+		FailTimeout: "",
+		SlowStart:   "",
+		Route:       "",
+		Service:     "",
+		ID:          serverID,
+		Drain:       false,
 	}
 }

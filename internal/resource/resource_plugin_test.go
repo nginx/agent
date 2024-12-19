@@ -233,8 +233,7 @@ func TestResource_Process_APIAction_GetHTTPServers(t *testing.T) {
 			},
 			err: nil,
 			upstreams: []client.UpstreamServer{
-				helpers.CreateNginxPlusUpstreamServer(t, 10, 2, 0, 1234, true, false,
-					false, "test_server", "", "", "", ""),
+				helpers.CreateNginxPlusUpstreamServer(t),
 			},
 			topic:    []string{bus.DataPlaneResponseTopic},
 			instance: protos.GetNginxPlusInstance([]string{}),
@@ -249,8 +248,7 @@ func TestResource_Process_APIAction_GetHTTPServers(t *testing.T) {
 			},
 			err: errors.New("failed to get http servers"),
 			upstreams: []client.UpstreamServer{
-				helpers.CreateNginxPlusUpstreamServer(t, 10, 2, 0, 1234, true, false,
-					false, "test_server", "", "", "", ""),
+				helpers.CreateNginxPlusUpstreamServer(t),
 			},
 			topic:    []string{bus.DataPlaneResponseTopic},
 			instance: protos.GetNginxPlusInstance([]string{}),
@@ -264,8 +262,7 @@ func TestResource_Process_APIAction_GetHTTPServers(t *testing.T) {
 			},
 			err: errors.New("failed to preform API action, instance is not NGINX Plus"),
 			upstreams: []client.UpstreamServer{
-				helpers.CreateNginxPlusUpstreamServer(t, 10, 2, 0, 1234, true, false,
-					false, "test_server", "", "", "", ""),
+				helpers.CreateNginxPlusUpstreamServer(t),
 			},
 			topic:    []string{bus.DataPlaneResponseTopic},
 			instance: protos.GetNginxOssInstance([]string{}),
@@ -335,12 +332,11 @@ func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 			},
 			err: nil,
 			upstreams: []client.UpstreamServer{
-				helpers.CreateNginxPlusUpstreamServer(t, 10, 2, 0, 1234, true, false,
-					false, "test_server", "", "", "", ""),
+				helpers.CreateNginxPlusUpstreamServer(t),
 			},
 			topic:       []string{bus.DataPlaneResponseTopic},
 			instance:    protos.GetNginxPlusInstance([]string{}),
-			expectedLog: "successfully updated http upstreams",
+			expectedLog: "Successfully updated http upstream",
 		},
 	}
 

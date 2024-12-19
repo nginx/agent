@@ -785,7 +785,7 @@ The file settings associated with file server for configurations
 <a name="mpi-v1-GetHTTPUpstreamServers"></a>
 
 ### GetHTTPUpstreamServers
-
+Get HTTP Upstream Servers for an instance
 
 
 | Field | Type | Label | Description |
@@ -970,7 +970,7 @@ The metrics settings associated with origins (sources) of the metrics and destin
 <a name="mpi-v1-NGINXPlusAction"></a>
 
 ### NGINXPlusAction
-
+Perform an action using the NGINX Plus API on an instance
 
 
 | Field | Type | Label | Description |
@@ -1124,7 +1124,7 @@ Respond to a UpdateDataPlaneStatusRequest - intentionally empty
 <a name="mpi-v1-UpdateHTTPUpstreamServers"></a>
 
 ### UpdateHTTPUpstreamServers
-
+Update HTTP Upstream Servers for an instance
 
 
 | Field | Type | Label | Description |
