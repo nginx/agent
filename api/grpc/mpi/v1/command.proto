@@ -204,8 +204,11 @@ message APIActionRequest {
 message NGINXPlusAction {
     // types of actions possible with NGINX Plus API
     oneof action {
-        UpdateHTTPUpstreamServers update_http_upstream_servers = 2;
-        GetHTTPUpstreamServers get_http_upstream_servers = 3;
+        UpdateHTTPUpstreamServers update_http_upstream_servers = 1;
+        GetHTTPUpstreamServers get_http_upstream_servers = 2;
+        UpdateStreamServers update_stream_servers = 3;
+        GetUpstreams get_upstreams = 4;
+        GetStreamUpstreams get_stream_upstreams = 5;
     }
 }
 
@@ -221,6 +224,22 @@ message UpdateHTTPUpstreamServers {
 message GetHTTPUpstreamServers {
     // the name of the upstream
     string http_upstream_name = 1;
+}
+
+// Update Upstream Stream Servers for an instance 
+message UpdateStreamServers {
+    // the name of the upstream stream
+    string  upstream_stream_name = 1;
+    // a list of upstream stream servers
+    repeated google.protobuf.Struct servers = 2;
+}
+
+// Get Upstreams for an instance 
+message GetUpstreams {
+}
+
+// Get Stream Upstream Servers for an instance 
+message GetStreamUpstreams {
 }
 
 // Request an update on a particular command

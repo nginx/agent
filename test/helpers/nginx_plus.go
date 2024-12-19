@@ -511,3 +511,26 @@ func CreateNginxPlusUpstreamServer(t *testing.T) client.UpstreamServer {
 		Drain:       false,
 	}
 }
+
+func CreateNginxPlusStreamServer(t *testing.T) client.StreamUpstreamServer {
+	t.Helper()
+
+	maxConns := 10
+	maxFails := 2
+	weight := 0
+	down := false
+	backup := true
+
+	return client.StreamUpstreamServer{
+		MaxConns:    &maxConns,
+		MaxFails:    &maxFails,
+		Backup:      &backup,
+		Down:        &down,
+		Weight:      &weight,
+		Server:      "test_server",
+		FailTimeout: "",
+		SlowStart:   "",
+		Service:     "",
+		ID:          serverID,
+	}
+}
