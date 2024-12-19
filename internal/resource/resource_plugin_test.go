@@ -216,6 +216,9 @@ func TestResource_createPlusAPIError(t *testing.T) {
 func TestResource_Process_APIAction_GetHTTPServers(t *testing.T) {
 	ctx := context.Background()
 
+	inValidInstance := protos.GetNginxPlusInstance([]string{})
+	inValidInstance.InstanceMeta.InstanceId = "e1374cb1-462d-3b6c-9f3b-f28332b5f10f"
+
 	tests := []struct {
 		instance  *mpi.Instance
 		name      string
@@ -267,13 +270,30 @@ func TestResource_Process_APIAction_GetHTTPServers(t *testing.T) {
 			topic:    []string{bus.DataPlaneResponseTopic},
 			instance: protos.GetNginxOssInstance([]string{}),
 		},
+		{
+			name: "Test 4: Fail, No Instance",
+			message: &bus.Message{
+				Topic: bus.APIActionRequestTopic,
+				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
+					protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+			},
+			err: errors.New("failed to preform API action, could not find instance with ID: " +
+				"e1374cb1-462d-3b6c-9f3b-f28332b5f10c"),
+			upstreams: []client.UpstreamServer{
+				helpers.CreateNginxPlusUpstreamServer(t),
+			},
+			topic:    []string{bus.DataPlaneResponseTopic},
+			instance: inValidInstance,
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
 			fakeResourceService.GetUpstreamsReturns(test.upstreams, test.err)
-			fakeResourceService.InstanceReturns(test.instance)
+			if test.instance.GetInstanceMeta().GetInstanceId() != "e1374cb1-462d-3b6c-9f3b-f28332b5f10f" {
+				fakeResourceService.InstanceReturns(test.instance)
+			}
 
 			messagePipe := busfakes.NewFakeMessagePipe()
 
@@ -338,6 +358,30 @@ func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 			instance:    protos.GetNginxPlusInstance([]string{}),
 			expectedLog: "Successfully updated http upstream",
 		},
+		{
+			name: "Test 2: Fail, Update Http Upstream Servers",
+			message: &bus.Message{
+				Topic: bus.APIActionRequestTopic,
+				Data: protos.CreatAPIActionRequestNginxPlusUpdateHTTPServers("test_upstream",
+					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(), []*structpb.Struct{
+						{
+							Fields: map[string]*structpb.Value{
+								"max_cons":  structpb.NewNumberValue(8),
+								"max_fails": structpb.NewNumberValue(0),
+								"backup":    structpb.NewBoolValue(true),
+								"service":   structpb.NewStringValue("test_server"),
+							},
+						},
+					}),
+			},
+			err: errors.New("something went wrong"),
+			upstreams: []client.UpstreamServer{
+				helpers.CreateNginxPlusUpstreamServer(t),
+			},
+			topic:       []string{bus.DataPlaneResponseTopic},
+			instance:    protos.GetNginxPlusInstance([]string{}),
+			expectedLog: "Unable to update HTTP servers of upstream",
+		},
 	}
 
 	for _, test := range tests {
@@ -347,8 +391,10 @@ func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 
 			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
 			fakeResourceService.InstanceReturns(test.instance)
-			fakeResourceService.UpdateHTTPUpstreamsReturns(test.upstreams, []client.UpstreamServer{},
+			fakeResourceService.UpdateHTTPUpstreamsReturnsOnCall(0, test.upstreams, []client.UpstreamServer{},
 				[]client.UpstreamServer{}, test.err)
+			fakeResourceService.UpdateHTTPUpstreamsReturnsOnCall(1, []client.UpstreamServer{},
+				[]client.UpstreamServer{}, []client.UpstreamServer{}, test.err)
 
 			messagePipe := busfakes.NewFakeMessagePipe()
 
@@ -367,8 +413,12 @@ func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 			response, ok := messagePipe.GetMessages()[0].Data.(*mpi.DataPlaneResponse)
 			assert.True(tt, ok)
 
-			assert.Empty(tt, response.GetCommandResponse().GetError())
-			assert.Equal(tt, mpi.CommandResponse_COMMAND_STATUS_OK, response.GetCommandResponse().GetStatus())
+			if test.err != nil {
+				assert.Equal(tt, mpi.CommandResponse_COMMAND_STATUS_FAILURE, response.GetCommandResponse().GetStatus())
+			} else {
+				assert.Empty(tt, response.GetCommandResponse().GetError())
+				assert.Equal(tt, mpi.CommandResponse_COMMAND_STATUS_OK, response.GetCommandResponse().GetStatus())
+			}
 
 			helpers.ValidateLog(tt, test.expectedLog, logBuf)
 		})
