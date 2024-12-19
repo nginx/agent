@@ -589,6 +589,51 @@ func TestResource_Process_APIAction_GetStreamUpstreams(t *testing.T) {
 			topic:    []string{bus.DataPlaneResponseTopic},
 			instance: protos.GetNginxPlusInstance([]string{}),
 		},
+		{
+			name: "Test 3: Fail, No Instance",
+			message: &bus.Message{
+				Topic: bus.APIActionRequestTopic,
+				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
+					protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+			},
+			err: errors.New("failed to preform API action, could not find instance with ID: " +
+				"e1374cb1-462d-3b6c-9f3b-f28332b5f10c"),
+			upstreams: &client.StreamUpstreams{
+				"upstream_1": client.StreamUpstream{
+					Zone: "zone_1",
+					Peers: []client.StreamPeer{
+						{
+							Server: "server_1",
+						},
+					},
+					Zombies: 0,
+				},
+			},
+			topic:    []string{bus.DataPlaneResponseTopic},
+			instance: inValidInstance,
+		},
+		{
+			name: "Test 4: Fail, OSS Instance",
+			message: &bus.Message{
+				Topic: bus.APIActionRequestTopic,
+				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
+					protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+			},
+			err: errors.New("failed to preform API action, instance is not NGINX Plus"),
+			upstreams: &client.StreamUpstreams{
+				"upstream_1": client.StreamUpstream{
+					Zone: "zone_1",
+					Peers: []client.StreamPeer{
+						{
+							Server: "server_1",
+						},
+					},
+					Zombies: 0,
+				},
+			},
+			topic:    []string{bus.DataPlaneResponseTopic},
+			instance: protos.GetNginxOssInstance([]string{}),
+		},
 	}
 
 	for _, test := range tests {
@@ -689,6 +734,55 @@ func TestResource_Process_APIAction_GetUpstreams(t *testing.T) {
 			},
 			topic:    []string{bus.DataPlaneResponseTopic},
 			instance: protos.GetNginxPlusInstance([]string{}),
+		},
+		{
+			name: "Test 3: Fail, No Instance",
+			message: &bus.Message{
+				Topic: bus.APIActionRequestTopic,
+				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
+					protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+			},
+			err: errors.New("failed to preform API action, could not find instance with ID: " +
+				"e1374cb1-462d-3b6c-9f3b-f28332b5f10c"),
+			upstreams: &client.Upstreams{
+				"upstream_1": client.Upstream{
+					Zone: "zone_1",
+					Peers: []client.Peer{
+						{
+							Server: "server_1",
+						},
+					},
+					Queue:     client.Queue{},
+					Keepalive: 6,
+					Zombies:   0,
+				},
+			},
+			topic:    []string{bus.DataPlaneResponseTopic},
+			instance: inValidInstance,
+		},
+		{
+			name: "Test 4: Fail, OSS Instance",
+			message: &bus.Message{
+				Topic: bus.APIActionRequestTopic,
+				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
+					protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+			},
+			err: errors.New("failed to preform API action, instance is not NGINX Plus"),
+			upstreams: &client.Upstreams{
+				"upstream_1": client.Upstream{
+					Zone: "zone_1",
+					Peers: []client.Peer{
+						{
+							Server: "server_1",
+						},
+					},
+					Queue:     client.Queue{},
+					Keepalive: 6,
+					Zombies:   0,
+				},
+			},
+			topic:    []string{bus.DataPlaneResponseTopic},
+			instance: protos.GetNginxOssInstance([]string{}),
 		},
 	}
 
