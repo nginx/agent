@@ -14,6 +14,7 @@ const (
 	ConfigPathKey                               = "path"
 	CommandRootKey                              = "command"
 	DataPlaneConfigRootKey                      = "data_plane_config"
+	LabelsRootKey                               = "labels"
 	LogLevelRootKey                             = "log"
 	CollectorRootKey                            = "collector"
 	VersionKey                                  = "version"
