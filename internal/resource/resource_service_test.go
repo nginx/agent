@@ -290,6 +290,7 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 	}
 }
 
+// nolint: dupl
 func Test_convertToUpstreamServer(t *testing.T) {
 	expectedMax := 2
 	expectedFails := 0
@@ -329,5 +330,48 @@ func Test_convertToUpstreamServer(t *testing.T) {
 	}
 
 	result := convertToUpstreamServer(test)
+	assert.Equal(t, expected, result)
+}
+
+// nolint: dupl
+func Test_convertToStreamUpstreamServer(t *testing.T) {
+	expectedMax := 2
+	expectedFails := 0
+	expectedBackup := true
+	expected := []client.StreamUpstreamServer{
+		{
+			MaxConns: &expectedMax,
+			MaxFails: &expectedFails,
+			Backup:   &expectedBackup,
+			Server:   "test_server",
+		},
+		{
+			MaxConns: &expectedMax,
+			MaxFails: &expectedFails,
+			Backup:   &expectedBackup,
+			Server:   "test_server2",
+		},
+	}
+
+	test := []*structpb.Struct{
+		{
+			Fields: map[string]*structpb.Value{
+				"max_conns": structpb.NewNumberValue(2),
+				"max_fails": structpb.NewNumberValue(0),
+				"backup":    structpb.NewBoolValue(expectedBackup),
+				"server":    structpb.NewStringValue("test_server"),
+			},
+		},
+		{
+			Fields: map[string]*structpb.Value{
+				"max_conns": structpb.NewNumberValue(2),
+				"max_fails": structpb.NewNumberValue(0),
+				"backup":    structpb.NewBoolValue(expectedBackup),
+				"server":    structpb.NewStringValue("test_server2"),
+			},
+		},
+	}
+
+	result := convertToStreamUpstreamServer(test)
 	assert.Equal(t, expected, result)
 }
