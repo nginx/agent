@@ -1205,8 +1205,11 @@ func (x *ConfigUploadRequest) GetOverview() *FileOverview {
 
 // Perform an associated API action on an instance
 type APIActionRequest struct {
-	state      protoimpl.MessageState `protogen:"open.v1"`
-	InstanceId string                 `protobuf:"bytes,1,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// the identifier associated with the instance
+	InstanceId string `protobuf:"bytes,1,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
+	// types of API actions possible
+	//
 	// Types that are valid to be assigned to Action:
 	//
 	//	*APIActionRequest_NginxPlusAction
@@ -1281,6 +1284,8 @@ func (*APIActionRequest_NginxPlusAction) isAPIActionRequest_Action() {}
 // Perform an action using the NGINX Plus API on an instance
 type NGINXPlusAction struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
+	// types of actions possible with NGINX Plus API
+	//
 	// Types that are valid to be assigned to Action:
 	//
 	//	*NGINXPlusAction_UpdateHttpUpstreamServers
@@ -1363,11 +1368,13 @@ func (*NGINXPlusAction_GetHttpUpstreamServers) isNGINXPlusAction_Action() {}
 
 // Update HTTP Upstream Servers for an instance
 type UpdateHTTPUpstreamServers struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	HttpUpstreamName string                 `protobuf:"bytes,1,opt,name=http_upstream_name,json=httpUpstreamName,proto3" json:"http_upstream_name,omitempty"`
-	Servers          []*structpb.Struct     `protobuf:"bytes,2,rep,name=servers,proto3" json:"servers,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// the name of the upstream to update
+	HttpUpstreamName string `protobuf:"bytes,1,opt,name=http_upstream_name,json=httpUpstreamName,proto3" json:"http_upstream_name,omitempty"`
+	// a list of upstream servers
+	Servers       []*structpb.Struct `protobuf:"bytes,2,rep,name=servers,proto3" json:"servers,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateHTTPUpstreamServers) Reset() {
@@ -1416,8 +1423,9 @@ func (x *UpdateHTTPUpstreamServers) GetServers() []*structpb.Struct {
 
 // Get HTTP Upstream Servers for an instance
 type GetHTTPUpstreamServers struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	HttpUpstreamName string                 `protobuf:"bytes,1,opt,name=http_upstream_name,json=httpUpstreamName,proto3" json:"http_upstream_name,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// the name of the upstream
+	HttpUpstreamName string `protobuf:"bytes,1,opt,name=http_upstream_name,json=httpUpstreamName,proto3" json:"http_upstream_name,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }

@@ -172,6 +172,8 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 				"action, could not find instance with ID: %s", instanceID))
 
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+
+		return
 	}
 
 	if instance.GetInstanceMeta().GetInstanceType() != mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {

@@ -192,7 +192,9 @@ message ConfigUploadRequest {
 
 // Perform an associated API action on an instance
 message APIActionRequest {
+    // the identifier associated with the instance
     string instance_id = 1;
+    // types of API actions possible
     oneof action {
         NGINXPlusAction nginx_plus_action = 2;
     }
@@ -200,6 +202,7 @@ message APIActionRequest {
 
 // Perform an action using the NGINX Plus API on an instance
 message NGINXPlusAction {
+    // types of actions possible with NGINX Plus API
     oneof action {
         UpdateHTTPUpstreamServers update_http_upstream_servers = 2;
         GetHTTPUpstreamServers get_http_upstream_servers = 3;
@@ -208,12 +211,15 @@ message NGINXPlusAction {
 
 // Update HTTP Upstream Servers for an instance 
 message UpdateHTTPUpstreamServers {
+    // the name of the upstream to update
     string http_upstream_name = 1;
+    // a list of upstream servers 
     repeated google.protobuf.Struct servers = 2;
 }
 
 // Get HTTP Upstream Servers for an instance 
 message GetHTTPUpstreamServers {
+    // the name of the upstream
     string http_upstream_name = 1;
 }
 

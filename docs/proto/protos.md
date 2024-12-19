@@ -606,7 +606,7 @@ Perform an associated API action on an instance
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| instance_id | [string](#string) |  |  |
+| instance_id | [string](#string) |  | the identifier associated with the instance |
 | nginx_plus_action | [NGINXPlusAction](#mpi-v1-NGINXPlusAction) |  |  |
 
 
@@ -790,7 +790,7 @@ Get HTTP Upstream Servers for an instance
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| http_upstream_name | [string](#string) |  |  |
+| http_upstream_name | [string](#string) |  | the name of the upstream |
 
 
 
@@ -1129,8 +1129,8 @@ Update HTTP Upstream Servers for an instance
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| http_upstream_name | [string](#string) |  |  |
-| servers | [google.protobuf.Struct](#google-protobuf-Struct) | repeated |  |
+| http_upstream_name | [string](#string) |  | the name of the upstream to update |
+| servers | [google.protobuf.Struct](#google-protobuf-Struct) | repeated | a list of upstream servers |
 
 
 
