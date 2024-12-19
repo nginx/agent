@@ -159,10 +159,10 @@ func verifyAgentVersion(ctx context.Context, tb testing.TB, testContainer testco
 	exitCode, cmdOut, err := testContainer.Exec(ctx, []string{"nginx-agent", "--version"})
 	require.NoError(tb, err)
 	assert.Equal(tb, 0, exitCode)
-	stdoutStderr, _ := io.ReadAll(cmdOut)
 
-	versionOutput := strings.Trim(string(stdoutStderr), "#$%\x00\x01\n")
-	require.NoError(tb, err)
+	stdoutStderr, readAllErr := io.ReadAll(cmdOut)
+	versionOutput := helpers.RemoveASCIIControlSignals(tb, string(stdoutStderr))
+	require.NoError(tb, readAllErr)
 	assert.Equal(tb, expectedVersionOutput, versionOutput)
 }
 
@@ -176,8 +176,10 @@ func installAgent(ctx context.Context, tb testing.TB, container testcontainers.C
 
 	exitCode, cmdOut, err := container.Exec(ctx, installCmd)
 	require.NoError(tb, err)
+
 	stdoutStderr, err := io.ReadAll(cmdOut)
 	require.NoError(tb, err)
+
 	msg := fmt.Sprintf("expected error code of 0 from cmd %q. Got: %v\n %s", installCmd, exitCode, stdoutStderr)
 	assert.Equal(tb, 0, exitCode, msg)
 

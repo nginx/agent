@@ -88,7 +88,11 @@ func TestTemplateWrite(t *testing.T) {
 	}
 	cfg.Collector.Receivers.NginxReceivers = append(cfg.Collector.Receivers.NginxReceivers, config.NginxReceiver{
 		InstanceID: "123",
-		StubStatus: "http://localhost:80/status",
+		StubStatus: config.APIDetails{
+			URL:      "http://localhost:80/status",
+			Location: "",
+			Listen:   "",
+		},
 		AccessLogs: []config.AccessLog{
 			{
 				LogFormat: accessLogFormat,

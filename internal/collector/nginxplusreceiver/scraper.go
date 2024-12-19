@@ -7,7 +7,10 @@ package nginxplusreceiver
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -43,14 +46,20 @@ func newNginxPlusScraper(
 	settings receiver.Settings,
 	cfg *Config,
 ) (*nginxPlusScraper, error) {
+	endpoint := strings.TrimPrefix(cfg.APIDetails.URL, "unix:")
 	logger := settings.Logger
 	logger.Info("Creating NGINX Plus scraper")
+	httpClient := http.DefaultClient
 
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
 	rb := mb.NewResourceBuilder()
 
-	plusClient, err := plusapi.NewNginxClient(cfg.Endpoint,
-		plusapi.WithMaxAPIVersion(),
+	if strings.HasPrefix(cfg.APIDetails.Listen, "unix:") {
+		httpClient = socketClient(strings.TrimPrefix(cfg.APIDetails.Listen, "unix:"))
+	}
+
+	plusClient, err := plusapi.NewNginxClient(endpoint,
+		plusapi.WithMaxAPIVersion(), plusapi.WithHTTPClient(httpClient),
 	)
 	if err != nil {
 		return nil, err
@@ -991,6 +1000,16 @@ func (nps *nginxPlusScraper) recordCacheMetrics(stats *plusapi.Stats, now pcommo
 			metadata.AttributeNginxCacheOutcomeUPDATING,
 			name,
 		)
+	}
+}
+
+func socketClient(socketPath string) *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{
+			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+				return net.Dial("unix", socketPath)
+			},
+		},
 	}
 }
 

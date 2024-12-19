@@ -13,7 +13,12 @@ Please see [ngx_http_api_module](https://nginx.org/en/docs/http/ngx_http_api_mod
 
 The following settings are required:
 
-- `endpoint` (default: `http://localhost:80/api`): The URL of the NGINX Plus API endpoint
+
+The following settings are required:
+- `api_details`: Details for the NGINX Plus API endpoint.
+    - `url`: (default: `http://localhost:80/api`): The URL of the NGINX Plus API endpoint.
+    - `listen`: (default: `localhost:80`): The listen directive of the NGINX Plus API endpoint.
+    - `location`: (default: `/api`): The location directive of the NGINX Plus API endpoint.
 
 The following settings are optional:
 
@@ -26,6 +31,9 @@ Example:
 ```yaml
 receivers:
   nginxplus:
-    endpoint: "http://localhost:80/api"
+    api_details:
+      url: "http://localhost:80/api"
+      listen: "localhost:80"
+      location: "/api"
     collection_interval: 10s
 ```
