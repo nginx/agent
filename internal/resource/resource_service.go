@@ -7,14 +7,28 @@ package resource
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"log/slog"
+	"net"
+	"net/http"
+	"strings"
 	"sync"
+
+	"github.com/nginxinc/nginx-plus-go-client/v2/client"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/nginx/agent/v3/internal/config"
 
 	"github.com/nginx/agent/v3/internal/datasource/host"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+)
+
+const (
+	apiFormat         = "http://%s%s"
+	unixPlusAPIFormat = "http://nginx-plus-api%s"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
@@ -32,6 +46,9 @@ type resourceServiceInterface interface {
 	DeleteInstances(instanceList []*mpi.Instance) *mpi.Resource
 	ApplyConfig(ctx context.Context, instanceID string) error
 	Instance(instanceID string) *mpi.Instance
+	GetUpstreams(ctx context.Context, instance *mpi.Instance, upstreams string) ([]client.UpstreamServer, error)
+	UpdateHTTPUpstreams(ctx context.Context, instance *mpi.Instance, upstream string,
+		upstreams []*structpb.Struct) (added, updated, deleted []client.UpstreamServer, err error)
 }
 
 type (
@@ -160,6 +177,76 @@ func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) er
 	return nil
 }
 
+func (r *ResourceService) GetUpstreams(ctx context.Context, instance *mpi.Instance,
+	upstream string,
+) ([]client.UpstreamServer, error) {
+	plusClient, err := r.createPlusClient(instance)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
+		return nil, err
+	}
+
+	servers, getServersErr := plusClient.GetHTTPServers(ctx, upstream)
+
+	return servers, createPlusAPIError(getServersErr)
+}
+
+// max number of returns from function is 3
+// nolint: revive
+func (r *ResourceService) UpdateHTTPUpstreams(ctx context.Context, instance *mpi.Instance, upstream string,
+	upstreams []*structpb.Struct,
+) (added, updated, deleted []client.UpstreamServer, err error) {
+	plusClient, err := r.createPlusClient(instance)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
+		return nil, nil, nil, err
+	}
+
+	servers := convertToUpstreamServer(upstreams)
+
+	added, updated, deleted, updateError := plusClient.UpdateHTTPServers(ctx, upstream, servers)
+
+	return added, updated, deleted, createPlusAPIError(updateError)
+}
+
+func convertToUpstreamServer(upstreams []*structpb.Struct) []client.UpstreamServer {
+	var servers []client.UpstreamServer
+	res, err := json.Marshal(upstreams)
+	if err != nil {
+		slog.Error("Failed to marshal upstreams", "error", err, "upstreams", upstreams)
+	}
+	err = json.Unmarshal(res, &servers)
+	if err != nil {
+		slog.Error("Failed to unmarshal upstreams", "error", err, "servers", servers)
+	}
+
+	return servers
+}
+
+func (r *ResourceService) createPlusClient(instance *mpi.Instance) (*client.NginxClient, error) {
+	plusAPI := instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo().GetPlusApi()
+	var endpoint string
+
+	if plusAPI.GetLocation() == "" || plusAPI.GetListen() == "" {
+		return nil, errors.New("failed to preform API action, NGINX Plus API is not configured")
+	}
+
+	if strings.HasPrefix(plusAPI.GetListen(), "unix:") {
+		endpoint = fmt.Sprintf(unixPlusAPIFormat, plusAPI.GetLocation())
+	} else {
+		endpoint = fmt.Sprintf(apiFormat, plusAPI.GetListen(), plusAPI.GetLocation())
+	}
+
+	httpClient := http.DefaultClient
+	if strings.HasPrefix(plusAPI.GetListen(), "unix:") {
+		httpClient = socketClient(strings.TrimPrefix(plusAPI.GetListen(), "unix:"))
+	}
+
+	return client.NewNginxClient(endpoint,
+		client.WithMaxAPIVersion(), client.WithHTTPClient(httpClient),
+	)
+}
+
 func (r *ResourceService) updateResourceInfo(ctx context.Context) {
 	r.resourceMutex.Lock()
 	defer r.resourceMutex.Unlock()
@@ -173,4 +260,46 @@ func (r *ResourceService) updateResourceInfo(ctx context.Context) {
 		r.resource.ResourceId = r.resource.GetHostInfo().GetHostId()
 		r.resource.Instances = []*mpi.Instance{}
 	}
+}
+
+func socketClient(socketPath string) *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{
+			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+				return net.Dial("unix", socketPath)
+			},
+		},
+	}
+}
+
+// createPlusAPIError converts the error returned by the plus go client into the json format used by the NGINX Plus API
+func createPlusAPIError(apiErr error) error {
+	if apiErr == nil {
+		return nil
+	}
+	_, after, _ := strings.Cut(apiErr.Error(), "error.status")
+	errorSlice := strings.Split(after, ";")
+
+	for i, errStr := range errorSlice {
+		_, value, _ := strings.Cut(errStr, "=")
+		errorSlice[i] = value
+	}
+
+	plusErr := plusAPIErr{
+		Error: errResponse{
+			Status: errorSlice[0],
+			Test:   errorSlice[1],
+			Code:   errorSlice[2],
+		},
+		RequestID: errorSlice[3],
+		Href:      errorSlice[4],
+	}
+
+	r, err := json.Marshal(plusErr)
+	if err != nil {
+		slog.Error("Unable to marshal NGINX Plus API error", "error", err)
+		return apiErr
+	}
+
+	return errors.New(string(r))
 }

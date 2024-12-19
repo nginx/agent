@@ -11,7 +11,13 @@ import (
 	"testing"
 	"time"
 
+	pkg "github.com/nginx/agent/v3/pkg/config"
+
+	"github.com/nginx/agent/v3/internal/datasource/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/nginx/agent/v3/internal/bus/busfakes"
+	"github.com/nginx/agent/v3/internal/config"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
@@ -111,8 +117,8 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 		managementPlaneRequest *mpi.ManagementPlaneRequest
 		expectedTopic          *bus.Message
 		name                   string
-		isUploadRequest        bool
-		isApplyRequest         bool
+		request                string
+		configFeatures         []string
 	}{
 		{
 			name: "Test 1: Config Upload Request",
@@ -121,8 +127,9 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 					ConfigUploadRequest: &mpi.ConfigUploadRequest{},
 				},
 			},
-			expectedTopic:   &bus.Message{Topic: bus.ConfigUploadRequestTopic},
-			isUploadRequest: true,
+			expectedTopic:  &bus.Message{Topic: bus.ConfigUploadRequestTopic},
+			request:        "UploadRequest",
+			configFeatures: config.DefaultFeatures(),
 		},
 		{
 			name: "Test 2: Config Apply Request",
@@ -132,7 +139,8 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 				},
 			},
 			expectedTopic:  &bus.Message{Topic: bus.ConfigApplyRequestTopic},
-			isApplyRequest: true,
+			request:        "ApplyRequest",
+			configFeatures: config.DefaultFeatures(),
 		},
 		{
 			name: "Test 3: Health Request",
@@ -141,7 +149,27 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 					HealthRequest: &mpi.HealthRequest{},
 				},
 			},
-			expectedTopic: &bus.Message{Topic: bus.DataPlaneHealthRequestTopic},
+			expectedTopic:  &bus.Message{Topic: bus.DataPlaneHealthRequestTopic},
+			configFeatures: config.DefaultFeatures(),
+		},
+		{
+			name: "Test 4: API Action Request",
+			managementPlaneRequest: &mpi.ManagementPlaneRequest{
+				Request: &mpi.ManagementPlaneRequest_ActionRequest{
+					ActionRequest: &mpi.APIActionRequest{
+						Action: &mpi.APIActionRequest_NginxPlusAction{},
+					},
+				},
+			},
+			expectedTopic: &bus.Message{Topic: bus.APIActionRequestTopic},
+			request:       "APIActionRequest",
+			configFeatures: []string{
+				pkg.FeatureConfiguration,
+				pkg.FeatureConnection,
+				pkg.FeatureMetrics,
+				pkg.FeatureFileWatcher,
+				pkg.FeatureAPIAction,
+			},
 		},
 	}
 
@@ -151,9 +179,11 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 			defer cancel()
 			messagePipe := busfakes.NewFakeMessagePipe()
 
-			commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+			agentConfig := types.AgentConfig()
+			agentConfig.Features = test.configFeatures
+			commandPlugin := NewCommandPlugin(agentConfig, &grpcfakes.FakeGrpcConnectionInterface{})
 			err := commandPlugin.Init(ctx, messagePipe)
-			require.NoError(t, err)
+			require.NoError(tt, err)
 			defer commandPlugin.Close(ctx)
 
 			go commandPlugin.monitorSubscribeChannel(ctx)
@@ -168,19 +198,109 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 			)
 
 			messages := messagePipe.GetMessages()
-			assert.Len(t, messages, 1)
-			assert.Equal(t, test.expectedTopic.Topic, messages[0].Topic)
+			assert.Len(tt, messages, 1)
+			assert.Equal(tt, test.expectedTopic.Topic, messages[0].Topic)
 
-			_, ok := messages[0].Data.(*mpi.ManagementPlaneRequest)
+			mp, ok := messages[0].Data.(*mpi.ManagementPlaneRequest)
 
-			if test.isUploadRequest {
-				assert.True(t, ok)
-				require.NotNil(t, test.managementPlaneRequest.GetConfigUploadRequest())
+			switch test.request {
+			case "UploadRequest":
+				assert.True(tt, ok)
+				require.NotNil(tt, mp.GetConfigUploadRequest())
+			case "ApplyRequest":
+				assert.True(tt, ok)
+				require.NotNil(tt, mp.GetConfigApplyRequest())
+			case "APIActionRequest":
+				assert.True(tt, ok)
+				require.NotNil(tt, mp.GetActionRequest())
 			}
-			if test.isApplyRequest {
-				assert.True(t, ok)
-				require.NotNil(t, test.managementPlaneRequest.GetConfigApplyRequest())
-			}
+		})
+	}
+}
+
+func TestCommandPlugin_FeatureDisabled(t *testing.T) {
+	// logBuf := &bytes.Buffer{}
+	// stub.StubLoggerWith(logBuf)
+
+	tests := []struct {
+		managementPlaneRequest *mpi.ManagementPlaneRequest
+		expectedLog            string
+		name                   string
+		request                string
+		configFeatures         []string
+	}{
+		{
+			name: "Test 1: Config Upload Request",
+			managementPlaneRequest: &mpi.ManagementPlaneRequest{
+				Request: &mpi.ManagementPlaneRequest_ConfigUploadRequest{
+					ConfigUploadRequest: &mpi.ConfigUploadRequest{},
+				},
+			},
+			expectedLog: "Configuration feature disabled. Unable to process config upload request",
+			request:     "UploadRequest",
+			configFeatures: []string{
+				pkg.FeatureConnection,
+				pkg.FeatureMetrics,
+				pkg.FeatureFileWatcher,
+			},
+		},
+		{
+			name: "Test 2: Config Apply Request",
+			managementPlaneRequest: &mpi.ManagementPlaneRequest{
+				Request: &mpi.ManagementPlaneRequest_ConfigApplyRequest{
+					ConfigApplyRequest: &mpi.ConfigApplyRequest{},
+				},
+			},
+			expectedLog: "Configuration feature disabled. Unable to process config apply request",
+			request:     "ApplyRequest",
+			configFeatures: []string{
+				pkg.FeatureConnection,
+				pkg.FeatureMetrics,
+				pkg.FeatureFileWatcher,
+			},
+		},
+		{
+			name: "Test 3: API Action Request",
+			managementPlaneRequest: &mpi.ManagementPlaneRequest{
+				Request: &mpi.ManagementPlaneRequest_ActionRequest{
+					ActionRequest: &mpi.APIActionRequest{
+						Action: &mpi.APIActionRequest_NginxPlusAction{},
+					},
+				},
+			},
+			expectedLog:    "API Action Request feature disabled. Unable to process API action request",
+			request:        "APIActionRequest",
+			configFeatures: config.DefaultFeatures(),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			fakeCommandService := &commandfakes.FakeCommandService{}
+			fakeCommandService.SendDataPlaneResponseReturns(nil)
+			messagePipe := busfakes.NewFakeMessagePipe()
+
+			agentConfig := types.AgentConfig()
+
+			agentConfig.Features = test.configFeatures
+
+			commandPlugin := NewCommandPlugin(agentConfig, &grpcfakes.FakeGrpcConnectionInterface{})
+			err := commandPlugin.Init(ctx, messagePipe)
+			commandPlugin.commandService = fakeCommandService
+			require.NoError(tt, err)
+			defer commandPlugin.Close(ctx)
+
+			go commandPlugin.monitorSubscribeChannel(ctx)
+
+			commandPlugin.subscribeChannel <- test.managementPlaneRequest
+			assert.Eventually(
+				tt,
+				func() bool { return fakeCommandService.SendDataPlaneResponseCallCount() == 1 },
+				2*time.Second,
+				10*time.Millisecond,
+			)
 		})
 	}
 }
@@ -215,4 +335,26 @@ func TestMonitorSubscribeChannel(t *testing.T) {
 
 	// Clear the log buffer
 	logBuf.Reset()
+}
+
+func Test_createDataPlaneResponse(t *testing.T) {
+	expected := &mpi.DataPlaneResponse{
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     proto.GenerateMessageID(),
+			CorrelationId: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
+			Timestamp:     timestamppb.Now(),
+		},
+		CommandResponse: &mpi.CommandResponse{
+			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+			Message: "Success",
+			Error:   "",
+		},
+	}
+	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	result := commandPlugin.createDataPlaneResponse(expected.GetMessageMeta().GetCorrelationId(),
+		expected.GetCommandResponse().GetStatus(),
+		expected.GetCommandResponse().GetMessage(), expected.GetCommandResponse().GetError())
+
+	assert.Equal(t, expected.GetCommandResponse(), result.GetCommandResponse())
+	assert.Equal(t, expected.GetMessageMeta().GetCorrelationId(), result.GetMessageMeta().GetCorrelationId())
 }
