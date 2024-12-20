@@ -4,10 +4,14 @@
 ## Table of Contents
 
 - [mpi/v1/common.proto](#mpi_v1_common-proto)
+    - [AuthSettings](#mpi-v1-AuthSettings)
     - [CommandResponse](#mpi-v1-CommandResponse)
     - [MessageMeta](#mpi-v1-MessageMeta)
+    - [ServerSettings](#mpi-v1-ServerSettings)
+    - [TLSSettings](#mpi-v1-TLSSettings)
   
     - [CommandResponse.CommandStatus](#mpi-v1-CommandResponse-CommandStatus)
+    - [ServerSettings.ServerType](#mpi-v1-ServerSettings-ServerType)
   
 - [mpi/v1/files.proto](#mpi_v1_files-proto)
     - [AttributeTypeAndValue](#mpi-v1-AttributeTypeAndValue)
@@ -36,6 +40,7 @@
   
 - [mpi/v1/command.proto](#mpi_v1_command-proto)
     - [APIActionRequest](#mpi-v1-APIActionRequest)
+    - [APIDetails](#mpi-v1-APIDetails)
     - [AgentConfig](#mpi-v1-AgentConfig)
     - [CommandServer](#mpi-v1-CommandServer)
     - [CommandStatusRequest](#mpi-v1-CommandStatusRequest)
@@ -46,6 +51,7 @@
     - [CreateConnectionResponse](#mpi-v1-CreateConnectionResponse)
     - [DataPlaneResponse](#mpi-v1-DataPlaneResponse)
     - [FileServer](#mpi-v1-FileServer)
+    - [GetHTTPUpstreamServers](#mpi-v1-GetHTTPUpstreamServers)
     - [HealthRequest](#mpi-v1-HealthRequest)
     - [HostInfo](#mpi-v1-HostInfo)
     - [Instance](#mpi-v1-Instance)
@@ -57,6 +63,7 @@
     - [InstanceRuntime](#mpi-v1-InstanceRuntime)
     - [ManagementPlaneRequest](#mpi-v1-ManagementPlaneRequest)
     - [MetricsServer](#mpi-v1-MetricsServer)
+    - [NGINXPlusAction](#mpi-v1-NGINXPlusAction)
     - [NGINXPlusRuntimeInfo](#mpi-v1-NGINXPlusRuntimeInfo)
     - [NGINXRuntimeInfo](#mpi-v1-NGINXRuntimeInfo)
     - [ReleaseInfo](#mpi-v1-ReleaseInfo)
@@ -66,6 +73,7 @@
     - [UpdateDataPlaneHealthResponse](#mpi-v1-UpdateDataPlaneHealthResponse)
     - [UpdateDataPlaneStatusRequest](#mpi-v1-UpdateDataPlaneStatusRequest)
     - [UpdateDataPlaneStatusResponse](#mpi-v1-UpdateDataPlaneStatusResponse)
+    - [UpdateHTTPUpstreamServers](#mpi-v1-UpdateHTTPUpstreamServers)
   
     - [InstanceHealth.InstanceHealthStatus](#mpi-v1-InstanceHealth-InstanceHealthStatus)
     - [InstanceMeta.InstanceType](#mpi-v1-InstanceMeta-InstanceType)
@@ -84,6 +92,16 @@ Copyright (c) F5, Inc.
 
 This source code is licensed under the Apache License, Version 2.0 license found in the
 LICENSE file in the root directory of this source tree.
+
+
+<a name="mpi-v1-AuthSettings"></a>
+
+### AuthSettings
+Defines the authentication configuration
+
+
+
+
 
 
 <a name="mpi-v1-CommandResponse"></a>
@@ -119,6 +137,42 @@ Meta-information associated with a message
 
 
 
+
+<a name="mpi-v1-ServerSettings"></a>
+
+### ServerSettings
+The top-level configuration for the command server
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| host | [string](#string) |  | Command server host |
+| port | [int32](#int32) |  | Command server port |
+| type | [ServerSettings.ServerType](#mpi-v1-ServerSettings-ServerType) |  | Server type (enum for gRPC, HTTP, etc.) |
+
+
+
+
+
+
+<a name="mpi-v1-TLSSettings"></a>
+
+### TLSSettings
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| cert | [string](#string) |  | TLS certificate for the command server (e.g., &#34;/path/to/cert.pem&#34;) |
+| key | [string](#string) |  | TLS key for the command server (e.g., &#34;/path/to/key.pem&#34;) |
+| ca | [string](#string) |  | CA certificate for the command server (e.g., &#34;/path/to/ca.pem&#34;) |
+| skip_verify | [bool](#bool) |  | Controls whether a client verifies the server&#39;s certificate chain and host name. If skip_verify is true, accepts any certificate presented by the server and any host name in that certificate. |
+| server_name | [string](#string) |  | Server name for TLS |
+
+
+
+
+
  
 
 
@@ -134,6 +188,19 @@ Command status enum
 | COMMAND_STATUS_ERROR | 2 | Command error |
 | COMMAND_STATUS_IN_PROGRESS | 3 | Command in-progress |
 | COMMAND_STATUS_FAILURE | 4 | Command failure |
+
+
+
+<a name="mpi-v1-ServerSettings-ServerType"></a>
+
+### ServerSettings.ServerType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| SERVER_SETTINGS_TYPE_UNDEFINED | 0 | Undefined server type |
+| SERVER_SETTINGS_TYPE_GRPC | 1 | gRPC server type |
+| SERVER_SETTINGS_TYPE_HTTP | 2 | HTTP server type |
 
 
  
@@ -192,7 +259,7 @@ and https://github.com/googleapis/googleapis/blob/005df4681b89bd204a90b76168a6dc
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| serial_number | [bytes](#bytes) |  | Serial number of the certificate, usually a unique identifier, RFC5280 states the upper limit for serial number is 20 octets |
+| serial_number | [string](#string) |  | Serial number of the certificate, usually a unique identifier, the max length is the length of an interger |
 | issuer | [X509Name](#mpi-v1-X509Name) |  | Issuer details (who issued the certificate) |
 | subject | [X509Name](#mpi-v1-X509Name) |  | Subject details (to whom the certificate is issued) |
 | sans | [SubjectAlternativeNames](#mpi-v1-SubjectAlternativeNames) |  | Subject Alternative Names (SAN) including DNS names and IP addresses |
@@ -417,7 +484,12 @@ Represents a list of logically grouped files that have changed e.g. configuratio
 <a name="mpi-v1-UpdateOverviewResponse"></a>
 
 ### UpdateOverviewResponse
-Represents a the response from an UpdateOverviewRequest - intentionally left empty
+Represents a the response from an UpdateOverviewRequest
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| overview | [FileOverview](#mpi-v1-FileOverview) |  | The file overview with the list of files that were uploaded |
 
 
 
@@ -532,6 +604,28 @@ and recommendations outlined in https://static.sched.com/hosted_files/kccncna17/
 Perform an associated API action on an instance
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| instance_id | [string](#string) |  | the identifier associated with the instance |
+| nginx_plus_action | [NGINXPlusAction](#mpi-v1-NGINXPlusAction) |  |  |
+
+
+
+
+
+
+<a name="mpi-v1-APIDetails"></a>
+
+### APIDetails
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| location | [string](#string) |  | the API location directive |
+| listen | [string](#string) |  | the API listen directive |
+
+
 
 
 
@@ -559,7 +653,14 @@ This contains a series of NGINX Agent configurations
 <a name="mpi-v1-CommandServer"></a>
 
 ### CommandServer
-The command settings, associated with messaging from an external source
+The command server settings, associated with messaging from an external source
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| server | [ServerSettings](#mpi-v1-ServerSettings) |  | Server configuration (e.g., host, port, type) |
+| auth | [AuthSettings](#mpi-v1-AuthSettings) |  | Authentication configuration (e.g., token) |
+| tls | [TLSSettings](#mpi-v1-TLSSettings) |  | TLS configuration for secure communication |
 
 
 
@@ -675,6 +776,21 @@ Reports the status of an associated command. This may be in response to a Manage
 
 ### FileServer
 The file settings associated with file server for configurations
+
+
+
+
+
+
+<a name="mpi-v1-GetHTTPUpstreamServers"></a>
+
+### GetHTTPUpstreamServers
+Get HTTP Upstream Servers for an instance
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| http_upstream_name | [string](#string) |  | the name of the upstream |
 
 
 
@@ -851,6 +967,22 @@ The metrics settings associated with origins (sources) of the metrics and destin
 
 
 
+<a name="mpi-v1-NGINXPlusAction"></a>
+
+### NGINXPlusAction
+Perform an action using the NGINX Plus API on an instance
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| update_http_upstream_servers | [UpdateHTTPUpstreamServers](#mpi-v1-UpdateHTTPUpstreamServers) |  |  |
+| get_http_upstream_servers | [GetHTTPUpstreamServers](#mpi-v1-GetHTTPUpstreamServers) |  |  |
+
+
+
+
+
+
 <a name="mpi-v1-NGINXPlusRuntimeInfo"></a>
 
 ### NGINXPlusRuntimeInfo
@@ -859,12 +991,12 @@ A set of runtime NGINX Plus settings
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| stub_status | [string](#string) |  | the stub status API URL |
+| stub_status | [APIDetails](#mpi-v1-APIDetails) |  | the stub status API details |
 | access_logs | [string](#string) | repeated | a list of access_logs |
 | error_logs | [string](#string) | repeated | a list of error_logs |
 | loadable_modules | [string](#string) | repeated | List of NGINX potentially loadable modules (installed but not loaded). |
 | dynamic_modules | [string](#string) | repeated | List of NGINX dynamic modules. |
-| plus_api | [string](#string) |  | the plus API location |
+| plus_api | [APIDetails](#mpi-v1-APIDetails) |  | the plus API details |
 
 
 
@@ -879,7 +1011,7 @@ A set of runtime NGINX OSS settings
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| stub_status | [string](#string) |  | the stub status API URL |
+| stub_status | [APIDetails](#mpi-v1-APIDetails) |  | the stub status API details |
 | access_logs | [string](#string) | repeated | a list of access_logs |
 | error_logs | [string](#string) | repeated | a list of error_logs |
 | loadable_modules | [string](#string) | repeated | List of NGINX potentially loadable modules (installed but not loaded). |
@@ -983,6 +1115,22 @@ Report on the status of the Data Plane
 
 ### UpdateDataPlaneStatusResponse
 Respond to a UpdateDataPlaneStatusRequest - intentionally empty
+
+
+
+
+
+
+<a name="mpi-v1-UpdateHTTPUpstreamServers"></a>
+
+### UpdateHTTPUpstreamServers
+Update HTTP Upstream Servers for an instance
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| http_upstream_name | [string](#string) |  | the name of the upstream to update |
+| servers | [google.protobuf.Struct](#google-protobuf-Struct) | repeated | a list of upstream servers |
 
 
 

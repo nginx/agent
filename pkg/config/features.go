@@ -15,4 +15,5 @@ const (
 	FeatureMetricsInstance  = "metrics-instance"
 	FeatureFileWatcher      = "file-watcher"
 	FeatureAgentAPI         = "agent-api"
+	FeatureAPIAction        = "api-action"
 )

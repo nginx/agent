@@ -16,8 +16,10 @@ You must also configure an access log as well. Please see [Setting Up the Access
 ### Receiver Config
 
 The following settings are required:
-
-- `endpoint` (default: `http://localhost:80/status`): The URL of the NGINX status endpoint
+- `api_details`: Details for the NGINX status endpoint.
+    - `url`: (default: `http://localhost:80/status`): The URL of the NGINX status endpoint.
+    - `listen`: (default: `localhost:80`): The listen directive of the NGINX status endpoint.
+    - `location`: (default: `/status`): The location directive of the NGINX status endpoint.
 
 The following settings are optional:
 
@@ -34,7 +36,10 @@ Example:
 ```yaml
 receivers:
   nginx:
-    endpoint: "http://localhost:80/status"
+    api_details:
+      url: "http://localhost:80/status"
+      listen: "localhost:80"
+      location: "/status"    
     collection_interval: 10s
     access_logs:
       - log_format: "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\"\"$upstream_cache_status\""

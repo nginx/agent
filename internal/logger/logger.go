@@ -13,8 +13,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/datasource/proto"
 )
 
 const (
@@ -121,7 +121,7 @@ func (h contextHandler) observe(ctx context.Context) (as []slog.Attr) {
 }
 
 func GenerateCorrelationID() slog.Attr {
-	return slog.Any(CorrelationIDKey, uuid.NewString())
+	return slog.Any(CorrelationIDKey, proto.GenerateMessageID())
 }
 
 func GetCorrelationID(ctx context.Context) string {
@@ -131,8 +131,13 @@ func GetCorrelationID(ctx context.Context) string {
 func GetCorrelationIDAttr(ctx context.Context) slog.Attr {
 	value, ok := ctx.Value(CorrelationIDContextKey).(slog.Attr)
 	if !ok {
-		slog.Debug("Correlation ID not found in context")
-		return slog.Attr{}
+		correlationID := GenerateCorrelationID()
+		slog.Debug(
+			"Correlation ID not found in context, generating new correlation ID",
+			"correlation_id",
+			correlationID)
+
+		return GenerateCorrelationID()
 	}
 
 	return value

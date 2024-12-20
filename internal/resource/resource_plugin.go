@@ -7,14 +7,17 @@ package resource
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"log/slog"
 
-	"github.com/google/uuid"
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/datasource/proto"
+	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/model"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 
 	"github.com/nginx/agent/v3/internal/bus"
 )
@@ -27,6 +30,18 @@ type Resource struct {
 	messagePipe     bus.MessagePipeInterface
 	resourceService resourceServiceInterface
 	agentConfig     *config.Config
+}
+
+type errResponse struct {
+	Status string `json:"status"`
+	Test   string `json:"test"`
+	Code   string `json:"code"`
+}
+
+type plusAPIErr struct {
+	Error     errResponse `json:"error"`
+	RequestID string      `json:"request_id"`
+	Href      string      `json:"href"`
 }
 
 var _ bus.Plugin = (*Resource)(nil)
@@ -103,6 +118,8 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 		r.handleWriteConfigSuccessful(ctx, msg)
 	case bus.RollbackWriteTopic:
 		r.handleRollbackWrite(ctx, msg)
+	case bus.APIActionRequestTopic:
+		r.handleAPIActionRequest(ctx, msg)
 	default:
 		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)
 	}
@@ -115,6 +132,108 @@ func (*Resource) Subscriptions() []string {
 		bus.DeletedInstancesTopic,
 		bus.WriteConfigSuccessfulTopic,
 		bus.RollbackWriteTopic,
+		bus.APIActionRequestTopic,
+	}
+}
+
+func (r *Resource) handleAPIActionRequest(ctx context.Context, msg *bus.Message) {
+	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
+
+	if !ok {
+		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest", "payload",
+			msg.Data)
+
+		return
+	}
+
+	request, requestOk := managementPlaneRequest.GetRequest().(*mpi.ManagementPlaneRequest_ActionRequest)
+	if !requestOk {
+		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest_ActionRequest",
+			"payload", msg.Data)
+	}
+
+	instanceID := request.ActionRequest.GetInstanceId()
+
+	switch request.ActionRequest.GetAction().(type) {
+	case *mpi.APIActionRequest_NginxPlusAction:
+		r.handleNginxPlusActionRequest(ctx, request.ActionRequest.GetNginxPlusAction(), instanceID)
+	default:
+		slog.DebugContext(ctx, "API action request not implemented yet")
+	}
+}
+
+func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi.NGINXPlusAction, instanceID string) {
+	correlationID := logger.GetCorrelationID(ctx)
+	instance := r.resourceService.Instance(instanceID)
+	if instance == nil {
+		slog.ErrorContext(ctx, "Unable to find instance with ID", "id", instanceID)
+		resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+			"", instanceID, fmt.Sprintf("failed to preform API "+
+				"action, could not find instance with ID: %s", instanceID))
+
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+
+		return
+	}
+
+	if instance.GetInstanceMeta().GetInstanceType() != mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
+		slog.ErrorContext(ctx, "Failed to preform API action", "error", errors.New("instance is not NGINX Plus"))
+		resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+			"", instanceID, "failed to preform API action, instance is not NGINX Plus")
+
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+
+		return
+	}
+
+	switch action.GetAction().(type) {
+	case *mpi.NGINXPlusAction_UpdateHttpUpstreamServers:
+		slog.DebugContext(ctx, "Updating http upstream servers",
+			"request", action.GetUpdateHttpUpstreamServers())
+		add, update, del, err := r.resourceService.UpdateHTTPUpstreams(ctx, instance,
+			action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(),
+			action.GetUpdateHttpUpstreamServers().GetServers())
+		if err != nil {
+			slog.ErrorContext(ctx, "Unable to update HTTP servers of upstream", "request",
+				action.GetUpdateHttpUpstreamServers(), "error", err)
+			resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				"", instanceID, err.Error())
+			r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+
+			return
+		}
+
+		slog.DebugContext(ctx, "Successfully updated http upstream servers", "http_upstream_name",
+			action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(), "add", len(add), "update", len(update),
+			"delete", len(del))
+		resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
+			"Successfully updated HTTP Upstreams", instanceID, "")
+
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+
+	case *mpi.NGINXPlusAction_GetHttpUpstreamServers:
+		slog.DebugContext(ctx, "Getting http upstream servers", "request", action.GetGetHttpUpstreamServers())
+		upstreams, err := r.resourceService.GetUpstreams(ctx, instance,
+			action.GetGetHttpUpstreamServers().GetHttpUpstreamName())
+		if err != nil {
+			slog.ErrorContext(ctx, "Unable to get HTTP servers of upstream", "error", err)
+			resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				"", instanceID, err.Error())
+			r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+
+			return
+		}
+
+		upstreamsJSON, err := json.Marshal(upstreams)
+		if err != nil {
+			slog.ErrorContext(ctx, "Unable to marshal http upstreams", "err", err)
+		}
+		resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
+			string(upstreamsJSON), instanceID, "")
+
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+	default:
+		slog.DebugContext(ctx, "NGINX Plus action not implemented yet")
 	}
 }
 
@@ -186,7 +305,7 @@ func (*Resource) createDataPlaneResponse(correlationID string, status mpi.Comman
 ) *mpi.DataPlaneResponse {
 	return &mpi.DataPlaneResponse{
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     uuid.NewString(),
+			MessageId:     proto.GenerateMessageID(),
 			CorrelationId: correlationID,
 			Timestamp:     timestamppb.Now(),
 		},

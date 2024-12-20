@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v3/internal/bus/busfakes"
+	"github.com/nginx/agent/v3/internal/datasource/proto"
 
-	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -77,6 +77,10 @@ func TestFilePlugin_Process_NginxConfigUpdateTopic(t *testing.T) {
 	}
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+	fakeFileServiceClient.UpdateOverviewReturns(&mpi.UpdateOverviewResponse{
+		Overview: nil,
+	}, nil)
+
 	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
 	fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
 	messagePipe := busfakes.NewFakeMessagePipe()
@@ -441,7 +445,7 @@ func TestFilePlugin_Process_ConfigApplyRollbackCompleteTopic(t *testing.T) {
 
 	expectedResponse := &mpi.DataPlaneResponse{
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     uuid.NewString(),
+			MessageId:     proto.GenerateMessageID(),
 			CorrelationId: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
 			Timestamp:     timestamppb.Now(),
 		},
