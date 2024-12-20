@@ -11,6 +11,10 @@ exporters:
     resource_to_telemetry_conversion:
       enabled: true
     add_metric_suffixes: false
+  debug:
+    verbosity: detailed
+    sampling_initial: 5
+    sampling_thereafter: 200
 
 processors:
   batch:
@@ -28,3 +32,7 @@ service:
       receivers: [otlp]
       processors: [batch]
       exporters: [prometheus]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]
