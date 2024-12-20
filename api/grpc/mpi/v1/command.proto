@@ -191,7 +191,37 @@ message ConfigUploadRequest {
 }
 
 // Perform an associated API action on an instance
-message APIActionRequest {}
+message APIActionRequest {
+    // the identifier associated with the instance
+    string instance_id = 1;
+    // types of API actions possible
+    oneof action {
+        NGINXPlusAction nginx_plus_action = 2;
+    }
+}
+
+// Perform an action using the NGINX Plus API on an instance
+message NGINXPlusAction {
+    // types of actions possible with NGINX Plus API
+    oneof action {
+        UpdateHTTPUpstreamServers update_http_upstream_servers = 2;
+        GetHTTPUpstreamServers get_http_upstream_servers = 3;
+    }
+}
+
+// Update HTTP Upstream Servers for an instance 
+message UpdateHTTPUpstreamServers {
+    // the name of the upstream to update
+    string http_upstream_name = 1;
+    // a list of upstream servers 
+    repeated google.protobuf.Struct servers = 2;
+}
+
+// Get HTTP Upstream Servers for an instance 
+message GetHTTPUpstreamServers {
+    // the name of the upstream
+    string http_upstream_name = 1;
+}
 
 // Request an update on a particular command
 message CommandStatusRequest {}
@@ -268,12 +298,8 @@ message InstanceChild {
 
 // A set of runtime NGINX OSS settings
 message NGINXRuntimeInfo {
-    // the stub status API URL
-    string stub_status = 1 [(buf.validate.field).cel = {
-        id:  "string.uri",
-        message: "value must be a valid URI or can be empty",
-        expression: "this == \'\' || this.isUri()"
-    }];
+    // the stub status API details
+    APIDetails stub_status = 1;
     // a list of access_logs
     repeated string access_logs = 2; 
     // a list of error_logs
@@ -286,12 +312,8 @@ message NGINXRuntimeInfo {
 
 // A set of runtime NGINX Plus settings
 message NGINXPlusRuntimeInfo {
-    // the stub status API URL
-    string stub_status = 1 [(buf.validate.field).cel = {
-        id:  "string.uri",
-        message: "value must be a valid URI or can be empty",
-        expression: "this == \'\' || this.isUri()"
-    }];
+    // the stub status API details
+    APIDetails stub_status = 1;
     // a list of access_logs
     repeated string access_logs = 2;
     // a list of error_logs
@@ -300,12 +322,15 @@ message NGINXPlusRuntimeInfo {
     repeated string loadable_modules = 4;
     // List of NGINX dynamic modules.
     repeated string dynamic_modules = 5;
-    // the plus API location
-    string plus_api = 6 [(buf.validate.field).cel = {
-        id:  "string.uri",
-        message: "value must be a valid URI or can be empty",
-        expression: "this == \'\' || this.isUri()"
-    }];
+    // the plus API details
+    APIDetails plus_api = 6;
+}
+
+message APIDetails {
+    // the API location directive
+    string location = 1;
+    // the API listen directive
+    string listen =  2;
 }
 
 // A set of runtime NGINX App Protect settings
@@ -337,8 +362,15 @@ message AgentConfig {
     string message_buffer_size = 6;
 }
 
-// The command settings, associated with messaging from an external source 
-message CommandServer {}
+// The command server settings, associated with messaging from an external source
+message CommandServer {
+    // Server configuration (e.g., host, port, type)
+    mpi.v1.ServerSettings server = 1;
+    // Authentication configuration (e.g., token)
+    mpi.v1.AuthSettings auth = 2;
+    // TLS configuration for secure communication
+    mpi.v1.TLSSettings tls = 3;
+}
 
 // The metrics settings associated with origins (sources) of the metrics and destinations (exporter)
 message MetricsServer {}

@@ -6,11 +6,19 @@
 package resource
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
 	"testing"
+
+	"github.com/nginx/agent/v3/test/stub"
+	"google.golang.org/protobuf/types/known/structpb"
+
+	"github.com/nginx/agent/v3/test/helpers"
+	"github.com/nginxinc/nginx-plus-go-client/v2/client"
 
 	"github.com/nginx/agent/v3/internal/bus/busfakes"
 
@@ -183,6 +191,240 @@ func TestResource_Process_Apply(t *testing.T) {
 	}
 }
 
+func TestResource_createPlusAPIError(t *testing.T) {
+	s := "failed to get the HTTP servers of upstream nginx1: expected 200 response, got 404. error.status=404;" +
+		" error.text=upstream not found; error.code=UpstreamNotFound; request_id=b534bdab5cb5e321e8b41b431828b270; " +
+		"href=https://nginx.org/en/docs/http/ngx_http_api_module.html"
+
+	expectedErr := plusAPIErr{
+		Error: errResponse{
+			Status: "404",
+			Test:   "upstream not found",
+			Code:   "UpstreamNotFound",
+		},
+		RequestID: "b534bdab5cb5e321e8b41b431828b270",
+		Href:      "https://nginx.org/en/docs/http/ngx_http_api_module.html",
+	}
+	expectedJSON, err := json.Marshal(expectedErr)
+	require.NoError(t, err)
+
+	result := createPlusAPIError(errors.New(s))
+
+	assert.Equal(t, errors.New(string(expectedJSON)), result)
+}
+
+func TestResource_Process_APIAction_GetHTTPServers(t *testing.T) {
+	ctx := context.Background()
+
+	inValidInstance := protos.GetNginxPlusInstance([]string{})
+	inValidInstance.InstanceMeta.InstanceId = "e1374cb1-462d-3b6c-9f3b-f28332b5f10f"
+
+	tests := []struct {
+		instance  *mpi.Instance
+		name      string
+		message   *bus.Message
+		err       error
+		topic     []string
+		upstreams []client.UpstreamServer
+	}{
+		{
+			name: "Test 1: Success, Get HTTP Server API Action",
+			message: &bus.Message{
+				Topic: bus.APIActionRequestTopic,
+				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
+					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+			},
+			err: nil,
+			upstreams: []client.UpstreamServer{
+				helpers.CreateNginxPlusUpstreamServer(t),
+			},
+			topic:    []string{bus.DataPlaneResponseTopic},
+			instance: protos.GetNginxPlusInstance([]string{}),
+		},
+
+		{
+			name: "Test 2: Fail, Get HTTP Server API Action",
+			message: &bus.Message{
+				Topic: bus.APIActionRequestTopic,
+				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
+					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+			},
+			err: errors.New("failed to get http servers"),
+			upstreams: []client.UpstreamServer{
+				helpers.CreateNginxPlusUpstreamServer(t),
+			},
+			topic:    []string{bus.DataPlaneResponseTopic},
+			instance: protos.GetNginxPlusInstance([]string{}),
+		},
+		{
+			name: "Test 3: Fail, OSS Instance",
+			message: &bus.Message{
+				Topic: bus.APIActionRequestTopic,
+				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
+					protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+			},
+			err: errors.New("failed to preform API action, instance is not NGINX Plus"),
+			upstreams: []client.UpstreamServer{
+				helpers.CreateNginxPlusUpstreamServer(t),
+			},
+			topic:    []string{bus.DataPlaneResponseTopic},
+			instance: protos.GetNginxOssInstance([]string{}),
+		},
+		{
+			name: "Test 4: Fail, No Instance",
+			message: &bus.Message{
+				Topic: bus.APIActionRequestTopic,
+				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
+					protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+			},
+			err: errors.New("failed to preform API action, could not find instance with ID: " +
+				"e1374cb1-462d-3b6c-9f3b-f28332b5f10c"),
+			upstreams: []client.UpstreamServer{
+				helpers.CreateNginxPlusUpstreamServer(t),
+			},
+			topic:    []string{bus.DataPlaneResponseTopic},
+			instance: inValidInstance,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
+			fakeResourceService.GetUpstreamsReturns(test.upstreams, test.err)
+			if test.instance.GetInstanceMeta().GetInstanceId() != "e1374cb1-462d-3b6c-9f3b-f28332b5f10f" {
+				fakeResourceService.InstanceReturns(test.instance)
+			}
+
+			messagePipe := busfakes.NewFakeMessagePipe()
+
+			resourcePlugin := NewResource(types.AgentConfig())
+			resourcePlugin.resourceService = fakeResourceService
+
+			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
+			require.NoError(t, err)
+
+			resourcePlugin.messagePipe = messagePipe
+
+			resourcePlugin.Process(ctx, test.message)
+
+			assert.Equal(t, test.topic[0], messagePipe.GetMessages()[0].Topic)
+
+			response, ok := messagePipe.GetMessages()[0].Data.(*mpi.DataPlaneResponse)
+			assert.True(tt, ok)
+
+			if test.err != nil {
+				assert.Equal(tt, test.err.Error(), response.GetCommandResponse().GetError())
+				assert.Equal(tt, mpi.CommandResponse_COMMAND_STATUS_FAILURE, response.GetCommandResponse().GetStatus())
+			} else {
+				assert.Empty(t, response.GetCommandResponse().GetError())
+				assert.Equal(tt, mpi.CommandResponse_COMMAND_STATUS_OK, response.GetCommandResponse().GetStatus())
+			}
+		})
+	}
+}
+
+func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
+	ctx := context.Background()
+	tests := []struct {
+		instance    *mpi.Instance
+		name        string
+		expectedLog string
+		message     *bus.Message
+		err         error
+		topic       []string
+		upstreams   []client.UpstreamServer
+	}{
+		{
+			name: "Test 1: Success, Update Http Upstream Servers",
+			message: &bus.Message{
+				Topic: bus.APIActionRequestTopic,
+				Data: protos.CreatAPIActionRequestNginxPlusUpdateHTTPServers("test_upstream",
+					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(), []*structpb.Struct{
+						{
+							Fields: map[string]*structpb.Value{
+								"max_cons":  structpb.NewNumberValue(8),
+								"max_fails": structpb.NewNumberValue(0),
+								"backup":    structpb.NewBoolValue(true),
+								"service":   structpb.NewStringValue("test_server"),
+							},
+						},
+					}),
+			},
+			err: nil,
+			upstreams: []client.UpstreamServer{
+				helpers.CreateNginxPlusUpstreamServer(t),
+			},
+			topic:       []string{bus.DataPlaneResponseTopic},
+			instance:    protos.GetNginxPlusInstance([]string{}),
+			expectedLog: "Successfully updated http upstream",
+		},
+		{
+			name: "Test 2: Fail, Update Http Upstream Servers",
+			message: &bus.Message{
+				Topic: bus.APIActionRequestTopic,
+				Data: protos.CreatAPIActionRequestNginxPlusUpdateHTTPServers("test_upstream",
+					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(), []*structpb.Struct{
+						{
+							Fields: map[string]*structpb.Value{
+								"max_cons":  structpb.NewNumberValue(8),
+								"max_fails": structpb.NewNumberValue(0),
+								"backup":    structpb.NewBoolValue(true),
+								"service":   structpb.NewStringValue("test_server"),
+							},
+						},
+					}),
+			},
+			err: errors.New("something went wrong"),
+			upstreams: []client.UpstreamServer{
+				helpers.CreateNginxPlusUpstreamServer(t),
+			},
+			topic:       []string{bus.DataPlaneResponseTopic},
+			instance:    protos.GetNginxPlusInstance([]string{}),
+			expectedLog: "Unable to update HTTP servers of upstream",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			logBuf := &bytes.Buffer{}
+			stub.StubLoggerWith(logBuf)
+
+			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
+			fakeResourceService.InstanceReturns(test.instance)
+			fakeResourceService.UpdateHTTPUpstreamsReturnsOnCall(0, test.upstreams, []client.UpstreamServer{},
+				[]client.UpstreamServer{}, test.err)
+			fakeResourceService.UpdateHTTPUpstreamsReturnsOnCall(1, []client.UpstreamServer{},
+				[]client.UpstreamServer{}, []client.UpstreamServer{}, test.err)
+
+			messagePipe := busfakes.NewFakeMessagePipe()
+
+			resourcePlugin := NewResource(types.AgentConfig())
+			resourcePlugin.resourceService = fakeResourceService
+
+			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
+			require.NoError(tt, err)
+
+			resourcePlugin.messagePipe = messagePipe
+
+			resourcePlugin.Process(ctx, test.message)
+
+			assert.Equal(tt, test.topic[0], messagePipe.GetMessages()[0].Topic)
+
+			response, ok := messagePipe.GetMessages()[0].Data.(*mpi.DataPlaneResponse)
+			assert.True(tt, ok)
+
+			if test.err != nil {
+				assert.Equal(tt, mpi.CommandResponse_COMMAND_STATUS_FAILURE, response.GetCommandResponse().GetStatus())
+			} else {
+				assert.Empty(tt, response.GetCommandResponse().GetError())
+				assert.Equal(tt, mpi.CommandResponse_COMMAND_STATUS_OK, response.GetCommandResponse().GetStatus())
+			}
+
+			helpers.ValidateLog(tt, test.expectedLog, logBuf)
+		})
+	}
+}
+
 func TestResource_Process_Rollback(t *testing.T) {
 	ctx := context.Background()
 
@@ -267,6 +509,7 @@ func TestResource_Subscriptions(t *testing.T) {
 			bus.DeletedInstancesTopic,
 			bus.WriteConfigSuccessfulTopic,
 			bus.RollbackWriteTopic,
+			bus.APIActionRequestTopic,
 		},
 		resourcePlugin.Subscriptions())
 }

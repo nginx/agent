@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
@@ -27,21 +26,6 @@ func NewFactory() receiver.Factory {
 		metadata.Type,
 		createDefaultConfig,
 		receiver.WithMetrics(createMetricsReceiver, metadata.MetricsStability))
-}
-
-// nolint: ireturn
-func createDefaultConfig() component.Config {
-	cfg := scraperhelper.NewDefaultControllerConfig()
-	cfg.CollectionInterval = defaultCollectInterval
-
-	return &Config{
-		ControllerConfig: cfg,
-		ClientConfig: confighttp.ClientConfig{
-			Endpoint: "http://localhost:80/api",
-			Timeout:  defaultTimeout,
-		},
-		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
-	}
 }
 
 // nolint: ireturn

@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
 )
 
@@ -27,14 +27,14 @@ const (
 	childID4             = 321
 )
 
-func GetAgentInstance(processID int32, agentConfig *config.Config) *v1.Instance {
-	return &v1.Instance{
-		InstanceMeta: &v1.InstanceMeta{
+func GetAgentInstance(processID int32, agentConfig *config.Config) *mpi.Instance {
+	return &mpi.Instance{
+		InstanceMeta: &mpi.InstanceMeta{
 			InstanceId:   agentConfig.UUID,
-			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_AGENT,
+			InstanceType: mpi.InstanceMeta_INSTANCE_TYPE_AGENT,
 			Version:      agentConfig.Version,
 		},
-		InstanceRuntime: &v1.InstanceRuntime{
+		InstanceRuntime: &mpi.InstanceRuntime{
 			ProcessId:  processID,
 			BinaryPath: "/run/nginx-agent",
 			ConfigPath: agentConfig.Path,
@@ -42,20 +42,23 @@ func GetAgentInstance(processID int32, agentConfig *config.Config) *v1.Instance 
 	}
 }
 
-func GetNginxOssInstance(expectedModules []string) *v1.Instance {
-	return &v1.Instance{
-		InstanceMeta: &v1.InstanceMeta{
+func GetNginxOssInstance(expectedModules []string) *mpi.Instance {
+	return &mpi.Instance{
+		InstanceMeta: &mpi.InstanceMeta{
 			InstanceId:   ossInstanceID,
-			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX,
+			InstanceType: mpi.InstanceMeta_INSTANCE_TYPE_NGINX,
 			Version:      "1.25.3",
 		},
-		InstanceRuntime: &v1.InstanceRuntime{
+		InstanceRuntime: &mpi.InstanceRuntime{
 			ProcessId:  processID,
 			BinaryPath: "/usr/local/Cellar/nginx/1.25.3/bin/nginx",
 			ConfigPath: "/usr/local/etc/nginx/nginx.conf",
-			Details: &v1.InstanceRuntime_NginxRuntimeInfo{
-				NginxRuntimeInfo: &v1.NGINXRuntimeInfo{
-					StubStatus:      "",
+			Details: &mpi.InstanceRuntime_NginxRuntimeInfo{
+				NginxRuntimeInfo: &mpi.NGINXRuntimeInfo{
+					StubStatus: &mpi.APIDetails{
+						Location: "",
+						Listen:   "",
+					},
 					AccessLogs:      []string{},
 					ErrorLogs:       []string{},
 					LoadableModules: expectedModules,
@@ -69,25 +72,28 @@ func GetNginxOssInstance(expectedModules []string) *v1.Instance {
 					},
 				},
 			},
-			InstanceChildren: []*v1.InstanceChild{{ProcessId: childID}, {ProcessId: childID2}},
+			InstanceChildren: []*mpi.InstanceChild{{ProcessId: childID}, {ProcessId: childID2}},
 		},
 	}
 }
 
-func GetNginxPlusInstance(expectedModules []string) *v1.Instance {
-	return &v1.Instance{
-		InstanceMeta: &v1.InstanceMeta{
+func GetNginxPlusInstance(expectedModules []string) *mpi.Instance {
+	return &mpi.Instance{
+		InstanceMeta: &mpi.InstanceMeta{
 			InstanceId:   plusInstanceID,
-			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS,
+			InstanceType: mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS,
 			Version:      "1.25.3 (nginx-plus-r31-p1)",
 		},
-		InstanceRuntime: &v1.InstanceRuntime{
+		InstanceRuntime: &mpi.InstanceRuntime{
 			ProcessId:  processID,
 			BinaryPath: "/usr/local/Cellar/nginx/1.25.3/bin/nginx",
 			ConfigPath: "/etc/nginx/nginx.conf",
-			Details: &v1.InstanceRuntime_NginxPlusRuntimeInfo{
-				NginxPlusRuntimeInfo: &v1.NGINXPlusRuntimeInfo{
-					StubStatus:      "",
+			Details: &mpi.InstanceRuntime_NginxPlusRuntimeInfo{
+				NginxPlusRuntimeInfo: &mpi.NGINXPlusRuntimeInfo{
+					StubStatus: &mpi.APIDetails{
+						Location: "",
+						Listen:   "",
+					},
 					AccessLogs:      []string{},
 					ErrorLogs:       []string{},
 					LoadableModules: expectedModules,
@@ -102,19 +108,22 @@ func GetNginxPlusInstance(expectedModules []string) *v1.Instance {
 						"stream_proxy_protocol_vendor_module", "stream_realip_module", "stream_ssl_module",
 						"stream_ssl_preread_module",
 					},
-					PlusApi: "",
+					PlusApi: &mpi.APIDetails{
+						Location: "",
+						Listen:   "",
+					},
 				},
 			},
-			InstanceChildren: []*v1.InstanceChild{{ProcessId: childID}, {ProcessId: childID2}},
+			InstanceChildren: []*mpi.InstanceChild{{ProcessId: childID}, {ProcessId: childID2}},
 		},
 	}
 }
 
-func GetUnsupportedInstance() *v1.Instance {
-	return &v1.Instance{
-		InstanceMeta: &v1.InstanceMeta{
+func GetUnsupportedInstance() *mpi.Instance {
+	return &mpi.Instance{
+		InstanceMeta: &mpi.InstanceMeta{
 			InstanceId:   unsuportedInstanceID,
-			InstanceType: v1.InstanceMeta_INSTANCE_TYPE_UNIT,
+			InstanceType: mpi.InstanceMeta_INSTANCE_TYPE_UNIT,
 			Version:      "",
 		},
 		InstanceConfig:  nil,
@@ -122,39 +131,39 @@ func GetUnsupportedInstance() *v1.Instance {
 	}
 }
 
-func GetMultipleInstances(expectedModules []string) []*v1.Instance {
+func GetMultipleInstances(expectedModules []string) []*mpi.Instance {
 	process1 := GetNginxOssInstance(expectedModules)
 	process2 := getSecondNginxOssInstance(expectedModules)
 
-	return []*v1.Instance{process1, process2}
+	return []*mpi.Instance{process1, process2}
 }
 
-func GetMultipleInstancesWithUnsupportedInstance() []*v1.Instance {
+func GetMultipleInstancesWithUnsupportedInstance() []*mpi.Instance {
 	process1 := GetNginxOssInstance([]string{})
 	process2 := GetUnsupportedInstance()
 
-	return []*v1.Instance{process1, process2}
+	return []*mpi.Instance{process1, process2}
 }
 
-func GetInstancesNoParentProcess(expectedModules []string) []*v1.Instance {
+func GetInstancesNoParentProcess(expectedModules []string) []*mpi.Instance {
 	process1 := GetNginxOssInstance(expectedModules)
 	process1.GetInstanceRuntime().ProcessId = 0
 
 	process2 := getSecondNginxOssInstance(expectedModules)
 	process2.GetInstanceRuntime().ProcessId = 0
 
-	return []*v1.Instance{process1, process2}
+	return []*mpi.Instance{process1, process2}
 }
 
-func GetFileCache(files ...*os.File) (map[string]*v1.FileMeta, error) {
-	cache := make(map[string]*v1.FileMeta)
+func GetFileCache(files ...*os.File) (map[string]*mpi.FileMeta, error) {
+	cache := make(map[string]*mpi.FileMeta)
 	for _, file := range files {
 		lastModified, err := CreateProtoTime("2024-01-09T13:22:21Z")
 		if err != nil {
 			return nil, err
 		}
 
-		cache[file.Name()] = &v1.FileMeta{
+		cache[file.Name()] = &mpi.FileMeta{
 			ModifiedTime: lastModified,
 			Name:         file.Name(),
 			Hash:         "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
@@ -164,34 +173,34 @@ func GetFileCache(files ...*os.File) (map[string]*v1.FileMeta, error) {
 	return cache, nil
 }
 
-func getSecondNginxOssInstance(expectedModules []string) *v1.Instance {
+func getSecondNginxOssInstance(expectedModules []string) *mpi.Instance {
 	process2 := GetNginxOssInstance(expectedModules)
 	process2.GetInstanceRuntime().ProcessId = processID2
 	process2.GetInstanceMeta().InstanceId = secondOssInstanceID
 	process2.GetInstanceRuntime().BinaryPath = "/opt/homebrew/etc/nginx/1.25.3/bin/nginx"
-	process2.GetInstanceRuntime().InstanceChildren = []*v1.InstanceChild{{ProcessId: childID3}, {ProcessId: childID4}}
+	process2.GetInstanceRuntime().InstanceChildren = []*mpi.InstanceChild{{ProcessId: childID3}, {ProcessId: childID4}}
 
 	return process2
 }
 
-func GetHealthyInstanceHealth() *v1.InstanceHealth {
-	return &v1.InstanceHealth{
+func GetHealthyInstanceHealth() *mpi.InstanceHealth {
+	return &mpi.InstanceHealth{
 		InstanceId:           GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
-		InstanceHealthStatus: v1.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY,
+		InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY,
 	}
 }
 
-func GetUnhealthyInstanceHealth() *v1.InstanceHealth {
-	return &v1.InstanceHealth{
+func GetUnhealthyInstanceHealth() *mpi.InstanceHealth {
+	return &mpi.InstanceHealth{
 		InstanceId:           GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
-		InstanceHealthStatus: v1.InstanceHealth_INSTANCE_HEALTH_STATUS_UNHEALTHY,
+		InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNHEALTHY,
 	}
 }
 
-func GetUnspecifiedInstanceHealth() *v1.InstanceHealth {
-	return &v1.InstanceHealth{
+func GetUnspecifiedInstanceHealth() *mpi.InstanceHealth {
+	return &mpi.InstanceHealth{
 		InstanceId:           unsuportedInstanceID,
-		InstanceHealthStatus: v1.InstanceHealth_INSTANCE_HEALTH_STATUS_UNSPECIFIED,
+		InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNSPECIFIED,
 		Description: fmt.Sprintf("failed to get health for instance %s, error: unable "+
 			"to determine health", unsuportedInstanceID),
 	}

@@ -12,10 +12,10 @@ import (
 
 	"github.com/nginx/agent/v3/pkg/files"
 
-	"github.com/google/uuid"
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/datasource/proto"
 	"github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/model"
@@ -259,7 +259,7 @@ func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 
 	fp.fileManagerService.UpdateCurrentFilesOnDisk(files.ConvertToMapOfFiles(nginxConfigContext.Files))
 
-	err := fp.fileManagerService.UpdateOverview(ctx, nginxConfigContext.InstanceID, nginxConfigContext.Files)
+	err := fp.fileManagerService.UpdateOverview(ctx, nginxConfigContext.InstanceID, nginxConfigContext.Files, 0)
 	if err != nil {
 		slog.ErrorContext(
 			ctx,
@@ -319,7 +319,7 @@ func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Me
 
 	response := &mpi.DataPlaneResponse{
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     uuid.NewString(),
+			MessageId:     proto.GenerateMessageID(),
 			CorrelationId: correlationID,
 			Timestamp:     timestamppb.Now(),
 		},
@@ -343,7 +343,7 @@ func (fp *FilePlugin) createDataPlaneResponse(correlationID string, status mpi.C
 ) *mpi.DataPlaneResponse {
 	return &mpi.DataPlaneResponse{
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     uuid.NewString(),
+			MessageId:     proto.GenerateMessageID(),
 			CorrelationId: correlationID,
 			Timestamp:     timestamppb.Now(),
 		},

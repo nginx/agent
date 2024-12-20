@@ -23,7 +23,7 @@ nginx_pid=$!
 SECONDS=0
 
 while ! ps -ef | grep "nginx: master process" | grep -v grep; do 
-    if (( SECONDS > 15 )); then
+    if (( SECONDS > 30 )); then
         echo "couldn't find nginx master process"
         exit 1
     fi
