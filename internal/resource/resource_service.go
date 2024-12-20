@@ -46,9 +46,14 @@ type resourceServiceInterface interface {
 	DeleteInstances(instanceList []*mpi.Instance) *mpi.Resource
 	ApplyConfig(ctx context.Context, instanceID string) error
 	Instance(instanceID string) *mpi.Instance
-	GetUpstreams(ctx context.Context, instance *mpi.Instance, upstreams string) ([]client.UpstreamServer, error)
-	UpdateHTTPUpstreams(ctx context.Context, instance *mpi.Instance, upstream string,
+	GetHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance, upstreams string) ([]client.UpstreamServer,
+		error)
+	UpdateHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance, upstream string,
 		upstreams []*structpb.Struct) (added, updated, deleted []client.UpstreamServer, err error)
+	GetUpstreams(ctx context.Context, instance *mpi.Instance) (*client.Upstreams, error)
+	GetStreamUpstreams(ctx context.Context, instance *mpi.Instance) (*client.StreamUpstreams, error)
+	UpdateStreamServers(ctx context.Context, instance *mpi.Instance, upstream string,
+		upstreams []*structpb.Struct) (added, updated, deleted []client.StreamUpstreamServer, err error)
 }
 
 type (
@@ -177,7 +182,7 @@ func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) er
 	return nil
 }
 
-func (r *ResourceService) GetUpstreams(ctx context.Context, instance *mpi.Instance,
+func (r *ResourceService) GetHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance,
 	upstream string,
 ) ([]client.UpstreamServer, error) {
 	plusClient, err := r.createPlusClient(instance)
@@ -191,9 +196,53 @@ func (r *ResourceService) GetUpstreams(ctx context.Context, instance *mpi.Instan
 	return servers, createPlusAPIError(getServersErr)
 }
 
+func (r *ResourceService) GetUpstreams(ctx context.Context, instance *mpi.Instance,
+) (*client.Upstreams, error) {
+	plusClient, err := r.createPlusClient(instance)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
+		return nil, err
+	}
+
+	servers, getServersErr := plusClient.GetUpstreams(ctx)
+
+	return servers, createPlusAPIError(getServersErr)
+}
+
+func (r *ResourceService) GetStreamUpstreams(ctx context.Context, instance *mpi.Instance,
+) (*client.StreamUpstreams, error) {
+	plusClient, err := r.createPlusClient(instance)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
+		return nil, err
+	}
+
+	streamUpstreams, getServersErr := plusClient.GetStreamUpstreams(ctx)
+
+	return streamUpstreams, createPlusAPIError(getServersErr)
+}
+
 // max number of returns from function is 3
 // nolint: revive
-func (r *ResourceService) UpdateHTTPUpstreams(ctx context.Context, instance *mpi.Instance, upstream string,
+func (r *ResourceService) UpdateStreamServers(ctx context.Context, instance *mpi.Instance, upstream string,
+	upstreams []*structpb.Struct,
+) (added, updated, deleted []client.StreamUpstreamServer, err error) {
+	plusClient, err := r.createPlusClient(instance)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
+		return nil, nil, nil, err
+	}
+
+	servers := convertToStreamUpstreamServer(upstreams)
+
+	added, updated, deleted, updateError := plusClient.UpdateStreamServers(ctx, upstream, servers)
+
+	return added, updated, deleted, createPlusAPIError(updateError)
+}
+
+// max number of returns from function is 3
+// nolint: revive
+func (r *ResourceService) UpdateHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance, upstream string,
 	upstreams []*structpb.Struct,
 ) (added, updated, deleted []client.UpstreamServer, err error) {
 	plusClient, err := r.createPlusClient(instance)
@@ -218,6 +267,20 @@ func convertToUpstreamServer(upstreams []*structpb.Struct) []client.UpstreamServ
 	err = json.Unmarshal(res, &servers)
 	if err != nil {
 		slog.Error("Failed to unmarshal upstreams", "error", err, "servers", servers)
+	}
+
+	return servers
+}
+
+func convertToStreamUpstreamServer(streamUpstreams []*structpb.Struct) []client.StreamUpstreamServer {
+	var servers []client.StreamUpstreamServer
+	res, err := json.Marshal(streamUpstreams)
+	if err != nil {
+		slog.Error("Failed to marshal stream upstream server", "error", err, "stream_upstreams", streamUpstreams)
+	}
+	err = json.Unmarshal(res, &servers)
+	if err != nil {
+		slog.Error("Failed to unmarshal stream upstream server", "error", err, "stream_upstreams", streamUpstreams)
 	}
 
 	return servers

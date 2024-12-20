@@ -188,53 +188,165 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 
 	switch action.GetAction().(type) {
 	case *mpi.NGINXPlusAction_UpdateHttpUpstreamServers:
-		slog.DebugContext(ctx, "Updating http upstream servers",
-			"request", action.GetUpdateHttpUpstreamServers())
-		add, update, del, err := r.resourceService.UpdateHTTPUpstreams(ctx, instance,
-			action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(),
-			action.GetUpdateHttpUpstreamServers().GetServers())
-		if err != nil {
-			slog.ErrorContext(ctx, "Unable to update HTTP servers of upstream", "request",
-				action.GetUpdateHttpUpstreamServers(), "error", err)
-			resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-				"", instanceID, err.Error())
-			r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
-
-			return
-		}
-
-		slog.DebugContext(ctx, "Successfully updated http upstream servers", "http_upstream_name",
-			action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(), "add", len(add), "update", len(update),
-			"delete", len(del))
-		resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
-			"Successfully updated HTTP Upstreams", instanceID, "")
-
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
-
+		r.handleUpdateHTTPUpstreamServers(ctx, action, instance)
 	case *mpi.NGINXPlusAction_GetHttpUpstreamServers:
-		slog.DebugContext(ctx, "Getting http upstream servers", "request", action.GetGetHttpUpstreamServers())
-		upstreams, err := r.resourceService.GetUpstreams(ctx, instance,
-			action.GetGetHttpUpstreamServers().GetHttpUpstreamName())
-		if err != nil {
-			slog.ErrorContext(ctx, "Unable to get HTTP servers of upstream", "error", err)
-			resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-				"", instanceID, err.Error())
-			r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
-
-			return
-		}
-
-		upstreamsJSON, err := json.Marshal(upstreams)
-		if err != nil {
-			slog.ErrorContext(ctx, "Unable to marshal http upstreams", "err", err)
-		}
-		resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
-			string(upstreamsJSON), instanceID, "")
-
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+		r.handleGetHTTPUpstreamServers(ctx, action, instance)
+	case *mpi.NGINXPlusAction_UpdateStreamServers:
+		r.handleUpdateStreamServers(ctx, action, instance)
+	case *mpi.NGINXPlusAction_GetStreamUpstreams:
+		r.handleGetStreamUpstreams(ctx, action, instance)
+	case *mpi.NGINXPlusAction_GetUpstreams:
+		r.handleGetUpstreams(ctx, action, instance)
 	default:
 		slog.DebugContext(ctx, "NGINX Plus action not implemented yet")
 	}
+}
+
+// nolint: dupl
+func (r *Resource) handleUpdateStreamServers(ctx context.Context, action *mpi.NGINXPlusAction, instance *mpi.Instance) {
+	correlationID := logger.GetCorrelationID(ctx)
+	instanceID := instance.GetInstanceMeta().GetInstanceId()
+
+	slog.DebugContext(ctx, "Updating stream servers", "request", action.GetUpdateStreamServers())
+
+	add, update, del, err := r.resourceService.UpdateStreamServers(ctx, instance,
+		action.GetUpdateStreamServers().GetUpstreamStreamName(), action.GetUpdateStreamServers().GetServers())
+	if err != nil {
+		slog.ErrorContext(ctx, "Unable to update stream servers of upstream", "request",
+			action.GetUpdateHttpUpstreamServers(), "error", err)
+		resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+			"", instanceID, err.Error())
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+
+		return
+	}
+
+	slog.DebugContext(ctx, "Successfully updated stream upstream servers", "http_upstream_name",
+		action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(), "add", len(add), "update", len(update),
+		"delete", len(del))
+
+	resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
+		"Successfully updated stream upstream servers", instanceID, "")
+
+	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+}
+
+// nolint: dupl
+func (r *Resource) handleGetStreamUpstreams(ctx context.Context, action *mpi.NGINXPlusAction, instance *mpi.Instance) {
+	correlationID := logger.GetCorrelationID(ctx)
+	instanceID := instance.GetInstanceMeta().GetInstanceId()
+
+	slog.DebugContext(ctx, "Getting Stream Upstreams", "request", action.GetUpdateStreamServers())
+
+	streamUpstreams, err := r.resourceService.GetStreamUpstreams(ctx, instance)
+	if err != nil {
+		slog.ErrorContext(ctx, "Unable to get stream upstreams", "error", err)
+		resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+			"", instanceID, err.Error())
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+
+		return
+	}
+
+	streamUpstreamsJSON, err := json.Marshal(streamUpstreams)
+	if err != nil {
+		slog.ErrorContext(ctx, "Unable to marshal stream upstreams", "err", err)
+	}
+
+	resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
+		string(streamUpstreamsJSON), instanceID, "")
+
+	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+}
+
+// nolint: dupl
+func (r *Resource) handleGetUpstreams(ctx context.Context, action *mpi.NGINXPlusAction, instance *mpi.Instance) {
+	correlationID := logger.GetCorrelationID(ctx)
+	instanceID := instance.GetInstanceMeta().GetInstanceId()
+
+	slog.DebugContext(ctx, "Getting upstreams", "request", action.GetUpdateStreamServers())
+
+	upstreams, err := r.resourceService.GetUpstreams(ctx, instance)
+	if err != nil {
+		slog.InfoContext(ctx, "Unable to get upstreams", "error", err)
+		resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+			"", instanceID, err.Error())
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+
+		return
+	}
+
+	upstreamsJSON, err := json.Marshal(upstreams)
+	if err != nil {
+		slog.ErrorContext(ctx, "Unable to marshal upstreams", "err", err)
+	}
+
+	resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
+		string(upstreamsJSON), instanceID, "")
+
+	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+}
+
+// nolint: dupl
+func (r *Resource) handleUpdateHTTPUpstreamServers(ctx context.Context, action *mpi.NGINXPlusAction,
+	instance *mpi.Instance,
+) {
+	correlationID := logger.GetCorrelationID(ctx)
+	instanceID := instance.GetInstanceMeta().GetInstanceId()
+
+	slog.DebugContext(ctx, "Updating http upstream servers", "request", action.GetUpdateHttpUpstreamServers())
+
+	add, update, del, err := r.resourceService.UpdateHTTPUpstreamServers(ctx, instance,
+		action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(),
+		action.GetUpdateHttpUpstreamServers().GetServers())
+	if err != nil {
+		slog.ErrorContext(ctx, "Unable to update HTTP servers of upstream", "request",
+			action.GetUpdateHttpUpstreamServers(), "error", err)
+		resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+			"", instanceID, err.Error())
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+
+		return
+	}
+
+	slog.DebugContext(ctx, "Successfully updated http upstream servers", "http_upstream_name",
+		action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(), "add", len(add), "update", len(update),
+		"delete", len(del))
+
+	resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
+		"Successfully updated HTTP Upstreams", instanceID, "")
+
+	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+}
+
+func (r *Resource) handleGetHTTPUpstreamServers(ctx context.Context, action *mpi.NGINXPlusAction,
+	instance *mpi.Instance,
+) {
+	correlationID := logger.GetCorrelationID(ctx)
+	instanceID := instance.GetInstanceMeta().GetInstanceId()
+
+	slog.DebugContext(ctx, "Getting http upstream servers", "request", action.GetGetHttpUpstreamServers())
+
+	upstreams, err := r.resourceService.GetHTTPUpstreamServers(ctx, instance,
+		action.GetGetHttpUpstreamServers().GetHttpUpstreamName())
+	if err != nil {
+		slog.ErrorContext(ctx, "Unable to get HTTP servers of upstream", "error", err)
+		resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+			"", instanceID, err.Error())
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+
+		return
+	}
+
+	upstreamsJSON, err := json.Marshal(upstreams)
+	if err != nil {
+		slog.ErrorContext(ctx, "Unable to marshal http upstreams", "err", err)
+	}
+
+	resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
+		string(upstreamsJSON), instanceID, "")
+
+	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 }
 
 func (r *Resource) handleWriteConfigSuccessful(ctx context.Context, msg *bus.Message) {
