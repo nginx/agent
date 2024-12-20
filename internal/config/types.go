@@ -40,6 +40,7 @@ type (
 		File               *File            `yaml:"-" mapstructure:"file"`
 		Common             *CommonSettings  `yaml:"-"`
 		Watchers           *Watchers        `yaml:"-"`
+		Labels             map[string]any   `yaml:"-" mapstructure:"labels"`
 		Version            string           `yaml:"-"`
 		Path               string           `yaml:"-"`
 		UUID               string           `yaml:"-"`
