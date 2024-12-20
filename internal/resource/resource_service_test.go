@@ -7,8 +7,13 @@ package resource
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
+
+	"github.com/nginxinc/nginx-plus-go-client/v2/client"
+
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/nginx/agent/v3/internal/resource/resourcefakes"
 	"github.com/nginx/agent/v3/test/types"
@@ -192,6 +197,45 @@ func TestResourceService_GetResource(t *testing.T) {
 	}
 }
 
+func TestResourceService_createPlusClient(t *testing.T) {
+	instanceWithAPI := protos.GetNginxPlusInstance([]string{})
+	instanceWithAPI.InstanceRuntime.GetNginxPlusRuntimeInfo().PlusApi = &v1.APIDetails{
+		Location: "localhost:80",
+		Listen:   "/api",
+	}
+
+	ctx := context.Background()
+	tests := []struct {
+		err      error
+		instance *v1.Instance
+		name     string
+	}{
+		{
+			name:     "Test 1: Create Plus Client",
+			instance: instanceWithAPI,
+			err:      nil,
+		},
+		{
+			name:     "Test 2: Fail Creating Client - API not Configured",
+			instance: protos.GetNginxPlusInstance([]string{}),
+			err:      errors.New("failed to preform API action, NGINX Plus API is not configured"),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			resourceService := NewResourceService(ctx, types.AgentConfig())
+			resourceService.resource.Instances = []*v1.Instance{
+				protos.GetNginxOssInstance([]string{}),
+				protos.GetNginxPlusInstance([]string{}),
+			}
+
+			_, err := resourceService.createPlusClient(test.instance)
+			assert.Equal(tt, test.err, err)
+		})
+	}
+}
+
 func TestResourceService_ApplyConfig(t *testing.T) {
 	ctx := context.Background()
 
@@ -244,4 +288,46 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 			assert.Equal(t, test.expected, reloadError)
 		})
 	}
+}
+
+func Test_convertToUpstreamServer(t *testing.T) {
+	expectedMax := 2
+	expectedFails := 0
+	expectedBackup := true
+	expected := []client.UpstreamServer{
+		{
+			MaxConns: &expectedMax,
+			MaxFails: &expectedFails,
+			Backup:   &expectedBackup,
+			Server:   "test_server",
+		},
+		{
+			MaxConns: &expectedMax,
+			MaxFails: &expectedFails,
+			Backup:   &expectedBackup,
+			Server:   "test_server2",
+		},
+	}
+
+	test := []*structpb.Struct{
+		{
+			Fields: map[string]*structpb.Value{
+				"max_conns": structpb.NewNumberValue(2),
+				"max_fails": structpb.NewNumberValue(0),
+				"backup":    structpb.NewBoolValue(expectedBackup),
+				"server":    structpb.NewStringValue("test_server"),
+			},
+		},
+		{
+			Fields: map[string]*structpb.Value{
+				"max_conns": structpb.NewNumberValue(2),
+				"max_fails": structpb.NewNumberValue(0),
+				"backup":    structpb.NewBoolValue(expectedBackup),
+				"server":    structpb.NewStringValue("test_server2"),
+			},
+		},
+	}
+
+	result := convertToUpstreamServer(test)
+	assert.Equal(t, expected, result)
 }
