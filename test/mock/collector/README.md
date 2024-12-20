@@ -7,7 +7,7 @@ There are 3 images that need to be built in order to use the mock management OTe
 
 To build these images run the following
 ```
-make local-deb-package build-test-plus-image build-test-oss-image build-mock-management-otel-collector-image
+OSARCH=amd64 make local-deb-package build-test-plus-image build-test-oss-image build-mock-management-otel-collector-image
 ```
 
 To start run everything run the following

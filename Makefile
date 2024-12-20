@@ -69,12 +69,12 @@ OLD_BENCHMARK_RESULTS_FILE ?= $(TEST_BUILD_DIR)/benchmark.txt
 uname_m    := $(shell uname -m)
 
 ifeq ($(uname_m),aarch64)
-	OSARCH = arm64
+	OSARCH ?= arm64
 else
 	ifeq ($(uname_m),x86_64)
-		OSARCH = amd64
+		OSARCH ?= amd64
 	else
-		OSARCH = $(uname_m)
+		OSARCH ?= $(uname_m)
 	endif
 endif
 
@@ -237,8 +237,9 @@ local-apk-package: ## Create local apk package
 	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager apk --target $(APK_PACKAGE);
 
 local-deb-package: ## Create local deb package
-	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -pgo=default.pgo -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
-	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager deb --target $(DEB_PACKAGE);
+	echo $(OSARCH)
+#	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -pgo=default.pgo -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
+#	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager deb --target $(DEB_PACKAGE);
 
 local-rpm-package: ## Create local rpm package
 	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -pgo=default.pgo -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
