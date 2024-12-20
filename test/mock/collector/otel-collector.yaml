@@ -15,9 +15,16 @@ exporters:
     verbosity: detailed
     sampling_initial: 5
     sampling_thereafter: 200
+  otlphttp:
+    endpoint: http://loki:3100/otlp
 
 processors:
   batch:
+  resource:
+    attributes:
+      - key: service.name
+        value: "nginx.app.protect"
+        action: insert
 
 extensions:
   headers_check:
@@ -34,5 +41,5 @@ service:
       exporters: [prometheus]
     logs:
       receivers: [otlp]
-      processors: [batch]
-      exporters: [debug]
+      processors: [resource, batch]
+      exporters: [otlphttp]

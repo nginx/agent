@@ -69,12 +69,12 @@ OLD_BENCHMARK_RESULTS_FILE ?= $(TEST_BUILD_DIR)/benchmark.txt
 uname_m    := $(shell uname -m)
 
 ifeq ($(uname_m),aarch64)
-	OSARCH = arm64
+	OSARCH ?= arm64
 else
 	ifeq ($(uname_m),x86_64)
-		OSARCH = amd64
+		OSARCH ?= amd64
 	else
-		OSARCH = $(uname_m)
+		OSARCH ?= $(uname_m)
 	endif
 endif
 
@@ -150,9 +150,9 @@ build-mock-management-plane-grpc:
 	mkdir -p $(BUILD_DIR)/mock-management-plane-grpc
 	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/mock-management-plane-grpc/server test/mock/grpc/cmd/main.go
 
-build-mock-management-plane-collector:
-	mkdir -p $(BUILD_DIR)/mock-management-plane-collector
-	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/mock-management-plane-collector/collector test/mock/collector/mock-collector/main.go
+build-mock-management-otel-collector:
+	mkdir -p $(BUILD_DIR)/mock-management-otel-collector
+	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/mock-management-otel-collector/collector test/mock/collector/mock-collector/main.go
 
 integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} \
@@ -211,8 +211,8 @@ build-test-oss-image:
 		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
 		--build-arg ENTRY_POINT=./test/docker/entrypoint.sh
 		
-.PHONY: build-mock-collector-image
-build-mock-collector-image: build-mock-management-plane-collector
+.PHONY: build-mock-management-otel-collector-image
+build-mock-collector-image: build-mock-management-otel-collector
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t mock-collector . \
 		--no-cache -f ./test/mock/collector/mock-collector/Dockerfile
 
