@@ -6,15 +6,15 @@ import (
 	"sync"
 
 	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/pkg/nginxprocess"
 )
 
 type FakeProcessParser struct {
-	ParseStub        func(context.Context, []*model.Process) map[string]*v1.Instance
+	ParseStub        func(context.Context, []*nginxprocess.Process) map[string]*v1.Instance
 	parseMutex       sync.RWMutex
 	parseArgsForCall []struct {
 		arg1 context.Context
-		arg2 []*model.Process
+		arg2 []*nginxprocess.Process
 	}
 	parseReturns struct {
 		result1 map[string]*v1.Instance
@@ -26,17 +26,17 @@ type FakeProcessParser struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeProcessParser) Parse(arg1 context.Context, arg2 []*model.Process) map[string]*v1.Instance {
-	var arg2Copy []*model.Process
+func (fake *FakeProcessParser) Parse(arg1 context.Context, arg2 []*nginxprocess.Process) map[string]*v1.Instance {
+	var arg2Copy []*nginxprocess.Process
 	if arg2 != nil {
-		arg2Copy = make([]*model.Process, len(arg2))
+		arg2Copy = make([]*nginxprocess.Process, len(arg2))
 		copy(arg2Copy, arg2)
 	}
 	fake.parseMutex.Lock()
 	ret, specificReturn := fake.parseReturnsOnCall[len(fake.parseArgsForCall)]
 	fake.parseArgsForCall = append(fake.parseArgsForCall, struct {
 		arg1 context.Context
-		arg2 []*model.Process
+		arg2 []*nginxprocess.Process
 	}{arg1, arg2Copy})
 	stub := fake.ParseStub
 	fakeReturns := fake.parseReturns
@@ -57,13 +57,13 @@ func (fake *FakeProcessParser) ParseCallCount() int {
 	return len(fake.parseArgsForCall)
 }
 
-func (fake *FakeProcessParser) ParseCalls(stub func(context.Context, []*model.Process) map[string]*v1.Instance) {
+func (fake *FakeProcessParser) ParseCalls(stub func(context.Context, []*nginxprocess.Process) map[string]*v1.Instance) {
 	fake.parseMutex.Lock()
 	defer fake.parseMutex.Unlock()
 	fake.ParseStub = stub
 }
 
-func (fake *FakeProcessParser) ParseArgsForCall(i int) (context.Context, []*model.Process) {
+func (fake *FakeProcessParser) ParseArgsForCall(i int) (context.Context, []*nginxprocess.Process) {
 	fake.parseMutex.RLock()
 	defer fake.parseMutex.RUnlock()
 	argsForCall := fake.parseArgsForCall[i]

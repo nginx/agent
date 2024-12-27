@@ -18,7 +18,7 @@ import (
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
-	"github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/pkg/nginxprocess"
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/stretchr/testify/assert"
@@ -93,7 +93,7 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 	noModuleArgs := fmt.Sprintf(ossConfigArgs, noModulesPath)
 
 	expectedModules := strings.ReplaceAll(filepath.Base(testModule.Name()), ".so", "")
-	processes := []*model.Process{
+	processes := []*nginxprocess.Process{
 		{
 			PID:  789,
 			PPID: 1234,
@@ -228,11 +228,11 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 	tests := []struct {
 		expected  map[string]*mpi.Instance
 		name      string
-		processes []*model.Process
+		processes []*nginxprocess.Process
 	}{
 		{
 			name: "Test 1: 1 master process, 2 workers",
-			processes: []*model.Process{
+			processes: []*nginxprocess.Process{
 				{
 					PID:  567,
 					PPID: 1234,
@@ -259,7 +259,7 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 		},
 		{
 			name: "Test 2: 1 master process, no workers",
-			processes: []*model.Process{
+			processes: []*nginxprocess.Process{
 				{
 					PID:  1234,
 					PPID: 1,
@@ -272,7 +272,7 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 		},
 		{
 			name: "Test 3: no master process, 2 workers for each killed master",
-			processes: []*model.Process{
+			processes: []*nginxprocess.Process{
 				{
 					PID:  789,
 					PPID: 1234,
@@ -306,7 +306,7 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 		},
 		{
 			name: "Test 4: 2 master process each with 2 workers",
-			processes: []*model.Process{
+			processes: []*nginxprocess.Process{
 				{
 					PID:  789,
 					PPID: 1234,
@@ -400,7 +400,7 @@ func TestGetInfo(t *testing.T) {
 	expectedModules := strings.ReplaceAll(filepath.Base(testModule.Name()), ".so", "")
 
 	tests := []struct {
-		process                   *model.Process
+		process                   *nginxprocess.Process
 		expected                  *Info
 		name                      string
 		nginxVersionCommandOutput string
@@ -413,14 +413,16 @@ func TestGetInfo(t *testing.T) {
 				built with OpenSSL 3.1.3 19 Sep 2023 (running with OpenSSL 3.2.0 23 Nov 2023)
 				TLS SNI support enabled
 				configure arguments: %s`, ossArgs),
-			process: &model.Process{
+			process: &nginxprocess.Process{
+				PID: 1123,
 				Exe: exePath,
 			},
 			expected: &Info{
-				Version:  "1.25.3",
-				Prefix:   "/usr/local/Cellar/nginx/1.25.3",
-				ConfPath: "/usr/local/etc/nginx/nginx.conf",
-				ExePath:  exePath,
+				ProcessID: 1123,
+				Version:   "1.25.3",
+				Prefix:    "/usr/local/Cellar/nginx/1.25.3",
+				ConfPath:  "/usr/local/etc/nginx/nginx.conf",
+				ExePath:   exePath,
 				ConfigureArgs: map[string]interface{}{
 					"conf-path":                  "/usr/local/etc/nginx/nginx.conf",
 					"error-log-path":             "/usr/local/var/log/nginx/error.log",
@@ -479,14 +481,16 @@ func TestGetInfo(t *testing.T) {
 				built with OpenSSL 1.1.1f  31 Mar 2020
 				TLS SNI support enabled
 				configure arguments: %s`, plusArgs),
-			process: &model.Process{
+			process: &nginxprocess.Process{
+				PID: 3141,
 				Exe: exePath,
 			},
 			expected: &Info{
-				Version:  "1.25.3 (nginx-plus-r31-p1)",
-				Prefix:   "/etc/nginx",
-				ConfPath: "/etc/nginx/nginx.conf",
-				ExePath:  exePath,
+				ProcessID: 3141,
+				Version:   "1.25.3 (nginx-plus-r31-p1)",
+				Prefix:    "/etc/nginx",
+				ConfPath:  "/etc/nginx/nginx.conf",
+				ExePath:   exePath,
 				ConfigureArgs: map[string]interface{}{
 					"build":                                  "nginx-plus-r31-p1",
 					"conf-path":                              "/etc/nginx/nginx.conf",
