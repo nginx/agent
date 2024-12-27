@@ -40,9 +40,10 @@ exclude:
     - ^test/.*$
     - app.go          # app.go and main.go should be tested by integration tests.
     - main.go
-# Intentionally ignoring as GetProcesses & KillProcess arent being tested as they are wrappers
+    # ignore wrappers around gopsutil
     - internal/datasource/host
     - internal/watcher/process
+    - pkg/nginxprocess
 
 # NOTES:
 # - symbol `/` in all path regexps will be replaced by
