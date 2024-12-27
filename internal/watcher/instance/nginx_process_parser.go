@@ -19,8 +19,8 @@ import (
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
-	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/pkg/id"
+	"github.com/nginx/agent/v3/pkg/nginxprocess"
 )
 
 const (
@@ -62,15 +62,15 @@ func NewNginxProcessParser() *NginxProcessParser {
 // cognitive complexity of 16 because of the if statements in the for loop
 // don't think can be avoided due to the need for continue
 // nolint: revive
-func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*model.Process) map[string]*mpi.Instance {
+func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*nginxprocess.Process) map[string]*mpi.Instance {
 	instanceMap := make(map[string]*mpi.Instance)   // key is instanceID
 	workers := make(map[int32][]*mpi.InstanceChild) // key is ppid of process
 
-	nginxProcesses := filterNginxProcesses(processes)
+	nginxProcesses := convertToMap(processes)
 
 	for _, nginxProcess := range nginxProcesses {
 		// Here we are determining if the nginxProcess is a worker process
-		if strings.Contains(nginxProcess.Cmd, "worker") {
+		if nginxProcess.IsWorker() {
 			// Here we are determining if the worker process has a master
 			if masterProcess, ok := nginxProcesses[nginxProcess.PPID]; ok {
 				workers[masterProcess.PID] = append(workers[masterProcess.PID],
@@ -125,7 +125,7 @@ func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*model.Pro
 	return instanceMap
 }
 
-func (npp *NginxProcessParser) getInfo(ctx context.Context, nginxProcess *model.Process) (*Info, error) {
+func (npp *NginxProcessParser) getInfo(ctx context.Context, nginxProcess *nginxprocess.Process) (*Info, error) {
 	exePath := nginxProcess.Exe
 
 	if exePath == "" {
@@ -382,18 +382,12 @@ func readDirectory(dir, extension string) (files []string, err error) {
 	return files, err
 }
 
-func filterNginxProcesses(processes []*model.Process) map[int32]*model.Process {
-	nginxProcesses := make(map[int32]*model.Process)
+func convertToMap(processes []*nginxprocess.Process) map[int32]*nginxprocess.Process {
+	nginxProcesses := make(map[int32]*nginxprocess.Process)
 
 	for _, p := range processes {
-		if isNginxProcess(p.Name, p.Cmd) {
-			nginxProcesses[p.PID] = p
-		}
+		nginxProcesses[p.PID] = p
 	}
 
 	return nginxProcesses
-}
-
-func isNginxProcess(name, cmd string) bool {
-	return name == "nginx" && !strings.Contains(cmd, "upgrade") && strings.HasPrefix(cmd, "nginx:")
 }
