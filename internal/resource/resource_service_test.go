@@ -147,6 +147,42 @@ func TestResourceService_DeleteInstance(t *testing.T) {
 	}
 }
 
+func TestResourceService_Instance(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		result    *v1.Instance
+		name      string
+		instances []*v1.Instance
+	}{
+		{
+			name: "Test 1: instance found",
+			instances: []*v1.Instance{
+				protos.GetNginxOssInstance([]string{}),
+				protos.GetNginxPlusInstance([]string{}),
+			},
+			result: protos.GetNginxPlusInstance([]string{}),
+		},
+		{
+			name: "Test 2: instance not found",
+			instances: []*v1.Instance{
+				protos.GetNginxOssInstance([]string{}),
+			},
+			result: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			resourceService := NewResourceService(ctx, types.AgentConfig())
+			resourceService.resource.Instances = test.instances
+			instance := resourceService.Instance(protos.GetNginxPlusInstance([]string{}).
+				GetInstanceMeta().GetInstanceId())
+			assert.Equal(tt, test.result, instance)
+		})
+	}
+}
+
 func TestResourceService_GetResource(t *testing.T) {
 	ctx := context.Background()
 

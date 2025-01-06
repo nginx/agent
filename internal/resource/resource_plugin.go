@@ -236,7 +236,7 @@ func (r *Resource) handleGetStreamUpstreams(ctx context.Context, action *mpi.NGI
 	correlationID := logger.GetCorrelationID(ctx)
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
 
-	slog.DebugContext(ctx, "Getting Stream Upstreams", "request", action.GetUpdateStreamServers())
+	slog.DebugContext(ctx, "Getting stream upstreams", "request", action.GetGetStreamUpstreams())
 
 	streamUpstreams, err := r.resourceService.GetStreamUpstreams(ctx, instance)
 	if err != nil {
