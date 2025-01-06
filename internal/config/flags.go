@@ -69,6 +69,7 @@ var (
 	CollectorLogPathKey                         = pre(CollectorLogKey) + "path"
 	CommandAuthKey                              = pre(CommandRootKey) + "auth"
 	CommandAuthTokenKey                         = pre(CommandAuthKey) + "token"
+	CommandAuthTokenPathKey                     = pre(CommandAuthKey) + "token-path"
 	CommandServerHostKey                        = pre(CommandServerKey) + "host"
 	CommandServerKey                            = pre(CommandRootKey) + "server"
 	CommandServerPortKey                        = pre(CommandServerKey) + "port"

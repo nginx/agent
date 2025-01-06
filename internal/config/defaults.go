@@ -20,6 +20,7 @@ const (
 	DefCommandServerPortKey    = 0
 	DefCommandServerTypeKey    = "grpc"
 	DefCommandAuthTokenKey     = ""
+	DefCommandAuthTokenPathKey = ""
 	DefCommandTLSCertKey       = ""
 	DefCommandTLSKeyKey        = ""
 	DefCommandTLSCaKey         = ""
