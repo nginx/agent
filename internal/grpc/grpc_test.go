@@ -8,6 +8,7 @@ package grpc
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/cenkalti/backoff/v4"
@@ -351,4 +352,72 @@ func Test_ValidateGrpcError(t *testing.T) {
 
 	result = ValidateGrpcError(status.Errorf(codes.InvalidArgument, "error"))
 	assert.IsType(t, &backoff.PermanentError{}, result)
+}
+
+func Test_validateTokenFile(t *testing.T) {
+	type args struct {
+		path string
+	}
+	tests := []struct {
+		name        string
+		createToken bool
+		args        args
+		want        string
+		wantErrMsg  string
+	}{
+		{
+			name:        "File exists",
+			createToken: true,
+			args: args{
+				path: "test-tkn",
+			},
+			want:       "test-tkn",
+			wantErrMsg: "",
+		},
+		{
+			name:        "File does not exist",
+			createToken: false,
+			args: args{
+				path: "test-tkn",
+			},
+			want:       "",
+			wantErrMsg: "open test-tkn: no such file or directory",
+		},
+		{
+			name:        "Empty path",
+			createToken: false,
+			args: args{
+				path: "",
+			},
+			want:       "",
+			wantErrMsg: "token file path is empty",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer func() {
+				if tt.createToken {
+					err := os.Remove(tt.args.path)
+					if err != nil {
+						t.Log(err)
+					}
+				}
+			}()
+
+			if tt.createToken {
+				err := os.WriteFile(tt.args.path, []byte(tt.args.path), 0666)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			got, err := validateTokenFile(tt.args.path)
+			if err != nil {
+				if err.Error() != tt.wantErrMsg {
+					t.Errorf("validateTokenFile() error = %v, wantErr %v", err, tt.wantErrMsg)
+				}
+			}
+			assert.Equalf(t, tt.want, got, "validateTokenFile(%v)", tt.args.path)
+		})
+	}
 }

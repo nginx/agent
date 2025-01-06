@@ -266,13 +266,6 @@ func validateTokenFile(path string) (string, error) {
 		return "", errors.New("token file path is empty")
 	}
 
-	slog.Debug("Checking token file", "path", path)
-	_, err := os.Stat(path)
-	if err != nil {
-		slog.Error("Unable to find token file", "path", path, "error", err)
-		return "", err
-	}
-
 	slog.Debug("Reading dataplane key from file", "path", path)
 	var keyVal string
 	keyBytes, err := os.ReadFile(path)
