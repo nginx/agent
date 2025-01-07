@@ -358,6 +358,9 @@ func Test_ValidateGrpcError(t *testing.T) {
 
 // nolint:revive,gocognit
 func Test_validateTokenFile(t *testing.T) {
+	type args struct {
+		path string
+	}
 	tests := []struct {
 		name        string
 		path        string
