@@ -7,8 +7,11 @@ There are 3 images that need to be built in order to use the mock management OTe
 
 To build these images run the following
 ```
-OSARCH=amd64 make local-deb-package build-test-plus-image build-test-oss-image build-mock-management-otel-collector-image
+OSARCH=amd64 make local-deb-package build-test-plus-image
+make local-deb-package build-test-oss-image build-mock-management-otel-collector-image
 ```
+
+[**Note:** We need to build the test NGINX Plus image with the environment variable `OSARCH=amd64` since NGINX App Protect doesn't support ARM yet.]
 
 To start run everything run the following
 ```
