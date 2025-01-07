@@ -11,6 +11,8 @@ import (
 	"os"
 	"testing"
 
+	"google.golang.org/grpc/credentials"
+
 	"github.com/cenkalti/backoff/v4"
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/protos"
@@ -354,50 +356,42 @@ func Test_ValidateGrpcError(t *testing.T) {
 	assert.IsType(t, &backoff.PermanentError{}, result)
 }
 
+// nolint:revive,gocognit
 func Test_validateTokenFile(t *testing.T) {
-	type args struct {
-		path string
-	}
 	tests := []struct {
 		name        string
-		createToken bool
-		args        args
+		path        string
 		want        string
 		wantErrMsg  string
+		createToken bool
 	}{
 		{
-			name:        "File exists",
+			name:        "Test 1: File exists",
 			createToken: true,
-			args: args{
-				path: "test-tkn",
-			},
-			want:       "test-tkn",
-			wantErrMsg: "",
+			path:        "test-tkn",
+			want:        "test-tkn",
+			wantErrMsg:  "",
 		},
 		{
-			name:        "File does not exist",
+			name:        "Test 2: File does not exist",
 			createToken: false,
-			args: args{
-				path: "test-tkn",
-			},
-			want:       "",
-			wantErrMsg: "open test-tkn: no such file or directory",
+			path:        "test-tkn",
+			want:        "",
+			wantErrMsg:  "open test-tkn: no such file or directory",
 		},
 		{
-			name:        "Empty path",
+			name:        "Test 3: Empty path",
 			createToken: false,
-			args: args{
-				path: "",
-			},
-			want:       "",
-			wantErrMsg: "token file path is empty",
+			path:        "",
+			want:        "",
+			wantErrMsg:  "token file path is empty",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			defer func() {
 				if tt.createToken {
-					err := os.Remove(tt.args.path)
+					err := os.Remove(tt.path)
 					if err != nil {
 						t.Log(err)
 					}
@@ -405,19 +399,46 @@ func Test_validateTokenFile(t *testing.T) {
 			}()
 
 			if tt.createToken {
-				err := os.WriteFile(tt.args.path, []byte(tt.args.path), 0666)
+				err := os.WriteFile(tt.path, []byte(tt.path), 0o600)
 				if err != nil {
 					t.Fatal(err)
 				}
 			}
 
-			got, err := validateTokenFile(tt.args.path)
+			got, err := validateTokenFile(tt.path)
 			if err != nil {
 				if err.Error() != tt.wantErrMsg {
 					t.Errorf("validateTokenFile() error = %v, wantErr %v", err, tt.wantErrMsg)
 				}
 			}
-			assert.Equalf(t, tt.want, got, "validateTokenFile(%v)", tt.args.path)
+			assert.Equalf(t, tt.want, got, "validateTokenFile(%v)", tt.path)
+		})
+	}
+}
+
+func Test_getTransportCredentials(t *testing.T) {
+	tests := []struct {
+		want    credentials.TransportCredentials
+		conf    *config.Config
+		wantErr assert.ErrorAssertionFunc
+		name    string
+	}{
+		{
+			name: "No TLS config returns default credentials",
+			conf: &config.Config{
+				Command: &config.Command{},
+			},
+			want:    defaultCredentials,
+			wantErr: assert.NoError,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getTransportCredentials(tt.conf)
+			if !tt.wantErr(t, err, fmt.Sprintf("getTransportCredentials(%v)", tt.conf)) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "getTransportCredentials(%v)", tt.conf)
 		})
 	}
 }

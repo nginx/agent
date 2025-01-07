@@ -219,22 +219,22 @@ func GetDialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOp
 }
 
 func addTransportCredentials(agentConfig *config.Config, opts []grpc.DialOption) ([]grpc.DialOption, bool) {
-	skipToken := false
 	transportCredentials, err := getTransportCredentials(agentConfig)
-	if err == nil {
-		slog.Debug("Adding transport credentials to gRPC dial options")
-		opts = append(opts,
-			grpc.WithTransportCredentials(transportCredentials),
-		)
-	} else {
+	if err != nil {
 		slog.Error("Unable to add transport credentials to gRPC dial options", "error", err)
 		slog.Debug("Adding default transport credentials to gRPC dial options")
 		opts = append(opts,
 			grpc.WithTransportCredentials(defaultCredentials),
 		)
-		skipToken = true
+
+		return opts, true
 	}
-	return opts, skipToken
+	slog.Debug("Adding transport credentials to gRPC dial options")
+	opts = append(opts,
+		grpc.WithTransportCredentials(transportCredentials),
+	)
+
+	return opts, false
 }
 
 func addPerRPCCredentials(agentConfig *config.Config, resourceID string, opts []grpc.DialOption) []grpc.DialOption {
