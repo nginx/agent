@@ -8,11 +8,10 @@ package command
 import (
 	"context"
 	"errors"
+	"github.com/cenkalti/backoff/v4"
 	"log/slog"
 	"sync"
 	"sync/atomic"
-
-	"github.com/cenkalti/backoff/v4"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
@@ -26,6 +25,10 @@ import (
 )
 
 var _ commandService = (*CommandService)(nil)
+
+const (
+	createConnectionMaxElapsedTime = 0
+)
 
 type (
 	CommandService struct {
@@ -181,7 +184,7 @@ func (cs *CommandService) subscribe(ctx context.Context) {
 	commonSettings := &config.BackOff{
 		InitialInterval:     cs.agentConfig.Client.Backoff.InitialInterval,
 		MaxInterval:         cs.agentConfig.Client.Backoff.MaxInterval,
-		MaxElapsedTime:      cs.agentConfig.Client.Backoff.MaxElapsedTime,
+		MaxElapsedTime:      createConnectionMaxElapsedTime,
 		RandomizationFactor: cs.agentConfig.Client.Backoff.RandomizationFactor,
 		Multiplier:          cs.agentConfig.Client.Backoff.Multiplier,
 	}
@@ -220,7 +223,7 @@ func (cs *CommandService) CreateConnection(
 	commonSettings := &config.BackOff{
 		InitialInterval:     cs.agentConfig.Client.Backoff.InitialInterval,
 		MaxInterval:         cs.agentConfig.Client.Backoff.MaxInterval,
-		MaxElapsedTime:      cs.agentConfig.Client.Backoff.MaxElapsedTime,
+		MaxElapsedTime:      createConnectionMaxElapsedTime,
 		RandomizationFactor: cs.agentConfig.Client.Backoff.RandomizationFactor,
 		Multiplier:          cs.agentConfig.Client.Backoff.Multiplier,
 	}
