@@ -159,7 +159,6 @@ func getServerOptions(agentConfig *config.Config) []grpc.ServerOption {
 
 	if agentConfig.Client != nil {
 		if agentConfig.Client.Grpc.MaxMessageSize != 0 {
-			slog.Info("grpc MaxMessageSize")
 			opts = append(opts, grpc.MaxSendMsgSize(agentConfig.Client.Grpc.MaxMessageSize),
 				grpc.MaxRecvMsgSize(agentConfig.Client.Grpc.MaxMessageSize),
 			)
