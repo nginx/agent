@@ -212,7 +212,7 @@ build-test-oss-image:
 		--build-arg ENTRY_POINT=./test/docker/entrypoint.sh
 		
 .PHONY: build-mock-management-otel-collector-image
-build-mock-collector-image: build-mock-management-otel-collector
+build-mock-management-otel-collector-image: build-mock-management-otel-collector
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t mock-collector . \
 		--no-cache -f ./test/mock/collector/mock-collector/Dockerfile
 
