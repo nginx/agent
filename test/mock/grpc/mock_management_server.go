@@ -158,15 +158,15 @@ func getServerOptions(agentConfig *config.Config) []grpc.ServerOption {
 	}
 
 	if agentConfig.Client != nil {
-		if agentConfig.Client.MaxMessageSize != 0 {
+		if agentConfig.Client.Grpc.MaxMessageSize != 0 {
 			slog.Info("grpc MaxMessageSize")
-			opts = append(opts, grpc.MaxSendMsgSize(agentConfig.Client.MaxMessageSize),
-				grpc.MaxRecvMsgSize(agentConfig.Client.MaxMessageSize),
+			opts = append(opts, grpc.MaxSendMsgSize(agentConfig.Client.Grpc.MaxMessageSize),
+				grpc.MaxRecvMsgSize(agentConfig.Client.Grpc.MaxMessageSize),
 			)
 		} else {
 			// both are defulted to math.MaxInt for ServerOption
-			opts = append(opts, grpc.MaxSendMsgSize(agentConfig.Client.MaxMessageSendSize),
-				grpc.MaxRecvMsgSize(agentConfig.Client.MaxMessageRecieveSize),
+			opts = append(opts, grpc.MaxSendMsgSize(agentConfig.Client.Grpc.MaxMessageSendSize),
+				grpc.MaxRecvMsgSize(agentConfig.Client.Grpc.MaxMessageReceiveSize),
 			)
 		}
 	}
@@ -217,10 +217,10 @@ func createListener(apiAddress string, agentConfig *config.Config) (net.Listener
 func reportHealth(healthcheck *health.Server, agentConfig *config.Config) {
 	var sleep time.Duration
 	var serverName string
-	if agentConfig.Common == nil {
+	if agentConfig.Client.Backoff == nil {
 		sleep = maxElapsedTime
 	} else {
-		sleep = agentConfig.Common.MaxElapsedTime
+		sleep = agentConfig.Client.Backoff.MaxElapsedTime
 	}
 
 	if agentConfig.Command.TLS == nil {

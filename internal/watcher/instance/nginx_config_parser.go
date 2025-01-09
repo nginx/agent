@@ -482,7 +482,7 @@ func (ncp *NginxConfigParser) pingAPIEndpoint(ctx context.Context, statusAPIDeta
 	if strings.HasPrefix(listen, "unix:") {
 		httpClient = ncp.SocketClient(strings.TrimPrefix(listen, "unix:"))
 	} else {
-		httpClient = http.Client{Timeout: ncp.agentConfig.Client.Timeout}
+		httpClient = http.Client{Timeout: ncp.agentConfig.Client.Grpc.KeepAlive.Timeout}
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, statusAPI, nil)
 	if err != nil {
@@ -674,7 +674,7 @@ func (ncp *NginxConfigParser) isPort(value string) bool {
 
 func (ncp *NginxConfigParser) SocketClient(socketPath string) http.Client {
 	return http.Client{
-		Timeout: ncp.agentConfig.Client.Timeout,
+		Timeout: ncp.agentConfig.Client.Grpc.KeepAlive.Timeout,
 		Transport: &http.Transport{
 			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
 				return net.Dial("unix", socketPath)

@@ -20,6 +20,8 @@ const (
 	clientTime                = 50 * time.Second
 	clientTimeout             = 5 * time.Second
 
+	clientHTTPTimeout = 5 * time.Second
+
 	commonInitialInterval     = 100 * time.Microsecond
 	commonMaxInterval         = 1000 * time.Microsecond
 	commonMaxElapsedTime      = 10 * time.Millisecond
@@ -37,9 +39,23 @@ func AgentConfig() *config.Config {
 		Path:    "/etc/nginx-agent",
 		Log:     &config.Log{},
 		Client: &config.Client{
-			Timeout:             clientTimeout,
-			Time:                clientTime,
-			PermitWithoutStream: clientPermitWithoutStream,
+			HTTP: &config.HTTP{
+				Timeout: clientHTTPTimeout,
+			},
+			Grpc: &config.GRPC{
+				KeepAlive: &config.KeepAlive{
+					Timeout:             clientTimeout,
+					Time:                clientTime,
+					PermitWithoutStream: clientPermitWithoutStream,
+				},
+			},
+			Backoff: &config.BackOff{
+				InitialInterval:     commonInitialInterval,
+				MaxInterval:         commonMaxInterval,
+				MaxElapsedTime:      commonMaxElapsedTime,
+				RandomizationFactor: commonRandomizationFactor,
+				Multiplier:          commonMultiplier,
+			},
 		},
 		AllowedDirectories: []string{"/tmp/"},
 		Collector: &config.Collector{
@@ -128,13 +144,6 @@ func AgentConfig() *config.Config {
 			},
 		},
 		File: &config.File{},
-		Common: &config.CommonSettings{
-			InitialInterval:     commonInitialInterval,
-			MaxInterval:         commonMaxInterval,
-			MaxElapsedTime:      commonMaxElapsedTime,
-			RandomizationFactor: commonRandomizationFactor,
-			Multiplier:          commonMultiplier,
-		},
 		DataPlaneConfig: &config.DataPlaneConfig{
 			Nginx: &config.NginxDataPlaneConfig{
 				TreatWarningsAsErrors:  true,
