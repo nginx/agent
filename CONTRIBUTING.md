@@ -48,6 +48,8 @@ can be merged. Your agreement signature will be safely stored by F5 and no longe
 
 <!-- ### Go Guidelines Here Linter-->
 
+* when writing [table-driven tests](https://go.dev/wiki/TableDrivenTests), add a numbered prefix to each test case name (`Test 1:`, `Test 2:`, and so on) to make it easier to see which cases failed.
+
 ### Git Guidelines
 
 * Keep a clean, concise and meaningful git commit history on your branch (within reason), rebasing locally and squashing before submitting a PR.
