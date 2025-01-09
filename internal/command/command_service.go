@@ -8,10 +8,11 @@ package command
 import (
 	"context"
 	"errors"
-	"github.com/cenkalti/backoff/v4"
 	"log/slog"
 	"sync"
 	"sync/atomic"
+
+	"github.com/cenkalti/backoff/v4"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
