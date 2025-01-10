@@ -221,8 +221,7 @@ func GetDialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOp
 func addTransportCredentials(agentConfig *config.Config, opts []grpc.DialOption) ([]grpc.DialOption, bool) {
 	transportCredentials, err := getTransportCredentials(agentConfig)
 	if err != nil {
-		slog.Error("Unable to add transport credentials to gRPC dial options", "error", err)
-		slog.Debug("Adding default transport credentials to gRPC dial options")
+		slog.Error("Unable to get transport credentials from agent configuration, adding default transport credentials to gRPC dial options", "error", err)
 		opts = append(opts,
 			grpc.WithTransportCredentials(defaultCredentials),
 		)
@@ -238,11 +237,11 @@ func addTransportCredentials(agentConfig *config.Config, opts []grpc.DialOption)
 }
 
 func addPerRPCCredentials(agentConfig *config.Config, resourceID string, opts []grpc.DialOption) []grpc.DialOption {
-	key := agentConfig.Command.Auth.Token
+	token := agentConfig.Command.Auth.Token
 
 	if agentConfig.Command.Auth.TokenPath != "" {
 		var err error
-		key, err = validateTokenFile(agentConfig.Command.Auth.TokenPath)
+		token, err = retrieveTokenFile(agentConfig.Command.Auth.TokenPath)
 		if err != nil {
 			slog.Error("Unable to add token to gRPC dial options, token will be empty", "error", err)
 		}
@@ -252,7 +251,7 @@ func addPerRPCCredentials(agentConfig *config.Config, resourceID string, opts []
 	opts = append(opts,
 		grpc.WithPerRPCCredentials(
 			&PerRPCCredentials{
-				Token: key,
+				Token: token,
 				ID:    resourceID,
 			}),
 	)
@@ -260,9 +259,8 @@ func addPerRPCCredentials(agentConfig *config.Config, resourceID string, opts []
 	return opts
 }
 
-func validateTokenFile(path string) (string, error) {
+func retrieveTokenFile(path string) (string, error) {
 	if path == "" {
-		slog.Error("Token file path is empty")
 		return "", errors.New("token file path is empty")
 	}
 
@@ -279,8 +277,7 @@ func validateTokenFile(path string) (string, error) {
 	keyVal = string(keyBytes)
 
 	if keyVal == "" {
-		slog.Error("failed to load token, please check agent configuration")
-		return "", errors.New("failed to load token, please check agent configuration")
+		return "", errors.New("failed to retrieve token, token file is empty")
 	}
 
 	return keyVal, nil
