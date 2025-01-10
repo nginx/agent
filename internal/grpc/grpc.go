@@ -265,7 +265,7 @@ func retrieveTokenFromFile(path string) (string, error) {
 		return "", errors.New("token file path is empty")
 	}
 
-	slog.Debug("Reading dataplane key from file", "path", path)
+	slog.Debug("Reading token from file", "path", path)
 	var keyVal string
 	keyBytes, err := os.ReadFile(path)
 	if err != nil {
