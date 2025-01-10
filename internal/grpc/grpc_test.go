@@ -405,13 +405,13 @@ func Test_validateTokenFile(t *testing.T) {
 				}
 			}
 
-			got, err := retrieveTokenFile(tt.path)
+			got, err := retrieveTokenFromFile(tt.path)
 			if err != nil {
 				if err.Error() != tt.wantErrMsg {
-					t.Errorf("retrieveTokenFile() error = %v, wantErr %v", err, tt.wantErrMsg)
+					t.Errorf("retrieveTokenFromFile() error = %v, wantErr %v", err, tt.wantErrMsg)
 				}
 			}
-			assert.Equalf(t, tt.want, got, "retrieveTokenFile(%v)", tt.path)
+			assert.Equalf(t, tt.want, got, "retrieveTokenFromFile(%v)", tt.path)
 		})
 	}
 }

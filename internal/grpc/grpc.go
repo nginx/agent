@@ -241,7 +241,7 @@ func addPerRPCCredentials(agentConfig *config.Config, resourceID string, opts []
 
 	if agentConfig.Command.Auth.TokenPath != "" {
 		var err error
-		token, err = retrieveTokenFile(agentConfig.Command.Auth.TokenPath)
+		token, err = retrieveTokenFromFile(agentConfig.Command.Auth.TokenPath)
 		if err != nil {
 			slog.Error("Unable to add token to gRPC dial options, token will be empty", "error", err)
 		}
@@ -259,7 +259,7 @@ func addPerRPCCredentials(agentConfig *config.Config, resourceID string, opts []
 	return opts
 }
 
-func retrieveTokenFile(path string) (string, error) {
+func retrieveTokenFromFile(path string) (string, error) {
 	if path == "" {
 		return "", errors.New("token file path is empty")
 	}
