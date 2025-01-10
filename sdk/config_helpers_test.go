@@ -799,6 +799,121 @@ var tests = []struct {
 			"/tmp/testdata/nginx/ca/ca.crt": {},
 		},
 	},
+	{
+		fileName: "/tmp/testdata/nginx/lua.conf",
+		config: `server {
+  listen 443 ssl;
+  server_name lua.example.com;
+  
+  ssl_certificate /etc/nginx/ssl/server.cert;
+  ssl_certificate_key /etc/nginx/ssl/server.key;
+
+  ssl_certificate_by_lua_block {
+    print("Test lua ssl certificate!")
+  }
+}
+
+server {
+}`,
+		plusApi: "",
+		expected: &proto.NginxConfig{
+			Action: proto.NginxConfigAction_RETURN,
+			DirectoryMap: &proto.DirectoryMap{
+				Directories: []*proto.Directory{
+					{
+						Name:        "/tmp/testdata/foo",
+						Permissions: "0755",
+						Files: []*proto.File{
+							{
+								Name:        "test.html",
+								Permissions: "0644",
+							},
+						},
+					},
+					{
+						Name:        "/tmp/testdata/nginx",
+						Permissions: "0755",
+						Files: []*proto.File{
+							{
+								Name:        "nginx2.conf",
+								Permissions: "0644",
+								Lines:       int32(46),
+							},
+						},
+					},
+					{
+						Name:        "/tmp/testdata/nginx/ca",
+						Permissions: "0755",
+						Files: []*proto.File{
+							{
+								Name:        "ca.crt",
+								Permissions: "0644",
+								Lines:       int32(31),
+							},
+						},
+					},
+				},
+			},
+			AccessLogs: accessLogs,
+			ErrorLogs:  errorLogs,
+			ConfigData: &proto.ConfigDescriptor{
+				NginxId:  nginxID,
+				SystemId: systemID,
+				Checksum: "",
+			},
+			Ssl: &proto.SslCertificates{
+				SslCerts: []*proto.SslCertificate{
+					{
+						FileName: "/tmp/testdata/nginx/ca/ca.crt",
+						Validity: &proto.CertificateDates{
+							NotBefore: 1632834204,
+							NotAfter:  1635426204,
+						},
+						Issuer: &proto.CertificateName{
+							CommonName:         "ca.local",
+							Country:            []string{"IE"},
+							Locality:           []string{"Cork"},
+							Organization:       []string{"NGINX"},
+							OrganizationalUnit: nil,
+						},
+						Subject: &proto.CertificateName{
+							CommonName:         "ca.local",
+							Country:            []string{"IE"},
+							Locality:           []string{"Cork"},
+							Organization:       []string{"NGINX"},
+							State:              []string{"Cork"},
+							OrganizationalUnit: nil,
+						},
+						Mtime:                  &types.Timestamp{Seconds: 1633343804, Nanos: 15240107},
+						SubjAltNames:           nil,
+						PublicKeyAlgorithm:     "RSA",
+						SignatureAlgorithm:     "SHA512-RSA",
+						SerialNumber:           "12554968962670027276",
+						SubjectKeyIdentifier:   "75:50:E2:24:8F:6F:13:1D:81:20:E1:01:0B:57:2B:98:39:E5:2E:C3",
+						Fingerprint:            "48:6D:05:D4:78:10:91:15:69:74:9C:6A:54:F7:F2:FC:C8:93:46:E8:28:42:24:41:68:41:51:1E:1E:43:E0:12",
+						AuthorityKeyIdentifier: "3A:79:E0:3E:61:CD:94:29:1D:BB:45:37:0B:E9:78:E9:2F:40:67:CA",
+						FingerprintAlgorithm:   "SHA512-RSA",
+						Version:                3,
+					},
+				},
+			},
+			// using RootDirectory for allowed in the tests, but the "root" directive is /tmp/testdata/foo, so
+			// should have an empty file list from the aux
+			Zaux: &proto.ZippedFile{
+				Checksum:      "51c05b653bc43deb5ec497988692fc5dec05ab8b6a0b78e908e4628b3d9e0d4c",
+				RootDirectory: "/tmp/testdata/foo",
+			},
+			Zconfig: &proto.ZippedFile{
+				Contents:      []uint8{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 1, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0},
+				Checksum:      "cc6cee5366d87e85fbf1c05b9621df82996548e0e135f2b4a93e98f88c23d2b9",
+				RootDirectory: "/tmp/testdata/nginx",
+			},
+		},
+		expectedAuxFiles: map[string]struct{}{
+			"/tmp/testdata/foo/test.html":   {},
+			"/tmp/testdata/nginx/ca/ca.crt": {},
+		},
+	},
 }
 
 func TestGetNginxConfigFiles(t *testing.T) {
