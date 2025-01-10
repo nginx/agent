@@ -188,15 +188,20 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 
 	switch action.GetAction().(type) {
 	case *mpi.NGINXPlusAction_UpdateHttpUpstreamServers:
+		slog.DebugContext(ctx, "Updating http upstream servers", "request", action.GetUpdateHttpUpstreamServers())
 		r.handleUpdateHTTPUpstreamServers(ctx, action, instance)
 	case *mpi.NGINXPlusAction_GetHttpUpstreamServers:
+		slog.DebugContext(ctx, "Getting http upstream servers", "request", action.GetGetHttpUpstreamServers())
 		r.handleGetHTTPUpstreamServers(ctx, action, instance)
 	case *mpi.NGINXPlusAction_UpdateStreamServers:
+		slog.DebugContext(ctx, "Updating stream servers", "request", action.GetUpdateStreamServers())
 		r.handleUpdateStreamServers(ctx, action, instance)
 	case *mpi.NGINXPlusAction_GetStreamUpstreams:
-		r.handleGetStreamUpstreams(ctx, action, instance)
+		slog.DebugContext(ctx, "Getting stream upstreams", "request", action.GetGetStreamUpstreams())
+		r.handleGetStreamUpstreams(ctx, instance)
 	case *mpi.NGINXPlusAction_GetUpstreams:
-		r.handleGetUpstreams(ctx, action, instance)
+		slog.DebugContext(ctx, "Getting upstreams", "request", action.GetGetUpstreams())
+		r.handleGetUpstreams(ctx, instance)
 	default:
 		slog.DebugContext(ctx, "NGINX Plus action not implemented yet")
 	}
@@ -206,8 +211,6 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 func (r *Resource) handleUpdateStreamServers(ctx context.Context, action *mpi.NGINXPlusAction, instance *mpi.Instance) {
 	correlationID := logger.GetCorrelationID(ctx)
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
-
-	slog.DebugContext(ctx, "Updating stream servers", "request", action.GetUpdateStreamServers())
 
 	add, update, del, err := r.resourceService.UpdateStreamServers(ctx, instance,
 		action.GetUpdateStreamServers().GetUpstreamStreamName(), action.GetUpdateStreamServers().GetServers())
@@ -232,11 +235,9 @@ func (r *Resource) handleUpdateStreamServers(ctx context.Context, action *mpi.NG
 }
 
 // nolint: dupl
-func (r *Resource) handleGetStreamUpstreams(ctx context.Context, action *mpi.NGINXPlusAction, instance *mpi.Instance) {
+func (r *Resource) handleGetStreamUpstreams(ctx context.Context, instance *mpi.Instance) {
 	correlationID := logger.GetCorrelationID(ctx)
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
-
-	slog.DebugContext(ctx, "Getting stream upstreams", "request", action.GetGetStreamUpstreams())
 
 	streamUpstreams, err := r.resourceService.GetStreamUpstreams(ctx, instance)
 	if err != nil {
@@ -260,11 +261,9 @@ func (r *Resource) handleGetStreamUpstreams(ctx context.Context, action *mpi.NGI
 }
 
 // nolint: dupl
-func (r *Resource) handleGetUpstreams(ctx context.Context, action *mpi.NGINXPlusAction, instance *mpi.Instance) {
+func (r *Resource) handleGetUpstreams(ctx context.Context, instance *mpi.Instance) {
 	correlationID := logger.GetCorrelationID(ctx)
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
-
-	slog.DebugContext(ctx, "Getting upstreams", "request", action.GetGetUpstreams())
 
 	upstreams, err := r.resourceService.GetUpstreams(ctx, instance)
 	if err != nil {
@@ -294,8 +293,6 @@ func (r *Resource) handleUpdateHTTPUpstreamServers(ctx context.Context, action *
 	correlationID := logger.GetCorrelationID(ctx)
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
 
-	slog.DebugContext(ctx, "Updating http upstream servers", "request", action.GetUpdateHttpUpstreamServers())
-
 	add, update, del, err := r.resourceService.UpdateHTTPUpstreamServers(ctx, instance,
 		action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(),
 		action.GetUpdateHttpUpstreamServers().GetServers())
@@ -324,8 +321,6 @@ func (r *Resource) handleGetHTTPUpstreamServers(ctx context.Context, action *mpi
 ) {
 	correlationID := logger.GetCorrelationID(ctx)
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
-
-	slog.DebugContext(ctx, "Getting http upstream servers", "request", action.GetGetHttpUpstreamServers())
 
 	upstreams, err := r.resourceService.GetHTTPUpstreamServers(ctx, instance,
 		action.GetGetHttpUpstreamServers().GetHttpUpstreamName())
