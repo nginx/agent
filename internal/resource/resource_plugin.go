@@ -44,6 +44,8 @@ type plusAPIErr struct {
 	Href      string      `json:"href"`
 }
 
+const emptyResponse = "{}"
+
 var _ bus.Plugin = (*Resource)(nil)
 
 func NewResource(agentConfig *config.Config) *Resource {
@@ -238,6 +240,7 @@ func (r *Resource) handleUpdateStreamServers(ctx context.Context, action *mpi.NG
 func (r *Resource) handleGetStreamUpstreams(ctx context.Context, instance *mpi.Instance) {
 	correlationID := logger.GetCorrelationID(ctx)
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
+	streamUpstreamsResponse := emptyResponse
 
 	streamUpstreams, err := r.resourceService.GetStreamUpstreams(ctx, instance)
 	if err != nil {
@@ -249,13 +252,16 @@ func (r *Resource) handleGetStreamUpstreams(ctx context.Context, instance *mpi.I
 		return
 	}
 
-	streamUpstreamsJSON, err := json.Marshal(streamUpstreams)
-	if err != nil {
-		slog.ErrorContext(ctx, "Unable to marshal stream upstreams", "err", err)
+	if streamUpstreams != nil {
+		streamUpstreamsJSON, jsonErr := json.Marshal(streamUpstreams)
+		if jsonErr != nil {
+			slog.ErrorContext(ctx, "Unable to marshal stream upstreams", "err", err)
+		}
+		streamUpstreamsResponse = string(streamUpstreamsJSON)
 	}
 
 	resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
-		string(streamUpstreamsJSON), instanceID, "")
+		streamUpstreamsResponse, instanceID, "")
 
 	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 }
@@ -264,6 +270,7 @@ func (r *Resource) handleGetStreamUpstreams(ctx context.Context, instance *mpi.I
 func (r *Resource) handleGetUpstreams(ctx context.Context, instance *mpi.Instance) {
 	correlationID := logger.GetCorrelationID(ctx)
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
+	upstreamsResponse := emptyResponse
 
 	upstreams, err := r.resourceService.GetUpstreams(ctx, instance)
 	if err != nil {
@@ -275,13 +282,16 @@ func (r *Resource) handleGetUpstreams(ctx context.Context, instance *mpi.Instanc
 		return
 	}
 
-	upstreamsJSON, err := json.Marshal(upstreams)
-	if err != nil {
-		slog.ErrorContext(ctx, "Unable to marshal upstreams", "err", err)
+	if upstreams != nil {
+		upstreamsJSON, jsonErr := json.Marshal(upstreams)
+		if jsonErr != nil {
+			slog.ErrorContext(ctx, "Unable to marshal upstreams", "err", err)
+		}
+		upstreamsResponse = string(upstreamsJSON)
 	}
 
 	resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
-		string(upstreamsJSON), instanceID, "")
+		upstreamsResponse, instanceID, "")
 
 	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 }
@@ -321,6 +331,7 @@ func (r *Resource) handleGetHTTPUpstreamServers(ctx context.Context, action *mpi
 ) {
 	correlationID := logger.GetCorrelationID(ctx)
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
+	upstreamsResponse := emptyResponse
 
 	upstreams, err := r.resourceService.GetHTTPUpstreamServers(ctx, instance,
 		action.GetGetHttpUpstreamServers().GetHttpUpstreamName())
@@ -333,13 +344,15 @@ func (r *Resource) handleGetHTTPUpstreamServers(ctx context.Context, action *mpi
 		return
 	}
 
-	upstreamsJSON, err := json.Marshal(upstreams)
-	if err != nil {
-		slog.ErrorContext(ctx, "Unable to marshal http upstreams", "err", err)
+	if upstreams != nil {
+		upstreamsJSON, jsonErr := json.Marshal(upstreams)
+		if jsonErr != nil {
+			slog.ErrorContext(ctx, "Unable to marshal http upstreams", "err", err)
+		}
+		upstreamsResponse = string(upstreamsJSON)
 	}
-
 	resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
-		string(upstreamsJSON), instanceID, "")
+		upstreamsResponse, instanceID, "")
 
 	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 }
