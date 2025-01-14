@@ -377,7 +377,7 @@ func Test_validateTokenFile(t *testing.T) {
 			createToken: false,
 			path:        "test-tkn",
 			want:        "",
-			wantErrMsg:  "open test-tkn: no such file or directory",
+			wantErrMsg:  "unable to read token from file: open test-tkn: no such file or directory",
 		},
 		{
 			name:        "Test 3: Empty path",
