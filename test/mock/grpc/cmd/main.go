@@ -54,9 +54,9 @@ func main() {
 	agentConfig.Command.Server.Port = portInt
 	agentConfig.Command.Auth = nil
 	agentConfig.Command.TLS = nil
-	agentConfig.Common.MaxElapsedTime = *sleepDuration
-	agentConfig.Client.MaxMessageRecieveSize = 4194304
-	agentConfig.Client.MaxMessageSendSize = math.MaxInt
+	agentConfig.Client.Backoff.MaxElapsedTime = *sleepDuration
+	agentConfig.Client.Grpc.MaxMessageReceiveSize = 4194304
+	agentConfig.Client.Grpc.MaxMessageSendSize = math.MaxInt
 
 	newLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
 		Level: logger.GetLogLevel(*logLevel),
