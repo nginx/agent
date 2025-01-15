@@ -29,6 +29,7 @@ const (
 	ConfigFileName = "nginx-agent.conf"
 	EnvPrefix      = "NGINX_AGENT"
 	KeyDelimiter   = "_"
+	KeyValueNumber = 2
 )
 
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
@@ -420,33 +421,62 @@ func resolveLog() *Log {
 
 func resolveLabels() map[string]interface{} {
 	input := viperInstance.GetStringMapString(LabelsRootKey)
+
+	// Parsing the environment variable for labels needs to be done differently
+	// by parsing the environment variable as a string.
+	envLabels := resolveEnvironmentVariableLabels()
+
+	if len(envLabels) > 0 {
+		input = envLabels
+	}
+
 	result := make(map[string]interface{})
 
 	for key, value := range input {
+		trimmedKey := strings.TrimSpace(key)
 		trimmedValue := strings.TrimSpace(value)
 
 		switch {
 		case trimmedValue == "" || trimmedValue == "nil": // Handle empty values as nil
-			result[key] = nil
+			result[trimmedKey] = nil
 
 		case parseInt(trimmedValue) != nil: // Integer
-			result[key] = parseInt(trimmedValue)
+			result[trimmedKey] = parseInt(trimmedValue)
 
 		case parseFloat(trimmedValue) != nil: // Float
-			result[key] = parseFloat(trimmedValue)
+			result[trimmedKey] = parseFloat(trimmedValue)
 
 		case parseBool(trimmedValue) != nil: // Boolean
-			result[key] = parseBool(trimmedValue)
+			result[trimmedKey] = parseBool(trimmedValue)
 
 		case parseJSON(trimmedValue) != nil: // JSON object/array
-			result[key] = parseJSON(trimmedValue)
+			result[trimmedKey] = parseJSON(trimmedValue)
 
 		default: // String
-			result[key] = trimmedValue
+			result[trimmedKey] = trimmedValue
 		}
 	}
 
+	slog.Info("Configured labels", "labels", result)
+
 	return result
+}
+
+func resolveEnvironmentVariableLabels() map[string]string {
+	envLabels := make(map[string]string)
+	envInput := viperInstance.GetString(LabelsRootKey)
+
+	labels := strings.Split(envInput, ",")
+	for _, label := range labels {
+		splitLabel := strings.Split(label, "=")
+		if len(splitLabel) == KeyValueNumber {
+			envLabels[splitLabel[0]] = splitLabel[1]
+		} else {
+			slog.Warn("Unable to parse label: " + label)
+		}
+	}
+
+	return envLabels
 }
 
 // Parsing helper functions return the parsed value or nil if parsing fails
