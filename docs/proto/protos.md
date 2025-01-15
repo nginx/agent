@@ -298,6 +298,7 @@ Represents meta data about a file
 | ----- | ---- | ----- | ----------- |
 | file_meta | [FileMeta](#mpi-v1-FileMeta) |  | Meta information about the file, the name (including path) and hash |
 | action | [File.FileAction](#mpi-v1-File-FileAction) | optional | Optional action |
+| unmanaged | [bool](#bool) |  | Unmanaged files will not be modified |
 
 
 
