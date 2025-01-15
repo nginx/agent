@@ -11,7 +11,6 @@ import (
 	"log/slog"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"github.com/cenkalti/backoff/v4"
 
@@ -29,7 +28,6 @@ import (
 var _ commandService = (*CommandService)(nil)
 
 const (
-	retryInterval                  = 5 * time.Second
 	createConnectionMaxElapsedTime = 0
 )
 
@@ -98,7 +96,7 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 		Resource: resource,
 	}
 
-	backOffCtx, backoffCancel := context.WithTimeout(ctx, cs.agentConfig.Common.MaxElapsedTime)
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, cs.agentConfig.Client.Backoff.MaxElapsedTime)
 	defer backoffCancel()
 
 	sendDataPlaneStatus := func() (*mpi.UpdateDataPlaneStatusResponse, error) {
@@ -122,7 +120,7 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 
 	response, err := backoff.RetryWithData(
 		sendDataPlaneStatus,
-		backoffHelpers.Context(backOffCtx, cs.agentConfig.Common),
+		backoffHelpers.Context(backOffCtx, cs.agentConfig.Client.Backoff),
 	)
 	if err != nil {
 		return err
@@ -148,12 +146,12 @@ func (cs *CommandService) UpdateDataPlaneHealth(ctx context.Context, instanceHea
 		InstanceHealths: instanceHealths,
 	}
 
-	backOffCtx, backoffCancel := context.WithTimeout(ctx, cs.agentConfig.Common.MaxElapsedTime)
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, cs.agentConfig.Client.Backoff.MaxElapsedTime)
 	defer backoffCancel()
 
 	response, err := backoff.RetryWithData(
 		cs.dataPlaneHealthCallback(ctx, request),
-		backoffHelpers.Context(backOffCtx, cs.agentConfig.Common),
+		backoffHelpers.Context(backOffCtx, cs.agentConfig.Client.Backoff),
 	)
 	if err != nil {
 		return err
@@ -167,7 +165,7 @@ func (cs *CommandService) UpdateDataPlaneHealth(ctx context.Context, instanceHea
 func (cs *CommandService) SendDataPlaneResponse(ctx context.Context, response *mpi.DataPlaneResponse) error {
 	slog.DebugContext(ctx, "Sending data plane response", "response", response)
 
-	backOffCtx, backoffCancel := context.WithTimeout(ctx, cs.agentConfig.Common.MaxElapsedTime)
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, cs.agentConfig.Client.Backoff.MaxElapsedTime)
 	defer backoffCancel()
 
 	err := cs.handleConfigApplyResponse(ctx, response)
@@ -177,7 +175,7 @@ func (cs *CommandService) SendDataPlaneResponse(ctx context.Context, response *m
 
 	return backoff.Retry(
 		cs.sendDataPlaneResponseCallback(ctx, response),
-		backoffHelpers.Context(backOffCtx, cs.agentConfig.Common),
+		backoffHelpers.Context(backOffCtx, cs.agentConfig.Client.Backoff),
 	)
 }
 
@@ -192,12 +190,12 @@ func (cs *CommandService) CancelSubscription(ctx context.Context) {
 }
 
 func (cs *CommandService) subscribe(ctx context.Context) {
-	commonSettings := &config.CommonSettings{
-		InitialInterval:     cs.agentConfig.Common.InitialInterval,
-		MaxInterval:         cs.agentConfig.Common.MaxInterval,
+	commonSettings := &config.BackOff{
+		InitialInterval:     cs.agentConfig.Client.Backoff.InitialInterval,
+		MaxInterval:         cs.agentConfig.Client.Backoff.MaxInterval,
 		MaxElapsedTime:      createConnectionMaxElapsedTime,
-		RandomizationFactor: cs.agentConfig.Common.RandomizationFactor,
-		Multiplier:          cs.agentConfig.Common.Multiplier,
+		RandomizationFactor: cs.agentConfig.Client.Backoff.RandomizationFactor,
+		Multiplier:          cs.agentConfig.Client.Backoff.Multiplier,
 	}
 
 	for {
@@ -231,12 +229,12 @@ func (cs *CommandService) CreateConnection(
 		Resource: resource,
 	}
 
-	commonSettings := &config.CommonSettings{
-		InitialInterval:     cs.agentConfig.Common.InitialInterval,
-		MaxInterval:         cs.agentConfig.Common.MaxInterval,
+	commonSettings := &config.BackOff{
+		InitialInterval:     cs.agentConfig.Client.Backoff.InitialInterval,
+		MaxInterval:         cs.agentConfig.Client.Backoff.MaxInterval,
 		MaxElapsedTime:      createConnectionMaxElapsedTime,
-		RandomizationFactor: cs.agentConfig.Common.RandomizationFactor,
-		Multiplier:          cs.agentConfig.Common.Multiplier,
+		RandomizationFactor: cs.agentConfig.Client.Backoff.RandomizationFactor,
+		Multiplier:          cs.agentConfig.Client.Backoff.Multiplier,
 	}
 
 	slog.DebugContext(ctx, "Sending create connection request", "request", request)
