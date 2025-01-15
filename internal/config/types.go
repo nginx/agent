@@ -38,7 +38,6 @@ type (
 		Client             *Client          `yaml:"-" mapstructure:"client"`
 		Collector          *Collector       `yaml:"-" mapstructure:"collector"`
 		File               *File            `yaml:"-" mapstructure:"file"`
-		Common             *CommonSettings  `yaml:"-"`
 		Watchers           *Watchers        `yaml:"-"`
 		Version            string           `yaml:"-"`
 		Path               string           `yaml:"-"`
@@ -63,14 +62,36 @@ type (
 	}
 
 	Client struct {
-		Timeout             time.Duration `yaml:"-" mapstructure:"timeout"`
-		Time                time.Duration `yaml:"-" mapstructure:"time"`
-		PermitWithoutStream bool          `yaml:"-" mapstructure:"permit_without_stream"`
+		HTTP    *HTTP    `yaml:"http"    mapstructure:"http"`
+		Grpc    *GRPC    `yaml:"grpc"    mapstructure:"grpc"`
+		Backoff *BackOff `yaml:"backoff" mapstructure:"backoff"`
+	}
+
+	HTTP struct {
+		Timeout time.Duration `yaml:"-" mapstructure:"timeout"`
+	}
+
+	BackOff struct {
+		InitialInterval     time.Duration `yaml:"-" mapstructure:"initial_interval"`
+		MaxInterval         time.Duration `yaml:"-" mapstructure:"max_interval"`
+		MaxElapsedTime      time.Duration `yaml:"-" mapstructure:"max_elapsed_time"`
+		RandomizationFactor float64       `yaml:"-" mapstructure:"randomization_factor"`
+		Multiplier          float64       `yaml:"-" mapstructure:"multiplier"`
+	}
+
+	GRPC struct {
+		KeepAlive *KeepAlive `yaml:"-" mapstructure:"target"`
 		// if MaxMessageSize is size set then we use that value,
 		// otherwise MaxMessageRecieveSize and MaxMessageSendSize for individual settings
 		MaxMessageSize        int `yaml:"-" mapstructure:"max_message_size"`
-		MaxMessageRecieveSize int `yaml:"-" mapstructure:"max_message_receive_size"`
+		MaxMessageReceiveSize int `yaml:"-" mapstructure:"max_message_receive_size"`
 		MaxMessageSendSize    int `yaml:"-" mapstructure:"max_message_send_size"`
+	}
+
+	KeepAlive struct {
+		Timeout             time.Duration `yaml:"-" mapstructure:"timeout"`
+		Time                time.Duration `yaml:"-" mapstructure:"time"`
+		PermitWithoutStream bool          `yaml:"-" mapstructure:"permit_without_stream"`
 	}
 
 	Collector struct {
@@ -227,13 +248,6 @@ type (
 	MemoryScraper     struct{}
 	NetworkScraper    struct{}
 
-	GRPC struct {
-		Target         string        `yaml:"-" mapstructure:"target"`
-		ConnTimeout    time.Duration `yaml:"-" mapstructure:"connection_timeout"`
-		MinConnTimeout time.Duration `yaml:"-" mapstructure:"minimum_connection_timeout"`
-		BackoffDelay   time.Duration `yaml:"-" mapstructure:"backoff_delay"`
-	}
-
 	Command struct {
 		Server *ServerConfig `yaml:"-" mapstructure:"server"`
 		Auth   *AuthConfig   `yaml:"-" mapstructure:"auth"`
@@ -272,14 +286,6 @@ type (
 
 	File struct {
 		Location string `yaml:"-" mapstructure:"location"`
-	}
-
-	CommonSettings struct {
-		InitialInterval     time.Duration `yaml:"-" mapstructure:"initial_interval"`
-		MaxInterval         time.Duration `yaml:"-" mapstructure:"max_interval"`
-		MaxElapsedTime      time.Duration `yaml:"-" mapstructure:"max_elapsed_time"`
-		RandomizationFactor float64       `yaml:"-" mapstructure:"randomization_factor"`
-		Multiplier          float64       `yaml:"-" mapstructure:"multiplier"`
 	}
 
 	Watchers struct {

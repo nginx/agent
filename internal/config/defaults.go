@@ -27,16 +27,25 @@ const (
 	DefCommandTLSSkipVerifyKey = false
 	DefCommandTLServerNameKey  = ""
 
+	// Client GRPC Settings
 	DefMaxMessageSize        = 0       // 0 = unset
 	DefMaxMessageRecieveSize = 4194304 // default 4 MB
 	DefMaxMessageSendSize    = math.MaxInt32
 
-	// Backoff defaults
-	DefBackoffInitialInterval     = 50 * time.Millisecond
-	DefBackoffRandomizationFactor = 0.1 // the value is 0 <= and < 1
+	// Client HTTP Settings
+	DefHTTPTimeout = 10 * time.Second
+
+	// Client GRPC Keep Alive Settings
+	DefGRPCKeepAliveTimeout             = 10 * time.Second
+	DefGRPCKeepAliveTime                = 20 * time.Second
+	DefGRPCKeepAlivePermitWithoutStream = true
+
+	// Client Backoff defaults
+	DefBackoffInitialInterval     = 500 * time.Millisecond
+	DefBackoffRandomizationFactor = 0.5 // the value is 0 <= and < 1
 	DefBackoffMultiplier          = 1.5
-	DefBackoffMaxInterval         = 200 * time.Millisecond
-	DefBackoffMaxElapsedTime      = 3 * time.Second
+	DefBackoffMaxInterval         = 5 * time.Second
+	DefBackoffMaxElapsedTime      = 30 * time.Second
 
 	// Watcher defaults
 	DefInstanceWatcherMonitoringFrequency       = 5 * time.Second

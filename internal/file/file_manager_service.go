@@ -117,7 +117,7 @@ func (fms *FileManagerService) UpdateOverview(
 		},
 	}
 
-	backOffCtx, backoffCancel := context.WithTimeout(newCtx, fms.agentConfig.Common.MaxElapsedTime)
+	backOffCtx, backoffCancel := context.WithTimeout(newCtx, fms.agentConfig.Client.Backoff.MaxElapsedTime)
 	defer backoffCancel()
 
 	sendUpdateOverview := func() (*mpi.UpdateOverviewResponse, error) {
@@ -146,7 +146,7 @@ func (fms *FileManagerService) UpdateOverview(
 
 	response, err := backoff.RetryWithData(
 		sendUpdateOverview,
-		backoffHelpers.Context(backOffCtx, fms.agentConfig.Common),
+		backoffHelpers.Context(backOffCtx, fms.agentConfig.Client.Backoff),
 	)
 	if err != nil {
 		return err
@@ -230,7 +230,7 @@ func (fms *FileManagerService) UpdateFile(
 		},
 	}
 
-	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Common.MaxElapsedTime)
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Client.Backoff.MaxElapsedTime)
 	defer backoffCancel()
 
 	sendUpdateFile := func() (*mpi.UpdateFileResponse, error) {
@@ -256,7 +256,8 @@ func (fms *FileManagerService) UpdateFile(
 		return response, nil
 	}
 
-	response, err := backoff.RetryWithData(sendUpdateFile, backoffHelpers.Context(backOffCtx, fms.agentConfig.Common))
+	response, err := backoff.RetryWithData(sendUpdateFile, backoffHelpers.Context(backOffCtx,
+		fms.agentConfig.Client.Backoff))
 	if err != nil {
 		return err
 	}
@@ -375,7 +376,7 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 }
 
 func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) error {
-	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Common.MaxElapsedTime)
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Client.Backoff.MaxElapsedTime)
 	defer backoffCancel()
 
 	getFile := func() (*mpi.GetFileResponse, error) {
@@ -391,7 +392,7 @@ func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) e
 
 	getFileResp, getFileErr := backoff.RetryWithData(
 		getFile,
-		backoffHelpers.Context(backOffCtx, fms.agentConfig.Common),
+		backoffHelpers.Context(backOffCtx, fms.agentConfig.Client.Backoff),
 	)
 
 	if getFileErr != nil {

@@ -179,21 +179,21 @@ func GetDialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOp
 
 	sendRecOpts := []grpc.DialOption{}
 	if agentConfig.Client != nil {
-		if agentConfig.Client.MaxMessageSize != 0 {
+		if agentConfig.Client.Grpc.MaxMessageSize != 0 {
 			sendRecOpts = append(sendRecOpts, grpc.WithDefaultCallOptions(
-				grpc.MaxCallRecvMsgSize(agentConfig.Client.MaxMessageSize),
-				grpc.MaxCallSendMsgSize(agentConfig.Client.MaxMessageSize),
+				grpc.MaxCallRecvMsgSize(agentConfig.Client.Grpc.MaxMessageSize),
+				grpc.MaxCallSendMsgSize(agentConfig.Client.Grpc.MaxMessageSize),
 			))
 		} else {
 			sendRecOpts = append(sendRecOpts, grpc.WithDefaultCallOptions(
-				grpc.MaxCallRecvMsgSize(agentConfig.Client.MaxMessageRecieveSize),
-				grpc.MaxCallSendMsgSize(agentConfig.Client.MaxMessageSendSize),
+				grpc.MaxCallRecvMsgSize(agentConfig.Client.Grpc.MaxMessageReceiveSize),
+				grpc.MaxCallSendMsgSize(agentConfig.Client.Grpc.MaxMessageSendSize),
 			))
 		}
 		keepAlive := keepalive.ClientParameters{
-			Time:                agentConfig.Client.Time,
-			Timeout:             agentConfig.Client.Timeout,
-			PermitWithoutStream: agentConfig.Client.PermitWithoutStream,
+			Time:                agentConfig.Client.Grpc.KeepAlive.Time,
+			Timeout:             agentConfig.Client.Grpc.KeepAlive.Timeout,
+			PermitWithoutStream: agentConfig.Client.Grpc.KeepAlive.PermitWithoutStream,
 		}
 
 		sendRecOpts = append(sendRecOpts,

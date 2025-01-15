@@ -14,7 +14,6 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-	"time"
 
 	selfsignedcerts "github.com/nginx/agent/v3/pkg/tls"
 	uuidLibrary "github.com/nginx/agent/v3/pkg/uuid"
@@ -101,7 +100,6 @@ func ResolveConfig() (*Config, error) {
 		AllowedDirectories: allowedDirs,
 		Collector:          collector,
 		Command:            resolveCommand(),
-		Common:             resolveCommon(),
 		Watchers:           resolveWatchers(),
 		Features:           viperInstance.GetStringSlice(FeaturesKey),
 	}
@@ -155,7 +153,6 @@ func registerFlags() {
 			"collection or error monitoring",
 	)
 
-	fs.Duration(ClientTimeoutKey, time.Minute, "Client timeout")
 	fs.StringSlice(AllowedDirectoriesKey,
 		DefaultAllowedDirectories(),
 		"A comma-separated list of paths that you want to grant NGINX Agent read/write access to")
@@ -178,24 +175,6 @@ func registerFlags() {
 		"How often the NGINX Agent will check for file changes.",
 	)
 
-	fs.Int(
-		ClientMaxMessageSizeKey,
-		DefMaxMessageSize,
-		"The value used, if not 0, for both max_message_send_size and max_message_receive_size",
-	)
-
-	fs.Int(
-		ClientMaxMessageReceiveSizeKey,
-		DefMaxMessageRecieveSize,
-		"Updates the client grpc setting MaxRecvMsgSize with the specific value in MB.",
-	)
-
-	fs.Int(
-		ClientMaxMessageSendSizeKey,
-		DefMaxMessageSendSize,
-		"Updates the client grpc setting MaxSendMsgSize with the specific value in MB.",
-	)
-
 	fs.StringSlice(
 		FeaturesKey,
 		DefaultFeatures(),
@@ -204,6 +183,7 @@ func registerFlags() {
 
 	registerCommandFlags(fs)
 	registerCollectorFlags(fs)
+	registerClientFlags(fs)
 
 	fs.SetNormalizeFunc(normalizeFunc)
 
@@ -216,6 +196,76 @@ func registerFlags() {
 			slog.Warn("Error occurred binding env", "env", flag.Name, "error", err)
 		}
 	})
+}
+
+func registerClientFlags(fs *flag.FlagSet) {
+	// HTTP Flags
+	fs.Duration(
+		ClientHTTPTimeoutKey,
+		DefHTTPTimeout,
+		"The client HTTP Timeout, value in seconds")
+
+	// Backoff Flags
+	fs.Duration(
+		ClientBackoffInitialIntervalKey,
+		DefBackoffInitialInterval,
+		"The client backoff initial interval, value in seconds")
+
+	fs.Duration(
+		ClientBackoffMaxIntervalKey,
+		DefBackoffMaxInterval,
+		"The client backoff max interval, value in seconds")
+
+	fs.Duration(
+		ClientBackoffMaxElapsedTimeKey,
+		DefBackoffMaxElapsedTime,
+		"The client backoff max elapsed time, value in seconds")
+
+	fs.Float64(
+		ClientBackoffRandomizationFactorKey,
+		DefBackoffRandomizationFactor,
+		"The client backoff randomization factor, value float")
+
+	fs.Float64(
+		ClientBackoffMultiplierKey,
+		DefBackoffMultiplier,
+		"The client backoff multiplier, value float")
+
+	// GRPC Flags
+	fs.Duration(
+		ClientKeepAliveTimeoutKey,
+		DefGRPCKeepAliveTimeout,
+		"Updates the client grpc setting, KeepAlive Timeout with the specific value in seconds.",
+	)
+
+	fs.Duration(
+		ClientKeepAliveTimeKey,
+		DefGRPCKeepAliveTime,
+		"Updates the client grpc setting, KeepAlive Time with the specific value in seconds.",
+	)
+
+	fs.Bool(
+		ClientKeepAlivePermitWithoutStreamKey,
+		DefGRPCKeepAlivePermitWithoutStream,
+		"Update the client grpc setting, KeepAlive PermitWithoutStream value")
+
+	fs.Int(
+		ClientGRPCMaxMessageSizeKey,
+		DefMaxMessageSize,
+		"The value used, if not 0, for both max_message_send_size and max_message_receive_size",
+	)
+
+	fs.Int(
+		ClientGRPCMaxMessageReceiveSizeKey,
+		DefMaxMessageRecieveSize,
+		"Updates the client grpc setting MaxRecvMsgSize with the specific value in MB.",
+	)
+
+	fs.Int(
+		ClientGRPCMaxMessageSendSizeKey,
+		DefMaxMessageSendSize,
+		"Updates the client grpc setting MaxSendMsgSize with the specific value in MB.",
+	)
 }
 
 func registerCommandFlags(fs *flag.FlagSet) {
@@ -424,12 +474,26 @@ func resolveDataPlaneConfig() *DataPlaneConfig {
 
 func resolveClient() *Client {
 	return &Client{
-		Timeout:               viperInstance.GetDuration(ClientTimeoutKey),
-		Time:                  viperInstance.GetDuration(ClientTimeKey),
-		PermitWithoutStream:   viperInstance.GetBool(ClientPermitWithoutStreamKey),
-		MaxMessageSize:        viperInstance.GetInt(ClientMaxMessageSizeKey),
-		MaxMessageRecieveSize: viperInstance.GetInt(ClientMaxMessageReceiveSizeKey),
-		MaxMessageSendSize:    viperInstance.GetInt(ClientMaxMessageSendSizeKey),
+		HTTP: &HTTP{
+			Timeout: viperInstance.GetDuration(ClientHTTPTimeoutKey),
+		},
+		Grpc: &GRPC{
+			KeepAlive: &KeepAlive{
+				Timeout:             viperInstance.GetDuration(ClientKeepAliveTimeoutKey),
+				Time:                viperInstance.GetDuration(ClientKeepAliveTimeKey),
+				PermitWithoutStream: viperInstance.GetBool(ClientKeepAlivePermitWithoutStreamKey),
+			},
+			MaxMessageSize:        viperInstance.GetInt(ClientGRPCMaxMessageSizeKey),
+			MaxMessageReceiveSize: viperInstance.GetInt(ClientGRPCMaxMessageReceiveSizeKey),
+			MaxMessageSendSize:    viperInstance.GetInt(ClientGRPCMaxMessageSendSizeKey),
+		},
+		Backoff: &BackOff{
+			InitialInterval:     viperInstance.GetDuration(ClientBackoffInitialIntervalKey),
+			MaxInterval:         viperInstance.GetDuration(ClientBackoffMaxIntervalKey),
+			MaxElapsedTime:      viperInstance.GetDuration(ClientBackoffMaxElapsedTimeKey),
+			RandomizationFactor: viperInstance.GetFloat64(ClientBackoffRandomizationFactorKey),
+			Multiplier:          viperInstance.GetFloat64(ClientBackoffMultiplierKey),
+		},
 	}
 }
 
@@ -695,16 +759,6 @@ func arePrometheusExportTLSSettingsSet() bool {
 		viperInstance.IsSet(CollectorPrometheusExporterTLSCaKey) ||
 		viperInstance.IsSet(CollectorPrometheusExporterTLSSkipVerifyKey) ||
 		viperInstance.IsSet(CollectorPrometheusExporterTLSServerNameKey)
-}
-
-func resolveCommon() *CommonSettings {
-	return &CommonSettings{
-		InitialInterval:     DefBackoffInitialInterval,
-		MaxInterval:         DefBackoffMaxInterval,
-		MaxElapsedTime:      DefBackoffMaxElapsedTime,
-		RandomizationFactor: DefBackoffRandomizationFactor,
-		Multiplier:          DefBackoffMultiplier,
-	}
 }
 
 func resolveWatchers() *Watchers {
