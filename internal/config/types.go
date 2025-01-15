@@ -164,12 +164,26 @@ type (
 		OtlpReceivers      []OtlpReceiver      `yaml:"-" mapstructure:"otlp_receivers"`
 		NginxReceivers     []NginxReceiver     `yaml:"-" mapstructure:"nginx_receivers"`
 		NginxPlusReceivers []NginxPlusReceiver `yaml:"-" mapstructure:"nginx_plus_receivers"`
+		TcplogReceivers    []TcplogReceiver    `yaml:"-" mapstructure:"tcplog_receivers"`
 	}
 
 	OtlpReceiver struct {
 		Server        *ServerConfig  `yaml:"-" mapstructure:"server"`
 		Auth          *AuthConfig    `yaml:"-" mapstructure:"auth"`
 		OtlpTLSConfig *OtlpTLSConfig `yaml:"-" mapstructure:"tls"`
+	}
+
+	TcplogReceiver struct {
+		ListenAddress string     `yaml:"-" mapstructure:"listen_address"`
+		Operators     []Operator `yaml:"-" mapstructure:"operators"`
+	}
+
+	// There are many types of operators with different field names so we use a generic map to store the fields.
+	// See here for more info:
+	// https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/stanza/docs/operators/README.md
+	Operator struct {
+		Fields map[string]string `yaml:"-" mapstructure:"fields"`
+		Type   string            `yaml:"-" mapstructure:"type"`
 	}
 
 	NginxReceiver struct {
@@ -352,9 +366,14 @@ func (c *Config) AreReceiversConfigured() bool {
 	}
 
 	return c.Collector.Receivers.NginxPlusReceivers != nil ||
+		len(c.Collector.Receivers.NginxPlusReceivers) > 0 ||
 		c.Collector.Receivers.OtlpReceivers != nil ||
+		len(c.Collector.Receivers.OtlpReceivers) > 0 ||
 		c.Collector.Receivers.NginxReceivers != nil ||
-		c.Collector.Receivers.HostMetrics != nil
+		len(c.Collector.Receivers.NginxReceivers) > 0 ||
+		c.Collector.Receivers.HostMetrics != nil ||
+		c.Collector.Receivers.TcplogReceivers != nil ||
+		len(c.Collector.Receivers.TcplogReceivers) > 0
 }
 
 func isAllowedDir(dir string, allowedDirs []string) bool {

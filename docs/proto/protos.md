@@ -51,6 +51,7 @@
     - [CreateConnectionResponse](#mpi-v1-CreateConnectionResponse)
     - [DataPlaneResponse](#mpi-v1-DataPlaneResponse)
     - [FileServer](#mpi-v1-FileServer)
+    - [GetHTTPUpstreamServers](#mpi-v1-GetHTTPUpstreamServers)
     - [HealthRequest](#mpi-v1-HealthRequest)
     - [HostInfo](#mpi-v1-HostInfo)
     - [Instance](#mpi-v1-Instance)
@@ -62,6 +63,7 @@
     - [InstanceRuntime](#mpi-v1-InstanceRuntime)
     - [ManagementPlaneRequest](#mpi-v1-ManagementPlaneRequest)
     - [MetricsServer](#mpi-v1-MetricsServer)
+    - [NGINXPlusAction](#mpi-v1-NGINXPlusAction)
     - [NGINXPlusRuntimeInfo](#mpi-v1-NGINXPlusRuntimeInfo)
     - [NGINXRuntimeInfo](#mpi-v1-NGINXRuntimeInfo)
     - [ReleaseInfo](#mpi-v1-ReleaseInfo)
@@ -71,6 +73,7 @@
     - [UpdateDataPlaneHealthResponse](#mpi-v1-UpdateDataPlaneHealthResponse)
     - [UpdateDataPlaneStatusRequest](#mpi-v1-UpdateDataPlaneStatusRequest)
     - [UpdateDataPlaneStatusResponse](#mpi-v1-UpdateDataPlaneStatusResponse)
+    - [UpdateHTTPUpstreamServers](#mpi-v1-UpdateHTTPUpstreamServers)
   
     - [InstanceHealth.InstanceHealthStatus](#mpi-v1-InstanceHealth-InstanceHealthStatus)
     - [InstanceMeta.InstanceType](#mpi-v1-InstanceMeta-InstanceType)
@@ -256,7 +259,7 @@ and https://github.com/googleapis/googleapis/blob/005df4681b89bd204a90b76168a6dc
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| serial_number | [bytes](#bytes) |  | Serial number of the certificate, usually a unique identifier, RFC5280 states the upper limit for serial number is 20 octets |
+| serial_number | [string](#string) |  | Serial number of the certificate, usually a unique identifier, the max length is the length of an interger |
 | issuer | [X509Name](#mpi-v1-X509Name) |  | Issuer details (who issued the certificate) |
 | subject | [X509Name](#mpi-v1-X509Name) |  | Subject details (to whom the certificate is issued) |
 | sans | [SubjectAlternativeNames](#mpi-v1-SubjectAlternativeNames) |  | Subject Alternative Names (SAN) including DNS names and IP addresses |
@@ -481,7 +484,12 @@ Represents a list of logically grouped files that have changed e.g. configuratio
 <a name="mpi-v1-UpdateOverviewResponse"></a>
 
 ### UpdateOverviewResponse
-Represents a the response from an UpdateOverviewRequest - intentionally left empty
+Represents a the response from an UpdateOverviewRequest
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| overview | [FileOverview](#mpi-v1-FileOverview) |  | The file overview with the list of files that were uploaded |
 
 
 
@@ -594,6 +602,12 @@ and recommendations outlined in https://static.sched.com/hosted_files/kccncna17/
 
 ### APIActionRequest
 Perform an associated API action on an instance
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| instance_id | [string](#string) |  | the identifier associated with the instance |
+| nginx_plus_action | [NGINXPlusAction](#mpi-v1-NGINXPlusAction) |  |  |
 
 
 
@@ -762,6 +776,21 @@ Reports the status of an associated command. This may be in response to a Manage
 
 ### FileServer
 The file settings associated with file server for configurations
+
+
+
+
+
+
+<a name="mpi-v1-GetHTTPUpstreamServers"></a>
+
+### GetHTTPUpstreamServers
+Get HTTP Upstream Servers for an instance
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| http_upstream_name | [string](#string) |  | the name of the upstream |
 
 
 
@@ -938,6 +967,22 @@ The metrics settings associated with origins (sources) of the metrics and destin
 
 
 
+<a name="mpi-v1-NGINXPlusAction"></a>
+
+### NGINXPlusAction
+Perform an action using the NGINX Plus API on an instance
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| update_http_upstream_servers | [UpdateHTTPUpstreamServers](#mpi-v1-UpdateHTTPUpstreamServers) |  |  |
+| get_http_upstream_servers | [GetHTTPUpstreamServers](#mpi-v1-GetHTTPUpstreamServers) |  |  |
+
+
+
+
+
+
 <a name="mpi-v1-NGINXPlusRuntimeInfo"></a>
 
 ### NGINXPlusRuntimeInfo
@@ -1070,6 +1115,22 @@ Report on the status of the Data Plane
 
 ### UpdateDataPlaneStatusResponse
 Respond to a UpdateDataPlaneStatusRequest - intentionally empty
+
+
+
+
+
+
+<a name="mpi-v1-UpdateHTTPUpstreamServers"></a>
+
+### UpdateHTTPUpstreamServers
+Update HTTP Upstream Servers for an instance
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| http_upstream_name | [string](#string) |  | the name of the upstream to update |
+| servers | [google.protobuf.Struct](#google-protobuf-Struct) | repeated | a list of upstream servers |
 
 
 
