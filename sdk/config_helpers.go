@@ -125,6 +125,7 @@ func GetNginxConfigWithIgnoreDirectives(
 		},
 	)
 	if err != nil {
+		readLock.Unlock()
 		return nil, fmt.Errorf("error reading config from %s, error: %s", confFile, err)
 	}
 
@@ -144,10 +145,11 @@ func GetNginxConfigWithIgnoreDirectives(
 
 	err = updateNginxConfigFromPayload(confFile, payload, nginxConfig, allowedDirectories)
 	if err != nil {
+		readLock.Unlock()
 		return nil, fmt.Errorf("error assemble payload from %s, error: %s", confFile, err)
 	}
+	
 	readLock.Unlock()
-
 	return nginxConfig, nil
 }
 
