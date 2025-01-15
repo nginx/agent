@@ -82,7 +82,7 @@ func (mgs *FileService) UpdateOverview(
 		},
 		Request: &v1.ManagementPlaneRequest_ConfigUploadRequest{
 			ConfigUploadRequest: &v1.ConfigUploadRequest{
-				Overview: request.GetOverview(),
+				Overview: overview,
 			},
 		},
 	}
