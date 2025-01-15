@@ -357,10 +357,7 @@ func Test_ValidateGrpcError(t *testing.T) {
 }
 
 // nolint:revive,gocognit
-func Test_validateTokenFile(t *testing.T) {
-	type args struct {
-		path string
-	}
+func Test_retrieveTokenFromFile(t *testing.T) {
 	tests := []struct {
 		name        string
 		path        string
