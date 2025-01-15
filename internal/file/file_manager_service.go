@@ -474,7 +474,7 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles, modifiedFiles 
 		// default to unchanged action
 		file.Action = &unchangedAction
 
-		// if the file unmanaged is set to true, action set to unchanged so file is skipped when performing actions
+		// if file is unmanaged, action is set to unchanged so file is skipped when performing actions
 		if file.GetUnmanaged() {
 			continue
 		}
