@@ -801,19 +801,21 @@ var tests = []struct {
 	},
 	{
 		fileName: "/tmp/testdata/nginx/lua.conf",
-		config: `server {
-  listen 443 ssl;
-  server_name lua.example.com;
-  
-  ssl_certificate /etc/nginx/ssl/server.cert;
-  ssl_certificate_key /etc/nginx/ssl/server.key;
+		config: `http {
+    server {
+        listen 443 ssl;
+        server_name lua.example.com;
+		
+        ssl_certificate /etc/nginx/ssl/server.cert;
+        ssl_certificate_key /etc/nginx/ssl/server.key;
 
-  ssl_certificate_by_lua_block {
-    print("Test lua ssl certificate!")
-  }
-}
+        ssl_certificate_by_lua_block {
+            print("Test lua ssl certificate!")
+        }
+    }
 
-server {
+    server {
+    }
 }`,
 		plusApi: "",
 		expected: &proto.NginxConfig{
