@@ -41,8 +41,10 @@ type (
 		isConnected          *atomic.Bool
 		subscribeCancel      context.CancelFunc
 		subscribeChannel     chan *mpi.ManagementPlaneRequest
+		instances            []*mpi.Instance
 		subscribeMutex       sync.Mutex
 		subscribeClientMutex sync.Mutex
+		instancesMutex       sync.Mutex
 	}
 )
 
@@ -60,6 +62,7 @@ func NewCommandService(
 		agentConfig:          agentConfig,
 		isConnected:          isConnected,
 		subscribeChannel:     subscribeChannel,
+		instances:            []*mpi.Instance{},
 	}
 
 	var subscribeCtx context.Context
@@ -125,6 +128,10 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 		return err
 	}
 	slog.DebugContext(ctx, "UpdateDataPlaneStatus response", "response", response)
+
+	cs.instancesMutex.Lock()
+	defer cs.instancesMutex.Unlock()
+	cs.instances = resource.GetInstances()
 
 	return err
 }
@@ -246,6 +253,10 @@ func (cs *CommandService) CreateConnection(
 
 	cs.isConnected.Store(true)
 
+	cs.instancesMutex.Lock()
+	defer cs.instancesMutex.Unlock()
+	cs.instances = resource.GetInstances()
+
 	return response, nil
 }
 
@@ -335,10 +346,73 @@ func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
 			return recvError
 		}
 
-		cs.subscribeChannel <- request
+		if cs.isValidRequest(ctx, request) {
+			cs.subscribeChannel <- request
+		}
 
 		return nil
 	}
+}
+
+func (cs *CommandService) isValidRequest(ctx context.Context, request *mpi.ManagementPlaneRequest) bool {
+	var validRequest bool
+
+	switch request.GetRequest().(type) {
+	case *mpi.ManagementPlaneRequest_ConfigApplyRequest:
+		requestInstanceID := request.GetConfigApplyRequest().GetOverview().GetConfigVersion().GetInstanceId()
+		validRequest = cs.checkIfInstanceExists(ctx, request, requestInstanceID)
+	case *mpi.ManagementPlaneRequest_ConfigUploadRequest:
+		requestInstanceID := request.GetConfigUploadRequest().GetOverview().GetConfigVersion().GetInstanceId()
+		validRequest = cs.checkIfInstanceExists(ctx, request, requestInstanceID)
+	case *mpi.ManagementPlaneRequest_ActionRequest:
+		requestInstanceID := request.GetActionRequest().GetInstanceId()
+		validRequest = cs.checkIfInstanceExists(ctx, request, requestInstanceID)
+	default:
+		validRequest = true
+	}
+
+	return validRequest
+}
+
+func (cs *CommandService) checkIfInstanceExists(
+	ctx context.Context,
+	request *mpi.ManagementPlaneRequest,
+	requestInstanceID string,
+) bool {
+	instanceFound := false
+
+	cs.instancesMutex.Lock()
+	for _, instance := range cs.instances {
+		if instance.GetInstanceMeta().GetInstanceId() == requestInstanceID {
+			instanceFound = true
+		}
+	}
+	cs.instancesMutex.Unlock()
+
+	if !instanceFound {
+		slog.WarnContext(
+			ctx,
+			"Unable to handle request, instance not found",
+			"instance", requestInstanceID,
+			"request", request,
+		)
+
+		response := &mpi.DataPlaneResponse{
+			MessageMeta: request.GetMessageMeta(),
+			CommandResponse: &mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "Unable to handle request",
+				Error:   "Instance ID not found",
+			},
+			InstanceId: requestInstanceID,
+		}
+		err := cs.SendDataPlaneResponse(ctx, response)
+		if err != nil {
+			slog.ErrorContext(ctx, "Failed to send data plane response", "error", err)
+		}
+	}
+
+	return instanceFound
 }
 
 // Retry callback for establishing the connection between the Management Plane and the Agent.

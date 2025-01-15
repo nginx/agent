@@ -272,7 +272,7 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 			instanceID:  "unknown",
 			reloadErr:   nil,
 			validateErr: nil,
-			expected:    fmt.Errorf("no instance operator found for instance unknown"),
+			expected:    fmt.Errorf("instance unknown not found"),
 		},
 	}
 

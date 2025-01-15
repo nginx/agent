@@ -193,3 +193,140 @@ func TestCommandService_SendDataPlaneResponse(t *testing.T) {
 
 	require.NoError(t, err)
 }
+
+func TestCommandService_isValidRequest(t *testing.T) {
+	ctx := context.Background()
+	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
+	subscribeClient := &FakeSubscribeClient{}
+
+	commandService := NewCommandService(
+		ctx,
+		commandServiceClient,
+		types.AgentConfig(),
+		make(chan *mpi.ManagementPlaneRequest),
+	)
+
+	commandService.subscribeClientMutex.Lock()
+	commandService.subscribeClient = subscribeClient
+	commandService.subscribeClientMutex.Unlock()
+
+	nginxInstance := protos.GetNginxOssInstance([]string{})
+
+	commandService.instances = append(commandService.instances, nginxInstance)
+
+	testCases := []struct {
+		req    *mpi.ManagementPlaneRequest
+		name   string
+		result bool
+	}{
+		{
+			name: "Test 1: valid health request",
+			req: &mpi.ManagementPlaneRequest{
+				MessageMeta: protos.CreateMessageMeta(),
+				Request:     &mpi.ManagementPlaneRequest_HealthRequest{HealthRequest: &mpi.HealthRequest{}},
+			},
+			result: true,
+		},
+		{
+			name: "Test 2: valid config apply request",
+			req: &mpi.ManagementPlaneRequest{
+				MessageMeta: protos.CreateMessageMeta(),
+				Request: &mpi.ManagementPlaneRequest_ConfigApplyRequest{
+					ConfigApplyRequest: protos.CreateConfigApplyRequest(&mpi.FileOverview{
+						Files: make([]*mpi.File, 0),
+						ConfigVersion: &mpi.ConfigVersion{
+							InstanceId: nginxInstance.GetInstanceMeta().GetInstanceId(),
+							Version:    "e23brbei3u2bru93",
+						},
+					}),
+				},
+			},
+			result: true,
+		},
+		{
+			name: "Test 3: invalid config apply request",
+			req: &mpi.ManagementPlaneRequest{
+				MessageMeta: protos.CreateMessageMeta(),
+				Request: &mpi.ManagementPlaneRequest_ConfigApplyRequest{
+					ConfigApplyRequest: protos.CreateConfigApplyRequest(&mpi.FileOverview{
+						Files: make([]*mpi.File, 0),
+						ConfigVersion: &mpi.ConfigVersion{
+							InstanceId: "unknown-id",
+							Version:    "e23brbei3u2bru93",
+						},
+					}),
+				},
+			},
+			result: false,
+		},
+		{
+			name: "Test 4: valid config upload request",
+			req: &mpi.ManagementPlaneRequest{
+				MessageMeta: protos.CreateMessageMeta(),
+				Request: &mpi.ManagementPlaneRequest_ConfigUploadRequest{
+					ConfigUploadRequest: &mpi.ConfigUploadRequest{
+						Overview: &mpi.FileOverview{
+							Files: make([]*mpi.File, 0),
+							ConfigVersion: &mpi.ConfigVersion{
+								InstanceId: nginxInstance.GetInstanceMeta().GetInstanceId(),
+								Version:    "e23brbei3u2bru93",
+							},
+						},
+					},
+				},
+			},
+			result: true,
+		},
+		{
+			name: "Test 5: invalid config upload request",
+			req: &mpi.ManagementPlaneRequest{
+				MessageMeta: protos.CreateMessageMeta(),
+				Request: &mpi.ManagementPlaneRequest_ConfigUploadRequest{
+					ConfigUploadRequest: &mpi.ConfigUploadRequest{
+						Overview: &mpi.FileOverview{
+							Files: make([]*mpi.File, 0),
+							ConfigVersion: &mpi.ConfigVersion{
+								InstanceId: "unknown-id",
+								Version:    "e23brbei3u2bru93",
+							},
+						},
+					},
+				},
+			},
+			result: false,
+		},
+		{
+			name: "Test 6: valid action request",
+			req: &mpi.ManagementPlaneRequest{
+				MessageMeta: protos.CreateMessageMeta(),
+				Request: &mpi.ManagementPlaneRequest_ActionRequest{
+					ActionRequest: &mpi.APIActionRequest{
+						InstanceId: nginxInstance.GetInstanceMeta().GetInstanceId(),
+						Action:     nil,
+					},
+				},
+			},
+			result: true,
+		},
+		{
+			name: "Test 7: invalid action request",
+			req: &mpi.ManagementPlaneRequest{
+				MessageMeta: protos.CreateMessageMeta(),
+				Request: &mpi.ManagementPlaneRequest_ActionRequest{
+					ActionRequest: &mpi.APIActionRequest{
+						InstanceId: "unknown-id",
+						Action:     nil,
+					},
+				},
+			},
+			result: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			result := commandService.isValidRequest(ctx, testCase.req)
+			assert.Equal(t, testCase.result, result)
+		})
+	}
+}

@@ -159,7 +159,7 @@ func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) er
 	operator := r.instanceOperators[instanceID]
 
 	if operator == nil {
-		return fmt.Errorf("no instance operator found for instance %s", instanceID)
+		return fmt.Errorf("instance %s not found", instanceID)
 	}
 
 	for _, resourceInstance := range r.resource.GetInstances() {
