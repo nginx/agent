@@ -148,7 +148,7 @@ func GetNginxConfigWithIgnoreDirectives(
 		readLock.Unlock()
 		return nil, fmt.Errorf("error assemble payload from %s, error: %s", confFile, err)
 	}
-	
+
 	readLock.Unlock()
 	return nginxConfig, nil
 }
