@@ -294,16 +294,19 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 	require.NoError(t, err)
 
 	tests := []struct {
-		instance *mpi.Instance
-		name     string
+		instance      *mpi.Instance
+		name          string
+		syslogServers []string
 	}{
 		{
-			name:     "Test 1: Valid response",
-			instance: protos.GetNginxOssInstance([]string{}),
+			name:          "Test 1: Valid response",
+			instance:      protos.GetNginxOssInstance([]string{}),
+			syslogServers: []string{"127.0.0.1:1515"},
 		},
 		{
-			name:     "Test 2: Error response",
-			instance: protos.GetNginxPlusInstance([]string{}),
+			name:          "Test 2: Error response",
+			instance:      protos.GetNginxPlusInstance([]string{}),
+			syslogServers: []string{"127.0.0.1:1515"},
 		},
 	}
 
@@ -315,7 +318,9 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 				ltsvAccessLog.Name(),
 				errorLog.Name(),
 				test.instance.GetInstanceMeta().GetInstanceId(),
+				test.syslogServers,
 			)
+
 			expectedConfigContext.Files = append(expectedConfigContext.Files, &mpi.File{
 				FileMeta: fileMeta,
 			})

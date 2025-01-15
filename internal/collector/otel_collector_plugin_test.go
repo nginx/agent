@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"testing"
 
 	"github.com/nginx/agent/v3/test/protos"
@@ -26,6 +27,8 @@ import (
 )
 
 func TestCollector_New(t *testing.T) {
+	tmpDir := t.TempDir()
+
 	tests := []struct {
 		config        *config.Config
 		expectedError error
@@ -56,7 +59,7 @@ func TestCollector_New(t *testing.T) {
 			name: "Successful initialization",
 			config: &config.Config{
 				Collector: &config.Collector{
-					Log: &config.Log{Path: "/tmp/test.log"},
+					Log: &config.Log{Path: filepath.Join(tmpDir, "test.log")},
 				},
 			},
 			expectedError: nil,
@@ -79,6 +82,8 @@ func TestCollector_New(t *testing.T) {
 }
 
 func TestCollector_Init(t *testing.T) {
+	tmpDir := t.TempDir()
+
 	tests := []struct {
 		name          string
 		expectedLog   string
@@ -104,7 +109,7 @@ func TestCollector_Init(t *testing.T) {
 			logBuf := &bytes.Buffer{}
 			stub.StubLoggerWith(logBuf)
 
-			conf.Collector.Log = &config.Log{Path: "/tmp/test.log"}
+			conf.Collector.Log = &config.Log{Path: filepath.Join(tmpDir, "test.log")}
 
 			if tt.expectedError {
 				conf.Collector.Receivers = config.Receivers{}
@@ -712,6 +717,60 @@ func TestCollector_updateResourceAttributes(t *testing.T) {
 			assert.Equal(tt, test.expectedReloadRequired, reloadRequired)
 		})
 	}
+}
+
+func TestCollector_updateTcplogReceivers(t *testing.T) {
+	conf := types.OTelConfig(t)
+	conf.Collector.Log.Path = ""
+	conf.Collector.Processors.Batch = nil
+	conf.Collector.Processors.Attribute = nil
+	conf.Collector.Processors.Resource = nil
+
+	collector, err := New(conf)
+	require.NoError(t, err)
+
+	nginxConfigContext := &model.NginxConfigContext{
+		NAPSysLogServers: []string{
+			"localhost:151",
+		},
+	}
+
+	assert.Empty(t, conf.Collector.Receivers.TcplogReceivers)
+
+	t.Run("Test 1: New TcplogReceiver added", func(tt *testing.T) {
+		tcplogReceiverAdded := collector.updateTcplogReceivers(nginxConfigContext)
+
+		assert.True(tt, tcplogReceiverAdded)
+		assert.Len(tt, conf.Collector.Receivers.TcplogReceivers, 1)
+		assert.Equal(tt, "localhost:151", conf.Collector.Receivers.TcplogReceivers[0].ListenAddress)
+		assert.Len(tt, conf.Collector.Receivers.TcplogReceivers[0].Operators, 4)
+	})
+
+	// Calling updateTcplogReceivers shouldn't update the TcplogReceivers slice
+	// since there is already a receiver with the same ListenAddress
+	t.Run("Test 2: TcplogReceiver already exists", func(tt *testing.T) {
+		tcplogReceiverAdded := collector.updateTcplogReceivers(nginxConfigContext)
+		assert.False(t, tcplogReceiverAdded)
+		assert.Len(t, conf.Collector.Receivers.TcplogReceivers, 1)
+		assert.Equal(t, "localhost:151", conf.Collector.Receivers.TcplogReceivers[0].ListenAddress)
+		assert.Len(t, conf.Collector.Receivers.TcplogReceivers[0].Operators, 4)
+	})
+
+	t.Run("Test 3: TcplogReceiver deleted", func(tt *testing.T) {
+		tcplogReceiverDeleted := collector.updateTcplogReceivers(&model.NginxConfigContext{})
+		assert.True(t, tcplogReceiverDeleted)
+		assert.Empty(t, conf.Collector.Receivers.TcplogReceivers)
+	})
+
+	t.Run("Test 4: New tcplogReceiver added and deleted another", func(tt *testing.T) {
+		tcplogReceiverDeleted := collector.updateTcplogReceivers(&model.NginxConfigContext{NAPSysLogServers: []string{
+			"localhost:152",
+		}})
+		assert.True(t, tcplogReceiverDeleted)
+		assert.Len(t, conf.Collector.Receivers.TcplogReceivers, 1)
+		assert.Equal(t, "localhost:152", conf.Collector.Receivers.TcplogReceivers[0].ListenAddress)
+		assert.Len(t, conf.Collector.Receivers.TcplogReceivers[0].Operators, 4)
+	})
 }
 
 func createFakeCollector() *typesfakes.FakeCollectorInterface {

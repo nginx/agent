@@ -82,14 +82,16 @@ func TestWaitUntil(t *testing.T) {
 
 	for _, test := range tests {
 		invocations = 0
-		settings := &config.CommonSettings{
-			InitialInterval:     test.initialInterval,
-			MaxInterval:         test.maxInterval,
-			MaxElapsedTime:      test.maxElapsedTime,
-			RandomizationFactor: config.DefBackoffRandomizationFactor,
-			Multiplier:          config.DefBackoffMultiplier,
+		settings := &config.Client{
+			Backoff: &config.BackOff{
+				InitialInterval:     test.initialInterval,
+				MaxInterval:         test.maxInterval,
+				MaxElapsedTime:      test.maxElapsedTime,
+				RandomizationFactor: config.DefBackoffRandomizationFactor,
+				Multiplier:          config.DefBackoffMultiplier,
+			},
 		}
-		result := WaitUntil(test.context, settings, test.operation)
+		result := WaitUntil(test.context, settings.Backoff, test.operation)
 
 		if test.expectedError {
 			assert.Errorf(t, result, test.name)
@@ -164,7 +166,7 @@ func TestWaitUntilWithData(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		settings := &config.CommonSettings{
+		settings := &config.BackOff{
 			InitialInterval:     test.initialInterval,
 			MaxInterval:         test.maxInterval,
 			MaxElapsedTime:      test.maxElapsedTime,
@@ -185,7 +187,7 @@ func TestWaitUntilWithData(t *testing.T) {
 }
 
 func TestContext(t *testing.T) {
-	settings := &config.CommonSettings{
+	settings := &config.BackOff{
 		InitialInterval:     10 * time.Millisecond,
 		MaxInterval:         10 * time.Millisecond,
 		MaxElapsedTime:      10 * time.Millisecond,

@@ -337,7 +337,7 @@ func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 		upstreams   []client.UpstreamServer
 	}{
 		{
-			name: "Test 1: Success, Update Http Upstream Servers",
+			name: "Test 1: Success, Update HTTP Upstream Servers",
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreatAPIActionRequestNginxPlusUpdateHTTPServers("test_upstream",
@@ -361,7 +361,7 @@ func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 			expectedLog: "Successfully updated http upstream",
 		},
 		{
-			name: "Test 2: Fail, Update Http Upstream Servers",
+			name: "Test 2: Fail, Update HTTP Upstream Servers",
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreatAPIActionRequestNginxPlusUpdateHTTPServers("test_upstream",

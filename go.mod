@@ -33,6 +33,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor v0.114.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.114.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.114.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/tcplogreceiver v0.114.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/testbed v0.114.0
 	github.com/shirou/gopsutil/v4 v4.24.10
 	github.com/spf13/pflag v1.0.5

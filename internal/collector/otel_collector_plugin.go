@@ -26,6 +26,16 @@ import (
 const (
 	maxTimeToWaitForShutdown = 30 * time.Second
 	filePermission           = 0o600
+	// To conform to the rfc3164 spec the timestamp in the logs need to be formatted correctly.
+	// Here are some examples of what the timestamp conversions look like.
+	// Notice how if the day begins with a zero that the zero is replaced with an empty space.
+
+	// 2024-11-06T17:19:24+00:00 ---> Nov  6 17:19:24
+	// 2024-11-16T17:19:24+00:00 ---> Nov 16 17:19:24
+	timestampConversionExpression = `'EXPR(let timestamp = split(split(body, ">")[1], " ")[0]; ` +
+		`let newTimestamp = timestamp matches "(\\d{4})-(\\d{2})-(0\\d{1})T(\\d{2}):(\\d{2}):(\\d{2}).*" ` +
+		`? date(timestamp).Format("Jan  2 15:04:05") : date(timestamp).Format("Jan 02 15:04:05"); ` +
+		`split(body, ">")[0] + ">" + newTimestamp + " " + split(body, " ", 2)[1])'`
 )
 
 type (
@@ -193,9 +203,9 @@ func (oc *Collector) Close(ctx context.Context) error {
 		oc.service.Shutdown()
 		oc.cancel()
 
-		settings := oc.config.Common
+		settings := oc.config.Client.Backoff
 		settings.MaxElapsedTime = maxTimeToWaitForShutdown
-		err := backoff.WaitUntil(ctx, oc.config.Common, func() error {
+		err := backoff.WaitUntil(ctx, settings, func() error {
 			if oc.service.GetState() == otelcol.StateClosed {
 				return nil
 			}
@@ -243,7 +253,7 @@ func (oc *Collector) handleNginxConfigUpdate(ctx context.Context, msg *bus.Messa
 		return
 	}
 
-	reloadCollector := oc.checkForNewNginxReceivers(nginxConfigContext)
+	reloadCollector := oc.checkForNewReceivers(nginxConfigContext)
 
 	if reloadCollector {
 		slog.InfoContext(ctx, "Reloading OTel collector config")
@@ -368,7 +378,7 @@ func (oc *Collector) restartCollector(ctx context.Context) {
 	}
 }
 
-func (oc *Collector) checkForNewNginxReceivers(nginxConfigContext *model.NginxConfigContext) bool {
+func (oc *Collector) checkForNewReceivers(nginxConfigContext *model.NginxConfigContext) bool {
 	nginxReceiverFound, reloadCollector := oc.updateExistingNginxPlusReceiver(nginxConfigContext)
 
 	if !nginxReceiverFound && nginxConfigContext.PlusAPI.URL != "" {
@@ -404,6 +414,11 @@ func (oc *Collector) checkForNewNginxReceivers(nginxConfigContext *model.NginxCo
 
 			reloadCollector = true
 		}
+	}
+
+	tcplogReceiversFound := oc.updateTcplogReceivers(nginxConfigContext)
+	if tcplogReceiversFound {
+		reloadCollector = true
 	}
 
 	return reloadCollector
@@ -474,6 +489,110 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 	}
 
 	return nginxReceiverFound, reloadCollector
+}
+
+func (oc *Collector) updateTcplogReceivers(nginxConfigContext *model.NginxConfigContext) bool {
+	newTcplogReceiverAdded := false
+	if nginxConfigContext.NAPSysLogServers != nil {
+	napLoop:
+		for _, napSysLogServer := range nginxConfigContext.NAPSysLogServers {
+			if oc.doesTcplogReceiverAlreadyExist(napSysLogServer) {
+				continue napLoop
+			}
+
+			oc.config.Collector.Receivers.TcplogReceivers = append(
+				oc.config.Collector.Receivers.TcplogReceivers,
+				config.TcplogReceiver{
+					ListenAddress: napSysLogServer,
+					Operators: []config.Operator{
+						{
+							Type: "add",
+							Fields: map[string]string{
+								"field": "body",
+								"value": timestampConversionExpression,
+							},
+						},
+						{
+							Type: "syslog_parser",
+							Fields: map[string]string{
+								"protocol": "rfc3164",
+							},
+						},
+						{
+							Type: "remove",
+							Fields: map[string]string{
+								"field": "attributes.message",
+							},
+						},
+						{
+							Type: "add",
+							Fields: map[string]string{
+								"field": "resource[\"instance.id\"]",
+								"value": nginxConfigContext.InstanceID,
+							},
+						},
+					},
+				},
+			)
+
+			newTcplogReceiverAdded = true
+		}
+	}
+
+	tcplogReceiverDeleted := oc.areNapReceiversDeleted(nginxConfigContext)
+
+	return newTcplogReceiverAdded || tcplogReceiverDeleted
+}
+
+func (oc *Collector) areNapReceiversDeleted(nginxConfigContext *model.NginxConfigContext) bool {
+	listenAddressesToBeDeleted := oc.getConfigDeletedNapReceivers(nginxConfigContext)
+	if len(listenAddressesToBeDeleted) != 0 {
+		oc.deleteNapReceivers(listenAddressesToBeDeleted)
+		return true
+	}
+
+	return false
+}
+
+func (oc *Collector) deleteNapReceivers(listenAddressesToBeDeleted map[string]bool) {
+	filteredReceivers := (oc.config.Collector.Receivers.TcplogReceivers)[:0]
+	for _, receiver := range oc.config.Collector.Receivers.TcplogReceivers {
+		if !listenAddressesToBeDeleted[receiver.ListenAddress] {
+			filteredReceivers = append(filteredReceivers, receiver)
+		}
+	}
+	oc.config.Collector.Receivers.TcplogReceivers = filteredReceivers
+}
+
+func (oc *Collector) getConfigDeletedNapReceivers(nginxConfigContext *model.NginxConfigContext) map[string]bool {
+	elements := make(map[string]bool)
+
+	for _, tcplogReceiver := range oc.config.Collector.Receivers.TcplogReceivers {
+		elements[tcplogReceiver.ListenAddress] = true
+	}
+
+	if nginxConfigContext.NAPSysLogServers != nil {
+		addressesToDelete := make(map[string]bool)
+		for _, napAddress := range nginxConfigContext.NAPSysLogServers {
+			if !elements[napAddress] {
+				addressesToDelete[napAddress] = true
+			}
+		}
+
+		return addressesToDelete
+	}
+
+	return elements
+}
+
+func (oc *Collector) doesTcplogReceiverAlreadyExist(listenAddress string) bool {
+	for _, tcplogReceiver := range oc.config.Collector.Receivers.TcplogReceivers {
+		if listenAddress == tcplogReceiver.ListenAddress {
+			return true
+		}
+	}
+
+	return false
 }
 
 // nolint: revive
