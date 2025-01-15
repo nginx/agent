@@ -42,7 +42,7 @@ func CreatAPIActionRequestNginxPlusGetHTTPServers(upstream, instanceID string) *
 	}
 }
 
-func CreatAPIActionRequestNginxPlusGetUpstreams(instanceID string) *mpi.ManagementPlaneRequest {
+func CreateAPIActionRequestNginxPlusGetUpstreams(instanceID string) *mpi.ManagementPlaneRequest {
 	return &mpi.ManagementPlaneRequest{
 		MessageMeta: CreateMessageMeta(),
 		Request: &mpi.ManagementPlaneRequest_ActionRequest{
@@ -60,7 +60,7 @@ func CreatAPIActionRequestNginxPlusGetUpstreams(instanceID string) *mpi.Manageme
 	}
 }
 
-func CreatAPIActionRequestNginxPlusGetStreamUpstreams(instanceID string) *mpi.ManagementPlaneRequest {
+func CreateAPIActionRequestNginxPlusGetStreamUpstreams(instanceID string) *mpi.ManagementPlaneRequest {
 	return &mpi.ManagementPlaneRequest{
 		MessageMeta: CreateMessageMeta(),
 		Request: &mpi.ManagementPlaneRequest_ActionRequest{
@@ -101,7 +101,7 @@ func CreatAPIActionRequestNginxPlusUpdateHTTPServers(upstream, instanceID string
 	}
 }
 
-func CreatAPIActionRequestNginxPlusUpdateStreamServers(upstream, instanceID string,
+func CreateAPIActionRequestNginxPlusUpdateStreamServers(upstream, instanceID string,
 	servers []*structpb.Struct,
 ) *mpi.ManagementPlaneRequest {
 	return &mpi.ManagementPlaneRequest{

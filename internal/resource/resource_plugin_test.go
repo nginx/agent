@@ -443,7 +443,7 @@ func TestResource_Process_APIAction_UpdateStreamServers(t *testing.T) {
 			name: "Test 1: Success, Update Stream Servers",
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
-				Data: protos.CreatAPIActionRequestNginxPlusUpdateStreamServers("test_upstream",
+				Data: protos.CreateAPIActionRequestNginxPlusUpdateStreamServers("test_upstream",
 					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(), []*structpb.Struct{
 						{
 							Fields: map[string]*structpb.Value{
@@ -467,7 +467,7 @@ func TestResource_Process_APIAction_UpdateStreamServers(t *testing.T) {
 			name: "Test 2: Fail, Update Stream Servers",
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
-				Data: protos.CreatAPIActionRequestNginxPlusUpdateStreamServers("test_upstream",
+				Data: protos.CreateAPIActionRequestNginxPlusUpdateStreamServers("test_upstream",
 					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(), []*structpb.Struct{
 						{
 							Fields: map[string]*structpb.Value{
@@ -549,7 +549,7 @@ func TestResource_Process_APIAction_GetStreamUpstreams(t *testing.T) {
 			name: "Test 1: Success, Get Stream Upstreams API Action",
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
-				Data: protos.CreatAPIActionRequestNginxPlusGetStreamUpstreams(
+				Data: protos.CreateAPIActionRequestNginxPlusGetStreamUpstreams(
 					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
 			},
 			err: nil,
@@ -571,7 +571,7 @@ func TestResource_Process_APIAction_GetStreamUpstreams(t *testing.T) {
 			name: "Test 2: Fail, Get Stream Upstreams API Action",
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
-				Data: protos.CreatAPIActionRequestNginxPlusGetStreamUpstreams(
+				Data: protos.CreateAPIActionRequestNginxPlusGetStreamUpstreams(
 					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
 			},
 			err: errors.New("failed to get stream upstreams servers"),
@@ -691,7 +691,7 @@ func TestResource_Process_APIAction_GetUpstreams(t *testing.T) {
 			name: "Test 1: Success, Get Upstreams API Action",
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
-				Data: protos.CreatAPIActionRequestNginxPlusGetUpstreams(
+				Data: protos.CreateAPIActionRequestNginxPlusGetUpstreams(
 					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
 			},
 			err: nil,
@@ -715,7 +715,7 @@ func TestResource_Process_APIAction_GetUpstreams(t *testing.T) {
 			name: "Test 2: Fail, Get Upstreams API Action",
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
-				Data: protos.CreatAPIActionRequestNginxPlusGetUpstreams(
+				Data: protos.CreateAPIActionRequestNginxPlusGetUpstreams(
 					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
 			},
 			err: errors.New("failed to get upstreams"),
