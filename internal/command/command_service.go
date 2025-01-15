@@ -328,11 +328,11 @@ func (cs *CommandService) sendResponseForQueuedConfigApplyRequests(
 			"response", newResponse,
 		)
 
-		backOffCtx, backoffCancel := context.WithTimeout(ctx, cs.agentConfig.Common.MaxElapsedTime)
+		backOffCtx, backoffCancel := context.WithTimeout(ctx, cs.agentConfig.Client.Backoff.MaxElapsedTime)
 
 		err := backoff.Retry(
 			cs.sendDataPlaneResponseCallback(ctx, newResponse),
-			backoffHelpers.Context(backOffCtx, cs.agentConfig.Common),
+			backoffHelpers.Context(backOffCtx, cs.agentConfig.Client.Backoff),
 		)
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to send data plane response", "error", err)
