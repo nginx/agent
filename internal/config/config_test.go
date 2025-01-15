@@ -73,7 +73,23 @@ func TestResolveConfig(t *testing.T) {
 	assert.NotEmpty(t, actual.Collector.Exporters)
 	assert.NotEmpty(t, actual.Collector.Extensions)
 
-	assert.Equal(t, 10*time.Second, actual.Client.Timeout)
+	// Client GRPC Settings
+	assert.Equal(t, 15*time.Second, actual.Client.Grpc.KeepAlive.Timeout)
+	assert.Equal(t, 10*time.Second, actual.Client.Grpc.KeepAlive.Time)
+	assert.False(t, actual.Client.Grpc.KeepAlive.PermitWithoutStream)
+	assert.Equal(t, 1048575, actual.Client.Grpc.MaxMessageSize)
+	assert.Equal(t, 1048575, actual.Client.Grpc.MaxMessageReceiveSize)
+	assert.Equal(t, 1048575, actual.Client.Grpc.MaxMessageSendSize)
+
+	// Client HTTP Settings
+	assert.Equal(t, 15*time.Second, actual.Client.HTTP.Timeout)
+
+	// Client Backoff Settings
+	assert.Equal(t, 200*time.Millisecond, actual.Client.Backoff.InitialInterval)
+	assert.Equal(t, 10*time.Second, actual.Client.Backoff.MaxInterval)
+	assert.Equal(t, 25*time.Second, actual.Client.Backoff.MaxElapsedTime)
+	assert.InDelta(t, 1.5, actual.Client.Backoff.RandomizationFactor, 0.01)
+	assert.InDelta(t, 2.5, actual.Client.Backoff.Multiplier, 0.01)
 
 	assert.Equal(t,
 		allowedDir,
@@ -101,12 +117,35 @@ func TestRegisterFlags(t *testing.T) {
 	t.Setenv("NGINX_AGENT_PROCESS_MONITOR_MONITORING_FREQUENCY", "10s")
 	t.Setenv("NGINX_AGENT_DATA_PLANE_API_HOST", "example.com")
 	t.Setenv("NGINX_AGENT_DATA_PLANE_API_PORT", "9090")
-	t.Setenv("NGINX_AGENT_CLIENT_TIMEOUT", "10s")
+	t.Setenv("NGINX_AGENT_CLIENT_GRPC_KEEPALIVE_TIMEOUT", "10s")
 	registerFlags()
 
 	assert.Equal(t, "warn", viperInstance.GetString(LogLevelKey))
 	assert.Equal(t, "/var/log/test/agent.log", viperInstance.GetString(LogPathKey))
-	assert.Equal(t, 10*time.Second, viperInstance.GetDuration(ClientTimeoutKey))
+	assert.Equal(t, 10*time.Second, viperInstance.GetDuration(ClientKeepAliveTimeoutKey))
+
+	checkDefaultsClientValues(t, viperInstance)
+}
+
+func checkDefaultsClientValues(t *testing.T, viperInstance *viper.Viper) {
+	t.Helper()
+
+	assert.Equal(t, DefHTTPTimeout, viperInstance.GetDuration(ClientHTTPTimeoutKey))
+
+	assert.Equal(t, DefBackoffInitialInterval, viperInstance.GetDuration(ClientBackoffInitialIntervalKey))
+	assert.Equal(t, DefBackoffMaxInterval, viperInstance.GetDuration(ClientBackoffMaxIntervalKey))
+	assert.InDelta(t, DefBackoffRandomizationFactor, viperInstance.GetFloat64(ClientBackoffRandomizationFactorKey),
+		0.01)
+	assert.InDelta(t, DefBackoffMultiplier, viperInstance.GetFloat64(ClientBackoffMultiplierKey), 0.01)
+	assert.Equal(t, DefBackoffMaxElapsedTime, viperInstance.GetDuration(ClientBackoffMaxElapsedTimeKey))
+
+	assert.Equal(t, DefGRPCKeepAliveTimeout, viperInstance.GetDuration(ClientKeepAliveTimeoutKey))
+	assert.Equal(t, DefGRPCKeepAliveTime, viperInstance.GetDuration(ClientKeepAliveTimeKey))
+	assert.Equal(t, DefGRPCKeepAlivePermitWithoutStream, viperInstance.GetBool(ClientKeepAlivePermitWithoutStreamKey))
+
+	assert.Equal(t, DefMaxMessageSize, viperInstance.GetInt(ClientGRPCMaxMessageSizeKey))
+	assert.Equal(t, DefMaxMessageRecieveSize, viperInstance.GetInt(ClientGRPCMaxMessageReceiveSizeKey))
+	assert.Equal(t, DefMaxMessageSendSize, viperInstance.GetInt(ClientGRPCMaxMessageSendSizeKey))
 }
 
 func TestSeekFileInPaths(t *testing.T) {
@@ -140,7 +179,7 @@ func TestLoadPropertiesFromFile(t *testing.T) {
 	assert.Equal(t, "debug", viperInstance.GetString(LogLevelKey))
 	assert.Equal(t, "./", viperInstance.GetString(LogPathKey))
 
-	assert.Equal(t, 10*time.Second, viperInstance.GetDuration(ClientTimeoutKey))
+	assert.Equal(t, 15*time.Second, viperInstance.GetDuration(ClientKeepAliveTimeoutKey))
 
 	err = loadPropertiesFromFile("./testdata/unknown.conf")
 	require.Error(t, err)
@@ -165,10 +204,10 @@ func TestResolveLog(t *testing.T) {
 
 func TestResolveClient(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
-	viperInstance.Set(ClientTimeoutKey, time.Hour)
+	viperInstance.Set(ClientKeepAliveTimeoutKey, time.Hour)
 
 	result := resolveClient()
-	assert.Equal(t, time.Hour, result.Timeout)
+	assert.Equal(t, time.Hour, result.Grpc.KeepAlive.Timeout)
 }
 
 func TestResolveCollector(t *testing.T) {
@@ -269,18 +308,26 @@ func TestClient(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	expected := getAgentConfig().Client
 
-	viperInstance.Set(ClientMaxMessageSizeKey, expected.MaxMessageSize)
-	viperInstance.Set(ClientPermitWithoutStreamKey, expected.PermitWithoutStream)
-	viperInstance.Set(ClientTimeKey, expected.Time)
-	viperInstance.Set(ClientTimeoutKey, expected.Timeout)
+	viperInstance.Set(ClientGRPCMaxMessageSizeKey, expected.Grpc.MaxMessageSize)
+	viperInstance.Set(ClientKeepAlivePermitWithoutStreamKey, expected.Grpc.KeepAlive.PermitWithoutStream)
+	viperInstance.Set(ClientKeepAliveTimeKey, expected.Grpc.KeepAlive.Time)
+	viperInstance.Set(ClientKeepAliveTimeoutKey, expected.Grpc.KeepAlive.Timeout)
+
+	viperInstance.Set(ClientHTTPTimeoutKey, expected.HTTP.Timeout)
+
+	viperInstance.Set(ClientBackoffMaxIntervalKey, expected.Backoff.MaxInterval)
+	viperInstance.Set(ClientBackoffMultiplierKey, expected.Backoff.Multiplier)
+	viperInstance.Set(ClientBackoffMaxElapsedTimeKey, expected.Backoff.MaxElapsedTime)
+	viperInstance.Set(ClientBackoffInitialIntervalKey, expected.Backoff.InitialInterval)
+	viperInstance.Set(ClientBackoffRandomizationFactorKey, expected.Backoff.RandomizationFactor)
 
 	// root keys for sections are set appropriately
-	assert.True(t, viperInstance.IsSet(ClientMaxMessageSizeKey))
-	assert.False(t, viperInstance.IsSet(ClientMaxMessageReceiveSizeKey))
-	assert.False(t, viperInstance.IsSet(ClientMaxMessageSendSizeKey))
+	assert.True(t, viperInstance.IsSet(ClientGRPCMaxMessageSizeKey))
+	assert.False(t, viperInstance.IsSet(ClientGRPCMaxMessageReceiveSizeKey))
+	assert.False(t, viperInstance.IsSet(ClientGRPCMaxMessageSendSizeKey))
 
-	viperInstance.Set(ClientMaxMessageReceiveSizeKey, expected.MaxMessageRecieveSize)
-	viperInstance.Set(ClientMaxMessageSendSizeKey, expected.MaxMessageSendSize)
+	viperInstance.Set(ClientGRPCMaxMessageReceiveSizeKey, expected.Grpc.MaxMessageReceiveSize)
+	viperInstance.Set(ClientGRPCMaxMessageSendSizeKey, expected.Grpc.MaxMessageSendSize)
 
 	result := resolveClient()
 
@@ -294,12 +341,26 @@ func getAgentConfig() *Config {
 		Path:    "",
 		Log:     &Log{},
 		Client: &Client{
-			Timeout:               5 * time.Second,
-			Time:                  4 * time.Second,
-			PermitWithoutStream:   true,
-			MaxMessageSize:        1,
-			MaxMessageRecieveSize: 20,
-			MaxMessageSendSize:    40,
+			HTTP: &HTTP{
+				Timeout: 10 * time.Second,
+			},
+			Grpc: &GRPC{
+				KeepAlive: &KeepAlive{
+					Timeout:             5 * time.Second,
+					Time:                4 * time.Second,
+					PermitWithoutStream: true,
+				},
+				MaxMessageSize:        1,
+				MaxMessageReceiveSize: 20,
+				MaxMessageSendSize:    40,
+			},
+			Backoff: &BackOff{
+				InitialInterval:     500 * time.Millisecond,
+				MaxInterval:         5 * time.Second,
+				MaxElapsedTime:      30 * time.Second,
+				RandomizationFactor: 0.5,
+				Multiplier:          1.5,
+			},
 		},
 		AllowedDirectories: []string{
 			"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx", "/var/log/nginx", "/usr/share/nginx/modules",

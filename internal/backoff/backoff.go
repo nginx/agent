@@ -48,7 +48,7 @@ import (
 // Information from https://pkg.go.dev/github.com/cenkalti/backoff/v4#section-readme
 func WaitUntil(
 	ctx context.Context,
-	backoffSettings *config.CommonSettings,
+	backoffSettings *config.BackOff,
 	operation backoff.Operation,
 ) error {
 	eb := backoff.NewExponentialBackOff()
@@ -68,7 +68,7 @@ func WaitUntil(
 // nolint: ireturn
 func WaitUntilWithData[T any](
 	ctx context.Context,
-	backoffSettings *config.CommonSettings,
+	backoffSettings *config.BackOff,
 	operation backoff.OperationWithData[T],
 ) (T, error) {
 	backoffWithContext := Context(ctx, backoffSettings)
@@ -77,7 +77,7 @@ func WaitUntilWithData[T any](
 }
 
 // nolint: ireturn
-func Context(ctx context.Context, backoffSettings *config.CommonSettings) backoff.BackOffContext {
+func Context(ctx context.Context, backoffSettings *config.BackOff) backoff.BackOffContext {
 	eb := backoff.NewExponentialBackOff()
 	eb.InitialInterval = backoffSettings.InitialInterval
 	eb.MaxInterval = backoffSettings.MaxInterval
