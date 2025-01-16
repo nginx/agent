@@ -221,7 +221,8 @@ func GetDialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOp
 func addTransportCredentials(agentConfig *config.Config, opts []grpc.DialOption) ([]grpc.DialOption, bool) {
 	transportCredentials, err := getTransportCredentials(agentConfig)
 	if err != nil {
-		slog.Error("Unable to add transport credentials to gRPC dial options, adding default transport credentials", "error", err)
+		slog.Error("Unable to add transport credentials to gRPC dial options, adding "+
+			"default transport credentials", "error", err)
 		opts = append(opts,
 			grpc.WithTransportCredentials(defaultCredentials),
 		)
