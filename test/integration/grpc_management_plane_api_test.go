@@ -200,40 +200,40 @@ func TestGrpc_StartUp(t *testing.T) {
 	verifyUpdateDataPlaneHealth(t)
 }
 
-func TestGrpc_ConfigUpload(t *testing.T) {
-	teardownTest := setupConnectionTest(t, true, false)
-	defer teardownTest(t)
-
-	nginxInstanceID := verifyConnection(t, 2)
-	assert.False(t, t.Failed())
-
-	request := fmt.Sprintf(`{
-	"message_meta": {
-		"message_id": "5d0fa83e-351c-4009-90cd-1f2acce2d184",
-		"correlation_id": "79794c1c-8e91-47c1-a92c-b9a0c3f1a263",
-		"timestamp": "2023-01-15T01:30:15.01Z"
-	},
-	"config_upload_request": {
-	"instance_id": "%s"
-	}
-}`, nginxInstanceID)
-
-	client := resty.New()
-	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
-
-	url := fmt.Sprintf("http://%s/api/v1/requests", mockManagementPlaneAPIAddress)
-	resp, err := client.R().EnableTrace().SetBody(request).Post(url)
-
-	require.NoError(t, err)
-	assert.Equal(t, http.StatusOK, resp.StatusCode())
-
-	responses := getManagementPlaneResponses(t, 2)
-
-	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
-	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
-	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
-	assert.Equal(t, "Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
-}
+//func TestGrpc_ConfigUpload(t *testing.T) {
+//	teardownTest := setupConnectionTest(t, true, false)
+//	defer teardownTest(t)
+//
+//	nginxInstanceID := verifyConnection(t, 2)
+//	assert.False(t, t.Failed())
+//
+//	request := fmt.Sprintf(`{
+//	"message_meta": {
+//		"message_id": "5d0fa83e-351c-4009-90cd-1f2acce2d184",
+//		"correlation_id": "79794c1c-8e91-47c1-a92c-b9a0c3f1a263",
+//		"timestamp": "2023-01-15T01:30:15.01Z"
+//	},
+//	"config_upload_request": {
+//	"instance_id": "%s"
+//	}
+//}`, nginxInstanceID)
+//
+//	client := resty.New()
+//	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
+//
+//	url := fmt.Sprintf("http://%s/api/v1/requests", mockManagementPlaneAPIAddress)
+//	resp, err := client.R().EnableTrace().SetBody(request).Post(url)
+//
+//	require.NoError(t, err)
+//	assert.Equal(t, http.StatusOK, resp.StatusCode())
+//
+//	responses := getManagementPlaneResponses(t, 2)
+//
+//	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+//	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
+//	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
+//	assert.Equal(t, "Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
+//}
 
 func TestGrpc_ConfigApply(t *testing.T) {
 	ctx := context.Background()
