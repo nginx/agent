@@ -221,8 +221,7 @@ func GetDialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOp
 func addTransportCredentials(agentConfig *config.Config, opts []grpc.DialOption) ([]grpc.DialOption, bool) {
 	transportCredentials, err := getTransportCredentials(agentConfig)
 	if err != nil {
-		slog.Error("Unable to add transport credentials to gRPC dial options", "error", err)
-		slog.Debug("Adding default transport credentials to gRPC dial options")
+		slog.Error("Unable to add transport credentials to gRPC dial options, adding default transport credentials", "error", err)
 		opts = append(opts,
 			grpc.WithTransportCredentials(defaultCredentials),
 		)
@@ -265,11 +264,12 @@ func retrieveTokenFromFile(path string) (string, error) {
 		return "", errors.New("token file path is empty")
 	}
 
-	slog.Debug("Reading token from file", "path", path)
+	slog.Debug("Reading dataplane key from file", "path", path)
 	var keyVal string
 	keyBytes, err := os.ReadFile(path)
 	if err != nil {
-		return "", fmt.Errorf("unable to read token from file: %w", err)
+		slog.Error("Unable to read token from file", "error", err)
+		return "", err
 	}
 
 	keyBytes = bytes.TrimSpace(keyBytes)
@@ -277,7 +277,8 @@ func retrieveTokenFromFile(path string) (string, error) {
 	keyVal = string(keyBytes)
 
 	if keyVal == "" {
-		return "", errors.New("failed to retrieve token, token file is empty")
+		slog.Error("failed to load token, please check agent configuration")
+		return "", errors.New("failed to load token, please check agent configuration")
 	}
 
 	return keyVal, nil
