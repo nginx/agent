@@ -269,8 +269,7 @@ func retrieveTokenFromFile(path string) (string, error) {
 	var keyVal string
 	keyBytes, err := os.ReadFile(path)
 	if err != nil {
-		slog.Error("Unable to read token from file", "error", err)
-		return "", err
+		return "", fmt.Errorf("unable to read token from file: %w", err)
 	}
 
 	keyBytes = bytes.TrimSpace(keyBytes)
