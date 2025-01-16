@@ -56,7 +56,8 @@ func (*FakeConfigApplySubscribeClient) Send(*mpi.DataPlaneResponse) error {
 
 // nolint: nilnil
 func (*FakeConfigApplySubscribeClient) Recv() (*mpi.ManagementPlaneRequest, error) {
-	protos.CreateManagementPlaneRequest()
+	nginxInstance := protos.GetNginxOssInstance([]string{})
+
 	return &mpi.ManagementPlaneRequest{
 		MessageMeta: &mpi.MessageMeta{
 			MessageId:     "1",
@@ -67,7 +68,7 @@ func (*FakeConfigApplySubscribeClient) Recv() (*mpi.ManagementPlaneRequest, erro
 			ConfigApplyRequest: &mpi.ConfigApplyRequest{
 				Overview: &mpi.FileOverview{
 					ConfigVersion: &mpi.ConfigVersion{
-						InstanceId: "12314",
+						InstanceId: nginxInstance.GetInstanceMeta().GetInstanceId(),
 						Version:    "4215432",
 					},
 				},
@@ -112,6 +113,9 @@ func TestCommandService_receiveCallback_configApplyRequest(t *testing.T) {
 		types.AgentConfig(),
 		subscribeChannel,
 	)
+
+	nginxInstance := protos.GetNginxOssInstance([]string{})
+	commandService.instances = append(commandService.instances, nginxInstance)
 
 	defer commandService.CancelSubscription(ctx)
 
