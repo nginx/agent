@@ -193,6 +193,8 @@ func (r *ResourceService) GetHTTPUpstreamServers(ctx context.Context, instance *
 
 	servers, getServersErr := plusClient.GetHTTPServers(ctx, upstream)
 
+	slog.Warn("Error returned from NGINX Plus client, GetHTTPUpstreamServers", "err", getServersErr)
+
 	return servers, createPlusAPIError(getServersErr)
 }
 
@@ -204,9 +206,11 @@ func (r *ResourceService) GetUpstreams(ctx context.Context, instance *mpi.Instan
 		return nil, err
 	}
 
-	servers, getServersErr := plusClient.GetUpstreams(ctx)
+	servers, getUpstreamsErr := plusClient.GetUpstreams(ctx)
 
-	return servers, createPlusAPIError(getServersErr)
+	slog.Warn("Error returned from NGINX Plus client, GetUpstreams", "err", getUpstreamsErr)
+
+	return servers, createPlusAPIError(getUpstreamsErr)
 }
 
 func (r *ResourceService) GetStreamUpstreams(ctx context.Context, instance *mpi.Instance,
@@ -218,6 +222,8 @@ func (r *ResourceService) GetStreamUpstreams(ctx context.Context, instance *mpi.
 	}
 
 	streamUpstreams, getServersErr := plusClient.GetStreamUpstreams(ctx)
+
+	slog.Warn("Error returned from NGINX Plus client, GetStreamUpstreams", "err", getServersErr)
 
 	return streamUpstreams, createPlusAPIError(getServersErr)
 }
@@ -237,6 +243,8 @@ func (r *ResourceService) UpdateStreamServers(ctx context.Context, instance *mpi
 
 	added, updated, deleted, updateError := plusClient.UpdateStreamServers(ctx, upstream, servers)
 
+	slog.Warn("Error returned from NGINX Plus client, UpdateStreamServers", "err", updateError)
+
 	return added, updated, deleted, createPlusAPIError(updateError)
 }
 
@@ -254,6 +262,8 @@ func (r *ResourceService) UpdateHTTPUpstreamServers(ctx context.Context, instanc
 	servers := convertToUpstreamServer(upstreams)
 
 	added, updated, deleted, updateError := plusClient.UpdateHTTPServers(ctx, upstream, servers)
+
+	slog.Warn("Error returned from NGINX Plus client, UpdateHTTPUpstreamServers", "err", updateError)
 
 	return added, updated, deleted, createPlusAPIError(updateError)
 }
