@@ -10,6 +10,7 @@ const (
 	UpdatedInstancesTopic        = "updated-instances"
 	DeletedInstancesTopic        = "deleted-instances"
 	ResourceUpdateTopic          = "resource-update"
+	TokenUpdateTopic             = "token-update"
 	NginxConfigUpdateTopic       = "nginx-config-update"
 	InstanceHealthTopic          = "instance-health"
 	ConfigUploadRequestTopic     = "config-upload-request"

@@ -76,6 +76,8 @@ func (cp *CommandPlugin) Info() *bus.Info {
 
 func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
+	case bus.TokenUpdateTopic:
+		cp.processTokenUpdate(ctx, msg)
 	case bus.ResourceUpdateTopic:
 		cp.processResourceUpdate(ctx, msg)
 	case bus.InstanceHealthTopic:
@@ -153,8 +155,19 @@ func (cp *CommandPlugin) processDataPlaneResponse(ctx context.Context, msg *bus.
 	}
 }
 
+func (cp *CommandPlugin) processTokenUpdate(ctx context.Context, msg *bus.Message) {
+	// token has been updated, reinitiate gRPC connection
+	slog.InfoContext(ctx, "Command plugin received token update")
+
+	_, err := cp.conn.Restart(ctx)
+	if err != nil {
+		slog.ErrorContext(ctx, "Unable to restart connection", "error", err)
+	}
+}
+
 func (cp *CommandPlugin) Subscriptions() []string {
 	return []string{
+		bus.TokenUpdateTopic,
 		bus.ResourceUpdateTopic,
 		bus.InstanceHealthTopic,
 		bus.DataPlaneHealthResponseTopic,
