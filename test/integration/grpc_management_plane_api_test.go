@@ -219,7 +219,11 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 		"timestamp": "2023-01-15T01:30:15.01Z"
 	},
 	"config_upload_request": {
-	"instance_id": "%s"
+      "overview" : {
+        "config_version": {
+          "instance_id": "%s"
+        }
+      }
 	}
 }`, nginxInstanceID)
 
