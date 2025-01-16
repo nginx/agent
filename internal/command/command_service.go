@@ -501,7 +501,11 @@ func (cs *CommandService) checkIfInstanceExists(
 		)
 
 		response := &mpi.DataPlaneResponse{
-			MessageMeta: request.GetMessageMeta(),
+			MessageMeta: &mpi.MessageMeta{
+				MessageId:     proto.GenerateMessageID(),
+				CorrelationId: request.GetMessageMeta().GetCorrelationId(),
+				Timestamp:     timestamppb.Now(),
+			},
 			CommandResponse: &mpi.CommandResponse{
 				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 				Message: "Unable to handle request",
