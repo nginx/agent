@@ -57,7 +57,7 @@ func (cp *CommandPlugin) Init(ctx context.Context, messagePipe bus.MessagePipeIn
 
 	cp.messagePipe = messagePipe
 	cp.commandService = NewCommandService(ctx, cp.conn.CommandServiceClient(), cp.config, cp.subscribeChannel)
-	
+
 	go cp.monitorSubscribeChannel(ctx)
 
 	return nil

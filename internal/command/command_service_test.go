@@ -115,7 +115,9 @@ func TestCommandService_receiveCallback_configApplyRequest(t *testing.T) {
 	)
 
 	nginxInstance := protos.GetNginxOssInstance([]string{})
+	commandService.instancesMutex.Lock()
 	commandService.instances = append(commandService.instances, nginxInstance)
+	commandService.instancesMutex.Unlock()
 
 	defer commandService.CancelSubscription(ctx)
 
@@ -412,7 +414,9 @@ func TestCommandService_isValidRequest(t *testing.T) {
 
 	nginxInstance := protos.GetNginxOssInstance([]string{})
 
+	commandService.instancesMutex.Lock()
 	commandService.instances = append(commandService.instances, nginxInstance)
+	commandService.instancesMutex.Unlock()
 
 	testCases := []struct {
 		req    *mpi.ManagementPlaneRequest
