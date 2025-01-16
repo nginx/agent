@@ -38,7 +38,6 @@ type (
 		Client             *Client          `yaml:"-" mapstructure:"client"`
 		Collector          *Collector       `yaml:"-" mapstructure:"collector"`
 		File               *File            `yaml:"-" mapstructure:"file"`
-		Common             *CommonSettings  `yaml:"-"`
 		Watchers           *Watchers        `yaml:"-"`
 		Labels             map[string]any   `yaml:"-" mapstructure:"labels"`
 		Version            string           `yaml:"-"`
@@ -64,14 +63,36 @@ type (
 	}
 
 	Client struct {
-		Timeout             time.Duration `yaml:"-" mapstructure:"timeout"`
-		Time                time.Duration `yaml:"-" mapstructure:"time"`
-		PermitWithoutStream bool          `yaml:"-" mapstructure:"permit_without_stream"`
+		HTTP    *HTTP    `yaml:"http"    mapstructure:"http"`
+		Grpc    *GRPC    `yaml:"grpc"    mapstructure:"grpc"`
+		Backoff *BackOff `yaml:"backoff" mapstructure:"backoff"`
+	}
+
+	HTTP struct {
+		Timeout time.Duration `yaml:"-" mapstructure:"timeout"`
+	}
+
+	BackOff struct {
+		InitialInterval     time.Duration `yaml:"-" mapstructure:"initial_interval"`
+		MaxInterval         time.Duration `yaml:"-" mapstructure:"max_interval"`
+		MaxElapsedTime      time.Duration `yaml:"-" mapstructure:"max_elapsed_time"`
+		RandomizationFactor float64       `yaml:"-" mapstructure:"randomization_factor"`
+		Multiplier          float64       `yaml:"-" mapstructure:"multiplier"`
+	}
+
+	GRPC struct {
+		KeepAlive *KeepAlive `yaml:"-" mapstructure:"target"`
 		// if MaxMessageSize is size set then we use that value,
 		// otherwise MaxMessageRecieveSize and MaxMessageSendSize for individual settings
 		MaxMessageSize        int `yaml:"-" mapstructure:"max_message_size"`
-		MaxMessageRecieveSize int `yaml:"-" mapstructure:"max_message_receive_size"`
+		MaxMessageReceiveSize int `yaml:"-" mapstructure:"max_message_receive_size"`
 		MaxMessageSendSize    int `yaml:"-" mapstructure:"max_message_send_size"`
+	}
+
+	KeepAlive struct {
+		Timeout             time.Duration `yaml:"-" mapstructure:"timeout"`
+		Time                time.Duration `yaml:"-" mapstructure:"time"`
+		PermitWithoutStream bool          `yaml:"-" mapstructure:"permit_without_stream"`
 	}
 
 	Collector struct {
@@ -165,12 +186,26 @@ type (
 		OtlpReceivers      []OtlpReceiver      `yaml:"-" mapstructure:"otlp_receivers"`
 		NginxReceivers     []NginxReceiver     `yaml:"-" mapstructure:"nginx_receivers"`
 		NginxPlusReceivers []NginxPlusReceiver `yaml:"-" mapstructure:"nginx_plus_receivers"`
+		TcplogReceivers    []TcplogReceiver    `yaml:"-" mapstructure:"tcplog_receivers"`
 	}
 
 	OtlpReceiver struct {
 		Server        *ServerConfig  `yaml:"-" mapstructure:"server"`
 		Auth          *AuthConfig    `yaml:"-" mapstructure:"auth"`
 		OtlpTLSConfig *OtlpTLSConfig `yaml:"-" mapstructure:"tls"`
+	}
+
+	TcplogReceiver struct {
+		ListenAddress string     `yaml:"-" mapstructure:"listen_address"`
+		Operators     []Operator `yaml:"-" mapstructure:"operators"`
+	}
+
+	// There are many types of operators with different field names so we use a generic map to store the fields.
+	// See here for more info:
+	// https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/stanza/docs/operators/README.md
+	Operator struct {
+		Fields map[string]string `yaml:"-" mapstructure:"fields"`
+		Type   string            `yaml:"-" mapstructure:"type"`
 	}
 
 	NginxReceiver struct {
@@ -214,13 +249,6 @@ type (
 	MemoryScraper     struct{}
 	NetworkScraper    struct{}
 
-	GRPC struct {
-		Target         string        `yaml:"-" mapstructure:"target"`
-		ConnTimeout    time.Duration `yaml:"-" mapstructure:"connection_timeout"`
-		MinConnTimeout time.Duration `yaml:"-" mapstructure:"minimum_connection_timeout"`
-		BackoffDelay   time.Duration `yaml:"-" mapstructure:"backoff_delay"`
-	}
-
 	Command struct {
 		Server *ServerConfig `yaml:"-" mapstructure:"server"`
 		Auth   *AuthConfig   `yaml:"-" mapstructure:"auth"`
@@ -258,14 +286,6 @@ type (
 
 	File struct {
 		Location string `yaml:"-" mapstructure:"location"`
-	}
-
-	CommonSettings struct {
-		InitialInterval     time.Duration `yaml:"-" mapstructure:"initial_interval"`
-		MaxInterval         time.Duration `yaml:"-" mapstructure:"max_interval"`
-		MaxElapsedTime      time.Duration `yaml:"-" mapstructure:"max_elapsed_time"`
-		RandomizationFactor float64       `yaml:"-" mapstructure:"randomization_factor"`
-		Multiplier          float64       `yaml:"-" mapstructure:"multiplier"`
 	}
 
 	Watchers struct {
@@ -353,9 +373,14 @@ func (c *Config) AreReceiversConfigured() bool {
 	}
 
 	return c.Collector.Receivers.NginxPlusReceivers != nil ||
+		len(c.Collector.Receivers.NginxPlusReceivers) > 0 ||
 		c.Collector.Receivers.OtlpReceivers != nil ||
+		len(c.Collector.Receivers.OtlpReceivers) > 0 ||
 		c.Collector.Receivers.NginxReceivers != nil ||
-		c.Collector.Receivers.HostMetrics != nil
+		len(c.Collector.Receivers.NginxReceivers) > 0 ||
+		c.Collector.Receivers.HostMetrics != nil ||
+		c.Collector.Receivers.TcplogReceivers != nil ||
+		len(c.Collector.Receivers.TcplogReceivers) > 0
 }
 
 func isAllowedDir(dir string, allowedDirs []string) bool {
