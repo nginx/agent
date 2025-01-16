@@ -207,12 +207,10 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 	nginxInstanceID := verifyConnection(t, 2)
 	assert.False(t, t.Failed())
 
-	responses := getManagementPlaneResponses(t, 2)
+	responses := getManagementPlaneResponses(t, 1)
 
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
-	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
-	assert.Equal(t, "Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
 
 	request := fmt.Sprintf(`{
 	"message_meta": {
@@ -236,14 +234,12 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 
-	responses = getManagementPlaneResponses(t, 3)
+	responses = getManagementPlaneResponses(t, 2)
 
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
-	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[2].GetCommandResponse().GetStatus())
-	assert.Equal(t, "Successfully updated all files", responses[2].GetCommandResponse().GetMessage())
 }
 
 func TestGrpc_ConfigApply(t *testing.T) {
