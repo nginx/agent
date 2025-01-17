@@ -7,12 +7,14 @@ package config
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 
 	selfsignedcerts "github.com/nginx/agent/v3/pkg/tls"
@@ -26,6 +28,7 @@ const (
 	ConfigFileName = "nginx-agent.conf"
 	EnvPrefix      = "NGINX_AGENT"
 	KeyDelimiter   = "_"
+	KeyValueNumber = 2
 )
 
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
@@ -102,6 +105,7 @@ func ResolveConfig() (*Config, error) {
 		Command:            resolveCommand(),
 		Watchers:           resolveWatchers(),
 		Features:           viperInstance.GetStringSlice(FeaturesKey),
+		Labels:             resolveLabels(),
 	}
 
 	slog.Debug("Agent config", "config", config)
@@ -181,6 +185,7 @@ func registerFlags() {
 		"A comma-separated list of features enabled for the agent.",
 	)
 
+	registerCommonFlags(fs)
 	registerCommandFlags(fs)
 	registerCollectorFlags(fs)
 	registerClientFlags(fs)
@@ -196,6 +201,14 @@ func registerFlags() {
 			slog.Warn("Error occurred binding env", "env", flag.Name, "error", err)
 		}
 	})
+}
+
+func registerCommonFlags(fs *flag.FlagSet) {
+	fs.StringToString(
+		LabelsRootKey,
+		DefaultLabels(),
+		"A list of labels associated with these instances",
+	)
 }
 
 func registerClientFlags(fs *flag.FlagSet) {
@@ -454,6 +467,102 @@ func resolveLog() *Log {
 		Level: viperInstance.GetString(LogLevelKey),
 		Path:  viperInstance.GetString(LogPathKey),
 	}
+}
+
+func resolveLabels() map[string]interface{} {
+	input := viperInstance.GetStringMapString(LabelsRootKey)
+
+	// Parsing the environment variable for labels needs to be done differently
+	// by parsing the environment variable as a string.
+	envLabels := resolveEnvironmentVariableLabels()
+
+	if len(envLabels) > 0 {
+		input = envLabels
+	}
+
+	result := make(map[string]interface{})
+
+	for key, value := range input {
+		trimmedKey := strings.TrimSpace(key)
+		trimmedValue := strings.TrimSpace(value)
+
+		switch {
+		case trimmedValue == "" || trimmedValue == "nil": // Handle empty values as nil
+			result[trimmedKey] = nil
+
+		case parseInt(trimmedValue) != nil: // Integer
+			result[trimmedKey] = parseInt(trimmedValue)
+
+		case parseFloat(trimmedValue) != nil: // Float
+			result[trimmedKey] = parseFloat(trimmedValue)
+
+		case parseBool(trimmedValue) != nil: // Boolean
+			result[trimmedKey] = parseBool(trimmedValue)
+
+		case parseJSON(trimmedValue) != nil: // JSON object/array
+			result[trimmedKey] = parseJSON(trimmedValue)
+
+		default: // String
+			result[trimmedKey] = trimmedValue
+		}
+	}
+
+	slog.Info("Configured labels", "labels", result)
+
+	return result
+}
+
+func resolveEnvironmentVariableLabels() map[string]string {
+	envLabels := make(map[string]string)
+	envInput := viperInstance.GetString(LabelsRootKey)
+
+	labels := strings.Split(envInput, ",")
+	if len(labels) > 0 && labels[0] != "" {
+		for _, label := range labels {
+			splitLabel := strings.Split(label, "=")
+			if len(splitLabel) == KeyValueNumber {
+				envLabels[splitLabel[0]] = splitLabel[1]
+			} else {
+				slog.Warn("Unable to parse label: " + label)
+			}
+		}
+	}
+
+	return envLabels
+}
+
+// Parsing helper functions return the parsed value or nil if parsing fails
+func parseInt(value string) interface{} {
+	if intValue, err := strconv.Atoi(value); err == nil {
+		return intValue
+	}
+
+	return nil
+}
+
+func parseFloat(value string) interface{} {
+	if floatValue, err := strconv.ParseFloat(value, 64); err == nil {
+		return floatValue
+	}
+
+	return nil
+}
+
+func parseBool(value string) interface{} {
+	if boolValue, err := strconv.ParseBool(value); err == nil {
+		return boolValue
+	}
+
+	return nil
+}
+
+func parseJSON(value string) interface{} {
+	var jsonValue interface{}
+	if err := json.Unmarshal([]byte(value), &jsonValue); err == nil {
+		return jsonValue
+	}
+
+	return nil
 }
 
 func resolveDataPlaneConfig() *DataPlaneConfig {

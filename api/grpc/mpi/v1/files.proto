@@ -92,6 +92,8 @@ message File {
     }
     // Optional action
     optional FileAction action = 2;
+    // Unmanaged files will not be modified
+    bool unmanaged = 3;
 }
 
 // Represents the get file request
