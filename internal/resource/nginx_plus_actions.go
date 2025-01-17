@@ -45,7 +45,8 @@ func (a *APIAction) HandleUpdateStreamServersRequest(ctx context.Context, action
 		"Successfully updated stream upstream servers", instanceID, "")
 }
 
-func (a *APIAction) HandleGetStreamUpstreamsRequest(ctx context.Context, instance *mpi.Instance) *mpi.DataPlaneResponse {
+func (a *APIAction) HandleGetStreamUpstreamsRequest(ctx context.Context,
+	instance *mpi.Instance) *mpi.DataPlaneResponse {
 	correlationID := logger.GetCorrelationID(ctx)
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
 	streamUpstreamsResponse := emptyResponse
