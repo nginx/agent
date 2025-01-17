@@ -517,12 +517,14 @@ func resolveEnvironmentVariableLabels() map[string]string {
 	envInput := viperInstance.GetString(LabelsRootKey)
 
 	labels := strings.Split(envInput, ",")
-	for _, label := range labels {
-		splitLabel := strings.Split(label, "=")
-		if len(splitLabel) == KeyValueNumber {
-			envLabels[splitLabel[0]] = splitLabel[1]
-		} else {
-			slog.Warn("Unable to parse label: " + label)
+	if len(labels) > 0 && labels[0] != "" {
+		for _, label := range labels {
+			splitLabel := strings.Split(label, "=")
+			if len(splitLabel) == KeyValueNumber {
+				envLabels[splitLabel[0]] = splitLabel[1]
+			} else {
+				slog.Warn("Unable to parse label: " + label)
+			}
 		}
 	}
 
