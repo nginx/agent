@@ -199,7 +199,7 @@ func TestResource_createPlusAPIError(t *testing.T) {
 	expectedErr := plusAPIErr{
 		Error: errResponse{
 			Status: "404",
-			Test:   "upstream not found",
+			Text:   "upstream not found",
 			Code:   "UpstreamNotFound",
 		},
 		RequestID: "b534bdab5cb5e321e8b41b431828b270",

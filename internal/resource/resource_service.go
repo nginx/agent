@@ -304,6 +304,7 @@ func (r *ResourceService) createPlusClient(instance *mpi.Instance) (*client.Ngin
 		return nil, errors.New("failed to preform API action, NGINX Plus API is not configured")
 	}
 
+	slog.Info("location", "", plusAPI.GetListen())
 	if strings.HasPrefix(plusAPI.GetListen(), "unix:") {
 		endpoint = fmt.Sprintf(unixPlusAPIFormat, plusAPI.GetLocation())
 	} else {
@@ -361,7 +362,7 @@ func createPlusAPIError(apiErr error) error {
 	plusErr := plusAPIErr{
 		Error: errResponse{
 			Status: errorSlice[0],
-			Test:   errorSlice[1],
+			Text:   errorSlice[1],
 			Code:   errorSlice[2],
 		},
 		RequestID: errorSlice[3],

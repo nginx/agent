@@ -32,7 +32,7 @@ type Resource struct {
 
 type errResponse struct {
 	Status string `json:"status"`
-	Test   string `json:"test"`
+	Text   string `json:"test"`
 	Code   string `json:"code"`
 }
 

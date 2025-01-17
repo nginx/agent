@@ -236,8 +236,14 @@ func TestResourceService_GetResource(t *testing.T) {
 func TestResourceService_createPlusClient(t *testing.T) {
 	instanceWithAPI := protos.GetNginxPlusInstance([]string{})
 	instanceWithAPI.InstanceRuntime.GetNginxPlusRuntimeInfo().PlusApi = &v1.APIDetails{
-		Location: "localhost:80",
-		Listen:   "/api",
+		Location: "/api",
+		Listen:   "localhost:80",
+	}
+
+	instanceWithUnixAPI := protos.GetNginxPlusInstance([]string{})
+	instanceWithUnixAPI.InstanceRuntime.GetNginxPlusRuntimeInfo().PlusApi = &v1.APIDetails{
+		Listen:   "unix:/var/run/nginx-status.sock",
+		Location: "/api",
 	}
 
 	ctx := context.Background()
@@ -252,7 +258,12 @@ func TestResourceService_createPlusClient(t *testing.T) {
 			err:      nil,
 		},
 		{
-			name:     "Test 2: Fail Creating Client - API not Configured",
+			name:     "Test 2: Create Plus Client, Unix",
+			instance: instanceWithUnixAPI,
+			err:      nil,
+		},
+		{
+			name:     "Test 3: Fail Creating Client - API not Configured",
 			instance: protos.GetNginxPlusInstance([]string{}),
 			err:      errors.New("failed to preform API action, NGINX Plus API is not configured"),
 		},
