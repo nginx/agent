@@ -287,6 +287,7 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
+		instanceID  string
 		reloadErr   error
 		validateErr error
 		expected    error
@@ -294,21 +295,31 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 	}{
 		{
 			name:        "Test 1: Successful reload",
+			instanceID:  protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 			reloadErr:   nil,
 			validateErr: nil,
 			expected:    nil,
 		},
 		{
 			name:        "Test 2: Failed reload",
+			instanceID:  protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 			reloadErr:   fmt.Errorf("something went wrong"),
 			validateErr: nil,
 			expected:    fmt.Errorf("failed to reload NGINX %w", fmt.Errorf("something went wrong")),
 		},
 		{
 			name:        "Test 3: Failed validate",
+			instanceID:  protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 			reloadErr:   nil,
 			validateErr: fmt.Errorf("something went wrong"),
 			expected:    fmt.Errorf("failed validating config %w", fmt.Errorf("something went wrong")),
+		},
+		{
+			name:        "Test 4: Unknown instance ID",
+			instanceID:  "unknown",
+			reloadErr:   nil,
+			validateErr: nil,
+			expected:    fmt.Errorf("instance unknown not found"),
 		},
 	}
 
@@ -330,8 +341,7 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 			}
 			resourceService.resource.Instances = instances
 
-			reloadError := resourceService.ApplyConfig(ctx,
-				protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId())
+			reloadError := resourceService.ApplyConfig(ctx, test.instanceID)
 			assert.Equal(t, test.expected, reloadError)
 		})
 	}
