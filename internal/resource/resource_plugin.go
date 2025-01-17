@@ -190,11 +190,11 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 	switch action.GetAction().(type) {
 	case *mpi.NGINXPlusAction_UpdateHttpUpstreamServers:
 		slog.DebugContext(ctx, "Updating http upstream servers", "request", action.GetUpdateHttpUpstreamServers())
-		resp := apiAction.HandleUpdateHTTPUpstreams(ctx, action, instance)
+		resp := apiAction.HandleUpdateHTTPUpstreamsRequest(ctx, action, instance)
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 	case *mpi.NGINXPlusAction_GetHttpUpstreamServers:
 		slog.DebugContext(ctx, "Getting http upstream servers", "request", action.GetGetHttpUpstreamServers())
-		resp := apiAction.HandleGetHTTPUpstreamsServers(ctx, action, instance)
+		resp := apiAction.HandleGetHTTPUpstreamsServersRequest(ctx, action, instance)
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 	case *mpi.NGINXPlusAction_UpdateStreamServers:
 		slog.DebugContext(ctx, "Updating stream servers", "request", action.GetUpdateStreamServers())
@@ -202,11 +202,11 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 	case *mpi.NGINXPlusAction_GetStreamUpstreams:
 		slog.DebugContext(ctx, "Getting stream upstreams", "request", action.GetGetStreamUpstreams())
-		resp := apiAction.HandleGetStreamUpstreams(ctx, instance)
+		resp := apiAction.HandleGetStreamUpstreamsRequest(ctx, instance)
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 	case *mpi.NGINXPlusAction_GetUpstreams:
 		slog.DebugContext(ctx, "Getting upstreams", "request", action.GetGetUpstreams())
-		resp := apiAction.HandleGetUpstreams(ctx, instance)
+		resp := apiAction.HandleGetUpstreamsRequest(ctx, instance)
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 	default:
 		slog.DebugContext(ctx, "NGINX Plus action not implemented yet")

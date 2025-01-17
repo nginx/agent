@@ -45,7 +45,7 @@ func (a *APIAction) HandleUpdateStreamServersRequest(ctx context.Context, action
 		"Successfully updated stream upstream servers", instanceID, "")
 }
 
-func (a *APIAction) HandleGetStreamUpstreams(ctx context.Context, instance *mpi.Instance) *mpi.DataPlaneResponse {
+func (a *APIAction) HandleGetStreamUpstreamsRequest(ctx context.Context, instance *mpi.Instance) *mpi.DataPlaneResponse {
 	correlationID := logger.GetCorrelationID(ctx)
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
 	streamUpstreamsResponse := emptyResponse
@@ -69,7 +69,7 @@ func (a *APIAction) HandleGetStreamUpstreams(ctx context.Context, instance *mpi.
 		streamUpstreamsResponse, instanceID, "")
 }
 
-func (a *APIAction) HandleGetUpstreams(ctx context.Context, instance *mpi.Instance) *mpi.DataPlaneResponse {
+func (a *APIAction) HandleGetUpstreamsRequest(ctx context.Context, instance *mpi.Instance) *mpi.DataPlaneResponse {
 	correlationID := logger.GetCorrelationID(ctx)
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
 	upstreamsResponse := emptyResponse
@@ -94,7 +94,7 @@ func (a *APIAction) HandleGetUpstreams(ctx context.Context, instance *mpi.Instan
 		upstreamsResponse, instanceID, "")
 }
 
-func (a *APIAction) HandleUpdateHTTPUpstreams(ctx context.Context, action *mpi.NGINXPlusAction,
+func (a *APIAction) HandleUpdateHTTPUpstreamsRequest(ctx context.Context, action *mpi.NGINXPlusAction,
 	instance *mpi.Instance,
 ) *mpi.DataPlaneResponse {
 	correlationID := logger.GetCorrelationID(ctx)
@@ -119,7 +119,7 @@ func (a *APIAction) HandleUpdateHTTPUpstreams(ctx context.Context, action *mpi.N
 		"Successfully updated HTTP Upstreams", instanceID, "")
 }
 
-func (a *APIAction) HandleGetHTTPUpstreamsServers(ctx context.Context, action *mpi.NGINXPlusAction,
+func (a *APIAction) HandleGetHTTPUpstreamsServersRequest(ctx context.Context, action *mpi.NGINXPlusAction,
 	instance *mpi.Instance,
 ) *mpi.DataPlaneResponse {
 	correlationID := logger.GetCorrelationID(ctx)
