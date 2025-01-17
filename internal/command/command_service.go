@@ -40,9 +40,11 @@ type (
 		subscribeCancel              context.CancelFunc
 		subscribeChannel             chan *mpi.ManagementPlaneRequest
 		configApplyRequestQueue      map[string][]*mpi.ManagementPlaneRequest // key is the instance ID
+		instances                    []*mpi.Instance
 		subscribeMutex               sync.Mutex
 		subscribeClientMutex         sync.Mutex
 		configApplyRequestQueueMutex sync.Mutex
+		instancesMutex               sync.Mutex
 	}
 )
 
@@ -61,6 +63,7 @@ func NewCommandService(
 		isConnected:             isConnected,
 		subscribeChannel:        subscribeChannel,
 		configApplyRequestQueue: make(map[string][]*mpi.ManagementPlaneRequest),
+		instances:               []*mpi.Instance{},
 	}
 
 	var subscribeCtx context.Context
@@ -126,6 +129,10 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 		return err
 	}
 	slog.DebugContext(ctx, "UpdateDataPlaneStatus response", "response", response)
+
+	cs.instancesMutex.Lock()
+	defer cs.instancesMutex.Unlock()
+	cs.instances = resource.GetInstances()
 
 	return err
 }
@@ -251,6 +258,10 @@ func (cs *CommandService) CreateConnection(
 	slog.InfoContext(ctx, "Agent connected")
 
 	cs.isConnected.Store(true)
+
+	cs.instancesMutex.Lock()
+	defer cs.instancesMutex.Unlock()
+	cs.instances = resource.GetInstances()
 
 	return response, nil
 }
@@ -416,28 +427,99 @@ func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
 			return recvError
 		}
 
-		switch request.GetRequest().(type) {
-		case *mpi.ManagementPlaneRequest_ConfigApplyRequest:
-			cs.configApplyRequestQueueMutex.Lock()
-			defer cs.configApplyRequestQueueMutex.Unlock()
-
-			instanceID := request.GetConfigApplyRequest().GetOverview().GetConfigVersion().GetInstanceId()
-			cs.configApplyRequestQueue[instanceID] = append(cs.configApplyRequestQueue[instanceID], request)
-			if len(cs.configApplyRequestQueue[instanceID]) == 1 {
+		if cs.isValidRequest(ctx, request) {
+			switch request.GetRequest().(type) {
+			case *mpi.ManagementPlaneRequest_ConfigApplyRequest:
+				cs.queueConfigApplyRequests(ctx, request)
+			default:
 				cs.subscribeChannel <- request
-			} else {
-				slog.DebugContext(
-					ctx,
-					"Config apply request is already in progress, queuing new config apply request",
-					"request", request,
-				)
 			}
-		default:
-			cs.subscribeChannel <- request
 		}
 
 		return nil
 	}
+}
+
+func (cs *CommandService) queueConfigApplyRequests(ctx context.Context, request *mpi.ManagementPlaneRequest) {
+	cs.configApplyRequestQueueMutex.Lock()
+	defer cs.configApplyRequestQueueMutex.Unlock()
+
+	instanceID := request.GetConfigApplyRequest().GetOverview().GetConfigVersion().GetInstanceId()
+	cs.configApplyRequestQueue[instanceID] = append(cs.configApplyRequestQueue[instanceID], request)
+	if len(cs.configApplyRequestQueue[instanceID]) == 1 {
+		cs.subscribeChannel <- request
+	} else {
+		slog.DebugContext(
+			ctx,
+			"Config apply request is already in progress, queuing new config apply request",
+			"request", request,
+		)
+	}
+}
+
+func (cs *CommandService) isValidRequest(ctx context.Context, request *mpi.ManagementPlaneRequest) bool {
+	var validRequest bool
+
+	switch request.GetRequest().(type) {
+	case *mpi.ManagementPlaneRequest_ConfigApplyRequest:
+		requestInstanceID := request.GetConfigApplyRequest().GetOverview().GetConfigVersion().GetInstanceId()
+		validRequest = cs.checkIfInstanceExists(ctx, request, requestInstanceID)
+	case *mpi.ManagementPlaneRequest_ConfigUploadRequest:
+		requestInstanceID := request.GetConfigUploadRequest().GetOverview().GetConfigVersion().GetInstanceId()
+		validRequest = cs.checkIfInstanceExists(ctx, request, requestInstanceID)
+	case *mpi.ManagementPlaneRequest_ActionRequest:
+		requestInstanceID := request.GetActionRequest().GetInstanceId()
+		validRequest = cs.checkIfInstanceExists(ctx, request, requestInstanceID)
+	default:
+		validRequest = true
+	}
+
+	return validRequest
+}
+
+func (cs *CommandService) checkIfInstanceExists(
+	ctx context.Context,
+	request *mpi.ManagementPlaneRequest,
+	requestInstanceID string,
+) bool {
+	instanceFound := false
+
+	cs.instancesMutex.Lock()
+	for _, instance := range cs.instances {
+		if instance.GetInstanceMeta().GetInstanceId() == requestInstanceID {
+			instanceFound = true
+		}
+	}
+	cs.instancesMutex.Unlock()
+
+	if !instanceFound {
+		slog.WarnContext(
+			ctx,
+			"Unable to handle request, instance not found",
+			"instance", requestInstanceID,
+			"request", request,
+		)
+
+		response := &mpi.DataPlaneResponse{
+			MessageMeta: &mpi.MessageMeta{
+				MessageId:     proto.GenerateMessageID(),
+				CorrelationId: request.GetMessageMeta().GetCorrelationId(),
+				Timestamp:     timestamppb.Now(),
+			},
+			CommandResponse: &mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "Unable to handle request",
+				Error:   "Instance ID not found",
+			},
+			InstanceId: requestInstanceID,
+		}
+		err := cs.SendDataPlaneResponse(ctx, response)
+		if err != nil {
+			slog.ErrorContext(ctx, "Failed to send data plane response", "error", err)
+		}
+	}
+
+	return instanceFound
 }
 
 // Retry callback for establishing the connection between the Management Plane and the Agent.

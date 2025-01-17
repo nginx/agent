@@ -158,6 +158,10 @@ func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) er
 	var instance *mpi.Instance
 	operator := r.instanceOperators[instanceID]
 
+	if operator == nil {
+		return fmt.Errorf("instance %s not found", instanceID)
+	}
+
 	for _, resourceInstance := range r.resource.GetInstances() {
 		if resourceInstance.GetInstanceMeta().GetInstanceId() == instanceID {
 			instance = resourceInstance

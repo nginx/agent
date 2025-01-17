@@ -207,6 +207,11 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 	nginxInstanceID := verifyConnection(t, 2)
 	assert.False(t, t.Failed())
 
+	responses := getManagementPlaneResponses(t, 1)
+
+	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
+
 	request := fmt.Sprintf(`{
 	"message_meta": {
 		"message_id": "5d0fa83e-351c-4009-90cd-1f2acce2d184",
@@ -214,9 +219,15 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 		"timestamp": "2023-01-15T01:30:15.01Z"
 	},
 	"config_upload_request": {
-	"instance_id": "%s"
+      "overview" : {
+        "config_version": {
+          "instance_id": "%s"
+        }
+      }
 	}
 }`, nginxInstanceID)
+
+	t.Logf("Sending config upload request: %s", request)
 
 	client := resty.New()
 	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
@@ -227,7 +238,7 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 
-	responses := getManagementPlaneResponses(t, 2)
+	responses = getManagementPlaneResponses(t, 2)
 
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
