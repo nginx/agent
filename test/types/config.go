@@ -143,7 +143,6 @@ func AgentConfig() *config.Config {
 				ServerName: "test-server",
 			},
 		},
-		File: &config.File{},
 		DataPlaneConfig: &config.DataPlaneConfig{
 			Nginx: &config.NginxDataPlaneConfig{
 				TreatWarningsAsErrors:  true,
