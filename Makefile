@@ -190,6 +190,18 @@ run-mock-management-grpc-server: ## Run mock management plane gRPC server
 	@echo "🖲️ Running mock management plane gRPC server"
 	$(GORUN) test/mock/grpc/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY) -logLevel=$(MOCK_MANAGEMENT_PLANE_LOG_LEVEL) -grpcAddress=$(MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS) -apiAddress=$(MOCK_MANAGEMENT_PLANE_API_ADDRESS)
 
+
+.PHONY: build-test-nginx-plus-and-nap-image
+build-test-nginx-plus-and-nap-image:
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx_plus_and_nap_$(IMAGE_TAG) . \
+		--no-cache -f ./test/docker/nginx-plus-and-nap/deb/Dockerfile \
+		--secret id=nginx-crt,src=$(CERTS_DIR)/nginx-repo.crt \
+		--secret id=nginx-key,src=$(CERTS_DIR)/nginx-repo.key \
+		--build-arg PACKAGE_NAME=$(PACKAGE_NAME) \
+		--build-arg PACKAGES_REPO=$(OSS_PACKAGES_REPO) \
+		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
+		--build-arg ENTRY_POINT=./test/docker/entrypoint.sh
+
 .PHONY: build-test-plus-image
 build-test-plus-image:
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx_plus_$(IMAGE_TAG) . \
@@ -219,12 +231,12 @@ build-mock-management-otel-collector-image: build-mock-management-otel-collector
 .PHONY: run-mock-management-otel-collector
 run-mock-management-otel-collector: ## Run mock management plane OTel collector
 	@echo "🚀 Running mock management plane OTel collector"
-	AGENT_IMAGE_WITH_NGINX_PLUS=nginx_plus_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_OSS=nginx_oss_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml up -d
+	AGENT_IMAGE_WITH_NGINX_PLUS=nginx_plus_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_OSS=nginx_oss_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_PLUS_AND_NAP=nginx_plus_and_nap_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml up -d
 
 .PHONY: stop-mock-management-otel-collector
 stop-mock-management-otel-collector: ## Stop running mock management plane OTel collector
 	@echo "Stopping mock management plane OTel collector"
-	AGENT_IMAGE_WITH_NGINX_PLUS=nginx_plus_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_OSS=nginx_oss_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml down
+	AGENT_IMAGE_WITH_NGINX_PLUS=nginx_plus_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_OSS=nginx_oss_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_PLUS_AND_NAP=nginx_plus_and_nap_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml down
 
 generate: ## Generate golang code
 	@echo "🗄️ Generating proto files"

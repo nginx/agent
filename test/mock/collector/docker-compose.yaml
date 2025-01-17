@@ -7,6 +7,16 @@ volumes:
   grafana-storage:
 
 services:
+  agent-with-nginx-plus-and-nap:
+    image: ${AGENT_IMAGE_WITH_NGINX_PLUS_AND_NAP}
+    container_name: mock-collector-agent-with-nginx-plus-and-nap
+    volumes:
+      - ./nginx-agent.conf:/etc/nginx-agent/nginx-agent.conf
+      - ./nginx-plus-and-nap/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx-plus-and-nap/conf.d/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - metrics
+
   agent-with-nginx-plus:
     image: ${AGENT_IMAGE_WITH_NGINX_PLUS}
     container_name: mock-collector-agent-with-nginx-plus
