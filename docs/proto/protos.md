@@ -52,6 +52,8 @@
     - [DataPlaneResponse](#mpi-v1-DataPlaneResponse)
     - [FileServer](#mpi-v1-FileServer)
     - [GetHTTPUpstreamServers](#mpi-v1-GetHTTPUpstreamServers)
+    - [GetStreamUpstreams](#mpi-v1-GetStreamUpstreams)
+    - [GetUpstreams](#mpi-v1-GetUpstreams)
     - [HealthRequest](#mpi-v1-HealthRequest)
     - [HostInfo](#mpi-v1-HostInfo)
     - [Instance](#mpi-v1-Instance)
@@ -74,6 +76,7 @@
     - [UpdateDataPlaneStatusRequest](#mpi-v1-UpdateDataPlaneStatusRequest)
     - [UpdateDataPlaneStatusResponse](#mpi-v1-UpdateDataPlaneStatusResponse)
     - [UpdateHTTPUpstreamServers](#mpi-v1-UpdateHTTPUpstreamServers)
+    - [UpdateStreamServers](#mpi-v1-UpdateStreamServers)
   
     - [InstanceHealth.InstanceHealthStatus](#mpi-v1-InstanceHealth-InstanceHealthStatus)
     - [InstanceMeta.InstanceType](#mpi-v1-InstanceMeta-InstanceType)
@@ -798,6 +801,26 @@ Get HTTP Upstream Servers for an instance
 
 
 
+<a name="mpi-v1-GetStreamUpstreams"></a>
+
+### GetStreamUpstreams
+Get Stream Upstream Servers for an instance
+
+
+
+
+
+
+<a name="mpi-v1-GetUpstreams"></a>
+
+### GetUpstreams
+Get Upstreams for an instance
+
+
+
+
+
+
 <a name="mpi-v1-HealthRequest"></a>
 
 ### HealthRequest
@@ -978,6 +1001,9 @@ Perform an action using the NGINX Plus API on an instance
 | ----- | ---- | ----- | ----------- |
 | update_http_upstream_servers | [UpdateHTTPUpstreamServers](#mpi-v1-UpdateHTTPUpstreamServers) |  |  |
 | get_http_upstream_servers | [GetHTTPUpstreamServers](#mpi-v1-GetHTTPUpstreamServers) |  |  |
+| update_stream_servers | [UpdateStreamServers](#mpi-v1-UpdateStreamServers) |  |  |
+| get_upstreams | [GetUpstreams](#mpi-v1-GetUpstreams) |  |  |
+| get_stream_upstreams | [GetStreamUpstreams](#mpi-v1-GetStreamUpstreams) |  |  |
 
 
 
@@ -1132,6 +1158,22 @@ Update HTTP Upstream Servers for an instance
 | ----- | ---- | ----- | ----------- |
 | http_upstream_name | [string](#string) |  | the name of the upstream to update |
 | servers | [google.protobuf.Struct](#google-protobuf-Struct) | repeated | a list of upstream servers |
+
+
+
+
+
+
+<a name="mpi-v1-UpdateStreamServers"></a>
+
+### UpdateStreamServers
+Update Upstream Stream Servers for an instance
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| upstream_stream_name | [string](#string) |  | the name of the upstream stream |
+| servers | [google.protobuf.Struct](#google-protobuf-Struct) | repeated | a list of upstream stream servers |
 
 
 

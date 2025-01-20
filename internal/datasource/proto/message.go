@@ -9,6 +9,9 @@ import (
 	"log/slog"
 	"time"
 
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/google/uuid"
 	agentUuid "github.com/nginx/agent/v3/pkg/uuid"
 )
@@ -28,4 +31,22 @@ func GenerateMessageID() string {
 	}
 
 	return uuidv7.String()
+}
+
+func CreateDataPlaneResponse(correlationID string, status mpi.CommandResponse_CommandStatus,
+	message, instanceID, err string,
+) *mpi.DataPlaneResponse {
+	return &mpi.DataPlaneResponse{
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     GenerateMessageID(),
+			CorrelationId: correlationID,
+			Timestamp:     timestamppb.Now(),
+		},
+		CommandResponse: &mpi.CommandResponse{
+			Status:  status,
+			Message: message,
+			Error:   err,
+		},
+		InstanceId: instanceID,
+	}
 }
