@@ -241,10 +241,11 @@ func addPerRPCCredentials(agentConfig *config.Config, resourceID string, opts []
 	token := agentConfig.Command.Auth.Token
 
 	if agentConfig.Command.Auth.TokenPath != "" {
-		var err error
-		token, err = retrieveTokenFromFile(agentConfig.Command.Auth.TokenPath)
-		if err != nil {
-			slog.Error("Unable to add token to gRPC dial options, token will be empty", "error", err)
+		tk, err := retrieveTokenFromFile(agentConfig.Command.Auth.TokenPath)
+		if err == nil {
+			token = tk
+		} else {
+			slog.Error("Unable to add token to gRPC dial options", "error", err)
 		}
 	}
 
