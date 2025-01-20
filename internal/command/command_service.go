@@ -435,25 +435,6 @@ func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
 				cs.subscribeChannel <- request
 			}
 		}
-		switch request.GetRequest().(type) {
-		case *mpi.ManagementPlaneRequest_ConfigApplyRequest:
-			cs.configApplyRequestQueueMutex.Lock()
-			defer cs.configApplyRequestQueueMutex.Unlock()
-
-			instanceID := request.GetConfigApplyRequest().GetOverview().GetConfigVersion().GetInstanceId()
-			cs.configApplyRequestQueue[instanceID] = append(cs.configApplyRequestQueue[instanceID], request)
-			if len(cs.configApplyRequestQueue[instanceID]) == 1 {
-				cs.subscribeChannel <- request
-			} else {
-				slog.DebugContext(
-					ctx,
-					"Config apply request is already in progress, queuing new config apply request",
-					"request", request,
-				)
-			}
-		default:
-			cs.subscribeChannel <- request
-		}
 
 		return nil
 	}
