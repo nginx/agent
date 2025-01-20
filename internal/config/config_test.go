@@ -132,7 +132,7 @@ func TestLoadPropertiesFromFile(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, "debug", viperInstance.GetString(LogLevelKey))
-	assert.Equal(t, "./", viperInstance.GetString(LogPathKey))
+	assert.Equal(t, "./test-path", viperInstance.GetString(LogPathKey))
 
 	assert.Equal(t, 15*time.Second, viperInstance.GetDuration(ClientKeepAliveTimeoutKey))
 
@@ -772,7 +772,6 @@ func createConfig() *Config {
 						Server: &ServerConfig{
 							Host: "127.0.0.1",
 							Port: 5643,
-							Type: 0,
 						},
 						Authenticator: "test-saas-token",
 						TLS: &TLSConfig{
@@ -788,7 +787,6 @@ func createConfig() *Config {
 					Server: &ServerConfig{
 						Host: "127.0.0.1",
 						Port: 1235,
-						Type: 0,
 					},
 					TLS: &TLSConfig{
 						Cert:       "/path/to/server-cert.pem",
@@ -822,7 +820,6 @@ func createConfig() *Config {
 						Server: &ServerConfig{
 							Host: "127.0.0.1",
 							Port: 4317,
-							Type: 0,
 						},
 						Auth: &AuthConfig{
 							Token: "secret-receiver-token",
@@ -872,7 +869,6 @@ func createConfig() *Config {
 					Server: &ServerConfig{
 						Host: "127.0.0.1",
 						Port: 1337,
-						Type: 0,
 					},
 					TLS: &TLSConfig{
 						Cert:       "/path/to/server-cert.pem",
@@ -925,6 +921,11 @@ func createConfig() *Config {
 			FileWatcher: FileWatcher{
 				MonitoringFrequency: 10 * time.Second,
 			},
+		},
+		Labels: map[string]any{
+			"label1": "label 1",
+			"label2": "new-value",
+			"label3": 123,
 		},
 	}
 }
