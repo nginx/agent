@@ -334,7 +334,7 @@ func (cs *CommandService) addResponseAndRequestEndpoints() {
 			return
 		}
 
-		pb := protojson.UnmarshalOptions{DiscardUnknown: true}
+		pb := protojson.UnmarshalOptions{DiscardUnknown: true, AllowPartial: true}
 		err = pb.Unmarshal(body, &request)
 		if err != nil {
 			slog.Error("Error unmarshalling request body", "err", err)

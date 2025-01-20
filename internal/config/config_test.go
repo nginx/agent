@@ -7,6 +7,7 @@ package config
 import (
 	"os"
 	"path"
+	"strings"
 	"testing"
 	"time"
 
@@ -99,6 +100,7 @@ func checkDefaultsClientValues(t *testing.T, viperInstance *viper.Viper) {
 	assert.Equal(t, DefMaxMessageSize, viperInstance.GetInt(ClientGRPCMaxMessageSizeKey))
 	assert.Equal(t, DefMaxMessageRecieveSize, viperInstance.GetInt(ClientGRPCMaxMessageReceiveSizeKey))
 	assert.Equal(t, DefMaxMessageSendSize, viperInstance.GetInt(ClientGRPCMaxMessageSendSizeKey))
+	assert.Equal(t, make(map[string]string), viperInstance.GetStringMapString(LabelsRootKey))
 }
 
 func TestSeekFileInPaths(t *testing.T) {
@@ -287,6 +289,313 @@ func TestClient(t *testing.T) {
 	assert.Equal(t, expected, result)
 }
 
+func TestResolveLabels(t *testing.T) {
+	// Helper to set up the viper instance
+	setupViper := func(input map[string]string) {
+		viperInstance = viper.New() // Create a new viper instance for isolation
+		viperInstance.Set(LabelsRootKey, input)
+	}
+
+	tests := []struct {
+		input    map[string]string
+		expected map[string]interface{}
+		name     string
+	}{
+		{
+			name: "Test 1: Integer values",
+			input: map[string]string{
+				"key1": "123",
+				"key2": "456",
+			},
+			expected: map[string]interface{}{
+				"key1": 123,
+				"key2": 456,
+			},
+		},
+		{
+			name: "Test 2: Float values",
+			input: map[string]string{
+				"key1": "123.45",
+				"key2": "678.90",
+			},
+			expected: map[string]interface{}{
+				"key1": 123.45,
+				"key2": 678.9,
+			},
+		},
+		{
+			name: "Test 3: Boolean values",
+			input: map[string]string{
+				"key1": "true",
+				"key2": "false",
+			},
+			expected: map[string]interface{}{
+				"key1": true,
+				"key2": false,
+			},
+		},
+		{
+			name: "Test 4: Mixed types",
+			input: map[string]string{
+				"key1": "true",
+				"key2": "123",
+				"key3": "45.67",
+				"key4": "hello",
+			},
+			expected: map[string]interface{}{
+				"key1": true,
+				"key2": 123,
+				"key3": 45.67,
+				"key4": "hello",
+			},
+		},
+		{
+			name: "Test 5: String values",
+			input: map[string]string{
+				"key1": "hello",
+				"key2": "world",
+			},
+			expected: map[string]interface{}{
+				"key1": "hello",
+				"key2": "world",
+			},
+		},
+		{
+			name:     "Test 6: Empty input",
+			input:    make(map[string]string),
+			expected: make(map[string]interface{}),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup viper with test input
+			setupViper(tt.input)
+
+			// Call the function
+			actual := resolveLabels()
+
+			// Assert the results
+			assert.Equal(t, tt.expected, actual)
+		})
+	}
+}
+
+func TestResolveLabelsWithYAML(t *testing.T) {
+	tests := []struct {
+		expected  map[string]interface{}
+		name      string
+		yamlInput string
+	}{
+		{
+			name: "Test 1: Integer and Float Values",
+			yamlInput: `
+labels:
+  key1: "123"
+  key2: "45.67"
+`,
+			expected: map[string]interface{}{
+				"key1": 123,
+				"key2": 45.67,
+			},
+		},
+		{
+			name: "Test 2: Boolean Values",
+			yamlInput: `
+labels:
+  key1: "true"
+  key2: "false"
+`,
+			expected: map[string]interface{}{
+				"key1": true,
+				"key2": false,
+			},
+		},
+		{
+			name: "Test 3: Nil and Empty Values",
+			yamlInput: `
+labels:
+  key1: "nil"
+  key2: ""
+`,
+			expected: map[string]interface{}{
+				"key1": nil,
+				"key2": nil,
+			},
+		},
+		{
+			name: "Test 4: Array Values",
+			yamlInput: `
+labels:
+  key1: "[1, 2, 3]"
+`,
+			expected: map[string]interface{}{
+				"key1": []interface{}{float64(1), float64(2), float64(3)},
+			},
+		},
+		{
+			name: "Test 5: Nested JSON Object",
+			yamlInput: `
+labels:
+  key1: '{"a": 1, "b": 2}'
+`,
+			expected: map[string]interface{}{
+				"key1": map[string]interface{}{
+					"a": float64(1),
+					"b": float64(2),
+				},
+			},
+		},
+		{
+			name: "Test 6: Plain Strings",
+			yamlInput: `
+labels:
+  key1: "hello"
+  key2: "world"
+`,
+			expected: map[string]interface{}{
+				"key1": "hello",
+				"key2": "world",
+			},
+		},
+		{
+			name: "Test 7: Specific Strings Example",
+			yamlInput: `
+labels:
+  config-sync-group: "group1"
+`,
+			expected: map[string]interface{}{
+				"config-sync-group": "group1",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set up viper with YAML input
+			viperInstance = viper.New() // Create a new viper instance for isolation
+			viperInstance.SetConfigType("yaml")
+
+			err := viperInstance.ReadConfig(strings.NewReader(tt.yamlInput))
+			require.NoError(t, err, "Error reading YAML input")
+
+			// Call the function
+			actual := resolveLabels()
+
+			// Assert the results
+			assert.Equal(t, tt.expected, actual)
+		})
+	}
+}
+
+func TestParseInt(t *testing.T) {
+	tests := []struct {
+		expected interface{}
+		name     string
+		input    string
+	}{
+		{name: "Test 1: Valid Integer", input: "123", expected: 123},
+		{name: "Test 2: Negative Integer", input: "-456", expected: -456},
+		{name: "Test 3: Zero", input: "0", expected: 0},
+		{name: "Test 4: Invalid Integer", input: "abc", expected: nil},
+		{name: "Test 5: Empty String", input: "", expected: nil},
+		{name: "Test 6: Float String", input: "45.67", expected: nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := parseInt(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestParseFloat(t *testing.T) {
+	tests := []struct {
+		expected interface{}
+		name     string
+		input    string
+	}{
+		{name: "Test 1: Valid Float", input: "45.67", expected: 45.67},
+		{name: "Test 2: Negative Float", input: "-123.45", expected: -123.45},
+		{name: "Test 3: Valid Integer as Float", input: "123", expected: 123.0},
+		{name: "Test 4: Invalid Float", input: "abc", expected: nil},
+		{name: "Test 5: Empty String", input: "", expected: nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := parseFloat(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestParseBool(t *testing.T) {
+	tests := []struct {
+		expected interface{}
+		name     string
+		input    string
+	}{
+		{name: "Test 1: True (lowercase)", input: "true", expected: true},
+		{name: "Test 2: False (lowercase)", input: "false", expected: false},
+		{name: "Test 3: True (uppercase)", input: "TRUE", expected: true},
+		{name: "Test 4: False (uppercase)", input: "FALSE", expected: false},
+		{name: "Test 5: Numeric True", input: "1", expected: true},
+		{name: "Test 6: Numeric False", input: "0", expected: false},
+		{name: "Test 7: Invalid Boolean", input: "abc", expected: nil},
+		{name: "Test 8: Empty String", input: "", expected: nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := parseBool(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestParseJSON(t *testing.T) {
+	tests := []struct {
+		expected interface{}
+		name     string
+		input    string
+	}{
+		{
+			name:  "Test 1: Valid JSON Object",
+			input: `{"a": 1, "b": "text"}`,
+			expected: map[string]interface{}{
+				"a": float64(1),
+				"b": "text",
+			},
+		},
+		{
+			name:     "Test 2: Valid JSON Array",
+			input:    `[1, 2, 3]`,
+			expected: []interface{}{float64(1), float64(2), float64(3)},
+		},
+		{
+			name:  "Test 3: Nested JSON",
+			input: `{"a": {"b": [1, 2, 3]}}`,
+			expected: map[string]interface{}{
+				"a": map[string]interface{}{"b": []interface{}{float64(1), float64(2), float64(3)}},
+			},
+		},
+		{name: "Test 4: Invalid JSON", input: `{"a": 1,`, expected: nil},
+		{name: "Test 5: Empty String", input: "", expected: nil},
+		{name: "Test 6: Plain String", input: `"hello"`, expected: "hello"},
+		{name: "Test 7: Number as JSON", input: "123", expected: float64(123)},
+		{name: "Test 8: Boolean as JSON", input: "true", expected: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := parseJSON(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 func getAgentConfig() *Config {
 	return &Config{
 		UUID:    "",
@@ -413,6 +722,7 @@ func getAgentConfig() *Config {
 				ServerName: "server-name",
 			},
 		},
+		Labels: make(map[string]any),
 	}
 }
 

@@ -7,7 +7,6 @@ package resource
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -17,7 +16,6 @@ import (
 	"github.com/nginx/agent/v3/internal/datasource/proto"
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/model"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/nginx/agent/v3/internal/bus"
 )
@@ -34,7 +32,7 @@ type Resource struct {
 
 type errResponse struct {
 	Status string `json:"status"`
-	Test   string `json:"test"`
+	Text   string `json:"test"`
 	Code   string `json:"code"`
 }
 
@@ -165,9 +163,12 @@ func (r *Resource) handleAPIActionRequest(ctx context.Context, msg *bus.Message)
 func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi.NGINXPlusAction, instanceID string) {
 	correlationID := logger.GetCorrelationID(ctx)
 	instance := r.resourceService.Instance(instanceID)
+	apiAction := APIAction{
+		ResourceService: r.resourceService,
+	}
 	if instance == nil {
 		slog.ErrorContext(ctx, "Unable to find instance with ID", "id", instanceID)
-		resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+		resp := proto.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"", instanceID, fmt.Sprintf("failed to preform API "+
 				"action, could not find instance with ID: %s", instanceID))
 
@@ -178,7 +179,7 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 
 	if instance.GetInstanceMeta().GetInstanceType() != mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
 		slog.ErrorContext(ctx, "Failed to preform API action", "error", errors.New("instance is not NGINX Plus"))
-		resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+		resp := proto.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"", instanceID, "failed to preform API action, instance is not NGINX Plus")
 
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
@@ -188,49 +189,24 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 
 	switch action.GetAction().(type) {
 	case *mpi.NGINXPlusAction_UpdateHttpUpstreamServers:
-		slog.DebugContext(ctx, "Updating http upstream servers",
-			"request", action.GetUpdateHttpUpstreamServers())
-		add, update, del, err := r.resourceService.UpdateHTTPUpstreams(ctx, instance,
-			action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(),
-			action.GetUpdateHttpUpstreamServers().GetServers())
-		if err != nil {
-			slog.ErrorContext(ctx, "Unable to update HTTP servers of upstream", "request",
-				action.GetUpdateHttpUpstreamServers(), "error", err)
-			resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-				"", instanceID, err.Error())
-			r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
-
-			return
-		}
-
-		slog.DebugContext(ctx, "Successfully updated http upstream servers", "http_upstream_name",
-			action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(), "add", len(add), "update", len(update),
-			"delete", len(del))
-		resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
-			"Successfully updated HTTP Upstreams", instanceID, "")
-
+		slog.DebugContext(ctx, "Updating http upstream servers", "request", action.GetUpdateHttpUpstreamServers())
+		resp := apiAction.HandleUpdateHTTPUpstreamsRequest(ctx, action, instance)
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
-
 	case *mpi.NGINXPlusAction_GetHttpUpstreamServers:
 		slog.DebugContext(ctx, "Getting http upstream servers", "request", action.GetGetHttpUpstreamServers())
-		upstreams, err := r.resourceService.GetUpstreams(ctx, instance,
-			action.GetGetHttpUpstreamServers().GetHttpUpstreamName())
-		if err != nil {
-			slog.ErrorContext(ctx, "Unable to get HTTP servers of upstream", "error", err)
-			resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-				"", instanceID, err.Error())
-			r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
-
-			return
-		}
-
-		upstreamsJSON, err := json.Marshal(upstreams)
-		if err != nil {
-			slog.ErrorContext(ctx, "Unable to marshal http upstreams", "err", err)
-		}
-		resp := r.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
-			string(upstreamsJSON), instanceID, "")
-
+		resp := apiAction.HandleGetHTTPUpstreamsServersRequest(ctx, action, instance)
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+	case *mpi.NGINXPlusAction_UpdateStreamServers:
+		slog.DebugContext(ctx, "Updating stream servers", "request", action.GetUpdateStreamServers())
+		resp := apiAction.HandleUpdateStreamServersRequest(ctx, action, instance)
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+	case *mpi.NGINXPlusAction_GetStreamUpstreams:
+		slog.DebugContext(ctx, "Getting stream upstreams", "request", action.GetGetStreamUpstreams())
+		resp := apiAction.HandleGetStreamUpstreamsRequest(ctx, instance)
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
+	case *mpi.NGINXPlusAction_GetUpstreams:
+		slog.DebugContext(ctx, "Getting upstreams", "request", action.GetGetUpstreams())
+		resp := apiAction.HandleGetUpstreamsRequest(ctx, instance)
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 	default:
 		slog.DebugContext(ctx, "NGINX Plus action not implemented yet")
@@ -248,7 +224,7 @@ func (r *Resource) handleWriteConfigSuccessful(ctx context.Context, msg *bus.Mes
 	if err != nil {
 		data.Error = err
 		slog.Error("errors found during config apply, sending error status, rolling back config", "err", err)
-		response := r.createDataPlaneResponse(data.CorrelationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
+		response := proto.CreateDataPlaneResponse(data.CorrelationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
 			"Config apply failed, rolling back config", data.InstanceID, err.Error())
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
 
@@ -257,7 +233,7 @@ func (r *Resource) handleWriteConfigSuccessful(ctx context.Context, msg *bus.Mes
 		return
 	}
 
-	response := r.createDataPlaneResponse(data.CorrelationID, mpi.CommandResponse_COMMAND_STATUS_OK,
+	response := proto.CreateDataPlaneResponse(data.CorrelationID, mpi.CommandResponse_COMMAND_STATUS_OK,
 		"Config apply successful", data.InstanceID, "")
 
 	r.messagePipe.Process(
@@ -280,10 +256,10 @@ func (r *Resource) handleRollbackWrite(ctx context.Context, msg *bus.Message) {
 	if err != nil {
 		slog.Error("errors found during rollback, sending failure status", "err", err)
 
-		rollbackResponse := r.createDataPlaneResponse(data.CorrelationID,
+		rollbackResponse := proto.CreateDataPlaneResponse(data.CorrelationID,
 			mpi.CommandResponse_COMMAND_STATUS_ERROR, "Rollback failed", data.InstanceID, err.Error())
 
-		applyResponse := r.createDataPlaneResponse(data.CorrelationID,
+		applyResponse := proto.CreateDataPlaneResponse(data.CorrelationID,
 			mpi.CommandResponse_COMMAND_STATUS_FAILURE, "Config apply failed, rollback failed",
 			data.InstanceID, data.Error.Error())
 
@@ -293,27 +269,9 @@ func (r *Resource) handleRollbackWrite(ctx context.Context, msg *bus.Message) {
 		return
 	}
 
-	applyResponse := r.createDataPlaneResponse(data.CorrelationID,
+	applyResponse := proto.CreateDataPlaneResponse(data.CorrelationID,
 		mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 		"Config apply failed, rollback successful", data.InstanceID, data.Error.Error())
 
 	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: applyResponse})
-}
-
-func (*Resource) createDataPlaneResponse(correlationID string, status mpi.CommandResponse_CommandStatus,
-	message, instanceID, err string,
-) *mpi.DataPlaneResponse {
-	return &mpi.DataPlaneResponse{
-		MessageMeta: &mpi.MessageMeta{
-			MessageId:     proto.GenerateMessageID(),
-			CorrelationId: correlationID,
-			Timestamp:     timestamppb.Now(),
-		},
-		CommandResponse: &mpi.CommandResponse{
-			Status:  status,
-			Message: message,
-			Error:   err,
-		},
-		InstanceId: instanceID,
-	}
 }

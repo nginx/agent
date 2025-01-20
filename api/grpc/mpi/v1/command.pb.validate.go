@@ -2820,6 +2820,129 @@ func (m *NGINXPlusAction) validate(all bool) error {
 			}
 		}
 
+	case *NGINXPlusAction_UpdateStreamServers:
+		if v == nil {
+			err := NGINXPlusActionValidationError{
+				field:  "Action",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetUpdateStreamServers()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, NGINXPlusActionValidationError{
+						field:  "UpdateStreamServers",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, NGINXPlusActionValidationError{
+						field:  "UpdateStreamServers",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetUpdateStreamServers()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return NGINXPlusActionValidationError{
+					field:  "UpdateStreamServers",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *NGINXPlusAction_GetUpstreams:
+		if v == nil {
+			err := NGINXPlusActionValidationError{
+				field:  "Action",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetGetUpstreams()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, NGINXPlusActionValidationError{
+						field:  "GetUpstreams",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, NGINXPlusActionValidationError{
+						field:  "GetUpstreams",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetGetUpstreams()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return NGINXPlusActionValidationError{
+					field:  "GetUpstreams",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *NGINXPlusAction_GetStreamUpstreams:
+		if v == nil {
+			err := NGINXPlusActionValidationError{
+				field:  "Action",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetGetStreamUpstreams()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, NGINXPlusActionValidationError{
+						field:  "GetStreamUpstreams",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, NGINXPlusActionValidationError{
+						field:  "GetStreamUpstreams",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetGetStreamUpstreams()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return NGINXPlusActionValidationError{
+					field:  "GetStreamUpstreams",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}
@@ -3143,6 +3266,345 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = GetHTTPUpstreamServersValidationError{}
+
+// Validate checks the field values on UpdateStreamServers with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *UpdateStreamServers) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UpdateStreamServers with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// UpdateStreamServersMultiError, or nil if none found.
+func (m *UpdateStreamServers) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UpdateStreamServers) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for UpstreamStreamName
+
+	for idx, item := range m.GetServers() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, UpdateStreamServersValidationError{
+						field:  fmt.Sprintf("Servers[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, UpdateStreamServersValidationError{
+						field:  fmt.Sprintf("Servers[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return UpdateStreamServersValidationError{
+					field:  fmt.Sprintf("Servers[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return UpdateStreamServersMultiError(errors)
+	}
+
+	return nil
+}
+
+// UpdateStreamServersMultiError is an error wrapping multiple validation
+// errors returned by UpdateStreamServers.ValidateAll() if the designated
+// constraints aren't met.
+type UpdateStreamServersMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UpdateStreamServersMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UpdateStreamServersMultiError) AllErrors() []error { return m }
+
+// UpdateStreamServersValidationError is the validation error returned by
+// UpdateStreamServers.Validate if the designated constraints aren't met.
+type UpdateStreamServersValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UpdateStreamServersValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UpdateStreamServersValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UpdateStreamServersValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UpdateStreamServersValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UpdateStreamServersValidationError) ErrorName() string {
+	return "UpdateStreamServersValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UpdateStreamServersValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUpdateStreamServers.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UpdateStreamServersValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UpdateStreamServersValidationError{}
+
+// Validate checks the field values on GetUpstreams with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *GetUpstreams) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetUpstreams with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in GetUpstreamsMultiError, or
+// nil if none found.
+func (m *GetUpstreams) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetUpstreams) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return GetUpstreamsMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetUpstreamsMultiError is an error wrapping multiple validation errors
+// returned by GetUpstreams.ValidateAll() if the designated constraints aren't met.
+type GetUpstreamsMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetUpstreamsMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetUpstreamsMultiError) AllErrors() []error { return m }
+
+// GetUpstreamsValidationError is the validation error returned by
+// GetUpstreams.Validate if the designated constraints aren't met.
+type GetUpstreamsValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetUpstreamsValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetUpstreamsValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetUpstreamsValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetUpstreamsValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetUpstreamsValidationError) ErrorName() string { return "GetUpstreamsValidationError" }
+
+// Error satisfies the builtin error interface
+func (e GetUpstreamsValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetUpstreams.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetUpstreamsValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetUpstreamsValidationError{}
+
+// Validate checks the field values on GetStreamUpstreams with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetStreamUpstreams) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetStreamUpstreams with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetStreamUpstreamsMultiError, or nil if none found.
+func (m *GetStreamUpstreams) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetStreamUpstreams) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return GetStreamUpstreamsMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetStreamUpstreamsMultiError is an error wrapping multiple validation errors
+// returned by GetStreamUpstreams.ValidateAll() if the designated constraints
+// aren't met.
+type GetStreamUpstreamsMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetStreamUpstreamsMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetStreamUpstreamsMultiError) AllErrors() []error { return m }
+
+// GetStreamUpstreamsValidationError is the validation error returned by
+// GetStreamUpstreams.Validate if the designated constraints aren't met.
+type GetStreamUpstreamsValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetStreamUpstreamsValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetStreamUpstreamsValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetStreamUpstreamsValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetStreamUpstreamsValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetStreamUpstreamsValidationError) ErrorName() string {
+	return "GetStreamUpstreamsValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetStreamUpstreamsValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetStreamUpstreams.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetStreamUpstreamsValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetStreamUpstreamsValidationError{}
 
 // Validate checks the field values on CommandStatusRequest with the rules
 // defined in the proto definition for this message. If any rules are

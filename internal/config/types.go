@@ -38,6 +38,7 @@ type (
 		Client             *Client          `yaml:"-" mapstructure:"client"`
 		Collector          *Collector       `yaml:"-" mapstructure:"collector"`
 		Watchers           *Watchers        `yaml:"-"`
+		Labels             map[string]any   `yaml:"-" mapstructure:"labels"`
 		Version            string           `yaml:"-"`
 		Path               string           `yaml:"-"`
 		UUID               string           `yaml:"-"`
