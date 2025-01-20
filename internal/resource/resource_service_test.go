@@ -147,6 +147,42 @@ func TestResourceService_DeleteInstance(t *testing.T) {
 	}
 }
 
+func TestResourceService_Instance(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		result    *v1.Instance
+		name      string
+		instances []*v1.Instance
+	}{
+		{
+			name: "Test 1: instance found",
+			instances: []*v1.Instance{
+				protos.GetNginxOssInstance([]string{}),
+				protos.GetNginxPlusInstance([]string{}),
+			},
+			result: protos.GetNginxPlusInstance([]string{}),
+		},
+		{
+			name: "Test 2: instance not found",
+			instances: []*v1.Instance{
+				protos.GetNginxOssInstance([]string{}),
+			},
+			result: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			resourceService := NewResourceService(ctx, types.AgentConfig())
+			resourceService.resource.Instances = test.instances
+			instance := resourceService.Instance(protos.GetNginxPlusInstance([]string{}).
+				GetInstanceMeta().GetInstanceId())
+			assert.Equal(tt, test.result, instance)
+		})
+	}
+}
+
 func TestResourceService_GetResource(t *testing.T) {
 	ctx := context.Background()
 
@@ -200,8 +236,14 @@ func TestResourceService_GetResource(t *testing.T) {
 func TestResourceService_createPlusClient(t *testing.T) {
 	instanceWithAPI := protos.GetNginxPlusInstance([]string{})
 	instanceWithAPI.InstanceRuntime.GetNginxPlusRuntimeInfo().PlusApi = &v1.APIDetails{
-		Location: "localhost:80",
-		Listen:   "/api",
+		Location: "/api",
+		Listen:   "localhost:80",
+	}
+
+	instanceWithUnixAPI := protos.GetNginxPlusInstance([]string{})
+	instanceWithUnixAPI.InstanceRuntime.GetNginxPlusRuntimeInfo().PlusApi = &v1.APIDetails{
+		Listen:   "unix:/var/run/nginx-status.sock",
+		Location: "/api",
 	}
 
 	ctx := context.Background()
@@ -216,7 +258,12 @@ func TestResourceService_createPlusClient(t *testing.T) {
 			err:      nil,
 		},
 		{
-			name:     "Test 2: Fail Creating Client - API not Configured",
+			name:     "Test 2: Create Plus Client, Unix",
+			instance: instanceWithUnixAPI,
+			err:      nil,
+		},
+		{
+			name:     "Test 3: Fail Creating Client - API not Configured",
 			instance: protos.GetNginxPlusInstance([]string{}),
 			err:      errors.New("failed to preform API action, NGINX Plus API is not configured"),
 		},
@@ -240,6 +287,7 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
+		instanceID  string
 		reloadErr   error
 		validateErr error
 		expected    error
@@ -247,21 +295,31 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 	}{
 		{
 			name:        "Test 1: Successful reload",
+			instanceID:  protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 			reloadErr:   nil,
 			validateErr: nil,
 			expected:    nil,
 		},
 		{
 			name:        "Test 2: Failed reload",
+			instanceID:  protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 			reloadErr:   fmt.Errorf("something went wrong"),
 			validateErr: nil,
 			expected:    fmt.Errorf("failed to reload NGINX %w", fmt.Errorf("something went wrong")),
 		},
 		{
 			name:        "Test 3: Failed validate",
+			instanceID:  protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 			reloadErr:   nil,
 			validateErr: fmt.Errorf("something went wrong"),
 			expected:    fmt.Errorf("failed validating config %w", fmt.Errorf("something went wrong")),
+		},
+		{
+			name:        "Test 4: Unknown instance ID",
+			instanceID:  "unknown",
+			reloadErr:   nil,
+			validateErr: nil,
+			expected:    fmt.Errorf("instance unknown not found"),
 		},
 	}
 
@@ -283,13 +341,13 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 			}
 			resourceService.resource.Instances = instances
 
-			reloadError := resourceService.ApplyConfig(ctx,
-				protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId())
+			reloadError := resourceService.ApplyConfig(ctx, test.instanceID)
 			assert.Equal(t, test.expected, reloadError)
 		})
 	}
 }
 
+// nolint: dupl
 func Test_convertToUpstreamServer(t *testing.T) {
 	expectedMax := 2
 	expectedFails := 0
@@ -329,5 +387,48 @@ func Test_convertToUpstreamServer(t *testing.T) {
 	}
 
 	result := convertToUpstreamServer(test)
+	assert.Equal(t, expected, result)
+}
+
+// nolint: dupl
+func Test_convertToStreamUpstreamServer(t *testing.T) {
+	expectedMax := 2
+	expectedFails := 0
+	expectedBackup := true
+	expected := []client.StreamUpstreamServer{
+		{
+			MaxConns: &expectedMax,
+			MaxFails: &expectedFails,
+			Backup:   &expectedBackup,
+			Server:   "test_server",
+		},
+		{
+			MaxConns: &expectedMax,
+			MaxFails: &expectedFails,
+			Backup:   &expectedBackup,
+			Server:   "test_server2",
+		},
+	}
+
+	test := []*structpb.Struct{
+		{
+			Fields: map[string]*structpb.Value{
+				"max_conns": structpb.NewNumberValue(2),
+				"max_fails": structpb.NewNumberValue(0),
+				"backup":    structpb.NewBoolValue(expectedBackup),
+				"server":    structpb.NewStringValue("test_server"),
+			},
+		},
+		{
+			Fields: map[string]*structpb.Value{
+				"max_conns": structpb.NewNumberValue(2),
+				"max_fails": structpb.NewNumberValue(0),
+				"backup":    structpb.NewBoolValue(expectedBackup),
+				"server":    structpb.NewStringValue("test_server2"),
+			},
+		},
+	}
+
+	result := convertToStreamUpstreamServer(test)
 	assert.Equal(t, expected, result)
 }

@@ -39,6 +39,7 @@ type (
 		Collector          *Collector       `yaml:"-" mapstructure:"collector"`
 		File               *File            `yaml:"-" mapstructure:"file"`
 		Watchers           *Watchers        `yaml:"-"`
+		Labels             map[string]any   `yaml:"-" mapstructure:"labels"`
 		Version            string           `yaml:"-"`
 		Path               string           `yaml:"-"`
 		UUID               string           `yaml:"-"`

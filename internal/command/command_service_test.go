@@ -56,7 +56,8 @@ func (*FakeConfigApplySubscribeClient) Send(*mpi.DataPlaneResponse) error {
 
 // nolint: nilnil
 func (*FakeConfigApplySubscribeClient) Recv() (*mpi.ManagementPlaneRequest, error) {
-	protos.CreateManagementPlaneRequest()
+	nginxInstance := protos.GetNginxOssInstance([]string{})
+
 	return &mpi.ManagementPlaneRequest{
 		MessageMeta: &mpi.MessageMeta{
 			MessageId:     "1",
@@ -67,7 +68,7 @@ func (*FakeConfigApplySubscribeClient) Recv() (*mpi.ManagementPlaneRequest, erro
 			ConfigApplyRequest: &mpi.ConfigApplyRequest{
 				Overview: &mpi.FileOverview{
 					ConfigVersion: &mpi.ConfigVersion{
-						InstanceId: "12314",
+						InstanceId: nginxInstance.GetInstanceMeta().GetInstanceId(),
 						Version:    "4215432",
 					},
 				},
@@ -112,6 +113,11 @@ func TestCommandService_receiveCallback_configApplyRequest(t *testing.T) {
 		types.AgentConfig(),
 		subscribeChannel,
 	)
+
+	nginxInstance := protos.GetNginxOssInstance([]string{})
+	commandService.instancesMutex.Lock()
+	commandService.instances = append(commandService.instances, nginxInstance)
+	commandService.instancesMutex.Unlock()
 
 	defer commandService.CancelSubscription(ctx)
 
@@ -388,4 +394,143 @@ func TestCommandService_SendDataPlaneResponse_configApplyRequest(t *testing.T) {
 	assert.Len(t, commandService.configApplyRequestQueue, 1)
 	assert.Equal(t, request3, commandService.configApplyRequestQueue["12314"][0])
 	wg.Wait()
+}
+
+func TestCommandService_isValidRequest(t *testing.T) {
+	ctx := context.Background()
+	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
+	subscribeClient := &FakeSubscribeClient{}
+
+	commandService := NewCommandService(
+		ctx,
+		commandServiceClient,
+		types.AgentConfig(),
+		make(chan *mpi.ManagementPlaneRequest),
+	)
+
+	commandService.subscribeClientMutex.Lock()
+	commandService.subscribeClient = subscribeClient
+	commandService.subscribeClientMutex.Unlock()
+
+	nginxInstance := protos.GetNginxOssInstance([]string{})
+
+	commandService.instancesMutex.Lock()
+	commandService.instances = append(commandService.instances, nginxInstance)
+	commandService.instancesMutex.Unlock()
+
+	testCases := []struct {
+		req    *mpi.ManagementPlaneRequest
+		name   string
+		result bool
+	}{
+		{
+			name: "Test 1: valid health request",
+			req: &mpi.ManagementPlaneRequest{
+				MessageMeta: protos.CreateMessageMeta(),
+				Request:     &mpi.ManagementPlaneRequest_HealthRequest{HealthRequest: &mpi.HealthRequest{}},
+			},
+			result: true,
+		},
+		{
+			name: "Test 2: valid config apply request",
+			req: &mpi.ManagementPlaneRequest{
+				MessageMeta: protos.CreateMessageMeta(),
+				Request: &mpi.ManagementPlaneRequest_ConfigApplyRequest{
+					ConfigApplyRequest: protos.CreateConfigApplyRequest(&mpi.FileOverview{
+						Files: make([]*mpi.File, 0),
+						ConfigVersion: &mpi.ConfigVersion{
+							InstanceId: nginxInstance.GetInstanceMeta().GetInstanceId(),
+							Version:    "e23brbei3u2bru93",
+						},
+					}),
+				},
+			},
+			result: true,
+		},
+		{
+			name: "Test 3: invalid config apply request",
+			req: &mpi.ManagementPlaneRequest{
+				MessageMeta: protos.CreateMessageMeta(),
+				Request: &mpi.ManagementPlaneRequest_ConfigApplyRequest{
+					ConfigApplyRequest: protos.CreateConfigApplyRequest(&mpi.FileOverview{
+						Files: make([]*mpi.File, 0),
+						ConfigVersion: &mpi.ConfigVersion{
+							InstanceId: "unknown-id",
+							Version:    "e23brbei3u2bru93",
+						},
+					}),
+				},
+			},
+			result: false,
+		},
+		{
+			name: "Test 4: valid config upload request",
+			req: &mpi.ManagementPlaneRequest{
+				MessageMeta: protos.CreateMessageMeta(),
+				Request: &mpi.ManagementPlaneRequest_ConfigUploadRequest{
+					ConfigUploadRequest: &mpi.ConfigUploadRequest{
+						Overview: &mpi.FileOverview{
+							Files: make([]*mpi.File, 0),
+							ConfigVersion: &mpi.ConfigVersion{
+								InstanceId: nginxInstance.GetInstanceMeta().GetInstanceId(),
+								Version:    "e23brbei3u2bru93",
+							},
+						},
+					},
+				},
+			},
+			result: true,
+		},
+		{
+			name: "Test 5: invalid config upload request",
+			req: &mpi.ManagementPlaneRequest{
+				MessageMeta: protos.CreateMessageMeta(),
+				Request: &mpi.ManagementPlaneRequest_ConfigUploadRequest{
+					ConfigUploadRequest: &mpi.ConfigUploadRequest{
+						Overview: &mpi.FileOverview{
+							Files: make([]*mpi.File, 0),
+							ConfigVersion: &mpi.ConfigVersion{
+								InstanceId: "unknown-id",
+								Version:    "e23brbei3u2bru93",
+							},
+						},
+					},
+				},
+			},
+			result: false,
+		},
+		{
+			name: "Test 6: valid action request",
+			req: &mpi.ManagementPlaneRequest{
+				MessageMeta: protos.CreateMessageMeta(),
+				Request: &mpi.ManagementPlaneRequest_ActionRequest{
+					ActionRequest: &mpi.APIActionRequest{
+						InstanceId: nginxInstance.GetInstanceMeta().GetInstanceId(),
+						Action:     nil,
+					},
+				},
+			},
+			result: true,
+		},
+		{
+			name: "Test 7: invalid action request",
+			req: &mpi.ManagementPlaneRequest{
+				MessageMeta: protos.CreateMessageMeta(),
+				Request: &mpi.ManagementPlaneRequest_ActionRequest{
+					ActionRequest: &mpi.APIActionRequest{
+						InstanceId: "unknown-id",
+						Action:     nil,
+					},
+				},
+			},
+			result: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			result := commandService.isValidRequest(ctx, testCase.req)
+			assert.Equal(t, testCase.result, result)
+		})
+	}
 }

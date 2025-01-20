@@ -473,6 +473,11 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles, modifiedFiles 
 		currentFile, ok := currentFiles[file.GetFileMeta().GetName()]
 		// default to unchanged action
 		file.Action = &unchangedAction
+
+		// if file is unmanaged, action is set to unchanged so file is skipped when performing actions
+		if file.GetUnmanaged() {
+			continue
+		}
 		// if file doesn't exist in the current files, file has been added
 		// set file action
 		if !ok {

@@ -933,6 +933,8 @@ func (m *File) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for Unmanaged
+
 	if m.Action != nil {
 		// no validation rules for Action
 	}
