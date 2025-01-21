@@ -12,6 +12,9 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/cenkalti/backoff/v4"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -40,11 +43,11 @@ type (
 		subscribeCancel              context.CancelFunc
 		subscribeChannel             chan *mpi.ManagementPlaneRequest
 		configApplyRequestQueue      map[string][]*mpi.ManagementPlaneRequest // key is the instance ID
-		instances                    []*mpi.Instance
+		resource                     *mpi.Resource
 		subscribeMutex               sync.Mutex
 		subscribeClientMutex         sync.Mutex
 		configApplyRequestQueueMutex sync.Mutex
-		instancesMutex               sync.Mutex
+		resourceMutex                sync.Mutex
 	}
 )
 
@@ -63,7 +66,7 @@ func NewCommandService(
 		isConnected:             isConnected,
 		subscribeChannel:        subscribeChannel,
 		configApplyRequestQueue: make(map[string][]*mpi.ManagementPlaneRequest),
-		instances:               []*mpi.Instance{},
+		resource:                &mpi.Resource{},
 	}
 
 	var subscribeCtx context.Context
@@ -130,9 +133,9 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 	}
 	slog.DebugContext(ctx, "UpdateDataPlaneStatus response", "response", response)
 
-	cs.instancesMutex.Lock()
-	defer cs.instancesMutex.Unlock()
-	cs.instances = resource.GetInstances()
+	cs.resourceMutex.Lock()
+	defer cs.resourceMutex.Unlock()
+	cs.resource = resource
 
 	return err
 }
@@ -259,9 +262,9 @@ func (cs *CommandService) CreateConnection(
 
 	cs.isConnected.Store(true)
 
-	cs.instancesMutex.Lock()
-	defer cs.instancesMutex.Unlock()
-	cs.instances = resource.GetInstances()
+	cs.resourceMutex.Lock()
+	defer cs.resourceMutex.Unlock()
+	cs.resource = resource
 
 	return response, nil
 }
@@ -405,10 +408,7 @@ func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
 			var err error
 			cs.subscribeClient, err = cs.commandServiceClient.Subscribe(ctx)
 			if err != nil {
-				slog.ErrorContext(ctx, "Failed to create subscribe client", "error", err)
-				cs.subscribeClientMutex.Unlock()
-
-				return err
+				return cs.handleSubscribeError(ctx, err)
 			}
 
 			if cs.subscribeClient == nil {
@@ -438,6 +438,27 @@ func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
 
 		return nil
 	}
+}
+
+func (cs *CommandService) handleSubscribeError(ctx context.Context, err error) error {
+	codeError, ok := status.FromError(err)
+
+	if ok && codeError.Code() == codes.Unavailable {
+		slog.ErrorContext(ctx, "Failed to create subscribe client, rpc unavailable. "+
+			"Trying create connection rpc", "error", err)
+		_, connectionErr := cs.CreateConnection(ctx, cs.resource)
+		if connectionErr != nil {
+			slog.ErrorContext(ctx, "Unable to create connection", "error", err)
+		}
+		cs.subscribeClientMutex.Unlock()
+
+		return nil
+	}
+
+	slog.ErrorContext(ctx, "Failed to create subscribe client", "error", err)
+	cs.subscribeClientMutex.Unlock()
+
+	return err
 }
 
 func (cs *CommandService) queueConfigApplyRequests(ctx context.Context, request *mpi.ManagementPlaneRequest) {
@@ -484,13 +505,13 @@ func (cs *CommandService) checkIfInstanceExists(
 ) bool {
 	instanceFound := false
 
-	cs.instancesMutex.Lock()
-	for _, instance := range cs.instances {
+	cs.resourceMutex.Lock()
+	for _, instance := range cs.resource.GetInstances() {
 		if instance.GetInstanceMeta().GetInstanceId() == requestInstanceID {
 			instanceFound = true
 		}
 	}
-	cs.instancesMutex.Unlock()
+	cs.resourceMutex.Unlock()
 
 	if !instanceFound {
 		slog.WarnContext(
