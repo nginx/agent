@@ -200,11 +200,11 @@ func TestGrpc_Reconnection(t *testing.T) {
 	startErr := mockManagementPlaneGrpcContainer.Start(ctx)
 	require.NoError(t, startErr)
 
-	//ipAddress, err := mockManagementPlaneGrpcContainer.Host(ctx)
-	//require.NoError(t, err)
-	//ports, err := mockManagementPlaneGrpcContainer.Ports(ctx)
-	//require.NoError(t, err)
-	//mockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9093/tcp"][0].HostPort)
+	// ipAddress, err := mockManagementPlaneGrpcContainer.Host(ctx)
+	// require.NoError(t, err)
+	// ports, err := mockManagementPlaneGrpcContainer.Ports(ctx)
+	// require.NoError(t, err)
+	// mockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9093/tcp"][0].HostPort)
 
 	time.Sleep(10 * time.Second)
 
