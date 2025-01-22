@@ -198,9 +198,9 @@ func TestGrpc_Reconnection(t *testing.T) {
 	require.NoError(t, stopErr)
 
 	startErr := mockManagementPlaneGrpcContainer.Start(ctx)
-
 	require.NoError(t, startErr)
-
+	
+	mockManagementPlaneGrpcAddress = "managementPlane:9092"
 	currentID := verifyConnection(t, 2)
 	assert.Equal(t, originalID, currentID)
 }
