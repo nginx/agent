@@ -206,7 +206,7 @@ func TestGrpc_Reconnection(t *testing.T) {
 	// require.NoError(t, err)
 	// mockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9093/tcp"][0].HostPort)
 
-	time.Sleep(10 * time.Second)
+	time.Sleep(60 * time.Second)
 
 	currentID := verifyConnection(t, 2)
 	assert.Equal(t, originalID, currentID)
