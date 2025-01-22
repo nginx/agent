@@ -41,6 +41,7 @@ type (
 		CommandServiceClient() mpi.CommandServiceClient
 		FileServiceClient() mpi.FileServiceClient
 		Close(ctx context.Context) error
+		Restart(ctx context.Context) (*GrpcConnection, error)
 	}
 
 	GrpcConnection struct {
@@ -128,6 +129,22 @@ func (gc *GrpcConnection) Close(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (gc *GrpcConnection) Restart(ctx context.Context) (*GrpcConnection, error) {
+	slog.InfoContext(ctx, "Restarting grpc connection")
+	err := gc.Close(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	slog.InfoContext(ctx, "Creating grpc connection")
+	newConn, err := NewGrpcConnection(ctx, gc.config)
+	if err != nil {
+		return nil, err
+	}
+
+	return newConn, nil
 }
 
 func (w *wrappedStream) RecvMsg(message any) error {
@@ -249,7 +266,7 @@ func addPerRPCCredentials(agentConfig *config.Config, resourceID string, opts []
 		}
 	}
 
-	slog.Debug("Adding token to RPC credentials")
+	slog.Debug("Adding token to RPC credentials", "token", token)
 	opts = append(opts,
 		grpc.WithPerRPCCredentials(
 			&PerRPCCredentials{

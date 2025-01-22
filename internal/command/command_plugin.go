@@ -93,6 +93,15 @@ func (cp *CommandPlugin) processResourceUpdate(ctx context.Context, msg *bus.Mes
 	if resource, ok := msg.Data.(*mpi.Resource); ok {
 		if !cp.commandService.IsConnected() && cp.config.IsFeatureEnabled(pkgConfig.FeatureConnection) {
 			cp.createConnection(ctx, resource)
+
+			newConn, err := cp.conn.Restart(ctx)
+			if err != nil {
+				slog.ErrorContext(ctx, "Failed to restart connection", "error", err)
+				return
+			}
+			cp.conn = newConn
+			cp.createConnection(ctx, resource)
+
 		} else {
 			statusErr := cp.commandService.UpdateDataPlaneStatus(ctx, resource)
 			if statusErr != nil {
