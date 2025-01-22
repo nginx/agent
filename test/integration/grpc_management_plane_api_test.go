@@ -200,11 +200,14 @@ func TestGrpc_Reconnection(t *testing.T) {
 	startErr := mockManagementPlaneGrpcContainer.Start(ctx)
 	require.NoError(t, startErr)
 
-	ipAddress, err := mockManagementPlaneGrpcContainer.Host(ctx)
-	require.NoError(t, err)
-	ports, err := mockManagementPlaneGrpcContainer.Ports(ctx)
-	require.NoError(t, err)
-	mockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9093/tcp"][0].HostPort)
+	//ipAddress, err := mockManagementPlaneGrpcContainer.Host(ctx)
+	//require.NoError(t, err)
+	//ports, err := mockManagementPlaneGrpcContainer.Ports(ctx)
+	//require.NoError(t, err)
+	//mockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9093/tcp"][0].HostPort)
+
+	time.Sleep(10 * time.Second)
+
 	currentID := verifyConnection(t, 2)
 	assert.Equal(t, originalID, currentID)
 }
@@ -225,7 +228,6 @@ func verifyConnection(t *testing.T, instancesLength int) string {
 	client := resty.New()
 	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
 
-	t.Logf("-------- mockManagementPlaneAPIAddress: %s", mockManagementPlaneAPIAddress)
 	url := fmt.Sprintf("http://%s/api/v1/connection", mockManagementPlaneAPIAddress)
 	resp, err := client.R().EnableTrace().Get(url)
 
