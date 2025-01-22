@@ -186,11 +186,12 @@ func setupLocalEnvironment(tb testing.TB) {
 
 func TestGrpc_Reconnection(t *testing.T) {
 	ctx := context.Background()
-	teardownTest := setupConnectionTest(t, true, false)
+	teardownTest := setupConnectionTest(t, false, false)
 	defer teardownTest(t)
 
 	timeout := 30 * time.Second
 
+	t.Logf("-------------------------------- Verify Original Connection")
 	originalID := verifyConnection(t, 2)
 
 	stopErr := mockManagementPlaneGrpcContainer.Stop(ctx, &timeout)
@@ -208,6 +209,7 @@ func TestGrpc_Reconnection(t *testing.T) {
 
 	time.Sleep(60 * time.Second)
 
+	t.Logf("-------------------------------- Verify Next Connection")
 	currentID := verifyConnection(t, 2)
 	assert.Equal(t, originalID, currentID)
 }
