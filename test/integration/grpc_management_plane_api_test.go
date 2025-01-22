@@ -231,6 +231,7 @@ func verifyConnection(t *testing.T, instancesLength int) string {
 	url := fmt.Sprintf("http://%s/api/v1/connection", mockManagementPlaneAPIAddress)
 	resp, err := client.R().EnableTrace().Get(url)
 
+	t.Logf("------------ url: %s", url)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 
