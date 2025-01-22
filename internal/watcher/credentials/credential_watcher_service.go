@@ -4,11 +4,12 @@ import (
 	"context"
 	"github.com/fsnotify/fsnotify"
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/logger"
 	"log/slog"
-	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 const (
@@ -54,6 +55,19 @@ func NewCredentialWatcherService(agentConfig *config.Config) *CredentialWatcherS
 func (cws *CredentialWatcherService) Watch(ctx context.Context, ch chan<- CredentialUpdateMessage) {
 	slog.DebugContext(ctx, "Starting credential watcher monitoring")
 
+	ticker := time.NewTicker(time.Second * 3)
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to create file watcher", "error", err)
+		return
+	}
+
+	cws.watcher = watcher
+
+	cws.watchFiles(ctx, []string{
+		cws.agentConfig.Command.Auth.TokenPath, // might not exist, handle that
+	})
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -65,8 +79,8 @@ func (cws *CredentialWatcherService) Watch(ctx context.Context, ch chan<- Creden
 			return
 		case event := <-cws.watcher.Events:
 			cws.handleEvent(ctx, event)
-		//case <-instanceWatcherTicker.C:
-		//	cws.checkForUpdates(ctx, ch)
+		case <-ticker.C:
+			cws.checkForUpdates(ctx, ch)
 		case watcherError := <-cws.watcher.Errors:
 			slog.ErrorContext(ctx, "Unexpected error in credential watcher", "error", watcherError)
 		}
@@ -77,7 +91,7 @@ func (cws *CredentialWatcherService) SetEnabled(enabled bool) {
 	cws.enabled.Store(enabled)
 }
 
-func (cws *CredentialWatcherService) addWatcher(ctx context.Context, filePath string, info os.FileInfo) {
+func (cws *CredentialWatcherService) addWatcher(ctx context.Context, filePath string) {
 
 	if !cws.enabled.Load() {
 		slog.DebugContext(ctx, "Credential watcher is disabled")
@@ -92,7 +106,7 @@ func (cws *CredentialWatcherService) addWatcher(ctx context.Context, filePath st
 		return
 	}
 
-	if !info.IsDir() && !cws.isWatching(filePath) {
+	if !cws.isWatching(filePath) {
 		if err := cws.watcher.Add(filePath); err != nil {
 			slog.ErrorContext(ctx, "Failed to add credential watcher", "path", filePath, "error", err)
 			removeError := cws.watcher.Remove(filePath)
@@ -118,6 +132,13 @@ func (cws *CredentialWatcherService) removeWatcher(ctx context.Context, filePath
 
 		cws.filesBeingWatched.Delete(filePath)
 	}
+}
+
+func (cws *CredentialWatcherService) watchFiles(ctx context.Context, files []string) {
+	slog.DebugContext(ctx, "creating credential watchers")
+
+	cws.addWatcher(ctx, files[0])
+	//cws.addWatcher(ctx, )
 }
 
 func (cws *CredentialWatcherService) isWatching(path string) bool {
@@ -156,6 +177,20 @@ func (cws *CredentialWatcherService) handleEvent(ctx context.Context, event fsno
 		slog.DebugContext(ctx, "Processing FSNotify event", "event", event)
 
 		cws.filesChanged.Store(true)
+	}
+}
+
+func (cws *CredentialWatcherService) checkForUpdates(ctx context.Context, ch chan<- CredentialUpdateMessage) {
+	if cws.filesChanged.Load() {
+		newCtx := context.WithValue(
+			ctx,
+			logger.CorrelationIDContextKey,
+			slog.Any(logger.CorrelationIDKey, logger.GenerateCorrelationID()),
+		)
+
+		slog.DebugContext(ctx, "Credential watcher has detected changes")
+		ch <- CredentialUpdateMessage{CorrelationID: logger.GetCorrelationIDAttr(newCtx)}
+		cws.filesChanged.Store(false)
 	}
 }
 

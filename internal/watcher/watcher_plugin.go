@@ -39,6 +39,7 @@ type (
 		nginxConfigContextChannel          chan instance.NginxConfigContextMessage
 		instanceHealthChannel              chan health.InstanceHealthMessage
 		fileUpdatesChannel                 chan file.FileUpdateMessage
+		credentialUpdatesChannel           chan credentials.CredentialUpdateMessage
 		cancel                             context.CancelFunc
 		instancesWithConfigApplyInProgress []string
 	}
@@ -67,6 +68,7 @@ func NewWatcher(agentConfig *config.Config) *Watcher {
 		nginxConfigContextChannel:          make(chan instance.NginxConfigContextMessage),
 		instanceHealthChannel:              make(chan health.InstanceHealthMessage),
 		fileUpdatesChannel:                 make(chan file.FileUpdateMessage),
+		credentialUpdatesChannel:           make(chan credentials.CredentialUpdateMessage),
 		instancesWithConfigApplyInProgress: []string{},
 	}
 }
@@ -82,6 +84,7 @@ func (w *Watcher) Init(ctx context.Context, messagePipe bus.MessagePipeInterface
 
 	go w.instanceWatcherService.Watch(watcherContext, w.instanceUpdatesChannel, w.nginxConfigContextChannel)
 	go w.healthWatcherService.Watch(watcherContext, w.instanceHealthChannel)
+	go w.credentialWatcherService.Watch(watcherContext, w.credentialUpdatesChannel)
 
 	if w.agentConfig.IsFeatureEnabled(pkgConfig.FeatureFileWatcher) {
 		go w.fileWatcherService.Watch(watcherContext, w.fileUpdatesChannel)
@@ -110,8 +113,8 @@ func (*Watcher) Info() *bus.Info {
 
 func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
-	//case bus.CredentialUpdateTopic:
-	//	w.handleCredentialUpdate()
+	case bus.CredentialUpdatedTopic:
+		w.handleCredentialUpdate(ctx, msg)
 	case bus.ConfigApplyRequestTopic:
 		w.handleConfigApplyRequest(ctx, msg)
 	case bus.ConfigApplySuccessfulTopic:
@@ -127,7 +130,7 @@ func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
 
 func (*Watcher) Subscriptions() []string {
 	return []string{
-		//bus.CredentialUpdateTopic,
+		bus.CredentialUpdatedTopic,
 		bus.ConfigApplyRequestTopic,
 		bus.ConfigApplySuccessfulTopic,
 		bus.ConfigApplyCompleteTopic,
@@ -206,10 +209,10 @@ func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Messag
 	w.fileWatcherService.SetEnabled(true)
 }
 
-//`func (w *Watcher) handleCredentialUpdate(ctx context.Context, msg *bus.Message) {
-//	// handler function for when a file containing credentials is updated, sometimes this will require
-//	// a restart of the gRPC connection to the mgmt plane.
-//}`
+func (w *Watcher) handleCredentialUpdate(ctx context.Context, msg *bus.Message) {
+	// handler function for when a file containing credentials is updated, sometimes this will require
+	// a restart of the gRPC connection to the mgmt plane.
+}
 
 func (w *Watcher) monitorWatchers(ctx context.Context) {
 	for {
