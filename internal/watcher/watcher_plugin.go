@@ -7,6 +7,7 @@ package watcher
 
 import (
 	"context"
+	"github.com/nginx/agent/v3/internal/watcher/credentials"
 	"log/slog"
 	"slices"
 
@@ -33,6 +34,7 @@ type (
 		instanceWatcherService             instanceWatcherServiceInterface
 		healthWatcherService               *health.HealthWatcherService
 		fileWatcherService                 *file.FileWatcherService
+		credentialWatcherService           *credentials.CredentialWatcherService
 		instanceUpdatesChannel             chan instance.InstanceUpdatesMessage
 		nginxConfigContextChannel          chan instance.NginxConfigContextMessage
 		instanceHealthChannel              chan health.InstanceHealthMessage
@@ -60,6 +62,7 @@ func NewWatcher(agentConfig *config.Config) *Watcher {
 		instanceWatcherService:             instance.NewInstanceWatcherService(agentConfig),
 		healthWatcherService:               health.NewHealthWatcherService(agentConfig),
 		fileWatcherService:                 file.NewFileWatcherService(agentConfig),
+		credentialWatcherService:           credentials.NewCredentialWatcherService(agentConfig),
 		instanceUpdatesChannel:             make(chan instance.InstanceUpdatesMessage),
 		nginxConfigContextChannel:          make(chan instance.NginxConfigContextMessage),
 		instanceHealthChannel:              make(chan health.InstanceHealthMessage),
@@ -107,6 +110,8 @@ func (*Watcher) Info() *bus.Info {
 
 func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
+	//case bus.CredentialUpdateTopic:
+	//	w.handleCredentialUpdate()
 	case bus.ConfigApplyRequestTopic:
 		w.handleConfigApplyRequest(ctx, msg)
 	case bus.ConfigApplySuccessfulTopic:
@@ -122,6 +127,7 @@ func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
 
 func (*Watcher) Subscriptions() []string {
 	return []string{
+		//bus.CredentialUpdateTopic,
 		bus.ConfigApplyRequestTopic,
 		bus.ConfigApplySuccessfulTopic,
 		bus.ConfigApplyCompleteTopic,
@@ -199,6 +205,11 @@ func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Messag
 	)
 	w.fileWatcherService.SetEnabled(true)
 }
+
+//`func (w *Watcher) handleCredentialUpdate(ctx context.Context, msg *bus.Message) {
+//	// handler function for when a file containing credentials is updated, sometimes this will require
+//	// a restart of the gRPC connection to the mgmt plane.
+//}`
 
 func (w *Watcher) monitorWatchers(ctx context.Context) {
 	for {
