@@ -157,7 +157,8 @@ func (cp *CommandPlugin) processDataPlaneResponse(ctx context.Context, msg *bus.
 }
 
 func (cp *CommandPlugin) processConnectionReset(ctx context.Context, _ *bus.Message) {
-	// token has been updated, reinitiate gRPC connection
+	cp.commandService.CancelSubscription(ctx)
+
 	slog.InfoContext(ctx, "Command plugin received connection reset")
 	_, err := cp.conn.Restart(ctx)
 	if err != nil {

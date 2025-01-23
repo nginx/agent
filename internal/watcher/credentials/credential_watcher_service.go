@@ -71,8 +71,11 @@ func (cws *CredentialWatcherService) Watch(ctx context.Context, ch chan<- Creden
 
 	cws.watcher = watcher
 
-	pathsToWatch := []string{
-		cws.agentConfig.Command.Auth.TokenPath, // might not exist, read from the config
+	var pathsToWatch []string
+	if cws.agentConfig.Command.Auth != nil {
+		if cws.agentConfig.Command.Auth.TokenPath != "" {
+			pathsToWatch = append(pathsToWatch, cws.agentConfig.Command.Auth.TokenPath)
+		}
 	}
 
 	cws.watchFiles(ctx, pathsToWatch)
@@ -114,20 +117,18 @@ func (cws *CredentialWatcherService) addWatcher(ctx context.Context, filePath st
 		return
 	}
 
-	if !cws.isWatching(filePath) {
-		if err := cws.watcher.Add(filePath); err != nil {
-			slog.ErrorContext(ctx, "Failed to add credential watcher", "path", filePath, "error", err)
-			removeError := cws.watcher.Remove(filePath)
-			if removeError != nil {
-				slog.ErrorContext(
-					ctx, "Failed to remove credential watcher", "path", filePath, "error", removeError)
-			}
-
-			return
+	if err := cws.watcher.Add(filePath); err != nil {
+		slog.ErrorContext(ctx, "Failed to add credential watcher", "path", filePath, "error", err)
+		removeError := cws.watcher.Remove(filePath)
+		if removeError != nil {
+			slog.ErrorContext(
+				ctx, "Failed to remove credential watcher", "path", filePath, "error", removeError)
 		}
-		cws.filesBeingWatched.Store(filePath, true)
-		slog.DebugContext(ctx, "Credential watcher has been added", "path", filePath)
+
+		return
 	}
+	cws.filesBeingWatched.Store(filePath, true)
+	slog.DebugContext(ctx, "Credential watcher has been added", "path", filePath)
 }
 
 // func (cws *CredentialWatcherService) removeWatcher(ctx context.Context, filePath string) {
@@ -145,8 +146,9 @@ func (cws *CredentialWatcherService) addWatcher(ctx context.Context, filePath st
 func (cws *CredentialWatcherService) watchFiles(ctx context.Context, files []string) {
 	slog.DebugContext(ctx, "creating credential watchers")
 
-	// For each authentication or cert file, add a watcher
-	cws.addWatcher(ctx, files[0])
+	for _, filePath := range files {
+		cws.addWatcher(ctx, filePath)
+	}
 }
 
 func (cws *CredentialWatcherService) isWatching(path string) bool {
