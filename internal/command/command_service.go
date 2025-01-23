@@ -8,6 +8,7 @@ package command
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"sync"
 	"sync/atomic"
@@ -408,11 +409,15 @@ func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
 			var err error
 			cs.subscribeClient, err = cs.commandServiceClient.Subscribe(ctx)
 			if err != nil {
-				return cs.handleSubscribeError(ctx, err)
+				subscribeErr := cs.handleSubscribeError(ctx, err, "create subscribe client")
+				cs.subscribeClientMutex.Unlock()
+
+				return subscribeErr
 			}
 
 			if cs.subscribeClient == nil {
 				cs.subscribeClientMutex.Unlock()
+
 				return errors.New("subscribe service client not initialized yet")
 			}
 		}
@@ -421,10 +426,9 @@ func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
 
 		request, recvError := cs.subscribeClient.Recv()
 		if recvError != nil {
-			slog.ErrorContext(ctx, "Failed to receive message from subscribe stream", "error", recvError)
 			cs.subscribeClient = nil
 
-			return recvError
+			return cs.handleSubscribeError(ctx, recvError, "receive message from subscribe stream")
 		}
 
 		if cs.isValidRequest(ctx, request) {
@@ -440,23 +444,21 @@ func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
 	}
 }
 
-func (cs *CommandService) handleSubscribeError(ctx context.Context, err error) error {
+func (cs *CommandService) handleSubscribeError(ctx context.Context, err error, errorMsg string) error {
 	codeError, ok := status.FromError(err)
 
 	if ok && codeError.Code() == codes.Unavailable {
-		slog.ErrorContext(ctx, "Failed to create subscribe client, rpc unavailable. "+
-			"Trying create connection rpc", "error", err)
+		slog.ErrorContext(ctx, fmt.Sprintf("Failed to %s, rpc unavailable. "+
+			"Trying create connection rpc", errorMsg), "error", err)
 		_, connectionErr := cs.CreateConnection(ctx, cs.resource)
 		if connectionErr != nil {
 			slog.ErrorContext(ctx, "Unable to create connection", "error", err)
 		}
-		cs.subscribeClientMutex.Unlock()
 
 		return nil
 	}
 
-	slog.ErrorContext(ctx, "Failed to create subscribe client", "error", err)
-	cs.subscribeClientMutex.Unlock()
+	slog.ErrorContext(ctx, fmt.Sprintf("Failed to %s", errorMsg), "error", err)
 
 	return err
 }
