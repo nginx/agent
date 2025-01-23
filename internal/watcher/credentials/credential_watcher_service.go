@@ -2,14 +2,14 @@ package credentials
 
 import (
 	"context"
-	"github.com/fsnotify/fsnotify"
-	"github.com/nginx/agent/v3/internal/config"
-	"github.com/nginx/agent/v3/internal/logger"
 	"log/slog"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/fsnotify/fsnotify"
+	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/logger"
 )
 
 const (
@@ -27,6 +27,7 @@ var emptyEvent = fsnotify.Event{
 
 type CredentialUpdateMessage struct {
 	CorrelationID slog.Attr
+	File          string
 }
 
 type CredentialWatcherService struct {
@@ -159,19 +160,11 @@ func (cws *CredentialWatcherService) handleEvent(ctx context.Context, event fsno
 		}
 
 		switch {
-		case event.Op&Write == Write:
+		case event.Has(event.Op & Write):
 			// We want to send messages on write since that means the contents changed,
 			// but we also need to restart the gRPC connection to load the new credentials from the file being watched.
 			// Can we post a message on the message bus to trigger the CommandService to restart the gRPC connection?
-		case event.Op&Create == Create:
-			//info, err := os.Stat(event.Name)
-			//if err != nil {
-			//	slog.DebugContext(ctx, "Unable to add watcher", "path", event.Name, "error", err)
-			//	return
-			//}
-			//cws.addWatcher(ctx, event.Name, info)
-		case event.Op&Remove == Remove, event.Op&Rename == Rename:
-			//cws.removeWatcher(ctx, event.Name)
+			slog.DebugContext(ctx, "Write event", "event", event)
 		}
 
 		slog.DebugContext(ctx, "Processing FSNotify event", "event", event)
@@ -197,7 +190,8 @@ func (cws *CredentialWatcherService) checkForUpdates(ctx context.Context, ch cha
 func isEventSkippable(event fsnotify.Event) bool {
 	return event == emptyEvent ||
 		event.Name == "" ||
-		strings.HasSuffix(event.Name, ".swp") ||
-		strings.HasSuffix(event.Name, ".swx") ||
-		strings.HasSuffix(event.Name, "~")
+		event.Has(event.Op&Chmod) ||
+		event.Has(event.Op&Create) ||
+		event.Has(event.Op&Remove) ||
+		event.Has(event.Op&Rename)
 }

@@ -114,7 +114,7 @@ func (*Watcher) Info() *bus.Info {
 func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
 	case bus.CredentialUpdatedTopic:
-		w.handleCredentialUpdate(ctx, msg)
+		w.handleCredentialUpdate(ctx)
 	case bus.ConfigApplyRequestTopic:
 		w.handleConfigApplyRequest(ctx, msg)
 	case bus.ConfigApplySuccessfulTopic:
@@ -209,9 +209,11 @@ func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Messag
 	w.fileWatcherService.SetEnabled(true)
 }
 
-func (w *Watcher) handleCredentialUpdate(ctx context.Context, msg *bus.Message) {
-	// handler function for when a file containing credentials is updated, sometimes this will require
-	// a restart of the gRPC connection to the mgmt plane.
+func (w *Watcher) handleCredentialUpdate(ctx context.Context) {
+	slog.DebugContext(ctx, "Handling Credential Update")
+	w.messagePipe.Process(ctx, &bus.Message{
+		Topic: bus.ConnectionResetTopic, Data: nil,
+	})
 }
 
 func (w *Watcher) monitorWatchers(ctx context.Context) {
@@ -219,6 +221,12 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
+		case message := <-w.credentialUpdatesChannel:
+			slog.DebugContext(ctx, "Received credential update event")
+			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
+			w.messagePipe.Process(newCtx, &bus.Message{
+				Topic: bus.CredentialUpdatedTopic, Data: message.File,
+			})
 		case message := <-w.instanceUpdatesChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 			w.handleInstanceUpdates(newCtx, message)
@@ -248,7 +256,6 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 			w.messagePipe.Process(newCtx, &bus.Message{
 				Topic: bus.InstanceHealthTopic, Data: message.InstanceHealth,
 			})
-
 		case message := <-w.fileUpdatesChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 			// Running this in a separate go routine otherwise we get into a deadlock
