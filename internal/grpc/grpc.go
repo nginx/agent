@@ -133,7 +133,7 @@ func (gc *GrpcConnection) Close(ctx context.Context) error {
 
 func (gc *GrpcConnection) Restart(ctx context.Context) (*GrpcConnection, error) {
 	slog.InfoContext(ctx, "Restarting grpc connection")
-	err := gc.Close(ctx)
+	err := gc.conn.Close()
 	if err != nil {
 		return nil, err
 	}

@@ -45,6 +45,7 @@ func TestCommandPlugin_Subscriptions(t *testing.T) {
 	assert.Equal(
 		t,
 		[]string{
+			bus.ConnectionResetTopic,
 			bus.ResourceUpdateTopic,
 			bus.InstanceHealthTopic,
 			bus.DataPlaneHealthResponseTopic,

@@ -1,3 +1,8 @@
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
+
 package credentials
 
 import (
@@ -18,6 +23,8 @@ const (
 	Remove = fsnotify.Remove
 	Rename = fsnotify.Rename
 	Chmod  = fsnotify.Chmod
+
+	monitoringInterval = 5 * time.Second
 )
 
 var emptyEvent = fsnotify.Event{
@@ -27,7 +34,6 @@ var emptyEvent = fsnotify.Event{
 
 type CredentialUpdateMessage struct {
 	CorrelationID slog.Attr
-	File          string
 }
 
 type CredentialWatcherService struct {
@@ -56,7 +62,7 @@ func NewCredentialWatcherService(agentConfig *config.Config) *CredentialWatcherS
 func (cws *CredentialWatcherService) Watch(ctx context.Context, ch chan<- CredentialUpdateMessage) {
 	slog.DebugContext(ctx, "Starting credential watcher monitoring")
 
-	ticker := time.NewTicker(time.Second * 3)
+	ticker := time.NewTicker(monitoringInterval)
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to create file watcher", "error", err)
@@ -65,9 +71,11 @@ func (cws *CredentialWatcherService) Watch(ctx context.Context, ch chan<- Creden
 
 	cws.watcher = watcher
 
-	cws.watchFiles(ctx, []string{
-		cws.agentConfig.Command.Auth.TokenPath, // might not exist, handle that
-	})
+	pathsToWatch := []string{
+		cws.agentConfig.Command.Auth.TokenPath, // might not exist, read from the config
+	}
+
+	cws.watchFiles(ctx, pathsToWatch)
 
 	for {
 		select {
@@ -93,7 +101,6 @@ func (cws *CredentialWatcherService) SetEnabled(enabled bool) {
 }
 
 func (cws *CredentialWatcherService) addWatcher(ctx context.Context, filePath string) {
-
 	if !cws.enabled.Load() {
 		slog.DebugContext(ctx, "Credential watcher is disabled")
 
@@ -123,23 +130,23 @@ func (cws *CredentialWatcherService) addWatcher(ctx context.Context, filePath st
 	}
 }
 
-func (cws *CredentialWatcherService) removeWatcher(ctx context.Context, filePath string) {
-	if _, ok := cws.filesBeingWatched.Load(filePath); ok {
-		err := cws.watcher.Remove(filePath)
-		if err != nil {
-			slog.ErrorContext(ctx, "Failed to remove credential watcher", "path", filePath, "error", err)
-			return
-		}
-
-		cws.filesBeingWatched.Delete(filePath)
-	}
-}
+// func (cws *CredentialWatcherService) removeWatcher(ctx context.Context, filePath string) {
+//	if _, ok := cws.filesBeingWatched.Load(filePath); ok {
+//		err := cws.watcher.Remove(filePath)
+//		if err != nil {
+//			slog.ErrorContext(ctx, "Failed to remove credential watcher", "path", filePath, "error", err)
+//			return
+//		}
+//
+//		cws.filesBeingWatched.Delete(filePath)
+//	}
+// }
 
 func (cws *CredentialWatcherService) watchFiles(ctx context.Context, files []string) {
 	slog.DebugContext(ctx, "creating credential watchers")
 
+	// For each authentication or cert file, add a watcher
 	cws.addWatcher(ctx, files[0])
-	//cws.addWatcher(ctx, )
 }
 
 func (cws *CredentialWatcherService) isWatching(path string) bool {
@@ -159,8 +166,7 @@ func (cws *CredentialWatcherService) handleEvent(ctx context.Context, event fsno
 			return
 		}
 
-		switch {
-		case event.Has(event.Op & Write):
+		if event.Has(event.Op & Write) {
 			// We want to send messages on write since that means the contents changed,
 			// but we also need to restart the gRPC connection to load the new credentials from the file being watched.
 			// Can we post a message on the message bus to trigger the CommandService to restart the gRPC connection?

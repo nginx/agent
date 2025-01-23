@@ -202,6 +202,7 @@ func TestWatcher_Subscriptions(t *testing.T) {
 	assert.Equal(
 		t,
 		[]string{
+			bus.CredentialUpdatedTopic,
 			bus.ConfigApplyRequestTopic,
 			bus.ConfigApplySuccessfulTopic,
 			bus.ConfigApplyCompleteTopic,

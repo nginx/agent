@@ -7,9 +7,10 @@ package watcher
 
 import (
 	"context"
-	"github.com/nginx/agent/v3/internal/watcher/credentials"
 	"log/slog"
 	"slices"
+
+	"github.com/nginx/agent/v3/internal/watcher/credentials"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 
@@ -225,7 +226,7 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 			slog.DebugContext(ctx, "Received credential update event")
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 			w.messagePipe.Process(newCtx, &bus.Message{
-				Topic: bus.CredentialUpdatedTopic, Data: message.File,
+				Topic: bus.CredentialUpdatedTopic, Data: nil,
 			})
 		case message := <-w.instanceUpdatesChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
