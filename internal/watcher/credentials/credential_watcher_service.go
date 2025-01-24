@@ -65,20 +65,13 @@ func (cws *CredentialWatcherService) Watch(ctx context.Context, ch chan<- Creden
 	ticker := time.NewTicker(monitoringInterval)
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to create file watcher", "error", err)
+		slog.ErrorContext(ctx, "Failed to create credential watcher", "error", err)
 		return
 	}
 
 	cws.watcher = watcher
 
-	var pathsToWatch []string
-	if cws.agentConfig.Command.Auth != nil {
-		if cws.agentConfig.Command.Auth.TokenPath != "" {
-			pathsToWatch = append(pathsToWatch, cws.agentConfig.Command.Auth.TokenPath)
-		}
-	}
-
-	cws.watchFiles(ctx, pathsToWatch)
+	cws.watchFiles(ctx, credentialPaths(cws.agentConfig))
 
 	for {
 		select {
@@ -193,6 +186,19 @@ func (cws *CredentialWatcherService) checkForUpdates(ctx context.Context, ch cha
 		ch <- CredentialUpdateMessage{CorrelationID: logger.GetCorrelationIDAttr(newCtx)}
 		cws.filesChanged.Store(false)
 	}
+}
+
+func credentialPaths(agentConfig *config.Config) []string {
+	var paths []string
+
+	// is dataplane key token set?
+	if agentConfig.Command.Auth != nil {
+		if agentConfig.Command.Auth.TokenPath != "" {
+			paths = append(paths, agentConfig.Command.Auth.TokenPath)
+		}
+	}
+
+	return paths
 }
 
 func isEventSkippable(event fsnotify.Event) bool {
