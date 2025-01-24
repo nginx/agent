@@ -822,7 +822,7 @@ func resolveCommand() *Command {
 		},
 	}
 
-	if viperInstance.IsSet(CommandAuthTokenKey) || viperInstance.IsSet(CommandAuthTokenPathKey) {
+	if areAuthSettingsSet() {
 		command.Auth = &AuthConfig{
 			Token:     viperInstance.GetString(CommandAuthTokenKey),
 			TokenPath: viperInstance.GetString(CommandAuthTokenPathKey),
@@ -840,6 +840,11 @@ func resolveCommand() *Command {
 	}
 
 	return command
+}
+
+func areAuthSettingsSet() bool {
+	return viperInstance.IsSet(CommandAuthTokenKey) ||
+		viperInstance.IsSet(CommandAuthTokenPathKey)
 }
 
 func areTLSSettingsSet() bool {
