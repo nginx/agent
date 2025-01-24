@@ -158,17 +158,12 @@ func (cp *CommandPlugin) processDataPlaneResponse(ctx context.Context, msg *bus.
 
 func (cp *CommandPlugin) processConnectionReset(ctx context.Context, _ *bus.Message) {
 	slog.InfoContext(ctx, "Command plugin received connection reset, skipping for test")
-	//newConn, err := grpc.NewGrpcConnection(context.WithoutCancel(ctx), cp.config)
-	//if err != nil {
+	// newConn, err := grpc.NewGrpcConnection(context.WithoutCancel(ctx), cp.config)
+	// if err != nil {
 	//	slog.ErrorContext(ctx, "Unable to create grpc connection", "error", err)
 	//	return
-	//}
-	//cp.conn = newConn
-	////cp.commandService.CancelSubscription(ctx)
-	////_, err := cp.conn.Restart(ctx)
-	////if err != nil {
-	////	slog.ErrorContext(ctx, "Unable to restart connection", "error", err)
-	////}
+	// }
+	// cp.conn = newConn
 }
 
 func (cp *CommandPlugin) Subscriptions() []string {
