@@ -277,7 +277,7 @@ message InstanceRuntime {
     // the binary path location
     string binary_path = 2 [(buf.validate.field).string.prefix = "/"];
     // the config path location
-    string config_path = 3 [(buf.validate.field).string.prefix = "/"];
+    optional string config_path = 3 [(buf.validate.field).string.prefix = "/"];
     // more detailed runtime objects
     oneof details {
         // NGINX runtime configuration settings like stub_status, usually read from the NGINX config or NGINX process

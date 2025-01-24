@@ -51,6 +51,11 @@ func (n NginxAppProtectProcessParser) Parse(ctx context.Context, processes []*mo
 		if process.Name == processName {
 			instanceID := n.instanceID(process)
 
+			binaryPath := process.Exe
+			if binaryPath == "" {
+				binaryPath = strings.Split(process.Cmd, " ")[0]
+			}
+
 			instanceMap[instanceID] = &mpi.Instance{
 				InstanceMeta: &mpi.InstanceMeta{
 					InstanceId:   instanceID,
@@ -60,8 +65,7 @@ func (n NginxAppProtectProcessParser) Parse(ctx context.Context, processes []*mo
 				InstanceConfig: &mpi.InstanceConfig{},
 				InstanceRuntime: &mpi.InstanceRuntime{
 					ProcessId:  process.PID,
-					BinaryPath: process.Exe,
-					ConfigPath: "",
+					BinaryPath: binaryPath,
 					Details: &mpi.InstanceRuntime_NginxAppProtectRuntimeInfo{
 						NginxAppProtectRuntimeInfo: &mpi.NGINXAppProtectRuntimeInfo{
 							Release:                n.release(ctx),

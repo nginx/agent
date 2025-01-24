@@ -201,7 +201,7 @@ func convertInfoToInstance(nginxInfo Info) *mpi.Instance {
 		instanceRuntime = &mpi.InstanceRuntime{
 			ProcessId:  nginxInfo.ProcessID,
 			BinaryPath: nginxInfo.ExePath,
-			ConfigPath: nginxInfo.ConfPath,
+			ConfigPath: &nginxInfo.ConfPath,
 			Details: &mpi.InstanceRuntime_NginxRuntimeInfo{
 				NginxRuntimeInfo: &mpi.NGINXRuntimeInfo{
 					StubStatus: &mpi.APIDetails{
@@ -219,7 +219,7 @@ func convertInfoToInstance(nginxInfo Info) *mpi.Instance {
 		instanceRuntime = &mpi.InstanceRuntime{
 			ProcessId:  nginxInfo.ProcessID,
 			BinaryPath: nginxInfo.ExePath,
-			ConfigPath: nginxInfo.ConfPath,
+			ConfigPath: &nginxInfo.ConfPath,
 			Details: &mpi.InstanceRuntime_NginxPlusRuntimeInfo{
 				NginxPlusRuntimeInfo: &mpi.NGINXPlusRuntimeInfo{
 					StubStatus: &mpi.APIDetails{

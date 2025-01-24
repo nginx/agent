@@ -68,6 +68,7 @@ func TestResourceService_AddInstance(t *testing.T) {
 
 func TestResourceService_UpdateInstance(t *testing.T) {
 	ctx := context.Background()
+	configPath := protos.GetNginxOssInstance([]string{}).GetInstanceRuntime().GetConfigPath()
 
 	updatedInstance := &v1.Instance{
 		InstanceConfig: protos.GetNginxOssInstance([]string{}).GetInstanceConfig(),
@@ -75,7 +76,7 @@ func TestResourceService_UpdateInstance(t *testing.T) {
 		InstanceRuntime: &v1.InstanceRuntime{
 			ProcessId:  56789,
 			BinaryPath: protos.GetNginxOssInstance([]string{}).GetInstanceRuntime().GetBinaryPath(),
-			ConfigPath: protos.GetNginxOssInstance([]string{}).GetInstanceRuntime().GetConfigPath(),
+			ConfigPath: &configPath,
 			Details:    protos.GetNginxOssInstance([]string{}).GetInstanceRuntime().GetDetails(),
 		},
 	}

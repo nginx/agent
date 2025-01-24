@@ -308,7 +308,7 @@ func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *mpi.Instan
 		InstanceRuntime: &mpi.InstanceRuntime{
 			ProcessId:  iw.executer.ProcessID(),
 			BinaryPath: processPath,
-			ConfigPath: iw.agentConfig.Path,
+			ConfigPath: &iw.agentConfig.Path,
 			Details:    nil,
 		},
 	}

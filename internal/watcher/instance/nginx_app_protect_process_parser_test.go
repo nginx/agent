@@ -31,7 +31,6 @@ func TestNginxAppProtectProcessParser_Parse(t *testing.T) {
 		InstanceRuntime: &mpi.InstanceRuntime{
 			ProcessId:  1111,
 			BinaryPath: "/usr/share/ts/bin/bd-socket-plugin",
-			ConfigPath: "",
 			Details: &mpi.InstanceRuntime_NginxAppProtectRuntimeInfo{
 				NginxAppProtectRuntimeInfo: &mpi.NGINXAppProtectRuntimeInfo{
 					Release:                "4.11.0",

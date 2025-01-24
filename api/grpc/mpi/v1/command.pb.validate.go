@@ -3743,8 +3743,6 @@ func (m *InstanceRuntime) validate(all bool) error {
 
 	// no validation rules for BinaryPath
 
-	// no validation rules for ConfigPath
-
 	for idx, item := range m.GetInstanceChildren() {
 		_, _ = idx, item
 
@@ -3905,6 +3903,10 @@ func (m *InstanceRuntime) validate(all bool) error {
 
 	default:
 		_ = v // ensures v is used
+	}
+
+	if m.ConfigPath != nil {
+		// no validation rules for ConfigPath
 	}
 
 	if len(errors) > 0 {
