@@ -75,6 +75,7 @@ func NewInstanceWatcherService(agentConfig *config.Config) *InstanceWatcherServi
 		processOperator: process.NewProcessOperator(),
 		processParsers: []processParser{
 			NewNginxProcessParser(),
+			NewNginxAppProtectProcessParser(),
 		},
 		nginxConfigParser: NewNginxConfigParser(agentConfig),
 		instanceCache:     make(map[string]*mpi.Instance),
@@ -307,7 +308,7 @@ func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *mpi.Instan
 		InstanceRuntime: &mpi.InstanceRuntime{
 			ProcessId:  iw.executer.ProcessID(),
 			BinaryPath: processPath,
-			ConfigPath: iw.agentConfig.Path,
+			ConfigPath: &iw.agentConfig.Path,
 			Details:    nil,
 		},
 	}
