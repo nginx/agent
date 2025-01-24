@@ -266,7 +266,7 @@ func addPerRPCCredentials(agentConfig *config.Config, resourceID string, opts []
 		}
 	}
 
-	slog.Debug("Adding token to RPC credentials", "token", token)
+	slog.Debug("Adding RPC credentials")
 	opts = append(opts,
 		grpc.WithPerRPCCredentials(
 			&PerRPCCredentials{
@@ -416,7 +416,7 @@ func getTransportCredentials(agentConfig *config.Config) (credentials.TransportC
 
 	err := appendCertKeyPair(tlsConfig, agentConfig.Command.TLS.Cert, agentConfig.Command.TLS.Key)
 	if err != nil {
-		return nil, errors.New("append cert and key pair")
+		return nil, fmt.Errorf("append cert and key pair failed: %w", err)
 	}
 
 	err = appendRootCAs(tlsConfig, agentConfig.Command.TLS.Ca)
