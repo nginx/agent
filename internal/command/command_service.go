@@ -8,9 +8,13 @@ package command
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"sync"
 	"sync/atomic"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/cenkalti/backoff/v4"
 
@@ -40,11 +44,11 @@ type (
 		subscribeCancel              context.CancelFunc
 		subscribeChannel             chan *mpi.ManagementPlaneRequest
 		configApplyRequestQueue      map[string][]*mpi.ManagementPlaneRequest // key is the instance ID
-		instances                    []*mpi.Instance
+		resource                     *mpi.Resource
 		subscribeMutex               sync.Mutex
 		subscribeClientMutex         sync.Mutex
 		configApplyRequestQueueMutex sync.Mutex
-		instancesMutex               sync.Mutex
+		resourceMutex                sync.Mutex
 	}
 )
 
@@ -63,7 +67,7 @@ func NewCommandService(
 		isConnected:             isConnected,
 		subscribeChannel:        subscribeChannel,
 		configApplyRequestQueue: make(map[string][]*mpi.ManagementPlaneRequest),
-		instances:               []*mpi.Instance{},
+		resource:                &mpi.Resource{},
 	}
 
 	var subscribeCtx context.Context
@@ -130,9 +134,9 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 	}
 	slog.DebugContext(ctx, "UpdateDataPlaneStatus response", "response", response)
 
-	cs.instancesMutex.Lock()
-	defer cs.instancesMutex.Unlock()
-	cs.instances = resource.GetInstances()
+	cs.resourceMutex.Lock()
+	defer cs.resourceMutex.Unlock()
+	cs.resource = resource
 
 	return err
 }
@@ -259,9 +263,9 @@ func (cs *CommandService) CreateConnection(
 
 	cs.isConnected.Store(true)
 
-	cs.instancesMutex.Lock()
-	defer cs.instancesMutex.Unlock()
-	cs.instances = resource.GetInstances()
+	cs.resourceMutex.Lock()
+	defer cs.resourceMutex.Unlock()
+	cs.resource = resource
 
 	return response, nil
 }
@@ -405,14 +409,15 @@ func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
 			var err error
 			cs.subscribeClient, err = cs.commandServiceClient.Subscribe(ctx)
 			if err != nil {
-				slog.ErrorContext(ctx, "Failed to create subscribe client", "error", err)
+				subscribeErr := cs.handleSubscribeError(ctx, err, "create subscribe client")
 				cs.subscribeClientMutex.Unlock()
 
-				return err
+				return subscribeErr
 			}
 
 			if cs.subscribeClient == nil {
 				cs.subscribeClientMutex.Unlock()
+
 				return errors.New("subscribe service client not initialized yet")
 			}
 		}
@@ -421,10 +426,9 @@ func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
 
 		request, recvError := cs.subscribeClient.Recv()
 		if recvError != nil {
-			slog.ErrorContext(ctx, "Failed to receive message from subscribe stream", "error", recvError)
 			cs.subscribeClient = nil
 
-			return recvError
+			return cs.handleSubscribeError(ctx, recvError, "receive message from subscribe stream")
 		}
 
 		if cs.isValidRequest(ctx, request) {
@@ -438,6 +442,25 @@ func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
 
 		return nil
 	}
+}
+
+func (cs *CommandService) handleSubscribeError(ctx context.Context, err error, errorMsg string) error {
+	codeError, ok := status.FromError(err)
+
+	if ok && codeError.Code() == codes.Unavailable {
+		slog.ErrorContext(ctx, fmt.Sprintf("Failed to %s, rpc unavailable. "+
+			"Trying create connection rpc", errorMsg), "error", err)
+		_, connectionErr := cs.CreateConnection(ctx, cs.resource)
+		if connectionErr != nil {
+			slog.ErrorContext(ctx, "Unable to create connection", "error", err)
+		}
+
+		return nil
+	}
+
+	slog.ErrorContext(ctx, fmt.Sprintf("Failed to %s", errorMsg), "error", err)
+
+	return err
 }
 
 func (cs *CommandService) queueConfigApplyRequests(ctx context.Context, request *mpi.ManagementPlaneRequest) {
@@ -484,13 +507,13 @@ func (cs *CommandService) checkIfInstanceExists(
 ) bool {
 	instanceFound := false
 
-	cs.instancesMutex.Lock()
-	for _, instance := range cs.instances {
+	cs.resourceMutex.Lock()
+	for _, instance := range cs.resource.GetInstances() {
 		if instance.GetInstanceMeta().GetInstanceId() == requestInstanceID {
 			instanceFound = true
 		}
 	}
-	cs.instancesMutex.Unlock()
+	cs.resourceMutex.Unlock()
 
 	if !instanceFound {
 		slog.WarnContext(
