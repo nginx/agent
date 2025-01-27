@@ -263,7 +263,7 @@ type (
 
 	AuthConfig struct {
 		Token     string `yaml:"-" mapstructure:"token"`
-		TokenPath string `yaml:"-" mapstructure:"token-path"`
+		TokenPath string `yaml:"-" mapstructure:"tokenpath"`
 	}
 
 	TLSConfig struct {
