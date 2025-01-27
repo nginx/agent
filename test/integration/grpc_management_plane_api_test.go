@@ -190,6 +190,34 @@ func setupLocalEnvironment(tb testing.TB) {
 	}(tb)
 }
 
+func TestGrpc_Reconnection(t *testing.T) {
+	ctx := context.Background()
+	teardownTest := setupConnectionTest(t, false, false)
+	defer teardownTest(t)
+
+	timeout := 15 * time.Second
+
+	originalID := verifyConnection(t, 2)
+
+	stopErr := mockManagementPlaneGrpcContainer.Stop(ctx, &timeout)
+
+	require.NoError(t, stopErr)
+
+	startErr := mockManagementPlaneGrpcContainer.Start(ctx)
+	require.NoError(t, startErr)
+
+	ipAddress, err := mockManagementPlaneGrpcContainer.Host(ctx)
+	require.NoError(t, err)
+	ports, err := mockManagementPlaneGrpcContainer.Ports(ctx)
+	require.NoError(t, err)
+	mockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9093/tcp"][0].HostPort)
+
+	time.Sleep(5 * time.Second)
+
+	currentID := verifyConnection(t, 2)
+	assert.Equal(t, originalID, currentID)
+}
+
 // Verify that the agent sends a connection request and an update data plane status request
 func TestGrpc_StartUp(t *testing.T) {
 	teardownTest := setupConnectionTest(t, true, false)

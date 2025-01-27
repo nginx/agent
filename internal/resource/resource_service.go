@@ -267,7 +267,9 @@ func (r *ResourceService) UpdateHTTPUpstreamServers(ctx context.Context, instanc
 
 	added, updated, deleted, updateError := plusClient.UpdateHTTPServers(ctx, upstream, servers)
 
-	slog.Warn("Error returned from NGINX Plus client, UpdateHTTPUpstreamServers", "err", updateError)
+	if updateError != nil {
+		slog.Warn("Error returned from NGINX Plus client, UpdateHTTPUpstreamServers", "err", updateError)
+	}
 
 	return added, updated, deleted, createPlusAPIError(updateError)
 }
