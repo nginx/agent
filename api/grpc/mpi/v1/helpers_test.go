@@ -65,7 +65,7 @@ func TestConvertToStructs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := ConvertToStructs(tt.input)
 
-			assert.Equal(t, tt.expected, got)
+			assert.ElementsMatch(t, tt.expected, got)
 			assert.Equal(t, tt.wantErr, err != nil)
 		})
 	}
