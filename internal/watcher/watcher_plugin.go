@@ -26,6 +26,7 @@ import (
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . instanceWatcherServiceInterface
+//counterfeiter:generate . credentialWatcherServiceInterface
 
 // nolint
 type (
@@ -35,7 +36,7 @@ type (
 		instanceWatcherService             instanceWatcherServiceInterface
 		healthWatcherService               *health.HealthWatcherService
 		fileWatcherService                 *file.FileWatcherService
-		credentialWatcherService           *credentials.CredentialWatcherService
+		credentialWatcherService           credentialWatcherServiceInterface
 		instanceUpdatesChannel             chan instance.InstanceUpdatesMessage
 		nginxConfigContextChannel          chan instance.NginxConfigContextMessage
 		instanceHealthChannel              chan health.InstanceHealthMessage
@@ -53,6 +54,13 @@ type (
 		)
 		ReparseConfig(ctx context.Context, instanceID string)
 		ReparseConfigs(ctx context.Context)
+	}
+
+	credentialWatcherServiceInterface interface {
+		Watch(
+			ctx context.Context,
+			credentialUpdateChannel chan<- credentials.CredentialUpdateMessage,
+		)
 	}
 )
 

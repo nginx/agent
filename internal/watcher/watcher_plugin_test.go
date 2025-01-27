@@ -7,6 +7,7 @@ package watcher
 
 import (
 	"context"
+	"github.com/nginx/agent/v3/internal/watcher/credentials"
 	"testing"
 	"time"
 
@@ -72,11 +73,16 @@ func TestWatcher_Init(t *testing.T) {
 		InstanceHealth: []*mpi.InstanceHealth{},
 	}
 
+	credentialUpdateMessage := credentials.CredentialUpdateMessage{
+		CorrelationID: logger.GenerateCorrelationID(),
+	}
+
 	watcherPlugin.instanceUpdatesChannel <- instanceUpdatesMessage
 	watcherPlugin.nginxConfigContextChannel <- nginxConfigContextMessage
 	watcherPlugin.instanceHealthChannel <- instanceHealthMessage
+	watcherPlugin.credentialUpdatesChannel <- credentialUpdateMessage
 
-	assert.Eventually(t, func() bool { return len(messagePipe.GetMessages()) == 5 }, 2*time.Second, 10*time.Millisecond)
+	assert.Eventually(t, func() bool { return len(messagePipe.GetMessages()) == 6 }, 2*time.Second, 10*time.Millisecond)
 	messages = messagePipe.GetMessages()
 
 	assert.Equal(
@@ -104,11 +110,24 @@ func TestWatcher_Init(t *testing.T) {
 		&bus.Message{Topic: bus.InstanceHealthTopic, Data: instanceHealthMessage.InstanceHealth},
 		messages[4],
 	)
+	assert.Equal(t,
+		&bus.Message{Topic: bus.CredentialUpdatedTopic, Data: nil},
+		messages[5])
 }
 
 func TestWatcher_Info(t *testing.T) {
 	watcherPlugin := NewWatcher(types.AgentConfig())
 	assert.Equal(t, &bus.Info{Name: "watcher"}, watcherPlugin.Info())
+}
+
+func TestWatcher_Process_CredentialUpdateTopic(t *testing.T) {
+	ctx := context.Background()
+	watcherPlugin := NewWatcher(types.AgentConfig())
+	watcherPlugin.messagePipe = busfakes.NewFakeMessagePipe()
+	watcherPlugin.Process(ctx, &bus.Message{
+		Topic: bus.CredentialUpdatedTopic,
+		Data:  nil,
+	})
 }
 
 func TestWatcher_Process_ConfigApplyRequestTopic(t *testing.T) {
