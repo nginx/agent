@@ -7,17 +7,14 @@ package credentials
 
 import (
 	"context"
+	"os"
+	"path"
+	"testing"
+
 	"github.com/fsnotify/fsnotify"
 	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"os"
-	"path"
-	"testing"
-)
-
-const (
-	filePermissions = 0o700
 )
 
 func TestCredentialWatcherService_TestNewCredentialWatcherService(t *testing.T) {
@@ -174,5 +171,4 @@ func TestCredentialWatcherService_handleEvent(t *testing.T) {
 	assert.False(t, cws.filesChanged.Load())
 	cws.handleEvent(ctx, fsnotify.Event{Name: "test-write", Op: fsnotify.Write})
 	assert.True(t, cws.filesChanged.Load())
-
 }

@@ -7,9 +7,10 @@ package watcher
 
 import (
 	"context"
-	"github.com/nginx/agent/v3/internal/watcher/credentials"
 	"testing"
 	"time"
+
+	"github.com/nginx/agent/v3/internal/watcher/credentials"
 
 	"github.com/nginx/agent/v3/internal/bus/busfakes"
 	"github.com/nginx/agent/v3/internal/datasource/proto"
@@ -128,6 +129,7 @@ func TestWatcher_Process_CredentialUpdateTopic(t *testing.T) {
 		Topic: bus.CredentialUpdatedTopic,
 		Data:  nil,
 	})
+	assert.Len(t, watcherPlugin.credentialUpdatesChannel, 1)
 }
 
 func TestWatcher_Process_ConfigApplyRequestTopic(t *testing.T) {
