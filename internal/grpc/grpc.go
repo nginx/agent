@@ -6,12 +6,14 @@
 package grpc
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net"
+	"os"
 	"sync"
 
 	"github.com/cenkalti/backoff/v4"
@@ -39,6 +41,7 @@ type (
 		CommandServiceClient() mpi.CommandServiceClient
 		FileServiceClient() mpi.FileServiceClient
 		Close(ctx context.Context) error
+		Restart(ctx context.Context) (*GrpcConnection, error)
 	}
 
 	GrpcConnection struct {
@@ -128,6 +131,22 @@ func (gc *GrpcConnection) Close(ctx context.Context) error {
 	return nil
 }
 
+func (gc *GrpcConnection) Restart(ctx context.Context) (*GrpcConnection, error) {
+	slog.InfoContext(ctx, "Restarting grpc connection")
+	err := gc.Close(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	slog.InfoContext(ctx, "Creating grpc connection")
+	newConn, err := NewGrpcConnection(ctx, gc.config)
+	if err != nil {
+		return nil, err
+	}
+
+	return newConn, nil
+}
+
 func (w *wrappedStream) RecvMsg(message any) error {
 	err := w.ClientStream.RecvMsg(message)
 	if err == nil {
@@ -158,7 +177,6 @@ func (w *wrappedStream) SendMsg(message any) error {
 }
 
 func GetDialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOption {
-	skipToken := false
 	streamClientInterceptors := []grpc.StreamClientInterceptor{grpcRetry.StreamClientInterceptor()}
 	unaryClientInterceptors := []grpc.UnaryClientInterceptor{grpcRetry.UnaryClientInterceptor()}
 
@@ -208,32 +226,79 @@ func GetDialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOp
 
 	opts = append(opts, sendRecOpts...)
 
-	transportCredentials, err := getTransportCredentials(agentConfig)
-	if err == nil {
-		slog.Debug("Adding transport credentials to gRPC dial options")
-		opts = append(opts,
-			grpc.WithTransportCredentials(transportCredentials),
-		)
-	} else {
-		slog.Debug("Adding default transport credentials to gRPC dial options")
-		opts = append(opts,
-			grpc.WithTransportCredentials(defaultCredentials),
-		)
-		skipToken = true
-	}
+	opts, skipToken := addTransportCredentials(agentConfig, opts)
 
 	if agentConfig.Command.Auth != nil && !skipToken {
-		slog.Debug("Adding token to RPC credentials")
-		opts = append(opts,
-			grpc.WithPerRPCCredentials(
-				&PerRPCCredentials{
-					Token: agentConfig.Command.Auth.Token,
-					ID:    resourceID,
-				}),
-		)
+		opts = addPerRPCCredentials(agentConfig, resourceID, opts)
 	}
 
 	return opts
+}
+
+func addTransportCredentials(agentConfig *config.Config, opts []grpc.DialOption) ([]grpc.DialOption, bool) {
+	transportCredentials, err := getTransportCredentials(agentConfig)
+	if err != nil {
+		slog.Error("Unable to add transport credentials to gRPC dial options, adding "+
+			"default transport credentials", "error", err)
+		opts = append(opts,
+			grpc.WithTransportCredentials(defaultCredentials),
+		)
+
+		return opts, true
+	}
+	slog.Debug("Adding transport credentials to gRPC dial options")
+	opts = append(opts,
+		grpc.WithTransportCredentials(transportCredentials),
+	)
+
+	return opts, false
+}
+
+func addPerRPCCredentials(agentConfig *config.Config, resourceID string, opts []grpc.DialOption) []grpc.DialOption {
+	token := agentConfig.Command.Auth.Token
+
+	if agentConfig.Command.Auth.TokenPath != "" {
+		tk, err := retrieveTokenFromFile(agentConfig.Command.Auth.TokenPath)
+		if err == nil {
+			token = tk
+		} else {
+			slog.Error("Unable to add token to gRPC dial options", "error", err)
+		}
+	}
+
+	slog.Debug("Adding RPC credentials")
+	opts = append(opts,
+		grpc.WithPerRPCCredentials(
+			&PerRPCCredentials{
+				Token: token,
+				ID:    resourceID,
+			}),
+	)
+
+	return opts
+}
+
+func retrieveTokenFromFile(path string) (string, error) {
+	if path == "" {
+		return "", errors.New("token file path is empty")
+	}
+
+	slog.Debug("Reading token from file", "path", path)
+	var keyVal string
+	keyBytes, err := os.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("unable to read token from file: %w", err)
+	}
+
+	keyBytes = bytes.TrimSpace(keyBytes)
+	keyBytes = bytes.TrimRight(keyBytes, "\n")
+	keyVal = string(keyBytes)
+
+	if keyVal == "" {
+		return "", errors.New("failed to load token, token file is empty")
+	}
+
+	return keyVal, nil
 }
 
 // Have to create our own UnaryClientInterceptor function since protovalidate only provides a UnaryServerInterceptor
@@ -351,7 +416,7 @@ func getTransportCredentials(agentConfig *config.Config) (credentials.TransportC
 
 	err := appendCertKeyPair(tlsConfig, agentConfig.Command.TLS.Cert, agentConfig.Command.TLS.Key)
 	if err != nil {
-		return nil, errors.New("append cert and key pair")
+		return nil, fmt.Errorf("append cert and key pair failed: %w", err)
 	}
 
 	err = appendRootCAs(tlsConfig, agentConfig.Command.TLS.Ca)

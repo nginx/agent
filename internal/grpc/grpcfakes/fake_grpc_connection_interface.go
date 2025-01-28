@@ -41,6 +41,19 @@ type FakeGrpcConnectionInterface struct {
 	fileServiceClientReturnsOnCall map[int]struct {
 		result1 v1.FileServiceClient
 	}
+	RestartStub        func(context.Context) (*grpc.GrpcConnection, error)
+	restartMutex       sync.RWMutex
+	restartArgsForCall []struct {
+		arg1 context.Context
+	}
+	restartReturns struct {
+		result1 *grpc.GrpcConnection
+		result2 error
+	}
+	restartReturnsOnCall map[int]struct {
+		result1 *grpc.GrpcConnection
+		result2 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -212,6 +225,70 @@ func (fake *FakeGrpcConnectionInterface) FileServiceClientReturnsOnCall(i int, r
 	}{result1}
 }
 
+func (fake *FakeGrpcConnectionInterface) Restart(arg1 context.Context) (*grpc.GrpcConnection, error) {
+	fake.restartMutex.Lock()
+	ret, specificReturn := fake.restartReturnsOnCall[len(fake.restartArgsForCall)]
+	fake.restartArgsForCall = append(fake.restartArgsForCall, struct {
+		arg1 context.Context
+	}{arg1})
+	stub := fake.RestartStub
+	fakeReturns := fake.restartReturns
+	fake.recordInvocation("Restart", []interface{}{arg1})
+	fake.restartMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeGrpcConnectionInterface) RestartCallCount() int {
+	fake.restartMutex.RLock()
+	defer fake.restartMutex.RUnlock()
+	return len(fake.restartArgsForCall)
+}
+
+func (fake *FakeGrpcConnectionInterface) RestartCalls(stub func(context.Context) (*grpc.GrpcConnection, error)) {
+	fake.restartMutex.Lock()
+	defer fake.restartMutex.Unlock()
+	fake.RestartStub = stub
+}
+
+func (fake *FakeGrpcConnectionInterface) RestartArgsForCall(i int) context.Context {
+	fake.restartMutex.RLock()
+	defer fake.restartMutex.RUnlock()
+	argsForCall := fake.restartArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeGrpcConnectionInterface) RestartReturns(result1 *grpc.GrpcConnection, result2 error) {
+	fake.restartMutex.Lock()
+	defer fake.restartMutex.Unlock()
+	fake.RestartStub = nil
+	fake.restartReturns = struct {
+		result1 *grpc.GrpcConnection
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeGrpcConnectionInterface) RestartReturnsOnCall(i int, result1 *grpc.GrpcConnection, result2 error) {
+	fake.restartMutex.Lock()
+	defer fake.restartMutex.Unlock()
+	fake.RestartStub = nil
+	if fake.restartReturnsOnCall == nil {
+		fake.restartReturnsOnCall = make(map[int]struct {
+			result1 *grpc.GrpcConnection
+			result2 error
+		})
+	}
+	fake.restartReturnsOnCall[i] = struct {
+		result1 *grpc.GrpcConnection
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeGrpcConnectionInterface) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -221,6 +298,8 @@ func (fake *FakeGrpcConnectionInterface) Invocations() map[string][][]interface{
 	defer fake.commandServiceClientMutex.RUnlock()
 	fake.fileServiceClientMutex.RLock()
 	defer fake.fileServiceClientMutex.RUnlock()
+	fake.restartMutex.RLock()
+	defer fake.restartMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
