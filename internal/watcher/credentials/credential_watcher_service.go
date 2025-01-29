@@ -124,18 +124,6 @@ func (cws *CredentialWatcherService) addWatcher(ctx context.Context, filePath st
 	slog.DebugContext(ctx, "Credential watcher has been added", "path", filePath)
 }
 
-// func (cws *CredentialWatcherService) removeWatcher(ctx context.Context, filePath string) {
-//	if _, ok := cws.filesBeingWatched.Load(filePath); ok {
-//		err := cws.watcher.Remove(filePath)
-//		if err != nil {
-//			slog.ErrorContext(ctx, "Failed to remove credential watcher", "path", filePath, "error", err)
-//			return
-//		}
-//
-//		cws.filesBeingWatched.Delete(filePath)
-//	}
-// }
-
 func (cws *CredentialWatcherService) watchFiles(ctx context.Context, files []string) {
 	slog.DebugContext(ctx, "creating credential watchers")
 

@@ -63,17 +63,16 @@ func (pw *ProcessOperator) Processes(ctx context.Context) ([]*model.Process, err
 
 func (pw *ProcessOperator) Process(ctx context.Context, pid int32) (*model.Process, error) {
 	newProc, err := process.NewProcessWithContext(ctx, pid)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create process with pid: %d, error : %w",
+			pid, err)
+	}
 	status, _ := newProc.StatusWithContext(ctx)
 	running, _ := newProc.IsRunningWithContext(ctx)
 	ppid, _ := newProc.PpidWithContext(ctx)
 	name, _ := newProc.NameWithContext(ctx)
 	cmd, _ := newProc.CmdlineWithContext(ctx)
 	exe, _ := newProc.ExeWithContext(ctx)
-
-	if err != nil {
-		return nil, fmt.Errorf("unable to create process with pid: %d, error : %w",
-			pid, err)
-	}
 
 	proc := &model.Process{
 		PID:     newProc.Pid,

@@ -26,9 +26,7 @@ import (
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . instanceWatcherServiceInterface
-//counterfeiter:generate . credentialWatcherServiceInterface
 
-// nolint
 type (
 	Watcher struct {
 		messagePipe                        bus.MessagePipeInterface

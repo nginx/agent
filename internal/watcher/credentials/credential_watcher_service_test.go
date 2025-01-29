@@ -7,9 +7,13 @@ package credentials
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path"
 	"testing"
+	"time"
+
+	"github.com/nginx/agent/v3/internal/config"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/nginx/agent/v3/test/types"
@@ -38,24 +42,34 @@ func TestCredentialWatcherService_SetEnabled(t *testing.T) {
 
 func TestCredentialWatcherService_Watch(t *testing.T) {
 	ctx := context.Background()
-	credentialWatcherService := NewCredentialWatcherService(types.AgentConfig())
+	cws := NewCredentialWatcherService(types.AgentConfig())
 	watcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
-	credentialWatcherService.watcher = watcher
+	cws.watcher = watcher
+
+	cuc := make(chan CredentialUpdateMessage)
 
 	name := path.Join(os.TempDir(), "test_file")
-	testFile, err := os.Create(name)
+	_, err = os.Create(name)
 	require.NoError(t, err)
-	defer os.Remove(testFile.Name())
+	defer os.Remove(name)
 
-	credentialWatcherService.addWatcher(ctx, testFile.Name())
-	assert.True(t, credentialWatcherService.isWatching(testFile.Name()))
+	cws.agentConfig.Command.Auth.TokenPath = name
+	cws.filesChanged.Store(true)
+	go cws.Watch(ctx, cuc)
 
-	name = path.Join(os.TempDir(), "test_file2")
-	require.NoError(t, err)
+	select {
+	case <-ctx.Done():
+		t.Error("context done")
+	case <-cuc:
+		assert.True(t, cws.isWatching(name))
+	case <-time.After(2 * monitoringInterval):
+		t.Error("Timed out waiting for credential watch")
+	}
 
-	credentialWatcherService.addWatcher(ctx, name)
-	assert.False(t, credentialWatcherService.isWatching(name))
+	func() {
+		cws.watcher.Errors <- fmt.Errorf("watch error")
+	}()
 }
 
 func TestCredentialWatcherService_isWatching(t *testing.T) {
@@ -87,6 +101,16 @@ func TestCredentialWatcherService_addWatcher(t *testing.T) {
 	_, err = os.Create(name)
 	require.NoError(t, err)
 	defer os.Remove(name)
+
+	cws.enabled.Store(false)
+
+	cws.addWatcher(ctx, name)
+	require.False(t, cws.isWatching(name))
+
+	cws.enabled.Store(true)
+
+	cws.addWatcher(ctx, name)
+	require.True(t, cws.isWatching(name))
 
 	cws.addWatcher(ctx, name)
 	require.True(t, cws.isWatching(name))
@@ -150,7 +174,10 @@ func TestCredentialWatcherService_checkForUpdates(t *testing.T) {
 	select {
 	case <-ctx.Done():
 		t.Error(ctx.Err())
-	case <-ch:
+	case cu := <-ch:
+		t.Logf("check for update success %v", cu)
+	case <-time.After(2 * monitoringInterval):
+		t.Error("timeout waiting for update")
 	}
 }
 
@@ -171,4 +198,36 @@ func TestCredentialWatcherService_handleEvent(t *testing.T) {
 	assert.False(t, cws.filesChanged.Load())
 	cws.handleEvent(ctx, fsnotify.Event{Name: "test-write", Op: fsnotify.Write})
 	assert.True(t, cws.filesChanged.Load())
+}
+
+func Test_credentialPaths(t *testing.T) {
+	tests := []struct {
+		name        string
+		agentConfig *config.Config
+		want        []string
+	}{
+		{
+			name:        "Test 1: Returns expected paths when Auth TokenPath is set",
+			agentConfig: types.AgentConfig(),
+			want: []string{
+				"/tmp/token",
+			},
+		},
+		{
+			name: "Test 2: Returns empty slice when Auth TokenPath is not set",
+			agentConfig: &config.Config{
+				Command: &config.Command{
+					Server: nil,
+					Auth:   nil,
+					TLS:    nil,
+				},
+			},
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equalf(t, tt.want, credentialPaths(tt.agentConfig), "credentialPaths(%v)", tt.agentConfig)
+		})
+	}
 }
