@@ -32,6 +32,7 @@ type (
 		SendDataPlaneResponse(ctx context.Context, response *mpi.DataPlaneResponse) error
 		CancelSubscription(ctx context.Context)
 		IsConnected() bool
+		StartSubscription()
 		CreateConnection(ctx context.Context, resource *mpi.Resource) (*mpi.CreateConnectionResponse, error)
 	}
 
@@ -108,6 +109,7 @@ func (cp *CommandPlugin) createConnection(ctx context.Context, resource *mpi.Res
 		slog.ErrorContext(ctx, "Unable to create connection", "error", err)
 	}
 	if createConnectionResponse != nil {
+		cp.commandService.StartSubscription()
 		cp.messagePipe.Process(ctx, &bus.Message{
 			Topic: bus.ConnectionCreatedTopic,
 			Data:  createConnectionResponse,

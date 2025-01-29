@@ -45,6 +45,7 @@ type (
 		subscribeChannel             chan *mpi.ManagementPlaneRequest
 		configApplyRequestQueue      map[string][]*mpi.ManagementPlaneRequest // key is the instance ID
 		resource                     *mpi.Resource
+		subscribeContext             context.Context
 		subscribeMutex               sync.Mutex
 		subscribeClientMutex         sync.Mutex
 		configApplyRequestQueueMutex sync.Mutex
@@ -70,15 +71,16 @@ func NewCommandService(
 		resource:                &mpi.Resource{},
 	}
 
-	var subscribeCtx context.Context
-
 	commandService.subscribeMutex.Lock()
-	subscribeCtx, commandService.subscribeCancel = context.WithCancel(ctx)
+	commandService.subscribeContext, commandService.subscribeCancel = context.WithCancel(ctx)
 	commandService.subscribeMutex.Unlock()
 
-	go commandService.subscribe(subscribeCtx)
-
 	return commandService
+}
+
+func (cs *CommandService) StartSubscription() {
+	slog.DebugContext(cs.subscribeContext, "Starting subscribe")
+	go cs.subscribe(cs.subscribeContext)
 }
 
 func (cs *CommandService) IsConnected() bool {

@@ -77,7 +77,7 @@ func (*FakeConfigApplySubscribeClient) Recv() (*mpi.ManagementPlaneRequest, erro
 	}, nil
 }
 
-func TestCommandService_NewCommandService(t *testing.T) {
+func TestCommandService_StartSubscribe(t *testing.T) {
 	ctx := context.Background()
 	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
 
@@ -89,6 +89,8 @@ func TestCommandService_NewCommandService(t *testing.T) {
 	)
 
 	defer commandService.CancelSubscription(ctx)
+
+	commandService.StartSubscription()
 
 	assert.Eventually(
 		t,
@@ -113,6 +115,7 @@ func TestCommandService_receiveCallback_configApplyRequest(t *testing.T) {
 		types.AgentConfig(),
 		subscribeChannel,
 	)
+	commandService.StartSubscription()
 
 	nginxInstance := protos.GetNginxOssInstance([]string{})
 	commandService.resourceMutex.Lock()

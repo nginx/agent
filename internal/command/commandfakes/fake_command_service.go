@@ -50,6 +50,10 @@ type FakeCommandService struct {
 	sendDataPlaneResponseReturnsOnCall map[int]struct {
 		result1 error
 	}
+	StartSubscriptionStub        func()
+	startSubscriptionMutex       sync.RWMutex
+	startSubscriptionArgsForCall []struct {
+	}
 	UpdateDataPlaneHealthStub        func(context.Context, []*v1.InstanceHealth) error
 	updateDataPlaneHealthMutex       sync.RWMutex
 	updateDataPlaneHealthArgsForCall []struct {
@@ -290,6 +294,30 @@ func (fake *FakeCommandService) SendDataPlaneResponseReturnsOnCall(i int, result
 	}{result1}
 }
 
+func (fake *FakeCommandService) StartSubscription() {
+	fake.startSubscriptionMutex.Lock()
+	fake.startSubscriptionArgsForCall = append(fake.startSubscriptionArgsForCall, struct {
+	}{})
+	stub := fake.StartSubscriptionStub
+	fake.recordInvocation("StartSubscription", []interface{}{})
+	fake.startSubscriptionMutex.Unlock()
+	if stub != nil {
+		fake.StartSubscriptionStub()
+	}
+}
+
+func (fake *FakeCommandService) StartSubscriptionCallCount() int {
+	fake.startSubscriptionMutex.RLock()
+	defer fake.startSubscriptionMutex.RUnlock()
+	return len(fake.startSubscriptionArgsForCall)
+}
+
+func (fake *FakeCommandService) StartSubscriptionCalls(stub func()) {
+	fake.startSubscriptionMutex.Lock()
+	defer fake.startSubscriptionMutex.Unlock()
+	fake.StartSubscriptionStub = stub
+}
+
 func (fake *FakeCommandService) UpdateDataPlaneHealth(arg1 context.Context, arg2 []*v1.InstanceHealth) error {
 	var arg2Copy []*v1.InstanceHealth
 	if arg2 != nil {
@@ -430,6 +458,8 @@ func (fake *FakeCommandService) Invocations() map[string][][]interface{} {
 	defer fake.isConnectedMutex.RUnlock()
 	fake.sendDataPlaneResponseMutex.RLock()
 	defer fake.sendDataPlaneResponseMutex.RUnlock()
+	fake.startSubscriptionMutex.RLock()
+	defer fake.startSubscriptionMutex.RUnlock()
 	fake.updateDataPlaneHealthMutex.RLock()
 	defer fake.updateDataPlaneHealthMutex.RUnlock()
 	fake.updateDataPlaneStatusMutex.RLock()
