@@ -70,7 +70,39 @@ func TestCommandPlugin_Init(t *testing.T) {
 
 	closeError := commandPlugin.Close(ctx)
 	require.NoError(t, closeError)
-	require.Equal(t, 1, fakeCommandService.CancelSubscriptionCallCount())
+}
+
+func TestCommandPlugin_createConnection(t *testing.T) {
+	ctx := context.Background()
+	commandService := &commandfakes.FakeCommandService{}
+	commandService.CreateConnectionReturns(&mpi.CreateConnectionResponse{}, nil)
+	messagePipe := busfakes.NewFakeMessagePipe()
+
+	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	err := commandPlugin.Init(ctx, messagePipe)
+	commandPlugin.commandService = commandService
+	require.NoError(t, err)
+	defer commandPlugin.Close(ctx)
+
+	commandPlugin.createConnection(ctx, &mpi.Resource{})
+
+	assert.Eventually(
+		t,
+		func() bool { return commandService.SubscribeCallCount() > 0 },
+		2*time.Second,
+		10*time.Millisecond,
+	)
+
+	assert.Eventually(
+		t,
+		func() bool { return len(messagePipe.GetMessages()) == 1 },
+		2*time.Second,
+		10*time.Millisecond,
+	)
+
+	messages := messagePipe.GetMessages()
+	assert.Len(t, messages, 1)
+	assert.Equal(t, bus.ConnectionCreatedTopic, messages[0].Topic)
 }
 
 func TestCommandPlugin_Process(t *testing.T) {

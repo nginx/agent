@@ -9,11 +9,6 @@ import (
 )
 
 type FakeCommandService struct {
-	CancelSubscriptionStub        func(context.Context)
-	cancelSubscriptionMutex       sync.RWMutex
-	cancelSubscriptionArgsForCall []struct {
-		arg1 context.Context
-	}
 	CreateConnectionStub        func(context.Context, *v1.Resource) (*v1.CreateConnectionResponse, error)
 	createConnectionMutex       sync.RWMutex
 	createConnectionArgsForCall []struct {
@@ -50,9 +45,10 @@ type FakeCommandService struct {
 	sendDataPlaneResponseReturnsOnCall map[int]struct {
 		result1 error
 	}
-	StartSubscriptionStub        func()
-	startSubscriptionMutex       sync.RWMutex
-	startSubscriptionArgsForCall []struct {
+	SubscribeStub        func(context.Context)
+	subscribeMutex       sync.RWMutex
+	subscribeArgsForCall []struct {
+		arg1 context.Context
 	}
 	UpdateDataPlaneHealthStub        func(context.Context, []*v1.InstanceHealth) error
 	updateDataPlaneHealthMutex       sync.RWMutex
@@ -80,38 +76,6 @@ type FakeCommandService struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
-}
-
-func (fake *FakeCommandService) CancelSubscription(arg1 context.Context) {
-	fake.cancelSubscriptionMutex.Lock()
-	fake.cancelSubscriptionArgsForCall = append(fake.cancelSubscriptionArgsForCall, struct {
-		arg1 context.Context
-	}{arg1})
-	stub := fake.CancelSubscriptionStub
-	fake.recordInvocation("CancelSubscription", []interface{}{arg1})
-	fake.cancelSubscriptionMutex.Unlock()
-	if stub != nil {
-		fake.CancelSubscriptionStub(arg1)
-	}
-}
-
-func (fake *FakeCommandService) CancelSubscriptionCallCount() int {
-	fake.cancelSubscriptionMutex.RLock()
-	defer fake.cancelSubscriptionMutex.RUnlock()
-	return len(fake.cancelSubscriptionArgsForCall)
-}
-
-func (fake *FakeCommandService) CancelSubscriptionCalls(stub func(context.Context)) {
-	fake.cancelSubscriptionMutex.Lock()
-	defer fake.cancelSubscriptionMutex.Unlock()
-	fake.CancelSubscriptionStub = stub
-}
-
-func (fake *FakeCommandService) CancelSubscriptionArgsForCall(i int) context.Context {
-	fake.cancelSubscriptionMutex.RLock()
-	defer fake.cancelSubscriptionMutex.RUnlock()
-	argsForCall := fake.cancelSubscriptionArgsForCall[i]
-	return argsForCall.arg1
 }
 
 func (fake *FakeCommandService) CreateConnection(arg1 context.Context, arg2 *v1.Resource) (*v1.CreateConnectionResponse, error) {
@@ -294,28 +258,36 @@ func (fake *FakeCommandService) SendDataPlaneResponseReturnsOnCall(i int, result
 	}{result1}
 }
 
-func (fake *FakeCommandService) StartSubscription() {
-	fake.startSubscriptionMutex.Lock()
-	fake.startSubscriptionArgsForCall = append(fake.startSubscriptionArgsForCall, struct {
-	}{})
-	stub := fake.StartSubscriptionStub
-	fake.recordInvocation("StartSubscription", []interface{}{})
-	fake.startSubscriptionMutex.Unlock()
+func (fake *FakeCommandService) Subscribe(arg1 context.Context) {
+	fake.subscribeMutex.Lock()
+	fake.subscribeArgsForCall = append(fake.subscribeArgsForCall, struct {
+		arg1 context.Context
+	}{arg1})
+	stub := fake.SubscribeStub
+	fake.recordInvocation("Subscribe", []interface{}{arg1})
+	fake.subscribeMutex.Unlock()
 	if stub != nil {
-		fake.StartSubscriptionStub()
+		fake.SubscribeStub(arg1)
 	}
 }
 
-func (fake *FakeCommandService) StartSubscriptionCallCount() int {
-	fake.startSubscriptionMutex.RLock()
-	defer fake.startSubscriptionMutex.RUnlock()
-	return len(fake.startSubscriptionArgsForCall)
+func (fake *FakeCommandService) SubscribeCallCount() int {
+	fake.subscribeMutex.RLock()
+	defer fake.subscribeMutex.RUnlock()
+	return len(fake.subscribeArgsForCall)
 }
 
-func (fake *FakeCommandService) StartSubscriptionCalls(stub func()) {
-	fake.startSubscriptionMutex.Lock()
-	defer fake.startSubscriptionMutex.Unlock()
-	fake.StartSubscriptionStub = stub
+func (fake *FakeCommandService) SubscribeCalls(stub func(context.Context)) {
+	fake.subscribeMutex.Lock()
+	defer fake.subscribeMutex.Unlock()
+	fake.SubscribeStub = stub
+}
+
+func (fake *FakeCommandService) SubscribeArgsForCall(i int) context.Context {
+	fake.subscribeMutex.RLock()
+	defer fake.subscribeMutex.RUnlock()
+	argsForCall := fake.subscribeArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakeCommandService) UpdateDataPlaneHealth(arg1 context.Context, arg2 []*v1.InstanceHealth) error {
@@ -450,16 +422,14 @@ func (fake *FakeCommandService) UpdateDataPlaneStatusReturnsOnCall(i int, result
 func (fake *FakeCommandService) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.cancelSubscriptionMutex.RLock()
-	defer fake.cancelSubscriptionMutex.RUnlock()
 	fake.createConnectionMutex.RLock()
 	defer fake.createConnectionMutex.RUnlock()
 	fake.isConnectedMutex.RLock()
 	defer fake.isConnectedMutex.RUnlock()
 	fake.sendDataPlaneResponseMutex.RLock()
 	defer fake.sendDataPlaneResponseMutex.RUnlock()
-	fake.startSubscriptionMutex.RLock()
-	defer fake.startSubscriptionMutex.RUnlock()
+	fake.subscribeMutex.RLock()
+	defer fake.subscribeMutex.RUnlock()
 	fake.updateDataPlaneHealthMutex.RLock()
 	defer fake.updateDataPlaneHealthMutex.RUnlock()
 	fake.updateDataPlaneStatusMutex.RLock()

@@ -41,12 +41,9 @@ type (
 		subscribeClient              mpi.CommandService_SubscribeClient
 		agentConfig                  *config.Config
 		isConnected                  *atomic.Bool
-		subscribeCancel              context.CancelFunc
 		subscribeChannel             chan *mpi.ManagementPlaneRequest
 		configApplyRequestQueue      map[string][]*mpi.ManagementPlaneRequest // key is the instance ID
 		resource                     *mpi.Resource
-		subscribeContext             context.Context
-		subscribeMutex               sync.Mutex
 		subscribeClientMutex         sync.Mutex
 		configApplyRequestQueueMutex sync.Mutex
 		resourceMutex                sync.Mutex
@@ -54,7 +51,6 @@ type (
 )
 
 func NewCommandService(
-	ctx context.Context,
 	commandServiceClient mpi.CommandServiceClient,
 	agentConfig *config.Config,
 	subscribeChannel chan *mpi.ManagementPlaneRequest,
@@ -71,16 +67,7 @@ func NewCommandService(
 		resource:                &mpi.Resource{},
 	}
 
-	commandService.subscribeMutex.Lock()
-	commandService.subscribeContext, commandService.subscribeCancel = context.WithCancel(ctx)
-	commandService.subscribeMutex.Unlock()
-
 	return commandService
-}
-
-func (cs *CommandService) StartSubscription() {
-	slog.DebugContext(cs.subscribeContext, "Starting subscribe")
-	go cs.subscribe(cs.subscribeContext)
 }
 
 func (cs *CommandService) IsConnected() bool {
@@ -192,17 +179,7 @@ func (cs *CommandService) SendDataPlaneResponse(ctx context.Context, response *m
 	)
 }
 
-func (cs *CommandService) CancelSubscription(ctx context.Context) {
-	slog.InfoContext(ctx, "Canceling subscribe context")
-
-	cs.subscribeMutex.Lock()
-	if cs.subscribeCancel != nil {
-		cs.subscribeCancel()
-	}
-	cs.subscribeMutex.Unlock()
-}
-
-func (cs *CommandService) subscribe(ctx context.Context) {
+func (cs *CommandService) Subscribe(ctx context.Context) {
 	commonSettings := &config.BackOff{
 		InitialInterval:     cs.agentConfig.Client.Backoff.InitialInterval,
 		MaxInterval:         cs.agentConfig.Client.Backoff.MaxInterval,
@@ -411,6 +388,7 @@ func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
 			var err error
 			cs.subscribeClient, err = cs.commandServiceClient.Subscribe(ctx)
 			if err != nil {
+				slog.Info("Error: ", "", err)
 				subscribeErr := cs.handleSubscribeError(ctx, err, "create subscribe client")
 				cs.subscribeClientMutex.Unlock()
 
