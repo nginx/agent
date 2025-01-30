@@ -11,7 +11,7 @@ import (
 	"log/slog"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/internal/datasource/proto"
+	response "github.com/nginx/agent/v3/internal/datasource/proto"
 	"github.com/nginx/agent/v3/internal/logger"
 )
 
@@ -33,7 +33,7 @@ func (a *APIAction) HandleUpdateStreamServersRequest(ctx context.Context, action
 		slog.ErrorContext(ctx, "Unable to update stream servers of upstream", "request",
 			action.GetUpdateHttpUpstreamServers(), "error", err)
 
-		return proto.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+		return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"", instanceID, err.Error())
 	}
 
@@ -41,7 +41,7 @@ func (a *APIAction) HandleUpdateStreamServersRequest(ctx context.Context, action
 		action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(), "add", len(add), "update", len(update),
 		"delete", len(del))
 
-	return proto.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
+	return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
 		"Successfully updated stream upstream servers", instanceID, "")
 }
 
@@ -55,7 +55,7 @@ func (a *APIAction) HandleGetStreamUpstreamsRequest(ctx context.Context,
 	streamUpstreams, err := a.ResourceService.GetStreamUpstreams(ctx, instance)
 	if err != nil {
 		slog.ErrorContext(ctx, "Unable to get stream upstreams", "error", err)
-		return proto.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+		return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"", instanceID, err.Error())
 	}
 
@@ -67,7 +67,7 @@ func (a *APIAction) HandleGetStreamUpstreamsRequest(ctx context.Context,
 		streamUpstreamsResponse = string(streamUpstreamsJSON)
 	}
 
-	return proto.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
+	return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
 		streamUpstreamsResponse, instanceID, "")
 }
 
@@ -80,7 +80,7 @@ func (a *APIAction) HandleGetUpstreamsRequest(ctx context.Context, instance *mpi
 	if err != nil {
 		slog.InfoContext(ctx, "Unable to get upstreams", "error", err)
 
-		return proto.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+		return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"", instanceID, err.Error())
 	}
 
@@ -92,7 +92,7 @@ func (a *APIAction) HandleGetUpstreamsRequest(ctx context.Context, instance *mpi
 		upstreamsResponse = string(upstreamsJSON)
 	}
 
-	return proto.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
+	return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
 		upstreamsResponse, instanceID, "")
 }
 
@@ -109,7 +109,7 @@ func (a *APIAction) HandleUpdateHTTPUpstreamsRequest(ctx context.Context, action
 		slog.ErrorContext(ctx, "Unable to update HTTP servers of upstream", "request",
 			action.GetUpdateHttpUpstreamServers(), "error", err)
 
-		return proto.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+		return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"", instanceID, err.Error())
 	}
 
@@ -117,7 +117,7 @@ func (a *APIAction) HandleUpdateHTTPUpstreamsRequest(ctx context.Context, action
 		action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(), "add", len(add), "update", len(update),
 		"delete", len(del))
 
-	return proto.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
+	return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
 		"Successfully updated HTTP Upstreams", instanceID, "")
 }
 
@@ -132,7 +132,7 @@ func (a *APIAction) HandleGetHTTPUpstreamsServersRequest(ctx context.Context, ac
 		action.GetGetHttpUpstreamServers().GetHttpUpstreamName())
 	if err != nil {
 		slog.ErrorContext(ctx, "Unable to get HTTP servers of upstream", "error", err)
-		return proto.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+		return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"", instanceID, err.Error())
 	}
 
@@ -144,6 +144,6 @@ func (a *APIAction) HandleGetHTTPUpstreamsServersRequest(ctx context.Context, ac
 		upstreamsResponse = string(upstreamsJSON)
 	}
 
-	return proto.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
+	return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
 		upstreamsResponse, instanceID, "")
 }
