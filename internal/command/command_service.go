@@ -388,7 +388,6 @@ func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
 			var err error
 			cs.subscribeClient, err = cs.commandServiceClient.Subscribe(ctx)
 			if err != nil {
-				slog.Info("Error: ", "", err)
 				subscribeErr := cs.handleSubscribeError(ctx, err, "create subscribe client")
 				cs.subscribeClientMutex.Unlock()
 
