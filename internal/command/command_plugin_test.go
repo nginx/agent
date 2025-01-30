@@ -339,12 +339,12 @@ func TestCommandPlugin_FeatureDisabled(t *testing.T) {
 
 func TestMonitorSubscribeChannel(t *testing.T) {
 	ctx, cncl := context.WithCancel(context.Background())
-	defer cncl()
 
 	logBuf := &bytes.Buffer{}
 	stub.StubLoggerWith(logBuf)
 
 	cp := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	cp.subscribeCancel = cncl
 
 	message := protos.CreateManagementPlaneRequest()
 
@@ -359,7 +359,7 @@ func TestMonitorSubscribeChannel(t *testing.T) {
 	// Give some time to process the message
 	time.Sleep(100 * time.Millisecond)
 
-	cncl()
+	cp.Close(ctx)
 
 	time.Sleep(100 * time.Millisecond)
 
