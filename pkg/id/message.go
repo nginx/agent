@@ -6,7 +6,6 @@
 package id
 
 import (
-	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,7 +21,6 @@ var defaultUUIDGenerator UUIDGenerator = uuid.NewUUID
 func GenerateMessageID() string {
 	uuidv7, err := defaultUUIDGenerator()
 	if err != nil {
-		slog.Debug("Issue generating uuidv7, using sha256 and timestamp instead", "error", err)
 		return Generate("%s", time.Now().String())
 	}
 

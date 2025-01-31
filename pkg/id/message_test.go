@@ -11,7 +11,6 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/stub"
 	"github.com/stretchr/testify/assert"
 
@@ -104,9 +103,6 @@ func TestGenerateMessageID(t *testing.T) {
 
 				got := GenerateMessageID()
 				assert.NotEmpty(t, got)
-
-				// Inspect logs
-				helpers.ValidateLog(t, "Issue generating uuidv7, using sha256 and timestamp instead", logBuf)
 
 				logBuf.Reset()
 			} else {
