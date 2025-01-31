@@ -303,6 +303,12 @@ func registerCommandFlags(fs *flag.FlagSet) {
 		"The token used in the authentication handshake with the command server endpoint for command and control.",
 	)
 	fs.String(
+		CommandAuthTokenPathKey,
+		DefCommandAuthTokenPathKey,
+		"The path to the file containing the token used in the authentication handshake with "+
+			"the command server endpoint for command and control.",
+	)
+	fs.String(
 		CommandTLSCertKey,
 		DefCommandTLSCertKey,
 		"The path to the certificate file to use for TLS communication with the command server.",
@@ -816,9 +822,10 @@ func resolveCommand() *Command {
 		},
 	}
 
-	if viperInstance.IsSet(CommandAuthTokenKey) {
+	if areAuthSettingsSet() {
 		command.Auth = &AuthConfig{
-			Token: viperInstance.GetString(CommandAuthTokenKey),
+			Token:     viperInstance.GetString(CommandAuthTokenKey),
+			TokenPath: viperInstance.GetString(CommandAuthTokenPathKey),
 		}
 	}
 
@@ -833,6 +840,11 @@ func resolveCommand() *Command {
 	}
 
 	return command
+}
+
+func areAuthSettingsSet() bool {
+	return viperInstance.IsSet(CommandAuthTokenKey) ||
+		viperInstance.IsSet(CommandAuthTokenPathKey)
 }
 
 func areTLSSettingsSet() bool {
