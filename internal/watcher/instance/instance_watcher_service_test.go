@@ -28,7 +28,7 @@ func TestInstanceWatcherService_checkForUpdates(t *testing.T) {
 	nginxConfigContext := testModel.GetConfigContext()
 
 	fakeProcessWatcher := &processfakes.FakeProcessOperatorInterface{}
-	fakeProcessWatcher.ProcessesReturns([]*model.Process{}, nil)
+	fakeProcessWatcher.ProcessesReturns(nil, nil)
 
 	fakeProcessParser := &instancefakes.FakeProcessParser{}
 	fakeProcessParser.ParseReturns(map[string]*mpi.Instance{
@@ -131,7 +131,7 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			fakeProcessWatcher := &processfakes.FakeProcessOperatorInterface{}
-			fakeProcessWatcher.ProcessesReturns([]*model.Process{}, nil)
+			fakeProcessWatcher.ProcessesReturns(nil, nil)
 
 			fakeProcessParser := &instancefakes.FakeProcessParser{}
 			fakeProcessParser.ParseReturns(test.parsedInstances)

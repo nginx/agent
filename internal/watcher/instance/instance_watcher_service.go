@@ -19,6 +19,7 @@ import (
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/watcher/process"
+	"github.com/nginx/agent/v3/pkg/nginxprocess"
 )
 
 const defaultAgentPath = "/run/nginx-agent"
@@ -31,7 +32,7 @@ const defaultAgentPath = "/run/nginx-agent"
 
 type (
 	processParser interface {
-		Parse(ctx context.Context, processes []*model.Process) map[string]*mpi.Instance
+		Parse(ctx context.Context, processes []*nginxprocess.Process) map[string]*mpi.Instance
 	}
 
 	nginxConfigParser interface {
