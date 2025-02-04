@@ -14,6 +14,7 @@ const (
 	ConfigPathKey                               = "path"
 	CommandRootKey                              = "command"
 	DataPlaneConfigRootKey                      = "data_plane_config"
+	LabelsRootKey                               = "labels"
 	LogLevelRootKey                             = "log"
 	CollectorRootKey                            = "collector"
 	VersionKey                                  = "version"
@@ -26,12 +27,22 @@ const (
 
 var (
 	// child flags saved as vars to enable easier prefixing.
-	ClientPermitWithoutStreamKey                = pre(ClientRootKey) + "permit_without_stream"
-	ClientTimeKey                               = pre(ClientRootKey) + "time"
-	ClientTimeoutKey                            = pre(ClientRootKey) + "timeout"
-	ClientMaxMessageSendSizeKey                 = pre(ClientRootKey) + "max_message_send_size"
-	ClientMaxMessageReceiveSizeKey              = pre(ClientRootKey) + "max_message_receive_size"
-	ClientMaxMessageSizeKey                     = pre(ClientRootKey) + "max_message_size"
+	GrpcKeepAlive                         = pre(ClientRootKey) + "grpc_keepalive"
+	ClientKeepAlivePermitWithoutStreamKey = pre(GrpcKeepAlive) + "permit_without_stream"
+	ClientKeepAliveTimeKey                = pre(GrpcKeepAlive) + "time"
+	ClientKeepAliveTimeoutKey             = pre(GrpcKeepAlive) + "timeout"
+
+	ClientHTTPTimeoutKey               = pre(ClientRootKey) + "http_timeout"
+	ClientGRPCMaxMessageSendSizeKey    = pre(ClientRootKey) + "grpc_max_message_send_size"
+	ClientGRPCMaxMessageReceiveSizeKey = pre(ClientRootKey) + "grpc_max_message_receive_size"
+	ClientGRPCMaxMessageSizeKey        = pre(ClientRootKey) + "grpc_max_message_size"
+
+	ClientBackoffInitialIntervalKey     = pre(ClientRootKey) + "backoff_initial_interval"
+	ClientBackoffMaxIntervalKey         = pre(ClientRootKey) + "backoff_max_interval"
+	ClientBackoffMaxElapsedTimeKey      = pre(ClientRootKey) + "backoff_max_elapsed_time"
+	ClientBackoffRandomizationFactorKey = pre(ClientRootKey) + "backoff_randomization_factor"
+	ClientBackoffMultiplierKey          = pre(ClientRootKey) + "backoff_multiplier"
+
 	CollectorConfigPathKey                      = pre(CollectorRootKey) + "config_path"
 	CollectorExportersKey                       = pre(CollectorRootKey) + "exporters"
 	CollectorAttributeProcessorKey              = pre(CollectorProcessorsKey) + "attribute"
@@ -69,6 +80,7 @@ var (
 	CollectorLogPathKey                         = pre(CollectorLogKey) + "path"
 	CommandAuthKey                              = pre(CommandRootKey) + "auth"
 	CommandAuthTokenKey                         = pre(CommandAuthKey) + "token"
+	CommandAuthTokenPathKey                     = pre(CommandAuthKey) + "tokenpath"
 	CommandServerHostKey                        = pre(CommandServerKey) + "host"
 	CommandServerKey                            = pre(CommandRootKey) + "server"
 	CommandServerPortKey                        = pre(CommandServerKey) + "port"

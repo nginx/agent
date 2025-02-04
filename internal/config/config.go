@@ -7,17 +7,18 @@ package config
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
-	"time"
 
+	uuidLibrary "github.com/nginx/agent/v3/pkg/id"
 	selfsignedcerts "github.com/nginx/agent/v3/pkg/tls"
-	uuidLibrary "github.com/nginx/agent/v3/pkg/uuid"
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -27,6 +28,7 @@ const (
 	ConfigFileName = "nginx-agent.conf"
 	EnvPrefix      = "NGINX_AGENT"
 	KeyDelimiter   = "_"
+	KeyValueNumber = 2
 )
 
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
@@ -101,9 +103,9 @@ func ResolveConfig() (*Config, error) {
 		AllowedDirectories: allowedDirs,
 		Collector:          collector,
 		Command:            resolveCommand(),
-		Common:             resolveCommon(),
 		Watchers:           resolveWatchers(),
 		Features:           viperInstance.GetStringSlice(FeaturesKey),
+		Labels:             resolveLabels(),
 	}
 
 	slog.Debug("Agent config", "config", config)
@@ -155,7 +157,6 @@ func registerFlags() {
 			"collection or error monitoring",
 	)
 
-	fs.Duration(ClientTimeoutKey, time.Minute, "Client timeout")
 	fs.StringSlice(AllowedDirectoriesKey,
 		DefaultAllowedDirectories(),
 		"A comma-separated list of paths that you want to grant NGINX Agent read/write access to")
@@ -178,32 +179,16 @@ func registerFlags() {
 		"How often the NGINX Agent will check for file changes.",
 	)
 
-	fs.Int(
-		ClientMaxMessageSizeKey,
-		DefMaxMessageSize,
-		"The value used, if not 0, for both max_message_send_size and max_message_receive_size",
-	)
-
-	fs.Int(
-		ClientMaxMessageReceiveSizeKey,
-		DefMaxMessageRecieveSize,
-		"Updates the client grpc setting MaxRecvMsgSize with the specific value in MB.",
-	)
-
-	fs.Int(
-		ClientMaxMessageSendSizeKey,
-		DefMaxMessageSendSize,
-		"Updates the client grpc setting MaxSendMsgSize with the specific value in MB.",
-	)
-
 	fs.StringSlice(
 		FeaturesKey,
 		DefaultFeatures(),
 		"A comma-separated list of features enabled for the agent.",
 	)
 
+	registerCommonFlags(fs)
 	registerCommandFlags(fs)
 	registerCollectorFlags(fs)
+	registerClientFlags(fs)
 
 	fs.SetNormalizeFunc(normalizeFunc)
 
@@ -216,6 +201,84 @@ func registerFlags() {
 			slog.Warn("Error occurred binding env", "env", flag.Name, "error", err)
 		}
 	})
+}
+
+func registerCommonFlags(fs *flag.FlagSet) {
+	fs.StringToString(
+		LabelsRootKey,
+		DefaultLabels(),
+		"A list of labels associated with these instances",
+	)
+}
+
+func registerClientFlags(fs *flag.FlagSet) {
+	// HTTP Flags
+	fs.Duration(
+		ClientHTTPTimeoutKey,
+		DefHTTPTimeout,
+		"The client HTTP Timeout, value in seconds")
+
+	// Backoff Flags
+	fs.Duration(
+		ClientBackoffInitialIntervalKey,
+		DefBackoffInitialInterval,
+		"The client backoff initial interval, value in seconds")
+
+	fs.Duration(
+		ClientBackoffMaxIntervalKey,
+		DefBackoffMaxInterval,
+		"The client backoff max interval, value in seconds")
+
+	fs.Duration(
+		ClientBackoffMaxElapsedTimeKey,
+		DefBackoffMaxElapsedTime,
+		"The client backoff max elapsed time, value in seconds")
+
+	fs.Float64(
+		ClientBackoffRandomizationFactorKey,
+		DefBackoffRandomizationFactor,
+		"The client backoff randomization factor, value float")
+
+	fs.Float64(
+		ClientBackoffMultiplierKey,
+		DefBackoffMultiplier,
+		"The client backoff multiplier, value float")
+
+	// GRPC Flags
+	fs.Duration(
+		ClientKeepAliveTimeoutKey,
+		DefGRPCKeepAliveTimeout,
+		"Updates the client grpc setting, KeepAlive Timeout with the specific value in seconds.",
+	)
+
+	fs.Duration(
+		ClientKeepAliveTimeKey,
+		DefGRPCKeepAliveTime,
+		"Updates the client grpc setting, KeepAlive Time with the specific value in seconds.",
+	)
+
+	fs.Bool(
+		ClientKeepAlivePermitWithoutStreamKey,
+		DefGRPCKeepAlivePermitWithoutStream,
+		"Update the client grpc setting, KeepAlive PermitWithoutStream value")
+
+	fs.Int(
+		ClientGRPCMaxMessageSizeKey,
+		DefMaxMessageSize,
+		"The value used, if not 0, for both max_message_send_size and max_message_receive_size",
+	)
+
+	fs.Int(
+		ClientGRPCMaxMessageReceiveSizeKey,
+		DefMaxMessageRecieveSize,
+		"Updates the client grpc setting MaxRecvMsgSize with the specific value in MB.",
+	)
+
+	fs.Int(
+		ClientGRPCMaxMessageSendSizeKey,
+		DefMaxMessageSendSize,
+		"Updates the client grpc setting MaxSendMsgSize with the specific value in MB.",
+	)
 }
 
 func registerCommandFlags(fs *flag.FlagSet) {
@@ -238,6 +301,12 @@ func registerCommandFlags(fs *flag.FlagSet) {
 		CommandAuthTokenKey,
 		DefCommandAuthTokenKey,
 		"The token used in the authentication handshake with the command server endpoint for command and control.",
+	)
+	fs.String(
+		CommandAuthTokenPathKey,
+		DefCommandAuthTokenPathKey,
+		"The path to the file containing the token used in the authentication handshake with "+
+			"the command server endpoint for command and control.",
 	)
 	fs.String(
 		CommandTLSCertKey,
@@ -406,6 +475,102 @@ func resolveLog() *Log {
 	}
 }
 
+func resolveLabels() map[string]interface{} {
+	input := viperInstance.GetStringMapString(LabelsRootKey)
+
+	// Parsing the environment variable for labels needs to be done differently
+	// by parsing the environment variable as a string.
+	envLabels := resolveEnvironmentVariableLabels()
+
+	if len(envLabels) > 0 {
+		input = envLabels
+	}
+
+	result := make(map[string]interface{})
+
+	for key, value := range input {
+		trimmedKey := strings.TrimSpace(key)
+		trimmedValue := strings.TrimSpace(value)
+
+		switch {
+		case trimmedValue == "" || trimmedValue == "nil": // Handle empty values as nil
+			result[trimmedKey] = nil
+
+		case parseInt(trimmedValue) != nil: // Integer
+			result[trimmedKey] = parseInt(trimmedValue)
+
+		case parseFloat(trimmedValue) != nil: // Float
+			result[trimmedKey] = parseFloat(trimmedValue)
+
+		case parseBool(trimmedValue) != nil: // Boolean
+			result[trimmedKey] = parseBool(trimmedValue)
+
+		case parseJSON(trimmedValue) != nil: // JSON object/array
+			result[trimmedKey] = parseJSON(trimmedValue)
+
+		default: // String
+			result[trimmedKey] = trimmedValue
+		}
+	}
+
+	slog.Info("Configured labels", "labels", result)
+
+	return result
+}
+
+func resolveEnvironmentVariableLabels() map[string]string {
+	envLabels := make(map[string]string)
+	envInput := viperInstance.GetString(LabelsRootKey)
+
+	labels := strings.Split(envInput, ",")
+	if len(labels) > 0 && labels[0] != "" {
+		for _, label := range labels {
+			splitLabel := strings.Split(label, "=")
+			if len(splitLabel) == KeyValueNumber {
+				envLabels[splitLabel[0]] = splitLabel[1]
+			} else {
+				slog.Warn("Unable to parse label: " + label)
+			}
+		}
+	}
+
+	return envLabels
+}
+
+// Parsing helper functions return the parsed value or nil if parsing fails
+func parseInt(value string) interface{} {
+	if intValue, err := strconv.Atoi(value); err == nil {
+		return intValue
+	}
+
+	return nil
+}
+
+func parseFloat(value string) interface{} {
+	if floatValue, err := strconv.ParseFloat(value, 64); err == nil {
+		return floatValue
+	}
+
+	return nil
+}
+
+func parseBool(value string) interface{} {
+	if boolValue, err := strconv.ParseBool(value); err == nil {
+		return boolValue
+	}
+
+	return nil
+}
+
+func parseJSON(value string) interface{} {
+	var jsonValue interface{}
+	if err := json.Unmarshal([]byte(value), &jsonValue); err == nil {
+		return jsonValue
+	}
+
+	return nil
+}
+
 func resolveDataPlaneConfig() *DataPlaneConfig {
 	return &DataPlaneConfig{
 		Nginx: &NginxDataPlaneConfig{
@@ -418,12 +583,26 @@ func resolveDataPlaneConfig() *DataPlaneConfig {
 
 func resolveClient() *Client {
 	return &Client{
-		Timeout:               viperInstance.GetDuration(ClientTimeoutKey),
-		Time:                  viperInstance.GetDuration(ClientTimeKey),
-		PermitWithoutStream:   viperInstance.GetBool(ClientPermitWithoutStreamKey),
-		MaxMessageSize:        viperInstance.GetInt(ClientMaxMessageSizeKey),
-		MaxMessageRecieveSize: viperInstance.GetInt(ClientMaxMessageReceiveSizeKey),
-		MaxMessageSendSize:    viperInstance.GetInt(ClientMaxMessageSendSizeKey),
+		HTTP: &HTTP{
+			Timeout: viperInstance.GetDuration(ClientHTTPTimeoutKey),
+		},
+		Grpc: &GRPC{
+			KeepAlive: &KeepAlive{
+				Timeout:             viperInstance.GetDuration(ClientKeepAliveTimeoutKey),
+				Time:                viperInstance.GetDuration(ClientKeepAliveTimeKey),
+				PermitWithoutStream: viperInstance.GetBool(ClientKeepAlivePermitWithoutStreamKey),
+			},
+			MaxMessageSize:        viperInstance.GetInt(ClientGRPCMaxMessageSizeKey),
+			MaxMessageReceiveSize: viperInstance.GetInt(ClientGRPCMaxMessageReceiveSizeKey),
+			MaxMessageSendSize:    viperInstance.GetInt(ClientGRPCMaxMessageSendSizeKey),
+		},
+		Backoff: &BackOff{
+			InitialInterval:     viperInstance.GetDuration(ClientBackoffInitialIntervalKey),
+			MaxInterval:         viperInstance.GetDuration(ClientBackoffMaxIntervalKey),
+			MaxElapsedTime:      viperInstance.GetDuration(ClientBackoffMaxElapsedTimeKey),
+			RandomizationFactor: viperInstance.GetFloat64(ClientBackoffRandomizationFactorKey),
+			Multiplier:          viperInstance.GetFloat64(ClientBackoffMultiplierKey),
+		},
 	}
 }
 
@@ -643,9 +822,10 @@ func resolveCommand() *Command {
 		},
 	}
 
-	if viperInstance.IsSet(CommandAuthTokenKey) {
+	if areAuthSettingsSet() {
 		command.Auth = &AuthConfig{
-			Token: viperInstance.GetString(CommandAuthTokenKey),
+			Token:     viperInstance.GetString(CommandAuthTokenKey),
+			TokenPath: viperInstance.GetString(CommandAuthTokenPathKey),
 		}
 	}
 
@@ -660,6 +840,11 @@ func resolveCommand() *Command {
 	}
 
 	return command
+}
+
+func areAuthSettingsSet() bool {
+	return viperInstance.IsSet(CommandAuthTokenKey) ||
+		viperInstance.IsSet(CommandAuthTokenPathKey)
 }
 
 func areTLSSettingsSet() bool {
@@ -684,16 +869,6 @@ func arePrometheusExportTLSSettingsSet() bool {
 		viperInstance.IsSet(CollectorPrometheusExporterTLSCaKey) ||
 		viperInstance.IsSet(CollectorPrometheusExporterTLSSkipVerifyKey) ||
 		viperInstance.IsSet(CollectorPrometheusExporterTLSServerNameKey)
-}
-
-func resolveCommon() *CommonSettings {
-	return &CommonSettings{
-		InitialInterval:     DefBackoffInitialInterval,
-		MaxInterval:         DefBackoffMaxInterval,
-		MaxElapsedTime:      DefBackoffMaxElapsedTime,
-		RandomizationFactor: DefBackoffRandomizationFactor,
-		Multiplier:          DefBackoffMultiplier,
-	}
 }
 
 func resolveWatchers() *Watchers {

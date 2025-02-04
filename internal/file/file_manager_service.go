@@ -16,7 +16,6 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/nginx/agent/v3/internal/datasource/proto"
 	"github.com/nginx/agent/v3/internal/model"
 
 	"github.com/cenkalti/backoff/v4"
@@ -26,6 +25,7 @@ import (
 	"github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/pkg/files"
+	"github.com/nginx/agent/v3/pkg/id"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	backoffHelpers "github.com/nginx/agent/v3/internal/backoff"
@@ -104,7 +104,7 @@ func (fms *FileManagerService) UpdateOverview(
 
 	request := &mpi.UpdateOverviewRequest{
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     proto.GenerateMessageID(),
+			MessageId:     id.GenerateMessageID(),
 			CorrelationId: correlationID,
 			Timestamp:     timestamppb.Now(),
 		},
@@ -117,7 +117,7 @@ func (fms *FileManagerService) UpdateOverview(
 		},
 	}
 
-	backOffCtx, backoffCancel := context.WithTimeout(newCtx, fms.agentConfig.Common.MaxElapsedTime)
+	backOffCtx, backoffCancel := context.WithTimeout(newCtx, fms.agentConfig.Client.Backoff.MaxElapsedTime)
 	defer backoffCancel()
 
 	sendUpdateOverview := func() (*mpi.UpdateOverviewResponse, error) {
@@ -146,7 +146,7 @@ func (fms *FileManagerService) UpdateOverview(
 
 	response, err := backoff.RetryWithData(
 		sendUpdateOverview,
-		backoffHelpers.Context(backOffCtx, fms.agentConfig.Common),
+		backoffHelpers.Context(backOffCtx, fms.agentConfig.Client.Backoff),
 	)
 	if err != nil {
 		return err
@@ -224,13 +224,13 @@ func (fms *FileManagerService) UpdateFile(
 			Contents: contents,
 		},
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     proto.GenerateMessageID(),
+			MessageId:     id.GenerateMessageID(),
 			CorrelationId: correlationID,
 			Timestamp:     timestamppb.Now(),
 		},
 	}
 
-	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Common.MaxElapsedTime)
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Client.Backoff.MaxElapsedTime)
 	defer backoffCancel()
 
 	sendUpdateFile := func() (*mpi.UpdateFileResponse, error) {
@@ -256,7 +256,8 @@ func (fms *FileManagerService) UpdateFile(
 		return response, nil
 	}
 
-	response, err := backoff.RetryWithData(sendUpdateFile, backoffHelpers.Context(backOffCtx, fms.agentConfig.Common))
+	response, err := backoff.RetryWithData(sendUpdateFile, backoffHelpers.Context(backOffCtx,
+		fms.agentConfig.Client.Backoff))
 	if err != nil {
 		return err
 	}
@@ -375,13 +376,13 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 }
 
 func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) error {
-	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Common.MaxElapsedTime)
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Client.Backoff.MaxElapsedTime)
 	defer backoffCancel()
 
 	getFile := func() (*mpi.GetFileResponse, error) {
 		return fms.fileServiceClient.GetFile(ctx, &mpi.GetFileRequest{
 			MessageMeta: &mpi.MessageMeta{
-				MessageId:     proto.GenerateMessageID(),
+				MessageId:     id.GenerateMessageID(),
 				CorrelationId: logger.GetCorrelationID(ctx),
 				Timestamp:     timestamppb.Now(),
 			},
@@ -391,7 +392,7 @@ func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) e
 
 	getFileResp, getFileErr := backoff.RetryWithData(
 		getFile,
-		backoffHelpers.Context(backOffCtx, fms.agentConfig.Common),
+		backoffHelpers.Context(backOffCtx, fms.agentConfig.Client.Backoff),
 	)
 
 	if getFileErr != nil {
@@ -472,6 +473,11 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles, modifiedFiles 
 		currentFile, ok := currentFiles[file.GetFileMeta().GetName()]
 		// default to unchanged action
 		file.Action = &unchangedAction
+
+		// if file is unmanaged, action is set to unchanged so file is skipped when performing actions
+		if file.GetUnmanaged() {
+			continue
+		}
 		// if file doesn't exist in the current files, file has been added
 		// set file action
 		if !ok {

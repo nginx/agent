@@ -462,6 +462,12 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 
 	addTestFileName := tempDir + "/nginx_add.conf"
 
+	unmanagedFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx_unmanaged.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, unmanagedFile.Name())
+	unmanagedFileContent := []byte("test unmanaged file")
+	unmanagedErr := os.WriteFile(unmanagedFile.Name(), unmanagedFileContent, 0o600)
+	require.NoError(t, unmanagedErr)
+
 	tests := []struct {
 		expectedError   error
 		modifiedFiles   map[string]*mpi.File
@@ -479,6 +485,10 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 				updateTestFile.Name(): {
 					FileMeta: protos.FileMeta(updateTestFile.Name(), files.GenerateHash(updatedFileContent)),
 				},
+				unmanagedFile.Name(): {
+					FileMeta:  protos.FileMeta(unmanagedFile.Name(), files.GenerateHash(unmanagedFileContent)),
+					Unmanaged: true,
+				},
 			},
 			currentFiles: map[string]*mpi.File{
 				deleteTestFile.Name(): {
@@ -486,6 +496,10 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 				},
 				updateTestFile.Name(): {
 					FileMeta: protos.FileMeta(updateTestFile.Name(), files.GenerateHash(fileContent)),
+				},
+				unmanagedFile.Name(): {
+					FileMeta:  protos.FileMeta(unmanagedFile.Name(), files.GenerateHash(fileContent)),
+					Unmanaged: true,
 				},
 			},
 			expectedCache: map[string]*mpi.File{
