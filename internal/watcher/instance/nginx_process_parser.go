@@ -20,7 +20,7 @@ import (
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	"github.com/nginx/agent/v3/internal/model"
-	"github.com/nginx/agent/v3/pkg/uuid"
+	"github.com/nginx/agent/v3/pkg/id"
 )
 
 const (
@@ -244,7 +244,7 @@ func convertInfoToInstance(nginxInfo Info) *mpi.Instance {
 
 	return &mpi.Instance{
 		InstanceMeta: &mpi.InstanceMeta{
-			InstanceId:   uuid.Generate("%s_%s_%s", nginxInfo.ExePath, nginxInfo.ConfPath, nginxInfo.Prefix),
+			InstanceId:   id.Generate("%s_%s_%s", nginxInfo.ExePath, nginxInfo.ConfPath, nginxInfo.Prefix),
 			InstanceType: nginxType,
 			Version:      version,
 		},

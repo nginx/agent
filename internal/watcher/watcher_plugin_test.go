@@ -11,8 +11,6 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v3/internal/bus/busfakes"
-	"github.com/nginx/agent/v3/internal/datasource/proto"
-
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/nginx/agent/v3/internal/watcher/health"
@@ -22,6 +20,7 @@ import (
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/logger"
+	"github.com/nginx/agent/v3/pkg/id"
 	"github.com/nginx/agent/v3/test/model"
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/nginx/agent/v3/test/types"
@@ -138,7 +137,7 @@ func TestWatcher_Process_ConfigApplySuccessfulTopic(t *testing.T) {
 
 	response := &mpi.DataPlaneResponse{
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     proto.GenerateMessageID(),
+			MessageId:     id.GenerateMessageID(),
 			CorrelationId: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
 			Timestamp:     timestamppb.Now(),
 		},
@@ -172,7 +171,7 @@ func TestWatcher_Process_RollbackCompleteTopic(t *testing.T) {
 
 	response := &mpi.DataPlaneResponse{
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     proto.GenerateMessageID(),
+			MessageId:     id.GenerateMessageID(),
 			CorrelationId: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
 			Timestamp:     timestamppb.Now(),
 		},
