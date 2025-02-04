@@ -1,5 +1,5 @@
 ---
-title: Migrate from NGINX Agent v2 to v3
+title: Upgrade from v2.x to v3.0
 weight: 500
 docs: DOCS-000
 ---
