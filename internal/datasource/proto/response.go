@@ -3,27 +3,28 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package protos
+package proto
 
 import (
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/pkg/id"
+	agentid "github.com/nginx/agent/v3/pkg/id"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-const success = "Success"
-
-func OKDataPlaneResponse() *mpi.DataPlaneResponse {
+func CreateDataPlaneResponse(correlationID string, status mpi.CommandResponse_CommandStatus,
+	message, instanceID, err string,
+) *mpi.DataPlaneResponse {
 	return &mpi.DataPlaneResponse{
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     id.GenerateMessageID(),
-			CorrelationId: id.GenerateMessageID(),
+			MessageId:     agentid.GenerateMessageID(),
+			CorrelationId: correlationID,
 			Timestamp:     timestamppb.Now(),
 		},
 		CommandResponse: &mpi.CommandResponse{
-			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
-			Message: success,
+			Status:  status,
+			Message: message,
+			Error:   err,
 		},
-		InstanceId: ossInstanceID,
+		InstanceId: instanceID,
 	}
 }
