@@ -17,8 +17,8 @@ import (
 	"strconv"
 	"strings"
 
+	uuidLibrary "github.com/nginx/agent/v3/pkg/id"
 	selfsignedcerts "github.com/nginx/agent/v3/pkg/tls"
-	uuidLibrary "github.com/nginx/agent/v3/pkg/uuid"
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
