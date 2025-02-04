@@ -15,6 +15,8 @@ import (
 	"slices"
 	"strconv"
 
+	"github.com/nginx/agent/v3/internal/model"
+
 	"github.com/google/uuid"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -143,6 +145,18 @@ func ConvertToMapOfFiles(files []*mpi.File) map[string]*mpi.File {
 	filesMap := make(map[string]*mpi.File)
 	for _, file := range files {
 		filesMap[file.GetFileMeta().GetName()] = file
+	}
+
+	return filesMap
+}
+
+// ConvertToMapOfFiles converts a list of files to a map of file caches (file and action) with the file name as the key
+func ConvertToMapOfFileCache(convertFiles []*mpi.File) map[string]model.FileCache {
+	filesMap := make(map[string]model.FileCache)
+	for _, convertFile := range convertFiles {
+		filesMap[convertFile.GetFileMeta().GetName()] = model.FileCache{
+			File: convertFile,
+		}
 	}
 
 	return filesMap
