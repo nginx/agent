@@ -17,8 +17,8 @@ import (
 	"strconv"
 	"strings"
 
+	uuidLibrary "github.com/nginx/agent/v3/pkg/id"
 	selfsignedcerts "github.com/nginx/agent/v3/pkg/tls"
-	uuidLibrary "github.com/nginx/agent/v3/pkg/uuid"
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -301,6 +301,12 @@ func registerCommandFlags(fs *flag.FlagSet) {
 		CommandAuthTokenKey,
 		DefCommandAuthTokenKey,
 		"The token used in the authentication handshake with the command server endpoint for command and control.",
+	)
+	fs.String(
+		CommandAuthTokenPathKey,
+		DefCommandAuthTokenPathKey,
+		"The path to the file containing the token used in the authentication handshake with "+
+			"the command server endpoint for command and control.",
 	)
 	fs.String(
 		CommandTLSCertKey,
@@ -816,9 +822,10 @@ func resolveCommand() *Command {
 		},
 	}
 
-	if viperInstance.IsSet(CommandAuthTokenKey) {
+	if areAuthSettingsSet() {
 		command.Auth = &AuthConfig{
-			Token: viperInstance.GetString(CommandAuthTokenKey),
+			Token:     viperInstance.GetString(CommandAuthTokenKey),
+			TokenPath: viperInstance.GetString(CommandAuthTokenPathKey),
 		}
 	}
 
@@ -833,6 +840,11 @@ func resolveCommand() *Command {
 	}
 
 	return command
+}
+
+func areAuthSettingsSet() bool {
+	return viperInstance.IsSet(CommandAuthTokenKey) ||
+		viperInstance.IsSet(CommandAuthTokenPathKey)
 }
 
 func areTLSSettingsSet() bool {

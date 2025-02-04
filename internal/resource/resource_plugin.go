@@ -13,7 +13,7 @@ import (
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
-	"github.com/nginx/agent/v3/internal/datasource/proto"
+	response "github.com/nginx/agent/v3/internal/datasource/proto"
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/model"
 
@@ -168,7 +168,7 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 	}
 	if instance == nil {
 		slog.ErrorContext(ctx, "Unable to find instance with ID", "id", instanceID)
-		resp := proto.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+		resp := response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"", instanceID, fmt.Sprintf("failed to preform API "+
 				"action, could not find instance with ID: %s", instanceID))
 
@@ -179,7 +179,7 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 
 	if instance.GetInstanceMeta().GetInstanceType() != mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
 		slog.ErrorContext(ctx, "Failed to preform API action", "error", errors.New("instance is not NGINX Plus"))
-		resp := proto.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+		resp := response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"", instanceID, "failed to preform API action, instance is not NGINX Plus")
 
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
@@ -224,23 +224,23 @@ func (r *Resource) handleWriteConfigSuccessful(ctx context.Context, msg *bus.Mes
 	if err != nil {
 		data.Error = err
 		slog.Error("errors found during config apply, sending error status, rolling back config", "err", err)
-		response := proto.CreateDataPlaneResponse(data.CorrelationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
+		dpResponse := response.CreateDataPlaneResponse(data.CorrelationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
 			"Config apply failed, rolling back config", data.InstanceID, err.Error())
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
+		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: dpResponse})
 
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyFailedTopic, Data: data})
 
 		return
 	}
 
-	response := proto.CreateDataPlaneResponse(data.CorrelationID, mpi.CommandResponse_COMMAND_STATUS_OK,
+	dpResponse := response.CreateDataPlaneResponse(data.CorrelationID, mpi.CommandResponse_COMMAND_STATUS_OK,
 		"Config apply successful", data.InstanceID, "")
 
 	r.messagePipe.Process(
 		ctx,
 		&bus.Message{
 			Topic: bus.ConfigApplySuccessfulTopic,
-			Data:  response,
+			Data:  dpResponse,
 		},
 	)
 }
@@ -256,10 +256,10 @@ func (r *Resource) handleRollbackWrite(ctx context.Context, msg *bus.Message) {
 	if err != nil {
 		slog.Error("errors found during rollback, sending failure status", "err", err)
 
-		rollbackResponse := proto.CreateDataPlaneResponse(data.CorrelationID,
+		rollbackResponse := response.CreateDataPlaneResponse(data.CorrelationID,
 			mpi.CommandResponse_COMMAND_STATUS_ERROR, "Rollback failed", data.InstanceID, err.Error())
 
-		applyResponse := proto.CreateDataPlaneResponse(data.CorrelationID,
+		applyResponse := response.CreateDataPlaneResponse(data.CorrelationID,
 			mpi.CommandResponse_COMMAND_STATUS_FAILURE, "Config apply failed, rollback failed",
 			data.InstanceID, data.Error.Error())
 
@@ -269,7 +269,7 @@ func (r *Resource) handleRollbackWrite(ctx context.Context, msg *bus.Message) {
 		return
 	}
 
-	applyResponse := proto.CreateDataPlaneResponse(data.CorrelationID,
+	applyResponse := response.CreateDataPlaneResponse(data.CorrelationID,
 		mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 		"Config apply failed, rollback successful", data.InstanceID, data.Error.Error())
 
