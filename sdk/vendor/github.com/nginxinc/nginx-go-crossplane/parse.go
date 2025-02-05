@@ -385,7 +385,6 @@ func (p *parser) parse(parsing *Config, tokens <-chan NgxToken, ctx blockCtx, co
 				// if the file pattern was explicit, nginx will check
 				// that the included file can be opened and read
 				if f, err := p.openFile(pattern); err != nil {
-					defer f.Close()
 					perr := &ParseError{
 						What:      err.Error(),
 						File:      &parsing.File,
@@ -399,6 +398,7 @@ func (p *parser) parse(parsing *Config, tokens <-chan NgxToken, ctx blockCtx, co
 						return nil, perr
 					}
 				} else {
+					defer f.Close()
 					fnames = []string{pattern}
 				}
 			}

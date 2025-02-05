@@ -12,7 +12,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.5.0
 	github.com/klauspost/cpuid/v2 v2.2.5
-	github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1 // indirect
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.11.2 // indirect
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nginxinc/nginx-prometheus-exporter v1.2.0
 	github.com/nxadm/tail v1.4.11
@@ -23,7 +23,7 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.18.2
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/trivago/grok v1.0.0
 	github.com/vardius/message-bus v1.1.5
 	go.uber.org/atomic v1.11.0
@@ -42,7 +42,7 @@ require (
 	github.com/rs/cors v1.11.0
 	go.uber.org/goleak v1.3.0
 	go.uber.org/mock v0.4.0
-	golang.org/x/sys v0.28.0
+	golang.org/x/sys v0.29.0
 	golang.org/x/text v0.21.0
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -59,7 +59,7 @@ require (
 	github.com/lufia/plan9stats v0.0.0-20231016141302-07b5767bb0ed // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/nginxinc/nginx-go-crossplane v0.4.48 // indirect
+	github.com/nginxinc/nginx-go-crossplane v0.4.70 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20221212215047-62379fc7944b // indirect
@@ -80,9 +80,9 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
-	golang.org/x/mod v0.21.0 // indirect
-	golang.org/x/net v0.33.0 // indirect
-	golang.org/x/tools v0.25.0 // indirect
+	golang.org/x/mod v0.22.0 // indirect
+	golang.org/x/net v0.34.0 // indirect
+	golang.org/x/tools v0.29.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240116215550-a9fa1716bcac // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect

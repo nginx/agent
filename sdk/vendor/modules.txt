@@ -30,21 +30,16 @@ github.com/grpc-ecosystem/go-grpc-middleware/util/metautils
 github.com/grpc-ecosystem/go-grpc-middleware/validator
 # github.com/jstemmer/go-junit-report v1.0.0
 ## explicit; go 1.2
-github.com/jstemmer/go-junit-report
-github.com/jstemmer/go-junit-report/formatter
 github.com/jstemmer/go-junit-report/parser
 # github.com/kr/text v0.2.0
 ## explicit
-# github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1
-## explicit; go 1.20
-github.com/maxbrunsfeld/counterfeiter/v6
-github.com/maxbrunsfeld/counterfeiter/v6/arguments
-github.com/maxbrunsfeld/counterfeiter/v6/command
+# github.com/maxbrunsfeld/counterfeiter/v6 v6.11.2
+## explicit; go 1.23
 github.com/maxbrunsfeld/counterfeiter/v6/generator
 # github.com/mitchellh/mapstructure v1.5.0
 ## explicit; go 1.14
 github.com/mitchellh/mapstructure
-# github.com/nginxinc/nginx-go-crossplane v0.4.48
+# github.com/nginxinc/nginx-go-crossplane v0.4.70
 ## explicit; go 1.19
 github.com/nginxinc/nginx-go-crossplane
 # github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
@@ -58,17 +53,18 @@ github.com/sirupsen/logrus
 # github.com/stretchr/objx v0.5.2
 ## explicit; go 1.20
 github.com/stretchr/objx
-# github.com/stretchr/testify v1.9.0
+# github.com/stretchr/testify v1.10.0
 ## explicit; go 1.17
 github.com/stretchr/testify/assert
+github.com/stretchr/testify/assert/yaml
 github.com/stretchr/testify/mock
 github.com/stretchr/testify/require
-# golang.org/x/mod v0.21.0
+# golang.org/x/mod v0.22.0
 ## explicit; go 1.22.0
 golang.org/x/mod/internal/lazyregexp
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/net v0.33.0
+# golang.org/x/net v0.34.0
 ## explicit; go 1.18
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2
@@ -79,7 +75,7 @@ golang.org/x/net/trace
 # golang.org/x/sync v0.10.0
 ## explicit; go 1.18
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.28.0
+# golang.org/x/sys v0.29.0
 ## explicit; go 1.18
 golang.org/x/sys/unix
 golang.org/x/sys/windows
@@ -95,9 +91,8 @@ golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
-# golang.org/x/tools v0.25.0
+# golang.org/x/tools v0.29.0
 ## explicit; go 1.22.0
-golang.org/x/tools/cmd/goimports
 golang.org/x/tools/go/ast/astutil
 golang.org/x/tools/go/gcexportdata
 golang.org/x/tools/go/packages
@@ -113,10 +108,10 @@ golang.org/x/tools/internal/gcimporter
 golang.org/x/tools/internal/gocommand
 golang.org/x/tools/internal/gopathwalk
 golang.org/x/tools/internal/imports
+golang.org/x/tools/internal/modindex
 golang.org/x/tools/internal/packagesinternal
 golang.org/x/tools/internal/pkgbits
 golang.org/x/tools/internal/stdlib
-golang.org/x/tools/internal/tokeninternal
 golang.org/x/tools/internal/typeparams
 golang.org/x/tools/internal/typesinternal
 golang.org/x/tools/internal/versions
