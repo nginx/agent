@@ -129,6 +129,10 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 					if !ncp.ignoreLog(directive.Args[0]) {
 						errorLog := ncp.errorLog(directive.Args[0], ncp.errorLogDirectiveLevel(directive))
 						nginxConfigContext.ErrorLogs = append(nginxConfigContext.ErrorLogs, errorLog)
+					} else {
+						slog.WarnContext(ctx, fmt.Sprintf("Error log outputs to %s. Unable to monitor logs during "+
+							"config apply, log errors to file to enable error monitoring", directive.Args[0]),
+							"error_log", directive.Args[0])
 					}
 				case "root":
 					rootFiles := ncp.rootFiles(ctx, directive.Args[0])
@@ -185,7 +189,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 
 func (ncp *NginxConfigParser) ignoreLog(logPath string) bool {
 	logLower := strings.ToLower(logPath)
-	ignoreLogs := []string{"off", "/dev/stderr", "/dev/stdout", "/dev/null"}
+	ignoreLogs := []string{"off", "/dev/stderr", "/dev/stdout", "/dev/null", "stderr", "stdout"}
 
 	if strings.HasPrefix(logLower, "syslog:") || slices.Contains(ignoreLogs, logLower) {
 		return true
