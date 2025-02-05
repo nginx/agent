@@ -7,6 +7,7 @@ package watcher
 
 import (
 	"context"
+	"github.com/nginx/agent/v3/internal/grpc"
 	"log/slog"
 	"slices"
 
@@ -217,9 +218,13 @@ func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Messag
 }
 
 func (w *Watcher) handleCredentialUpdate(ctx context.Context) {
-	slog.DebugContext(ctx, "Handling Credential Update")
+	slog.DebugContext(ctx, "Watcher plugin received credential update: resetting grpc connection")
+	conn, err := grpc.NewGrpcConnection(ctx, w.agentConfig)
+	if err != nil {
+		slog.ErrorContext(ctx, "Unable to create new grpc connection", "err", err)
+	}
 	w.messagePipe.Process(ctx, &bus.Message{
-		Topic: bus.ConnectionResetTopic, Data: nil,
+		Topic: bus.ConnectionResetTopic, Data: conn,
 	})
 }
 

@@ -77,7 +77,6 @@ func (cp *CommandPlugin) Info() *bus.Info {
 func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
 	case bus.ConnectionResetTopic:
-		slog.DebugContext(ctx, "Received ConnectionResetTopic")
 		cp.processConnectionReset(ctx, msg)
 	case bus.ResourceUpdateTopic:
 		cp.processResourceUpdate(ctx, msg)
@@ -156,14 +155,12 @@ func (cp *CommandPlugin) processDataPlaneResponse(ctx context.Context, msg *bus.
 	}
 }
 
-func (cp *CommandPlugin) processConnectionReset(ctx context.Context, _ *bus.Message) {
-	slog.InfoContext(ctx, "Command plugin received connection reset, skipping for test")
-	// newConn, err := grpc.NewGrpcConnection(context.WithoutCancel(ctx), cp.config)
-	// if err != nil {
-	//	slog.ErrorContext(ctx, "Unable to create grpc connection", "error", err)
-	//	return
-	// }
-	// cp.conn = newConn
+func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Message) {
+	if newConnection, ok := msg.Data.(*grpc.GrpcConnection); ok {
+		slog.DebugContext(ctx, "Command plugin received connection reset")
+		_ = cp.conn.Close(ctx)
+		cp.conn = newConnection
+	}
 }
 
 func (cp *CommandPlugin) Subscriptions() []string {
