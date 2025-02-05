@@ -130,9 +130,9 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 						errorLog := ncp.errorLog(directive.Args[0], ncp.errorLogDirectiveLevel(directive))
 						nginxConfigContext.ErrorLogs = append(nginxConfigContext.ErrorLogs, errorLog)
 					} else {
-						slog.WarnContext(ctx, fmt.Sprintf("Error log outputs to %s. Unable to monitor logs during "+
-							"config apply, log errors to file to enable error monitoring", directive.Args[0]),
-							"error_log", directive.Args[0])
+						slog.WarnContext(ctx, fmt.Sprintf("Currently error log outputs to %s. Log monitoring "+
+							"is disabled while applying a config; "+"log errors to file to enable error monitoring",
+							directive.Args[0]), "error_log", directive.Args[0])
 					}
 				case "root":
 					rootFiles := ncp.rootFiles(ctx, directive.Args[0])
