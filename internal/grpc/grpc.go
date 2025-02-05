@@ -68,6 +68,7 @@ var (
 	_ GrpcConnectionInterface = (*GrpcConnection)(nil)
 )
 
+// nolint: ireturn
 func NewGrpcConnection(ctx context.Context, agentConfig *config.Config) (*GrpcConnection, error) {
 	if agentConfig == nil || agentConfig.Command.Server.Type != config.Grpc {
 		return nil, errors.New("invalid command server settings")

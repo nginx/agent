@@ -8,6 +8,7 @@ package command
 import (
 	"context"
 	"log/slog"
+	"sync"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -30,7 +31,7 @@ type (
 		UpdateDataPlaneStatus(ctx context.Context, resource *mpi.Resource) error
 		UpdateDataPlaneHealth(ctx context.Context, instanceHealths []*mpi.InstanceHealth) error
 		SendDataPlaneResponse(ctx context.Context, response *mpi.DataPlaneResponse) error
-		CancelSubscription(ctx context.Context)
+		Subscribe(ctx context.Context)
 		IsConnected() bool
 		CreateConnection(ctx context.Context, resource *mpi.Resource) (*mpi.CreateConnectionResponse, error)
 	}
@@ -38,9 +39,11 @@ type (
 	CommandPlugin struct {
 		messagePipe      bus.MessagePipeInterface
 		config           *config.Config
+		subscribeCancel  context.CancelFunc
 		conn             grpc.GrpcConnectionInterface
 		commandService   commandService
 		subscribeChannel chan *mpi.ManagementPlaneRequest
+		subscribeMutex   sync.Mutex
 	}
 )
 
@@ -56,7 +59,7 @@ func (cp *CommandPlugin) Init(ctx context.Context, messagePipe bus.MessagePipeIn
 	slog.DebugContext(ctx, "Starting command plugin")
 
 	cp.messagePipe = messagePipe
-	cp.commandService = NewCommandService(ctx, cp.conn.CommandServiceClient(), cp.config, cp.subscribeChannel)
+	cp.commandService = NewCommandService(cp.conn.CommandServiceClient(), cp.config, cp.subscribeChannel)
 
 	go cp.monitorSubscribeChannel(ctx)
 
@@ -64,7 +67,14 @@ func (cp *CommandPlugin) Init(ctx context.Context, messagePipe bus.MessagePipeIn
 }
 
 func (cp *CommandPlugin) Close(ctx context.Context) error {
-	cp.commandService.CancelSubscription(ctx)
+	slog.InfoContext(ctx, "Canceling subscribe context")
+
+	cp.subscribeMutex.Lock()
+	if cp.subscribeCancel != nil {
+		cp.subscribeCancel()
+	}
+	cp.subscribeMutex.Unlock()
+
 	return cp.conn.Close(ctx)
 }
 
@@ -105,11 +115,20 @@ func (cp *CommandPlugin) processResourceUpdate(ctx context.Context, msg *bus.Mes
 }
 
 func (cp *CommandPlugin) createConnection(ctx context.Context, resource *mpi.Resource) {
+	var subscribeCtx context.Context
+
 	createConnectionResponse, err := cp.commandService.CreateConnection(ctx, resource)
 	if err != nil {
 		slog.ErrorContext(ctx, "Unable to create connection", "error", err)
 	}
+
 	if createConnectionResponse != nil {
+		cp.subscribeMutex.Lock()
+		subscribeCtx, cp.subscribeCancel = context.WithCancel(ctx)
+		cp.subscribeMutex.Unlock()
+
+		go cp.commandService.Subscribe(subscribeCtx)
+
 		cp.messagePipe.Process(ctx, &bus.Message{
 			Topic: bus.ConnectionCreatedTopic,
 			Data:  createConnectionResponse,
