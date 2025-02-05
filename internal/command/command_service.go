@@ -20,9 +20,9 @@ import (
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
-	"github.com/nginx/agent/v3/internal/datasource/proto"
 	"github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/logger"
+	"github.com/nginx/agent/v3/pkg/id"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -85,7 +85,7 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 
 	request := &mpi.UpdateDataPlaneStatusRequest{
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     proto.GenerateMessageID(),
+			MessageId:     id.GenerateMessageID(),
 			CorrelationId: correlationID,
 			Timestamp:     timestamppb.Now(),
 		},
@@ -139,7 +139,7 @@ func (cs *CommandService) UpdateDataPlaneHealth(ctx context.Context, instanceHea
 
 	request := &mpi.UpdateDataPlaneHealthRequest{
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     proto.GenerateMessageID(),
+			MessageId:     id.GenerateMessageID(),
 			CorrelationId: correlationID,
 			Timestamp:     timestamppb.Now(),
 		},
@@ -212,7 +212,7 @@ func (cs *CommandService) CreateConnection(
 
 	request := &mpi.CreateConnectionRequest{
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     proto.GenerateMessageID(),
+			MessageId:     id.GenerateMessageID(),
 			CorrelationId: correlationID,
 			Timestamp:     timestamppb.Now(),
 		},
@@ -311,7 +311,7 @@ func (cs *CommandService) sendResponseForQueuedConfigApplyRequests(
 	for i := 0; i < indexOfConfigApplyRequest; i++ {
 		newResponse := response
 
-		newResponse.GetMessageMeta().MessageId = proto.GenerateMessageID()
+		newResponse.GetMessageMeta().MessageId = id.GenerateMessageID()
 
 		request := cs.configApplyRequestQueue[instanceID][i]
 		newResponse.GetMessageMeta().CorrelationId = request.GetMessageMeta().GetCorrelationId()
@@ -504,7 +504,7 @@ func (cs *CommandService) checkIfInstanceExists(
 
 		response := &mpi.DataPlaneResponse{
 			MessageMeta: &mpi.MessageMeta{
-				MessageId:     proto.GenerateMessageID(),
+				MessageId:     id.GenerateMessageID(),
 				CorrelationId: request.GetMessageMeta().GetCorrelationId(),
 				Timestamp:     timestamppb.Now(),
 			},

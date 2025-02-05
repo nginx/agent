@@ -1,13 +1,9 @@
 ---
-title: "About"
+title: "Overview"
 weight: 100
 toc: true
 docs: DOCS-000
 ---
-
-This page provides a brief overview of what F5 NGINX Agent is, and how it works.
-
-## Overview
 
 NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus instance. It enables:
 
@@ -15,11 +11,11 @@ NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus insta
 - Collection and reporting of real-time NGINX performance and operating system metrics
 - Notifications of NGINX events
 
-[OpenTelemetry](https://opentelemetry.io/) support comes with NGINX Agent v3, and the ability to [export the metrics data]({{< relref "/how-to/export-metrics.md" >}}) for use in other applications. 
+[OpenTelemetry](https://opentelemetry.io/) support comes with NGINX Agent v3, and the ability to [export the metrics data]({{< relref "/how-to/export-metrics.md" >}}) for use in other applications.
 
 For an overview of the metrics available from NGINX Agent, read the following topics:
 
-- [OpenTelemetry metrics]({{< relref "/metrics.md" >}}) (Agent v3)
+- [OpenTelemetry metrics]({{< relref "/otel/metrics.md" >}}) (Agent v3)
 - [Metrics]({{< relref "/v2/metrics.md" >}}) (Agent v2)
 
 
@@ -29,7 +25,7 @@ For an overview of the metrics available from NGINX Agent, read the following to
 
 ## How it works
 
-NGINX Agent runs as a companion process on a system running NGINX. It provides gRPC and REST interfaces for configuration management and metrics collection from the NGINX process and operating system. 
+NGINX Agent runs as a companion process on a system running NGINX. It provides gRPC and REST interfaces for configuration management and metrics collection from the NGINX process and operating system.
 
 NGINX Agent enables remote interaction with NGINX using common Linux tools and unlocks the ability to build sophisticated monitoring and control systems that can manage large collections of NGINX instances.
 
