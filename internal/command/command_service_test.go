@@ -77,30 +77,10 @@ func (*FakeConfigApplySubscribeClient) Recv() (*mpi.ManagementPlaneRequest, erro
 	}, nil
 }
 
-func TestCommandService_NewCommandService(t *testing.T) {
-	ctx := context.Background()
-	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
-
-	commandService := NewCommandService(
-		ctx,
-		commandServiceClient,
-		types.AgentConfig(),
-		make(chan *mpi.ManagementPlaneRequest),
-	)
-
-	defer commandService.CancelSubscription(ctx)
-
-	assert.Eventually(
-		t,
-		func() bool { return commandServiceClient.SubscribeCallCount() > 0 },
-		2*time.Second,
-		10*time.Millisecond,
-	)
-}
-
 func TestCommandService_receiveCallback_configApplyRequest(t *testing.T) {
-	ctx := context.Background()
 	fakeSubscribeClient := &FakeConfigApplySubscribeClient{}
+	ctx := context.Background()
+	subscribeCtx, subscribeCancel := context.WithCancel(ctx)
 
 	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
 	commandServiceClient.SubscribeReturns(fakeSubscribeClient, nil)
@@ -108,18 +88,17 @@ func TestCommandService_receiveCallback_configApplyRequest(t *testing.T) {
 	subscribeChannel := make(chan *mpi.ManagementPlaneRequest)
 
 	commandService := NewCommandService(
-		ctx,
 		commandServiceClient,
 		types.AgentConfig(),
 		subscribeChannel,
 	)
+	go commandService.Subscribe(subscribeCtx)
+	defer subscribeCancel()
 
 	nginxInstance := protos.GetNginxOssInstance([]string{})
 	commandService.resourceMutex.Lock()
 	commandService.resource.Instances = append(commandService.resource.Instances, nginxInstance)
 	commandService.resourceMutex.Unlock()
-
-	defer commandService.CancelSubscription(ctx)
 
 	var wg sync.WaitGroup
 
@@ -152,13 +131,10 @@ func TestCommandService_UpdateDataPlaneStatus(t *testing.T) {
 	commandServiceClient.SubscribeReturns(fakeSubscribeClient, nil)
 
 	commandService := NewCommandService(
-		ctx,
 		commandServiceClient,
 		types.AgentConfig(),
 		make(chan *mpi.ManagementPlaneRequest),
 	)
-	defer commandService.CancelSubscription(ctx)
-
 	// Fail first time since there are no other instances besides the agent
 	err := commandService.UpdateDataPlaneStatus(ctx, protos.GetHostResource())
 	require.Error(t, err)
@@ -191,12 +167,10 @@ func TestCommandService_UpdateDataPlaneStatusSubscribeError(t *testing.T) {
 	stub.StubLoggerWith(logBuf)
 
 	commandService := NewCommandService(
-		ctx,
 		commandServiceClient,
 		types.AgentConfig(),
 		make(chan *mpi.ManagementPlaneRequest),
 	)
-	defer commandService.CancelSubscription(ctx)
 
 	commandService.isConnected.Store(true)
 
@@ -213,7 +187,6 @@ func TestCommandService_CreateConnection(t *testing.T) {
 	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
 
 	commandService := NewCommandService(
-		ctx,
 		commandServiceClient,
 		types.AgentConfig(),
 		make(chan *mpi.ManagementPlaneRequest),
@@ -230,7 +203,6 @@ func TestCommandService_UpdateDataPlaneHealth(t *testing.T) {
 	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
 
 	commandService := NewCommandService(
-		ctx,
 		commandServiceClient,
 		types.AgentConfig(),
 		make(chan *mpi.ManagementPlaneRequest),
@@ -261,7 +233,6 @@ func TestCommandService_SendDataPlaneResponse(t *testing.T) {
 	subscribeClient := &FakeSubscribeClient{}
 
 	commandService := NewCommandService(
-		ctx,
 		commandServiceClient,
 		types.AgentConfig(),
 		make(chan *mpi.ManagementPlaneRequest),
@@ -283,13 +254,10 @@ func TestCommandService_SendDataPlaneResponse_configApplyRequest(t *testing.T) {
 	subscribeChannel := make(chan *mpi.ManagementPlaneRequest)
 
 	commandService := NewCommandService(
-		ctx,
 		commandServiceClient,
 		types.AgentConfig(),
 		subscribeChannel,
 	)
-
-	defer commandService.CancelSubscription(ctx)
 
 	request1 := &mpi.ManagementPlaneRequest{
 		MessageMeta: &mpi.MessageMeta{
@@ -402,7 +370,6 @@ func TestCommandService_isValidRequest(t *testing.T) {
 	subscribeClient := &FakeSubscribeClient{}
 
 	commandService := NewCommandService(
-		ctx,
 		commandServiceClient,
 		types.AgentConfig(),
 		make(chan *mpi.ManagementPlaneRequest),

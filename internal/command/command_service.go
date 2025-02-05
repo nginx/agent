@@ -41,11 +41,9 @@ type (
 		subscribeClient              mpi.CommandService_SubscribeClient
 		agentConfig                  *config.Config
 		isConnected                  *atomic.Bool
-		subscribeCancel              context.CancelFunc
 		subscribeChannel             chan *mpi.ManagementPlaneRequest
 		configApplyRequestQueue      map[string][]*mpi.ManagementPlaneRequest // key is the instance ID
 		resource                     *mpi.Resource
-		subscribeMutex               sync.Mutex
 		subscribeClientMutex         sync.Mutex
 		configApplyRequestQueueMutex sync.Mutex
 		resourceMutex                sync.Mutex
@@ -53,7 +51,6 @@ type (
 )
 
 func NewCommandService(
-	ctx context.Context,
 	commandServiceClient mpi.CommandServiceClient,
 	agentConfig *config.Config,
 	subscribeChannel chan *mpi.ManagementPlaneRequest,
@@ -69,14 +66,6 @@ func NewCommandService(
 		configApplyRequestQueue: make(map[string][]*mpi.ManagementPlaneRequest),
 		resource:                &mpi.Resource{},
 	}
-
-	var subscribeCtx context.Context
-
-	commandService.subscribeMutex.Lock()
-	subscribeCtx, commandService.subscribeCancel = context.WithCancel(ctx)
-	commandService.subscribeMutex.Unlock()
-
-	go commandService.subscribe(subscribeCtx)
 
 	return commandService
 }
@@ -190,17 +179,7 @@ func (cs *CommandService) SendDataPlaneResponse(ctx context.Context, response *m
 	)
 }
 
-func (cs *CommandService) CancelSubscription(ctx context.Context) {
-	slog.InfoContext(ctx, "Canceling subscribe context")
-
-	cs.subscribeMutex.Lock()
-	if cs.subscribeCancel != nil {
-		cs.subscribeCancel()
-	}
-	cs.subscribeMutex.Unlock()
-}
-
-func (cs *CommandService) subscribe(ctx context.Context) {
+func (cs *CommandService) Subscribe(ctx context.Context) {
 	commonSettings := &config.BackOff{
 		InitialInterval:     cs.agentConfig.Client.Backoff.InitialInterval,
 		MaxInterval:         cs.agentConfig.Client.Backoff.MaxInterval,
