@@ -175,8 +175,8 @@ func (cp *CommandPlugin) processDataPlaneResponse(ctx context.Context, msg *bus.
 }
 
 func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Command plugin received connection reset")
 	if newConnection, ok := msg.Data.(*grpc.GrpcConnection); ok {
-		slog.DebugContext(ctx, "Command plugin received connection reset")
 		_ = cp.conn.Close(ctx)
 		cp.conn = newConnection
 	}

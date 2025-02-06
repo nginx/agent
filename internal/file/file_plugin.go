@@ -95,8 +95,8 @@ func (fp *FilePlugin) Subscriptions() []string {
 }
 
 func (fp *FilePlugin) handleConnectionReset(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "File plugin received connection reset message")
 	if newConnection, ok := msg.Data.(*grpc.GrpcConnection); ok {
-		slog.DebugContext(ctx, "File plugin received connection reset message")
 		_ = fp.conn.Close(ctx)
 		fp.conn = newConnection
 	}
