@@ -44,6 +44,11 @@ func TestResolveConfig(t *testing.T) {
 		"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx",
 		"/usr/share/nginx/modules", "/var/log/nginx",
 	}
+
+	excludeFiles := []string{
+		"\\.*log$",
+	}
+
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	err := loadPropertiesFromFile("./testdata/nginx-agent.conf")
 	require.NoError(t, err)
@@ -64,8 +69,9 @@ func TestResolveConfig(t *testing.T) {
 
 	assert.Equal(t, 30*time.Second, actual.DataPlaneConfig.Nginx.ReloadMonitoringPeriod)
 	assert.False(t, actual.DataPlaneConfig.Nginx.TreatWarningsAsErrors)
-	assert.Equal(t, []string{"/var/log/nginx/error.log", "/var/log/nginx/access.log"},
+	assert.Equal(t, []string{"/var/log/nginx/error.log", "^/var/log/nginx/.*.log$"},
 		actual.DataPlaneConfig.Nginx.ExcludeLogs)
+	assert.Equal(t, excludeFiles, actual.Watchers.FileWatcher.ExcludeFiles)
 
 	require.NotNil(t, actual.Collector)
 	assert.Equal(t, "/etc/nginx-agent/nginx-agent-otelcol.yaml", actual.Collector.ConfigPath)
