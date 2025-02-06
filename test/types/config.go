@@ -160,6 +160,7 @@ func AgentConfig() *config.Config {
 			},
 			FileWatcher: config.FileWatcher{
 				MonitoringFrequency: config.DefFileWatcherMonitoringFrequency,
+				ExcludeFiles:        config.DefaultExcludedFiles(),
 			},
 		},
 		Features: config.DefaultFeatures(),

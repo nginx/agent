@@ -285,9 +285,9 @@ type (
 	}
 
 	Watchers struct {
+		FileWatcher           FileWatcher           `yaml:"-" mapstructure:"file_watcher"`
 		InstanceWatcher       InstanceWatcher       `yaml:"-" mapstructure:"instance_watcher"`
 		InstanceHealthWatcher InstanceHealthWatcher `yaml:"-" mapstructure:"instance_health_watcher"`
-		FileWatcher           FileWatcher           `yaml:"-" mapstructure:"file_watcher"`
 	}
 
 	InstanceWatcher struct {
@@ -299,6 +299,7 @@ type (
 	}
 
 	FileWatcher struct {
+		ExcludeFiles        []string      `yaml:"-" mapstructure:"exclude_files"`
 		MonitoringFrequency time.Duration `yaml:"-" mapstructure:"monitoring_frequency"`
 	}
 )

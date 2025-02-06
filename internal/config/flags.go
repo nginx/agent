@@ -22,7 +22,7 @@ const (
 	FeaturesKey                                 = "features"
 	InstanceWatcherMonitoringFrequencyKey       = "watchers_instance_watcher_monitoring_frequency"
 	InstanceHealthWatcherMonitoringFrequencyKey = "watchers_instance_health_watcher_monitoring_frequency"
-	FileWatcherMonitoringFrequencyKey           = "watchers_file_watcher_monitoring_frequency"
+	FileWatcherKey                              = "watchers_file_watcher"
 )
 
 var (
@@ -96,6 +96,8 @@ var (
 	NginxReloadMonitoringPeriodKey              = pre(DataPlaneConfigRootKey, "nginx") + "reload_monitoring_period"
 	NginxTreatWarningsAsErrorsKey               = pre(DataPlaneConfigRootKey, "nginx") + "treat_warnings_as_errors"
 	NginxExcludeLogsKey                         = pre(DataPlaneConfigRootKey, "nginx") + "exclude_logs"
+	FileWatcherMonitoringFrequencyKey           = pre(FileWatcherKey) + "monitoring_frequency"
+	NginxExcludeFilesKey                        = pre(FileWatcherKey) + "exclude_files"
 )
 
 func pre(prefixes ...string) string {
