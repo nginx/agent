@@ -7,9 +7,10 @@ package watcher
 
 import (
 	"context"
-	"github.com/nginx/agent/v3/internal/grpc"
 	"log/slog"
 	"slices"
+
+	"github.com/nginx/agent/v3/internal/grpc"
 
 	"github.com/nginx/agent/v3/internal/watcher/credentials"
 
