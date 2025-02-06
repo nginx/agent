@@ -37,7 +37,13 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . fileManagerServiceInterface
 
-const maxAttempts = 5
+const (
+	maxAttempts     = 5
+	addAction       = "add"
+	updateAction    = "update"
+	deleteAction    = "delete"
+	unchangedAction = "unchanged"
+)
 
 type (
 	fileOperator interface {
@@ -51,8 +57,8 @@ type (
 		Rollback(ctx context.Context, instanceID string) error
 		UpdateFile(ctx context.Context, instanceID string, fileToUpdate *mpi.File) error
 		ClearCache()
-		UpdateCurrentFilesOnDisk(updateFiles map[string]*mpi.File)
-		DetermineFileActions(currentFiles, modifiedFiles map[string]*mpi.File) (map[string]*mpi.File,
+		UpdateCurrentFilesOnDisk(updateFiles map[string]model.FileCache)
+		DetermineFileActions(currentFiles, modifiedFiles map[string]model.FileCache) (map[string]model.FileCache,
 			map[string][]byte, error)
 		SetIsConnected(isConnected bool)
 	}
@@ -64,11 +70,11 @@ type FileManagerService struct {
 	isConnected       *atomic.Bool
 	fileOperator      fileOperator
 	// map of files and the actions performed on them during config apply
-	fileActions map[string]*mpi.File // key is file path
+	fileActions map[string]model.FileCache // key is File path
 	// map of the contents of files which have been updated or deleted during config apply, used during rollback
-	rollbackFileContents map[string][]byte // key is file path
-	// map of the files currently on disk, used to determine the file action during config apply
-	currentFilesOnDisk map[string]*mpi.File // key is file path
+	rollbackFileContents map[string][]byte // key is File path
+	// map of the files currently on disk, used to determine the File Action during config apply
+	currentFilesOnDisk map[string]model.FileCache // key is File path
 	filesMutex         sync.RWMutex
 }
 
@@ -80,9 +86,9 @@ func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig 
 		fileServiceClient:    fileServiceClient,
 		agentConfig:          agentConfig,
 		fileOperator:         NewFileOperator(),
-		fileActions:          make(map[string]*mpi.File),
+		fileActions:          make(map[string]model.FileCache),
 		rollbackFileContents: make(map[string][]byte),
-		currentFilesOnDisk:   make(map[string]*mpi.File),
+		currentFilesOnDisk:   make(map[string]model.FileCache),
 		isConnected:          isConnected,
 	}
 }
@@ -286,7 +292,7 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	}
 
 	diffFiles, fileContent, compareErr := fms.DetermineFileActions(fms.currentFilesOnDisk,
-		files.ConvertToMapOfFiles(fileOverview.GetFiles()))
+		files.ConvertToMapOfFileCache(fileOverview.GetFiles()))
 
 	if compareErr != nil {
 		return model.Error, compareErr
@@ -305,7 +311,7 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	}
 
 	// Update map of current files on disk
-	fms.UpdateCurrentFilesOnDisk(files.ConvertToMapOfFiles(fileOverview.GetFiles()))
+	fms.UpdateCurrentFilesOnDisk(files.ConvertToMapOfFileCache(fileOverview.GetFiles()))
 
 	return model.OK, nil
 }
@@ -319,29 +325,29 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 	slog.InfoContext(ctx, "Rolling back config for instance", "instanceid", instanceID)
 	fms.filesMutex.Lock()
 	defer fms.filesMutex.Unlock()
-	for _, file := range fms.fileActions {
-		switch file.GetAction() {
-		case mpi.File_FILE_ACTION_ADD:
-			if err := os.Remove(file.GetFileMeta().GetName()); err != nil && !os.IsNotExist(err) {
-				return fmt.Errorf("error deleting file: %s error: %w", file.GetFileMeta().GetName(), err)
+	for _, fileAction := range fms.fileActions {
+		switch fileAction.Action {
+		case addAction:
+			if err := os.Remove(fileAction.File.GetFileMeta().GetName()); err != nil && !os.IsNotExist(err) {
+				return fmt.Errorf("error deleting file: %s error: %w", fileAction.File.GetFileMeta().GetName(), err)
 			}
 
 			// currentFilesOnDisk needs to be updated after rollback action is performed
-			delete(fms.currentFilesOnDisk, file.GetFileMeta().GetName())
+			delete(fms.currentFilesOnDisk, fileAction.File.GetFileMeta().GetName())
 
 			continue
-		case mpi.File_FILE_ACTION_DELETE, mpi.File_FILE_ACTION_UPDATE:
-			content := fms.rollbackFileContents[file.GetFileMeta().GetName()]
+		case deleteAction, updateAction:
+			content := fms.rollbackFileContents[fileAction.File.GetFileMeta().GetName()]
 
-			err := fms.fileOperator.Write(ctx, content, file.GetFileMeta())
+			err := fms.fileOperator.Write(ctx, content, fileAction.File.GetFileMeta())
 			if err != nil {
 				return err
 			}
 
 			// currentFilesOnDisk needs to be updated after rollback action is performed
-			file.GetFileMeta().Hash = files.GenerateHash(content)
-			fms.currentFilesOnDisk[file.GetFileMeta().GetName()] = file
-		case mpi.File_FILE_ACTION_UNSPECIFIED, mpi.File_FILE_ACTION_UNCHANGED:
+			fileAction.File.GetFileMeta().Hash = files.GenerateHash(content)
+			fms.currentFilesOnDisk[fileAction.File.GetFileMeta().GetName()] = fileAction
+		case "", unchangedAction:
 			fallthrough
 		default:
 			slog.DebugContext(ctx, "File Action not implemented")
@@ -352,23 +358,23 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 }
 
 func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
-	for _, file := range fms.fileActions {
-		switch file.GetAction() {
-		case mpi.File_FILE_ACTION_DELETE:
-			if err := os.Remove(file.GetFileMeta().GetName()); err != nil && !os.IsNotExist(err) {
-				return fmt.Errorf("error deleting file: %s error: %w", file.GetFileMeta().GetName(), err)
+	for _, fileAction := range fms.fileActions {
+		switch fileAction.Action {
+		case deleteAction:
+			if err := os.Remove(fileAction.File.GetFileMeta().GetName()); err != nil && !os.IsNotExist(err) {
+				return fmt.Errorf("error deleting file: %s error: %w", fileAction.File.GetFileMeta().GetName(), err)
 			}
 
 			continue
-		case mpi.File_FILE_ACTION_ADD, mpi.File_FILE_ACTION_UPDATE:
-			updateErr := fms.fileUpdate(ctx, file)
+		case addAction, updateAction:
+			updateErr := fms.fileUpdate(ctx, fileAction.File)
 			if updateErr != nil {
 				return updateErr
 			}
-		case mpi.File_FILE_ACTION_UNSPECIFIED, mpi.File_FILE_ACTION_UNCHANGED:
+		case "", unchangedAction:
 			fallthrough
 		default:
-			slog.DebugContext(ctx, "File Action not implemented", "action", file.GetAction())
+			slog.DebugContext(ctx, "File Action not implemented", "action", fileAction.Action)
 		}
 	}
 
@@ -416,7 +422,7 @@ func (fms *FileManagerService) validateFileHash(filePath string) error {
 	}
 	fileHash := files.GenerateHash(content)
 
-	if fileHash != fms.fileActions[filePath].GetFileMeta().GetHash() {
+	if fileHash != fms.fileActions[filePath].File.GetFileMeta().GetHash() {
 		return fmt.Errorf("error writing file, file hash does not match for file %s", filePath)
 	}
 
@@ -437,24 +443,19 @@ func (fms *FileManagerService) checkAllowedDirectory(checkFiles []*mpi.File) err
 // DetermineFileActions compares two sets of files to determine the file action for each file. Returns a map of files
 // that have changed and a map of the contents for each updated and deleted file. Key to both maps is file path
 // nolint: revive
-func (fms *FileManagerService) DetermineFileActions(currentFiles, modifiedFiles map[string]*mpi.File) (
-	map[string]*mpi.File, map[string][]byte, error,
+func (fms *FileManagerService) DetermineFileActions(currentFiles, modifiedFiles map[string]model.FileCache) (
+	map[string]model.FileCache, map[string][]byte, error,
 ) {
 	fms.filesMutex.Lock()
 	defer fms.filesMutex.Unlock()
-	// Go doesn't allow address of numeric constant
-	addAction := mpi.File_FILE_ACTION_ADD
-	updateAction := mpi.File_FILE_ACTION_UPDATE
-	deleteAction := mpi.File_FILE_ACTION_DELETE
-	unchangedAction := mpi.File_FILE_ACTION_UNCHANGED
 
-	fileDiff := make(map[string]*mpi.File)  // Files that have changed, key is file name
-	fileContents := make(map[string][]byte) // contents of the file, key is file name
+	fileDiff := make(map[string]model.FileCache) // Files that have changed, key is file name
+	fileContents := make(map[string][]byte)      // contents of the file, key is file name
 
 	// if file is in currentFiles but not in modified files, file has been deleted
 	// copy contents, set file action
 	for _, currentFile := range currentFiles {
-		fileName := currentFile.GetFileMeta().GetName()
+		fileName := currentFile.File.GetFileMeta().GetName()
 		_, ok := modifiedFiles[fileName]
 
 		if !ok {
@@ -463,36 +464,36 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles, modifiedFiles 
 				return nil, nil, fmt.Errorf("error reading file %s, error: %w", fileName, readErr)
 			}
 			fileContents[fileName] = fileContent
-			currentFile.Action = &deleteAction
-			fileDiff[currentFile.GetFileMeta().GetName()] = currentFile
+			currentFile.Action = deleteAction
+			fileDiff[currentFile.File.GetFileMeta().GetName()] = currentFile
 		}
 	}
 
-	for _, file := range modifiedFiles {
-		fileName := file.GetFileMeta().GetName()
-		currentFile, ok := currentFiles[file.GetFileMeta().GetName()]
+	for _, modifiedFile := range modifiedFiles {
+		fileName := modifiedFile.File.GetFileMeta().GetName()
+		currentFile, ok := currentFiles[modifiedFile.File.GetFileMeta().GetName()]
 		// default to unchanged action
-		file.Action = &unchangedAction
+		modifiedFile.Action = unchangedAction
 
 		// if file is unmanaged, action is set to unchanged so file is skipped when performing actions
-		if file.GetUnmanaged() {
+		if modifiedFile.File.GetUnmanaged() {
 			continue
 		}
 		// if file doesn't exist in the current files, file has been added
 		// set file action
 		if !ok {
-			file.Action = &addAction
-			fileDiff[file.GetFileMeta().GetName()] = file
+			modifiedFile.Action = addAction
+			fileDiff[modifiedFile.File.GetFileMeta().GetName()] = modifiedFile
 			// if file currently exists and file hash is different, file has been updated
 			// copy contents, set file action
-		} else if file.GetFileMeta().GetHash() != currentFile.GetFileMeta().GetHash() {
+		} else if modifiedFile.File.GetFileMeta().GetHash() != currentFile.File.GetFileMeta().GetHash() {
 			fileContent, readErr := os.ReadFile(fileName)
 			if readErr != nil {
 				return nil, nil, fmt.Errorf("error reading file %s, error: %w", fileName, readErr)
 			}
-			file.Action = &updateAction
+			modifiedFile.Action = updateAction
 			fileContents[fileName] = fileContent
-			fileDiff[file.GetFileMeta().GetName()] = file
+			fileDiff[modifiedFile.File.GetFileMeta().GetName()] = modifiedFile
 		}
 	}
 
@@ -501,13 +502,13 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles, modifiedFiles 
 
 // UpdateCurrentFilesOnDisk updates the FileManagerService currentFilesOnDisk slice which contains the files
 // currently on disk
-func (fms *FileManagerService) UpdateCurrentFilesOnDisk(currentFiles map[string]*mpi.File) {
+func (fms *FileManagerService) UpdateCurrentFilesOnDisk(currentFiles map[string]model.FileCache) {
 	fms.filesMutex.Lock()
 	defer fms.filesMutex.Unlock()
 
 	clear(fms.currentFilesOnDisk)
 
-	for _, file := range currentFiles {
-		fms.currentFilesOnDisk[file.GetFileMeta().GetName()] = file
+	for _, currentFile := range currentFiles {
+		fms.currentFilesOnDisk[currentFile.File.GetFileMeta().GetName()] = currentFile
 	}
 }
