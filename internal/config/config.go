@@ -881,13 +881,13 @@ func arePrometheusExportTLSSettingsSet() bool {
 func resolveWatchers() *Watchers {
 	return &Watchers{
 		InstanceWatcher: InstanceWatcher{
-			MonitoringFrequency: DefInstanceWatcherMonitoringFrequency,
+			MonitoringFrequency: viperInstance.GetDuration(InstanceWatcherMonitoringFrequencyKey),
 		},
 		InstanceHealthWatcher: InstanceHealthWatcher{
-			MonitoringFrequency: DefInstanceHealthWatcherMonitoringFrequency,
+			MonitoringFrequency: viperInstance.GetDuration(InstanceHealthWatcherMonitoringFrequencyKey),
 		},
 		FileWatcher: FileWatcher{
-			MonitoringFrequency: DefFileWatcherMonitoringFrequency,
+			MonitoringFrequency: viperInstance.GetDuration(FileWatcherMonitoringFrequencyKey),
 			ExcludeFiles:        viperInstance.GetStringSlice(NginxExcludeFilesKey),
 		},
 	}

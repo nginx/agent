@@ -37,7 +37,6 @@ type (
 		DataPlaneConfig    *DataPlaneConfig `yaml:"-" mapstructure:"data_plane_config"`
 		Client             *Client          `yaml:"-" mapstructure:"client"`
 		Collector          *Collector       `yaml:"-" mapstructure:"collector"`
-		File               *File            `yaml:"-" mapstructure:"file"`
 		Watchers           *Watchers        `yaml:"-"`
 		Labels             map[string]any   `yaml:"-" mapstructure:"labels"`
 		Version            string           `yaml:"-"`
@@ -283,10 +282,6 @@ type (
 		ExistingCert           bool   `yaml:"-"`
 		SkipVerify             bool   `yaml:"-" mapstructure:"skip_verify"`
 		GenerateSelfSignedCert bool   `yaml:"-" mapstructure:"generate_self_signed_cert"`
-	}
-
-	File struct {
-		Location string `yaml:"-" mapstructure:"location"`
 	}
 
 	Watchers struct {
