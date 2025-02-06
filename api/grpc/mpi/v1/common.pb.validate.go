@@ -103,7 +103,7 @@ type MessageMetaMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m MessageMetaMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -209,7 +209,7 @@ type CommandResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m CommandResponseMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -315,7 +315,7 @@ type ServerSettingsMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ServerSettingsMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -414,7 +414,7 @@ type AuthSettingsMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m AuthSettingsMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -523,7 +523,7 @@ type TLSSettingsMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m TLSSettingsMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

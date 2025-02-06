@@ -41,5 +41,5 @@ To begin this task, you will require the following:
 [//]: # "Examples of additional topics users might want to read include:"
 [//]: # "Relevant reference information, configuration options and more complex use cases."
 
-- [OpenTelemetry metrics]({{< ref "/metrics.md" >}})
+- [OpenTelemetry metrics]({{< ref "/otel/metrics.md" >}})
 -
