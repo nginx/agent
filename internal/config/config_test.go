@@ -40,7 +40,6 @@ func TestRegisterConfigFile(t *testing.T) {
 }
 
 func TestResolveConfig(t *testing.T) {
-
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	err := loadPropertiesFromFile("./testdata/nginx-agent.conf")
 	require.NoError(t, err)
