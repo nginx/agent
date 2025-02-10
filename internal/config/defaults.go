@@ -94,6 +94,12 @@ func DefaultAllowedDirectories() []string {
 	}
 }
 
+func DefaultExcludedFiles() []string {
+	return []string{
+		"^.*(\\.log|.swx|~|.swp)$",
+	}
+}
+
 func DefaultLabels() map[string]string {
 	return make(map[string]string)
 }
