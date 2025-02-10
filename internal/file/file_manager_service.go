@@ -38,11 +38,7 @@ import (
 //counterfeiter:generate . fileManagerServiceInterface
 
 const (
-	maxAttempts     = 5
-	addAction       = "add"
-	updateAction    = "update"
-	deleteAction    = "delete"
-	unchangedAction = "unchanged"
+	maxAttempts = 5
 )
 
 type (
@@ -327,7 +323,7 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 	defer fms.filesMutex.Unlock()
 	for _, fileAction := range fms.fileActions {
 		switch fileAction.Action {
-		case addAction:
+		case model.Add:
 			if err := os.Remove(fileAction.File.GetFileMeta().GetName()); err != nil && !os.IsNotExist(err) {
 				return fmt.Errorf("error deleting file: %s error: %w", fileAction.File.GetFileMeta().GetName(), err)
 			}
@@ -336,7 +332,7 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 			delete(fms.currentFilesOnDisk, fileAction.File.GetFileMeta().GetName())
 
 			continue
-		case deleteAction, updateAction:
+		case model.Delete, model.Update:
 			content := fms.rollbackFileContents[fileAction.File.GetFileMeta().GetName()]
 
 			err := fms.fileOperator.Write(ctx, content, fileAction.File.GetFileMeta())
@@ -347,7 +343,7 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 			// currentFilesOnDisk needs to be updated after rollback action is performed
 			fileAction.File.GetFileMeta().Hash = files.GenerateHash(content)
 			fms.currentFilesOnDisk[fileAction.File.GetFileMeta().GetName()] = fileAction
-		case "", unchangedAction:
+		case model.Unchanged:
 			fallthrough
 		default:
 			slog.DebugContext(ctx, "File Action not implemented")
@@ -360,18 +356,18 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 	for _, fileAction := range fms.fileActions {
 		switch fileAction.Action {
-		case deleteAction:
+		case model.Delete:
 			if err := os.Remove(fileAction.File.GetFileMeta().GetName()); err != nil && !os.IsNotExist(err) {
 				return fmt.Errorf("error deleting file: %s error: %w", fileAction.File.GetFileMeta().GetName(), err)
 			}
 
 			continue
-		case addAction, updateAction:
+		case model.Add, model.Update:
 			updateErr := fms.fileUpdate(ctx, fileAction.File)
 			if updateErr != nil {
 				return updateErr
 			}
-		case "", unchangedAction:
+		case model.Unchanged:
 			fallthrough
 		default:
 			slog.DebugContext(ctx, "File Action not implemented", "action", fileAction.Action)
@@ -464,7 +460,7 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles, modifiedFiles 
 				return nil, nil, fmt.Errorf("error reading file %s, error: %w", fileName, readErr)
 			}
 			fileContents[fileName] = fileContent
-			currentFile.Action = deleteAction
+			currentFile.Action = model.Delete
 			fileDiff[currentFile.File.GetFileMeta().GetName()] = currentFile
 		}
 	}
@@ -473,7 +469,7 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles, modifiedFiles 
 		fileName := modifiedFile.File.GetFileMeta().GetName()
 		currentFile, ok := currentFiles[modifiedFile.File.GetFileMeta().GetName()]
 		// default to unchanged action
-		modifiedFile.Action = unchangedAction
+		modifiedFile.Action = model.Unchanged
 
 		// if file is unmanaged, action is set to unchanged so file is skipped when performing actions
 		if modifiedFile.File.GetUnmanaged() {
@@ -482,7 +478,7 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles, modifiedFiles 
 		// if file doesn't exist in the current files, file has been added
 		// set file action
 		if !ok {
-			modifiedFile.Action = addAction
+			modifiedFile.Action = model.Add
 			fileDiff[modifiedFile.File.GetFileMeta().GetName()] = modifiedFile
 			// if file currently exists and file hash is different, file has been updated
 			// copy contents, set file action
@@ -491,7 +487,7 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles, modifiedFiles 
 			if readErr != nil {
 				return nil, nil, fmt.Errorf("error reading file %s, error: %w", fileName, readErr)
 			}
-			modifiedFile.Action = updateAction
+			modifiedFile.Action = model.Update
 			fileContents[fileName] = fileContent
 			fileDiff[modifiedFile.File.GetFileMeta().GetName()] = modifiedFile
 		}

@@ -9,5 +9,14 @@ import mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 
 type FileCache struct {
 	File   *mpi.File
-	Action string
+	Action FileAction
 }
+
+type FileAction int
+
+const (
+	Add FileAction = iota + 1
+	Update
+	Delete
+	Unchanged
+)

@@ -200,7 +200,6 @@ func TestFileManagerService_ConfigApply_Update(t *testing.T) {
 					Size:         0,
 				},
 			},
-			Action: "",
 		},
 	}
 
@@ -255,7 +254,7 @@ func TestFileManagerService_ConfigApply_Delete(t *testing.T) {
 					Size:         0,
 				},
 			},
-			Action: deleteAction,
+			Action: model.Delete,
 		},
 	}
 
@@ -333,7 +332,6 @@ func TestFileManagerService_ClearCache(t *testing.T) {
 					Size:         0,
 				},
 			},
-			Action: "",
 		},
 	}
 
@@ -382,7 +380,7 @@ func TestFileManagerService_Rollback(t *testing.T) {
 				},
 				Unmanaged: false,
 			},
-			Action: addAction,
+			Action: model.Add,
 		},
 		updateFile.Name(): {
 			File: &mpi.File{
@@ -395,7 +393,7 @@ func TestFileManagerService_Rollback(t *testing.T) {
 				},
 				Unmanaged: false,
 			},
-			Action: updateAction,
+			Action: model.Update,
 		},
 		deleteFilePath: {
 			File: &mpi.File{
@@ -408,7 +406,7 @@ func TestFileManagerService_Rollback(t *testing.T) {
 				},
 				Unmanaged: false,
 			},
-			Action: deleteAction,
+			Action: model.Delete,
 		},
 		"unspecified/file/test.conf": {
 			File: &mpi.File{
@@ -421,7 +419,6 @@ func TestFileManagerService_Rollback(t *testing.T) {
 				},
 				Unmanaged: false,
 			},
-			Action: "",
 		},
 	}
 
@@ -531,21 +528,21 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 						FileMeta:  protos.FileMeta(deleteTestFile.Name(), files.GenerateHash(fileContent)),
 						Unmanaged: false,
 					},
-					Action: deleteAction,
+					Action: model.Delete,
 				},
 				updateTestFile.Name(): {
 					File: &mpi.File{
 						FileMeta:  protos.FileMeta(updateTestFile.Name(), files.GenerateHash(updatedFileContent)),
 						Unmanaged: false,
 					},
-					Action: updateAction,
+					Action: model.Update,
 				},
 				addTestFileName: {
 					File: &mpi.File{
 						FileMeta:  protos.FileMeta(addTestFileName, files.GenerateHash(fileContent)),
 						Unmanaged: false,
 					},
-					Action: addAction,
+					Action: model.Add,
 				},
 			},
 			expectedContent: map[string][]byte{
@@ -640,7 +637,7 @@ func TestFileManagerService_fileActions(t *testing.T) {
 					Size:         0,
 				},
 			},
-			Action: addAction,
+			Action: model.Add,
 		},
 		updateFile.Name(): {
 			File: &mpi.File{
@@ -652,7 +649,7 @@ func TestFileManagerService_fileActions(t *testing.T) {
 					Size:         0,
 				},
 			},
-			Action: updateAction,
+			Action: model.Update,
 		},
 		deleteFile.Name(): {
 			File: &mpi.File{
@@ -664,7 +661,7 @@ func TestFileManagerService_fileActions(t *testing.T) {
 					Size:         0,
 				},
 			},
-			Action: deleteAction,
+			Action: model.Delete,
 		},
 		unspecifiedFilePath: {
 			File: &mpi.File{
@@ -676,7 +673,6 @@ func TestFileManagerService_fileActions(t *testing.T) {
 					Size:         0,
 				},
 			},
-			Action: "",
 		},
 	}
 
