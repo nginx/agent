@@ -99,7 +99,6 @@ func Test_GenerateConfigVersion(t *testing.T) {
 						Name: "file1",
 						Hash: "hash1",
 					},
-					Action: nil,
 				},
 			},
 			expected: GenerateHash([]byte("hash1")),
@@ -112,14 +111,12 @@ func Test_GenerateConfigVersion(t *testing.T) {
 						Name: "file1",
 						Hash: "hash1",
 					},
-					Action: nil,
 				},
 				{
 					FileMeta: &mpi.FileMeta{
 						Name: "file2",
 						Hash: "hash2",
 					},
-					Action: nil,
 				},
 			},
 			expected: func() string {
