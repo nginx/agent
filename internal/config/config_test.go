@@ -40,10 +40,6 @@ func TestRegisterConfigFile(t *testing.T) {
 }
 
 func TestResolveConfig(t *testing.T) {
-	allowedDir := []string{
-		"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx",
-		"/usr/share/nginx/modules", "/var/log/nginx",
-	}
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	err := loadPropertiesFromFile("./testdata/nginx-agent.conf")
 	require.NoError(t, err)
@@ -58,50 +54,7 @@ func TestResolveConfig(t *testing.T) {
 
 	actual, err := ResolveConfig()
 	require.NoError(t, err)
-
-	assert.Equal(t, "debug", actual.Log.Level)
-	assert.Equal(t, "./", actual.Log.Path)
-
-	assert.Equal(t, 30*time.Second, actual.DataPlaneConfig.Nginx.ReloadMonitoringPeriod)
-	assert.False(t, actual.DataPlaneConfig.Nginx.TreatWarningsAsErrors)
-	assert.Equal(t, []string{"/var/log/nginx/error.log", "/var/log/nginx/access.log"},
-		actual.DataPlaneConfig.Nginx.ExcludeLogs)
-
-	require.NotNil(t, actual.Collector)
-	assert.Equal(t, "/etc/nginx-agent/nginx-agent-otelcol.yaml", actual.Collector.ConfigPath)
-	assert.NotEmpty(t, actual.Collector.Receivers)
-	assert.Equal(t, Processors{Batch: &Batch{}}, actual.Collector.Processors)
-	assert.NotEmpty(t, actual.Collector.Exporters)
-	assert.NotEmpty(t, actual.Collector.Extensions)
-
-	// Client GRPC Settings
-	assert.Equal(t, 15*time.Second, actual.Client.Grpc.KeepAlive.Timeout)
-	assert.Equal(t, 10*time.Second, actual.Client.Grpc.KeepAlive.Time)
-	assert.False(t, actual.Client.Grpc.KeepAlive.PermitWithoutStream)
-	assert.Equal(t, 1048575, actual.Client.Grpc.MaxMessageSize)
-	assert.Equal(t, 1048575, actual.Client.Grpc.MaxMessageReceiveSize)
-	assert.Equal(t, 1048575, actual.Client.Grpc.MaxMessageSendSize)
-
-	// Client HTTP Settings
-	assert.Equal(t, 15*time.Second, actual.Client.HTTP.Timeout)
-
-	// Client Backoff Settings
-	assert.Equal(t, 200*time.Millisecond, actual.Client.Backoff.InitialInterval)
-	assert.Equal(t, 10*time.Second, actual.Client.Backoff.MaxInterval)
-	assert.Equal(t, 25*time.Second, actual.Client.Backoff.MaxElapsedTime)
-	assert.InDelta(t, 1.5, actual.Client.Backoff.RandomizationFactor, 0.01)
-	assert.InDelta(t, 2.5, actual.Client.Backoff.Multiplier, 0.01)
-
-	assert.Equal(t,
-		allowedDir,
-		actual.AllowedDirectories,
-	)
-
-	assert.Equal(t, allowedDir, actual.AllowedDirectories)
-
-	assert.Equal(t, 5*time.Second, actual.Watchers.InstanceWatcher.MonitoringFrequency)
-	assert.Equal(t, 5*time.Second, actual.Watchers.InstanceHealthWatcher.MonitoringFrequency)
-	assert.Equal(t, 5*time.Second, actual.Watchers.FileWatcher.MonitoringFrequency)
+	assert.Equal(t, createConfig(), actual)
 }
 
 func TestSetVersion(t *testing.T) {
@@ -179,7 +132,7 @@ func TestLoadPropertiesFromFile(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, "debug", viperInstance.GetString(LogLevelKey))
-	assert.Equal(t, "./", viperInstance.GetString(LogPathKey))
+	assert.Equal(t, "./test-path", viperInstance.GetString(LogPathKey))
 
 	assert.Equal(t, 15*time.Second, viperInstance.GetDuration(ClientKeepAliveTimeoutKey))
 
@@ -770,5 +723,209 @@ func getAgentConfig() *Config {
 			},
 		},
 		Labels: make(map[string]any),
+	}
+}
+
+func createConfig() *Config {
+	return &Config{
+		Log: &Log{
+			Level: "debug",
+			Path:  "./test-path",
+		},
+		Client: &Client{
+			HTTP: &HTTP{
+				Timeout: 15 * time.Second,
+			},
+			Grpc: &GRPC{
+				KeepAlive: &KeepAlive{
+					Timeout:             15 * time.Second,
+					Time:                10 * time.Second,
+					PermitWithoutStream: false,
+				},
+				MaxMessageSize:        1048575,
+				MaxMessageReceiveSize: 1048575,
+				MaxMessageSendSize:    1048575,
+			},
+			Backoff: &BackOff{
+				InitialInterval:     200 * time.Millisecond,
+				MaxInterval:         10 * time.Second,
+				MaxElapsedTime:      25 * time.Second,
+				RandomizationFactor: 1.5,
+				Multiplier:          2.5,
+			},
+		},
+		AllowedDirectories: []string{
+			"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx", "/usr/share/nginx/modules", "/var/log/nginx",
+		},
+		DataPlaneConfig: &DataPlaneConfig{
+			Nginx: &NginxDataPlaneConfig{
+				ExcludeLogs:            []string{"/var/log/nginx/error.log", "/var/log/nginx/access.log"},
+				ReloadMonitoringPeriod: 30 * time.Second,
+				TreatWarningsAsErrors:  true,
+			},
+		},
+		Collector: &Collector{
+			ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
+			Exporters: Exporters{
+				OtlpExporters: []OtlpExporter{
+					{
+						Server: &ServerConfig{
+							Host: "127.0.0.1",
+							Port: 5643,
+						},
+						Authenticator: "test-saas-token",
+						TLS: &TLSConfig{
+							Cert:       "/path/to/server-cert.pem",
+							Key:        "/path/to/server-key.pem",
+							Ca:         "/path/to/server-cert.pem",
+							SkipVerify: false,
+							ServerName: "test-saas-server",
+						},
+					},
+				},
+				PrometheusExporter: &PrometheusExporter{
+					Server: &ServerConfig{
+						Host: "127.0.0.1",
+						Port: 1235,
+					},
+					TLS: &TLSConfig{
+						Cert:       "/path/to/server-cert.pem",
+						Key:        "/path/to/server-key.pem",
+						Ca:         "/path/to/server-cert.pem",
+						SkipVerify: false,
+						ServerName: "test-server",
+					},
+				},
+				Debug: &DebugExporter{},
+			},
+			Processors: Processors{
+				Batch: &Batch{
+					SendBatchMaxSize: 1,
+					SendBatchSize:    8199,
+					Timeout:          30 * time.Second,
+				},
+				Attribute: &Attribute{
+					Actions: []Action{
+						{
+							Key:    "test",
+							Action: "insert",
+							Value:  "value",
+						},
+					},
+				},
+			},
+			Receivers: Receivers{
+				OtlpReceivers: []OtlpReceiver{
+					{
+						Server: &ServerConfig{
+							Host: "127.0.0.1",
+							Port: 4317,
+						},
+						Auth: &AuthConfig{
+							Token: "secret-receiver-token",
+						},
+						OtlpTLSConfig: &OtlpTLSConfig{
+							GenerateSelfSignedCert: false,
+							Cert:                   "/tmp/cert.pem",
+							Key:                    "/tmp/key.pem",
+							Ca:                     "/tmp/ca.pem",
+							SkipVerify:             true,
+							ServerName:             "test-local-server",
+						},
+					},
+				},
+				NginxReceivers: []NginxReceiver{
+					{
+						InstanceID: "cd7b8911-c2c5-4daf-b311-dbead151d938",
+						AccessLogs: []AccessLog{
+							{
+								LogFormat: "$remote_addr - $remote_user [$time_local] \"$request\"" +
+									" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\" " +
+									"\"$http_x_forwarded_for\"",
+								FilePath: "/var/log/nginx/access-custom.conf",
+							},
+						},
+					},
+				},
+				NginxPlusReceivers: []NginxPlusReceiver{
+					{
+						InstanceID: "cd7b8911-c2c5-4daf-b311-dbead151d939",
+					},
+				},
+				HostMetrics: &HostMetrics{
+					CollectionInterval: 10 * time.Second,
+					InitialDelay:       2 * time.Second,
+					Scrapers: &HostMetricsScrapers{
+						CPU:        &CPUScraper{},
+						Disk:       nil,
+						Filesystem: nil,
+						Memory:     nil,
+						Network:    nil,
+					},
+				},
+			},
+			Extensions: Extensions{
+				Health: &Health{
+					Server: &ServerConfig{
+						Host: "127.0.0.1",
+						Port: 1337,
+					},
+					TLS: &TLSConfig{
+						Cert:       "/path/to/server-cert.pem",
+						Key:        "/path/to/server-key.pem",
+						Ca:         "/path/to/server-ca.pem",
+						SkipVerify: false,
+						ServerName: "server-name",
+					},
+					Path: "/test",
+				},
+				HeadersSetter: &HeadersSetter{
+					Headers: []Header{
+						{
+							Action: "action",
+							Key:    "key",
+							Value:  "value",
+						},
+					},
+				},
+			},
+			Log: &Log{
+				Level: "INFO",
+				Path:  "/var/log/nginx-agent/opentelemetry-collector-agent.log",
+			},
+		},
+		Command: &Command{
+			Server: &ServerConfig{
+				Host: "127.0.0.1",
+				Port: 8888,
+				Type: Grpc,
+			},
+			Auth: &AuthConfig{
+				Token: "1234",
+			},
+			TLS: &TLSConfig{
+				Cert:       "some.cert",
+				Key:        "some.key",
+				Ca:         "some.ca",
+				SkipVerify: false,
+				ServerName: "server-name",
+			},
+		},
+		Watchers: &Watchers{
+			InstanceWatcher: InstanceWatcher{
+				MonitoringFrequency: 10 * time.Second,
+			},
+			InstanceHealthWatcher: InstanceHealthWatcher{
+				MonitoringFrequency: 10 * time.Second,
+			},
+			FileWatcher: FileWatcher{
+				MonitoringFrequency: 10 * time.Second,
+			},
+		},
+		Labels: map[string]any{
+			"label1": "label 1",
+			"label2": "new-value",
+			"label3": 123,
+		},
 	}
 }
