@@ -279,9 +279,11 @@ Example response:
     }
 ]
 ```
+
 ## POST /api/v1/requests
-Used to send management plane requests over the Subscribe rpc stream to the NGINX Agent. \
-Example request body:
+Used to send management plane requests over the Subscribe rpc stream to the NGINX Agent.
+
+Example request body to health request:
 ```
 {
     "message_meta": {
@@ -292,6 +294,123 @@ Example request body:
     "health_request": {}
 }
 ```
+
+Example request body to get HTTP upstream servers example:
+```
+{
+    "message_meta": {
+        "message_id": "5d0fa83e-351c-4009-90cd-1f2acce2d184",
+        "correlation_id": "79794c1c-8e91-47c1-a92c-b9a0c3f1a263",
+        "timestamp": "2023-01-15T01:30:15.01Z"
+    },
+    "action_request": {
+        "instance_id": "e8d1bda6-397e-3b98-a179-e500ff99fbc7",
+        "nginx_plus_action": {
+            "get_http_upstream_servers": {
+                "http_upstream_name": "nginx1"
+            }
+        }
+    }
+}
+```
+
+Example request body to update HTTP upstream servers example:
+```
+{
+    "message_meta": {
+        "message_id": "5d0fa83e-351c-4009-90cd-1f2acce2d184",
+        "correlation_id": "79794c1c-8e91-47c1-a92c-b9a0c3f1a263",
+        "timestamp": "2023-01-15T01:30:15.01Z"
+    },
+    "action_request": {
+        "instance_id": "e8d1bda6-397e-3b98-a179-e500ff99fbc7",
+        "nginx_plus_action": {
+            "update_http_upstream_servers": {
+                "http_upstream_name": "nginx1",
+                "servers": [
+                    {
+                        "max_conns": 0,
+                        "max_fails": 3,
+                        "backup": false,
+                        "down": false,
+                        "weight": 1,
+                        "server": "127.0.0.1:9081",
+                        "fail_timeout": "10s",
+                        "slow_start": "0s"
+                    }
+                ]
+            }
+        }
+    }
+}
+```
+
+Example request body to update upstream stream servers example:
+```
+{
+    "message_meta": {
+        "message_id": "5d0fa83e-351c-4009-90cd-1f2acce2d184",
+        "correlation_id": "79794c1c-8e91-47c1-a92c-b9a0c3f1a263",
+        "timestamp": "2023-01-15T01:30:15.01Z"
+    },
+    "action_request": {
+        "instance_id": "e8d1bda6-397e-3b98-a179-e500ff99fbc7",
+        "nginx_plus_action": {
+            "update_stream_servers": {
+                "upstream_stream_name": "stream_backend",
+                "servers": [
+                    {
+                        "id" : 0,
+                        "server" : "10.0.0.1:12348",
+                        "weight" : 1,
+                        "max_conns" : 0,
+                        "max_fails" : 1,
+                        "fail_timeout" : "10s",
+                        "slow_start" : 0,
+                        "backup" : false,
+                        "down" : false
+                    }
+                ]
+            }
+        }
+    }
+}
+```
+
+Example request body to get upstreams example:
+```
+{
+    "message_meta": {
+        "message_id": "5d0fa83e-351c-4009-90cd-1f2acce2d184",
+        "correlation_id": "79794c1c-8e91-47c1-a92c-b9a0c3f1a263",
+        "timestamp": "2023-01-15T01:30:15.01Z"
+    },
+    "action_request": {
+        "instance_id": "e8d1bda6-397e-3b98-a179-e500ff99fbc7",
+        "nginx_plus_action": {
+            "get_upstreams": {}
+        }
+    }
+}
+```
+
+Example request body to get stream upstreams example:
+```
+{
+    "message_meta": {
+        "message_id": "5d0fa83e-351c-4009-90cd-1f2acce2d184",
+        "correlation_id": "79794c1c-8e91-47c1-a92c-b9a0c3f1a263",
+        "timestamp": "2023-01-15T01:30:15.01Z"
+    },
+    "action_request": {
+        "instance_id": "e8d1bda6-397e-3b98-a179-e500ff99fbc7",
+        "nginx_plus_action": {
+            "get_stream_upstreams": {}
+        }
+    }
+}
+```
+
 ## POST /api/v1/instance/\<instance id\>/config/apply
 Used to send management plane config apply request over the Subscribe rpc stream to the NGINX Agent for a particular data plane instance.
 

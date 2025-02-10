@@ -12,8 +12,8 @@ import (
 	"time"
 
 	pkg "github.com/nginx/agent/v3/pkg/config"
+	"github.com/nginx/agent/v3/pkg/id"
 
-	"github.com/nginx/agent/v3/internal/datasource/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/nginx/agent/v3/internal/bus/busfakes"
@@ -70,7 +70,39 @@ func TestCommandPlugin_Init(t *testing.T) {
 
 	closeError := commandPlugin.Close(ctx)
 	require.NoError(t, closeError)
-	require.Equal(t, 1, fakeCommandService.CancelSubscriptionCallCount())
+}
+
+func TestCommandPlugin_createConnection(t *testing.T) {
+	ctx := context.Background()
+	commandService := &commandfakes.FakeCommandService{}
+	commandService.CreateConnectionReturns(&mpi.CreateConnectionResponse{}, nil)
+	messagePipe := busfakes.NewFakeMessagePipe()
+
+	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	err := commandPlugin.Init(ctx, messagePipe)
+	commandPlugin.commandService = commandService
+	require.NoError(t, err)
+	defer commandPlugin.Close(ctx)
+
+	commandPlugin.createConnection(ctx, &mpi.Resource{})
+
+	assert.Eventually(
+		t,
+		func() bool { return commandService.SubscribeCallCount() > 0 },
+		2*time.Second,
+		10*time.Millisecond,
+	)
+
+	assert.Eventually(
+		t,
+		func() bool { return len(messagePipe.GetMessages()) == 1 },
+		2*time.Second,
+		10*time.Millisecond,
+	)
+
+	messages := messagePipe.GetMessages()
+	assert.Len(t, messages, 1)
+	assert.Equal(t, bus.ConnectionCreatedTopic, messages[0].Topic)
 }
 
 func TestCommandPlugin_Process(t *testing.T) {
@@ -307,12 +339,12 @@ func TestCommandPlugin_FeatureDisabled(t *testing.T) {
 
 func TestMonitorSubscribeChannel(t *testing.T) {
 	ctx, cncl := context.WithCancel(context.Background())
-	defer cncl()
 
 	logBuf := &bytes.Buffer{}
 	stub.StubLoggerWith(logBuf)
 
 	cp := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	cp.subscribeCancel = cncl
 
 	message := protos.CreateManagementPlaneRequest()
 
@@ -327,7 +359,7 @@ func TestMonitorSubscribeChannel(t *testing.T) {
 	// Give some time to process the message
 	time.Sleep(100 * time.Millisecond)
 
-	cncl()
+	cp.Close(ctx)
 
 	time.Sleep(100 * time.Millisecond)
 
@@ -340,7 +372,7 @@ func TestMonitorSubscribeChannel(t *testing.T) {
 func Test_createDataPlaneResponse(t *testing.T) {
 	expected := &mpi.DataPlaneResponse{
 		MessageMeta: &mpi.MessageMeta{
-			MessageId:     proto.GenerateMessageID(),
+			MessageId:     id.GenerateMessageID(),
 			CorrelationId: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
 			Timestamp:     timestamppb.Now(),
 		},

@@ -46,9 +46,14 @@ type resourceServiceInterface interface {
 	DeleteInstances(instanceList []*mpi.Instance) *mpi.Resource
 	ApplyConfig(ctx context.Context, instanceID string) error
 	Instance(instanceID string) *mpi.Instance
-	GetUpstreams(ctx context.Context, instance *mpi.Instance, upstreams string) ([]client.UpstreamServer, error)
-	UpdateHTTPUpstreams(ctx context.Context, instance *mpi.Instance, upstream string,
+	GetHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance, upstreams string) ([]client.UpstreamServer,
+		error)
+	UpdateHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance, upstream string,
 		upstreams []*structpb.Struct) (added, updated, deleted []client.UpstreamServer, err error)
+	GetUpstreams(ctx context.Context, instance *mpi.Instance) (*client.Upstreams, error)
+	GetStreamUpstreams(ctx context.Context, instance *mpi.Instance) (*client.StreamUpstreams, error)
+	UpdateStreamServers(ctx context.Context, instance *mpi.Instance, upstream string,
+		upstreams []*structpb.Struct) (added, updated, deleted []client.StreamUpstreamServer, err error)
 }
 
 type (
@@ -158,6 +163,10 @@ func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) er
 	var instance *mpi.Instance
 	operator := r.instanceOperators[instanceID]
 
+	if operator == nil {
+		return fmt.Errorf("instance %s not found", instanceID)
+	}
+
 	for _, resourceInstance := range r.resource.GetInstances() {
 		if resourceInstance.GetInstanceMeta().GetInstanceId() == instanceID {
 			instance = resourceInstance
@@ -177,7 +186,7 @@ func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) er
 	return nil
 }
 
-func (r *ResourceService) GetUpstreams(ctx context.Context, instance *mpi.Instance,
+func (r *ResourceService) GetHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance,
 	upstream string,
 ) ([]client.UpstreamServer, error) {
 	plusClient, err := r.createPlusClient(instance)
@@ -188,12 +197,64 @@ func (r *ResourceService) GetUpstreams(ctx context.Context, instance *mpi.Instan
 
 	servers, getServersErr := plusClient.GetHTTPServers(ctx, upstream)
 
+	slog.Warn("Error returned from NGINX Plus client, GetHTTPUpstreamServers", "err", getServersErr)
+
 	return servers, createPlusAPIError(getServersErr)
+}
+
+func (r *ResourceService) GetUpstreams(ctx context.Context, instance *mpi.Instance,
+) (*client.Upstreams, error) {
+	plusClient, err := r.createPlusClient(instance)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
+		return nil, err
+	}
+
+	servers, getUpstreamsErr := plusClient.GetUpstreams(ctx)
+
+	slog.Warn("Error returned from NGINX Plus client, GetUpstreams", "err", getUpstreamsErr)
+
+	return servers, createPlusAPIError(getUpstreamsErr)
+}
+
+func (r *ResourceService) GetStreamUpstreams(ctx context.Context, instance *mpi.Instance,
+) (*client.StreamUpstreams, error) {
+	plusClient, err := r.createPlusClient(instance)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
+		return nil, err
+	}
+
+	streamUpstreams, getServersErr := plusClient.GetStreamUpstreams(ctx)
+
+	slog.Warn("Error returned from NGINX Plus client, GetStreamUpstreams", "err", getServersErr)
+
+	return streamUpstreams, createPlusAPIError(getServersErr)
 }
 
 // max number of returns from function is 3
 // nolint: revive
-func (r *ResourceService) UpdateHTTPUpstreams(ctx context.Context, instance *mpi.Instance, upstream string,
+func (r *ResourceService) UpdateStreamServers(ctx context.Context, instance *mpi.Instance, upstream string,
+	upstreams []*structpb.Struct,
+) (added, updated, deleted []client.StreamUpstreamServer, err error) {
+	plusClient, err := r.createPlusClient(instance)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
+		return nil, nil, nil, err
+	}
+
+	servers := convertToStreamUpstreamServer(upstreams)
+
+	added, updated, deleted, updateError := plusClient.UpdateStreamServers(ctx, upstream, servers)
+
+	slog.Warn("Error returned from NGINX Plus client, UpdateStreamServers", "err", updateError)
+
+	return added, updated, deleted, createPlusAPIError(updateError)
+}
+
+// max number of returns from function is 3
+// nolint: revive
+func (r *ResourceService) UpdateHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance, upstream string,
 	upstreams []*structpb.Struct,
 ) (added, updated, deleted []client.UpstreamServer, err error) {
 	plusClient, err := r.createPlusClient(instance)
@@ -205,6 +266,10 @@ func (r *ResourceService) UpdateHTTPUpstreams(ctx context.Context, instance *mpi
 	servers := convertToUpstreamServer(upstreams)
 
 	added, updated, deleted, updateError := plusClient.UpdateHTTPServers(ctx, upstream, servers)
+
+	if updateError != nil {
+		slog.Warn("Error returned from NGINX Plus client, UpdateHTTPUpstreamServers", "err", updateError)
+	}
 
 	return added, updated, deleted, createPlusAPIError(updateError)
 }
@@ -223,6 +288,20 @@ func convertToUpstreamServer(upstreams []*structpb.Struct) []client.UpstreamServ
 	return servers
 }
 
+func convertToStreamUpstreamServer(streamUpstreams []*structpb.Struct) []client.StreamUpstreamServer {
+	var servers []client.StreamUpstreamServer
+	res, err := json.Marshal(streamUpstreams)
+	if err != nil {
+		slog.Error("Failed to marshal stream upstream server", "error", err, "stream_upstreams", streamUpstreams)
+	}
+	err = json.Unmarshal(res, &servers)
+	if err != nil {
+		slog.Error("Failed to unmarshal stream upstream server", "error", err, "stream_upstreams", streamUpstreams)
+	}
+
+	return servers
+}
+
 func (r *ResourceService) createPlusClient(instance *mpi.Instance) (*client.NginxClient, error) {
 	plusAPI := instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo().GetPlusApi()
 	var endpoint string
@@ -231,6 +310,7 @@ func (r *ResourceService) createPlusClient(instance *mpi.Instance) (*client.Ngin
 		return nil, errors.New("failed to preform API action, NGINX Plus API is not configured")
 	}
 
+	slog.Info("location", "", plusAPI.GetListen())
 	if strings.HasPrefix(plusAPI.GetListen(), "unix:") {
 		endpoint = fmt.Sprintf(unixPlusAPIFormat, plusAPI.GetLocation())
 	} else {
@@ -288,7 +368,7 @@ func createPlusAPIError(apiErr error) error {
 	plusErr := plusAPIErr{
 		Error: errResponse{
 			Status: errorSlice[0],
-			Test:   errorSlice[1],
+			Text:   errorSlice[1],
 			Code:   errorSlice[2],
 		},
 		RequestID: errorSlice[3],

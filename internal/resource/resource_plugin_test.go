@@ -201,7 +201,7 @@ func TestResource_createPlusAPIError(t *testing.T) {
 	expectedErr := plusAPIErr{
 		Error: errResponse{
 			Status: "404",
-			Test:   "upstream not found",
+			Text:   "upstream not found",
 			Code:   "UpstreamNotFound",
 		},
 		RequestID: "b534bdab5cb5e321e8b41b431828b270",
@@ -215,6 +215,7 @@ func TestResource_createPlusAPIError(t *testing.T) {
 	assert.Equal(t, errors.New(string(expectedJSON)), result)
 }
 
+// nolint: dupl
 func TestResource_Process_APIAction_GetHTTPServers(t *testing.T) {
 	ctx := context.Background()
 
@@ -292,7 +293,7 @@ func TestResource_Process_APIAction_GetHTTPServers(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
-			fakeResourceService.GetUpstreamsReturns(test.upstreams, test.err)
+			fakeResourceService.GetHTTPUpstreamServersReturns(test.upstreams, test.err)
 			if test.instance.GetInstanceMeta().GetInstanceId() != "e1374cb1-462d-3b6c-9f3b-f28332b5f10f" {
 				fakeResourceService.InstanceReturns(test.instance)
 			}
@@ -325,6 +326,7 @@ func TestResource_Process_APIAction_GetHTTPServers(t *testing.T) {
 	}
 }
 
+// nolint: dupl
 func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
@@ -337,7 +339,7 @@ func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 		upstreams   []client.UpstreamServer
 	}{
 		{
-			name: "Test 1: Success, Update Http Upstream Servers",
+			name: "Test 1: Success, Update HTTP Upstream Servers",
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreatAPIActionRequestNginxPlusUpdateHTTPServers("test_upstream",
@@ -361,7 +363,7 @@ func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 			expectedLog: "Successfully updated http upstream",
 		},
 		{
-			name: "Test 2: Fail, Update Http Upstream Servers",
+			name: "Test 2: Fail, Update HTTP Upstream Servers",
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreatAPIActionRequestNginxPlusUpdateHTTPServers("test_upstream",
@@ -393,9 +395,9 @@ func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 
 			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
 			fakeResourceService.InstanceReturns(test.instance)
-			fakeResourceService.UpdateHTTPUpstreamsReturnsOnCall(0, test.upstreams, []client.UpstreamServer{},
+			fakeResourceService.UpdateHTTPUpstreamServersReturnsOnCall(0, test.upstreams, []client.UpstreamServer{},
 				[]client.UpstreamServer{}, test.err)
-			fakeResourceService.UpdateHTTPUpstreamsReturnsOnCall(1, []client.UpstreamServer{},
+			fakeResourceService.UpdateHTTPUpstreamServersReturnsOnCall(1, []client.UpstreamServer{},
 				[]client.UpstreamServer{}, []client.UpstreamServer{}, test.err)
 
 			messagePipe := busfakes.NewFakeMessagePipe()
@@ -423,6 +425,401 @@ func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 			}
 
 			helpers.ValidateLog(tt, test.expectedLog, logBuf)
+		})
+	}
+}
+
+// nolint: dupl
+func TestResource_Process_APIAction_UpdateStreamServers(t *testing.T) {
+	ctx := context.Background()
+	tests := []struct {
+		instance    *mpi.Instance
+		name        string
+		expectedLog string
+		message     *bus.Message
+		err         error
+		topic       []string
+		upstreams   []client.StreamUpstreamServer
+	}{
+		{
+			name: "Test 1: Success, Update Stream Servers",
+			message: &bus.Message{
+				Topic: bus.APIActionRequestTopic,
+				Data: protos.CreateAPIActionRequestNginxPlusUpdateStreamServers("test_upstream",
+					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(), []*structpb.Struct{
+						{
+							Fields: map[string]*structpb.Value{
+								"max_cons":  structpb.NewNumberValue(8),
+								"max_fails": structpb.NewNumberValue(0),
+								"backup":    structpb.NewBoolValue(true),
+								"service":   structpb.NewStringValue("test_server"),
+							},
+						},
+					}),
+			},
+			err: nil,
+			upstreams: []client.StreamUpstreamServer{
+				helpers.CreateNginxPlusStreamServer(t),
+			},
+			topic:       []string{bus.DataPlaneResponseTopic},
+			instance:    protos.GetNginxPlusInstance([]string{}),
+			expectedLog: "Successfully updated stream upstream",
+		},
+		{
+			name: "Test 2: Fail, Update Stream Servers",
+			message: &bus.Message{
+				Topic: bus.APIActionRequestTopic,
+				Data: protos.CreateAPIActionRequestNginxPlusUpdateStreamServers("test_upstream",
+					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(), []*structpb.Struct{
+						{
+							Fields: map[string]*structpb.Value{
+								"max_cons":  structpb.NewNumberValue(8),
+								"max_fails": structpb.NewNumberValue(0),
+								"backup":    structpb.NewBoolValue(true),
+								"service":   structpb.NewStringValue("test_server"),
+							},
+						},
+					}),
+			},
+			err: errors.New("something went wrong"),
+			upstreams: []client.StreamUpstreamServer{
+				helpers.CreateNginxPlusStreamServer(t),
+			},
+			topic:       []string{bus.DataPlaneResponseTopic},
+			instance:    protos.GetNginxPlusInstance([]string{}),
+			expectedLog: "Unable to update stream servers of upstream",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			logBuf := &bytes.Buffer{}
+			stub.StubLoggerWith(logBuf)
+
+			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
+			fakeResourceService.InstanceReturns(test.instance)
+			fakeResourceService.UpdateStreamServersReturnsOnCall(0, test.upstreams, []client.StreamUpstreamServer{},
+				[]client.StreamUpstreamServer{}, test.err)
+			fakeResourceService.UpdateStreamServersReturnsOnCall(0, test.upstreams, []client.StreamUpstreamServer{},
+				[]client.StreamUpstreamServer{}, test.err)
+
+			messagePipe := busfakes.NewFakeMessagePipe()
+
+			resourcePlugin := NewResource(types.AgentConfig())
+			resourcePlugin.resourceService = fakeResourceService
+
+			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
+			require.NoError(tt, err)
+
+			resourcePlugin.messagePipe = messagePipe
+
+			resourcePlugin.Process(ctx, test.message)
+
+			assert.Equal(tt, test.topic[0], messagePipe.GetMessages()[0].Topic)
+
+			response, ok := messagePipe.GetMessages()[0].Data.(*mpi.DataPlaneResponse)
+			assert.True(tt, ok)
+
+			if test.err != nil {
+				assert.Equal(tt, mpi.CommandResponse_COMMAND_STATUS_FAILURE, response.GetCommandResponse().GetStatus())
+			} else {
+				assert.Empty(tt, response.GetCommandResponse().GetError())
+				assert.Equal(tt, mpi.CommandResponse_COMMAND_STATUS_OK, response.GetCommandResponse().GetStatus())
+			}
+
+			helpers.ValidateLog(tt, test.expectedLog, logBuf)
+		})
+	}
+}
+
+// nolint: dupl
+func TestResource_Process_APIAction_GetStreamUpstreams(t *testing.T) {
+	ctx := context.Background()
+
+	inValidInstance := protos.GetNginxPlusInstance([]string{})
+	inValidInstance.InstanceMeta.InstanceId = "e1374cb1-462d-3b6c-9f3b-f28332b5f10f"
+
+	tests := []struct {
+		instance  *mpi.Instance
+		upstreams *client.StreamUpstreams
+		name      string
+		message   *bus.Message
+		err       error
+		topic     []string
+	}{
+		{
+			name: "Test 1: Success, Get Stream Upstreams API Action",
+			message: &bus.Message{
+				Topic: bus.APIActionRequestTopic,
+				Data: protos.CreateAPIActionRequestNginxPlusGetStreamUpstreams(
+					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+			},
+			err: nil,
+			upstreams: &client.StreamUpstreams{
+				"upstream_1": client.StreamUpstream{
+					Zone: "zone_1",
+					Peers: []client.StreamPeer{
+						{
+							Server: "server_1",
+						},
+					},
+					Zombies: 0,
+				},
+			},
+			topic:    []string{bus.DataPlaneResponseTopic},
+			instance: protos.GetNginxPlusInstance([]string{}),
+		},
+		{
+			name: "Test 2: Fail, Get Stream Upstreams API Action",
+			message: &bus.Message{
+				Topic: bus.APIActionRequestTopic,
+				Data: protos.CreateAPIActionRequestNginxPlusGetStreamUpstreams(
+					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+			},
+			err: errors.New("failed to get stream upstreams servers"),
+			upstreams: &client.StreamUpstreams{
+				"upstream_1": client.StreamUpstream{
+					Zone: "zone_1",
+					Peers: []client.StreamPeer{
+						{
+							Server: "server_1",
+						},
+					},
+					Zombies: 0,
+				},
+			},
+			topic:    []string{bus.DataPlaneResponseTopic},
+			instance: protos.GetNginxPlusInstance([]string{}),
+		},
+		{
+			name: "Test 3: Fail, No Instance",
+			message: &bus.Message{
+				Topic: bus.APIActionRequestTopic,
+				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
+					protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+			},
+			err: errors.New("failed to preform API action, could not find instance with ID: " +
+				"e1374cb1-462d-3b6c-9f3b-f28332b5f10c"),
+			upstreams: &client.StreamUpstreams{
+				"upstream_1": client.StreamUpstream{
+					Zone: "zone_1",
+					Peers: []client.StreamPeer{
+						{
+							Server: "server_1",
+						},
+					},
+					Zombies: 0,
+				},
+			},
+			topic:    []string{bus.DataPlaneResponseTopic},
+			instance: inValidInstance,
+		},
+		{
+			name: "Test 4: Fail, OSS Instance",
+			message: &bus.Message{
+				Topic: bus.APIActionRequestTopic,
+				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
+					protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+			},
+			err: errors.New("failed to preform API action, instance is not NGINX Plus"),
+			upstreams: &client.StreamUpstreams{
+				"upstream_1": client.StreamUpstream{
+					Zone: "zone_1",
+					Peers: []client.StreamPeer{
+						{
+							Server: "server_1",
+						},
+					},
+					Zombies: 0,
+				},
+			},
+			topic:    []string{bus.DataPlaneResponseTopic},
+			instance: protos.GetNginxOssInstance([]string{}),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
+			fakeResourceService.GetStreamUpstreamsReturns(test.upstreams, test.err)
+			if test.instance.GetInstanceMeta().GetInstanceId() != "e1374cb1-462d-3b6c-9f3b-f28332b5f10f" {
+				fakeResourceService.InstanceReturns(test.instance)
+			}
+
+			messagePipe := busfakes.NewFakeMessagePipe()
+
+			resourcePlugin := NewResource(types.AgentConfig())
+			resourcePlugin.resourceService = fakeResourceService
+
+			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
+			require.NoError(t, err)
+
+			resourcePlugin.messagePipe = messagePipe
+
+			resourcePlugin.Process(ctx, test.message)
+
+			assert.Equal(t, test.topic[0], messagePipe.GetMessages()[0].Topic)
+
+			response, ok := messagePipe.GetMessages()[0].Data.(*mpi.DataPlaneResponse)
+			assert.True(tt, ok)
+
+			if test.err != nil {
+				assert.Equal(tt, test.err.Error(), response.GetCommandResponse().GetError())
+				assert.Equal(tt, mpi.CommandResponse_COMMAND_STATUS_FAILURE, response.GetCommandResponse().GetStatus())
+			} else {
+				assert.Empty(t, response.GetCommandResponse().GetError())
+				assert.Equal(tt, mpi.CommandResponse_COMMAND_STATUS_OK, response.GetCommandResponse().GetStatus())
+			}
+		})
+	}
+}
+
+// nolint: dupl
+func TestResource_Process_APIAction_GetUpstreams(t *testing.T) {
+	ctx := context.Background()
+
+	inValidInstance := protos.GetNginxPlusInstance([]string{})
+	inValidInstance.InstanceMeta.InstanceId = "e1374cb1-462d-3b6c-9f3b-f28332b5f10f"
+
+	tests := []struct {
+		instance  *mpi.Instance
+		upstreams *client.Upstreams
+		name      string
+		message   *bus.Message
+		err       error
+		topic     []string
+	}{
+		{
+			name: "Test 1: Success, Get Upstreams API Action",
+			message: &bus.Message{
+				Topic: bus.APIActionRequestTopic,
+				Data: protos.CreateAPIActionRequestNginxPlusGetUpstreams(
+					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+			},
+			err: nil,
+			upstreams: &client.Upstreams{
+				"upstream_1": client.Upstream{
+					Zone: "zone_1",
+					Peers: []client.Peer{
+						{
+							Server: "server_1",
+						},
+					},
+					Queue:     client.Queue{},
+					Keepalive: 6,
+					Zombies:   0,
+				},
+			},
+			topic:    []string{bus.DataPlaneResponseTopic},
+			instance: protos.GetNginxPlusInstance([]string{}),
+		},
+		{
+			name: "Test 2: Fail, Get Upstreams API Action",
+			message: &bus.Message{
+				Topic: bus.APIActionRequestTopic,
+				Data: protos.CreateAPIActionRequestNginxPlusGetUpstreams(
+					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+			},
+			err: errors.New("failed to get upstreams"),
+			upstreams: &client.Upstreams{
+				"upstream_1": client.Upstream{
+					Zone: "zone_1",
+					Peers: []client.Peer{
+						{
+							Server: "server_1",
+						},
+					},
+					Queue:     client.Queue{},
+					Keepalive: 6,
+					Zombies:   0,
+				},
+			},
+			topic:    []string{bus.DataPlaneResponseTopic},
+			instance: protos.GetNginxPlusInstance([]string{}),
+		},
+		{
+			name: "Test 3: Fail, No Instance",
+			message: &bus.Message{
+				Topic: bus.APIActionRequestTopic,
+				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
+					protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+			},
+			err: errors.New("failed to preform API action, could not find instance with ID: " +
+				"e1374cb1-462d-3b6c-9f3b-f28332b5f10c"),
+			upstreams: &client.Upstreams{
+				"upstream_1": client.Upstream{
+					Zone: "zone_1",
+					Peers: []client.Peer{
+						{
+							Server: "server_1",
+						},
+					},
+					Queue:     client.Queue{},
+					Keepalive: 6,
+					Zombies:   0,
+				},
+			},
+			topic:    []string{bus.DataPlaneResponseTopic},
+			instance: inValidInstance,
+		},
+		{
+			name: "Test 4: Fail, OSS Instance",
+			message: &bus.Message{
+				Topic: bus.APIActionRequestTopic,
+				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
+					protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+			},
+			err: errors.New("failed to preform API action, instance is not NGINX Plus"),
+			upstreams: &client.Upstreams{
+				"upstream_1": client.Upstream{
+					Zone: "zone_1",
+					Peers: []client.Peer{
+						{
+							Server: "server_1",
+						},
+					},
+					Queue:     client.Queue{},
+					Keepalive: 6,
+					Zombies:   0,
+				},
+			},
+			topic:    []string{bus.DataPlaneResponseTopic},
+			instance: protos.GetNginxOssInstance([]string{}),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
+			fakeResourceService.GetUpstreamsReturns(test.upstreams, test.err)
+			if test.instance.GetInstanceMeta().GetInstanceId() != "e1374cb1-462d-3b6c-9f3b-f28332b5f10f" {
+				fakeResourceService.InstanceReturns(test.instance)
+			}
+
+			messagePipe := busfakes.NewFakeMessagePipe()
+
+			resourcePlugin := NewResource(types.AgentConfig())
+			resourcePlugin.resourceService = fakeResourceService
+
+			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
+			require.NoError(t, err)
+
+			resourcePlugin.messagePipe = messagePipe
+
+			resourcePlugin.Process(ctx, test.message)
+
+			assert.Equal(t, test.topic[0], messagePipe.GetMessages()[0].Topic)
+
+			response, ok := messagePipe.GetMessages()[0].Data.(*mpi.DataPlaneResponse)
+			assert.True(tt, ok)
+
+			if test.err != nil {
+				assert.Equal(tt, test.err.Error(), response.GetCommandResponse().GetError())
+				assert.Equal(tt, mpi.CommandResponse_COMMAND_STATUS_FAILURE, response.GetCommandResponse().GetStatus())
+			} else {
+				assert.Empty(t, response.GetCommandResponse().GetError())
+				assert.Equal(tt, mpi.CommandResponse_COMMAND_STATUS_OK, response.GetCommandResponse().GetStatus())
+			}
 		})
 	}
 }

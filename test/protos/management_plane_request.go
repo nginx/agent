@@ -42,6 +42,42 @@ func CreatAPIActionRequestNginxPlusGetHTTPServers(upstream, instanceID string) *
 	}
 }
 
+func CreateAPIActionRequestNginxPlusGetUpstreams(instanceID string) *mpi.ManagementPlaneRequest {
+	return &mpi.ManagementPlaneRequest{
+		MessageMeta: CreateMessageMeta(),
+		Request: &mpi.ManagementPlaneRequest_ActionRequest{
+			ActionRequest: &mpi.APIActionRequest{
+				InstanceId: instanceID,
+				Action: &mpi.APIActionRequest_NginxPlusAction{
+					NginxPlusAction: &mpi.NGINXPlusAction{
+						Action: &mpi.NGINXPlusAction_GetUpstreams{
+							GetUpstreams: &mpi.GetUpstreams{},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func CreateAPIActionRequestNginxPlusGetStreamUpstreams(instanceID string) *mpi.ManagementPlaneRequest {
+	return &mpi.ManagementPlaneRequest{
+		MessageMeta: CreateMessageMeta(),
+		Request: &mpi.ManagementPlaneRequest_ActionRequest{
+			ActionRequest: &mpi.APIActionRequest{
+				InstanceId: instanceID,
+				Action: &mpi.APIActionRequest_NginxPlusAction{
+					NginxPlusAction: &mpi.NGINXPlusAction{
+						Action: &mpi.NGINXPlusAction_GetStreamUpstreams{
+							GetStreamUpstreams: &mpi.GetStreamUpstreams{},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func CreatAPIActionRequestNginxPlusUpdateHTTPServers(upstream, instanceID string,
 	servers []*structpb.Struct,
 ) *mpi.ManagementPlaneRequest {
@@ -56,6 +92,29 @@ func CreatAPIActionRequestNginxPlusUpdateHTTPServers(upstream, instanceID string
 							UpdateHttpUpstreamServers: &mpi.UpdateHTTPUpstreamServers{
 								HttpUpstreamName: upstream,
 								Servers:          servers,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func CreateAPIActionRequestNginxPlusUpdateStreamServers(upstream, instanceID string,
+	servers []*structpb.Struct,
+) *mpi.ManagementPlaneRequest {
+	return &mpi.ManagementPlaneRequest{
+		MessageMeta: CreateMessageMeta(),
+		Request: &mpi.ManagementPlaneRequest_ActionRequest{
+			ActionRequest: &mpi.APIActionRequest{
+				InstanceId: instanceID,
+				Action: &mpi.APIActionRequest_NginxPlusAction{
+					NginxPlusAction: &mpi.NGINXPlusAction{
+						Action: &mpi.NGINXPlusAction_UpdateStreamServers{
+							UpdateStreamServers: &mpi.UpdateStreamServers{
+								Servers:            servers,
+								UpstreamStreamName: upstream,
 							},
 						},
 					},

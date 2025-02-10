@@ -19,7 +19,7 @@ import (
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/watcher/process"
-	"google.golang.org/protobuf/types/known/structpb"
+	"github.com/nginx/agent/v3/pkg/nginxprocess"
 )
 
 const defaultAgentPath = "/run/nginx-agent"
@@ -32,7 +32,7 @@ const defaultAgentPath = "/run/nginx-agent"
 
 type (
 	processParser interface {
-		Parse(ctx context.Context, processes []*model.Process) map[string]*mpi.Instance
+		Parse(ctx context.Context, processes []*nginxprocess.Process) map[string]*mpi.Instance
 	}
 
 	nginxConfigParser interface {
@@ -286,6 +286,11 @@ func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *mpi.Instan
 		slog.WarnContext(ctx, "Unable to read process location, defaulting to /var/run/nginx-agent", "error", err)
 	}
 
+	labels, convertErr := mpi.ConvertToStructs(iw.agentConfig.Labels)
+	if convertErr != nil {
+		slog.WarnContext(ctx, "Unable to convert config to labels structure", "error", convertErr)
+	}
+
 	return &mpi.Instance{
 		InstanceMeta: &mpi.InstanceMeta{
 			InstanceId:   iw.agentConfig.UUID,
@@ -299,7 +304,7 @@ func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *mpi.Instan
 					Command:           config.ToCommandProto(iw.agentConfig.Command),
 					Metrics:           &mpi.MetricsServer{},
 					File:              &mpi.FileServer{},
-					Labels:            []*structpb.Struct{},
+					Labels:            labels,
 					Features:          iw.agentConfig.Features,
 					MessageBufferSize: "",
 				},

@@ -928,6 +928,20 @@ func TestNginxConfigParser_ignoreLog(t *testing.T) {
 			expected:    false,
 			expectedLog: "Log being read is outside of allowed directories",
 		},
+		{
+			name:        "Test 10: log stderr",
+			logPath:     "stderr",
+			excludeLogs: []string{},
+			expected:    true,
+			expectedLog: "",
+		},
+		{
+			name:        "Test 11: log stdout",
+			logPath:     "stdout",
+			excludeLogs: []string{},
+			expected:    true,
+			expectedLog: "",
+		},
 	}
 
 	for _, test := range tests {

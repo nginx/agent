@@ -33,8 +33,10 @@ const (
 	// 2024-11-06T17:19:24+00:00 ---> Nov  6 17:19:24
 	// 2024-11-16T17:19:24+00:00 ---> Nov 16 17:19:24
 	timestampConversionExpression = `'EXPR(let timestamp = split(split(body, ">")[1], " ")[0]; ` +
-		`let newTimestamp = timestamp matches "(\\d{4})-(\\d{2})-(0\\d{1})T(\\d{2}):(\\d{2}):(\\d{2}).*" ` +
-		`? date(timestamp).Format("Jan  2 15:04:05") : date(timestamp).Format("Jan 02 15:04:05"); ` +
+		`let newTimestamp = ` +
+		`timestamp matches "(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2}):(\\d{2})([+-]\\d{2}:\\d{2}|Z)" ` +
+		`? (let utcTime = ` +
+		`date(timestamp).UTC(); utcTime.Format("Jan  2 15:04:05")) : date(timestamp).Format("Jan 02 15:04:05"); ` +
 		`split(body, ">")[0] + ">" + newTimestamp + " " + split(body, " ", 2)[1])'`
 )
 
@@ -203,9 +205,9 @@ func (oc *Collector) Close(ctx context.Context) error {
 		oc.service.Shutdown()
 		oc.cancel()
 
-		settings := oc.config.Common
+		settings := oc.config.Client.Backoff
 		settings.MaxElapsedTime = maxTimeToWaitForShutdown
-		err := backoff.WaitUntil(ctx, oc.config.Common, func() error {
+		err := backoff.WaitUntil(ctx, settings, func() error {
 			if oc.service.GetState() == otelcol.StateClosed {
 				return nil
 			}
@@ -539,7 +541,50 @@ func (oc *Collector) updateTcplogReceivers(nginxConfigContext *model.NginxConfig
 		}
 	}
 
-	return newTcplogReceiverAdded
+	tcplogReceiverDeleted := oc.areNapReceiversDeleted(nginxConfigContext)
+
+	return newTcplogReceiverAdded || tcplogReceiverDeleted
+}
+
+func (oc *Collector) areNapReceiversDeleted(nginxConfigContext *model.NginxConfigContext) bool {
+	listenAddressesToBeDeleted := oc.getConfigDeletedNapReceivers(nginxConfigContext)
+	if len(listenAddressesToBeDeleted) != 0 {
+		oc.deleteNapReceivers(listenAddressesToBeDeleted)
+		return true
+	}
+
+	return false
+}
+
+func (oc *Collector) deleteNapReceivers(listenAddressesToBeDeleted map[string]bool) {
+	filteredReceivers := (oc.config.Collector.Receivers.TcplogReceivers)[:0]
+	for _, receiver := range oc.config.Collector.Receivers.TcplogReceivers {
+		if !listenAddressesToBeDeleted[receiver.ListenAddress] {
+			filteredReceivers = append(filteredReceivers, receiver)
+		}
+	}
+	oc.config.Collector.Receivers.TcplogReceivers = filteredReceivers
+}
+
+func (oc *Collector) getConfigDeletedNapReceivers(nginxConfigContext *model.NginxConfigContext) map[string]bool {
+	elements := make(map[string]bool)
+
+	for _, tcplogReceiver := range oc.config.Collector.Receivers.TcplogReceivers {
+		elements[tcplogReceiver.ListenAddress] = true
+	}
+
+	if nginxConfigContext.NAPSysLogServers != nil {
+		addressesToDelete := make(map[string]bool)
+		for _, napAddress := range nginxConfigContext.NAPSysLogServers {
+			if !elements[napAddress] {
+				addressesToDelete[napAddress] = true
+			}
+		}
+
+		return addressesToDelete
+	}
+
+	return elements
 }
 
 func (oc *Collector) doesTcplogReceiverAlreadyExist(listenAddress string) bool {
