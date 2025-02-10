@@ -223,6 +223,7 @@ func (oc *Collector) Close(ctx context.Context) error {
 			slog.ErrorContext(ctx, "Failed to shutdown OTel Collector", "error", err, "state", oc.service.GetState())
 		} else {
 			slog.InfoContext(ctx, "OTel Collector shutdown", "state", oc.service.GetState())
+			oc.stopped = true
 		}
 	}
 
