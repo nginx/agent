@@ -33,6 +33,16 @@ type FakeCommandService struct {
 	isConnectedReturnsOnCall map[int]struct {
 		result1 bool
 	}
+	ResourceStub        func() *v1.Resource
+	resourceMutex       sync.RWMutex
+	resourceArgsForCall []struct {
+	}
+	resourceReturns struct {
+		result1 *v1.Resource
+	}
+	resourceReturnsOnCall map[int]struct {
+		result1 *v1.Resource
+	}
 	SendDataPlaneResponseStub        func(context.Context, *v1.DataPlaneResponse) error
 	sendDataPlaneResponseMutex       sync.RWMutex
 	sendDataPlaneResponseArgsForCall []struct {
@@ -49,6 +59,11 @@ type FakeCommandService struct {
 	subscribeMutex       sync.RWMutex
 	subscribeArgsForCall []struct {
 		arg1 context.Context
+	}
+	UpdateClientStub        func(v1.CommandServiceClient)
+	updateClientMutex       sync.RWMutex
+	updateClientArgsForCall []struct {
+		arg1 v1.CommandServiceClient
 	}
 	UpdateDataPlaneHealthStub        func(context.Context, []*v1.InstanceHealth) error
 	updateDataPlaneHealthMutex       sync.RWMutex
@@ -196,6 +211,59 @@ func (fake *FakeCommandService) IsConnectedReturnsOnCall(i int, result1 bool) {
 	}{result1}
 }
 
+func (fake *FakeCommandService) Resource() *v1.Resource {
+	fake.resourceMutex.Lock()
+	ret, specificReturn := fake.resourceReturnsOnCall[len(fake.resourceArgsForCall)]
+	fake.resourceArgsForCall = append(fake.resourceArgsForCall, struct {
+	}{})
+	stub := fake.ResourceStub
+	fakeReturns := fake.resourceReturns
+	fake.recordInvocation("Resource", []interface{}{})
+	fake.resourceMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeCommandService) ResourceCallCount() int {
+	fake.resourceMutex.RLock()
+	defer fake.resourceMutex.RUnlock()
+	return len(fake.resourceArgsForCall)
+}
+
+func (fake *FakeCommandService) ResourceCalls(stub func() *v1.Resource) {
+	fake.resourceMutex.Lock()
+	defer fake.resourceMutex.Unlock()
+	fake.ResourceStub = stub
+}
+
+func (fake *FakeCommandService) ResourceReturns(result1 *v1.Resource) {
+	fake.resourceMutex.Lock()
+	defer fake.resourceMutex.Unlock()
+	fake.ResourceStub = nil
+	fake.resourceReturns = struct {
+		result1 *v1.Resource
+	}{result1}
+}
+
+func (fake *FakeCommandService) ResourceReturnsOnCall(i int, result1 *v1.Resource) {
+	fake.resourceMutex.Lock()
+	defer fake.resourceMutex.Unlock()
+	fake.ResourceStub = nil
+	if fake.resourceReturnsOnCall == nil {
+		fake.resourceReturnsOnCall = make(map[int]struct {
+			result1 *v1.Resource
+		})
+	}
+	fake.resourceReturnsOnCall[i] = struct {
+		result1 *v1.Resource
+	}{result1}
+}
+
 func (fake *FakeCommandService) SendDataPlaneResponse(arg1 context.Context, arg2 *v1.DataPlaneResponse) error {
 	fake.sendDataPlaneResponseMutex.Lock()
 	ret, specificReturn := fake.sendDataPlaneResponseReturnsOnCall[len(fake.sendDataPlaneResponseArgsForCall)]
@@ -287,6 +355,38 @@ func (fake *FakeCommandService) SubscribeArgsForCall(i int) context.Context {
 	fake.subscribeMutex.RLock()
 	defer fake.subscribeMutex.RUnlock()
 	argsForCall := fake.subscribeArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeCommandService) UpdateClient(arg1 v1.CommandServiceClient) {
+	fake.updateClientMutex.Lock()
+	fake.updateClientArgsForCall = append(fake.updateClientArgsForCall, struct {
+		arg1 v1.CommandServiceClient
+	}{arg1})
+	stub := fake.UpdateClientStub
+	fake.recordInvocation("UpdateClient", []interface{}{arg1})
+	fake.updateClientMutex.Unlock()
+	if stub != nil {
+		fake.UpdateClientStub(arg1)
+	}
+}
+
+func (fake *FakeCommandService) UpdateClientCallCount() int {
+	fake.updateClientMutex.RLock()
+	defer fake.updateClientMutex.RUnlock()
+	return len(fake.updateClientArgsForCall)
+}
+
+func (fake *FakeCommandService) UpdateClientCalls(stub func(v1.CommandServiceClient)) {
+	fake.updateClientMutex.Lock()
+	defer fake.updateClientMutex.Unlock()
+	fake.UpdateClientStub = stub
+}
+
+func (fake *FakeCommandService) UpdateClientArgsForCall(i int) v1.CommandServiceClient {
+	fake.updateClientMutex.RLock()
+	defer fake.updateClientMutex.RUnlock()
+	argsForCall := fake.updateClientArgsForCall[i]
 	return argsForCall.arg1
 }
 
@@ -426,10 +526,14 @@ func (fake *FakeCommandService) Invocations() map[string][][]interface{} {
 	defer fake.createConnectionMutex.RUnlock()
 	fake.isConnectedMutex.RLock()
 	defer fake.isConnectedMutex.RUnlock()
+	fake.resourceMutex.RLock()
+	defer fake.resourceMutex.RUnlock()
 	fake.sendDataPlaneResponseMutex.RLock()
 	defer fake.sendDataPlaneResponseMutex.RUnlock()
 	fake.subscribeMutex.RLock()
 	defer fake.subscribeMutex.RUnlock()
+	fake.updateClientMutex.RLock()
+	defer fake.updateClientMutex.RUnlock()
 	fake.updateDataPlaneHealthMutex.RLock()
 	defer fake.updateDataPlaneHealthMutex.RUnlock()
 	fake.updateDataPlaneStatusMutex.RLock()
