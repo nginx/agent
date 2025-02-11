@@ -433,19 +433,18 @@ func TestInfo_ContainerInfo(t *testing.T) {
 	require.NoError(t, err)
 
 	releaseInfo := &v1.ReleaseInfo{
-		Codename:  "focal",
+		Codename:  "jammy",
 		Id:        "ubuntu",
 		Name:      "Ubuntu",
-		VersionId: "20.04",
-		Version:   "20.04.5 LTS (Focal Fossa)",
+		VersionId: "22.04",
+		Version:   "22.04.5 LTS (Jammy Jellyfish)",
 	}
 
 	tests := []struct {
-		name                  string
-		mountInfo             string
-		expectContainerID     string
-		expectHostname        string
-		expectedOSReleaseInfo string
+		name              string
+		mountInfo         string
+		expectContainerID string
+		expectHostname    string
 	}{
 		{
 			name:              "unknown cgroups format",
