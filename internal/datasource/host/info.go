@@ -302,7 +302,7 @@ func (i *Info) getReleaseInfo(ctx context.Context, osReleaseLocation string) (re
 
 		return hostReleaseInfo
 	}
-	
+
 	return mergeHostAndOsReleaseInfo(hostReleaseInfo, osRelease)
 }
 

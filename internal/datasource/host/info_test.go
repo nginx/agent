@@ -518,7 +518,7 @@ func TestInfo_ContainerInfo(t *testing.T) {
 			execMock.HostnameReturns(test.expectHostname, nil)
 			execMock.ReleaseInfoReturns(releaseInfo)
 
-			_, err := mountInfoFile.WriteString(test.mountInfo)
+			_, err = mountInfoFile.WriteString(test.mountInfo)
 			require.NoError(tt, err)
 
 			err = mountInfoFile.Close()
