@@ -7,6 +7,39 @@
 
 package crossplane
 
+// Upgrade for .gen.go files. If you don't have access to some private modules,
+// please use -skip options to skip them. e.g. go generate -skip="nap".
+
+// Update for headersmore
+//go:generate sh -c "sh ./scripts/generate/generate.sh --url https://github.com/openresty/headers-more-nginx-module.git --config-path ./scripts/generate/configs/headersmore_config.json > ./analyze_headersMore_directives.gen.go"
+
+// Update for njs
+//go:generate sh -c "sh ./scripts/generate/generate.sh --url https://github.com/nginx/njs.git --config-path ./scripts/generate/configs/njs_config.json > ./analyze_njs_directives.gen.go"
+
+// Update for OSS, filter in config is the directives not in https://nginx.org/en/docs/dirindex.html but in source code.
+// Override in config is for the "if" directive. We create a bitmask ngxConfExpr for it in crossplane, which is not in source code.
+//go:generate sh -c "sh ./scripts/generate/generate.sh --url https://github.com/nginx/nginx.git --config-path ./scripts/generate/configs/oss_latest_config.json > ./analyze_oss_latest_directives.gen.go"
+//go:generate sh -c "sh ./scripts/generate/generate.sh --url https://github.com/nginx/nginx.git --config-path ./scripts/generate/configs/oss_126_config.json --branch branches/stable-1.26 > ./analyze_oss_126_directives.gen.go"
+//go:generate sh -c "sh ./scripts/generate/generate.sh --url https://github.com/nginx/nginx.git --config-path ./scripts/generate/configs/oss_124_config.json --branch branches/stable-1.24 > ./analyze_oss_124_directives.gen.go"
+
+// Update for lua, override is for the lua block directives, see https://github.com/nginxinc/nginx-go-crossplane/pull/86.
+//go:generate sh -c "sh ./scripts/generate/generate.sh --url https://github.com/openresty/lua-nginx-module.git --config-path ./scripts/generate/configs/lua_config.json  --path ./src > ./analyze_lua_directives.gen.go"
+
+// Update for otel. Filter is for some directives withou context.
+// Otel provides its own config handler for some directives and they don't have context. Currently we don't support them.
+//go:generate sh -c "sh ./scripts/generate/generate.sh --url https://github.com/nginxinc/nginx-otel.git --config-path ./scripts/generate/configs/otel_config.json --branch main > ./analyze_otel_directives.gen.go"
+
+// Update for NAP v4 and v5.
+// NAP is a private module. Please ensure you have correct access and put the url.
+// and branch of it in environment variable NAP_URL, NAP_V4_BRANCH, and NAP_V5_BRANCH.
+// Override is for flag dirctives. NAP used ngxConfTake1 for flag directives, we change them to ngxConfFlag in crossplane.
+// NAP v4
+//go:generate sh -c "sh ./scripts/generate/generate.sh --url $NAP_URL --config-path ./scripts/generate/configs/nap_v4_config.json --branch $NAP_V4_BRANCH --path ./src > analyze_appProtectWAFv4_directives.gen.go"
+// NAP v5
+//go:generate sh -c "sh ./scripts/generate/generate.sh --url $NAP_URL --config-path ./scripts/generate/configs/nap_v5_config.json --branch $NAP_V5_BRANCH --path ./src > analyze_appProtectWAFv5_directives.gen.go"
+
+// Update for geoip2
+//go:generate sh -c "sh ./scripts/generate/generate.sh --url https://github.com/leev/ngx_http_geoip2_module.git --config-path ./scripts/generate/configs/geoip2_config.json > ./analyze_geoip2_directives.gen.go"
 import (
 	"fmt"
 )
@@ -219,7 +252,7 @@ func unionBitmaskMaps(maps ...map[string][]uint) map[string][]uint {
 // not provided. It is union of latest Nplus, Njs, and Otel.
 //
 //nolint:gochecknoglobals
-var defaultDirectives = unionBitmaskMaps(ngxPlusLatestDirectives, moduleNjsDirectives, moduleOtelDirectives)
+var defaultDirectives = unionBitmaskMaps(nginxPlusLatestDirectives, njsDirectives, otelDirectives)
 
 func DefaultDirectivesMatchFunc(directive string) ([]uint, bool) {
 	masks, matched := defaultDirectives[directive]

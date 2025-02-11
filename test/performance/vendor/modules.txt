@@ -68,8 +68,6 @@ github.com/hashicorp/hcl/json/token
 github.com/inconshreveable/mousetrap
 # github.com/jstemmer/go-junit-report v1.0.0
 ## explicit; go 1.2
-github.com/jstemmer/go-junit-report
-github.com/jstemmer/go-junit-report/formatter
 github.com/jstemmer/go-junit-report/parser
 # github.com/kelseyhightower/envconfig v1.4.0
 ## explicit
@@ -88,11 +86,8 @@ github.com/lufia/plan9stats
 # github.com/magiconair/properties v1.8.7
 ## explicit; go 1.19
 github.com/magiconair/properties
-# github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1
-## explicit; go 1.20
-github.com/maxbrunsfeld/counterfeiter/v6
-github.com/maxbrunsfeld/counterfeiter/v6/arguments
-github.com/maxbrunsfeld/counterfeiter/v6/command
+# github.com/maxbrunsfeld/counterfeiter/v6 v6.11.2
+## explicit; go 1.23
 github.com/maxbrunsfeld/counterfeiter/v6/generator
 # github.com/minio/highwayhash v1.0.2
 ## explicit; go 1.15
@@ -179,7 +174,7 @@ github.com/nginx/agent/v2/src/extensions/prometheus-metrics
 github.com/nginx/agent/v2/src/plugins
 github.com/nginx/agent/v2/test/utils
 github.com/nginx/agent/v2/test/utils/system
-# github.com/nginxinc/nginx-go-crossplane v0.4.48
+# github.com/nginxinc/nginx-go-crossplane v0.4.70
 ## explicit; go 1.19
 github.com/nginxinc/nginx-go-crossplane
 # github.com/nginxinc/nginx-plus-go-client/v2 v2.0.1
@@ -301,9 +296,10 @@ github.com/spf13/viper/internal/features
 # github.com/stretchr/objx v0.5.2
 ## explicit; go 1.20
 github.com/stretchr/objx
-# github.com/stretchr/testify v1.9.0
+# github.com/stretchr/testify v1.10.0
 ## explicit; go 1.17
 github.com/stretchr/testify/assert
+github.com/stretchr/testify/assert/yaml
 github.com/stretchr/testify/mock
 github.com/stretchr/testify/require
 # github.com/subosito/gotenv v1.6.0
@@ -330,7 +326,7 @@ go.uber.org/atomic
 # go.uber.org/multierr v1.11.0
 ## explicit; go 1.19
 go.uber.org/multierr
-# golang.org/x/crypto v0.31.0
+# golang.org/x/crypto v0.32.0
 ## explicit; go 1.20
 golang.org/x/crypto/bcrypt
 golang.org/x/crypto/blake2b
@@ -354,12 +350,12 @@ golang.org/x/exp/slices
 golang.org/x/exp/slog
 golang.org/x/exp/slog/internal
 golang.org/x/exp/slog/internal/buffer
-# golang.org/x/mod v0.21.0
+# golang.org/x/mod v0.22.0
 ## explicit; go 1.22.0
 golang.org/x/mod/internal/lazyregexp
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/net v0.33.0
+# golang.org/x/net v0.34.0
 ## explicit; go 1.18
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2
@@ -372,7 +368,7 @@ golang.org/x/net/trace
 ## explicit; go 1.18
 golang.org/x/sync/errgroup
 golang.org/x/sync/singleflight
-# golang.org/x/sys v0.28.0
+# golang.org/x/sys v0.29.0
 ## explicit; go 1.18
 golang.org/x/sys/cpu
 golang.org/x/sys/unix
@@ -402,9 +398,8 @@ golang.org/x/text/unicode/norm
 # golang.org/x/time v0.5.0
 ## explicit; go 1.18
 golang.org/x/time/rate
-# golang.org/x/tools v0.25.0
+# golang.org/x/tools v0.29.0
 ## explicit; go 1.22.0
-golang.org/x/tools/cmd/goimports
 golang.org/x/tools/go/ast/astutil
 golang.org/x/tools/go/gcexportdata
 golang.org/x/tools/go/packages
@@ -420,10 +415,10 @@ golang.org/x/tools/internal/gcimporter
 golang.org/x/tools/internal/gocommand
 golang.org/x/tools/internal/gopathwalk
 golang.org/x/tools/internal/imports
+golang.org/x/tools/internal/modindex
 golang.org/x/tools/internal/packagesinternal
 golang.org/x/tools/internal/pkgbits
 golang.org/x/tools/internal/stdlib
-golang.org/x/tools/internal/tokeninternal
 golang.org/x/tools/internal/typeparams
 golang.org/x/tools/internal/typesinternal
 golang.org/x/tools/internal/versions

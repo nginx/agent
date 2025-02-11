@@ -799,6 +799,64 @@ var tests = []struct {
 			"/tmp/testdata/nginx/ca/ca.crt": {},
 		},
 	},
+	{
+		fileName: "/tmp/testdata/nginx/lua.conf",
+		config: `http {
+    server {
+        listen 443 ssl;
+        server_name lua.example.com;
+		
+        #ssl_certificate /etc/nginx/ssl/server.cert;
+        #ssl_certificate_key /etc/nginx/ssl/server.key;
+
+        ssl_certificate_by_lua_block {
+            print("Test lua ssl certificate!")
+        }
+    }
+}`,
+		plusApi: "",
+		expected: &proto.NginxConfig{
+			Action: proto.NginxConfigAction_RETURN,
+			DirectoryMap: &proto.DirectoryMap{
+				Directories: []*proto.Directory{
+					{
+						Name:        "/tmp/testdata/nginx",
+						Permissions: "0755",
+						Files: []*proto.File{
+							{
+								Name:        "lua.conf",
+								Permissions: "0644",
+								Lines:       int32(12),
+							},
+						},
+					},
+				},
+			},
+			AccessLogs: &proto.AccessLogs{
+				AccessLog: []*proto.AccessLog{},
+			},
+			ErrorLogs: &proto.ErrorLogs{
+				ErrorLog: []*proto.ErrorLog{},
+			},
+			ConfigData: &proto.ConfigDescriptor{
+				NginxId:  nginxID,
+				SystemId: systemID,
+				Checksum: "",
+			},
+			Ssl: &proto.SslCertificates{
+				SslCerts: []*proto.SslCertificate{},
+			},
+			// using RootDirectory for allowed in the tests, but the "root" directive is /tmp/testdata/foo, so
+			// should have an empty file list from the aux
+			Zaux: nil,
+			Zconfig: &proto.ZippedFile{
+				Contents:      []uint8{31, 139, 8, 0, 0, 0, 0, 0, 0, 255, 1, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0},
+				Checksum:      "46502784daf997bcbbe63e6ec23ee45cbcc666e6657a581c385d5b1416abeb1d",
+				RootDirectory: "/tmp/testdata/nginx",
+			},
+		},
+		expectedAuxFiles: map[string]struct{}{},
+	},
 }
 
 func TestGetNginxConfigFiles(t *testing.T) {
