@@ -41,6 +41,7 @@ type (
 		subscribeClient              mpi.CommandService_SubscribeClient
 		agentConfig                  *config.Config
 		isConnected                  *atomic.Bool
+		clientUpdated                *atomic.Bool
 		subscribeChannel             chan *mpi.ManagementPlaneRequest
 		configApplyRequestQueue      map[string][]*mpi.ManagementPlaneRequest // key is the instance ID
 		resource                     *mpi.Resource
@@ -58,10 +59,14 @@ func NewCommandService(
 	isConnected := &atomic.Bool{}
 	isConnected.Store(false)
 
+	clientUpdated := &atomic.Bool{}
+	clientUpdated.Store(false)
+
 	commandService := &CommandService{
 		commandServiceClient:    commandServiceClient,
 		agentConfig:             agentConfig,
 		isConnected:             isConnected,
+		clientUpdated:           clientUpdated,
 		subscribeChannel:        subscribeChannel,
 		configApplyRequestQueue: make(map[string][]*mpi.ManagementPlaneRequest),
 		resource:                &mpi.Resource{},
@@ -210,6 +215,10 @@ func (cs *CommandService) CreateConnection(
 		slog.InfoContext(ctx, "No Data Plane Instance found")
 	}
 
+	if cs.isConnected.Load() {
+		return nil, errors.New("command service already connected")
+	}
+
 	request := &mpi.CreateConnectionRequest{
 		MessageMeta: &mpi.MessageMeta{
 			MessageId:     id.GenerateMessageID(),
@@ -228,7 +237,6 @@ func (cs *CommandService) CreateConnection(
 	}
 
 	slog.DebugContext(ctx, "Sending create connection request", "request", request)
-
 	response, err := backoff.RetryWithData(
 		cs.connectCallback(ctx, request),
 		backoffHelpers.Context(ctx, commonSettings),
@@ -247,6 +255,17 @@ func (cs *CommandService) CreateConnection(
 	cs.resource = resource
 
 	return response, nil
+}
+
+func (cs *CommandService) UpdateClient(client mpi.CommandServiceClient) {
+	cs.commandServiceClient = client
+	cs.clientUpdated.Store(true)
+}
+
+func (cs *CommandService) Resource() *mpi.Resource {
+	cs.resourceMutex.Lock()
+	defer cs.resourceMutex.Unlock()
+	return cs.resource
 }
 
 // Retry callback for sending a data plane response to the Management Plane.
