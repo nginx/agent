@@ -144,6 +144,7 @@ func (i *Info) ContainerInfo(ctx context.Context) *v1.Resource_ContainerInfo {
 		ContainerInfo: &v1.ContainerInfo{
 			ContainerId: i.getContainerID(),
 			Hostname:    hostname,
+			ReleaseInfo: i.getReleaseInfo(ctx, i.osReleaseLocation),
 		},
 	}
 }
@@ -301,7 +302,7 @@ func (i *Info) getReleaseInfo(ctx context.Context, osReleaseLocation string) (re
 
 		return hostReleaseInfo
 	}
-
+	
 	return mergeHostAndOsReleaseInfo(hostReleaseInfo, osRelease)
 }
 

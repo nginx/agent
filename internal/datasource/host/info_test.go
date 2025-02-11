@@ -426,11 +426,26 @@ func TestInfo_IsContainer(t *testing.T) {
 
 func TestInfo_ContainerInfo(t *testing.T) {
 	ctx := context.Background()
+
+	osReleaseFile := helpers.CreateFileWithErrorCheck(t, os.TempDir(), "os-release")
+	defer helpers.RemoveFileWithErrorCheck(t, osReleaseFile.Name())
+	err := os.WriteFile(osReleaseFile.Name(), []byte(ubuntuReleaseInfo), os.ModeAppend)
+	require.NoError(t, err)
+
+	releaseInfo := &v1.ReleaseInfo{
+		Codename:  "focal",
+		Id:        "ubuntu",
+		Name:      "Ubuntu",
+		VersionId: "20.04",
+		Version:   "20.04.5 LTS (Focal Fossa)",
+	}
+
 	tests := []struct {
-		name              string
-		mountInfo         string
-		expectContainerID string
-		expectHostname    string
+		name                  string
+		mountInfo             string
+		expectContainerID     string
+		expectHostname        string
+		expectedOSReleaseInfo string
 	}{
 		{
 			name:              "unknown cgroups format",
@@ -501,6 +516,7 @@ func TestInfo_ContainerInfo(t *testing.T) {
 
 			execMock := &execfakes.FakeExecInterface{}
 			execMock.HostnameReturns(test.expectHostname, nil)
+			execMock.ReleaseInfoReturns(releaseInfo)
 
 			_, err := mountInfoFile.WriteString(test.mountInfo)
 			require.NoError(tt, err)
@@ -515,6 +531,7 @@ func TestInfo_ContainerInfo(t *testing.T) {
 
 			assert.Equal(tt, test.expectContainerID, containerInfo.ContainerInfo.GetContainerId())
 			assert.Equal(tt, test.expectHostname, containerInfo.ContainerInfo.GetHostname())
+			assert.Equal(t, releaseInfo, containerInfo.ContainerInfo.GetReleaseInfo())
 		})
 	}
 }
