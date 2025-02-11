@@ -10,9 +10,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/shirou/gopsutil/v4/process"
+
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/watcher/process/processfakes"
+	"github.com/nginx/agent/v3/pkg/nginxprocess"
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,20 +32,19 @@ func TestNginxHealthWatcherOperator_Health(t *testing.T) {
 	tests := []struct {
 		expected *mpi.InstanceHealth
 		instance *mpi.Instance
-		process  *model.Process
+		process  *nginxprocess.Process
 		err      error
 		name     string
 	}{
 		{
 			name: "Test 1: Healthy Instance",
-			process: &model.Process{
-				PID:     123,
-				PPID:    456,
-				Name:    "nginx",
-				Cmd:     "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
-				Exe:     "/usr/local/Cellar/nginx/1.25.3/bin/nginx",
-				Status:  "running",
-				Running: true,
+			process: &nginxprocess.Process{
+				PID:    instance.GetInstanceRuntime().GetProcessId(),
+				PPID:   456,
+				Name:   "nginx",
+				Cmd:    "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
+				Exe:    "/usr/local/Cellar/nginx/1.25.3/bin/nginx",
+				Status: "running",
 			},
 			expected: &mpi.InstanceHealth{
 				InstanceId:           instance.GetInstanceMeta().GetInstanceId(),
@@ -54,38 +55,34 @@ func TestNginxHealthWatcherOperator_Health(t *testing.T) {
 		},
 		{
 			name: "Test 2: Unhealthy Instance, Not Running",
-			process: &model.Process{
-				PID:     123,
-				PPID:    456,
-				Name:    "nginx",
-				Cmd:     "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
-				Exe:     "/usr/local/Cellar/nginx/1.25.3/bin/nginx",
-				Status:  "sleep",
-				Running: false,
-			},
 			expected: &mpi.InstanceHealth{
-				InstanceId:           instance.GetInstanceMeta().GetInstanceId(),
-				Description:          fmt.Sprintf("PID: %d is unhealthy, status: %s", 123, "sleep"),
+				InstanceId: instance.GetInstanceMeta().GetInstanceId(),
+				Description: fmt.Sprintf(
+					"PID: %d is not running",
+					instance.GetInstanceRuntime().GetProcessId(),
+				),
 				InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNHEALTHY,
 			},
-			err:      nil,
+			err:      process.ErrorProcessNotRunning,
 			instance: instance,
 		},
 		{
 			name: "Test 3: Degraded Instance, Not Children",
-			process: &model.Process{
-				PID:     123,
-				PPID:    456,
-				Name:    "nginx",
-				Cmd:     "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
-				Exe:     "/usr/local/Cellar/nginx/1.25.3/bin/nginx",
-				Status:  "sleep",
-				Running: false,
+			process: &nginxprocess.Process{
+				PID:    instance.GetInstanceRuntime().GetProcessId(),
+				PPID:   456,
+				Name:   "nginx",
+				Cmd:    "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
+				Exe:    "/usr/local/Cellar/nginx/1.25.3/bin/nginx",
+				Status: "zombie",
 			},
 			expected: &mpi.InstanceHealth{
 				InstanceId: instance.GetInstanceMeta().GetInstanceId(),
-				Description: fmt.Sprintf("PID: %d is unhealthy, status: %s, instance "+
-					"does not have enough children", 123, "sleep"),
+				Description: fmt.Sprintf(
+					"PID: %d is unhealthy, status: %s, instance does not have enough children",
+					instance.GetInstanceRuntime().GetProcessId(),
+					"zombie",
+				),
 				InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_DEGRADED,
 			},
 			err:      nil,
