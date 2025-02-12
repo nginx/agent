@@ -189,8 +189,6 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 		}
 		cp.conn = newConnection
 		cp.commandService.UpdateClient(cp.conn.CommandServiceClient())
-		//go cp.monitorSubscribeChannel(ctx)
-		//cp.createConnection(ctx, cp.commandService.Resource())
 		slog.DebugContext(ctx, "Command plugin: client reset successfully")
 	}
 }

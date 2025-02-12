@@ -120,6 +120,24 @@ func TestWatcher_Info(t *testing.T) {
 	assert.Equal(t, &bus.Info{Name: "watcher"}, watcherPlugin.Info())
 }
 
+func TestWatcher_Process_CredentialUpdatedTopic(t *testing.T) {
+	ctx := context.Background()
+
+	watcherPlugin := NewWatcher(types.AgentConfig())
+
+	messagePipe := busfakes.NewFakeMessagePipe()
+
+	err := watcherPlugin.Init(ctx, messagePipe)
+	require.NoError(t, err)
+
+	message := &bus.Message{
+		Topic: bus.CredentialUpdatedTopic,
+		Data:  nil,
+	}
+
+	watcherPlugin.Process(ctx, message)
+}
+
 func TestWatcher_Process_ConfigApplyRequestTopic(t *testing.T) {
 	ctx := context.Background()
 	data := &mpi.ManagementPlaneRequest{

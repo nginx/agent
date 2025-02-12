@@ -143,6 +143,9 @@ func TestCommandPlugin_Process(t *testing.T) {
 	})
 	require.Equal(t, 1, fakeCommandService.UpdateDataPlaneHealthCallCount())
 	require.Equal(t, 1, fakeCommandService.SendDataPlaneResponseCallCount())
+
+	commandPlugin.Process(ctx, &bus.Message{Topic: bus.ConnectionResetTopic, Data: &protos.)
+	require.Equal(t, 1, fakeCommandService.UpdateClientCallCount())
 }
 
 func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {

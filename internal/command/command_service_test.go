@@ -198,6 +198,20 @@ func TestCommandService_CreateConnection(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestCommandService_UpdateClient(t *testing.T) {
+	//ctx := context.Background()
+	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
+
+	commandService := NewCommandService(
+		commandServiceClient,
+		types.AgentConfig(),
+		make(chan *mpi.ManagementPlaneRequest),
+	)
+	assert.False(t, commandService.clientUpdated.Load())
+	commandService.UpdateClient(commandServiceClient)
+	assert.True(t, commandService.clientUpdated.Load())
+}
+
 func TestCommandService_UpdateDataPlaneHealth(t *testing.T) {
 	ctx := context.Background()
 	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
