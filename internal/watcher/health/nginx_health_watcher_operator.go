@@ -8,6 +8,7 @@ package health
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
@@ -18,6 +19,7 @@ import (
 type NginxHealthWatcher struct {
 	executer        exec.ExecInterface
 	processOperator processwatcher.ProcessOperatorInterface
+	healthMutex     sync.Mutex
 }
 
 var _ healthWatcherOperator = (*NginxHealthWatcher)(nil)
@@ -26,10 +28,14 @@ func NewNginxHealthWatcher() *NginxHealthWatcher {
 	return &NginxHealthWatcher{
 		executer:        &exec.Exec{},
 		processOperator: processwatcher.NewProcessOperator(),
+		healthMutex:     sync.Mutex{},
 	}
 }
 
 func (nhw *NginxHealthWatcher) Health(ctx context.Context, instance *mpi.Instance) (*mpi.InstanceHealth, error) {
+	nhw.healthMutex.Lock()
+	defer nhw.healthMutex.Unlock()
+
 	health := &mpi.InstanceHealth{
 		InstanceId:           instance.GetInstanceMeta().GetInstanceId(),
 		InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY,

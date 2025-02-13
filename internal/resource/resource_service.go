@@ -160,6 +160,9 @@ func (r *ResourceService) DeleteInstances(instanceList []*mpi.Instance) *mpi.Res
 }
 
 func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) error {
+	r.resourceMutex.Lock()
+	defer r.resourceMutex.Unlock()
+
 	var instance *mpi.Instance
 	operator := r.instanceOperators[instanceID]
 
