@@ -167,8 +167,6 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instanceID 
 func (iw *InstanceWatcherService) checkForUpdates(
 	ctx context.Context,
 ) {
-	iw.cacheMutex.Lock()
-	defer iw.cacheMutex.Unlock()
 
 	var instancesToParse []*mpi.Instance
 	correlationID := logger.GenerateCorrelationID()
@@ -245,6 +243,8 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 	instanceUpdates InstanceUpdates,
 	err error,
 ) {
+	iw.cacheMutex.Lock()
+	defer iw.cacheMutex.Unlock()
 	processes, err := iw.processOperator.Processes(ctx)
 	if err != nil {
 		return instanceUpdates, err

@@ -9,14 +9,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
-	"sync"
-
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
 	response "github.com/nginx/agent/v3/internal/datasource/proto"
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/model"
+	"log/slog"
 
 	"github.com/nginx/agent/v3/internal/bus"
 )
@@ -29,7 +27,6 @@ type Resource struct {
 	messagePipe     bus.MessagePipeInterface
 	resourceService resourceServiceInterface
 	agentConfig     *config.Config
-	resourceMutex   sync.Mutex
 }
 
 type errResponse struct {
@@ -48,8 +45,7 @@ var _ bus.Plugin = (*Resource)(nil)
 
 func NewResource(agentConfig *config.Config) *Resource {
 	return &Resource{
-		agentConfig:   agentConfig,
-		resourceMutex: sync.Mutex{},
+		agentConfig: agentConfig,
 	}
 }
 
@@ -97,8 +93,6 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 
 			return
 		}
-		r.resourceMutex.Lock()
-		defer r.resourceMutex.Unlock()
 		resource := r.resourceService.UpdateInstances(instanceList)
 
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: resource})
