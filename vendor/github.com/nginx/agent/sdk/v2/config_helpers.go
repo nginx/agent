@@ -117,11 +117,15 @@ func GetNginxConfigWithIgnoreDirectives(
 	ignoreDirectives []string,
 ) (*proto.NginxConfig, error) {
 	readLock.Lock()
+	lua := crossplane.Lua{}
 	payload, err := crossplane.Parse(confFile,
 		&crossplane.ParseOptions{
 			IgnoreDirectives:   ignoreDirectives,
 			SingleFile:         false,
 			StopParsingOnError: true,
+			LexOptions: crossplane.LexOptions{
+				Lexers: []crossplane.RegisterLexer{lua.RegisterLexer()},
+			},
 		},
 	)
 	if err != nil {
