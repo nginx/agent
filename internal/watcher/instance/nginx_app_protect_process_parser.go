@@ -11,9 +11,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/nginx/agent/v3/pkg/nginxprocess"
+
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/internal/model"
-	"github.com/nginx/agent/v3/pkg/uuid"
+	"github.com/nginx/agent/v3/pkg/id"
 )
 
 const (
@@ -44,7 +45,10 @@ func NewNginxAppProtectProcessParser() *NginxAppProtectProcessParser {
 	}
 }
 
-func (n NginxAppProtectProcessParser) Parse(ctx context.Context, processes []*model.Process) map[string]*mpi.Instance {
+func (n NginxAppProtectProcessParser) Parse(
+	ctx context.Context,
+	processes []*nginxprocess.Process,
+) map[string]*mpi.Instance {
 	instanceMap := make(map[string]*mpi.Instance) // key is instanceID
 
 	for _, process := range processes {
@@ -82,8 +86,8 @@ func (n NginxAppProtectProcessParser) Parse(ctx context.Context, processes []*mo
 	return instanceMap
 }
 
-func (n NginxAppProtectProcessParser) instanceID(process *model.Process) string {
-	return uuid.Generate("%s", process.Exe)
+func (n NginxAppProtectProcessParser) instanceID(process *nginxprocess.Process) string {
+	return id.Generate("%s", process.Exe)
 }
 
 func (n NginxAppProtectProcessParser) instanceVersion(ctx context.Context) string {

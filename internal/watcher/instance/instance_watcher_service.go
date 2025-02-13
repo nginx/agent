@@ -13,13 +13,15 @@ import (
 	"sync"
 	"time"
 
+	"github.com/nginx/agent/v3/pkg/nginxprocess"
+
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/internal/watcher/process"
+
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/model"
-	"github.com/nginx/agent/v3/internal/watcher/process"
-	"github.com/nginx/agent/v3/pkg/nginxprocess"
 )
 
 const defaultAgentPath = "/run/nginx-agent"
@@ -40,16 +42,17 @@ type (
 	}
 
 	InstanceWatcherService struct {
-		processOperator           process.ProcessOperatorInterface
-		nginxConfigParser         nginxConfigParser
-		executer                  exec.ExecInterface
-		agentConfig               *config.Config
-		instanceCache             map[string]*mpi.Instance
-		nginxConfigCache          map[string]*model.NginxConfigContext
-		instancesChannel          chan<- InstanceUpdatesMessage
-		nginxConfigContextChannel chan<- NginxConfigContextMessage
-		processParsers            []processParser
-		cacheMutex                sync.Mutex
+		processOperator              process.ProcessOperatorInterface
+		nginxConfigParser            nginxConfigParser
+		executer                     exec.ExecInterface
+		agentConfig                  *config.Config
+		instanceCache                map[string]*mpi.Instance
+		nginxConfigCache             map[string]*model.NginxConfigContext
+		instancesChannel             chan<- InstanceUpdatesMessage
+		nginxConfigContextChannel    chan<- NginxConfigContextMessage
+		nginxParser                  processParser
+		nginxAppProtectProcessParser processParser
+		cacheMutex                   sync.Mutex
 	}
 
 	InstanceUpdates struct {
@@ -71,17 +74,15 @@ type (
 
 func NewInstanceWatcherService(agentConfig *config.Config) *InstanceWatcherService {
 	return &InstanceWatcherService{
-		agentConfig:     agentConfig,
-		processOperator: process.NewProcessOperator(),
-		processParsers: []processParser{
-			NewNginxProcessParser(),
-			NewNginxAppProtectProcessParser(),
-		},
-		nginxConfigParser: NewNginxConfigParser(agentConfig),
-		instanceCache:     make(map[string]*mpi.Instance),
-		cacheMutex:        sync.Mutex{},
-		nginxConfigCache:  make(map[string]*model.NginxConfigContext),
-		executer:          &exec.Exec{},
+		agentConfig:                  agentConfig,
+		processOperator:              process.NewProcessOperator(),
+		nginxParser:                  NewNginxProcessParser(),
+		nginxAppProtectProcessParser: NewNginxAppProtectProcessParser(),
+		nginxConfigParser:            NewNginxConfigParser(agentConfig),
+		instanceCache:                make(map[string]*mpi.Instance),
+		cacheMutex:                   sync.Mutex{},
+		nginxConfigCache:             make(map[string]*model.NginxConfigContext),
+		executer:                     &exec.Exec{},
 	}
 }
 
@@ -246,7 +247,7 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 	instanceUpdates InstanceUpdates,
 	err error,
 ) {
-	processes, err := iw.processOperator.Processes(ctx)
+	nginxProcesses, nginxAppProtectProcesses, err := iw.processOperator.Processes(ctx)
 	if err != nil {
 		return instanceUpdates, err
 	}
@@ -256,11 +257,14 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 	agentInstance := iw.agentInstance(ctx)
 	instancesFound[agentInstance.GetInstanceMeta().GetInstanceId()] = agentInstance
 
-	for _, parser := range iw.processParsers {
-		instances := parser.Parse(ctx, processes)
-		for _, instance := range instances {
-			instancesFound[instance.GetInstanceMeta().GetInstanceId()] = instance
-		}
+	nginxInstances := iw.nginxParser.Parse(ctx, nginxProcesses)
+	for _, instance := range nginxInstances {
+		instancesFound[instance.GetInstanceMeta().GetInstanceId()] = instance
+	}
+
+	nginxAppProtectInstances := iw.nginxAppProtectProcessParser.Parse(ctx, nginxAppProtectProcesses)
+	for _, instance := range nginxAppProtectInstances {
+		instancesFound[instance.GetInstanceMeta().GetInstanceId()] = instance
 	}
 	newInstances, updatedInstances, deletedInstances := compareInstances(iw.instanceCache, instancesFound)
 

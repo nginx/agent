@@ -10,8 +10,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/nginx/agent/v3/pkg/nginxprocess"
+
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -42,7 +43,7 @@ func TestNginxAppProtectProcessParser_Parse(t *testing.T) {
 		},
 	}
 
-	processes := []*model.Process{
+	processes := []*nginxprocess.Process{
 		{
 			PID:  789,
 			PPID: 1234,
