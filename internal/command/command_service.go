@@ -265,6 +265,7 @@ func (cs *CommandService) UpdateClient(client mpi.CommandServiceClient) {
 func (cs *CommandService) Resource() *mpi.Resource {
 	cs.resourceMutex.Lock()
 	defer cs.resourceMutex.Unlock()
+
 	return cs.resource
 }
 

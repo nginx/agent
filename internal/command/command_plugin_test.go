@@ -143,7 +143,6 @@ func TestCommandPlugin_Process(t *testing.T) {
 	})
 	require.Equal(t, 1, fakeCommandService.UpdateDataPlaneHealthCallCount())
 	require.Equal(t, 1, fakeCommandService.SendDataPlaneResponseCallCount())
-	
 }
 
 func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {

@@ -199,7 +199,6 @@ func TestCommandService_CreateConnection(t *testing.T) {
 }
 
 func TestCommandService_UpdateClient(t *testing.T) {
-	//ctx := context.Background()
 	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
 
 	commandService := NewCommandService(
