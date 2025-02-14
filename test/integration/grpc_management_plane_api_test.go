@@ -240,12 +240,12 @@ func TestGrpc_ConfigApply(t *testing.T) {
 
 			responses = getManagementPlaneResponses(t, 3)
 			t.Logf("Config apply responses: %v", responses)
-			//assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
-			//assert.Equal(t, "Config apply successful", responses[0].GetCommandResponse().GetMessage())
-			//assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
-			//assert.Equal(t, "Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
-			//assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[2].GetCommandResponse().GetStatus())
-			//assert.Equal(t, "Successfully updated all files", responses[2].GetCommandResponse().GetMessage())
+			// assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+			// assert.Equal(t, "Config apply successful", responses[0].GetCommandResponse().GetMessage())
+			// assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
+			// assert.Equal(t, "Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
+			// assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[2].GetCommandResponse().GetStatus())
+			// assert.Equal(t, "Successfully updated all files", responses[2].GetCommandResponse().GetMessage())
 		}
 	})
 
