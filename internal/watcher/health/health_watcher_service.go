@@ -202,7 +202,7 @@ func (hw *HealthWatcherService) compareHealth(currentHealth map[string]*mpi.Inst
 	defer hw.healthWatcherMutex.Unlock()
 
 	if len(currentHealth) != len(hw.cache) {
-		for _, i := range currentHealth {
+		for _, i := range hw.cache {
 			slog.Info("Health of Instance Current")
 			slog.Info("Instance ID", "", i.GetInstanceId())
 			slog.Info("Instance Status", "", i.GetInstanceHealthStatus())
