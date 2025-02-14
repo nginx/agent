@@ -117,14 +117,19 @@ func GetNginxConfigWithIgnoreDirectives(
 	ignoreDirectives []string,
 ) (*proto.NginxConfig, error) {
 	readLock.Lock()
+	lua := crossplane.Lua{}
 	payload, err := crossplane.Parse(confFile,
 		&crossplane.ParseOptions{
 			IgnoreDirectives:   ignoreDirectives,
 			SingleFile:         false,
 			StopParsingOnError: true,
+			LexOptions: crossplane.LexOptions{
+				Lexers: []crossplane.RegisterLexer{lua.RegisterLexer()},
+			},
 		},
 	)
 	if err != nil {
+		readLock.Unlock()
 		return nil, fmt.Errorf("error reading config from %s, error: %s", confFile, err)
 	}
 
@@ -144,10 +149,11 @@ func GetNginxConfigWithIgnoreDirectives(
 
 	err = updateNginxConfigFromPayload(confFile, payload, nginxConfig, allowedDirectories)
 	if err != nil {
+		readLock.Unlock()
 		return nil, fmt.Errorf("error assemble payload from %s, error: %s", confFile, err)
 	}
-	readLock.Unlock()
 
+	readLock.Unlock()
 	return nginxConfig, nil
 }
 
