@@ -28,7 +28,7 @@ require (
 	github.com/vardius/message-bus v1.1.5
 	go.uber.org/atomic v1.11.0
 	golang.org/x/sync v0.10.0
-	google.golang.org/grpc v1.62.2
+	google.golang.org/grpc v1.64.1
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -83,7 +83,7 @@ require (
 	golang.org/x/mod v0.21.0 // indirect
 	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/tools v0.25.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240123012728-ef4313101c80 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240318140521-94a12d6c2237 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 )
