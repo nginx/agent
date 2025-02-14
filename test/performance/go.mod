@@ -11,7 +11,7 @@ require (
 	github.com/nats-io/nats-server/v2 v2.10.4
 	github.com/nats-io/nats.go v1.31.0
 	github.com/nginx/agent/sdk/v2 v2.0.0-00010101000000-000000000000
-	github.com/nginx/agent/v2 v2.30.3
+	github.com/nginx/agent/v2 v2.0.0-00010101000000-000000000000
 	github.com/prometheus/client_golang v1.19.1
 	github.com/sanity-io/litter v1.5.5
 	github.com/sirupsen/logrus v1.9.3
