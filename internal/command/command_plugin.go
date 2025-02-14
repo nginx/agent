@@ -31,6 +31,8 @@ type (
 		UpdateDataPlaneStatus(ctx context.Context, resource *mpi.Resource) error
 		UpdateDataPlaneHealth(ctx context.Context, instanceHealths []*mpi.InstanceHealth) error
 		SendDataPlaneResponse(ctx context.Context, response *mpi.DataPlaneResponse) error
+		UpdateClient(client mpi.CommandServiceClient)
+		Resource() *mpi.Resource
 		Subscribe(ctx context.Context)
 		IsConnected() bool
 		CreateConnection(ctx context.Context, resource *mpi.Resource) (*mpi.CreateConnectionResponse, error)
@@ -86,6 +88,8 @@ func (cp *CommandPlugin) Info() *bus.Info {
 
 func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
+	case bus.ConnectionResetTopic:
+		cp.processConnectionReset(ctx, msg)
 	case bus.ResourceUpdateTopic:
 		cp.processResourceUpdate(ctx, msg)
 	case bus.InstanceHealthTopic:
@@ -172,8 +176,26 @@ func (cp *CommandPlugin) processDataPlaneResponse(ctx context.Context, msg *bus.
 	}
 }
 
+func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Command plugin received connection reset")
+	if newConnection, ok := msg.Data.(*grpc.GrpcConnection); ok {
+		if !cp.commandService.IsConnected() {
+			slog.DebugContext(ctx, "Command plugin: service is not connected")
+			return
+		}
+		err := cp.conn.Close(ctx)
+		if err != nil {
+			slog.ErrorContext(ctx, "Unable to close connection", "error", err)
+		}
+		cp.conn = newConnection
+		cp.commandService.UpdateClient(cp.conn.CommandServiceClient())
+		slog.DebugContext(ctx, "Command plugin: client reset successfully")
+	}
+}
+
 func (cp *CommandPlugin) Subscriptions() []string {
 	return []string{
+		bus.ConnectionResetTopic,
 		bus.ResourceUpdateTopic,
 		bus.InstanceHealthTopic,
 		bus.DataPlaneHealthResponseTopic,
