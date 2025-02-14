@@ -8,9 +8,11 @@ package file
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -110,18 +112,31 @@ func (fws *FileWatcherService) watchDirectories(ctx context.Context) {
 
 		slog.DebugContext(ctx, "Creating file watchers", "directory", dir)
 
-		err := filepath.Walk(dir, func(path string, info os.FileInfo, fileWalkErr error) error {
-			if fileWalkErr != nil {
-				return fileWalkErr
-			}
-			fws.addWatcher(ctx, path, info)
-
-			return nil
-		})
+		err := fws.walkDir(ctx, dir)
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to create file watchers", "directory", dir, "error", err)
 		}
 	}
+}
+
+func (fws *FileWatcherService) walkDir(ctx context.Context, dir string) error {
+	return filepath.WalkDir(dir, func(path string, d fs.DirEntry, fileWalkErr error) error {
+		if fileWalkErr != nil {
+			return fileWalkErr
+		}
+
+		info, infoErr := d.Info()
+		if infoErr != nil {
+			slog.ErrorContext(ctx, "Error getting info for file", "error", infoErr)
+			return infoErr
+		}
+
+		if d.IsDir() {
+			fws.addWatcher(ctx, path, info)
+		}
+
+		return nil
+	})
 }
 
 func (fws *FileWatcherService) addWatcher(ctx context.Context, path string, info os.FileInfo) {
@@ -164,7 +179,7 @@ func (fws *FileWatcherService) isWatching(name string) bool {
 
 func (fws *FileWatcherService) handleEvent(ctx context.Context, event fsnotify.Event) {
 	if fws.enabled.Load() {
-		if isEventSkippable(event) {
+		if fws.isEventSkippable(event) {
 			slog.DebugContext(ctx, "Skipping FSNotify event", "event", event)
 			return
 		}
@@ -204,10 +219,29 @@ func (fws *FileWatcherService) checkForUpdates(ctx context.Context, ch chan<- Fi
 	}
 }
 
-func isEventSkippable(event fsnotify.Event) bool {
+func (fws *FileWatcherService) isEventSkippable(event fsnotify.Event) bool {
 	return event == emptyEvent ||
-		event.Name == "" ||
-		strings.HasSuffix(event.Name, ".swp") ||
-		strings.HasSuffix(event.Name, ".swx") ||
-		strings.HasSuffix(event.Name, "~")
+		event.Name == "" || isExcludedFile(event.Name, fws.agentConfig.Watchers.FileWatcher.ExcludeFiles)
+}
+
+func isExcludedFile(path string, excludeFiles []string) bool {
+	path = strings.ToLower(path)
+	for _, pattern := range excludeFiles {
+		_, compileErr := regexp.Compile(pattern)
+		if compileErr != nil {
+			slog.Error("Invalid path for excluding file", "file_path", pattern)
+			continue
+		}
+
+		ok, err := regexp.MatchString(pattern, path)
+		if err != nil {
+			slog.Error("Invalid path for excluding file", "file_path", pattern)
+			continue
+		} else if ok {
+			slog.Debug("Excluding file from watcher as specified in config", "file_path", path)
+			return true
+		}
+	}
+
+	return false
 }
