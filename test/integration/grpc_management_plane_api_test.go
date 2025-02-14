@@ -236,7 +236,7 @@ func TestGrpc_ConfigApply(t *testing.T) {
 		} else {
 			// NGINX Plus contains two extra Successfully updated all files responses as the NginxConfigContext
 			// is updated, and the file overview is then updated
-			time.Sleep(5 * time.Second)
+			time.Sleep(20 * time.Second)
 
 			responses = getManagementPlaneResponses(t, 3)
 			t.Logf("Config apply responses: %v", responses)

@@ -219,6 +219,7 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 			w.handleInstanceUpdates(newCtx, message)
 		case message := <-w.nginxConfigContextChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
+			slog.Info("============= Nginx Config Context Channel got Context")
 			w.watcherMutex.Lock()
 			if !slices.Contains(w.instancesWithConfigApplyInProgress, message.NginxConfigContext.InstanceID) {
 				slog.DebugContext(

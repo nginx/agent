@@ -202,14 +202,18 @@ func (hw *HealthWatcherService) compareHealth(currentHealth map[string]*mpi.Inst
 	defer hw.healthWatcherMutex.Unlock()
 
 	if len(currentHealth) != len(hw.cache) {
+		slog.Info("Len of cache different in health watcher cache")
 		return true
 	}
 
 	for key, health := range currentHealth {
 		if !proto.Equal(health, hw.cache[key]) {
+			slog.Info("Health is different", "health", health, "cache", hw.cache[key])
 			return true
 		}
 	}
+
+	slog.Info("No difference in health")
 
 	return false
 }
