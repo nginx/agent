@@ -64,7 +64,7 @@ func validExpr(d *Directive) bool {
 		strings.HasSuffix(d.Args[e], ")") &&
 		((l == 1 && len(d.Args[b]) > 2) || // empty expression single arg '()'
 			(l == 2 && (len(d.Args[b]) > 1 || len(d.Args[e]) > 1)) || // empty expression two args '(', ')'
-			(l > 2)) //nolint: mnd
+			(l > 2))
 }
 
 // prepareIfArgs removes parentheses from an `if` directive's arguments.

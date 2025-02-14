@@ -40,9 +40,8 @@ linters:
 run:
   # 10 minute timeout for analysis
   timeout: 10m
-  modules-download-mode: mod
+  modules-download-mode: vendor
   skip-dirs-use-default: true
-
 
 # Specific linter settings
 linters-settings:
@@ -63,9 +62,6 @@ linters-settings:
     local-prefixes: gitswarm.f5net.com/indigo,gitlab.com/f5
   errcheck:
     ignore: ^Close.*,os:^Setenv.*,fmt:.*,io/ioutil:^Read.*,github.com/spf13/viper:.*,github.com/pkg/errors:^Wrap.*
-  funclen:
-    skip-ifles:
-        - ".*\\.gen\\.go"
 
   lll:
     line-length: 140

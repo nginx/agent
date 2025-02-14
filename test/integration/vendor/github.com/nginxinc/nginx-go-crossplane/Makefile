@@ -1,5 +1,6 @@
 PACKAGE           = $(notdir $(patsubst %/,%,$(dir $(realpath $(lastword $(MAKEFILE_LIST))))))
 OUT_DIR          ?= build
+VENDOR_DIR       ?= vendor
 RESULTS_DIR		 ?= results
 DOCKER_REGISTRY  ?= local
 DOCKER_TAG       ?= latest
@@ -24,6 +25,7 @@ deps:
 	go mod download
 	go mod tidy
 	go mod verify
+	go mod vendor
 
 deps-upgrade:
 	GOFLAGS="" go get -u ./...
@@ -34,7 +36,7 @@ deps-upgrade:
 #######################################
 fmt:
 	$(info Running goimports...)
-	@goimports -w -e $$(find . -type f -name '*.go')
+	@goimports -w -e $$(find . -type f -name '*.go' -not -path "./vendor/*")
 
 test:
 	$(info Running unit tests...)
@@ -58,7 +60,7 @@ lint-docker:
 	docker run --rm -v "${PWD}":/app -w /app golangci/golangci-lint:v1.51.2 golangci-lint run
 
 lint-shell:
-	shellcheck -x $$(find . -name "*.sh" -type f)
+	shellcheck -x $$(find . -name "*.sh" -type f -not -path "./vendor/*")
 
 gen:
 	go generate -x ./...
