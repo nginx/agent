@@ -54,7 +54,7 @@ func BenchmarkNginxConfigParser_Parse(b *testing.B) {
 								InstanceType: mpi.InstanceMeta_INSTANCE_TYPE_NGINX,
 							},
 							InstanceRuntime: &mpi.InstanceRuntime{
-								ConfigPath: &configFilePath,
+								ConfigPath: configFilePath,
 							},
 						},
 					)
@@ -115,7 +115,7 @@ func BenchmarkNginxConfigParserGeneratedConfig_Parse(b *testing.B) {
 							InstanceType: mpi.InstanceMeta_INSTANCE_TYPE_NGINX,
 						},
 						InstanceRuntime: &mpi.InstanceRuntime{
-							ConfigPath: &location,
+							ConfigPath: location,
 						},
 					},
 				)

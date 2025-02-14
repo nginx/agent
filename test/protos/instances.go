@@ -37,14 +37,12 @@ func GetAgentInstance(processID int32, agentConfig *config.Config) *mpi.Instance
 		InstanceRuntime: &mpi.InstanceRuntime{
 			ProcessId:  processID,
 			BinaryPath: "/run/nginx-agent",
-			ConfigPath: &agentConfig.Path,
+			ConfigPath: agentConfig.Path,
 		},
 	}
 }
 
 func GetNginxOssInstance(expectedModules []string) *mpi.Instance {
-	configPath := "/usr/local/etc/nginx/nginx.conf"
-
 	return &mpi.Instance{
 		InstanceMeta: &mpi.InstanceMeta{
 			InstanceId:   ossInstanceID,
@@ -54,7 +52,7 @@ func GetNginxOssInstance(expectedModules []string) *mpi.Instance {
 		InstanceRuntime: &mpi.InstanceRuntime{
 			ProcessId:  processID,
 			BinaryPath: "/usr/local/Cellar/nginx/1.25.3/bin/nginx",
-			ConfigPath: &configPath,
+			ConfigPath: "/usr/local/etc/nginx/nginx.conf",
 			Details: &mpi.InstanceRuntime_NginxRuntimeInfo{
 				NginxRuntimeInfo: &mpi.NGINXRuntimeInfo{
 					StubStatus: &mpi.APIDetails{
@@ -80,8 +78,6 @@ func GetNginxOssInstance(expectedModules []string) *mpi.Instance {
 }
 
 func GetNginxPlusInstance(expectedModules []string) *mpi.Instance {
-	configPath := "/etc/nginx/nginx.conf"
-
 	return &mpi.Instance{
 		InstanceMeta: &mpi.InstanceMeta{
 			InstanceId:   plusInstanceID,
@@ -91,7 +87,7 @@ func GetNginxPlusInstance(expectedModules []string) *mpi.Instance {
 		InstanceRuntime: &mpi.InstanceRuntime{
 			ProcessId:  processID,
 			BinaryPath: "/usr/local/Cellar/nginx/1.25.3/bin/nginx",
-			ConfigPath: &configPath,
+			ConfigPath: "/etc/nginx/nginx.conf",
 			Details: &mpi.InstanceRuntime_NginxPlusRuntimeInfo{
 				NginxPlusRuntimeInfo: &mpi.NGINXPlusRuntimeInfo{
 					StubStatus: &mpi.APIDetails{

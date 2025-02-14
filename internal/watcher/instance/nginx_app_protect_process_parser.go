@@ -70,6 +70,7 @@ func (n NginxAppProtectProcessParser) Parse(
 				InstanceRuntime: &mpi.InstanceRuntime{
 					ProcessId:  process.PID,
 					BinaryPath: binaryPath,
+					ConfigPath: "",
 					Details: &mpi.InstanceRuntime_NginxAppProtectRuntimeInfo{
 						NginxAppProtectRuntimeInfo: &mpi.NGINXAppProtectRuntimeInfo{
 							Release:                n.release(ctx),

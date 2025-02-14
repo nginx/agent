@@ -951,7 +951,7 @@ Meta-information relating to the reported instance
 | ----- | ---- | ----- | ----------- |
 | process_id | [int32](#int32) |  | the process identifier |
 | binary_path | [string](#string) |  | the binary path location |
-| config_path | [string](#string) | optional | the config path location |
+| config_path | [string](#string) |  | the config path location |
 | nginx_runtime_info | [NGINXRuntimeInfo](#mpi-v1-NGINXRuntimeInfo) |  | NGINX runtime configuration settings like stub_status, usually read from the NGINX config or NGINX process |
 | nginx_plus_runtime_info | [NGINXPlusRuntimeInfo](#mpi-v1-NGINXPlusRuntimeInfo) |  | NGINX Plus runtime configuration settings like api value, usually read from the NGINX config, NGINX process or NGINX Plus API |
 | nginx_app_protect_runtime_info | [NGINXAppProtectRuntimeInfo](#mpi-v1-NGINXAppProtectRuntimeInfo) |  | NGINX App Protect runtime information |

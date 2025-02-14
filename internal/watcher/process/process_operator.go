@@ -47,7 +47,7 @@ func nginxFilter(ctx context.Context, p *process.Process) bool {
 
 func napFilter(ctx context.Context, p *process.Process) bool {
 	name, _ := p.NameWithContext(ctx) // slow: shells out to ps
-	return name != "bd-socket-plugin"
+	return name == "bd-socket-plugin"
 }
 
 var _ ProcessOperatorInterface = (*ProcessOperator)(nil)

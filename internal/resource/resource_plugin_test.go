@@ -37,15 +37,13 @@ import (
 func TestResource_Process(t *testing.T) {
 	ctx := context.Background()
 
-	configPath := protos.GetNginxOssInstance([]string{}).GetInstanceRuntime().GetConfigPath()
-
 	updatedInstance := &mpi.Instance{
 		InstanceConfig: protos.GetNginxOssInstance([]string{}).GetInstanceConfig(),
 		InstanceMeta:   protos.GetNginxOssInstance([]string{}).GetInstanceMeta(),
 		InstanceRuntime: &mpi.InstanceRuntime{
 			ProcessId:  56789,
 			BinaryPath: protos.GetNginxOssInstance([]string{}).GetInstanceRuntime().GetBinaryPath(),
-			ConfigPath: &configPath,
+			ConfigPath: protos.GetNginxOssInstance([]string{}).GetInstanceRuntime().GetConfigPath(),
 			Details:    protos.GetNginxOssInstance([]string{}).GetInstanceRuntime().GetDetails(),
 		},
 	}
