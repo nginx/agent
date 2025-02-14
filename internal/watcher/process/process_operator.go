@@ -85,7 +85,12 @@ func (pw *ProcessOperator) Processes(ctx context.Context) (
 }
 
 func (pw *ProcessOperator) Process(ctx context.Context, pid int32) (*nginxprocess.Process, error) {
-	return nginxprocess.Find(ctx, pid, nginxprocess.WithStatus(true))
+	proc, err := process.NewProcessWithContext(ctx, pid)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertProcess(ctx, proc), nil
 }
 
 func convertProcess(ctx context.Context, proc *process.Process) *nginxprocess.Process {
