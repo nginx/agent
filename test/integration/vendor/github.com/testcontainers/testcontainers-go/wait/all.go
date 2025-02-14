@@ -2,13 +2,15 @@ package wait
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"time"
 )
 
 // Implement interface
-var _ Strategy = (*MultiStrategy)(nil)
-var _ StrategyTimeout = (*MultiStrategy)(nil)
+var (
+	_ Strategy        = (*MultiStrategy)(nil)
+	_ StrategyTimeout = (*MultiStrategy)(nil)
+)
 
 type MultiStrategy struct {
 	// all Strategies should have a startupTimeout to avoid waiting infinitely
@@ -56,7 +58,7 @@ func (ms *MultiStrategy) WaitUntilReady(ctx context.Context, target StrategyTarg
 	}
 
 	if len(ms.Strategies) == 0 {
-		return fmt.Errorf("no wait strategy supplied")
+		return errors.New("no wait strategy supplied")
 	}
 
 	for _, strategy := range ms.Strategies {
