@@ -167,7 +167,6 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instanceID 
 func (iw *InstanceWatcherService) checkForUpdates(
 	ctx context.Context,
 ) {
-
 	var instancesToParse []*mpi.Instance
 	correlationID := logger.GenerateCorrelationID()
 	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, correlationID)

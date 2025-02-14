@@ -10,12 +10,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"google.golang.org/protobuf/proto"
 	"log/slog"
 	"net"
 	"net/http"
 	"strings"
 	"sync"
+
+	"google.golang.org/protobuf/proto"
 
 	"github.com/nginxinc/nginx-plus-go-client/v2/client"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -145,7 +146,6 @@ func (r *ResourceService) UpdateInstances(instanceList []*mpi.Instance) *mpi.Res
 		} else {
 			slog.Warn("Error updating resource instances", "instances", instanceList)
 		}
-
 	}
 
 	return r.resource
@@ -166,7 +166,6 @@ func (r *ResourceService) DeleteInstances(instanceList []*mpi.Instance) *mpi.Res
 		} else {
 			slog.Warn("Error deleting instances from resource", "instances", instanceList)
 		}
-
 	}
 	r.RemoveOperator(instanceList)
 

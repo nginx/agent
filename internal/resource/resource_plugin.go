@@ -9,12 +9,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
 	response "github.com/nginx/agent/v3/internal/datasource/proto"
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/model"
-	"log/slog"
 
 	"github.com/nginx/agent/v3/internal/bus"
 )
