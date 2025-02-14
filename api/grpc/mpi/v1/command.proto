@@ -90,6 +90,8 @@ message ContainerInfo {
     string container_id = 1 [(buf.validate.field).string.uuid = true];
     // The name of the host
     string hostname = 2 [(buf.validate.field).string.address = true];
+    // Release information of the container
+    ReleaseInfo release_info = 3;
 }
 
 // A response to a CreateConnectionRequest
