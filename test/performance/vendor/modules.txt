@@ -125,7 +125,7 @@ github.com/nats-io/nkeys
 # github.com/nats-io/nuid v1.0.1
 ## explicit
 github.com/nats-io/nuid
-# github.com/nginx/agent/sdk/v2 v2.38.0 => ./../../sdk
+# github.com/nginx/agent/sdk/v2 v2.0.0-00010101000000-000000000000 => ./../../sdk
 ## explicit; go 1.23
 github.com/nginx/agent/sdk/v2
 github.com/nginx/agent/sdk/v2/agent/config
