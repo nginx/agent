@@ -5,6 +5,7 @@ OAPI_CODEGEN       = "github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen@v2.0.0
 LEFTHOOK           = "github.com/evilmartians/lefthook@v1.5.5"
 GO_SWAGGER         = "github.com/go-swagger/go-swagger/cmd/swagger@abb53530bfcf49c470e5f4c7071ee43f37ec7437" # v0.30.5 currently broken. Update expected shortly. Ref: https://github.com/go-swagger/go-swagger/issues/3070
 PROTOBUF           = "github.com/gogo/protobuf/protoc-gen-gogo@v1.3.2"
+GOGOFAST           = "github.com/gogo/protobuf/protoc-gen-gogofast@v1.3.2"
 GOLANGCI_LINT      = "github.com/golangci/golangci-lint/cmd/golangci-lint@v1.61.0"
 PROTOC_GENGO       = "google.golang.org/protobuf/cmd/protoc-gen-go@v1.32.0"
 PROTOC_VALIDATORS  = "github.com/mwitkow/go-proto-validators/protoc-gen-govalidators@v0.3.2"
@@ -22,6 +23,7 @@ install-tools: ## Install tool dependencies
 	@$(GOGET) $(LEFTHOOK)
 	@$(GOGET) $(GO_SWAGGER)
 	@$(GOGET) $(PROTOBUF)
+	@$(GOGET) $(GOGOFAST)
 	@$(GOGET) $(GOLANGCI_LINT)
 	@$(GOGET) $(PROTOC_GENGO)
 	@$(GOGET) $(PROTOC_VALIDATORS)
@@ -33,5 +35,7 @@ install-tools: ## Install tool dependencies
 	@$(GOGET) $(COUNTERFEITER)
 	@$(GOGET) ./...
 	@${GOTIDY}
+	@$(GOINST) $(GOGOFAST)
+	@$(GOINST) $(PROTOC_GEN_DOC)
 	@echo "Setting up git hooks"
 	@$(GORUN) $(LEFTHOOK) install pre-push

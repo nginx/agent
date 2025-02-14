@@ -20,6 +20,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/google/uuid"
 	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/nginx/agent/sdk/v2/checksum"
@@ -96,7 +98,8 @@ func TestCommander_Recv(t *testing.T) {
 	assert.Nil(t, err)
 
 	t.Cleanup(func() {
-		commanderClient.Close()
+		err := commanderClient.Close()
+		require.NoError(t, err)
 		if err := stopMockCommandServer(ctx, grpcServer, dialer); err != nil {
 			t.Fatalf("Unable to stop grpc server")
 		}
@@ -603,7 +606,7 @@ func stopMockServer(ctx context.Context, server *grpc.Server, dialer func(contex
 	}()
 
 	<-done
-	server.GracefulStop()
+	server.Stop()
 	return nil
 }
 

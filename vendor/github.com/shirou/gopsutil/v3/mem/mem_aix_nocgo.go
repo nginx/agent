@@ -5,17 +5,14 @@ package mem
 
 import (
 	"context"
-	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/shirou/gopsutil/v3/internal/common"
 )
 
-var whiteSpaces = regexp.MustCompile(`\s+`)
-
 func VirtualMemoryWithContext(ctx context.Context) (*VirtualMemoryStat, error) {
-	vmem, swap, err := callSVMon(ctx)
+	vmem, swap, err := callSVMon(ctx, true)
 	if err != nil {
 		return nil, err
 	}
@@ -28,7 +25,7 @@ func VirtualMemoryWithContext(ctx context.Context) (*VirtualMemoryStat, error) {
 }
 
 func SwapMemoryWithContext(ctx context.Context) (*SwapMemoryStat, error) {
-	_, swap, err := callSVMon(ctx)
+	_, swap, err := callSVMon(ctx, false)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +35,7 @@ func SwapMemoryWithContext(ctx context.Context) (*SwapMemoryStat, error) {
 	return swap, nil
 }
 
-func callSVMon(ctx context.Context) (*VirtualMemoryStat, *SwapMemoryStat, error) {
+func callSVMon(ctx context.Context, virt bool) (*VirtualMemoryStat, *SwapMemoryStat, error) {
 	out, err := invoke.CommandWithContext(ctx, "svmon", "-G")
 	if err != nil {
 		return nil, nil, err
@@ -48,8 +45,8 @@ func callSVMon(ctx context.Context) (*VirtualMemoryStat, *SwapMemoryStat, error)
 	vmem := &VirtualMemoryStat{}
 	swap := &SwapMemoryStat{}
 	for _, line := range strings.Split(string(out), "\n") {
-		if strings.HasPrefix(line, "memory") {
-			p := whiteSpaces.Split(line, 7)
+		if virt && strings.HasPrefix(line, "memory") {
+			p := strings.Fields(line)
 			if len(p) > 2 {
 				if t, err := strconv.ParseUint(p[1], 10, 64); err == nil {
 					vmem.Total = t * pagesize
@@ -65,7 +62,7 @@ func callSVMon(ctx context.Context) (*VirtualMemoryStat, *SwapMemoryStat, error)
 				}
 			}
 		} else if strings.HasPrefix(line, "pg space") {
-			p := whiteSpaces.Split(line, 4)
+			p := strings.Fields(line)
 			if len(p) > 3 {
 				if t, err := strconv.ParseUint(p[2], 10, 64); err == nil {
 					swap.Total = t * pagesize
