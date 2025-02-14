@@ -52,6 +52,8 @@ func NewHealthWatcherService(agentConfig *config.Config) *HealthWatcherService {
 }
 
 func (hw *HealthWatcherService) AddHealthWatcher(instances []*mpi.Instance) {
+	hw.healthWatcherMutex.Lock()
+	defer hw.healthWatcherMutex.Unlock()
 	for _, instance := range instances {
 		switch instance.GetInstanceMeta().GetInstanceType() {
 		case mpi.InstanceMeta_INSTANCE_TYPE_NGINX, mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS:
@@ -200,14 +202,33 @@ func (hw *HealthWatcherService) compareHealth(currentHealth map[string]*mpi.Inst
 	defer hw.healthWatcherMutex.Unlock()
 
 	if len(currentHealth) != len(hw.cache) {
+		for _, i := range hw.cache {
+			slog.Info("Health of Instance Current")
+			slog.Info("Instance ID", "", i.GetInstanceId())
+			slog.Info("Instance Status", "", i.GetInstanceHealthStatus())
+			slog.Info("Instance Description", "", i.GetDescription())
+		}
+
+		slog.Info("======================")
+		for _, i := range currentHealth {
+			slog.Info("Health of Instance New")
+			slog.Info("Instance ID", "", i.GetInstanceId())
+			slog.Info("Instance Status", "", i.GetInstanceHealthStatus())
+			slog.Info("Instance Description", "", i.GetDescription())
+		}
+		slog.Info("Len of cache different in health watcher cache")
+
 		return true
 	}
 
 	for key, health := range currentHealth {
 		if !proto.Equal(health, hw.cache[key]) {
+			slog.Info("Health is different", "health", health, "cache", hw.cache[key])
 			return true
 		}
 	}
+
+	slog.Info("No difference in health")
 
 	return false
 }

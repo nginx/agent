@@ -16,6 +16,8 @@ import (
 	"strings"
 	"sync"
 
+	"google.golang.org/protobuf/proto"
+
 	"github.com/nginxinc/nginx-plus-go-client/v2/client"
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -131,12 +133,18 @@ func (r *ResourceService) UpdateInstances(instanceList []*mpi.Instance) *mpi.Res
 	defer r.resourceMutex.Unlock()
 
 	for _, updatedInstance := range instanceList {
-		for _, instance := range r.resource.GetInstances() {
-			if updatedInstance.GetInstanceMeta().GetInstanceId() == instance.GetInstanceMeta().GetInstanceId() {
-				instance.InstanceMeta = updatedInstance.GetInstanceMeta()
-				instance.InstanceRuntime = updatedInstance.GetInstanceRuntime()
-				instance.InstanceConfig = updatedInstance.GetInstanceConfig()
+		resourceCopy, ok := proto.Clone(r.resource).(*mpi.Resource)
+		if ok {
+			for _, instance := range resourceCopy.GetInstances() {
+				if updatedInstance.GetInstanceMeta().GetInstanceId() == instance.GetInstanceMeta().GetInstanceId() {
+					instance.InstanceMeta = updatedInstance.GetInstanceMeta()
+					instance.InstanceRuntime = updatedInstance.GetInstanceRuntime()
+					instance.InstanceConfig = updatedInstance.GetInstanceConfig()
+				}
 			}
+			r.resource = resourceCopy
+		} else {
+			slog.Warn("Error updating resource instances", "instances", instanceList)
 		}
 	}
 
@@ -148,10 +156,15 @@ func (r *ResourceService) DeleteInstances(instanceList []*mpi.Instance) *mpi.Res
 	defer r.resourceMutex.Unlock()
 
 	for _, deletedInstance := range instanceList {
-		for index, instance := range r.resource.GetInstances() {
-			if deletedInstance.GetInstanceMeta().GetInstanceId() == instance.GetInstanceMeta().GetInstanceId() {
-				r.resource.Instances = append(r.resource.Instances[:index], r.resource.GetInstances()[index+1:]...)
+		resourceCopy, ok := proto.Clone(r.resource).(*mpi.Resource)
+		if ok {
+			for index, instance := range resourceCopy.GetInstances() {
+				if deletedInstance.GetInstanceMeta().GetInstanceId() == instance.GetInstanceMeta().GetInstanceId() {
+					r.resource.Instances = append(r.resource.Instances[:index], r.resource.GetInstances()[index+1:]...)
+				}
 			}
+		} else {
+			slog.Warn("Error deleting instances from resource", "instances", instanceList)
 		}
 	}
 	r.RemoveOperator(instanceList)
