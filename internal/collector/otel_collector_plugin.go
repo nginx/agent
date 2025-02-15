@@ -120,6 +120,10 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 		oc.processReceivers(ctx, oc.config.Collector.Receivers.OtlpReceivers)
 	}
 
+	if !oc.stopped {
+		return errors.New("OTel collector already running")
+	}
+
 	bootErr := oc.bootup(runCtx)
 	if bootErr != nil {
 		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)
@@ -219,6 +223,7 @@ func (oc *Collector) Close(ctx context.Context) error {
 			slog.ErrorContext(ctx, "Failed to shutdown OTel Collector", "error", err, "state", oc.service.GetState())
 		} else {
 			slog.InfoContext(ctx, "OTel Collector shutdown", "state", oc.service.GetState())
+			oc.stopped = true
 		}
 	}
 
@@ -373,6 +378,11 @@ func (oc *Collector) restartCollector(ctx context.Context) {
 
 	var runCtx context.Context
 	runCtx, oc.cancel = context.WithCancel(ctx)
+
+	if !oc.stopped {
+		slog.ErrorContext(ctx, "Unable to restart OTel collector, failed to stop collector")
+		return
+	}
 
 	bootErr := oc.bootup(runCtx)
 	if bootErr != nil {
