@@ -4,13 +4,8 @@
 # shellcheck source=/dev/null
 . /etc/os-release
 
-if [ "$ID" = "freebsd" ]; then
-    BSD_HIER="/usr/local"
-    AGENT_EXE="${BSD_HIER}/bin/nginx-agent"
-else
-    AGENT_EXE="/usr/bin/nginx-agent"
-    BSD_HIER=""
-fi
+
+AGENT_EXE="/usr/bin/nginx-agent"
 AGENT_RUN_DIR="/var/run/nginx-agent"
 AGENT_LOG_DIR="/var/log/nginx-agent"
 AGENT_UNIT_LOCATION="/etc/systemd/system"
@@ -107,18 +102,6 @@ create_agent_group() {
         fi
     fi
 
-    if [ "$ID" = "freebsd" ]; then
-        printf "PostInstall: Adding nginx-agent group %s\n" "${AGENT_GROUP}"
-        pw groupadd "${AGENT_GROUP}"
-
-        printf "PostInstall: Adding NGINX / agent user %s to group %s\n" "${AGENT_USER}" "${AGENT_GROUP}"
-        pw groupmod "${AGENT_GROUP}" -M "${AGENT_USER}"
-        if [ "${WORKER_USER}" ]; then
-            printf "PostInstall: Adding NGINX Worker user %s to group %s\n" "${WORKER_USER}" "${AGENT_GROUP}"
-            pw groupmod "${AGENT_GROUP}" -M "${WORKER_USER}"
-        fi
-    fi
-
     if [ "$ID" = "alpine" ]; then
         printf "PostInstall: Adding nginx-agent group %s\n" "${AGENT_GROUP}"
         addgroup "${AGENT_GROUP}"
@@ -168,17 +151,12 @@ update_unit_file() {
         printf "PostInstall: Set the enabled flag for the service unit\n"
         systemctl enable "${AGENT_UNIT_FILE}"
     fi
-
-    if [ "$ID" = "freebsd" ]; then
-        printf "PostInstall: Enabling NGINX Agent Service\n"
-        sysrc nginx_agent_enable=YES
-    fi
 }
 
 add_default_config_file() {
-    if [ ! -f "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf ]; then
+    if [ ! -f /etc/nginx-agent/nginx-agent.conf ]; then
         printf "PostInstall: Creating default nginx-agent.conf file\n"
-        cat <<EOF > "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf
+        cat <<EOF > /etc/nginx-agent/nginx-agent.conf
 #
 # /etc/nginx-agent/nginx-agent.conf
 #
@@ -249,37 +227,33 @@ api:
   port: 8081
 EOF
     printf "PostInstall: Updating file permissions for nginx-agent.conf to 0640\n"
-    chmod 0640 "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf
+    chmod 0640 /etc/nginx-agent/nginx-agent.conf
     fi
 }
 
 upgrade_config_file() {
-    if [ -f "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf ]; then
+    if [ -f /etc/nginx-agent/nginx-agent.conf ]; then
         extensions=""
-        if grep -q "advanced_metrics:" "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf; then
+        if grep -q "advanced_metrics:" /etc/nginx-agent/nginx-agent.conf; then
             extensions="${extensions} advanced-metrics"
         fi
-        if grep -q "nginx_app_protect:" "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf; then
+        if grep -q "nginx_app_protect:" /etc/nginx-agent/nginx-agent.conf; then
             extensions="${extensions} nginx-app-protect"
         fi
-        if grep -q "nap_monitoring:" "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf; then
+        if grep -q "nap_monitoring:" /etc/nginx-agent/nginx-agent.conf; then
             extensions="${extensions} nap-monitoring"
         fi
-        if ! grep -q "extensions:" "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf && [ "${#extensions}" -ne "0" ]; then
+        if ! grep -q "extensions:" /etc/nginx-agent/nginx-agent.conf && [ "${#extensions}" -ne "0" ]; then
             printf "PostInstall: Updating nginx-agent.conf to include extensions array\n"
-            printf "\nextensions:\n" >> "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf
+            printf "\nextensions:\n" >> /etc/nginx-agent/nginx-agent.conf
             for extension in ${extensions}; do
-                echo "  - $extension" >> "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf
+                echo "  - $extension" >> /etc/nginx-agent/nginx-agent.conf
             done
         fi
     fi
 }
 
 restart_agent_if_required() {
-    if [ "${ID}" = "freebsd" ]; then
-        # https://github.com/freebsd/pkg/pull/2128
-        return
-    fi
     if service nginx-agent status >/dev/null 2>&1; then
         printf "PostInstall: Restarting nginx agent\n"
         service nginx-agent restart || true
@@ -291,15 +265,10 @@ summary() {
     echo " NGINX Agent package has been successfully installed."
     echo ""
     echo " Please follow the next steps to start the software:"
-    if [ "$ID" = "freebsd" ]; then
-        echo "    sudo service nginx-agent start"
-        echo ""
-    else
-        echo "    sudo systemctl start nginx-agent"
-        echo ""
-    fi
+    echo "    sudo systemctl start nginx-agent"
+    echo ""
     echo " Configuration settings can be adjusted here:"
-    echo "    ${BSD_HIER}/etc/nginx-agent/nginx-agent.conf"
+    echo "    /etc/nginx-agent/nginx-agent.conf"
     echo ""
     echo "----------------------------------------------------------------------"
 }
