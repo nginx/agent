@@ -153,6 +153,7 @@ func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message
 
 	w.watcherMutex.Lock()
 	defer w.watcherMutex.Unlock()
+	slog.Info("Apply In Progress Set")
 	w.instancesWithConfigApplyInProgress = append(w.instancesWithConfigApplyInProgress, instanceID)
 	w.fileWatcherService.SetEnabled(false)
 }
@@ -168,7 +169,7 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 
 	instanceID := response.GetInstanceId()
 
-	slog.Info("handleConfigApplySuccess start")
+	slog.Info("handleConfigApplySuccess start, deleting in progress set")
 	w.watcherMutex.Lock()
 	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
 		w.instancesWithConfigApplyInProgress,
@@ -200,6 +201,7 @@ func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Messag
 
 	instanceID := response.GetInstanceId()
 
+	slog.Info("handleConfigApplyComplete start, deleting in progress set")
 	w.watcherMutex.Lock()
 	defer w.watcherMutex.Unlock()
 	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
