@@ -168,7 +168,6 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 
 	instanceID := response.GetInstanceId()
 
-	slog.Info("handleConfigApplySuccess start, deleting in progress set")
 	w.watcherMutex.Lock()
 	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
 		w.instancesWithConfigApplyInProgress,
@@ -180,7 +179,6 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 	w.watcherMutex.Unlock()
 
 	w.instanceWatcherService.ReparseConfig(ctx, instanceID)
-	slog.Info("handleConfigApplySuccess done")
 }
 
 func (w *Watcher) handleHealthRequest(ctx context.Context) {
@@ -200,7 +198,6 @@ func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Messag
 
 	instanceID := response.GetInstanceId()
 
-	slog.Info("handleConfigApplyComplete start, deleting in progress set")
 	w.watcherMutex.Lock()
 	defer w.watcherMutex.Unlock()
 	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(

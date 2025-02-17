@@ -207,7 +207,6 @@ func (hw *HealthWatcherService) compareHealth(currentHealth map[string]*mpi.Inst
 
 	for key, health := range currentHealth {
 		if !proto.Equal(health, hw.cache[key]) {
-			slog.Info("Health is different", "health", health, "cache", hw.cache[key])
 			return true
 		}
 	}
