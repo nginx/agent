@@ -124,7 +124,7 @@ github.com/cenkalti/backoff/v4
 # github.com/cespare/xxhash/v2 v2.3.0
 ## explicit; go 1.11
 github.com/cespare/xxhash/v2
-# github.com/compose-spec/compose-go v1.18.3
+# github.com/compose-spec/compose-go v1.20.2
 ## explicit; go 1.19
 github.com/compose-spec/compose-go/cli
 github.com/compose-spec/compose-go/consts
@@ -140,7 +140,7 @@ github.com/compose-spec/compose-go/utils
 # github.com/containerd/console v1.0.4
 ## explicit; go 1.13
 github.com/containerd/console
-# github.com/containerd/containerd v1.7.11 => github.com/containerd/containerd v1.7.11
+# github.com/containerd/containerd v1.7.11
 ## explicit; go 1.19
 github.com/containerd/containerd/api/services/content/v1
 github.com/containerd/containerd/archive/compression
@@ -184,14 +184,10 @@ github.com/cpuguy83/dockercfg
 # github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 ## explicit
 github.com/davecgh/go-spew/spew
-# github.com/distribution/distribution/v3 v3.0.0-20230830064551-b9b19409cf45
-## explicit; go 1.20
-github.com/distribution/distribution/v3/reference
-github.com/distribution/distribution/v3/uuid
 # github.com/distribution/reference v0.5.0
 ## explicit; go 1.20
 github.com/distribution/reference
-# github.com/docker/buildx v0.11.2
+# github.com/docker/buildx v0.12.0
 ## explicit; go 1.20
 github.com/docker/buildx/build
 github.com/docker/buildx/builder
@@ -259,7 +255,7 @@ github.com/docker/cli/cli/trust
 github.com/docker/cli/cli/version
 github.com/docker/cli/opts
 github.com/docker/cli/templates
-# github.com/docker/compose/v2 v2.20.3
+# github.com/docker/compose/v2 v2.23.3
 ## explicit; go 1.21
 github.com/docker/compose/v2/internal
 github.com/docker/compose/v2/internal/sync
@@ -288,11 +284,12 @@ github.com/docker/distribution/registry/client/transport
 github.com/docker/distribution/registry/storage/cache
 github.com/docker/distribution/registry/storage/cache/memory
 github.com/docker/distribution/uuid
-# github.com/docker/docker v27.1.1+incompatible => github.com/docker/docker v24.0.9+incompatible
+# github.com/docker/docker v27.1.1+incompatible
 ## explicit
 github.com/docker/docker/api
 github.com/docker/docker/api/types
 github.com/docker/docker/api/types/blkiodev
+github.com/docker/docker/api/types/checkpoint
 github.com/docker/docker/api/types/container
 github.com/docker/docker/api/types/events
 github.com/docker/docker/api/types/filters
@@ -303,6 +300,7 @@ github.com/docker/docker/api/types/registry
 github.com/docker/docker/api/types/strslice
 github.com/docker/docker/api/types/swarm
 github.com/docker/docker/api/types/swarm/runtime
+github.com/docker/docker/api/types/system
 github.com/docker/docker/api/types/time
 github.com/docker/docker/api/types/versions
 github.com/docker/docker/api/types/volume
@@ -310,16 +308,15 @@ github.com/docker/docker/builder/remotecontext/git
 github.com/docker/docker/builder/remotecontext/urlutil
 github.com/docker/docker/client
 github.com/docker/docker/errdefs
+github.com/docker/docker/internal/multierror
 github.com/docker/docker/pkg/archive
 github.com/docker/docker/pkg/homedir
 github.com/docker/docker/pkg/idtools
 github.com/docker/docker/pkg/ioutils
 github.com/docker/docker/pkg/jsonmessage
 github.com/docker/docker/pkg/longpath
-github.com/docker/docker/pkg/meminfo
 github.com/docker/docker/pkg/namesgenerator
 github.com/docker/docker/pkg/pools
-github.com/docker/docker/pkg/process
 github.com/docker/docker/pkg/progress
 github.com/docker/docker/pkg/stdcopy
 github.com/docker/docker/pkg/streamformatter
@@ -452,6 +449,9 @@ github.com/grpc-ecosystem/grpc-gateway/v2/utilities
 # github.com/hashicorp/errwrap v1.1.0
 ## explicit
 github.com/hashicorp/errwrap
+# github.com/hashicorp/go-cleanhttp v0.5.2
+## explicit; go 1.13
+github.com/hashicorp/go-cleanhttp
 # github.com/hashicorp/go-multierror v1.1.1
 ## explicit; go 1.13
 github.com/hashicorp/go-multierror
@@ -552,7 +552,7 @@ github.com/miekg/pkcs11
 # github.com/mitchellh/mapstructure v1.5.0
 ## explicit; go 1.14
 github.com/mitchellh/mapstructure
-# github.com/moby/buildkit v0.12.5 => github.com/moby/buildkit v0.12.5
+# github.com/moby/buildkit v0.13.0-beta1.0.20231023114302-d5c1d785b042
 ## explicit; go 1.20
 github.com/moby/buildkit/api/services/control
 github.com/moby/buildkit/api/types
@@ -567,7 +567,6 @@ github.com/moby/buildkit/client/ociindex
 github.com/moby/buildkit/cmd/buildkitd/config
 github.com/moby/buildkit/exporter/containerimage/exptypes
 github.com/moby/buildkit/exporter/exptypes
-github.com/moby/buildkit/frontend/dockerfile/dockerignore
 github.com/moby/buildkit/frontend/gateway/client
 github.com/moby/buildkit/frontend/gateway/grpcclient
 github.com/moby/buildkit/frontend/gateway/pb
@@ -613,6 +612,9 @@ github.com/moby/buildkit/util/tracing/detect/delegated
 github.com/moby/buildkit/util/tracing/env
 github.com/moby/buildkit/util/tracing/otlptracegrpc
 github.com/moby/buildkit/version
+# github.com/moby/docker-image-spec v1.3.1
+## explicit; go 1.18
+github.com/moby/docker-image-spec/specs-go/v1
 # github.com/moby/locker v1.0.1
 ## explicit; go 1.13
 github.com/moby/locker
@@ -702,9 +704,10 @@ github.com/opencontainers/go-digest/digestset
 ## explicit; go 1.18
 github.com/opencontainers/image-spec/specs-go
 github.com/opencontainers/image-spec/specs-go/v1
-# github.com/opencontainers/runc v1.2.0-rc.3 => github.com/opencontainers/runc v1.2.0-rc.1
-## explicit; go 1.20
-github.com/opencontainers/runc/libcontainer/user
+# github.com/opencontainers/runc v1.2.0-rc.3
+## explicit; go 1.22
+# github.com/opencontainers/runtime-spec v1.2.0
+## explicit
 # github.com/opentracing/opentracing-go v1.2.0
 ## explicit; go 1.14
 # github.com/orcaman/concurrent-map v1.0.0
@@ -825,7 +828,7 @@ github.com/stretchr/testify/require
 # github.com/subosito/gotenv v1.6.0
 ## explicit; go 1.18
 github.com/subosito/gotenv
-# github.com/testcontainers/testcontainers-go v0.23.0
+# github.com/testcontainers/testcontainers-go v0.27.0
 ## explicit; go 1.20
 github.com/testcontainers/testcontainers-go
 github.com/testcontainers/testcontainers-go/exec
@@ -834,8 +837,8 @@ github.com/testcontainers/testcontainers-go/internal/config
 github.com/testcontainers/testcontainers-go/internal/testcontainersdocker
 github.com/testcontainers/testcontainers-go/internal/testcontainerssession
 github.com/testcontainers/testcontainers-go/wait
-# github.com/testcontainers/testcontainers-go/modules/compose v0.23.0
-## explicit; go 1.20
+# github.com/testcontainers/testcontainers-go/modules/compose v0.27.0
+## explicit; go 1.21
 github.com/testcontainers/testcontainers-go/modules/compose
 # github.com/theupdateframework/notary v0.7.0
 ## explicit; go 1.12
@@ -875,8 +878,6 @@ github.com/tonistiigi/vt100
 # github.com/vardius/message-bus v1.1.5
 ## explicit; go 1.12
 github.com/vardius/message-bus
-# github.com/weppos/publicsuffix-go v0.30.1
-## explicit; go 1.16
 # github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb
 ## explicit
 github.com/xeipuuv/gojsonpointer
@@ -1461,10 +1462,5 @@ sigs.k8s.io/structured-merge-diff/v4/value
 # sigs.k8s.io/yaml v1.3.0
 ## explicit; go 1.12
 sigs.k8s.io/yaml
-# github.com/containerd/containerd => github.com/containerd/containerd v1.7.11
-# github.com/cucumber/godog => github.com/laurazard/godog v0.0.0-20220922095256-4c4b17abdae7
-# github.com/docker/docker => github.com/docker/docker v24.0.9+incompatible
-# github.com/moby/buildkit => github.com/moby/buildkit v0.12.5
 # github.com/nginx/agent/sdk/v2 => ./../../sdk
 # github.com/nginx/agent/v2 => ./../../
-# github.com/opencontainers/runc => github.com/opencontainers/runc v1.2.0-rc.1

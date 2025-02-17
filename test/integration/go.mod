@@ -10,8 +10,8 @@ require (
 	github.com/nginx/agent/v2 v2.0.0-00010101000000-000000000000
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
-	github.com/testcontainers/testcontainers-go v0.23.0
-	github.com/testcontainers/testcontainers-go/modules/compose v0.23.0
+	github.com/testcontainers/testcontainers-go v0.27.0
+	github.com/testcontainers/testcontainers-go/modules/compose v0.27.0
 	google.golang.org/grpc v1.62.2
 )
 
@@ -39,7 +39,7 @@ require (
 	github.com/buger/goterm v1.0.4 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/compose-spec/compose-go v1.18.3 // indirect
+	github.com/compose-spec/compose-go v1.20.2 // indirect
 	github.com/containerd/console v1.0.4 // indirect
 	github.com/containerd/containerd v1.7.11 // indirect
 	github.com/containerd/continuity v0.4.3 // indirect
@@ -47,11 +47,10 @@ require (
 	github.com/containerd/typeurl/v2 v2.1.1 // indirect
 	github.com/cpuguy83/dockercfg v0.3.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/distribution/distribution/v3 v3.0.0-20230830064551-b9b19409cf45 // indirect
 	github.com/distribution/reference v0.5.0 // indirect
-	github.com/docker/buildx v0.11.2 // indirect
+	github.com/docker/buildx v0.12.0 // indirect
 	github.com/docker/cli v24.0.7+incompatible // indirect
-	github.com/docker/compose/v2 v2.20.3 // indirect
+	github.com/docker/compose/v2 v2.23.3 // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
 	github.com/docker/docker v27.1.1+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.1 // indirect
@@ -85,6 +84,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.17.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
+	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-version v1.6.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
@@ -110,7 +110,8 @@ require (
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/miekg/pkcs11 v1.1.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
-	github.com/moby/buildkit v0.12.5 // indirect
+	github.com/moby/buildkit v0.13.0-beta1.0.20231023114302-d5c1d785b042 // indirect
+	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/locker v1.0.1 // indirect
 	github.com/moby/patternmatcher v0.6.0 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
@@ -129,6 +130,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc5 // indirect
 	github.com/opencontainers/runc v1.2.0-rc.3 // indirect
+	github.com/opencontainers/runtime-spec v1.2.0 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/orcaman/concurrent-map v1.0.0 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
@@ -164,7 +166,6 @@ require (
 	github.com/tonistiigi/units v0.0.0-20180711220420-6950e57a87ea // indirect
 	github.com/tonistiigi/vt100 v0.0.0-20230623042737-f9a4f7ef6531 // indirect
 	github.com/vardius/message-bus v1.1.5 // indirect
-	github.com/weppos/publicsuffix-go v0.30.1 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
@@ -212,11 +213,6 @@ require (
 )
 
 replace (
-	github.com/containerd/containerd => github.com/containerd/containerd v1.7.11
-	github.com/cucumber/godog => github.com/laurazard/godog v0.0.0-20220922095256-4c4b17abdae7
-	github.com/docker/docker => github.com/docker/docker v24.0.9+incompatible
-	github.com/moby/buildkit => github.com/moby/buildkit v0.12.5
 	github.com/nginx/agent/sdk/v2 => ./../../sdk
 	github.com/nginx/agent/v2 => ./../../
-	github.com/opencontainers/runc => github.com/opencontainers/runc v1.2.0-rc.1
 )
