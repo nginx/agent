@@ -219,9 +219,10 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 			w.handleInstanceUpdates(newCtx, message)
 		case message := <-w.nginxConfigContextChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
-			slog.Info("============= Nginx Config Context Channel got Context")
-			// w.watcherMutex.Lock()
+			slog.Info("============= Nginx Config Context Channel")
+			w.watcherMutex.Lock()
 			if !slices.Contains(w.instancesWithConfigApplyInProgress, message.NginxConfigContext.InstanceID) {
+				slog.Info("============= Nginx Config Context update")
 				slog.DebugContext(
 					newCtx,
 					"Updated NGINX config context",
@@ -239,7 +240,8 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 					"nginx_config_context", message.NginxConfigContext,
 				)
 			}
-			// w.watcherMutex.Unlock()
+			w.watcherMutex.Unlock()
+			slog.Info("============= Nginx Config Unlock")
 		case message := <-w.instanceHealthChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 			w.messagePipe.Process(newCtx, &bus.Message{
