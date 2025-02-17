@@ -113,6 +113,7 @@ func (i *NginxInstanceOperator) errorLogs(instance *mpi.Instance) (errorLogs []s
 	}
 
 	slog.Info("Error Logs", "", errorLogs)
+	
 	return errorLogs
 }
 
