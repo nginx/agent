@@ -170,7 +170,7 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 
 	slog.Info("handleConfigApplySuccess start")
 	w.watcherMutex.Lock()
-	defer w.watcherMutex.Unlock()
+	// defer w.watcherMutex.Unlock()
 	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
 		w.instancesWithConfigApplyInProgress,
 		func(element string) bool {
@@ -179,6 +179,7 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 	)
 	w.fileWatcherService.SetEnabled(true)
 
+	w.watcherMutex.Unlock()
 	w.instanceWatcherService.ReparseConfig(ctx, instanceID)
 	slog.Info("handleConfigApplySuccess done")
 }
