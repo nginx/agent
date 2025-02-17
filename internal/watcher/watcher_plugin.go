@@ -170,7 +170,6 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 
 	slog.Info("handleConfigApplySuccess start")
 	w.watcherMutex.Lock()
-	// defer w.watcherMutex.Unlock()
 	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
 		w.instancesWithConfigApplyInProgress,
 		func(element string) bool {
@@ -178,8 +177,8 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 		},
 	)
 	w.fileWatcherService.SetEnabled(true)
-
 	w.watcherMutex.Unlock()
+
 	w.instanceWatcherService.ReparseConfig(ctx, instanceID)
 	slog.Info("handleConfigApplySuccess done")
 }
@@ -223,9 +222,7 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 		case message := <-w.nginxConfigContextChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 			w.watcherMutex.Lock()
-			slog.Info("============= Nginx Config Context Channel")
 			if !slices.Contains(w.instancesWithConfigApplyInProgress, message.NginxConfigContext.InstanceID) {
-				slog.Info("============= Nginx Config Context update")
 				slog.DebugContext(
 					newCtx,
 					"Updated NGINX config context",
@@ -244,7 +241,6 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 				)
 			}
 			w.watcherMutex.Unlock()
-			slog.Info("============= Nginx Config Unlock")
 		case message := <-w.instanceHealthChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 			w.messagePipe.Process(newCtx, &bus.Message{

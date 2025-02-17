@@ -181,7 +181,6 @@ func (iw *InstanceWatcherService) checkForUpdates(
 
 	for _, newInstance := range instancesToParse {
 		instanceType := newInstance.GetInstanceMeta().GetInstanceType()
-		slog.Info("================================================== ")
 		slog.InfoContext(
 			newCtx,
 			"Parsing instance config",
