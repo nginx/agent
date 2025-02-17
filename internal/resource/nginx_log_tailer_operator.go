@@ -47,7 +47,7 @@ func (l *NginxLogTailerOperator) Tail(ctx context.Context, errorLog string, erro
 
 		return
 	}
-	
+
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, l.agentConfig.DataPlaneConfig.Nginx.ReloadMonitoringPeriod)
 	defer cancel()
 

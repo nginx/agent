@@ -211,6 +211,6 @@ func (hw *HealthWatcherService) compareHealth(currentHealth map[string]*mpi.Inst
 			return true
 		}
 	}
-	
+
 	return false
 }
