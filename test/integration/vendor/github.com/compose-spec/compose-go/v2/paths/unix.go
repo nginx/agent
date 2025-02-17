@@ -19,15 +19,10 @@ package paths
 import (
 	"path"
 	"path/filepath"
-
-	"github.com/compose-spec/compose-go/v2/utils"
 )
 
 func (r *relativePathsResolver) maybeUnixPath(a any) (any, error) {
-	p, ok := a.(string)
-	if !ok {
-		return a, nil
-	}
+	p := a.(string)
 	p = ExpandUser(p)
 	// Check if source is an absolute path (either Unix or Windows), to
 	// handle a Windows client with a Unix daemon or vice-versa.
@@ -42,16 +37,4 @@ func (r *relativePathsResolver) maybeUnixPath(a any) (any, error) {
 		return filepath.Join(r.workingDir, p), nil
 	}
 	return p, nil
-}
-
-func (r *relativePathsResolver) absSymbolicLink(value any) (any, error) {
-	abs, err := r.absPath(value)
-	if err != nil {
-		return nil, err
-	}
-	str, ok := abs.(string)
-	if !ok {
-		return abs, nil
-	}
-	return utils.ResolveSymbolicLink(str)
 }

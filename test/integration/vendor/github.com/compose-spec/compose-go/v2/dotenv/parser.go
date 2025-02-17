@@ -136,10 +136,6 @@ loop:
 		return "", "", inherited, errors.New("zero length string")
 	}
 
-	if inherited && strings.IndexByte(key, ' ') == -1 {
-		p.line++
-	}
-
 	// trim whitespace
 	key = strings.TrimRightFunc(key, unicode.IsSpace)
 	cutset := strings.TrimLeftFunc(src[offset:], isSpace)

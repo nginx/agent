@@ -108,9 +108,6 @@ func extractVariable(value interface{}, pattern *regexp.Regexp) ([]Variable, boo
 			if r >= 'A' && r <= 'Z' {
 				return false
 			}
-			if r >= '0' && r <= '9' {
-				return false
-			}
 			if r == '_' {
 				return false
 			}

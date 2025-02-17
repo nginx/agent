@@ -236,7 +236,6 @@ require (
 )
 
 replace (
-	github.com/compose-spec/compose-go/v2 => github.com/compose-spec/compose-go/v2 v2.4.8
 	github.com/nginx/agent/sdk/v2 => ./../../sdk
 	github.com/nginx/agent/v2 => ./../../
 )

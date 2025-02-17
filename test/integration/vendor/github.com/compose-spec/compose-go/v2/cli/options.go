@@ -26,7 +26,6 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
 
 	"github.com/compose-spec/compose-go/v2/consts"
 	"github.com/compose-spec/compose-go/v2/dotenv"
@@ -404,24 +403,22 @@ func (o *ProjectOptions) GetWorkingDir() (string, error) {
 	return os.Getwd()
 }
 
-// ReadConfigFiles reads ConfigFiles and populates the content field
-func (o *ProjectOptions) ReadConfigFiles(ctx context.Context, workingDir string, options *ProjectOptions) (*types.ConfigDetails, error) {
-	config, err := loader.LoadConfigFiles(ctx, options.ConfigPaths, workingDir, options.loadOptions...)
+func (o *ProjectOptions) GeConfigFiles() ([]types.ConfigFile, error) {
+	configPaths, err := o.getConfigPaths()
 	if err != nil {
 		return nil, err
 	}
-	configs := make([][]byte, len(config.ConfigFiles))
 
-	for i, c := range config.ConfigFiles {
-		var err error
+	var configs []types.ConfigFile
+	for _, f := range configPaths {
 		var b []byte
-		if c.IsStdin() {
+		if f == "-" {
 			b, err = io.ReadAll(os.Stdin)
 			if err != nil {
 				return nil, err
 			}
 		} else {
-			f, err := filepath.Abs(c.Filename)
+			f, err := filepath.Abs(f)
 			if err != nil {
 				return nil, err
 			}
@@ -430,31 +427,27 @@ func (o *ProjectOptions) ReadConfigFiles(ctx context.Context, workingDir string,
 				return nil, err
 			}
 		}
-		configs[i] = b
+		configs = append(configs, types.ConfigFile{
+			Filename: f,
+			Content:  b,
+		})
 	}
-	for i, c := range configs {
-		config.ConfigFiles[i].Content = c
-	}
-	return config, nil
+	return configs, err
 }
 
 // LoadProject loads compose file according to options and bind to types.Project go structs
 func (o *ProjectOptions) LoadProject(ctx context.Context) (*types.Project, error) {
-	config, err := o.prepare(ctx)
+	configDetails, err := o.prepare()
 	if err != nil {
 		return nil, err
 	}
 
-	project, err := loader.LoadWithContext(ctx, types.ConfigDetails{
-		ConfigFiles: config.ConfigFiles,
-		WorkingDir:  config.WorkingDir,
-		Environment: o.Environment,
-	}, o.loadOptions...)
+	project, err := loader.LoadWithContext(ctx, configDetails, o.loadOptions...)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, config := range config.ConfigFiles {
+	for _, config := range configDetails.ConfigFiles {
 		project.ComposeFiles = append(project.ComposeFiles, config.Filename)
 	}
 
@@ -463,50 +456,36 @@ func (o *ProjectOptions) LoadProject(ctx context.Context) (*types.Project, error
 
 // LoadModel loads compose file according to options and returns a raw (yaml tree) model
 func (o *ProjectOptions) LoadModel(ctx context.Context) (map[string]any, error) {
-	configDetails, err := o.prepare(ctx)
+	configDetails, err := o.prepare()
 	if err != nil {
 		return nil, err
 	}
 
-	return loader.LoadModelWithContext(ctx, *configDetails, o.loadOptions...)
+	return loader.LoadModelWithContext(ctx, configDetails, o.loadOptions...)
 }
 
 // prepare converts ProjectOptions into loader's types.ConfigDetails and configures default load options
-func (o *ProjectOptions) prepare(ctx context.Context) (*types.ConfigDetails, error) {
-	defaultDir, err := o.GetWorkingDir()
+func (o *ProjectOptions) prepare() (types.ConfigDetails, error) {
+	configs, err := o.GeConfigFiles()
 	if err != nil {
-		return &types.ConfigDetails{}, err
+		return types.ConfigDetails{}, err
 	}
 
-	configDetails, err := o.ReadConfigFiles(ctx, defaultDir, o)
+	workingDir, err := o.GetWorkingDir()
 	if err != nil {
-		return configDetails, err
+		return types.ConfigDetails{}, err
 	}
 
-	isNamed := false
-	if o.Name == "" {
-		type named struct {
-			Name string `yaml:"name,omitempty"`
-		}
-		// if any of the compose file is named, this is equivalent to user passing --project-name
-		for _, cfg := range configDetails.ConfigFiles {
-			var n named
-			err = yaml.Unmarshal(cfg.Content, &n)
-			if err != nil {
-				return nil, err
-			}
-			if n.Name != "" {
-				isNamed = true
-				break
-			}
-		}
+	configDetails := types.ConfigDetails{
+		ConfigFiles: configs,
+		WorkingDir:  workingDir,
+		Environment: o.Environment,
 	}
 
 	o.loadOptions = append(o.loadOptions,
-		withNamePrecedenceLoad(defaultDir, isNamed, o),
+		withNamePrecedenceLoad(workingDir, o),
 		withConvertWindowsPaths(o),
 		withListeners(o))
-
 	return configDetails, nil
 }
 
@@ -516,20 +495,15 @@ func ProjectFromOptions(ctx context.Context, options *ProjectOptions) (*types.Pr
 	return options.LoadProject(ctx)
 }
 
-func withNamePrecedenceLoad(absWorkingDir string, namedInYaml bool, options *ProjectOptions) func(*loader.Options) {
+func withNamePrecedenceLoad(absWorkingDir string, options *ProjectOptions) func(*loader.Options) {
 	return func(opts *loader.Options) {
 		if options.Name != "" {
 			opts.SetProjectName(options.Name, true)
 		} else if nameFromEnv, ok := options.Environment[consts.ComposeProjectName]; ok && nameFromEnv != "" {
 			opts.SetProjectName(nameFromEnv, true)
-		} else if !namedInYaml {
-			dirname := filepath.Base(absWorkingDir)
-			symlink, err := filepath.EvalSymlinks(absWorkingDir)
-			if err == nil && filepath.Base(symlink) != dirname {
-				logrus.Warnf("project has been loaded without an explicit name from a symlink. Using name %q", dirname)
-			}
+		} else {
 			opts.SetProjectName(
-				loader.NormalizeProjectName(dirname),
+				loader.NormalizeProjectName(filepath.Base(absWorkingDir)),
 				false,
 			)
 		}

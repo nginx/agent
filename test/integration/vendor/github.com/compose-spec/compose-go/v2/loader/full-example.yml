@@ -118,9 +118,7 @@ services:
       - "a 7:* rmw"
 
     devices:
-      - source: /dev/ttyUSB0
-        target: /dev/ttyUSB0
-        permissions: rwm
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
 
     # String or list
     # dns: 8.8.8.8
@@ -209,10 +207,6 @@ services:
     #   - "com.example.description=Accounting webapp"
     #   - "com.example.number=42"
     #   - "com.example.empty-label"
-
-    label_file:
-      - ./example1.label
-      - ./example2.label
 
     links:
      - db

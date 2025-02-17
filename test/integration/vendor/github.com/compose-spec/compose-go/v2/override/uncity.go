@@ -36,6 +36,7 @@ func init() {
 	unique["services.*.annotations"] = keyValueIndexer
 	unique["services.*.build.args"] = keyValueIndexer
 	unique["services.*.build.additional_contexts"] = keyValueIndexer
+	unique["services.*.build.extra_hosts"] = keyValueIndexer
 	unique["services.*.build.platform"] = keyValueIndexer
 	unique["services.*.build.tags"] = keyValueIndexer
 	unique["services.*.build.labels"] = keyValueIndexer
@@ -50,6 +51,7 @@ func init() {
 	unique["services.*.environment"] = keyValueIndexer
 	unique["services.*.env_file"] = envFileIndexer
 	unique["services.*.expose"] = exposeIndexer
+	unique["services.*.extra_hosts"] = keyValueIndexer
 	unique["services.*.labels"] = keyValueIndexer
 	unique["services.*.links"] = keyValueIndexer
 	unique["services.*.networks.*.aliases"] = keyValueIndexer
@@ -60,7 +62,6 @@ func init() {
 	unique["services.*.sysctls"] = keyValueIndexer
 	unique["services.*.tmpfs"] = keyValueIndexer
 	unique["services.*.volumes"] = volumeIndexer
-	unique["services.*.devices"] = deviceMappingIndexer
 }
 
 // EnforceUnicity removes redefinition of elements declared in a sequence
@@ -107,16 +108,16 @@ func enforceUnicity(value any, p tree.Path) (any, error) {
 	return value, nil
 }
 
-func keyValueIndexer(v any, p tree.Path) (string, error) {
-	switch value := v.(type) {
+func keyValueIndexer(y any, p tree.Path) (string, error) {
+	switch value := y.(type) {
 	case string:
 		key, _, found := strings.Cut(value, "=")
-		if found {
-			return key, nil
+		if !found {
+			return value, nil
 		}
-		return value, nil
+		return key, nil
 	default:
-		return "", fmt.Errorf("%s: unexpected type %T", p, v)
+		return "", fmt.Errorf("%s: unexpected type %T", p, y)
 	}
 }
 
@@ -134,24 +135,6 @@ func volumeIndexer(y any, p tree.Path) (string, error) {
 			return "", err
 		}
 		return volume.Target, nil
-	}
-	return "", nil
-}
-
-func deviceMappingIndexer(y any, p tree.Path) (string, error) {
-	switch value := y.(type) {
-	case map[string]any:
-		target, ok := value["target"].(string)
-		if !ok {
-			return "", fmt.Errorf("service device %s is missing a mount target", p)
-		}
-		return target, nil
-	case string:
-		arr := strings.Split(value, ":")
-		if len(arr) == 1 {
-			return arr[0], nil
-		}
-		return arr[1], nil
 	}
 	return "", nil
 }

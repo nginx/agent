@@ -23,7 +23,6 @@ import (
 
 	"github.com/compose-spec/compose-go/v2/consts"
 	"github.com/compose-spec/compose-go/v2/override"
-	"github.com/compose-spec/compose-go/v2/paths"
 	"github.com/compose-spec/compose-go/v2/types"
 )
 
@@ -76,23 +75,17 @@ func applyServiceExtends(ctx context.Context, name string, services map[string]a
 		opts.ProcessEvent("extends", map[string]any{"service": ref})
 	}
 
-	var (
-		base      any
-		processor PostProcessor
-	)
-
+	var base any
 	if file != nil {
-		refFilename := file.(string)
-		services, processor, err = getExtendsBaseFromFile(ctx, name, ref, filename, refFilename, opts, tracker)
-		post = append(post, processor)
+		filename = file.(string)
+		services, err = getExtendsBaseFromFile(ctx, ref, filename, opts, tracker)
 		if err != nil {
 			return nil, err
 		}
-		filename = refFilename
 	} else {
 		_, ok := services[ref]
 		if !ok {
-			return nil, fmt.Errorf("cannot extend service %q in %s: service %q not found", name, filename, ref)
+			return nil, fmt.Errorf("cannot extend service %q in %s: service not found", name, filename)
 		}
 	}
 
@@ -123,78 +116,52 @@ func applyServiceExtends(ctx context.Context, name string, services map[string]a
 	if err != nil {
 		return nil, err
 	}
-
 	delete(merged, "extends")
 	services[name] = merged
 	return merged, nil
 }
 
-func getExtendsBaseFromFile(
-	ctx context.Context,
-	name, ref string,
-	path, refPath string,
-	opts *Options,
-	ct *cycleTracker,
-) (map[string]any, PostProcessor, error) {
+func getExtendsBaseFromFile(ctx context.Context, name string, path string, opts *Options, ct *cycleTracker) (map[string]any, error) {
 	for _, loader := range opts.ResourceLoaders {
-		if !loader.Accept(refPath) {
+		if !loader.Accept(path) {
 			continue
 		}
-		local, err := loader.Load(ctx, refPath)
+		local, err := loader.Load(ctx, path)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		localdir := filepath.Dir(local)
-		relworkingdir := loader.Dir(refPath)
+		relworkingdir := loader.Dir(path)
 
 		extendsOpts := opts.clone()
 		// replace localResourceLoader with a new flavour, using extended file base path
 		extendsOpts.ResourceLoaders = append(opts.RemoteResourceLoaders(), localResourceLoader{
 			WorkingDir: localdir,
 		})
-		extendsOpts.ResolvePaths = false // we do relative path resolution after file has been loaded
+		extendsOpts.ResolvePaths = true
 		extendsOpts.SkipNormalization = true
 		extendsOpts.SkipConsistencyCheck = true
 		extendsOpts.SkipInclude = true
 		extendsOpts.SkipExtends = true    // we manage extends recursively based on raw service definition
 		extendsOpts.SkipValidation = true // we validate the merge result
 		extendsOpts.SkipDefaultValues = true
-		source, processor, err := loadYamlFile(ctx, types.ConfigFile{Filename: local},
-			extendsOpts, relworkingdir, nil, ct, map[string]any{}, nil)
+		source, err := loadYamlModel(ctx, types.ConfigDetails{
+			WorkingDir: relworkingdir,
+			ConfigFiles: []types.ConfigFile{
+				{Filename: local},
+			},
+		}, extendsOpts, ct, nil)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
-		m, ok := source["services"]
+		services := source["services"].(map[string]any)
+		_, ok := services[name]
 		if !ok {
-			return nil, nil, fmt.Errorf("cannot extend service %q in %s: no services section", name, local)
+			return nil, fmt.Errorf("cannot extend service %q in %s: service not found", name, path)
 		}
-		services, ok := m.(map[string]any)
-		if !ok {
-			return nil, nil, fmt.Errorf("cannot extend service %q in %s: services must be a mapping", name, local)
-		}
-		_, ok = services[ref]
-		if !ok {
-			return nil, nil, fmt.Errorf(
-				"cannot extend service %q in %s: service %q not found in %s",
-				name,
-				path,
-				ref,
-				refPath,
-			)
-		}
-
-		var remotes []paths.RemoteResource
-		for _, loader := range opts.RemoteResourceLoaders() {
-			remotes = append(remotes, loader.Accept)
-		}
-		err = paths.ResolveRelativePaths(source, relworkingdir, remotes)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		return services, processor, nil
+		return services, nil
 	}
-	return nil, nil, fmt.Errorf("cannot read %s", refPath)
+	return nil, fmt.Errorf("cannot read %s", path)
 }
 
 func deepClone(value any) any {

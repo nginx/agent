@@ -560,69 +560,39 @@ func (p *Project) WithImagesResolved(resolver func(named reference.Named) (godig
 	})
 }
 
-type marshallOptions struct {
-	secretsContent bool
-}
-
-func WithSecretContent(o *marshallOptions) {
-	o.secretsContent = true
-}
-
-func (opt *marshallOptions) apply(p *Project) *Project {
-	if opt.secretsContent {
-		p = p.deepCopy()
-		for name, config := range p.Secrets {
-			config.marshallContent = true
-			p.Secrets[name] = config
-		}
-	}
-	return p
-}
-
-func applyMarshallOptions(p *Project, options ...func(*marshallOptions)) *Project {
-	opts := &marshallOptions{}
-	for _, option := range options {
-		option(opts)
-	}
-	p = opts.apply(p)
-	return p
-}
-
 // MarshalYAML marshal Project into a yaml tree
-func (p *Project) MarshalYAML(options ...func(*marshallOptions)) ([]byte, error) {
+func (p *Project) MarshalYAML() ([]byte, error) {
 	buf := bytes.NewBuffer([]byte{})
 	encoder := yaml.NewEncoder(buf)
 	encoder.SetIndent(2)
 	// encoder.CompactSeqIndent() FIXME https://github.com/go-yaml/yaml/pull/753
-	src := applyMarshallOptions(p, options...)
-	err := encoder.Encode(src)
+	err := encoder.Encode(p)
 	if err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
 }
 
-// MarshalJSON marshal Project into a json document
-func (p *Project) MarshalJSON(options ...func(*marshallOptions)) ([]byte, error) {
-	src := applyMarshallOptions(p, options...)
+// MarshalJSON makes Config implement json.Marshaler
+func (p *Project) MarshalJSON() ([]byte, error) {
 	m := map[string]interface{}{
-		"name":     src.Name,
-		"services": src.Services,
+		"name":     p.Name,
+		"services": p.Services,
 	}
 
-	if len(src.Networks) > 0 {
-		m["networks"] = src.Networks
+	if len(p.Networks) > 0 {
+		m["networks"] = p.Networks
 	}
-	if len(src.Volumes) > 0 {
-		m["volumes"] = src.Volumes
+	if len(p.Volumes) > 0 {
+		m["volumes"] = p.Volumes
 	}
-	if len(src.Secrets) > 0 {
-		m["secrets"] = src.Secrets
+	if len(p.Secrets) > 0 {
+		m["secrets"] = p.Secrets
 	}
-	if len(src.Configs) > 0 {
-		m["configs"] = src.Configs
+	if len(p.Configs) > 0 {
+		m["configs"] = p.Configs
 	}
-	for k, v := range src.Extensions {
+	for k, v := range p.Extensions {
 		m[k] = v
 	}
 	return json.MarshalIndent(m, "", "  ")
@@ -646,11 +616,22 @@ func (p Project) WithServicesEnvironmentResolved(discardEnvFiles bool) (*Project
 		}
 
 		for _, envFile := range service.EnvFiles {
-			vars, err := loadEnvFile(envFile, resolve)
-			if err != nil {
-				return nil, err
+			if _, err := os.Stat(envFile.Path); os.IsNotExist(err) {
+				if envFile.Required {
+					return nil, fmt.Errorf("env file %s not found: %w", envFile.Path, err)
+				}
+				continue
 			}
-			environment.OverrideBy(vars.ToMappingWithEquals())
+			b, err := os.ReadFile(envFile.Path)
+			if err != nil {
+				return nil, fmt.Errorf("failed to load %s: %w", envFile.Path, err)
+			}
+
+			fileVars, err := dotenv.ParseWithLookup(bytes.NewBuffer(b), resolve)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read %s: %w", envFile.Path, err)
+			}
+			environment.OverrideBy(Mapping(fileVars).ToMappingWithEquals())
 		}
 
 		service.Environment = environment.OverrideBy(service.Environment)
@@ -661,82 +642,6 @@ func (p Project) WithServicesEnvironmentResolved(discardEnvFiles bool) (*Project
 		newProject.Services[i] = service
 	}
 	return newProject, nil
-}
-
-// WithServicesLabelsResolved parses label_files set for services to resolve the actual label map for services
-// It returns a new Project instance with the changes and keep the original Project unchanged
-func (p Project) WithServicesLabelsResolved(discardLabelFiles bool) (*Project, error) {
-	newProject := p.deepCopy()
-	for i, service := range newProject.Services {
-		labels := MappingWithEquals{}
-		// resolve variables based on other files we already parsed
-		var resolve dotenv.LookupFn = func(s string) (string, bool) {
-			v, ok := labels[s]
-			if ok && v != nil {
-				return *v, ok
-			}
-			return "", false
-		}
-
-		for _, labelFile := range service.LabelFiles {
-			vars, err := loadLabelFile(labelFile, resolve)
-			if err != nil {
-				return nil, err
-			}
-			labels.OverrideBy(vars.ToMappingWithEquals())
-		}
-
-		labels = labels.OverrideBy(service.Labels.ToMappingWithEquals())
-		if len(labels) == 0 {
-			labels = nil
-		} else {
-			service.Labels = NewLabelsFromMappingWithEquals(labels)
-		}
-
-		if discardLabelFiles {
-			service.LabelFiles = nil
-		}
-		newProject.Services[i] = service
-	}
-	return newProject, nil
-}
-
-func loadEnvFile(envFile EnvFile, resolve dotenv.LookupFn) (Mapping, error) {
-	if _, err := os.Stat(envFile.Path); os.IsNotExist(err) {
-		if envFile.Required {
-			return nil, fmt.Errorf("env file %s not found: %w", envFile.Path, err)
-		}
-		return nil, nil
-	}
-
-	return loadMappingFile(envFile.Path, envFile.Format, resolve)
-}
-
-func loadLabelFile(labelFile string, resolve dotenv.LookupFn) (Mapping, error) {
-	if _, err := os.Stat(labelFile); os.IsNotExist(err) {
-		return nil, fmt.Errorf("label file %s not found: %w", labelFile, err)
-	}
-
-	return loadMappingFile(labelFile, "", resolve)
-}
-
-func loadMappingFile(path string, format string, resolve dotenv.LookupFn) (Mapping, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close() //nolint:errcheck
-
-	var fileVars map[string]string
-	if format != "" {
-		fileVars, err = dotenv.ParseWithFormat(file, path, resolve, format)
-	} else {
-		fileVars, err = dotenv.ParseWithLookup(file, resolve)
-	}
-	if err != nil {
-		return nil, err
-	}
-	return fileVars, nil
 }
 
 func (p *Project) deepCopy() *Project {
