@@ -277,7 +277,7 @@ func LogAndTerminateContainers(
 ) {
 	tb.Helper()
 
-	tb.Log("------------------- Logging nginx agent container logs -------------------")
+	tb.Log("Logging nginx agent container logs")
 	logReader, err := agentContainer.Logs(ctx)
 	require.NoError(tb, err)
 
@@ -294,7 +294,7 @@ func LogAndTerminateContainers(
 	require.NoError(tb, err)
 
 	if mockManagementPlaneContainer != nil {
-		tb.Log("------------------- Logging mock management container logs -------------------")
+		tb.Log("Logging mock management container logs")
 		logReader, err = mockManagementPlaneContainer.Logs(ctx)
 		require.NoError(tb, err)
 
