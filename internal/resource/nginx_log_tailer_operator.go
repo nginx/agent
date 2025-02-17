@@ -39,7 +39,6 @@ func NewLogTailerOperator(agentConfig *config.Config) *NginxLogTailerOperator {
 }
 
 func (l *NginxLogTailerOperator) Tail(ctx context.Context, errorLog string, errorChannel chan error) {
-	slog.Info("Tailing Logs")
 	t, err := nginx.NewTailer(errorLog)
 	if err != nil {
 		slog.ErrorContext(ctx, "Unable to tail error log after NGINX reload", "log_file", errorLog, "error", err)
@@ -48,8 +47,7 @@ func (l *NginxLogTailerOperator) Tail(ctx context.Context, errorLog string, erro
 
 		return
 	}
-
-	slog.Info("Monitoring Period", "", l.agentConfig.DataPlaneConfig.Nginx.ReloadMonitoringPeriod)
+	
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, l.agentConfig.DataPlaneConfig.Nginx.ReloadMonitoringPeriod)
 	defer cancel()
 

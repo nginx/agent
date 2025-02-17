@@ -112,13 +112,10 @@ func (i *NginxInstanceOperator) errorLogs(instance *mpi.Instance) (errorLogs []s
 		errorLogs = instance.GetInstanceRuntime().GetNginxRuntimeInfo().GetErrorLogs()
 	}
 
-	slog.Info("Error Logs", "", errorLogs)
-
 	return errorLogs
 }
 
 func (i *NginxInstanceOperator) monitorLogs(ctx context.Context, errorLogs []string, errorChannel chan error) {
-	slog.Info("Monitoring Logs")
 	if len(errorLogs) == 0 {
 		slog.InfoContext(ctx, "No NGINX error logs found to monitor")
 		return

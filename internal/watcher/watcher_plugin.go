@@ -153,7 +153,6 @@ func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message
 
 	w.watcherMutex.Lock()
 	defer w.watcherMutex.Unlock()
-	slog.Info("Apply In Progress Set")
 	w.instancesWithConfigApplyInProgress = append(w.instancesWithConfigApplyInProgress, instanceID)
 	w.fileWatcherService.SetEnabled(false)
 }

@@ -211,8 +211,6 @@ func (hw *HealthWatcherService) compareHealth(currentHealth map[string]*mpi.Inst
 			return true
 		}
 	}
-
-	slog.Info("No difference in health")
-
+	
 	return false
 }
