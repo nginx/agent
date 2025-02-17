@@ -56,6 +56,7 @@ func (*Exec) ProcessID() int32 {
 }
 
 func (*Exec) KillProcess(pid int32) error {
+	slog.Info("Kill PRocess")
 	return syscall.Kill(int(pid), syscall.SIGHUP)
 }
 
