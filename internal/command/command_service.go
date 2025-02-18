@@ -447,6 +447,7 @@ func (cs *CommandService) handleSubscribeError(ctx context.Context, err error, e
 	codeError, ok := status.FromError(err)
 
 	if ok && codeError.Code() == codes.Unavailable {
+		cs.isConnected.Store(false)
 		slog.ErrorContext(ctx, fmt.Sprintf("Failed to %s, rpc unavailable. "+
 			"Trying create connection rpc", errorMsg), "error", err)
 		_, connectionErr := cs.CreateConnection(ctx, cs.resource)
