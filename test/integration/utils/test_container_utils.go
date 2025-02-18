@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/docker/docker/api/types/container"
+
 	"github.com/docker/docker/api/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -73,6 +75,11 @@ func StartContainer(
 		},
 		ExposedPorts: []string{"9091/tcp"},
 		WaitingFor:   wait.ForLog(parameters.LogMessage),
+		HostConfigModifier: func(hostConfig *container.HostConfig) {
+			hostConfig.ExtraHosts = []string{
+				"host.docker.internal:host-gateway",
+			}
+		},
 		Networks: []string{
 			containerNetwork.Name,
 		},
