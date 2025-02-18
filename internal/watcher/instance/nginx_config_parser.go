@@ -21,6 +21,8 @@ import (
 	"strconv"
 	"strings"
 
+	"google.golang.org/protobuf/proto"
+
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/model"
@@ -139,7 +141,10 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 					nginxConfigContext.Files = append(nginxConfigContext.Files, rootFiles...)
 				case "ssl_certificate", "proxy_ssl_certificate", "ssl_client_certificate", "ssl_trusted_certificate":
 					sslCertFile := ncp.sslCert(ctx, directive.Args[0], rootDir)
-					nginxConfigContext.Files = append(nginxConfigContext.Files, sslCertFile)
+					if !ncp.checkDuplicate(nginxConfigContext.Files, sslCertFile) {
+						nginxConfigContext.Files = append(nginxConfigContext.Files, sslCertFile)
+					}
+
 				case "app_protect_security_log":
 					if len(directive.Args) > 1 {
 						syslogArg := directive.Args[1]
@@ -347,6 +352,16 @@ func (ncp *NginxConfigParser) sslCert(ctx context.Context, file, rootDir string)
 	}
 
 	return sslCertFile
+}
+
+func (ncp *NginxConfigParser) checkDuplicate(nginxConfigContextFiles []*mpi.File, newFile *mpi.File) bool {
+	for _, nginxConfigContextFile := range nginxConfigContextFiles {
+		if proto.Equal(nginxConfigContextFile, newFile) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (ncp *NginxConfigParser) crossplaneConfigTraverse(
