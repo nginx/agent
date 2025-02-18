@@ -279,11 +279,6 @@ func TestGrpc_ConfigApply(t *testing.T) {
 	teardownTest := setupConnectionTest(t, false, false)
 	defer teardownTest(t)
 
-	instanceType := "OSS"
-	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
-		instanceType = "PLUS"
-	}
-
 	nginxInstanceID := verifyConnection(t, 2)
 
 	responses := getManagementPlaneResponses(t, 1)
@@ -312,24 +307,11 @@ func TestGrpc_ConfigApply(t *testing.T) {
 
 		performConfigApply(t, nginxInstanceID)
 
-		if instanceType == "OSS" {
-			responses = getManagementPlaneResponses(t, 1)
-			t.Logf("Config apply responses: %v", responses)
+		responses = getManagementPlaneResponses(t, 1)
+		t.Logf("Config apply responses: %v", responses)
 
-			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
-			assert.Equal(t, "Config apply successful", responses[0].GetCommandResponse().GetMessage())
-		} else {
-			// NGINX Plus contains two extra Successfully updated all files responses as the NginxConfigContext
-			// is updated, and the file overview is then updated
-			responses = getManagementPlaneResponses(t, 3)
-			t.Logf("Config apply responses: %v", responses)
-			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
-			assert.Equal(t, "Config apply successful", responses[0].GetCommandResponse().GetMessage())
-			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
-			assert.Equal(t, "Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
-			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[2].GetCommandResponse().GetStatus())
-			assert.Equal(t, "Successfully updated all files", responses[2].GetCommandResponse().GetMessage())
-		}
+		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+		assert.Equal(t, "Config apply successful", responses[0].GetCommandResponse().GetMessage())
 	})
 
 	t.Run("Test 3: Invalid config", func(t *testing.T) {
@@ -344,27 +326,15 @@ func TestGrpc_ConfigApply(t *testing.T) {
 
 		performConfigApply(t, nginxInstanceID)
 
-		if instanceType == "OSS" {
-			responses = getManagementPlaneResponses(t, 2)
-			t.Logf("Config apply responses: %v", responses)
+		responses = getManagementPlaneResponses(t, 2)
+		t.Logf("Config apply responses: %v", responses)
 
-			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_ERROR, responses[0].GetCommandResponse().GetStatus())
-			assert.Equal(t, "Config apply failed, rolling back config", responses[0].GetCommandResponse().GetMessage())
-			assert.Equal(t, configApplyErrorMessage, responses[0].GetCommandResponse().GetError())
-			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE, responses[1].GetCommandResponse().GetStatus())
-			assert.Equal(t, "Config apply failed, rollback successful", responses[1].GetCommandResponse().GetMessage())
-			assert.Equal(t, configApplyErrorMessage, responses[1].GetCommandResponse().GetError())
-		} else {
-			responses = getManagementPlaneResponses(t, 2)
-			t.Logf("Config apply responses: %v", len(responses))
-
-			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_ERROR, responses[0].GetCommandResponse().GetStatus())
-			assert.Equal(t, "Config apply failed, rolling back config", responses[0].GetCommandResponse().GetMessage())
-			assert.Equal(t, configApplyErrorMessage, responses[0].GetCommandResponse().GetError())
-			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE, responses[1].GetCommandResponse().GetStatus())
-			assert.Equal(t, "Config apply failed, rollback successful", responses[1].GetCommandResponse().GetMessage())
-			assert.Equal(t, configApplyErrorMessage, responses[1].GetCommandResponse().GetError())
-		}
+		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_ERROR, responses[0].GetCommandResponse().GetStatus())
+		assert.Equal(t, "Config apply failed, rolling back config", responses[0].GetCommandResponse().GetMessage())
+		assert.Equal(t, configApplyErrorMessage, responses[0].GetCommandResponse().GetError())
+		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE, responses[1].GetCommandResponse().GetStatus())
+		assert.Equal(t, "Config apply failed, rollback successful", responses[1].GetCommandResponse().GetMessage())
+		assert.Equal(t, configApplyErrorMessage, responses[1].GetCommandResponse().GetError())
 	})
 
 	t.Run("Test 4: File not in allowed directory", func(t *testing.T) {
@@ -481,7 +451,7 @@ func performInvalidConfigApply(t *testing.T, nginxInstanceID string) {
 							"size": 0
 						},
 						"action": "FILE_ACTION_UPDATE"
-					}, 
+					},
 					{
 						"file_meta": {
 							"name": "/unknown/nginx.conf",

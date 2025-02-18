@@ -9,6 +9,7 @@ import (
 	"context"
 	"log/slog"
 	"slices"
+	"sync"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 
@@ -39,6 +40,7 @@ type (
 		fileUpdatesChannel                 chan file.FileUpdateMessage
 		cancel                             context.CancelFunc
 		instancesWithConfigApplyInProgress []string
+		watcherMutex                       sync.Mutex
 	}
 
 	instanceWatcherServiceInterface interface {
@@ -65,6 +67,7 @@ func NewWatcher(agentConfig *config.Config) *Watcher {
 		instanceHealthChannel:              make(chan health.InstanceHealthMessage),
 		fileUpdatesChannel:                 make(chan file.FileUpdateMessage),
 		instancesWithConfigApplyInProgress: []string{},
+		watcherMutex:                       sync.Mutex{},
 	}
 }
 
@@ -148,6 +151,8 @@ func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message
 
 	instanceID := request.ConfigApplyRequest.GetOverview().GetConfigVersion().GetInstanceId()
 
+	w.watcherMutex.Lock()
+	defer w.watcherMutex.Unlock()
 	w.instancesWithConfigApplyInProgress = append(w.instancesWithConfigApplyInProgress, instanceID)
 	w.fileWatcherService.SetEnabled(false)
 }
@@ -163,6 +168,7 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 
 	instanceID := response.GetInstanceId()
 
+	w.watcherMutex.Lock()
 	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
 		w.instancesWithConfigApplyInProgress,
 		func(element string) bool {
@@ -170,6 +176,7 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 		},
 	)
 	w.fileWatcherService.SetEnabled(true)
+	w.watcherMutex.Unlock()
 
 	w.instanceWatcherService.ReparseConfig(ctx, instanceID)
 }
@@ -191,6 +198,8 @@ func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Messag
 
 	instanceID := response.GetInstanceId()
 
+	w.watcherMutex.Lock()
+	defer w.watcherMutex.Unlock()
 	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
 		w.instancesWithConfigApplyInProgress,
 		func(element string) bool {
@@ -210,7 +219,7 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 			w.handleInstanceUpdates(newCtx, message)
 		case message := <-w.nginxConfigContextChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
-
+			w.watcherMutex.Lock()
 			if !slices.Contains(w.instancesWithConfigApplyInProgress, message.NginxConfigContext.InstanceID) {
 				slog.DebugContext(
 					newCtx,
@@ -229,6 +238,7 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 					"nginx_config_context", message.NginxConfigContext,
 				)
 			}
+			w.watcherMutex.Unlock()
 		case message := <-w.instanceHealthChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 			w.messagePipe.Process(newCtx, &bus.Message{
