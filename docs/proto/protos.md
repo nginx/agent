@@ -721,6 +721,7 @@ Container information
 | ----- | ---- | ----- | ----------- |
 | container_id | [string](#string) |  | The identifier of the container |
 | hostname | [string](#string) |  | The name of the host |
+| release_info | [ReleaseInfo](#mpi-v1-ReleaseInfo) |  | Release information of the container |
 
 
 
