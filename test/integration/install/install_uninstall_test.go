@@ -32,6 +32,34 @@ var (
 	INSTALL_FROM_REPO      = os.Getenv("INSTALL_FROM_REPO")
 )
 
+func installUninstallSetup(tb testing.TB, expectNoErrorsInLogs bool) (testcontainers.Container, func(tb testing.TB)) {
+	tb.Helper()
+	ctx := context.Background()
+
+	params := &utils.Parameters{
+		NginxConfigPath: "./nginx.conf",
+		LogMessage:      "nginx_pid",
+	}
+
+	// start container without agent installed
+	testContainer := utils.StartAgentlessContainer(
+		ctx,
+		tb,
+		params,
+	)
+
+	return testContainer, func(tb testing.TB) {
+		tb.Helper()
+		utils.LogAndTerminateContainers(
+			ctx,
+			tb,
+			nil,
+			testContainer,
+			expectNoErrorsInLogs,
+		)
+	}
+}
+
 // TestAgentManualInstallUninstall tests Agent Install and Uninstall.
 // Verifies that agent installs with correct output and files.
 // Verifies that agent uninstalls and removes all the files.
@@ -47,7 +75,8 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 		"AgentDynamicConfigFile": "/var/lib/nginx-agent/agent-dynamic.conf",
 	}
 
-	testContainer := utils.SetupTestContainerWithoutAgent(t)
+	testContainer, teardownTest := installUninstallSetup(t, true)
+	defer teardownTest(t)
 
 	ctx := context.Background()
 
@@ -84,8 +113,8 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 	}
 
 	// Check nginx-agent config files were created.
-	for _, path := range expectedAgentPaths {
-		_, err = testContainer.CopyFileFromContainer(ctx, path)
+	for _, agentPath := range expectedAgentPaths {
+		_, err = testContainer.CopyFileFromContainer(ctx, agentPath)
 		assert.NoError(t, err)
 	}
 
@@ -115,14 +144,14 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 	}
 
 	// Check nginx-agent config files were removed.
-	for path := range expectedAgentPaths {
-		_, err = testContainer.CopyFileFromContainer(ctx, path)
+	for agentPath := range expectedAgentPaths {
+		_, err = testContainer.CopyFileFromContainer(ctx, agentPath)
 		assert.Error(t, err)
 	}
 }
 
 // installAgent installs the agent returning total install time and install output
-func installAgent(ctx context.Context, container *testcontainers.DockerContainer, osReleaseContent string, agentPackageFilePath string) (string, time.Duration, error) {
+func installAgent(ctx context.Context, container testcontainers.Container, osReleaseContent string, agentPackageFilePath string) (string, time.Duration, error) {
 	installCmd := createInstallCommand(osReleaseContent, agentPackageFilePath)
 
 	start := time.Now()
@@ -140,7 +169,7 @@ func installAgent(ctx context.Context, container *testcontainers.DockerContainer
 }
 
 // uninstallAgent uninstall the agent returning output
-func uninstallAgent(ctx context.Context, container *testcontainers.DockerContainer, osReleaseContent string) (string, error) {
+func uninstallAgent(ctx context.Context, container testcontainers.Container, osReleaseContent string) (string, error) {
 	uninstallCmd := createUninstallCommand(osReleaseContent)
 
 	exitCode, cmdOut, err := container.Exec(ctx, uninstallCmd)
@@ -155,7 +184,7 @@ func uninstallAgent(ctx context.Context, container *testcontainers.DockerContain
 	return string(stdoutStderr), err
 }
 
-func updateDebRepo(testContainer *testcontainers.DockerContainer) error {
+func updateDebRepo(testContainer testcontainers.Container) error {
 	if INSTALL_FROM_REPO == "" {
 		return nil
 	}
@@ -202,7 +231,7 @@ func createUninstallCommand(osReleaseContent string) []string {
 	}
 }
 
-func checkAgentVersion(ctx context.Context, container *testcontainers.DockerContainer) (string, error) {
+func checkAgentVersion(ctx context.Context, container testcontainers.Container) (string, error) {
 	exitCode, cmdOut, err := container.Exec(ctx, []string{"nginx-agent", "--version"})
 	if err != nil {
 		return "", fmt.Errorf("failed to check agent version: %v", err)
@@ -215,7 +244,7 @@ func checkAgentVersion(ctx context.Context, container *testcontainers.DockerCont
 	return strings.Trim(string(stdoutStderr), "%\x00\x01\n"), nil
 }
 
-func nginxIsRunning(ctx context.Context, container *testcontainers.DockerContainer) bool {
+func nginxIsRunning(ctx context.Context, container testcontainers.Container) bool {
 	exitCode, _, err := container.Exec(ctx, []string{"pgrep", "nginx"})
 
 	if err != nil || exitCode != 0 {
@@ -224,7 +253,7 @@ func nginxIsRunning(ctx context.Context, container *testcontainers.DockerContain
 	return true
 }
 
-func getOsReleaseContent(ctx context.Context, testContainer *testcontainers.DockerContainer) (string, error) {
+func getOsReleaseContent(ctx context.Context, testContainer testcontainers.Container) (string, error) {
 	exitCode, osReleaseFileContent, err := testContainer.Exec(ctx, []string{"cat", osReleasePath})
 	if err != nil {
 		return "", fmt.Errorf("failed to read osRelease file: %v", err)
