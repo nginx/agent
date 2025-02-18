@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -66,6 +67,7 @@ config_dirs: "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules:/etc/nms:
 )
 
 func TestRegistrationAndConfigApply(t *testing.T) {
+	ctx := context.Background()
 	grpcListener, grpcClose := createListener()
 	defer grpcClose()
 
@@ -90,11 +92,18 @@ func TestRegistrationAndConfigApply(t *testing.T) {
 	}()
 	assert.NoError(t, err)
 
-	testContainer := utils.SetupTestContainerWithAgent(
+	containerNetwork := utils.CreateContainerNetwork(ctx, t)
+
+	params := &utils.Parameters{
+		NginxAgentConfigPath: "./nginx-agent.conf",
+		LogMessage:           "The following core plugins have been registered",
+	}
+
+	testContainer := utils.StartContainer(
+		ctx,
 		t,
-		"grpc-registration-and-config-apply",
-		"./nginx-agent.conf:/etc/nginx-agent/nginx-agent.conf",
-		"The following core plugins have been registered",
+		containerNetwork,
+		params,
 	)
 
 	// Validate that registration is complete

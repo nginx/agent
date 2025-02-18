@@ -3,6 +3,7 @@ package features
 import (
 	"context"
 	"io"
+	"os"
 	"testing"
 
 	"github.com/nginx/agent/test/integration/utils"
@@ -16,12 +17,27 @@ func TestFeatures_NginxCountingEnabled(t *testing.T) {
 	}
 	disabledFeatureLogs := []string{"level=info msg=\"Events initializing\"", "level=info msg=\"Agent API initializing\""}
 
-	testContainer := utils.SetupTestContainerWithAgent(
+	ctx := context.Background()
+	containerNetwork := utils.CreateContainerNetwork(ctx, t)
+
+	nginxConf := "./nginx-oss.conf"
+	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+		nginxConf = "./nginx-plus.conf"
+	}
+
+	params := &utils.Parameters{
+		NginxAgentConfigPath: "./test_configs/nginx-agent-counting.conf",
+		NginxConfigPath:      nginxConf,
+		LogMessage:           "MetricsThrottle waiting for report ready",
+	}
+
+	testContainer := utils.StartContainer(
+		ctx,
 		t,
-		"features-nginx-counting-enabled",
-		"./test_configs/nginx-agent-counting.conf:/etc/nginx-agent/nginx-agent.conf",
-		"MetricsThrottle waiting for report ready",
+		containerNetwork,
+		params,
 	)
+
 	utils.TestAgentHasNoErrorLogs(t, testContainer)
 
 	exitCode, agentLogFile, err := testContainer.Exec(context.Background(), []string{"cat", "/var/log/nginx-agent/agent.log"})
@@ -46,11 +62,25 @@ func TestFeatures_MetricsEnabled(t *testing.T) {
 	enabledFeatureLogs := []string{"level=info msg=\"Metrics initializing\"", "level=info msg=\"MetricsThrottle initializing\"", "level=info msg=\"DataPlaneStatus initializing\""}
 	disabledFeatureLogs := []string{"level=info msg=\"OneTimeRegistration initializing\"", "level=info msg=\"Events initializing\"", "level=info msg=\"Agent API initializing\""}
 
-	testContainer := utils.SetupTestContainerWithAgent(
+	ctx := context.Background()
+	containerNetwork := utils.CreateContainerNetwork(ctx, t)
+
+	nginxConf := "./nginx-oss.conf"
+	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+		nginxConf = "./nginx-plus.conf"
+	}
+
+	params := &utils.Parameters{
+		NginxAgentConfigPath: "./test_configs/nginx-agent-metrics.conf",
+		NginxConfigPath:      nginxConf,
+		LogMessage:           "MetricsThrottle waiting for report ready",
+	}
+
+	testContainer := utils.StartContainer(
+		ctx,
 		t,
-		"features-metrics-enabled",
-		"./test_configs/nginx-agent-metrics.conf:/etc/nginx-agent/nginx-agent.conf",
-		"MetricsThrottle waiting for report ready",
+		containerNetwork,
+		params,
 	)
 
 	utils.TestAgentHasNoErrorLogs(t, testContainer)
@@ -77,11 +107,25 @@ func TestFeatures_ConfigEnabled(t *testing.T) {
 	enabledFeatureLogs := []string{"level=info msg=\"DataPlaneStatus initializing\""}
 	disabledFeatureLogs := []string{"level=info msg=\"Events initializing\"", "level=info msg=\"Agent API initializing\"", "level=info msg=\"Metrics initializing\"", "level=info msg=\"MetricsThrottle initializing\""}
 
-	testContainer := utils.SetupTestContainerWithAgent(
+	ctx := context.Background()
+	containerNetwork := utils.CreateContainerNetwork(ctx, t)
+
+	nginxConf := "./nginx-oss.conf"
+	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+		nginxConf = "./nginx-plus.conf"
+	}
+
+	params := &utils.Parameters{
+		NginxAgentConfigPath: "./test_configs/nginx-agent-config.conf",
+		NginxConfigPath:      nginxConf,
+		LogMessage:           "DataPlaneStatus initializing",
+	}
+
+	testContainer := utils.StartContainer(
+		ctx,
 		t,
-		"features-config-enabled",
-		"./test_configs/nginx-agent-config.conf:/etc/nginx-agent/nginx-agent.conf",
-		"DataPlaneStatus initializing",
+		containerNetwork,
+		params,
 	)
 
 	utils.TestAgentHasNoErrorLogs(t, testContainer)
