@@ -978,11 +978,10 @@ func TestNginxConfigParser_checkDuplicate(t *testing.T) {
 			name: "Test 1: File already in files",
 			file: &mpi.File{
 				FileMeta: &mpi.FileMeta{
-					Name:         "/etc/nginx/certs/nginx-repo.crt",
-					Hash:         fileHash,
-					ModifiedTime: timestamppb.Now(),
-					Permissions:  "0640",
-					Size:         0,
+					Name:        "/etc/nginx/certs/nginx-repo.crt",
+					Hash:        fileHash,
+					Permissions: "0640",
+					Size:        0,
 				},
 			},
 			expected: true,
@@ -1006,11 +1005,10 @@ func TestNginxConfigParser_checkDuplicate(t *testing.T) {
 		Files: []*mpi.File{
 			{
 				FileMeta: &mpi.FileMeta{
-					Name:         "/etc/nginx/certs/nginx-repo.crt",
-					Hash:         fileHash,
-					ModifiedTime: timestamppb.Now(),
-					Permissions:  "0640",
-					Size:         0,
+					Name:        "/etc/nginx/certs/nginx-repo.crt",
+					Hash:        fileHash,
+					Permissions: "0640",
+					Size:        0,
 				},
 			},
 			{
