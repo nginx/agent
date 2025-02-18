@@ -15,6 +15,8 @@ const (
 	ConfigUploadRequestTopic     = "config-upload-request"
 	DataPlaneResponseTopic       = "data-plane-response"
 	ConnectionCreatedTopic       = "connection-created"
+	CredentialUpdatedTopic       = "credential-updated"
+	ConnectionResetTopic         = "connection-reset"
 	ConfigApplyRequestTopic      = "config-apply-request"
 	WriteConfigSuccessfulTopic   = "write-config-successful"
 	ConfigApplySuccessfulTopic   = "config-apply-successful"
