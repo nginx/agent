@@ -21,8 +21,6 @@ import (
 	"strconv"
 	"strings"
 
-	"google.golang.org/protobuf/proto"
-
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/model"
@@ -356,7 +354,7 @@ func (ncp *NginxConfigParser) sslCert(ctx context.Context, file, rootDir string)
 
 func (ncp *NginxConfigParser) checkDuplicate(nginxConfigContextFiles []*mpi.File, newFile *mpi.File) bool {
 	for _, nginxConfigContextFile := range nginxConfigContextFiles {
-		if proto.Equal(nginxConfigContextFile, newFile) {
+		if nginxConfigContextFile.GetFileMeta().GetName() == newFile.GetFileMeta().GetName() {
 			return true
 		}
 	}
