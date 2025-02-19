@@ -94,7 +94,7 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 
 			return
 		}
-		resource := r.resourceService.UpdateInstances(instanceList)
+		resource := r.resourceService.UpdateInstances(ctx, instanceList)
 
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: resource})
 
@@ -107,7 +107,7 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 
 			return
 		}
-		resource := r.resourceService.DeleteInstances(instanceList)
+		resource := r.resourceService.DeleteInstances(ctx, instanceList)
 
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: resource})
 
