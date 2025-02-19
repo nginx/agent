@@ -110,7 +110,8 @@ func ResolveConfig() (*Config, error) {
 
 	slog.Debug("Agent config", "config", config)
 	slog.Info("Enabled features", "features", config.Features)
-	slog.Info("Excluded files from file monitoring", "exclude_files", config.Watchers.FileWatcher.ExcludeFiles)
+	slog.Info("Excluded files from being watched for file changes", "exclude_files",
+		config.Watchers.FileWatcher.ExcludeFiles)
 
 	return config, nil
 }
