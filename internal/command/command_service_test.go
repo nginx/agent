@@ -519,8 +519,8 @@ func TestCommandService_isValidRequest(t *testing.T) {
 }
 
 type FakeGrpcError struct {
-	code  codes.Code
 	error string
+	code  codes.Code
 }
 
 func (e *FakeGrpcError) Error() string {
