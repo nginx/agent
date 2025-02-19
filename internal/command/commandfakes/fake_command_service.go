@@ -33,16 +33,6 @@ type FakeCommandService struct {
 	isConnectedReturnsOnCall map[int]struct {
 		result1 bool
 	}
-	ResourceStub        func() *v1.Resource
-	resourceMutex       sync.RWMutex
-	resourceArgsForCall []struct {
-	}
-	resourceReturns struct {
-		result1 *v1.Resource
-	}
-	resourceReturnsOnCall map[int]struct {
-		result1 *v1.Resource
-	}
 	SendDataPlaneResponseStub        func(context.Context, *v1.DataPlaneResponse) error
 	sendDataPlaneResponseMutex       sync.RWMutex
 	sendDataPlaneResponseArgsForCall []struct {
@@ -208,59 +198,6 @@ func (fake *FakeCommandService) IsConnectedReturnsOnCall(i int, result1 bool) {
 	}
 	fake.isConnectedReturnsOnCall[i] = struct {
 		result1 bool
-	}{result1}
-}
-
-func (fake *FakeCommandService) Resource() *v1.Resource {
-	fake.resourceMutex.Lock()
-	ret, specificReturn := fake.resourceReturnsOnCall[len(fake.resourceArgsForCall)]
-	fake.resourceArgsForCall = append(fake.resourceArgsForCall, struct {
-	}{})
-	stub := fake.ResourceStub
-	fakeReturns := fake.resourceReturns
-	fake.recordInvocation("Resource", []interface{}{})
-	fake.resourceMutex.Unlock()
-	if stub != nil {
-		return stub()
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fakeReturns.result1
-}
-
-func (fake *FakeCommandService) ResourceCallCount() int {
-	fake.resourceMutex.RLock()
-	defer fake.resourceMutex.RUnlock()
-	return len(fake.resourceArgsForCall)
-}
-
-func (fake *FakeCommandService) ResourceCalls(stub func() *v1.Resource) {
-	fake.resourceMutex.Lock()
-	defer fake.resourceMutex.Unlock()
-	fake.ResourceStub = stub
-}
-
-func (fake *FakeCommandService) ResourceReturns(result1 *v1.Resource) {
-	fake.resourceMutex.Lock()
-	defer fake.resourceMutex.Unlock()
-	fake.ResourceStub = nil
-	fake.resourceReturns = struct {
-		result1 *v1.Resource
-	}{result1}
-}
-
-func (fake *FakeCommandService) ResourceReturnsOnCall(i int, result1 *v1.Resource) {
-	fake.resourceMutex.Lock()
-	defer fake.resourceMutex.Unlock()
-	fake.ResourceStub = nil
-	if fake.resourceReturnsOnCall == nil {
-		fake.resourceReturnsOnCall = make(map[int]struct {
-			result1 *v1.Resource
-		})
-	}
-	fake.resourceReturnsOnCall[i] = struct {
-		result1 *v1.Resource
 	}{result1}
 }
 
@@ -526,8 +463,6 @@ func (fake *FakeCommandService) Invocations() map[string][][]interface{} {
 	defer fake.createConnectionMutex.RUnlock()
 	fake.isConnectedMutex.RLock()
 	defer fake.isConnectedMutex.RUnlock()
-	fake.resourceMutex.RLock()
-	defer fake.resourceMutex.RUnlock()
 	fake.sendDataPlaneResponseMutex.RLock()
 	defer fake.sendDataPlaneResponseMutex.RUnlock()
 	fake.subscribeMutex.RLock()
