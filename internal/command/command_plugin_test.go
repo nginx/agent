@@ -399,5 +399,4 @@ func Test_createDataPlaneResponse(t *testing.T) {
 }
 
 func TestCommandPlugin_processConnectionReset(t *testing.T) {
-
 }

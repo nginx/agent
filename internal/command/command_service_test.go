@@ -9,12 +9,13 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"log/slog"
 	"sync"
 	"testing"
 	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -542,5 +543,5 @@ func TestCommandService_handleSubscribeError(t *testing.T) {
 	require.Error(t, commandService.handleSubscribeError(ctx, errors.New(""), ""))
 
 	err := commandService.handleSubscribeError(ctx, errors.New("blah blah blah"), "Testing handleSubscribeError")
-	require.NotNil(t, err)
+	require.Error(t, err)
 }
