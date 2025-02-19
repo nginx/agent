@@ -901,7 +901,8 @@ func createConfig() *Config {
 				Type: Grpc,
 			},
 			Auth: &AuthConfig{
-				Token: "1234",
+				Token:     "1234",
+				TokenPath: "path/to/my_token",
 			},
 			TLS: &TLSConfig{
 				Cert:       "some.cert",
