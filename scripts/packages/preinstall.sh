@@ -26,7 +26,6 @@ AGENT_CONFIG_FILE=${AGENT_CONFIG_FILE:-"/etc/nginx-agent/nginx-agent.conf"}
 #
 # Functions
 #
-
 err_exit() {
     printf "\n%b" "$1"
     printf " exiting.\n"
