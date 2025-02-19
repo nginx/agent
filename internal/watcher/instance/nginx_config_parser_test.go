@@ -1046,7 +1046,7 @@ func TestNginxConfigParser_checkDuplicate(t *testing.T) {
 	for _, test := range tests {
 		ncp := NewNginxConfigParser(types.AgentConfig())
 		t.Run(test.name, func(t *testing.T) {
-			assert.Equal(t, test.expected, ncp.checkDuplicate(nginxConfigContextFiles.Files, test.file))
+			assert.Equal(t, test.expected, ncp.isDuplicateFile(nginxConfigContextFiles.Files, test.file))
 		})
 	}
 }
