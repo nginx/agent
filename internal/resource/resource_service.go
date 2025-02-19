@@ -44,8 +44,8 @@ const (
 
 type resourceServiceInterface interface {
 	AddInstances(instanceList []*mpi.Instance) *mpi.Resource
-	UpdateInstances(instanceList []*mpi.Instance) *mpi.Resource
-	DeleteInstances(instanceList []*mpi.Instance) *mpi.Resource
+	UpdateInstances(ctx context.Context, instanceList []*mpi.Instance) *mpi.Resource
+	DeleteInstances(ctx context.Context, instanceList []*mpi.Instance) *mpi.Resource
 	ApplyConfig(ctx context.Context, instanceID string) error
 	Instance(instanceID string) *mpi.Instance
 	GetHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance, upstreams string) ([]client.UpstreamServer,
@@ -128,7 +128,7 @@ func (r *ResourceService) RemoveOperator(instanceList []*mpi.Instance) {
 	}
 }
 
-func (r *ResourceService) UpdateInstances(instanceList []*mpi.Instance) *mpi.Resource {
+func (r *ResourceService) UpdateInstances(ctx context.Context, instanceList []*mpi.Instance) *mpi.Resource {
 	r.resourceMutex.Lock()
 	defer r.resourceMutex.Unlock()
 
@@ -144,14 +144,15 @@ func (r *ResourceService) UpdateInstances(instanceList []*mpi.Instance) *mpi.Res
 			}
 			r.resource = resourceCopy
 		} else {
-			slog.Warn("Error updating resource instances", "instances", instanceList)
+			slog.WarnContext(ctx, "Unable to clone resource while updating instances", "resource",
+				r.resource, "instances", instanceList)
 		}
 	}
 
 	return r.resource
 }
 
-func (r *ResourceService) DeleteInstances(instanceList []*mpi.Instance) *mpi.Resource {
+func (r *ResourceService) DeleteInstances(ctx context.Context, instanceList []*mpi.Instance) *mpi.Resource {
 	r.resourceMutex.Lock()
 	defer r.resourceMutex.Unlock()
 
@@ -164,7 +165,8 @@ func (r *ResourceService) DeleteInstances(instanceList []*mpi.Instance) *mpi.Res
 				}
 			}
 		} else {
-			slog.Warn("Error deleting instances from resource", "instances", instanceList)
+			slog.WarnContext(ctx, "Unable to clone resource while deleting instances", "resource",
+				r.resource, "instances", instanceList)
 		}
 	}
 	r.RemoveOperator(instanceList)
