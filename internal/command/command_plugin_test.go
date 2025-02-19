@@ -397,6 +397,3 @@ func Test_createDataPlaneResponse(t *testing.T) {
 	assert.Equal(t, expected.GetCommandResponse(), result.GetCommandResponse())
 	assert.Equal(t, expected.GetMessageMeta().GetCorrelationId(), result.GetMessageMeta().GetCorrelationId())
 }
-
-func TestCommandPlugin_processConnectionReset(t *testing.T) {
-}

@@ -125,7 +125,7 @@ func (cws *CredentialWatcherService) addWatcher(ctx context.Context, filePath st
 }
 
 func (cws *CredentialWatcherService) watchFiles(ctx context.Context, files []string) {
-	slog.DebugContext(ctx, "creating credential watchers")
+	slog.DebugContext(ctx, "Creating credential watchers")
 
 	for _, filePath := range files {
 		cws.addWatcher(ctx, filePath)
@@ -149,15 +149,7 @@ func (cws *CredentialWatcherService) handleEvent(ctx context.Context, event fsno
 			return
 		}
 
-		if event.Has(event.Op & Write) {
-			// We want to send messages on write since that means the contents changed,
-			// but we also need to restart the gRPC connection to load the new credentials from the file being watched.
-			// Can we post a message on the message bus to trigger the CommandService to restart the gRPC connection?
-			slog.DebugContext(ctx, "Write event", "event", event)
-		}
-
 		slog.DebugContext(ctx, "Processing FSNotify event", "event", event)
-
 		cws.filesChanged.Store(true)
 	}
 }
@@ -179,7 +171,6 @@ func (cws *CredentialWatcherService) checkForUpdates(ctx context.Context, ch cha
 func credentialPaths(agentConfig *config.Config) []string {
 	var paths []string
 
-	// is dataplane key token set?
 	if agentConfig.Command.Auth != nil {
 		if agentConfig.Command.Auth.TokenPath != "" {
 			paths = append(paths, agentConfig.Command.Auth.TokenPath)

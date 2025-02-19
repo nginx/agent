@@ -32,7 +32,6 @@ type (
 		UpdateDataPlaneHealth(ctx context.Context, instanceHealths []*mpi.InstanceHealth) error
 		SendDataPlaneResponse(ctx context.Context, response *mpi.DataPlaneResponse) error
 		UpdateClient(client mpi.CommandServiceClient)
-		Resource() *mpi.Resource
 		Subscribe(ctx context.Context)
 		IsConnected() bool
 		CreateConnection(ctx context.Context, resource *mpi.Resource) (*mpi.CreateConnectionResponse, error)
@@ -185,7 +184,7 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 		}
 		err := cp.conn.Close(ctx)
 		if err != nil {
-			slog.ErrorContext(ctx, "Unable to close connection", "error", err)
+			slog.ErrorContext(ctx, "Command plugin: unable to close connection", "error", err)
 		}
 		cp.conn = newConnection
 		cp.commandService.UpdateClient(cp.conn.CommandServiceClient())

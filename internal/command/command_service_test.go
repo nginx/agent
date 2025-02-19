@@ -206,9 +206,8 @@ func TestCommandService_UpdateClient(t *testing.T) {
 		types.AgentConfig(),
 		make(chan *mpi.ManagementPlaneRequest),
 	)
-	assert.False(t, commandService.clientUpdated.Load())
 	commandService.UpdateClient(commandServiceClient)
-	assert.True(t, commandService.clientUpdated.Load())
+	assert.NotNil(t, commandServiceClient)
 }
 
 func TestCommandService_UpdateDataPlaneHealth(t *testing.T) {

@@ -220,9 +220,11 @@ func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Messag
 
 func (w *Watcher) handleCredentialUpdate(ctx context.Context) {
 	slog.DebugContext(ctx, "Watcher plugin received credential update: resetting grpc connection")
+
 	conn, err := grpc.NewGrpcConnection(ctx, w.agentConfig)
 	if err != nil {
-		slog.ErrorContext(ctx, "Unable to create new grpc connection", "err", err)
+		slog.ErrorContext(ctx, "Unable to create new grpc connection", "error", err)
+		return
 	}
 	w.messagePipe.Process(ctx, &bus.Message{
 		Topic: bus.ConnectionResetTopic, Data: conn,
