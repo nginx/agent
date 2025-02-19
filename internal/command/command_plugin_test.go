@@ -143,6 +143,12 @@ func TestCommandPlugin_Process(t *testing.T) {
 	})
 	require.Equal(t, 1, fakeCommandService.UpdateDataPlaneHealthCallCount())
 	require.Equal(t, 1, fakeCommandService.SendDataPlaneResponseCallCount())
+
+	commandPlugin.Process(ctx, &bus.Message{
+		Topic: bus.ConnectionResetTopic,
+		Data:  commandPlugin.conn,
+	})
+	require.Equal(t, 1, fakeCommandService.UpdateClientCallCount())
 }
 
 func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
@@ -390,4 +396,8 @@ func Test_createDataPlaneResponse(t *testing.T) {
 
 	assert.Equal(t, expected.GetCommandResponse(), result.GetCommandResponse())
 	assert.Equal(t, expected.GetMessageMeta().GetCorrelationId(), result.GetMessageMeta().GetCorrelationId())
+}
+
+func TestCommandPlugin_processConnectionReset(t *testing.T) {
+
 }

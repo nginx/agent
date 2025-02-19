@@ -9,6 +9,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"log/slog"
 	"sync"
 	"testing"
@@ -513,4 +515,32 @@ func TestCommandService_isValidRequest(t *testing.T) {
 			assert.Equal(t, testCase.result, result)
 		})
 	}
+}
+
+type FakeGrpcError struct {
+	code  codes.Code
+	error string
+}
+
+func (e *FakeGrpcError) Error() string {
+	return e.error
+}
+
+func (e *FakeGrpcError) GRPCStatus() *status.Status {
+	return status.New(e.code, e.error)
+}
+
+func TestCommandService_handleSubscribeError(t *testing.T) {
+	ctx := context.Background()
+	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
+
+	commandService := NewCommandService(
+		commandServiceClient,
+		types.AgentConfig(),
+		make(chan *mpi.ManagementPlaneRequest),
+	)
+	require.Error(t, commandService.handleSubscribeError(ctx, errors.New(""), ""))
+
+	err := commandService.handleSubscribeError(ctx, errors.New("blah blah blah"), "Testing handleSubscribeError")
+	require.NotNil(t, err)
 }
