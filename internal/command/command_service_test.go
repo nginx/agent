@@ -14,9 +14,6 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -516,19 +513,6 @@ func TestCommandService_isValidRequest(t *testing.T) {
 			assert.Equal(t, testCase.result, result)
 		})
 	}
-}
-
-type FakeGrpcError struct {
-	error string
-	code  codes.Code
-}
-
-func (e *FakeGrpcError) Error() string {
-	return e.error
-}
-
-func (e *FakeGrpcError) GRPCStatus() *status.Status {
-	return status.New(e.code, e.error)
 }
 
 func TestCommandService_handleSubscribeError(t *testing.T) {
