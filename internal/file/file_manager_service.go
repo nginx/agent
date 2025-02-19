@@ -193,6 +193,7 @@ func (fms *FileManagerService) updateFiles(
 	diffFiles := slices.Collect(maps.Values(delta))
 
 	for _, file := range diffFiles {
+		slog.DebugContext(ctx, "Updating file", "file", file.GetFileMeta())
 		updateErr := fms.UpdateFile(ctx, instanceID, file)
 		if updateErr != nil {
 			return updateErr

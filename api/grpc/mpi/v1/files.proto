@@ -275,7 +275,7 @@ message X509Name {
     string serial_number = 8 [(buf.validate.field).string.min_len = 0];
     
     // Common Name (CN): Typically the person’s or entity's full name.
-    string common_name = 9 [(buf.validate.field).string.min_len = 1];
+    string common_name = 9 [(buf.validate.field).string.min_len = 0];
     
     // Parsed attributes including any non-standard attributes, as specified in RFC 2253.
     // These attributes are parsed but not marshaled by this package.
