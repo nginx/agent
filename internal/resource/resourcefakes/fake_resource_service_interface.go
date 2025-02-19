@@ -34,10 +34,11 @@ type FakeResourceServiceInterface struct {
 	applyConfigReturnsOnCall map[int]struct {
 		result1 error
 	}
-	DeleteInstancesStub        func([]*v1.Instance) *v1.Resource
+	DeleteInstancesStub        func(context.Context, []*v1.Instance) *v1.Resource
 	deleteInstancesMutex       sync.RWMutex
 	deleteInstancesArgsForCall []struct {
-		arg1 []*v1.Instance
+		arg1 context.Context
+		arg2 []*v1.Instance
 	}
 	deleteInstancesReturns struct {
 		result1 *v1.Resource
@@ -119,10 +120,11 @@ type FakeResourceServiceInterface struct {
 		result3 []client.UpstreamServer
 		result4 error
 	}
-	UpdateInstancesStub        func([]*v1.Instance) *v1.Resource
+	UpdateInstancesStub        func(context.Context, []*v1.Instance) *v1.Resource
 	updateInstancesMutex       sync.RWMutex
 	updateInstancesArgsForCall []struct {
-		arg1 []*v1.Instance
+		arg1 context.Context
+		arg2 []*v1.Instance
 	}
 	updateInstancesReturns struct {
 		result1 *v1.Resource
@@ -282,23 +284,24 @@ func (fake *FakeResourceServiceInterface) ApplyConfigReturnsOnCall(i int, result
 	}{result1}
 }
 
-func (fake *FakeResourceServiceInterface) DeleteInstances(arg1 []*v1.Instance) *v1.Resource {
-	var arg1Copy []*v1.Instance
-	if arg1 != nil {
-		arg1Copy = make([]*v1.Instance, len(arg1))
-		copy(arg1Copy, arg1)
+func (fake *FakeResourceServiceInterface) DeleteInstances(arg1 context.Context, arg2 []*v1.Instance) *v1.Resource {
+	var arg2Copy []*v1.Instance
+	if arg2 != nil {
+		arg2Copy = make([]*v1.Instance, len(arg2))
+		copy(arg2Copy, arg2)
 	}
 	fake.deleteInstancesMutex.Lock()
 	ret, specificReturn := fake.deleteInstancesReturnsOnCall[len(fake.deleteInstancesArgsForCall)]
 	fake.deleteInstancesArgsForCall = append(fake.deleteInstancesArgsForCall, struct {
-		arg1 []*v1.Instance
-	}{arg1Copy})
+		arg1 context.Context
+		arg2 []*v1.Instance
+	}{arg1, arg2Copy})
 	stub := fake.DeleteInstancesStub
 	fakeReturns := fake.deleteInstancesReturns
-	fake.recordInvocation("DeleteInstances", []interface{}{arg1Copy})
+	fake.recordInvocation("DeleteInstances", []interface{}{arg1, arg2Copy})
 	fake.deleteInstancesMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
@@ -312,17 +315,17 @@ func (fake *FakeResourceServiceInterface) DeleteInstancesCallCount() int {
 	return len(fake.deleteInstancesArgsForCall)
 }
 
-func (fake *FakeResourceServiceInterface) DeleteInstancesCalls(stub func([]*v1.Instance) *v1.Resource) {
+func (fake *FakeResourceServiceInterface) DeleteInstancesCalls(stub func(context.Context, []*v1.Instance) *v1.Resource) {
 	fake.deleteInstancesMutex.Lock()
 	defer fake.deleteInstancesMutex.Unlock()
 	fake.DeleteInstancesStub = stub
 }
 
-func (fake *FakeResourceServiceInterface) DeleteInstancesArgsForCall(i int) []*v1.Instance {
+func (fake *FakeResourceServiceInterface) DeleteInstancesArgsForCall(i int) (context.Context, []*v1.Instance) {
 	fake.deleteInstancesMutex.RLock()
 	defer fake.deleteInstancesMutex.RUnlock()
 	argsForCall := fake.deleteInstancesArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeResourceServiceInterface) DeleteInstancesReturns(result1 *v1.Resource) {
@@ -683,23 +686,24 @@ func (fake *FakeResourceServiceInterface) UpdateHTTPUpstreamServersReturnsOnCall
 	}{result1, result2, result3, result4}
 }
 
-func (fake *FakeResourceServiceInterface) UpdateInstances(arg1 []*v1.Instance) *v1.Resource {
-	var arg1Copy []*v1.Instance
-	if arg1 != nil {
-		arg1Copy = make([]*v1.Instance, len(arg1))
-		copy(arg1Copy, arg1)
+func (fake *FakeResourceServiceInterface) UpdateInstances(arg1 context.Context, arg2 []*v1.Instance) *v1.Resource {
+	var arg2Copy []*v1.Instance
+	if arg2 != nil {
+		arg2Copy = make([]*v1.Instance, len(arg2))
+		copy(arg2Copy, arg2)
 	}
 	fake.updateInstancesMutex.Lock()
 	ret, specificReturn := fake.updateInstancesReturnsOnCall[len(fake.updateInstancesArgsForCall)]
 	fake.updateInstancesArgsForCall = append(fake.updateInstancesArgsForCall, struct {
-		arg1 []*v1.Instance
-	}{arg1Copy})
+		arg1 context.Context
+		arg2 []*v1.Instance
+	}{arg1, arg2Copy})
 	stub := fake.UpdateInstancesStub
 	fakeReturns := fake.updateInstancesReturns
-	fake.recordInvocation("UpdateInstances", []interface{}{arg1Copy})
+	fake.recordInvocation("UpdateInstances", []interface{}{arg1, arg2Copy})
 	fake.updateInstancesMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
@@ -713,17 +717,17 @@ func (fake *FakeResourceServiceInterface) UpdateInstancesCallCount() int {
 	return len(fake.updateInstancesArgsForCall)
 }
 
-func (fake *FakeResourceServiceInterface) UpdateInstancesCalls(stub func([]*v1.Instance) *v1.Resource) {
+func (fake *FakeResourceServiceInterface) UpdateInstancesCalls(stub func(context.Context, []*v1.Instance) *v1.Resource) {
 	fake.updateInstancesMutex.Lock()
 	defer fake.updateInstancesMutex.Unlock()
 	fake.UpdateInstancesStub = stub
 }
 
-func (fake *FakeResourceServiceInterface) UpdateInstancesArgsForCall(i int) []*v1.Instance {
+func (fake *FakeResourceServiceInterface) UpdateInstancesArgsForCall(i int) (context.Context, []*v1.Instance) {
 	fake.updateInstancesMutex.RLock()
 	defer fake.updateInstancesMutex.RUnlock()
 	argsForCall := fake.updateInstancesArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeResourceServiceInterface) UpdateInstancesReturns(result1 *v1.Resource) {
