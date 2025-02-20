@@ -403,7 +403,7 @@ func (oc *Collector) checkForNewReceivers(nginxConfigContext *model.NginxConfigC
 		reloadCollector = oc.addNginxOssReceiver(nginxConfigContext)
 	}
 
-	if oc.config.IsFeatureEnabled(pkgConfig.FeatureNAPLogCollection) {
+	if oc.config.IsFeatureEnabled(pkgConfig.FeatureLogsNap) {
 		tcplogReceiversFound := oc.updateTcplogReceivers(nginxConfigContext)
 		if tcplogReceiversFound {
 			reloadCollector = true
