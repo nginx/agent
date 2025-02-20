@@ -177,7 +177,6 @@ func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message
 
 	slog.DebugContext(ctx, "Config Apply in progress: Disabling watchers...")
 	w.fileWatcherService.SetEnabled(false)
-	w.credentialWatcherService.SetEnabled(false)
 }
 
 func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message) {
@@ -201,7 +200,6 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 
 	slog.DebugContext(ctx, "Config Apply succeeded: re-enabling watchers...")
 	w.fileWatcherService.SetEnabled(true)
-	w.credentialWatcherService.SetEnabled(true)
 	w.watcherMutex.Unlock()
 
 	w.instanceWatcherService.ReparseConfig(ctx, instanceID)
