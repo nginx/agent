@@ -175,7 +175,6 @@ func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message
 	defer w.watcherMutex.Unlock()
 	w.instancesWithConfigApplyInProgress = append(w.instancesWithConfigApplyInProgress, instanceID)
 
-	slog.DebugContext(ctx, "Config Apply in progress: Disabling watchers...")
 	w.fileWatcherService.SetEnabled(false)
 }
 
@@ -198,7 +197,6 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 		},
 	)
 
-	slog.DebugContext(ctx, "Config Apply succeeded: re-enabling watchers...")
 	w.fileWatcherService.SetEnabled(true)
 	w.watcherMutex.Unlock()
 
@@ -232,11 +230,10 @@ func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Messag
 	)
 
 	w.fileWatcherService.SetEnabled(true)
-	w.credentialWatcherService.SetEnabled(true)
 }
 
 func (w *Watcher) handleCredentialUpdate(ctx context.Context) {
-	slog.DebugContext(ctx, "Watcher plugin received credential update: resetting grpc connection")
+	slog.DebugContext(ctx, "Received credential update topic")
 
 	conn, err := grpc.NewGrpcConnection(ctx, w.agentConfig)
 	if err != nil {
