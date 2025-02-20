@@ -207,7 +207,7 @@ func TestCommandService_UpdateClient(t *testing.T) {
 		make(chan *mpi.ManagementPlaneRequest),
 	)
 	commandService.UpdateClient(commandServiceClient)
-	assert.NotNil(t, commandServiceClient)
+	assert.NotNil(t, commandService.commandServiceClient)
 }
 
 func TestCommandService_UpdateDataPlaneHealth(t *testing.T) {

@@ -178,10 +178,6 @@ func (cp *CommandPlugin) processDataPlaneResponse(ctx context.Context, msg *bus.
 func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "Command plugin received connection reset")
 	if newConnection, ok := msg.Data.(grpc.GrpcConnectionInterface); ok {
-		if !cp.commandService.IsConnected() {
-			slog.DebugContext(ctx, "Command plugin: service is not connected")
-			return
-		}
 		err := cp.conn.Close(ctx)
 		if err != nil {
 			slog.ErrorContext(ctx, "Command plugin: unable to close connection", "error", err)

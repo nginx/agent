@@ -61,6 +61,7 @@ type (
 			ctx context.Context,
 			credentialUpdateChannel chan<- credentials.CredentialUpdateMessage,
 		)
+		SetEnabled(enabled bool)
 	}
 )
 
@@ -167,7 +168,10 @@ func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message
 	instanceID := request.ConfigApplyRequest.GetOverview().GetConfigVersion().GetInstanceId()
 
 	w.instancesWithConfigApplyInProgress = append(w.instancesWithConfigApplyInProgress, instanceID)
+
+	slog.DebugContext(ctx, "Config Apply in progress: Disabling watchers...")
 	w.fileWatcherService.SetEnabled(false)
+	w.credentialWatcherService.SetEnabled(false)
 }
 
 func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message) {
@@ -187,7 +191,10 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 			return element == instanceID
 		},
 	)
+
+	slog.DebugContext(ctx, "Config Apply succeeded: re-enabling watchers...")
 	w.fileWatcherService.SetEnabled(true)
+	w.credentialWatcherService.SetEnabled(true)
 
 	w.instanceWatcherService.ReparseConfig(ctx, instanceID)
 }
@@ -215,7 +222,9 @@ func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Messag
 			return element == instanceID
 		},
 	)
+
 	w.fileWatcherService.SetEnabled(true)
+	w.credentialWatcherService.SetEnabled(true)
 }
 
 func (w *Watcher) handleCredentialUpdate(ctx context.Context) {
