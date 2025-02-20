@@ -60,6 +60,7 @@ require (
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nginxinc/nginx-go-crossplane v0.4.48 // indirect
+	github.com/onsi/gomega v1.33.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20221212215047-62379fc7944b // indirect
