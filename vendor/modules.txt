@@ -257,7 +257,7 @@ github.com/nxadm/tail/ratelimiter
 github.com/nxadm/tail/util
 github.com/nxadm/tail/watch
 github.com/nxadm/tail/winfile
-# github.com/onsi/gomega v1.31.1
+# github.com/onsi/gomega v1.33.1
 ## explicit; go 1.20
 # github.com/opencontainers/go-digest v1.0.0
 ## explicit; go 1.13
