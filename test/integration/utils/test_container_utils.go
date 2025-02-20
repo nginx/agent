@@ -8,137 +8,247 @@ import (
 	"os"
 	"regexp"
 	"testing"
-	"time"
 
+	"github.com/docker/docker/api/types/container"
+
+	"github.com/docker/docker/api/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	tcexec "github.com/testcontainers/testcontainers-go/exec"
-	"github.com/testcontainers/testcontainers-go/modules/compose"
-	wait "github.com/testcontainers/testcontainers-go/wait"
+	"github.com/testcontainers/testcontainers-go/network"
+	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 const (
-	agentServiceTimeout = 20 * time.Second
-	semverRegex         = `v^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-]\d*(?:\.\d*[a-zA-Z-]\d*)*)?))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$`
+	configFilePermissions = 0o700
+	semverRegex           = `v^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-]\d*(?:\.\d*[a-zA-Z-]\d*)*)?))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$`
 )
 
-// SetupTestContainerWithAgent sets up a container with nginx and nginx-agent installed
-func SetupTestContainerWithAgent(t *testing.T, testName string, agentConf string, waitForLog string) *testcontainers.DockerContainer {
-	comp, err := compose.NewDockerCompose(os.Getenv("DOCKER_COMPOSE_FILE"))
-	assert.NoError(t, err, "NewDockerComposeAPI()")
+type Parameters struct {
+	NginxConfigPath      string
+	NginxAgentConfigPath string
+	LogMessage           string
+}
 
-	ctx := context.Background()
+func StartContainer(
+	ctx context.Context,
+	tb testing.TB,
+	containerNetwork *testcontainers.DockerNetwork,
+	parameters *Parameters,
+) testcontainers.Container {
+	tb.Helper()
 
-	ctxCancel, cancel := context.WithCancel(ctx)
-	t.Cleanup(cancel)
+	packageName := Env(tb, "PACKAGE_NAME")
+	packageRepo := Env(tb, "PACKAGES_REPO")
+	baseImage := Env(tb, "BASE_IMAGE")
+	osRelease := Env(tb, "OS_RELEASE")
+	osVersion := Env(tb, "OS_VERSION")
+	buildTarget := Env(tb, "BUILD_TARGET")
+	dockerfilePath := Env(tb, "DOCKERFILE_PATH")
+	containerRegistry := Env(tb, "CONTAINER_NGINX_IMAGE_REGISTRY")
+	tag := Env(tb, "TAG")
+	imagePath := Env(tb, "IMAGE_PATH")
+	containerOsType := Env(tb, "CONTAINER_OS_TYPE")
 
-	nginxConf := "./nginx-oss.conf:/etc/nginx/nginx.conf"
-
-	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
-		nginxConf = "./nginx-plus.conf:/etc/nginx/nginx.conf"
-	}
-
-	require.NoError(t,
-		comp.WaitForService("agent", wait.ForLog(waitForLog)).WithEnv(
-			map[string]string{
-				"PACKAGE_NAME":                   os.Getenv("PACKAGE_NAME"),
-				"PACKAGES_REPO":                  os.Getenv("PACKAGES_REPO"),
-				"BASE_IMAGE":                     os.Getenv("BASE_IMAGE"),
-				"OS_RELEASE":                     os.Getenv("OS_RELEASE"),
-				"OS_VERSION":                     os.Getenv("OS_VERSION"),
-				"CONTAINER_OS_TYPE":              os.Getenv("CONTAINER_OS_TYPE"),
-				"CONTAINER_NGINX_IMAGE_REGISTRY": os.Getenv("CONTAINER_NGINX_IMAGE_REGISTRY"),
-				"TAG":                            os.Getenv("TAG"),
-				"IMAGE_PATH":                     os.Getenv("IMAGE_PATH"),
-				"AGENT_CONF_FILE":                agentConf,
-				"NGINX_CONF_FILE":                nginxConf,
+	req := testcontainers.ContainerRequest{
+		FromDockerfile: testcontainers.FromDockerfile{
+			Context:       "../../../",
+			Dockerfile:    dockerfilePath,
+			KeepImage:     false,
+			PrintBuildLog: true,
+			BuildArgs: map[string]*string{
+				"PACKAGE_NAME":                   ToPtr(packageName),
+				"PACKAGES_REPO":                  ToPtr(packageRepo),
+				"BASE_IMAGE":                     ToPtr(baseImage),
+				"OS_RELEASE":                     ToPtr(osRelease),
+				"OS_VERSION":                     ToPtr(osVersion),
+				"ENTRY_POINT":                    ToPtr("./test/docker/entrypoint.sh"),
+				"CONTAINER_NGINX_IMAGE_REGISTRY": ToPtr(containerRegistry),
+				"IMAGE_PATH":                     ToPtr(imagePath),
+				"TAG":                            ToPtr(tag),
+				"CONTAINER_OS_TYPE":              ToPtr(containerOsType),
 			},
-		).Up(ctxCancel, compose.Wait(true)), "compose.Up()")
-
-	testContainer, err := comp.ServiceContainer(ctxCancel, "agent")
-	require.NoError(t, err)
-
-	t.Cleanup(func() {
-		logReader, err := testContainer.Logs(ctxCancel)
-		assert.NoError(t, err)
-		defer logReader.Close()
-
-		testContainerLogs, err := io.ReadAll(logReader)
-		assert.NoError(t, err)
-
-		err = os.MkdirAll("/tmp/integration-test-logs/", os.ModePerm)
-		assert.NoError(t, err)
-		err = os.WriteFile(fmt.Sprintf("/tmp/integration-test-logs/nginx-agent-integration-test-%s.log", testName), testContainerLogs, 0o660)
-		assert.NoError(t, err)
-
-		assert.NoError(t, comp.Down(ctxCancel, compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")
-	})
-
-	return testContainer
-}
-
-// SetupTestContainerWithoutAgent sets up a container with nginx installed
-func SetupTestContainerWithoutAgent(t *testing.T) *testcontainers.DockerContainer {
-	comp, err := compose.NewDockerCompose(os.Getenv("DOCKER_COMPOSE_FILE"))
-	assert.NoError(t, err, "NewDockerComposeAPI()")
-
-	ctx, cancel := context.WithCancel(context.Background())
-	t.Cleanup(cancel)
-
-	nginxConf := "./nginx-oss.conf:/etc/nginx/nginx.conf"
-
-	log := "nginx_pid"
-
-	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
-		nginxConf = "./nginx-plus.conf:/etc/nginx/nginx.conf"
+			BuildOptionsModifier: func(buildOptions *types.ImageBuildOptions) {
+				buildOptions.Target = buildTarget
+			},
+		},
+		ExposedPorts: []string{"9091/tcp"},
+		WaitingFor:   wait.ForLog(parameters.LogMessage),
+		HostConfigModifier: func(hostConfig *container.HostConfig) {
+			hostConfig.ExtraHosts = []string{
+				"host.docker.internal:host-gateway",
+			}
+		},
+		Networks: []string{
+			containerNetwork.Name,
+		},
+		NetworkAliases: map[string][]string{
+			containerNetwork.Name: {
+				"agent",
+			},
+		},
+		Files: []testcontainers.ContainerFile{
+			{
+				HostFilePath:      parameters.NginxAgentConfigPath,
+				ContainerFilePath: "/etc/nginx-agent/nginx-agent.conf",
+				FileMode:          configFilePermissions,
+			},
+		},
 	}
 
-	err = comp.
-		WithEnv(map[string]string{
-			"PACKAGE_NAME":                   os.Getenv("PACKAGE_NAME"),
-			"PACKAGES_REPO":                  os.Getenv("PACKAGES_REPO"),
-			"INSTALL_FROM_REPO":              os.Getenv("INSTALL_FROM_REPO"),
-			"BASE_IMAGE":                     os.Getenv("BASE_IMAGE"),
-			"OS_RELEASE":                     os.Getenv("OS_RELEASE"),
-			"OS_VERSION":                     os.Getenv("OS_VERSION"),
-			"CONTAINER_NGINX_IMAGE_REGISTRY": os.Getenv("CONTAINER_NGINX_IMAGE_REGISTRY"),
-			"TAG":                            os.Getenv("TAG"),
-			"CONTAINER_OS_TYPE":              os.Getenv("CONTAINER_OS_TYPE"),
-			"IMAGE_PATH":                     os.Getenv("IMAGE_PATH"),
-			"NGINX_CONF_FILE":                nginxConf,
-		}).
-		WaitForService("agent", wait.NewLogStrategy(log).WithOccurrence(1)).
-		Up(ctx, compose.Wait(true))
+	if parameters.NginxConfigPath != "" {
+		req.Files = append(req.Files, testcontainers.ContainerFile{
+			HostFilePath:      parameters.NginxConfigPath,
+			ContainerFilePath: "/etc/nginx/nginx.conf",
+			FileMode:          configFilePermissions,
+		})
+	}
 
-	assert.NoError(t, err, "compose.Up()")
-
-	testContainer, err := comp.ServiceContainer(ctx, "agent")
-	serviceNames := comp.Services()
-
-	assert.Equal(t, 1, len(serviceNames))
-	assert.Contains(t, serviceNames, "agent")
-
-	t.Cleanup(func() {
-		logReader, err := testContainer.Logs(ctx)
-		assert.NoError(t, err)
-		defer logReader.Close()
-
-		testContainerLogs, err := io.ReadAll(logReader)
-		assert.NoError(t, err)
-
-		err = os.MkdirAll("/tmp/integration-test-logs/", os.ModePerm)
-		assert.NoError(t, err)
-		err = os.WriteFile("/tmp/integration-test-logs/nginx-agent-integration-test-install-uninstall.log", testContainerLogs, 0o660)
-		assert.NoError(t, err)
-
-		assert.NoError(t, comp.Down(ctx, compose.RemoveOrphans(true), compose.RemoveImagesLocal), "compose.Down()")
+	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          true,
 	})
 
-	return testContainer
+	require.NoError(tb, err)
+
+	return container
 }
 
-func TestAgentHasNoErrorLogs(t *testing.T, agentContainer *testcontainers.DockerContainer) {
+func StartAgentlessContainer(
+	ctx context.Context,
+	tb testing.TB,
+	parameters *Parameters,
+) testcontainers.Container {
+	tb.Helper()
+
+	packageName := Env(tb, "PACKAGE_NAME")
+	packageRepo := Env(tb, "PACKAGES_REPO")
+	baseImage := Env(tb, "BASE_IMAGE")
+	osRelease := Env(tb, "OS_RELEASE")
+	osVersion := Env(tb, "OS_VERSION")
+	dockerfilePath := Env(tb, "DOCKERFILE_PATH")
+	containerRegistry := Env(tb, "CONTAINER_NGINX_IMAGE_REGISTRY")
+	tag := Env(tb, "TAG")
+	imagePath := Env(tb, "IMAGE_PATH")
+
+	req := testcontainers.ContainerRequest{
+		FromDockerfile: testcontainers.FromDockerfile{
+			Context:       "../../../",
+			Dockerfile:    dockerfilePath,
+			KeepImage:     false,
+			PrintBuildLog: true,
+			BuildArgs: map[string]*string{
+				"PACKAGE_NAME":                   ToPtr(packageName),
+				"PACKAGES_REPO":                  ToPtr(packageRepo),
+				"BASE_IMAGE":                     ToPtr(baseImage),
+				"OS_RELEASE":                     ToPtr(osRelease),
+				"OS_VERSION":                     ToPtr(osVersion),
+				"ENTRY_POINT":                    ToPtr("./test/docker/agentless-entrypoint.sh"),
+				"CONTAINER_NGINX_IMAGE_REGISTRY": ToPtr(containerRegistry),
+				"IMAGE_PATH":                     ToPtr(imagePath),
+				"TAG":                            ToPtr(tag),
+			},
+			BuildOptionsModifier: func(buildOptions *types.ImageBuildOptions) {
+				buildOptions.Target = "install-nginx"
+			},
+		},
+		ExposedPorts: []string{"9091/tcp"},
+		WaitingFor:   wait.ForLog(parameters.LogMessage),
+		Files: []testcontainers.ContainerFile{
+			{
+				HostFilePath:      parameters.NginxConfigPath,
+				ContainerFilePath: "/etc/nginx/nginx.conf",
+				FileMode:          configFilePermissions,
+			},
+		},
+	}
+
+	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          true,
+	})
+
+	require.NoError(tb, err)
+
+	return container
+}
+
+func ToPtr[T any](value T) *T {
+	return &value
+}
+
+// nolint: revive
+func LogAndTerminateContainers(
+	ctx context.Context,
+	tb testing.TB,
+	mockManagementPlaneContainer testcontainers.Container,
+	agentContainer testcontainers.Container,
+	expectNoErrorsInLogs bool,
+) {
+	tb.Helper()
+
+	tb.Log("Logging nginx agent container logs")
+	logReader, err := agentContainer.Logs(ctx)
+	require.NoError(tb, err)
+
+	buf, err := io.ReadAll(logReader)
+	require.NoError(tb, err)
+	logs := string(buf)
+
+	tb.Log(logs)
+	if expectNoErrorsInLogs {
+		assert.NotContains(tb, logs, "level=ERROR", "agent log file contains logs at error level")
+	}
+
+	err = agentContainer.Terminate(ctx)
+	require.NoError(tb, err)
+
+	if mockManagementPlaneContainer != nil {
+		tb.Log("Logging mock management container logs")
+		logReader, err = mockManagementPlaneContainer.Logs(ctx)
+		require.NoError(tb, err)
+
+		buf, err = io.ReadAll(logReader)
+		require.NoError(tb, err)
+		logs = string(buf)
+
+		tb.Log(logs)
+
+		err = mockManagementPlaneContainer.Terminate(ctx)
+		require.NoError(tb, err)
+	}
+}
+
+func Env(tb testing.TB, envKey string) string {
+	tb.Helper()
+
+	envValue := os.Getenv(envKey)
+	tb.Logf("Environment variable %s is set to %s", envKey, envValue)
+
+	require.NotEmptyf(tb, envValue, "Environment variable %s should not be empty", envKey)
+
+	return envValue
+}
+
+func ExecuteCommand(container testcontainers.Container, cmd []string) (string, error) {
+	exitCode, response, err := container.Exec(context.Background(), cmd, tcexec.Multiplexed())
+	if err != nil {
+		return "", err
+	}
+	if exitCode != 0 {
+		return "", errors.New(fmt.Sprintf("Incorrect exit code returned: %d", exitCode))
+	}
+
+	responseContent, err := io.ReadAll(response)
+	if err != nil {
+		return "", err
+	}
+
+	return string(responseContent), nil
+}
+
+func TestAgentHasNoErrorLogs(t *testing.T, agentContainer testcontainers.Container) {
 	exitCode, agentLogFile, err := agentContainer.Exec(context.Background(), []string{"cat", "/var/log/nginx-agent/agent.log"})
 	require.NoError(t, err, "agent log file not found")
 	require.Equal(t, 0, exitCode)
@@ -160,19 +270,15 @@ func TestAgentHasNoErrorLogs(t *testing.T, agentContainer *testcontainers.Docker
 	assert.NotContains(t, string(agentLogContent), "level=fatal", "agent log file contains logs at fatal level")
 }
 
-func ExecuteCommand(agentContainer *testcontainers.DockerContainer, cmd []string) (string, error) {
-	exitCode, response, err := agentContainer.Exec(context.Background(), cmd, tcexec.Multiplexed())
-	if err != nil {
-		return "", err
-	}
-	if exitCode != 0 {
-		return "", errors.New(fmt.Sprintf("Incorrect exit code returned: %d", exitCode))
-	}
+// CreateContainerNetwork creates and configures a container network.
+func CreateContainerNetwork(ctx context.Context, tb testing.TB) *testcontainers.DockerNetwork {
+	tb.Helper()
+	containerNetwork, err := network.New(ctx, network.WithAttachable())
+	require.NoError(tb, err)
+	tb.Cleanup(func() {
+		networkErr := containerNetwork.Remove(ctx)
+		tb.Logf("Error removing container network: %v", networkErr)
+	})
 
-	responseContent, err := io.ReadAll(response)
-	if err != nil {
-		return "", err
-	}
-
-	return string(responseContent), nil
+	return containerNetwork
 }
