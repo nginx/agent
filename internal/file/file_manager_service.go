@@ -7,6 +7,7 @@ package file
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -70,6 +71,7 @@ type FileManagerService struct {
 	// map of the files currently on disk, used to determine the file action during config apply
 	currentFilesOnDisk map[string]*mpi.File // key is file path
 	filesMutex         sync.RWMutex
+	manifestFilePath   string
 }
 
 func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig *config.Config) *FileManagerService {
@@ -510,4 +512,23 @@ func (fms *FileManagerService) UpdateCurrentFilesOnDisk(currentFiles map[string]
 	for _, file := range currentFiles {
 		fms.currentFilesOnDisk[file.GetFileMeta().GetName()] = file
 	}
+
+	if err := fms.writeManifest(); err != nil {
+		// Handle error (e.g., logging)
+	}
+}
+
+// writeManifest writes the currentFilesOnDisk to a JSON manifest file
+func (fms *FileManagerService) writeManifest() error {
+	fileList := make([]string, 0, len(fms.currentFilesOnDisk))
+	for name := range fms.currentFilesOnDisk {
+		fileList = append(fileList, name)
+	}
+
+	data, err := json.MarshalIndent(fileList, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(fms.manifestFilePath, data, 0640)
 }
