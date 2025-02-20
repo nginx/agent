@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	pkgConfig "github.com/nginx/agent/v3/pkg/config"
+
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/backoff"
 	"github.com/nginx/agent/v3/internal/bus"
@@ -398,28 +400,36 @@ func (oc *Collector) checkForNewReceivers(nginxConfigContext *model.NginxConfigC
 
 		reloadCollector = true
 	} else if nginxConfigContext.PlusAPI.URL == "" {
-		nginxReceiverFound, reloadCollector = oc.updateExistingNginxOSSReceiver(nginxConfigContext)
+		reloadCollector = oc.addNginxOssReceiver(nginxConfigContext)
+	}
 
-		if !nginxReceiverFound && nginxConfigContext.StubStatus.URL != "" {
-			oc.config.Collector.Receivers.NginxReceivers = append(
-				oc.config.Collector.Receivers.NginxReceivers,
-				config.NginxReceiver{
-					InstanceID: nginxConfigContext.InstanceID,
-					StubStatus: config.APIDetails{
-						URL:      nginxConfigContext.StubStatus.URL,
-						Listen:   nginxConfigContext.StubStatus.Listen,
-						Location: nginxConfigContext.StubStatus.Location,
-					},
-					AccessLogs: toConfigAccessLog(nginxConfigContext.AccessLogs),
-				},
-			)
-
+	if oc.config.IsFeatureEnabled(pkgConfig.FeatureNAPLogCollection) {
+		tcplogReceiversFound := oc.updateTcplogReceivers(nginxConfigContext)
+		if tcplogReceiversFound {
 			reloadCollector = true
 		}
 	}
 
-	tcplogReceiversFound := oc.updateTcplogReceivers(nginxConfigContext)
-	if tcplogReceiversFound {
+	return reloadCollector
+}
+
+func (oc *Collector) addNginxOssReceiver(nginxConfigContext *model.NginxConfigContext) bool {
+	nginxReceiverFound, reloadCollector := oc.updateExistingNginxOSSReceiver(nginxConfigContext)
+
+	if !nginxReceiverFound && nginxConfigContext.StubStatus.URL != "" {
+		oc.config.Collector.Receivers.NginxReceivers = append(
+			oc.config.Collector.Receivers.NginxReceivers,
+			config.NginxReceiver{
+				InstanceID: nginxConfigContext.InstanceID,
+				StubStatus: config.APIDetails{
+					URL:      nginxConfigContext.StubStatus.URL,
+					Listen:   nginxConfigContext.StubStatus.Listen,
+					Location: nginxConfigContext.StubStatus.Location,
+				},
+				AccessLogs: toConfigAccessLog(nginxConfigContext.AccessLogs),
+			},
+		)
+
 		reloadCollector = true
 	}
 
