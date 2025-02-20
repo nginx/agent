@@ -247,8 +247,6 @@ github.com/nginxinc/nginx-go-crossplane
 # github.com/nginxinc/nginx-plus-go-client/v2 v2.0.1
 ## explicit; go 1.22.6
 github.com/nginxinc/nginx-plus-go-client/v2/client
-# github.com/nginxinc/nginx-prometheus-exporter v1.1.2
-## explicit; go 1.21.3
 # github.com/nginxinc/nginx-prometheus-exporter v1.2.0
 ## explicit; go 1.21.3
 github.com/nginxinc/nginx-prometheus-exporter/client
@@ -259,8 +257,6 @@ github.com/nxadm/tail/ratelimiter
 github.com/nxadm/tail/util
 github.com/nxadm/tail/watch
 github.com/nxadm/tail/winfile
-# github.com/onsi/gomega v1.31.1
-## explicit; go 1.20
 # github.com/onsi/gomega v1.33.1
 ## explicit; go 1.20
 # github.com/opencontainers/go-digest v1.0.0
@@ -289,21 +285,15 @@ github.com/pmezard/go-difflib/difflib
 # github.com/power-devops/perfstat v0.0.0-20221212215047-62379fc7944b
 ## explicit; go 1.14
 github.com/power-devops/perfstat
-# github.com/prometheus/client_golang v1.19.0
-## explicit; go 1.20
 # github.com/prometheus/client_golang v1.19.1
 ## explicit; go 1.20
 github.com/prometheus/client_golang/prometheus
 github.com/prometheus/client_golang/prometheus/internal
 github.com/prometheus/client_golang/prometheus/promauto
 github.com/prometheus/client_golang/prometheus/promhttp
-# github.com/prometheus/client_model v0.6.0
-## explicit; go 1.19
 # github.com/prometheus/client_model v0.6.1
 ## explicit; go 1.19
 github.com/prometheus/client_model/go
-# github.com/prometheus/common v0.49.0
-## explicit; go 1.20
 # github.com/prometheus/common v0.55.0
 ## explicit; go 1.20
 github.com/prometheus/common/expfmt
