@@ -10,6 +10,11 @@ on:
         required: true
         type: boolean
         default: false
+      createPullRequest:
+          description: 'Create pull request back into main'
+          required: true
+          type: boolean
+          default: false  
       uploadJWT:
         description: 'Temporary JWT to publish packages to up-ap.nginx.com'
         required: true
@@ -194,7 +199,7 @@ jobs:
             }))
             console.log(`Release published: ${release.data.html_url}`)
       - name: Create Pull Request
-        if: ${{ inputs.publishPackages == true }}
+        if: ${{ inputs.publishPackages == true && inputs.createPullRequest == true}}
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
