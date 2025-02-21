@@ -49,7 +49,9 @@ func newNginxPlusScraper(
 	endpoint := strings.TrimPrefix(cfg.APIDetails.URL, "unix:")
 	logger := settings.Logger
 	logger.Info("Creating NGINX Plus scraper")
+
 	httpClient := http.DefaultClient
+	httpClient.Timeout = cfg.ClientConfig.Timeout
 
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
 	rb := mb.NewResourceBuilder()
