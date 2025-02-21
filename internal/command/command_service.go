@@ -47,6 +47,7 @@ type (
 		subscribeClientMutex         sync.Mutex
 		configApplyRequestQueueMutex sync.Mutex
 		resourceMutex                sync.Mutex
+		commandMutex                 sync.Mutex
 	}
 )
 
@@ -253,6 +254,8 @@ func (cs *CommandService) CreateConnection(
 }
 
 func (cs *CommandService) UpdateClient(client mpi.CommandServiceClient) {
+	cs.commandMutex.Lock()
+	defer cs.commandMutex.Unlock()
 	cs.commandServiceClient = client
 }
 

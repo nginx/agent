@@ -184,7 +184,7 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 		}
 		cp.conn = newConnection
 		cp.commandService.UpdateClient(cp.conn.CommandServiceClient())
-		slog.DebugContext(ctx, "Command plugin: client reset successfully")
+		slog.DebugContext(ctx, "Command service client reset successfully")
 	}
 }
 
