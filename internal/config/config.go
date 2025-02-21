@@ -110,6 +110,8 @@ func ResolveConfig() (*Config, error) {
 
 	slog.Debug("Agent config", "config", config)
 	slog.Info("Enabled features", "features", config.Features)
+	slog.Info("Excluded files from being watched for file changes", "exclude_files",
+		config.Watchers.FileWatcher.ExcludeFiles)
 
 	return config, nil
 }
@@ -154,7 +156,7 @@ func registerFlags() {
 	fs.StringSlice(
 		NginxExcludeLogsKey, []string{},
 		"A comma-separated list of one or more NGINX log paths that you want to exclude from metrics "+
-			"collection or error monitoring",
+			"collection or error monitoring. This includes absolute paths or regex patterns",
 	)
 
 	fs.StringSlice(AllowedDirectoriesKey,
@@ -177,6 +179,12 @@ func registerFlags() {
 		FileWatcherMonitoringFrequencyKey,
 		DefFileWatcherMonitoringFrequency,
 		"How often the NGINX Agent will check for file changes.",
+	)
+
+	fs.StringSlice(
+		NginxExcludeFilesKey, DefaultExcludedFiles(),
+		"A comma-separated list of one or more file paths that you want to exclude from file monitoring. "+
+			"This includes absolute paths or regex patterns",
 	)
 
 	fs.StringSlice(
@@ -881,6 +889,7 @@ func resolveWatchers() *Watchers {
 		},
 		FileWatcher: FileWatcher{
 			MonitoringFrequency: viperInstance.GetDuration(FileWatcherMonitoringFrequencyKey),
+			ExcludeFiles:        viperInstance.GetStringSlice(NginxExcludeFilesKey),
 		},
 	}
 }
