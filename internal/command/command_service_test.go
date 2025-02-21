@@ -523,8 +523,8 @@ func TestCommandService_handleSubscribeError(t *testing.T) {
 		types.AgentConfig(),
 		make(chan *mpi.ManagementPlaneRequest),
 	)
-	require.Error(t, commandService.handleSubscribeError(ctx, errors.New(""), ""))
-
-	err := commandService.handleSubscribeError(ctx, errors.New("blah blah blah"), "Testing handleSubscribeError")
-	require.Error(t, err)
+	require.Error(t,
+		commandService.handleSubscribeError(ctx,
+			errors.New("an error occurred when attempting to subscribe"),
+			"Testing handleSubscribeError"))
 }
