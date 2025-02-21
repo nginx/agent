@@ -47,6 +47,7 @@ type (
 		subscribeClientMutex         sync.Mutex
 		configApplyRequestQueueMutex sync.Mutex
 		resourceMutex                sync.Mutex
+		commandMutex                 sync.Mutex
 	}
 )
 
@@ -210,6 +211,10 @@ func (cs *CommandService) CreateConnection(
 		slog.InfoContext(ctx, "No Data Plane Instance found")
 	}
 
+	if cs.isConnected.Load() {
+		return nil, errors.New("command service already connected")
+	}
+
 	request := &mpi.CreateConnectionRequest{
 		MessageMeta: &mpi.MessageMeta{
 			MessageId:     id.GenerateMessageID(),
@@ -228,7 +233,6 @@ func (cs *CommandService) CreateConnection(
 	}
 
 	slog.DebugContext(ctx, "Sending create connection request", "request", request)
-
 	response, err := backoff.RetryWithData(
 		cs.connectCallback(ctx, request),
 		backoffHelpers.Context(ctx, commonSettings),
@@ -247,6 +251,12 @@ func (cs *CommandService) CreateConnection(
 	cs.resource = resource
 
 	return response, nil
+}
+
+func (cs *CommandService) UpdateClient(client mpi.CommandServiceClient) {
+	cs.commandMutex.Lock()
+	defer cs.commandMutex.Unlock()
+	cs.commandServiceClient = client
 }
 
 // Retry callback for sending a data plane response to the Management Plane.
@@ -427,6 +437,7 @@ func (cs *CommandService) handleSubscribeError(ctx context.Context, err error, e
 	codeError, ok := status.FromError(err)
 
 	if ok && codeError.Code() == codes.Unavailable {
+		cs.isConnected.Store(false)
 		slog.ErrorContext(ctx, fmt.Sprintf("Failed to %s, rpc unavailable. "+
 			"Trying create connection rpc", errorMsg), "error", err)
 		_, connectionErr := cs.CreateConnection(ctx, cs.resource)

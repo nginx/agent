@@ -134,7 +134,7 @@ func AgentConfig() *config.Config {
 			},
 			Auth: &config.AuthConfig{
 				Token:     "1234",
-				TokenPath: "",
+				TokenPath: "/tmp/token",
 			},
 			TLS: &config.TLSConfig{
 				Cert:       "cert.pem",
