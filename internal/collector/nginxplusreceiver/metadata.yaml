@@ -184,7 +184,7 @@ metrics:
     attributes:
       - nginx.cache.outcome
       - nginx.cache.name
-  nginx.cache.response.count:
+  nginx.cache.responses:
     enabled: true
     description: The total number of responses read from the cache or proxied server.
     sum:
