@@ -38,7 +38,11 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . fileManagerServiceInterface
 
-const maxAttempts = 5
+const (
+	maxAttempts      = 5
+	manifestDirPath  = "/var/lib/nginx-agent"
+	manifestFilePath = manifestDirPath + "/manifest.json"
+)
 
 type (
 	fileOperator interface {
@@ -71,7 +75,6 @@ type FileManagerService struct {
 	// map of the files currently on disk, used to determine the file action during config apply
 	currentFilesOnDisk map[string]*mpi.File // key is file path
 	filesMutex         sync.RWMutex
-	manifestFilePath   string
 }
 
 func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig *config.Config) *FileManagerService {
@@ -453,20 +456,32 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles, modifiedFiles 
 	fileDiff := make(map[string]*mpi.File)  // Files that have changed, key is file name
 	fileContents := make(map[string][]byte) // contents of the file, key is file name
 
-	// if file is in currentFiles but not in modified files, file has been deleted
-	// copy contents, set file action
-	for _, currentFile := range currentFiles {
-		fileName := currentFile.GetFileMeta().GetName()
-		_, ok := modifiedFiles[fileName]
+	file, err := os.ReadFile(manifestFilePath)
+	if err != nil {
+		fmt.Printf("Failed to read manifest file: %v\n", err)
+	}
 
-		if !ok {
+	// Parse JSON into a map
+	var manifestFiles map[string]*mpi.File
+	err = json.Unmarshal(file, &manifestFiles)
+	if err != nil {
+		fmt.Printf("Failed to parse manifest JSON: %v\n", err)
+	}
+
+	// if file is in manifestFiles but not in modified files, file has been deleted
+	// copy contents, set file action
+	for fileName, currentFile := range manifestFiles {
+		_, exists := modifiedFiles[fileName]
+
+		if !exists {
+			// Read file contents before marking it deleted
 			fileContent, readErr := os.ReadFile(fileName)
 			if readErr != nil {
 				return nil, nil, fmt.Errorf("error reading file %s, error: %w", fileName, readErr)
 			}
 			fileContents[fileName] = fileContent
 			currentFile.Action = &deleteAction
-			fileDiff[currentFile.GetFileMeta().GetName()] = currentFile
+			fileDiff[fileName] = currentFile
 		}
 	}
 
@@ -513,22 +528,26 @@ func (fms *FileManagerService) UpdateCurrentFilesOnDisk(currentFiles map[string]
 		fms.currentFilesOnDisk[file.GetFileMeta().GetName()] = file
 	}
 
-	if err := fms.writeManifest(); err != nil {
-		// Handle error (e.g., logging)
-	}
-}
-
-// writeManifest writes the currentFilesOnDisk to a JSON manifest file
-func (fms *FileManagerService) writeManifest() error {
-	fileList := make([]string, 0, len(fms.currentFilesOnDisk))
-	for name := range fms.currentFilesOnDisk {
-		fileList = append(fileList, name)
-	}
-
-	data, err := json.MarshalIndent(fileList, "", "  ")
+	jsonData, err := json.MarshalIndent(currentFiles, "", "  ")
 	if err != nil {
-		return err
+		fmt.Printf("Failed to read manifest file: %v\n", err)
 	}
 
-	return os.WriteFile(fms.manifestFilePath, data, 0640)
+	err = os.MkdirAll(manifestDirPath, 0755) // 0755 allows read/execute for all, write for owner
+	if err != nil {
+		fmt.Printf("Failed to read manifest file: %v\n", err)
+	}
+
+	newFile, err := os.OpenFile(manifestFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600) // 0600 ensures only root can read/write
+	if err != nil {
+		fmt.Printf("Failed to read manifest file: %v\n", err)
+	}
+	defer newFile.Close()
+
+	_, err = newFile.Write(jsonData)
+	if err != nil {
+		fmt.Printf("Failed to read manifest file: %v\n", err)
+	}
+
+	slog.Error("Manifest File updated successfully")
 }
