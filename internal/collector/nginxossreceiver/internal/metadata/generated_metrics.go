@@ -92,6 +92,57 @@ var MapAttributeNginxStatusRange = map[string]AttributeNginxStatusRange{
 	"5xx": AttributeNginxStatusRange5xx,
 }
 
+type metricNginxHTTPConnectionCount struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills nginx.http.connection.count metric with initial data.
+func (m *metricNginxHTTPConnectionCount) init() {
+	m.data.SetName("nginx.http.connection.count")
+	m.data.SetDescription("The current number of connections.")
+	m.data.SetUnit("connections")
+	m.data.SetEmptyGauge()
+	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricNginxHTTPConnectionCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxConnectionsOutcomeAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Gauge().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetIntValue(val)
+	dp.Attributes().PutStr("nginx.connections.outcome", nginxConnectionsOutcomeAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricNginxHTTPConnectionCount) updateCapacity() {
+	if m.data.Gauge().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Gauge().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricNginxHTTPConnectionCount) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricNginxHTTPConnectionCount(cfg MetricConfig) metricNginxHTTPConnectionCount {
+	m := metricNginxHTTPConnectionCount{config: cfg}
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
 type metricNginxHTTPConnections struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
@@ -138,57 +189,6 @@ func (m *metricNginxHTTPConnections) emit(metrics pmetric.MetricSlice) {
 
 func newMetricNginxHTTPConnections(cfg MetricConfig) metricNginxHTTPConnections {
 	m := metricNginxHTTPConnections{config: cfg}
-	if cfg.Enabled {
-		m.data = pmetric.NewMetric()
-		m.init()
-	}
-	return m
-}
-
-type metricNginxHTTPConnectionsCount struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
-}
-
-// init fills nginx.http.connections.count metric with initial data.
-func (m *metricNginxHTTPConnectionsCount) init() {
-	m.data.SetName("nginx.http.connections.count")
-	m.data.SetDescription("The current number of connections.")
-	m.data.SetUnit("connections")
-	m.data.SetEmptyGauge()
-	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
-}
-
-func (m *metricNginxHTTPConnectionsCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxConnectionsOutcomeAttributeValue string) {
-	if !m.config.Enabled {
-		return
-	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
-	dp.SetStartTimestamp(start)
-	dp.SetTimestamp(ts)
-	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.connections.outcome", nginxConnectionsOutcomeAttributeValue)
-}
-
-// updateCapacity saves max length of data point slices that will be used for the slice capacity.
-func (m *metricNginxHTTPConnectionsCount) updateCapacity() {
-	if m.data.Gauge().DataPoints().Len() > m.capacity {
-		m.capacity = m.data.Gauge().DataPoints().Len()
-	}
-}
-
-// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
-func (m *metricNginxHTTPConnectionsCount) emit(metrics pmetric.MetricSlice) {
-	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
-		m.updateCapacity()
-		m.data.MoveTo(metrics.AppendEmpty())
-		m.init()
-	}
-}
-
-func newMetricNginxHTTPConnectionsCount(cfg MetricConfig) metricNginxHTTPConnectionsCount {
-	m := metricNginxHTTPConnectionsCount{config: cfg}
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -303,17 +303,17 @@ func newMetricNginxHTTPResponseStatus(cfg MetricConfig) metricNginxHTTPResponseS
 // MetricsBuilder provides an interface for scrapers to report metrics while taking care of all the transformations
 // required to produce metric representation defined in metadata and user config.
 type MetricsBuilder struct {
-	config                          MetricsBuilderConfig // config of the metrics builder.
-	startTime                       pcommon.Timestamp    // start time that will be applied to all recorded data points.
-	metricsCapacity                 int                  // maximum observed number of metrics per resource.
-	metricsBuffer                   pmetric.Metrics      // accumulates metrics data before emitting.
-	buildInfo                       component.BuildInfo  // contains version information.
-	resourceAttributeIncludeFilter  map[string]filter.Filter
-	resourceAttributeExcludeFilter  map[string]filter.Filter
-	metricNginxHTTPConnections      metricNginxHTTPConnections
-	metricNginxHTTPConnectionsCount metricNginxHTTPConnectionsCount
-	metricNginxHTTPRequests         metricNginxHTTPRequests
-	metricNginxHTTPResponseStatus   metricNginxHTTPResponseStatus
+	config                         MetricsBuilderConfig // config of the metrics builder.
+	startTime                      pcommon.Timestamp    // start time that will be applied to all recorded data points.
+	metricsCapacity                int                  // maximum observed number of metrics per resource.
+	metricsBuffer                  pmetric.Metrics      // accumulates metrics data before emitting.
+	buildInfo                      component.BuildInfo  // contains version information.
+	resourceAttributeIncludeFilter map[string]filter.Filter
+	resourceAttributeExcludeFilter map[string]filter.Filter
+	metricNginxHTTPConnectionCount metricNginxHTTPConnectionCount
+	metricNginxHTTPConnections     metricNginxHTTPConnections
+	metricNginxHTTPRequests        metricNginxHTTPRequests
+	metricNginxHTTPResponseStatus  metricNginxHTTPResponseStatus
 }
 
 // MetricBuilderOption applies changes to default metrics builder.
@@ -336,16 +336,16 @@ func WithStartTime(startTime pcommon.Timestamp) MetricBuilderOption {
 
 func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, options ...MetricBuilderOption) *MetricsBuilder {
 	mb := &MetricsBuilder{
-		config:                          mbc,
-		startTime:                       pcommon.NewTimestampFromTime(time.Now()),
-		metricsBuffer:                   pmetric.NewMetrics(),
-		buildInfo:                       settings.BuildInfo,
-		metricNginxHTTPConnections:      newMetricNginxHTTPConnections(mbc.Metrics.NginxHTTPConnections),
-		metricNginxHTTPConnectionsCount: newMetricNginxHTTPConnectionsCount(mbc.Metrics.NginxHTTPConnectionsCount),
-		metricNginxHTTPRequests:         newMetricNginxHTTPRequests(mbc.Metrics.NginxHTTPRequests),
-		metricNginxHTTPResponseStatus:   newMetricNginxHTTPResponseStatus(mbc.Metrics.NginxHTTPResponseStatus),
-		resourceAttributeIncludeFilter:  make(map[string]filter.Filter),
-		resourceAttributeExcludeFilter:  make(map[string]filter.Filter),
+		config:                         mbc,
+		startTime:                      pcommon.NewTimestampFromTime(time.Now()),
+		metricsBuffer:                  pmetric.NewMetrics(),
+		buildInfo:                      settings.BuildInfo,
+		metricNginxHTTPConnectionCount: newMetricNginxHTTPConnectionCount(mbc.Metrics.NginxHTTPConnectionCount),
+		metricNginxHTTPConnections:     newMetricNginxHTTPConnections(mbc.Metrics.NginxHTTPConnections),
+		metricNginxHTTPRequests:        newMetricNginxHTTPRequests(mbc.Metrics.NginxHTTPRequests),
+		metricNginxHTTPResponseStatus:  newMetricNginxHTTPResponseStatus(mbc.Metrics.NginxHTTPResponseStatus),
+		resourceAttributeIncludeFilter: make(map[string]filter.Filter),
+		resourceAttributeExcludeFilter: make(map[string]filter.Filter),
 	}
 	if mbc.ResourceAttributes.InstanceID.MetricsInclude != nil {
 		mb.resourceAttributeIncludeFilter["instance.id"] = filter.CreateFilter(mbc.ResourceAttributes.InstanceID.MetricsInclude)
@@ -428,8 +428,8 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	ils.Scope().SetName("otelcol/nginxreceiver")
 	ils.Scope().SetVersion(mb.buildInfo.Version)
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
+	mb.metricNginxHTTPConnectionCount.emit(ils.Metrics())
 	mb.metricNginxHTTPConnections.emit(ils.Metrics())
-	mb.metricNginxHTTPConnectionsCount.emit(ils.Metrics())
 	mb.metricNginxHTTPRequests.emit(ils.Metrics())
 	mb.metricNginxHTTPResponseStatus.emit(ils.Metrics())
 
@@ -463,14 +463,14 @@ func (mb *MetricsBuilder) Emit(options ...ResourceMetricsOption) pmetric.Metrics
 	return metrics
 }
 
+// RecordNginxHTTPConnectionCountDataPoint adds a data point to nginx.http.connection.count metric.
+func (mb *MetricsBuilder) RecordNginxHTTPConnectionCountDataPoint(ts pcommon.Timestamp, val int64, nginxConnectionsOutcomeAttributeValue AttributeNginxConnectionsOutcome) {
+	mb.metricNginxHTTPConnectionCount.recordDataPoint(mb.startTime, ts, val, nginxConnectionsOutcomeAttributeValue.String())
+}
+
 // RecordNginxHTTPConnectionsDataPoint adds a data point to nginx.http.connections metric.
 func (mb *MetricsBuilder) RecordNginxHTTPConnectionsDataPoint(ts pcommon.Timestamp, val int64, nginxConnectionsOutcomeAttributeValue AttributeNginxConnectionsOutcome) {
 	mb.metricNginxHTTPConnections.recordDataPoint(mb.startTime, ts, val, nginxConnectionsOutcomeAttributeValue.String())
-}
-
-// RecordNginxHTTPConnectionsCountDataPoint adds a data point to nginx.http.connections.count metric.
-func (mb *MetricsBuilder) RecordNginxHTTPConnectionsCountDataPoint(ts pcommon.Timestamp, val int64, nginxConnectionsOutcomeAttributeValue AttributeNginxConnectionsOutcome) {
-	mb.metricNginxHTTPConnectionsCount.recordDataPoint(mb.startTime, ts, val, nginxConnectionsOutcomeAttributeValue.String())
 }
 
 // RecordNginxHTTPRequestsDataPoint adds a data point to nginx.http.requests metric.

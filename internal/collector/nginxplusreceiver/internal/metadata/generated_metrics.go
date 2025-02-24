@@ -703,6 +703,57 @@ func newMetricNginxConfigReloads(cfg MetricConfig) metricNginxConfigReloads {
 	return m
 }
 
+type metricNginxHTTPConnectionCount struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills nginx.http.connection.count metric with initial data.
+func (m *metricNginxHTTPConnectionCount) init() {
+	m.data.SetName("nginx.http.connection.count")
+	m.data.SetDescription("The current number of connections.")
+	m.data.SetUnit("connections")
+	m.data.SetEmptyGauge()
+	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricNginxHTTPConnectionCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxConnectionsOutcomeAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Gauge().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetIntValue(val)
+	dp.Attributes().PutStr("nginx.connections.outcome", nginxConnectionsOutcomeAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricNginxHTTPConnectionCount) updateCapacity() {
+	if m.data.Gauge().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Gauge().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricNginxHTTPConnectionCount) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricNginxHTTPConnectionCount(cfg MetricConfig) metricNginxHTTPConnectionCount {
+	m := metricNginxHTTPConnectionCount{config: cfg}
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
 type metricNginxHTTPConnections struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
@@ -749,57 +800,6 @@ func (m *metricNginxHTTPConnections) emit(metrics pmetric.MetricSlice) {
 
 func newMetricNginxHTTPConnections(cfg MetricConfig) metricNginxHTTPConnections {
 	m := metricNginxHTTPConnections{config: cfg}
-	if cfg.Enabled {
-		m.data = pmetric.NewMetric()
-		m.init()
-	}
-	return m
-}
-
-type metricNginxHTTPConnectionsCount struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
-}
-
-// init fills nginx.http.connections.count metric with initial data.
-func (m *metricNginxHTTPConnectionsCount) init() {
-	m.data.SetName("nginx.http.connections.count")
-	m.data.SetDescription("The current number of connections.")
-	m.data.SetUnit("connections")
-	m.data.SetEmptyGauge()
-	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
-}
-
-func (m *metricNginxHTTPConnectionsCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxConnectionsOutcomeAttributeValue string) {
-	if !m.config.Enabled {
-		return
-	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
-	dp.SetStartTimestamp(start)
-	dp.SetTimestamp(ts)
-	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.connections.outcome", nginxConnectionsOutcomeAttributeValue)
-}
-
-// updateCapacity saves max length of data point slices that will be used for the slice capacity.
-func (m *metricNginxHTTPConnectionsCount) updateCapacity() {
-	if m.data.Gauge().DataPoints().Len() > m.capacity {
-		m.capacity = m.data.Gauge().DataPoints().Len()
-	}
-}
-
-// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
-func (m *metricNginxHTTPConnectionsCount) emit(metrics pmetric.MetricSlice) {
-	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
-		m.updateCapacity()
-		m.data.MoveTo(metrics.AppendEmpty())
-		m.init()
-	}
-}
-
-func newMetricNginxHTTPConnectionsCount(cfg MetricConfig) metricNginxHTTPConnectionsCount {
-	m := metricNginxHTTPConnectionsCount{config: cfg}
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -970,6 +970,55 @@ func newMetricNginxHTTPRequestByteIo(cfg MetricConfig) metricNginxHTTPRequestByt
 	return m
 }
 
+type metricNginxHTTPRequestCount struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills nginx.http.request.count metric with initial data.
+func (m *metricNginxHTTPRequestCount) init() {
+	m.data.SetName("nginx.http.request.count")
+	m.data.SetDescription("The current number of client requests received from clients.")
+	m.data.SetUnit("requests")
+	m.data.SetEmptyGauge()
+}
+
+func (m *metricNginxHTTPRequestCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Gauge().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetIntValue(val)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricNginxHTTPRequestCount) updateCapacity() {
+	if m.data.Gauge().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Gauge().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricNginxHTTPRequestCount) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricNginxHTTPRequestCount(cfg MetricConfig) metricNginxHTTPRequestCount {
+	m := metricNginxHTTPRequestCount{config: cfg}
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
 type metricNginxHTTPRequestDiscarded struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
@@ -1130,55 +1179,6 @@ func newMetricNginxHTTPRequests(cfg MetricConfig) metricNginxHTTPRequests {
 	return m
 }
 
-type metricNginxHTTPRequestsCount struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
-}
-
-// init fills nginx.http.requests.count metric with initial data.
-func (m *metricNginxHTTPRequestsCount) init() {
-	m.data.SetName("nginx.http.requests.count")
-	m.data.SetDescription("The current number of client requests received from clients.")
-	m.data.SetUnit("requests")
-	m.data.SetEmptyGauge()
-}
-
-func (m *metricNginxHTTPRequestsCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64) {
-	if !m.config.Enabled {
-		return
-	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
-	dp.SetStartTimestamp(start)
-	dp.SetTimestamp(ts)
-	dp.SetIntValue(val)
-}
-
-// updateCapacity saves max length of data point slices that will be used for the slice capacity.
-func (m *metricNginxHTTPRequestsCount) updateCapacity() {
-	if m.data.Gauge().DataPoints().Len() > m.capacity {
-		m.capacity = m.data.Gauge().DataPoints().Len()
-	}
-}
-
-// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
-func (m *metricNginxHTTPRequestsCount) emit(metrics pmetric.MetricSlice) {
-	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
-		m.updateCapacity()
-		m.data.MoveTo(metrics.AppendEmpty())
-		m.init()
-	}
-}
-
-func newMetricNginxHTTPRequestsCount(cfg MetricConfig) metricNginxHTTPRequestsCount {
-	m := metricNginxHTTPRequestsCount{config: cfg}
-	if cfg.Enabled {
-		m.data = pmetric.NewMetric()
-		m.init()
-	}
-	return m
-}
-
 type metricNginxHTTPResponseStatus struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
@@ -1243,7 +1243,7 @@ type metricNginxHTTPResponses struct {
 // init fills nginx.http.responses metric with initial data.
 func (m *metricNginxHTTPResponses) init() {
 	m.data.SetName("nginx.http.responses")
-	m.data.SetDescription("The total number of client requests received from clients.")
+	m.data.SetDescription("The total number of HTTP responses sent to clients.")
 	m.data.SetUnit("responses")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
@@ -1397,22 +1397,22 @@ func newMetricNginxHTTPUpstreamPeerByteIo(cfg MetricConfig) metricNginxHTTPUpstr
 	return m
 }
 
-type metricNginxHTTPUpstreamPeerConnectionsCount struct {
+type metricNginxHTTPUpstreamPeerConnectionCount struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
 	capacity int            // max observed number of data points added to the metric.
 }
 
-// init fills nginx.http.upstream.peer.connections.count metric with initial data.
-func (m *metricNginxHTTPUpstreamPeerConnectionsCount) init() {
-	m.data.SetName("nginx.http.upstream.peer.connections.count")
+// init fills nginx.http.upstream.peer.connection.count metric with initial data.
+func (m *metricNginxHTTPUpstreamPeerConnectionCount) init() {
+	m.data.SetName("nginx.http.upstream.peer.connection.count")
 	m.data.SetDescription("The average number of active connections per HTTP upstream peer.")
 	m.data.SetUnit("connections")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricNginxHTTPUpstreamPeerConnectionsCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string) {
+func (m *metricNginxHTTPUpstreamPeerConnectionCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -1427,14 +1427,14 @@ func (m *metricNginxHTTPUpstreamPeerConnectionsCount) recordDataPoint(start pcom
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
-func (m *metricNginxHTTPUpstreamPeerConnectionsCount) updateCapacity() {
+func (m *metricNginxHTTPUpstreamPeerConnectionCount) updateCapacity() {
 	if m.data.Gauge().DataPoints().Len() > m.capacity {
 		m.capacity = m.data.Gauge().DataPoints().Len()
 	}
 }
 
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
-func (m *metricNginxHTTPUpstreamPeerConnectionsCount) emit(metrics pmetric.MetricSlice) {
+func (m *metricNginxHTTPUpstreamPeerConnectionCount) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
@@ -1442,8 +1442,8 @@ func (m *metricNginxHTTPUpstreamPeerConnectionsCount) emit(metrics pmetric.Metri
 	}
 }
 
-func newMetricNginxHTTPUpstreamPeerConnectionsCount(cfg MetricConfig) metricNginxHTTPUpstreamPeerConnectionsCount {
-	m := metricNginxHTTPUpstreamPeerConnectionsCount{config: cfg}
+func newMetricNginxHTTPUpstreamPeerConnectionCount(cfg MetricConfig) metricNginxHTTPUpstreamPeerConnectionCount {
+	m := metricNginxHTTPUpstreamPeerConnectionCount{config: cfg}
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -1515,15 +1515,17 @@ func (m *metricNginxHTTPUpstreamPeerFails) init() {
 	m.data.SetName("nginx.http.upstream.peer.fails")
 	m.data.SetDescription("The total number of unsuccessful attempts to communicate with the HTTP upstream peer.")
 	m.data.SetUnit("attempts")
-	m.data.SetEmptyGauge()
-	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.data.SetEmptySum()
+	m.data.Sum().SetIsMonotonic(false)
+	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityUnspecified)
+	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
 func (m *metricNginxHTTPUpstreamPeerFails) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+	dp := m.data.Sum().DataPoints().AppendEmpty()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
@@ -1535,14 +1537,14 @@ func (m *metricNginxHTTPUpstreamPeerFails) recordDataPoint(start pcommon.Timesta
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
 func (m *metricNginxHTTPUpstreamPeerFails) updateCapacity() {
-	if m.data.Gauge().DataPoints().Len() > m.capacity {
-		m.capacity = m.data.Gauge().DataPoints().Len()
+	if m.data.Sum().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Sum().DataPoints().Len()
 	}
 }
 
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxHTTPUpstreamPeerFails) emit(metrics pmetric.MetricSlice) {
-	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
@@ -2681,15 +2683,15 @@ func newMetricNginxStreamByteIo(cfg MetricConfig) metricNginxStreamByteIo {
 	return m
 }
 
-type metricNginxStreamConnectionsAccepted struct {
+type metricNginxStreamConnectionAccepted struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
 	capacity int            // max observed number of data points added to the metric.
 }
 
-// init fills nginx.stream.connections.accepted metric with initial data.
-func (m *metricNginxStreamConnectionsAccepted) init() {
-	m.data.SetName("nginx.stream.connections.accepted")
+// init fills nginx.stream.connection.accepted metric with initial data.
+func (m *metricNginxStreamConnectionAccepted) init() {
+	m.data.SetName("nginx.stream.connection.accepted")
 	m.data.SetDescription("The total number of connections accepted from clients.")
 	m.data.SetUnit("connections")
 	m.data.SetEmptySum()
@@ -2698,7 +2700,7 @@ func (m *metricNginxStreamConnectionsAccepted) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricNginxStreamConnectionsAccepted) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string) {
+func (m *metricNginxStreamConnectionAccepted) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -2710,14 +2712,14 @@ func (m *metricNginxStreamConnectionsAccepted) recordDataPoint(start pcommon.Tim
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
-func (m *metricNginxStreamConnectionsAccepted) updateCapacity() {
+func (m *metricNginxStreamConnectionAccepted) updateCapacity() {
 	if m.data.Sum().DataPoints().Len() > m.capacity {
 		m.capacity = m.data.Sum().DataPoints().Len()
 	}
 }
 
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
-func (m *metricNginxStreamConnectionsAccepted) emit(metrics pmetric.MetricSlice) {
+func (m *metricNginxStreamConnectionAccepted) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
@@ -2725,8 +2727,8 @@ func (m *metricNginxStreamConnectionsAccepted) emit(metrics pmetric.MetricSlice)
 	}
 }
 
-func newMetricNginxStreamConnectionsAccepted(cfg MetricConfig) metricNginxStreamConnectionsAccepted {
-	m := metricNginxStreamConnectionsAccepted{config: cfg}
+func newMetricNginxStreamConnectionAccepted(cfg MetricConfig) metricNginxStreamConnectionAccepted {
+	m := metricNginxStreamConnectionAccepted{config: cfg}
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -2734,15 +2736,15 @@ func newMetricNginxStreamConnectionsAccepted(cfg MetricConfig) metricNginxStream
 	return m
 }
 
-type metricNginxStreamConnectionsDiscarded struct {
+type metricNginxStreamConnectionDiscarded struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
 	capacity int            // max observed number of data points added to the metric.
 }
 
-// init fills nginx.stream.connections.discarded metric with initial data.
-func (m *metricNginxStreamConnectionsDiscarded) init() {
-	m.data.SetName("nginx.stream.connections.discarded")
+// init fills nginx.stream.connection.discarded metric with initial data.
+func (m *metricNginxStreamConnectionDiscarded) init() {
+	m.data.SetName("nginx.stream.connection.discarded")
 	m.data.SetDescription("Total number of connections completed without creating a session.")
 	m.data.SetUnit("connections")
 	m.data.SetEmptySum()
@@ -2751,7 +2753,7 @@ func (m *metricNginxStreamConnectionsDiscarded) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricNginxStreamConnectionsDiscarded) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string) {
+func (m *metricNginxStreamConnectionDiscarded) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -2763,14 +2765,14 @@ func (m *metricNginxStreamConnectionsDiscarded) recordDataPoint(start pcommon.Ti
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
-func (m *metricNginxStreamConnectionsDiscarded) updateCapacity() {
+func (m *metricNginxStreamConnectionDiscarded) updateCapacity() {
 	if m.data.Sum().DataPoints().Len() > m.capacity {
 		m.capacity = m.data.Sum().DataPoints().Len()
 	}
 }
 
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
-func (m *metricNginxStreamConnectionsDiscarded) emit(metrics pmetric.MetricSlice) {
+func (m *metricNginxStreamConnectionDiscarded) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
@@ -2778,8 +2780,8 @@ func (m *metricNginxStreamConnectionsDiscarded) emit(metrics pmetric.MetricSlice
 	}
 }
 
-func newMetricNginxStreamConnectionsDiscarded(cfg MetricConfig) metricNginxStreamConnectionsDiscarded {
-	m := metricNginxStreamConnectionsDiscarded{config: cfg}
+func newMetricNginxStreamConnectionDiscarded(cfg MetricConfig) metricNginxStreamConnectionDiscarded {
+	m := metricNginxStreamConnectionDiscarded{config: cfg}
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -2787,22 +2789,22 @@ func newMetricNginxStreamConnectionsDiscarded(cfg MetricConfig) metricNginxStrea
 	return m
 }
 
-type metricNginxStreamConnectionsProcessingCount struct {
+type metricNginxStreamConnectionProcessingCount struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
 	capacity int            // max observed number of data points added to the metric.
 }
 
-// init fills nginx.stream.connections.processing.count metric with initial data.
-func (m *metricNginxStreamConnectionsProcessingCount) init() {
-	m.data.SetName("nginx.stream.connections.processing.count")
+// init fills nginx.stream.connection.processing.count metric with initial data.
+func (m *metricNginxStreamConnectionProcessingCount) init() {
+	m.data.SetName("nginx.stream.connection.processing.count")
 	m.data.SetDescription("The number of client connections that are currently being processed.")
 	m.data.SetUnit("connections")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricNginxStreamConnectionsProcessingCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string) {
+func (m *metricNginxStreamConnectionProcessingCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -2814,14 +2816,14 @@ func (m *metricNginxStreamConnectionsProcessingCount) recordDataPoint(start pcom
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
-func (m *metricNginxStreamConnectionsProcessingCount) updateCapacity() {
+func (m *metricNginxStreamConnectionProcessingCount) updateCapacity() {
 	if m.data.Gauge().DataPoints().Len() > m.capacity {
 		m.capacity = m.data.Gauge().DataPoints().Len()
 	}
 }
 
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
-func (m *metricNginxStreamConnectionsProcessingCount) emit(metrics pmetric.MetricSlice) {
+func (m *metricNginxStreamConnectionProcessingCount) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
@@ -2829,8 +2831,8 @@ func (m *metricNginxStreamConnectionsProcessingCount) emit(metrics pmetric.Metri
 	}
 }
 
-func newMetricNginxStreamConnectionsProcessingCount(cfg MetricConfig) metricNginxStreamConnectionsProcessingCount {
-	m := metricNginxStreamConnectionsProcessingCount{config: cfg}
+func newMetricNginxStreamConnectionProcessingCount(cfg MetricConfig) metricNginxStreamConnectionProcessingCount {
+	m := metricNginxStreamConnectionProcessingCount{config: cfg}
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -2949,6 +2951,114 @@ func newMetricNginxStreamUpstreamPeerByteIo(cfg MetricConfig) metricNginxStreamU
 	return m
 }
 
+type metricNginxStreamUpstreamPeerConnectionCount struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills nginx.stream.upstream.peer.connection.count metric with initial data.
+func (m *metricNginxStreamUpstreamPeerConnectionCount) init() {
+	m.data.SetName("nginx.stream.upstream.peer.connection.count")
+	m.data.SetDescription("The current number of Stream Upstream Peer connections.")
+	m.data.SetUnit("connections")
+	m.data.SetEmptyGauge()
+	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricNginxStreamUpstreamPeerConnectionCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Gauge().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetIntValue(val)
+	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
+	dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricNginxStreamUpstreamPeerConnectionCount) updateCapacity() {
+	if m.data.Gauge().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Gauge().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricNginxStreamUpstreamPeerConnectionCount) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricNginxStreamUpstreamPeerConnectionCount(cfg MetricConfig) metricNginxStreamUpstreamPeerConnectionCount {
+	m := metricNginxStreamUpstreamPeerConnectionCount{config: cfg}
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
+type metricNginxStreamUpstreamPeerConnectionTime struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills nginx.stream.upstream.peer.connection.time metric with initial data.
+func (m *metricNginxStreamUpstreamPeerConnectionTime) init() {
+	m.data.SetName("nginx.stream.upstream.peer.connection.time")
+	m.data.SetDescription("The average time to connect to the stream upstream peer.")
+	m.data.SetUnit("ms")
+	m.data.SetEmptyGauge()
+	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricNginxStreamUpstreamPeerConnectionTime) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Gauge().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetIntValue(val)
+	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
+	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
+	dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricNginxStreamUpstreamPeerConnectionTime) updateCapacity() {
+	if m.data.Gauge().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Gauge().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricNginxStreamUpstreamPeerConnectionTime) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricNginxStreamUpstreamPeerConnectionTime(cfg MetricConfig) metricNginxStreamUpstreamPeerConnectionTime {
+	m := metricNginxStreamUpstreamPeerConnectionTime{config: cfg}
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
 type metricNginxStreamUpstreamPeerConnections struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
@@ -3005,114 +3115,6 @@ func newMetricNginxStreamUpstreamPeerConnections(cfg MetricConfig) metricNginxSt
 	return m
 }
 
-type metricNginxStreamUpstreamPeerConnectionsCount struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
-}
-
-// init fills nginx.stream.upstream.peer.connections.count metric with initial data.
-func (m *metricNginxStreamUpstreamPeerConnectionsCount) init() {
-	m.data.SetName("nginx.stream.upstream.peer.connections.count")
-	m.data.SetDescription("The current number of Stream Upstream Peer connections.")
-	m.data.SetUnit("connections")
-	m.data.SetEmptyGauge()
-	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
-}
-
-func (m *metricNginxStreamUpstreamPeerConnectionsCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string) {
-	if !m.config.Enabled {
-		return
-	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
-	dp.SetStartTimestamp(start)
-	dp.SetTimestamp(ts)
-	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
-}
-
-// updateCapacity saves max length of data point slices that will be used for the slice capacity.
-func (m *metricNginxStreamUpstreamPeerConnectionsCount) updateCapacity() {
-	if m.data.Gauge().DataPoints().Len() > m.capacity {
-		m.capacity = m.data.Gauge().DataPoints().Len()
-	}
-}
-
-// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
-func (m *metricNginxStreamUpstreamPeerConnectionsCount) emit(metrics pmetric.MetricSlice) {
-	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
-		m.updateCapacity()
-		m.data.MoveTo(metrics.AppendEmpty())
-		m.init()
-	}
-}
-
-func newMetricNginxStreamUpstreamPeerConnectionsCount(cfg MetricConfig) metricNginxStreamUpstreamPeerConnectionsCount {
-	m := metricNginxStreamUpstreamPeerConnectionsCount{config: cfg}
-	if cfg.Enabled {
-		m.data = pmetric.NewMetric()
-		m.init()
-	}
-	return m
-}
-
-type metricNginxStreamUpstreamPeerConnectionsTime struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
-}
-
-// init fills nginx.stream.upstream.peer.connections.time metric with initial data.
-func (m *metricNginxStreamUpstreamPeerConnectionsTime) init() {
-	m.data.SetName("nginx.stream.upstream.peer.connections.time")
-	m.data.SetDescription("The average time to connect to the stream upstream peer.")
-	m.data.SetUnit("ms")
-	m.data.SetEmptyGauge()
-	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
-}
-
-func (m *metricNginxStreamUpstreamPeerConnectionsTime) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string) {
-	if !m.config.Enabled {
-		return
-	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
-	dp.SetStartTimestamp(start)
-	dp.SetTimestamp(ts)
-	dp.SetIntValue(val)
-	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
-	dp.Attributes().PutStr("nginx.upstream.name", nginxUpstreamNameAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.address", nginxPeerAddressAttributeValue)
-	dp.Attributes().PutStr("nginx.peer.name", nginxPeerNameAttributeValue)
-}
-
-// updateCapacity saves max length of data point slices that will be used for the slice capacity.
-func (m *metricNginxStreamUpstreamPeerConnectionsTime) updateCapacity() {
-	if m.data.Gauge().DataPoints().Len() > m.capacity {
-		m.capacity = m.data.Gauge().DataPoints().Len()
-	}
-}
-
-// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
-func (m *metricNginxStreamUpstreamPeerConnectionsTime) emit(metrics pmetric.MetricSlice) {
-	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
-		m.updateCapacity()
-		m.data.MoveTo(metrics.AppendEmpty())
-		m.init()
-	}
-}
-
-func newMetricNginxStreamUpstreamPeerConnectionsTime(cfg MetricConfig) metricNginxStreamUpstreamPeerConnectionsTime {
-	m := metricNginxStreamUpstreamPeerConnectionsTime{config: cfg}
-	if cfg.Enabled {
-		m.data = pmetric.NewMetric()
-		m.init()
-	}
-	return m
-}
-
 type metricNginxStreamUpstreamPeerCount struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
@@ -3122,19 +3124,17 @@ type metricNginxStreamUpstreamPeerCount struct {
 // init fills nginx.stream.upstream.peer.count metric with initial data.
 func (m *metricNginxStreamUpstreamPeerCount) init() {
 	m.data.SetName("nginx.stream.upstream.peer.count")
-	m.data.SetDescription("The total number of stream upstream peers grouped by state.")
+	m.data.SetDescription("The current number of stream upstream peers grouped by state.")
 	m.data.SetUnit("peers")
-	m.data.SetEmptySum()
-	m.data.Sum().SetIsMonotonic(true)
-	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
-	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.data.SetEmptyGauge()
+	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
 
 func (m *metricNginxStreamUpstreamPeerCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxPeerStateAttributeValue string, nginxZoneNameAttributeValue string, nginxUpstreamNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+	dp := m.data.Gauge().DataPoints().AppendEmpty()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
@@ -3145,14 +3145,14 @@ func (m *metricNginxStreamUpstreamPeerCount) recordDataPoint(start pcommon.Times
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
 func (m *metricNginxStreamUpstreamPeerCount) updateCapacity() {
-	if m.data.Sum().DataPoints().Len() > m.capacity {
-		m.capacity = m.data.Sum().DataPoints().Len()
+	if m.data.Gauge().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Gauge().DataPoints().Len()
 	}
 }
 
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricNginxStreamUpstreamPeerCount) emit(metrics pmetric.MetricSlice) {
-	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
@@ -3178,7 +3178,7 @@ type metricNginxStreamUpstreamPeerFails struct {
 func (m *metricNginxStreamUpstreamPeerFails) init() {
 	m.data.SetName("nginx.stream.upstream.peer.fails")
 	m.data.SetDescription("The total number of unsuccessful attempts to communicate with the stream upstream peer.")
-	m.data.SetUnit("peers")
+	m.data.SetUnit("attempts")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -3445,15 +3445,15 @@ func newMetricNginxStreamUpstreamPeerTtfbTime(cfg MetricConfig) metricNginxStrea
 	return m
 }
 
-type metricNginxStreamUpstreamPeerUnavailable struct {
+type metricNginxStreamUpstreamPeerUnavailables struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
 	capacity int            // max observed number of data points added to the metric.
 }
 
-// init fills nginx.stream.upstream.peer.unavailable metric with initial data.
-func (m *metricNginxStreamUpstreamPeerUnavailable) init() {
-	m.data.SetName("nginx.stream.upstream.peer.unavailable")
+// init fills nginx.stream.upstream.peer.unavailables metric with initial data.
+func (m *metricNginxStreamUpstreamPeerUnavailables) init() {
+	m.data.SetName("nginx.stream.upstream.peer.unavailables")
 	m.data.SetDescription("How many times the server became unavailable for client connections (state “unavail”) due to the number of unsuccessful attempts reaching the max_fails threshold.")
 	m.data.SetUnit("requests")
 	m.data.SetEmptySum()
@@ -3462,7 +3462,7 @@ func (m *metricNginxStreamUpstreamPeerUnavailable) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricNginxStreamUpstreamPeerUnavailable) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string) {
+func (m *metricNginxStreamUpstreamPeerUnavailables) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -3477,14 +3477,14 @@ func (m *metricNginxStreamUpstreamPeerUnavailable) recordDataPoint(start pcommon
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
-func (m *metricNginxStreamUpstreamPeerUnavailable) updateCapacity() {
+func (m *metricNginxStreamUpstreamPeerUnavailables) updateCapacity() {
 	if m.data.Sum().DataPoints().Len() > m.capacity {
 		m.capacity = m.data.Sum().DataPoints().Len()
 	}
 }
 
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
-func (m *metricNginxStreamUpstreamPeerUnavailable) emit(metrics pmetric.MetricSlice) {
+func (m *metricNginxStreamUpstreamPeerUnavailables) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
@@ -3492,8 +3492,8 @@ func (m *metricNginxStreamUpstreamPeerUnavailable) emit(metrics pmetric.MetricSl
 	}
 }
 
-func newMetricNginxStreamUpstreamPeerUnavailable(cfg MetricConfig) metricNginxStreamUpstreamPeerUnavailable {
-	m := metricNginxStreamUpstreamPeerUnavailable{config: cfg}
+func newMetricNginxStreamUpstreamPeerUnavailables(cfg MetricConfig) metricNginxStreamUpstreamPeerUnavailables {
+	m := metricNginxStreamUpstreamPeerUnavailables{config: cfg}
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -3556,71 +3556,71 @@ func newMetricNginxStreamUpstreamZombieCount(cfg MetricConfig) metricNginxStream
 // MetricsBuilder provides an interface for scrapers to report metrics while taking care of all the transformations
 // required to produce metric representation defined in metadata and user config.
 type MetricsBuilder struct {
-	config                                        MetricsBuilderConfig // config of the metrics builder.
-	startTime                                     pcommon.Timestamp    // start time that will be applied to all recorded data points.
-	metricsCapacity                               int                  // maximum observed number of metrics per resource.
-	metricsBuffer                                 pmetric.Metrics      // accumulates metrics data before emitting.
-	buildInfo                                     component.BuildInfo  // contains version information.
-	resourceAttributeIncludeFilter                map[string]filter.Filter
-	resourceAttributeExcludeFilter                map[string]filter.Filter
-	metricNginxCacheBytes                         metricNginxCacheBytes
-	metricNginxCacheMemoryLimit                   metricNginxCacheMemoryLimit
-	metricNginxCacheMemoryUsage                   metricNginxCacheMemoryUsage
-	metricNginxCacheResponses                     metricNginxCacheResponses
-	metricNginxConfigReloads                      metricNginxConfigReloads
-	metricNginxHTTPConnections                    metricNginxHTTPConnections
-	metricNginxHTTPConnectionsCount               metricNginxHTTPConnectionsCount
-	metricNginxHTTPLimitConnRequests              metricNginxHTTPLimitConnRequests
-	metricNginxHTTPLimitReqRequests               metricNginxHTTPLimitReqRequests
-	metricNginxHTTPRequestByteIo                  metricNginxHTTPRequestByteIo
-	metricNginxHTTPRequestDiscarded               metricNginxHTTPRequestDiscarded
-	metricNginxHTTPRequestProcessingCount         metricNginxHTTPRequestProcessingCount
-	metricNginxHTTPRequests                       metricNginxHTTPRequests
-	metricNginxHTTPRequestsCount                  metricNginxHTTPRequestsCount
-	metricNginxHTTPResponseStatus                 metricNginxHTTPResponseStatus
-	metricNginxHTTPResponses                      metricNginxHTTPResponses
-	metricNginxHTTPUpstreamKeepaliveCount         metricNginxHTTPUpstreamKeepaliveCount
-	metricNginxHTTPUpstreamPeerByteIo             metricNginxHTTPUpstreamPeerByteIo
-	metricNginxHTTPUpstreamPeerConnectionsCount   metricNginxHTTPUpstreamPeerConnectionsCount
-	metricNginxHTTPUpstreamPeerCount              metricNginxHTTPUpstreamPeerCount
-	metricNginxHTTPUpstreamPeerFails              metricNginxHTTPUpstreamPeerFails
-	metricNginxHTTPUpstreamPeerHeaderTime         metricNginxHTTPUpstreamPeerHeaderTime
-	metricNginxHTTPUpstreamPeerHealthChecks       metricNginxHTTPUpstreamPeerHealthChecks
-	metricNginxHTTPUpstreamPeerRequests           metricNginxHTTPUpstreamPeerRequests
-	metricNginxHTTPUpstreamPeerResponseTime       metricNginxHTTPUpstreamPeerResponseTime
-	metricNginxHTTPUpstreamPeerResponses          metricNginxHTTPUpstreamPeerResponses
-	metricNginxHTTPUpstreamPeerState              metricNginxHTTPUpstreamPeerState
-	metricNginxHTTPUpstreamPeerUnavailables       metricNginxHTTPUpstreamPeerUnavailables
-	metricNginxHTTPUpstreamQueueLimit             metricNginxHTTPUpstreamQueueLimit
-	metricNginxHTTPUpstreamQueueOverflows         metricNginxHTTPUpstreamQueueOverflows
-	metricNginxHTTPUpstreamQueueUsage             metricNginxHTTPUpstreamQueueUsage
-	metricNginxHTTPUpstreamZombieCount            metricNginxHTTPUpstreamZombieCount
-	metricNginxSlabPageFree                       metricNginxSlabPageFree
-	metricNginxSlabPageLimit                      metricNginxSlabPageLimit
-	metricNginxSlabPageUsage                      metricNginxSlabPageUsage
-	metricNginxSlabPageUtilization                metricNginxSlabPageUtilization
-	metricNginxSlabSlotAllocations                metricNginxSlabSlotAllocations
-	metricNginxSlabSlotFree                       metricNginxSlabSlotFree
-	metricNginxSlabSlotUsage                      metricNginxSlabSlotUsage
-	metricNginxSslCertificateVerifyFailures       metricNginxSslCertificateVerifyFailures
-	metricNginxSslHandshakes                      metricNginxSslHandshakes
-	metricNginxStreamByteIo                       metricNginxStreamByteIo
-	metricNginxStreamConnectionsAccepted          metricNginxStreamConnectionsAccepted
-	metricNginxStreamConnectionsDiscarded         metricNginxStreamConnectionsDiscarded
-	metricNginxStreamConnectionsProcessingCount   metricNginxStreamConnectionsProcessingCount
-	metricNginxStreamSessionStatus                metricNginxStreamSessionStatus
-	metricNginxStreamUpstreamPeerByteIo           metricNginxStreamUpstreamPeerByteIo
-	metricNginxStreamUpstreamPeerConnections      metricNginxStreamUpstreamPeerConnections
-	metricNginxStreamUpstreamPeerConnectionsCount metricNginxStreamUpstreamPeerConnectionsCount
-	metricNginxStreamUpstreamPeerConnectionsTime  metricNginxStreamUpstreamPeerConnectionsTime
-	metricNginxStreamUpstreamPeerCount            metricNginxStreamUpstreamPeerCount
-	metricNginxStreamUpstreamPeerFails            metricNginxStreamUpstreamPeerFails
-	metricNginxStreamUpstreamPeerHealthChecks     metricNginxStreamUpstreamPeerHealthChecks
-	metricNginxStreamUpstreamPeerResponseTime     metricNginxStreamUpstreamPeerResponseTime
-	metricNginxStreamUpstreamPeerState            metricNginxStreamUpstreamPeerState
-	metricNginxStreamUpstreamPeerTtfbTime         metricNginxStreamUpstreamPeerTtfbTime
-	metricNginxStreamUpstreamPeerUnavailable      metricNginxStreamUpstreamPeerUnavailable
-	metricNginxStreamUpstreamZombieCount          metricNginxStreamUpstreamZombieCount
+	config                                       MetricsBuilderConfig // config of the metrics builder.
+	startTime                                    pcommon.Timestamp    // start time that will be applied to all recorded data points.
+	metricsCapacity                              int                  // maximum observed number of metrics per resource.
+	metricsBuffer                                pmetric.Metrics      // accumulates metrics data before emitting.
+	buildInfo                                    component.BuildInfo  // contains version information.
+	resourceAttributeIncludeFilter               map[string]filter.Filter
+	resourceAttributeExcludeFilter               map[string]filter.Filter
+	metricNginxCacheBytes                        metricNginxCacheBytes
+	metricNginxCacheMemoryLimit                  metricNginxCacheMemoryLimit
+	metricNginxCacheMemoryUsage                  metricNginxCacheMemoryUsage
+	metricNginxCacheResponses                    metricNginxCacheResponses
+	metricNginxConfigReloads                     metricNginxConfigReloads
+	metricNginxHTTPConnectionCount               metricNginxHTTPConnectionCount
+	metricNginxHTTPConnections                   metricNginxHTTPConnections
+	metricNginxHTTPLimitConnRequests             metricNginxHTTPLimitConnRequests
+	metricNginxHTTPLimitReqRequests              metricNginxHTTPLimitReqRequests
+	metricNginxHTTPRequestByteIo                 metricNginxHTTPRequestByteIo
+	metricNginxHTTPRequestCount                  metricNginxHTTPRequestCount
+	metricNginxHTTPRequestDiscarded              metricNginxHTTPRequestDiscarded
+	metricNginxHTTPRequestProcessingCount        metricNginxHTTPRequestProcessingCount
+	metricNginxHTTPRequests                      metricNginxHTTPRequests
+	metricNginxHTTPResponseStatus                metricNginxHTTPResponseStatus
+	metricNginxHTTPResponses                     metricNginxHTTPResponses
+	metricNginxHTTPUpstreamKeepaliveCount        metricNginxHTTPUpstreamKeepaliveCount
+	metricNginxHTTPUpstreamPeerByteIo            metricNginxHTTPUpstreamPeerByteIo
+	metricNginxHTTPUpstreamPeerConnectionCount   metricNginxHTTPUpstreamPeerConnectionCount
+	metricNginxHTTPUpstreamPeerCount             metricNginxHTTPUpstreamPeerCount
+	metricNginxHTTPUpstreamPeerFails             metricNginxHTTPUpstreamPeerFails
+	metricNginxHTTPUpstreamPeerHeaderTime        metricNginxHTTPUpstreamPeerHeaderTime
+	metricNginxHTTPUpstreamPeerHealthChecks      metricNginxHTTPUpstreamPeerHealthChecks
+	metricNginxHTTPUpstreamPeerRequests          metricNginxHTTPUpstreamPeerRequests
+	metricNginxHTTPUpstreamPeerResponseTime      metricNginxHTTPUpstreamPeerResponseTime
+	metricNginxHTTPUpstreamPeerResponses         metricNginxHTTPUpstreamPeerResponses
+	metricNginxHTTPUpstreamPeerState             metricNginxHTTPUpstreamPeerState
+	metricNginxHTTPUpstreamPeerUnavailables      metricNginxHTTPUpstreamPeerUnavailables
+	metricNginxHTTPUpstreamQueueLimit            metricNginxHTTPUpstreamQueueLimit
+	metricNginxHTTPUpstreamQueueOverflows        metricNginxHTTPUpstreamQueueOverflows
+	metricNginxHTTPUpstreamQueueUsage            metricNginxHTTPUpstreamQueueUsage
+	metricNginxHTTPUpstreamZombieCount           metricNginxHTTPUpstreamZombieCount
+	metricNginxSlabPageFree                      metricNginxSlabPageFree
+	metricNginxSlabPageLimit                     metricNginxSlabPageLimit
+	metricNginxSlabPageUsage                     metricNginxSlabPageUsage
+	metricNginxSlabPageUtilization               metricNginxSlabPageUtilization
+	metricNginxSlabSlotAllocations               metricNginxSlabSlotAllocations
+	metricNginxSlabSlotFree                      metricNginxSlabSlotFree
+	metricNginxSlabSlotUsage                     metricNginxSlabSlotUsage
+	metricNginxSslCertificateVerifyFailures      metricNginxSslCertificateVerifyFailures
+	metricNginxSslHandshakes                     metricNginxSslHandshakes
+	metricNginxStreamByteIo                      metricNginxStreamByteIo
+	metricNginxStreamConnectionAccepted          metricNginxStreamConnectionAccepted
+	metricNginxStreamConnectionDiscarded         metricNginxStreamConnectionDiscarded
+	metricNginxStreamConnectionProcessingCount   metricNginxStreamConnectionProcessingCount
+	metricNginxStreamSessionStatus               metricNginxStreamSessionStatus
+	metricNginxStreamUpstreamPeerByteIo          metricNginxStreamUpstreamPeerByteIo
+	metricNginxStreamUpstreamPeerConnectionCount metricNginxStreamUpstreamPeerConnectionCount
+	metricNginxStreamUpstreamPeerConnectionTime  metricNginxStreamUpstreamPeerConnectionTime
+	metricNginxStreamUpstreamPeerConnections     metricNginxStreamUpstreamPeerConnections
+	metricNginxStreamUpstreamPeerCount           metricNginxStreamUpstreamPeerCount
+	metricNginxStreamUpstreamPeerFails           metricNginxStreamUpstreamPeerFails
+	metricNginxStreamUpstreamPeerHealthChecks    metricNginxStreamUpstreamPeerHealthChecks
+	metricNginxStreamUpstreamPeerResponseTime    metricNginxStreamUpstreamPeerResponseTime
+	metricNginxStreamUpstreamPeerState           metricNginxStreamUpstreamPeerState
+	metricNginxStreamUpstreamPeerTtfbTime        metricNginxStreamUpstreamPeerTtfbTime
+	metricNginxStreamUpstreamPeerUnavailables    metricNginxStreamUpstreamPeerUnavailables
+	metricNginxStreamUpstreamZombieCount         metricNginxStreamUpstreamZombieCount
 }
 
 // MetricBuilderOption applies changes to default metrics builder.
@@ -3643,70 +3643,70 @@ func WithStartTime(startTime pcommon.Timestamp) MetricBuilderOption {
 
 func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, options ...MetricBuilderOption) *MetricsBuilder {
 	mb := &MetricsBuilder{
-		config:                                        mbc,
-		startTime:                                     pcommon.NewTimestampFromTime(time.Now()),
-		metricsBuffer:                                 pmetric.NewMetrics(),
-		buildInfo:                                     settings.BuildInfo,
-		metricNginxCacheBytes:                         newMetricNginxCacheBytes(mbc.Metrics.NginxCacheBytes),
-		metricNginxCacheMemoryLimit:                   newMetricNginxCacheMemoryLimit(mbc.Metrics.NginxCacheMemoryLimit),
-		metricNginxCacheMemoryUsage:                   newMetricNginxCacheMemoryUsage(mbc.Metrics.NginxCacheMemoryUsage),
-		metricNginxCacheResponses:                     newMetricNginxCacheResponses(mbc.Metrics.NginxCacheResponses),
-		metricNginxConfigReloads:                      newMetricNginxConfigReloads(mbc.Metrics.NginxConfigReloads),
-		metricNginxHTTPConnections:                    newMetricNginxHTTPConnections(mbc.Metrics.NginxHTTPConnections),
-		metricNginxHTTPConnectionsCount:               newMetricNginxHTTPConnectionsCount(mbc.Metrics.NginxHTTPConnectionsCount),
-		metricNginxHTTPLimitConnRequests:              newMetricNginxHTTPLimitConnRequests(mbc.Metrics.NginxHTTPLimitConnRequests),
-		metricNginxHTTPLimitReqRequests:               newMetricNginxHTTPLimitReqRequests(mbc.Metrics.NginxHTTPLimitReqRequests),
-		metricNginxHTTPRequestByteIo:                  newMetricNginxHTTPRequestByteIo(mbc.Metrics.NginxHTTPRequestByteIo),
-		metricNginxHTTPRequestDiscarded:               newMetricNginxHTTPRequestDiscarded(mbc.Metrics.NginxHTTPRequestDiscarded),
-		metricNginxHTTPRequestProcessingCount:         newMetricNginxHTTPRequestProcessingCount(mbc.Metrics.NginxHTTPRequestProcessingCount),
-		metricNginxHTTPRequests:                       newMetricNginxHTTPRequests(mbc.Metrics.NginxHTTPRequests),
-		metricNginxHTTPRequestsCount:                  newMetricNginxHTTPRequestsCount(mbc.Metrics.NginxHTTPRequestsCount),
-		metricNginxHTTPResponseStatus:                 newMetricNginxHTTPResponseStatus(mbc.Metrics.NginxHTTPResponseStatus),
-		metricNginxHTTPResponses:                      newMetricNginxHTTPResponses(mbc.Metrics.NginxHTTPResponses),
-		metricNginxHTTPUpstreamKeepaliveCount:         newMetricNginxHTTPUpstreamKeepaliveCount(mbc.Metrics.NginxHTTPUpstreamKeepaliveCount),
-		metricNginxHTTPUpstreamPeerByteIo:             newMetricNginxHTTPUpstreamPeerByteIo(mbc.Metrics.NginxHTTPUpstreamPeerByteIo),
-		metricNginxHTTPUpstreamPeerConnectionsCount:   newMetricNginxHTTPUpstreamPeerConnectionsCount(mbc.Metrics.NginxHTTPUpstreamPeerConnectionsCount),
-		metricNginxHTTPUpstreamPeerCount:              newMetricNginxHTTPUpstreamPeerCount(mbc.Metrics.NginxHTTPUpstreamPeerCount),
-		metricNginxHTTPUpstreamPeerFails:              newMetricNginxHTTPUpstreamPeerFails(mbc.Metrics.NginxHTTPUpstreamPeerFails),
-		metricNginxHTTPUpstreamPeerHeaderTime:         newMetricNginxHTTPUpstreamPeerHeaderTime(mbc.Metrics.NginxHTTPUpstreamPeerHeaderTime),
-		metricNginxHTTPUpstreamPeerHealthChecks:       newMetricNginxHTTPUpstreamPeerHealthChecks(mbc.Metrics.NginxHTTPUpstreamPeerHealthChecks),
-		metricNginxHTTPUpstreamPeerRequests:           newMetricNginxHTTPUpstreamPeerRequests(mbc.Metrics.NginxHTTPUpstreamPeerRequests),
-		metricNginxHTTPUpstreamPeerResponseTime:       newMetricNginxHTTPUpstreamPeerResponseTime(mbc.Metrics.NginxHTTPUpstreamPeerResponseTime),
-		metricNginxHTTPUpstreamPeerResponses:          newMetricNginxHTTPUpstreamPeerResponses(mbc.Metrics.NginxHTTPUpstreamPeerResponses),
-		metricNginxHTTPUpstreamPeerState:              newMetricNginxHTTPUpstreamPeerState(mbc.Metrics.NginxHTTPUpstreamPeerState),
-		metricNginxHTTPUpstreamPeerUnavailables:       newMetricNginxHTTPUpstreamPeerUnavailables(mbc.Metrics.NginxHTTPUpstreamPeerUnavailables),
-		metricNginxHTTPUpstreamQueueLimit:             newMetricNginxHTTPUpstreamQueueLimit(mbc.Metrics.NginxHTTPUpstreamQueueLimit),
-		metricNginxHTTPUpstreamQueueOverflows:         newMetricNginxHTTPUpstreamQueueOverflows(mbc.Metrics.NginxHTTPUpstreamQueueOverflows),
-		metricNginxHTTPUpstreamQueueUsage:             newMetricNginxHTTPUpstreamQueueUsage(mbc.Metrics.NginxHTTPUpstreamQueueUsage),
-		metricNginxHTTPUpstreamZombieCount:            newMetricNginxHTTPUpstreamZombieCount(mbc.Metrics.NginxHTTPUpstreamZombieCount),
-		metricNginxSlabPageFree:                       newMetricNginxSlabPageFree(mbc.Metrics.NginxSlabPageFree),
-		metricNginxSlabPageLimit:                      newMetricNginxSlabPageLimit(mbc.Metrics.NginxSlabPageLimit),
-		metricNginxSlabPageUsage:                      newMetricNginxSlabPageUsage(mbc.Metrics.NginxSlabPageUsage),
-		metricNginxSlabPageUtilization:                newMetricNginxSlabPageUtilization(mbc.Metrics.NginxSlabPageUtilization),
-		metricNginxSlabSlotAllocations:                newMetricNginxSlabSlotAllocations(mbc.Metrics.NginxSlabSlotAllocations),
-		metricNginxSlabSlotFree:                       newMetricNginxSlabSlotFree(mbc.Metrics.NginxSlabSlotFree),
-		metricNginxSlabSlotUsage:                      newMetricNginxSlabSlotUsage(mbc.Metrics.NginxSlabSlotUsage),
-		metricNginxSslCertificateVerifyFailures:       newMetricNginxSslCertificateVerifyFailures(mbc.Metrics.NginxSslCertificateVerifyFailures),
-		metricNginxSslHandshakes:                      newMetricNginxSslHandshakes(mbc.Metrics.NginxSslHandshakes),
-		metricNginxStreamByteIo:                       newMetricNginxStreamByteIo(mbc.Metrics.NginxStreamByteIo),
-		metricNginxStreamConnectionsAccepted:          newMetricNginxStreamConnectionsAccepted(mbc.Metrics.NginxStreamConnectionsAccepted),
-		metricNginxStreamConnectionsDiscarded:         newMetricNginxStreamConnectionsDiscarded(mbc.Metrics.NginxStreamConnectionsDiscarded),
-		metricNginxStreamConnectionsProcessingCount:   newMetricNginxStreamConnectionsProcessingCount(mbc.Metrics.NginxStreamConnectionsProcessingCount),
-		metricNginxStreamSessionStatus:                newMetricNginxStreamSessionStatus(mbc.Metrics.NginxStreamSessionStatus),
-		metricNginxStreamUpstreamPeerByteIo:           newMetricNginxStreamUpstreamPeerByteIo(mbc.Metrics.NginxStreamUpstreamPeerByteIo),
-		metricNginxStreamUpstreamPeerConnections:      newMetricNginxStreamUpstreamPeerConnections(mbc.Metrics.NginxStreamUpstreamPeerConnections),
-		metricNginxStreamUpstreamPeerConnectionsCount: newMetricNginxStreamUpstreamPeerConnectionsCount(mbc.Metrics.NginxStreamUpstreamPeerConnectionsCount),
-		metricNginxStreamUpstreamPeerConnectionsTime:  newMetricNginxStreamUpstreamPeerConnectionsTime(mbc.Metrics.NginxStreamUpstreamPeerConnectionsTime),
-		metricNginxStreamUpstreamPeerCount:            newMetricNginxStreamUpstreamPeerCount(mbc.Metrics.NginxStreamUpstreamPeerCount),
-		metricNginxStreamUpstreamPeerFails:            newMetricNginxStreamUpstreamPeerFails(mbc.Metrics.NginxStreamUpstreamPeerFails),
-		metricNginxStreamUpstreamPeerHealthChecks:     newMetricNginxStreamUpstreamPeerHealthChecks(mbc.Metrics.NginxStreamUpstreamPeerHealthChecks),
-		metricNginxStreamUpstreamPeerResponseTime:     newMetricNginxStreamUpstreamPeerResponseTime(mbc.Metrics.NginxStreamUpstreamPeerResponseTime),
-		metricNginxStreamUpstreamPeerState:            newMetricNginxStreamUpstreamPeerState(mbc.Metrics.NginxStreamUpstreamPeerState),
-		metricNginxStreamUpstreamPeerTtfbTime:         newMetricNginxStreamUpstreamPeerTtfbTime(mbc.Metrics.NginxStreamUpstreamPeerTtfbTime),
-		metricNginxStreamUpstreamPeerUnavailable:      newMetricNginxStreamUpstreamPeerUnavailable(mbc.Metrics.NginxStreamUpstreamPeerUnavailable),
-		metricNginxStreamUpstreamZombieCount:          newMetricNginxStreamUpstreamZombieCount(mbc.Metrics.NginxStreamUpstreamZombieCount),
-		resourceAttributeIncludeFilter:                make(map[string]filter.Filter),
-		resourceAttributeExcludeFilter:                make(map[string]filter.Filter),
+		config:                                       mbc,
+		startTime:                                    pcommon.NewTimestampFromTime(time.Now()),
+		metricsBuffer:                                pmetric.NewMetrics(),
+		buildInfo:                                    settings.BuildInfo,
+		metricNginxCacheBytes:                        newMetricNginxCacheBytes(mbc.Metrics.NginxCacheBytes),
+		metricNginxCacheMemoryLimit:                  newMetricNginxCacheMemoryLimit(mbc.Metrics.NginxCacheMemoryLimit),
+		metricNginxCacheMemoryUsage:                  newMetricNginxCacheMemoryUsage(mbc.Metrics.NginxCacheMemoryUsage),
+		metricNginxCacheResponses:                    newMetricNginxCacheResponses(mbc.Metrics.NginxCacheResponses),
+		metricNginxConfigReloads:                     newMetricNginxConfigReloads(mbc.Metrics.NginxConfigReloads),
+		metricNginxHTTPConnectionCount:               newMetricNginxHTTPConnectionCount(mbc.Metrics.NginxHTTPConnectionCount),
+		metricNginxHTTPConnections:                   newMetricNginxHTTPConnections(mbc.Metrics.NginxHTTPConnections),
+		metricNginxHTTPLimitConnRequests:             newMetricNginxHTTPLimitConnRequests(mbc.Metrics.NginxHTTPLimitConnRequests),
+		metricNginxHTTPLimitReqRequests:              newMetricNginxHTTPLimitReqRequests(mbc.Metrics.NginxHTTPLimitReqRequests),
+		metricNginxHTTPRequestByteIo:                 newMetricNginxHTTPRequestByteIo(mbc.Metrics.NginxHTTPRequestByteIo),
+		metricNginxHTTPRequestCount:                  newMetricNginxHTTPRequestCount(mbc.Metrics.NginxHTTPRequestCount),
+		metricNginxHTTPRequestDiscarded:              newMetricNginxHTTPRequestDiscarded(mbc.Metrics.NginxHTTPRequestDiscarded),
+		metricNginxHTTPRequestProcessingCount:        newMetricNginxHTTPRequestProcessingCount(mbc.Metrics.NginxHTTPRequestProcessingCount),
+		metricNginxHTTPRequests:                      newMetricNginxHTTPRequests(mbc.Metrics.NginxHTTPRequests),
+		metricNginxHTTPResponseStatus:                newMetricNginxHTTPResponseStatus(mbc.Metrics.NginxHTTPResponseStatus),
+		metricNginxHTTPResponses:                     newMetricNginxHTTPResponses(mbc.Metrics.NginxHTTPResponses),
+		metricNginxHTTPUpstreamKeepaliveCount:        newMetricNginxHTTPUpstreamKeepaliveCount(mbc.Metrics.NginxHTTPUpstreamKeepaliveCount),
+		metricNginxHTTPUpstreamPeerByteIo:            newMetricNginxHTTPUpstreamPeerByteIo(mbc.Metrics.NginxHTTPUpstreamPeerByteIo),
+		metricNginxHTTPUpstreamPeerConnectionCount:   newMetricNginxHTTPUpstreamPeerConnectionCount(mbc.Metrics.NginxHTTPUpstreamPeerConnectionCount),
+		metricNginxHTTPUpstreamPeerCount:             newMetricNginxHTTPUpstreamPeerCount(mbc.Metrics.NginxHTTPUpstreamPeerCount),
+		metricNginxHTTPUpstreamPeerFails:             newMetricNginxHTTPUpstreamPeerFails(mbc.Metrics.NginxHTTPUpstreamPeerFails),
+		metricNginxHTTPUpstreamPeerHeaderTime:        newMetricNginxHTTPUpstreamPeerHeaderTime(mbc.Metrics.NginxHTTPUpstreamPeerHeaderTime),
+		metricNginxHTTPUpstreamPeerHealthChecks:      newMetricNginxHTTPUpstreamPeerHealthChecks(mbc.Metrics.NginxHTTPUpstreamPeerHealthChecks),
+		metricNginxHTTPUpstreamPeerRequests:          newMetricNginxHTTPUpstreamPeerRequests(mbc.Metrics.NginxHTTPUpstreamPeerRequests),
+		metricNginxHTTPUpstreamPeerResponseTime:      newMetricNginxHTTPUpstreamPeerResponseTime(mbc.Metrics.NginxHTTPUpstreamPeerResponseTime),
+		metricNginxHTTPUpstreamPeerResponses:         newMetricNginxHTTPUpstreamPeerResponses(mbc.Metrics.NginxHTTPUpstreamPeerResponses),
+		metricNginxHTTPUpstreamPeerState:             newMetricNginxHTTPUpstreamPeerState(mbc.Metrics.NginxHTTPUpstreamPeerState),
+		metricNginxHTTPUpstreamPeerUnavailables:      newMetricNginxHTTPUpstreamPeerUnavailables(mbc.Metrics.NginxHTTPUpstreamPeerUnavailables),
+		metricNginxHTTPUpstreamQueueLimit:            newMetricNginxHTTPUpstreamQueueLimit(mbc.Metrics.NginxHTTPUpstreamQueueLimit),
+		metricNginxHTTPUpstreamQueueOverflows:        newMetricNginxHTTPUpstreamQueueOverflows(mbc.Metrics.NginxHTTPUpstreamQueueOverflows),
+		metricNginxHTTPUpstreamQueueUsage:            newMetricNginxHTTPUpstreamQueueUsage(mbc.Metrics.NginxHTTPUpstreamQueueUsage),
+		metricNginxHTTPUpstreamZombieCount:           newMetricNginxHTTPUpstreamZombieCount(mbc.Metrics.NginxHTTPUpstreamZombieCount),
+		metricNginxSlabPageFree:                      newMetricNginxSlabPageFree(mbc.Metrics.NginxSlabPageFree),
+		metricNginxSlabPageLimit:                     newMetricNginxSlabPageLimit(mbc.Metrics.NginxSlabPageLimit),
+		metricNginxSlabPageUsage:                     newMetricNginxSlabPageUsage(mbc.Metrics.NginxSlabPageUsage),
+		metricNginxSlabPageUtilization:               newMetricNginxSlabPageUtilization(mbc.Metrics.NginxSlabPageUtilization),
+		metricNginxSlabSlotAllocations:               newMetricNginxSlabSlotAllocations(mbc.Metrics.NginxSlabSlotAllocations),
+		metricNginxSlabSlotFree:                      newMetricNginxSlabSlotFree(mbc.Metrics.NginxSlabSlotFree),
+		metricNginxSlabSlotUsage:                     newMetricNginxSlabSlotUsage(mbc.Metrics.NginxSlabSlotUsage),
+		metricNginxSslCertificateVerifyFailures:      newMetricNginxSslCertificateVerifyFailures(mbc.Metrics.NginxSslCertificateVerifyFailures),
+		metricNginxSslHandshakes:                     newMetricNginxSslHandshakes(mbc.Metrics.NginxSslHandshakes),
+		metricNginxStreamByteIo:                      newMetricNginxStreamByteIo(mbc.Metrics.NginxStreamByteIo),
+		metricNginxStreamConnectionAccepted:          newMetricNginxStreamConnectionAccepted(mbc.Metrics.NginxStreamConnectionAccepted),
+		metricNginxStreamConnectionDiscarded:         newMetricNginxStreamConnectionDiscarded(mbc.Metrics.NginxStreamConnectionDiscarded),
+		metricNginxStreamConnectionProcessingCount:   newMetricNginxStreamConnectionProcessingCount(mbc.Metrics.NginxStreamConnectionProcessingCount),
+		metricNginxStreamSessionStatus:               newMetricNginxStreamSessionStatus(mbc.Metrics.NginxStreamSessionStatus),
+		metricNginxStreamUpstreamPeerByteIo:          newMetricNginxStreamUpstreamPeerByteIo(mbc.Metrics.NginxStreamUpstreamPeerByteIo),
+		metricNginxStreamUpstreamPeerConnectionCount: newMetricNginxStreamUpstreamPeerConnectionCount(mbc.Metrics.NginxStreamUpstreamPeerConnectionCount),
+		metricNginxStreamUpstreamPeerConnectionTime:  newMetricNginxStreamUpstreamPeerConnectionTime(mbc.Metrics.NginxStreamUpstreamPeerConnectionTime),
+		metricNginxStreamUpstreamPeerConnections:     newMetricNginxStreamUpstreamPeerConnections(mbc.Metrics.NginxStreamUpstreamPeerConnections),
+		metricNginxStreamUpstreamPeerCount:           newMetricNginxStreamUpstreamPeerCount(mbc.Metrics.NginxStreamUpstreamPeerCount),
+		metricNginxStreamUpstreamPeerFails:           newMetricNginxStreamUpstreamPeerFails(mbc.Metrics.NginxStreamUpstreamPeerFails),
+		metricNginxStreamUpstreamPeerHealthChecks:    newMetricNginxStreamUpstreamPeerHealthChecks(mbc.Metrics.NginxStreamUpstreamPeerHealthChecks),
+		metricNginxStreamUpstreamPeerResponseTime:    newMetricNginxStreamUpstreamPeerResponseTime(mbc.Metrics.NginxStreamUpstreamPeerResponseTime),
+		metricNginxStreamUpstreamPeerState:           newMetricNginxStreamUpstreamPeerState(mbc.Metrics.NginxStreamUpstreamPeerState),
+		metricNginxStreamUpstreamPeerTtfbTime:        newMetricNginxStreamUpstreamPeerTtfbTime(mbc.Metrics.NginxStreamUpstreamPeerTtfbTime),
+		metricNginxStreamUpstreamPeerUnavailables:    newMetricNginxStreamUpstreamPeerUnavailables(mbc.Metrics.NginxStreamUpstreamPeerUnavailables),
+		metricNginxStreamUpstreamZombieCount:         newMetricNginxStreamUpstreamZombieCount(mbc.Metrics.NginxStreamUpstreamZombieCount),
+		resourceAttributeIncludeFilter:               make(map[string]filter.Filter),
+		resourceAttributeExcludeFilter:               make(map[string]filter.Filter),
 	}
 	if mbc.ResourceAttributes.InstanceID.MetricsInclude != nil {
 		mb.resourceAttributeIncludeFilter["instance.id"] = filter.CreateFilter(mbc.ResourceAttributes.InstanceID.MetricsInclude)
@@ -3794,20 +3794,20 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	mb.metricNginxCacheMemoryUsage.emit(ils.Metrics())
 	mb.metricNginxCacheResponses.emit(ils.Metrics())
 	mb.metricNginxConfigReloads.emit(ils.Metrics())
+	mb.metricNginxHTTPConnectionCount.emit(ils.Metrics())
 	mb.metricNginxHTTPConnections.emit(ils.Metrics())
-	mb.metricNginxHTTPConnectionsCount.emit(ils.Metrics())
 	mb.metricNginxHTTPLimitConnRequests.emit(ils.Metrics())
 	mb.metricNginxHTTPLimitReqRequests.emit(ils.Metrics())
 	mb.metricNginxHTTPRequestByteIo.emit(ils.Metrics())
+	mb.metricNginxHTTPRequestCount.emit(ils.Metrics())
 	mb.metricNginxHTTPRequestDiscarded.emit(ils.Metrics())
 	mb.metricNginxHTTPRequestProcessingCount.emit(ils.Metrics())
 	mb.metricNginxHTTPRequests.emit(ils.Metrics())
-	mb.metricNginxHTTPRequestsCount.emit(ils.Metrics())
 	mb.metricNginxHTTPResponseStatus.emit(ils.Metrics())
 	mb.metricNginxHTTPResponses.emit(ils.Metrics())
 	mb.metricNginxHTTPUpstreamKeepaliveCount.emit(ils.Metrics())
 	mb.metricNginxHTTPUpstreamPeerByteIo.emit(ils.Metrics())
-	mb.metricNginxHTTPUpstreamPeerConnectionsCount.emit(ils.Metrics())
+	mb.metricNginxHTTPUpstreamPeerConnectionCount.emit(ils.Metrics())
 	mb.metricNginxHTTPUpstreamPeerCount.emit(ils.Metrics())
 	mb.metricNginxHTTPUpstreamPeerFails.emit(ils.Metrics())
 	mb.metricNginxHTTPUpstreamPeerHeaderTime.emit(ils.Metrics())
@@ -3831,21 +3831,21 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	mb.metricNginxSslCertificateVerifyFailures.emit(ils.Metrics())
 	mb.metricNginxSslHandshakes.emit(ils.Metrics())
 	mb.metricNginxStreamByteIo.emit(ils.Metrics())
-	mb.metricNginxStreamConnectionsAccepted.emit(ils.Metrics())
-	mb.metricNginxStreamConnectionsDiscarded.emit(ils.Metrics())
-	mb.metricNginxStreamConnectionsProcessingCount.emit(ils.Metrics())
+	mb.metricNginxStreamConnectionAccepted.emit(ils.Metrics())
+	mb.metricNginxStreamConnectionDiscarded.emit(ils.Metrics())
+	mb.metricNginxStreamConnectionProcessingCount.emit(ils.Metrics())
 	mb.metricNginxStreamSessionStatus.emit(ils.Metrics())
 	mb.metricNginxStreamUpstreamPeerByteIo.emit(ils.Metrics())
+	mb.metricNginxStreamUpstreamPeerConnectionCount.emit(ils.Metrics())
+	mb.metricNginxStreamUpstreamPeerConnectionTime.emit(ils.Metrics())
 	mb.metricNginxStreamUpstreamPeerConnections.emit(ils.Metrics())
-	mb.metricNginxStreamUpstreamPeerConnectionsCount.emit(ils.Metrics())
-	mb.metricNginxStreamUpstreamPeerConnectionsTime.emit(ils.Metrics())
 	mb.metricNginxStreamUpstreamPeerCount.emit(ils.Metrics())
 	mb.metricNginxStreamUpstreamPeerFails.emit(ils.Metrics())
 	mb.metricNginxStreamUpstreamPeerHealthChecks.emit(ils.Metrics())
 	mb.metricNginxStreamUpstreamPeerResponseTime.emit(ils.Metrics())
 	mb.metricNginxStreamUpstreamPeerState.emit(ils.Metrics())
 	mb.metricNginxStreamUpstreamPeerTtfbTime.emit(ils.Metrics())
-	mb.metricNginxStreamUpstreamPeerUnavailable.emit(ils.Metrics())
+	mb.metricNginxStreamUpstreamPeerUnavailables.emit(ils.Metrics())
 	mb.metricNginxStreamUpstreamZombieCount.emit(ils.Metrics())
 
 	for _, op := range options {
@@ -3903,14 +3903,14 @@ func (mb *MetricsBuilder) RecordNginxConfigReloadsDataPoint(ts pcommon.Timestamp
 	mb.metricNginxConfigReloads.recordDataPoint(mb.startTime, ts, val)
 }
 
+// RecordNginxHTTPConnectionCountDataPoint adds a data point to nginx.http.connection.count metric.
+func (mb *MetricsBuilder) RecordNginxHTTPConnectionCountDataPoint(ts pcommon.Timestamp, val int64, nginxConnectionsOutcomeAttributeValue AttributeNginxConnectionsOutcome) {
+	mb.metricNginxHTTPConnectionCount.recordDataPoint(mb.startTime, ts, val, nginxConnectionsOutcomeAttributeValue.String())
+}
+
 // RecordNginxHTTPConnectionsDataPoint adds a data point to nginx.http.connections metric.
 func (mb *MetricsBuilder) RecordNginxHTTPConnectionsDataPoint(ts pcommon.Timestamp, val int64, nginxConnectionsOutcomeAttributeValue AttributeNginxConnectionsOutcome) {
 	mb.metricNginxHTTPConnections.recordDataPoint(mb.startTime, ts, val, nginxConnectionsOutcomeAttributeValue.String())
-}
-
-// RecordNginxHTTPConnectionsCountDataPoint adds a data point to nginx.http.connections.count metric.
-func (mb *MetricsBuilder) RecordNginxHTTPConnectionsCountDataPoint(ts pcommon.Timestamp, val int64, nginxConnectionsOutcomeAttributeValue AttributeNginxConnectionsOutcome) {
-	mb.metricNginxHTTPConnectionsCount.recordDataPoint(mb.startTime, ts, val, nginxConnectionsOutcomeAttributeValue.String())
 }
 
 // RecordNginxHTTPLimitConnRequestsDataPoint adds a data point to nginx.http.limit_conn.requests metric.
@@ -3928,6 +3928,11 @@ func (mb *MetricsBuilder) RecordNginxHTTPRequestByteIoDataPoint(ts pcommon.Times
 	mb.metricNginxHTTPRequestByteIo.recordDataPoint(mb.startTime, ts, val, nginxByteIoDirectionAttributeValue.String(), nginxZoneNameAttributeValue, nginxZoneTypeAttributeValue.String())
 }
 
+// RecordNginxHTTPRequestCountDataPoint adds a data point to nginx.http.request.count metric.
+func (mb *MetricsBuilder) RecordNginxHTTPRequestCountDataPoint(ts pcommon.Timestamp, val int64) {
+	mb.metricNginxHTTPRequestCount.recordDataPoint(mb.startTime, ts, val)
+}
+
 // RecordNginxHTTPRequestDiscardedDataPoint adds a data point to nginx.http.request.discarded metric.
 func (mb *MetricsBuilder) RecordNginxHTTPRequestDiscardedDataPoint(ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxZoneTypeAttributeValue AttributeNginxZoneType) {
 	mb.metricNginxHTTPRequestDiscarded.recordDataPoint(mb.startTime, ts, val, nginxZoneNameAttributeValue, nginxZoneTypeAttributeValue.String())
@@ -3941,11 +3946,6 @@ func (mb *MetricsBuilder) RecordNginxHTTPRequestProcessingCountDataPoint(ts pcom
 // RecordNginxHTTPRequestsDataPoint adds a data point to nginx.http.requests metric.
 func (mb *MetricsBuilder) RecordNginxHTTPRequestsDataPoint(ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxZoneTypeAttributeValue AttributeNginxZoneType) {
 	mb.metricNginxHTTPRequests.recordDataPoint(mb.startTime, ts, val, nginxZoneNameAttributeValue, nginxZoneTypeAttributeValue.String())
-}
-
-// RecordNginxHTTPRequestsCountDataPoint adds a data point to nginx.http.requests.count metric.
-func (mb *MetricsBuilder) RecordNginxHTTPRequestsCountDataPoint(ts pcommon.Timestamp, val int64) {
-	mb.metricNginxHTTPRequestsCount.recordDataPoint(mb.startTime, ts, val)
 }
 
 // RecordNginxHTTPResponseStatusDataPoint adds a data point to nginx.http.response.status metric.
@@ -3968,9 +3968,9 @@ func (mb *MetricsBuilder) RecordNginxHTTPUpstreamPeerByteIoDataPoint(ts pcommon.
 	mb.metricNginxHTTPUpstreamPeerByteIo.recordDataPoint(mb.startTime, ts, val, nginxByteIoDirectionAttributeValue.String(), nginxZoneNameAttributeValue, nginxUpstreamNameAttributeValue, nginxPeerAddressAttributeValue, nginxPeerNameAttributeValue)
 }
 
-// RecordNginxHTTPUpstreamPeerConnectionsCountDataPoint adds a data point to nginx.http.upstream.peer.connections.count metric.
-func (mb *MetricsBuilder) RecordNginxHTTPUpstreamPeerConnectionsCountDataPoint(ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string) {
-	mb.metricNginxHTTPUpstreamPeerConnectionsCount.recordDataPoint(mb.startTime, ts, val, nginxZoneNameAttributeValue, nginxUpstreamNameAttributeValue, nginxPeerAddressAttributeValue, nginxPeerNameAttributeValue)
+// RecordNginxHTTPUpstreamPeerConnectionCountDataPoint adds a data point to nginx.http.upstream.peer.connection.count metric.
+func (mb *MetricsBuilder) RecordNginxHTTPUpstreamPeerConnectionCountDataPoint(ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string) {
+	mb.metricNginxHTTPUpstreamPeerConnectionCount.recordDataPoint(mb.startTime, ts, val, nginxZoneNameAttributeValue, nginxUpstreamNameAttributeValue, nginxPeerAddressAttributeValue, nginxPeerNameAttributeValue)
 }
 
 // RecordNginxHTTPUpstreamPeerCountDataPoint adds a data point to nginx.http.upstream.peer.count metric.
@@ -4088,19 +4088,19 @@ func (mb *MetricsBuilder) RecordNginxStreamByteIoDataPoint(ts pcommon.Timestamp,
 	mb.metricNginxStreamByteIo.recordDataPoint(mb.startTime, ts, val, nginxByteIoDirectionAttributeValue.String(), nginxZoneNameAttributeValue)
 }
 
-// RecordNginxStreamConnectionsAcceptedDataPoint adds a data point to nginx.stream.connections.accepted metric.
-func (mb *MetricsBuilder) RecordNginxStreamConnectionsAcceptedDataPoint(ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string) {
-	mb.metricNginxStreamConnectionsAccepted.recordDataPoint(mb.startTime, ts, val, nginxZoneNameAttributeValue)
+// RecordNginxStreamConnectionAcceptedDataPoint adds a data point to nginx.stream.connection.accepted metric.
+func (mb *MetricsBuilder) RecordNginxStreamConnectionAcceptedDataPoint(ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string) {
+	mb.metricNginxStreamConnectionAccepted.recordDataPoint(mb.startTime, ts, val, nginxZoneNameAttributeValue)
 }
 
-// RecordNginxStreamConnectionsDiscardedDataPoint adds a data point to nginx.stream.connections.discarded metric.
-func (mb *MetricsBuilder) RecordNginxStreamConnectionsDiscardedDataPoint(ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string) {
-	mb.metricNginxStreamConnectionsDiscarded.recordDataPoint(mb.startTime, ts, val, nginxZoneNameAttributeValue)
+// RecordNginxStreamConnectionDiscardedDataPoint adds a data point to nginx.stream.connection.discarded metric.
+func (mb *MetricsBuilder) RecordNginxStreamConnectionDiscardedDataPoint(ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string) {
+	mb.metricNginxStreamConnectionDiscarded.recordDataPoint(mb.startTime, ts, val, nginxZoneNameAttributeValue)
 }
 
-// RecordNginxStreamConnectionsProcessingCountDataPoint adds a data point to nginx.stream.connections.processing.count metric.
-func (mb *MetricsBuilder) RecordNginxStreamConnectionsProcessingCountDataPoint(ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string) {
-	mb.metricNginxStreamConnectionsProcessingCount.recordDataPoint(mb.startTime, ts, val, nginxZoneNameAttributeValue)
+// RecordNginxStreamConnectionProcessingCountDataPoint adds a data point to nginx.stream.connection.processing.count metric.
+func (mb *MetricsBuilder) RecordNginxStreamConnectionProcessingCountDataPoint(ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string) {
+	mb.metricNginxStreamConnectionProcessingCount.recordDataPoint(mb.startTime, ts, val, nginxZoneNameAttributeValue)
 }
 
 // RecordNginxStreamSessionStatusDataPoint adds a data point to nginx.stream.session.status metric.
@@ -4113,19 +4113,19 @@ func (mb *MetricsBuilder) RecordNginxStreamUpstreamPeerByteIoDataPoint(ts pcommo
 	mb.metricNginxStreamUpstreamPeerByteIo.recordDataPoint(mb.startTime, ts, val, nginxByteIoDirectionAttributeValue.String(), nginxZoneNameAttributeValue, nginxUpstreamNameAttributeValue, nginxPeerAddressAttributeValue, nginxPeerNameAttributeValue)
 }
 
+// RecordNginxStreamUpstreamPeerConnectionCountDataPoint adds a data point to nginx.stream.upstream.peer.connection.count metric.
+func (mb *MetricsBuilder) RecordNginxStreamUpstreamPeerConnectionCountDataPoint(ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string) {
+	mb.metricNginxStreamUpstreamPeerConnectionCount.recordDataPoint(mb.startTime, ts, val, nginxZoneNameAttributeValue, nginxUpstreamNameAttributeValue, nginxPeerAddressAttributeValue, nginxPeerNameAttributeValue)
+}
+
+// RecordNginxStreamUpstreamPeerConnectionTimeDataPoint adds a data point to nginx.stream.upstream.peer.connection.time metric.
+func (mb *MetricsBuilder) RecordNginxStreamUpstreamPeerConnectionTimeDataPoint(ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string) {
+	mb.metricNginxStreamUpstreamPeerConnectionTime.recordDataPoint(mb.startTime, ts, val, nginxZoneNameAttributeValue, nginxUpstreamNameAttributeValue, nginxPeerAddressAttributeValue, nginxPeerNameAttributeValue)
+}
+
 // RecordNginxStreamUpstreamPeerConnectionsDataPoint adds a data point to nginx.stream.upstream.peer.connections metric.
 func (mb *MetricsBuilder) RecordNginxStreamUpstreamPeerConnectionsDataPoint(ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string) {
 	mb.metricNginxStreamUpstreamPeerConnections.recordDataPoint(mb.startTime, ts, val, nginxZoneNameAttributeValue, nginxUpstreamNameAttributeValue, nginxPeerAddressAttributeValue, nginxPeerNameAttributeValue)
-}
-
-// RecordNginxStreamUpstreamPeerConnectionsCountDataPoint adds a data point to nginx.stream.upstream.peer.connections.count metric.
-func (mb *MetricsBuilder) RecordNginxStreamUpstreamPeerConnectionsCountDataPoint(ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string) {
-	mb.metricNginxStreamUpstreamPeerConnectionsCount.recordDataPoint(mb.startTime, ts, val, nginxZoneNameAttributeValue, nginxUpstreamNameAttributeValue, nginxPeerAddressAttributeValue, nginxPeerNameAttributeValue)
-}
-
-// RecordNginxStreamUpstreamPeerConnectionsTimeDataPoint adds a data point to nginx.stream.upstream.peer.connections.time metric.
-func (mb *MetricsBuilder) RecordNginxStreamUpstreamPeerConnectionsTimeDataPoint(ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string) {
-	mb.metricNginxStreamUpstreamPeerConnectionsTime.recordDataPoint(mb.startTime, ts, val, nginxZoneNameAttributeValue, nginxUpstreamNameAttributeValue, nginxPeerAddressAttributeValue, nginxPeerNameAttributeValue)
 }
 
 // RecordNginxStreamUpstreamPeerCountDataPoint adds a data point to nginx.stream.upstream.peer.count metric.
@@ -4158,9 +4158,9 @@ func (mb *MetricsBuilder) RecordNginxStreamUpstreamPeerTtfbTimeDataPoint(ts pcom
 	mb.metricNginxStreamUpstreamPeerTtfbTime.recordDataPoint(mb.startTime, ts, val, nginxZoneNameAttributeValue, nginxUpstreamNameAttributeValue, nginxPeerAddressAttributeValue, nginxPeerNameAttributeValue)
 }
 
-// RecordNginxStreamUpstreamPeerUnavailableDataPoint adds a data point to nginx.stream.upstream.peer.unavailable metric.
-func (mb *MetricsBuilder) RecordNginxStreamUpstreamPeerUnavailableDataPoint(ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string) {
-	mb.metricNginxStreamUpstreamPeerUnavailable.recordDataPoint(mb.startTime, ts, val, nginxZoneNameAttributeValue, nginxUpstreamNameAttributeValue, nginxPeerAddressAttributeValue, nginxPeerNameAttributeValue)
+// RecordNginxStreamUpstreamPeerUnavailablesDataPoint adds a data point to nginx.stream.upstream.peer.unavailables metric.
+func (mb *MetricsBuilder) RecordNginxStreamUpstreamPeerUnavailablesDataPoint(ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxUpstreamNameAttributeValue string, nginxPeerAddressAttributeValue string, nginxPeerNameAttributeValue string) {
+	mb.metricNginxStreamUpstreamPeerUnavailables.recordDataPoint(mb.startTime, ts, val, nginxZoneNameAttributeValue, nginxUpstreamNameAttributeValue, nginxPeerAddressAttributeValue, nginxPeerNameAttributeValue)
 }
 
 // RecordNginxStreamUpstreamZombieCountDataPoint adds a data point to nginx.stream.upstream.zombie.count metric.

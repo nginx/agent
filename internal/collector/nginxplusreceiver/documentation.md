@@ -78,13 +78,13 @@ The total number of NGINX config reloads.
 | ---- | ----------- | ---------- | ----------------------- | --------- |
 | reloads | Sum | Int | Cumulative | true |
 
-### nginx.http.connections
+### nginx.http.connection.count
 
-The total number of connections.
+The current number of connections.
 
-| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
-| ---- | ----------- | ---------- | ----------------------- | --------- |
-| connections | Sum | Int | Cumulative | true |
+| Unit | Metric Type | Value Type |
+| ---- | ----------- | ---------- |
+| connections | Gauge | Int |
 
 #### Attributes
 
@@ -92,13 +92,13 @@ The total number of connections.
 | ---- | ----------- | ------ |
 | nginx.connections.outcome | The outcome of the connection. | Str: ``ACCEPTED``, ``ACTIVE``, ``DROPPED``, ``IDLE`` |
 
-### nginx.http.connections.count
+### nginx.http.connections
 
-The current number of connections.
+The total number of connections.
 
-| Unit | Metric Type | Value Type |
-| ---- | ----------- | ---------- |
-| connections | Gauge | Int |
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
+| ---- | ----------- | ---------- | ----------------------- | --------- |
+| connections | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -152,6 +152,14 @@ The total number of HTTP byte IO.
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` |
 
+### nginx.http.request.count
+
+The current number of client requests received from clients.
+
+| Unit | Metric Type | Value Type |
+| ---- | ----------- | ---------- |
+| requests | Gauge | Int |
+
 ### nginx.http.request.discarded
 
 The total number of requests completed without sending a response.
@@ -197,14 +205,6 @@ The total number of client requests received from clients.
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` |
 
-### nginx.http.requests.count
-
-The current number of client requests received from clients.
-
-| Unit | Metric Type | Value Type |
-| ---- | ----------- | ---------- |
-| requests | Gauge | Int |
-
 ### nginx.http.response.status
 
 The number of responses, grouped by status code range.
@@ -223,7 +223,7 @@ The number of responses, grouped by status code range.
 
 ### nginx.http.responses
 
-The total number of client requests received from clients.
+The total number of HTTP responses sent to clients.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
@@ -269,7 +269,7 @@ The total number of byte IO per HTTP upstream peer.
 | nginx.peer.address | The address of the peer. | Any Str |
 | nginx.peer.name | The name of the peer. | Any Str |
 
-### nginx.http.upstream.peer.connections.count
+### nginx.http.upstream.peer.connection.count
 
 The average number of active connections per HTTP upstream peer.
 
@@ -306,9 +306,9 @@ The current count of peers on the HTTP upstream grouped by state.
 
 The total number of unsuccessful attempts to communicate with the HTTP upstream peer.
 
-| Unit | Metric Type | Value Type |
-| ---- | ----------- | ---------- |
-| attempts | Gauge | Int |
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
+| ---- | ----------- | ---------- | ----------------------- | --------- |
+| attempts | Sum | Int | Unspecified | false |
 
 #### Attributes
 
@@ -647,7 +647,7 @@ The total number of Stream byte IO.
 | nginx.byte.io.direction | The direction of byte traffic. | Str: ``RX``, ``TX`` |
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 
-### nginx.stream.connections.accepted
+### nginx.stream.connection.accepted
 
 The total number of connections accepted from clients.
 
@@ -661,7 +661,7 @@ The total number of connections accepted from clients.
 | ---- | ----------- | ------ |
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 
-### nginx.stream.connections.discarded
+### nginx.stream.connection.discarded
 
 Total number of connections completed without creating a session.
 
@@ -675,7 +675,7 @@ Total number of connections completed without creating a session.
 | ---- | ----------- | ------ |
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 
-### nginx.stream.connections.processing.count
+### nginx.stream.connection.processing.count
 
 The number of client connections that are currently being processed.
 
@@ -722,6 +722,40 @@ The total number of Stream Upstream Peer byte IO.
 | nginx.peer.address | The address of the peer. | Any Str |
 | nginx.peer.name | The name of the peer. | Any Str |
 
+### nginx.stream.upstream.peer.connection.count
+
+The current number of Stream Upstream Peer connections.
+
+| Unit | Metric Type | Value Type |
+| ---- | ----------- | ---------- |
+| connections | Gauge | Int |
+
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| nginx.zone.name | The name of the shared memory zone. | Any Str |
+| nginx.upstream.name | The name of the upstream block. | Any Str |
+| nginx.peer.address | The address of the peer. | Any Str |
+| nginx.peer.name | The name of the peer. | Any Str |
+
+### nginx.stream.upstream.peer.connection.time
+
+The average time to connect to the stream upstream peer.
+
+| Unit | Metric Type | Value Type |
+| ---- | ----------- | ---------- |
+| ms | Gauge | Int |
+
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| nginx.zone.name | The name of the shared memory zone. | Any Str |
+| nginx.upstream.name | The name of the upstream block. | Any Str |
+| nginx.peer.address | The address of the peer. | Any Str |
+| nginx.peer.name | The name of the peer. | Any Str |
+
 ### nginx.stream.upstream.peer.connections
 
 The total number of client connections forwarded to this stream upstream peer.
@@ -739,47 +773,13 @@ The total number of client connections forwarded to this stream upstream peer.
 | nginx.peer.address | The address of the peer. | Any Str |
 | nginx.peer.name | The name of the peer. | Any Str |
 
-### nginx.stream.upstream.peer.connections.count
-
-The current number of Stream Upstream Peer connections.
-
-| Unit | Metric Type | Value Type |
-| ---- | ----------- | ---------- |
-| connections | Gauge | Int |
-
-#### Attributes
-
-| Name | Description | Values |
-| ---- | ----------- | ------ |
-| nginx.zone.name | The name of the shared memory zone. | Any Str |
-| nginx.upstream.name | The name of the upstream block. | Any Str |
-| nginx.peer.address | The address of the peer. | Any Str |
-| nginx.peer.name | The name of the peer. | Any Str |
-
-### nginx.stream.upstream.peer.connections.time
-
-The average time to connect to the stream upstream peer.
-
-| Unit | Metric Type | Value Type |
-| ---- | ----------- | ---------- |
-| ms | Gauge | Int |
-
-#### Attributes
-
-| Name | Description | Values |
-| ---- | ----------- | ------ |
-| nginx.zone.name | The name of the shared memory zone. | Any Str |
-| nginx.upstream.name | The name of the upstream block. | Any Str |
-| nginx.peer.address | The address of the peer. | Any Str |
-| nginx.peer.name | The name of the peer. | Any Str |
-
 ### nginx.stream.upstream.peer.count
 
-The total number of stream upstream peers grouped by state.
+The current number of stream upstream peers grouped by state.
 
-| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
-| ---- | ----------- | ---------- | ----------------------- | --------- |
-| peers | Sum | Int | Cumulative | true |
+| Unit | Metric Type | Value Type |
+| ---- | ----------- | ---------- |
+| peers | Gauge | Int |
 
 #### Attributes
 
@@ -795,7 +795,7 @@ The total number of unsuccessful attempts to communicate with the stream upstrea
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| peers | Sum | Int | Cumulative | true |
+| attempts | Sum | Int | Cumulative | true |
 
 #### Attributes
 
@@ -875,7 +875,7 @@ The average time to receive the first byte of data for the stream upstream peer.
 | nginx.peer.address | The address of the peer. | Any Str |
 | nginx.peer.name | The name of the peer. | Any Str |
 
-### nginx.stream.upstream.peer.unavailable
+### nginx.stream.upstream.peer.unavailables
 
 How many times the server became unavailable for client connections (state “unavail”) due to the number of unsuccessful attempts reaching the max_fails threshold.
 

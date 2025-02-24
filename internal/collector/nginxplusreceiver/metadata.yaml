@@ -159,7 +159,7 @@ metrics:
     unit: "connections"
     attributes:
       - nginx.connections.outcome
-  nginx.http.connections.count:
+  nginx.http.connection.count:
     enabled: true
     description: The current number of connections.
     gauge:
@@ -167,7 +167,7 @@ metrics:
     unit: "connections"
     attributes:
       - nginx.connections.outcome
-  nginx.http.requests.count:
+  nginx.http.request.count:
     enabled: true
     description: The current number of client requests received from clients.
     gauge:
@@ -278,7 +278,7 @@ metrics:
       - nginx.zone.type
   nginx.http.responses:
     enabled: true
-    description: The total number of client requests received from clients.
+    description: The total number of HTTP responses sent to clients.
     sum:
       value_type: int
       monotonic: true
@@ -322,7 +322,7 @@ metrics:
       - nginx.upstream.name
       - nginx.peer.address
       - nginx.peer.name
-  nginx.http.upstream.peer.connections.count:
+  nginx.http.upstream.peer.connection.count:
     enabled: true
     description: The average number of active connections per HTTP upstream peer.
     gauge:
@@ -346,7 +346,7 @@ metrics:
   nginx.http.upstream.peer.fails:
     enabled: true
     description: The total number of unsuccessful attempts to communicate with the HTTP upstream peer.
-    gauge:
+    sum:
       value_type: int
     unit: "attempts"
     attributes:
@@ -574,7 +574,7 @@ metrics:
     attributes:
       - nginx.byte.io.direction
       - nginx.zone.name
-  nginx.stream.connections.accepted:
+  nginx.stream.connection.accepted:
     enabled: true
     description: The total number of connections accepted from clients.
     sum:
@@ -584,7 +584,7 @@ metrics:
     unit: "connections"
     attributes:
       - nginx.zone.name
-  nginx.stream.connections.discarded:
+  nginx.stream.connection.discarded:
     enabled: true
     description: Total number of connections completed without creating a session.
     sum:
@@ -594,7 +594,7 @@ metrics:
     unit: "connections"
     attributes:
       - nginx.zone.name
-  nginx.stream.connections.processing.count:
+  nginx.stream.connection.processing.count:
     enabled: true
     description: The number of client connections that are currently being processed.
     gauge:
@@ -627,7 +627,7 @@ metrics:
       - nginx.upstream.name
       - nginx.peer.address
       - nginx.peer.name
-  nginx.stream.upstream.peer.connections.count:
+  nginx.stream.upstream.peer.connection.count:
     enabled: true
     description: The current number of Stream Upstream Peer connections.
     gauge:
@@ -638,7 +638,7 @@ metrics:
       - nginx.upstream.name
       - nginx.peer.address
       - nginx.peer.name
-  nginx.stream.upstream.peer.connections.time:
+  nginx.stream.upstream.peer.connection.time:
     enabled: true
     description: The average time to connect to the stream upstream peer.
     gauge:
@@ -664,8 +664,8 @@ metrics:
       - nginx.peer.name
   nginx.stream.upstream.peer.count:
     enabled: true
-    description: The total number of stream upstream peers grouped by state.
-    sum:
+    description: The current number of stream upstream peers grouped by state.
+    gauge:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
@@ -681,7 +681,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "peers"
+    unit: "attempts"
     attributes:
       - nginx.zone.name
       - nginx.upstream.name
@@ -722,7 +722,7 @@ metrics:
       - nginx.upstream.name
       - nginx.peer.address
       - nginx.peer.name
-  nginx.stream.upstream.peer.unavailable:
+  nginx.stream.upstream.peer.unavailables:
     enabled: true
     description: How many times the server became unavailable for client connections (state “unavail”) due to the number of
       unsuccessful attempts reaching the max_fails threshold.
