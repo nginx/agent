@@ -1516,8 +1516,8 @@ func (m *metricNginxHTTPUpstreamPeerFails) init() {
 	m.data.SetDescription("The total number of unsuccessful attempts to communicate with the HTTP upstream peer.")
 	m.data.SetUnit("attempts")
 	m.data.SetEmptySum()
-	m.data.Sum().SetIsMonotonic(false)
-	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityUnspecified)
+	m.data.Sum().SetIsMonotonic(true)
+	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 

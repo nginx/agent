@@ -32,7 +32,7 @@ resourceMetrics:
               isMonotonic: true
             unit: connections
           - description: The current number of connections.
-            name: nginx.http.connections.count
+            name: nginx.http.connection.count
             gauge:
               aggregationTemporality: 2
               dataPoints:
@@ -291,7 +291,7 @@ resourceMetrics:
               isMonotonic: true
             unit: requests
           - description: The current number of client requests received from clients.
-            name: nginx.http.requests.count
+            name: nginx.http.request.count
             gauge:
               aggregationTemporality: 2
               dataPoints:
@@ -592,7 +592,7 @@ resourceMetrics:
               isMonotonic: true
             unit: bytes
           - description: The average number of active connections per HTTP upstream peer.
-            name: nginx.http.upstream.peer.connections.count
+            name: nginx.http.upstream.peer.connection.count
             gauge:
               aggregationTemporality: 2
               dataPoints:
@@ -614,7 +614,7 @@ resourceMetrics:
             unit: connections
           - description: The total number of unsuccessful attempts to communicate with the HTTP upstream peer.
             name: nginx.http.upstream.peer.fails
-            gauge:
+            sum:
               aggregationTemporality: 2
               dataPoints:
                 - asInt: "87"
@@ -1636,7 +1636,7 @@ resourceMetrics:
               isMonotonic: true
             unit: bytes
           - description: The total number of connections accepted from clients.
-            name: nginx.stream.connections.accepted
+            name: nginx.stream.connection.accepted
             sum:
               aggregationTemporality: 2
               dataPoints:
@@ -1648,7 +1648,7 @@ resourceMetrics:
               isMonotonic: true
             unit: connections
           - description: Total number of connections completed without creating a session.
-            name: nginx.stream.connections.discarded
+            name: nginx.stream.connection.discarded
             sum:
               aggregationTemporality: 2
               dataPoints:
@@ -1660,7 +1660,7 @@ resourceMetrics:
               isMonotonic: true
             unit: connections
           - description: The number of client connections that are currently being processed.
-            name: nginx.stream.connections.processing.count
+            name: nginx.stream.connection.processing.count
             gauge:
               aggregationTemporality: 2
               dataPoints:
@@ -1752,7 +1752,7 @@ resourceMetrics:
               isMonotonic: true
             unit: bytes
           - description: The current number of Stream Upstream Peer connections.
-            name: nginx.stream.upstream.peer.connections.count
+            name: nginx.stream.upstream.peer.connection.count
             gauge:
               aggregationTemporality: 2
               dataPoints:
@@ -1773,7 +1773,7 @@ resourceMetrics:
               isMonotonic: true
             unit: connections
           - description: The average time to connect to the stream upstream peer.
-            name: nginx.stream.upstream.peer.connections.time
+            name: nginx.stream.upstream.peer.connection.time
             gauge:
               aggregationTemporality: 2
               dataPoints:
@@ -1915,7 +1915,7 @@ resourceMetrics:
               isMonotonic: true
             unit: ms
           - description: How many times the server became unavailable for client connections (state “unavail”) due to the number of unsuccessful attempts reaching the max_fails threshold.
-            name: nginx.stream.upstream.peer.unavailable
+            name: nginx.stream.upstream.peer.unavailables
             sum:
               aggregationTemporality: 2
               dataPoints:
@@ -2044,9 +2044,9 @@ resourceMetrics:
                         stringValue: DRAINING
               isMonotonic: true
             unit: deployments
-          - description: The total number of stream upstream peers grouped by state.
+          - description: The current number of stream upstream peers grouped by state.
             name: nginx.stream.upstream.peer.count
-            sum:
+            gauge:
               aggregationTemporality: 2
               dataPoints:
                 - asInt: "0"

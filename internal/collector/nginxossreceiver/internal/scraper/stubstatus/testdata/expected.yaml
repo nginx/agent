@@ -24,7 +24,7 @@ resourceMetrics:
               isMonotonic: true
             unit: connections
           - description: The current number of connections.
-            name: nginx.http.connections.count
+            name: nginx.http.connection.count
             gauge:
               aggregationTemporality: 2
               dataPoints:

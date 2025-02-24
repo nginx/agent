@@ -308,7 +308,7 @@ The total number of unsuccessful attempts to communicate with the HTTP upstream 
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| attempts | Sum | Int | Unspecified | false |
+| attempts | Sum | Int | Cumulative | true |
 
 #### Attributes
 

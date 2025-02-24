@@ -348,6 +348,8 @@ metrics:
     description: The total number of unsuccessful attempts to communicate with the HTTP upstream peer.
     sum:
       value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
     unit: "attempts"
     attributes:
       - nginx.zone.name

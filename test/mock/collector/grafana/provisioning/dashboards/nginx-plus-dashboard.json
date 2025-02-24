@@ -108,7 +108,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "nginx_http_connections_count{instance_type=\"nginxplus\"}",
+          "expr": "nginx_http_connection_count{instance_type=\"nginxplus\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": false,
           "instant": false,
