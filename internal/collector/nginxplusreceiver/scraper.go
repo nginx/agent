@@ -108,12 +108,12 @@ func (nps *nginxPlusScraper) recordMetrics(stats *plusapi.Stats) {
 		int64(stats.Connections.Dropped),
 		metadata.AttributeNginxConnectionsOutcomeDROPPED,
 	)
-	nps.mb.RecordNginxHTTPConnectionsCountDataPoint(
+	nps.mb.RecordNginxHTTPConnectionCountDataPoint(
 		now,
 		int64(stats.Connections.Active),
 		metadata.AttributeNginxConnectionsOutcomeACTIVE,
 	)
-	nps.mb.RecordNginxHTTPConnectionsCountDataPoint(
+	nps.mb.RecordNginxHTTPConnectionCountDataPoint(
 		now,
 		int64(stats.Connections.Idle),
 		metadata.AttributeNginxConnectionsOutcomeIDLE,
@@ -121,7 +121,7 @@ func (nps *nginxPlusScraper) recordMetrics(stats *plusapi.Stats) {
 
 	// HTTP Requests
 	nps.mb.RecordNginxHTTPRequestsDataPoint(now, int64(stats.HTTPRequests.Total), "", 0)
-	nps.mb.RecordNginxHTTPRequestsCountDataPoint(now, int64(stats.HTTPRequests.Current))
+	nps.mb.RecordNginxHTTPRequestCountDataPoint(now, int64(stats.HTTPRequests.Current))
 
 	nps.recordCacheMetrics(stats, now)
 	nps.recordHTTPLimitMetrics(stats, now)
@@ -147,9 +147,9 @@ func (nps *nginxPlusScraper) recordStreamMetrics(stats *plusapi.Stats, now pcomm
 			metadata.AttributeNginxByteIoDirectionTX,
 			name,
 		)
-		nps.mb.RecordNginxStreamConnectionsAcceptedDataPoint(now, int64(streamServerZone.Connections), name)
-		nps.mb.RecordNginxStreamConnectionsDiscardedDataPoint(now, int64(streamServerZone.Discarded), name)
-		nps.mb.RecordNginxStreamConnectionsProcessingCountDataPoint(now, int64(streamServerZone.Processing), name)
+		nps.mb.RecordNginxStreamConnectionAcceptedDataPoint(now, int64(streamServerZone.Connections), name)
+		nps.mb.RecordNginxStreamConnectionDiscardedDataPoint(now, int64(streamServerZone.Discarded), name)
+		nps.mb.RecordNginxStreamConnectionProcessingCountDataPoint(now, int64(streamServerZone.Processing), name)
 		nps.mb.RecordNginxStreamSessionStatusDataPoint(
 			now,
 			int64(streamServerZone.Sessions.Sessions2xx),
@@ -193,7 +193,7 @@ func (nps *nginxPlusScraper) recordStreamMetrics(stats *plusapi.Stats, now pcomm
 				peer.Server,
 				peer.Name,
 			)
-			nps.mb.RecordNginxStreamUpstreamPeerConnectionsCountDataPoint(
+			nps.mb.RecordNginxStreamUpstreamPeerConnectionCountDataPoint(
 				now,
 				int64(peer.Active),
 				upstream.Zone,
@@ -201,7 +201,7 @@ func (nps *nginxPlusScraper) recordStreamMetrics(stats *plusapi.Stats, now pcomm
 				peer.Server,
 				peer.Name,
 			)
-			nps.mb.RecordNginxStreamUpstreamPeerConnectionsTimeDataPoint(
+			nps.mb.RecordNginxStreamUpstreamPeerConnectionTimeDataPoint(
 				now,
 				int64(peer.ConnectTime),
 				upstream.Zone,
@@ -263,7 +263,7 @@ func (nps *nginxPlusScraper) recordStreamMetrics(stats *plusapi.Stats, now pcomm
 				peer.Server,
 				peer.Name,
 			)
-			nps.mb.RecordNginxStreamUpstreamPeerUnavailableDataPoint(
+			nps.mb.RecordNginxStreamUpstreamPeerUnavailablesDataPoint(
 				now,
 				int64(peer.Unavail),
 				upstream.Zone,
@@ -500,7 +500,7 @@ func (nps *nginxPlusScraper) recordHTTPUpstreamPeerMetrics(stats *plusapi.Stats,
 				peer.Name,
 			)
 
-			nps.mb.RecordNginxHTTPUpstreamPeerConnectionsCountDataPoint(
+			nps.mb.RecordNginxHTTPUpstreamPeerConnectionCountDataPoint(
 				now,
 				int64(peer.Active),
 				upstream.Zone,
