@@ -7,7 +7,7 @@ status:
     beta: [metrics]
   distributions: [contrib]
   codeowners:
-    active: [olli-holmala, oliveromahony, apgralG, dhurley, craigell, sean-breen]
+    active: [apgralG, dhurley, craigell, sean-breen, Rashmiti, CVanF5]
 
 resource_attributes:
   instance.id:
@@ -173,7 +173,7 @@ metrics:
     gauge:
       value_type: int
     unit: "requests"
-  nginx.cache.bytes:
+  nginx.cache.bytes_read:
     enabled: true
     description: The total number of bytes read from the cache or proxied server.
     sum:

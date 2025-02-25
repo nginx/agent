@@ -442,15 +442,15 @@ var MapAttributeNginxZoneType = map[string]AttributeNginxZoneType{
 	"LOCATION": AttributeNginxZoneTypeLOCATION,
 }
 
-type metricNginxCacheBytes struct {
+type metricNginxCacheBytesRead struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
 	capacity int            // max observed number of data points added to the metric.
 }
 
-// init fills nginx.cache.bytes metric with initial data.
-func (m *metricNginxCacheBytes) init() {
-	m.data.SetName("nginx.cache.bytes")
+// init fills nginx.cache.bytes_read metric with initial data.
+func (m *metricNginxCacheBytesRead) init() {
+	m.data.SetName("nginx.cache.bytes_read")
 	m.data.SetDescription("The total number of bytes read from the cache or proxied server.")
 	m.data.SetUnit("bytes")
 	m.data.SetEmptySum()
@@ -459,7 +459,7 @@ func (m *metricNginxCacheBytes) init() {
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricNginxCacheBytes) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxCacheOutcomeAttributeValue string, nginxCacheNameAttributeValue string) {
+func (m *metricNginxCacheBytesRead) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxCacheOutcomeAttributeValue string, nginxCacheNameAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -472,14 +472,14 @@ func (m *metricNginxCacheBytes) recordDataPoint(start pcommon.Timestamp, ts pcom
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
-func (m *metricNginxCacheBytes) updateCapacity() {
+func (m *metricNginxCacheBytesRead) updateCapacity() {
 	if m.data.Sum().DataPoints().Len() > m.capacity {
 		m.capacity = m.data.Sum().DataPoints().Len()
 	}
 }
 
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
-func (m *metricNginxCacheBytes) emit(metrics pmetric.MetricSlice) {
+func (m *metricNginxCacheBytesRead) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
@@ -487,8 +487,8 @@ func (m *metricNginxCacheBytes) emit(metrics pmetric.MetricSlice) {
 	}
 }
 
-func newMetricNginxCacheBytes(cfg MetricConfig) metricNginxCacheBytes {
-	m := metricNginxCacheBytes{config: cfg}
+func newMetricNginxCacheBytesRead(cfg MetricConfig) metricNginxCacheBytesRead {
+	m := metricNginxCacheBytesRead{config: cfg}
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -3563,7 +3563,7 @@ type MetricsBuilder struct {
 	buildInfo                                    component.BuildInfo  // contains version information.
 	resourceAttributeIncludeFilter               map[string]filter.Filter
 	resourceAttributeExcludeFilter               map[string]filter.Filter
-	metricNginxCacheBytes                        metricNginxCacheBytes
+	metricNginxCacheBytesRead                    metricNginxCacheBytesRead
 	metricNginxCacheMemoryLimit                  metricNginxCacheMemoryLimit
 	metricNginxCacheMemoryUsage                  metricNginxCacheMemoryUsage
 	metricNginxCacheResponses                    metricNginxCacheResponses
@@ -3647,7 +3647,7 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, opt
 		startTime:                                    pcommon.NewTimestampFromTime(time.Now()),
 		metricsBuffer:                                pmetric.NewMetrics(),
 		buildInfo:                                    settings.BuildInfo,
-		metricNginxCacheBytes:                        newMetricNginxCacheBytes(mbc.Metrics.NginxCacheBytes),
+		metricNginxCacheBytesRead:                    newMetricNginxCacheBytesRead(mbc.Metrics.NginxCacheBytesRead),
 		metricNginxCacheMemoryLimit:                  newMetricNginxCacheMemoryLimit(mbc.Metrics.NginxCacheMemoryLimit),
 		metricNginxCacheMemoryUsage:                  newMetricNginxCacheMemoryUsage(mbc.Metrics.NginxCacheMemoryUsage),
 		metricNginxCacheResponses:                    newMetricNginxCacheResponses(mbc.Metrics.NginxCacheResponses),
@@ -3789,7 +3789,7 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	ils.Scope().SetName("otelcol/nginxplusreceiver")
 	ils.Scope().SetVersion(mb.buildInfo.Version)
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
-	mb.metricNginxCacheBytes.emit(ils.Metrics())
+	mb.metricNginxCacheBytesRead.emit(ils.Metrics())
 	mb.metricNginxCacheMemoryLimit.emit(ils.Metrics())
 	mb.metricNginxCacheMemoryUsage.emit(ils.Metrics())
 	mb.metricNginxCacheResponses.emit(ils.Metrics())
@@ -3878,9 +3878,9 @@ func (mb *MetricsBuilder) Emit(options ...ResourceMetricsOption) pmetric.Metrics
 	return metrics
 }
 
-// RecordNginxCacheBytesDataPoint adds a data point to nginx.cache.bytes metric.
-func (mb *MetricsBuilder) RecordNginxCacheBytesDataPoint(ts pcommon.Timestamp, val int64, nginxCacheOutcomeAttributeValue AttributeNginxCacheOutcome, nginxCacheNameAttributeValue string) {
-	mb.metricNginxCacheBytes.recordDataPoint(mb.startTime, ts, val, nginxCacheOutcomeAttributeValue.String(), nginxCacheNameAttributeValue)
+// RecordNginxCacheBytesReadDataPoint adds a data point to nginx.cache.bytes_read metric.
+func (mb *MetricsBuilder) RecordNginxCacheBytesReadDataPoint(ts pcommon.Timestamp, val int64, nginxCacheOutcomeAttributeValue AttributeNginxCacheOutcome, nginxCacheNameAttributeValue string) {
+	mb.metricNginxCacheBytesRead.recordDataPoint(mb.startTime, ts, val, nginxCacheOutcomeAttributeValue.String(), nginxCacheNameAttributeValue)
 }
 
 // RecordNginxCacheMemoryLimitDataPoint adds a data point to nginx.cache.memory.limit metric.

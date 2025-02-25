@@ -28,7 +28,7 @@ func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
 
 // MetricsConfig provides config for nginxplus metrics.
 type MetricsConfig struct {
-	NginxCacheBytes                        MetricConfig `mapstructure:"nginx.cache.bytes"`
+	NginxCacheBytesRead                    MetricConfig `mapstructure:"nginx.cache.bytes_read"`
 	NginxCacheMemoryLimit                  MetricConfig `mapstructure:"nginx.cache.memory.limit"`
 	NginxCacheMemoryUsage                  MetricConfig `mapstructure:"nginx.cache.memory.usage"`
 	NginxCacheResponses                    MetricConfig `mapstructure:"nginx.cache.responses"`
@@ -90,7 +90,7 @@ type MetricsConfig struct {
 
 func DefaultMetricsConfig() MetricsConfig {
 	return MetricsConfig{
-		NginxCacheBytes: MetricConfig{
+		NginxCacheBytesRead: MetricConfig{
 			Enabled: true,
 		},
 		NginxCacheMemoryLimit: MetricConfig{

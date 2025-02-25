@@ -70,7 +70,7 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordNginxCacheBytesDataPoint(ts, 1, AttributeNginxCacheOutcomeBYPASS, "nginx.cache.name-val")
+			mb.RecordNginxCacheBytesReadDataPoint(ts, 1, AttributeNginxCacheOutcomeBYPASS, "nginx.cache.name-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
@@ -325,9 +325,9 @@ func TestMetricsBuilder(t *testing.T) {
 			validatedMetrics := make(map[string]bool)
 			for i := 0; i < ms.Len(); i++ {
 				switch ms.At(i).Name() {
-				case "nginx.cache.bytes":
-					assert.False(t, validatedMetrics["nginx.cache.bytes"], "Found a duplicate in the metrics slice: nginx.cache.bytes")
-					validatedMetrics["nginx.cache.bytes"] = true
+				case "nginx.cache.bytes_read":
+					assert.False(t, validatedMetrics["nginx.cache.bytes_read"], "Found a duplicate in the metrics slice: nginx.cache.bytes_read")
+					validatedMetrics["nginx.cache.bytes_read"] = true
 					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
 					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
 					assert.Equal(t, "The total number of bytes read from the cache or proxied server.", ms.At(i).Description())

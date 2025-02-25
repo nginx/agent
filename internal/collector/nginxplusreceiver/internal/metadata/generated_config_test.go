@@ -25,7 +25,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "all_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					NginxCacheBytes:                        MetricConfig{Enabled: true},
+					NginxCacheBytesRead:                    MetricConfig{Enabled: true},
 					NginxCacheMemoryLimit:                  MetricConfig{Enabled: true},
 					NginxCacheMemoryUsage:                  MetricConfig{Enabled: true},
 					NginxCacheResponses:                    MetricConfig{Enabled: true},
@@ -94,7 +94,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "none_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					NginxCacheBytes:                        MetricConfig{Enabled: false},
+					NginxCacheBytesRead:                    MetricConfig{Enabled: false},
 					NginxCacheMemoryLimit:                  MetricConfig{Enabled: false},
 					NginxCacheMemoryUsage:                  MetricConfig{Enabled: false},
 					NginxCacheResponses:                    MetricConfig{Enabled: false},

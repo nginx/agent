@@ -1,7 +1,7 @@
 default:
 all_set:
   metrics:
-    nginx.cache.bytes:
+    nginx.cache.bytes_read:
       enabled: true
     nginx.cache.memory.limit:
       enabled: true
@@ -124,7 +124,7 @@ all_set:
       enabled: true
 none_set:
   metrics:
-    nginx.cache.bytes:
+    nginx.cache.bytes_read:
       enabled: false
     nginx.cache.memory.limit:
       enabled: false

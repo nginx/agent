@@ -917,38 +917,38 @@ func (nps *nginxPlusScraper) recordHTTPLimitMetrics(stats *plusapi.Stats, now pc
 
 func (nps *nginxPlusScraper) recordCacheMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
 	for name, cache := range stats.Caches {
-		nps.mb.RecordNginxCacheBytesDataPoint(
+		nps.mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Bypass.Bytes),
 			metadata.AttributeNginxCacheOutcomeBYPASS,
 			name,
 		)
-		nps.mb.RecordNginxCacheBytesDataPoint(
+		nps.mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Expired.Bytes),
 			metadata.AttributeNginxCacheOutcomeEXPIRED,
 			name,
 		)
-		nps.mb.RecordNginxCacheBytesDataPoint(now, int64(cache.Hit.Bytes), metadata.AttributeNginxCacheOutcomeHIT, name)
-		nps.mb.RecordNginxCacheBytesDataPoint(
+		nps.mb.RecordNginxCacheBytesReadDataPoint(now, int64(cache.Hit.Bytes), metadata.AttributeNginxCacheOutcomeHIT, name)
+		nps.mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Miss.Bytes),
 			metadata.AttributeNginxCacheOutcomeMISS,
 			name,
 		)
-		nps.mb.RecordNginxCacheBytesDataPoint(
+		nps.mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Revalidated.Bytes),
 			metadata.AttributeNginxCacheOutcomeREVALIDATED,
 			name,
 		)
-		nps.mb.RecordNginxCacheBytesDataPoint(
+		nps.mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Stale.Bytes),
 			metadata.AttributeNginxCacheOutcomeSTALE,
 			name,
 		)
-		nps.mb.RecordNginxCacheBytesDataPoint(
+		nps.mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Updating.Bytes),
 			metadata.AttributeNginxCacheOutcomeUPDATING,

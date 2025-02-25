@@ -300,7 +300,7 @@ resourceMetrics:
               isMonotonic: true
             unit: requests
           - description: The total number of bytes read from the cache or proxied server.
-            name: nginx.cache.bytes
+            name: nginx.cache.bytes_read
             sum:
               aggregationTemporality: 2
               dataPoints:

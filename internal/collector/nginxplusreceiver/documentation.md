@@ -12,7 +12,7 @@ metrics:
     enabled: false
 ```
 
-### nginx.cache.bytes
+### nginx.cache.bytes_read
 
 The total number of bytes read from the cache or proxied server.
 
