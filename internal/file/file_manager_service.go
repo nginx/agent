@@ -308,9 +308,10 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	if fileErr != nil {
 		return model.RollbackRequired, fileErr
 	}
-
+	slog.Error("config apply called")
 	// Update map of current files on disk
 	fms.UpdateCurrentFilesOnDisk(files.ConvertToMapOfFiles(fileOverview.GetFiles()))
+	fms.UpdateManifestFile(files.ConvertToMapOfFiles(fileOverview.GetFiles()))
 
 	return model.OK, nil
 }
@@ -333,8 +334,9 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 
 			// currentFilesOnDisk needs to be updated after rollback action is performed
 			delete(fms.currentFilesOnDisk, file.GetFileMeta().GetName())
-
+			fms.UpdateManifestFile(fms.currentFilesOnDisk)
 			continue
+
 		case mpi.File_FILE_ACTION_DELETE, mpi.File_FILE_ACTION_UPDATE:
 			content := fms.rollbackFileContents[file.GetFileMeta().GetName()]
 
@@ -346,6 +348,8 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 			// currentFilesOnDisk needs to be updated after rollback action is performed
 			file.GetFileMeta().Hash = files.GenerateHash(content)
 			fms.currentFilesOnDisk[file.GetFileMeta().GetName()] = file
+			fms.UpdateManifestFile(fms.currentFilesOnDisk)
+
 		case mpi.File_FILE_ACTION_UNSPECIFIED, mpi.File_FILE_ACTION_UNCHANGED:
 			fallthrough
 		default:
@@ -466,6 +470,7 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles, modifiedFiles 
 	err = json.Unmarshal(file, &manifestFiles)
 	if err != nil {
 		fmt.Printf("Failed to parse manifest JSON: %v\n", err)
+		manifestFiles = currentFiles // This is the first time when config apply is happening.
 	}
 
 	// if file is in manifestFiles but not in modified files, file has been deleted
@@ -528,11 +533,15 @@ func (fms *FileManagerService) UpdateCurrentFilesOnDisk(currentFiles map[string]
 		fms.currentFilesOnDisk[file.GetFileMeta().GetName()] = file
 	}
 
+}
+
+func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.File) {
 	jsonData, err := json.MarshalIndent(currentFiles, "", "  ")
 	if err != nil {
 		fmt.Printf("Failed to read manifest file: %v\n", err)
 	}
 
+	slog.Error(string(jsonData))
 	err = os.MkdirAll(manifestDirPath, 0755) // 0755 allows read/execute for all, write for owner
 	if err != nil {
 		fmt.Printf("Failed to read manifest file: %v\n", err)
