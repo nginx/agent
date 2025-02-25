@@ -929,7 +929,12 @@ func (nps *nginxPlusScraper) recordCacheMetrics(stats *plusapi.Stats, now pcommo
 			metadata.AttributeNginxCacheOutcomeEXPIRED,
 			name,
 		)
-		nps.mb.RecordNginxCacheBytesReadDataPoint(now, int64(cache.Hit.Bytes), metadata.AttributeNginxCacheOutcomeHIT, name)
+		nps.mb.RecordNginxCacheBytesReadDataPoint(
+			now,
+			int64(cache.Hit.Bytes),
+			metadata.AttributeNginxCacheOutcomeHIT,
+			name,
+		)
 		nps.mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Miss.Bytes),
