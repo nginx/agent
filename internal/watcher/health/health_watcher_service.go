@@ -52,6 +52,8 @@ func NewHealthWatcherService(agentConfig *config.Config) *HealthWatcherService {
 }
 
 func (hw *HealthWatcherService) AddHealthWatcher(instances []*mpi.Instance) {
+	hw.healthWatcherMutex.Lock()
+	defer hw.healthWatcherMutex.Unlock()
 	for _, instance := range instances {
 		switch instance.GetInstanceMeta().GetInstanceType() {
 		case mpi.InstanceMeta_INSTANCE_TYPE_NGINX, mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS:

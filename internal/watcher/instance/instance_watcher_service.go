@@ -19,6 +19,7 @@ import (
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/watcher/process"
+	"github.com/nginx/agent/v3/pkg/nginxprocess"
 )
 
 const defaultAgentPath = "/run/nginx-agent"
@@ -31,7 +32,7 @@ const defaultAgentPath = "/run/nginx-agent"
 
 type (
 	processParser interface {
-		Parse(ctx context.Context, processes []*model.Process) map[string]*mpi.Instance
+		Parse(ctx context.Context, processes []*nginxprocess.Process) map[string]*mpi.Instance
 	}
 
 	nginxConfigParser interface {
@@ -166,9 +167,6 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instanceID 
 func (iw *InstanceWatcherService) checkForUpdates(
 	ctx context.Context,
 ) {
-	iw.cacheMutex.Lock()
-	defer iw.cacheMutex.Unlock()
-
 	var instancesToParse []*mpi.Instance
 	correlationID := logger.GenerateCorrelationID()
 	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, correlationID)
@@ -244,6 +242,8 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 	instanceUpdates InstanceUpdates,
 	err error,
 ) {
+	iw.cacheMutex.Lock()
+	defer iw.cacheMutex.Unlock()
 	processes, err := iw.processOperator.Processes(ctx)
 	if err != nil {
 		return instanceUpdates, err

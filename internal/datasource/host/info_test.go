@@ -426,6 +426,20 @@ func TestInfo_IsContainer(t *testing.T) {
 
 func TestInfo_ContainerInfo(t *testing.T) {
 	ctx := context.Background()
+
+	osReleaseFile := helpers.CreateFileWithErrorCheck(t, os.TempDir(), "os-release")
+	defer helpers.RemoveFileWithErrorCheck(t, osReleaseFile.Name())
+	err := os.WriteFile(osReleaseFile.Name(), []byte(ubuntuReleaseInfo), os.ModeAppend)
+	require.NoError(t, err)
+
+	releaseInfo := &v1.ReleaseInfo{
+		Codename:  "jammy",
+		Id:        "ubuntu",
+		Name:      "Ubuntu",
+		VersionId: "22.04",
+		Version:   "22.04.5 LTS (Jammy Jellyfish)",
+	}
+
 	tests := []struct {
 		name              string
 		mountInfo         string
@@ -501,8 +515,9 @@ func TestInfo_ContainerInfo(t *testing.T) {
 
 			execMock := &execfakes.FakeExecInterface{}
 			execMock.HostnameReturns(test.expectHostname, nil)
+			execMock.ReleaseInfoReturns(releaseInfo)
 
-			_, err := mountInfoFile.WriteString(test.mountInfo)
+			_, err = mountInfoFile.WriteString(test.mountInfo)
 			require.NoError(tt, err)
 
 			err = mountInfoFile.Close()
@@ -515,6 +530,7 @@ func TestInfo_ContainerInfo(t *testing.T) {
 
 			assert.Equal(tt, test.expectContainerID, containerInfo.ContainerInfo.GetContainerId())
 			assert.Equal(tt, test.expectHostname, containerInfo.ContainerInfo.GetHostname())
+			assert.Equal(t, releaseInfo, containerInfo.ContainerInfo.GetReleaseInfo())
 		})
 	}
 }

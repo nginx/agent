@@ -129,13 +129,20 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 					if !ncp.ignoreLog(directive.Args[0]) {
 						errorLog := ncp.errorLog(directive.Args[0], ncp.errorLogDirectiveLevel(directive))
 						nginxConfigContext.ErrorLogs = append(nginxConfigContext.ErrorLogs, errorLog)
+					} else {
+						slog.WarnContext(ctx, fmt.Sprintf("Currently error log outputs to %s. Log monitoring "+
+							"is disabled while applying a config; "+"log errors to file to enable error monitoring",
+							directive.Args[0]), "error_log", directive.Args[0])
 					}
 				case "root":
 					rootFiles := ncp.rootFiles(ctx, directive.Args[0])
 					nginxConfigContext.Files = append(nginxConfigContext.Files, rootFiles...)
 				case "ssl_certificate", "proxy_ssl_certificate", "ssl_client_certificate", "ssl_trusted_certificate":
 					sslCertFile := ncp.sslCert(ctx, directive.Args[0], rootDir)
-					nginxConfigContext.Files = append(nginxConfigContext.Files, sslCertFile)
+					if !ncp.isDuplicateFile(nginxConfigContext.Files, sslCertFile) {
+						nginxConfigContext.Files = append(nginxConfigContext.Files, sslCertFile)
+					}
+
 				case "app_protect_security_log":
 					if len(directive.Args) > 1 {
 						syslogArg := directive.Args[1]
@@ -185,7 +192,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 
 func (ncp *NginxConfigParser) ignoreLog(logPath string) bool {
 	logLower := strings.ToLower(logPath)
-	ignoreLogs := []string{"off", "/dev/stderr", "/dev/stdout", "/dev/null"}
+	ignoreLogs := []string{"off", "/dev/stderr", "/dev/stdout", "/dev/null", "stderr", "stdout"}
 
 	if strings.HasPrefix(logLower, "syslog:") || slices.Contains(ignoreLogs, logLower) {
 		return true
@@ -359,6 +366,16 @@ func (ncp *NginxConfigParser) sslCert(ctx context.Context, file, rootDir string)
 	}
 
 	return sslCertFile
+}
+
+func (ncp *NginxConfigParser) isDuplicateFile(nginxConfigContextFiles []*mpi.File, newFile *mpi.File) bool {
+	for _, nginxConfigContextFile := range nginxConfigContextFiles {
+		if nginxConfigContextFile.GetFileMeta().GetName() == newFile.GetFileMeta().GetName() {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (ncp *NginxConfigParser) crossplaneConfigTraverse(
