@@ -1,0 +1,105 @@
+#!/bin/sh
+set -e
+
+# Copyright (C) Nginx, Inc. 2022.
+#
+# Description:
+# NGINX Agent script for converting NGINX AGENT V2 config format to V3 config format
+
+RED='\033[0;31m'
+NC='\033[0m'
+N1_HOST="agent.connect.nginx.com"
+
+for i in "$@"; do
+  case $i in
+    --v2-config-file=*)
+      v2_config_file="${i#*=}"
+      shift
+      ;;
+    --v3-config-file=*)
+      v3_config_file="${i#*=}"
+      shift
+      ;;
+    -*|--*)
+      echo "Unknown option $i"
+      exit 1
+      ;;
+    *)
+      ;;
+  esac
+done
+
+echo "V2 config file path = ${v2_config_file}"
+echo "V3 config file path = ${v3_config_file}"
+
+if grep -q "$N1_HOST" ${v2_config_file}; then
+    echo "N1 connected agent"
+else 
+    echo "${RED}Previous version of NGINX Agent was not connected to NGINX One. Stopping upgrade.${NC}" 
+    exit 1
+fi
+
+token=`grep "token:" "${v2_config_file}"`
+token=`echo $token | cut -d ":" -f 2 | xargs`
+
+config_dirs=`grep "config_dirs:" "${v2_config_file}"`
+config_dirs=`echo $config_dirs | cut -d "\"" -f 2`
+
+allowed_directories=""
+export IFS=":"
+for config_dir in $config_dirs; do
+  allowed_directories="${allowed_directories}\n  - ${config_dir}"
+done
+       
+v3_config_contents="
+#
+# /etc/nginx-agent/nginx-agent.conf
+#
+# Configuration file for NGINX Agent.
+#
+
+log:
+  # set log level (error, info, debug; default \"info\")
+  level: info
+  # set log path. if empty, don't log to file.
+  path: /var/log/nginx-agent/
+
+allowed_directories: ${allowed_directories}
+
+command:
+    server:
+        host: ${N1_HOST}
+        port: 443
+    auth:
+        token: ${token}
+    tls:
+        skip_verify: false
+        
+collector:
+  receivers:
+    host_metrics:
+      scrapers:
+        cpu: {}
+        memory: {}
+        disk: {}
+        network: {}
+        filesystem: {}
+  processors:
+    batch: {}
+  exporters:
+    otlp_exporters:
+      - server:
+          host: ${N1_HOST}
+          port: 443
+        authenticator: headers_setter
+        tls:
+          skip_verify: false
+  extensions:
+    headers_setter:
+      headers:
+        - action: insert
+          key: \"authorization\"
+          value: ${token}
+"
+
+echo "${v3_config_contents}" > $v3_config_file

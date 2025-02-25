@@ -17,6 +17,8 @@ INSTANCE_GROUP=""
 ###### Default variables
 ################################
 export AGENT_GROUP="${AGENT_GROUP:-$(id -ng)}"
+RED='\033[0;31m'
+NC='\033[0m'
 
 # Determine OS platform
 # shellcheck source=/dev/null
@@ -108,51 +110,93 @@ load_config_values() {
 }
 
 update_config_file() {
-    sed_cmd="sed -i.bak "
+    echo "Checking what version of NGINX Agent is already installed"
+    check_version="nginx-agent --version"
+    nginx_agent_version=$($check_version 2>&1)
+    if [ $? -eq 0 ]; then 
+        echo "Currently NGINX Agent version is $nginx_agent_version"
+        
+        if [ -z "${nginx_agent_version##nginx-agent version v2*}" ]; then
+            echo "Updating NGINX Agent V2 configuration to V3 configuration"
+            echo "Backing up NGINX Agent V2 configuration to /etc/nginx-agent/nginx-agent-v2-backup.conf"
+            cp $AGENT_CONFIG_FILE /etc/nginx-agent/nginx-agent-v2-backup.conf
+            
+            nginx_one_host="agent.connect.nginx.com"
+            v2_config_file=$AGENT_CONFIG_FILE
+            v3_config_file=$AGENT_CONFIG_FILE
+            
+            if grep -q "nginx_one_host" ${v2_config_file}; then
+                echo "N1 connected agent"
+            else 
+                echo "${RED}Previous version of NGINX Agent was not connected to NGINX One. Stopping upgrade.${NC}" 
+                exit 1
+            fi
+            
+            token=`grep "token:" "${v2_config_file}"`
+            token=`echo $token | cut -d ":" -f 2 | xargs`
+            
+            config_dirs=`grep "config_dirs:" "${v2_config_file}"`
+            config_dirs=`echo $config_dirs | cut -d "\"" -f 2`
+            
+            allowed_directories=""
+            export IFS=":"
+            for config_dir in $config_dirs; do
+              allowed_directories="${allowed_directories}\n  - ${config_dir}"
+            done
+                   
+            v3_config_contents="
+#
+# /etc/nginx-agent/nginx-agent.conf
+#
+# Configuration file for NGINX Agent.
+#
 
-    printf "Updating %s ...\n" "${AGENT_DYNAMIC_CONFIG_FILE}"
+log:
+  # set log level (error, info, debug; default \"info\")
+  level: info
+  # set log path. if empty, don't log to file.
+  path: /var/log/nginx-agent/
 
-    if [ ! -f "$AGENT_CONFIG_FILE" ]; then
-        printf "NGINX Agent config file %s does not exist. Could not be updated\n" "$AGENT_CONFIG_FILE"
-        exit 0
-    fi
+allowed_directories: ${allowed_directories}
 
-    if [ ! -f "$AGENT_DYNAMIC_CONFIG_FILE" ]; then
-        err_exit "$AGENT_DYNAMIC_CONFIG_FILE does not exist"
-    fi
-
-    if [ "${PACKAGE_HOST}" ]; then
-        printf "Updating %s ...\n" "${AGENT_CONFIG_FILE}"
-
-        # Replace Host
-        ${sed_cmd} "s/host:.*$/host: ${PACKAGE_HOST}/" "${AGENT_CONFIG_FILE}"
-    fi
-    
-    # Check the instance group and set accordingly
-    if [ "${INSTANCE_GROUP}" ]; then
-        if [ "$(grep -cP '^(?=[\s]*+[^#])[^#]*(instance_group)' "${AGENT_DYNAMIC_CONFIG_FILE}")" -ge 1 ]; then
-            printf "Setting existing instance_group: %s\n" "${INSTANCE_GROUP}"
-            ${sed_cmd} "/^[[:space:]]*#/!s/\(instance_group:.*\)/instance_group: ${INSTANCE_GROUP}/g" "${AGENT_DYNAMIC_CONFIG_FILE}"
-        else
-            printf "Setting instance_group: %s\n" "${INSTANCE_GROUP}"
-            printf "instance_group: %s\n" "${INSTANCE_GROUP}" >> "${AGENT_DYNAMIC_CONFIG_FILE}"
+command:
+    server:
+        host: ${nginx_one_host}
+        port: 443
+    auth:
+        token: ${token}
+    tls:
+        skip_verify: false
+        
+collector:
+  receivers:
+    host_metrics:
+      scrapers:
+        cpu: {}
+        memory: {}
+        disk: {}
+        network: {}
+        filesystem: {}
+  processors:
+    batch: {}
+  exporters:
+    otlp_exporters:
+      - server:
+          host: ${nginx_one_host}
+          port: 443
+        authenticator: headers_setter
+        tls:
+          skip_verify: false
+  extensions:
+    headers_setter:
+      headers:
+        - action: insert
+          key: \"authorization\"
+          value: ${token}
+            "
+            
+            echo "${v3_config_contents}" > $v3_config_file
         fi
-        printf "Successfully updated %s\n" "${AGENT_DYNAMIC_CONFIG_FILE}"
-    fi
-    # Check the log-level and set accordingly
-    if [ "${LOG_LEVEL}" ]; then
-        if [ "$(grep -cP '^(?=[\s]*+[^#])[^#]*(level:)' "${AGENT_CONFIG_FILE}")" -ge 1 ]; then
-            printf "Setting existing log level: %s\n" "${LOG_LEVEL}"
-            ${sed_cmd} "/^[[:space:]]*#/!s/\(level:.*\)/level: ${LOG_LEVEL}/g" "${AGENT_CONFIG_FILE}"
-        else
-            printf "Setting log level: %s\n" "${LOG_LEVEL}"
-            _log_level_replacement="s/^log:/log:\\
-  level: ${LOG_LEVEL}/"
-
-            ${sed_cmd} "${_log_level_replacement}" "${AGENT_CONFIG_FILE}"
-            printf "Successfully updated %s\n" "${AGENT_CONFIG_FILE}"
-        fi
-        printf "Successfully updated %s\n" "${AGENT_CONFIG_FILE}"
     fi
 }
 
