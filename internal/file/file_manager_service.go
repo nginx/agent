@@ -238,7 +238,8 @@ func (fms *FileManagerService) UpdateFile(
 	defer backoffCancel()
 
 	sendUpdateFile := func() (*mpi.UpdateFileResponse, error) {
-		slog.DebugContext(ctx, "Sending update file request", "request_file", request.File, "request_message_meta", request.MessageMeta)
+		slog.DebugContext(ctx, "Sending update file request", "request_file", request.GetFile(),
+			"request_message_meta", request.GetMessageMeta())
 		if fms.fileServiceClient == nil {
 			return nil, errors.New("file service client is not initialized")
 		}
