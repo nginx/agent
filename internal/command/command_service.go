@@ -47,7 +47,6 @@ type (
 		subscribeClientMutex         sync.Mutex
 		configApplyRequestQueueMutex sync.Mutex
 		resourceMutex                sync.Mutex
-		commandMutex                 sync.Mutex
 	}
 )
 
@@ -549,7 +548,7 @@ func (cs *CommandService) connectCallback(
 		cs.subscribeClientMutex.Lock()
 		response, connectErr := cs.commandServiceClient.CreateConnection(ctx, request)
 		cs.subscribeClientMutex.Unlock()
-		
+
 		validatedError := grpc.ValidateGrpcError(connectErr)
 		if validatedError != nil {
 			slog.ErrorContext(ctx, "Failed to create connection", "error", validatedError)
