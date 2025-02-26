@@ -239,6 +239,7 @@ func (w *Watcher) handleCredentialUpdate(ctx context.Context) {
 	conn, err := grpc.NewGrpcConnection(ctx, w.agentConfig)
 	if err != nil {
 		slog.ErrorContext(ctx, "Unable to create new grpc connection", "error", err)
+		w.watcherMutex.Unlock()
 		return
 	}
 	w.watcherMutex.Unlock()
