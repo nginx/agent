@@ -125,7 +125,7 @@ update_config_file() {
             v2_config_file=$AGENT_CONFIG_FILE
             v3_config_file=$AGENT_CONFIG_FILE
             
-            if grep -q "nginx_one_host" ${v2_config_file}; then
+            if grep -q "$nginx_one_host" ${v2_config_file}; then
                 echo "N1 connected agent"
             else 
                 echo "${RED}Previous version of NGINX Agent was not connected to NGINX One. Stopping upgrade.${NC}" 
