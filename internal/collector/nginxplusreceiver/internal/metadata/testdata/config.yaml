@@ -19,11 +19,11 @@ all_set:
       enabled: true
     nginx.http.limit_req.requests:
       enabled: true
-    nginx.http.request.byte.io:
-      enabled: true
     nginx.http.request.count:
       enabled: true
     nginx.http.request.discarded:
+      enabled: true
+    nginx.http.request.io:
       enabled: true
     nginx.http.request.processing.count:
       enabled: true
@@ -35,8 +35,6 @@ all_set:
       enabled: true
     nginx.http.upstream.keepalive.count:
       enabled: true
-    nginx.http.upstream.peer.byte.io:
-      enabled: true
     nginx.http.upstream.peer.connection.count:
       enabled: true
     nginx.http.upstream.peer.count:
@@ -46,6 +44,8 @@ all_set:
     nginx.http.upstream.peer.header.time:
       enabled: true
     nginx.http.upstream.peer.health_checks:
+      enabled: true
+    nginx.http.upstream.peer.io:
       enabled: true
     nginx.http.upstream.peer.requests:
       enabled: true
@@ -83,17 +83,15 @@ all_set:
       enabled: true
     nginx.ssl.handshakes:
       enabled: true
-    nginx.stream.byte.io:
-      enabled: true
     nginx.stream.connection.accepted:
       enabled: true
     nginx.stream.connection.discarded:
       enabled: true
     nginx.stream.connection.processing.count:
       enabled: true
-    nginx.stream.session.status:
+    nginx.stream.io:
       enabled: true
-    nginx.stream.upstream.peer.byte.io:
+    nginx.stream.session.status:
       enabled: true
     nginx.stream.upstream.peer.connection.count:
       enabled: true
@@ -106,6 +104,8 @@ all_set:
     nginx.stream.upstream.peer.fails:
       enabled: true
     nginx.stream.upstream.peer.health_checks:
+      enabled: true
+    nginx.stream.upstream.peer.io:
       enabled: true
     nginx.stream.upstream.peer.response.time:
       enabled: true
@@ -142,11 +142,11 @@ none_set:
       enabled: false
     nginx.http.limit_req.requests:
       enabled: false
-    nginx.http.request.byte.io:
-      enabled: false
     nginx.http.request.count:
       enabled: false
     nginx.http.request.discarded:
+      enabled: false
+    nginx.http.request.io:
       enabled: false
     nginx.http.request.processing.count:
       enabled: false
@@ -158,8 +158,6 @@ none_set:
       enabled: false
     nginx.http.upstream.keepalive.count:
       enabled: false
-    nginx.http.upstream.peer.byte.io:
-      enabled: false
     nginx.http.upstream.peer.connection.count:
       enabled: false
     nginx.http.upstream.peer.count:
@@ -169,6 +167,8 @@ none_set:
     nginx.http.upstream.peer.header.time:
       enabled: false
     nginx.http.upstream.peer.health_checks:
+      enabled: false
+    nginx.http.upstream.peer.io:
       enabled: false
     nginx.http.upstream.peer.requests:
       enabled: false
@@ -206,17 +206,15 @@ none_set:
       enabled: false
     nginx.ssl.handshakes:
       enabled: false
-    nginx.stream.byte.io:
-      enabled: false
     nginx.stream.connection.accepted:
       enabled: false
     nginx.stream.connection.discarded:
       enabled: false
     nginx.stream.connection.processing.count:
       enabled: false
-    nginx.stream.session.status:
+    nginx.stream.io:
       enabled: false
-    nginx.stream.upstream.peer.byte.io:
+    nginx.stream.session.status:
       enabled: false
     nginx.stream.upstream.peer.connection.count:
       enabled: false
@@ -229,6 +227,8 @@ none_set:
     nginx.stream.upstream.peer.fails:
       enabled: false
     nginx.stream.upstream.peer.health_checks:
+      enabled: false
+    nginx.stream.upstream.peer.io:
       enabled: false
     nginx.stream.upstream.peer.response.time:
       enabled: false

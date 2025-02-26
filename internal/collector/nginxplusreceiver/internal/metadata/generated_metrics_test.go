@@ -106,15 +106,15 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordNginxHTTPRequestByteIoDataPoint(ts, 1, AttributeNginxByteIoDirectionRX, "nginx.zone.name-val", AttributeNginxZoneTypeSERVER)
-
-			defaultMetricsCount++
-			allMetricsCount++
 			mb.RecordNginxHTTPRequestCountDataPoint(ts, 1)
 
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordNginxHTTPRequestDiscardedDataPoint(ts, 1, "nginx.zone.name-val", AttributeNginxZoneTypeSERVER)
+
+			defaultMetricsCount++
+			allMetricsCount++
+			mb.RecordNginxHTTPRequestIoDataPoint(ts, 1, AttributeNginxIoDirectionReceive, "nginx.zone.name-val", AttributeNginxZoneTypeSERVER)
 
 			defaultMetricsCount++
 			allMetricsCount++
@@ -138,10 +138,6 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordNginxHTTPUpstreamPeerByteIoDataPoint(ts, 1, AttributeNginxByteIoDirectionRX, "nginx.zone.name-val", "nginx.upstream.name-val", "nginx.peer.address-val", "nginx.peer.name-val")
-
-			defaultMetricsCount++
-			allMetricsCount++
 			mb.RecordNginxHTTPUpstreamPeerConnectionCountDataPoint(ts, 1, "nginx.zone.name-val", "nginx.upstream.name-val", "nginx.peer.address-val", "nginx.peer.name-val")
 
 			defaultMetricsCount++
@@ -159,6 +155,10 @@ func TestMetricsBuilder(t *testing.T) {
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordNginxHTTPUpstreamPeerHealthChecksDataPoint(ts, 1, AttributeNginxHealthCheckUNHEALTHY, "nginx.zone.name-val", "nginx.upstream.name-val", "nginx.peer.address-val", "nginx.peer.name-val")
+
+			defaultMetricsCount++
+			allMetricsCount++
+			mb.RecordNginxHTTPUpstreamPeerIoDataPoint(ts, 1, AttributeNginxIoDirectionReceive, "nginx.zone.name-val", "nginx.upstream.name-val", "nginx.peer.address-val", "nginx.peer.name-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
@@ -234,10 +234,6 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordNginxStreamByteIoDataPoint(ts, 1, AttributeNginxByteIoDirectionRX, "nginx.zone.name-val")
-
-			defaultMetricsCount++
-			allMetricsCount++
 			mb.RecordNginxStreamConnectionAcceptedDataPoint(ts, 1, "nginx.zone.name-val")
 
 			defaultMetricsCount++
@@ -250,11 +246,11 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordNginxStreamSessionStatusDataPoint(ts, 1, AttributeNginxStatusRange1xx, "nginx.zone.name-val")
+			mb.RecordNginxStreamIoDataPoint(ts, 1, AttributeNginxIoDirectionReceive, "nginx.zone.name-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordNginxStreamUpstreamPeerByteIoDataPoint(ts, 1, AttributeNginxByteIoDirectionRX, "nginx.zone.name-val", "nginx.upstream.name-val", "nginx.peer.address-val", "nginx.peer.name-val")
+			mb.RecordNginxStreamSessionStatusDataPoint(ts, 1, AttributeNginxStatusRange1xx, "nginx.zone.name-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
@@ -279,6 +275,10 @@ func TestMetricsBuilder(t *testing.T) {
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordNginxStreamUpstreamPeerHealthChecksDataPoint(ts, 1, AttributeNginxHealthCheckUNHEALTHY, "nginx.zone.name-val", "nginx.upstream.name-val", "nginx.peer.address-val", "nginx.peer.name-val")
+
+			defaultMetricsCount++
+			allMetricsCount++
+			mb.RecordNginxStreamUpstreamPeerIoDataPoint(ts, 1, AttributeNginxIoDirectionReceive, "nginx.zone.name-val", "nginx.upstream.name-val", "nginx.peer.address-val", "nginx.peer.name-val")
 
 			defaultMetricsCount++
 			allMetricsCount++
@@ -481,29 +481,6 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("nginx.zone.name")
 					assert.True(t, ok)
 					assert.EqualValues(t, "nginx.zone.name-val", attrVal.Str())
-				case "nginx.http.request.byte.io":
-					assert.False(t, validatedMetrics["nginx.http.request.byte.io"], "Found a duplicate in the metrics slice: nginx.http.request.byte.io")
-					validatedMetrics["nginx.http.request.byte.io"] = true
-					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
-					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
-					assert.Equal(t, "The total number of HTTP byte IO.", ms.At(i).Description())
-					assert.Equal(t, "bytes", ms.At(i).Unit())
-					assert.True(t, ms.At(i).Sum().IsMonotonic())
-					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
-					dp := ms.At(i).Sum().DataPoints().At(0)
-					assert.Equal(t, start, dp.StartTimestamp())
-					assert.Equal(t, ts, dp.Timestamp())
-					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
-					assert.Equal(t, int64(1), dp.IntValue())
-					attrVal, ok := dp.Attributes().Get("nginx.byte.io.direction")
-					assert.True(t, ok)
-					assert.EqualValues(t, "RX", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("nginx.zone.name")
-					assert.True(t, ok)
-					assert.EqualValues(t, "nginx.zone.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("nginx.zone.type")
-					assert.True(t, ok)
-					assert.EqualValues(t, "SERVER", attrVal.Str())
 				case "nginx.http.request.count":
 					assert.False(t, validatedMetrics["nginx.http.request.count"], "Found a duplicate in the metrics slice: nginx.http.request.count")
 					validatedMetrics["nginx.http.request.count"] = true
@@ -531,6 +508,29 @@ func TestMetricsBuilder(t *testing.T) {
 					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
 					assert.Equal(t, int64(1), dp.IntValue())
 					attrVal, ok := dp.Attributes().Get("nginx.zone.name")
+					assert.True(t, ok)
+					assert.EqualValues(t, "nginx.zone.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("nginx.zone.type")
+					assert.True(t, ok)
+					assert.EqualValues(t, "SERVER", attrVal.Str())
+				case "nginx.http.request.io":
+					assert.False(t, validatedMetrics["nginx.http.request.io"], "Found a duplicate in the metrics slice: nginx.http.request.io")
+					validatedMetrics["nginx.http.request.io"] = true
+					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
+					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
+					assert.Equal(t, "The total number of HTTP byte IO.", ms.At(i).Description())
+					assert.Equal(t, "bytes", ms.At(i).Unit())
+					assert.True(t, ms.At(i).Sum().IsMonotonic())
+					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
+					dp := ms.At(i).Sum().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+					assert.Equal(t, int64(1), dp.IntValue())
+					attrVal, ok := dp.Attributes().Get("nginx.io.direction")
+					assert.True(t, ok)
+					assert.EqualValues(t, "receive", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("nginx.zone.name")
 					assert.True(t, ok)
 					assert.EqualValues(t, "nginx.zone.name-val", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("nginx.zone.type")
@@ -635,35 +635,6 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("nginx.upstream.name")
 					assert.True(t, ok)
 					assert.EqualValues(t, "nginx.upstream.name-val", attrVal.Str())
-				case "nginx.http.upstream.peer.byte.io":
-					assert.False(t, validatedMetrics["nginx.http.upstream.peer.byte.io"], "Found a duplicate in the metrics slice: nginx.http.upstream.peer.byte.io")
-					validatedMetrics["nginx.http.upstream.peer.byte.io"] = true
-					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
-					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
-					assert.Equal(t, "The total number of byte IO per HTTP upstream peer.", ms.At(i).Description())
-					assert.Equal(t, "bytes", ms.At(i).Unit())
-					assert.True(t, ms.At(i).Sum().IsMonotonic())
-					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
-					dp := ms.At(i).Sum().DataPoints().At(0)
-					assert.Equal(t, start, dp.StartTimestamp())
-					assert.Equal(t, ts, dp.Timestamp())
-					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
-					assert.Equal(t, int64(1), dp.IntValue())
-					attrVal, ok := dp.Attributes().Get("nginx.byte.io.direction")
-					assert.True(t, ok)
-					assert.EqualValues(t, "RX", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("nginx.zone.name")
-					assert.True(t, ok)
-					assert.EqualValues(t, "nginx.zone.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("nginx.upstream.name")
-					assert.True(t, ok)
-					assert.EqualValues(t, "nginx.upstream.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("nginx.peer.address")
-					assert.True(t, ok)
-					assert.EqualValues(t, "nginx.peer.address-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("nginx.peer.name")
-					assert.True(t, ok)
-					assert.EqualValues(t, "nginx.peer.name-val", attrVal.Str())
 				case "nginx.http.upstream.peer.connection.count":
 					assert.False(t, validatedMetrics["nginx.http.upstream.peer.connection.count"], "Found a duplicate in the metrics slice: nginx.http.upstream.peer.connection.count")
 					validatedMetrics["nginx.http.upstream.peer.connection.count"] = true
@@ -776,6 +747,35 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok := dp.Attributes().Get("nginx.health_check")
 					assert.True(t, ok)
 					assert.EqualValues(t, "UNHEALTHY", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("nginx.zone.name")
+					assert.True(t, ok)
+					assert.EqualValues(t, "nginx.zone.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("nginx.upstream.name")
+					assert.True(t, ok)
+					assert.EqualValues(t, "nginx.upstream.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("nginx.peer.address")
+					assert.True(t, ok)
+					assert.EqualValues(t, "nginx.peer.address-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("nginx.peer.name")
+					assert.True(t, ok)
+					assert.EqualValues(t, "nginx.peer.name-val", attrVal.Str())
+				case "nginx.http.upstream.peer.io":
+					assert.False(t, validatedMetrics["nginx.http.upstream.peer.io"], "Found a duplicate in the metrics slice: nginx.http.upstream.peer.io")
+					validatedMetrics["nginx.http.upstream.peer.io"] = true
+					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
+					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
+					assert.Equal(t, "The total number of byte IO per HTTP upstream peer.", ms.At(i).Description())
+					assert.Equal(t, "bytes", ms.At(i).Unit())
+					assert.True(t, ms.At(i).Sum().IsMonotonic())
+					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
+					dp := ms.At(i).Sum().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+					assert.Equal(t, int64(1), dp.IntValue())
+					attrVal, ok := dp.Attributes().Get("nginx.io.direction")
+					assert.True(t, ok)
+					assert.EqualValues(t, "receive", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("nginx.zone.name")
 					assert.True(t, ok)
 					assert.EqualValues(t, "nginx.zone.name-val", attrVal.Str())
@@ -1150,26 +1150,6 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("nginx.ssl.handshake.reason")
 					assert.True(t, ok)
 					assert.EqualValues(t, "NO_COMMON_PROTOCOL", attrVal.Str())
-				case "nginx.stream.byte.io":
-					assert.False(t, validatedMetrics["nginx.stream.byte.io"], "Found a duplicate in the metrics slice: nginx.stream.byte.io")
-					validatedMetrics["nginx.stream.byte.io"] = true
-					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
-					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
-					assert.Equal(t, "The total number of Stream byte IO.", ms.At(i).Description())
-					assert.Equal(t, "bytes", ms.At(i).Unit())
-					assert.True(t, ms.At(i).Sum().IsMonotonic())
-					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
-					dp := ms.At(i).Sum().DataPoints().At(0)
-					assert.Equal(t, start, dp.StartTimestamp())
-					assert.Equal(t, ts, dp.Timestamp())
-					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
-					assert.Equal(t, int64(1), dp.IntValue())
-					attrVal, ok := dp.Attributes().Get("nginx.byte.io.direction")
-					assert.True(t, ok)
-					assert.EqualValues(t, "RX", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("nginx.zone.name")
-					assert.True(t, ok)
-					assert.EqualValues(t, "nginx.zone.name-val", attrVal.Str())
 				case "nginx.stream.connection.accepted":
 					assert.False(t, validatedMetrics["nginx.stream.connection.accepted"], "Found a duplicate in the metrics slice: nginx.stream.connection.accepted")
 					validatedMetrics["nginx.stream.connection.accepted"] = true
@@ -1219,6 +1199,26 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok := dp.Attributes().Get("nginx.zone.name")
 					assert.True(t, ok)
 					assert.EqualValues(t, "nginx.zone.name-val", attrVal.Str())
+				case "nginx.stream.io":
+					assert.False(t, validatedMetrics["nginx.stream.io"], "Found a duplicate in the metrics slice: nginx.stream.io")
+					validatedMetrics["nginx.stream.io"] = true
+					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
+					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
+					assert.Equal(t, "The total number of Stream byte IO.", ms.At(i).Description())
+					assert.Equal(t, "bytes", ms.At(i).Unit())
+					assert.True(t, ms.At(i).Sum().IsMonotonic())
+					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
+					dp := ms.At(i).Sum().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+					assert.Equal(t, int64(1), dp.IntValue())
+					attrVal, ok := dp.Attributes().Get("nginx.io.direction")
+					assert.True(t, ok)
+					assert.EqualValues(t, "receive", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("nginx.zone.name")
+					assert.True(t, ok)
+					assert.EqualValues(t, "nginx.zone.name-val", attrVal.Str())
 				case "nginx.stream.session.status":
 					assert.False(t, validatedMetrics["nginx.stream.session.status"], "Found a duplicate in the metrics slice: nginx.stream.session.status")
 					validatedMetrics["nginx.stream.session.status"] = true
@@ -1239,35 +1239,6 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("nginx.zone.name")
 					assert.True(t, ok)
 					assert.EqualValues(t, "nginx.zone.name-val", attrVal.Str())
-				case "nginx.stream.upstream.peer.byte.io":
-					assert.False(t, validatedMetrics["nginx.stream.upstream.peer.byte.io"], "Found a duplicate in the metrics slice: nginx.stream.upstream.peer.byte.io")
-					validatedMetrics["nginx.stream.upstream.peer.byte.io"] = true
-					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
-					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
-					assert.Equal(t, "The total number of Stream Upstream Peer byte IO.", ms.At(i).Description())
-					assert.Equal(t, "bytes", ms.At(i).Unit())
-					assert.True(t, ms.At(i).Sum().IsMonotonic())
-					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
-					dp := ms.At(i).Sum().DataPoints().At(0)
-					assert.Equal(t, start, dp.StartTimestamp())
-					assert.Equal(t, ts, dp.Timestamp())
-					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
-					assert.Equal(t, int64(1), dp.IntValue())
-					attrVal, ok := dp.Attributes().Get("nginx.byte.io.direction")
-					assert.True(t, ok)
-					assert.EqualValues(t, "RX", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("nginx.zone.name")
-					assert.True(t, ok)
-					assert.EqualValues(t, "nginx.zone.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("nginx.upstream.name")
-					assert.True(t, ok)
-					assert.EqualValues(t, "nginx.upstream.name-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("nginx.peer.address")
-					assert.True(t, ok)
-					assert.EqualValues(t, "nginx.peer.address-val", attrVal.Str())
-					attrVal, ok = dp.Attributes().Get("nginx.peer.name")
-					assert.True(t, ok)
-					assert.EqualValues(t, "nginx.peer.name-val", attrVal.Str())
 				case "nginx.stream.upstream.peer.connection.count":
 					assert.False(t, validatedMetrics["nginx.stream.upstream.peer.connection.count"], "Found a duplicate in the metrics slice: nginx.stream.upstream.peer.connection.count")
 					validatedMetrics["nginx.stream.upstream.peer.connection.count"] = true
@@ -1403,6 +1374,35 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok := dp.Attributes().Get("nginx.health_check")
 					assert.True(t, ok)
 					assert.EqualValues(t, "UNHEALTHY", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("nginx.zone.name")
+					assert.True(t, ok)
+					assert.EqualValues(t, "nginx.zone.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("nginx.upstream.name")
+					assert.True(t, ok)
+					assert.EqualValues(t, "nginx.upstream.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("nginx.peer.address")
+					assert.True(t, ok)
+					assert.EqualValues(t, "nginx.peer.address-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("nginx.peer.name")
+					assert.True(t, ok)
+					assert.EqualValues(t, "nginx.peer.name-val", attrVal.Str())
+				case "nginx.stream.upstream.peer.io":
+					assert.False(t, validatedMetrics["nginx.stream.upstream.peer.io"], "Found a duplicate in the metrics slice: nginx.stream.upstream.peer.io")
+					validatedMetrics["nginx.stream.upstream.peer.io"] = true
+					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
+					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
+					assert.Equal(t, "The total number of Stream Upstream Peer byte IO.", ms.At(i).Description())
+					assert.Equal(t, "bytes", ms.At(i).Unit())
+					assert.True(t, ms.At(i).Sum().IsMonotonic())
+					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
+					dp := ms.At(i).Sum().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+					assert.Equal(t, int64(1), dp.IntValue())
+					attrVal, ok := dp.Attributes().Get("nginx.io.direction")
+					assert.True(t, ok)
+					assert.EqualValues(t, "receive", attrVal.Str())
 					attrVal, ok = dp.Attributes().Get("nginx.zone.name")
 					assert.True(t, ok)
 					assert.EqualValues(t, "nginx.zone.name-val", attrVal.Str())

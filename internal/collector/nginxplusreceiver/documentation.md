@@ -136,22 +136,6 @@ The total number of requests to an endpoint with a limit_req directive.
 | nginx.limit_req.outcome | The outcome for attempting to establish a connection to an endpoint that has a limit_req directive configured. | Str: ``PASSED``, ``REJECTED``, ``REJECTED_DRY_RUN``, ``DELAYED``, ``DELAYED_DRY_RUN`` |
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 
-### nginx.http.request.byte.io
-
-The total number of HTTP byte IO.
-
-| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
-| ---- | ----------- | ---------- | ----------------------- | --------- |
-| bytes | Sum | Int | Cumulative | true |
-
-#### Attributes
-
-| Name | Description | Values |
-| ---- | ----------- | ------ |
-| nginx.byte.io.direction | The direction of byte traffic. | Str: ``RX``, ``TX`` |
-| nginx.zone.name | The name of the shared memory zone. | Any Str |
-| nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` |
-
 ### nginx.http.request.count
 
 The current number of client requests received from clients.
@@ -172,6 +156,22 @@ The total number of requests completed without sending a response.
 
 | Name | Description | Values |
 | ---- | ----------- | ------ |
+| nginx.zone.name | The name of the shared memory zone. | Any Str |
+| nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` |
+
+### nginx.http.request.io
+
+The total number of HTTP byte IO.
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
+| ---- | ----------- | ---------- | ----------------------- | --------- |
+| bytes | Sum | Int | Cumulative | true |
+
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| nginx.io.direction | The direction of byte traffic. | Str: ``receive``, ``transmit`` |
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` |
 
@@ -250,24 +250,6 @@ The current number of idle keepalive connections per HTTP upstream.
 | ---- | ----------- | ------ |
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.upstream.name | The name of the upstream block. | Any Str |
-
-### nginx.http.upstream.peer.byte.io
-
-The total number of byte IO per HTTP upstream peer.
-
-| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
-| ---- | ----------- | ---------- | ----------------------- | --------- |
-| bytes | Sum | Int | Cumulative | true |
-
-#### Attributes
-
-| Name | Description | Values |
-| ---- | ----------- | ------ |
-| nginx.byte.io.direction | The direction of byte traffic. | Str: ``RX``, ``TX`` |
-| nginx.zone.name | The name of the shared memory zone. | Any Str |
-| nginx.upstream.name | The name of the upstream block. | Any Str |
-| nginx.peer.address | The address of the peer. | Any Str |
-| nginx.peer.name | The name of the peer. | Any Str |
 
 ### nginx.http.upstream.peer.connection.count
 
@@ -349,6 +331,24 @@ The total number of health check requests made to a HTTP upstream peer.
 | Name | Description | Values |
 | ---- | ----------- | ------ |
 | nginx.health_check | The state received from a health check. | Str: ``UNHEALTHY``, ``FAIL`` |
+| nginx.zone.name | The name of the shared memory zone. | Any Str |
+| nginx.upstream.name | The name of the upstream block. | Any Str |
+| nginx.peer.address | The address of the peer. | Any Str |
+| nginx.peer.name | The name of the peer. | Any Str |
+
+### nginx.http.upstream.peer.io
+
+The total number of byte IO per HTTP upstream peer.
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
+| ---- | ----------- | ---------- | ----------------------- | --------- |
+| bytes | Sum | Int | Cumulative | true |
+
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| nginx.io.direction | The direction of byte traffic. | Str: ``receive``, ``transmit`` |
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.upstream.name | The name of the upstream block. | Any Str |
 | nginx.peer.address | The address of the peer. | Any Str |
@@ -632,21 +632,6 @@ The total number of SSL handshakes.
 | nginx.ssl.status | The status of a SSL handshake. | Str: ``FAILED``, ``REUSE`` |
 | nginx.ssl.handshake.reason | The reason for a SSL handshake failure. | Str: ``NO_COMMON_PROTOCOL``, ``NO_COMMON_CIPHER``, ``TIMEOUT``, ``CERT_REJECTED`` |
 
-### nginx.stream.byte.io
-
-The total number of Stream byte IO.
-
-| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
-| ---- | ----------- | ---------- | ----------------------- | --------- |
-| bytes | Sum | Int | Cumulative | true |
-
-#### Attributes
-
-| Name | Description | Values |
-| ---- | ----------- | ------ |
-| nginx.byte.io.direction | The direction of byte traffic. | Str: ``RX``, ``TX`` |
-| nginx.zone.name | The name of the shared memory zone. | Any Str |
-
 ### nginx.stream.connection.accepted
 
 The total number of connections accepted from clients.
@@ -689,6 +674,21 @@ The number of client connections that are currently being processed.
 | ---- | ----------- | ------ |
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 
+### nginx.stream.io
+
+The total number of Stream byte IO.
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
+| ---- | ----------- | ---------- | ----------------------- | --------- |
+| bytes | Sum | Int | Cumulative | true |
+
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| nginx.io.direction | The direction of byte traffic. | Str: ``receive``, ``transmit`` |
+| nginx.zone.name | The name of the shared memory zone. | Any Str |
+
 ### nginx.stream.session.status
 
 The total number of completed sessions.
@@ -703,24 +703,6 @@ The total number of completed sessions.
 | ---- | ----------- | ------ |
 | nginx.status_range | A status code range or bucket for a HTTP response's status code. | Str: ``1xx``, ``2xx``, ``3xx``, ``4xx``, ``5xx`` |
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
-
-### nginx.stream.upstream.peer.byte.io
-
-The total number of Stream Upstream Peer byte IO.
-
-| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
-| ---- | ----------- | ---------- | ----------------------- | --------- |
-| bytes | Sum | Int | Cumulative | true |
-
-#### Attributes
-
-| Name | Description | Values |
-| ---- | ----------- | ------ |
-| nginx.byte.io.direction | The direction of byte traffic. | Str: ``RX``, ``TX`` |
-| nginx.zone.name | The name of the shared memory zone. | Any Str |
-| nginx.upstream.name | The name of the upstream block. | Any Str |
-| nginx.peer.address | The address of the peer. | Any Str |
-| nginx.peer.name | The name of the peer. | Any Str |
 
 ### nginx.stream.upstream.peer.connection.count
 
@@ -818,6 +800,24 @@ The total number of health check requests made to the stream upstream peer.
 | Name | Description | Values |
 | ---- | ----------- | ------ |
 | nginx.health_check | The state received from a health check. | Str: ``UNHEALTHY``, ``FAIL`` |
+| nginx.zone.name | The name of the shared memory zone. | Any Str |
+| nginx.upstream.name | The name of the upstream block. | Any Str |
+| nginx.peer.address | The address of the peer. | Any Str |
+| nginx.peer.name | The name of the peer. | Any Str |
+
+### nginx.stream.upstream.peer.io
+
+The total number of Stream Upstream Peer byte IO.
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
+| ---- | ----------- | ---------- | ----------------------- | --------- |
+| bytes | Sum | Int | Cumulative | true |
+
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| nginx.io.direction | The direction of byte traffic. | Str: ``receive``, ``transmit`` |
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.upstream.name | The name of the upstream block. | Any Str |
 | nginx.peer.address | The address of the peer. | Any Str |

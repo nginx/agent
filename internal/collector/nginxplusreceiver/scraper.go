@@ -135,16 +135,16 @@ func (nps *nginxPlusScraper) recordMetrics(stats *plusapi.Stats) {
 
 func (nps *nginxPlusScraper) recordStreamMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
 	for name, streamServerZone := range stats.StreamServerZones {
-		nps.mb.RecordNginxStreamByteIoDataPoint(
+		nps.mb.RecordNginxStreamIoDataPoint(
 			now,
 			int64(streamServerZone.Received),
-			metadata.AttributeNginxByteIoDirectionRX,
+			metadata.AttributeNginxIoDirectionReceive,
 			name,
 		)
-		nps.mb.RecordNginxStreamByteIoDataPoint(
+		nps.mb.RecordNginxStreamIoDataPoint(
 			now,
 			int64(streamServerZone.Sent),
-			metadata.AttributeNginxByteIoDirectionTX,
+			metadata.AttributeNginxIoDirectionTransmit,
 			name,
 		)
 		nps.mb.RecordNginxStreamConnectionAcceptedDataPoint(now, int64(streamServerZone.Connections), name)
@@ -175,19 +175,19 @@ func (nps *nginxPlusScraper) recordStreamMetrics(stats *plusapi.Stats, now pcomm
 		peerStates := make(map[string]int)
 
 		for _, peer := range upstream.Peers {
-			nps.mb.RecordNginxStreamUpstreamPeerByteIoDataPoint(
+			nps.mb.RecordNginxStreamUpstreamPeerIoDataPoint(
 				now,
 				int64(peer.Received),
-				metadata.AttributeNginxByteIoDirectionRX,
+				metadata.AttributeNginxIoDirectionReceive,
 				upstream.Zone,
 				upstreamName,
 				peer.Server,
 				peer.Name,
 			)
-			nps.mb.RecordNginxStreamUpstreamPeerByteIoDataPoint(
+			nps.mb.RecordNginxStreamUpstreamPeerIoDataPoint(
 				now,
 				int64(peer.Sent),
-				metadata.AttributeNginxByteIoDirectionTX,
+				metadata.AttributeNginxIoDirectionTransmit,
 				upstream.Zone,
 				upstreamName,
 				peer.Server,
@@ -481,19 +481,19 @@ func (nps *nginxPlusScraper) recordHTTPUpstreamPeerMetrics(stats *plusapi.Stats,
 		peerStates := make(map[string]int)
 
 		for _, peer := range upstream.Peers {
-			nps.mb.RecordNginxHTTPUpstreamPeerByteIoDataPoint(
+			nps.mb.RecordNginxHTTPUpstreamPeerIoDataPoint(
 				now,
 				int64(peer.Received),
-				metadata.AttributeNginxByteIoDirectionRX,
+				metadata.AttributeNginxIoDirectionReceive,
 				upstream.Zone,
 				name,
 				peer.Server,
 				peer.Name,
 			)
-			nps.mb.RecordNginxHTTPUpstreamPeerByteIoDataPoint(
+			nps.mb.RecordNginxHTTPUpstreamPeerIoDataPoint(
 				now,
 				int64(peer.Sent),
-				metadata.AttributeNginxByteIoDirectionTX,
+				metadata.AttributeNginxIoDirectionTransmit,
 				upstream.Zone,
 				name,
 				peer.Server,
@@ -745,17 +745,17 @@ func (nps *nginxPlusScraper) recordHTTPUpstreamPeerMetrics(stats *plusapi.Stats,
 
 func (nps *nginxPlusScraper) recordServerZoneMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
 	for szName, sz := range stats.ServerZones {
-		nps.mb.RecordNginxHTTPRequestByteIoDataPoint(
+		nps.mb.RecordNginxHTTPRequestIoDataPoint(
 			now,
 			int64(sz.Received),
-			metadata.AttributeNginxByteIoDirectionRX,
+			metadata.AttributeNginxIoDirectionReceive,
 			szName,
 			metadata.AttributeNginxZoneTypeSERVER,
 		)
-		nps.mb.RecordNginxHTTPRequestByteIoDataPoint(
+		nps.mb.RecordNginxHTTPRequestIoDataPoint(
 			now,
 			int64(sz.Sent),
-			metadata.AttributeNginxByteIoDirectionTX,
+			metadata.AttributeNginxIoDirectionTransmit,
 			szName,
 			metadata.AttributeNginxZoneTypeSERVER,
 		)
@@ -804,17 +804,17 @@ func (nps *nginxPlusScraper) recordServerZoneMetrics(stats *plusapi.Stats, now p
 
 func (nps *nginxPlusScraper) recordLocationZoneMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
 	for lzName, lz := range stats.LocationZones {
-		nps.mb.RecordNginxHTTPRequestByteIoDataPoint(
+		nps.mb.RecordNginxHTTPRequestIoDataPoint(
 			now,
 			lz.Received,
-			metadata.AttributeNginxByteIoDirectionRX,
+			metadata.AttributeNginxIoDirectionReceive,
 			lzName,
 			metadata.AttributeNginxZoneTypeLOCATION,
 		)
-		nps.mb.RecordNginxHTTPRequestByteIoDataPoint(
+		nps.mb.RecordNginxHTTPRequestIoDataPoint(
 			now,
 			lz.Sent,
-			metadata.AttributeNginxByteIoDirectionTX,
+			metadata.AttributeNginxIoDirectionTransmit,
 			lzName,
 			metadata.AttributeNginxZoneTypeLOCATION,
 		)

@@ -207,7 +207,7 @@ resourceMetrics:
               isMonotonic: true
             unit: requests
           - description: The total number of HTTP byte IO.
-            name: nginx.http.request.byte.io
+            name: nginx.http.request.io
             sum:
               aggregationTemporality: 2
               dataPoints:
@@ -219,9 +219,9 @@ resourceMetrics:
                     - key: nginx.zone.type
                       value:
                         stringValue: SERVER
-                    - key: nginx.byte.io.direction
+                    - key: nginx.io.direction
                       value:
-                        stringValue: TX
+                        stringValue: transmit
                 - asInt: "3312"
                   attributes:
                     - key: nginx.zone.name
@@ -230,9 +230,9 @@ resourceMetrics:
                     - key: nginx.zone.type
                       value:
                         stringValue: SERVER
-                    - key: nginx.byte.io.direction
+                    - key: nginx.io.direction
                       value:
-                        stringValue: RX
+                        stringValue: receive
                 - asInt: "23265"
                   attributes:
                     - key: nginx.zone.name
@@ -241,9 +241,9 @@ resourceMetrics:
                     - key: nginx.zone.type
                       value:
                         stringValue: LOCATION
-                    - key: nginx.byte.io.direction
+                    - key: nginx.io.direction
                       value:
-                        stringValue: TX
+                        stringValue: transmit
                 - asInt: "3609"
                   attributes:
                     - key: nginx.zone.name
@@ -252,9 +252,9 @@ resourceMetrics:
                     - key: nginx.zone.type
                       value:
                         stringValue: LOCATION
-                    - key: nginx.byte.io.direction
+                    - key: nginx.io.direction
                       value:
-                        stringValue: RX
+                        stringValue: receive
                   timeUnixNano: "1000000"
               isMonotonic: true
             unit: bytes
@@ -551,15 +551,15 @@ resourceMetrics:
               isMonotonic: true
             unit: connections
           - description: The total number of byte IO per HTTP upstream peer.
-            name: nginx.http.upstream.peer.byte.io
+            name: nginx.http.upstream.peer.io
             sum:
               aggregationTemporality: 2
               dataPoints:
                 - asInt: "432"
                   attributes:
-                    - key: nginx.byte.io.direction
+                    - key: nginx.io.direction
                       value:
-                        stringValue: RX
+                        stringValue: receive
                     - key: nginx.peer.address
                       value:
                         stringValue: 127.0.0.1:9001
@@ -574,9 +574,9 @@ resourceMetrics:
                         stringValue: test-drain-zone
                 - asInt: "121"
                   attributes:
-                    - key: nginx.byte.io.direction
+                    - key: nginx.io.direction
                       value:
-                        stringValue: TX
+                        stringValue: transmit
                     - key: nginx.peer.address
                       value:
                         stringValue: 127.0.0.1:9001
@@ -1613,23 +1613,23 @@ resourceMetrics:
               isMonotonic: true
             unit: certificates
           - description: The total number of Stream byte IO.
-            name: nginx.stream.byte.io
+            name: nginx.stream.io
             sum:
               aggregationTemporality: 2
               dataPoints:
                 - asInt: "11"
                   attributes:
-                    - key: nginx.byte.io.direction
+                    - key: nginx.io.direction
                       value:
-                        stringValue: TX
+                        stringValue: transmit
                     - key: nginx.zone.name
                       value:
                         stringValue: stream_test
                 - asInt: "22"
                   attributes:
-                    - key: nginx.byte.io.direction
+                    - key: nginx.io.direction
                       value:
-                        stringValue: RX
+                        stringValue: receive
                     - key: nginx.zone.name
                       value:
                         stringValue: stream_test
@@ -1711,15 +1711,15 @@ resourceMetrics:
               isMonotonic: true
             unit: sessions
           - description: The total number of Stream Upstream Peer byte IO.
-            name: nginx.stream.upstream.peer.byte.io
+            name: nginx.stream.upstream.peer.io
             sum:
               aggregationTemporality: 2
               dataPoints:
                 - asInt: "251946292"
                   attributes:
-                    - key: nginx.byte.io.direction
+                    - key: nginx.io.direction
                       value:
-                        stringValue: TX
+                        stringValue: transmit
                     - key: nginx.peer.address
                       value:
                         stringValue: 10.0.0.1:12347
@@ -1734,9 +1734,9 @@ resourceMetrics:
                         stringValue: upstream_test_zone
                 - asInt: "19222475454"
                   attributes:
-                    - key: nginx.byte.io.direction
+                    - key: nginx.io.direction
                       value:
-                        stringValue: RX
+                        stringValue: receive
                     - key: nginx.peer.address
                       value:
                         stringValue: 10.0.0.1:12347

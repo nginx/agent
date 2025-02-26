@@ -310,7 +310,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "nginx_http_requests_count{instance_type=\"nginxplus\"}",
+          "expr": "nginx_http_request_count{instance_type=\"nginxplus\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,

@@ -37,20 +37,20 @@ type MetricsConfig struct {
 	NginxHTTPConnections                   MetricConfig `mapstructure:"nginx.http.connections"`
 	NginxHTTPLimitConnRequests             MetricConfig `mapstructure:"nginx.http.limit_conn.requests"`
 	NginxHTTPLimitReqRequests              MetricConfig `mapstructure:"nginx.http.limit_req.requests"`
-	NginxHTTPRequestByteIo                 MetricConfig `mapstructure:"nginx.http.request.byte.io"`
 	NginxHTTPRequestCount                  MetricConfig `mapstructure:"nginx.http.request.count"`
 	NginxHTTPRequestDiscarded              MetricConfig `mapstructure:"nginx.http.request.discarded"`
+	NginxHTTPRequestIo                     MetricConfig `mapstructure:"nginx.http.request.io"`
 	NginxHTTPRequestProcessingCount        MetricConfig `mapstructure:"nginx.http.request.processing.count"`
 	NginxHTTPRequests                      MetricConfig `mapstructure:"nginx.http.requests"`
 	NginxHTTPResponseStatus                MetricConfig `mapstructure:"nginx.http.response.status"`
 	NginxHTTPResponses                     MetricConfig `mapstructure:"nginx.http.responses"`
 	NginxHTTPUpstreamKeepaliveCount        MetricConfig `mapstructure:"nginx.http.upstream.keepalive.count"`
-	NginxHTTPUpstreamPeerByteIo            MetricConfig `mapstructure:"nginx.http.upstream.peer.byte.io"`
 	NginxHTTPUpstreamPeerConnectionCount   MetricConfig `mapstructure:"nginx.http.upstream.peer.connection.count"`
 	NginxHTTPUpstreamPeerCount             MetricConfig `mapstructure:"nginx.http.upstream.peer.count"`
 	NginxHTTPUpstreamPeerFails             MetricConfig `mapstructure:"nginx.http.upstream.peer.fails"`
 	NginxHTTPUpstreamPeerHeaderTime        MetricConfig `mapstructure:"nginx.http.upstream.peer.header.time"`
 	NginxHTTPUpstreamPeerHealthChecks      MetricConfig `mapstructure:"nginx.http.upstream.peer.health_checks"`
+	NginxHTTPUpstreamPeerIo                MetricConfig `mapstructure:"nginx.http.upstream.peer.io"`
 	NginxHTTPUpstreamPeerRequests          MetricConfig `mapstructure:"nginx.http.upstream.peer.requests"`
 	NginxHTTPUpstreamPeerResponseTime      MetricConfig `mapstructure:"nginx.http.upstream.peer.response.time"`
 	NginxHTTPUpstreamPeerResponses         MetricConfig `mapstructure:"nginx.http.upstream.peer.responses"`
@@ -69,18 +69,18 @@ type MetricsConfig struct {
 	NginxSlabSlotUsage                     MetricConfig `mapstructure:"nginx.slab.slot.usage"`
 	NginxSslCertificateVerifyFailures      MetricConfig `mapstructure:"nginx.ssl.certificate.verify_failures"`
 	NginxSslHandshakes                     MetricConfig `mapstructure:"nginx.ssl.handshakes"`
-	NginxStreamByteIo                      MetricConfig `mapstructure:"nginx.stream.byte.io"`
 	NginxStreamConnectionAccepted          MetricConfig `mapstructure:"nginx.stream.connection.accepted"`
 	NginxStreamConnectionDiscarded         MetricConfig `mapstructure:"nginx.stream.connection.discarded"`
 	NginxStreamConnectionProcessingCount   MetricConfig `mapstructure:"nginx.stream.connection.processing.count"`
+	NginxStreamIo                          MetricConfig `mapstructure:"nginx.stream.io"`
 	NginxStreamSessionStatus               MetricConfig `mapstructure:"nginx.stream.session.status"`
-	NginxStreamUpstreamPeerByteIo          MetricConfig `mapstructure:"nginx.stream.upstream.peer.byte.io"`
 	NginxStreamUpstreamPeerConnectionCount MetricConfig `mapstructure:"nginx.stream.upstream.peer.connection.count"`
 	NginxStreamUpstreamPeerConnectionTime  MetricConfig `mapstructure:"nginx.stream.upstream.peer.connection.time"`
 	NginxStreamUpstreamPeerConnections     MetricConfig `mapstructure:"nginx.stream.upstream.peer.connections"`
 	NginxStreamUpstreamPeerCount           MetricConfig `mapstructure:"nginx.stream.upstream.peer.count"`
 	NginxStreamUpstreamPeerFails           MetricConfig `mapstructure:"nginx.stream.upstream.peer.fails"`
 	NginxStreamUpstreamPeerHealthChecks    MetricConfig `mapstructure:"nginx.stream.upstream.peer.health_checks"`
+	NginxStreamUpstreamPeerIo              MetricConfig `mapstructure:"nginx.stream.upstream.peer.io"`
 	NginxStreamUpstreamPeerResponseTime    MetricConfig `mapstructure:"nginx.stream.upstream.peer.response.time"`
 	NginxStreamUpstreamPeerState           MetricConfig `mapstructure:"nginx.stream.upstream.peer.state"`
 	NginxStreamUpstreamPeerTtfbTime        MetricConfig `mapstructure:"nginx.stream.upstream.peer.ttfb.time"`
@@ -117,13 +117,13 @@ func DefaultMetricsConfig() MetricsConfig {
 		NginxHTTPLimitReqRequests: MetricConfig{
 			Enabled: true,
 		},
-		NginxHTTPRequestByteIo: MetricConfig{
-			Enabled: true,
-		},
 		NginxHTTPRequestCount: MetricConfig{
 			Enabled: true,
 		},
 		NginxHTTPRequestDiscarded: MetricConfig{
+			Enabled: true,
+		},
+		NginxHTTPRequestIo: MetricConfig{
 			Enabled: true,
 		},
 		NginxHTTPRequestProcessingCount: MetricConfig{
@@ -141,9 +141,6 @@ func DefaultMetricsConfig() MetricsConfig {
 		NginxHTTPUpstreamKeepaliveCount: MetricConfig{
 			Enabled: true,
 		},
-		NginxHTTPUpstreamPeerByteIo: MetricConfig{
-			Enabled: true,
-		},
 		NginxHTTPUpstreamPeerConnectionCount: MetricConfig{
 			Enabled: true,
 		},
@@ -157,6 +154,9 @@ func DefaultMetricsConfig() MetricsConfig {
 			Enabled: true,
 		},
 		NginxHTTPUpstreamPeerHealthChecks: MetricConfig{
+			Enabled: true,
+		},
+		NginxHTTPUpstreamPeerIo: MetricConfig{
 			Enabled: true,
 		},
 		NginxHTTPUpstreamPeerRequests: MetricConfig{
@@ -213,9 +213,6 @@ func DefaultMetricsConfig() MetricsConfig {
 		NginxSslHandshakes: MetricConfig{
 			Enabled: true,
 		},
-		NginxStreamByteIo: MetricConfig{
-			Enabled: true,
-		},
 		NginxStreamConnectionAccepted: MetricConfig{
 			Enabled: true,
 		},
@@ -225,10 +222,10 @@ func DefaultMetricsConfig() MetricsConfig {
 		NginxStreamConnectionProcessingCount: MetricConfig{
 			Enabled: true,
 		},
-		NginxStreamSessionStatus: MetricConfig{
+		NginxStreamIo: MetricConfig{
 			Enabled: true,
 		},
-		NginxStreamUpstreamPeerByteIo: MetricConfig{
+		NginxStreamSessionStatus: MetricConfig{
 			Enabled: true,
 		},
 		NginxStreamUpstreamPeerConnectionCount: MetricConfig{
@@ -247,6 +244,9 @@ func DefaultMetricsConfig() MetricsConfig {
 			Enabled: true,
 		},
 		NginxStreamUpstreamPeerHealthChecks: MetricConfig{
+			Enabled: true,
+		},
+		NginxStreamUpstreamPeerIo: MetricConfig{
 			Enabled: true,
 		},
 		NginxStreamUpstreamPeerResponseTime: MetricConfig{

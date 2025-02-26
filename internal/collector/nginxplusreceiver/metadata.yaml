@@ -56,12 +56,12 @@ attributes:
       - "REJECTED_DRY_RUN"
       - "DELAYED"
       - "DELAYED_DRY_RUN"
-  nginx.byte.io.direction:
+  nginx.io.direction:
     description: The direction of byte traffic.
     type: string
     enum:
-      - "RX"
-      - "TX"
+      - "receive"
+      - "transmit"
   nginx.status_range:
     description: A status code range or bucket for a HTTP response's status code.
     type: string
@@ -233,7 +233,7 @@ metrics:
     attributes:
       - nginx.limit_req.outcome
       - nginx.zone.name
-  nginx.http.request.byte.io:
+  nginx.http.request.io:
     enabled: true
     description: The total number of HTTP byte IO.
     sum:
@@ -242,7 +242,7 @@ metrics:
       aggregation_temporality: cumulative
     unit: "bytes"
     attributes:
-      - nginx.byte.io.direction
+      - nginx.io.direction
       - nginx.zone.name
       - nginx.zone.type
   nginx.http.request.discarded:
@@ -308,7 +308,7 @@ metrics:
     attributes:
       - nginx.zone.name
       - nginx.upstream.name
-  nginx.http.upstream.peer.byte.io:
+  nginx.http.upstream.peer.io:
     enabled: true
     description: The total number of byte IO per HTTP upstream peer.
     sum:
@@ -317,7 +317,7 @@ metrics:
       aggregation_temporality: cumulative
     unit: "bytes"
     attributes:
-      - nginx.byte.io.direction
+      - nginx.io.direction
       - nginx.zone.name
       - nginx.upstream.name
       - nginx.peer.address
@@ -565,7 +565,7 @@ metrics:
     unit: "certificates"
     attributes:
       - nginx.ssl.verify_failure.reason
-  nginx.stream.byte.io:
+  nginx.stream.io:
     enabled: true
     description: The total number of Stream byte IO.
     sum:
@@ -574,7 +574,7 @@ metrics:
       aggregation_temporality: cumulative
     unit: "bytes"
     attributes:
-      - nginx.byte.io.direction
+      - nginx.io.direction
       - nginx.zone.name
   nginx.stream.connection.accepted:
     enabled: true
@@ -615,7 +615,7 @@ metrics:
     attributes:
       - nginx.status_range
       - nginx.zone.name
-  nginx.stream.upstream.peer.byte.io:
+  nginx.stream.upstream.peer.io:
     enabled: true
     description: The total number of Stream Upstream Peer byte IO.
     sum:
@@ -624,7 +624,7 @@ metrics:
       aggregation_temporality: cumulative
     unit: "bytes"
     attributes:
-      - nginx.byte.io.direction
+      - nginx.io.direction
       - nginx.zone.name
       - nginx.upstream.name
       - nginx.peer.address
