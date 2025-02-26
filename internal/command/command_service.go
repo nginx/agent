@@ -99,11 +99,13 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 	sendDataPlaneStatus := func() (*mpi.UpdateDataPlaneStatusResponse, error) {
 		slog.DebugContext(ctx, "Sending data plane status update request", "request", request,
 			"parent_correlation_id", correlationID)
+
+		cs.subscribeClientMutex.Lock()
 		if cs.commandServiceClient == nil {
 			return nil, errors.New("command service client is not initialized")
 		}
-
 		response, updateError := cs.commandServiceClient.UpdateDataPlaneStatus(ctx, request)
+		cs.subscribeClientMutex.Unlock()
 
 		validatedError := grpc.ValidateGrpcError(updateError)
 		if validatedError != nil {
@@ -254,8 +256,8 @@ func (cs *CommandService) CreateConnection(
 }
 
 func (cs *CommandService) UpdateClient(client mpi.CommandServiceClient) {
-	cs.commandMutex.Lock()
-	defer cs.commandMutex.Unlock()
+	cs.subscribeClientMutex.Lock()
+	defer cs.subscribeClientMutex.Unlock()
 	cs.commandServiceClient = client
 }
 
@@ -365,11 +367,14 @@ func (cs *CommandService) dataPlaneHealthCallback(
 ) func() (*mpi.UpdateDataPlaneHealthResponse, error) {
 	return func() (*mpi.UpdateDataPlaneHealthResponse, error) {
 		slog.DebugContext(ctx, "Sending data plane health update request", "request", request)
+
+		cs.subscribeClientMutex.Lock()
 		if cs.commandServiceClient == nil {
 			return nil, errors.New("command service client is not initialized")
 		}
 
 		response, updateError := cs.commandServiceClient.UpdateDataPlaneHealth(ctx, request)
+		cs.subscribeClientMutex.Unlock()
 
 		validatedError := grpc.ValidateGrpcError(updateError)
 
@@ -541,8 +546,10 @@ func (cs *CommandService) connectCallback(
 	request *mpi.CreateConnectionRequest,
 ) func() (*mpi.CreateConnectionResponse, error) {
 	return func() (*mpi.CreateConnectionResponse, error) {
+		cs.subscribeClientMutex.Lock()
 		response, connectErr := cs.commandServiceClient.CreateConnection(ctx, request)
-
+		cs.subscribeClientMutex.Unlock()
+		
 		validatedError := grpc.ValidateGrpcError(connectErr)
 		if validatedError != nil {
 			slog.ErrorContext(ctx, "Failed to create connection", "error", validatedError)
