@@ -507,7 +507,8 @@ func getManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int) []
 	unmarshalErr := json.Unmarshal(responseData, &response)
 	require.NoError(t, unmarshalErr)
 
-	assert.Len(t, response, numberOfExpectedResponses)
+	assert.Eventually(t, func() bool { return len(response) == numberOfExpectedResponses },
+		2*time.Second, 10*time.Millisecond)
 
 	slices.SortFunc(response, func(a, b *mpi.DataPlaneResponse) int {
 		return a.GetMessageMeta().GetTimestamp().AsTime().Compare(b.GetMessageMeta().GetTimestamp().AsTime())
