@@ -12,7 +12,7 @@ WORKDIR /agent
 COPY ./build/${PACKAGE_NAME}.apk /agent/build/${PACKAGE_NAME}.apk
 COPY ./ /agent
 
-RUN apk del nginx-agent \
+RUN apk del nginx-agent
 RUN apk add --allow-untrusted /agent/build/${PACKAGE_NAME}.apk
 
 RUN unlink /var/log/nginx/access.log

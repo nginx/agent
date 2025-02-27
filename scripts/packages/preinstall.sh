@@ -16,6 +16,7 @@ INSTANCE_GROUP=""
 ################################
 ###### Default variables
 ################################
+export NGINX_ONE_HOST="${NGINX_AGENT_SERVER_HOST:-agent.connect.nginx.com}"
 export AGENT_GROUP="${AGENT_GROUP:-$(id -ng)}"
 RED='\033[0;31m'
 NC='\033[0m'
@@ -118,12 +119,13 @@ update_config_file() {
         echo "Backing up NGINX Agent V2 configuration to /etc/nginx-agent/nginx-agent-v2-backup.conf"
         cp $AGENT_CONFIG_FILE /etc/nginx-agent/nginx-agent-v2-backup.conf
         
-        nginx_one_host="agent.connect.nginx.com"
         v2_config_file=$AGENT_CONFIG_FILE
         v3_config_file=$AGENT_CONFIG_FILE
         
-        if grep -q "$nginx_one_host" ${v2_config_file}; then
-            echo "N1 connected agent"
+        echo "NGINX Agent server host should be ${NGINX_ONE_HOST}"
+        
+        if grep -q "$NGINX_ONE_HOST" ${v2_config_file}; then
+            echo "NGINX One connected agent"
         else 
             echo "${RED}Previous version of NGINX Agent was not connected to NGINX One. Stopping upgrade.${NC}" 
             exit 1
@@ -158,7 +160,7 @@ allowed_directories: ${allowed_directories}
 
 command:
     server:
-        host: ${nginx_one_host}
+        host: ${NGINX_ONE_HOST}
         port: 443
     auth:
         token: ${token}
@@ -179,7 +181,7 @@ collector:
   exporters:
     otlp_exporters:
       - server:
-          host: ${nginx_one_host}
+          host: ${NGINX_ONE_HOST}
           port: 443
         authenticator: headers_setter
         tls:
@@ -190,7 +192,7 @@ collector:
         - action: insert
           key: \"authorization\"
           value: ${token}
-            "
+        "
             
         echo "${v3_config_contents}" > $v3_config_file
     fi

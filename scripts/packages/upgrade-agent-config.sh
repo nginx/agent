@@ -6,9 +6,9 @@ set -e
 # Description:
 # NGINX Agent script for converting NGINX AGENT V2 config format to V3 config format
 
+export NGINX_ONE_HOST="${NGINX_AGENT_SERVER_HOST:-agent.connect.nginx.com}"
 RED='\033[0;31m'
 NC='\033[0m'
-N1_HOST="agent.connect.nginx.com"
 
 for i in "$@"; do
   case $i in
@@ -29,10 +29,9 @@ for i in "$@"; do
   esac
 done
 
-echo "V2 config file path = ${v2_config_file}"
-echo "V3 config file path = ${v3_config_file}"
+echo "NGINX Agent server host should be ${NGINX_ONE_HOST}"
 
-if grep -q "$N1_HOST" ${v2_config_file}; then
+if grep -q "$NGINX_ONE_HOST" ${v2_config_file}; then
     echo "N1 connected agent"
 else 
     echo "${RED}Previous version of NGINX Agent was not connected to NGINX One. Stopping upgrade.${NC}" 
@@ -68,7 +67,7 @@ allowed_directories: ${allowed_directories}
 
 command:
     server:
-        host: ${N1_HOST}
+        host: ${NGINX_ONE_HOST}
         port: 443
     auth:
         token: ${token}
@@ -89,7 +88,7 @@ collector:
   exporters:
     otlp_exporters:
       - server:
-          host: ${N1_HOST}
+          host: ${NGINX_ONE_HOST}
           port: 443
         authenticator: headers_setter
         tls:
