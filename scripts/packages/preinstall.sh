@@ -112,39 +112,36 @@ load_config_values() {
 update_config_file() {
     echo "Checking what version of NGINX Agent is already installed"
     check_version="nginx-agent --version"
-    nginx_agent_version=$($check_version 2>&1)
-    if [ $? -eq 0 ]; then 
-        echo "Currently NGINX Agent version is $nginx_agent_version"
+    nginx_agent_version=$($check_version 2>&1) || true
+    if [ -z "${nginx_agent_version##nginx-agent version v2*}" ]; then
+        echo "Updating NGINX Agent V2 configuration to V3 configuration"
+        echo "Backing up NGINX Agent V2 configuration to /etc/nginx-agent/nginx-agent-v2-backup.conf"
+        cp $AGENT_CONFIG_FILE /etc/nginx-agent/nginx-agent-v2-backup.conf
         
-        if [ -z "${nginx_agent_version##nginx-agent version v2*}" ]; then
-            echo "Updating NGINX Agent V2 configuration to V3 configuration"
-            echo "Backing up NGINX Agent V2 configuration to /etc/nginx-agent/nginx-agent-v2-backup.conf"
-            cp $AGENT_CONFIG_FILE /etc/nginx-agent/nginx-agent-v2-backup.conf
-            
-            nginx_one_host="agent.connect.nginx.com"
-            v2_config_file=$AGENT_CONFIG_FILE
-            v3_config_file=$AGENT_CONFIG_FILE
-            
-            if grep -q "$nginx_one_host" ${v2_config_file}; then
-                echo "N1 connected agent"
-            else 
-                echo "${RED}Previous version of NGINX Agent was not connected to NGINX One. Stopping upgrade.${NC}" 
-                exit 1
-            fi
-            
-            token=`grep "token:" "${v2_config_file}"`
-            token=`echo $token | cut -d ":" -f 2 | xargs`
-            
-            config_dirs=`grep "config_dirs:" "${v2_config_file}"`
-            config_dirs=`echo $config_dirs | cut -d "\"" -f 2`
-            
-            allowed_directories=""
-            export IFS=":"
-            for config_dir in $config_dirs; do
-              allowed_directories="${allowed_directories}\n  - ${config_dir}"
-            done
-                   
-            v3_config_contents="
+        nginx_one_host="agent.connect.nginx.com"
+        v2_config_file=$AGENT_CONFIG_FILE
+        v3_config_file=$AGENT_CONFIG_FILE
+        
+        if grep -q "$nginx_one_host" ${v2_config_file}; then
+            echo "N1 connected agent"
+        else 
+            echo "${RED}Previous version of NGINX Agent was not connected to NGINX One. Stopping upgrade.${NC}" 
+            exit 1
+        fi
+        
+        token=`grep "token:" "${v2_config_file}"`
+        token=`echo $token | cut -d ":" -f 2 | xargs`
+        
+        config_dirs=`grep "config_dirs:" "${v2_config_file}"`
+        config_dirs=`echo $config_dirs | cut -d "\"" -f 2`
+        
+        allowed_directories=""
+        export IFS=":"
+        for config_dir in $config_dirs; do
+          allowed_directories="${allowed_directories}\n  - ${config_dir}"
+        done
+               
+        v3_config_contents="
 #
 # /etc/nginx-agent/nginx-agent.conf
 #
@@ -195,8 +192,7 @@ collector:
           value: ${token}
             "
             
-            echo "${v3_config_contents}" > $v3_config_file
-        fi
+        echo "${v3_config_contents}" > $v3_config_file
     fi
 }
 
