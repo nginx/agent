@@ -27,6 +27,47 @@ service FileService {
     rpc GetFile(GetFileRequest) returns (GetFileResponse) {}
     // Update a file from the Agent to the Server
     rpc UpdateFile(UpdateFileRequest) returns (UpdateFileResponse) {}
+
+    // GetFileStream requests the file content in chunks. MP and agent should agree on size to use stream
+    // vs non-stream. For smaller files, it may be more efficient to not-stream.
+    rpc GetFileStream(GetFileRequest) returns (stream FileDataChunk) {}
+
+    // UpdateFileStream uploads the file content in streams. MP and agent should agree on size to use stream
+    // vs non-stream. For smaller files, it may be more efficient to not-stream.
+    rpc UpdateFileStream(stream FileDataChunk) returns (UpdateFileResponse) {}
+}
+
+// Represents a data chunk for streaming file transfer
+message FileDataChunk {
+    oneof chunk {
+        // Chunk header
+        FileDataChunkHeader header = 1;
+        // Chunk data
+        FileDataChunkContent content = 2;
+    }
+}
+
+// Represents a chunked resource Header
+message FileDataChunkHeader {
+    // meta regarding the transfer request
+    mpi.v1.MessageMeta meta = 1;
+    // meta regarding the file, help identity the file name, size, hash, perm
+    // receiver should validate the hash
+    FileMeta file_meta = 2;
+    // total number of chunks expected in the transfer
+    int32 chunks = 3;
+    // max size of individual chunks, can be undersized if EOF
+    int32 chunk_size = 4;
+}
+
+// Represents a chunked resource chunk
+message FileDataChunkContent {
+    // meta regarding the transfer request, may be optional since we are in a stream
+    mpi.v1.MessageMeta meta = 1;
+    // chunk id, i.e. x of y
+    int32 chunk_id = 2;
+    // chunk data, should be at most chunk_size
+    bytes data = 3;
 }
 
 // Represents a request payload for a file overview

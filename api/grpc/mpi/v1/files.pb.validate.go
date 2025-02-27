@@ -35,6 +35,492 @@ var (
 	_ = sort.Sort
 )
 
+// Validate checks the field values on FileDataChunk with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *FileDataChunk) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on FileDataChunk with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in FileDataChunkMultiError, or
+// nil if none found.
+func (m *FileDataChunk) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *FileDataChunk) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	switch v := m.Chunk.(type) {
+	case *FileDataChunk_Header:
+		if v == nil {
+			err := FileDataChunkValidationError{
+				field:  "Chunk",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetHeader()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, FileDataChunkValidationError{
+						field:  "Header",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, FileDataChunkValidationError{
+						field:  "Header",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetHeader()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return FileDataChunkValidationError{
+					field:  "Header",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *FileDataChunk_Content:
+		if v == nil {
+			err := FileDataChunkValidationError{
+				field:  "Chunk",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetContent()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, FileDataChunkValidationError{
+						field:  "Content",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, FileDataChunkValidationError{
+						field:  "Content",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetContent()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return FileDataChunkValidationError{
+					field:  "Content",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	default:
+		_ = v // ensures v is used
+	}
+
+	if len(errors) > 0 {
+		return FileDataChunkMultiError(errors)
+	}
+
+	return nil
+}
+
+// FileDataChunkMultiError is an error wrapping multiple validation errors
+// returned by FileDataChunk.ValidateAll() if the designated constraints
+// aren't met.
+type FileDataChunkMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m FileDataChunkMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m FileDataChunkMultiError) AllErrors() []error { return m }
+
+// FileDataChunkValidationError is the validation error returned by
+// FileDataChunk.Validate if the designated constraints aren't met.
+type FileDataChunkValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e FileDataChunkValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e FileDataChunkValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e FileDataChunkValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e FileDataChunkValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e FileDataChunkValidationError) ErrorName() string { return "FileDataChunkValidationError" }
+
+// Error satisfies the builtin error interface
+func (e FileDataChunkValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sFileDataChunk.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = FileDataChunkValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = FileDataChunkValidationError{}
+
+// Validate checks the field values on FileDataChunkHeader with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *FileDataChunkHeader) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on FileDataChunkHeader with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// FileDataChunkHeaderMultiError, or nil if none found.
+func (m *FileDataChunkHeader) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *FileDataChunkHeader) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetMeta()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, FileDataChunkHeaderValidationError{
+					field:  "Meta",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, FileDataChunkHeaderValidationError{
+					field:  "Meta",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetMeta()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return FileDataChunkHeaderValidationError{
+				field:  "Meta",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetFileMeta()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, FileDataChunkHeaderValidationError{
+					field:  "FileMeta",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, FileDataChunkHeaderValidationError{
+					field:  "FileMeta",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetFileMeta()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return FileDataChunkHeaderValidationError{
+				field:  "FileMeta",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	// no validation rules for Chunks
+
+	// no validation rules for ChunkSize
+
+	if len(errors) > 0 {
+		return FileDataChunkHeaderMultiError(errors)
+	}
+
+	return nil
+}
+
+// FileDataChunkHeaderMultiError is an error wrapping multiple validation
+// errors returned by FileDataChunkHeader.ValidateAll() if the designated
+// constraints aren't met.
+type FileDataChunkHeaderMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m FileDataChunkHeaderMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m FileDataChunkHeaderMultiError) AllErrors() []error { return m }
+
+// FileDataChunkHeaderValidationError is the validation error returned by
+// FileDataChunkHeader.Validate if the designated constraints aren't met.
+type FileDataChunkHeaderValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e FileDataChunkHeaderValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e FileDataChunkHeaderValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e FileDataChunkHeaderValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e FileDataChunkHeaderValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e FileDataChunkHeaderValidationError) ErrorName() string {
+	return "FileDataChunkHeaderValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e FileDataChunkHeaderValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sFileDataChunkHeader.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = FileDataChunkHeaderValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = FileDataChunkHeaderValidationError{}
+
+// Validate checks the field values on FileDataChunkContent with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *FileDataChunkContent) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on FileDataChunkContent with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// FileDataChunkContentMultiError, or nil if none found.
+func (m *FileDataChunkContent) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *FileDataChunkContent) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetMeta()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, FileDataChunkContentValidationError{
+					field:  "Meta",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, FileDataChunkContentValidationError{
+					field:  "Meta",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetMeta()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return FileDataChunkContentValidationError{
+				field:  "Meta",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	// no validation rules for ChunkId
+
+	// no validation rules for Data
+
+	if len(errors) > 0 {
+		return FileDataChunkContentMultiError(errors)
+	}
+
+	return nil
+}
+
+// FileDataChunkContentMultiError is an error wrapping multiple validation
+// errors returned by FileDataChunkContent.ValidateAll() if the designated
+// constraints aren't met.
+type FileDataChunkContentMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m FileDataChunkContentMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m FileDataChunkContentMultiError) AllErrors() []error { return m }
+
+// FileDataChunkContentValidationError is the validation error returned by
+// FileDataChunkContent.Validate if the designated constraints aren't met.
+type FileDataChunkContentValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e FileDataChunkContentValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e FileDataChunkContentValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e FileDataChunkContentValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e FileDataChunkContentValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e FileDataChunkContentValidationError) ErrorName() string {
+	return "FileDataChunkContentValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e FileDataChunkContentValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sFileDataChunkContent.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = FileDataChunkContentValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = FileDataChunkContentValidationError{}
+
 // Validate checks the field values on GetOverviewRequest with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.
