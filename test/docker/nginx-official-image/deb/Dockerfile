@@ -14,6 +14,7 @@ COPY ./build/${PACKAGE_NAME}.deb /agent/build/${PACKAGE_NAME}.deb
 COPY ./ /agent
 
 RUN  apt-get update \ 
+    && apt purge -y nginx-agent \
     && apt install --no-install-recommends --no-install-suggests -y /agent/build/${PACKAGE_NAME}.deb \ 
     &&  rm /agent/build/${PACKAGE_NAME}.deb
 
