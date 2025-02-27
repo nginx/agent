@@ -308,7 +308,6 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	if fileErr != nil {
 		return model.RollbackRequired, fileErr
 	}
-	slog.Error("config apply called")
 	// Update map of current files on disk
 	fms.UpdateCurrentFilesOnDisk(files.ConvertToMapOfFiles(fileOverview.GetFiles()))
 	fms.UpdateManifestFile(files.ConvertToMapOfFiles(fileOverview.GetFiles()))
@@ -335,11 +334,11 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 			// currentFilesOnDisk needs to be updated after rollback action is performed
 			delete(fms.currentFilesOnDisk, file.GetFileMeta().GetName())
 			fms.UpdateManifestFile(fms.currentFilesOnDisk)
+
 			continue
 
 		case mpi.File_FILE_ACTION_DELETE, mpi.File_FILE_ACTION_UPDATE:
 			content := fms.rollbackFileContents[file.GetFileMeta().GetName()]
-
 			err := fms.fileOperator.Write(ctx, content, file.GetFileMeta())
 			if err != nil {
 				return err
@@ -460,22 +459,9 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles, modifiedFiles 
 	fileDiff := make(map[string]*mpi.File)  // Files that have changed, key is file name
 	fileContents := make(map[string][]byte) // contents of the file, key is file name
 
-	file, err := os.ReadFile(manifestFilePath)
-	if err != nil {
-		fmt.Printf("Failed to read manifest file: %v\n", err)
-	}
-
-	// Parse JSON into a map
-	var manifestFiles map[string]*mpi.File
-	err = json.Unmarshal(file, &manifestFiles)
-	if err != nil {
-		fmt.Printf("Failed to parse manifest JSON: %v\n", err)
-		manifestFiles = currentFiles // This is the first time when config apply is happening.
-	}
-
 	// if file is in manifestFiles but not in modified files, file has been deleted
 	// copy contents, set file action
-	for fileName, currentFile := range manifestFiles {
+	for fileName, currentFile := range fms.getManifestFile(currentFiles) {
 		_, exists := modifiedFiles[fileName]
 
 		if !exists {
@@ -532,7 +518,6 @@ func (fms *FileManagerService) UpdateCurrentFilesOnDisk(currentFiles map[string]
 	for _, file := range currentFiles {
 		fms.currentFilesOnDisk[file.GetFileMeta().GetName()] = file
 	}
-
 }
 
 func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.File) {
@@ -541,13 +526,13 @@ func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.F
 		fmt.Printf("Failed to read manifest file: %v\n", err)
 	}
 
-	slog.Error(string(jsonData))
-	err = os.MkdirAll(manifestDirPath, 0755) // 0755 allows read/execute for all, write for owner
-	if err != nil {
+	// 0755 allows read/execute for all, write for owner
+	if err := os.MkdirAll(manifestDirPath, 0755); err != nil {
 		fmt.Printf("Failed to read manifest file: %v\n", err)
 	}
 
-	newFile, err := os.OpenFile(manifestFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600) // 0600 ensures only root can read/write
+	// 0600 ensures only root can read/write
+	newFile, err := os.OpenFile(manifestFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		fmt.Printf("Failed to read manifest file: %v\n", err)
 	}
@@ -559,4 +544,24 @@ func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.F
 	}
 
 	slog.Error("Manifest File updated successfully")
+}
+
+func (fms *FileManagerService) getManifestFile(currentFiles map[string]*mpi.File) map[string]*mpi.File {
+	if _, err := os.Stat(manifestFilePath); err != nil {
+		return currentFiles // Return current files if manifest file doesn't exist
+	}
+
+	file, err := os.ReadFile(manifestFilePath)
+	if err != nil {
+		fmt.Printf("Failed to read manifest file: %v\n", err)
+		return currentFiles
+	}
+
+	var manifestFiles map[string]*mpi.File
+	if err = json.Unmarshal(file, &manifestFiles); err != nil {
+		fmt.Printf("Failed to parse manifest JSON: %v\n", err)
+		return currentFiles
+	}
+
+	return manifestFiles
 }
