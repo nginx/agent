@@ -146,7 +146,10 @@ func (cws *CredentialWatcherService) handleEvent(ctx context.Context, event fsno
 
 		slog.DebugContext(ctx, "Processing FSNotify event", "event", event)
 
-		if event.Has(fsnotify.Rename) {
+		switch {
+		case event.Has(fsnotify.Remove):
+			fallthrough
+		case event.Has(fsnotify.Rename):
 			if !slices.Contains(cws.watcher.WatchList(), event.Name) {
 				cws.filesBeingWatched.Store(event.Name, false)
 			}
@@ -187,6 +190,5 @@ func isEventSkippable(event fsnotify.Event) bool {
 	return event == emptyEvent ||
 		event.Name == "" ||
 		event.Has(fsnotify.Chmod) ||
-		event.Has(fsnotify.Create) ||
-		event.Has(fsnotify.Remove)
+		event.Has(fsnotify.Create)
 }
