@@ -147,8 +147,6 @@ func (cws *CredentialWatcherService) handleEvent(ctx context.Context, event fsno
 		slog.DebugContext(ctx, "Processing FSNotify event", "event", event)
 
 		switch {
-		case event.Has(fsnotify.Write):
-		case event.Has(fsnotify.Create):
 		case event.Has(fsnotify.Rename):
 			if !slices.Contains(cws.watcher.WatchList(), event.Name) {
 				cws.filesBeingWatched.Store(event.Name, false)
