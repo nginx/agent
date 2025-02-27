@@ -192,10 +192,10 @@ func TestCredentialWatcherService_handleEvent(t *testing.T) {
 	assert.False(t, cws.filesChanged.Load())
 	cws.handleEvent(ctx, fsnotify.Event{Name: "test-remove", Op: fsnotify.Remove})
 	assert.False(t, cws.filesChanged.Load())
-	cws.handleEvent(ctx, fsnotify.Event{Name: "test-rename", Op: fsnotify.Rename})
-	assert.False(t, cws.filesChanged.Load())
 	cws.handleEvent(ctx, fsnotify.Event{Name: "test-create", Op: fsnotify.Create})
 	assert.False(t, cws.filesChanged.Load())
+	cws.handleEvent(ctx, fsnotify.Event{Name: "test-rename", Op: fsnotify.Rename})
+	assert.True(t, cws.filesChanged.Load())
 	cws.handleEvent(ctx, fsnotify.Event{Name: "test-write", Op: fsnotify.Write})
 	assert.True(t, cws.filesChanged.Load())
 }

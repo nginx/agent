@@ -8,6 +8,7 @@ package credentials
 import (
 	"context"
 	"log/slog"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -18,12 +19,6 @@ import (
 )
 
 const (
-	Create = fsnotify.Create
-	Write  = fsnotify.Write
-	Remove = fsnotify.Remove
-	Rename = fsnotify.Rename
-	Chmod  = fsnotify.Chmod
-
 	monitoringInterval = 5 * time.Second
 )
 
@@ -150,6 +145,17 @@ func (cws *CredentialWatcherService) handleEvent(ctx context.Context, event fsno
 		}
 
 		slog.DebugContext(ctx, "Processing FSNotify event", "event", event)
+
+		switch {
+		case event.Has(fsnotify.Write):
+		case event.Has(fsnotify.Create):
+		case event.Has(fsnotify.Rename):
+			if !slices.Contains(cws.watcher.WatchList(), event.Name) {
+				cws.filesBeingWatched.Store(event.Name, false)
+			}
+			cws.addWatcher(ctx, event.Name)
+		}
+
 		cws.filesChanged.Store(true)
 	}
 }
@@ -183,8 +189,7 @@ func credentialPaths(agentConfig *config.Config) []string {
 func isEventSkippable(event fsnotify.Event) bool {
 	return event == emptyEvent ||
 		event.Name == "" ||
-		event.Has(event.Op&Chmod) ||
-		event.Has(event.Op&Create) ||
-		event.Has(event.Op&Remove) ||
-		event.Has(event.Op&Rename)
+		event.Has(fsnotify.Chmod) ||
+		event.Has(fsnotify.Create) ||
+		event.Has(fsnotify.Remove)
 }
