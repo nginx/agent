@@ -36,8 +36,8 @@ const (
 		"configuration file /etc/nginx/nginx.conf test failed\n"
 
 	retryCount       = 5
-	retryWaitTime    = 2 * time.Second
-	retryMaxWaitTime = 3 * time.Second
+	retryWaitTime    = 4 * time.Second
+	retryMaxWaitTime = 5 * time.Second
 )
 
 var (
@@ -477,7 +477,7 @@ func getManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int) []
 	t.Helper()
 
 	client := resty.New()
-	client.SetRetryCount(retryCount).SetRetryWaitTime(4 * time.Second).SetRetryMaxWaitTime(5 * time.Second)
+	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
 	client.AddRetryCondition(
 		func(r *resty.Response, err error) bool {
 			responseData := r.Body()
