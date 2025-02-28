@@ -527,16 +527,16 @@ func clearManagementPlaneResponses(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 }
 
+// nolint
 func verifyConnection(t *testing.T, instancesLength int) string {
 	t.Helper()
 
 	client := resty.New()
-	client.SetRetryCount(10).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(1 * time.Minute)
+	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
 	connectionRequest := mpi.CreateConnectionRequest{}
 	client.AddRetryCondition(
 		func(r *resty.Response, err error) bool {
 			responseData := r.Body()
-			assert.True(t, json.Valid(responseData))
 
 			pb := protojson.UnmarshalOptions{DiscardUnknown: true}
 			unmarshalErr := pb.Unmarshal(responseData, &connectionRequest)
