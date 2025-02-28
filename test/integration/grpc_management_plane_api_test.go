@@ -543,7 +543,8 @@ func verifyConnection(t *testing.T, instancesLength int) string {
 
 			t.Logf("Connection response: %v", &connectionRequest)
 			t.Logf("Error response: %v", unmarshalErr)
-			t.Logf("status", "", r.StatusCode())
+			t.Logf("status %v", r.StatusCode())
+
 			return r.StatusCode() == http.StatusNotFound || unmarshalErr == nil
 		},
 	)
