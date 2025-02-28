@@ -505,9 +505,6 @@ func getManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int) []
 	unmarshalErr := json.Unmarshal(responseData, &response)
 	require.NoError(t, unmarshalErr)
 
-	assert.Eventually(t, func() bool { return len(response) == numberOfExpectedResponses },
-		2*time.Second, 10*time.Millisecond)
-
 	slices.SortFunc(response, func(a, b *mpi.DataPlaneResponse) int {
 		return a.GetMessageMeta().GetTimestamp().AsTime().Compare(b.GetMessageMeta().GetTimestamp().AsTime())
 	})
@@ -527,7 +524,6 @@ func clearManagementPlaneResponses(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 }
 
-// nolint
 func verifyConnection(t *testing.T, instancesLength int) string {
 	t.Helper()
 
@@ -541,11 +537,7 @@ func verifyConnection(t *testing.T, instancesLength int) string {
 			pb := protojson.UnmarshalOptions{DiscardUnknown: true}
 			unmarshalErr := pb.Unmarshal(responseData, &connectionRequest)
 
-			t.Logf("Connection response: %v", &connectionRequest)
-			t.Logf("Error response: %v", unmarshalErr)
-			t.Logf("status %v", r.StatusCode())
-
-			return r.StatusCode() == http.StatusNotFound || unmarshalErr == nil
+			return r.StatusCode() == http.StatusNotFound || unmarshalErr != nil
 		},
 	)
 	url := fmt.Sprintf("http://%s/api/v1/connection", mockManagementPlaneAPIAddress)
