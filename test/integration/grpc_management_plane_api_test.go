@@ -541,6 +541,9 @@ func verifyConnection(t *testing.T, instancesLength int) string {
 			pb := protojson.UnmarshalOptions{DiscardUnknown: true}
 			unmarshalErr := pb.Unmarshal(responseData, &connectionRequest)
 
+			t.Logf("Connection response: %v", &connectionRequest)
+			t.Logf("Error response: %v", unmarshalErr)
+			t.Logf("status", "", r.StatusCode())
 			return r.StatusCode() == http.StatusNotFound || unmarshalErr == nil
 		},
 	)
