@@ -531,7 +531,7 @@ func verifyConnection(t *testing.T, instancesLength int) string {
 	t.Helper()
 
 	client := resty.New()
-	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
+	client.SetRetryCount(10).SetRetryWaitTime(5 * time.Second).SetRetryMaxWaitTime(1 * time.Minute)
 	connectionRequest := mpi.CreateConnectionRequest{}
 	client.AddRetryCondition(
 		func(r *resty.Response, err error) bool {
