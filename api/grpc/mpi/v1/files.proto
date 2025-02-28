@@ -37,37 +37,45 @@ service FileService {
     rpc UpdateFileStream(stream FileDataChunk) returns (UpdateFileResponse) {}
 }
 
-// Represents a data chunk for streaming file transfer
+// Represents a data chunk for streaming file transfer.
+// For any Stream file transfer, following assumptions should be asserted (by implementation):
+// - invalid to contain more or less than one FileDataChunkHeaders
+// - invalid to have FileDataChunkContents before FileDataChunkHeaders
+// - invalid to have more/fewer FileDataChunkContents than FileDataChunkHeader.chunks
+// - invalid to have two FileDataChunkContents with same chunk_id
+// - invalid to have FileDataChunkContent with zero-length data
+// - invalid to have FileDataChunk message without either header or content
+// - hash of the combined contents should match FileDataChunkHeader.file_meta.hash
+// - total size of the combined contents should match FileDataChunkHeader.file_meta.size
+// - chunk_size should be less than the gRPC max message size
 message FileDataChunk {
+    // meta regarding the transfer request
+    mpi.v1.MessageMeta meta = 1;
     oneof chunk {
         // Chunk header
-        FileDataChunkHeader header = 1;
+        FileDataChunkHeader header = 2;
         // Chunk data
-        FileDataChunkContent content = 2;
+        FileDataChunkContent content = 3;
     }
 }
 
 // Represents a chunked resource Header
 message FileDataChunkHeader {
-    // meta regarding the transfer request
-    mpi.v1.MessageMeta meta = 1;
     // meta regarding the file, help identity the file name, size, hash, perm
-    // receiver should validate the hash
-    FileMeta file_meta = 2;
+    // receiver should validate the hash against the combined contents
+    FileMeta file_meta = 1;
     // total number of chunks expected in the transfer
-    int32 chunks = 3;
+    uint32 chunks = 2 [(buf.validate.field).uint32 = { gt: 0 }];
     // max size of individual chunks, can be undersized if EOF
-    int32 chunk_size = 4;
+    uint32 chunk_size = 3 [(buf.validate.field).uint32 = { gt: 0 }];
 }
 
 // Represents a chunked resource chunk
 message FileDataChunkContent {
-    // meta regarding the transfer request, may be optional since we are in a stream
-    mpi.v1.MessageMeta meta = 1;
-    // chunk id, i.e. x of y
-    int32 chunk_id = 2;
+    // chunk id, i.e. x of y, zero-indexed
+    uint32 chunk_id = 1;
     // chunk data, should be at most chunk_size
-    bytes data = 3;
+    bytes data = 2;
 }
 
 // Represents a request payload for a file overview

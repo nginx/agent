@@ -330,11 +330,22 @@ Represents the bytes contents of the file https://protobuf.dev/programming-guide
 <a name="mpi-v1-FileDataChunk"></a>
 
 ### FileDataChunk
-Represents a data chunk for streaming file transfer
+Represents a data chunk for streaming file transfer.
+For any Stream file transfer, following assumptions should be asserted (by implementation):
+- invalid to contain more or less than one FileDataChunkHeaders
+- invalid to have FileDataChunkContents before FileDataChunkHeaders
+- invalid to have more/fewer FileDataChunkContents than FileDataChunkHeader.chunks
+- invalid to have two FileDataChunkContents with same chunk_id
+- invalid to have FileDataChunkContent with zero-length data
+- invalid to have FileDataChunk message without either header or content
+- hash of the combined contents should match FileDataChunkHeader.file_meta.hash
+- total size of the combined contents should match FileDataChunkHeader.file_meta.size
+- chunk_size should be less than the gRPC max message size
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| meta | [MessageMeta](#mpi-v1-MessageMeta) |  | meta regarding the transfer request |
 | header | [FileDataChunkHeader](#mpi-v1-FileDataChunkHeader) |  | Chunk header |
 | content | [FileDataChunkContent](#mpi-v1-FileDataChunkContent) |  | Chunk data |
 
@@ -351,8 +362,7 @@ Represents a chunked resource chunk
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| meta | [MessageMeta](#mpi-v1-MessageMeta) |  | meta regarding the transfer request, may be optional since we are in a stream |
-| chunk_id | [int32](#int32) |  | chunk id, i.e. x of y |
+| chunk_id | [uint32](#uint32) |  | chunk id, i.e. x of y, zero-indexed |
 | data | [bytes](#bytes) |  | chunk data, should be at most chunk_size |
 
 
@@ -368,10 +378,9 @@ Represents a chunked resource Header
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| meta | [MessageMeta](#mpi-v1-MessageMeta) |  | meta regarding the transfer request |
-| file_meta | [FileMeta](#mpi-v1-FileMeta) |  | meta regarding the file, help identity the file name, size, hash, perm receiver should validate the hash |
-| chunks | [int32](#int32) |  | total number of chunks expected in the transfer |
-| chunk_size | [int32](#int32) |  | max size of individual chunks, can be undersized if EOF |
+| file_meta | [FileMeta](#mpi-v1-FileMeta) |  | meta regarding the file, help identity the file name, size, hash, perm receiver should validate the hash against the combined contents |
+| chunks | [uint32](#uint32) |  | total number of chunks expected in the transfer |
+| chunk_size | [uint32](#uint32) |  | max size of individual chunks, can be undersized if EOF |
 
 
 
