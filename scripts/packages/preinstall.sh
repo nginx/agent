@@ -18,8 +18,9 @@ INSTANCE_GROUP=""
 ################################
 export NGINX_ONE_HOST="${NGINX_AGENT_SERVER_HOST:-agent.connect.nginx.com}"
 export AGENT_GROUP="${AGENT_GROUP:-$(id -ng)}"
-RED='\033[0;31m'
-NC='\033[0m'
+
+RED_COLOUR='\033[0;31m'
+NO_COLOUR='\033[0m'
 
 # Determine OS platform
 # shellcheck source=/dev/null
@@ -125,9 +126,9 @@ update_config_file() {
         echo "NGINX Agent server host should be ${NGINX_ONE_HOST}"
         
         if grep -q "$NGINX_ONE_HOST" ${v2_config_file}; then
-            echo "NGINX One connected agent"
+            echo "NGINX Agent is connected to NGINX One"
         else 
-            echo "${RED}Previous version of NGINX Agent was not connected to NGINX One. Stopping upgrade.${NC}" 
+            echo "${RED_COLOUR}Previous version of NGINX Agent was not connected to NGINX One. Stopping upgrade${NO_COLOUR}" 
             exit 1
         fi
         
