@@ -45,6 +45,7 @@ func TestCommandPlugin_Subscriptions(t *testing.T) {
 	assert.Equal(
 		t,
 		[]string{
+			bus.ConnectionResetTopic,
 			bus.ResourceUpdateTopic,
 			bus.InstanceHealthTopic,
 			bus.DataPlaneHealthResponseTopic,
@@ -142,6 +143,12 @@ func TestCommandPlugin_Process(t *testing.T) {
 	})
 	require.Equal(t, 1, fakeCommandService.UpdateDataPlaneHealthCallCount())
 	require.Equal(t, 1, fakeCommandService.SendDataPlaneResponseCallCount())
+
+	commandPlugin.Process(ctx, &bus.Message{
+		Topic: bus.ConnectionResetTopic,
+		Data:  commandPlugin.conn,
+	})
+	require.Equal(t, 1, fakeCommandService.UpdateClientCallCount())
 }
 
 func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {

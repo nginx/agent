@@ -54,6 +54,7 @@ type (
 		UpdateCurrentFilesOnDisk(updateFiles map[string]*mpi.File)
 		DetermineFileActions(currentFiles, modifiedFiles map[string]*mpi.File) (map[string]*mpi.File,
 			map[string][]byte, error)
+		IsConnected() bool
 		SetIsConnected(isConnected bool)
 	}
 )
@@ -270,6 +271,10 @@ func (fms *FileManagerService) UpdateFile(
 	slog.DebugContext(ctx, "UpdateFile response", "response", response)
 
 	return err
+}
+
+func (fms *FileManagerService) IsConnected() bool {
+	return fms.isConnected.Load()
 }
 
 func (fms *FileManagerService) SetIsConnected(isConnected bool) {
