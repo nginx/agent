@@ -42,6 +42,8 @@ const (
 	maxAttempts      = 5
 	manifestDirPath  = "/var/lib/nginx-agent"
 	manifestFilePath = manifestDirPath + "/manifest.json"
+	dirPerm          = 0o755
+	filePerm         = 0o600
 )
 
 type (
@@ -527,12 +529,12 @@ func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.F
 	}
 
 	// 0755 allows read/execute for all, write for owner
-	if err = os.MkdirAll(manifestDirPath, 0o755); err != nil {
+	if err = os.MkdirAll(manifestDirPath, dirPerm); err != nil {
 		fmt.Printf("Failed to read manifest file: %v\n", err)
 	}
 
 	// 0600 ensures only root can read/write
-	newFile, err := os.OpenFile(manifestFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
+	newFile, err := os.OpenFile(manifestFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, filePerm)
 	if err != nil {
 		slog.Error("Failed to read manifest file", "error", err)
 	}
