@@ -36,8 +36,8 @@ const (
 		"configuration file /etc/nginx/nginx.conf test failed\n"
 
 	retryCount       = 5
-	retryWaitTime    = 2 * time.Second
-	retryMaxWaitTime = 3 * time.Second
+	retryWaitTime    = 4 * time.Second
+	retryMaxWaitTime = 5 * time.Second
 )
 
 var (
@@ -211,8 +211,6 @@ func TestGrpc_Reconnection(t *testing.T) {
 	ports, err := mockManagementPlaneGrpcContainer.Ports(ctx)
 	require.NoError(t, err)
 	mockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9093/tcp"][0].HostPort)
-
-	time.Sleep(5 * time.Second)
 
 	currentID := verifyConnection(t, 2)
 	assert.Equal(t, originalID, currentID)
@@ -533,14 +531,23 @@ func verifyConnection(t *testing.T, instancesLength int) string {
 
 	client := resty.New()
 	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
+	connectionRequest := mpi.CreateConnectionRequest{}
+	client.AddRetryCondition(
+		func(r *resty.Response, err error) bool {
+			responseData := r.Body()
 
+			pb := protojson.UnmarshalOptions{DiscardUnknown: true}
+			unmarshalErr := pb.Unmarshal(responseData, &connectionRequest)
+
+			return r.StatusCode() == http.StatusNotFound || unmarshalErr != nil
+		},
+	)
 	url := fmt.Sprintf("http://%s/api/v1/connection", mockManagementPlaneAPIAddress)
+	t.Logf("Connecting to %s", url)
 	resp, err := client.R().EnableTrace().Get(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
-
-	connectionRequest := mpi.CreateConnectionRequest{}
 
 	responseData := resp.Body()
 	t.Logf("Response: %s", string(responseData))
