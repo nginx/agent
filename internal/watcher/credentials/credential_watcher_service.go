@@ -107,11 +107,6 @@ func (cws *CredentialWatcherService) addWatcher(ctx context.Context, filePath st
 
 	if err := cws.watcher.Add(filePath); err != nil {
 		slog.ErrorContext(ctx, "Failed to add credential watcher", "path", filePath, "error", err)
-		//removeError := cws.watcher.Remove(filePath)
-		//if removeError != nil {
-		//	slog.ErrorContext(
-		//		ctx, "Failed to remove credential watcher", "path", filePath, "error", removeError)
-		//}
 
 		return
 	}

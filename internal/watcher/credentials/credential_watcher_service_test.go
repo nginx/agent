@@ -211,6 +211,9 @@ func Test_credentialPaths(t *testing.T) {
 			agentConfig: types.AgentConfig(),
 			want: []string{
 				"/tmp/token",
+				"ca.pem",
+				"cert.pem",
+				"key.pem",
 			},
 		},
 		{
