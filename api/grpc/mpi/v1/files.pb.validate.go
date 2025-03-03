@@ -1016,6 +1016,267 @@ var _ interface {
 	ErrorName() string
 } = FileValidationError{}
 
+// Validate checks the field values on ManifestFile with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *ManifestFile) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ManifestFile with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in ManifestFileMultiError, or
+// nil if none found.
+func (m *ManifestFile) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ManifestFile) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetFileMeta()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ManifestFileValidationError{
+					field:  "FileMeta",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ManifestFileValidationError{
+					field:  "FileMeta",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetFileMeta()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ManifestFileValidationError{
+				field:  "FileMeta",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return ManifestFileMultiError(errors)
+	}
+
+	return nil
+}
+
+// ManifestFileMultiError is an error wrapping multiple validation errors
+// returned by ManifestFile.ValidateAll() if the designated constraints aren't met.
+type ManifestFileMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ManifestFileMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ManifestFileMultiError) AllErrors() []error { return m }
+
+// ManifestFileValidationError is the validation error returned by
+// ManifestFile.Validate if the designated constraints aren't met.
+type ManifestFileValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ManifestFileValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ManifestFileValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ManifestFileValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ManifestFileValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ManifestFileValidationError) ErrorName() string { return "ManifestFileValidationError" }
+
+// Error satisfies the builtin error interface
+func (e ManifestFileValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sManifestFile.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ManifestFileValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ManifestFileValidationError{}
+
+// Validate checks the field values on ManifestFileMeta with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *ManifestFileMeta) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ManifestFileMeta with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ManifestFileMetaMultiError, or nil if none found.
+func (m *ManifestFileMeta) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ManifestFileMeta) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Name
+
+	if all {
+		switch v := interface{}(m.GetModifiedTime()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ManifestFileMetaValidationError{
+					field:  "ModifiedTime",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ManifestFileMetaValidationError{
+					field:  "ModifiedTime",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetModifiedTime()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ManifestFileMetaValidationError{
+				field:  "ModifiedTime",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	// no validation rules for Size
+
+	if len(errors) > 0 {
+		return ManifestFileMetaMultiError(errors)
+	}
+
+	return nil
+}
+
+// ManifestFileMetaMultiError is an error wrapping multiple validation errors
+// returned by ManifestFileMeta.ValidateAll() if the designated constraints
+// aren't met.
+type ManifestFileMetaMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ManifestFileMetaMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ManifestFileMetaMultiError) AllErrors() []error { return m }
+
+// ManifestFileMetaValidationError is the validation error returned by
+// ManifestFileMeta.Validate if the designated constraints aren't met.
+type ManifestFileMetaValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ManifestFileMetaValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ManifestFileMetaValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ManifestFileMetaValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ManifestFileMetaValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ManifestFileMetaValidationError) ErrorName() string { return "ManifestFileMetaValidationError" }
+
+// Error satisfies the builtin error interface
+func (e ManifestFileMetaValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sManifestFileMeta.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ManifestFileMetaValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ManifestFileMetaValidationError{}
+
 // Validate checks the field values on GetFileRequest with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
