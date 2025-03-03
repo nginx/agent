@@ -107,11 +107,11 @@ func (cws *CredentialWatcherService) addWatcher(ctx context.Context, filePath st
 
 	if err := cws.watcher.Add(filePath); err != nil {
 		slog.ErrorContext(ctx, "Failed to add credential watcher", "path", filePath, "error", err)
-		removeError := cws.watcher.Remove(filePath)
-		if removeError != nil {
-			slog.ErrorContext(
-				ctx, "Failed to remove credential watcher", "path", filePath, "error", removeError)
-		}
+		//removeError := cws.watcher.Remove(filePath)
+		//if removeError != nil {
+		//	slog.ErrorContext(
+		//		ctx, "Failed to remove credential watcher", "path", filePath, "error", removeError)
+		//}
 
 		return
 	}
@@ -180,6 +180,19 @@ func credentialPaths(agentConfig *config.Config) []string {
 	if agentConfig.Command.Auth != nil {
 		if agentConfig.Command.Auth.TokenPath != "" {
 			paths = append(paths, agentConfig.Command.Auth.TokenPath)
+		}
+	}
+
+	// agent's tls certs
+	if agentConfig.Command.TLS != nil {
+		if agentConfig.Command.TLS.Ca != "" {
+			paths = append(paths, agentConfig.Command.TLS.Ca)
+		}
+		if agentConfig.Command.TLS.Cert != "" {
+			paths = append(paths, agentConfig.Command.TLS.Cert)
+		}
+		if agentConfig.Command.TLS.Key != "" {
+			paths = append(paths, agentConfig.Command.TLS.Key)
 		}
 	}
 
