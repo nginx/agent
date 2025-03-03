@@ -96,22 +96,6 @@ message File {
     bool unmanaged = 3;
 }
 
-// Represents meta data about the Manifest file
-message ManifestFile {
-    // Meta information about the manifest file, the name (including path) 
-    ManifestFileMeta file_meta = 1;
-}
-
-// Meta information about the file, the name (including path) and hash
-message ManifestFileMeta {
-    // The full path of the file
-    string name = 1 [(buf.validate.field).string.prefix = "/"];
-    // Last modified time of the file (created time if never modified)
-    google.protobuf.Timestamp modified_time = 3 [(buf.validate.field).timestamp.lt_now = true];
-    // The size of the file in bytes
-    int64 size = 5;
-}
-
 // Represents the get file request
 message GetFileRequest {
     // Meta-information associated with a message

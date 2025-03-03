@@ -336,7 +336,6 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 			fms.UpdateManifestFile(fms.currentFilesOnDisk)
 
 			continue
-
 		case mpi.File_FILE_ACTION_DELETE, mpi.File_FILE_ACTION_UPDATE:
 			content := fms.rollbackFileContents[file.GetFileMeta().GetName()]
 			err := fms.fileOperator.Write(ctx, content, file.GetFileMeta())
@@ -348,7 +347,6 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 			file.GetFileMeta().Hash = files.GenerateHash(content)
 			fms.currentFilesOnDisk[file.GetFileMeta().GetName()] = file
 			fms.UpdateManifestFile(fms.currentFilesOnDisk)
-
 		case mpi.File_FILE_ACTION_UNSPECIFIED, mpi.File_FILE_ACTION_UNCHANGED:
 			fallthrough
 		default:
@@ -459,9 +457,10 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles, modifiedFiles 
 	fileDiff := make(map[string]*mpi.File)  // Files that have changed, key is file name
 	fileContents := make(map[string][]byte) // contents of the file, key is file name
 
+	manifestFiles := fms.getManifestFile(currentFiles)
 	// if file is in manifestFiles but not in modified files, file has been deleted
 	// copy contents, set file action
-	for fileName, currentFile := range fms.getManifestFile(currentFiles) {
+	for fileName, currentFile := range manifestFiles {
 		_, exists := modifiedFiles[fileName]
 
 		if !exists {
@@ -478,7 +477,7 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles, modifiedFiles 
 
 	for _, file := range modifiedFiles {
 		fileName := file.GetFileMeta().GetName()
-		currentFile, ok := currentFiles[file.GetFileMeta().GetName()]
+		currentFile, ok := manifestFiles[file.GetFileMeta().GetName()]
 		// default to unchanged action
 		file.Action = &unchangedAction
 
@@ -528,12 +527,12 @@ func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.F
 	}
 
 	// 0755 allows read/execute for all, write for owner
-	if err = os.MkdirAll(manifestDirPath, 0755); err != nil {
+	if err = os.MkdirAll(manifestDirPath, 0o755); err != nil {
 		fmt.Printf("Failed to read manifest file: %v\n", err)
 	}
 
 	// 0600 ensures only root can read/write
-	newFile, err := os.OpenFile(manifestFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	newFile, err := os.OpenFile(manifestFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		slog.Error("Failed to read manifest file", "error", err)
 	}
@@ -556,11 +555,11 @@ func (fms *FileManagerService) getManifestFile(currentFiles map[string]*mpi.File
 		return currentFiles
 	}
 
-	var manifestFiles map[string]*mpi.ManifestFile
+	var manifestFiles map[string]*model.ManifestFile
 	fileMap := fms.ConvertToFileMap(manifestFiles)
 
 	if err = json.Unmarshal(file, &fileMap); err != nil {
-		slog.Info("Failed to parse manifest JSON: %v\n", "error ", err)
+		slog.Info("Failed to parse manifest json: %v\n", "error ", err)
 		return currentFiles
 	}
 
@@ -569,8 +568,8 @@ func (fms *FileManagerService) getManifestFile(currentFiles map[string]*mpi.File
 
 func (fms *FileManagerService) ConvertToManifestFileMap(
 	currentFiles map[string]*mpi.File,
-) map[string]*mpi.ManifestFile {
-	manifestFileMap := make(map[string]*mpi.ManifestFile)
+) map[string]*model.ManifestFile {
+	manifestFileMap := make(map[string]*model.ManifestFile)
 
 	for name, file := range currentFiles {
 		if file == nil || file.GetFileMeta() == nil {
@@ -583,23 +582,20 @@ func (fms *FileManagerService) ConvertToManifestFileMap(
 	return manifestFileMap
 }
 
-func ConvertToManifestFile(file *mpi.File) *mpi.ManifestFile {
-	return &mpi.ManifestFile{
-		FileMeta: &mpi.ManifestFileMeta{
-			Name:         file.GetFileMeta().GetName(),
-			Size:         file.GetFileMeta().GetSize(),
-			ModifiedTime: file.GetFileMeta().GetModifiedTime(),
+func ConvertToManifestFile(file *mpi.File) *model.ManifestFile {
+	return &model.ManifestFile{
+		ManifestFileMeta: &model.ManifestFileMeta{
+			Name: file.GetFileMeta().GetName(),
+			Size: file.GetFileMeta().GetSize(),
+			Hash: file.GetFileMeta().GetHash(),
 		},
 	}
 }
 
-func (fms *FileManagerService) ConvertToFileMap(manifestFiles map[string]*mpi.ManifestFile) map[string]*mpi.File {
+func (fms *FileManagerService) ConvertToFileMap(manifestFiles map[string]*model.ManifestFile) map[string]*mpi.File {
 	currentFileMap := make(map[string]*mpi.File)
 
 	for name, manifestFile := range manifestFiles {
-		if manifestFile == nil || manifestFile.GetFileMeta() == nil {
-			continue
-		}
 		currentFile := ConvertToFile(manifestFile)
 		currentFileMap[name] = currentFile
 	}
@@ -607,12 +603,12 @@ func (fms *FileManagerService) ConvertToFileMap(manifestFiles map[string]*mpi.Ma
 	return currentFileMap
 }
 
-func ConvertToFile(manifestFile *mpi.ManifestFile) *mpi.File {
+func ConvertToFile(manifestFile *model.ManifestFile) *mpi.File {
 	return &mpi.File{
 		FileMeta: &mpi.FileMeta{
-			Name:         manifestFile.GetFileMeta().GetName(),
-			Size:         manifestFile.GetFileMeta().GetSize(),
-			ModifiedTime: manifestFile.GetFileMeta().GetModifiedTime(),
+			Name: manifestFile.ManifestFileMeta.Name,
+			Hash: manifestFile.ManifestFileMeta.Hash,
+			Size: manifestFile.ManifestFileMeta.Size,
 		},
 	}
 }

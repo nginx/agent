@@ -26,8 +26,6 @@
     - [GetFileResponse](#mpi-v1-GetFileResponse)
     - [GetOverviewRequest](#mpi-v1-GetOverviewRequest)
     - [GetOverviewResponse](#mpi-v1-GetOverviewResponse)
-    - [ManifestFile](#mpi-v1-ManifestFile)
-    - [ManifestFileMeta](#mpi-v1-ManifestFileMeta)
     - [SubjectAlternativeNames](#mpi-v1-SubjectAlternativeNames)
     - [UpdateFileRequest](#mpi-v1-UpdateFileRequest)
     - [UpdateFileResponse](#mpi-v1-UpdateFileResponse)
@@ -417,38 +415,6 @@ Represents the response payload to a GetOverviewRequest, requesting a list of lo
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | overview | [FileOverview](#mpi-v1-FileOverview) |  | The file overview of an instance |
-
-
-
-
-
-
-<a name="mpi-v1-ManifestFile"></a>
-
-### ManifestFile
-Represents meta data about the Manifest file
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| file_meta | [ManifestFileMeta](#mpi-v1-ManifestFileMeta) |  | Meta information about the manifest file, the name (including path) |
-
-
-
-
-
-
-<a name="mpi-v1-ManifestFileMeta"></a>
-
-### ManifestFileMeta
-Meta information about the file, the name (including path) and hash
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  | The full path of the file |
-| modified_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | Last modified time of the file (created time if never modified) |
-| size | [int64](#int64) |  | The size of the file in bytes |
 
 
 
