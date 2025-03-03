@@ -224,6 +224,27 @@ func Test_credentialPaths(t *testing.T) {
 			},
 			want: nil,
 		},
+		{
+			name: "Test 3: Add TLS paths if Command TLS is set",
+			agentConfig: &config.Config{
+				Command: &config.Command{
+					Server: nil,
+					Auth:   nil,
+					TLS: &config.TLSConfig{
+						Cert:       "/tmp-ca",
+						Key:        "/tmp-token",
+						Ca:         "/tmp-key",
+						ServerName: "my-server",
+						SkipVerify: false,
+					},
+				},
+			},
+			want: []string{
+				"/tmp-key",
+				"/tmp-ca",
+				"/tmp-token",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
