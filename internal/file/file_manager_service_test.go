@@ -216,6 +216,8 @@ func TestFileManagerService_ConfigApply_Update(t *testing.T) {
 	agentConfig.AllowedDirectories = []string{tempDir}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig)
 	fileManagerService.UpdateCurrentFilesOnDisk(filesOnDisk)
+	manifesterr := fileManagerService.UpdateManifestFile(filesOnDisk)
+	require.NoError(t, manifesterr)
 
 	request := protos.CreateConfigApplyRequest(overview)
 

@@ -312,7 +312,10 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	}
 	// Update map of current files on disk
 	fms.UpdateCurrentFilesOnDisk(files.ConvertToMapOfFiles(fileOverview.GetFiles()))
-	fms.UpdateManifestFile(files.ConvertToMapOfFiles(fileOverview.GetFiles()))
+	manifestFileErr := fms.UpdateManifestFile(files.ConvertToMapOfFiles(fileOverview.GetFiles()))
+	if manifestFileErr != nil {
+		return model.Error, manifestFileErr
+	}
 
 	return model.OK, nil
 }
@@ -335,7 +338,10 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 
 			// currentFilesOnDisk needs to be updated after rollback action is performed
 			delete(fms.currentFilesOnDisk, file.GetFileMeta().GetName())
-			fms.UpdateManifestFile(fms.currentFilesOnDisk)
+			manifestFileErr := fms.UpdateManifestFile(fms.currentFilesOnDisk)
+			if manifestFileErr != nil {
+				return manifestFileErr
+			}
 
 			continue
 		case mpi.File_FILE_ACTION_DELETE, mpi.File_FILE_ACTION_UPDATE:
@@ -348,7 +354,10 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 			// currentFilesOnDisk needs to be updated after rollback action is performed
 			file.GetFileMeta().Hash = files.GenerateHash(content)
 			fms.currentFilesOnDisk[file.GetFileMeta().GetName()] = file
-			fms.UpdateManifestFile(fms.currentFilesOnDisk)
+			manifestFileErr := fms.UpdateManifestFile(fms.currentFilesOnDisk)
+			if manifestFileErr != nil {
+				return manifestFileErr
+			}
 		case mpi.File_FILE_ACTION_UNSPECIFIED, mpi.File_FILE_ACTION_UNCHANGED:
 			fallthrough
 		default:
@@ -521,29 +530,35 @@ func (fms *FileManagerService) UpdateCurrentFilesOnDisk(currentFiles map[string]
 	}
 }
 
-func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.File) {
+func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.File) (err error) {
 	manifestFiles := fms.ConvertToManifestFileMap(currentFiles)
-	jsonData, err := json.MarshalIndent(manifestFiles, "", "  ")
+	manifestJSON, err := json.MarshalIndent(manifestFiles, "", "  ")
 	if err != nil {
-		fmt.Printf("Failed to read manifest file: %v\n", err)
+		slog.Error("Unable to marshal manifest file json ", "err", err)
+		return err
 	}
 
 	// 0755 allows read/execute for all, write for owner
 	if err = os.MkdirAll(manifestDirPath, dirPerm); err != nil {
-		fmt.Printf("Failed to read manifest file: %v\n", err)
+		slog.Error("Unable to create directory", "err", err)
+		return err
 	}
 
 	// 0600 ensures only root can read/write
 	newFile, err := os.OpenFile(manifestFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, filePerm)
 	if err != nil {
 		slog.Error("Failed to read manifest file", "error", err)
+		return err
 	}
 	defer newFile.Close()
 
-	_, err = newFile.Write(jsonData)
+	_, err = newFile.Write(manifestJSON)
 	if err != nil {
 		slog.Error("Failed to write manifest file: %v\n", "error", err)
+		return err
 	}
+
+	return nil
 }
 
 func (fms *FileManagerService) getManifestFile(currentFiles map[string]*mpi.File) map[string]*mpi.File {
@@ -553,17 +568,18 @@ func (fms *FileManagerService) getManifestFile(currentFiles map[string]*mpi.File
 
 	file, err := os.ReadFile(manifestFilePath)
 	if err != nil {
-		slog.Info("Failed to read manifest file: %v\n", "error", err)
+		slog.Error("Failed to read manifest file: %v\n", "error", err)
 		return currentFiles
 	}
 
 	var manifestFiles map[string]*model.ManifestFile
-	fileMap := fms.ConvertToFileMap(manifestFiles)
 
-	if err = json.Unmarshal(file, &fileMap); err != nil {
-		slog.Info("Failed to parse manifest json: %v\n", "error ", err)
+	if err = json.Unmarshal(file, &manifestFiles); err != nil {
+		slog.Error("Failed to parse Manifest file", "error ", err)
 		return currentFiles
 	}
+
+	fileMap := fms.ConvertToFileMap(manifestFiles)
 
 	return fileMap
 }
@@ -596,7 +612,6 @@ func ConvertToManifestFile(file *mpi.File) *model.ManifestFile {
 
 func (fms *FileManagerService) ConvertToFileMap(manifestFiles map[string]*model.ManifestFile) map[string]*mpi.File {
 	currentFileMap := make(map[string]*mpi.File)
-
 	for name, manifestFile := range manifestFiles {
 		currentFile := ConvertToFile(manifestFile)
 		currentFileMap[name] = currentFile
