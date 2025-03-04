@@ -28,16 +28,16 @@ type APIDetails struct {
 }
 
 type ManifestFile struct {
-	ManifestFileMeta *ManifestFileMeta
+	ManifestFileMeta *ManifestFileMeta `json:"manifest_file_meta"`
 }
 
 type ManifestFileMeta struct {
 	// The full path of the file
-	Name string
+	Name string `json:"name"`
 	// The hash of the file contents sha256, hex encoded
-	Hash string
+	Hash string `json:"hash"`
 	// The size of the file in bytes
-	Size int64
+	Size int64 `json:"size"`
 }
 
 // Complexity is 11, allowed is 10

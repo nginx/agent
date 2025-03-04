@@ -325,6 +325,7 @@ func (fms *FileManagerService) ClearCache() {
 	clear(fms.fileActions)
 }
 
+// nolint:revive,cyclop
 func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) error {
 	slog.InfoContext(ctx, "Rolling back config for instance", "instanceid", instanceID)
 	fms.filesMutex.Lock()
@@ -568,14 +569,15 @@ func (fms *FileManagerService) getManifestFile(currentFiles map[string]*mpi.File
 
 	file, err := os.ReadFile(manifestFilePath)
 	if err != nil {
-		slog.Error("Failed to read manifest file: %v\n", "error", err)
+		slog.Error("Failed to read manifest file", "error", err)
 		return currentFiles
 	}
 
 	var manifestFiles map[string]*model.ManifestFile
 
-	if err = json.Unmarshal(file, &manifestFiles); err != nil {
-		slog.Error("Failed to parse Manifest file", "error ", err)
+	err = json.Unmarshal(file, &manifestFiles)
+	if err != nil {
+		slog.Error("Failed to parse manifest file", "error", err)
 		return currentFiles
 	}
 
