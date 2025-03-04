@@ -113,80 +113,84 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 	rootDir := filepath.Dir(instance.GetInstanceRuntime().GetConfigPath())
 
 	for _, conf := range payload.Config {
-		formatMap := make(map[string]string)
-		err := ncp.crossplaneConfigTraverse(ctx, &conf,
-			func(ctx context.Context, parent, directive *crossplane.Directive) error {
-				switch directive.Directive {
-				case "log_format":
-					formatMap = ncp.formatMap(directive)
-				case "access_log":
-					if !ncp.ignoreLog(directive.Args[0]) {
-						accessLog := ncp.accessLog(directive.Args[0], ncp.accessLogDirectiveFormat(directive),
-							formatMap)
-						nginxConfigContext.AccessLogs = append(nginxConfigContext.AccessLogs, accessLog)
-					}
-				case "error_log":
-					if !ncp.ignoreLog(directive.Args[0]) {
-						errorLog := ncp.errorLog(directive.Args[0], ncp.errorLogDirectiveLevel(directive))
-						nginxConfigContext.ErrorLogs = append(nginxConfigContext.ErrorLogs, errorLog)
-					} else {
-						slog.WarnContext(ctx, fmt.Sprintf("Currently error log outputs to %s. Log monitoring "+
-							"is disabled while applying a config; "+"log errors to file to enable error monitoring",
-							directive.Args[0]), "error_log", directive.Args[0])
-					}
-				case "root":
-					rootFiles := ncp.rootFiles(ctx, directive.Args[0])
-					nginxConfigContext.Files = append(nginxConfigContext.Files, rootFiles...)
-				case "ssl_certificate", "proxy_ssl_certificate", "ssl_client_certificate", "ssl_trusted_certificate":
-					sslCertFile := ncp.sslCert(ctx, directive.Args[0], rootDir)
-					if !ncp.isDuplicateFile(nginxConfigContext.Files, sslCertFile) {
-						nginxConfigContext.Files = append(nginxConfigContext.Files, sslCertFile)
-					}
+		if ncp.agentConfig.IsDirectoryAllowed(strings.ToLower(conf.File)) {
+			formatMap := make(map[string]string)
+			err := ncp.crossplaneConfigTraverse(ctx, &conf,
+				func(ctx context.Context, parent, directive *crossplane.Directive) error {
+					switch directive.Directive {
+					case "log_format":
+						formatMap = ncp.formatMap(directive)
+					case "access_log":
+						if !ncp.ignoreLog(directive.Args[0]) {
+							accessLog := ncp.accessLog(directive.Args[0], ncp.accessLogDirectiveFormat(directive),
+								formatMap)
+							nginxConfigContext.AccessLogs = append(nginxConfigContext.AccessLogs, accessLog)
+						}
+					case "error_log":
+						if !ncp.ignoreLog(directive.Args[0]) {
+							errorLog := ncp.errorLog(directive.Args[0], ncp.errorLogDirectiveLevel(directive))
+							nginxConfigContext.ErrorLogs = append(nginxConfigContext.ErrorLogs, errorLog)
+						} else {
+							slog.WarnContext(ctx, fmt.Sprintf("Currently error log outputs to %s. Log monitoring "+
+								"is disabled while applying a config; "+"log errors to file to enable error monitoring",
+								directive.Args[0]), "error_log", directive.Args[0])
+						}
+					case "root":
+						rootFiles := ncp.rootFiles(ctx, directive.Args[0])
+						nginxConfigContext.Files = append(nginxConfigContext.Files, rootFiles...)
+					case "ssl_certificate", "proxy_ssl_certificate", "ssl_client_certificate", "ssl_trusted_certificate":
+						sslCertFile := ncp.sslCert(ctx, directive.Args[0], rootDir)
+						if !ncp.isDuplicateFile(nginxConfigContext.Files, sslCertFile) {
+							nginxConfigContext.Files = append(nginxConfigContext.Files, sslCertFile)
+						}
 
-				case "app_protect_security_log":
-					if len(directive.Args) > 1 {
-						syslogArg := directive.Args[1]
-						re := regexp.MustCompile(`syslog:server=([\S]+)`)
-						matches := re.FindStringSubmatch(syslogArg)
-						if len(matches) > 1 {
-							syslogServer := matches[1]
-							if !napSyslogServersFound[syslogServer] {
-								nginxConfigContext.NAPSysLogServers = append(
-									nginxConfigContext.NAPSysLogServers,
-									syslogServer,
-								)
-								napSyslogServersFound[syslogServer] = true
-								slog.DebugContext(ctx, "Found NAP syslog server", "address", syslogServer)
+					case "app_protect_security_log":
+						if len(directive.Args) > 1 {
+							syslogArg := directive.Args[1]
+							re := regexp.MustCompile(`syslog:server=([\S]+)`)
+							matches := re.FindStringSubmatch(syslogArg)
+							if len(matches) > 1 {
+								syslogServer := matches[1]
+								if !napSyslogServersFound[syslogServer] {
+									nginxConfigContext.NAPSysLogServers = append(
+										nginxConfigContext.NAPSysLogServers,
+										syslogServer,
+									)
+									napSyslogServersFound[syslogServer] = true
+									slog.DebugContext(ctx, "Found NAP syslog server", "address", syslogServer)
+								}
 							}
 						}
 					}
-				}
 
-				return nil
-			},
-		)
-		if err != nil {
-			return nginxConfigContext, fmt.Errorf("traverse nginx config: %w", err)
-		}
+					return nil
+				},
+			)
+			if err != nil {
+				return nginxConfigContext, fmt.Errorf("traverse nginx config: %w", err)
+			}
 
-		stubStatus := ncp.crossplaneConfigTraverseAPIDetails(ctx, &conf, ncp.apiCallback, stubStatusAPIDirective)
-		if stubStatus.URL != "" {
-			nginxConfigContext.StubStatus = stubStatus
-		}
+			stubStatus := ncp.crossplaneConfigTraverseAPIDetails(ctx, &conf, ncp.apiCallback, stubStatusAPIDirective)
+			if stubStatus.URL != "" {
+				nginxConfigContext.StubStatus = stubStatus
+			}
 
-		plusAPI := ncp.crossplaneConfigTraverseAPIDetails(ctx, &conf, ncp.apiCallback, plusAPIDirective)
-		if plusAPI.URL != "" {
-			nginxConfigContext.PlusAPI = plusAPI
-		}
+			plusAPI := ncp.crossplaneConfigTraverseAPIDetails(ctx, &conf, ncp.apiCallback, plusAPIDirective)
+			if plusAPI.URL != "" {
+				nginxConfigContext.PlusAPI = plusAPI
+			}
 
-		fileMeta, err := files.FileMeta(conf.File)
-		if err != nil {
-			slog.WarnContext(ctx, "Unable to get file metadata", "file_name", conf.File, "error", err)
+			fileMeta, err := files.FileMeta(conf.File)
+			if err != nil {
+				slog.WarnContext(ctx, "Unable to get file metadata", "file_name", conf.File, "error", err)
+			} else {
+				nginxConfigContext.Files = append(nginxConfigContext.Files, &mpi.File{FileMeta: fileMeta})
+			}
 		} else {
-			nginxConfigContext.Files = append(nginxConfigContext.Files, &mpi.File{FileMeta: fileMeta})
+			slog.WarnContext(ctx, "File in NGINX config not in allowed directories, excluding from config",
+				"file", conf.File)
 		}
 	}
-
 	return nginxConfigContext, nil
 }
 
