@@ -449,7 +449,7 @@ func getConfigFilePaths() []string {
 	if err == nil {
 		paths = append(paths, path)
 	} else {
-		slog.Warn("Unable to determine process's current directory")
+		slog.Warn("Unable to determine process's current directory", "error", err)
 	}
 
 	return paths
@@ -537,7 +537,7 @@ func resolveEnvironmentVariableLabels() map[string]string {
 			if len(splitLabel) == KeyValueNumber {
 				envLabels[splitLabel[0]] = splitLabel[1]
 			} else {
-				slog.Warn("Unable to parse label: " + label)
+				slog.Warn("Unable to parse label ", "label", label)
 			}
 		}
 	}
