@@ -88,7 +88,7 @@ func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *mpi.Instance)
 	return ncp.createNginxConfigContext(ctx, instance, payload)
 }
 
-// nolint: cyclop,revive,gocognit
+// nolint: cyclop,revive,gocognit, nestif
 func (ncp *NginxConfigParser) createNginxConfigContext(
 	ctx context.Context,
 	instance *mpi.Instance,
@@ -138,7 +138,8 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 					case "root":
 						rootFiles := ncp.rootFiles(ctx, directive.Args[0])
 						nginxConfigContext.Files = append(nginxConfigContext.Files, rootFiles...)
-					case "ssl_certificate", "proxy_ssl_certificate", "ssl_client_certificate", "ssl_trusted_certificate":
+					case "ssl_certificate", "proxy_ssl_certificate", "ssl_client_certificate",
+						"ssl_trusted_certificate":
 						sslCertFile := ncp.sslCert(ctx, directive.Args[0], rootDir)
 						if !ncp.isDuplicateFile(nginxConfigContext.Files, sslCertFile) {
 							nginxConfigContext.Files = append(nginxConfigContext.Files, sslCertFile)
@@ -191,6 +192,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 				"file", conf.File)
 		}
 	}
+
 	return nginxConfigContext, nil
 }
 
