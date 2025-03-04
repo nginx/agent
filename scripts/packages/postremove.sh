@@ -4,16 +4,6 @@
 # shellcheck source=/dev/null
 . /etc/os-release
 
-stop_agent_freebsd() {
-    echo "Stopping nginx-agent service"
-    service nginx-agent onestop >/dev/null 2>&1 || true
-}
-
-disable_agent_freebsd() {
-    echo "Disabling nginx-agent service"
-    sysrc -x nginx_agent_enable >/dev/null 2>&1 || true
-}
-
 stop_agent_systemd() {
     echo "Stopping nginx-agent service"
     systemctl stop nginx-agent >/dev/null 2>&1 || true
@@ -35,11 +25,6 @@ cleanup() {
 }
 
 case "$ID" in
-    freebsd)
-        stop_agent_freebsd
-        disable_agent_freebsd
-        cleanup
-        ;;
     debian|ubuntu)
         if [ "$1" = "remove" ]; then
             stop_agent_systemd

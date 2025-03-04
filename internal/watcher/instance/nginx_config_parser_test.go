@@ -14,6 +14,8 @@ import (
 	"os"
 	"testing"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/pkg/files"
@@ -907,23 +909,30 @@ func TestNginxConfigParser_ignoreLog(t *testing.T) {
 			expectedLog: "",
 		},
 		{
-			name:        "Test 7: exclude logs set, log path should be excluded",
+			name:        "Test 7: exclude logs set, log path should be excluded - regex",
 			logPath:     "/tmp/var/log/nginx/alert.log",
-			excludeLogs: []string{"/tmp/var/log/nginx/[^ace]*", "/tmp/var/log/nginx/a[^c]*"},
+			excludeLogs: []string{"\\.log$"},
 			expected:    true,
 			expectedLog: "",
 		},
 		{
-			name:        "Test 8: exclude logs set, log path is allowed",
+			name:        "Test 8: exclude logs set, log path should be excluded - full path",
+			logPath:     "/tmp/var/log/nginx/alert.log",
+			excludeLogs: []string{"/tmp/var/log/nginx/alert.log"},
+			expected:    true,
+			expectedLog: "",
+		},
+		{
+			name:        "Test 9: exclude logs set, log path is allowed",
 			logPath:     "/tmp/var/log/nginx/access.log",
-			excludeLogs: []string{"/tmp/var/log/nginx/[^ace]*", "/tmp/var/log/nginx/a[^c]*"},
+			excludeLogs: []string{"/tmp/var/log/nginx/alert.log", "\\.swp$"},
 			expected:    false,
 			expectedLog: "",
 		},
 		{
-			name:        "Test 9: log path outside allowed dir",
+			name:        "Test 10: log path outside allowed dir",
 			logPath:     "/var/log/nginx/access.log",
-			excludeLogs: []string{"/var/log/nginx/[^ace]*", "/var/log/nginx/a[^c]*"},
+			excludeLogs: []string{"/tmp/var/log/nginx/alert.log", "\\.swp$"},
 			expected:    false,
 			expectedLog: "Log being read is outside of allowed directories",
 		},
@@ -957,6 +966,94 @@ func TestNginxConfigParser_ignoreLog(t *testing.T) {
 			helpers.ValidateLog(t, test.expectedLog, logBuf)
 
 			logBuf.Reset()
+		})
+	}
+}
+
+func TestNginxConfigParser_checkDuplicate(t *testing.T) {
+	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
+	fileContentNew := []byte("some test data")
+	fileHash := files.GenerateHash(fileContent)
+	fileHashNew := files.GenerateHash(fileContentNew)
+
+	tests := []struct {
+		file     *mpi.File
+		name     string
+		expected bool
+	}{
+		{
+			name: "Test 1: File already in files",
+			file: &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name:         "/etc/nginx/certs/nginx-repo.crt",
+					Hash:         fileHashNew,
+					ModifiedTime: timestamppb.Now(),
+					Permissions:  "0640",
+					Size:         0,
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Test 2: File not in files",
+			file: &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name:         "/etc/nginx/certs/nginx-repo-new.crt",
+					Hash:         fileHashNew,
+					ModifiedTime: timestamppb.Now(),
+					Permissions:  "0640",
+					Size:         0,
+				},
+			},
+			expected: false,
+		},
+	}
+
+	nginxConfigContextFiles := model.NginxConfigContext{
+		Files: []*mpi.File{
+			{
+				FileMeta: &mpi.FileMeta{
+					Name:         "/etc/nginx/certs/nginx-repo.crt",
+					Hash:         fileHash,
+					ModifiedTime: timestamppb.Now(),
+					Permissions:  "0640",
+					Size:         0,
+				},
+			},
+			{
+				FileMeta: &mpi.FileMeta{
+					Name:         "/etc/nginx/keys/nginx-repo.key",
+					Hash:         fileHash,
+					ModifiedTime: timestamppb.Now(),
+					Permissions:  "0640",
+					Size:         0,
+				},
+			},
+			{
+				FileMeta: &mpi.FileMeta{
+					Name:         "/etc/nginx/keys/inline_key.pem",
+					Hash:         fileHash,
+					ModifiedTime: timestamppb.Now(),
+					Permissions:  "0640",
+					Size:         0,
+				},
+			},
+			{
+				FileMeta: &mpi.FileMeta{
+					Name:         "/etc/nginx/certs/inline_cert.pem",
+					Hash:         fileHash,
+					ModifiedTime: timestamppb.Now(),
+					Permissions:  "0640",
+					Size:         0,
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		ncp := NewNginxConfigParser(types.AgentConfig())
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.expected, ncp.isDuplicateFile(nginxConfigContextFiles.Files, test.file))
 		})
 	}
 }

@@ -139,7 +139,10 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 					nginxConfigContext.Files = append(nginxConfigContext.Files, rootFiles...)
 				case "ssl_certificate", "proxy_ssl_certificate", "ssl_client_certificate", "ssl_trusted_certificate":
 					sslCertFile := ncp.sslCert(ctx, directive.Args[0], rootDir)
-					nginxConfigContext.Files = append(nginxConfigContext.Files, sslCertFile)
+					if !ncp.isDuplicateFile(nginxConfigContext.Files, sslCertFile) {
+						nginxConfigContext.Files = append(nginxConfigContext.Files, sslCertFile)
+					}
+
 				case "app_protect_security_log":
 					if len(directive.Args) > 1 {
 						syslogArg := directive.Args[1]
@@ -195,18 +198,34 @@ func (ncp *NginxConfigParser) ignoreLog(logPath string) bool {
 		return true
 	}
 
-	for _, path := range ncp.agentConfig.DataPlaneConfig.Nginx.ExcludeLogs {
-		ok, err := filepath.Match(path, logPath)
-		if err != nil {
-			slog.Error("Invalid path for excluding log", "log_path", path)
-		} else if ok {
-			slog.Info("Excluding log as specified in config", "log_path", logPath)
-			return true
-		}
+	if ncp.isExcludeLog(logLower) {
+		return true
 	}
 
 	if !ncp.agentConfig.IsDirectoryAllowed(logLower) {
 		slog.Warn("Log being read is outside of allowed directories", "log_path", logPath)
+	}
+
+	return false
+}
+
+func (ncp *NginxConfigParser) isExcludeLog(path string) bool {
+	for _, pattern := range ncp.agentConfig.DataPlaneConfig.Nginx.ExcludeLogs {
+		_, compileErr := regexp.Compile(pattern)
+		if compileErr != nil {
+			slog.Error("Invalid path for excluding log", "log_path", pattern)
+			continue
+		}
+
+		ok, err := regexp.MatchString(pattern, path)
+		if err != nil {
+			slog.Error("Invalid path for excluding log", "file_path", pattern)
+			continue
+		} else if ok {
+			slog.Info("Excluding log as specified in config", "log_path", path)
+
+			return true
+		}
 	}
 
 	return false
@@ -349,6 +368,16 @@ func (ncp *NginxConfigParser) sslCert(ctx context.Context, file, rootDir string)
 	return sslCertFile
 }
 
+func (ncp *NginxConfigParser) isDuplicateFile(nginxConfigContextFiles []*mpi.File, newFile *mpi.File) bool {
+	for _, nginxConfigContextFile := range nginxConfigContextFiles {
+		if nginxConfigContextFile.GetFileMeta().GetName() == newFile.GetFileMeta().GetName() {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (ncp *NginxConfigParser) crossplaneConfigTraverse(
 	ctx context.Context,
 	root *crossplane.Config,
@@ -479,14 +508,14 @@ func (ncp *NginxConfigParser) apiCallback(ctx context.Context, parent,
 func (ncp *NginxConfigParser) pingAPIEndpoint(ctx context.Context, statusAPIDetail *model.APIDetails,
 	apiType string,
 ) bool {
-	httpClient := http.Client{}
+	httpClient := http.DefaultClient
 	listen := statusAPIDetail.Listen
 	statusAPI := statusAPIDetail.URL
 
 	if strings.HasPrefix(listen, "unix:") {
 		httpClient = ncp.SocketClient(strings.TrimPrefix(listen, "unix:"))
 	} else {
-		httpClient = http.Client{Timeout: ncp.agentConfig.Client.Grpc.KeepAlive.Timeout}
+		httpClient.Timeout = ncp.agentConfig.Client.HTTP.Timeout
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, statusAPI, nil)
 	if err != nil {
@@ -676,8 +705,8 @@ func (ncp *NginxConfigParser) isPort(value string) bool {
 	return err == nil && port >= 1 && port <= 65535
 }
 
-func (ncp *NginxConfigParser) SocketClient(socketPath string) http.Client {
-	return http.Client{
+func (ncp *NginxConfigParser) SocketClient(socketPath string) *http.Client {
+	return &http.Client{
 		Timeout: ncp.agentConfig.Client.Grpc.KeepAlive.Timeout,
 		Transport: &http.Transport{
 			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {

@@ -133,10 +133,27 @@ func TestFileWatcherService_removeWatcher(t *testing.T) {
 }
 
 func TestFileWatcherService_isEventSkippable(t *testing.T) {
-	assert.False(t, isEventSkippable(fsnotify.Event{Name: "test.conf"}))
-	assert.True(t, isEventSkippable(fsnotify.Event{Name: "test.swp"}))
-	assert.True(t, isEventSkippable(fsnotify.Event{Name: "test.swx"}))
-	assert.True(t, isEventSkippable(fsnotify.Event{Name: "test.conf~"}))
+	config := types.AgentConfig()
+	config.Watchers.FileWatcher.ExcludeFiles = []string{"^/var/log/nginx/.*.log$", "\\.*swp$", "\\.*swx$", ".*~$"}
+	fws := NewFileWatcherService(config)
+
+	assert.False(t, fws.isEventSkippable(fsnotify.Event{Name: "test.conf"}))
+	assert.True(t, fws.isEventSkippable(fsnotify.Event{Name: "test.swp"}))
+	assert.True(t, fws.isEventSkippable(fsnotify.Event{Name: "test.swx"}))
+	assert.True(t, fws.isEventSkippable(fsnotify.Event{Name: "test.conf~"}))
+	assert.True(t, fws.isEventSkippable(fsnotify.Event{Name: "/var/log/nginx/access.log"}))
+}
+
+func TestFileWatcherService_isExcludedFile(t *testing.T) {
+	excludeFiles := []string{"/var/log/nginx/access.log", "^.*(\\.log|.swx|~|.swp)$"}
+
+	assert.True(t, isExcludedFile("/var/log/nginx/error.log", excludeFiles))
+	assert.True(t, isExcludedFile("/var/log/nginx/error.swx", excludeFiles))
+	assert.True(t, isExcludedFile("test.swp", excludeFiles))
+	assert.True(t, isExcludedFile("/var/log/nginx/error~", excludeFiles))
+	assert.True(t, isExcludedFile("/var/log/nginx/access.log", excludeFiles))
+	assert.False(t, isExcludedFile("/etc/nginx/nginx.conf", excludeFiles))
+	assert.False(t, isExcludedFile("/var/log/accesslog", excludeFiles))
 }
 
 func TestFileWatcherService_Watch(t *testing.T) {

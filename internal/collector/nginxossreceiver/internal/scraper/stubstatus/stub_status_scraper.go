@@ -59,6 +59,8 @@ func (s *NginxStubStatusScraper) ID() component.ID {
 
 func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) error {
 	httpClient := http.DefaultClient
+	httpClient.Timeout = s.cfg.ClientConfig.Timeout
+
 	if strings.HasPrefix(s.cfg.APIDetails.Listen, "unix:") {
 		httpClient.Transport = &http.Transport{
 			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {

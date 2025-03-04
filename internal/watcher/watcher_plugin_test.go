@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/watcher/credentials"
+
 	"github.com/nginx/agent/v3/internal/bus/busfakes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -71,11 +73,16 @@ func TestWatcher_Init(t *testing.T) {
 		InstanceHealth: []*mpi.InstanceHealth{},
 	}
 
+	credentialUpdateMessage := credentials.CredentialUpdateMessage{
+		CorrelationID: logger.GenerateCorrelationID(),
+	}
+
 	watcherPlugin.instanceUpdatesChannel <- instanceUpdatesMessage
 	watcherPlugin.nginxConfigContextChannel <- nginxConfigContextMessage
 	watcherPlugin.instanceHealthChannel <- instanceHealthMessage
+	watcherPlugin.credentialUpdatesChannel <- credentialUpdateMessage
 
-	assert.Eventually(t, func() bool { return len(messagePipe.GetMessages()) == 5 }, 2*time.Second, 10*time.Millisecond)
+	assert.Eventually(t, func() bool { return len(messagePipe.GetMessages()) == 6 }, 2*time.Second, 10*time.Millisecond)
 	messages = messagePipe.GetMessages()
 
 	assert.Equal(
@@ -103,11 +110,32 @@ func TestWatcher_Init(t *testing.T) {
 		&bus.Message{Topic: bus.InstanceHealthTopic, Data: instanceHealthMessage.InstanceHealth},
 		messages[4],
 	)
+	assert.Equal(t,
+		&bus.Message{Topic: bus.CredentialUpdatedTopic, Data: nil},
+		messages[5])
 }
 
 func TestWatcher_Info(t *testing.T) {
 	watcherPlugin := NewWatcher(types.AgentConfig())
 	assert.Equal(t, &bus.Info{Name: "watcher"}, watcherPlugin.Info())
+}
+
+func TestWatcher_Process_CredentialUpdatedTopic(t *testing.T) {
+	ctx := context.Background()
+
+	watcherPlugin := NewWatcher(types.AgentConfig())
+
+	messagePipe := busfakes.NewFakeMessagePipe()
+
+	err := watcherPlugin.Init(ctx, messagePipe)
+	require.NoError(t, err)
+
+	message := &bus.Message{
+		Topic: bus.CredentialUpdatedTopic,
+		Data:  nil,
+	}
+
+	watcherPlugin.Process(ctx, message)
 }
 
 func TestWatcher_Process_ConfigApplyRequestTopic(t *testing.T) {
@@ -201,6 +229,7 @@ func TestWatcher_Subscriptions(t *testing.T) {
 	assert.Equal(
 		t,
 		[]string{
+			bus.CredentialUpdatedTopic,
 			bus.ConfigApplyRequestTopic,
 			bus.ConfigApplySuccessfulTopic,
 			bus.ConfigApplyCompleteTopic,

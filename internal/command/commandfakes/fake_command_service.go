@@ -50,6 +50,11 @@ type FakeCommandService struct {
 	subscribeArgsForCall []struct {
 		arg1 context.Context
 	}
+	UpdateClientStub        func(v1.CommandServiceClient)
+	updateClientMutex       sync.RWMutex
+	updateClientArgsForCall []struct {
+		arg1 v1.CommandServiceClient
+	}
 	UpdateDataPlaneHealthStub        func(context.Context, []*v1.InstanceHealth) error
 	updateDataPlaneHealthMutex       sync.RWMutex
 	updateDataPlaneHealthArgsForCall []struct {
@@ -290,6 +295,38 @@ func (fake *FakeCommandService) SubscribeArgsForCall(i int) context.Context {
 	return argsForCall.arg1
 }
 
+func (fake *FakeCommandService) UpdateClient(arg1 v1.CommandServiceClient) {
+	fake.updateClientMutex.Lock()
+	fake.updateClientArgsForCall = append(fake.updateClientArgsForCall, struct {
+		arg1 v1.CommandServiceClient
+	}{arg1})
+	stub := fake.UpdateClientStub
+	fake.recordInvocation("UpdateClient", []interface{}{arg1})
+	fake.updateClientMutex.Unlock()
+	if stub != nil {
+		fake.UpdateClientStub(arg1)
+	}
+}
+
+func (fake *FakeCommandService) UpdateClientCallCount() int {
+	fake.updateClientMutex.RLock()
+	defer fake.updateClientMutex.RUnlock()
+	return len(fake.updateClientArgsForCall)
+}
+
+func (fake *FakeCommandService) UpdateClientCalls(stub func(v1.CommandServiceClient)) {
+	fake.updateClientMutex.Lock()
+	defer fake.updateClientMutex.Unlock()
+	fake.UpdateClientStub = stub
+}
+
+func (fake *FakeCommandService) UpdateClientArgsForCall(i int) v1.CommandServiceClient {
+	fake.updateClientMutex.RLock()
+	defer fake.updateClientMutex.RUnlock()
+	argsForCall := fake.updateClientArgsForCall[i]
+	return argsForCall.arg1
+}
+
 func (fake *FakeCommandService) UpdateDataPlaneHealth(arg1 context.Context, arg2 []*v1.InstanceHealth) error {
 	var arg2Copy []*v1.InstanceHealth
 	if arg2 != nil {
@@ -430,6 +467,8 @@ func (fake *FakeCommandService) Invocations() map[string][][]interface{} {
 	defer fake.sendDataPlaneResponseMutex.RUnlock()
 	fake.subscribeMutex.RLock()
 	defer fake.subscribeMutex.RUnlock()
+	fake.updateClientMutex.RLock()
+	defer fake.updateClientMutex.RUnlock()
 	fake.updateDataPlaneHealthMutex.RLock()
 	defer fake.updateDataPlaneHealthMutex.RUnlock()
 	fake.updateDataPlaneStatusMutex.RLock()
