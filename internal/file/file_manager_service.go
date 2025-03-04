@@ -328,6 +328,7 @@ func (fms *FileManagerService) ClearCache() {
 // nolint:revive,cyclop
 func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) error {
 	slog.InfoContext(ctx, "Rolling back config for instance", "instanceid", instanceID)
+	areFilesUpdated := false
 	fms.filesMutex.Lock()
 	defer fms.filesMutex.Unlock()
 	for _, file := range fms.fileActions {
@@ -339,6 +340,7 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 
 			// currentFilesOnDisk needs to be updated after rollback action is performed
 			delete(fms.currentFilesOnDisk, file.GetFileMeta().GetName())
+			areFilesUpdated = true
 			manifestFileErr := fms.UpdateManifestFile(fms.currentFilesOnDisk)
 			if manifestFileErr != nil {
 				return manifestFileErr
@@ -355,6 +357,7 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 			// currentFilesOnDisk needs to be updated after rollback action is performed
 			file.GetFileMeta().Hash = files.GenerateHash(content)
 			fms.currentFilesOnDisk[file.GetFileMeta().GetName()] = file
+			areFilesUpdated = true
 			manifestFileErr := fms.UpdateManifestFile(fms.currentFilesOnDisk)
 			if manifestFileErr != nil {
 				return manifestFileErr
@@ -363,6 +366,13 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 			fallthrough
 		default:
 			slog.DebugContext(ctx, "File Action not implemented")
+		}
+	}
+
+	if areFilesUpdated {
+		manifestFileErr := fms.UpdateManifestFile(fms.currentFilesOnDisk)
+		if manifestFileErr != nil {
+			return manifestFileErr
 		}
 	}
 
@@ -532,7 +542,7 @@ func (fms *FileManagerService) UpdateCurrentFilesOnDisk(currentFiles map[string]
 }
 
 func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.File) (err error) {
-	manifestFiles := fms.ConvertToManifestFileMap(currentFiles)
+	manifestFiles := fms.convertToManifestFileMap(currentFiles)
 	manifestJSON, err := json.MarshalIndent(manifestFiles, "", "  ")
 	if err != nil {
 		slog.Error("Unable to marshal manifest file json ", "err", err)
@@ -581,12 +591,12 @@ func (fms *FileManagerService) getManifestFile(currentFiles map[string]*mpi.File
 		return currentFiles
 	}
 
-	fileMap := fms.ConvertToFileMap(manifestFiles)
+	fileMap := fms.convertToFileMap(manifestFiles)
 
 	return fileMap
 }
 
-func (fms *FileManagerService) ConvertToManifestFileMap(
+func (fms *FileManagerService) convertToManifestFileMap(
 	currentFiles map[string]*mpi.File,
 ) map[string]*model.ManifestFile {
 	manifestFileMap := make(map[string]*model.ManifestFile)
@@ -595,14 +605,14 @@ func (fms *FileManagerService) ConvertToManifestFileMap(
 		if file == nil || file.GetFileMeta() == nil {
 			continue
 		}
-		manifestFile := ConvertToManifestFile(file)
+		manifestFile := fms.convertToManifestFile(file)
 		manifestFileMap[name] = manifestFile
 	}
 
 	return manifestFileMap
 }
 
-func ConvertToManifestFile(file *mpi.File) *model.ManifestFile {
+func (fms *FileManagerService) convertToManifestFile(file *mpi.File) *model.ManifestFile {
 	return &model.ManifestFile{
 		ManifestFileMeta: &model.ManifestFileMeta{
 			Name: file.GetFileMeta().GetName(),
@@ -612,17 +622,17 @@ func ConvertToManifestFile(file *mpi.File) *model.ManifestFile {
 	}
 }
 
-func (fms *FileManagerService) ConvertToFileMap(manifestFiles map[string]*model.ManifestFile) map[string]*mpi.File {
+func (fms *FileManagerService) convertToFileMap(manifestFiles map[string]*model.ManifestFile) map[string]*mpi.File {
 	currentFileMap := make(map[string]*mpi.File)
 	for name, manifestFile := range manifestFiles {
-		currentFile := ConvertToFile(manifestFile)
+		currentFile := fms.convertToFile(manifestFile)
 		currentFileMap[name] = currentFile
 	}
 
 	return currentFileMap
 }
 
-func ConvertToFile(manifestFile *model.ManifestFile) *mpi.File {
+func (fms *FileManagerService) convertToFile(manifestFile *model.ManifestFile) *mpi.File {
 	return &mpi.File{
 		FileMeta: &mpi.FileMeta{
 			Name: manifestFile.ManifestFileMeta.Name,
