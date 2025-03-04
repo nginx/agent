@@ -11,6 +11,10 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/nginx/agent/v3/internal/grpc"
+
+	"github.com/nginx/agent/v3/internal/watcher/credentials"
+
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 
 	"github.com/nginx/agent/v3/internal/watcher/file"
@@ -34,10 +38,12 @@ type (
 		instanceWatcherService             instanceWatcherServiceInterface
 		healthWatcherService               *health.HealthWatcherService
 		fileWatcherService                 *file.FileWatcherService
+		credentialWatcherService           credentialWatcherServiceInterface
 		instanceUpdatesChannel             chan instance.InstanceUpdatesMessage
 		nginxConfigContextChannel          chan instance.NginxConfigContextMessage
 		instanceHealthChannel              chan health.InstanceHealthMessage
 		fileUpdatesChannel                 chan file.FileUpdateMessage
+		credentialUpdatesChannel           chan credentials.CredentialUpdateMessage
 		cancel                             context.CancelFunc
 		instancesWithConfigApplyInProgress []string
 		watcherMutex                       sync.Mutex
@@ -52,6 +58,14 @@ type (
 		ReparseConfig(ctx context.Context, instanceID string)
 		ReparseConfigs(ctx context.Context)
 	}
+
+	credentialWatcherServiceInterface interface {
+		Watch(
+			ctx context.Context,
+			credentialUpdateChannel chan<- credentials.CredentialUpdateMessage,
+		)
+		SetEnabled(enabled bool)
+	}
 )
 
 var _ bus.Plugin = (*Watcher)(nil)
@@ -62,10 +76,12 @@ func NewWatcher(agentConfig *config.Config) *Watcher {
 		instanceWatcherService:             instance.NewInstanceWatcherService(agentConfig),
 		healthWatcherService:               health.NewHealthWatcherService(agentConfig),
 		fileWatcherService:                 file.NewFileWatcherService(agentConfig),
+		credentialWatcherService:           credentials.NewCredentialWatcherService(agentConfig),
 		instanceUpdatesChannel:             make(chan instance.InstanceUpdatesMessage),
 		nginxConfigContextChannel:          make(chan instance.NginxConfigContextMessage),
 		instanceHealthChannel:              make(chan health.InstanceHealthMessage),
 		fileUpdatesChannel:                 make(chan file.FileUpdateMessage),
+		credentialUpdatesChannel:           make(chan credentials.CredentialUpdateMessage),
 		instancesWithConfigApplyInProgress: []string{},
 		watcherMutex:                       sync.Mutex{},
 	}
@@ -82,6 +98,7 @@ func (w *Watcher) Init(ctx context.Context, messagePipe bus.MessagePipeInterface
 
 	go w.instanceWatcherService.Watch(watcherContext, w.instanceUpdatesChannel, w.nginxConfigContextChannel)
 	go w.healthWatcherService.Watch(watcherContext, w.instanceHealthChannel)
+	go w.credentialWatcherService.Watch(watcherContext, w.credentialUpdatesChannel)
 
 	if w.agentConfig.IsFeatureEnabled(pkgConfig.FeatureFileWatcher) {
 		go w.fileWatcherService.Watch(watcherContext, w.fileUpdatesChannel)
@@ -110,6 +127,8 @@ func (*Watcher) Info() *bus.Info {
 
 func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
+	case bus.CredentialUpdatedTopic:
+		w.handleCredentialUpdate(ctx)
 	case bus.ConfigApplyRequestTopic:
 		w.handleConfigApplyRequest(ctx, msg)
 	case bus.ConfigApplySuccessfulTopic:
@@ -125,6 +144,7 @@ func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
 
 func (*Watcher) Subscriptions() []string {
 	return []string{
+		bus.CredentialUpdatedTopic,
 		bus.ConfigApplyRequestTopic,
 		bus.ConfigApplySuccessfulTopic,
 		bus.ConfigApplyCompleteTopic,
@@ -154,6 +174,7 @@ func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message
 	w.watcherMutex.Lock()
 	defer w.watcherMutex.Unlock()
 	w.instancesWithConfigApplyInProgress = append(w.instancesWithConfigApplyInProgress, instanceID)
+
 	w.fileWatcherService.SetEnabled(false)
 }
 
@@ -175,6 +196,7 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 			return element == instanceID
 		},
 	)
+
 	w.fileWatcherService.SetEnabled(true)
 	w.watcherMutex.Unlock()
 
@@ -206,7 +228,25 @@ func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Messag
 			return element == instanceID
 		},
 	)
+
 	w.fileWatcherService.SetEnabled(true)
+}
+
+func (w *Watcher) handleCredentialUpdate(ctx context.Context) {
+	slog.DebugContext(ctx, "Received credential update topic")
+
+	w.watcherMutex.Lock()
+	conn, err := grpc.NewGrpcConnection(ctx, w.agentConfig)
+	if err != nil {
+		slog.ErrorContext(ctx, "Unable to create new grpc connection", "error", err)
+		w.watcherMutex.Unlock()
+
+		return
+	}
+	w.watcherMutex.Unlock()
+	w.messagePipe.Process(ctx, &bus.Message{
+		Topic: bus.ConnectionResetTopic, Data: conn,
+	})
 }
 
 func (w *Watcher) monitorWatchers(ctx context.Context) {
@@ -214,6 +254,12 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
+		case message := <-w.credentialUpdatesChannel:
+			slog.DebugContext(ctx, "Received credential update event")
+			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
+			w.messagePipe.Process(newCtx, &bus.Message{
+				Topic: bus.CredentialUpdatedTopic, Data: nil,
+			})
 		case message := <-w.instanceUpdatesChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 			w.handleInstanceUpdates(newCtx, message)
@@ -244,7 +290,6 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 			w.messagePipe.Process(newCtx, &bus.Message{
 				Topic: bus.InstanceHealthTopic, Data: message.InstanceHealth,
 			})
-
 		case message := <-w.fileUpdatesChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 			// Running this in a separate go routine otherwise we get into a deadlock

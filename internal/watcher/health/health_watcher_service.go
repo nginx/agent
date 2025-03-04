@@ -61,7 +61,8 @@ func (hw *HealthWatcherService) AddHealthWatcher(instances []*mpi.Instance) {
 			hw.watchers[instance.GetInstanceMeta().GetInstanceId()] = watcher
 		case mpi.InstanceMeta_INSTANCE_TYPE_AGENT:
 		case mpi.InstanceMeta_INSTANCE_TYPE_UNSPECIFIED,
-			mpi.InstanceMeta_INSTANCE_TYPE_UNIT:
+			mpi.InstanceMeta_INSTANCE_TYPE_UNIT,
+			mpi.InstanceMeta_INSTANCE_TYPE_NGINX_APP_PROTECT:
 			fallthrough
 		default:
 			slog.Warn("Health watcher not implemented", "instance_type",

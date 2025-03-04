@@ -98,11 +98,13 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 	sendDataPlaneStatus := func() (*mpi.UpdateDataPlaneStatusResponse, error) {
 		slog.DebugContext(ctx, "Sending data plane status update request", "request", request,
 			"parent_correlation_id", correlationID)
+
+		cs.subscribeClientMutex.Lock()
 		if cs.commandServiceClient == nil {
 			return nil, errors.New("command service client is not initialized")
 		}
-
 		response, updateError := cs.commandServiceClient.UpdateDataPlaneStatus(ctx, request)
+		cs.subscribeClientMutex.Unlock()
 
 		validatedError := grpc.ValidateGrpcError(updateError)
 		if validatedError != nil {
@@ -210,6 +212,10 @@ func (cs *CommandService) CreateConnection(
 		slog.InfoContext(ctx, "No Data Plane Instance found")
 	}
 
+	if cs.isConnected.Load() {
+		return nil, errors.New("command service already connected")
+	}
+
 	request := &mpi.CreateConnectionRequest{
 		MessageMeta: &mpi.MessageMeta{
 			MessageId:     id.GenerateMessageID(),
@@ -228,7 +234,6 @@ func (cs *CommandService) CreateConnection(
 	}
 
 	slog.DebugContext(ctx, "Sending create connection request", "request", request)
-
 	response, err := backoff.RetryWithData(
 		cs.connectCallback(ctx, request),
 		backoffHelpers.Context(ctx, commonSettings),
@@ -247,6 +252,12 @@ func (cs *CommandService) CreateConnection(
 	cs.resource = resource
 
 	return response, nil
+}
+
+func (cs *CommandService) UpdateClient(client mpi.CommandServiceClient) {
+	cs.subscribeClientMutex.Lock()
+	defer cs.subscribeClientMutex.Unlock()
+	cs.commandServiceClient = client
 }
 
 // Retry callback for sending a data plane response to the Management Plane.
@@ -355,11 +366,14 @@ func (cs *CommandService) dataPlaneHealthCallback(
 ) func() (*mpi.UpdateDataPlaneHealthResponse, error) {
 	return func() (*mpi.UpdateDataPlaneHealthResponse, error) {
 		slog.DebugContext(ctx, "Sending data plane health update request", "request", request)
+
+		cs.subscribeClientMutex.Lock()
 		if cs.commandServiceClient == nil {
 			return nil, errors.New("command service client is not initialized")
 		}
 
 		response, updateError := cs.commandServiceClient.UpdateDataPlaneHealth(ctx, request)
+		cs.subscribeClientMutex.Unlock()
 
 		validatedError := grpc.ValidateGrpcError(updateError)
 
@@ -427,6 +441,7 @@ func (cs *CommandService) handleSubscribeError(ctx context.Context, err error, e
 	codeError, ok := status.FromError(err)
 
 	if ok && codeError.Code() == codes.Unavailable {
+		cs.isConnected.Store(false)
 		slog.ErrorContext(ctx, fmt.Sprintf("Failed to %s, rpc unavailable. "+
 			"Trying create connection rpc", errorMsg), "error", err)
 		_, connectionErr := cs.CreateConnection(ctx, cs.resource)
@@ -530,7 +545,9 @@ func (cs *CommandService) connectCallback(
 	request *mpi.CreateConnectionRequest,
 ) func() (*mpi.CreateConnectionResponse, error) {
 	return func() (*mpi.CreateConnectionResponse, error) {
+		cs.subscribeClientMutex.Lock()
 		response, connectErr := cs.commandServiceClient.CreateConnection(ctx, request)
+		cs.subscribeClientMutex.Unlock()
 
 		validatedError := grpc.ValidateGrpcError(connectErr)
 		if validatedError != nil {

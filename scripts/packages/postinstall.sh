@@ -4,15 +4,12 @@
 # shellcheck source=/dev/null
 . /etc/os-release
 
-if [ "$ID" = "freebsd" ]; then
-    BSD_HIER="/usr/local"
-    AGENT_EXE="${BSD_HIER}/bin/nginx-agent"
-else
-    AGENT_EXE="/usr/bin/nginx-agent"
-    BSD_HIER=""
-fi
+
+AGENT_EXE="/usr/bin/nginx-agent"
 AGENT_RUN_DIR="/var/run/nginx-agent"
 AGENT_LOG_DIR="/var/log/nginx-agent"
+AGENT_ETC_DIR="/etc/nginx-agent"
+AGENT_LIB_DIR="/var/lib/nginx-agent/"
 AGENT_UNIT_LOCATION="/etc/systemd/system"
 AGENT_UNIT_FILE="nginx-agent.service"
 AGENT_USER=$(id -nu)
@@ -107,18 +104,6 @@ create_agent_group() {
         fi
     fi
 
-    if [ "$ID" = "freebsd" ]; then
-        printf "PostInstall: Adding nginx-agent group %s\n" "${AGENT_GROUP}"
-        pw groupadd "${AGENT_GROUP}"
-
-        printf "PostInstall: Adding NGINX / agent user %s to group %s\n" "${AGENT_USER}" "${AGENT_GROUP}"
-        pw groupmod "${AGENT_GROUP}" -M "${AGENT_USER}"
-        if [ "${WORKER_USER}" ]; then
-            printf "PostInstall: Adding NGINX Worker user %s to group %s\n" "${WORKER_USER}" "${AGENT_GROUP}"
-            pw groupmod "${AGENT_GROUP}" -M "${WORKER_USER}"
-        fi
-    fi
-
     if [ "$ID" = "alpine" ]; then
         printf "PostInstall: Adding nginx-agent group %s\n" "${AGENT_GROUP}"
         addgroup "${AGENT_GROUP}"
@@ -138,6 +123,11 @@ create_run_dir() {
 
     printf "PostInstall: Modifying group ownership of NGINX Agent run directory \n"
     chown "${AGENT_USER}":"${AGENT_GROUP}" "${AGENT_RUN_DIR}"
+}
+
+update_user_groups() {
+    printf "PostInstall: Modifying group ownership of NGINX Agent directories \n"
+    chown -R "${AGENT_USER}":"${AGENT_GROUP}" "${AGENT_LOG_DIR}" "${AGENT_ETC_DIR}" "${AGENT_LIB_DIR}"
 }
 
 update_unit_file() {
@@ -168,118 +158,9 @@ update_unit_file() {
         printf "PostInstall: Set the enabled flag for the service unit\n"
         systemctl enable "${AGENT_UNIT_FILE}"
     fi
-
-    if [ "$ID" = "freebsd" ]; then
-        printf "PostInstall: Enabling NGINX Agent Service\n"
-        sysrc nginx_agent_enable=YES
-    fi
-}
-
-add_default_config_file() {
-    if [ ! -f "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf ]; then
-        printf "PostInstall: Creating default nginx-agent.conf file\n"
-        cat <<EOF > "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf
-#
-# /etc/nginx-agent/nginx-agent.conf
-#
-# Configuration file for NGINX Agent.
-#
-# This file is to track NGINX Agent configuration values that are meant to be statically set. There  
-# are additional NGINX Agent configuration values that are set via the API and NGINX Agent install script
-# which can be found in /var/lib/nginx-agent/agent-dynamic.conf. 
-
-# specify the server grpc port to connect to
-server:
-  # host of the control plane
-  host: 127.0.0.1
-  grpcPort: 54789
-  # provide servername overrides if using SNI
-  # metrics: ""
-  # command: ""
-# tls options
-tls:
-  # enable tls in the nginx-agent setup for grpcs
-  # default to enable to connect with tls connection but without client cert for mtls
-  enable: false
-  # specify the absolute path to the CA certificate file to use for verifying
-  # the server certificate (also requires 'skip_verify: false' below)
-  # by default, this will be the trusted root CAs found in the OS CA store
-  # ca: /etc/nginx-agent/ca.pem
-  # specify the absolute path to the client cert, when mtls is enabled
-  # cert: /etc/nginx-agent/client.crt
-  # specify the absolute path to the client cert key, when mtls is enabled
-  # key: /etc/nginx-agent/client.key
-  # controls whether the server certificate chain and host name are verified.
-  # for production use, see instructions for configuring TLS
-  skip_verify: true
-log:
-  # set log level (panic, fatal, error, info, debug, trace; default "info")
-  level: info
-  # set log path. if empty, don't log to file.
-  path: /var/log/nginx-agent/
-# data plane status message / 'heartbeat'
-nginx:
-  # path of NGINX logs to exclude
-  exclude_logs: ""
-  socket: "unix:/var/run/nginx-agent/nginx.sock"
-
-dataplane:
-  status:
-    # poll interval for data plane status - the frequency the NGINX Agent will query the dataplane for changes
-    poll_interval: 30s
-    # report interval for data plane status - the maximum duration to wait before syncing dataplane information if no updates have being observed
-    report_interval: 24h
-metrics:
-  # specify the size of a buffer to build before sending metrics
-  bulk_size: 20
-  # specify metrics poll interval
-  report_interval: 1m
-  collection_interval: 15s
-  mode: aggregated
-
-# OSS NGINX default config path
-# path to aux file dirs can also be added
-allowed_directories: 
-    - /etc/nginx
-    - /usr/local/etc/nginx
-    - /usr/share/nginx/modules
-    - /etc/nms
-api:
-  # default port for NGINX Agent API, this is for the server configuration of the REST API
-  port: 8081
-EOF
-    printf "PostInstall: Updating file permissions for nginx-agent.conf to 0640\n"
-    chmod 0640 "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf
-    fi
-}
-
-upgrade_config_file() {
-    if [ -f "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf ]; then
-        extensions=""
-        if grep -q "advanced_metrics:" "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf; then
-            extensions="${extensions} advanced-metrics"
-        fi
-        if grep -q "nginx_app_protect:" "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf; then
-            extensions="${extensions} nginx-app-protect"
-        fi
-        if grep -q "nap_monitoring:" "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf; then
-            extensions="${extensions} nap-monitoring"
-        fi
-        if ! grep -q "extensions:" "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf && [ "${#extensions}" -ne "0" ]; then
-            printf "PostInstall: Updating nginx-agent.conf to include extensions array\n"
-            printf "\nextensions:\n" >> "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf
-            for extension in ${extensions}; do
-                echo "  - $extension" >> "${BSD_HIER}"/etc/nginx-agent/nginx-agent.conf
-            done
-        fi
-    fi
 }
 
 restart_agent_if_required() {
-    if [ "${ID}" = "freebsd" ]; then
-        # https://github.com/freebsd/pkg/pull/2128
-        return
-    fi
     if service nginx-agent status >/dev/null 2>&1; then
         printf "PostInstall: Restarting nginx agent\n"
         service nginx-agent restart || true
@@ -291,15 +172,10 @@ summary() {
     echo " NGINX Agent package has been successfully installed."
     echo ""
     echo " Please follow the next steps to start the software:"
-    if [ "$ID" = "freebsd" ]; then
-        echo "    sudo service nginx-agent start"
-        echo ""
-    else
-        echo "    sudo systemctl start nginx-agent"
-        echo ""
-    fi
+    echo "    sudo systemctl start nginx-agent"
+    echo ""
     echo " Configuration settings can be adjusted here:"
-    echo "    ${BSD_HIER}/etc/nginx-agent/nginx-agent.conf"
+    echo "    /etc/nginx-agent/nginx-agent.conf"
     echo ""
     echo "----------------------------------------------------------------------"
 }
@@ -313,9 +189,8 @@ summary() {
     ensure_agent_path
     create_agent_group
     create_run_dir
+    update_user_groups
     update_unit_file
-    add_default_config_file
-    upgrade_config_file
     restart_agent_if_required
     summary
 }
