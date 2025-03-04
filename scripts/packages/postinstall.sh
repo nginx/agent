@@ -8,6 +8,8 @@
 AGENT_EXE="/usr/bin/nginx-agent"
 AGENT_RUN_DIR="/var/run/nginx-agent"
 AGENT_LOG_DIR="/var/log/nginx-agent"
+AGENT_ETC_DIR="/etc/nginx-agent"
+AGENT_LIB_DIR="/var/lib/nginx-agent/"
 AGENT_UNIT_LOCATION="/etc/systemd/system"
 AGENT_UNIT_FILE="nginx-agent.service"
 AGENT_USER=$(id -nu)
@@ -123,6 +125,11 @@ create_run_dir() {
     chown "${AGENT_USER}":"${AGENT_GROUP}" "${AGENT_RUN_DIR}"
 }
 
+update_user_groups() {
+    printf "PostInstall: Modifying group ownership of NGINX Agent directories \n"
+    chown -R "${AGENT_USER}":"${AGENT_GROUP}" "${AGENT_LOG_DIR}" "${AGENT_ETC_DIR}" "${AGENT_LIB_DIR}"
+}
+
 update_unit_file() {
     # Fill in data to unit file that's acquired post install
     if command -V systemctl >/dev/null 2>&1; then
@@ -182,6 +189,7 @@ summary() {
     ensure_agent_path
     create_agent_group
     create_run_dir
+    update_user_groups
     update_unit_file
     restart_agent_if_required
     summary
