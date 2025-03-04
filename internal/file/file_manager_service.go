@@ -39,11 +39,14 @@ import (
 //counterfeiter:generate . fileManagerServiceInterface
 
 const (
-	maxAttempts      = 5
+	maxAttempts = 5
+	dirPerm     = 0o755
+	filePerm    = 0o600
+)
+
+var (
 	manifestDirPath  = "/var/lib/nginx-agent"
 	manifestFilePath = manifestDirPath + "/manifest.json"
-	dirPerm          = 0o755
-	filePerm         = 0o600
 )
 
 type (
@@ -312,7 +315,7 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	}
 	// Update map of current files on disk
 	fms.UpdateCurrentFilesOnDisk(files.ConvertToMapOfFiles(fileOverview.GetFiles()))
-	manifestFileErr := fms.UpdateManifestFile(files.ConvertToMapOfFiles(fileOverview.GetFiles()))
+	manifestFileErr := fms.updateManifestFile(files.ConvertToMapOfFiles(fileOverview.GetFiles()))
 	if manifestFileErr != nil {
 		return model.Error, manifestFileErr
 	}
@@ -341,10 +344,6 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 			// currentFilesOnDisk needs to be updated after rollback action is performed
 			delete(fms.currentFilesOnDisk, file.GetFileMeta().GetName())
 			areFilesUpdated = true
-			manifestFileErr := fms.UpdateManifestFile(fms.currentFilesOnDisk)
-			if manifestFileErr != nil {
-				return manifestFileErr
-			}
 
 			continue
 		case mpi.File_FILE_ACTION_DELETE, mpi.File_FILE_ACTION_UPDATE:
@@ -358,7 +357,7 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 			file.GetFileMeta().Hash = files.GenerateHash(content)
 			fms.currentFilesOnDisk[file.GetFileMeta().GetName()] = file
 			areFilesUpdated = true
-			manifestFileErr := fms.UpdateManifestFile(fms.currentFilesOnDisk)
+			manifestFileErr := fms.updateManifestFile(fms.currentFilesOnDisk)
 			if manifestFileErr != nil {
 				return manifestFileErr
 			}
@@ -370,7 +369,7 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 	}
 
 	if areFilesUpdated {
-		manifestFileErr := fms.UpdateManifestFile(fms.currentFilesOnDisk)
+		manifestFileErr := fms.updateManifestFile(fms.currentFilesOnDisk)
 		if manifestFileErr != nil {
 			return manifestFileErr
 		}
@@ -479,7 +478,11 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles, modifiedFiles 
 	fileDiff := make(map[string]*mpi.File)  // Files that have changed, key is file name
 	fileContents := make(map[string][]byte) // contents of the file, key is file name
 
-	manifestFiles := fms.getManifestFile(currentFiles)
+	manifestFiles, manifestFileErr := fms.getManifestFile(currentFiles)
+
+	if manifestFileErr != nil {
+		return nil, nil, manifestFileErr
+	}
 	// if file is in manifestFiles but not in modified files, file has been deleted
 	// copy contents, set file action
 	for fileName, currentFile := range manifestFiles {
@@ -541,7 +544,7 @@ func (fms *FileManagerService) UpdateCurrentFilesOnDisk(currentFiles map[string]
 	}
 }
 
-func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.File) (err error) {
+func (fms *FileManagerService) updateManifestFile(currentFiles map[string]*mpi.File) (err error) {
 	manifestFiles := fms.convertToManifestFileMap(currentFiles)
 	manifestJSON, err := json.MarshalIndent(manifestFiles, "", "  ")
 	if err != nil {
@@ -572,15 +575,15 @@ func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.F
 	return nil
 }
 
-func (fms *FileManagerService) getManifestFile(currentFiles map[string]*mpi.File) map[string]*mpi.File {
+func (fms *FileManagerService) getManifestFile(currentFiles map[string]*mpi.File) (map[string]*mpi.File, error) {
 	if _, err := os.Stat(manifestFilePath); err != nil {
-		return currentFiles // Return current files if manifest file doesn't exist
+		return currentFiles, nil // Return current files if manifest directory still doesn't exist
 	}
 
 	file, err := os.ReadFile(manifestFilePath)
 	if err != nil {
 		slog.Error("Failed to read manifest file", "error", err)
-		return currentFiles
+		return nil, err
 	}
 
 	var manifestFiles map[string]*model.ManifestFile
@@ -588,12 +591,12 @@ func (fms *FileManagerService) getManifestFile(currentFiles map[string]*mpi.File
 	err = json.Unmarshal(file, &manifestFiles)
 	if err != nil {
 		slog.Error("Failed to parse manifest file", "error", err)
-		return currentFiles
+		return nil, err
 	}
 
 	fileMap := fms.convertToFileMap(manifestFiles)
 
-	return fileMap
+	return fileMap, nil
 }
 
 func (fms *FileManagerService) convertToManifestFileMap(

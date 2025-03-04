@@ -153,6 +153,12 @@ func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 
 	overview := protos.FileOverview(filePath, fileHash)
 
+	manifestDirPath = tempDir
+	manifestFilePath = manifestDirPath + "manifest.json"
+	manifestFile := helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
+	_, writeErr := manifestFile.Write(fileContent)
+	require.NoError(t, writeErr)
+
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fakeFileServiceClient.GetOverviewReturns(&mpi.GetOverviewResponse{
 		Overview: overview,
@@ -201,6 +207,12 @@ func TestFileManagerService_ConfigApply_Update(t *testing.T) {
 		},
 	}
 
+	manifestDirPath = tempDir
+	manifestFilePath = manifestDirPath + "manifest.json"
+	manifestFile := helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
+	_, writeErr = manifestFile.Write(fileContent)
+	require.NoError(t, writeErr)
+
 	overview := protos.FileOverview(tempFile.Name(), fileHash)
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
@@ -216,8 +228,6 @@ func TestFileManagerService_ConfigApply_Update(t *testing.T) {
 	agentConfig.AllowedDirectories = []string{tempDir}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig)
 	fileManagerService.UpdateCurrentFilesOnDisk(filesOnDisk)
-	manifesterr := fileManagerService.UpdateManifestFile(filesOnDisk)
-	require.NoError(t, manifesterr)
 
 	request := protos.CreateConfigApplyRequest(overview)
 
@@ -254,6 +264,12 @@ func TestFileManagerService_ConfigApply_Delete(t *testing.T) {
 			},
 		},
 	}
+
+	manifestDirPath = tempDir
+	manifestFilePath = manifestDirPath + "manifest.json"
+	manifestFile := helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
+	_, writeErr = manifestFile.Write(fileContent)
+	require.NoError(t, writeErr)
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	agentConfig := types.AgentConfig()
@@ -368,6 +384,12 @@ func TestFileManagerService_Rollback(t *testing.T) {
 
 	updateFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx_update.conf")
 	_, writeErr = updateFile.Write(newFileContent)
+	require.NoError(t, writeErr)
+
+	manifestDirPath = tempDir
+	manifestFilePath = manifestDirPath + "manifest.json"
+	manifestFile := helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
+	_, writeErr = manifestFile.Write(newFileContent)
 	require.NoError(t, writeErr)
 
 	filesCache := map[string]*mpi.File{
