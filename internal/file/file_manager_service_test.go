@@ -155,9 +155,7 @@ func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 
 	manifestDirPath = tempDir
 	manifestFilePath = manifestDirPath + "manifest.json"
-	manifestFile := helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
-	_, writeErr := manifestFile.Write(fileContent)
-	require.NoError(t, writeErr)
+	helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fakeFileServiceClient.GetOverviewReturns(&mpi.GetOverviewResponse{
@@ -209,9 +207,7 @@ func TestFileManagerService_ConfigApply_Update(t *testing.T) {
 
 	manifestDirPath = tempDir
 	manifestFilePath = manifestDirPath + "manifest.json"
-	manifestFile := helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
-	_, writeErr = manifestFile.Write(fileContent)
-	require.NoError(t, writeErr)
+	helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
 
 	overview := protos.FileOverview(tempFile.Name(), fileHash)
 
@@ -267,9 +263,7 @@ func TestFileManagerService_ConfigApply_Delete(t *testing.T) {
 
 	manifestDirPath = tempDir
 	manifestFilePath = manifestDirPath + "manifest.json"
-	manifestFile := helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
-	_, writeErr = manifestFile.Write(fileContent)
-	require.NoError(t, writeErr)
+	helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	agentConfig := types.AgentConfig()
@@ -388,9 +382,7 @@ func TestFileManagerService_Rollback(t *testing.T) {
 
 	manifestDirPath = tempDir
 	manifestFilePath = manifestDirPath + "manifest.json"
-	manifestFile := helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
-	_, writeErr = manifestFile.Write(newFileContent)
-	require.NoError(t, writeErr)
+	helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
 
 	filesCache := map[string]*mpi.File{
 		addFile.Name(): {
@@ -492,6 +484,10 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 	unmanagedErr := os.WriteFile(unmanagedFile.Name(), unmanagedFileContent, 0o600)
 	require.NoError(t, unmanagedErr)
 
+	manifestDirPath = tempDir
+	manifestFilePath = manifestDirPath + "manifest.json"
+	helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
+
 	tests := []struct {
 		expectedError   error
 		modifiedFiles   map[string]*mpi.File
@@ -528,7 +524,7 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 			},
 			expectedCache: map[string]*mpi.File{
 				deleteTestFile.Name(): {
-					FileMeta: protos.FileMeta(deleteTestFile.Name(), files.GenerateHash(fileContent)),
+					FileMeta: protos.ManifestFileMeta(deleteTestFile.Name(), files.GenerateHash(fileContent)),
 					Action:   &deleteAction,
 				},
 				updateTestFile.Name(): {
@@ -580,9 +576,10 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 			fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
+			err = fileManagerService.UpdateManifestFile(test.currentFiles)
+			require.NoError(tt, err)
 			diff, contents, fileActionErr := fileManagerService.DetermineFileActions(test.currentFiles,
 				test.modifiedFiles)
-
 			require.NoError(tt, fileActionErr)
 			assert.Equal(tt, test.expectedContent, contents)
 			assert.Equal(tt, test.expectedCache, diff)

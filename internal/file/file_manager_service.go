@@ -315,7 +315,7 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	}
 	// Update map of current files on disk
 	fms.UpdateCurrentFilesOnDisk(files.ConvertToMapOfFiles(fileOverview.GetFiles()))
-	manifestFileErr := fms.updateManifestFile(files.ConvertToMapOfFiles(fileOverview.GetFiles()))
+	manifestFileErr := fms.UpdateManifestFile(files.ConvertToMapOfFiles(fileOverview.GetFiles()))
 	if manifestFileErr != nil {
 		return model.Error, manifestFileErr
 	}
@@ -357,10 +357,6 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 			file.GetFileMeta().Hash = files.GenerateHash(content)
 			fms.currentFilesOnDisk[file.GetFileMeta().GetName()] = file
 			areFilesUpdated = true
-			manifestFileErr := fms.updateManifestFile(fms.currentFilesOnDisk)
-			if manifestFileErr != nil {
-				return manifestFileErr
-			}
 		case mpi.File_FILE_ACTION_UNSPECIFIED, mpi.File_FILE_ACTION_UNCHANGED:
 			fallthrough
 		default:
@@ -369,7 +365,7 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 	}
 
 	if areFilesUpdated {
-		manifestFileErr := fms.updateManifestFile(fms.currentFilesOnDisk)
+		manifestFileErr := fms.UpdateManifestFile(fms.currentFilesOnDisk)
 		if manifestFileErr != nil {
 			return manifestFileErr
 		}
@@ -544,7 +540,7 @@ func (fms *FileManagerService) UpdateCurrentFilesOnDisk(currentFiles map[string]
 	}
 }
 
-func (fms *FileManagerService) updateManifestFile(currentFiles map[string]*mpi.File) (err error) {
+func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.File) (err error) {
 	manifestFiles := fms.convertToManifestFileMap(currentFiles)
 	manifestJSON, err := json.MarshalIndent(manifestFiles, "", "  ")
 	if err != nil {
