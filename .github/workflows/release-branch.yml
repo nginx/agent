@@ -79,7 +79,7 @@ permissions:
 jobs:
   vars:
     name: Set workflow variables
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-22.04-amd64
     outputs:
       github_release: ${{steps.vars.outputs.github_release }}
       upload_azure: ${{steps.vars.outputs.upload_azure }}
@@ -222,7 +222,7 @@ jobs:
 
   upload-packages:
     name: Upload packages
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-22.04-amd64
     needs: [vars,release-draft,tag-release]
     permissions:
       id-token: write
