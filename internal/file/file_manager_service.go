@@ -459,7 +459,7 @@ func (fms *FileManagerService) checkAllowedDirectory(checkFiles []*mpi.File) err
 
 // DetermineFileActions compares two sets of files to determine the file action for each file. Returns a map of files
 // that have changed and a map of the contents for each updated and deleted file. Key to both maps is file path
-// nolint: revive
+// nolint: revive,cyclop
 func (fms *FileManagerService) DetermineFileActions(currentFiles, modifiedFiles map[string]*mpi.File) (
 	map[string]*mpi.File, map[string][]byte, error,
 ) {
@@ -476,7 +476,7 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles, modifiedFiles 
 
 	manifestFiles, manifestFileErr := fms.getManifestFile(currentFiles)
 
-	if manifestFileErr != nil {
+	if manifestFileErr != nil && manifestFiles == nil {
 		return nil, nil, manifestFileErr
 	}
 	// if file is in manifestFiles but not in modified files, file has been deleted
@@ -573,7 +573,7 @@ func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.F
 
 func (fms *FileManagerService) getManifestFile(currentFiles map[string]*mpi.File) (map[string]*mpi.File, error) {
 	if _, err := os.Stat(manifestFilePath); err != nil {
-		return currentFiles, nil // Return current files if manifest directory still doesn't exist
+		return currentFiles, err // Return current files if manifest directory still doesn't exist
 	}
 
 	file, err := os.ReadFile(manifestFilePath)
