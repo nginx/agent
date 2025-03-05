@@ -108,22 +108,22 @@ func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error
 		metadata.AttributeNginxConnectionsOutcomeHANDLED,
 	)
 
-	s.mb.RecordNginxHTTPConnectionsCountDataPoint(
+	s.mb.RecordNginxHTTPConnectionCountDataPoint(
 		now,
 		stats.Connections.Active,
 		metadata.AttributeNginxConnectionsOutcomeACTIVE,
 	)
-	s.mb.RecordNginxHTTPConnectionsCountDataPoint(
+	s.mb.RecordNginxHTTPConnectionCountDataPoint(
 		now,
 		stats.Connections.Reading,
 		metadata.AttributeNginxConnectionsOutcomeREADING,
 	)
-	s.mb.RecordNginxHTTPConnectionsCountDataPoint(
+	s.mb.RecordNginxHTTPConnectionCountDataPoint(
 		now,
 		stats.Connections.Writing,
 		metadata.AttributeNginxConnectionsOutcomeWRITING,
 	)
-	s.mb.RecordNginxHTTPConnectionsCountDataPoint(
+	s.mb.RecordNginxHTTPConnectionCountDataPoint(
 		now,
 		stats.Connections.Waiting,
 		metadata.AttributeNginxConnectionsOutcomeWAITING,

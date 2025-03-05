@@ -110,12 +110,12 @@ func (nps *nginxPlusScraper) recordMetrics(stats *plusapi.Stats) {
 		int64(stats.Connections.Dropped),
 		metadata.AttributeNginxConnectionsOutcomeDROPPED,
 	)
-	nps.mb.RecordNginxHTTPConnectionsCountDataPoint(
+	nps.mb.RecordNginxHTTPConnectionCountDataPoint(
 		now,
 		int64(stats.Connections.Active),
 		metadata.AttributeNginxConnectionsOutcomeACTIVE,
 	)
-	nps.mb.RecordNginxHTTPConnectionsCountDataPoint(
+	nps.mb.RecordNginxHTTPConnectionCountDataPoint(
 		now,
 		int64(stats.Connections.Idle),
 		metadata.AttributeNginxConnectionsOutcomeIDLE,
@@ -123,7 +123,7 @@ func (nps *nginxPlusScraper) recordMetrics(stats *plusapi.Stats) {
 
 	// HTTP Requests
 	nps.mb.RecordNginxHTTPRequestsDataPoint(now, int64(stats.HTTPRequests.Total), "", 0)
-	nps.mb.RecordNginxHTTPRequestsCountDataPoint(now, int64(stats.HTTPRequests.Current))
+	nps.mb.RecordNginxHTTPRequestCountDataPoint(now, int64(stats.HTTPRequests.Current))
 
 	nps.recordCacheMetrics(stats, now)
 	nps.recordHTTPLimitMetrics(stats, now)
@@ -137,21 +137,21 @@ func (nps *nginxPlusScraper) recordMetrics(stats *plusapi.Stats) {
 
 func (nps *nginxPlusScraper) recordStreamMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
 	for name, streamServerZone := range stats.StreamServerZones {
-		nps.mb.RecordNginxStreamByteIoDataPoint(
+		nps.mb.RecordNginxStreamIoDataPoint(
 			now,
 			int64(streamServerZone.Received),
-			metadata.AttributeNginxByteIoDirectionRX,
+			metadata.AttributeNginxIoDirectionReceive,
 			name,
 		)
-		nps.mb.RecordNginxStreamByteIoDataPoint(
+		nps.mb.RecordNginxStreamIoDataPoint(
 			now,
 			int64(streamServerZone.Sent),
-			metadata.AttributeNginxByteIoDirectionTX,
+			metadata.AttributeNginxIoDirectionTransmit,
 			name,
 		)
-		nps.mb.RecordNginxStreamConnectionsAcceptedDataPoint(now, int64(streamServerZone.Connections), name)
-		nps.mb.RecordNginxStreamConnectionsDiscardedDataPoint(now, int64(streamServerZone.Discarded), name)
-		nps.mb.RecordNginxStreamConnectionsProcessingCountDataPoint(now, int64(streamServerZone.Processing), name)
+		nps.mb.RecordNginxStreamConnectionAcceptedDataPoint(now, int64(streamServerZone.Connections), name)
+		nps.mb.RecordNginxStreamConnectionDiscardedDataPoint(now, int64(streamServerZone.Discarded), name)
+		nps.mb.RecordNginxStreamConnectionProcessingCountDataPoint(now, int64(streamServerZone.Processing), name)
 		nps.mb.RecordNginxStreamSessionStatusDataPoint(
 			now,
 			int64(streamServerZone.Sessions.Sessions2xx),
@@ -177,25 +177,25 @@ func (nps *nginxPlusScraper) recordStreamMetrics(stats *plusapi.Stats, now pcomm
 		peerStates := make(map[string]int)
 
 		for _, peer := range upstream.Peers {
-			nps.mb.RecordNginxStreamUpstreamPeerByteIoDataPoint(
+			nps.mb.RecordNginxStreamUpstreamPeerIoDataPoint(
 				now,
 				int64(peer.Received),
-				metadata.AttributeNginxByteIoDirectionRX,
+				metadata.AttributeNginxIoDirectionReceive,
 				upstream.Zone,
 				upstreamName,
 				peer.Server,
 				peer.Name,
 			)
-			nps.mb.RecordNginxStreamUpstreamPeerByteIoDataPoint(
+			nps.mb.RecordNginxStreamUpstreamPeerIoDataPoint(
 				now,
 				int64(peer.Sent),
-				metadata.AttributeNginxByteIoDirectionTX,
+				metadata.AttributeNginxIoDirectionTransmit,
 				upstream.Zone,
 				upstreamName,
 				peer.Server,
 				peer.Name,
 			)
-			nps.mb.RecordNginxStreamUpstreamPeerConnectionsCountDataPoint(
+			nps.mb.RecordNginxStreamUpstreamPeerConnectionCountDataPoint(
 				now,
 				int64(peer.Active),
 				upstream.Zone,
@@ -203,7 +203,7 @@ func (nps *nginxPlusScraper) recordStreamMetrics(stats *plusapi.Stats, now pcomm
 				peer.Server,
 				peer.Name,
 			)
-			nps.mb.RecordNginxStreamUpstreamPeerConnectionsTimeDataPoint(
+			nps.mb.RecordNginxStreamUpstreamPeerConnectionTimeDataPoint(
 				now,
 				int64(peer.ConnectTime),
 				upstream.Zone,
@@ -265,7 +265,7 @@ func (nps *nginxPlusScraper) recordStreamMetrics(stats *plusapi.Stats, now pcomm
 				peer.Server,
 				peer.Name,
 			)
-			nps.mb.RecordNginxStreamUpstreamPeerUnavailableDataPoint(
+			nps.mb.RecordNginxStreamUpstreamPeerUnavailablesDataPoint(
 				now,
 				int64(peer.Unavail),
 				upstream.Zone,
@@ -483,26 +483,26 @@ func (nps *nginxPlusScraper) recordHTTPUpstreamPeerMetrics(stats *plusapi.Stats,
 		peerStates := make(map[string]int)
 
 		for _, peer := range upstream.Peers {
-			nps.mb.RecordNginxHTTPUpstreamPeerByteIoDataPoint(
+			nps.mb.RecordNginxHTTPUpstreamPeerIoDataPoint(
 				now,
 				int64(peer.Received),
-				metadata.AttributeNginxByteIoDirectionRX,
+				metadata.AttributeNginxIoDirectionReceive,
 				upstream.Zone,
 				name,
 				peer.Server,
 				peer.Name,
 			)
-			nps.mb.RecordNginxHTTPUpstreamPeerByteIoDataPoint(
+			nps.mb.RecordNginxHTTPUpstreamPeerIoDataPoint(
 				now,
 				int64(peer.Sent),
-				metadata.AttributeNginxByteIoDirectionTX,
+				metadata.AttributeNginxIoDirectionTransmit,
 				upstream.Zone,
 				name,
 				peer.Server,
 				peer.Name,
 			)
 
-			nps.mb.RecordNginxHTTPUpstreamPeerConnectionsCountDataPoint(
+			nps.mb.RecordNginxHTTPUpstreamPeerConnectionCountDataPoint(
 				now,
 				int64(peer.Active),
 				upstream.Zone,
@@ -747,17 +747,17 @@ func (nps *nginxPlusScraper) recordHTTPUpstreamPeerMetrics(stats *plusapi.Stats,
 
 func (nps *nginxPlusScraper) recordServerZoneMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
 	for szName, sz := range stats.ServerZones {
-		nps.mb.RecordNginxHTTPRequestByteIoDataPoint(
+		nps.mb.RecordNginxHTTPRequestIoDataPoint(
 			now,
 			int64(sz.Received),
-			metadata.AttributeNginxByteIoDirectionRX,
+			metadata.AttributeNginxIoDirectionReceive,
 			szName,
 			metadata.AttributeNginxZoneTypeSERVER,
 		)
-		nps.mb.RecordNginxHTTPRequestByteIoDataPoint(
+		nps.mb.RecordNginxHTTPRequestIoDataPoint(
 			now,
 			int64(sz.Sent),
-			metadata.AttributeNginxByteIoDirectionTX,
+			metadata.AttributeNginxIoDirectionTransmit,
 			szName,
 			metadata.AttributeNginxZoneTypeSERVER,
 		)
@@ -806,17 +806,17 @@ func (nps *nginxPlusScraper) recordServerZoneMetrics(stats *plusapi.Stats, now p
 
 func (nps *nginxPlusScraper) recordLocationZoneMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
 	for lzName, lz := range stats.LocationZones {
-		nps.mb.RecordNginxHTTPRequestByteIoDataPoint(
+		nps.mb.RecordNginxHTTPRequestIoDataPoint(
 			now,
 			lz.Received,
-			metadata.AttributeNginxByteIoDirectionRX,
+			metadata.AttributeNginxIoDirectionReceive,
 			lzName,
 			metadata.AttributeNginxZoneTypeLOCATION,
 		)
-		nps.mb.RecordNginxHTTPRequestByteIoDataPoint(
+		nps.mb.RecordNginxHTTPRequestIoDataPoint(
 			now,
 			lz.Sent,
-			metadata.AttributeNginxByteIoDirectionTX,
+			metadata.AttributeNginxIoDirectionTransmit,
 			lzName,
 			metadata.AttributeNginxZoneTypeLOCATION,
 		)
@@ -919,38 +919,43 @@ func (nps *nginxPlusScraper) recordHTTPLimitMetrics(stats *plusapi.Stats, now pc
 
 func (nps *nginxPlusScraper) recordCacheMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
 	for name, cache := range stats.Caches {
-		nps.mb.RecordNginxCacheBytesDataPoint(
+		nps.mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Bypass.Bytes),
 			metadata.AttributeNginxCacheOutcomeBYPASS,
 			name,
 		)
-		nps.mb.RecordNginxCacheBytesDataPoint(
+		nps.mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Expired.Bytes),
 			metadata.AttributeNginxCacheOutcomeEXPIRED,
 			name,
 		)
-		nps.mb.RecordNginxCacheBytesDataPoint(now, int64(cache.Hit.Bytes), metadata.AttributeNginxCacheOutcomeHIT, name)
-		nps.mb.RecordNginxCacheBytesDataPoint(
+		nps.mb.RecordNginxCacheBytesReadDataPoint(
+			now,
+			int64(cache.Hit.Bytes),
+			metadata.AttributeNginxCacheOutcomeHIT,
+			name,
+		)
+		nps.mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Miss.Bytes),
 			metadata.AttributeNginxCacheOutcomeMISS,
 			name,
 		)
-		nps.mb.RecordNginxCacheBytesDataPoint(
+		nps.mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Revalidated.Bytes),
 			metadata.AttributeNginxCacheOutcomeREVALIDATED,
 			name,
 		)
-		nps.mb.RecordNginxCacheBytesDataPoint(
+		nps.mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Stale.Bytes),
 			metadata.AttributeNginxCacheOutcomeSTALE,
 			name,
 		)
-		nps.mb.RecordNginxCacheBytesDataPoint(
+		nps.mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Updating.Bytes),
 			metadata.AttributeNginxCacheOutcomeUPDATING,
