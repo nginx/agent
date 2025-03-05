@@ -16,4 +16,5 @@ const (
 	FeatureFileWatcher      = "file-watcher"
 	FeatureAgentAPI         = "agent-api"
 	FeatureAPIAction        = "api-action"
+	FeatureLogsNap          = "logs-nap"
 )

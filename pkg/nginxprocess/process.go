@@ -103,14 +103,26 @@ func convert(ctx context.Context, p *process.Process, o options) (*Process, erro
 
 // List returns a slice of all NGINX processes. Returns a zero-length slice if no NGINX processes are found.
 func List(ctx context.Context, opts ...Option) (ret []*Process, err error) {
-	o := options{}
-	for _, opt := range opts {
-		opt.apply(&o)
-	}
 	processes, err := process.ProcessesWithContext(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	return ListWithProcesses(ctx, processes, opts...)
+}
+
+// ListWithProcesses returns a slice of all NGINX processes.
+// Returns a zero-length slice if no NGINX processes are found.
+func ListWithProcesses(
+	ctx context.Context,
+	processes []*process.Process,
+	opts ...Option,
+) (ret []*Process, err error) {
+	o := options{}
+	for _, opt := range opts {
+		opt.apply(&o)
+	}
+
 	for _, p := range processes {
 		pr, cerr := convert(ctx, p, o)
 		if IsNotNginxErr(cerr) {
