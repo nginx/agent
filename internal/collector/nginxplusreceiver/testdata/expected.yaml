@@ -32,7 +32,7 @@ resourceMetrics:
               isMonotonic: true
             unit: connections
           - description: The current number of connections.
-            name: nginx.http.connections.count
+            name: nginx.http.connection.count
             gauge:
               aggregationTemporality: 2
               dataPoints:
@@ -207,7 +207,7 @@ resourceMetrics:
               isMonotonic: true
             unit: requests
           - description: The total number of HTTP byte IO.
-            name: nginx.http.request.byte.io
+            name: nginx.http.request.io
             sum:
               aggregationTemporality: 2
               dataPoints:
@@ -219,9 +219,9 @@ resourceMetrics:
                     - key: nginx.zone.type
                       value:
                         stringValue: SERVER
-                    - key: nginx.byte.io.direction
+                    - key: nginx.io.direction
                       value:
-                        stringValue: TX
+                        stringValue: transmit
                 - asInt: "3312"
                   attributes:
                     - key: nginx.zone.name
@@ -230,9 +230,9 @@ resourceMetrics:
                     - key: nginx.zone.type
                       value:
                         stringValue: SERVER
-                    - key: nginx.byte.io.direction
+                    - key: nginx.io.direction
                       value:
-                        stringValue: RX
+                        stringValue: receive
                 - asInt: "23265"
                   attributes:
                     - key: nginx.zone.name
@@ -241,9 +241,9 @@ resourceMetrics:
                     - key: nginx.zone.type
                       value:
                         stringValue: LOCATION
-                    - key: nginx.byte.io.direction
+                    - key: nginx.io.direction
                       value:
-                        stringValue: TX
+                        stringValue: transmit
                 - asInt: "3609"
                   attributes:
                     - key: nginx.zone.name
@@ -252,9 +252,9 @@ resourceMetrics:
                     - key: nginx.zone.type
                       value:
                         stringValue: LOCATION
-                    - key: nginx.byte.io.direction
+                    - key: nginx.io.direction
                       value:
-                        stringValue: RX
+                        stringValue: receive
                   timeUnixNano: "1000000"
               isMonotonic: true
             unit: bytes
@@ -291,7 +291,7 @@ resourceMetrics:
               isMonotonic: true
             unit: requests
           - description: The current number of client requests received from clients.
-            name: nginx.http.requests.count
+            name: nginx.http.request.count
             gauge:
               aggregationTemporality: 2
               dataPoints:
@@ -300,7 +300,7 @@ resourceMetrics:
               isMonotonic: true
             unit: requests
           - description: The total number of bytes read from the cache or proxied server.
-            name: nginx.cache.bytes
+            name: nginx.cache.bytes_read
             sum:
               aggregationTemporality: 2
               dataPoints:
@@ -551,15 +551,15 @@ resourceMetrics:
               isMonotonic: true
             unit: connections
           - description: The total number of byte IO per HTTP upstream peer.
-            name: nginx.http.upstream.peer.byte.io
+            name: nginx.http.upstream.peer.io
             sum:
               aggregationTemporality: 2
               dataPoints:
                 - asInt: "432"
                   attributes:
-                    - key: nginx.byte.io.direction
+                    - key: nginx.io.direction
                       value:
-                        stringValue: RX
+                        stringValue: receive
                     - key: nginx.peer.address
                       value:
                         stringValue: 127.0.0.1:9001
@@ -574,9 +574,9 @@ resourceMetrics:
                         stringValue: test-drain-zone
                 - asInt: "121"
                   attributes:
-                    - key: nginx.byte.io.direction
+                    - key: nginx.io.direction
                       value:
-                        stringValue: TX
+                        stringValue: transmit
                     - key: nginx.peer.address
                       value:
                         stringValue: 127.0.0.1:9001
@@ -592,7 +592,7 @@ resourceMetrics:
               isMonotonic: true
             unit: bytes
           - description: The average number of active connections per HTTP upstream peer.
-            name: nginx.http.upstream.peer.connections.count
+            name: nginx.http.upstream.peer.connection.count
             gauge:
               aggregationTemporality: 2
               dataPoints:
@@ -614,7 +614,7 @@ resourceMetrics:
             unit: connections
           - description: The total number of unsuccessful attempts to communicate with the HTTP upstream peer.
             name: nginx.http.upstream.peer.fails
-            gauge:
+            sum:
               aggregationTemporality: 2
               dataPoints:
                 - asInt: "87"
@@ -1613,30 +1613,30 @@ resourceMetrics:
               isMonotonic: true
             unit: certificates
           - description: The total number of Stream byte IO.
-            name: nginx.stream.byte.io
+            name: nginx.stream.io
             sum:
               aggregationTemporality: 2
               dataPoints:
                 - asInt: "11"
                   attributes:
-                    - key: nginx.byte.io.direction
+                    - key: nginx.io.direction
                       value:
-                        stringValue: TX
+                        stringValue: transmit
                     - key: nginx.zone.name
                       value:
                         stringValue: stream_test
                 - asInt: "22"
                   attributes:
-                    - key: nginx.byte.io.direction
+                    - key: nginx.io.direction
                       value:
-                        stringValue: RX
+                        stringValue: receive
                     - key: nginx.zone.name
                       value:
                         stringValue: stream_test
               isMonotonic: true
             unit: bytes
           - description: The total number of connections accepted from clients.
-            name: nginx.stream.connections.accepted
+            name: nginx.stream.connection.accepted
             sum:
               aggregationTemporality: 2
               dataPoints:
@@ -1648,7 +1648,7 @@ resourceMetrics:
               isMonotonic: true
             unit: connections
           - description: Total number of connections completed without creating a session.
-            name: nginx.stream.connections.discarded
+            name: nginx.stream.connection.discarded
             sum:
               aggregationTemporality: 2
               dataPoints:
@@ -1660,7 +1660,7 @@ resourceMetrics:
               isMonotonic: true
             unit: connections
           - description: The number of client connections that are currently being processed.
-            name: nginx.stream.connections.processing.count
+            name: nginx.stream.connection.processing.count
             gauge:
               aggregationTemporality: 2
               dataPoints:
@@ -1711,15 +1711,15 @@ resourceMetrics:
               isMonotonic: true
             unit: sessions
           - description: The total number of Stream Upstream Peer byte IO.
-            name: nginx.stream.upstream.peer.byte.io
+            name: nginx.stream.upstream.peer.io
             sum:
               aggregationTemporality: 2
               dataPoints:
                 - asInt: "251946292"
                   attributes:
-                    - key: nginx.byte.io.direction
+                    - key: nginx.io.direction
                       value:
-                        stringValue: TX
+                        stringValue: transmit
                     - key: nginx.peer.address
                       value:
                         stringValue: 10.0.0.1:12347
@@ -1734,9 +1734,9 @@ resourceMetrics:
                         stringValue: upstream_test_zone
                 - asInt: "19222475454"
                   attributes:
-                    - key: nginx.byte.io.direction
+                    - key: nginx.io.direction
                       value:
-                        stringValue: RX
+                        stringValue: receive
                     - key: nginx.peer.address
                       value:
                         stringValue: 10.0.0.1:12347
@@ -1752,7 +1752,7 @@ resourceMetrics:
               isMonotonic: true
             unit: bytes
           - description: The current number of Stream Upstream Peer connections.
-            name: nginx.stream.upstream.peer.connections.count
+            name: nginx.stream.upstream.peer.connection.count
             gauge:
               aggregationTemporality: 2
               dataPoints:
@@ -1773,7 +1773,7 @@ resourceMetrics:
               isMonotonic: true
             unit: connections
           - description: The average time to connect to the stream upstream peer.
-            name: nginx.stream.upstream.peer.connections.time
+            name: nginx.stream.upstream.peer.connection.time
             gauge:
               aggregationTemporality: 2
               dataPoints:
@@ -1915,7 +1915,7 @@ resourceMetrics:
               isMonotonic: true
             unit: ms
           - description: How many times the server became unavailable for client connections (state “unavail”) due to the number of unsuccessful attempts reaching the max_fails threshold.
-            name: nginx.stream.upstream.peer.unavailable
+            name: nginx.stream.upstream.peer.unavailables
             sum:
               aggregationTemporality: 2
               dataPoints:
@@ -2044,9 +2044,9 @@ resourceMetrics:
                         stringValue: DRAINING
               isMonotonic: true
             unit: deployments
-          - description: The total number of stream upstream peers grouped by state.
+          - description: The current number of stream upstream peers grouped by state.
             name: nginx.stream.upstream.peer.count
-            sum:
+            gauge:
               aggregationTemporality: 2
               dataPoints:
                 - asInt: "0"
