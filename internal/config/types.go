@@ -382,9 +382,6 @@ func (c *Config) AreReceiversConfigured() bool {
 
 func isAllowedDir(dir string, allowedDirs []string) bool {
 	for _, allowedDirectory := range allowedDirs {
-		if !strings.HasSuffix(allowedDirectory, "/") {
-			allowedDirectory += "/"
-		}
 		if strings.HasPrefix(dir, allowedDirectory) {
 			return true
 		}

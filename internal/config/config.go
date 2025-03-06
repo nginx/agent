@@ -29,6 +29,7 @@ const (
 	EnvPrefix      = "NGINX_AGENT"
 	KeyDelimiter   = "_"
 	KeyValueNumber = 2
+	AgentDirName   = "/etc/nginx-agent/"
 )
 
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
@@ -73,15 +74,20 @@ func RegisterConfigFile() error {
 func ResolveConfig() (*Config, error) {
 	// Collect allowed directories, so that paths in the config can be validated.
 	directories := viperInstance.GetStringSlice(AllowedDirectoriesKey)
-	allowedDirs := make([]string, 0)
+	allowedDirs := []string{AgentDirName}
 
 	// Check directories in allowed_directories are valid
 	for _, dir := range directories {
-		if dir != "" && filepath.IsAbs(dir) {
-			allowedDirs = append(allowedDirs, dir)
-		} else {
+		if dir == "" || !filepath.IsAbs(dir) {
 			slog.Warn("Invalid directory: ", "dir", dir)
+			continue
 		}
+
+		if !strings.HasSuffix(dir, "/") {
+			dir += "/"
+		}
+		allowedDirs = append(allowedDirs, dir)
+		slog.Info("Resolved directory", "dir", allowedDirs)
 	}
 
 	// Collect all parsing errors before returning the error, so the user sees all issues with config

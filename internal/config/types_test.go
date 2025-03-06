@@ -24,6 +24,7 @@ func TestTypes_IsDirectoryAllowed(t *testing.T) {
 			name:    "Test 1: directory allowed",
 			allowed: true,
 			allowedDirs: []string{
+				AgentDirName,
 				"/etc/nginx",
 				"/var/log/nginx/",
 			},
@@ -33,6 +34,7 @@ func TestTypes_IsDirectoryAllowed(t *testing.T) {
 			name:    "Test 2: directory not allowed",
 			allowed: false,
 			allowedDirs: []string{
+				AgentDirName,
 				"/etc/nginx/",
 				"/var/log/nginx/",
 			},
@@ -42,6 +44,7 @@ func TestTypes_IsDirectoryAllowed(t *testing.T) {
 			name:    "Test 3: directory allowed",
 			allowed: true,
 			allowedDirs: []string{
+				AgentDirName,
 				"/etc/nginx/",
 				"/var/log/nginx/",
 			},
@@ -51,6 +54,7 @@ func TestTypes_IsDirectoryAllowed(t *testing.T) {
 			name:    "Test 4: directory not allowed",
 			allowed: false,
 			allowedDirs: []string{
+				AgentDirName,
 				"/etc/nginx",
 				"/var/log/nginx",
 			},
@@ -60,6 +64,7 @@ func TestTypes_IsDirectoryAllowed(t *testing.T) {
 			name:    "Test 5: directory not allowed",
 			allowed: false,
 			allowedDirs: []string{
+				AgentDirName,
 				"/etc/nginx/",
 				"/var/log/nginx/",
 			},
@@ -69,6 +74,7 @@ func TestTypes_IsDirectoryAllowed(t *testing.T) {
 			name:    "Test 6: directory allowed",
 			allowed: true,
 			allowedDirs: []string{
+				AgentDirName,
 				"/etc/nginx/",
 				"/var/log/nginx/",
 				"/",
