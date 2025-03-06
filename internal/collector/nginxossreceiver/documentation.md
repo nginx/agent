@@ -12,13 +12,13 @@ metrics:
     enabled: false
 ```
 
-### nginx.http.connections
+### nginx.http.connection.count
 
-The total number of connections.
+The current number of connections.
 
-| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
-| ---- | ----------- | ---------- | ----------------------- | --------- |
-| connections | Sum | Int | Cumulative | true |
+| Unit | Metric Type | Value Type |
+| ---- | ----------- | ---------- |
+| connections | Gauge | Int |
 
 #### Attributes
 
@@ -26,13 +26,13 @@ The total number of connections.
 | ---- | ----------- | ------ |
 | nginx.connections.outcome | The outcome of the connection. | Str: ``ACCEPTED``, ``ACTIVE``, ``HANDLED``, ``READING``, ``WRITING``, ``WAITING`` |
 
-### nginx.http.connections.count
+### nginx.http.connections
 
-The current number of connections.
+The total number of connections.
 
-| Unit | Metric Type | Value Type |
-| ---- | ----------- | ---------- |
-| connections | Gauge | Int |
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
+| ---- | ----------- | ---------- | ----------------------- | --------- |
+| connections | Sum | Int | Cumulative | true |
 
 #### Attributes
 

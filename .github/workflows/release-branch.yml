@@ -35,6 +35,10 @@ on:
         description: 'Release branch to build & publish from'
         required: true
         type: string
+      uploadUrl:
+        description: 'Location to publish packages to'
+        required: false
+        default: "up-ap.nginx.com"
   workflow_call:
     inputs:
       githubRelease:
@@ -61,6 +65,9 @@ on:
       releaseBranch:
         type: string
         required: true
+      uploadUrl:
+        type: string
+        default: "up-ap.nginx.com"
 
 env:
   NFPM_VERSION: 'v2.35.3'
@@ -222,7 +229,7 @@ jobs:
 
   upload-packages:
     name: Upload packages
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-22.04-amd64
     needs: [vars,release-draft,tag-release]
     permissions:
       id-token: write
@@ -314,7 +321,7 @@ jobs:
         if: ${{ inputs.publishPackages == true }}
         env:
           TOKEN: ${{ steps.idtoken.outputs.id_token }}
-          UPLOAD_URL: ${{ secrets.UPLOAD_URL }}
+          UPLOAD_URL: ${{ inputs.uploadUrl }}
         run: |
           make release
 

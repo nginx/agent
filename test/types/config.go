@@ -134,7 +134,7 @@ func AgentConfig() *config.Config {
 			},
 			Auth: &config.AuthConfig{
 				Token:     "1234",
-				TokenPath: "",
+				TokenPath: "/tmp/token",
 			},
 			TLS: &config.TLSConfig{
 				Cert:       "cert.pem",
@@ -160,6 +160,7 @@ func AgentConfig() *config.Config {
 			},
 			FileWatcher: config.FileWatcher{
 				MonitoringFrequency: config.DefFileWatcherMonitoringFrequency,
+				ExcludeFiles:        config.DefaultExcludedFiles(),
 			},
 		},
 		Features: config.DefaultFeatures(),

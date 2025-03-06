@@ -36,8 +36,8 @@ const (
 		"configuration file /etc/nginx/nginx.conf test failed\n"
 
 	retryCount       = 5
-	retryWaitTime    = 2 * time.Second
-	retryMaxWaitTime = 3 * time.Second
+	retryWaitTime    = 4 * time.Second
+	retryMaxWaitTime = 5 * time.Second
 )
 
 var (
@@ -212,8 +212,6 @@ func TestGrpc_Reconnection(t *testing.T) {
 	require.NoError(t, err)
 	mockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9093/tcp"][0].HostPort)
 
-	time.Sleep(5 * time.Second)
-
 	currentID := verifyConnection(t, 2)
 	assert.Equal(t, originalID, currentID)
 }
@@ -279,11 +277,6 @@ func TestGrpc_ConfigApply(t *testing.T) {
 	teardownTest := setupConnectionTest(t, false, false)
 	defer teardownTest(t)
 
-	instanceType := "OSS"
-	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
-		instanceType = "PLUS"
-	}
-
 	nginxInstanceID := verifyConnection(t, 2)
 
 	responses := getManagementPlaneResponses(t, 1)
@@ -312,24 +305,11 @@ func TestGrpc_ConfigApply(t *testing.T) {
 
 		performConfigApply(t, nginxInstanceID)
 
-		if instanceType == "OSS" {
-			responses = getManagementPlaneResponses(t, 1)
-			t.Logf("Config apply responses: %v", responses)
+		responses = getManagementPlaneResponses(t, 1)
+		t.Logf("Config apply responses: %v", responses)
 
-			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
-			assert.Equal(t, "Config apply successful", responses[0].GetCommandResponse().GetMessage())
-		} else {
-			// NGINX Plus contains two extra Successfully updated all files responses as the NginxConfigContext
-			// is updated, and the file overview is then updated
-			responses = getManagementPlaneResponses(t, 3)
-			t.Logf("Config apply responses: %v", responses)
-			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
-			assert.Equal(t, "Config apply successful", responses[0].GetCommandResponse().GetMessage())
-			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
-			assert.Equal(t, "Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
-			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[2].GetCommandResponse().GetStatus())
-			assert.Equal(t, "Successfully updated all files", responses[2].GetCommandResponse().GetMessage())
-		}
+		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+		assert.Equal(t, "Config apply successful", responses[0].GetCommandResponse().GetMessage())
 	})
 
 	t.Run("Test 3: Invalid config", func(t *testing.T) {
@@ -344,27 +324,15 @@ func TestGrpc_ConfigApply(t *testing.T) {
 
 		performConfigApply(t, nginxInstanceID)
 
-		if instanceType == "OSS" {
-			responses = getManagementPlaneResponses(t, 2)
-			t.Logf("Config apply responses: %v", responses)
+		responses = getManagementPlaneResponses(t, 2)
+		t.Logf("Config apply responses: %v", responses)
 
-			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_ERROR, responses[0].GetCommandResponse().GetStatus())
-			assert.Equal(t, "Config apply failed, rolling back config", responses[0].GetCommandResponse().GetMessage())
-			assert.Equal(t, configApplyErrorMessage, responses[0].GetCommandResponse().GetError())
-			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE, responses[1].GetCommandResponse().GetStatus())
-			assert.Equal(t, "Config apply failed, rollback successful", responses[1].GetCommandResponse().GetMessage())
-			assert.Equal(t, configApplyErrorMessage, responses[1].GetCommandResponse().GetError())
-		} else {
-			responses = getManagementPlaneResponses(t, 2)
-			t.Logf("Config apply responses: %v", len(responses))
-
-			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_ERROR, responses[0].GetCommandResponse().GetStatus())
-			assert.Equal(t, "Config apply failed, rolling back config", responses[0].GetCommandResponse().GetMessage())
-			assert.Equal(t, configApplyErrorMessage, responses[0].GetCommandResponse().GetError())
-			assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE, responses[1].GetCommandResponse().GetStatus())
-			assert.Equal(t, "Config apply failed, rollback successful", responses[1].GetCommandResponse().GetMessage())
-			assert.Equal(t, configApplyErrorMessage, responses[1].GetCommandResponse().GetError())
-		}
+		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_ERROR, responses[0].GetCommandResponse().GetStatus())
+		assert.Equal(t, "Config apply failed, rolling back config", responses[0].GetCommandResponse().GetMessage())
+		assert.Equal(t, configApplyErrorMessage, responses[0].GetCommandResponse().GetError())
+		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE, responses[1].GetCommandResponse().GetStatus())
+		assert.Equal(t, "Config apply failed, rollback successful", responses[1].GetCommandResponse().GetMessage())
+		assert.Equal(t, configApplyErrorMessage, responses[1].GetCommandResponse().GetError())
 	})
 
 	t.Run("Test 4: File not in allowed directory", func(t *testing.T) {
@@ -481,7 +449,7 @@ func performInvalidConfigApply(t *testing.T, nginxInstanceID string) {
 							"size": 0
 						},
 						"action": "FILE_ACTION_UPDATE"
-					}, 
+					},
 					{
 						"file_meta": {
 							"name": "/unknown/nginx.conf",
@@ -563,14 +531,23 @@ func verifyConnection(t *testing.T, instancesLength int) string {
 
 	client := resty.New()
 	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
+	connectionRequest := mpi.CreateConnectionRequest{}
+	client.AddRetryCondition(
+		func(r *resty.Response, err error) bool {
+			responseData := r.Body()
 
+			pb := protojson.UnmarshalOptions{DiscardUnknown: true}
+			unmarshalErr := pb.Unmarshal(responseData, &connectionRequest)
+
+			return r.StatusCode() == http.StatusNotFound || unmarshalErr != nil
+		},
+	)
 	url := fmt.Sprintf("http://%s/api/v1/connection", mockManagementPlaneAPIAddress)
+	t.Logf("Connecting to %s", url)
 	resp, err := client.R().EnableTrace().Get(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
-
-	connectionRequest := mpi.CreateConnectionRequest{}
 
 	responseData := resp.Body()
 	t.Logf("Response: %s", string(responseData))
@@ -622,6 +599,15 @@ func verifyConnection(t *testing.T, instancesLength int) string {
 			assert.NotEmpty(t, instance.GetInstanceRuntime().GetBinaryPath())
 
 			assert.Equal(t, "/etc/nginx/nginx.conf", instance.GetInstanceRuntime().GetConfigPath())
+		case mpi.InstanceMeta_INSTANCE_TYPE_NGINX_APP_PROTECT:
+			instanceMeta := instance.GetInstanceMeta()
+			assert.NotEmpty(t, instanceMeta.GetInstanceId())
+			assert.NotEmpty(t, instanceMeta.GetVersion())
+
+			instanceRuntimeInfo := instance.GetInstanceRuntime().GetNginxAppProtectRuntimeInfo()
+			assert.NotEmpty(t, instanceRuntimeInfo.GetRelease())
+			assert.NotEmpty(t, instanceRuntimeInfo.GetAttackSignatureVersion())
+			assert.NotEmpty(t, instanceRuntimeInfo.GetThreatCampaignVersion())
 		case mpi.InstanceMeta_INSTANCE_TYPE_UNIT,
 			mpi.InstanceMeta_INSTANCE_TYPE_UNSPECIFIED:
 			fallthrough
