@@ -161,7 +161,8 @@ func registerFlags() {
 
 	fs.StringSlice(AllowedDirectoriesKey,
 		DefaultAllowedDirectories(),
-		"A comma-separated list of paths that you want to grant NGINX Agent read/write access to")
+		"A comma-separated list of paths that you want to grant NGINX Agent read/write access to. Allowed "+
+			"directories are case sensitive")
 
 	fs.Duration(
 		InstanceWatcherMonitoringFrequencyKey,

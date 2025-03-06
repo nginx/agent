@@ -34,6 +34,11 @@ func GetConfigContextWithNames(
 			Listen:   "",
 			Location: "",
 		},
+		PlusAPI: &model.APIDetails{
+			URL:      "",
+			Listen:   "",
+			Location: "",
+		},
 		AccessLogs: []*model.AccessLog{
 			{
 				Name:        accessLogName,
