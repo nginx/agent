@@ -12,13 +12,12 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-
-	"github.com/nginx/agent/v3/test/protos"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/test/helpers"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/nginx/agent/v3/test/protos"
 )
 
 func TestGetFileMeta(t *testing.T) {
