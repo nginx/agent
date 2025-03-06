@@ -143,6 +143,8 @@ update_config_file() {
         for config_dir in $config_dirs; do
           allowed_directories="${allowed_directories}\n  - ${config_dir}"
         done
+        
+        allowed_directories="${allowed_directories}\n  - /var/log/nginx"
                
         v3_config_contents="
 #

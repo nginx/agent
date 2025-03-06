@@ -50,6 +50,8 @@ export IFS=":"
 for config_dir in $config_dirs; do
   allowed_directories="${allowed_directories}\n  - ${config_dir}"
 done
+
+allowed_directories="${allowed_directories}\n  - /var/log/nginx"
        
 v3_config_contents="
 #
@@ -103,3 +105,5 @@ collector:
 "
 
 echo "${v3_config_contents}" > $v3_config_file
+
+echo "NGINX Agent configuration successfully upgraded"
