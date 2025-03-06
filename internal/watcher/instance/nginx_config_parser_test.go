@@ -336,7 +336,8 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 		{
 			name:     "Test 3: File outside allowed directories",
 			instance: protos.GetNginxPlusInstance([]string{}),
-			content:  testconfig.GetNginxConfigWithNotAllowedDir(allowedFile.Name(), notAllowedFile.Name()),
+			content: testconfig.GetNginxConfigWithNotAllowedDir(errorLog.Name(), allowedFile.Name(),
+				notAllowedFile.Name(), accessLog.Name()),
 			expectedConfigContext: &model.NginxConfigContext{
 				StubStatus: &model.APIDetails{},
 				PlusAPI:    &model.APIDetails{},
@@ -348,19 +349,19 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 				},
 				AccessLogs: []*model.AccessLog{
 					{
-						Name: "/var/log/nginx/access.log",
+						Name: accessLog.Name(),
 						Format: "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent " +
 							"\"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\" \"$bytes_sent\" " +
 							"\"$request_length\" \"$request_time\" \"$gzip_ratio\" $server_protocol ",
-						Permissions: "",
-						Readable:    false,
+						Permissions: "0600",
+						Readable:    true,
 					},
 				},
 				ErrorLogs: []*model.ErrorLog{
 					{
-						Name:        "/var/log/nginx/error.log",
-						Permissions: "",
-						Readable:    false,
+						Name:        errorLog.Name(),
+						Permissions: "0600",
+						Readable:    true,
 					},
 				},
 				NAPSysLogServers: nil,

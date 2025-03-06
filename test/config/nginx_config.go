@@ -31,6 +31,6 @@ func GetNginxConfigWithMultipleAccessLogs(
 	)
 }
 
-func GetNginxConfigWithNotAllowedDir(notAllowedFileDir, fileDir string) string {
-	return fmt.Sprintf(embedNginxConfWithNotAllowedDir, notAllowedFileDir, fileDir)
+func GetNginxConfigWithNotAllowedDir(errorLogFile, notAllowedFile, allowedFileDir, accessLogFile string) string {
+	return fmt.Sprintf(embedNginxConfWithNotAllowedDir, errorLogFile, notAllowedFile, allowedFileDir, accessLogFile)
 }
