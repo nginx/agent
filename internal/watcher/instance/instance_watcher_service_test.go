@@ -28,7 +28,7 @@ func TestInstanceWatcherService_checkForUpdates(t *testing.T) {
 	nginxConfigContext := testModel.GetConfigContext()
 
 	fakeProcessWatcher := &processfakes.FakeProcessOperatorInterface{}
-	fakeProcessWatcher.ProcessesReturns(nil, nil)
+	fakeProcessWatcher.ProcessesReturns(nil, nil, nil)
 
 	fakeProcessParser := &instancefakes.FakeProcessParser{}
 	fakeProcessParser.ParseReturns(map[string]*mpi.Instance{
@@ -43,7 +43,8 @@ func TestInstanceWatcherService_checkForUpdates(t *testing.T) {
 
 	instanceWatcherService := NewInstanceWatcherService(types.AgentConfig())
 	instanceWatcherService.processOperator = fakeProcessWatcher
-	instanceWatcherService.processParsers = []processParser{fakeProcessParser}
+	instanceWatcherService.nginxParser = fakeProcessParser
+	instanceWatcherService.nginxAppProtectProcessParser = fakeProcessParser
 	instanceWatcherService.nginxConfigParser = fakeNginxConfigParser
 	instanceWatcherService.instancesChannel = instanceUpdatesChannel
 	instanceWatcherService.nginxConfigContextChannel = nginxConfigContextChannel
@@ -131,7 +132,7 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			fakeProcessWatcher := &processfakes.FakeProcessOperatorInterface{}
-			fakeProcessWatcher.ProcessesReturns(nil, nil)
+			fakeProcessWatcher.ProcessesReturns(nil, nil, nil)
 
 			fakeProcessParser := &instancefakes.FakeProcessParser{}
 			fakeProcessParser.ParseReturns(test.parsedInstances)
@@ -142,7 +143,8 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 
 			instanceWatcherService := NewInstanceWatcherService(types.AgentConfig())
 			instanceWatcherService.processOperator = fakeProcessWatcher
-			instanceWatcherService.processParsers = []processParser{fakeProcessParser}
+			instanceWatcherService.nginxParser = fakeProcessParser
+			instanceWatcherService.nginxAppProtectProcessParser = fakeProcessParser
 			instanceWatcherService.instanceCache = test.oldInstances
 			instanceWatcherService.executer = fakeExec
 
