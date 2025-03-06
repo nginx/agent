@@ -38,7 +38,7 @@ func TestTypes_IsDirectoryAllowed(t *testing.T) {
 				"/etc/nginx/",
 				"/var/log/nginx/",
 			},
-			fileDir: "/etc/nginx-agent/nginx-agent.conf",
+			fileDir: "/etc/nginx-test/nginx-agent.conf",
 		},
 		{
 			name:    "Test 3: directory allowed",
