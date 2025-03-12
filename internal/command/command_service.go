@@ -254,10 +254,19 @@ func (cs *CommandService) CreateConnection(
 	return response, nil
 }
 
-func (cs *CommandService) UpdateClient(client mpi.CommandServiceClient) {
+func (cs *CommandService) UpdateClient(ctx context.Context, client mpi.CommandServiceClient) error {
 	cs.subscribeClientMutex.Lock()
-	defer cs.subscribeClientMutex.Unlock()
 	cs.commandServiceClient = client
+	cs.subscribeClientMutex.Unlock()
+
+	cs.isConnected.Store(false)
+	resp, err := cs.CreateConnection(ctx, cs.resource)
+	if err != nil {
+		return err
+	}
+	slog.InfoContext(ctx, "Successfully sent create connection request", "response", resp)
+
+	return nil
 }
 
 // Retry callback for sending a data plane response to the Management Plane.
@@ -551,6 +560,11 @@ func (cs *CommandService) connectCallback(
 
 		validatedError := grpc.ValidateGrpcError(connectErr)
 		if validatedError != nil {
+			codeError, ok := status.FromError(validatedError)
+			if ok && codeError.Message() == "grpc: the client connection is closing" {
+				return nil, backoff.Permanent(fmt.Errorf("failed to create connection: %w, "+
+					"stopping retry", validatedError))
+			}
 			slog.ErrorContext(ctx, "Failed to create connection", "error", validatedError)
 
 			return nil, validatedError
