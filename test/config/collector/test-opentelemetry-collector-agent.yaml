@@ -4,6 +4,9 @@ receivers:
     initial_delay: 1s
     scrapers:
       cpu:
+        metrics:
+          utilization:
+            enabled: true
       disk:
       filesystem:
       memory:

@@ -79,7 +79,9 @@ func TestTemplateWrite(t *testing.T) {
 		CollectionInterval: time.Minute,
 		InitialDelay:       time.Second,
 		Scrapers: &config.HostMetricsScrapers{
-			CPU:        &config.CPUScraper{},
+			CPU: &config.CPUScraper{
+				Utilization: true,
+			},
 			Disk:       &config.DiskScraper{},
 			Filesystem: &config.FilesystemScraper{},
 			Memory:     &config.MemoryScraper{},
