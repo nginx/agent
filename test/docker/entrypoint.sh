@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+set -x
 set -euxo pipefail
 
 handle_term()
@@ -7,8 +9,10 @@ handle_term()
     echo "received TERM signal"
     echo "stopping nginx-agent ..."
     kill -TERM "${agent_pid}" 2>/dev/null
+    wait -n ${agent_pid}
     echo "stopping nginx ..."
     kill -TERM "${nginx_pid}" 2>/dev/null
+    wait -n ${nginx_pid}
 }
 
 trap 'handle_term' TERM

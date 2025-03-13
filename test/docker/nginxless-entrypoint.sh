@@ -7,6 +7,7 @@ handle_term()
     echo "received TERM signal"
     echo "stopping nginx-agent ..."
     kill -TERM "${agent_pid}" 2>/dev/null
+    wait -n ${agent_pid}
 }
 
 trap 'handle_term' TERM
