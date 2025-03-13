@@ -7,13 +7,6 @@ set -e
 # NGINX Agent install script for downloading the NGINX Agent package from the appropriate repository
 #
 ################################
-###### Changeable variables
-################################
-
-LOG_LEVEL=""
-INSTANCE_GROUP=""
-
-################################
 ###### Default variables
 ################################
 export NGINX_ONE_HOST="${NGINX_AGENT_SERVER_HOST:-agent.connect.nginx.com}"
