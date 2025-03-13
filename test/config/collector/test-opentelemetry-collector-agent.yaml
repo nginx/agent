@@ -5,7 +5,9 @@ receivers:
     scrapers:
       cpu:
         metrics:
-          utilization:
+          system.cpu.utilization:
+            enabled: true
+          system.cpu.logical.count:
             enabled: true
       disk:
       filesystem:

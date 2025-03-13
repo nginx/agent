@@ -242,9 +242,7 @@ type (
 		Memory     *MemoryScraper     `yaml:"-" mapstructure:"memory"`
 		Network    *NetworkScraper    `yaml:"-" mapstructure:"network"`
 	}
-	CPUScraper struct {
-		Utilization bool `yaml:"-" mapstructure:"utilization"`
-	}
+	CPUScraper        struct{}
 	DiskScraper       struct{}
 	FilesystemScraper struct{}
 	MemoryScraper     struct{}

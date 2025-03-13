@@ -7,11 +7,11 @@ receivers:
       {{- if .Receivers.HostMetrics.Scrapers }}
       {{- if .Receivers.HostMetrics.Scrapers.CPU }}
       cpu:
-      {{- if .Receivers.HostMetrics.Scrapers.CPU.Utilization }}
         metrics:
-          utilization:
+          system.cpu.utilization:
             enabled: true
-      {{- end }}
+          system.cpu.logical.count:
+            enabled: true
       {{- end }}
       {{- if .Receivers.HostMetrics.Scrapers.Disk }}
       disk:
