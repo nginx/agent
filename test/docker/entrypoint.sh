@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-set -x
 set -euxo pipefail
 
 handle_term()
