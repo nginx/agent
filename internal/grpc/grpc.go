@@ -353,7 +353,8 @@ func ProtoValidatorStreamClientInterceptor() (grpc.StreamClientInterceptor, erro
 func ValidateGrpcError(err error) error {
 	if err != nil {
 		if statusError, ok := status.FromError(err); ok {
-			if statusError.Code() == codes.InvalidArgument || statusError.Code() == codes.Unimplemented {
+			if statusError.Code() == codes.InvalidArgument || statusError.Code() == codes.Unimplemented ||
+				statusError.Code() == codes.Canceled {
 				return backoff.Permanent(err)
 			}
 		}

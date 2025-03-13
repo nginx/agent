@@ -560,11 +560,6 @@ func (cs *CommandService) connectCallback(
 
 		validatedError := grpc.ValidateGrpcError(connectErr)
 		if validatedError != nil {
-			codeError, ok := status.FromError(validatedError)
-			if ok && codeError.Message() == "grpc: the client connection is closing" {
-				return nil, backoff.Permanent(fmt.Errorf("failed to create connection: %w, "+
-					"stopping retry", validatedError))
-			}
 			slog.ErrorContext(ctx, "Failed to create connection", "error", validatedError)
 
 			return nil, validatedError
