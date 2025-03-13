@@ -1,0 +1,331 @@
+.TH  "nginx_agent_selinux"  "8"  "25-03-13" "nginx_agent" "SELinux Policy nginx_agent"
+.SH "NAME"
+nginx_agent_selinux \- Security Enhanced Linux Policy for the nginx_agent processes
+.SH "DESCRIPTION"
+
+Security-Enhanced Linux secures the nginx_agent processes via flexible mandatory access control.
+
+The nginx_agent processes execute with the nginx_agent_t SELinux type. You can check if you have these processes running by executing the \fBps\fP command with the \fB\-Z\fP qualifier.
+
+For example:
+
+.B ps -eZ | grep nginx_agent_t
+
+
+.SH "ENTRYPOINTS"
+
+The nginx_agent_t SELinux type can be entered via the \fBnginx_agent_exec_t\fP file type.
+
+The default entrypoint paths for the nginx_agent_t domain are the following:
+
+/usr/bin/nginx-agent
+.SH PROCESS TYPES
+SELinux defines process types (domains) for each process running on the system
+.PP
+You can see the context of a process using the \fB\-Z\fP option to \fBps\bP
+.PP
+Policy governs the access confined processes have to files.
+SELinux nginx_agent policy is very flexible allowing users to setup their nginx_agent processes in as secure a method as possible.
+.PP
+The following process types are defined for nginx_agent:
+
+.EX
+.B nginx_agent_t
+.EE
+.PP
+Note:
+.B semanage permissive -a nginx_agent_t
+can be used to make the process type nginx_agent_t permissive. SELinux does not deny access to permissive process types, but the AVC (SELinux denials) messages are still generated.
+
+.SH BOOLEANS
+SELinux policy is customizable based on least access required.  nginx_agent policy is extremely flexible and has several booleans that allow you to manipulate the policy and run nginx_agent with the tightest access possible.
+
+
+.PP
+If you want to allow all domains to execute in fips_mode, you must turn on the fips_mode boolean. Enabled by default.
+
+.EX
+.B setsebool -P fips_mode 1
+
+.EE
+
+.SH "MANAGED FILES"
+
+The SELinux process type nginx_agent_t can manage files labeled with the following file types.  The paths listed are the default paths for these file types.  Note the processes UID still need to have DAC permissions.
+
+.br
+.B cluster_conf_t
+
+	/etc/cluster(/.*)?
+.br
+
+.br
+.B cluster_var_lib_t
+
+	/var/lib/pcsd(/.*)?
+.br
+	/var/lib/cluster(/.*)?
+.br
+	/var/lib/openais(/.*)?
+.br
+	/var/lib/pengine(/.*)?
+.br
+	/var/lib/corosync(/.*)?
+.br
+	/usr/lib/heartbeat(/.*)?
+.br
+	/var/lib/heartbeat(/.*)?
+.br
+	/var/lib/pacemaker(/.*)?
+.br
+
+.br
+.B cluster_var_run_t
+
+	/var/run/crm(/.*)?
+.br
+	/var/run/cman_.*
+.br
+	/var/run/rsctmp(/.*)?
+.br
+	/var/run/aisexec.*
+.br
+	/var/run/heartbeat(/.*)?
+.br
+	/var/run/pcsd-ruby.socket
+.br
+	/var/run/corosync-qnetd(/.*)?
+.br
+	/var/run/corosync-qdevice(/.*)?
+.br
+	/var/run/corosync\.pid
+.br
+	/var/run/cpglockd\.pid
+.br
+	/var/run/rgmanager\.pid
+.br
+	/var/run/cluster/rgmanager\.sk
+.br
+
+.br
+.B etc_t
+
+	/etc/.*
+.br
+	/usr/etc(/.*)?
+.br
+	/etc/httpd/.*
+.br
+	/var/ftp/etc(/.*)?
+.br
+	/var/lib/openshift/.limits.d(/.*)?
+.br
+	/var/lib/openshift/.openshift-proxy.d(/.*)?
+.br
+	/var/lib/openshift/.stickshift-proxy.d(/.*)?
+.br
+	/var/lib/stickshift/.limits.d(/.*)?
+.br
+	/var/lib/stickshift/.stickshift-proxy.d(/.*)?
+.br
+	/etc/ipsec\.d/examples(/.*)?
+.br
+	/var/named/chroot/etc(/.*)?
+.br
+	/var/spool/postfix/etc(/.*)?
+.br
+	/etc
+.br
+	/run/cockpit/motd
+.br
+	/etc/cups/client\.conf
+.br
+
+.br
+.B httpd_config_t
+
+	/etc/httpd(/.*)?
+.br
+	/etc/nginx(/.*)?
+.br
+	/etc/apache(2)?(/.*)?
+.br
+	/etc/cherokee(/.*)?
+.br
+	/etc/lighttpd(/.*)?
+.br
+	/etc/apache-ssl(2)?(/.*)?
+.br
+	/var/lib/openshift/\.httpd\.d(/.*)?
+.br
+	/etc/opt/rh/rh-nginx18/nginx(/.*)?
+.br
+	/var/lib/stickshift/\.httpd\.d(/.*)?
+.br
+	/etc/vhosts
+.br
+	/etc/thttpd\.conf
+.br
+
+.br
+.B httpd_var_run_t
+
+	/var/run/wsgi.*
+.br
+	/var/run/mod_.*
+.br
+	/var/run/httpd.*
+.br
+	/var/run/nginx.*
+.br
+	/var/run/apache.*
+.br
+	/var/run/php-fpm(/.*)?
+.br
+	/var/run/fcgiwrap(/.*)?
+.br
+	/var/run/lighttpd(/.*)?
+.br
+	/var/lib/php/session(/.*)?
+.br
+	/var/lib/php/wsdlcache(/.*)?
+.br
+	/var/run/dirsrv/admin-serv.*
+.br
+	/var/opt/rh/rh-nginx18/run/nginx(/.*)?
+.br
+	/var/www/openshift/broker/httpd/run(/.*)?
+.br
+	/var/www/openshift/console/httpd/run(/.*)?
+.br
+	/opt/dirsrv/var/run/dirsrv/dsgw/cookies(/.*)?
+.br
+	/var/run/thttpd\.pid
+.br
+	/var/run/gcache_port
+.br
+	/var/run/cherokee\.pid
+.br
+
+.br
+.B nginx_agent_log_t
+
+
+.br
+.B root_t
+
+	/sysroot/ostree/deploy/.*-atomic/deploy(/.*)?
+.br
+	/
+.br
+	/initrd
+.br
+
+.br
+.B tmp_t
+
+	/sandbox(/.*)?
+.br
+	/tmp
+.br
+	/usr/tmp
+.br
+	/var/tmp
+.br
+	/var/tmp
+.br
+	/tmp-inst
+.br
+	/var/tmp-inst
+.br
+	/var/tmp/tmp-inst
+.br
+	/var/tmp/vi\.recover
+.br
+
+.br
+.B var_lib_t
+
+	/opt/(.*/)?var/lib(/.*)?
+.br
+	/var/lib(/.*)?
+.br
+
+.SH FILE CONTEXTS
+SELinux requires files to have an extended attribute to define the file type.
+.PP
+You can see the context of a file using the \fB\-Z\fP option to \fBls\bP
+.PP
+Policy governs the access confined processes have to these files.
+SELinux nginx_agent policy is very flexible allowing users to setup their nginx_agent processes in as secure a method as possible.
+.PP
+
+.PP
+.B STANDARD FILE CONTEXT
+
+SELinux defines the file context types for the nginx_agent, if you wanted to
+store files with these types in a diffent paths, you need to execute the semanage command to sepecify alternate labeling and then use restorecon to put the labels on disk.
+
+.B semanage fcontext -a -t nginx_agent_unit_file_t '/srv/mynginx_agent_content(/.*)?'
+.br
+.B restorecon -R -v /srv/mynginx_agent_content
+
+Note: SELinux often uses regular expressions to specify labels that match multiple files.
+
+.I The following file types are defined for nginx_agent:
+
+
+.EX
+.PP
+.B nginx_agent_exec_t
+.EE
+
+- Set files with the nginx_agent_exec_t type, if you want to transition an executable to the nginx_agent_t domain.
+
+
+.EX
+.PP
+.B nginx_agent_log_t
+.EE
+
+- Set files with the nginx_agent_log_t type, if you want to treat the data as nginx agent log data, usually stored under the /var/log directory.
+
+
+.EX
+.PP
+.B nginx_agent_unit_file_t
+.EE
+
+- Set files with the nginx_agent_unit_file_t type, if you want to treat the files as nginx agent unit content.
+
+
+.PP
+Note: File context can be temporarily modified with the chcon command.  If you want to permanently change the file context you need to use the
+.B semanage fcontext
+command.  This will modify the SELinux labeling database.  You will need to use
+.B restorecon
+to apply the labels.
+
+.SH "COMMANDS"
+.B semanage fcontext
+can also be used to manipulate default file context mappings.
+.PP
+.B semanage permissive
+can also be used to manipulate whether or not a process type is permissive.
+.PP
+.B semanage module
+can also be used to enable/disable/install/remove policy modules.
+
+.B semanage boolean
+can also be used to manipulate the booleans
+
+.PP
+.B system-config-selinux
+is a GUI tool available to customize SELinux policy settings.
+
+.SH AUTHOR
+This manual page was auto-generated using
+.B "sepolicy manpage".
+
+.SH "SEE ALSO"
+selinux(8), nginx_agent(8), semanage(8), restorecon(8), chcon(1), sepolicy(8), setsebool(8)
