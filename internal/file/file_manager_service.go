@@ -313,9 +313,10 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	if fileErr != nil {
 		return model.RollbackRequired, fileErr
 	}
+	fileOverviewFiles := files.ConvertToMapOfFiles(fileOverview.GetFiles())
 	// Update map of current files on disk
-	fms.UpdateCurrentFilesOnDisk(files.ConvertToMapOfFiles(fileOverview.GetFiles()))
-	manifestFileErr := fms.UpdateManifestFile(files.ConvertToMapOfFiles(fileOverview.GetFiles()))
+	fms.UpdateCurrentFilesOnDisk(fileOverviewFiles)
+	manifestFileErr := fms.UpdateManifestFile(fileOverviewFiles)
 	if manifestFileErr != nil {
 		return model.RollbackRequired, manifestFileErr
 	}
