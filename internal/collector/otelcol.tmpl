@@ -1,8 +1,12 @@
 receivers:
 {{- if ne .Receivers.HostMetrics nil }}
   hostmetrics:
+    {{- if .Receivers.HostMetrics.CollectionInterval }}
     collection_interval: {{ .Receivers.HostMetrics.CollectionInterval }}
+    {{- end}}
+    {{- if .Receivers.HostMetrics.InitialDelay }}
     initial_delay: {{ .Receivers.HostMetrics.InitialDelay }}
+    {{- end}}
     scrapers:
       {{- if .Receivers.HostMetrics.Scrapers }}
       {{- if .Receivers.HostMetrics.Scrapers.CPU }}
