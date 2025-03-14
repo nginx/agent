@@ -74,10 +74,14 @@ func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *mpi.Instance)
 		"instance_id", instance.GetInstanceMeta().GetInstanceId(),
 	)
 
+	lua := crossplane.Lua{}
 	payload, err := crossplane.Parse(configPath,
 		&crossplane.ParseOptions{
 			SingleFile:         false,
 			StopParsingOnError: true,
+			LexOptions: crossplane.LexOptions{
+				Lexers: []crossplane.RegisterLexer{lua.RegisterLexer()},
+			},
 		},
 	)
 	if err != nil {

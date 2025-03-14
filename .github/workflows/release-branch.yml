@@ -38,7 +38,7 @@ on:
       uploadUrl:
         description: 'Location to publish packages to'
         required: false
-        default: "up-ap.nginx.com"
+        default: "https://up-ap.nginx.com"
   workflow_call:
     inputs:
       githubRelease:
@@ -67,7 +67,7 @@ on:
         required: true
       uploadUrl:
         type: string
-        default: "up-ap.nginx.com"
+        default: "https://up-ap.nginx.com"
 
 env:
   NFPM_VERSION: 'v2.35.3'
