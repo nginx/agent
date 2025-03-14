@@ -87,7 +87,7 @@ func ResolveConfig() (*Config, error) {
 			dir += "/"
 		}
 		allowedDirs = append(allowedDirs, dir)
-		slog.Info("Resolved directory", "dir", allowedDirs)
+		slog.Info("Configured allowed directories", "allowed_directories", allowedDirs)
 	}
 
 	// Collect all parsing errors before returning the error, so the user sees all issues with config
