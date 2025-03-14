@@ -57,9 +57,9 @@ update_config_file() {
         echo "NGINX Agent server host should be ${NGINX_ONE_HOST}"
         
         if grep -q "$NGINX_ONE_HOST" ${v2_config_file}; then
-            echo "NGINX Agent is connected to NGINX One"
+            echo "NGINX Agent is configured to connect to NGINX One"
         else 
-            echo "${RED_COLOUR}Previous version of NGINX Agent was not connected to NGINX One. Stopping upgrade${NO_COLOUR}" 
+            echo "${RED_COLOUR}Previous version of NGINX Agent was not configured to connect to NGINX One. Stopping upgrade${NO_COLOUR}" 
             exit 1
         fi
         
@@ -70,7 +70,7 @@ update_config_file() {
         config_dirs=`echo $config_dirs | cut -d "\"" -f 2`
         
         allowed_directories=""
-        export IFS=":"
+        IFS=":"
         for config_dir in $config_dirs; do
           allowed_directories="${allowed_directories}\n  - ${config_dir}"
         done
