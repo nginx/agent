@@ -115,12 +115,11 @@ func (gc *GrpcConnection) FileServiceClient() mpi.FileServiceClient {
 }
 
 func (gc *GrpcConnection) Close(ctx context.Context) error {
-	slog.InfoContext(ctx, "Closing grpc connection")
-
 	gc.mutex.Lock()
 	defer gc.mutex.Unlock()
 
 	if gc.conn != nil {
+		slog.InfoContext(ctx, "Closing grpc connection")
 		err := gc.conn.Close()
 		gc.conn = nil
 		if err != nil {
@@ -354,7 +353,8 @@ func ProtoValidatorStreamClientInterceptor() (grpc.StreamClientInterceptor, erro
 func ValidateGrpcError(err error) error {
 	if err != nil {
 		if statusError, ok := status.FromError(err); ok {
-			if statusError.Code() == codes.InvalidArgument || statusError.Code() == codes.Unimplemented {
+			if statusError.Code() == codes.InvalidArgument || statusError.Code() == codes.Unimplemented ||
+				statusError.Code() == codes.Canceled {
 				return backoff.Permanent(err)
 			}
 		}

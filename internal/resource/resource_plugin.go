@@ -60,7 +60,7 @@ func (r *Resource) Init(ctx context.Context, messagePipe bus.MessagePipeInterfac
 }
 
 func (*Resource) Close(ctx context.Context) error {
-	slog.DebugContext(ctx, "Closing resource plugin")
+	slog.InfoContext(ctx, "Closing resource plugin")
 	return nil
 }
 
