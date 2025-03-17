@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package v1_test
+package files_test
 
 import (
 	"bytes"
@@ -17,6 +17,7 @@ import (
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1/v1fakes"
+	"github.com/nginx/agent/v3/pkg/files"
 )
 
 var letters = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -33,16 +34,19 @@ func randBytes(n int) []byte {
 
 //nolint:gocognit,revive
 func TestSendChunkedFile(t *testing.T) {
-	for desc, td := range map[string]struct {
-		clientFunc  func(cl *v1fakes.FakeFileService_GetFileStreamServer)
-		header      v1.FileDataChunk_Header
-		expectedErr error
-		content     []byte
+	tests := []struct {
+		name              string
+		clientFunc        func(cl *v1fakes.FakeFileService_GetFileStreamServer)
+		header            v1.FileDataChunk_Header
+		expectedErrString string
+		content           []byte
 	}{
-		"empty": {
-			expectedErr: v1.ErrInvalidHeader,
+		{
+			name:              "Test 1: zero header",
+			expectedErrString: "zero in header",
 		},
-		"under chunk size": {
+		{
+			name: "Test 2: under chunk size",
 			header: v1.FileDataChunk_Header{
 				Header: &v1.FileDataChunkHeader{
 					FileMeta: &v1.FileMeta{
@@ -54,7 +58,8 @@ func TestSendChunkedFile(t *testing.T) {
 			},
 			content: randBytes(3),
 		},
-		"exact chunk size": {
+		{
+			name: "Test 3: exact chunk size",
 			header: v1.FileDataChunk_Header{
 				Header: &v1.FileDataChunkHeader{
 					FileMeta: &v1.FileMeta{
@@ -66,7 +71,8 @@ func TestSendChunkedFile(t *testing.T) {
 			},
 			content: randBytes(1500),
 		},
-		"over chunk size": {
+		{
+			name: "Test 4: over chunk size",
 			header: v1.FileDataChunk_Header{
 				Header: &v1.FileDataChunkHeader{
 					FileMeta: &v1.FileMeta{
@@ -78,8 +84,8 @@ func TestSendChunkedFile(t *testing.T) {
 			},
 			content: randBytes(2300),
 		},
-		"read under size (meta file size < actual content size)": {
-			expectedErr: v1.ErrFailedRead,
+		{
+			name: "Test 5: read under size (meta file size < actual content size)",
 			header: v1.FileDataChunk_Header{
 				Header: &v1.FileDataChunkHeader{
 					FileMeta: &v1.FileMeta{
@@ -89,9 +95,11 @@ func TestSendChunkedFile(t *testing.T) {
 					ChunkSize: 1500,
 				},
 			},
-			content: randBytes(2300),
+			content:           randBytes(2300),
+			expectedErrString: "failed read",
 		},
-		"read over size (meta file size > actual content size)": {
+		{
+			name: "Test 6: read over size (meta file size > actual content size)",
 			header: v1.FileDataChunk_Header{
 				Header: &v1.FileDataChunkHeader{
 					FileMeta: &v1.FileMeta{
@@ -104,7 +112,8 @@ func TestSendChunkedFile(t *testing.T) {
 			// we send up to the Size in the file meta
 			content: randBytes(2300),
 		},
-		"send error (header)": {
+		{
+			name: "Test 7: send error (header)",
 			header: v1.FileDataChunk_Header{
 				Header: &v1.FileDataChunkHeader{
 					FileMeta: &v1.FileMeta{
@@ -119,9 +128,10 @@ func TestSendChunkedFile(t *testing.T) {
 			clientFunc: func(cl *v1fakes.FakeFileService_GetFileStreamServer) {
 				cl.SendReturns(fmt.Errorf("error"))
 			},
-			expectedErr: v1.ErrSend,
+			expectedErrString: "send error (header)",
 		},
-		"send error (content)": {
+		{
+			name: "Test 8: send error (content)",
 			header: v1.FileDataChunk_Header{
 				Header: &v1.FileDataChunkHeader{
 					FileMeta: &v1.FileMeta{
@@ -142,14 +152,16 @@ func TestSendChunkedFile(t *testing.T) {
 					return nil
 				})
 			},
-			expectedErr: v1.ErrSend,
+			expectedErrString: "send error (content)",
 		},
-	} {
-		t.Run(desc, func(t *testing.T) {
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			cl := &v1fakes.FakeFileService_GetFileStreamServer{}
 			buf := &bytes.Buffer{}
-			if td.clientFunc != nil {
-				td.clientFunc(cl)
+			if test.clientFunc != nil {
+				test.clientFunc(cl)
 			} else {
 				cl.SendCalls(func(chunk *v1.FileDataChunk) error {
 					d, ok := chunk.GetChunk().(*v1.FileDataChunk_Content)
@@ -163,21 +175,21 @@ func TestSendChunkedFile(t *testing.T) {
 				})
 			}
 
-			err := v1.SendChunkedFile(
+			err := files.SendChunkedFile(
 				&v1.MessageMeta{},
-				td.header,
-				bytes.NewReader(td.content),
+				test.header,
+				bytes.NewReader(test.content),
 				cl,
 			)
-			if td.expectedErr != nil {
+			if test.expectedErrString != "" {
 				require.Error(t, err)
-				assert.ErrorIs(t, err, td.expectedErr)
+				assert.Contains(t, err.Error(), test.expectedErrString)
 
 				return
 			}
 			require.NoError(t, err)
 
-			chunks := td.header.Header.GetChunks()
+			chunks := test.header.Header.GetChunks()
 			assert.EqualValues(t, chunks+1, cl.SendCallCount())
 			for i := 0; i < int(chunks+1); i++ {
 				arg := cl.SendArgsForCall(i)
@@ -190,10 +202,10 @@ func TestSendChunkedFile(t *testing.T) {
 				}
 			}
 			sentBytes := buf.Bytes()
-			if len(td.content) > len(sentBytes) {
-				assert.Equal(t, td.content[0:len(sentBytes)], sentBytes)
+			if len(test.content) > len(sentBytes) {
+				assert.Equal(t, test.content[0:len(sentBytes)], sentBytes)
 			} else {
-				assert.Equal(t, td.content, sentBytes)
+				assert.Equal(t, test.content, sentBytes)
 			}
 		})
 	}
@@ -208,22 +220,23 @@ func (b badWriter) Write(p []byte) (n int, err error) {
 // nolint: revive,govet,maintidx
 func TestRecvChunkedFile(t *testing.T) {
 	recvErr := fmt.Errorf("recv error")
-
 	type recvReturn struct {
 		chunk *v1.FileDataChunk
 		err   error
 	}
-	for desc, td := range map[string]struct {
+	tests := []struct {
+		name              string
 		recvReturn        []recvReturn
-		expectedErr       error
 		expectedErrString string
 		content           []byte
 		writer            io.Writer
 	}{
-		"empty": {
-			expectedErr: v1.ErrInvalidHeader,
+		{
+			name:              "Test 1: empty send",
+			expectedErrString: "no header chunk",
 		},
-		"header with zero": {
+		{
+			name: "Test 2: header with zeros",
 			recvReturn: []recvReturn{
 				{
 					chunk: &v1.FileDataChunk{
@@ -235,9 +248,10 @@ func TestRecvChunkedFile(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: v1.ErrInvalidHeader,
+			expectedErrString: "zero in header:",
 		},
-		"data unmatched": {
+		{
+			name: "Test 3: data unmatched",
 			recvReturn: []recvReturn{
 				{
 					chunk: &v1.FileDataChunk{
@@ -262,11 +276,11 @@ func TestRecvChunkedFile(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: v1.ErrUnexpectedContent,
 			// last chunk can be undersized
 			expectedErrString: "1500 left",
 		},
-		"data unmatched - chunks size": {
+		{
+			name: "Test 4: data unmatched - chunks size",
 			recvReturn: []recvReturn{
 				{
 					chunk: &v1.FileDataChunk{
@@ -300,10 +314,10 @@ func TestRecvChunkedFile(t *testing.T) {
 					},
 				},
 			},
-			expectedErr:       v1.ErrUnexpectedContent,
 			expectedErrString: "content chunk size 0, expected 1500",
 		},
-		"data unmatched - extra": {
+		{
+			name: "Test 5: data unmatched - extra",
 			recvReturn: []recvReturn{
 				{
 					chunk: &v1.FileDataChunk{
@@ -339,10 +353,10 @@ func TestRecvChunkedFile(t *testing.T) {
 					},
 				},
 			},
-			expectedErr:       v1.ErrUnexpectedContent,
 			expectedErrString: "1500 more data than expected",
 		},
-		"data unmatched - chunk id": {
+		{
+			name: "Test 6: data unmatched - chunk id",
 			recvReturn: []recvReturn{
 				{
 					chunk: &v1.FileDataChunk{
@@ -368,10 +382,10 @@ func TestRecvChunkedFile(t *testing.T) {
 					},
 				},
 			},
-			expectedErr:       v1.ErrUnexpectedContent,
 			expectedErrString: "unexpected chunk id 5, expected 0",
 		},
-		"content recv error": {
+		{
+			name: "Test 7: content recv error",
 			recvReturn: []recvReturn{
 				{
 					chunk: &v1.FileDataChunk{
@@ -390,19 +404,19 @@ func TestRecvChunkedFile(t *testing.T) {
 					err: recvErr,
 				},
 			},
-			expectedErr:       v1.ErrFailedRead,
-			expectedErrString: "content error " + recvErr.Error(),
+			expectedErrString: "recv error: failed to read content",
 		},
-		"header recv error": {
+		{
+			name: "Test 8: header recv error",
 			recvReturn: []recvReturn{
 				{
 					err: recvErr,
 				},
 			},
-			expectedErr:       v1.ErrFailedRead,
-			expectedErrString: "header error " + recvErr.Error(),
+			expectedErrString: "recv error: header error",
 		},
-		"data unmatched - nil content": {
+		{
+			name: "Test 9: data unmatched - nil content",
 			recvReturn: []recvReturn{
 				{
 					chunk: &v1.FileDataChunk{
@@ -423,10 +437,10 @@ func TestRecvChunkedFile(t *testing.T) {
 					},
 				},
 			},
-			expectedErr:       v1.ErrUnexpectedContent,
 			expectedErrString: "no content",
 		},
-		"write error": {
+		{
+			name: "Test 10: write error",
 			recvReturn: []recvReturn{
 				{
 					chunk: &v1.FileDataChunk{
@@ -452,10 +466,11 @@ func TestRecvChunkedFile(t *testing.T) {
 					},
 				},
 			},
-			writer:      &badWriter{},
-			expectedErr: v1.ErrWrite,
+			writer:            &badWriter{},
+			expectedErrString: "error: failed write",
 		},
-		"good data": {
+		{
+			name: "Test 11: no error",
 			recvReturn: []recvReturn{
 				{
 					chunk: &v1.FileDataChunk{
@@ -482,27 +497,26 @@ func TestRecvChunkedFile(t *testing.T) {
 				},
 			},
 		},
-	} {
-		t.Run(desc, func(t *testing.T) {
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			cl := &v1fakes.FakeFileService_GetFileStreamClient{}
 			cl.RecvCalls(func() (*v1.FileDataChunk, error) {
 				index := cl.RecvCallCount() - 1
-				if index < len(td.recvReturn) {
-					return td.recvReturn[index].chunk, td.recvReturn[index].err
+				if index < len(test.recvReturn) {
+					return test.recvReturn[index].chunk, test.recvReturn[index].err
 				}
 
 				return (*v1.FileDataChunk)(nil), nil
 			})
-			if td.writer == nil {
-				td.writer = &bytes.Buffer{}
+			if test.writer == nil {
+				test.writer = &bytes.Buffer{}
 			}
-			_, err := v1.RecvChunkedFile(cl, td.writer)
-			if td.expectedErr != nil {
+			_, err := files.RecvChunkedFile(cl, test.writer)
+			if test.expectedErrString != "" {
 				require.Error(t, err)
-				assert.ErrorIs(t, err, td.expectedErr)
-				if td.expectedErrString != "" {
-					assert.Contains(t, err.Error(), td.expectedErrString)
-				}
+				assert.Contains(t, err.Error(), test.expectedErrString)
 
 				return
 			}

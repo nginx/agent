@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package v1
+package files
 
 import (
 	"errors"
@@ -11,35 +11,29 @@ import (
 	"io"
 
 	"google.golang.org/grpc"
-)
 
-var (
-	ErrInvalidHeader     = errors.New("invalid header")
-	ErrUnexpectedContent = errors.New("unexpected content")
-	ErrSend              = errors.New("send error")
-	ErrWrite             = errors.New("write error")
-	ErrFailedRead        = errors.New("failed to read")
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )
 
 // SendChunkedFile reads the src into [FileDataChunkContent]s, and sends a valid sequence of
 // [FileDataChunk]s down the stream.
 func SendChunkedFile(
-	meta *MessageMeta,
-	header FileDataChunk_Header,
+	meta *v1.MessageMeta,
+	header v1.FileDataChunk_Header,
 	src io.Reader,
-	dst grpc.ServerStreamingServer[FileDataChunk],
+	dst grpc.ServerStreamingServer[v1.FileDataChunk],
 ) error {
 	chunkCount := int(header.Header.GetChunks())
 	chunkSize := int(header.Header.GetChunkSize())
 	total := int(header.Header.GetFileMeta().GetSize())
 	if chunkSize == 0 || chunkCount == 0 || total == 0 {
-		return fmt.Errorf("%w:  %v", ErrInvalidHeader, header.Header)
+		return fmt.Errorf("zero in header: %+v", header.Header)
 	}
-	if err := dst.Send(&FileDataChunk{
+	if err := dst.Send(&v1.FileDataChunk{
 		Meta:  meta,
 		Chunk: &header,
 	}); err != nil {
-		return fmt.Errorf("%w: %s (header)", ErrSend, err)
+		return fmt.Errorf("%w: send error (header)", err)
 	}
 	// allocate the buffer we need for reading from io.Reader
 	// this is set to the size of the chunks we need to send.
@@ -54,18 +48,18 @@ func SendChunkedFile(
 		total -= n
 		if err != nil && total != 0 {
 			// partial read
-			return fmt.Errorf("%w: %s", ErrFailedRead, err)
+			return fmt.Errorf("%w: failed read", err)
 		}
-		if err = dst.Send(&FileDataChunk{
+		if err = dst.Send(&v1.FileDataChunk{
 			Meta: meta,
-			Chunk: &FileDataChunk_Content{
-				Content: &FileDataChunkContent{
+			Chunk: &v1.FileDataChunk_Content{
+				Content: &v1.FileDataChunkContent{
 					ChunkId: uint32(i),
 					Data:    buf[0:n],
 				},
 			},
 		}); err != nil {
-			return fmt.Errorf("%w: %s (content)", ErrSend, err)
+			return fmt.Errorf("%w: send error (content)", err)
 		}
 	}
 
@@ -75,19 +69,19 @@ func SendChunkedFile(
 // RecvChunkedFile receives [FileDataChunkContent]s from the stream and writes the file contents
 // to the dst.
 func RecvChunkedFile(
-	src grpc.ServerStreamingClient[FileDataChunk],
+	src grpc.ServerStreamingClient[v1.FileDataChunk],
 	dst io.Writer,
-) (header *FileMeta, err error) {
+) (header *v1.FileMeta, err error) {
 	// receive the header first
 	chunk, err := src.Recv()
 	if err != nil {
-		return header, fmt.Errorf("%w: header error %s", ErrFailedRead, err)
+		return header, fmt.Errorf("%w: header error", err)
 	}
 
 	// validate and extract header info
 	headerChunk := chunk.GetHeader()
 	if headerChunk == nil {
-		return header, fmt.Errorf("%w: invalid header chunk", ErrInvalidHeader)
+		return header, errors.New("no header chunk")
 	}
 
 	header = headerChunk.GetFileMeta()
@@ -96,14 +90,14 @@ func RecvChunkedFile(
 	total := int(header.GetSize())
 
 	if chunkSize == 0 || chunkCount == 0 || total == 0 {
-		return header, fmt.Errorf("%w: %v", ErrInvalidHeader, headerChunk)
+		return header, fmt.Errorf("zero in header: %v", headerChunk)
 	}
 
 	return header, recvContents(src, dst, chunkCount, chunkSize, total)
 }
 
 func recvContents(
-	src grpc.ServerStreamingClient[FileDataChunk],
+	src grpc.ServerStreamingClient[v1.FileDataChunk],
 	dst io.Writer,
 	chunkCount int,
 	chunkSize int,
@@ -113,7 +107,7 @@ func recvContents(
 	for i := 0; i < chunkCount; i++ {
 		chunk, err := src.Recv()
 		if err != nil {
-			return fmt.Errorf("%w: content error %s", ErrFailedRead, err)
+			return fmt.Errorf("%w: failed to read content", err)
 		}
 
 		if err = validateRecvChunk(chunk, chunkSize, chunkCount-1, i); err != nil {
@@ -121,35 +115,31 @@ func recvContents(
 		}
 		data := chunk.GetContent().GetData()
 		if _, err = dst.Write(data); err != nil {
-			return fmt.Errorf("%w: %s", ErrWrite, err)
+			return fmt.Errorf("%w: failed write", err)
 		}
 		totalSize -= len(data)
 		if 0 > totalSize {
-			return fmt.Errorf("%w: %d more data than expected",
-				ErrUnexpectedContent, 0-totalSize)
+			return fmt.Errorf("unexpected content: %d more data than expected", 0-totalSize)
 		}
 	}
 	if totalSize > 0 {
-		return fmt.Errorf("%w: unexpected end of content, %d left",
-			ErrUnexpectedContent, totalSize)
+		return fmt.Errorf("unexpected content: unexpected end of content, %d left", totalSize)
 	}
 
 	return nil
 }
 
-func validateRecvChunk(chunk *FileDataChunk, chunkSize, lastChunkIndex, i int) error {
+func validateRecvChunk(chunk *v1.FileDataChunk, chunkSize, lastChunkIndex, i int) error {
 	content := chunk.GetContent()
 	if content == nil {
-		return fmt.Errorf("%w: no content", ErrUnexpectedContent)
+		return fmt.Errorf("no content")
 	}
 	if content.GetChunkId() != uint32(i) {
-		return fmt.Errorf("%w: unexpected chunk id %d, expected %d",
-			ErrUnexpectedContent, content.GetChunkId(), i)
+		return fmt.Errorf("unexpected chunk id %d, expected %d", content.GetChunkId(), i)
 	}
 	data := content.GetData()
 	if len(data) != chunkSize && i != lastChunkIndex {
-		return fmt.Errorf("%w: content chunk size %d, expected %d",
-			ErrUnexpectedContent, len(data), chunkSize)
+		return fmt.Errorf("content chunk size %d, expected %d", len(data), chunkSize)
 	}
 
 	return nil
