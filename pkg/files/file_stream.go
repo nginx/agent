@@ -119,11 +119,11 @@ func recvContents(
 		}
 		totalSize -= len(data)
 		if 0 > totalSize {
-			return fmt.Errorf("unexpected content: %d more data than expected", 0-totalSize)
+			return fmt.Errorf("unexpected content: %d bytes more data than expected", 0-totalSize)
 		}
 	}
 	if totalSize > 0 {
-		return fmt.Errorf("unexpected content: unexpected end of content, %d left", totalSize)
+		return fmt.Errorf("unexpected content: unexpected end of content, expected additional %d bytes", totalSize)
 	}
 
 	return nil
@@ -132,14 +132,16 @@ func recvContents(
 func validateRecvChunk(chunk *v1.FileDataChunk, chunkSize, lastChunkIndex, i int) error {
 	content := chunk.GetContent()
 	if content == nil {
-		return fmt.Errorf("no content")
+		return fmt.Errorf("no content in chunk id %d", i)
 	}
 	if content.GetChunkId() != uint32(i) {
-		return fmt.Errorf("unexpected chunk id %d, expected %d", content.GetChunkId(), i)
+		return fmt.Errorf("content chunk id of %d does not match expected id of %d",
+			content.GetChunkId(), i)
 	}
 	data := content.GetData()
 	if len(data) != chunkSize && i != lastChunkIndex {
-		return fmt.Errorf("content chunk size %d, expected %d", len(data), chunkSize)
+		return fmt.Errorf("content chunk size of %d does not match expected size of %d",
+			len(data), chunkSize)
 	}
 
 	return nil

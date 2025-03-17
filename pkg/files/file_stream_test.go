@@ -277,7 +277,7 @@ func TestRecvChunkedFile(t *testing.T) {
 				},
 			},
 			// last chunk can be undersized
-			expectedErrString: "1500 left",
+			expectedErrString: "expected additional 1500 bytes",
 		},
 		{
 			name: "Test 4: data unmatched - chunks size",
@@ -314,7 +314,7 @@ func TestRecvChunkedFile(t *testing.T) {
 					},
 				},
 			},
-			expectedErrString: "content chunk size 0, expected 1500",
+			expectedErrString: "content chunk size of 0 does not match expected size of 1500",
 		},
 		{
 			name: "Test 5: data unmatched - extra",
@@ -353,7 +353,7 @@ func TestRecvChunkedFile(t *testing.T) {
 					},
 				},
 			},
-			expectedErrString: "1500 more data than expected",
+			expectedErrString: "unexpected content: 1500 bytes more data than expected",
 		},
 		{
 			name: "Test 6: data unmatched - chunk id",
@@ -382,7 +382,7 @@ func TestRecvChunkedFile(t *testing.T) {
 					},
 				},
 			},
-			expectedErrString: "unexpected chunk id 5, expected 0",
+			expectedErrString: "content chunk id of 5 does not match expected id of 0",
 		},
 		{
 			name: "Test 7: content recv error",
