@@ -43,7 +43,7 @@ func TestSendChunkedFile(t *testing.T) {
 	}{
 		{
 			name:              "Test 1: zero header",
-			expectedErrString: "zero in header",
+			expectedErrString: "file size in header is zero",
 		},
 		{
 			name: "Test 2: under chunk size",
@@ -96,7 +96,7 @@ func TestSendChunkedFile(t *testing.T) {
 				},
 			},
 			content:           randBytes(2300),
-			expectedErrString: "failed read",
+			expectedErrString: "unable to read chunk id 1",
 		},
 		{
 			name: "Test 6: read over size (meta file size > actual content size)",
@@ -128,7 +128,7 @@ func TestSendChunkedFile(t *testing.T) {
 			clientFunc: func(cl *v1fakes.FakeFileService_GetFileStreamServer) {
 				cl.SendReturns(fmt.Errorf("error"))
 			},
-			expectedErrString: "send error (header)",
+			expectedErrString: "unable to send header chunk",
 		},
 		{
 			name: "Test 8: send error (content)",
@@ -152,7 +152,7 @@ func TestSendChunkedFile(t *testing.T) {
 					return nil
 				})
 			},
-			expectedErrString: "send error (content)",
+			expectedErrString: "unable to send chunk id 0",
 		},
 	}
 
@@ -248,7 +248,7 @@ func TestRecvChunkedFile(t *testing.T) {
 					},
 				},
 			},
-			expectedErrString: "zero in header:",
+			expectedErrString: "file size in header is zero",
 		},
 		{
 			name: "Test 3: data unmatched",
@@ -404,7 +404,7 @@ func TestRecvChunkedFile(t *testing.T) {
 					err: recvErr,
 				},
 			},
-			expectedErrString: "recv error: failed to read content",
+			expectedErrString: "unable to receive chunk id 0",
 		},
 		{
 			name: "Test 8: header recv error",
@@ -413,7 +413,7 @@ func TestRecvChunkedFile(t *testing.T) {
 					err: recvErr,
 				},
 			},
-			expectedErrString: "recv error: header error",
+			expectedErrString: "unable to receive header chunk",
 		},
 		{
 			name: "Test 9: data unmatched - nil content",
@@ -467,7 +467,7 @@ func TestRecvChunkedFile(t *testing.T) {
 				},
 			},
 			writer:            &badWriter{},
-			expectedErrString: "error: failed write",
+			expectedErrString: "unable to write chunk id 0",
 		},
 		{
 			name: "Test 11: no error",

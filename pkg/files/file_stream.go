@@ -27,13 +27,13 @@ func SendChunkedFile(
 	chunkSize := int(header.Header.GetChunkSize())
 	total := int(header.Header.GetFileMeta().GetSize())
 	if chunkSize == 0 || chunkCount == 0 || total == 0 {
-		return fmt.Errorf("zero in header: %+v", header.Header)
+		return fmt.Errorf("file size in header is zero: %+v", header.Header)
 	}
 	if err := dst.Send(&v1.FileDataChunk{
 		Meta:  meta,
 		Chunk: &header,
 	}); err != nil {
-		return fmt.Errorf("%w: send error (header)", err)
+		return fmt.Errorf("unable to send header chunk: %w", err)
 	}
 	// allocate the buffer we need for reading from io.Reader
 	// this is set to the size of the chunks we need to send.
@@ -48,7 +48,7 @@ func SendChunkedFile(
 		total -= n
 		if err != nil && total != 0 {
 			// partial read
-			return fmt.Errorf("%w: failed read", err)
+			return fmt.Errorf("unable to read chunk id %d: %w", i, err)
 		}
 		if err = dst.Send(&v1.FileDataChunk{
 			Meta: meta,
@@ -59,7 +59,7 @@ func SendChunkedFile(
 				},
 			},
 		}); err != nil {
-			return fmt.Errorf("%w: send error (content)", err)
+			return fmt.Errorf("unable to send chunk id %d: %w", i, err)
 		}
 	}
 
@@ -75,7 +75,7 @@ func RecvChunkedFile(
 	// receive the header first
 	chunk, err := src.Recv()
 	if err != nil {
-		return header, fmt.Errorf("%w: header error", err)
+		return header, fmt.Errorf("unable to receive header chunk: %w", err)
 	}
 
 	// validate and extract header info
@@ -90,7 +90,7 @@ func RecvChunkedFile(
 	total := int(header.GetSize())
 
 	if chunkSize == 0 || chunkCount == 0 || total == 0 {
-		return header, fmt.Errorf("zero in header: %v", headerChunk)
+		return header, fmt.Errorf("file size in header is zero: %+v", headerChunk)
 	}
 
 	return header, recvContents(src, dst, chunkCount, chunkSize, total)
@@ -107,7 +107,7 @@ func recvContents(
 	for i := 0; i < chunkCount; i++ {
 		chunk, err := src.Recv()
 		if err != nil {
-			return fmt.Errorf("%w: failed to read content", err)
+			return fmt.Errorf("unable to receive chunk id %d: %w", i, err)
 		}
 
 		if err = validateRecvChunk(chunk, chunkSize, chunkCount-1, i); err != nil {
@@ -115,7 +115,7 @@ func recvContents(
 		}
 		data := chunk.GetContent().GetData()
 		if _, err = dst.Write(data); err != nil {
-			return fmt.Errorf("%w: failed write", err)
+			return fmt.Errorf("unable to write chunk id %d: %w", i, err)
 		}
 		totalSize -= len(data)
 		if 0 > totalSize {
@@ -129,17 +129,17 @@ func recvContents(
 	return nil
 }
 
-func validateRecvChunk(chunk *v1.FileDataChunk, chunkSize, lastChunkIndex, i int) error {
+func validateRecvChunk(chunk *v1.FileDataChunk, chunkSize, lastChunkIndex, chunkID int) error {
 	content := chunk.GetContent()
 	if content == nil {
-		return fmt.Errorf("no content in chunk id %d", i)
+		return fmt.Errorf("no content in chunk id %d", chunkID)
 	}
-	if content.GetChunkId() != uint32(i) {
+	if content.GetChunkId() != uint32(chunkID) {
 		return fmt.Errorf("content chunk id of %d does not match expected id of %d",
-			content.GetChunkId(), i)
+			content.GetChunkId(), chunkID)
 	}
 	data := content.GetData()
-	if len(data) != chunkSize && i != lastChunkIndex {
+	if len(data) != chunkSize && chunkID != lastChunkIndex {
 		return fmt.Errorf("content chunk size of %d does not match expected size of %d",
 			len(data), chunkSize)
 	}
