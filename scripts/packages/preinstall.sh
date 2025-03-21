@@ -20,6 +20,7 @@ NO_COLOUR='\033[0m'
 . /etc/os-release
 
 AGENT_CONFIG_FILE=${AGENT_CONFIG_FILE:-"/etc/nginx-agent/nginx-agent.conf"}
+AGENT_DYNAMIC_CONFIG_FILE=${AGENT_DYNAMIC_CONFIG_FILE:-"/var/lib/nginx-agent/agent-dynamic.conf"}
 
 #
 # Functions
@@ -66,6 +67,19 @@ update_config_file() {
         token=`grep "token:" "${v2_config_file}"`
         token=`echo $token | cut -d ":" -f 2 | xargs`
         
+        instance_group=`grep "instance_group:" "${AGENT_DYNAMIC_CONFIG_FILE}"`
+        instance_group=`echo $instance_group | cut -d ":" -f 2 | xargs`
+        
+        labels=""
+        
+        if [ -n "${instance_group}" ]; then 
+            echo "Adding config sync group to NGINX Agent configuration"
+            labels="
+labels:
+  config-sync-group: ${instance_group}
+"
+        fi
+        
         config_dirs=`grep "config_dirs:" "${v2_config_file}"`
         config_dirs=`echo $config_dirs | cut -d "\"" -f 2`
         
@@ -91,7 +105,7 @@ log:
   path: /var/log/nginx-agent/
 
 allowed_directories: ${allowed_directories}
-
+${labels}
 command:
     server:
         host: ${NGINX_ONE_HOST}
