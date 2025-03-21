@@ -1,4 +1,4 @@
-.TH  "nginx_agent_selinux"  "8"  "25-03-13" "nginx_agent" "SELinux Policy nginx_agent"
+.TH  "nginx_agent_selinux"  "8"  "25-03-21" "nginx_agent" "SELinux Policy nginx_agent"
 .SH "NAME"
 nginx_agent_selinux \- Security Enhanced Linux Policy for the nginx_agent processes
 .SH "DESCRIPTION"
@@ -244,11 +244,87 @@ The SELinux process type nginx_agent_t can manage files labeled with the followi
 .br
 
 .br
+.B udev_var_run_t
+
+	/dev/\.udev(/.*)?
+.br
+	/var/run/udev(/.*)?
+.br
+	/var/run/libgpod(/.*)?
+.br
+	/var/run/PackageKit/udev(/.*)?
+.br
+	/dev/\.udevdb
+.br
+	/dev/udev\.tbl
+.br
+
+.br
 .B var_lib_t
 
 	/opt/(.*/)?var/lib(/.*)?
 .br
 	/var/lib(/.*)?
+.br
+
+.br
+.B var_log_t
+
+	/var/log/.*
+.br
+	/nsr/logs(/.*)?
+.br
+	/var/webmin(/.*)?
+.br
+	/var/log/secure[^/]*
+.br
+	/opt/zimbra/log(/.*)?
+.br
+	/var/log/maillog[^/]*
+.br
+	/var/log/spooler[^/]*
+.br
+	/var/log/messages[^/]*
+.br
+	/usr/centreon/log(/.*)?
+.br
+	/var/spool/rsyslog(/.*)?
+.br
+	/var/axfrdns/log/main(/.*)?
+.br
+	/var/spool/bacula/log(/.*)?
+.br
+	/var/tinydns/log/main(/.*)?
+.br
+	/var/dnscache/log/main(/.*)?
+.br
+	/var/stockmaniac/templates_cache(/.*)?
+.br
+	/opt/Symantec/scspagent/IDS/system(/.*)?
+.br
+	/var/log
+.br
+	/var/log/dmesg
+.br
+	/var/log/syslog
+.br
+	/var/named/chroot/var/log
+.br
+
+.br
+.B var_run_t
+
+	/run/.*
+.br
+	/var/run/.*
+.br
+	/run
+.br
+	/var/run
+.br
+	/var/run
+.br
+	/var/spool/postfix/pid
 .br
 
 .SH FILE CONTEXTS

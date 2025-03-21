@@ -65,6 +65,9 @@ require {
 	type fixed_disk_device_t;
 	type nvme_device_t;
 	type udev_var_run_t;
+	type httpd_var_lib_t;
+	type unconfined_t;
+	type unreserved_port_t;
 }
 
 allow nginx_agent_t bin_t:file { execute execute_no_trans };
@@ -101,7 +104,7 @@ allow nginx_agent_t httpd_config_t:file { getattr open read };
 #!!!! This avc can be allowed using the boolean 'domain_can_mmap_files'
 allow nginx_agent_t httpd_exec_t:file map;
 allow nginx_agent_t httpd_exec_t:file { execute execute_no_trans getattr open read };
-allow nginx_agent_t httpd_log_t:dir { getattr open read search };
+allow nginx_agent_t httpd_log_t:dir { watch getattr open read search };
 allow nginx_agent_t passwd_file_t:file { getattr open read };
 allow nginx_agent_t self:capability dac_read_search;
 
@@ -124,7 +127,7 @@ allow nginx_agent_t httpd_log_t:file { open read };
 allow nginx_agent_t httpd_t:process signal;
 allow nginx_agent_t httpd_var_run_t:file { open read write };
 allow nginx_agent_t self:capability { dac_override net_bind_service };
-allow nginx_agent_t cert_t:dir { search open read };
+allow nginx_agent_t cert_t:dir { getattr search open read };
 allow nginx_agent_t cert_t:lnk_file read;
 
 
@@ -149,8 +152,15 @@ allow nginx_agent_t self:udp_socket { connect create getattr setopt };
 allow nginx_agent_t fixed_disk_device_t:blk_file getattr;
 allow nginx_agent_t nvme_device_t:blk_file getattr;
 allow nginx_agent_t udev_var_run_t:dir search;
-allow nginx_agent_t udev_var_run_t:file { getattr open read };
+allow nginx_agent_t udev_var_run_t:file { getattr open read write };
 
 allow nginx_agent_t etc_t:dir { add_name write };
 allow nginx_agent_t etc_t:file { create write };
 
+allow nginx_agent_t httpd_var_lib_t:dir { getattr search };
+allow nginx_agent_t unconfined_t:process signal;
+allow nginx_agent_t unreserved_port_t:tcp_socket name_bind;
+allow nginx_agent_t self:cap_userns sys_ptrace;
+allow nginx_agent_t usr_t:dir watch;
+allow nginx_agent_t var_log_t:file { open write };
+allow nginx_agent_t var_run_t:file { open read write };
