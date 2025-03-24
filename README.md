@@ -12,7 +12,7 @@ The F5 NGINX Agent is a companion application designed to efficiently manage NGI
 - Remote management: Easily control and configure NGINX instances remotely.  
 - Real-time metrics: Monitor and analyze performance data for NGINX and the underlying operating system.
 
-Discover more advanced features and capabilities by visiting: [Try NGINX One: Free Enterprise Trial](https://www.f5.com/trials/nginx-one). 
+Discover more advanced features and capabilities by visiting [Try NGINX One: Free Enterprise Trial](https://www.f5.com/trials/nginx-one). 
 
 
 # Installation
