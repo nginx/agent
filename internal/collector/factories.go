@@ -7,8 +7,10 @@ package collector
 import (
 	"errors"
 
+	containermetricsreceiver "github.com/nginx/agent/v3/internal/collector/containermetricsreceiver"
 	nginxreceiver "github.com/nginx/agent/v3/internal/collector/nginxossreceiver"
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver"
+
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/headerssetterextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension"
@@ -96,6 +98,7 @@ func createExtensionFactories() (map[component.Type]extension.Factory, error) {
 func createReceiverFactories() (map[component.Type]receiver.Factory, error) {
 	receiverList := []receiver.Factory{
 		otlpreceiver.NewFactory(),
+		containermetricsreceiver.NewFactory(),
 		hostmetricsreceiver.NewFactory(),
 		nginxreceiver.NewFactory(),
 		nginxplusreceiver.NewFactory(),

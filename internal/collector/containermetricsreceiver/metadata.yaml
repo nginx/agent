@@ -1,0 +1,30 @@
+type: containermetrics
+scope_name: otelcol/containermetrics
+
+status:
+  class: receiver
+  stability:
+    beta: [metrics]
+  distributions: [contrib]
+  codeowners:
+    active: [ aphralG, dhurley, craigell, sean-breen, Rashmiti, CVanF5 ]
+
+resource_attributes:
+  resource.id:
+    description: The resource's id.
+    type: string
+    enabled: true
+
+attributes:
+#  container.memory.current:
+#    description: The current amount of RAM used by the container.
+#    type: int
+
+metrics:
+  container.memory.current:
+    enabled: true
+    description: "The amount of memory currently in use."
+    sum:
+      value_type: int
+      monotonic: false
+    unit: "bytes"
