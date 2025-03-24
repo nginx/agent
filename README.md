@@ -15,7 +15,7 @@ F5 NGINX Agent is a companion application designed to efficiently manage NGINX i
 Discover more advanced features and capabilities by visiting [Try NGINX One: Free Enterprise Trial](https://www.f5.com/trials/nginx-one). 
 
 
-# Installation
+## Installation
 
 You can install **NGINX Agent** using one of the following methods:
 
@@ -31,9 +31,9 @@ You can install **NGINX Agent** using one of the following methods:
    Access detailed instructions to install or upgrade NGINX Agent from the official NGINX documentation:  
    [NGINX Agent Installation Guide](https://docs.nginx.com/nginx-agent/installation-upgrade/)
 
-# Useful Links
+## Useful Links
 * [Offical NGINX Agent Documentation](https://docs.nginx.com/nginx-agent/)
 * [F5 Support](https://my.f5.com/manage/s/)
 
-# Community 
+## Community 
 If you have any questions please reach out using the [NGINX Community](https://community.nginx.org/)
