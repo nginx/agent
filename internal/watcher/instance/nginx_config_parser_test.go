@@ -16,11 +16,8 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/pkg/files"
-	"google.golang.org/protobuf/testing/protocmp"
-
 	"github.com/nginx/agent/v3/test/stub"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -266,6 +263,7 @@ var (
 func TestNginxConfigParser_Parse(t *testing.T) {
 	ctx := context.Background()
 	dir := t.TempDir()
+	notAllowedDir := t.TempDir()
 
 	file := helpers.CreateFileWithErrorCheck(t, dir, "nginx-parse-config.conf")
 	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
@@ -282,88 +280,126 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 	ltsvAccessLog := helpers.CreateFileWithErrorCheck(t, dir, "ltsv_access.log")
 	defer helpers.RemoveFileWithErrorCheck(t, ltsvAccessLog.Name())
 
-	content := testconfig.GetNginxConfigWithMultipleAccessLogs(
-		errorLog.Name(),
-		accessLog.Name(),
-		combinedAccessLog.Name(),
-		ltsvAccessLog.Name(),
-	)
+	notAllowedFile := helpers.CreateFileWithErrorCheck(t, notAllowedDir, "file_outside_allowed.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, notAllowedFile.Name())
 
-	err := os.WriteFile(file.Name(), []byte(content), 0o600)
-	require.NoError(t, err)
-
-	fileMeta, err := files.FileMeta(file.Name())
+	allowedFile := helpers.CreateFileWithErrorCheck(t, dir, "file_allowed.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, allowedFile.Name())
+	fileMetaAllowedFiles, err := files.FileMeta(allowedFile.Name())
 	require.NoError(t, err)
 
 	tests := []struct {
-		instance      *mpi.Instance
-		name          string
-		syslogServers []string
+		instance              *mpi.Instance
+		name                  string
+		content               string
+		expectedConfigContext *model.NginxConfigContext
+		allowedDirectories    []string
 	}{
 		{
-			name:          "Test 1: Valid response",
-			instance:      protos.GetNginxOssInstance([]string{}),
-			syslogServers: []string{"127.0.0.1:1515"},
+			name:     "Test 1: Valid response",
+			instance: protos.GetNginxOssInstance([]string{}),
+			content: testconfig.GetNginxConfigWithMultipleAccessLogs(
+				errorLog.Name(),
+				accessLog.Name(),
+				combinedAccessLog.Name(),
+				ltsvAccessLog.Name(),
+			),
+			expectedConfigContext: modelHelpers.GetConfigContextWithNames(
+				accessLog.Name(),
+				combinedAccessLog.Name(),
+				ltsvAccessLog.Name(),
+				errorLog.Name(),
+				protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				[]string{"127.0.0.1:1515"},
+			),
+			allowedDirectories: []string{dir},
 		},
 		{
-			name:          "Test 2: Error response",
-			instance:      protos.GetNginxPlusInstance([]string{}),
-			syslogServers: []string{"127.0.0.1:1515"},
+			name:     "Test 2: Error response",
+			instance: protos.GetNginxPlusInstance([]string{}),
+			content: testconfig.GetNginxConfigWithMultipleAccessLogs(
+				errorLog.Name(),
+				accessLog.Name(),
+				combinedAccessLog.Name(),
+				ltsvAccessLog.Name(),
+			),
+			expectedConfigContext: modelHelpers.GetConfigContextWithNames(
+				accessLog.Name(),
+				combinedAccessLog.Name(),
+				ltsvAccessLog.Name(),
+				errorLog.Name(),
+				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				[]string{"127.0.0.1:1515"},
+			),
+			allowedDirectories: []string{dir},
+		},
+		{
+			name:     "Test 3: File outside allowed directories",
+			instance: protos.GetNginxPlusInstance([]string{}),
+			content: testconfig.GetNginxConfigWithNotAllowedDir(errorLog.Name(), allowedFile.Name(),
+				notAllowedFile.Name(), accessLog.Name()),
+			expectedConfigContext: &model.NginxConfigContext{
+				StubStatus: &model.APIDetails{},
+				PlusAPI:    &model.APIDetails{},
+				InstanceID: protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				Files: []*mpi.File{
+					{
+						FileMeta: fileMetaAllowedFiles,
+					},
+				},
+				AccessLogs: []*model.AccessLog{
+					{
+						Name: accessLog.Name(),
+						Format: "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent " +
+							"\"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\" \"$bytes_sent\" " +
+							"\"$request_length\" \"$request_time\" \"$gzip_ratio\" $server_protocol ",
+						Permissions: "0600",
+						Readable:    true,
+					},
+				},
+				ErrorLogs: []*model.ErrorLog{
+					{
+						Name:        errorLog.Name(),
+						Permissions: "0600",
+						Readable:    true,
+					},
+				},
+				NAPSysLogServers: nil,
+			},
+			allowedDirectories: []string{dir},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			expectedConfigContext := modelHelpers.GetConfigContextWithNames(
-				accessLog.Name(),
-				combinedAccessLog.Name(),
-				ltsvAccessLog.Name(),
-				errorLog.Name(),
-				test.instance.GetInstanceMeta().GetInstanceId(),
-				test.syslogServers,
-			)
+			writeErr := os.WriteFile(file.Name(), []byte(test.content), 0o600)
+			require.NoError(t, writeErr)
 
-			expectedConfigContext.Files = append(expectedConfigContext.Files, &mpi.File{
+			fileMeta, fileMetaErr := files.FileMeta(file.Name())
+			require.NoError(t, fileMetaErr)
+
+			test.expectedConfigContext.Files = append(test.expectedConfigContext.Files, &mpi.File{
 				FileMeta: fileMeta,
 			})
 
 			test.instance.InstanceRuntime.ConfigPath = file.Name()
 
 			agentConfig := types.AgentConfig()
-			agentConfig.AllowedDirectories = []string{dir}
+			agentConfig.AllowedDirectories = test.allowedDirectories
 
 			nginxConfig := NewNginxConfigParser(agentConfig)
 			result, parseError := nginxConfig.Parse(ctx, test.instance)
 			require.NoError(t, parseError)
 
-			if diff := cmp.Diff(expectedConfigContext.AccessLogs, result.AccessLogs, protocmp.Transform()); diff != "" {
-				t.Errorf("\n%v", diff)
-			}
+			assert.ElementsMatch(t, test.expectedConfigContext.Files, result.Files)
+			assert.Equal(t, test.expectedConfigContext.NAPSysLogServers, result.NAPSysLogServers)
+			assert.Equal(t, test.expectedConfigContext.PlusAPI, result.PlusAPI)
+			assert.ElementsMatch(t, test.expectedConfigContext.AccessLogs, result.AccessLogs)
+			assert.ElementsMatch(t, test.expectedConfigContext.ErrorLogs, result.ErrorLogs)
+			assert.Equal(t, test.expectedConfigContext.StubStatus, result.StubStatus)
+			assert.Equal(t, test.expectedConfigContext.InstanceID, result.InstanceID)
 		})
 	}
-}
-
-func TestNginxConfigParser_rootFiles(t *testing.T) {
-	ctx := context.Background()
-	dir := t.TempDir()
-
-	file1 := helpers.CreateFileWithErrorCheck(t, dir, "nginx-1.conf")
-	defer helpers.RemoveFileWithErrorCheck(t, file1.Name())
-	file2 := helpers.CreateFileWithErrorCheck(t, dir, "nginx-2.conf")
-	defer helpers.RemoveFileWithErrorCheck(t, file2.Name())
-
-	// Not in allowed directory
-	nginxConfig := NewNginxConfigParser(types.AgentConfig())
-	nginxConfig.agentConfig.AllowedDirectories = []string{}
-	rootfiles := nginxConfig.rootFiles(ctx, dir)
-	assert.Empty(t, rootfiles)
-
-	// In allowed directory
-	nginxConfig.agentConfig.AllowedDirectories = []string{dir}
-	rootfiles = nginxConfig.rootFiles(ctx, dir)
-	assert.Len(t, rootfiles, 2)
-	assert.Equal(t, file1.Name(), rootfiles[0].GetFileMeta().GetName())
-	assert.Equal(t, file2.Name(), rootfiles[1].GetFileMeta().GetName())
 }
 
 func TestNginxConfigParser_sslCert(t *testing.T) {

@@ -112,7 +112,7 @@ func (w *Watcher) Init(ctx context.Context, messagePipe bus.MessagePipeInterface
 // nolint: unparam
 // error is always nil
 func (w *Watcher) Close(ctx context.Context) error {
-	slog.DebugContext(ctx, "Closing watcher plugin")
+	slog.InfoContext(ctx, "Closing watcher plugin")
 
 	w.cancel()
 

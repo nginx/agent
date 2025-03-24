@@ -29,6 +29,7 @@ const (
 	EnvPrefix      = "NGINX_AGENT"
 	KeyDelimiter   = "_"
 	KeyValueNumber = 2
+	AgentDirName   = "/etc/nginx-agent/"
 )
 
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
@@ -73,15 +74,20 @@ func RegisterConfigFile() error {
 func ResolveConfig() (*Config, error) {
 	// Collect allowed directories, so that paths in the config can be validated.
 	directories := viperInstance.GetStringSlice(AllowedDirectoriesKey)
-	allowedDirs := make([]string, 0)
+	allowedDirs := []string{AgentDirName}
 
 	// Check directories in allowed_directories are valid
 	for _, dir := range directories {
-		if dir != "" && filepath.IsAbs(dir) {
-			allowedDirs = append(allowedDirs, dir)
-		} else {
+		if dir == "" || !filepath.IsAbs(dir) {
 			slog.Warn("Invalid directory: ", "dir", dir)
+			continue
 		}
+
+		if !strings.HasSuffix(dir, "/") {
+			dir += "/"
+		}
+		allowedDirs = append(allowedDirs, dir)
+		slog.Info("Configured allowed directories", "allowed_directories", allowedDirs)
 	}
 
 	// Collect all parsing errors before returning the error, so the user sees all issues with config
@@ -161,7 +167,8 @@ func registerFlags() {
 
 	fs.StringSlice(AllowedDirectoriesKey,
 		DefaultAllowedDirectories(),
-		"A comma-separated list of paths that you want to grant NGINX Agent read/write access to")
+		"A comma-separated list of paths that you want to grant NGINX Agent read/write access to. Allowed "+
+			"directories are case sensitive")
 
 	fs.Duration(
 		InstanceWatcherMonitoringFrequencyKey,
@@ -449,7 +456,7 @@ func getConfigFilePaths() []string {
 	if err == nil {
 		paths = append(paths, path)
 	} else {
-		slog.Warn("Unable to determine process's current directory")
+		slog.Warn("Unable to determine process's current directory", "error", err)
 	}
 
 	return paths
@@ -537,7 +544,7 @@ func resolveEnvironmentVariableLabels() map[string]string {
 			if len(splitLabel) == KeyValueNumber {
 				envLabels[splitLabel[0]] = splitLabel[1]
 			} else {
-				slog.Warn("Unable to parse label: " + label)
+				slog.Warn("Unable to parse label ", "label", label)
 			}
 		}
 	}
