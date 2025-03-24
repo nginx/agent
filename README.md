@@ -21,7 +21,7 @@ You can install **NGINX Agent** using one of the following methods:
 
 1. **Official documentation**  
    Follow the step-by-step guide to add and configure instances:  
-   [How to Add an Instance](https://docs.nginx.com/nginx-one/how-to/nginx-configs/add-instance/)
+   [How to add an instance](https://docs.nginx.com/nginx-one/how-to/nginx-configs/add-instance/)
 
 2. **GitHub Releases**  
    Download the latest binaries or packages directly from the GitHub releases page:  
