@@ -19,7 +19,7 @@ Discover more advanced features and capabilities by visiting [Try NGINX One: Fre
 
 You can install **NGINX Agent** using one of the following methods:
 
-1. **Official Documentation**  
+1. **Official documentation**  
    Follow the step-by-step guide to add and configure instances:  
    [How to Add an Instance](https://docs.nginx.com/nginx-one/how-to/nginx-configs/add-instance/)
 
