@@ -17,7 +17,7 @@ Discover more advanced features and capabilities by visiting [Try NGINX One: Fre
 
 # Installation
 
-You can install the **F5 NGINX Agent** using one of the following methods:
+You can install **NGINX Agent** using one of the following methods:
 
 1. **Official Documentation**  
    Follow the step-by-step guide to add and configure instances:  
