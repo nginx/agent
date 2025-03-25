@@ -27,7 +27,7 @@ You can install **NGINX Agent** using one of the following methods:
    Download the latest binaries or packages directly from the GitHub releases page:  
    [NGINX Agent GitHub releases](https://github.com/nginx/agent/releases)  
 
-3. **Installation and Upgrade Guide**  
+3. **Installation and upgrade guide**  
    Access detailed instructions to install or upgrade NGINX Agent from the official NGINX documentation:  
    [NGINX Agent Installation Guide](https://docs.nginx.com/nginx-agent/installation-upgrade/)
 
