@@ -31,8 +31,9 @@ You can install **NGINX Agent** using one of the following methods:
    Access detailed instructions to install or upgrade NGINX Agent from the official NGINX documentation:  
    [NGINX Agent Installation Guide](https://docs.nginx.com/nginx-agent/installation-upgrade/)
 
-## Useful Links
-* [Offical NGINX Agent Documentation](https://docs.nginx.com/nginx-agent/)
+## Useful links
+
+* [Offical NGINX Agent documentation](https://docs.nginx.com/nginx-agent/)
 * [F5 Support](https://my.f5.com/manage/s/)
 
 ## Community 
