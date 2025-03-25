@@ -24,10 +24,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	FileService_GetOverview_FullMethodName    = "/mpi.v1.FileService/GetOverview"
-	FileService_UpdateOverview_FullMethodName = "/mpi.v1.FileService/UpdateOverview"
-	FileService_GetFile_FullMethodName        = "/mpi.v1.FileService/GetFile"
-	FileService_UpdateFile_FullMethodName     = "/mpi.v1.FileService/UpdateFile"
+	FileService_GetOverview_FullMethodName      = "/mpi.v1.FileService/GetOverview"
+	FileService_UpdateOverview_FullMethodName   = "/mpi.v1.FileService/UpdateOverview"
+	FileService_GetFile_FullMethodName          = "/mpi.v1.FileService/GetFile"
+	FileService_UpdateFile_FullMethodName       = "/mpi.v1.FileService/UpdateFile"
+	FileService_GetFileStream_FullMethodName    = "/mpi.v1.FileService/GetFileStream"
+	FileService_UpdateFileStream_FullMethodName = "/mpi.v1.FileService/UpdateFileStream"
 )
 
 // FileServiceClient is the client API for FileService service.
@@ -49,6 +51,12 @@ type FileServiceClient interface {
 	GetFile(ctx context.Context, in *GetFileRequest, opts ...grpc.CallOption) (*GetFileResponse, error)
 	// Update a file from the Agent to the Server
 	UpdateFile(ctx context.Context, in *UpdateFileRequest, opts ...grpc.CallOption) (*UpdateFileResponse, error)
+	// GetFileStream requests the file content in chunks. MP and agent should agree on size to use stream
+	// vs non-stream. For smaller files, it may be more efficient to not-stream.
+	GetFileStream(ctx context.Context, in *GetFileRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[FileDataChunk], error)
+	// UpdateFileStream uploads the file content in streams. MP and agent should agree on size to use stream
+	// vs non-stream. For smaller files, it may be more efficient to not-stream.
+	UpdateFileStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[FileDataChunk, UpdateFileResponse], error)
 }
 
 type fileServiceClient struct {
@@ -99,6 +107,38 @@ func (c *fileServiceClient) UpdateFile(ctx context.Context, in *UpdateFileReques
 	return out, nil
 }
 
+func (c *fileServiceClient) GetFileStream(ctx context.Context, in *GetFileRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[FileDataChunk], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &FileService_ServiceDesc.Streams[0], FileService_GetFileStream_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[GetFileRequest, FileDataChunk]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type FileService_GetFileStreamClient = grpc.ServerStreamingClient[FileDataChunk]
+
+func (c *fileServiceClient) UpdateFileStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[FileDataChunk, UpdateFileResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &FileService_ServiceDesc.Streams[1], FileService_UpdateFileStream_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[FileDataChunk, UpdateFileResponse]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type FileService_UpdateFileStreamClient = grpc.ClientStreamingClient[FileDataChunk, UpdateFileResponse]
+
 // FileServiceServer is the server API for FileService service.
 // All implementations should embed UnimplementedFileServiceServer
 // for forward compatibility.
@@ -118,6 +158,12 @@ type FileServiceServer interface {
 	GetFile(context.Context, *GetFileRequest) (*GetFileResponse, error)
 	// Update a file from the Agent to the Server
 	UpdateFile(context.Context, *UpdateFileRequest) (*UpdateFileResponse, error)
+	// GetFileStream requests the file content in chunks. MP and agent should agree on size to use stream
+	// vs non-stream. For smaller files, it may be more efficient to not-stream.
+	GetFileStream(*GetFileRequest, grpc.ServerStreamingServer[FileDataChunk]) error
+	// UpdateFileStream uploads the file content in streams. MP and agent should agree on size to use stream
+	// vs non-stream. For smaller files, it may be more efficient to not-stream.
+	UpdateFileStream(grpc.ClientStreamingServer[FileDataChunk, UpdateFileResponse]) error
 }
 
 // UnimplementedFileServiceServer should be embedded to have
@@ -138,6 +184,12 @@ func (UnimplementedFileServiceServer) GetFile(context.Context, *GetFileRequest) 
 }
 func (UnimplementedFileServiceServer) UpdateFile(context.Context, *UpdateFileRequest) (*UpdateFileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateFile not implemented")
+}
+func (UnimplementedFileServiceServer) GetFileStream(*GetFileRequest, grpc.ServerStreamingServer[FileDataChunk]) error {
+	return status.Errorf(codes.Unimplemented, "method GetFileStream not implemented")
+}
+func (UnimplementedFileServiceServer) UpdateFileStream(grpc.ClientStreamingServer[FileDataChunk, UpdateFileResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method UpdateFileStream not implemented")
 }
 func (UnimplementedFileServiceServer) testEmbeddedByValue() {}
 
@@ -231,6 +283,24 @@ func _FileService_UpdateFile_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FileService_GetFileStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetFileRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(FileServiceServer).GetFileStream(m, &grpc.GenericServerStream[GetFileRequest, FileDataChunk]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type FileService_GetFileStreamServer = grpc.ServerStreamingServer[FileDataChunk]
+
+func _FileService_UpdateFileStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(FileServiceServer).UpdateFileStream(&grpc.GenericServerStream[FileDataChunk, UpdateFileResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type FileService_UpdateFileStreamServer = grpc.ClientStreamingServer[FileDataChunk, UpdateFileResponse]
+
 // FileService_ServiceDesc is the grpc.ServiceDesc for FileService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -255,6 +325,17 @@ var FileService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _FileService_UpdateFile_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "GetFileStream",
+			Handler:       _FileService_GetFileStream_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "UpdateFileStream",
+			Handler:       _FileService_UpdateFileStream_Handler,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "mpi/v1/files.proto",
 }
