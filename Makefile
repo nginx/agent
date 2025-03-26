@@ -205,7 +205,7 @@ build-test-nginx-plus-and-nap-image:
 .PHONY: build-test-plus-image
 build-test-plus-image:
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx_plus_$(IMAGE_TAG) . \
-		--no-cache -f ./test/docker/nginx-plus/deb/Dockerfile \
+		--no-cache -f ./test/docker/nginx-plus/$(CONTAINER_OS_TYPE)/Dockerfile \
 		--secret id=nginx-crt,src=$(CERTS_DIR)/nginx-repo.crt \
 		--secret id=nginx-key,src=$(CERTS_DIR)/nginx-repo.key \
 		--build-arg PACKAGE_NAME=$(PACKAGE_NAME) \
@@ -216,7 +216,7 @@ build-test-plus-image:
 .PHONY: build-test-oss-image
 build-test-oss-image:
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx_oss_$(IMAGE_TAG) . \
-		--no-cache -f ./test/docker/nginx-oss/deb/Dockerfile \
+		--no-cache -f ./test/docker/nginx-oss/$(CONTAINER_OS_TYPE)/Dockerfile \
 		--target install-agent-local \
 		--build-arg PACKAGE_NAME=$(PACKAGE_NAME) \
 		--build-arg PACKAGES_REPO=$(OSS_PACKAGES_REPO) \

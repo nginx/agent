@@ -200,13 +200,15 @@ func TestCommandService_CreateConnection(t *testing.T) {
 
 func TestCommandService_UpdateClient(t *testing.T) {
 	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
+	ctx := context.Background()
 
 	commandService := NewCommandService(
 		commandServiceClient,
 		types.AgentConfig(),
 		make(chan *mpi.ManagementPlaneRequest),
 	)
-	commandService.UpdateClient(commandServiceClient)
+	err := commandService.UpdateClient(ctx, commandServiceClient)
+	require.NoError(t, err)
 	assert.NotNil(t, commandService.commandServiceClient)
 }
 

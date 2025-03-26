@@ -254,10 +254,19 @@ func (cs *CommandService) CreateConnection(
 	return response, nil
 }
 
-func (cs *CommandService) UpdateClient(client mpi.CommandServiceClient) {
+func (cs *CommandService) UpdateClient(ctx context.Context, client mpi.CommandServiceClient) error {
 	cs.subscribeClientMutex.Lock()
-	defer cs.subscribeClientMutex.Unlock()
 	cs.commandServiceClient = client
+	cs.subscribeClientMutex.Unlock()
+
+	cs.isConnected.Store(false)
+	resp, err := cs.CreateConnection(ctx, cs.resource)
+	if err != nil {
+		return err
+	}
+	slog.InfoContext(ctx, "Successfully sent create connection request", "response", resp)
+
+	return nil
 }
 
 // Retry callback for sending a data plane response to the Management Plane.

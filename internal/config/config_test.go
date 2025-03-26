@@ -625,7 +625,8 @@ func getAgentConfig() *Config {
 			},
 		},
 		AllowedDirectories: []string{
-			"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx", "/var/log/nginx", "/usr/share/nginx/modules",
+			"/etc/nginx/", "/etc/nginx-agent/", "/usr/local/etc/nginx/", "/var/run/nginx/", "/var/log/nginx/",
+			"/usr/share/nginx/modules/",
 		},
 		Collector: &Collector{
 			ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
@@ -755,7 +756,8 @@ func createConfig() *Config {
 			},
 		},
 		AllowedDirectories: []string{
-			"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx", "/usr/share/nginx/modules", "/var/log/nginx",
+			"/etc/nginx-agent/", "/etc/nginx/", "/usr/local/etc/nginx/", "/var/run/nginx/",
+			"/usr/share/nginx/modules/", "/var/log/nginx/",
 		},
 		DataPlaneConfig: &DataPlaneConfig{
 			Nginx: &NginxDataPlaneConfig{

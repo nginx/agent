@@ -10,22 +10,11 @@ import (
 	"fmt"
 )
 
-//go:embed nginx/nginx.conf
-var embedNginxConf string
-
-//go:embed nginx/nginx-with-test-location.conf
-var embedNginxConfWithTestLocation string
-
 //go:embed nginx/nginx-with-multiple-access-logs.conf
 var embedNginxConfWithMultipleAccessLogs string
 
-func GetNginxConfig() string {
-	return embedNginxConf
-}
-
-func GetNginxConfWithTestLocation() string {
-	return embedNginxConfWithTestLocation
-}
+//go:embed nginx/nginx-not-allowed-dir.conf
+var embedNginxConfWithNotAllowedDir string
 
 func GetNginxConfigWithMultipleAccessLogs(
 	errorLogName,
@@ -40,4 +29,8 @@ func GetNginxConfigWithMultipleAccessLogs(
 		combinedAccessLogName,
 		ltsvAccessLogName,
 	)
+}
+
+func GetNginxConfigWithNotAllowedDir(errorLogFile, notAllowedFile, allowedFileDir, accessLogFile string) string {
+	return fmt.Sprintf(embedNginxConfWithNotAllowedDir, errorLogFile, notAllowedFile, allowedFileDir, accessLogFile)
 }
