@@ -25,6 +25,21 @@ type FakeFileServiceClient struct {
 		result1 *v1.GetFileResponse
 		result2 error
 	}
+	GetFileStreamStub        func(context.Context, *v1.GetFileRequest, ...grpc.CallOption) (grpc.ServerStreamingClient[v1.FileDataChunk], error)
+	getFileStreamMutex       sync.RWMutex
+	getFileStreamArgsForCall []struct {
+		arg1 context.Context
+		arg2 *v1.GetFileRequest
+		arg3 []grpc.CallOption
+	}
+	getFileStreamReturns struct {
+		result1 grpc.ServerStreamingClient[v1.FileDataChunk]
+		result2 error
+	}
+	getFileStreamReturnsOnCall map[int]struct {
+		result1 grpc.ServerStreamingClient[v1.FileDataChunk]
+		result2 error
+	}
 	GetOverviewStub        func(context.Context, *v1.GetOverviewRequest, ...grpc.CallOption) (*v1.GetOverviewResponse, error)
 	getOverviewMutex       sync.RWMutex
 	getOverviewArgsForCall []struct {
@@ -53,6 +68,20 @@ type FakeFileServiceClient struct {
 	}
 	updateFileReturnsOnCall map[int]struct {
 		result1 *v1.UpdateFileResponse
+		result2 error
+	}
+	UpdateFileStreamStub        func(context.Context, ...grpc.CallOption) (grpc.ClientStreamingClient[v1.FileDataChunk, v1.UpdateFileResponse], error)
+	updateFileStreamMutex       sync.RWMutex
+	updateFileStreamArgsForCall []struct {
+		arg1 context.Context
+		arg2 []grpc.CallOption
+	}
+	updateFileStreamReturns struct {
+		result1 grpc.ClientStreamingClient[v1.FileDataChunk, v1.UpdateFileResponse]
+		result2 error
+	}
+	updateFileStreamReturnsOnCall map[int]struct {
+		result1 grpc.ClientStreamingClient[v1.FileDataChunk, v1.UpdateFileResponse]
 		result2 error
 	}
 	UpdateOverviewStub        func(context.Context, *v1.UpdateOverviewRequest, ...grpc.CallOption) (*v1.UpdateOverviewResponse, error)
@@ -136,6 +165,72 @@ func (fake *FakeFileServiceClient) GetFileReturnsOnCall(i int, result1 *v1.GetFi
 	}
 	fake.getFileReturnsOnCall[i] = struct {
 		result1 *v1.GetFileResponse
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeFileServiceClient) GetFileStream(arg1 context.Context, arg2 *v1.GetFileRequest, arg3 ...grpc.CallOption) (grpc.ServerStreamingClient[v1.FileDataChunk], error) {
+	fake.getFileStreamMutex.Lock()
+	ret, specificReturn := fake.getFileStreamReturnsOnCall[len(fake.getFileStreamArgsForCall)]
+	fake.getFileStreamArgsForCall = append(fake.getFileStreamArgsForCall, struct {
+		arg1 context.Context
+		arg2 *v1.GetFileRequest
+		arg3 []grpc.CallOption
+	}{arg1, arg2, arg3})
+	stub := fake.GetFileStreamStub
+	fakeReturns := fake.getFileStreamReturns
+	fake.recordInvocation("GetFileStream", []interface{}{arg1, arg2, arg3})
+	fake.getFileStreamMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeFileServiceClient) GetFileStreamCallCount() int {
+	fake.getFileStreamMutex.RLock()
+	defer fake.getFileStreamMutex.RUnlock()
+	return len(fake.getFileStreamArgsForCall)
+}
+
+func (fake *FakeFileServiceClient) GetFileStreamCalls(stub func(context.Context, *v1.GetFileRequest, ...grpc.CallOption) (grpc.ServerStreamingClient[v1.FileDataChunk], error)) {
+	fake.getFileStreamMutex.Lock()
+	defer fake.getFileStreamMutex.Unlock()
+	fake.GetFileStreamStub = stub
+}
+
+func (fake *FakeFileServiceClient) GetFileStreamArgsForCall(i int) (context.Context, *v1.GetFileRequest, []grpc.CallOption) {
+	fake.getFileStreamMutex.RLock()
+	defer fake.getFileStreamMutex.RUnlock()
+	argsForCall := fake.getFileStreamArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeFileServiceClient) GetFileStreamReturns(result1 grpc.ServerStreamingClient[v1.FileDataChunk], result2 error) {
+	fake.getFileStreamMutex.Lock()
+	defer fake.getFileStreamMutex.Unlock()
+	fake.GetFileStreamStub = nil
+	fake.getFileStreamReturns = struct {
+		result1 grpc.ServerStreamingClient[v1.FileDataChunk]
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeFileServiceClient) GetFileStreamReturnsOnCall(i int, result1 grpc.ServerStreamingClient[v1.FileDataChunk], result2 error) {
+	fake.getFileStreamMutex.Lock()
+	defer fake.getFileStreamMutex.Unlock()
+	fake.GetFileStreamStub = nil
+	if fake.getFileStreamReturnsOnCall == nil {
+		fake.getFileStreamReturnsOnCall = make(map[int]struct {
+			result1 grpc.ServerStreamingClient[v1.FileDataChunk]
+			result2 error
+		})
+	}
+	fake.getFileStreamReturnsOnCall[i] = struct {
+		result1 grpc.ServerStreamingClient[v1.FileDataChunk]
 		result2 error
 	}{result1, result2}
 }
@@ -272,6 +367,71 @@ func (fake *FakeFileServiceClient) UpdateFileReturnsOnCall(i int, result1 *v1.Up
 	}{result1, result2}
 }
 
+func (fake *FakeFileServiceClient) UpdateFileStream(arg1 context.Context, arg2 ...grpc.CallOption) (grpc.ClientStreamingClient[v1.FileDataChunk, v1.UpdateFileResponse], error) {
+	fake.updateFileStreamMutex.Lock()
+	ret, specificReturn := fake.updateFileStreamReturnsOnCall[len(fake.updateFileStreamArgsForCall)]
+	fake.updateFileStreamArgsForCall = append(fake.updateFileStreamArgsForCall, struct {
+		arg1 context.Context
+		arg2 []grpc.CallOption
+	}{arg1, arg2})
+	stub := fake.UpdateFileStreamStub
+	fakeReturns := fake.updateFileStreamReturns
+	fake.recordInvocation("UpdateFileStream", []interface{}{arg1, arg2})
+	fake.updateFileStreamMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeFileServiceClient) UpdateFileStreamCallCount() int {
+	fake.updateFileStreamMutex.RLock()
+	defer fake.updateFileStreamMutex.RUnlock()
+	return len(fake.updateFileStreamArgsForCall)
+}
+
+func (fake *FakeFileServiceClient) UpdateFileStreamCalls(stub func(context.Context, ...grpc.CallOption) (grpc.ClientStreamingClient[v1.FileDataChunk, v1.UpdateFileResponse], error)) {
+	fake.updateFileStreamMutex.Lock()
+	defer fake.updateFileStreamMutex.Unlock()
+	fake.UpdateFileStreamStub = stub
+}
+
+func (fake *FakeFileServiceClient) UpdateFileStreamArgsForCall(i int) (context.Context, []grpc.CallOption) {
+	fake.updateFileStreamMutex.RLock()
+	defer fake.updateFileStreamMutex.RUnlock()
+	argsForCall := fake.updateFileStreamArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeFileServiceClient) UpdateFileStreamReturns(result1 grpc.ClientStreamingClient[v1.FileDataChunk, v1.UpdateFileResponse], result2 error) {
+	fake.updateFileStreamMutex.Lock()
+	defer fake.updateFileStreamMutex.Unlock()
+	fake.UpdateFileStreamStub = nil
+	fake.updateFileStreamReturns = struct {
+		result1 grpc.ClientStreamingClient[v1.FileDataChunk, v1.UpdateFileResponse]
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeFileServiceClient) UpdateFileStreamReturnsOnCall(i int, result1 grpc.ClientStreamingClient[v1.FileDataChunk, v1.UpdateFileResponse], result2 error) {
+	fake.updateFileStreamMutex.Lock()
+	defer fake.updateFileStreamMutex.Unlock()
+	fake.UpdateFileStreamStub = nil
+	if fake.updateFileStreamReturnsOnCall == nil {
+		fake.updateFileStreamReturnsOnCall = make(map[int]struct {
+			result1 grpc.ClientStreamingClient[v1.FileDataChunk, v1.UpdateFileResponse]
+			result2 error
+		})
+	}
+	fake.updateFileStreamReturnsOnCall[i] = struct {
+		result1 grpc.ClientStreamingClient[v1.FileDataChunk, v1.UpdateFileResponse]
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeFileServiceClient) UpdateOverview(arg1 context.Context, arg2 *v1.UpdateOverviewRequest, arg3 ...grpc.CallOption) (*v1.UpdateOverviewResponse, error) {
 	fake.updateOverviewMutex.Lock()
 	ret, specificReturn := fake.updateOverviewReturnsOnCall[len(fake.updateOverviewArgsForCall)]
@@ -343,10 +503,14 @@ func (fake *FakeFileServiceClient) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.getFileMutex.RLock()
 	defer fake.getFileMutex.RUnlock()
+	fake.getFileStreamMutex.RLock()
+	defer fake.getFileStreamMutex.RUnlock()
 	fake.getOverviewMutex.RLock()
 	defer fake.getOverviewMutex.RUnlock()
 	fake.updateFileMutex.RLock()
 	defer fake.updateFileMutex.RUnlock()
+	fake.updateFileStreamMutex.RLock()
+	defer fake.updateFileStreamMutex.RUnlock()
 	fake.updateOverviewMutex.RLock()
 	defer fake.updateOverviewMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}

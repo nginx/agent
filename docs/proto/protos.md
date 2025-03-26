@@ -20,6 +20,9 @@
     - [ConfigVersion](#mpi-v1-ConfigVersion)
     - [File](#mpi-v1-File)
     - [FileContents](#mpi-v1-FileContents)
+    - [FileDataChunk](#mpi-v1-FileDataChunk)
+    - [FileDataChunkContent](#mpi-v1-FileDataChunkContent)
+    - [FileDataChunkHeader](#mpi-v1-FileDataChunkHeader)
     - [FileMeta](#mpi-v1-FileMeta)
     - [FileOverview](#mpi-v1-FileOverview)
     - [GetFileRequest](#mpi-v1-GetFileRequest)
@@ -324,6 +327,66 @@ Represents the bytes contents of the file https://protobuf.dev/programming-guide
 
 
 
+<a name="mpi-v1-FileDataChunk"></a>
+
+### FileDataChunk
+Represents a data chunk for streaming file transfer.
+For any Stream file transfer, following assumptions should be asserted (by implementation):
+- invalid to contain more or less than one FileDataChunkHeaders
+- invalid to have FileDataChunkContents before FileDataChunkHeaders
+- invalid to have more/fewer FileDataChunkContents than FileDataChunkHeader.chunks
+- invalid to have two FileDataChunkContents with same chunk_id
+- invalid to have FileDataChunkContent with zero-length data
+- invalid to have FileDataChunk message without either header or content
+- hash of the combined contents should match FileDataChunkHeader.file_meta.hash
+- total size of the combined contents should match FileDataChunkHeader.file_meta.size
+- chunk_size should be less than the gRPC max message size
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| meta | [MessageMeta](#mpi-v1-MessageMeta) |  | meta regarding the transfer request |
+| header | [FileDataChunkHeader](#mpi-v1-FileDataChunkHeader) |  | Chunk header |
+| content | [FileDataChunkContent](#mpi-v1-FileDataChunkContent) |  | Chunk data |
+
+
+
+
+
+
+<a name="mpi-v1-FileDataChunkContent"></a>
+
+### FileDataChunkContent
+Represents a chunked resource chunk
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| chunk_id | [uint32](#uint32) |  | chunk id, i.e. x of y, zero-indexed |
+| data | [bytes](#bytes) |  | chunk data, should be at most chunk_size |
+
+
+
+
+
+
+<a name="mpi-v1-FileDataChunkHeader"></a>
+
+### FileDataChunkHeader
+Represents a chunked resource Header
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| file_meta | [FileMeta](#mpi-v1-FileMeta) |  | meta regarding the file, help identity the file name, size, hash, perm receiver should validate the hash against the combined contents |
+| chunks | [uint32](#uint32) |  | total number of chunks expected in the transfer |
+| chunk_size | [uint32](#uint32) |  | max size of individual chunks, can be undersized if EOF |
+
+
+
+
+
+
 <a name="mpi-v1-FileMeta"></a>
 
 ### FileMeta
@@ -590,6 +653,8 @@ A SHA256 hash string is 64 bytes, therefore the configured max message size shou
 | UpdateOverview | [UpdateOverviewRequest](#mpi-v1-UpdateOverviewRequest) | [UpdateOverviewResponse](#mpi-v1-UpdateOverviewResponse) | Update the overview of files for a particular set of file changes on the data plane |
 | GetFile | [GetFileRequest](#mpi-v1-GetFileRequest) | [GetFileResponse](#mpi-v1-GetFileResponse) | Get the file contents for a particular file |
 | UpdateFile | [UpdateFileRequest](#mpi-v1-UpdateFileRequest) | [UpdateFileResponse](#mpi-v1-UpdateFileResponse) | Update a file from the Agent to the Server |
+| GetFileStream | [GetFileRequest](#mpi-v1-GetFileRequest) | [FileDataChunk](#mpi-v1-FileDataChunk) stream | GetFileStream requests the file content in chunks. MP and agent should agree on size to use stream vs non-stream. For smaller files, it may be more efficient to not-stream. |
+| UpdateFileStream | [FileDataChunk](#mpi-v1-FileDataChunk) stream | [UpdateFileResponse](#mpi-v1-UpdateFileResponse) | UpdateFileStream uploads the file content in streams. MP and agent should agree on size to use stream vs non-stream. For smaller files, it may be more efficient to not-stream. |
 
  
 
