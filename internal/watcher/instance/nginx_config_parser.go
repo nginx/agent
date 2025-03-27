@@ -462,7 +462,7 @@ func (ncp *NginxConfigParser) apiCallback(ctx context.Context, parent,
 ) *model.APIDetails {
 	urls := ncp.urlsForLocationDirectiveAPIDetails(parent, current, apiType)
 	if len(urls) > 0 {
-		slog.DebugContext(ctx, fmt.Sprintf("Potential %d of %s urls", len(urls), apiType), "urls", urls)
+		slog.DebugContext(ctx, fmt.Sprintf("%d potential %s urls", len(urls), apiType), "urls", urls)
 	}
 
 	for _, url := range urls {
