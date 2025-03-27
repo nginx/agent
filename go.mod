@@ -1,15 +1,15 @@
 module github.com/nginx/agent/v2
 
-go 1.23
+go 1.23.0
 
-toolchain go1.23.2
+toolchain go1.23.7
 
 require (
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/protobuf v1.5.4
-	github.com/google/go-cmp v0.6.0
+	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/klauspost/cpuid/v2 v2.2.5
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1 // indirect
@@ -23,11 +23,11 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.18.2
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/trivago/grok v1.0.0
 	github.com/vardius/message-bus v1.1.5
 	go.uber.org/atomic v1.11.0
-	golang.org/x/sync v0.10.0
+	golang.org/x/sync v0.11.0
 	google.golang.org/grpc v1.64.1
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
@@ -42,8 +42,8 @@ require (
 	github.com/rs/cors v1.11.0
 	go.uber.org/goleak v1.3.0
 	go.uber.org/mock v0.4.0
-	golang.org/x/sys v0.28.0
-	golang.org/x/text v0.21.0
+	golang.org/x/sys v0.31.0
+	golang.org/x/text v0.22.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -57,7 +57,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jstemmer/go-junit-report v1.0.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20231016141302-07b5767bb0ed // indirect
-	github.com/magiconair/properties v1.8.7 // indirect
+	github.com/magiconair/properties v1.8.9 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nginxinc/nginx-go-crossplane v0.4.48 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
@@ -88,4 +88,7 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 )
 
-replace github.com/nginx/agent/sdk/v2 => ./sdk
+replace (
+	github.com/nginx/agent/sdk/v2 => ./sdk
+	golang.org/x/net => golang.org/x/net v0.36.0
+)
