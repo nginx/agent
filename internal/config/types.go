@@ -181,11 +181,12 @@ type (
 
 	// OTel Collector Receiver configuration.
 	Receivers struct {
-		HostMetrics        *HostMetrics        `yaml:"-" mapstructure:"host_metrics"`
-		OtlpReceivers      []OtlpReceiver      `yaml:"-" mapstructure:"otlp_receivers"`
-		NginxReceivers     []NginxReceiver     `yaml:"-" mapstructure:"nginx_receivers"`
-		NginxPlusReceivers []NginxPlusReceiver `yaml:"-" mapstructure:"nginx_plus_receivers"`
-		TcplogReceivers    []TcplogReceiver    `yaml:"-" mapstructure:"tcplog_receivers"`
+		ContainerMetrics   *ContainerMetricsReceiver `yaml:"-" mapstructure:"container_metrics"`
+		HostMetrics        *HostMetrics              `yaml:"-" mapstructure:"host_metrics"`
+		OtlpReceivers      []OtlpReceiver            `yaml:"-" mapstructure:"otlp_receivers"`
+		NginxReceivers     []NginxReceiver           `yaml:"-" mapstructure:"nginx_receivers"`
+		NginxPlusReceivers []NginxPlusReceiver       `yaml:"-" mapstructure:"nginx_plus_receivers"`
+		TcplogReceivers    []TcplogReceiver          `yaml:"-" mapstructure:"tcplog_receivers"`
 	}
 
 	OtlpReceiver struct {
@@ -227,6 +228,10 @@ type (
 	NginxPlusReceiver struct {
 		InstanceID string     `yaml:"-" mapstructure:"instance_id"`
 		PlusAPI    APIDetails `yaml:"-" mapstructure:"api_details"`
+	}
+
+	ContainerMetricsReceiver struct {
+		CollectionInterval time.Duration `yaml:"-" mapstructure:"collection_interval"`
 	}
 
 	HostMetrics struct {
