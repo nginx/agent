@@ -162,7 +162,7 @@ jobs:
         container:
         - image: "alpine"
           version: "3.21"
-          plus: "r32"
+          plus: "r33"
           release: "alpine"
           path: "/nginx-plus/agent"
         - image: "alpine"
