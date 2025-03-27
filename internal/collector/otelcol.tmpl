@@ -1,4 +1,10 @@
 receivers:
+{{- if ne .Receivers.ContainerMetrics nil }}
+  containermetrics:
+    {{- if .Receivers.ContainerMetrics.CollectionInterval }}
+    collection_interval: {{ .Receivers.ContainerMetrics.CollectionInterval }}
+    {{- end}}
+{{- end }}
 {{- if ne .Receivers.HostMetrics nil }}
   hostmetrics:
     {{- if .Receivers.HostMetrics.CollectionInterval }}
