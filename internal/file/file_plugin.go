@@ -51,6 +51,7 @@ func (fp *FilePlugin) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 }
 
 func (fp *FilePlugin) Close(ctx context.Context) error {
+	slog.InfoContext(ctx, "Closing file plugin")
 	return fp.conn.Close(ctx)
 }
 

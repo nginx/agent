@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/fs"
 	"log/slog"
 	"net"
 	"net/http"
@@ -75,10 +74,14 @@ func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *mpi.Instance)
 		"instance_id", instance.GetInstanceMeta().GetInstanceId(),
 	)
 
+	lua := crossplane.Lua{}
 	payload, err := crossplane.Parse(configPath,
 		&crossplane.ParseOptions{
 			SingleFile:         false,
 			StopParsingOnError: true,
+			LexOptions: crossplane.LexOptions{
+				Lexers: []crossplane.RegisterLexer{lua.RegisterLexer()},
+			},
 		},
 	)
 	if err != nil {
@@ -113,6 +116,14 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 	rootDir := filepath.Dir(instance.GetInstanceRuntime().GetConfigPath())
 
 	for _, conf := range payload.Config {
+		if !ncp.agentConfig.IsDirectoryAllowed(conf.File) {
+			slog.WarnContext(ctx, "File included in NGINX config is outside of allowed directories, "+
+				"excluding from config",
+				"file", conf.File)
+
+			continue
+		}
+
 		formatMap := make(map[string]string)
 		err := ncp.crossplaneConfigTraverse(ctx, &conf,
 			func(ctx context.Context, parent, directive *crossplane.Directive) error {
@@ -134,10 +145,8 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 							"is disabled while applying a config; "+"log errors to file to enable error monitoring",
 							directive.Args[0]), "error_log", directive.Args[0])
 					}
-				case "root":
-					rootFiles := ncp.rootFiles(ctx, directive.Args[0])
-					nginxConfigContext.Files = append(nginxConfigContext.Files, rootFiles...)
-				case "ssl_certificate", "proxy_ssl_certificate", "ssl_client_certificate", "ssl_trusted_certificate":
+				case "ssl_certificate", "proxy_ssl_certificate", "ssl_client_certificate",
+					"ssl_trusted_certificate":
 					sslCertFile := ncp.sslCert(ctx, directive.Args[0], rootDir)
 					if !ncp.isDuplicateFile(nginxConfigContext.Files, sslCertFile) {
 						nginxConfigContext.Files = append(nginxConfigContext.Files, sslCertFile)
@@ -191,18 +200,17 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 }
 
 func (ncp *NginxConfigParser) ignoreLog(logPath string) bool {
-	logLower := strings.ToLower(logPath)
 	ignoreLogs := []string{"off", "/dev/stderr", "/dev/stdout", "/dev/null", "stderr", "stdout"}
 
-	if strings.HasPrefix(logLower, "syslog:") || slices.Contains(ignoreLogs, logLower) {
+	if strings.HasPrefix(logPath, "syslog:") || slices.Contains(ignoreLogs, logPath) {
 		return true
 	}
 
-	if ncp.isExcludeLog(logLower) {
+	if ncp.isExcludeLog(logPath) {
 		return true
 	}
 
-	if !ncp.agentConfig.IsDirectoryAllowed(logLower) {
+	if !ncp.agentConfig.IsDirectoryAllowed(logPath) {
 		slog.Warn("Log being read is outside of allowed directories", "log_path", logPath)
 	}
 
@@ -309,39 +317,6 @@ func (ncp *NginxConfigParser) errorLogDirectiveLevel(directive *crossplane.Direc
 	}
 
 	return ""
-}
-
-func (ncp *NginxConfigParser) rootFiles(ctx context.Context, rootDir string) (rootFiles []*mpi.File) {
-	if !ncp.agentConfig.IsDirectoryAllowed(rootDir) {
-		slog.DebugContext(ctx, "Root directory not in allowed directories", "root_directory", rootDir)
-		return rootFiles
-	}
-
-	err := filepath.WalkDir(rootDir,
-		func(path string, d fs.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-
-			if d.IsDir() {
-				return nil
-			}
-
-			rootFileMeta, fileMetaErr := files.FileMeta(path)
-			if fileMetaErr != nil {
-				return fileMetaErr
-			}
-
-			rootFiles = append(rootFiles, &mpi.File{FileMeta: rootFileMeta})
-
-			return nil
-		},
-	)
-	if err != nil {
-		slog.WarnContext(ctx, "Unable to walk root directory", "root_directory", rootDir)
-	}
-
-	return rootFiles
 }
 
 func (ncp *NginxConfigParser) sslCert(ctx context.Context, file, rootDir string) (sslCertFile *mpi.File) {
