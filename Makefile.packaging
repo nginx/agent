@@ -10,7 +10,7 @@ GPG_PUBLIC_KEY      := .key
 
 DEB_DISTROS?=ubuntu-noble-24.04 ubuntu-jammy-22.04 ubuntu-focal-20.04 debian-bookworm-12 debian-bullseye-11
 DEB_ARCHS?=arm64 amd64
-RPM_DISTROS?=oraclelinux-8-x86_64 oraclelinux-9-x86_64 suse-12-x86_64 suse-15-x86_64
+RPM_DISTROS?=oraclelinux-8-x86_64 oraclelinux-9-x86_64 suse-15-x86_64
 RPM_ARCH=x86_64
 REDHAT_VERSIONS?=redhatenterprise-8 redhatenterprise-9
 REDHAT_ARCHS?=aarch64 x86_64

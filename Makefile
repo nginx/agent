@@ -38,7 +38,7 @@ GOTIDY  = ${GOMOD} tidy
 # | almalinux        | 8, 9                                      |                                                                |
 # | alpine           | 3.18, 3.19, 3.20, 3.21                    |                                                                |
 # | oraclelinux      | 8, 9                                      |                                                                |
-# | suse             | sle15                          |                                                                |
+# | suse             | sle15                                     |                                                                |
 # | freebsd          |                                           | Not supported                                                  |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 OS_RELEASE  ?= ubuntu
