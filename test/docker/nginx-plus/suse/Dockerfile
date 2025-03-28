@@ -24,13 +24,8 @@ RUN --mount=type=secret,id=nginx-crt,dst=/nginx-repo.crt \
     && nginxPackages=" \
         nginx-plus \
        " \
-    &&  if [ "$OS_VERSION" = "sles12sp5" ]; then \
-            zypper addrepo -G -c "https://$PACKAGES_REPO/plus/sles/12?ssl_clientcert=/etc/ssl/nginx/nginx-repo-bundle.crt&ssl_verify=peer" nginx-plus \
-            && zypper addrepo -G -c "https://$PACKAGES_REPO/nginx-agent/sles/12?ssl_clientcert=/etc/ssl/nginx/nginx-repo-bundle.crt&ssl_verify=peer" nginx-agent; \
-        else \
-            zypper addrepo -G -c "https://$PACKAGES_REPO/plus/sles/15?ssl_clientcert=/etc/ssl/nginx/nginx-repo-bundle.crt&ssl_verify=peer" nginx-plus \
-            && zypper addrepo -G -c "https://$PACKAGES_REPO/nginx-agent/sles/15?ssl_clientcert=/etc/ssl/nginx/nginx-repo-bundle.crt&ssl_verify=peer" nginx-agent; \
-        fi \
+    &&  zypper addrepo -G -c "https://$PACKAGES_REPO/plus/sles/15?ssl_clientcert=/etc/ssl/nginx/nginx-repo-bundle.crt&ssl_verify=peer" nginx-plus \
+    &&  zypper addrepo -G -c "https://$PACKAGES_REPO/nginx-agent/sles/15?ssl_clientcert=/etc/ssl/nginx/nginx-repo-bundle.crt&ssl_verify=peer" nginx-agent; \
     && zypper refresh \
     && zypper install -y $nginxPackages 
 
