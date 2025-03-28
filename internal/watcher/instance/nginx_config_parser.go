@@ -116,6 +116,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 	rootDir := filepath.Dir(instance.GetInstanceRuntime().GetConfigPath())
 
 	for _, conf := range payload.Config {
+		slog.DebugContext(ctx, "Traversing NGINX config file", "config", conf)
 		if !ncp.agentConfig.IsDirectoryAllowed(conf.File) {
 			slog.WarnContext(ctx, "File included in NGINX config is outside of allowed directories, "+
 				"excluding from config",
@@ -148,8 +149,11 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 				case "ssl_certificate", "proxy_ssl_certificate", "ssl_client_certificate",
 					"ssl_trusted_certificate":
 					sslCertFile := ncp.sslCert(ctx, directive.Args[0], rootDir)
-					if !ncp.isDuplicateFile(nginxConfigContext.Files, sslCertFile) {
-						nginxConfigContext.Files = append(nginxConfigContext.Files, sslCertFile)
+					if sslCertFile != nil {
+						if !ncp.isDuplicateFile(nginxConfigContext.Files, sslCertFile) {
+							slog.DebugContext(ctx, "Adding SSL certificate file", "ssl_cert", sslCertFile)
+							nginxConfigContext.Files = append(nginxConfigContext.Files, sslCertFile)
+						}
 					}
 
 				case "app_protect_security_log":
@@ -321,7 +325,7 @@ func (ncp *NginxConfigParser) errorLogDirectiveLevel(directive *crossplane.Direc
 
 func (ncp *NginxConfigParser) sslCert(ctx context.Context, file, rootDir string) (sslCertFile *mpi.File) {
 	if strings.Contains(file, "$") {
-		// cannot process any filepath with variables
+		slog.DebugContext(ctx, "Cannot process SSL certificate file path with variables", "file", file)
 		return nil
 	}
 
