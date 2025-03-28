@@ -8,7 +8,6 @@ package containermetricsreceiver
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"go.opentelemetry.io/collector/component"
@@ -20,8 +19,10 @@ import (
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/metadata"
 )
 
+// nolint: unused
 const defaultTimeout = 10 * time.Second
 
+// nolint: ireturn
 func NewFactory() receiver.Factory {
 	return receiver.NewFactory(
 		metadata.Type,
@@ -33,22 +34,19 @@ func NewFactory() receiver.Factory {
 	)
 }
 
+// nolint: ireturn
 func createMetricsReceiver(
 	_ context.Context,
 	params receiver.Settings,
 	rConf component.Config,
 	cons consumer.Metrics,
 ) (receiver.Metrics, error) {
-
 	cfg, ok := rConf.(*config.Config)
 	if !ok {
 		return nil, errors.New("cast to metrics receiver config failed")
 	}
 
-	cs, err := newContainerScraper(params, cfg)
-	if err != nil {
-		return nil, fmt.Errorf("new container scraper: %w", err)
-	}
+	cs := newContainerScraper(params, cfg)
 
 	scraper, err := scraperhelper.NewScraperWithoutType(
 		cs.scrape,

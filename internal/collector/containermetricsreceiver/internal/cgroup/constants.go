@@ -1,27 +1,25 @@
-/**
- * Copyright (c) F5, Inc.
- *
- * This source code is licensed under the Apache License, Version 2.0 license found in the
- * LICENSE file in the root directory of this source tree.
- */
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
 
 package cgroup
 
 const (
 	CgroupBasePath = "/sys/fs/cgroup/"
 
-	V1CpuacctStatFile        = "cpuacct/cpuacct.stat"
-	V1CpuStatFile            = "cpu/cpu.stat"
-	V1CpuSharesFile          = "cpu/cpu.shares"
-	V1CpuPeriodFile          = "cpu/cpu.cfs_period_us"
-	V1CpuQuotaFile           = "cpu/cpu.cfs_quota_us"
-	V1CpusetCpusFile         = "cpuset/cpuset.cpus"
-	V1MemStatFile            = "memory/memory.stat"
-	V1MemTotalFile           = "memory/memory.limit_in_bytes"
-	V1MemUsageFile           = "memory/memory.usage_in_bytes"
-	V1OutOfMemoryControlFile = "memory/memory.oom_control"
-	V1SwapTotalFile          = "memory/memory.memsw.limit_in_bytes"
-	V1SwapUsageFile          = "memory/memory.memsw.usage_in_bytes"
+	V1CpuacctStatFile        = CgroupBasePath + "cpuacct.stat"
+	V1CpuStatFile            = CgroupBasePath + "cpu.stat"
+	V1CpuSharesFile          = CgroupBasePath + "cpu.shares"
+	V1CpuPeriodFile          = CgroupBasePath + "cpu.cfs_period_us"
+	V1CpuQuotaFile           = CgroupBasePath + "cpu.cfs_quota_us"
+	V1CpusetCpusFile         = CgroupBasePath + "cpuset.cpus"
+	V1MemStatFile            = CgroupBasePath + "memory.stat"
+	V1MemTotalFile           = CgroupBasePath + "memory.limit_in_bytes"
+	V1MemUsageFile           = CgroupBasePath + "memory.usage_in_bytes"
+	V1OutOfMemoryControlFile = CgroupBasePath + "memory.oom_control"
+	V1SwapTotalFile          = CgroupBasePath + "memory.memsw.limit_in_bytes"
+	V1SwapUsageFile          = CgroupBasePath + "memory.memsw.usage_in_bytes"
 
 	V1UserKey                = "user"
 	V1SystemKey              = "system"
@@ -33,16 +31,16 @@ const (
 	V1OutOfMemoryKey         = "under_oom"
 	V1OutOfMemoryKillKey     = "oom_kill"
 
-	V2CpuStatFile    = "cpu.stat"
-	V2CpuWeightFile  = "cpu.weight"
-	V2CpuMaxFile     = "cpu.max"
-	V2CpusetCpusFile = "cpuset.cpus"
-	V2MemStatFile    = "memory.stat"
-	V2MemTotalFile   = "memory.max"
-	V2MemUsageFile   = "memory.current"
-	V2MemEventsFile  = "memory.events"
-	V2SwapTotalFile  = "memory.swap.max"
-	V2SwapUsageFile  = "memory.swap.current"
+	V2CpuStatFile    = CgroupBasePath + "cpu.stat"
+	V2CpuWeightFile  = CgroupBasePath + "cpu.weight"
+	V2CpuMaxFile     = CgroupBasePath + "cpu.max"
+	V2CpusetCpusFile = CgroupBasePath + "cpuset.cpus"
+	V2MemStatFile    = CgroupBasePath + "memory.stat"
+	V2MemTotalFile   = CgroupBasePath + "memory.max"
+	V2MemUsageFile   = CgroupBasePath + "memory.current"
+	V2MemEventsFile  = CgroupBasePath + "memory.events"
+	V2SwapTotalFile  = CgroupBasePath + "memory.swap.max"
+	V2SwapUsageFile  = CgroupBasePath + "memory.swap.current"
 
 	V2UserKey                = "user_usec"
 	V2SystemKey              = "system_usec"

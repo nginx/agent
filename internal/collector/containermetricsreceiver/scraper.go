@@ -7,8 +7,12 @@ package containermetricsreceiver
 
 import (
 	"context"
+	"time"
+
+	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/cgroup"
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/config"
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/metadata"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
 	"go.uber.org/zap"
@@ -24,7 +28,7 @@ type containerScraper struct {
 func newContainerScraper(
 	settings receiver.Settings,
 	cfg *config.Config,
-) (*containerScraper, error) {
+) *containerScraper {
 	logger := settings.Logger
 	logger.Info("Creating container metrics scraper")
 
@@ -36,7 +40,7 @@ func newContainerScraper(
 		settings: settings,
 		mb:       mb,
 		rb:       rb,
-	}, nil
+	}
 }
 
 func (cms *containerScraper) Shutdown(ctx context.Context) error {
@@ -46,16 +50,27 @@ func (cms *containerScraper) Shutdown(ctx context.Context) error {
 func (cms *containerScraper) scrape(
 	ctx context.Context,
 ) (pmetric.Metrics, error) {
+	cms.logger.Debug("Starting container metrics scrape")
 
 	// set resource attributes
-	//cms.rb.SetResourceID()
+	// cms.rb.SetResourceID()
 
-	// collect metrics
 	// record metrics
+	cms.recordMetrics()
+
+	cms.logger.Debug("Finished container metrics scrape, emitting metrics")
 
 	return cms.mb.Emit(metadata.WithResource(cms.rb.Emit())), nil
 }
 
 func (cms *containerScraper) recordMetrics() {
+	cms.logger.Debug("Collecting container metrics")
+	_ = pcommon.NewTimestampFromTime(time.Now())
 
+	// collect cpu
+	_ = cgroup.NewCgroupCPUSource()
+
+	// collect memory
+	_ = cgroup.NewCgroupMemorySource()
+	// cms.mb.RecordContainerMemoryCurrentDataPoint()
 }
