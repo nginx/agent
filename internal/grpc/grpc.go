@@ -14,6 +14,7 @@ import (
 	"log/slog"
 	"net"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/cenkalti/backoff/v4"
@@ -204,6 +205,7 @@ func GetDialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOp
 	opts := []grpc.DialOption{
 		grpc.WithChainStreamInterceptor(streamClientInterceptors...),
 		grpc.WithChainUnaryInterceptor(unaryClientInterceptors...),
+		grpc.WithUserAgent("nginx-agent/" + strings.TrimPrefix(agentConfig.Version, "v")),
 		grpc.WithDefaultServiceConfig(serviceConfig),
 	}
 
