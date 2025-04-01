@@ -48,6 +48,7 @@ type (
 		Write(ctx context.Context, fileContent []byte, file *mpi.FileMeta) error
 		ManifestFile(currentFiles map[string]*mpi.File) (map[string]*mpi.File, error)
 		UpdateManifestFile(currentFiles map[string]*mpi.File) (err error)
+		CreateManifestFile() error
 	}
 
 	fileManagerServiceInterface interface {

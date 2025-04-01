@@ -42,6 +42,11 @@ const (
 	locationDirective                 = "location"
 )
 
+var (
+	manifestDirPath  = "/var/lib/nginx-agent"
+	manifestFilePath = manifestDirPath + "/manifest.json"
+)
+
 type (
 	NginxConfigParser struct {
 		agentConfig  *config.Config
@@ -107,14 +112,13 @@ func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *mpi.Instance)
 func (ncp *NginxConfigParser) addAuxFiles(ctx context.Context,
 	configContext *model.NginxConfigContext,
 ) *model.NginxConfigContext {
-	auxFiles, auxErr := ncp.fileOperator.ManifestFile(make(map[string]*mpi.File))
-	if auxErr != nil {
-		slog.ErrorContext(ctx, "Error reading manifest file", "error", auxErr)
-		return configContext
-	}
-
 	configContextFilesMap := files.ConvertToMapOfFiles(configContext.Files)
 
+	auxFiles, auxErr := ncp.auxFiles()
+	if auxErr != nil {
+		slog.ErrorContext(ctx, "Failed to get aux files from manifest file", "error", auxErr)
+		return configContext
+	}
 	if len(auxFiles) > 0 {
 		for fileName, auxFile := range auxFiles {
 			if _, ok := configContextFilesMap[fileName]; !ok {
@@ -130,6 +134,22 @@ func (ncp *NginxConfigParser) addAuxFiles(ctx context.Context,
 	}
 
 	return configContext
+}
+
+func (ncp *NginxConfigParser) auxFiles() (map[string]*mpi.File, error) {
+	_, err := os.Stat(manifestFilePath)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return nil, err
+		}
+
+		err = ncp.fileOperator.CreateManifestFile()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return ncp.fileOperator.ManifestFile(make(map[string]*mpi.File))
 }
 
 // nolint: cyclop,revive,gocognit
