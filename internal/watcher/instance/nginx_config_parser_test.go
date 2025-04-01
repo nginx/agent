@@ -383,6 +383,8 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			})
 
 			test.instance.InstanceRuntime.ConfigPath = file.Name()
+			t.Log("------- File Name", file.Name())
+			t.Log("------- Content Expected", test.content)
 
 			agentConfig := types.AgentConfig()
 			agentConfig.AllowedDirectories = test.allowedDirectories
