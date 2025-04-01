@@ -9,6 +9,16 @@ import (
 )
 
 type FakeFileOperator struct {
+	CreateManifestFileStub        func() error
+	createManifestFileMutex       sync.RWMutex
+	createManifestFileArgsForCall []struct {
+	}
+	createManifestFileReturns struct {
+		result1 error
+	}
+	createManifestFileReturnsOnCall map[int]struct {
+		result1 error
+	}
 	ManifestFileStub        func(map[string]*v1.File) (map[string]*v1.File, error)
 	manifestFileMutex       sync.RWMutex
 	manifestFileArgsForCall []struct {
@@ -48,6 +58,59 @@ type FakeFileOperator struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *FakeFileOperator) CreateManifestFile() error {
+	fake.createManifestFileMutex.Lock()
+	ret, specificReturn := fake.createManifestFileReturnsOnCall[len(fake.createManifestFileArgsForCall)]
+	fake.createManifestFileArgsForCall = append(fake.createManifestFileArgsForCall, struct {
+	}{})
+	stub := fake.CreateManifestFileStub
+	fakeReturns := fake.createManifestFileReturns
+	fake.recordInvocation("CreateManifestFile", []interface{}{})
+	fake.createManifestFileMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeFileOperator) CreateManifestFileCallCount() int {
+	fake.createManifestFileMutex.RLock()
+	defer fake.createManifestFileMutex.RUnlock()
+	return len(fake.createManifestFileArgsForCall)
+}
+
+func (fake *FakeFileOperator) CreateManifestFileCalls(stub func() error) {
+	fake.createManifestFileMutex.Lock()
+	defer fake.createManifestFileMutex.Unlock()
+	fake.CreateManifestFileStub = stub
+}
+
+func (fake *FakeFileOperator) CreateManifestFileReturns(result1 error) {
+	fake.createManifestFileMutex.Lock()
+	defer fake.createManifestFileMutex.Unlock()
+	fake.CreateManifestFileStub = nil
+	fake.createManifestFileReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeFileOperator) CreateManifestFileReturnsOnCall(i int, result1 error) {
+	fake.createManifestFileMutex.Lock()
+	defer fake.createManifestFileMutex.Unlock()
+	fake.CreateManifestFileStub = nil
+	if fake.createManifestFileReturnsOnCall == nil {
+		fake.createManifestFileReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.createManifestFileReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
 }
 
 func (fake *FakeFileOperator) ManifestFile(arg1 map[string]*v1.File) (map[string]*v1.File, error) {
@@ -246,6 +309,8 @@ func (fake *FakeFileOperator) WriteReturnsOnCall(i int, result1 error) {
 func (fake *FakeFileOperator) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.createManifestFileMutex.RLock()
+	defer fake.createManifestFileMutex.RUnlock()
 	fake.manifestFileMutex.RLock()
 	defer fake.manifestFileMutex.RUnlock()
 	fake.updateManifestFileMutex.RLock()
