@@ -281,6 +281,11 @@ func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 
 	fp.fileManagerService.UpdateCurrentFilesOnDisk(files.ConvertToMapOfFiles(nginxConfigContext.Files))
 
+	manifestErr := fp.fileManagerService.UpdateManifestFile(files.ConvertToMapOfFiles(nginxConfigContext.Files))
+	if manifestErr != nil {
+		slog.ErrorContext(ctx, "Unable to update manifest file", "manifest", manifestErr.Error())
+	}
+
 	err := fp.fileManagerService.UpdateOverview(ctx, nginxConfigContext.InstanceID, nginxConfigContext.Files, 0)
 	if err != nil {
 		slog.ErrorContext(

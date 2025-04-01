@@ -7,7 +7,6 @@ package protos
 
 import (
 	"fmt"
-	"os"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
@@ -138,13 +137,6 @@ func GetMultipleInstances(expectedModules []string) []*mpi.Instance {
 	return []*mpi.Instance{process1, process2}
 }
 
-func GetMultipleInstancesWithUnsupportedInstance() []*mpi.Instance {
-	process1 := GetNginxOssInstance([]string{})
-	process2 := GetUnsupportedInstance()
-
-	return []*mpi.Instance{process1, process2}
-}
-
 func GetInstancesNoParentProcess(expectedModules []string) []*mpi.Instance {
 	process1 := GetNginxOssInstance(expectedModules)
 	process1.GetInstanceRuntime().ProcessId = 0
@@ -153,24 +145,6 @@ func GetInstancesNoParentProcess(expectedModules []string) []*mpi.Instance {
 	process2.GetInstanceRuntime().ProcessId = 0
 
 	return []*mpi.Instance{process1, process2}
-}
-
-func GetFileCache(files ...*os.File) (map[string]*mpi.FileMeta, error) {
-	cache := make(map[string]*mpi.FileMeta)
-	for _, file := range files {
-		lastModified, err := CreateProtoTime("2024-01-09T13:22:21Z")
-		if err != nil {
-			return nil, err
-		}
-
-		cache[file.Name()] = &mpi.FileMeta{
-			ModifiedTime: lastModified,
-			Name:         file.Name(),
-			Hash:         "BDEIFo9anKNvAwWm9O2LpfvNiNiGMx.c",
-		}
-	}
-
-	return cache, nil
 }
 
 func getSecondNginxOssInstance(expectedModules []string) *mpi.Instance {

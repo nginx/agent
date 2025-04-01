@@ -20,6 +20,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/nginx/agent/v3/internal/file"
+
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/model"
@@ -42,7 +44,8 @@ const (
 
 type (
 	NginxConfigParser struct {
-		agentConfig *config.Config
+		agentConfig  *config.Config
+		fileOperator *file.FileOperator
 	}
 )
 
@@ -56,7 +59,8 @@ type (
 
 func NewNginxConfigParser(agentConfig *config.Config) *NginxConfigParser {
 	return &NginxConfigParser{
-		agentConfig: agentConfig,
+		agentConfig:  agentConfig,
+		fileOperator: file.NewFileOperator(),
 	}
 }
 
@@ -88,7 +92,44 @@ func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *mpi.Instance)
 		return nil, err
 	}
 
-	return ncp.createNginxConfigContext(ctx, instance, payload)
+	configContext, configErr := ncp.createNginxConfigContext(ctx, instance, payload)
+
+	if configContext == nil || configErr != nil {
+		slog.ErrorContext(ctx, fmt.Sprintf("Failed to parse NGINX config context: %s", err))
+		return nil, err
+	}
+
+	configContext = ncp.addAuxFiles(ctx, configContext)
+
+	return configContext, err
+}
+
+func (ncp *NginxConfigParser) addAuxFiles(ctx context.Context,
+	configContext *model.NginxConfigContext,
+) *model.NginxConfigContext {
+	auxFiles, auxErr := ncp.fileOperator.ManifestFile(make(map[string]*mpi.File))
+	if auxErr != nil {
+		slog.ErrorContext(ctx, "Error reading manifest file", "error", auxErr)
+		return configContext
+	}
+
+	configContextFilesMap := files.ConvertToMapOfFiles(configContext.Files)
+
+	if len(auxFiles) > 0 {
+		for fileName, auxFile := range auxFiles {
+			if _, ok := configContextFilesMap[fileName]; !ok {
+				slog.DebugContext(ctx, "Aux file in manifest, adding to list of files", "file", fileName)
+				configContext.Files = append(configContext.Files, auxFile)
+			}
+		}
+	}
+
+	updateErr := ncp.fileOperator.UpdateManifestFile(files.ConvertToMapOfFiles(configContext.Files))
+	if updateErr != nil {
+		slog.ErrorContext(ctx, "Error updating manifest file", "error", updateErr)
+	}
+
+	return configContext
 }
 
 // nolint: cyclop,revive,gocognit
@@ -253,13 +294,13 @@ func (ncp *NginxConfigParser) formatMap(directive *crossplane.Directive) map[str
 	return formatMap
 }
 
-func (ncp *NginxConfigParser) accessLog(file, format string, formatMap map[string]string) *model.AccessLog {
+func (ncp *NginxConfigParser) accessLog(accessLogFile, format string, formatMap map[string]string) *model.AccessLog {
 	accessLog := &model.AccessLog{
-		Name:     file,
+		Name:     accessLogFile,
 		Readable: false,
 	}
 
-	info, err := os.Stat(file)
+	info, err := os.Stat(accessLogFile)
 	if err == nil {
 		accessLog.Readable = true
 		accessLog.Permissions = files.Permissions(info.Mode())
@@ -288,13 +329,13 @@ func (ncp *NginxConfigParser) updateLogFormat(
 	return accessLog
 }
 
-func (ncp *NginxConfigParser) errorLog(file, level string) *model.ErrorLog {
+func (ncp *NginxConfigParser) errorLog(errorLogFile, level string) *model.ErrorLog {
 	errorLog := &model.ErrorLog{
-		Name:     file,
+		Name:     errorLogFile,
 		LogLevel: level,
 		Readable: false,
 	}
-	info, err := os.Stat(file)
+	info, err := os.Stat(errorLogFile)
 	if err == nil {
 		errorLog.Permissions = files.Permissions(info.Mode())
 		errorLog.Readable = true
@@ -319,22 +360,22 @@ func (ncp *NginxConfigParser) errorLogDirectiveLevel(directive *crossplane.Direc
 	return ""
 }
 
-func (ncp *NginxConfigParser) sslCert(ctx context.Context, file, rootDir string) (sslCertFile *mpi.File) {
-	if strings.Contains(file, "$") {
+func (ncp *NginxConfigParser) sslCert(ctx context.Context, certFile, rootDir string) (sslCertFile *mpi.File) {
+	if strings.Contains(certFile, "$") {
 		// cannot process any filepath with variables
 		return nil
 	}
 
-	if !filepath.IsAbs(file) {
-		file = filepath.Join(rootDir, file)
+	if !filepath.IsAbs(certFile) {
+		certFile = filepath.Join(rootDir, certFile)
 	}
 
-	if !ncp.agentConfig.IsDirectoryAllowed(file) {
-		slog.DebugContext(ctx, "File not in allowed directories", "file", file)
+	if !ncp.agentConfig.IsDirectoryAllowed(certFile) {
+		slog.DebugContext(ctx, "File not in allowed directories", "file", certFile)
 	} else {
-		sslCertFileMeta, fileMetaErr := files.FileMetaWithCertificate(file)
+		sslCertFileMeta, fileMetaErr := files.FileMetaWithCertificate(certFile)
 		if fileMetaErr != nil {
-			slog.ErrorContext(ctx, "Unable to get file metadata", "file", file, "error", fileMetaErr)
+			slog.ErrorContext(ctx, "Unable to get file metadata", "file", certFile, "error", fileMetaErr)
 		} else {
 			sslCertFile = &mpi.File{FileMeta: sslCertFileMeta}
 		}

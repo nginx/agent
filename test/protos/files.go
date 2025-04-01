@@ -21,15 +21,6 @@ func FileMeta(fileName, fileHash string) *mpi.FileMeta {
 	}
 }
 
-func ManifestFileMeta(fileName, fileHash string) *mpi.FileMeta {
-	return &mpi.FileMeta{
-		ModifiedTime: nil,
-		Name:         fileName,
-		Hash:         fileHash,
-		Permissions:  "",
-	}
-}
-
 func CertMeta(fileName, fileHash string) *mpi.FileMeta {
 	lastModified, _ := CreateProtoTime("2024-01-09T13:22:21Z")
 
@@ -80,11 +71,5 @@ func FileOverview(filePath, fileHash string) *mpi.FileOverview {
 			},
 		},
 		ConfigVersion: CreateConfigVersion(),
-	}
-}
-
-func FileContents(content []byte) *mpi.FileContents {
-	return &mpi.FileContents{
-		Contents: content,
 	}
 }

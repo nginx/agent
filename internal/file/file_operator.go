@@ -7,6 +7,7 @@ package file
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -20,6 +21,11 @@ import (
 type FileOperator struct{}
 
 var _ fileOperator = (*FileOperator)(nil)
+
+var (
+	manifestDirPath  = "/var/lib/nginx-agent"
+	manifestFilePath = manifestDirPath + "/manifest.json"
+)
 
 // FileOperator only purpose is to write files,
 
@@ -44,4 +50,76 @@ func (fo *FileOperator) Write(ctx context.Context, fileContent []byte, file *mpi
 	slog.DebugContext(ctx, "Content written to file", "file_path", file.GetName())
 
 	return nil
+}
+
+// nolint: musttag
+func (fo *FileOperator) UpdateManifestFile(currentFiles map[string]*mpi.File) (err error) {
+	slog.Info("Updating NGINX config manifest file", "current_files", currentFiles)
+
+	manifestJSON, err := json.MarshalIndent(currentFiles, "", "  ")
+	if err != nil {
+		slog.Error("Unable to marshal manifest file json ", "err", err)
+		return err
+	}
+
+	// 0755 allows read/execute for all, write for owner
+	if err = os.MkdirAll(manifestDirPath, dirPerm); err != nil {
+		slog.Error("Unable to create directory", "err", err)
+		return err
+	}
+
+	// 0600 ensures only root can read/write
+	newFile, err := os.OpenFile(manifestFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, filePerm)
+	if err != nil {
+		slog.Error("Failed to read manifest file", "error", err)
+		return err
+	}
+	defer newFile.Close()
+
+	_, err = newFile.Write(manifestJSON)
+	if err != nil {
+		slog.Error("Failed to write manifest file: %v\n", "error", err)
+		return err
+	}
+
+	return nil
+}
+
+// nolint: musttag
+func (fo *FileOperator) ManifestFile(currentFiles map[string]*mpi.File) (map[string]*mpi.File, error) {
+	if _, err := os.Stat(manifestFilePath); err != nil {
+		return currentFiles, err // Return current files if manifest directory still doesn't exist
+	}
+
+	file, err := os.ReadFile(manifestFilePath)
+	if err != nil {
+		slog.Error("Failed to read manifest file", "error", err)
+		return nil, err
+	}
+
+	var manifestFiles map[string]*mpi.File
+
+	err = json.Unmarshal(file, &manifestFiles)
+	if err != nil {
+		slog.Error("Failed to parse manifest file", "error", err)
+		return nil, err
+	}
+
+	fileMap := fo.convertToFileMap(manifestFiles)
+
+	return fileMap, nil
+}
+
+func (fo *FileOperator) convertToFileMap(manifestFiles map[string]*mpi.File) map[string]*mpi.File {
+	currentFileMap := make(map[string]*mpi.File)
+	for name, manifestFile := range manifestFiles {
+		currentFile := fo.convertToFile(manifestFile)
+		currentFileMap[name] = currentFile
+	}
+
+	return currentFileMap
+}
+
+func (fo *FileOperator) convertToFile(manifestFile *mpi.File) *mpi.File {
+	return manifestFile
 }

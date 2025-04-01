@@ -97,6 +97,7 @@ func DefaultAllowedDirectories() []string {
 func DefaultExcludedFiles() []string {
 	return []string{
 		"^.*(\\.log|.swx|~|.swp)$",
+		"/var/lib/nginx-agent/manifest.json",
 	}
 }
 
