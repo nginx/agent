@@ -7,7 +7,7 @@ status:
     beta: [metrics]
   distributions: [contrib]
   codeowners:
-    active: [olli-holmala, oliveromahony, apgralG, dhurley, craigell, sean-breen]
+    active: [apgralG, dhurley, craigell, sean-breen, Rashmiti, CVanF5]
 
 resource_attributes:
   instance.id:
@@ -56,12 +56,12 @@ attributes:
       - "REJECTED_DRY_RUN"
       - "DELAYED"
       - "DELAYED_DRY_RUN"
-  nginx.byte.io.direction:
+  nginx.io.direction:
     description: The direction of byte traffic.
     type: string
     enum:
-      - "RX"
-      - "TX"
+      - "receive"
+      - "transmit"
   nginx.status_range:
     description: A status code range or bucket for a HTTP response's status code.
     type: string
@@ -159,7 +159,7 @@ metrics:
     unit: "connections"
     attributes:
       - nginx.connections.outcome
-  nginx.http.connections.count:
+  nginx.http.connection.count:
     enabled: true
     description: The current number of connections.
     gauge:
@@ -167,13 +167,13 @@ metrics:
     unit: "connections"
     attributes:
       - nginx.connections.outcome
-  nginx.http.requests.count:
+  nginx.http.request.count:
     enabled: true
     description: The current number of client requests received from clients.
     gauge:
       value_type: int
     unit: "requests"
-  nginx.cache.bytes:
+  nginx.cache.bytes_read:
     enabled: true
     description: The total number of bytes read from the cache or proxied server.
     sum:
@@ -233,7 +233,7 @@ metrics:
     attributes:
       - nginx.limit_req.outcome
       - nginx.zone.name
-  nginx.http.request.byte.io:
+  nginx.http.request.io:
     enabled: true
     description: The total number of HTTP byte IO.
     sum:
@@ -242,7 +242,7 @@ metrics:
       aggregation_temporality: cumulative
     unit: "bytes"
     attributes:
-      - nginx.byte.io.direction
+      - nginx.io.direction
       - nginx.zone.name
       - nginx.zone.type
   nginx.http.request.discarded:
@@ -278,7 +278,7 @@ metrics:
       - nginx.zone.type
   nginx.http.responses:
     enabled: true
-    description: The total number of client requests received from clients.
+    description: The total number of HTTP responses sent to clients.
     sum:
       value_type: int
       monotonic: true
@@ -308,7 +308,7 @@ metrics:
     attributes:
       - nginx.zone.name
       - nginx.upstream.name
-  nginx.http.upstream.peer.byte.io:
+  nginx.http.upstream.peer.io:
     enabled: true
     description: The total number of byte IO per HTTP upstream peer.
     sum:
@@ -317,12 +317,12 @@ metrics:
       aggregation_temporality: cumulative
     unit: "bytes"
     attributes:
-      - nginx.byte.io.direction
+      - nginx.io.direction
       - nginx.zone.name
       - nginx.upstream.name
       - nginx.peer.address
       - nginx.peer.name
-  nginx.http.upstream.peer.connections.count:
+  nginx.http.upstream.peer.connection.count:
     enabled: true
     description: The average number of active connections per HTTP upstream peer.
     gauge:
@@ -346,8 +346,10 @@ metrics:
   nginx.http.upstream.peer.fails:
     enabled: true
     description: The total number of unsuccessful attempts to communicate with the HTTP upstream peer.
-    gauge:
+    sum:
       value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
     unit: "attempts"
     attributes:
       - nginx.zone.name
@@ -563,7 +565,7 @@ metrics:
     unit: "certificates"
     attributes:
       - nginx.ssl.verify_failure.reason
-  nginx.stream.byte.io:
+  nginx.stream.io:
     enabled: true
     description: The total number of Stream byte IO.
     sum:
@@ -572,9 +574,9 @@ metrics:
       aggregation_temporality: cumulative
     unit: "bytes"
     attributes:
-      - nginx.byte.io.direction
+      - nginx.io.direction
       - nginx.zone.name
-  nginx.stream.connections.accepted:
+  nginx.stream.connection.accepted:
     enabled: true
     description: The total number of connections accepted from clients.
     sum:
@@ -584,7 +586,7 @@ metrics:
     unit: "connections"
     attributes:
       - nginx.zone.name
-  nginx.stream.connections.discarded:
+  nginx.stream.connection.discarded:
     enabled: true
     description: Total number of connections completed without creating a session.
     sum:
@@ -594,7 +596,7 @@ metrics:
     unit: "connections"
     attributes:
       - nginx.zone.name
-  nginx.stream.connections.processing.count:
+  nginx.stream.connection.processing.count:
     enabled: true
     description: The number of client connections that are currently being processed.
     gauge:
@@ -613,7 +615,7 @@ metrics:
     attributes:
       - nginx.status_range
       - nginx.zone.name
-  nginx.stream.upstream.peer.byte.io:
+  nginx.stream.upstream.peer.io:
     enabled: true
     description: The total number of Stream Upstream Peer byte IO.
     sum:
@@ -622,12 +624,12 @@ metrics:
       aggregation_temporality: cumulative
     unit: "bytes"
     attributes:
-      - nginx.byte.io.direction
+      - nginx.io.direction
       - nginx.zone.name
       - nginx.upstream.name
       - nginx.peer.address
       - nginx.peer.name
-  nginx.stream.upstream.peer.connections.count:
+  nginx.stream.upstream.peer.connection.count:
     enabled: true
     description: The current number of Stream Upstream Peer connections.
     gauge:
@@ -638,7 +640,7 @@ metrics:
       - nginx.upstream.name
       - nginx.peer.address
       - nginx.peer.name
-  nginx.stream.upstream.peer.connections.time:
+  nginx.stream.upstream.peer.connection.time:
     enabled: true
     description: The average time to connect to the stream upstream peer.
     gauge:
@@ -664,8 +666,8 @@ metrics:
       - nginx.peer.name
   nginx.stream.upstream.peer.count:
     enabled: true
-    description: The total number of stream upstream peers grouped by state.
-    sum:
+    description: The current number of stream upstream peers grouped by state.
+    gauge:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
@@ -681,7 +683,7 @@ metrics:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
-    unit: "peers"
+    unit: "attempts"
     attributes:
       - nginx.zone.name
       - nginx.upstream.name
@@ -722,7 +724,7 @@ metrics:
       - nginx.upstream.name
       - nginx.peer.address
       - nginx.peer.name
-  nginx.stream.upstream.peer.unavailable:
+  nginx.stream.upstream.peer.unavailables:
     enabled: true
     description: How many times the server became unavailable for client connections (state “unavail”) due to the number of
       unsuccessful attempts reaching the max_fails threshold.

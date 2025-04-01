@@ -16,6 +16,8 @@ import (
 	"strings"
 	"sync"
 
+	"google.golang.org/protobuf/proto"
+
 	"github.com/nginxinc/nginx-plus-go-client/v2/client"
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -42,8 +44,8 @@ const (
 
 type resourceServiceInterface interface {
 	AddInstances(instanceList []*mpi.Instance) *mpi.Resource
-	UpdateInstances(instanceList []*mpi.Instance) *mpi.Resource
-	DeleteInstances(instanceList []*mpi.Instance) *mpi.Resource
+	UpdateInstances(ctx context.Context, instanceList []*mpi.Instance) *mpi.Resource
+	DeleteInstances(ctx context.Context, instanceList []*mpi.Instance) *mpi.Resource
 	ApplyConfig(ctx context.Context, instanceID string) error
 	Instance(instanceID string) *mpi.Instance
 	GetHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance, upstreams string) ([]client.UpstreamServer,
@@ -126,32 +128,45 @@ func (r *ResourceService) RemoveOperator(instanceList []*mpi.Instance) {
 	}
 }
 
-func (r *ResourceService) UpdateInstances(instanceList []*mpi.Instance) *mpi.Resource {
+func (r *ResourceService) UpdateInstances(ctx context.Context, instanceList []*mpi.Instance) *mpi.Resource {
 	r.resourceMutex.Lock()
 	defer r.resourceMutex.Unlock()
 
 	for _, updatedInstance := range instanceList {
-		for _, instance := range r.resource.GetInstances() {
-			if updatedInstance.GetInstanceMeta().GetInstanceId() == instance.GetInstanceMeta().GetInstanceId() {
-				instance.InstanceMeta = updatedInstance.GetInstanceMeta()
-				instance.InstanceRuntime = updatedInstance.GetInstanceRuntime()
-				instance.InstanceConfig = updatedInstance.GetInstanceConfig()
+		resourceCopy, ok := proto.Clone(r.resource).(*mpi.Resource)
+		if ok {
+			for _, instance := range resourceCopy.GetInstances() {
+				if updatedInstance.GetInstanceMeta().GetInstanceId() == instance.GetInstanceMeta().GetInstanceId() {
+					instance.InstanceMeta = updatedInstance.GetInstanceMeta()
+					instance.InstanceRuntime = updatedInstance.GetInstanceRuntime()
+					instance.InstanceConfig = updatedInstance.GetInstanceConfig()
+				}
 			}
+			r.resource = resourceCopy
+		} else {
+			slog.WarnContext(ctx, "Unable to clone resource while updating instances", "resource",
+				r.resource, "instances", instanceList)
 		}
 	}
 
 	return r.resource
 }
 
-func (r *ResourceService) DeleteInstances(instanceList []*mpi.Instance) *mpi.Resource {
+func (r *ResourceService) DeleteInstances(ctx context.Context, instanceList []*mpi.Instance) *mpi.Resource {
 	r.resourceMutex.Lock()
 	defer r.resourceMutex.Unlock()
 
 	for _, deletedInstance := range instanceList {
-		for index, instance := range r.resource.GetInstances() {
-			if deletedInstance.GetInstanceMeta().GetInstanceId() == instance.GetInstanceMeta().GetInstanceId() {
-				r.resource.Instances = append(r.resource.Instances[:index], r.resource.GetInstances()[index+1:]...)
+		resourceCopy, ok := proto.Clone(r.resource).(*mpi.Resource)
+		if ok {
+			for index, instance := range resourceCopy.GetInstances() {
+				if deletedInstance.GetInstanceMeta().GetInstanceId() == instance.GetInstanceMeta().GetInstanceId() {
+					r.resource.Instances = append(r.resource.Instances[:index], r.resource.GetInstances()[index+1:]...)
+				}
 			}
+		} else {
+			slog.WarnContext(ctx, "Unable to clone resource while deleting instances", "resource",
+				r.resource, "instances", instanceList)
 		}
 	}
 	r.RemoveOperator(instanceList)

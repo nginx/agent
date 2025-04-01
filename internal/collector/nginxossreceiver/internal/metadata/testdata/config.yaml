@@ -1,9 +1,9 @@
 default:
 all_set:
   metrics:
-    nginx.http.connections:
+    nginx.http.connection.count:
       enabled: true
-    nginx.http.connections.count:
+    nginx.http.connections:
       enabled: true
     nginx.http.requests:
       enabled: true
@@ -16,9 +16,9 @@ all_set:
       enabled: true
 none_set:
   metrics:
-    nginx.http.connections:
+    nginx.http.connection.count:
       enabled: false
-    nginx.http.connections.count:
+    nginx.http.connections:
       enabled: false
     nginx.http.requests:
       enabled: false

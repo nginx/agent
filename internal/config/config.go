@@ -29,6 +29,7 @@ const (
 	EnvPrefix      = "NGINX_AGENT"
 	KeyDelimiter   = "_"
 	KeyValueNumber = 2
+	AgentDirName   = "/etc/nginx-agent/"
 )
 
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
@@ -73,15 +74,20 @@ func RegisterConfigFile() error {
 func ResolveConfig() (*Config, error) {
 	// Collect allowed directories, so that paths in the config can be validated.
 	directories := viperInstance.GetStringSlice(AllowedDirectoriesKey)
-	allowedDirs := make([]string, 0)
+	allowedDirs := []string{AgentDirName}
 
 	// Check directories in allowed_directories are valid
 	for _, dir := range directories {
-		if dir != "" && filepath.IsAbs(dir) {
-			allowedDirs = append(allowedDirs, dir)
-		} else {
+		if dir == "" || !filepath.IsAbs(dir) {
 			slog.Warn("Invalid directory: ", "dir", dir)
+			continue
 		}
+
+		if !strings.HasSuffix(dir, "/") {
+			dir += "/"
+		}
+		allowedDirs = append(allowedDirs, dir)
+		slog.Info("Configured allowed directories", "allowed_directories", allowedDirs)
 	}
 
 	// Collect all parsing errors before returning the error, so the user sees all issues with config
@@ -110,6 +116,8 @@ func ResolveConfig() (*Config, error) {
 
 	slog.Debug("Agent config", "config", config)
 	slog.Info("Enabled features", "features", config.Features)
+	slog.Info("Excluded files from being watched for file changes", "exclude_files",
+		config.Watchers.FileWatcher.ExcludeFiles)
 
 	return config, nil
 }
@@ -154,12 +162,13 @@ func registerFlags() {
 	fs.StringSlice(
 		NginxExcludeLogsKey, []string{},
 		"A comma-separated list of one or more NGINX log paths that you want to exclude from metrics "+
-			"collection or error monitoring",
+			"collection or error monitoring. This includes absolute paths or regex patterns",
 	)
 
 	fs.StringSlice(AllowedDirectoriesKey,
 		DefaultAllowedDirectories(),
-		"A comma-separated list of paths that you want to grant NGINX Agent read/write access to")
+		"A comma-separated list of paths that you want to grant NGINX Agent read/write access to. Allowed "+
+			"directories are case sensitive")
 
 	fs.Duration(
 		InstanceWatcherMonitoringFrequencyKey,
@@ -177,6 +186,12 @@ func registerFlags() {
 		FileWatcherMonitoringFrequencyKey,
 		DefFileWatcherMonitoringFrequency,
 		"How often the NGINX Agent will check for file changes.",
+	)
+
+	fs.StringSlice(
+		NginxExcludeFilesKey, DefaultExcludedFiles(),
+		"A comma-separated list of one or more file paths that you want to exclude from file monitoring. "+
+			"This includes absolute paths or regex patterns",
 	)
 
 	fs.StringSlice(
@@ -441,7 +456,7 @@ func getConfigFilePaths() []string {
 	if err == nil {
 		paths = append(paths, path)
 	} else {
-		slog.Warn("Unable to determine process's current directory")
+		slog.Warn("Unable to determine process's current directory", "error", err)
 	}
 
 	return paths
@@ -529,7 +544,7 @@ func resolveEnvironmentVariableLabels() map[string]string {
 			if len(splitLabel) == KeyValueNumber {
 				envLabels[splitLabel[0]] = splitLabel[1]
 			} else {
-				slog.Warn("Unable to parse label: " + label)
+				slog.Warn("Unable to parse label ", "label", label)
 			}
 		}
 	}
@@ -881,6 +896,7 @@ func resolveWatchers() *Watchers {
 		},
 		FileWatcher: FileWatcher{
 			MonitoringFrequency: viperInstance.GetDuration(FileWatcherMonitoringFrequencyKey),
+			ExcludeFiles:        viperInstance.GetStringSlice(NginxExcludeFilesKey),
 		},
 	}
 }

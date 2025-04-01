@@ -59,6 +59,8 @@ func (s *NginxStubStatusScraper) ID() component.ID {
 
 func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) error {
 	httpClient := http.DefaultClient
+	httpClient.Timeout = s.cfg.ClientConfig.Timeout
+
 	if strings.HasPrefix(s.cfg.APIDetails.Listen, "unix:") {
 		httpClient.Transport = &http.Transport{
 			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
@@ -106,22 +108,22 @@ func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error
 		metadata.AttributeNginxConnectionsOutcomeHANDLED,
 	)
 
-	s.mb.RecordNginxHTTPConnectionsCountDataPoint(
+	s.mb.RecordNginxHTTPConnectionCountDataPoint(
 		now,
 		stats.Connections.Active,
 		metadata.AttributeNginxConnectionsOutcomeACTIVE,
 	)
-	s.mb.RecordNginxHTTPConnectionsCountDataPoint(
+	s.mb.RecordNginxHTTPConnectionCountDataPoint(
 		now,
 		stats.Connections.Reading,
 		metadata.AttributeNginxConnectionsOutcomeREADING,
 	)
-	s.mb.RecordNginxHTTPConnectionsCountDataPoint(
+	s.mb.RecordNginxHTTPConnectionCountDataPoint(
 		now,
 		stats.Connections.Writing,
 		metadata.AttributeNginxConnectionsOutcomeWRITING,
 	)
-	s.mb.RecordNginxHTTPConnectionsCountDataPoint(
+	s.mb.RecordNginxHTTPConnectionCountDataPoint(
 		now,
 		stats.Connections.Waiting,
 		metadata.AttributeNginxConnectionsOutcomeWAITING,

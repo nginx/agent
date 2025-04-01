@@ -51,6 +51,7 @@ func (fp *FilePlugin) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 }
 
 func (fp *FilePlugin) Close(ctx context.Context) error {
+	slog.InfoContext(ctx, "Closing file plugin")
 	return fp.conn.Close(ctx)
 }
 
@@ -62,6 +63,8 @@ func (fp *FilePlugin) Info() *bus.Info {
 
 func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
+	case bus.ConnectionResetTopic:
+		fp.handleConnectionReset(ctx, msg)
 	case bus.ConnectionCreatedTopic:
 		fp.fileManagerService.SetIsConnected(true)
 	case bus.NginxConfigUpdateTopic:
@@ -81,6 +84,7 @@ func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 
 func (fp *FilePlugin) Subscriptions() []string {
 	return []string{
+		bus.ConnectionResetTopic,
 		bus.ConnectionCreatedTopic,
 		bus.NginxConfigUpdateTopic,
 		bus.ConfigUploadRequestTopic,
@@ -88,6 +92,24 @@ func (fp *FilePlugin) Subscriptions() []string {
 		bus.ConfigApplyFailedTopic,
 		bus.ConfigApplySuccessfulTopic,
 		bus.ConfigApplyCompleteTopic,
+	}
+}
+
+func (fp *FilePlugin) handleConnectionReset(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "File plugin received connection reset message")
+	if newConnection, ok := msg.Data.(grpc.GrpcConnectionInterface); ok {
+		var reconnect bool
+		err := fp.conn.Close(ctx)
+		if err != nil {
+			slog.ErrorContext(ctx, "File plugin: unable to close connection", "error", err)
+		}
+		fp.conn = newConnection
+
+		reconnect = fp.fileManagerService.IsConnected()
+		fp.fileManagerService = NewFileManagerService(fp.conn.FileServiceClient(), fp.config)
+		fp.fileManagerService.SetIsConnected(reconnect)
+
+		slog.DebugContext(ctx, "File plugin: client reset successfully")
 	}
 }
 

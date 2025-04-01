@@ -70,11 +70,11 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordNginxHTTPConnectionsDataPoint(ts, 1, AttributeNginxConnectionsOutcomeACCEPTED)
+			mb.RecordNginxHTTPConnectionCountDataPoint(ts, 1, AttributeNginxConnectionsOutcomeACCEPTED)
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordNginxHTTPConnectionsCountDataPoint(ts, 1, AttributeNginxConnectionsOutcomeACCEPTED)
+			mb.RecordNginxHTTPConnectionsDataPoint(ts, 1, AttributeNginxConnectionsOutcomeACCEPTED)
 
 			defaultMetricsCount++
 			allMetricsCount++
@@ -109,6 +109,21 @@ func TestMetricsBuilder(t *testing.T) {
 			validatedMetrics := make(map[string]bool)
 			for i := 0; i < ms.Len(); i++ {
 				switch ms.At(i).Name() {
+				case "nginx.http.connection.count":
+					assert.False(t, validatedMetrics["nginx.http.connection.count"], "Found a duplicate in the metrics slice: nginx.http.connection.count")
+					validatedMetrics["nginx.http.connection.count"] = true
+					assert.Equal(t, pmetric.MetricTypeGauge, ms.At(i).Type())
+					assert.Equal(t, 1, ms.At(i).Gauge().DataPoints().Len())
+					assert.Equal(t, "The current number of connections.", ms.At(i).Description())
+					assert.Equal(t, "connections", ms.At(i).Unit())
+					dp := ms.At(i).Gauge().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+					assert.Equal(t, int64(1), dp.IntValue())
+					attrVal, ok := dp.Attributes().Get("nginx.connections.outcome")
+					assert.True(t, ok)
+					assert.EqualValues(t, "ACCEPTED", attrVal.Str())
 				case "nginx.http.connections":
 					assert.False(t, validatedMetrics["nginx.http.connections"], "Found a duplicate in the metrics slice: nginx.http.connections")
 					validatedMetrics["nginx.http.connections"] = true
@@ -119,21 +134,6 @@ func TestMetricsBuilder(t *testing.T) {
 					assert.True(t, ms.At(i).Sum().IsMonotonic())
 					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
 					dp := ms.At(i).Sum().DataPoints().At(0)
-					assert.Equal(t, start, dp.StartTimestamp())
-					assert.Equal(t, ts, dp.Timestamp())
-					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
-					assert.Equal(t, int64(1), dp.IntValue())
-					attrVal, ok := dp.Attributes().Get("nginx.connections.outcome")
-					assert.True(t, ok)
-					assert.EqualValues(t, "ACCEPTED", attrVal.Str())
-				case "nginx.http.connections.count":
-					assert.False(t, validatedMetrics["nginx.http.connections.count"], "Found a duplicate in the metrics slice: nginx.http.connections.count")
-					validatedMetrics["nginx.http.connections.count"] = true
-					assert.Equal(t, pmetric.MetricTypeGauge, ms.At(i).Type())
-					assert.Equal(t, 1, ms.At(i).Gauge().DataPoints().Len())
-					assert.Equal(t, "The current number of connections.", ms.At(i).Description())
-					assert.Equal(t, "connections", ms.At(i).Unit())
-					dp := ms.At(i).Gauge().DataPoints().At(0)
 					assert.Equal(t, start, dp.StartTimestamp())
 					assert.Equal(t, ts, dp.Timestamp())
 					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())

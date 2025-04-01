@@ -625,7 +625,8 @@ func getAgentConfig() *Config {
 			},
 		},
 		AllowedDirectories: []string{
-			"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx", "/var/log/nginx", "/usr/share/nginx/modules",
+			"/etc/nginx/", "/etc/nginx-agent/", "/usr/local/etc/nginx/", "/var/run/nginx/", "/var/log/nginx/",
+			"/usr/share/nginx/modules/",
 		},
 		Collector: &Collector{
 			ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
@@ -755,11 +756,12 @@ func createConfig() *Config {
 			},
 		},
 		AllowedDirectories: []string{
-			"/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx", "/usr/share/nginx/modules", "/var/log/nginx",
+			"/etc/nginx-agent/", "/etc/nginx/", "/usr/local/etc/nginx/", "/var/run/nginx/",
+			"/usr/share/nginx/modules/", "/var/log/nginx/",
 		},
 		DataPlaneConfig: &DataPlaneConfig{
 			Nginx: &NginxDataPlaneConfig{
-				ExcludeLogs:            []string{"/var/log/nginx/error.log", "/var/log/nginx/access.log"},
+				ExcludeLogs:            []string{"/var/log/nginx/error.log", "^/var/log/nginx/.*.log$"},
 				ReloadMonitoringPeriod: 30 * time.Second,
 				TreatWarningsAsErrors:  true,
 			},
@@ -901,7 +903,8 @@ func createConfig() *Config {
 				Type: Grpc,
 			},
 			Auth: &AuthConfig{
-				Token: "1234",
+				Token:     "1234",
+				TokenPath: "path/to/my_token",
 			},
 			TLS: &TLSConfig{
 				Cert:       "some.cert",
@@ -920,6 +923,7 @@ func createConfig() *Config {
 			},
 			FileWatcher: FileWatcher{
 				MonitoringFrequency: 10 * time.Second,
+				ExcludeFiles:        []string{"\\.*log$"},
 			},
 		},
 		Labels: map[string]any{

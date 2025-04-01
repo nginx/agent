@@ -25,10 +25,10 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "all_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					NginxHTTPConnections:      MetricConfig{Enabled: true},
-					NginxHTTPConnectionsCount: MetricConfig{Enabled: true},
-					NginxHTTPRequests:         MetricConfig{Enabled: true},
-					NginxHTTPResponseStatus:   MetricConfig{Enabled: true},
+					NginxHTTPConnectionCount: MetricConfig{Enabled: true},
+					NginxHTTPConnections:     MetricConfig{Enabled: true},
+					NginxHTTPRequests:        MetricConfig{Enabled: true},
+					NginxHTTPResponseStatus:  MetricConfig{Enabled: true},
 				},
 				ResourceAttributes: ResourceAttributesConfig{
 					InstanceID:   ResourceAttributeConfig{Enabled: true},
@@ -40,10 +40,10 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "none_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					NginxHTTPConnections:      MetricConfig{Enabled: false},
-					NginxHTTPConnectionsCount: MetricConfig{Enabled: false},
-					NginxHTTPRequests:         MetricConfig{Enabled: false},
-					NginxHTTPResponseStatus:   MetricConfig{Enabled: false},
+					NginxHTTPConnectionCount: MetricConfig{Enabled: false},
+					NginxHTTPConnections:     MetricConfig{Enabled: false},
+					NginxHTTPRequests:        MetricConfig{Enabled: false},
+					NginxHTTPResponseStatus:  MetricConfig{Enabled: false},
 				},
 				ResourceAttributes: ResourceAttributesConfig{
 					InstanceID:   ResourceAttributeConfig{Enabled: false},
