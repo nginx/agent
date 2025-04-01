@@ -143,7 +143,7 @@ func (ncp *NginxConfigParser) auxFiles() (map[string]*mpi.File, error) {
 			return nil, err
 		}
 
-		err = ncp.fileOperator.CreateManifestFile()
+		err = ncp.fileOperator.UpdateManifestFile(make(map[string]*mpi.File))
 		if err != nil {
 			return nil, err
 		}

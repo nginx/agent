@@ -85,22 +85,6 @@ func (fo *FileOperator) UpdateManifestFile(currentFiles map[string]*mpi.File) (e
 	return nil
 }
 
-func (fo *FileOperator) CreateManifestFile() error {
-	if err := os.MkdirAll(manifestDirPath, dirPerm); err != nil {
-		slog.Error("Unable to create directory", "err", err)
-		return err
-	}
-
-	// 0600 ensures only root can read/write
-	newFile, err := os.OpenFile(manifestFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, filePerm)
-	if err != nil {
-		slog.Error("Failed to create manifest file", "error", err)
-		return err
-	}
-
-	return newFile.Close()
-}
-
 // nolint: musttag
 func (fo *FileOperator) ManifestFile(currentFiles map[string]*mpi.File) (map[string]*mpi.File, error) {
 	if _, err := os.Stat(manifestFilePath); err != nil {
