@@ -25,7 +25,9 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "all_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					ContainerMemoryCurrent: MetricConfig{Enabled: true},
+					ContainerCPUUsageSystem: MetricConfig{Enabled: true},
+					ContainerCPUUsageUser:   MetricConfig{Enabled: true},
+					ContainerMemoryUsed:     MetricConfig{Enabled: true},
 				},
 				ResourceAttributes: ResourceAttributesConfig{
 					ResourceID: ResourceAttributeConfig{Enabled: true},
@@ -36,7 +38,9 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "none_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					ContainerMemoryCurrent: MetricConfig{Enabled: false},
+					ContainerCPUUsageSystem: MetricConfig{Enabled: false},
+					ContainerCPUUsageUser:   MetricConfig{Enabled: false},
+					ContainerMemoryUsed:     MetricConfig{Enabled: false},
 				},
 				ResourceAttributes: ResourceAttributesConfig{
 					ResourceID: ResourceAttributeConfig{Enabled: false},

@@ -7,8 +7,6 @@ package containermetricsreceiver
 
 import (
 	"context"
-	"time"
-
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/cgroup"
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/config"
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/metadata"
@@ -16,6 +14,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
 	"go.uber.org/zap"
+	"time"
 )
 
 type containerScraper struct {
@@ -59,18 +58,40 @@ func (cms *containerScraper) scrape(
 	cms.recordMetrics()
 
 	cms.logger.Debug("Finished container metrics scrape, emitting metrics")
-
 	return cms.mb.Emit(metadata.WithResource(cms.rb.Emit())), nil
 }
 
 func (cms *containerScraper) recordMetrics() {
 	cms.logger.Debug("Collecting container metrics")
-	_ = pcommon.NewTimestampFromTime(time.Now())
+	now := pcommon.NewTimestampFromTime(time.Now())
 
-	// collect cpu
-	_ = cgroup.NewCgroupCPUSource()
+	cms.recordCpuStats(now)
+	cms.recordMemoryStats(now)
+}
 
-	// collect memory
-	_ = cgroup.NewCgroupMemorySource()
-	// cms.mb.RecordContainerMemoryCurrentDataPoint()
+func (cms *containerScraper) recordCpuStats(timestamp pcommon.Timestamp) {
+
+	cms.logger.Debug("Collecting container cpu metrics")
+	cpuSource := cgroup.NewCPUSource(cgroup.BasePath)
+	percentages, err := cpuSource.Collect()
+	if err != nil {
+		cms.logger.Warn("Failed to collect container cpu metrics", zap.Error(err))
+		return
+	}
+
+	cms.logger.Debug("Collecting container cpu metrics", zap.Any("percentages", percentages))
+	cms.mb.RecordContainerCPUUsageUserDataPoint(timestamp, percentages.User, "0", 0)
+	cms.mb.RecordContainerCPUUsageSystemDataPoint(timestamp, percentages.System, "0", 0)
+}
+func (cms *containerScraper) recordMemoryStats(timestamp pcommon.Timestamp) {
+	// capture all the desired memory metrics
+	cms.logger.Debug("Collecting container memory metrics")
+	memSource := cgroup.NewMemorySource(cgroup.BasePath)
+	stats, err := memSource.VirtualMemoryStatWithContext(context.Background())
+	if err != nil {
+		cms.logger.Warn("Failed to collect container memory metrics", zap.Error(err))
+		return
+	}
+	cms.logger.Debug("Collecting container memory metrics", zap.Any("memory", stats))
+	cms.mb.RecordContainerMemoryUsedDataPoint(timestamp, int64(stats.Used))
 }

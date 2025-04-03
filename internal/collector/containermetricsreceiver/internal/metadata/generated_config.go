@@ -28,12 +28,20 @@ func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
 
 // MetricsConfig provides config for containermetrics metrics.
 type MetricsConfig struct {
-	ContainerMemoryCurrent MetricConfig `mapstructure:"container.memory.current"`
+	ContainerCPUUsageSystem MetricConfig `mapstructure:"container.cpu.usage.system"`
+	ContainerCPUUsageUser   MetricConfig `mapstructure:"container.cpu.usage.user"`
+	ContainerMemoryUsed     MetricConfig `mapstructure:"container.memory.used"`
 }
 
 func DefaultMetricsConfig() MetricsConfig {
 	return MetricsConfig{
-		ContainerMemoryCurrent: MetricConfig{
+		ContainerCPUUsageSystem: MetricConfig{
+			Enabled: true,
+		},
+		ContainerCPUUsageUser: MetricConfig{
+			Enabled: true,
+		},
+		ContainerMemoryUsed: MetricConfig{
 			Enabled: true,
 		},
 	}
@@ -73,7 +81,7 @@ type ResourceAttributesConfig struct {
 func DefaultResourceAttributesConfig() ResourceAttributesConfig {
 	return ResourceAttributesConfig{
 		ResourceID: ResourceAttributeConfig{
-			Enabled: true,
+			Enabled: false,
 		},
 	}
 }

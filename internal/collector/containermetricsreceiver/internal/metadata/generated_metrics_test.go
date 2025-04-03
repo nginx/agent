@@ -70,7 +70,15 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordContainerMemoryCurrentDataPoint(ts, 1)
+			mb.RecordContainerCPUUsageSystemDataPoint(ts, 1, "cpu-val", AttributeStateIdle)
+
+			defaultMetricsCount++
+			allMetricsCount++
+			mb.RecordContainerCPUUsageUserDataPoint(ts, 1, "cpu-val", AttributeStateIdle)
+
+			defaultMetricsCount++
+			allMetricsCount++
+			mb.RecordContainerMemoryUsedDataPoint(ts, 1)
 
 			rb := mb.NewResourceBuilder()
 			rb.SetResourceID("resource.id-val")
@@ -96,16 +104,54 @@ func TestMetricsBuilder(t *testing.T) {
 			validatedMetrics := make(map[string]bool)
 			for i := 0; i < ms.Len(); i++ {
 				switch ms.At(i).Name() {
-				case "container.memory.current":
-					assert.False(t, validatedMetrics["container.memory.current"], "Found a duplicate in the metrics slice: container.memory.current")
-					validatedMetrics["container.memory.current"] = true
+				case "container.cpu.usage.system":
+					assert.False(t, validatedMetrics["container.cpu.usage.system"], "Found a duplicate in the metrics slice: container.cpu.usage.system")
+					validatedMetrics["container.cpu.usage.system"] = true
 					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
 					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
-					assert.Equal(t, "The amount of memory currently in use.", ms.At(i).Description())
-					assert.Equal(t, "bytes", ms.At(i).Unit())
-					assert.False(t, ms.At(i).Sum().IsMonotonic())
-					assert.Equal(t, pmetric.AggregationTemporalityUnspecified, ms.At(i).Sum().AggregationTemporality())
+					assert.Equal(t, "Total seconds each logical CPU spent on each mode.", ms.At(i).Description())
+					assert.Equal(t, "s", ms.At(i).Unit())
+					assert.True(t, ms.At(i).Sum().IsMonotonic())
+					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
 					dp := ms.At(i).Sum().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeDouble, dp.ValueType())
+					assert.InDelta(t, float64(1), dp.DoubleValue(), 0.01)
+					attrVal, ok := dp.Attributes().Get("cpu")
+					assert.True(t, ok)
+					assert.EqualValues(t, "cpu-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("state")
+					assert.True(t, ok)
+					assert.EqualValues(t, "idle", attrVal.Str())
+				case "container.cpu.usage.user":
+					assert.False(t, validatedMetrics["container.cpu.usage.user"], "Found a duplicate in the metrics slice: container.cpu.usage.user")
+					validatedMetrics["container.cpu.usage.user"] = true
+					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
+					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
+					assert.Equal(t, "Total seconds each logical CPU spent on each mode.", ms.At(i).Description())
+					assert.Equal(t, "s", ms.At(i).Unit())
+					assert.True(t, ms.At(i).Sum().IsMonotonic())
+					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
+					dp := ms.At(i).Sum().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeDouble, dp.ValueType())
+					assert.InDelta(t, float64(1), dp.DoubleValue(), 0.01)
+					attrVal, ok := dp.Attributes().Get("cpu")
+					assert.True(t, ok)
+					assert.EqualValues(t, "cpu-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("state")
+					assert.True(t, ok)
+					assert.EqualValues(t, "idle", attrVal.Str())
+				case "container.memory.used":
+					assert.False(t, validatedMetrics["container.memory.used"], "Found a duplicate in the metrics slice: container.memory.used")
+					validatedMetrics["container.memory.used"] = true
+					assert.Equal(t, pmetric.MetricTypeGauge, ms.At(i).Type())
+					assert.Equal(t, 1, ms.At(i).Gauge().DataPoints().Len())
+					assert.Equal(t, "Current memory in bytes.", ms.At(i).Description())
+					assert.Equal(t, "b", ms.At(i).Unit())
+					dp := ms.At(i).Gauge().DataPoints().At(0)
 					assert.Equal(t, start, dp.StartTimestamp())
 					assert.Equal(t, ts, dp.Timestamp())
 					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())

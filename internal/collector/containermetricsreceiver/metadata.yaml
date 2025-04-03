@@ -10,17 +10,43 @@ status:
     active: [ aphralG, dhurley, craigell, sean-breen, Rashmiti, CVanF5 ]
 
 resource_attributes:
+  resource.id:
+    description: The resource id.
+    type: string
 
 attributes:
-#  container.memory.current:
-#    description: The current amount of RAM used by the container.
-#    type: int
+  cpu:
+    description: Logical CPU number starting at 0.
+    type: string
+
+  state:
+    description: CPU usage type.
+    type: string
+    enum: [idle, interrupt, nice, softirq, steal, system, user, wait]
 
 metrics:
-#  container.memory.current:
-#    enabled: true
-#    description: "The amount of memory currently in use."
-#    sum:
-#      value_type: int
-#      monotonic: false
-#    unit: "bytes"
+  container.cpu.usage.user:
+    enabled: true
+    description: Total seconds each logical CPU spent on each mode.
+    unit: s
+    sum:
+      value_type: double
+      aggregation_temporality: cumulative
+      monotonic: true
+    attributes: [ cpu, state ]
+  container.cpu.usage.system:
+    enabled: true
+    description: Total seconds each logical CPU spent on each mode.
+    unit: s
+    sum:
+      value_type: double
+      aggregation_temporality: cumulative
+      monotonic: true
+    attributes: [ cpu, state ]
+  container.memory.used:
+    enabled: true
+    description: Current memory in bytes.
+    unit: b
+    gauge:
+      value_type: int
+    

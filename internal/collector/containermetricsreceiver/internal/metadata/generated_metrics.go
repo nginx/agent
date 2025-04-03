@@ -12,41 +12,94 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 )
 
-type metricContainerMemoryCurrent struct {
+// AttributeState specifies the a value state attribute.
+type AttributeState int
+
+const (
+	_ AttributeState = iota
+	AttributeStateIdle
+	AttributeStateInterrupt
+	AttributeStateNice
+	AttributeStateSoftirq
+	AttributeStateSteal
+	AttributeStateSystem
+	AttributeStateUser
+	AttributeStateWait
+)
+
+// String returns the string representation of the AttributeState.
+func (av AttributeState) String() string {
+	switch av {
+	case AttributeStateIdle:
+		return "idle"
+	case AttributeStateInterrupt:
+		return "interrupt"
+	case AttributeStateNice:
+		return "nice"
+	case AttributeStateSoftirq:
+		return "softirq"
+	case AttributeStateSteal:
+		return "steal"
+	case AttributeStateSystem:
+		return "system"
+	case AttributeStateUser:
+		return "user"
+	case AttributeStateWait:
+		return "wait"
+	}
+	return ""
+}
+
+// MapAttributeState is a helper map of string to AttributeState attribute value.
+var MapAttributeState = map[string]AttributeState{
+	"idle":      AttributeStateIdle,
+	"interrupt": AttributeStateInterrupt,
+	"nice":      AttributeStateNice,
+	"softirq":   AttributeStateSoftirq,
+	"steal":     AttributeStateSteal,
+	"system":    AttributeStateSystem,
+	"user":      AttributeStateUser,
+	"wait":      AttributeStateWait,
+}
+
+type metricContainerCPUUsageSystem struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
 	capacity int            // max observed number of data points added to the metric.
 }
 
-// init fills container.memory.current metric with initial data.
-func (m *metricContainerMemoryCurrent) init() {
-	m.data.SetName("container.memory.current")
-	m.data.SetDescription("The amount of memory currently in use.")
-	m.data.SetUnit("bytes")
+// init fills container.cpu.usage.system metric with initial data.
+func (m *metricContainerCPUUsageSystem) init() {
+	m.data.SetName("container.cpu.usage.system")
+	m.data.SetDescription("Total seconds each logical CPU spent on each mode.")
+	m.data.SetUnit("s")
 	m.data.SetEmptySum()
-	m.data.Sum().SetIsMonotonic(false)
-	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityUnspecified)
+	m.data.Sum().SetIsMonotonic(true)
+	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricContainerMemoryCurrent) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64) {
+func (m *metricContainerCPUUsageSystem) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, cpuAttributeValue string, stateAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
 	dp := m.data.Sum().DataPoints().AppendEmpty()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
-	dp.SetIntValue(val)
+	dp.SetDoubleValue(val)
+	dp.Attributes().PutStr("cpu", cpuAttributeValue)
+	dp.Attributes().PutStr("state", stateAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
-func (m *metricContainerMemoryCurrent) updateCapacity() {
+func (m *metricContainerCPUUsageSystem) updateCapacity() {
 	if m.data.Sum().DataPoints().Len() > m.capacity {
 		m.capacity = m.data.Sum().DataPoints().Len()
 	}
 }
 
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
-func (m *metricContainerMemoryCurrent) emit(metrics pmetric.MetricSlice) {
+func (m *metricContainerCPUUsageSystem) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
@@ -54,8 +107,111 @@ func (m *metricContainerMemoryCurrent) emit(metrics pmetric.MetricSlice) {
 	}
 }
 
-func newMetricContainerMemoryCurrent(cfg MetricConfig) metricContainerMemoryCurrent {
-	m := metricContainerMemoryCurrent{config: cfg}
+func newMetricContainerCPUUsageSystem(cfg MetricConfig) metricContainerCPUUsageSystem {
+	m := metricContainerCPUUsageSystem{config: cfg}
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
+type metricContainerCPUUsageUser struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills container.cpu.usage.user metric with initial data.
+func (m *metricContainerCPUUsageUser) init() {
+	m.data.SetName("container.cpu.usage.user")
+	m.data.SetDescription("Total seconds each logical CPU spent on each mode.")
+	m.data.SetUnit("s")
+	m.data.SetEmptySum()
+	m.data.Sum().SetIsMonotonic(true)
+	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricContainerCPUUsageUser) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, cpuAttributeValue string, stateAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Sum().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetDoubleValue(val)
+	dp.Attributes().PutStr("cpu", cpuAttributeValue)
+	dp.Attributes().PutStr("state", stateAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricContainerCPUUsageUser) updateCapacity() {
+	if m.data.Sum().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Sum().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricContainerCPUUsageUser) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricContainerCPUUsageUser(cfg MetricConfig) metricContainerCPUUsageUser {
+	m := metricContainerCPUUsageUser{config: cfg}
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
+type metricContainerMemoryUsed struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills container.memory.used metric with initial data.
+func (m *metricContainerMemoryUsed) init() {
+	m.data.SetName("container.memory.used")
+	m.data.SetDescription("Current memory in bytes.")
+	m.data.SetUnit("b")
+	m.data.SetEmptyGauge()
+}
+
+func (m *metricContainerMemoryUsed) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Gauge().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetIntValue(val)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricContainerMemoryUsed) updateCapacity() {
+	if m.data.Gauge().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Gauge().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricContainerMemoryUsed) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricContainerMemoryUsed(cfg MetricConfig) metricContainerMemoryUsed {
+	m := metricContainerMemoryUsed{config: cfg}
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -73,7 +229,9 @@ type MetricsBuilder struct {
 	buildInfo                      component.BuildInfo  // contains version information.
 	resourceAttributeIncludeFilter map[string]filter.Filter
 	resourceAttributeExcludeFilter map[string]filter.Filter
-	metricContainerMemoryCurrent   metricContainerMemoryCurrent
+	metricContainerCPUUsageSystem  metricContainerCPUUsageSystem
+	metricContainerCPUUsageUser    metricContainerCPUUsageUser
+	metricContainerMemoryUsed      metricContainerMemoryUsed
 }
 
 // MetricBuilderOption applies changes to default metrics builder.
@@ -100,7 +258,9 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, opt
 		startTime:                      pcommon.NewTimestampFromTime(time.Now()),
 		metricsBuffer:                  pmetric.NewMetrics(),
 		buildInfo:                      settings.BuildInfo,
-		metricContainerMemoryCurrent:   newMetricContainerMemoryCurrent(mbc.Metrics.ContainerMemoryCurrent),
+		metricContainerCPUUsageSystem:  newMetricContainerCPUUsageSystem(mbc.Metrics.ContainerCPUUsageSystem),
+		metricContainerCPUUsageUser:    newMetricContainerCPUUsageUser(mbc.Metrics.ContainerCPUUsageUser),
+		metricContainerMemoryUsed:      newMetricContainerMemoryUsed(mbc.Metrics.ContainerMemoryUsed),
 		resourceAttributeIncludeFilter: make(map[string]filter.Filter),
 		resourceAttributeExcludeFilter: make(map[string]filter.Filter),
 	}
@@ -179,7 +339,9 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	ils.Scope().SetName("otelcol/containermetrics")
 	ils.Scope().SetVersion(mb.buildInfo.Version)
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
-	mb.metricContainerMemoryCurrent.emit(ils.Metrics())
+	mb.metricContainerCPUUsageSystem.emit(ils.Metrics())
+	mb.metricContainerCPUUsageUser.emit(ils.Metrics())
+	mb.metricContainerMemoryUsed.emit(ils.Metrics())
 
 	for _, op := range options {
 		op.apply(rm)
@@ -211,9 +373,19 @@ func (mb *MetricsBuilder) Emit(options ...ResourceMetricsOption) pmetric.Metrics
 	return metrics
 }
 
-// RecordContainerMemoryCurrentDataPoint adds a data point to container.memory.current metric.
-func (mb *MetricsBuilder) RecordContainerMemoryCurrentDataPoint(ts pcommon.Timestamp, val int64) {
-	mb.metricContainerMemoryCurrent.recordDataPoint(mb.startTime, ts, val)
+// RecordContainerCPUUsageSystemDataPoint adds a data point to container.cpu.usage.system metric.
+func (mb *MetricsBuilder) RecordContainerCPUUsageSystemDataPoint(ts pcommon.Timestamp, val float64, cpuAttributeValue string, stateAttributeValue AttributeState) {
+	mb.metricContainerCPUUsageSystem.recordDataPoint(mb.startTime, ts, val, cpuAttributeValue, stateAttributeValue.String())
+}
+
+// RecordContainerCPUUsageUserDataPoint adds a data point to container.cpu.usage.user metric.
+func (mb *MetricsBuilder) RecordContainerCPUUsageUserDataPoint(ts pcommon.Timestamp, val float64, cpuAttributeValue string, stateAttributeValue AttributeState) {
+	mb.metricContainerCPUUsageUser.recordDataPoint(mb.startTime, ts, val, cpuAttributeValue, stateAttributeValue.String())
+}
+
+// RecordContainerMemoryUsedDataPoint adds a data point to container.memory.used metric.
+func (mb *MetricsBuilder) RecordContainerMemoryUsedDataPoint(ts pcommon.Timestamp, val int64) {
+	mb.metricContainerMemoryUsed.recordDataPoint(mb.startTime, ts, val)
 }
 
 // Reset resets metrics builder to its initial state. It should be used when external metrics source is restarted,

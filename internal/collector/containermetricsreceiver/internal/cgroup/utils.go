@@ -16,7 +16,7 @@ import (
 
 var pageSize = int64(os.Getpagesize())
 
-type CgroupSource interface {
+type Source interface {
 	Stats() float64
 }
 

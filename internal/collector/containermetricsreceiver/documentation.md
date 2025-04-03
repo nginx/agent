@@ -12,16 +12,46 @@ metrics:
     enabled: false
 ```
 
-### container.memory.current
+### container.cpu.usage.system
 
-The amount of memory currently in use.
+Total seconds each logical CPU spent on each mode.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| bytes | Sum | Int | Unspecified | false |
+| s | Sum | Double | Cumulative | true |
+
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| cpu | Logical CPU number starting at 0. | Any Str |
+| state | CPU usage type. | Str: ``idle``, ``interrupt``, ``nice``, ``softirq``, ``steal``, ``system``, ``user``, ``wait`` |
+
+### container.cpu.usage.user
+
+Total seconds each logical CPU spent on each mode.
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
+| ---- | ----------- | ---------- | ----------------------- | --------- |
+| s | Sum | Double | Cumulative | true |
+
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| cpu | Logical CPU number starting at 0. | Any Str |
+| state | CPU usage type. | Str: ``idle``, ``interrupt``, ``nice``, ``softirq``, ``steal``, ``system``, ``user``, ``wait`` |
+
+### container.memory.used
+
+Current memory in bytes.
+
+| Unit | Metric Type | Value Type |
+| ---- | ----------- | ---------- |
+| b | Gauge | Int |
 
 ## Resource Attributes
 
 | Name | Description | Values | Enabled |
 | ---- | ----------- | ------ | ------- |
-| resource.id | The resource's id. | Any Str | true |
+| resource.id | The resource id. | Any Str | false |

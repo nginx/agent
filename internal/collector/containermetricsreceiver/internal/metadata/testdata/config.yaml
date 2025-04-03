@@ -1,10 +1,35 @@
 default:
 all_set:
   metrics:
-    container.memory.current:
+    container.cpu.usage.system:
+      enabled: true
+    container.cpu.usage.user:
+      enabled: true
+    container.memory.used:
+      enabled: true
+  resource_attributes:
+    resource.id:
       enabled: true
 none_set:
   metrics:
-    container.memory.current:
+    container.cpu.usage.system:
+      enabled: false
+    container.cpu.usage.user:
+      enabled: false
+    container.memory.used:
       enabled: false
   resource_attributes:
+    resource.id:
+      enabled: false
+filter_set_include:
+  resource_attributes:
+    resource.id:
+      enabled: true
+      metrics_include:
+        - regexp: ".*"
+filter_set_exclude:
+  resource_attributes:
+    resource.id:
+      enabled: true
+      metrics_exclude:
+        - strict: "resource.id-val"

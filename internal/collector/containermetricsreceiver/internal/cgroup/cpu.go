@@ -5,31 +5,183 @@
 
 package cgroup
 
-// nolint: unused
+import (
+	"bytes"
+	"errors"
+	"os/exec"
+	"path"
+	"runtime"
+	"strconv"
+	"strings"
+)
+
 const (
+	CpuStatsPath         = "/proc/stat"
 	nanoSecondsPerSecond = 1e9
 )
 
-// nolint: unused
-type DockerCPUTimes struct {
-	userUsage       float64
-	systemUsage     float64
-	hostSystemUsage float64
+type (
+	DockerCPUTimes struct {
+		userUsage       float64
+		systemUsage     float64
+		hostSystemUsage float64
+	}
+
+	DockerCPUPercentages struct {
+		User   float64
+		System float64
+	}
+
+	CPUSource struct {
+		basePath   string
+		isCgroupV2 bool
+		previous   *DockerCPUTimes
+	}
+)
+
+func NewCPUSource(basePath string) *CPUSource {
+	return &CPUSource{
+		basePath:   basePath,
+		isCgroupV2: IsCgroupV2(BasePath),
+		previous:   &DockerCPUTimes{},
+	}
 }
 
-// nolint: unused
-type DockerCPUPercentages struct {
-	User   float64
-	System float64
+func (cs *CPUSource) Collect() (DockerCPUPercentages, error) {
+
+	cpuPercentages, err := cs.collectCPUPercentages()
+	if err != nil {
+		return DockerCPUPercentages{}, err
+	}
+
+	return cpuPercentages, nil
 }
 
-// nolint: unused
-type CgroupCPUSource struct {
-	basePath   string
-	isCgroupV2 bool
-	clockTicks int
+func (cs *CPUSource) collectCPUPercentages() (DockerCPUPercentages, error) {
+	clockTicks, err := getClockTicks()
+	if err != nil {
+		return DockerCPUPercentages{}, err
+	}
+
+	// cgroup v2 by default
+	filepath := path.Join(cs.basePath, V2CpuStat)
+	userKey := V2UserKey
+	sysKey := V2SystemKey
+	convertUsage := func(usage float64) float64 {
+		return usage * 1000
+	}
+
+	if !cs.isCgroupV2 { // cgroup v1
+		filepath = path.Join(cs.basePath, V1CpuStatFile)
+		userKey = V1UserKey
+		sysKey = V1SystemKey
+		convertUsage = func(usage float64) float64 {
+			return usage * nanoSecondsPerSecond / float64(clockTicks)
+		}
+	}
+
+	cpuTimes, err := cs.cpuUsageTimes(
+		filepath,
+		userKey,
+		sysKey,
+	)
+	if err != nil {
+		return DockerCPUPercentages{}, err
+	}
+
+	cpuTimes.userUsage = convertUsage(cpuTimes.userUsage)
+	cpuTimes.systemUsage = convertUsage(cpuTimes.systemUsage)
+	hostSystemUsage, err := getSystemCPUUsage(clockTicks)
+	if err != nil {
+		return DockerCPUPercentages{}, err
+	}
+	cpuTimes.hostSystemUsage = hostSystemUsage
+	userDelta := cpuTimes.userUsage - cs.previous.userUsage
+	systemDelta := cpuTimes.systemUsage - cs.previous.systemUsage
+	hostSystemDelta := cpuTimes.hostSystemUsage - cs.previous.hostSystemUsage
+
+	numCores := runtime.NumCPU()
+	userPercent := (userDelta / hostSystemDelta) * float64(numCores) * 100
+	systemPercent := (systemDelta / hostSystemDelta) * float64(numCores) * 100
+
+	dockerCpuPercentages := DockerCPUPercentages{
+		User:   userPercent,
+		System: systemPercent,
+	}
+
+	// save this result for comparison
+	cs.previous = cpuTimes
+	return dockerCpuPercentages, nil
 }
 
-func NewCgroupCPUSource() *CgroupCPUSource {
-	return &CgroupCPUSource{}
+func (cs *CPUSource) cpuUsageTimes(filePath, userKey, systemKey string) (*DockerCPUTimes, error) {
+	ret := &DockerCPUTimes{}
+	lines, err := ReadLines(filePath)
+	if err != nil {
+		return ret, err
+	}
+
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		if fields[0] == userKey {
+			user, err := strconv.ParseFloat(fields[1], 64)
+			if err != nil {
+				return ret, err
+			}
+
+			ret.userUsage = user
+		}
+		if fields[0] == systemKey {
+			system, err := strconv.ParseFloat(fields[1], 64)
+			if err != nil {
+				return ret, err
+			}
+
+			ret.systemUsage = system
+		}
+	}
+
+	return ret, nil
+}
+
+func getSystemCPUUsage(clockTicks int) (float64, error) {
+	lines, err := ReadLines(CpuStatsPath)
+	if err != nil {
+		return 0, err
+	}
+
+	for _, line := range lines {
+		parts := strings.Fields(line)
+		switch parts[0] {
+		case "cpu":
+			if len(parts) < 8 {
+				return 0, errors.New("unable to process " + CpuStatsPath + ". Invalid number of fields for cpu line")
+			}
+			var totalClockTicks float64
+			for _, i := range parts[1:8] {
+				v, err := strconv.ParseFloat(i, 64)
+				if err != nil {
+					return 0, err
+				}
+				totalClockTicks += v
+			}
+
+			return (totalClockTicks * nanoSecondsPerSecond) / float64(clockTicks), nil
+		}
+	}
+
+	return 0, errors.New("unable to process " + CpuStatsPath + ". No cpu found")
+}
+
+func getClockTicks() (int, error) {
+	cmd := exec.Command("getconf", "CLK_TCK")
+	out := new(bytes.Buffer)
+	cmd.Stdout = out
+
+	err := cmd.Run()
+	if err != nil {
+		return 0, err
+	}
+
+	return strconv.Atoi(strings.TrimSuffix(out.String(), "\n"))
 }
