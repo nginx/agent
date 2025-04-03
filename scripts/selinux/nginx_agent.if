@@ -1,0 +1,40 @@
+
+## <summary>policy for nginx_agent</summary>
+
+########################################
+## <summary>
+##	Execute nginx_agent_exec_t in the nginx_agent domain.
+## </summary>
+## <param name="domain">
+## <summary>
+##	Domain allowed to transition.
+## </summary>
+## </param>
+#
+interface(`nginx_agent_domtrans',`
+	gen_require(`
+		type nginx_agent_t, nginx_agent_exec_t;
+	')
+
+	corecmd_search_bin($1)
+	domtrans_pattern($1, nginx_agent_exec_t, nginx_agent_t)
+')
+
+######################################
+## <summary>
+##	Execute nginx_agent in the caller domain.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`nginx_agent_exec',`
+	gen_require(`
+		type nginx_agent_exec_t;
+	')
+
+	corecmd_search_bin($1)
+	can_exec($1, nginx_agent_exec_t)
+')

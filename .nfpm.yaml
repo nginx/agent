@@ -1,6 +1,6 @@
 # this is the base "template" for the package
 name: nginx-agent
-description: NGINX Agent 
+description: NGINX Agent
 arch: ${ARCH}
 version: ${VERSION}
 priority: optional
@@ -18,8 +18,20 @@ contents:
       mode: 0640
   - src: ./scripts/packages/nginx-agent.service
     dst: /etc/systemd/system/nginx-agent.service
+  - src: ./scripts/packages/nginx-agent.openrc
+    dst: /etc/init.d/nginx-agent
+    packager: apk
   - src: ./scripts/nginx-agent.logrotate
     dst: /etc/logrotate.d/nginx-agent
+  - src: ./scripts/selinux/nginx_agent_selinux.8
+    dst: /usr/share/man/man8/nginx_agent_selinux.8
+    packager: rpm
+  - src: ./scripts/selinux/nginx_agent.if
+    dst: /usr/share/selinux/devel/include/contrib/nginx_agent.if
+    packager: rpm
+  - src: ./scripts/selinux/nginx_agent.pp
+    dst: /usr/share/selinux/packages/nginx_agent.pp
+    packager: rpm
   - dst: /var/log/nginx-agent
     type: dir
 overrides:
@@ -36,6 +48,8 @@ rpm:
 apk:
   signature:
     key_file: ".key.rsa"
+  scripts:
+    postupgrade: "./scripts/packages/postupgrade.sh"
 scripts:
   preinstall: "./scripts/packages/preinstall.sh"
   postinstall: "./scripts/packages/postinstall.sh"

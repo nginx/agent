@@ -25,6 +25,9 @@ receivers:
       {{- end }}
       {{- if .Receivers.HostMetrics.Scrapers.Memory }}
       memory:
+        metrics:
+          system.memory.limit:
+            enabled: true
       {{- end }}
       {{- if .Receivers.HostMetrics.Scrapers.Network }}
       network:

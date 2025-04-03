@@ -12,6 +12,9 @@ receivers:
       disk:
       filesystem:
       memory:
+        metrics:
+          system.memory.limit:
+            enabled: true
       network:
   otlp/0:
     protocols:
