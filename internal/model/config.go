@@ -27,6 +27,19 @@ type APIDetails struct {
 	Location string
 }
 
+type ManifestFile struct {
+	ManifestFileMeta *ManifestFileMeta `json:"manifest_file_meta"`
+}
+
+type ManifestFileMeta struct {
+	// The full path of the file
+	Name string `json:"name"`
+	// The hash of the file contents sha256, hex encoded
+	Hash string `json:"hash"`
+	// The size of the file in bytes
+	Size int64 `json:"size"`
+}
+
 // Complexity is 11, allowed is 10
 // nolint: revive, cyclop
 func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext) bool {
