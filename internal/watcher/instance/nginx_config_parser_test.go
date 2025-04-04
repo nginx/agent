@@ -339,11 +339,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			content: testconfig.GetNginxConfigWithNotAllowedDir(errorLog.Name(), allowedFile.Name(),
 				notAllowedFile.Name(), accessLog.Name()),
 			expectedConfigContext: &model.NginxConfigContext{
-				StubStatus: &model.APIDetails{
-					URL:      "http://127.0.0.1:8080/api",
-					Listen:   "127.0.0.1:8080",
-					Location: "/api",
-				},
+				StubStatus: &model.APIDetails{},
 				PlusAPI:    &model.APIDetails{},
 				InstanceID: protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 				Files: []*mpi.File{
