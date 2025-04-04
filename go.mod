@@ -11,6 +11,7 @@ require (
 	github.com/docker/docker v27.3.1+incompatible
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/go-resty/resty/v2 v2.16.2
+	github.com/goccy/go-yaml v1.17.1
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0

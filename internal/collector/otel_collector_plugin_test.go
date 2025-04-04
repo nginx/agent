@@ -324,7 +324,7 @@ func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
 		Server: &config.ServerConfig{
 			Host: "",
 			Port: 0,
-			Type: 0,
+			Type: config.Grpc,
 		},
 		TLS: &config.TLSConfig{
 			Cert:       "",
@@ -408,7 +408,7 @@ func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
 		Server: &config.ServerConfig{
 			Host: "",
 			Port: 0,
-			Type: 0,
+			Type: config.Grpc,
 		},
 		TLS: &config.TLSConfig{
 			Cert:       "",

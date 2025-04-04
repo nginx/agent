@@ -21,8 +21,8 @@ func FromCommandProto(config *mpi.CommandServer) *Command {
 			Host: config.GetServer().GetHost(),
 			Port: int(config.GetServer().GetPort()),
 		}
-		if config.GetServer().GetType() != mpi.ServerSettings_SERVER_SETTINGS_TYPE_UNDEFINED {
-			cmd.Server.Type = ServerType(config.GetServer().GetType())
+		if config.GetServer().GetType() == mpi.ServerSettings_SERVER_SETTINGS_TYPE_GRPC {
+			cmd.Server.Type = Grpc
 		}
 	} else {
 		cmd.Server = nil
@@ -55,10 +55,15 @@ func ToCommandProto(cmd *Command) *mpi.CommandServer {
 
 	// Map ServerConfig to the ServerSettings
 	if cmd.Server != nil {
+		protoServerType := mpi.ServerSettings_SERVER_SETTINGS_TYPE_UNDEFINED
+		if cmd.Server.Type == Grpc {
+			protoServerType = mpi.ServerSettings_SERVER_SETTINGS_TYPE_GRPC
+		}
+
 		protoConfig.Server = &mpi.ServerSettings{
 			Host: cmd.Server.Host,
 			Port: int32(cmd.Server.Port),
-			Type: mpi.ServerSettings_ServerType(cmd.Server.Type + 1),
+			Type: protoServerType,
 		}
 	}
 

@@ -84,7 +84,7 @@ func AgentConfig() *config.Config {
 						Server: &config.ServerConfig{
 							Host: "127.0.0.1",
 							Port: 0,
-							Type: 0,
+							Type: config.Grpc,
 						},
 						Auth: &config.AuthConfig{
 							Token: "even-secreter-token",
@@ -108,7 +108,6 @@ func AgentConfig() *config.Config {
 					Server: &config.ServerConfig{
 						Host: "127.0.0.1",
 						Port: 0,
-						Type: 0,
 					},
 				},
 				HeadersSetter: &config.HeadersSetter{
