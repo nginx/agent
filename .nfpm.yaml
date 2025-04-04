@@ -1,6 +1,6 @@
 # this is the base "template" for the package
 name: nginx-agent
-description: NGINX Agent 
+description: NGINX Agent
 arch: ${ARCH}
 version: ${VERSION}
 priority: optional
@@ -21,6 +21,8 @@ contents:
   - src: ./scripts/nginx-agent.logrotate
     dst: /etc/logrotate.d/nginx-agent
   - dst: /var/log/nginx-agent
+    type: dir
+  - dst: /var/lib/nginx-agent
     type: dir
 overrides:
   deb:
