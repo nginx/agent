@@ -6,6 +6,7 @@
 package config
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -17,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/goccy/go-yaml"
 	uuidLibrary "github.com/nginx/agent/v3/pkg/id"
 	selfsignedcerts "github.com/nginx/agent/v3/pkg/tls"
 	"github.com/spf13/cobra"
@@ -463,11 +465,30 @@ func getConfigFilePaths() []string {
 }
 
 func loadPropertiesFromFile(cfg string) error {
+	validationError := validateYamlFile(cfg)
+	if validationError != nil {
+		return validationError
+	}
+
 	viperInstance.SetConfigFile(cfg)
 	viperInstance.SetConfigType("yaml")
 	err := viperInstance.MergeInConfig()
 	if err != nil {
 		return fmt.Errorf("error loading config file %s: %w", cfg, err)
+	}
+
+	return nil
+}
+
+func validateYamlFile(filePath string) error {
+	fileContents, readError := os.ReadFile(filePath)
+	if readError != nil {
+		return fmt.Errorf("failed to read file %s: %w", filePath, readError)
+	}
+
+	decoder := yaml.NewDecoder(bytes.NewReader(fileContents), yaml.DisallowUnknownField())
+	if err := decoder.Decode(&Config{}); err != nil {
+		return errors.New(yaml.FormatError(err, false, false))
 	}
 
 	return nil

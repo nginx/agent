@@ -37,7 +37,7 @@ receivers:
 {{- range $index, $otlpReceiver := .Receivers.OtlpReceivers }}
   otlp/{{$index}}:
     protocols:
-      {{- if eq .Server.Type 0 }}
+      {{- if eq .Server.Type "grpc" }}
       grpc:
         endpoint: "{{ .Server.Host }}:{{ .Server.Port }}"
         {{- if and .OtlpTLSConfig (or (gt (len .OtlpTLSConfig.Key) 0) (gt (len .OtlpTLSConfig.Cert) 0) (gt (len .OtlpTLSConfig.Key) 0)) }}
