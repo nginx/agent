@@ -545,28 +545,24 @@ func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.F
 	manifestFiles := fms.convertToManifestFileMap(currentFiles)
 	manifestJSON, err := json.MarshalIndent(manifestFiles, "", "  ")
 	if err != nil {
-		slog.Error("Unable to marshal manifest file json ", "err", err)
-		return err
+		return fmt.Errorf("unable to marshal manifest file json: %w", err)
 	}
 
 	// 0755 allows read/execute for all, write for owner
 	if err = os.MkdirAll(manifestDirPath, dirPerm); err != nil {
-		slog.Error("Unable to create directory", "err", err)
-		return err
+		return fmt.Errorf("unable to create directory %s: %w", manifestDirPath, err)
 	}
 
 	// 0600 ensures only root can read/write
 	newFile, err := os.OpenFile(manifestFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, filePerm)
 	if err != nil {
-		slog.Error("Failed to read manifest file", "error", err)
-		return err
+		return fmt.Errorf("failed to read manifest file: %w", err)
 	}
 	defer newFile.Close()
 
 	_, err = newFile.Write(manifestJSON)
 	if err != nil {
-		slog.Error("Failed to write manifest file: %v\n", "error", err)
-		return err
+		return fmt.Errorf("failed to write manifest file: %w", err)
 	}
 
 	return nil
@@ -579,16 +575,14 @@ func (fms *FileManagerService) getManifestFile(currentFiles map[string]*mpi.File
 
 	file, err := os.ReadFile(manifestFilePath)
 	if err != nil {
-		slog.Error("Failed to read manifest file", "error", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to read manifest file: %w", err)
 	}
 
 	var manifestFiles map[string]*model.ManifestFile
 
 	err = json.Unmarshal(file, &manifestFiles)
 	if err != nil {
-		slog.Error("Failed to parse manifest file", "error", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to parse manifest file: %w", err)
 	}
 
 	fileMap := fms.convertToFileMap(manifestFiles)
