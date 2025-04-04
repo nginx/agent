@@ -485,7 +485,7 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles, modifiedFiles 
 	fileDiff := make(map[string]*mpi.File)  // Files that have changed, key is file name
 	fileContents := make(map[string][]byte) // contents of the file, key is file name
 
-	manifestFiles, manifestFileErr := fms.getManifestFile(currentFiles)
+	manifestFiles, manifestFileErr := fms.manifestFile(currentFiles)
 
 	if manifestFileErr != nil && manifestFiles == nil {
 		return nil, nil, manifestFileErr
@@ -578,7 +578,7 @@ func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.F
 	return nil
 }
 
-func (fms *FileManagerService) getManifestFile(currentFiles map[string]*mpi.File) (map[string]*mpi.File, error) {
+func (fms *FileManagerService) manifestFile(currentFiles map[string]*mpi.File) (map[string]*mpi.File, error) {
 	if _, err := os.Stat(manifestFilePath); err != nil {
 		return currentFiles, err // Return current files if manifest directory still doesn't exist
 	}
