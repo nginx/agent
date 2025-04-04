@@ -64,6 +64,7 @@ type (
 		UpdateCurrentFilesOnDisk(updateFiles map[string]*mpi.File)
 		DetermineFileActions(currentFiles, modifiedFiles map[string]*mpi.File) (map[string]*mpi.File,
 			map[string][]byte, error)
+		IsConnected() bool
 		SetIsConnected(isConnected bool)
 	}
 )
@@ -131,8 +132,6 @@ func (fms *FileManagerService) UpdateOverview(
 	defer backoffCancel()
 
 	sendUpdateOverview := func() (*mpi.UpdateOverviewResponse, error) {
-		slog.DebugContext(newCtx, "Sending update overview request", "request", request,
-			"parent_correlation_id", correlationID)
 		if fms.fileServiceClient == nil {
 			return nil, errors.New("file service client is not initialized")
 		}
@@ -140,6 +139,14 @@ func (fms *FileManagerService) UpdateOverview(
 		if !fms.isConnected.Load() {
 			return nil, errors.New("CreateConnection rpc has not being called yet")
 		}
+
+		slog.InfoContext(newCtx, "Updating file overview",
+			"instance_id", request.GetOverview().GetConfigVersion().GetInstanceId(),
+			"parent_correlation_id", correlationID,
+		)
+		slog.DebugContext(newCtx, "Sending update overview request",
+			"request", request, "parent_correlation_id", correlationID,
+		)
 
 		response, updateError := fms.fileServiceClient.UpdateOverview(newCtx, request)
 
@@ -188,8 +195,6 @@ func (fms *FileManagerService) setupIdentifiers(ctx context.Context, iteration i
 	}
 
 	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, requestCorrelationID)
-	slog.InfoContext(newCtx, "Updating file overview", "instance_id", logger.GetCorrelationIDAttr(ctx),
-		"parent_correlation_id", correlationID)
 
 	return newCtx, correlationID
 }
@@ -244,7 +249,8 @@ func (fms *FileManagerService) UpdateFile(
 	defer backoffCancel()
 
 	sendUpdateFile := func() (*mpi.UpdateFileResponse, error) {
-		slog.DebugContext(ctx, "Sending update file request", "request", request)
+		slog.DebugContext(ctx, "Sending update file request", "request_file", request.GetFile(),
+			"request_message_meta", request.GetMessageMeta())
 		if fms.fileServiceClient == nil {
 			return nil, errors.New("file service client is not initialized")
 		}
@@ -275,6 +281,10 @@ func (fms *FileManagerService) UpdateFile(
 	slog.DebugContext(ctx, "UpdateFile response", "response", response)
 
 	return err
+}
+
+func (fms *FileManagerService) IsConnected() bool {
+	return fms.isConnected.Load()
 }
 
 func (fms *FileManagerService) SetIsConnected(isConnected bool) {

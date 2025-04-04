@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	pkgConfig "github.com/nginx/agent/v3/pkg/config"
+
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/backoff"
 	"github.com/nginx/agent/v3/internal/bus"
@@ -120,6 +122,10 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 		oc.processReceivers(ctx, oc.config.Collector.Receivers.OtlpReceivers)
 	}
 
+	if !oc.stopped {
+		return errors.New("OTel collector already running")
+	}
+
 	bootErr := oc.bootup(runCtx)
 	if bootErr != nil {
 		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)
@@ -219,6 +225,7 @@ func (oc *Collector) Close(ctx context.Context) error {
 			slog.ErrorContext(ctx, "Failed to shutdown OTel Collector", "error", err, "state", oc.service.GetState())
 		} else {
 			slog.InfoContext(ctx, "OTel Collector shutdown", "state", oc.service.GetState())
+			oc.stopped = true
 		}
 	}
 
@@ -374,6 +381,11 @@ func (oc *Collector) restartCollector(ctx context.Context) {
 	var runCtx context.Context
 	runCtx, oc.cancel = context.WithCancel(ctx)
 
+	if !oc.stopped {
+		slog.ErrorContext(ctx, "Unable to restart OTel collector, failed to stop collector")
+		return
+	}
+
 	bootErr := oc.bootup(runCtx)
 	if bootErr != nil {
 		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)
@@ -398,28 +410,36 @@ func (oc *Collector) checkForNewReceivers(nginxConfigContext *model.NginxConfigC
 
 		reloadCollector = true
 	} else if nginxConfigContext.PlusAPI.URL == "" {
-		nginxReceiverFound, reloadCollector = oc.updateExistingNginxOSSReceiver(nginxConfigContext)
+		reloadCollector = oc.addNginxOssReceiver(nginxConfigContext)
+	}
 
-		if !nginxReceiverFound && nginxConfigContext.StubStatus.URL != "" {
-			oc.config.Collector.Receivers.NginxReceivers = append(
-				oc.config.Collector.Receivers.NginxReceivers,
-				config.NginxReceiver{
-					InstanceID: nginxConfigContext.InstanceID,
-					StubStatus: config.APIDetails{
-						URL:      nginxConfigContext.StubStatus.URL,
-						Listen:   nginxConfigContext.StubStatus.Listen,
-						Location: nginxConfigContext.StubStatus.Location,
-					},
-					AccessLogs: toConfigAccessLog(nginxConfigContext.AccessLogs),
-				},
-			)
-
+	if oc.config.IsFeatureEnabled(pkgConfig.FeatureLogsNap) {
+		tcplogReceiversFound := oc.updateTcplogReceivers(nginxConfigContext)
+		if tcplogReceiversFound {
 			reloadCollector = true
 		}
 	}
 
-	tcplogReceiversFound := oc.updateTcplogReceivers(nginxConfigContext)
-	if tcplogReceiversFound {
+	return reloadCollector
+}
+
+func (oc *Collector) addNginxOssReceiver(nginxConfigContext *model.NginxConfigContext) bool {
+	nginxReceiverFound, reloadCollector := oc.updateExistingNginxOSSReceiver(nginxConfigContext)
+
+	if !nginxReceiverFound && nginxConfigContext.StubStatus.URL != "" {
+		oc.config.Collector.Receivers.NginxReceivers = append(
+			oc.config.Collector.Receivers.NginxReceivers,
+			config.NginxReceiver{
+				InstanceID: nginxConfigContext.InstanceID,
+				StubStatus: config.APIDetails{
+					URL:      nginxConfigContext.StubStatus.URL,
+					Listen:   nginxConfigContext.StubStatus.Listen,
+					Location: nginxConfigContext.StubStatus.Location,
+				},
+				AccessLogs: toConfigAccessLog(nginxConfigContext.AccessLogs),
+			},
+		)
+
 		reloadCollector = true
 	}
 

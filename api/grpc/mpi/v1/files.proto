@@ -27,6 +27,55 @@ service FileService {
     rpc GetFile(GetFileRequest) returns (GetFileResponse) {}
     // Update a file from the Agent to the Server
     rpc UpdateFile(UpdateFileRequest) returns (UpdateFileResponse) {}
+
+    // GetFileStream requests the file content in chunks. MP and agent should agree on size to use stream
+    // vs non-stream. For smaller files, it may be more efficient to not-stream.
+    rpc GetFileStream(GetFileRequest) returns (stream FileDataChunk) {}
+
+    // UpdateFileStream uploads the file content in streams. MP and agent should agree on size to use stream
+    // vs non-stream. For smaller files, it may be more efficient to not-stream.
+    rpc UpdateFileStream(stream FileDataChunk) returns (UpdateFileResponse) {}
+}
+
+// Represents a data chunk for streaming file transfer.
+// For any Stream file transfer, following assumptions should be asserted (by implementation):
+// - invalid to contain more or less than one FileDataChunkHeaders
+// - invalid to have FileDataChunkContents before FileDataChunkHeaders
+// - invalid to have more/fewer FileDataChunkContents than FileDataChunkHeader.chunks
+// - invalid to have two FileDataChunkContents with same chunk_id
+// - invalid to have FileDataChunkContent with zero-length data
+// - invalid to have FileDataChunk message without either header or content
+// - hash of the combined contents should match FileDataChunkHeader.file_meta.hash
+// - total size of the combined contents should match FileDataChunkHeader.file_meta.size
+// - chunk_size should be less than the gRPC max message size
+message FileDataChunk {
+    // meta regarding the transfer request
+    mpi.v1.MessageMeta meta = 1;
+    oneof chunk {
+        // Chunk header
+        FileDataChunkHeader header = 2;
+        // Chunk data
+        FileDataChunkContent content = 3;
+    }
+}
+
+// Represents a chunked resource Header
+message FileDataChunkHeader {
+    // meta regarding the file, help identity the file name, size, hash, perm
+    // receiver should validate the hash against the combined contents
+    FileMeta file_meta = 1;
+    // total number of chunks expected in the transfer
+    uint32 chunks = 2 [(buf.validate.field).uint32 = { gt: 0 }];
+    // max size of individual chunks, can be undersized if EOF
+    uint32 chunk_size = 3 [(buf.validate.field).uint32 = { gt: 0 }];
+}
+
+// Represents a chunked resource chunk
+message FileDataChunkContent {
+    // chunk id, i.e. x of y, zero-indexed
+    uint32 chunk_id = 1;
+    // chunk data, should be at most chunk_size
+    bytes data = 2;
 }
 
 // Represents a request payload for a file overview
@@ -272,10 +321,10 @@ message X509Name {
     repeated string postal_code = 7 [(buf.validate.field).repeated.items.string.min_len = 1];
     
     // Serial Number (SN): Unique identifier or serial number.
-    string serial_number = 8 [(buf.validate.field).string.min_len = 0];
+    string serial_number = 8;
     
     // Common Name (CN): Typically the person’s or entity's full name.
-    string common_name = 9 [(buf.validate.field).string.min_len = 1];
+    string common_name = 9;
     
     // Parsed attributes including any non-standard attributes, as specified in RFC 2253.
     // These attributes are parsed but not marshaled by this package.

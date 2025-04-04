@@ -104,7 +104,7 @@ func TestResourceService_UpdateInstance(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			resourceService := NewResourceService(ctx, types.AgentConfig())
 			resourceService.resource.Instances = []*v1.Instance{protos.GetNginxOssInstance([]string{})}
-			resource := resourceService.UpdateInstances(test.instanceList)
+			resource := resourceService.UpdateInstances(ctx, test.instanceList)
 			assert.Equal(tt, test.resource.GetInstances(), resource.GetInstances())
 		})
 	}
@@ -141,7 +141,7 @@ func TestResourceService_DeleteInstance(t *testing.T) {
 				protos.GetNginxOssInstance([]string{}),
 				protos.GetNginxPlusInstance([]string{}),
 			}
-			resource := resourceService.DeleteInstances(test.instanceList)
+			resource := resourceService.DeleteInstances(ctx, test.instanceList)
 			assert.Equal(tt, test.resource.GetInstances(), resource.GetInstances())
 		})
 	}

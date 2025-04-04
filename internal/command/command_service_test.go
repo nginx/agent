@@ -198,6 +198,20 @@ func TestCommandService_CreateConnection(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestCommandService_UpdateClient(t *testing.T) {
+	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
+	ctx := context.Background()
+
+	commandService := NewCommandService(
+		commandServiceClient,
+		types.AgentConfig(),
+		make(chan *mpi.ManagementPlaneRequest),
+	)
+	err := commandService.UpdateClient(ctx, commandServiceClient)
+	require.NoError(t, err)
+	assert.NotNil(t, commandService.commandServiceClient)
+}
+
 func TestCommandService_UpdateDataPlaneHealth(t *testing.T) {
 	ctx := context.Background()
 	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
@@ -500,4 +514,19 @@ func TestCommandService_isValidRequest(t *testing.T) {
 			assert.Equal(t, testCase.result, result)
 		})
 	}
+}
+
+func TestCommandService_handleSubscribeError(t *testing.T) {
+	ctx := context.Background()
+	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
+
+	commandService := NewCommandService(
+		commandServiceClient,
+		types.AgentConfig(),
+		make(chan *mpi.ManagementPlaneRequest),
+	)
+	require.Error(t,
+		commandService.handleSubscribeError(ctx,
+			errors.New("an error occurred when attempting to subscribe"),
+			"Testing handleSubscribeError"))
 }

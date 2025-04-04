@@ -44,6 +44,16 @@ type FakeFileManagerServiceInterface struct {
 		result2 map[string][]byte
 		result3 error
 	}
+	IsConnectedStub        func() bool
+	isConnectedMutex       sync.RWMutex
+	isConnectedArgsForCall []struct {
+	}
+	isConnectedReturns struct {
+		result1 bool
+	}
+	isConnectedReturnsOnCall map[int]struct {
+		result1 bool
+	}
 	RollbackStub        func(context.Context, string) error
 	rollbackMutex       sync.RWMutex
 	rollbackArgsForCall []struct {
@@ -252,6 +262,59 @@ func (fake *FakeFileManagerServiceInterface) DetermineFileActionsReturnsOnCall(i
 		result2 map[string][]byte
 		result3 error
 	}{result1, result2, result3}
+}
+
+func (fake *FakeFileManagerServiceInterface) IsConnected() bool {
+	fake.isConnectedMutex.Lock()
+	ret, specificReturn := fake.isConnectedReturnsOnCall[len(fake.isConnectedArgsForCall)]
+	fake.isConnectedArgsForCall = append(fake.isConnectedArgsForCall, struct {
+	}{})
+	stub := fake.IsConnectedStub
+	fakeReturns := fake.isConnectedReturns
+	fake.recordInvocation("IsConnected", []interface{}{})
+	fake.isConnectedMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeFileManagerServiceInterface) IsConnectedCallCount() int {
+	fake.isConnectedMutex.RLock()
+	defer fake.isConnectedMutex.RUnlock()
+	return len(fake.isConnectedArgsForCall)
+}
+
+func (fake *FakeFileManagerServiceInterface) IsConnectedCalls(stub func() bool) {
+	fake.isConnectedMutex.Lock()
+	defer fake.isConnectedMutex.Unlock()
+	fake.IsConnectedStub = stub
+}
+
+func (fake *FakeFileManagerServiceInterface) IsConnectedReturns(result1 bool) {
+	fake.isConnectedMutex.Lock()
+	defer fake.isConnectedMutex.Unlock()
+	fake.IsConnectedStub = nil
+	fake.isConnectedReturns = struct {
+		result1 bool
+	}{result1}
+}
+
+func (fake *FakeFileManagerServiceInterface) IsConnectedReturnsOnCall(i int, result1 bool) {
+	fake.isConnectedMutex.Lock()
+	defer fake.isConnectedMutex.Unlock()
+	fake.IsConnectedStub = nil
+	if fake.isConnectedReturnsOnCall == nil {
+		fake.isConnectedReturnsOnCall = make(map[int]struct {
+			result1 bool
+		})
+	}
+	fake.isConnectedReturnsOnCall[i] = struct {
+		result1 bool
+	}{result1}
 }
 
 func (fake *FakeFileManagerServiceInterface) Rollback(arg1 context.Context, arg2 string) error {
@@ -521,6 +584,8 @@ func (fake *FakeFileManagerServiceInterface) Invocations() map[string][][]interf
 	defer fake.configApplyMutex.RUnlock()
 	fake.determineFileActionsMutex.RLock()
 	defer fake.determineFileActionsMutex.RUnlock()
+	fake.isConnectedMutex.RLock()
+	defer fake.isConnectedMutex.RUnlock()
 	fake.rollbackMutex.RLock()
 	defer fake.rollbackMutex.RUnlock()
 	fake.setIsConnectedMutex.RLock()

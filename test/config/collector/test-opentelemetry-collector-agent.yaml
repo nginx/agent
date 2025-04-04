@@ -4,9 +4,17 @@ receivers:
     initial_delay: 1s
     scrapers:
       cpu:
+        metrics:
+          system.cpu.utilization:
+            enabled: true
+          system.cpu.logical.count:
+            enabled: true
       disk:
       filesystem:
       memory:
+        metrics:
+          system.memory.limit:
+            enabled: true
       network:
   otlp/0:
     protocols:

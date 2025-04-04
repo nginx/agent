@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/fs"
 	"log/slog"
 	"net"
 	"net/http"
@@ -75,10 +74,14 @@ func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *mpi.Instance)
 		"instance_id", instance.GetInstanceMeta().GetInstanceId(),
 	)
 
+	lua := crossplane.Lua{}
 	payload, err := crossplane.Parse(configPath,
 		&crossplane.ParseOptions{
 			SingleFile:         false,
 			StopParsingOnError: true,
+			LexOptions: crossplane.LexOptions{
+				Lexers: []crossplane.RegisterLexer{lua.RegisterLexer()},
+			},
 		},
 	)
 	if err != nil {
@@ -113,6 +116,14 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 	rootDir := filepath.Dir(instance.GetInstanceRuntime().GetConfigPath())
 
 	for _, conf := range payload.Config {
+		if !ncp.agentConfig.IsDirectoryAllowed(conf.File) {
+			slog.WarnContext(ctx, "File included in NGINX config is outside of allowed directories, "+
+				"excluding from config",
+				"file", conf.File)
+
+			continue
+		}
+
 		formatMap := make(map[string]string)
 		err := ncp.crossplaneConfigTraverse(ctx, &conf,
 			func(ctx context.Context, parent, directive *crossplane.Directive) error {
@@ -134,12 +145,13 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 							"is disabled while applying a config; "+"log errors to file to enable error monitoring",
 							directive.Args[0]), "error_log", directive.Args[0])
 					}
-				case "root":
-					rootFiles := ncp.rootFiles(ctx, directive.Args[0])
-					nginxConfigContext.Files = append(nginxConfigContext.Files, rootFiles...)
-				case "ssl_certificate", "proxy_ssl_certificate", "ssl_client_certificate", "ssl_trusted_certificate":
+				case "ssl_certificate", "proxy_ssl_certificate", "ssl_client_certificate",
+					"ssl_trusted_certificate":
 					sslCertFile := ncp.sslCert(ctx, directive.Args[0], rootDir)
-					nginxConfigContext.Files = append(nginxConfigContext.Files, sslCertFile)
+					if !ncp.isDuplicateFile(nginxConfigContext.Files, sslCertFile) {
+						nginxConfigContext.Files = append(nginxConfigContext.Files, sslCertFile)
+					}
+
 				case "app_protect_security_log":
 					if len(directive.Args) > 1 {
 						syslogArg := directive.Args[1]
@@ -188,25 +200,40 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 }
 
 func (ncp *NginxConfigParser) ignoreLog(logPath string) bool {
-	logLower := strings.ToLower(logPath)
 	ignoreLogs := []string{"off", "/dev/stderr", "/dev/stdout", "/dev/null", "stderr", "stdout"}
 
-	if strings.HasPrefix(logLower, "syslog:") || slices.Contains(ignoreLogs, logLower) {
+	if strings.HasPrefix(logPath, "syslog:") || slices.Contains(ignoreLogs, logPath) {
 		return true
 	}
 
-	for _, path := range ncp.agentConfig.DataPlaneConfig.Nginx.ExcludeLogs {
-		ok, err := filepath.Match(path, logPath)
-		if err != nil {
-			slog.Error("Invalid path for excluding log", "log_path", path)
-		} else if ok {
-			slog.Info("Excluding log as specified in config", "log_path", logPath)
-			return true
-		}
+	if ncp.isExcludeLog(logPath) {
+		return true
 	}
 
-	if !ncp.agentConfig.IsDirectoryAllowed(logLower) {
+	if !ncp.agentConfig.IsDirectoryAllowed(logPath) {
 		slog.Warn("Log being read is outside of allowed directories", "log_path", logPath)
+	}
+
+	return false
+}
+
+func (ncp *NginxConfigParser) isExcludeLog(path string) bool {
+	for _, pattern := range ncp.agentConfig.DataPlaneConfig.Nginx.ExcludeLogs {
+		_, compileErr := regexp.Compile(pattern)
+		if compileErr != nil {
+			slog.Error("Invalid path for excluding log", "log_path", pattern)
+			continue
+		}
+
+		ok, err := regexp.MatchString(pattern, path)
+		if err != nil {
+			slog.Error("Invalid path for excluding log", "file_path", pattern)
+			continue
+		} else if ok {
+			slog.Info("Excluding log as specified in config", "log_path", path)
+
+			return true
+		}
 	}
 
 	return false
@@ -292,39 +319,6 @@ func (ncp *NginxConfigParser) errorLogDirectiveLevel(directive *crossplane.Direc
 	return ""
 }
 
-func (ncp *NginxConfigParser) rootFiles(ctx context.Context, rootDir string) (rootFiles []*mpi.File) {
-	if !ncp.agentConfig.IsDirectoryAllowed(rootDir) {
-		slog.DebugContext(ctx, "Root directory not in allowed directories", "root_directory", rootDir)
-		return rootFiles
-	}
-
-	err := filepath.WalkDir(rootDir,
-		func(path string, d fs.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-
-			if d.IsDir() {
-				return nil
-			}
-
-			rootFileMeta, fileMetaErr := files.FileMeta(path)
-			if fileMetaErr != nil {
-				return fileMetaErr
-			}
-
-			rootFiles = append(rootFiles, &mpi.File{FileMeta: rootFileMeta})
-
-			return nil
-		},
-	)
-	if err != nil {
-		slog.WarnContext(ctx, "Unable to walk root directory", "root_directory", rootDir)
-	}
-
-	return rootFiles
-}
-
 func (ncp *NginxConfigParser) sslCert(ctx context.Context, file, rootDir string) (sslCertFile *mpi.File) {
 	if strings.Contains(file, "$") {
 		// cannot process any filepath with variables
@@ -347,6 +341,16 @@ func (ncp *NginxConfigParser) sslCert(ctx context.Context, file, rootDir string)
 	}
 
 	return sslCertFile
+}
+
+func (ncp *NginxConfigParser) isDuplicateFile(nginxConfigContextFiles []*mpi.File, newFile *mpi.File) bool {
+	for _, nginxConfigContextFile := range nginxConfigContextFiles {
+		if nginxConfigContextFile.GetFileMeta().GetName() == newFile.GetFileMeta().GetName() {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (ncp *NginxConfigParser) crossplaneConfigTraverse(
@@ -458,7 +462,7 @@ func (ncp *NginxConfigParser) apiCallback(ctx context.Context, parent,
 ) *model.APIDetails {
 	urls := ncp.urlsForLocationDirectiveAPIDetails(parent, current, apiType)
 	if len(urls) > 0 {
-		slog.DebugContext(ctx, fmt.Sprintf("Potential %s urls", apiType), "urls", urls)
+		slog.DebugContext(ctx, fmt.Sprintf("%d potential %s urls", len(urls), apiType), "urls", urls)
 	}
 
 	for _, url := range urls {
@@ -479,14 +483,14 @@ func (ncp *NginxConfigParser) apiCallback(ctx context.Context, parent,
 func (ncp *NginxConfigParser) pingAPIEndpoint(ctx context.Context, statusAPIDetail *model.APIDetails,
 	apiType string,
 ) bool {
-	httpClient := http.Client{}
+	httpClient := http.DefaultClient
 	listen := statusAPIDetail.Listen
 	statusAPI := statusAPIDetail.URL
 
 	if strings.HasPrefix(listen, "unix:") {
 		httpClient = ncp.SocketClient(strings.TrimPrefix(listen, "unix:"))
 	} else {
-		httpClient = http.Client{Timeout: ncp.agentConfig.Client.Grpc.KeepAlive.Timeout}
+		httpClient.Timeout = ncp.agentConfig.Client.HTTP.Timeout
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, statusAPI, nil)
 	if err != nil {
@@ -676,8 +680,8 @@ func (ncp *NginxConfigParser) isPort(value string) bool {
 	return err == nil && port >= 1 && port <= 65535
 }
 
-func (ncp *NginxConfigParser) SocketClient(socketPath string) http.Client {
-	return http.Client{
+func (ncp *NginxConfigParser) SocketClient(socketPath string) *http.Client {
+	return &http.Client{
 		Timeout: ncp.agentConfig.Client.Grpc.KeepAlive.Timeout,
 		Transport: &http.Transport{
 			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
