@@ -98,13 +98,13 @@ func Test_GetDialOptions(t *testing.T) {
 					},
 				},
 			},
-			expected:    6,
+			expected:    7,
 			createCerts: false,
 		},
 		{
 			name:        "Test 2: DialOptions mTLS",
 			agentConfig: types.AgentConfig(),
-			expected:    6,
+			expected:    7,
 			createCerts: true,
 		},
 		{
@@ -123,7 +123,7 @@ func Test_GetDialOptions(t *testing.T) {
 				},
 				Client: types.AgentConfig().Client,
 			},
-			expected:    6,
+			expected:    7,
 			createCerts: false,
 		},
 		{
@@ -135,7 +135,7 @@ func Test_GetDialOptions(t *testing.T) {
 					TLS:    types.AgentConfig().Command.TLS,
 				},
 			},
-			expected:    4,
+			expected:    5,
 			createCerts: false,
 		},
 		{
@@ -147,7 +147,7 @@ func Test_GetDialOptions(t *testing.T) {
 					TLS:    types.AgentConfig().Command.TLS,
 				},
 			},
-			expected:    6,
+			expected:    7,
 			createCerts: false,
 		},
 		{
@@ -159,7 +159,7 @@ func Test_GetDialOptions(t *testing.T) {
 					Auth:   types.AgentConfig().Command.Auth,
 				},
 			},
-			expected:    7,
+			expected:    8,
 			createCerts: false,
 		},
 	}
