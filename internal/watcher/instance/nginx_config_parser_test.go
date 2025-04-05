@@ -368,6 +368,21 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			},
 			allowedDirectories: []string{dir},
 		},
+		{
+			name:     "Test 4: SSL Certificate file path containing variables",
+			instance: protos.GetNginxPlusInstance([]string{}),
+			content:  testconfig.GetNginxConfWithSSLCertsWithVariables(),
+			expectedConfigContext: &model.NginxConfigContext{
+				StubStatus:       &model.APIDetails{},
+				PlusAPI:          &model.APIDetails{},
+				InstanceID:       protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				Files:            []*mpi.File{},
+				AccessLogs:       []*model.AccessLog{},
+				ErrorLogs:        []*model.ErrorLog{},
+				NAPSysLogServers: nil,
+			},
+			allowedDirectories: []string{dir},
+		},
 	}
 
 	for _, test := range tests {
