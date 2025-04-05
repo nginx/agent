@@ -15,7 +15,7 @@ services:
     restart: always
     command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
-      - ./otel-collector.yaml:/etc/otel-collector-config.yaml
+      - ./otel-collector.yaml:/etc/otel-collector-config.yaml:ro
     ports:
       - "1888:1888"   # pprof extension
       - "13133:13133" # health_check extension
@@ -25,12 +25,15 @@ services:
       - "8889:8889"   # prometheus exporter
     networks:
       - monitoring
+    read_only: true
+    tmpfs:
+      - /tmp:mode=666
 
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
     volumes:
-      - ./prometheus.yaml:/etc/prometheus/prometheus.yml
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -43,6 +46,9 @@ services:
       - monitoring
     depends_on:
       - otel-collector
+    read_only: true
+    tmpfs:
+      - /tmp:mode=666
 
   victoriametrics:
     image: victoriametrics/victoria-metrics:latest
@@ -60,3 +66,6 @@ services:
       - monitoring
     depends_on:
       - prometheus
+    read_only: true
+    tmpfs:
+      - /tmp:mode=666
