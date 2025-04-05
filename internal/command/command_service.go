@@ -101,6 +101,7 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 
 		cs.subscribeClientMutex.Lock()
 		if cs.commandServiceClient == nil {
+			cs.subscribeClientMutex.Unlock()
 			return nil, errors.New("command service client is not initialized")
 		}
 		response, updateError := cs.commandServiceClient.UpdateDataPlaneStatus(ctx, request)
@@ -378,6 +379,7 @@ func (cs *CommandService) dataPlaneHealthCallback(
 
 		cs.subscribeClientMutex.Lock()
 		if cs.commandServiceClient == nil {
+			cs.subscribeClientMutex.Unlock()
 			return nil, errors.New("command service client is not initialized")
 		}
 
