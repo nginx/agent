@@ -7,7 +7,7 @@ package collector
 import (
 	"errors"
 
-	containermetricsreceiver "github.com/nginx/agent/v3/internal/collector/containermetricsreceiver"
+	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver"
 	nginxreceiver "github.com/nginx/agent/v3/internal/collector/nginxossreceiver"
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver"
 

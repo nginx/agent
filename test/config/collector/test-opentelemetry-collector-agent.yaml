@@ -1,4 +1,6 @@
 receivers:
+  containermetrics:
+    collection_interval: 1s
   hostmetrics:
     collection_interval: 1m0s
     initial_delay: 1s
@@ -96,6 +98,7 @@ service:
   pipelines:
     metrics:
       receivers:
+        - containermetrics
         - hostmetrics
         - otlp/0
         - nginx/123

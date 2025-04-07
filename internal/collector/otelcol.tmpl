@@ -232,6 +232,9 @@ service:
     {{- if or (ne .Receivers.HostMetrics nil) (gt (len .Receivers.OtlpReceivers) 0) (gt (len .Receivers.NginxReceivers) 0) (gt (len .Receivers.NginxPlusReceivers) 0) }}
     metrics:
       receivers:
+        {{- if ne .Receivers.ContainerMetrics nil }}
+        - containermetrics
+        {{- end }}
         {{- if ne .Receivers.HostMetrics nil }}
         - hostmetrics
         {{- end }}

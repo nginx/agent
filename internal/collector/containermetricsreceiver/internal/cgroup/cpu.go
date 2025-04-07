@@ -16,8 +16,9 @@ import (
 )
 
 const (
-	CpuStatsPath         = "/proc/stat"
-	nanoSecondsPerSecond = 1e9
+	CPUStatsPath           = "/proc/stat"
+	CPUStatsFileLineLength = 8
+	nanoSecondsPerSecond   = 1e9
 )
 
 type (
@@ -33,9 +34,9 @@ type (
 	}
 
 	CPUSource struct {
+		previous   *DockerCPUTimes
 		basePath   string
 		isCgroupV2 bool
-		previous   *DockerCPUTimes
 	}
 )
 
@@ -48,7 +49,6 @@ func NewCPUSource(basePath string) *CPUSource {
 }
 
 func (cs *CPUSource) Collect() (DockerCPUPercentages, error) {
-
 	cpuPercentages, err := cs.collectCPUPercentages()
 	if err != nil {
 		return DockerCPUPercentages{}, err
@@ -57,6 +57,7 @@ func (cs *CPUSource) Collect() (DockerCPUPercentages, error) {
 	return cpuPercentages, nil
 }
 
+// nolint: mnd
 func (cs *CPUSource) collectCPUPercentages() (DockerCPUPercentages, error) {
 	clockTicks, err := getClockTicks()
 	if err != nil {
@@ -96,6 +97,8 @@ func (cs *CPUSource) collectCPUPercentages() (DockerCPUPercentages, error) {
 		return DockerCPUPercentages{}, err
 	}
 	cpuTimes.hostSystemUsage = hostSystemUsage
+
+	// calculate deltas
 	userDelta := cpuTimes.userUsage - cs.previous.userUsage
 	systemDelta := cpuTimes.systemUsage - cs.previous.systemUsage
 	hostSystemDelta := cpuTimes.hostSystemUsage - cs.previous.hostSystemUsage
@@ -104,48 +107,47 @@ func (cs *CPUSource) collectCPUPercentages() (DockerCPUPercentages, error) {
 	userPercent := (userDelta / hostSystemDelta) * float64(numCores) * 100
 	systemPercent := (systemDelta / hostSystemDelta) * float64(numCores) * 100
 
-	dockerCpuPercentages := DockerCPUPercentages{
+	dockerCPUPercentages := DockerCPUPercentages{
 		User:   userPercent,
 		System: systemPercent,
 	}
 
-	// save this result for comparison
 	cs.previous = cpuTimes
-	return dockerCpuPercentages, nil
+
+	return dockerCPUPercentages, nil
 }
 
 func (cs *CPUSource) cpuUsageTimes(filePath, userKey, systemKey string) (*DockerCPUTimes, error) {
-	ret := &DockerCPUTimes{}
+	cpuTimes := &DockerCPUTimes{}
 	lines, err := ReadLines(filePath)
 	if err != nil {
-		return ret, err
+		return cpuTimes, err
 	}
 
 	for _, line := range lines {
 		fields := strings.Fields(line)
-		if fields[0] == userKey {
-			user, err := strconv.ParseFloat(fields[1], 64)
-			if err != nil {
-				return ret, err
+		switch fields[0] {
+		case userKey:
+			user, parseErr := strconv.ParseFloat(fields[1], 64)
+			if parseErr != nil {
+				return cpuTimes, err
 			}
-
-			ret.userUsage = user
-		}
-		if fields[0] == systemKey {
-			system, err := strconv.ParseFloat(fields[1], 64)
-			if err != nil {
-				return ret, err
+			cpuTimes.userUsage = user
+		case systemKey:
+			system, parseErr := strconv.ParseFloat(fields[1], 64)
+			if parseErr != nil {
+				return cpuTimes, err
 			}
-
-			ret.systemUsage = system
+			cpuTimes.systemUsage = system
 		}
 	}
 
-	return ret, nil
+	return cpuTimes, nil
 }
 
+// nolint: revive, gocritic
 func getSystemCPUUsage(clockTicks int) (float64, error) {
-	lines, err := ReadLines(CpuStatsPath)
+	lines, err := ReadLines(CPUStatsPath)
 	if err != nil {
 		return 0, err
 	}
@@ -154,13 +156,13 @@ func getSystemCPUUsage(clockTicks int) (float64, error) {
 		parts := strings.Fields(line)
 		switch parts[0] {
 		case "cpu":
-			if len(parts) < 8 {
-				return 0, errors.New("unable to process " + CpuStatsPath + ". Invalid number of fields for cpu line")
+			if len(parts) < CPUStatsFileLineLength {
+				return 0, errors.New("unable to process " + CPUStatsPath + ". Invalid number of fields for cpu line")
 			}
 			var totalClockTicks float64
-			for _, i := range parts[1:8] {
-				v, err := strconv.ParseFloat(i, 64)
-				if err != nil {
+			for _, i := range parts[1:CPUStatsFileLineLength] {
+				v, parseErr := strconv.ParseFloat(i, 64)
+				if parseErr != nil {
 					return 0, err
 				}
 				totalClockTicks += v
@@ -170,7 +172,7 @@ func getSystemCPUUsage(clockTicks int) (float64, error) {
 		}
 	}
 
-	return 0, errors.New("unable to process " + CpuStatsPath + ". No cpu found")
+	return 0, errors.New("unable to process " + CPUStatsPath + ". No cpu found")
 }
 
 func getClockTicks() (int, error) {

@@ -8,7 +8,6 @@ package containermetricsreceiver
 import (
 	"context"
 	"errors"
-	"time"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
@@ -18,9 +17,6 @@ import (
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/config"
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/metadata"
 )
-
-// nolint: unused
-const defaultTimeout = 10 * time.Second
 
 // nolint: ireturn
 func NewFactory() receiver.Factory {

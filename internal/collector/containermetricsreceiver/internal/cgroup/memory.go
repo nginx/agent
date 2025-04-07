@@ -8,11 +8,12 @@ package cgroup
 import (
 	"context"
 	"fmt"
-	"github.com/shirou/gopsutil/v4/mem"
 	"log/slog"
 	"path"
 	"strconv"
 	"strings"
+
+	"github.com/shirou/gopsutil/v4/mem"
 )
 
 /*
@@ -67,6 +68,8 @@ func (ms *MemorySource) Collect() {
 		return
 	}
 }
+
+// nolint: unparam
 func (ms *MemorySource) VirtualMemoryStatWithContext(ctx context.Context) (*mem.VirtualMemoryStat, error) {
 	var cgroupStat mem.VirtualMemoryStat
 	var memoryStat MemoryStat
@@ -85,7 +88,7 @@ func (ms *MemorySource) VirtualMemoryStatWithContext(ctx context.Context) (*mem.
 		memSharedKey = V1SharedKey
 	}
 
-	memoryLimitInBytes, err := GetMemoryLimitInBytes(path.Join(ms.basePath, memTotalFile))
+	memoryLimitInBytes, err := MemoryLimitInBytes(ctx, path.Join(ms.basePath, memTotalFile))
 	if err != nil {
 		slog.Debug("Error getting memory limit in bytes", "err", err)
 	}
@@ -124,31 +127,32 @@ func (ms *MemorySource) VirtualMemoryStatWithContext(ctx context.Context) (*mem.
 	return &cgroupStat, nil
 }
 
-func (cs *MemorySource) VirtualMemoryStat() (*mem.VirtualMemoryStat, error) {
+func (ms *MemorySource) VirtualMemoryStat() (*mem.VirtualMemoryStat, error) {
 	ctx := context.Background()
 	defer ctx.Done()
-	return cs.VirtualMemoryStatWithContext(ctx)
+
+	return ms.VirtualMemoryStatWithContext(ctx)
 }
 
-func GetMemoryLimitInBytes(filePath string) (uint64, error) {
-	ctx := context.Background()
-	defer ctx.Done()
+func MemoryLimitInBytes(ctx context.Context, filePath string) (uint64, error) {
 	memTotalString, err := ReadSingleValueCgroupFile(filePath)
 	if err != nil {
 		return 0, err
 	}
 	if memTotalString == V2DefaultMaxValue || memTotalString == GetV1DefaultMaxValue() {
-		hostMemoryStats, err := getHostMemoryStats(ctx)
-		if err != nil {
-			return 0, nil
+		hostMemoryStats, hostErr := getHostMemoryStats(ctx)
+		if hostErr != nil {
+			return 0, hostErr
 		}
+
 		return hostMemoryStats.Total, nil
-	} else {
-		return strconv.ParseUint(memTotalString, 10, 64)
 	}
+
+	return strconv.ParseUint(memTotalString, 10, 64)
 }
 
-func GetMemoryStat(statFile string, cachedKey string, sharedKey string) (MemoryStat, error) {
+// nolint: revive, mnd
+func GetMemoryStat(statFile, cachedKey, sharedKey string) (MemoryStat, error) {
 	memoryStat := MemoryStat{}
 	lines, err := ReadLines(statFile)
 	if err != nil {
@@ -160,19 +164,19 @@ func GetMemoryStat(statFile string, cachedKey string, sharedKey string) (MemoryS
 			return memoryStat, fmt.Errorf("%+v required 2 fields", fields)
 		}
 
-		if fields[0] == cachedKey {
-			value, err := strconv.ParseUint(strings.TrimSpace(fields[1]), 10, 64)
-			if err != nil {
-				return memoryStat, err
+		switch fields[0] {
+		case cachedKey:
+			cached, parseErr := strconv.ParseUint(fields[1], 10, 64)
+			if parseErr != nil {
+				return memoryStat, parseErr
 			}
-			memoryStat.cached = value
-		}
-		if fields[0] == sharedKey {
-			value, err := strconv.ParseUint(strings.TrimSpace(fields[1]), 10, 64)
-			if err != nil {
-				return memoryStat, err
+			memoryStat.cached = cached
+		case sharedKey:
+			shared, parseErr := strconv.ParseUint(fields[1], 10, 64)
+			if parseErr != nil {
+				return memoryStat, parseErr
 			}
-			memoryStat.shared = value
+			memoryStat.shared = shared
 		}
 	}
 

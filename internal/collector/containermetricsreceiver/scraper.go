@@ -7,6 +7,8 @@ package containermetricsreceiver
 
 import (
 	"context"
+	"time"
+
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/cgroup"
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/config"
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/metadata"
@@ -14,7 +16,6 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
 	"go.uber.org/zap"
-	"time"
 )
 
 type containerScraper struct {
@@ -46,31 +47,27 @@ func (cms *containerScraper) Shutdown(ctx context.Context) error {
 	return nil
 }
 
+// nolint: unparam, contextcheck
 func (cms *containerScraper) scrape(
 	ctx context.Context,
 ) (pmetric.Metrics, error) {
 	cms.logger.Debug("Starting container metrics scrape")
 
-	// set resource attributes
-	// cms.rb.SetResourceID()
-
-	// record metrics
 	cms.recordMetrics()
 
 	cms.logger.Debug("Finished container metrics scrape, emitting metrics")
+
 	return cms.mb.Emit(metadata.WithResource(cms.rb.Emit())), nil
 }
 
 func (cms *containerScraper) recordMetrics() {
 	cms.logger.Debug("Collecting container metrics")
 	now := pcommon.NewTimestampFromTime(time.Now())
-
-	cms.recordCpuStats(now)
+	cms.recordCPUStats(now)
 	cms.recordMemoryStats(now)
 }
 
-func (cms *containerScraper) recordCpuStats(timestamp pcommon.Timestamp) {
-
+func (cms *containerScraper) recordCPUStats(timestamp pcommon.Timestamp) {
 	cms.logger.Debug("Collecting container cpu metrics")
 	cpuSource := cgroup.NewCPUSource(cgroup.BasePath)
 	percentages, err := cpuSource.Collect()
@@ -83,6 +80,7 @@ func (cms *containerScraper) recordCpuStats(timestamp pcommon.Timestamp) {
 	cms.mb.RecordContainerCPUUsageUserDataPoint(timestamp, percentages.User, "0", 0)
 	cms.mb.RecordContainerCPUUsageSystemDataPoint(timestamp, percentages.System, "0", 0)
 }
+
 func (cms *containerScraper) recordMemoryStats(timestamp pcommon.Timestamp) {
 	// capture all the desired memory metrics
 	cms.logger.Debug("Collecting container memory metrics")
