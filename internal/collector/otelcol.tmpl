@@ -37,10 +37,10 @@ receivers:
 {{- range $index, $otlpReceiver := .Receivers.OtlpReceivers }}
   otlp/{{$index}}:
     protocols:
-      {{- if eq .Server.Type "grpc" }}
-      grpc:
-        endpoint: "{{ .Server.Host }}:{{ .Server.Port }}"
-        {{- if and .OtlpTLSConfig (or (gt (len .OtlpTLSConfig.Key) 0) (gt (len .OtlpTLSConfig.Cert) 0) (gt (len .OtlpTLSConfig.Key) 0)) }}
+      {{- if eq .Server.Type "http" }}
+      http:
+        endpoint: "{{- .Server.Host -}}:{{- .Server.Port -}}"
+        {{- if .OtlpTLSConfig }}
         tls:
           {{ if gt (len .OtlpTLSConfig.Cert) 0 -}}
           cert_file: {{ .OtlpTLSConfig.Cert }}
@@ -53,9 +53,9 @@ receivers:
           {{- end }}
         {{- end }}
       {{- else }}
-      http:
-        endpoint: "{{- .Server.Host -}}:{{- .Server.Port -}}"
-        {{- if .OtlpTLSConfig }}
+      grpc:
+        endpoint: "{{ .Server.Host }}:{{ .Server.Port }}"
+        {{- if and .OtlpTLSConfig (or (gt (len .OtlpTLSConfig.Key) 0) (gt (len .OtlpTLSConfig.Cert) 0) (gt (len .OtlpTLSConfig.Key) 0)) }}
         tls:
           {{ if gt (len .OtlpTLSConfig.Cert) 0 -}}
           cert_file: {{ .OtlpTLSConfig.Cert }}
