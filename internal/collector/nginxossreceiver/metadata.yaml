@@ -7,7 +7,7 @@ status:
     beta: [metrics]
   distributions: [contrib]
   codeowners:
-    active: [apgralG, dhurley, craigell, sean-breen, Rashmiti, CVanF5]
+    active: [aphralG, dhurley, craigell, sean-breen, Rashmiti, CVanF5]
 
 resource_attributes:
   instance.id:
@@ -43,15 +43,21 @@ attributes:
 metrics:
   nginx.http.requests:
     enabled: true
-    description: The total number of client requests received from clients.
+    description: The total number of client requests received, since NGINX was last started or reloaded.
     sum:
       value_type: int
       monotonic: true
       aggregation_temporality: cumulative
     unit: "requests"
+  nginx.http.request.count:
+    enabled: true
+    description: The total number of client requests received, since the last collection interval.
+    gauge:
+      value_type: int
+    unit: "requests"
   nginx.http.connections:
     enabled: true
-    description: The total number of connections.
+    description: The total number of connections, since NGINX was last started or reloaded.
     sum:
       value_type: int
       monotonic: true
@@ -67,13 +73,11 @@ metrics:
     unit: "connections"
     attributes:
       - nginx.connections.outcome
-  nginx.http.response.status:
+  nginx.http.response.count:
     enabled: true
-    description: The number of responses, grouped by status code range.
-    sum:
+    description: The total number of HTTP responses, grouped by status code range, since the last collection interval.
+    gauge:
       value_type: int
-      monotonic: true
-      aggregation_temporality: cumulative
     unit: "responses"
     attributes:
       - nginx.status_range

@@ -126,6 +126,10 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
+			mb.RecordNginxHTTPResponseCountDataPoint(ts, 1, AttributeNginxStatusRange1xx, "nginx.zone.name-val", AttributeNginxZoneTypeSERVER)
+
+			defaultMetricsCount++
+			allMetricsCount++
 			mb.RecordNginxHTTPResponseStatusDataPoint(ts, 1, AttributeNginxStatusRange1xx, "nginx.zone.name-val", AttributeNginxZoneTypeSERVER)
 
 			defaultMetricsCount++
@@ -486,7 +490,7 @@ func TestMetricsBuilder(t *testing.T) {
 					validatedMetrics["nginx.http.request.count"] = true
 					assert.Equal(t, pmetric.MetricTypeGauge, ms.At(i).Type())
 					assert.Equal(t, 1, ms.At(i).Gauge().DataPoints().Len())
-					assert.Equal(t, "The current number of client requests received from clients.", ms.At(i).Description())
+					assert.Equal(t, "The total number of client requests received, since the last collection interval.", ms.At(i).Description())
 					assert.Equal(t, "requests", ms.At(i).Unit())
 					dp := ms.At(i).Gauge().DataPoints().At(0)
 					assert.Equal(t, start, dp.StartTimestamp())
@@ -559,7 +563,7 @@ func TestMetricsBuilder(t *testing.T) {
 					validatedMetrics["nginx.http.requests"] = true
 					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
 					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
-					assert.Equal(t, "The total number of client requests received from clients.", ms.At(i).Description())
+					assert.Equal(t, "The total number of client requests received, since NGINX was last started or reloaded.", ms.At(i).Description())
 					assert.Equal(t, "requests", ms.At(i).Unit())
 					assert.True(t, ms.At(i).Sum().IsMonotonic())
 					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
@@ -574,12 +578,33 @@ func TestMetricsBuilder(t *testing.T) {
 					attrVal, ok = dp.Attributes().Get("nginx.zone.type")
 					assert.True(t, ok)
 					assert.EqualValues(t, "SERVER", attrVal.Str())
+				case "nginx.http.response.count":
+					assert.False(t, validatedMetrics["nginx.http.response.count"], "Found a duplicate in the metrics slice: nginx.http.response.count")
+					validatedMetrics["nginx.http.response.count"] = true
+					assert.Equal(t, pmetric.MetricTypeGauge, ms.At(i).Type())
+					assert.Equal(t, 1, ms.At(i).Gauge().DataPoints().Len())
+					assert.Equal(t, "The total number of HTTP responses sent to clients, grouped by status code range, since the last collection interval.", ms.At(i).Description())
+					assert.Equal(t, "responses", ms.At(i).Unit())
+					dp := ms.At(i).Gauge().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+					assert.Equal(t, int64(1), dp.IntValue())
+					attrVal, ok := dp.Attributes().Get("nginx.status_range")
+					assert.True(t, ok)
+					assert.EqualValues(t, "1xx", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("nginx.zone.name")
+					assert.True(t, ok)
+					assert.EqualValues(t, "nginx.zone.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("nginx.zone.type")
+					assert.True(t, ok)
+					assert.EqualValues(t, "SERVER", attrVal.Str())
 				case "nginx.http.response.status":
 					assert.False(t, validatedMetrics["nginx.http.response.status"], "Found a duplicate in the metrics slice: nginx.http.response.status")
 					validatedMetrics["nginx.http.response.status"] = true
 					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
 					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
-					assert.Equal(t, "The number of responses, grouped by status code range.", ms.At(i).Description())
+					assert.Equal(t, "The total number of responses, grouped by status code range, since NGINX was last started or reloaded.", ms.At(i).Description())
 					assert.Equal(t, "responses", ms.At(i).Unit())
 					assert.True(t, ms.At(i).Sum().IsMonotonic())
 					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
@@ -602,7 +627,7 @@ func TestMetricsBuilder(t *testing.T) {
 					validatedMetrics["nginx.http.responses"] = true
 					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
 					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
-					assert.Equal(t, "The total number of HTTP responses sent to clients.", ms.At(i).Description())
+					assert.Equal(t, "The total number of HTTP responses sent to clients, since NGINX was last started or reloaded.", ms.At(i).Description())
 					assert.Equal(t, "responses", ms.At(i).Unit())
 					assert.True(t, ms.At(i).Sum().IsMonotonic())
 					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())

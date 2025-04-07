@@ -25,12 +25,13 @@ import (
 )
 
 type NginxStubStatusScraper struct {
-	httpClient *http.Client
-	client     *client.NginxClient
-	cfg        *config.Config
-	mb         *metadata.MetricsBuilder
-	rb         *metadata.ResourceBuilder
-	settings   receiver.Settings
+	httpClient       *http.Client
+	client           *client.NginxClient
+	cfg              *config.Config
+	mb               *metadata.MetricsBuilder
+	rb               *metadata.ResourceBuilder
+	settings         receiver.Settings
+	previousRequests int
 }
 
 var _ scraperhelper.Scraper = (*NginxStubStatusScraper)(nil)
@@ -69,6 +70,7 @@ func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) erro
 		}
 	}
 	s.httpClient = httpClient
+	s.previousRequests = 0
 
 	return nil
 }
@@ -96,6 +98,9 @@ func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error
 	now := pcommon.NewTimestampFromTime(time.Now())
 
 	s.mb.RecordNginxHTTPRequestsDataPoint(now, stats.Requests)
+
+	s.mb.RecordNginxHTTPRequestCountDataPoint(now, int64(int(stats.Requests)-s.previousRequests))
+	s.previousRequests = int(stats.Requests)
 
 	s.mb.RecordNginxHTTPConnectionsDataPoint(
 		now,
