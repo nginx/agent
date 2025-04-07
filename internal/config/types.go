@@ -37,13 +37,13 @@ type (
 		DataPlaneConfig    *DataPlaneConfig `yaml:"data_plane_config"   mapstructure:"data_plane_config"`
 		Client             *Client          `yaml:"client"              mapstructure:"client"`
 		Collector          *Collector       `yaml:"collector"           mapstructure:"collector"`
-		Watchers           *Watchers        `yaml:"watchers"`
+		Watchers           *Watchers        `yaml:"watchers"            mapstructure:"watchers"`
 		Labels             map[string]any   `yaml:"labels"              mapstructure:"labels"`
 		Version            string           `yaml:"-"`
 		Path               string           `yaml:"-"`
 		UUID               string           `yaml:"-"`
 		AllowedDirectories []string         `yaml:"allowed_directories" mapstructure:"allowed_directories"`
-		Features           []string         `yaml:"features"`
+		Features           []string         `yaml:"features"            mapstructure:"features"`
 	}
 
 	Log struct {
