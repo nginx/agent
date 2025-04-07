@@ -634,8 +634,6 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 		return nil, fmt.Errorf("unmarshal collector exporters config: %w", err)
 	}
 
-	//slog.Info("Resolved collector receivers", "receivers", receivers)
-
 	col := &Collector{
 		ConfigPath: viperInstance.GetString(CollectorConfigPathKey),
 		Exporters:  exporters,
