@@ -1,0 +1,811 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/open-telemetry/weaver/v0.9.2/schemas/semconv.schema.json
+groups:
+  # nginx.config metrics
+  - id: metric.nginxplus.config.reloads
+    type: metric
+    unit: "reloads"
+    metric_name: nginx.config.reloads
+    stability: experimental
+    brief: "The total number of NGINX config reloads."
+    instrument: counter
+    note: |
+      Source: Service `nginx-agent`
+    attributes: []
+
+  # nginx.http.* metrics
+  - id: metric.nginxplus.http.connections
+    type: metric
+    unit: "connections"
+    metric_name: nginx.http.connections
+    stability: experimental
+    brief: "The total number of connections."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/connections`
+    attributes:
+      - ref: nginx.connections.outcome
+
+  - id: metric.nginxplus.http.connection.count
+    type: metric
+    unit: "connections"
+    metric_name: nginx.http.connection.count
+    stability: experimental
+    brief: "The current number of connections."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/connections`
+    attributes:
+      - ref: nginx.connections.outcome
+
+  - id: metric.nginxplus.http.limit_conn.requests
+    type: metric
+    unit: "connections"
+    metric_name: nginx.http.limit_conn.requests
+    stability: experimental
+    brief: "The total number of connections to an endpoint with a limit_conn directive."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/http/limit_conns`
+    attributes:
+      - ref: nginx.limit_conn.outcome
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.http.limit_req.requests
+    type: metric
+    unit: "requests"
+    metric_name: nginx.http.limit_req.requests
+    stability: experimental
+    brief: "The total number of requests to an endpoint with a limit_req directive."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/http/limit_reqs`
+    attributes:
+      - ref: nginx.limit_req.outcome
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.http.request.io
+    type: metric
+    unit: "bytes"
+    metric_name: nginx.http.request.io
+    stability: experimental
+    brief: "The total number of HTTP byte IO."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/http/requests`
+    attributes:
+      - ref: nginx.io.direction
+      - ref: nginx.zone.name
+      - ref: nginx.zone.type
+
+  - id: metric.nginxplus.http.request.discarded
+    type: metric
+    unit: "requests"
+    metric_name: nginx.http.request.discarded
+    stability: experimental
+    brief: "The total number of requests completed without sending a response."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/http/requests`
+    attributes:
+      - ref: nginx.zone.name
+      - ref: nginx.zone.type
+
+  - id: metric.nginxplus.http.request.processing.count
+    type: metric
+    unit: "requests"
+    metric_name: nginx.http.request.processing.count
+    stability: experimental
+    brief: "The number of client requests that are currently being processed."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/http/requests`
+    attributes:
+      - ref: nginx.zone.name
+      - ref: nginx.zone.type
+
+  - id: metric.nginxplus.http.requests
+    type: metric
+    unit: "requests"
+    metric_name: nginx.http.requests
+    stability: experimental
+    brief: "The total number of client requests received, since NGINX was last started or reloaded."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/http/requests`
+    attributes:
+      - ref: nginx.zone.name
+      - ref: nginx.zone.type
+
+  - id: metric.nginxplus.http.request.count
+    type: metric
+    unit: "requests"
+    metric_name: nginx.http.request.count
+    stability: experimental
+    brief: "The total number of client requests received, since the last collection interval."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/http/requests`
+    attributes: []
+
+  - id: metric.nginxplus.http.responses
+    type: metric
+    unit: "responses"
+    metric_name: nginx.http.responses
+    stability: experimental
+    brief: "The total number of HTTP responses sent to clients."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/http/requests`
+    attributes:
+      - ref: nginx.zone.name
+      - ref: nginx.zone.type
+
+  - id: metric.nginxplus.http.response.status
+    type: metric
+    unit: "responses"
+    metric_name: nginx.http.response.status
+    stability: experimental
+    brief: "The total number of responses since NGINX was last started or reloaded, grouped by status code range."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/http/requests`
+    attributes:
+      - ref: nginx.status_range
+      - ref: nginx.zone.name
+      - ref: nginx.zone.type
+
+  - id: metric.nginxplus.http.response.count
+    type: metric
+    unit: "responses"
+    metric_name: nginx.http.response.count
+    stability: experimental
+    brief: "The total number of HTTP responses, since the last collection interval and grouped by status code range."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/http/requests`
+    attributes:
+      - ref: nginx.status_range
+      - ref: nginx.zone.name
+      - ref: nginx.zone.type
+
+  - id: metric.nginxplus.http.upstream.keepalive.count
+    type: metric
+    unit: "connections"
+    metric_name: nginx.http.upstream.keepalive.count
+    stability: experimental
+    brief: "The current number of idle keepalive connections per HTTP upstream."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/http/upstreams`
+    attributes:
+      - ref: nginx.zone.name
+      - ref: nginx.upstream.name
+
+  - id: metric.nginxplus.http.upstream.peer.io
+    type: metric
+    unit: "bytes"
+    metric_name: nginx.http.upstream.peer.io
+    stability: experimental
+    brief: "The total number of byte IO per HTTP upstream peer."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/http/upstreams`
+    attributes:
+      - ref: nginx.io.direction
+      - ref: nginx.upstream.name
+      - ref: nginx.zone.name
+      - ref: nginx.peer.address
+      - ref: nginx.peer.name
+
+  - id: metric.nginxplus.http.upstream.peer.connection.count
+    type: metric
+    unit: "connections"
+    metric_name: nginx.http.upstream.peer.connection.count
+    stability: experimental
+    brief: "The average number of active connections per HTTP upstream peer."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/http/upstreams`
+    attributes:
+      - ref: nginx.upstream.name
+      - ref: nginx.peer.address
+      - ref: nginx.peer.name
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.http.upstream.peer.count
+    type: metric
+    unit: "peers"
+    metric_name: nginx.http.upstream.peer.count
+    stability: experimental
+    brief: "The current count of peers on the HTTP upstream grouped by state."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/http/upstreams`
+    attributes:
+      - ref: nginx.peer.state
+      - ref: nginx.zone.name
+      - ref: nginx.upstream.name
+
+  - id: metric.nginxplus.http.upstream.peer.fails
+    type: metric
+    unit: "attempts"
+    metric_name: nginx.http.upstream.peer.fails
+    stability: experimental
+    brief: "The total number of unsuccessful attempts to communicate with the HTTP upstream peer."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/http/upstreams`
+    attributes:
+      - ref: nginx.upstream.name
+      - ref: nginx.peer.name
+      - ref: nginx.peer.address
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.http.upstream.peer.header.time
+    type: metric
+    unit: "ms"
+    metric_name: nginx.http.upstream.peer.header.time
+    stability: experimental
+    brief: "The average time to get the response header from the HTTP upstream peer."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/http/upstreams`
+    attributes:
+      - ref: nginx.upstream.name
+      - ref: nginx.peer.name
+      - ref: nginx.peer.address
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.http.upstream.peer.health_checks
+    type: metric
+    unit: "requests"
+    metric_name: nginx.http.upstream.peer.health_checks
+    stability: experimental
+    brief: "The total number of health check requests made to a HTTP upstream peer."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/http/upstreams`
+    attributes:
+      - ref: nginx.health_check
+      - ref: nginx.upstream.name
+      - ref: nginx.peer.name
+      - ref: nginx.peer.address
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.http.upstream.peer.requests
+    type: metric
+    unit: "requests"
+    metric_name: nginx.http.upstream.peer.requests
+    stability: experimental
+    brief: "The total number of client requests forwarded to the HTTP upstream peer."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/http/upstreams`
+    attributes:
+      - ref: nginx.upstream.name
+      - ref: nginx.peer.name
+      - ref: nginx.peer.address
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.http.upstream.peer.response.time
+    type: metric
+    unit: "ms"
+    metric_name: nginx.http.upstream.peer.response.time
+    stability: experimental
+    brief: "The average time to get the full response from the HTTP upstream peer."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/http/upstreams`
+    attributes:
+      - ref: nginx.upstream.name
+      - ref: nginx.peer.name
+      - ref: nginx.peer.address
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.http.upstream.peer.responses
+    type: metric
+    unit: "responses"
+    metric_name: nginx.http.upstream.peer.responses
+    stability: experimental
+    brief: "The total number of responses obtained from the HTTP upstream peer grouped by status range."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/http/upstreams`
+    attributes:
+      - ref: nginx.status_range
+      - ref: nginx.upstream.name
+      - ref: nginx.peer.name
+      - ref: nginx.peer.address
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.http.upstream.peer.unavailables
+    type: metric
+    unit: "requests"
+    metric_name: nginx.http.upstream.peer.unavailables
+    stability: experimental
+    brief: "The total number of times the server became unavailable for client requests ('unavail')."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/http/upstreams`
+    attributes:
+      - ref: nginx.upstream.name
+      - ref: nginx.peer.name
+      - ref: nginx.peer.address
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.http.upstream.peer.state
+    type: metric
+    unit: "is_deployed"
+    metric_name: nginx.http.upstream.peer.state
+    stability: experimental
+    brief: "Current state of an upstream peer in deployment."
+    instrument: gauge
+    attributes:
+      - ref: nginx.peer.state
+      - ref: nginx.upstream.name
+      - ref: nginx.peer.name
+      - ref: nginx.peer.address
+      - ref: nginx.zone.name
+
+
+  - id: metric.nginxplus.http.upstream.queue.limit
+    type: metric
+    unit: "requests"
+    metric_name: nginx.http.upstream.queue.limit
+    stability: experimental
+    brief: "The maximum number of requests that can be in the queue at the same time."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/http/upstreams`
+    attributes:
+      - ref: nginx.upstream.name
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.http.upstream.queue.overflows
+    type: metric
+    unit: "responses"
+    metric_name: nginx.http.upstream.queue.overflows
+    stability: experimental
+    brief: "The total number of requests rejected due to the queue overflow."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/http/upstreams`
+    attributes:
+      - ref: nginx.upstream.name
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.http.upstream.queue.usage
+    type: metric
+    unit: "requests"
+    metric_name: nginx.http.upstream.queue.usage
+    stability: experimental
+    brief: "The current number of requests in the queue."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/http/upstreams`
+    attributes:
+      - ref: nginx.upstream.name
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.http.upstream.zombie.count
+    type: metric
+    unit: "is_deployed"
+    metric_name: nginx.http.upstream.zombie.count
+    stability: experimental
+    brief: "The current number of upstream peers removed from the group but still processing active client requests."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/http/upstreams`
+    attributes:
+      - ref: nginx.upstream.name
+      - ref: nginx.zone.name
+
+  # nginx.cache.* metrics
+  - id: metric.nginxplus.cache.bytes_read
+    type: metric
+    unit: "bytes"
+    metric_name: nginx.cache.bytes_read
+    stability: experimental
+    brief: "The total number of bytes read from the cache or proxied server."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/http/caches`
+    attributes:
+      - ref: nginx.cache.outcome
+      - ref: nginx.cache.name
+
+  - id: metric.nginxplus.cache.responses
+    type: metric
+    unit: "responses"
+    metric_name: nginx.cache.responses
+    stability: experimental
+    brief: "The total number of responses read from the cache or proxied server."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/http/caches`
+    attributes:
+      - ref: nginx.cache.outcome
+      - ref: nginx.cache.name
+
+  - id: metric.nginxplus.cache.memory.limit
+    type: metric
+    unit: "bytes"
+    metric_name: nginx.cache.memory.limit
+    stability: experimental
+    brief: "The limit on the maximum size of the cache specified in the configuration."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/http/caches`
+    attributes:
+      - ref: nginx.cache.name
+
+  - id: metric.nginxplus.cache.memory.usage
+    type: metric
+    unit: "bytes"
+    metric_name: nginx.cache.memory.usage
+    stability: experimental
+    brief: "The current size of the cache."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/http/caches`
+    attributes:
+      - ref: nginx.cache.name
+
+  # nginx.slab.* metrics
+  - id: metric.nginxplus.slab.page.free
+    type: metric
+    unit: "pages"
+    metric_name: nginx.slab.page.free
+    stability: experimental
+    brief: "The current number of free memory pages."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/http/slabs`
+    attributes:
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.slab.page.limit
+    type: metric
+    unit: "pages"
+    metric_name: nginx.slab.page.limit
+    stability: experimental
+    brief: "The total number of memory pages (free and used)."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/http/slabs`
+    attributes:
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.slab.page.usage
+    type: metric
+    unit: "pages"
+    metric_name: nginx.slab.page.usage
+    stability: experimental
+    brief: "The current number of used memory pages."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/http/slabs`
+    attributes:
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.slab.page.utilization
+    type: metric
+    unit: "pages"
+    metric_name: nginx.slab.page.utilization
+    stability: experimental
+    brief: "The current percentage of used memory pages."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/http/slabs`
+    attributes:
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.slab.slot.usage
+    type: metric
+    unit: "slots"
+    metric_name: nginx.slab.slot.usage
+    stability: experimental
+    brief: "The current number of used memory slots."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/http/slabs`
+    attributes:
+      - ref: nginx.slab.slot.limit
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.slab.slot.free
+    type: metric
+    unit: "slots"
+    metric_name: nginx.slab.slot.free
+    stability: experimental
+    brief: "The current number of free memory slots."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/http/slabs`
+    attributes:
+      - ref: nginx.slab.slot.limit
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.slab.slot.allocations
+    type: metric
+    unit: "allocations"
+    metric_name: nginx.slab.slot.allocations
+    stability: experimental
+    brief: "The number of attempts to allocate memory of specified size."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/http/slabs`
+    attributes:
+      - ref: nginx.slab.slot.limit
+      - ref: nginx.slab.slot.allocation.result
+      - ref: nginx.zone.name
+
+  # nginx.ssl.* metrics
+  - id: metric.nginxplus.ssl.handshakes
+    type: metric
+    unit: "handshakes"
+    metric_name: nginx.ssl.handshakes
+    stability: experimental
+    brief: "The total number of SSL handshakes."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/http/ssl`
+    attributes:
+      - ref: nginx.ssl.status
+      - ref: nginx.ssl.handshake.reason
+
+  - id: metric.nginxplus.ssl.certificate.verify_failures
+    type: metric
+    unit: "certificates"
+    metric_name: nginx.ssl.certificate.verify_failures
+    stability: experimental
+    brief: "The total number of SSL certificate verification failures."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/http/ssl`
+    attributes:
+      - ref: nginx.ssl.verify_failure.reason
+
+  # nginx.stream.* metrics
+  - id: metric.nginxplus.stream.io
+    type: metric
+    unit: "bytes"
+    metric_name: nginx.stream.io
+    stability: experimental
+    brief: "The total number of Stream byte IO."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/stream/zone_sync`
+    attributes:
+      - ref: nginx.io.direction
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.stream.connection.accepted
+    type: metric
+    unit: "connections"
+    metric_name: nginx.stream.connection.accepted
+    stability: experimental
+    brief: "The total number of connections accepted from clients."
+    instrument: counter
+    note: |
+      Cumulative
+    attributes:
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.stream.connection.discarded
+    type: metric
+    unit: "connections"
+    metric_name: nginx.stream.connection.discarded
+    stability: experimental
+    brief: "Total number of connections completed without creating a session."
+    instrument: counter
+    note: |
+      Cumulative
+    attributes:
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.stream.connection.processing.count
+    type: metric
+    unit: "connections"
+    metric_name: nginx.stream.connection.processing.count
+    stability: experimental
+    brief: "The number of client connections that are currently being processed."
+    instrument: gauge
+    attributes:
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.stream.session.status
+    type: metric
+    unit: "sessions"
+    metric_name: nginx.stream.session.status
+    stability: experimental
+    brief: "The total number of completed sessions."
+    instrument: counter
+    note: |
+      Cumulative
+    attributes:
+      - ref: nginx.status_range
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.stream.upstream.peer.io
+    type: metric
+    unit: "bytes"
+    metric_name: nginx.stream.upstream.peer.io
+    stability: experimental
+    brief: "The total number of Stream Upstream Peer byte IO."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/stream/upstreams`
+    attributes:
+      - ref: nginx.io.direction
+      - ref: nginx.upstream.name
+      - ref: nginx.zone.name
+      - ref: nginx.peer.address
+      - ref: nginx.peer.name
+
+  - id: metric.nginxplus.stream.upstream.peer.connection.count
+    type: metric
+    unit: "connections"
+    metric_name: nginx.stream.upstream.peer.connection.count
+    stability: experimental
+    brief: "The current number of Stream Upstream Peer connections."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/stream/upstreams`
+    attributes:
+      - ref: nginx.upstream.name
+      - ref: nginx.zone.name
+      - ref: nginx.peer.address
+      - ref: nginx.peer.name
+
+  - id: metric.nginxplus.stream.upstream.peer.connection.time
+    type: metric
+    unit: "ms"
+    metric_name: nginx.stream.upstream.peer.connection.time
+    stability: experimental
+    brief: "The average time to connect to the stream upstream peer."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/stream/upstreams`
+    attributes:
+      - ref: nginx.upstream.name
+      - ref: nginx.zone.name
+      - ref: nginx.peer.address
+      - ref: nginx.peer.name
+
+  - id: metric.nginxplus.stream.upstream.peer.connections
+    type: metric
+    unit: "connections"
+    metric_name: nginx.stream.upstream.peer.connections
+    stability: experimental
+    brief: "The total number of client connections forwarded to this stream upstream peer."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/stream/upstreams`
+    attributes:
+      - ref: nginx.upstream.name
+      - ref: nginx.zone.name
+      - ref: nginx.peer.address
+      - ref: nginx.peer.name
+
+  - id: metric.nginxplus.stream.upstream.peer.count
+    type: metric
+    unit: "peers"
+    metric_name: nginx.stream.upstream.peer.count
+    stability: experimental
+    brief: "The current number of stream upstream peers grouped by state."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/stream/upstreams`
+    attributes:
+      - ref: nginx.peer.state
+      - ref: nginx.upstream.name
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.stream.upstream.peer.fails
+    type: metric
+    unit: "attempts"
+    metric_name: nginx.stream.upstream.peer.fails
+    stability: experimental
+    brief: "The total number of unsuccessful attempts to communicate with the stream upstream peer."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/stream/upstreams`
+    attributes:
+      - ref: nginx.upstream.name
+      - ref: nginx.peer.address
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.stream.upstream.peer.health_checks
+    type: metric
+    unit: "requests"
+    metric_name: nginx.stream.upstream.peer.health_checks
+    stability: experimental
+    brief: "The total number of health check requests made to the stream upstream peer."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/stream/upstreams`
+    attributes:
+      - ref: nginx.health_check
+      - ref: nginx.upstream.name
+      - ref: nginx.peer.name
+      - ref: nginx.peer.address
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.stream.upstream.peer.response.time
+    type: metric
+    unit: "ms"
+    metric_name: nginx.stream.upstream.peer.response.time
+    stability: experimental
+    brief: "The average time to receive the last byte of data for the stream upstream peer."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/stream/upstreams`
+    attributes:
+      - ref: nginx.upstream.name
+      - ref: nginx.peer.name
+      - ref: nginx.peer.address
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.stream.upstream.peer.ttfb.time
+    type: metric
+    unit: "ms"
+    metric_name: nginx.stream.upstream.peer.ttfb.time
+    stability: experimental
+    brief: "The average time to receive the first byte of data for the stream upstream peer."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/stream/upstreams`
+    attributes:
+      - ref: nginx.upstream.name
+      - ref: nginx.peer.name
+      - ref: nginx.peer.address
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.stream.upstream.peer.unavailables
+    type: metric
+    unit: "requests"
+    metric_name: nginx.stream.upstream.peer.unavailables
+    stability: experimental
+    brief: "How many times the server became unavailable for client connections (state 'unavail') due to the number of
+      unsuccessful attempts reaching the max_fails threshold."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/api/9/stream/upstreams`
+    attributes:
+      - ref: nginx.upstream.name
+      - ref: nginx.peer.name
+      - ref: nginx.peer.address
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.stream.upstream.peer.state
+    type: metric
+    unit: "deployments"
+    metric_name: nginx.stream.upstream.peer.state
+    stability: experimental
+    brief: "Current state of upstream peers in deployment."
+    note: |
+      If any of the upstream peers in the deployment match the given state then the value will be 1.
+      If no upstream peer is a match then the value will be 0.
+
+      Source: HTTP GET `/api/9/stream/upstreams`
+    instrument: gauge
+    attributes:
+      - ref: nginx.peer.state
+      - ref: nginx.upstream.name
+      - ref: nginx.peer.name
+      - ref: nginx.peer.address
+      - ref: nginx.zone.name
+
+  - id: metric.nginxplus.stream.upstream.zombie.count
+    type: metric
+    unit: "deployments"
+    metric_name: nginx.stream.upstream.zombie.count
+    stability: experimental
+    brief: "The current number of peers removed from the group but still processing active client connections."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/api/9/stream/upstreams`
+    attributes:
+      - ref: nginx.upstream.name
+      - ref: nginx.zone.name

@@ -3,12 +3,14 @@ resourceMetrics:
       attributes:
         - key: instance.type
           value:
-            stringValue: nginx
+            stringValue: nginxoss
     scopeMetrics:
       - metrics:
-          - description: The total number of HTTP responses since the last collection interval, grouped by status code range.
+          - description: The total number of HTTP responses, since the last collection interval and grouped by status code range.
             name: nginx.http.response.count
             gauge:
+              aggregationTemporality: 2
+              isMonotonic: true
               dataPoints:
                 - asInt: 0
                   attributes:
@@ -38,5 +40,5 @@ resourceMetrics:
                   timeUnixNano: "1000000"
             unit: responses
         scope:
-          name: otelcol/nginxreceiver
+          name: otelcol/nginxossreceiver
           version: latest

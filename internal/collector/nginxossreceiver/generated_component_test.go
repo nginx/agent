@@ -15,7 +15,7 @@ import (
 	"go.opentelemetry.io/collector/receiver/receivertest"
 )
 
-var typ = component.MustNewType("nginx")
+var typ = component.MustNewType("nginxoss")
 
 func TestComponentFactoryType(t *testing.T) {
 	require.Equal(t, typ, NewFactory().Type())

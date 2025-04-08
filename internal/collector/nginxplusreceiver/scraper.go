@@ -252,152 +252,152 @@ func (nps *NginxPlusScraper) recordStreamMetrics(stats *plusapi.Stats, now pcomm
 				now,
 				int64(peer.Received),
 				metadata.AttributeNginxIoDirectionReceive,
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				upstreamName,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxStreamUpstreamPeerIoDataPoint(
 				now,
 				int64(peer.Sent),
 				metadata.AttributeNginxIoDirectionTransmit,
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				upstreamName,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxStreamUpstreamPeerConnectionCountDataPoint(
 				now,
 				int64(peer.Active),
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				upstreamName,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxStreamUpstreamPeerConnectionTimeDataPoint(
 				now,
 				int64(peer.ConnectTime),
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				upstreamName,
+				upstream.Zone,
 			)
 
 			nps.mb.RecordNginxStreamUpstreamPeerConnectionsDataPoint(
 				now,
 				int64(peer.Connections),
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				upstreamName,
+				upstream.Zone,
 			)
 
 			nps.mb.RecordNginxStreamUpstreamPeerHealthChecksDataPoint(
 				now,
 				int64(peer.HealthChecks.Checks),
 				0,
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				upstreamName,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxStreamUpstreamPeerHealthChecksDataPoint(
 				now,
 				int64(peer.HealthChecks.Fails),
 				metadata.AttributeNginxHealthCheckFAIL,
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				upstreamName,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxStreamUpstreamPeerHealthChecksDataPoint(
 				now,
 				int64(peer.HealthChecks.Unhealthy),
 				metadata.AttributeNginxHealthCheckUNHEALTHY,
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				upstreamName,
+				upstream.Zone,
 			)
 
 			nps.mb.RecordNginxStreamUpstreamPeerResponseTimeDataPoint(
 				now,
 				int64(peer.ResponseTime),
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				upstreamName,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxStreamUpstreamPeerTtfbTimeDataPoint(
 				now,
 				int64(peer.FirstByteTime),
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				upstreamName,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxStreamUpstreamPeerUnavailablesDataPoint(
 				now,
 				int64(peer.Unavail),
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				upstreamName,
+				upstream.Zone,
 			)
 
 			nps.mb.RecordNginxStreamUpstreamPeerStateDataPoint(
 				now,
 				boolToInt64(peer.State == peerStateChecking),
-				metadata.AttributeNginxPeerStateCHECKING,
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				metadata.AttributeNginxPeerStateCHECKING,
+				upstreamName,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxStreamUpstreamPeerStateDataPoint(
 				now,
 				boolToInt64(peer.State == peerStateDown),
-				metadata.AttributeNginxPeerStateDOWN,
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				metadata.AttributeNginxPeerStateDOWN,
+				upstreamName,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxStreamUpstreamPeerStateDataPoint(
 				now,
 				boolToInt64(peer.State == peerStateDraining),
-				metadata.AttributeNginxPeerStateDRAINING,
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				metadata.AttributeNginxPeerStateDRAINING,
+				upstreamName,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxStreamUpstreamPeerStateDataPoint(
 				now,
 				boolToInt64(peer.State == peerStateUnavail),
-				metadata.AttributeNginxPeerStateUNAVAILABLE,
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				metadata.AttributeNginxPeerStateUNAVAILABLE,
+				upstreamName,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxStreamUpstreamPeerStateDataPoint(
 				now,
 				boolToInt64(peer.State == peerStateUnhealthy),
-				metadata.AttributeNginxPeerStateUNHEALTHY,
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				metadata.AttributeNginxPeerStateUNHEALTHY,
+				upstreamName,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxStreamUpstreamPeerStateDataPoint(
 				now,
 				boolToInt64(peer.State == peerStateUp),
-				metadata.AttributeNginxPeerStateUP,
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				metadata.AttributeNginxPeerStateUP,
+				upstreamName,
+				upstream.Zone,
 			)
 
 			peerStates[peer.State]++
@@ -407,46 +407,46 @@ func (nps *NginxPlusScraper) recordStreamMetrics(stats *plusapi.Stats, now pcomm
 			now,
 			int64(peerStates[peerStateChecking]),
 			metadata.AttributeNginxPeerStateCHECKING,
-			upstream.Zone,
 			upstreamName,
+			upstream.Zone,
 		)
 		nps.mb.RecordNginxStreamUpstreamPeerCountDataPoint(
 			now,
 			int64(peerStates[peerStateDown]),
 			metadata.AttributeNginxPeerStateDOWN,
-			upstream.Zone,
 			upstreamName,
+			upstream.Zone,
 		)
 		nps.mb.RecordNginxStreamUpstreamPeerCountDataPoint(
 			now,
 			int64(peerStates[peerStateDraining]),
 			metadata.AttributeNginxPeerStateDRAINING,
-			upstream.Zone,
 			upstreamName,
+			upstream.Zone,
 		)
 		nps.mb.RecordNginxStreamUpstreamPeerCountDataPoint(
 			now,
 			int64(peerStates[peerStateUnavail]),
 			metadata.AttributeNginxPeerStateUNAVAILABLE,
-			upstream.Zone,
 			upstreamName,
+			upstream.Zone,
 		)
 		nps.mb.RecordNginxStreamUpstreamPeerCountDataPoint(
 			now,
 			int64(peerStates[peerStateUnhealthy]),
 			metadata.AttributeNginxPeerStateUNHEALTHY,
-			upstream.Zone,
 			upstreamName,
+			upstream.Zone,
 		)
 		nps.mb.RecordNginxStreamUpstreamPeerCountDataPoint(
 			now,
 			int64(peerStates[peerStateUp]),
 			metadata.AttributeNginxPeerStateUP,
-			upstream.Zone,
 			upstreamName,
+			upstream.Zone,
 		)
 
-		nps.mb.RecordNginxStreamUpstreamZombieCountDataPoint(now, int64(upstream.Zombies), upstream.Zone, upstreamName)
+		nps.mb.RecordNginxStreamUpstreamZombieCountDataPoint(now, int64(upstream.Zombies), upstreamName, upstream.Zone)
 	}
 }
 
@@ -454,39 +454,39 @@ func (nps *NginxPlusScraper) recordSSLMetrics(now pcommon.Timestamp, stats *plus
 	nps.mb.RecordNginxSslHandshakesDataPoint(
 		now,
 		int64(stats.SSL.HandshakesFailed),
-		metadata.AttributeNginxSslStatusFAILED,
 		0,
+		metadata.AttributeNginxSslStatusFAILED,
 	)
 	nps.mb.RecordNginxSslHandshakesDataPoint(now, int64(stats.SSL.Handshakes), 0, 0)
 	nps.mb.RecordNginxSslHandshakesDataPoint(
 		now,
 		int64(stats.SSL.SessionReuses),
-		metadata.AttributeNginxSslStatusREUSE,
 		0,
+		metadata.AttributeNginxSslStatusREUSE,
 	)
 	nps.mb.RecordNginxSslHandshakesDataPoint(
 		now,
 		int64(stats.SSL.NoCommonProtocol),
-		metadata.AttributeNginxSslStatusFAILED,
 		metadata.AttributeNginxSslHandshakeReasonNOCOMMONPROTOCOL,
+		metadata.AttributeNginxSslStatusFAILED,
 	)
 	nps.mb.RecordNginxSslHandshakesDataPoint(
 		now,
 		int64(stats.SSL.NoCommonCipher),
-		metadata.AttributeNginxSslStatusFAILED,
 		metadata.AttributeNginxSslHandshakeReasonNOCOMMONCIPHER,
+		metadata.AttributeNginxSslStatusFAILED,
 	)
 	nps.mb.RecordNginxSslHandshakesDataPoint(
 		now,
 		int64(stats.SSL.HandshakeTimeout),
-		metadata.AttributeNginxSslStatusFAILED,
 		metadata.AttributeNginxSslHandshakeReasonTIMEOUT,
+		metadata.AttributeNginxSslStatusFAILED,
 	)
 	nps.mb.RecordNginxSslHandshakesDataPoint(
 		now,
 		int64(stats.SSL.PeerRejectedCert),
-		metadata.AttributeNginxSslStatusFAILED,
 		metadata.AttributeNginxSslHandshakeReasonCERTREJECTED,
+		metadata.AttributeNginxSslStatusFAILED,
 	)
 
 	nps.mb.RecordNginxSslCertificateVerifyFailuresDataPoint(
@@ -532,15 +532,15 @@ func (nps *NginxPlusScraper) recordSlabPageMetrics(stats *plusapi.Stats, now pco
 			nps.mb.RecordNginxSlabSlotAllocationsDataPoint(
 				now,
 				int64(slot.Fails),
-				slotNumber,
 				metadata.AttributeNginxSlabSlotAllocationResultFAILURE,
+				slotNumber,
 				name,
 			)
 			nps.mb.RecordNginxSlabSlotAllocationsDataPoint(
 				now,
 				int64(slot.Reqs),
-				slotNumber,
 				metadata.AttributeNginxSlabSlotAllocationResultSUCCESS,
+				slotNumber,
 				name,
 			)
 		}
@@ -549,7 +549,7 @@ func (nps *NginxPlusScraper) recordSlabPageMetrics(stats *plusapi.Stats, now pco
 
 func (nps *NginxPlusScraper) recordHTTPUpstreamPeerMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
 	for name, upstream := range stats.Upstreams {
-		nps.mb.RecordNginxHTTPUpstreamKeepaliveCountDataPoint(now, int64(upstream.Keepalive), upstream.Zone, name)
+		nps.mb.RecordNginxHTTPUpstreamKeepaliveCountDataPoint(now, int64(upstream.Keepalive), name, upstream.Zone)
 
 		peerStates := make(map[string]int)
 
@@ -558,209 +558,209 @@ func (nps *NginxPlusScraper) recordHTTPUpstreamPeerMetrics(stats *plusapi.Stats,
 				now,
 				int64(peer.Received),
 				metadata.AttributeNginxIoDirectionReceive,
-				upstream.Zone,
-				name,
 				peer.Server,
 				peer.Name,
+				name,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxHTTPUpstreamPeerIoDataPoint(
 				now,
 				int64(peer.Sent),
 				metadata.AttributeNginxIoDirectionTransmit,
-				upstream.Zone,
-				name,
 				peer.Server,
 				peer.Name,
+				name,
+				upstream.Zone,
 			)
 
 			nps.mb.RecordNginxHTTPUpstreamPeerConnectionCountDataPoint(
 				now,
 				int64(peer.Active),
-				upstream.Zone,
-				name,
 				peer.Server,
 				peer.Name,
+				name,
+				upstream.Zone,
 			)
 
 			nps.mb.RecordNginxHTTPUpstreamPeerFailsDataPoint(
 				now,
 				int64(peer.Fails),
-				upstream.Zone,
-				name,
 				peer.Server,
 				peer.Name,
+				name,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxHTTPUpstreamPeerHeaderTimeDataPoint(
 				now,
 				int64(peer.HeaderTime),
-				upstream.Zone,
-				name,
 				peer.Server,
 				peer.Name,
+				name,
+				upstream.Zone,
 			)
 
 			nps.mb.RecordNginxHTTPUpstreamPeerHealthChecksDataPoint(
 				now,
 				int64(peer.HealthChecks.Checks),
 				0,
-				upstream.Zone,
-				name,
 				peer.Server,
 				peer.Name,
+				name,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxHTTPUpstreamPeerHealthChecksDataPoint(
 				now,
 				int64(peer.HealthChecks.Fails),
 				metadata.AttributeNginxHealthCheckFAIL,
-				upstream.Zone,
-				name,
 				peer.Server,
 				peer.Name,
+				name,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxHTTPUpstreamPeerHealthChecksDataPoint(
 				now,
 				int64(peer.HealthChecks.Unhealthy),
 				metadata.AttributeNginxHealthCheckUNHEALTHY,
-				upstream.Zone,
-				name,
 				peer.Server,
 				peer.Name,
+				name,
+				upstream.Zone,
 			)
 
 			nps.mb.RecordNginxHTTPUpstreamPeerRequestsDataPoint(
 				now,
 				int64(peer.Requests),
-				upstream.Zone,
-				name,
 				peer.Server,
 				peer.Name,
+				name,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxHTTPUpstreamPeerResponseTimeDataPoint(
 				now,
 				int64(peer.ResponseTime),
-				upstream.Zone,
-				name,
 				peer.Server,
 				peer.Name,
+				name,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxHTTPUpstreamPeerResponsesDataPoint(
 				now,
 				int64(peer.Responses.Total),
-				0,
-				upstream.Zone,
-				name,
 				peer.Server,
 				peer.Name,
+				0,
+				name,
+				upstream.Zone,
 			)
 
 			nps.mb.RecordNginxHTTPUpstreamPeerResponsesDataPoint(
 				now,
 				int64(peer.Responses.Responses1xx),
-				metadata.AttributeNginxStatusRange1xx,
-				upstream.Zone,
-				name,
 				peer.Server,
 				peer.Name,
+				metadata.AttributeNginxStatusRange1xx,
+				name,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxHTTPUpstreamPeerResponsesDataPoint(
 				now,
 				int64(peer.Responses.Responses2xx),
-				metadata.AttributeNginxStatusRange2xx,
-				upstream.Zone,
-				name,
 				peer.Server,
 				peer.Name,
+				metadata.AttributeNginxStatusRange2xx,
+				name,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxHTTPUpstreamPeerResponsesDataPoint(
 				now,
 				int64(peer.Responses.Responses3xx),
-				metadata.AttributeNginxStatusRange3xx,
-				upstream.Zone,
-				name,
 				peer.Server,
 				peer.Name,
+				metadata.AttributeNginxStatusRange3xx,
+				name,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxHTTPUpstreamPeerResponsesDataPoint(
 				now,
 				int64(peer.Responses.Responses4xx),
-				metadata.AttributeNginxStatusRange4xx,
-				upstream.Zone,
-				name,
 				peer.Server,
 				peer.Name,
+				metadata.AttributeNginxStatusRange4xx,
+				name,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxHTTPUpstreamPeerResponsesDataPoint(
 				now,
 				int64(peer.Responses.Responses5xx),
-				metadata.AttributeNginxStatusRange5xx,
-				upstream.Zone,
-				name,
 				peer.Server,
 				peer.Name,
+				metadata.AttributeNginxStatusRange5xx,
+				name,
+				upstream.Zone,
 			)
 
 			nps.mb.RecordNginxHTTPUpstreamPeerUnavailablesDataPoint(
 				now,
 				int64(peer.Unavail),
-				upstream.Zone,
-				name,
 				peer.Server,
 				peer.Name,
+				name,
+				upstream.Zone,
 			)
 
 			nps.mb.RecordNginxHTTPUpstreamPeerStateDataPoint(
 				now,
 				boolToInt64(peer.State == peerStateChecking),
-				metadata.AttributeNginxPeerStateCHECKING,
-				upstream.Zone,
-				name,
 				peer.Server,
 				peer.Name,
+				metadata.AttributeNginxPeerStateCHECKING,
+				name,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxHTTPUpstreamPeerStateDataPoint(
 				now,
 				boolToInt64(peer.State == peerStateDown),
-				metadata.AttributeNginxPeerStateDOWN,
-				upstream.Zone,
-				name,
 				peer.Server,
 				peer.Name,
+				metadata.AttributeNginxPeerStateDOWN,
+				name,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxHTTPUpstreamPeerStateDataPoint(
 				now,
 				boolToInt64(peer.State == peerStateDraining),
-				metadata.AttributeNginxPeerStateDRAINING,
-				upstream.Zone,
-				name,
 				peer.Server,
 				peer.Name,
+				metadata.AttributeNginxPeerStateDRAINING,
+				name,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxHTTPUpstreamPeerStateDataPoint(
 				now,
 				boolToInt64(peer.State == peerStateUnavail),
-				metadata.AttributeNginxPeerStateUNAVAILABLE,
-				upstream.Zone,
-				name,
 				peer.Server,
 				peer.Name,
+				metadata.AttributeNginxPeerStateUNAVAILABLE,
+				name,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxHTTPUpstreamPeerStateDataPoint(
 				now,
 				boolToInt64(peer.State == peerStateUnhealthy),
-				metadata.AttributeNginxPeerStateUNHEALTHY,
-				upstream.Zone,
-				name,
 				peer.Server,
 				peer.Name,
+				metadata.AttributeNginxPeerStateUNHEALTHY,
+				name,
+				upstream.Zone,
 			)
 			nps.mb.RecordNginxHTTPUpstreamPeerStateDataPoint(
 				now,
 				boolToInt64(peer.State == peerStateUp),
-				metadata.AttributeNginxPeerStateUP,
-				upstream.Zone,
-				name,
 				peer.Server,
 				peer.Name,
+				metadata.AttributeNginxPeerStateUP,
+				name,
+				upstream.Zone,
 			)
 
 			peerStates[peer.State]++
@@ -770,49 +770,49 @@ func (nps *NginxPlusScraper) recordHTTPUpstreamPeerMetrics(stats *plusapi.Stats,
 			now,
 			int64(peerStates[peerStateChecking]),
 			metadata.AttributeNginxPeerStateCHECKING,
-			upstream.Zone,
 			name,
+			upstream.Zone,
 		)
 		nps.mb.RecordNginxHTTPUpstreamPeerCountDataPoint(
 			now,
 			int64(peerStates[peerStateDown]),
 			metadata.AttributeNginxPeerStateDOWN,
-			upstream.Zone,
 			name,
+			upstream.Zone,
 		)
 		nps.mb.RecordNginxHTTPUpstreamPeerCountDataPoint(
 			now,
 			int64(peerStates[peerStateDraining]),
 			metadata.AttributeNginxPeerStateDRAINING,
-			upstream.Zone,
 			name,
+			upstream.Zone,
 		)
 		nps.mb.RecordNginxHTTPUpstreamPeerCountDataPoint(
 			now,
 			int64(peerStates[peerStateUnavail]),
 			metadata.AttributeNginxPeerStateUNAVAILABLE,
-			upstream.Zone,
 			name,
+			upstream.Zone,
 		)
 		nps.mb.RecordNginxHTTPUpstreamPeerCountDataPoint(
 			now,
 			int64(peerStates[peerStateUnhealthy]),
 			metadata.AttributeNginxPeerStateUNHEALTHY,
-			upstream.Zone,
 			name,
+			upstream.Zone,
 		)
 		nps.mb.RecordNginxHTTPUpstreamPeerCountDataPoint(
 			now,
 			int64(peerStates[peerStateUp]),
 			metadata.AttributeNginxPeerStateUP,
-			upstream.Zone,
 			name,
+			upstream.Zone,
 		)
 
-		nps.mb.RecordNginxHTTPUpstreamQueueLimitDataPoint(now, int64(upstream.Queue.MaxSize), upstream.Zone, name)
-		nps.mb.RecordNginxHTTPUpstreamQueueOverflowsDataPoint(now, int64(upstream.Queue.Overflows), upstream.Zone, name)
-		nps.mb.RecordNginxHTTPUpstreamQueueUsageDataPoint(now, int64(upstream.Queue.Size), upstream.Zone, name)
-		nps.mb.RecordNginxHTTPUpstreamZombieCountDataPoint(now, int64(upstream.Zombies), upstream.Zone, name)
+		nps.mb.RecordNginxHTTPUpstreamQueueLimitDataPoint(now, int64(upstream.Queue.MaxSize), name, upstream.Zone)
+		nps.mb.RecordNginxHTTPUpstreamQueueOverflowsDataPoint(now, int64(upstream.Queue.Overflows), name, upstream.Zone)
+		nps.mb.RecordNginxHTTPUpstreamQueueUsageDataPoint(now, int64(upstream.Queue.Size), name, upstream.Zone)
+		nps.mb.RecordNginxHTTPUpstreamZombieCountDataPoint(now, int64(upstream.Zombies), name, upstream.Zone)
 	}
 }
 
@@ -884,31 +884,36 @@ func (nps *NginxPlusScraper) recordServerZoneHTTPMetrics(sz plusapi.ServerZone, 
 		int64(sz.Responses.Responses1xx)-nps.previousServerZoneResponses[szName].oneHundredStatusRange,
 		metadata.AttributeNginxStatusRange1xx,
 		szName,
-		metadata.AttributeNginxZoneTypeSERVER)
+		metadata.AttributeNginxZoneTypeSERVER,
+	)
 
 	nps.mb.RecordNginxHTTPResponseCountDataPoint(now,
 		int64(sz.Responses.Responses2xx)-nps.previousServerZoneResponses[szName].twoHundredStatusRange,
 		metadata.AttributeNginxStatusRange2xx,
 		szName,
-		metadata.AttributeNginxZoneTypeSERVER)
+		metadata.AttributeNginxZoneTypeSERVER,
+	)
 
 	nps.mb.RecordNginxHTTPResponseCountDataPoint(now,
 		int64(sz.Responses.Responses3xx)-nps.previousServerZoneResponses[szName].threeHundredStatusRange,
 		metadata.AttributeNginxStatusRange3xx,
 		szName,
-		metadata.AttributeNginxZoneTypeSERVER)
+		metadata.AttributeNginxZoneTypeSERVER,
+	)
 
 	nps.mb.RecordNginxHTTPResponseCountDataPoint(now,
 		int64(sz.Responses.Responses4xx)-nps.previousServerZoneResponses[szName].fourHundredStatusRange,
 		metadata.AttributeNginxStatusRange4xx,
 		szName,
-		metadata.AttributeNginxZoneTypeSERVER)
+		metadata.AttributeNginxZoneTypeSERVER,
+	)
 
 	nps.mb.RecordNginxHTTPResponseCountDataPoint(now,
 		int64(sz.Responses.Responses5xx)-nps.previousServerZoneResponses[szName].fiveHundredStatusRange,
 		metadata.AttributeNginxStatusRange5xx,
 		szName,
-		metadata.AttributeNginxZoneTypeSERVER)
+		metadata.AttributeNginxZoneTypeSERVER,
+	)
 
 	respStatus := ResponseStatuses{
 		oneHundredStatusRange:   int64(sz.Responses.Responses1xx),
@@ -991,31 +996,36 @@ func (nps *NginxPlusScraper) recordLocationZoneHTTPMetrics(lz plusapi.LocationZo
 		int64(lz.Responses.Responses1xx)-nps.previousLocationZoneResponses[lzName].oneHundredStatusRange,
 		metadata.AttributeNginxStatusRange1xx,
 		lzName,
-		metadata.AttributeNginxZoneTypeLOCATION)
+		metadata.AttributeNginxZoneTypeLOCATION,
+	)
 
 	nps.mb.RecordNginxHTTPResponseCountDataPoint(now,
 		int64(lz.Responses.Responses2xx)-nps.previousLocationZoneResponses[lzName].twoHundredStatusRange,
 		metadata.AttributeNginxStatusRange2xx,
 		lzName,
-		metadata.AttributeNginxZoneTypeLOCATION)
+		metadata.AttributeNginxZoneTypeLOCATION,
+	)
 
 	nps.mb.RecordNginxHTTPResponseCountDataPoint(now,
 		int64(lz.Responses.Responses3xx)-nps.previousLocationZoneResponses[lzName].threeHundredStatusRange,
 		metadata.AttributeNginxStatusRange3xx,
 		lzName,
-		metadata.AttributeNginxZoneTypeLOCATION)
+		metadata.AttributeNginxZoneTypeLOCATION,
+	)
 
 	nps.mb.RecordNginxHTTPResponseCountDataPoint(now,
 		int64(lz.Responses.Responses4xx)-nps.previousLocationZoneResponses[lzName].fourHundredStatusRange,
 		metadata.AttributeNginxStatusRange4xx,
 		lzName,
-		metadata.AttributeNginxZoneTypeLOCATION)
+		metadata.AttributeNginxZoneTypeLOCATION,
+	)
 
 	nps.mb.RecordNginxHTTPResponseCountDataPoint(now,
 		int64(lz.Responses.Responses5xx)-nps.previousLocationZoneResponses[lzName].fiveHundredStatusRange,
 		metadata.AttributeNginxStatusRange5xx,
 		lzName,
-		metadata.AttributeNginxZoneTypeLOCATION)
+		metadata.AttributeNginxZoneTypeLOCATION,
+	)
 
 	respStatus := ResponseStatuses{
 		oneHundredStatusRange:   int64(lz.Responses.Responses1xx),
@@ -1089,44 +1099,44 @@ func (nps *NginxPlusScraper) recordCacheMetrics(stats *plusapi.Stats, now pcommo
 		nps.mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Bypass.Bytes),
-			metadata.AttributeNginxCacheOutcomeBYPASS,
 			name,
+			metadata.AttributeNginxCacheOutcomeBYPASS,
 		)
 		nps.mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Expired.Bytes),
-			metadata.AttributeNginxCacheOutcomeEXPIRED,
 			name,
+			metadata.AttributeNginxCacheOutcomeEXPIRED,
 		)
 		nps.mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Hit.Bytes),
-			metadata.AttributeNginxCacheOutcomeHIT,
 			name,
+			metadata.AttributeNginxCacheOutcomeHIT,
 		)
 		nps.mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Miss.Bytes),
-			metadata.AttributeNginxCacheOutcomeMISS,
 			name,
+			metadata.AttributeNginxCacheOutcomeMISS,
 		)
 		nps.mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Revalidated.Bytes),
-			metadata.AttributeNginxCacheOutcomeREVALIDATED,
 			name,
+			metadata.AttributeNginxCacheOutcomeREVALIDATED,
 		)
 		nps.mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Stale.Bytes),
-			metadata.AttributeNginxCacheOutcomeSTALE,
 			name,
+			metadata.AttributeNginxCacheOutcomeSTALE,
 		)
 		nps.mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Updating.Bytes),
-			metadata.AttributeNginxCacheOutcomeUPDATING,
 			name,
+			metadata.AttributeNginxCacheOutcomeUPDATING,
 		)
 
 		nps.mb.RecordNginxCacheMemoryLimitDataPoint(now, int64(cache.MaxSize), name)
@@ -1135,44 +1145,44 @@ func (nps *NginxPlusScraper) recordCacheMetrics(stats *plusapi.Stats, now pcommo
 		nps.mb.RecordNginxCacheResponsesDataPoint(
 			now,
 			int64(cache.Bypass.Responses),
-			metadata.AttributeNginxCacheOutcomeBYPASS,
 			name,
+			metadata.AttributeNginxCacheOutcomeBYPASS,
 		)
 		nps.mb.RecordNginxCacheResponsesDataPoint(
 			now,
 			int64(cache.Expired.Responses),
-			metadata.AttributeNginxCacheOutcomeEXPIRED,
 			name,
+			metadata.AttributeNginxCacheOutcomeEXPIRED,
 		)
 		nps.mb.RecordNginxCacheResponsesDataPoint(
 			now,
 			int64(cache.Hit.Responses),
-			metadata.AttributeNginxCacheOutcomeHIT,
 			name,
+			metadata.AttributeNginxCacheOutcomeHIT,
 		)
 		nps.mb.RecordNginxCacheResponsesDataPoint(
 			now,
 			int64(cache.Miss.Responses),
-			metadata.AttributeNginxCacheOutcomeMISS,
 			name,
+			metadata.AttributeNginxCacheOutcomeMISS,
 		)
 		nps.mb.RecordNginxCacheResponsesDataPoint(
 			now,
 			int64(cache.Revalidated.Responses),
-			metadata.AttributeNginxCacheOutcomeREVALIDATED,
 			name,
+			metadata.AttributeNginxCacheOutcomeREVALIDATED,
 		)
 		nps.mb.RecordNginxCacheResponsesDataPoint(
 			now,
 			int64(cache.Stale.Responses),
-			metadata.AttributeNginxCacheOutcomeSTALE,
 			name,
+			metadata.AttributeNginxCacheOutcomeSTALE,
 		)
 		nps.mb.RecordNginxCacheResponsesDataPoint(
 			now,
 			int64(cache.Updating.Responses),
-			metadata.AttributeNginxCacheOutcomeUPDATING,
 			name,
+			metadata.AttributeNginxCacheOutcomeUPDATING,
 		)
 	}
 }

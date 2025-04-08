@@ -1,0 +1,103 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/open-telemetry/weaver/v0.9.2/schemas/semconv.schema.json
+groups:
+  # General NGINX Plus attributes
+  - id: registry.nginxplus
+    type: attribute_group
+    stability: experimental
+    display_name: General NGINX Plus Attributes
+    brief: "Describes NGINX attributes"
+    attributes:
+      - id: nginx.cache.outcome
+        type: string
+        stability: development
+        brief: "The outcome for an attempt to fetch content from NGINX's cache"
+        examples: ["BYPASS","EXPIRED","HIT","MISS","REVALIDATED","STALE","UPDATING"]
+      - id: nginx.zone.name
+        type: string
+        stability: development
+        brief: "The name of the shared memory zone."
+        examples: ""
+      - id: nginx.zone.type
+        type: string
+        stability: development
+        brief: "The type of shared memory zone, depending on what block it was defined in the NGINX configuration."
+        examples: ["SERVER","LOCATION"]
+      - id: nginx.limit_conn.outcome
+        type: string
+        stability: development
+        brief: "The outcome for attempting to establish a connection to an endpoint that has a limit_conn directive configured."
+        examples: ["PASSED","REJECTED","REJECTED_DRY_RUN"]
+      - id: nginx.limit_req.outcome
+        type: string
+        stability: development
+        brief: "The outcome for attempting to establish a connection to an endpoint that has a limit_req directive configured."
+        examples: ["PASSED","REJECTED","REJECTED_DRY_RUN","DELAYED","DELAYED_DRY_RUN"]
+      - id: nginx.io.direction
+        type: string
+        stability: development
+        brief: "The direction of byte traffic."
+        examples: ["receive","transmit"]
+      - id: nginx.status_range
+        type: string
+        stability: development
+        brief: "A status code range or bucket for a HTTP response's status code."
+        examples: ["1xx","2xx","3xx","4xx","5xx"]
+      - id: nginx.upstream.name
+        type: string
+        stability: development
+        brief: "The name of the upstream block."
+        examples: ""
+      - id: nginx.peer.address
+        type: string
+        stability: development
+        brief: "The address of the peer."
+        examples: ""
+      - id: nginx.peer.name
+        type: string
+        stability: development
+        brief: "The name of the peer."
+        examples: ""
+      - id: nginx.peer.state
+        type: string
+        stability: development
+        brief: "The current state of an upstream peer."
+        examples: ["CHECKING","DOWN","DRAINING","UNAVAILABLE","UNHEALTHY","UP"]
+      - id: nginx.health_check
+        type: string
+        stability: development
+        brief: "The state received from a health check."
+        examples: ["UNHEALTHY","FAIL"]
+      - id: nginx.ssl.status
+        type: string
+        stability: development
+        brief: "The status of a SSL handshake."
+        examples: ["FAILED","REUSE"]
+      - id: nginx.ssl.handshake.reason
+        type: string
+        stability: development
+        brief: "The reason for a SSL handshake failure."
+        examples: ["NO_COMMON_PROTOCOL","NO_COMMON_CIPHER","TIMEOUT","CERT_REJECTED"]
+      - id: nginx.ssl.verify_failure.reason
+        type: string
+        stability: development
+        brief: "The reason for a SSL certificate verification failure."
+        examples: ["NO_CERT","EXPIRED_CERT","REVOKED_CERT","HOSTNAME_MISMATCH","OTHER"]
+      - id: nginx.slab.slot.allocation.result
+        type: string
+        stability: development
+        brief: "Result of an attempt to allocate memory to a slab slot."
+        examples: ["FAILURE","SUCCESS"]
+      - id: nginx.slab.slot.limit
+        type: int
+        stability: development
+        brief: "The upper limit for a slab slot, used as the identifier for the slot."
+      - id: nginx.connections.outcome
+        type: string
+        stability: development
+        brief: "The outcome of a connection"
+        examples: ["ACCEPTED","ACTIVE","HANDLED","READING","WRITING","WAITING","DROPPED","IDLE"]
+      - id: nginx.cache.name
+        type: string
+        stability: development
+        brief: "The name of the cache."
+        examples: ""

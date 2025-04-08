@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	Type      = component.MustNewType("nginx")
-	ScopeName = "otelcol/nginxreceiver"
+	Type      = component.MustNewType("nginxoss")
+	ScopeName = "otelcol/nginxossreceiver"
 )
 
 const (

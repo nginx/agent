@@ -1,0 +1,11 @@
+params:
+  excluded_attributes: ["messaging.client_id"]
+templates:
+  - pattern: attrs_metadata.yaml.j2
+    filter: >
+      .groups | map(select(.type == "attribute_group")) | map(select(.id | startswith("registry")))
+    application_mode: single    
+  - pattern: metrics_metadata.yaml.j2
+    filter: >
+      .groups | map(select(.type == "metric"))    
+    application_mode: single

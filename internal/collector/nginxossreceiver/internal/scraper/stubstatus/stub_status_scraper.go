@@ -113,7 +113,7 @@ func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error
 	}
 
 	s.rb.SetInstanceID(s.settings.ID.Name())
-	s.rb.SetInstanceType("nginx")
+	s.rb.SetInstanceType("nginxoss")
 	s.settings.Logger.Debug("NGINX OSS stub status resource info", zap.Any("resource", s.rb))
 
 	now := pcommon.NewTimestampFromTime(time.Now())

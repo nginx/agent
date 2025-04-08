@@ -26,7 +26,7 @@ func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
 	return nil
 }
 
-// MetricsConfig provides config for nginx metrics.
+// MetricsConfig provides config for nginxoss metrics.
 type MetricsConfig struct {
 	NginxHTTPConnectionCount MetricConfig `mapstructure:"nginx.http.connection.count"`
 	NginxHTTPConnections     MetricConfig `mapstructure:"nginx.http.connections"`
@@ -81,7 +81,7 @@ func (rac *ResourceAttributeConfig) Unmarshal(parser *confmap.Conf) error {
 	return nil
 }
 
-// ResourceAttributesConfig provides config for nginx resource attributes.
+// ResourceAttributesConfig provides config for nginxoss resource attributes.
 type ResourceAttributesConfig struct {
 	InstanceID   ResourceAttributeConfig `mapstructure:"instance.id"`
 	InstanceType ResourceAttributeConfig `mapstructure:"instance.type"`
@@ -98,7 +98,7 @@ func DefaultResourceAttributesConfig() ResourceAttributesConfig {
 	}
 }
 
-// MetricsBuilderConfig is a configuration for nginx metrics builder.
+// MetricsBuilderConfig is a configuration for nginxoss metrics builder.
 type MetricsBuilderConfig struct {
 	Metrics            MetricsConfig            `mapstructure:"metrics"`
 	ResourceAttributes ResourceAttributesConfig `mapstructure:"resource_attributes"`

@@ -23,6 +23,8 @@ const (
 	AttributeNginxConnectionsOutcomeREADING
 	AttributeNginxConnectionsOutcomeWRITING
 	AttributeNginxConnectionsOutcomeWAITING
+	AttributeNginxConnectionsOutcomeDROPPED
+	AttributeNginxConnectionsOutcomeIDLE
 )
 
 // String returns the string representation of the AttributeNginxConnectionsOutcome.
@@ -40,6 +42,10 @@ func (av AttributeNginxConnectionsOutcome) String() string {
 		return "WRITING"
 	case AttributeNginxConnectionsOutcomeWAITING:
 		return "WAITING"
+	case AttributeNginxConnectionsOutcomeDROPPED:
+		return "DROPPED"
+	case AttributeNginxConnectionsOutcomeIDLE:
+		return "IDLE"
 	}
 	return ""
 }
@@ -52,6 +58,8 @@ var MapAttributeNginxConnectionsOutcome = map[string]AttributeNginxConnectionsOu
 	"READING":  AttributeNginxConnectionsOutcomeREADING,
 	"WRITING":  AttributeNginxConnectionsOutcomeWRITING,
 	"WAITING":  AttributeNginxConnectionsOutcomeWAITING,
+	"DROPPED":  AttributeNginxConnectionsOutcomeDROPPED,
+	"IDLE":     AttributeNginxConnectionsOutcomeIDLE,
 }
 
 // AttributeNginxStatusRange specifies the value nginx.status_range attribute.
@@ -335,7 +343,7 @@ type metricNginxHTTPResponseCount struct {
 // init fills nginx.http.response.count metric with initial data.
 func (m *metricNginxHTTPResponseCount) init() {
 	m.data.SetName("nginx.http.response.count")
-	m.data.SetDescription("The total number of HTTP responses since the last collection interval, grouped by status code range.")
+	m.data.SetDescription("The total number of HTTP responses, since the last collection interval and grouped by status code range.")
 	m.data.SetUnit("responses")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
