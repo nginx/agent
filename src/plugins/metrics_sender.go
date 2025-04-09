@@ -60,7 +60,7 @@ func (r *MetricsSender) Info() *core.Info {
 
 func (r *MetricsSender) Process(msg *core.Message) {
 	if msg.Exact(core.AgentConnected) {
-		r.readyToSend.Toggle()
+		r.readyToSend.Store(true)
 		return
 	}
 
