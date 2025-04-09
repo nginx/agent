@@ -61,6 +61,7 @@ func (r *MetricsSender) Info() *core.Info {
 func (r *MetricsSender) Process(msg *core.Message) {
 	if msg.Exact(core.AgentConnected) {
 		r.readyToSend.Store(true)
+		log.Debugf("MetricsSender is ready to send %s:", r.readyToSend.String())
 		return
 	}
 
