@@ -60,8 +60,9 @@ func (r *MetricsSender) Info() *core.Info {
 
 func (r *MetricsSender) Process(msg *core.Message) {
 	if msg.Exact(core.AgentConnected) {
-		log.Debugf("AgentConnected message received in metrics sender %v", r.readyToSend)
+		log.Debugf("MetricsSender AgentConnected Before: %v", r.readyToSend)
 		r.readyToSend.Store(true)
+		log.Debugf("MetricsSender AgentConnected After %v", r.readyToSend)
 		return
 	}
 
