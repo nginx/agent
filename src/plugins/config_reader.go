@@ -107,6 +107,8 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 
 			sort.Strings(onDiskAgentConfig.Features)
 			sort.Strings(payloadAgentConfig.Details.Features)
+			log.Debugf("OnDisk Agent Features %v", onDiskAgentConfig.Features)
+			log.Debugf("Payload Agent Features %v", onDiskAgentConfig.Features)
 			r.detailsMu.Unlock()
 
 			r.detailsMu.RLock()
@@ -137,6 +139,7 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 				log.Errorf("Failed updating Agent config - %v", err)
 			}
 			if configUpdated {
+				r.config.Features = features
 				log.Debugf("Updated agent config on disk")
 			}
 		}
