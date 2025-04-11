@@ -45,7 +45,7 @@ func (r *MetricsSender) Init(pipeline core.MessagePipeInterface) {
 	r.started.Toggle()
 	r.pipeline = pipeline
 	r.ctx = pipeline.Context()
-	log.Info("MetricsSender initializing")
+	log.Infof("MetricsSender initializing %v %v", r.started, r.readyToSend)
 }
 
 func (r *MetricsSender) Close() {
@@ -60,8 +60,8 @@ func (r *MetricsSender) Info() *core.Info {
 
 func (r *MetricsSender) Process(msg *core.Message) {
 	if msg.Exact(core.AgentConnected) {
+		log.Debugf("AgentConnected message received in metrics sender %v", r.readyToSend)
 		r.readyToSend.Store(true)
-		log.Debugf("MetricsSender is ready to send %s:", r.readyToSend.String())
 		return
 	}
 
@@ -73,12 +73,14 @@ func (r *MetricsSender) Process(msg *core.Message) {
 		}
 		for _, p := range payloads {
 			if !r.readyToSend.Load() {
+				log.Debugf("metrics_sender is not ready to send the metrics")
 				continue
 			}
 
 			switch report := p.(type) {
 			case *proto.MetricsReport:
 				message := client.MessageFromMetrics(report)
+				log.Debugf("metrics_sender sending the metrics report")
 				err := r.reporter.Send(r.ctx, message)
 				if err != nil {
 					log.Errorf("Failed to send MetricsReport: %v", err)
@@ -86,6 +88,7 @@ func (r *MetricsSender) Process(msg *core.Message) {
 					r.pipeline.Process(core.NewMessage(core.MetricReportSent, nil))
 				}
 			case *models.EventReport:
+				log.Debugf("metrics_sender sending the events report")
 				err := r.reporter.Send(r.ctx, client.MessageFromEvents(report))
 				if err != nil {
 					l := len(report.Events)

@@ -155,6 +155,7 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 			r.synchronizeFeatures(payloadAgentConfig)
 		}
 
+		log.Debugf("agent config changed, updating all plugins %v", payloadAgentConfig)
 		r.messagePipeline.Process(core.NewMessage(core.AgentConfigChanged, payloadAgentConfig))
 	}
 }
@@ -164,6 +165,7 @@ func (r *ConfigReader) synchronizeFeatures(agtCfg *proto.AgentConfig) {
 		r.detailsMu.RLock()
 		for _, feature := range r.config.Features {
 			if feature != agent_config.FeatureRegistration && feature != agent_config.FeatureNginxConfigAsync {
+				log.Debugf("synchronizeFeatures: deregistering the feature %s", feature)
 				r.deRegisterPlugin(feature)
 			}
 		}
