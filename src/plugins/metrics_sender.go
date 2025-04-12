@@ -9,14 +9,13 @@ package plugins
 
 import (
 	"context"
-	"strings"
-
 	"github.com/nginx/agent/sdk/v2"
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
 	models "github.com/nginx/agent/sdk/v2/proto/events"
 	"github.com/nginx/agent/v2/src/core"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"go.uber.org/atomic"
@@ -115,7 +114,14 @@ func (r *MetricsSender) Process(msg *core.Message) {
 
 func (r *MetricsSender) metricSenderBackoff(agentConfig *proto.AgentConfig) {
 	log.Debugf("update metric reporter client configuration to %+v", agentConfig)
-
+	if agentConfig.Details.Features != nil {
+		for _, feature := range agentConfig.Details.Features {
+			if feature == agent_config.FeatureMetricsSender {
+				r.readyToSend.Store(true)
+				break
+			}
+		}
+	}
 	if agentConfig.GetDetails() == nil || agentConfig.GetDetails().GetServer() == nil || agentConfig.GetDetails().GetServer().GetBackoff() == nil {
 		log.Debug("not updating metric reporter client configuration as new Agent backoff settings is nil")
 		return
