@@ -1188,7 +1188,7 @@ type metricNginxHTTPResponseCount struct {
 // init fills nginx.http.response.count metric with initial data.
 func (m *metricNginxHTTPResponseCount) init() {
 	m.data.SetName("nginx.http.response.count")
-	m.data.SetDescription("The total number of HTTP responses sent to clients, grouped by status code range, since the last collection interval.")
+	m.data.SetDescription("The total number of HTTP responses sent to clients since the last collection interval, grouped by status code range.")
 	m.data.SetUnit("responses")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
@@ -1241,7 +1241,7 @@ type metricNginxHTTPResponseStatus struct {
 // init fills nginx.http.response.status metric with initial data.
 func (m *metricNginxHTTPResponseStatus) init() {
 	m.data.SetName("nginx.http.response.status")
-	m.data.SetDescription("The total number of responses, grouped by status code range, since NGINX was last started or reloaded.")
+	m.data.SetDescription("The total number of responses since NGINX was last started or reloaded, grouped by status code range.")
 	m.data.SetUnit("responses")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)

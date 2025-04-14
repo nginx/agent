@@ -289,7 +289,7 @@ metrics:
       - nginx.zone.type
   nginx.http.response.count:
     enabled: true
-    description: The total number of HTTP responses sent to clients, grouped by status code range, since the last collection interval.
+    description: The total number of HTTP responses sent to clients since the last collection interval, grouped by status code range.
     gauge:
       value_type: int
     unit: "responses"
@@ -299,7 +299,7 @@ metrics:
       - nginx.zone.type
   nginx.http.response.status:
     enabled: true
-    description: The total number of responses, grouped by status code range, since NGINX was last started or reloaded.
+    description: The total number of responses since NGINX was last started or reloaded, grouped by status code range.
     sum:
       value_type: int
       monotonic: true

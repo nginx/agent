@@ -48,7 +48,7 @@ resourceMetrics:
                         stringValue: ACTIVE
               isMonotonic: true
             unit: connections
-          - description: The total number of responses, grouped by status code range, since NGINX was last started or reloaded.
+          - description: The total number of responses since NGINX was last started or reloaded, grouped by status code range.
             name: nginx.http.response.status
             sum:
               aggregationTemporality: 2
@@ -2132,12 +2132,12 @@ resourceMetrics:
                         stringValue: upstream_test_zone
               isMonotonic: true
             unit: deployments
-          - description: The total number of HTTP responses sent to clients, grouped by status code range, since the last collection interval.
+          - description: The total number of HTTP responses sent to clients since the last collection interval, grouped by status code range.
             name: nginx.http.response.count
             gauge:
               aggregationTemporality: 2
               dataPoints:
-                - asInt: "5"
+                - asInt: "0"
                   attributes:
                     - key: nginx.status_range
                       value:
@@ -2148,7 +2148,7 @@ resourceMetrics:
                     - key: nginx.zone.type
                       value:
                         stringValue: SERVER
-                - asInt: "29"
+                - asInt: "0"
                   attributes:
                     - key: nginx.status_range
                       value:
@@ -2170,7 +2170,7 @@ resourceMetrics:
                     - key: nginx.zone.type
                       value:
                         stringValue: SERVER
-                - asInt: "2"
+                - asInt: "0"
                   attributes:
                     - key: nginx.status_range
                       value:
@@ -2192,7 +2192,7 @@ resourceMetrics:
                     - key: nginx.zone.type
                       value:
                         stringValue: SERVER
-                - asInt: "7"
+                - asInt: "0"
                   attributes:
                     - key: nginx.status_range
                       value:
@@ -2203,7 +2203,7 @@ resourceMetrics:
                     - key: nginx.zone.type
                       value:
                         stringValue: LOCATION
-                - asInt: "31"
+                - asInt: "0"
                   attributes:
                     - key: nginx.status_range
                       value:
@@ -2225,7 +2225,7 @@ resourceMetrics:
                     - key: nginx.zone.type
                       value:
                         stringValue: LOCATION
-                - asInt: "3"
+                - asInt: "0"
                   attributes:
                     - key: nginx.status_range
                       value:

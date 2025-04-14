@@ -207,7 +207,7 @@ The total number of client requests received, since NGINX was last started or re
 
 ### nginx.http.response.count
 
-The total number of HTTP responses sent to clients, grouped by status code range, since the last collection interval.
+The total number of HTTP responses sent to clients since the last collection interval, grouped by status code range.
 
 | Unit | Metric Type | Value Type |
 | ---- | ----------- | ---------- |
@@ -223,7 +223,7 @@ The total number of HTTP responses sent to clients, grouped by status code range
 
 ### nginx.http.response.status
 
-The total number of responses, grouped by status code range, since NGINX was last started or reloaded.
+The total number of responses since NGINX was last started or reloaded, grouped by status code range.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |

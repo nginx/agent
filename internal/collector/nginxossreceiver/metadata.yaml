@@ -75,7 +75,7 @@ metrics:
       - nginx.connections.outcome
   nginx.http.response.count:
     enabled: true
-    description: The total number of HTTP responses, grouped by status code range, since the last collection interval.
+    description: The total number of HTTP responses since the last collection interval, grouped by status code range.
     gauge:
       value_type: int
     unit: "responses"

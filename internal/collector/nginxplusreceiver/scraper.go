@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -42,6 +43,7 @@ type nginxPlusScraper struct {
 	rb                            *metadata.ResourceBuilder
 	logger                        *zap.Logger
 	settings                      receiver.Settings
+	init                          sync.Once
 }
 
 type ResponseStatuses struct {
@@ -78,18 +80,62 @@ func newNginxPlusScraper(
 	}
 
 	return &nginxPlusScraper{
-		plusClient:                    plusClient,
-		settings:                      settings,
-		cfg:                           cfg,
-		mb:                            mb,
-		rb:                            rb,
-		logger:                        settings.Logger,
-		previousLocationZoneResponses: make(map[string]ResponseStatuses),
-		previousServerZoneResponses:   make(map[string]ResponseStatuses),
+		plusClient: plusClient,
+		settings:   settings,
+		cfg:        cfg,
+		mb:         mb,
+		rb:         rb,
+		logger:     settings.Logger,
 	}, nil
 }
 
+func (nps *nginxPlusScraper) createPreviousLocationZoneResponses(stats *plusapi.Stats) {
+	previousLocationZoneResponses := make(map[string]ResponseStatuses)
+	for lzName, lz := range stats.LocationZones {
+		respStatus := ResponseStatuses{
+			oneHundredStatusRange:   int64(lz.Responses.Responses1xx),
+			twoHundredStatusRange:   int64(lz.Responses.Responses2xx),
+			threeHundredStatusRange: int64(lz.Responses.Responses3xx),
+			fourHundredStatusRange:  int64(lz.Responses.Responses4xx),
+			fiveHundredStatusRange:  int64(lz.Responses.Responses5xx),
+		}
+
+		previousLocationZoneResponses[lzName] = respStatus
+	}
+
+	nps.previousLocationZoneResponses = previousLocationZoneResponses
+}
+
+func (nps *nginxPlusScraper) createPreviousServerZoneResponses(stats *plusapi.Stats) {
+	previousServerZoneResponses := make(map[string]ResponseStatuses)
+	for szName, sz := range stats.ServerZones {
+		respStatus := ResponseStatuses{
+			oneHundredStatusRange:   int64(sz.Responses.Responses1xx),
+			twoHundredStatusRange:   int64(sz.Responses.Responses2xx),
+			threeHundredStatusRange: int64(sz.Responses.Responses3xx),
+			fourHundredStatusRange:  int64(sz.Responses.Responses4xx),
+			fiveHundredStatusRange:  int64(sz.Responses.Responses5xx),
+		}
+
+		previousServerZoneResponses[szName] = respStatus
+	}
+
+	nps.previousServerZoneResponses = previousServerZoneResponses
+}
+
 func (nps *nginxPlusScraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
+	// nps.init.Do is ran only once, it is only ran the first time scrape is called to set the previous responses
+	// metric value
+	nps.init.Do(func() {
+		stats, err := nps.plusClient.GetStats(ctx)
+		if err != nil {
+			nps.logger.Warn("Failed to get stats", zap.Error(err))
+			return
+		}
+		nps.createPreviousServerZoneResponses(stats)
+		nps.createPreviousLocationZoneResponses(stats)
+	})
+
 	stats, err := nps.plusClient.GetStats(ctx)
 	if err != nil {
 		return pmetric.Metrics{}, fmt.Errorf("GET stats: %w", err)

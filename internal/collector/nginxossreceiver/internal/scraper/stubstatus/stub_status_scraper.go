@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/nginxinc/nginx-prometheus-exporter/client"
@@ -31,6 +32,7 @@ type NginxStubStatusScraper struct {
 	mb               *metadata.MetricsBuilder
 	rb               *metadata.ResourceBuilder
 	settings         receiver.Settings
+	init             sync.Once
 	previousRequests int
 }
 
@@ -70,7 +72,6 @@ func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) erro
 		}
 	}
 	s.httpClient = httpClient
-	s.previousRequests = 0
 
 	return nil
 }
@@ -80,6 +81,23 @@ func (s *NginxStubStatusScraper) Shutdown(_ context.Context) error {
 }
 
 func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error) {
+	// s.init.Do is ran only once, it is only ran the first time Scrape is called to set the previous requests
+	// metric value
+	s.init.Do(func() {
+		// Init client in scrape method in case there are transient errors in the constructor.
+		if s.client == nil {
+			s.client = client.NewNginxClient(s.httpClient, s.cfg.APIDetails.URL)
+		}
+
+		stats, err := s.client.GetStubStats()
+		if err != nil {
+			s.settings.Logger.Error("fetch nginx stats", zap.Error(err))
+			return
+		}
+
+		s.previousRequests = int(stats.Requests)
+	})
+
 	// Init client in scrape method in case there are transient errors in the constructor.
 	if s.client == nil {
 		s.client = client.NewNginxClient(s.httpClient, s.cfg.APIDetails.URL)

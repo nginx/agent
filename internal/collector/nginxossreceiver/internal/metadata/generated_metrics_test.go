@@ -176,7 +176,7 @@ func TestMetricsBuilder(t *testing.T) {
 					validatedMetrics["nginx.http.response.count"] = true
 					assert.Equal(t, pmetric.MetricTypeGauge, ms.At(i).Type())
 					assert.Equal(t, 1, ms.At(i).Gauge().DataPoints().Len())
-					assert.Equal(t, "The total number of HTTP responses, grouped by status code range, since the last collection interval.", ms.At(i).Description())
+					assert.Equal(t, "The total number of HTTP responses since the last collection interval, grouped by status code range.", ms.At(i).Description())
 					assert.Equal(t, "responses", ms.At(i).Unit())
 					dp := ms.At(i).Gauge().DataPoints().At(0)
 					assert.Equal(t, start, dp.StartTimestamp())

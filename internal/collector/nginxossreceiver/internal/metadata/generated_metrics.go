@@ -305,7 +305,7 @@ type metricNginxHTTPResponseCount struct {
 // init fills nginx.http.response.count metric with initial data.
 func (m *metricNginxHTTPResponseCount) init() {
 	m.data.SetName("nginx.http.response.count")
-	m.data.SetDescription("The total number of HTTP responses, grouped by status code range, since the last collection interval.")
+	m.data.SetDescription("The total number of HTTP responses since the last collection interval, grouped by status code range.")
 	m.data.SetUnit("responses")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)

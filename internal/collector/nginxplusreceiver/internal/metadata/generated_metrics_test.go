@@ -583,7 +583,7 @@ func TestMetricsBuilder(t *testing.T) {
 					validatedMetrics["nginx.http.response.count"] = true
 					assert.Equal(t, pmetric.MetricTypeGauge, ms.At(i).Type())
 					assert.Equal(t, 1, ms.At(i).Gauge().DataPoints().Len())
-					assert.Equal(t, "The total number of HTTP responses sent to clients, grouped by status code range, since the last collection interval.", ms.At(i).Description())
+					assert.Equal(t, "The total number of HTTP responses sent to clients since the last collection interval, grouped by status code range.", ms.At(i).Description())
 					assert.Equal(t, "responses", ms.At(i).Unit())
 					dp := ms.At(i).Gauge().DataPoints().At(0)
 					assert.Equal(t, start, dp.StartTimestamp())
@@ -604,7 +604,7 @@ func TestMetricsBuilder(t *testing.T) {
 					validatedMetrics["nginx.http.response.status"] = true
 					assert.Equal(t, pmetric.MetricTypeSum, ms.At(i).Type())
 					assert.Equal(t, 1, ms.At(i).Sum().DataPoints().Len())
-					assert.Equal(t, "The total number of responses, grouped by status code range, since NGINX was last started or reloaded.", ms.At(i).Description())
+					assert.Equal(t, "The total number of responses since NGINX was last started or reloaded, grouped by status code range.", ms.At(i).Description())
 					assert.Equal(t, "responses", ms.At(i).Unit())
 					assert.True(t, ms.At(i).Sum().IsMonotonic())
 					assert.Equal(t, pmetric.AggregationTemporalityCumulative, ms.At(i).Sum().AggregationTemporality())
