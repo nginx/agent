@@ -7,9 +7,18 @@ handle_term()
     echo "received TERM signal"
     echo "stopping nginx-agent ..."
     kill -TERM "${agent_pid}" 2>/dev/null
+    wait -n ${agent_pid}
 }
 
-trap 'handle_term' TERM
+handle_quit() {
+    echo "received QUIT signal"
+    echo "stopping nginx-agent ..."
+    kill -QUIT "${agent_pid}" 2>/dev/null
+    wait -n ${agent_pid}
+}
+
+trap 'handle_term' TERM 
+trap 'handle_quit' QUIT
 
 cat /etc/nginx-agent/nginx-agent.conf;
 
