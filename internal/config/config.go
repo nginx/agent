@@ -16,6 +16,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	uuidLibrary "github.com/nginx/agent/v3/pkg/id"
 	selfsignedcerts "github.com/nginx/agent/v3/pkg/tls"
@@ -115,12 +116,71 @@ func ResolveConfig() (*Config, error) {
 		Labels:             resolveLabels(),
 	}
 
+	checkCollectorConfiguration(collector, config)
+
 	slog.Debug("Agent config", "config", config)
 	slog.Info("Enabled features", "features", config.Features)
 	slog.Info("Excluded files from being watched for file changes", "exclude_files",
 		config.Watchers.FileWatcher.ExcludeFiles)
 
 	return config, nil
+}
+
+func checkCollectorConfiguration(collector *Collector, config *Config) {
+	if len(collector.Exporters.OtlpExporters) == 0 && collector.Exporters.PrometheusExporter == nil &&
+		collector.Exporters.Debug == nil && isGrpcClientConfigured(config) {
+		slog.Info("No collector configuration found in NGINX Agent config, command server configuration found." +
+			"Using default collector configuration")
+		defaultCollector(collector, config)
+	}
+}
+
+func defaultCollector(collector *Collector, config *Config) {
+	token := config.Command.Auth.Token
+	if config.Command.Auth.TokenPath != "" {
+		token = config.Command.Auth.TokenPath
+	}
+
+	collector.Receivers.HostMetrics = &HostMetrics{
+		Scrapers: &HostMetricsScrapers{
+			CPU:        &CPUScraper{},
+			Disk:       &DiskScraper{},
+			Filesystem: &FilesystemScraper{},
+			Memory:     &MemoryScraper{},
+			Network:    nil,
+		},
+		CollectionInterval: 1 * time.Minute,
+		InitialDelay:       1 * time.Second,
+	}
+
+	collector.Exporters.OtlpExporters = append(collector.Exporters.OtlpExporters, OtlpExporter{
+		Server:        config.Command.Server,
+		TLS:           config.Command.TLS,
+		Compression:   "",
+		Authenticator: "headers_setter",
+	})
+
+	header := []Header{
+		{
+			Action: "insert",
+			Key:    "authorization",
+			Value:  token,
+		},
+	}
+	collector.Extensions.HeadersSetter = &HeadersSetter{
+		Headers: header,
+	}
+}
+
+func isGrpcClientConfigured(agentConfig *Config) bool {
+	return agentConfig.Command != nil &&
+		agentConfig.Command.Server != nil &&
+		agentConfig.Command.Server.Host != "" &&
+		agentConfig.Command.Server.Port != 0 &&
+		agentConfig.Command.Server.Type == Grpc &&
+		agentConfig.Command.Auth != nil &&
+		(agentConfig.Command.Auth.Token != "" || agentConfig.Command.Auth.TokenPath != "") &&
+		agentConfig.Command.TLS != nil
 }
 
 func setVersion(version, commit string) {
