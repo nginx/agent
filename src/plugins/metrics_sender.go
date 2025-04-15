@@ -16,17 +16,19 @@ import (
 	models "github.com/nginx/agent/sdk/v2/proto/events"
 	"github.com/nginx/agent/v2/src/core"
 	"strings"
+	"sync"
 
 	log "github.com/sirupsen/logrus"
 	"go.uber.org/atomic"
 )
 
 type MetricsSender struct {
-	reporter    client.MetricReporter
-	pipeline    core.MessagePipeInterface
-	ctx         context.Context
-	started     *atomic.Bool
-	readyToSend *atomic.Bool
+	reporter      client.MetricReporter
+	pipeline      core.MessagePipeInterface
+	ctx           context.Context
+	started       *atomic.Bool
+	readyToSend   *atomic.Bool
+	readyToSendMu sync.RWMutex
 }
 
 func NewMetricsSender(reporter client.MetricReporter) *MetricsSender {
@@ -49,8 +51,10 @@ func (r *MetricsSender) Init(pipeline core.MessagePipeInterface) {
 
 func (r *MetricsSender) Close() {
 	log.Info("MetricsSender is wrapping up")
+	r.readyToSendMu.Lock()
 	r.started.Store(false)
 	r.readyToSend.Store(false)
+	defer r.readyToSendMu.Unlock()
 }
 
 func (r *MetricsSender) Info() *core.Info {
@@ -58,12 +62,12 @@ func (r *MetricsSender) Info() *core.Info {
 }
 
 func (r *MetricsSender) Process(msg *core.Message) {
-	if msg.Exact(core.AgentConnected) {
-		log.Debugf("MetricsSender AgentConnected Before: %v", r.readyToSend)
-		r.readyToSend.Store(true)
-		log.Debugf("MetricsSender AgentConnected After %v", r.readyToSend)
-		return
-	}
+	//if msg.Exact(core.AgentConnected) {
+	//	log.Debugf("MetricsSender AgentConnected Before: %v", r.readyToSend)
+	//	r.readyToSend.Store(true)
+	//	log.Debugf("MetricsSender AgentConnected After %v", r.readyToSend)
+	//	return
+	//}
 
 	if msg.Exact(core.CommMetrics) {
 		payloads, ok := msg.Data().([]core.Payload)
@@ -115,11 +119,14 @@ func (r *MetricsSender) Process(msg *core.Message) {
 func (r *MetricsSender) metricSenderBackoff(agentConfig *proto.AgentConfig) {
 	log.Debugf("update metric reporter client configuration to %+v", agentConfig)
 	if agentConfig.Details.Features != nil {
-		for _, feature := range agentConfig.Details.Features {
-			if feature == agent_config.FeatureMetricsSender {
-				r.readyToSend.Store(true)
-				break
-			}
+		if r.isFeatureEnabled(agentConfig) {
+			r.readyToSendMu.Lock()
+			r.readyToSend.Store(true)
+			r.readyToSendMu.Unlock()
+		} else {
+			r.readyToSendMu.Lock()
+			r.readyToSend.Store(false)
+			r.readyToSendMu.Unlock()
 		}
 	}
 	if agentConfig.GetDetails() == nil || agentConfig.GetDetails().GetServer() == nil || agentConfig.GetDetails().GetServer().GetBackoff() == nil {
@@ -133,4 +140,17 @@ func (r *MetricsSender) metricSenderBackoff(agentConfig *proto.AgentConfig) {
 
 func (r *MetricsSender) Subscriptions() []string {
 	return []string{core.CommMetrics, core.AgentConnected, core.AgentConfigChanged}
+}
+
+func (r *MetricsSender) isFeatureEnabled(agentConfig *proto.AgentConfig) bool {
+	var isFeatureEnabled bool
+	if agentConfig.Details.Features != nil {
+		for _, feature := range agentConfig.Details.Features {
+			if feature == agent_config.FeatureMetricsSender {
+				isFeatureEnabled = true
+				break
+			}
+		}
+	}
+	return isFeatureEnabled
 }
