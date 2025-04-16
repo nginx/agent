@@ -149,7 +149,7 @@ func (f *Features) enableMetricsFeature(_ string) []core.Plugin {
 
 		metrics := NewMetrics(f.conf, f.env, f.binary, f.processes)
 		metricsThrottle := NewMetricsThrottle(f.conf, f.env)
-		metricsSender := NewMetricsSender(f.commander)
+		metricsSender := NewMetricsSender(f.commander, conf)
 
 		return []core.Plugin{metrics, metricsThrottle, metricsSender}
 	} else {
@@ -202,7 +202,7 @@ func (f *Features) enableMetricsSenderFeature(_ string) []core.Plugin {
 		}
 		f.conf = conf
 
-		metricsSender := NewMetricsSender(f.commander)
+		metricsSender := NewMetricsSender(f.commander, conf)
 
 		return []core.Plugin{metricsSender}
 	} else {

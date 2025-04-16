@@ -39,7 +39,7 @@ func LoadPlugins(commander client.Commander, binary core.NginxBinary, env core.E
 		fmt.Println(fmt.Sprintf("metrics enabled : %t", loadedConfig.IsExtensionEnabled(agent_config.FeatureMetrics)))
 		fmt.Println(fmt.Sprintf("metrics-sender enabled : %t", loadedConfig.IsExtensionEnabled(agent_config.FeatureMetricsSender)))
 		corePlugins = append(corePlugins,
-			NewMetricsSender(reporter),
+			NewMetricsSender(reporter, loadedConfig),
 		)
 	}
 

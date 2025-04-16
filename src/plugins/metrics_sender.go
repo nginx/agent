@@ -15,6 +15,7 @@ import (
 	"github.com/nginx/agent/sdk/v2/proto"
 	models "github.com/nginx/agent/sdk/v2/proto/events"
 	"github.com/nginx/agent/v2/src/core"
+	"github.com/nginx/agent/v2/src/core/config"
 	"strings"
 	"sync"
 
@@ -29,13 +30,15 @@ type MetricsSender struct {
 	started       *atomic.Bool
 	readyToSend   *atomic.Bool
 	readyToSendMu sync.RWMutex
+	conf          *config.Config
 }
 
-func NewMetricsSender(reporter client.MetricReporter) *MetricsSender {
+func NewMetricsSender(reporter client.MetricReporter, config *config.Config) *MetricsSender {
 	return &MetricsSender{
 		reporter:    reporter,
 		started:     atomic.NewBool(false),
 		readyToSend: atomic.NewBool(false),
+		conf:        config,
 	}
 }
 
@@ -62,13 +65,17 @@ func (r *MetricsSender) Info() *core.Info {
 }
 
 func (r *MetricsSender) Process(msg *core.Message) {
-	//if msg.Exact(core.AgentConnected) {
-	//	log.Debugf("MetricsSender AgentConnected Before: %v", r.readyToSend)
-	//	r.readyToSend.Store(true)
-	//	log.Debugf("MetricsSender AgentConnected After %v", r.readyToSend)
-	//	return
-	//}
-
+	if msg.Exact(core.AgentConnected) {
+		if r.conf.Features != nil && r.isFeatureEnabled(r.conf.Features) {
+			r.readyToSendMu.Lock()
+			r.readyToSend.Store(true)
+			r.readyToSendMu.Unlock()
+		} else {
+			r.readyToSendMu.Lock()
+			r.readyToSend.Store(false)
+			r.readyToSendMu.Unlock()
+		}
+	}
 	if msg.Exact(core.CommMetrics) {
 		payloads, ok := msg.Data().([]core.Payload)
 		if !ok {
@@ -107,9 +114,9 @@ func (r *MetricsSender) Process(msg *core.Message) {
 			}
 		}
 	} else if msg.Exact(core.AgentConfigChanged) {
-		switch config := msg.Data().(type) {
+		switch agentConfig := msg.Data().(type) {
 		case *proto.AgentConfig:
-			r.metricSenderBackoff(config)
+			r.metricSenderBackoff(agentConfig)
 		default:
 			log.Warnf("metrics sender expected %T type, but got: %T", &proto.AgentConfig{}, msg.Data())
 		}
@@ -119,7 +126,7 @@ func (r *MetricsSender) Process(msg *core.Message) {
 func (r *MetricsSender) metricSenderBackoff(agentConfig *proto.AgentConfig) {
 	log.Debugf("update metric reporter client configuration to %+v", agentConfig)
 	if agentConfig.Details.Features != nil {
-		if r.isFeatureEnabled(agentConfig) {
+		if r.isFeatureEnabled(agentConfig.Details.Features) {
 			r.readyToSendMu.Lock()
 			r.readyToSend.Store(true)
 			r.readyToSendMu.Unlock()
@@ -142,10 +149,10 @@ func (r *MetricsSender) Subscriptions() []string {
 	return []string{core.CommMetrics, core.AgentConnected, core.AgentConfigChanged}
 }
 
-func (r *MetricsSender) isFeatureEnabled(agentConfig *proto.AgentConfig) bool {
+func (r *MetricsSender) isFeatureEnabled(features []string) bool {
 	var isFeatureEnabled bool
-	if agentConfig.Details.Features != nil {
-		for _, feature := range agentConfig.Details.Features {
+	if features != nil {
+		for _, feature := range features {
 			if feature == agent_config.FeatureMetricsSender {
 				isFeatureEnabled = true
 				break

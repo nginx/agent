@@ -10,6 +10,7 @@ package plugins
 import (
 	"context"
 	"errors"
+	"github.com/nginx/agent/v2/src/core/config"
 	"reflect"
 	"testing"
 	"time"
@@ -43,7 +44,7 @@ func TestMetricsSenderSendMetrics(t *testing.T) {
 			ctx := context.TODO()
 			mockMetricsReportClient := tutils.NewMockMetricsReportClient()
 			mockMetricsReportClient.Mock.On("Send", ctx, mock.Anything).Return(test.err)
-			pluginUnderTest := NewMetricsSender(mockMetricsReportClient)
+			pluginUnderTest := NewMetricsSender(mockMetricsReportClient, &config.Config{ClientID: "12345", Features: []string{"metrics-sender"}})
 
 			assert.False(t, pluginUnderTest.started.Load())
 			assert.False(t, pluginUnderTest.readyToSend.Load())
@@ -110,7 +111,7 @@ func TestMetricsSenderBackoff(t *testing.T) {
 		t.Run(test.name, func(_ *testing.T) {
 			ctx := context.TODO()
 			mockMetricsReportClient := tutils.NewMockMetricsReportClient()
-			pluginUnderTest := NewMetricsSender(mockMetricsReportClient)
+			pluginUnderTest := NewMetricsSender(mockMetricsReportClient, &config.Config{ClientID: "12345", Features: []string{"metrics-sender"}})
 
 			pluginUnderTest.Init(core.NewMockMessagePipe(ctx))
 			pluginUnderTest.Process(core.NewMessage(core.AgentConnected, nil))
@@ -130,6 +131,6 @@ func TestMetricsSenderBackoff(t *testing.T) {
 }
 
 func TestMetricsSenderSubscriptions(t *testing.T) {
-	pluginUnderTest := NewMetricsSender(tutils.NewMockMetricsReportClient())
+	pluginUnderTest := NewMetricsSender(tutils.NewMockMetricsReportClient(), &config.Config{ClientID: "12345"})
 	assert.Equal(t, []string{core.CommMetrics, core.AgentConnected, core.AgentConfigChanged}, pluginUnderTest.Subscriptions())
 }
