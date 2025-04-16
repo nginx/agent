@@ -18,6 +18,8 @@ import (
 	"github.com/nginx/agent/v2/src/core/config"
 
 	"github.com/gogo/protobuf/types"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type Collector interface {
@@ -402,6 +404,11 @@ func GenerateMetricsReportBundle(entities []*StatsEntityWrapper) core.Payload {
 	reportMap := make(map[proto.MetricsReport_Type]*proto.MetricsReport, 0)
 
 	for _, entity := range entities {
+		if entity == nil || entity.Data == nil {
+			log.Debugf("Skipping nil entity in metrics generation")
+			continue
+		}
+
 		if _, ok := reportMap[entity.Type]; !ok {
 			reportMap[entity.Type] = &proto.MetricsReport{
 				Meta: &proto.Metadata{
