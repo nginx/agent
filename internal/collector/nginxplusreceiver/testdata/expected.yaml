@@ -2137,7 +2137,7 @@ resourceMetrics:
             gauge:
               aggregationTemporality: 2
               dataPoints:
-                - asInt: "0"
+                - asInt: "2"
                   attributes:
                     - key: nginx.status_range
                       value:
@@ -2148,7 +2148,7 @@ resourceMetrics:
                     - key: nginx.zone.type
                       value:
                         stringValue: SERVER
-                - asInt: "0"
+                - asInt: "29"
                   attributes:
                     - key: nginx.status_range
                       value:
@@ -2170,7 +2170,7 @@ resourceMetrics:
                     - key: nginx.zone.type
                       value:
                         stringValue: SERVER
-                - asInt: "0"
+                - asInt: "1"
                   attributes:
                     - key: nginx.status_range
                       value:
@@ -2192,7 +2192,7 @@ resourceMetrics:
                     - key: nginx.zone.type
                       value:
                         stringValue: SERVER
-                - asInt: "0"
+                - asInt: "4"
                   attributes:
                     - key: nginx.status_range
                       value:
@@ -2203,7 +2203,7 @@ resourceMetrics:
                     - key: nginx.zone.type
                       value:
                         stringValue: LOCATION
-                - asInt: "0"
+                - asInt: "2"
                   attributes:
                     - key: nginx.status_range
                       value:
@@ -2225,7 +2225,7 @@ resourceMetrics:
                     - key: nginx.zone.type
                       value:
                         stringValue: LOCATION
-                - asInt: "0"
+                - asInt: "2"
                   attributes:
                     - key: nginx.status_range
                       value:
