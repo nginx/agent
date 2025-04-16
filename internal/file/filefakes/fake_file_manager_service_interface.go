@@ -28,19 +28,19 @@ type FakeFileManagerServiceInterface struct {
 		result1 model.WriteStatus
 		result2 error
 	}
-	DetermineFileActionsStub        func(map[string]*v1.File, map[string]*v1.File) (map[string]*v1.File, map[string][]byte, error)
+	DetermineFileActionsStub        func(map[string]*v1.File, map[string]*model.FileCache) (map[string]*model.FileCache, map[string][]byte, error)
 	determineFileActionsMutex       sync.RWMutex
 	determineFileActionsArgsForCall []struct {
 		arg1 map[string]*v1.File
-		arg2 map[string]*v1.File
+		arg2 map[string]*model.FileCache
 	}
 	determineFileActionsReturns struct {
-		result1 map[string]*v1.File
+		result1 map[string]*model.FileCache
 		result2 map[string][]byte
 		result3 error
 	}
 	determineFileActionsReturnsOnCall map[int]struct {
-		result1 map[string]*v1.File
+		result1 map[string]*model.FileCache
 		result2 map[string][]byte
 		result3 error
 	}
@@ -196,12 +196,12 @@ func (fake *FakeFileManagerServiceInterface) ConfigApplyReturnsOnCall(i int, res
 	}{result1, result2}
 }
 
-func (fake *FakeFileManagerServiceInterface) DetermineFileActions(arg1 map[string]*v1.File, arg2 map[string]*v1.File) (map[string]*v1.File, map[string][]byte, error) {
+func (fake *FakeFileManagerServiceInterface) DetermineFileActions(arg1 map[string]*v1.File, arg2 map[string]*model.FileCache) (map[string]*model.FileCache, map[string][]byte, error) {
 	fake.determineFileActionsMutex.Lock()
 	ret, specificReturn := fake.determineFileActionsReturnsOnCall[len(fake.determineFileActionsArgsForCall)]
 	fake.determineFileActionsArgsForCall = append(fake.determineFileActionsArgsForCall, struct {
 		arg1 map[string]*v1.File
-		arg2 map[string]*v1.File
+		arg2 map[string]*model.FileCache
 	}{arg1, arg2})
 	stub := fake.DetermineFileActionsStub
 	fakeReturns := fake.determineFileActionsReturns
@@ -222,43 +222,43 @@ func (fake *FakeFileManagerServiceInterface) DetermineFileActionsCallCount() int
 	return len(fake.determineFileActionsArgsForCall)
 }
 
-func (fake *FakeFileManagerServiceInterface) DetermineFileActionsCalls(stub func(map[string]*v1.File, map[string]*v1.File) (map[string]*v1.File, map[string][]byte, error)) {
+func (fake *FakeFileManagerServiceInterface) DetermineFileActionsCalls(stub func(map[string]*v1.File, map[string]*model.FileCache) (map[string]*model.FileCache, map[string][]byte, error)) {
 	fake.determineFileActionsMutex.Lock()
 	defer fake.determineFileActionsMutex.Unlock()
 	fake.DetermineFileActionsStub = stub
 }
 
-func (fake *FakeFileManagerServiceInterface) DetermineFileActionsArgsForCall(i int) (map[string]*v1.File, map[string]*v1.File) {
+func (fake *FakeFileManagerServiceInterface) DetermineFileActionsArgsForCall(i int) (map[string]*v1.File, map[string]*model.FileCache) {
 	fake.determineFileActionsMutex.RLock()
 	defer fake.determineFileActionsMutex.RUnlock()
 	argsForCall := fake.determineFileActionsArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeFileManagerServiceInterface) DetermineFileActionsReturns(result1 map[string]*v1.File, result2 map[string][]byte, result3 error) {
+func (fake *FakeFileManagerServiceInterface) DetermineFileActionsReturns(result1 map[string]*model.FileCache, result2 map[string][]byte, result3 error) {
 	fake.determineFileActionsMutex.Lock()
 	defer fake.determineFileActionsMutex.Unlock()
 	fake.DetermineFileActionsStub = nil
 	fake.determineFileActionsReturns = struct {
-		result1 map[string]*v1.File
+		result1 map[string]*model.FileCache
 		result2 map[string][]byte
 		result3 error
 	}{result1, result2, result3}
 }
 
-func (fake *FakeFileManagerServiceInterface) DetermineFileActionsReturnsOnCall(i int, result1 map[string]*v1.File, result2 map[string][]byte, result3 error) {
+func (fake *FakeFileManagerServiceInterface) DetermineFileActionsReturnsOnCall(i int, result1 map[string]*model.FileCache, result2 map[string][]byte, result3 error) {
 	fake.determineFileActionsMutex.Lock()
 	defer fake.determineFileActionsMutex.Unlock()
 	fake.DetermineFileActionsStub = nil
 	if fake.determineFileActionsReturnsOnCall == nil {
 		fake.determineFileActionsReturnsOnCall = make(map[int]struct {
-			result1 map[string]*v1.File
+			result1 map[string]*model.FileCache
 			result2 map[string][]byte
 			result3 error
 		})
 	}
 	fake.determineFileActionsReturnsOnCall[i] = struct {
-		result1 map[string]*v1.File
+		result1 map[string]*model.FileCache
 		result2 map[string][]byte
 		result3 error
 	}{result1, result2, result3}
