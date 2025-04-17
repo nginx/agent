@@ -15,5 +15,6 @@ const (
 	FeatureMetricsInstance  = "metrics-instance"
 	FeatureFileWatcher      = "file-watcher"
 	FeatureAPIAction        = "api-action"
-	FeatureLogsNap          = "logs-nap"
+	// experimental feature
+	FeatureLogsNap = "logs-nap"
 )
