@@ -27,8 +27,9 @@ func TestMetricsBuilderConfig(t *testing.T) {
 				Metrics: MetricsConfig{
 					NginxHTTPConnectionCount: MetricConfig{Enabled: true},
 					NginxHTTPConnections:     MetricConfig{Enabled: true},
+					NginxHTTPRequestCount:    MetricConfig{Enabled: true},
 					NginxHTTPRequests:        MetricConfig{Enabled: true},
-					NginxHTTPResponseStatus:  MetricConfig{Enabled: true},
+					NginxHTTPResponseCount:   MetricConfig{Enabled: true},
 				},
 				ResourceAttributes: ResourceAttributesConfig{
 					InstanceID:   ResourceAttributeConfig{Enabled: true},
@@ -42,8 +43,9 @@ func TestMetricsBuilderConfig(t *testing.T) {
 				Metrics: MetricsConfig{
 					NginxHTTPConnectionCount: MetricConfig{Enabled: false},
 					NginxHTTPConnections:     MetricConfig{Enabled: false},
+					NginxHTTPRequestCount:    MetricConfig{Enabled: false},
 					NginxHTTPRequests:        MetricConfig{Enabled: false},
-					NginxHTTPResponseStatus:  MetricConfig{Enabled: false},
+					NginxHTTPResponseCount:   MetricConfig{Enabled: false},
 				},
 				ResourceAttributes: ResourceAttributesConfig{
 					InstanceID:   ResourceAttributeConfig{Enabled: false},
