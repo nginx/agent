@@ -91,7 +91,7 @@ func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error
 
 		stats, err := s.client.GetStubStats()
 		if err != nil {
-			s.settings.Logger.Error("fetch nginx stats", zap.Error(err))
+			s.settings.Logger.Error("Failed to get stats from stub status API", zap.Error(err))
 			return
 		}
 
@@ -105,7 +105,7 @@ func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error
 
 	stats, err := s.client.GetStubStats()
 	if err != nil {
-		s.settings.Logger.Error("fetch nginx stats", zap.Error(err))
+		s.settings.Logger.Error("Failed to get stats from stub status API", zap.Error(err))
 		return pmetric.Metrics{}, err
 	}
 

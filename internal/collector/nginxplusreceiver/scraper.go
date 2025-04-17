@@ -129,7 +129,7 @@ func (nps *nginxPlusScraper) scrape(ctx context.Context) (pmetric.Metrics, error
 	nps.init.Do(func() {
 		stats, err := nps.plusClient.GetStats(ctx)
 		if err != nil {
-			nps.logger.Warn("Failed to get stats", zap.Error(err))
+			nps.logger.Error("Failed to get stats from plus API", zap.Error(err))
 			return
 		}
 		nps.createPreviousServerZoneResponses(stats)
@@ -138,7 +138,7 @@ func (nps *nginxPlusScraper) scrape(ctx context.Context) (pmetric.Metrics, error
 
 	stats, err := nps.plusClient.GetStats(ctx)
 	if err != nil {
-		return pmetric.Metrics{}, fmt.Errorf("GET stats: %w", err)
+		return pmetric.Metrics{}, fmt.Errorf("failed to get stats from plus API: %w", err)
 	}
 
 	nps.rb.SetInstanceID(nps.settings.ID.Name())
