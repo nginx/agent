@@ -7,6 +7,7 @@ package file
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -37,7 +38,16 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . fileManagerServiceInterface
 
-const maxAttempts = 5
+const (
+	maxAttempts = 5
+	dirPerm     = 0o755
+	filePerm    = 0o600
+)
+
+var (
+	manifestDirPath  = "/var/lib/nginx-agent"
+	manifestFilePath = manifestDirPath + "/manifest.json"
+)
 
 type (
 	fileOperator interface {
@@ -313,9 +323,13 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	if fileErr != nil {
 		return model.RollbackRequired, fileErr
 	}
-
+	fileOverviewFiles := files.ConvertToMapOfFiles(fileOverview.GetFiles())
 	// Update map of current files on disk
-	fms.UpdateCurrentFilesOnDisk(files.ConvertToMapOfFiles(fileOverview.GetFiles()))
+	fms.UpdateCurrentFilesOnDisk(fileOverviewFiles)
+	manifestFileErr := fms.UpdateManifestFile(fileOverviewFiles)
+	if manifestFileErr != nil {
+		return model.RollbackRequired, manifestFileErr
+	}
 
 	return model.OK, nil
 }
@@ -325,8 +339,10 @@ func (fms *FileManagerService) ClearCache() {
 	clear(fms.fileActions)
 }
 
+// nolint:revive,cyclop
 func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) error {
 	slog.InfoContext(ctx, "Rolling back config for instance", "instanceid", instanceID)
+	areFilesUpdated := false
 	fms.filesMutex.Lock()
 	defer fms.filesMutex.Unlock()
 	for _, file := range fms.fileActions {
@@ -338,11 +354,11 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 
 			// currentFilesOnDisk needs to be updated after rollback action is performed
 			delete(fms.currentFilesOnDisk, file.GetFileMeta().GetName())
+			areFilesUpdated = true
 
 			continue
 		case mpi.File_FILE_ACTION_DELETE, mpi.File_FILE_ACTION_UPDATE:
 			content := fms.rollbackFileContents[file.GetFileMeta().GetName()]
-
 			err := fms.fileOperator.Write(ctx, content, file.GetFileMeta())
 			if err != nil {
 				return err
@@ -351,10 +367,18 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 			// currentFilesOnDisk needs to be updated after rollback action is performed
 			file.GetFileMeta().Hash = files.GenerateHash(content)
 			fms.currentFilesOnDisk[file.GetFileMeta().GetName()] = file
+			areFilesUpdated = true
 		case mpi.File_FILE_ACTION_UNSPECIFIED, mpi.File_FILE_ACTION_UNCHANGED:
 			fallthrough
 		default:
 			slog.DebugContext(ctx, "File Action not implemented")
+		}
+	}
+
+	if areFilesUpdated {
+		manifestFileErr := fms.UpdateManifestFile(fms.currentFilesOnDisk)
+		if manifestFileErr != nil {
+			return manifestFileErr
 		}
 	}
 
@@ -446,7 +470,7 @@ func (fms *FileManagerService) checkAllowedDirectory(checkFiles []*mpi.File) err
 
 // DetermineFileActions compares two sets of files to determine the file action for each file. Returns a map of files
 // that have changed and a map of the contents for each updated and deleted file. Key to both maps is file path
-// nolint: revive
+// nolint: revive,cyclop
 func (fms *FileManagerService) DetermineFileActions(currentFiles, modifiedFiles map[string]*mpi.File) (
 	map[string]*mpi.File, map[string][]byte, error,
 ) {
@@ -461,26 +485,31 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles, modifiedFiles 
 	fileDiff := make(map[string]*mpi.File)  // Files that have changed, key is file name
 	fileContents := make(map[string][]byte) // contents of the file, key is file name
 
-	// if file is in currentFiles but not in modified files, file has been deleted
-	// copy contents, set file action
-	for _, currentFile := range currentFiles {
-		fileName := currentFile.GetFileMeta().GetName()
-		_, ok := modifiedFiles[fileName]
+	manifestFiles, manifestFileErr := fms.manifestFile(currentFiles)
 
-		if !ok {
+	if manifestFileErr != nil && manifestFiles == nil {
+		return nil, nil, manifestFileErr
+	}
+	// if file is in manifestFiles but not in modified files, file has been deleted
+	// copy contents, set file action
+	for fileName, currentFile := range manifestFiles {
+		_, exists := modifiedFiles[fileName]
+
+		if !exists {
+			// Read file contents before marking it deleted
 			fileContent, readErr := os.ReadFile(fileName)
 			if readErr != nil {
 				return nil, nil, fmt.Errorf("error reading file %s, error: %w", fileName, readErr)
 			}
 			fileContents[fileName] = fileContent
 			currentFile.Action = &deleteAction
-			fileDiff[currentFile.GetFileMeta().GetName()] = currentFile
+			fileDiff[fileName] = currentFile
 		}
 	}
 
 	for _, file := range modifiedFiles {
 		fileName := file.GetFileMeta().GetName()
-		currentFile, ok := currentFiles[file.GetFileMeta().GetName()]
+		currentFile, ok := manifestFiles[file.GetFileMeta().GetName()]
 		// default to unchanged action
 		file.Action = &unchangedAction
 
@@ -519,5 +548,100 @@ func (fms *FileManagerService) UpdateCurrentFilesOnDisk(currentFiles map[string]
 
 	for _, file := range currentFiles {
 		fms.currentFilesOnDisk[file.GetFileMeta().GetName()] = file
+	}
+}
+
+func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.File) (err error) {
+	manifestFiles := fms.convertToManifestFileMap(currentFiles)
+	manifestJSON, err := json.MarshalIndent(manifestFiles, "", "  ")
+	if err != nil {
+		return fmt.Errorf("unable to marshal manifest file json: %w", err)
+	}
+
+	// 0755 allows read/execute for all, write for owner
+	if err = os.MkdirAll(manifestDirPath, dirPerm); err != nil {
+		return fmt.Errorf("unable to create directory %s: %w", manifestDirPath, err)
+	}
+
+	// 0600 ensures only root can read/write
+	newFile, err := os.OpenFile(manifestFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, filePerm)
+	if err != nil {
+		return fmt.Errorf("failed to read manifest file: %w", err)
+	}
+	defer newFile.Close()
+
+	_, err = newFile.Write(manifestJSON)
+	if err != nil {
+		return fmt.Errorf("failed to write manifest file: %w", err)
+	}
+
+	return nil
+}
+
+func (fms *FileManagerService) manifestFile(currentFiles map[string]*mpi.File) (map[string]*mpi.File, error) {
+	if _, err := os.Stat(manifestFilePath); err != nil {
+		return currentFiles, err // Return current files if manifest directory still doesn't exist
+	}
+
+	file, err := os.ReadFile(manifestFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read manifest file: %w", err)
+	}
+
+	var manifestFiles map[string]*model.ManifestFile
+
+	err = json.Unmarshal(file, &manifestFiles)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse manifest file: %w", err)
+	}
+
+	fileMap := fms.convertToFileMap(manifestFiles)
+
+	return fileMap, nil
+}
+
+func (fms *FileManagerService) convertToManifestFileMap(
+	currentFiles map[string]*mpi.File,
+) map[string]*model.ManifestFile {
+	manifestFileMap := make(map[string]*model.ManifestFile)
+
+	for name, file := range currentFiles {
+		if file == nil || file.GetFileMeta() == nil {
+			continue
+		}
+		manifestFile := fms.convertToManifestFile(file)
+		manifestFileMap[name] = manifestFile
+	}
+
+	return manifestFileMap
+}
+
+func (fms *FileManagerService) convertToManifestFile(file *mpi.File) *model.ManifestFile {
+	return &model.ManifestFile{
+		ManifestFileMeta: &model.ManifestFileMeta{
+			Name: file.GetFileMeta().GetName(),
+			Size: file.GetFileMeta().GetSize(),
+			Hash: file.GetFileMeta().GetHash(),
+		},
+	}
+}
+
+func (fms *FileManagerService) convertToFileMap(manifestFiles map[string]*model.ManifestFile) map[string]*mpi.File {
+	currentFileMap := make(map[string]*mpi.File)
+	for name, manifestFile := range manifestFiles {
+		currentFile := fms.convertToFile(manifestFile)
+		currentFileMap[name] = currentFile
+	}
+
+	return currentFileMap
+}
+
+func (fms *FileManagerService) convertToFile(manifestFile *model.ManifestFile) *mpi.File {
+	return &mpi.File{
+		FileMeta: &mpi.FileMeta{
+			Name: manifestFile.ManifestFileMeta.Name,
+			Hash: manifestFile.ManifestFileMeta.Hash,
+			Size: manifestFile.ManifestFileMeta.Size,
+		},
 	}
 }
