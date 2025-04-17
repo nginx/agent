@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"sort"
 	"testing"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -260,6 +261,7 @@ var (
 `
 )
 
+// nolint: maintidx
 func TestNginxConfigParser_Parse(t *testing.T) {
 	ctx := context.Background()
 	dir := t.TempDir()
@@ -286,6 +288,20 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 	allowedFile := helpers.CreateFileWithErrorCheck(t, dir, "file_allowed.conf")
 	defer helpers.RemoveFileWithErrorCheck(t, allowedFile.Name())
 	fileMetaAllowedFiles, err := files.FileMeta(allowedFile.Name())
+	require.NoError(t, err)
+
+	_, cert := helpers.GenerateSelfSignedCert(t)
+	certContents := helpers.Cert{Name: "nginx.cert", Type: "CERTIFICATE", Contents: cert}
+	certFile := helpers.WriteCertFiles(t, dir, certContents)
+	require.NotNil(t, certFile)
+	fileMetaCertFiles, err := files.FileMetaWithCertificate(certFile)
+	require.NoError(t, err)
+
+	_, diffCert := helpers.GenerateSelfSignedCert(t)
+	diffCertContents := helpers.Cert{Name: "nginx1.cert", Type: "CERTIFICATE", Contents: diffCert}
+	diffCertFile := helpers.WriteCertFiles(t, dir, diffCertContents)
+	require.NotNil(t, diffCertFile)
+	diffFileMetaCertFiles, err := files.FileMetaWithCertificate(diffCertFile)
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -368,6 +384,125 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			},
 			allowedDirectories: []string{dir},
 		},
+		{
+			name:     "Test 4: Check Parser for SSL Certs",
+			instance: protos.GetNginxPlusInstance([]string{}),
+			content: testconfig.GetNginxConfigWithSSLCerts(
+				errorLog.Name(),
+				accessLog.Name(),
+				certFile,
+			),
+			expectedConfigContext: &model.NginxConfigContext{
+				StubStatus: &model.APIDetails{},
+				PlusAPI:    &model.APIDetails{},
+				InstanceID: protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				Files: []*mpi.File{
+					{
+						FileMeta: fileMetaCertFiles,
+					},
+				},
+				AccessLogs: []*model.AccessLog{
+					{
+						Name: accessLog.Name(),
+						Format: "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent " +
+							"\"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\" \"$bytes_sent\" " +
+							"\"$request_length\" \"$request_time\" \"$gzip_ratio\" $server_protocol ",
+						Permissions: "0600",
+						Readable:    true,
+					},
+				},
+				ErrorLogs: []*model.ErrorLog{
+					{
+						Name:        errorLog.Name(),
+						Permissions: "0600",
+						Readable:    true,
+					},
+				},
+				NAPSysLogServers: nil,
+			},
+			allowedDirectories: []string{dir},
+		},
+		{
+			name:     "Test 5: Check for multiple different SSL Certs",
+			instance: protos.GetNginxPlusInstance([]string{}),
+			content: testconfig.GetNginxConfigWithMultipleSSLCerts(
+				errorLog.Name(),
+				accessLog.Name(),
+				certFile,
+				diffCertFile,
+			),
+			expectedConfigContext: &model.NginxConfigContext{
+				StubStatus: &model.APIDetails{},
+				PlusAPI:    &model.APIDetails{},
+				InstanceID: protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				Files: []*mpi.File{
+					{
+						FileMeta: fileMetaCertFiles,
+					},
+					{
+						FileMeta: diffFileMetaCertFiles,
+					},
+				},
+				AccessLogs: []*model.AccessLog{
+					{
+						Name: accessLog.Name(),
+						Format: "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent " +
+							"\"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\" \"$bytes_sent\" " +
+							"\"$request_length\" \"$request_time\" \"$gzip_ratio\" $server_protocol ",
+						Permissions: "0600",
+						Readable:    true,
+					},
+				},
+				ErrorLogs: []*model.ErrorLog{
+					{
+						Name:        errorLog.Name(),
+						Permissions: "0600",
+						Readable:    true,
+					},
+				},
+				NAPSysLogServers: nil,
+			},
+			allowedDirectories: []string{dir},
+		},
+		{
+			name:     "Test 6: Check for multiple same SSL Certs",
+			instance: protos.GetNginxPlusInstance([]string{}),
+			content: testconfig.GetNginxConfigWithMultipleSSLCerts(
+				errorLog.Name(),
+				accessLog.Name(),
+				certFile,
+				certFile,
+			),
+			expectedConfigContext: &model.NginxConfigContext{
+				StubStatus: &model.APIDetails{},
+				PlusAPI:    &model.APIDetails{},
+				InstanceID: protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				Files: []*mpi.File{
+					{
+						FileMeta: fileMetaCertFiles,
+					},
+				},
+				AccessLogs: []*model.AccessLog{
+					{
+						Name: accessLog.Name(),
+						Format: "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent " +
+							"\"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\" \"$bytes_sent\" " +
+							"\"$request_length\" \"$request_time\" \"$gzip_ratio\" $server_protocol ",
+						Permissions: "0600",
+						Readable:    true,
+					},
+				},
+				ErrorLogs: []*model.ErrorLog{
+					{
+						Name:        errorLog.Name(),
+						Permissions: "0600",
+						Readable:    true,
+					},
+				},
+				NAPSysLogServers: nil,
+			},
+			allowedDirectories: []string{dir},
+		},
 	}
 
 	for _, test := range tests {
@@ -391,6 +526,11 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			result, parseError := nginxConfig.Parse(ctx, test.instance)
 			require.NoError(t, parseError)
 
+			sort.Slice(test.expectedConfigContext.Files, func(i, j int) bool {
+				return test.expectedConfigContext.Files[i].GetFileMeta().GetName() >
+					test.expectedConfigContext.Files[j].GetFileMeta().GetName()
+			})
+
 			assert.ElementsMatch(t, test.expectedConfigContext.Files, result.Files)
 			assert.Equal(t, test.expectedConfigContext.NAPSysLogServers, result.NAPSysLogServers)
 			assert.Equal(t, test.expectedConfigContext.PlusAPI, result.PlusAPI)
@@ -398,6 +538,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			assert.ElementsMatch(t, test.expectedConfigContext.ErrorLogs, result.ErrorLogs)
 			assert.Equal(t, test.expectedConfigContext.StubStatus, result.StubStatus)
 			assert.Equal(t, test.expectedConfigContext.InstanceID, result.InstanceID)
+			assert.Equal(t, len(test.expectedConfigContext.Files), len(result.Files))
 		})
 	}
 }
