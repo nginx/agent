@@ -14,7 +14,6 @@ const (
 	FeatureMetricsHost      = "metrics-host"
 	FeatureMetricsInstance  = "metrics-instance"
 	FeatureFileWatcher      = "file-watcher"
-	FeatureAgentAPI         = "agent-api"
 	FeatureAPIAction        = "api-action"
 	FeatureLogsNap          = "logs-nap"
 )

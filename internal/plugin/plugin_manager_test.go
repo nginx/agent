@@ -9,6 +9,8 @@ import (
 	"context"
 	"testing"
 
+	pkg "github.com/nginx/agent/v3/pkg/config"
+
 	"github.com/nginx/agent/v3/internal/collector"
 	"github.com/nginx/agent/v3/internal/command"
 	"github.com/nginx/agent/v3/internal/file"
@@ -35,7 +37,8 @@ func TestLoadPlugins(t *testing.T) {
 				&resource.Resource{},
 				&watcher.Watcher{},
 			},
-		}, {
+		},
+		{
 			name: "Test 2: Load file and command plugins",
 			input: &config.Config{
 				Command: &config.Command{
@@ -53,7 +56,8 @@ func TestLoadPlugins(t *testing.T) {
 				&file.FilePlugin{},
 				&watcher.Watcher{},
 			},
-		}, {
+		},
+		{
 			name: "Test 3: Load metrics collector plugin",
 			input: &config.Config{
 				Collector: &config.Collector{
@@ -61,9 +65,101 @@ func TestLoadPlugins(t *testing.T) {
 						Debug: &config.DebugExporter{},
 					},
 				},
+				Features: config.DefaultFeatures(),
 			},
 			expected: []bus.Plugin{
 				&resource.Resource{},
+				&collector.Collector{},
+				&watcher.Watcher{},
+			},
+		},
+		{
+			name: "Test 4: Metrics collector plugin, feature disabled",
+			input: &config.Config{
+				Command: &config.Command{
+					Server: &config.ServerConfig{
+						Host: "127.0.0.1",
+						Port: 443,
+						Type: config.Grpc,
+					},
+				},
+				Collector: &config.Collector{
+					Exporters: config.Exporters{
+						Debug: &config.DebugExporter{},
+					},
+				},
+				Features: []string{
+					pkg.FeatureConfiguration,
+					pkg.FeatureConnection,
+					pkg.FeatureFileWatcher,
+				},
+			},
+			expected: []bus.Plugin{
+				&resource.Resource{},
+				&command.CommandPlugin{},
+				&file.FilePlugin{},
+				&watcher.Watcher{},
+			},
+		},
+		{
+			name: "Test 6: No Connection feature enabled",
+			input: &config.Config{
+				Command: &config.Command{
+					Server: &config.ServerConfig{
+						Host: "127.0.0.1",
+						Port: 443,
+						Type: config.Grpc,
+					},
+				},
+				Collector: &config.Collector{
+					Exporters: config.Exporters{
+						Debug: &config.DebugExporter{},
+					},
+				},
+				Features: []string{
+					pkg.FeatureConfiguration,
+					pkg.FeatureMetrics,
+					pkg.FeatureFileWatcher,
+					pkg.FeatureCertificates,
+					pkg.FeatureAPIAction,
+					pkg.FeatureLogsNap,
+				},
+			},
+			expected: []bus.Plugin{
+				&resource.Resource{},
+				&collector.Collector{},
+				&watcher.Watcher{},
+			},
+		},
+		{
+			name: "Test 7: All features enabled",
+			input: &config.Config{
+				Command: &config.Command{
+					Server: &config.ServerConfig{
+						Host: "127.0.0.1",
+						Port: 443,
+						Type: config.Grpc,
+					},
+				},
+				Collector: &config.Collector{
+					Exporters: config.Exporters{
+						Debug: &config.DebugExporter{},
+					},
+				},
+				Features: []string{
+					pkg.FeatureConfiguration,
+					pkg.FeatureMetrics,
+					pkg.FeatureFileWatcher,
+					pkg.FeatureConnection,
+					pkg.FeatureCertificates,
+					pkg.FeatureAPIAction,
+					pkg.FeatureLogsNap,
+				},
+			},
+			expected: []bus.Plugin{
+				&resource.Resource{},
+				&command.CommandPlugin{},
+				&file.FilePlugin{},
 				&collector.Collector{},
 				&watcher.Watcher{},
 			},

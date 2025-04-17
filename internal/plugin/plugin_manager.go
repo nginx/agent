@@ -9,6 +9,8 @@ import (
 	"context"
 	"log/slog"
 
+	pkg "github.com/nginx/agent/v3/pkg/config"
+
 	"github.com/nginx/agent/v3/internal/collector"
 	"github.com/nginx/agent/v3/internal/command"
 	"github.com/nginx/agent/v3/internal/file"
@@ -39,6 +41,13 @@ func addResourcePlugin(plugins []bus.Plugin, agentConfig *config.Config) []bus.P
 }
 
 func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentConfig *config.Config) []bus.Plugin {
+	if !agentConfig.IsFeatureEnabled(pkg.FeatureConnection) {
+		slog.WarnContext(ctx, "Connection feature is disabled, no gRPC connection will be created",
+			"enabled_features", agentConfig.Features)
+
+		return plugins
+	}
+
 	if isGrpcClientConfigured(agentConfig) {
 		grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig)
 		if err != nil {
@@ -58,6 +67,12 @@ func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentCo
 }
 
 func addCollectorPlugin(ctx context.Context, agentConfig *config.Config, plugins []bus.Plugin) []bus.Plugin {
+	if !agentConfig.IsFeatureEnabled(pkg.FeatureMetrics) {
+		slog.WarnContext(ctx, "Metrics feature disabled, no metrics will be collected",
+			"enabled_features", agentConfig.Features)
+
+		return plugins
+	}
 	if agentConfig.IsACollectorExporterConfigured() {
 		oTelCollector, err := collector.New(agentConfig)
 		if err == nil {
