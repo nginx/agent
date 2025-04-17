@@ -5,7 +5,6 @@
 package config
 
 import (
-	"math"
 	"time"
 
 	pkg "github.com/nginx/agent/v3/pkg/config"
@@ -30,7 +29,7 @@ const (
 	// Client GRPC Settings
 	DefMaxMessageSize        = 0       // 0 = unset
 	DefMaxMessageRecieveSize = 4194304 // default 4 MB
-	DefMaxMessageSendSize    = math.MaxInt32
+	DefMaxMessageSendSize    = 4194304 // default 4 MB
 
 	// Client HTTP Settings
 	DefHTTPTimeout = 10 * time.Second

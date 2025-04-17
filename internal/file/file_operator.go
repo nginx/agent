@@ -29,19 +29,28 @@ func NewFileOperator() *FileOperator {
 
 func (fo *FileOperator) Write(ctx context.Context, fileContent []byte, file *mpi.FileMeta) error {
 	filePermission := files.FileMode(file.GetPermissions())
-	if _, err := os.Stat(file.GetName()); os.IsNotExist(err) {
-		slog.DebugContext(ctx, "File does not exist, creating new file", "file_path", file.GetName())
-		err = os.MkdirAll(path.Dir(file.GetName()), filePermission)
-		if err != nil {
-			return fmt.Errorf("error creating directory %s: %w", path.Dir(file.GetName()), err)
-		}
+	err := fo.CreateFileDirectories(ctx, file, filePermission)
+	if err != nil {
+		return err
 	}
 
-	err := os.WriteFile(file.GetName(), fileContent, filePermission)
-	if err != nil {
-		return fmt.Errorf("error writing to file %s: %w", file.GetName(), err)
+	writeErr := os.WriteFile(file.GetName(), fileContent, filePermission)
+	if writeErr != nil {
+		return fmt.Errorf("error writing to file %s: %w", file.GetName(), writeErr)
 	}
 	slog.DebugContext(ctx, "Content written to file", "file_path", file.GetName())
+
+	return nil
+}
+
+func (fo *FileOperator) CreateFileDirectories(ctx context.Context, fileMeta *mpi.FileMeta, filePermission os.FileMode) error {
+	if _, err := os.Stat(fileMeta.GetName()); os.IsNotExist(err) {
+		slog.DebugContext(ctx, "File does not exist, creating new file", "file_path", fileMeta.GetName())
+		err = os.MkdirAll(path.Dir(fileMeta.GetName()), filePermission)
+		if err != nil {
+			return fmt.Errorf("error creating directory %s: %w", path.Dir(fileMeta.GetName()), err)
+		}
+	}
 
 	return nil
 }

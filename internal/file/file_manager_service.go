@@ -6,12 +6,15 @@
 package file
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"maps"
+	"math"
 	"os"
 	"slices"
 	"sync"
@@ -30,6 +33,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	backoffHelpers "github.com/nginx/agent/v3/internal/backoff"
+	grpc2 "google.golang.org/grpc"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
@@ -52,6 +56,7 @@ var (
 type (
 	fileOperator interface {
 		Write(ctx context.Context, fileContent []byte, file *mpi.FileMeta) error
+		CreateFileDirectories(ctx context.Context, fileMeta *mpi.FileMeta, filePermission os.FileMode) error
 	}
 
 	fileManagerServiceInterface interface {
@@ -226,23 +231,42 @@ func (fms *FileManagerService) UpdateFile(
 	fileToUpdate *mpi.File,
 ) error {
 	slog.InfoContext(ctx, "Updating file", "instance_id", instanceID, "file_name", fileToUpdate.GetFileMeta().GetName())
+
+	slog.DebugContext(ctx, "Checking file size",
+		"file_size", fileToUpdate.GetFileMeta().GetSize(),
+		"max_message_send_size", int64(fms.agentConfig.Client.Grpc.MaxMessageSendSize),
+	)
+
+	if fileToUpdate.GetFileMeta().GetSize() <= int64(fms.agentConfig.Client.Grpc.MaxMessageSendSize) {
+		return fms.sendUpdateFileRequest(ctx, fileToUpdate)
+	}
+
+	// TODO: Add config parameter for chunk size
+	var chunkSize uint32 = 2097152 // 2MB
+	return fms.sendUpdateFileStream(ctx, fileToUpdate, chunkSize)
+}
+
+func (fms *FileManagerService) sendUpdateFileRequest(
+	ctx context.Context,
+	fileToUpdate *mpi.File,
+) error {
+	messageMeta := &mpi.MessageMeta{
+		MessageId:     id.GenerateMessageID(),
+		CorrelationId: logger.GetCorrelationID(ctx),
+		Timestamp:     timestamppb.Now(),
+	}
+
 	contents, err := os.ReadFile(fileToUpdate.GetFileMeta().GetName())
 	if err != nil {
 		return err
 	}
-
-	correlationID := logger.GetCorrelationID(ctx)
 
 	request := &mpi.UpdateFileRequest{
 		File: fileToUpdate,
 		Contents: &mpi.FileContents{
 			Contents: contents,
 		},
-		MessageMeta: &mpi.MessageMeta{
-			MessageId:     id.GenerateMessageID(),
-			CorrelationId: correlationID,
-			Timestamp:     timestamppb.Now(),
-		},
+		MessageMeta: messageMeta,
 	}
 
 	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Client.Backoff.MaxElapsedTime)
@@ -272,15 +296,209 @@ func (fms *FileManagerService) UpdateFile(
 		return response, nil
 	}
 
-	response, err := backoff.RetryWithData(sendUpdateFile, backoffHelpers.Context(backOffCtx,
-		fms.agentConfig.Client.Backoff))
+	response, err := backoff.RetryWithData(
+		sendUpdateFile,
+		backoffHelpers.Context(backOffCtx, fms.agentConfig.Client.Backoff),
+	)
 	if err != nil {
 		return err
 	}
 
 	slog.DebugContext(ctx, "UpdateFile response", "response", response)
 
-	return err
+	return nil
+}
+
+func (fms *FileManagerService) sendUpdateFileStream(
+	ctx context.Context,
+	fileToUpdate *mpi.File,
+	chunkSize uint32,
+) error {
+	updateFileStreamClient, err := fms.fileServiceClient.UpdateFileStream(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = fms.sendUpdateFileStreamHeader(ctx, fileToUpdate, chunkSize, updateFileStreamClient)
+	if err != nil {
+		return err
+	}
+
+	return fms.sendFileUpdateStreamChunks(ctx, fileToUpdate, chunkSize, updateFileStreamClient)
+}
+
+func (fms *FileManagerService) sendUpdateFileStreamHeader(
+	ctx context.Context,
+	fileToUpdate *mpi.File,
+	chunkSize uint32,
+	updateFileStreamClient grpc2.ClientStreamingClient[mpi.FileDataChunk, mpi.UpdateFileResponse],
+) error {
+	messageMeta := &mpi.MessageMeta{
+		MessageId:     id.GenerateMessageID(),
+		CorrelationId: logger.GetCorrelationID(ctx),
+		Timestamp:     timestamppb.Now(),
+	}
+
+	numberOfChunks := uint32(math.Ceil(float64(fileToUpdate.GetFileMeta().GetSize()) / float64(chunkSize)))
+
+	header := mpi.FileDataChunk_Header{
+		Header: &mpi.FileDataChunkHeader{
+			FileMeta:  fileToUpdate.GetFileMeta(),
+			Chunks:    numberOfChunks,
+			ChunkSize: chunkSize,
+		},
+	}
+
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Client.Backoff.MaxElapsedTime)
+	defer backoffCancel()
+
+	sendUpdateFileHeader := func() error {
+		slog.DebugContext(ctx, "Sending update file stream header", "header", header)
+		if fms.fileServiceClient == nil {
+			return errors.New("file service client is not initialized")
+		}
+
+		if !fms.isConnected.Load() {
+			return errors.New("CreateConnection rpc has not being called yet")
+		}
+
+		err := updateFileStreamClient.Send(
+			&mpi.FileDataChunk{
+				Meta:  messageMeta,
+				Chunk: &header,
+			},
+		)
+
+		validatedError := grpc.ValidateGrpcError(err)
+
+		if validatedError != nil {
+			slog.ErrorContext(ctx, "Failed to send update file stream header", "error", validatedError)
+
+			return validatedError
+		}
+
+		return nil
+	}
+
+	return backoff.Retry(sendUpdateFileHeader, backoffHelpers.Context(backOffCtx, fms.agentConfig.Client.Backoff))
+}
+
+func (fms *FileManagerService) sendFileUpdateStreamChunks(
+	ctx context.Context,
+	fileToUpdate *mpi.File,
+	chunkSize uint32,
+	updateFileStreamClient grpc2.ClientStreamingClient[mpi.FileDataChunk, mpi.UpdateFileResponse],
+) error {
+	f, err := os.Open(fileToUpdate.GetFileMeta().GetName())
+	defer func() {
+		closeError := f.Close()
+		if closeError != nil {
+			slog.WarnContext(
+				ctx, "Failed to close file",
+				"file", fileToUpdate.GetFileMeta().GetName(),
+				"error", closeError,
+			)
+		}
+	}()
+	if err != nil {
+		return err
+	}
+
+	var chunkID uint32
+
+	reader := bufio.NewReader(f)
+	for {
+		chunk, readChunkError := fms.readChunk(ctx, chunkSize, reader, chunkID)
+		if readChunkError != nil {
+			return readChunkError
+		}
+		if chunk.Content == nil {
+			break
+		}
+
+		sendError := fms.sendFileUpdateStreamChunk(ctx, chunk, updateFileStreamClient)
+		if sendError != nil {
+			return sendError
+		}
+
+		chunkID++
+	}
+
+	return nil
+}
+
+func (fms *FileManagerService) readChunk(
+	ctx context.Context,
+	chunkSize uint32,
+	reader *bufio.Reader,
+	chunkID uint32,
+) (mpi.FileDataChunk_Content, error) {
+	buf := make([]byte, chunkSize)
+	n, err := reader.Read(buf)
+	buf = buf[:n]
+	if err != nil {
+		if err != io.EOF {
+			return mpi.FileDataChunk_Content{}, fmt.Errorf("failed to read chunk: %w", err)
+		}
+
+		return mpi.FileDataChunk_Content{}, nil
+	}
+
+	slog.DebugContext(ctx, "Read chunk", "chunkID", chunkID, "chunk_size", len(buf))
+
+	chunk := mpi.FileDataChunk_Content{
+		Content: &mpi.FileDataChunkContent{
+			ChunkId: chunkID,
+			Data:    buf,
+		},
+	}
+
+	return chunk, err
+}
+
+func (fms *FileManagerService) sendFileUpdateStreamChunk(
+	ctx context.Context,
+	chunk mpi.FileDataChunk_Content,
+	updateFileStreamClient grpc2.ClientStreamingClient[mpi.FileDataChunk, mpi.UpdateFileResponse],
+) error {
+	messageMeta := &mpi.MessageMeta{
+		MessageId:     id.GenerateMessageID(),
+		CorrelationId: logger.GetCorrelationID(ctx),
+		Timestamp:     timestamppb.Now(),
+	}
+
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Client.Backoff.MaxElapsedTime)
+	defer backoffCancel()
+
+	sendUpdateFileChunk := func() error {
+		slog.DebugContext(ctx, "Sending update file stream chunk", "chunk_id", chunk.Content.GetChunkId())
+		if fms.fileServiceClient == nil {
+			return errors.New("file service client is not initialized")
+		}
+
+		if !fms.isConnected.Load() {
+			return errors.New("CreateConnection rpc has not being called yet")
+		}
+
+		err := updateFileStreamClient.Send(
+			&mpi.FileDataChunk{
+				Meta:  messageMeta,
+				Chunk: &chunk,
+			},
+		)
+
+		validatedError := grpc.ValidateGrpcError(err)
+
+		if validatedError != nil {
+			slog.ErrorContext(ctx, "Failed to send update file stream chunk", "error", validatedError)
+
+			return validatedError
+		}
+
+		return nil
+	}
+
+	return backoff.Retry(sendUpdateFileChunk, backoffHelpers.Context(backOffCtx, fms.agentConfig.Client.Backoff))
 }
 
 func (fms *FileManagerService) IsConnected() bool {
@@ -410,37 +628,84 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 }
 
 func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) error {
-	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Client.Backoff.MaxElapsedTime)
-	defer backoffCancel()
+	if file.GetFileMeta().GetSize() <= int64(fms.agentConfig.Client.Grpc.MaxMessageReceiveSize) {
+		backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Client.Backoff.MaxElapsedTime)
+		defer backoffCancel()
 
-	getFile := func() (*mpi.GetFileResponse, error) {
-		return fms.fileServiceClient.GetFile(ctx, &mpi.GetFileRequest{
-			MessageMeta: &mpi.MessageMeta{
-				MessageId:     id.GenerateMessageID(),
-				CorrelationId: logger.GetCorrelationID(ctx),
-				Timestamp:     timestamppb.Now(),
-			},
-			FileMeta: file.GetFileMeta(),
-		})
+		getFile := func() (*mpi.GetFileResponse, error) {
+			return fms.fileServiceClient.GetFile(ctx, &mpi.GetFileRequest{
+				MessageMeta: &mpi.MessageMeta{
+					MessageId:     id.GenerateMessageID(),
+					CorrelationId: logger.GetCorrelationID(ctx),
+					Timestamp:     timestamppb.Now(),
+				},
+				FileMeta: file.GetFileMeta(),
+			})
+		}
+
+		getFileResp, getFileErr := backoff.RetryWithData(
+			getFile,
+			backoffHelpers.Context(backOffCtx, fms.agentConfig.Client.Backoff),
+		)
+
+		if getFileErr != nil {
+			return fmt.Errorf("error getting file data for %s: %w", file.GetFileMeta(), getFileErr)
+		}
+
+		if writeErr := fms.fileOperator.Write(ctx, getFileResp.GetContents().GetContents(),
+			file.GetFileMeta()); writeErr != nil {
+			return writeErr
+		}
+
+		return fms.validateFileHash(file.GetFileMeta().GetName())
 	}
 
-	getFileResp, getFileErr := backoff.RetryWithData(
-		getFile,
-		backoffHelpers.Context(backOffCtx, fms.agentConfig.Client.Backoff),
-	)
-
-	if getFileErr != nil {
-		return fmt.Errorf("error getting file data for %s: %w", file.GetFileMeta(), getFileErr)
+	stream, err := fms.fileServiceClient.GetFileStream(ctx, &mpi.GetFileRequest{
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     id.GenerateMessageID(),
+			CorrelationId: logger.GetCorrelationID(ctx),
+			Timestamp:     timestamppb.Now(),
+		},
+		FileMeta: file.GetFileMeta(),
+	})
+	if err != nil {
+		return fmt.Errorf("error getting file stream for %s: %w", file.GetFileMeta().GetName(), err)
 	}
 
-	if writeErr := fms.fileOperator.Write(ctx, getFileResp.GetContents().GetContents(),
-		file.GetFileMeta()); writeErr != nil {
-		return writeErr
+	// Get header chunk first
+	chunk := &mpi.FileDataChunk{}
+	recvError := stream.RecvMsg(chunk)
+	if recvError != nil {
+		return recvError
 	}
 
-	validateErr := fms.validateFileHash(file.GetFileMeta().GetName())
+	header := chunk.GetHeader()
 
-	return validateErr
+	filePermissions := files.FileMode(header.GetFileMeta().GetPermissions())
+	createFileDirectoriesError := fms.fileOperator.CreateFileDirectories(ctx, header.GetFileMeta(), filePermissions)
+	if createFileDirectoriesError != nil {
+		return createFileDirectoriesError
+	}
+
+	fileToWrite, openError := os.OpenFile(header.GetFileMeta().GetName(), os.O_WRONLY, filePermissions)
+	if openError != nil {
+		return openError
+	}
+
+	for i := uint32(0); i < header.GetChunks(); i++ {
+		chunk := &mpi.FileDataChunk{}
+		recvError := stream.RecvMsg(chunk)
+		if recvError != nil {
+			return recvError
+		}
+
+		_, chunkWriteError := fileToWrite.Write(chunk.GetContent().GetData())
+		if chunkWriteError != nil {
+			return fmt.Errorf("error writing chunk to file %s: %w", file.GetFileMeta().GetName(), chunkWriteError)
+		}
+	}
+
+	return nil
 }
 
 func (fms *FileManagerService) validateFileHash(filePath string) error {
