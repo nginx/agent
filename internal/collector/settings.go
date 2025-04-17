@@ -73,11 +73,7 @@ func createURIs(cfg *config.Config) []string {
 	return []string{cfg.Collector.ConfigPath}
 }
 
-func createFile(err error, confPath string) error {
-	if !os.IsNotExist(err) {
-		return err
-	}
-
+func createFile(confPath string) error {
 	// Create if doesn't exist.
 	_, createErr := os.Create(confPath)
 	if createErr != nil {
@@ -105,7 +101,11 @@ func writeCollectorConfig(conf *config.Collector) error {
 	// Check if file exists, if not create it.
 	_, err = os.Stat(confPath)
 	if err != nil {
-		fileErr := createFile(err, confPath)
+		if !os.IsNotExist(err) {
+			return err
+		}
+
+		fileErr := createFile(confPath)
 		if fileErr != nil {
 			return fileErr
 		}
