@@ -73,6 +73,22 @@ func createURIs(cfg *config.Config) []string {
 	return []string{cfg.Collector.ConfigPath}
 }
 
+func createFile(confPath string) error {
+	// Create if doesn't exist.
+	_, createErr := os.Create(confPath)
+	if createErr != nil {
+		return createErr
+	}
+
+	// Set the file permissions to 600.
+	permissionErr := os.Chmod(confPath, configFilePermission)
+	if permissionErr != nil {
+		return permissionErr
+	}
+
+	return nil
+}
+
 // Generates a OTel Collector config to a file by injecting the Metrics Config to a Go template.
 func writeCollectorConfig(conf *config.Collector) error {
 	otelcolTemplate, err := template.New(otelTemplatePath).Parse(otelcolTemplate)
@@ -82,17 +98,16 @@ func writeCollectorConfig(conf *config.Collector) error {
 
 	confPath := filepath.Clean(conf.ConfigPath)
 
-	// Check if file exists.
+	// Check if file exists, if not create it.
 	_, err = os.Stat(confPath)
 	if err != nil {
 		if !os.IsNotExist(err) {
 			return err
 		}
 
-		// Create if doesn't exist.
-		_, createErr := os.Create(confPath)
-		if createErr != nil {
-			return createErr
+		fileErr := createFile(confPath)
+		if fileErr != nil {
+			return fileErr
 		}
 	}
 
