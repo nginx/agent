@@ -271,7 +271,7 @@ generate-pgo-profile: build-mock-management-plane-grpc
 load-test-image: ## Build performance load testing image
 	@echo "🚚 Running load tests"
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t $(IMAGE_TAG)_load_test . \
-		--no-cache -f ./scripts/testing/load/Dockerfile \
+		--no-cache -f ./test/docker/load/Dockerfile \
 		--secret id=nginx-crt,src=$(CERTS_DIR)/nginx-repo.crt \
 		--secret id=nginx-key,src=$(CERTS_DIR)/nginx-repo.key \
 		--build-arg OSARCH=$(OSARCH) \
