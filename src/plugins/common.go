@@ -1,7 +1,6 @@
 package plugins
 
 import (
-	"fmt"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
@@ -36,8 +35,6 @@ func LoadPlugins(commander client.Commander, binary core.NginxBinary, env core.E
 	}
 
 	if (loadedConfig.IsFeatureEnabled(agent_config.FeatureMetrics) || loadedConfig.IsFeatureEnabled(agent_config.FeatureMetricsSender)) && reporter != nil {
-		fmt.Println(fmt.Sprintf("metrics enabled : %t", loadedConfig.IsExtensionEnabled(agent_config.FeatureMetrics)))
-		fmt.Println(fmt.Sprintf("metrics-sender enabled : %t", loadedConfig.IsExtensionEnabled(agent_config.FeatureMetricsSender)))
 		corePlugins = append(corePlugins,
 			NewMetricsSender(reporter, loadedConfig),
 		)

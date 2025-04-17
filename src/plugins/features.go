@@ -113,25 +113,20 @@ func (f *Features) Process(msg *core.Message) {
 	plugins := []core.Plugin{}
 
 	if msg.Topic() == core.EnableFeature {
-		log.Debugf("received a request for enabling the feature")
 		for _, feature := range data.([]string) {
 			if initFeature, ok := f.featureMap[feature]; ok {
-				log.Debugf("enabling feature: %s", feature)
 				featurePlugins := initFeature(feature)
 				plugins = append(plugins, featurePlugins...)
 			}
 		}
 
 		err := f.pipeline.Register(f.conf.QueueSize, plugins, nil)
-		log.Debugf("registring plugins: %v", plugins)
 		if err != nil {
 			log.Warnf("Unable to register features: %v", err)
 		}
 
 		for _, plugin := range plugins {
-			log.Debugf("initializing plugin %s", plugin)
 			plugin.Init(f.pipeline)
-			log.Debugf("initialized plugin %s", plugin)
 		}
 	} else if msg.Topic() == core.NginxDetailProcUpdate {
 		f.processes = msg.Data().([]*core.Process)
@@ -140,7 +135,7 @@ func (f *Features) Process(msg *core.Message) {
 
 func (f *Features) enableMetricsFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) {
-		log.Debugf("inside features.go, enabling metrics, throttle and sender")
+		log.Debugf("features.go: enabling metrics feature")
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
 			log.Warnf("Unable to get agent config, %v", err)
@@ -152,8 +147,6 @@ func (f *Features) enableMetricsFeature(_ string) []core.Plugin {
 		metricsSender := NewMetricsSender(f.commander, conf)
 
 		return []core.Plugin{metrics, metricsThrottle, metricsSender}
-	} else {
-		log.Debugf("metrics features.go, already enabled so skipping the enablement")
 	}
 	return []core.Plugin{}
 }
@@ -195,7 +188,7 @@ func (f *Features) enableMetricsThrottleFeature(_ string) []core.Plugin {
 func (f *Features) enableMetricsSenderFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) &&
 		!f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsSender) {
-		log.Debugf("inside features.go, enabling metrics_sender")
+		log.Debugf("features.go: enabling metrics_sender")
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
 			log.Warnf("Unable to get agent config, %v", err)
@@ -205,8 +198,6 @@ func (f *Features) enableMetricsSenderFeature(_ string) []core.Plugin {
 		metricsSender := NewMetricsSender(f.commander, conf)
 
 		return []core.Plugin{metricsSender}
-	} else {
-		log.Debugf("inside features.go, already enabled metrics_sender")
 	}
 	return []core.Plugin{}
 }

@@ -107,8 +107,6 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 
 			sort.Strings(onDiskAgentConfig.Features)
 			sort.Strings(payloadAgentConfig.Details.Features)
-			log.Debugf("OnDisk Agent Features %v", onDiskAgentConfig.Features)
-			log.Debugf("Payload Agent Features %v", payloadAgentConfig.Details.Features)
 			r.detailsMu.Unlock()
 
 			r.detailsMu.RLock()
@@ -139,7 +137,7 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 				log.Errorf("Failed updating Agent config - %v", err)
 			}
 			if configUpdated {
-				log.Debugf("Updated agent config on disk %v %v", features, synchronizeFeatures)
+				log.Debugf("Updated agent config on disk")
 			}
 		}
 
@@ -154,13 +152,12 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 		}
 
 		if synchronizeFeatures {
-			log.Debugf("agent config changed, synchronizeFeatures")
+			log.Debugf("agent config  features changed, synchronizing features")
 			r.synchronizeFeatures(payloadAgentConfig)
+			r.config.Features = payloadAgentConfig.Details.Features
 		}
 
-		log.Debugf("agent config changed, updating all plugins %v", payloadAgentConfig)
 		r.messagePipeline.Process(core.NewMessage(core.AgentConfigChanged, payloadAgentConfig))
-		r.config.Features = payloadAgentConfig.Details.Features
 	}
 }
 
@@ -169,7 +166,7 @@ func (r *ConfigReader) synchronizeFeatures(agtCfg *proto.AgentConfig) {
 		r.detailsMu.RLock()
 		for _, feature := range r.config.Features {
 			if feature != agent_config.FeatureRegistration && feature != agent_config.FeatureNginxConfigAsync {
-				log.Debugf("synchronizeFeatures: deregistering the feature %s", feature)
+				log.Debugf("config_reader: deregistering the feature %s", feature)
 				r.deRegisterPlugin(feature)
 			}
 		}

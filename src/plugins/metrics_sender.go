@@ -9,7 +9,6 @@ package plugins
 
 import (
 	"context"
-	"github.com/nginx/agent/sdk/v2"
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -49,7 +48,7 @@ func (r *MetricsSender) Init(pipeline core.MessagePipeInterface) {
 	r.started.Toggle()
 	r.pipeline = pipeline
 	r.ctx = pipeline.Context()
-	log.Infof("MetricsSender initializing %v %v", r.started, r.readyToSend)
+	log.Info("MetricsSender initializing")
 }
 
 func (r *MetricsSender) Close() {
@@ -91,7 +90,6 @@ func (r *MetricsSender) Process(msg *core.Message) {
 			switch report := p.(type) {
 			case *proto.MetricsReport:
 				message := client.MessageFromMetrics(report)
-				log.Debugf("metrics_sender sending the metrics report")
 				err := r.reporter.Send(r.ctx, message)
 				if err != nil {
 					log.Errorf("Failed to send MetricsReport: %v", err)
@@ -99,7 +97,6 @@ func (r *MetricsSender) Process(msg *core.Message) {
 					r.pipeline.Process(core.NewMessage(core.MetricReportSent, nil))
 				}
 			case *models.EventReport:
-				log.Debugf("metrics_sender sending the events report")
 				err := r.reporter.Send(r.ctx, client.MessageFromEvents(report))
 				if err != nil {
 					l := len(report.Events)
