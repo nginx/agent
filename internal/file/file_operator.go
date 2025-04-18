@@ -43,12 +43,20 @@ func (fo *FileOperator) Write(ctx context.Context, fileContent []byte, file *mpi
 	return nil
 }
 
-func (fo *FileOperator) CreateFileDirectories(ctx context.Context, fileMeta *mpi.FileMeta, filePermission os.FileMode) error {
+func (fo *FileOperator) CreateFileDirectories(
+	ctx context.Context,
+	fileMeta *mpi.FileMeta,
+	filePermission os.FileMode,
+) error {
 	if _, err := os.Stat(fileMeta.GetName()); os.IsNotExist(err) {
-		slog.DebugContext(ctx, "File does not exist, creating new file", "file_path", fileMeta.GetName())
-		err = os.MkdirAll(path.Dir(fileMeta.GetName()), filePermission)
+		parentDirectory := path.Dir(fileMeta.GetName())
+		slog.DebugContext(
+			ctx, "File does not exist, creating parent directory",
+			"directory_path", parentDirectory,
+		)
+		err = os.MkdirAll(parentDirectory, filePermission)
 		if err != nil {
-			return fmt.Errorf("error creating directory %s: %w", path.Dir(fileMeta.GetName()), err)
+			return fmt.Errorf("error creating directory %s: %w", parentDirectory, err)
 		}
 	}
 

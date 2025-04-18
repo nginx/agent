@@ -7,8 +7,11 @@ package protos
 
 import (
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/internal/config"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
+
+const largeFileSize = int64(10 * config.DefFileChunkSize)
 
 func FileMeta(fileName, fileHash string) *mpi.FileMeta {
 	lastModified, _ := CreateProtoTime("2024-01-09T13:22:21Z")
@@ -18,6 +21,18 @@ func FileMeta(fileName, fileHash string) *mpi.FileMeta {
 		Name:         fileName,
 		Hash:         fileHash,
 		Permissions:  "0600",
+	}
+}
+
+func FileMetaLargeFile(fileName, fileHash string) *mpi.FileMeta {
+	lastModified, _ := CreateProtoTime("2024-01-09T13:22:21Z")
+
+	return &mpi.FileMeta{
+		ModifiedTime: lastModified,
+		Name:         fileName,
+		Hash:         fileHash,
+		Permissions:  "0600",
+		Size:         largeFileSize,
 	}
 }
 
@@ -76,6 +91,23 @@ func FileOverview(filePath, fileHash string) *mpi.FileOverview {
 					ModifiedTime: timestamppb.Now(),
 					Permissions:  "0640",
 					Size:         0,
+				},
+			},
+		},
+		ConfigVersion: CreateConfigVersion(),
+	}
+}
+
+func FileOverviewLargeFile(filePath, fileHash string) *mpi.FileOverview {
+	return &mpi.FileOverview{
+		Files: []*mpi.File{
+			{
+				FileMeta: &mpi.FileMeta{
+					Name:         filePath,
+					Hash:         fileHash,
+					ModifiedTime: timestamppb.Now(),
+					Permissions:  "0640",
+					Size:         largeFileSize,
 				},
 			},
 		},

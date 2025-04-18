@@ -3,12 +3,26 @@ package filefakes
 
 import (
 	"context"
+	"io/fs"
 	"sync"
 
 	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )
 
 type FakeFileOperator struct {
+	CreateFileDirectoriesStub        func(context.Context, *v1.FileMeta, fs.FileMode) error
+	createFileDirectoriesMutex       sync.RWMutex
+	createFileDirectoriesArgsForCall []struct {
+		arg1 context.Context
+		arg2 *v1.FileMeta
+		arg3 fs.FileMode
+	}
+	createFileDirectoriesReturns struct {
+		result1 error
+	}
+	createFileDirectoriesReturnsOnCall map[int]struct {
+		result1 error
+	}
 	WriteStub        func(context.Context, []byte, *v1.FileMeta) error
 	writeMutex       sync.RWMutex
 	writeArgsForCall []struct {
@@ -24,6 +38,69 @@ type FakeFileOperator struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *FakeFileOperator) CreateFileDirectories(arg1 context.Context, arg2 *v1.FileMeta, arg3 fs.FileMode) error {
+	fake.createFileDirectoriesMutex.Lock()
+	ret, specificReturn := fake.createFileDirectoriesReturnsOnCall[len(fake.createFileDirectoriesArgsForCall)]
+	fake.createFileDirectoriesArgsForCall = append(fake.createFileDirectoriesArgsForCall, struct {
+		arg1 context.Context
+		arg2 *v1.FileMeta
+		arg3 fs.FileMode
+	}{arg1, arg2, arg3})
+	stub := fake.CreateFileDirectoriesStub
+	fakeReturns := fake.createFileDirectoriesReturns
+	fake.recordInvocation("CreateFileDirectories", []interface{}{arg1, arg2, arg3})
+	fake.createFileDirectoriesMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeFileOperator) CreateFileDirectoriesCallCount() int {
+	fake.createFileDirectoriesMutex.RLock()
+	defer fake.createFileDirectoriesMutex.RUnlock()
+	return len(fake.createFileDirectoriesArgsForCall)
+}
+
+func (fake *FakeFileOperator) CreateFileDirectoriesCalls(stub func(context.Context, *v1.FileMeta, fs.FileMode) error) {
+	fake.createFileDirectoriesMutex.Lock()
+	defer fake.createFileDirectoriesMutex.Unlock()
+	fake.CreateFileDirectoriesStub = stub
+}
+
+func (fake *FakeFileOperator) CreateFileDirectoriesArgsForCall(i int) (context.Context, *v1.FileMeta, fs.FileMode) {
+	fake.createFileDirectoriesMutex.RLock()
+	defer fake.createFileDirectoriesMutex.RUnlock()
+	argsForCall := fake.createFileDirectoriesArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeFileOperator) CreateFileDirectoriesReturns(result1 error) {
+	fake.createFileDirectoriesMutex.Lock()
+	defer fake.createFileDirectoriesMutex.Unlock()
+	fake.CreateFileDirectoriesStub = nil
+	fake.createFileDirectoriesReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeFileOperator) CreateFileDirectoriesReturnsOnCall(i int, result1 error) {
+	fake.createFileDirectoriesMutex.Lock()
+	defer fake.createFileDirectoriesMutex.Unlock()
+	fake.CreateFileDirectoriesStub = nil
+	if fake.createFileDirectoriesReturnsOnCall == nil {
+		fake.createFileDirectoriesReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.createFileDirectoriesReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
 }
 
 func (fake *FakeFileOperator) Write(arg1 context.Context, arg2 []byte, arg3 *v1.FileMeta) error {
@@ -97,6 +174,8 @@ func (fake *FakeFileOperator) WriteReturnsOnCall(i int, result1 error) {
 func (fake *FakeFileOperator) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.createFileDirectoriesMutex.RLock()
+	defer fake.createFileDirectoriesMutex.RUnlock()
 	fake.writeMutex.RLock()
 	defer fake.writeMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}

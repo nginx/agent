@@ -80,12 +80,11 @@ type (
 	}
 
 	GRPC struct {
-		KeepAlive *KeepAlive `yaml:"-" mapstructure:"target"`
-		// if MaxMessageSize is size set then we use that value,
-		// otherwise MaxMessageRecieveSize and MaxMessageSendSize for individual settings
-		MaxMessageSize        int `yaml:"-" mapstructure:"max_message_size"`
-		MaxMessageReceiveSize int `yaml:"-" mapstructure:"max_message_receive_size"`
-		MaxMessageSendSize    int `yaml:"-" mapstructure:"max_message_send_size"`
+		KeepAlive             *KeepAlive `yaml:"-"               mapstructure:"target"`
+		MaxMessageSize        int        `yaml:"-"               mapstructure:"max_message_size"`
+		MaxMessageReceiveSize int        `yaml:"-"               mapstructure:"max_message_receive_size"`
+		MaxMessageSendSize    int        `yaml:"-"               mapstructure:"max_message_send_size"`
+		FileChunkSize         uint32     `yaml:"file_chunk_size" mapstructure:"file_chunk_size"`
 	}
 
 	KeepAlive struct {

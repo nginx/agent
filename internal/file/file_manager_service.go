@@ -241,9 +241,7 @@ func (fms *FileManagerService) UpdateFile(
 		return fms.sendUpdateFileRequest(ctx, fileToUpdate)
 	}
 
-	// TODO: Add config parameter for chunk size
-	var chunkSize uint32 = 2097152 // 2MB
-	return fms.sendUpdateFileStream(ctx, fileToUpdate, chunkSize)
+	return fms.sendUpdateFileStream(ctx, fileToUpdate, fms.agentConfig.Client.Grpc.FileChunkSize)
 }
 
 func (fms *FileManagerService) sendUpdateFileRequest(
@@ -314,6 +312,10 @@ func (fms *FileManagerService) sendUpdateFileStream(
 	fileToUpdate *mpi.File,
 	chunkSize uint32,
 ) error {
+	if chunkSize == 0 {
+		return fmt.Errorf("file chunk size must be greater than zero")
+	}
+
 	updateFileStreamClient, err := fms.fileServiceClient.UpdateFileStream(ctx)
 	if err != nil {
 		return err
@@ -441,10 +443,12 @@ func (fms *FileManagerService) readChunk(
 			return mpi.FileDataChunk_Content{}, fmt.Errorf("failed to read chunk: %w", err)
 		}
 
+		slog.DebugContext(ctx, "No more data to read from file")
+
 		return mpi.FileDataChunk_Content{}, nil
 	}
 
-	slog.DebugContext(ctx, "Read chunk", "chunkID", chunkID, "chunk_size", len(buf))
+	slog.DebugContext(ctx, "Read file chunk", "chunk_id", chunkID, "chunk_size", len(buf))
 
 	chunk := mpi.FileDataChunk_Content{
 		Content: &mpi.FileDataChunkContent{
@@ -628,37 +632,50 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 }
 
 func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) error {
+	slog.DebugContext(ctx, "Updating file", "file", file.GetFileMeta().GetName())
 	if file.GetFileMeta().GetSize() <= int64(fms.agentConfig.Client.Grpc.MaxMessageReceiveSize) {
-		backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Client.Backoff.MaxElapsedTime)
-		defer backoffCancel()
-
-		getFile := func() (*mpi.GetFileResponse, error) {
-			return fms.fileServiceClient.GetFile(ctx, &mpi.GetFileRequest{
-				MessageMeta: &mpi.MessageMeta{
-					MessageId:     id.GenerateMessageID(),
-					CorrelationId: logger.GetCorrelationID(ctx),
-					Timestamp:     timestamppb.Now(),
-				},
-				FileMeta: file.GetFileMeta(),
-			})
-		}
-
-		getFileResp, getFileErr := backoff.RetryWithData(
-			getFile,
-			backoffHelpers.Context(backOffCtx, fms.agentConfig.Client.Backoff),
-		)
-
-		if getFileErr != nil {
-			return fmt.Errorf("error getting file data for %s: %w", file.GetFileMeta(), getFileErr)
-		}
-
-		if writeErr := fms.fileOperator.Write(ctx, getFileResp.GetContents().GetContents(),
-			file.GetFileMeta()); writeErr != nil {
-			return writeErr
-		}
-
-		return fms.validateFileHash(file.GetFileMeta().GetName())
+		return fms.getFile(ctx, file)
 	}
+
+	return fms.getChunkedFile(ctx, file)
+}
+
+func (fms *FileManagerService) getFile(ctx context.Context, file *mpi.File) error {
+	slog.DebugContext(ctx, "Getting file", "file", file.GetFileMeta().GetName())
+
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Client.Backoff.MaxElapsedTime)
+	defer backoffCancel()
+
+	getFile := func() (*mpi.GetFileResponse, error) {
+		return fms.fileServiceClient.GetFile(ctx, &mpi.GetFileRequest{
+			MessageMeta: &mpi.MessageMeta{
+				MessageId:     id.GenerateMessageID(),
+				CorrelationId: logger.GetCorrelationID(ctx),
+				Timestamp:     timestamppb.Now(),
+			},
+			FileMeta: file.GetFileMeta(),
+		})
+	}
+
+	getFileResp, getFileErr := backoff.RetryWithData(
+		getFile,
+		backoffHelpers.Context(backOffCtx, fms.agentConfig.Client.Backoff),
+	)
+
+	if getFileErr != nil {
+		return fmt.Errorf("error getting file data for %s: %w", file.GetFileMeta(), getFileErr)
+	}
+
+	if writeErr := fms.fileOperator.Write(ctx, getFileResp.GetContents().GetContents(),
+		file.GetFileMeta()); writeErr != nil {
+		return writeErr
+	}
+
+	return fms.validateFileHash(file.GetFileMeta().GetName())
+}
+
+func (fms *FileManagerService) getChunkedFile(ctx context.Context, file *mpi.File) error {
+	slog.DebugContext(ctx, "Getting chunked file", "file", file.GetFileMeta().GetName())
 
 	stream, err := fms.fileServiceClient.GetFileStream(ctx, &mpi.GetFileRequest{
 		MessageMeta: &mpi.MessageMeta{
@@ -673,28 +690,52 @@ func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) e
 	}
 
 	// Get header chunk first
-	chunk := &mpi.FileDataChunk{}
-	recvError := stream.RecvMsg(chunk)
-	if recvError != nil {
-		return recvError
+	headerChunk, recvHeaderChunkError := stream.Recv()
+	if recvHeaderChunkError != nil {
+		return recvHeaderChunkError
 	}
 
-	header := chunk.GetHeader()
+	slog.DebugContext(ctx, "File header chunk received", "header_chunk", headerChunk)
 
-	filePermissions := files.FileMode(header.GetFileMeta().GetPermissions())
-	createFileDirectoriesError := fms.fileOperator.CreateFileDirectories(ctx, header.GetFileMeta(), filePermissions)
+	header := headerChunk.GetHeader()
+
+	writeChunkedFileError := fms.writeChunkedFile(ctx, file, header, stream)
+	if writeChunkedFileError != nil {
+		return writeChunkedFileError
+	}
+
+	return nil
+}
+
+func (fms *FileManagerService) writeChunkedFile(
+	ctx context.Context,
+	file *mpi.File,
+	header *mpi.FileDataChunkHeader,
+	stream grpc2.ServerStreamingClient[mpi.FileDataChunk],
+) error {
+	filePermissions := files.FileMode(file.GetFileMeta().GetPermissions())
+	createFileDirectoriesError := fms.fileOperator.CreateFileDirectories(ctx, file.GetFileMeta(), filePermissions)
 	if createFileDirectoriesError != nil {
 		return createFileDirectoriesError
 	}
 
-	fileToWrite, openError := os.OpenFile(header.GetFileMeta().GetName(), os.O_WRONLY, filePermissions)
-	if openError != nil {
-		return openError
+	fileToWrite, createError := os.Create(file.GetFileMeta().GetName())
+	defer func() {
+		closeError := fileToWrite.Close()
+		if closeError != nil {
+			slog.WarnContext(
+				ctx, "Failed to close file",
+				"file", file.GetFileMeta().GetName(),
+				"error", closeError,
+			)
+		}
+	}()
+	if createError != nil {
+		return createError
 	}
 
 	for i := uint32(0); i < header.GetChunks(); i++ {
-		chunk := &mpi.FileDataChunk{}
-		recvError := stream.RecvMsg(chunk)
+		chunk, recvError := stream.Recv()
 		if recvError != nil {
 			return recvError
 		}

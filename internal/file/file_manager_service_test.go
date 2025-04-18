@@ -10,7 +10,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"testing"
+
+	"google.golang.org/grpc/metadata"
 
 	"github.com/nginx/agent/v3/internal/model"
 
@@ -25,6 +28,107 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+type FakeClientStreamingClient struct {
+	sendCount atomic.Int32
+}
+
+func (f *FakeClientStreamingClient) Send(req *mpi.FileDataChunk) error {
+	f.sendCount.Add(1)
+	return nil
+}
+
+func (f *FakeClientStreamingClient) CloseAndRecv() (*mpi.UpdateFileResponse, error) {
+	return &mpi.UpdateFileResponse{}, nil
+}
+
+func (f *FakeClientStreamingClient) Header() (metadata.MD, error) {
+	return metadata.MD{}, nil
+}
+
+func (f *FakeClientStreamingClient) Trailer() metadata.MD {
+	return nil
+}
+
+func (f *FakeClientStreamingClient) CloseSend() error {
+	return nil
+}
+
+func (f *FakeClientStreamingClient) Context() context.Context {
+	return context.Background()
+}
+
+func (f *FakeClientStreamingClient) SendMsg(m any) error {
+	return nil
+}
+
+func (f *FakeClientStreamingClient) RecvMsg(m any) error {
+	return nil
+}
+
+type FakeServerStreamingClient struct {
+	chunks         map[uint32][]byte
+	fileName       string
+	currentChunkID uint32
+}
+
+func (f *FakeServerStreamingClient) Recv() (*mpi.FileDataChunk, error) {
+	fileDataChunk := &mpi.FileDataChunk{
+		Meta: &mpi.MessageMeta{
+			MessageId:     "123",
+			CorrelationId: "1234",
+			Timestamp:     timestamppb.Now(),
+		},
+	}
+
+	if f.currentChunkID == 0 {
+		fileDataChunk.Chunk = &mpi.FileDataChunk_Header{
+			Header: &mpi.FileDataChunkHeader{
+				FileMeta: &mpi.FileMeta{
+					Name:        f.fileName,
+					Permissions: "666",
+				},
+				Chunks:    52,
+				ChunkSize: 1,
+			},
+		}
+	} else {
+		fileDataChunk.Chunk = &mpi.FileDataChunk_Content{
+			Content: &mpi.FileDataChunkContent{
+				ChunkId: f.currentChunkID,
+				Data:    f.chunks[f.currentChunkID-1],
+			},
+		}
+	}
+
+	f.currentChunkID++
+
+	return fileDataChunk, nil
+}
+
+func (f *FakeServerStreamingClient) Header() (metadata.MD, error) {
+	return metadata.MD{}, nil
+}
+
+func (f *FakeServerStreamingClient) Trailer() metadata.MD {
+	return metadata.MD{}
+}
+
+func (f *FakeServerStreamingClient) CloseSend() error {
+	return nil
+}
+
+func (f *FakeServerStreamingClient) Context() context.Context {
+	return context.Background()
+}
+
+func (f *FakeServerStreamingClient) SendMsg(m any) error {
+	return nil
+}
+
+func (f *FakeServerStreamingClient) RecvMsg(m any) error {
+	return nil
+}
 
 func TestFileManagerService_UpdateOverview(t *testing.T) {
 	ctx := context.Background()
@@ -142,6 +246,30 @@ func TestFileManagerService_UpdateFile(t *testing.T) {
 	}
 }
 
+func TestFileManagerService_UpdateFile_LargeFile(t *testing.T) {
+	ctx := context.Background()
+	tempDir := os.TempDir()
+
+	testFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
+	writeFileError := os.WriteFile(testFile.Name(), []byte("#test content"), 0o600)
+	require.NoError(t, writeFileError)
+	fileMeta := protos.FileMetaLargeFile(testFile.Name(), "")
+
+	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+	fakeClientStreamingClient := &FakeClientStreamingClient{sendCount: atomic.Int32{}}
+	fakeFileServiceClient.UpdateFileStreamReturns(fakeClientStreamingClient, nil)
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
+	fileManagerService.SetIsConnected(true)
+
+	err := fileManagerService.UpdateFile(ctx, "123", &mpi.File{FileMeta: fileMeta})
+
+	require.NoError(t, err)
+	assert.Equal(t, 0, fakeFileServiceClient.UpdateFileCallCount())
+	assert.Equal(t, 14, int(fakeClientStreamingClient.sendCount.Load()))
+
+	helpers.RemoveFileWithErrorCheck(t, testFile.Name())
+}
+
 func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	ctx := context.Background()
 	tempDir := t.TempDir()
@@ -178,6 +306,59 @@ func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	require.NoError(t, readErr)
 	assert.Equal(t, fileContent, data)
 	assert.Equal(t, fileManagerService.fileActions[filePath], overview.GetFiles()[0])
+	assert.Equal(t, 1, fakeFileServiceClient.GetFileCallCount())
+}
+
+func TestFileManagerService_ConfigApply_Add_LargeFile(t *testing.T) {
+	ctx := context.Background()
+	tempDir := t.TempDir()
+
+	filePath := filepath.Join(tempDir, "nginx.conf")
+	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
+	fileHash := files.GenerateHash(fileContent)
+	defer helpers.RemoveFileWithErrorCheck(t, filePath)
+
+	overview := protos.FileOverviewLargeFile(filePath, fileHash)
+
+	manifestDirPath = tempDir
+	manifestFilePath = manifestDirPath + "/manifest.json"
+	helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
+
+	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+	fakeFileServiceClient.GetOverviewReturns(&mpi.GetOverviewResponse{
+		Overview: overview,
+	}, nil)
+
+	fakeServerStreamingClient := &FakeServerStreamingClient{
+		chunks:         make(map[uint32][]byte),
+		currentChunkID: 0,
+		fileName:       filePath,
+	}
+
+	t.Logf("fakeServerStreamingClient: %v", fakeServerStreamingClient)
+
+	for i := 0; i < len(fileContent); i++ {
+		fakeServerStreamingClient.chunks[uint32(i)] = []byte{fileContent[i]}
+	}
+
+	t.Logf("fakeServerStreamingClient: %v", fakeServerStreamingClient)
+
+	fakeFileServiceClient.GetFileStreamReturns(fakeServerStreamingClient, nil)
+	agentConfig := types.AgentConfig()
+	agentConfig.AllowedDirectories = []string{tempDir}
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig)
+
+	request := protos.CreateConfigApplyRequest(overview)
+	t.Logf("request: %v", request)
+	writeStatus, err := fileManagerService.ConfigApply(ctx, request)
+	require.NoError(t, err)
+	assert.Equal(t, model.OK, writeStatus)
+	data, readErr := os.ReadFile(filePath)
+	require.NoError(t, readErr)
+	assert.Equal(t, fileContent, data)
+	assert.Equal(t, fileManagerService.fileActions[filePath], overview.GetFiles()[0])
+	assert.Equal(t, 0, fakeFileServiceClient.GetFileCallCount())
+	assert.Equal(t, 53, int(fakeServerStreamingClient.currentChunkID))
 }
 
 func TestFileManagerService_ConfigApply_Update(t *testing.T) {
