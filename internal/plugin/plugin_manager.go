@@ -41,13 +41,6 @@ func addResourcePlugin(plugins []bus.Plugin, agentConfig *config.Config) []bus.P
 }
 
 func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentConfig *config.Config) []bus.Plugin {
-	if !agentConfig.IsFeatureEnabled(pkg.FeatureConnection) {
-		slog.WarnContext(ctx, "Connection feature is disabled, no gRPC connection will be created",
-			"enabled_features", agentConfig.Features)
-
-		return plugins
-	}
-
 	if isGrpcClientConfigured(agentConfig) {
 		grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig)
 		if err != nil {

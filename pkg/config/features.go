@@ -6,15 +6,11 @@
 package config
 
 const (
-	FeatureCertificates     = "certificates"
-	FeatureConfiguration    = "configuration"
-	FeatureConnection       = "connection"
-	FeatureMetrics          = "metrics"
-	FeatureMetricsContainer = "metrics-container"
-	FeatureMetricsHost      = "metrics-host"
-	FeatureMetricsInstance  = "metrics-instance"
-	FeatureFileWatcher      = "file-watcher"
-	FeatureAPIAction        = "api-action"
-	// experimental feature
+	FeatureCertificates  = "certificates"
+	FeatureConfiguration = "configuration"
+	FeatureMetrics       = "metrics"
+	FeatureFileWatcher   = "file-watcher"
+	FeatureAPIAction     = "api-action"
+	// FeatureLogsNap experimental feature
 	FeatureLogsNap = "logs-nap"
 )

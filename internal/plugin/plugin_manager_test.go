@@ -90,7 +90,6 @@ func TestLoadPlugins(t *testing.T) {
 				},
 				Features: []string{
 					pkg.FeatureConfiguration,
-					pkg.FeatureConnection,
 					pkg.FeatureFileWatcher,
 				},
 			},
@@ -98,36 +97,6 @@ func TestLoadPlugins(t *testing.T) {
 				&resource.Resource{},
 				&command.CommandPlugin{},
 				&file.FilePlugin{},
-				&watcher.Watcher{},
-			},
-		},
-		{
-			name: "Test 6: No Connection feature enabled",
-			input: &config.Config{
-				Command: &config.Command{
-					Server: &config.ServerConfig{
-						Host: "127.0.0.1",
-						Port: 443,
-						Type: config.Grpc,
-					},
-				},
-				Collector: &config.Collector{
-					Exporters: config.Exporters{
-						Debug: &config.DebugExporter{},
-					},
-				},
-				Features: []string{
-					pkg.FeatureConfiguration,
-					pkg.FeatureMetrics,
-					pkg.FeatureFileWatcher,
-					pkg.FeatureCertificates,
-					pkg.FeatureAPIAction,
-					pkg.FeatureLogsNap,
-				},
-			},
-			expected: []bus.Plugin{
-				&resource.Resource{},
-				&collector.Collector{},
 				&watcher.Watcher{},
 			},
 		},
@@ -150,7 +119,6 @@ func TestLoadPlugins(t *testing.T) {
 					pkg.FeatureConfiguration,
 					pkg.FeatureMetrics,
 					pkg.FeatureFileWatcher,
-					pkg.FeatureConnection,
 					pkg.FeatureCertificates,
 					pkg.FeatureAPIAction,
 					pkg.FeatureLogsNap,
