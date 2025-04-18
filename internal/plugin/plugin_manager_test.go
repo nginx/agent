@@ -101,7 +101,7 @@ func TestLoadPlugins(t *testing.T) {
 			},
 		},
 		{
-			name: "Test 7: All features enabled",
+			name: "Test 5: All features enabled",
 			input: &config.Config{
 				Command: &config.Command{
 					Server: &config.ServerConfig{
