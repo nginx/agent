@@ -18,6 +18,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/datasource/file"
+
 	uuidLibrary "github.com/nginx/agent/v3/pkg/id"
 	selfsignedcerts "github.com/nginx/agent/v3/pkg/tls"
 	"github.com/spf13/cobra"
@@ -128,7 +130,8 @@ func ResolveConfig() (*Config, error) {
 
 func checkCollectorConfiguration(collector *Collector, config *Config) {
 	if len(collector.Exporters.OtlpExporters) == 0 && collector.Exporters.PrometheusExporter == nil &&
-		collector.Exporters.Debug == nil && isGrpcClientConfigured(config) {
+		collector.Exporters.Debug == nil && config.IsGrpcClientConfigured() && config.IsAuthConfigured() &&
+		config.IsTLSConfigured() {
 		slog.Info("No collector configuration found in NGINX Agent config, command server configuration found." +
 			"Using default collector configuration")
 		defaultCollector(collector, config)
@@ -138,7 +141,14 @@ func checkCollectorConfiguration(collector *Collector, config *Config) {
 func defaultCollector(collector *Collector, config *Config) {
 	token := config.Command.Auth.Token
 	if config.Command.Auth.TokenPath != "" {
-		token = config.Command.Auth.TokenPath
+		pathToken, err := file.RetrieveTokenFromFile(config.Command.Auth.TokenPath)
+		if err != nil {
+			slog.Error("Error adding token to default collector, "+
+				"default collector configuration not started", "error", err)
+
+			return
+		}
+		token = pathToken
 	}
 
 	collector.Receivers.HostMetrics = &HostMetrics{
@@ -170,17 +180,6 @@ func defaultCollector(collector *Collector, config *Config) {
 	collector.Extensions.HeadersSetter = &HeadersSetter{
 		Headers: header,
 	}
-}
-
-func isGrpcClientConfigured(agentConfig *Config) bool {
-	return agentConfig.Command != nil &&
-		agentConfig.Command.Server != nil &&
-		agentConfig.Command.Server.Host != "" &&
-		agentConfig.Command.Server.Port != 0 &&
-		agentConfig.Command.Server.Type == Grpc &&
-		agentConfig.Command.Auth != nil &&
-		(agentConfig.Command.Auth.Token != "" || agentConfig.Command.Auth.TokenPath != "") &&
-		agentConfig.Command.TLS != nil
 }
 
 func setVersion(version, commit string) {
