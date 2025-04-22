@@ -82,40 +82,6 @@ func (nps *NginxPlusScraper) ID() component.ID {
 	return component.NewID(metadata.Type)
 }
 
-func (nps *NginxPlusScraper) createPreviousLocationZoneResponses(stats *plusapi.Stats) {
-	previousLocationZoneResponses := make(map[string]ResponseStatuses)
-	for lzName, lz := range stats.LocationZones {
-		respStatus := ResponseStatuses{
-			oneHundredStatusRange:   int64(lz.Responses.Responses1xx),
-			twoHundredStatusRange:   int64(lz.Responses.Responses2xx),
-			threeHundredStatusRange: int64(lz.Responses.Responses3xx),
-			fourHundredStatusRange:  int64(lz.Responses.Responses4xx),
-			fiveHundredStatusRange:  int64(lz.Responses.Responses5xx),
-		}
-
-		previousLocationZoneResponses[lzName] = respStatus
-	}
-
-	nps.previousLocationZoneResponses = previousLocationZoneResponses
-}
-
-func (nps *NginxPlusScraper) createPreviousServerZoneResponses(stats *plusapi.Stats) {
-	previousServerZoneResponses := make(map[string]ResponseStatuses)
-	for szName, sz := range stats.ServerZones {
-		respStatus := ResponseStatuses{
-			oneHundredStatusRange:   int64(sz.Responses.Responses1xx),
-			twoHundredStatusRange:   int64(sz.Responses.Responses2xx),
-			threeHundredStatusRange: int64(sz.Responses.Responses3xx),
-			fourHundredStatusRange:  int64(sz.Responses.Responses4xx),
-			fiveHundredStatusRange:  int64(sz.Responses.Responses5xx),
-		}
-
-		previousServerZoneResponses[szName] = respStatus
-	}
-
-	nps.previousServerZoneResponses = previousServerZoneResponses
-}
-
 func (nps *NginxPlusScraper) Start(_ context.Context, _ component.Host) error {
 	endpoint := strings.TrimPrefix(nps.cfg.APIDetails.URL, "unix:")
 	httpClient := http.DefaultClient
@@ -162,6 +128,44 @@ func (nps *NginxPlusScraper) Scrape(ctx context.Context) (pmetric.Metrics, error
 	nps.recordMetrics(stats)
 
 	return nps.mb.Emit(metadata.WithResource(nps.rb.Emit())), nil
+}
+
+func (nps *NginxPlusScraper) Shutdown(ctx context.Context) error {
+	return nil
+}
+
+func (nps *NginxPlusScraper) createPreviousLocationZoneResponses(stats *plusapi.Stats) {
+	previousLocationZoneResponses := make(map[string]ResponseStatuses)
+	for lzName, lz := range stats.LocationZones {
+		respStatus := ResponseStatuses{
+			oneHundredStatusRange:   int64(lz.Responses.Responses1xx),
+			twoHundredStatusRange:   int64(lz.Responses.Responses2xx),
+			threeHundredStatusRange: int64(lz.Responses.Responses3xx),
+			fourHundredStatusRange:  int64(lz.Responses.Responses4xx),
+			fiveHundredStatusRange:  int64(lz.Responses.Responses5xx),
+		}
+
+		previousLocationZoneResponses[lzName] = respStatus
+	}
+
+	nps.previousLocationZoneResponses = previousLocationZoneResponses
+}
+
+func (nps *NginxPlusScraper) createPreviousServerZoneResponses(stats *plusapi.Stats) {
+	previousServerZoneResponses := make(map[string]ResponseStatuses)
+	for szName, sz := range stats.ServerZones {
+		respStatus := ResponseStatuses{
+			oneHundredStatusRange:   int64(sz.Responses.Responses1xx),
+			twoHundredStatusRange:   int64(sz.Responses.Responses2xx),
+			threeHundredStatusRange: int64(sz.Responses.Responses3xx),
+			fourHundredStatusRange:  int64(sz.Responses.Responses4xx),
+			fiveHundredStatusRange:  int64(sz.Responses.Responses5xx),
+		}
+
+		previousServerZoneResponses[szName] = respStatus
+	}
+
+	nps.previousServerZoneResponses = previousServerZoneResponses
 }
 
 func (nps *NginxPlusScraper) recordMetrics(stats *plusapi.Stats) {
@@ -1185,10 +1189,6 @@ func socketClient(socketPath string) *http.Client {
 			},
 		},
 	}
-}
-
-func (nps *NginxPlusScraper) Shutdown(ctx context.Context) error {
-	return nil
 }
 
 // nolint: revive
