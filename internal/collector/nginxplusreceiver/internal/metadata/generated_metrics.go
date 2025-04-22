@@ -924,7 +924,7 @@ type metricNginxHTTPRequestCount struct {
 // init fills nginx.http.request.count metric with initial data.
 func (m *metricNginxHTTPRequestCount) init() {
 	m.data.SetName("nginx.http.request.count")
-	m.data.SetDescription("The current number of client requests received from clients.")
+	m.data.SetDescription("The total number of client requests received, since the last collection interval.")
 	m.data.SetUnit("requests")
 	m.data.SetEmptyGauge()
 }
@@ -1134,7 +1134,7 @@ type metricNginxHTTPRequests struct {
 // init fills nginx.http.requests metric with initial data.
 func (m *metricNginxHTTPRequests) init() {
 	m.data.SetName("nginx.http.requests")
-	m.data.SetDescription("The total number of client requests received from clients.")
+	m.data.SetDescription("The total number of client requests received, since NGINX was last started or reloaded.")
 	m.data.SetUnit("requests")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
@@ -1179,6 +1179,59 @@ func newMetricNginxHTTPRequests(cfg MetricConfig) metricNginxHTTPRequests {
 	return m
 }
 
+type metricNginxHTTPResponseCount struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills nginx.http.response.count metric with initial data.
+func (m *metricNginxHTTPResponseCount) init() {
+	m.data.SetName("nginx.http.response.count")
+	m.data.SetDescription("The total number of HTTP responses sent to clients since the last collection interval, grouped by status code range.")
+	m.data.SetUnit("responses")
+	m.data.SetEmptyGauge()
+	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricNginxHTTPResponseCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxStatusRangeAttributeValue string, nginxZoneNameAttributeValue string, nginxZoneTypeAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Gauge().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetIntValue(val)
+	dp.Attributes().PutStr("nginx.status_range", nginxStatusRangeAttributeValue)
+	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	dp.Attributes().PutStr("nginx.zone.type", nginxZoneTypeAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricNginxHTTPResponseCount) updateCapacity() {
+	if m.data.Gauge().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Gauge().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricNginxHTTPResponseCount) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricNginxHTTPResponseCount(cfg MetricConfig) metricNginxHTTPResponseCount {
+	m := metricNginxHTTPResponseCount{config: cfg}
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
 type metricNginxHTTPResponseStatus struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
@@ -1188,7 +1241,7 @@ type metricNginxHTTPResponseStatus struct {
 // init fills nginx.http.response.status metric with initial data.
 func (m *metricNginxHTTPResponseStatus) init() {
 	m.data.SetName("nginx.http.response.status")
-	m.data.SetDescription("The number of responses, grouped by status code range.")
+	m.data.SetDescription("The total number of responses since NGINX was last started or reloaded, grouped by status code range.")
 	m.data.SetUnit("responses")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
@@ -1243,7 +1296,7 @@ type metricNginxHTTPResponses struct {
 // init fills nginx.http.responses metric with initial data.
 func (m *metricNginxHTTPResponses) init() {
 	m.data.SetName("nginx.http.responses")
-	m.data.SetDescription("The total number of HTTP responses sent to clients.")
+	m.data.SetDescription("The total number of HTTP responses sent to clients, since NGINX was last started or reloaded.")
 	m.data.SetUnit("responses")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
@@ -3577,6 +3630,7 @@ type MetricsBuilder struct {
 	metricNginxHTTPRequestIo                     metricNginxHTTPRequestIo
 	metricNginxHTTPRequestProcessingCount        metricNginxHTTPRequestProcessingCount
 	metricNginxHTTPRequests                      metricNginxHTTPRequests
+	metricNginxHTTPResponseCount                 metricNginxHTTPResponseCount
 	metricNginxHTTPResponseStatus                metricNginxHTTPResponseStatus
 	metricNginxHTTPResponses                     metricNginxHTTPResponses
 	metricNginxHTTPUpstreamKeepaliveCount        metricNginxHTTPUpstreamKeepaliveCount
@@ -3661,6 +3715,7 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, opt
 		metricNginxHTTPRequestIo:                     newMetricNginxHTTPRequestIo(mbc.Metrics.NginxHTTPRequestIo),
 		metricNginxHTTPRequestProcessingCount:        newMetricNginxHTTPRequestProcessingCount(mbc.Metrics.NginxHTTPRequestProcessingCount),
 		metricNginxHTTPRequests:                      newMetricNginxHTTPRequests(mbc.Metrics.NginxHTTPRequests),
+		metricNginxHTTPResponseCount:                 newMetricNginxHTTPResponseCount(mbc.Metrics.NginxHTTPResponseCount),
 		metricNginxHTTPResponseStatus:                newMetricNginxHTTPResponseStatus(mbc.Metrics.NginxHTTPResponseStatus),
 		metricNginxHTTPResponses:                     newMetricNginxHTTPResponses(mbc.Metrics.NginxHTTPResponses),
 		metricNginxHTTPUpstreamKeepaliveCount:        newMetricNginxHTTPUpstreamKeepaliveCount(mbc.Metrics.NginxHTTPUpstreamKeepaliveCount),
@@ -3803,6 +3858,7 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	mb.metricNginxHTTPRequestIo.emit(ils.Metrics())
 	mb.metricNginxHTTPRequestProcessingCount.emit(ils.Metrics())
 	mb.metricNginxHTTPRequests.emit(ils.Metrics())
+	mb.metricNginxHTTPResponseCount.emit(ils.Metrics())
 	mb.metricNginxHTTPResponseStatus.emit(ils.Metrics())
 	mb.metricNginxHTTPResponses.emit(ils.Metrics())
 	mb.metricNginxHTTPUpstreamKeepaliveCount.emit(ils.Metrics())
@@ -3946,6 +4002,11 @@ func (mb *MetricsBuilder) RecordNginxHTTPRequestProcessingCountDataPoint(ts pcom
 // RecordNginxHTTPRequestsDataPoint adds a data point to nginx.http.requests metric.
 func (mb *MetricsBuilder) RecordNginxHTTPRequestsDataPoint(ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxZoneTypeAttributeValue AttributeNginxZoneType) {
 	mb.metricNginxHTTPRequests.recordDataPoint(mb.startTime, ts, val, nginxZoneNameAttributeValue, nginxZoneTypeAttributeValue.String())
+}
+
+// RecordNginxHTTPResponseCountDataPoint adds a data point to nginx.http.response.count metric.
+func (mb *MetricsBuilder) RecordNginxHTTPResponseCountDataPoint(ts pcommon.Timestamp, val int64, nginxStatusRangeAttributeValue AttributeNginxStatusRange, nginxZoneNameAttributeValue string, nginxZoneTypeAttributeValue AttributeNginxZoneType) {
+	mb.metricNginxHTTPResponseCount.recordDataPoint(mb.startTime, ts, val, nginxStatusRangeAttributeValue.String(), nginxZoneNameAttributeValue, nginxZoneTypeAttributeValue.String())
 }
 
 // RecordNginxHTTPResponseStatusDataPoint adds a data point to nginx.http.response.status metric.

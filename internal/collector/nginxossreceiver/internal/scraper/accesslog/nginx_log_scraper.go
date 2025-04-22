@@ -169,27 +169,29 @@ func (nls *NginxLogScraper) Scrape(_ context.Context) (pmetric.Metrics, error) {
 	nls.rb.SetInstanceType("nginx")
 	nls.logger.Debug("NGINX OSS access log resource info", zap.Any("resource", nls.rb))
 
-	nls.mb.RecordNginxHTTPResponseStatusDataPoint(
+	nls.mb.RecordNginxHTTPResponseCountDataPoint(
 		timeNow,
 		nginxMetrics.responseStatuses.oneHundredStatusRange,
 		metadata.AttributeNginxStatusRange1xx,
 	)
-	nls.mb.RecordNginxHTTPResponseStatusDataPoint(
+
+	nls.mb.RecordNginxHTTPResponseCountDataPoint(
 		timeNow,
 		nginxMetrics.responseStatuses.twoHundredStatusRange,
 		metadata.AttributeNginxStatusRange2xx,
 	)
-	nls.mb.RecordNginxHTTPResponseStatusDataPoint(
+
+	nls.mb.RecordNginxHTTPResponseCountDataPoint(
 		timeNow,
 		nginxMetrics.responseStatuses.threeHundredStatusRange,
 		metadata.AttributeNginxStatusRange3xx,
 	)
-	nls.mb.RecordNginxHTTPResponseStatusDataPoint(
+	nls.mb.RecordNginxHTTPResponseCountDataPoint(
 		timeNow,
 		nginxMetrics.responseStatuses.fourHundredStatusRange,
 		metadata.AttributeNginxStatusRange4xx,
 	)
-	nls.mb.RecordNginxHTTPResponseStatusDataPoint(
+	nls.mb.RecordNginxHTTPResponseCountDataPoint(
 		timeNow,
 		nginxMetrics.responseStatuses.fiveHundredStatusRange,
 		metadata.AttributeNginxStatusRange5xx,

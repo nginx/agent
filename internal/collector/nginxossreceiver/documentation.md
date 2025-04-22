@@ -28,7 +28,7 @@ The current number of connections.
 
 ### nginx.http.connections
 
-The total number of connections.
+The total number of connections, since NGINX was last started or reloaded.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
@@ -40,21 +40,29 @@ The total number of connections.
 | ---- | ----------- | ------ |
 | nginx.connections.outcome | The outcome of the connection. | Str: ``ACCEPTED``, ``ACTIVE``, ``HANDLED``, ``READING``, ``WRITING``, ``WAITING`` |
 
+### nginx.http.request.count
+
+The total number of client requests received, since the last collection interval.
+
+| Unit | Metric Type | Value Type |
+| ---- | ----------- | ---------- |
+| requests | Gauge | Int |
+
 ### nginx.http.requests
 
-The total number of client requests received from clients.
+The total number of client requests received, since NGINX was last started or reloaded.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
 | requests | Sum | Int | Cumulative | true |
 
-### nginx.http.response.status
+### nginx.http.response.count
 
-The number of responses, grouped by status code range.
+The total number of HTTP responses since the last collection interval, grouped by status code range.
 
-| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
-| ---- | ----------- | ---------- | ----------------------- | --------- |
-| responses | Sum | Int | Cumulative | true |
+| Unit | Metric Type | Value Type |
+| ---- | ----------- | ---------- |
+| responses | Gauge | Int |
 
 #### Attributes
 
