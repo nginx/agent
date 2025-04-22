@@ -37,7 +37,7 @@ func Test_RetrieveTokenFromFile(t *testing.T) {
 			createToken:    false,
 			path:           "test-tkn",
 			expected:       "",
-			expectedErrMsg: "unable to read token from file: open test-tkn: no such file or directory",
+			expectedErrMsg: "unable to read from file: open test-tkn: no such file or directory",
 		},
 		{
 			name:           "Test 3: Empty path",
