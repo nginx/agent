@@ -373,7 +373,22 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			allowedDirectories: []string{dir},
 		},
 		{
-			name:     "Test 4: Log monitoring error for stderr directory",
+			name:     "Test 4: SSL Certificate file path containing variables",
+			instance: protos.GetNginxPlusInstance([]string{}),
+			content:  testconfig.GetNginxConfWithSSLCertsWithVariables(),
+			expectedConfigContext: &model.NginxConfigContext{
+				StubStatus:       &model.APIDetails{},
+				PlusAPI:          &model.APIDetails{},
+				InstanceID:       protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				Files:            []*mpi.File{},
+				AccessLogs:       []*model.AccessLog{},
+				ErrorLogs:        []*model.ErrorLog{},
+				NAPSysLogServers: nil,
+			},
+			allowedDirectories: []string{dir},
+		},
+		{
+			name:     "Test 5: Error Log outputting to stderr",
 			instance: protos.GetNginxPlusInstance([]string{}),
 			content: testconfig.GetNginxConfigWithMultipleAccessLogs(
 				"stderr",
@@ -393,7 +408,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			allowedDirectories: []string{dir},
 		},
 		{
-			name:     "Test 5: Log monitoring error for stdout directory",
+			name:     "Test 6: Error Log outputting to stdout",
 			instance: protos.GetNginxPlusInstance([]string{}),
 			content: testconfig.GetNginxConfigWithMultipleAccessLogs(
 				"stdout",
@@ -410,21 +425,6 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			),
 			expectedLog: "Currently error log outputs to stdout. Log monitoring is disabled while applying a " +
 				"config; log errors to file to enable error monitoring",
-			allowedDirectories: []string{dir},
-		},
-		{
-			name:     "Test 4: SSL Certificate file path containing variables",
-			instance: protos.GetNginxPlusInstance([]string{}),
-			content:  testconfig.GetNginxConfWithSSLCertsWithVariables(),
-			expectedConfigContext: &model.NginxConfigContext{
-				StubStatus:       &model.APIDetails{},
-				PlusAPI:          &model.APIDetails{},
-				InstanceID:       protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
-				Files:            []*mpi.File{},
-				AccessLogs:       []*model.AccessLog{},
-				ErrorLogs:        []*model.ErrorLog{},
-				NAPSysLogServers: nil,
-			},
 			allowedDirectories: []string{dir},
 		},
 	}
