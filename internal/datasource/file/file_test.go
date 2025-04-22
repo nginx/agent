@@ -44,7 +44,7 @@ func Test_RetrieveTokenFromFile(t *testing.T) {
 			createToken:    false,
 			path:           "",
 			expected:       "",
-			expectedErrMsg: "token file path is empty",
+			expectedErrMsg: "failed to read file since file path is empty",
 		},
 	}
 	for _, tt := range tests {
@@ -54,7 +54,7 @@ func Test_RetrieveTokenFromFile(t *testing.T) {
 				require.NoError(t, writeErr)
 			}
 
-			token, err := RetrieveTokenFromFile(tt.path)
+			token, err := ReadFromFile(tt.path)
 			if err != nil {
 				assert.Equal(t, tt.expectedErrMsg, err.Error())
 			}

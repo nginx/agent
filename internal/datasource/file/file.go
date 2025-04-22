@@ -9,29 +9,29 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"log/slog"
 	"os"
 )
 
-func RetrieveTokenFromFile(path string) (string, error) {
+// ReadFromFile reads the contents from a file, trims the white space, trims newlines
+// then returns the contents as a string
+func ReadFromFile(path string) (string, error) {
 	if path == "" {
-		return "", errors.New("token file path is empty")
+		return "", errors.New("failed to read file since file path is empty")
 	}
 
-	slog.Debug("Reading token from file", "path", path)
-	var keyVal string
-	keyBytes, err := os.ReadFile(path)
+	var content string
+	contentBytes, err := os.ReadFile(path)
 	if err != nil {
-		return "", fmt.Errorf("unable to read token from file: %w", err)
+		return "", fmt.Errorf("unable to read from file: %w", err)
 	}
 
-	keyBytes = bytes.TrimSpace(keyBytes)
-	keyBytes = bytes.TrimRight(keyBytes, "\n")
-	keyVal = string(keyBytes)
+	contentBytes = bytes.TrimSpace(contentBytes)
+	contentBytes = bytes.TrimRight(contentBytes, "\n")
+	content = string(contentBytes)
 
-	if keyVal == "" {
-		return "", errors.New("failed to load token, token file is empty")
+	if content == "" {
+		return "", errors.New("failed to read from file, file is empty")
 	}
 
-	return keyVal, nil
+	return content, nil
 }

@@ -129,8 +129,7 @@ func ResolveConfig() (*Config, error) {
 }
 
 func checkCollectorConfiguration(collector *Collector, config *Config) {
-	if len(collector.Exporters.OtlpExporters) == 0 && collector.Exporters.PrometheusExporter == nil &&
-		collector.Exporters.Debug == nil && config.IsGrpcClientConfigured() && config.IsAuthConfigured() &&
+	if isOTelExporterConfigured(collector) && config.IsGrpcClientConfigured() && config.IsAuthConfigured() &&
 		config.IsTLSConfigured() {
 		slog.Info("No collector configuration found in NGINX Agent config, command server configuration found." +
 			"Using default collector configuration")
@@ -141,7 +140,8 @@ func checkCollectorConfiguration(collector *Collector, config *Config) {
 func defaultCollector(collector *Collector, config *Config) {
 	token := config.Command.Auth.Token
 	if config.Command.Auth.TokenPath != "" {
-		pathToken, err := file.RetrieveTokenFromFile(config.Command.Auth.TokenPath)
+		slog.Debug("Reading token from file", "path", config.Command.Auth.TokenPath)
+		pathToken, err := file.ReadFromFile(config.Command.Auth.TokenPath)
 		if err != nil {
 			slog.Error("Error adding token to default collector, "+
 				"default collector configuration not started", "error", err)
@@ -969,4 +969,9 @@ func resolveMapStructure(key string, object any) error {
 	}
 
 	return nil
+}
+
+func isOTelExporterConfigured(collector *Collector) bool {
+	return len(collector.Exporters.OtlpExporters) == 0 && collector.Exporters.PrometheusExporter == nil &&
+		collector.Exporters.Debug == nil
 }

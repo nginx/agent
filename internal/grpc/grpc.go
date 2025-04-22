@@ -243,7 +243,8 @@ func addPerRPCCredentials(agentConfig *config.Config, resourceID string, opts []
 	token := agentConfig.Command.Auth.Token
 
 	if agentConfig.Command.Auth.TokenPath != "" {
-		tk, err := file.RetrieveTokenFromFile(agentConfig.Command.Auth.TokenPath)
+		slog.Debug("Reading token from file", "path", agentConfig.Command.Auth.TokenPath)
+		tk, err := file.ReadFromFile(agentConfig.Command.Auth.TokenPath)
 		if err == nil {
 			token = tk
 		} else {
