@@ -293,6 +293,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 		name                  string
 		content               string
 		expectedConfigContext *model.NginxConfigContext
+		expectedLog           string
 		allowedDirectories    []string
 	}{
 		{
@@ -312,6 +313,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 				protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 				[]string{"127.0.0.1:1515"},
 			),
+			expectedLog:        "",
 			allowedDirectories: []string{dir},
 		},
 		{
@@ -331,6 +333,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 				[]string{"127.0.0.1:1515"},
 			),
+			expectedLog:        "",
 			allowedDirectories: []string{dir},
 		},
 		{
@@ -366,6 +369,47 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 				},
 				NAPSysLogServers: nil,
 			},
+			expectedLog:        "",
+			allowedDirectories: []string{dir},
+		},
+		{
+			name:     "Test 4: Log monitoring error for stderr directory",
+			instance: protos.GetNginxPlusInstance([]string{}),
+			content: testconfig.GetNginxConfigWithMultipleAccessLogs(
+				"stderr",
+				accessLog.Name(),
+				combinedAccessLog.Name(),
+				ltsvAccessLog.Name(),
+			),
+			expectedConfigContext: modelHelpers.GetConfigContextWithoutErrorLog(
+				accessLog.Name(),
+				combinedAccessLog.Name(),
+				ltsvAccessLog.Name(),
+				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				[]string{"127.0.0.1:1515"},
+			),
+			expectedLog: "Currently error log outputs to stderr. Log monitoring is disabled while applying a " +
+				"config; log errors to file to enable error monitoring",
+			allowedDirectories: []string{dir},
+		},
+		{
+			name:     "Test 5: Log monitoring error for stdout directory",
+			instance: protos.GetNginxPlusInstance([]string{}),
+			content: testconfig.GetNginxConfigWithMultipleAccessLogs(
+				"stdout",
+				accessLog.Name(),
+				combinedAccessLog.Name(),
+				ltsvAccessLog.Name(),
+			),
+			expectedConfigContext: modelHelpers.GetConfigContextWithoutErrorLog(
+				accessLog.Name(),
+				combinedAccessLog.Name(),
+				ltsvAccessLog.Name(),
+				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				[]string{"127.0.0.1:1515"},
+			),
+			expectedLog: "Currently error log outputs to stdout. Log monitoring is disabled while applying a " +
+				"config; log errors to file to enable error monitoring",
 			allowedDirectories: []string{dir},
 		},
 	}
@@ -388,8 +432,16 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			agentConfig.AllowedDirectories = test.allowedDirectories
 
 			nginxConfig := NewNginxConfigParser(agentConfig)
+
+			logBuf := &bytes.Buffer{}
+			stub.StubLoggerWith(logBuf)
+
 			result, parseError := nginxConfig.Parse(ctx, test.instance)
 			require.NoError(t, parseError)
+
+			helpers.ValidateLog(t, test.expectedLog, logBuf)
+
+			logBuf.Reset()
 
 			assert.ElementsMatch(t, test.expectedConfigContext.Files, result.Files)
 			assert.Equal(t, test.expectedConfigContext.NAPSysLogServers, result.NAPSysLogServers)
