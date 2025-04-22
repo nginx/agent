@@ -5,9 +5,11 @@ all_set:
       enabled: true
     nginx.http.connections:
       enabled: true
+    nginx.http.request.count:
+      enabled: true
     nginx.http.requests:
       enabled: true
-    nginx.http.response.status:
+    nginx.http.response.count:
       enabled: true
   resource_attributes:
     instance.id:
@@ -20,9 +22,11 @@ none_set:
       enabled: false
     nginx.http.connections:
       enabled: false
+    nginx.http.request.count:
+      enabled: false
     nginx.http.requests:
       enabled: false
-    nginx.http.response.status:
+    nginx.http.response.count:
       enabled: false
   resource_attributes:
     instance.id:

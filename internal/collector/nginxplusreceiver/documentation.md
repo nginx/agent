@@ -138,7 +138,7 @@ The total number of requests to an endpoint with a limit_req directive.
 
 ### nginx.http.request.count
 
-The current number of client requests received from clients.
+The total number of client requests received, since the last collection interval.
 
 | Unit | Metric Type | Value Type |
 | ---- | ----------- | ---------- |
@@ -192,7 +192,7 @@ The number of client requests that are currently being processed.
 
 ### nginx.http.requests
 
-The total number of client requests received from clients.
+The total number of client requests received, since NGINX was last started or reloaded.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
@@ -205,9 +205,25 @@ The total number of client requests received from clients.
 | nginx.zone.name | The name of the shared memory zone. | Any Str |
 | nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` |
 
+### nginx.http.response.count
+
+The total number of HTTP responses sent to clients since the last collection interval, grouped by status code range.
+
+| Unit | Metric Type | Value Type |
+| ---- | ----------- | ---------- |
+| responses | Gauge | Int |
+
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| nginx.status_range | A status code range or bucket for a HTTP response's status code. | Str: ``1xx``, ``2xx``, ``3xx``, ``4xx``, ``5xx`` |
+| nginx.zone.name | The name of the shared memory zone. | Any Str |
+| nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` |
+
 ### nginx.http.response.status
 
-The number of responses, grouped by status code range.
+The total number of responses since NGINX was last started or reloaded, grouped by status code range.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
@@ -223,7 +239,7 @@ The number of responses, grouped by status code range.
 
 ### nginx.http.responses
 
-The total number of HTTP responses sent to clients.
+The total number of HTTP responses sent to clients, since NGINX was last started or reloaded.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
