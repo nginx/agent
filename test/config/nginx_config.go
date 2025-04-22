@@ -16,6 +16,9 @@ var embedNginxConfWithMultipleAccessLogs string
 //go:embed nginx/nginx-not-allowed-dir.conf
 var embedNginxConfWithNotAllowedDir string
 
+//go:embed nginx/nginx-ssl-certs-with-variables.conf
+var embedNginxConfWithSSLCertsWithVariables string
+
 func GetNginxConfigWithMultipleAccessLogs(
 	errorLogName,
 	accessLogName,
@@ -33,4 +36,8 @@ func GetNginxConfigWithMultipleAccessLogs(
 
 func GetNginxConfigWithNotAllowedDir(errorLogFile, notAllowedFile, allowedFileDir, accessLogFile string) string {
 	return fmt.Sprintf(embedNginxConfWithNotAllowedDir, errorLogFile, notAllowedFile, allowedFileDir, accessLogFile)
+}
+
+func GetNginxConfWithSSLCertsWithVariables() string {
+	return embedNginxConfWithSSLCertsWithVariables
 }
