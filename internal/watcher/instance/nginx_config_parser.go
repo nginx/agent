@@ -153,14 +153,13 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 					if ncp.agentConfig.IsFeatureEnabled(pkg.FeatureCertificates) {
 						sslCertFile := ncp.sslCert(ctx, directive.Args[0], rootDir)
 						if sslCertFile != nil && !ncp.isDuplicateFile(nginxConfigContext.Files, sslCertFile) {
-							slog.InfoContext(ctx, "Adding SSL certificate file", "ssl_cert", sslCertFile)
+							slog.DebugContext(ctx, "Adding SSL certificate file", "ssl_cert", sslCertFile)
 							nginxConfigContext.Files = append(nginxConfigContext.Files, sslCertFile)
 						}
 					} else {
 						slog.InfoContext(ctx, "Certificate feature is disabled, skipping cert",
 							"enabled_features", ncp.agentConfig.Features)
 					}
-
 				case "app_protect_security_log":
 					if len(directive.Args) > 1 {
 						syslogArg := directive.Args[1]
