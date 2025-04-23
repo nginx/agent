@@ -57,6 +57,7 @@ type (
 		)
 		ReparseConfig(ctx context.Context, instanceID string)
 		ReparseConfigs(ctx context.Context)
+		SetEnabled(enabled bool)
 	}
 
 	credentialWatcherServiceInterface interface {
@@ -64,7 +65,6 @@ type (
 			ctx context.Context,
 			credentialUpdateChannel chan<- credentials.CredentialUpdateMessage,
 		)
-		SetEnabled(enabled bool)
 	}
 )
 
@@ -153,6 +153,7 @@ func (*Watcher) Subscriptions() []string {
 }
 
 func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message) {
+	slog.Info("Received ConfigApplyRequest event")
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest",
@@ -176,9 +177,11 @@ func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message
 	w.instancesWithConfigApplyInProgress = append(w.instancesWithConfigApplyInProgress, instanceID)
 
 	w.fileWatcherService.SetEnabled(false)
+	w.instanceWatcherService.SetEnabled(false)
 }
 
 func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message) {
+	slog.Info("Received ConfigApplySuccess event")
 	response, ok := msg.Data.(*mpi.DataPlaneResponse)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.DataPlaneResponse", "payload",
@@ -199,6 +202,7 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 
 	w.fileWatcherService.SetEnabled(true)
 	w.watcherMutex.Unlock()
+	w.instanceWatcherService.SetEnabled(true)
 
 	w.instanceWatcherService.ReparseConfig(ctx, instanceID)
 }
@@ -210,6 +214,7 @@ func (w *Watcher) handleHealthRequest(ctx context.Context) {
 }
 
 func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Message) {
+	slog.Info("Received ConfigApplyComplete event")
 	response, ok := msg.Data.(*mpi.DataPlaneResponse)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.DataPlaneResponse", "payload",
@@ -267,7 +272,7 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 			w.watcherMutex.Lock()
 			if !slices.Contains(w.instancesWithConfigApplyInProgress, message.NginxConfigContext.InstanceID) {
-				slog.DebugContext(
+				slog.InfoContext(
 					newCtx,
 					"Updated NGINX config context",
 					"nginx_config_context", message.NginxConfigContext,
@@ -278,7 +283,7 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 						NginxConfigUpdateTopic, Data: message.NginxConfigContext},
 				)
 			} else {
-				slog.DebugContext(
+				slog.InfoContext(
 					newCtx,
 					"Not sending updated NGINX config context since config apply is in progress",
 					"nginx_config_context", message.NginxConfigContext,

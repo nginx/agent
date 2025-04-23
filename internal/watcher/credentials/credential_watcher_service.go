@@ -32,7 +32,6 @@ type CredentialUpdateMessage struct {
 }
 
 type CredentialWatcherService struct {
-	enabled           *atomic.Bool
 	agentConfig       *config.Config
 	watcher           *fsnotify.Watcher
 	filesBeingWatched *sync.Map
@@ -40,14 +39,10 @@ type CredentialWatcherService struct {
 }
 
 func NewCredentialWatcherService(agentConfig *config.Config) *CredentialWatcherService {
-	enabled := &atomic.Bool{}
-	enabled.Store(true)
-
 	filesChanged := &atomic.Bool{}
 	filesChanged.Store(false)
 
 	return &CredentialWatcherService{
-		enabled:           enabled,
 		agentConfig:       agentConfig,
 		filesBeingWatched: &sync.Map{},
 		filesChanged:      filesChanged,
@@ -87,17 +82,7 @@ func (cws *CredentialWatcherService) Watch(ctx context.Context, ch chan<- Creden
 	}
 }
 
-func (cws *CredentialWatcherService) SetEnabled(enabled bool) {
-	cws.enabled.Store(enabled)
-}
-
 func (cws *CredentialWatcherService) addWatcher(ctx context.Context, filePath string) {
-	if !cws.enabled.Load() {
-		slog.DebugContext(ctx, "Credential watcher is disabled")
-
-		return
-	}
-
 	if cws.isWatching(filePath) {
 		slog.DebugContext(
 			ctx, "Credential watcher is already watching ", "path", filePath)
@@ -133,26 +118,24 @@ func (cws *CredentialWatcherService) isWatching(path string) bool {
 }
 
 func (cws *CredentialWatcherService) handleEvent(ctx context.Context, event fsnotify.Event) {
-	if cws.enabled.Load() {
-		if isEventSkippable(event) {
-			slog.DebugContext(ctx, "Skipping FSNotify event", "event", event)
-			return
-		}
-
-		slog.DebugContext(ctx, "Processing FSNotify event", "event", event)
-
-		switch {
-		case event.Has(fsnotify.Remove):
-			fallthrough
-		case event.Has(fsnotify.Rename):
-			if !slices.Contains(cws.watcher.WatchList(), event.Name) {
-				cws.filesBeingWatched.Store(event.Name, false)
-			}
-			cws.addWatcher(ctx, event.Name)
-		}
-
-		cws.filesChanged.Store(true)
+	if isEventSkippable(event) {
+		// slog.DebugContext(ctx, "Skipping FSNotify event", "event", event)
+		return
 	}
+
+	// slog.DebugContext(ctx, "Processing FSNotify event", "event", event)
+
+	switch {
+	case event.Has(fsnotify.Remove):
+		fallthrough
+	case event.Has(fsnotify.Rename):
+		if !slices.Contains(cws.watcher.WatchList(), event.Name) {
+			cws.filesBeingWatched.Store(event.Name, false)
+		}
+		cws.addWatcher(ctx, event.Name)
+	}
+
+	cws.filesChanged.Store(true)
 }
 
 func (cws *CredentialWatcherService) checkForUpdates(ctx context.Context, ch chan<- CredentialUpdateMessage) {

@@ -32,6 +32,7 @@ type NginxStubStatusScraper struct {
 	mb               *metadata.MetricsBuilder
 	rb               *metadata.ResourceBuilder
 	settings         receiver.Settings
+	logger           *zap.Logger
 	init             sync.Once
 	previousRequests int
 }
@@ -53,6 +54,7 @@ func NewScraper(
 		cfg:      cfg,
 		mb:       mb,
 		rb:       rb,
+		logger:   logger,
 	}
 }
 
@@ -61,6 +63,7 @@ func (s *NginxStubStatusScraper) ID() component.ID {
 }
 
 func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) error {
+	s.logger.Info("Starting NGINX stub status scraper")
 	httpClient := http.DefaultClient
 	httpClient.Timeout = s.cfg.ClientConfig.Timeout
 
@@ -77,6 +80,7 @@ func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) erro
 }
 
 func (s *NginxStubStatusScraper) Shutdown(_ context.Context) error {
+	s.logger.Info("Shutting down NGINX stub status scraper")
 	return nil
 }
 

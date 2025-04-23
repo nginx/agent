@@ -11,7 +11,10 @@ import (
 	"reflect"
 	"slices"
 	"sync"
+	"sync/atomic"
 	"time"
+
+	parser "github.com/nginx/agent/v3/internal/datasource/config"
 
 	"github.com/nginx/agent/v3/pkg/nginxprocess"
 
@@ -45,6 +48,7 @@ type (
 		processOperator              process.ProcessOperatorInterface
 		nginxConfigParser            nginxConfigParser
 		executer                     exec.ExecInterface
+		enabled                      *atomic.Bool
 		agentConfig                  *config.Config
 		instanceCache                map[string]*mpi.Instance
 		nginxConfigCache             map[string]*model.NginxConfigContext
@@ -73,17 +77,25 @@ type (
 )
 
 func NewInstanceWatcherService(agentConfig *config.Config) *InstanceWatcherService {
+	enabled := &atomic.Bool{}
+	enabled.Store(true)
+
 	return &InstanceWatcherService{
 		agentConfig:                  agentConfig,
 		processOperator:              process.NewProcessOperator(),
 		nginxParser:                  NewNginxProcessParser(),
 		nginxAppProtectProcessParser: NewNginxAppProtectProcessParser(),
-		nginxConfigParser:            NewNginxConfigParser(agentConfig),
+		nginxConfigParser:            parser.NewNginxConfigParser(agentConfig),
 		instanceCache:                make(map[string]*mpi.Instance),
 		cacheMutex:                   sync.Mutex{},
 		nginxConfigCache:             make(map[string]*model.NginxConfigContext),
 		executer:                     &exec.Exec{},
+		enabled:                      enabled,
 	}
+}
+
+func (iw *InstanceWatcherService) SetEnabled(enabled bool) {
+	iw.enabled.Store(enabled)
 }
 
 func (iw *InstanceWatcherService) Watch(
@@ -108,7 +120,11 @@ func (iw *InstanceWatcherService) Watch(
 
 			return
 		case <-instanceWatcherTicker.C:
-			iw.checkForUpdates(ctx)
+			if iw.enabled.Load() {
+				iw.checkForUpdates(ctx)
+			} else {
+				slog.Info("Instance watcher is disabled")
+			}
 		}
 	}
 }

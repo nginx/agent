@@ -20,6 +20,11 @@ type FakeInstanceWatcherServiceInterface struct {
 	reparseConfigsArgsForCall []struct {
 		arg1 context.Context
 	}
+	SetEnabledStub        func(bool)
+	setEnabledMutex       sync.RWMutex
+	setEnabledArgsForCall []struct {
+		arg1 bool
+	}
 	WatchStub        func(context.Context, chan<- instance.InstanceUpdatesMessage, chan<- instance.NginxConfigContextMessage)
 	watchMutex       sync.RWMutex
 	watchArgsForCall []struct {
@@ -96,6 +101,38 @@ func (fake *FakeInstanceWatcherServiceInterface) ReparseConfigsArgsForCall(i int
 	return argsForCall.arg1
 }
 
+func (fake *FakeInstanceWatcherServiceInterface) SetEnabled(arg1 bool) {
+	fake.setEnabledMutex.Lock()
+	fake.setEnabledArgsForCall = append(fake.setEnabledArgsForCall, struct {
+		arg1 bool
+	}{arg1})
+	stub := fake.SetEnabledStub
+	fake.recordInvocation("SetEnabled", []interface{}{arg1})
+	fake.setEnabledMutex.Unlock()
+	if stub != nil {
+		fake.SetEnabledStub(arg1)
+	}
+}
+
+func (fake *FakeInstanceWatcherServiceInterface) SetEnabledCallCount() int {
+	fake.setEnabledMutex.RLock()
+	defer fake.setEnabledMutex.RUnlock()
+	return len(fake.setEnabledArgsForCall)
+}
+
+func (fake *FakeInstanceWatcherServiceInterface) SetEnabledCalls(stub func(bool)) {
+	fake.setEnabledMutex.Lock()
+	defer fake.setEnabledMutex.Unlock()
+	fake.SetEnabledStub = stub
+}
+
+func (fake *FakeInstanceWatcherServiceInterface) SetEnabledArgsForCall(i int) bool {
+	fake.setEnabledMutex.RLock()
+	defer fake.setEnabledMutex.RUnlock()
+	argsForCall := fake.setEnabledArgsForCall[i]
+	return argsForCall.arg1
+}
+
 func (fake *FakeInstanceWatcherServiceInterface) Watch(arg1 context.Context, arg2 chan<- instance.InstanceUpdatesMessage, arg3 chan<- instance.NginxConfigContextMessage) {
 	fake.watchMutex.Lock()
 	fake.watchArgsForCall = append(fake.watchArgsForCall, struct {
@@ -137,6 +174,8 @@ func (fake *FakeInstanceWatcherServiceInterface) Invocations() map[string][][]in
 	defer fake.reparseConfigMutex.RUnlock()
 	fake.reparseConfigsMutex.RLock()
 	defer fake.reparseConfigsMutex.RUnlock()
+	fake.setEnabledMutex.RLock()
+	defer fake.setEnabledMutex.RUnlock()
 	fake.watchMutex.RLock()
 	defer fake.watchMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}

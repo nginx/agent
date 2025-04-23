@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package instance
+package config
 
 import (
 	"context"
@@ -45,6 +45,10 @@ type (
 		agentConfig *config.Config
 	}
 )
+
+type nginxConfigParser interface {
+	Parse(ctx context.Context, instance *mpi.Instance) (*model.NginxConfigContext, error)
+}
 
 var _ nginxConfigParser = (*NginxConfigParser)(nil)
 
@@ -203,160 +207,6 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 	return nginxConfigContext, nil
 }
 
-func (ncp *NginxConfigParser) ignoreLog(logPath string) bool {
-	ignoreLogs := []string{"off", "/dev/stderr", "/dev/stdout", "/dev/null", "stderr", "stdout"}
-
-	if strings.HasPrefix(logPath, "syslog:") || slices.Contains(ignoreLogs, logPath) {
-		return true
-	}
-
-	if ncp.isExcludeLog(logPath) {
-		return true
-	}
-
-	if !ncp.agentConfig.IsDirectoryAllowed(logPath) {
-		slog.Warn("Log being read is outside of allowed directories", "log_path", logPath)
-	}
-
-	return false
-}
-
-func (ncp *NginxConfigParser) isExcludeLog(path string) bool {
-	for _, pattern := range ncp.agentConfig.DataPlaneConfig.Nginx.ExcludeLogs {
-		_, compileErr := regexp.Compile(pattern)
-		if compileErr != nil {
-			slog.Error("Invalid path for excluding log", "log_path", pattern)
-			continue
-		}
-
-		ok, err := regexp.MatchString(pattern, path)
-		if err != nil {
-			slog.Error("Invalid path for excluding log", "file_path", pattern)
-			continue
-		} else if ok {
-			slog.Info("Excluding log as specified in config", "log_path", path)
-
-			return true
-		}
-	}
-
-	return false
-}
-
-func (ncp *NginxConfigParser) formatMap(directive *crossplane.Directive) map[string]string {
-	formatMap := make(map[string]string)
-
-	if ncp.hasAdditionArguments(directive.Args) {
-		if directive.Args[0] == ltsvArg {
-			formatMap[directive.Args[0]] = ltsvArg
-		} else {
-			formatMap[directive.Args[0]] = strings.Join(directive.Args[1:], "")
-		}
-	}
-
-	return formatMap
-}
-
-func (ncp *NginxConfigParser) accessLog(file, format string, formatMap map[string]string) *model.AccessLog {
-	accessLog := &model.AccessLog{
-		Name:     file,
-		Readable: false,
-	}
-
-	info, err := os.Stat(file)
-	if err == nil {
-		accessLog.Readable = true
-		accessLog.Permissions = files.Permissions(info.Mode())
-	}
-
-	accessLog = ncp.updateLogFormat(format, formatMap, accessLog)
-
-	return accessLog
-}
-
-func (ncp *NginxConfigParser) updateLogFormat(
-	format string,
-	formatMap map[string]string,
-	accessLog *model.AccessLog,
-) *model.AccessLog {
-	if formatMap[format] != "" {
-		accessLog.Format = formatMap[format]
-	} else if format == "" || format == "combined" {
-		accessLog.Format = predefinedAccessLogFormat
-	} else if format == ltsvArg {
-		accessLog.Format = format
-	} else {
-		accessLog.Format = ""
-	}
-
-	return accessLog
-}
-
-func (ncp *NginxConfigParser) errorLog(file, level string) *model.ErrorLog {
-	errorLog := &model.ErrorLog{
-		Name:     file,
-		LogLevel: level,
-		Readable: false,
-	}
-	info, err := os.Stat(file)
-	if err == nil {
-		errorLog.Permissions = files.Permissions(info.Mode())
-		errorLog.Readable = true
-	}
-
-	return errorLog
-}
-
-func (ncp *NginxConfigParser) accessLogDirectiveFormat(directive *crossplane.Directive) string {
-	if ncp.hasAdditionArguments(directive.Args) {
-		return strings.ReplaceAll(directive.Args[1], "$", "")
-	}
-
-	return ""
-}
-
-func (ncp *NginxConfigParser) errorLogDirectiveLevel(directive *crossplane.Directive) string {
-	if ncp.hasAdditionArguments(directive.Args) {
-		return directive.Args[1]
-	}
-
-	return ""
-}
-
-func (ncp *NginxConfigParser) sslCert(ctx context.Context, file, rootDir string) (sslCertFile *mpi.File) {
-	if strings.Contains(file, "$") {
-		slog.DebugContext(ctx, "Cannot process SSL certificate file path with variables", "file", file)
-		return nil
-	}
-
-	if !filepath.IsAbs(file) {
-		file = filepath.Join(rootDir, file)
-	}
-
-	if !ncp.agentConfig.IsDirectoryAllowed(file) {
-		slog.DebugContext(ctx, "File not in allowed directories", "file", file)
-	} else {
-		sslCertFileMeta, fileMetaErr := files.FileMetaWithCertificate(file)
-		if fileMetaErr != nil {
-			slog.ErrorContext(ctx, "Unable to get file metadata", "file", file, "error", fileMetaErr)
-		} else {
-			sslCertFile = &mpi.File{FileMeta: sslCertFileMeta}
-		}
-	}
-
-	return sslCertFile
-}
-
-func (ncp *NginxConfigParser) isDuplicateFile(nginxConfigContextFiles []*mpi.File, newFile *mpi.File) bool {
-	for _, nginxConfigContextFile := range nginxConfigContextFiles {
-		if nginxConfigContextFile.GetFileMeta().GetName() == newFile.GetFileMeta().GetName() {
-			return true
-		}
-	}
-
-	return false
-}
-
 func (ncp *NginxConfigParser) crossplaneConfigTraverse(
 	ctx context.Context,
 	root *crossplane.Config,
@@ -369,6 +219,26 @@ func (ncp *NginxConfigParser) crossplaneConfigTraverse(
 		}
 
 		err = ncp.traverse(ctx, dir, callback)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (ncp *NginxConfigParser) traverse(
+	ctx context.Context,
+	root *crossplane.Directive,
+	callback crossplaneTraverseCallback,
+) error {
+	for _, child := range root.Block {
+		err := callback(ctx, root, child)
+		if err != nil {
+			return err
+		}
+
+		err = ncp.traverse(ctx, child, callback)
 		if err != nil {
 			return err
 		}
@@ -437,28 +307,152 @@ func traverseAPIDetails(
 	return response
 }
 
-func (ncp *NginxConfigParser) traverse(
-	ctx context.Context,
-	root *crossplane.Directive,
-	callback crossplaneTraverseCallback,
-) error {
-	for _, child := range root.Block {
-		err := callback(ctx, root, child)
-		if err != nil {
-			return err
-		}
+func (ncp *NginxConfigParser) formatMap(directive *crossplane.Directive) map[string]string {
+	formatMap := make(map[string]string)
 
-		err = ncp.traverse(ctx, child, callback)
-		if err != nil {
-			return err
+	if ncp.hasAdditionArguments(directive.Args) {
+		if directive.Args[0] == ltsvArg {
+			formatMap[directive.Args[0]] = ltsvArg
+		} else {
+			formatMap[directive.Args[0]] = strings.Join(directive.Args[1:], "")
 		}
 	}
 
-	return nil
+	return formatMap
 }
 
 func (ncp *NginxConfigParser) hasAdditionArguments(args []string) bool {
 	return len(args) >= defaultNumberOfDirectiveArguments
+}
+
+func (ncp *NginxConfigParser) ignoreLog(logPath string) bool {
+	ignoreLogs := []string{"off", "/dev/stderr", "/dev/stdout", "/dev/null", "stderr", "stdout"}
+
+	if strings.HasPrefix(logPath, "syslog:") || slices.Contains(ignoreLogs, logPath) {
+		return true
+	}
+
+	if ncp.isExcludeLog(logPath) {
+		return true
+	}
+
+	if !ncp.agentConfig.IsDirectoryAllowed(logPath) {
+		slog.Warn("Log being read is outside of allowed directories", "log_path", logPath)
+	}
+
+	return false
+}
+
+func (ncp *NginxConfigParser) isExcludeLog(path string) bool {
+	for _, pattern := range ncp.agentConfig.DataPlaneConfig.Nginx.ExcludeLogs {
+		_, compileErr := regexp.Compile(pattern)
+		if compileErr != nil {
+			slog.Error("Invalid path for excluding log", "log_path", pattern)
+			continue
+		}
+
+		ok, err := regexp.MatchString(pattern, path)
+		if err != nil {
+			slog.Error("Invalid path for excluding log", "file_path", pattern)
+			continue
+		} else if ok {
+			slog.Info("Excluding log as specified in config", "log_path", path)
+
+			return true
+		}
+	}
+
+	return false
+}
+
+func (ncp *NginxConfigParser) accessLog(file, format string, formatMap map[string]string) *model.AccessLog {
+	accessLog := &model.AccessLog{
+		Name:     file,
+		Readable: false,
+	}
+
+	info, err := os.Stat(file)
+	if err == nil {
+		accessLog.Readable = true
+		accessLog.Permissions = files.Permissions(info.Mode())
+	}
+
+	accessLog = ncp.updateLogFormat(format, formatMap, accessLog)
+
+	return accessLog
+}
+
+func (ncp *NginxConfigParser) errorLog(file, level string) *model.ErrorLog {
+	errorLog := &model.ErrorLog{
+		Name:     file,
+		LogLevel: level,
+		Readable: false,
+	}
+	info, err := os.Stat(file)
+	if err == nil {
+		errorLog.Permissions = files.Permissions(info.Mode())
+		errorLog.Readable = true
+	}
+
+	return errorLog
+}
+
+func (ncp *NginxConfigParser) accessLogDirectiveFormat(directive *crossplane.Directive) string {
+	if ncp.hasAdditionArguments(directive.Args) {
+		return strings.ReplaceAll(directive.Args[1], "$", "")
+	}
+
+	return ""
+}
+
+func (ncp *NginxConfigParser) errorLogDirectiveLevel(directive *crossplane.Directive) string {
+	if ncp.hasAdditionArguments(directive.Args) {
+		return directive.Args[1]
+	}
+
+	return ""
+}
+
+func (ncp *NginxConfigParser) updateLogFormat(
+	format string,
+	formatMap map[string]string,
+	accessLog *model.AccessLog,
+) *model.AccessLog {
+	if formatMap[format] != "" {
+		accessLog.Format = formatMap[format]
+	} else if format == "" || format == "combined" {
+		accessLog.Format = predefinedAccessLogFormat
+	} else if format == ltsvArg {
+		accessLog.Format = format
+	} else {
+		accessLog.Format = ""
+	}
+
+	return accessLog
+}
+
+func (ncp *NginxConfigParser) sslCert(ctx context.Context, file, rootDir string) (sslCertFile *mpi.File) {
+	if strings.Contains(file, "$") {
+		slog.DebugContext(ctx, "Cannot process SSL certificate file path with variables", "file", file)
+		return nil
+	}
+
+	if !filepath.IsAbs(file) {
+		file = filepath.Join(rootDir, file)
+	}
+
+	if !ncp.agentConfig.IsDirectoryAllowed(file) {
+		slog.DebugContext(ctx, "File not in allowed directories", "file", file)
+	} else {
+		sslCertFileMeta, fileMetaErr := files.FileMetaWithCertificate(file)
+		if fileMetaErr != nil {
+			slog.ErrorContext(ctx, "Unable to get file metadata", "file", file, "error", fileMetaErr)
+		} else {
+			sslCertFile = &mpi.File{FileMeta: sslCertFileMeta}
+		}
+	}
+
+	return sslCertFile
 }
 
 func (ncp *NginxConfigParser) apiCallback(ctx context.Context, parent,
@@ -492,7 +486,7 @@ func (ncp *NginxConfigParser) pingAPIEndpoint(ctx context.Context, statusAPIDeta
 	statusAPI := statusAPIDetail.URL
 
 	if strings.HasPrefix(listen, "unix:") {
-		httpClient = ncp.SocketClient(strings.TrimPrefix(listen, "unix:"))
+		httpClient = ncp.socketClient(strings.TrimPrefix(listen, "unix:"))
 	} else {
 		httpClient.Timeout = ncp.agentConfig.Client.HTTP.Timeout
 	}
@@ -595,19 +589,6 @@ func (ncp *NginxConfigParser) urlsForLocationDirectiveAPIDetails(
 	return urls
 }
 
-func (ncp *NginxConfigParser) parsePathFromLocationDirective(location *crossplane.Directive) string {
-	path := "/"
-	if len(location.Args) > 0 {
-		if location.Args[0] != "=" {
-			path = location.Args[0]
-		} else {
-			path = location.Args[1]
-		}
-	}
-
-	return path
-}
-
 func (ncp *NginxConfigParser) parseAddressesFromServerDirective(parent *crossplane.Directive) []string {
 	foundHosts := []string{}
 	port := "80"
@@ -639,6 +620,19 @@ func (ncp *NginxConfigParser) parseAddressesFromServerDirective(parent *crosspla
 	}
 
 	return ncp.formatAddresses(foundHosts, port)
+}
+
+func (ncp *NginxConfigParser) parsePathFromLocationDirective(location *crossplane.Directive) string {
+	path := "/"
+	if len(location.Args) > 0 {
+		if location.Args[0] != "=" {
+			path = location.Args[0]
+		} else {
+			path = location.Args[1]
+		}
+	}
+
+	return path
 }
 
 func (ncp *NginxConfigParser) formatAddresses(foundHosts []string, port string) []string {
@@ -684,7 +678,7 @@ func (ncp *NginxConfigParser) isPort(value string) bool {
 	return err == nil && port >= 1 && port <= 65535
 }
 
-func (ncp *NginxConfigParser) SocketClient(socketPath string) *http.Client {
+func (ncp *NginxConfigParser) socketClient(socketPath string) *http.Client {
 	return &http.Client{
 		Timeout: ncp.agentConfig.Client.Grpc.KeepAlive.Timeout,
 		Transport: &http.Transport{
@@ -693,4 +687,14 @@ func (ncp *NginxConfigParser) SocketClient(socketPath string) *http.Client {
 			},
 		},
 	}
+}
+
+func (ncp *NginxConfigParser) isDuplicateFile(nginxConfigContextFiles []*mpi.File, newFile *mpi.File) bool {
+	for _, nginxConfigContextFile := range nginxConfigContextFiles {
+		if nginxConfigContextFile.GetFileMeta().GetName() == newFile.GetFileMeta().GetName() {
+			return true
+		}
+	}
+
+	return false
 }
