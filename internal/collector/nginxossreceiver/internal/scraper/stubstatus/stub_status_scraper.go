@@ -26,13 +26,13 @@ import (
 )
 
 type NginxStubStatusScraper struct {
+	logger           *zap.Logger
 	httpClient       *http.Client
 	client           *client.NginxClient
 	cfg              *config.Config
 	mb               *metadata.MetricsBuilder
 	rb               *metadata.ResourceBuilder
 	settings         receiver.Settings
-	logger           *zap.Logger
 	init             sync.Once
 	previousRequests int
 }
