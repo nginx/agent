@@ -6,16 +6,16 @@
 package grpc
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net"
-	"os"
 	"strings"
 	"sync"
+
+	"github.com/nginx/agent/v3/internal/datasource/file"
 
 	"github.com/cenkalti/backoff/v4"
 	grpcRetry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
@@ -243,7 +243,8 @@ func addPerRPCCredentials(agentConfig *config.Config, resourceID string, opts []
 	token := agentConfig.Command.Auth.Token
 
 	if agentConfig.Command.Auth.TokenPath != "" {
-		tk, err := retrieveTokenFromFile(agentConfig.Command.Auth.TokenPath)
+		slog.Debug("Reading token from file", "path", agentConfig.Command.Auth.TokenPath)
+		tk, err := file.ReadFromFile(agentConfig.Command.Auth.TokenPath)
 		if err == nil {
 			token = tk
 		} else {
@@ -261,29 +262,6 @@ func addPerRPCCredentials(agentConfig *config.Config, resourceID string, opts []
 	)
 
 	return opts
-}
-
-func retrieveTokenFromFile(path string) (string, error) {
-	if path == "" {
-		return "", errors.New("token file path is empty")
-	}
-
-	slog.Debug("Reading token from file", "path", path)
-	var keyVal string
-	keyBytes, err := os.ReadFile(path)
-	if err != nil {
-		return "", fmt.Errorf("unable to read token from file: %w", err)
-	}
-
-	keyBytes = bytes.TrimSpace(keyBytes)
-	keyBytes = bytes.TrimRight(keyBytes, "\n")
-	keyVal = string(keyBytes)
-
-	if keyVal == "" {
-		return "", errors.New("failed to load token, token file is empty")
-	}
-
-	return keyVal, nil
 }
 
 // Have to create our own UnaryClientInterceptor function since protovalidate only provides a UnaryServerInterceptor

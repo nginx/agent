@@ -6,11 +6,9 @@ resourceMetrics:
             stringValue: nginx
     scopeMetrics:
       - metrics:
-          - description: The number of responses, grouped by status code range.
-            name: nginx.http.response.status
-            sum:
-              aggregationTemporality: 2 # Cumulative
-              isMonotonic: true
+          - description: The total number of HTTP responses since the last collection interval, grouped by status code range.
+            name: nginx.http.response.count
+            gauge:
               dataPoints:
                 - asInt: 0
                   attributes:

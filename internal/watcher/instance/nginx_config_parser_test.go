@@ -385,7 +385,22 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			allowedDirectories: []string{dir},
 		},
 		{
-			name:     "Test 4: Check Parser for SSL Certs",
+			name:     "Test 4: SSL Certificate file path containing variables",
+			instance: protos.GetNginxPlusInstance([]string{}),
+			content:  testconfig.GetNginxConfWithSSLCertsWithVariables(),
+			expectedConfigContext: &model.NginxConfigContext{
+				StubStatus:       &model.APIDetails{},
+				PlusAPI:          &model.APIDetails{},
+				InstanceID:       protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				Files:            []*mpi.File{},
+				AccessLogs:       []*model.AccessLog{},
+				ErrorLogs:        []*model.ErrorLog{},
+				NAPSysLogServers: nil,
+			},
+			allowedDirectories: []string{dir},
+		},
+		{
+			name:     "Test 5: Check Parser for SSL Certs",
 			instance: protos.GetNginxPlusInstance([]string{}),
 			content: testconfig.GetNginxConfigWithSSLCerts(
 				errorLog.Name(),
@@ -423,7 +438,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			allowedDirectories: []string{dir},
 		},
 		{
-			name:     "Test 5: Check for multiple different SSL Certs",
+			name:     "Test 6: Check for multiple different SSL Certs",
 			instance: protos.GetNginxPlusInstance([]string{}),
 			content: testconfig.GetNginxConfigWithMultipleSSLCerts(
 				errorLog.Name(),
@@ -465,7 +480,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			allowedDirectories: []string{dir},
 		},
 		{
-			name:     "Test 6: Check for multiple same SSL Certs",
+			name:     "Test 7: Check for multiple same SSL Certs",
 			instance: protos.GetNginxPlusInstance([]string{}),
 			content: testconfig.GetNginxConfigWithMultipleSSLCerts(
 				errorLog.Name(),

@@ -48,7 +48,7 @@ resourceMetrics:
                         stringValue: ACTIVE
               isMonotonic: true
             unit: connections
-          - description: The number of responses, grouped by status code range.
+          - description: The total number of responses since NGINX was last started or reloaded, grouped by status code range.
             name: nginx.http.response.status
             sum:
               aggregationTemporality: 2
@@ -258,7 +258,7 @@ resourceMetrics:
                   timeUnixNano: "1000000"
               isMonotonic: true
             unit: bytes
-          - description: The total number of client requests received from clients.
+          - description: The total number of client requests received, since NGINX was last started or reloaded.
             name: nginx.http.requests
             sum:
               aggregationTemporality: 2
@@ -290,7 +290,7 @@ resourceMetrics:
                   timeUnixNano: "1000000"
               isMonotonic: true
             unit: requests
-          - description: The current number of client requests received from clients.
+          - description:  The total number of client requests received, since the last collection interval.
             name: nginx.http.request.count
             gauge:
               aggregationTemporality: 2
@@ -2132,6 +2132,122 @@ resourceMetrics:
                         stringValue: upstream_test_zone
               isMonotonic: true
             unit: deployments
+          - description: The total number of HTTP responses sent to clients since the last collection interval, grouped by status code range.
+            name: nginx.http.response.count
+            gauge:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "2"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 1xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: SERVER
+                - asInt: "29"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 2xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: SERVER
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 3xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: SERVER
+                - asInt: "1"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 4xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: SERVER
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 5xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: SERVER
+                - asInt: "4"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 1xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: location_test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: LOCATION
+                - asInt: "2"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 2xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: location_test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: LOCATION
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 3xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: location_test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: LOCATION
+                - asInt: "2"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 4xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: location_test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: LOCATION
+                - asInt: "0"
+                  attributes:
+                    - key: nginx.status_range
+                      value:
+                        stringValue: 5xx
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: location_test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: LOCATION
+            unit: responses
         scope:
           name: otelcol/nginxplusreceiver
           version: latest

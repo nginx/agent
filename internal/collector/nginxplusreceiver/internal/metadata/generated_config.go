@@ -42,6 +42,7 @@ type MetricsConfig struct {
 	NginxHTTPRequestIo                     MetricConfig `mapstructure:"nginx.http.request.io"`
 	NginxHTTPRequestProcessingCount        MetricConfig `mapstructure:"nginx.http.request.processing.count"`
 	NginxHTTPRequests                      MetricConfig `mapstructure:"nginx.http.requests"`
+	NginxHTTPResponseCount                 MetricConfig `mapstructure:"nginx.http.response.count"`
 	NginxHTTPResponseStatus                MetricConfig `mapstructure:"nginx.http.response.status"`
 	NginxHTTPResponses                     MetricConfig `mapstructure:"nginx.http.responses"`
 	NginxHTTPUpstreamKeepaliveCount        MetricConfig `mapstructure:"nginx.http.upstream.keepalive.count"`
@@ -130,6 +131,9 @@ func DefaultMetricsConfig() MetricsConfig {
 			Enabled: true,
 		},
 		NginxHTTPRequests: MetricConfig{
+			Enabled: true,
+		},
+		NginxHTTPResponseCount: MetricConfig{
 			Enabled: true,
 		},
 		NginxHTTPResponseStatus: MetricConfig{
