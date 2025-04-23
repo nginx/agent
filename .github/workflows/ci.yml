@@ -264,7 +264,7 @@ jobs:
         env:
           GO_VERSION: ${{ env.GO_VERSION }}
         with:
-          file: scripts/testing/load/Dockerfile
+          file: test/docker/load/Dockerfile
           tags: nginx-agent-load-test:1.0.0
           context: '.'
           push: false

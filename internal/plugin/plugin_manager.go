@@ -41,7 +41,7 @@ func addResourcePlugin(plugins []bus.Plugin, agentConfig *config.Config) []bus.P
 }
 
 func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentConfig *config.Config) []bus.Plugin {
-	if isGrpcClientConfigured(agentConfig) {
+	if agentConfig.IsGrpcClientConfigured() {
 		grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig)
 		if err != nil {
 			slog.WarnContext(ctx, "Failed to create gRPC connection", "error", err)
@@ -86,12 +86,4 @@ func addWatcherPlugin(plugins []bus.Plugin, agentConfig *config.Config) []bus.Pl
 	plugins = append(plugins, watcherPlugin)
 
 	return plugins
-}
-
-func isGrpcClientConfigured(agentConfig *config.Config) bool {
-	return agentConfig.Command != nil &&
-		agentConfig.Command.Server != nil &&
-		agentConfig.Command.Server.Host != "" &&
-		agentConfig.Command.Server.Port != 0 &&
-		agentConfig.Command.Server.Type == config.Grpc
 }

@@ -344,6 +344,23 @@ func (c *Config) IsDirectoryAllowed(directory string) bool {
 	return isAllowedDir(directory, c.AllowedDirectories)
 }
 
+func (c *Config) IsGrpcClientConfigured() bool {
+	return c.Command != nil &&
+		c.Command.Server != nil &&
+		c.Command.Server.Host != "" &&
+		c.Command.Server.Port != 0 &&
+		c.Command.Server.Type == Grpc
+}
+
+func (c *Config) IsAuthConfigured() bool {
+	return c.Command.Auth != nil &&
+		(c.Command.Auth.Token != "" || c.Command.Auth.TokenPath != "")
+}
+
+func (c *Config) IsTLSConfigured() bool {
+	return c.Command.TLS != nil
+}
+
 func (c *Config) IsFeatureEnabled(feature string) bool {
 	for _, enabledFeature := range c.Features {
 		if enabledFeature == feature {
