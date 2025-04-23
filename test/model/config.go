@@ -76,6 +76,50 @@ func GetConfigContextWithNames(
 	}
 }
 
+func GetConfigContextWithoutErrorLog(
+	accessLogName,
+	combinedAccessLogName,
+	ltsvAccessLogName,
+	instanceID string,
+	syslogServers []string,
+) *model.NginxConfigContext {
+	return &model.NginxConfigContext{
+		StubStatus: &model.APIDetails{
+			URL:      "",
+			Listen:   "",
+			Location: "",
+		},
+		PlusAPI: &model.APIDetails{
+			URL:      "",
+			Listen:   "",
+			Location: "",
+		},
+		AccessLogs: []*model.AccessLog{
+			{
+				Name:        accessLogName,
+				Format:      "$remote_addr - $remote_user [$time_local]",
+				Readable:    true,
+				Permissions: "0600",
+			},
+			{
+				Name: combinedAccessLogName,
+				Format: "$remote_addr - $remote_user [$time_local] " +
+					"\"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\"",
+				Readable:    true,
+				Permissions: "0600",
+			},
+			{
+				Name:        ltsvAccessLogName,
+				Format:      "ltsv",
+				Readable:    true,
+				Permissions: "0600",
+			},
+		},
+		InstanceID:       instanceID,
+		NAPSysLogServers: syslogServers,
+	}
+}
+
 func GetConfigContextWithFiles(
 	accessLogName,
 	errorLogName string,
