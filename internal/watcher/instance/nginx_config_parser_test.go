@@ -289,6 +289,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 	defer helpers.RemoveFileWithErrorCheck(t, allowedFile.Name())
 	fileMetaAllowedFiles, err := files.FileMeta(allowedFile.Name())
 	require.NoError(t, err)
+	allowedFileWithMetas := mpi.File{FileMeta: fileMetaAllowedFiles}
 
 	_, cert := helpers.GenerateSelfSignedCert(t)
 	certContents := helpers.Cert{Name: "nginx.cert", Type: "CERTIFICATE", Contents: cert}
@@ -296,6 +297,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 	require.NotNil(t, certFile)
 	fileMetaCertFiles, err := files.FileMetaWithCertificate(certFile)
 	require.NoError(t, err)
+	certFileWithMetas := mpi.File{FileMeta: fileMetaCertFiles}
 
 	_, diffCert := helpers.GenerateSelfSignedCert(t)
 	diffCertContents := helpers.Cert{Name: "nginx1.cert", Type: "CERTIFICATE", Contents: diffCert}
@@ -303,6 +305,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 	require.NotNil(t, diffCertFile)
 	diffFileMetaCertFiles, err := files.FileMetaWithCertificate(diffCertFile)
 	require.NoError(t, err)
+	diffCertFileWithMetas := mpi.File{FileMeta: diffFileMetaCertFiles}
 
 	tests := []struct {
 		instance              *mpi.Instance
@@ -354,34 +357,13 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			instance: protos.GetNginxPlusInstance([]string{}),
 			content: testconfig.GetNginxConfigWithNotAllowedDir(errorLog.Name(), allowedFile.Name(),
 				notAllowedFile.Name(), accessLog.Name()),
-			expectedConfigContext: &model.NginxConfigContext{
-				StubStatus: &model.APIDetails{},
-				PlusAPI:    &model.APIDetails{},
-				InstanceID: protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
-				Files: []*mpi.File{
-					{
-						FileMeta: fileMetaAllowedFiles,
-					},
-				},
-				AccessLogs: []*model.AccessLog{
-					{
-						Name: accessLog.Name(),
-						Format: "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent " +
-							"\"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\" \"$bytes_sent\" " +
-							"\"$request_length\" \"$request_time\" \"$gzip_ratio\" $server_protocol ",
-						Permissions: "0600",
-						Readable:    true,
-					},
-				},
-				ErrorLogs: []*model.ErrorLog{
-					{
-						Name:        errorLog.Name(),
-						Permissions: "0600",
-						Readable:    true,
-					},
-				},
-				NAPSysLogServers: nil,
-			},
+			expectedConfigContext: modelHelpers.GetConfigContextWithFiles(
+				accessLog.Name(),
+				errorLog.Name(),
+				[]*mpi.File{&allowedFileWithMetas},
+				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				nil,
+			),
 			allowedDirectories: []string{dir},
 		},
 		{
@@ -407,34 +389,13 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 				accessLog.Name(),
 				certFile,
 			),
-			expectedConfigContext: &model.NginxConfigContext{
-				StubStatus: &model.APIDetails{},
-				PlusAPI:    &model.APIDetails{},
-				InstanceID: protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
-				Files: []*mpi.File{
-					{
-						FileMeta: fileMetaCertFiles,
-					},
-				},
-				AccessLogs: []*model.AccessLog{
-					{
-						Name: accessLog.Name(),
-						Format: "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent " +
-							"\"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\" \"$bytes_sent\" " +
-							"\"$request_length\" \"$request_time\" \"$gzip_ratio\" $server_protocol ",
-						Permissions: "0600",
-						Readable:    true,
-					},
-				},
-				ErrorLogs: []*model.ErrorLog{
-					{
-						Name:        errorLog.Name(),
-						Permissions: "0600",
-						Readable:    true,
-					},
-				},
-				NAPSysLogServers: nil,
-			},
+			expectedConfigContext: modelHelpers.GetConfigContextWithFiles(
+				accessLog.Name(),
+				errorLog.Name(),
+				[]*mpi.File{&certFileWithMetas},
+				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				nil,
+			),
 			allowedDirectories: []string{dir},
 		},
 		{
@@ -446,37 +407,13 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 				certFile,
 				diffCertFile,
 			),
-			expectedConfigContext: &model.NginxConfigContext{
-				StubStatus: &model.APIDetails{},
-				PlusAPI:    &model.APIDetails{},
-				InstanceID: protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
-				Files: []*mpi.File{
-					{
-						FileMeta: fileMetaCertFiles,
-					},
-					{
-						FileMeta: diffFileMetaCertFiles,
-					},
-				},
-				AccessLogs: []*model.AccessLog{
-					{
-						Name: accessLog.Name(),
-						Format: "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent " +
-							"\"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\" \"$bytes_sent\" " +
-							"\"$request_length\" \"$request_time\" \"$gzip_ratio\" $server_protocol ",
-						Permissions: "0600",
-						Readable:    true,
-					},
-				},
-				ErrorLogs: []*model.ErrorLog{
-					{
-						Name:        errorLog.Name(),
-						Permissions: "0600",
-						Readable:    true,
-					},
-				},
-				NAPSysLogServers: nil,
-			},
+			expectedConfigContext: modelHelpers.GetConfigContextWithFiles(
+				accessLog.Name(),
+				errorLog.Name(),
+				[]*mpi.File{&certFileWithMetas, &diffCertFileWithMetas},
+				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				nil,
+			),
 			allowedDirectories: []string{dir},
 		},
 		{
@@ -488,34 +425,13 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 				certFile,
 				certFile,
 			),
-			expectedConfigContext: &model.NginxConfigContext{
-				StubStatus: &model.APIDetails{},
-				PlusAPI:    &model.APIDetails{},
-				InstanceID: protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
-				Files: []*mpi.File{
-					{
-						FileMeta: fileMetaCertFiles,
-					},
-				},
-				AccessLogs: []*model.AccessLog{
-					{
-						Name: accessLog.Name(),
-						Format: "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent " +
-							"\"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\" \"$bytes_sent\" " +
-							"\"$request_length\" \"$request_time\" \"$gzip_ratio\" $server_protocol ",
-						Permissions: "0600",
-						Readable:    true,
-					},
-				},
-				ErrorLogs: []*model.ErrorLog{
-					{
-						Name:        errorLog.Name(),
-						Permissions: "0600",
-						Readable:    true,
-					},
-				},
-				NAPSysLogServers: nil,
-			},
+			expectedConfigContext: modelHelpers.GetConfigContextWithFiles(
+				accessLog.Name(),
+				errorLog.Name(),
+				[]*mpi.File{&certFileWithMetas},
+				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				nil,
+			),
 			allowedDirectories: []string{dir},
 		},
 	}
