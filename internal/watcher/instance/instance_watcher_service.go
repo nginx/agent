@@ -145,6 +145,8 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instanceID 
 
 	if instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX ||
 		instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
+		// If the ReparseConfig was not triggered by a config apply that had changes there is no NginxConfigContext
+		// passed to this function. So we need to parse the config and create one.
 		if nginxConfigContext.InstanceID == "" {
 			slog.DebugContext(
 				ctx,

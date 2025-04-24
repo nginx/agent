@@ -119,11 +119,11 @@ func (cws *CredentialWatcherService) isWatching(path string) bool {
 
 func (cws *CredentialWatcherService) handleEvent(ctx context.Context, event fsnotify.Event) {
 	if isEventSkippable(event) {
-		// slog.DebugContext(ctx, "Skipping FSNotify event", "event", event)
+		slog.DebugContext(ctx, "Skipping FSNotify event", "event", event)
 		return
 	}
 
-	// slog.DebugContext(ctx, "Processing FSNotify event", "event", event)
+	slog.DebugContext(ctx, "Processing FSNotify event", "event", event)
 
 	switch {
 	case event.Has(fsnotify.Remove):
