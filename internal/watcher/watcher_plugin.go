@@ -200,7 +200,7 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 		return
 	}
 	w.instanceWatcherService.ReparseConfig(ctx, instanceID, successMessage.ConfigContext)
-	
+
 	w.watcherMutex.Lock()
 	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
 		w.instancesWithConfigApplyInProgress,
