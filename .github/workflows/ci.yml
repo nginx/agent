@@ -19,49 +19,19 @@ env:
   NFPM_VERSION: 'v2.35.3'
 
 jobs:
-#  lint:
-#    name: Lint
-#    runs-on: ubuntu-22.04
-#    steps:
-#      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-#      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
-#        with:
-#            go-version-file: 'go.mod'
-#            cache: false
-#      - name: run install-tools
-#        run: make install-tools
-#      - name: run lint
-#        run: make lint
-#  unit-test:
-#      name: Unit Tests
-#      runs-on: ubuntu-22.04
-#      steps:
-#          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-#          - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
-#            with:
-#                go-version-file: 'go.mod'
-#                cache: false
-#          - name: Run Unit Tests
-#            run: make unit-test
-#          - name: Check Coverage
-#            uses: vladopajic/go-test-coverage@dd4b1f21c4e48db0425e1187d2845404b1206919
-#            with:
-#              config: ./.testcoverage.yaml
-#              ## when token is not specified (value '') this feature is turned off
-#              git-token: ${{ github.ref_name == 'v3' && secrets.GITHUB_TOKEN || '' }}
-#              ## name of orphaned branch where badges are stored
-#              git-branch: badges
-#  race-condition-test:
-#      name: Unit tests with race condition detection
-#      runs-on: ubuntu-22.04
-#      steps:
-#          - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-#          - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
-#            with:
-#                go-version-file: 'go.mod'
-#                cache: false
-#          - name: Run unit tests with race condition detection
-#            run: make race-condition-test
+  lint:
+    name: Lint
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        with:
+            go-version-file: 'go.mod'
+            cache: false
+      - name: run install-tools
+        run: make install-tools
+      - name: run lint
+        run: make lint
   build-unsigned-snapshot:
       name: Build Unsigned Snapshot
       runs-on: ubuntu-22.04
@@ -83,36 +53,6 @@ jobs:
               path: build
               retention-days: 1
 
-  integration-tests:
-    name: Integration Tests
-    needs: build-unsigned-snapshot
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        container:
-        - image: "ubuntu"
-          version: "22.04"
-        - image: "redhatenterprise"
-          version: "9"
-        - image: "alpine"
-          version: "3.19"
-    steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
-        with:
-          go-version-file: 'go.mod'
-          cache: false
-      - name: Download Packages
-        uses: actions/download-artifact@eaceaf801fd36c7dee90939fad912460b18a1ffe # v4.1.2
-        with:
-          name: nginx-agent-unsigned-snapshots
-          path: build
-      - name: Run Integration Tests
-        run: |
-          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-          OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
-            make integration-test
-
   official-oss-image-integration-tests:
     name: Integration Tests - Official OSS Images
     needs: build-unsigned-snapshot
@@ -124,15 +64,6 @@ jobs:
           - image: "bookworm"
             version: "stable"
             release: "debian"
-          - image: "bookworm"
-            version: "mainline"
-            release: "debian"
-          - image: "alpine"
-            version: "stable"
-            release: "alpine"
-          - image: "alpine"
-            version: "mainline"
-            release: "alpine"
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
@@ -160,22 +91,6 @@ jobs:
     strategy:
       matrix:
         container:
-        - image: "alpine"
-          version: "3.20"
-          plus: "r32"
-          release: "alpine"
-          path: "/nginx-plus/agent"
-        - image: "alpine"
-          version: "3.19"
-          plus: "r31"
-          release: "alpine"
-          path: "/nginx-plus/agent"
-        - image: "debian"
-          version: "bookworm"
-          plus: "r32"
-          release: "debian"
-          path: "/nginx-plus/agent"
-        - image: "debian"
           version: "bookworm"
           plus: "r31"
           release: "debian"
@@ -205,124 +120,123 @@ jobs:
           OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" IMAGE_PATH="${{ matrix.container.path }}" \
             make official-image-integration-test
 
-#  performance-tests:
-#    name: Performance Tests
-#    runs-on: ubuntu-22.04
-#    permissions:
-#      contents: write
-#    steps:
-#      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-#      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
-#        with:
-#          go-version-file: 'go.mod'
-#          cache: false
-#      - name: Run Performance Tests
-#        run: |
-#          make performance-test
-#      - name: Store benchmark result
-#        uses: benchmark-action/github-action-benchmark@4de1bed97a47495fc4c5404952da0499e31f5c29 # v1.20.3
-#        with:
-#          name: Compare Benchmark Results
-#          tool: 'go'
-#          output-file-path: ./build/test/benchmark.txt
-#          benchmark-data-dir-path: ""
-#          # Set auto-push to false since GitHub API token is not given
-#          auto-push: false
-#          alert-threshold: '125%'
-#          gh-pages-branch: "benchmark-results"
-#          fail-on-alert: true
-#      - name: Push benchmark result
-#        if:  ${{ success() && github.ref_name == 'v3'}}
-#        run: git push 'https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/nginx/agent.git' benchmark-results:benchmark-results
-#  load-tests:
-#    name: Load Tests
-#    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
-#    runs-on: ubuntu-22.04
-#    needs: build-unsigned-snapshot
-#
-#    steps:
-#      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
-#      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
-#        with:
-#          go-version-file: 'go.mod'
-#          cache: false
-#
-#      - name: Download Packages
-#        uses: actions/download-artifact@eaceaf801fd36c7dee90939fad912460b18a1ffe # v4.1.2
-#        with:
-#          name: nginx-agent-unsigned-snapshots
-#          path: build
-#
-#      - name: Set up Docker Build
-#        uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
-#
-#      - name: Set env
-#        run: echo "GO_VERSION=$(cat go.mod | grep toolchain | sed 's/toolchain //; s/go//')" >> $GITHUB_ENV
-#
-#      - name: Build Docker Image
-#        uses: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0 # v5.3.0
-#        env:
-#          GO_VERSION: ${{ env.GO_VERSION }}
-#        with:
-#          file: test/docker/load/Dockerfile
-#          tags: nginx-agent-load-test:1.0.0
-#          context: '.'
-#          push: false
-#          load: true
-#          no-cache: true
-#          secrets: |
-#            "nginx-crt=${{ secrets.NGINX_CRT }}"
-#            "nginx-key=${{ secrets.NGINX_KEY }}"
-#          build-args: |
-#            OSARCH=amd64
-#            GO_VERSION=${{ env.GO_VERSION }}
-#
-#      - name: Run Load Tests
-#        run: |
-#          results=$(docker run --rm nginx-agent-load-test:1.0.0)
-#          echo "$results" > benchmarks.json
-#          echo "$results"
-#
-#      - name: Upload Load Test Results
-#        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
-#        with:
-#          name: load-test-results
-#          path: benchmarks.json
-#          if-no-files-found: error
-#
-#      - name: Store benchmark result
-#        uses: benchmark-action/github-action-benchmark@4de1bed97a47495fc4c5404952da0499e31f5c29 # v1.20.3
-#        with:
-#          name: Compare Benchmark Results
-#          tool: 'customSmallerIsBetter'
-#          output-file-path: benchmarks.json
-#          benchmark-data-dir-path: ""
-#          # Set auto-push to false since GitHub API token is not given
-#          auto-push: false
-#          alert-threshold: '175%'
-#          gh-pages-branch: "benchmark-results"
-#          fail-on-alert: true
-#
-#      - name: Push load test result
-#        if:  ${{ success() && github.ref_name == 'v3'}}
-#        run: git push 'https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/nginx/agent.git' benchmark-results:benchmark-results
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        with:
+          go-version-file: 'go.mod'
+          cache: false
+      - name: Run Performance Tests
+        run: |
+          make performance-test
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@4de1bed97a47495fc4c5404952da0499e31f5c29 # v1.20.3
+        with:
+          name: Compare Benchmark Results
+          tool: 'go'
+          output-file-path: ./build/test/benchmark.txt
+          benchmark-data-dir-path: ""
+          # Set auto-push to false since GitHub API token is not given
+          auto-push: false
+          alert-threshold: '125%'
+          gh-pages-branch: "benchmark-results"
+          fail-on-alert: true
+      - name: Push benchmark result
+        if:  ${{ success() && github.ref_name == 'v3'}}
+        run: git push 'https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/nginx/agent.git' benchmark-results:benchmark-results
+  load-tests:
+    name: Load Tests
+    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
+    runs-on: ubuntu-22.04
+    needs: build-unsigned-snapshot
 
-#  publish-packages:
-#    name: Publish NGINX Agent v3 packages
-#    if: ${{ github.ref_name == 'v3' &&
-#      !github.event.pull_request.head.repo.fork }}
-#    needs: [ lint, unit-test, performance-tests,
-#             load-tests, official-oss-image-integration-tests,
-#             official-plus-image-integration-tests,
-#             race-condition-test, integration-tests ]
-#    uses: ./.github/workflows/release-branch.yml
-#    secrets: inherit
-#    permissions:
-#      id-token: write
-#      contents: read
-#    with:
-#      packageVersion: "3.0.0"
-#      packageBuildNo: "${{ github.run_number }}"
-#      uploadAzure: true
-#      publishPackages: true
-#      releaseBranch: "v3"
+    steps:
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        with:
+          go-version-file: 'go.mod'
+          cache: false
+
+      - name: Download Packages
+        uses: actions/download-artifact@eaceaf801fd36c7dee90939fad912460b18a1ffe # v4.1.2
+        with:
+          name: nginx-agent-unsigned-snapshots
+          path: build
+
+      - name: Set up Docker Build
+        uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
+
+      - name: Set env
+        run: echo "GO_VERSION=$(cat go.mod | grep toolchain | sed 's/toolchain //; s/go//')" >> $GITHUB_ENV
+
+      - name: Build Docker Image
+        uses: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0 # v5.3.0
+        env:
+          GO_VERSION: ${{ env.GO_VERSION }}
+        with:
+          file: test/docker/load/Dockerfile
+          tags: nginx-agent-load-test:1.0.0
+          context: '.'
+          push: false
+          load: true
+          no-cache: true
+          secrets: |
+            "nginx-crt=${{ secrets.NGINX_CRT }}"
+            "nginx-key=${{ secrets.NGINX_KEY }}"
+          build-args: |
+            OSARCH=amd64
+            GO_VERSION=${{ env.GO_VERSION }}
+
+      - name: Run Load Tests
+        run: |
+          results=$(docker run --rm nginx-agent-load-test:1.0.0)
+          echo "$results" > benchmarks.json
+          echo "$results"
+
+      - name: Upload Load Test Results
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
+        with:
+          name: load-test-results
+          path: benchmarks.json
+          if-no-files-found: error
+
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@4de1bed97a47495fc4c5404952da0499e31f5c29 # v1.20.3
+        with:
+          name: Compare Benchmark Results
+          tool: 'customSmallerIsBetter'
+          output-file-path: benchmarks.json
+          benchmark-data-dir-path: ""
+          # Set auto-push to false since GitHub API token is not given
+          auto-push: false
+          alert-threshold: '175%'
+          gh-pages-branch: "benchmark-results"
+          fail-on-alert: true
+
+      - name: Push load test result
+        if:  ${{ success() && github.ref_name == 'v3'}}
+        run: git push 'https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/nginx/agent.git' benchmark-results:benchmark-results
+
+  publish-packages:
+    name: Publish NGINX Agent v3 packages
+    if: ${{ github.ref_name == 'v3' &&
+      !github.event.pull_request.head.repo.fork }}
+    needs: [ lint, performance-tests,
+             load-tests, official-oss-image-integration-tests,
+             official-plus-image-integration-tests ]
+    uses: ./.github/workflows/release-branch.yml
+    secrets: inherit
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      packageVersion: "3.0.0"
+      packageBuildNo: "${{ github.run_number }}"
+      uploadAzure: true
+      publishPackages: true
+      releaseBranch: "v3"
