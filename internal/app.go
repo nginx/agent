@@ -16,6 +16,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var logOrigin = slog.String("log_origin", "app.go")
+
 const (
 	defaultMessagePipeChannelSize = 100
 	defaultQueueSize              = 100
@@ -36,13 +38,13 @@ func (a *App) Run(ctx context.Context) error {
 	config.RegisterRunner(func(_ *cobra.Command, _ []string) {
 		err := config.RegisterConfigFile()
 		if err != nil {
-			slog.ErrorContext(ctx, "Failed to load configuration file", "error", err)
+			slog.ErrorContext(ctx, "Failed to load configuration file", "error", err, logOrigin)
 			return
 		}
 
 		agentConfig, err := config.ResolveConfig()
 		if err != nil {
-			slog.ErrorContext(ctx, "Invalid config", "error", err)
+			slog.ErrorContext(ctx, "Invalid config", "error", err, logOrigin)
 			return
 		}
 
@@ -52,12 +54,13 @@ func (a *App) Run(ctx context.Context) error {
 		slog.InfoContext(ctx, "Starting NGINX Agent",
 			slog.String("version", a.version),
 			slog.String("commit", a.commit),
+			logOrigin,
 		)
 
 		messagePipe := bus.NewMessagePipe(defaultMessagePipeChannelSize)
 		err = messagePipe.Register(defaultQueueSize, plugin.LoadPlugins(ctx, agentConfig))
 		if err != nil {
-			slog.ErrorContext(ctx, "Failed to register plugins", "error", err)
+			slog.ErrorContext(ctx, "Failed to register plugins", "error", err, logOrigin)
 			return
 		}
 

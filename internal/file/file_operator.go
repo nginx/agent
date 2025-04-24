@@ -19,6 +19,8 @@ import (
 
 type FileOperator struct{}
 
+var operatorLogOrigin = slog.String("log_origin", "file_operator.go")
+
 var _ fileOperator = (*FileOperator)(nil)
 
 // FileOperator only purpose is to write files,
@@ -30,7 +32,7 @@ func NewFileOperator() *FileOperator {
 func (fo *FileOperator) Write(ctx context.Context, fileContent []byte, file *mpi.FileMeta) error {
 	filePermission := files.FileMode(file.GetPermissions())
 	if _, err := os.Stat(file.GetName()); os.IsNotExist(err) {
-		slog.DebugContext(ctx, "File does not exist, creating new file", "file_path", file.GetName())
+		slog.DebugContext(ctx, "File does not exist, creating new file", "file_path", file.GetName(), operatorLogOrigin)
 		err = os.MkdirAll(path.Dir(file.GetName()), filePermission)
 		if err != nil {
 			return fmt.Errorf("error creating directory %s: %w", path.Dir(file.GetName()), err)
@@ -41,7 +43,7 @@ func (fo *FileOperator) Write(ctx context.Context, fileContent []byte, file *mpi
 	if err != nil {
 		return fmt.Errorf("error writing to file %s: %w", file.GetName(), err)
 	}
-	slog.DebugContext(ctx, "Content written to file", "file_path", file.GetName())
+	slog.DebugContext(ctx, "Content written to file", "file_path", file.GetName(), operatorLogOrigin)
 
 	return nil
 }

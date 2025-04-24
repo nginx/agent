@@ -53,6 +53,8 @@ type (
 	}
 )
 
+var pluginLogOrigin = slog.String("log_origin", "otel_collector_plugin.go")
+
 var (
 	_         bus.Plugin = (*Collector)(nil)
 	initMutex            = &sync.Mutex{}
@@ -101,14 +103,16 @@ func (oc *Collector) GetState() otelcol.State {
 
 // Init initializes and starts the plugin
 func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) error {
-	slog.InfoContext(ctx, "Starting OTel Collector plugin")
+	slog.InfoContext(ctx, "Starting OTel Collector plugin", pluginLogOrigin)
 
 	var runCtx context.Context
 	runCtx, oc.cancel = context.WithCancel(ctx)
 
 	if !oc.config.AreReceiversConfigured() {
 		slog.InfoContext(runCtx, "No receivers configured for OTel Collector. "+
-			"Waiting to discover a receiver before starting OTel collector.")
+			"Waiting to discover a receiver before starting OTel collector.",
+			pluginLogOrigin,
+		)
 
 		return nil
 	}
@@ -128,7 +132,7 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 
 	bootErr := oc.bootup(runCtx)
 	if bootErr != nil {
-		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)
+		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr, pluginLogOrigin)
 	}
 
 	return nil
@@ -138,7 +142,9 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 func (oc *Collector) processReceivers(ctx context.Context, receivers []config.OtlpReceiver) {
 	for _, receiver := range receivers {
 		if receiver.OtlpTLSConfig == nil {
-			slog.WarnContext(ctx, "OTel receiver is configured without TLS. Connections are unencrypted.")
+			slog.WarnContext(ctx, "OTel receiver is configured without TLS. Connections are unencrypted.",
+				pluginLogOrigin)
+
 			continue
 		}
 
@@ -146,21 +152,22 @@ func (oc *Collector) processReceivers(ctx context.Context, receivers []config.Ot
 			slog.WarnContext(ctx,
 				"Self-signed certificate for OTel receiver requested, "+
 					"this is not recommended for production environments.",
+				pluginLogOrigin,
 			)
 
 			if receiver.OtlpTLSConfig.ExistingCert {
 				slog.WarnContext(ctx,
-					"Certificate file already exists, skipping self-signed certificate generation",
-				)
+					"Certificate file already exists, skipping self-signed certificate generation", pluginLogOrigin)
 			}
 		} else {
-			slog.WarnContext(ctx, "OTel receiver is configured without TLS. Connections are unencrypted.")
+			slog.WarnContext(ctx, "OTel receiver is configured without TLS. Connections are unencrypted.",
+				pluginLogOrigin)
 		}
 	}
 }
 
 func (oc *Collector) bootup(ctx context.Context) error {
-	slog.InfoContext(ctx, "Starting OTel collector")
+	slog.InfoContext(ctx, "Starting OTel collector", pluginLogOrigin)
 	errChan := make(chan error)
 
 	go func() {
@@ -168,7 +175,7 @@ func (oc *Collector) bootup(ctx context.Context) error {
 		if appErr != nil {
 			errChan <- appErr
 		}
-		slog.InfoContext(ctx, "OTel collector run finished")
+		slog.InfoContext(ctx, "OTel collector run finished", pluginLogOrigin)
 	}()
 
 	for {
@@ -204,10 +211,10 @@ func (oc *Collector) Info() *bus.Info {
 
 // Close the plugin.
 func (oc *Collector) Close(ctx context.Context) error {
-	slog.InfoContext(ctx, "Closing OTel Collector plugin")
+	slog.InfoContext(ctx, "Closing OTel Collector plugin", pluginLogOrigin)
 
 	if !oc.stopped {
-		slog.InfoContext(ctx, "Shutting down OTel Collector", "state", oc.service.GetState())
+		slog.InfoContext(ctx, "Shutting down OTel Collector", "state", oc.service.GetState(), pluginLogOrigin)
 		oc.service.Shutdown()
 		oc.cancel()
 
@@ -222,9 +229,12 @@ func (oc *Collector) Close(ctx context.Context) error {
 		})
 
 		if err != nil {
-			slog.ErrorContext(ctx, "Failed to shutdown OTel Collector", "error", err, "state", oc.service.GetState())
+			slog.ErrorContext(ctx, "Failed to shutdown OTel Collector",
+				"error", err, "state", oc.service.GetState(),
+				pluginLogOrigin,
+			)
 		} else {
-			slog.InfoContext(ctx, "OTel Collector shutdown", "state", oc.service.GetState())
+			slog.InfoContext(ctx, "OTel Collector shutdown", "state", oc.service.GetState(), pluginLogOrigin)
 			oc.stopped = true
 		}
 	}
@@ -240,7 +250,7 @@ func (oc *Collector) Process(ctx context.Context, msg *bus.Message) {
 	case bus.ResourceUpdateTopic:
 		oc.handleResourceUpdate(ctx, msg)
 	default:
-		slog.DebugContext(ctx, "OTel collector plugin unknown topic", "topic", msg.Topic)
+		slog.DebugContext(ctx, "OTel collector plugin unknown topic", "topic", msg.Topic, pluginLogOrigin)
 	}
 }
 
@@ -258,17 +268,19 @@ func (oc *Collector) handleNginxConfigUpdate(ctx context.Context, msg *bus.Messa
 
 	nginxConfigContext, ok := msg.Data.(*model.NginxConfigContext)
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *model.NginxConfigContext", "payload", msg.Data)
+		slog.ErrorContext(ctx, "Unable to cast message payload to *model.NginxConfigContext",
+			"payload", msg.Data, pluginLogOrigin)
+
 		return
 	}
 
 	reloadCollector := oc.checkForNewReceivers(nginxConfigContext)
 
 	if reloadCollector {
-		slog.InfoContext(ctx, "Reloading OTel collector config")
+		slog.InfoContext(ctx, "Reloading OTel collector config", pluginLogOrigin)
 		err := writeCollectorConfig(oc.config.Collector)
 		if err != nil {
-			slog.ErrorContext(ctx, "Failed to write OTel Collector config", "error", err)
+			slog.ErrorContext(ctx, "Failed to write OTel Collector config", "error", err, pluginLogOrigin)
 			return
 		}
 
@@ -282,7 +294,7 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 
 	resourceUpdateContext, ok := msg.Data.(*v1.Resource)
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *v1.Resource", "payload", msg.Data)
+		slog.ErrorContext(ctx, "Unable to cast message payload to *v1.Resource", "payload", msg.Data, pluginLogOrigin)
 		return
 	}
 
@@ -290,10 +302,10 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 	headersSetterExtensionUpdated := oc.updateHeadersSetterExtension(ctx, resourceUpdateContext)
 
 	if resourceProcessorUpdated || headersSetterExtensionUpdated {
-		slog.InfoContext(ctx, "Reloading OTel collector config")
+		slog.InfoContext(ctx, "Reloading OTel collector config", pluginLogOrigin)
 		err := writeCollectorConfig(oc.config.Collector)
 		if err != nil {
-			slog.ErrorContext(ctx, "Failed to write OTel Collector config", "error", err)
+			slog.ErrorContext(ctx, "Failed to write OTel Collector config", "error", err, pluginLogOrigin)
 			return
 		}
 
@@ -343,9 +355,9 @@ func (oc *Collector) updateHeadersSetterExtension(
 		}
 
 		if !isUUIDHeaderSet {
-			slog.DebugContext(
-				ctx, "Adding uuid header to OTel collector",
+			slog.DebugContext(ctx, "Adding uuid header to OTel collector",
 				"uuid", resourceUpdateContext.GetResourceId(),
+				pluginLogOrigin,
 			)
 			oc.config.Collector.Extensions.HeadersSetter.Headers = append(
 				oc.config.Collector.Extensions.HeadersSetter.Headers,
@@ -366,14 +378,14 @@ func (oc *Collector) updateHeadersSetterExtension(
 func (oc *Collector) restartCollector(ctx context.Context) {
 	err := oc.Close(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to shutdown OTel Collector", "error", err)
+		slog.ErrorContext(ctx, "Failed to shutdown OTel Collector", "error", err, pluginLogOrigin)
 		return
 	}
 
 	settings := OTelCollectorSettings(oc.config)
 	oTelCollector, err := otelcol.NewCollector(settings)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to create OTel Collector", "error", err)
+		slog.ErrorContext(ctx, "Failed to create OTel Collector", "error", err, pluginLogOrigin)
 		return
 	}
 	oc.service = oTelCollector
@@ -382,13 +394,14 @@ func (oc *Collector) restartCollector(ctx context.Context) {
 	runCtx, oc.cancel = context.WithCancel(ctx)
 
 	if !oc.stopped {
-		slog.ErrorContext(ctx, "Unable to restart OTel collector, failed to stop collector")
+		slog.ErrorContext(ctx, "Unable to restart OTel collector, failed to stop collector", pluginLogOrigin)
+
 		return
 	}
 
 	bootErr := oc.bootup(runCtx)
 	if bootErr != nil {
-		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)
+		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr, pluginLogOrigin)
 	}
 }
 

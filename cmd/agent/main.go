@@ -18,6 +18,8 @@ import (
 	"github.com/nginx/agent/v3/internal/config"
 )
 
+var logOrigin = slog.String("log_origin", "main.go")
+
 var (
 	// set at buildtime
 	commit  = ""
@@ -32,7 +34,7 @@ func main() {
 	go func() {
 		select {
 		case <-sigChan:
-			slog.WarnContext(ctx, "NGINX Agent exiting")
+			slog.WarnContext(ctx, "NGINX Agent exiting", logOrigin)
 			cancel()
 
 			time.Sleep(config.DefGracefulShutdownPeriod)
@@ -41,6 +43,7 @@ func main() {
 					"Failed to gracefully shutdown within timeout of %v. Exiting",
 					config.DefGracefulShutdownPeriod,
 				),
+				logOrigin,
 			)
 			os.Exit(1)
 		case <-ctx.Done():
@@ -51,6 +54,6 @@ func main() {
 
 	err := app.Run(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "NGINX Agent exiting due to error", "error", err)
+		slog.ErrorContext(ctx, "NGINX Agent exiting due to error", "error", err, logOrigin)
 	}
 }

@@ -44,6 +44,8 @@ const (
 	filePerm    = 0o600
 )
 
+var managerLogOrigin = slog.String("log_origin", "file_manager_service.go")
+
 var (
 	manifestDirPath  = "/var/lib/nginx-agent"
 	manifestFilePath = manifestDirPath + "/manifest.json"
@@ -143,9 +145,11 @@ func (fms *FileManagerService) UpdateOverview(
 		slog.InfoContext(newCtx, "Updating file overview",
 			"instance_id", request.GetOverview().GetConfigVersion().GetInstanceId(),
 			"parent_correlation_id", correlationID,
+			managerLogOrigin,
 		)
 		slog.DebugContext(newCtx, "Sending update overview request",
 			"request", request, "parent_correlation_id", correlationID,
+			managerLogOrigin,
 		)
 
 		response, updateError := fms.fileServiceClient.UpdateOverview(newCtx, request)
@@ -153,7 +157,7 @@ func (fms *FileManagerService) UpdateOverview(
 		validatedError := grpc.ValidateGrpcError(updateError)
 
 		if validatedError != nil {
-			slog.ErrorContext(newCtx, "Failed to send update overview", "error", validatedError)
+			slog.ErrorContext(newCtx, "Failed to send update overview", "error", validatedError, managerLogOrigin)
 
 			return nil, validatedError
 		}
@@ -169,10 +173,10 @@ func (fms *FileManagerService) UpdateOverview(
 		return err
 	}
 
-	slog.DebugContext(newCtx, "UpdateOverview response", "response", response)
+	slog.DebugContext(newCtx, "UpdateOverview response", "response", response, managerLogOrigin)
 
 	if response.GetOverview() == nil {
-		slog.Debug("UpdateOverview response is empty")
+		slog.Debug("UpdateOverview response is empty", managerLogOrigin)
 		return nil
 	}
 	delta := files.ConvertToMapOfFiles(response.GetOverview().GetFiles())
@@ -215,7 +219,7 @@ func (fms *FileManagerService) updateFiles(
 	}
 
 	iteration++
-	slog.Debug("Updating file overview", "attempt_number", iteration)
+	slog.Debug("Updating file overview", "attempt_number", iteration, managerLogOrigin)
 
 	return fms.UpdateOverview(ctx, instanceID, diffFiles, iteration)
 }
@@ -225,7 +229,11 @@ func (fms *FileManagerService) UpdateFile(
 	instanceID string,
 	fileToUpdate *mpi.File,
 ) error {
-	slog.InfoContext(ctx, "Updating file", "instance_id", instanceID, "file_name", fileToUpdate.GetFileMeta().GetName())
+	slog.InfoContext(ctx, "Updating file",
+		"instance_id", instanceID,
+		"file_name", fileToUpdate.GetFileMeta().GetName(),
+		managerLogOrigin,
+	)
 	contents, err := os.ReadFile(fileToUpdate.GetFileMeta().GetName())
 	if err != nil {
 		return err
@@ -249,8 +257,11 @@ func (fms *FileManagerService) UpdateFile(
 	defer backoffCancel()
 
 	sendUpdateFile := func() (*mpi.UpdateFileResponse, error) {
-		slog.DebugContext(ctx, "Sending update file request", "request_file", request.GetFile(),
-			"request_message_meta", request.GetMessageMeta())
+		slog.DebugContext(ctx, "Sending update file request",
+			"request_file", request.GetFile(),
+			"request_message_meta", request.GetMessageMeta(),
+			managerLogOrigin,
+		)
 		if fms.fileServiceClient == nil {
 			return nil, errors.New("file service client is not initialized")
 		}
@@ -264,7 +275,7 @@ func (fms *FileManagerService) UpdateFile(
 		validatedError := grpc.ValidateGrpcError(updateError)
 
 		if validatedError != nil {
-			slog.ErrorContext(ctx, "Failed to send update file", "error", validatedError)
+			slog.ErrorContext(ctx, "Failed to send update file", "error", validatedError, managerLogOrigin)
 
 			return nil, validatedError
 		}
@@ -278,7 +289,7 @@ func (fms *FileManagerService) UpdateFile(
 		return err
 	}
 
-	slog.DebugContext(ctx, "UpdateFile response", "response", response)
+	slog.DebugContext(ctx, "UpdateFile response", "response", response, managerLogOrigin)
 
 	return err
 }
@@ -341,7 +352,7 @@ func (fms *FileManagerService) ClearCache() {
 
 // nolint:revive,cyclop
 func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) error {
-	slog.InfoContext(ctx, "Rolling back config for instance", "instanceid", instanceID)
+	slog.InfoContext(ctx, "Rolling back config for instance", "instanceid", instanceID, managerLogOrigin)
 	areFilesUpdated := false
 	fms.filesMutex.Lock()
 	defer fms.filesMutex.Unlock()
@@ -371,7 +382,7 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 		case mpi.File_FILE_ACTION_UNSPECIFIED, mpi.File_FILE_ACTION_UNCHANGED:
 			fallthrough
 		default:
-			slog.DebugContext(ctx, "File Action not implemented")
+			slog.DebugContext(ctx, "File Action not implemented", managerLogOrigin)
 		}
 	}
 
@@ -402,7 +413,7 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 		case mpi.File_FILE_ACTION_UNSPECIFIED, mpi.File_FILE_ACTION_UNCHANGED:
 			fallthrough
 		default:
-			slog.DebugContext(ctx, "File Action not implemented", "action", file.GetAction())
+			slog.DebugContext(ctx, "File Action not implemented", "action", file.GetAction(), managerLogOrigin)
 		}
 	}
 

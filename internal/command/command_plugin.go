@@ -21,6 +21,8 @@ import (
 	"github.com/nginx/agent/v3/pkg/id"
 )
 
+var pluginLogOrigin = slog.String("log_origin", "command_plugin.go")
+
 var _ bus.Plugin = (*CommandPlugin)(nil)
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
@@ -57,7 +59,7 @@ func NewCommandPlugin(agentConfig *config.Config, grpcConnection grpc.GrpcConnec
 }
 
 func (cp *CommandPlugin) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
-	slog.DebugContext(ctx, "Starting command plugin")
+	slog.DebugContext(ctx, "Starting command plugin", pluginLogOrigin)
 
 	cp.messagePipe = messagePipe
 	cp.commandService = NewCommandService(cp.conn.CommandServiceClient(), cp.config, cp.subscribeChannel)
@@ -68,7 +70,7 @@ func (cp *CommandPlugin) Init(ctx context.Context, messagePipe bus.MessagePipeIn
 }
 
 func (cp *CommandPlugin) Close(ctx context.Context) error {
-	slog.InfoContext(ctx, "Closing command plugin")
+	slog.InfoContext(ctx, "Closing command plugin", pluginLogOrigin)
 
 	cp.subscribeMutex.Lock()
 	if cp.subscribeCancel != nil {
@@ -98,7 +100,7 @@ func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 	case bus.DataPlaneResponseTopic:
 		cp.processDataPlaneResponse(ctx, msg)
 	default:
-		slog.DebugContext(ctx, "Command plugin unknown topic", "topic", msg.Topic)
+		slog.DebugContext(ctx, "Command plugin unknown topic", "topic", msg.Topic, pluginLogOrigin)
 	}
 }
 
@@ -109,7 +111,7 @@ func (cp *CommandPlugin) processResourceUpdate(ctx context.Context, msg *bus.Mes
 		} else {
 			statusErr := cp.commandService.UpdateDataPlaneStatus(ctx, resource)
 			if statusErr != nil {
-				slog.ErrorContext(ctx, "Unable to update data plane status", "error", statusErr)
+				slog.ErrorContext(ctx, "Unable to update data plane status", "error", statusErr, pluginLogOrigin)
 			}
 		}
 	}
@@ -120,7 +122,7 @@ func (cp *CommandPlugin) createConnection(ctx context.Context, resource *mpi.Res
 
 	createConnectionResponse, err := cp.commandService.CreateConnection(ctx, resource)
 	if err != nil {
-		slog.ErrorContext(ctx, "Unable to create connection", "error", err)
+		slog.ErrorContext(ctx, "Unable to create connection", "error", err, pluginLogOrigin)
 	}
 
 	if createConnectionResponse != nil {
@@ -142,7 +144,7 @@ func (cp *CommandPlugin) processDataPlaneHealth(ctx context.Context, msg *bus.Me
 		err := cp.commandService.UpdateDataPlaneHealth(ctx, instances)
 		correlationID := logger.GetCorrelationID(ctx)
 		if err != nil {
-			slog.ErrorContext(ctx, "Unable to update data plane health", "error", err)
+			slog.ErrorContext(ctx, "Unable to update data plane health", "error", err, pluginLogOrigin)
 			cp.messagePipe.Process(ctx, &bus.Message{
 				Topic: bus.DataPlaneResponseTopic,
 				Data: cp.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
@@ -161,7 +163,7 @@ func (cp *CommandPlugin) processInstanceHealth(ctx context.Context, msg *bus.Mes
 	if instances, ok := msg.Data.([]*mpi.InstanceHealth); ok {
 		err := cp.commandService.UpdateDataPlaneHealth(ctx, instances)
 		if err != nil {
-			slog.ErrorContext(ctx, "Unable to update data plane health", "error", err)
+			slog.ErrorContext(ctx, "Unable to update data plane health", "error", err, pluginLogOrigin)
 		}
 	}
 }
@@ -170,25 +172,26 @@ func (cp *CommandPlugin) processDataPlaneResponse(ctx context.Context, msg *bus.
 	if response, ok := msg.Data.(*mpi.DataPlaneResponse); ok {
 		err := cp.commandService.SendDataPlaneResponse(ctx, response)
 		if err != nil {
-			slog.ErrorContext(ctx, "Unable to send data plane response", "error", err)
+			slog.ErrorContext(ctx, "Unable to send data plane response", "error", err, pluginLogOrigin)
 		}
 	}
 }
 
 func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "Command plugin received connection reset")
+	slog.DebugContext(ctx, "Command plugin received connection reset", pluginLogOrigin)
 	if newConnection, ok := msg.Data.(grpc.GrpcConnectionInterface); ok {
 		connectionErr := cp.conn.Close(ctx)
 		if connectionErr != nil {
-			slog.ErrorContext(ctx, "Command plugin: unable to close connection", "error", connectionErr)
+			slog.ErrorContext(ctx, "Command plugin: unable to close connection",
+				"error", connectionErr, pluginLogOrigin)
 		}
 		cp.conn = newConnection
 		err := cp.commandService.UpdateClient(ctx, cp.conn.CommandServiceClient())
 		if err != nil {
-			slog.ErrorContext(ctx, "Failed to reset connection", "error", err)
+			slog.ErrorContext(ctx, "Failed to reset connection", "error", err, pluginLogOrigin)
 			return
 		}
-		slog.DebugContext(ctx, "Command service client reset successfully")
+		slog.DebugContext(ctx, "Command service client reset successfully", pluginLogOrigin)
 	}
 }
 
@@ -213,7 +216,7 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 				logger.CorrelationIDContextKey,
 				slog.Any(logger.CorrelationIDKey, message.GetMessageMeta().GetCorrelationId()),
 			)
-			slog.DebugContext(newCtx, "Received management plane request", "request", message)
+			slog.DebugContext(newCtx, "Received management plane request", "request", message, pluginLogOrigin)
 
 			switch message.GetRequest().(type) {
 			case *mpi.ManagementPlaneRequest_ConfigUploadRequest:
@@ -225,7 +228,7 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 			case *mpi.ManagementPlaneRequest_ActionRequest:
 				cp.handleAPIActionRequest(newCtx, message)
 			default:
-				slog.DebugContext(newCtx, "Management plane request not implemented yet")
+				slog.DebugContext(newCtx, "Management plane request not implemented yet", pluginLogOrigin)
 			}
 		}
 	}
@@ -239,6 +242,7 @@ func (cp *CommandPlugin) handleAPIActionRequest(ctx context.Context, message *mp
 			ctx,
 			"API Action Request feature disabled. Unable to process API action request",
 			"request", message,
+			pluginLogOrigin,
 		)
 
 		err := cp.commandService.SendDataPlaneResponse(ctx, &mpi.DataPlaneResponse{
@@ -251,7 +255,7 @@ func (cp *CommandPlugin) handleAPIActionRequest(ctx context.Context, message *mp
 			InstanceId: message.GetActionRequest().GetInstanceId(),
 		})
 		if err != nil {
-			slog.ErrorContext(ctx, "Unable to send data plane response", "error", err)
+			slog.ErrorContext(ctx, "Unable to send data plane response", "error", err, pluginLogOrigin)
 		}
 	}
 }
@@ -264,6 +268,7 @@ func (cp *CommandPlugin) handleConfigApplyRequest(newCtx context.Context, messag
 			newCtx,
 			"Configuration feature disabled. Unable to process config apply request",
 			"request", message,
+			pluginLogOrigin,
 		)
 
 		err := cp.commandService.SendDataPlaneResponse(newCtx, &mpi.DataPlaneResponse{
@@ -276,7 +281,7 @@ func (cp *CommandPlugin) handleConfigApplyRequest(newCtx context.Context, messag
 			InstanceId: message.GetConfigApplyRequest().GetOverview().GetConfigVersion().GetInstanceId(),
 		})
 		if err != nil {
-			slog.ErrorContext(newCtx, "Unable to send data plane response", "error", err)
+			slog.ErrorContext(newCtx, "Unable to send data plane response", "error", err, pluginLogOrigin)
 		}
 	}
 }
@@ -286,9 +291,9 @@ func (cp *CommandPlugin) handleConfigUploadRequest(newCtx context.Context, messa
 		cp.messagePipe.Process(newCtx, &bus.Message{Topic: bus.ConfigUploadRequestTopic, Data: message})
 	} else {
 		slog.WarnContext(
-			newCtx,
-			"Configuration feature disabled. Unable to process config upload request",
+			newCtx, "Configuration feature disabled. Unable to process config upload request",
 			"request", message,
+			pluginLogOrigin,
 		)
 
 		err := cp.commandService.SendDataPlaneResponse(newCtx, &mpi.DataPlaneResponse{
@@ -301,7 +306,7 @@ func (cp *CommandPlugin) handleConfigUploadRequest(newCtx context.Context, messa
 			InstanceId: message.GetConfigUploadRequest().GetOverview().GetConfigVersion().GetInstanceId(),
 		})
 		if err != nil {
-			slog.ErrorContext(newCtx, "Unable to send data plane response", "error", err)
+			slog.ErrorContext(newCtx, "Unable to send data plane response", "error", err, pluginLogOrigin)
 		}
 	}
 }

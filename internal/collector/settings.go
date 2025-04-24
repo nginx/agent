@@ -26,6 +26,8 @@ const (
 	configFilePermission = 0o600
 )
 
+var settingsLogOrigin = slog.String("log_origin", "settings.go")
+
 //go:embed otelcol.tmpl
 var otelcolTemplate string
 
@@ -115,7 +117,7 @@ func writeCollectorConfig(conf *config.Collector) error {
 	defer func() {
 		err = file.Close()
 		if err != nil {
-			slog.Warn("Failed to close file", "file_path", confPath)
+			slog.Warn("Failed to close file", "file_path", confPath, settingsLogOrigin)
 		}
 	}()
 	if err != nil {

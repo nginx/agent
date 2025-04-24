@@ -22,6 +22,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+var pluginLogOrigin = slog.String("log_origin", "file_plugin.go")
+
 var _ bus.Plugin = (*FilePlugin)(nil)
 
 // The file plugin only writes, deletes and checks hashes of files
@@ -42,7 +44,7 @@ func NewFilePlugin(agentConfig *config.Config, grpcConnection grpc.GrpcConnectio
 }
 
 func (fp *FilePlugin) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
-	slog.DebugContext(ctx, "Starting file plugin")
+	slog.DebugContext(ctx, "Starting file plugin", pluginLogOrigin)
 
 	fp.messagePipe = messagePipe
 	fp.fileManagerService = NewFileManagerService(fp.conn.FileServiceClient(), fp.config)
@@ -51,7 +53,7 @@ func (fp *FilePlugin) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 }
 
 func (fp *FilePlugin) Close(ctx context.Context) error {
-	slog.InfoContext(ctx, "Closing file plugin")
+	slog.InfoContext(ctx, "Closing file plugin", pluginLogOrigin)
 	return fp.conn.Close(ctx)
 }
 
@@ -78,7 +80,7 @@ func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 	case bus.ConfigApplyFailedTopic:
 		fp.handleConfigApplyFailedRequest(ctx, msg)
 	default:
-		slog.DebugContext(ctx, "File plugin unknown topic", "topic", msg.Topic)
+		slog.DebugContext(ctx, "File plugin unknown topic", "topic", msg.Topic, pluginLogOrigin)
 	}
 }
 
@@ -96,12 +98,12 @@ func (fp *FilePlugin) Subscriptions() []string {
 }
 
 func (fp *FilePlugin) handleConnectionReset(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "File plugin received connection reset message")
+	slog.DebugContext(ctx, "File plugin received connection reset message", pluginLogOrigin)
 	if newConnection, ok := msg.Data.(grpc.GrpcConnectionInterface); ok {
 		var reconnect bool
 		err := fp.conn.Close(ctx)
 		if err != nil {
-			slog.ErrorContext(ctx, "File plugin: unable to close connection", "error", err)
+			slog.ErrorContext(ctx, "File plugin: unable to close connection", "error", err, pluginLogOrigin)
 		}
 		fp.conn = newConnection
 
@@ -109,7 +111,7 @@ func (fp *FilePlugin) handleConnectionReset(ctx context.Context, msg *bus.Messag
 		fp.fileManagerService = NewFileManagerService(fp.conn.FileServiceClient(), fp.config)
 		fp.fileManagerService.SetIsConnected(reconnect)
 
-		slog.DebugContext(ctx, "File plugin: client reset successfully")
+		slog.DebugContext(ctx, "File plugin: client reset successfully", pluginLogOrigin)
 	}
 }
 
@@ -117,7 +119,11 @@ func (fp *FilePlugin) handleConfigApplyComplete(ctx context.Context, msg *bus.Me
 	response, ok := msg.Data.(*mpi.DataPlaneResponse)
 
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.DataPlaneResponse", "payload", msg.Data)
+		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.DataPlaneResponse",
+			"payload", msg.Data,
+			pluginLogOrigin,
+		)
+
 		return
 	}
 
@@ -129,7 +135,9 @@ func (fp *FilePlugin) handleConfigApplyFailedRequest(ctx context.Context, msg *b
 	data, ok := msg.Data.(*model.ConfigApplyMessage)
 	if data.InstanceID == "" || !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplyMessage",
-			"payload", msg.Data)
+			"payload", msg.Data,
+			pluginLogOrigin,
+		)
 		fp.fileManagerService.ClearCache()
 
 		return
@@ -163,7 +171,9 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest",
-			"payload", msg.Data)
+			"payload", msg.Data,
+			pluginLogOrigin,
+		)
 
 		return
 	}
@@ -171,7 +181,9 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 	request, requestOk := managementPlaneRequest.GetRequest().(*mpi.ManagementPlaneRequest_ConfigApplyRequest)
 	if !requestOk {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest_ConfigApplyRequest",
-			"payload", msg.Data)
+			"payload", msg.Data,
+			pluginLogOrigin,
+		)
 
 		return
 	}
@@ -201,6 +213,7 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			"Failed to apply config changes",
 			"instance_id", instanceID,
 			"error", err,
+			pluginLogOrigin,
 		)
 		response = fp.createDataPlaneResponse(
 			correlationID,
@@ -220,6 +233,7 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			"Failed to apply config changes, rolling back",
 			"instance_id", instanceID,
 			"error", err,
+			pluginLogOrigin,
 		)
 
 		response = fp.createDataPlaneResponse(
@@ -274,7 +288,12 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Message) {
 	nginxConfigContext, ok := msg.Data.(*model.NginxConfigContext)
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *model.NginxConfigContext", "payload", msg.Data)
+		slog.ErrorContext(
+			ctx,
+			"Unable to cast message payload to *model.NginxConfigContext",
+			"payload", msg.Data,
+			pluginLogOrigin,
+		)
 
 		return
 	}
@@ -288,6 +307,7 @@ func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 			"Failed to update file overview",
 			"instance_id", nginxConfigContext.InstanceID,
 			"error", err,
+			pluginLogOrigin,
 		)
 	}
 }
@@ -299,6 +319,7 @@ func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Me
 			ctx,
 			"Unable to cast message payload to *mpi.ManagementPlaneRequest",
 			"payload", msg.Data,
+			pluginLogOrigin,
 		)
 
 		return
@@ -323,6 +344,7 @@ func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Me
 				"instance_id", configUploadRequest.GetOverview().GetConfigVersion().GetInstanceId(),
 				"file_name", file.GetFileMeta().GetName(),
 				"error", err,
+				pluginLogOrigin,
 			)
 
 			response := fp.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,

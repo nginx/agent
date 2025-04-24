@@ -31,6 +31,8 @@ import (
 
 var _ commandService = (*CommandService)(nil)
 
+var serviceLogOrigin = slog.String("log_origin", "command_service.go")
+
 const (
 	createConnectionMaxElapsedTime = 0
 )
@@ -96,8 +98,11 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 	defer backoffCancel()
 
 	sendDataPlaneStatus := func() (*mpi.UpdateDataPlaneStatusResponse, error) {
-		slog.DebugContext(ctx, "Sending data plane status update request", "request", request,
-			"parent_correlation_id", correlationID)
+		slog.DebugContext(ctx, "Sending data plane status update request",
+			"request", request,
+			"parent_correlation_id", correlationID,
+			serviceLogOrigin,
+		)
 
 		cs.subscribeClientMutex.Lock()
 		if cs.commandServiceClient == nil {
@@ -109,8 +114,7 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 
 		validatedError := grpc.ValidateGrpcError(updateError)
 		if validatedError != nil {
-			slog.ErrorContext(ctx, "Failed to send update data plane status", "error", validatedError)
-
+			slog.ErrorContext(ctx, "Failed to send update data plane status", "error", validatedError, serviceLogOrigin)
 			return nil, validatedError
 		}
 
@@ -124,7 +128,7 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 	if err != nil {
 		return err
 	}
-	slog.DebugContext(ctx, "UpdateDataPlaneStatus response", "response", response)
+	slog.DebugContext(ctx, "UpdateDataPlaneStatus response", "response", response, serviceLogOrigin)
 
 	cs.resourceMutex.Lock()
 	defer cs.resourceMutex.Unlock()
@@ -160,13 +164,13 @@ func (cs *CommandService) UpdateDataPlaneHealth(ctx context.Context, instanceHea
 		return err
 	}
 
-	slog.DebugContext(ctx, "UpdateDataPlaneHealth response", "response", response)
+	slog.DebugContext(ctx, "UpdateDataPlaneHealth response", "response", response, serviceLogOrigin)
 
 	return err
 }
 
 func (cs *CommandService) SendDataPlaneResponse(ctx context.Context, response *mpi.DataPlaneResponse) error {
-	slog.DebugContext(ctx, "Sending data plane response", "response", response)
+	slog.DebugContext(ctx, "Sending data plane response", "response", response, serviceLogOrigin)
 
 	backOffCtx, backoffCancel := context.WithTimeout(ctx, cs.agentConfig.Client.Backoff.MaxElapsedTime)
 	defer backoffCancel()
@@ -198,7 +202,8 @@ func (cs *CommandService) Subscribe(ctx context.Context) {
 		default:
 			retryError := backoff.Retry(cs.receiveCallback(ctx), backoffHelpers.Context(ctx, commonSettings))
 			if retryError != nil {
-				slog.WarnContext(ctx, "Failed to receive messages from subscribe stream", "error", retryError)
+				slog.WarnContext(ctx, "Failed to receive messages from subscribe stream",
+					"error", retryError, serviceLogOrigin)
 			}
 		}
 	}
@@ -210,7 +215,7 @@ func (cs *CommandService) CreateConnection(
 ) (*mpi.CreateConnectionResponse, error) {
 	correlationID := logger.GetCorrelationID(ctx)
 	if len(resource.GetInstances()) <= 1 {
-		slog.InfoContext(ctx, "No Data Plane Instance found")
+		slog.InfoContext(ctx, "No Data Plane Instance found", serviceLogOrigin)
 	}
 
 	if cs.isConnected.Load() {
@@ -234,7 +239,7 @@ func (cs *CommandService) CreateConnection(
 		Multiplier:          cs.agentConfig.Client.Backoff.Multiplier,
 	}
 
-	slog.DebugContext(ctx, "Sending create connection request", "request", request)
+	slog.DebugContext(ctx, "Sending create connection request", "request", request, serviceLogOrigin)
 	response, err := backoff.RetryWithData(
 		cs.connectCallback(ctx, request),
 		backoffHelpers.Context(ctx, commonSettings),
@@ -243,8 +248,8 @@ func (cs *CommandService) CreateConnection(
 		return nil, err
 	}
 
-	slog.InfoContext(ctx, "Connection created", "response", response)
-	slog.InfoContext(ctx, "Agent connected")
+	slog.InfoContext(ctx, "Connection created", "response", response, serviceLogOrigin)
+	slog.InfoContext(ctx, "Agent connected", serviceLogOrigin)
 
 	cs.isConnected.Store(true)
 
@@ -265,7 +270,7 @@ func (cs *CommandService) UpdateClient(ctx context.Context, client mpi.CommandSe
 	if err != nil {
 		return err
 	}
-	slog.InfoContext(ctx, "Successfully sent create connection request", "response", resp)
+	slog.InfoContext(ctx, "Successfully sent create connection request", "response", resp, serviceLogOrigin)
 
 	return nil
 }
@@ -285,8 +290,7 @@ func (cs *CommandService) sendDataPlaneResponseCallback(
 
 		err := cs.subscribeClient.Send(response)
 		if err != nil {
-			slog.ErrorContext(ctx, "Failed to send data plane response", "error", err)
-
+			slog.ErrorContext(ctx, "Failed to send data plane response", "error", err, serviceLogOrigin)
 			return err
 		}
 
@@ -341,6 +345,7 @@ func (cs *CommandService) sendResponseForQueuedConfigApplyRequests(
 			ctx,
 			"Sending data plane response for queued config apply request",
 			"response", newResponse,
+			serviceLogOrigin,
 		)
 
 		backOffCtx, backoffCancel := context.WithTimeout(ctx, cs.agentConfig.Client.Backoff.MaxElapsedTime)
@@ -350,7 +355,7 @@ func (cs *CommandService) sendResponseForQueuedConfigApplyRequests(
 			backoffHelpers.Context(backOffCtx, cs.agentConfig.Client.Backoff),
 		)
 		if err != nil {
-			slog.ErrorContext(ctx, "Failed to send data plane response", "error", err)
+			slog.ErrorContext(ctx, "Failed to send data plane response", "error", err, serviceLogOrigin)
 			backoffCancel()
 
 			return err
@@ -360,7 +365,10 @@ func (cs *CommandService) sendResponseForQueuedConfigApplyRequests(
 	}
 
 	cs.configApplyRequestQueue[instanceID] = cs.configApplyRequestQueue[instanceID][indexOfConfigApplyRequest+1:]
-	slog.DebugContext(ctx, "Removed config apply requests from queue", "queue", cs.configApplyRequestQueue[instanceID])
+	slog.DebugContext(ctx, "Removed config apply requests from queue",
+		"queue", cs.configApplyRequestQueue[instanceID],
+		serviceLogOrigin,
+	)
 
 	if len(cs.configApplyRequestQueue[instanceID]) > 0 {
 		cs.subscribeChannel <- cs.configApplyRequestQueue[instanceID][len(cs.configApplyRequestQueue[instanceID])-1]
@@ -375,7 +383,7 @@ func (cs *CommandService) dataPlaneHealthCallback(
 	request *mpi.UpdateDataPlaneHealthRequest,
 ) func() (*mpi.UpdateDataPlaneHealthResponse, error) {
 	return func() (*mpi.UpdateDataPlaneHealthResponse, error) {
-		slog.DebugContext(ctx, "Sending data plane health update request", "request", request)
+		slog.DebugContext(ctx, "Sending data plane health update request", "request", request, serviceLogOrigin)
 
 		cs.subscribeClientMutex.Lock()
 		if cs.commandServiceClient == nil {
@@ -389,7 +397,7 @@ func (cs *CommandService) dataPlaneHealthCallback(
 		validatedError := grpc.ValidateGrpcError(updateError)
 
 		if validatedError != nil {
-			slog.ErrorContext(ctx, "Failed to send update data plane health", "error", validatedError)
+			slog.ErrorContext(ctx, "Failed to send update data plane health", "error", validatedError, serviceLogOrigin)
 
 			return nil, validatedError
 		}
@@ -453,17 +461,21 @@ func (cs *CommandService) handleSubscribeError(ctx context.Context, err error, e
 
 	if ok && codeError.Code() == codes.Unavailable {
 		cs.isConnected.Store(false)
-		slog.ErrorContext(ctx, fmt.Sprintf("Failed to %s, rpc unavailable. "+
-			"Trying create connection rpc", errorMsg), "error", err)
+		slog.ErrorContext(
+			ctx,
+			fmt.Sprintf("Failed to %s, rpc unavailable. Trying create connection rpc", errorMsg),
+			"error", err,
+			serviceLogOrigin,
+		)
 		_, connectionErr := cs.CreateConnection(ctx, cs.resource)
 		if connectionErr != nil {
-			slog.ErrorContext(ctx, "Unable to create connection", "error", err)
+			slog.ErrorContext(ctx, "Unable to create connection", "error", err, serviceLogOrigin)
 		}
 
 		return nil
 	}
 
-	slog.ErrorContext(ctx, fmt.Sprintf("Failed to %s", errorMsg), "error", err)
+	slog.ErrorContext(ctx, fmt.Sprintf("Failed to %s", errorMsg), "error", err, serviceLogOrigin)
 
 	return err
 }
@@ -481,6 +493,7 @@ func (cs *CommandService) queueConfigApplyRequests(ctx context.Context, request 
 			ctx,
 			"Config apply request is already in progress, queuing new config apply request",
 			"request", request,
+			serviceLogOrigin,
 		)
 	}
 }
@@ -526,6 +539,7 @@ func (cs *CommandService) checkIfInstanceExists(
 			"Unable to handle request, instance not found",
 			"instance", requestInstanceID,
 			"request", request,
+			serviceLogOrigin,
 		)
 
 		response := &mpi.DataPlaneResponse{
@@ -543,7 +557,7 @@ func (cs *CommandService) checkIfInstanceExists(
 		}
 		err := cs.SendDataPlaneResponse(ctx, response)
 		if err != nil {
-			slog.ErrorContext(ctx, "Failed to send data plane response", "error", err)
+			slog.ErrorContext(ctx, "Failed to send data plane response", "error", err, serviceLogOrigin)
 		}
 	}
 
@@ -562,7 +576,7 @@ func (cs *CommandService) connectCallback(
 
 		validatedError := grpc.ValidateGrpcError(connectErr)
 		if validatedError != nil {
-			slog.ErrorContext(ctx, "Failed to create connection", "error", validatedError)
+			slog.ErrorContext(ctx, "Failed to create connection", "error", validatedError, serviceLogOrigin)
 
 			return nil, validatedError
 		}

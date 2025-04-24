@@ -17,6 +17,8 @@ import (
 	"github.com/shirou/gopsutil/v4/host"
 )
 
+var logOrigin = slog.String("log_origin", "exec.go")
+
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . ExecInterface
 type ExecInterface interface {
@@ -70,7 +72,7 @@ func (*Exec) HostID(ctx context.Context) (string, error) {
 func (*Exec) ReleaseInfo(ctx context.Context) (releaseInfo *v1.ReleaseInfo) {
 	hostInfo, err := host.InfoWithContext(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "Could not read release information for host", "error", err)
+		slog.ErrorContext(ctx, "Could not read release information for host", "error", err, logOrigin)
 		return &v1.ReleaseInfo{}
 	}
 

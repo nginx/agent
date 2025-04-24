@@ -11,6 +11,8 @@ import (
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )
 
+var mapperLogOrigin = slog.String("log_origin", "mapper.go")
+
 // FromCommandProto maps the AgentConfig Command struct to the Command proto message
 func FromCommandProto(config *mpi.CommandServer) *Command {
 	cmd := &Command{}
@@ -40,7 +42,8 @@ func FromCommandProto(config *mpi.CommandServer) *Command {
 			SkipVerify: config.GetTls().GetSkipVerify(),
 		}
 		if cmd.TLS.SkipVerify {
-			slog.Warn("Insecure setting SkipVerify, this tells the server to accept a certificate with any hostname.")
+			slog.Warn("Insecure setting SkipVerify, this tells the server to accept a certificate with any hostname.",
+				mapperLogOrigin)
 		}
 	} else {
 		cmd.TLS = nil

@@ -13,6 +13,8 @@ import (
 	messagebus "github.com/vardius/message-bus"
 )
 
+var logOrigin = slog.String("log_origin", "message_pipe.go")
+
 type (
 	Payload interface{}
 
@@ -81,7 +83,7 @@ func (p *MessagePipe) Register(size int, plugins []Plugin) error {
 		pluginsRegistered = append(pluginsRegistered, plugin.Info().Name)
 	}
 
-	slog.Info("Finished registering plugins", "plugins", pluginsRegistered)
+	slog.Info("Finished registering plugins", "plugins", pluginsRegistered, logOrigin)
 
 	return nil
 }
@@ -195,7 +197,7 @@ func (p *MessagePipe) initPlugins(ctx context.Context) {
 	for index, plugin := range p.plugins {
 		err := plugin.Init(ctx, p)
 		if err != nil {
-			slog.ErrorContext(ctx, "Failed to initialize plugin", "plugin", plugin.Info().Name, "error", err)
+			slog.ErrorContext(ctx, "Failed to initialize plugin", "plugin", plugin.Info().Name, "error", err, logOrigin)
 
 			unsubscribeError := p.unsubscribePlugin(ctx, index, plugin)
 			if unsubscribeError != nil {
@@ -204,6 +206,7 @@ func (p *MessagePipe) initPlugins(ctx context.Context) {
 					"Failed to unsubscribe plugin",
 					"plugin", plugin.Info().Name,
 					"error", unsubscribeError,
+					logOrigin,
 				)
 			}
 		}

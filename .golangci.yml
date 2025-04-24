@@ -764,7 +764,7 @@ linters-settings:
       - github.com/jmoiron/sqlx
   sloglint:
     # Enforce not mixing key-value pairs and attributes. Default: true
-    no-mixed-args: true
+    no-mixed-args: false
     # Enforce using key-value pairs only (overrides no-mixed-args, incompatible with attr-only). Default: false
     kv-only: false
     # Enforce using attributes only (overrides no-mixed-args, incompatible with kv-only). Default: false

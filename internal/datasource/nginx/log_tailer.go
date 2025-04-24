@@ -18,6 +18,8 @@ import (
 
 const numberOfTimesToSplitLogLine = 2
 
+var logOrigin = slog.String("log_origin", "log_tailer.go")
+
 var tailConfig = tail.Config{
 	Follow:    true,
 	ReOpen:    true,
@@ -215,9 +217,9 @@ func handleContextDone(ctx context.Context) {
 	ctxErr := ctx.Err()
 	switch ctxErr {
 	case context.DeadlineExceeded:
-		slog.DebugContext(ctx, "Tailer canceled because deadline was exceeded", "error", ctxErr)
+		slog.DebugContext(ctx, "Tailer canceled because deadline was exceeded", "error", ctxErr, logOrigin)
 	case context.Canceled:
-		slog.DebugContext(ctx, "Tailer forcibly canceled", "error", ctxErr)
+		slog.DebugContext(ctx, "Tailer forcibly canceled", "error", ctxErr, logOrigin)
 	}
-	slog.DebugContext(ctx, "Tailer is done")
+	slog.DebugContext(ctx, "Tailer is done", logOrigin)
 }

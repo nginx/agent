@@ -35,6 +35,8 @@ const (
 	AgentDirName   = "/etc/nginx-agent/"
 )
 
+var configLogOrigin = slog.String("log_origin", "config.go")
+
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 
 func RegisterRunner(r func(cmd *cobra.Command, args []string)) {
@@ -61,7 +63,7 @@ func RegisterConfigFile() error {
 		return err
 	}
 
-	slog.Debug("Configuration file loaded", "config_path", configPath)
+	slog.Debug("Configuration file loaded", "config_path", configPath, configLogOrigin)
 	viperInstance.Set(ConfigPathKey, configPath)
 
 	exePath, err := os.Executable()
@@ -82,7 +84,7 @@ func ResolveConfig() (*Config, error) {
 	// Check directories in allowed_directories are valid
 	for _, dir := range directories {
 		if dir == "" || !filepath.IsAbs(dir) {
-			slog.Warn("Invalid directory: ", "dir", dir)
+			slog.Warn("Invalid directory: ", "dir", dir, configLogOrigin)
 			continue
 		}
 
@@ -92,7 +94,7 @@ func ResolveConfig() (*Config, error) {
 		allowedDirs = append(allowedDirs, dir)
 	}
 
-	slog.Info("Configured allowed directories", "allowed_directories", allowedDirs)
+	slog.Info("Configured allowed directories", "allowed_directories", allowedDirs, configLogOrigin)
 
 	// Collect all parsing errors before returning the error, so the user sees all issues with config
 	// in one error message.
@@ -120,10 +122,12 @@ func ResolveConfig() (*Config, error) {
 
 	checkCollectorConfiguration(collector, config)
 
-	slog.Debug("Agent config", "config", config)
-	slog.Info("Enabled features", "features", config.Features)
-	slog.Info("Excluded files from being watched for file changes", "exclude_files",
-		config.Watchers.FileWatcher.ExcludeFiles)
+	slog.Debug("Agent config", "config", config, configLogOrigin)
+	slog.Info("Enabled features", "features", config.Features, configLogOrigin)
+	slog.Info("Excluded files from being watched for file changes",
+		"exclude_files", config.Watchers.FileWatcher.ExcludeFiles,
+		configLogOrigin,
+	)
 
 	return config, nil
 }
@@ -131,8 +135,8 @@ func ResolveConfig() (*Config, error) {
 func checkCollectorConfiguration(collector *Collector, config *Config) {
 	if isOTelExporterConfigured(collector) && config.IsGrpcClientConfigured() && config.IsAuthConfigured() &&
 		config.IsTLSConfigured() {
-		slog.Info("No collector configuration found in NGINX Agent config, command server configuration found." +
-			"Using default collector configuration")
+		slog.Info("No collector configuration found in NGINX Agent config, command server configuration found."+
+			"Using default collector configuration", configLogOrigin)
 		defaultCollector(collector, config)
 	}
 }
@@ -140,11 +144,14 @@ func checkCollectorConfiguration(collector *Collector, config *Config) {
 func defaultCollector(collector *Collector, config *Config) {
 	token := config.Command.Auth.Token
 	if config.Command.Auth.TokenPath != "" {
-		slog.Debug("Reading token from file", "path", config.Command.Auth.TokenPath)
+		slog.Debug("Reading token from file", "path", config.Command.Auth.TokenPath, configLogOrigin)
 		pathToken, err := file.ReadFromFile(config.Command.Auth.TokenPath)
 		if err != nil {
 			slog.Error("Error adding token to default collector, "+
-				"default collector configuration not started", "error", err)
+				"default collector configuration not started",
+				"error", err,
+				configLogOrigin,
+			)
 
 			return
 		}
@@ -273,7 +280,7 @@ func registerFlags() {
 		}
 		err := viperInstance.BindEnv(flag.Name)
 		if err != nil {
-			slog.Warn("Error occurred binding env", "env", flag.Name, "error", err)
+			slog.Warn("Error occurred binding env", "env", flag.Name, "error", err, configLogOrigin)
 		}
 	})
 }
@@ -516,7 +523,7 @@ func getConfigFilePaths() []string {
 	if err == nil {
 		paths = append(paths, path)
 	} else {
-		slog.Warn("Unable to determine process's current directory", "error", err)
+		slog.Warn("Unable to determine process's current directory", "error", err, configLogOrigin)
 	}
 
 	return paths
@@ -588,7 +595,7 @@ func resolveLabels() map[string]interface{} {
 		}
 	}
 
-	slog.Info("Configured labels", "labels", result)
+	slog.Info("Configured labels", "labels", result, configLogOrigin)
 
 	return result
 }
@@ -604,7 +611,7 @@ func resolveEnvironmentVariableLabels() map[string]string {
 			if len(splitLabel) == KeyValueNumber {
 				envLabels[splitLabel[0]] = splitLabel[1]
 			} else {
-				slog.Warn("Unable to parse label ", "label", label)
+				slog.Warn("Unable to parse label ", "label", label, configLogOrigin)
 			}
 		}
 	}
@@ -886,6 +893,7 @@ func resolveCommand() *Command {
 		slog.Error(
 			"Invalid value for command server type, defaulting to gRPC server type",
 			"server_type", viperInstance.GetString(CommandServerTypeKey),
+			configLogOrigin,
 		)
 	}
 

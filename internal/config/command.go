@@ -12,6 +12,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var commandLogOrigin = slog.String("log_origin", "command.go")
+
 var RootCommand = &cobra.Command{
 	Use:   "nginx-agent [flags]",
 	Short: "nginx-agent",
@@ -67,7 +69,7 @@ $ nginx-agent completion fish > ~/.config/fish/completions/nginx-agent.fish
 		}
 
 		if err != nil {
-			slog.Warn("Error sending command", "error", err)
+			slog.Warn("Error sending command", "error", err, commandLogOrigin)
 		}
 	},
 }

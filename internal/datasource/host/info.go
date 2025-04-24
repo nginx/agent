@@ -49,6 +49,8 @@ const (
 	GetSystemUUIDKey  = "GetSystemUUIDKey"
 )
 
+var logOrigin = slog.String("log_origin", "info.go")
+
 var (
 	singleflightGroup = &singleflight.Group{}
 
@@ -115,7 +117,7 @@ func (i *Info) IsContainer() bool {
 	})
 
 	if err != nil {
-		slog.Warn("Unable to determine if resource is a container or not", "error", err)
+		slog.Warn("Unable to determine if resource is a container or not", "error", err, logOrigin)
 		return false
 	}
 
@@ -137,7 +139,7 @@ func (i *Info) ResourceID(ctx context.Context) string {
 func (i *Info) ContainerInfo(ctx context.Context) *v1.Resource_ContainerInfo {
 	hostname, err := i.exec.Hostname()
 	if err != nil {
-		slog.WarnContext(ctx, "Unable to get hostname", "error", err)
+		slog.WarnContext(ctx, "Unable to get hostname", "error", err, logOrigin)
 	}
 
 	return &v1.Resource_ContainerInfo{
@@ -152,7 +154,7 @@ func (i *Info) ContainerInfo(ctx context.Context) *v1.Resource_ContainerInfo {
 func (i *Info) HostInfo(ctx context.Context) *v1.Resource_HostInfo {
 	hostname, err := i.exec.Hostname()
 	if err != nil {
-		slog.WarnContext(ctx, "Unable to get hostname", "error", err)
+		slog.WarnContext(ctx, "Unable to get hostname", "error", err, logOrigin)
 	}
 
 	return &v1.Resource_HostInfo{
@@ -167,7 +169,7 @@ func (i *Info) HostInfo(ctx context.Context) *v1.Resource_HostInfo {
 func containsContainerReference(cgroupFile string) bool {
 	data, err := os.ReadFile(cgroupFile)
 	if err != nil {
-		slog.Warn("Unable to check if cgroup file contains a container reference", "error", err)
+		slog.Warn("Unable to check if cgroup file contains a container reference", "error", err, logOrigin)
 		return false
 	}
 
@@ -189,7 +191,7 @@ func (i *Info) getContainerID() string {
 	})
 
 	if err != nil {
-		slog.Error("Could not get container ID", "error", err)
+		slog.Error("Could not get container ID", "error", err, logOrigin)
 		return ""
 	}
 
@@ -211,7 +213,7 @@ func getContainerIDFromMountInfo(mountInfo string) (string, error) {
 	defer func(f *os.File, fileName string) {
 		closeErr := f.Close()
 		if closeErr != nil {
-			slog.Error("Unable to close file", "file", fileName, "error", closeErr)
+			slog.Error("Unable to close file", "file", fileName, "error", closeErr, logOrigin)
 		}
 	}(mInfoFile, mountInfo)
 
@@ -275,7 +277,7 @@ func (i *Info) getHostID(ctx context.Context) string {
 
 		hostID, err := i.exec.HostID(ctx)
 		if err != nil {
-			slog.WarnContext(ctx, "Unable to get host ID", "error", err)
+			slog.WarnContext(ctx, "Unable to get host ID", "error", err, logOrigin)
 			return "", err
 		}
 
@@ -283,7 +285,7 @@ func (i *Info) getHostID(ctx context.Context) string {
 	})
 
 	if err != nil {
-		slog.WarnContext(ctx, "Unable to get host ID", "error", err)
+		slog.WarnContext(ctx, "Unable to get host ID", "error", err, logOrigin)
 		return ""
 	}
 
@@ -298,7 +300,7 @@ func (i *Info) getReleaseInfo(ctx context.Context, osReleaseLocation string) (re
 	hostReleaseInfo := i.exec.ReleaseInfo(ctx)
 	osRelease, err := readOsRelease(osReleaseLocation)
 	if err != nil {
-		slog.WarnContext(ctx, "Unable to read from os release file", "error", err)
+		slog.WarnContext(ctx, "Unable to read from os release file", "error", err, logOrigin)
 
 		return hostReleaseInfo
 	}
@@ -314,7 +316,7 @@ func readOsRelease(path string) (map[string]string, error) {
 	defer func(f *os.File, fileName string) {
 		closeErr := f.Close()
 		if closeErr != nil {
-			slog.Error("Unable to close file", "file", fileName, "error", closeErr)
+			slog.Error("Unable to close file", "file", fileName, "error", closeErr, logOrigin)
 		}
 	}(f, path)
 
