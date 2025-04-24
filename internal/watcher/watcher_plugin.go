@@ -183,7 +183,6 @@ func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message
 }
 
 func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message) {
-	slog.Info("Received ConfigApplySuccess event")
 	successMessage, ok := msg.Data.(*model.ConfigApplySuccess)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplySuccess", "payload",
@@ -207,7 +206,7 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 	w.instanceWatcherService.SetEnabled(true)
 
 	if successMessage.ConfigContext.InstanceID == "" {
-		slog.DebugContext(ctx, "ConfigContext is empty, no need to reparse config")
+		slog.DebugContext(ctx, "NginxConfigContext is empty, no need to reparse config")
 		return
 	}
 	w.instanceWatcherService.ReparseConfig(ctx, instanceID, successMessage.ConfigContext)
@@ -220,7 +219,6 @@ func (w *Watcher) handleHealthRequest(ctx context.Context) {
 }
 
 func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Message) {
-	slog.Info("Received ConfigApplyComplete event")
 	response, ok := msg.Data.(*mpi.DataPlaneResponse)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.DataPlaneResponse", "payload",
@@ -290,7 +288,7 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 						NginxConfigUpdateTopic, Data: message.NginxConfigContext},
 				)
 			} else {
-				slog.InfoContext(
+				slog.DebugContext(
 					newCtx,
 					"Not sending updated NGINX config context since config apply is in progress",
 					"nginx_config_context", message.NginxConfigContext,
