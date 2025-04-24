@@ -32,7 +32,7 @@ import (
 
 const (
 	configApplyErrorMessage = "failed to parse config invalid " +
-		"number of arguments in \\\"worker_processes\\\" directive in /etc/nginx/nginx.conf:1"
+		"number of arguments in \"worker_processes\" directive in /etc/nginx/nginx.conf:1"
 
 	retryCount       = 5
 	retryWaitTime    = 4 * time.Second
