@@ -16,6 +16,10 @@ import (
 	"strings"
 	"sync"
 
+	parser "github.com/nginx/agent/v3/internal/datasource/config"
+	datasource "github.com/nginx/agent/v3/internal/datasource/proto"
+	"github.com/nginx/agent/v3/internal/model"
+
 	"google.golang.org/protobuf/proto"
 
 	"github.com/nginxinc/nginx-plus-go-client/v2/client"
@@ -46,7 +50,7 @@ type resourceServiceInterface interface {
 	AddInstances(instanceList []*mpi.Instance) *mpi.Resource
 	UpdateInstances(ctx context.Context, instanceList []*mpi.Instance) *mpi.Resource
 	DeleteInstances(ctx context.Context, instanceList []*mpi.Instance) *mpi.Resource
-	ApplyConfig(ctx context.Context, instanceID string) error
+	ApplyConfig(ctx context.Context, instanceID string) (*model.NginxConfigContext, error)
 	Instance(instanceID string) *mpi.Instance
 	GetHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance, upstreams string) ([]client.UpstreamServer,
 		error)
@@ -71,6 +75,7 @@ type (
 
 type ResourceService struct {
 	resource          *mpi.Resource
+	nginxConfigParser parser.ConfigParser
 	agentConfig       *config.Config
 	instanceOperators map[string]instanceOperator // key is instance ID
 	info              host.InfoInterface
@@ -85,6 +90,7 @@ func NewResourceService(ctx context.Context, agentConfig *config.Config) *Resour
 		info:              host.NewInfo(),
 		operatorsMutex:    sync.Mutex{},
 		instanceOperators: make(map[string]instanceOperator),
+		nginxConfigParser: parser.NewNginxConfigParser(agentConfig),
 		agentConfig:       agentConfig,
 	}
 
@@ -174,12 +180,12 @@ func (r *ResourceService) DeleteInstances(ctx context.Context, instanceList []*m
 	return r.resource
 }
 
-func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) error {
+func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) (*model.NginxConfigContext, error) {
 	var instance *mpi.Instance
 	operator := r.instanceOperators[instanceID]
 
 	if operator == nil {
-		return fmt.Errorf("instance %s not found", instanceID)
+		return nil, fmt.Errorf("instance %s not found", instanceID)
 	}
 
 	for _, resourceInstance := range r.resource.GetInstances() {
@@ -188,17 +194,45 @@ func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) er
 		}
 	}
 
+	configContext, parseErr := r.ParseConfig(ctx, instance)
+	if parseErr != nil || configContext == nil {
+		return nil, fmt.Errorf("failed to parse config %w", parseErr)
+	}
+
+	datasource.UpdateNginxInstanceRuntime(instance, configContext)
+
+	slog.DebugContext(ctx, "Updated Instance Runtime after parsing config", "instance", instance.GetInstanceRuntime())
+
 	valErr := operator.Validate(ctx, instance)
 	if valErr != nil {
-		return fmt.Errorf("failed validating config %w", valErr)
+		return nil, fmt.Errorf("failed validating config %w", valErr)
 	}
 
 	reloadErr := operator.Reload(ctx, instance)
 	if reloadErr != nil {
-		return fmt.Errorf("failed to reload NGINX %w", reloadErr)
+		return nil, fmt.Errorf("failed to reload NGINX %w", reloadErr)
 	}
 
-	return nil
+	return configContext, nil
+}
+
+func (r *ResourceService) ParseConfig(ctx context.Context, instance *mpi.Instance) (*model.NginxConfigContext, error) {
+	slog.DebugContext(ctx, "Parsing NGINX instance config", "", instance.GetInstanceMeta().GetInstanceId())
+
+	nginxConfigContext, parseErr := r.nginxConfigParser.Parse(ctx, instance)
+	if parseErr != nil {
+		slog.WarnContext(
+			ctx,
+			"Unable to parse NGINX instance config",
+			"config_path", instance.GetInstanceRuntime().GetConfigPath(),
+			"instance_id", instance.GetInstanceMeta().GetInstanceId(),
+			"error", parseErr,
+		)
+
+		return nil, parseErr
+	}
+
+	return nginxConfigContext, nil
 }
 
 func (r *ResourceService) GetHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance,

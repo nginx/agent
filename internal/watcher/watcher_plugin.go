@@ -11,6 +11,8 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/nginx/agent/v3/internal/model"
+
 	"github.com/nginx/agent/v3/internal/grpc"
 
 	"github.com/nginx/agent/v3/internal/watcher/credentials"
@@ -55,7 +57,7 @@ type (
 			instancesChannel chan<- instance.InstanceUpdatesMessage,
 			nginxConfigContextChannel chan<- instance.NginxConfigContextMessage,
 		)
-		ReparseConfig(ctx context.Context, instanceID string)
+		ReparseConfig(ctx context.Context, instanceID string, configContext *model.NginxConfigContext)
 		ReparseConfigs(ctx context.Context)
 		SetEnabled(enabled bool)
 	}
@@ -182,15 +184,15 @@ func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message
 
 func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message) {
 	slog.Info("Received ConfigApplySuccess event")
-	response, ok := msg.Data.(*mpi.DataPlaneResponse)
+	successMessage, ok := msg.Data.(*model.ConfigApplySuccess)
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.DataPlaneResponse", "payload",
+		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplySuccess", "payload",
 			msg.Data, "topic", msg.Topic)
 
 		return
 	}
 
-	instanceID := response.GetInstanceId()
+	instanceID := successMessage.DataPlaneResponse.GetInstanceId()
 
 	w.watcherMutex.Lock()
 	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
@@ -204,7 +206,11 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 	w.watcherMutex.Unlock()
 	w.instanceWatcherService.SetEnabled(true)
 
-	w.instanceWatcherService.ReparseConfig(ctx, instanceID)
+	if successMessage.ConfigContext.InstanceID == "" {
+		slog.DebugContext(ctx, "ConfigContext is empty, no need to reparse config")
+		return
+	}
+	w.instanceWatcherService.ReparseConfig(ctx, instanceID, successMessage.ConfigContext)
 }
 
 func (w *Watcher) handleHealthRequest(ctx context.Context) {
@@ -234,6 +240,7 @@ func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Messag
 		},
 	)
 
+	w.instanceWatcherService.SetEnabled(true)
 	w.fileWatcherService.SetEnabled(true)
 }
 

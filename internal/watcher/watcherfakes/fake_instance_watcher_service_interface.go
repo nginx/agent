@@ -5,15 +5,17 @@ import (
 	"context"
 	"sync"
 
+	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/watcher/instance"
 )
 
 type FakeInstanceWatcherServiceInterface struct {
-	ReparseConfigStub        func(context.Context, string)
+	ReparseConfigStub        func(context.Context, string, *model.NginxConfigContext)
 	reparseConfigMutex       sync.RWMutex
 	reparseConfigArgsForCall []struct {
 		arg1 context.Context
 		arg2 string
+		arg3 *model.NginxConfigContext
 	}
 	ReparseConfigsStub        func(context.Context)
 	reparseConfigsMutex       sync.RWMutex
@@ -36,17 +38,18 @@ type FakeInstanceWatcherServiceInterface struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeInstanceWatcherServiceInterface) ReparseConfig(arg1 context.Context, arg2 string) {
+func (fake *FakeInstanceWatcherServiceInterface) ReparseConfig(arg1 context.Context, arg2 string, arg3 *model.NginxConfigContext) {
 	fake.reparseConfigMutex.Lock()
 	fake.reparseConfigArgsForCall = append(fake.reparseConfigArgsForCall, struct {
 		arg1 context.Context
 		arg2 string
-	}{arg1, arg2})
+		arg3 *model.NginxConfigContext
+	}{arg1, arg2, arg3})
 	stub := fake.ReparseConfigStub
-	fake.recordInvocation("ReparseConfig", []interface{}{arg1, arg2})
+	fake.recordInvocation("ReparseConfig", []interface{}{arg1, arg2, arg3})
 	fake.reparseConfigMutex.Unlock()
 	if stub != nil {
-		fake.ReparseConfigStub(arg1, arg2)
+		fake.ReparseConfigStub(arg1, arg2, arg3)
 	}
 }
 
@@ -56,17 +59,17 @@ func (fake *FakeInstanceWatcherServiceInterface) ReparseConfigCallCount() int {
 	return len(fake.reparseConfigArgsForCall)
 }
 
-func (fake *FakeInstanceWatcherServiceInterface) ReparseConfigCalls(stub func(context.Context, string)) {
+func (fake *FakeInstanceWatcherServiceInterface) ReparseConfigCalls(stub func(context.Context, string, *model.NginxConfigContext)) {
 	fake.reparseConfigMutex.Lock()
 	defer fake.reparseConfigMutex.Unlock()
 	fake.ReparseConfigStub = stub
 }
 
-func (fake *FakeInstanceWatcherServiceInterface) ReparseConfigArgsForCall(i int) (context.Context, string) {
+func (fake *FakeInstanceWatcherServiceInterface) ReparseConfigArgsForCall(i int) (context.Context, string, *model.NginxConfigContext) {
 	fake.reparseConfigMutex.RLock()
 	defer fake.reparseConfigMutex.RUnlock()
 	argsForCall := fake.reparseConfigArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
 func (fake *FakeInstanceWatcherServiceInterface) ReparseConfigs(arg1 context.Context) {

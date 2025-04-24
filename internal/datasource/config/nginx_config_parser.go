@@ -40,17 +40,20 @@ const (
 	locationDirective                 = "location"
 )
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//counterfeiter:generate . ConfigParser
+
 type (
 	NginxConfigParser struct {
 		agentConfig *config.Config
 	}
 )
 
-type nginxConfigParser interface {
+type ConfigParser interface {
 	Parse(ctx context.Context, instance *mpi.Instance) (*model.NginxConfigContext, error)
 }
 
-var _ nginxConfigParser = (*NginxConfigParser)(nil)
+var _ ConfigParser = (*NginxConfigParser)(nil)
 
 type (
 	crossplaneTraverseCallback           = func(ctx context.Context, parent, current *crossplane.Directive) error

@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	model2 "github.com/nginx/agent/v3/internal/model"
+
 	"github.com/nginx/agent/v3/internal/watcher/credentials"
 
 	"github.com/nginx/agent/v3/internal/bus/busfakes"
@@ -163,18 +165,21 @@ func TestWatcher_Process_ConfigApplySuccessfulTopic(t *testing.T) {
 	ctx := context.Background()
 	data := protos.GetNginxOssInstance([]string{})
 
-	response := &mpi.DataPlaneResponse{
-		MessageMeta: &mpi.MessageMeta{
-			MessageId:     id.GenerateMessageID(),
-			CorrelationId: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
-			Timestamp:     timestamppb.Now(),
+	response := &model2.ConfigApplySuccess{
+		ConfigContext: &model2.NginxConfigContext{},
+		DataPlaneResponse: &mpi.DataPlaneResponse{
+			MessageMeta: &mpi.MessageMeta{
+				MessageId:     id.GenerateMessageID(),
+				CorrelationId: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
+				Timestamp:     timestamppb.Now(),
+			},
+			CommandResponse: &mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+				Message: "Config apply successful",
+				Error:   "",
+			},
+			InstanceId: data.GetInstanceMeta().GetInstanceId(),
 		},
-		CommandResponse: &mpi.CommandResponse{
-			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
-			Message: "Config apply successful",
-			Error:   "",
-		},
-		InstanceId: data.GetInstanceMeta().GetInstanceId(),
 	}
 
 	message := &bus.Message{

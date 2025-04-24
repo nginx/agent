@@ -8,11 +8,12 @@ package instance
 import (
 	"context"
 	"log/slog"
-	"reflect"
 	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/nginx/agent/v3/internal/datasource/proto"
 
 	parser "github.com/nginx/agent/v3/internal/datasource/config"
 
@@ -32,21 +33,14 @@ const defaultAgentPath = "/run/nginx-agent"
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . processParser
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
-//counterfeiter:generate . nginxConfigParser
-
 type (
 	processParser interface {
 		Parse(ctx context.Context, processes []*nginxprocess.Process) map[string]*mpi.Instance
 	}
 
-	nginxConfigParser interface {
-		Parse(ctx context.Context, instance *mpi.Instance) (*model.NginxConfigContext, error)
-	}
-
 	InstanceWatcherService struct {
 		processOperator              process.ProcessOperatorInterface
-		nginxConfigParser            nginxConfigParser
+		nginxConfigParser            parser.ConfigParser
 		executer                     exec.ExecInterface
 		enabled                      *atomic.Bool
 		agentConfig                  *config.Config
@@ -123,7 +117,7 @@ func (iw *InstanceWatcherService) Watch(
 			if iw.enabled.Load() {
 				iw.checkForUpdates(ctx)
 			} else {
-				slog.Info("Instance watcher is disabled")
+				slog.Debug("Skipping check for instance updates, instance watcher is disabled")
 			}
 		}
 	}
@@ -132,12 +126,15 @@ func (iw *InstanceWatcherService) Watch(
 func (iw *InstanceWatcherService) ReparseConfigs(ctx context.Context) {
 	slog.DebugContext(ctx, "Reparsing all instance configurations")
 	for _, instance := range iw.instanceCache {
-		iw.ReparseConfig(ctx, instance.GetInstanceMeta().GetInstanceId())
+		iw.ReparseConfig(ctx, instance.GetInstanceMeta().GetInstanceId(), &model.NginxConfigContext{})
 	}
 	slog.DebugContext(ctx, "Finished reparsing all instance configurations")
 }
 
-func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instanceID string) {
+func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instanceID string,
+	nginxConfigContext *model.NginxConfigContext,
+) {
+	var parseErr error
 	iw.cacheMutex.Lock()
 	defer iw.cacheMutex.Unlock()
 
@@ -148,28 +145,30 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instanceID 
 
 	if instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX ||
 		instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
-		slog.DebugContext(
-			ctx,
-			"Reparsing NGINX instance config",
-			"instance_id", instanceID,
-		)
-
-		nginxConfigContext, parseErr := iw.nginxConfigParser.Parse(ctx, instance)
-		if parseErr != nil {
-			slog.WarnContext(
+		if nginxConfigContext.InstanceID == "" {
+			slog.DebugContext(
 				ctx,
-				"Unable to parse NGINX instance config",
-				"config_path", instance.GetInstanceRuntime().GetConfigPath(),
+				"Reparsing NGINX instance config",
 				"instance_id", instanceID,
-				"error", parseErr,
 			)
 
-			return
+			nginxConfigContext, parseErr = iw.nginxConfigParser.Parse(ctx, instance)
+			if parseErr != nil {
+				slog.WarnContext(
+					ctx,
+					"Unable to parse NGINX instance config",
+					"config_path", instance.GetInstanceRuntime().GetConfigPath(),
+					"instance_id", instanceID,
+					"error", parseErr,
+				)
+
+				return
+			}
 		}
 
 		iw.sendNginxConfigContextUpdate(ctx, nginxConfigContext)
 		iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
-		updatesRequired = iw.updateNginxInstanceRuntime(instance, nginxConfigContext)
+		updatesRequired = proto.UpdateNginxInstanceRuntime(instance, nginxConfigContext)
 	}
 
 	if updatesRequired {
@@ -221,7 +220,7 @@ func (iw *InstanceWatcherService) checkForUpdates(
 			} else {
 				iw.sendNginxConfigContextUpdate(newCtx, nginxConfigContext)
 				iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
-				iw.updateNginxInstanceRuntime(newInstance, nginxConfigContext)
+				proto.UpdateNginxInstanceRuntime(newInstance, nginxConfigContext)
 				iw.instanceCache[newInstance.GetInstanceMeta().GetInstanceId()] = newInstance
 			}
 		}
@@ -408,84 +407,4 @@ func areInstancesEqual(oldRuntime, currentRuntime *mpi.InstanceRuntime) (equal b
 	}
 
 	return true
-}
-
-func (iw *InstanceWatcherService) updateNginxInstanceRuntime(
-	instance *mpi.Instance,
-	nginxConfigContext *model.NginxConfigContext,
-) (updatesRequired bool) {
-	instanceType := instance.GetInstanceMeta().GetInstanceType()
-
-	accessLogs := convertAccessLogs(nginxConfigContext.AccessLogs)
-	errorLogs := convertErrorLogs(nginxConfigContext.ErrorLogs)
-
-	if instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
-		nginxPlusRuntimeInfo := instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo()
-
-		if nginxPlusRuntimeInfoEqual(nginxPlusRuntimeInfo, nginxConfigContext, accessLogs, errorLogs) {
-			nginxPlusRuntimeInfo.AccessLogs = accessLogs
-			nginxPlusRuntimeInfo.ErrorLogs = errorLogs
-			nginxPlusRuntimeInfo.StubStatus.Listen = nginxConfigContext.StubStatus.Listen
-			nginxPlusRuntimeInfo.PlusApi.Listen = nginxConfigContext.PlusAPI.Listen
-			nginxPlusRuntimeInfo.StubStatus.Location = nginxConfigContext.StubStatus.Location
-			nginxPlusRuntimeInfo.PlusApi.Location = nginxConfigContext.PlusAPI.Location
-			updatesRequired = true
-		}
-	} else {
-		nginxRuntimeInfo := instance.GetInstanceRuntime().GetNginxRuntimeInfo()
-
-		if nginxRuntimeInfoEqual(nginxRuntimeInfo, nginxConfigContext, accessLogs, errorLogs) {
-			nginxRuntimeInfo.AccessLogs = accessLogs
-			nginxRuntimeInfo.ErrorLogs = errorLogs
-			nginxRuntimeInfo.StubStatus.Location = nginxConfigContext.StubStatus.Location
-			nginxRuntimeInfo.StubStatus.Listen = nginxConfigContext.StubStatus.Listen
-			updatesRequired = true
-		}
-	}
-
-	return updatesRequired
-}
-
-func nginxPlusRuntimeInfoEqual(nginxPlusRuntimeInfo *mpi.NGINXPlusRuntimeInfo,
-	nginxConfigContext *model.NginxConfigContext, accessLogs, errorLogs []string,
-) bool {
-	if !reflect.DeepEqual(nginxPlusRuntimeInfo.GetAccessLogs(), accessLogs) ||
-		!reflect.DeepEqual(nginxPlusRuntimeInfo.GetErrorLogs(), errorLogs) ||
-		nginxPlusRuntimeInfo.GetStubStatus().GetListen() != nginxConfigContext.StubStatus.Listen ||
-		nginxPlusRuntimeInfo.GetPlusApi().GetListen() != nginxConfigContext.PlusAPI.Listen ||
-		nginxPlusRuntimeInfo.GetStubStatus().GetLocation() != nginxConfigContext.StubStatus.Location ||
-		nginxPlusRuntimeInfo.GetPlusApi().GetLocation() != nginxConfigContext.PlusAPI.Location {
-		return true
-	}
-
-	return false
-}
-
-func nginxRuntimeInfoEqual(nginxRuntimeInfo *mpi.NGINXRuntimeInfo, nginxConfigContext *model.NginxConfigContext,
-	accessLogs, errorLogs []string,
-) bool {
-	if !reflect.DeepEqual(nginxRuntimeInfo.GetAccessLogs(), accessLogs) ||
-		!reflect.DeepEqual(nginxRuntimeInfo.GetErrorLogs(), errorLogs) ||
-		nginxRuntimeInfo.GetStubStatus().GetListen() != nginxConfigContext.StubStatus.Listen ||
-		nginxRuntimeInfo.GetStubStatus().GetLocation() != nginxConfigContext.StubStatus.Location {
-		return true
-	}
-
-	return false
-}
-
-func convertAccessLogs(accessLogs []*model.AccessLog) (logs []string) {
-	for _, log := range accessLogs {
-		logs = append(logs, log.Name)
-	}
-
-	return logs
-}
-
-func convertErrorLogs(errorLogs []*model.ErrorLog) (logs []string) {
-	for _, log := range errorLogs {
-		logs = append(logs, log.Name)
-	}
-
-	return logs
 }

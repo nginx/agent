@@ -39,6 +39,41 @@ type ManifestFileMeta struct {
 	// The size of the file in bytes
 	Size int64 `json:"size"`
 }
+type ConfigApplyMessage struct {
+	Error         error
+	CorrelationID string
+	InstanceID    string
+}
+
+type AccessLog struct {
+	Name        string
+	Format      string
+	Permissions string
+	Readable    bool
+}
+
+type ErrorLog struct {
+	Name        string
+	LogLevel    string
+	Permissions string
+	Readable    bool
+}
+
+type (
+	WriteStatus int
+)
+
+const (
+	RollbackRequired WriteStatus = iota + 1
+	NoChange
+	Error
+	OK
+)
+
+type ConfigApplySuccess struct {
+	ConfigContext     *NginxConfigContext
+	DataPlaneResponse *v1.DataPlaneResponse
+}
 
 // Complexity is 11, allowed is 10
 // nolint: revive, cyclop
@@ -95,33 +130,18 @@ func (ncc *NginxConfigContext) areFileEqual(files []*v1.File) bool {
 	return true
 }
 
-type ConfigApplyMessage struct {
-	Error         error
-	CorrelationID string
-	InstanceID    string
+func ConvertAccessLogs(accessLogs []*AccessLog) (logs []string) {
+	for _, log := range accessLogs {
+		logs = append(logs, log.Name)
+	}
+
+	return logs
 }
 
-type AccessLog struct {
-	Name        string
-	Format      string
-	Permissions string
-	Readable    bool
+func ConvertErrorLogs(errorLogs []*ErrorLog) (logs []string) {
+	for _, log := range errorLogs {
+		logs = append(logs, log.Name)
+	}
+
+	return logs
 }
-
-type ErrorLog struct {
-	Name        string
-	LogLevel    string
-	Permissions string
-	Readable    bool
-}
-
-type (
-	WriteStatus int
-)
-
-const (
-	RollbackRequired WriteStatus = iota + 1
-	NoChange
-	Error
-	OK
-)

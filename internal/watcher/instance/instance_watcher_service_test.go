@@ -156,94 +156,6 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 	}
 }
 
-func TestInstanceWatcherService_updateNginxInstanceRuntime(t *testing.T) {
-	instanceWatcherService := NewInstanceWatcherService(types.AgentConfig())
-
-	nginxOSSConfigContext := &model.NginxConfigContext{
-		AccessLogs: []*model.AccessLog{
-			{
-				Name: "/usr/local/var/log/nginx/access.log",
-			},
-		},
-		ErrorLogs: []*model.ErrorLog{
-			{
-				Name: "/usr/local/var/log/nginx/error.log",
-			},
-		},
-		StubStatus: &model.APIDetails{
-			URL:    "http://127.0.0.1:8081/api",
-			Listen: "",
-		},
-	}
-
-	nginxPlusConfigContext := &model.NginxConfigContext{
-		AccessLogs: []*model.AccessLog{
-			{
-				Name: "/usr/local/var/log/nginx/access.log",
-			},
-		},
-		ErrorLogs: []*model.ErrorLog{
-			{
-				Name: "/usr/local/var/log/nginx/error.log",
-			},
-		},
-		PlusAPI: &model.APIDetails{
-			URL:    "http://127.0.0.1:8081/api",
-			Listen: "",
-		},
-		StubStatus: &model.APIDetails{
-			URL:    "http://127.0.0.1:8081/api",
-			Listen: "",
-		},
-	}
-
-	tests := []struct {
-		nginxConfigContext *model.NginxConfigContext
-		instance           *mpi.Instance
-		name               string
-	}{
-		{
-			name:               "Test 1: OSS Instance",
-			nginxConfigContext: nginxOSSConfigContext,
-			instance:           protos.GetNginxOssInstance([]string{}),
-		},
-		{
-			name:               "Test 2: Plus Instance",
-			nginxConfigContext: nginxPlusConfigContext,
-			instance:           protos.GetNginxPlusInstance([]string{}),
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(tt *testing.T) {
-			instanceWatcherService.updateNginxInstanceRuntime(test.instance, test.nginxConfigContext)
-			if test.name == "Test 2: Plus Instance" {
-				assert.Equal(t, test.nginxConfigContext.AccessLogs[0].Name, test.instance.GetInstanceRuntime().
-					GetNginxPlusRuntimeInfo().GetAccessLogs()[0])
-				assert.Equal(t, test.nginxConfigContext.ErrorLogs[0].Name, test.instance.GetInstanceRuntime().
-					GetNginxPlusRuntimeInfo().GetErrorLogs()[0])
-				assert.Equal(t, test.nginxConfigContext.StubStatus.Location, test.instance.GetInstanceRuntime().
-					GetNginxPlusRuntimeInfo().GetStubStatus().GetLocation())
-				assert.Equal(t, test.nginxConfigContext.PlusAPI.Location, test.instance.GetInstanceRuntime().
-					GetNginxPlusRuntimeInfo().GetPlusApi().GetLocation())
-				assert.Equal(t, test.nginxConfigContext.StubStatus.Listen, test.instance.GetInstanceRuntime().
-					GetNginxPlusRuntimeInfo().GetStubStatus().GetListen())
-				assert.Equal(t, test.nginxConfigContext.PlusAPI.Listen, test.instance.GetInstanceRuntime().
-					GetNginxPlusRuntimeInfo().GetPlusApi().GetListen())
-			} else {
-				assert.Equal(t, test.nginxConfigContext.AccessLogs[0].Name, test.instance.GetInstanceRuntime().
-					GetNginxRuntimeInfo().GetAccessLogs()[0])
-				assert.Equal(t, test.nginxConfigContext.ErrorLogs[0].Name, test.instance.GetInstanceRuntime().
-					GetNginxRuntimeInfo().GetErrorLogs()[0])
-				assert.Equal(t, test.nginxConfigContext.StubStatus.Location, test.instance.GetInstanceRuntime().
-					GetNginxRuntimeInfo().GetStubStatus().GetLocation())
-				assert.Equal(t, test.nginxConfigContext.StubStatus.Listen, test.instance.GetInstanceRuntime().
-					GetNginxRuntimeInfo().GetStubStatus().GetListen())
-			}
-		})
-	}
-}
-
 func TestInstanceWatcherService_areInstancesEqual(t *testing.T) {
 	tests := []struct {
 		oldRuntime     *mpi.InstanceRuntime
@@ -381,7 +293,8 @@ func TestInstanceWatcherService_ReparseConfig(t *testing.T) {
 				instance.GetInstanceMeta().GetInstanceId(): instance,
 			}
 
-			instanceWatcherService.ReparseConfig(ctx, updatedInstance.GetInstanceMeta().GetInstanceId())
+			instanceWatcherService.ReparseConfig(ctx, updatedInstance.GetInstanceMeta().GetInstanceId(),
+				&model.NginxConfigContext{})
 
 			nginxConfigContextMessage := <-nginxConfigContextChannel
 			assert.Equal(t, updateNginxConfigContext, nginxConfigContextMessage.NginxConfigContext)
