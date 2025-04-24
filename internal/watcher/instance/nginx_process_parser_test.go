@@ -363,7 +363,7 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 					Exe:  exePath,
 				},
 			},
-			expected: map[string]*mpi.Instance{},
+			expected: make(map[string]*mpi.Instance),
 		},
 	}
 
