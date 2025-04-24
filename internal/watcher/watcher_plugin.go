@@ -278,9 +278,9 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 						NginxConfigUpdateTopic, Data: message.NginxConfigContext},
 				)
 			} else {
-				slog.DebugContext(
+				slog.InfoContext(
 					newCtx,
-					"Not sending updated NGINX config context since config apply is in progress",
+					"-------------- Not sending updated NGINX config context since config apply is in progress",
 					"nginx_config_context", message.NginxConfigContext,
 				)
 			}

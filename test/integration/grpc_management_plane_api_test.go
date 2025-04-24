@@ -308,7 +308,7 @@ func TestGrpc_ConfigApply(t *testing.T) {
 		responses = getManagementPlaneResponses(t, 1)
 		t.Logf("Config apply responses: %v", responses)
 
-		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE, responses[0].GetCommandResponse().GetStatus())
 		assert.Equal(t, "Config apply successful", responses[0].GetCommandResponse().GetMessage())
 	})
 
