@@ -37,6 +37,8 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . GrpcConnectionInterface
 
+var logOrigin = slog.String("log_origin", "grpc.go")
+
 type (
 	GrpcConnectionInterface interface {
 		CommandServiceClient() mpi.CommandServiceClient
@@ -83,7 +85,7 @@ func NewGrpcConnection(ctx context.Context, agentConfig *config.Config) (*GrpcCo
 		fmt.Sprint(agentConfig.Command.Server.Port),
 	)
 
-	slog.InfoContext(ctx, "Dialing grpc server", "server_addr", serverAddr)
+	slog.InfoContext(ctx, "Dialing grpc server", "server_addr", serverAddr, logOrigin)
 
 	info := host.NewInfo()
 	resourceID := info.ResourceID(ctx)
@@ -120,7 +122,7 @@ func (gc *GrpcConnection) Close(ctx context.Context) error {
 	defer gc.mutex.Unlock()
 
 	if gc.conn != nil {
-		slog.InfoContext(ctx, "Closing grpc connection")
+		slog.InfoContext(ctx, "Closing grpc connection", logOrigin)
 		err := gc.conn.Close()
 		gc.conn = nil
 		if err != nil {
@@ -166,14 +168,14 @@ func GetDialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOp
 
 	protoValidatorStreamClientInterceptor, err := ProtoValidatorStreamClientInterceptor()
 	if err != nil {
-		slog.Error("Unable to add proto validation stream interceptor", "error", err)
+		slog.Error("Unable to add proto validation stream interceptor", "error", err, logOrigin)
 	} else {
 		streamClientInterceptors = append(streamClientInterceptors, protoValidatorStreamClientInterceptor)
 	}
 
 	protoValidatorUnaryClientInterceptor, err := ProtoValidatorUnaryClientInterceptor()
 	if err != nil {
-		slog.Error("Unable to add proto validation unary interceptor", "error", err)
+		slog.Error("Unable to add proto validation unary interceptor", "error", err, logOrigin)
 	} else {
 		unaryClientInterceptors = append(unaryClientInterceptors, protoValidatorUnaryClientInterceptor)
 	}
@@ -224,14 +226,14 @@ func addTransportCredentials(agentConfig *config.Config, opts []grpc.DialOption)
 	transportCredentials, err := getTransportCredentials(agentConfig)
 	if err != nil {
 		slog.Error("Unable to add transport credentials to gRPC dial options, adding "+
-			"default transport credentials", "error", err)
+			"default transport credentials", "error", err, logOrigin)
 		opts = append(opts,
 			grpc.WithTransportCredentials(defaultCredentials),
 		)
 
 		return opts, true
 	}
-	slog.Debug("Adding transport credentials to gRPC dial options")
+	slog.Debug("Adding transport credentials to gRPC dial options", logOrigin)
 	opts = append(opts,
 		grpc.WithTransportCredentials(transportCredentials),
 	)
@@ -243,16 +245,16 @@ func addPerRPCCredentials(agentConfig *config.Config, resourceID string, opts []
 	token := agentConfig.Command.Auth.Token
 
 	if agentConfig.Command.Auth.TokenPath != "" {
-		slog.Debug("Reading token from file", "path", agentConfig.Command.Auth.TokenPath)
+		slog.Debug("Reading token from file", "path", agentConfig.Command.Auth.TokenPath, logOrigin)
 		tk, err := file.ReadFromFile(agentConfig.Command.Auth.TokenPath)
 		if err == nil {
 			token = tk
 		} else {
-			slog.Error("Unable to add token to gRPC dial options", "error", err)
+			slog.Error("Unable to add token to gRPC dial options", "error", err, logOrigin)
 		}
 	}
 
-	slog.Debug("Adding RPC credentials")
+	slog.Debug("Adding RPC credentials", logOrigin)
 	opts = append(opts,
 		grpc.WithPerRPCCredentials(
 			&PerRPCCredentials{
@@ -365,7 +367,7 @@ func getTransportCredentials(agentConfig *config.Config) (credentials.TransportC
 	}
 
 	if agentConfig.Command.TLS.SkipVerify {
-		slog.Warn("Verification of the server's certificate chain and host name is disabled")
+		slog.Warn("Verification of the server's certificate chain and host name is disabled", logOrigin)
 	}
 
 	tlsConfig := &tls.Config{
@@ -385,7 +387,7 @@ func getTransportCredentials(agentConfig *config.Config) (credentials.TransportC
 
 	err = appendRootCAs(tlsConfig, agentConfig.Command.TLS.Ca)
 	if err != nil {
-		slog.Debug("Unable to append root CA", "error", err)
+		slog.Debug("Unable to append root CA", "error", err, logOrigin)
 	}
 
 	return credentials.NewTLS(tlsConfig), nil
