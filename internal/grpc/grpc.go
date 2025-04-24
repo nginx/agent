@@ -37,8 +37,6 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . GrpcConnectionInterface
 
-var logOrigin = slog.String("log_origin", "grpc.go")
-
 type (
 	GrpcConnectionInterface interface {
 		CommandServiceClient() mpi.CommandServiceClient
@@ -68,6 +66,8 @@ var (
 	defaultCredentials = insecure.NewCredentials()
 
 	_ GrpcConnectionInterface = (*GrpcConnection)(nil)
+
+	logOrigin = slog.String("log_origin", "grpc.go")
 )
 
 // nolint: ireturn
