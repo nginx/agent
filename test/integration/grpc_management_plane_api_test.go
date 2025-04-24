@@ -31,9 +31,8 @@ import (
 )
 
 const (
-	configApplyErrorMessage = "failed validating config NGINX config test failed exit status 1:" +
-		" nginx: [emerg] unexpected end of file, expecting \";\" or \"}\" in /etc/nginx/nginx.conf:2\nnginx: " +
-		"configuration file /etc/nginx/nginx.conf test failed\n"
+	configApplyErrorMessage = "failed to parse config invalid " +
+		"number of arguments in \\\"worker_processes\\\" directive in /etc/nginx/nginx.conf:1"
 
 	retryCount       = 5
 	retryWaitTime    = 4 * time.Second
