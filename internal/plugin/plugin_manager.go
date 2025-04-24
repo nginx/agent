@@ -20,6 +20,8 @@ import (
 	"github.com/nginx/agent/v3/internal/watcher"
 )
 
+var logOrigin = slog.String("log_origin", "plugin_manager.go")
+
 func LoadPlugins(ctx context.Context, agentConfig *config.Config) []bus.Plugin {
 	plugins := make([]bus.Plugin, 0)
 
@@ -42,7 +44,7 @@ func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentCo
 	if agentConfig.IsGrpcClientConfigured() {
 		grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig)
 		if err != nil {
-			slog.WarnContext(ctx, "Failed to create gRPC connection", "error", err)
+			slog.WarnContext(ctx, "Failed to create gRPC connection", "error", err, logOrigin)
 		} else {
 			commandPlugin := command.NewCommandPlugin(agentConfig, grpcConnection)
 			plugins = append(plugins, commandPlugin)
@@ -51,7 +53,7 @@ func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentCo
 		}
 	} else {
 		slog.InfoContext(ctx, "Agent is not connected to a management plane. "+
-			"Configure a command server to establish a connection with a management plane.")
+			"Configure a command server to establish a connection with a management plane.", logOrigin)
 	}
 
 	return plugins
@@ -63,11 +65,11 @@ func addCollectorPlugin(ctx context.Context, agentConfig *config.Config, plugins
 		if err == nil {
 			plugins = append(plugins, oTelCollector)
 		} else {
-			slog.ErrorContext(ctx, "Failed to initialize collector plugin", "error", err)
+			slog.ErrorContext(ctx, "Failed to initialize collector plugin", "error", err, logOrigin)
 		}
 	} else {
 		slog.InfoContext(ctx, "Agent OTel collector isn't started. "+
-			"Configure a collector to begin collecting metrics.")
+			"Configure a collector to begin collecting metrics.", logOrigin)
 	}
 
 	return plugins
