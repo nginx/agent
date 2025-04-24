@@ -47,21 +47,22 @@ update_config_file() {
     echo "Checking what version of NGINX Agent is already installed"
     check_version="nginx-agent --version"
     nginx_agent_version=$($check_version 2>&1) || true
+    echo "Existing NGINX Agent version: $nginx_agent_version"
 
     if [ -z "${nginx_agent_version##nginx-agent version v2*}" ]; then
-        echo "Updating NGINX Agent V2 configuration to V3 configuration"
-        echo "Backing up NGINX Agent V2 configuration to /etc/nginx-agent/nginx-agent-v2-backup.conf"
+        echo "Migrating NGINX Agent configuration from V2 to V3 format"
+        echo "Backing up existing NGINX Agent V2 configuration to /etc/nginx-agent/nginx-agent-v2-backup.conf"
         cp "$AGENT_CONFIG_FILE" /etc/nginx-agent/nginx-agent-v2-backup.conf
 
         v2_config_file=$AGENT_CONFIG_FILE
         v3_config_file=$AGENT_CONFIG_FILE
 
-        echo "NGINX Agent server host should be ${NGINX_ONE_HOST}"
+        echo "Verifying configured NGINX One host: ${NGINX_ONE_HOST}"
 
         if grep -q "$NGINX_ONE_HOST" "$v2_config_file"; then
             echo "NGINX Agent is configured to connect to NGINX One"
         else
-            echo "${RED_COLOUR}Previous version of NGINX Agent was not configured to connect to NGINX One. Stopping upgrade${NO_COLOUR}"
+            echo "${RED_COLOUR}Upgrade aborted: existing Agent V2 is not configured for NGINX One.${NO_COLOUR}"
             exit 1
         fi
 
@@ -75,7 +76,7 @@ update_config_file() {
 
         labels=""
         if [ -n "$instance_group" ]; then
-            echo "Adding config sync group to NGINX Agent configuration"
+            echo "Migrating existing config sync group into NGINX Agent V3 configuration"
             labels="
 labels:
   config-sync-group: ${instance_group}
