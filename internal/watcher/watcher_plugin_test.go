@@ -166,7 +166,9 @@ func TestWatcher_Process_ConfigApplySuccessfulTopic(t *testing.T) {
 	data := protos.GetNginxOssInstance([]string{})
 
 	response := &model2.ConfigApplySuccess{
-		ConfigContext: &model2.NginxConfigContext{},
+		ConfigContext: &model2.NginxConfigContext{
+			InstanceID: data.GetInstanceMeta().GetInstanceId(),
+		},
 		DataPlaneResponse: &mpi.DataPlaneResponse{
 			MessageMeta: &mpi.MessageMeta{
 				MessageId:     id.GenerateMessageID(),
