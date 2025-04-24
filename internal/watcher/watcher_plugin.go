@@ -206,7 +206,7 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 	w.instanceWatcherService.SetEnabled(true)
 
 	// If the config apply had no changes to any files, it is results in a ConfigApplySuccessfulTopic with an empty
-	// configContext being sent, there is no need to reparse the config as no change has occurred. 
+	// configContext being sent, there is no need to reparse the config as no change has occurred.
 	if successMessage.ConfigContext.InstanceID == "" {
 		slog.DebugContext(ctx, "NginxConfigContext is empty, no need to reparse config")
 		return
@@ -279,7 +279,7 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 			w.watcherMutex.Lock()
 			if !slices.Contains(w.instancesWithConfigApplyInProgress, message.NginxConfigContext.InstanceID) {
-				slog.InfoContext(
+				slog.DebugContext(
 					newCtx,
 					"Updated NGINX config context",
 					"nginx_config_context", message.NginxConfigContext,
