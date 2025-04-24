@@ -47,50 +47,54 @@ update_config_file() {
     echo "Checking what version of NGINX Agent is already installed"
     check_version="nginx-agent --version"
     nginx_agent_version=$($check_version 2>&1) || true
+
     if [ -z "${nginx_agent_version##nginx-agent version v2*}" ]; then
         echo "Updating NGINX Agent V2 configuration to V3 configuration"
         echo "Backing up NGINX Agent V2 configuration to /etc/nginx-agent/nginx-agent-v2-backup.conf"
-        cp $AGENT_CONFIG_FILE /etc/nginx-agent/nginx-agent-v2-backup.conf
-        
+        cp "$AGENT_CONFIG_FILE" /etc/nginx-agent/nginx-agent-v2-backup.conf
+
         v2_config_file=$AGENT_CONFIG_FILE
         v3_config_file=$AGENT_CONFIG_FILE
-        
+
         echo "NGINX Agent server host should be ${NGINX_ONE_HOST}"
-        
-        if grep -q "$NGINX_ONE_HOST" ${v2_config_file}; then
+
+        if grep -q "$NGINX_ONE_HOST" "$v2_config_file"; then
             echo "NGINX Agent is configured to connect to NGINX One"
-        else 
-            echo "${RED_COLOUR}Previous version of NGINX Agent was not configured to connect to NGINX One. Stopping upgrade${NO_COLOUR}" 
+        else
+            echo "${RED_COLOUR}Previous version of NGINX Agent was not configured to connect to NGINX One. Stopping upgrade${NO_COLOUR}"
             exit 1
         fi
-        
-        token=`grep "token:" "${v2_config_file}"`
-        token=`echo $token | cut -d ":" -f 2 | xargs`
-        
-        instance_group=`grep "instance_group:" "${AGENT_DYNAMIC_CONFIG_FILE}"`
-        instance_group=`echo $instance_group | cut -d ":" -f 2 | xargs`
-        
+
+        token=$(grep "token:" "$v2_config_file" | cut -d ":" -f 2 | xargs)
+
+        # extract instance_group if present
+        instance_group=""
+        if instance_line=$(grep "instance_group:" "$AGENT_DYNAMIC_CONFIG_FILE"); then
+            instance_group=$(echo "$instance_line" | cut -d ":" -f 2 | xargs)
+        fi
+
         labels=""
-        
-        if [ -n "${instance_group}" ]; then 
+        if [ -n "$instance_group" ]; then
             echo "Adding config sync group to NGINX Agent configuration"
             labels="
 labels:
   config-sync-group: ${instance_group}
 "
         fi
-        
-        config_dirs=`grep "config_dirs:" "${v2_config_file}"`
-        config_dirs=`echo $config_dirs | cut -d "\"" -f 2`
-        
+
+        # extract config_dirs if present
+        config_dirs=""
+        if config_line=$(grep "config_dirs:" "$v2_config_file"); then
+            config_dirs=$(echo "$config_line" | cut -d "\"" -f 2)
+        fi
+
         allowed_directories=""
         IFS=":"
         for config_dir in $config_dirs; do
-          allowed_directories="${allowed_directories}\n  - ${config_dir}"
+            allowed_directories="${allowed_directories}\n  - ${config_dir}"
         done
-        
         allowed_directories="${allowed_directories}\n  - /var/log/nginx"
-               
+
         v3_config_contents="
 #
 # /etc/nginx-agent/nginx-agent.conf
@@ -114,9 +118,35 @@ command:
         token: ${token}
     tls:
         skip_verify: false
-        "
-            
-        echo "${v3_config_contents}" > $v3_config_file
+
+collector:
+  receivers:
+    host_metrics:
+      scrapers:
+        cpu: {}
+        memory: {}
+        disk: {}
+        network: {}
+        filesystem: {}
+  processors:
+    batch: {}
+  exporters:
+    otlp_exporters:
+      - server:
+          host: ${NGINX_ONE_HOST}
+          port: 443
+        authenticator: headers_setter
+        tls:
+          skip_verify: false
+  extensions:
+    headers_setter:
+      headers:
+        - action: insert
+          key: \"authorization\"
+          value: ${token}
+"
+
+        echo "${v3_config_contents}" > "$v3_config_file"
     fi
 }
 
