@@ -256,6 +256,12 @@ func (iw *InstanceWatcherService) sendNginxConfigContextUpdate(
 			CorrelationID:      logger.GetCorrelationIDAttr(ctx),
 			NginxConfigContext: nginxConfigContext,
 		}
+	} else if iw.nginxConfigCache[nginxConfigContext.InstanceID] != nil {
+		slog.Info("iw.nginxConfigCache[nginxConfigContext.InstanceID] != nil")
+	} else if !iw.nginxConfigCache[nginxConfigContext.InstanceID].Equal(nginxConfigContext) {
+		slog.Info("!iw.nginxConfigCache[nginxConfigContext.InstanceID].Equal(nginxConfigContext) ")
+	} else {
+		slog.Info("skipped")
 	}
 }
 
