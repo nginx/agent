@@ -45,9 +45,12 @@ ensure_sudo() {
 
 update_config_file() {
     echo "Checking what version of NGINX Agent is already installed"
-    check_version="nginx-agent --version"
-    nginx_agent_version=$($check_version 2>&1) || true
-    echo "Existing NGINX Agent version: $nginx_agent_version"
+    if command -v nginx-agent >/dev/null 2>&1; then
+        nginx_agent_version=$(nginx-agent --version 2>&1)
+        echo "Existing NGINX Agent version: $nginx_agent_version"
+    else
+        echo "No existing NGINX Agent installation found"
+    fi
 
     if [ -z "${nginx_agent_version##nginx-agent version v2*}" ]; then
         echo "Migrating NGINX Agent configuration from V2 to V3 format"
