@@ -14,6 +14,11 @@ make local-deb-package build-test-oss-image build-test-plus-image build-mock-man
 
 [**Note:** We need to build the test NGINX Plus with NAP image with the environment variable `OSARCH=amd64` since NGINX App Protect doesn't support ARM yet.]
 
+To build all images except the NGINX Plus & NGINX App Protect run the following
+```
+make local-deb-package build-test-oss-image build-test-plus-image build-mock-management-otel-collector-image
+```
+
 To start run everything run the following
 ```
 make run-mock-management-otel-collector
