@@ -168,14 +168,12 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instanceID 
 			}
 		}
 
-		slog.Info("Send Config Context Update - Reparse config", "instance_id", instanceID)
 		iw.sendNginxConfigContextUpdate(ctx, nginxConfigContext)
-		iw.updateCache(nginxConfigContext)
+		iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
 		updatesRequired = proto.UpdateNginxInstanceRuntime(instance, nginxConfigContext)
 	}
 
 	if updatesRequired {
-		slog.Info("Instance Update Required")
 		instanceUpdates := InstanceUpdates{}
 		instanceUpdates.UpdatedInstances = append(instanceUpdates.UpdatedInstances, instance)
 		iw.instancesChannel <- InstanceUpdatesMessage{
@@ -183,17 +181,6 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instanceID 
 			InstanceUpdates: instanceUpdates,
 		}
 	}
-}
-
-func (iw *InstanceWatcherService) updateCache(nginxConfigContext *model.NginxConfigContext) {
-	iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
-	slog.Info("Instance Update Cache - New Context", "url", &nginxConfigContext.StubStatus.URL,
-		"location", nginxConfigContext.StubStatus.Location,
-		"listen", nginxConfigContext.StubStatus.Listen)
-	slog.Info("Instance Update Cache - Cache ", "url",
-		iw.nginxConfigCache[nginxConfigContext.InstanceID].StubStatus.URL,
-		"location", iw.nginxConfigCache[nginxConfigContext.InstanceID].StubStatus.Location,
-		"listen", iw.nginxConfigCache[nginxConfigContext.InstanceID].StubStatus.Listen)
 }
 
 func (iw *InstanceWatcherService) checkForUpdates(
@@ -233,9 +220,8 @@ func (iw *InstanceWatcherService) checkForUpdates(
 					"error", parseErr,
 				)
 			} else {
-				slog.Info("Send Config Context Update - check for updates")
 				iw.sendNginxConfigContextUpdate(newCtx, nginxConfigContext)
-				iw.updateCache(nginxConfigContext)
+				iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
 				proto.UpdateNginxInstanceRuntime(newInstance, nginxConfigContext)
 				iw.instanceCache[newInstance.GetInstanceMeta().GetInstanceId()] = newInstance
 			}
@@ -255,28 +241,8 @@ func (iw *InstanceWatcherService) sendNginxConfigContextUpdate(
 	ctx context.Context,
 	nginxConfigContext *model.NginxConfigContext,
 ) {
-	if iw.nginxConfigCache[nginxConfigContext.InstanceID] == nil {
-		slog.Info("iw.nginxConfigCache[nginxConfigContext.InstanceID] == nil")
-		slog.DebugContext(
-			ctx,
-			"New NGINX config context",
-			"instance_id", nginxConfigContext.InstanceID,
-			"nginx_config_context", nginxConfigContext,
-		)
-
-		iw.nginxConfigContextChannel <- NginxConfigContextMessage{
-			CorrelationID:      logger.GetCorrelationIDAttr(ctx),
-			NginxConfigContext: nginxConfigContext,
-		}
-	} else if !iw.nginxConfigCache[nginxConfigContext.InstanceID].Equal(nginxConfigContext) {
-		slog.Info("!iw.nginxConfigCache[nginxConfigContext.InstanceID].Equal(nginxConfigContext)")
-		slog.Info("Check Cache - Cache ", "url",
-			iw.nginxConfigCache[nginxConfigContext.InstanceID].StubStatus.URL,
-			"location", iw.nginxConfigCache[nginxConfigContext.InstanceID].StubStatus.Location,
-			"listen", iw.nginxConfigCache[nginxConfigContext.InstanceID].StubStatus.Listen)
-		slog.Info("Check Cache - New Context", "url", nginxConfigContext.StubStatus.URL,
-			"location", nginxConfigContext.StubStatus.Location,
-			"listen", nginxConfigContext.StubStatus.Listen)
+	if iw.nginxConfigCache[nginxConfigContext.InstanceID] == nil ||
+		!iw.nginxConfigCache[nginxConfigContext.InstanceID].Equal(nginxConfigContext) {
 		slog.DebugContext(
 			ctx,
 			"New NGINX config context",
