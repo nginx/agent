@@ -83,6 +83,13 @@ func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext
 		otherNginxConfigContext.StubStatus.Listen || ncc.StubStatus.Location !=
 		otherNginxConfigContext.StubStatus.Location {
 		slog.Info("stub status not equal")
+		slog.Info("URL", "ncc", ncc.StubStatus.URL, "other",
+			otherNginxConfigContext.StubStatus.URL)
+		slog.Info("Listen", "ncc", ncc.StubStatus.Listen, "other",
+			otherNginxConfigContext.StubStatus.Listen)
+		slog.Info("URL", "ncc", ncc.StubStatus.Location, "other",
+			otherNginxConfigContext.StubStatus.Location)
+
 		return false
 	}
 
@@ -90,16 +97,19 @@ func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext
 		otherNginxConfigContext.PlusAPI.Listen || ncc.PlusAPI.Location !=
 		otherNginxConfigContext.PlusAPI.Location {
 		slog.Info("plus api not equal")
+
 		return false
 	}
 
 	if ncc.InstanceID != otherNginxConfigContext.InstanceID {
 		slog.Info("id not equal")
+
 		return false
 	}
 
 	if !ncc.areFileEqual(otherNginxConfigContext.Files) {
 		slog.Info("files not equal")
+
 		return false
 	}
 
