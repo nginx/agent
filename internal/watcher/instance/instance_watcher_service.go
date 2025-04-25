@@ -187,7 +187,7 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instanceID 
 
 func (iw *InstanceWatcherService) updateCache(nginxConfigContext *model.NginxConfigContext) {
 	iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
-	slog.Info("Instance Update Cache - New Context", "url", nginxConfigContext.StubStatus.URL,
+	slog.Info("Instance Update Cache - New Context", "url", &nginxConfigContext.StubStatus.URL,
 		"location", nginxConfigContext.StubStatus.Location,
 		"listen", nginxConfigContext.StubStatus.Listen)
 	slog.Info("Instance Update Cache - Cache ", "url",
