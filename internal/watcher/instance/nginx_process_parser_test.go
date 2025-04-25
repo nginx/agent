@@ -352,6 +352,19 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 			},
 			expected: instancesTest4,
 		},
+		{
+			name: "Test 5: 1 cache process",
+			processes: []*nginxprocess.Process{
+				{
+					PID:  1234,
+					PPID: 1,
+					Name: "nginx",
+					Cmd:  "nginx: cache manager process",
+					Exe:  exePath,
+				},
+			},
+			expected: make(map[string]*mpi.Instance),
+		},
 	}
 
 	for _, test := range tests {
