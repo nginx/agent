@@ -180,7 +180,6 @@ func (fws *FileWatcherService) isWatching(name string) bool {
 func (fws *FileWatcherService) handleEvent(ctx context.Context, event fsnotify.Event) {
 	if fws.enabled.Load() {
 		if fws.isEventSkippable(event) {
-			slog.DebugContext(ctx, "Skipping FSNotify event", "event", event)
 			return
 		}
 
@@ -238,7 +237,6 @@ func isExcludedFile(path string, excludeFiles []string) bool {
 			slog.Error("Invalid path for excluding file", "file_path", pattern)
 			continue
 		} else if ok {
-			slog.Debug("Excluding file from watcher as specified in config", "file_path", path)
 			return true
 		}
 	}
