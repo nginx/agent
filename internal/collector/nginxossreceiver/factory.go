@@ -9,15 +9,16 @@ import (
 	"context"
 	"errors"
 
-	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/consumer"
-	"go.opentelemetry.io/collector/receiver"
-	"go.opentelemetry.io/collector/receiver/scraperhelper"
+	"go.opentelemetry.io/collector/scraper"
 
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/config"
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/metadata"
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/scraper/accesslog"
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/scraper/stubstatus"
+	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/consumer"
+	"go.opentelemetry.io/collector/receiver"
+	"go.opentelemetry.io/collector/scraper/scraperhelper"
 )
 
 // nolint: ireturn
@@ -25,11 +26,12 @@ func NewFactory() receiver.Factory {
 	return receiver.NewFactory(
 		metadata.Type,
 		config.CreateDefaultConfig,
-		receiver.WithMetrics(createMetricsReceiver, metadata.MetricsStability))
+		receiver.WithMetrics(createMetrics, metadata.MetricsStability),
+	)
 }
 
 // nolint: ireturn
-func createMetricsReceiver(
+func createMetrics(
 	_ context.Context,
 	params receiver.Settings,
 	rConf component.Config,
@@ -40,24 +42,39 @@ func createMetricsReceiver(
 		return nil, errors.New("cast to metrics receiver config")
 	}
 
-	logger := params.Logger.Sugar()
+	var controllers []scraperhelper.ControllerOption
 
-	ns := stubstatus.NewScraper(params, cfg)
-	scraperOpts := []scraperhelper.ScraperControllerOption{
-		scraperhelper.AddScraperWithType(metadata.Type, ns),
+	stubStatusScraper := stubstatus.NewScraper(params, cfg)
+	stubStatusMetrics, stubStatusMetricsError := scraper.NewMetrics(
+		stubStatusScraper.Scrape,
+		scraper.WithStart(stubStatusScraper.Start),
+		scraper.WithShutdown(stubStatusScraper.Shutdown),
+	)
+	if stubStatusMetricsError != nil {
+		return nil, stubStatusMetricsError
 	}
+
+	controllers = append(controllers, scraperhelper.AddScraper(metadata.Type, stubStatusMetrics))
 
 	if len(cfg.AccessLogs) > 0 {
-		nals, err := accesslog.NewScraper(params, cfg)
-		if err != nil {
-			logger.Errorf("Failed to initialize NGINX Access Log scraper: %s", err.Error())
-		} else {
-			scraperOpts = append(scraperOpts, scraperhelper.AddScraperWithType(metadata.Type, nals))
+		accessLogScraper := accesslog.NewScraper(params, cfg)
+
+		accessLogMetrics, accessLogMetricsError := scraper.NewMetrics(
+			accessLogScraper.Scrape,
+			scraper.WithStart(accessLogScraper.Start),
+			scraper.WithShutdown(accessLogScraper.Shutdown),
+		)
+		if accessLogMetricsError != nil {
+			return nil, accessLogMetricsError
 		}
+
+		controllers = append(controllers, scraperhelper.AddScraper(metadata.Type, accessLogMetrics))
 	}
 
-	return scraperhelper.NewScraperControllerReceiver(
-		&cfg.ControllerConfig, params, cons,
-		scraperOpts...,
+	return scraperhelper.NewMetricsController(
+		&cfg.ControllerConfig,
+		params,
+		cons,
+		controllers...,
 	)
 }

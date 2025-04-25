@@ -25,6 +25,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"syscall"
+	"testing"
 	"text/template"
 	"time"
 
@@ -117,26 +118,26 @@ func WithEnvVar(k, v string) NginxAgentProcessOption {
 	}
 }
 
-func (cp *agentProcessCollector) PrepareConfig(configStr string) (configCleanup func(), err error) {
+func (cp *agentProcessCollector) PrepareConfig(t *testing.T, configStr string) (configCleanup func(), err error) {
 	configCleanup = func() {
 		// NoOp
 	}
 	var file *os.File
 	file, err = os.CreateTemp("", "agent*.yaml")
 	if err != nil {
-		log.Printf("%s", err)
+		t.Logf("%s", err)
 		return configCleanup, err
 	}
 
 	defer func() {
 		errClose := file.Close()
 		if errClose != nil {
-			log.Printf("%s", errClose)
+			t.Logf("%s", errClose)
 		}
 	}()
 
 	if _, err = file.WriteString(configStr); err != nil {
-		log.Printf("%s", err)
+		t.Logf("%s", err)
 		return configCleanup, err
 	}
 	cp.configFileName = file.Name()

@@ -66,46 +66,38 @@ func main() {
 }
 
 func components() (otelcol.Factories, error) {
-	var err error
 	factories := otelcol.Factories{}
 
-	factories.Extensions, err = extension.MakeFactoryMap(
-		auth.NewFactory(),
-	)
-	if err != nil {
-		return otelcol.Factories{}, err
-	}
+	authFactory := auth.NewFactory()
+	factories.Extensions = make(map[component.Type]extension.Factory)
+	factories.Extensions[authFactory.Type()] = authFactory
 
-	factories.Receivers, err = receiver.MakeFactoryMap(
-		otlpreceiver.NewFactory(),
-	)
-	if err != nil {
-		return otelcol.Factories{}, err
-	}
+	otlpReceiverFactory := otlpreceiver.NewFactory()
+	factories.Receivers = make(map[component.Type]receiver.Factory)
+	factories.Receivers[otlpReceiverFactory.Type()] = otlpReceiverFactory
 
-	factories.Exporters, err = exporter.MakeFactoryMap(
+	exportersList := []exporter.Factory{
 		debugexporter.NewFactory(),
 		otlpexporter.NewFactory(),
 		prometheusexporter.NewFactory(),
 		otlphttpexporter.NewFactory(),
-	)
-	if err != nil {
-		return otelcol.Factories{}, err
 	}
-
-	factories.Processors, err = processor.MakeFactoryMap(
+	factories.Exporters = make(map[component.Type]exporter.Factory)
+	for _, exporterFactory := range exportersList {
+		factories.Exporters[exporterFactory.Type()] = exporterFactory
+	}
+	processorsList := []processor.Factory{
 		batchprocessor.NewFactory(),
 		resourceprocessor.NewFactory(),
-	)
-	if err != nil {
-		return otelcol.Factories{}, err
 	}
+	factories.Processors = make(map[component.Type]processor.Factory)
+	for _, processorFactory := range processorsList {
+		factories.Processors[processorFactory.Type()] = processorFactory
+	}
+
 	factories.ProcessorModules = make(map[component.Type]string, len(factories.Processors))
 
-	factories.Connectors, err = connector.MakeFactoryMap()
-	if err != nil {
-		return otelcol.Factories{}, err
-	}
+	factories.Connectors = make(map[component.Type]connector.Factory)
 
 	return factories, nil
 }

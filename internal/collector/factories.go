@@ -5,8 +5,6 @@
 package collector
 
 import (
-	"errors"
-
 	nginxreceiver "github.com/nginx/agent/v3/internal/collector/nginxossreceiver"
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter"
@@ -39,32 +37,11 @@ import (
 // OTelComponentFactories returns all the OTel collector components supported
 // based on https://github.com/DataDog/datadog-agent/blob/main/comp/otelcol/collector-contrib/impl/collectorcontrib.go
 func OTelComponentFactories() (otelcol.Factories, error) {
-	var errs error
-
-	connectors, err := createConnectorFactories()
-	if err != nil {
-		errs = errors.Join(errs, err)
-	}
-
-	extensions, err := createExtensionFactories()
-	if err != nil {
-		errs = errors.Join(errs, err)
-	}
-
-	receivers, err := createReceiverFactories()
-	if err != nil {
-		errs = errors.Join(errs, err)
-	}
-
-	processors, err := createProcessorFactories()
-	if err != nil {
-		errs = errors.Join(errs, err)
-	}
-
-	exporters, err := createExporterFactories()
-	if err != nil {
-		errs = errors.Join(errs, err)
-	}
+	connectors := createConnectorFactories()
+	extensions := createExtensionFactories()
+	receivers := createReceiverFactories()
+	processors := createProcessorFactories()
+	exporters := createExporterFactories()
 
 	factories := otelcol.Factories{
 		Connectors: connectors,
@@ -74,26 +51,29 @@ func OTelComponentFactories() (otelcol.Factories, error) {
 		Exporters:  exporters,
 	}
 
-	return factories, errs
+	return factories, nil
 }
 
-func createConnectorFactories() (map[component.Type]connector.Factory, error) {
-	var connectorsList []connector.Factory
-
-	return connector.MakeFactoryMap(connectorsList...)
+func createConnectorFactories() map[component.Type]connector.Factory {
+	return make(map[component.Type]connector.Factory)
 }
 
-func createExtensionFactories() (map[component.Type]extension.Factory, error) {
+func createExtensionFactories() map[component.Type]extension.Factory {
 	extensionsList := []extension.Factory{
 		headerssetterextension.NewFactory(),
 		healthcheckextension.NewFactory(),
 		pprofextension.NewFactory(),
 	}
 
-	return extension.MakeFactoryMap(extensionsList...)
+	extensions := make(map[component.Type]extension.Factory)
+	for _, extensionFactory := range extensionsList {
+		extensions[extensionFactory.Type()] = extensionFactory
+	}
+
+	return extensions
 }
 
-func createReceiverFactories() (map[component.Type]receiver.Factory, error) {
+func createReceiverFactories() map[component.Type]receiver.Factory {
 	receiverList := []receiver.Factory{
 		otlpreceiver.NewFactory(),
 		hostmetricsreceiver.NewFactory(),
@@ -102,10 +82,15 @@ func createReceiverFactories() (map[component.Type]receiver.Factory, error) {
 		tcplogreceiver.NewFactory(),
 	}
 
-	return receiver.MakeFactoryMap(receiverList...)
+	receivers := make(map[component.Type]receiver.Factory)
+	for _, receiverFactory := range receiverList {
+		receivers[receiverFactory.Type()] = receiverFactory
+	}
+
+	return receivers
 }
 
-func createProcessorFactories() (map[component.Type]processor.Factory, error) {
+func createProcessorFactories() map[component.Type]processor.Factory {
 	processorList := []processor.Factory{
 		attributesprocessor.NewFactory(),
 		batchprocessor.NewFactory(),
@@ -117,10 +102,15 @@ func createProcessorFactories() (map[component.Type]processor.Factory, error) {
 		transformprocessor.NewFactory(),
 	}
 
-	return processor.MakeFactoryMap(processorList...)
+	processors := make(map[component.Type]processor.Factory)
+	for _, processorFactory := range processorList {
+		processors[processorFactory.Type()] = processorFactory
+	}
+
+	return processors
 }
 
-func createExporterFactories() (map[component.Type]exporter.Factory, error) {
+func createExporterFactories() map[component.Type]exporter.Factory {
 	exporterList := []exporter.Factory{
 		debugexporter.NewFactory(),
 		prometheusexporter.NewFactory(),
@@ -128,5 +118,10 @@ func createExporterFactories() (map[component.Type]exporter.Factory, error) {
 		otlphttpexporter.NewFactory(),
 	}
 
-	return exporter.MakeFactoryMap(exporterList...)
+	exporters := make(map[component.Type]exporter.Factory)
+	for _, exporterFactory := range exporterList {
+		exporters[exporterFactory.Type()] = exporterFactory
+	}
+
+	return exporters
 }
