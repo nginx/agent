@@ -75,8 +75,11 @@ func getLogWriter(logFile string) io.Writer {
 	if logFile != "" {
 		fileInfo, err := os.Stat(logPath)
 		if err != nil {
-			slog.Error("Error reading log directory, proceeding to log only to stdout/stderr",
-				"error", err, logOrigin)
+			slog.Error(
+				"Error reading log directory, proceeding to log only to stdout/stderr",
+				"error", err,
+				logOrigin,
+			)
 
 			return os.Stderr
 		}
@@ -87,8 +90,11 @@ func getLogWriter(logFile string) io.Writer {
 
 		logFileHandle, err := os.OpenFile(logPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, filePermission)
 		if err != nil {
-			slog.Error("Failed to open log file, proceeding to log only to stdout/stderr",
-				"error", err, logOrigin)
+			slog.Error(
+				"Failed to open log file, proceeding to log only to stdout/stderr",
+				"error", err,
+				logOrigin,
+			)
 
 			return os.Stderr
 		}
@@ -139,7 +145,9 @@ func GetCorrelationIDAttr(ctx context.Context) slog.Attr {
 		slog.Debug(
 			"Correlation ID not found in context, generating new correlation ID",
 			"correlation_id",
-			correlationID, logOrigin)
+			correlationID,
+			logOrigin,
+		)
 
 		return GenerateCorrelationID()
 	}

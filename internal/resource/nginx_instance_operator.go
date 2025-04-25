@@ -70,11 +70,19 @@ func (i *NginxInstanceOperator) validateConfigCheckResponse(out []byte) error {
 
 func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instance) error {
 	var errorsFound error
-	slog.InfoContext(ctx, "Reloading NGINX PID", "pid",
-		instance.GetInstanceRuntime().GetProcessId(), logOrigin)
+	slog.InfoContext(
+		ctx,
+		"Reloading NGINX PID",
+		"pid", instance.GetInstanceRuntime().GetProcessId(),
+		logOrigin,
+	)
 
-	slog.InfoContext(ctx, "NGINX reloaded", "processid",
-		instance.GetInstanceRuntime().GetProcessId(), logOrigin)
+	slog.InfoContext(
+		ctx,
+		"NGINX reloaded",
+		"processid", instance.GetInstanceRuntime().GetProcessId(),
+		logOrigin,
+	)
 
 	errorLogs := i.errorLogs(instance)
 

@@ -23,6 +23,7 @@ type APIAction struct {
 
 var plusActionsLogOrigin = slog.String("log_origin", "nginx_plus_actions.go")
 
+// nolint: dupl
 func (a *APIAction) HandleUpdateStreamServersRequest(ctx context.Context, action *mpi.NGINXPlusAction,
 	instance *mpi.Instance,
 ) *mpi.DataPlaneResponse {
@@ -32,16 +33,27 @@ func (a *APIAction) HandleUpdateStreamServersRequest(ctx context.Context, action
 	add, update, del, err := a.ResourceService.UpdateStreamServers(ctx, instance,
 		action.GetUpdateStreamServers().GetUpstreamStreamName(), action.GetUpdateStreamServers().GetServers())
 	if err != nil {
-		slog.ErrorContext(ctx, "Unable to update stream servers of upstream", "request",
-			action.GetUpdateHttpUpstreamServers(), "error", err, plusActionsLogOrigin)
+		slog.ErrorContext(
+			ctx,
+			"Unable to update stream servers of upstream",
+			"request", action.GetUpdateHttpUpstreamServers(),
+			"error", err,
+			plusActionsLogOrigin,
+		)
 
 		return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"", instanceID, err.Error())
 	}
 
-	slog.DebugContext(ctx, "Successfully updated stream upstream servers", "http_upstream_name",
-		action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(), "add", len(add), "update", len(update),
-		"delete", len(del), plusActionsLogOrigin)
+	slog.DebugContext(
+		ctx,
+		"Successfully updated stream upstream servers",
+		"http_upstream_name", action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(),
+		"add", len(add),
+		"update", len(update),
+		"delete", len(del),
+		plusActionsLogOrigin,
+	)
 
 	return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
 		"Successfully updated stream upstream servers", instanceID, "")
@@ -98,6 +110,7 @@ func (a *APIAction) HandleGetUpstreamsRequest(ctx context.Context, instance *mpi
 		upstreamsResponse, instanceID, "")
 }
 
+// nolint: dupl
 func (a *APIAction) HandleUpdateHTTPUpstreamsRequest(ctx context.Context, action *mpi.NGINXPlusAction,
 	instance *mpi.Instance,
 ) *mpi.DataPlaneResponse {
@@ -108,16 +121,27 @@ func (a *APIAction) HandleUpdateHTTPUpstreamsRequest(ctx context.Context, action
 		action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(),
 		action.GetUpdateHttpUpstreamServers().GetServers())
 	if err != nil {
-		slog.ErrorContext(ctx, "Unable to update HTTP servers of upstream", "request",
-			action.GetUpdateHttpUpstreamServers(), "error", err, plusActionsLogOrigin)
+		slog.ErrorContext(
+			ctx,
+			"Unable to update HTTP servers of upstream",
+			"request", action.GetUpdateHttpUpstreamServers(),
+			"error", err,
+			plusActionsLogOrigin,
+		)
 
 		return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"", instanceID, err.Error())
 	}
 
-	slog.DebugContext(ctx, "Successfully updated http upstream servers", "http_upstream_name",
-		action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(), plusActionsLogOrigin, "add", len(add),
-		"update", len(update), "delete", len(del))
+	slog.DebugContext(
+		ctx,
+		"Successfully updated http upstream servers",
+		"http_upstream_name", action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(),
+		"add", len(add),
+		"update", len(update),
+		"delete", len(del),
+		plusActionsLogOrigin,
+	)
 
 	return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
 		"Successfully updated HTTP Upstreams", instanceID, "")

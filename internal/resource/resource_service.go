@@ -146,8 +146,13 @@ func (r *ResourceService) UpdateInstances(ctx context.Context, instanceList []*m
 			}
 			r.resource = resourceCopy
 		} else {
-			slog.WarnContext(ctx, "Unable to clone resource while updating instances", "resource",
-				r.resource, "instances", instanceList, resourceServiceLogOrigin)
+			slog.WarnContext(
+				ctx,
+				"Unable to clone resource while updating instances",
+				"resource", r.resource,
+				"instances", instanceList,
+				resourceServiceLogOrigin,
+			)
 		}
 	}
 
@@ -167,8 +172,13 @@ func (r *ResourceService) DeleteInstances(ctx context.Context, instanceList []*m
 				}
 			}
 		} else {
-			slog.WarnContext(ctx, "Unable to clone resource while deleting instances", "resource",
-				r.resource, "instances", instanceList, resourceServiceLogOrigin)
+			slog.WarnContext(
+				ctx,
+				"Unable to clone resource while deleting instances",
+				"resource", r.resource,
+				"instances", instanceList,
+				resourceServiceLogOrigin,
+			)
 		}
 	}
 	r.RemoveOperator(instanceList)
@@ -214,8 +224,11 @@ func (r *ResourceService) GetHTTPUpstreamServers(ctx context.Context, instance *
 
 	servers, getServersErr := plusClient.GetHTTPServers(ctx, upstream)
 
-	slog.Warn("Error returned from NGINX Plus client, GetHTTPUpstreamServers",
-		"err", getServersErr, resourceServiceLogOrigin)
+	slog.Warn(
+		"Error returned from NGINX Plus client, GetHTTPUpstreamServers",
+		"err", getServersErr,
+		resourceServiceLogOrigin,
+	)
 
 	return servers, createPlusAPIError(getServersErr)
 }
@@ -224,16 +237,23 @@ func (r *ResourceService) GetUpstreams(ctx context.Context, instance *mpi.Instan
 ) (*client.Upstreams, error) {
 	plusClient, err := r.createPlusClient(instance)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to create plus client ",
-			"error", err, resourceServiceLogOrigin)
+		slog.ErrorContext(
+			ctx,
+			"Failed to create plus client ",
+			"error", err,
+			resourceServiceLogOrigin,
+		)
 
 		return nil, err
 	}
 
 	servers, getUpstreamsErr := plusClient.GetUpstreams(ctx)
 
-	slog.Warn("Error returned from NGINX Plus client, GetUpstreams",
-		"err", getUpstreamsErr, resourceServiceLogOrigin)
+	slog.Warn(
+		"Error returned from NGINX Plus client, GetUpstreams",
+		"err", getUpstreamsErr,
+		resourceServiceLogOrigin,
+	)
 
 	return servers, createPlusAPIError(getUpstreamsErr)
 }
@@ -242,15 +262,23 @@ func (r *ResourceService) GetStreamUpstreams(ctx context.Context, instance *mpi.
 ) (*client.StreamUpstreams, error) {
 	plusClient, err := r.createPlusClient(instance)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err, resourceServiceLogOrigin)
+		slog.ErrorContext(
+			ctx,
+			"Failed to create plus client ",
+			"error", err,
+			resourceServiceLogOrigin,
+		)
 
 		return nil, err
 	}
 
 	streamUpstreams, getServersErr := plusClient.GetStreamUpstreams(ctx)
 
-	slog.Warn("Error returned from NGINX Plus client, GetStreamUpstreams",
-		"err", getServersErr, resourceServiceLogOrigin)
+	slog.Warn(
+		"Error returned from NGINX Plus client, GetStreamUpstreams",
+		"err", getServersErr,
+		resourceServiceLogOrigin,
+	)
 
 	return streamUpstreams, createPlusAPIError(getServersErr)
 }
@@ -271,8 +299,11 @@ func (r *ResourceService) UpdateStreamServers(ctx context.Context, instance *mpi
 
 	added, updated, deleted, updateError := plusClient.UpdateStreamServers(ctx, upstream, servers)
 
-	slog.Warn("Error returned from NGINX Plus client, UpdateStreamServers",
-		"err", updateError, resourceServiceLogOrigin)
+	slog.Warn(
+		"Error returned from NGINX Plus client, UpdateStreamServers",
+		"err", updateError,
+		resourceServiceLogOrigin,
+	)
 
 	return added, updated, deleted, createPlusAPIError(updateError)
 }
@@ -293,8 +324,11 @@ func (r *ResourceService) UpdateHTTPUpstreamServers(ctx context.Context, instanc
 	added, updated, deleted, updateError := plusClient.UpdateHTTPServers(ctx, upstream, servers)
 
 	if updateError != nil {
-		slog.Warn("Error returned from NGINX Plus client, UpdateHTTPUpstreamServers",
-			"err", updateError, resourceServiceLogOrigin)
+		slog.Warn(
+			"Error returned from NGINX Plus client, UpdateHTTPUpstreamServers",
+			"err", updateError,
+			resourceServiceLogOrigin,
+		)
 	}
 
 	return added, updated, deleted, createPlusAPIError(updateError)
@@ -304,13 +338,21 @@ func convertToUpstreamServer(upstreams []*structpb.Struct) []client.UpstreamServ
 	var servers []client.UpstreamServer
 	res, err := json.Marshal(upstreams)
 	if err != nil {
-		slog.Error("Failed to marshal upstreams",
-			"error", err, "upstreams", upstreams, resourceServiceLogOrigin)
+		slog.Error(
+			"Failed to marshal upstreams",
+			"error", err,
+			"upstreams", upstreams,
+			resourceServiceLogOrigin,
+		)
 	}
 	err = json.Unmarshal(res, &servers)
 	if err != nil {
-		slog.Error("Failed to unmarshal upstreams",
-			"error", err, "servers", servers, resourceServiceLogOrigin)
+		slog.Error(
+			"Failed to unmarshal upstreams",
+			"error", err,
+			"servers", servers,
+			resourceServiceLogOrigin,
+		)
 	}
 
 	return servers
@@ -320,13 +362,21 @@ func convertToStreamUpstreamServer(streamUpstreams []*structpb.Struct) []client.
 	var servers []client.StreamUpstreamServer
 	res, err := json.Marshal(streamUpstreams)
 	if err != nil {
-		slog.Error("Failed to marshal stream upstream server",
-			"error", err, "stream_upstreams", streamUpstreams, resourceServiceLogOrigin)
+		slog.Error(
+			"Failed to marshal stream upstream server",
+			"error", err,
+			"stream_upstreams", streamUpstreams,
+			resourceServiceLogOrigin,
+		)
 	}
 	err = json.Unmarshal(res, &servers)
 	if err != nil {
-		slog.Error("Failed to unmarshal stream upstream server",
-			"error", err, "stream_upstreams", streamUpstreams, resourceServiceLogOrigin)
+		slog.Error(
+			"Failed to unmarshal stream upstream server",
+			"error", err,
+			"stream_upstreams", streamUpstreams,
+			resourceServiceLogOrigin,
+		)
 	}
 
 	return servers

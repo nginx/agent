@@ -68,8 +68,11 @@ func addCollectorPlugin(ctx context.Context, agentConfig *config.Config, plugins
 			slog.ErrorContext(ctx, "Failed to initialize collector plugin", "error", err, logOrigin)
 		}
 	} else {
-		slog.InfoContext(ctx, "Agent OTel collector isn't started. "+
-			"Configure a collector to begin collecting metrics.", logOrigin)
+		slog.InfoContext(
+			ctx,
+			"Agent OTel collector isn't started. Configure a collector to begin collecting metrics.",
+			logOrigin,
+		)
 	}
 
 	return plugins
