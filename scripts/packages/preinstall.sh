@@ -119,32 +119,6 @@ command:
         token: ${token}
     tls:
         skip_verify: false
-
-collector:
-  receivers:
-    host_metrics:
-      scrapers:
-        cpu: {}
-        memory: {}
-        disk: {}
-        network: {}
-        filesystem: {}
-  processors:
-    batch: {}
-  exporters:
-    otlp_exporters:
-      - server:
-          host: ${NGINX_ONE_HOST}
-          port: 443
-        authenticator: headers_setter
-        tls:
-          skip_verify: false
-  extensions:
-    headers_setter:
-      headers:
-        - action: insert
-          key: \"authorization\"
-          value: ${token}
 "
 
         echo "${v3_config_contents}" > "$v3_config_file"
