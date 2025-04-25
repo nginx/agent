@@ -106,7 +106,7 @@ func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 
 func (cp *CommandPlugin) processResourceUpdate(ctx context.Context, msg *bus.Message) {
 	if resource, ok := msg.Data.(*mpi.Resource); ok {
-		if !cp.commandService.IsConnected() && cp.config.IsFeatureEnabled(pkgConfig.FeatureConnection) {
+		if !cp.commandService.IsConnected() {
 			cp.createConnection(ctx, resource)
 		} else {
 			statusErr := cp.commandService.UpdateDataPlaneStatus(ctx, resource)
@@ -240,8 +240,8 @@ func (cp *CommandPlugin) handleAPIActionRequest(ctx context.Context, message *mp
 	} else {
 		slog.WarnContext(
 			ctx,
-			"API Action Request feature disabled. Unable to process API action request",
-			"request", message,
+			"API action feature disabled. Unable to process API action request",
+			"request", message, "enabled_features", cp.config.Features,
 			pluginLogOrigin,
 		)
 
@@ -267,7 +267,7 @@ func (cp *CommandPlugin) handleConfigApplyRequest(newCtx context.Context, messag
 		slog.WarnContext(
 			newCtx,
 			"Configuration feature disabled. Unable to process config apply request",
-			"request", message,
+			"request", message, "enabled_features", cp.config.Features,
 			pluginLogOrigin,
 		)
 
@@ -291,8 +291,9 @@ func (cp *CommandPlugin) handleConfigUploadRequest(newCtx context.Context, messa
 		cp.messagePipe.Process(newCtx, &bus.Message{Topic: bus.ConfigUploadRequestTopic, Data: message})
 	} else {
 		slog.WarnContext(
-			newCtx, "Configuration feature disabled. Unable to process config upload request",
-			"request", message,
+			newCtx,
+			"Configuration feature disabled. Unable to process config upload request",
+			"request", message, "enabled_features", cp.config.Features,
 			pluginLogOrigin,
 		)
 

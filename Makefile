@@ -231,12 +231,22 @@ build-mock-management-otel-collector-image: build-mock-management-otel-collector
 .PHONY: run-mock-management-otel-collector
 run-mock-management-otel-collector: ## Run mock management plane OTel collector
 	@echo "🚀 Running mock management plane OTel collector"
-	AGENT_IMAGE_WITH_NGINX_PLUS=nginx_plus_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_OSS=nginx_oss_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_PLUS_AND_NAP=nginx_plus_and_nap_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml up -d
+	AGENT_IMAGE_WITH_NGINX_PLUS=nginx_plus_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_OSS=nginx_oss_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_PLUS_AND_NAP=nginx_plus_and_nap_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/nginx-plus-and-nap/docker-compose.yaml up -d
 
 .PHONY: stop-mock-management-otel-collector
 stop-mock-management-otel-collector: ## Stop running mock management plane OTel collector
 	@echo "Stopping mock management plane OTel collector"
-	AGENT_IMAGE_WITH_NGINX_PLUS=nginx_plus_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_OSS=nginx_oss_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_PLUS_AND_NAP=nginx_plus_and_nap_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml down
+	AGENT_IMAGE_WITH_NGINX_PLUS=nginx_plus_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_OSS=nginx_oss_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_PLUS_AND_NAP=nginx_plus_and_nap_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/nginx-plus-and-nap/docker-compose.yaml down
+
+.PHONY: run-mock-otel-collector-without-nap
+run-mock-otel-collector-without-nap:
+	@echo "🚀 Running mock management plane OTel collector without NAP"
+	AGENT_IMAGE_WITH_NGINX_PLUS=nginx_plus_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_OSS=nginx_oss_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml up -d
+
+.PHONY: stop-mock-otel-collector-without-nap
+stop-mock-otel-collector-without-nap: ## Stop running mock management plane OTel collector
+	@echo "Stopping mock management plane OTel collector without NAP"
+	AGENT_IMAGE_WITH_NGINX_PLUS=nginx_plus_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_OSS=nginx_oss_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml down
 
 generate: ## Generate golang code
 	@echo "🗄️ Generating proto files"

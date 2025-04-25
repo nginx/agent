@@ -68,7 +68,7 @@ func TestTemplateWrite(t *testing.T) {
 		Server: &config.ServerConfig{
 			Host: "localhost",
 			Port: 9876,
-			Type: 0,
+			Type: config.Grpc,
 		},
 		TLS: nil,
 	}
@@ -106,7 +106,7 @@ func TestTemplateWrite(t *testing.T) {
 		Server: &config.ServerConfig{
 			Host: "localhost",
 			Port: 4317,
-			Type: 0,
+			Type: config.Grpc,
 		},
 		OtlpTLSConfig: &config.OtlpTLSConfig{
 			Cert: "/tmp/cert.pem",
