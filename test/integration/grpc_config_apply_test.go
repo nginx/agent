@@ -15,6 +15,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	configApplyErrorMessage = "failed validating config NGINX config test failed exit status 1:" +
+		" nginx: [emerg] unexpected end of file, expecting \";\" or \"}\" in /etc/nginx/nginx.conf:2\nnginx: " +
+		"configuration file /etc/nginx/nginx.conf test failed\n"
+)
+
 func TestGrpc_ConfigApply(t *testing.T) {
 	ctx := context.Background()
 	teardownTest := setupConnectionTest(t, false, false)

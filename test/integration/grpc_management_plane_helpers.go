@@ -30,12 +30,6 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-const (
-	configApplyErrorMessage = "failed validating config NGINX config test failed exit status 1:" +
-		" nginx: [emerg] unexpected end of file, expecting \";\" or \"}\" in /etc/nginx/nginx.conf:2\nnginx: " +
-		"configuration file /etc/nginx/nginx.conf test failed\n"
-)
-
 var (
 	container                        testcontainers.Container
 	mockManagementPlaneGrpcContainer testcontainers.Container
