@@ -31,8 +31,8 @@ import (
 )
 
 const (
-	// configApplyErrorMessage = "failed to parse config invalid " +
-	//	"number of arguments in \"worker_processes\" directive in /etc/nginx/nginx.conf:1"
+	configApplyErrorMessage = "failed to parse config invalid " +
+		"number of arguments in \"worker_processes\" directive in /etc/nginx/nginx.conf:1"
 
 	retryCount       = 5
 	retryWaitTime    = 4 * time.Second
@@ -200,15 +200,15 @@ func TestGrpc_ConfigApply(t *testing.T) {
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 
-	// t.Run("Test 1: No config changes", func(t *testing.T) {
-	//	clearManagementPlaneResponses(t)
-	//	performConfigApply(t, nginxInstanceID)
-	//	responses = getManagementPlaneResponses(t, 1)
-	//	t.Logf("Config apply responses: %v", responses)
-	//
-	//	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
-	//	assert.Equal(t, "Config apply successful, no files to change", responses[0].GetCommandResponse().GetMessage())
-	// })
+	t.Run("Test 1: No config changes", func(t *testing.T) {
+		clearManagementPlaneResponses(t)
+		performConfigApply(t, nginxInstanceID)
+		responses = getManagementPlaneResponses(t, 1)
+		t.Logf("Config apply responses: %v", responses)
+
+		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+		assert.Equal(t, "Config apply successful, no files to change", responses[0].GetCommandResponse().GetMessage())
+	})
 
 	t.Run("Test 2: Valid config", func(t *testing.T) {
 		clearManagementPlaneResponses(t)
@@ -235,44 +235,44 @@ func TestGrpc_ConfigApply(t *testing.T) {
 		assert.Equal(t, "Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
 	})
 
-	// t.Run("Test 3: Invalid config", func(t *testing.T) {
-	//	clearManagementPlaneResponses(t)
-	//	err := mockManagementPlaneGrpcContainer.CopyFileToContainer(
-	//		ctx,
-	//		"../config/nginx/invalid-nginx.conf",
-	//		fmt.Sprintf("/mock-management-plane-grpc/config/%s/etc/nginx/nginx.conf", nginxInstanceID),
-	//		0o666,
-	//	)
-	//	require.NoError(t, err)
-	//
-	//	performConfigApply(t, nginxInstanceID)
-	//
-	//	responses = getManagementPlaneResponses(t, 2)
-	//	t.Logf("Config apply responses: %v", responses)
-	//
-	//	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_ERROR, responses[0].GetCommandResponse().GetStatus())
-	//	assert.Equal(t, "Config apply failed, rolling back config", responses[0].GetCommandResponse().GetMessage())
-	//	assert.Equal(t, configApplyErrorMessage, responses[0].GetCommandResponse().GetError())
-	//	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE, responses[1].GetCommandResponse().GetStatus())
-	//	assert.Equal(t, "Config apply failed, rollback successful", responses[1].GetCommandResponse().GetMessage())
-	//	assert.Equal(t, configApplyErrorMessage, responses[1].GetCommandResponse().GetError())
-	// })
-	//
-	// t.Run("Test 4: File not in allowed directory", func(t *testing.T) {
-	//	clearManagementPlaneResponses(t)
-	//	performInvalidConfigApply(t, nginxInstanceID)
-	//
-	//	responses = getManagementPlaneResponses(t, 1)
-	//	t.Logf("Config apply responses: %v", responses)
-	//
-	//	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE, responses[0].GetCommandResponse().GetStatus())
-	//	assert.Equal(t, "Config apply failed", responses[0].GetCommandResponse().GetMessage())
-	//	assert.Equal(
-	//		t,
-	//		"file not in allowed directories /unknown/nginx.conf",
-	//		responses[0].GetCommandResponse().GetError(),
-	//	)
-	// })
+	t.Run("Test 3: Invalid config", func(t *testing.T) {
+		clearManagementPlaneResponses(t)
+		err := mockManagementPlaneGrpcContainer.CopyFileToContainer(
+			ctx,
+			"../config/nginx/invalid-nginx.conf",
+			fmt.Sprintf("/mock-management-plane-grpc/config/%s/etc/nginx/nginx.conf", nginxInstanceID),
+			0o666,
+		)
+		require.NoError(t, err)
+
+		performConfigApply(t, nginxInstanceID)
+
+		responses = getManagementPlaneResponses(t, 2)
+		t.Logf("Config apply responses: %v", responses)
+
+		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_ERROR, responses[0].GetCommandResponse().GetStatus())
+		assert.Equal(t, "Config apply failed, rolling back config", responses[0].GetCommandResponse().GetMessage())
+		assert.Equal(t, configApplyErrorMessage, responses[0].GetCommandResponse().GetError())
+		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE, responses[1].GetCommandResponse().GetStatus())
+		assert.Equal(t, "Config apply failed, rollback successful", responses[1].GetCommandResponse().GetMessage())
+		assert.Equal(t, configApplyErrorMessage, responses[1].GetCommandResponse().GetError())
+	})
+
+	t.Run("Test 4: File not in allowed directory", func(t *testing.T) {
+		clearManagementPlaneResponses(t)
+		performInvalidConfigApply(t, nginxInstanceID)
+
+		responses = getManagementPlaneResponses(t, 1)
+		t.Logf("Config apply responses: %v", responses)
+
+		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE, responses[0].GetCommandResponse().GetStatus())
+		assert.Equal(t, "Config apply failed", responses[0].GetCommandResponse().GetMessage())
+		assert.Equal(
+			t,
+			"file not in allowed directories /unknown/nginx.conf",
+			responses[0].GetCommandResponse().GetError(),
+		)
+	})
 }
 
 func performConfigApply(t *testing.T, nginxInstanceID string) {
@@ -288,52 +288,52 @@ func performConfigApply(t *testing.T, nginxInstanceID string) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 }
 
-// func performInvalidConfigApply(t *testing.T, nginxInstanceID string) {
-//	t.Helper()
-//
-//	client := resty.New()
-//	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
-//
-//	body := fmt.Sprintf(`{
-//			"message_meta": {
-//				"message_id": "e2254df9-8edd-4900-91ce-88782473bcb9",
-//				"correlation_id": "9673f3b4-bf33-4d98-ade1-ded9266f6818",
-//				"timestamp": "2023-01-15T01:30:15.01Z"
-//			},
-//			"config_apply_request": {
-//				"overview": {
-//					"files": [{
-//						"file_meta": {
-//							"name": "/etc/nginx/nginx.conf",
-//							"hash": "ea57e443-e968-3a50-b842-f37112acde71",
-//							"modifiedTime": "2023-01-15T01:30:15.01Z",
-//							"permissions": "0644",
-//							"size": 0
-//						},
-//						"action": "FILE_ACTION_UPDATE"
-//					},
-//					{
-//						"file_meta": {
-//							"name": "/unknown/nginx.conf",
-//							"hash": "bd1f337d-6874-35ea-9d4d-2b543efd42cf",
-//							"modifiedTime": "2023-01-15T01:30:15.01Z",
-//							"permissions": "0644",
-//							"size": 0
-//						},
-//						"action": "FILE_ACTION_ADD"
-//					}],
-//					"config_version": {
-//						"instance_id": "%s",
-//						"version": "6f343257-55e3-309e-a2eb-bb13af5f80f4"
-//					}
-//				}
-//			}
-//		}`, nginxInstanceID)
-//	url := fmt.Sprintf("http://%s/api/v1/requests", mockManagementPlaneAPIAddress)
-//	resp, err := client.R().EnableTrace().SetBody(body).Post(url)
-//	require.NoError(t, err)
-//	assert.Equal(t, http.StatusOK, resp.StatusCode())
-// }
+func performInvalidConfigApply(t *testing.T, nginxInstanceID string) {
+	t.Helper()
+
+	client := resty.New()
+	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
+
+	body := fmt.Sprintf(`{
+			"message_meta": {
+				"message_id": "e2254df9-8edd-4900-91ce-88782473bcb9",
+				"correlation_id": "9673f3b4-bf33-4d98-ade1-ded9266f6818",
+				"timestamp": "2023-01-15T01:30:15.01Z"
+			},
+			"config_apply_request": {
+				"overview": {
+					"files": [{
+						"file_meta": {
+							"name": "/etc/nginx/nginx.conf",
+							"hash": "ea57e443-e968-3a50-b842-f37112acde71",
+							"modifiedTime": "2023-01-15T01:30:15.01Z",
+							"permissions": "0644",
+							"size": 0
+						},
+						"action": "FILE_ACTION_UPDATE"
+					},
+					{
+						"file_meta": {
+							"name": "/unknown/nginx.conf",
+							"hash": "bd1f337d-6874-35ea-9d4d-2b543efd42cf",
+							"modifiedTime": "2023-01-15T01:30:15.01Z",
+							"permissions": "0644",
+							"size": 0
+						},
+						"action": "FILE_ACTION_ADD"
+					}],
+					"config_version": {
+						"instance_id": "%s",
+						"version": "6f343257-55e3-309e-a2eb-bb13af5f80f4"
+					}
+				}
+			}
+		}`, nginxInstanceID)
+	url := fmt.Sprintf("http://%s/api/v1/requests", mockManagementPlaneAPIAddress)
+	resp, err := client.R().EnableTrace().SetBody(body).Post(url)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode())
+}
 
 func getManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int) []*mpi.DataPlaneResponse {
 	t.Helper()

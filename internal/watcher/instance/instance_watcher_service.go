@@ -170,7 +170,7 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instanceID 
 
 		slog.Info("Send Config Context Update - Reparse config", "instance_id", instanceID)
 		iw.sendNginxConfigContextUpdate(ctx, nginxConfigContext)
-		iw.updateCache(nginxConfigContext)
+		iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
 		updatesRequired = proto.UpdateNginxInstanceRuntime(instance, nginxConfigContext)
 	}
 
@@ -183,13 +183,6 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instanceID 
 			InstanceUpdates: instanceUpdates,
 		}
 	}
-}
-
-func (iw *InstanceWatcherService) updateCache(nginxConfigContext *model.NginxConfigContext) {
-	slog.Info("Updating Cache")
-	iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
-	slog.Info("Updated Cache for instance", "", nginxConfigContext.InstanceID)
-	slog.Info("Current Cache", "", iw.nginxConfigCache[nginxConfigContext.InstanceID])
 }
 
 func (iw *InstanceWatcherService) checkForUpdates(

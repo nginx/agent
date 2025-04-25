@@ -6,6 +6,7 @@
 package model
 
 import (
+	"log/slog"
 	"reflect"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -81,35 +82,44 @@ func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext
 	if ncc.StubStatus.URL != otherNginxConfigContext.StubStatus.URL || ncc.StubStatus.Listen !=
 		otherNginxConfigContext.StubStatus.Listen || ncc.StubStatus.Location !=
 		otherNginxConfigContext.StubStatus.Location {
+		slog.Info("stub status not equal")
 		return false
 	}
 
 	if ncc.PlusAPI.URL != otherNginxConfigContext.PlusAPI.URL || ncc.PlusAPI.Listen !=
 		otherNginxConfigContext.PlusAPI.Listen || ncc.PlusAPI.Location !=
 		otherNginxConfigContext.PlusAPI.Location {
+		slog.Info("plus api not equal")
 		return false
 	}
 
 	if ncc.InstanceID != otherNginxConfigContext.InstanceID {
+		slog.Info("id not equal")
 		return false
 	}
 
 	if !ncc.areFileEqual(otherNginxConfigContext.Files) {
+		slog.Info("files not equal")
 		return false
 	}
 
 	if !reflect.DeepEqual(ncc.AccessLogs, otherNginxConfigContext.AccessLogs) {
+		slog.Info("access logs not equal")
 		return false
 	}
 
 	if !reflect.DeepEqual(ncc.ErrorLogs, otherNginxConfigContext.ErrorLogs) {
+		slog.Info("error logs not equal")
 		return false
 	}
 
 	if !reflect.DeepEqual(ncc.NAPSysLogServers, otherNginxConfigContext.NAPSysLogServers) {
+		slog.Info("nap syslog servers not equal")
 		return false
 	}
 
+	slog.Info("config is equal")
+	
 	return true
 }
 
