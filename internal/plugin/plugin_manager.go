@@ -9,6 +9,8 @@ import (
 	"context"
 	"log/slog"
 
+	pkg "github.com/nginx/agent/v3/pkg/config"
+
 	"github.com/nginx/agent/v3/internal/collector"
 	"github.com/nginx/agent/v3/internal/command"
 	"github.com/nginx/agent/v3/internal/file"
@@ -58,6 +60,12 @@ func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentCo
 }
 
 func addCollectorPlugin(ctx context.Context, agentConfig *config.Config, plugins []bus.Plugin) []bus.Plugin {
+	if !agentConfig.IsFeatureEnabled(pkg.FeatureMetrics) {
+		slog.WarnContext(ctx, "Metrics feature disabled, no metrics will be collected",
+			"enabled_features", agentConfig.Features)
+
+		return plugins
+	}
 	if agentConfig.IsACollectorExporterConfigured() {
 		oTelCollector, err := collector.New(agentConfig)
 		if err == nil {
