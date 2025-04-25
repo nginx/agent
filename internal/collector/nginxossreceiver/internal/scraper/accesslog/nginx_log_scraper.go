@@ -19,8 +19,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/helper"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/pipeline"
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/config/configtelemetry"
-	"go.opentelemetry.io/collector/extension/experimental/storage"
+	"go.opentelemetry.io/collector/extension/xextension/storage"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/otel"
@@ -37,17 +36,18 @@ const Percentage = 100
 
 type (
 	NginxLogScraper struct {
-		outChan  <-chan []*entry.Entry
-		cfg      *config.Config
-		settings receiver.Settings
-		logger   *zap.Logger
-		mb       *metadata.MetricsBuilder
-		rb       *metadata.ResourceBuilder
-		pipe     *pipeline.DirectedPipeline
-		wg       *sync.WaitGroup
-		cancel   context.CancelFunc
-		entries  []*entry.Entry
-		mut      sync.Mutex
+		outChan   <-chan []*entry.Entry
+		cfg       *config.Config
+		settings  receiver.Settings
+		logger    *zap.Logger
+		mb        *metadata.MetricsBuilder
+		rb        *metadata.ResourceBuilder
+		pipe      *pipeline.DirectedPipeline
+		wg        *sync.WaitGroup
+		cancel    context.CancelFunc
+		entries   []*entry.Entry
+		operators []operator.Config
+		mut       sync.Mutex
 	}
 
 	NginxMetrics struct {
@@ -66,7 +66,7 @@ type (
 func NewScraper(
 	settings receiver.Settings,
 	cfg *config.Config,
-) (*NginxLogScraper, error) {
+) *NginxLogScraper {
 	logger := settings.Logger
 	logger.Info("Creating NGINX access log scraper")
 
@@ -86,22 +86,17 @@ func NewScraper(
 	}
 
 	nls := &NginxLogScraper{
-		cfg:      cfg,
-		logger:   logger,
-		settings: settings,
-		mb:       mb,
-		rb:       rb,
-		mut:      sync.Mutex{},
-		wg:       &sync.WaitGroup{},
+		cfg:       cfg,
+		logger:    logger,
+		settings:  settings,
+		mb:        mb,
+		rb:        rb,
+		mut:       sync.Mutex{},
+		wg:        &sync.WaitGroup{},
+		operators: operators,
 	}
 
-	var err error
-	nls.pipe, err = nls.initStanzaPipeline(operators, settings.Logger)
-	if err != nil {
-		return nil, fmt.Errorf("init stanza pipeline: %w", err)
-	}
-
-	return nls, nil
+	return nls
 }
 
 func (nls *NginxLogScraper) ID() component.ID {
@@ -113,9 +108,15 @@ func (nls *NginxLogScraper) Start(parentCtx context.Context, _ component.Host) e
 	ctx, cancel := context.WithCancel(parentCtx)
 	nls.cancel = cancel
 
-	err := nls.pipe.Start(storage.NewNopClient())
+	var err error
+	nls.pipe, err = nls.initStanzaPipeline(nls.operators, nls.logger)
 	if err != nil {
-		return fmt.Errorf("stanza pipeline start: %w", err)
+		return fmt.Errorf("init stanza pipeline: %w", err)
+	}
+
+	startError := nls.pipe.Start(storage.NewNopClient())
+	if startError != nil {
+		return fmt.Errorf("stanza pipeline start: %w", startError)
 	}
 
 	nls.wg.Add(1)
@@ -221,10 +222,9 @@ func (nls *NginxLogScraper) initStanzaPipeline(
 	settings := component.TelemetrySettings{
 		Logger:        logger,
 		MeterProvider: mp,
-		MetricsLevel:  configtelemetry.LevelNone,
 	}
 
-	emitter := helper.NewLogEmitter(settings, nls.ConsumerCallback)
+	emitter := helper.NewSynchronousLogEmitter(settings, nls.ConsumerCallback)
 	pipe, err := pipeline.Config{
 		Operators:     operators,
 		DefaultOutput: emitter,

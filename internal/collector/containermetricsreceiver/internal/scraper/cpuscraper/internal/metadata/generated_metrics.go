@@ -9,10 +9,10 @@ import (
 	"go.opentelemetry.io/collector/filter"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
-	"go.opentelemetry.io/collector/receiver"
+	"go.opentelemetry.io/collector/scraper"
 )
 
-// AttributeState specifies the a value state attribute.
+// AttributeState specifies the value state attribute.
 type AttributeState int
 
 const (
@@ -60,6 +60,24 @@ var MapAttributeState = map[string]AttributeState{
 	"system":    AttributeStateSystem,
 	"user":      AttributeStateUser,
 	"wait":      AttributeStateWait,
+}
+
+var MetricsInfo = metricsInfo{
+	SystemCPULogicalCount: metricInfo{
+		Name: "system.cpu.logical.count",
+	},
+	SystemCPUUtilization: metricInfo{
+		Name: "system.cpu.utilization",
+	},
+}
+
+type metricsInfo struct {
+	SystemCPULogicalCount metricInfo
+	SystemCPUUtilization  metricInfo
+}
+
+type metricInfo struct {
+	Name string
 }
 
 type metricSystemCPULogicalCount struct {
@@ -195,8 +213,7 @@ func WithStartTime(startTime pcommon.Timestamp) MetricBuilderOption {
 		mb.startTime = startTime
 	})
 }
-
-func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, options ...MetricBuilderOption) *MetricsBuilder {
+func NewMetricsBuilder(mbc MetricsBuilderConfig, settings scraper.Settings, options ...MetricBuilderOption) *MetricsBuilder {
 	mb := &MetricsBuilder{
 		config:                         mbc,
 		startTime:                      pcommon.NewTimestampFromTime(time.Now()),
@@ -279,7 +296,7 @@ func WithStartTimeOverride(start pcommon.Timestamp) ResourceMetricsOption {
 func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	rm := pmetric.NewResourceMetrics()
 	ils := rm.ScopeMetrics().AppendEmpty()
-	ils.Scope().SetName("github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/scraper/cpuscraper")
+	ils.Scope().SetName(ScopeName)
 	ils.Scope().SetVersion(mb.buildInfo.Version)
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
 	mb.metricSystemCPULogicalCount.emit(ils.Metrics())

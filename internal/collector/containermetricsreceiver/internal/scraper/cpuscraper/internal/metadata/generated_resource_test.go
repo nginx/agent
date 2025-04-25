@@ -33,7 +33,7 @@ func TestResourceBuilder(t *testing.T) {
 			val, ok := res.Attributes().Get("resource.id")
 			assert.Equal(t, tt == "all_set", ok)
 			if ok {
-				assert.EqualValues(t, "resource.id-val", val.Str())
+				assert.Equal(t, "resource.id-val", val.Str())
 			}
 		})
 	}

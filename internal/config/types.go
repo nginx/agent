@@ -181,7 +181,7 @@ type (
 
 	// OTel Collector Receiver configuration.
 	Receivers struct {
-		ContainerMetrics   *ContainerMetricsReceiver `yaml:"container_metrics" mapstructure:"container_metrics"`
+		ContainerMetrics   *ContainerMetricsReceiver `yaml:"container_metrics"    mapstructure:"container_metrics"`
 		HostMetrics        *HostMetrics              `yaml:"host_metrics"         mapstructure:"host_metrics"`
 		OtlpReceivers      []OtlpReceiver            `yaml:"otlp_receivers"       mapstructure:"otlp_receivers"`
 		NginxReceivers     []NginxReceiver           `yaml:"nginx_receivers"      mapstructure:"nginx_receivers"`
@@ -387,6 +387,7 @@ func (c *Config) IsACollectorExporterConfigured() bool {
 		c.Collector.Exporters.Debug != nil
 }
 
+// nolint: cyclop, revive
 func (c *Config) AreReceiversConfigured() bool {
 	if c.Collector == nil {
 		return false

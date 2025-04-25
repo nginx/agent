@@ -1,7 +1,7 @@
 type: memory
 
 status:
-  class: receiver
+  class: scraper
   stability:
     beta: [metrics]
   distributions: [contrib]

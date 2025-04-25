@@ -57,6 +57,7 @@ func (s *NginxStubStatusScraper) ID() component.ID {
 	return component.NewID(metadata.Type)
 }
 
+// nolint: unparam
 func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) error {
 	httpClient := http.DefaultClient
 	httpClient.Timeout = s.cfg.ClientConfig.Timeout

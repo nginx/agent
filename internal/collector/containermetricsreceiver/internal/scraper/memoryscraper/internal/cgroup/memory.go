@@ -9,6 +9,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"math"
+	"os"
 	"path"
 	"strconv"
 	"strings"
@@ -25,13 +27,15 @@ const (
 	V1CachedKey    = "cache"
 	V1SharedKey    = "total_shmem"
 
-	V2MemStat         = "memory.stat"
-	V2MemTotal        = "memory.max"
-	V2MemUsage        = "memory.current"
+	V2MemStatFile     = "memory.stat"
+	V2MemTotalFile    = "memory.max"
+	V2MemUsageFile    = "memory.current"
 	V2CachedKey       = "file"
 	V2SharedKey       = "shmem"
 	V2DefaultMaxValue = "max"
 )
+
+var pageSize = int64(os.Getpagesize())
 
 type MemorySource struct {
 	basePath   string
@@ -66,11 +70,12 @@ func (ms *MemorySource) VirtualMemoryStatWithContext(ctx context.Context) (*mem.
 	var memoryStat MemoryStat
 
 	// cgroup v2 by default
-	memTotalFile := V2MemTotal
-	memUsageFile := V2MemUsage
-	memStatFile := V2MemStat
+	memTotalFile := V2MemTotalFile
+	memUsageFile := V2MemUsageFile
+	memStatFile := V2MemStatFile
 	memCachedKey := V2CachedKey
 	memSharedKey := V2SharedKey
+
 	if !ms.isCgroupV2 {
 		memTotalFile = V1MemTotalFile
 		memUsageFile = V1MemUsageFile
@@ -81,12 +86,12 @@ func (ms *MemorySource) VirtualMemoryStatWithContext(ctx context.Context) (*mem.
 
 	memoryLimitInBytes, err := MemoryLimitInBytes(ctx, path.Join(ms.basePath, memTotalFile))
 	if err != nil {
-		slog.Debug("Error getting memory limit in bytes", "err", err)
+		return &mem.VirtualMemoryStat{}, err
 	}
 
 	memoryUsageInBytes, err := internal.ReadIntegerValueCgroupFile(path.Join(ms.basePath, memUsageFile))
 	if err != nil {
-		slog.Debug("Error reading memory usage in bytes", "err", err)
+		return &mem.VirtualMemoryStat{}, err
 	}
 
 	memoryStat, err = GetMemoryStat(
@@ -95,8 +100,7 @@ func (ms *MemorySource) VirtualMemoryStatWithContext(ctx context.Context) (*mem.
 		memSharedKey,
 	)
 	if err != nil {
-		slog.Debug("Error getting memory stats", "err", err)
-		return nil, err
+		return &mem.VirtualMemoryStat{}, err
 	}
 
 	var usedMemoryPercent float64
@@ -130,7 +134,7 @@ func MemoryLimitInBytes(ctx context.Context, filePath string) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	if memTotalString == V2DefaultMaxValue || memTotalString == internal.GetV1DefaultMaxValue() {
+	if memTotalString == V2DefaultMaxValue || memTotalString == V1DefaultMaxValue() {
 		hostMemoryStats, hostErr := getHostMemoryStats(ctx)
 		if hostErr != nil {
 			return 0, hostErr
@@ -172,4 +176,9 @@ func GetMemoryStat(statFile, cachedKey, sharedKey string) (MemoryStat, error) {
 	}
 
 	return memoryStat, nil
+}
+
+func V1DefaultMaxValue() string {
+	maxInt := int64(math.MaxInt64)
+	return strconv.FormatInt((maxInt/pageSize)*pageSize, 10)
 }

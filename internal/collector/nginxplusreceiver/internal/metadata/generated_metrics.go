@@ -12,7 +12,7 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 )
 
-// AttributeNginxCacheOutcome specifies the a value nginx.cache.outcome attribute.
+// AttributeNginxCacheOutcome specifies the value nginx.cache.outcome attribute.
 type AttributeNginxCacheOutcome int
 
 const (
@@ -58,7 +58,7 @@ var MapAttributeNginxCacheOutcome = map[string]AttributeNginxCacheOutcome{
 	"UPDATING":    AttributeNginxCacheOutcomeUPDATING,
 }
 
-// AttributeNginxConnectionsOutcome specifies the a value nginx.connections.outcome attribute.
+// AttributeNginxConnectionsOutcome specifies the value nginx.connections.outcome attribute.
 type AttributeNginxConnectionsOutcome int
 
 const (
@@ -92,7 +92,7 @@ var MapAttributeNginxConnectionsOutcome = map[string]AttributeNginxConnectionsOu
 	"IDLE":     AttributeNginxConnectionsOutcomeIDLE,
 }
 
-// AttributeNginxHealthCheck specifies the a value nginx.health_check attribute.
+// AttributeNginxHealthCheck specifies the value nginx.health_check attribute.
 type AttributeNginxHealthCheck int
 
 const (
@@ -118,7 +118,7 @@ var MapAttributeNginxHealthCheck = map[string]AttributeNginxHealthCheck{
 	"FAIL":      AttributeNginxHealthCheckFAIL,
 }
 
-// AttributeNginxIoDirection specifies the a value nginx.io.direction attribute.
+// AttributeNginxIoDirection specifies the value nginx.io.direction attribute.
 type AttributeNginxIoDirection int
 
 const (
@@ -144,7 +144,7 @@ var MapAttributeNginxIoDirection = map[string]AttributeNginxIoDirection{
 	"transmit": AttributeNginxIoDirectionTransmit,
 }
 
-// AttributeNginxLimitConnOutcome specifies the a value nginx.limit_conn.outcome attribute.
+// AttributeNginxLimitConnOutcome specifies the value nginx.limit_conn.outcome attribute.
 type AttributeNginxLimitConnOutcome int
 
 const (
@@ -174,7 +174,7 @@ var MapAttributeNginxLimitConnOutcome = map[string]AttributeNginxLimitConnOutcom
 	"REJECTED_DRY_RUN": AttributeNginxLimitConnOutcomeREJECTEDDRYRUN,
 }
 
-// AttributeNginxLimitReqOutcome specifies the a value nginx.limit_req.outcome attribute.
+// AttributeNginxLimitReqOutcome specifies the value nginx.limit_req.outcome attribute.
 type AttributeNginxLimitReqOutcome int
 
 const (
@@ -212,7 +212,7 @@ var MapAttributeNginxLimitReqOutcome = map[string]AttributeNginxLimitReqOutcome{
 	"DELAYED_DRY_RUN":  AttributeNginxLimitReqOutcomeDELAYEDDRYRUN,
 }
 
-// AttributeNginxPeerState specifies the a value nginx.peer.state attribute.
+// AttributeNginxPeerState specifies the value nginx.peer.state attribute.
 type AttributeNginxPeerState int
 
 const (
@@ -254,7 +254,7 @@ var MapAttributeNginxPeerState = map[string]AttributeNginxPeerState{
 	"UP":          AttributeNginxPeerStateUP,
 }
 
-// AttributeNginxSlabSlotAllocationResult specifies the a value nginx.slab.slot.allocation.result attribute.
+// AttributeNginxSlabSlotAllocationResult specifies the value nginx.slab.slot.allocation.result attribute.
 type AttributeNginxSlabSlotAllocationResult int
 
 const (
@@ -280,7 +280,7 @@ var MapAttributeNginxSlabSlotAllocationResult = map[string]AttributeNginxSlabSlo
 	"SUCCESS": AttributeNginxSlabSlotAllocationResultSUCCESS,
 }
 
-// AttributeNginxSslHandshakeReason specifies the a value nginx.ssl.handshake.reason attribute.
+// AttributeNginxSslHandshakeReason specifies the value nginx.ssl.handshake.reason attribute.
 type AttributeNginxSslHandshakeReason int
 
 const (
@@ -314,7 +314,7 @@ var MapAttributeNginxSslHandshakeReason = map[string]AttributeNginxSslHandshakeR
 	"CERT_REJECTED":      AttributeNginxSslHandshakeReasonCERTREJECTED,
 }
 
-// AttributeNginxSslStatus specifies the a value nginx.ssl.status attribute.
+// AttributeNginxSslStatus specifies the value nginx.ssl.status attribute.
 type AttributeNginxSslStatus int
 
 const (
@@ -340,7 +340,7 @@ var MapAttributeNginxSslStatus = map[string]AttributeNginxSslStatus{
 	"REUSE":  AttributeNginxSslStatusREUSE,
 }
 
-// AttributeNginxSslVerifyFailureReason specifies the a value nginx.ssl.verify_failure.reason attribute.
+// AttributeNginxSslVerifyFailureReason specifies the value nginx.ssl.verify_failure.reason attribute.
 type AttributeNginxSslVerifyFailureReason int
 
 const (
@@ -378,7 +378,7 @@ var MapAttributeNginxSslVerifyFailureReason = map[string]AttributeNginxSslVerify
 	"OTHER":             AttributeNginxSslVerifyFailureReasonOTHER,
 }
 
-// AttributeNginxStatusRange specifies the a value nginx.status_range attribute.
+// AttributeNginxStatusRange specifies the value nginx.status_range attribute.
 type AttributeNginxStatusRange int
 
 const (
@@ -416,7 +416,7 @@ var MapAttributeNginxStatusRange = map[string]AttributeNginxStatusRange{
 	"5xx": AttributeNginxStatusRange5xx,
 }
 
-// AttributeNginxZoneType specifies the a value nginx.zone.type attribute.
+// AttributeNginxZoneType specifies the value nginx.zone.type attribute.
 type AttributeNginxZoneType int
 
 const (
@@ -440,6 +440,252 @@ func (av AttributeNginxZoneType) String() string {
 var MapAttributeNginxZoneType = map[string]AttributeNginxZoneType{
 	"SERVER":   AttributeNginxZoneTypeSERVER,
 	"LOCATION": AttributeNginxZoneTypeLOCATION,
+}
+
+var MetricsInfo = metricsInfo{
+	NginxCacheBytesRead: metricInfo{
+		Name: "nginx.cache.bytes_read",
+	},
+	NginxCacheMemoryLimit: metricInfo{
+		Name: "nginx.cache.memory.limit",
+	},
+	NginxCacheMemoryUsage: metricInfo{
+		Name: "nginx.cache.memory.usage",
+	},
+	NginxCacheResponses: metricInfo{
+		Name: "nginx.cache.responses",
+	},
+	NginxConfigReloads: metricInfo{
+		Name: "nginx.config.reloads",
+	},
+	NginxHTTPConnectionCount: metricInfo{
+		Name: "nginx.http.connection.count",
+	},
+	NginxHTTPConnections: metricInfo{
+		Name: "nginx.http.connections",
+	},
+	NginxHTTPLimitConnRequests: metricInfo{
+		Name: "nginx.http.limit_conn.requests",
+	},
+	NginxHTTPLimitReqRequests: metricInfo{
+		Name: "nginx.http.limit_req.requests",
+	},
+	NginxHTTPRequestCount: metricInfo{
+		Name: "nginx.http.request.count",
+	},
+	NginxHTTPRequestDiscarded: metricInfo{
+		Name: "nginx.http.request.discarded",
+	},
+	NginxHTTPRequestIo: metricInfo{
+		Name: "nginx.http.request.io",
+	},
+	NginxHTTPRequestProcessingCount: metricInfo{
+		Name: "nginx.http.request.processing.count",
+	},
+	NginxHTTPRequests: metricInfo{
+		Name: "nginx.http.requests",
+	},
+	NginxHTTPResponseCount: metricInfo{
+		Name: "nginx.http.response.count",
+	},
+	NginxHTTPResponseStatus: metricInfo{
+		Name: "nginx.http.response.status",
+	},
+	NginxHTTPResponses: metricInfo{
+		Name: "nginx.http.responses",
+	},
+	NginxHTTPUpstreamKeepaliveCount: metricInfo{
+		Name: "nginx.http.upstream.keepalive.count",
+	},
+	NginxHTTPUpstreamPeerConnectionCount: metricInfo{
+		Name: "nginx.http.upstream.peer.connection.count",
+	},
+	NginxHTTPUpstreamPeerCount: metricInfo{
+		Name: "nginx.http.upstream.peer.count",
+	},
+	NginxHTTPUpstreamPeerFails: metricInfo{
+		Name: "nginx.http.upstream.peer.fails",
+	},
+	NginxHTTPUpstreamPeerHeaderTime: metricInfo{
+		Name: "nginx.http.upstream.peer.header.time",
+	},
+	NginxHTTPUpstreamPeerHealthChecks: metricInfo{
+		Name: "nginx.http.upstream.peer.health_checks",
+	},
+	NginxHTTPUpstreamPeerIo: metricInfo{
+		Name: "nginx.http.upstream.peer.io",
+	},
+	NginxHTTPUpstreamPeerRequests: metricInfo{
+		Name: "nginx.http.upstream.peer.requests",
+	},
+	NginxHTTPUpstreamPeerResponseTime: metricInfo{
+		Name: "nginx.http.upstream.peer.response.time",
+	},
+	NginxHTTPUpstreamPeerResponses: metricInfo{
+		Name: "nginx.http.upstream.peer.responses",
+	},
+	NginxHTTPUpstreamPeerState: metricInfo{
+		Name: "nginx.http.upstream.peer.state",
+	},
+	NginxHTTPUpstreamPeerUnavailables: metricInfo{
+		Name: "nginx.http.upstream.peer.unavailables",
+	},
+	NginxHTTPUpstreamQueueLimit: metricInfo{
+		Name: "nginx.http.upstream.queue.limit",
+	},
+	NginxHTTPUpstreamQueueOverflows: metricInfo{
+		Name: "nginx.http.upstream.queue.overflows",
+	},
+	NginxHTTPUpstreamQueueUsage: metricInfo{
+		Name: "nginx.http.upstream.queue.usage",
+	},
+	NginxHTTPUpstreamZombieCount: metricInfo{
+		Name: "nginx.http.upstream.zombie.count",
+	},
+	NginxSlabPageFree: metricInfo{
+		Name: "nginx.slab.page.free",
+	},
+	NginxSlabPageLimit: metricInfo{
+		Name: "nginx.slab.page.limit",
+	},
+	NginxSlabPageUsage: metricInfo{
+		Name: "nginx.slab.page.usage",
+	},
+	NginxSlabPageUtilization: metricInfo{
+		Name: "nginx.slab.page.utilization",
+	},
+	NginxSlabSlotAllocations: metricInfo{
+		Name: "nginx.slab.slot.allocations",
+	},
+	NginxSlabSlotFree: metricInfo{
+		Name: "nginx.slab.slot.free",
+	},
+	NginxSlabSlotUsage: metricInfo{
+		Name: "nginx.slab.slot.usage",
+	},
+	NginxSslCertificateVerifyFailures: metricInfo{
+		Name: "nginx.ssl.certificate.verify_failures",
+	},
+	NginxSslHandshakes: metricInfo{
+		Name: "nginx.ssl.handshakes",
+	},
+	NginxStreamConnectionAccepted: metricInfo{
+		Name: "nginx.stream.connection.accepted",
+	},
+	NginxStreamConnectionDiscarded: metricInfo{
+		Name: "nginx.stream.connection.discarded",
+	},
+	NginxStreamConnectionProcessingCount: metricInfo{
+		Name: "nginx.stream.connection.processing.count",
+	},
+	NginxStreamIo: metricInfo{
+		Name: "nginx.stream.io",
+	},
+	NginxStreamSessionStatus: metricInfo{
+		Name: "nginx.stream.session.status",
+	},
+	NginxStreamUpstreamPeerConnectionCount: metricInfo{
+		Name: "nginx.stream.upstream.peer.connection.count",
+	},
+	NginxStreamUpstreamPeerConnectionTime: metricInfo{
+		Name: "nginx.stream.upstream.peer.connection.time",
+	},
+	NginxStreamUpstreamPeerConnections: metricInfo{
+		Name: "nginx.stream.upstream.peer.connections",
+	},
+	NginxStreamUpstreamPeerCount: metricInfo{
+		Name: "nginx.stream.upstream.peer.count",
+	},
+	NginxStreamUpstreamPeerFails: metricInfo{
+		Name: "nginx.stream.upstream.peer.fails",
+	},
+	NginxStreamUpstreamPeerHealthChecks: metricInfo{
+		Name: "nginx.stream.upstream.peer.health_checks",
+	},
+	NginxStreamUpstreamPeerIo: metricInfo{
+		Name: "nginx.stream.upstream.peer.io",
+	},
+	NginxStreamUpstreamPeerResponseTime: metricInfo{
+		Name: "nginx.stream.upstream.peer.response.time",
+	},
+	NginxStreamUpstreamPeerState: metricInfo{
+		Name: "nginx.stream.upstream.peer.state",
+	},
+	NginxStreamUpstreamPeerTtfbTime: metricInfo{
+		Name: "nginx.stream.upstream.peer.ttfb.time",
+	},
+	NginxStreamUpstreamPeerUnavailables: metricInfo{
+		Name: "nginx.stream.upstream.peer.unavailables",
+	},
+	NginxStreamUpstreamZombieCount: metricInfo{
+		Name: "nginx.stream.upstream.zombie.count",
+	},
+}
+
+type metricsInfo struct {
+	NginxCacheBytesRead                    metricInfo
+	NginxCacheMemoryLimit                  metricInfo
+	NginxCacheMemoryUsage                  metricInfo
+	NginxCacheResponses                    metricInfo
+	NginxConfigReloads                     metricInfo
+	NginxHTTPConnectionCount               metricInfo
+	NginxHTTPConnections                   metricInfo
+	NginxHTTPLimitConnRequests             metricInfo
+	NginxHTTPLimitReqRequests              metricInfo
+	NginxHTTPRequestCount                  metricInfo
+	NginxHTTPRequestDiscarded              metricInfo
+	NginxHTTPRequestIo                     metricInfo
+	NginxHTTPRequestProcessingCount        metricInfo
+	NginxHTTPRequests                      metricInfo
+	NginxHTTPResponseCount                 metricInfo
+	NginxHTTPResponseStatus                metricInfo
+	NginxHTTPResponses                     metricInfo
+	NginxHTTPUpstreamKeepaliveCount        metricInfo
+	NginxHTTPUpstreamPeerConnectionCount   metricInfo
+	NginxHTTPUpstreamPeerCount             metricInfo
+	NginxHTTPUpstreamPeerFails             metricInfo
+	NginxHTTPUpstreamPeerHeaderTime        metricInfo
+	NginxHTTPUpstreamPeerHealthChecks      metricInfo
+	NginxHTTPUpstreamPeerIo                metricInfo
+	NginxHTTPUpstreamPeerRequests          metricInfo
+	NginxHTTPUpstreamPeerResponseTime      metricInfo
+	NginxHTTPUpstreamPeerResponses         metricInfo
+	NginxHTTPUpstreamPeerState             metricInfo
+	NginxHTTPUpstreamPeerUnavailables      metricInfo
+	NginxHTTPUpstreamQueueLimit            metricInfo
+	NginxHTTPUpstreamQueueOverflows        metricInfo
+	NginxHTTPUpstreamQueueUsage            metricInfo
+	NginxHTTPUpstreamZombieCount           metricInfo
+	NginxSlabPageFree                      metricInfo
+	NginxSlabPageLimit                     metricInfo
+	NginxSlabPageUsage                     metricInfo
+	NginxSlabPageUtilization               metricInfo
+	NginxSlabSlotAllocations               metricInfo
+	NginxSlabSlotFree                      metricInfo
+	NginxSlabSlotUsage                     metricInfo
+	NginxSslCertificateVerifyFailures      metricInfo
+	NginxSslHandshakes                     metricInfo
+	NginxStreamConnectionAccepted          metricInfo
+	NginxStreamConnectionDiscarded         metricInfo
+	NginxStreamConnectionProcessingCount   metricInfo
+	NginxStreamIo                          metricInfo
+	NginxStreamSessionStatus               metricInfo
+	NginxStreamUpstreamPeerConnectionCount metricInfo
+	NginxStreamUpstreamPeerConnectionTime  metricInfo
+	NginxStreamUpstreamPeerConnections     metricInfo
+	NginxStreamUpstreamPeerCount           metricInfo
+	NginxStreamUpstreamPeerFails           metricInfo
+	NginxStreamUpstreamPeerHealthChecks    metricInfo
+	NginxStreamUpstreamPeerIo              metricInfo
+	NginxStreamUpstreamPeerResponseTime    metricInfo
+	NginxStreamUpstreamPeerState           metricInfo
+	NginxStreamUpstreamPeerTtfbTime        metricInfo
+	NginxStreamUpstreamPeerUnavailables    metricInfo
+	NginxStreamUpstreamZombieCount         metricInfo
+}
+
+type metricInfo struct {
+	Name string
 }
 
 type metricNginxCacheBytesRead struct {
@@ -3694,7 +3940,6 @@ func WithStartTime(startTime pcommon.Timestamp) MetricBuilderOption {
 		mb.startTime = startTime
 	})
 }
-
 func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, options ...MetricBuilderOption) *MetricsBuilder {
 	mb := &MetricsBuilder{
 		config:                                       mbc,
@@ -3841,7 +4086,7 @@ func WithStartTimeOverride(start pcommon.Timestamp) ResourceMetricsOption {
 func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	rm := pmetric.NewResourceMetrics()
 	ils := rm.ScopeMetrics().AppendEmpty()
-	ils.Scope().SetName("otelcol/nginxplusreceiver")
+	ils.Scope().SetName(ScopeName)
 	ils.Scope().SetVersion(mb.buildInfo.Version)
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
 	mb.metricNginxCacheBytesRead.emit(ils.Metrics())

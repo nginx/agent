@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	"go.opentelemetry.io/collector/component"
+
 	"go.uber.org/zap"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -34,7 +36,7 @@ const (
 	peerStateUnhealthy = "unhealthy"
 )
 
-type nginxPlusScraper struct {
+type NginxPlusScraper struct {
 	previousServerZoneResponses   map[string]ResponseStatuses
 	previousLocationZoneResponses map[string]ResponseStatuses
 	plusClient                    *plusapi.NginxClient
@@ -57,73 +59,46 @@ type ResponseStatuses struct {
 func newNginxPlusScraper(
 	settings receiver.Settings,
 	cfg *Config,
-) (*nginxPlusScraper, error) {
-	endpoint := strings.TrimPrefix(cfg.APIDetails.URL, "unix:")
+) *NginxPlusScraper {
 	logger := settings.Logger
 	logger.Info("Creating NGINX Plus scraper")
-
-	httpClient := http.DefaultClient
-	httpClient.Timeout = cfg.ClientConfig.Timeout
-
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
 	rb := mb.NewResourceBuilder()
 
-	if strings.HasPrefix(cfg.APIDetails.Listen, "unix:") {
-		httpClient = socketClient(strings.TrimPrefix(cfg.APIDetails.Listen, "unix:"))
+	return &NginxPlusScraper{
+		settings: settings,
+		cfg:      cfg,
+		mb:       mb,
+		rb:       rb,
+		logger:   settings.Logger,
+	}
+}
+
+func (nps *NginxPlusScraper) ID() component.ID {
+	return component.NewID(metadata.Type)
+}
+
+func (nps *NginxPlusScraper) Start(_ context.Context, _ component.Host) error {
+	endpoint := strings.TrimPrefix(nps.cfg.APIDetails.URL, "unix:")
+	httpClient := http.DefaultClient
+	httpClient.Timeout = nps.cfg.ClientConfig.Timeout
+
+	if strings.HasPrefix(nps.cfg.APIDetails.Listen, "unix:") {
+		httpClient = socketClient(strings.TrimPrefix(nps.cfg.APIDetails.Listen, "unix:"))
 	}
 
 	plusClient, err := plusapi.NewNginxClient(endpoint,
 		plusapi.WithMaxAPIVersion(), plusapi.WithHTTPClient(httpClient),
 	)
+	nps.plusClient = plusClient
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &nginxPlusScraper{
-		plusClient: plusClient,
-		settings:   settings,
-		cfg:        cfg,
-		mb:         mb,
-		rb:         rb,
-		logger:     settings.Logger,
-	}, nil
+	return nil
 }
 
-func (nps *nginxPlusScraper) createPreviousLocationZoneResponses(stats *plusapi.Stats) {
-	previousLocationZoneResponses := make(map[string]ResponseStatuses)
-	for lzName, lz := range stats.LocationZones {
-		respStatus := ResponseStatuses{
-			oneHundredStatusRange:   int64(lz.Responses.Responses1xx),
-			twoHundredStatusRange:   int64(lz.Responses.Responses2xx),
-			threeHundredStatusRange: int64(lz.Responses.Responses3xx),
-			fourHundredStatusRange:  int64(lz.Responses.Responses4xx),
-			fiveHundredStatusRange:  int64(lz.Responses.Responses5xx),
-		}
-
-		previousLocationZoneResponses[lzName] = respStatus
-	}
-
-	nps.previousLocationZoneResponses = previousLocationZoneResponses
-}
-
-func (nps *nginxPlusScraper) createPreviousServerZoneResponses(stats *plusapi.Stats) {
-	previousServerZoneResponses := make(map[string]ResponseStatuses)
-	for szName, sz := range stats.ServerZones {
-		respStatus := ResponseStatuses{
-			oneHundredStatusRange:   int64(sz.Responses.Responses1xx),
-			twoHundredStatusRange:   int64(sz.Responses.Responses2xx),
-			threeHundredStatusRange: int64(sz.Responses.Responses3xx),
-			fourHundredStatusRange:  int64(sz.Responses.Responses4xx),
-			fiveHundredStatusRange:  int64(sz.Responses.Responses5xx),
-		}
-
-		previousServerZoneResponses[szName] = respStatus
-	}
-
-	nps.previousServerZoneResponses = previousServerZoneResponses
-}
-
-func (nps *nginxPlusScraper) scrape(ctx context.Context) (pmetric.Metrics, error) {
+func (nps *NginxPlusScraper) Scrape(ctx context.Context) (pmetric.Metrics, error) {
 	// nps.init.Do is ran only once, it is only ran the first time scrape is called to set the previous responses
 	// metric value
 	nps.init.Do(func() {
@@ -151,7 +126,45 @@ func (nps *nginxPlusScraper) scrape(ctx context.Context) (pmetric.Metrics, error
 	return nps.mb.Emit(metadata.WithResource(nps.rb.Emit())), nil
 }
 
-func (nps *nginxPlusScraper) recordMetrics(stats *plusapi.Stats) {
+func (nps *NginxPlusScraper) Shutdown(ctx context.Context) error {
+	return nil
+}
+
+func (nps *NginxPlusScraper) createPreviousLocationZoneResponses(stats *plusapi.Stats) {
+	previousLocationZoneResponses := make(map[string]ResponseStatuses)
+	for lzName, lz := range stats.LocationZones {
+		respStatus := ResponseStatuses{
+			oneHundredStatusRange:   int64(lz.Responses.Responses1xx),
+			twoHundredStatusRange:   int64(lz.Responses.Responses2xx),
+			threeHundredStatusRange: int64(lz.Responses.Responses3xx),
+			fourHundredStatusRange:  int64(lz.Responses.Responses4xx),
+			fiveHundredStatusRange:  int64(lz.Responses.Responses5xx),
+		}
+
+		previousLocationZoneResponses[lzName] = respStatus
+	}
+
+	nps.previousLocationZoneResponses = previousLocationZoneResponses
+}
+
+func (nps *NginxPlusScraper) createPreviousServerZoneResponses(stats *plusapi.Stats) {
+	previousServerZoneResponses := make(map[string]ResponseStatuses)
+	for szName, sz := range stats.ServerZones {
+		respStatus := ResponseStatuses{
+			oneHundredStatusRange:   int64(sz.Responses.Responses1xx),
+			twoHundredStatusRange:   int64(sz.Responses.Responses2xx),
+			threeHundredStatusRange: int64(sz.Responses.Responses3xx),
+			fourHundredStatusRange:  int64(sz.Responses.Responses4xx),
+			fiveHundredStatusRange:  int64(sz.Responses.Responses5xx),
+		}
+
+		previousServerZoneResponses[szName] = respStatus
+	}
+
+	nps.previousServerZoneResponses = previousServerZoneResponses
+}
+
+func (nps *NginxPlusScraper) recordMetrics(stats *plusapi.Stats) {
 	now := pcommon.NewTimestampFromTime(time.Now())
 
 	// NGINX config reloads
@@ -193,7 +206,7 @@ func (nps *nginxPlusScraper) recordMetrics(stats *plusapi.Stats) {
 	nps.recordStreamMetrics(stats, now)
 }
 
-func (nps *nginxPlusScraper) recordStreamMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
+func (nps *NginxPlusScraper) recordStreamMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
 	for name, streamServerZone := range stats.StreamServerZones {
 		nps.mb.RecordNginxStreamIoDataPoint(
 			now,
@@ -437,7 +450,7 @@ func (nps *nginxPlusScraper) recordStreamMetrics(stats *plusapi.Stats, now pcomm
 	}
 }
 
-func (nps *nginxPlusScraper) recordSSLMetrics(now pcommon.Timestamp, stats *plusapi.Stats) {
+func (nps *NginxPlusScraper) recordSSLMetrics(now pcommon.Timestamp, stats *plusapi.Stats) {
 	nps.mb.RecordNginxSslHandshakesDataPoint(
 		now,
 		int64(stats.SSL.HandshakesFailed),
@@ -503,7 +516,7 @@ func (nps *nginxPlusScraper) recordSSLMetrics(now pcommon.Timestamp, stats *plus
 	)
 }
 
-func (nps *nginxPlusScraper) recordSlabPageMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
+func (nps *NginxPlusScraper) recordSlabPageMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
 	for name, slab := range stats.Slabs {
 		nps.mb.RecordNginxSlabPageFreeDataPoint(now, int64(slab.Pages.Free), name)
 		nps.mb.RecordNginxSlabPageUsageDataPoint(now, int64(slab.Pages.Used), name)
@@ -534,7 +547,7 @@ func (nps *nginxPlusScraper) recordSlabPageMetrics(stats *plusapi.Stats, now pco
 	}
 }
 
-func (nps *nginxPlusScraper) recordHTTPUpstreamPeerMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
+func (nps *NginxPlusScraper) recordHTTPUpstreamPeerMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
 	for name, upstream := range stats.Upstreams {
 		nps.mb.RecordNginxHTTPUpstreamKeepaliveCountDataPoint(now, int64(upstream.Keepalive), upstream.Zone, name)
 
@@ -803,7 +816,7 @@ func (nps *nginxPlusScraper) recordHTTPUpstreamPeerMetrics(stats *plusapi.Stats,
 	}
 }
 
-func (nps *nginxPlusScraper) recordServerZoneMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
+func (nps *NginxPlusScraper) recordServerZoneMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
 	for szName, sz := range stats.ServerZones {
 		nps.mb.RecordNginxHTTPRequestIoDataPoint(
 			now,
@@ -838,7 +851,7 @@ func (nps *nginxPlusScraper) recordServerZoneMetrics(stats *plusapi.Stats, now p
 
 // Duplicate of recordLocationZoneHTTPMetrics but same function can not be used due to plusapi.ServerZone
 // nolint: dupl
-func (nps *nginxPlusScraper) recordServerZoneHTTPMetrics(sz plusapi.ServerZone, szName string, now pcommon.Timestamp) {
+func (nps *NginxPlusScraper) recordServerZoneHTTPMetrics(sz plusapi.ServerZone, szName string, now pcommon.Timestamp) {
 	nps.mb.RecordNginxHTTPResponseStatusDataPoint(now, int64(sz.Responses.Responses1xx),
 		metadata.AttributeNginxStatusRange1xx,
 		szName,
@@ -908,7 +921,7 @@ func (nps *nginxPlusScraper) recordServerZoneHTTPMetrics(sz plusapi.ServerZone, 
 	nps.previousServerZoneResponses[szName] = respStatus
 }
 
-func (nps *nginxPlusScraper) recordLocationZoneMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
+func (nps *NginxPlusScraper) recordLocationZoneMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
 	for lzName, lz := range stats.LocationZones {
 		nps.mb.RecordNginxHTTPRequestIoDataPoint(
 			now,
@@ -943,7 +956,7 @@ func (nps *nginxPlusScraper) recordLocationZoneMetrics(stats *plusapi.Stats, now
 
 // Duplicate of recordServerZoneHTTPMetrics but same function can not be used due to plusapi.LocationZone
 // nolint: dupl
-func (nps *nginxPlusScraper) recordLocationZoneHTTPMetrics(lz plusapi.LocationZone,
+func (nps *NginxPlusScraper) recordLocationZoneHTTPMetrics(lz plusapi.LocationZone,
 	lzName string, now pcommon.Timestamp,
 ) {
 	nps.mb.RecordNginxHTTPResponseStatusDataPoint(now, int64(lz.Responses.Responses1xx),
@@ -1015,7 +1028,7 @@ func (nps *nginxPlusScraper) recordLocationZoneHTTPMetrics(lz plusapi.LocationZo
 	nps.previousLocationZoneResponses[lzName] = respStatus
 }
 
-func (nps *nginxPlusScraper) recordHTTPLimitMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
+func (nps *NginxPlusScraper) recordHTTPLimitMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
 	for name, limitConnection := range stats.HTTPLimitConnections {
 		nps.mb.RecordNginxHTTPLimitConnRequestsDataPoint(
 			now,
@@ -1071,7 +1084,7 @@ func (nps *nginxPlusScraper) recordHTTPLimitMetrics(stats *plusapi.Stats, now pc
 	}
 }
 
-func (nps *nginxPlusScraper) recordCacheMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
+func (nps *NginxPlusScraper) recordCacheMetrics(stats *plusapi.Stats, now pcommon.Timestamp) {
 	for name, cache := range stats.Caches {
 		nps.mb.RecordNginxCacheBytesReadDataPoint(
 			now,
@@ -1172,10 +1185,6 @@ func socketClient(socketPath string) *http.Client {
 			},
 		},
 	}
-}
-
-func (nps *nginxPlusScraper) Shutdown(ctx context.Context) error {
-	return nil
 }
 
 // nolint: revive

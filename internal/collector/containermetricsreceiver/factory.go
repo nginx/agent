@@ -9,10 +9,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/scraper/cpuscraper"
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/scraper/memoryscraper"
-	"go.opentelemetry.io/collector/scraper"
 
+	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/scraper/cpuscraper"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/receiver"
@@ -46,31 +45,11 @@ func createMetricsReceiver(
 		return nil, errors.New("cast to metrics receiver config failed")
 	}
 
-	cpuScraper := cpuscraper.NewScraper(params, cpuscraper.NewConfig(cfg))
-	cpuScraperMetrics, cpuScraperMetricsError := scraper.NewMetrics(
-		cpuScraper.Scrape,
-		scraper.WithStart(cpuScraper.Start),
-		scraper.WithShutdown(cpuScraper.Shutdown),
-	)
-	if cpuScraperMetricsError != nil {
-		return nil, cpuScraperMetricsError
-	}
-
-	memoryScraper := memoryscraper.NewScraper(params, memoryscraper.NewConfig(cfg))
-	memoryScraperMetrics, memoryScraperMetricsError := scraper.NewMetrics(
-		memoryScraper.Scrape,
-		scraper.WithStart(memoryScraper.Start),
-		scraper.WithShutdown(memoryScraper.Shutdown),
-	)
-	if memoryScraperMetricsError != nil {
-		return nil, memoryScraperMetricsError
-	}
-
 	return scraperhelper.NewMetricsController(
 		&cfg.ControllerConfig,
 		params,
 		cons,
-		scraperhelper.AddScraper(metadata.Type, cpuScraperMetrics),
-		scraperhelper.AddScraper(metadata.Type, memoryScraperMetrics),
+		scraperhelper.AddFactoryWithConfig(cpuscraper.NewFactory(), cpuscraper.NewConfig(cfg)),
+		scraperhelper.AddFactoryWithConfig(memoryscraper.NewFactory(), memoryscraper.NewConfig(cfg)),
 	)
 }

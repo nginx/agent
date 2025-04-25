@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/nginx/agent/v3/internal/datasource/host"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -19,6 +18,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/nginx/agent/v3/internal/datasource/host"
 
 	"github.com/nginx/agent/v3/internal/datasource/file"
 

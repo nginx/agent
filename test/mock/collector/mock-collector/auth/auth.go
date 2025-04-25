@@ -10,7 +10,7 @@ import (
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/extension"
-	"go.opentelemetry.io/collector/extension/auth"
+	auth "go.opentelemetry.io/collector/extension/extensionauth"
 	"go.uber.org/zap"
 )
 

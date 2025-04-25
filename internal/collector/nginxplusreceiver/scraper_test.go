@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"go.opentelemetry.io/collector/component/componenttest"
+
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest/pmetrictest"
@@ -25,12 +27,12 @@ func TestScraper(t *testing.T) {
 	cfg, ok := createDefaultConfig().(*Config)
 	assert.True(t, ok)
 	cfg.APIDetails.URL = nginxPlusMock.URL + "/api"
-	require.NoError(t, component.ValidateConfig(cfg))
 
-	scraper, err := newNginxPlusScraper(receivertest.NewNopSettings(), cfg)
+	scraper := newNginxPlusScraper(receivertest.NewNopSettings(component.Type{}), cfg)
+	err := scraper.Start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
 
-	_, err = scraper.scrape(context.Background())
+	_, err = scraper.Scrape(context.Background())
 	require.NoError(t, err)
 
 	// To test the nginx.http.response.count metric calculation we need to set the previousLocationZoneResponses &
@@ -56,7 +58,7 @@ func TestScraper(t *testing.T) {
 		},
 	}
 
-	actualMetrics, err := scraper.scrape(context.Background())
+	actualMetrics, err := scraper.Scrape(context.Background())
 	require.NoError(t, err)
 
 	expectedFile := filepath.Join("testdata", "expected.yaml")

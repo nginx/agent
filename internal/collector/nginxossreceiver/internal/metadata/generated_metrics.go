@@ -12,7 +12,7 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 )
 
-// AttributeNginxConnectionsOutcome specifies the a value nginx.connections.outcome attribute.
+// AttributeNginxConnectionsOutcome specifies the value nginx.connections.outcome attribute.
 type AttributeNginxConnectionsOutcome int
 
 const (
@@ -54,7 +54,7 @@ var MapAttributeNginxConnectionsOutcome = map[string]AttributeNginxConnectionsOu
 	"WAITING":  AttributeNginxConnectionsOutcomeWAITING,
 }
 
-// AttributeNginxStatusRange specifies the a value nginx.status_range attribute.
+// AttributeNginxStatusRange specifies the value nginx.status_range attribute.
 type AttributeNginxStatusRange int
 
 const (
@@ -90,6 +90,36 @@ var MapAttributeNginxStatusRange = map[string]AttributeNginxStatusRange{
 	"3xx": AttributeNginxStatusRange3xx,
 	"4xx": AttributeNginxStatusRange4xx,
 	"5xx": AttributeNginxStatusRange5xx,
+}
+
+var MetricsInfo = metricsInfo{
+	NginxHTTPConnectionCount: metricInfo{
+		Name: "nginx.http.connection.count",
+	},
+	NginxHTTPConnections: metricInfo{
+		Name: "nginx.http.connections",
+	},
+	NginxHTTPRequestCount: metricInfo{
+		Name: "nginx.http.request.count",
+	},
+	NginxHTTPRequests: metricInfo{
+		Name: "nginx.http.requests",
+	},
+	NginxHTTPResponseCount: metricInfo{
+		Name: "nginx.http.response.count",
+	},
+}
+
+type metricsInfo struct {
+	NginxHTTPConnectionCount metricInfo
+	NginxHTTPConnections     metricInfo
+	NginxHTTPRequestCount    metricInfo
+	NginxHTTPRequests        metricInfo
+	NginxHTTPResponseCount   metricInfo
+}
+
+type metricInfo struct {
+	Name string
 }
 
 type metricNginxHTTPConnectionCount struct {
@@ -381,7 +411,6 @@ func WithStartTime(startTime pcommon.Timestamp) MetricBuilderOption {
 		mb.startTime = startTime
 	})
 }
-
 func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, options ...MetricBuilderOption) *MetricsBuilder {
 	mb := &MetricsBuilder{
 		config:                         mbc,
@@ -474,7 +503,7 @@ func WithStartTimeOverride(start pcommon.Timestamp) ResourceMetricsOption {
 func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	rm := pmetric.NewResourceMetrics()
 	ils := rm.ScopeMetrics().AppendEmpty()
-	ils.Scope().SetName("otelcol/nginxreceiver")
+	ils.Scope().SetName(ScopeName)
 	ils.Scope().SetVersion(mb.buildInfo.Version)
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
 	mb.metricNginxHTTPConnectionCount.emit(ils.Metrics())

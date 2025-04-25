@@ -1,8 +1,15 @@
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
+
 package memoryscraper
 
 import (
 	"context"
 	"time"
+
+	"go.opentelemetry.io/collector/scraper"
 
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/scraper/memoryscraper/internal/cgroup"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -11,21 +18,21 @@ import (
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/scraper/memoryscraper/internal/metadata"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pmetric"
-	"go.opentelemetry.io/collector/receiver"
 )
 
-const BasePath = "/sys/fs/cgroup/"
+var basePath = "/sys/fs/cgroup/"
 
 type CPUScraper struct {
 	cfg          *Config
 	mb           *metadata.MetricsBuilder
 	rb           *metadata.ResourceBuilder
-	settings     receiver.Settings
 	memorySource *cgroup.MemorySource
+	settings     scraper.Settings
 }
 
 func NewScraper(
-	settings receiver.Settings,
+	_ context.Context,
+	settings scraper.Settings,
 	cfg *Config,
 ) *CPUScraper {
 	logger := settings.Logger
@@ -42,29 +49,19 @@ func NewScraper(
 	}
 }
 
-func (s *CPUScraper) ID() component.ID {
-	return component.NewID(metadata.Type)
-}
-
 func (s *CPUScraper) Start(_ context.Context, _ component.Host) error {
 	s.settings.Logger.Info("Starting container memory scraper")
-	s.memorySource = cgroup.NewMemorySource(BasePath)
+	s.memorySource = cgroup.NewMemorySource(basePath)
+
 	return nil
 }
 
-func (s *CPUScraper) Shutdown(_ context.Context) error {
-	return nil
-}
-
-func (s *CPUScraper) Scrape(context.Context) (pmetric.Metrics, error) {
+func (s *CPUScraper) Scrape(ctx context.Context) (pmetric.Metrics, error) {
 	s.settings.Logger.Debug("Scraping container memory metrics")
-	if s.memorySource == nil {
-		s.memorySource = cgroup.NewMemorySource(BasePath)
-	}
 
 	now := pcommon.NewTimestampFromTime(time.Now())
 
-	stats, err := s.memorySource.VirtualMemoryStatWithContext(context.Background())
+	stats, err := s.memorySource.VirtualMemoryStatWithContext(ctx)
 	if err != nil {
 		return pmetric.NewMetrics(), err
 	}

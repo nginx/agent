@@ -9,8 +9,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer/emit"
-
 	"go.uber.org/zap"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/entry"
@@ -38,21 +36,24 @@ func (i *Input) Stop() error {
 	return i.fileConsumer.Stop()
 }
 
-func (i *Input) emit(ctx context.Context, token emit.Token) error {
-	if len(token.Body) == 0 {
-		return nil
-	}
+func (i *Input) emit(ctx context.Context, tokens [][]byte, attributes map[string]any, lastRecordNumber int64) error {
+	for _, token := range tokens {
+		ent, err := i.NewEntry(i.toBody(token))
+		if err != nil {
+			return fmt.Errorf("create entry: %w", err)
+		}
 
-	ent, err := i.NewEntry(i.toBody(token.Body))
-	if err != nil {
-		return fmt.Errorf("create entry: %w", err)
-	}
+		for k, v := range attributes {
+			if setError := ent.Set(entry.NewAttributeField(k), v); setError != nil {
+				i.Logger().Error("Set attribute", zap.Error(setError))
+			}
+		}
 
-	for k, v := range token.Attributes {
-		if setError := ent.Set(entry.NewAttributeField(k), v); setError != nil {
-			i.Logger().Error("Set attribute", zap.Error(setError))
+		writeError := i.Write(ctx, ent)
+		if writeError != nil {
+			return writeError
 		}
 	}
 
-	return i.Write(ctx, ent)
+	return nil
 }

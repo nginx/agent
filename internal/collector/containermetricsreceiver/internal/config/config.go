@@ -7,13 +7,10 @@ package config
 
 import (
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/receiver/scraperhelper"
-
-	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/metadata"
+	"go.opentelemetry.io/collector/scraper/scraperhelper"
 )
 
 type Config struct {
-	MetricsBuilderConfig           metadata.MetricsBuilderConfig `mapstructure:",squash"`
 	scraperhelper.ControllerConfig `mapstructure:",squash"`
 }
 
@@ -21,7 +18,6 @@ type Config struct {
 func CreateDefaultConfig() component.Config {
 	cfg := scraperhelper.NewDefaultControllerConfig()
 	return &Config{
-		ControllerConfig:     cfg,
-		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
+		ControllerConfig: cfg,
 	}
 }

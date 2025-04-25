@@ -40,6 +40,8 @@ exclude:
     - ^test/.*$
     - app.go          # app.go and main.go should be tested by integration tests.
     - main.go
+    # ignore metadata generated files
+    - metadata/generated_.*\.go
     # ignore wrappers around gopsutil
     - internal/datasource/host
     - internal/watcher/process

@@ -10,13 +10,14 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/confmap/confmaptest"
-	"go.opentelemetry.io/collector/consumer/consumertest"
-	"go.opentelemetry.io/collector/receiver"
-	"go.opentelemetry.io/collector/receiver/receivertest"
+	"go.opentelemetry.io/collector/scraper"
+	"go.opentelemetry.io/collector/scraper/scrapertest"
 )
 
+var typ = component.MustNewType("memory")
+
 func TestComponentFactoryType(t *testing.T) {
-	require.Equal(t, "memory", NewFactory().Type().String())
+	require.Equal(t, typ, NewFactory().Type())
 }
 
 func TestComponentConfigStruct(t *testing.T) {
@@ -27,14 +28,14 @@ func TestComponentLifecycle(t *testing.T) {
 	factory := NewFactory()
 
 	tests := []struct {
+		createFn func(ctx context.Context, set scraper.Settings, cfg component.Config) (component.Component, error)
 		name     string
-		createFn func(ctx context.Context, set receiver.Settings, cfg component.Config) (component.Component, error)
 	}{
 
 		{
 			name: "metrics",
-			createFn: func(ctx context.Context, set receiver.Settings, cfg component.Config) (component.Component, error) {
-				return factory.CreateMetrics(ctx, set, cfg, consumertest.NewNop())
+			createFn: func(ctx context.Context, set scraper.Settings, cfg component.Config) (component.Component, error) {
+				return factory.CreateMetrics(ctx, set, cfg)
 			},
 		},
 	}
@@ -48,19 +49,19 @@ func TestComponentLifecycle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name+"-shutdown", func(t *testing.T) {
-			c, err := tt.createFn(context.Background(), receivertest.NewNopSettings(), cfg)
+			c, err := tt.createFn(context.Background(), scrapertest.NewNopSettings(typ), cfg)
 			require.NoError(t, err)
 			err = c.Shutdown(context.Background())
 			require.NoError(t, err)
 		})
 		t.Run(tt.name+"-lifecycle", func(t *testing.T) {
-			firstRcvr, err := tt.createFn(context.Background(), receivertest.NewNopSettings(), cfg)
+			firstRcvr, err := tt.createFn(context.Background(), scrapertest.NewNopSettings(typ), cfg)
 			require.NoError(t, err)
 			host := componenttest.NewNopHost()
 			require.NoError(t, err)
 			require.NoError(t, firstRcvr.Start(context.Background(), host))
 			require.NoError(t, firstRcvr.Shutdown(context.Background()))
-			secondRcvr, err := tt.createFn(context.Background(), receivertest.NewNopSettings(), cfg)
+			secondRcvr, err := tt.createFn(context.Background(), scrapertest.NewNopSettings(typ), cfg)
 			require.NoError(t, err)
 			require.NoError(t, secondRcvr.Start(context.Background(), host))
 			require.NoError(t, secondRcvr.Shutdown(context.Background()))

@@ -18,9 +18,9 @@ import (
 )
 
 const (
-	V1CpuStatFile = "cpu/cpu.stat"
-	V1UserKey     = "user"
-	V1SystemKey   = "system"
+	V1CpuacctStatFile = "cpuacct/cpuacct.stat"
+	V1UserKey         = "user"
+	V1SystemKey       = "system"
 
 	V2CpuStat   = "cpu.stat"
 	V2UserKey   = "user_usec"
@@ -88,7 +88,7 @@ func (cs *CPUSource) collectCPUStats() (ContainerCPUStats, error) {
 	}
 
 	if !cs.isCgroupV2 { // cgroup v1
-		filepath = path.Join(cs.basePath, V1CpuStatFile)
+		filepath = path.Join(cs.basePath, V1CpuacctStatFile)
 		userKey = V1UserKey
 		sysKey = V1SystemKey
 		convertUsage = func(usage float64) float64 {
@@ -146,13 +146,13 @@ func (cs *CPUSource) cpuUsageTimes(filePath, userKey, systemKey string) (*Contai
 		case userKey:
 			user, parseErr := strconv.ParseFloat(fields[1], 64)
 			if parseErr != nil {
-				return cpuTimes, err
+				return cpuTimes, parseErr
 			}
 			cpuTimes.userUsage = user
 		case systemKey:
 			system, parseErr := strconv.ParseFloat(fields[1], 64)
 			if parseErr != nil {
-				return cpuTimes, err
+				return cpuTimes, parseErr
 			}
 			cpuTimes.systemUsage = system
 		}

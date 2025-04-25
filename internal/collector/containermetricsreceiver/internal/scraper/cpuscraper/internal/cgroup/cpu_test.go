@@ -15,27 +15,60 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPercentages(t *testing.T) {
+func TestCollectCPUStats(t *testing.T) {
 	_, filename, _, _ := runtime.Caller(0)
 	localDirectory := path.Dir(filename)
 
 	tests := []struct {
+		errorType error
 		name      string
 		basePath  string
 		cpuStat   ContainerCPUStats
-		errorType error
 	}{
-		{"v1 good data", localDirectory + "/../testdata/good_data/v1/", ContainerCPUStats{User: 0.6712570862198262, System: 0.20429056808044366}, nil},
-		{"v1 bad data", localDirectory + "/../testdata/bad_data/v1/", ContainerCPUStats{}, &strconv.NumError{}},
-		{"v2 good data", localDirectory + "/../testdata/good_data/v2/", ContainerCPUStats{User: 4.627063395919899, System: 4.250076104937527}, nil},
-		{"v2 bad data", localDirectory + "/../testdata/bad_data/v2/", ContainerCPUStats{}, &strconv.NumError{}},
-		{"no file", localDirectory + "/unknown/", ContainerCPUStats{}, &os.PathError{}},
+		{
+			name:     "Test 1: v1 good data",
+			basePath: localDirectory + "/../../../testdata/good_data/v1/",
+			cpuStat: ContainerCPUStats{
+				NumberOfLogicalCPUs: 2,
+				User:                0.006712570862198262,
+				System:              0.0020429056808044366,
+			},
+			errorType: nil,
+		},
+		{
+			name:      "Test 2: v1 bad data",
+			basePath:  localDirectory + "/../../../testdata/bad_data/v1/",
+			cpuStat:   ContainerCPUStats{},
+			errorType: &strconv.NumError{},
+		},
+		{
+			name:     "Test 3: v2 good data",
+			basePath: localDirectory + "/../../../testdata/good_data/v2/",
+			cpuStat: ContainerCPUStats{
+				NumberOfLogicalCPUs: 2,
+				User:                0.04627063395919899,
+				System:              0.04250076104937527,
+			},
+			errorType: nil,
+		},
+		{
+			name:      "Test 4: v2 bad data",
+			basePath:  localDirectory + "/../../../testdata/bad_data/v2/",
+			cpuStat:   ContainerCPUStats{},
+			errorType: &strconv.NumError{},
+		},
+		{
+			name:      "Test 5: no file",
+			basePath:  localDirectory + "/unknown/",
+			cpuStat:   ContainerCPUStats{},
+			errorType: &os.PathError{},
+		},
 	}
 
 	GetNumberOfCores = func() int {
 		return 2
 	}
-	CPUStatsPath = localDirectory + "/../testdata/proc/stat"
+	CPUStatsPath = localDirectory + "/../../../testdata/proc/stat"
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {

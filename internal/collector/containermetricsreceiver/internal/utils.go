@@ -8,13 +8,10 @@ package internal
 import (
 	"bufio"
 	"io"
-	"math"
 	"os"
 	"strconv"
 	"strings"
 )
-
-var pageSize = int64(os.Getpagesize())
 
 type Source interface {
 	Stats() float64
@@ -77,9 +74,4 @@ func IsCgroupV2(basePath string) bool {
 	}
 
 	return false
-}
-
-func GetV1DefaultMaxValue() string {
-	maxInt := int64(math.MaxInt64)
-	return strconv.FormatInt((maxInt/pageSize)*pageSize, 10)
 }

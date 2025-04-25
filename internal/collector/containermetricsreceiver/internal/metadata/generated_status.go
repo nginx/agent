@@ -8,7 +8,7 @@ import (
 
 var (
 	Type      = component.MustNewType("containermetrics")
-	ScopeName = "otelcol/containermetrics"
+	ScopeName = "github.com/nginx/agent/v3/internal/collector/containermetricsreceiver"
 )
 
 const (

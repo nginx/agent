@@ -7,7 +7,7 @@ package memoryscraper
 
 import (
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/config"
-	"go.opentelemetry.io/collector/receiver/scraperhelper"
+	"go.opentelemetry.io/collector/scraper/scraperhelper"
 
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/scraper/memoryscraper/internal/metadata"
 )

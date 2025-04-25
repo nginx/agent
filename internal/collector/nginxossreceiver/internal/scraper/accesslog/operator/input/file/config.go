@@ -14,7 +14,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/model"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/decode"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/helper"
@@ -62,10 +61,6 @@ func (c Config) Build(set component.TelemetrySettings) (operator.Operator, error
 	}
 
 	toBody := grokParseFunction(logger, compiledGrok)
-
-	if decode.IsNop(c.Config.Encoding) {
-		toBody = copyFunction(logger, compiledGrok)
-	}
 
 	input := &Input{
 		InputOperator: inputOperator,
