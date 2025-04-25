@@ -23,7 +23,7 @@ func TestFromCommandProto(t *testing.T) {
 				Server: &mpi.ServerSettings{
 					Host: getAgentConfig().Command.Server.Host,
 					Port: int32(getAgentConfig().Command.Server.Port),
-					Type: 1,
+					Type: mpi.ServerSettings_SERVER_SETTINGS_TYPE_GRPC,
 				},
 				Auth: &mpi.AuthSettings{},
 				Tls: &mpi.TLSSettings{
@@ -64,7 +64,7 @@ func TestFromCommandProto(t *testing.T) {
 				Server: &mpi.ServerSettings{
 					Host: getAgentConfig().Command.Server.Host,
 					Port: int32(getAgentConfig().Command.Server.Port),
-					Type: 1, // gRPC
+					Type: mpi.ServerSettings_SERVER_SETTINGS_TYPE_GRPC,
 				},
 				Tls: &mpi.TLSSettings{
 					Cert:       getAgentConfig().Command.TLS.Cert,
@@ -86,7 +86,7 @@ func TestFromCommandProto(t *testing.T) {
 				Server: &mpi.ServerSettings{
 					Host: getAgentConfig().Command.Server.Host,
 					Port: int32(getAgentConfig().Command.Server.Port),
-					Type: 1, // Change to HTTP when supported
+					Type: mpi.ServerSettings_SERVER_SETTINGS_TYPE_GRPC,
 				},
 				Auth: &mpi.AuthSettings{},
 			},
@@ -132,7 +132,7 @@ func TestToCommandProto(t *testing.T) {
 				Server: &mpi.ServerSettings{
 					Host: getAgentConfig().Command.Server.Host,
 					Port: int32(getAgentConfig().Command.Server.Port),
-					Type: 2,
+					Type: mpi.ServerSettings_SERVER_SETTINGS_TYPE_GRPC,
 				},
 				Auth: &mpi.AuthSettings{},
 				Tls: &mpi.TLSSettings{
@@ -174,7 +174,7 @@ func TestToCommandProto(t *testing.T) {
 				Server: &mpi.ServerSettings{
 					Host: getAgentConfig().Command.Server.Host,
 					Port: int32(getAgentConfig().Command.Server.Port),
-					Type: 2, // gRPC
+					Type: mpi.ServerSettings_SERVER_SETTINGS_TYPE_GRPC,
 				},
 				Tls: &mpi.TLSSettings{
 					Cert:       getAgentConfig().Command.TLS.Cert,
@@ -196,7 +196,7 @@ func TestToCommandProto(t *testing.T) {
 				Server: &mpi.ServerSettings{
 					Host: getAgentConfig().Command.Server.Host,
 					Port: int32(getAgentConfig().Command.Server.Port),
-					Type: 2,
+					Type: mpi.ServerSettings_SERVER_SETTINGS_TYPE_GRPC,
 				},
 				Auth: &mpi.AuthSettings{},
 			},
