@@ -228,6 +228,7 @@ func TestGrpc_ConfigApply(t *testing.T) {
 
 		performConfigApply(t, nginxInstanceID)
 
+		time.Sleep(5 * time.Second)
 		responses = getManagementPlaneResponses(t, 2)
 		t.Logf("Config apply responses: %v", responses)
 
