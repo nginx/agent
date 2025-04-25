@@ -26,6 +26,8 @@ const (
 	directoryPermissions = 0o700
 )
 
+var logOrigin = slog.String("log_origin", "main.go")
+
 var (
 	sleepDuration   = flag.Duration("sleepDuration", defaultSleepDuration, "duration between changes in health")
 	configDirectory = flag.String("configDirectory", "", "set the directory where the config files are stored")
@@ -41,12 +43,12 @@ func main() {
 	agentConfig := types.AgentConfig()
 	grpcHost, grpcPort, err := net.SplitHostPort(*grpcAddress)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to read host and port", "error", err)
+		slog.ErrorContext(ctx, "Failed to read host and port", "error", err, logOrigin)
 		os.Exit(1)
 	}
 	portInt, err := strconv.Atoi(grpcPort)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to convert port", "error", err)
+		slog.ErrorContext(ctx, "Failed to convert port", "error", err, logOrigin)
 		os.Exit(1)
 	}
 
@@ -67,33 +69,33 @@ func main() {
 		defaultConfigDirectory, configDirErr := generateDefaultConfigDirectory()
 		configDirectory = &defaultConfigDirectory
 		if configDirErr != nil {
-			slog.ErrorContext(ctx, "Failed to create default config directory", "error", err)
+			slog.ErrorContext(ctx, "Failed to create default config directory", "error", err, logOrigin)
 			os.Exit(1)
 		}
 	}
 
-	slog.DebugContext(ctx, "Config directory", "directory", *configDirectory)
+	slog.DebugContext(ctx, "Config directory", "directory", *configDirectory, logOrigin)
 
 	_, err = grpc.NewMockManagementServer(*apiAddress, agentConfig, configDirectory)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to start mock management server", "error", err)
+		slog.ErrorContext(ctx, "Failed to start mock management server", "error", err, logOrigin)
 		os.Exit(1)
 	}
 	<-ctx.Done()
 }
 
 func generateDefaultConfigDirectory() (string, error) {
-	slog.Info("Generating default configs")
+	slog.Info("Generating default configs", logOrigin)
 	tempDirectory := os.TempDir()
 	configDirectory := filepath.Join(tempDirectory, "config")
 
 	err := os.MkdirAll(configDirectory, directoryPermissions)
 	if err != nil {
-		slog.Error("Failed to create directories", "error", err)
+		slog.Error("Failed to create directories", "error", err, logOrigin)
 		return "", err
 	}
 
-	slog.Info("Created default config directory", "directory", configDirectory)
+	slog.Info("Created default config directory", "directory", configDirectory, logOrigin)
 
 	return configDirectory, nil
 }

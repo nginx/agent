@@ -14,12 +14,14 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+var logOrigin = slog.String("log_origin", "common.go")
+
 const messageID = "964e1e51-44cc-4c55-8422-2a3205bdfc2f"
 
 func CreateProtoTime(timeString string) (*timestamppb.Timestamp, error) {
 	newTime, err := time.Parse(time.RFC3339, timeString)
 	if err != nil {
-		slog.Error("failed to parse time")
+		slog.Error("failed to parse time", logOrigin)
 		return timestamppb.Now(), err
 	}
 

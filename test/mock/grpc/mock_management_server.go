@@ -41,6 +41,8 @@ const (
 	connectionType   = "tcp"
 )
 
+var serverLogOrigin = slog.String("log_origin", "mock_management_server.go")
+
 var (
 	commandServiceLock         sync.Mutex
 	fileServiceLock            sync.Mutex
@@ -82,7 +84,7 @@ func NewMockManagementServer(
 	grpcListener, err := net.Listen(connectionType,
 		fmt.Sprintf("%s:%d", agentConfig.Command.Server.Host, agentConfig.Command.Server.Port))
 	if err != nil {
-		slog.Error("Failed to listen", "error", err)
+		slog.Error("Failed to listen", "error", err, serverLogOrigin)
 		return nil, err
 	}
 
@@ -96,10 +98,13 @@ func NewMockManagementServer(
 	go reportHealth(healthcheck, agentConfig)
 
 	go func() {
-		slog.Info("Starting mock management plane gRPC server", "address", grpcListener.Addr().String())
+		slog.Info("Starting mock management plane gRPC server",
+			"address", grpcListener.Addr().String(),
+			serverLogOrigin,
+		)
 		grpcErr := grpcServer.Serve(grpcListener)
 		if grpcErr != nil {
-			slog.Error("Failed to start mock management plane gRPC server", "error", grpcErr)
+			slog.Error("Failed to start mock management plane gRPC server", "error", grpcErr, serverLogOrigin)
 		}
 	}()
 
@@ -202,7 +207,7 @@ func createListener(apiAddress string, agentConfig *config.Config) (net.Listener
 		cert, keyPairErr := tls.LoadX509KeyPair(agentConfig.Command.TLS.Cert, agentConfig.Command.TLS.Key)
 
 		if keyPairErr == nil {
-			slog.Error("Failed to load key and cert pair", "error", keyPairErr)
+			slog.Error("Failed to load key and cert pair", "error", keyPairErr, serverLogOrigin)
 			return tls.Listen(connectionType, apiAddress, &tls.Config{
 				Certificates: []tls.Certificate{cert},
 				MinVersion:   tls.VersionTLS12,

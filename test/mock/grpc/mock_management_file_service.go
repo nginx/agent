@@ -21,6 +21,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+var fileLogOrigin = slog.String("log_origin", "mock_management_file_service.go")
+
 const defaultFilePermissions = 0o644
 
 type FileService struct {
@@ -44,10 +46,10 @@ func (mgs *FileService) GetOverview(
 ) (*v1.GetOverviewResponse, error) {
 	configVersion := request.GetConfigVersion()
 
-	slog.Info("Getting overview", "config_version", configVersion)
+	slog.Info("Getting overview", "config_version", configVersion, fileLogOrigin)
 
 	if _, ok := mgs.instanceFiles[request.GetConfigVersion().GetInstanceId()]; !ok {
-		slog.Error("Config version not found", "config_version", configVersion)
+		slog.Error("Config version not found", "config_version", configVersion, fileLogOrigin)
 		return nil, status.Errorf(codes.NotFound, "Config version not found")
 	}
 
@@ -70,7 +72,7 @@ func (mgs *FileService) UpdateOverview(
 	if errMarshaledJSON != nil {
 		return nil, fmt.Errorf("failed to marshal struct back to JSON: %w", errMarshaledJSON)
 	}
-	slog.Info("Updating overview JSON", "overview", marshaledJSON)
+	slog.Info("Updating overview JSON", "overview", marshaledJSON, fileLogOrigin)
 
 	mgs.instanceFiles[overview.GetConfigVersion().GetInstanceId()] = overview.GetFiles()
 
@@ -98,18 +100,18 @@ func (mgs *FileService) GetFile(
 	fileName := request.GetFileMeta().GetName()
 	fileHash := request.GetFileMeta().GetHash()
 
-	slog.Info("Getting file", "name", fileName, "hash", fileHash)
+	slog.Info("Getting file", "name", fileName, "hash", fileHash, fileLogOrigin)
 
 	fullFilePath := mgs.findFile(request.GetFileMeta())
 
 	if fullFilePath == "" {
-		slog.Error("File not found", "file_name", fileName)
+		slog.Error("File not found", "file_name", fileName, fileLogOrigin)
 		return nil, status.Errorf(codes.NotFound, "File not found")
 	}
 
 	bytes, err := os.ReadFile(fullFilePath)
 	if err != nil {
-		slog.Error("Failed to get file contents", "full_file_path", fullFilePath, "error", err)
+		slog.Error("Failed to get file contents", "full_file_path", fullFilePath, "error", err, fileLogOrigin)
 		return nil, status.Errorf(codes.Internal, "Failed to get file contents")
 	}
 
@@ -130,21 +132,21 @@ func (mgs *FileService) UpdateFile(
 	fileHash := fileMeta.GetHash()
 	filePermissions := fileMeta.GetPermissions()
 
-	slog.Info("Updating file", "name", fileName, "hash", fileHash)
+	slog.Info("Updating file", "name", fileName, "hash", fileHash, fileLogOrigin)
 
 	fullFilePath := mgs.findFile(request.GetFile().GetFileMeta())
 
 	if _, err := os.Stat(fullFilePath); os.IsNotExist(err) {
 		statErr := os.MkdirAll(filepath.Dir(fullFilePath), os.ModePerm)
 		if statErr != nil {
-			slog.Info("Failed to create/update file", "full_file_path", fullFilePath, "error", statErr)
+			slog.Info("Failed to create/update file", "full_file_path", fullFilePath, "error", statErr, fileLogOrigin)
 			return nil, status.Errorf(codes.Internal, "Failed to create/update file")
 		}
 	}
 
 	err := os.WriteFile(fullFilePath, fileContents, getFileMode(filePermissions))
 	if err != nil {
-		slog.Info("Failed to create/update file", "full_file_path", fullFilePath, "error", err)
+		slog.Info("Failed to create/update file", "full_file_path", fullFilePath, "error", err, fileLogOrigin)
 		return nil, status.Errorf(codes.Internal, "Failed to create/update file")
 	}
 

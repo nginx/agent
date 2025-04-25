@@ -30,6 +30,8 @@ import (
 	sloggin "github.com/samber/slog-gin"
 )
 
+var commandLogOrigin = slog.String("log_origin", "mock_management_command_service.go")
+
 type CommandService struct {
 	mpi.UnimplementedCommandServiceServer
 	server                       *gin.Engine
@@ -76,10 +78,10 @@ func NewCommandService(requestChan chan *mpi.ManagementPlaneRequest, configDirec
 }
 
 func (cs *CommandService) StartServer(listener net.Listener) {
-	slog.Info("Starting mock management plane http server", "address", listener.Addr().String())
+	slog.Info("Starting mock management plane http server", "address", listener.Addr().String(), commandLogOrigin)
 	err := cs.server.RunListener(listener)
 	if err != nil {
-		slog.Error("Failed to start mock management plane http server", "error", err)
+		slog.Error("Failed to start mock management plane http server", "error", err, commandLogOrigin)
 	}
 }
 
@@ -89,7 +91,7 @@ func (cs *CommandService) CreateConnection(
 	*mpi.CreateConnectionResponse,
 	error,
 ) {
-	slog.DebugContext(ctx, "Create connection request", "request", request)
+	slog.DebugContext(ctx, "Create connection request", "request", request, commandLogOrigin)
 
 	if request == nil {
 		return nil, errors.New("empty connection request")
@@ -114,7 +116,7 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 	*mpi.UpdateDataPlaneStatusResponse,
 	error,
 ) {
-	slog.Debug("Update data plane status request", "request", request)
+	slog.Debug("Update data plane status request", "request", request, commandLogOrigin)
 
 	if request == nil {
 		return nil, errors.New("empty update data plane status request")
@@ -133,7 +135,7 @@ func (cs *CommandService) UpdateDataPlaneHealth(
 	*mpi.UpdateDataPlaneHealthResponse,
 	error,
 ) {
-	slog.Debug("Update data plane health request", "request", request)
+	slog.Debug("Update data plane health request", "request", request, commandLogOrigin)
 
 	if request == nil {
 		return nil, errors.New("empty update dataplane health request")
@@ -151,7 +153,7 @@ func (cs *CommandService) Subscribe(in mpi.CommandService_SubscribeServer) error
 
 	go cs.listenForDataPlaneResponses(ctx, in)
 
-	slog.InfoContext(ctx, "Starting Subscribe")
+	slog.InfoContext(ctx, "Starting Subscribe", commandLogOrigin)
 
 	for {
 		select {
@@ -160,7 +162,7 @@ func (cs *CommandService) Subscribe(in mpi.CommandService_SubscribeServer) error
 		default:
 			request := <-cs.requestChan
 
-			slog.InfoContext(ctx, "Subscribe", "request", request)
+			slog.InfoContext(ctx, "Subscribe", "request", request, commandLogOrigin)
 
 			if upload, ok := request.GetRequest().(*mpi.ManagementPlaneRequest_ConfigUploadRequest); ok {
 				cs.handleConfigUploadRequest(ctx, upload)
@@ -168,7 +170,7 @@ func (cs *CommandService) Subscribe(in mpi.CommandService_SubscribeServer) error
 
 			err := in.Send(request)
 			if err != nil {
-				slog.ErrorContext(ctx, "Failed to send management request", "error", err)
+				slog.ErrorContext(ctx, "Failed to send management request", "error", err, commandLogOrigin)
 			}
 		}
 	}
@@ -188,7 +190,7 @@ func (cs *CommandService) handleConfigUploadRequest(
 		for _, fileToDelete := range filesToDelete {
 			err := os.Remove(fileToDelete)
 			if err != nil {
-				slog.ErrorContext(ctx, "Failed to delete file", "error", err, "path", fileToDelete)
+				slog.ErrorContext(ctx, "Failed to delete file", "error", err, "path", fileToDelete, commandLogOrigin)
 			}
 		}
 	}
@@ -223,9 +225,12 @@ func (cs *CommandService) listenForDataPlaneResponses(ctx context.Context, in mp
 			return
 		default:
 			dataPlaneResponse, err := in.Recv()
-			slog.DebugContext(ctx, "Received data plane response", "data_plane_response", dataPlaneResponse)
+			slog.DebugContext(ctx, "Received data plane response",
+				"data_plane_response", dataPlaneResponse,
+				commandLogOrigin,
+			)
 			if err != nil {
-				slog.ErrorContext(ctx, "Failed to receive data plane response", "error", err)
+				slog.ErrorContext(ctx, "Failed to receive data plane response", "error", err, commandLogOrigin)
 				return
 			}
 			cs.dataPlaneResponsesMutex.Lock()
@@ -258,7 +263,7 @@ func (cs *CommandService) addConnectionEndpoint() {
 		} else {
 			var data map[string]interface{}
 			if err := json.Unmarshal([]byte(protojson.Format(cs.connectionRequest)), &data); err != nil {
-				slog.Error("Failed to return connection", "error", err)
+				slog.Error("Failed to return connection", "error", err, commandLogOrigin)
 				c.JSON(http.StatusInternalServerError, nil)
 			}
 			c.JSON(http.StatusOK, data)
@@ -276,7 +281,7 @@ func (cs *CommandService) addStatusEndpoint() {
 		} else {
 			var data map[string]interface{}
 			if err := json.Unmarshal([]byte(protojson.Format(cs.updateDataPlaneStatusRequest)), &data); err != nil {
-				slog.Error("Failed to return status", "error", err)
+				slog.Error("Failed to return status", "error", err, commandLogOrigin)
 				c.JSON(http.StatusInternalServerError, nil)
 			}
 			c.JSON(http.StatusOK, data)
@@ -294,7 +299,7 @@ func (cs *CommandService) addHealthEndpoint() {
 		} else {
 			var data map[string]interface{}
 			if err := json.Unmarshal([]byte(protojson.Format(cs.updateDataPlaneHealthRequest)), &data); err != nil {
-				slog.Error("Failed to return data plane health", "error", err)
+				slog.Error("Failed to return data plane health", "error", err, commandLogOrigin)
 				c.JSON(http.StatusInternalServerError, nil)
 			}
 			c.JSON(http.StatusOK, data)
@@ -326,9 +331,9 @@ func (cs *CommandService) addResponseAndRequestEndpoints() {
 	cs.server.POST("/api/v1/requests", func(c *gin.Context) {
 		request := mpi.ManagementPlaneRequest{}
 		body, err := io.ReadAll(c.Request.Body)
-		slog.Debug("Received request", "body", body)
+		slog.Debug("Received request", "body", body, commandLogOrigin)
 		if err != nil {
-			slog.Error("Error reading request body", "err", err)
+			slog.Error("Error reading request body", "err", err, commandLogOrigin)
 			c.JSON(http.StatusBadRequest, err)
 
 			return
@@ -337,7 +342,7 @@ func (cs *CommandService) addResponseAndRequestEndpoints() {
 		pb := protojson.UnmarshalOptions{DiscardUnknown: true, AllowPartial: true}
 		err = pb.Unmarshal(body, &request)
 		if err != nil {
-			slog.Error("Error unmarshalling request body", "err", err)
+			slog.Error("Error unmarshalling request body", "err", err, commandLogOrigin)
 			c.JSON(http.StatusBadRequest, err)
 
 			return
@@ -395,7 +400,7 @@ func (cs *CommandService) findInstanceConfigFiles(instanceID string) (configFile
 		}
 
 		if isValidFile(info, path) {
-			slog.Debug("Found file", "path", path)
+			slog.Debug("Found file", "path", path, commandLogOrigin)
 
 			filePath := strings.Split(path, instanceDirectory)[1]
 
@@ -408,6 +413,7 @@ func (cs *CommandService) findInstanceConfigFiles(instanceID string) (configFile
 				"File found:",
 				"path", file.GetFileMeta().GetName(),
 				"hash", file.GetFileMeta().GetHash(),
+				commandLogOrigin,
 			)
 
 			configFiles = append(configFiles, file)
