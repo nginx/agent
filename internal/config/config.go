@@ -6,6 +6,7 @@
 package config
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -16,7 +17,11 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/nginx/agent/v3/internal/datasource/file"
+
+	"github.com/goccy/go-yaml"
 	uuidLibrary "github.com/nginx/agent/v3/pkg/id"
 	selfsignedcerts "github.com/nginx/agent/v3/pkg/tls"
 	"github.com/spf13/cobra"
@@ -87,8 +92,9 @@ func ResolveConfig() (*Config, error) {
 			dir += "/"
 		}
 		allowedDirs = append(allowedDirs, dir)
-		slog.Info("Configured allowed directories", "allowed_directories", allowedDirs)
 	}
+
+	slog.Info("Configured allowed directories", "allowed_directories", allowedDirs)
 
 	// Collect all parsing errors before returning the error, so the user sees all issues with config
 	// in one error message.
@@ -114,12 +120,67 @@ func ResolveConfig() (*Config, error) {
 		Labels:             resolveLabels(),
 	}
 
+	checkCollectorConfiguration(collector, config)
+
 	slog.Debug("Agent config", "config", config)
-	slog.Info("Enabled features", "features", config.Features)
 	slog.Info("Excluded files from being watched for file changes", "exclude_files",
 		config.Watchers.FileWatcher.ExcludeFiles)
 
 	return config, nil
+}
+
+func checkCollectorConfiguration(collector *Collector, config *Config) {
+	if isOTelExporterConfigured(collector) && config.IsGrpcClientConfigured() && config.IsAuthConfigured() &&
+		config.IsTLSConfigured() {
+		slog.Info("No collector configuration found in NGINX Agent config, command server configuration found." +
+			"Using default collector configuration")
+		defaultCollector(collector, config)
+	}
+}
+
+func defaultCollector(collector *Collector, config *Config) {
+	token := config.Command.Auth.Token
+	if config.Command.Auth.TokenPath != "" {
+		slog.Debug("Reading token from file", "path", config.Command.Auth.TokenPath)
+		pathToken, err := file.ReadFromFile(config.Command.Auth.TokenPath)
+		if err != nil {
+			slog.Error("Error adding token to default collector, "+
+				"default collector configuration not started", "error", err)
+
+			return
+		}
+		token = pathToken
+	}
+
+	collector.Receivers.HostMetrics = &HostMetrics{
+		Scrapers: &HostMetricsScrapers{
+			CPU:        &CPUScraper{},
+			Disk:       &DiskScraper{},
+			Filesystem: &FilesystemScraper{},
+			Memory:     &MemoryScraper{},
+			Network:    nil,
+		},
+		CollectionInterval: 1 * time.Minute,
+		InitialDelay:       1 * time.Second,
+	}
+
+	collector.Exporters.OtlpExporters = append(collector.Exporters.OtlpExporters, OtlpExporter{
+		Server:        config.Command.Server,
+		TLS:           config.Command.TLS,
+		Compression:   "",
+		Authenticator: "headers_setter",
+	})
+
+	header := []Header{
+		{
+			Action: "insert",
+			Key:    "authorization",
+			Value:  token,
+		},
+	}
+	collector.Extensions.HeadersSetter = &HeadersSetter{
+		Headers: header,
+	}
 }
 
 func setVersion(version, commit string) {
@@ -463,11 +524,30 @@ func getConfigFilePaths() []string {
 }
 
 func loadPropertiesFromFile(cfg string) error {
+	validationError := validateYamlFile(cfg)
+	if validationError != nil {
+		return validationError
+	}
+
 	viperInstance.SetConfigFile(cfg)
 	viperInstance.SetConfigType("yaml")
 	err := viperInstance.MergeInConfig()
 	if err != nil {
 		return fmt.Errorf("error loading config file %s: %w", cfg, err)
+	}
+
+	return nil
+}
+
+func validateYamlFile(filePath string) error {
+	fileContents, readError := os.ReadFile(filePath)
+	if readError != nil {
+		return fmt.Errorf("failed to read file %s: %w", filePath, readError)
+	}
+
+	decoder := yaml.NewDecoder(bytes.NewReader(fileContents), yaml.DisallowUnknownField())
+	if err := decoder.Decode(&Config{}); err != nil {
+		return errors.New(yaml.FormatError(err, false, false))
 	}
 
 	return nil
@@ -909,4 +989,9 @@ func resolveMapStructure(key string, object any) error {
 	}
 
 	return nil
+}
+
+func isOTelExporterConfigured(collector *Collector) bool {
+	return len(collector.Exporters.OtlpExporters) == 0 && collector.Exporters.PrometheusExporter == nil &&
+		collector.Exporters.Debug == nil
 }

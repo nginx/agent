@@ -39,6 +39,12 @@ func TestStubStatusScraper(t *testing.T) {
 	err := stubStatusScraper.Start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
 
+	_, err = stubStatusScraper.Scrape(context.Background())
+	require.NoError(t, err)
+
+	// To test the nginx.http.request.count metric calculation we need to set the previousRequests and
+	// call scrape a second time as the first time it is called the previous requests is set using the API
+	stubStatusScraper.previousRequests = 31070460
 	actualMetrics, err := stubStatusScraper.Scrape(context.Background())
 	require.NoError(t, err)
 

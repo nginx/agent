@@ -29,6 +29,8 @@ all_set:
       enabled: true
     nginx.http.requests:
       enabled: true
+    nginx.http.response.count:
+      enabled: true
     nginx.http.response.status:
       enabled: true
     nginx.http.responses:
@@ -151,6 +153,8 @@ none_set:
     nginx.http.request.processing.count:
       enabled: false
     nginx.http.requests:
+      enabled: false
+    nginx.http.response.count:
       enabled: false
     nginx.http.response.status:
       enabled: false

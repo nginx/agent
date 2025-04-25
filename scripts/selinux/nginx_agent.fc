@@ -1,0 +1,1 @@
+/usr/bin/nginx-agent		--	gen_context(system_u:object_r:nginx_agent_exec_t,s0)

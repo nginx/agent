@@ -18,15 +18,28 @@ contents:
           mode: 0640
     - src: ./scripts/packages/nginx-agent.service
       dst: /etc/systemd/system/nginx-agent.service
-    - dst: /var/log/nginx-agent
-      type: dir
     - src: ./scripts/packages/nginx-agent.openrc
       dst: /etc/init.d/nginx-agent
       packager: apk
+    - src: ./scripts/nginx-agent.logrotate
+      dst: /etc/logrotate.d/nginx-agent
+    - src: ./scripts/selinux/nginx_agent_selinux.8
+      dst: /usr/share/man/man8/nginx_agent_selinux.8
+      packager: rpm
+    - src: ./scripts/selinux/nginx_agent.if
+      dst: /usr/share/selinux/devel/include/contrib/nginx_agent.if
+      packager: rpm
+    - src: ./scripts/selinux/nginx_agent.pp
+      dst: /usr/share/selinux/packages/nginx_agent.pp
+      packager: rpm
+    - dst: /var/log/nginx-agent
+      type: dir
+    - dst: /var/lib/nginx-agent
+      type: dir
 overrides:
-    deb:
-        depends:
-            - apt-transport-https
+  deb:
+    depends:
+      - apt-transport-https
 scripts:
     preinstall: "./scripts/packages/preinstall.sh"
     postinstall: "./scripts/packages/postinstall.sh"

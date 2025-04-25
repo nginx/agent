@@ -78,7 +78,7 @@ const (
 func DefaultFeatures() []string {
 	return []string{
 		pkg.FeatureConfiguration,
-		pkg.FeatureConnection,
+		pkg.FeatureCertificates,
 		pkg.FeatureMetrics,
 		pkg.FeatureFileWatcher,
 	}

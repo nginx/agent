@@ -22,7 +22,7 @@ GOBIN 	?= $$(go env GOPATH)/bin
 # | redhatenterprise | 8, 9                                  	 |                                                                |
 # | rockylinux       | 8, 9                                      |                                                                |
 # | almalinux        | 8, 9                                      |                                                                |
-# | alpine           | 3.17, 3.18, 3.19, 3.20                    |                                                                |
+# | alpine           | 3.17, 3.18, 3.19, 3.20, 3.21              |                                                                |
 # | oraclelinux      | 8, 9                                		 |                                                                |
 # | suse             | sles12sp5, sle15                          |                                                                |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -60,7 +60,7 @@ APK_PACKAGE := ./build/$(PACKAGE_NAME).apk
 DEB_PACKAGE := ./build/$(PACKAGE_NAME).deb
 RPM_PACKAGE := ./build/$(PACKAGE_NAME).rpm
 
-MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY ?= 
+MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY ?=
 MOCK_MANAGEMENT_PLANE_LOG_LEVEL ?= INFO
 MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS ?= 127.0.0.1:0
 MOCK_MANAGEMENT_PLANE_API_ADDRESS ?= 127.0.0.1:0
@@ -180,7 +180,7 @@ run: build ## Run code
 
 dev: ## Run agent executable
 	@echo "🚀 Running App"
-	$(GORUN) $(PROJECT_DIR)/$(PROJECT_FILE)
+	$(GORUN) -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
 
 race-condition-dev: ## Run agent executable with race condition detection
 	@echo "🏎️ Running app with race condition detection enabled"
@@ -231,12 +231,22 @@ build-mock-management-otel-collector-image: build-mock-management-otel-collector
 .PHONY: run-mock-management-otel-collector
 run-mock-management-otel-collector: ## Run mock management plane OTel collector
 	@echo "🚀 Running mock management plane OTel collector"
-	AGENT_IMAGE_WITH_NGINX_PLUS=nginx_plus_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_OSS=nginx_oss_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_PLUS_AND_NAP=nginx_plus_and_nap_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml up -d
+	AGENT_IMAGE_WITH_NGINX_PLUS=nginx_plus_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_OSS=nginx_oss_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_PLUS_AND_NAP=nginx_plus_and_nap_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/nginx-plus-and-nap/docker-compose.yaml up -d
 
 .PHONY: stop-mock-management-otel-collector
 stop-mock-management-otel-collector: ## Stop running mock management plane OTel collector
 	@echo "Stopping mock management plane OTel collector"
-	AGENT_IMAGE_WITH_NGINX_PLUS=nginx_plus_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_OSS=nginx_oss_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_PLUS_AND_NAP=nginx_plus_and_nap_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml down
+	AGENT_IMAGE_WITH_NGINX_PLUS=nginx_plus_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_OSS=nginx_oss_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_PLUS_AND_NAP=nginx_plus_and_nap_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/nginx-plus-and-nap/docker-compose.yaml down
+
+.PHONY: run-mock-otel-collector-without-nap
+run-mock-otel-collector-without-nap:
+	@echo "🚀 Running mock management plane OTel collector without NAP"
+	AGENT_IMAGE_WITH_NGINX_PLUS=nginx_plus_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_OSS=nginx_oss_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml up -d
+
+.PHONY: stop-mock-otel-collector-without-nap
+stop-mock-otel-collector-without-nap: ## Stop running mock management plane OTel collector
+	@echo "Stopping mock management plane OTel collector without NAP"
+	AGENT_IMAGE_WITH_NGINX_PLUS=nginx_plus_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_OSS=nginx_oss_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml down
 
 generate: ## Generate golang code
 	@echo "🗄️ Generating proto files"
@@ -271,7 +281,7 @@ generate-pgo-profile: build-mock-management-plane-grpc
 load-test-image: ## Build performance load testing image
 	@echo "🚚 Running load tests"
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t $(IMAGE_TAG)_load_test . \
-		--no-cache -f ./scripts/testing/load/Dockerfile \
+		--no-cache -f ./test/docker/load/Dockerfile \
 		--secret id=nginx-crt,src=$(CERTS_DIR)/nginx-repo.crt \
 		--secret id=nginx-key,src=$(CERTS_DIR)/nginx-repo.key \
 		--build-arg OSARCH=$(OSARCH) \

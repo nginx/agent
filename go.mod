@@ -1,8 +1,8 @@
 module github.com/nginx/agent/v3
 
-go 1.23
+go 1.23.0
 
-toolchain go1.23.2
+toolchain go1.23.8
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.33.0-20240401165935-b983156c5e99.1
@@ -11,6 +11,7 @@ require (
 	github.com/docker/docker v27.3.1+incompatible
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/go-resty/resty/v2 v2.16.2
+	github.com/goccy/go-yaml v1.17.1
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
@@ -74,7 +75,7 @@ require (
 	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e
 	golang.org/x/mod v0.21.0
-	golang.org/x/sync v0.10.0
+	golang.org/x/sync v0.12.0
 	google.golang.org/protobuf v1.35.2
 )
 
@@ -308,9 +309,9 @@ require (
 	github.com/vardius/message-bus v1.1.5
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.32.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.32.0
-	golang.org/x/crypto v0.31.0 // indirect
+	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/net v0.33.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
 	google.golang.org/grpc v1.68.0
 )
