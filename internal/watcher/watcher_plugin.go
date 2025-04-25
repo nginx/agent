@@ -70,6 +70,8 @@ type (
 
 var _ bus.Plugin = (*Watcher)(nil)
 
+var logOrigin = slog.String("log_origin", "watcher_plugin.go")
+
 func NewWatcher(agentConfig *config.Config) *Watcher {
 	return &Watcher{
 		agentConfig:                        agentConfig,
@@ -90,7 +92,7 @@ func NewWatcher(agentConfig *config.Config) *Watcher {
 // nolint: unparam
 // error is always nil
 func (w *Watcher) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
-	slog.DebugContext(ctx, "Starting watcher plugin")
+	slog.DebugContext(ctx, "Starting watcher plugin", logOrigin)
 	w.messagePipe = messagePipe
 
 	watcherContext, cancel := context.WithCancel(ctx)
@@ -112,7 +114,7 @@ func (w *Watcher) Init(ctx context.Context, messagePipe bus.MessagePipeInterface
 // nolint: unparam
 // error is always nil
 func (w *Watcher) Close(ctx context.Context) error {
-	slog.InfoContext(ctx, "Closing watcher plugin")
+	slog.InfoContext(ctx, "Closing watcher plugin", logOrigin)
 
 	w.cancel()
 
@@ -138,7 +140,7 @@ func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
 	case bus.DataPlaneHealthRequestTopic:
 		w.handleHealthRequest(ctx)
 	default:
-		slog.DebugContext(ctx, "Watcher plugin unknown topic", "topic", msg.Topic)
+		slog.DebugContext(ctx, "Watcher plugin unknown topic", "topic", msg.Topic, logOrigin)
 	}
 }
 
@@ -155,16 +157,26 @@ func (*Watcher) Subscriptions() []string {
 func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message) {
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest",
-			"payload", msg.Data, "topic", msg.Topic)
+		slog.ErrorContext(
+			ctx,
+			"Unable to cast message payload to *mpi.ManagementPlaneRequest",
+			"payload", msg.Data,
+			"topic", msg.Topic,
+			logOrigin,
+		)
 
 		return
 	}
 
 	request, requestOk := managementPlaneRequest.GetRequest().(*mpi.ManagementPlaneRequest_ConfigApplyRequest)
 	if !requestOk {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest_ConfigApplyRequest",
-			"payload", msg.Data, "topic", msg.Topic)
+		slog.ErrorContext(
+			ctx,
+			"Unable to cast message payload to *mpi.ManagementPlaneRequest_ConfigApplyRequest",
+			"payload", msg.Data,
+			"topic", msg.Topic,
+			logOrigin,
+		)
 
 		return
 	}
@@ -181,8 +193,13 @@ func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message
 func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message) {
 	response, ok := msg.Data.(*mpi.DataPlaneResponse)
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.DataPlaneResponse", "payload",
-			msg.Data, "topic", msg.Topic)
+		slog.ErrorContext(
+			ctx,
+			"Unable to cast message payload to *mpi.DataPlaneResponse",
+			"payload", msg.Data,
+			"topic", msg.Topic,
+			logOrigin,
+		)
 
 		return
 	}
@@ -212,8 +229,13 @@ func (w *Watcher) handleHealthRequest(ctx context.Context) {
 func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Message) {
 	response, ok := msg.Data.(*mpi.DataPlaneResponse)
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.DataPlaneResponse", "payload",
-			msg.Data, "topic", msg.Topic)
+		slog.ErrorContext(
+			ctx,
+			"Unable to cast message payload to *mpi.DataPlaneResponse",
+			"payload", msg.Data,
+			"topic", msg.Topic,
+			logOrigin,
+		)
 
 		return
 	}
@@ -233,12 +255,12 @@ func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Messag
 }
 
 func (w *Watcher) handleCredentialUpdate(ctx context.Context) {
-	slog.DebugContext(ctx, "Received credential update topic")
+	slog.DebugContext(ctx, "Received credential update topic", logOrigin)
 
 	w.watcherMutex.Lock()
 	conn, err := grpc.NewGrpcConnection(ctx, w.agentConfig)
 	if err != nil {
-		slog.ErrorContext(ctx, "Unable to create new grpc connection", "error", err)
+		slog.ErrorContext(ctx, "Unable to create new grpc connection", "error", err, logOrigin)
 		w.watcherMutex.Unlock()
 
 		return
@@ -255,7 +277,7 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case message := <-w.credentialUpdatesChannel:
-			slog.DebugContext(ctx, "Received credential update event")
+			slog.DebugContext(ctx, "Received credential update event", logOrigin)
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 			w.messagePipe.Process(newCtx, &bus.Message{
 				Topic: bus.CredentialUpdatedTopic, Data: nil,
@@ -271,6 +293,7 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 					newCtx,
 					"Updated NGINX config context",
 					"nginx_config_context", message.NginxConfigContext,
+					logOrigin,
 				)
 				w.messagePipe.Process(
 					newCtx,
@@ -282,6 +305,7 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 					newCtx,
 					"Not sending updated NGINX config context since config apply is in progress",
 					"nginx_config_context", message.NginxConfigContext,
+					logOrigin,
 				)
 			}
 			w.watcherMutex.Unlock()
@@ -301,7 +325,12 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 
 func (w *Watcher) handleInstanceUpdates(newCtx context.Context, message instance.InstanceUpdatesMessage) {
 	if len(message.InstanceUpdates.NewInstances) > 0 {
-		slog.DebugContext(newCtx, "New instances found", "instances", message.InstanceUpdates.NewInstances)
+		slog.DebugContext(
+			newCtx,
+			"New instances found",
+			"instances", message.InstanceUpdates.NewInstances,
+			logOrigin,
+		)
 		w.healthWatcherService.AddHealthWatcher(message.InstanceUpdates.NewInstances)
 		w.messagePipe.Process(
 			newCtx,
@@ -309,14 +338,24 @@ func (w *Watcher) handleInstanceUpdates(newCtx context.Context, message instance
 		)
 	}
 	if len(message.InstanceUpdates.UpdatedInstances) > 0 {
-		slog.DebugContext(newCtx, "Instances updated", "instances", message.InstanceUpdates.UpdatedInstances)
+		slog.DebugContext(
+			newCtx,
+			"Instances updated",
+			"instances", message.InstanceUpdates.UpdatedInstances,
+			logOrigin,
+		)
 		w.messagePipe.Process(
 			newCtx,
 			&bus.Message{Topic: bus.UpdatedInstancesTopic, Data: message.InstanceUpdates.UpdatedInstances},
 		)
 	}
 	if len(message.InstanceUpdates.DeletedInstances) > 0 {
-		slog.DebugContext(newCtx, "Instances deleted", "instances", message.InstanceUpdates.DeletedInstances)
+		slog.DebugContext(
+			newCtx,
+			"Instances deleted",
+			"instances", message.InstanceUpdates.DeletedInstances,
+			logOrigin,
+		)
 		w.healthWatcherService.DeleteHealthWatcher(message.InstanceUpdates.
 			DeletedInstances)
 		w.messagePipe.Process(

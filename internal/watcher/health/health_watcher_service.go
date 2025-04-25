@@ -42,6 +42,8 @@ type (
 	}
 )
 
+var logOrigin = slog.String("log_origin", "health_watcher_service.go")
+
 func NewHealthWatcherService(agentConfig *config.Config) *HealthWatcherService {
 	return &HealthWatcherService{
 		watchers:    make(map[string]healthWatcherOperator),
@@ -65,8 +67,8 @@ func (hw *HealthWatcherService) AddHealthWatcher(instances []*mpi.Instance) {
 			mpi.InstanceMeta_INSTANCE_TYPE_NGINX_APP_PROTECT:
 			fallthrough
 		default:
-			slog.Warn("Health watcher not implemented", "instance_type",
-				instance.GetInstanceMeta().GetInstanceType())
+			slog.Warn("Health watcher not implemented",
+				"instance_type", instance.GetInstanceMeta().GetInstanceType(), logOrigin)
 		}
 		hw.instances[instance.GetInstanceMeta().GetInstanceId()] = instance
 	}
@@ -100,7 +102,12 @@ func (hw *HealthWatcherService) GetInstancesHealth() []*mpi.InstanceHealth {
 
 func (hw *HealthWatcherService) Watch(ctx context.Context, ch chan<- InstanceHealthMessage) {
 	monitoringFrequency := hw.agentConfig.Watchers.InstanceHealthWatcher.MonitoringFrequency
-	slog.DebugContext(ctx, "Starting health watcher monitoring", "monitoring_frequency", monitoringFrequency)
+	slog.DebugContext(
+		ctx,
+		"Starting health watcher monitoring",
+		"monitoring_frequency", monitoringFrequency,
+		logOrigin,
+	)
 
 	instanceHealthTicker := time.NewTicker(monitoringFrequency)
 	defer instanceHealthTicker.Stop()
@@ -116,7 +123,7 @@ func (hw *HealthWatcherService) Watch(ctx context.Context, ch chan<- InstanceHea
 
 			healthStatuses, isHealthDiff := hw.health(ctx)
 			if isHealthDiff && len(healthStatuses) > 0 {
-				slog.DebugContext(newCtx, "Instance health watcher found health updates")
+				slog.DebugContext(newCtx, "Instance health watcher found health updates", logOrigin)
 				ch <- InstanceHealthMessage{
 					CorrelationID:  correlationID,
 					InstanceHealth: healthStatuses,
@@ -171,7 +178,7 @@ func (hw *HealthWatcherService) updateCache(currentHealth map[string]*mpi.Instan
 		}
 	}
 
-	slog.Debug("Updating health watcher cache", "cache", hw.cache)
+	slog.Debug("Updating health watcher cache", "cache", hw.cache, logOrigin)
 }
 
 // compare the cache with the current list of instances to check if an instance has been deleted

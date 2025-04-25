@@ -32,6 +32,8 @@ const defaultAgentPath = "/run/nginx-agent"
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . nginxConfigParser
 
+var logOrigin = slog.String("log_origin", "instance_watcher_service.go")
+
 type (
 	processParser interface {
 		Parse(ctx context.Context, processes []*nginxprocess.Process) map[string]*mpi.Instance
@@ -92,7 +94,12 @@ func (iw *InstanceWatcherService) Watch(
 	nginxConfigContextChannel chan<- NginxConfigContextMessage,
 ) {
 	monitoringFrequency := iw.agentConfig.Watchers.InstanceWatcher.MonitoringFrequency
-	slog.DebugContext(ctx, "Starting instance watcher monitoring", "monitoring_frequency", monitoringFrequency)
+	slog.DebugContext(
+		ctx,
+		"Starting instance watcher monitoring",
+		"monitoring_frequency", monitoringFrequency,
+		logOrigin,
+	)
 
 	iw.instancesChannel = instancesChannel
 	iw.nginxConfigContextChannel = nginxConfigContextChannel
@@ -114,11 +121,11 @@ func (iw *InstanceWatcherService) Watch(
 }
 
 func (iw *InstanceWatcherService) ReparseConfigs(ctx context.Context) {
-	slog.DebugContext(ctx, "Reparsing all instance configurations")
+	slog.DebugContext(ctx, "Reparsing all instance configurations", logOrigin)
 	for _, instance := range iw.instanceCache {
 		iw.ReparseConfig(ctx, instance.GetInstanceMeta().GetInstanceId())
 	}
-	slog.DebugContext(ctx, "Finished reparsing all instance configurations")
+	slog.DebugContext(ctx, "Finished reparsing all instance configurations", logOrigin)
 }
 
 func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instanceID string) {
@@ -136,6 +143,7 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instanceID 
 			ctx,
 			"Reparsing NGINX instance config",
 			"instance_id", instanceID,
+			logOrigin,
 		)
 
 		nginxConfigContext, parseErr := iw.nginxConfigParser.Parse(ctx, instance)
@@ -146,6 +154,7 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instanceID 
 				"config_path", instance.GetInstanceRuntime().GetConfigPath(),
 				"instance_id", instanceID,
 				"error", parseErr,
+				logOrigin,
 			)
 
 			return
@@ -175,7 +184,7 @@ func (iw *InstanceWatcherService) checkForUpdates(
 
 	instanceUpdates, err := iw.instanceUpdates(newCtx)
 	if err != nil {
-		slog.ErrorContext(newCtx, "Instance watcher updates", "error", err)
+		slog.ErrorContext(newCtx, "Instance watcher updates", "error", err, logOrigin)
 	}
 
 	instancesToParse = append(instancesToParse, instanceUpdates.UpdatedInstances...)
@@ -188,6 +197,7 @@ func (iw *InstanceWatcherService) checkForUpdates(
 			"Parsing instance config",
 			"instance_id", newInstance.GetInstanceMeta().GetInstanceId(),
 			"instance_type", instanceType,
+			logOrigin,
 		)
 
 		if instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX ||
@@ -201,6 +211,7 @@ func (iw *InstanceWatcherService) checkForUpdates(
 					"instance_id", newInstance.GetInstanceMeta().GetInstanceId(),
 					"instance_type", instanceType,
 					"error", parseErr,
+					logOrigin,
 				)
 			} else {
 				iw.sendNginxConfigContextUpdate(newCtx, nginxConfigContext)
@@ -231,6 +242,7 @@ func (iw *InstanceWatcherService) sendNginxConfigContextUpdate(
 			"New NGINX config context",
 			"instance_id", nginxConfigContext.InstanceID,
 			"nginx_config_context", nginxConfigContext,
+			logOrigin,
 		)
 
 		iw.nginxConfigContextChannel <- NginxConfigContextMessage{
@@ -286,12 +298,22 @@ func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *mpi.Instan
 	processPath, err := iw.executer.Executable()
 	if err != nil {
 		processPath = defaultAgentPath
-		slog.WarnContext(ctx, "Unable to read process location, defaulting to /var/run/nginx-agent", "error", err)
+		slog.WarnContext(
+			ctx,
+			"Unable to read process location, defaulting to /var/run/nginx-agent",
+			"error", err,
+			logOrigin,
+		)
 	}
 
 	labels, convertErr := mpi.ConvertToStructs(iw.agentConfig.Labels)
 	if convertErr != nil {
-		slog.WarnContext(ctx, "Unable to convert config to labels structure", "error", convertErr)
+		slog.WarnContext(
+			ctx,
+			"Unable to convert config to labels structure",
+			"error", convertErr,
+			logOrigin,
+		)
 	}
 
 	return &mpi.Instance{

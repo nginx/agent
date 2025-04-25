@@ -36,6 +36,8 @@ var emptyEvent = fsnotify.Event{
 	Op:   0,
 }
 
+var logOrigin = slog.String("log_origin", "file_watcher_service.go")
+
 type FileUpdateMessage struct {
 	CorrelationID slog.Attr
 }
@@ -65,14 +67,25 @@ func NewFileWatcherService(agentConfig *config.Config) *FileWatcherService {
 
 func (fws *FileWatcherService) Watch(ctx context.Context, ch chan<- FileUpdateMessage) {
 	monitoringFrequency := fws.agentConfig.Watchers.FileWatcher.MonitoringFrequency
-	slog.DebugContext(ctx, "Starting file watcher monitoring", "monitoring_frequency", monitoringFrequency)
+	slog.DebugContext(
+		ctx,
+		"Starting file watcher monitoring",
+		"monitoring_frequency", monitoringFrequency,
+		logOrigin,
+	)
 
 	instanceWatcherTicker := time.NewTicker(monitoringFrequency)
 	defer instanceWatcherTicker.Stop()
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to create file watcher", "error", err)
+		slog.ErrorContext(
+			ctx,
+			"Failed to create file watcher",
+			"error", err,
+			logOrigin,
+		)
+
 		return
 	}
 
@@ -85,7 +98,7 @@ func (fws *FileWatcherService) Watch(ctx context.Context, ch chan<- FileUpdateMe
 		case <-ctx.Done():
 			closeError := fws.watcher.Close()
 			if closeError != nil {
-				slog.ErrorContext(ctx, "Unable to close file watcher", "error", closeError)
+				slog.ErrorContext(ctx, "Unable to close file watcher", "error", closeError, logOrigin)
 			}
 
 			return
@@ -94,7 +107,7 @@ func (fws *FileWatcherService) Watch(ctx context.Context, ch chan<- FileUpdateMe
 		case <-instanceWatcherTicker.C:
 			fws.checkForUpdates(ctx, ch)
 		case watcherError := <-fws.watcher.Errors:
-			slog.ErrorContext(ctx, "Unexpected error in file watcher", "error", watcherError)
+			slog.ErrorContext(ctx, "Unexpected error in file watcher", "error", watcherError, logOrigin)
 		}
 	}
 }
@@ -106,15 +119,28 @@ func (fws *FileWatcherService) SetEnabled(enabled bool) {
 func (fws *FileWatcherService) watchDirectories(ctx context.Context) {
 	for _, dir := range fws.agentConfig.AllowedDirectories {
 		if _, err := os.Stat(dir); errors.Is(err, os.ErrNotExist) {
-			slog.DebugContext(ctx, "Unable to watch directory that does not exist", "directory", dir, "error", err)
+			slog.DebugContext(
+				ctx,
+				"Unable to watch directory that does not exist",
+				"directory", dir,
+				"error", err,
+				logOrigin,
+			)
+
 			continue
 		}
 
-		slog.DebugContext(ctx, "Creating file watchers", "directory", dir)
+		slog.DebugContext(ctx, "Creating file watchers", "directory", dir, logOrigin)
 
 		err := fws.walkDir(ctx, dir)
 		if err != nil {
-			slog.ErrorContext(ctx, "Failed to create file watchers", "directory", dir, "error", err)
+			slog.ErrorContext(
+				ctx,
+				"Failed to create file watchers",
+				"directory", dir,
+				"error", err,
+				logOrigin,
+			)
 		}
 	}
 }
@@ -127,7 +153,13 @@ func (fws *FileWatcherService) walkDir(ctx context.Context, dir string) error {
 
 		info, infoErr := d.Info()
 		if infoErr != nil {
-			slog.ErrorContext(ctx, "Error getting info for file", "error", infoErr)
+			slog.ErrorContext(
+				ctx,
+				"Error getting info for file",
+				"error", infoErr,
+				logOrigin,
+			)
+
 			return infoErr
 		}
 
@@ -142,10 +174,22 @@ func (fws *FileWatcherService) walkDir(ctx context.Context, dir string) error {
 func (fws *FileWatcherService) addWatcher(ctx context.Context, path string, info os.FileInfo) {
 	if info.IsDir() && !fws.isWatching(path) {
 		if err := fws.watcher.Add(path); err != nil {
-			slog.ErrorContext(ctx, "Failed to add file watcher", "directory_path", path, "error", err)
+			slog.ErrorContext(
+				ctx,
+				"Failed to add file watcher",
+				"directory_path", path,
+				"error", err,
+				logOrigin,
+			)
 			removeError := fws.watcher.Remove(path)
 			if removeError != nil {
-				slog.ErrorContext(ctx, "Failed to remove file watcher", "directory_path", path, "error", removeError)
+				slog.ErrorContext(
+					ctx,
+					"Failed to remove file watcher",
+					"directory_path", path,
+					"error", removeError,
+					logOrigin,
+				)
 			}
 
 			return
@@ -159,7 +203,14 @@ func (fws *FileWatcherService) removeWatcher(ctx context.Context, path string) {
 	if _, ok := fws.directoriesBeingWatched.Load(path); ok {
 		err := fws.watcher.Remove(path)
 		if err != nil {
-			slog.ErrorContext(ctx, "Failed to remove file watcher", "directory_path", path, "error", err)
+			slog.ErrorContext(
+				ctx,
+				"Failed to remove file watcher",
+				"directory_path", path,
+				"error", err,
+				logOrigin,
+			)
+
 			return
 		}
 
@@ -180,7 +231,13 @@ func (fws *FileWatcherService) isWatching(name string) bool {
 func (fws *FileWatcherService) handleEvent(ctx context.Context, event fsnotify.Event) {
 	if fws.enabled.Load() {
 		if fws.isEventSkippable(event) {
-			slog.DebugContext(ctx, "Skipping FSNotify event", "event", event)
+			slog.DebugContext(
+				ctx,
+				"Skipping FSNotify event",
+				"event", event,
+				logOrigin,
+			)
+
 			return
 		}
 
@@ -191,7 +248,7 @@ func (fws *FileWatcherService) handleEvent(ctx context.Context, event fsnotify.E
 		case event.Op&Create == Create:
 			info, err := os.Stat(event.Name)
 			if err != nil {
-				slog.DebugContext(ctx, "Unable to add watcher", "path", event.Name, "error", err)
+				slog.DebugContext(ctx, "Unable to add watcher", "path", event.Name, "error", err, logOrigin)
 				return
 			}
 			fws.addWatcher(ctx, event.Name, info)
@@ -199,7 +256,7 @@ func (fws *FileWatcherService) handleEvent(ctx context.Context, event fsnotify.E
 			fws.removeWatcher(ctx, event.Name)
 		}
 
-		slog.DebugContext(ctx, "Processing FSNotify event", "event", event)
+		slog.DebugContext(ctx, "Processing FSNotify event", "event", event, logOrigin)
 
 		fws.filesChanged.Store(true)
 	}
@@ -213,7 +270,7 @@ func (fws *FileWatcherService) checkForUpdates(ctx context.Context, ch chan<- Fi
 			slog.Any(logger.CorrelationIDKey, logger.GenerateCorrelationID()),
 		)
 
-		slog.DebugContext(newCtx, "File watcher detected a file change")
+		slog.DebugContext(newCtx, "File watcher detected a file change", logOrigin)
 		ch <- FileUpdateMessage{CorrelationID: logger.GetCorrelationIDAttr(newCtx)}
 		fws.filesChanged.Store(false)
 	}
@@ -229,16 +286,16 @@ func isExcludedFile(path string, excludeFiles []string) bool {
 	for _, pattern := range excludeFiles {
 		_, compileErr := regexp.Compile(pattern)
 		if compileErr != nil {
-			slog.Error("Invalid path for excluding file", "file_path", pattern)
+			slog.Error("Invalid path for excluding file", "file_path", pattern, logOrigin)
 			continue
 		}
 
 		ok, err := regexp.MatchString(pattern, path)
 		if err != nil {
-			slog.Error("Invalid path for excluding file", "file_path", pattern)
+			slog.Error("Invalid path for excluding file", "file_path", pattern, logOrigin)
 			continue
 		} else if ok {
-			slog.Debug("Excluding file from watcher as specified in config", "file_path", path)
+			slog.Debug("Excluding file from watcher as specified in config", "file_path", path, logOrigin)
 			return true
 		}
 	}

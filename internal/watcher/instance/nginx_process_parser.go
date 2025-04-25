@@ -53,6 +53,8 @@ var (
 	versionRegex = regexp.MustCompile(`(?P<name>\S+)\/(?P<version>.*)`)
 )
 
+var processParserLogOrigin = slog.String("log_origin", "nginx_process_parser.go")
+
 func NewNginxProcessParser() *NginxProcessParser {
 	return &NginxProcessParser{
 		executer: &exec.Exec{},
@@ -79,7 +81,13 @@ func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*nginxproc
 			}
 			nginxInfo, err := npp.getInfo(ctx, proc)
 			if err != nil {
-				slog.DebugContext(ctx, "Unable to get NGINX info", "pid", proc.PID, "error", err)
+				slog.DebugContext(
+					ctx,
+					"Unable to get NGINX info",
+					"pid", proc.PID,
+					"error", err,
+					processParserLogOrigin,
+				)
 
 				continue
 			}
@@ -106,7 +114,13 @@ func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*nginxproc
 		// proc is a master process
 		nginxInfo, err := npp.getInfo(ctx, proc)
 		if err != nil {
-			slog.DebugContext(ctx, "Unable to get NGINX info", "pid", proc.PID, "error", err)
+			slog.DebugContext(
+				ctx,
+				"Unable to get NGINX info",
+				"pid", proc.PID,
+				"error", err,
+				processParserLogOrigin,
+			)
 
 			continue
 		}
@@ -299,7 +313,7 @@ func getNginxPrefix(ctx context.Context, nginxInfo *Info) string {
 		var ok bool
 		prefix, ok = nginxInfo.ConfigureArgs["prefix"].(string)
 		if !ok {
-			slog.DebugContext(ctx, "Failed to cast nginxInfo prefix to string")
+			slog.DebugContext(ctx, "Failed to cast nginxInfo prefix to string", processParserLogOrigin)
 		}
 	} else {
 		prefix = "/usr/local/nginx"
@@ -315,7 +329,7 @@ func getNginxConfPath(ctx context.Context, nginxInfo *Info) string {
 		var ok bool
 		confPath, ok = nginxInfo.ConfigureArgs["conf-path"].(string)
 		if !ok {
-			slog.DebugContext(ctx, "failed to cast nginxInfo conf-path to string")
+			slog.DebugContext(ctx, "failed to cast nginxInfo conf-path to string", processParserLogOrigin)
 		}
 	} else {
 		confPath = path.Join(nginxInfo.Prefix, "/conf/nginx.conf")
@@ -337,12 +351,12 @@ func getLoadableModules(nginxInfo *Info) (modules []string) {
 	if mp, ok := nginxInfo.ConfigureArgs["modules-path"]; ok {
 		modulePath, pathOK := mp.(string)
 		if !pathOK {
-			slog.Debug("Error parsing modules-path")
+			slog.Debug("Error parsing modules-path", processParserLogOrigin)
 			return modules
 		}
 		modules, err = readDirectory(modulePath, ".so")
 		if err != nil {
-			slog.Debug("Error reading module dir", "dir", modulePath, "error", err)
+			slog.Debug("Error reading module dir", "dir", modulePath, "error", err, processParserLogOrigin)
 			return modules
 		}
 

@@ -36,6 +36,8 @@ type (
 
 var _ processParser = (*NginxAppProtectProcessParser)(nil)
 
+var napProcessParserLogOrigin = slog.String("log_origin", "nginx_app_protect_process_parser.go")
+
 func NewNginxAppProtectProcessParser() *NginxAppProtectProcessParser {
 	return &NginxAppProtectProcessParser{
 		versionFilePath:                versionFilePath,
@@ -94,7 +96,14 @@ func (n NginxAppProtectProcessParser) instanceID(process *nginxprocess.Process) 
 func (n NginxAppProtectProcessParser) instanceVersion(ctx context.Context) string {
 	version, err := os.ReadFile(n.versionFilePath)
 	if err != nil {
-		slog.WarnContext(ctx, "Unable to read NAP version file", "file_path", n.versionFilePath, "error", err)
+		slog.WarnContext(
+			ctx,
+			"Unable to read NAP version file",
+			"file_path", n.versionFilePath,
+			"error", err,
+			napProcessParserLogOrigin,
+		)
+
 		return ""
 	}
 
@@ -104,7 +113,14 @@ func (n NginxAppProtectProcessParser) instanceVersion(ctx context.Context) strin
 func (n NginxAppProtectProcessParser) release(ctx context.Context) string {
 	release, err := os.ReadFile(n.releaseFilePath)
 	if err != nil {
-		slog.WarnContext(ctx, "Unable to read NAP release file", "file_path", n.releaseFilePath, "error", err)
+		slog.WarnContext(
+			ctx,
+			"Unable to read NAP release file",
+			"file_path", n.releaseFilePath,
+			"error", err,
+			napProcessParserLogOrigin,
+		)
+
 		return ""
 	}
 
@@ -119,6 +135,7 @@ func (n NginxAppProtectProcessParser) attackSignatureVersion(ctx context.Context
 			"Unable to read NAP attack signature version file",
 			"file_path", n.attackSignatureVersionFilePath,
 			"error", err,
+			napProcessParserLogOrigin,
 		)
 
 		return ""
@@ -135,6 +152,7 @@ func (n NginxAppProtectProcessParser) threatCampaignVersion(ctx context.Context)
 			"Unable to read NAP threat campaign version file",
 			"file_path", n.threatCampaignVersionFilePath,
 			"error", err,
+			napProcessParserLogOrigin,
 		)
 
 		return ""

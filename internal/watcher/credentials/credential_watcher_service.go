@@ -27,6 +27,8 @@ var emptyEvent = fsnotify.Event{
 	Op:   0,
 }
 
+var logOrigin = slog.String("log_origin", "credential_watcher_service.go")
+
 type CredentialUpdateMessage struct {
 	CorrelationID slog.Attr
 }
@@ -55,12 +57,12 @@ func NewCredentialWatcherService(agentConfig *config.Config) *CredentialWatcherS
 }
 
 func (cws *CredentialWatcherService) Watch(ctx context.Context, ch chan<- CredentialUpdateMessage) {
-	slog.DebugContext(ctx, "Starting credential watcher monitoring")
+	slog.DebugContext(ctx, "Starting credential watcher monitoring", logOrigin)
 
 	ticker := time.NewTicker(monitoringInterval)
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to create credential watcher", "error", err)
+		slog.ErrorContext(ctx, "Failed to create credential watcher", "error", err, logOrigin)
 		return
 	}
 
@@ -73,7 +75,7 @@ func (cws *CredentialWatcherService) Watch(ctx context.Context, ch chan<- Creden
 		case <-ctx.Done():
 			closeError := cws.watcher.Close()
 			if closeError != nil {
-				slog.ErrorContext(ctx, "Unable to close credential watcher", "error", closeError)
+				slog.ErrorContext(ctx, "Unable to close credential watcher", "error", closeError, logOrigin)
 			}
 
 			return
@@ -82,7 +84,12 @@ func (cws *CredentialWatcherService) Watch(ctx context.Context, ch chan<- Creden
 		case <-ticker.C:
 			cws.checkForUpdates(ctx, ch)
 		case watcherError := <-cws.watcher.Errors:
-			slog.ErrorContext(ctx, "Unexpected error in credential watcher", "error", watcherError)
+			slog.ErrorContext(
+				ctx,
+				"Unexpected error in credential watcher",
+				"error", watcherError,
+				logOrigin,
+			)
 		}
 	}
 }
@@ -93,29 +100,30 @@ func (cws *CredentialWatcherService) SetEnabled(enabled bool) {
 
 func (cws *CredentialWatcherService) addWatcher(ctx context.Context, filePath string) {
 	if !cws.enabled.Load() {
-		slog.DebugContext(ctx, "Credential watcher is disabled")
+		slog.DebugContext(ctx, "Credential watcher is disabled", logOrigin)
 
 		return
 	}
 
 	if cws.isWatching(filePath) {
 		slog.DebugContext(
-			ctx, "Credential watcher is already watching ", "path", filePath)
+			ctx, "Credential watcher is already watching ", "path", filePath, logOrigin)
 
 		return
 	}
 
 	if err := cws.watcher.Add(filePath); err != nil {
-		slog.ErrorContext(ctx, "Failed to add credential watcher", "path", filePath, "error", err)
+		slog.ErrorContext(ctx, "Failed to add credential watcher", "path", filePath,
+			"error", err, logOrigin)
 
 		return
 	}
 	cws.filesBeingWatched.Store(filePath, true)
-	slog.DebugContext(ctx, "Credential watcher has been added", "path", filePath)
+	slog.DebugContext(ctx, "Credential watcher has been added", "path", filePath, logOrigin)
 }
 
 func (cws *CredentialWatcherService) watchFiles(ctx context.Context, files []string) {
-	slog.DebugContext(ctx, "Creating credential watchers")
+	slog.DebugContext(ctx, "Creating credential watchers", logOrigin)
 
 	for _, filePath := range files {
 		cws.addWatcher(ctx, filePath)
@@ -135,11 +143,11 @@ func (cws *CredentialWatcherService) isWatching(path string) bool {
 func (cws *CredentialWatcherService) handleEvent(ctx context.Context, event fsnotify.Event) {
 	if cws.enabled.Load() {
 		if isEventSkippable(event) {
-			slog.DebugContext(ctx, "Skipping FSNotify event", "event", event)
+			slog.DebugContext(ctx, "Skipping FSNotify event", "event", event, logOrigin)
 			return
 		}
 
-		slog.DebugContext(ctx, "Processing FSNotify event", "event", event)
+		slog.DebugContext(ctx, "Processing FSNotify event", "event", event, logOrigin)
 
 		switch {
 		case event.Has(fsnotify.Remove):
@@ -163,7 +171,7 @@ func (cws *CredentialWatcherService) checkForUpdates(ctx context.Context, ch cha
 			slog.Any(logger.CorrelationIDKey, logger.GenerateCorrelationID()),
 		)
 
-		slog.DebugContext(ctx, "Credential watcher has detected changes")
+		slog.DebugContext(ctx, "Credential watcher has detected changes", logOrigin)
 		ch <- CredentialUpdateMessage{CorrelationID: logger.GetCorrelationIDAttr(newCtx)}
 		cws.filesChanged.Store(false)
 	}

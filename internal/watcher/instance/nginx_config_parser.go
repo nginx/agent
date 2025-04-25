@@ -48,6 +48,8 @@ type (
 
 var _ nginxConfigParser = (*NginxConfigParser)(nil)
 
+var configParserLogOrigin = slog.String("log_origin", "nginx_config_parser.go")
+
 type (
 	crossplaneTraverseCallback           = func(ctx context.Context, parent, current *crossplane.Directive) error
 	crossplaneTraverseCallbackAPIDetails = func(ctx context.Context, parent,
@@ -72,6 +74,7 @@ func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *mpi.Instance)
 		"Parsing NGINX config",
 		"file_path", configPath,
 		"instance_id", instance.GetInstanceMeta().GetInstanceId(),
+		configParserLogOrigin,
 	)
 
 	lua := crossplane.Lua{}
@@ -116,11 +119,14 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 	rootDir := filepath.Dir(instance.GetInstanceRuntime().GetConfigPath())
 
 	for _, conf := range payload.Config {
-		slog.DebugContext(ctx, "Traversing NGINX config file", "config", conf)
+		slog.DebugContext(ctx, "Traversing NGINX config file", "config", conf, configParserLogOrigin)
 		if !ncp.agentConfig.IsDirectoryAllowed(conf.File) {
-			slog.WarnContext(ctx, "File included in NGINX config is outside of allowed directories, "+
-				"excluding from config",
-				"file", conf.File)
+			slog.WarnContext(
+				ctx,
+				"File included in NGINX config is outside of allowed directories, excluding from config",
+				"file", conf.File,
+				configParserLogOrigin,
+			)
 
 			continue
 		}
@@ -142,16 +148,26 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 						errorLog := ncp.errorLog(directive.Args[0], ncp.errorLogDirectiveLevel(directive))
 						nginxConfigContext.ErrorLogs = append(nginxConfigContext.ErrorLogs, errorLog)
 					} else {
-						slog.WarnContext(ctx, fmt.Sprintf("Currently error log outputs to %s. Log monitoring "+
-							"is disabled while applying a config; "+"log errors to file to enable error monitoring",
-							directive.Args[0]), "error_log", directive.Args[0])
+						slog.WarnContext(
+							ctx,
+							fmt.Sprintf("Currently error log outputs to %s. Log monitoring "+
+								"is disabled while applying a config; "+"log errors to file to enable error monitoring",
+								directive.Args[0]),
+							"error_log", directive.Args[0],
+							configParserLogOrigin,
+						)
 					}
 				case "ssl_certificate", "proxy_ssl_certificate", "ssl_client_certificate",
 					"ssl_trusted_certificate":
 					sslCertFile := ncp.sslCert(ctx, directive.Args[0], rootDir)
 					if sslCertFile != nil {
 						if !ncp.isDuplicateFile(nginxConfigContext.Files, sslCertFile) {
-							slog.DebugContext(ctx, "Adding SSL certificate file", "ssl_cert", sslCertFile)
+							slog.DebugContext(
+								ctx,
+								"Adding SSL certificate file",
+								"ssl_cert", sslCertFile,
+								configParserLogOrigin,
+							)
 							nginxConfigContext.Files = append(nginxConfigContext.Files, sslCertFile)
 						}
 					}
@@ -169,7 +185,12 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 									syslogServer,
 								)
 								napSyslogServersFound[syslogServer] = true
-								slog.DebugContext(ctx, "Found NAP syslog server", "address", syslogServer)
+								slog.DebugContext(
+									ctx,
+									"Found NAP syslog server",
+									"address", syslogServer,
+									configParserLogOrigin,
+								)
 							}
 						}
 					}
@@ -194,7 +215,13 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 
 		fileMeta, err := files.FileMeta(conf.File)
 		if err != nil {
-			slog.WarnContext(ctx, "Unable to get file metadata", "file_name", conf.File, "error", err)
+			slog.WarnContext(
+				ctx,
+				"Unable to get file metadata",
+				"file_name", conf.File,
+				"error", err,
+				configParserLogOrigin,
+			)
 		} else {
 			nginxConfigContext.Files = append(nginxConfigContext.Files, &mpi.File{FileMeta: fileMeta})
 		}
@@ -215,7 +242,8 @@ func (ncp *NginxConfigParser) ignoreLog(logPath string) bool {
 	}
 
 	if !ncp.agentConfig.IsDirectoryAllowed(logPath) {
-		slog.Warn("Log being read is outside of allowed directories", "log_path", logPath)
+		slog.Warn("Log being read is outside of allowed directories",
+			"log_path", logPath, configParserLogOrigin)
 	}
 
 	return false
@@ -225,16 +253,16 @@ func (ncp *NginxConfigParser) isExcludeLog(path string) bool {
 	for _, pattern := range ncp.agentConfig.DataPlaneConfig.Nginx.ExcludeLogs {
 		_, compileErr := regexp.Compile(pattern)
 		if compileErr != nil {
-			slog.Error("Invalid path for excluding log", "log_path", pattern)
+			slog.Error("Invalid path for excluding log", "log_path", pattern, configParserLogOrigin)
 			continue
 		}
 
 		ok, err := regexp.MatchString(pattern, path)
 		if err != nil {
-			slog.Error("Invalid path for excluding log", "file_path", pattern)
+			slog.Error("Invalid path for excluding log", "file_path", pattern, configParserLogOrigin)
 			continue
 		} else if ok {
-			slog.Info("Excluding log as specified in config", "log_path", path)
+			slog.Info("Excluding log as specified in config", "log_path", path, configParserLogOrigin)
 
 			return true
 		}
@@ -325,7 +353,12 @@ func (ncp *NginxConfigParser) errorLogDirectiveLevel(directive *crossplane.Direc
 
 func (ncp *NginxConfigParser) sslCert(ctx context.Context, file, rootDir string) (sslCertFile *mpi.File) {
 	if strings.Contains(file, "$") {
-		slog.DebugContext(ctx, "Cannot process SSL certificate file path with variables", "file", file)
+		slog.DebugContext(
+			ctx,
+			"Cannot process SSL certificate file path with variables",
+			"file", file, configParserLogOrigin,
+		)
+
 		return nil
 	}
 
@@ -334,11 +367,17 @@ func (ncp *NginxConfigParser) sslCert(ctx context.Context, file, rootDir string)
 	}
 
 	if !ncp.agentConfig.IsDirectoryAllowed(file) {
-		slog.DebugContext(ctx, "File not in allowed directories", "file", file)
+		slog.DebugContext(ctx, "File not in allowed directories", "file", file, configParserLogOrigin)
 	} else {
 		sslCertFileMeta, fileMetaErr := files.FileMetaWithCertificate(file)
 		if fileMetaErr != nil {
-			slog.ErrorContext(ctx, "Unable to get file metadata", "file", file, "error", fileMetaErr)
+			slog.ErrorContext(
+				ctx,
+				"Unable to get file metadata",
+				"file", file,
+				"error", fileMetaErr,
+				configParserLogOrigin,
+			)
 		} else {
 			sslCertFile = &mpi.File{FileMeta: sslCertFileMeta}
 		}
@@ -466,15 +505,31 @@ func (ncp *NginxConfigParser) apiCallback(ctx context.Context, parent,
 ) *model.APIDetails {
 	urls := ncp.urlsForLocationDirectiveAPIDetails(parent, current, apiType)
 	if len(urls) > 0 {
-		slog.DebugContext(ctx, fmt.Sprintf("%d potential %s urls", len(urls), apiType), "urls", urls)
+		slog.DebugContext(
+			ctx,
+			fmt.Sprintf("%d potential %s urls", len(urls), apiType),
+			"urls", urls,
+			configParserLogOrigin,
+		)
 	}
 
 	for _, url := range urls {
 		if ncp.pingAPIEndpoint(ctx, url, apiType) {
-			slog.DebugContext(ctx, fmt.Sprintf("%s found", apiType), "url", url)
+			slog.DebugContext(
+				ctx,
+				fmt.Sprintf("%s found", apiType),
+				"url", url,
+				configParserLogOrigin,
+			)
+
 			return url
 		}
-		slog.DebugContext(ctx, fmt.Sprintf("%s is not reachable", apiType), "url", url)
+		slog.DebugContext(
+			ctx,
+			fmt.Sprintf("%s is not reachable", apiType),
+			"url", url,
+			configParserLogOrigin,
+		)
 	}
 
 	return &model.APIDetails{
@@ -498,26 +553,48 @@ func (ncp *NginxConfigParser) pingAPIEndpoint(ctx context.Context, statusAPIDeta
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, statusAPI, nil)
 	if err != nil {
-		slog.WarnContext(ctx, fmt.Sprintf("Unable to create %s API GET request", apiType), "error", err)
+		slog.WarnContext(
+			ctx,
+			fmt.Sprintf("Unable to create %s API GET request", apiType),
+			"error", err,
+			configParserLogOrigin,
+		)
+
 		return false
 	}
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		slog.WarnContext(ctx, fmt.Sprintf("Unable to GET %s from API request", apiType), "error", err)
+		slog.WarnContext(
+			ctx,
+			fmt.Sprintf("Unable to GET %s from API request", apiType),
+			"error", err,
+			configParserLogOrigin,
+		)
+
 		return false
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		slog.DebugContext(ctx, fmt.Sprintf("%s API responded with unexpected status code", apiType), "status_code",
-			resp.StatusCode, "expected", http.StatusOK)
+		slog.DebugContext(ctx,
+			fmt.Sprintf("%s API responded with unexpected status code", apiType),
+			"status_code", resp.StatusCode,
+			"expected", http.StatusOK,
+			configParserLogOrigin,
+		)
 
 		return false
 	}
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		slog.WarnContext(ctx, fmt.Sprintf("Unable to read %s API response body", apiType), "error", err)
+		slog.WarnContext(
+			ctx,
+			fmt.Sprintf("Unable to read %s API response body", apiType),
+			"error", err,
+			configParserLogOrigin,
+		)
+
 		return false
 	}
 
@@ -540,7 +617,13 @@ func (ncp *NginxConfigParser) pingAPIEndpoint(ctx context.Context, statusAPIDeta
 	err = json.Unmarshal(bodyBytes, &responseBody)
 	defer resp.Body.Close()
 	if err != nil {
-		slog.DebugContext(ctx, "Unable to unmarshal NGINX Plus API response body", "error", err)
+		slog.DebugContext(
+			ctx,
+			"Unable to unmarshal NGINX Plus API response body",
+			"error", err,
+			configParserLogOrigin,
+		)
+
 		return false
 	}
 
