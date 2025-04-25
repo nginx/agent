@@ -21,6 +21,8 @@ type APIAction struct {
 	ResourceService resourceServiceInterface
 }
 
+var plusActionsLogOrigin = slog.String("log_origin", "nginx_plus_actions.go")
+
 func (a *APIAction) HandleUpdateStreamServersRequest(ctx context.Context, action *mpi.NGINXPlusAction,
 	instance *mpi.Instance,
 ) *mpi.DataPlaneResponse {
@@ -31,7 +33,7 @@ func (a *APIAction) HandleUpdateStreamServersRequest(ctx context.Context, action
 		action.GetUpdateStreamServers().GetUpstreamStreamName(), action.GetUpdateStreamServers().GetServers())
 	if err != nil {
 		slog.ErrorContext(ctx, "Unable to update stream servers of upstream", "request",
-			action.GetUpdateHttpUpstreamServers(), "error", err)
+			action.GetUpdateHttpUpstreamServers(), "error", err, plusActionsLogOrigin)
 
 		return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"", instanceID, err.Error())
@@ -39,7 +41,7 @@ func (a *APIAction) HandleUpdateStreamServersRequest(ctx context.Context, action
 
 	slog.DebugContext(ctx, "Successfully updated stream upstream servers", "http_upstream_name",
 		action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(), "add", len(add), "update", len(update),
-		"delete", len(del))
+		"delete", len(del), plusActionsLogOrigin)
 
 	return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
 		"Successfully updated stream upstream servers", instanceID, "")
@@ -54,7 +56,7 @@ func (a *APIAction) HandleGetStreamUpstreamsRequest(ctx context.Context,
 
 	streamUpstreams, err := a.ResourceService.GetStreamUpstreams(ctx, instance)
 	if err != nil {
-		slog.ErrorContext(ctx, "Unable to get stream upstreams", "error", err)
+		slog.ErrorContext(ctx, "Unable to get stream upstreams", "error", err, plusActionsLogOrigin)
 		return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"", instanceID, err.Error())
 	}
@@ -62,7 +64,7 @@ func (a *APIAction) HandleGetStreamUpstreamsRequest(ctx context.Context,
 	if streamUpstreams != nil {
 		streamUpstreamsJSON, jsonErr := json.Marshal(streamUpstreams)
 		if jsonErr != nil {
-			slog.ErrorContext(ctx, "Unable to marshal stream upstreams", "err", err)
+			slog.ErrorContext(ctx, "Unable to marshal stream upstreams", "err", err, plusActionsLogOrigin)
 		}
 		streamUpstreamsResponse = string(streamUpstreamsJSON)
 	}
@@ -78,7 +80,7 @@ func (a *APIAction) HandleGetUpstreamsRequest(ctx context.Context, instance *mpi
 
 	upstreams, err := a.ResourceService.GetUpstreams(ctx, instance)
 	if err != nil {
-		slog.InfoContext(ctx, "Unable to get upstreams", "error", err)
+		slog.InfoContext(ctx, "Unable to get upstreams", "error", err, plusActionsLogOrigin)
 
 		return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"", instanceID, err.Error())
@@ -87,7 +89,7 @@ func (a *APIAction) HandleGetUpstreamsRequest(ctx context.Context, instance *mpi
 	if upstreams != nil {
 		upstreamsJSON, jsonErr := json.Marshal(upstreams)
 		if jsonErr != nil {
-			slog.ErrorContext(ctx, "Unable to marshal upstreams", "err", err)
+			slog.ErrorContext(ctx, "Unable to marshal upstreams", "err", err, plusActionsLogOrigin)
 		}
 		upstreamsResponse = string(upstreamsJSON)
 	}
@@ -107,15 +109,15 @@ func (a *APIAction) HandleUpdateHTTPUpstreamsRequest(ctx context.Context, action
 		action.GetUpdateHttpUpstreamServers().GetServers())
 	if err != nil {
 		slog.ErrorContext(ctx, "Unable to update HTTP servers of upstream", "request",
-			action.GetUpdateHttpUpstreamServers(), "error", err)
+			action.GetUpdateHttpUpstreamServers(), "error", err, plusActionsLogOrigin)
 
 		return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"", instanceID, err.Error())
 	}
 
 	slog.DebugContext(ctx, "Successfully updated http upstream servers", "http_upstream_name",
-		action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(), "add", len(add), "update", len(update),
-		"delete", len(del))
+		action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(), plusActionsLogOrigin, "add", len(add),
+		"update", len(update), "delete", len(del))
 
 	return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
 		"Successfully updated HTTP Upstreams", instanceID, "")
@@ -131,7 +133,7 @@ func (a *APIAction) HandleGetHTTPUpstreamsServersRequest(ctx context.Context, ac
 	upstreams, err := a.ResourceService.GetHTTPUpstreamServers(ctx, instance,
 		action.GetGetHttpUpstreamServers().GetHttpUpstreamName())
 	if err != nil {
-		slog.ErrorContext(ctx, "Unable to get HTTP servers of upstream", "error", err)
+		slog.ErrorContext(ctx, "Unable to get HTTP servers of upstream", "error", err, plusActionsLogOrigin)
 		return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"", instanceID, err.Error())
 	}
@@ -139,7 +141,7 @@ func (a *APIAction) HandleGetHTTPUpstreamsServersRequest(ctx context.Context, ac
 	if upstreams != nil {
 		upstreamsJSON, jsonErr := json.Marshal(upstreams)
 		if jsonErr != nil {
-			slog.ErrorContext(ctx, "Unable to marshal http upstreams", "err", err)
+			slog.ErrorContext(ctx, "Unable to marshal http upstreams", "err", err, plusActionsLogOrigin)
 		}
 		upstreamsResponse = string(upstreamsJSON)
 	}

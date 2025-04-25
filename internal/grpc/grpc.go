@@ -56,6 +56,8 @@ type (
 	}
 )
 
+var logOrigin = slog.String("log_origin", "grpc.go")
+
 var (
 	serviceConfig = `{
 		"healthCheckConfig": {
@@ -66,8 +68,6 @@ var (
 	defaultCredentials = insecure.NewCredentials()
 
 	_ GrpcConnectionInterface = (*GrpcConnection)(nil)
-
-	logOrigin = slog.String("log_origin", "grpc.go")
 )
 
 // nolint: ireturn

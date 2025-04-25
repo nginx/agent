@@ -23,6 +23,8 @@ type NginxLogTailerOperator struct {
 
 var _ logTailerOperator = (*NginxLogTailerOperator)(nil)
 
+var tailerLogOrigin = slog.String("log_origin", "nginx_log_tailer_operator.go")
+
 var (
 	// Line is over 120 characters long, regex needs to be on one line so needs to be ignored by linter
 	// nolint: lll
@@ -41,7 +43,8 @@ func NewLogTailerOperator(agentConfig *config.Config) *NginxLogTailerOperator {
 func (l *NginxLogTailerOperator) Tail(ctx context.Context, errorLog string, errorChannel chan error) {
 	t, err := nginx.NewTailer(errorLog)
 	if err != nil {
-		slog.ErrorContext(ctx, "Unable to tail error log after NGINX reload", "log_file", errorLog, "error", err)
+		slog.ErrorContext(ctx, "Unable to tail error log after NGINX reload", "log_file", errorLog,
+			"error", err, tailerLogOrigin)
 		// this is not an error in the logs, ignoring tailing
 		errorChannel <- nil
 
@@ -51,7 +54,8 @@ func (l *NginxLogTailerOperator) Tail(ctx context.Context, errorLog string, erro
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, l.agentConfig.DataPlaneConfig.Nginx.ReloadMonitoringPeriod)
 	defer cancel()
 
-	slog.DebugContext(ctxWithTimeout, "Monitoring NGINX error log file for any errors", "file", errorLog)
+	slog.DebugContext(ctxWithTimeout, "Monitoring NGINX error log file for any errors",
+		"file", errorLog, tailerLogOrigin)
 
 	data := make(chan string, logTailerChannelSize)
 	go t.Tail(ctxWithTimeout, data)

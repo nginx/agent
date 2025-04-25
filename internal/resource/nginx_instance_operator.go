@@ -25,6 +25,8 @@ type NginxInstanceOperator struct {
 
 var _ instanceOperator = (*NginxInstanceOperator)(nil)
 
+var logOrigin = slog.String("log_origin", "nginx_instance_operator.go")
+
 func NewInstanceOperator(agentConfig *config.Config) *NginxInstanceOperator {
 	return &NginxInstanceOperator{
 		executer:              &exec.Exec{},
@@ -34,7 +36,7 @@ func NewInstanceOperator(agentConfig *config.Config) *NginxInstanceOperator {
 }
 
 func (i *NginxInstanceOperator) Validate(ctx context.Context, instance *mpi.Instance) error {
-	slog.DebugContext(ctx, "Validating NGINX config")
+	slog.DebugContext(ctx, "Validating NGINX config", logOrigin)
 	exePath := instance.GetInstanceRuntime().GetBinaryPath()
 
 	out, err := i.executer.RunCmd(ctx, exePath, "-t")
@@ -47,7 +49,7 @@ func (i *NginxInstanceOperator) Validate(ctx context.Context, instance *mpi.Inst
 		return err
 	}
 
-	slog.InfoContext(ctx, "NGINX config tested", "output", out)
+	slog.InfoContext(ctx, "NGINX config tested", "output", out, logOrigin)
 
 	return nil
 }
@@ -69,9 +71,10 @@ func (i *NginxInstanceOperator) validateConfigCheckResponse(out []byte) error {
 func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instance) error {
 	var errorsFound error
 	slog.InfoContext(ctx, "Reloading NGINX PID", "pid",
-		instance.GetInstanceRuntime().GetProcessId())
+		instance.GetInstanceRuntime().GetProcessId(), logOrigin)
 
-	slog.InfoContext(ctx, "NGINX reloaded", "processid", instance.GetInstanceRuntime().GetProcessId())
+	slog.InfoContext(ctx, "NGINX reloaded", "processid",
+		instance.GetInstanceRuntime().GetProcessId(), logOrigin)
 
 	errorLogs := i.errorLogs(instance)
 
@@ -89,14 +92,14 @@ func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instan
 
 	for i := 0; i < numberOfExpectedMessages; i++ {
 		logErr := <-logErrorChannel
-		slog.InfoContext(ctx, "Message received in logErrorChannel", "error", logErr)
+		slog.InfoContext(ctx, "Message received in logErrorChannel", "error", logErr, logOrigin)
 		if logErr != nil {
 			errorsFound = errors.Join(errorsFound, logErr)
-			slog.Info("Errors Found", "", errorsFound)
+			slog.Info("Errors Found", "", errorsFound, logOrigin)
 		}
 	}
 
-	slog.InfoContext(ctx, "Finished monitoring post reload")
+	slog.InfoContext(ctx, "Finished monitoring post reload", logOrigin)
 
 	if errorsFound != nil {
 		return errorsFound
@@ -117,7 +120,7 @@ func (i *NginxInstanceOperator) errorLogs(instance *mpi.Instance) (errorLogs []s
 
 func (i *NginxInstanceOperator) monitorLogs(ctx context.Context, errorLogs []string, errorChannel chan error) {
 	if len(errorLogs) == 0 {
-		slog.InfoContext(ctx, "No NGINX error logs found to monitor")
+		slog.InfoContext(ctx, "No NGINX error logs found to monitor", logOrigin)
 		return
 	}
 

@@ -44,6 +44,8 @@ type plusAPIErr struct {
 
 var _ bus.Plugin = (*Resource)(nil)
 
+var resourcePluginLogOrigin = slog.String("log_origin", "resource_plugin.go")
+
 func NewResource(agentConfig *config.Config) *Resource {
 	return &Resource{
 		agentConfig: agentConfig,
@@ -51,7 +53,7 @@ func NewResource(agentConfig *config.Config) *Resource {
 }
 
 func (r *Resource) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
-	slog.DebugContext(ctx, "Starting resource plugin")
+	slog.DebugContext(ctx, "Starting resource plugin", resourcePluginLogOrigin)
 
 	r.messagePipe = messagePipe
 	r.resourceService = NewResourceService(ctx, r.agentConfig)
@@ -60,7 +62,7 @@ func (r *Resource) Init(ctx context.Context, messagePipe bus.MessagePipeInterfac
 }
 
 func (*Resource) Close(ctx context.Context) error {
-	slog.InfoContext(ctx, "Closing resource plugin")
+	slog.InfoContext(ctx, "Closing resource plugin", resourcePluginLogOrigin)
 	return nil
 }
 
@@ -77,7 +79,8 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 	case bus.AddInstancesTopic:
 		instanceList, ok := msg.Data.([]*mpi.Instance)
 		if !ok {
-			slog.ErrorContext(ctx, "Unable to cast message payload to []*mpi.Instance", "payload", msg.Data)
+			slog.ErrorContext(ctx, "Unable to cast message payload to []*mpi.Instance",
+				"payload", msg.Data, resourcePluginLogOrigin)
 
 			return
 		}
@@ -90,7 +93,8 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 	case bus.UpdatedInstancesTopic:
 		instanceList, ok := msg.Data.([]*mpi.Instance)
 		if !ok {
-			slog.ErrorContext(ctx, "Unable to cast message payload to []*mpi.Instance", "payload", msg.Data)
+			slog.ErrorContext(ctx, "Unable to cast message payload to []*mpi.Instance",
+				"payload", msg.Data, resourcePluginLogOrigin)
 
 			return
 		}
@@ -103,7 +107,8 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 	case bus.DeletedInstancesTopic:
 		instanceList, ok := msg.Data.([]*mpi.Instance)
 		if !ok {
-			slog.ErrorContext(ctx, "Unable to cast message payload to []*mpi.Instance", "payload", msg.Data)
+			slog.ErrorContext(ctx, "Unable to cast message payload to []*mpi.Instance",
+				"payload", msg.Data, resourcePluginLogOrigin)
 
 			return
 		}
@@ -119,7 +124,7 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 	case bus.APIActionRequestTopic:
 		r.handleAPIActionRequest(ctx, msg)
 	default:
-		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)
+		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic, resourcePluginLogOrigin)
 	}
 }
 
@@ -138,8 +143,8 @@ func (r *Resource) handleAPIActionRequest(ctx context.Context, msg *bus.Message)
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
 
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest", "payload",
-			msg.Data)
+		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest",
+			"payload", msg.Data, resourcePluginLogOrigin)
 
 		return
 	}
@@ -147,7 +152,7 @@ func (r *Resource) handleAPIActionRequest(ctx context.Context, msg *bus.Message)
 	request, requestOk := managementPlaneRequest.GetRequest().(*mpi.ManagementPlaneRequest_ActionRequest)
 	if !requestOk {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest_ActionRequest",
-			"payload", msg.Data)
+			"payload", msg.Data, resourcePluginLogOrigin)
 	}
 
 	instanceID := request.ActionRequest.GetInstanceId()
@@ -156,7 +161,7 @@ func (r *Resource) handleAPIActionRequest(ctx context.Context, msg *bus.Message)
 	case *mpi.APIActionRequest_NginxPlusAction:
 		r.handleNginxPlusActionRequest(ctx, request.ActionRequest.GetNginxPlusAction(), instanceID)
 	default:
-		slog.DebugContext(ctx, "API action request not implemented yet")
+		slog.DebugContext(ctx, "API action request not implemented yet", resourcePluginLogOrigin)
 	}
 }
 
@@ -167,7 +172,7 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 		ResourceService: r.resourceService,
 	}
 	if instance == nil {
-		slog.ErrorContext(ctx, "Unable to find instance with ID", "id", instanceID)
+		slog.ErrorContext(ctx, "Unable to find instance with ID", "id", instanceID, resourcePluginLogOrigin)
 		resp := response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"", instanceID, fmt.Sprintf("failed to preform API "+
 				"action, could not find instance with ID: %s", instanceID))
@@ -178,7 +183,8 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 	}
 
 	if instance.GetInstanceMeta().GetInstanceType() != mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
-		slog.ErrorContext(ctx, "Failed to preform API action", "error", errors.New("instance is not NGINX Plus"))
+		slog.ErrorContext(ctx, "Failed to preform API action",
+			"error", errors.New("instance is not NGINX Plus"), resourcePluginLogOrigin)
 		resp := response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"", instanceID, "failed to preform API action, instance is not NGINX Plus")
 
@@ -189,41 +195,48 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 
 	switch action.GetAction().(type) {
 	case *mpi.NGINXPlusAction_UpdateHttpUpstreamServers:
-		slog.DebugContext(ctx, "Updating http upstream servers", "request", action.GetUpdateHttpUpstreamServers())
+		slog.DebugContext(ctx, "Updating http upstream servers",
+			"request", action.GetUpdateHttpUpstreamServers(), resourcePluginLogOrigin)
 		resp := apiAction.HandleUpdateHTTPUpstreamsRequest(ctx, action, instance)
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 	case *mpi.NGINXPlusAction_GetHttpUpstreamServers:
-		slog.DebugContext(ctx, "Getting http upstream servers", "request", action.GetGetHttpUpstreamServers())
+		slog.DebugContext(ctx, "Getting http upstream servers",
+			"request", action.GetGetHttpUpstreamServers(), resourcePluginLogOrigin)
 		resp := apiAction.HandleGetHTTPUpstreamsServersRequest(ctx, action, instance)
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 	case *mpi.NGINXPlusAction_UpdateStreamServers:
-		slog.DebugContext(ctx, "Updating stream servers", "request", action.GetUpdateStreamServers())
+		slog.DebugContext(ctx, "Updating stream servers",
+			"request", action.GetUpdateStreamServers(), resourcePluginLogOrigin)
 		resp := apiAction.HandleUpdateStreamServersRequest(ctx, action, instance)
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 	case *mpi.NGINXPlusAction_GetStreamUpstreams:
-		slog.DebugContext(ctx, "Getting stream upstreams", "request", action.GetGetStreamUpstreams())
+		slog.DebugContext(ctx, "Getting stream upstreams",
+			"request", action.GetGetStreamUpstreams(), resourcePluginLogOrigin)
 		resp := apiAction.HandleGetStreamUpstreamsRequest(ctx, instance)
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 	case *mpi.NGINXPlusAction_GetUpstreams:
-		slog.DebugContext(ctx, "Getting upstreams", "request", action.GetGetUpstreams())
+		slog.DebugContext(ctx, "Getting upstreams",
+			"request", action.GetGetUpstreams(), resourcePluginLogOrigin)
 		resp := apiAction.HandleGetUpstreamsRequest(ctx, instance)
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 	default:
-		slog.DebugContext(ctx, "NGINX Plus action not implemented yet")
+		slog.DebugContext(ctx, "NGINX Plus action not implemented yet", resourcePluginLogOrigin)
 	}
 }
 
 func (r *Resource) handleWriteConfigSuccessful(ctx context.Context, msg *bus.Message) {
 	data, ok := msg.Data.(*model.ConfigApplyMessage)
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplyMessage", "payload", msg.Data)
+		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplyMessage",
+			"payload", msg.Data, resourcePluginLogOrigin)
 
 		return
 	}
 	err := r.resourceService.ApplyConfig(ctx, data.InstanceID)
 	if err != nil {
 		data.Error = err
-		slog.Error("errors found during config apply, sending error status, rolling back config", "err", err)
+		slog.Error("errors found during config apply, sending error status, rolling back config",
+			"err", err, resourcePluginLogOrigin)
 		dpResponse := response.CreateDataPlaneResponse(data.CorrelationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
 			"Config apply failed, rolling back config", data.InstanceID, err.Error())
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: dpResponse})
@@ -248,13 +261,15 @@ func (r *Resource) handleWriteConfigSuccessful(ctx context.Context, msg *bus.Mes
 func (r *Resource) handleRollbackWrite(ctx context.Context, msg *bus.Message) {
 	data, ok := msg.Data.(*model.ConfigApplyMessage)
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplyMessage", "payload", msg.Data)
+		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplyMessage",
+			"payload", msg.Data, resourcePluginLogOrigin)
 
 		return
 	}
 	err := r.resourceService.ApplyConfig(ctx, data.InstanceID)
 	if err != nil {
-		slog.Error("errors found during rollback, sending failure status", "err", err)
+		slog.Error("errors found during rollback, sending failure status",
+			"err", err, resourcePluginLogOrigin)
 
 		rollbackResponse := response.CreateDataPlaneResponse(data.CorrelationID,
 			mpi.CommandResponse_COMMAND_STATUS_ERROR, "Rollback failed", data.InstanceID, err.Error())

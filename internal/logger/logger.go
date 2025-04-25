@@ -24,6 +24,8 @@ const (
 	CorrelationIDKey = "correlation_id"
 )
 
+var logOrigin = slog.String("log_origin", "logger.go")
+
 var (
 	logLevels = map[string]slog.Level{
 		"debug": slog.LevelDebug,
@@ -33,8 +35,6 @@ var (
 	}
 
 	CorrelationIDContextKey = contextKey(CorrelationIDKey)
-
-	logOrigin = slog.String("log_origin", "logger.go")
 )
 
 type (
