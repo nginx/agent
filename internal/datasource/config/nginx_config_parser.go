@@ -20,6 +20,8 @@ import (
 	"strconv"
 	"strings"
 
+	pkg "github.com/nginx/agent/v3/pkg/config"
+
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/model"
@@ -155,14 +157,16 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 					}
 				case "ssl_certificate", "proxy_ssl_certificate", "ssl_client_certificate",
 					"ssl_trusted_certificate":
-					sslCertFile := ncp.sslCert(ctx, directive.Args[0], rootDir)
-					if sslCertFile != nil {
-						if !ncp.isDuplicateFile(nginxConfigContext.Files, sslCertFile) {
+					if ncp.agentConfig.IsFeatureEnabled(pkg.FeatureCertificates) {
+						sslCertFile := ncp.sslCert(ctx, directive.Args[0], rootDir)
+						if sslCertFile != nil && !ncp.isDuplicateFile(nginxConfigContext.Files, sslCertFile) {
 							slog.DebugContext(ctx, "Adding SSL certificate file", "ssl_cert", sslCertFile)
 							nginxConfigContext.Files = append(nginxConfigContext.Files, sslCertFile)
 						}
+					} else {
+						slog.DebugContext(ctx, "Certificate feature is disabled, skipping cert",
+							"enabled_features", ncp.agentConfig.Features)
 					}
-
 				case "app_protect_security_log":
 					if len(directive.Args) > 1 {
 						syslogArg := directive.Args[1]

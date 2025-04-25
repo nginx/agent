@@ -5,7 +5,10 @@
 
 package model
 
-import "github.com/nginx/agent/v3/internal/model"
+import (
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/internal/model"
+)
 
 func GetConfigContext() *model.NginxConfigContext {
 	return &model.NginxConfigContext{
@@ -108,6 +111,47 @@ func GetConfigContextWithoutErrorLog(
 			{
 				Name:        ltsvAccessLogName,
 				Format:      "ltsv",
+				Readable:    true,
+				Permissions: "0600",
+			},
+		},
+		InstanceID:       instanceID,
+		NAPSysLogServers: syslogServers,
+	}
+}
+
+func GetConfigContextWithFiles(
+	accessLogName,
+	errorLogName string,
+	files []*mpi.File,
+	instanceID string,
+	syslogServers []string,
+) *model.NginxConfigContext {
+	return &model.NginxConfigContext{
+		StubStatus: &model.APIDetails{
+			URL:      "",
+			Listen:   "",
+			Location: "",
+		},
+		PlusAPI: &model.APIDetails{
+			URL:      "",
+			Listen:   "",
+			Location: "",
+		},
+		Files: files,
+		AccessLogs: []*model.AccessLog{
+			{
+				Name: accessLogName,
+				Format: "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent " +
+					"\"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\" \"$bytes_sent\" " +
+					"\"$request_length\" \"$request_time\" \"$gzip_ratio\" $server_protocol ",
+				Readable:    true,
+				Permissions: "0600",
+			},
+		},
+		ErrorLogs: []*model.ErrorLog{
+			{
+				Name:        errorLogName,
 				Readable:    true,
 				Permissions: "0600",
 			},
