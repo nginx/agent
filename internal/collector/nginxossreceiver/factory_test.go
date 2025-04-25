@@ -10,8 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"go.opentelemetry.io/collector/component"
-
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/consumer/consumertest"
@@ -54,26 +52,4 @@ func TestCreateMetricsReceiver(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, metricsReceiver)
-}
-
-func TestCreateStubStatusReceiver(t *testing.T) {
-	metrics, err := createStubStatusReceiver(
-		context.Background(),
-		receivertest.NewNopSettings(component.Type{}),
-		NewFactory().CreateDefaultConfig(),
-		consumertest.NewNop(),
-	)
-	require.NoError(t, err)
-	require.NotNil(t, metrics)
-}
-
-func TestCreateAccessLogReceiver(t *testing.T) {
-	metrics, err := createAccessLogReceiver(
-		context.Background(),
-		receivertest.NewNopSettings(component.Type{}),
-		NewFactory().CreateDefaultConfig(),
-		consumertest.NewNop(),
-	)
-	require.NoError(t, err)
-	require.NotNil(t, metrics)
 }

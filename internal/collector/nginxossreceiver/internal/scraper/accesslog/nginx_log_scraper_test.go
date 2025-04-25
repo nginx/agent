@@ -55,14 +55,13 @@ func TestAccessLogScraper(t *testing.T) {
 		},
 	}
 
-	accessLogScraper, err := NewScraper(receivertest.NewNopSettings(component.Type{}), cfg)
-	require.NoError(t, err)
+	accessLogScraper := NewScraper(receivertest.NewNopSettings(component.Type{}), cfg)
 	defer func() {
 		shutdownError := accessLogScraper.Shutdown(ctx)
 		require.NoError(t, shutdownError)
 	}()
 
-	err = accessLogScraper.Start(context.Background(), componenttest.NewNopHost())
+	err := accessLogScraper.Start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
 
 	go simulateLogging(t, testDataFilePath, testAccessLogPath, 250*time.Millisecond)
@@ -81,6 +80,15 @@ func TestAccessLogScraper(t *testing.T) {
 		pmetrictest.IgnoreTimestamp(),
 		pmetrictest.IgnoreMetricsOrder(),
 		pmetrictest.IgnoreResourceAttributeValue("instance.id")))
+}
+
+func TestAccessLogScraperError(t *testing.T) {
+	t.Run("include config missing", func(tt *testing.T) {
+		logScraper := NewScraper(receivertest.NewNopSettings(component.Type{}), &config.Config{})
+		err := logScraper.Start(context.Background(), componenttest.NewNopHost())
+		require.Error(tt, err)
+		assert.Contains(tt, err.Error(), "init stanza pipeline")
+	})
 }
 
 // Copies the contents of one file to another with the given delay. Used to simulate writing log entries to a log file.

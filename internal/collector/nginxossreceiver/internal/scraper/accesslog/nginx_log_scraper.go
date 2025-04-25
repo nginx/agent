@@ -36,17 +36,18 @@ const Percentage = 100
 
 type (
 	NginxLogScraper struct {
-		outChan  <-chan []*entry.Entry
-		cfg      *config.Config
-		settings receiver.Settings
-		logger   *zap.Logger
-		mb       *metadata.MetricsBuilder
-		rb       *metadata.ResourceBuilder
-		pipe     *pipeline.DirectedPipeline
-		wg       *sync.WaitGroup
-		cancel   context.CancelFunc
-		entries  []*entry.Entry
-		mut      sync.Mutex
+		outChan   <-chan []*entry.Entry
+		cfg       *config.Config
+		settings  receiver.Settings
+		logger    *zap.Logger
+		mb        *metadata.MetricsBuilder
+		rb        *metadata.ResourceBuilder
+		pipe      *pipeline.DirectedPipeline
+		wg        *sync.WaitGroup
+		cancel    context.CancelFunc
+		entries   []*entry.Entry
+		operators []operator.Config
+		mut       sync.Mutex
 	}
 
 	NginxMetrics struct {
@@ -65,7 +66,7 @@ type (
 func NewScraper(
 	settings receiver.Settings,
 	cfg *config.Config,
-) (*NginxLogScraper, error) {
+) *NginxLogScraper {
 	logger := settings.Logger
 	logger.Info("Creating NGINX access log scraper")
 
@@ -85,24 +86,17 @@ func NewScraper(
 	}
 
 	nls := &NginxLogScraper{
-		cfg:      cfg,
-		logger:   logger,
-		settings: settings,
-		mb:       mb,
-		rb:       rb,
-		mut:      sync.Mutex{},
-		wg:       &sync.WaitGroup{},
+		cfg:       cfg,
+		logger:    logger,
+		settings:  settings,
+		mb:        mb,
+		rb:        rb,
+		mut:       sync.Mutex{},
+		wg:        &sync.WaitGroup{},
+		operators: operators,
 	}
 
-	if len(operators) > 0 {
-		var err error
-		nls.pipe, err = nls.initStanzaPipeline(operators, settings.Logger)
-		if err != nil {
-			return nil, fmt.Errorf("init stanza pipeline: %w", err)
-		}
-	}
-
-	return nls, nil
+	return nls
 }
 
 func (nls *NginxLogScraper) ID() component.ID {
@@ -114,15 +108,19 @@ func (nls *NginxLogScraper) Start(parentCtx context.Context, _ component.Host) e
 	ctx, cancel := context.WithCancel(parentCtx)
 	nls.cancel = cancel
 
-	if nls.pipe != nil {
-		err := nls.pipe.Start(storage.NewNopClient())
-		if err != nil {
-			return fmt.Errorf("stanza pipeline start: %w", err)
-		}
-
-		nls.wg.Add(1)
-		go nls.runConsumer(ctx)
+	var err error
+	nls.pipe, err = nls.initStanzaPipeline(nls.operators, nls.logger)
+	if err != nil {
+		return fmt.Errorf("init stanza pipeline: %w", err)
 	}
+
+	startError := nls.pipe.Start(storage.NewNopClient())
+	if startError != nil {
+		return fmt.Errorf("stanza pipeline start: %w", startError)
+	}
+
+	nls.wg.Add(1)
+	go nls.runConsumer(ctx)
 
 	return nil
 }
@@ -208,11 +206,7 @@ func (nls *NginxLogScraper) Shutdown(_ context.Context) error {
 	}
 	nls.wg.Wait()
 
-	if nls.pipe != nil {
-		return nls.pipe.Stop()
-	}
-
-	return nil
+	return nls.pipe.Stop()
 }
 
 func (nls *NginxLogScraper) initStanzaPipeline(
