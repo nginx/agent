@@ -53,7 +53,6 @@ func (a *App) Run(ctx context.Context) error {
 			slog.String("version", a.version),
 			slog.String("commit", a.commit),
 		)
-		slog.Info("Enabled features", "features", agentConfig.Features)
 
 		messagePipe := bus.NewMessagePipe(defaultMessagePipeChannelSize)
 		err = messagePipe.Register(defaultQueueSize, plugin.LoadPlugins(ctx, agentConfig))

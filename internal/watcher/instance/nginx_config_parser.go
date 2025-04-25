@@ -157,7 +157,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 							nginxConfigContext.Files = append(nginxConfigContext.Files, sslCertFile)
 						}
 					} else {
-						slog.InfoContext(ctx, "Certificate feature is disabled, skipping cert",
+						slog.DebugContext(ctx, "Certificate feature is disabled, skipping cert",
 							"enabled_features", ncp.agentConfig.Features)
 					}
 				case "app_protect_security_log":

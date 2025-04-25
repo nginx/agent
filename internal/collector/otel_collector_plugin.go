@@ -419,7 +419,7 @@ func (oc *Collector) checkForNewReceivers(nginxConfigContext *model.NginxConfigC
 			reloadCollector = true
 		}
 	} else {
-		slog.Warn("NAP logs feature disabled", "enabled_features", oc.config.Features)
+		slog.Debug("NAP logs feature disabled", "enabled_features", oc.config.Features)
 	}
 
 	return reloadCollector

@@ -103,7 +103,7 @@ func (w *Watcher) Init(ctx context.Context, messagePipe bus.MessagePipeInterface
 	if w.agentConfig.IsFeatureEnabled(pkgConfig.FeatureFileWatcher) {
 		go w.fileWatcherService.Watch(watcherContext, w.fileUpdatesChannel)
 	} else {
-		slog.InfoContext(watcherContext, "File watcher feature is disabled",
+		slog.DebugContext(watcherContext, "File watcher feature is disabled",
 			"enabled_features", w.agentConfig.Features)
 	}
 
