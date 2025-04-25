@@ -20,6 +20,8 @@ import (
 	"strconv"
 	"strings"
 
+	pkg "github.com/nginx/agent/v3/pkg/config"
+
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/model"
@@ -159,9 +161,9 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 					}
 				case "ssl_certificate", "proxy_ssl_certificate", "ssl_client_certificate",
 					"ssl_trusted_certificate":
-					sslCertFile := ncp.sslCert(ctx, directive.Args[0], rootDir)
-					if sslCertFile != nil {
-						if !ncp.isDuplicateFile(nginxConfigContext.Files, sslCertFile) {
+					if ncp.agentConfig.IsFeatureEnabled(pkg.FeatureCertificates) {
+						sslCertFile := ncp.sslCert(ctx, directive.Args[0], rootDir)
+						if sslCertFile != nil && !ncp.isDuplicateFile(nginxConfigContext.Files, sslCertFile) {
 							slog.DebugContext(
 								ctx,
 								"Adding SSL certificate file",
@@ -170,8 +172,14 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 							)
 							nginxConfigContext.Files = append(nginxConfigContext.Files, sslCertFile)
 						}
+					} else {
+						slog.DebugContext(
+							ctx,
+							"Certificate feature is disabled, skipping cert",
+							"enabled_features", ncp.agentConfig.Features,
+							configParserLogOrigin,
+						)
 					}
-
 				case "app_protect_security_log":
 					if len(directive.Args) > 1 {
 						syslogArg := directive.Args[1]
@@ -242,8 +250,11 @@ func (ncp *NginxConfigParser) ignoreLog(logPath string) bool {
 	}
 
 	if !ncp.agentConfig.IsDirectoryAllowed(logPath) {
-		slog.Warn("Log being read is outside of allowed directories",
-			"log_path", logPath, configParserLogOrigin)
+		slog.Warn(
+			"Log being read is outside of allowed directories",
+			"log_path", logPath,
+			configParserLogOrigin,
+		)
 	}
 
 	return false
@@ -356,7 +367,8 @@ func (ncp *NginxConfigParser) sslCert(ctx context.Context, file, rootDir string)
 		slog.DebugContext(
 			ctx,
 			"Cannot process SSL certificate file path with variables",
-			"file", file, configParserLogOrigin,
+			"file", file,
+			configParserLogOrigin,
 		)
 
 		return nil
