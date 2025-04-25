@@ -170,7 +170,7 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instanceID 
 
 		slog.Info("Send Config Context Update - Reparse config", "instance_id", instanceID)
 		iw.sendNginxConfigContextUpdate(ctx, nginxConfigContext)
-		iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
+		iw.updateCache(nginxConfigContext)
 		updatesRequired = proto.UpdateNginxInstanceRuntime(instance, nginxConfigContext)
 	}
 
@@ -183,6 +183,17 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instanceID 
 			InstanceUpdates: instanceUpdates,
 		}
 	}
+}
+
+func (iw *InstanceWatcherService) updateCache(nginxConfigContext *model.NginxConfigContext) {
+	iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
+	slog.Info("Instance Update Cache - New Context", "url", nginxConfigContext.StubStatus.URL,
+		"location", nginxConfigContext.StubStatus.Location,
+		"listen", nginxConfigContext.StubStatus.Listen)
+	slog.Info("Instance Update Cache - Cache ", "url",
+		iw.nginxConfigCache[nginxConfigContext.InstanceID].StubStatus.URL,
+		"location", iw.nginxConfigCache[nginxConfigContext.InstanceID].StubStatus.Location,
+		"listen", iw.nginxConfigCache[nginxConfigContext.InstanceID].StubStatus.Listen)
 }
 
 func (iw *InstanceWatcherService) checkForUpdates(
@@ -224,7 +235,7 @@ func (iw *InstanceWatcherService) checkForUpdates(
 			} else {
 				slog.Info("Send Config Context Update - check for updates")
 				iw.sendNginxConfigContextUpdate(newCtx, nginxConfigContext)
-				iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
+				iw.updateCache(nginxConfigContext)
 				proto.UpdateNginxInstanceRuntime(newInstance, nginxConfigContext)
 				iw.instanceCache[newInstance.GetInstanceMeta().GetInstanceId()] = newInstance
 			}
@@ -259,6 +270,13 @@ func (iw *InstanceWatcherService) sendNginxConfigContextUpdate(
 		}
 	} else if !iw.nginxConfigCache[nginxConfigContext.InstanceID].Equal(nginxConfigContext) {
 		slog.Info("!iw.nginxConfigCache[nginxConfigContext.InstanceID].Equal(nginxConfigContext)")
+		slog.Info("Check Cache - Cache ", "url",
+			iw.nginxConfigCache[nginxConfigContext.InstanceID].StubStatus.URL,
+			"location", iw.nginxConfigCache[nginxConfigContext.InstanceID].StubStatus.Location,
+			"listen", iw.nginxConfigCache[nginxConfigContext.InstanceID].StubStatus.Listen)
+		slog.Info("Check Cache - New Context", "url", nginxConfigContext.StubStatus.URL,
+			"location", nginxConfigContext.StubStatus.Location,
+			"listen", nginxConfigContext.StubStatus.Listen)
 		slog.DebugContext(
 			ctx,
 			"New NGINX config context",
