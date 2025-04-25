@@ -212,9 +212,15 @@ func TestGrpc_ConfigApply(t *testing.T) {
 
 	t.Run("Test 2: Valid config", func(t *testing.T) {
 		clearManagementPlaneResponses(t)
+		newConfigFile := "../config/nginx/nginx-with-test-location.conf"
+
+		if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+			newConfigFile = "../config/nginx/nginx-plus.conf"
+		}
+
 		err := mockManagementPlaneGrpcContainer.CopyFileToContainer(
 			ctx,
-			"../config/nginx/nginx-with-test-location.conf",
+			newConfigFile,
 			fmt.Sprintf("/mock-management-plane-grpc/config/%s/etc/nginx/nginx.conf", nginxInstanceID),
 			0o666,
 		)
