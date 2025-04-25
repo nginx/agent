@@ -170,11 +170,12 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instanceID 
 
 		slog.Info("Send Config Context Update - Reparse config", "instance_id", instanceID)
 		iw.sendNginxConfigContextUpdate(ctx, nginxConfigContext)
-		iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
+		iw.updateCache(nginxConfigContext)
 		updatesRequired = proto.UpdateNginxInstanceRuntime(instance, nginxConfigContext)
 	}
 
 	if updatesRequired {
+		slog.Info("Instance Update Required")
 		instanceUpdates := InstanceUpdates{}
 		instanceUpdates.UpdatedInstances = append(instanceUpdates.UpdatedInstances, instance)
 		iw.instancesChannel <- InstanceUpdatesMessage{
@@ -182,6 +183,13 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instanceID 
 			InstanceUpdates: instanceUpdates,
 		}
 	}
+}
+
+func (iw *InstanceWatcherService) updateCache(nginxConfigContext *model.NginxConfigContext) {
+	slog.Info("Updating Cache")
+	iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
+	slog.Info("Updated Cache for instance", "", nginxConfigContext.InstanceID)
+	slog.Info("Current Cache", "", iw.nginxConfigCache[nginxConfigContext.InstanceID])
 }
 
 func (iw *InstanceWatcherService) checkForUpdates(
@@ -243,8 +251,8 @@ func (iw *InstanceWatcherService) sendNginxConfigContextUpdate(
 	ctx context.Context,
 	nginxConfigContext *model.NginxConfigContext,
 ) {
-	if iw.nginxConfigCache[nginxConfigContext.InstanceID] == nil ||
-		!iw.nginxConfigCache[nginxConfigContext.InstanceID].Equal(nginxConfigContext) {
+	if iw.nginxConfigCache[nginxConfigContext.InstanceID] == nil {
+		slog.Info("iw.nginxConfigCache[nginxConfigContext.InstanceID] == nil")
 		slog.DebugContext(
 			ctx,
 			"New NGINX config context",
@@ -256,12 +264,19 @@ func (iw *InstanceWatcherService) sendNginxConfigContextUpdate(
 			CorrelationID:      logger.GetCorrelationIDAttr(ctx),
 			NginxConfigContext: nginxConfigContext,
 		}
-	} else if iw.nginxConfigCache[nginxConfigContext.InstanceID] != nil {
-		slog.Info("iw.nginxConfigCache[nginxConfigContext.InstanceID] != nil")
 	} else if !iw.nginxConfigCache[nginxConfigContext.InstanceID].Equal(nginxConfigContext) {
-		slog.Info("!iw.nginxConfigCache[nginxConfigContext.InstanceID].Equal(nginxConfigContext) ")
-	} else {
-		slog.Info("skipped")
+		slog.Info("!iw.nginxConfigCache[nginxConfigContext.InstanceID].Equal(nginxConfigContext)")
+		slog.DebugContext(
+			ctx,
+			"New NGINX config context",
+			"instance_id", nginxConfigContext.InstanceID,
+			"nginx_config_context", nginxConfigContext,
+		)
+
+		iw.nginxConfigContextChannel <- NginxConfigContextMessage{
+			CorrelationID:      logger.GetCorrelationIDAttr(ctx),
+			NginxConfigContext: nginxConfigContext,
+		}
 	}
 }
 
