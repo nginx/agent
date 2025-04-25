@@ -1,0 +1,52 @@
+// Copyright (c) F5, Inc.
+//
+// This source code is licensed under the Apache License, Version 2.0 license found in the
+// LICENSE file in the root directory of this source tree.
+
+package cgroup
+
+import (
+	"os"
+	"path"
+	"runtime"
+	"strconv"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestPercentages(t *testing.T) {
+	_, filename, _, _ := runtime.Caller(0)
+	localDirectory := path.Dir(filename)
+
+	tests := []struct {
+		name      string
+		basePath  string
+		cpuStat   ContainerCPUStats
+		errorType error
+	}{
+		{"v1 good data", localDirectory + "/../testdata/good_data/v1/", ContainerCPUStats{User: 0.6712570862198262, System: 0.20429056808044366}, nil},
+		{"v1 bad data", localDirectory + "/../testdata/bad_data/v1/", ContainerCPUStats{}, &strconv.NumError{}},
+		{"v2 good data", localDirectory + "/../testdata/good_data/v2/", ContainerCPUStats{User: 4.627063395919899, System: 4.250076104937527}, nil},
+		{"v2 bad data", localDirectory + "/../testdata/bad_data/v2/", ContainerCPUStats{}, &strconv.NumError{}},
+		{"no file", localDirectory + "/unknown/", ContainerCPUStats{}, &os.PathError{}},
+	}
+
+	GetNumberOfCores = func() int {
+		return 2
+	}
+	CPUStatsPath = localDirectory + "/../testdata/proc/stat"
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			cgroupCPUSource := NewCPUSource(test.basePath)
+			cpuStat, err := cgroupCPUSource.collectCPUStats()
+
+			// Assert error
+			assert.IsType(tt, test.errorType, err)
+
+			// Assert result
+			assert.Equal(tt, test.cpuStat, cpuStat)
+		})
+	}
+}

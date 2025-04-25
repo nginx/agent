@@ -26,14 +26,18 @@ func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
 	return nil
 }
 
-// MetricsConfig provides config for containermetrics metrics.
+// MetricsConfig provides config for cpu metrics.
 type MetricsConfig struct {
-	SystemMemoryUsage MetricConfig `mapstructure:"system.memory.usage"`
+	SystemCPULogicalCount MetricConfig `mapstructure:"system.cpu.logical.count"`
+	SystemCPUUtilization  MetricConfig `mapstructure:"system.cpu.utilization"`
 }
 
 func DefaultMetricsConfig() MetricsConfig {
 	return MetricsConfig{
-		SystemMemoryUsage: MetricConfig{
+		SystemCPULogicalCount: MetricConfig{
+			Enabled: true,
+		},
+		SystemCPUUtilization: MetricConfig{
 			Enabled: true,
 		},
 	}
@@ -65,7 +69,7 @@ func (rac *ResourceAttributeConfig) Unmarshal(parser *confmap.Conf) error {
 	return nil
 }
 
-// ResourceAttributesConfig provides config for containermetrics resource attributes.
+// ResourceAttributesConfig provides config for cpu resource attributes.
 type ResourceAttributesConfig struct {
 	ResourceID ResourceAttributeConfig `mapstructure:"resource.id"`
 }
@@ -78,7 +82,7 @@ func DefaultResourceAttributesConfig() ResourceAttributesConfig {
 	}
 }
 
-// MetricsBuilderConfig is a configuration for containermetrics metrics builder.
+// MetricsBuilderConfig is a configuration for cpu metrics builder.
 type MetricsBuilderConfig struct {
 	Metrics            MetricsConfig            `mapstructure:"metrics"`
 	ResourceAttributes ResourceAttributesConfig `mapstructure:"resource_attributes"`

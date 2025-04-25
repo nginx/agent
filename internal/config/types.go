@@ -182,11 +182,11 @@ type (
 	// OTel Collector Receiver configuration.
 	Receivers struct {
 		ContainerMetrics   *ContainerMetricsReceiver `yaml:"container_metrics" mapstructure:"container_metrics"`
-		HostMetrics        *HostMetrics        `yaml:"host_metrics"         mapstructure:"host_metrics"`
-		OtlpReceivers      []OtlpReceiver      `yaml:"otlp_receivers"       mapstructure:"otlp_receivers"`
-		NginxReceivers     []NginxReceiver     `yaml:"nginx_receivers"      mapstructure:"nginx_receivers"`
-		NginxPlusReceivers []NginxPlusReceiver `yaml:"nginx_plus_receivers" mapstructure:"nginx_plus_receivers"`
-		TcplogReceivers    []TcplogReceiver    `yaml:"tcplog_receivers"     mapstructure:"tcplog_receivers"`
+		HostMetrics        *HostMetrics              `yaml:"host_metrics"         mapstructure:"host_metrics"`
+		OtlpReceivers      []OtlpReceiver            `yaml:"otlp_receivers"       mapstructure:"otlp_receivers"`
+		NginxReceivers     []NginxReceiver           `yaml:"nginx_receivers"      mapstructure:"nginx_receivers"`
+		NginxPlusReceivers []NginxPlusReceiver       `yaml:"nginx_plus_receivers" mapstructure:"nginx_plus_receivers"`
+		TcplogReceivers    []TcplogReceiver          `yaml:"tcplog_receivers"     mapstructure:"tcplog_receivers"`
 	}
 
 	OtlpReceiver struct {
@@ -399,6 +399,7 @@ func (c *Config) AreReceiversConfigured() bool {
 		c.Collector.Receivers.NginxReceivers != nil ||
 		len(c.Collector.Receivers.NginxReceivers) > 0 ||
 		c.Collector.Receivers.HostMetrics != nil ||
+		c.Collector.Receivers.ContainerMetrics != nil ||
 		c.Collector.Receivers.TcplogReceivers != nil ||
 		len(c.Collector.Receivers.TcplogReceivers) > 0
 }

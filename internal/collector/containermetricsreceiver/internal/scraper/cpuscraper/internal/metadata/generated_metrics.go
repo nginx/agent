@@ -17,65 +17,68 @@ type AttributeState int
 
 const (
 	_ AttributeState = iota
-	AttributeStateBuffered
-	AttributeStateCached
-	AttributeStateInactive
-	AttributeStateFree
-	AttributeStateSlabReclaimable
-	AttributeStateSlabUnreclaimable
-	AttributeStateUsed
+	AttributeStateIdle
+	AttributeStateInterrupt
+	AttributeStateNice
+	AttributeStateSoftirq
+	AttributeStateSteal
+	AttributeStateSystem
+	AttributeStateUser
+	AttributeStateWait
 )
 
 // String returns the string representation of the AttributeState.
 func (av AttributeState) String() string {
 	switch av {
-	case AttributeStateBuffered:
-		return "buffered"
-	case AttributeStateCached:
-		return "cached"
-	case AttributeStateInactive:
-		return "inactive"
-	case AttributeStateFree:
-		return "free"
-	case AttributeStateSlabReclaimable:
-		return "slab_reclaimable"
-	case AttributeStateSlabUnreclaimable:
-		return "slab_unreclaimable"
-	case AttributeStateUsed:
-		return "used"
+	case AttributeStateIdle:
+		return "idle"
+	case AttributeStateInterrupt:
+		return "interrupt"
+	case AttributeStateNice:
+		return "nice"
+	case AttributeStateSoftirq:
+		return "softirq"
+	case AttributeStateSteal:
+		return "steal"
+	case AttributeStateSystem:
+		return "system"
+	case AttributeStateUser:
+		return "user"
+	case AttributeStateWait:
+		return "wait"
 	}
 	return ""
 }
 
 // MapAttributeState is a helper map of string to AttributeState attribute value.
 var MapAttributeState = map[string]AttributeState{
-	"buffered":           AttributeStateBuffered,
-	"cached":             AttributeStateCached,
-	"inactive":           AttributeStateInactive,
-	"free":               AttributeStateFree,
-	"slab_reclaimable":   AttributeStateSlabReclaimable,
-	"slab_unreclaimable": AttributeStateSlabUnreclaimable,
-	"used":               AttributeStateUsed,
+	"idle":      AttributeStateIdle,
+	"interrupt": AttributeStateInterrupt,
+	"nice":      AttributeStateNice,
+	"softirq":   AttributeStateSoftirq,
+	"steal":     AttributeStateSteal,
+	"system":    AttributeStateSystem,
+	"user":      AttributeStateUser,
+	"wait":      AttributeStateWait,
 }
 
-type metricSystemMemoryUsage struct {
+type metricSystemCPULogicalCount struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
 	capacity int            // max observed number of data points added to the metric.
 }
 
-// init fills system.memory.usage metric with initial data.
-func (m *metricSystemMemoryUsage) init() {
-	m.data.SetName("system.memory.usage")
-	m.data.SetDescription("Bytes of memory in use.")
-	m.data.SetUnit("By")
+// init fills system.cpu.logical.count metric with initial data.
+func (m *metricSystemCPULogicalCount) init() {
+	m.data.SetName("system.cpu.logical.count")
+	m.data.SetDescription("Number of available logical CPUs.")
+	m.data.SetUnit("{cpu}")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(false)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
-	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricSystemMemoryUsage) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, stateAttributeValue string) {
+func (m *metricSystemCPULogicalCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64) {
 	if !m.config.Enabled {
 		return
 	}
@@ -83,18 +86,17 @@ func (m *metricSystemMemoryUsage) recordDataPoint(start pcommon.Timestamp, ts pc
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("state", stateAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
-func (m *metricSystemMemoryUsage) updateCapacity() {
+func (m *metricSystemCPULogicalCount) updateCapacity() {
 	if m.data.Sum().DataPoints().Len() > m.capacity {
 		m.capacity = m.data.Sum().DataPoints().Len()
 	}
 }
 
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
-func (m *metricSystemMemoryUsage) emit(metrics pmetric.MetricSlice) {
+func (m *metricSystemCPULogicalCount) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
@@ -102,8 +104,59 @@ func (m *metricSystemMemoryUsage) emit(metrics pmetric.MetricSlice) {
 	}
 }
 
-func newMetricSystemMemoryUsage(cfg MetricConfig) metricSystemMemoryUsage {
-	m := metricSystemMemoryUsage{config: cfg}
+func newMetricSystemCPULogicalCount(cfg MetricConfig) metricSystemCPULogicalCount {
+	m := metricSystemCPULogicalCount{config: cfg}
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
+type metricSystemCPUUtilization struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills system.cpu.utilization metric with initial data.
+func (m *metricSystemCPUUtilization) init() {
+	m.data.SetName("system.cpu.utilization")
+	m.data.SetDescription("Difference in system.cpu.time since the last measurement per logical CPU, divided by the elapsed time (value in interval [0,1]).")
+	m.data.SetUnit("1")
+	m.data.SetEmptyGauge()
+	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricSystemCPUUtilization) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, stateAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Gauge().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetDoubleValue(val)
+	dp.Attributes().PutStr("state", stateAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricSystemCPUUtilization) updateCapacity() {
+	if m.data.Gauge().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Gauge().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricSystemCPUUtilization) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricSystemCPUUtilization(cfg MetricConfig) metricSystemCPUUtilization {
+	m := metricSystemCPUUtilization{config: cfg}
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
 		m.init()
@@ -121,7 +174,8 @@ type MetricsBuilder struct {
 	buildInfo                      component.BuildInfo  // contains version information.
 	resourceAttributeIncludeFilter map[string]filter.Filter
 	resourceAttributeExcludeFilter map[string]filter.Filter
-	metricSystemMemoryUsage        metricSystemMemoryUsage
+	metricSystemCPULogicalCount    metricSystemCPULogicalCount
+	metricSystemCPUUtilization     metricSystemCPUUtilization
 }
 
 // MetricBuilderOption applies changes to default metrics builder.
@@ -148,7 +202,8 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, opt
 		startTime:                      pcommon.NewTimestampFromTime(time.Now()),
 		metricsBuffer:                  pmetric.NewMetrics(),
 		buildInfo:                      settings.BuildInfo,
-		metricSystemMemoryUsage:        newMetricSystemMemoryUsage(mbc.Metrics.SystemMemoryUsage),
+		metricSystemCPULogicalCount:    newMetricSystemCPULogicalCount(mbc.Metrics.SystemCPULogicalCount),
+		metricSystemCPUUtilization:     newMetricSystemCPUUtilization(mbc.Metrics.SystemCPUUtilization),
 		resourceAttributeIncludeFilter: make(map[string]filter.Filter),
 		resourceAttributeExcludeFilter: make(map[string]filter.Filter),
 	}
@@ -224,10 +279,11 @@ func WithStartTimeOverride(start pcommon.Timestamp) ResourceMetricsOption {
 func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	rm := pmetric.NewResourceMetrics()
 	ils := rm.ScopeMetrics().AppendEmpty()
-	ils.Scope().SetName("otelcol/containermetrics")
+	ils.Scope().SetName("github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/scraper/cpuscraper")
 	ils.Scope().SetVersion(mb.buildInfo.Version)
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
-	mb.metricSystemMemoryUsage.emit(ils.Metrics())
+	mb.metricSystemCPULogicalCount.emit(ils.Metrics())
+	mb.metricSystemCPUUtilization.emit(ils.Metrics())
 
 	for _, op := range options {
 		op.apply(rm)
@@ -259,9 +315,14 @@ func (mb *MetricsBuilder) Emit(options ...ResourceMetricsOption) pmetric.Metrics
 	return metrics
 }
 
-// RecordSystemMemoryUsageDataPoint adds a data point to system.memory.usage metric.
-func (mb *MetricsBuilder) RecordSystemMemoryUsageDataPoint(ts pcommon.Timestamp, val int64, stateAttributeValue AttributeState) {
-	mb.metricSystemMemoryUsage.recordDataPoint(mb.startTime, ts, val, stateAttributeValue.String())
+// RecordSystemCPULogicalCountDataPoint adds a data point to system.cpu.logical.count metric.
+func (mb *MetricsBuilder) RecordSystemCPULogicalCountDataPoint(ts pcommon.Timestamp, val int64) {
+	mb.metricSystemCPULogicalCount.recordDataPoint(mb.startTime, ts, val)
+}
+
+// RecordSystemCPUUtilizationDataPoint adds a data point to system.cpu.utilization metric.
+func (mb *MetricsBuilder) RecordSystemCPUUtilizationDataPoint(ts pcommon.Timestamp, val float64, stateAttributeValue AttributeState) {
+	mb.metricSystemCPUUtilization.recordDataPoint(mb.startTime, ts, val, stateAttributeValue.String())
 }
 
 // Reset resets metrics builder to its initial state. It should be used when external metrics source is restarted,

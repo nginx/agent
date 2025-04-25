@@ -20,57 +20,58 @@ require (
 	github.com/nginxinc/nginx-plus-go-client/v2 v2.0.1
 	github.com/nginxinc/nginx-prometheus-exporter v1.3.0
 	github.com/nxadm/tail v1.4.11
-	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter v0.114.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/extension/headerssetterextension v0.114.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.114.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.114.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden v0.114.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest v0.114.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza v0.114.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.114.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatorateprocessor v0.114.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.114.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/redactionprocessor v0.114.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor v0.114.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.114.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.114.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/tcplogreceiver v0.114.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/testbed v0.114.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter v0.124.1
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/headerssetterextension v0.124.1
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.124.1
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.124.1
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden v0.124.1
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest v0.124.1
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza v0.124.1
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.124.1
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatorateprocessor v0.124.1
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.124.1
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/redactionprocessor v0.124.1
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor v0.124.1
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.124.1
+	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.124.1
+	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/tcplogreceiver v0.124.1
+	github.com/open-telemetry/opentelemetry-collector-contrib/testbed v0.124.1
 	github.com/shirou/gopsutil/v4 v4.24.10
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.10.0
 	github.com/testcontainers/testcontainers-go v0.34.0
 	github.com/trivago/grok v1.0.0
-	go.opentelemetry.io/collector/component v0.114.0
-	go.opentelemetry.io/collector/component/componenttest v0.114.0
-	go.opentelemetry.io/collector/config/confighttp v0.114.0
-	go.opentelemetry.io/collector/config/configtelemetry v0.114.0
-	go.opentelemetry.io/collector/confmap v1.20.0
-	go.opentelemetry.io/collector/confmap/provider/envprovider v1.20.0
-	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.20.0
-	go.opentelemetry.io/collector/confmap/provider/httpprovider v1.20.0
-	go.opentelemetry.io/collector/confmap/provider/httpsprovider v1.17.0
-	go.opentelemetry.io/collector/confmap/provider/yamlprovider v1.20.0
-	go.opentelemetry.io/collector/connector v0.114.0
-	go.opentelemetry.io/collector/consumer v0.114.0
-	go.opentelemetry.io/collector/consumer/consumertest v0.114.0
-	go.opentelemetry.io/collector/exporter v0.114.0
-	go.opentelemetry.io/collector/exporter/debugexporter v0.114.0
-	go.opentelemetry.io/collector/exporter/otlpexporter v0.114.0
-	go.opentelemetry.io/collector/exporter/otlphttpexporter v0.114.0
-	go.opentelemetry.io/collector/extension v0.114.0
-	go.opentelemetry.io/collector/extension/auth v0.114.0
-	go.opentelemetry.io/collector/extension/experimental/storage v0.114.0
-	go.opentelemetry.io/collector/filter v0.114.0
-	go.opentelemetry.io/collector/otelcol v0.114.0
-	go.opentelemetry.io/collector/pdata v1.20.0
-	go.opentelemetry.io/collector/processor v0.114.0
-	go.opentelemetry.io/collector/processor/batchprocessor v0.114.0
-	go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.114.0
-	go.opentelemetry.io/collector/receiver v0.114.0
-	go.opentelemetry.io/collector/receiver/otlpreceiver v0.114.0
-	go.opentelemetry.io/collector/receiver/receivertest v0.114.0
-	go.opentelemetry.io/otel v1.32.0
+	go.opentelemetry.io/collector/component v0.124.0 
+	go.opentelemetry.io/collector/component/componenttest v0.124.0 
+	go.opentelemetry.io/collector/config/confighttp v0.124.0 
+	go.opentelemetry.io/collector/config/configtelemetry v0.124.0 
+	go.opentelemetry.io/collector/confmap v0.124.0 
+	go.opentelemetry.io/collector/confmap/provider/envprovider v0.124.0 
+	go.opentelemetry.io/collector/confmap/provider/fileprovider v0.124.0 
+	go.opentelemetry.io/collector/confmap/provider/httpprovider v0.124.0 
+	go.opentelemetry.io/collector/confmap/provider/httpsprovider v0.124.0 
+	go.opentelemetry.io/collector/confmap/provider/yamlprovider v0.124.0 
+	go.opentelemetry.io/collector/connector v0.124.0 
+	go.opentelemetry.io/collector/consumer v0.124.0 
+	go.opentelemetry.io/collector/consumer/consumertest v0.124.0 
+	go.opentelemetry.io/collector/exporter v0.124.0 
+	go.opentelemetry.io/collector/exporter/debugexporter v0.124.0 
+	go.opentelemetry.io/collector/exporter/otlpexporter v0.124.0 
+	go.opentelemetry.io/collector/exporter/otlphttpexporter v0.124.0 
+	go.opentelemetry.io/collector/extension v0.124.0 
+	go.opentelemetry.io/collector/extension/auth v0.121.0 
+	go.opentelemetry.io/collector/extension/experimental/storage v0.117.0 
+	go.opentelemetry.io/collector/filter v0.124.0 
+	go.opentelemetry.io/collector/otelcol v0.124.0 
+	go.opentelemetry.io/collector/pdata v1.30.0 
+	go.opentelemetry.io/collector/processor v1.30.0 
+	go.opentelemetry.io/collector/processor/batchprocessor v0.124.0 
+	go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.124.0 
+	go.opentelemetry.io/collector/receiver v1.30.0 
+	go.opentelemetry.io/collector/receiver/otlpreceiver v0.124.0 
+	go.opentelemetry.io/collector/receiver/receivertest v0.124.0 
+	go.opentelemetry.io/collector/scraper v0.124.0
+	go.opentelemetry.io/otel v1.35.0
 	go.uber.org/goleak v1.3.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e

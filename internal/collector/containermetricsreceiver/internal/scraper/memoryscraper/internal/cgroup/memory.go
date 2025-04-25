@@ -13,34 +13,25 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal"
+
 	"github.com/shirou/gopsutil/v4/mem"
 )
 
-/*
-cgroup memory files (under /sys/fs/cgroup/)
+const (
+	V1MemStatFile  = "memory/memory.stat"
+	V1MemTotalFile = "memory/memory.limit_in_bytes"
+	V1MemUsageFile = "memory/memory.usage_in_bytes"
+	V1CachedKey    = "cache"
+	V1SharedKey    = "total_shmem"
 
-memory.current
-memory.events
-memory.events.local
-memory.high
-memory.low
-memory.max
-memory.min
-memory.numa_stat
-memory.oom.group
-memory.peak
-memory.pressure
-memory.reclaim
-memory.stat
-memory.swap.current
-memory.swap.events
-memory.swap.high
-memory.swap.max
-memory.swap.peak
-memory.zswap.current
-memory.zswap.max
-memory.zswap.writeback
-*/
+	V2MemStat         = "memory.stat"
+	V2MemTotal        = "memory.max"
+	V2MemUsage        = "memory.current"
+	V2CachedKey       = "file"
+	V2SharedKey       = "shmem"
+	V2DefaultMaxValue = "max"
+)
 
 type MemorySource struct {
 	basePath   string
@@ -57,7 +48,7 @@ var getHostMemoryStats = mem.VirtualMemoryWithContext
 func NewMemorySource(basePath string) *MemorySource {
 	return &MemorySource{
 		basePath:   basePath,
-		isCgroupV2: IsCgroupV2(basePath),
+		isCgroupV2: internal.IsCgroupV2(basePath),
 	}
 }
 
@@ -93,7 +84,7 @@ func (ms *MemorySource) VirtualMemoryStatWithContext(ctx context.Context) (*mem.
 		slog.Debug("Error getting memory limit in bytes", "err", err)
 	}
 
-	memoryUsageInBytes, err := ReadIntegerValueCgroupFile(path.Join(ms.basePath, memUsageFile))
+	memoryUsageInBytes, err := internal.ReadIntegerValueCgroupFile(path.Join(ms.basePath, memUsageFile))
 	if err != nil {
 		slog.Debug("Error reading memory usage in bytes", "err", err)
 	}
@@ -135,11 +126,11 @@ func (ms *MemorySource) VirtualMemoryStat() (*mem.VirtualMemoryStat, error) {
 }
 
 func MemoryLimitInBytes(ctx context.Context, filePath string) (uint64, error) {
-	memTotalString, err := ReadSingleValueCgroupFile(filePath)
+	memTotalString, err := internal.ReadSingleValueCgroupFile(filePath)
 	if err != nil {
 		return 0, err
 	}
-	if memTotalString == V2DefaultMaxValue || memTotalString == GetV1DefaultMaxValue() {
+	if memTotalString == V2DefaultMaxValue || memTotalString == internal.GetV1DefaultMaxValue() {
 		hostMemoryStats, hostErr := getHostMemoryStats(ctx)
 		if hostErr != nil {
 			return 0, hostErr
@@ -154,7 +145,7 @@ func MemoryLimitInBytes(ctx context.Context, filePath string) (uint64, error) {
 // nolint: revive, mnd
 func GetMemoryStat(statFile, cachedKey, sharedKey string) (MemoryStat, error) {
 	memoryStat := MemoryStat{}
-	lines, err := ReadLines(statFile)
+	lines, err := internal.ReadLines(statFile)
 	if err != nil {
 		return memoryStat, err
 	}

@@ -9,10 +9,14 @@ import (
 	"context"
 	"errors"
 
+	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/scraper/cpuscraper"
+	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/scraper/memoryscraper"
+	"go.opentelemetry.io/collector/scraper"
+
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/receiver"
-	"go.opentelemetry.io/collector/receiver/scraperhelper"
+	"go.opentelemetry.io/collector/scraper/scraperhelper"
 
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/config"
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/metadata"
@@ -42,20 +46,31 @@ func createMetricsReceiver(
 		return nil, errors.New("cast to metrics receiver config failed")
 	}
 
-	cs := newContainerScraper(params, cfg)
-
-	scraper, err := scraperhelper.NewScraperWithoutType(
-		cs.scrape,
-		scraperhelper.WithShutdown(cs.Shutdown),
+	cpuScraper := cpuscraper.NewScraper(params, cpuscraper.NewConfig(cfg))
+	cpuScraperMetrics, cpuScraperMetricsError := scraper.NewMetrics(
+		cpuScraper.Scrape,
+		scraper.WithStart(cpuScraper.Start),
+		scraper.WithShutdown(cpuScraper.Shutdown),
 	)
-	if err != nil {
-		return nil, err
+	if cpuScraperMetricsError != nil {
+		return nil, cpuScraperMetricsError
 	}
 
-	return scraperhelper.NewScraperControllerReceiver(
+	memoryScraper := memoryscraper.NewScraper(params, memoryscraper.NewConfig(cfg))
+	memoryScraperMetrics, memoryScraperMetricsError := scraper.NewMetrics(
+		memoryScraper.Scrape,
+		scraper.WithStart(memoryScraper.Start),
+		scraper.WithShutdown(memoryScraper.Shutdown),
+	)
+	if memoryScraperMetricsError != nil {
+		return nil, memoryScraperMetricsError
+	}
+
+	return scraperhelper.NewMetricsController(
 		&cfg.ControllerConfig,
 		params,
 		cons,
-		scraperhelper.AddScraperWithType(metadata.Type, scraper),
+		scraperhelper.AddScraper(metadata.Type, cpuScraperMetrics),
+		scraperhelper.AddScraper(metadata.Type, memoryScraperMetrics),
 	)
 }

@@ -23,7 +23,6 @@ import (
 	"go.opentelemetry.io/collector/extension/experimental/storage"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
-	"go.opentelemetry.io/collector/receiver/scraperhelper"
 	"go.opentelemetry.io/otel"
 	metricSdk "go.opentelemetry.io/otel/sdk/metric"
 	"go.uber.org/zap"
@@ -63,8 +62,6 @@ type (
 		fiveHundredStatusRange  int64
 	}
 )
-
-var _ scraperhelper.Scraper = (*NginxLogScraper)(nil)
 
 func NewScraper(
 	settings receiver.Settings,

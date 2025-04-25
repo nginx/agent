@@ -13,28 +13,43 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal"
 )
 
 const (
-	CPUStatsPath           = "/proc/stat"
+	V1CpuStatFile = "cpu/cpu.stat"
+	V1UserKey     = "user"
+	V1SystemKey   = "system"
+
+	V2CpuStat   = "cpu.stat"
+	V2UserKey   = "user_usec"
+	V2SystemKey = "system_usec"
+
 	CPUStatsFileLineLength = 8
 	nanoSecondsPerSecond   = 1e9
 )
 
+var (
+	CPUStatsPath     = "/proc/stat"
+	GetNumberOfCores = runtime.NumCPU
+)
+
 type (
-	DockerCPUTimes struct {
+	ContainerCPUTimes struct {
 		userUsage       float64
 		systemUsage     float64
 		hostSystemUsage float64
 	}
 
-	DockerCPUPercentages struct {
-		User   float64
-		System float64
+	ContainerCPUStats struct {
+		NumberOfLogicalCPUs int
+		User                float64
+		System              float64
 	}
 
 	CPUSource struct {
-		previous   *DockerCPUTimes
+		previous   *ContainerCPUTimes
 		basePath   string
 		isCgroupV2 bool
 	}
@@ -43,25 +58,25 @@ type (
 func NewCPUSource(basePath string) *CPUSource {
 	return &CPUSource{
 		basePath:   basePath,
-		isCgroupV2: IsCgroupV2(BasePath),
-		previous:   &DockerCPUTimes{},
+		isCgroupV2: internal.IsCgroupV2(basePath),
+		previous:   &ContainerCPUTimes{},
 	}
 }
 
-func (cs *CPUSource) Collect() (DockerCPUPercentages, error) {
-	cpuPercentages, err := cs.collectCPUPercentages()
+func (cs *CPUSource) Collect() (ContainerCPUStats, error) {
+	cpuStats, err := cs.collectCPUStats()
 	if err != nil {
-		return DockerCPUPercentages{}, err
+		return ContainerCPUStats{}, err
 	}
 
-	return cpuPercentages, nil
+	return cpuStats, nil
 }
 
 // nolint: mnd
-func (cs *CPUSource) collectCPUPercentages() (DockerCPUPercentages, error) {
+func (cs *CPUSource) collectCPUStats() (ContainerCPUStats, error) {
 	clockTicks, err := getClockTicks()
 	if err != nil {
-		return DockerCPUPercentages{}, err
+		return ContainerCPUStats{}, err
 	}
 
 	// cgroup v2 by default
@@ -87,14 +102,14 @@ func (cs *CPUSource) collectCPUPercentages() (DockerCPUPercentages, error) {
 		sysKey,
 	)
 	if err != nil {
-		return DockerCPUPercentages{}, err
+		return ContainerCPUStats{}, err
 	}
 
 	cpuTimes.userUsage = convertUsage(cpuTimes.userUsage)
 	cpuTimes.systemUsage = convertUsage(cpuTimes.systemUsage)
 	hostSystemUsage, err := getSystemCPUUsage(clockTicks)
 	if err != nil {
-		return DockerCPUPercentages{}, err
+		return ContainerCPUStats{}, err
 	}
 	cpuTimes.hostSystemUsage = hostSystemUsage
 
@@ -103,23 +118,24 @@ func (cs *CPUSource) collectCPUPercentages() (DockerCPUPercentages, error) {
 	systemDelta := cpuTimes.systemUsage - cs.previous.systemUsage
 	hostSystemDelta := cpuTimes.hostSystemUsage - cs.previous.hostSystemUsage
 
-	numCores := runtime.NumCPU()
-	userPercent := (userDelta / hostSystemDelta) * float64(numCores) * 100
-	systemPercent := (systemDelta / hostSystemDelta) * float64(numCores) * 100
+	numCores := GetNumberOfCores()
+	userPercent := (userDelta / hostSystemDelta) * float64(numCores)
+	systemPercent := (systemDelta / hostSystemDelta) * float64(numCores)
 
-	dockerCPUPercentages := DockerCPUPercentages{
-		User:   userPercent,
-		System: systemPercent,
+	cpuStats := ContainerCPUStats{
+		NumberOfLogicalCPUs: numCores,
+		User:                userPercent,
+		System:              systemPercent,
 	}
 
 	cs.previous = cpuTimes
 
-	return dockerCPUPercentages, nil
+	return cpuStats, nil
 }
 
-func (cs *CPUSource) cpuUsageTimes(filePath, userKey, systemKey string) (*DockerCPUTimes, error) {
-	cpuTimes := &DockerCPUTimes{}
-	lines, err := ReadLines(filePath)
+func (cs *CPUSource) cpuUsageTimes(filePath, userKey, systemKey string) (*ContainerCPUTimes, error) {
+	cpuTimes := &ContainerCPUTimes{}
+	lines, err := internal.ReadLines(filePath)
 	if err != nil {
 		return cpuTimes, err
 	}
@@ -147,7 +163,7 @@ func (cs *CPUSource) cpuUsageTimes(filePath, userKey, systemKey string) (*Docker
 
 // nolint: revive, gocritic
 func getSystemCPUUsage(clockTicks int) (float64, error) {
-	lines, err := ReadLines(CPUStatsPath)
+	lines, err := internal.ReadLines(CPUStatsPath)
 	if err != nil {
 		return 0, err
 	}

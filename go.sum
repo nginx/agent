@@ -738,6 +738,8 @@ go.opentelemetry.io/collector/receiver/receiverprofiles v0.114.0 h1:ibhEfGpvNB3y
 go.opentelemetry.io/collector/receiver/receiverprofiles v0.114.0/go.mod h1:UZyRfaasw+NLvN10AN8IQnmj5tQ3BOUH1uP2ctpO9f0=
 go.opentelemetry.io/collector/receiver/receivertest v0.114.0 h1:D+Kh9t2n4asTnM+TiSxbrKlUemLZandWntj17BJWWb0=
 go.opentelemetry.io/collector/receiver/receivertest v0.114.0/go.mod h1:mNSHQ13vFmqD+VAcRzLjStFBejbcWUn2Mp0pAd7Op+U=
+go.opentelemetry.io/collector/scraper v0.114.0 h1:65fGJ63oiw31FH089VgIA3VAMzNFGZz43DoCuD2FtDo=
+go.opentelemetry.io/collector/scraper v0.114.0/go.mod h1:vWKPP+UxgMkQNCz22YGnx/PVreUL5CvA2slMSyC7Gks=
 go.opentelemetry.io/collector/semconv v0.114.0 h1:/eKcCJwZepQUtEuFuxa0thx2XIOvhFpaf214ZG1a11k=
 go.opentelemetry.io/collector/semconv v0.114.0/go.mod h1:zCJ5njhWpejR+A40kiEoeFm1xq1uzyZwMnRNX6/D82A=
 go.opentelemetry.io/collector/service v0.114.0 h1:MYF/4nH1CgtiLx09503xPAAUZefCzG1kaO+oanwX590=
