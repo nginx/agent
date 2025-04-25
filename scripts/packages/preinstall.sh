@@ -84,14 +84,10 @@ update_config_file() {
             err_exit "Upgrade aborted: no token found in v2 config"
         fi
 
-        # Extract instance_group if present, ensure only one group
+        # Extract instance_group if present
         instance_group=""
         if [ -f "$AGENT_DYNAMIC_CONFIG_FILE" ] && instance_line=$(grep "instance_group:" "$AGENT_DYNAMIC_CONFIG_FILE"); then
             instance_group=$(echo "$instance_line" | cut -d ":" -f 2 | xargs)
-            # Fail if multiple groups detected
-            if echo "$instance_group" | grep -q ','; then
-                err_exit "Upgrade aborted: multiple Config Sync Groups detected; An instance can join only one Config Sync Group at a time"
-            fi
             echo "Migrating existing Config Sync Group: $instance_group"
             labels="
 labels:
