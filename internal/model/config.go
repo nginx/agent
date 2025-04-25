@@ -119,7 +119,7 @@ func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext
 	}
 
 	slog.Info("config is equal")
-	
+
 	return true
 }
 
