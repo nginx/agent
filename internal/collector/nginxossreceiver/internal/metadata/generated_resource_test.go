@@ -34,12 +34,12 @@ func TestResourceBuilder(t *testing.T) {
 			val, ok := res.Attributes().Get("instance.id")
 			assert.True(t, ok)
 			if ok {
-				assert.EqualValues(t, "instance.id-val", val.Str())
+				assert.Equal(t, "instance.id-val", val.Str())
 			}
 			val, ok = res.Attributes().Get("instance.type")
 			assert.True(t, ok)
 			if ok {
-				assert.EqualValues(t, "instance.type-val", val.Str())
+				assert.Equal(t, "instance.type-val", val.Str())
 			}
 		})
 	}

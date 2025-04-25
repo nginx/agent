@@ -32,9 +32,8 @@ func TestStubStatusScraper(t *testing.T) {
 	cfg, ok := config.CreateDefaultConfig().(*config.Config)
 	assert.True(t, ok)
 	cfg.APIDetails.URL = nginxMock.URL + "/status"
-	require.NoError(t, component.ValidateConfig(cfg))
 
-	stubStatusScraper := NewScraper(receivertest.NewNopSettings(), cfg)
+	stubStatusScraper := NewScraper(receivertest.NewNopSettings(component.Type{}), cfg)
 
 	err := stubStatusScraper.Start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
@@ -71,7 +70,7 @@ func TestStubStatusScraperError(t *testing.T) {
 		rw.WriteHeader(http.StatusNotFound)
 	}))
 	t.Run("404", func(t *testing.T) {
-		sc := NewScraper(receivertest.NewNopSettings(), &config.Config{
+		sc := NewScraper(receivertest.NewNopSettings(component.Type{}), &config.Config{
 			APIDetails: config.APIDetails{
 				URL:      nginxMock.URL + "/badpath",
 				Listen:   "",
@@ -85,7 +84,7 @@ func TestStubStatusScraperError(t *testing.T) {
 	})
 
 	t.Run("parse error", func(t *testing.T) {
-		sc := NewScraper(receivertest.NewNopSettings(), &config.Config{
+		sc := NewScraper(receivertest.NewNopSettings(component.Type{}), &config.Config{
 			APIDetails: config.APIDetails{
 				URL:      nginxMock.URL + "/status",
 				Listen:   "",

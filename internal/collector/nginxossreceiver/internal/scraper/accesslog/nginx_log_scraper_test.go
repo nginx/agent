@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"go.opentelemetry.io/collector/component"
+
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/config"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest/pmetrictest"
@@ -53,7 +55,7 @@ func TestAccessLogScraper(t *testing.T) {
 		},
 	}
 
-	accessLogScraper, err := NewScraper(receivertest.NewNopSettings(), cfg)
+	accessLogScraper, err := NewScraper(receivertest.NewNopSettings(component.Type{}), cfg)
 	require.NoError(t, err)
 	defer func() {
 		shutdownError := accessLogScraper.Shutdown(ctx)
@@ -79,14 +81,6 @@ func TestAccessLogScraper(t *testing.T) {
 		pmetrictest.IgnoreTimestamp(),
 		pmetrictest.IgnoreMetricsOrder(),
 		pmetrictest.IgnoreResourceAttributeValue("instance.id")))
-}
-
-func TestAccessLogScraperError(t *testing.T) {
-	t.Run("include config missing", func(tt *testing.T) {
-		_, err := NewScraper(receivertest.NewNopSettings(), &config.Config{})
-		require.Error(tt, err)
-		assert.Contains(tt, err.Error(), "init stanza pipeline")
-	})
 }
 
 // Copies the contents of one file to another with the given delay. Used to simulate writing log entries to a log file.

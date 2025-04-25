@@ -10,11 +10,13 @@ import (
 	"testing"
 	"time"
 
+	"go.opentelemetry.io/collector/component"
+
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/receiver/receivertest"
-	"go.opentelemetry.io/collector/receiver/scraperhelper"
+	"go.opentelemetry.io/collector/scraper/scraperhelper"
 
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/config"
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/metadata"
@@ -36,7 +38,7 @@ func TestCreateMetricsReceiver(t *testing.T) {
 	factory := NewFactory()
 	metricsReceiver, err := factory.CreateMetrics(
 		context.Background(),
-		receivertest.NewNopSettings(),
+		receivertest.NewNopSettings(metadata.Type),
 		&config.Config{
 			ControllerConfig: scraperhelper.ControllerConfig{
 				CollectionInterval: 10 * time.Second,
@@ -52,4 +54,26 @@ func TestCreateMetricsReceiver(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.NotNil(t, metricsReceiver)
+}
+
+func TestCreateStubStatusReceiver(t *testing.T) {
+	metrics, err := createStubStatusReceiver(
+		context.Background(),
+		receivertest.NewNopSettings(component.Type{}),
+		NewFactory().CreateDefaultConfig(),
+		consumertest.NewNop(),
+	)
+	require.NoError(t, err)
+	require.NotNil(t, metrics)
+}
+
+func TestCreateAccessLogReceiver(t *testing.T) {
+	metrics, err := createAccessLogReceiver(
+		context.Background(),
+		receivertest.NewNopSettings(component.Type{}),
+		NewFactory().CreateDefaultConfig(),
+		consumertest.NewNop(),
+	)
+	require.NoError(t, err)
+	require.NotNil(t, metrics)
 }
