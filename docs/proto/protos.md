@@ -53,7 +53,6 @@
     - [CreateConnectionRequest](#mpi-v1-CreateConnectionRequest)
     - [CreateConnectionResponse](#mpi-v1-CreateConnectionResponse)
     - [DataPlaneResponse](#mpi-v1-DataPlaneResponse)
-    - [FileServer](#mpi-v1-FileServer)
     - [GetHTTPUpstreamServers](#mpi-v1-GetHTTPUpstreamServers)
     - [GetStreamUpstreams](#mpi-v1-GetStreamUpstreams)
     - [GetUpstreams](#mpi-v1-GetUpstreams)
@@ -67,7 +66,6 @@
     - [InstanceMeta](#mpi-v1-InstanceMeta)
     - [InstanceRuntime](#mpi-v1-InstanceRuntime)
     - [ManagementPlaneRequest](#mpi-v1-ManagementPlaneRequest)
-    - [MetricsServer](#mpi-v1-MetricsServer)
     - [NGINXAppProtectRuntimeInfo](#mpi-v1-NGINXAppProtectRuntimeInfo)
     - [NGINXPlusAction](#mpi-v1-NGINXPlusAction)
     - [NGINXPlusRuntimeInfo](#mpi-v1-NGINXPlusRuntimeInfo)
@@ -709,11 +707,8 @@ This contains a series of NGINX Agent configurations
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | command | [CommandServer](#mpi-v1-CommandServer) |  | Command server settings |
-| metrics | [MetricsServer](#mpi-v1-MetricsServer) |  | Metrics server settings |
-| file | [FileServer](#mpi-v1-FileServer) |  | File server settings |
 | labels | [google.protobuf.Struct](#google-protobuf-Struct) | repeated | A series of key/value pairs to add more data to the NGINX Agent instance |
 | features | [string](#string) | repeated | A list of features that the NGINX Agent has |
-| message_buffer_size | [string](#string) |  | Message buffer size, maximum not acknowledged messages from the subscribe perspective |
 
 
 
@@ -837,16 +832,6 @@ Reports the status of an associated command. This may be in response to a Manage
 | message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
 | command_response | [CommandResponse](#mpi-v1-CommandResponse) |  | The command response with the associated request |
 | instance_id | [string](#string) |  | The instance identifier, if applicable, for this response |
-
-
-
-
-
-
-<a name="mpi-v1-FileServer"></a>
-
-### FileServer
-The file settings associated with file server for configurations
 
 
 
@@ -1049,16 +1034,6 @@ A Management Plane request for information, triggers an associated rpc on the Da
 
 
 
-<a name="mpi-v1-MetricsServer"></a>
-
-### MetricsServer
-The metrics settings associated with origins (sources) of the metrics and destinations (exporter)
-
-
-
-
-
-
 <a name="mpi-v1-NGINXAppProtectRuntimeInfo"></a>
 
 ### NGINXAppProtectRuntimeInfo
@@ -1068,8 +1043,6 @@ A set of runtime NGINX App Protect settings
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | release | [string](#string) |  | NGINX App Protect Release |
-| attack_signature_version | [string](#string) |  | Attack signature version |
-| threat_campaign_version | [string](#string) |  | Threat campaign version |
 
 
 

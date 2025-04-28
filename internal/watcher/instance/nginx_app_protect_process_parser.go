@@ -18,19 +18,15 @@ import (
 )
 
 const (
-	versionFilePath                = "/opt/app_protect/VERSION"
-	releaseFilePath                = "/opt/app_protect/RELEASE"
-	processName                    = "bd-socket-plugin"
-	attackSignatureVersionFilePath = "/opt/app_protect/var/update_files/signatures/version"
-	threatCampaignVersionFilePath  = "/opt/app_protect/var/update_files/threat_campaigns/version"
+	versionFilePath = "/opt/app_protect/VERSION"
+	releaseFilePath = "/opt/app_protect/RELEASE"
+	processName     = "bd-socket-plugin"
 )
 
 type (
 	NginxAppProtectProcessParser struct {
-		versionFilePath                string
-		releaseFilePath                string
-		attackSignatureVersionFilePath string
-		threatCampaignVersionFilePath  string
+		versionFilePath string
+		releaseFilePath string
 	}
 )
 
@@ -38,10 +34,8 @@ var _ processParser = (*NginxAppProtectProcessParser)(nil)
 
 func NewNginxAppProtectProcessParser() *NginxAppProtectProcessParser {
 	return &NginxAppProtectProcessParser{
-		versionFilePath:                versionFilePath,
-		releaseFilePath:                releaseFilePath,
-		attackSignatureVersionFilePath: attackSignatureVersionFilePath,
-		threatCampaignVersionFilePath:  threatCampaignVersionFilePath,
+		versionFilePath: versionFilePath,
+		releaseFilePath: releaseFilePath,
 	}
 }
 
@@ -73,9 +67,7 @@ func (n NginxAppProtectProcessParser) Parse(
 					ConfigPath: "",
 					Details: &mpi.InstanceRuntime_NginxAppProtectRuntimeInfo{
 						NginxAppProtectRuntimeInfo: &mpi.NGINXAppProtectRuntimeInfo{
-							Release:                n.release(ctx),
-							AttackSignatureVersion: n.attackSignatureVersion(ctx),
-							ThreatCampaignVersion:  n.threatCampaignVersion(ctx),
+							Release: n.release(ctx),
 						},
 					},
 					InstanceChildren: make([]*mpi.InstanceChild, 0),
@@ -109,36 +101,4 @@ func (n NginxAppProtectProcessParser) release(ctx context.Context) string {
 	}
 
 	return strings.TrimSuffix(string(release), "\n")
-}
-
-func (n NginxAppProtectProcessParser) attackSignatureVersion(ctx context.Context) string {
-	attackSignatureVersion, err := os.ReadFile(n.attackSignatureVersionFilePath)
-	if err != nil {
-		slog.WarnContext(
-			ctx,
-			"Unable to read NAP attack signature version file",
-			"file_path", n.attackSignatureVersionFilePath,
-			"error", err,
-		)
-
-		return ""
-	}
-
-	return string(attackSignatureVersion)
-}
-
-func (n NginxAppProtectProcessParser) threatCampaignVersion(ctx context.Context) string {
-	threatCampaignVersion, err := os.ReadFile(n.threatCampaignVersionFilePath)
-	if err != nil {
-		slog.WarnContext(
-			ctx,
-			"Unable to read NAP threat campaign version file",
-			"file_path", n.threatCampaignVersionFilePath,
-			"error", err,
-		)
-
-		return ""
-	}
-
-	return string(threatCampaignVersion)
 }

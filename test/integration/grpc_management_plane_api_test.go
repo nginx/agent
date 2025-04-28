@@ -606,8 +606,6 @@ func verifyConnection(t *testing.T, instancesLength int) string {
 
 			instanceRuntimeInfo := instance.GetInstanceRuntime().GetNginxAppProtectRuntimeInfo()
 			assert.NotEmpty(t, instanceRuntimeInfo.GetRelease())
-			assert.NotEmpty(t, instanceRuntimeInfo.GetAttackSignatureVersion())
-			assert.NotEmpty(t, instanceRuntimeInfo.GetThreatCampaignVersion())
 		case mpi.InstanceMeta_INSTANCE_TYPE_UNIT,
 			mpi.InstanceMeta_INSTANCE_TYPE_UNSPECIFIED:
 			fallthrough

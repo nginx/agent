@@ -358,10 +358,6 @@ message APIDetails {
 message NGINXAppProtectRuntimeInfo {
     // NGINX App Protect Release 
     string release = 1;
-    // Attack signature version
-    string attack_signature_version = 2;
-    // Threat campaign version
-    string threat_campaign_version = 3;
 }
 
 // A set of actions that can be performed on an instance
@@ -371,16 +367,10 @@ message InstanceAction {}
 message AgentConfig { 
     // Command server settings
     CommandServer command = 1;
-    // Metrics server settings
-    MetricsServer metrics = 2;
-    // File server settings
-    FileServer file = 3;
     // A series of key/value pairs to add more data to the NGINX Agent instance
-    repeated google.protobuf.Struct labels = 4;
+    repeated google.protobuf.Struct labels = 2;
     // A list of features that the NGINX Agent has
-    repeated string features = 5;
-    // Message buffer size, maximum not acknowledged messages from the subscribe perspective
-    string message_buffer_size = 6;
+    repeated string features = 3;
 }
 
 // The command server settings, associated with messaging from an external source
@@ -392,9 +382,3 @@ message CommandServer {
     // TLS configuration for secure communication
     mpi.v1.TLSSettings tls = 3;
 }
-
-// The metrics settings associated with origins (sources) of the metrics and destinations (exporter)
-message MetricsServer {}
-
-// The file settings associated with file server for configurations
-message FileServer {}

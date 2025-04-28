@@ -304,12 +304,9 @@ func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *mpi.Instan
 			Actions: []*mpi.InstanceAction{},
 			Config: &mpi.InstanceConfig_AgentConfig{
 				AgentConfig: &mpi.AgentConfig{
-					Command:           config.ToCommandProto(iw.agentConfig.Command),
-					Metrics:           &mpi.MetricsServer{},
-					File:              &mpi.FileServer{},
-					Labels:            labels,
-					Features:          iw.agentConfig.Features,
-					MessageBufferSize: "",
+					Command:  config.ToCommandProto(iw.agentConfig.Command),
+					Labels:   labels,
+					Features: iw.agentConfig.Features,
 				},
 			},
 		},

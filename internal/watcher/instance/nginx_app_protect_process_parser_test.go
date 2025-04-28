@@ -34,9 +34,7 @@ func TestNginxAppProtectProcessParser_Parse(t *testing.T) {
 			BinaryPath: "/usr/share/ts/bin/bd-socket-plugin",
 			Details: &mpi.InstanceRuntime_NginxAppProtectRuntimeInfo{
 				NginxAppProtectRuntimeInfo: &mpi.NGINXAppProtectRuntimeInfo{
-					Release:                "4.11.0",
-					AttackSignatureVersion: "2024.11.28",
-					ThreatCampaignVersion:  "2024.12.02",
+					Release: "4.11.0",
 				},
 			},
 			InstanceChildren: make([]*mpi.InstanceChild, 0),
@@ -86,23 +84,9 @@ func TestNginxAppProtectProcessParser_Parse(t *testing.T) {
 	_, err = releaseFile.WriteString("4.11.0")
 	require.NoError(t, err)
 
-	attackSignatureVersionFile := helpers.CreateFileWithErrorCheck(t, os.TempDir(), "version")
-	defer helpers.RemoveFileWithErrorCheck(t, attackSignatureVersionFile.Name())
-
-	_, err = attackSignatureVersionFile.WriteString("2024.11.28")
-	require.NoError(t, err)
-
-	threatCampaignVersionFile := helpers.CreateFileWithErrorCheck(t, os.TempDir(), "version")
-	defer helpers.RemoveFileWithErrorCheck(t, threatCampaignVersionFile.Name())
-
-	_, err = threatCampaignVersionFile.WriteString("2024.12.02")
-	require.NoError(t, err)
-
 	nginxAppProtectProcessParser := NewNginxAppProtectProcessParser()
 	nginxAppProtectProcessParser.versionFilePath = versionFile.Name()
 	nginxAppProtectProcessParser.releaseFilePath = releaseFile.Name()
-	nginxAppProtectProcessParser.attackSignatureVersionFilePath = attackSignatureVersionFile.Name()
-	nginxAppProtectProcessParser.threatCampaignVersionFilePath = threatCampaignVersionFile.Name()
 
 	instances := nginxAppProtectProcessParser.Parse(ctx, processes)
 
