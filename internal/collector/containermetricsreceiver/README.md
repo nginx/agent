@@ -1,18 +1,18 @@
-# ContainerMetricsReceiver
+# Container Metrics Receiver
 
-This receiver can fetch stats from a container related to the container's CPU usage, memory etc, using `cgroup` stats.
+The Container Metrics receiver generates metrics about the container scraped from the cgroup files.
 
 ## Configuration
 
 ### Receiver Config
 
-The following settings are required: ...
-
-The following settings are optional: ...
+The following settings are optional:
+- `collection_interval` (default = `10s`): This receiver collects metrics on an interval. This value must be a string readable by Golang's [time.ParseDuration](https://pkg.go.dev/time#ParseDuration). Valid time units are `ns`, `us` (or `µs`), `ms`, `s`, `m`, `h`.
+- `initial_delay` (default = `1s`): defines how long this receiver waits before starting.
 
 Example:
 ```yaml
-receivers:
-  container-metrics:
-    a-random-setting: "on"
+containermetrics:
+  collection_interval: <duration> # default = 1m
+  initial_delay: <duration> # default = 1s
 ```

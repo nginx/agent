@@ -36,7 +36,7 @@ func NewScraper(
 	cfg *Config,
 ) *CPUScraper {
 	logger := settings.Logger
-	logger.Info("Creating container CPU scraper")
+	logger.Info("Creating container memory scraper")
 
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
 	rb := mb.NewResourceBuilder()
