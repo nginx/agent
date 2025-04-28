@@ -75,7 +75,9 @@ receivers:
       url: "{{- .StubStatus.URL -}}"
       listen: "{{- .StubStatus.Listen -}}"
       location: "{{- .StubStatus.Location -}}"
-    collection_interval: 10s
+    {{- if .CollectionInterval }}
+    collection_interval: {{ .CollectionInterval }}
+    {{- end }}
     {{- if gt (len .AccessLogs) 0 }}
     access_logs:
     {{- range .AccessLogs }}
@@ -90,7 +92,9 @@ receivers:
         url: "{{- .PlusAPI.URL -}}"
         listen: "{{- .PlusAPI.Listen -}}"
         location: "{{- .PlusAPI.Location -}}"
-    collection_interval: 10s
+    {{- if .CollectionInterval }}
+    collection_interval: {{ .CollectionInterval }}
+    {{- end }}
 {{- end }}
 {{- range $index, $tcplogReceiver := .Receivers.TcplogReceivers }}
   tcplog/{{$index}}:

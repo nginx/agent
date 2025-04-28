@@ -104,9 +104,9 @@ type (
 	}
 
 	Exporters struct {
-		Debug              *DebugExporter      `yaml:"debug"               mapstructure:"debug"`
-		PrometheusExporter *PrometheusExporter `yaml:"prometheus_exporter" mapstructure:"prometheus_exporter"`
-		OtlpExporters      []OtlpExporter      `yaml:"otlp_exporters"      mapstructure:"otlp_exporters"`
+		Debug              *DebugExporter      `yaml:"debug"      mapstructure:"debug"`
+		PrometheusExporter *PrometheusExporter `yaml:"prometheus" mapstructure:"prometheus"`
+		OtlpExporters      []OtlpExporter      `yaml:"otlp"       mapstructure:"otlp"`
 	}
 
 	OtlpExporter struct {
@@ -181,11 +181,11 @@ type (
 
 	// OTel Collector Receiver configuration.
 	Receivers struct {
-		HostMetrics        *HostMetrics        `yaml:"host_metrics"         mapstructure:"host_metrics"`
-		OtlpReceivers      []OtlpReceiver      `yaml:"otlp_receivers"       mapstructure:"otlp_receivers"`
-		NginxReceivers     []NginxReceiver     `yaml:"nginx_receivers"      mapstructure:"nginx_receivers"`
-		NginxPlusReceivers []NginxPlusReceiver `yaml:"nginx_plus_receivers" mapstructure:"nginx_plus_receivers"`
-		TcplogReceivers    []TcplogReceiver    `yaml:"tcplog_receivers"     mapstructure:"tcplog_receivers"`
+		HostMetrics        *HostMetrics        `yaml:"host_metrics" mapstructure:"host_metrics"`
+		OtlpReceivers      []OtlpReceiver      `yaml:"otlp"         mapstructure:"otlp"`
+		NginxReceivers     []NginxReceiver     `yaml:"nginx"        mapstructure:"nginx"`
+		NginxPlusReceivers []NginxPlusReceiver `yaml:"nginx_plus"   mapstructure:"nginx_plus"`
+		TcplogReceivers    []TcplogReceiver    `yaml:"tcplog"       mapstructure:"tcplog"`
 	}
 
 	OtlpReceiver struct {
@@ -208,9 +208,10 @@ type (
 	}
 
 	NginxReceiver struct {
-		InstanceID string      `yaml:"instance_id" mapstructure:"instance_id"`
-		StubStatus APIDetails  `yaml:"api_details" mapstructure:"api_details"`
-		AccessLogs []AccessLog `yaml:"access_logs" mapstructure:"access_logs"`
+		InstanceID         string        `yaml:"instance_id"         mapstructure:"instance_id"`
+		StubStatus         APIDetails    `yaml:"api_details"         mapstructure:"api_details"`
+		AccessLogs         []AccessLog   `yaml:"access_logs"         mapstructure:"access_logs"`
+		CollectionInterval time.Duration `yaml:"collection_interval" mapstructure:"collection_interval"`
 	}
 
 	APIDetails struct {
@@ -225,8 +226,9 @@ type (
 	}
 
 	NginxPlusReceiver struct {
-		InstanceID string     `yaml:"instance_id" mapstructure:"instance_id"`
-		PlusAPI    APIDetails `yaml:"api_details" mapstructure:"api_details"`
+		InstanceID         string        `yaml:"instance_id"         mapstructure:"instance_id"`
+		PlusAPI            APIDetails    `yaml:"api_details"         mapstructure:"api_details"`
+		CollectionInterval time.Duration `yaml:"collection_interval" mapstructure:"collection_interval"`
 	}
 
 	HostMetrics struct {

@@ -93,6 +93,7 @@ func TestTemplateWrite(t *testing.T) {
 			Location: "",
 			Listen:   "",
 		},
+		CollectionInterval: 30 * time.Second,
 		AccessLogs: []config.AccessLog{
 			{
 				LogFormat: accessLogFormat,

@@ -44,7 +44,7 @@ const (
 	DefBackoffInitialInterval     = 500 * time.Millisecond
 	DefBackoffRandomizationFactor = 0.5 // the value is 0 <= and < 1
 	DefBackoffMultiplier          = 1.5
-	DefBackoffMaxInterval         = 5 * time.Second
+	DefBackoffMaxInterval         = 10 * time.Minute
 	DefBackoffMaxElapsedTime      = 30 * time.Second
 
 	// Watcher defaults
