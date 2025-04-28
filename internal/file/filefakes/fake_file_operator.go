@@ -2,11 +2,13 @@
 package filefakes
 
 import (
+	"bufio"
 	"context"
 	"io/fs"
 	"sync"
 
 	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"google.golang.org/grpc"
 )
 
 type FakeFileOperator struct {
@@ -23,6 +25,22 @@ type FakeFileOperator struct {
 	createFileDirectoriesReturnsOnCall map[int]struct {
 		result1 error
 	}
+	ReadChunkStub        func(context.Context, uint32, *bufio.Reader, uint32) (v1.FileDataChunk_Content, error)
+	readChunkMutex       sync.RWMutex
+	readChunkArgsForCall []struct {
+		arg1 context.Context
+		arg2 uint32
+		arg3 *bufio.Reader
+		arg4 uint32
+	}
+	readChunkReturns struct {
+		result1 v1.FileDataChunk_Content
+		result2 error
+	}
+	readChunkReturnsOnCall map[int]struct {
+		result1 v1.FileDataChunk_Content
+		result2 error
+	}
 	WriteStub        func(context.Context, []byte, *v1.FileMeta) error
 	writeMutex       sync.RWMutex
 	writeArgsForCall []struct {
@@ -34,6 +52,20 @@ type FakeFileOperator struct {
 		result1 error
 	}
 	writeReturnsOnCall map[int]struct {
+		result1 error
+	}
+	WriteChunkedFileStub        func(context.Context, *v1.File, *v1.FileDataChunkHeader, grpc.ServerStreamingClient[v1.FileDataChunk]) error
+	writeChunkedFileMutex       sync.RWMutex
+	writeChunkedFileArgsForCall []struct {
+		arg1 context.Context
+		arg2 *v1.File
+		arg3 *v1.FileDataChunkHeader
+		arg4 grpc.ServerStreamingClient[v1.FileDataChunk]
+	}
+	writeChunkedFileReturns struct {
+		result1 error
+	}
+	writeChunkedFileReturnsOnCall map[int]struct {
 		result1 error
 	}
 	invocations      map[string][][]interface{}
@@ -101,6 +133,73 @@ func (fake *FakeFileOperator) CreateFileDirectoriesReturnsOnCall(i int, result1 
 	fake.createFileDirectoriesReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
+}
+
+func (fake *FakeFileOperator) ReadChunk(arg1 context.Context, arg2 uint32, arg3 *bufio.Reader, arg4 uint32) (v1.FileDataChunk_Content, error) {
+	fake.readChunkMutex.Lock()
+	ret, specificReturn := fake.readChunkReturnsOnCall[len(fake.readChunkArgsForCall)]
+	fake.readChunkArgsForCall = append(fake.readChunkArgsForCall, struct {
+		arg1 context.Context
+		arg2 uint32
+		arg3 *bufio.Reader
+		arg4 uint32
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.ReadChunkStub
+	fakeReturns := fake.readChunkReturns
+	fake.recordInvocation("ReadChunk", []interface{}{arg1, arg2, arg3, arg4})
+	fake.readChunkMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeFileOperator) ReadChunkCallCount() int {
+	fake.readChunkMutex.RLock()
+	defer fake.readChunkMutex.RUnlock()
+	return len(fake.readChunkArgsForCall)
+}
+
+func (fake *FakeFileOperator) ReadChunkCalls(stub func(context.Context, uint32, *bufio.Reader, uint32) (v1.FileDataChunk_Content, error)) {
+	fake.readChunkMutex.Lock()
+	defer fake.readChunkMutex.Unlock()
+	fake.ReadChunkStub = stub
+}
+
+func (fake *FakeFileOperator) ReadChunkArgsForCall(i int) (context.Context, uint32, *bufio.Reader, uint32) {
+	fake.readChunkMutex.RLock()
+	defer fake.readChunkMutex.RUnlock()
+	argsForCall := fake.readChunkArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeFileOperator) ReadChunkReturns(result1 v1.FileDataChunk_Content, result2 error) {
+	fake.readChunkMutex.Lock()
+	defer fake.readChunkMutex.Unlock()
+	fake.ReadChunkStub = nil
+	fake.readChunkReturns = struct {
+		result1 v1.FileDataChunk_Content
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeFileOperator) ReadChunkReturnsOnCall(i int, result1 v1.FileDataChunk_Content, result2 error) {
+	fake.readChunkMutex.Lock()
+	defer fake.readChunkMutex.Unlock()
+	fake.ReadChunkStub = nil
+	if fake.readChunkReturnsOnCall == nil {
+		fake.readChunkReturnsOnCall = make(map[int]struct {
+			result1 v1.FileDataChunk_Content
+			result2 error
+		})
+	}
+	fake.readChunkReturnsOnCall[i] = struct {
+		result1 v1.FileDataChunk_Content
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeFileOperator) Write(arg1 context.Context, arg2 []byte, arg3 *v1.FileMeta) error {
@@ -171,13 +270,81 @@ func (fake *FakeFileOperator) WriteReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *FakeFileOperator) WriteChunkedFile(arg1 context.Context, arg2 *v1.File, arg3 *v1.FileDataChunkHeader, arg4 grpc.ServerStreamingClient[v1.FileDataChunk]) error {
+	fake.writeChunkedFileMutex.Lock()
+	ret, specificReturn := fake.writeChunkedFileReturnsOnCall[len(fake.writeChunkedFileArgsForCall)]
+	fake.writeChunkedFileArgsForCall = append(fake.writeChunkedFileArgsForCall, struct {
+		arg1 context.Context
+		arg2 *v1.File
+		arg3 *v1.FileDataChunkHeader
+		arg4 grpc.ServerStreamingClient[v1.FileDataChunk]
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.WriteChunkedFileStub
+	fakeReturns := fake.writeChunkedFileReturns
+	fake.recordInvocation("WriteChunkedFile", []interface{}{arg1, arg2, arg3, arg4})
+	fake.writeChunkedFileMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeFileOperator) WriteChunkedFileCallCount() int {
+	fake.writeChunkedFileMutex.RLock()
+	defer fake.writeChunkedFileMutex.RUnlock()
+	return len(fake.writeChunkedFileArgsForCall)
+}
+
+func (fake *FakeFileOperator) WriteChunkedFileCalls(stub func(context.Context, *v1.File, *v1.FileDataChunkHeader, grpc.ServerStreamingClient[v1.FileDataChunk]) error) {
+	fake.writeChunkedFileMutex.Lock()
+	defer fake.writeChunkedFileMutex.Unlock()
+	fake.WriteChunkedFileStub = stub
+}
+
+func (fake *FakeFileOperator) WriteChunkedFileArgsForCall(i int) (context.Context, *v1.File, *v1.FileDataChunkHeader, grpc.ServerStreamingClient[v1.FileDataChunk]) {
+	fake.writeChunkedFileMutex.RLock()
+	defer fake.writeChunkedFileMutex.RUnlock()
+	argsForCall := fake.writeChunkedFileArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeFileOperator) WriteChunkedFileReturns(result1 error) {
+	fake.writeChunkedFileMutex.Lock()
+	defer fake.writeChunkedFileMutex.Unlock()
+	fake.WriteChunkedFileStub = nil
+	fake.writeChunkedFileReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeFileOperator) WriteChunkedFileReturnsOnCall(i int, result1 error) {
+	fake.writeChunkedFileMutex.Lock()
+	defer fake.writeChunkedFileMutex.Unlock()
+	fake.WriteChunkedFileStub = nil
+	if fake.writeChunkedFileReturnsOnCall == nil {
+		fake.writeChunkedFileReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.writeChunkedFileReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeFileOperator) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.createFileDirectoriesMutex.RLock()
 	defer fake.createFileDirectoriesMutex.RUnlock()
+	fake.readChunkMutex.RLock()
+	defer fake.readChunkMutex.RUnlock()
 	fake.writeMutex.RLock()
 	defer fake.writeMutex.RUnlock()
+	fake.writeChunkedFileMutex.RLock()
+	defer fake.writeChunkedFileMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

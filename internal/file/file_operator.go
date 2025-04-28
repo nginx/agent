@@ -6,11 +6,15 @@
 package file
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"path"
+
+	"google.golang.org/grpc"
 
 	"github.com/nginx/agent/v3/pkg/files"
 
@@ -61,4 +65,77 @@ func (fo *FileOperator) CreateFileDirectories(
 	}
 
 	return nil
+}
+
+func (fo *FileOperator) WriteChunkedFile(
+	ctx context.Context,
+	file *mpi.File,
+	header *mpi.FileDataChunkHeader,
+	stream grpc.ServerStreamingClient[mpi.FileDataChunk],
+) error {
+	filePermissions := files.FileMode(file.GetFileMeta().GetPermissions())
+	createFileDirectoriesError := fo.CreateFileDirectories(ctx, file.GetFileMeta(), filePermissions)
+	if createFileDirectoriesError != nil {
+		return createFileDirectoriesError
+	}
+
+	fileToWrite, createError := os.Create(file.GetFileMeta().GetName())
+	defer func() {
+		closeError := fileToWrite.Close()
+		if closeError != nil {
+			slog.WarnContext(
+				ctx, "Failed to close file",
+				"file", file.GetFileMeta().GetName(),
+				"error", closeError,
+			)
+		}
+	}()
+	if createError != nil {
+		return createError
+	}
+
+	for i := uint32(0); i < header.GetChunks(); i++ {
+		chunk, recvError := stream.Recv()
+		if recvError != nil {
+			return recvError
+		}
+
+		_, chunkWriteError := fileToWrite.Write(chunk.GetContent().GetData())
+		if chunkWriteError != nil {
+			return fmt.Errorf("error writing chunk to file %s: %w", file.GetFileMeta().GetName(), chunkWriteError)
+		}
+	}
+
+	return nil
+}
+
+func (fo *FileOperator) ReadChunk(
+	ctx context.Context,
+	chunkSize uint32,
+	reader *bufio.Reader,
+	chunkID uint32,
+) (mpi.FileDataChunk_Content, error) {
+	buf := make([]byte, chunkSize)
+	n, err := reader.Read(buf)
+	buf = buf[:n]
+	if err != nil {
+		if err != io.EOF {
+			return mpi.FileDataChunk_Content{}, fmt.Errorf("failed to read chunk: %w", err)
+		}
+
+		slog.DebugContext(ctx, "No more data to read from file")
+
+		return mpi.FileDataChunk_Content{}, nil
+	}
+
+	slog.DebugContext(ctx, "Read file chunk", "chunk_id", chunkID, "chunk_size", len(buf))
+
+	chunk := mpi.FileDataChunk_Content{
+		Content: &mpi.FileDataChunkContent{
+			ChunkId: chunkID,
+			Data:    buf,
+		},
+	}
+
+	return chunk, err
 }

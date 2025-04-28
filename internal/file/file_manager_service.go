@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"maps"
 	"math"
@@ -20,20 +19,21 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"google.golang.org/grpc"
+
 	"github.com/nginx/agent/v3/internal/model"
 
 	"github.com/cenkalti/backoff/v4"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
-	"github.com/nginx/agent/v3/internal/grpc"
+	internalgrpc "github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/pkg/files"
 	"github.com/nginx/agent/v3/pkg/id"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	backoffHelpers "github.com/nginx/agent/v3/internal/backoff"
-	grpc2 "google.golang.org/grpc"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
@@ -57,6 +57,18 @@ type (
 	fileOperator interface {
 		Write(ctx context.Context, fileContent []byte, file *mpi.FileMeta) error
 		CreateFileDirectories(ctx context.Context, fileMeta *mpi.FileMeta, filePermission os.FileMode) error
+		WriteChunkedFile(
+			ctx context.Context,
+			file *mpi.File,
+			header *mpi.FileDataChunkHeader,
+			stream grpc.ServerStreamingClient[mpi.FileDataChunk],
+		) error
+		ReadChunk(
+			ctx context.Context,
+			chunkSize uint32,
+			reader *bufio.Reader,
+			chunkID uint32,
+		) (mpi.FileDataChunk_Content, error)
 	}
 
 	fileManagerServiceInterface interface {
@@ -155,7 +167,7 @@ func (fms *FileManagerService) UpdateOverview(
 
 		response, updateError := fms.fileServiceClient.UpdateOverview(newCtx, request)
 
-		validatedError := grpc.ValidateGrpcError(updateError)
+		validatedError := internalgrpc.ValidateGrpcError(updateError)
 
 		if validatedError != nil {
 			slog.ErrorContext(newCtx, "Failed to send update overview", "error", validatedError)
@@ -283,7 +295,7 @@ func (fms *FileManagerService) sendUpdateFileRequest(
 
 		response, updateError := fms.fileServiceClient.UpdateFile(ctx, request)
 
-		validatedError := grpc.ValidateGrpcError(updateError)
+		validatedError := internalgrpc.ValidateGrpcError(updateError)
 
 		if validatedError != nil {
 			slog.ErrorContext(ctx, "Failed to send update file", "error", validatedError)
@@ -333,7 +345,7 @@ func (fms *FileManagerService) sendUpdateFileStreamHeader(
 	ctx context.Context,
 	fileToUpdate *mpi.File,
 	chunkSize uint32,
-	updateFileStreamClient grpc2.ClientStreamingClient[mpi.FileDataChunk, mpi.UpdateFileResponse],
+	updateFileStreamClient grpc.ClientStreamingClient[mpi.FileDataChunk, mpi.UpdateFileResponse],
 ) error {
 	messageMeta := &mpi.MessageMeta{
 		MessageId:     id.GenerateMessageID(),
@@ -371,7 +383,7 @@ func (fms *FileManagerService) sendUpdateFileStreamHeader(
 			},
 		)
 
-		validatedError := grpc.ValidateGrpcError(err)
+		validatedError := internalgrpc.ValidateGrpcError(err)
 
 		if validatedError != nil {
 			slog.ErrorContext(ctx, "Failed to send update file stream header", "error", validatedError)
@@ -389,7 +401,7 @@ func (fms *FileManagerService) sendFileUpdateStreamChunks(
 	ctx context.Context,
 	fileToUpdate *mpi.File,
 	chunkSize uint32,
-	updateFileStreamClient grpc2.ClientStreamingClient[mpi.FileDataChunk, mpi.UpdateFileResponse],
+	updateFileStreamClient grpc.ClientStreamingClient[mpi.FileDataChunk, mpi.UpdateFileResponse],
 ) error {
 	f, err := os.Open(fileToUpdate.GetFileMeta().GetName())
 	defer func() {
@@ -410,7 +422,7 @@ func (fms *FileManagerService) sendFileUpdateStreamChunks(
 
 	reader := bufio.NewReader(f)
 	for {
-		chunk, readChunkError := fms.readChunk(ctx, chunkSize, reader, chunkID)
+		chunk, readChunkError := fms.fileOperator.ReadChunk(ctx, chunkSize, reader, chunkID)
 		if readChunkError != nil {
 			return readChunkError
 		}
@@ -429,41 +441,10 @@ func (fms *FileManagerService) sendFileUpdateStreamChunks(
 	return nil
 }
 
-func (fms *FileManagerService) readChunk(
-	ctx context.Context,
-	chunkSize uint32,
-	reader *bufio.Reader,
-	chunkID uint32,
-) (mpi.FileDataChunk_Content, error) {
-	buf := make([]byte, chunkSize)
-	n, err := reader.Read(buf)
-	buf = buf[:n]
-	if err != nil {
-		if err != io.EOF {
-			return mpi.FileDataChunk_Content{}, fmt.Errorf("failed to read chunk: %w", err)
-		}
-
-		slog.DebugContext(ctx, "No more data to read from file")
-
-		return mpi.FileDataChunk_Content{}, nil
-	}
-
-	slog.DebugContext(ctx, "Read file chunk", "chunk_id", chunkID, "chunk_size", len(buf))
-
-	chunk := mpi.FileDataChunk_Content{
-		Content: &mpi.FileDataChunkContent{
-			ChunkId: chunkID,
-			Data:    buf,
-		},
-	}
-
-	return chunk, err
-}
-
 func (fms *FileManagerService) sendFileUpdateStreamChunk(
 	ctx context.Context,
 	chunk mpi.FileDataChunk_Content,
-	updateFileStreamClient grpc2.ClientStreamingClient[mpi.FileDataChunk, mpi.UpdateFileResponse],
+	updateFileStreamClient grpc.ClientStreamingClient[mpi.FileDataChunk, mpi.UpdateFileResponse],
 ) error {
 	messageMeta := &mpi.MessageMeta{
 		MessageId:     id.GenerateMessageID(),
@@ -491,7 +472,7 @@ func (fms *FileManagerService) sendFileUpdateStreamChunk(
 			},
 		)
 
-		validatedError := grpc.ValidateGrpcError(err)
+		validatedError := internalgrpc.ValidateGrpcError(err)
 
 		if validatedError != nil {
 			slog.ErrorContext(ctx, "Failed to send update file stream chunk", "error", validatedError)
@@ -634,13 +615,13 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) error {
 	slog.DebugContext(ctx, "Updating file", "file", file.GetFileMeta().GetName())
 	if file.GetFileMeta().GetSize() <= int64(fms.agentConfig.Client.Grpc.MaxMessageReceiveSize) {
-		return fms.getFile(ctx, file)
+		return fms.file(ctx, file)
 	}
 
-	return fms.getChunkedFile(ctx, file)
+	return fms.chunkedFile(ctx, file)
 }
 
-func (fms *FileManagerService) getFile(ctx context.Context, file *mpi.File) error {
+func (fms *FileManagerService) file(ctx context.Context, file *mpi.File) error {
 	slog.DebugContext(ctx, "Getting file", "file", file.GetFileMeta().GetName())
 
 	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Client.Backoff.MaxElapsedTime)
@@ -674,7 +655,7 @@ func (fms *FileManagerService) getFile(ctx context.Context, file *mpi.File) erro
 	return fms.validateFileHash(file.GetFileMeta().GetName())
 }
 
-func (fms *FileManagerService) getChunkedFile(ctx context.Context, file *mpi.File) error {
+func (fms *FileManagerService) chunkedFile(ctx context.Context, file *mpi.File) error {
 	slog.DebugContext(ctx, "Getting chunked file", "file", file.GetFileMeta().GetName())
 
 	stream, err := fms.fileServiceClient.GetFileStream(ctx, &mpi.GetFileRequest{
@@ -699,51 +680,9 @@ func (fms *FileManagerService) getChunkedFile(ctx context.Context, file *mpi.Fil
 
 	header := headerChunk.GetHeader()
 
-	writeChunkedFileError := fms.writeChunkedFile(ctx, file, header, stream)
+	writeChunkedFileError := fms.fileOperator.WriteChunkedFile(ctx, file, header, stream)
 	if writeChunkedFileError != nil {
 		return writeChunkedFileError
-	}
-
-	return nil
-}
-
-func (fms *FileManagerService) writeChunkedFile(
-	ctx context.Context,
-	file *mpi.File,
-	header *mpi.FileDataChunkHeader,
-	stream grpc2.ServerStreamingClient[mpi.FileDataChunk],
-) error {
-	filePermissions := files.FileMode(file.GetFileMeta().GetPermissions())
-	createFileDirectoriesError := fms.fileOperator.CreateFileDirectories(ctx, file.GetFileMeta(), filePermissions)
-	if createFileDirectoriesError != nil {
-		return createFileDirectoriesError
-	}
-
-	fileToWrite, createError := os.Create(file.GetFileMeta().GetName())
-	defer func() {
-		closeError := fileToWrite.Close()
-		if closeError != nil {
-			slog.WarnContext(
-				ctx, "Failed to close file",
-				"file", file.GetFileMeta().GetName(),
-				"error", closeError,
-			)
-		}
-	}()
-	if createError != nil {
-		return createError
-	}
-
-	for i := uint32(0); i < header.GetChunks(); i++ {
-		chunk, recvError := stream.Recv()
-		if recvError != nil {
-			return recvError
-		}
-
-		_, chunkWriteError := fileToWrite.Write(chunk.GetContent().GetData())
-		if chunkWriteError != nil {
-			return fmt.Errorf("error writing chunk to file %s: %w", file.GetFileMeta().GetName(), chunkWriteError)
-		}
 	}
 
 	return nil

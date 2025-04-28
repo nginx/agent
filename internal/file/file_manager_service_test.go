@@ -335,13 +335,9 @@ func TestFileManagerService_ConfigApply_Add_LargeFile(t *testing.T) {
 		fileName:       filePath,
 	}
 
-	t.Logf("fakeServerStreamingClient: %v", fakeServerStreamingClient)
-
 	for i := 0; i < len(fileContent); i++ {
 		fakeServerStreamingClient.chunks[uint32(i)] = []byte{fileContent[i]}
 	}
-
-	t.Logf("fakeServerStreamingClient: %v", fakeServerStreamingClient)
 
 	fakeFileServiceClient.GetFileStreamReturns(fakeServerStreamingClient, nil)
 	agentConfig := types.AgentConfig()
@@ -349,7 +345,6 @@ func TestFileManagerService_ConfigApply_Add_LargeFile(t *testing.T) {
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig)
 
 	request := protos.CreateConfigApplyRequest(overview)
-	t.Logf("request: %v", request)
 	writeStatus, err := fileManagerService.ConfigApply(ctx, request)
 	require.NoError(t, err)
 	assert.Equal(t, model.OK, writeStatus)
