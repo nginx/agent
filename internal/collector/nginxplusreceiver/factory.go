@@ -7,13 +7,11 @@ package nginxplusreceiver
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/receiver"
-	"go.opentelemetry.io/collector/receiver/scraperhelper"
 
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver/internal/metadata"
 )
@@ -44,21 +42,7 @@ func createMetricsReceiver(
 		return nil, errors.New("failed to cast to Config in NGINX Plus metrics receiver")
 	}
 
-	nps, err := newNginxPlusScraper(params, cfg)
-	if err != nil {
-		return nil, fmt.Errorf("new nginx plus scraper: %w", err)
-	}
+	nps := newNginxPlusScraper(params, cfg)
 
-	scraper, err := scraperhelper.NewScraperWithoutType(
-		nps.scrape,
-		scraperhelper.WithShutdown(nps.Shutdown),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return scraperhelper.NewScraperControllerReceiver(
-		&cfg.ControllerConfig, params, metricsConsumer,
-		scraperhelper.AddScraperWithType(metadata.Type, scraper),
-	)
+	return nps, nil
 }
