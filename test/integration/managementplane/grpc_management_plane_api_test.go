@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package grpc_management_plane
+package managementplane
 
 import (
 	"context"
@@ -79,7 +79,8 @@ func TestGrpc_DataplaneHealthRequest(t *testing.T) {
 		}`
 
 	client := resty.New()
-	client.SetRetryCount(utils.RetryCount).SetRetryWaitTime(utils.RetryWaitTime).SetRetryMaxWaitTime(utils.RetryMaxWaitTime)
+	client.SetRetryCount(utils.RetryCount).SetRetryWaitTime(utils.RetryWaitTime).SetRetryMaxWaitTime(
+		utils.RetryMaxWaitTime)
 
 	url := fmt.Sprintf("http://%s/api/v1/requests", utils.MockManagementPlaneAPIAddress)
 	resp, err := client.R().EnableTrace().SetBody(request).Post(url)
