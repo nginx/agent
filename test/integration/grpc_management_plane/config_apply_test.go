@@ -3,12 +3,14 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package integration
+package grpc_management_plane
 
 import (
 	"context"
 	"fmt"
 	"testing"
+
+	"github.com/nginx/agent/v3/test/integration/utils"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/stretchr/testify/assert"
@@ -23,19 +25,19 @@ const (
 
 func TestGrpc_ConfigApply(t *testing.T) {
 	ctx := context.Background()
-	teardownTest := SetupConnectionTest(t, false, false)
+	teardownTest := utils.SetupConnectionTest(t, false, false)
 	defer teardownTest(t)
 
-	nginxInstanceID := VerifyConnection(t, 2)
+	nginxInstanceID := utils.VerifyConnection(t, 2)
 
-	responses := GetManagementPlaneResponses(t, 1)
+	responses := utils.GetManagementPlaneResponses(t, 1)
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 
 	t.Run("Test 1: No config changes", func(t *testing.T) {
-		ClearManagementPlaneResponses(t)
-		PerformConfigApply(t, nginxInstanceID)
-		responses = GetManagementPlaneResponses(t, 1)
+		utils.ClearManagementPlaneResponses(t)
+		utils.PerformConfigApply(t, nginxInstanceID)
+		responses = utils.GetManagementPlaneResponses(t, 1)
 		t.Logf("Config apply responses: %v", responses)
 
 		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
@@ -43,8 +45,8 @@ func TestGrpc_ConfigApply(t *testing.T) {
 	})
 
 	t.Run("Test 2: Valid config", func(t *testing.T) {
-		ClearManagementPlaneResponses(t)
-		err := MockManagementPlaneGrpcContainer.CopyFileToContainer(
+		utils.ClearManagementPlaneResponses(t)
+		err := utils.MockManagementPlaneGrpcContainer.CopyFileToContainer(
 			ctx,
 			"../config/nginx/nginx-with-test-location.conf",
 			fmt.Sprintf("/mock-management-plane-grpc/config/%s/etc/nginx/nginx.conf", nginxInstanceID),
@@ -52,9 +54,9 @@ func TestGrpc_ConfigApply(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		PerformConfigApply(t, nginxInstanceID)
+		utils.PerformConfigApply(t, nginxInstanceID)
 
-		responses = GetManagementPlaneResponses(t, 1)
+		responses = utils.GetManagementPlaneResponses(t, 1)
 		t.Logf("Config apply responses: %v", responses)
 
 		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
@@ -62,8 +64,8 @@ func TestGrpc_ConfigApply(t *testing.T) {
 	})
 
 	t.Run("Test 3: Invalid config", func(t *testing.T) {
-		ClearManagementPlaneResponses(t)
-		err := MockManagementPlaneGrpcContainer.CopyFileToContainer(
+		utils.ClearManagementPlaneResponses(t)
+		err := utils.MockManagementPlaneGrpcContainer.CopyFileToContainer(
 			ctx,
 			"../config/nginx/invalid-nginx.conf",
 			fmt.Sprintf("/mock-management-plane-grpc/config/%s/etc/nginx/nginx.conf", nginxInstanceID),
@@ -71,9 +73,9 @@ func TestGrpc_ConfigApply(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		PerformConfigApply(t, nginxInstanceID)
+		utils.PerformConfigApply(t, nginxInstanceID)
 
-		responses = GetManagementPlaneResponses(t, 2)
+		responses = utils.GetManagementPlaneResponses(t, 2)
 		t.Logf("Config apply responses: %v", responses)
 
 		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_ERROR, responses[0].GetCommandResponse().GetStatus())
@@ -85,10 +87,10 @@ func TestGrpc_ConfigApply(t *testing.T) {
 	})
 
 	t.Run("Test 4: File not in allowed directory", func(t *testing.T) {
-		ClearManagementPlaneResponses(t)
-		PerformInvalidConfigApply(t, nginxInstanceID)
+		utils.ClearManagementPlaneResponses(t)
+		utils.PerformInvalidConfigApply(t, nginxInstanceID)
 
-		responses = GetManagementPlaneResponses(t, 1)
+		responses = utils.GetManagementPlaneResponses(t, 1)
 		t.Logf("Config apply responses: %v", responses)
 
 		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE, responses[0].GetCommandResponse().GetStatus())

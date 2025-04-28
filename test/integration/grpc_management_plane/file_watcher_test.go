@@ -3,11 +3,13 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package integration
+package grpc_management_plane
 
 import (
 	"context"
 	"testing"
+
+	"github.com/nginx/agent/v3/test/integration/utils"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/stretchr/testify/assert"
@@ -16,13 +18,13 @@ import (
 
 func TestGrpc_FileWatcher(t *testing.T) {
 	ctx := context.Background()
-	teardownTest := SetupConnectionTest(t, true, false)
+	teardownTest := utils.SetupConnectionTest(t, true, false)
 	defer teardownTest(t)
 
-	VerifyConnection(t, 2)
+	utils.VerifyConnection(t, 2)
 	assert.False(t, t.Failed())
 
-	err := Container.CopyFileToContainer(
+	err := utils.Container.CopyFileToContainer(
 		ctx,
 		"../config/nginx/nginx-with-server-block-access-log.conf",
 		"/etc/nginx/nginx.conf",
@@ -30,11 +32,11 @@ func TestGrpc_FileWatcher(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	responses := GetManagementPlaneResponses(t, 2)
+	responses := utils.GetManagementPlaneResponses(t, 2)
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
 
-	VerifyUpdateDataPlaneStatus(t)
+	utils.VerifyUpdateDataPlaneStatus(t)
 }

@@ -3,12 +3,14 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package integration
+package grpc_management_plane
 
 import (
 	"fmt"
 	"net/http"
 	"testing"
+
+	"github.com/nginx/agent/v3/test/integration/utils"
 
 	"github.com/go-resty/resty/v2"
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -17,13 +19,13 @@ import (
 )
 
 func TestGrpc_ConfigUpload(t *testing.T) {
-	teardownTest := SetupConnectionTest(t, true, false)
+	teardownTest := utils.SetupConnectionTest(t, true, false)
 	defer teardownTest(t)
 
-	nginxInstanceID := VerifyConnection(t, 2)
+	nginxInstanceID := utils.VerifyConnection(t, 2)
 	assert.False(t, t.Failed())
 
-	responses := GetManagementPlaneResponses(t, 1)
+	responses := utils.GetManagementPlaneResponses(t, 1)
 
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
@@ -46,15 +48,15 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 	t.Logf("Sending config upload request: %s", request)
 
 	client := resty.New()
-	client.SetRetryCount(RetryCount).SetRetryWaitTime(RetryWaitTime).SetRetryMaxWaitTime(RetryMaxWaitTime)
+	client.SetRetryCount(utils.RetryCount).SetRetryWaitTime(utils.RetryWaitTime).SetRetryMaxWaitTime(utils.RetryMaxWaitTime)
 
-	url := fmt.Sprintf("http://%s/api/v1/requests", MockManagementPlaneAPIAddress)
+	url := fmt.Sprintf("http://%s/api/v1/requests", utils.MockManagementPlaneAPIAddress)
 	resp, err := client.R().EnableTrace().SetBody(request).Post(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 
-	responses = GetManagementPlaneResponses(t, 2)
+	responses = utils.GetManagementPlaneResponses(t, 2)
 
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
