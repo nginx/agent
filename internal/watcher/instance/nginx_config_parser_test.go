@@ -12,7 +12,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"sort"
 	"testing"
+
+	"google.golang.org/protobuf/proto"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -260,6 +263,7 @@ var (
 `
 )
 
+// nolint: maintidx
 func TestNginxConfigParser_Parse(t *testing.T) {
 	ctx := context.Background()
 	dir := t.TempDir()
@@ -287,12 +291,30 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 	defer helpers.RemoveFileWithErrorCheck(t, allowedFile.Name())
 	fileMetaAllowedFiles, err := files.FileMeta(allowedFile.Name())
 	require.NoError(t, err)
+	allowedFileWithMetas := mpi.File{FileMeta: fileMetaAllowedFiles}
+
+	_, cert := helpers.GenerateSelfSignedCert(t)
+	certContents := helpers.Cert{Name: "nginx.cert", Type: "CERTIFICATE", Contents: cert}
+	certFile := helpers.WriteCertFiles(t, dir, certContents)
+	require.NotNil(t, certFile)
+	fileMetaCertFiles, err := files.FileMetaWithCertificate(certFile)
+	require.NoError(t, err)
+	certFileWithMetas := mpi.File{FileMeta: fileMetaCertFiles}
+
+	_, diffCert := helpers.GenerateSelfSignedCert(t)
+	diffCertContents := helpers.Cert{Name: "nginx1.cert", Type: "CERTIFICATE", Contents: diffCert}
+	diffCertFile := helpers.WriteCertFiles(t, dir, diffCertContents)
+	require.NotNil(t, diffCertFile)
+	diffFileMetaCertFiles, err := files.FileMetaWithCertificate(diffCertFile)
+	require.NoError(t, err)
+	diffCertFileWithMetas := mpi.File{FileMeta: diffFileMetaCertFiles}
 
 	tests := []struct {
 		instance              *mpi.Instance
 		name                  string
 		content               string
 		expectedConfigContext *model.NginxConfigContext
+		expectedLog           string
 		allowedDirectories    []string
 	}{
 		{
@@ -312,6 +334,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 				protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 				[]string{"127.0.0.1:1515"},
 			),
+			expectedLog:        "",
 			allowedDirectories: []string{dir},
 		},
 		{
@@ -331,6 +354,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 				[]string{"127.0.0.1:1515"},
 			),
+			expectedLog:        "",
 			allowedDirectories: []string{dir},
 		},
 		{
@@ -338,34 +362,122 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			instance: protos.GetNginxPlusInstance([]string{}),
 			content: testconfig.GetNginxConfigWithNotAllowedDir(errorLog.Name(), allowedFile.Name(),
 				notAllowedFile.Name(), accessLog.Name()),
+			expectedConfigContext: modelHelpers.GetConfigContextWithFiles(
+				accessLog.Name(),
+				errorLog.Name(),
+				[]*mpi.File{&allowedFileWithMetas},
+				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				nil,
+			),
+			expectedLog:        "",
+			allowedDirectories: []string{dir},
+		},
+		{
+			name:     "Test 4: SSL Certificate file path containing variables",
+			instance: protos.GetNginxPlusInstance([]string{}),
+			content:  testconfig.GetNginxConfWithSSLCertsWithVariables(),
 			expectedConfigContext: &model.NginxConfigContext{
-				StubStatus: &model.APIDetails{},
-				PlusAPI:    &model.APIDetails{},
-				InstanceID: protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
-				Files: []*mpi.File{
-					{
-						FileMeta: fileMetaAllowedFiles,
-					},
-				},
-				AccessLogs: []*model.AccessLog{
-					{
-						Name: accessLog.Name(),
-						Format: "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent " +
-							"\"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\" \"$bytes_sent\" " +
-							"\"$request_length\" \"$request_time\" \"$gzip_ratio\" $server_protocol ",
-						Permissions: "0600",
-						Readable:    true,
-					},
-				},
-				ErrorLogs: []*model.ErrorLog{
-					{
-						Name:        errorLog.Name(),
-						Permissions: "0600",
-						Readable:    true,
-					},
-				},
+				StubStatus:       &model.APIDetails{},
+				PlusAPI:          &model.APIDetails{},
+				InstanceID:       protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				Files:            []*mpi.File{},
+				AccessLogs:       []*model.AccessLog{},
+				ErrorLogs:        []*model.ErrorLog{},
 				NAPSysLogServers: nil,
 			},
+			allowedDirectories: []string{dir},
+		},
+		{
+			name:     "Test 5: Error Log outputting to stderr",
+			instance: protos.GetNginxPlusInstance([]string{}),
+			content: testconfig.GetNginxConfigWithMultipleAccessLogs(
+				"stderr",
+				accessLog.Name(),
+				combinedAccessLog.Name(),
+				ltsvAccessLog.Name(),
+			),
+			expectedConfigContext: modelHelpers.GetConfigContextWithoutErrorLog(
+				accessLog.Name(),
+				combinedAccessLog.Name(),
+				ltsvAccessLog.Name(),
+				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				[]string{"127.0.0.1:1515"},
+			),
+			expectedLog: "Currently error log outputs to stderr. Log monitoring is disabled while applying a " +
+				"config; log errors to file to enable error monitoring",
+			allowedDirectories: []string{dir},
+		},
+		{
+			name:     "Test 6: Error Log outputting to stdout",
+			instance: protos.GetNginxPlusInstance([]string{}),
+			content: testconfig.GetNginxConfigWithMultipleAccessLogs(
+				"stdout",
+				accessLog.Name(),
+				combinedAccessLog.Name(),
+				ltsvAccessLog.Name(),
+			),
+			expectedConfigContext: modelHelpers.GetConfigContextWithoutErrorLog(
+				accessLog.Name(),
+				combinedAccessLog.Name(),
+				ltsvAccessLog.Name(),
+				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				[]string{"127.0.0.1:1515"},
+			),
+			expectedLog: "Currently error log outputs to stdout. Log monitoring is disabled while applying a " +
+				"config; log errors to file to enable error monitoring",
+			allowedDirectories: []string{dir},
+		},
+		{
+			name:     "Test 7: Check Parser for SSL Certs",
+			instance: protos.GetNginxPlusInstance([]string{}),
+			content: testconfig.GetNginxConfigWithSSLCerts(
+				errorLog.Name(),
+				accessLog.Name(),
+				certFile,
+			),
+			expectedConfigContext: modelHelpers.GetConfigContextWithFiles(
+				accessLog.Name(),
+				errorLog.Name(),
+				[]*mpi.File{&certFileWithMetas},
+				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				nil,
+			),
+			allowedDirectories: []string{dir},
+		},
+		{
+			name:     "Test 8: Check for multiple different SSL Certs",
+			instance: protos.GetNginxPlusInstance([]string{}),
+			content: testconfig.GetNginxConfigWithMultipleSSLCerts(
+				errorLog.Name(),
+				accessLog.Name(),
+				certFile,
+				diffCertFile,
+			),
+			expectedConfigContext: modelHelpers.GetConfigContextWithFiles(
+				accessLog.Name(),
+				errorLog.Name(),
+				[]*mpi.File{&diffCertFileWithMetas, &certFileWithMetas},
+				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				nil,
+			),
+			allowedDirectories: []string{dir},
+		},
+		{
+			name:     "Test 9: Check for multiple same SSL Certs",
+			instance: protos.GetNginxPlusInstance([]string{}),
+			content: testconfig.GetNginxConfigWithMultipleSSLCerts(
+				errorLog.Name(),
+				accessLog.Name(),
+				certFile,
+				certFile,
+			),
+			expectedConfigContext: modelHelpers.GetConfigContextWithFiles(
+				accessLog.Name(),
+				errorLog.Name(),
+				[]*mpi.File{&certFileWithMetas},
+				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				nil,
+			),
 			allowedDirectories: []string{dir},
 		},
 	}
@@ -388,16 +500,36 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			agentConfig.AllowedDirectories = test.allowedDirectories
 
 			nginxConfig := NewNginxConfigParser(agentConfig)
+
+			logBuf := &bytes.Buffer{}
+			stub.StubLoggerWith(logBuf)
+
 			result, parseError := nginxConfig.Parse(ctx, test.instance)
 			require.NoError(t, parseError)
 
-			assert.ElementsMatch(t, test.expectedConfigContext.Files, result.Files)
+			helpers.ValidateLog(t, test.expectedLog, logBuf)
+			logBuf.Reset()
+
+			sort.Slice(test.expectedConfigContext.Files, func(i, j int) bool {
+				return test.expectedConfigContext.Files[i].GetFileMeta().GetName() >
+					test.expectedConfigContext.Files[j].GetFileMeta().GetName()
+			})
+
+			sort.Slice(result.Files, func(i, j int) bool {
+				return result.Files[i].GetFileMeta().GetName() >
+					result.Files[j].GetFileMeta().GetName()
+			})
+
+			assert.Truef(t,
+				protoListEqual(test.expectedConfigContext.Files, result.Files),
+				"Expect %s Got %s", test.expectedConfigContext.Files, result.Files)
 			assert.Equal(t, test.expectedConfigContext.NAPSysLogServers, result.NAPSysLogServers)
 			assert.Equal(t, test.expectedConfigContext.PlusAPI, result.PlusAPI)
 			assert.ElementsMatch(t, test.expectedConfigContext.AccessLogs, result.AccessLogs)
 			assert.ElementsMatch(t, test.expectedConfigContext.ErrorLogs, result.ErrorLogs)
 			assert.Equal(t, test.expectedConfigContext.StubStatus, result.StubStatus)
 			assert.Equal(t, test.expectedConfigContext.InstanceID, result.InstanceID)
+			assert.Equal(t, len(test.expectedConfigContext.Files), len(result.Files))
 		})
 	}
 }
@@ -1092,4 +1224,15 @@ func TestNginxConfigParser_checkDuplicate(t *testing.T) {
 			assert.Equal(t, test.expected, ncp.isDuplicateFile(nginxConfigContextFiles.Files, test.file))
 		})
 	}
+}
+
+func protoListEqual(protoListA, protoListB []*mpi.File) bool {
+	for i := 0; i < len(protoListA); i++ {
+		res := proto.Equal(protoListA[i], protoListB[i])
+		if !res {
+			return false
+		}
+	}
+
+	return true
 }

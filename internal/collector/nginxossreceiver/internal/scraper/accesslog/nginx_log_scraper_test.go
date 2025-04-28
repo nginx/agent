@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"go.opentelemetry.io/collector/component"
+
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/config"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest/pmetrictest"
@@ -53,14 +55,13 @@ func TestAccessLogScraper(t *testing.T) {
 		},
 	}
 
-	accessLogScraper, err := NewScraper(receivertest.NewNopSettings(), cfg)
-	require.NoError(t, err)
+	accessLogScraper := NewScraper(receivertest.NewNopSettings(component.Type{}), cfg)
 	defer func() {
 		shutdownError := accessLogScraper.Shutdown(ctx)
 		require.NoError(t, shutdownError)
 	}()
 
-	err = accessLogScraper.Start(context.Background(), componenttest.NewNopHost())
+	err := accessLogScraper.Start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
 
 	go simulateLogging(t, testDataFilePath, testAccessLogPath, 250*time.Millisecond)
@@ -83,7 +84,8 @@ func TestAccessLogScraper(t *testing.T) {
 
 func TestAccessLogScraperError(t *testing.T) {
 	t.Run("include config missing", func(tt *testing.T) {
-		_, err := NewScraper(receivertest.NewNopSettings(), &config.Config{})
+		logScraper := NewScraper(receivertest.NewNopSettings(component.Type{}), &config.Config{})
+		err := logScraper.Start(context.Background(), componenttest.NewNopHost())
 		require.Error(tt, err)
 		assert.Contains(tt, err.Error(), "init stanza pipeline")
 	})

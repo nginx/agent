@@ -6,7 +6,7 @@ resourceMetrics:
             stringValue: nginx
     scopeMetrics:
       - metrics:
-          - description: The total number of accepted client connections
+          - description: The total number of connections, since NGINX was last started or reloaded.
             name: nginx.connections_accepted
             sum:
               aggregationTemporality: 2
@@ -53,9 +53,18 @@ resourceMetrics:
                   timeUnixNano: "1000000"
               isMonotonic: true
             unit: connections
-          - description: Total number of requests made to the server since it started
+          - description: The total number of client requests received, since NGINX was last started or reloaded.
             name: nginx.requests
             sum:
+              aggregationTemporality: 2
+              dataPoints:
+                - asInt: "31070465"
+                  timeUnixNano: "1000000"
+              isMonotonic: true
+            unit: requests
+          - description: The total number of client requests received, since the last collection interval.
+            name: nginx.http.request.count
+            gauge:
               aggregationTemporality: 2
               dataPoints:
                 - asInt: "31070465"

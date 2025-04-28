@@ -8,9 +8,10 @@ package config // import "github.com/open-telemetry/opentelemetry-collector-cont
 import (
 	"time"
 
+	"go.opentelemetry.io/collector/scraper/scraperhelper"
+
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/confighttp"
-	"go.opentelemetry.io/collector/receiver/scraperhelper"
 
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/metadata"
 )

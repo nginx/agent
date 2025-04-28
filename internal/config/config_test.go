@@ -5,6 +5,7 @@
 package config
 
 import (
+	"errors"
 	"os"
 	"path"
 	"strings"
@@ -28,6 +29,9 @@ func TestRegisterConfigFile(t *testing.T) {
 	file, err := os.Create("nginx-agent.conf")
 	require.NoError(t, err)
 	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
+
+	_, err = file.WriteString("log:")
+	require.NoError(t, err)
 
 	currentDirectory, err := os.Getwd()
 	require.NoError(t, err)
@@ -597,6 +601,37 @@ func TestParseJSON(t *testing.T) {
 	}
 }
 
+func TestValidateYamlFile(t *testing.T) {
+	tests := []struct {
+		expected error
+		name     string
+		input    string
+	}{
+		{
+			name:     "Test 1: Valid NGINX Agent config file",
+			input:    "testdata/nginx-agent.conf",
+			expected: nil,
+		},
+		{
+			name:     "Test 2: Invalid format NGINX Agent config file",
+			input:    "testdata/invalid-format-nginx-agent.conf",
+			expected: errors.New("[2:1] unknown field \"level\""),
+		},
+		{
+			name:     "Test 3: Unknown field in NGINX Agent config file",
+			input:    "testdata/unknown-field-nginx-agent.conf",
+			expected: errors.New("[5:1] unknown field \"unknown_field\""),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := validateYamlFile(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 func getAgentConfig() *Config {
 	return &Config{
 		UUID:    "",
@@ -637,6 +672,7 @@ func getAgentConfig() *Config {
 						Server: &ServerConfig{
 							Host: "127.0.0.1",
 							Port: 1234,
+							Type: Grpc,
 						},
 						TLS: &TLSConfig{
 							Cert:       "/path/to/server-cert.pem",
@@ -661,7 +697,7 @@ func getAgentConfig() *Config {
 						Server: &ServerConfig{
 							Host: "localhost",
 							Port: 4317,
-							Type: 0,
+							Type: Grpc,
 						},
 						Auth: &AuthConfig{
 							Token: "even-secreter-token",
@@ -697,7 +733,6 @@ func getAgentConfig() *Config {
 					Server: &ServerConfig{
 						Host: "localhost",
 						Port: 1337,
-						Type: 0,
 					},
 					Path: "/",
 				},
