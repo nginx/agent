@@ -21,47 +21,47 @@ import (
 
 func TestGrpc_Reconnection(t *testing.T) {
 	ctx := context.Background()
-	teardownTest := setupConnectionTest(t, false, false)
+	teardownTest := SetupConnectionTest(t, false, false)
 	defer teardownTest(t)
 
 	timeout := 15 * time.Second
 
-	originalID := verifyConnection(t, 2)
+	originalID := VerifyConnection(t, 2)
 
-	stopErr := mockManagementPlaneGrpcContainer.Stop(ctx, &timeout)
+	stopErr := MockManagementPlaneGrpcContainer.Stop(ctx, &timeout)
 
 	require.NoError(t, stopErr)
 
-	startErr := mockManagementPlaneGrpcContainer.Start(ctx)
+	startErr := MockManagementPlaneGrpcContainer.Start(ctx)
 	require.NoError(t, startErr)
 
-	ipAddress, err := mockManagementPlaneGrpcContainer.Host(ctx)
+	ipAddress, err := MockManagementPlaneGrpcContainer.Host(ctx)
 	require.NoError(t, err)
-	ports, err := mockManagementPlaneGrpcContainer.Ports(ctx)
+	ports, err := MockManagementPlaneGrpcContainer.Ports(ctx)
 	require.NoError(t, err)
-	mockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9093/tcp"][0].HostPort)
+	MockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9093/tcp"][0].HostPort)
 
-	currentID := verifyConnection(t, 2)
+	currentID := VerifyConnection(t, 2)
 	assert.Equal(t, originalID, currentID)
 }
 
 // Verify that the agent sends a connection request and an update data plane status request
 func TestGrpc_StartUp(t *testing.T) {
-	teardownTest := setupConnectionTest(t, true, false)
+	teardownTest := SetupConnectionTest(t, true, false)
 	defer teardownTest(t)
 
-	verifyConnection(t, 2)
+	VerifyConnection(t, 2)
 	assert.False(t, t.Failed())
-	verifyUpdateDataPlaneHealth(t)
+	VerifyUpdateDataPlaneHealth(t)
 }
 
 func TestGrpc_DataplaneHealthRequest(t *testing.T) {
-	teardownTest := setupConnectionTest(t, true, false)
+	teardownTest := SetupConnectionTest(t, true, false)
 	defer teardownTest(t)
 
-	verifyConnection(t, 2)
+	VerifyConnection(t, 2)
 
-	responses := getManagementPlaneResponses(t, 1)
+	responses := GetManagementPlaneResponses(t, 1)
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 
@@ -77,15 +77,15 @@ func TestGrpc_DataplaneHealthRequest(t *testing.T) {
 		}`
 
 	client := resty.New()
-	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
+	client.SetRetryCount(RetryCount).SetRetryWaitTime(RetryWaitTime).SetRetryMaxWaitTime(RetryMaxWaitTime)
 
-	url := fmt.Sprintf("http://%s/api/v1/requests", mockManagementPlaneAPIAddress)
+	url := fmt.Sprintf("http://%s/api/v1/requests", MockManagementPlaneAPIAddress)
 	resp, err := client.R().EnableTrace().SetBody(request).Post(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 
-	responses = getManagementPlaneResponses(t, 2)
+	responses = GetManagementPlaneResponses(t, 2)
 
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully sent the health status update", responses[1].GetCommandResponse().GetMessage())

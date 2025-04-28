@@ -17,13 +17,13 @@ import (
 )
 
 func TestGrpc_ConfigUpload(t *testing.T) {
-	teardownTest := setupConnectionTest(t, true, false)
+	teardownTest := SetupConnectionTest(t, true, false)
 	defer teardownTest(t)
 
-	nginxInstanceID := verifyConnection(t, 2)
+	nginxInstanceID := VerifyConnection(t, 2)
 	assert.False(t, t.Failed())
 
-	responses := getManagementPlaneResponses(t, 1)
+	responses := GetManagementPlaneResponses(t, 1)
 
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
@@ -46,15 +46,15 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 	t.Logf("Sending config upload request: %s", request)
 
 	client := resty.New()
-	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
+	client.SetRetryCount(RetryCount).SetRetryWaitTime(RetryWaitTime).SetRetryMaxWaitTime(RetryMaxWaitTime)
 
-	url := fmt.Sprintf("http://%s/api/v1/requests", mockManagementPlaneAPIAddress)
+	url := fmt.Sprintf("http://%s/api/v1/requests", MockManagementPlaneAPIAddress)
 	resp, err := client.R().EnableTrace().SetBody(request).Post(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 
-	responses = getManagementPlaneResponses(t, 2)
+	responses = GetManagementPlaneResponses(t, 2)
 
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())

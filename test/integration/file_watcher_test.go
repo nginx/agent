@@ -16,13 +16,13 @@ import (
 
 func TestGrpc_FileWatcher(t *testing.T) {
 	ctx := context.Background()
-	teardownTest := setupConnectionTest(t, true, false)
+	teardownTest := SetupConnectionTest(t, true, false)
 	defer teardownTest(t)
 
-	verifyConnection(t, 2)
+	VerifyConnection(t, 2)
 	assert.False(t, t.Failed())
 
-	err := container.CopyFileToContainer(
+	err := Container.CopyFileToContainer(
 		ctx,
 		"../config/nginx/nginx-with-server-block-access-log.conf",
 		"/etc/nginx/nginx.conf",
@@ -30,11 +30,11 @@ func TestGrpc_FileWatcher(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	responses := getManagementPlaneResponses(t, 2)
+	responses := GetManagementPlaneResponses(t, 2)
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
 
-	verifyUpdateDataPlaneStatus(t)
+	VerifyUpdateDataPlaneStatus(t)
 }

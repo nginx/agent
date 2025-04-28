@@ -17,31 +17,31 @@ import (
 )
 
 const (
-	retryCount       = 5
-	retryWaitTime    = 4 * time.Second
-	retryMaxWaitTime = 5 * time.Second
+	RetryCount       = 5
+	RetryWaitTime    = 4 * time.Second
+	RetryMaxWaitTime = 5 * time.Second
 )
 
-var mockManagementPlaneAPIAddress string
+var MockManagementPlaneAPIAddress string
 
-func performConfigApply(t *testing.T, nginxInstanceID string) {
+func PerformConfigApply(t *testing.T, nginxInstanceID string) {
 	t.Helper()
 
 	client := resty.New()
-	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
+	client.SetRetryCount(RetryCount).SetRetryWaitTime(RetryWaitTime).SetRetryMaxWaitTime(RetryMaxWaitTime)
 
-	url := fmt.Sprintf("http://%s/api/v1/instance/%s/config/apply", mockManagementPlaneAPIAddress, nginxInstanceID)
+	url := fmt.Sprintf("http://%s/api/v1/instance/%s/config/apply", MockManagementPlaneAPIAddress, nginxInstanceID)
 	resp, err := client.R().EnableTrace().Post(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 }
 
-func performInvalidConfigApply(t *testing.T, nginxInstanceID string) {
+func PerformInvalidConfigApply(t *testing.T, nginxInstanceID string) {
 	t.Helper()
 
 	client := resty.New()
-	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
+	client.SetRetryCount(RetryCount).SetRetryWaitTime(RetryWaitTime).SetRetryMaxWaitTime(RetryMaxWaitTime)
 
 	body := fmt.Sprintf(`{
 			"message_meta": {
@@ -78,7 +78,7 @@ func performInvalidConfigApply(t *testing.T, nginxInstanceID string) {
 				}
 			}
 		}`, nginxInstanceID)
-	url := fmt.Sprintf("http://%s/api/v1/requests", mockManagementPlaneAPIAddress)
+	url := fmt.Sprintf("http://%s/api/v1/requests", MockManagementPlaneAPIAddress)
 	resp, err := client.R().EnableTrace().SetBody(body).Post(url)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
