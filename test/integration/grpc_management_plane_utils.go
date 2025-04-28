@@ -36,6 +36,13 @@ var (
 	mockManagementPlaneGrpcAddress   string
 )
 
+const (
+	instanceLen      = 2
+	statusRetryCount = 3
+	retryWait        = 50 * time.Millisecond
+	retryMaxWait     = 200 * time.Millisecond
+)
+
 type (
 	ConnectionRequest struct {
 		ConnectionRequest *mpi.CreateConnectionRequest `json:"connectionRequest"`
@@ -373,7 +380,7 @@ func verifyUpdateDataPlaneStatus(t *testing.T) {
 	t.Helper()
 
 	client := resty.New()
-	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
+	client.SetRetryCount(statusRetryCount).SetRetryWaitTime(retryWait).SetRetryMaxWaitTime(retryMaxWait)
 
 	url := fmt.Sprintf("http://%s/api/v1/status", mockManagementPlaneAPIAddress)
 	resp, err := client.R().EnableTrace().Get(url)
@@ -405,7 +412,7 @@ func verifyUpdateDataPlaneStatus(t *testing.T) {
 	sort.Slice(instances, func(i, j int) bool {
 		return instances[i].GetInstanceMeta().GetInstanceType() < instances[j].GetInstanceMeta().GetInstanceType()
 	})
-	assert.Len(t, instances, 2)
+	assert.Len(t, instances, instanceLen)
 
 	// Verify agent instance metadata
 	assert.NotEmpty(t, instances[0].GetInstanceMeta().GetInstanceId())
