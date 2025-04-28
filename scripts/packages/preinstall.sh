@@ -4,7 +4,7 @@ set -e
 # Copyright (C) Nginx, Inc. 2022.
 #
 # Description:
-# NGINX Agent install script for migrating configuration from v2 to v3
+# NGINX Agent pre install script
 #
 ################################
 ###### Default variables
