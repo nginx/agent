@@ -74,7 +74,7 @@ update_config_file() {
         if [ -f "$v2_config_file" ] && grep -q "$NGINX_ONE_HOST" "$v2_config_file"; then
             echo "NGINX Agent is configured to connect to NGINX One"
         else
-            err_exit "Upgrade aborted: existing Agent V2 is not configured for NGINX One"
+            err_exit "Upgrade aborted: existing NGINX Agent V2 is not configured for NGINX One"
         fi
 
         # Extract token
