@@ -329,7 +329,7 @@ func TestFileManagerService_ClearCache(t *testing.T) {
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
 
 	filesCache := map[string]*model.FileCache{
-		"File/path/test.conf": {
+		"file/path/test.conf": {
 			File: &mpi.File{
 				FileMeta: &mpi.FileMeta{
 					Name:         "file/path/test.conf",
