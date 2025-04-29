@@ -47,7 +47,7 @@ func installUninstallSetup(tb testing.TB, expectNoErrorsInLogs bool) (testcontai
 	ctx := context.Background()
 
 	params := &helpers.Parameters{
-		NginxConfigPath: "../config/nginx/nginx.conf",
+		NginxConfigPath: "../../config/nginx/nginx.conf",
 		LogMessage:      "nginx_pid",
 	}
 
@@ -90,7 +90,7 @@ func TestInstallUninstall(t *testing.T) {
 
 func verifyAgentPackage(tb testing.TB, testContainer testcontainers.Container) string {
 	tb.Helper()
-	agentPkgPath, filePathErr := filepath.Abs("../../build/")
+	agentPkgPath, filePathErr := filepath.Abs("../../../build/")
 	require.NoError(tb, filePathErr, "Error finding local agent package build dir")
 
 	localAgentPkg, packageErr := os.Stat(getPackagePath(agentPkgPath, osRelease))

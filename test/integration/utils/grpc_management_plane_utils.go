@@ -44,6 +44,9 @@ const (
 )
 
 type (
+	ConnectionRequest struct {
+		ConnectionRequest *mpi.CreateConnectionRequest `json:"connectionRequest"`
+	}
 	Instance struct {
 		InstanceMeta    *mpi.InstanceMeta    `json:"instance_meta"`
 		InstanceRuntime *mpi.InstanceRuntime `json:"instance_runtime"`
@@ -51,6 +54,9 @@ type (
 	NginxUpdateDataPlaneHealthRequest struct {
 		MessageMeta *mpi.MessageMeta `json:"message_meta"`
 		Instances   []Instance       `json:"instances"`
+	}
+	UpdateDataPlaneStatusRequest struct {
+		UpdateDataPlaneStatusRequest NginxUpdateDataPlaneHealthRequest `json:"updateDataPlaneStatusRequest"`
 	}
 )
 
@@ -88,7 +94,7 @@ func setupContainerEnvironment(ctx context.Context, tb testing.TB, nginxless boo
 	setupMockManagementPlaneGrpc(ctx, tb, containerNetwork)
 
 	params := &helpers.Parameters{
-		NginxAgentConfigPath: "../config/agent/nginx-config-with-grpc-client.conf",
+		NginxAgentConfigPath: "../../config/agent/nginx-config-with-grpc-client.conf",
 		LogMessage:           "Agent connected",
 	}
 	switch nginxless {
@@ -136,9 +142,9 @@ func setupNginxContainer(
 	params *helpers.Parameters,
 ) {
 	tb.Helper()
-	nginxConfPath := "../config/nginx/nginx.conf"
+	nginxConfPath := "../../config/nginx/nginx.conf"
 	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
-		nginxConfPath = "../config/nginx/nginx-plus.conf"
+		nginxConfPath = "../../config/nginx/nginx-plus.conf"
 	}
 	params.NginxConfigPath = nginxConfPath
 

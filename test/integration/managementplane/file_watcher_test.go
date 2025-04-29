@@ -26,7 +26,7 @@ func TestGrpc_FileWatcher(t *testing.T) {
 
 	err := utils.Container.CopyFileToContainer(
 		ctx,
-		"../config/nginx/nginx-with-server-block-access-log.conf",
+		"../../config/nginx/nginx-with-server-block-access-log.conf",
 		"/etc/nginx/nginx.conf",
 		0o666,
 	)
