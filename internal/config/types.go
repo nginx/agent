@@ -181,11 +181,12 @@ type (
 
 	// OTel Collector Receiver configuration.
 	Receivers struct {
-		HostMetrics        *HostMetrics        `yaml:"host_metrics" mapstructure:"host_metrics"`
-		OtlpReceivers      []OtlpReceiver      `yaml:"otlp"         mapstructure:"otlp"`
-		NginxReceivers     []NginxReceiver     `yaml:"nginx"        mapstructure:"nginx"`
-		NginxPlusReceivers []NginxPlusReceiver `yaml:"nginx_plus"   mapstructure:"nginx_plus"`
-		TcplogReceivers    []TcplogReceiver    `yaml:"tcplog"       mapstructure:"tcplog"`
+		ContainerMetrics   *ContainerMetricsReceiver `yaml:"container_metrics" mapstructure:"container_metrics"`
+		HostMetrics        *HostMetrics              `yaml:"host_metrics"      mapstructure:"host_metrics"`
+		OtlpReceivers      []OtlpReceiver            `yaml:"otlp"              mapstructure:"otlp"`
+		NginxReceivers     []NginxReceiver           `yaml:"nginx"             mapstructure:"nginx"`
+		NginxPlusReceivers []NginxPlusReceiver       `yaml:"nginx_plus"        mapstructure:"nginx_plus"`
+		TcplogReceivers    []TcplogReceiver          `yaml:"tcplog"            mapstructure:"tcplog"`
 	}
 
 	OtlpReceiver struct {
@@ -229,6 +230,10 @@ type (
 		InstanceID         string        `yaml:"instance_id"         mapstructure:"instance_id"`
 		PlusAPI            APIDetails    `yaml:"api_details"         mapstructure:"api_details"`
 		CollectionInterval time.Duration `yaml:"collection_interval" mapstructure:"collection_interval"`
+	}
+
+	ContainerMetricsReceiver struct {
+		CollectionInterval time.Duration `yaml:"-" mapstructure:"collection_interval"`
 	}
 
 	HostMetrics struct {
@@ -384,6 +389,7 @@ func (c *Config) IsACollectorExporterConfigured() bool {
 		c.Collector.Exporters.Debug != nil
 }
 
+// nolint: cyclop, revive
 func (c *Config) AreReceiversConfigured() bool {
 	if c.Collector == nil {
 		return false
@@ -396,6 +402,7 @@ func (c *Config) AreReceiversConfigured() bool {
 		c.Collector.Receivers.NginxReceivers != nil ||
 		len(c.Collector.Receivers.NginxReceivers) > 0 ||
 		c.Collector.Receivers.HostMetrics != nil ||
+		c.Collector.Receivers.ContainerMetrics != nil ||
 		c.Collector.Receivers.TcplogReceivers != nil ||
 		len(c.Collector.Receivers.TcplogReceivers) > 0
 }
