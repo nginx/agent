@@ -233,7 +233,7 @@ type (
 	}
 
 	ContainerMetricsReceiver struct {
-		CollectionInterval time.Duration `yaml:"-" mapstructure:"collection_interval"`
+		CollectionInterval time.Duration `yaml:"collection_interval" mapstructure:"collection_interval"`
 	}
 
 	HostMetrics struct {
