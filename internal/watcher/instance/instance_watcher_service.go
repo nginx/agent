@@ -134,7 +134,7 @@ func (iw *InstanceWatcherService) ReparseConfigs(ctx context.Context) {
 
 		nginxConfigContext, parseErr := iw.nginxConfigParser.Parse(ctx, instance)
 		if parseErr != nil {
-			slog.ErrorContext(
+			slog.WarnContext(
 				ctx,
 				"Failed to parse NGINX instance config",
 				"config_path", instance.GetInstanceRuntime().GetConfigPath(),

@@ -163,6 +163,9 @@ func (oc *Collector) bootup(ctx context.Context) error {
 	slog.InfoContext(ctx, "Starting OTel collector")
 	errChan := make(chan error)
 
+	if oc.service == nil {
+		return errors.New("OTel Collector service is nil")
+	}
 	go func() {
 		appErr := oc.service.Run(ctx)
 		if appErr != nil {
