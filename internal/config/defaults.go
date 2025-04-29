@@ -30,6 +30,7 @@ const (
 	DefMaxMessageSize               = 0       // 0 = unset
 	DefMaxMessageRecieveSize        = 4194304 // default 4 MB
 	DefMaxMessageSendSize           = 4194304 // default 4 MB
+	DefMaxFileSize           uint32 = 3145728 // 3MB
 	DefFileChunkSize         uint32 = 2097152 // 2MB
 
 	// Client HTTP Settings

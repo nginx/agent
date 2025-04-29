@@ -361,6 +361,12 @@ func registerClientFlags(fs *flag.FlagSet) {
 		DefFileChunkSize,
 		"File chunk size in bytes.",
 	)
+
+	fs.Uint32(
+		ClientGRPCMaxFileSizeKey,
+		DefMaxFileSize,
+		"Max file size in bytes.",
+	)
 }
 
 func registerCommandFlags(fs *flag.FlagSet) {
@@ -696,6 +702,7 @@ func resolveClient() *Client {
 			MaxMessageSize:        viperInstance.GetInt(ClientGRPCMaxMessageSizeKey),
 			MaxMessageReceiveSize: viperInstance.GetInt(ClientGRPCMaxMessageReceiveSizeKey),
 			MaxMessageSendSize:    viperInstance.GetInt(ClientGRPCMaxMessageSendSizeKey),
+			MaxFileSize:           viperInstance.GetUint32(ClientGRPCMaxFileSizeKey),
 			FileChunkSize:         viperInstance.GetUint32(ClientGRPCFileChunkSizeKey),
 		},
 		Backoff: &BackOff{

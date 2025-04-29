@@ -50,6 +50,7 @@ func AgentConfig() *config.Config {
 				},
 				MaxMessageReceiveSize: 1,
 				MaxMessageSendSize:    1,
+				MaxFileSize:           1,
 				FileChunkSize:         1,
 			},
 			Backoff: &config.BackOff{

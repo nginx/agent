@@ -246,10 +246,10 @@ func (fms *FileManagerService) UpdateFile(
 
 	slog.DebugContext(ctx, "Checking file size",
 		"file_size", fileToUpdate.GetFileMeta().GetSize(),
-		"max_message_send_size", int64(fms.agentConfig.Client.Grpc.MaxMessageSendSize),
+		"max_file_size", int64(fms.agentConfig.Client.Grpc.MaxFileSize),
 	)
 
-	if fileToUpdate.GetFileMeta().GetSize() <= int64(fms.agentConfig.Client.Grpc.MaxMessageSendSize) {
+	if fileToUpdate.GetFileMeta().GetSize() <= int64(fms.agentConfig.Client.Grpc.MaxFileSize) {
 		return fms.sendUpdateFileRequest(ctx, fileToUpdate)
 	}
 
@@ -614,7 +614,7 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 
 func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) error {
 	slog.DebugContext(ctx, "Updating file", "file", file.GetFileMeta().GetName())
-	if file.GetFileMeta().GetSize() <= int64(fms.agentConfig.Client.Grpc.MaxMessageReceiveSize) {
+	if file.GetFileMeta().GetSize() <= int64(fms.agentConfig.Client.Grpc.MaxFileSize) {
 		return fms.file(ctx, file)
 	}
 
