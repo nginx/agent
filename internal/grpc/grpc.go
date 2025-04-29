@@ -52,7 +52,7 @@ type (
 
 	wrappedStream struct {
 		grpc.ClientStream
-		*protovalidate.Validator
+		protovalidate.Validator
 	}
 )
 
@@ -345,7 +345,7 @@ func ValidateGrpcError(err error) error {
 	return nil
 }
 
-func validateMessage(validator *protovalidate.Validator, message any) error {
+func validateMessage(validator protovalidate.Validator, message any) error {
 	protoMessage, ok := message.(proto.Message)
 	if !ok {
 		return status.Errorf(codes.InvalidArgument, "invalid request type: %T", message)

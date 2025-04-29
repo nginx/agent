@@ -18,7 +18,6 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
-	"go.opentelemetry.io/collector/receiver/scraperhelper"
 	"go.uber.org/zap"
 
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/config"
@@ -36,8 +35,6 @@ type NginxStubStatusScraper struct {
 	init             sync.Once
 	previousRequests int
 }
-
-var _ scraperhelper.Scraper = (*NginxStubStatusScraper)(nil)
 
 func NewScraper(
 	settings receiver.Settings,
@@ -62,6 +59,7 @@ func (s *NginxStubStatusScraper) ID() component.ID {
 	return component.NewID(metadata.Type)
 }
 
+// nolint: unparam
 func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) error {
 	s.logger.Info("Starting NGINX stub status scraper")
 	httpClient := http.DefaultClient
