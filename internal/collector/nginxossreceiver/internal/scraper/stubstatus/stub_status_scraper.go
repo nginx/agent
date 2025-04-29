@@ -77,6 +77,7 @@ func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) erro
 	return nil
 }
 
+// nolint: unparam
 func (s *NginxStubStatusScraper) Shutdown(_ context.Context) error {
 	s.logger.Info("Shutting down NGINX stub status scraper")
 	return nil
