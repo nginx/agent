@@ -78,16 +78,20 @@ type ConfigApplySuccess struct {
 // Complexity is 11, allowed is 10
 // nolint: revive, cyclop
 func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext) bool {
-	if ncc.StubStatus.URL != otherNginxConfigContext.StubStatus.URL || ncc.StubStatus.Listen !=
-		otherNginxConfigContext.StubStatus.Listen || ncc.StubStatus.Location !=
-		otherNginxConfigContext.StubStatus.Location {
-		return false
+	if ncc.StubStatus != nil && otherNginxConfigContext.StubStatus != nil {
+		if ncc.StubStatus.URL != otherNginxConfigContext.StubStatus.URL || ncc.StubStatus.Listen !=
+			otherNginxConfigContext.StubStatus.Listen || ncc.StubStatus.Location !=
+			otherNginxConfigContext.StubStatus.Location {
+			return false
+		}
 	}
 
-	if ncc.PlusAPI.URL != otherNginxConfigContext.PlusAPI.URL || ncc.PlusAPI.Listen !=
-		otherNginxConfigContext.PlusAPI.Listen || ncc.PlusAPI.Location !=
-		otherNginxConfigContext.PlusAPI.Location {
-		return false
+	if ncc.PlusAPI != nil && otherNginxConfigContext.PlusAPI != nil {
+		if ncc.PlusAPI.URL != otherNginxConfigContext.PlusAPI.URL || ncc.PlusAPI.Listen !=
+			otherNginxConfigContext.PlusAPI.Listen || ncc.PlusAPI.Location !=
+			otherNginxConfigContext.PlusAPI.Location {
+			return false
+		}
 	}
 
 	if ncc.InstanceID != otherNginxConfigContext.InstanceID {

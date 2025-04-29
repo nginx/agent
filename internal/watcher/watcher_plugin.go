@@ -57,7 +57,7 @@ type (
 			instancesChannel chan<- instance.InstanceUpdatesMessage,
 			nginxConfigContextChannel chan<- instance.NginxConfigContextMessage,
 		)
-		ReparseConfig(ctx context.Context, instanceID string, configContext *model.NginxConfigContext)
+		HandleNginxConfigContextUpdate(ctx context.Context, instanceID string, configContext *model.NginxConfigContext)
 		ReparseConfigs(ctx context.Context)
 		SetEnabled(enabled bool)
 	}
@@ -202,7 +202,7 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 		slog.DebugContext(ctx, "NginxConfigContext is empty, no need to reparse config")
 		return
 	}
-	w.instanceWatcherService.ReparseConfig(ctx, instanceID, successMessage.ConfigContext)
+	w.instanceWatcherService.HandleNginxConfigContextUpdate(ctx, instanceID, successMessage.ConfigContext)
 
 	w.watcherMutex.Lock()
 	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(

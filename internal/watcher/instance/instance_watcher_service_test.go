@@ -263,6 +263,8 @@ func TestInstanceWatcherService_ReparseConfig(t *testing.T) {
 	updatedInstance.GetInstanceRuntime().GetNginxRuntimeInfo().AccessLogs = []string{"access2.log"}
 	updatedInstance.GetInstanceRuntime().GetNginxRuntimeInfo().ErrorLogs = []string{"error.log"}
 
+	updateNginxConfigContext.InstanceID = updatedInstance.GetInstanceMeta().GetInstanceId()
+
 	tests := []struct {
 		parseReturns *model.NginxConfigContext
 		name         string
@@ -275,13 +277,10 @@ func TestInstanceWatcherService_ReparseConfig(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			fakeNginxConfigParser := &instancefakes.FakeNginxConfigParser{}
-			fakeNginxConfigParser.ParseReturns(test.parseReturns, nil)
 			instanceUpdatesChannel := make(chan InstanceUpdatesMessage, 1)
 			nginxConfigContextChannel := make(chan NginxConfigContextMessage, 1)
 
 			instanceWatcherService := NewInstanceWatcherService(types.AgentConfig())
-			instanceWatcherService.nginxConfigParser = fakeNginxConfigParser
 			instanceWatcherService.instancesChannel = instanceUpdatesChannel
 			instanceWatcherService.nginxConfigContextChannel = nginxConfigContextChannel
 
@@ -293,11 +292,15 @@ func TestInstanceWatcherService_ReparseConfig(t *testing.T) {
 				instance.GetInstanceMeta().GetInstanceId(): instance,
 			}
 
-			instanceWatcherService.ReparseConfig(ctx, updatedInstance.GetInstanceMeta().GetInstanceId(),
-				&model.NginxConfigContext{})
+			instanceWatcherService.HandleNginxConfigContextUpdate(ctx, updatedInstance.
+				GetInstanceMeta().GetInstanceId(),
+				updateNginxConfigContext)
 
 			nginxConfigContextMessage := <-nginxConfigContextChannel
 			assert.Equal(t, updateNginxConfigContext, nginxConfigContextMessage.NginxConfigContext)
+
+			assert.Equal(tt, updateNginxConfigContext, instanceWatcherService.
+				nginxConfigCache[updatedInstance.GetInstanceMeta().GetInstanceId()])
 
 			instanceUpdatesMessage := <-instanceUpdatesChannel
 			assert.Len(t, instanceUpdatesMessage.InstanceUpdates.UpdatedInstances, 1)

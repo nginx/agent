@@ -126,15 +126,33 @@ func (iw *InstanceWatcherService) Watch(
 func (iw *InstanceWatcherService) ReparseConfigs(ctx context.Context) {
 	slog.DebugContext(ctx, "Reparsing all instance configurations")
 	for _, instance := range iw.instanceCache {
-		iw.ReparseConfig(ctx, instance.GetInstanceMeta().GetInstanceId(), &model.NginxConfigContext{})
+		slog.DebugContext(
+			ctx,
+			"Reparsing NGINX instance config",
+			"instance_id", instance.GetInstanceMeta().GetInstanceId(),
+		)
+
+		nginxConfigContext, parseErr := iw.nginxConfigParser.Parse(ctx, instance)
+		if parseErr != nil {
+			slog.ErrorContext(
+				ctx,
+				"Failed to parse NGINX instance config",
+				"config_path", instance.GetInstanceRuntime().GetConfigPath(),
+				"instance_id", instance.GetInstanceMeta().GetInstanceId(),
+				"error", parseErr,
+			)
+
+			return
+		}
+
+		iw.HandleNginxConfigContextUpdate(ctx, instance.GetInstanceMeta().GetInstanceId(), nginxConfigContext)
 	}
 	slog.DebugContext(ctx, "Finished reparsing all instance configurations")
 }
 
-func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instanceID string,
+func (iw *InstanceWatcherService) HandleNginxConfigContextUpdate(ctx context.Context, instanceID string,
 	nginxConfigContext *model.NginxConfigContext,
 ) {
-	var parseErr error
 	iw.cacheMutex.Lock()
 	defer iw.cacheMutex.Unlock()
 
@@ -145,29 +163,6 @@ func (iw *InstanceWatcherService) ReparseConfig(ctx context.Context, instanceID 
 
 	if instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX ||
 		instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
-		// If the ReparseConfig was not triggered by a config apply that had changes there is no NginxConfigContext
-		// passed to this function. So we need to parse the config and create one.
-		if nginxConfigContext.InstanceID == "" {
-			slog.DebugContext(
-				ctx,
-				"Reparsing NGINX instance config",
-				"instance_id", instanceID,
-			)
-
-			nginxConfigContext, parseErr = iw.nginxConfigParser.Parse(ctx, instance)
-			if parseErr != nil {
-				slog.WarnContext(
-					ctx,
-					"Unable to parse NGINX instance config",
-					"config_path", instance.GetInstanceRuntime().GetConfigPath(),
-					"instance_id", instanceID,
-					"error", parseErr,
-				)
-
-				return
-			}
-		}
-
 		iw.sendNginxConfigContextUpdate(ctx, nginxConfigContext)
 		iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
 		updatesRequired = proto.UpdateNginxInstanceRuntime(instance, nginxConfigContext)

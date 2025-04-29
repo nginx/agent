@@ -10,9 +10,9 @@ import (
 )
 
 type FakeInstanceWatcherServiceInterface struct {
-	ReparseConfigStub        func(context.Context, string, *model.NginxConfigContext)
-	reparseConfigMutex       sync.RWMutex
-	reparseConfigArgsForCall []struct {
+	HandleNginxConfigContextUpdateStub        func(context.Context, string, *model.NginxConfigContext)
+	handleNginxConfigContextUpdateMutex       sync.RWMutex
+	handleNginxConfigContextUpdateArgsForCall []struct {
 		arg1 context.Context
 		arg2 string
 		arg3 *model.NginxConfigContext
@@ -38,37 +38,37 @@ type FakeInstanceWatcherServiceInterface struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeInstanceWatcherServiceInterface) ReparseConfig(arg1 context.Context, arg2 string, arg3 *model.NginxConfigContext) {
-	fake.reparseConfigMutex.Lock()
-	fake.reparseConfigArgsForCall = append(fake.reparseConfigArgsForCall, struct {
+func (fake *FakeInstanceWatcherServiceInterface) HandleNginxConfigContextUpdate(arg1 context.Context, arg2 string, arg3 *model.NginxConfigContext) {
+	fake.handleNginxConfigContextUpdateMutex.Lock()
+	fake.handleNginxConfigContextUpdateArgsForCall = append(fake.handleNginxConfigContextUpdateArgsForCall, struct {
 		arg1 context.Context
 		arg2 string
 		arg3 *model.NginxConfigContext
 	}{arg1, arg2, arg3})
-	stub := fake.ReparseConfigStub
-	fake.recordInvocation("ReparseConfig", []interface{}{arg1, arg2, arg3})
-	fake.reparseConfigMutex.Unlock()
+	stub := fake.HandleNginxConfigContextUpdateStub
+	fake.recordInvocation("HandleNginxConfigContextUpdate", []interface{}{arg1, arg2, arg3})
+	fake.handleNginxConfigContextUpdateMutex.Unlock()
 	if stub != nil {
-		fake.ReparseConfigStub(arg1, arg2, arg3)
+		fake.HandleNginxConfigContextUpdateStub(arg1, arg2, arg3)
 	}
 }
 
-func (fake *FakeInstanceWatcherServiceInterface) ReparseConfigCallCount() int {
-	fake.reparseConfigMutex.RLock()
-	defer fake.reparseConfigMutex.RUnlock()
-	return len(fake.reparseConfigArgsForCall)
+func (fake *FakeInstanceWatcherServiceInterface) HandleNginxConfigContextUpdateCallCount() int {
+	fake.handleNginxConfigContextUpdateMutex.RLock()
+	defer fake.handleNginxConfigContextUpdateMutex.RUnlock()
+	return len(fake.handleNginxConfigContextUpdateArgsForCall)
 }
 
-func (fake *FakeInstanceWatcherServiceInterface) ReparseConfigCalls(stub func(context.Context, string, *model.NginxConfigContext)) {
-	fake.reparseConfigMutex.Lock()
-	defer fake.reparseConfigMutex.Unlock()
-	fake.ReparseConfigStub = stub
+func (fake *FakeInstanceWatcherServiceInterface) HandleNginxConfigContextUpdateCalls(stub func(context.Context, string, *model.NginxConfigContext)) {
+	fake.handleNginxConfigContextUpdateMutex.Lock()
+	defer fake.handleNginxConfigContextUpdateMutex.Unlock()
+	fake.HandleNginxConfigContextUpdateStub = stub
 }
 
-func (fake *FakeInstanceWatcherServiceInterface) ReparseConfigArgsForCall(i int) (context.Context, string, *model.NginxConfigContext) {
-	fake.reparseConfigMutex.RLock()
-	defer fake.reparseConfigMutex.RUnlock()
-	argsForCall := fake.reparseConfigArgsForCall[i]
+func (fake *FakeInstanceWatcherServiceInterface) HandleNginxConfigContextUpdateArgsForCall(i int) (context.Context, string, *model.NginxConfigContext) {
+	fake.handleNginxConfigContextUpdateMutex.RLock()
+	defer fake.handleNginxConfigContextUpdateMutex.RUnlock()
+	argsForCall := fake.handleNginxConfigContextUpdateArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
@@ -173,8 +173,8 @@ func (fake *FakeInstanceWatcherServiceInterface) WatchArgsForCall(i int) (contex
 func (fake *FakeInstanceWatcherServiceInterface) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.reparseConfigMutex.RLock()
-	defer fake.reparseConfigMutex.RUnlock()
+	fake.handleNginxConfigContextUpdateMutex.RLock()
+	defer fake.handleNginxConfigContextUpdateMutex.RUnlock()
 	fake.reparseConfigsMutex.RLock()
 	defer fake.reparseConfigsMutex.RUnlock()
 	fake.setEnabledMutex.RLock()

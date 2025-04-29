@@ -196,7 +196,7 @@ func TestWatcher_Process_ConfigApplySuccessfulTopic(t *testing.T) {
 
 	watcherPlugin.Process(ctx, message)
 
-	assert.Equal(t, 1, fakeWatcherService.ReparseConfigCallCount())
+	assert.Equal(t, 1, fakeWatcherService.HandleNginxConfigContextUpdateCallCount())
 	assert.Empty(t, watcherPlugin.instancesWithConfigApplyInProgress)
 }
 
