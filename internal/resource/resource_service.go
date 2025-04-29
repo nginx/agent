@@ -194,12 +194,12 @@ func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) (*
 		}
 	}
 
-	configContext, parseErr := r.ParseConfig(ctx, instance)
-	if parseErr != nil || configContext == nil {
+	nginxConfigContext, parseErr := r.nginxConfigParser.Parse(ctx, instance)
+	if parseErr != nil || nginxConfigContext == nil {
 		return nil, fmt.Errorf("failed to parse config %w", parseErr)
 	}
 
-	datasource.UpdateNginxInstanceRuntime(instance, configContext)
+	datasource.UpdateNginxInstanceRuntime(instance, nginxConfigContext)
 
 	slog.DebugContext(ctx, "Updated Instance Runtime after parsing config", "instance", instance.GetInstanceRuntime())
 
@@ -213,7 +213,7 @@ func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) (*
 		return nil, fmt.Errorf("failed to reload NGINX %w", reloadErr)
 	}
 
-	return configContext, nil
+	return nginxConfigContext, nil
 }
 
 func (r *ResourceService) ParseConfig(ctx context.Context, instance *mpi.Instance) (*model.NginxConfigContext, error) {
@@ -221,14 +221,6 @@ func (r *ResourceService) ParseConfig(ctx context.Context, instance *mpi.Instanc
 
 	nginxConfigContext, parseErr := r.nginxConfigParser.Parse(ctx, instance)
 	if parseErr != nil {
-		slog.WarnContext(
-			ctx,
-			"Unable to parse NGINX instance config",
-			"config_path", instance.GetInstanceRuntime().GetConfigPath(),
-			"instance_id", instance.GetInstanceMeta().GetInstanceId(),
-			"error", parseErr,
-		)
-
 		return nil, parseErr
 	}
 

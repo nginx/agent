@@ -158,7 +158,7 @@ func (*Watcher) Subscriptions() []string {
 }
 
 func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message) {
-	slog.Info("Received ConfigApplyRequest event")
+	slog.Info("Watcher plugin received ConfigApplyRequest event")
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest",
