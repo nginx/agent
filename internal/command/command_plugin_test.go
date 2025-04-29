@@ -204,7 +204,6 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 			request:       "APIActionRequest",
 			configFeatures: []string{
 				pkg.FeatureConfiguration,
-				pkg.FeatureConnection,
 				pkg.FeatureMetrics,
 				pkg.FeatureFileWatcher,
 				pkg.FeatureAPIAction,
@@ -278,7 +277,6 @@ func TestCommandPlugin_FeatureDisabled(t *testing.T) {
 			expectedLog: "Configuration feature disabled. Unable to process config upload request",
 			request:     "UploadRequest",
 			configFeatures: []string{
-				pkg.FeatureConnection,
 				pkg.FeatureMetrics,
 				pkg.FeatureFileWatcher,
 			},
@@ -293,7 +291,6 @@ func TestCommandPlugin_FeatureDisabled(t *testing.T) {
 			expectedLog: "Configuration feature disabled. Unable to process config apply request",
 			request:     "ApplyRequest",
 			configFeatures: []string{
-				pkg.FeatureConnection,
 				pkg.FeatureMetrics,
 				pkg.FeatureFileWatcher,
 			},

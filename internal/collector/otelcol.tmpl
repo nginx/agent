@@ -1,4 +1,10 @@
 receivers:
+{{- if ne .Receivers.ContainerMetrics nil }}
+  containermetrics:
+    {{- if .Receivers.ContainerMetrics.CollectionInterval }}
+    collection_interval: {{ .Receivers.ContainerMetrics.CollectionInterval }}
+    {{- end}}
+{{- end }}
 {{- if ne .Receivers.HostMetrics nil }}
   hostmetrics:
     {{- if .Receivers.HostMetrics.CollectionInterval }}
@@ -37,10 +43,10 @@ receivers:
 {{- range $index, $otlpReceiver := .Receivers.OtlpReceivers }}
   otlp/{{$index}}:
     protocols:
-      {{- if eq .Server.Type 0 }}
-      grpc:
-        endpoint: "{{ .Server.Host }}:{{ .Server.Port }}"
-        {{- if and .OtlpTLSConfig (or (gt (len .OtlpTLSConfig.Key) 0) (gt (len .OtlpTLSConfig.Cert) 0) (gt (len .OtlpTLSConfig.Key) 0)) }}
+      {{- if eq .Server.Type "http" }}
+      http:
+        endpoint: "{{- .Server.Host -}}:{{- .Server.Port -}}"
+        {{- if .OtlpTLSConfig }}
         tls:
           {{ if gt (len .OtlpTLSConfig.Cert) 0 -}}
           cert_file: {{ .OtlpTLSConfig.Cert }}
@@ -53,9 +59,9 @@ receivers:
           {{- end }}
         {{- end }}
       {{- else }}
-      http:
-        endpoint: "{{- .Server.Host -}}:{{- .Server.Port -}}"
-        {{- if .OtlpTLSConfig }}
+      grpc:
+        endpoint: "{{ .Server.Host }}:{{ .Server.Port }}"
+        {{- if and .OtlpTLSConfig (or (gt (len .OtlpTLSConfig.Key) 0) (gt (len .OtlpTLSConfig.Cert) 0) (gt (len .OtlpTLSConfig.Key) 0)) }}
         tls:
           {{ if gt (len .OtlpTLSConfig.Cert) 0 -}}
           cert_file: {{ .OtlpTLSConfig.Cert }}
@@ -226,9 +232,12 @@ service:
     {{- end}}
   {{- end}}
   pipelines:
-    {{- if or (ne .Receivers.HostMetrics nil) (gt (len .Receivers.OtlpReceivers) 0) (gt (len .Receivers.NginxReceivers) 0) (gt (len .Receivers.NginxPlusReceivers) 0) }}
+    {{- if or (ne .Receivers.HostMetrics nil) (ne .Receivers.ContainerMetrics nil) (gt (len .Receivers.OtlpReceivers) 0) (gt (len .Receivers.NginxReceivers) 0) (gt (len .Receivers.NginxPlusReceivers) 0) }}
     metrics:
       receivers:
+        {{- if ne .Receivers.ContainerMetrics nil }}
+        - containermetrics
+        {{- end }}
         {{- if ne .Receivers.HostMetrics nil }}
         - hostmetrics
         {{- end }}

@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"go.opentelemetry.io/collector/component/componenttest"
+
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest/pmetrictest"
@@ -25,12 +27,38 @@ func TestScraper(t *testing.T) {
 	cfg, ok := createDefaultConfig().(*Config)
 	assert.True(t, ok)
 	cfg.APIDetails.URL = nginxPlusMock.URL + "/api"
-	require.NoError(t, component.ValidateConfig(cfg))
 
-	scraper, err := newNginxPlusScraper(receivertest.NewNopSettings(), cfg)
+	scraper := newNginxPlusScraper(receivertest.NewNopSettings(component.Type{}), cfg)
+	err := scraper.Start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
 
-	actualMetrics, err := scraper.scrape(context.Background())
+	_, err = scraper.Scrape(context.Background())
+	require.NoError(t, err)
+
+	// To test the nginx.http.response.count metric calculation we need to set the previousLocationZoneResponses &
+	// previousSeverZoneResponses then call scrape a second time as the first time it is called the previous responses
+	// are set using the API
+	scraper.previousLocationZoneResponses = map[string]ResponseStatuses{
+		"location_test": {
+			oneHundredStatusRange:   3,  // 4
+			twoHundredStatusRange:   29, // 2
+			threeHundredStatusRange: 0,
+			fourHundredStatusRange:  1, // 2
+			fiveHundredStatusRange:  0,
+		},
+	}
+
+	scraper.previousServerZoneResponses = map[string]ResponseStatuses{
+		"test": {
+			oneHundredStatusRange:   3, // 2
+			twoHundredStatusRange:   0, // 29
+			threeHundredStatusRange: 0,
+			fourHundredStatusRange:  1, // 1
+			fiveHundredStatusRange:  0,
+		},
+	}
+
+	actualMetrics, err := scraper.Scrape(context.Background())
 	require.NoError(t, err)
 
 	expectedFile := filepath.Join("testdata", "expected.yaml")
