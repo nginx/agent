@@ -314,7 +314,6 @@ func TestGrpc_ConfigApply(t *testing.T) {
 		responses = getManagementPlaneResponses(t, 2)
 		t.Logf("Config apply responses: %v", responses)
 
-		t.Logf("Config apply responses more than 1")
 		sort.Slice(responses, func(i, j int) bool {
 			return responses[i].GetCommandResponse().GetMessage() < responses[j].GetCommandResponse().GetMessage()
 		})

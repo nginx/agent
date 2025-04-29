@@ -217,7 +217,7 @@ func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) (*
 }
 
 func (r *ResourceService) ParseConfig(ctx context.Context, instance *mpi.Instance) (*model.NginxConfigContext, error) {
-	slog.DebugContext(ctx, "Parsing NGINX instance config", "", instance.GetInstanceMeta().GetInstanceId())
+	slog.DebugContext(ctx, "Parsing NGINX instance config", "instance_id", instance.GetInstanceMeta().GetInstanceId())
 
 	nginxConfigContext, parseErr := r.nginxConfigParser.Parse(ctx, instance)
 	if parseErr != nil {
