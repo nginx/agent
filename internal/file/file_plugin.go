@@ -73,8 +73,10 @@ func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 		fp.handleConfigUploadRequest(ctx, msg)
 	case bus.ConfigApplyRequestTopic:
 		fp.handleConfigApplyRequest(ctx, msg)
-	case bus.ConfigApplySuccessfulTopic, bus.ConfigApplyCompleteTopic:
+	case bus.ConfigApplyCompleteTopic:
 		fp.handleConfigApplyComplete(ctx, msg)
+	case bus.ConfigApplySuccessfulTopic:
+		fp.handleConfigApplySuccess(ctx, msg)
 	case bus.ConfigApplyFailedTopic:
 		fp.handleConfigApplyFailedRequest(ctx, msg)
 	default:
@@ -123,6 +125,18 @@ func (fp *FilePlugin) handleConfigApplyComplete(ctx context.Context, msg *bus.Me
 
 	fp.fileManagerService.ClearCache()
 	fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
+}
+
+func (fp *FilePlugin) handleConfigApplySuccess(ctx context.Context, msg *bus.Message) {
+	successMessage, ok := msg.Data.(*model.ConfigApplySuccess)
+
+	if !ok {
+		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplySuccess", "payload", msg.Data)
+		return
+	}
+
+	fp.fileManagerService.ClearCache()
+	fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: successMessage.DataPlaneResponse})
 }
 
 func (fp *FilePlugin) handleConfigApplyFailedRequest(ctx context.Context, msg *bus.Message) {
@@ -183,7 +197,7 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 
 	switch writeStatus {
 	case model.NoChange:
-		response = fp.createDataPlaneResponse(
+		dpResponse := fp.createDataPlaneResponse(
 			correlationID,
 			mpi.CommandResponse_COMMAND_STATUS_OK,
 			"Config apply successful, no files to change",
@@ -191,8 +205,13 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			"",
 		)
 
+		successMessage := &model.ConfigApplySuccess{
+			ConfigContext:     &model.NginxConfigContext{},
+			DataPlaneResponse: dpResponse,
+		}
+
 		fp.fileManagerService.ClearCache()
-		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplySuccessfulTopic, Data: response})
+		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplySuccessfulTopic, Data: successMessage})
 
 		return
 	case model.Error:

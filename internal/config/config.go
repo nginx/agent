@@ -19,9 +19,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nginx/agent/v3/internal/datasource/host"
-
 	"github.com/nginx/agent/v3/internal/datasource/file"
+	"github.com/nginx/agent/v3/internal/datasource/host"
+	"github.com/nginx/agent/v3/internal/logger"
 
 	"github.com/goccy/go-yaml"
 	uuidLibrary "github.com/nginx/agent/v3/pkg/id"
@@ -83,6 +83,10 @@ func ResolveConfig() (*Config, error) {
 	directories := viperInstance.GetStringSlice(AllowedDirectoriesKey)
 	allowedDirs := []string{AgentDirName}
 
+	log := resolveLog()
+	slogger := logger.New(log.Path, log.Level)
+	slog.SetDefault(slogger)
+
 	// Check directories in allowed_directories are valid
 	for _, dir := range directories {
 		if dir == "" || !filepath.IsAbs(dir) {
@@ -111,7 +115,7 @@ func ResolveConfig() (*Config, error) {
 		UUID:               viperInstance.GetString(UUIDKey),
 		Version:            viperInstance.GetString(VersionKey),
 		Path:               viperInstance.GetString(ConfigPathKey),
-		Log:                resolveLog(),
+		Log:                log,
 		DataPlaneConfig:    resolveDataPlaneConfig(),
 		Client:             resolveClient(),
 		AllowedDirectories: allowedDirs,

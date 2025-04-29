@@ -198,13 +198,13 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 			case test.configApplyStatus == model.NoChange:
 				assert.Len(t, messages, 1)
 
-				response, ok := messages[0].Data.(*mpi.DataPlaneResponse)
+				response, ok := messages[0].Data.(*model.ConfigApplySuccess)
 				assert.True(t, ok)
 				assert.Equal(t, bus.ConfigApplySuccessfulTopic, messages[0].Topic)
 				assert.Equal(
 					t,
 					mpi.CommandResponse_COMMAND_STATUS_OK,
-					response.GetCommandResponse().GetStatus(),
+					response.DataPlaneResponse.GetCommandResponse().GetStatus(),
 				)
 			case test.message == nil:
 				assert.Empty(t, messages)
@@ -457,7 +457,10 @@ func TestFilePlugin_Process_ConfigApplyRollbackCompleteTopic(t *testing.T) {
 		InstanceId: instance.GetInstanceMeta().GetInstanceId(),
 	}
 
-	filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigApplySuccessfulTopic, Data: expectedResponse})
+	filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigApplySuccessfulTopic, Data: &model.ConfigApplySuccess{
+		ConfigContext:     &model.NginxConfigContext{},
+		DataPlaneResponse: expectedResponse,
+	}})
 
 	messages := messagePipe.GetMessages()
 	response, ok := messages[0].Data.(*mpi.DataPlaneResponse)

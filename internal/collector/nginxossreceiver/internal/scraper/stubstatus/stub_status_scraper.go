@@ -25,6 +25,7 @@ import (
 )
 
 type NginxStubStatusScraper struct {
+	logger           *zap.Logger
 	httpClient       *http.Client
 	client           *client.NginxClient
 	cfg              *config.Config
@@ -50,6 +51,7 @@ func NewScraper(
 		cfg:      cfg,
 		mb:       mb,
 		rb:       rb,
+		logger:   logger,
 	}
 }
 
@@ -59,6 +61,7 @@ func (s *NginxStubStatusScraper) ID() component.ID {
 
 // nolint: unparam
 func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) error {
+	s.logger.Info("Starting NGINX stub status scraper")
 	httpClient := http.DefaultClient
 	httpClient.Timeout = s.cfg.ClientConfig.Timeout
 
@@ -74,7 +77,9 @@ func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) erro
 	return nil
 }
 
+// nolint: unparam
 func (s *NginxStubStatusScraper) Shutdown(_ context.Context) error {
+	s.logger.Info("Shutting down NGINX stub status scraper")
 	return nil
 }
 
