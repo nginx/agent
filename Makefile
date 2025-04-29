@@ -37,7 +37,7 @@ TAG ?= ""
 
 BUILD_DIR		:= build
 TEST_BUILD_DIR  := build/test
-CERTS_DIR       := /Users/a.griffin/dev/certs
+CERTS_DIR       := build/certs
 DOCS_DIR        := docs
 PROTO_DIR       := proto
 BINARY_NAME		:= nginx-agent
