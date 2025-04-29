@@ -1,0 +1,11 @@
+type: containermetrics
+
+status:
+  class: receiver
+  stability:
+    beta: [metrics]
+  distributions: [contrib]
+  codeowners:
+    active: [ aphralG, dhurley, craigell, sean-breen, CVanF5 ]
+tests:
+  config:
