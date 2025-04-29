@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginxinc/nginx-plus-go-client/v2/client"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -22,17 +23,19 @@ type FakeResourceServiceInterface struct {
 	addInstancesReturnsOnCall map[int]struct {
 		result1 *v1.Resource
 	}
-	ApplyConfigStub        func(context.Context, string) error
+	ApplyConfigStub        func(context.Context, string) (*model.NginxConfigContext, error)
 	applyConfigMutex       sync.RWMutex
 	applyConfigArgsForCall []struct {
 		arg1 context.Context
 		arg2 string
 	}
 	applyConfigReturns struct {
-		result1 error
+		result1 *model.NginxConfigContext
+		result2 error
 	}
 	applyConfigReturnsOnCall map[int]struct {
-		result1 error
+		result1 *model.NginxConfigContext
+		result2 error
 	}
 	DeleteInstancesStub        func(context.Context, []*v1.Instance) *v1.Resource
 	deleteInstancesMutex       sync.RWMutex
@@ -222,7 +225,7 @@ func (fake *FakeResourceServiceInterface) AddInstancesReturnsOnCall(i int, resul
 	}{result1}
 }
 
-func (fake *FakeResourceServiceInterface) ApplyConfig(arg1 context.Context, arg2 string) error {
+func (fake *FakeResourceServiceInterface) ApplyConfig(arg1 context.Context, arg2 string) (*model.NginxConfigContext, error) {
 	fake.applyConfigMutex.Lock()
 	ret, specificReturn := fake.applyConfigReturnsOnCall[len(fake.applyConfigArgsForCall)]
 	fake.applyConfigArgsForCall = append(fake.applyConfigArgsForCall, struct {
@@ -237,9 +240,9 @@ func (fake *FakeResourceServiceInterface) ApplyConfig(arg1 context.Context, arg2
 		return stub(arg1, arg2)
 	}
 	if specificReturn {
-		return ret.result1
+		return ret.result1, ret.result2
 	}
-	return fakeReturns.result1
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FakeResourceServiceInterface) ApplyConfigCallCount() int {
@@ -248,7 +251,7 @@ func (fake *FakeResourceServiceInterface) ApplyConfigCallCount() int {
 	return len(fake.applyConfigArgsForCall)
 }
 
-func (fake *FakeResourceServiceInterface) ApplyConfigCalls(stub func(context.Context, string) error) {
+func (fake *FakeResourceServiceInterface) ApplyConfigCalls(stub func(context.Context, string) (*model.NginxConfigContext, error)) {
 	fake.applyConfigMutex.Lock()
 	defer fake.applyConfigMutex.Unlock()
 	fake.ApplyConfigStub = stub
@@ -261,27 +264,30 @@ func (fake *FakeResourceServiceInterface) ApplyConfigArgsForCall(i int) (context
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeResourceServiceInterface) ApplyConfigReturns(result1 error) {
+func (fake *FakeResourceServiceInterface) ApplyConfigReturns(result1 *model.NginxConfigContext, result2 error) {
 	fake.applyConfigMutex.Lock()
 	defer fake.applyConfigMutex.Unlock()
 	fake.ApplyConfigStub = nil
 	fake.applyConfigReturns = struct {
-		result1 error
-	}{result1}
+		result1 *model.NginxConfigContext
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *FakeResourceServiceInterface) ApplyConfigReturnsOnCall(i int, result1 error) {
+func (fake *FakeResourceServiceInterface) ApplyConfigReturnsOnCall(i int, result1 *model.NginxConfigContext, result2 error) {
 	fake.applyConfigMutex.Lock()
 	defer fake.applyConfigMutex.Unlock()
 	fake.ApplyConfigStub = nil
 	if fake.applyConfigReturnsOnCall == nil {
 		fake.applyConfigReturnsOnCall = make(map[int]struct {
-			result1 error
+			result1 *model.NginxConfigContext
+			result2 error
 		})
 	}
 	fake.applyConfigReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
+		result1 *model.NginxConfigContext
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeResourceServiceInterface) DeleteInstances(arg1 context.Context, arg2 []*v1.Instance) *v1.Resource {

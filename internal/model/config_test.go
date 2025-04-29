@@ -81,6 +81,10 @@ func TestNginxConfigContext_Equal(t *testing.T) {
 	nginxConfigContextWithDifferentErrorLogs := *nginxConfigContext
 	nginxConfigContextWithDifferentErrorLogs.ErrorLogs = []*ErrorLog{}
 
+	nginxConfigContextWithNilValues := *nginxConfigContext
+	nginxConfigContextWithNilValues.StubStatus = nil
+	nginxConfigContextWithNilValues.PlusAPI = nil
+
 	assert.True(t, nginxConfigContext.Equal(&nginxConfigContextWithSameValues))
 	assert.False(t, nginxConfigContext.Equal(&nginxConfigContextWithDifferentStubStatus))
 	assert.False(t, nginxConfigContext.Equal(&nginxConfigContextWithDifferentPlusAPI))
@@ -89,4 +93,5 @@ func TestNginxConfigContext_Equal(t *testing.T) {
 	assert.False(t, nginxConfigContext.Equal(&nginxConfigContextWithDifferentFileHashes))
 	assert.False(t, nginxConfigContext.Equal(&nginxConfigContextWithDifferentAccessLogs))
 	assert.False(t, nginxConfigContext.Equal(&nginxConfigContextWithDifferentErrorLogs))
+	assert.True(t, nginxConfigContext.Equal(&nginxConfigContextWithNilValues))
 }

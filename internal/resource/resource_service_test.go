@@ -11,6 +11,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/internal/watcher/instance/instancefakes"
+
 	"github.com/nginxinc/nginx-plus-go-client/v2/client"
 
 	"google.golang.org/protobuf/types/known/structpb"
@@ -330,10 +333,23 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 			instanceOp.ReloadReturns(test.reloadErr)
 			instanceOp.ValidateReturns(test.validateErr)
 
+			nginxParser := instancefakes.FakeNginxConfigParser{}
+
+			nginxParser.ParseReturns(&model.NginxConfigContext{
+				StubStatus:       &model.APIDetails{},
+				PlusAPI:          &model.APIDetails{},
+				InstanceID:       test.instanceID,
+				Files:            nil,
+				AccessLogs:       nil,
+				ErrorLogs:        nil,
+				NAPSysLogServers: nil,
+			}, nil)
+
 			resourceService := NewResourceService(ctx, types.AgentConfig())
 			resourceOpMap := make(map[string]instanceOperator)
 			resourceOpMap[protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()] = instanceOp
 			resourceService.instanceOperators = resourceOpMap
+			resourceService.nginxConfigParser = &nginxParser
 
 			instance := protos.GetNginxOssInstance([]string{})
 			instances := []*v1.Instance{
@@ -341,7 +357,7 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 			}
 			resourceService.resource.Instances = instances
 
-			reloadError := resourceService.ApplyConfig(ctx, test.instanceID)
+			_, reloadError := resourceService.ApplyConfig(ctx, test.instanceID)
 			assert.Equal(t, test.expected, reloadError)
 		})
 	}
