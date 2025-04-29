@@ -126,23 +126,28 @@ func (iw *InstanceWatcherService) Watch(
 func (iw *InstanceWatcherService) ReparseConfigs(ctx context.Context) {
 	slog.DebugContext(ctx, "Reparsing all instance configurations")
 	for _, instance := range iw.instanceCache {
+		nginxConfigContext := &model.NginxConfigContext{}
+		var parseErr error
 		slog.DebugContext(
 			ctx,
 			"Reparsing NGINX instance config",
 			"instance_id", instance.GetInstanceMeta().GetInstanceId(),
 		)
 
-		nginxConfigContext, parseErr := iw.nginxConfigParser.Parse(ctx, instance)
-		if parseErr != nil {
-			slog.WarnContext(
-				ctx,
-				"Failed to parse NGINX instance config",
-				"config_path", instance.GetInstanceRuntime().GetConfigPath(),
-				"instance_id", instance.GetInstanceMeta().GetInstanceId(),
-				"error", parseErr,
-			)
+		if instance.GetInstanceMeta().GetInstanceType() == mpi.InstanceMeta_INSTANCE_TYPE_NGINX ||
+			instance.GetInstanceMeta().GetInstanceType() == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
+			nginxConfigContext, parseErr = iw.nginxConfigParser.Parse(ctx, instance)
+			if parseErr != nil {
+				slog.WarnContext(
+					ctx,
+					"Failed to parse NGINX instance config",
+					"config_path", instance.GetInstanceRuntime().GetConfigPath(),
+					"instance_id", instance.GetInstanceMeta().GetInstanceId(),
+					"error", parseErr,
+				)
 
-			return
+				return
+			}
 		}
 
 		iw.HandleNginxConfigContextUpdate(ctx, instance.GetInstanceMeta().GetInstanceId(), nginxConfigContext)

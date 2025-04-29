@@ -216,17 +216,6 @@ func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) (*
 	return nginxConfigContext, nil
 }
 
-func (r *ResourceService) ParseConfig(ctx context.Context, instance *mpi.Instance) (*model.NginxConfigContext, error) {
-	slog.DebugContext(ctx, "Parsing NGINX instance config", "instance_id", instance.GetInstanceMeta().GetInstanceId())
-
-	nginxConfigContext, parseErr := r.nginxConfigParser.Parse(ctx, instance)
-	if parseErr != nil {
-		return nil, parseErr
-	}
-
-	return nginxConfigContext, nil
-}
-
 func (r *ResourceService) GetHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance,
 	upstream string,
 ) ([]client.UpstreamServer, error) {
