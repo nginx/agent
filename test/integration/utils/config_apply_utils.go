@@ -17,9 +17,9 @@ import (
 )
 
 const (
-	RetryCount       = 5
-	RetryWaitTime    = 4 * time.Second
-	RetryMaxWaitTime = 5 * time.Second
+	RetryCount       = 8
+	RetryWaitTime    = 5 * time.Second
+	RetryMaxWaitTime = 6 * time.Second
 )
 
 var MockManagementPlaneAPIAddress string
@@ -41,6 +41,7 @@ func PerformInvalidConfigApply(t *testing.T, nginxInstanceID string) {
 	t.Helper()
 
 	client := resty.New()
+
 	client.SetRetryCount(RetryCount).SetRetryWaitTime(RetryWaitTime).SetRetryMaxWaitTime(RetryMaxWaitTime)
 
 	body := fmt.Sprintf(`{

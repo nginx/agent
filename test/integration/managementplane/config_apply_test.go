@@ -8,6 +8,7 @@ package managementplane
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/nginx/agent/v3/test/integration/utils"
@@ -18,9 +19,8 @@ import (
 )
 
 const (
-	configApplyErrorMessage = "failed validating config NGINX config test failed exit status 1:" +
-		" nginx: [emerg] unexpected end of file, expecting \";\" or \"}\" in /etc/nginx/nginx.conf:2\nnginx: " +
-		"configuration file /etc/nginx/nginx.conf test failed\n"
+	configApplyErrorMessage = "failed to parse config invalid " +
+		"number of arguments in \"worker_processes\" directive in /etc/nginx/nginx.conf:1"
 )
 
 func TestGrpc_ConfigApply(t *testing.T) {
@@ -46,9 +46,11 @@ func TestGrpc_ConfigApply(t *testing.T) {
 
 	t.Run("Test 2: Valid config", func(t *testing.T) {
 		utils.ClearManagementPlaneResponses(t)
+		newConfigFile := "../../config/nginx/nginx-with-test-location.conf"
+
 		err := utils.MockManagementPlaneGrpcContainer.CopyFileToContainer(
 			ctx,
-			"../../config/nginx/nginx-with-test-location.conf",
+			newConfigFile,
 			fmt.Sprintf("/mock-management-plane-grpc/config/%s/etc/nginx/nginx.conf", nginxInstanceID),
 			0o666,
 		)
@@ -56,11 +58,17 @@ func TestGrpc_ConfigApply(t *testing.T) {
 
 		utils.PerformConfigApply(t, nginxInstanceID)
 
-		responses = utils.GetManagementPlaneResponses(t, 1)
+		responses = utils.GetManagementPlaneResponses(t, 2)
 		t.Logf("Config apply responses: %v", responses)
+
+		sort.Slice(responses, func(i, j int) bool {
+			return responses[i].GetCommandResponse().GetMessage() < responses[j].GetCommandResponse().GetMessage()
+		})
 
 		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 		assert.Equal(t, "Config apply successful", responses[0].GetCommandResponse().GetMessage())
+		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
+		assert.Equal(t, "Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
 	})
 
 	t.Run("Test 3: Invalid config", func(t *testing.T) {
