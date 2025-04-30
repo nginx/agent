@@ -4,7 +4,7 @@ set -e
 # Copyright (C) Nginx, Inc. 2022.
 #
 # Description:
-# NGINX Agent install script for downloading the NGINX Agent package from the appropriate repository
+# NGINX Agent pre install script
 #
 ################################
 ###### Default variables
@@ -44,64 +44,78 @@ ensure_sudo() {
 }
 
 update_config_file() {
+    # Check for existing agent binary and version
     echo "Checking what version of NGINX Agent is already installed"
-    check_version="nginx-agent --version"
-    nginx_agent_version=$($check_version 2>&1) || true
-    if [ -z "${nginx_agent_version##nginx-agent version v2*}" ]; then
-        echo "Updating NGINX Agent V2 configuration to V3 configuration"
-        echo "Backing up NGINX Agent V2 configuration to /etc/nginx-agent/nginx-agent-v2-backup.conf"
-        cp $AGENT_CONFIG_FILE /etc/nginx-agent/nginx-agent-v2-backup.conf
-        
-        v2_config_file=$AGENT_CONFIG_FILE
-        v3_config_file=$AGENT_CONFIG_FILE
-        
-        echo "NGINX Agent server host should be ${NGINX_ONE_HOST}"
-        
-        if grep -q "$NGINX_ONE_HOST" ${v2_config_file}; then
-            echo "NGINX Agent is configured to connect to NGINX One"
-        else 
-            echo "${RED_COLOUR}Previous version of NGINX Agent was not configured to connect to NGINX One. Stopping upgrade${NO_COLOUR}" 
-            exit 1
+    if command -v nginx-agent >/dev/null 2>&1; then
+        nginx_agent_version=$(nginx-agent -v 2>&1)
+        echo "Existing NGINX Agent version: $nginx_agent_version"
+    else
+        echo "No existing NGINX Agent installation found, skipping migration"
+        return 0
+    fi
+
+    # Only proceed if it's v2
+    if echo "$nginx_agent_version" | grep -qE '^nginx-agent version v2'; then
+        echo "Migrating NGINX Agent configuration from V2 to V3 format"
+
+        # Backup v2 config if present
+        if [ -f "$AGENT_CONFIG_FILE" ]; then
+            echo "Backing up existing NGINX Agent V2 configuration to $AGENT_CONFIG_FILE.v2-backup"
+            cp -v "$AGENT_CONFIG_FILE" "$AGENT_CONFIG_FILE.v2-backup" \
+                || err_exit "Failed to back up v2 config"
+        else
+            echo "No existing NGINX Agent V2 config file found, skipping backup"
         fi
-        
-        token=`grep "token:" "${v2_config_file}"`
-        token=`echo $token | cut -d ":" -f 2 | xargs`
-        
-        instance_group=`grep "instance_group:" "${AGENT_DYNAMIC_CONFIG_FILE}"`
-        instance_group=`echo $instance_group | cut -d ":" -f 2 | xargs`
-        
-        labels=""
-        
-        if [ -n "${instance_group}" ]; then 
-            echo "Adding config sync group to NGINX Agent configuration"
+
+        v2_config_file="$AGENT_CONFIG_FILE"
+        v3_config_file="$AGENT_CONFIG_FILE"
+
+        echo "Verifying configured NGINX One host: ${NGINX_ONE_HOST}"
+        if [ -f "$v2_config_file" ] && grep -q "$NGINX_ONE_HOST" "$v2_config_file"; then
+            echo "NGINX Agent is configured to connect to NGINX One"
+        else
+            err_exit "Upgrade aborted: existing NGINX Agent V2 is not configured for NGINX One"
+        fi
+
+        # Extract token
+        if token_line=$(grep "token:" "$v2_config_file"); then
+            token=$(echo "$token_line" | cut -d ":" -f 2 | xargs)
+        else
+            err_exit "Upgrade aborted: no token found in v2 config"
+        fi
+
+        # Extract instance_group if present
+        instance_group=""
+        if [ -f "$AGENT_DYNAMIC_CONFIG_FILE" ] && instance_line=$(grep "instance_group:" "$AGENT_DYNAMIC_CONFIG_FILE"); then
+            instance_group=$(echo "$instance_line" | cut -d ":" -f 2 | xargs)
+            echo "Migrating existing Config Sync Group: $instance_group"
             labels="
 labels:
   config-sync-group: ${instance_group}
 "
+        else
+            labels=""
         fi
-        
-        config_dirs=`grep "config_dirs:" "${v2_config_file}"`
-        config_dirs=`echo $config_dirs | cut -d "\"" -f 2`
-        
+
+        # Extract config_dirs if present
+        config_dirs=""
+        if config_line=$(grep "config_dirs:" "$v2_config_file"); then
+            config_dirs=$(echo "$config_line" | cut -d '"' -f 2)
+        fi
+
         allowed_directories=""
         IFS=":"
         for config_dir in $config_dirs; do
-          allowed_directories="${allowed_directories}\n  - ${config_dir}"
+            allowed_directories="${allowed_directories}\n  - ${config_dir}"
         done
-        
         allowed_directories="${allowed_directories}\n  - /var/log/nginx"
-               
+
+        echo "Writing new v3 configuration to $v3_config_file"
         v3_config_contents="
-#
 # /etc/nginx-agent/nginx-agent.conf
-#
-# Configuration file for NGINX Agent.
-#
 
 log:
-  # set log level (error, info, debug; default \"info\")
   level: info
-  # set log path. if empty, don't log to file.
   path: /var/log/nginx-agent/
 
 allowed_directories: ${allowed_directories}
@@ -114,9 +128,12 @@ command:
         token: ${token}
     tls:
         skip_verify: false
-        "
-            
-        echo "${v3_config_contents}" > $v3_config_file
+"
+
+        echo "$v3_config_contents" > "$v3_config_file" \
+            || err_exit "Failed to write v3 config"
+    else
+        echo "Existing NGINX Agent version is not v2, skipping config migration"
     fi
 }
 

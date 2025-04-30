@@ -2,11 +2,14 @@
 //
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
+
 package collector
 
 import (
+	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver"
 	nginxreceiver "github.com/nginx/agent/v3/internal/collector/nginxossreceiver"
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver"
+
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/headerssetterextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension"
@@ -76,6 +79,7 @@ func createExtensionFactories() map[component.Type]extension.Factory {
 func createReceiverFactories() map[component.Type]receiver.Factory {
 	receiverList := []receiver.Factory{
 		otlpreceiver.NewFactory(),
+		containermetricsreceiver.NewFactory(),
 		hostmetricsreceiver.NewFactory(),
 		nginxreceiver.NewFactory(),
 		nginxplusreceiver.NewFactory(),

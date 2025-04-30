@@ -36,7 +36,6 @@
     - [UpdateOverviewResponse](#mpi-v1-UpdateOverviewResponse)
     - [X509Name](#mpi-v1-X509Name)
   
-    - [File.FileAction](#mpi-v1-File-FileAction)
     - [SignatureAlgorithm](#mpi-v1-SignatureAlgorithm)
   
     - [FileService](#mpi-v1-FileService)
@@ -304,7 +303,6 @@ Represents meta data about a file
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | file_meta | [FileMeta](#mpi-v1-FileMeta) |  | Meta information about the file, the name (including path) and hash |
-| action | [File.FileAction](#mpi-v1-File-FileAction) | optional | Optional action |
 | unmanaged | [bool](#bool) |  | Unmanaged files will not be modified |
 
 
@@ -589,21 +587,6 @@ Represents the dates for which a certificate is valid as seen at https://pkg.go.
 
 
  
-
-
-<a name="mpi-v1-File-FileAction"></a>
-
-### File.FileAction
-Action enumeration
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| FILE_ACTION_UNSPECIFIED | 0 | Default value, no action |
-| FILE_ACTION_UNCHANGED | 1 | No changes to the file |
-| FILE_ACTION_ADD | 2 | New file |
-| FILE_ACTION_UPDATE | 3 | Updated file |
-| FILE_ACTION_DELETE | 4 | File deleted |
-
 
 
 <a name="mpi-v1-SignatureAlgorithm"></a>
