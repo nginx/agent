@@ -48,7 +48,7 @@ func TestGrpc_ConfigApply(t *testing.T) {
 		utils.ClearManagementPlaneResponses(t)
 		err := utils.MockManagementPlaneGrpcContainer.CopyFileToContainer(
 			ctx,
-			"../config/nginx/nginx-with-test-location.conf",
+			"../../config/nginx/nginx-with-test-location.conf",
 			fmt.Sprintf("/mock-management-plane-grpc/config/%s/etc/nginx/nginx.conf", nginxInstanceID),
 			0o666,
 		)
@@ -67,7 +67,7 @@ func TestGrpc_ConfigApply(t *testing.T) {
 		utils.ClearManagementPlaneResponses(t)
 		err := utils.MockManagementPlaneGrpcContainer.CopyFileToContainer(
 			ctx,
-			"../config/nginx/invalid-nginx.conf",
+			"../../config/nginx/invalid-nginx.conf",
 			fmt.Sprintf("/mock-management-plane-grpc/config/%s/etc/nginx/nginx.conf", nginxInstanceID),
 			0o666,
 		)
