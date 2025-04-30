@@ -1,4 +1,4 @@
-// Copyright 2012-2019 The NATS Authors
+// Copyright 2012-2024 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -99,34 +99,34 @@ func getNetworkAndAddr(fqn string) (network, addr string) {
 }
 
 // Noticef logs a notice statement
-func (l *SysLogger) Noticef(format string, v ...interface{}) {
+func (l *SysLogger) Noticef(format string, v ...any) {
 	l.writer.Notice(fmt.Sprintf(format, v...))
 }
 
 // Warnf logs a warning statement
-func (l *SysLogger) Warnf(format string, v ...interface{}) {
+func (l *SysLogger) Warnf(format string, v ...any) {
 	l.writer.Warning(fmt.Sprintf(format, v...))
 }
 
 // Fatalf logs a fatal error
-func (l *SysLogger) Fatalf(format string, v ...interface{}) {
+func (l *SysLogger) Fatalf(format string, v ...any) {
 	l.writer.Crit(fmt.Sprintf(format, v...))
 }
 
 // Errorf logs an error statement
-func (l *SysLogger) Errorf(format string, v ...interface{}) {
+func (l *SysLogger) Errorf(format string, v ...any) {
 	l.writer.Err(fmt.Sprintf(format, v...))
 }
 
 // Debugf logs a debug statement
-func (l *SysLogger) Debugf(format string, v ...interface{}) {
+func (l *SysLogger) Debugf(format string, v ...any) {
 	if l.debug {
 		l.writer.Debug(fmt.Sprintf(format, v...))
 	}
 }
 
 // Tracef logs a trace statement
-func (l *SysLogger) Tracef(format string, v ...interface{}) {
+func (l *SysLogger) Tracef(format string, v ...any) {
 	if l.trace {
 		l.writer.Notice(fmt.Sprintf(format, v...))
 	}

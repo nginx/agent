@@ -1,4 +1,4 @@
-// Copyright 2020-2021 The NATS Authors
+// Copyright 2020-2025 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -18,13 +18,22 @@ import (
 	"time"
 )
 
-func (s *Server) publishAdvisory(acc *Account, subject string, adv interface{}) {
+// publishAdvisory sends the given advisory into the account. Returns true if
+// it was sent, false if not (i.e. due to lack of interest or a marshal error).
+func (s *Server) publishAdvisory(acc *Account, subject string, adv any) bool {
 	if acc == nil {
 		acc = s.SystemAccount()
 		if acc == nil {
-			return
+			return false
 		}
 	}
+
+	// If there is no one listening for this advisory then save ourselves the effort
+	// and don't bother encoding the JSON or sending it.
+	if sl := acc.sl; (sl != nil && !sl.HasInterest(subject)) && !s.hasGatewayInterest(acc.Name, subject) {
+		return false
+	}
+
 	ej, err := json.Marshal(adv)
 	if err == nil {
 		err = s.sendInternalAccountMsg(acc, subject, ej)
@@ -34,6 +43,7 @@ func (s *Server) publishAdvisory(acc *Account, subject string, adv interface{}) 
 	} else {
 		s.Warnf("Advisory could not be serialized for account %q: %v", acc.Name, err)
 	}
+	return err == nil
 }
 
 // JSAPIAudit is an advisory about administrative actions taken on JetStream
@@ -193,10 +203,22 @@ const JSRestoreCompleteAdvisoryType = "io.nats.jetstream.advisory.v1.restore_com
 
 // Clustering specific.
 
-// JSStreamLeaderElectedAdvisoryType is sent when the system elects a leader for a stream.
+// JSClusterLeaderElectedAdvisoryType is sent when the system elects a new meta leader.
+const JSDomainLeaderElectedAdvisoryType = "io.nats.jetstream.advisory.v1.domain_leader_elected"
+
+// JSClusterLeaderElectedAdvisory indicates that a domain has elected a new leader.
+type JSDomainLeaderElectedAdvisory struct {
+	TypedEvent
+	Leader   string      `json:"leader"`
+	Replicas []*PeerInfo `json:"replicas"`
+	Cluster  string      `json:"cluster"`
+	Domain   string      `json:"domain,omitempty"`
+}
+
+// JSStreamLeaderElectedAdvisoryType is sent when the system elects a new leader for a stream.
 const JSStreamLeaderElectedAdvisoryType = "io.nats.jetstream.advisory.v1.stream_leader_elected"
 
-// JSStreamLeaderElectedAdvisory indicates that a stream has lost quorum and is stalled.
+// JSStreamLeaderElectedAdvisory indicates that a stream has elected a new leader.
 type JSStreamLeaderElectedAdvisory struct {
 	TypedEvent
 	Account  string      `json:"account,omitempty"`
@@ -222,7 +244,7 @@ type JSStreamQuorumLostAdvisory struct {
 // JSConsumerLeaderElectedAdvisoryType is sent when the system elects a leader for a consumer.
 const JSConsumerLeaderElectedAdvisoryType = "io.nats.jetstream.advisory.v1.consumer_leader_elected"
 
-// JSConsumerLeaderElectedAdvisory indicates that a stream has lost quorum and is stalled.
+// JSConsumerLeaderElectedAdvisory indicates that a consumer has elected a new leader.
 type JSConsumerLeaderElectedAdvisory struct {
 	TypedEvent
 	Account  string      `json:"account,omitempty"`
@@ -270,4 +292,15 @@ type JSServerRemovedAdvisory struct {
 	ServerID string `json:"server_id"`
 	Cluster  string `json:"cluster"`
 	Domain   string `json:"domain,omitempty"`
+}
+
+// JSAPILimitReachedAdvisoryType is sent when the JS API request queue limit is reached.
+const JSAPILimitReachedAdvisoryType = "io.nats.jetstream.advisory.v1.api_limit_reached"
+
+// JSAPILimitReachedAdvisory is a advisory published when JetStream hits the queue length limit.
+type JSAPILimitReachedAdvisory struct {
+	TypedEvent
+	Server  string `json:"server"`           // Server that created the event, name or ID
+	Domain  string `json:"domain,omitempty"` // Domain the server belongs to
+	Dropped int64  `json:"dropped"`          // How many messages did we drop from the queue
 }

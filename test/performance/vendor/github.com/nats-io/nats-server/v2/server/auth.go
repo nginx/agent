@@ -1,4 +1,4 @@
-// Copyright 2012-2023 The NATS Authors
+// Copyright 2012-2024 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -15,6 +15,7 @@ package server
 
 import (
 	"crypto/sha256"
+	"crypto/subtle"
 	"crypto/tls"
 	"crypto/x509/pkix"
 	"encoding/asn1"
@@ -59,6 +60,7 @@ type ClientAuthentication interface {
 // NkeyUser is for multiple nkey based users
 type NkeyUser struct {
 	Nkey                   string              `json:"user"`
+	Issued                 int64               `json:"issued,omitempty"` // this is a copy of the issued at (iat) field in the jwt
 	Permissions            *Permissions        `json:"permissions,omitempty"`
 	Account                *Account            `json:"account,omitempty"`
 	SigningKey             string              `json:"signing_key,omitempty"`
@@ -83,9 +85,10 @@ func (u *User) clone() *User {
 	}
 	clone := &User{}
 	*clone = *u
+	// Account is not cloned because it is always by reference to an existing struct.
 	clone.Permissions = u.Permissions.clone()
 
-	if len(u.AllowedConnectionTypes) > 0 {
+	if u.AllowedConnectionTypes != nil {
 		clone.AllowedConnectionTypes = make(map[string]struct{})
 		for k, v := range u.AllowedConnectionTypes {
 			clone.AllowedConnectionTypes[k] = v
@@ -103,7 +106,16 @@ func (n *NkeyUser) clone() *NkeyUser {
 	}
 	clone := &NkeyUser{}
 	*clone = *n
+	// Account is not cloned because it is always by reference to an existing struct.
 	clone.Permissions = n.Permissions.clone()
+
+	if n.AllowedConnectionTypes != nil {
+		clone.AllowedConnectionTypes = make(map[string]struct{})
+		for k, v := range n.AllowedConnectionTypes {
+			clone.AllowedConnectionTypes[k] = v
+		}
+	}
+
 	return clone
 }
 
@@ -525,7 +537,7 @@ func processUserPermissionsTemplate(lim jwt.UserPermissionLimits, ujwt *jwt.User
 				for _, valueList := range nArrayCartesianProduct(tagValues...) {
 					b := strings.Builder{}
 					for i, token := range newTokens {
-						if token == _EMPTY_ {
+						if token == _EMPTY_ && len(valueList) > 0 {
 							b.WriteString(valueList[0])
 							valueList = valueList[1:]
 						} else {
@@ -743,13 +755,24 @@ func (s *Server) processClientOrLeafAuthentication(c *client, opts *Options) (au
 	// Check if we have nkeys or users for client.
 	hasNkeys := len(s.nkeys) > 0
 	hasUsers := len(s.users) > 0
-	if hasNkeys && c.opts.Nkey != _EMPTY_ {
-		nkey, ok = s.nkeys[c.opts.Nkey]
-		if !ok || !c.connectionTypeAllowed(nkey.AllowedConnectionTypes) {
-			s.mu.Unlock()
-			return false
+	if hasNkeys {
+		if (c.kind == CLIENT || c.kind == LEAF) && noAuthUser != _EMPTY_ &&
+			c.opts.Username == _EMPTY_ && c.opts.Password == _EMPTY_ && c.opts.Token == _EMPTY_ && c.opts.Nkey == _EMPTY_ {
+			if _, exists := s.nkeys[noAuthUser]; exists {
+				c.mu.Lock()
+				c.opts.Nkey = noAuthUser
+				c.mu.Unlock()
+			}
 		}
-	} else if hasUsers {
+		if c.opts.Nkey != _EMPTY_ {
+			nkey, ok = s.nkeys[c.opts.Nkey]
+			if !ok || !c.connectionTypeAllowed(nkey.AllowedConnectionTypes) {
+				s.mu.Unlock()
+				return false
+			}
+		}
+	}
+	if hasUsers && nkey == nil {
 		// Check if we are tls verify and are mapping users from the client_certificate.
 		if tlsMap {
 			authorized := checkClientTLSCertSubject(c, func(u string, certDN *ldap.DN, _ bool) (string, bool) {
@@ -834,6 +857,54 @@ func (s *Server) processClientOrLeafAuthentication(c *client, opts *Options) (au
 	// If we have a jwt and a userClaim, make sure we have the Account, etc associated.
 	// We need to look up the account. This will use an account resolver if one is present.
 	if juc != nil {
+		issuer := juc.Issuer
+		if juc.IssuerAccount != _EMPTY_ {
+			issuer = juc.IssuerAccount
+		}
+		if pinnedAcounts != nil {
+			if _, ok := pinnedAcounts[issuer]; !ok {
+				c.Debugf("Account %s not listed as operator pinned account", issuer)
+				atomic.AddUint64(&s.pinnedAccFail, 1)
+				return false
+			}
+		}
+		if acc, err = s.LookupAccount(issuer); acc == nil {
+			c.Debugf("Account JWT lookup error: %v", err)
+			return false
+		}
+		acc.mu.RLock()
+		aissuer := acc.Issuer
+		acc.mu.RUnlock()
+		if !s.isTrustedIssuer(aissuer) {
+			c.Debugf("Account JWT not signed by trusted operator")
+			return false
+		}
+		if scope, ok := acc.hasIssuer(juc.Issuer); !ok {
+			c.Debugf("User JWT issuer is not known")
+			return false
+		} else if scope != nil {
+			if err := scope.ValidateScopedSigner(juc); err != nil {
+				c.Debugf("User JWT is not valid: %v", err)
+				return false
+			} else if uSc, ok := scope.(*jwt.UserScope); !ok {
+				c.Debugf("User JWT is not valid")
+				return false
+			} else if juc.UserPermissionLimits, err = processUserPermissionsTemplate(uSc.Template, juc, acc); err != nil {
+				c.Debugf("User JWT generated invalid permissions")
+				return false
+			}
+		}
+		if acc.IsExpired() {
+			c.Debugf("Account JWT has expired")
+			return false
+		}
+		if juc.BearerToken && acc.failBearer() {
+			c.Debugf("Account does not allow bearer tokens")
+			return false
+		}
+		// We check the allowed connection types, but only after processing
+		// of scoped signer (so that it updates `juc` with what is defined
+		// in the account.
 		allowedConnTypes, err := convertAllowedConnectionTypes(juc.AllowedConnectionTypes)
 		if err != nil {
 			// We got an error, which means some connection types were unknown. As long as
@@ -859,48 +930,6 @@ func (s *Server) processClientOrLeafAuthentication(c *client, opts *Options) (au
 		}
 		if !c.connectionTypeAllowed(allowedConnTypes) {
 			c.Debugf("Connection type not allowed")
-			return false
-		}
-		issuer := juc.Issuer
-		if juc.IssuerAccount != _EMPTY_ {
-			issuer = juc.IssuerAccount
-		}
-		if pinnedAcounts != nil {
-			if _, ok := pinnedAcounts[issuer]; !ok {
-				c.Debugf("Account %s not listed as operator pinned account", issuer)
-				atomic.AddUint64(&s.pinnedAccFail, 1)
-				return false
-			}
-		}
-		if acc, err = s.LookupAccount(issuer); acc == nil {
-			c.Debugf("Account JWT lookup error: %v", err)
-			return false
-		}
-		if !s.isTrustedIssuer(acc.Issuer) {
-			c.Debugf("Account JWT not signed by trusted operator")
-			return false
-		}
-		if scope, ok := acc.hasIssuer(juc.Issuer); !ok {
-			c.Debugf("User JWT issuer is not known")
-			return false
-		} else if scope != nil {
-			if err := scope.ValidateScopedSigner(juc); err != nil {
-				c.Debugf("User JWT is not valid: %v", err)
-				return false
-			} else if uSc, ok := scope.(*jwt.UserScope); !ok {
-				c.Debugf("User JWT is not valid")
-				return false
-			} else if juc.UserPermissionLimits, err = processUserPermissionsTemplate(uSc.Template, juc, acc); err != nil {
-				c.Debugf("User JWT generated invalid permissions")
-				return false
-			}
-		}
-		if acc.IsExpired() {
-			c.Debugf("Account JWT has expired")
-			return false
-		}
-		if juc.BearerToken && acc.failBearer() {
-			c.Debugf("Account does not allow bearer tokens")
 			return false
 		}
 		// skip validation of nonce when presented with a bearer token
@@ -955,12 +984,12 @@ func (s *Server) processClientOrLeafAuthentication(c *client, opts *Options) (au
 			deniedSub := []string{}
 			for _, sub := range denyAllJs {
 				if c.perms.pub.deny != nil {
-					if r := c.perms.pub.deny.Match(sub); len(r.psubs)+len(r.qsubs) > 0 {
+					if c.perms.pub.deny.HasInterest(sub) {
 						deniedPub = append(deniedPub, sub)
 					}
 				}
 				if c.perms.sub.deny != nil {
-					if r := c.perms.sub.deny.Match(sub); len(r.psubs)+len(r.qsubs) > 0 {
+					if c.perms.sub.deny.HasInterest(sub) {
 						deniedSub = append(deniedSub, sub)
 					}
 				}
@@ -989,27 +1018,30 @@ func (s *Server) processClientOrLeafAuthentication(c *client, opts *Options) (au
 	}
 
 	if nkey != nil {
-		if c.opts.Sig == _EMPTY_ {
-			c.Debugf("Signature missing")
-			return false
-		}
-		sig, err := base64.RawURLEncoding.DecodeString(c.opts.Sig)
-		if err != nil {
-			// Allow fallback to normal base64.
-			sig, err = base64.StdEncoding.DecodeString(c.opts.Sig)
-			if err != nil {
-				c.Debugf("Signature not valid base64")
+		// If we did not match noAuthUser check signature which is required.
+		if nkey.Nkey != noAuthUser {
+			if c.opts.Sig == _EMPTY_ {
+				c.Debugf("Signature missing")
 				return false
 			}
-		}
-		pub, err := nkeys.FromPublicKey(c.opts.Nkey)
-		if err != nil {
-			c.Debugf("User nkey not valid: %v", err)
-			return false
-		}
-		if err := pub.Verify(c.nonce, sig); err != nil {
-			c.Debugf("Signature not verified")
-			return false
+			sig, err := base64.RawURLEncoding.DecodeString(c.opts.Sig)
+			if err != nil {
+				// Allow fallback to normal base64.
+				sig, err = base64.StdEncoding.DecodeString(c.opts.Sig)
+				if err != nil {
+					c.Debugf("Signature not valid base64")
+					return false
+				}
+			}
+			pub, err := nkeys.FromPublicKey(c.opts.Nkey)
+			if err != nil {
+				c.Debugf("User nkey not valid: %v", err)
+				return false
+			}
+			if err := pub.Verify(c.nonce, sig); err != nil {
+				c.Debugf("Signature not verified")
+				return false
+			}
 		}
 		if err := c.RegisterNkeyUser(nkey); err != nil {
 			return false
@@ -1308,6 +1340,33 @@ func (s *Server) isLeafNodeAuthorized(c *client) bool {
 	// with that user (from the leafnode's authorization{} config).
 	if opts.LeafNode.Username != _EMPTY_ {
 		return isAuthorized(opts.LeafNode.Username, opts.LeafNode.Password, opts.LeafNode.Account)
+	} else if opts.LeafNode.Nkey != _EMPTY_ {
+		if c.opts.Nkey != opts.LeafNode.Nkey {
+			return false
+		}
+		if c.opts.Sig == _EMPTY_ {
+			c.Debugf("Signature missing")
+			return false
+		}
+		sig, err := base64.RawURLEncoding.DecodeString(c.opts.Sig)
+		if err != nil {
+			// Allow fallback to normal base64.
+			sig, err = base64.StdEncoding.DecodeString(c.opts.Sig)
+			if err != nil {
+				c.Debugf("Signature not valid base64")
+				return false
+			}
+		}
+		pub, err := nkeys.FromPublicKey(c.opts.Nkey)
+		if err != nil {
+			c.Debugf("User nkey not valid: %v", err)
+			return false
+		}
+		if err := pub.Verify(c.nonce, sig); err != nil {
+			c.Debugf("Signature not verified")
+			return false
+		}
+		return s.registerLeafWithAccount(c, opts.LeafNode.Account)
 	} else if len(opts.LeafNode.Users) > 0 {
 		if opts.LeafNode.TLSMap {
 			var user *User
@@ -1377,8 +1436,14 @@ func comparePasswords(serverPassword, clientPassword string) bool {
 		if err := bcrypt.CompareHashAndPassword([]byte(serverPassword), []byte(clientPassword)); err != nil {
 			return false
 		}
-	} else if serverPassword != clientPassword {
-		return false
+	} else {
+		// stringToBytes should be constant-time near enough compared to
+		// turning a string into []byte normally.
+		spass := stringToBytes(serverPassword)
+		cpass := stringToBytes(clientPassword)
+		if subtle.ConstantTimeCompare(spass, cpass) == 0 {
+			return false
+		}
 	}
 	return true
 }
@@ -1425,15 +1490,21 @@ func validateNoAuthUser(o *Options, noAuthUser string) error {
 	if len(o.TrustedOperators) > 0 {
 		return fmt.Errorf("no_auth_user not compatible with Trusted Operator")
 	}
-	if o.Users == nil {
-		return fmt.Errorf(`no_auth_user: "%s" present, but users are not defined`, noAuthUser)
+
+	if o.Nkeys == nil && o.Users == nil {
+		return fmt.Errorf(`no_auth_user: "%s" present, but users/nkeys are not defined`, noAuthUser)
 	}
 	for _, u := range o.Users {
 		if u.Username == noAuthUser {
 			return nil
 		}
 	}
+	for _, u := range o.Nkeys {
+		if u.Nkey == noAuthUser {
+			return nil
+		}
+	}
 	return fmt.Errorf(
-		`no_auth_user: "%s" not present as user in authorization block or account configuration`,
+		`no_auth_user: "%s" not present as user or nkey in authorization block or account configuration`,
 		noAuthUser)
 }

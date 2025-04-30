@@ -1,4 +1,4 @@
-// Copyright 2012-2019 The NATS Authors
+// Copyright 2012-2024 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -33,8 +33,8 @@ import (
 
 // So we can pass tests and benchmarks..
 type tLogger interface {
-	Fatalf(format string, args ...interface{})
-	Errorf(format string, args ...interface{})
+	Fatalf(format string, args ...any)
+	Errorf(format string, args ...any)
 }
 
 // DefaultTestOptions are default options for the unit tests.
@@ -135,7 +135,7 @@ func RunServerWithConfigOverrides(configFile string, optsCallback func(*server.O
 	return
 }
 
-func stackFatalf(t tLogger, f string, args ...interface{}) {
+func stackFatalf(t tLogger, f string, args ...any) {
 	lines := make([]string, 0, 32)
 	msg := fmt.Sprintf(f, args...)
 	lines = append(lines, msg)
@@ -364,9 +364,10 @@ var (
 	asubRe      = regexp.MustCompile(`A\+\s+([^\r\n]+)\r\n`)
 	aunsubRe    = regexp.MustCompile(`A\-\s+([^\r\n]+)\r\n`)
 	lsubRe      = regexp.MustCompile(`LS\+\s+([^\s]+)\s*([^\s]+)?\s*(\d+)?\r\n`)
-	lunsubRe    = regexp.MustCompile(`LS\-\s+([^\s]+)\s*([^\s]+)?\r\n`)
+	lunsubRe    = regexp.MustCompile(`LS\-\s+([^\s]+)\s*([^\s]+)\s*([^\s]+)?\r\n`)
 	lmsgRe      = regexp.MustCompile(`(?:(?:LMSG\s+([^\s]+)\s+(?:([|+]\s+([\w\s]+)|[^\s]+)[^\S\r\n]+)?(\d+)\s*\r\n([^\\r\\n]*?)\r\n)+?)`)
 	rlsubRe     = regexp.MustCompile(`LS\+\s+([^\s]+)\s+([^\s]+)\s+([^\s]+)\s*([^\s]+)?\s*(\d+)?\r\n`)
+	rlunsubRe   = regexp.MustCompile(`LS\-\s+([^\s]+)\s+([^\s]+)\s+([^\s]+)\s*([^\s]+)?\r\n`)
 )
 
 const (

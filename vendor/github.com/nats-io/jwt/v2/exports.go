@@ -119,6 +119,7 @@ type Export struct {
 	Latency              *ServiceLatency `json:"service_latency,omitempty"`
 	AccountTokenPosition uint            `json:"account_token_position,omitempty"`
 	Advertise            bool            `json:"advertise,omitempty"`
+	AllowTrace           bool            `json:"allow_trace,omitempty"`
 	Info
 }
 
@@ -160,8 +161,13 @@ func (e *Export) Validate(vr *ValidationResults) {
 	if e.IsService() && !e.IsSingleResponse() && !e.IsChunkedResponse() && !e.IsStreamResponse() {
 		vr.AddError("invalid response type for service: %q", e.ResponseType)
 	}
-	if e.IsStream() && e.ResponseType != "" {
-		vr.AddError("invalid response type for stream: %q", e.ResponseType)
+	if e.IsStream() {
+		if e.ResponseType != "" {
+			vr.AddError("invalid response type for stream: %q", e.ResponseType)
+		}
+		if e.AllowTrace {
+			vr.AddError("AllowTrace only valid for service export")
+		}
 	}
 	if e.Latency != nil {
 		if !e.IsService() {
@@ -267,7 +273,7 @@ func isContainedIn(kind ExportType, subjects []Subject, vr *ValidationResults) {
 }
 
 // Validate calls validate on all of the exports
-func (e *Exports) Validate(vr *ValidationResults) error {
+func (e *Exports) Validate(vr *ValidationResults) {
 	var serviceSubjects []Subject
 	var streamSubjects []Subject
 
@@ -286,8 +292,6 @@ func (e *Exports) Validate(vr *ValidationResults) error {
 
 	isContainedIn(Service, serviceSubjects, vr)
 	isContainedIn(Stream, streamSubjects, vr)
-
-	return nil
 }
 
 // HasExportContainingSubject checks if the export list has an export with the provided subject

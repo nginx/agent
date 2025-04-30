@@ -1,4 +1,4 @@
-// Copyright 2023 The NATS Authors
+// Copyright 2023-2024 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -52,11 +52,24 @@ var (
 	}
 )
 
+// GetStatusAssertionStr returns the corresponding string representation of the StatusAssertion.
 func GetStatusAssertionStr(sa int) string {
-	return StatusAssertionValToStr[StatusAssertionIntToVal[sa]]
+	// If the provided status assertion value is not found in the map (StatusAssertionIntToVal),
+	// the function defaults to "unknown" to avoid defaulting to "good," which is the default iota value
+	// for the ocsp.StatusAssertion enumeration (https://pkg.go.dev/golang.org/x/crypto/ocsp#pkg-constants).
+	// This ensures that we don't unintentionally default to "good" when there's no map entry.
+	v, ok := StatusAssertionIntToVal[sa]
+	if !ok {
+		// set unknown as fallback
+		v = ocsp.Unknown
+	}
+
+	return StatusAssertionValToStr[v]
 }
 
 func (sa StatusAssertion) MarshalJSON() ([]byte, error) {
+	// This ensures that we don't unintentionally default to "good" when there's no map entry.
+	// (see more details in the GetStatusAssertionStr() comment)
 	str, ok := StatusAssertionValToStr[sa]
 	if !ok {
 		// set unknown as fallback
@@ -66,6 +79,8 @@ func (sa StatusAssertion) MarshalJSON() ([]byte, error) {
 }
 
 func (sa *StatusAssertion) UnmarshalJSON(in []byte) error {
+	// This ensures that we don't unintentionally default to "good" when there's no map entry.
+	// (see more details in the GetStatusAssertionStr() comment)
 	v, ok := StatusAssertionStrToVal[strings.ReplaceAll(string(in), "\"", "")]
 	if !ok {
 		// set unknown as fallback
@@ -106,11 +121,11 @@ func NewOCSPPeerConfig() *OCSPPeerConfig {
 
 // Log is a neutral method of passing server loggers to plugins
 type Log struct {
-	Debugf  func(format string, v ...interface{})
-	Noticef func(format string, v ...interface{})
-	Warnf   func(format string, v ...interface{})
-	Errorf  func(format string, v ...interface{})
-	Tracef  func(format string, v ...interface{})
+	Debugf  func(format string, v ...any)
+	Noticef func(format string, v ...any)
+	Warnf   func(format string, v ...any)
+	Errorf  func(format string, v ...any)
+	Tracef  func(format string, v ...any)
 }
 
 type CertInfo struct {
@@ -130,7 +145,7 @@ For client, leaf spoke (remotes), and leaf hub connections, you may enable OCSP 
         ...
         # short form enables peer verify and takes option defaults
         ocsp_peer: true
-        
+
         # long form includes settable options
         ocsp_peer {
            # Enable OCSP peer validation (default false)
@@ -207,7 +222,7 @@ func CertOCSPEligible(link *ChainLink) bool {
 	if link == nil || link.Leaf.Raw == nil || len(link.Leaf.Raw) == 0 {
 		return false
 	}
-	if link.Leaf.OCSPServer == nil || len(link.Leaf.OCSPServer) == 0 {
+	if len(link.Leaf.OCSPServer) == 0 {
 		return false
 	}
 	urls := getWebEndpoints(link.Leaf.OCSPServer)
