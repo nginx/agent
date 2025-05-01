@@ -50,7 +50,7 @@ func TestGrpc_ConfigApply(t *testing.T) {
 		newConfigFile := "../../config/nginx/nginx-with-test-location.conf"
 
 		if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
-			newConfigFile = "../config/nginx/nginx-plus-with-test-location.conf"
+			newConfigFile = "../../config/nginx/nginx-plus-with-test-location.conf"
 		}
 
 		err := utils.MockManagementPlaneGrpcContainer.CopyFileToContainer(
