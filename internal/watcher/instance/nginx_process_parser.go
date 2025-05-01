@@ -136,6 +136,8 @@ func (npp *NginxProcessParser) getInfo(ctx context.Context, proc *nginxprocess.P
 		}
 	}
 
+	confPath := getConfPathFromCommand(proc.Cmd)
+
 	var nginxInfo *Info
 
 	outputBuffer, err := npp.executer.RunCmd(ctx, exePath, "-V")
@@ -147,6 +149,12 @@ func (npp *NginxProcessParser) getInfo(ctx context.Context, proc *nginxprocess.P
 
 	nginxInfo.ExePath = exePath
 	nginxInfo.ProcessID = proc.PID
+
+	if confPath != "" {
+		nginxInfo.ConfPath = confPath
+	} else {
+		nginxInfo.ConfPath = getNginxConfPath(ctx, nginxInfo)
+	}
 
 	loadableModules := getLoadableModules(nginxInfo)
 	nginxInfo.LoadableModules = loadableModules
@@ -268,7 +276,6 @@ func parseNginxVersionCommandOutput(ctx context.Context, output *bytes.Buffer) *
 	}
 
 	nginxInfo.Prefix = getNginxPrefix(ctx, nginxInfo)
-	nginxInfo.ConfPath = getNginxConfPath(ctx, nginxInfo)
 
 	return nginxInfo
 }
@@ -391,4 +398,18 @@ func convertToMap(processes []*nginxprocess.Process) map[int32]*nginxprocess.Pro
 	}
 
 	return processesByPID
+}
+
+func getConfPathFromCommand(command string) string {
+	commands := strings.Split(command, " ")
+
+	for i, command := range commands {
+		if command == "-c" {
+			if i < len(commands)-1 {
+				return commands[i+1]
+			}
+		}
+	}
+
+	return ""
 }
