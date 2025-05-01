@@ -1,4 +1,4 @@
-// Copyright 2023 The NATS Authors
+// Copyright 2023-2024 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -571,11 +571,11 @@ func (s *Server) stopOCSPResponseCache() {
 	s.ocsprc.Stop(s)
 }
 
-func parseOCSPResponseCache(v interface{}) (pcfg *OCSPResponseCacheConfig, retError error) {
+func parseOCSPResponseCache(v any) (pcfg *OCSPResponseCacheConfig, retError error) {
 	var lt token
 	defer convertPanicToError(&lt, &retError)
 	tk, v := unwrapValue(v, &lt)
-	cm, ok := v.(map[string]interface{})
+	cm, ok := v.(map[string]any)
 	if !ok {
 		return nil, &configErr{tk, fmt.Sprintf(certidp.ErrIllegalCacheOptsConfig, v)}
 	}

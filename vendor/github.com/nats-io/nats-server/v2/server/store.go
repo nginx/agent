@@ -1,4 +1,4 @@
-// Copyright 2019-2023 The NATS Authors
+// Copyright 2019-2025 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -15,12 +15,13 @@ package server
 
 import (
 	"encoding/binary"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"time"
+	"unsafe"
 
 	"github.com/nats-io/nats-server/v2/server/avl"
 )
@@ -85,9 +86,12 @@ type StreamStore interface {
 	StoreMsg(subject string, hdr, msg []byte) (uint64, int64, error)
 	StoreRawMsg(subject string, hdr, msg []byte, seq uint64, ts int64) error
 	SkipMsg() uint64
+	SkipMsgs(seq uint64, num uint64) error
 	LoadMsg(seq uint64, sm *StoreMsg) (*StoreMsg, error)
 	LoadNextMsg(filter string, wc bool, start uint64, smp *StoreMsg) (sm *StoreMsg, skip uint64, err error)
+	LoadNextMsgMulti(sl *Sublist, start uint64, smp *StoreMsg) (sm *StoreMsg, skip uint64, err error)
 	LoadLastMsg(subject string, sm *StoreMsg) (*StoreMsg, error)
+	LoadPrevMsg(start uint64, smp *StoreMsg) (sm *StoreMsg, err error)
 	RemoveMsg(seq uint64) (bool, error)
 	EraseMsg(seq uint64) (bool, error)
 	Purge() (uint64, error)
@@ -99,6 +103,7 @@ type StreamStore interface {
 	SubjectsState(filterSubject string) map[string]SimpleState
 	SubjectsTotals(filterSubject string) map[string]uint64
 	NumPending(sseq uint64, filter string, lastPerSubject bool) (total, validThrough uint64)
+	NumPendingMulti(sseq uint64, sl *Sublist, lastPerSubject bool) (total, validThrough uint64)
 	State() StreamState
 	FastState(*StreamState)
 	EncodedStreamState(failed uint64) (enc []byte, err error)
@@ -163,6 +168,8 @@ type SimpleState struct {
 
 	// Internal usage for when the first needs to be updated before use.
 	firstNeedsUpdate bool
+	// Internal usage for when the last needs to be updated before use.
+	lastNeedsUpdate bool
 }
 
 // LostStreamData indicates msgs that have been lost.
@@ -289,12 +296,16 @@ type DeleteRange struct {
 }
 
 func (dr *DeleteRange) State() (first, last, num uint64) {
-	return dr.First, dr.First + dr.Num, dr.Num
+	deletesAfterFirst := dr.Num
+	if deletesAfterFirst > 0 {
+		deletesAfterFirst--
+	}
+	return dr.First, dr.First + deletesAfterFirst, dr.Num
 }
 
 // Range will range over all the deleted sequences represented by this block.
 func (dr *DeleteRange) Range(f func(uint64) bool) {
-	for seq := dr.First; seq <= dr.First+dr.Num; seq++ {
+	for seq := dr.First; seq < dr.First+dr.Num; seq++ {
 		if !f(seq) {
 			return
 		}
@@ -441,14 +452,16 @@ type TemplateStore interface {
 	Delete(*streamTemplate) error
 }
 
-func jsonString(s string) string {
-	return "\"" + s + "\""
-}
-
 const (
-	limitsPolicyString    = "limits"
-	interestPolicyString  = "interest"
-	workQueuePolicyString = "workqueue"
+	limitsPolicyJSONString    = `"limits"`
+	interestPolicyJSONString  = `"interest"`
+	workQueuePolicyJSONString = `"workqueue"`
+)
+
+var (
+	limitsPolicyJSONBytes    = []byte(limitsPolicyJSONString)
+	interestPolicyJSONBytes  = []byte(interestPolicyJSONString)
+	workQueuePolicyJSONBytes = []byte(workQueuePolicyJSONString)
 )
 
 func (rp RetentionPolicy) String() string {
@@ -467,11 +480,11 @@ func (rp RetentionPolicy) String() string {
 func (rp RetentionPolicy) MarshalJSON() ([]byte, error) {
 	switch rp {
 	case LimitsPolicy:
-		return json.Marshal(limitsPolicyString)
+		return limitsPolicyJSONBytes, nil
 	case InterestPolicy:
-		return json.Marshal(interestPolicyString)
+		return interestPolicyJSONBytes, nil
 	case WorkQueuePolicy:
-		return json.Marshal(workQueuePolicyString)
+		return workQueuePolicyJSONBytes, nil
 	default:
 		return nil, fmt.Errorf("can not marshal %v", rp)
 	}
@@ -479,11 +492,11 @@ func (rp RetentionPolicy) MarshalJSON() ([]byte, error) {
 
 func (rp *RetentionPolicy) UnmarshalJSON(data []byte) error {
 	switch string(data) {
-	case jsonString(limitsPolicyString):
+	case limitsPolicyJSONString:
 		*rp = LimitsPolicy
-	case jsonString(interestPolicyString):
+	case interestPolicyJSONString:
 		*rp = InterestPolicy
-	case jsonString(workQueuePolicyString):
+	case workQueuePolicyJSONString:
 		*rp = WorkQueuePolicy
 	default:
 		return fmt.Errorf("can not unmarshal %q", data)
@@ -505,9 +518,9 @@ func (dp DiscardPolicy) String() string {
 func (dp DiscardPolicy) MarshalJSON() ([]byte, error) {
 	switch dp {
 	case DiscardOld:
-		return json.Marshal("old")
+		return []byte(`"old"`), nil
 	case DiscardNew:
-		return json.Marshal("new")
+		return []byte(`"new"`), nil
 	default:
 		return nil, fmt.Errorf("can not marshal %v", dp)
 	}
@@ -515,9 +528,9 @@ func (dp DiscardPolicy) MarshalJSON() ([]byte, error) {
 
 func (dp *DiscardPolicy) UnmarshalJSON(data []byte) error {
 	switch strings.ToLower(string(data)) {
-	case jsonString("old"):
+	case `"old"`:
 		*dp = DiscardOld
-	case jsonString("new"):
+	case `"new"`:
 		*dp = DiscardNew
 	default:
 		return fmt.Errorf("can not unmarshal %q", data)
@@ -526,9 +539,15 @@ func (dp *DiscardPolicy) UnmarshalJSON(data []byte) error {
 }
 
 const (
-	memoryStorageString = "memory"
-	fileStorageString   = "file"
-	anyStorageString    = "any"
+	memoryStorageJSONString = `"memory"`
+	fileStorageJSONString   = `"file"`
+	anyStorageJSONString    = `"any"`
+)
+
+var (
+	memoryStorageJSONBytes = []byte(memoryStorageJSONString)
+	fileStorageJSONBytes   = []byte(fileStorageJSONString)
+	anyStorageJSONBytes    = []byte(anyStorageJSONString)
 )
 
 func (st StorageType) String() string {
@@ -547,11 +566,11 @@ func (st StorageType) String() string {
 func (st StorageType) MarshalJSON() ([]byte, error) {
 	switch st {
 	case MemoryStorage:
-		return json.Marshal(memoryStorageString)
+		return memoryStorageJSONBytes, nil
 	case FileStorage:
-		return json.Marshal(fileStorageString)
+		return fileStorageJSONBytes, nil
 	case AnyStorage:
-		return json.Marshal(anyStorageString)
+		return anyStorageJSONBytes, nil
 	default:
 		return nil, fmt.Errorf("can not marshal %v", st)
 	}
@@ -559,11 +578,11 @@ func (st StorageType) MarshalJSON() ([]byte, error) {
 
 func (st *StorageType) UnmarshalJSON(data []byte) error {
 	switch string(data) {
-	case jsonString(memoryStorageString):
+	case memoryStorageJSONString:
 		*st = MemoryStorage
-	case jsonString(fileStorageString):
+	case fileStorageJSONString:
 		*st = FileStorage
-	case jsonString(anyStorageString):
+	case anyStorageJSONString:
 		*st = AnyStorage
 	default:
 		return fmt.Errorf("can not unmarshal %q", data)
@@ -572,19 +591,25 @@ func (st *StorageType) UnmarshalJSON(data []byte) error {
 }
 
 const (
-	ackNonePolicyString     = "none"
-	ackAllPolicyString      = "all"
-	ackExplicitPolicyString = "explicit"
+	ackNonePolicyJSONString     = `"none"`
+	ackAllPolicyJSONString      = `"all"`
+	ackExplicitPolicyJSONString = `"explicit"`
+)
+
+var (
+	ackNonePolicyJSONBytes     = []byte(ackNonePolicyJSONString)
+	ackAllPolicyJSONBytes      = []byte(ackAllPolicyJSONString)
+	ackExplicitPolicyJSONBytes = []byte(ackExplicitPolicyJSONString)
 )
 
 func (ap AckPolicy) MarshalJSON() ([]byte, error) {
 	switch ap {
 	case AckNone:
-		return json.Marshal(ackNonePolicyString)
+		return ackNonePolicyJSONBytes, nil
 	case AckAll:
-		return json.Marshal(ackAllPolicyString)
+		return ackAllPolicyJSONBytes, nil
 	case AckExplicit:
-		return json.Marshal(ackExplicitPolicyString)
+		return ackExplicitPolicyJSONBytes, nil
 	default:
 		return nil, fmt.Errorf("can not marshal %v", ap)
 	}
@@ -592,11 +617,11 @@ func (ap AckPolicy) MarshalJSON() ([]byte, error) {
 
 func (ap *AckPolicy) UnmarshalJSON(data []byte) error {
 	switch string(data) {
-	case jsonString(ackNonePolicyString):
+	case ackNonePolicyJSONString:
 		*ap = AckNone
-	case jsonString(ackAllPolicyString):
+	case ackAllPolicyJSONString:
 		*ap = AckAll
-	case jsonString(ackExplicitPolicyString):
+	case ackExplicitPolicyJSONString:
 		*ap = AckExplicit
 	default:
 		return fmt.Errorf("can not unmarshal %q", data)
@@ -605,16 +630,21 @@ func (ap *AckPolicy) UnmarshalJSON(data []byte) error {
 }
 
 const (
-	replayInstantPolicyString  = "instant"
-	replayOriginalPolicyString = "original"
+	replayInstantPolicyJSONString  = `"instant"`
+	replayOriginalPolicyJSONString = `"original"`
+)
+
+var (
+	replayInstantPolicyJSONBytes  = []byte(replayInstantPolicyJSONString)
+	replayOriginalPolicyJSONBytes = []byte(replayOriginalPolicyJSONString)
 )
 
 func (rp ReplayPolicy) MarshalJSON() ([]byte, error) {
 	switch rp {
 	case ReplayInstant:
-		return json.Marshal(replayInstantPolicyString)
+		return replayInstantPolicyJSONBytes, nil
 	case ReplayOriginal:
-		return json.Marshal(replayOriginalPolicyString)
+		return replayOriginalPolicyJSONBytes, nil
 	default:
 		return nil, fmt.Errorf("can not marshal %v", rp)
 	}
@@ -622,9 +652,9 @@ func (rp ReplayPolicy) MarshalJSON() ([]byte, error) {
 
 func (rp *ReplayPolicy) UnmarshalJSON(data []byte) error {
 	switch string(data) {
-	case jsonString(replayInstantPolicyString):
+	case replayInstantPolicyJSONString:
 		*rp = ReplayInstant
-	case jsonString(replayOriginalPolicyString):
+	case replayOriginalPolicyJSONString:
 		*rp = ReplayOriginal
 	default:
 		return fmt.Errorf("can not unmarshal %q", data)
@@ -633,28 +663,38 @@ func (rp *ReplayPolicy) UnmarshalJSON(data []byte) error {
 }
 
 const (
-	deliverAllPolicyString       = "all"
-	deliverLastPolicyString      = "last"
-	deliverNewPolicyString       = "new"
-	deliverByStartSequenceString = "by_start_sequence"
-	deliverByStartTimeString     = "by_start_time"
-	deliverLastPerPolicyString   = "last_per_subject"
-	deliverUndefinedString       = "undefined"
+	deliverAllPolicyJSONString       = `"all"`
+	deliverLastPolicyJSONString      = `"last"`
+	deliverNewPolicyJSONString       = `"new"`
+	deliverByStartSequenceJSONString = `"by_start_sequence"`
+	deliverByStartTimeJSONString     = `"by_start_time"`
+	deliverLastPerPolicyJSONString   = `"last_per_subject"`
+	deliverUndefinedJSONString       = `"undefined"`
+)
+
+var (
+	deliverAllPolicyJSONBytes       = []byte(deliverAllPolicyJSONString)
+	deliverLastPolicyJSONBytes      = []byte(deliverLastPolicyJSONString)
+	deliverNewPolicyJSONBytes       = []byte(deliverNewPolicyJSONString)
+	deliverByStartSequenceJSONBytes = []byte(deliverByStartSequenceJSONString)
+	deliverByStartTimeJSONBytes     = []byte(deliverByStartTimeJSONString)
+	deliverLastPerPolicyJSONBytes   = []byte(deliverLastPerPolicyJSONString)
+	deliverUndefinedJSONBytes       = []byte(deliverUndefinedJSONString)
 )
 
 func (p *DeliverPolicy) UnmarshalJSON(data []byte) error {
 	switch string(data) {
-	case jsonString(deliverAllPolicyString), jsonString(deliverUndefinedString):
+	case deliverAllPolicyJSONString, deliverUndefinedJSONString:
 		*p = DeliverAll
-	case jsonString(deliverLastPolicyString):
+	case deliverLastPolicyJSONString:
 		*p = DeliverLast
-	case jsonString(deliverLastPerPolicyString):
+	case deliverLastPerPolicyJSONString:
 		*p = DeliverLastPerSubject
-	case jsonString(deliverNewPolicyString):
+	case deliverNewPolicyJSONString:
 		*p = DeliverNew
-	case jsonString(deliverByStartSequenceString):
+	case deliverByStartSequenceJSONString:
 		*p = DeliverByStartSequence
-	case jsonString(deliverByStartTimeString):
+	case deliverByStartTimeJSONString:
 		*p = DeliverByStartTime
 	default:
 		return fmt.Errorf("can not unmarshal %q", data)
@@ -666,19 +706,19 @@ func (p *DeliverPolicy) UnmarshalJSON(data []byte) error {
 func (p DeliverPolicy) MarshalJSON() ([]byte, error) {
 	switch p {
 	case DeliverAll:
-		return json.Marshal(deliverAllPolicyString)
+		return deliverAllPolicyJSONBytes, nil
 	case DeliverLast:
-		return json.Marshal(deliverLastPolicyString)
+		return deliverLastPolicyJSONBytes, nil
 	case DeliverLastPerSubject:
-		return json.Marshal(deliverLastPerPolicyString)
+		return deliverLastPerPolicyJSONBytes, nil
 	case DeliverNew:
-		return json.Marshal(deliverNewPolicyString)
+		return deliverNewPolicyJSONBytes, nil
 	case DeliverByStartSequence:
-		return json.Marshal(deliverByStartSequenceString)
+		return deliverByStartSequenceJSONBytes, nil
 	case DeliverByStartTime:
-		return json.Marshal(deliverByStartTimeString)
+		return deliverByStartTimeJSONBytes, nil
 	default:
-		return json.Marshal(deliverUndefinedString)
+		return deliverUndefinedJSONBytes, nil
 	}
 }
 
@@ -690,7 +730,7 @@ func isOutOfSpaceErr(err error) bool {
 var errFirstSequenceMismatch = errors.New("first sequence mismatch")
 
 func isClusterResetErr(err error) bool {
-	return err == errLastSeqMismatch || err == ErrStoreEOF || err == errFirstSequenceMismatch
+	return err == errLastSeqMismatch || err == ErrStoreEOF || err == errFirstSequenceMismatch || errors.Is(err, errCatchupAbortedNoLeader) || err == errCatchupTooManyRetries
 }
 
 // Copy all fields.
@@ -713,4 +753,36 @@ func (sm *StoreMsg) clear() {
 	if len(sm.buf) > 0 {
 		sm.buf = sm.buf[:0]
 	}
+}
+
+// Note this will avoid a copy of the data used for the string, but it will also reference the existing slice's data pointer.
+// So this should be used sparingly when we know the encompassing byte slice's lifetime is the same.
+func bytesToString(b []byte) string {
+	if len(b) == 0 {
+		return _EMPTY_
+	}
+	p := unsafe.SliceData(b)
+	return unsafe.String(p, len(b))
+}
+
+// Same in reverse. Used less often.
+func stringToBytes(s string) []byte {
+	if len(s) == 0 {
+		return nil
+	}
+	p := unsafe.StringData(s)
+	b := unsafe.Slice(p, len(s))
+	return b
+}
+
+// Forces a copy of a string, for use in the case that you might have been passed a value when bytesToString was used,
+// but now you need a separate copy of it to store for longer-term use.
+func copyString(s string) string {
+	b := make([]byte, len(s))
+	copy(b, s)
+	return bytesToString(b)
+}
+
+func isPermissionError(err error) bool {
+	return err != nil && os.IsPermission(err)
 }

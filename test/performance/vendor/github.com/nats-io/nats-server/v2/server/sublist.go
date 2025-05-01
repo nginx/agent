@@ -1,4 +1,4 @@
-// Copyright 2016-2023 The NATS Authors
+// Copyright 2016-2025 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -19,6 +19,9 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"unicode/utf8"
+
+	"github.com/nats-io/nats-server/v2/server/stree"
 )
 
 // Sublist is a routing mechanism to handle subject distribution and
@@ -503,7 +506,7 @@ func (s *Sublist) addToCache(subject string, sub *subscription) {
 
 // removeFromCache will remove the sub from any active cache entries.
 // Assumes write lock is held.
-func (s *Sublist) removeFromCache(subject string, sub *subscription) {
+func (s *Sublist) removeFromCache(subject string) {
 	if s.cache == nil {
 		return
 	}
@@ -526,14 +529,33 @@ var emptyResult = &SublistResult{}
 // Match will match all entries to the literal subject.
 // It will return a set of results for both normal and queue subscribers.
 func (s *Sublist) Match(subject string) *SublistResult {
-	return s.match(subject, true)
+	return s.match(subject, true, false)
+}
+
+// MatchBytes will match all entries to the literal subject.
+// It will return a set of results for both normal and queue subscribers.
+func (s *Sublist) MatchBytes(subject []byte) *SublistResult {
+	return s.match(bytesToString(subject), true, true)
+}
+
+// HasInterest will return whether or not there is any interest in the subject.
+// In cases where more detail is not required, this may be faster than Match.
+func (s *Sublist) HasInterest(subject string) bool {
+	return s.hasInterest(subject, true, nil, nil)
+}
+
+// NumInterest will return the number of subs/qsubs interested in the subject.
+// In cases where more detail is not required, this may be faster than Match.
+func (s *Sublist) NumInterest(subject string) (np, nq int) {
+	s.hasInterest(subject, true, &np, &nq)
+	return
 }
 
 func (s *Sublist) matchNoLock(subject string) *SublistResult {
-	return s.match(subject, false)
+	return s.match(subject, false, false)
 }
 
-func (s *Sublist) match(subject string, doLock bool) *SublistResult {
+func (s *Sublist) match(subject string, doLock bool, doCopyOnCache bool) *SublistResult {
 	atomic.AddUint64(&s.matches, 1)
 
 	// Check cache first.
@@ -588,6 +610,9 @@ func (s *Sublist) match(subject string, doLock bool) *SublistResult {
 		result = emptyResult
 	}
 	if cacheEnabled {
+		if doCopyOnCache {
+			subject = copyString(subject)
+		}
 		s.cache[subject] = result
 		n = len(s.cache)
 	}
@@ -605,6 +630,55 @@ func (s *Sublist) match(subject string, doLock bool) *SublistResult {
 	}
 
 	return result
+}
+
+func (s *Sublist) hasInterest(subject string, doLock bool, np, nq *int) bool {
+	// Check cache first.
+	if doLock {
+		s.RLock()
+	}
+	var matched bool
+	if s.cache != nil {
+		if r, ok := s.cache[subject]; ok {
+			if np != nil && nq != nil {
+				*np += len(r.psubs)
+				for _, qsub := range r.qsubs {
+					*nq += len(qsub)
+				}
+			}
+			matched = len(r.psubs)+len(r.qsubs) > 0
+		}
+	}
+	if doLock {
+		s.RUnlock()
+	}
+	if matched {
+		atomic.AddUint64(&s.cacheHits, 1)
+		return true
+	}
+
+	tsa := [32]string{}
+	tokens := tsa[:0]
+	start := 0
+	for i := 0; i < len(subject); i++ {
+		if subject[i] == btsep {
+			if i-start == 0 {
+				return false
+			}
+			tokens = append(tokens, subject[start:i])
+			start = i + 1
+		}
+	}
+	if start >= len(subject) {
+		return false
+	}
+	tokens = append(tokens, subject[start:])
+
+	if doLock {
+		s.RLock()
+		defer s.RUnlock()
+	}
+	return matchLevelForAny(s.root, tokens, np, nq)
 }
 
 // Remove entries in the cache until we are under the maximum.
@@ -634,7 +708,7 @@ func (s *Sublist) UpdateRemoteQSub(sub *subscription) {
 	// it unless we are thrashing the cache. Just remove from our L2 and update
 	// the genid so L1 will be flushed.
 	s.Lock()
-	s.removeFromCache(string(sub.subject), sub)
+	s.removeFromCache(string(sub.subject))
 	atomic.AddUint64(&s.genid, 1)
 	s.Unlock()
 }
@@ -719,6 +793,54 @@ func matchLevel(l *level, toks []string, results *SublistResult) {
 	}
 }
 
+func matchLevelForAny(l *level, toks []string, np, nq *int) bool {
+	var pwc, n *node
+	for i, t := range toks {
+		if l == nil {
+			return false
+		}
+		if l.fwc != nil {
+			if np != nil && nq != nil {
+				*np += len(l.fwc.psubs)
+				for _, qsub := range l.fwc.qsubs {
+					*nq += len(qsub)
+				}
+			}
+			return true
+		}
+		if pwc = l.pwc; pwc != nil {
+			if match := matchLevelForAny(pwc.next, toks[i+1:], np, nq); match {
+				return true
+			}
+		}
+		n = l.nodes[t]
+		if n != nil {
+			l = n.next
+		} else {
+			l = nil
+		}
+	}
+	if n != nil {
+		if np != nil && nq != nil {
+			*np += len(n.psubs)
+			for _, qsub := range n.qsubs {
+				*nq += len(qsub)
+			}
+		}
+		return len(n.plist) > 0 || len(n.psubs) > 0 || len(n.qsubs) > 0
+	}
+	if pwc != nil {
+		if np != nil && nq != nil {
+			*np += len(pwc.psubs)
+			for _, qsub := range pwc.qsubs {
+				*nq += len(qsub)
+			}
+		}
+		return len(pwc.plist) > 0 || len(pwc.psubs) > 0 || len(pwc.qsubs) > 0
+	}
+	return false
+}
+
 // lnt is used to track descent into levels for a removal for pruning.
 type lnt struct {
 	l *level
@@ -797,7 +919,7 @@ func (s *Sublist) remove(sub *subscription, shouldLock bool, doCacheUpdates bool
 		}
 	}
 	if doCacheUpdates {
-		s.removeFromCache(subject, sub)
+		s.removeFromCache(subject)
 		atomic.AddUint64(&s.genid, 1)
 	}
 
@@ -1051,7 +1173,16 @@ func visitLevel(l *level, depth int) int {
 
 // Determine if a subject has any wildcard tokens.
 func subjectHasWildcard(subject string) bool {
-	return !subjectIsLiteral(subject)
+	// This one exits earlier then !subjectIsLiteral(subject)
+	for i, c := range subject {
+		if c == pwc || c == fwc {
+			if (i == 0 || subject[i-1] == btsep) &&
+				(i+1 == len(subject) || subject[i+1] == btsep) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // Determine if the subject has any wildcards. Fast version, does not check for
@@ -1075,8 +1206,25 @@ func IsValidPublishSubject(subject string) bool {
 
 // IsValidSubject returns true if a subject is valid, false otherwise
 func IsValidSubject(subject string) bool {
+	return isValidSubject(subject, false)
+}
+
+func isValidSubject(subject string, checkRunes bool) bool {
 	if subject == _EMPTY_ {
 		return false
+	}
+	if checkRunes {
+		// Check if we have embedded nulls.
+		if bytes.IndexByte(stringToBytes(subject), 0) >= 0 {
+			return false
+		}
+		// Since casting to a string will always produce valid UTF-8, we need to look for replacement runes.
+		// This signals something is off or corrupt.
+		for _, r := range subject {
+			if r == utf8.RuneError {
+				return false
+			}
+		}
 	}
 	sfwc := false
 	tokens := strings.Split(subject, tsep)
@@ -1099,32 +1247,6 @@ func IsValidSubject(subject string) bool {
 		}
 	}
 	return true
-}
-
-// Will share relevant info regarding the subject.
-// Returns valid, tokens, num pwcs, has fwc.
-func subjectInfo(subject string) (bool, []string, int, bool) {
-	if subject == "" {
-		return false, nil, 0, false
-	}
-	npwcs := 0
-	sfwc := false
-	tokens := strings.Split(subject, tsep)
-	for _, t := range tokens {
-		if len(t) == 0 || sfwc {
-			return false, nil, 0, false
-		}
-		if len(t) > 1 {
-			continue
-		}
-		switch t[0] {
-		case fwc:
-			sfwc = true
-		case pwc:
-			npwcs++
-		}
-	}
-	return true, tokens, npwcs, sfwc
 }
 
 // IsValidLiteralSubject returns true if a subject is valid and literal (no wildcards), false otherwise
@@ -1609,5 +1731,52 @@ func getAllNodes(l *level, results *SublistResult) {
 	for _, n := range l.nodes {
 		addNodeToResults(n, results)
 		getAllNodes(n.next, results)
+	}
+}
+
+// IntersectStree will match all items in the given subject tree that
+// have interest expressed in the given sublist. The callback will only be called
+// once for each subject, regardless of overlapping subscriptions in the sublist.
+func IntersectStree[T any](st *stree.SubjectTree[T], sl *Sublist, cb func(subj []byte, entry *T)) {
+	var _subj [255]byte
+	intersectStree(st, sl.root, _subj[:0], cb)
+}
+
+func intersectStree[T any](st *stree.SubjectTree[T], r *level, subj []byte, cb func(subj []byte, entry *T)) {
+	if r.numNodes() == 0 {
+		// For wildcards we can't avoid Match, but if it's a literal subject at
+		// this point, using Find is considerably cheaper.
+		if subjectHasWildcard(bytesToString(subj)) {
+			st.Match(subj, cb)
+		} else if e, ok := st.Find(subj); ok {
+			cb(subj, e)
+		}
+		return
+	}
+	nsubj := subj
+	if len(nsubj) > 0 {
+		nsubj = append(subj, '.')
+	}
+	switch {
+	case r.fwc != nil:
+		// We've reached a full wildcard, do a FWC match on the stree at this point
+		// and don't keep iterating downward.
+		nsubj := append(nsubj, '>')
+		st.Match(nsubj, cb)
+	case r.pwc != nil:
+		// We've found a partial wildcard. We'll keep iterating downwards, but first
+		// check whether there's interest at this level (without triggering dupes) and
+		// match if so.
+		nsubj := append(nsubj, '*')
+		if len(r.pwc.psubs)+len(r.pwc.qsubs) > 0 && r.pwc.next != nil && r.pwc.next.numNodes() > 0 {
+			st.Match(nsubj, cb)
+		}
+		intersectStree(st, r.pwc.next, nsubj, cb)
+	case r.numNodes() > 0:
+		// Normal node with subject literals, keep iterating.
+		for t, n := range r.nodes {
+			nsubj := append(nsubj, t...)
+			intersectStree(st, n.next, nsubj, cb)
+		}
 	}
 }

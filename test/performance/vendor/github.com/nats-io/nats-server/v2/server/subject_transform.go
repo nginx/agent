@@ -1,4 +1,4 @@
-// Copyright 2023 The NATS Authors
+// Copyright 2023-2024 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -31,6 +31,8 @@ var (
 	sliceFromLeftMappingFunctionRegEx  = regexp.MustCompile(`{{\s*[sS]lice[fF]rom[lL]eft\s*\((.*)\)\s*}}`)
 	sliceFromRightMappingFunctionRegEx = regexp.MustCompile(`{{\s*[sS]lice[fF]rom[rR]ight\s*\((.*)\)\s*}}`)
 	splitMappingFunctionRegEx          = regexp.MustCompile(`{{\s*[sS]plit\s*\((.*)\)\s*}}`)
+	leftMappingFunctionRegEx           = regexp.MustCompile(`{{\s*[lL]eft\s*\((.*)\)\s*}}`)
+	rightMappingFunctionRegEx          = regexp.MustCompile(`{{\s*[rR]ight\s*\((.*)\)\s*}}`)
 )
 
 // Enum for the subject mapping subjectTransform function types
@@ -44,6 +46,8 @@ const (
 	SliceFromLeft
 	SliceFromRight
 	Split
+	Left
+	Right
 )
 
 // Transforms for arbitrarily mapping subjects from one to another for maps, tees and filters.
@@ -297,6 +301,18 @@ func indexPlaceHolders(token string) (int16, []int, int32, string, error) {
 				return transformIndexIntArgsHelper(token, args, SliceFromRight)
 			}
 
+			// Right(token, length)
+			args = getMappingFunctionArgs(rightMappingFunctionRegEx, token)
+			if args != nil {
+				return transformIndexIntArgsHelper(token, args, Right)
+			}
+
+			// Left(token, length)
+			args = getMappingFunctionArgs(leftMappingFunctionRegEx, token)
+			if args != nil {
+				return transformIndexIntArgsHelper(token, args, Left)
+			}
+
 			// split(token, deliminator)
 			args = getMappingFunctionArgs(splitMappingFunctionRegEx, token)
 			if args != nil {
@@ -515,6 +531,24 @@ func (tr *subjectTransform) TransformTokenizedSubject(tokens []string) string {
 						b.WriteString(tsep)
 					}
 				}
+			case Left:
+				sourceToken := tokens[tr.dtokmftokindexesargs[i][0]]
+				sourceTokenLen := len(sourceToken)
+				sliceSize := int(tr.dtokmfintargs[i])
+				if sliceSize > 0 && sliceSize < sourceTokenLen {
+					b.WriteString(sourceToken[0:sliceSize])
+				} else { // too small to slice at the requested size: don't slice
+					b.WriteString(sourceToken)
+				}
+			case Right:
+				sourceToken := tokens[tr.dtokmftokindexesargs[i][0]]
+				sourceTokenLen := len(sourceToken)
+				sliceSize := int(tr.dtokmfintargs[i])
+				if sliceSize > 0 && sliceSize < sourceTokenLen {
+					b.WriteString(sourceToken[sourceTokenLen-sliceSize : sourceTokenLen])
+				} else { // too small to slice at the requested size: don't slice
+					b.WriteString(sourceToken)
+				}
 			}
 		}
 
@@ -560,4 +594,30 @@ func (tr *subjectTransform) reverse() *subjectTransform {
 	ndest := strings.Join(nda, tsep)
 	rtr, _ := NewSubjectTransformStrict(nsrc, ndest)
 	return rtr
+}
+
+// Will share relevant info regarding the subject.
+// Returns valid, tokens, num pwcs, has fwc.
+func subjectInfo(subject string) (bool, []string, int, bool) {
+	if subject == "" {
+		return false, nil, 0, false
+	}
+	npwcs := 0
+	sfwc := false
+	tokens := strings.Split(subject, tsep)
+	for _, t := range tokens {
+		if len(t) == 0 || sfwc {
+			return false, nil, 0, false
+		}
+		if len(t) > 1 {
+			continue
+		}
+		switch t[0] {
+		case fwc:
+			sfwc = true
+		case pwc:
+			npwcs++
+		}
+	}
+	return true, tokens, npwcs, sfwc
 }

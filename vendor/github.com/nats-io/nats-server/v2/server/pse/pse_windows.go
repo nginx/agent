@@ -1,4 +1,4 @@
-// Copyright 2015-2018 The NATS Authors
+// Copyright 2015-2024 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -25,16 +25,32 @@ import (
 	"syscall"
 	"time"
 	"unsafe"
+
+	"golang.org/x/sys/windows"
 )
 
 var (
-	pdh                            = syscall.NewLazyDLL("pdh.dll")
+	pdh                            = windows.NewLazySystemDLL("pdh.dll")
 	winPdhOpenQuery                = pdh.NewProc("PdhOpenQuery")
 	winPdhAddCounter               = pdh.NewProc("PdhAddCounterW")
 	winPdhCollectQueryData         = pdh.NewProc("PdhCollectQueryData")
 	winPdhGetFormattedCounterValue = pdh.NewProc("PdhGetFormattedCounterValue")
 	winPdhGetFormattedCounterArray = pdh.NewProc("PdhGetFormattedCounterArrayW")
 )
+
+func init() {
+	if err := pdh.Load(); err != nil {
+		panic(err)
+	}
+	for _, p := range []*windows.LazyProc{
+		winPdhOpenQuery, winPdhAddCounter, winPdhCollectQueryData,
+		winPdhGetFormattedCounterValue, winPdhGetFormattedCounterArray,
+	} {
+		if err := p.Find(); err != nil {
+			panic(err)
+		}
+	}
+}
 
 // global performance counter query handle and counters
 var (
