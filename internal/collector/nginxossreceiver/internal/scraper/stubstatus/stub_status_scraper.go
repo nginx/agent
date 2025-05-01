@@ -18,7 +18,6 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
-	"go.opentelemetry.io/collector/receiver/scraperhelper"
 	"go.uber.org/zap"
 
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/config"
@@ -26,6 +25,7 @@ import (
 )
 
 type NginxStubStatusScraper struct {
+	logger           *zap.Logger
 	httpClient       *http.Client
 	client           *client.NginxClient
 	cfg              *config.Config
@@ -35,8 +35,6 @@ type NginxStubStatusScraper struct {
 	init             sync.Once
 	previousRequests int
 }
-
-var _ scraperhelper.Scraper = (*NginxStubStatusScraper)(nil)
 
 func NewScraper(
 	settings receiver.Settings,
@@ -53,6 +51,7 @@ func NewScraper(
 		cfg:      cfg,
 		mb:       mb,
 		rb:       rb,
+		logger:   logger,
 	}
 }
 
@@ -60,7 +59,9 @@ func (s *NginxStubStatusScraper) ID() component.ID {
 	return component.NewID(metadata.Type)
 }
 
+// nolint: unparam
 func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) error {
+	s.logger.Info("Starting NGINX stub status scraper")
 	httpClient := http.DefaultClient
 	httpClient.Timeout = s.cfg.ClientConfig.Timeout
 
@@ -76,7 +77,9 @@ func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) erro
 	return nil
 }
 
+// nolint: unparam
 func (s *NginxStubStatusScraper) Shutdown(_ context.Context) error {
+	s.logger.Info("Shutting down NGINX stub status scraper")
 	return nil
 }
 

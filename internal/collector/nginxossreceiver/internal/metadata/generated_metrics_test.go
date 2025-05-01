@@ -57,7 +57,7 @@ func TestMetricsBuilder(t *testing.T) {
 			start := pcommon.Timestamp(1_000_000_000)
 			ts := pcommon.Timestamp(1_000_001_000)
 			observedZapCore, observedLogs := observer.New(zap.WarnLevel)
-			settings := receivertest.NewNopSettings()
+			settings := receivertest.NewNopSettings(receivertest.NopType)
 			settings.Logger = zap.New(observedZapCore)
 			mb := NewMetricsBuilder(loadMetricsBuilderConfig(t, tt.name), settings, WithStartTime(start))
 
@@ -127,7 +127,7 @@ func TestMetricsBuilder(t *testing.T) {
 					assert.Equal(t, int64(1), dp.IntValue())
 					attrVal, ok := dp.Attributes().Get("nginx.connections.outcome")
 					assert.True(t, ok)
-					assert.EqualValues(t, "ACCEPTED", attrVal.Str())
+					assert.Equal(t, "ACCEPTED", attrVal.Str())
 				case "nginx.http.connections":
 					assert.False(t, validatedMetrics["nginx.http.connections"], "Found a duplicate in the metrics slice: nginx.http.connections")
 					validatedMetrics["nginx.http.connections"] = true
@@ -144,7 +144,7 @@ func TestMetricsBuilder(t *testing.T) {
 					assert.Equal(t, int64(1), dp.IntValue())
 					attrVal, ok := dp.Attributes().Get("nginx.connections.outcome")
 					assert.True(t, ok)
-					assert.EqualValues(t, "ACCEPTED", attrVal.Str())
+					assert.Equal(t, "ACCEPTED", attrVal.Str())
 				case "nginx.http.request.count":
 					assert.False(t, validatedMetrics["nginx.http.request.count"], "Found a duplicate in the metrics slice: nginx.http.request.count")
 					validatedMetrics["nginx.http.request.count"] = true
@@ -185,7 +185,7 @@ func TestMetricsBuilder(t *testing.T) {
 					assert.Equal(t, int64(1), dp.IntValue())
 					attrVal, ok := dp.Attributes().Get("nginx.status_range")
 					assert.True(t, ok)
-					assert.EqualValues(t, "1xx", attrVal.Str())
+					assert.Equal(t, "1xx", attrVal.Str())
 				}
 			}
 		})

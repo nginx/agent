@@ -11,7 +11,6 @@ import (
 
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
-	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/plugin"
 	"github.com/spf13/cobra"
 )
@@ -47,9 +46,6 @@ func (a *App) Run(ctx context.Context) error {
 			slog.ErrorContext(ctx, "Invalid config", "error", err, logOrigin)
 			return
 		}
-
-		slogger := logger.New(*agentConfig.Log)
-		slog.SetDefault(slogger)
 
 		slog.InfoContext(ctx, "Starting NGINX Agent",
 			slog.String("version", a.version),

@@ -9,9 +9,8 @@ AZURE_PACKAGES_DIR  := ./build/azure/packages
 BINARY_PATH         := $(BUILD_DIR)/$(BINARY_NAME)
 GPG_PUBLIC_KEY      := .key
 PACKAGE_BUILD       ?= 1
-PACKAGE_VERSION     := $(shell echo ${VERSION} | tr -d 'v')-$(PACKAGE_BUILD)
-APK_PACKAGE_VERSION := $(shell echo ${VERSION} | tr -d 'v').$(PACKAGE_BUILD)
-TARBALL_NAME        := $(PACKAGE_PREFIX)v3.tar.gz
+PACKAGE_VERSION     := $(shell echo ${VERSION} | tr -d 'v')
+TARBALL_NAME        := $(PACKAGE_PREFIX).tar.gz
 
 DEB_DISTROS         ?= ubuntu-noble-24.04 ubuntu-jammy-22.04 ubuntu-focal-20.04 debian-bookworm-12 debian-bullseye-11
 DEB_ARCHS           ?= arm64 amd64
@@ -22,8 +21,9 @@ REDHAT_ARCHS        ?= aarch64 x86_64
 ROCKY_VERSIONS      ?= rocky-8 rocky-9
 ROCKY_ARCHS         ?= aarch64 x86_64
 FREEBSD_DISTROS     ?= "FreeBSD:13:amd64" "FreeBSD:14:amd64" 
-APK_VERSIONS        ?= 3.17 3.18 3.19 3.20 3.21
+APK_VERSIONS        ?= 3.18 3.19 3.20 3.21
 APK_ARCHS           ?= aarch64 x86_64
+APK_REVISION 		?= 1
 ALMA_VERSIONS       ?= almalinux-8 almalinux-9
 ALMA_ARCHS          ?= aarch64 x86_64
 AMAZON_VERSIONS     ?= amazon-2 amazon-2023
@@ -158,9 +158,9 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) ##
 		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -pgo=auto -ldflags=${LDFLAGS} -o $(BINARY_PATH) $(PROJECT_DIR)/$(PROJECT_FILE); \
     	for version in $(APK_VERSIONS); do \
 			if [ ! -d "$(PACKAGES_DIR)/apk/v$${version}/$${arch}" ]; then mkdir -p $(PACKAGES_DIR)/apk/v$${version}/$${arch}; fi; \
-			VERSION=$(APK_PACKAGE_VERSION) ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager apk --target $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(APK_PACKAGE_VERSION).apk; \
-			cp $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(APK_PACKAGE_VERSION).apk ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(APK_PACKAGE_VERSION)-v$${version}-$${arch}.apk; \
-			cp $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(APK_PACKAGE_VERSION).apk ${AZURE_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(APK_PACKAGE_VERSION)-v$${version}-$${arch}.apk; \
+			VERSION=$(PACKAGE_VERSION) ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager apk --target $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).apk; \
+			cp $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).apk ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-v$(PACKAGE_VERSION)-r$(APK_REVISION).apk; \
+			cp $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).apk ${AZURE_PACKAGES_DIR}/${PACKAGE_PREFIX}-v$(PACKAGE_VERSION)-r$(APK_REVISION).apk; \
 		done; \
 		rm -rf $(BINARY_PATH); \
 	done; \

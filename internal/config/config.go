@@ -20,6 +20,8 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v3/internal/datasource/file"
+	"github.com/nginx/agent/v3/internal/datasource/host"
+	"github.com/nginx/agent/v3/internal/logger"
 
 	"github.com/goccy/go-yaml"
 	uuidLibrary "github.com/nginx/agent/v3/pkg/id"
@@ -83,6 +85,10 @@ func ResolveConfig() (*Config, error) {
 	directories := viperInstance.GetStringSlice(AllowedDirectoriesKey)
 	allowedDirs := []string{AgentDirName}
 
+	log := resolveLog()
+	slogger := logger.New(log.Path, log.Level)
+	slog.SetDefault(slogger)
+
 	// Check directories in allowed_directories are valid
 	for _, dir := range directories {
 		if dir == "" || !filepath.IsAbs(dir) {
@@ -111,7 +117,7 @@ func ResolveConfig() (*Config, error) {
 		UUID:               viperInstance.GetString(UUIDKey),
 		Version:            viperInstance.GetString(VersionKey),
 		Path:               viperInstance.GetString(ConfigPathKey),
-		Log:                resolveLog(),
+		Log:                log,
 		DataPlaneConfig:    resolveDataPlaneConfig(),
 		Client:             resolveClient(),
 		AllowedDirectories: allowedDirs,
@@ -159,16 +165,29 @@ func defaultCollector(collector *Collector, config *Config) {
 		token = pathToken
 	}
 
-	collector.Receivers.HostMetrics = &HostMetrics{
-		Scrapers: &HostMetricsScrapers{
-			CPU:        &CPUScraper{},
-			Disk:       &DiskScraper{},
-			Filesystem: &FilesystemScraper{},
-			Memory:     &MemoryScraper{},
-			Network:    nil,
-		},
-		CollectionInterval: 1 * time.Minute,
-		InitialDelay:       1 * time.Second,
+	if host.NewInfo().IsContainer() {
+		collector.Receivers.ContainerMetrics = &ContainerMetricsReceiver{
+			CollectionInterval: 1 * time.Minute,
+		}
+		collector.Receivers.HostMetrics = &HostMetrics{
+			Scrapers: &HostMetricsScrapers{
+				Network: &NetworkScraper{},
+			},
+			CollectionInterval: 1 * time.Minute,
+			InitialDelay:       1 * time.Second,
+		}
+	} else {
+		collector.Receivers.HostMetrics = &HostMetrics{
+			Scrapers: &HostMetricsScrapers{
+				CPU:        &CPUScraper{},
+				Memory:     &MemoryScraper{},
+				Disk:       &DiskScraper{},
+				Filesystem: &FilesystemScraper{},
+				Network:    &NetworkScraper{},
+			},
+			CollectionInterval: 1 * time.Minute,
+			InitialDelay:       1 * time.Second,
+		}
 	}
 
 	collector.Exporters.OtlpExporters = append(collector.Exporters.OtlpExporters, OtlpExporter{
@@ -207,7 +226,7 @@ func registerFlags() {
 		"info",
 		"The desired verbosity level for logging messages from nginx-agent. "+
 			"Available options, in order of severity from highest to lowest, are: "+
-			"panic, fatal, error, info and debug.",
+			"error, warn, info and debug.",
 	)
 	fs.String(
 		LogPathKey,

@@ -137,67 +137,6 @@ func (SignatureAlgorithm) EnumDescriptor() ([]byte, []int) {
 	return file_mpi_v1_files_proto_rawDescGZIP(), []int{0}
 }
 
-// Action enumeration
-type File_FileAction int32
-
-const (
-	// Default value, no action
-	File_FILE_ACTION_UNSPECIFIED File_FileAction = 0
-	// No changes to the file
-	File_FILE_ACTION_UNCHANGED File_FileAction = 1
-	// New file
-	File_FILE_ACTION_ADD File_FileAction = 2
-	// Updated file
-	File_FILE_ACTION_UPDATE File_FileAction = 3
-	// File deleted
-	File_FILE_ACTION_DELETE File_FileAction = 4
-)
-
-// Enum value maps for File_FileAction.
-var (
-	File_FileAction_name = map[int32]string{
-		0: "FILE_ACTION_UNSPECIFIED",
-		1: "FILE_ACTION_UNCHANGED",
-		2: "FILE_ACTION_ADD",
-		3: "FILE_ACTION_UPDATE",
-		4: "FILE_ACTION_DELETE",
-	}
-	File_FileAction_value = map[string]int32{
-		"FILE_ACTION_UNSPECIFIED": 0,
-		"FILE_ACTION_UNCHANGED":   1,
-		"FILE_ACTION_ADD":         2,
-		"FILE_ACTION_UPDATE":      3,
-		"FILE_ACTION_DELETE":      4,
-	}
-)
-
-func (x File_FileAction) Enum() *File_FileAction {
-	p := new(File_FileAction)
-	*p = x
-	return p
-}
-
-func (x File_FileAction) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (File_FileAction) Descriptor() protoreflect.EnumDescriptor {
-	return file_mpi_v1_files_proto_enumTypes[1].Descriptor()
-}
-
-func (File_FileAction) Type() protoreflect.EnumType {
-	return &file_mpi_v1_files_proto_enumTypes[1]
-}
-
-func (x File_FileAction) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use File_FileAction.Descriptor instead.
-func (File_FileAction) EnumDescriptor() ([]byte, []int) {
-	return file_mpi_v1_files_proto_rawDescGZIP(), []int{9, 0}
-}
-
 // Represents a data chunk for streaming file transfer.
 // For any Stream file transfer, following assumptions should be asserted (by implementation):
 // - invalid to contain more or less than one FileDataChunkHeaders
@@ -739,10 +678,8 @@ type File struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Meta information about the file, the name (including path) and hash
 	FileMeta *FileMeta `protobuf:"bytes,1,opt,name=file_meta,json=fileMeta,proto3" json:"file_meta,omitempty"`
-	// Optional action
-	Action *File_FileAction `protobuf:"varint,2,opt,name=action,proto3,enum=mpi.v1.File_FileAction,oneof" json:"action,omitempty"`
 	// Unmanaged files will not be modified
-	Unmanaged     bool `protobuf:"varint,3,opt,name=unmanaged,proto3" json:"unmanaged,omitempty"`
+	Unmanaged     bool `protobuf:"varint,2,opt,name=unmanaged,proto3" json:"unmanaged,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -782,13 +719,6 @@ func (x *File) GetFileMeta() *FileMeta {
 		return x.FileMeta
 	}
 	return nil
-}
-
-func (x *File) GetAction() File_FileAction {
-	if x != nil && x.Action != nil {
-		return *x.Action
-	}
-	return File_FILE_ACTION_UNSPECIFIED
 }
 
 func (x *File) GetUnmanaged() bool {
@@ -1608,19 +1538,10 @@ const file_mpi_v1_files_proto_rawDesc = "" +
 	"\aversion\x18\x02 \x01(\tR\aversion\"p\n" +
 	"\fFileOverview\x12\"\n" +
 	"\x05files\x18\x01 \x03(\v2\f.mpi.v1.FileR\x05files\x12<\n" +
-	"\x0econfig_version\x18\x02 \x01(\v2\x15.mpi.v1.ConfigVersionR\rconfigVersion\"\xa0\x02\n" +
+	"\x0econfig_version\x18\x02 \x01(\v2\x15.mpi.v1.ConfigVersionR\rconfigVersion\"S\n" +
 	"\x04File\x12-\n" +
-	"\tfile_meta\x18\x01 \x01(\v2\x10.mpi.v1.FileMetaR\bfileMeta\x124\n" +
-	"\x06action\x18\x02 \x01(\x0e2\x17.mpi.v1.File.FileActionH\x00R\x06action\x88\x01\x01\x12\x1c\n" +
-	"\tunmanaged\x18\x03 \x01(\bR\tunmanaged\"\x89\x01\n" +
-	"\n" +
-	"FileAction\x12\x1b\n" +
-	"\x17FILE_ACTION_UNSPECIFIED\x10\x00\x12\x19\n" +
-	"\x15FILE_ACTION_UNCHANGED\x10\x01\x12\x13\n" +
-	"\x0fFILE_ACTION_ADD\x10\x02\x12\x16\n" +
-	"\x12FILE_ACTION_UPDATE\x10\x03\x12\x16\n" +
-	"\x12FILE_ACTION_DELETE\x10\x04B\t\n" +
-	"\a_action\"w\n" +
+	"\tfile_meta\x18\x01 \x01(\v2\x10.mpi.v1.FileMetaR\bfileMeta\x12\x1c\n" +
+	"\tunmanaged\x18\x02 \x01(\bR\tunmanaged\"w\n" +
 	"\x0eGetFileRequest\x126\n" +
 	"\fmessage_meta\x18\x01 \x01(\v2\x13.mpi.v1.MessageMetaR\vmessageMeta\x12-\n" +
 	"\tfile_meta\x18\x02 \x01(\v2\x10.mpi.v1.FileMetaR\bfileMeta\"C\n" +
@@ -1716,83 +1637,81 @@ func file_mpi_v1_files_proto_rawDescGZIP() []byte {
 	return file_mpi_v1_files_proto_rawDescData
 }
 
-var file_mpi_v1_files_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_mpi_v1_files_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_mpi_v1_files_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_mpi_v1_files_proto_goTypes = []any{
 	(SignatureAlgorithm)(0),         // 0: mpi.v1.SignatureAlgorithm
-	(File_FileAction)(0),            // 1: mpi.v1.File.FileAction
-	(*FileDataChunk)(nil),           // 2: mpi.v1.FileDataChunk
-	(*FileDataChunkHeader)(nil),     // 3: mpi.v1.FileDataChunkHeader
-	(*FileDataChunkContent)(nil),    // 4: mpi.v1.FileDataChunkContent
-	(*GetOverviewRequest)(nil),      // 5: mpi.v1.GetOverviewRequest
-	(*GetOverviewResponse)(nil),     // 6: mpi.v1.GetOverviewResponse
-	(*UpdateOverviewRequest)(nil),   // 7: mpi.v1.UpdateOverviewRequest
-	(*UpdateOverviewResponse)(nil),  // 8: mpi.v1.UpdateOverviewResponse
-	(*ConfigVersion)(nil),           // 9: mpi.v1.ConfigVersion
-	(*FileOverview)(nil),            // 10: mpi.v1.FileOverview
-	(*File)(nil),                    // 11: mpi.v1.File
-	(*GetFileRequest)(nil),          // 12: mpi.v1.GetFileRequest
-	(*GetFileResponse)(nil),         // 13: mpi.v1.GetFileResponse
-	(*FileContents)(nil),            // 14: mpi.v1.FileContents
-	(*FileMeta)(nil),                // 15: mpi.v1.FileMeta
-	(*UpdateFileRequest)(nil),       // 16: mpi.v1.UpdateFileRequest
-	(*UpdateFileResponse)(nil),      // 17: mpi.v1.UpdateFileResponse
-	(*CertificateMeta)(nil),         // 18: mpi.v1.CertificateMeta
-	(*CertificateDates)(nil),        // 19: mpi.v1.CertificateDates
-	(*SubjectAlternativeNames)(nil), // 20: mpi.v1.SubjectAlternativeNames
-	(*X509Name)(nil),                // 21: mpi.v1.X509Name
-	(*AttributeTypeAndValue)(nil),   // 22: mpi.v1.AttributeTypeAndValue
-	(*MessageMeta)(nil),             // 23: mpi.v1.MessageMeta
-	(*timestamppb.Timestamp)(nil),   // 24: google.protobuf.Timestamp
+	(*FileDataChunk)(nil),           // 1: mpi.v1.FileDataChunk
+	(*FileDataChunkHeader)(nil),     // 2: mpi.v1.FileDataChunkHeader
+	(*FileDataChunkContent)(nil),    // 3: mpi.v1.FileDataChunkContent
+	(*GetOverviewRequest)(nil),      // 4: mpi.v1.GetOverviewRequest
+	(*GetOverviewResponse)(nil),     // 5: mpi.v1.GetOverviewResponse
+	(*UpdateOverviewRequest)(nil),   // 6: mpi.v1.UpdateOverviewRequest
+	(*UpdateOverviewResponse)(nil),  // 7: mpi.v1.UpdateOverviewResponse
+	(*ConfigVersion)(nil),           // 8: mpi.v1.ConfigVersion
+	(*FileOverview)(nil),            // 9: mpi.v1.FileOverview
+	(*File)(nil),                    // 10: mpi.v1.File
+	(*GetFileRequest)(nil),          // 11: mpi.v1.GetFileRequest
+	(*GetFileResponse)(nil),         // 12: mpi.v1.GetFileResponse
+	(*FileContents)(nil),            // 13: mpi.v1.FileContents
+	(*FileMeta)(nil),                // 14: mpi.v1.FileMeta
+	(*UpdateFileRequest)(nil),       // 15: mpi.v1.UpdateFileRequest
+	(*UpdateFileResponse)(nil),      // 16: mpi.v1.UpdateFileResponse
+	(*CertificateMeta)(nil),         // 17: mpi.v1.CertificateMeta
+	(*CertificateDates)(nil),        // 18: mpi.v1.CertificateDates
+	(*SubjectAlternativeNames)(nil), // 19: mpi.v1.SubjectAlternativeNames
+	(*X509Name)(nil),                // 20: mpi.v1.X509Name
+	(*AttributeTypeAndValue)(nil),   // 21: mpi.v1.AttributeTypeAndValue
+	(*MessageMeta)(nil),             // 22: mpi.v1.MessageMeta
+	(*timestamppb.Timestamp)(nil),   // 23: google.protobuf.Timestamp
 }
 var file_mpi_v1_files_proto_depIdxs = []int32{
-	23, // 0: mpi.v1.FileDataChunk.meta:type_name -> mpi.v1.MessageMeta
-	3,  // 1: mpi.v1.FileDataChunk.header:type_name -> mpi.v1.FileDataChunkHeader
-	4,  // 2: mpi.v1.FileDataChunk.content:type_name -> mpi.v1.FileDataChunkContent
-	15, // 3: mpi.v1.FileDataChunkHeader.file_meta:type_name -> mpi.v1.FileMeta
-	23, // 4: mpi.v1.GetOverviewRequest.message_meta:type_name -> mpi.v1.MessageMeta
-	9,  // 5: mpi.v1.GetOverviewRequest.config_version:type_name -> mpi.v1.ConfigVersion
-	10, // 6: mpi.v1.GetOverviewResponse.overview:type_name -> mpi.v1.FileOverview
-	23, // 7: mpi.v1.UpdateOverviewRequest.message_meta:type_name -> mpi.v1.MessageMeta
-	10, // 8: mpi.v1.UpdateOverviewRequest.overview:type_name -> mpi.v1.FileOverview
-	10, // 9: mpi.v1.UpdateOverviewResponse.overview:type_name -> mpi.v1.FileOverview
-	11, // 10: mpi.v1.FileOverview.files:type_name -> mpi.v1.File
-	9,  // 11: mpi.v1.FileOverview.config_version:type_name -> mpi.v1.ConfigVersion
-	15, // 12: mpi.v1.File.file_meta:type_name -> mpi.v1.FileMeta
-	1,  // 13: mpi.v1.File.action:type_name -> mpi.v1.File.FileAction
-	23, // 14: mpi.v1.GetFileRequest.message_meta:type_name -> mpi.v1.MessageMeta
-	15, // 15: mpi.v1.GetFileRequest.file_meta:type_name -> mpi.v1.FileMeta
-	14, // 16: mpi.v1.GetFileResponse.contents:type_name -> mpi.v1.FileContents
-	24, // 17: mpi.v1.FileMeta.modified_time:type_name -> google.protobuf.Timestamp
-	18, // 18: mpi.v1.FileMeta.certificate_meta:type_name -> mpi.v1.CertificateMeta
-	11, // 19: mpi.v1.UpdateFileRequest.file:type_name -> mpi.v1.File
-	14, // 20: mpi.v1.UpdateFileRequest.contents:type_name -> mpi.v1.FileContents
-	23, // 21: mpi.v1.UpdateFileRequest.message_meta:type_name -> mpi.v1.MessageMeta
-	15, // 22: mpi.v1.UpdateFileResponse.file_meta:type_name -> mpi.v1.FileMeta
-	21, // 23: mpi.v1.CertificateMeta.issuer:type_name -> mpi.v1.X509Name
-	21, // 24: mpi.v1.CertificateMeta.subject:type_name -> mpi.v1.X509Name
-	20, // 25: mpi.v1.CertificateMeta.sans:type_name -> mpi.v1.SubjectAlternativeNames
-	19, // 26: mpi.v1.CertificateMeta.dates:type_name -> mpi.v1.CertificateDates
-	0,  // 27: mpi.v1.CertificateMeta.signature_algorithm:type_name -> mpi.v1.SignatureAlgorithm
-	22, // 28: mpi.v1.X509Name.names:type_name -> mpi.v1.AttributeTypeAndValue
-	22, // 29: mpi.v1.X509Name.extra_names:type_name -> mpi.v1.AttributeTypeAndValue
-	5,  // 30: mpi.v1.FileService.GetOverview:input_type -> mpi.v1.GetOverviewRequest
-	7,  // 31: mpi.v1.FileService.UpdateOverview:input_type -> mpi.v1.UpdateOverviewRequest
-	12, // 32: mpi.v1.FileService.GetFile:input_type -> mpi.v1.GetFileRequest
-	16, // 33: mpi.v1.FileService.UpdateFile:input_type -> mpi.v1.UpdateFileRequest
-	12, // 34: mpi.v1.FileService.GetFileStream:input_type -> mpi.v1.GetFileRequest
-	2,  // 35: mpi.v1.FileService.UpdateFileStream:input_type -> mpi.v1.FileDataChunk
-	6,  // 36: mpi.v1.FileService.GetOverview:output_type -> mpi.v1.GetOverviewResponse
-	8,  // 37: mpi.v1.FileService.UpdateOverview:output_type -> mpi.v1.UpdateOverviewResponse
-	13, // 38: mpi.v1.FileService.GetFile:output_type -> mpi.v1.GetFileResponse
-	17, // 39: mpi.v1.FileService.UpdateFile:output_type -> mpi.v1.UpdateFileResponse
-	2,  // 40: mpi.v1.FileService.GetFileStream:output_type -> mpi.v1.FileDataChunk
-	17, // 41: mpi.v1.FileService.UpdateFileStream:output_type -> mpi.v1.UpdateFileResponse
-	36, // [36:42] is the sub-list for method output_type
-	30, // [30:36] is the sub-list for method input_type
-	30, // [30:30] is the sub-list for extension type_name
-	30, // [30:30] is the sub-list for extension extendee
-	0,  // [0:30] is the sub-list for field type_name
+	22, // 0: mpi.v1.FileDataChunk.meta:type_name -> mpi.v1.MessageMeta
+	2,  // 1: mpi.v1.FileDataChunk.header:type_name -> mpi.v1.FileDataChunkHeader
+	3,  // 2: mpi.v1.FileDataChunk.content:type_name -> mpi.v1.FileDataChunkContent
+	14, // 3: mpi.v1.FileDataChunkHeader.file_meta:type_name -> mpi.v1.FileMeta
+	22, // 4: mpi.v1.GetOverviewRequest.message_meta:type_name -> mpi.v1.MessageMeta
+	8,  // 5: mpi.v1.GetOverviewRequest.config_version:type_name -> mpi.v1.ConfigVersion
+	9,  // 6: mpi.v1.GetOverviewResponse.overview:type_name -> mpi.v1.FileOverview
+	22, // 7: mpi.v1.UpdateOverviewRequest.message_meta:type_name -> mpi.v1.MessageMeta
+	9,  // 8: mpi.v1.UpdateOverviewRequest.overview:type_name -> mpi.v1.FileOverview
+	9,  // 9: mpi.v1.UpdateOverviewResponse.overview:type_name -> mpi.v1.FileOverview
+	10, // 10: mpi.v1.FileOverview.files:type_name -> mpi.v1.File
+	8,  // 11: mpi.v1.FileOverview.config_version:type_name -> mpi.v1.ConfigVersion
+	14, // 12: mpi.v1.File.file_meta:type_name -> mpi.v1.FileMeta
+	22, // 13: mpi.v1.GetFileRequest.message_meta:type_name -> mpi.v1.MessageMeta
+	14, // 14: mpi.v1.GetFileRequest.file_meta:type_name -> mpi.v1.FileMeta
+	13, // 15: mpi.v1.GetFileResponse.contents:type_name -> mpi.v1.FileContents
+	23, // 16: mpi.v1.FileMeta.modified_time:type_name -> google.protobuf.Timestamp
+	17, // 17: mpi.v1.FileMeta.certificate_meta:type_name -> mpi.v1.CertificateMeta
+	10, // 18: mpi.v1.UpdateFileRequest.file:type_name -> mpi.v1.File
+	13, // 19: mpi.v1.UpdateFileRequest.contents:type_name -> mpi.v1.FileContents
+	22, // 20: mpi.v1.UpdateFileRequest.message_meta:type_name -> mpi.v1.MessageMeta
+	14, // 21: mpi.v1.UpdateFileResponse.file_meta:type_name -> mpi.v1.FileMeta
+	20, // 22: mpi.v1.CertificateMeta.issuer:type_name -> mpi.v1.X509Name
+	20, // 23: mpi.v1.CertificateMeta.subject:type_name -> mpi.v1.X509Name
+	19, // 24: mpi.v1.CertificateMeta.sans:type_name -> mpi.v1.SubjectAlternativeNames
+	18, // 25: mpi.v1.CertificateMeta.dates:type_name -> mpi.v1.CertificateDates
+	0,  // 26: mpi.v1.CertificateMeta.signature_algorithm:type_name -> mpi.v1.SignatureAlgorithm
+	21, // 27: mpi.v1.X509Name.names:type_name -> mpi.v1.AttributeTypeAndValue
+	21, // 28: mpi.v1.X509Name.extra_names:type_name -> mpi.v1.AttributeTypeAndValue
+	4,  // 29: mpi.v1.FileService.GetOverview:input_type -> mpi.v1.GetOverviewRequest
+	6,  // 30: mpi.v1.FileService.UpdateOverview:input_type -> mpi.v1.UpdateOverviewRequest
+	11, // 31: mpi.v1.FileService.GetFile:input_type -> mpi.v1.GetFileRequest
+	15, // 32: mpi.v1.FileService.UpdateFile:input_type -> mpi.v1.UpdateFileRequest
+	11, // 33: mpi.v1.FileService.GetFileStream:input_type -> mpi.v1.GetFileRequest
+	1,  // 34: mpi.v1.FileService.UpdateFileStream:input_type -> mpi.v1.FileDataChunk
+	5,  // 35: mpi.v1.FileService.GetOverview:output_type -> mpi.v1.GetOverviewResponse
+	7,  // 36: mpi.v1.FileService.UpdateOverview:output_type -> mpi.v1.UpdateOverviewResponse
+	12, // 37: mpi.v1.FileService.GetFile:output_type -> mpi.v1.GetFileResponse
+	16, // 38: mpi.v1.FileService.UpdateFile:output_type -> mpi.v1.UpdateFileResponse
+	1,  // 39: mpi.v1.FileService.GetFileStream:output_type -> mpi.v1.FileDataChunk
+	16, // 40: mpi.v1.FileService.UpdateFileStream:output_type -> mpi.v1.UpdateFileResponse
+	35, // [35:41] is the sub-list for method output_type
+	29, // [29:35] is the sub-list for method input_type
+	29, // [29:29] is the sub-list for extension type_name
+	29, // [29:29] is the sub-list for extension extendee
+	0,  // [0:29] is the sub-list for field type_name
 }
 
 func init() { file_mpi_v1_files_proto_init() }
@@ -1805,7 +1724,6 @@ func file_mpi_v1_files_proto_init() {
 		(*FileDataChunk_Header)(nil),
 		(*FileDataChunk_Content)(nil),
 	}
-	file_mpi_v1_files_proto_msgTypes[9].OneofWrappers = []any{}
 	file_mpi_v1_files_proto_msgTypes[13].OneofWrappers = []any{
 		(*FileMeta_CertificateMeta)(nil),
 	}
@@ -1814,7 +1732,7 @@ func file_mpi_v1_files_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mpi_v1_files_proto_rawDesc), len(file_mpi_v1_files_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      1,
 			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   1,

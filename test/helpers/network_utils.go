@@ -5,18 +5,16 @@
 package helpers
 
 import (
+	"crypto/rand"
 	"fmt"
+	"math/big"
 	"net"
 	"testing"
-	"time"
-
-	"golang.org/x/exp/rand"
 )
 
 // GetRandomPort generates a random port for testing and checks if a port is available by attempting to bind to it
 func GetRandomPort(t *testing.T) (int, error) {
 	t.Helper()
-	rand.Seed(uint64(time.Now().UnixNano()))
 
 	// Define the range for dynamic ports (49152–65535 as per IANA recommendation)
 	const minPort = 49152
@@ -24,10 +22,18 @@ func GetRandomPort(t *testing.T) (int, error) {
 
 	// try up to 10 times to get a random port
 	for i := 0; i < 10; i++ {
-		port := rand.Intn(maxPort-minPort+1) + minPort
+		maxValue := &big.Int{}
+		maxValue.SetInt64(maxPort - minPort + 1)
 
-		if isPortAvailable(port) {
-			return port, nil
+		port, err := rand.Int(rand.Reader, maxValue)
+		if err != nil {
+			return 0, err
+		}
+
+		portNumber := int(port.Int64()) + minPort
+
+		if isPortAvailable(portNumber) {
+			return portNumber, nil
 		}
 	}
 
