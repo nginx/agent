@@ -142,7 +142,7 @@ Here is the overview of how we set up and use JetStream **streams**,
 ## JetStream API
 
 All interactions with JetStream are performed via `mqttJSA` that sends NATS
-requests to JetStream. Most are processed syncronously and await a response,
+requests to JetStream. Most are processed synchronously and await a response,
 some (e.g. `jsa.sendAck()`) are sent asynchronously. JetStream API is usually
 referred to as `jsa` in the code. No special locking is required to use `jsa`,
 however the asynchronous use of JetStream may create race conditions with
@@ -265,7 +265,7 @@ or the server receiving another `CONNECT` packet with the same client ID. See
 `mqttHandleClosedClient()` and `mqttHandleWill()`. Steps:
 
 1. Send out the Will Message if applicable (if not caused by a `DISCONNECT` packet)
-2. Delete the the JetStream consumers for to QoS 1 and 2 packet delivery through
+2. Delete the JetStream consumers for to QoS 1 and 2 packet delivery through
    JS API calls (if "clean" session flag is set)
 3. Delete the session record from the “$MQTT_sess” stream, based on recorded
    stream sequence. (if "clean" session flag is set)
