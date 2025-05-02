@@ -223,7 +223,7 @@ func TestFileManagerService_ConfigApply_Update(t *testing.T) {
 	agentConfig := types.AgentConfig()
 	agentConfig.AllowedDirectories = []string{tempDir}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig)
-	fileManagerService.UpdateCurrentFilesOnDisk(filesOnDisk)
+	fileManagerService.UpdateCurrentFilesOnDisk(ctx, filesOnDisk)
 
 	request := protos.CreateConfigApplyRequest(overview)
 
@@ -269,7 +269,7 @@ func TestFileManagerService_ConfigApply_Delete(t *testing.T) {
 	agentConfig := types.AgentConfig()
 	agentConfig.AllowedDirectories = []string{tempDir}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig)
-	fileManagerService.UpdateCurrentFilesOnDisk(filesOnDisk)
+	fileManagerService.UpdateCurrentFilesOnDisk(ctx, filesOnDisk)
 
 	request := protos.CreateConfigApplyRequest(overview)
 
@@ -286,7 +286,18 @@ func TestFileManagerService_ConfigApply_Delete(t *testing.T) {
 	require.NoError(t, err)
 	assert.NoFileExists(t, tempFile.Name())
 	assert.Equal(t, fileManagerService.rollbackFileContents[tempFile.Name()], fileContent)
-	assert.Equal(t, fileManagerService.fileActions[tempFile.Name()].File, filesOnDisk[tempFile.Name()])
+	assert.Equal(t,
+		fileManagerService.fileActions[tempFile.Name()].File.GetFileMeta().GetName(),
+		filesOnDisk[tempFile.Name()].GetFileMeta().GetName(),
+	)
+	assert.Equal(t,
+		fileManagerService.fileActions[tempFile.Name()].File.GetFileMeta().GetHash(),
+		filesOnDisk[tempFile.Name()].GetFileMeta().GetHash(),
+	)
+	assert.Equal(t,
+		fileManagerService.fileActions[tempFile.Name()].File.GetFileMeta().GetSize(),
+		filesOnDisk[tempFile.Name()].GetFileMeta().GetSize(),
+	)
 	assert.Equal(t, model.OK, writeStatus)
 }
 

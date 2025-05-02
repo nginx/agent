@@ -61,7 +61,7 @@ type (
 		Rollback(ctx context.Context, instanceID string) error
 		UpdateFile(ctx context.Context, instanceID string, fileToUpdate *mpi.File) error
 		ClearCache()
-		UpdateCurrentFilesOnDisk(updateFiles map[string]*mpi.File)
+		UpdateCurrentFilesOnDisk(ctx context.Context, updateFiles map[string]*mpi.File)
 		DetermineFileActions(currentFiles map[string]*mpi.File, modifiedFiles map[string]*model.FileCache) (
 			map[string]*model.FileCache, map[string][]byte, error)
 		IsConnected() bool
@@ -325,7 +325,7 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	}
 	fileOverviewFiles := files.ConvertToMapOfFiles(fileOverview.GetFiles())
 	// Update map of current files on disk
-	fms.UpdateCurrentFilesOnDisk(fileOverviewFiles)
+	fms.UpdateCurrentFilesOnDisk(ctx, fileOverviewFiles)
 	manifestFileErr := fms.UpdateManifestFile(fileOverviewFiles)
 	if manifestFileErr != nil {
 		return model.RollbackRequired, manifestFileErr
@@ -479,10 +479,14 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles map[string]*mpi
 	fileDiff := make(map[string]*model.FileCache) // Files that have changed, key is file name
 	fileContents := make(map[string][]byte)       // contents of the file, key is file name
 
-	manifestFiles, manifestFileErr := fms.manifestFile(currentFiles)
+	manifestFiles, manifestFileErr := fms.manifestFile()
 
-	if manifestFileErr != nil && manifestFiles == nil {
-		return nil, nil, manifestFileErr
+	if manifestFileErr != nil {
+		if errors.Is(manifestFileErr, os.ErrNotExist) {
+			manifestFiles = currentFiles
+		} else {
+			return nil, nil, manifestFileErr
+		}
 	}
 	// if file is in manifestFiles but not in modified files, file has been deleted
 	// copy contents, set file action
@@ -537,7 +541,7 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles map[string]*mpi
 
 // UpdateCurrentFilesOnDisk updates the FileManagerService currentFilesOnDisk slice which contains the files
 // currently on disk
-func (fms *FileManagerService) UpdateCurrentFilesOnDisk(currentFiles map[string]*mpi.File) {
+func (fms *FileManagerService) UpdateCurrentFilesOnDisk(ctx context.Context, currentFiles map[string]*mpi.File) {
 	fms.filesMutex.Lock()
 	defer fms.filesMutex.Unlock()
 
@@ -545,6 +549,11 @@ func (fms *FileManagerService) UpdateCurrentFilesOnDisk(currentFiles map[string]
 
 	for _, currentFile := range currentFiles {
 		fms.currentFilesOnDisk[currentFile.GetFileMeta().GetName()] = currentFile
+	}
+
+	err := fms.UpdateManifestFile(currentFiles)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to update manifest file", "error", err)
 	}
 }
 
@@ -575,9 +584,9 @@ func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.F
 	return nil
 }
 
-func (fms *FileManagerService) manifestFile(currentFiles map[string]*mpi.File) (map[string]*mpi.File, error) {
+func (fms *FileManagerService) manifestFile() (map[string]*mpi.File, error) {
 	if _, err := os.Stat(manifestFilePath); err != nil {
-		return currentFiles, err // Return current files if manifest directory still doesn't exist
+		return nil, err
 	}
 
 	file, err := os.ReadFile(manifestFilePath)

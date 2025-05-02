@@ -71,10 +71,11 @@ type FakeFileManagerServiceInterface struct {
 	setIsConnectedArgsForCall []struct {
 		arg1 bool
 	}
-	UpdateCurrentFilesOnDiskStub        func(map[string]*v1.File)
+	UpdateCurrentFilesOnDiskStub        func(context.Context, map[string]*v1.File)
 	updateCurrentFilesOnDiskMutex       sync.RWMutex
 	updateCurrentFilesOnDiskArgsForCall []struct {
-		arg1 map[string]*v1.File
+		arg1 context.Context
+		arg2 map[string]*v1.File
 	}
 	UpdateFileStub        func(context.Context, string, *v1.File) error
 	updateFileMutex       sync.RWMutex
@@ -411,16 +412,17 @@ func (fake *FakeFileManagerServiceInterface) SetIsConnectedArgsForCall(i int) bo
 	return argsForCall.arg1
 }
 
-func (fake *FakeFileManagerServiceInterface) UpdateCurrentFilesOnDisk(arg1 map[string]*v1.File) {
+func (fake *FakeFileManagerServiceInterface) UpdateCurrentFilesOnDisk(arg1 context.Context, arg2 map[string]*v1.File) {
 	fake.updateCurrentFilesOnDiskMutex.Lock()
 	fake.updateCurrentFilesOnDiskArgsForCall = append(fake.updateCurrentFilesOnDiskArgsForCall, struct {
-		arg1 map[string]*v1.File
-	}{arg1})
+		arg1 context.Context
+		arg2 map[string]*v1.File
+	}{arg1, arg2})
 	stub := fake.UpdateCurrentFilesOnDiskStub
-	fake.recordInvocation("UpdateCurrentFilesOnDisk", []interface{}{arg1})
+	fake.recordInvocation("UpdateCurrentFilesOnDisk", []interface{}{arg1, arg2})
 	fake.updateCurrentFilesOnDiskMutex.Unlock()
 	if stub != nil {
-		fake.UpdateCurrentFilesOnDiskStub(arg1)
+		fake.UpdateCurrentFilesOnDiskStub(arg1, arg2)
 	}
 }
 
@@ -430,17 +432,17 @@ func (fake *FakeFileManagerServiceInterface) UpdateCurrentFilesOnDiskCallCount()
 	return len(fake.updateCurrentFilesOnDiskArgsForCall)
 }
 
-func (fake *FakeFileManagerServiceInterface) UpdateCurrentFilesOnDiskCalls(stub func(map[string]*v1.File)) {
+func (fake *FakeFileManagerServiceInterface) UpdateCurrentFilesOnDiskCalls(stub func(context.Context, map[string]*v1.File)) {
 	fake.updateCurrentFilesOnDiskMutex.Lock()
 	defer fake.updateCurrentFilesOnDiskMutex.Unlock()
 	fake.UpdateCurrentFilesOnDiskStub = stub
 }
 
-func (fake *FakeFileManagerServiceInterface) UpdateCurrentFilesOnDiskArgsForCall(i int) map[string]*v1.File {
+func (fake *FakeFileManagerServiceInterface) UpdateCurrentFilesOnDiskArgsForCall(i int) (context.Context, map[string]*v1.File) {
 	fake.updateCurrentFilesOnDiskMutex.RLock()
 	defer fake.updateCurrentFilesOnDiskMutex.RUnlock()
 	argsForCall := fake.updateCurrentFilesOnDiskArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeFileManagerServiceInterface) UpdateFile(arg1 context.Context, arg2 string, arg3 *v1.File) error {
