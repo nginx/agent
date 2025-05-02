@@ -37,7 +37,8 @@ type ManifestFileMeta struct {
 	// The hash of the file contents sha256, hex encoded
 	Hash string `json:"hash"`
 	// The size of the file in bytes
-	Size int64 `json:"size"`
+	Size       int64 `json:"size"`
+	Referenced bool  `json:"referenced"`
 }
 type ConfigApplyMessage struct {
 	Error         error

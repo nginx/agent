@@ -223,7 +223,8 @@ func TestFileManagerService_ConfigApply_Update(t *testing.T) {
 	agentConfig := types.AgentConfig()
 	agentConfig.AllowedDirectories = []string{tempDir}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig)
-	fileManagerService.UpdateCurrentFilesOnDisk(ctx, filesOnDisk)
+	err := fileManagerService.UpdateCurrentFilesOnDisk(ctx, filesOnDisk, false)
+	require.NoError(t, err)
 
 	request := protos.CreateConfigApplyRequest(overview)
 
@@ -269,7 +270,8 @@ func TestFileManagerService_ConfigApply_Delete(t *testing.T) {
 	agentConfig := types.AgentConfig()
 	agentConfig.AllowedDirectories = []string{tempDir}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig)
-	fileManagerService.UpdateCurrentFilesOnDisk(ctx, filesOnDisk)
+	err := fileManagerService.UpdateCurrentFilesOnDisk(ctx, filesOnDisk, false)
+	require.NoError(t, err)
 
 	request := protos.CreateConfigApplyRequest(overview)
 
@@ -610,7 +612,7 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 			fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
-			err = fileManagerService.UpdateManifestFile(test.currentFiles)
+			err = fileManagerService.UpdateManifestFile(test.currentFiles, true)
 			require.NoError(tt, err)
 			diff, contents, fileActionErr := fileManagerService.DetermineFileActions(test.currentFiles,
 				test.modifiedFiles)

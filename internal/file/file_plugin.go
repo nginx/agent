@@ -136,6 +136,14 @@ func (fp *FilePlugin) handleConfigApplySuccess(ctx context.Context, msg *bus.Mes
 	}
 
 	fp.fileManagerService.ClearCache()
+	updateError := fp.fileManagerService.UpdateCurrentFilesOnDisk(
+		ctx,
+		files.ConvertToMapOfFiles(successMessage.ConfigContext.Files),
+		true,
+	)
+	if updateError != nil {
+		slog.ErrorContext(ctx, "Unable to update current files on disk", "error", updateError)
+	}
 	fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: successMessage.DataPlaneResponse})
 }
 
@@ -301,7 +309,14 @@ func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 		return
 	}
 
-	fp.fileManagerService.UpdateCurrentFilesOnDisk(ctx, files.ConvertToMapOfFiles(nginxConfigContext.Files))
+	updateError := fp.fileManagerService.UpdateCurrentFilesOnDisk(
+		ctx,
+		files.ConvertToMapOfFiles(nginxConfigContext.Files),
+		true,
+	)
+	if updateError != nil {
+		slog.ErrorContext(ctx, "Unable to update current files on disk", "error", updateError)
+	}
 
 	err := fp.fileManagerService.UpdateOverview(ctx, nginxConfigContext.InstanceID, nginxConfigContext.Files, 0)
 	if err != nil {
