@@ -139,7 +139,7 @@ func checkCollectorConfiguration(collector *Collector, config *Config) {
 	if isOTelExporterConfigured(collector) && config.IsGrpcClientConfigured() && config.IsAuthConfigured() &&
 		config.IsTLSConfigured() {
 		slog.Info("No collector configuration found in NGINX Agent config, command server configuration found." +
-			"Using default collector configuration")
+			" Using default collector configuration")
 		defaultCollector(collector, config)
 	}
 }

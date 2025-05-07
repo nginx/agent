@@ -499,7 +499,6 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 
 	manifestDirPath = tempDir
 	manifestFilePath = manifestDirPath + "/manifest.json"
-	helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
 
 	tests := []struct {
 		expectedError   error
@@ -610,6 +609,7 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
+			helpers.CreateManifestFileWithErrorCheck(t, manifestDirPath, "manifest.json")
 			fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 			fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
 			err = fileManagerService.UpdateManifestFile(test.currentFiles, true)

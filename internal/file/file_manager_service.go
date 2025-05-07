@@ -468,7 +468,7 @@ func (fms *FileManagerService) checkAllowedDirectory(checkFiles []*mpi.File) err
 
 // DetermineFileActions compares two sets of files to determine the file action for each file. Returns a map of files
 // that have changed and a map of the contents for each updated and deleted file. Key to both maps is file path
-// nolint: revive,cyclop
+// nolint: revive,cyclop,gocognit
 func (fms *FileManagerService) DetermineFileActions(
 	currentFiles map[string]*mpi.File,
 	modifiedFiles map[string]*model.FileCache,
@@ -543,7 +543,8 @@ func (fms *FileManagerService) DetermineFileActions(
 
 		// If the file is unreferenced we check if the file has been updated since the last time
 		// Also check if the unreferenced file still exists
-		if !manifestFiles[modifiedFile.File.GetFileMeta().GetName()].ManifestFileMeta.Referenced {
+		if manifestFiles[modifiedFile.File.GetFileMeta().GetName()] != nil &&
+			!manifestFiles[modifiedFile.File.GetFileMeta().GetName()].ManifestFileMeta.Referenced {
 			if fileStats, err := os.Stat(modifiedFile.File.GetFileMeta().GetName()); errors.Is(err, os.ErrNotExist) {
 				modifiedFile.Action = model.Add
 				fileDiff[modifiedFile.File.GetFileMeta().GetName()] = modifiedFile
@@ -586,6 +587,8 @@ func (fms *FileManagerService) UpdateCurrentFilesOnDisk(
 	return nil
 }
 
+// seems to be a control flag, avoid control coupling
+// nolint: revive
 func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.File, referenced bool) (err error) {
 	currentManifestFiles, _, readError := fms.manifestFile()
 	if readError != nil && !errors.Is(readError, os.ErrNotExist) {
