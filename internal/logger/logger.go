@@ -13,7 +13,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/pkg/id"
 )
 
@@ -44,11 +43,11 @@ type (
 	}
 )
 
-func New(params config.Log) *slog.Logger {
+func New(logPath, level string) *slog.Logger {
 	handler := slog.NewTextHandler(
-		getLogWriter(params.Path),
+		getLogWriter(logPath),
 		&slog.HandlerOptions{
-			Level: GetLogLevel(params.Level),
+			Level: GetLogLevel(level),
 		},
 	)
 

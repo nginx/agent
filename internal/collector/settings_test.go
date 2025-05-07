@@ -68,12 +68,16 @@ func TestTemplateWrite(t *testing.T) {
 		Server: &config.ServerConfig{
 			Host: "localhost",
 			Port: 9876,
-			Type: 0,
+			Type: config.Grpc,
 		},
 		TLS: nil,
 	}
 
 	cfg.Collector.Exporters.Debug = &config.DebugExporter{}
+
+	cfg.Collector.Receivers.ContainerMetrics = &config.ContainerMetricsReceiver{
+		CollectionInterval: time.Second,
+	}
 
 	cfg.Collector.Receivers.HostMetrics = &config.HostMetrics{
 		CollectionInterval: time.Minute,
@@ -106,7 +110,7 @@ func TestTemplateWrite(t *testing.T) {
 		Server: &config.ServerConfig{
 			Host: "localhost",
 			Port: 4317,
-			Type: 0,
+			Type: config.Grpc,
 		},
 		OtlpTLSConfig: &config.OtlpTLSConfig{
 			Cert: "/tmp/cert.pem",
@@ -170,4 +174,20 @@ func TestTemplateWrite(t *testing.T) {
 
 	// Convert to string for human readable error messages.
 	assert.Equal(t, string(expected), string(actual))
+}
+
+func TestFilePermissions(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	cfg := types.AgentConfig()
+	actualConfPath := filepath.Join(tmpDir, "nginx-agent-otelcol-test.yaml")
+	cfg.Collector.ConfigPath = actualConfPath
+
+	err := writeCollectorConfig(cfg.Collector)
+	require.NoError(t, err)
+
+	// Check file permissions are 600
+	fileInfo, err := os.Stat(actualConfPath)
+	require.NoError(t, err)
+	assert.Equal(t, os.FileMode(0o600), fileInfo.Mode())
 }

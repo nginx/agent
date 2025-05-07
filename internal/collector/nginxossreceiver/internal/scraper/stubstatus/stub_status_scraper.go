@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/nginxinc/nginx-prometheus-exporter/client"
@@ -17,7 +18,6 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
-	"go.opentelemetry.io/collector/receiver/scraperhelper"
 	"go.uber.org/zap"
 
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/config"
@@ -25,15 +25,16 @@ import (
 )
 
 type NginxStubStatusScraper struct {
-	httpClient *http.Client
-	client     *client.NginxClient
-	cfg        *config.Config
-	mb         *metadata.MetricsBuilder
-	rb         *metadata.ResourceBuilder
-	settings   receiver.Settings
+	logger           *zap.Logger
+	httpClient       *http.Client
+	client           *client.NginxClient
+	cfg              *config.Config
+	mb               *metadata.MetricsBuilder
+	rb               *metadata.ResourceBuilder
+	settings         receiver.Settings
+	init             sync.Once
+	previousRequests int
 }
-
-var _ scraperhelper.Scraper = (*NginxStubStatusScraper)(nil)
 
 func NewScraper(
 	settings receiver.Settings,
@@ -50,6 +51,7 @@ func NewScraper(
 		cfg:      cfg,
 		mb:       mb,
 		rb:       rb,
+		logger:   logger,
 	}
 }
 
@@ -57,7 +59,9 @@ func (s *NginxStubStatusScraper) ID() component.ID {
 	return component.NewID(metadata.Type)
 }
 
+// nolint: unparam
 func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) error {
+	s.logger.Info("Starting NGINX stub status scraper")
 	httpClient := http.DefaultClient
 	httpClient.Timeout = s.cfg.ClientConfig.Timeout
 
@@ -73,11 +77,30 @@ func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) erro
 	return nil
 }
 
+// nolint: unparam
 func (s *NginxStubStatusScraper) Shutdown(_ context.Context) error {
+	s.logger.Info("Shutting down NGINX stub status scraper")
 	return nil
 }
 
 func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error) {
+	// s.init.Do is ran only once, it is only ran the first time Scrape is called to set the previous requests
+	// metric value
+	s.init.Do(func() {
+		// Init client in scrape method in case there are transient errors in the constructor.
+		if s.client == nil {
+			s.client = client.NewNginxClient(s.httpClient, s.cfg.APIDetails.URL)
+		}
+
+		stats, err := s.client.GetStubStats()
+		if err != nil {
+			s.settings.Logger.Error("Failed to get stats from stub status API", zap.Error(err))
+			return
+		}
+
+		s.previousRequests = int(stats.Requests)
+	})
+
 	// Init client in scrape method in case there are transient errors in the constructor.
 	if s.client == nil {
 		s.client = client.NewNginxClient(s.httpClient, s.cfg.APIDetails.URL)
@@ -85,7 +108,7 @@ func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error
 
 	stats, err := s.client.GetStubStats()
 	if err != nil {
-		s.settings.Logger.Error("fetch nginx stats", zap.Error(err))
+		s.settings.Logger.Error("Failed to get stats from stub status API", zap.Error(err))
 		return pmetric.Metrics{}, err
 	}
 
@@ -96,6 +119,9 @@ func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error
 	now := pcommon.NewTimestampFromTime(time.Now())
 
 	s.mb.RecordNginxHTTPRequestsDataPoint(now, stats.Requests)
+
+	s.mb.RecordNginxHTTPRequestCountDataPoint(now, int64(int(stats.Requests)-s.previousRequests))
+	s.previousRequests = int(stats.Requests)
 
 	s.mb.RecordNginxHTTPConnectionsDataPoint(
 		now,

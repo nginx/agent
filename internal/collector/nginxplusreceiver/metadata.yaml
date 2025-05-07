@@ -7,7 +7,7 @@ status:
     beta: [metrics]
   distributions: [contrib]
   codeowners:
-    active: [apgralG, dhurley, craigell, sean-breen, Rashmiti, CVanF5]
+    active: [aphralG, dhurley, craigell, sean-breen, Rashmiti, CVanF5]
 
 resource_attributes:
   instance.id:
@@ -169,7 +169,7 @@ metrics:
       - nginx.connections.outcome
   nginx.http.request.count:
     enabled: true
-    description: The current number of client requests received from clients.
+    description: The total number of client requests received, since the last collection interval.
     gauge:
       value_type: int
     unit: "requests"
@@ -267,7 +267,7 @@ metrics:
       - nginx.zone.type
   nginx.http.requests:
     enabled: true
-    description: The total number of client requests received from clients.
+    description: The total number of client requests received, since NGINX was last started or reloaded.
     sum:
       value_type: int
       monotonic: true
@@ -278,7 +278,7 @@ metrics:
       - nginx.zone.type
   nginx.http.responses:
     enabled: true
-    description: The total number of HTTP responses sent to clients.
+    description: The total number of HTTP responses sent to clients, since NGINX was last started or reloaded.
     sum:
       value_type: int
       monotonic: true
@@ -287,9 +287,19 @@ metrics:
     attributes:
       - nginx.zone.name
       - nginx.zone.type
+  nginx.http.response.count:
+    enabled: true
+    description: The total number of HTTP responses sent to clients since the last collection interval, grouped by status code range.
+    gauge:
+      value_type: int
+    unit: "responses"
+    attributes:
+      - nginx.status_range
+      - nginx.zone.name
+      - nginx.zone.type
   nginx.http.response.status:
     enabled: true
-    description: The number of responses, grouped by status code range.
+    description: The total number of responses since NGINX was last started or reloaded, grouped by status code range.
     sum:
       value_type: int
       monotonic: true

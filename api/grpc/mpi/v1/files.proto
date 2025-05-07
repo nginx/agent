@@ -126,23 +126,8 @@ message FileOverview {
 message File {
     // Meta information about the file, the name (including path) and hash
     FileMeta file_meta = 1;
-    // Action enumeration
-    enum FileAction {
-        // Default value, no action
-        FILE_ACTION_UNSPECIFIED = 0;
-        // No changes to the file
-        FILE_ACTION_UNCHANGED = 1;
-        // New file
-        FILE_ACTION_ADD = 2;
-        // Updated file
-        FILE_ACTION_UPDATE = 3;
-        // File deleted
-        FILE_ACTION_DELETE = 4;
-    }
-    // Optional action
-    optional FileAction action = 2;
     // Unmanaged files will not be modified
-    bool unmanaged = 3;
+    bool unmanaged = 2;
 }
 
 // Represents the get file request

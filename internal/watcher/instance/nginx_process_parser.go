@@ -103,16 +103,18 @@ func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*nginxproc
 			continue
 		}
 
-		// proc is a master process
-		nginxInfo, err := npp.getInfo(ctx, proc)
-		if err != nil {
-			slog.DebugContext(ctx, "Unable to get NGINX info", "pid", proc.PID, "error", err)
+		// check if proc is a master process, process is not a worker but could be cache manager etc
+		if proc.IsMaster() {
+			nginxInfo, err := npp.getInfo(ctx, proc)
+			if err != nil {
+				slog.DebugContext(ctx, "Unable to get NGINX info", "pid", proc.PID, "error", err)
 
-			continue
+				continue
+			}
+
+			instance := convertInfoToInstance(*nginxInfo)
+			instanceMap[instance.GetInstanceMeta().GetInstanceId()] = instance
 		}
-
-		instance := convertInfoToInstance(*nginxInfo)
-		instanceMap[instance.GetInstanceMeta().GetInstanceId()] = instance
 	}
 
 	for _, instance := range instanceMap {

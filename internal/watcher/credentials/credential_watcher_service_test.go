@@ -25,19 +25,7 @@ func TestCredentialWatcherService_TestNewCredentialWatcherService(t *testing.T) 
 	credentialWatcherService := NewCredentialWatcherService(types.AgentConfig())
 
 	assert.Empty(t, credentialWatcherService.filesBeingWatched)
-	assert.True(t, credentialWatcherService.enabled.Load())
 	assert.False(t, credentialWatcherService.filesChanged.Load())
-}
-
-func TestCredentialWatcherService_SetEnabled(t *testing.T) {
-	credentialWatcherService := NewCredentialWatcherService(types.AgentConfig())
-	assert.True(t, credentialWatcherService.enabled.Load())
-
-	credentialWatcherService.SetEnabled(false)
-	assert.False(t, credentialWatcherService.enabled.Load())
-
-	credentialWatcherService.SetEnabled(true)
-	assert.True(t, credentialWatcherService.enabled.Load())
 }
 
 func TestCredentialWatcherService_Watch(t *testing.T) {
@@ -101,13 +89,6 @@ func TestCredentialWatcherService_addWatcher(t *testing.T) {
 	_, err = os.Create(name)
 	require.NoError(t, err)
 	defer os.Remove(name)
-
-	cws.enabled.Store(false)
-
-	cws.addWatcher(ctx, name)
-	require.False(t, cws.isWatching(name))
-
-	cws.enabled.Store(true)
 
 	cws.addWatcher(ctx, name)
 	require.True(t, cws.isWatching(name))
