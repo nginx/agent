@@ -202,7 +202,7 @@ func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	data, readErr := os.ReadFile(filePath)
 	require.NoError(t, readErr)
 	assert.Equal(t, fileContent, data)
-	assert.Equal(t, fileManagerService.fileActions[filePath], overview.GetFiles()[0])
+	assert.Equal(t, fileManagerService.fileActions[filePath].File, overview.GetFiles()[0])
 	assert.Equal(t, 1, fakeFileServiceClient.GetFileCallCount())
 }
 
@@ -248,7 +248,7 @@ func TestFileManagerService_ConfigApply_Add_LargeFile(t *testing.T) {
 	data, readErr := os.ReadFile(filePath)
 	require.NoError(t, readErr)
 	assert.Equal(t, fileContent, data)
-	assert.Equal(t, fileManagerService.fileActions[filePath], overview.GetFiles()[0])
+	assert.Equal(t, fileManagerService.fileActions[filePath].File, overview.GetFiles()[0])
 	assert.Equal(t, 0, fakeFileServiceClient.GetFileCallCount())
 	assert.Equal(t, 53, int(fakeServerStreamingClient.currentChunkID))
 }
