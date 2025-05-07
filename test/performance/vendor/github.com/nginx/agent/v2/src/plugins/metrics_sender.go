@@ -9,32 +9,35 @@ package plugins
 
 import (
 	"context"
-	"strings"
-
-	"github.com/nginx/agent/sdk/v2"
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
 	models "github.com/nginx/agent/sdk/v2/proto/events"
 	"github.com/nginx/agent/v2/src/core"
+	"github.com/nginx/agent/v2/src/core/config"
+	"strings"
+	"sync"
 
 	log "github.com/sirupsen/logrus"
 	"go.uber.org/atomic"
 )
 
 type MetricsSender struct {
-	reporter    client.MetricReporter
-	pipeline    core.MessagePipeInterface
-	ctx         context.Context
-	started     *atomic.Bool
-	readyToSend *atomic.Bool
+	reporter      client.MetricReporter
+	pipeline      core.MessagePipeInterface
+	ctx           context.Context
+	started       *atomic.Bool
+	readyToSend   *atomic.Bool
+	readyToSendMu sync.RWMutex
+	conf          *config.Config
 }
 
-func NewMetricsSender(reporter client.MetricReporter) *MetricsSender {
+func NewMetricsSender(reporter client.MetricReporter, config *config.Config) *MetricsSender {
 	return &MetricsSender{
 		reporter:    reporter,
 		started:     atomic.NewBool(false),
 		readyToSend: atomic.NewBool(false),
+		conf:        config,
 	}
 }
 
@@ -50,8 +53,10 @@ func (r *MetricsSender) Init(pipeline core.MessagePipeInterface) {
 
 func (r *MetricsSender) Close() {
 	log.Info("MetricsSender is wrapping up")
+	r.readyToSendMu.Lock()
 	r.started.Store(false)
 	r.readyToSend.Store(false)
+	defer r.readyToSendMu.Unlock()
 }
 
 func (r *MetricsSender) Info() *core.Info {
@@ -60,10 +65,16 @@ func (r *MetricsSender) Info() *core.Info {
 
 func (r *MetricsSender) Process(msg *core.Message) {
 	if msg.Exact(core.AgentConnected) {
-		r.readyToSend.Toggle()
-		return
+		if r.conf.Features != nil && r.isFeatureEnabled(r.conf.Features) {
+			r.readyToSendMu.Lock()
+			r.readyToSend.Store(true)
+			r.readyToSendMu.Unlock()
+		} else {
+			r.readyToSendMu.Lock()
+			r.readyToSend.Store(false)
+			r.readyToSendMu.Unlock()
+		}
 	}
-
 	if msg.Exact(core.CommMetrics) {
 		payloads, ok := msg.Data().([]core.Payload)
 		if !ok {
@@ -71,10 +82,13 @@ func (r *MetricsSender) Process(msg *core.Message) {
 			return
 		}
 		for _, p := range payloads {
+			r.readyToSendMu.RLock()
 			if !r.readyToSend.Load() {
+				log.Debugf("metrics_sender is not ready to send the metrics")
+				r.readyToSendMu.RUnlock()
 				continue
 			}
-
+			r.readyToSendMu.Unlock()
 			switch report := p.(type) {
 			case *proto.MetricsReport:
 				message := client.MessageFromMetrics(report)
@@ -99,9 +113,9 @@ func (r *MetricsSender) Process(msg *core.Message) {
 			}
 		}
 	} else if msg.Exact(core.AgentConfigChanged) {
-		switch config := msg.Data().(type) {
+		switch agentConfig := msg.Data().(type) {
 		case *proto.AgentConfig:
-			r.metricSenderBackoff(config)
+			r.metricSenderBackoff(agentConfig)
 		default:
 			log.Warnf("metrics sender expected %T type, but got: %T", &proto.AgentConfig{}, msg.Data())
 		}
@@ -110,7 +124,17 @@ func (r *MetricsSender) Process(msg *core.Message) {
 
 func (r *MetricsSender) metricSenderBackoff(agentConfig *proto.AgentConfig) {
 	log.Debugf("update metric reporter client configuration to %+v", agentConfig)
-
+	if agentConfig.Details.Features != nil {
+		if r.isFeatureEnabled(agentConfig.Details.Features) {
+			r.readyToSendMu.Lock()
+			r.readyToSend.Store(true)
+			r.readyToSendMu.Unlock()
+		} else {
+			r.readyToSendMu.Lock()
+			r.readyToSend.Store(false)
+			r.readyToSendMu.Unlock()
+		}
+	}
 	if agentConfig.GetDetails() == nil || agentConfig.GetDetails().GetServer() == nil || agentConfig.GetDetails().GetServer().GetBackoff() == nil {
 		log.Debug("not updating metric reporter client configuration as new Agent backoff settings is nil")
 		return
@@ -122,4 +146,17 @@ func (r *MetricsSender) metricSenderBackoff(agentConfig *proto.AgentConfig) {
 
 func (r *MetricsSender) Subscriptions() []string {
 	return []string{core.CommMetrics, core.AgentConnected, core.AgentConfigChanged}
+}
+
+func (r *MetricsSender) isFeatureEnabled(features []string) bool {
+	var isFeatureEnabled bool
+	if features != nil {
+		for _, feature := range features {
+			if feature == agent_config.FeatureMetricsSender {
+				isFeatureEnabled = true
+				break
+			}
+		}
+	}
+	return isFeatureEnabled
 }

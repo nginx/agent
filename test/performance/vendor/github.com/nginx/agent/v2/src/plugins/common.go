@@ -36,7 +36,7 @@ func LoadPlugins(commander client.Commander, binary core.NginxBinary, env core.E
 
 	if (loadedConfig.IsFeatureEnabled(agent_config.FeatureMetrics) || loadedConfig.IsFeatureEnabled(agent_config.FeatureMetricsSender)) && reporter != nil {
 		corePlugins = append(corePlugins,
-			NewMetricsSender(reporter),
+			NewMetricsSender(reporter, loadedConfig),
 		)
 	}
 
