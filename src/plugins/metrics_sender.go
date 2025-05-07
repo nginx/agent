@@ -9,9 +9,10 @@ package plugins
 
 import (
 	"context"
-	"github.com/nginx/agent/sdk/v2"
 	"strings"
 	"sync"
+
+	"github.com/nginx/agent/sdk/v2"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/client"

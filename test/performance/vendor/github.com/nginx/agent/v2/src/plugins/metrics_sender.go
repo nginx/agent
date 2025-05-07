@@ -13,6 +13,7 @@ import (
 	"sync"
 
 	"github.com/nginx/agent/sdk/v2"
+
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -83,14 +84,13 @@ func (r *MetricsSender) Process(msg *core.Message) {
 			log.Warnf("Failed to coerce Message to []Payload: %v", msg.Data())
 			return
 		}
+		defer r.readyToSendMu.RUnlock()
 		for _, p := range payloads {
 			r.readyToSendMu.RLock()
 			if !r.readyToSend.Load() {
 				log.Debugf("metrics_sender is not ready to send the metrics")
-				r.readyToSendMu.RUnlock()
 				continue
 			}
-			r.readyToSendMu.Unlock()
 			switch report := p.(type) {
 			case *proto.MetricsReport:
 				message := client.MessageFromMetrics(report)
