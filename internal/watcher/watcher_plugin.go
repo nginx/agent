@@ -11,6 +11,8 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/nginx/agent/v3/internal/model"
+
 	"github.com/nginx/agent/v3/internal/grpc"
 
 	"github.com/nginx/agent/v3/internal/watcher/credentials"
@@ -55,8 +57,9 @@ type (
 			instancesChannel chan<- instance.InstanceUpdatesMessage,
 			nginxConfigContextChannel chan<- instance.NginxConfigContextMessage,
 		)
-		ReparseConfig(ctx context.Context, instanceID string)
+		HandleNginxConfigContextUpdate(ctx context.Context, instanceID string, configContext *model.NginxConfigContext)
 		ReparseConfigs(ctx context.Context)
+		SetEnabled(enabled bool)
 	}
 
 	credentialWatcherServiceInterface interface {
@@ -64,7 +67,6 @@ type (
 			ctx context.Context,
 			credentialUpdateChannel chan<- credentials.CredentialUpdateMessage,
 		)
-		SetEnabled(enabled bool)
 	}
 )
 
@@ -156,6 +158,7 @@ func (*Watcher) Subscriptions() []string {
 }
 
 func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message) {
+	slog.Info("Watcher plugin received ConfigApplyRequest event")
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest",
@@ -179,18 +182,27 @@ func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message
 	w.instancesWithConfigApplyInProgress = append(w.instancesWithConfigApplyInProgress, instanceID)
 
 	w.fileWatcherService.SetEnabled(false)
+	w.instanceWatcherService.SetEnabled(false)
 }
 
 func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message) {
-	response, ok := msg.Data.(*mpi.DataPlaneResponse)
+	successMessage, ok := msg.Data.(*model.ConfigApplySuccess)
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.DataPlaneResponse", "payload",
+		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplySuccess", "payload",
 			msg.Data, "topic", msg.Topic)
 
 		return
 	}
 
-	instanceID := response.GetInstanceId()
+	instanceID := successMessage.DataPlaneResponse.GetInstanceId()
+
+	// If the config apply had no changes to any files, it is results in a ConfigApplySuccessfulTopic with an empty
+	// configContext being sent, there is no need to reparse the config as no change has occurred.
+	if successMessage.ConfigContext.InstanceID == "" {
+		slog.DebugContext(ctx, "NginxConfigContext is empty, no need to reparse config")
+		return
+	}
+	w.instanceWatcherService.HandleNginxConfigContextUpdate(ctx, instanceID, successMessage.ConfigContext)
 
 	w.watcherMutex.Lock()
 	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
@@ -202,8 +214,7 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 
 	w.fileWatcherService.SetEnabled(true)
 	w.watcherMutex.Unlock()
-
-	w.instanceWatcherService.ReparseConfig(ctx, instanceID)
+	w.instanceWatcherService.SetEnabled(true)
 }
 
 func (w *Watcher) handleHealthRequest(ctx context.Context) {
@@ -232,6 +243,7 @@ func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Messag
 		},
 	)
 
+	w.instanceWatcherService.SetEnabled(true)
 	w.fileWatcherService.SetEnabled(true)
 }
 

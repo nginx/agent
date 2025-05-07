@@ -163,7 +163,7 @@ func TestResource_Process_Apply(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
-			fakeResourceService.ApplyConfigReturns(test.applyErr)
+			fakeResourceService.ApplyConfigReturns(&model.NginxConfigContext{}, test.applyErr)
 			messagePipe := busfakes.NewFakeMessagePipe()
 
 			resourcePlugin := NewResource(types.AgentConfig())
@@ -862,7 +862,7 @@ func TestResource_Process_Rollback(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
-			fakeResourceService.ApplyConfigReturns(test.rollbackErr)
+			fakeResourceService.ApplyConfigReturns(&model.NginxConfigContext{}, test.rollbackErr)
 			messagePipe := busfakes.NewFakeMessagePipe()
 
 			resourcePlugin := NewResource(types.AgentConfig())

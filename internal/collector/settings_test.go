@@ -75,6 +75,10 @@ func TestTemplateWrite(t *testing.T) {
 
 	cfg.Collector.Exporters.Debug = &config.DebugExporter{}
 
+	cfg.Collector.Receivers.ContainerMetrics = &config.ContainerMetricsReceiver{
+		CollectionInterval: time.Second,
+	}
+
 	cfg.Collector.Receivers.HostMetrics = &config.HostMetrics{
 		CollectionInterval: time.Minute,
 		InitialDelay:       time.Second,

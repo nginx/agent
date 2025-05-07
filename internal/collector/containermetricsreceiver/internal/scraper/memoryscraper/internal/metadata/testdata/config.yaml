@@ -1,0 +1,27 @@
+default:
+all_set:
+  metrics:
+    system.memory.usage:
+      enabled: true
+  resource_attributes:
+    resource.id:
+      enabled: true
+none_set:
+  metrics:
+    system.memory.usage:
+      enabled: false
+  resource_attributes:
+    resource.id:
+      enabled: false
+filter_set_include:
+  resource_attributes:
+    resource.id:
+      enabled: true
+      metrics_include:
+        - regexp: ".*"
+filter_set_exclude:
+  resource_attributes:
+    resource.id:
+      enabled: true
+      metrics_exclude:
+        - strict: "resource.id-val"

@@ -307,7 +307,7 @@ func TestFileManagerService_ConfigApply_Update(t *testing.T) {
 	require.NoError(t, readErr)
 	assert.Equal(t, fileContent, data)
 	assert.Equal(t, fileManagerService.rollbackFileContents[tempFile.Name()], previousFileContent)
-	assert.Equal(t, fileManagerService.fileActions[tempFile.Name()], overview.GetFiles()[0])
+	assert.Equal(t, fileManagerService.fileActions[tempFile.Name()].File, overview.GetFiles()[0])
 }
 
 func TestFileManagerService_ConfigApply_Delete(t *testing.T) {
@@ -359,7 +359,7 @@ func TestFileManagerService_ConfigApply_Delete(t *testing.T) {
 	require.NoError(t, err)
 	assert.NoFileExists(t, tempFile.Name())
 	assert.Equal(t, fileManagerService.rollbackFileContents[tempFile.Name()], fileContent)
-	assert.Equal(t, fileManagerService.fileActions[tempFile.Name()], filesOnDisk[tempFile.Name()])
+	assert.Equal(t, fileManagerService.fileActions[tempFile.Name()].File, filesOnDisk[tempFile.Name()])
 	assert.Equal(t, model.OK, writeStatus)
 }
 
@@ -376,7 +376,6 @@ func TestFileManagerService_checkAllowedDirectory(t *testing.T) {
 				Permissions:  "",
 				Size:         0,
 			},
-			Action: nil,
 		},
 	}
 
@@ -389,7 +388,6 @@ func TestFileManagerService_checkAllowedDirectory(t *testing.T) {
 				Permissions:  "",
 				Size:         0,
 			},
-			Action: nil,
 		},
 	}
 
@@ -403,14 +401,16 @@ func TestFileManagerService_ClearCache(t *testing.T) {
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
 
-	filesCache := map[string]*mpi.File{
+	filesCache := map[string]*model.FileCache{
 		"file/path/test.conf": {
-			FileMeta: &mpi.FileMeta{
-				Name:         "file/path/test.conf",
-				Hash:         "",
-				ModifiedTime: nil,
-				Permissions:  "",
-				Size:         0,
+			File: &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name:         "file/path/test.conf",
+					Hash:         "",
+					ModifiedTime: nil,
+					Permissions:  "",
+					Size:         0,
+				},
 			},
 		},
 	}
@@ -434,11 +434,6 @@ func TestFileManagerService_Rollback(t *testing.T) {
 	ctx := context.Background()
 	tempDir := t.TempDir()
 
-	addAction := mpi.File_FILE_ACTION_ADD
-	deleteAction := mpi.File_FILE_ACTION_DELETE
-	updateAction := mpi.File_FILE_ACTION_UPDATE
-	unspecifiedAction := mpi.File_FILE_ACTION_UNSPECIFIED
-
 	deleteFilePath := filepath.Join(tempDir, "nginx_delete.conf")
 
 	newFileContent := []byte("location /test {\n    return 200 \"This config needs to be rolled back\\n\";\n}")
@@ -457,49 +452,59 @@ func TestFileManagerService_Rollback(t *testing.T) {
 	manifestFilePath = manifestDirPath + "/manifest.json"
 	helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
 
-	filesCache := map[string]*mpi.File{
+	filesCache := map[string]*model.FileCache{
 		addFile.Name(): {
-			FileMeta: &mpi.FileMeta{
-				Name:         addFile.Name(),
-				Hash:         fileHash,
-				ModifiedTime: timestamppb.Now(),
-				Permissions:  "0777",
-				Size:         0,
+			File: &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name:         addFile.Name(),
+					Hash:         fileHash,
+					ModifiedTime: timestamppb.Now(),
+					Permissions:  "0777",
+					Size:         0,
+				},
+				Unmanaged: false,
 			},
-			Action: &addAction,
+			Action: model.Add,
 		},
 		updateFile.Name(): {
-			FileMeta: &mpi.FileMeta{
-				Name:         updateFile.Name(),
-				Hash:         fileHash,
-				ModifiedTime: timestamppb.Now(),
-				Permissions:  "0777",
-				Size:         0,
+			File: &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name:         updateFile.Name(),
+					Hash:         fileHash,
+					ModifiedTime: timestamppb.Now(),
+					Permissions:  "0777",
+					Size:         0,
+				},
+				Unmanaged: false,
 			},
-			Action: &updateAction,
+			Action: model.Update,
 		},
 		deleteFilePath: {
-			FileMeta: &mpi.FileMeta{
-				Name:         deleteFilePath,
-				Hash:         "",
-				ModifiedTime: timestamppb.Now(),
-				Permissions:  "0777",
-				Size:         0,
+			File: &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name:         deleteFilePath,
+					Hash:         "",
+					ModifiedTime: timestamppb.Now(),
+					Permissions:  "0777",
+					Size:         0,
+				},
+				Unmanaged: false,
 			},
-			Action: &deleteAction,
+			Action: model.Delete,
 		},
 		"unspecified/file/test.conf": {
-			FileMeta: &mpi.FileMeta{
-				Name:         "unspecified/file/test.conf",
-				Hash:         "",
-				ModifiedTime: timestamppb.Now(),
-				Permissions:  "0777",
-				Size:         0,
+			File: &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name:         "unspecified/file/test.conf",
+					Hash:         "",
+					ModifiedTime: timestamppb.Now(),
+					Permissions:  "0777",
+					Size:         0,
+				},
+				Unmanaged: false,
 			},
-			Action: &unspecifiedAction,
 		},
 	}
-
 	fileContentCache := map[string][]byte{
 		deleteFilePath:    oldFileContent,
 		updateFile.Name(): oldFileContent,
@@ -529,11 +534,6 @@ func TestFileManagerService_Rollback(t *testing.T) {
 }
 
 func TestFileManagerService_DetermineFileActions(t *testing.T) {
-	// Go doesn't allow address of numeric constant
-	addAction := mpi.File_FILE_ACTION_ADD
-	updateAction := mpi.File_FILE_ACTION_UPDATE
-	deleteAction := mpi.File_FILE_ACTION_DELETE
-
 	tempDir := os.TempDir()
 
 	deleteTestFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx_delete.conf")
@@ -563,24 +563,32 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 
 	tests := []struct {
 		expectedError   error
-		modifiedFiles   map[string]*mpi.File
+		modifiedFiles   map[string]*model.FileCache
 		currentFiles    map[string]*mpi.File
-		expectedCache   map[string]*mpi.File
+		expectedCache   map[string]*model.FileCache
 		expectedContent map[string][]byte
 		name            string
 	}{
 		{
 			name: "Test 1: Add, Update & Delete Files",
-			modifiedFiles: map[string]*mpi.File{
+			modifiedFiles: map[string]*model.FileCache{
 				addTestFileName: {
-					FileMeta: protos.FileMeta(addTestFileName, files.GenerateHash(fileContent)),
+					File: &mpi.File{
+						FileMeta:  protos.FileMeta(addTestFileName, files.GenerateHash(fileContent)),
+						Unmanaged: false,
+					},
 				},
 				updateTestFile.Name(): {
-					FileMeta: protos.FileMeta(updateTestFile.Name(), files.GenerateHash(updatedFileContent)),
+					File: &mpi.File{
+						FileMeta:  protos.FileMeta(updateTestFile.Name(), files.GenerateHash(updatedFileContent)),
+						Unmanaged: false,
+					},
 				},
 				unmanagedFile.Name(): {
-					FileMeta:  protos.FileMeta(unmanagedFile.Name(), files.GenerateHash(unmanagedFileContent)),
-					Unmanaged: true,
+					File: &mpi.File{
+						FileMeta:  protos.FileMeta(unmanagedFile.Name(), files.GenerateHash(unmanagedFileContent)),
+						Unmanaged: true,
+					},
 				},
 			},
 			currentFiles: map[string]*mpi.File{
@@ -595,18 +603,27 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 					Unmanaged: true,
 				},
 			},
-			expectedCache: map[string]*mpi.File{
+			expectedCache: map[string]*model.FileCache{
 				deleteTestFile.Name(): {
-					FileMeta: protos.ManifestFileMeta(deleteTestFile.Name(), files.GenerateHash(fileContent)),
-					Action:   &deleteAction,
+					File: &mpi.File{
+						FileMeta:  protos.ManifestFileMeta(deleteTestFile.Name(), files.GenerateHash(fileContent)),
+						Unmanaged: false,
+					},
+					Action: model.Delete,
 				},
 				updateTestFile.Name(): {
-					FileMeta: protos.FileMeta(updateTestFile.Name(), files.GenerateHash(updatedFileContent)),
-					Action:   &updateAction,
+					File: &mpi.File{
+						FileMeta:  protos.FileMeta(updateTestFile.Name(), files.GenerateHash(updatedFileContent)),
+						Unmanaged: false,
+					},
+					Action: model.Update,
 				},
 				addTestFileName: {
-					FileMeta: protos.FileMeta(addTestFileName, files.GenerateHash(fileContent)),
-					Action:   &addAction,
+					File: &mpi.File{
+						FileMeta:  protos.FileMeta(addTestFileName, files.GenerateHash(fileContent)),
+						Unmanaged: false,
+					},
+					Action: model.Add,
 				},
 			},
 			expectedContent: map[string][]byte{
@@ -617,15 +634,21 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 		},
 		{
 			name: "Test 2: Files same as on disk",
-			modifiedFiles: map[string]*mpi.File{
+			modifiedFiles: map[string]*model.FileCache{
 				addTestFileName: {
-					FileMeta: protos.FileMeta(addTestFileName, files.GenerateHash(fileContent)),
+					File: &mpi.File{
+						FileMeta: protos.FileMeta(addTestFileName, files.GenerateHash(fileContent)),
+					},
 				},
 				updateTestFile.Name(): {
-					FileMeta: protos.FileMeta(updateTestFile.Name(), files.GenerateHash(fileContent)),
+					File: &mpi.File{
+						FileMeta: protos.FileMeta(updateTestFile.Name(), files.GenerateHash(fileContent)),
+					},
 				},
 				deleteTestFile.Name(): {
-					FileMeta: protos.FileMeta(deleteTestFile.Name(), files.GenerateHash(fileContent)),
+					File: &mpi.File{
+						FileMeta: protos.FileMeta(deleteTestFile.Name(), files.GenerateHash(fileContent)),
+					},
 				},
 			},
 			currentFiles: map[string]*mpi.File{
@@ -639,7 +662,7 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 					FileMeta: protos.FileMeta(addTestFileName, files.GenerateHash(fileContent)),
 				},
 			},
-			expectedCache:   make(map[string]*mpi.File),
+			expectedCache:   make(map[string]*model.FileCache),
 			expectedContent: make(map[string][]byte),
 			expectedError:   nil,
 		},
@@ -664,11 +687,6 @@ func TestFileManagerService_fileActions(t *testing.T) {
 	ctx := context.Background()
 	tempDir := t.TempDir()
 
-	addAction := mpi.File_FILE_ACTION_ADD
-	deleteAction := mpi.File_FILE_ACTION_DELETE
-	updateAction := mpi.File_FILE_ACTION_UPDATE
-	unspecifiedAction := mpi.File_FILE_ACTION_UNSPECIFIED
-
 	addFilePath := filepath.Join(tempDir, "nginx_add.conf")
 	unspecifiedFilePath := "unspecified/file/test.conf"
 
@@ -684,46 +702,53 @@ func TestFileManagerService_fileActions(t *testing.T) {
 	_, writeErr = updateFile.Write(oldFileContent)
 	require.NoError(t, writeErr)
 
-	filesCache := map[string]*mpi.File{
+	filesCache := map[string]*model.FileCache{
 		addFilePath: {
-			FileMeta: &mpi.FileMeta{
-				Name:         addFilePath,
-				Hash:         fileHash,
-				ModifiedTime: timestamppb.Now(),
-				Permissions:  "0777",
-				Size:         0,
+			File: &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name:         addFilePath,
+					Hash:         fileHash,
+					ModifiedTime: timestamppb.Now(),
+					Permissions:  "0777",
+					Size:         0,
+				},
 			},
-			Action: &addAction,
+			Action: model.Add,
 		},
 		updateFile.Name(): {
-			FileMeta: &mpi.FileMeta{
-				Name:         updateFile.Name(),
-				Hash:         fileHash,
-				ModifiedTime: timestamppb.Now(),
-				Permissions:  "0777",
-				Size:         0,
+			File: &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name:         updateFile.Name(),
+					Hash:         fileHash,
+					ModifiedTime: timestamppb.Now(),
+					Permissions:  "0777",
+					Size:         0,
+				},
 			},
-			Action: &updateAction,
+			Action: model.Update,
 		},
 		deleteFile.Name(): {
-			FileMeta: &mpi.FileMeta{
-				Name:         deleteFile.Name(),
-				Hash:         "",
-				ModifiedTime: timestamppb.Now(),
-				Permissions:  "0777",
-				Size:         0,
+			File: &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name:         deleteFile.Name(),
+					Hash:         "",
+					ModifiedTime: timestamppb.Now(),
+					Permissions:  "0777",
+					Size:         0,
+				},
 			},
-			Action: &deleteAction,
+			Action: model.Delete,
 		},
 		unspecifiedFilePath: {
-			FileMeta: &mpi.FileMeta{
-				Name:         unspecifiedFilePath,
-				Hash:         "",
-				ModifiedTime: timestamppb.Now(),
-				Permissions:  "0777",
-				Size:         0,
+			File: &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name:         unspecifiedFilePath,
+					Hash:         "",
+					ModifiedTime: timestamppb.Now(),
+					Permissions:  "0777",
+					Size:         0,
+				},
 			},
-			Action: &unspecifiedAction,
 		},
 	}
 
