@@ -9,14 +9,16 @@ package plugins
 
 import (
 	"context"
+	"github.com/nginx/agent/sdk/v2"
+	"strings"
+	"sync"
+
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
 	models "github.com/nginx/agent/sdk/v2/proto/events"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
-	"strings"
-	"sync"
 
 	log "github.com/sirupsen/logrus"
 	"go.uber.org/atomic"
@@ -81,14 +83,13 @@ func (r *MetricsSender) Process(msg *core.Message) {
 			log.Warnf("Failed to coerce Message to []Payload: %v", msg.Data())
 			return
 		}
+		defer r.readyToSendMu.RUnlock()
 		for _, p := range payloads {
 			r.readyToSendMu.RLock()
 			if !r.readyToSend.Load() {
 				log.Debugf("metrics_sender is not ready to send the metrics")
-				r.readyToSendMu.RUnlock()
 				continue
 			}
-			r.readyToSendMu.Unlock()
 			switch report := p.(type) {
 			case *proto.MetricsReport:
 				message := client.MessageFromMetrics(report)

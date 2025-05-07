@@ -130,7 +130,7 @@ func TestNAPMonitoring(t *testing.T) {
 		return
 	}
 
-	metricsSender := plugins.NewMetricsSender(reporter)
+	metricsSender := plugins.NewMetricsSender(reporter, &config.Config{ClientID: "12345", Features: []string{"metrics-sender"}})
 
 	env := tutils.NewMockEnvironment()
 	env.On("NewHostInfo", testifyMock.Anything, testifyMock.Anything, testifyMock.Anything).Return(&sdkPb.HostInfo{

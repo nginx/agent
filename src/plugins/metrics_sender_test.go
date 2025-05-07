@@ -10,10 +10,11 @@ package plugins
 import (
 	"context"
 	"errors"
-	"github.com/nginx/agent/v2/src/core/config"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/nginx/agent/v2/src/core/config"
 
 	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/nginx/agent/sdk/v2/proto"
