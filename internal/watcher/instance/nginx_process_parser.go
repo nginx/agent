@@ -150,10 +150,8 @@ func (npp *NginxProcessParser) getInfo(ctx context.Context, proc *nginxprocess.P
 	nginxInfo.ExePath = exePath
 	nginxInfo.ProcessID = proc.PID
 
-	if confPath != "" {
+	if nginxInfo.ConfPath = getNginxConfPath(ctx, nginxInfo); confPath != "" {
 		nginxInfo.ConfPath = confPath
-	} else {
-		nginxInfo.ConfPath = getNginxConfPath(ctx, nginxInfo)
 	}
 
 	loadableModules := getLoadableModules(nginxInfo)
