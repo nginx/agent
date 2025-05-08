@@ -616,3 +616,14 @@ func TestNginxProcessParser_GetExe(t *testing.T) {
 		})
 	}
 }
+
+func TestGetConfigPathFromCommand(t *testing.T) {
+	result := getConfPathFromCommand("nginx: master process nginx -c /tmp/nginx.conf")
+	assert.Equal(t, "/tmp/nginx.conf", result)
+
+	result = getConfPathFromCommand("nginx: master process nginx -c")
+	assert.Equal(t, "", result)
+
+	result = getConfPathFromCommand("")
+	assert.Equal(t, "", result)
+}
