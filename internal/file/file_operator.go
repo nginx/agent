@@ -94,6 +94,7 @@ func (fo *FileOperator) WriteChunkedFile(
 		return createError
 	}
 
+	slog.DebugContext(ctx, "Writing chunked file", "file", file.GetFileMeta().GetName())
 	for i := uint32(0); i < header.GetChunks(); i++ {
 		chunk, recvError := stream.Recv()
 		if recvError != nil {

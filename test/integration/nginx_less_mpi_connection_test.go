@@ -13,7 +13,7 @@ import (
 
 // Verify that the agent sends a connection request to Management Plane even when Nginx is not present
 func TestNginxLessGrpc_Connection(t *testing.T) {
-	teardownTest := setupConnectionTest(t, true, true)
+	teardownTest := setupConnectionTest(t, true, true, "../config/agent/nginx-config-with-max-file-size.conf")
 	defer teardownTest(t)
 
 	verifyConnection(t, 1)
