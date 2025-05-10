@@ -9,7 +9,6 @@ package plugins
 
 import (
 	"context"
-	"github.com/nginx/agent/sdk/v2"
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -54,10 +53,8 @@ func (r *MetricsSender) Init(pipeline core.MessagePipeInterface) {
 
 func (r *MetricsSender) Close() {
 	log.Info("MetricsSender is wrapping up")
-	r.readyToSendMu.Lock()
 	r.started.Store(false)
 	r.readyToSend.Store(false)
-	defer r.readyToSendMu.Unlock()
 }
 
 func (r *MetricsSender) Info() *core.Info {
