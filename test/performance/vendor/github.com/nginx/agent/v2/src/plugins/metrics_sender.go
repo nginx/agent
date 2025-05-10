@@ -9,17 +9,15 @@ package plugins
 
 import (
 	"context"
-	"strings"
-	"sync"
-
 	"github.com/nginx/agent/sdk/v2"
-
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
 	models "github.com/nginx/agent/sdk/v2/proto/events"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
+	"strings"
+	"sync"
 
 	log "github.com/sirupsen/logrus"
 	"go.uber.org/atomic"
@@ -77,6 +75,7 @@ func (r *MetricsSender) Process(msg *core.Message) {
 			r.readyToSend.Store(false)
 			r.readyToSendMu.Unlock()
 		}
+		return
 	}
 	if msg.Exact(core.CommMetrics) {
 		payloads, ok := msg.Data().([]core.Payload)
