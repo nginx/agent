@@ -13,7 +13,6 @@ import (
 
 	"sync"
 
-	"github.com/nginx/agent/sdk/v2"
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/client"
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -66,6 +65,7 @@ func (r *MetricsSender) Info() *core.Info {
 
 func (r *MetricsSender) Process(msg *core.Message) {
 	if msg.Exact(core.AgentConnected) {
+		log.Debugf("metrics_sender: agent connected %s", strings.Join(r.conf.Features, ","))
 		if r.conf.Features != nil && r.isFeatureEnabled(r.conf.Features) {
 			r.readyToSendMu.Lock()
 			r.readyToSend.Store(true)
