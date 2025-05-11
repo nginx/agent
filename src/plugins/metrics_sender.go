@@ -9,8 +9,6 @@ package plugins
 
 import (
 	"context"
-	"strings"
-
 	"github.com/nginx/agent/sdk/v2"
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/client"
@@ -18,6 +16,7 @@ import (
 	models "github.com/nginx/agent/sdk/v2/proto/events"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
+	"strings"
 	"sync"
 
 	log "github.com/sirupsen/logrus"
@@ -55,8 +54,10 @@ func (r *MetricsSender) Init(pipeline core.MessagePipeInterface) {
 
 func (r *MetricsSender) Close() {
 	log.Info("MetricsSender is wrapping up")
+	r.readyToSendMu.Lock()
 	r.started.Store(false)
 	r.readyToSend.Store(false)
+	defer r.readyToSendMu.Unlock()
 }
 
 func (r *MetricsSender) Info() *core.Info {
@@ -64,6 +65,7 @@ func (r *MetricsSender) Info() *core.Info {
 }
 
 func (r *MetricsSender) Process(msg *core.Message) {
+
 	if msg.Exact(core.AgentConnected) {
 		log.Debugf("metrics_sender: agent connected %s", strings.Join(r.conf.Features, ","))
 		if r.conf.Features != nil && r.isFeatureEnabled(r.conf.Features) {
@@ -83,9 +85,9 @@ func (r *MetricsSender) Process(msg *core.Message) {
 			log.Warnf("Failed to coerce Message to []Payload: %v", msg.Data())
 			return
 		}
+		r.readyToSendMu.RLock()
 		defer r.readyToSendMu.RUnlock()
 		for _, p := range payloads {
-			r.readyToSendMu.RLock()
 			if !r.readyToSend.Load() {
 				log.Debugf("metrics_sender is not ready to send the metrics")
 				continue
