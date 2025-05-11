@@ -154,7 +154,7 @@ func (f *Features) enableMetricsFeature(_ string) []core.Plugin {
 func (f *Features) enableMetricsCollectionFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) &&
 		!f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsCollection) {
-
+		log.Debugf("features.go: enabling metrics-collection feature")
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
 			log.Warnf("Unable to get agent config, %v", err)
@@ -171,7 +171,7 @@ func (f *Features) enableMetricsCollectionFeature(_ string) []core.Plugin {
 func (f *Features) enableMetricsThrottleFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) &&
 		!f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsThrottle) {
-
+		log.Debugf("features.go: enabling metrics-throttle feature")
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
 			log.Warnf("Unable to get agent config, %v", err)
@@ -188,7 +188,7 @@ func (f *Features) enableMetricsThrottleFeature(_ string) []core.Plugin {
 func (f *Features) enableMetricsSenderFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) &&
 		!f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsSender) {
-
+		log.Debugf("features.go: enabling metrics-sender feature")
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
 			log.Warnf("Unable to get agent config, %v", err)
@@ -205,6 +205,7 @@ func (f *Features) enableMetricsSenderFeature(_ string) []core.Plugin {
 func (f *Features) enableAgentAPIFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureAgentAPI) {
 		conf, err := config.GetConfig(f.conf.ClientID)
+		log.Debugf("features.go: enabling agent-api feature")
 		if err != nil {
 			log.Warnf("Unable to get agent config, %v", err)
 		}
@@ -219,6 +220,7 @@ func (f *Features) enableAgentAPIFeature(_ string) []core.Plugin {
 
 func (f *Features) enableRegistrationFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureRegistration) {
+		log.Debugf("features.go: enabling registration feature")
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
 			log.Warnf("Unable to get agent config, %v", err)
@@ -234,6 +236,7 @@ func (f *Features) enableRegistrationFeature(_ string) []core.Plugin {
 
 func (f *Features) enableDataPlaneStatusFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureDataPlaneStatus) {
+		log.Debugf("features.go: enabling dataplane-status feature")
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
 			log.Warnf("Unable to get agent config, %v", err)
@@ -249,6 +252,7 @@ func (f *Features) enableDataPlaneStatusFeature(_ string) []core.Plugin {
 
 func (f *Features) enableProcessWatcherFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureProcessWatcher) {
+		log.Debugf("features.go: enabling process-watcher feature")
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
 			log.Warnf("Unable to get agent config, %v", err)
@@ -264,6 +268,7 @@ func (f *Features) enableProcessWatcherFeature(_ string) []core.Plugin {
 
 func (f *Features) enableActivityEventsFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureActivityEvents) {
+		log.Debugf("features.go: enabling activity-events feature")
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
 			log.Warnf("Unable to get agent config, %v", err)
@@ -279,6 +284,7 @@ func (f *Features) enableActivityEventsFeature(_ string) []core.Plugin {
 
 func (f *Features) enableFileWatcherFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureFileWatcher) {
+		log.Debugf("features.go: enabling file-watcher feature")
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
 			log.Warnf("Unable to get agent config, %v", err)
@@ -297,6 +303,7 @@ func (f *Features) enableNginxCountingFeature(_ string) []core.Plugin {
 	countingPlugins := []core.Plugin{}
 	if len(f.conf.Nginx.NginxCountingSocket) > 0 {
 		if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureNginxCounting) {
+			log.Debugf("features.go: enabling nginx-counting feature")
 			conf, err := config.GetConfig(f.conf.ClientID)
 			if err != nil {
 				log.Warnf("Unable to get agent config, %v", err)

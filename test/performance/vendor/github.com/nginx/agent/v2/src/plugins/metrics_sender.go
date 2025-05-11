@@ -11,8 +11,6 @@ import (
 	"context"
 	"strings"
 
-	"sync"
-
 	"github.com/nginx/agent/sdk/v2"
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/client"
@@ -20,6 +18,7 @@ import (
 	models "github.com/nginx/agent/sdk/v2/proto/events"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
+	"sync"
 
 	log "github.com/sirupsen/logrus"
 	"go.uber.org/atomic"
@@ -66,6 +65,7 @@ func (r *MetricsSender) Info() *core.Info {
 
 func (r *MetricsSender) Process(msg *core.Message) {
 	if msg.Exact(core.AgentConnected) {
+		log.Debugf("metrics_sender: agent connected %s", strings.Join(r.conf.Features, ","))
 		if r.conf.Features != nil && r.isFeatureEnabled(r.conf.Features) {
 			r.readyToSendMu.Lock()
 			r.readyToSend.Store(true)
