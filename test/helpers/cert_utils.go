@@ -11,10 +11,9 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"fmt"
 	"math/big"
 	"os"
-	"strings"
+	"path"
 	"testing"
 	"time"
 
@@ -73,12 +72,7 @@ func WriteCertFiles(t *testing.T, location string, cert Cert) string {
 		Bytes: cert.Contents,
 	})
 
-	var certFile string
-	if strings.HasSuffix(location, string(os.PathSeparator)) {
-		certFile = fmt.Sprintf("%s%s", location, cert.Name)
-	} else {
-		certFile = fmt.Sprintf("%s%s%s", location, string(os.PathSeparator), cert.Name)
-	}
+	certFile := path.Join(location, cert.Name)
 
 	err := os.WriteFile(certFile, pemContents, permission)
 	require.NoError(t, err)
