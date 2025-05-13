@@ -143,7 +143,7 @@ func (mgs *FileService) GetFileStream(request *v1.GetFileRequest,
 	fileName := request.GetFileMeta().GetName()
 	fileHash := request.GetFileMeta().GetHash()
 
-	slog.Info("Getting file stream", "name", fileName, "hash", fileHash)
+	slog.Info("Getting file, stream", "name", fileName, "hash", fileHash)
 
 	fullFilePath := mgs.findFile(request.GetFileMeta())
 
@@ -263,6 +263,7 @@ func (mgs *FileService) sendGetFileStreamChunk(ctx context.Context, chunk v1.Fil
 	defer backoffCancel()
 
 	sendGetFileChunk := func() error {
+		slog.DebugContext(ctx, "Sending get file stream chunk", "chunk_id", chunk.Content.GetChunkId())
 		err := streamingServer.Send(
 			&v1.FileDataChunk{
 				Meta:  messageMeta,
@@ -298,6 +299,8 @@ func readChunk(
 
 		return v1.FileDataChunk_Content{}, nil
 	}
+
+	slog.Debug("Read file chunk", "chunk_id", chunkID, "chunk_size", len(buf))
 
 	chunk := v1.FileDataChunk_Content{
 		Content: &v1.FileDataChunkContent{
@@ -345,14 +348,14 @@ func (mgs *FileService) UpdateFile(
 func (mgs *FileService) UpdateFileStream(streamingServer grpc.ClientStreamingServer[v1.FileDataChunk,
 	v1.UpdateFileResponse],
 ) error {
-	slog.Info("Updating file stream")
+	slog.Info("Updating file, stream")
 
 	headerChunk, headerChunkErr := streamingServer.Recv()
 	if headerChunkErr != nil {
 		return headerChunkErr
 	}
 
-	slog.Info("File header chunk received", "header_chunk", headerChunk)
+	slog.Debug("File header chunk received", "header_chunk", headerChunk)
 
 	header := headerChunk.GetHeader()
 	writeChunkedFileError := mgs.WriteChunkFile(header.GetFileMeta(), header, streamingServer)
@@ -367,10 +370,7 @@ func (mgs *FileService) WriteChunkFile(fileMeta *v1.FileMeta, header *v1.FileDat
 	stream grpc.ClientStreamingServer[v1.FileDataChunk, v1.UpdateFileResponse],
 ) error {
 	fileName := mgs.findFile(fileMeta)
-	fileHash := fileMeta.GetHash()
 	filePermissions := files.FileMode(fileMeta.GetPermissions())
-
-	slog.Info("Updating file", "name", fileName, "hash", fileHash)
 	fullFilePath := mgs.findFile(fileMeta)
 
 	if err := mgs.createDirectories(fullFilePath, filePermissions); err != nil {
@@ -391,7 +391,7 @@ func (mgs *FileService) WriteChunkFile(fileMeta *v1.FileMeta, header *v1.FileDat
 	if createError != nil {
 		return createError
 	}
-
+	slog.Debug("Writing chunked file", "file", fileName)
 	for i := uint32(0); i < header.GetChunks(); i++ {
 		chunk, recvError := stream.Recv()
 		if recvError != nil {
