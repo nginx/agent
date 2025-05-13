@@ -138,7 +138,7 @@ func (mgs *FileService) GetFile(
 func (mgs *FileService) GetFileStream(request *v1.GetFileRequest,
 	streamingServer grpc.ServerStreamingServer[v1.FileDataChunk],
 ) error {
-	correlationID := logger.GenerateCorrelationID()
+	correlationID := request.GetMessageMeta().GetCorrelationId()
 	newCtx := context.WithValue(streamingServer.Context(), logger.CorrelationIDContextKey, correlationID)
 	fileName := request.GetFileMeta().GetName()
 	fileHash := request.GetFileMeta().GetHash()
