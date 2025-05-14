@@ -5,7 +5,9 @@
 package config
 
 import (
+	_ "embed"
 	"errors"
+	"fmt"
 	"os"
 	"path"
 	"strings"
@@ -627,6 +629,61 @@ func TestValidateYamlFile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := validateYamlFile(tt.input)
 			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+//go:embed testdata/nginx-agent-with-token.conf
+var agentConfigWithToken string
+
+func getAgentConfigWithToken(token string) string {
+	return fmt.Sprintf(agentConfigWithToken, token)
+}
+
+func TestResolveExtensions(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "Test 1: Header value is a valid token",
+			input:    "super-secret-token",
+			expected: "super-secret-token",
+		},
+		{
+			name:     "Test 2: Header value is a valid token path",
+			input:    "testdata/nginx-token.crt",
+			expected: "super-secret-token",
+		},
+		{
+			name:     "Test 3: Header value is empty",
+			input:    "",
+			expected: "",
+		},
+	}
+
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
+	tempDir := t.TempDir()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tempFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx-agent.conf")
+			defer helpers.RemoveFileWithErrorCheck(t, tempFile.Name())
+
+			confContent := []byte(getAgentConfigWithToken(tt.input))
+			_, writeErr := tempFile.Write(confContent)
+			require.NoError(t, writeErr)
+
+			err := loadPropertiesFromFile(tempFile.Name())
+			require.NoError(t, err)
+
+			extension := resolveExtensions()
+			require.NotNil(t, extension)
+			assert.Equal(t, tt.expected, extension.HeadersSetter.Headers[0].Value)
+
+			err = tempFile.Close()
+			require.NoError(t, err)
 		})
 	}
 }
