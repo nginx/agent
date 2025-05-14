@@ -16,7 +16,10 @@ import (
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver/internal/metadata"
 )
 
-const defaultCollectInterval = 10 * time.Second
+const (
+	defaultCollectInterval = 10 * time.Second
+	defaultTimeout         = 10 * time.Second
+)
 
 type Config struct {
 	confighttp.ClientConfig        `mapstructure:",squash"`
@@ -32,6 +35,7 @@ type APIDetails struct {
 }
 
 // Validate checks if the receiver configuration is valid
+// nolint: ireturn
 func (cfg *Config) Validate() error {
 	if cfg.APIDetails.URL == "" {
 		return errors.New("endpoint cannot be empty for nginxplusreceiver")

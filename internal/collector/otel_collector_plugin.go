@@ -58,6 +58,8 @@ var (
 	initMutex            = &sync.Mutex{}
 )
 
+var pluginLogOrigin = slog.String("log_origin", "otel_collector_plugin.go")
+
 // NewCollector is the constructor for the Collector plugin.
 func New(conf *config.Config) (*Collector, error) {
 	initMutex.Lock()
@@ -262,7 +264,7 @@ func (oc *Collector) handleNginxConfigUpdate(ctx context.Context, msg *bus.Messa
 		return
 	}
 
-	reloadCollector := oc.checkForNewReceivers(nginxConfigContext)
+	reloadCollector := oc.checkForNewReceivers(ctx, nginxConfigContext)
 
 	if reloadCollector {
 		slog.InfoContext(ctx, "Reloading OTel collector config")
@@ -392,7 +394,7 @@ func (oc *Collector) restartCollector(ctx context.Context) {
 	}
 }
 
-func (oc *Collector) checkForNewReceivers(nginxConfigContext *model.NginxConfigContext) bool {
+func (oc *Collector) checkForNewReceivers(ctx context.Context, nginxConfigContext *model.NginxConfigContext) bool {
 	nginxReceiverFound, reloadCollector := oc.updateExistingNginxPlusReceiver(nginxConfigContext)
 
 	if !nginxReceiverFound && nginxConfigContext.PlusAPI.URL != "" {
@@ -407,10 +409,20 @@ func (oc *Collector) checkForNewReceivers(nginxConfigContext *model.NginxConfigC
 				},
 			},
 		)
+		slog.DebugContext(
+			ctx,
+			"NGINX Plus API found, NGINX Plus receiver enabled to scrape metrics",
+			pluginLogOrigin,
+		)
 
 		reloadCollector = true
 	} else if nginxConfigContext.PlusAPI.URL == "" {
-		reloadCollector = oc.addNginxOssReceiver(nginxConfigContext)
+		slog.WarnContext(
+			ctx,
+			"NGINX Plus API is not configured, searching for stub status endpoint",
+			pluginLogOrigin,
+		)
+		reloadCollector = oc.addNginxOssReceiver(ctx, nginxConfigContext)
 	}
 
 	if oc.config.IsFeatureEnabled(pkgConfig.FeatureLogsNap) {
@@ -425,7 +437,7 @@ func (oc *Collector) checkForNewReceivers(nginxConfigContext *model.NginxConfigC
 	return reloadCollector
 }
 
-func (oc *Collector) addNginxOssReceiver(nginxConfigContext *model.NginxConfigContext) bool {
+func (oc *Collector) addNginxOssReceiver(ctx context.Context, nginxConfigContext *model.NginxConfigContext) bool {
 	nginxReceiverFound, reloadCollector := oc.updateExistingNginxOSSReceiver(nginxConfigContext)
 
 	if !nginxReceiverFound && nginxConfigContext.StubStatus.URL != "" {
@@ -441,8 +453,11 @@ func (oc *Collector) addNginxOssReceiver(nginxConfigContext *model.NginxConfigCo
 				AccessLogs: toConfigAccessLog(nginxConfigContext.AccessLogs),
 			},
 		)
+		slog.DebugContext(ctx, "Stub status endpoint found, OSS receiver enabled to scrape metrics", pluginLogOrigin)
 
 		reloadCollector = true
+	} else if nginxConfigContext.StubStatus.URL == "" {
+		slog.WarnContext(ctx, "Stub status endpoint not found, NGINX metrics not available", pluginLogOrigin)
 	}
 
 	return reloadCollector
