@@ -300,7 +300,7 @@ func readChunk(
 		return v1.FileDataChunk_Content{}, nil
 	}
 
-	slog.Debug("Read file chunk", "chunk_id", chunkID, "chunk_size", len(buf))
+	slog.Debug("read file chunk", "chunk_id", chunkID, "chunk_size", len(buf))
 
 	chunk := v1.FileDataChunk_Content{
 		Content: &v1.FileDataChunkContent{
