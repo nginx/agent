@@ -7,6 +7,7 @@ package helpers
 
 import (
 	"errors"
+	"log/slog"
 	"os"
 	"regexp"
 	"strings"
@@ -37,18 +38,16 @@ func CreateFileWithErrorCheck(t testing.TB, dir, fileName string) *os.File {
 	return testConf
 }
 
-func CreateManifestFileWithErrorCheck(t testing.TB, dir, manifestFileName string) *os.File {
+func CreateManifestDirWithErrorCheck(t testing.TB, dir, manifestFileName string) string {
 	t.Helper()
 
 	if _, err := os.Stat(dir + manifestFileName); !errors.Is(err, os.ErrNotExist) {
+		slog.Info("Manifest file exists, deleting", "", dir+manifestFileName)
 		removeErr := os.Remove(dir + manifestFileName)
 		require.NoError(t, removeErr)
 	}
 
-	testConf, err := os.CreateTemp(dir, manifestFileName)
-	require.NoError(t, err)
-
-	return testConf
+	return os.TempDir()
 }
 
 func RemoveFileWithErrorCheck(t testing.TB, fileName string) {
