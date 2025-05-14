@@ -103,7 +103,7 @@ func Test_GetDialOptions(t *testing.T) {
 		{
 			name:        "Test 2: DialOptions mTLS",
 			agentConfig: types.AgentConfig(),
-			expected:    7,
+			expected:    8,
 			createCerts: true,
 		},
 		{
@@ -171,8 +171,8 @@ func Test_GetDialOptions(t *testing.T) {
 				key, cert := helpers.GenerateSelfSignedCert(t)
 				_, ca := helpers.GenerateSelfSignedCert(t)
 
-				keyContents := helpers.Cert{Name: keyFileName, Type: certificateType, Contents: key}
-				certContents := helpers.Cert{Name: certFileName, Type: privateKeyType, Contents: cert}
+				keyContents := helpers.Cert{Name: keyFileName, Type: privateKeyType, Contents: key}
+				certContents := helpers.Cert{Name: certFileName, Type: certificateType, Contents: cert}
 				caContents := helpers.Cert{Name: caFileName, Type: certificateType, Contents: ca}
 
 				helpers.WriteCertFiles(t, tmpDir, keyContents)
