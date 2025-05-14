@@ -631,10 +631,13 @@ func CreateTestManifestFile(t testing.TB, tempDir string, currentFiles map[strin
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
 	manifestFiles := fileManagerService.convertToManifestFileMap(currentFiles, true)
 	manifestJSON, err := json.MarshalIndent(manifestFiles, "", "  ")
+	require.NoError(t, err)
 	file, err := os.CreateTemp(tempDir, "manifest.json")
 	require.NoError(t, err)
 
 	_, err = file.Write(manifestJSON)
+	require.NoError(t, err)
+
 	return file
 }
 
