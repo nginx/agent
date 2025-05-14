@@ -497,9 +497,6 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 	unmanagedErr := os.WriteFile(unmanagedFile.Name(), unmanagedFileContent, 0o600)
 	require.NoError(t, unmanagedErr)
 
-	manifestDirPath = tempDir
-	manifestFilePath = manifestDirPath + "/manifest.json"
-
 	tests := []struct {
 		expectedError   error
 		modifiedFiles   map[string]*model.FileCache
@@ -508,69 +505,69 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 		expectedContent map[string][]byte
 		name            string
 	}{
-		// {
-		//	name: "Test 1: Add, Update & Delete Files",
-		//	modifiedFiles: map[string]*model.FileCache{
-		//		addTestFileName: {
-		//			File: &mpi.File{
-		//				FileMeta:  protos.FileMeta(addTestFileName, files.GenerateHash(fileContent)),
-		//				Unmanaged: false,
-		//			},
-		//		},
-		//		updateTestFile.Name(): {
-		//			File: &mpi.File{
-		//				FileMeta:  protos.FileMeta(updateTestFile.Name(), files.GenerateHash(updatedFileContent)),
-		//				Unmanaged: false,
-		//			},
-		//		},
-		//		unmanagedFile.Name(): {
-		//			File: &mpi.File{
-		//				FileMeta:  protos.FileMeta(unmanagedFile.Name(), files.GenerateHash(unmanagedFileContent)),
-		//				Unmanaged: true,
-		//			},
-		//		},
-		//	},
-		//	currentFiles: map[string]*mpi.File{
-		//		deleteTestFile.Name(): {
-		//			FileMeta: protos.FileMeta(deleteTestFile.Name(), files.GenerateHash(fileContent)),
-		//		},
-		//		updateTestFile.Name(): {
-		//			FileMeta: protos.FileMeta(updateTestFile.Name(), files.GenerateHash(fileContent)),
-		//		},
-		//		unmanagedFile.Name(): {
-		//			FileMeta:  protos.FileMeta(unmanagedFile.Name(), files.GenerateHash(fileContent)),
-		//			Unmanaged: true,
-		//		},
-		//	},
-		//	expectedCache: map[string]*model.FileCache{
-		//		deleteTestFile.Name(): {
-		//			File: &mpi.File{
-		//				FileMeta:  protos.ManifestFileMeta(deleteTestFile.Name(), files.GenerateHash(fileContent)),
-		//				Unmanaged: false,
-		//			},
-		//			Action: model.Delete,
-		//		},
-		//		updateTestFile.Name(): {
-		//			File: &mpi.File{
-		//				FileMeta:  protos.FileMeta(updateTestFile.Name(), files.GenerateHash(updatedFileContent)),
-		//				Unmanaged: false,
-		//			},
-		//			Action: model.Update,
-		//		},
-		//		addTestFileName: {
-		//			File: &mpi.File{
-		//				FileMeta:  protos.FileMeta(addTestFileName, files.GenerateHash(fileContent)),
-		//				Unmanaged: false,
-		//			},
-		//			Action: model.Add,
-		//		},
-		//	},
-		//	expectedContent: map[string][]byte{
-		//		deleteTestFile.Name(): fileContent,
-		//		updateTestFile.Name(): updatedFileContent,
-		//	},
-		//	expectedError: nil,
-		// },
+		{
+			name: "Test 1: Add, Update & Delete Files",
+			modifiedFiles: map[string]*model.FileCache{
+				addTestFileName: {
+					File: &mpi.File{
+						FileMeta:  protos.FileMeta(addTestFileName, files.GenerateHash(fileContent)),
+						Unmanaged: false,
+					},
+				},
+				updateTestFile.Name(): {
+					File: &mpi.File{
+						FileMeta:  protos.FileMeta(updateTestFile.Name(), files.GenerateHash(updatedFileContent)),
+						Unmanaged: false,
+					},
+				},
+				unmanagedFile.Name(): {
+					File: &mpi.File{
+						FileMeta:  protos.FileMeta(unmanagedFile.Name(), files.GenerateHash(unmanagedFileContent)),
+						Unmanaged: true,
+					},
+				},
+			},
+			currentFiles: map[string]*mpi.File{
+				deleteTestFile.Name(): {
+					FileMeta: protos.FileMeta(deleteTestFile.Name(), files.GenerateHash(fileContent)),
+				},
+				updateTestFile.Name(): {
+					FileMeta: protos.FileMeta(updateTestFile.Name(), files.GenerateHash(fileContent)),
+				},
+				unmanagedFile.Name(): {
+					FileMeta:  protos.FileMeta(unmanagedFile.Name(), files.GenerateHash(fileContent)),
+					Unmanaged: true,
+				},
+			},
+			expectedCache: map[string]*model.FileCache{
+				deleteTestFile.Name(): {
+					File: &mpi.File{
+						FileMeta:  protos.ManifestFileMeta(deleteTestFile.Name(), files.GenerateHash(fileContent)),
+						Unmanaged: false,
+					},
+					Action: model.Delete,
+				},
+				updateTestFile.Name(): {
+					File: &mpi.File{
+						FileMeta:  protos.FileMeta(updateTestFile.Name(), files.GenerateHash(updatedFileContent)),
+						Unmanaged: false,
+					},
+					Action: model.Update,
+				},
+				addTestFileName: {
+					File: &mpi.File{
+						FileMeta:  protos.FileMeta(addTestFileName, files.GenerateHash(fileContent)),
+						Unmanaged: false,
+					},
+					Action: model.Add,
+				},
+			},
+			expectedContent: map[string][]byte{
+				deleteTestFile.Name(): fileContent,
+				updateTestFile.Name(): updatedFileContent,
+			},
+			expectedError: nil,
+		},
 		{
 			name: "Test 2: Files same as on disk",
 			modifiedFiles: map[string]*model.FileCache{
