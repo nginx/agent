@@ -7,6 +7,7 @@ package file
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -607,12 +608,13 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			// Delete manifest file if it already exists
-			dir := helpers.CreateManifestDirWithErrorCheck(t, manifestDirPath, "manifest.json")
-			manifestFilePath = dir + "/manifest.json"
+			manifestFile := CreateTestManifestFile(t, tempDir, test.currentFiles)
+			defer manifestFile.Close()
+			manifestDirPath = tempDir
+			manifestFilePath = manifestFile.Name()
 			t.Logf("path: %s", manifestFilePath)
 			fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 			fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
-			err = fileManagerService.UpdateManifestFile(test.currentFiles, true)
 			require.NoError(tt, err)
 			diff, contents, fileActionErr := fileManagerService.DetermineFileActions(test.currentFiles,
 				test.modifiedFiles)
@@ -621,6 +623,19 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 			assert.Equal(tt, test.expectedCache, diff)
 		})
 	}
+}
+
+func CreateTestManifestFile(t testing.TB, tempDir string, currentFiles map[string]*mpi.File) *os.File {
+	t.Helper()
+	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
+	manifestFiles := fileManagerService.convertToManifestFileMap(currentFiles, true)
+	manifestJSON, err := json.MarshalIndent(manifestFiles, "", "  ")
+	file, err := os.CreateTemp(tempDir, "manifest.json")
+	require.NoError(t, err)
+
+	_, err = file.Write(manifestJSON)
+	return file
 }
 
 func TestFileManagerService_fileActions(t *testing.T) {
