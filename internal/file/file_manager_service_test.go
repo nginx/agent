@@ -611,7 +611,8 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			// Delete manifest file if it already exists
 			dir := helpers.CreateManifestDirWithErrorCheck(t, manifestDirPath, "manifest.json")
-			manifestFilePath = dir + "manifest.json"
+			manifestFilePath = dir + "/manifest.json"
+			t.Logf("path: %s", manifestFilePath)
 			fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 			fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
 			err = fileManagerService.UpdateManifestFile(test.currentFiles, true)
