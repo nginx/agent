@@ -7,6 +7,7 @@ package nginxplusreceiver
 import (
 	"context"
 	"errors"
+	"time"
 
 	"go.opentelemetry.io/collector/scraper"
 	"go.opentelemetry.io/collector/scraper/scraperhelper"
@@ -17,6 +18,9 @@ import (
 
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver/internal/metadata"
 )
+
+// nolint: ireturn
+const defaultTimeout = 10 * time.Second
 
 // nolint: ireturn
 func NewFactory() receiver.Factory {
