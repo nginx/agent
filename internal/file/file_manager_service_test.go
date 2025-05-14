@@ -508,7 +508,7 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 		expectedContent map[string][]byte
 		name            string
 	}{
-		//{
+		// {
 		//	name: "Test 1: Add, Update & Delete Files",
 		//	modifiedFiles: map[string]*model.FileCache{
 		//		addTestFileName: {
@@ -570,7 +570,7 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 		//		updateTestFile.Name(): updatedFileContent,
 		//	},
 		//	expectedError: nil,
-		//},
+		// },
 		{
 			name: "Test 2: Files same as on disk",
 			modifiedFiles: map[string]*model.FileCache{
