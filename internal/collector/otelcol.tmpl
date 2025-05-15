@@ -156,6 +156,7 @@ exporters:
     tls:
       insecure: {{ if .TLS -}}false{{ else -}}true{{- end }}
       {{- if .TLS }}
+      insecure_skip_verify: {{ .TLS.SkipVerify }}
       {{ if gt (len .TLS.Ca) 0 -}}ca_file: "{{- .TLS.Ca -}}"{{- end }}
       {{ if gt (len .TLS.Cert) 0 -}}cert_file: "{{- .TLS.Cert -}}"{{- end }}
       {{ if gt (len .TLS.Key) 0 -}}key_file: "{{- .TLS.Key -}}"{{- end }}
