@@ -530,7 +530,7 @@ func TestInfo_ContainerInfo(t *testing.T) {
 
 			assert.Equal(tt, test.expectContainerID, containerInfo.ContainerInfo.GetContainerId())
 			assert.Equal(tt, test.expectHostname, containerInfo.ContainerInfo.GetHostname())
-			assert.Equal(t, releaseInfo, containerInfo.ContainerInfo.GetReleaseInfo())
+			assert.Equal(tt, releaseInfo, containerInfo.ContainerInfo.GetReleaseInfo())
 		})
 	}
 }
