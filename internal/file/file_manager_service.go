@@ -484,7 +484,6 @@ func (fms *FileManagerService) DetermineFileActions(
 	fileContents := make(map[string][]byte)       // contents of the file, key is file name
 
 	manifestFiles, filesMap, manifestFileErr := fms.manifestFile()
-	slog.Info("DetermineFileActions - Manifest files: ", "", manifestFiles)
 
 	if manifestFileErr != nil {
 		if errors.Is(manifestFileErr, os.ErrNotExist) {
@@ -597,8 +596,6 @@ func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.F
 	}
 
 	manifestFiles := fms.convertToManifestFileMap(currentFiles, referenced)
-
-	slog.Info("Current Manifest Files", "", currentManifestFiles)
 
 	// During a config apply every file is set to unreferenced
 	// When a new NGINX config context is detected
