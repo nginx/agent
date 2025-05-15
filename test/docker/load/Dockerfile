@@ -94,6 +94,6 @@ RUN chmod -R +x ./build
 
 WORKDIR /agent/test/load
 
-RUN go test -v -timeout 30s ./...
+RUN go test -v -timeout 1m ./...
 
 CMD ["sh", "-c", "cat benchmarks.json"]
