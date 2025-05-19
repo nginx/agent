@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"testing"
 
 	"github.com/nginx/agent/v3/internal/model"
@@ -143,6 +144,30 @@ func TestFileManagerService_UpdateFile(t *testing.T) {
 	}
 }
 
+func TestFileManagerService_UpdateFile_LargeFile(t *testing.T) {
+	ctx := context.Background()
+	tempDir := os.TempDir()
+
+	testFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
+	writeFileError := os.WriteFile(testFile.Name(), []byte("#test content"), 0o600)
+	require.NoError(t, writeFileError)
+	fileMeta := protos.FileMetaLargeFile(testFile.Name(), "")
+
+	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+	fakeClientStreamingClient := &FakeClientStreamingClient{sendCount: atomic.Int32{}}
+	fakeFileServiceClient.UpdateFileStreamReturns(fakeClientStreamingClient, nil)
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
+	fileManagerService.SetIsConnected(true)
+
+	err := fileManagerService.UpdateFile(ctx, "123", &mpi.File{FileMeta: fileMeta})
+
+	require.NoError(t, err)
+	assert.Equal(t, 0, fakeFileServiceClient.UpdateFileCallCount())
+	assert.Equal(t, 14, int(fakeClientStreamingClient.sendCount.Load()))
+
+	helpers.RemoveFileWithErrorCheck(t, testFile.Name())
+}
+
 func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	ctx := context.Background()
 	tempDir := t.TempDir()
@@ -179,6 +204,54 @@ func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	require.NoError(t, readErr)
 	assert.Equal(t, fileContent, data)
 	assert.Equal(t, fileManagerService.fileActions[filePath].File, overview.GetFiles()[0])
+	assert.Equal(t, 1, fakeFileServiceClient.GetFileCallCount())
+}
+
+func TestFileManagerService_ConfigApply_Add_LargeFile(t *testing.T) {
+	ctx := context.Background()
+	tempDir := t.TempDir()
+
+	filePath := filepath.Join(tempDir, "nginx.conf")
+	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
+	fileHash := files.GenerateHash(fileContent)
+	defer helpers.RemoveFileWithErrorCheck(t, filePath)
+
+	overview := protos.FileOverviewLargeFile(filePath, fileHash)
+
+	manifestDirPath = tempDir
+	manifestFilePath = manifestDirPath + "/manifest.json"
+	helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
+
+	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+	fakeFileServiceClient.GetOverviewReturns(&mpi.GetOverviewResponse{
+		Overview: overview,
+	}, nil)
+
+	fakeServerStreamingClient := &FakeServerStreamingClient{
+		chunks:         make(map[uint32][]byte),
+		currentChunkID: 0,
+		fileName:       filePath,
+	}
+
+	for i := 0; i < len(fileContent); i++ {
+		fakeServerStreamingClient.chunks[uint32(i)] = []byte{fileContent[i]}
+	}
+
+	fakeFileServiceClient.GetFileStreamReturns(fakeServerStreamingClient, nil)
+	agentConfig := types.AgentConfig()
+	agentConfig.AllowedDirectories = []string{tempDir}
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig)
+
+	request := protos.CreateConfigApplyRequest(overview)
+	writeStatus, err := fileManagerService.ConfigApply(ctx, request)
+	require.NoError(t, err)
+	assert.Equal(t, model.OK, writeStatus)
+	data, readErr := os.ReadFile(filePath)
+	require.NoError(t, readErr)
+	assert.Equal(t, fileContent, data)
+	assert.Equal(t, fileManagerService.fileActions[filePath].File, overview.GetFiles()[0])
+	assert.Equal(t, 0, fakeFileServiceClient.GetFileCallCount())
+	assert.Equal(t, 53, int(fakeServerStreamingClient.currentChunkID))
 }
 
 func TestFileManagerService_ConfigApply_Update(t *testing.T) {
