@@ -42,9 +42,9 @@ const (
 	DefGRPCKeepAlivePermitWithoutStream = true
 
 	// Client Backoff defaults
-	DefBackoffInitialInterval     = 10 * time.Second
+	DefBackoffInitialInterval     = 1 * time.Second
 	DefBackoffRandomizationFactor = 0.5 // the value is 0 <= and < 1
-	DefBackoffMultiplier          = 1.5
+	DefBackoffMultiplier          = 3
 	DefBackoffMaxInterval         = 20 * time.Second
 	DefBackoffMaxElapsedTime      = 1 * time.Minute
 
