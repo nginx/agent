@@ -65,39 +65,60 @@ func TestFilePlugin_Subscriptions(t *testing.T) {
 
 func TestFilePlugin_Process_NginxConfigUpdateTopic(t *testing.T) {
 	ctx := context.Background()
-
 	fileMeta := protos.FileMeta("/etc/nginx/nginx/conf", "")
 
-	message := &model.NginxConfigContext{
-		Files: []*mpi.File{
-			{
-				FileMeta: fileMeta,
+	testCases := []struct {
+		message                 *model.NginxConfigContext
+		name                    string
+		updateOverviewCallCount int
+	}{
+		{
+			name: "Test 1: NginxConfigContext triggered by local file change",
+			message: &model.NginxConfigContext{
+				Files: []*mpi.File{
+					{
+						FileMeta: fileMeta,
+					},
+				},
 			},
+			updateOverviewCallCount: 1,
+		},
+		{
+			name: "Test 2: NginxConfigContext triggered by config apply",
+			message: &model.NginxConfigContext{
+				Files: []*mpi.File{
+					{
+						FileMeta: fileMeta,
+					},
+				},
+				TriggeredByConfigApply: true,
+			},
+			updateOverviewCallCount: 0,
 		},
 	}
 
-	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
-	fakeFileServiceClient.UpdateOverviewReturns(&mpi.UpdateOverviewResponse{
-		Overview: nil,
-	}, nil)
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+			fakeFileServiceClient.UpdateOverviewReturns(&mpi.UpdateOverviewResponse{
+				Overview: nil,
+			}, nil)
 
-	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
-	fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
-	messagePipe := busfakes.NewFakeMessagePipe()
+			fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+			fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
 
-	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection)
-	err := filePlugin.Init(ctx, messagePipe)
-	require.NoError(t, err)
+			messagePipe := busfakes.NewFakeMessagePipe()
 
-	filePlugin.Process(ctx, &bus.Message{Topic: bus.ConnectionCreatedTopic})
-	filePlugin.Process(ctx, &bus.Message{Topic: bus.NginxConfigUpdateTopic, Data: message})
+			filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection)
+			err := filePlugin.Init(ctx, messagePipe)
+			require.NoError(t, err)
 
-	assert.Eventually(
-		t,
-		func() bool { return fakeFileServiceClient.UpdateOverviewCallCount() == 1 },
-		2*time.Second,
-		10*time.Millisecond,
-	)
+			filePlugin.Process(ctx, &bus.Message{Topic: bus.ConnectionCreatedTopic})
+			filePlugin.Process(ctx, &bus.Message{Topic: bus.NginxConfigUpdateTopic, Data: testCase.message})
+
+			assert.Equal(t, testCase.updateOverviewCallCount, fakeFileServiceClient.UpdateOverviewCallCount())
+		})
+	}
 }
 
 func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {

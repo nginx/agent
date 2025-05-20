@@ -213,6 +213,9 @@ func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) (*
 		return nil, fmt.Errorf("failed to reload NGINX %w", reloadErr)
 	}
 
+	// Set TriggeredByConfigApply to true to prevent a UpdateFileOverview request from being sent
+	nginxConfigContext.TriggeredByConfigApply = true
+
 	return nginxConfigContext, nil
 }
 

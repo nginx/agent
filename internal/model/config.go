@@ -12,13 +12,14 @@ import (
 )
 
 type NginxConfigContext struct {
-	StubStatus       *APIDetails
-	PlusAPI          *APIDetails
-	InstanceID       string
-	Files            []*v1.File
-	AccessLogs       []*AccessLog
-	ErrorLogs        []*ErrorLog
-	NAPSysLogServers []string
+	StubStatus             *APIDetails
+	PlusAPI                *APIDetails
+	InstanceID             string
+	Files                  []*v1.File
+	AccessLogs             []*AccessLog
+	ErrorLogs              []*ErrorLog
+	NAPSysLogServers       []string
+	TriggeredByConfigApply bool
 }
 
 type APIDetails struct {

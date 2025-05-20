@@ -318,14 +318,16 @@ func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 		slog.ErrorContext(ctx, "Unable to update current files on disk", "error", updateError)
 	}
 
-	err := fp.fileManagerService.UpdateOverview(ctx, nginxConfigContext.InstanceID, nginxConfigContext.Files, 0)
-	if err != nil {
-		slog.ErrorContext(
-			ctx,
-			"Failed to update file overview",
-			"instance_id", nginxConfigContext.InstanceID,
-			"error", err,
-		)
+	if !nginxConfigContext.TriggeredByConfigApply {
+		err := fp.fileManagerService.UpdateOverview(ctx, nginxConfigContext.InstanceID, nginxConfigContext.Files, 0)
+		if err != nil {
+			slog.ErrorContext(
+				ctx,
+				"Failed to update file overview",
+				"instance_id", nginxConfigContext.InstanceID,
+				"error", err,
+			)
+		}
 	}
 }
 
