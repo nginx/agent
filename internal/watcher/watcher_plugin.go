@@ -198,11 +198,9 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 
 	// If the config apply had no changes to any files, it is results in a ConfigApplySuccessfulTopic with an empty
 	// configContext being sent, there is no need to reparse the config as no change has occurred.
-	if successMessage.ConfigContext.InstanceID == "" {
-		slog.DebugContext(ctx, "NginxConfigContext is empty, no need to reparse config")
-		return
+	if successMessage.ConfigContext.InstanceID != "" {
+		w.instanceWatcherService.HandleNginxConfigContextUpdate(ctx, instanceID, successMessage.ConfigContext)
 	}
-	w.instanceWatcherService.HandleNginxConfigContextUpdate(ctx, instanceID, successMessage.ConfigContext)
 
 	w.watcherMutex.Lock()
 	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
@@ -213,8 +211,8 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 	)
 
 	w.fileWatcherService.SetEnabled(true)
-	w.watcherMutex.Unlock()
 	w.instanceWatcherService.SetEnabled(true)
+	w.watcherMutex.Unlock()
 }
 
 func (w *Watcher) handleHealthRequest(ctx context.Context) {
