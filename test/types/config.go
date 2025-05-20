@@ -48,6 +48,10 @@ func AgentConfig() *config.Config {
 					Time:                clientTime,
 					PermitWithoutStream: clientPermitWithoutStream,
 				},
+				MaxMessageReceiveSize: 1,
+				MaxMessageSendSize:    1,
+				MaxFileSize:           1,
+				FileChunkSize:         1,
 			},
 			Backoff: &config.BackOff{
 				InitialInterval:     commonInitialInterval,
