@@ -169,6 +169,10 @@ func defaultCollector(collector *Collector, config *Config) {
 			CollectionInterval: 1 * time.Minute,
 			InitialDelay:       1 * time.Second,
 		}
+		collector.Log = &Log{
+			Path:  "stdout",
+			Level: "info",
+		}
 	} else {
 		collector.Receivers.HostMetrics = &HostMetrics{
 			Scrapers: &HostMetricsScrapers{
