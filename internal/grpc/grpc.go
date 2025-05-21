@@ -382,14 +382,12 @@ func getTLSConfigForCredentials(c *config.TLSConfig) (*tls.Config, error) {
 		InsecureSkipVerify: c.SkipVerify,
 	}
 
-	err := appendRootCAs(tlsConfig, c.Ca)
-	if err != nil {
-		slog.Debug("Unable to append root CA", "error", err)
+	if err := appendRootCAs(tlsConfig, c.Ca); err != nil {
+		return nil, fmt.Errorf("invalid CA cert while building transport credentials: %w", err)
 	}
 
-	err = appendCertKeyPair(tlsConfig, c.Cert, c.Key)
-	if err != nil {
-		return nil, fmt.Errorf("append cert and key pair failed: %w", err)
+	if err := appendCertKeyPair(tlsConfig, c.Cert, c.Key); err != nil {
+		return nil, fmt.Errorf("invalid client cert while building transport credentials: %w", err)
 	}
 
 	return tlsConfig, nil

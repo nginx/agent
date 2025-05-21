@@ -447,14 +447,11 @@ func Test_getTLSConfig(t *testing.T) {
 				require.False(t, c.InsecureSkipVerify, "InsecureSkipVerify should not be set")
 			},
 		},
-		"Test 3: incorrect CA should not error": { // REALLY ?!
+		"Test 3: incorrect CA should not error": {
 			conf: &config.TLSConfig{
 				Ca: "customca.pem",
 			},
-			wantErr: false,
-			verify: func(t require.TestingT, c *tls.Config) {
-				require.Nil(t, c.RootCAs, "RootCAs should be nil to use system")
-			},
+			wantErr: true,
 		},
 		"Test 4: incorrect key path should error": {
 			conf: &config.TLSConfig{
