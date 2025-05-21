@@ -142,6 +142,14 @@ func (fp *FilePlugin) handleConfigApplySuccess(ctx context.Context, msg *bus.Mes
 	}
 
 	fp.fileManagerService.ClearCache()
+	updateError := fp.fileManagerService.UpdateCurrentFilesOnDisk(
+		ctx,
+		files.ConvertToMapOfFiles(successMessage.ConfigContext.Files),
+		true,
+	)
+	if updateError != nil {
+		slog.ErrorContext(ctx, "Unable to update current files on disk", "error", updateError)
+	}
 	fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: successMessage.DataPlaneResponse})
 }
 
@@ -179,6 +187,7 @@ func (fp *FilePlugin) handleConfigApplyFailedRequest(ctx context.Context, msg *b
 }
 
 func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "File plugin received config apply request message")
 	var response *mpi.DataPlaneResponse
 	correlationID := logger.GetCorrelationID(ctx)
 
@@ -209,6 +218,7 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 
 	switch writeStatus {
 	case model.NoChange:
+		slog.DebugContext(ctx, "No changes required for config apply request")
 		dpResponse := fp.createDataPlaneResponse(
 			correlationID,
 			mpi.CommandResponse_COMMAND_STATUS_OK,
@@ -294,6 +304,7 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 
 		return
 	case model.OK:
+		slog.DebugContext(ctx, "Changes required for config apply request")
 		// Send WriteConfigSuccessfulTopic with Correlation and Instance ID for use by resource plugin
 		data := &model.ConfigApplyMessage{
 			CorrelationID: correlationID,
@@ -317,7 +328,14 @@ func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 		return
 	}
 
-	fp.fileManagerService.UpdateCurrentFilesOnDisk(files.ConvertToMapOfFiles(nginxConfigContext.Files))
+	updateError := fp.fileManagerService.UpdateCurrentFilesOnDisk(
+		ctx,
+		files.ConvertToMapOfFiles(nginxConfigContext.Files),
+		true,
+	)
+	if updateError != nil {
+		slog.ErrorContext(ctx, "Unable to update current files on disk", "error", updateError)
+	}
 
 	err := fp.fileManagerService.UpdateOverview(ctx, nginxConfigContext.InstanceID, nginxConfigContext.Files, 0)
 	if err != nil {

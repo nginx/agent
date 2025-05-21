@@ -75,7 +75,7 @@ func NewMockManagementServer(
 	var fileServer *FileService
 
 	if *configDirectory != "" {
-		fileServer = NewFileService(*configDirectory, requestChan)
+		fileServer = NewFileService(*configDirectory, requestChan, agentConfig)
 	}
 
 	fileServiceLock.Lock()
