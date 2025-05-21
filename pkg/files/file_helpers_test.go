@@ -6,12 +6,13 @@
 package files
 
 import (
+	"crypto/sha256"
 	"crypto/x509"
+	"encoding/base64"
 	"net"
 	"os"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -136,6 +137,10 @@ func Test_GenerateConfigVersion(t *testing.T) {
 }
 
 func TestGenerateHash(t *testing.T) {
+	hash1 := sha256.New()
+	hash2 := sha256.New()
+	hash1.Write([]byte(""))
+	hash2.Write([]byte("test"))
 	tests := []struct {
 		name     string
 		expected string
@@ -144,12 +149,12 @@ func TestGenerateHash(t *testing.T) {
 		{
 			name:     "Test 1: empty byte slice",
 			input:    []byte{},
-			expected: uuid.NewMD5(uuid.Nil, []byte("")).String(),
+			expected: base64.StdEncoding.EncodeToString(hash1.Sum(nil)),
 		},
 		{
 			name:     "Test 2: non-empty byte slice",
 			input:    []byte("test"),
-			expected: uuid.NewMD5(uuid.Nil, []byte("test")).String(),
+			expected: base64.StdEncoding.EncodeToString(hash2.Sum(nil)),
 		},
 	}
 

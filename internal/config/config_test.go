@@ -106,6 +106,8 @@ func checkDefaultsClientValues(t *testing.T, viperInstance *viper.Viper) {
 	assert.Equal(t, DefMaxMessageSize, viperInstance.GetInt(ClientGRPCMaxMessageSizeKey))
 	assert.Equal(t, DefMaxMessageRecieveSize, viperInstance.GetInt(ClientGRPCMaxMessageReceiveSizeKey))
 	assert.Equal(t, DefMaxMessageSendSize, viperInstance.GetInt(ClientGRPCMaxMessageSendSizeKey))
+	assert.Equal(t, DefFileChunkSize, viperInstance.GetUint32(ClientGRPCFileChunkSizeKey))
+	assert.Equal(t, DefMaxFileSize, viperInstance.GetUint32(ClientGRPCMaxFileSizeKey))
 	assert.Equal(t, make(map[string]string), viperInstance.GetStringMapString(LabelsRootKey))
 }
 
@@ -783,6 +785,8 @@ func createConfig() *Config {
 				MaxMessageSize:        1048575,
 				MaxMessageReceiveSize: 1048575,
 				MaxMessageSendSize:    1048575,
+				MaxFileSize:           485753,
+				FileChunkSize:         48575,
 			},
 			Backoff: &BackOff{
 				InitialInterval:     200 * time.Millisecond,

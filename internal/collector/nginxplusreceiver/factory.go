@@ -19,6 +19,7 @@ import (
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver/internal/metadata"
 )
 
+// nolint: ireturn
 const defaultTimeout = 10 * time.Second
 
 // nolint: ireturn
