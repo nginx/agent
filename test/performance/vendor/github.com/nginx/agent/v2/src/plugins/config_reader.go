@@ -152,7 +152,9 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 		}
 
 		if synchronizeFeatures {
+			log.Debugf("Agent config features changed, synchronizing features")
 			r.synchronizeFeatures(payloadAgentConfig)
+			r.config.Features = payloadAgentConfig.Details.Features
 		}
 
 		r.messagePipeline.Process(core.NewMessage(core.AgentConfigChanged, payloadAgentConfig))
@@ -164,6 +166,7 @@ func (r *ConfigReader) synchronizeFeatures(agtCfg *proto.AgentConfig) {
 		r.detailsMu.RLock()
 		for _, feature := range r.config.Features {
 			if feature != agent_config.FeatureRegistration && feature != agent_config.FeatureNginxConfigAsync {
+				log.Debugf("Deregistering the feature %s", feature)
 				r.deRegisterPlugin(feature)
 			}
 		}
@@ -177,12 +180,15 @@ func (r *ConfigReader) synchronizeFeatures(agtCfg *proto.AgentConfig) {
 
 func (r *ConfigReader) deRegisterPlugin(data string) {
 	if data == agent_config.FeatureFileWatcher {
-
 		err := r.messagePipeline.DeRegister([]string{agent_config.FeatureFileWatcher, agent_config.FeatureFileWatcherThrottle})
 		if err != nil {
 			log.Warnf("Error De-registering %v Plugin: %v", data, err)
 		}
-
+	} else if data == agent_config.FeatureMetrics {
+		err := r.messagePipeline.DeRegister([]string{agent_config.FeatureMetrics, agent_config.FeatureMetricsThrottle, agent_config.FeatureMetricsSender})
+		if err != nil {
+			log.Warnf("Error De-registering %v Plugin: %v", data, err)
+		}
 	} else {
 		err := r.messagePipeline.DeRegister([]string{data})
 		if err != nil {

@@ -23,25 +23,26 @@ import (
 )
 
 type DataPlaneStatus struct {
-	messagePipeline             core.MessagePipeInterface
-	ctx                         context.Context
-	sendStatus                  chan bool
-	healthTicker                *time.Ticker
-	interval                    time.Duration
-	meta                        *proto.Metadata
-	binary                      core.NginxBinary
-	env                         core.Environment
-	version                     string
-	tags                        *[]string
-	configDirs                  string
-	lastSendDetails             time.Time
-	envHostInfo                 *proto.HostInfo
-	reportInterval              time.Duration
-	softwareDetails             map[string]*proto.DataplaneSoftwareDetails
-	nginxConfigActivityStatuses map[string]*proto.AgentActivityStatus
-	softwareDetailsMutex        sync.RWMutex
-	structMu                    sync.RWMutex
-	processes                   []*core.Process
+	messagePipeline                  core.MessagePipeInterface
+	ctx                              context.Context
+	sendStatus                       chan bool
+	healthTicker                     *time.Ticker
+	interval                         time.Duration
+	meta                             *proto.Metadata
+	binary                           core.NginxBinary
+	env                              core.Environment
+	version                          string
+	tags                             *[]string
+	configDirs                       string
+	lastSendDetails                  time.Time
+	envHostInfo                      *proto.HostInfo
+	reportInterval                   time.Duration
+	softwareDetails                  map[string]*proto.DataplaneSoftwareDetails
+	nginxConfigActivityStatuses      map[string]*proto.AgentActivityStatus
+	nginxConfigActivityStatusesMutex sync.RWMutex
+	softwareDetailsMutex             sync.RWMutex
+	structMu                         sync.RWMutex
+	processes                        []*core.Process
 }
 
 const (
@@ -81,7 +82,9 @@ func (dps *DataPlaneStatus) Init(pipeline core.MessagePipeInterface) {
 
 func (dps *DataPlaneStatus) Close() {
 	log.Info("DataPlaneStatus is wrapping up")
+	dps.nginxConfigActivityStatusesMutex.Lock()
 	dps.nginxConfigActivityStatuses = nil
+	dps.nginxConfigActivityStatusesMutex.Unlock()
 	dps.softwareDetailsMutex.Lock()
 	dps.softwareDetails = nil
 	dps.softwareDetailsMutex.Unlock()
@@ -144,8 +147,10 @@ func (dps *DataPlaneStatus) Subscriptions() []string {
 
 func (dps *DataPlaneStatus) updateNginxConfigActivityStatuses(newAgentActivityStatus *proto.AgentActivityStatus) {
 	log.Tracef("DataplaneStatus: Updating nginxConfigActivityStatuses with %v", newAgentActivityStatus)
-	if _, ok := newAgentActivityStatus.GetStatus().(*proto.AgentActivityStatus_NginxConfigStatus); ok {
+	if _, ok := newAgentActivityStatus.GetStatus().(*proto.AgentActivityStatus_NginxConfigStatus); dps.nginxConfigActivityStatuses != nil && ok {
+		dps.nginxConfigActivityStatusesMutex.Lock()
 		dps.nginxConfigActivityStatuses[newAgentActivityStatus.GetNginxConfigStatus().GetNginxId()] = newAgentActivityStatus
+		dps.nginxConfigActivityStatusesMutex.Unlock()
 	}
 }
 
@@ -184,6 +189,8 @@ func (dps *DataPlaneStatus) healthGoRoutine(pipeline core.MessagePipeInterface) 
 func (dps *DataPlaneStatus) dataplaneStatus(forceDetails bool) *proto.DataplaneStatus {
 	forceDetails = forceDetails || time.Now().UTC().Add(-dps.reportInterval).After(dps.lastSendDetails)
 
+	dps.nginxConfigActivityStatusesMutex.Lock()
+	defer dps.nginxConfigActivityStatusesMutex.Unlock()
 	agentActivityStatuses := []*proto.AgentActivityStatus{}
 	for _, nginxConfigActivityStatus := range dps.nginxConfigActivityStatuses {
 		agentActivityStatuses = append(agentActivityStatuses, nginxConfigActivityStatus)

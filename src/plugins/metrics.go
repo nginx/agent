@@ -41,6 +41,7 @@ type Metrics struct {
 	binary                   core.NginxBinary
 	processesMutex           sync.RWMutex
 	processes                []*core.Process
+	cancel                   context.CancelFunc
 }
 
 func NewMetrics(config *config.Config, env core.Environment, binary core.NginxBinary, processes []*core.Process) *Metrics {
@@ -65,13 +66,14 @@ func NewMetrics(config *config.Config, env core.Environment, binary core.NginxBi
 func (m *Metrics) Init(pipeline core.MessagePipeInterface) {
 	log.Info("Metrics initializing")
 	m.pipeline = pipeline
-	m.ctx = pipeline.Context()
+	m.ctx, m.cancel = context.WithCancel(pipeline.Context())
 	go m.metricsGoroutine()
 	go m.drainBuffer(m.ctx)
 }
 
 func (m *Metrics) Close() {
 	m.collectorsMutex.Lock()
+	m.cancel()
 	m.collectors = nil
 	m.collectorsMutex.Unlock()
 	log.Info("Metrics is wrapping up")
@@ -179,6 +181,7 @@ func (m *Metrics) metricsGoroutine() {
 			}
 			return
 		case <-m.ticker.C:
+			log.Debug("Collecting metrics")
 			m.collectStats()
 
 			if m.collectorsUpdate.Load() {

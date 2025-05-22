@@ -60,7 +60,8 @@ func (r *MetricsSender) Info() *core.Info {
 
 func (r *MetricsSender) Process(msg *core.Message) {
 	if msg.Exact(core.AgentConnected) {
-		r.readyToSend.Toggle()
+		log.Debug("Metrics sender received agent connected message")
+		r.readyToSend.Store(true)
 		return
 	}
 
@@ -82,6 +83,7 @@ func (r *MetricsSender) Process(msg *core.Message) {
 				if err != nil {
 					log.Errorf("Failed to send MetricsReport: %v", err)
 				} else {
+					log.Debug("Metrics sender sent metrics report")
 					r.pipeline.Process(core.NewMessage(core.MetricReportSent, nil))
 				}
 			case *models.EventReport:
@@ -99,9 +101,12 @@ func (r *MetricsSender) Process(msg *core.Message) {
 			}
 		}
 	} else if msg.Exact(core.AgentConfigChanged) {
+		log.Debug("Metrics sender received agent config changed message")
 		switch config := msg.Data().(type) {
 		case *proto.AgentConfig:
 			r.metricSenderBackoff(config)
+			// If metrics sender feature is re-enabled remotely then we need to set readyToSend to true
+			r.readyToSend.Store(true)
 		default:
 			log.Warnf("metrics sender expected %T type, but got: %T", &proto.AgentConfig{}, msg.Data())
 		}
