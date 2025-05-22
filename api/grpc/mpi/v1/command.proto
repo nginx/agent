@@ -65,7 +65,7 @@ message HostInfo {
     // The host identifier
     string host_id = 1 [(buf.validate.field).string.uuid = true];
     // The name of the host
-    string hostname = 2 [(buf.validate.field).string.address = true];
+    string hostname = 2;
     // Release information of the host
     ReleaseInfo release_info = 3;
 }
@@ -89,7 +89,7 @@ message ContainerInfo {
     // The identifier of the container
     string container_id = 1 [(buf.validate.field).string.uuid = true];
     // The name of the host
-    string hostname = 2 [(buf.validate.field).string.address = true];
+    string hostname = 2;
     // Release information of the container
     ReleaseInfo release_info = 3;
 }

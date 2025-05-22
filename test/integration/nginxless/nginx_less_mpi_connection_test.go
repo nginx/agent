@@ -15,7 +15,7 @@ import (
 
 // Verify that the agent sends a connection request to Management Plane even when Nginx is not present
 func TestNginxLessGrpc_Connection(t *testing.T) {
-	teardownTest := utils.SetupConnectionTest(t, true, true)
+	teardownTest := utils.SetupConnectionTest(t, true, true, )
 	defer teardownTest(t)
 
 	utils.VerifyConnection(t, 1)

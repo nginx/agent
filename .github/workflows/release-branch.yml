@@ -39,35 +39,6 @@ on:
         description: 'Location to publish packages to'
         required: false
         default: "https://up-ap.nginx.com"
-  workflow_call:
-    inputs:
-      githubRelease:
-        type: boolean
-        default: false
-      packageVersion:
-        type: string
-        default: "3.0.0"
-      packageBuildNo:
-        type: string
-        default: "1"
-      uploadAzure:
-        type: boolean
-        default: true
-      publishPackages:
-        type: boolean
-        default: true
-      tagRelease:
-        type: boolean
-        default: false
-      createPullRequest:
-        type: boolean
-        default: false
-      releaseBranch:
-        type: string
-        required: true
-      uploadUrl:
-        type: string
-        default: "https://up-ap.nginx.com"
 
 env:
   NFPM_VERSION: 'v2.35.3'
