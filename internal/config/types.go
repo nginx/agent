@@ -84,9 +84,11 @@ type (
 		KeepAlive *KeepAlive `yaml:"keepalive" mapstructure:"keepalive"`
 		// if MaxMessageSize is size set then we use that value,
 		// otherwise MaxMessageRecieveSize and MaxMessageSendSize for individual settings
-		MaxMessageSize        int `yaml:"max_message_size"         mapstructure:"max_message_size"`
-		MaxMessageReceiveSize int `yaml:"max_message_receive_size" mapstructure:"max_message_receive_size"`
-		MaxMessageSendSize    int `yaml:"max_message_send_size"    mapstructure:"max_message_send_size"`
+		MaxMessageSize        int    `yaml:"max_message_size"         mapstructure:"max_message_size"`
+		MaxMessageReceiveSize int    `yaml:"max_message_receive_size" mapstructure:"max_message_receive_size"`
+		MaxMessageSendSize    int    `yaml:"max_message_send_size"    mapstructure:"max_message_send_size"`
+		MaxFileSize           uint32 `yaml:"max_file_size"            mapstructure:"max_file_size"`
+		FileChunkSize         uint32 `yaml:"file_chunk_size"          mapstructure:"file_chunk_size"`
 	}
 
 	KeepAlive struct {
@@ -182,11 +184,12 @@ type (
 
 	// OTel Collector Receiver configuration.
 	Receivers struct {
-		HostMetrics        *HostMetrics        `yaml:"host_metrics"         mapstructure:"host_metrics"`
-		OtlpReceivers      []OtlpReceiver      `yaml:"otlp_receivers"       mapstructure:"otlp_receivers"`
-		NginxReceivers     []NginxReceiver     `yaml:"nginx_receivers"      mapstructure:"nginx_receivers"`
-		NginxPlusReceivers []NginxPlusReceiver `yaml:"nginx_plus_receivers" mapstructure:"nginx_plus_receivers"`
-		TcplogReceivers    []TcplogReceiver    `yaml:"tcplog_receivers"     mapstructure:"tcplog_receivers"`
+		ContainerMetrics   *ContainerMetricsReceiver `yaml:"container_metrics"    mapstructure:"container_metrics"`
+		HostMetrics        *HostMetrics              `yaml:"host_metrics"         mapstructure:"host_metrics"`
+		OtlpReceivers      []OtlpReceiver            `yaml:"otlp_receivers"       mapstructure:"otlp_receivers"`
+		NginxReceivers     []NginxReceiver           `yaml:"nginx_receivers"      mapstructure:"nginx_receivers"`
+		NginxPlusReceivers []NginxPlusReceiver       `yaml:"nginx_plus_receivers" mapstructure:"nginx_plus_receivers"`
+		TcplogReceivers    []TcplogReceiver          `yaml:"tcplog_receivers"     mapstructure:"tcplog_receivers"`
 	}
 
 	OtlpReceiver struct {
@@ -228,6 +231,10 @@ type (
 	NginxPlusReceiver struct {
 		InstanceID string     `yaml:"instance_id" mapstructure:"instance_id"`
 		PlusAPI    APIDetails `yaml:"api_details" mapstructure:"api_details"`
+	}
+
+	ContainerMetricsReceiver struct {
+		CollectionInterval time.Duration `yaml:"collection_interval" mapstructure:"collection_interval"`
 	}
 
 	HostMetrics struct {
@@ -383,6 +390,7 @@ func (c *Config) IsACollectorExporterConfigured() bool {
 		c.Collector.Exporters.Debug != nil
 }
 
+// nolint: cyclop, revive
 func (c *Config) AreReceiversConfigured() bool {
 	if c.Collector == nil {
 		return false
@@ -395,6 +403,7 @@ func (c *Config) AreReceiversConfigured() bool {
 		c.Collector.Receivers.NginxReceivers != nil ||
 		len(c.Collector.Receivers.NginxReceivers) > 0 ||
 		c.Collector.Receivers.HostMetrics != nil ||
+		c.Collector.Receivers.ContainerMetrics != nil ||
 		c.Collector.Receivers.TcplogReceivers != nil ||
 		len(c.Collector.Receivers.TcplogReceivers) > 0
 }

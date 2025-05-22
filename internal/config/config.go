@@ -20,6 +20,8 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v3/internal/datasource/file"
+	"github.com/nginx/agent/v3/internal/datasource/host"
+	"github.com/nginx/agent/v3/internal/logger"
 
 	"github.com/goccy/go-yaml"
 	uuidLibrary "github.com/nginx/agent/v3/pkg/id"
@@ -81,6 +83,10 @@ func ResolveConfig() (*Config, error) {
 	directories := viperInstance.GetStringSlice(AllowedDirectoriesKey)
 	allowedDirs := []string{AgentDirName}
 
+	log := resolveLog()
+	slogger := logger.New(log.Path, log.Level)
+	slog.SetDefault(slogger)
+
 	// Check directories in allowed_directories are valid
 	for _, dir := range directories {
 		if dir == "" || !filepath.IsAbs(dir) {
@@ -109,7 +115,7 @@ func ResolveConfig() (*Config, error) {
 		UUID:               viperInstance.GetString(UUIDKey),
 		Version:            viperInstance.GetString(VersionKey),
 		Path:               viperInstance.GetString(ConfigPathKey),
-		Log:                resolveLog(),
+		Log:                log,
 		DataPlaneConfig:    resolveDataPlaneConfig(),
 		Client:             resolveClient(),
 		AllowedDirectories: allowedDirs,
@@ -134,7 +140,7 @@ func checkCollectorConfiguration(collector *Collector, config *Config) {
 	if isOTelExporterConfigured(collector) && config.IsGrpcClientConfigured() && config.IsAuthConfigured() &&
 		config.IsTLSConfigured() {
 		slog.Info("No collector configuration found in NGINX Agent config, command server configuration found." +
-			"Using default collector configuration")
+			" Using default collector configuration")
 		defaultCollector(collector, config)
 	}
 }
@@ -153,16 +159,29 @@ func defaultCollector(collector *Collector, config *Config) {
 		token = pathToken
 	}
 
-	collector.Receivers.HostMetrics = &HostMetrics{
-		Scrapers: &HostMetricsScrapers{
-			CPU:        &CPUScraper{},
-			Disk:       &DiskScraper{},
-			Filesystem: &FilesystemScraper{},
-			Memory:     &MemoryScraper{},
-			Network:    nil,
-		},
-		CollectionInterval: 1 * time.Minute,
-		InitialDelay:       1 * time.Second,
+	if host.NewInfo().IsContainer() {
+		collector.Receivers.ContainerMetrics = &ContainerMetricsReceiver{
+			CollectionInterval: 1 * time.Minute,
+		}
+		collector.Receivers.HostMetrics = &HostMetrics{
+			Scrapers: &HostMetricsScrapers{
+				Network: &NetworkScraper{},
+			},
+			CollectionInterval: 1 * time.Minute,
+			InitialDelay:       1 * time.Second,
+		}
+	} else {
+		collector.Receivers.HostMetrics = &HostMetrics{
+			Scrapers: &HostMetricsScrapers{
+				CPU:        &CPUScraper{},
+				Memory:     &MemoryScraper{},
+				Disk:       &DiskScraper{},
+				Filesystem: &FilesystemScraper{},
+				Network:    &NetworkScraper{},
+			},
+			CollectionInterval: 1 * time.Minute,
+			InitialDelay:       1 * time.Second,
+		}
 	}
 
 	collector.Exporters.OtlpExporters = append(collector.Exporters.OtlpExporters, OtlpExporter{
@@ -352,13 +371,25 @@ func registerClientFlags(fs *flag.FlagSet) {
 	fs.Int(
 		ClientGRPCMaxMessageReceiveSizeKey,
 		DefMaxMessageRecieveSize,
-		"Updates the client grpc setting MaxRecvMsgSize with the specific value in MB.",
+		"Updates the client grpc setting MaxRecvMsgSize with the specific value in bytes.",
 	)
 
 	fs.Int(
 		ClientGRPCMaxMessageSendSizeKey,
 		DefMaxMessageSendSize,
-		"Updates the client grpc setting MaxSendMsgSize with the specific value in MB.",
+		"Updates the client grpc setting MaxSendMsgSize with the specific value in bytes.",
+	)
+
+	fs.Uint32(
+		ClientGRPCFileChunkSizeKey,
+		DefFileChunkSize,
+		"File chunk size in bytes.",
+	)
+
+	fs.Uint32(
+		ClientGRPCMaxFileSizeKey,
+		DefMaxFileSize,
+		"Max file size in bytes.",
 	)
 }
 
@@ -695,6 +726,8 @@ func resolveClient() *Client {
 			MaxMessageSize:        viperInstance.GetInt(ClientGRPCMaxMessageSizeKey),
 			MaxMessageReceiveSize: viperInstance.GetInt(ClientGRPCMaxMessageReceiveSizeKey),
 			MaxMessageSendSize:    viperInstance.GetInt(ClientGRPCMaxMessageSendSizeKey),
+			MaxFileSize:           viperInstance.GetUint32(ClientGRPCMaxFileSizeKey),
+			FileChunkSize:         viperInstance.GetUint32(ClientGRPCFileChunkSizeKey),
 		},
 		Backoff: &BackOff{
 			InitialInterval:     viperInstance.GetDuration(ClientBackoffInitialIntervalKey),

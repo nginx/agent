@@ -8,14 +8,14 @@ package files
 
 import (
 	"cmp"
+	"crypto/sha256"
 	"crypto/x509"
+	"encoding/base64"
 	"fmt"
 	"net"
 	"os"
 	"slices"
 	"strconv"
-
-	"github.com/google/uuid"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/datasource/cert"
@@ -135,7 +135,10 @@ func GenerateConfigVersion(fileSlice []*mpi.File) string {
 
 // GenerateHash returns the hash value of a file's contents.
 func GenerateHash(b []byte) string {
-	return uuid.NewMD5(uuid.Nil, b).String()
+	hash := sha256.New()
+	hash.Write(b)
+
+	return base64.StdEncoding.EncodeToString(hash.Sum(nil))
 }
 
 // ConvertToMapOfFiles converts a list of files to a map of files with the file name as the key

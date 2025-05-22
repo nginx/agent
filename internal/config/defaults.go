@@ -5,7 +5,6 @@
 package config
 
 import (
-	"math"
 	"time"
 
 	pkg "github.com/nginx/agent/v3/pkg/config"
@@ -28,9 +27,11 @@ const (
 	DefCommandTLServerNameKey  = ""
 
 	// Client GRPC Settings
-	DefMaxMessageSize        = 0       // 0 = unset
-	DefMaxMessageRecieveSize = 4194304 // default 4 MB
-	DefMaxMessageSendSize    = math.MaxInt32
+	DefMaxMessageSize               = 0       // 0 = unset
+	DefMaxMessageRecieveSize        = 4194304 // default 4 MB
+	DefMaxMessageSendSize           = 4194304 // default 4 MB
+	DefMaxFileSize           uint32 = 1048576 // 1MB
+	DefFileChunkSize         uint32 = 524288  // 0.5MB
 
 	// Client HTTP Settings
 	DefHTTPTimeout = 10 * time.Second
@@ -41,11 +42,11 @@ const (
 	DefGRPCKeepAlivePermitWithoutStream = true
 
 	// Client Backoff defaults
-	DefBackoffInitialInterval     = 500 * time.Millisecond
+	DefBackoffInitialInterval     = 1 * time.Second
 	DefBackoffRandomizationFactor = 0.5 // the value is 0 <= and < 1
-	DefBackoffMultiplier          = 1.5
-	DefBackoffMaxInterval         = 5 * time.Second
-	DefBackoffMaxElapsedTime      = 30 * time.Second
+	DefBackoffMultiplier          = 3
+	DefBackoffMaxInterval         = 20 * time.Second
+	DefBackoffMaxElapsedTime      = 1 * time.Minute
 
 	// Watcher defaults
 	DefInstanceWatcherMonitoringFrequency       = 5 * time.Second

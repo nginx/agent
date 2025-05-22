@@ -198,13 +198,13 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 			case test.configApplyStatus == model.NoChange:
 				assert.Len(t, messages, 1)
 
-				response, ok := messages[0].Data.(*mpi.DataPlaneResponse)
+				response, ok := messages[0].Data.(*model.ConfigApplySuccess)
 				assert.True(t, ok)
 				assert.Equal(t, bus.ConfigApplySuccessfulTopic, messages[0].Topic)
 				assert.Equal(
 					t,
 					mpi.CommandResponse_COMMAND_STATUS_OK,
-					response.GetCommandResponse().GetStatus(),
+					response.DataPlaneResponse.GetCommandResponse().GetStatus(),
 				)
 			case test.message == nil:
 				assert.Empty(t, messages)
@@ -457,7 +457,51 @@ func TestFilePlugin_Process_ConfigApplyRollbackCompleteTopic(t *testing.T) {
 		InstanceId: instance.GetInstanceMeta().GetInstanceId(),
 	}
 
-	filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigApplySuccessfulTopic, Data: expectedResponse})
+	filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigApplySuccessfulTopic, Data: &model.ConfigApplySuccess{
+		ConfigContext:     &model.NginxConfigContext{},
+		DataPlaneResponse: expectedResponse,
+	}})
+
+	messages := messagePipe.GetMessages()
+	response, ok := messages[0].Data.(*mpi.DataPlaneResponse)
+	assert.True(t, ok)
+
+	assert.Equal(t, expectedResponse.GetCommandResponse().GetStatus(), response.GetCommandResponse().GetStatus())
+	assert.Equal(t, expectedResponse.GetCommandResponse().GetMessage(), response.GetCommandResponse().GetMessage())
+	assert.Equal(t, expectedResponse.GetCommandResponse().GetError(), response.GetCommandResponse().GetError())
+	assert.Equal(t, expectedResponse.GetMessageMeta().GetCorrelationId(), response.GetMessageMeta().GetCorrelationId())
+
+	assert.Equal(t, expectedResponse.GetInstanceId(), response.GetInstanceId())
+}
+
+func TestFilePlugin_Process_ConfigApplyCompleteTopic(t *testing.T) {
+	ctx := context.Background()
+	instance := protos.GetNginxOssInstance([]string{})
+	mockFileManager := &filefakes.FakeFileManagerServiceInterface{}
+
+	messagePipe := busfakes.NewFakeMessagePipe()
+	agentConfig := types.AgentConfig()
+	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+	filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection)
+
+	err := filePlugin.Init(ctx, messagePipe)
+	require.NoError(t, err)
+	filePlugin.fileManagerService = mockFileManager
+	expectedResponse := &mpi.DataPlaneResponse{
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     id.GenerateMessageID(),
+			CorrelationId: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
+			Timestamp:     timestamppb.Now(),
+		},
+		CommandResponse: &mpi.CommandResponse{
+			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+			Message: "Config apply successful",
+			Error:   "",
+		},
+		InstanceId: instance.GetInstanceMeta().GetInstanceId(),
+	}
+
+	filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: expectedResponse})
 
 	messages := messagePipe.GetMessages()
 	response, ok := messages[0].Data.(*mpi.DataPlaneResponse)

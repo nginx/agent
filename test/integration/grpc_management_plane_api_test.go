@@ -31,13 +31,12 @@ import (
 )
 
 const (
-	configApplyErrorMessage = "failed validating config NGINX config test failed exit status 1:" +
-		" nginx: [emerg] unexpected end of file, expecting \";\" or \"}\" in /etc/nginx/nginx.conf:2\nnginx: " +
-		"configuration file /etc/nginx/nginx.conf test failed\n"
+	configApplyErrorMessage = "failed to parse config invalid " +
+		"number of arguments in \"worker_processes\" directive in /etc/nginx/nginx.conf:1"
 
-	retryCount       = 5
-	retryWaitTime    = 4 * time.Second
-	retryMaxWaitTime = 5 * time.Second
+	retryCount       = 8
+	retryWaitTime    = 5 * time.Second
+	retryMaxWaitTime = 6 * time.Second
 )
 
 var (
@@ -64,12 +63,12 @@ type (
 	}
 )
 
-func setupConnectionTest(tb testing.TB, expectNoErrorsInLogs, nginxless bool) func(tb testing.TB) {
+func setupConnectionTest(tb testing.TB, expectNoErrorsInLogs, nginxless bool, agentConfig string) func(tb testing.TB) {
 	tb.Helper()
 	ctx := context.Background()
 
 	if os.Getenv("TEST_ENV") == "Container" {
-		setupContainerEnvironment(ctx, tb, nginxless)
+		setupContainerEnvironment(ctx, tb, nginxless, agentConfig)
 	} else {
 		setupLocalEnvironment(tb)
 	}
@@ -90,7 +89,7 @@ func setupConnectionTest(tb testing.TB, expectNoErrorsInLogs, nginxless bool) fu
 }
 
 // setupContainerEnvironment sets up the container environment for testing.
-func setupContainerEnvironment(ctx context.Context, tb testing.TB, nginxless bool) {
+func setupContainerEnvironment(ctx context.Context, tb testing.TB, nginxless bool, agentConfig string) {
 	tb.Helper()
 	tb.Log("Running tests in a container environment")
 
@@ -98,7 +97,7 @@ func setupContainerEnvironment(ctx context.Context, tb testing.TB, nginxless boo
 	setupMockManagementPlaneGrpc(ctx, tb, containerNetwork)
 
 	params := &helpers.Parameters{
-		NginxAgentConfigPath: "../config/agent/nginx-config-with-grpc-client.conf",
+		NginxAgentConfigPath: agentConfig,
 		LogMessage:           "Agent connected",
 	}
 	switch nginxless {
@@ -192,7 +191,7 @@ func setupLocalEnvironment(tb testing.TB) {
 
 func TestGrpc_Reconnection(t *testing.T) {
 	ctx := context.Background()
-	teardownTest := setupConnectionTest(t, false, false)
+	teardownTest := setupConnectionTest(t, false, false, "../config/agent/nginx-config-with-grpc-client.conf")
 	defer teardownTest(t)
 
 	timeout := 15 * time.Second
@@ -218,7 +217,7 @@ func TestGrpc_Reconnection(t *testing.T) {
 
 // Verify that the agent sends a connection request and an update data plane status request
 func TestGrpc_StartUp(t *testing.T) {
-	teardownTest := setupConnectionTest(t, true, false)
+	teardownTest := setupConnectionTest(t, true, false, "../config/agent/nginx-config-with-grpc-client.conf")
 	defer teardownTest(t)
 
 	verifyConnection(t, 2)
@@ -227,7 +226,7 @@ func TestGrpc_StartUp(t *testing.T) {
 }
 
 func TestGrpc_ConfigUpload(t *testing.T) {
-	teardownTest := setupConnectionTest(t, true, false)
+	teardownTest := setupConnectionTest(t, true, false, "../config/agent/nginx-config-with-grpc-client.conf")
 	defer teardownTest(t)
 
 	nginxInstanceID := verifyConnection(t, 2)
@@ -274,7 +273,7 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 
 func TestGrpc_ConfigApply(t *testing.T) {
 	ctx := context.Background()
-	teardownTest := setupConnectionTest(t, false, false)
+	teardownTest := setupConnectionTest(t, false, false, "../config/agent/nginx-config-with-grpc-client.conf")
 	defer teardownTest(t)
 
 	nginxInstanceID := verifyConnection(t, 2)
@@ -295,9 +294,15 @@ func TestGrpc_ConfigApply(t *testing.T) {
 
 	t.Run("Test 2: Valid config", func(t *testing.T) {
 		clearManagementPlaneResponses(t)
+		newConfigFile := "../config/nginx/nginx-with-test-location.conf"
+
+		if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+			newConfigFile = "../config/nginx/nginx-plus-with-test-location.conf"
+		}
+
 		err := mockManagementPlaneGrpcContainer.CopyFileToContainer(
 			ctx,
-			"../config/nginx/nginx-with-test-location.conf",
+			newConfigFile,
 			fmt.Sprintf("/mock-management-plane-grpc/config/%s/etc/nginx/nginx.conf", nginxInstanceID),
 			0o666,
 		)
@@ -305,11 +310,17 @@ func TestGrpc_ConfigApply(t *testing.T) {
 
 		performConfigApply(t, nginxInstanceID)
 
-		responses = getManagementPlaneResponses(t, 1)
+		responses = getManagementPlaneResponses(t, 2)
 		t.Logf("Config apply responses: %v", responses)
+
+		sort.Slice(responses, func(i, j int) bool {
+			return responses[i].GetCommandResponse().GetMessage() < responses[j].GetCommandResponse().GetMessage()
+		})
 
 		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 		assert.Equal(t, "Config apply successful", responses[0].GetCommandResponse().GetMessage())
+		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
+		assert.Equal(t, "Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
 	})
 
 	t.Run("Test 3: Invalid config", func(t *testing.T) {
@@ -354,7 +365,7 @@ func TestGrpc_ConfigApply(t *testing.T) {
 
 func TestGrpc_FileWatcher(t *testing.T) {
 	ctx := context.Background()
-	teardownTest := setupConnectionTest(t, true, false)
+	teardownTest := setupConnectionTest(t, true, false, "../config/agent/nginx-config-with-grpc-client.conf")
 	defer teardownTest(t)
 
 	verifyConnection(t, 2)
@@ -378,7 +389,7 @@ func TestGrpc_FileWatcher(t *testing.T) {
 }
 
 func TestGrpc_DataplaneHealthRequest(t *testing.T) {
-	teardownTest := setupConnectionTest(t, true, false)
+	teardownTest := setupConnectionTest(t, true, false, "../config/agent/nginx-config-with-grpc-client.conf")
 	defer teardownTest(t)
 
 	verifyConnection(t, 2)
@@ -411,6 +422,44 @@ func TestGrpc_DataplaneHealthRequest(t *testing.T) {
 
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully sent the health status update", responses[1].GetCommandResponse().GetMessage())
+}
+
+func TestGrpc_ConfigApply_Chunking(t *testing.T) {
+	ctx := context.Background()
+	teardownTest := setupConnectionTest(t, false, false,
+		"../config/agent/nginx-config-with-max-file-size.conf")
+	defer teardownTest(t)
+
+	nginxInstanceID := verifyConnection(t, 2)
+
+	responses := getManagementPlaneResponses(t, 1)
+	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
+
+	clearManagementPlaneResponses(t)
+	newConfigFile := "../config/nginx/nginx-1mb-file.conf"
+
+	err := mockManagementPlaneGrpcContainer.CopyFileToContainer(
+		ctx,
+		newConfigFile,
+		fmt.Sprintf("/mock-management-plane-grpc/config/%s/etc/nginx/nginx.conf", nginxInstanceID),
+		0o666,
+	)
+	require.NoError(t, err)
+
+	performConfigApply(t, nginxInstanceID)
+
+	responses = getManagementPlaneResponses(t, 2)
+	t.Logf("Config apply responses: %v", responses)
+
+	sort.Slice(responses, func(i, j int) bool {
+		return responses[i].GetCommandResponse().GetMessage() < responses[j].GetCommandResponse().GetMessage()
+	})
+
+	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+	assert.Equal(t, "Config apply successful", responses[0].GetCommandResponse().GetMessage())
+	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
+	assert.Equal(t, "Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
 }
 
 func performConfigApply(t *testing.T, nginxInstanceID string) {
@@ -623,26 +672,36 @@ func verifyUpdateDataPlaneHealth(t *testing.T) {
 	t.Helper()
 
 	client := resty.New()
+
 	client.SetRetryCount(retryCount).SetRetryWaitTime(retryWaitTime).SetRetryMaxWaitTime(retryMaxWaitTime)
+
 	client.AddRetryCondition(
+
 		func(r *resty.Response, err error) bool {
 			return r.StatusCode() == http.StatusNotFound
 		},
 	)
 
 	url := fmt.Sprintf("http://%s/api/v1/health", mockManagementPlaneAPIAddress)
+
 	resp, err := client.R().EnableTrace().Get(url)
+
 	require.NoError(t, err)
+
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 
 	responseData := resp.Body()
+
 	t.Logf("Response: %s", string(responseData))
+
 	assert.True(t, json.Valid(responseData))
 
 	pb := protojson.UnmarshalOptions{DiscardUnknown: true}
 
 	updateDataPlaneHealthRequest := mpi.UpdateDataPlaneHealthRequest{}
+
 	unmarshalErr := pb.Unmarshal(responseData, &updateDataPlaneHealthRequest)
+
 	require.NoError(t, unmarshalErr)
 
 	t.Logf("UpdateDataPlaneHealthRequest: %v", &updateDataPlaneHealthRequest)
@@ -650,16 +709,23 @@ func verifyUpdateDataPlaneHealth(t *testing.T) {
 	assert.NotNil(t, &updateDataPlaneHealthRequest)
 
 	// Verify message metadata
+
 	messageMeta := updateDataPlaneHealthRequest.GetMessageMeta()
+
 	assert.NotEmpty(t, messageMeta.GetCorrelationId())
+
 	assert.NotEmpty(t, messageMeta.GetMessageId())
+
 	assert.NotEmpty(t, messageMeta.GetTimestamp())
 
 	healths := updateDataPlaneHealthRequest.GetInstanceHealths()
+
 	assert.Len(t, healths, 1)
 
 	// Verify health metadata
+
 	assert.NotEmpty(t, healths[0].GetInstanceId())
+
 	assert.Equal(t, mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY, healths[0].GetInstanceHealthStatus())
 }
 
@@ -667,22 +733,29 @@ func verifyUpdateDataPlaneStatus(t *testing.T) {
 	t.Helper()
 
 	client := resty.New()
+
 	client.SetRetryCount(3).SetRetryWaitTime(50 * time.Millisecond).SetRetryMaxWaitTime(200 * time.Millisecond)
 
 	url := fmt.Sprintf("http://%s/api/v1/status", mockManagementPlaneAPIAddress)
+
 	resp, err := client.R().EnableTrace().Get(url)
 
 	require.NoError(t, err)
+
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 
 	updateDataPlaneStatusRequest := mpi.UpdateDataPlaneStatusRequest{}
 
 	responseData := resp.Body()
+
 	t.Logf("Response: %s", string(responseData))
+
 	assert.True(t, json.Valid(responseData))
 
 	pb := protojson.UnmarshalOptions{DiscardUnknown: true}
+
 	unmarshalErr := pb.Unmarshal(responseData, &updateDataPlaneStatusRequest)
+
 	require.NoError(t, unmarshalErr)
 
 	t.Logf("UpdateDataPlaneStatusRequest: %v", &updateDataPlaneStatusRequest)
@@ -690,40 +763,60 @@ func verifyUpdateDataPlaneStatus(t *testing.T) {
 	assert.NotNil(t, &updateDataPlaneStatusRequest)
 
 	// Verify message metadata
+
 	messageMeta := updateDataPlaneStatusRequest.GetMessageMeta()
+
 	assert.NotEmpty(t, messageMeta.GetCorrelationId())
+
 	assert.NotEmpty(t, messageMeta.GetMessageId())
+
 	assert.NotEmpty(t, messageMeta.GetTimestamp())
 
 	instances := updateDataPlaneStatusRequest.GetResource().GetInstances()
+
 	sort.Slice(instances, func(i, j int) bool {
 		return instances[i].GetInstanceMeta().GetInstanceType() < instances[j].GetInstanceMeta().GetInstanceType()
 	})
+
 	assert.Len(t, instances, 2)
 
 	// Verify agent instance metadata
+
 	assert.NotEmpty(t, instances[0].GetInstanceMeta().GetInstanceId())
+
 	assert.Equal(t, mpi.InstanceMeta_INSTANCE_TYPE_AGENT, instances[0].GetInstanceMeta().GetInstanceType())
+
 	assert.NotEmpty(t, instances[0].GetInstanceMeta().GetVersion())
 
 	// Verify agent instance configuration
+
 	assert.Empty(t, instances[0].GetInstanceConfig().GetActions())
+
 	assert.NotEmpty(t, instances[0].GetInstanceRuntime().GetProcessId())
+
 	assert.Equal(t, "/usr/bin/nginx-agent", instances[0].GetInstanceRuntime().GetBinaryPath())
+
 	assert.Equal(t, "/etc/nginx-agent/nginx-agent.conf", instances[0].GetInstanceRuntime().GetConfigPath())
 
 	// Verify NGINX instance metadata
+
 	assert.NotEmpty(t, instances[1].GetInstanceMeta().GetInstanceId())
+
 	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
 		assert.Equal(t, mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS, instances[1].GetInstanceMeta().GetInstanceType())
 	} else {
 		assert.Equal(t, mpi.InstanceMeta_INSTANCE_TYPE_NGINX, instances[1].GetInstanceMeta().GetInstanceType())
 	}
+
 	assert.NotEmpty(t, instances[1].GetInstanceMeta().GetVersion())
 
 	// Verify NGINX instance configuration
+
 	assert.Empty(t, instances[1].GetInstanceConfig().GetActions())
+
 	assert.NotEmpty(t, instances[1].GetInstanceRuntime().GetProcessId())
+
 	assert.Equal(t, "/usr/sbin/nginx", instances[1].GetInstanceRuntime().GetBinaryPath())
+
 	assert.Equal(t, "/etc/nginx/nginx.conf", instances[1].GetInstanceRuntime().GetConfigPath())
 }

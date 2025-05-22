@@ -15,12 +15,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/nginx/agent/v3/internal/config"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewLogger(t *testing.T) {
-	result := New(config.Log{})
+	result := New("", "")
 	assert.IsType(t, &slog.Logger{}, result)
 }
 

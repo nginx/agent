@@ -37,6 +37,8 @@ var (
 	ClientGRPCMaxMessageSendSizeKey    = pre(ClientRootKey) + "grpc_max_message_send_size"
 	ClientGRPCMaxMessageReceiveSizeKey = pre(ClientRootKey) + "grpc_max_message_receive_size"
 	ClientGRPCMaxMessageSizeKey        = pre(ClientRootKey) + "grpc_max_message_size"
+	ClientGRPCMaxFileSizeKey           = pre(ClientRootKey) + "grpc_max_file_size"
+	ClientGRPCFileChunkSizeKey         = pre(ClientRootKey) + "grpc_file_chunk_size"
 
 	ClientBackoffInitialIntervalKey     = pre(ClientRootKey) + "backoff_initial_interval"
 	ClientBackoffMaxIntervalKey         = pre(ClientRootKey) + "backoff_max_interval"

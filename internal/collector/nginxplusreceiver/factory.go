@@ -9,6 +9,9 @@ import (
 	"errors"
 	"time"
 
+	"go.opentelemetry.io/collector/scraper"
+	"go.opentelemetry.io/collector/scraper/scraperhelper"
+
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/receiver"
@@ -16,6 +19,7 @@ import (
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver/internal/metadata"
 )
 
+// nolint: ireturn
 const defaultTimeout = 10 * time.Second
 
 // nolint: ireturn
@@ -43,6 +47,19 @@ func createMetricsReceiver(
 	}
 
 	nps := newNginxPlusScraper(params, cfg)
+	npsMetrics, npsMetricsError := scraper.NewMetrics(
+		nps.Scrape,
+		scraper.WithStart(nps.Start),
+		scraper.WithShutdown(nps.Shutdown),
+	)
+	if npsMetricsError != nil {
+		return nil, npsMetricsError
+	}
 
-	return nps, nil
+	return scraperhelper.NewMetricsController(
+		&cfg.ControllerConfig,
+		params,
+		metricsConsumer,
+		scraperhelper.AddScraper(metadata.Type, npsMetrics),
+	)
 }
