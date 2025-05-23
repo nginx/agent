@@ -107,11 +107,11 @@ func (nc *NginxCounter) recieveSocketMessage(socketListener net.Listener) {
 }
 
 func (nc *NginxCounter) Close() {
+	log.Info("NGINX Counter is wrapping up")
 	if nc.socketListener != nil {
 		nc.socketListener.Close()
 	}
 
-	log.Info("NGINX Counter is wrapping up")
 	if err := os.RemoveAll(nc.serverAddress[1]); err != nil {
 		log.Warn("Error removing socket")
 	}
@@ -119,6 +119,7 @@ func (nc *NginxCounter) Close() {
 	nc.processMutex.RLock()
 	nc.nginxes = nil
 	nc.processMutex.RUnlock()
+	log.Info("NGINX Counter is closed")
 }
 
 func (nc *NginxCounter) Info() *core.Info {
@@ -128,7 +129,7 @@ func (nc *NginxCounter) Info() *core.Info {
 func (nc *NginxCounter) Process(msg *core.Message) {
 	switch {
 	case msg.Exact(core.AgentConnected):
-		nc.connected.Toggle()
+		nc.connected.Store(true)
 	case msg.Exact(core.NginxDetailProcUpdate):
 		// get the processes from this payload
 		nc.processMutex.Lock()

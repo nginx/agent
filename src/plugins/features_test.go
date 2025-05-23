@@ -93,10 +93,11 @@ func TestFeatures_Process(t *testing.T) {
 	binary.On("UpdateNginxDetailsFromProcesses", mock.Anything).Return()
 
 	cmdr := tutils.NewMockCommandClient()
+	reporter := tutils.NewMockMetricsReportClient()
 
 	configuration, _ := config.GetConfig("1234")
 
-	pluginUnderTest := NewFeatures(cmdr, configuration, env, binary, "agentVersion", processes, events.NewAgentEventMeta(
+	pluginUnderTest := NewFeatures(cmdr, reporter, configuration, env, binary, "agentVersion", processes, events.NewAgentEventMeta(
 		config.MODULE,
 		"v0.0.1",
 		"75231",

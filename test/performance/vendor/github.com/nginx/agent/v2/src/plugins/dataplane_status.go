@@ -90,6 +90,7 @@ func (dps *DataPlaneStatus) Close() {
 	dps.softwareDetailsMutex.Unlock()
 	dps.healthTicker.Stop()
 	dps.sendStatus <- true
+	log.Info("DataPlaneStatus is closed")
 }
 
 func (dps *DataPlaneStatus) Info() *core.Info {

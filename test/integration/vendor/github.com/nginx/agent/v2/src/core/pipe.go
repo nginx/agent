@@ -71,7 +71,7 @@ func (p *MessagePipe) Register(size int, plugins []Plugin, extensionPlugins []Ex
 	pluginsRegistered := []string{}
 	extensionPluginsRegistered := []string{}
 
-	for _, plugin := range p.plugins {
+	for _, plugin := range plugins {
 		for _, subscription := range plugin.Subscriptions() {
 			p.regMu.Lock()
 			err := p.bus.Subscribe(subscription, plugin.Process)
@@ -83,7 +83,7 @@ func (p *MessagePipe) Register(size int, plugins []Plugin, extensionPlugins []Ex
 		pluginsRegistered = append(pluginsRegistered, *plugin.Info().name)
 	}
 
-	for _, plugin := range p.extensionPlugins {
+	for _, plugin := range extensionPlugins {
 		for _, subscription := range plugin.Subscriptions() {
 			p.regMu.Lock()
 			err := p.bus.Subscribe(subscription, plugin.Process)
@@ -94,6 +94,7 @@ func (p *MessagePipe) Register(size int, plugins []Plugin, extensionPlugins []Ex
 		}
 		extensionPluginsRegistered = append(extensionPluginsRegistered, *plugin.Info().name)
 	}
+
 	log.Infof("The following core plugins have been registered: %q", pluginsRegistered)
 	log.Infof("The following extension plugins have been registered: %q", extensionPluginsRegistered)
 
@@ -127,6 +128,8 @@ func (p *MessagePipe) DeRegister(pluginNames []string) error {
 					return err
 				}
 			}
+
+			plugin = nil
 		}
 	}
 

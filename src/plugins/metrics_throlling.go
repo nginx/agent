@@ -33,7 +33,7 @@ type MetricsThrottle struct {
 	ticker             *time.Ticker
 	reportsReady       *atomic.Bool
 	collectorsUpdate   *atomic.Bool
-	metricsAggregation bool
+	metricsAggregation *atomic.Bool
 	metricsCollections map[proto.MetricsReport_Type]*metrics.Collections
 	ctx                context.Context
 	cancel             context.CancelFunc
@@ -51,7 +51,7 @@ func NewMetricsThrottle(conf *config.Config, env core.Environment) *MetricsThrot
 		ticker:             time.NewTicker(conf.AgentMetrics.ReportInterval + reportStaggeringStartTime),
 		reportsReady:       atomic.NewBool(false),
 		collectorsUpdate:   atomic.NewBool(false),
-		metricsAggregation: conf.AgentMetrics.Mode == "aggregated",
+		metricsAggregation: atomic.NewBool(conf.AgentMetrics.Mode == "aggregated"),
 		metricsCollections: make(map[proto.MetricsReport_Type]*metrics.Collections, 0),
 		env:                env,
 		conf:               conf,
@@ -60,13 +60,14 @@ func NewMetricsThrottle(conf *config.Config, env core.Environment) *MetricsThrot
 }
 
 func (r *MetricsThrottle) Init(pipeline core.MessagePipeInterface) {
+	log.Info("MetricsThrottle initializing")
+	log.Debugf("MetricsThrottle: metricsAggregation set to %v", r.metricsAggregation.Load())
 	r.messagePipeline = pipeline
 	r.ctx, r.cancel = context.WithCancel(pipeline.Context())
-	if r.metricsAggregation {
+	if r.metricsAggregation.Load() {
 		r.wg.Add(1)
 		go r.metricsReportGoroutine()
 	}
-	log.Info("MetricsThrottle initializing")
 }
 
 func (r *MetricsThrottle) Close() {
@@ -75,6 +76,7 @@ func (r *MetricsThrottle) Close() {
 	r.cancel()
 	r.wg.Wait()
 	r.ticker.Stop()
+	log.Info("MetricsThrottle is closed")
 }
 
 func (r *MetricsThrottle) Info() *core.Info {
@@ -90,7 +92,7 @@ func (r *MetricsThrottle) Process(msg *core.Message) {
 		return
 
 	case msg.Exact(core.MetricReport):
-		if r.metricsAggregation {
+		if r.metricsAggregation.Load() {
 			switch bundle := msg.Data().(type) {
 			case *metrics.MetricsReportBundle:
 				if len(bundle.Data) > 0 {
@@ -171,7 +173,7 @@ func (r *MetricsThrottle) metricsReportGoroutine() {
 			}
 			if r.collectorsUpdate.Load() {
 				r.BulkSize = r.conf.AgentMetrics.BulkSize
-				r.metricsAggregation = r.conf.AgentMetrics.Mode == "aggregated"
+				r.metricsAggregation = atomic.NewBool(r.conf.AgentMetrics.Mode == "aggregated")
 				r.ticker.Stop()
 				r.ticker = time.NewTicker(r.conf.AgentMetrics.ReportInterval + reportStaggeringStartTime)
 				r.messagePipeline.Process(core.NewMessage(core.AgentCollectorsUpdate, ""))

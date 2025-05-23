@@ -26,32 +26,26 @@ type MetricsSender struct {
 	reporter    client.MetricReporter
 	pipeline    core.MessagePipeInterface
 	ctx         context.Context
-	started     *atomic.Bool
 	readyToSend *atomic.Bool
 }
 
-func NewMetricsSender(reporter client.MetricReporter) *MetricsSender {
+func NewMetricsSender(reporter client.MetricReporter, readyToSend *atomic.Bool) *MetricsSender {
 	return &MetricsSender{
 		reporter:    reporter,
-		started:     atomic.NewBool(false),
-		readyToSend: atomic.NewBool(false),
+		readyToSend: readyToSend,
 	}
 }
 
 func (r *MetricsSender) Init(pipeline core.MessagePipeInterface) {
-	if r.started.Load() {
-		return
-	}
-	r.started.Toggle()
+	log.Info("MetricsSender initializing")
 	r.pipeline = pipeline
 	r.ctx = pipeline.Context()
-	log.Info("MetricsSender initializing")
 }
 
 func (r *MetricsSender) Close() {
 	log.Info("MetricsSender is wrapping up")
-	r.started.Store(false)
 	r.readyToSend.Store(false)
+	log.Info("MetricsSender is closed")
 }
 
 func (r *MetricsSender) Info() *core.Info {
@@ -66,6 +60,7 @@ func (r *MetricsSender) Process(msg *core.Message) {
 	}
 
 	if msg.Exact(core.CommMetrics) {
+		log.Debug("Metrics sender received metrics message")
 		payloads, ok := msg.Data().([]core.Payload)
 		if !ok {
 			log.Warnf("Failed to coerce Message to []Payload: %v", msg.Data())
@@ -105,8 +100,6 @@ func (r *MetricsSender) Process(msg *core.Message) {
 		switch config := msg.Data().(type) {
 		case *proto.AgentConfig:
 			r.metricSenderBackoff(config)
-			// If metrics sender feature is re-enabled remotely then we need to set readyToSend to true
-			r.readyToSend.Store(true)
 		default:
 			log.Warnf("metrics sender expected %T type, but got: %T", &proto.AgentConfig{}, msg.Data())
 		}

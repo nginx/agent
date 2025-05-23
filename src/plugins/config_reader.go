@@ -37,6 +37,7 @@ func NewConfigReader(config *config.Config) *ConfigReader {
 }
 
 func (r *ConfigReader) Init(pipeline core.MessagePipeInterface) {
+	log.Info("ConfigReader initializing")
 	r.messagePipeline = pipeline
 }
 
@@ -46,6 +47,7 @@ func (r *ConfigReader) Info() *core.Info {
 
 func (r *ConfigReader) Close() {
 	log.Info("ConfigReader is wrapping up")
+	log.Info("ConfigReader is closed")
 }
 
 func (r *ConfigReader) Process(msg *core.Message) {
@@ -73,8 +75,10 @@ func (r *ConfigReader) Process(msg *core.Message) {
 			// Update the agent config on disk
 			switch commandData := cmd.Data.(type) {
 			case *proto.Command_AgentConfig:
+				log.Debugf("Config reader: AgentConfig message recevied: %v, topic: %v", commandData, msg.Topic())
 				r.updateAgentConfig(commandData.AgentConfig)
 			case *proto.Command_AgentConnectResponse:
+				log.Debugf("Config reader: AgentConnectResponse message recevied: %v, topic: %v", commandData, msg.Topic())
 				r.updateAgentConfig(commandData.AgentConnectResponse.AgentConfig)
 			}
 		}
@@ -152,7 +156,7 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 		}
 
 		if synchronizeFeatures {
-			log.Debugf("Agent config features changed, synchronizing features")
+			log.Info("Agent config features changed, synchronizing features")
 			r.synchronizeFeatures(payloadAgentConfig)
 			r.config.Features = payloadAgentConfig.Details.Features
 		}

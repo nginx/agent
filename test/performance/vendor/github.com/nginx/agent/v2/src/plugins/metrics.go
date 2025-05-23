@@ -72,11 +72,14 @@ func (m *Metrics) Init(pipeline core.MessagePipeInterface) {
 }
 
 func (m *Metrics) Close() {
+	log.Info("Metrics is wrapping up")
 	m.collectorsMutex.Lock()
-	m.cancel()
+	if m.cancel != nil {
+		m.cancel()
+	}
 	m.collectors = nil
 	m.collectorsMutex.Unlock()
-	log.Info("Metrics is wrapping up")
+	log.Info("Metrics is closed")
 }
 
 func (m *Metrics) Process(msg *core.Message) {
