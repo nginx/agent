@@ -54,20 +54,20 @@ func TestWatcher_Init(t *testing.T) {
 		CorrelationID: logger.GenerateCorrelationID(),
 		InstanceUpdates: instance.InstanceUpdates{
 			NewInstances: []*mpi.Instance{
-				protos.GetNginxOssInstance([]string{}),
+				protos.NginxOssInstance([]string{}),
 			},
 			UpdatedInstances: []*mpi.Instance{
-				protos.GetNginxOssInstance([]string{}),
+				protos.NginxOssInstance([]string{}),
 			},
 			DeletedInstances: []*mpi.Instance{
-				protos.GetNginxPlusInstance([]string{}),
+				protos.NginxPlusInstance([]string{}),
 			},
 		},
 	}
 
 	nginxConfigContextMessage := instance.NginxConfigContextMessage{
 		CorrelationID:      logger.GenerateCorrelationID(),
-		NginxConfigContext: model.GetConfigContext(),
+		NginxConfigContext: model.ConfigContext(),
 	}
 
 	instanceHealthMessage := health.InstanceHealthMessage{
@@ -163,7 +163,7 @@ func TestWatcher_Process_ConfigApplyRequestTopic(t *testing.T) {
 
 func TestWatcher_Process_ConfigApplySuccessfulTopic(t *testing.T) {
 	ctx := context.Background()
-	data := protos.GetNginxOssInstance([]string{})
+	data := protos.NginxOssInstance([]string{})
 
 	response := &model2.ConfigApplySuccess{
 		ConfigContext: &model2.NginxConfigContext{
@@ -202,7 +202,7 @@ func TestWatcher_Process_ConfigApplySuccessfulTopic(t *testing.T) {
 
 func TestWatcher_Process_RollbackCompleteTopic(t *testing.T) {
 	ctx := context.Background()
-	ossInstance := protos.GetNginxOssInstance([]string{})
+	ossInstance := protos.NginxOssInstance([]string{})
 
 	response := &mpi.DataPlaneResponse{
 		MessageMeta: &mpi.MessageMeta{

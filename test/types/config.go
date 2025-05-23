@@ -177,19 +177,19 @@ func OTelConfig(t *testing.T) *config.Config {
 	ac := AgentConfig()
 	ac.Collector.ConfigPath = filepath.Join(t.TempDir(), "otel-collector-config.yaml")
 
-	exporterPort, expErr := helpers.GetRandomPort(t)
+	exporterPort, expErr := helpers.RandomPort(t)
 	require.NoError(t, expErr)
 	ac.Collector.Exporters.OtlpExporters[0].Server.Port = exporterPort
 
-	receiverPort, recErr := helpers.GetRandomPort(t)
+	receiverPort, recErr := helpers.RandomPort(t)
 	require.NoError(t, recErr)
 	ac.Collector.Receivers.OtlpReceivers[0].Server.Port = receiverPort
 
-	healthPort, healthErr := helpers.GetRandomPort(t)
+	healthPort, healthErr := helpers.RandomPort(t)
 	require.NoError(t, healthErr)
 	ac.Collector.Extensions.Health.Server.Port = healthPort
 
-	commandPort, commandErr := helpers.GetRandomPort(t)
+	commandPort, commandErr := helpers.RandomPort(t)
 	require.NoError(t, commandErr)
 	ac.Command.Server.Port = commandPort
 

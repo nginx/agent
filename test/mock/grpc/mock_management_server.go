@@ -86,7 +86,7 @@ func NewMockManagementServer(
 		return nil, err
 	}
 
-	grpcServer := grpc.NewServer(getServerOptions(agentConfig)...)
+	grpcServer := grpc.NewServer(serverOptions(agentConfig)...)
 
 	healthcheck := health.NewServer()
 	healthgrpc.RegisterHealthServer(grpcServer, healthcheck)
@@ -130,7 +130,7 @@ func (ms *MockManagementServer) Stop() {
 	time.Sleep(testTimeout)
 }
 
-func getServerOptions(agentConfig *config.Config) []grpc.ServerOption {
+func serverOptions(agentConfig *config.Config) []grpc.ServerOption {
 	validator, _ := protovalidate.New()
 
 	opts := []grpc.ServerOption{

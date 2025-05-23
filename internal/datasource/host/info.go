@@ -184,7 +184,7 @@ func containsContainerReference(cgroupFile string) bool {
 
 func (i *Info) getContainerID() string {
 	res, err, _ := singleflightGroup.Do(GetContainerIDKey, func() (interface{}, error) {
-		containerID, err := getContainerIDFromMountInfo(i.mountInfoLocation)
+		containerID, err := containerIDFromMountInfo(i.mountInfoLocation)
 		return uuid.NewMD5(uuid.NameSpaceDNS, []byte(containerID)).String(), err
 	})
 
@@ -200,10 +200,10 @@ func (i *Info) getContainerID() string {
 	return ""
 }
 
-// getContainerID returns the container ID of the current running environment.
+// containerID returns the container ID of the current running environment.
 // Supports cgroup v1 and v2. Reading "/proc/1/cpuset" would only work for cgroups v1
 // mountInfo is the path: "/proc/self/mountinfo"
-func getContainerIDFromMountInfo(mountInfo string) (string, error) {
+func containerIDFromMountInfo(mountInfo string) (string, error) {
 	mInfoFile, err := os.Open(mountInfo)
 	if err != nil {
 		return "", fmt.Errorf("could not read %s: %w", mountInfo, err)
@@ -226,7 +226,7 @@ func getContainerIDFromMountInfo(mountInfo string) (string, error) {
 	for _, line := range lines {
 		splitLine := strings.Split(line, " ")
 		for _, word := range splitLine {
-			containerID := getContainerIDFromPatterns(word)
+			containerID := containerIDFromPatterns(word)
 			if containerID != "" {
 				return containerID, nil
 			}
@@ -236,7 +236,7 @@ func getContainerIDFromMountInfo(mountInfo string) (string, error) {
 	return "", fmt.Errorf("container ID not found in %s", mountInfo)
 }
 
-func getContainerIDFromPatterns(word string) string {
+func containerIDFromPatterns(word string) string {
 	slices := scopePattern.FindStringSubmatch(word)
 	if containsContainerID(slices) {
 		return slices[1]

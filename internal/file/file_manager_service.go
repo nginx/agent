@@ -49,7 +49,7 @@ const (
 )
 
 var (
-	manifestDirPath  = "/var/lib/nginx-agent"
+	manifestDirPath  = "/opt/homebrew/var/lib/nginx-agent"
 	manifestFilePath = manifestDirPath + "/manifest.json"
 )
 
@@ -121,7 +121,7 @@ func (fms *FileManagerService) UpdateOverview(
 	filesToUpdate []*mpi.File,
 	iteration int,
 ) error {
-	correlationID := logger.GetCorrelationID(ctx)
+	correlationID := logger.CorrelationID(ctx)
 
 	// error case for the UpdateOverview attempts
 	if iteration > maxAttempts {
@@ -202,13 +202,13 @@ func (fms *FileManagerService) UpdateOverview(
 }
 
 func (fms *FileManagerService) setupIdentifiers(ctx context.Context, iteration int) (context.Context, string) {
-	correlationID := logger.GetCorrelationID(ctx)
+	correlationID := logger.CorrelationID(ctx)
 	var requestCorrelationID slog.Attr
 
 	if iteration == 0 {
 		requestCorrelationID = logger.GenerateCorrelationID()
 	} else {
-		requestCorrelationID = logger.GetCorrelationIDAttr(ctx)
+		requestCorrelationID = logger.CorrelationIDAttr(ctx)
 	}
 
 	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, requestCorrelationID)
@@ -263,7 +263,7 @@ func (fms *FileManagerService) sendUpdateFileRequest(
 ) error {
 	messageMeta := &mpi.MessageMeta{
 		MessageId:     id.GenerateMessageID(),
-		CorrelationId: logger.GetCorrelationID(ctx),
+		CorrelationId: logger.CorrelationID(ctx),
 		Timestamp:     timestamppb.Now(),
 	}
 
@@ -350,7 +350,7 @@ func (fms *FileManagerService) sendUpdateFileStreamHeader(
 ) error {
 	messageMeta := &mpi.MessageMeta{
 		MessageId:     id.GenerateMessageID(),
-		CorrelationId: logger.GetCorrelationID(ctx),
+		CorrelationId: logger.CorrelationID(ctx),
 		Timestamp:     timestamppb.Now(),
 	}
 
@@ -449,7 +449,7 @@ func (fms *FileManagerService) sendFileUpdateStreamChunk(
 ) error {
 	messageMeta := &mpi.MessageMeta{
 		MessageId:     id.GenerateMessageID(),
-		CorrelationId: logger.GetCorrelationID(ctx),
+		CorrelationId: logger.CorrelationID(ctx),
 		Timestamp:     timestamppb.Now(),
 	}
 
@@ -630,7 +630,7 @@ func (fms *FileManagerService) file(ctx context.Context, file *mpi.File) error {
 		return fms.fileServiceClient.GetFile(ctx, &mpi.GetFileRequest{
 			MessageMeta: &mpi.MessageMeta{
 				MessageId:     id.GenerateMessageID(),
-				CorrelationId: logger.GetCorrelationID(ctx),
+				CorrelationId: logger.CorrelationID(ctx),
 				Timestamp:     timestamppb.Now(),
 			},
 			FileMeta: file.GetFileMeta(),
@@ -660,7 +660,7 @@ func (fms *FileManagerService) chunkedFile(ctx context.Context, file *mpi.File) 
 	stream, err := fms.fileServiceClient.GetFileStream(ctx, &mpi.GetFileRequest{
 		MessageMeta: &mpi.MessageMeta{
 			MessageId:     id.GenerateMessageID(),
-			CorrelationId: logger.GetCorrelationID(ctx),
+			CorrelationId: logger.CorrelationID(ctx),
 			Timestamp:     timestamppb.Now(),
 		},
 		FileMeta: file.GetFileMeta(),

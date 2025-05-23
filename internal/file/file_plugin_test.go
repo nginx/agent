@@ -354,7 +354,7 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic_Failure(t *testing.T) {
 
 func TestFilePlugin_Process_ConfigApplyFailedTopic(t *testing.T) {
 	ctx := context.Background()
-	instanceID := protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()
+	instanceID := protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()
 
 	tests := []struct {
 		name            string
@@ -431,7 +431,7 @@ func TestFilePlugin_Process_ConfigApplyFailedTopic(t *testing.T) {
 
 func TestFilePlugin_Process_ConfigApplyRollbackCompleteTopic(t *testing.T) {
 	ctx := context.Background()
-	instance := protos.GetNginxOssInstance([]string{})
+	instance := protos.NginxOssInstance([]string{})
 	mockFileManager := &filefakes.FakeFileManagerServiceInterface{}
 
 	messagePipe := busfakes.NewFakeMessagePipe()
@@ -476,7 +476,7 @@ func TestFilePlugin_Process_ConfigApplyRollbackCompleteTopic(t *testing.T) {
 
 func TestFilePlugin_Process_ConfigApplyCompleteTopic(t *testing.T) {
 	ctx := context.Background()
-	instance := protos.GetNginxOssInstance([]string{})
+	instance := protos.NginxOssInstance([]string{})
 	mockFileManager := &filefakes.FakeFileManagerServiceInterface{}
 
 	messagePipe := busfakes.NewFakeMessagePipe()

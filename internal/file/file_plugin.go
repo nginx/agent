@@ -181,7 +181,7 @@ func (fp *FilePlugin) handleConfigApplyFailedRequest(ctx context.Context, msg *b
 func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "File plugin received config apply request message")
 	var response *mpi.DataPlaneResponse
-	correlationID := logger.GetCorrelationID(ctx)
+	correlationID := logger.CorrelationID(ctx)
 
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
 	if !ok {
@@ -343,7 +343,7 @@ func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Me
 
 	configUploadRequest := managementPlaneRequest.GetConfigUploadRequest()
 
-	correlationID := logger.GetCorrelationID(ctx)
+	correlationID := logger.CorrelationID(ctx)
 
 	var updatingFilesError error
 

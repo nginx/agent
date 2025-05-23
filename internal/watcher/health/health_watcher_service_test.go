@@ -21,7 +21,7 @@ import (
 
 func TestHealthWatcherService_AddHealthWatcher(t *testing.T) {
 	agentConfig := types.AgentConfig()
-	instance := protos.GetNginxOssInstance([]string{})
+	instance := protos.NginxOssInstance([]string{})
 
 	tests := []struct {
 		name        string
@@ -38,7 +38,7 @@ func TestHealthWatcherService_AddHealthWatcher(t *testing.T) {
 		{
 			name: "Test 2: Not Supported Instance",
 			instances: []*mpi.Instance{
-				protos.GetUnsupportedInstance(),
+				protos.UnsupportedInstance(),
 			},
 		},
 	}
@@ -62,7 +62,7 @@ func TestHealthWatcherService_AddHealthWatcher(t *testing.T) {
 func TestHealthWatcherService_DeleteHealthWatcher(t *testing.T) {
 	agentConfig := types.AgentConfig()
 	healthWatcher := NewHealthWatcherService(agentConfig)
-	instance := protos.GetNginxOssInstance([]string{})
+	instance := protos.NginxOssInstance([]string{})
 
 	instances := []*mpi.Instance{instance}
 	healthWatcher.AddHealthWatcher(instances)
@@ -76,8 +76,8 @@ func TestHealthWatcherService_DeleteHealthWatcher(t *testing.T) {
 func TestHealthWatcherService_UpdateHealthWatcher(t *testing.T) {
 	agentConfig := types.AgentConfig()
 	healthWatcher := NewHealthWatcherService(agentConfig)
-	instance := protos.GetNginxOssInstance([]string{})
-	updatedInstance := protos.GetNginxPlusInstance([]string{})
+	instance := protos.NginxOssInstance([]string{})
+	updatedInstance := protos.NginxPlusInstance([]string{})
 	updatedInstance.GetInstanceMeta().InstanceId = instance.GetInstanceMeta().GetInstanceId()
 
 	instances := []*mpi.Instance{instance}
@@ -93,16 +93,16 @@ func TestHealthWatcherService_health(t *testing.T) {
 	ctx := context.Background()
 	agentConfig := types.AgentConfig()
 	healthWatcher := NewHealthWatcherService(agentConfig)
-	ossInstance := protos.GetNginxOssInstance([]string{})
-	plusInstance := protos.GetNginxPlusInstance([]string{})
-	unspecifiedInstance := protos.GetUnsupportedInstance()
+	ossInstance := protos.NginxOssInstance([]string{})
+	plusInstance := protos.NginxPlusInstance([]string{})
+	unspecifiedInstance := protos.UnsupportedInstance()
 	watchers := make(map[string]healthWatcherOperator)
 
 	fakeOSSHealthOp := healthfakes.FakeHealthWatcherOperator{}
-	fakeOSSHealthOp.HealthReturns(protos.GetHealthyInstanceHealth(), nil)
+	fakeOSSHealthOp.HealthReturns(protos.HealthyInstanceHealth(), nil)
 
 	fakePlusHealthOp := healthfakes.FakeHealthWatcherOperator{}
-	fakePlusHealthOp.HealthReturns(protos.GetUnhealthyInstanceHealth(), nil)
+	fakePlusHealthOp.HealthReturns(protos.UnhealthyInstanceHealth(), nil)
 
 	fakeUnspecifiedHealthOp := healthfakes.FakeHealthWatcherOperator{}
 	fakeUnspecifiedHealthOp.HealthReturns(nil, fmt.Errorf("unable to determine health"))
@@ -113,9 +113,9 @@ func TestHealthWatcherService_health(t *testing.T) {
 	healthWatcher.watchers = watchers
 
 	expected := []*mpi.InstanceHealth{
-		protos.GetHealthyInstanceHealth(),
-		protos.GetUnhealthyInstanceHealth(),
-		protos.GetUnspecifiedInstanceHealth(),
+		protos.HealthyInstanceHealth(),
+		protos.UnhealthyInstanceHealth(),
+		protos.UnspecifiedInstanceHealth(),
 	}
 
 	tests := []struct {
@@ -126,21 +126,21 @@ func TestHealthWatcherService_health(t *testing.T) {
 		{
 			name: "Test 1: Status Changed",
 			cache: map[string]*mpi.InstanceHealth{
-				ossInstance.GetInstanceMeta().GetInstanceId(): protos.GetHealthyInstanceHealth(),
+				ossInstance.GetInstanceMeta().GetInstanceId(): protos.HealthyInstanceHealth(),
 				plusInstance.GetInstanceMeta().GetInstanceId(): {
 					InstanceId:           plusInstance.GetInstanceMeta().GetInstanceId(),
 					InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY,
 				},
-				unspecifiedInstance.GetInstanceMeta().GetInstanceId(): protos.GetUnspecifiedInstanceHealth(),
+				unspecifiedInstance.GetInstanceMeta().GetInstanceId(): protos.UnspecifiedInstanceHealth(),
 			},
 			isHealthDiff: true,
 		},
 		{
 			name: "Test 2: Status Not Changed",
 			cache: map[string]*mpi.InstanceHealth{
-				ossInstance.GetInstanceMeta().GetInstanceId():         protos.GetHealthyInstanceHealth(),
-				plusInstance.GetInstanceMeta().GetInstanceId():        protos.GetUnhealthyInstanceHealth(),
-				unspecifiedInstance.GetInstanceMeta().GetInstanceId(): protos.GetUnspecifiedInstanceHealth(),
+				ossInstance.GetInstanceMeta().GetInstanceId():         protos.HealthyInstanceHealth(),
+				plusInstance.GetInstanceMeta().GetInstanceId():        protos.UnhealthyInstanceHealth(),
+				unspecifiedInstance.GetInstanceMeta().GetInstanceId(): protos.UnspecifiedInstanceHealth(),
 			},
 			isHealthDiff: false,
 		},
@@ -151,7 +151,7 @@ func TestHealthWatcherService_health(t *testing.T) {
 					InstanceId:           ossInstance.GetInstanceMeta().GetInstanceId(),
 					InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNHEALTHY,
 				},
-				unspecifiedInstance.GetInstanceMeta().GetInstanceId(): protos.GetUnspecifiedInstanceHealth(),
+				unspecifiedInstance.GetInstanceMeta().GetInstanceId(): protos.UnspecifiedInstanceHealth(),
 			},
 			isHealthDiff: true,
 		},
@@ -169,10 +169,10 @@ func TestHealthWatcherService_health(t *testing.T) {
 }
 
 func TestHealthWatcherService_compareCache(t *testing.T) {
-	ossInstance := protos.GetNginxOssInstance([]string{})
-	plusInstance := protos.GetNginxPlusInstance([]string{})
+	ossInstance := protos.NginxOssInstance([]string{})
+	plusInstance := protos.NginxPlusInstance([]string{})
 	healthCache := map[string]*mpi.InstanceHealth{
-		ossInstance.GetInstanceMeta().GetInstanceId(): protos.GetHealthyInstanceHealth(),
+		ossInstance.GetInstanceMeta().GetInstanceId(): protos.HealthyInstanceHealth(),
 		plusInstance.GetInstanceMeta().GetInstanceId(): {
 			InstanceId:           plusInstance.GetInstanceMeta().GetInstanceId(),
 			InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY,
@@ -180,7 +180,7 @@ func TestHealthWatcherService_compareCache(t *testing.T) {
 	}
 
 	healths := []*mpi.InstanceHealth{
-		protos.GetHealthyInstanceHealth(),
+		protos.HealthyInstanceHealth(),
 	}
 
 	tests := []struct {
@@ -192,7 +192,7 @@ func TestHealthWatcherService_compareCache(t *testing.T) {
 		{
 			name: "Test 1: Instance was deleted",
 			expectedHealth: []*mpi.InstanceHealth{
-				protos.GetHealthyInstanceHealth(),
+				protos.HealthyInstanceHealth(),
 				{
 					InstanceId: plusInstance.GetInstanceMeta().GetInstanceId(),
 					Description: fmt.Sprintf("instance %s not found", plusInstance.
@@ -201,7 +201,7 @@ func TestHealthWatcherService_compareCache(t *testing.T) {
 				},
 			},
 			expectedCache: map[string]*mpi.InstanceHealth{
-				ossInstance.GetInstanceMeta().GetInstanceId(): protos.GetHealthyInstanceHealth(),
+				ossInstance.GetInstanceMeta().GetInstanceId(): protos.HealthyInstanceHealth(),
 			},
 			instances: map[string]*mpi.Instance{
 				ossInstance.GetInstanceMeta().GetInstanceId(): ossInstance,
@@ -210,10 +210,10 @@ func TestHealthWatcherService_compareCache(t *testing.T) {
 		{
 			name: "Test 2: No change to instance list",
 			expectedHealth: []*mpi.InstanceHealth{
-				protos.GetHealthyInstanceHealth(),
+				protos.HealthyInstanceHealth(),
 			},
 			expectedCache: map[string]*mpi.InstanceHealth{
-				ossInstance.GetInstanceMeta().GetInstanceId(): protos.GetHealthyInstanceHealth(),
+				ossInstance.GetInstanceMeta().GetInstanceId(): protos.HealthyInstanceHealth(),
 			},
 			instances: map[string]*mpi.Instance{
 				ossInstance.GetInstanceMeta().GetInstanceId(): ossInstance,
@@ -237,10 +237,10 @@ func TestHealthWatcherService_compareCache(t *testing.T) {
 }
 
 func TestHealthWatcherService_GetInstancesHealth(t *testing.T) {
-	ossInstance := protos.GetNginxOssInstance([]string{})
-	plusInstance := protos.GetNginxPlusInstance([]string{})
-	ossInstanceHealth := protos.GetHealthyInstanceHealth()
-	plusInstanceHealth := protos.GetUnhealthyInstanceHealth()
+	ossInstance := protos.NginxOssInstance([]string{})
+	plusInstance := protos.NginxPlusInstance([]string{})
+	ossInstanceHealth := protos.HealthyInstanceHealth()
+	plusInstanceHealth := protos.UnhealthyInstanceHealth()
 
 	healthCache := map[string]*mpi.InstanceHealth{
 		ossInstance.GetInstanceMeta().GetInstanceId():  ossInstanceHealth,

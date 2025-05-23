@@ -58,7 +58,7 @@ func TestGetLogLevel(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			result := GetLogLevel(test.input)
+			result := LogLevel(test.input)
 			assert.IsType(tt, test.expected, result)
 		})
 	}
@@ -100,7 +100,7 @@ func TestGetLogWriter(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			result := getLogWriter(test.input)
+			result := logWriter(test.input)
 			assert.IsType(tt, test.expected, result)
 		})
 	}
@@ -108,7 +108,7 @@ func TestGetLogWriter(t *testing.T) {
 
 func TestGetCorrelationID(t *testing.T) {
 	ctx := context.WithValue(context.Background(), CorrelationIDContextKey, GenerateCorrelationID())
-	correlationID := GetCorrelationID(ctx)
+	correlationID := CorrelationID(ctx)
 	assert.NotEmpty(t, correlationID)
 }
 

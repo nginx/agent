@@ -39,23 +39,23 @@ func TestResourceService_AddInstance(t *testing.T) {
 		{
 			name: "Test 1: Add One Instance",
 			instanceList: []*v1.Instance{
-				protos.GetNginxOssInstance([]string{}),
+				protos.NginxOssInstance([]string{}),
 			},
-			resource: protos.GetHostResource(),
+			resource: protos.HostResource(),
 		},
 		{
 			name: "Test 2: Add Multiple Instance",
 			instanceList: []*v1.Instance{
-				protos.GetNginxOssInstance([]string{}),
-				protos.GetNginxPlusInstance([]string{}),
+				protos.NginxOssInstance([]string{}),
+				protos.NginxPlusInstance([]string{}),
 			},
 			resource: &v1.Resource{
-				ResourceId: protos.GetHostResource().GetResourceId(),
+				ResourceId: protos.HostResource().GetResourceId(),
 				Instances: []*v1.Instance{
-					protos.GetNginxOssInstance([]string{}),
-					protos.GetNginxPlusInstance([]string{}),
+					protos.NginxOssInstance([]string{}),
+					protos.NginxPlusInstance([]string{}),
 				},
-				Info: protos.GetHostResource().GetInfo(),
+				Info: protos.HostResource().GetInfo(),
 			},
 		},
 	}
@@ -73,13 +73,13 @@ func TestResourceService_UpdateInstance(t *testing.T) {
 	ctx := context.Background()
 
 	updatedInstance := &v1.Instance{
-		InstanceConfig: protos.GetNginxOssInstance([]string{}).GetInstanceConfig(),
-		InstanceMeta:   protos.GetNginxOssInstance([]string{}).GetInstanceMeta(),
+		InstanceConfig: protos.NginxOssInstance([]string{}).GetInstanceConfig(),
+		InstanceMeta:   protos.NginxOssInstance([]string{}).GetInstanceMeta(),
 		InstanceRuntime: &v1.InstanceRuntime{
 			ProcessId:  56789,
-			BinaryPath: protos.GetNginxOssInstance([]string{}).GetInstanceRuntime().GetBinaryPath(),
-			ConfigPath: protos.GetNginxOssInstance([]string{}).GetInstanceRuntime().GetConfigPath(),
-			Details:    protos.GetNginxOssInstance([]string{}).GetInstanceRuntime().GetDetails(),
+			BinaryPath: protos.NginxOssInstance([]string{}).GetInstanceRuntime().GetBinaryPath(),
+			ConfigPath: protos.NginxOssInstance([]string{}).GetInstanceRuntime().GetConfigPath(),
+			Details:    protos.NginxOssInstance([]string{}).GetInstanceRuntime().GetDetails(),
 		},
 	}
 
@@ -94,11 +94,11 @@ func TestResourceService_UpdateInstance(t *testing.T) {
 				updatedInstance,
 			},
 			resource: &v1.Resource{
-				ResourceId: protos.GetHostResource().GetResourceId(),
+				ResourceId: protos.HostResource().GetResourceId(),
 				Instances: []*v1.Instance{
 					updatedInstance,
 				},
-				Info: protos.GetHostResource().GetInfo(),
+				Info: protos.HostResource().GetInfo(),
 			},
 		},
 	}
@@ -106,7 +106,7 @@ func TestResourceService_UpdateInstance(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			resourceService := NewResourceService(ctx, types.AgentConfig())
-			resourceService.resource.Instances = []*v1.Instance{protos.GetNginxOssInstance([]string{})}
+			resourceService.resource.Instances = []*v1.Instance{protos.NginxOssInstance([]string{})}
 			resource := resourceService.UpdateInstances(ctx, test.instanceList)
 			assert.Equal(tt, test.resource.GetInstances(), resource.GetInstances())
 		})
@@ -125,14 +125,14 @@ func TestResourceService_DeleteInstance(t *testing.T) {
 		{
 			name: "Test 1: Update Instances",
 			instanceList: []*v1.Instance{
-				protos.GetNginxPlusInstance([]string{}),
+				protos.NginxPlusInstance([]string{}),
 			},
 			resource: &v1.Resource{
-				ResourceId: protos.GetHostResource().GetResourceId(),
+				ResourceId: protos.HostResource().GetResourceId(),
 				Instances: []*v1.Instance{
-					protos.GetNginxOssInstance([]string{}),
+					protos.NginxOssInstance([]string{}),
 				},
-				Info: protos.GetHostResource().GetInfo(),
+				Info: protos.HostResource().GetInfo(),
 			},
 		},
 	}
@@ -141,8 +141,8 @@ func TestResourceService_DeleteInstance(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			resourceService := NewResourceService(ctx, types.AgentConfig())
 			resourceService.resource.Instances = []*v1.Instance{
-				protos.GetNginxOssInstance([]string{}),
-				protos.GetNginxPlusInstance([]string{}),
+				protos.NginxOssInstance([]string{}),
+				protos.NginxPlusInstance([]string{}),
 			}
 			resource := resourceService.DeleteInstances(ctx, test.instanceList)
 			assert.Equal(tt, test.resource.GetInstances(), resource.GetInstances())
@@ -161,15 +161,15 @@ func TestResourceService_Instance(t *testing.T) {
 		{
 			name: "Test 1: instance found",
 			instances: []*v1.Instance{
-				protos.GetNginxOssInstance([]string{}),
-				protos.GetNginxPlusInstance([]string{}),
+				protos.NginxOssInstance([]string{}),
+				protos.NginxPlusInstance([]string{}),
 			},
-			result: protos.GetNginxPlusInstance([]string{}),
+			result: protos.NginxPlusInstance([]string{}),
 		},
 		{
 			name: "Test 2: instance not found",
 			instances: []*v1.Instance{
-				protos.GetNginxOssInstance([]string{}),
+				protos.NginxOssInstance([]string{}),
 			},
 			result: nil,
 		},
@@ -179,7 +179,7 @@ func TestResourceService_Instance(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			resourceService := NewResourceService(ctx, types.AgentConfig())
 			resourceService.resource.Instances = test.instances
-			instance := resourceService.Instance(protos.GetNginxPlusInstance([]string{}).
+			instance := resourceService.Instance(protos.NginxPlusInstance([]string{}).
 				GetInstanceMeta().GetInstanceId())
 			assert.Equal(tt, test.result, instance)
 		})
@@ -195,11 +195,11 @@ func TestResourceService_GetResource(t *testing.T) {
 	}{
 		{
 			isContainer:      true,
-			expectedResource: protos.GetContainerizedResource(),
+			expectedResource: protos.ContainerizedResource(),
 		},
 		{
 			isContainer:      false,
-			expectedResource: protos.GetHostResource(),
+			expectedResource: protos.HostResource(),
 		},
 	}
 	for _, tc := range testCases {
@@ -237,13 +237,13 @@ func TestResourceService_GetResource(t *testing.T) {
 }
 
 func TestResourceService_createPlusClient(t *testing.T) {
-	instanceWithAPI := protos.GetNginxPlusInstance([]string{})
+	instanceWithAPI := protos.NginxPlusInstance([]string{})
 	instanceWithAPI.InstanceRuntime.GetNginxPlusRuntimeInfo().PlusApi = &v1.APIDetails{
 		Location: "/api",
 		Listen:   "localhost:80",
 	}
 
-	instanceWithUnixAPI := protos.GetNginxPlusInstance([]string{})
+	instanceWithUnixAPI := protos.NginxPlusInstance([]string{})
 	instanceWithUnixAPI.InstanceRuntime.GetNginxPlusRuntimeInfo().PlusApi = &v1.APIDetails{
 		Listen:   "unix:/var/run/nginx-status.sock",
 		Location: "/api",
@@ -267,7 +267,7 @@ func TestResourceService_createPlusClient(t *testing.T) {
 		},
 		{
 			name:     "Test 3: Fail Creating Client - API not Configured",
-			instance: protos.GetNginxPlusInstance([]string{}),
+			instance: protos.NginxPlusInstance([]string{}),
 			err:      errors.New("failed to preform API action, NGINX Plus API is not configured"),
 		},
 	}
@@ -276,8 +276,8 @@ func TestResourceService_createPlusClient(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			resourceService := NewResourceService(ctx, types.AgentConfig())
 			resourceService.resource.Instances = []*v1.Instance{
-				protos.GetNginxOssInstance([]string{}),
-				protos.GetNginxPlusInstance([]string{}),
+				protos.NginxOssInstance([]string{}),
+				protos.NginxPlusInstance([]string{}),
 			}
 
 			_, err := resourceService.createPlusClient(test.instance)
@@ -298,21 +298,21 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 	}{
 		{
 			name:        "Test 1: Successful reload",
-			instanceID:  protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+			instanceID:  protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 			reloadErr:   nil,
 			validateErr: nil,
 			expected:    nil,
 		},
 		{
 			name:        "Test 2: Failed reload",
-			instanceID:  protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+			instanceID:  protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 			reloadErr:   fmt.Errorf("something went wrong"),
 			validateErr: nil,
 			expected:    fmt.Errorf("failed to reload NGINX %w", fmt.Errorf("something went wrong")),
 		},
 		{
 			name:        "Test 3: Failed validate",
-			instanceID:  protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+			instanceID:  protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 			reloadErr:   nil,
 			validateErr: fmt.Errorf("something went wrong"),
 			expected:    fmt.Errorf("failed validating config %w", fmt.Errorf("something went wrong")),
@@ -347,11 +347,11 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 
 			resourceService := NewResourceService(ctx, types.AgentConfig())
 			resourceOpMap := make(map[string]instanceOperator)
-			resourceOpMap[protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()] = instanceOp
+			resourceOpMap[protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()] = instanceOp
 			resourceService.instanceOperators = resourceOpMap
 			resourceService.nginxConfigParser = &nginxParser
 
-			instance := protos.GetNginxOssInstance([]string{})
+			instance := protos.NginxOssInstance([]string{})
 			instances := []*v1.Instance{
 				instance,
 			}

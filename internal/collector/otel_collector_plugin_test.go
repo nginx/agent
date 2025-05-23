@@ -347,7 +347,7 @@ func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
 			name: "Test 1: Resource update adds resource id attribute",
 			message: &bus.Message{
 				Topic: bus.ResourceUpdateTopic,
-				Data:  protos.GetHostResource(),
+				Data:  protos.HostResource(),
 			},
 			processors: config.Processors{
 				Resource: &config.Resource{

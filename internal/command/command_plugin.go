@@ -140,7 +140,7 @@ func (cp *CommandPlugin) createConnection(ctx context.Context, resource *mpi.Res
 func (cp *CommandPlugin) processDataPlaneHealth(ctx context.Context, msg *bus.Message) {
 	if instances, ok := msg.Data.([]*mpi.InstanceHealth); ok {
 		err := cp.commandService.UpdateDataPlaneHealth(ctx, instances)
-		correlationID := logger.GetCorrelationID(ctx)
+		correlationID := logger.CorrelationID(ctx)
 		if err != nil {
 			slog.ErrorContext(ctx, "Unable to update data plane health", "error", err)
 			cp.messagePipe.Process(ctx, &bus.Message{

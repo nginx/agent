@@ -45,9 +45,9 @@ type (
 
 func New(logPath, level string) *slog.Logger {
 	handler := slog.NewTextHandler(
-		getLogWriter(logPath),
+		logWriter(logPath),
 		&slog.HandlerOptions{
-			Level: GetLogLevel(level),
+			Level: LogLevel(level),
 		},
 	)
 
@@ -59,7 +59,7 @@ func New(logPath, level string) *slog.Logger {
 		})
 }
 
-func GetLogLevel(level string) slog.Level {
+func LogLevel(level string) slog.Level {
 	if level == "" {
 		return slog.LevelInfo
 	}
@@ -67,7 +67,7 @@ func GetLogLevel(level string) slog.Level {
 	return logLevels[strings.ToLower(level)]
 }
 
-func getLogWriter(logFile string) io.Writer {
+func logWriter(logFile string) io.Writer {
 	logPath := logFile
 	if logFile != "" {
 		fileInfo, err := os.Stat(logPath)
@@ -123,11 +123,11 @@ func GenerateCorrelationID() slog.Attr {
 	return slog.Any(CorrelationIDKey, id.GenerateMessageID())
 }
 
-func GetCorrelationID(ctx context.Context) string {
-	return GetCorrelationIDAttr(ctx).Value.String()
+func CorrelationID(ctx context.Context) string {
+	return CorrelationIDAttr(ctx).Value.String()
 }
 
-func GetCorrelationIDAttr(ctx context.Context) slog.Attr {
+func CorrelationIDAttr(ctx context.Context) slog.Attr {
 	value, ok := ctx.Value(CorrelationIDContextKey).(slog.Attr)
 	if !ok {
 		correlationID := GenerateCorrelationID()

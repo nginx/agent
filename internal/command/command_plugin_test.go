@@ -125,13 +125,13 @@ func TestCommandPlugin_Process(t *testing.T) {
 
 	commandPlugin.commandService = fakeCommandService
 
-	commandPlugin.Process(ctx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: protos.GetHostResource()})
+	commandPlugin.Process(ctx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: protos.HostResource()})
 	require.Equal(t, 1, fakeCommandService.CreateConnectionCallCount())
 
-	commandPlugin.Process(ctx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: protos.GetHostResource()})
+	commandPlugin.Process(ctx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: protos.HostResource()})
 	require.Equal(t, 1, fakeCommandService.UpdateDataPlaneStatusCallCount())
 
-	commandPlugin.Process(ctx, &bus.Message{Topic: bus.InstanceHealthTopic, Data: protos.GetInstanceHealths()})
+	commandPlugin.Process(ctx, &bus.Message{Topic: bus.InstanceHealthTopic, Data: protos.InstanceHealths()})
 	require.Equal(t, 1, fakeCommandService.UpdateDataPlaneHealthCallCount())
 
 	commandPlugin.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: protos.OKDataPlaneResponse()})
@@ -139,7 +139,7 @@ func TestCommandPlugin_Process(t *testing.T) {
 
 	commandPlugin.Process(ctx, &bus.Message{
 		Topic: bus.DataPlaneHealthResponseTopic,
-		Data:  protos.GetHealthyInstanceHealth(),
+		Data:  protos.HealthyInstanceHealth(),
 	})
 	require.Equal(t, 1, fakeCommandService.UpdateDataPlaneHealthCallCount())
 	require.Equal(t, 1, fakeCommandService.SendDataPlaneResponseCallCount())

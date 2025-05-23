@@ -161,7 +161,7 @@ func (r *Resource) handleAPIActionRequest(ctx context.Context, msg *bus.Message)
 }
 
 func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi.NGINXPlusAction, instanceID string) {
-	correlationID := logger.GetCorrelationID(ctx)
+	correlationID := logger.CorrelationID(ctx)
 	instance := r.resourceService.Instance(instanceID)
 	apiAction := APIAction{
 		ResourceService: r.resourceService,

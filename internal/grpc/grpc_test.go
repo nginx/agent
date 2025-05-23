@@ -184,7 +184,7 @@ func Test_GetDialOptions(t *testing.T) {
 				test.agentConfig.Command.TLS.Ca = fmt.Sprintf("%s%s%s", tmpDir, pathSeparator, caFileName)
 			}
 
-			options := GetDialOptions(test.agentConfig, "123")
+			options := DialOptions(test.agentConfig, "123")
 			assert.NotNil(tt, options)
 			assert.Len(tt, options, test.expected)
 		})
@@ -215,19 +215,19 @@ func Test_ProtoValidatorUnaryClientInterceptor(t *testing.T) {
 		{
 			name:            "Test 1: Invalid request type",
 			request:         "invalid",
-			reply:           protos.GetNginxOssInstance([]string{}),
+			reply:           protos.NginxOssInstance([]string{}),
 			isErrorExpected: true,
 		},
 		{
 			name:            "Test 2: Invalid reply type",
-			request:         protos.GetNginxOssInstance([]string{}),
+			request:         protos.NginxOssInstance([]string{}),
 			reply:           "invalid",
 			isErrorExpected: true,
 		},
 		{
 			name:            "Test 3: Valid request & reply types",
-			request:         protos.GetNginxOssInstance([]string{}),
-			reply:           protos.GetNginxOssInstance([]string{}),
+			request:         protos.NginxOssInstance([]string{}),
+			reply:           protos.NginxOssInstance([]string{}),
 			isErrorExpected: false,
 		},
 	}
@@ -256,7 +256,7 @@ func Test_ProtoValidatorStreamClientInterceptor_RecvMsg(t *testing.T) {
 			isErrorExpected: true,
 		}, {
 			name:            "Test 2: Valid received message type",
-			receivedMessage: protos.GetNginxOssInstance([]string{}),
+			receivedMessage: protos.NginxOssInstance([]string{}),
 			isErrorExpected: false,
 		},
 	}
@@ -287,7 +287,7 @@ func Test_ProtoValidatorStreamClientInterceptor_SendMsg(t *testing.T) {
 			isErrorExpected: true,
 		}, {
 			name:            "Test 2: Valid sent message type",
-			sentMessage:     protos.GetNginxOssInstance([]string{}),
+			sentMessage:     protos.NginxOssInstance([]string{}),
 			isErrorExpected: false,
 		},
 	}
@@ -373,11 +373,11 @@ func Test_getTransportCredentials(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getTransportCredentials(tt.conf)
-			if !tt.wantErr(t, err, fmt.Sprintf("getTransportCredentials(%v)", tt.conf)) {
+			got, err := transportCredentials(tt.conf)
+			if !tt.wantErr(t, err, fmt.Sprintf("transportCredentials(%v)", tt.conf)) {
 				return
 			}
-			assert.Equalf(t, tt.want, got, "getTransportCredentials(%v)", tt.conf)
+			assert.Equalf(t, tt.want, got, "transportCredentials(%v)", tt.conf)
 		})
 	}
 }
