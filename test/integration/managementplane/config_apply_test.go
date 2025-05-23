@@ -120,7 +120,7 @@ func TestGrpc_ConfigApply(t *testing.T) {
 func TestGrpc_ConfigApply_Chunking(t *testing.T) {
 	ctx := context.Background()
 	teardownTest := utils.SetupConnectionTest(t, false, false,
-		"../../config/nginx/nginx-config-with-max-file-size.conf")
+		"../../config/agent/nginx-config-with-max-file-size.conf")
 	defer teardownTest(t)
 
 	nginxInstanceID := utils.VerifyConnection(t, 2)
