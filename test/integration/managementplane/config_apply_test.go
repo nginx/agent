@@ -120,7 +120,7 @@ func TestGrpc_ConfigApply(t *testing.T) {
 func TestGrpc_ConfigApply_Chunking(t *testing.T) {
 	ctx := context.Background()
 	teardownTest := utils.SetupConnectionTest(t, false, false,
-		"../../config/agent/nginx-config-with-max-file-size.conf")
+		"../../config/nginx/nginx-config-with-max-file-size.conf")
 	defer teardownTest(t)
 
 	nginxInstanceID := utils.VerifyConnection(t, 2)
@@ -131,7 +131,7 @@ func TestGrpc_ConfigApply_Chunking(t *testing.T) {
 
 	utils.ClearManagementPlaneResponses(t)
 
-	newConfigFile := "../config/nginx/nginx-1mb-file.conf"
+	newConfigFile := "../../config/nginx/nginx-1mb-file.conf"
 
 	err := utils.MockManagementPlaneGrpcContainer.CopyFileToContainer(
 		ctx,
