@@ -128,8 +128,6 @@ func (p *MessagePipe) DeRegister(pluginNames []string) error {
 					return err
 				}
 			}
-
-			plugin = nil
 		}
 	}
 
