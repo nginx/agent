@@ -563,13 +563,20 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 	updateErr := os.WriteFile(updateTestFile.Name(), updatedFileContent, 0o600)
 	require.NoError(t, updateErr)
 
-	addTestFileName := tempDir + "/nginx_add.conf"
+	addTestFileName := tempDir + "nginx_add.conf"
 
 	unmanagedFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx_unmanaged.conf")
 	defer helpers.RemoveFileWithErrorCheck(t, unmanagedFile.Name())
 	unmanagedFileContent := []byte("test unmanaged file")
 	unmanagedErr := os.WriteFile(unmanagedFile.Name(), unmanagedFileContent, 0o600)
 	require.NoError(t, unmanagedErr)
+
+	addTestFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx_add.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, addTestFile.Name())
+	t.Logf("Adding file: %s", addTestFile.Name())
+	addFileContent := []byte("test add file")
+	addErr := os.WriteFile(addTestFile.Name(), addFileContent, 0o600)
+	require.NoError(t, addErr)
 
 	tests := []struct {
 		expectedError   error
@@ -645,9 +652,9 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 		{
 			name: "Test 2: Files same as on disk",
 			modifiedFiles: map[string]*model.FileCache{
-				addTestFileName: {
+				addTestFile.Name(): {
 					File: &mpi.File{
-						FileMeta: protos.FileMeta(addTestFileName, files.GenerateHash(fileContent)),
+						FileMeta: protos.FileMeta(addTestFile.Name(), files.GenerateHash(fileContent)),
 					},
 				},
 				updateTestFile.Name(): {
@@ -668,8 +675,8 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 				updateTestFile.Name(): {
 					FileMeta: protos.FileMeta(updateTestFile.Name(), files.GenerateHash(fileContent)),
 				},
-				addTestFileName: {
-					FileMeta: protos.FileMeta(addTestFileName, files.GenerateHash(fileContent)),
+				addTestFile.Name(): {
+					FileMeta: protos.FileMeta(addTestFile.Name(), files.GenerateHash(fileContent)),
 				},
 			},
 			expectedCache:   make(map[string]*model.FileCache),
@@ -685,10 +692,11 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 			defer manifestFile.Close()
 			manifestDirPath = tempDir
 			manifestFilePath = manifestFile.Name()
-			t.Logf("path: %s", manifestFilePath)
+
 			fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 			fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
 			require.NoError(tt, err)
+
 			diff, contents, fileActionErr := fileManagerService.DetermineFileActions(test.currentFiles,
 				test.modifiedFiles)
 			require.NoError(tt, fileActionErr)

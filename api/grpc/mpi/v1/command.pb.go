@@ -2655,10 +2655,10 @@ const file_mpi_v1_command_proto_rawDesc = "" +
 	"\tinstances\x18\x02 \x03(\v2\x10.mpi.v1.InstanceR\tinstances\x12/\n" +
 	"\thost_info\x18\x03 \x01(\v2\x10.mpi.v1.HostInfoH\x00R\bhostInfo\x12>\n" +
 	"\x0econtainer_info\x18\x04 \x01(\v2\x15.mpi.v1.ContainerInfoH\x00R\rcontainerInfoB\x06\n" +
-	"\x04info\"\x8b\x01\n" +
+	"\x04info\"\x81\x01\n" +
 	"\bHostInfo\x12!\n" +
-	"\ahost_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x06hostId\x12$\n" +
-	"\bhostname\x18\x02 \x01(\tB\b\xbaH\x05r\x03\xa8\x01\x01R\bhostname\x126\n" +
+	"\ahost_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x06hostId\x12\x1a\n" +
+	"\bhostname\x18\x02 \x01(\tR\bhostname\x126\n" +
 	"\frelease_info\x18\x03 \x01(\v2\x13.mpi.v1.ReleaseInfoR\vreleaseInfo\"\x86\x01\n" +
 	"\vReleaseInfo\x12\x1a\n" +
 	"\bcodename\x18\x01 \x01(\tR\bcodename\x12\x0e\n" +
@@ -2666,10 +2666,10 @@ const file_mpi_v1_command_proto_rawDesc = "" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12\x1d\n" +
 	"\n" +
 	"version_id\x18\x04 \x01(\tR\tversionId\x12\x18\n" +
-	"\aversion\x18\x05 \x01(\tR\aversion\"\x9a\x01\n" +
+	"\aversion\x18\x05 \x01(\tR\aversion\"\x90\x01\n" +
 	"\rContainerInfo\x12+\n" +
-	"\fcontainer_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\vcontainerId\x12$\n" +
-	"\bhostname\x18\x02 \x01(\tB\b\xbaH\x05r\x03\xa8\x01\x01R\bhostname\x126\n" +
+	"\fcontainer_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\vcontainerId\x12\x1a\n" +
+	"\bhostname\x18\x02 \x01(\tR\bhostname\x126\n" +
 	"\frelease_info\x18\x03 \x01(\v2\x13.mpi.v1.ReleaseInfoR\vreleaseInfo\"\x87\x01\n" +
 	"\x18CreateConnectionResponse\x123\n" +
 	"\bresponse\x18\x01 \x01(\v2\x17.mpi.v1.CommandResponseR\bresponse\x126\n" +

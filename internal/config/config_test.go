@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/pkg/config"
+
 	"github.com/nginx/agent/v3/test/helpers"
 
 	"github.com/stretchr/testify/require"
@@ -886,11 +888,13 @@ func createConfig() *Config {
 								FilePath: "/var/log/nginx/access-custom.conf",
 							},
 						},
+						CollectionInterval: 30 * time.Second,
 					},
 				},
 				NginxPlusReceivers: []NginxPlusReceiver{
 					{
-						InstanceID: "cd7b8911-c2c5-4daf-b311-dbead151d939",
+						InstanceID:         "cd7b8911-c2c5-4daf-b311-dbead151d939",
+						CollectionInterval: 30 * time.Second,
 					},
 				},
 				HostMetrics: &HostMetrics{
@@ -969,6 +973,10 @@ func createConfig() *Config {
 			"label1": "label 1",
 			"label2": "new-value",
 			"label3": 123,
+		},
+		Features: []string{
+			config.FeatureCertificates, config.FeatureFileWatcher, config.FeatureMetrics,
+			config.FeatureAPIAction, config.FeatureLogsNap,
 		},
 	}
 }
