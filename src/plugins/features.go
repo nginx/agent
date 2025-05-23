@@ -97,7 +97,6 @@ func (f *Features) Init(pipeline core.MessagePipeInterface) {
 }
 
 func (f *Features) Close() {
-	log.Info("Features is wrapping up")
 	log.Info("Features is closed")
 }
 

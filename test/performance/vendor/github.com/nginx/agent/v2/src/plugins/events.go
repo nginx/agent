@@ -63,7 +63,6 @@ func (a *Events) Init(pipeline core.MessagePipeInterface) {
 }
 
 func (a *Events) Close() {
-	log.Info("Events is wrapping up")
 	log.Info("Events is closed")
 }
 

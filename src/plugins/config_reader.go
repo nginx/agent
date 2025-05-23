@@ -46,7 +46,6 @@ func (r *ConfigReader) Info() *core.Info {
 }
 
 func (r *ConfigReader) Close() {
-	log.Info("ConfigReader is wrapping up")
 	log.Info("ConfigReader is closed")
 }
 
@@ -186,17 +185,17 @@ func (r *ConfigReader) deRegisterPlugin(data string) {
 	if data == agent_config.FeatureFileWatcher {
 		err := r.messagePipeline.DeRegister([]string{agent_config.FeatureFileWatcher, agent_config.FeatureFileWatcherThrottle})
 		if err != nil {
-			log.Warnf("Error De-registering %v Plugin: %v", data, err)
+			log.Warnf("Error deregistering %v plugin: %v", data, err)
 		}
 	} else if data == agent_config.FeatureMetrics {
 		err := r.messagePipeline.DeRegister([]string{agent_config.FeatureMetrics, agent_config.FeatureMetricsThrottle, agent_config.FeatureMetricsSender})
 		if err != nil {
-			log.Warnf("Error De-registering %v Plugin: %v", data, err)
+			log.Warnf("Error deregistering %v plugin: %v", data, err)
 		}
 	} else {
 		err := r.messagePipeline.DeRegister([]string{data})
 		if err != nil {
-			log.Warnf("Error De-registering %v Plugin: %v", data, err)
+			log.Warnf("Error deregistering %v plugin: %v", data, err)
 		}
 	}
 }

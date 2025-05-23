@@ -191,6 +191,7 @@ func (a *AgentAPI) Close() {
 	if err := a.server.Shutdown(context.Background()); err != nil {
 		log.Errorf("Agent API HTTP Server Shutdown Error: %v", err)
 	}
+	log.Info("Agent API is closed")
 }
 
 func (a *AgentAPI) Process(message *core.Message) {

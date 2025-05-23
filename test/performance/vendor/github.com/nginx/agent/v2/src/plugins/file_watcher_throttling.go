@@ -64,7 +64,6 @@ func (fwt *FileWatchThrottle) Init(pipeline core.MessagePipeInterface) {
 }
 
 func (fwt *FileWatchThrottle) Close() {
-	log.Info("FileWatchThrottle is wrapping up")
 	log.Info("FileWatchThrottle is closed")
 }
 

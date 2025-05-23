@@ -45,7 +45,6 @@ func (c *Commander) Init(pipeline core.MessagePipeInterface) {
 }
 
 func (c *Commander) Close() {
-	log.Info("Commander is wrapping up")
 	log.Info("Commander is closed")
 }
 
