@@ -91,6 +91,8 @@ extensions:
 
 service:
   telemetry:
+    metrics:
+      level: none
     logs:
       level: INFO
       output_paths: ["/var/log/nginx-agent/opentelemetry-collector-agent.log"]

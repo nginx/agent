@@ -72,7 +72,7 @@ func New(conf *config.Config) (*Collector, error) {
 		return nil, errors.New("nil collector config")
 	}
 
-	if conf.Collector.Log != nil && conf.Collector.Log.Path != "" {
+	if conf.Collector.Log != nil && conf.Collector.Log.Path != "" && conf.Collector.Log.Path != "stdout" {
 		err := os.WriteFile(conf.Collector.Log.Path, []byte{}, filePermission)
 		if err != nil {
 			return nil, err
