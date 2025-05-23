@@ -96,12 +96,12 @@ func TestCommandPlugin_createConnection(t *testing.T) {
 
 	assert.Eventually(
 		t,
-		func() bool { return len(messagePipe.GetMessages()) == 1 },
+		func() bool { return len(messagePipe.Messages()) == 1 },
 		2*time.Second,
 		10*time.Millisecond,
 	)
 
-	messages := messagePipe.GetMessages()
+	messages := messagePipe.Messages()
 	assert.Len(t, messages, 1)
 	assert.Equal(t, bus.ConnectionCreatedTopic, messages[0].Topic)
 }
@@ -230,12 +230,12 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 
 			assert.Eventually(
 				t,
-				func() bool { return len(messagePipe.GetMessages()) == 1 },
+				func() bool { return len(messagePipe.Messages()) == 1 },
 				2*time.Second,
 				10*time.Millisecond,
 			)
 
-			messages := messagePipe.GetMessages()
+			messages := messagePipe.Messages()
 			assert.Len(tt, messages, 1)
 			assert.Equal(tt, test.expectedTopic.Topic, messages[0].Topic)
 

@@ -77,7 +77,7 @@ func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*nginxproc
 
 				continue
 			}
-			nginxInfo, err := npp.getInfo(ctx, proc)
+			nginxInfo, err := npp.info(ctx, proc)
 			if err != nil {
 				slog.DebugContext(ctx, "Unable to get NGINX info", "pid", proc.PID, "error", err)
 
@@ -105,7 +105,7 @@ func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*nginxproc
 
 		// check if proc is a master process, process is not a worker but could be cache manager etc
 		if proc.IsMaster() {
-			nginxInfo, err := npp.getInfo(ctx, proc)
+			nginxInfo, err := npp.info(ctx, proc)
 			if err != nil {
 				slog.DebugContext(ctx, "Unable to get NGINX info", "pid", proc.PID, "error", err)
 
@@ -126,11 +126,11 @@ func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*nginxproc
 	return instanceMap
 }
 
-func (npp *NginxProcessParser) getInfo(ctx context.Context, proc *nginxprocess.Process) (*Info, error) {
+func (npp *NginxProcessParser) info(ctx context.Context, proc *nginxprocess.Process) (*Info, error) {
 	exePath := proc.Exe
 
 	if exePath == "" {
-		exePath = npp.getExe(ctx)
+		exePath = npp.exe(ctx)
 		if exePath == "" {
 			return nil, fmt.Errorf("unable to find NGINX exe for process %d", proc.PID)
 		}
@@ -162,7 +162,7 @@ func (npp *NginxProcessParser) getInfo(ctx context.Context, proc *nginxprocess.P
 	return nginxInfo, err
 }
 
-func (npp *NginxProcessParser) getExe(ctx context.Context) string {
+func (npp *NginxProcessParser) exe(ctx context.Context) string {
 	exePath := ""
 
 	out, commandErr := npp.executer.RunCmd(ctx, "sh", "-c", "command -v nginx")

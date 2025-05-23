@@ -49,6 +49,7 @@ const (
 )
 
 var (
+	// TODO: fix this
 	manifestDirPath  = "/opt/homebrew/var/lib/nginx-agent"
 	manifestFilePath = manifestDirPath + "/manifest.json"
 )

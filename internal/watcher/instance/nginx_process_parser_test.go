@@ -571,7 +571,7 @@ func TestGetInfo(t *testing.T) {
 
 			nginxProcessParser := NewNginxProcessParser()
 			nginxProcessParser.executer = mockExec
-			result, err := nginxProcessParser.getInfo(ctx, test.process)
+			result, err := nginxProcessParser.info(ctx, test.process)
 			sort.Strings(result.DynamicModules)
 
 			assert.Equal(tt, test.expected, result)
@@ -610,7 +610,7 @@ func TestNginxProcessParser_GetExe(t *testing.T) {
 
 			nginxProcessParser := NewNginxProcessParser()
 			nginxProcessParser.executer = mockExec
-			result := nginxProcessParser.getExe(ctx)
+			result := nginxProcessParser.exe(ctx)
 
 			assert.Equal(tt, test.expected, result)
 		})

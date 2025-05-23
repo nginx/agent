@@ -117,8 +117,8 @@ func TestResource_Process(t *testing.T) {
 
 			resourcePlugin.Process(ctx, test.message)
 
-			assert.Equal(t, test.topic, messagePipe.GetMessages()[0].Topic)
-			assert.Equal(t, test.resource, messagePipe.GetMessages()[0].Data)
+			assert.Equal(t, test.topic, messagePipe.Messages()[0].Topic)
+			assert.Equal(t, test.resource, messagePipe.Messages()[0].Data)
 		})
 	}
 }
@@ -176,14 +176,14 @@ func TestResource_Process_Apply(t *testing.T) {
 
 			resourcePlugin.Process(ctx, test.message)
 
-			assert.Equal(t, test.topic[0], messagePipe.GetMessages()[0].Topic)
+			assert.Equal(t, test.topic[0], messagePipe.Messages()[0].Topic)
 
 			if len(test.topic) > 1 {
-				assert.Equal(t, test.topic[1], messagePipe.GetMessages()[1].Topic)
+				assert.Equal(t, test.topic[1], messagePipe.Messages()[1].Topic)
 			}
 
 			if test.applyErr != nil {
-				response, ok := messagePipe.GetMessages()[0].Data.(*mpi.DataPlaneResponse)
+				response, ok := messagePipe.Messages()[0].Data.(*mpi.DataPlaneResponse)
 				assert.True(tt, ok)
 				assert.Equal(tt, test.applyErr.Error(), response.GetCommandResponse().GetError())
 			}
@@ -308,9 +308,9 @@ func TestResource_Process_APIAction_GetHTTPServers(t *testing.T) {
 
 			resourcePlugin.Process(ctx, test.message)
 
-			assert.Equal(t, test.topic[0], messagePipe.GetMessages()[0].Topic)
+			assert.Equal(t, test.topic[0], messagePipe.Messages()[0].Topic)
 
-			response, ok := messagePipe.GetMessages()[0].Data.(*mpi.DataPlaneResponse)
+			response, ok := messagePipe.Messages()[0].Data.(*mpi.DataPlaneResponse)
 			assert.True(tt, ok)
 
 			if test.err != nil {
@@ -410,9 +410,9 @@ func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 
 			resourcePlugin.Process(ctx, test.message)
 
-			assert.Equal(tt, test.topic[0], messagePipe.GetMessages()[0].Topic)
+			assert.Equal(tt, test.topic[0], messagePipe.Messages()[0].Topic)
 
-			response, ok := messagePipe.GetMessages()[0].Data.(*mpi.DataPlaneResponse)
+			response, ok := messagePipe.Messages()[0].Data.(*mpi.DataPlaneResponse)
 			assert.True(tt, ok)
 
 			if test.err != nil {
@@ -513,9 +513,9 @@ func TestResource_Process_APIAction_UpdateStreamServers(t *testing.T) {
 
 			resourcePlugin.Process(ctx, test.message)
 
-			assert.Equal(tt, test.topic[0], messagePipe.GetMessages()[0].Topic)
+			assert.Equal(tt, test.topic[0], messagePipe.Messages()[0].Topic)
 
-			response, ok := messagePipe.GetMessages()[0].Data.(*mpi.DataPlaneResponse)
+			response, ok := messagePipe.Messages()[0].Data.(*mpi.DataPlaneResponse)
 			assert.True(tt, ok)
 
 			if test.err != nil {
@@ -656,9 +656,9 @@ func TestResource_Process_APIAction_GetStreamUpstreams(t *testing.T) {
 
 			resourcePlugin.Process(ctx, test.message)
 
-			assert.Equal(t, test.topic[0], messagePipe.GetMessages()[0].Topic)
+			assert.Equal(t, test.topic[0], messagePipe.Messages()[0].Topic)
 
-			response, ok := messagePipe.GetMessages()[0].Data.(*mpi.DataPlaneResponse)
+			response, ok := messagePipe.Messages()[0].Data.(*mpi.DataPlaneResponse)
 			assert.True(tt, ok)
 
 			if test.err != nil {
@@ -806,9 +806,9 @@ func TestResource_Process_APIAction_GetUpstreams(t *testing.T) {
 
 			resourcePlugin.Process(ctx, test.message)
 
-			assert.Equal(t, test.topic[0], messagePipe.GetMessages()[0].Topic)
+			assert.Equal(t, test.topic[0], messagePipe.Messages()[0].Topic)
 
-			response, ok := messagePipe.GetMessages()[0].Data.(*mpi.DataPlaneResponse)
+			response, ok := messagePipe.Messages()[0].Data.(*mpi.DataPlaneResponse)
 			assert.True(tt, ok)
 
 			if test.err != nil {
@@ -875,22 +875,22 @@ func TestResource_Process_Rollback(t *testing.T) {
 
 			resourcePlugin.Process(ctx, test.message)
 
-			sort.Slice(messagePipe.GetMessages(), func(i, j int) bool {
-				return messagePipe.GetMessages()[i].Topic < messagePipe.GetMessages()[j].Topic
+			sort.Slice(messagePipe.Messages(), func(i, j int) bool {
+				return messagePipe.Messages()[i].Topic < messagePipe.Messages()[j].Topic
 			})
 
-			assert.Equal(tt, len(test.topic), len(messagePipe.GetMessages()))
+			assert.Equal(tt, len(test.topic), len(messagePipe.Messages()))
 
-			assert.Equal(t, test.topic[0], messagePipe.GetMessages()[0].Topic)
+			assert.Equal(t, test.topic[0], messagePipe.Messages()[0].Topic)
 
 			if len(test.topic) > 1 {
-				assert.Equal(t, test.topic[1], messagePipe.GetMessages()[1].Topic)
+				assert.Equal(t, test.topic[1], messagePipe.Messages()[1].Topic)
 			}
 
 			if test.rollbackErr != nil {
-				rollbackResponse, ok := messagePipe.GetMessages()[1].Data.(*mpi.DataPlaneResponse)
+				rollbackResponse, ok := messagePipe.Messages()[1].Data.(*mpi.DataPlaneResponse)
 				assert.True(tt, ok)
-				assert.Equal(t, test.topic[1], messagePipe.GetMessages()[1].Topic)
+				assert.Equal(t, test.topic[1], messagePipe.Messages()[1].Topic)
 				assert.Equal(tt, test.rollbackErr.Error(), rollbackResponse.GetCommandResponse().GetError())
 			}
 		})
@@ -928,7 +928,7 @@ func TestResource_Init(t *testing.T) {
 	err := resourcePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 
-	messages := messagePipe.GetMessages()
+	messages := messagePipe.Messages()
 
 	assert.Empty(t, messages)
 }

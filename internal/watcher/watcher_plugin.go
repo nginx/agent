@@ -217,7 +217,7 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 
 func (w *Watcher) handleHealthRequest(ctx context.Context) {
 	w.messagePipe.Process(ctx, &bus.Message{
-		Topic: bus.DataPlaneHealthResponseTopic, Data: w.healthWatcherService.GetInstancesHealth(),
+		Topic: bus.DataPlaneHealthResponseTopic, Data: w.healthWatcherService.InstancesHealth(),
 	})
 }
 

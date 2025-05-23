@@ -255,7 +255,7 @@ func TestHealthWatcherService_GetInstancesHealth(t *testing.T) {
 	healthWatcher := NewHealthWatcherService(agentConfig)
 	healthWatcher.cache = healthCache
 
-	result := healthWatcher.GetInstancesHealth()
+	result := healthWatcher.InstancesHealth()
 
 	assert.ElementsMatch(t, expectedInstancesHealth, result)
 }

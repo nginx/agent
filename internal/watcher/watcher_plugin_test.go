@@ -46,7 +46,7 @@ func TestWatcher_Init(t *testing.T) {
 	}()
 	require.NoError(t, err)
 
-	messages := messagePipe.GetMessages()
+	messages := messagePipe.Messages()
 
 	assert.Empty(t, messages)
 
@@ -84,8 +84,8 @@ func TestWatcher_Init(t *testing.T) {
 	watcherPlugin.instanceHealthChannel <- instanceHealthMessage
 	watcherPlugin.credentialUpdatesChannel <- credentialUpdateMessage
 
-	assert.Eventually(t, func() bool { return len(messagePipe.GetMessages()) == 6 }, 2*time.Second, 10*time.Millisecond)
-	messages = messagePipe.GetMessages()
+	assert.Eventually(t, func() bool { return len(messagePipe.Messages()) == 6 }, 2*time.Second, 10*time.Millisecond)
+	messages = messagePipe.Messages()
 
 	assert.Equal(
 		t,

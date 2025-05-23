@@ -167,7 +167,7 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 
 			filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigApplyRequestTopic, Data: test.message})
 
-			messages := messagePipe.GetMessages()
+			messages := messagePipe.Messages()
 
 			switch {
 			case test.configApplyStatus == model.OK:
@@ -272,7 +272,7 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic(t *testing.T) {
 		10*time.Millisecond,
 	)
 
-	messages := messagePipe.GetMessages()
+	messages := messagePipe.Messages()
 	assert.Len(t, messages, 1)
 	assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
 
@@ -322,14 +322,14 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic_Failure(t *testing.T) {
 
 	assert.Eventually(
 		t,
-		func() bool { return len(messagePipe.GetMessages()) == 2 },
+		func() bool { return len(messagePipe.Messages()) == 2 },
 		2*time.Second,
 		10*time.Millisecond,
 	)
 
 	assert.Equal(t, 0, fakeFileServiceClient.UpdateFileCallCount())
 
-	messages := messagePipe.GetMessages()
+	messages := messagePipe.Messages()
 	assert.Len(t, messages, 2)
 	assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
 
@@ -404,7 +404,7 @@ func TestFilePlugin_Process_ConfigApplyFailedTopic(t *testing.T) {
 
 			filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigApplyFailedTopic, Data: data})
 
-			messages := messagePipe.GetMessages()
+			messages := messagePipe.Messages()
 
 			switch {
 			case test.rollbackReturns == nil:
@@ -462,7 +462,7 @@ func TestFilePlugin_Process_ConfigApplyRollbackCompleteTopic(t *testing.T) {
 		DataPlaneResponse: expectedResponse,
 	}})
 
-	messages := messagePipe.GetMessages()
+	messages := messagePipe.Messages()
 	response, ok := messages[0].Data.(*mpi.DataPlaneResponse)
 	assert.True(t, ok)
 
@@ -503,7 +503,7 @@ func TestFilePlugin_Process_ConfigApplyCompleteTopic(t *testing.T) {
 
 	filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: expectedResponse})
 
-	messages := messagePipe.GetMessages()
+	messages := messagePipe.Messages()
 	response, ok := messages[0].Data.(*mpi.DataPlaneResponse)
 	assert.True(t, ok)
 
