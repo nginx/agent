@@ -26,19 +26,20 @@ const (
 
 func TestGrpc_ConfigApply(t *testing.T) {
 	ctx := context.Background()
-	teardownTest := utils.SetupConnectionTest(t, false, false)
+	teardownTest := utils.SetupConnectionTest(t, false, false,
+		"../../config/agent/nginx-config-with-grpc-client.conf")
 	defer teardownTest(t)
 
 	nginxInstanceID := utils.VerifyConnection(t, 2)
 
-	responses := utils.GetManagementPlaneResponses(t, 1)
+	responses := utils.ManagementPlaneResponses(t, 1)
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 
 	t.Run("Test 1: No config changes", func(t *testing.T) {
 		utils.ClearManagementPlaneResponses(t)
 		utils.PerformConfigApply(t, nginxInstanceID)
-		responses = utils.GetManagementPlaneResponses(t, 1)
+		responses = utils.ManagementPlaneResponses(t, 1)
 		t.Logf("Config apply responses: %v", responses)
 
 		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
@@ -63,7 +64,7 @@ func TestGrpc_ConfigApply(t *testing.T) {
 
 		utils.PerformConfigApply(t, nginxInstanceID)
 
-		responses = utils.GetManagementPlaneResponses(t, 2)
+		responses = utils.ManagementPlaneResponses(t, 2)
 		t.Logf("Config apply responses: %v", responses)
 
 		sort.Slice(responses, func(i, j int) bool {
@@ -88,7 +89,7 @@ func TestGrpc_ConfigApply(t *testing.T) {
 
 		utils.PerformConfigApply(t, nginxInstanceID)
 
-		responses = utils.GetManagementPlaneResponses(t, 2)
+		responses = utils.ManagementPlaneResponses(t, 2)
 		t.Logf("Config apply responses: %v", responses)
 
 		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_ERROR, responses[0].GetCommandResponse().GetStatus())
@@ -103,7 +104,7 @@ func TestGrpc_ConfigApply(t *testing.T) {
 		utils.ClearManagementPlaneResponses(t)
 		utils.PerformInvalidConfigApply(t, nginxInstanceID)
 
-		responses = utils.GetManagementPlaneResponses(t, 1)
+		responses = utils.ManagementPlaneResponses(t, 1)
 		t.Logf("Config apply responses: %v", responses)
 
 		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE, responses[0].GetCommandResponse().GetStatus())
@@ -114,4 +115,43 @@ func TestGrpc_ConfigApply(t *testing.T) {
 			responses[0].GetCommandResponse().GetError(),
 		)
 	})
+}
+
+func TestGrpc_ConfigApply_Chunking(t *testing.T) {
+	ctx := context.Background()
+	teardownTest := utils.SetupConnectionTest(t, false, false,
+		"../../config/agent/nginx-config-with-max-file-size.conf")
+	defer teardownTest(t)
+
+	nginxInstanceID := utils.VerifyConnection(t, 2)
+
+	responses := utils.ManagementPlaneResponses(t, 1)
+	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
+
+	utils.ClearManagementPlaneResponses(t)
+
+	newConfigFile := "../config/nginx/nginx-1mb-file.conf"
+
+	err := utils.MockManagementPlaneGrpcContainer.CopyFileToContainer(
+		ctx,
+		newConfigFile,
+		fmt.Sprintf("/mock-management-plane-grpc/config/%s/etc/nginx/nginx.conf", nginxInstanceID),
+		0o666,
+	)
+	require.NoError(t, err)
+
+	utils.PerformConfigApply(t, nginxInstanceID)
+
+	responses = utils.ManagementPlaneResponses(t, 2)
+	t.Logf("Config apply responses: %v", responses)
+
+	sort.Slice(responses, func(i, j int) bool {
+		return responses[i].GetCommandResponse().GetMessage() < responses[j].GetCommandResponse().GetMessage()
+	})
+
+	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+	assert.Equal(t, "Config apply successful", responses[0].GetCommandResponse().GetMessage())
+	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
+	assert.Equal(t, "Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
 }

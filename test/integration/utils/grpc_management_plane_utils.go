@@ -60,12 +60,12 @@ type (
 	}
 )
 
-func SetupConnectionTest(tb testing.TB, expectNoErrorsInLogs, nginxless bool) func(tb testing.TB) {
+func SetupConnectionTest(tb testing.TB, expectNoErrorsInLogs, nginxless bool, agentConfig string) func(tb testing.TB) {
 	tb.Helper()
 	ctx := context.Background()
 
 	if os.Getenv("TEST_ENV") == "Container" {
-		setupContainerEnvironment(ctx, tb, nginxless)
+		setupContainerEnvironment(ctx, tb, nginxless, agentConfig)
 	} else {
 		setupLocalEnvironment(tb)
 	}
@@ -86,7 +86,7 @@ func SetupConnectionTest(tb testing.TB, expectNoErrorsInLogs, nginxless bool) fu
 }
 
 // setupContainerEnvironment sets up the container environment for testing.
-func setupContainerEnvironment(ctx context.Context, tb testing.TB, nginxless bool) {
+func setupContainerEnvironment(ctx context.Context, tb testing.TB, nginxless bool, agentConfig string) {
 	tb.Helper()
 	tb.Log("Running tests in a container environment")
 
@@ -94,7 +94,7 @@ func setupContainerEnvironment(ctx context.Context, tb testing.TB, nginxless boo
 	setupMockManagementPlaneGrpc(ctx, tb, containerNetwork)
 
 	params := &helpers.Parameters{
-		NginxAgentConfigPath: "../../config/agent/nginx-config-with-grpc-client.conf",
+		NginxAgentConfigPath: agentConfig,
 		LogMessage:           "Agent connected",
 	}
 	switch nginxless {
@@ -186,7 +186,7 @@ func setupLocalEnvironment(tb testing.TB) {
 	}(tb)
 }
 
-func GetManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int) []*mpi.DataPlaneResponse {
+func ManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int) []*mpi.DataPlaneResponse {
 	t.Helper()
 
 	client := resty.New()

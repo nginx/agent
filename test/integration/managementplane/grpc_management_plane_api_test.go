@@ -23,7 +23,8 @@ import (
 
 func TestGrpc_Reconnection(t *testing.T) {
 	ctx := context.Background()
-	teardownTest := utils.SetupConnectionTest(t, false, false)
+	teardownTest := utils.SetupConnectionTest(t, false, false,
+		"../../config/agent/nginx-config-with-grpc-client.conf")
 	defer teardownTest(t)
 
 	timeout := 15 * time.Second
@@ -49,7 +50,8 @@ func TestGrpc_Reconnection(t *testing.T) {
 
 // Verify that the agent sends a connection request and an update data plane status request
 func TestGrpc_StartUp(t *testing.T) {
-	teardownTest := utils.SetupConnectionTest(t, true, false)
+	teardownTest := utils.SetupConnectionTest(t, true, false,
+		"../../config/agent/nginx-config-with-grpc-client.conf")
 	defer teardownTest(t)
 
 	utils.VerifyConnection(t, 2)
@@ -58,12 +60,13 @@ func TestGrpc_StartUp(t *testing.T) {
 }
 
 func TestGrpc_DataplaneHealthRequest(t *testing.T) {
-	teardownTest := utils.SetupConnectionTest(t, true, false)
+	teardownTest := utils.SetupConnectionTest(t, true, false,
+		"../../config/agent/nginx-config-with-grpc-client.conf")
 	defer teardownTest(t)
 
 	utils.VerifyConnection(t, 2)
 
-	responses := utils.GetManagementPlaneResponses(t, 1)
+	responses := utils.ManagementPlaneResponses(t, 1)
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 
@@ -88,7 +91,7 @@ func TestGrpc_DataplaneHealthRequest(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 
-	responses = utils.GetManagementPlaneResponses(t, 2)
+	responses = utils.ManagementPlaneResponses(t, 2)
 
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully sent the health status update", responses[1].GetCommandResponse().GetMessage())

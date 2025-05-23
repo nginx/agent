@@ -18,7 +18,8 @@ import (
 
 func TestGrpc_FileWatcher(t *testing.T) {
 	ctx := context.Background()
-	teardownTest := utils.SetupConnectionTest(t, true, false)
+	teardownTest := utils.SetupConnectionTest(t, true, false,
+		"../../config/agent/nginx-config-with-grpc-client.conf")
 	defer teardownTest(t)
 
 	utils.VerifyConnection(t, 2)
@@ -32,7 +33,7 @@ func TestGrpc_FileWatcher(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	responses := utils.GetManagementPlaneResponses(t, 2)
+	responses := utils.ManagementPlaneResponses(t, 2)
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
