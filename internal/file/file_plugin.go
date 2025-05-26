@@ -66,6 +66,7 @@ func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 	case bus.ConnectionResetTopic:
 		fp.handleConnectionReset(ctx, msg)
 	case bus.ConnectionCreatedTopic:
+		slog.DebugContext(ctx, "File plugin received connection created message")
 		fp.fileManagerService.SetIsConnected(true)
 	case bus.NginxConfigUpdateTopic:
 		fp.handleNginxConfigUpdate(ctx, msg)
@@ -80,7 +81,7 @@ func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 	case bus.ConfigApplyFailedTopic:
 		fp.handleConfigApplyFailedRequest(ctx, msg)
 	default:
-		slog.DebugContext(ctx, "File plugin unknown topic", "topic", msg.Topic)
+		slog.DebugContext(ctx, "File plugin received unknown topic", "topic", msg.Topic)
 	}
 }
 
@@ -111,11 +112,12 @@ func (fp *FilePlugin) handleConnectionReset(ctx context.Context, msg *bus.Messag
 		fp.fileManagerService = NewFileManagerService(fp.conn.FileServiceClient(), fp.config)
 		fp.fileManagerService.SetIsConnected(reconnect)
 
-		slog.DebugContext(ctx, "File plugin: client reset successfully")
+		slog.DebugContext(ctx, "File manager service client reset successfully")
 	}
 }
 
 func (fp *FilePlugin) handleConfigApplyComplete(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "File plugin received config apply complete message")
 	response, ok := msg.Data.(*mpi.DataPlaneResponse)
 
 	if !ok {
@@ -128,6 +130,7 @@ func (fp *FilePlugin) handleConfigApplyComplete(ctx context.Context, msg *bus.Me
 }
 
 func (fp *FilePlugin) handleConfigApplySuccess(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "File plugin received config success message")
 	successMessage, ok := msg.Data.(*model.ConfigApplySuccess)
 
 	if !ok {
@@ -148,6 +151,7 @@ func (fp *FilePlugin) handleConfigApplySuccess(ctx context.Context, msg *bus.Mes
 }
 
 func (fp *FilePlugin) handleConfigApplyFailedRequest(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "File plugin received config failed message")
 	data, ok := msg.Data.(*model.ConfigApplyMessage)
 	if data.InstanceID == "" || !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplyMessage",
@@ -302,6 +306,7 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 }
 
 func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "File plugin received nginx config update message")
 	nginxConfigContext, ok := msg.Data.(*model.NginxConfigContext)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *model.NginxConfigContext", "payload", msg.Data)
@@ -318,6 +323,7 @@ func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 		slog.ErrorContext(ctx, "Unable to update current files on disk", "error", updateError)
 	}
 
+	slog.InfoContext(ctx, "Updating overview after nginx config update")
 	err := fp.fileManagerService.UpdateOverview(ctx, nginxConfigContext.InstanceID, nginxConfigContext.Files, 0)
 	if err != nil {
 		slog.ErrorContext(
@@ -330,6 +336,7 @@ func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 }
 
 func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "File plugin received config upload request message")
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
 	if !ok {
 		slog.ErrorContext(

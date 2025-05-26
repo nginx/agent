@@ -158,11 +158,8 @@ func (fms *FileManagerService) UpdateOverview(
 			return nil, errors.New("CreateConnection rpc has not being called yet")
 		}
 
-		slog.InfoContext(newCtx, "Updating file overview",
-			"instance_id", request.GetOverview().GetConfigVersion().GetInstanceId(),
-			"parent_correlation_id", correlationID,
-		)
 		slog.DebugContext(newCtx, "Sending update overview request",
+			"instance_id", request.GetOverview().GetConfigVersion().GetInstanceId(),
 			"request", request, "parent_correlation_id", correlationID,
 		)
 
@@ -234,7 +231,7 @@ func (fms *FileManagerService) updateFiles(
 	}
 
 	iteration++
-	slog.Debug("Updating file overview", "attempt_number", iteration)
+	slog.Info("Updating file overview after file updates", "attempt_number", iteration)
 
 	return fms.UpdateOverview(ctx, instanceID, fileOverview, iteration)
 }
@@ -244,7 +241,7 @@ func (fms *FileManagerService) UpdateFile(
 	instanceID string,
 	fileToUpdate *mpi.File,
 ) error {
-	slog.InfoContext(ctx, "Updating file", "instance_id", instanceID, "file_name", fileToUpdate.GetFileMeta().GetName())
+	slog.InfoContext(ctx, "Updating file", "file_name", fileToUpdate.GetFileMeta().GetName(), "instance_id", instanceID)
 
 	slog.DebugContext(ctx, "Checking file size",
 		"file_size", fileToUpdate.GetFileMeta().GetSize(),
@@ -593,6 +590,7 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 	for _, fileAction := range fms.fileActions {
 		switch fileAction.Action {
 		case model.Delete:
+			slog.Debug("File action, deleting file", "file", fileAction.File.GetFileMeta().GetName())
 			if err := os.Remove(fileAction.File.GetFileMeta().GetName()); err != nil && !os.IsNotExist(err) {
 				return fmt.Errorf("error deleting file: %s error: %w",
 					fileAction.File.GetFileMeta().GetName(), err)
@@ -600,6 +598,7 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 
 			continue
 		case model.Add, model.Update:
+			slog.Debug("File action, add or update file", "file", fileAction.File.GetFileMeta().GetName())
 			updateErr := fms.fileUpdate(ctx, fileAction.File)
 			if updateErr != nil {
 				return updateErr
@@ -613,7 +612,6 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 }
 
 func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) error {
-	slog.DebugContext(ctx, "Updating file", "file", file.GetFileMeta().GetName())
 	if file.GetFileMeta().GetSize() <= int64(fms.agentConfig.Client.Grpc.MaxFileSize) {
 		return fms.file(ctx, file)
 	}

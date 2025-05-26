@@ -98,11 +98,12 @@ func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 	case bus.DataPlaneResponseTopic:
 		cp.processDataPlaneResponse(ctx, msg)
 	default:
-		slog.DebugContext(ctx, "Command plugin unknown topic", "topic", msg.Topic)
+		slog.DebugContext(ctx, "Command plugin received unknown topic", "topic", msg.Topic)
 	}
 }
 
 func (cp *CommandPlugin) processResourceUpdate(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Command plugin received resource update message")
 	if resource, ok := msg.Data.(*mpi.Resource); ok {
 		if !cp.commandService.IsConnected() {
 			cp.createConnection(ctx, resource)
@@ -138,6 +139,7 @@ func (cp *CommandPlugin) createConnection(ctx context.Context, resource *mpi.Res
 }
 
 func (cp *CommandPlugin) processDataPlaneHealth(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Command plugin received data plane health message")
 	if instances, ok := msg.Data.([]*mpi.InstanceHealth); ok {
 		err := cp.commandService.UpdateDataPlaneHealth(ctx, instances)
 		correlationID := logger.CorrelationID(ctx)
@@ -152,12 +154,13 @@ func (cp *CommandPlugin) processDataPlaneHealth(ctx context.Context, msg *bus.Me
 		cp.messagePipe.Process(ctx, &bus.Message{
 			Topic: bus.DataPlaneResponseTopic,
 			Data: cp.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
-				"Successfully sent the health status update", ""),
+				"Successfully sent health status update", ""),
 		})
 	}
 }
 
 func (cp *CommandPlugin) processInstanceHealth(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Command plugin received instance health message")
 	if instances, ok := msg.Data.([]*mpi.InstanceHealth); ok {
 		err := cp.commandService.UpdateDataPlaneHealth(ctx, instances)
 		if err != nil {
@@ -167,7 +170,10 @@ func (cp *CommandPlugin) processInstanceHealth(ctx context.Context, msg *bus.Mes
 }
 
 func (cp *CommandPlugin) processDataPlaneResponse(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Command plugin received data plane response message")
 	if response, ok := msg.Data.(*mpi.DataPlaneResponse); ok {
+		slog.InfoContext(ctx, "Sending data plane response message", "message",
+			response.GetCommandResponse().Message, "status", response.GetCommandResponse().Status)
 		err := cp.commandService.SendDataPlaneResponse(ctx, response)
 		if err != nil {
 			slog.ErrorContext(ctx, "Unable to send data plane response", "error", err)
@@ -176,7 +182,7 @@ func (cp *CommandPlugin) processDataPlaneResponse(ctx context.Context, msg *bus.
 }
 
 func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "Command plugin received connection reset")
+	slog.DebugContext(ctx, "Command plugin received connection reset message")
 	if newConnection, ok := msg.Data.(grpc.GrpcConnectionInterface); ok {
 		connectionErr := cp.conn.Close(ctx)
 		if connectionErr != nil {
@@ -217,12 +223,16 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 
 			switch message.GetRequest().(type) {
 			case *mpi.ManagementPlaneRequest_ConfigUploadRequest:
+				slog.InfoContext(ctx, "Received management plane config upload request")
 				cp.handleConfigUploadRequest(newCtx, message)
 			case *mpi.ManagementPlaneRequest_ConfigApplyRequest:
+				slog.InfoContext(ctx, "Received management plane config apply request")
 				cp.handleConfigApplyRequest(newCtx, message)
 			case *mpi.ManagementPlaneRequest_HealthRequest:
+				slog.InfoContext(ctx, "Received management plane health request")
 				cp.handleHealthRequest(newCtx)
 			case *mpi.ManagementPlaneRequest_ActionRequest:
+				slog.InfoContext(ctx, "Received management plane action request")
 				cp.handleAPIActionRequest(newCtx, message)
 			default:
 				slog.DebugContext(newCtx, "Management plane request not implemented yet")

@@ -158,7 +158,7 @@ func (*Watcher) Subscriptions() []string {
 }
 
 func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "Watcher plugin received ConfigApplyRequest event")
+	slog.DebugContext(ctx, "Watcher plugin received config apply request message")
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.ManagementPlaneRequest",
@@ -186,6 +186,7 @@ func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message
 }
 
 func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Watcher plugin received config apply success message")
 	successMessage, ok := msg.Data.(*model.ConfigApplySuccess)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplySuccess", "payload",
@@ -216,12 +217,14 @@ func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message
 }
 
 func (w *Watcher) handleHealthRequest(ctx context.Context) {
+	slog.DebugContext(ctx, "Watcher plugin received health request message")
 	w.messagePipe.Process(ctx, &bus.Message{
 		Topic: bus.DataPlaneHealthResponseTopic, Data: w.healthWatcherService.InstancesHealth(),
 	})
 }
 
 func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Watcher plugin received config apply complete message")
 	response, ok := msg.Data.(*mpi.DataPlaneResponse)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.DataPlaneResponse", "payload",
@@ -246,7 +249,7 @@ func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Messag
 }
 
 func (w *Watcher) handleCredentialUpdate(ctx context.Context) {
-	slog.DebugContext(ctx, "Received credential update topic")
+	slog.DebugContext(ctx, "Watcher plugin received credential update topic")
 
 	w.watcherMutex.Lock()
 	conn, err := grpc.NewGrpcConnection(ctx, w.agentConfig)

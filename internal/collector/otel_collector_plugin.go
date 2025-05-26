@@ -254,6 +254,7 @@ func (oc *Collector) Subscriptions() []string {
 }
 
 func (oc *Collector) handleNginxConfigUpdate(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "OTel collector plugin received nginx config update message")
 	oc.mu.Lock()
 	defer oc.mu.Unlock()
 
@@ -278,6 +279,7 @@ func (oc *Collector) handleNginxConfigUpdate(ctx context.Context, msg *bus.Messa
 }
 
 func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "OTel collector plugin received rescource update message")
 	oc.mu.Lock()
 	defer oc.mu.Unlock()
 
