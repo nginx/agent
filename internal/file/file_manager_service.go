@@ -771,7 +771,6 @@ func (fms *FileManagerService) DetermineFileActions(
 		// if file doesn't exist in the current files, file has been added
 		// set file action
 		if _, statErr := os.Stat(modifiedFile.File.GetFileMeta().GetName()); errors.Is(statErr, os.ErrNotExist) {
-			slog.Info("File is not present on disk", "file", modifiedFile.File.GetFileMeta().GetName())
 			modifiedFile.Action = model.Add
 			fileDiff[modifiedFile.File.GetFileMeta().GetName()] = modifiedFile
 
@@ -824,20 +823,31 @@ func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.F
 		return fmt.Errorf("unable to read manifest file: %w", readError)
 	}
 
-	manifestFiles := fms.convertToManifestFileMap(currentFiles, referenced)
+	updatedFiles := make(map[string]*model.ManifestFile)
 
+	manifestFiles := fms.convertToManifestFileMap(currentFiles, referenced)
 	// During a config apply every file is set to unreferenced
 	// When a new NGINX config context is detected
 	// we update the files in the manifest by setting the referenced bool to true
 	if currentManifestFiles != nil && referenced {
+		for _, currentManifestFile := range currentManifestFiles {
+			// if file from manifest file is unreferenced add it to updatedFiles map
+			if !currentManifestFile.ManifestFileMeta.Referenced {
+				updatedFiles[currentManifestFile.ManifestFileMeta.Name] = currentManifestFile
+			}
+		}
 		for manifestFileName, manifestFile := range manifestFiles {
-			currentManifestFiles[manifestFileName] = manifestFile
+			updatedFiles[manifestFileName] = manifestFile
 		}
 	} else {
-		currentManifestFiles = manifestFiles
+		updatedFiles = manifestFiles
 	}
 
-	manifestJSON, err := json.MarshalIndent(currentManifestFiles, "", "  ")
+	return fms.writeManifestFile(updatedFiles)
+}
+
+func (fms *FileManagerService) writeManifestFile(updatedFiles map[string]*model.ManifestFile) error {
+	manifestJSON, err := json.MarshalIndent(updatedFiles, "", "  ")
 	if err != nil {
 		return fmt.Errorf("unable to marshal manifest file json: %w", err)
 	}
