@@ -136,13 +136,17 @@ func (fp *FilePlugin) handleConfigApplySuccess(ctx context.Context, msg *bus.Mes
 	}
 
 	fp.fileManagerService.ClearCache()
-	updateError := fp.fileManagerService.UpdateCurrentFilesOnDisk(
-		ctx,
-		files.ConvertToMapOfFiles(successMessage.ConfigContext.Files),
-		true,
-	)
-	if updateError != nil {
-		slog.ErrorContext(ctx, "Unable to update current files on disk", "error", updateError)
+
+	if successMessage.ConfigContext.Files != nil {
+		slog.DebugContext(ctx, "Changes made during config apply, update files on disk")
+		updateError := fp.fileManagerService.UpdateCurrentFilesOnDisk(
+			ctx,
+			files.ConvertToMapOfFiles(successMessage.ConfigContext.Files),
+			true,
+		)
+		if updateError != nil {
+			slog.ErrorContext(ctx, "Unable to update current files on disk", "error", updateError)
+		}
 	}
 	fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: successMessage.DataPlaneResponse})
 }
