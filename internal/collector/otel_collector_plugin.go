@@ -160,11 +160,16 @@ func (oc *Collector) processReceivers(ctx context.Context, receivers []config.Ot
 	}
 }
 
+// nolint: revive, cyclop
 func (oc *Collector) bootup(ctx context.Context) error {
 	slog.InfoContext(ctx, "Starting OTel collector")
 	errChan := make(chan error)
 
 	go func() {
+		if oc.service == nil {
+			errChan <- fmt.Errorf("unable to start OTel collector: service is nil")
+		}
+
 		appErr := oc.service.Run(ctx)
 		if appErr != nil {
 			errChan <- appErr
