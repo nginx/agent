@@ -73,12 +73,24 @@ func (m *Metrics) Init(pipeline core.MessagePipeInterface) {
 
 func (m *Metrics) Close() {
 	log.Info("Metrics is wrapping up")
+
 	m.collectorsMutex.Lock()
+
 	if m.cancel != nil {
 		m.cancel()
 	}
+
+	for _, collector := range m.collectors {
+		if nginxCollector, ok := collector.(*collectors.NginxCollector); ok {
+			nginxCollector.Stop()
+			log.Debugf("Removing nginx collector for nginx id: %s", nginxCollector.GetNginxId())
+		}
+	}
+
 	m.collectors = nil
+
 	m.collectorsMutex.Unlock()
+
 	log.Info("Metrics is closed")
 }
 

@@ -68,12 +68,12 @@ OS                     := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 uname_m    := $(shell uname -m)
 
 ifeq ($(uname_m),aarch64)
-	OSARCH = arm64
+	OSARCH ?= arm64
 else
 	ifeq ($(uname_m),x86_64)
-		OSARCH = amd64
+		OSARCH ?= amd64
 	else
-		OSARCH = $(uname_m)
+		OSARCH ?= $(uname_m)
 	endif
 endif
 

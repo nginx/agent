@@ -29,6 +29,7 @@ type NginxCollector struct {
 }
 
 func NewNginxCollector(conf *config.Config, env core.Environment, collectorConf *metrics.NginxCollectorConfig, binary core.NginxBinary) *NginxCollector {
+	log.Debugf("Creating NGINX Collector")
 	host := env.NewHostInfo("agentVersion", &conf.Tags, conf.ConfigDirs, false)
 	dimensions := metrics.NewCommonDim(host, conf, collectorConf.NginxId)
 	dimensions.NginxConfPath = collectorConf.ConfPath
@@ -45,6 +46,7 @@ func NewNginxCollector(conf *config.Config, env core.Environment, collectorConf 
 }
 
 func buildSources(dimensions *metrics.CommonDim, binary core.NginxBinary, collectorConf *metrics.NginxCollectorConfig, conf *config.Config, env core.Environment) []metrics.NginxSource {
+	log.Debugf("Building NGINX metric sources")
 	var nginxSources []metrics.NginxSource
 	// worker metrics
 	if len(conf.Nginx.NginxCountingSocket) > 0 && conf.IsFeatureEnabled(agent_config.FeatureNginxCounting) {
@@ -68,6 +70,7 @@ func buildSources(dimensions *metrics.CommonDim, binary core.NginxBinary, collec
 			nginxSources = append(nginxSources, sources.NewNginxStatic(dimensions, sources.OSSNamespace))
 		}
 	}
+
 	return nginxSources
 }
 

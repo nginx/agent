@@ -8,6 +8,8 @@
 package plugins
 
 import (
+	"slices"
+
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/agent/events"
 	"github.com/nginx/agent/sdk/v2/client"
@@ -119,6 +121,9 @@ func (f *Features) Process(msg *core.Message) {
 	if msg.Topic() == core.EnableFeature {
 		for _, feature := range data.([]string) {
 			if initFeature, ok := f.featureMap[feature]; ok {
+				if feature == agent_config.FeatureNginxCounting && !f.isMetricsCollectionEnabled(data.([]string)) {
+					f.enableMetricsCollectionFeature("")
+				}
 				featurePlugins := initFeature(feature)
 				plugins = append(plugins, featurePlugins...)
 			}
@@ -135,6 +140,12 @@ func (f *Features) Process(msg *core.Message) {
 	} else if msg.Topic() == core.NginxDetailProcUpdate {
 		f.processes = msg.Data().([]*core.Process)
 	}
+}
+
+func (f *Features) isMetricsCollectionEnabled(featuresToBeEnabled []string) bool {
+	return slices.Contains(featuresToBeEnabled, agent_config.FeatureMetrics) ||
+		slices.Contains(featuresToBeEnabled, agent_config.FeatureMetricsCollection) ||
+		f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics)
 }
 
 func (f *Features) enableMetricsFeature(_ string) []core.Plugin {
@@ -313,14 +324,6 @@ func (f *Features) enableNginxCountingFeature(_ string) []core.Plugin {
 				log.Warnf("Unable to get agent config, %v", err)
 			}
 			f.conf = conf
-
-			if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) &&
-				!f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsCollection) {
-
-				metrics := NewMetrics(f.conf, f.env, f.binary, f.processes)
-
-				countingPlugins = append(countingPlugins, metrics)
-			}
 
 			nginxCounting := NewNginxCounter(f.conf, f.binary, f.env)
 			countingPlugins = append(countingPlugins, nginxCounting)
