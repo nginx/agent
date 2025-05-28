@@ -22,6 +22,15 @@ systemd_daemon_reload() {
 cleanup() {
     echo "Removing /var/run/nginx-agent directory"
     rm -rf "/var/run/nginx-agent"
+
+    echo "Removing /etc/nginx-agent directory"
+    rm -rf "/etc/nginx-agent"
+
+    echo "Removing /var/log/nginx-agent directory"
+    rm -rf "/var/log/nginx-agent"
+
+    echo "Removing /var/lib/nginx-agent directory"
+    rm -rf "/var/lib/nginx-agent"
 }
 
 case "$ID" in
