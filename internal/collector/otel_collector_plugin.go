@@ -217,9 +217,9 @@ func (oc *Collector) Close(ctx context.Context) error {
 		oc.service.Shutdown()
 		oc.cancel()
 
-		settings := oc.config.Client.Backoff
+		settings := *oc.config.Client.Backoff
 		settings.MaxElapsedTime = maxTimeToWaitForShutdown
-		err := backoff.WaitUntil(ctx, settings, func() error {
+		err := backoff.WaitUntil(ctx, &settings, func() error {
 			if oc.service.GetState() == otelcol.StateClosed {
 				return nil
 			}

@@ -8,10 +8,10 @@ package process
 import (
 	"context"
 	"strings"
-
-	"github.com/shirou/gopsutil/v4/process"
+	"sync"
 
 	"github.com/nginx/agent/v3/pkg/nginxprocess"
+	"github.com/shirou/gopsutil/v4/process"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
@@ -94,6 +94,10 @@ func (pw *ProcessOperator) Process(ctx context.Context, pid int32) (*nginxproces
 }
 
 func convertProcess(ctx context.Context, proc *process.Process) *nginxprocess.Process {
+	mu := &sync.Mutex{}
+
+	mu.Lock()
+	defer mu.Unlock()
 	ppid, _ := proc.PpidWithContext(ctx)
 	name, _ := proc.NameWithContext(ctx)
 	cmd, _ := proc.CmdlineWithContext(ctx)

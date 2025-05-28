@@ -178,9 +178,10 @@ func (fms *FileManagerService) UpdateOverview(
 		return response, nil
 	}
 
+	backoffSettings := fms.agentConfig.Client.Backoff
 	response, err := backoff.RetryWithData(
 		sendUpdateOverview,
-		backoffHelpers.Context(backOffCtx, fms.agentConfig.Client.Backoff),
+		backoffHelpers.Context(backOffCtx, backoffSettings),
 	)
 	if err != nil {
 		return err
