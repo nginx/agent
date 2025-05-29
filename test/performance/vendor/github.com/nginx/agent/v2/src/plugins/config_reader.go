@@ -37,6 +37,7 @@ func NewConfigReader(config *config.Config) *ConfigReader {
 }
 
 func (r *ConfigReader) Init(pipeline core.MessagePipeInterface) {
+	log.Info("ConfigReader initializing")
 	r.messagePipeline = pipeline
 }
 
@@ -45,7 +46,7 @@ func (r *ConfigReader) Info() *core.Info {
 }
 
 func (r *ConfigReader) Close() {
-	log.Info("ConfigReader is wrapping up")
+	log.Info("ConfigReader is closed")
 }
 
 func (r *ConfigReader) Process(msg *core.Message) {
@@ -73,8 +74,10 @@ func (r *ConfigReader) Process(msg *core.Message) {
 			// Update the agent config on disk
 			switch commandData := cmd.Data.(type) {
 			case *proto.Command_AgentConfig:
+				log.Debugf("Config reader: AgentConfig message recevied: %v, topic: %v", commandData, msg.Topic())
 				r.updateAgentConfig(commandData.AgentConfig)
 			case *proto.Command_AgentConnectResponse:
+				log.Debugf("Config reader: AgentConnectResponse message recevied: %v, topic: %v", commandData, msg.Topic())
 				r.updateAgentConfig(commandData.AgentConnectResponse.AgentConfig)
 			}
 		}
@@ -152,7 +155,9 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 		}
 
 		if synchronizeFeatures {
+			log.Info("Agent config features changed, synchronizing features")
 			r.synchronizeFeatures(payloadAgentConfig)
+			r.config.Features = payloadAgentConfig.Details.Features
 		}
 
 		r.messagePipeline.Process(core.NewMessage(core.AgentConfigChanged, payloadAgentConfig))
@@ -164,6 +169,7 @@ func (r *ConfigReader) synchronizeFeatures(agtCfg *proto.AgentConfig) {
 		r.detailsMu.RLock()
 		for _, feature := range r.config.Features {
 			if feature != agent_config.FeatureRegistration && feature != agent_config.FeatureNginxConfigAsync {
+				log.Debugf("Deregistering the feature %s", feature)
 				r.deRegisterPlugin(feature)
 			}
 		}
@@ -177,16 +183,19 @@ func (r *ConfigReader) synchronizeFeatures(agtCfg *proto.AgentConfig) {
 
 func (r *ConfigReader) deRegisterPlugin(data string) {
 	if data == agent_config.FeatureFileWatcher {
-
 		err := r.messagePipeline.DeRegister([]string{agent_config.FeatureFileWatcher, agent_config.FeatureFileWatcherThrottle})
 		if err != nil {
-			log.Warnf("Error De-registering %v Plugin: %v", data, err)
+			log.Warnf("Error deregistering %v plugin: %v", data, err)
 		}
-
+	} else if data == agent_config.FeatureMetrics {
+		err := r.messagePipeline.DeRegister([]string{agent_config.FeatureMetrics, agent_config.FeatureMetricsThrottle, agent_config.FeatureMetricsSender})
+		if err != nil {
+			log.Warnf("Error deregistering %v plugin: %v", data, err)
+		}
 	} else {
 		err := r.messagePipeline.DeRegister([]string{data})
 		if err != nil {
-			log.Warnf("Error De-registering %v Plugin: %v", data, err)
+			log.Warnf("Error deregistering %v plugin: %v", data, err)
 		}
 	}
 }

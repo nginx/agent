@@ -104,6 +104,7 @@ func (fw *FileWatcher) Close() {
 	fw.enabled = false
 	fw.cancelFunction()
 	fw.watcher.Close()
+	log.Info("File Watcher is closed")
 }
 
 func (fw *FileWatcher) Process(message *core.Message) {

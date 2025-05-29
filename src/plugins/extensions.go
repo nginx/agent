@@ -36,7 +36,7 @@ func (e *Extensions) Init(pipeline core.MessagePipeInterface) {
 }
 
 func (e *Extensions) Close() {
-	log.Info("Extensions is wrapping up")
+	log.Info("Extensions is closed")
 }
 
 func (e *Extensions) Process(msg *core.Message) {

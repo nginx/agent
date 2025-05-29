@@ -26,32 +26,26 @@ type MetricsSender struct {
 	reporter    client.MetricReporter
 	pipeline    core.MessagePipeInterface
 	ctx         context.Context
-	started     *atomic.Bool
 	readyToSend *atomic.Bool
 }
 
-func NewMetricsSender(reporter client.MetricReporter) *MetricsSender {
+func NewMetricsSender(reporter client.MetricReporter, readyToSend *atomic.Bool) *MetricsSender {
 	return &MetricsSender{
 		reporter:    reporter,
-		started:     atomic.NewBool(false),
-		readyToSend: atomic.NewBool(false),
+		readyToSend: readyToSend,
 	}
 }
 
 func (r *MetricsSender) Init(pipeline core.MessagePipeInterface) {
-	if r.started.Load() {
-		return
-	}
-	r.started.Toggle()
+	log.Info("MetricsSender initializing")
 	r.pipeline = pipeline
 	r.ctx = pipeline.Context()
-	log.Info("MetricsSender initializing")
 }
 
 func (r *MetricsSender) Close() {
 	log.Info("MetricsSender is wrapping up")
-	r.started.Store(false)
 	r.readyToSend.Store(false)
+	log.Info("MetricsSender is closed")
 }
 
 func (r *MetricsSender) Info() *core.Info {
@@ -60,11 +54,13 @@ func (r *MetricsSender) Info() *core.Info {
 
 func (r *MetricsSender) Process(msg *core.Message) {
 	if msg.Exact(core.AgentConnected) {
-		r.readyToSend.Toggle()
+		log.Debug("Metrics sender received agent connected message")
+		r.readyToSend.Store(true)
 		return
 	}
 
 	if msg.Exact(core.CommMetrics) {
+		log.Debug("Metrics sender received metrics message")
 		payloads, ok := msg.Data().([]core.Payload)
 		if !ok {
 			log.Warnf("Failed to coerce Message to []Payload: %v", msg.Data())
@@ -82,6 +78,7 @@ func (r *MetricsSender) Process(msg *core.Message) {
 				if err != nil {
 					log.Errorf("Failed to send MetricsReport: %v", err)
 				} else {
+					log.Debug("Metrics sender sent metrics report")
 					r.pipeline.Process(core.NewMessage(core.MetricReportSent, nil))
 				}
 			case *models.EventReport:
@@ -99,6 +96,7 @@ func (r *MetricsSender) Process(msg *core.Message) {
 			}
 		}
 	} else if msg.Exact(core.AgentConfigChanged) {
+		log.Debug("Metrics sender received agent config changed message")
 		switch config := msg.Data().(type) {
 		case *proto.AgentConfig:
 			r.metricSenderBackoff(config)

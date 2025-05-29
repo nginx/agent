@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"go.uber.org/atomic"
+
 	"github.com/nginx/agent/sdk/v2/backoff"
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core"
@@ -43,14 +45,12 @@ func TestMetricsSenderSendMetrics(t *testing.T) {
 			ctx := context.TODO()
 			mockMetricsReportClient := tutils.NewMockMetricsReportClient()
 			mockMetricsReportClient.Mock.On("Send", ctx, mock.Anything).Return(test.err)
-			pluginUnderTest := NewMetricsSender(mockMetricsReportClient)
+			pluginUnderTest := NewMetricsSender(mockMetricsReportClient, atomic.NewBool(false))
 
-			assert.False(t, pluginUnderTest.started.Load())
 			assert.False(t, pluginUnderTest.readyToSend.Load())
 
 			pluginUnderTest.Init(core.NewMockMessagePipe(ctx))
 
-			assert.True(t, pluginUnderTest.started.Load())
 			assert.False(t, pluginUnderTest.readyToSend.Load())
 
 			pluginUnderTest.Process(core.NewMessage(core.AgentConnected, nil))
@@ -110,7 +110,7 @@ func TestMetricsSenderBackoff(t *testing.T) {
 		t.Run(test.name, func(_ *testing.T) {
 			ctx := context.TODO()
 			mockMetricsReportClient := tutils.NewMockMetricsReportClient()
-			pluginUnderTest := NewMetricsSender(mockMetricsReportClient)
+			pluginUnderTest := NewMetricsSender(mockMetricsReportClient, atomic.NewBool(false))
 
 			pluginUnderTest.Init(core.NewMockMessagePipe(ctx))
 			pluginUnderTest.Process(core.NewMessage(core.AgentConnected, nil))
@@ -130,6 +130,6 @@ func TestMetricsSenderBackoff(t *testing.T) {
 }
 
 func TestMetricsSenderSubscriptions(t *testing.T) {
-	pluginUnderTest := NewMetricsSender(tutils.NewMockMetricsReportClient())
+	pluginUnderTest := NewMetricsSender(tutils.NewMockMetricsReportClient(), atomic.NewBool(false))
 	assert.Equal(t, []string{core.CommMetrics, core.AgentConnected, core.AgentConfigChanged}, pluginUnderTest.Subscriptions())
 }

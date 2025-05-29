@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"go.uber.org/atomic"
+
 	proto "github.com/golang/protobuf/jsonpb"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -130,7 +132,7 @@ func TestNAPMonitoring(t *testing.T) {
 		return
 	}
 
-	metricsSender := plugins.NewMetricsSender(reporter)
+	metricsSender := plugins.NewMetricsSender(reporter, atomic.NewBool(false))
 
 	env := tutils.NewMockEnvironment()
 	env.On("NewHostInfo", testifyMock.Anything, testifyMock.Anything, testifyMock.Anything).Return(&sdkPb.HostInfo{

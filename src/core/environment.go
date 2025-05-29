@@ -342,7 +342,6 @@ func (env *EnvironmentType) IsContainer() bool {
 	res, err, _ := singleflightGroup.Do(IsContainerKey, func() (interface{}, error) {
 		for _, filename := range []string{dockerEnv, containerEnv, k8sServiceAcct} {
 			if _, err := os.Stat(filename); err == nil {
-				log.Debugf("Is a container because (%s) exists", filename)
 				return true, nil
 			}
 		}

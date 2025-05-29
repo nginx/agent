@@ -59,12 +59,12 @@ func (fwt *FileWatchThrottle) SetStarted(newValue bool) {
 }
 
 func (fwt *FileWatchThrottle) Init(pipeline core.MessagePipeInterface) {
-	fwt.messagePipeline = pipeline
 	log.Info("FileWatchThrottle initializing")
+	fwt.messagePipeline = pipeline
 }
 
 func (fwt *FileWatchThrottle) Close() {
-	log.Info("FileWatchThrottle is wrapping up")
+	log.Info("FileWatchThrottle is closed")
 }
 
 func (fwt *FileWatchThrottle) Info() *core.Info {

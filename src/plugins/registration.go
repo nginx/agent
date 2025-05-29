@@ -77,7 +77,7 @@ func (r *OneTimeRegistration) Init(pipeline core.MessagePipeInterface) {
 }
 
 func (r *OneTimeRegistration) Close() {
-	log.Info("OneTimeRegistration is wrapping up")
+	log.Info("OneTimeRegistration is closed")
 }
 
 func (r *OneTimeRegistration) Info() *core.Info {

@@ -719,7 +719,7 @@ func (n *Nginx) Info() *core.Info {
 
 // Close cleans up anything outstanding once the plugin ends
 func (n *Nginx) Close() {
-	log.Info("NginxBinary is wrapping up")
+	log.Info("NginxBinary is closed")
 }
 
 func (n *Nginx) syncAgentConfigChange() {

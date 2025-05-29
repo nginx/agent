@@ -38,14 +38,14 @@ func NewCommander(cmdr client.Commander, config *config.Config) *Commander {
 }
 
 func (c *Commander) Init(pipeline core.MessagePipeInterface) {
+	log.Info("Commander initializing")
 	c.pipeline = pipeline
 	c.ctx = pipeline.Context()
-	log.Info("Commander initializing")
 	go c.dispatchLoop()
 }
 
 func (c *Commander) Close() {
-	log.Info("Commander is wrapping up")
+	log.Info("Commander is closed")
 }
 
 func (c *Commander) Info() *core.Info {
@@ -158,7 +158,6 @@ func (c *Commander) dispatchLoop() {
 		case *proto.Command_AgentConnectRequest, *proto.Command_AgentConnectResponse:
 			topic = core.AgentConnected
 		case *proto.Command_AgentConfigRequest, *proto.Command_AgentConfig:
-			log.Debugf("agent config %T command data type received and ignored", cmd.GetData())
 			topic = core.AgentConfig
 		case *proto.Command_CmdStatus:
 			data := cmd.GetData().(*proto.Command_CmdStatus)

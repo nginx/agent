@@ -72,12 +72,14 @@ func (pw *ProcessWatcher) Info() *core.Info {
 }
 
 func (pw *ProcessWatcher) Close() {
+	log.Info("ProcessWatcher is wrapping up")
+
 	pw.ticker.Stop()
 	pw.seenMasterProcs = nil
 	pw.seenWorkerProcs = nil
 	pw.nginxDetails = nil
 
-	log.Info("ProcessWatcher is wrapping up")
+	log.Info("ProcessWatcher is closed")
 }
 
 func (pw *ProcessWatcher) Process(message *core.Message) {}

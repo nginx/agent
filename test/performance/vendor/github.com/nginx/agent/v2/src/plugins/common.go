@@ -6,6 +6,7 @@ import (
 	"github.com/nginx/agent/v2/src/core/config"
 	"github.com/nginx/agent/v2/src/extensions"
 	log "github.com/sirupsen/logrus"
+	"go.uber.org/atomic"
 
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/agent/events"
@@ -36,7 +37,7 @@ func LoadPlugins(commander client.Commander, binary core.NginxBinary, env core.E
 
 	if (loadedConfig.IsFeatureEnabled(agent_config.FeatureMetrics) || loadedConfig.IsFeatureEnabled(agent_config.FeatureMetricsSender)) && reporter != nil {
 		corePlugins = append(corePlugins,
-			NewMetricsSender(reporter),
+			NewMetricsSender(reporter, atomic.NewBool(false)),
 		)
 	}
 
@@ -44,7 +45,7 @@ func LoadPlugins(commander client.Commander, binary core.NginxBinary, env core.E
 		NewConfigReader(loadedConfig),
 		NewNginx(commander, binary, env, loadedConfig, processes),
 		NewExtensions(loadedConfig, env),
-		NewFeatures(commander, loadedConfig, env, binary, loadedConfig.Version, processes, agentEventsMeta),
+		NewFeatures(commander, reporter, loadedConfig, env, binary, loadedConfig.Version, processes, agentEventsMeta),
 	)
 
 	if loadedConfig.IsFeatureEnabled(agent_config.FeatureRegistration) {

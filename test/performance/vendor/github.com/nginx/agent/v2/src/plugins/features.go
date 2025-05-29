@@ -8,12 +8,15 @@
 package plugins
 
 import (
+	"slices"
+
 	agent_config "github.com/nginx/agent/sdk/v2/agent/config"
 	"github.com/nginx/agent/sdk/v2/agent/events"
 	"github.com/nginx/agent/sdk/v2/client"
 	sdkGRPC "github.com/nginx/agent/sdk/v2/grpc"
 	"github.com/nginx/agent/v2/src/core"
 	"github.com/nginx/agent/v2/src/core/config"
+	"go.uber.org/atomic"
 
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -21,6 +24,7 @@ import (
 
 type Features struct {
 	commander       client.Commander
+	metricReporter  client.MetricReporter
 	pipeline        core.MessagePipeInterface
 	conf            *config.Config
 	env             core.Environment
@@ -33,6 +37,7 @@ type Features struct {
 
 func NewFeatures(
 	commander client.Commander,
+	metricReporter client.MetricReporter,
 	conf *config.Config,
 	env core.Environment,
 	binary core.NginxBinary,
@@ -42,6 +47,7 @@ func NewFeatures(
 ) *Features {
 	return &Features{
 		commander:       commander,
+		metricReporter:  metricReporter,
 		conf:            conf,
 		env:             env,
 		binary:          binary,
@@ -93,7 +99,7 @@ func (f *Features) Init(pipeline core.MessagePipeInterface) {
 }
 
 func (f *Features) Close() {
-	log.Info("Features is wrapping up")
+	log.Info("Features is closed")
 }
 
 func (f *Features) Info() *core.Info {
@@ -115,6 +121,9 @@ func (f *Features) Process(msg *core.Message) {
 	if msg.Topic() == core.EnableFeature {
 		for _, feature := range data.([]string) {
 			if initFeature, ok := f.featureMap[feature]; ok {
+				if feature == agent_config.FeatureNginxCounting && !f.isMetricsCollectionEnabled(data.([]string)) {
+					f.enableMetricsCollectionFeature("")
+				}
 				featurePlugins := initFeature(feature)
 				plugins = append(plugins, featurePlugins...)
 			}
@@ -133,9 +142,15 @@ func (f *Features) Process(msg *core.Message) {
 	}
 }
 
+func (f *Features) isMetricsCollectionEnabled(featuresToBeEnabled []string) bool {
+	return slices.Contains(featuresToBeEnabled, agent_config.FeatureMetrics) ||
+		slices.Contains(featuresToBeEnabled, agent_config.FeatureMetricsCollection) ||
+		f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics)
+}
+
 func (f *Features) enableMetricsFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) {
-
+		log.Debug("Enabling metrics feature")
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
 			log.Warnf("Unable to get agent config, %v", err)
@@ -144,7 +159,7 @@ func (f *Features) enableMetricsFeature(_ string) []core.Plugin {
 
 		metrics := NewMetrics(f.conf, f.env, f.binary, f.processes)
 		metricsThrottle := NewMetricsThrottle(f.conf, f.env)
-		metricsSender := NewMetricsSender(f.commander)
+		metricsSender := NewMetricsSender(f.metricReporter, atomic.NewBool(true))
 
 		return []core.Plugin{metrics, metricsThrottle, metricsSender}
 	}
@@ -154,7 +169,7 @@ func (f *Features) enableMetricsFeature(_ string) []core.Plugin {
 func (f *Features) enableMetricsCollectionFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) &&
 		!f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsCollection) {
-
+		log.Debug("Enabling metrics-collection feature")
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
 			log.Warnf("Unable to get agent config, %v", err)
@@ -171,7 +186,7 @@ func (f *Features) enableMetricsCollectionFeature(_ string) []core.Plugin {
 func (f *Features) enableMetricsThrottleFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) &&
 		!f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsThrottle) {
-
+		log.Debug("Enabling metrics-throttle feature")
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
 			log.Warnf("Unable to get agent config, %v", err)
@@ -188,14 +203,14 @@ func (f *Features) enableMetricsThrottleFeature(_ string) []core.Plugin {
 func (f *Features) enableMetricsSenderFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) &&
 		!f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsSender) {
-
+		log.Debug("Enabling metrics-sender feature")
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
 			log.Warnf("Unable to get agent config, %v", err)
 		}
 		f.conf = conf
 
-		metricsSender := NewMetricsSender(f.commander)
+		metricsSender := NewMetricsSender(f.metricReporter, atomic.NewBool(true))
 
 		return []core.Plugin{metricsSender}
 	}
@@ -204,6 +219,7 @@ func (f *Features) enableMetricsSenderFeature(_ string) []core.Plugin {
 
 func (f *Features) enableAgentAPIFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureAgentAPI) {
+		log.Debug("Enabling agent-api feature")
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
 			log.Warnf("Unable to get agent config, %v", err)
@@ -219,6 +235,7 @@ func (f *Features) enableAgentAPIFeature(_ string) []core.Plugin {
 
 func (f *Features) enableRegistrationFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureRegistration) {
+		log.Debug("Enabling registration feature")
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
 			log.Warnf("Unable to get agent config, %v", err)
@@ -234,6 +251,7 @@ func (f *Features) enableRegistrationFeature(_ string) []core.Plugin {
 
 func (f *Features) enableDataPlaneStatusFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureDataPlaneStatus) {
+		log.Debug("Enabling dataplane-status feature")
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
 			log.Warnf("Unable to get agent config, %v", err)
@@ -249,6 +267,7 @@ func (f *Features) enableDataPlaneStatusFeature(_ string) []core.Plugin {
 
 func (f *Features) enableProcessWatcherFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureProcessWatcher) {
+		log.Debug("Enabling process-watcher feature")
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
 			log.Warnf("Unable to get agent config, %v", err)
@@ -264,21 +283,23 @@ func (f *Features) enableProcessWatcherFeature(_ string) []core.Plugin {
 
 func (f *Features) enableActivityEventsFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureActivityEvents) {
+		log.Debug("Enabling activity-events feature")
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
 			log.Warnf("Unable to get agent config, %v", err)
 		}
 		f.conf = conf
 
-		events := NewEvents(f.conf, f.env, sdkGRPC.NewMessageMeta(uuid.NewString()), f.binary, f.agentEventsMeta)
+		eventsPlugin := NewEvents(f.conf, f.env, sdkGRPC.NewMessageMeta(uuid.NewString()), f.binary, f.agentEventsMeta)
 
-		return []core.Plugin{events}
+		return []core.Plugin{eventsPlugin}
 	}
 	return []core.Plugin{}
 }
 
 func (f *Features) enableFileWatcherFeature(_ string) []core.Plugin {
 	if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureFileWatcher) {
+		log.Debug("Enabling file-watcher feature")
 		conf, err := config.GetConfig(f.conf.ClientID)
 		if err != nil {
 			log.Warnf("Unable to get agent config, %v", err)
@@ -297,19 +318,12 @@ func (f *Features) enableNginxCountingFeature(_ string) []core.Plugin {
 	countingPlugins := []core.Plugin{}
 	if len(f.conf.Nginx.NginxCountingSocket) > 0 {
 		if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureNginxCounting) {
+			log.Debug("Enabling nginx-counting feature")
 			conf, err := config.GetConfig(f.conf.ClientID)
 			if err != nil {
 				log.Warnf("Unable to get agent config, %v", err)
 			}
 			f.conf = conf
-
-			if !f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetrics) &&
-				!f.pipeline.IsPluginAlreadyRegistered(agent_config.FeatureMetricsCollection) {
-
-				metrics := NewMetrics(f.conf, f.env, f.binary, f.processes)
-
-				countingPlugins = append(countingPlugins, metrics)
-			}
 
 			nginxCounting := NewNginxCounter(f.conf, f.binary, f.env)
 			countingPlugins = append(countingPlugins, nginxCounting)
