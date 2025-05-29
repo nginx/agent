@@ -221,17 +221,17 @@ func (ncp *NginxConfigParser) addAccessLog(accessLog *model.AccessLog,
 		if accessLog.Name == log.Name {
 			if accessLog.Format != log.Format {
 				slog.Warn("Found duplicate access log with different formats. Metrics from this access log "+
-					"will not be collected", "access_log", accessLog)
+					"will not be collected", "access_log", accessLog.Name)
 
 				return append(accessLogs[:i], accessLogs[i+1:]...)
 			}
-			slog.Debug("Found duplicate access log, skipping", "access_log", accessLog)
+			slog.Debug("Found duplicate access log, skipping", "access_log", accessLog.Name)
 
 			return accessLogs
 		}
 	}
 
-	slog.Debug("Found valid access log", "access_log", accessLog)
+	slog.Debug("Found valid access log", "access_log", accessLog.Name)
 
 	return append(accessLogs, accessLog)
 }
