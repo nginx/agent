@@ -557,6 +557,119 @@ func TestNginxConfigParser_sslCert(t *testing.T) {
 	assert.Equal(t, certFile, sslCert.GetFileMeta().GetName())
 }
 
+func TestNginxConfigParser_checkLog(t *testing.T) {
+	logBuf := &bytes.Buffer{}
+	stub.StubLoggerWith(logBuf)
+	tests := []struct {
+		name               string
+		expectedLog        string
+		accessLog          *model.AccessLog
+		currentAccessLogs  []*model.AccessLog
+		expectedAccessLogs []*model.AccessLog
+	}{
+		{
+			name: "Test 1: valid access log",
+			accessLog: &model.AccessLog{
+				Name: "/var/log/nginx/access2.log",
+				Format: "$remote_addr - $remote_user [$time_local] \"$request\" \"$http_user_agent\" " +
+					"\"$http_x_forwarded_for\"$status $body_bytes_sent \"$http_referer\"",
+				Permissions: "",
+				Readable:    true,
+			},
+			currentAccessLogs: []*model.AccessLog{
+				{
+					Name: "/var/log/nginx/access.log",
+					Format: "$remote_addr - $remote_user [$time_local] \"$request\" \"$http_user_agent\" " +
+						"\"$http_x_forwarded_for\"$status $body_bytes_sent \"$http_referer\"",
+					Permissions: "",
+					Readable:    true,
+				},
+			},
+			expectedAccessLogs: []*model.AccessLog{
+				{
+					Name: "/var/log/nginx/access.log",
+					Format: "$remote_addr - $remote_user [$time_local] \"$request\" \"$http_user_agent\" " +
+						"\"$http_x_forwarded_for\"$status $body_bytes_sent \"$http_referer\"",
+					Permissions: "",
+					Readable:    true,
+				},
+				{
+					Name: "/var/log/nginx/access2.log",
+					Format: "$remote_addr - $remote_user [$time_local] \"$request\" \"$http_user_agent\" " +
+						"\"$http_x_forwarded_for\"$status $body_bytes_sent \"$http_referer\"",
+					Permissions: "",
+					Readable:    true,
+				},
+			},
+			expectedLog: "Found valid access log",
+		},
+		{
+			name: "Test 2: Duplicate access log, with same format",
+			accessLog: &model.AccessLog{
+				Name: "/var/log/nginx/access.log",
+				Format: "$remote_addr - $remote_user [$time_local] \"$request\" \"$http_user_agent\" " +
+					"\"$http_x_forwarded_for\"$status $body_bytes_sent \"$http_referer\"",
+				Permissions: "",
+				Readable:    true,
+			},
+			currentAccessLogs: []*model.AccessLog{
+				{
+					Name: "/var/log/nginx/access.log",
+					Format: "$remote_addr - $remote_user [$time_local] \"$request\" \"$http_user_agent\" " +
+						"\"$http_x_forwarded_for\"$status $body_bytes_sent \"$http_referer\"",
+					Permissions: "",
+					Readable:    true,
+				},
+			},
+			expectedAccessLogs: []*model.AccessLog{
+				{
+					Name: "/var/log/nginx/access.log",
+					Format: "$remote_addr - $remote_user [$time_local] \"$request\" \"$http_user_agent\" " +
+						"\"$http_x_forwarded_for\"$status $body_bytes_sent \"$http_referer\"",
+					Permissions: "",
+					Readable:    true,
+				},
+			},
+			expectedLog: "Found duplicate access log, skipping",
+		},
+
+		{
+			name: "Test 3: invalid access log, duplicate access log with different format",
+			accessLog: &model.AccessLog{
+				Name: "/var/log/nginx/access.log",
+				Format: "$remote_addr - $remote_user [$time_local] \"$request\" \"$http_user_agent\" " +
+					"\"$http_x_forwarded_for\"$status $body_bytes_sent",
+				Permissions: "",
+				Readable:    true,
+			},
+			currentAccessLogs: []*model.AccessLog{
+				{
+					Name: "/var/log/nginx/access.log",
+					Format: "$remote_addr - $remote_user [$time_local] \"$request\" \"$http_user_agent\" " +
+						"\"$http_x_forwarded_for\"$status $body_bytes_sent \"$http_referer\"",
+					Permissions: "",
+					Readable:    true,
+				},
+			},
+			expectedAccessLogs: []*model.AccessLog{},
+			expectedLog: "Found duplicate access log with different formats. Metrics from " +
+				"this access log will not be collected",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ncp := NewNginxConfigParser(types.AgentConfig())
+			logs := ncp.addAccessLog(test.accessLog, test.currentAccessLogs)
+			assert.Equal(t, test.expectedAccessLogs, logs)
+
+			helpers.ValidateLog(t, test.expectedLog, logBuf)
+
+			logBuf.Reset()
+		})
+	}
+}
+
 // nolint: maintidx
 func TestNginxConfigParser_urlsForLocationDirective(t *testing.T) {
 	tmpDir := t.TempDir()

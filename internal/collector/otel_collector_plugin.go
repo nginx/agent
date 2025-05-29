@@ -127,6 +127,7 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 		return errors.New("OTel collector already running")
 	}
 
+	slog.InfoContext(ctx, "Starting OTel collector")
 	bootErr := oc.bootup(runCtx)
 	if bootErr != nil {
 		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)
@@ -162,7 +163,6 @@ func (oc *Collector) processReceivers(ctx context.Context, receivers []config.Ot
 
 // nolint: revive, cyclop
 func (oc *Collector) bootup(ctx context.Context) error {
-	slog.InfoContext(ctx, "Starting OTel collector")
 	errChan := make(chan error)
 
 	go func() {
@@ -271,7 +271,7 @@ func (oc *Collector) handleNginxConfigUpdate(ctx context.Context, msg *bus.Messa
 	reloadCollector := oc.checkForNewReceivers(nginxConfigContext)
 
 	if reloadCollector {
-		slog.InfoContext(ctx, "Reloading OTel collector config")
+		slog.InfoContext(ctx, "Reloading OTel collector config, nginx config updated")
 		err := writeCollectorConfig(oc.config.Collector)
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to write OTel Collector config", "error", err)
@@ -296,7 +296,7 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 	headersSetterExtensionUpdated := oc.updateHeadersSetterExtension(ctx, resourceUpdateContext)
 
 	if resourceProcessorUpdated || headersSetterExtensionUpdated {
-		slog.InfoContext(ctx, "Reloading OTel collector config")
+		slog.InfoContext(ctx, "Reloading OTel collector config, resource updated")
 		err := writeCollectorConfig(oc.config.Collector)
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to write OTel Collector config", "error", err)
@@ -392,6 +392,7 @@ func (oc *Collector) restartCollector(ctx context.Context) {
 		return
 	}
 
+	slog.InfoContext(ctx, "Restarting OTel collector")
 	bootErr := oc.bootup(runCtx)
 	if bootErr != nil {
 		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)
