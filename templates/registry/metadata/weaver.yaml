@@ -1,5 +1,6 @@
 params:
   excluded_attributes: ["messaging.client_id"]
+  code_owners: aphralG, dhurley, craigell, sean-breen, CVanF5
 templates:
   - pattern: attrs_metadata.yaml.j2
     filter: >
