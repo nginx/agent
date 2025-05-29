@@ -49,7 +49,7 @@ type (
 		instancesChannel             chan<- InstanceUpdatesMessage
 		nginxConfigContextChannel    chan<- NginxConfigContextMessage
 		nginxParser                  processParser
-		nginxAppProtectProcessParser processParser
+		nginxAppProtectProcessParser *NginxAppProtectParser
 		cacheMutex                   sync.Mutex
 	}
 
@@ -78,7 +78,7 @@ func NewInstanceWatcherService(agentConfig *config.Config) *InstanceWatcherServi
 		agentConfig:                  agentConfig,
 		processOperator:              process.NewProcessOperator(),
 		nginxParser:                  NewNginxProcessParser(),
-		nginxAppProtectProcessParser: NewNginxAppProtectProcessParser(),
+		nginxAppProtectProcessParser: NewNginxAppProtectParser(),
 		nginxConfigParser:            parser.NewNginxConfigParser(agentConfig),
 		instanceCache:                make(map[string]*mpi.Instance),
 		cacheMutex:                   sync.Mutex{},
@@ -263,7 +263,7 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 ) {
 	iw.cacheMutex.Lock()
 	defer iw.cacheMutex.Unlock()
-	nginxProcesses, nginxAppProtectProcesses, err := iw.processOperator.Processes(ctx)
+	nginxProcesses, _, err := iw.processOperator.Processes(ctx)
 	if err != nil {
 		return instanceUpdates, err
 	}
@@ -278,7 +278,7 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 		instancesFound[instance.GetInstanceMeta().GetInstanceId()] = instance
 	}
 
-	nginxAppProtectInstances := iw.nginxAppProtectProcessParser.Parse(ctx, nginxAppProtectProcesses)
+	nginxAppProtectInstances := iw.nginxAppProtectProcessParser.Parse(ctx)
 	for _, instance := range nginxAppProtectInstances {
 		instancesFound[instance.GetInstanceMeta().GetInstanceId()] = instance
 	}
