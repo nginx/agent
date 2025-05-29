@@ -177,7 +177,7 @@ func (fms *FileManagerService) UpdateOverview(
 
 		return response, nil
 	}
-	
+
 	response, err := backoff.RetryWithData(
 		sendUpdateOverview,
 		backoffHelpers.Context(backOffCtx, fms.agentConfig.Client.Backoff),
