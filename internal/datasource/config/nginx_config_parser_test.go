@@ -652,8 +652,9 @@ func TestNginxConfigParser_checkLog(t *testing.T) {
 				},
 			},
 			expectedAccessLogs: []*model.AccessLog{},
-			expectedLog: "Found duplicate access log with different formats. Metrics from " +
-				"this access log will not be collected",
+			expectedLog: "Found duplicate access log with different formats. " +
+				"Multiple log formats are not supported in the same access log, metrics from this access log " +
+				"will not be collected",
 		},
 	}
 
