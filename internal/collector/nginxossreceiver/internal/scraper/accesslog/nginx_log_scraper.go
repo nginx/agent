@@ -123,7 +123,7 @@ func (nls *NginxLogScraper) Start(parentCtx context.Context, _ component.Host) e
 	for _, pipe := range nls.pipes {
 		startError := pipe.Start(storage.NewNopClient())
 		if startError != nil {
-			nls.logger.Error("Error starting pipeline", zap.Any("error", startError), zap.Any("operator_id", pipe.Operators()[0].ID()))
+			nls.logger.Error("Error starting pipeline", zap.Any("error", startError))
 		}
 	}
 
