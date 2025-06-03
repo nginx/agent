@@ -7,6 +7,7 @@ package accesslog
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"sync"
@@ -42,7 +43,7 @@ type (
 		logger    *zap.Logger
 		mb        *metadata.MetricsBuilder
 		rb        *metadata.ResourceBuilder
-		pipe      *pipeline.DirectedPipeline
+		pipes     []*pipeline.DirectedPipeline
 		wg        *sync.WaitGroup
 		cancel    context.CancelFunc
 		entries   []*entry.Entry
@@ -103,20 +104,27 @@ func (nls *NginxLogScraper) ID() component.ID {
 	return component.NewID(metadata.Type)
 }
 
+// nolint: unparam
 func (nls *NginxLogScraper) Start(parentCtx context.Context, _ component.Host) error {
 	nls.logger.Info("NGINX access log scraper started")
 	ctx, cancel := context.WithCancel(parentCtx)
 	nls.cancel = cancel
 
-	var err error
-	nls.pipe, err = nls.initStanzaPipeline(nls.operators, nls.logger)
-	if err != nil {
-		return fmt.Errorf("init stanza pipeline: %w", err)
+	for _, op := range nls.operators {
+		nls.logger.Info("Initializing NGINX access log scraper pipeline", zap.Any("operator_id", op.ID()))
+		pipe, err := nls.initStanzaPipeline([]operator.Config{op}, nls.logger)
+		if err != nil {
+			nls.logger.Error("Error initializing pipeline", zap.Any("operator_id", op.ID()), zap.Any("error", err))
+			continue
+		}
+		nls.pipes = append(nls.pipes, pipe)
 	}
 
-	startError := nls.pipe.Start(storage.NewNopClient())
-	if startError != nil {
-		return fmt.Errorf("stanza pipeline start: %w", startError)
+	for _, pipe := range nls.pipes {
+		startError := pipe.Start(storage.NewNopClient())
+		if startError != nil {
+			nls.logger.Error("Error starting pipeline", zap.Any("error", startError))
+		}
 	}
 
 	nls.wg.Add(1)
@@ -206,7 +214,14 @@ func (nls *NginxLogScraper) Shutdown(_ context.Context) error {
 	}
 	nls.wg.Wait()
 
-	return nls.pipe.Stop()
+	var err error
+	for _, pipe := range nls.pipes {
+		if stopErr := pipe.Stop(); stopErr != nil {
+			err = errors.Join(err, stopErr)
+		}
+	}
+
+	return err
 }
 
 func (nls *NginxLogScraper) initStanzaPipeline(

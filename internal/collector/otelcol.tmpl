@@ -219,8 +219,10 @@ extensions:
 {{- end }}
 
 service:
-  {{- if .Log.Path}}
   telemetry:
+    metrics:
+      level: none
+  {{- if .Log.Path}}
     logs:
       level: {{ .Log.Level }}
       output_paths: ["{{ .Log.Path -}}"]

@@ -257,9 +257,6 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 }
 
 func TestCommandPlugin_FeatureDisabled(t *testing.T) {
-	// logBuf := &bytes.Buffer{}
-	// stub.StubLoggerWith(logBuf)
-
 	tests := []struct {
 		managementPlaneRequest *mpi.ManagementPlaneRequest
 		expectedLog            string
