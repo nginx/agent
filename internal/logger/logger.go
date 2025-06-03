@@ -46,22 +46,22 @@ type (
 
 func New(logPath, level string) *slog.Logger {
 	// TODO
-	//handlerOptions := &slog.HandlerOptions{
-	//	Level: LogLevel(level),
-	//}
-	//
-	//if level == "debug" {
-	//	handlerOptions.AddSource = true
-	//	handlerOptions.ReplaceAttr = func(groups []string, a slog.Attr) slog.Attr {
-	//		if a.Key == slog.SourceKey {
-	//			source := a.Value.Any().(*slog.Source)
-	//			relativeFilePath := strings.Split(source.File, "nginx/agent/")[1]
-	//			a.Value = slog.StringValue(relativeFilePath + ":" + strconv.Itoa(source.Line))
-	//		}
-	//
-	//		return a
-	//	}
-	//}
+	handlerOptions := &slog.HandlerOptions{
+		Level: LogLevel(level),
+	}
+
+	if level == "debug" {
+		handlerOptions.AddSource = true
+		handlerOptions.ReplaceAttr = func(groups []string, a slog.Attr) slog.Attr {
+			if a.Key == slog.SourceKey {
+				source := a.Value.Any().(*slog.Source)
+				relativeFilePath := strings.Split(source.File, "/agent/")[1]
+				a.Value = slog.StringValue(relativeFilePath + ":" + strconv.Itoa(source.Line))
+			}
+
+			return a
+		}
+	}
 
 	handler := slog.NewTextHandler(
 		logWriter(logPath),
