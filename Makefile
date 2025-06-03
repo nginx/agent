@@ -181,7 +181,7 @@ run: build ## Run code
 
 dev: ## Run agent executable
 	@echo "🚀 Running App"
-	$(GORUN) -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
+	$(GORUN) -ldflags=$(DEBUG_LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
 
 race-condition-dev: ## Run agent executable with race condition detection
 	@echo "🏎️ Running app with race condition detection enabled"
