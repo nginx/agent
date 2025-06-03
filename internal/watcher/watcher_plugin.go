@@ -249,7 +249,7 @@ func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Messag
 }
 
 func (w *Watcher) handleCredentialUpdate(ctx context.Context) {
-	slog.DebugContext(ctx, "Watcher plugin received credential update topic")
+	slog.DebugContext(ctx, "Watcher plugin received credential update message")
 
 	w.watcherMutex.Lock()
 	conn, err := grpc.NewGrpcConnection(ctx, w.agentConfig)

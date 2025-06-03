@@ -279,7 +279,7 @@ func (oc *Collector) handleNginxConfigUpdate(ctx context.Context, msg *bus.Messa
 }
 
 func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "OTel collector plugin received rescource update message")
+	slog.DebugContext(ctx, "OTel collector plugin received resource update message")
 	oc.mu.Lock()
 	defer oc.mu.Unlock()
 
@@ -400,6 +400,7 @@ func (oc *Collector) checkForNewReceivers(nginxConfigContext *model.NginxConfigC
 	nginxReceiverFound, reloadCollector := oc.updateExistingNginxPlusReceiver(nginxConfigContext)
 
 	if !nginxReceiverFound && nginxConfigContext.PlusAPI.URL != "" {
+		slog.Debug("Adding new Nginx Plus receiver", "url", nginxConfigContext.PlusAPI.URL)
 		oc.config.Collector.Receivers.NginxPlusReceivers = append(
 			oc.config.Collector.Receivers.NginxPlusReceivers,
 			config.NginxPlusReceiver{
@@ -415,6 +416,7 @@ func (oc *Collector) checkForNewReceivers(nginxConfigContext *model.NginxConfigC
 
 		reloadCollector = true
 	} else if nginxConfigContext.PlusAPI.URL == "" {
+		slog.Debug("Adding new Nginx Oss receiver", "url", nginxConfigContext.StubStatus.URL)
 		reloadCollector = oc.addNginxOssReceiver(nginxConfigContext)
 	}
 
@@ -467,6 +469,8 @@ func (oc *Collector) updateExistingNginxPlusReceiver(
 					oc.config.Collector.Receivers.NginxPlusReceivers[index+1:]...,
 				)
 				if nginxConfigContext.PlusAPI.URL != "" {
+					slog.Debug("Updating existing Nginx Plus receiver", "url",
+						nginxConfigContext.PlusAPI.URL)
 					nginxPlusReceiver.PlusAPI.URL = nginxConfigContext.PlusAPI.URL
 					oc.config.Collector.Receivers.NginxPlusReceivers = append(
 						oc.config.Collector.Receivers.NginxPlusReceivers,
@@ -498,6 +502,8 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 					oc.config.Collector.Receivers.NginxReceivers[index+1:]...,
 				)
 				if nginxConfigContext.StubStatus.URL != "" {
+					slog.Debug("Updating existing Nginx Oss receiver", "url",
+						nginxConfigContext.StubStatus.URL)
 					nginxReceiver.StubStatus = config.APIDetails{
 						URL:      nginxConfigContext.StubStatus.URL,
 						Listen:   nginxConfigContext.StubStatus.Listen,
