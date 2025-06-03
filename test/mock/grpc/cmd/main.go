@@ -57,6 +57,8 @@ func main() {
 	agentConfig.Client.Backoff.MaxElapsedTime = *sleepDuration
 	agentConfig.Client.Grpc.MaxMessageReceiveSize = 4194304
 	agentConfig.Client.Grpc.MaxMessageSendSize = math.MaxInt
+	agentConfig.Client.Grpc.MaxFileSize = 524288
+	agentConfig.Client.Grpc.FileChunkSize = 262144
 
 	newLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
 		Level: logger.GetLogLevel(*logLevel),

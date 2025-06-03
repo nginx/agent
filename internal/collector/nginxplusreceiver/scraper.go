@@ -46,6 +46,7 @@ type NginxPlusScraper struct {
 	logger                        *zap.Logger
 	settings                      receiver.Settings
 	init                          sync.Once
+	previousHTTPRequestsTotal     uint64
 }
 
 type ResponseStatuses struct {
@@ -107,6 +108,8 @@ func (nps *NginxPlusScraper) Scrape(ctx context.Context) (pmetric.Metrics, error
 			nps.logger.Error("Failed to get stats from plus API", zap.Error(err))
 			return
 		}
+
+		nps.previousHTTPRequestsTotal = stats.HTTPRequests.Total
 		nps.createPreviousServerZoneResponses(stats)
 		nps.createPreviousLocationZoneResponses(stats)
 	})
@@ -194,7 +197,10 @@ func (nps *NginxPlusScraper) recordMetrics(stats *plusapi.Stats) {
 
 	// HTTP Requests
 	nps.mb.RecordNginxHTTPRequestsDataPoint(now, int64(stats.HTTPRequests.Total), "", 0)
-	nps.mb.RecordNginxHTTPRequestCountDataPoint(now, int64(stats.HTTPRequests.Current))
+
+	requestsDiff := int64(stats.HTTPRequests.Total) - int64(nps.previousHTTPRequestsTotal)
+	nps.mb.RecordNginxHTTPRequestCountDataPoint(now, requestsDiff)
+	nps.previousHTTPRequestsTotal = stats.HTTPRequests.Total
 
 	nps.recordCacheMetrics(stats, now)
 	nps.recordHTTPLimitMetrics(stats, now)

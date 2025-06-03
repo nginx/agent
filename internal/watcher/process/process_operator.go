@@ -9,9 +9,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/shirou/gopsutil/v4/process"
-
 	"github.com/nginx/agent/v3/pkg/nginxprocess"
+	"github.com/shirou/gopsutil/v4/process"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate

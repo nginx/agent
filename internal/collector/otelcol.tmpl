@@ -81,7 +81,9 @@ receivers:
       url: "{{- .StubStatus.URL -}}"
       listen: "{{- .StubStatus.Listen -}}"
       location: "{{- .StubStatus.Location -}}"
-    collection_interval: 10s
+    {{- if .CollectionInterval }}
+    collection_interval: {{ .CollectionInterval }}
+    {{- end }}
     {{- if gt (len .AccessLogs) 0 }}
     access_logs:
     {{- range .AccessLogs }}
@@ -96,7 +98,9 @@ receivers:
         url: "{{- .PlusAPI.URL -}}"
         listen: "{{- .PlusAPI.Listen -}}"
         location: "{{- .PlusAPI.Location -}}"
-    collection_interval: 10s
+    {{- if .CollectionInterval }}
+    collection_interval: {{ .CollectionInterval }}
+    {{- end }}
 {{- end }}
 {{- range $index, $tcplogReceiver := .Receivers.TcplogReceivers }}
   tcplog/{{$index}}:
@@ -156,6 +160,7 @@ exporters:
     tls:
       insecure: {{ if .TLS -}}false{{ else -}}true{{- end }}
       {{- if .TLS }}
+      insecure_skip_verify: {{ .TLS.SkipVerify }}
       {{ if gt (len .TLS.Ca) 0 -}}ca_file: "{{- .TLS.Ca -}}"{{- end }}
       {{ if gt (len .TLS.Cert) 0 -}}cert_file: "{{- .TLS.Cert -}}"{{- end }}
       {{ if gt (len .TLS.Key) 0 -}}key_file: "{{- .TLS.Key -}}"{{- end }}
@@ -214,8 +219,10 @@ extensions:
 {{- end }}
 
 service:
-  {{- if .Log.Path}}
   telemetry:
+    metrics:
+      level: none
+  {{- if .Log.Path}}
     logs:
       level: {{ .Log.Level }}
       output_paths: ["{{ .Log.Path -}}"]

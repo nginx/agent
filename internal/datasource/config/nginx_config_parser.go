@@ -144,7 +144,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 					if !ncp.ignoreLog(directive.Args[0]) {
 						accessLog := ncp.accessLog(directive.Args[0], ncp.accessLogDirectiveFormat(directive),
 							formatMap)
-						nginxConfigContext.AccessLogs = append(nginxConfigContext.AccessLogs, accessLog)
+						nginxConfigContext.AccessLogs = ncp.addAccessLog(accessLog, nginxConfigContext.AccessLogs)
 					}
 				case "error_log":
 					if !ncp.ignoreLog(directive.Args[0]) {
@@ -212,6 +212,29 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 	}
 
 	return nginxConfigContext, nil
+}
+
+func (ncp *NginxConfigParser) addAccessLog(accessLog *model.AccessLog,
+	accessLogs []*model.AccessLog,
+) []*model.AccessLog {
+	for i, log := range accessLogs {
+		if accessLog.Name == log.Name {
+			if accessLog.Format != log.Format {
+				slog.Warn("Found multiple log_format directives for the same access log. Multiple log formats "+
+					"are not supported in the same access log, metrics from this access log "+
+					"will not be collected", "access_log", accessLog.Name)
+
+				return append(accessLogs[:i], accessLogs[i+1:]...)
+			}
+			slog.Debug("Found duplicate access log, skipping", "access_log", accessLog.Name)
+
+			return accessLogs
+		}
+	}
+
+	slog.Debug("Found valid access log", "access_log", accessLog.Name)
+
+	return append(accessLogs, accessLog)
 }
 
 func (ncp *NginxConfigParser) crossplaneConfigTraverse(
