@@ -45,7 +45,6 @@ type (
 )
 
 func New(logPath, level string) *slog.Logger {
-	// TODO
 	handlerOptions := &slog.HandlerOptions{
 		Level: LogLevel(level),
 	}
@@ -54,9 +53,11 @@ func New(logPath, level string) *slog.Logger {
 		handlerOptions.AddSource = true
 		handlerOptions.ReplaceAttr = func(groups []string, a slog.Attr) slog.Attr {
 			if a.Key == slog.SourceKey {
-				source := a.Value.Any().(*slog.Source)
-				relativeFilePath := strings.Split(source.File, "/agent/")[1]
-				a.Value = slog.StringValue(relativeFilePath + ":" + strconv.Itoa(source.Line))
+				source, ok := a.Value.Any().(*slog.Source)
+				if ok {
+					relativeFilePath := strings.Split(source.File, "/agent/")[1]
+					a.Value = slog.StringValue(relativeFilePath + ":" + strconv.Itoa(source.Line))
+				}
 			}
 
 			return a

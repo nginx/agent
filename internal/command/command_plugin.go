@@ -173,7 +173,7 @@ func (cp *CommandPlugin) processDataPlaneResponse(ctx context.Context, msg *bus.
 	slog.DebugContext(ctx, "Command plugin received data plane response message")
 	if response, ok := msg.Data.(*mpi.DataPlaneResponse); ok {
 		slog.InfoContext(ctx, "Sending data plane response message", "message",
-			response.GetCommandResponse().Message, "status", response.GetCommandResponse().Status)
+			response.GetCommandResponse().GetMessage(), "status", response.GetCommandResponse().GetStatus())
 		err := cp.commandService.SendDataPlaneResponse(ctx, response)
 		if err != nil {
 			slog.ErrorContext(ctx, "Unable to send data plane response", "error", err)

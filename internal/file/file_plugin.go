@@ -156,7 +156,7 @@ func (fp *FilePlugin) handleConfigApplySuccess(ctx context.Context, msg *bus.Mes
 
 func (fp *FilePlugin) handleConfigApplyFailedRequest(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "File plugin received config failed message")
-	
+
 	data, ok := msg.Data.(*model.ConfigApplyMessage)
 	if data.InstanceID == "" || !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplyMessage",
