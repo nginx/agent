@@ -59,8 +59,6 @@ var (
 	initMutex            = &sync.Mutex{}
 )
 
-var pluginLogOrigin = slog.String("log_origin", "otel_collector_plugin.go")
-
 // NewCollector is the constructor for the Collector plugin.
 func New(conf *config.Config) (*Collector, error) {
 	initMutex.Lock()
@@ -412,19 +410,11 @@ func (oc *Collector) checkForNewReceivers(ctx context.Context, nginxConfigContex
 				CollectionInterval: defaultCollectionInterval,
 			},
 		)
-		slog.DebugContext(
-			ctx,
-			"NGINX Plus API found, NGINX Plus receiver enabled to scrape metrics",
-			pluginLogOrigin,
-		)
+		slog.DebugContext(ctx, "NGINX Plus API found, NGINX Plus receiver enabled to scrape metrics")
 
 		reloadCollector = true
 	} else if nginxConfigContext.PlusAPI.URL == "" {
-		slog.WarnContext(
-			ctx,
-			"NGINX Plus API is not configured, searching for stub status endpoint",
-			pluginLogOrigin,
-		)
+		slog.WarnContext(ctx, "NGINX Plus API is not configured, searching for stub status endpoint")
 		reloadCollector = oc.addNginxOssReceiver(ctx, nginxConfigContext)
 	}
 
@@ -457,11 +447,11 @@ func (oc *Collector) addNginxOssReceiver(ctx context.Context, nginxConfigContext
 				CollectionInterval: defaultCollectionInterval,
 			},
 		)
-		slog.DebugContext(ctx, "Stub status endpoint found, OSS receiver enabled to scrape metrics", pluginLogOrigin)
+		slog.DebugContext(ctx, "Stub status endpoint found, OSS receiver enabled to scrape metrics")
 
 		reloadCollector = true
 	} else if nginxConfigContext.StubStatus.URL == "" {
-		slog.WarnContext(ctx, "Stub status endpoint not found, NGINX metrics not available", pluginLogOrigin)
+		slog.WarnContext(ctx, "Stub status endpoint not found, NGINX metrics not available")
 	}
 
 	return reloadCollector
