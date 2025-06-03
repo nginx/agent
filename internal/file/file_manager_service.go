@@ -560,7 +560,6 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 
 			// currentFilesOnDisk needs to be updated after rollback action is performed
 			delete(fms.currentFilesOnDisk, fileAction.File.GetFileMeta().GetName())
-			//areFilesUpdated = true
 
 			continue
 		case model.Delete, model.Update:
@@ -573,7 +572,6 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 			// currentFilesOnDisk needs to be updated after rollback action is performed
 			fileAction.File.GetFileMeta().Hash = files.GenerateHash(content)
 			fms.currentFilesOnDisk[fileAction.File.GetFileMeta().GetName()] = fileAction.File
-			//areFilesUpdated = true
 		case model.Unchanged:
 			fallthrough
 		default:
