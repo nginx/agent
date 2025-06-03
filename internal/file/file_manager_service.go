@@ -195,7 +195,7 @@ func (fms *FileManagerService) UpdateOverview(
 	delta := files.ConvertToMapOfFiles(response.GetOverview().GetFiles())
 
 	if len(delta) != 0 {
-		return fms.updateFiles(ctx, delta, request.GetOverview().GetFiles(), instanceID, iteration)
+		return fms.updateFiles(ctx, delta, instanceID, iteration)
 	}
 
 	return err
@@ -219,7 +219,6 @@ func (fms *FileManagerService) setupIdentifiers(ctx context.Context, iteration i
 func (fms *FileManagerService) updateFiles(
 	ctx context.Context,
 	delta map[string]*mpi.File,
-	fileOverview []*mpi.File,
 	instanceID string,
 	iteration int,
 ) error {
@@ -235,7 +234,7 @@ func (fms *FileManagerService) updateFiles(
 	iteration++
 	slog.Debug("Updating file overview", "attempt_number", iteration)
 
-	return fms.UpdateOverview(ctx, instanceID, fileOverview, iteration)
+	return fms.UpdateOverview(ctx, instanceID, diffFiles, iteration)
 }
 
 func (fms *FileManagerService) UpdateFile(
