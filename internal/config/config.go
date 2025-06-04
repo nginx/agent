@@ -139,7 +139,7 @@ func checkCollectorConfiguration(collector *Collector, config *Config) {
 	if isOTelExporterConfigured(collector) && config.IsGrpcClientConfigured() && config.IsAuthConfigured() &&
 		config.IsTLSConfigured() {
 		slog.Info("No collector configuration found in NGINX Agent config, command server configuration found." +
-			"Using default collector configuration")
+			" Using default collector configuration")
 		defaultCollector(collector, config)
 	}
 }
@@ -168,6 +168,10 @@ func defaultCollector(collector *Collector, config *Config) {
 			},
 			CollectionInterval: 1 * time.Minute,
 			InitialDelay:       1 * time.Second,
+		}
+		collector.Log = &Log{
+			Path:  "stdout",
+			Level: "info",
 		}
 	} else {
 		collector.Receivers.HostMetrics = &HostMetrics{
@@ -366,13 +370,25 @@ func registerClientFlags(fs *flag.FlagSet) {
 	fs.Int(
 		ClientGRPCMaxMessageReceiveSizeKey,
 		DefMaxMessageRecieveSize,
-		"Updates the client grpc setting MaxRecvMsgSize with the specific value in MB.",
+		"Updates the client grpc setting MaxRecvMsgSize with the specific value in bytes.",
 	)
 
 	fs.Int(
 		ClientGRPCMaxMessageSendSizeKey,
 		DefMaxMessageSendSize,
-		"Updates the client grpc setting MaxSendMsgSize with the specific value in MB.",
+		"Updates the client grpc setting MaxSendMsgSize with the specific value in bytes.",
+	)
+
+	fs.Uint32(
+		ClientGRPCFileChunkSizeKey,
+		DefFileChunkSize,
+		"File chunk size in bytes.",
+	)
+
+	fs.Uint32(
+		ClientGRPCMaxFileSizeKey,
+		DefMaxFileSize,
+		"Max file size in bytes.",
 	)
 }
 
@@ -709,6 +725,8 @@ func resolveClient() *Client {
 			MaxMessageSize:        viperInstance.GetInt(ClientGRPCMaxMessageSizeKey),
 			MaxMessageReceiveSize: viperInstance.GetInt(ClientGRPCMaxMessageReceiveSizeKey),
 			MaxMessageSendSize:    viperInstance.GetInt(ClientGRPCMaxMessageSendSizeKey),
+			MaxFileSize:           viperInstance.GetUint32(ClientGRPCMaxFileSizeKey),
+			FileChunkSize:         viperInstance.GetUint32(ClientGRPCFileChunkSizeKey),
 		},
 		Backoff: &BackOff{
 			InitialInterval:     viperInstance.GetDuration(ClientBackoffInitialIntervalKey),

@@ -6,16 +6,20 @@
 package file
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"maps"
+	"math"
 	"os"
 	"slices"
 	"sync"
 	"sync/atomic"
+
+	"google.golang.org/grpc"
 
 	"github.com/nginx/agent/v3/internal/model"
 
@@ -23,7 +27,7 @@ import (
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
-	"github.com/nginx/agent/v3/internal/grpc"
+	internalgrpc "github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/pkg/files"
 	"github.com/nginx/agent/v3/pkg/id"
@@ -52,6 +56,19 @@ var (
 type (
 	fileOperator interface {
 		Write(ctx context.Context, fileContent []byte, file *mpi.FileMeta) error
+		CreateFileDirectories(ctx context.Context, fileMeta *mpi.FileMeta, filePermission os.FileMode) error
+		WriteChunkedFile(
+			ctx context.Context,
+			file *mpi.File,
+			header *mpi.FileDataChunkHeader,
+			stream grpc.ServerStreamingClient[mpi.FileDataChunk],
+		) error
+		ReadChunk(
+			ctx context.Context,
+			chunkSize uint32,
+			reader *bufio.Reader,
+			chunkID uint32,
+		) (mpi.FileDataChunk_Content, error)
 	}
 
 	fileManagerServiceInterface interface {
@@ -61,7 +78,7 @@ type (
 		Rollback(ctx context.Context, instanceID string) error
 		UpdateFile(ctx context.Context, instanceID string, fileToUpdate *mpi.File) error
 		ClearCache()
-		UpdateCurrentFilesOnDisk(updateFiles map[string]*mpi.File)
+		UpdateCurrentFilesOnDisk(ctx context.Context, updateFiles map[string]*mpi.File, referenced bool) error
 		DetermineFileActions(currentFiles map[string]*mpi.File, modifiedFiles map[string]*model.FileCache) (
 			map[string]*model.FileCache, map[string][]byte, error)
 		IsConnected() bool
@@ -150,7 +167,7 @@ func (fms *FileManagerService) UpdateOverview(
 
 		response, updateError := fms.fileServiceClient.UpdateOverview(newCtx, request)
 
-		validatedError := grpc.ValidateGrpcError(updateError)
+		validatedError := internalgrpc.ValidateGrpcError(updateError)
 
 		if validatedError != nil {
 			slog.ErrorContext(newCtx, "Failed to send update overview", "error", validatedError)
@@ -178,7 +195,7 @@ func (fms *FileManagerService) UpdateOverview(
 	delta := files.ConvertToMapOfFiles(response.GetOverview().GetFiles())
 
 	if len(delta) != 0 {
-		return fms.updateFiles(ctx, delta, instanceID, iteration)
+		return fms.updateFiles(ctx, delta, request.GetOverview().GetFiles(), instanceID, iteration)
 	}
 
 	return err
@@ -202,6 +219,7 @@ func (fms *FileManagerService) setupIdentifiers(ctx context.Context, iteration i
 func (fms *FileManagerService) updateFiles(
 	ctx context.Context,
 	delta map[string]*mpi.File,
+	fileOverview []*mpi.File,
 	instanceID string,
 	iteration int,
 ) error {
@@ -217,7 +235,7 @@ func (fms *FileManagerService) updateFiles(
 	iteration++
 	slog.Debug("Updating file overview", "attempt_number", iteration)
 
-	return fms.UpdateOverview(ctx, instanceID, diffFiles, iteration)
+	return fms.UpdateOverview(ctx, instanceID, fileOverview, iteration)
 }
 
 func (fms *FileManagerService) UpdateFile(
@@ -226,23 +244,40 @@ func (fms *FileManagerService) UpdateFile(
 	fileToUpdate *mpi.File,
 ) error {
 	slog.InfoContext(ctx, "Updating file", "instance_id", instanceID, "file_name", fileToUpdate.GetFileMeta().GetName())
+
+	slog.DebugContext(ctx, "Checking file size",
+		"file_size", fileToUpdate.GetFileMeta().GetSize(),
+		"max_file_size", int64(fms.agentConfig.Client.Grpc.MaxFileSize),
+	)
+
+	if fileToUpdate.GetFileMeta().GetSize() <= int64(fms.agentConfig.Client.Grpc.MaxFileSize) {
+		return fms.sendUpdateFileRequest(ctx, fileToUpdate)
+	}
+
+	return fms.sendUpdateFileStream(ctx, fileToUpdate, fms.agentConfig.Client.Grpc.FileChunkSize)
+}
+
+func (fms *FileManagerService) sendUpdateFileRequest(
+	ctx context.Context,
+	fileToUpdate *mpi.File,
+) error {
+	messageMeta := &mpi.MessageMeta{
+		MessageId:     id.GenerateMessageID(),
+		CorrelationId: logger.GetCorrelationID(ctx),
+		Timestamp:     timestamppb.Now(),
+	}
+
 	contents, err := os.ReadFile(fileToUpdate.GetFileMeta().GetName())
 	if err != nil {
 		return err
 	}
-
-	correlationID := logger.GetCorrelationID(ctx)
 
 	request := &mpi.UpdateFileRequest{
 		File: fileToUpdate,
 		Contents: &mpi.FileContents{
 			Contents: contents,
 		},
-		MessageMeta: &mpi.MessageMeta{
-			MessageId:     id.GenerateMessageID(),
-			CorrelationId: correlationID,
-			Timestamp:     timestamppb.Now(),
-		},
+		MessageMeta: messageMeta,
 	}
 
 	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Client.Backoff.MaxElapsedTime)
@@ -261,7 +296,7 @@ func (fms *FileManagerService) UpdateFile(
 
 		response, updateError := fms.fileServiceClient.UpdateFile(ctx, request)
 
-		validatedError := grpc.ValidateGrpcError(updateError)
+		validatedError := internalgrpc.ValidateGrpcError(updateError)
 
 		if validatedError != nil {
 			slog.ErrorContext(ctx, "Failed to send update file", "error", validatedError)
@@ -272,15 +307,184 @@ func (fms *FileManagerService) UpdateFile(
 		return response, nil
 	}
 
-	response, err := backoff.RetryWithData(sendUpdateFile, backoffHelpers.Context(backOffCtx,
-		fms.agentConfig.Client.Backoff))
+	response, err := backoff.RetryWithData(
+		sendUpdateFile,
+		backoffHelpers.Context(backOffCtx, fms.agentConfig.Client.Backoff),
+	)
 	if err != nil {
 		return err
 	}
 
 	slog.DebugContext(ctx, "UpdateFile response", "response", response)
 
-	return err
+	return nil
+}
+
+func (fms *FileManagerService) sendUpdateFileStream(
+	ctx context.Context,
+	fileToUpdate *mpi.File,
+	chunkSize uint32,
+) error {
+	if chunkSize == 0 {
+		return fmt.Errorf("file chunk size must be greater than zero")
+	}
+
+	updateFileStreamClient, err := fms.fileServiceClient.UpdateFileStream(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = fms.sendUpdateFileStreamHeader(ctx, fileToUpdate, chunkSize, updateFileStreamClient)
+	if err != nil {
+		return err
+	}
+
+	return fms.sendFileUpdateStreamChunks(ctx, fileToUpdate, chunkSize, updateFileStreamClient)
+}
+
+func (fms *FileManagerService) sendUpdateFileStreamHeader(
+	ctx context.Context,
+	fileToUpdate *mpi.File,
+	chunkSize uint32,
+	updateFileStreamClient grpc.ClientStreamingClient[mpi.FileDataChunk, mpi.UpdateFileResponse],
+) error {
+	messageMeta := &mpi.MessageMeta{
+		MessageId:     id.GenerateMessageID(),
+		CorrelationId: logger.GetCorrelationID(ctx),
+		Timestamp:     timestamppb.Now(),
+	}
+
+	numberOfChunks := uint32(math.Ceil(float64(fileToUpdate.GetFileMeta().GetSize()) / float64(chunkSize)))
+
+	header := mpi.FileDataChunk_Header{
+		Header: &mpi.FileDataChunkHeader{
+			FileMeta:  fileToUpdate.GetFileMeta(),
+			Chunks:    numberOfChunks,
+			ChunkSize: chunkSize,
+		},
+	}
+
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Client.Backoff.MaxElapsedTime)
+	defer backoffCancel()
+
+	sendUpdateFileHeader := func() error {
+		slog.DebugContext(ctx, "Sending update file stream header", "header", header)
+		if fms.fileServiceClient == nil {
+			return errors.New("file service client is not initialized")
+		}
+
+		if !fms.isConnected.Load() {
+			return errors.New("CreateConnection rpc has not being called yet")
+		}
+
+		err := updateFileStreamClient.Send(
+			&mpi.FileDataChunk{
+				Meta:  messageMeta,
+				Chunk: &header,
+			},
+		)
+
+		validatedError := internalgrpc.ValidateGrpcError(err)
+
+		if validatedError != nil {
+			slog.ErrorContext(ctx, "Failed to send update file stream header", "error", validatedError)
+
+			return validatedError
+		}
+
+		return nil
+	}
+
+	return backoff.Retry(sendUpdateFileHeader, backoffHelpers.Context(backOffCtx, fms.agentConfig.Client.Backoff))
+}
+
+func (fms *FileManagerService) sendFileUpdateStreamChunks(
+	ctx context.Context,
+	fileToUpdate *mpi.File,
+	chunkSize uint32,
+	updateFileStreamClient grpc.ClientStreamingClient[mpi.FileDataChunk, mpi.UpdateFileResponse],
+) error {
+	f, err := os.Open(fileToUpdate.GetFileMeta().GetName())
+	defer func() {
+		closeError := f.Close()
+		if closeError != nil {
+			slog.WarnContext(
+				ctx, "Failed to close file",
+				"file", fileToUpdate.GetFileMeta().GetName(),
+				"error", closeError,
+			)
+		}
+	}()
+	if err != nil {
+		return err
+	}
+
+	var chunkID uint32
+
+	reader := bufio.NewReader(f)
+	for {
+		chunk, readChunkError := fms.fileOperator.ReadChunk(ctx, chunkSize, reader, chunkID)
+		if readChunkError != nil {
+			return readChunkError
+		}
+		if chunk.Content == nil {
+			break
+		}
+
+		sendError := fms.sendFileUpdateStreamChunk(ctx, chunk, updateFileStreamClient)
+		if sendError != nil {
+			return sendError
+		}
+
+		chunkID++
+	}
+
+	return nil
+}
+
+func (fms *FileManagerService) sendFileUpdateStreamChunk(
+	ctx context.Context,
+	chunk mpi.FileDataChunk_Content,
+	updateFileStreamClient grpc.ClientStreamingClient[mpi.FileDataChunk, mpi.UpdateFileResponse],
+) error {
+	messageMeta := &mpi.MessageMeta{
+		MessageId:     id.GenerateMessageID(),
+		CorrelationId: logger.GetCorrelationID(ctx),
+		Timestamp:     timestamppb.Now(),
+	}
+
+	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Client.Backoff.MaxElapsedTime)
+	defer backoffCancel()
+
+	sendUpdateFileChunk := func() error {
+		slog.DebugContext(ctx, "Sending update file stream chunk", "chunk_id", chunk.Content.GetChunkId())
+		if fms.fileServiceClient == nil {
+			return errors.New("file service client is not initialized")
+		}
+
+		if !fms.isConnected.Load() {
+			return errors.New("CreateConnection rpc has not being called yet")
+		}
+
+		err := updateFileStreamClient.Send(
+			&mpi.FileDataChunk{
+				Meta:  messageMeta,
+				Chunk: &chunk,
+			},
+		)
+
+		validatedError := internalgrpc.ValidateGrpcError(err)
+
+		if validatedError != nil {
+			slog.ErrorContext(ctx, "Failed to send update file stream chunk", "error", validatedError)
+
+			return validatedError
+		}
+
+		return nil
+	}
+
+	return backoff.Retry(sendUpdateFileChunk, backoffHelpers.Context(backOffCtx, fms.agentConfig.Client.Backoff))
 }
 
 func (fms *FileManagerService) IsConnected() bool {
@@ -325,8 +529,7 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	}
 	fileOverviewFiles := files.ConvertToMapOfFiles(fileOverview.GetFiles())
 	// Update map of current files on disk
-	fms.UpdateCurrentFilesOnDisk(fileOverviewFiles)
-	manifestFileErr := fms.UpdateManifestFile(fileOverviewFiles)
+	manifestFileErr := fms.UpdateCurrentFilesOnDisk(ctx, fileOverviewFiles, false)
 	if manifestFileErr != nil {
 		return model.RollbackRequired, manifestFileErr
 	}
@@ -376,7 +579,7 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 	}
 
 	if areFilesUpdated {
-		manifestFileErr := fms.UpdateManifestFile(fms.currentFilesOnDisk)
+		manifestFileErr := fms.UpdateManifestFile(fms.currentFilesOnDisk, true)
 		if manifestFileErr != nil {
 			return manifestFileErr
 		}
@@ -409,6 +612,17 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 }
 
 func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) error {
+	slog.DebugContext(ctx, "Updating file", "file", file.GetFileMeta().GetName())
+	if file.GetFileMeta().GetSize() <= int64(fms.agentConfig.Client.Grpc.MaxFileSize) {
+		return fms.file(ctx, file)
+	}
+
+	return fms.chunkedFile(ctx, file)
+}
+
+func (fms *FileManagerService) file(ctx context.Context, file *mpi.File) error {
+	slog.DebugContext(ctx, "Getting file", "file", file.GetFileMeta().GetName())
+
 	backOffCtx, backoffCancel := context.WithTimeout(ctx, fms.agentConfig.Client.Backoff.MaxElapsedTime)
 	defer backoffCancel()
 
@@ -437,9 +651,40 @@ func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) e
 		return writeErr
 	}
 
-	validateErr := fms.validateFileHash(file.GetFileMeta().GetName())
+	return fms.validateFileHash(file.GetFileMeta().GetName())
+}
 
-	return validateErr
+func (fms *FileManagerService) chunkedFile(ctx context.Context, file *mpi.File) error {
+	slog.DebugContext(ctx, "Getting chunked file", "file", file.GetFileMeta().GetName())
+
+	stream, err := fms.fileServiceClient.GetFileStream(ctx, &mpi.GetFileRequest{
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     id.GenerateMessageID(),
+			CorrelationId: logger.GetCorrelationID(ctx),
+			Timestamp:     timestamppb.Now(),
+		},
+		FileMeta: file.GetFileMeta(),
+	})
+	if err != nil {
+		return fmt.Errorf("error getting file stream for %s: %w", file.GetFileMeta().GetName(), err)
+	}
+
+	// Get header chunk first
+	headerChunk, recvHeaderChunkError := stream.Recv()
+	if recvHeaderChunkError != nil {
+		return recvHeaderChunkError
+	}
+
+	slog.DebugContext(ctx, "File header chunk received", "header_chunk", headerChunk)
+
+	header := headerChunk.GetHeader()
+
+	writeChunkedFileError := fms.fileOperator.WriteChunkedFile(ctx, file, header, stream)
+	if writeChunkedFileError != nil {
+		return writeChunkedFileError
+	}
+
+	return nil
 }
 
 func (fms *FileManagerService) validateFileHash(filePath string) error {
@@ -469,9 +714,14 @@ func (fms *FileManagerService) checkAllowedDirectory(checkFiles []*mpi.File) err
 
 // DetermineFileActions compares two sets of files to determine the file action for each file. Returns a map of files
 // that have changed and a map of the contents for each updated and deleted file. Key to both maps is file path
-// nolint: revive,cyclop
-func (fms *FileManagerService) DetermineFileActions(currentFiles map[string]*mpi.File,
-	modifiedFiles map[string]*model.FileCache) (map[string]*model.FileCache, map[string][]byte, error,
+// nolint: revive,cyclop,gocognit
+func (fms *FileManagerService) DetermineFileActions(
+	currentFiles map[string]*mpi.File,
+	modifiedFiles map[string]*model.FileCache,
+) (
+	map[string]*model.FileCache,
+	map[string][]byte,
+	error,
 ) {
 	fms.filesMutex.Lock()
 	defer fms.filesMutex.Unlock()
@@ -479,21 +729,25 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles map[string]*mpi
 	fileDiff := make(map[string]*model.FileCache) // Files that have changed, key is file name
 	fileContents := make(map[string][]byte)       // contents of the file, key is file name
 
-	manifestFiles, manifestFileErr := fms.manifestFile(currentFiles)
+	_, filesMap, manifestFileErr := fms.manifestFile()
 
-	if manifestFileErr != nil && manifestFiles == nil {
-		return nil, nil, manifestFileErr
+	if manifestFileErr != nil {
+		if errors.Is(manifestFileErr, os.ErrNotExist) {
+			filesMap = currentFiles
+		} else {
+			return nil, nil, manifestFileErr
+		}
 	}
 	// if file is in manifestFiles but not in modified files, file has been deleted
 	// copy contents, set file action
-	for fileName, manifestFile := range manifestFiles {
+	for fileName, manifestFile := range filesMap {
 		_, exists := modifiedFiles[fileName]
 
 		if !exists {
 			// Read file contents before marking it deleted
 			fileContent, readErr := os.ReadFile(fileName)
 			if readErr != nil {
-				return nil, nil, fmt.Errorf("error reading file %s, error: %w", fileName, readErr)
+				return nil, nil, fmt.Errorf("error reading file %s: %w", fileName, readErr)
 			}
 			fileContents[fileName] = fileContent
 
@@ -506,7 +760,7 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles map[string]*mpi
 
 	for _, modifiedFile := range modifiedFiles {
 		fileName := modifiedFile.File.GetFileMeta().GetName()
-		currentFile, ok := manifestFiles[modifiedFile.File.GetFileMeta().GetName()]
+		currentFile, ok := filesMap[modifiedFile.File.GetFileMeta().GetName()]
 		// default to unchanged action
 		modifiedFile.Action = model.Unchanged
 
@@ -516,12 +770,14 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles map[string]*mpi
 		}
 		// if file doesn't exist in the current files, file has been added
 		// set file action
-		if !ok {
+		if _, statErr := os.Stat(modifiedFile.File.GetFileMeta().GetName()); errors.Is(statErr, os.ErrNotExist) {
 			modifiedFile.Action = model.Add
 			fileDiff[modifiedFile.File.GetFileMeta().GetName()] = modifiedFile
+
+			continue
 			// if file currently exists and file hash is different, file has been updated
 			// copy contents, set file action
-		} else if modifiedFile.File.GetFileMeta().GetHash() != currentFile.GetFileMeta().GetHash() {
+		} else if ok && modifiedFile.File.GetFileMeta().GetHash() != currentFile.GetFileMeta().GetHash() {
 			fileContent, readErr := os.ReadFile(fileName)
 			if readErr != nil {
 				return nil, nil, fmt.Errorf("error reading file %s, error: %w", fileName, readErr)
@@ -537,7 +793,11 @@ func (fms *FileManagerService) DetermineFileActions(currentFiles map[string]*mpi
 
 // UpdateCurrentFilesOnDisk updates the FileManagerService currentFilesOnDisk slice which contains the files
 // currently on disk
-func (fms *FileManagerService) UpdateCurrentFilesOnDisk(currentFiles map[string]*mpi.File) {
+func (fms *FileManagerService) UpdateCurrentFilesOnDisk(
+	ctx context.Context,
+	currentFiles map[string]*mpi.File,
+	referenced bool,
+) error {
 	fms.filesMutex.Lock()
 	defer fms.filesMutex.Unlock()
 
@@ -546,11 +806,48 @@ func (fms *FileManagerService) UpdateCurrentFilesOnDisk(currentFiles map[string]
 	for _, currentFile := range currentFiles {
 		fms.currentFilesOnDisk[currentFile.GetFileMeta().GetName()] = currentFile
 	}
+
+	err := fms.UpdateManifestFile(currentFiles, referenced)
+	if err != nil {
+		return fmt.Errorf("failed to update manifest file: %w", err)
+	}
+
+	return nil
 }
 
-func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.File) (err error) {
-	manifestFiles := fms.convertToManifestFileMap(currentFiles)
-	manifestJSON, err := json.MarshalIndent(manifestFiles, "", "  ")
+// seems to be a control flag, avoid control coupling
+// nolint: revive
+func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.File, referenced bool) (err error) {
+	currentManifestFiles, _, readError := fms.manifestFile()
+	if readError != nil && !errors.Is(readError, os.ErrNotExist) {
+		return fmt.Errorf("unable to read manifest file: %w", readError)
+	}
+
+	updatedFiles := make(map[string]*model.ManifestFile)
+
+	manifestFiles := fms.convertToManifestFileMap(currentFiles, referenced)
+	// During a config apply every file is set to unreferenced
+	// When a new NGINX config context is detected
+	// we update the files in the manifest by setting the referenced bool to true
+	if currentManifestFiles != nil && referenced {
+		for _, currentManifestFile := range currentManifestFiles {
+			// if file from manifest file is unreferenced add it to updatedFiles map
+			if !currentManifestFile.ManifestFileMeta.Referenced {
+				updatedFiles[currentManifestFile.ManifestFileMeta.Name] = currentManifestFile
+			}
+		}
+		for manifestFileName, manifestFile := range manifestFiles {
+			updatedFiles[manifestFileName] = manifestFile
+		}
+	} else {
+		updatedFiles = manifestFiles
+	}
+
+	return fms.writeManifestFile(updatedFiles)
+}
+
+func (fms *FileManagerService) writeManifestFile(updatedFiles map[string]*model.ManifestFile) error {
+	manifestJSON, err := json.MarshalIndent(updatedFiles, "", "  ")
 	if err != nil {
 		return fmt.Errorf("unable to marshal manifest file json: %w", err)
 	}
@@ -575,30 +872,31 @@ func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.F
 	return nil
 }
 
-func (fms *FileManagerService) manifestFile(currentFiles map[string]*mpi.File) (map[string]*mpi.File, error) {
+func (fms *FileManagerService) manifestFile() (map[string]*model.ManifestFile, map[string]*mpi.File, error) {
 	if _, err := os.Stat(manifestFilePath); err != nil {
-		return currentFiles, err // Return current files if manifest directory still doesn't exist
+		return nil, nil, err
 	}
 
 	file, err := os.ReadFile(manifestFilePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read manifest file: %w", err)
+		return nil, nil, fmt.Errorf("failed to read manifest file: %w", err)
 	}
 
 	var manifestFiles map[string]*model.ManifestFile
 
 	err = json.Unmarshal(file, &manifestFiles)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse manifest file: %w", err)
+		return nil, nil, fmt.Errorf("failed to parse manifest file: %w", err)
 	}
 
 	fileMap := fms.convertToFileMap(manifestFiles)
 
-	return fileMap, nil
+	return manifestFiles, fileMap, nil
 }
 
 func (fms *FileManagerService) convertToManifestFileMap(
 	currentFiles map[string]*mpi.File,
+	referenced bool,
 ) map[string]*model.ManifestFile {
 	manifestFileMap := make(map[string]*model.ManifestFile)
 
@@ -606,19 +904,20 @@ func (fms *FileManagerService) convertToManifestFileMap(
 		if currentFile == nil || currentFile.GetFileMeta() == nil {
 			continue
 		}
-		manifestFile := fms.convertToManifestFile(currentFile)
+		manifestFile := fms.convertToManifestFile(currentFile, referenced)
 		manifestFileMap[name] = manifestFile
 	}
 
 	return manifestFileMap
 }
 
-func (fms *FileManagerService) convertToManifestFile(file *mpi.File) *model.ManifestFile {
+func (fms *FileManagerService) convertToManifestFile(file *mpi.File, referenced bool) *model.ManifestFile {
 	return &model.ManifestFile{
 		ManifestFileMeta: &model.ManifestFileMeta{
-			Name: file.GetFileMeta().GetName(),
-			Size: file.GetFileMeta().GetSize(),
-			Hash: file.GetFileMeta().GetHash(),
+			Name:       file.GetFileMeta().GetName(),
+			Size:       file.GetFileMeta().GetSize(),
+			Hash:       file.GetFileMeta().GetHash(),
+			Referenced: referenced,
 		},
 	}
 }

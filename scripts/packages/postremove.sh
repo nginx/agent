@@ -24,30 +24,46 @@ cleanup() {
     rm -rf "/var/run/nginx-agent"
 }
 
+full_cleanup() {
+    echo "Purging all nginx-agent data"
+    cleanup
+    rm -rf "/etc/nginx-agent"
+    rm -rf "/var/log/nginx-agent"
+    rm -rf "/var/lib/nginx-agent"
+}
+
 case "$ID" in
     debian|ubuntu)
-        if [ "$1" = "remove" ]; then
-            stop_agent_systemd
-            disable_agent_systemd
-            systemd_daemon_reload
-            cleanup
-        fi
+        case "$1" in
+            remove)
+                stop_agent_systemd
+                disable_agent_systemd
+                systemd_daemon_reload
+                cleanup
+                ;;
+            purge)
+                stop_agent_systemd
+                disable_agent_systemd
+                systemd_daemon_reload
+                full_cleanup
+                ;;
+        esac
         ;;
     rhel|fedora|centos|amzn|almalinux|rocky)
         if [ "$1" = "0" ]; then
             stop_agent_systemd
             disable_agent_systemd
             systemd_daemon_reload
-            cleanup
+            full_cleanup
         fi
         ;;
     alpine)
-        cleanup
+        full_cleanup
         ;;
     *)
         stop_agent_systemd
         disable_agent_systemd
         systemd_daemon_reload
-        cleanup
+        full_cleanup
         ;;
 esac

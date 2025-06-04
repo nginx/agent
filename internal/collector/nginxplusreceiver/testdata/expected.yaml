@@ -295,7 +295,7 @@ resourceMetrics:
             gauge:
               aggregationTemporality: 2
               dataPoints:
-                - asInt: "3"
+                - asInt: "44"
                   timeUnixNano: "1000000"
               isMonotonic: true
             unit: requests

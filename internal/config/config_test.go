@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/pkg/config"
+
 	"github.com/nginx/agent/v3/test/helpers"
 
 	"github.com/stretchr/testify/require"
@@ -106,6 +108,8 @@ func checkDefaultsClientValues(t *testing.T, viperInstance *viper.Viper) {
 	assert.Equal(t, DefMaxMessageSize, viperInstance.GetInt(ClientGRPCMaxMessageSizeKey))
 	assert.Equal(t, DefMaxMessageRecieveSize, viperInstance.GetInt(ClientGRPCMaxMessageReceiveSizeKey))
 	assert.Equal(t, DefMaxMessageSendSize, viperInstance.GetInt(ClientGRPCMaxMessageSendSizeKey))
+	assert.Equal(t, DefFileChunkSize, viperInstance.GetUint32(ClientGRPCFileChunkSizeKey))
+	assert.Equal(t, DefMaxFileSize, viperInstance.GetUint32(ClientGRPCMaxFileSizeKey))
 	assert.Equal(t, make(map[string]string), viperInstance.GetStringMapString(LabelsRootKey))
 }
 
@@ -838,6 +842,8 @@ func createConfig() *Config {
 				MaxMessageSize:        1048575,
 				MaxMessageReceiveSize: 1048575,
 				MaxMessageSendSize:    1048575,
+				MaxFileSize:           485753,
+				FileChunkSize:         48575,
 			},
 			Backoff: &BackOff{
 				InitialInterval:     200 * time.Millisecond,
@@ -939,11 +945,13 @@ func createConfig() *Config {
 								FilePath: "/var/log/nginx/access-custom.conf",
 							},
 						},
+						CollectionInterval: 30 * time.Second,
 					},
 				},
 				NginxPlusReceivers: []NginxPlusReceiver{
 					{
-						InstanceID: "cd7b8911-c2c5-4daf-b311-dbead151d939",
+						InstanceID:         "cd7b8911-c2c5-4daf-b311-dbead151d939",
+						CollectionInterval: 30 * time.Second,
 					},
 				},
 				HostMetrics: &HostMetrics{
@@ -1022,6 +1030,10 @@ func createConfig() *Config {
 			"label1": "label 1",
 			"label2": "new-value",
 			"label3": 123,
+		},
+		Features: []string{
+			config.FeatureCertificates, config.FeatureFileWatcher, config.FeatureMetrics,
+			config.FeatureAPIAction, config.FeatureLogsNap,
 		},
 	}
 }
