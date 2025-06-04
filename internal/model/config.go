@@ -38,6 +38,8 @@ type ManifestFileMeta struct {
 	Hash string `json:"hash"`
 	// The size of the file in bytes
 	Size int64 `json:"size"`
+	// File referenced in the NGINX config
+	Referenced bool `json:"referenced"`
 }
 type ConfigApplyMessage struct {
 	Error         error
