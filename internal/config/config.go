@@ -889,7 +889,6 @@ func processOtlpReceivers(tlsConfig *OtlpTLSConfig) error {
 func resolveExtensions() Extensions {
 	var health *Health
 	var headersSetter *HeadersSetter
-	var tokenValue string
 
 	if isHealthExtensionSet() {
 		health = &Health{
@@ -919,22 +918,36 @@ func resolveExtensions() Extensions {
 	}
 
 	if headersSetter != nil {
-		tokenValue = headersSetter.Headers[0].Value
-	}
-
-	_, err := os.Stat(tokenValue)
-	if err == nil {
-		token, fileErr := file.ReadFromFile(tokenValue)
-		if fileErr != nil {
-			slog.Error("error reading from file", "error", fileErr)
+		token, err := getToken(headersSetter)
+		if err != nil {
+			slog.Error("error getting token from config", "error", err)
+		} else {
+			headersSetter.Headers[0].Value = token
 		}
-		headersSetter.Headers[0].Value = token
 	}
 
 	return Extensions{
 		Health:        health,
 		HeadersSetter: headersSetter,
 	}
+}
+
+func getToken(headersSetter *HeadersSetter) (string, error) {
+	var err error
+
+	token := headersSetter.Headers[0].Value
+	if token == "" {
+		filePath := headersSetter.Headers[0].FilePath
+
+		token, err = file.ReadFromFile(filePath)
+		if err != nil {
+			return "", err
+		}
+
+		return token, nil
+	}
+
+	return token, nil
 }
 
 func isHealthExtensionSet() bool {

@@ -641,22 +641,32 @@ func TestValidateYamlFile(t *testing.T) {
 func TestResolveExtensions(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    string
+		token    string
+		path     string
 		expected string
 	}{
 		{
-			name:     "Test 1: Header value is a valid token",
-			input:    "super-secret-token",
+			name:     "Test 1: User includes only token value header",
+			token:    "super-secret-token",
+			path:     "",
 			expected: "super-secret-token",
 		},
 		{
-			name:     "Test 2: Header value is a valid token path",
-			input:    "testdata/nginx-token.crt",
+			name:     "Test 2: User includes only filepath header",
+			token:    "",
+			path:     "testdata/nginx-token.crt",
 			expected: "super-secret-token",
 		},
 		{
-			name:     "Test 3: Header value is empty",
-			input:    "",
+			name:     "Test 3: User includes both token and filepath header",
+			token:    "very-secret-token",
+			path:     "testdata/nginx-token.crt",
+			expected: "very-secret-token",
+		},
+		{
+			name:     "Test 4: User includes neither token nor filepath header",
+			token:    "",
+			path:     "",
 			expected: "",
 		},
 	}
@@ -669,7 +679,7 @@ func TestResolveExtensions(t *testing.T) {
 			tempFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx-agent.conf")
 			defer helpers.RemoveFileWithErrorCheck(t, tempFile.Name())
 
-			confContent := []byte(conf.GetAgentConfigWithToken(tt.input))
+			confContent := []byte(conf.GetAgentConfigWithToken(tt.token, tt.path))
 			_, writeErr := tempFile.Write(confContent)
 			require.NoError(t, writeErr)
 

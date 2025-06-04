@@ -59,6 +59,6 @@ func GetNginxConfigWithMultipleSSLCerts(errorLogFile, accessLogFile, certFile1, 
 	return fmt.Sprintf(embedNginxConfWithMultipleSSLCerts, errorLogFile, accessLogFile, certFile1, certFile2)
 }
 
-func GetAgentConfigWithToken(token string) string {
-	return fmt.Sprintf(agentConfigWithToken, token)
+func GetAgentConfigWithToken(token, path string) string {
+	return fmt.Sprintf(agentConfigWithToken, token, path)
 }
