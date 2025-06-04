@@ -58,6 +58,8 @@ func TestScraper(t *testing.T) {
 		},
 	}
 
+	scraper.previousHTTPRequestsTotal = 3
+
 	actualMetrics, err := scraper.Scrape(context.Background())
 	require.NoError(t, err)
 

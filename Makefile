@@ -51,7 +51,7 @@ $(shell mkdir -p $(DIRS))
 VERSION 		?= "v3.0.0"
 COMMIT  		= $(shell git rev-parse --short HEAD)
 DATE    		= $(shell date +%F_%H-%M-%S)
-LDFLAGS 		= "-w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)"
+LDFLAGS 		= "-s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)"
 DEBUG_LDFLAGS 	= "-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)"
 
 OSS_PACKAGES_REPO 	:= "packages.nginx.org"
@@ -116,8 +116,9 @@ no-local-changes:
 	git diff --quiet || { echo "Dependency changes detected. Please commit these before pushing." >&2; exit 1; }
 
 build: ## Build agent executable
+	@echo "🏗️ Building"
 	mkdir -p $(BUILD_DIR)
-	@GOARCH=$(OSARCH) $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -pgo=default.pgo -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
+	GOARCH=$(OSARCH) $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -pgo=default.pgo -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
 	@echo "📦 Build Done"
 
 lint: ## Run linter
@@ -182,7 +183,7 @@ run: build ## Run code
 
 dev: ## Run agent executable
 	@echo "🚀 Running App"
-	COLLECTOR_CONFIG_PATH=$(COLLECTOR_PATH) MANIFEST_DIR_PATH=$(MANIFEST_DIR) $(GORUN) -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
+	COLLECTOR_CONFIG_PATH=$(COLLECTOR_PATH) MANIFEST_DIR_PATH=$(MANIFEST_DIR) $(GORUN) -ldflags=$(DEBUG_LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
 
 race-condition-dev: ## Run agent executable with race condition detection
 	@echo "🏎️ Running app with race condition detection enabled"

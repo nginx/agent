@@ -26,8 +26,9 @@ import (
 )
 
 const (
-	maxTimeToWaitForShutdown = 30 * time.Second
-	filePermission           = 0o600
+	maxTimeToWaitForShutdown  = 30 * time.Second
+	defaultCollectionInterval = 1 * time.Minute
+	filePermission            = 0o600
 	// To conform to the rfc3164 spec the timestamp in the logs need to be formatted correctly.
 	// Here are some examples of what the timestamp conversions look like.
 	// Notice how if the day begins with a zero that the zero is replaced with an empty space.
@@ -71,7 +72,7 @@ func New(conf *config.Config) (*Collector, error) {
 		return nil, errors.New("nil collector config")
 	}
 
-	if conf.Collector.Log != nil && conf.Collector.Log.Path != "" {
+	if conf.Collector.Log != nil && conf.Collector.Log.Path != "" && conf.Collector.Log.Path != "stdout" {
 		err := os.WriteFile(conf.Collector.Log.Path, []byte{}, filePermission)
 		if err != nil {
 			return nil, err
@@ -126,6 +127,7 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 		return errors.New("OTel collector already running")
 	}
 
+	slog.InfoContext(ctx, "Starting OTel collector")
 	bootErr := oc.bootup(runCtx)
 	if bootErr != nil {
 		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)
@@ -160,7 +162,6 @@ func (oc *Collector) processReceivers(ctx context.Context, receivers []config.Ot
 }
 
 func (oc *Collector) bootup(ctx context.Context) error {
-	slog.InfoContext(ctx, "Starting OTel collector")
 	errChan := make(chan error)
 
 	go func() {
@@ -265,7 +266,7 @@ func (oc *Collector) handleNginxConfigUpdate(ctx context.Context, msg *bus.Messa
 	reloadCollector := oc.checkForNewReceivers(nginxConfigContext)
 
 	if reloadCollector {
-		slog.InfoContext(ctx, "Reloading OTel collector config")
+		slog.InfoContext(ctx, "Reloading OTel collector config, nginx config updated")
 		err := writeCollectorConfig(oc.config.Collector)
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to write OTel Collector config", "error", err)
@@ -290,7 +291,7 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 	headersSetterExtensionUpdated := oc.updateHeadersSetterExtension(ctx, resourceUpdateContext)
 
 	if resourceProcessorUpdated || headersSetterExtensionUpdated {
-		slog.InfoContext(ctx, "Reloading OTel collector config")
+		slog.InfoContext(ctx, "Reloading OTel collector config, resource updated")
 		err := writeCollectorConfig(oc.config.Collector)
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to write OTel Collector config", "error", err)
@@ -386,6 +387,7 @@ func (oc *Collector) restartCollector(ctx context.Context) {
 		return
 	}
 
+	slog.InfoContext(ctx, "Restarting OTel collector")
 	bootErr := oc.bootup(runCtx)
 	if bootErr != nil {
 		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)
@@ -405,6 +407,7 @@ func (oc *Collector) checkForNewReceivers(nginxConfigContext *model.NginxConfigC
 					Listen:   nginxConfigContext.PlusAPI.Listen,
 					Location: nginxConfigContext.PlusAPI.Location,
 				},
+				CollectionInterval: defaultCollectionInterval,
 			},
 		)
 
@@ -438,7 +441,8 @@ func (oc *Collector) addNginxOssReceiver(nginxConfigContext *model.NginxConfigCo
 					Listen:   nginxConfigContext.StubStatus.Listen,
 					Location: nginxConfigContext.StubStatus.Location,
 				},
-				AccessLogs: toConfigAccessLog(nginxConfigContext.AccessLogs),
+				AccessLogs:         toConfigAccessLog(nginxConfigContext.AccessLogs),
+				CollectionInterval: defaultCollectionInterval,
 			},
 		)
 

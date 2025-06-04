@@ -192,7 +192,7 @@ func (fms *FileManagerService) UpdateOverview(
 	delta := files.ConvertToMapOfFiles(response.GetOverview().GetFiles())
 
 	if len(delta) != 0 {
-		return fms.updateFiles(ctx, delta, instanceID, iteration)
+		return fms.updateFiles(ctx, delta, request.GetOverview().GetFiles(), instanceID, iteration)
 	}
 
 	return err
@@ -216,6 +216,7 @@ func (fms *FileManagerService) setupIdentifiers(ctx context.Context, iteration i
 func (fms *FileManagerService) updateFiles(
 	ctx context.Context,
 	delta map[string]*mpi.File,
+	fileOverview []*mpi.File,
 	instanceID string,
 	iteration int,
 ) error {
@@ -231,7 +232,7 @@ func (fms *FileManagerService) updateFiles(
 	iteration++
 	slog.Debug("Updating file overview", "attempt_number", iteration)
 
-	return fms.UpdateOverview(ctx, instanceID, diffFiles, iteration)
+	return fms.UpdateOverview(ctx, instanceID, fileOverview, iteration)
 }
 
 func (fms *FileManagerService) UpdateFile(
@@ -725,7 +726,7 @@ func (fms *FileManagerService) DetermineFileActions(
 	fileDiff := make(map[string]*model.FileCache) // Files that have changed, key is file name
 	fileContents := make(map[string][]byte)       // contents of the file, key is file name
 
-	manifestFiles, filesMap, manifestFileErr := fms.manifestFile()
+	_, filesMap, manifestFileErr := fms.manifestFile()
 
 	if manifestFileErr != nil {
 		if errors.Is(manifestFileErr, os.ErrNotExist) {
@@ -766,14 +767,14 @@ func (fms *FileManagerService) DetermineFileActions(
 		}
 		// if file doesn't exist in the current files, file has been added
 		// set file action
-		if !ok {
+		if _, statErr := os.Stat(modifiedFile.File.GetFileMeta().GetName()); errors.Is(statErr, os.ErrNotExist) {
 			modifiedFile.Action = model.Add
 			fileDiff[modifiedFile.File.GetFileMeta().GetName()] = modifiedFile
 
 			continue
 			// if file currently exists and file hash is different, file has been updated
 			// copy contents, set file action
-		} else if modifiedFile.File.GetFileMeta().GetHash() != currentFile.GetFileMeta().GetHash() {
+		} else if ok && modifiedFile.File.GetFileMeta().GetHash() != currentFile.GetFileMeta().GetHash() {
 			fileContent, readErr := os.ReadFile(fileName)
 			if readErr != nil {
 				return nil, nil, fmt.Errorf("error reading file %s, error: %w", fileName, readErr)
@@ -781,24 +782,6 @@ func (fms *FileManagerService) DetermineFileActions(
 			modifiedFile.Action = model.Update
 			fileContents[fileName] = fileContent
 			fileDiff[modifiedFile.File.GetFileMeta().GetName()] = modifiedFile
-		}
-
-		// If the file is unreferenced we check if the file has been updated since the last time
-		// Also check if the unreferenced file still exists
-		if manifestFiles[modifiedFile.File.GetFileMeta().GetName()] != nil &&
-			!manifestFiles[modifiedFile.File.GetFileMeta().GetName()].ManifestFileMeta.Referenced {
-			if fileStats, err := os.Stat(modifiedFile.File.GetFileMeta().GetName()); errors.Is(err, os.ErrNotExist) {
-				modifiedFile.Action = model.Add
-				fileDiff[modifiedFile.File.GetFileMeta().GetName()] = modifiedFile
-			} else if timestamppb.New(fileStats.ModTime()) != modifiedFile.File.GetFileMeta().GetModifiedTime() {
-				fileContent, readErr := os.ReadFile(fileName)
-				if readErr != nil {
-					return nil, nil, fmt.Errorf("error reading file %s, error: %w", fileName, readErr)
-				}
-				modifiedFile.Action = model.Update
-				fileContents[fileName] = fileContent
-				fileDiff[modifiedFile.File.GetFileMeta().GetName()] = modifiedFile
-			}
 		}
 	}
 
@@ -837,20 +820,31 @@ func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.F
 		return fmt.Errorf("unable to read manifest file: %w", readError)
 	}
 
-	manifestFiles := fms.convertToManifestFileMap(currentFiles, referenced)
+	updatedFiles := make(map[string]*model.ManifestFile)
 
+	manifestFiles := fms.convertToManifestFileMap(currentFiles, referenced)
 	// During a config apply every file is set to unreferenced
 	// When a new NGINX config context is detected
 	// we update the files in the manifest by setting the referenced bool to true
 	if currentManifestFiles != nil && referenced {
+		for _, currentManifestFile := range currentManifestFiles {
+			// if file from manifest file is unreferenced add it to updatedFiles map
+			if !currentManifestFile.ManifestFileMeta.Referenced {
+				updatedFiles[currentManifestFile.ManifestFileMeta.Name] = currentManifestFile
+			}
+		}
 		for manifestFileName, manifestFile := range manifestFiles {
-			currentManifestFiles[manifestFileName] = manifestFile
+			updatedFiles[manifestFileName] = manifestFile
 		}
 	} else {
-		currentManifestFiles = manifestFiles
+		updatedFiles = manifestFiles
 	}
 
-	manifestJSON, err := json.MarshalIndent(currentManifestFiles, "", "  ")
+	return fms.writeManifestFile(updatedFiles)
+}
+
+func (fms *FileManagerService) writeManifestFile(updatedFiles map[string]*model.ManifestFile) error {
+	manifestJSON, err := json.MarshalIndent(updatedFiles, "", "  ")
 	if err != nil {
 		return fmt.Errorf("unable to marshal manifest file json: %w", err)
 	}
