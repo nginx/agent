@@ -104,6 +104,7 @@ jobs:
           version: ${{ inputs.packageVersion }}
         with:
           script: |
+            const ref = context.ref.split("/")[2]
             const {version} = process.env
             console.log(`The release version is v${version}`)
 
