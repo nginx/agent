@@ -7,12 +7,13 @@ package config
 import (
 	_ "embed"
 	"errors"
-	"fmt"
 	"os"
 	"path"
 	"strings"
 	"testing"
 	"time"
+
+	conf "github.com/nginx/agent/v3/test/config"
 
 	"github.com/nginx/agent/v3/pkg/config"
 
@@ -637,13 +638,6 @@ func TestValidateYamlFile(t *testing.T) {
 	}
 }
 
-//go:embed testdata/nginx-agent-with-token.conf
-var agentConfigWithToken string
-
-func getAgentConfigWithToken(token string) string {
-	return fmt.Sprintf(agentConfigWithToken, token)
-}
-
 func TestResolveExtensions(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -675,7 +669,7 @@ func TestResolveExtensions(t *testing.T) {
 			tempFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx-agent.conf")
 			defer helpers.RemoveFileWithErrorCheck(t, tempFile.Name())
 
-			confContent := []byte(getAgentConfigWithToken(tt.input))
+			confContent := []byte(conf.GetAgentConfigWithToken(tt.input))
 			_, writeErr := tempFile.Write(confContent)
 			require.NoError(t, writeErr)
 
