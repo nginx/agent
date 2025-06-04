@@ -57,14 +57,14 @@
                         "overrides": []
                     },
                     "gridPos": {
-                        "h": 9,
-                        "w": 5,
+                        "h": 5,
+                        "w": 24,
                         "x": 0,
                         "y": 1
                     },
                     "id": 7,
                     "options": {
-                        "displayMode": "basic",
+                        "displayMode": "lcd",
                         "legend": {
                             "calcs": [],
                             "displayMode": "list",
@@ -138,9 +138,6 @@
                                 },
                                 "insertNulls": false,
                                 "lineInterpolation": "linear",
-                                "lineStyle": {
-                                    "fill": "solid"
-                                },
                                 "lineWidth": 1,
                                 "pointSize": 5,
                                 "scaleDistribution": {
@@ -163,6 +160,10 @@
                                     {
                                         "color": "green",
                                         "value": null
+                                    },
+                                    {
+                                        "color": "red",
+                                        "value": 80
                                     }
                                 ]
                             }
@@ -170,17 +171,17 @@
                         "overrides": []
                     },
                     "gridPos": {
-                        "h": 9,
-                        "w": 19,
-                        "x": 5,
-                        "y": 1
+                        "h": 12,
+                        "w": 24,
+                        "x": 0,
+                        "y": 186
                     },
                     "id": 2,
                     "options": {
                         "legend": {
                             "calcs": [],
                             "displayMode": "table",
-                            "placement": "right",
+                            "placement": "bottom",
                             "showLegend": true
                         },
                         "tooltip": {
@@ -190,6 +191,8 @@
                         }
                     },
                     "pluginVersion": "11.5.2",
+                    "repeat": "resourceID",
+                    "repeatDirection": "h",
                     "targets": [
                         {
                             "datasource": {
@@ -197,12 +200,12 @@
                                 "uid": "otel-prometheus-scraper"
                             },
                             "disableTextWrap": false,
-                            "editorMode": "builder",
-                            "expr": "system_cpu_time{cpu=~\"$cpu\", resource_id=~\"$resourceID\", state=~\"$state\"}",
+                            "editorMode": "code",
+                            "expr": "system_cpu_time{cpu=~\"$cpu\", resource_id=~\"$resourceID\", state=~\"$cpu_state\"}",
                             "fullMetaSearch": false,
                             "includeNullMetadata": false,
                             "instant": false,
-                            "legendFormat": "State: {{state}} {{cpu}} {{resource_id}}",
+                            "legendFormat": "CPU: {{cpu}} | State: {{state}} | Resource ID: {{resource_id}}",
                             "range": true,
                             "refId": "A",
                             "useBackend": false
@@ -269,17 +272,17 @@
                         "overrides": []
                     },
                     "gridPos": {
-                        "h": 9,
+                        "h": 12,
                         "w": 24,
                         "x": 0,
-                        "y": 10
+                        "y": 198
                     },
                     "id": 6,
                     "options": {
                         "legend": {
                             "calcs": [],
                             "displayMode": "table",
-                            "placement": "right",
+                            "placement": "bottom",
                             "showLegend": true
                         },
                         "tooltip": {
@@ -289,6 +292,8 @@
                         }
                     },
                     "pluginVersion": "11.5.2",
+                    "repeat": "resourceID",
+                    "repeatDirection": "h",
                     "targets": [
                         {
                             "datasource": {
@@ -297,11 +302,11 @@
                             },
                             "disableTextWrap": false,
                             "editorMode": "builder",
-                            "expr": "system_cpu_utilization{resource_id=~\"$resourceID\", state=~\"$state\"}",
+                            "expr": "system_cpu_utilization{resource_id=~\"$resourceID\", state=~\"$cpu_state\", cpu=~\"$cpu\"}",
                             "fullMetaSearch": false,
                             "includeNullMetadata": false,
                             "instant": false,
-                            "legendFormat": "{{cpu}} {{state}} {{resource_id}}",
+                            "legendFormat": "CPU: {{cpu}} | State: {{state}} | Resource ID: {{resource_id}}",
                             "range": true,
                             "refId": "A",
                             "useBackend": false
@@ -375,6 +380,10 @@
                                     {
                                         "color": "green",
                                         "value": null
+                                    },
+                                    {
+                                        "color": "red",
+                                        "value": 80
                                     }
                                 ]
                             }
@@ -406,10 +415,10 @@
                         {
                             "disableTextWrap": false,
                             "editorMode": "builder",
-                            "expr": "system_network_packets{device=~\"$device\", resource_id=~\"$resourceID\", direction=\"receive\"}",
+                            "expr": "system_network_packets{device=~\"$network_device\", resource_id=~\"$resourceID\", direction=\"receive\"}",
                             "fullMetaSearch": false,
                             "includeNullMetadata": true,
-                            "legendFormat": "{{device}} {{direction}} {{resource_id}}",
+                            "legendFormat": "Device: {{device}} | {{resource_id}}",
                             "range": true,
                             "refId": "A",
                             "useBackend": false
@@ -500,10 +509,10 @@
                         {
                             "disableTextWrap": false,
                             "editorMode": "builder",
-                            "expr": "system_network_packets{device=~\"$device\", resource_id=~\"$resourceID\", direction=\"transmit\"}",
+                            "expr": "system_network_packets{device=~\"$network_device\", resource_id=~\"$resourceID\", direction=\"transmit\"}",
                             "fullMetaSearch": false,
                             "includeNullMetadata": true,
-                            "legendFormat": "{{device}} {{direction}} {{resource_id}}",
+                            "legendFormat": "Device: {{device}} | {{resource_id}}",
                             "range": true,
                             "refId": "A",
                             "useBackend": false
@@ -577,7 +586,7 @@
                         "h": 8,
                         "w": 12,
                         "x": 0,
-                        "y": 10
+                        "y": 132
                     },
                     "id": 20,
                     "options": {
@@ -598,10 +607,10 @@
                         {
                             "disableTextWrap": false,
                             "editorMode": "builder",
-                            "expr": "system_network_errors{device=~\"$device\", resource_id=~\"$resourceID\", direction=\"receive\"}",
+                            "expr": "system_network_errors{device=~\"$network_device\", resource_id=~\"$resourceID\", direction=\"receive\"}",
                             "fullMetaSearch": false,
                             "includeNullMetadata": true,
-                            "legendFormat": "{{device}} {{direction}} {{resource_id}}",
+                            "legendFormat": "Device: {{device}} | {{resource_id}}",
                             "range": true,
                             "refId": "A",
                             "useBackend": false
@@ -675,7 +684,7 @@
                         "h": 8,
                         "w": 12,
                         "x": 12,
-                        "y": 10
+                        "y": 132
                     },
                     "id": 21,
                     "options": {
@@ -696,10 +705,10 @@
                         {
                             "disableTextWrap": false,
                             "editorMode": "builder",
-                            "expr": "system_network_errors{device=~\"$device\", resource_id=~\"$resourceID\", direction=\"transmit\"}",
+                            "expr": "system_network_errors{device=~\"$network_device\", resource_id=~\"$resourceID\", direction=\"transmit\"}",
                             "fullMetaSearch": false,
                             "includeNullMetadata": true,
-                            "legendFormat": "{{device}} {{direction}} {{resource_id}}",
+                            "legendFormat": "Device: {{device}} | {{resource_id}}",
                             "range": true,
                             "refId": "A",
                             "useBackend": false
@@ -720,68 +729,36 @@
                                 "mode": "palette-classic"
                             },
                             "custom": {
-                                "axisBorderShow": false,
-                                "axisCenteredZero": false,
-                                "axisColorMode": "text",
-                                "axisLabel": "",
-                                "axisPlacement": "auto",
-                                "barAlignment": 0,
-                                "barWidthFactor": 0.6,
-                                "drawStyle": "line",
-                                "fillOpacity": 20,
-                                "gradientMode": "opacity",
                                 "hideFrom": {
                                     "legend": false,
                                     "tooltip": false,
                                     "viz": false
-                                },
-                                "insertNulls": false,
-                                "lineInterpolation": "linear",
-                                "lineWidth": 1,
-                                "pointSize": 5,
-                                "scaleDistribution": {
-                                    "type": "linear"
-                                },
-                                "showPoints": "auto",
-                                "spanNulls": false,
-                                "stacking": {
-                                    "group": "A",
-                                    "mode": "none"
-                                },
-                                "thresholdsStyle": {
-                                    "mode": "off"
                                 }
                             },
-                            "mappings": [],
-                            "thresholds": {
-                                "mode": "absolute",
-                                "steps": [
-                                    {
-                                        "color": "green",
-                                        "value": null
-                                    },
-                                    {
-                                        "color": "red",
-                                        "value": 80
-                                    }
-                                ]
-                            }
+                            "mappings": []
                         },
                         "overrides": []
                     },
                     "gridPos": {
-                        "h": 8,
+                        "h": 16,
                         "w": 24,
                         "x": 0,
-                        "y": 18
+                        "y": 140
                     },
                     "id": 16,
                     "options": {
                         "legend": {
-                            "calcs": [],
                             "displayMode": "table",
-                            "placement": "right",
+                            "placement": "bottom",
                             "showLegend": true
+                        },
+                        "pieType": "pie",
+                        "reduceOptions": {
+                            "calcs": [
+                                "lastNotNull"
+                            ],
+                            "fields": "",
+                            "values": false
                         },
                         "tooltip": {
                             "hideZeros": false,
@@ -790,21 +767,23 @@
                         }
                     },
                     "pluginVersion": "11.5.2",
+                    "repeat": "resourceID",
+                    "repeatDirection": "h",
                     "targets": [
                         {
                             "disableTextWrap": false,
                             "editorMode": "builder",
-                            "expr": "system_network_connections{state=~\"$state\"}",
+                            "expr": "system_network_connections{state=~\"$network_state\", resource_id=~\"$resourceID\"}",
                             "fullMetaSearch": false,
                             "includeNullMetadata": true,
-                            "legendFormat": "{{state}} {{protocol}}",
+                            "legendFormat": "{{state}} | {{protocol}} | {{resource_id}}",
                             "range": true,
                             "refId": "A",
                             "useBackend": false
                         }
                     ],
                     "title": "Network Connections",
-                    "type": "timeseries"
+                    "type": "piechart"
                 },
                 {
                     "datasource": {
@@ -871,7 +850,7 @@
                         "h": 8,
                         "w": 12,
                         "x": 0,
-                        "y": 26
+                        "y": 156
                     },
                     "id": 19,
                     "options": {
@@ -892,10 +871,10 @@
                         {
                             "disableTextWrap": false,
                             "editorMode": "builder",
-                            "expr": "system_network_dropped{device=~\"$device\", resource_id=~\"$resourceID\", direction=\"receive\"}",
+                            "expr": "system_network_dropped{device=~\"$network_device\", resource_id=~\"$resourceID\", direction=\"receive\"}",
                             "fullMetaSearch": false,
                             "includeNullMetadata": true,
-                            "legendFormat": "{{device}} {{resource_id}}",
+                            "legendFormat": "Device: {{device}} | {{resource_id}}",
                             "range": true,
                             "refId": "A",
                             "useBackend": false
@@ -969,7 +948,7 @@
                         "h": 8,
                         "w": 12,
                         "x": 12,
-                        "y": 26
+                        "y": 156
                     },
                     "id": 17,
                     "options": {
@@ -990,10 +969,10 @@
                         {
                             "disableTextWrap": false,
                             "editorMode": "builder",
-                            "expr": "system_network_dropped{device=~\"$device\", resource_id=~\"$resourceID\", direction=\"transmit\"}",
+                            "expr": "system_network_dropped{device=~\"$network_device\", resource_id=~\"$resourceID\", direction=\"transmit\"}",
                             "fullMetaSearch": false,
                             "includeNullMetadata": true,
-                            "legendFormat": "{{device}} {{resource_id}}",
+                            "legendFormat": "Device: {{device}} | {{resource_id}}",
                             "range": true,
                             "refId": "A",
                             "useBackend": false
@@ -1064,10 +1043,10 @@
                         "overrides": []
                     },
                     "gridPos": {
-                        "h": 11,
+                        "h": 9,
                         "w": 24,
                         "x": 0,
-                        "y": 34
+                        "y": 164
                     },
                     "id": 5,
                     "options": {
@@ -1092,11 +1071,11 @@
                             },
                             "disableTextWrap": false,
                             "editorMode": "builder",
-                            "expr": "system_network_io{device=~\"$device\", resource_id=~\"$resourceID\", direction=\"receive\"}",
+                            "expr": "system_network_io{device=~\"$network_device\", resource_id=~\"$resourceID\", direction=\"receive\"}",
                             "fullMetaSearch": false,
                             "includeNullMetadata": false,
                             "instant": false,
-                            "legendFormat": "{{device}} {{direction}} {{resource_id}}",
+                            "legendFormat": "Device: {{device}} | {{resource_id}}",
                             "range": true,
                             "refId": "A",
                             "useBackend": false
@@ -1154,7 +1133,8 @@
                                 "mode": "absolute",
                                 "steps": [
                                     {
-                                        "color": "green"
+                                        "color": "green",
+                                        "value": null
                                     },
                                     {
                                         "color": "red",
@@ -1166,10 +1146,10 @@
                         "overrides": []
                     },
                     "gridPos": {
-                        "h": 12,
+                        "h": 9,
                         "w": 24,
                         "x": 0,
-                        "y": 45
+                        "y": 173
                     },
                     "id": 9,
                     "options": {
@@ -1194,11 +1174,11 @@
                             },
                             "disableTextWrap": false,
                             "editorMode": "builder",
-                            "expr": "system_network_io{device=~\"$device\", resource_id=~\"$resourceID\", direction=\"transmit\"}",
+                            "expr": "system_network_io{device=~\"$network_device\", resource_id=~\"$resourceID\", direction=\"transmit\"}",
                             "fullMetaSearch": false,
                             "includeNullMetadata": false,
                             "instant": false,
-                            "legendFormat": "{{device}} {{direction}} {{resource_id}}",
+                            "legendFormat": "Device: {{device}} | {{resource_id}}",
                             "range": true,
                             "refId": "A",
                             "useBackend": false
@@ -1226,7 +1206,271 @@
                         "type": "prometheus",
                         "uid": "otel-prometheus-scraper"
                     },
-                    "description": "Filesystem bytes used.",
+                    "description": "Free filesystem bytes.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "color": {
+                                "fixedColor": "green",
+                                "mode": "shades"
+                            },
+                            "mappings": [],
+                            "thresholds": {
+                                "mode": "absolute",
+                                "steps": [
+                                    {
+                                        "color": "green",
+                                        "value": null
+                                    },
+                                    {
+                                        "color": "red",
+                                        "value": 80
+                                    }
+                                ]
+                            }
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 8,
+                        "w": 24,
+                        "x": 0,
+                        "y": 3
+                    },
+                    "id": 3,
+                    "options": {
+                        "displayMode": "basic",
+                        "legend": {
+                            "calcs": [],
+                            "displayMode": "list",
+                            "placement": "bottom",
+                            "showLegend": false
+                        },
+                        "maxVizHeight": 300,
+                        "minVizHeight": 16,
+                        "minVizWidth": 8,
+                        "namePlacement": "auto",
+                        "orientation": "horizontal",
+                        "reduceOptions": {
+                            "calcs": [
+                                "lastNotNull"
+                            ],
+                            "fields": "",
+                            "values": false
+                        },
+                        "showUnfilled": true,
+                        "sizing": "auto",
+                        "text": {},
+                        "valueMode": "color"
+                    },
+                    "pluginVersion": "11.5.2",
+                    "targets": [
+                        {
+                            "datasource": {
+                                "type": "prometheus",
+                                "uid": "otel-prometheus-scraper"
+                            },
+                            "disableTextWrap": false,
+                            "editorMode": "builder",
+                            "expr": "system_filesystem_usage{mountpoint=~\"$mountpoint\", resource_id=~\"$resourceID\", state=\"free\"}",
+                            "fullMetaSearch": false,
+                            "includeNullMetadata": true,
+                            "instant": false,
+                            "legendFormat": "{{type}} | {{mode}} | {{device}} | {{mountpoint}} | {{resource_id}}",
+                            "range": true,
+                            "refId": "Free",
+                            "useBackend": false
+                        }
+                    ],
+                    "title": "System Filesystem Usage - Free",
+                    "type": "bargauge"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "otel-prometheus-scraper"
+                    },
+                    "description": "Used filesystem bytes.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "color": {
+                                "fixedColor": "orange",
+                                "mode": "shades"
+                            },
+                            "mappings": [],
+                            "thresholds": {
+                                "mode": "absolute",
+                                "steps": [
+                                    {
+                                        "color": "green",
+                                        "value": null
+                                    },
+                                    {
+                                        "color": "red",
+                                        "value": 80
+                                    }
+                                ]
+                            }
+                        },
+                        "overrides": [
+                            {
+                                "__systemRef": "hideSeriesFrom",
+                                "matcher": {
+                                    "id": "byNames",
+                                    "options": {
+                                        "mode": "exclude",
+                                        "names": [
+                                            "ext4 | rw | /dev/vda1 | /etc/hosts | 8321c54e-0c9d-362c-8e5e-951e1ef8dfd1"
+                                        ],
+                                        "prefix": "All except:",
+                                        "readOnly": true
+                                    }
+                                },
+                                "properties": []
+                            }
+                        ]
+                    },
+                    "gridPos": {
+                        "h": 10,
+                        "w": 12,
+                        "x": 0,
+                        "y": 59
+                    },
+                    "id": 27,
+                    "options": {
+                        "displayMode": "basic",
+                        "legend": {
+                            "calcs": [],
+                            "displayMode": "list",
+                            "placement": "bottom",
+                            "showLegend": false
+                        },
+                        "maxVizHeight": 300,
+                        "minVizHeight": 16,
+                        "minVizWidth": 8,
+                        "namePlacement": "top",
+                        "orientation": "horizontal",
+                        "reduceOptions": {
+                            "calcs": [
+                                "lastNotNull"
+                            ],
+                            "fields": "",
+                            "values": false
+                        },
+                        "showUnfilled": true,
+                        "sizing": "auto",
+                        "text": {},
+                        "valueMode": "color"
+                    },
+                    "pluginVersion": "11.5.2",
+                    "targets": [
+                        {
+                            "datasource": {
+                                "type": "prometheus",
+                                "uid": "otel-prometheus-scraper"
+                            },
+                            "disableTextWrap": false,
+                            "editorMode": "builder",
+                            "expr": "system_filesystem_usage{mountpoint=~\"$mountpoint\", resource_id=~\"$resourceID\", state=\"used\"}",
+                            "fullMetaSearch": false,
+                            "hide": false,
+                            "includeNullMetadata": true,
+                            "instant": false,
+                            "legendFormat": "{{type}} | {{mode}} | {{device}} | {{mountpoint}} | {{resource_id}}",
+                            "range": true,
+                            "refId": "Used",
+                            "useBackend": false
+                        }
+                    ],
+                    "title": "System Filesystem Usage - Used",
+                    "type": "bargauge"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "otel-prometheus-scraper"
+                    },
+                    "description": "Reserved Filesystem bytes.",
+                    "fieldConfig": {
+                        "defaults": {
+                            "color": {
+                                "fixedColor": "blue",
+                                "mode": "shades"
+                            },
+                            "mappings": [],
+                            "min": 2,
+                            "thresholds": {
+                                "mode": "absolute",
+                                "steps": [
+                                    {
+                                        "color": "green",
+                                        "value": null
+                                    }
+                                ]
+                            }
+                        },
+                        "overrides": []
+                    },
+                    "gridPos": {
+                        "h": 10,
+                        "w": 12,
+                        "x": 12,
+                        "y": 59
+                    },
+                    "id": 28,
+                    "options": {
+                        "displayMode": "basic",
+                        "legend": {
+                            "calcs": [],
+                            "displayMode": "list",
+                            "placement": "bottom",
+                            "showLegend": false
+                        },
+                        "maxVizHeight": 300,
+                        "minVizHeight": 16,
+                        "minVizWidth": 8,
+                        "namePlacement": "auto",
+                        "orientation": "horizontal",
+                        "reduceOptions": {
+                            "calcs": [
+                                "lastNotNull"
+                            ],
+                            "fields": "",
+                            "values": false
+                        },
+                        "showUnfilled": true,
+                        "sizing": "auto",
+                        "text": {},
+                        "valueMode": "color"
+                    },
+                    "pluginVersion": "11.5.2",
+                    "targets": [
+                        {
+                            "datasource": {
+                                "type": "prometheus",
+                                "uid": "otel-prometheus-scraper"
+                            },
+                            "disableTextWrap": false,
+                            "editorMode": "builder",
+                            "expr": "system_filesystem_usage{mountpoint=~\"$mountpoint\", resource_id=~\"$resourceID\", state=\"reserved\"}",
+                            "fullMetaSearch": false,
+                            "hide": false,
+                            "includeNullMetadata": true,
+                            "instant": false,
+                            "legendFormat": "{{type}} | {{mode}} | {{device}} | {{mountpoint}} | {{resource_id}}",
+                            "range": true,
+                            "refId": "Reserved",
+                            "useBackend": false
+                        }
+                    ],
+                    "title": "System Filesystem Usage - Reserved",
+                    "type": "bargauge"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "otel-prometheus-scraper"
+                    },
+                    "description": "Free fileSystem inodes.",
                     "fieldConfig": {
                         "defaults": {
                             "color": {
@@ -1270,11 +1514,8 @@
                                 "mode": "absolute",
                                 "steps": [
                                     {
-                                        "color": "green"
-                                    },
-                                    {
-                                        "color": "red",
-                                        "value": 80
+                                        "color": "green",
+                                        "value": null
                                     }
                                 ]
                             }
@@ -1285,9 +1526,9 @@
                         "h": 8,
                         "w": 24,
                         "x": 0,
-                        "y": 363
+                        "y": 69
                     },
-                    "id": 3,
+                    "id": 29,
                     "options": {
                         "legend": {
                             "calcs": [],
@@ -1304,23 +1545,18 @@
                     "pluginVersion": "11.5.2",
                     "targets": [
                         {
-                            "datasource": {
-                                "type": "prometheus",
-                                "uid": "otel-prometheus-scraper"
-                            },
                             "disableTextWrap": false,
                             "editorMode": "builder",
-                            "expr": "system_filesystem_usage{device=~\"$device\", mountpoint=~\"$mountpoint\", resource_id=~\"$resourceID\", state=~\"$state\"}",
+                            "expr": "system_filesystem_inodes_usage{mountpoint=~\"$mountpoint\", resource_id=~\"$resourceID\", state=\"free\"}",
                             "fullMetaSearch": false,
                             "includeNullMetadata": true,
-                            "instant": false,
-                            "legendFormat": "{{state}} {{type}} {{mode}} {{device}} {{mountpoint}} {{resource_id}}",
+                            "legendFormat": "{{mountpoint}} | {{type}} | {{device}} | {{mode}} | {{resource_id}}",
                             "range": true,
                             "refId": "A",
                             "useBackend": false
                         }
                     ],
-                    "title": "System Filesystem Usage",
+                    "title": "System FileSystem Inodes Usage - Free",
                     "type": "timeseries"
                 },
                 {
@@ -1372,7 +1608,8 @@
                                 "mode": "absolute",
                                 "steps": [
                                     {
-                                        "color": "green"
+                                        "color": "green",
+                                        "value": null
                                     }
                                 ]
                             }
@@ -1383,121 +1620,9 @@
                         "h": 8,
                         "w": 24,
                         "x": 0,
-                        "y": 371
+                        "y": 77
                     },
                     "id": 14,
-                    "options": {
-                        "legend": {
-                            "calcs": [],
-                            "displayMode": "list",
-                            "placement": "right",
-                            "showLegend": true
-                        },
-                        "tooltip": {
-                            "hideZeros": false,
-                            "mode": "single",
-                            "sort": "none"
-                        }
-                    },
-                    "pluginVersion": "11.5.2",
-                    "targets": [
-                        {
-                            "disableTextWrap": false,
-                            "editorMode": "builder",
-                            "expr": "system_filesystem_inodes_usage{device=~\"$device\", mountpoint=~\"$mountpoint\", resource_id=~\"$resourceID\", state=~\"$state\"}",
-                            "fullMetaSearch": false,
-                            "includeNullMetadata": true,
-                            "legendFormat": "{{device}} {{mode}} {{mountpoint}} {{state}} {{type}} {{resource_id}}",
-                            "range": true,
-                            "refId": "A",
-                            "useBackend": false
-                        }
-                    ],
-                    "title": "System FileSystem Inodes Usage",
-                    "type": "timeseries"
-                }
-            ],
-            "title": "Filesystem",
-            "type": "row"
-        },
-        {
-            "collapsed": true,
-            "gridPos": {
-                "h": 1,
-                "w": 24,
-                "x": 0,
-                "y": 3
-            },
-            "id": 13,
-            "panels": [
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "otel-prometheus-scraper"
-                    },
-                    "description": "Bytes of memory in use.",
-                    "fieldConfig": {
-                        "defaults": {
-                            "color": {
-                                "fixedColor": "blue",
-                                "mode": "palette-classic"
-                            },
-                            "custom": {
-                                "axisBorderShow": false,
-                                "axisCenteredZero": false,
-                                "axisColorMode": "text",
-                                "axisLabel": "",
-                                "axisPlacement": "auto",
-                                "barAlignment": 0,
-                                "barWidthFactor": 0.6,
-                                "drawStyle": "line",
-                                "fillOpacity": 50,
-                                "gradientMode": "opacity",
-                                "hideFrom": {
-                                    "legend": false,
-                                    "tooltip": false,
-                                    "viz": false
-                                },
-                                "insertNulls": false,
-                                "lineInterpolation": "linear",
-                                "lineWidth": 1,
-                                "pointSize": 5,
-                                "scaleDistribution": {
-                                    "type": "linear"
-                                },
-                                "showPoints": "auto",
-                                "spanNulls": false,
-                                "stacking": {
-                                    "group": "A",
-                                    "mode": "none"
-                                },
-                                "thresholdsStyle": {
-                                    "mode": "off"
-                                }
-                            },
-                            "mappings": [],
-                            "thresholds": {
-                                "mode": "absolute",
-                                "steps": [
-                                    {
-                                        "color": "green"
-                                    },
-                                    {
-                                        "color": "red",
-                                        "value": 80
-                                    }
-                                ]
-                            }
-                        },
-                        "overrides": []
-                    },
-                    "gridPos": {
-                        "h": 9,
-                        "w": 24,
-                        "x": 0,
-                        "y": 451
-                    },
-                    "id": 4,
                     "options": {
                         "legend": {
                             "calcs": [],
@@ -1514,129 +1639,22 @@
                     "pluginVersion": "11.5.2",
                     "targets": [
                         {
-                            "datasource": {
-                                "type": "prometheus",
-                                "uid": "otel-prometheus-scraper"
-                            },
                             "disableTextWrap": false,
                             "editorMode": "builder",
-                            "expr": "system_memory_usage{state=~\"$state\", resource_id=~\"$resourceID\"}",
+                            "expr": "system_filesystem_inodes_usage{mountpoint=~\"$mountpoint\", resource_id=~\"$resourceID\", state=\"used\"}",
                             "fullMetaSearch": false,
                             "includeNullMetadata": true,
-                            "instant": false,
-                            "legendFormat": "{{state}} {{resource_id}}",
+                            "legendFormat": "{{mountpoint}} | {{type}} | {{device}} | {{mode}} | {{resource_id}}",
                             "range": true,
                             "refId": "A",
                             "useBackend": false
                         }
                     ],
-                    "title": "System Memory Usage",
-                    "type": "timeseries"
-                },
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "otel-prometheus-scraper"
-                    },
-                    "description": "Total bytes of memory available.",
-                    "fieldConfig": {
-                        "defaults": {
-                            "color": {
-                                "mode": "palette-classic"
-                            },
-                            "custom": {
-                                "axisBorderShow": false,
-                                "axisCenteredZero": false,
-                                "axisColorMode": "text",
-                                "axisLabel": "",
-                                "axisPlacement": "auto",
-                                "barAlignment": 0,
-                                "barWidthFactor": 0.6,
-                                "drawStyle": "line",
-                                "fillOpacity": 20,
-                                "gradientMode": "opacity",
-                                "hideFrom": {
-                                    "legend": false,
-                                    "tooltip": false,
-                                    "viz": false
-                                },
-                                "insertNulls": false,
-                                "lineInterpolation": "linear",
-                                "lineWidth": 1,
-                                "pointSize": 5,
-                                "scaleDistribution": {
-                                    "type": "linear"
-                                },
-                                "showPoints": "auto",
-                                "spanNulls": false,
-                                "stacking": {
-                                    "group": "A",
-                                    "mode": "none"
-                                },
-                                "thresholdsStyle": {
-                                    "mode": "off"
-                                }
-                            },
-                            "mappings": [],
-                            "thresholds": {
-                                "mode": "absolute",
-                                "steps": [
-                                    {
-                                        "color": "green"
-                                    },
-                                    {
-                                        "color": "red",
-                                        "value": 80
-                                    }
-                                ]
-                            }
-                        },
-                        "overrides": []
-                    },
-                    "gridPos": {
-                        "h": 8,
-                        "w": 12,
-                        "x": 0,
-                        "y": 460
-                    },
-                    "id": 8,
-                    "options": {
-                        "legend": {
-                            "calcs": [],
-                            "displayMode": "list",
-                            "placement": "bottom",
-                            "showLegend": true
-                        },
-                        "tooltip": {
-                            "hideZeros": false,
-                            "mode": "single",
-                            "sort": "none"
-                        }
-                    },
-                    "pluginVersion": "11.5.2",
-                    "targets": [
-                        {
-                            "datasource": {
-                                "type": "prometheus",
-                                "uid": "otel-prometheus-scraper"
-                            },
-                            "disableTextWrap": false,
-                            "editorMode": "builder",
-                            "expr": "system_memory_limit{resource_id=~\"$resourceID\"}",
-                            "fullMetaSearch": false,
-                            "includeNullMetadata": true,
-                            "instant": false,
-                            "legendFormat": "{{resource_id}}",
-                            "range": true,
-                            "refId": "A",
-                            "useBackend": false
-                        }
-                    ],
-                    "title": "System Memory Limit",
+                    "title": "System FileSystem Inodes Usage - Used",
                     "type": "timeseries"
                 }
             ],
-            "title": "Memory",
+            "title": "Filesystem",
             "type": "row"
         },
         {
@@ -1645,7 +1663,227 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
+                "y": 3
+            },
+            "id": 13,
+            "panels": [],
+            "title": "Memory",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "otel-prometheus-scraper"
+            },
+            "description": "Bytes of memory in use.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "blue",
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 50,
+                        "gradientMode": "opacity",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 24,
+                "x": 0,
                 "y": 4
+            },
+            "id": 4,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "table",
+                    "placement": "right",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "11.5.2",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "otel-prometheus-scraper"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "system_memory_usage{state=~\"$memory_state\", resource_id=~\"$resourceID\"}",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "instant": false,
+                    "legendFormat": "State: {{state}} | {{resource_id}}",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                }
+            ],
+            "title": "System Memory Usage",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "otel-prometheus-scraper"
+            },
+            "description": "Total bytes of memory available.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 7,
+                "w": 24,
+                "x": 0,
+                "y": 13
+            },
+            "id": 8,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "11.5.2",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "otel-prometheus-scraper"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "system_memory_limit{resource_id=~\"$resourceID\"}",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "instant": false,
+                    "legendFormat": "Resource ID {{resource_id}}",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                }
+            ],
+            "title": "System Memory Limit",
+            "type": "timeseries"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 20
             },
             "id": 15,
             "panels": [],
@@ -1717,7 +1955,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 5
+                "y": 21
             },
             "id": 24,
             "options": {
@@ -1738,10 +1976,10 @@
                 {
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "system_disk_io{device=~\"$device\", direction=\"read\", resource_id=~\"$resourceID\"}",
+                    "expr": "system_disk_io{resource_id=~\"$resourceID\", device=~\"$disk_device\", direction=\"read\"}",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
-                    "legendFormat": "{{device}} {{direction}} {{resource_id}}",
+                    "legendFormat": "{{device}} | {{direction}} | {{resource_id}}",
                     "range": true,
                     "refId": "A",
                     "useBackend": false
@@ -1753,11 +1991,11 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "system_disk_io{device=~\"$device\", direction=\"write\", resource_id=~\"$resourceID\"}",
+                    "expr": "system_disk_io{device=~\"$disk_device\", direction=\"write\", resource_id=~\"$resourceID\"}",
                     "fullMetaSearch": false,
                     "hide": false,
                     "includeNullMetadata": true,
-                    "legendFormat": "{{device}} {{direction}} {{resource_id}}",
+                    "legendFormat": "{{device}} | {{direction}} | {{resource_id}}",
                     "range": true,
                     "refId": "B",
                     "useBackend": false
@@ -1831,7 +2069,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 5
+                "y": 21
             },
             "id": 25,
             "options": {
@@ -1852,10 +2090,10 @@
                 {
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "system_disk_io{device=~\"$device\", resource_id=~\"$resourceID\", direction=\"read\"}",
+                    "expr": "system_disk_io{device=~\"$disk_device\", resource_id=~\"$resourceID\", direction=\"read\"}",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
-                    "legendFormat": "{{device}} {{direction}} {{resource_id}}",
+                    "legendFormat": "{{device}} | {{direction}} | {{resource_id}}",
                     "range": true,
                     "refId": "A",
                     "useBackend": false
@@ -1867,17 +2105,441 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "system_disk_io{device=~\"$device\", direction=\"write\", resource_id=~\"$resourceID\"}",
+                    "expr": "system_disk_io{device=~\"$disk_device\", direction=\"write\", resource_id=~\"$resourceID\"}",
                     "fullMetaSearch": false,
                     "hide": false,
                     "includeNullMetadata": true,
-                    "legendFormat": "{{device}} {{direction}} {{resource_id}}",
+                    "legendFormat": "{{device}} | {{direction}} | {{resource_id}}",
                     "range": true,
                     "refId": "B",
                     "useBackend": false
                 }
             ],
             "title": "System Disk IO Time",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "otel-prometheus-scraper"
+            },
+            "description": "Time disk spent activated multiplied by the queue length.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 29
+            },
+            "id": 33,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "table",
+                    "placement": "right",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "11.5.2",
+            "targets": [
+                {
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "system_disk_weighted_io_time{resource_id=~\"$resourceID\", device=~\"$disk_device\"}",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{device}} | {{resource_id}}",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                }
+            ],
+            "title": "System Disk Weighted IO Time",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "otel-prometheus-scraper"
+            },
+            "description": "Disk operations count.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 37
+            },
+            "id": 31,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "table",
+                    "placement": "right",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "11.5.2",
+            "targets": [
+                {
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "system_disk_operations{resource_id=~\"$resourceID\", device=~\"$disk_device\", direction=\"read\"}",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{device}} | {{direction}} | {{resource_id}}",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "otel-prometheus-scraper"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "system_disk_operations{resource_id=~\"$resourceID\", device=~\"$disk_device\", direction=\"write\"}",
+                    "fullMetaSearch": false,
+                    "hide": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{device}} | {{direction}} | {{resource_id}}",
+                    "range": true,
+                    "refId": "B",
+                    "useBackend": false
+                }
+            ],
+            "title": "System Disk Operations",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "otel-prometheus-scraper"
+            },
+            "description": "Time spent in disk operations.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 37
+            },
+            "id": 30,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "table",
+                    "placement": "right",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "11.5.2",
+            "targets": [
+                {
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "system_disk_operation_time{resource_id=~\"$resourceID\", device=~\"$disk_device\", direction=\"read\"}",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{device}} | {{direction}} | {{resource_id}}",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "otel-prometheus-scraper"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "system_disk_operation_time{resource_id=~\"$resourceID\", device=~\"$disk_device\", direction=\"write\"}",
+                    "fullMetaSearch": false,
+                    "hide": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{device}} | {{direction}} | {{resource_id}}",
+                    "range": true,
+                    "refId": "B",
+                    "useBackend": false
+                }
+            ],
+            "title": "System Disk Operation Time",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "otel-prometheus-scraper"
+            },
+            "description": "The queue size of pending I/O operations.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 45
+            },
+            "id": 32,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "table",
+                    "placement": "right",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "11.5.2",
+            "targets": [
+                {
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "system_disk_pending_operations{device=~\"$disk_device\"}",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{device}} | {{resource_id}}",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                }
+            ],
+            "title": "System Disk Pending Operations",
             "type": "timeseries"
         },
         {
@@ -1944,8 +2606,8 @@
             "gridPos": {
                 "h": 8,
                 "w": 12,
-                "x": 0,
-                "y": 13
+                "x": 12,
+                "y": 45
             },
             "id": 26,
             "options": {
@@ -1966,10 +2628,10 @@
                 {
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "system_disk_merged{direction=\"read\", device=~\"$device\", resource_id=~\"$resourceID\"}",
+                    "expr": "system_disk_merged{device=~\"$disk_device\", resource_id=~\"$resourceID\", direction=\"read\"}",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
-                    "legendFormat": "{{device}} {{direction}} {{resource_id}}",
+                    "legendFormat": "{{device}} | {{direction}} | {{resource_id}}",
                     "range": true,
                     "refId": "A",
                     "useBackend": false
@@ -1981,11 +2643,11 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "system_disk_merged{direction=\"write\", device=~\"$device\", resource_id=~\"$resourceID\"}",
+                    "expr": "system_disk_merged{direction=\"write\", device=~\"$disk_device\", resource_id=~\"$resourceID\"}",
                     "fullMetaSearch": false,
                     "hide": false,
                     "includeNullMetadata": true,
-                    "legendFormat": "{{device}} {{direction}} {{resource_id}}",
+                    "legendFormat": "{{device}} | {{direction}} | {{resource_id}}",
                     "range": true,
                     "refId": "B",
                     "useBackend": false
@@ -2011,34 +2673,8 @@
                         "$__all"
                     ]
                 },
-                "definition": "label_values(cpu)",
-                "description": "Filter by CPU",
-                "includeAll": true,
-                "label": "CPU",
-                "multi": true,
-                "name": "cpu",
-                "options": [],
-                "query": {
-                    "qryType": 1,
-                    "query": "label_values(cpu)",
-                    "refId": "PrometheusVariableQueryEditor-VariableQuery"
-                },
-                "refresh": 1,
-                "regex": "",
-                "type": "query"
-            },
-            {
-                "allowCustomValue": false,
-                "current": {
-                    "text": [
-                        "All"
-                    ],
-                    "value": [
-                        "$__all"
-                    ]
-                },
                 "definition": "label_values(resource_id)",
-                "description": "Filter by Resource ID",
+                "description": "Filter by Resource ID.",
                 "includeAll": true,
                 "label": "Resource ID",
                 "multi": true,
@@ -2063,16 +2699,16 @@
                         "$__all"
                     ]
                 },
-                "definition": "label_values(state)",
-                "description": "Filter by State",
+                "definition": "label_values(cpu)",
+                "description": "Filter by CPU.",
                 "includeAll": true,
-                "label": "State",
+                "label": "CPU",
                 "multi": true,
-                "name": "state",
+                "name": "cpu",
                 "options": [],
                 "query": {
                     "qryType": 1,
-                    "query": "label_values(state)",
+                    "query": "label_values(cpu)",
                     "refId": "PrometheusVariableQueryEditor-VariableQuery"
                 },
                 "refresh": 1,
@@ -2089,16 +2725,68 @@
                         "$__all"
                     ]
                 },
-                "definition": "label_values(device)",
-                "description": "Filter by Device",
+                "definition": "label_values(system_cpu_time,state)",
+                "description": "Filter by CPU State.",
                 "includeAll": true,
-                "label": "Device",
+                "label": "CPU State",
                 "multi": true,
-                "name": "device",
+                "name": "cpu_state",
                 "options": [],
                 "query": {
                     "qryType": 1,
-                    "query": "label_values(device)",
+                    "query": "label_values(system_cpu_time,state)",
+                    "refId": "PrometheusVariableQueryEditor-VariableQuery"
+                },
+                "refresh": 1,
+                "regex": "",
+                "type": "query"
+            },
+            {
+                "allowCustomValue": false,
+                "current": {
+                    "text": [
+                        "All"
+                    ],
+                    "value": [
+                        "$__all"
+                    ]
+                },
+                "definition": "label_values(system_network_packets,device)",
+                "description": "Filter by Network Device.",
+                "includeAll": true,
+                "label": "Network Device",
+                "multi": true,
+                "name": "network_device",
+                "options": [],
+                "query": {
+                    "qryType": 1,
+                    "query": "label_values(system_network_packets,device)",
+                    "refId": "PrometheusVariableQueryEditor-VariableQuery"
+                },
+                "refresh": 1,
+                "regex": "",
+                "type": "query"
+            },
+            {
+                "allowCustomValue": false,
+                "current": {
+                    "text": [
+                        "All"
+                    ],
+                    "value": [
+                        "$__all"
+                    ]
+                },
+                "definition": "label_values(system_network_connections,state)",
+                "description": "Filter by Network State.",
+                "includeAll": true,
+                "label": "Network State",
+                "multi": true,
+                "name": "network_state",
+                "options": [],
+                "query": {
+                    "qryType": 1,
+                    "query": "label_values(system_network_connections,state)",
                     "refId": "PrometheusVariableQueryEditor-VariableQuery"
                 },
                 "refresh": 1,
@@ -2116,15 +2804,67 @@
                     ]
                 },
                 "definition": "label_values(mountpoint)",
-                "description": "Filter by Mountpoint",
+                "description": "Filter by Mountpoint.",
                 "includeAll": true,
-                "label": "Mountpoint",
+                "label": "Filesystem Mountpoint",
                 "multi": true,
                 "name": "mountpoint",
                 "options": [],
                 "query": {
                     "qryType": 1,
                     "query": "label_values(mountpoint)",
+                    "refId": "PrometheusVariableQueryEditor-VariableQuery"
+                },
+                "refresh": 1,
+                "regex": "",
+                "type": "query"
+            },
+            {
+                "allowCustomValue": false,
+                "current": {
+                    "text": [
+                        "All"
+                    ],
+                    "value": [
+                        "$__all"
+                    ]
+                },
+                "definition": "label_values(system_memory_usage,state)",
+                "description": "Filter by Memory State.",
+                "includeAll": true,
+                "label": "Memory State",
+                "multi": true,
+                "name": "memory_state",
+                "options": [],
+                "query": {
+                    "qryType": 1,
+                    "query": "label_values(system_memory_usage,state)",
+                    "refId": "PrometheusVariableQueryEditor-VariableQuery"
+                },
+                "refresh": 1,
+                "regex": "",
+                "type": "query"
+            },
+            {
+                "allowCustomValue": false,
+                "current": {
+                    "text": [
+                        "All"
+                    ],
+                    "value": [
+                        "$__all"
+                    ]
+                },
+                "definition": "label_values(system_disk_io,device)",
+                "description": "Filter by Disk Device.",
+                "includeAll": true,
+                "label": "Disk Device",
+                "multi": true,
+                "name": "disk_device",
+                "options": [],
+                "query": {
+                    "qryType": 1,
+                    "query": "label_values(system_disk_io,device)",
                     "refId": "PrometheusVariableQueryEditor-VariableQuery"
                 },
                 "refresh": 1,
@@ -2141,6 +2881,6 @@
     "timezone": "browser",
     "title": "Host Metrics",
     "uid": "jbsjbjfjnfjdnf",
-    "version": 19,
+    "version": 12,
     "weekStart": ""
 }

@@ -232,7 +232,7 @@
                         "uid": "otel-prometheus-scraper"
                     },
                     "disableTextWrap": false,
-                    "editorMode": "code",
+                    "editorMode": "builder",
                     "expr": "nginx_http_connection_count{instance_type=\"nginxplus\"}",
                     "format": "time_series",
                     "fullMetaSearch": false,
@@ -376,7 +376,8 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "mode": "thresholds"
+                        "fixedColor": "blue",
+                        "mode": "shades"
                     },
                     "mappings": [],
                     "thresholds": {
@@ -403,11 +404,9 @@
             },
             "id": 16,
             "options": {
-                "colorMode": "value",
-                "graphMode": "area",
-                "justifyMode": "auto",
+                "minVizHeight": 75,
+                "minVizWidth": 75,
                 "orientation": "auto",
-                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                     "calcs": [
                         "lastNotNull"
@@ -415,9 +414,9 @@
                     "fields": "",
                     "values": false
                 },
-                "showPercentChange": false,
-                "textMode": "auto",
-                "wideLayout": true
+                "showThresholdLabels": false,
+                "showThresholdMarkers": true,
+                "sizing": "auto"
             },
             "pluginVersion": "11.5.2",
             "targets": [
@@ -434,7 +433,7 @@
                 }
             ],
             "title": "HTTP Request Processing Count",
-            "type": "stat"
+            "type": "gauge"
         },
         {
             "datasource": {
@@ -500,7 +499,7 @@
             },
             "gridPos": {
                 "h": 8,
-                "w": 10,
+                "w": 11,
                 "x": 7,
                 "y": 12
             },
@@ -581,16 +580,12 @@
                         ]
                     },
                     {
-                        "__systemRef": "hideSeriesFrom",
                         "matcher": {
-                            "id": "byNames",
+                            "id": "byValue",
                             "options": {
-                                "mode": "exclude",
-                                "names": [
-                                    "Total"
-                                ],
-                                "prefix": "All except:",
-                                "readOnly": true
+                                "op": "gte",
+                                "reducer": "allIsZero",
+                                "value": 0
                             }
                         },
                         "properties": []
@@ -599,8 +594,8 @@
             },
             "gridPos": {
                 "h": 8,
-                "w": 7,
-                "x": 17,
+                "w": 6,
+                "x": 18,
                 "y": 12
             },
             "id": 5,
@@ -628,7 +623,7 @@
                         "type": "prometheus",
                         "uid": "otel-prometheus-scraper"
                     },
-                    "editorMode": "code",
+                    "editorMode": "builder",
                     "expr": "nginx_http_requests{instance_type=\"nginxplus\"}",
                     "hide": false,
                     "instant": false,
@@ -929,7 +924,7 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 50,
+                        "fillOpacity": 20,
                         "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
@@ -1027,7 +1022,7 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 50,
+                        "fillOpacity": 20,
                         "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
@@ -1125,7 +1120,7 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 50,
+                        "fillOpacity": 20,
                         "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
@@ -1223,7 +1218,7 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 50,
+                        "fillOpacity": 20,
                         "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
@@ -1410,7 +1405,7 @@
             },
             "gridPos": {
                 "h": 6,
-                "w": 5,
+                "w": 7,
                 "x": 5,
                 "y": 43
             },
@@ -1563,9 +1558,9 @@
                 ]
             },
             "gridPos": {
-                "h": 12,
-                "w": 14,
-                "x": 10,
+                "h": 18,
+                "w": 12,
+                "x": 12,
                 "y": 43
             },
             "id": 59,
@@ -1790,7 +1785,7 @@
             },
             "gridPos": {
                 "h": 6,
-                "w": 5,
+                "w": 7,
                 "x": 5,
                 "y": 49
             },
@@ -1847,8 +1842,8 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
@@ -2048,7 +2043,7 @@
                 "h": 15,
                 "w": 12,
                 "x": 12,
-                "y": 55
+                "y": 61
             },
             "id": 27,
             "maxDataPoints": 10,
@@ -2268,8 +2263,8 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
@@ -2310,8 +2305,8 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 7,
-                "w": 10,
+                "h": 9,
+                "w": 12,
                 "x": 0,
                 "y": 70
             },
@@ -2351,7 +2346,7 @@
                 "type": "prometheus",
                 "uid": "otel-prometheus-scraper"
             },
-            "description": "The total number of responses obtained from the HTTP upstream peer grouped by status range.",
+            "description": "The average time to get the full response from the HTTP upstream peer.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -2366,8 +2361,8 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
@@ -2408,10 +2403,108 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 14,
-                "w": 14,
-                "x": 10,
-                "y": 70
+                "h": 12,
+                "w": 12,
+                "x": 12,
+                "y": 76
+            },
+            "id": 25,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "11.5.2",
+            "targets": [
+                {
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "nginx_http_upstream_peer_response_time{instance_type=\"nginxplus\", nginx_upstream_name=~\"$nginxUpstreamPeerName\", nginx_peer_address=~\"$nginxUpstreamPeerAddress\"}",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{nginx_peer_address}} {{nginx_upstream_name}} {{nginx_zone_name}}",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                }
+            ],
+            "title": "HTTP Upstream Peer Response Time",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "otel-prometheus-scraper"
+            },
+            "description": "The total number of responses obtained from the HTTP upstream peer grouped by status range.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 10,
+                "w": 12,
+                "x": 0,
+                "y": 79
             },
             "id": 26,
             "options": {
@@ -2449,7 +2542,7 @@
                 "type": "prometheus",
                 "uid": "otel-prometheus-scraper"
             },
-            "description": "The total number of byte IO received per HTTP upstream peer.\n",
+            "description": "The total number of requests rejected due to the queue overflow.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -2464,8 +2557,8 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
@@ -2506,10 +2599,108 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 7,
-                "w": 5,
+                "h": 9,
+                "w": 12,
+                "x": 12,
+                "y": 88
+            },
+            "id": 30,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "11.5.2",
+            "targets": [
+                {
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "nginx_http_upstream_queue_overflows{instance_type=\"nginxplus\", nginx_upstream_name=~\"$nginxUpstreamPeerName\"}",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{nginx_upstream_name}} {{nginx_zone_name}}",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                }
+            ],
+            "title": "HTTP Upstream Queue Overflows",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "otel-prometheus-scraper"
+            },
+            "description": "The total number of byte IO received per HTTP upstream peer.\n",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 6,
                 "x": 0,
-                "y": 77
+                "y": 89
             },
             "id": 23,
             "options": {
@@ -2562,8 +2753,8 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
@@ -2604,10 +2795,10 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 7,
-                "w": 5,
-                "x": 5,
-                "y": 77
+                "h": 8,
+                "w": 6,
+                "x": 6,
+                "y": 89
             },
             "id": 60,
             "options": {
@@ -2645,202 +2836,6 @@
                 "type": "prometheus",
                 "uid": "otel-prometheus-scraper"
             },
-            "description": "The average time to get the response header from the HTTP upstream peer.",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "barWidthFactor": 0.6,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "insertNulls": false,
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 0,
-                "y": 84
-            },
-            "id": 21,
-            "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom",
-                    "showLegend": true
-                },
-                "tooltip": {
-                    "hideZeros": false,
-                    "mode": "single",
-                    "sort": "none"
-                }
-            },
-            "pluginVersion": "11.5.2",
-            "targets": [
-                {
-                    "disableTextWrap": false,
-                    "editorMode": "builder",
-                    "expr": "nginx_http_upstream_peer_header_time{instance_type=\"nginxplus\", nginx_upstream_name=~\"$nginxUpstreamPeerName\", nginx_peer_address=~\"$nginxUpstreamPeerAddress\"}",
-                    "fullMetaSearch": false,
-                    "includeNullMetadata": true,
-                    "legendFormat": "{{nginx_peer_address}} {{nginx_upstream_name}} {{nginx_zone_name}}",
-                    "range": true,
-                    "refId": "A",
-                    "useBackend": false
-                }
-            ],
-            "title": "HTTP Upstream Peer Header Time",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "otel-prometheus-scraper"
-            },
-            "description": "The average time to get the full response from the HTTP upstream peer.",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "barWidthFactor": 0.6,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "insertNulls": false,
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
-                "y": 84
-            },
-            "id": 25,
-            "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom",
-                    "showLegend": true
-                },
-                "tooltip": {
-                    "hideZeros": false,
-                    "mode": "single",
-                    "sort": "none"
-                }
-            },
-            "pluginVersion": "11.5.2",
-            "targets": [
-                {
-                    "disableTextWrap": false,
-                    "editorMode": "builder",
-                    "expr": "nginx_http_upstream_peer_response_time{instance_type=\"nginxplus\", nginx_upstream_name=~\"$nginxUpstreamPeerName\", nginx_peer_address=~\"$nginxUpstreamPeerAddress\"}",
-                    "fullMetaSearch": false,
-                    "includeNullMetadata": true,
-                    "legendFormat": "{{nginx_peer_address}} {{nginx_upstream_name}} {{nginx_zone_name}}",
-                    "range": true,
-                    "refId": "A",
-                    "useBackend": false
-                }
-            ],
-            "title": "HTTP Upstream Peer Response Time",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "otel-prometheus-scraper"
-            },
             "description": "The maximum number of requests that can be in the queue at the same time.",
             "fieldConfig": {
                 "defaults": {
@@ -2861,10 +2856,10 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 8,
+                "h": 9,
                 "w": 5,
                 "x": 0,
-                "y": 92
+                "y": 97
             },
             "id": 29,
             "options": {
@@ -2921,8 +2916,8 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
@@ -2963,10 +2958,10 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 8,
-                "w": 8,
+                "h": 9,
+                "w": 9,
                 "x": 5,
-                "y": 92
+                "y": 97
             },
             "id": 31,
             "options": {
@@ -3004,7 +2999,7 @@
                 "type": "prometheus",
                 "uid": "otel-prometheus-scraper"
             },
-            "description": "The total number of requests rejected due to the queue overflow.",
+            "description": "The average time to get the response header from the HTTP upstream peer.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -3019,8 +3014,8 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
@@ -3061,12 +3056,12 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 8,
-                "w": 11,
-                "x": 13,
-                "y": 92
+                "h": 9,
+                "w": 10,
+                "x": 14,
+                "y": 97
             },
-            "id": 30,
+            "id": 21,
             "options": {
                 "legend": {
                     "calcs": [],
@@ -3085,16 +3080,16 @@
                 {
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "nginx_http_upstream_queue_overflows{instance_type=\"nginxplus\", nginx_upstream_name=~\"$nginxUpstreamPeerName\"}",
+                    "expr": "nginx_http_upstream_peer_header_time{instance_type=\"nginxplus\", nginx_upstream_name=~\"$nginxUpstreamPeerName\", nginx_peer_address=~\"$nginxUpstreamPeerAddress\"}",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
-                    "legendFormat": "{{nginx_upstream_name}} {{nginx_zone_name}}",
+                    "legendFormat": "{{nginx_peer_address}} {{nginx_upstream_name}} {{nginx_zone_name}}",
                     "range": true,
                     "refId": "A",
                     "useBackend": false
                 }
             ],
-            "title": "HTTP Upstream Queue Overflows",
+            "title": "HTTP Upstream Peer Header Time",
             "type": "timeseries"
         },
         {
@@ -3103,7 +3098,7 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 100
+                "y": 106
             },
             "id": 10,
             "panels": [],
@@ -3130,8 +3125,8 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
@@ -3175,7 +3170,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 101
+                "y": 107
             },
             "id": 37,
             "options": {
@@ -3196,7 +3191,7 @@
                 {
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "nginx_slab_slot_free{nginx_zone_name=~\"$nginxAllZones\", instance_type=\"nginxplus\"}",
+                    "expr": "nginx_slab_slot_free{nginx_zone_name=~\"$nginx_application_zone\", instance_type=\"nginxplus\"}",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "legendFormat": "{{nginx_slab_slot_limit}} {{nginx_zone_name}}",
@@ -3205,7 +3200,7 @@
                     "useBackend": false
                 }
             ],
-            "title": "Free memory slots",
+            "title": "Free Memory Slots",
             "type": "timeseries"
         },
         {
@@ -3228,7 +3223,7 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 0,
+                        "fillOpacity": 20,
                         "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
@@ -3273,7 +3268,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 101
+                "y": 107
             },
             "id": 38,
             "options": {
@@ -3296,7 +3291,7 @@
                 {
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "nginx_slab_slot_usage{nginx_zone_name=~\"$nginxAllZones\", instance_type=\"nginxplus\"}",
+                    "expr": "nginx_slab_slot_usage{nginx_zone_name=~\"$nginx_application_zone\", instance_type=\"nginxplus\"}",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "legendFormat": "{{nginx_slab_slot_limit}} {{nginx_zone_name}}",
@@ -3305,7 +3300,7 @@
                     "useBackend": false
                 }
             ],
-            "title": "Memory slots in use",
+            "title": "Memory Slots in Use",
             "type": "timeseries"
         },
         {
@@ -3328,8 +3323,8 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
@@ -3373,7 +3368,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 109
+                "y": 115
             },
             "id": 34,
             "options": {
@@ -3394,7 +3389,7 @@
                 {
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "nginx_slab_page_free{instance_type=\"nginxplus\", nginx_zone_name=~\"$nginxAllZones\"}",
+                    "expr": "nginx_slab_page_free{instance_type=\"nginxplus\", nginx_zone_name=~\"$nginx_application_zone\"}",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "legendFormat": "{{nginx_zone_name}}",
@@ -3426,8 +3421,8 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
@@ -3471,7 +3466,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 109
+                "y": 115
             },
             "id": 35,
             "options": {
@@ -3492,7 +3487,7 @@
                 {
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "nginx_slab_page_usage{instance_type=\"nginxplus\", nginx_zone_name=~\"$nginxAllZones\"}",
+                    "expr": "nginx_slab_page_usage{instance_type=\"nginxplus\", nginx_zone_name=~\"$nginx_application_zone\"}",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "legendFormat": "{{nginx_zone_name}}",
@@ -3501,7 +3496,7 @@
                     "useBackend": false
                 }
             ],
-            "title": "Memory pages in use",
+            "title": "Memory Pages in Use",
             "type": "timeseries"
         },
         {
@@ -3524,8 +3519,8 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
@@ -3569,7 +3564,7 @@
                 "h": 10,
                 "w": 12,
                 "x": 0,
-                "y": 117
+                "y": 123
             },
             "id": 36,
             "options": {
@@ -3590,16 +3585,16 @@
                 {
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "nginx_slab_slot_allocations{instance_type=\"nginxplus\", nginx_zone_name=~\"$nginxAllZones\", nginx_slab_slot_allocation_result=\"SUCCESS\"}",
+                    "expr": "nginx_slab_slot_allocations{instance_type=\"nginxplus\", nginx_zone_name=~\"$nginx_application_zone\", nginx_slab_slot_allocation_result=\"SUCCESS\"}",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
-                    "legendFormat": "{{nginx_slab_slot_allocation_result}} {{nginx_slab_slot_limit}} {{nginx_zone_name}}",
+                    "legendFormat": "{{nginx_slab_slot_limit}} {{nginx_zone_name}} | {{nginx_slab_slot_allocation_result}}",
                     "range": true,
                     "refId": "A",
                     "useBackend": false
                 }
             ],
-            "title": "Successful memory allocation of specified size attempts",
+            "title": "Successful Memory Allocation of Specified Size Attempts",
             "type": "timeseries"
         },
         {
@@ -3622,8 +3617,8 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
@@ -3667,7 +3662,7 @@
                 "h": 10,
                 "w": 12,
                 "x": 12,
-                "y": 117
+                "y": 123
             },
             "id": 61,
             "options": {
@@ -3688,16 +3683,16 @@
                 {
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "nginx_slab_slot_allocations{instance_type=\"nginxplus\", nginx_zone_name=~\"$nginxAllZones\", nginx_slab_slot_allocation_result=\"FAILURE\"}",
+                    "expr": "nginx_slab_slot_allocations{instance_type=\"nginxplus\", nginx_zone_name=~\"$nginx_application_zone\", nginx_slab_slot_allocation_result=\"FAILURE\"}",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
-                    "legendFormat": "{{nginx_slab_slot_allocation_result}} {{nginx_slab_slot_limit}} {{nginx_zone_name}}",
+                    "legendFormat": "{{nginx_slab_slot_limit}} {{nginx_zone_name}} | {{nginx_slab_slot_allocation_result}} ",
                     "range": true,
                     "refId": "A",
                     "useBackend": false
                 }
             ],
-            "title": "Failed memory allocation of specified size attempts",
+            "title": "Failed Memory Allocation of Specified Size Attempts",
             "type": "timeseries"
         },
         {
@@ -3706,7 +3701,7 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 127
+                "y": 133
             },
             "id": 39,
             "panels": [],
@@ -3754,9 +3749,10 @@
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 128
+                "y": 134
             },
             "id": 40,
+            "maxDataPoints": 10,
             "options": {
                 "colWidth": 0.9,
                 "legend": {
@@ -3805,8 +3801,8 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
@@ -3850,7 +3846,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 128
+                "y": 134
             },
             "id": 41,
             "options": {
@@ -3885,7 +3881,7 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 136
+                "y": 142
             },
             "id": 42,
             "panels": [],
@@ -3901,40 +3897,7 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "barWidthFactor": 0.6,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "insertNulls": false,
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
+                        "mode": "thresholds"
                     },
                     "mappings": [],
                     "thresholds": {
@@ -3954,31 +3917,42 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 8,
-                "w": 12,
+                "h": 6,
+                "w": 9,
                 "x": 0,
-                "y": 137
+                "y": 143
             },
             "id": 43,
             "options": {
+                "displayMode": "basic",
                 "legend": {
                     "calcs": [],
                     "displayMode": "list",
                     "placement": "bottom",
-                    "showLegend": true
+                    "showLegend": false
                 },
-                "tooltip": {
-                    "hideZeros": false,
-                    "mode": "single",
-                    "sort": "none"
-                }
+                "maxVizHeight": 300,
+                "minVizHeight": 16,
+                "minVizWidth": 8,
+                "namePlacement": "auto",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showUnfilled": true,
+                "sizing": "auto",
+                "valueMode": "color"
             },
             "pluginVersion": "11.5.2",
             "targets": [
                 {
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "nginx_stream_connection_accepted{instance_type=\"nginxplus\", nginx_zone_name=~\"$nginxAllZones\"}",
+                    "expr": "nginx_stream_connection_accepted{instance_type=\"nginxplus\", nginx_zone_name=~\"$nginx_network_zone\"}",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "legendFormat": "{{nginx_zone_name}}",
@@ -3987,106 +3961,8 @@
                     "useBackend": false
                 }
             ],
-            "title": "Stream Connections Accepted",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "otel-prometheus-scraper"
-            },
-            "description": "Total number of connections completed without creating a session.",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "barWidthFactor": 0.6,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "insertNulls": false,
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
-                "y": 137
-            },
-            "id": 44,
-            "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom",
-                    "showLegend": true
-                },
-                "tooltip": {
-                    "hideZeros": false,
-                    "mode": "single",
-                    "sort": "none"
-                }
-            },
-            "pluginVersion": "11.5.2",
-            "targets": [
-                {
-                    "disableTextWrap": false,
-                    "editorMode": "builder",
-                    "expr": "nginx_stream_connection_discarded{instance_type=\"nginxplus\", nginx_zone_name=~\"$nginxAllZones\"}",
-                    "fullMetaSearch": false,
-                    "includeNullMetadata": true,
-                    "legendFormat": "{{nginx_zone_name}}",
-                    "range": true,
-                    "refId": "A",
-                    "useBackend": false
-                }
-            ],
-            "title": "Stream Connections Discarded",
-            "type": "timeseries"
+            "title": "Stream Connections - Accepted",
+            "type": "bargauge"
         },
         {
             "datasource": {
@@ -4097,40 +3973,7 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "barWidthFactor": 0.6,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "insertNulls": false,
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
+                        "mode": "thresholds"
                     },
                     "mappings": [],
                     "thresholds": {
@@ -4150,31 +3993,33 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 0,
-                "y": 145
+                "h": 12,
+                "w": 5,
+                "x": 9,
+                "y": 143
             },
             "id": 45,
             "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom",
-                    "showLegend": true
+                "minVizHeight": 75,
+                "minVizWidth": 75,
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
                 },
-                "tooltip": {
-                    "hideZeros": false,
-                    "mode": "single",
-                    "sort": "none"
-                }
+                "showThresholdLabels": false,
+                "showThresholdMarkers": true,
+                "sizing": "auto"
             },
             "pluginVersion": "11.5.2",
             "targets": [
                 {
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "nginx_stream_connection_processing_count{instance_type=\"nginxplus\", nginx_zone_name=~\"$nginxAllZones\"}",
+                    "expr": "nginx_stream_connection_processing_count{instance_type=\"nginxplus\", nginx_zone_name=~\"$nginx_network_zone\"}",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "legendFormat": "{{nginx_zone_name}}",
@@ -4184,7 +4029,7 @@
                 }
             ],
             "title": "Stream Connection Processing Count",
-            "type": "timeseries"
+            "type": "gauge"
         },
         {
             "datasource": {
@@ -4195,40 +4040,7 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "barWidthFactor": 0.6,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "insertNulls": false,
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
+                        "mode": "thresholds"
                     },
                     "mappings": [],
                     "thresholds": {
@@ -4248,139 +4060,204 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 8,
-                "w": 6,
-                "x": 12,
-                "y": 145
-            },
-            "id": 46,
-            "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "table",
-                    "placement": "right",
-                    "showLegend": true
-                },
-                "tooltip": {
-                    "hideZeros": false,
-                    "mode": "single",
-                    "sort": "none"
-                }
-            },
-            "pluginVersion": "11.5.2",
-            "targets": [
-                {
-                    "disableTextWrap": false,
-                    "editorMode": "builder",
-                    "expr": "nginx_stream_io{instance_type=\"nginxplus\", nginx_io_direction=\"receive\", nginx_zone_name=~\"$nginxAllZones\"}",
-                    "fullMetaSearch": false,
-                    "includeNullMetadata": true,
-                    "legendFormat": "{{nginx_io_direction}}: {{nginx_zone_name}}",
-                    "range": true,
-                    "refId": "A",
-                    "useBackend": false
-                }
-            ],
-            "title": "Stream IO - Receive",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "otel-prometheus-scraper"
-            },
-            "description": "The total number of Stream byte IO.",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "barWidthFactor": 0.6,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "insertNulls": false,
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 6,
-                "x": 18,
-                "y": 145
+                "h": 6,
+                "w": 10,
+                "x": 14,
+                "y": 143
             },
             "id": 62,
             "options": {
+                "displayMode": "basic",
                 "legend": {
                     "calcs": [],
-                    "displayMode": "table",
-                    "placement": "right",
-                    "showLegend": true
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": false
                 },
-                "tooltip": {
-                    "hideZeros": false,
-                    "mode": "single",
-                    "sort": "none"
-                }
+                "maxVizHeight": 300,
+                "minVizHeight": 16,
+                "minVizWidth": 8,
+                "namePlacement": "auto",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showUnfilled": true,
+                "sizing": "auto",
+                "valueMode": "color"
             },
             "pluginVersion": "11.5.2",
             "targets": [
                 {
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "nginx_stream_io{instance_type=\"nginxplus\", nginx_zone_name=~\"$nginxAllZones\", nginx_io_direction=\"transmit\"}",
+                    "expr": "nginx_stream_io{instance_type=\"nginxplus\", nginx_zone_name=~\"$nginx_network_zone\", nginx_io_direction=\"transmit\"}",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
-                    "legendFormat": "{{nginx_io_direction}}: {{nginx_zone_name}}",
+                    "legendFormat": "{{nginx_zone_name}}",
                     "range": true,
                     "refId": "A",
                     "useBackend": false
                 }
             ],
             "title": "Stream IO - Transmit",
-            "type": "timeseries"
+            "type": "bargauge"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "otel-prometheus-scraper"
+            },
+            "description": "Total number of connections completed without creating a session.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 9,
+                "x": 0,
+                "y": 149
+            },
+            "id": 44,
+            "options": {
+                "displayMode": "basic",
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": false
+                },
+                "maxVizHeight": 300,
+                "minVizHeight": 16,
+                "minVizWidth": 8,
+                "namePlacement": "auto",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showUnfilled": true,
+                "sizing": "auto",
+                "valueMode": "color"
+            },
+            "pluginVersion": "11.5.2",
+            "targets": [
+                {
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "nginx_stream_connection_discarded{instance_type=\"nginxplus\", nginx_zone_name=~\"$nginx_network_zone\"}",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{nginx_zone_name}}",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                }
+            ],
+            "title": "Stream Connections - Discarded",
+            "type": "bargauge"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "otel-prometheus-scraper"
+            },
+            "description": "The total number of Stream byte IO.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 10,
+                "x": 14,
+                "y": 149
+            },
+            "id": 46,
+            "options": {
+                "displayMode": "basic",
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": false
+                },
+                "maxVizHeight": 300,
+                "minVizHeight": 16,
+                "minVizWidth": 8,
+                "namePlacement": "auto",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showUnfilled": true,
+                "sizing": "auto",
+                "valueMode": "color"
+            },
+            "pluginVersion": "11.5.2",
+            "targets": [
+                {
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "nginx_stream_io{instance_type=\"nginxplus\", nginx_io_direction=\"receive\", nginx_zone_name=~\"$nginx_network_zone\"}",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{nginx_zone_name}}",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                }
+            ],
+            "title": "Stream IO - Receive",
+            "type": "bargauge"
         },
         {
             "datasource": {
@@ -4391,40 +4268,7 @@
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "barWidthFactor": 0.6,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "insertNulls": false,
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
+                        "mode": "thresholds"
                     },
                     "mappings": [],
                     "thresholds": {
@@ -4445,18 +4289,99 @@
             },
             "gridPos": {
                 "h": 8,
-                "w": 12,
+                "w": 24,
                 "x": 0,
-                "y": 153
+                "y": 155
             },
             "id": 47,
             "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "table",
-                    "placement": "right",
-                    "showLegend": true
+                "minVizHeight": 75,
+                "minVizWidth": 75,
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
                 },
+                "showThresholdLabels": false,
+                "showThresholdMarkers": true,
+                "sizing": "auto"
+            },
+            "pluginVersion": "11.5.2",
+            "repeat": "nginx_network_zone",
+            "repeatDirection": "h",
+            "targets": [
+                {
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "nginx_stream_session_status{instance_type=\"nginxplus\", nginx_zone_name=~\"$nginx_network_zone\"}",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{nginx_status_range}} Zone: {{nginx_zone_name}}",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                }
+            ],
+            "title": "Stream Session Status",
+            "type": "gauge"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "otel-prometheus-scraper"
+            },
+            "description": "The current number of Stream Upstream Peer connections.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "fillOpacity": 70,
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineWidth": 1
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "#58585a",
+                                "value": null
+                            },
+                            {
+                                "color": "green",
+                                "value": 1
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 10,
+                "x": 0,
+                "y": 163
+            },
+            "id": 48,
+            "maxDataPoints": 10,
+            "options": {
+                "colWidth": 0.9,
+                "legend": {
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": false
+                },
+                "rowHeight": 0.9,
+                "showValue": "auto",
                 "tooltip": {
                     "hideZeros": false,
                     "mode": "single",
@@ -4468,24 +4393,24 @@
                 {
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "nginx_stream_session_status{instance_type=\"nginxplus\", nginx_zone_name=~\"$nginxAllZones\"}",
+                    "expr": "nginx_stream_upstream_peer_connection_count{instance_type=\"nginxplus\", nginx_upstream_name=~\"$stream_upstream_peer\"}",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
-                    "legendFormat": "{{nginx_status_range}} Zone: {{nginx_zone_name}}",
+                    "legendFormat": "{{nginx_upstream_name}} {{nginx_zone_name}} {{nginx_peer_address}}",
                     "range": true,
                     "refId": "A",
                     "useBackend": false
                 }
             ],
-            "title": "Stream Session Status",
-            "type": "timeseries"
+            "title": "Stream Upstream Peer Connections Count",
+            "type": "status-history"
         },
         {
             "datasource": {
                 "type": "prometheus",
                 "uid": "otel-prometheus-scraper"
             },
-            "description": "The current number of Stream Upstream Peer connections.",
+            "description": "The total number of client connections forwarded to this stream upstream peer.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -4500,8 +4425,8 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
@@ -4542,12 +4467,12 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
-                "y": 153
+                "h": 9,
+                "w": 7,
+                "x": 10,
+                "y": 163
             },
-            "id": 48,
+            "id": 50,
             "options": {
                 "legend": {
                     "calcs": [],
@@ -4566,7 +4491,7 @@
                 {
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "nginx_stream_upstream_peer_connection_count{instance_type=\"nginxplus\", nginx_upstream_name=~\"$nginxUpstreamPeerName\", nginx_peer_address=~\"$nginxUpstreamPeerAddress\", nginx_zone_name=~\"$nginxAllZones\"}",
+                    "expr": "nginx_stream_upstream_peer_connections{instance_type=\"nginxplus\", nginx_upstream_name=~\"$stream_upstream_peer\"}",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "legendFormat": "{{nginx_upstream_name}} {{nginx_zone_name}} {{nginx_peer_address}}",
@@ -4575,7 +4500,7 @@
                     "useBackend": false
                 }
             ],
-            "title": "Stream Upstream Peer Connections Count",
+            "title": "Stream Upstream Peer Connections",
             "type": "timeseries"
         },
         {
@@ -4598,8 +4523,8 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
@@ -4640,10 +4565,10 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 0,
-                "y": 161
+                "h": 9,
+                "w": 7,
+                "x": 17,
+                "y": 163
             },
             "id": 49,
             "options": {
@@ -4664,7 +4589,7 @@
                 {
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "nginx_stream_upstream_peer_connection_time{instance_type=\"nginxplus\", nginx_upstream_name=~\"$nginxUpstreamPeerName\", nginx_peer_address=~\"$nginxUpstreamPeerAddress\", nginx_zone_name=~\"$nginxAllZones\"}",
+                    "expr": "nginx_stream_upstream_peer_connection_time{instance_type=\"nginxplus\", nginx_upstream_name=~\"$stream_upstream_peer\"}",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "legendFormat": "{{nginx_upstream_name}} {{nginx_zone_name}} {{nginx_peer_address}}",
@@ -4681,142 +4606,12 @@
                 "type": "prometheus",
                 "uid": "otel-prometheus-scraper"
             },
-            "description": "The total number of client connections forwarded to this stream upstream peer.",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "barWidthFactor": 0.6,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "insertNulls": false,
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
-                "y": 161
-            },
-            "id": 50,
-            "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom",
-                    "showLegend": true
-                },
-                "tooltip": {
-                    "hideZeros": false,
-                    "mode": "single",
-                    "sort": "none"
-                }
-            },
-            "pluginVersion": "11.5.2",
-            "targets": [
-                {
-                    "disableTextWrap": false,
-                    "editorMode": "builder",
-                    "expr": "nginx_stream_upstream_peer_connections{instance_type=\"nginxplus\", nginx_upstream_name=~\"$nginxUpstreamPeerName\", nginx_peer_address=~\"$nginxUpstreamPeerAddress\", nginx_zone_name=~\"$nginxAllZones\"}",
-                    "fullMetaSearch": false,
-                    "includeNullMetadata": true,
-                    "legendFormat": "{{nginx_upstream_name}} {{nginx_zone_name}} {{nginx_peer_address}}",
-                    "range": true,
-                    "refId": "A",
-                    "useBackend": false
-                }
-            ],
-            "title": "Stream Upstream Peer Connections",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "otel-prometheus-scraper"
-            },
             "description": "The current number of stream upstream peers grouped by state.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "barWidthFactor": 0.6,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "insertNulls": false,
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
+                        "fixedColor": "green",
+                        "mode": "fixed"
                     },
                     "mappings": [],
                     "thresholds": {
@@ -4825,52 +4620,229 @@
                             {
                                 "color": "green",
                                 "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
                             }
                         ]
                     }
                 },
-                "overrides": []
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byFrameRefID",
+                            "options": "UP"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byFrameRefID",
+                            "options": "CHECKING"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "yellow",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byFrameRefID",
+                            "options": "DRAINING"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "light-red",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byFrameRefID",
+                            "options": "DOWN"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "red",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byFrameRefID",
+                            "options": "UNHEALTHY"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "semi-dark-red",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byFrameRefID",
+                            "options": "UNAVAILABLE"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
             },
             "gridPos": {
-                "h": 8,
+                "h": 16,
                 "w": 12,
                 "x": 0,
-                "y": 169
+                "y": 172
             },
-            "id": 51,
+            "id": 64,
+            "maxDataPoints": 10,
             "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "table",
-                    "placement": "right",
-                    "showLegend": true
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
                 },
-                "tooltip": {
-                    "hideZeros": false,
-                    "mode": "single",
-                    "sort": "none"
-                }
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
             },
             "pluginVersion": "11.5.2",
             "targets": [
                 {
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "nginx_stream_upstream_peer_count{instance_type=\"nginxplus\", nginx_upstream_name=~\"$nginxUpstreamPeerName\", nginx_zone_name=~\"$nginxAllZones\"}",
+                    "expr": "nginx_stream_upstream_peer_count{instance_type=\"nginxplus\", nginx_peer_state=\"UP\", nginx_upstream_name=~\"$stream_upstream_peer\"}",
+                    "format": "time_series",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "legendFormat": "{{nginx_peer_state}} {{nginx_upstream_name}} {{nginx_zone_name}}",
                     "range": true,
-                    "refId": "A",
+                    "refId": "UP",
+                    "useBackend": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "otel-prometheus-scraper"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "nginx_stream_upstream_peer_count{instance_type=\"nginxplus\", nginx_peer_state=\"CHECKING\", nginx_upstream_name=~\"$stream_upstream_peer\"}",
+                    "format": "time_series",
+                    "fullMetaSearch": false,
+                    "hide": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{nginx_peer_state}} {{nginx_upstream_name}} {{nginx_zone_name}}",
+                    "range": true,
+                    "refId": "CHECKING",
+                    "useBackend": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "otel-prometheus-scraper"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "nginx_stream_upstream_peer_count{instance_type=\"nginxplus\", nginx_peer_state=\"UNAVAILABLE\", nginx_upstream_name=~\"$stream_upstream_peer\"}",
+                    "format": "time_series",
+                    "fullMetaSearch": false,
+                    "hide": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{nginx_peer_state}} {{nginx_upstream_name}} {{nginx_zone_name}}",
+                    "range": true,
+                    "refId": "UNAVAILABLE",
+                    "useBackend": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "otel-prometheus-scraper"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "nginx_stream_upstream_peer_count{instance_type=\"nginxplus\", nginx_peer_state=\"DRAINING\", nginx_upstream_name=~\"$stream_upstream_peer\"}",
+                    "format": "time_series",
+                    "fullMetaSearch": false,
+                    "hide": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{nginx_peer_state}} {{nginx_upstream_name}} {{nginx_zone_name}}",
+                    "range": true,
+                    "refId": "DRAINING",
+                    "useBackend": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "otel-prometheus-scraper"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "nginx_stream_upstream_peer_count{instance_type=\"nginxplus\", nginx_peer_state=\"DOWN\", nginx_upstream_name=~\"$stream_upstream_peer\"}",
+                    "format": "time_series",
+                    "fullMetaSearch": false,
+                    "hide": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{nginx_peer_state}} {{nginx_upstream_name}} {{nginx_zone_name}}",
+                    "range": true,
+                    "refId": "DOWN",
+                    "useBackend": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "otel-prometheus-scraper"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "nginx_stream_upstream_peer_count{instance_type=\"nginxplus\", nginx_peer_state=\"UNHEALTHY\", nginx_upstream_name=~\"$stream_upstream_peer\"}",
+                    "format": "time_series",
+                    "fullMetaSearch": false,
+                    "hide": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{nginx_peer_state}} {{nginx_upstream_name}} {{nginx_zone_name}}",
+                    "range": true,
+                    "refId": "UNHEALTHY",
                     "useBackend": false
                 }
             ],
             "title": "Stream Upstream Peer Count",
-            "type": "timeseries"
+            "type": "stat"
         },
         {
             "datasource": {
@@ -4892,8 +4864,8 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
@@ -4937,7 +4909,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 169
+                "y": 172
             },
             "id": 52,
             "options": {
@@ -4958,7 +4930,7 @@
                 {
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "nginx_stream_upstream_peer_health_checks{instance_type=\"nginxplus\", nginx_upstream_name=~\"$nginxUpstreamPeerName\", nginx_zone_name=~\"$nginxAllZones\"}",
+                    "expr": "nginx_stream_upstream_peer_health_checks{instance_type=\"nginxplus\", nginx_upstream_name=~\"$stream_upstream_peer\"}",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "legendFormat": "{{nginx_health_check}} {{nginx_peer address}} {{nginx_upstream_name}} {{nginx_zone_name}}",
@@ -4975,7 +4947,7 @@
                 "type": "prometheus",
                 "uid": "otel-prometheus-scraper"
             },
-            "description": "The total number of Stream Upstream Peer byte IO.",
+            "description": "How many times the server became unavailable for client connections (state “unavail”) due to the number of unsuccessful attempts reaching the max_fails threshold.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -4990,8 +4962,8 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
@@ -5034,8 +5006,620 @@
             "gridPos": {
                 "h": 8,
                 "w": 12,
+                "x": 12,
+                "y": 180
+            },
+            "id": 57,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "11.5.2",
+            "targets": [
+                {
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "nginx_stream_upstream_peer_unavailables{instance_type=\"nginxplus\", nginx_upstream_name=~\"$stream_upstream_peer\"}",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{nginx_peer_address}} {{nginx_upstream_name}} {{nginx_zone_name}}",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                }
+            ],
+            "title": "Stream Upstream Peer Unavailable",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "otel-prometheus-scraper"
+            },
+            "description": "Current state of upstream peers in deployment. If any of the upstream peers in the deployment match the given state then the value will be 1. If no upstream peer is a match then the value will be 0.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "fixedColor": "green",
+                        "mode": "fixed"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green"
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byFrameRefID",
+                            "options": "UP"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byFrameRefID",
+                            "options": "CHECKING"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "yellow",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byFrameRefID",
+                            "options": "DRAINING"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "light-red",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byFrameRefID",
+                            "options": "DOWN"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "red",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byFrameRefID",
+                            "options": "UNHEALTHY"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "semi-dark-red",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byFrameRefID",
+                            "options": "UNAVAILABLE"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 16,
+                "w": 12,
                 "x": 0,
-                "y": 177
+                "y": 188
+            },
+            "id": 65,
+            "maxDataPoints": 10,
+            "options": {
+                "displayMode": "gradient",
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": false
+                },
+                "maxVizHeight": 300,
+                "minVizHeight": 16,
+                "minVizWidth": 8,
+                "namePlacement": "auto",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showUnfilled": true,
+                "sizing": "auto",
+                "valueMode": "color"
+            },
+            "pluginVersion": "11.5.2",
+            "targets": [
+                {
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "nginx_stream_upstream_peer_state{instance_type=\"nginxplus\", nginx_peer_state=\"UP\", nginx_upstream_name=~\"$stream_upstream_peer\"}",
+                    "format": "time_series",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{nginx_peer_state}} {{nginx_peer_address}} {{nginx_upstream_name}} {{nginx_zone_name}}",
+                    "range": true,
+                    "refId": "UP",
+                    "useBackend": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "otel-prometheus-scraper"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "nginx_stream_upstream_peer_state{instance_type=\"nginxplus\", nginx_peer_state=\"CHECKING\", nginx_upstream_name=~\"$stream_upstream_peer\"}",
+                    "format": "time_series",
+                    "fullMetaSearch": false,
+                    "hide": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{nginx_peer_state}} {{nginx_peer_address}} {{nginx_upstream_name}} {{nginx_zone_name}}",
+                    "range": true,
+                    "refId": "CHECKING",
+                    "useBackend": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "otel-prometheus-scraper"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "nginx_stream_upstream_peer_state{instance_type=\"nginxplus\", nginx_peer_state=\"UNAVAILABLE\", nginx_upstream_name=~\"$stream_upstream_peer\"}",
+                    "format": "time_series",
+                    "fullMetaSearch": false,
+                    "hide": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{nginx_peer_state}} {{nginx_peer_address}} {{nginx_upstream_name}} {{nginx_zone_name}}",
+                    "range": true,
+                    "refId": "UNAVAILABLE",
+                    "useBackend": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "otel-prometheus-scraper"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "nginx_stream_upstream_peer_state{instance_type=\"nginxplus\", nginx_peer_state=\"DRAINING\", nginx_upstream_name=~\"$stream_upstream_peer\"}",
+                    "format": "time_series",
+                    "fullMetaSearch": false,
+                    "hide": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{nginx_peer_state}} {{nginx_peer_address}} {{nginx_upstream_name}} {{nginx_zone_name}}",
+                    "range": true,
+                    "refId": "DRAINING",
+                    "useBackend": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "otel-prometheus-scraper"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "nginx_stream_upstream_peer_state{instance_type=\"nginxplus\", nginx_peer_state=\"DOWN\", nginx_upstream_name=~\"$stream_upstream_peer\"}",
+                    "format": "time_series",
+                    "fullMetaSearch": false,
+                    "hide": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{nginx_peer_state}} {{nginx_peer_address}} {{nginx_upstream_name}} {{nginx_zone_name}}",
+                    "range": true,
+                    "refId": "DOWN",
+                    "useBackend": false
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "otel-prometheus-scraper"
+                    },
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "nginx_stream_upstream_peer_state{instance_type=\"nginxplus\", nginx_peer_state=\"UNHEALTHY\", nginx_upstream_name=~\"$stream_upstream_peer\"}",
+                    "format": "time_series",
+                    "fullMetaSearch": false,
+                    "hide": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{nginx_peer_state}} {{nginx_peer_address}} {{nginx_upstream_name}} {{nginx_zone_name}}",
+                    "range": true,
+                    "refId": "UNHEALTHY",
+                    "useBackend": false
+                }
+            ],
+            "title": "Stream Upstream Peer State",
+            "type": "bargauge"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "otel-prometheus-scraper"
+            },
+            "description": "The current number of peers removed from the group but still processing active client connections.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green"
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 16,
+                "w": 7,
+                "x": 12,
+                "y": 188
+            },
+            "id": 58,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "11.5.2",
+            "targets": [
+                {
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "nginx_stream_upstream_zombie_count{instance_type=\"nginxplus\", nginx_upstream_name=~\"$stream_upstream_peer\"}",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{nginx_upstream_name}} {{nginx_zone_name}}",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                }
+            ],
+            "title": "Stream Upstream Zombie Count",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "otel-prometheus-scraper"
+            },
+            "description": "The average time to receive the last byte of data for the stream upstream peer.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green"
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 5,
+                "x": 19,
+                "y": 188
+            },
+            "id": 54,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "11.5.2",
+            "targets": [
+                {
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "nginx_stream_upstream_peer_response_time{instance_type=\"nginxplus\", nginx_upstream_name=~\"$stream_upstream_peer\"}",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{nginx_peer_address}} {{nginx_upstream_name}} {{nginx_zone_name}}",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                }
+            ],
+            "title": "Stream Upstream Peer Response Time",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "otel-prometheus-scraper"
+            },
+            "description": "The average time to receive the first byte of data for the stream upstream peer.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green"
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 5,
+                "x": 19,
+                "y": 196
+            },
+            "id": 56,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "11.5.2",
+            "targets": [
+                {
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "nginx_stream_upstream_peer_ttfb_time{instance_type=\"nginxplus\", nginx_upstream_name=~\"$stream_upstream_peer\"}",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{nginx_peer_address}} {{nginx_upstream_name}} {{nginx_zone_name}}",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                }
+            ],
+            "title": "Stream Upstream Peer TTFB Time",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "otel-prometheus-scraper"
+            },
+            "description": "The total number of Stream Upstream Peer byte IO.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green"
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 204
             },
             "id": 53,
             "options": {
@@ -5056,7 +5640,7 @@
                 {
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "nginx_stream_upstream_peer_io{instance_type=\"nginxplus\", nginx_io_direction=\"receive\", nginx_peer_address=~\"$nginxUpstreamPeerAddress\", nginx_upstream_name=~\"$nginxUpstreamPeerName\", nginx_zone_name=~\"$nginxAllZones\"}",
+                    "expr": "nginx_stream_upstream_peer_io{instance_type=\"nginxplus\", nginx_io_direction=\"receive\", nginx_upstream_name=~\"$stream_upstream_peer\"}",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "legendFormat": "{{nginx_io_direction}} {{nginx_peer_address}} {{nginx_upstream_name}} {{nginx_zone_name}}",
@@ -5088,8 +5672,8 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
@@ -5117,8 +5701,7 @@
                         "mode": "absolute",
                         "steps": [
                             {
-                                "color": "green",
-                                "value": null
+                                "color": "green"
                             },
                             {
                                 "color": "red",
@@ -5133,7 +5716,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 177
+                "y": 204
             },
             "id": 63,
             "options": {
@@ -5154,7 +5737,7 @@
                 {
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "nginx_stream_upstream_peer_io{instance_type=\"nginxplus\", nginx_peer_address=~\"$nginxUpstreamPeerAddress\", nginx_zone_name=~\"$nginxAllZones\", nginx_upstream_name=~\"$nginxUpstreamPeerName\", nginx_io_direction=\"transmit\"}",
+                    "expr": "nginx_stream_upstream_peer_io{instance_type=\"nginxplus\", nginx_io_direction=\"transmit\", nginx_upstream_name=~\"$stream_upstream_peer\"}",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "legendFormat": "{{nginx_io_direction}} {{nginx_peer_address}} {{nginx_upstream_name}} {{nginx_zone_name}}",
@@ -5164,496 +5747,6 @@
                 }
             ],
             "title": "Stream Upstream Peer IO - Transmit",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "otel-prometheus-scraper"
-            },
-            "description": "Current state of upstream peers in deployment. If any of the upstream peers in the deployment match the given state then the value will be 1. If no upstream peer is a match then the value will be 0.",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "barWidthFactor": 0.6,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "insertNulls": false,
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 0,
-                "y": 185
-            },
-            "id": 55,
-            "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "table",
-                    "placement": "right",
-                    "showLegend": true
-                },
-                "tooltip": {
-                    "hideZeros": false,
-                    "mode": "single",
-                    "sort": "none"
-                }
-            },
-            "pluginVersion": "11.5.2",
-            "targets": [
-                {
-                    "disableTextWrap": false,
-                    "editorMode": "builder",
-                    "expr": "nginx_stream_upstream_peer_state{instance_type=\"nginxplus\", nginx_upstream_name=~\"$nginxUpstreamPeerName\", nginx_peer_address=~\"$nginxUpstreamPeerAddress\", nginx_zone_name=~\"$nginxAllZones\"}",
-                    "fullMetaSearch": false,
-                    "includeNullMetadata": true,
-                    "legendFormat": "{{nginx_peer_state}} {{nginx_peer_address}} {{nginx_upstream_name}} {{nginx_zone_name}}",
-                    "range": true,
-                    "refId": "A",
-                    "useBackend": false
-                }
-            ],
-            "title": "Stream Upstream Peer State",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "otel-prometheus-scraper"
-            },
-            "description": "The average time to receive the last byte of data for the stream upstream peer.",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "barWidthFactor": 0.6,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "insertNulls": false,
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
-                "y": 185
-            },
-            "id": 54,
-            "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom",
-                    "showLegend": true
-                },
-                "tooltip": {
-                    "hideZeros": false,
-                    "mode": "single",
-                    "sort": "none"
-                }
-            },
-            "pluginVersion": "11.5.2",
-            "targets": [
-                {
-                    "disableTextWrap": false,
-                    "editorMode": "builder",
-                    "expr": "nginx_stream_upstream_peer_response_time{instance_type=\"nginxplus\", nginx_upstream_name=~\"$nginxUpstreamPeerName\", nginx_peer_address=~\"$nginxUpstreamPeerAddress\", nginx_zone_name=~\"$nginxAllZones\"}",
-                    "fullMetaSearch": false,
-                    "includeNullMetadata": true,
-                    "legendFormat": "{{nginx_peer_address}} {{nginx_upstream_name}} {{nginx_zone_name}}",
-                    "range": true,
-                    "refId": "A",
-                    "useBackend": false
-                }
-            ],
-            "title": "Stream Upstream Peer Response Time",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "otel-prometheus-scraper"
-            },
-            "description": "How many times the server became unavailable for client connections (state “unavail”) due to the number of unsuccessful attempts reaching the max_fails threshold.",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "barWidthFactor": 0.6,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "insertNulls": false,
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 0,
-                "y": 193
-            },
-            "id": 57,
-            "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom",
-                    "showLegend": true
-                },
-                "tooltip": {
-                    "hideZeros": false,
-                    "mode": "single",
-                    "sort": "none"
-                }
-            },
-            "pluginVersion": "11.5.2",
-            "targets": [
-                {
-                    "disableTextWrap": false,
-                    "editorMode": "builder",
-                    "expr": "nginx_stream_upstream_peer_unavailables{instance_type=\"nginxplus\", nginx_peer_address=~\"$nginxUpstreamPeerAddress\", nginx_upstream_name=~\"$nginxUpstreamPeerName\", nginx_zone_name=~\"$nginxAllZones\"}",
-                    "fullMetaSearch": false,
-                    "includeNullMetadata": true,
-                    "legendFormat": "{{nginx_peer_address}} {{nginx_upstream_name}} {{nginx_zone_name}}",
-                    "range": true,
-                    "refId": "A",
-                    "useBackend": false
-                }
-            ],
-            "title": "Stream Upstream Peer Unavailable",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "otel-prometheus-scraper"
-            },
-            "description": "The average time to receive the first byte of data for the stream upstream peer.",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "barWidthFactor": 0.6,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "insertNulls": false,
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
-                "y": 193
-            },
-            "id": 56,
-            "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom",
-                    "showLegend": true
-                },
-                "tooltip": {
-                    "hideZeros": false,
-                    "mode": "single",
-                    "sort": "none"
-                }
-            },
-            "pluginVersion": "11.5.2",
-            "targets": [
-                {
-                    "disableTextWrap": false,
-                    "editorMode": "builder",
-                    "expr": "nginx_stream_upstream_peer_ttfb_time{instance_type=\"nginxplus\", nginx_peer_address=~\"$nginxUpstreamPeerAddress\", nginx_upstream_name=~\"$nginxUpstreamPeerName\", nginx_zone_name=~\"$nginxAllZones\"}",
-                    "fullMetaSearch": false,
-                    "includeNullMetadata": true,
-                    "legendFormat": "{{nginx_peer_address}} {{nginx_upstream_name}} {{nginx_zone_name}}",
-                    "range": true,
-                    "refId": "A",
-                    "useBackend": false
-                }
-            ],
-            "title": "Stream Upstream Peer TTFB Time",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "otel-prometheus-scraper"
-            },
-            "description": "The current number of peers removed from the group but still processing active client connections.",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "barWidthFactor": 0.6,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "insertNulls": false,
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
-                "y": 201
-            },
-            "id": 58,
-            "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom",
-                    "showLegend": true
-                },
-                "tooltip": {
-                    "hideZeros": false,
-                    "mode": "single",
-                    "sort": "none"
-                }
-            },
-            "pluginVersion": "11.5.2",
-            "targets": [
-                {
-                    "disableTextWrap": false,
-                    "editorMode": "builder",
-                    "expr": "nginx_stream_upstream_zombie_count{instance_type=\"nginxplus\", nginx_upstream_name=~\"$nginxUpstreamPeerName\", nginx_zone_name=~\"$nginxAllZones\"}",
-                    "fullMetaSearch": false,
-                    "includeNullMetadata": true,
-                    "legendFormat": "{{nginx_upstream_name}} {{nginx_zone_name}}",
-                    "range": true,
-                    "refId": "A",
-                    "useBackend": false
-                }
-            ],
-            "title": "Stream Upstream Zombie Count",
             "type": "timeseries"
         }
     ],
@@ -5674,9 +5767,9 @@
                     ]
                 },
                 "definition": "label_values({nginx_zone_type=\"SERVER\"},nginx_zone_name)",
-                "description": "Filter by Server Zone Name",
+                "description": "Filter by Server Zone Name.",
                 "includeAll": true,
-                "label": "NGINX Server Zones",
+                "label": "NGINX Server Zone",
                 "multi": true,
                 "name": "nginxServerZoneName",
                 "options": [],
@@ -5700,9 +5793,9 @@
                     ]
                 },
                 "definition": "label_values({nginx_zone_type=\"LOCATION\"},nginx_zone_name)",
-                "description": "Filter by Location Zone Name",
+                "description": "Filter by Location Zone Name.",
                 "includeAll": true,
-                "label": "NGINX Location Zones",
+                "label": "NGINX Location Zone",
                 "multi": true,
                 "name": "nginxLocationZoneName",
                 "options": [],
@@ -5725,16 +5818,16 @@
                         "$__all"
                     ]
                 },
-                "definition": "label_values(nginx_upstream_name)",
-                "description": "Filter by Upstream Peer Name",
+                "definition": "label_values(nginx_slab_page_usage,nginx_zone_name)",
+                "description": "Filter by Application Zone Name.",
                 "includeAll": true,
-                "label": "NGINX Upstream Peer Name",
+                "label": "NGINX Application Zone",
                 "multi": true,
-                "name": "nginxUpstreamPeerName",
+                "name": "nginx_application_zone",
                 "options": [],
                 "query": {
                     "qryType": 1,
-                    "query": "label_values(nginx_upstream_name)",
+                    "query": "label_values(nginx_slab_page_usage,nginx_zone_name)",
                     "refId": "PrometheusVariableQueryEditor-VariableQuery"
                 },
                 "refresh": 1,
@@ -5751,8 +5844,60 @@
                         "$__all"
                     ]
                 },
-                "definition": "label_values(nginx_peer_address)",
-                "description": "Filter by Upstream Peer Address",
+                "definition": "label_values(nginx_stream_connection_accepted,nginx_zone_name)",
+                "description": "Filter by Network Zone Name.",
+                "includeAll": true,
+                "label": "NGINX Network Zone",
+                "multi": true,
+                "name": "nginx_network_zone",
+                "options": [],
+                "query": {
+                    "qryType": 1,
+                    "query": "label_values(nginx_stream_connection_accepted,nginx_zone_name)",
+                    "refId": "PrometheusVariableQueryEditor-VariableQuery"
+                },
+                "refresh": 1,
+                "regex": "",
+                "type": "query"
+            },
+            {
+                "allowCustomValue": false,
+                "current": {
+                    "text": [
+                        "All"
+                    ],
+                    "value": [
+                        "$__all"
+                    ]
+                },
+                "definition": "label_values(nginx_http_upstream_peer_count,nginx_upstream_name)",
+                "description": "Filter by Upstream Peer Name.",
+                "includeAll": true,
+                "label": "NGINX Upstream Peer",
+                "multi": true,
+                "name": "nginxUpstreamPeerName",
+                "options": [],
+                "query": {
+                    "qryType": 1,
+                    "query": "label_values(nginx_http_upstream_peer_count,nginx_upstream_name)",
+                    "refId": "PrometheusVariableQueryEditor-VariableQuery"
+                },
+                "refresh": 1,
+                "regex": "",
+                "type": "query"
+            },
+            {
+                "allowCustomValue": false,
+                "current": {
+                    "text": [
+                        "All"
+                    ],
+                    "value": [
+                        "$__all"
+                    ]
+                },
+                "definition": "label_values({nginx_upstream_name=~\"$nginxUpstreamPeerName\"},nginx_peer_address)",
+                "description": "Filter by Upstream Peer Address.",
                 "includeAll": true,
                 "label": "NGINX Upstream Peer Address",
                 "multi": true,
@@ -5760,7 +5905,7 @@
                 "options": [],
                 "query": {
                     "qryType": 1,
-                    "query": "label_values(nginx_peer_address)",
+                    "query": "label_values({nginx_upstream_name=~\"$nginxUpstreamPeerName\"},nginx_peer_address)",
                     "refId": "PrometheusVariableQueryEditor-VariableQuery"
                 },
                 "refresh": 1,
@@ -5771,22 +5916,22 @@
                 "allowCustomValue": false,
                 "current": {
                     "text": [
-                        "All"
+                        "nginx3"
                     ],
                     "value": [
-                        "$__all"
+                        "nginx3"
                     ]
                 },
-                "definition": "label_values(nginx_zone_name)",
-                "description": "Filter by All Zones",
+                "definition": "label_values(nginx_stream_upstream_peer_count,nginx_upstream_name)",
+                "description": "Filter by Stream Upstream Peer Name.",
                 "includeAll": true,
-                "label": "NGINX Zones",
+                "label": "NGINX Stream Upstream Peer",
                 "multi": true,
-                "name": "nginxAllZones",
+                "name": "stream_upstream_peer",
                 "options": [],
                 "query": {
                     "qryType": 1,
-                    "query": "label_values(nginx_zone_name)",
+                    "query": "label_values(nginx_stream_upstream_peer_count,nginx_upstream_name)",
                     "refId": "PrometheusVariableQueryEditor-VariableQuery"
                 },
                 "refresh": 1,
@@ -5803,6 +5948,6 @@
     "timezone": "browser",
     "title": "NGINX Plus",
     "uid": "fdris4hclbqiob",
-    "version": 23,
+    "version": 20,
     "weekStart": ""
 }
