@@ -10,7 +10,7 @@ on:
     # The branches below must be a subset of the branches above
     branches:
       - main
-      - v3
+      - dev-v2
     paths-ignore:
       - '**/vendor'
   merge_group:
