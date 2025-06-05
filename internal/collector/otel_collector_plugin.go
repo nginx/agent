@@ -263,7 +263,7 @@ func (oc *Collector) handleNginxConfigUpdate(ctx context.Context, msg *bus.Messa
 		return
 	}
 
-	reloadCollector := oc.checkForNewReceivers(nginxConfigContext)
+	reloadCollector := oc.checkForNewReceivers(ctx, nginxConfigContext)
 
 	if reloadCollector {
 		slog.InfoContext(ctx, "Reloading OTel collector config, nginx config updated")
@@ -394,7 +394,7 @@ func (oc *Collector) restartCollector(ctx context.Context) {
 	}
 }
 
-func (oc *Collector) checkForNewReceivers(nginxConfigContext *model.NginxConfigContext) bool {
+func (oc *Collector) checkForNewReceivers(ctx context.Context, nginxConfigContext *model.NginxConfigContext) bool {
 	nginxReceiverFound, reloadCollector := oc.updateExistingNginxPlusReceiver(nginxConfigContext)
 
 	if !nginxReceiverFound && nginxConfigContext.PlusAPI.URL != "" {
@@ -410,10 +410,12 @@ func (oc *Collector) checkForNewReceivers(nginxConfigContext *model.NginxConfigC
 				CollectionInterval: defaultCollectionInterval,
 			},
 		)
+		slog.DebugContext(ctx, "NGINX Plus API found, NGINX Plus receiver enabled to scrape metrics")
 
 		reloadCollector = true
 	} else if nginxConfigContext.PlusAPI.URL == "" {
-		reloadCollector = oc.addNginxOssReceiver(nginxConfigContext)
+		slog.WarnContext(ctx, "NGINX Plus API is not configured, searching for stub status endpoint")
+		reloadCollector = oc.addNginxOssReceiver(ctx, nginxConfigContext)
 	}
 
 	if oc.config.IsFeatureEnabled(pkgConfig.FeatureLogsNap) {
@@ -428,7 +430,7 @@ func (oc *Collector) checkForNewReceivers(nginxConfigContext *model.NginxConfigC
 	return reloadCollector
 }
 
-func (oc *Collector) addNginxOssReceiver(nginxConfigContext *model.NginxConfigContext) bool {
+func (oc *Collector) addNginxOssReceiver(ctx context.Context, nginxConfigContext *model.NginxConfigContext) bool {
 	nginxReceiverFound, reloadCollector := oc.updateExistingNginxOSSReceiver(nginxConfigContext)
 
 	if !nginxReceiverFound && nginxConfigContext.StubStatus.URL != "" {
@@ -445,8 +447,11 @@ func (oc *Collector) addNginxOssReceiver(nginxConfigContext *model.NginxConfigCo
 				CollectionInterval: defaultCollectionInterval,
 			},
 		)
+		slog.DebugContext(ctx, "Stub status endpoint found, OSS receiver enabled to scrape metrics")
 
 		reloadCollector = true
+	} else if nginxConfigContext.StubStatus.URL == "" {
+		slog.WarnContext(ctx, "Stub status endpoint not found, NGINX metrics not available")
 	}
 
 	return reloadCollector
