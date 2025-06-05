@@ -641,33 +641,97 @@ func TestValidateYamlFile(t *testing.T) {
 func TestResolveExtensions(t *testing.T) {
 	tests := []struct {
 		name     string
-		token    string
+		value    string
+		value2   string
 		path     string
-		expected string
+		path2    string
+		expected []string
 	}{
 		{
-			name:     "Test 1: User includes only token value header",
-			token:    "super-secret-token",
+			name:     "Test 1: User includes a single value header only",
+			value:    "super-secret-token",
 			path:     "",
-			expected: "super-secret-token",
+			expected: []string{"super-secret-token"},
 		},
 		{
-			name:     "Test 2: User includes only filepath header",
-			token:    "",
+			name:     "Test 2: User includes a single filepath header only",
+			value:    "",
 			path:     "testdata/nginx-token.crt",
-			expected: "super-secret-token",
+			expected: []string{"super-secret-token"},
 		},
 		{
-			name:     "Test 3: User includes both token and filepath header",
-			token:    "very-secret-token",
+			name:     "Test 3: User includes both a single token and a single filepath header",
+			value:    "very-secret-token",
 			path:     "testdata/nginx-token.crt",
-			expected: "very-secret-token",
+			expected: []string{"very-secret-token"},
 		},
 		{
 			name:     "Test 4: User includes neither token nor filepath header",
-			token:    "",
+			value:    "",
 			path:     "",
-			expected: "",
+			expected: []string{""},
+		},
+		{
+			name:     "Test 5: User includes multiple headers",
+			value:    "super-secret-token",
+			value2:   "very-secret-token",
+			path:     "",
+			path2:    "",
+			expected: []string{"super-secret-token", "very-secret-token"},
+		},
+	}
+
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
+	tempDir := t.TempDir()
+	var confContent []byte
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tempFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx-agent.conf")
+			defer helpers.RemoveFileWithErrorCheck(t, tempFile.Name())
+
+			if len(tt.expected) == 1 {
+				confContent = []byte(conf.GetAgentConfigWithToken(tt.value, tt.path))
+			} else {
+				confContent = []byte(conf.AgentConfigWithMultipleHeaders(tt.value, tt.path, tt.value2, tt.path2))
+			}
+
+			_, writeErr := tempFile.Write(confContent)
+			require.NoError(t, writeErr)
+
+			err := loadPropertiesFromFile(tempFile.Name())
+			require.NoError(t, err)
+
+			extension := resolveExtensions()
+			require.NotNil(t, extension)
+
+			var result []string
+			for _, header := range extension.HeadersSetter.Headers {
+				result = append(result, header.Value)
+			}
+
+			assert.Equal(t, tt.expected, result)
+
+			err = tempFile.Close()
+			require.NoError(t, err)
+		})
+	}
+}
+
+func TestResolveExtensions_MultipleHeaders(t *testing.T) {
+	tests := []struct {
+		name     string
+		token    string
+		token2   string
+		path     string
+		path2    string
+		expected string
+	}{
+		{
+			name:     "Test 1: User includes a single value header only",
+			token:    "super-secret-token",
+			path:     "",
+			expected: "super-secret-token",
 		},
 	}
 

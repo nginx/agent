@@ -918,12 +918,7 @@ func resolveExtensions() Extensions {
 	}
 
 	if headersSetter != nil {
-		token, err := getToken(headersSetter)
-		if err != nil {
-			slog.Error("error getting token from config", "error", err)
-		} else {
-			headersSetter.Headers[0].Value = token
-		}
+		headersSetter.Headers = values(headersSetter.Headers)
 	}
 
 	return Extensions{
@@ -932,22 +927,26 @@ func resolveExtensions() Extensions {
 	}
 }
 
-func getToken(headersSetter *HeadersSetter) (string, error) {
+func values(headers []Header) []Header {
 	var err error
+	newHeaders := []Header{}
 
-	token := headersSetter.Headers[0].Value
-	if token == "" {
-		filePath := headersSetter.Headers[0].FilePath
+	for _, header := range headers {
+		value := header.Value
+		if value == "" {
+			filePath := header.FilePath
 
-		token, err = file.ReadFromFile(filePath)
-		if err != nil {
-			return "", err
+			value, err = file.ReadFromFile(filePath)
+			if err != nil {
+				slog.Error("Unable to read value from file path", "error", err, "file_path", filePath)
+			}
 		}
 
-		return token, nil
+		header.Value = value
+		newHeaders = append(newHeaders, header)
 	}
 
-	return token, nil
+	return newHeaders
 }
 
 func isHealthExtensionSet() bool {
