@@ -25,8 +25,8 @@ func TestNginxHealthWatcherOperator_Health(t *testing.T) {
 	ctx := context.Background()
 	nginxHealthWatcher := NewNginxHealthWatcher()
 	fakeProcessOperator := &processfakes.FakeProcessOperatorInterface{}
-	instance := protos.GetNginxOssInstance([]string{})
-	noChildrenInstance := protos.GetNginxOssInstance([]string{})
+	instance := protos.NginxOssInstance([]string{})
+	noChildrenInstance := protos.NginxOssInstance([]string{})
 	noChildrenInstance.GetInstanceRuntime().InstanceChildren = []*mpi.InstanceChild{}
 
 	tests := []struct {

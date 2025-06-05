@@ -7,39 +7,39 @@ package protos
 
 import "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 
-func GetContainerizedResource() *v1.Resource {
+func ContainerizedResource() *v1.Resource {
 	return &v1.Resource{
-		ResourceId: GetContainerInfo().GetContainerId(),
+		ResourceId: ContainerInfo().GetContainerId(),
 		Instances: []*v1.Instance{
-			GetNginxOssInstance([]string{}),
+			NginxOssInstance([]string{}),
 		},
 		Info: &v1.Resource_ContainerInfo{
-			ContainerInfo: GetContainerInfo(),
+			ContainerInfo: ContainerInfo(),
 		},
 	}
 }
 
-func GetHostResource() *v1.Resource {
+func HostResource() *v1.Resource {
 	return &v1.Resource{
-		ResourceId: GetHostInfo().GetHostId(),
+		ResourceId: HostInfo().GetHostId(),
 		Instances: []*v1.Instance{
-			GetNginxOssInstance([]string{}),
+			NginxOssInstance([]string{}),
 		},
 		Info: &v1.Resource_HostInfo{
-			HostInfo: GetHostInfo(),
+			HostInfo: HostInfo(),
 		},
 	}
 }
 
-func GetHostInfo() *v1.HostInfo {
+func HostInfo() *v1.HostInfo {
 	return &v1.HostInfo{
 		HostId:      "1234",
 		Hostname:    "test-host",
-		ReleaseInfo: GetReleaseInfo(),
+		ReleaseInfo: ReleaseInfo(),
 	}
 }
 
-func GetReleaseInfo() *v1.ReleaseInfo {
+func ReleaseInfo() *v1.ReleaseInfo {
 	return &v1.ReleaseInfo{
 		Codename:  "Focal Fossa",
 		Id:        "ubuntu",
@@ -49,21 +49,21 @@ func GetReleaseInfo() *v1.ReleaseInfo {
 	}
 }
 
-func GetContainerInfo() *v1.ContainerInfo {
+func ContainerInfo() *v1.ContainerInfo {
 	return &v1.ContainerInfo{
 		ContainerId: "f43f5eg54g54g54",
 	}
 }
 
-func GetInstanceHealths() []*v1.InstanceHealth {
+func InstanceHealths() []*v1.InstanceHealth {
 	return []*v1.InstanceHealth{
 		{
-			InstanceId:           GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+			InstanceId:           NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 			InstanceHealthStatus: v1.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY,
 			Description:          "healthy",
 		},
 		{
-			InstanceId:           GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+			InstanceId:           NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 			InstanceHealthStatus: v1.InstanceHealth_INSTANCE_HEALTH_STATUS_UNHEALTHY,
 			Description:          "unhealthy",
 		},

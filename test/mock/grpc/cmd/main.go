@@ -61,7 +61,7 @@ func main() {
 	agentConfig.Client.Grpc.FileChunkSize = 262144
 
 	newLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-		Level: logger.GetLogLevel(*logLevel),
+		Level: logger.LogLevel(*logLevel),
 	}))
 	slog.SetDefault(newLogger)
 

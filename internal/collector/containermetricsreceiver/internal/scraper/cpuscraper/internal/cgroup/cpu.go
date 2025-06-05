@@ -74,7 +74,7 @@ func (cs *CPUSource) Collect() (ContainerCPUStats, error) {
 
 // nolint: mnd
 func (cs *CPUSource) collectCPUStats() (ContainerCPUStats, error) {
-	clockTicks, err := getClockTicks()
+	clockTicks, err := clockTicks()
 	if err != nil {
 		return ContainerCPUStats{}, err
 	}
@@ -107,7 +107,7 @@ func (cs *CPUSource) collectCPUStats() (ContainerCPUStats, error) {
 
 	cpuTimes.userUsage = convertUsage(cpuTimes.userUsage)
 	cpuTimes.systemUsage = convertUsage(cpuTimes.systemUsage)
-	hostSystemUsage, err := getSystemCPUUsage(clockTicks)
+	hostSystemUsage, err := systemCPUUsage(clockTicks)
 	if err != nil {
 		return ContainerCPUStats{}, err
 	}
@@ -162,7 +162,7 @@ func (cs *CPUSource) cpuUsageTimes(filePath, userKey, systemKey string) (*Contai
 }
 
 // nolint: revive, gocritic
-func getSystemCPUUsage(clockTicks int) (float64, error) {
+func systemCPUUsage(clockTicks int) (float64, error) {
 	lines, err := internal.ReadLines(CPUStatsPath)
 	if err != nil {
 		return 0, err
@@ -191,7 +191,7 @@ func getSystemCPUUsage(clockTicks int) (float64, error) {
 	return 0, errors.New("unable to process " + CPUStatsPath + ". No cpu found")
 }
 
-func getClockTicks() (int, error) {
+func clockTicks() (int, error) {
 	cmd := exec.Command("getconf", "CLK_TCK")
 	out := new(bytes.Buffer)
 	cmd.Stdout = out

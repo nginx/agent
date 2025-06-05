@@ -94,7 +94,7 @@ func (ms *MemorySource) VirtualMemoryStatWithContext(ctx context.Context) (*mem.
 		return &mem.VirtualMemoryStat{}, err
 	}
 
-	memoryStat, err = GetMemoryStat(
+	memoryStat, err = CalculateMemoryStat(
 		path.Join(ms.basePath, memStatFile),
 		memCachedKey,
 		memSharedKey,
@@ -147,7 +147,7 @@ func MemoryLimitInBytes(ctx context.Context, filePath string) (uint64, error) {
 }
 
 // nolint: revive, mnd
-func GetMemoryStat(statFile, cachedKey, sharedKey string) (MemoryStat, error) {
+func CalculateMemoryStat(statFile, cachedKey, sharedKey string) (MemoryStat, error) {
 	memoryStat := MemoryStat{}
 	lines, err := internal.ReadLines(statFile)
 	if err != nil {

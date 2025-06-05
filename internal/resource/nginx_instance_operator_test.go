@@ -84,7 +84,7 @@ func TestInstanceOperator_Validate(t *testing.T) {
 			mockExec := &execfakes.FakeExecInterface{}
 			mockExec.RunCmdReturns(test.out, test.err)
 
-			instance := protos.GetNginxOssInstance([]string{})
+			instance := protos.NginxOssInstance([]string{})
 
 			operator := NewInstanceOperator(types.AgentConfig())
 			operator.executer = mockExec
@@ -124,7 +124,7 @@ func TestInstanceOperator_Reload(t *testing.T) {
 			mockExec := &execfakes.FakeExecInterface{}
 			mockExec.KillProcessReturns(test.err)
 
-			instance := protos.GetNginxOssInstance([]string{})
+			instance := protos.NginxOssInstance([]string{})
 
 			operator := NewInstanceOperator(types.AgentConfig())
 			operator.executer = mockExec
@@ -172,7 +172,7 @@ func TestInstanceOperator_ReloadAndMonitor(t *testing.T) {
 			mockExec := &execfakes.FakeExecInterface{}
 			mockExec.KillProcessReturns(nil)
 
-			instance := protos.GetNginxOssInstance([]string{})
+			instance := protos.NginxOssInstance([]string{})
 			if test.errorLogs != "" {
 				instance.GetInstanceRuntime().GetNginxRuntimeInfo().ErrorLogs = []string{test.errorLogs}
 			}

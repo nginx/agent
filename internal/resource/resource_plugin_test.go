@@ -38,13 +38,13 @@ func TestResource_Process(t *testing.T) {
 	ctx := context.Background()
 
 	updatedInstance := &mpi.Instance{
-		InstanceConfig: protos.GetNginxOssInstance([]string{}).GetInstanceConfig(),
-		InstanceMeta:   protos.GetNginxOssInstance([]string{}).GetInstanceMeta(),
+		InstanceConfig: protos.NginxOssInstance([]string{}).GetInstanceConfig(),
+		InstanceMeta:   protos.NginxOssInstance([]string{}).GetInstanceMeta(),
 		InstanceRuntime: &mpi.InstanceRuntime{
 			ProcessId:  56789,
-			BinaryPath: protos.GetNginxOssInstance([]string{}).GetInstanceRuntime().GetBinaryPath(),
-			ConfigPath: protos.GetNginxOssInstance([]string{}).GetInstanceRuntime().GetConfigPath(),
-			Details:    protos.GetNginxOssInstance([]string{}).GetInstanceRuntime().GetDetails(),
+			BinaryPath: protos.NginxOssInstance([]string{}).GetInstanceRuntime().GetBinaryPath(),
+			ConfigPath: protos.NginxOssInstance([]string{}).GetInstanceRuntime().GetConfigPath(),
+			Details:    protos.NginxOssInstance([]string{}).GetInstanceRuntime().GetDetails(),
 		},
 	}
 
@@ -59,10 +59,10 @@ func TestResource_Process(t *testing.T) {
 			message: &bus.Message{
 				Topic: bus.AddInstancesTopic,
 				Data: []*mpi.Instance{
-					protos.GetNginxOssInstance([]string{}),
+					protos.NginxOssInstance([]string{}),
 				},
 			},
-			resource: protos.GetHostResource(),
+			resource: protos.HostResource(),
 			topic:    bus.ResourceUpdateTopic,
 		},
 		{
@@ -74,11 +74,11 @@ func TestResource_Process(t *testing.T) {
 				},
 			},
 			resource: &mpi.Resource{
-				ResourceId: protos.GetHostResource().GetResourceId(),
+				ResourceId: protos.HostResource().GetResourceId(),
 				Instances: []*mpi.Instance{
 					updatedInstance,
 				},
-				Info: protos.GetHostResource().GetInfo(),
+				Info: protos.HostResource().GetInfo(),
 			},
 			topic: bus.ResourceUpdateTopic,
 		},
@@ -91,9 +91,9 @@ func TestResource_Process(t *testing.T) {
 				},
 			},
 			resource: &mpi.Resource{
-				ResourceId: protos.GetHostResource().GetResourceId(),
+				ResourceId: protos.HostResource().GetResourceId(),
 				Instances:  []*mpi.Instance{},
-				Info:       protos.GetHostResource().GetInfo(),
+				Info:       protos.HostResource().GetInfo(),
 			},
 			topic: bus.ResourceUpdateTopic,
 		},
@@ -102,7 +102,7 @@ func TestResource_Process(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
-			fakeResourceService.AddInstancesReturns(protos.GetHostResource())
+			fakeResourceService.AddInstancesReturns(protos.HostResource())
 			fakeResourceService.UpdateInstancesReturns(test.resource)
 			fakeResourceService.DeleteInstancesReturns(test.resource)
 			messagePipe := busfakes.NewFakeMessagePipe()
@@ -117,8 +117,8 @@ func TestResource_Process(t *testing.T) {
 
 			resourcePlugin.Process(ctx, test.message)
 
-			assert.Equal(t, test.topic, messagePipe.GetMessages()[0].Topic)
-			assert.Equal(t, test.resource, messagePipe.GetMessages()[0].Data)
+			assert.Equal(t, test.topic, messagePipe.Messages()[0].Topic)
+			assert.Equal(t, test.resource, messagePipe.Messages()[0].Data)
 		})
 	}
 }
@@ -138,7 +138,7 @@ func TestResource_Process_Apply(t *testing.T) {
 				Topic: bus.WriteConfigSuccessfulTopic,
 				Data: &model.ConfigApplyMessage{
 					CorrelationID: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
-					InstanceID:    protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+					InstanceID:    protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 					Error:         nil,
 				},
 			},
@@ -151,7 +151,7 @@ func TestResource_Process_Apply(t *testing.T) {
 				Topic: bus.WriteConfigSuccessfulTopic,
 				Data: &model.ConfigApplyMessage{
 					CorrelationID: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
-					InstanceID:    protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+					InstanceID:    protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 					Error:         nil,
 				},
 			},
@@ -176,14 +176,14 @@ func TestResource_Process_Apply(t *testing.T) {
 
 			resourcePlugin.Process(ctx, test.message)
 
-			assert.Equal(t, test.topic[0], messagePipe.GetMessages()[0].Topic)
+			assert.Equal(t, test.topic[0], messagePipe.Messages()[0].Topic)
 
 			if len(test.topic) > 1 {
-				assert.Equal(t, test.topic[1], messagePipe.GetMessages()[1].Topic)
+				assert.Equal(t, test.topic[1], messagePipe.Messages()[1].Topic)
 			}
 
 			if test.applyErr != nil {
-				response, ok := messagePipe.GetMessages()[0].Data.(*mpi.DataPlaneResponse)
+				response, ok := messagePipe.Messages()[0].Data.(*mpi.DataPlaneResponse)
 				assert.True(tt, ok)
 				assert.Equal(tt, test.applyErr.Error(), response.GetCommandResponse().GetError())
 			}
@@ -217,7 +217,7 @@ func TestResource_createPlusAPIError(t *testing.T) {
 func TestResource_Process_APIAction_GetHTTPServers(t *testing.T) {
 	ctx := context.Background()
 
-	inValidInstance := protos.GetNginxPlusInstance([]string{})
+	inValidInstance := protos.NginxPlusInstance([]string{})
 	inValidInstance.InstanceMeta.InstanceId = "e1374cb1-462d-3b6c-9f3b-f28332b5f10f"
 
 	tests := []struct {
@@ -233,14 +233,14 @@ func TestResource_Process_APIAction_GetHTTPServers(t *testing.T) {
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
-					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+					protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
 			},
 			err: nil,
 			upstreams: []client.UpstreamServer{
 				helpers.CreateNginxPlusUpstreamServer(t),
 			},
 			topic:    []string{bus.DataPlaneResponseTopic},
-			instance: protos.GetNginxPlusInstance([]string{}),
+			instance: protos.NginxPlusInstance([]string{}),
 		},
 
 		{
@@ -248,35 +248,35 @@ func TestResource_Process_APIAction_GetHTTPServers(t *testing.T) {
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
-					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+					protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
 			},
 			err: errors.New("failed to get http servers"),
 			upstreams: []client.UpstreamServer{
 				helpers.CreateNginxPlusUpstreamServer(t),
 			},
 			topic:    []string{bus.DataPlaneResponseTopic},
-			instance: protos.GetNginxPlusInstance([]string{}),
+			instance: protos.NginxPlusInstance([]string{}),
 		},
 		{
 			name: "Test 3: Fail, OSS Instance",
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
-					protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+					protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
 			},
 			err: errors.New("failed to preform API action, instance is not NGINX Plus"),
 			upstreams: []client.UpstreamServer{
 				helpers.CreateNginxPlusUpstreamServer(t),
 			},
 			topic:    []string{bus.DataPlaneResponseTopic},
-			instance: protos.GetNginxOssInstance([]string{}),
+			instance: protos.NginxOssInstance([]string{}),
 		},
 		{
 			name: "Test 4: Fail, No Instance",
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
-					protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+					protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
 			},
 			err: errors.New("failed to preform API action, could not find instance with ID: " +
 				"e1374cb1-462d-3b6c-9f3b-f28332b5f10c"),
@@ -308,9 +308,9 @@ func TestResource_Process_APIAction_GetHTTPServers(t *testing.T) {
 
 			resourcePlugin.Process(ctx, test.message)
 
-			assert.Equal(t, test.topic[0], messagePipe.GetMessages()[0].Topic)
+			assert.Equal(t, test.topic[0], messagePipe.Messages()[0].Topic)
 
-			response, ok := messagePipe.GetMessages()[0].Data.(*mpi.DataPlaneResponse)
+			response, ok := messagePipe.Messages()[0].Data.(*mpi.DataPlaneResponse)
 			assert.True(tt, ok)
 
 			if test.err != nil {
@@ -341,7 +341,7 @@ func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreatAPIActionRequestNginxPlusUpdateHTTPServers("test_upstream",
-					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(), []*structpb.Struct{
+					protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(), []*structpb.Struct{
 						{
 							Fields: map[string]*structpb.Value{
 								"max_cons":  structpb.NewNumberValue(8),
@@ -357,7 +357,7 @@ func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 				helpers.CreateNginxPlusUpstreamServer(t),
 			},
 			topic:       []string{bus.DataPlaneResponseTopic},
-			instance:    protos.GetNginxPlusInstance([]string{}),
+			instance:    protos.NginxPlusInstance([]string{}),
 			expectedLog: "Successfully updated http upstream",
 		},
 		{
@@ -365,7 +365,7 @@ func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreatAPIActionRequestNginxPlusUpdateHTTPServers("test_upstream",
-					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(), []*structpb.Struct{
+					protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(), []*structpb.Struct{
 						{
 							Fields: map[string]*structpb.Value{
 								"max_cons":  structpb.NewNumberValue(8),
@@ -381,7 +381,7 @@ func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 				helpers.CreateNginxPlusUpstreamServer(t),
 			},
 			topic:       []string{bus.DataPlaneResponseTopic},
-			instance:    protos.GetNginxPlusInstance([]string{}),
+			instance:    protos.NginxPlusInstance([]string{}),
 			expectedLog: "Unable to update HTTP servers of upstream",
 		},
 	}
@@ -410,9 +410,9 @@ func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 
 			resourcePlugin.Process(ctx, test.message)
 
-			assert.Equal(tt, test.topic[0], messagePipe.GetMessages()[0].Topic)
+			assert.Equal(tt, test.topic[0], messagePipe.Messages()[0].Topic)
 
-			response, ok := messagePipe.GetMessages()[0].Data.(*mpi.DataPlaneResponse)
+			response, ok := messagePipe.Messages()[0].Data.(*mpi.DataPlaneResponse)
 			assert.True(tt, ok)
 
 			if test.err != nil {
@@ -444,7 +444,7 @@ func TestResource_Process_APIAction_UpdateStreamServers(t *testing.T) {
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreateAPIActionRequestNginxPlusUpdateStreamServers("test_upstream",
-					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(), []*structpb.Struct{
+					protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(), []*structpb.Struct{
 						{
 							Fields: map[string]*structpb.Value{
 								"max_cons":  structpb.NewNumberValue(8),
@@ -460,7 +460,7 @@ func TestResource_Process_APIAction_UpdateStreamServers(t *testing.T) {
 				helpers.CreateNginxPlusStreamServer(t),
 			},
 			topic:       []string{bus.DataPlaneResponseTopic},
-			instance:    protos.GetNginxPlusInstance([]string{}),
+			instance:    protos.NginxPlusInstance([]string{}),
 			expectedLog: "Successfully updated stream upstream",
 		},
 		{
@@ -468,7 +468,7 @@ func TestResource_Process_APIAction_UpdateStreamServers(t *testing.T) {
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreateAPIActionRequestNginxPlusUpdateStreamServers("test_upstream",
-					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(), []*structpb.Struct{
+					protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(), []*structpb.Struct{
 						{
 							Fields: map[string]*structpb.Value{
 								"max_cons":  structpb.NewNumberValue(8),
@@ -484,7 +484,7 @@ func TestResource_Process_APIAction_UpdateStreamServers(t *testing.T) {
 				helpers.CreateNginxPlusStreamServer(t),
 			},
 			topic:       []string{bus.DataPlaneResponseTopic},
-			instance:    protos.GetNginxPlusInstance([]string{}),
+			instance:    protos.NginxPlusInstance([]string{}),
 			expectedLog: "Unable to update stream servers of upstream",
 		},
 	}
@@ -513,9 +513,9 @@ func TestResource_Process_APIAction_UpdateStreamServers(t *testing.T) {
 
 			resourcePlugin.Process(ctx, test.message)
 
-			assert.Equal(tt, test.topic[0], messagePipe.GetMessages()[0].Topic)
+			assert.Equal(tt, test.topic[0], messagePipe.Messages()[0].Topic)
 
-			response, ok := messagePipe.GetMessages()[0].Data.(*mpi.DataPlaneResponse)
+			response, ok := messagePipe.Messages()[0].Data.(*mpi.DataPlaneResponse)
 			assert.True(tt, ok)
 
 			if test.err != nil {
@@ -534,7 +534,7 @@ func TestResource_Process_APIAction_UpdateStreamServers(t *testing.T) {
 func TestResource_Process_APIAction_GetStreamUpstreams(t *testing.T) {
 	ctx := context.Background()
 
-	inValidInstance := protos.GetNginxPlusInstance([]string{})
+	inValidInstance := protos.NginxPlusInstance([]string{})
 	inValidInstance.InstanceMeta.InstanceId = "e1374cb1-462d-3b6c-9f3b-f28332b5f10f"
 
 	tests := []struct {
@@ -550,7 +550,7 @@ func TestResource_Process_APIAction_GetStreamUpstreams(t *testing.T) {
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreateAPIActionRequestNginxPlusGetStreamUpstreams(
-					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+					protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
 			},
 			err: nil,
 			upstreams: &client.StreamUpstreams{
@@ -565,14 +565,14 @@ func TestResource_Process_APIAction_GetStreamUpstreams(t *testing.T) {
 				},
 			},
 			topic:    []string{bus.DataPlaneResponseTopic},
-			instance: protos.GetNginxPlusInstance([]string{}),
+			instance: protos.NginxPlusInstance([]string{}),
 		},
 		{
 			name: "Test 2: Fail, Get Stream Upstreams API Action",
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreateAPIActionRequestNginxPlusGetStreamUpstreams(
-					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+					protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
 			},
 			err: errors.New("failed to get stream upstreams servers"),
 			upstreams: &client.StreamUpstreams{
@@ -587,14 +587,14 @@ func TestResource_Process_APIAction_GetStreamUpstreams(t *testing.T) {
 				},
 			},
 			topic:    []string{bus.DataPlaneResponseTopic},
-			instance: protos.GetNginxPlusInstance([]string{}),
+			instance: protos.NginxPlusInstance([]string{}),
 		},
 		{
 			name: "Test 3: Fail, No Instance",
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
-					protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+					protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
 			},
 			err: errors.New("failed to preform API action, could not find instance with ID: " +
 				"e1374cb1-462d-3b6c-9f3b-f28332b5f10c"),
@@ -617,7 +617,7 @@ func TestResource_Process_APIAction_GetStreamUpstreams(t *testing.T) {
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
-					protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+					protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
 			},
 			err: errors.New("failed to preform API action, instance is not NGINX Plus"),
 			upstreams: &client.StreamUpstreams{
@@ -632,7 +632,7 @@ func TestResource_Process_APIAction_GetStreamUpstreams(t *testing.T) {
 				},
 			},
 			topic:    []string{bus.DataPlaneResponseTopic},
-			instance: protos.GetNginxOssInstance([]string{}),
+			instance: protos.NginxOssInstance([]string{}),
 		},
 	}
 
@@ -656,9 +656,9 @@ func TestResource_Process_APIAction_GetStreamUpstreams(t *testing.T) {
 
 			resourcePlugin.Process(ctx, test.message)
 
-			assert.Equal(t, test.topic[0], messagePipe.GetMessages()[0].Topic)
+			assert.Equal(t, test.topic[0], messagePipe.Messages()[0].Topic)
 
-			response, ok := messagePipe.GetMessages()[0].Data.(*mpi.DataPlaneResponse)
+			response, ok := messagePipe.Messages()[0].Data.(*mpi.DataPlaneResponse)
 			assert.True(tt, ok)
 
 			if test.err != nil {
@@ -676,7 +676,7 @@ func TestResource_Process_APIAction_GetStreamUpstreams(t *testing.T) {
 func TestResource_Process_APIAction_GetUpstreams(t *testing.T) {
 	ctx := context.Background()
 
-	inValidInstance := protos.GetNginxPlusInstance([]string{})
+	inValidInstance := protos.NginxPlusInstance([]string{})
 	inValidInstance.InstanceMeta.InstanceId = "e1374cb1-462d-3b6c-9f3b-f28332b5f10f"
 
 	tests := []struct {
@@ -692,7 +692,7 @@ func TestResource_Process_APIAction_GetUpstreams(t *testing.T) {
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreateAPIActionRequestNginxPlusGetUpstreams(
-					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+					protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
 			},
 			err: nil,
 			upstreams: &client.Upstreams{
@@ -709,14 +709,14 @@ func TestResource_Process_APIAction_GetUpstreams(t *testing.T) {
 				},
 			},
 			topic:    []string{bus.DataPlaneResponseTopic},
-			instance: protos.GetNginxPlusInstance([]string{}),
+			instance: protos.NginxPlusInstance([]string{}),
 		},
 		{
 			name: "Test 2: Fail, Get Upstreams API Action",
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreateAPIActionRequestNginxPlusGetUpstreams(
-					protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+					protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId()),
 			},
 			err: errors.New("failed to get upstreams"),
 			upstreams: &client.Upstreams{
@@ -733,14 +733,14 @@ func TestResource_Process_APIAction_GetUpstreams(t *testing.T) {
 				},
 			},
 			topic:    []string{bus.DataPlaneResponseTopic},
-			instance: protos.GetNginxPlusInstance([]string{}),
+			instance: protos.NginxPlusInstance([]string{}),
 		},
 		{
 			name: "Test 3: Fail, No Instance",
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
-					protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+					protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
 			},
 			err: errors.New("failed to preform API action, could not find instance with ID: " +
 				"e1374cb1-462d-3b6c-9f3b-f28332b5f10c"),
@@ -765,7 +765,7 @@ func TestResource_Process_APIAction_GetUpstreams(t *testing.T) {
 			message: &bus.Message{
 				Topic: bus.APIActionRequestTopic,
 				Data: protos.CreatAPIActionRequestNginxPlusGetHTTPServers("test_upstream",
-					protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
+					protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()),
 			},
 			err: errors.New("failed to preform API action, instance is not NGINX Plus"),
 			upstreams: &client.Upstreams{
@@ -782,7 +782,7 @@ func TestResource_Process_APIAction_GetUpstreams(t *testing.T) {
 				},
 			},
 			topic:    []string{bus.DataPlaneResponseTopic},
-			instance: protos.GetNginxOssInstance([]string{}),
+			instance: protos.NginxOssInstance([]string{}),
 		},
 	}
 
@@ -806,9 +806,9 @@ func TestResource_Process_APIAction_GetUpstreams(t *testing.T) {
 
 			resourcePlugin.Process(ctx, test.message)
 
-			assert.Equal(t, test.topic[0], messagePipe.GetMessages()[0].Topic)
+			assert.Equal(t, test.topic[0], messagePipe.Messages()[0].Topic)
 
-			response, ok := messagePipe.GetMessages()[0].Data.(*mpi.DataPlaneResponse)
+			response, ok := messagePipe.Messages()[0].Data.(*mpi.DataPlaneResponse)
 			assert.True(tt, ok)
 
 			if test.err != nil {
@@ -837,7 +837,7 @@ func TestResource_Process_Rollback(t *testing.T) {
 				Topic: bus.RollbackWriteTopic,
 				Data: &model.ConfigApplyMessage{
 					CorrelationID: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
-					InstanceID:    protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+					InstanceID:    protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 					Error:         fmt.Errorf("something went wrong with config apply"),
 				},
 			},
@@ -850,7 +850,7 @@ func TestResource_Process_Rollback(t *testing.T) {
 				Topic: bus.RollbackWriteTopic,
 				Data: &model.ConfigApplyMessage{
 					CorrelationID: "",
-					InstanceID:    protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+					InstanceID:    protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 					Error:         fmt.Errorf("something went wrong with config apply"),
 				},
 			},
@@ -875,22 +875,22 @@ func TestResource_Process_Rollback(t *testing.T) {
 
 			resourcePlugin.Process(ctx, test.message)
 
-			sort.Slice(messagePipe.GetMessages(), func(i, j int) bool {
-				return messagePipe.GetMessages()[i].Topic < messagePipe.GetMessages()[j].Topic
+			sort.Slice(messagePipe.Messages(), func(i, j int) bool {
+				return messagePipe.Messages()[i].Topic < messagePipe.Messages()[j].Topic
 			})
 
-			assert.Equal(tt, len(test.topic), len(messagePipe.GetMessages()))
+			assert.Equal(tt, len(test.topic), len(messagePipe.Messages()))
 
-			assert.Equal(t, test.topic[0], messagePipe.GetMessages()[0].Topic)
+			assert.Equal(t, test.topic[0], messagePipe.Messages()[0].Topic)
 
 			if len(test.topic) > 1 {
-				assert.Equal(t, test.topic[1], messagePipe.GetMessages()[1].Topic)
+				assert.Equal(t, test.topic[1], messagePipe.Messages()[1].Topic)
 			}
 
 			if test.rollbackErr != nil {
-				rollbackResponse, ok := messagePipe.GetMessages()[1].Data.(*mpi.DataPlaneResponse)
+				rollbackResponse, ok := messagePipe.Messages()[1].Data.(*mpi.DataPlaneResponse)
 				assert.True(tt, ok)
-				assert.Equal(t, test.topic[1], messagePipe.GetMessages()[1].Topic)
+				assert.Equal(t, test.topic[1], messagePipe.Messages()[1].Topic)
 				assert.Equal(tt, test.rollbackErr.Error(), rollbackResponse.GetCommandResponse().GetError())
 			}
 		})
@@ -928,7 +928,7 @@ func TestResource_Init(t *testing.T) {
 	err := resourcePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 
-	messages := messagePipe.GetMessages()
+	messages := messagePipe.Messages()
 
 	assert.Empty(t, messages)
 }

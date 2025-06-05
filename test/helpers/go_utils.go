@@ -21,7 +21,7 @@ func GoVersion(t testing.TB, level int) (string, error) {
 	t.Helper()
 
 	fileName := goModuleFileName
-	filePath, modBytes, err := getModfileBytes(fileName, level)
+	filePath, modBytes, err := modfileBytes(fileName, level)
 	if err != nil || filePath == "" {
 		return "", err
 	}
@@ -38,7 +38,7 @@ func RequiredModuleVersion(t testing.TB, moduleName string, level int) (string, 
 	t.Helper()
 
 	fileName := goModuleFileName
-	filePath, modBytes, err := getModfileBytes(fileName, level)
+	filePath, modBytes, err := modfileBytes(fileName, level)
 	if err != nil {
 		return "", err
 	}
@@ -94,7 +94,7 @@ func generatePattern(n int) (string, error) {
 	return pattern.String(), nil
 }
 
-func getModfileBytes(fileName string, level int) (string, []byte, error) {
+func modfileBytes(fileName string, level int) (string, []byte, error) {
 	prefix, err := generatePattern(level)
 	if err != nil {
 		return "", nil, err

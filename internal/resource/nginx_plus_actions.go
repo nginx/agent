@@ -24,7 +24,7 @@ type APIAction struct {
 func (a *APIAction) HandleUpdateStreamServersRequest(ctx context.Context, action *mpi.NGINXPlusAction,
 	instance *mpi.Instance,
 ) *mpi.DataPlaneResponse {
-	correlationID := logger.GetCorrelationID(ctx)
+	correlationID := logger.CorrelationID(ctx)
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
 
 	add, update, del, err := a.ResourceService.UpdateStreamServers(ctx, instance,
@@ -48,7 +48,7 @@ func (a *APIAction) HandleUpdateStreamServersRequest(ctx context.Context, action
 func (a *APIAction) HandleGetStreamUpstreamsRequest(ctx context.Context,
 	instance *mpi.Instance,
 ) *mpi.DataPlaneResponse {
-	correlationID := logger.GetCorrelationID(ctx)
+	correlationID := logger.CorrelationID(ctx)
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
 	streamUpstreamsResponse := emptyResponse
 
@@ -72,7 +72,7 @@ func (a *APIAction) HandleGetStreamUpstreamsRequest(ctx context.Context,
 }
 
 func (a *APIAction) HandleGetUpstreamsRequest(ctx context.Context, instance *mpi.Instance) *mpi.DataPlaneResponse {
-	correlationID := logger.GetCorrelationID(ctx)
+	correlationID := logger.CorrelationID(ctx)
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
 	upstreamsResponse := emptyResponse
 
@@ -99,7 +99,7 @@ func (a *APIAction) HandleGetUpstreamsRequest(ctx context.Context, instance *mpi
 func (a *APIAction) HandleUpdateHTTPUpstreamsRequest(ctx context.Context, action *mpi.NGINXPlusAction,
 	instance *mpi.Instance,
 ) *mpi.DataPlaneResponse {
-	correlationID := logger.GetCorrelationID(ctx)
+	correlationID := logger.CorrelationID(ctx)
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
 
 	add, update, del, err := a.ResourceService.UpdateHTTPUpstreamServers(ctx, instance,
@@ -124,7 +124,7 @@ func (a *APIAction) HandleUpdateHTTPUpstreamsRequest(ctx context.Context, action
 func (a *APIAction) HandleGetHTTPUpstreamsServersRequest(ctx context.Context, action *mpi.NGINXPlusAction,
 	instance *mpi.Instance,
 ) *mpi.DataPlaneResponse {
-	correlationID := logger.GetCorrelationID(ctx)
+	correlationID := logger.CorrelationID(ctx)
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
 	upstreamsResponse := emptyResponse
 

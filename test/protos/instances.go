@@ -27,7 +27,7 @@ const (
 	childID4             = 321
 )
 
-func GetAgentInstance(processID int32, agentConfig *config.Config) *mpi.Instance {
+func AgentInstance(processID int32, agentConfig *config.Config) *mpi.Instance {
 	return &mpi.Instance{
 		InstanceMeta: &mpi.InstanceMeta{
 			InstanceId:   agentConfig.UUID,
@@ -42,7 +42,7 @@ func GetAgentInstance(processID int32, agentConfig *config.Config) *mpi.Instance
 	}
 }
 
-func GetNginxOssInstance(expectedModules []string) *mpi.Instance {
+func NginxOssInstance(expectedModules []string) *mpi.Instance {
 	return &mpi.Instance{
 		InstanceMeta: &mpi.InstanceMeta{
 			InstanceId:   ossInstanceID,
@@ -77,7 +77,7 @@ func GetNginxOssInstance(expectedModules []string) *mpi.Instance {
 	}
 }
 
-func GetNginxPlusInstance(expectedModules []string) *mpi.Instance {
+func NginxPlusInstance(expectedModules []string) *mpi.Instance {
 	return &mpi.Instance{
 		InstanceMeta: &mpi.InstanceMeta{
 			InstanceId:   plusInstanceID,
@@ -119,7 +119,7 @@ func GetNginxPlusInstance(expectedModules []string) *mpi.Instance {
 	}
 }
 
-func GetUnsupportedInstance() *mpi.Instance {
+func UnsupportedInstance() *mpi.Instance {
 	return &mpi.Instance{
 		InstanceMeta: &mpi.InstanceMeta{
 			InstanceId:   unsuportedInstanceID,
@@ -131,31 +131,31 @@ func GetUnsupportedInstance() *mpi.Instance {
 	}
 }
 
-func GetMultipleInstances(expectedModules []string) []*mpi.Instance {
-	process1 := GetNginxOssInstance(expectedModules)
-	process2 := getSecondNginxOssInstance(expectedModules)
+func MultipleInstances(expectedModules []string) []*mpi.Instance {
+	process1 := NginxOssInstance(expectedModules)
+	process2 := secondNginxOssInstance(expectedModules)
 
 	return []*mpi.Instance{process1, process2}
 }
 
-func GetMultipleInstancesWithUnsupportedInstance() []*mpi.Instance {
-	process1 := GetNginxOssInstance([]string{})
-	process2 := GetUnsupportedInstance()
+func MultipleInstancesWithUnsupportedInstance() []*mpi.Instance {
+	process1 := NginxOssInstance([]string{})
+	process2 := UnsupportedInstance()
 
 	return []*mpi.Instance{process1, process2}
 }
 
-func GetInstancesNoParentProcess(expectedModules []string) []*mpi.Instance {
-	process1 := GetNginxOssInstance(expectedModules)
+func InstancesNoParentProcess(expectedModules []string) []*mpi.Instance {
+	process1 := NginxOssInstance(expectedModules)
 	process1.GetInstanceRuntime().ProcessId = 0
 
-	process2 := getSecondNginxOssInstance(expectedModules)
+	process2 := secondNginxOssInstance(expectedModules)
 	process2.GetInstanceRuntime().ProcessId = 0
 
 	return []*mpi.Instance{process1, process2}
 }
 
-func GetFileCache(files ...*os.File) (map[string]*mpi.FileMeta, error) {
+func FileCache(files ...*os.File) (map[string]*mpi.FileMeta, error) {
 	cache := make(map[string]*mpi.FileMeta)
 	for _, file := range files {
 		lastModified, err := CreateProtoTime("2024-01-09T13:22:21Z")
@@ -173,8 +173,8 @@ func GetFileCache(files ...*os.File) (map[string]*mpi.FileMeta, error) {
 	return cache, nil
 }
 
-func getSecondNginxOssInstance(expectedModules []string) *mpi.Instance {
-	process2 := GetNginxOssInstance(expectedModules)
+func secondNginxOssInstance(expectedModules []string) *mpi.Instance {
+	process2 := NginxOssInstance(expectedModules)
 	process2.GetInstanceRuntime().ProcessId = processID2
 	process2.GetInstanceMeta().InstanceId = secondOssInstanceID
 	process2.GetInstanceRuntime().BinaryPath = "/opt/homebrew/etc/nginx/1.25.3/bin/nginx"
@@ -183,21 +183,21 @@ func getSecondNginxOssInstance(expectedModules []string) *mpi.Instance {
 	return process2
 }
 
-func GetHealthyInstanceHealth() *mpi.InstanceHealth {
+func HealthyInstanceHealth() *mpi.InstanceHealth {
 	return &mpi.InstanceHealth{
-		InstanceId:           GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+		InstanceId:           NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 		InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY,
 	}
 }
 
-func GetUnhealthyInstanceHealth() *mpi.InstanceHealth {
+func UnhealthyInstanceHealth() *mpi.InstanceHealth {
 	return &mpi.InstanceHealth{
-		InstanceId:           GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+		InstanceId:           NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 		InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNHEALTHY,
 	}
 }
 
-func GetUnspecifiedInstanceHealth() *mpi.InstanceHealth {
+func UnspecifiedInstanceHealth() *mpi.InstanceHealth {
 	return &mpi.InstanceHealth{
 		InstanceId:           unsuportedInstanceID,
 		InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNSPECIFIED,

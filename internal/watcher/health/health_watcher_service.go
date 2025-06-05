@@ -85,7 +85,7 @@ func (hw *HealthWatcherService) DeleteHealthWatcher(instances []*mpi.Instance) {
 	}
 }
 
-func (hw *HealthWatcherService) GetInstancesHealth() []*mpi.InstanceHealth {
+func (hw *HealthWatcherService) InstancesHealth() []*mpi.InstanceHealth {
 	hw.healthWatcherMutex.Lock()
 	defer hw.healthWatcherMutex.Unlock()
 

@@ -96,12 +96,12 @@ func TestCommandPlugin_createConnection(t *testing.T) {
 
 	assert.Eventually(
 		t,
-		func() bool { return len(messagePipe.GetMessages()) == 1 },
+		func() bool { return len(messagePipe.Messages()) == 1 },
 		2*time.Second,
 		10*time.Millisecond,
 	)
 
-	messages := messagePipe.GetMessages()
+	messages := messagePipe.Messages()
 	assert.Len(t, messages, 1)
 	assert.Equal(t, bus.ConnectionCreatedTopic, messages[0].Topic)
 }
@@ -125,13 +125,13 @@ func TestCommandPlugin_Process(t *testing.T) {
 
 	commandPlugin.commandService = fakeCommandService
 
-	commandPlugin.Process(ctx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: protos.GetHostResource()})
+	commandPlugin.Process(ctx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: protos.HostResource()})
 	require.Equal(t, 1, fakeCommandService.CreateConnectionCallCount())
 
-	commandPlugin.Process(ctx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: protos.GetHostResource()})
+	commandPlugin.Process(ctx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: protos.HostResource()})
 	require.Equal(t, 1, fakeCommandService.UpdateDataPlaneStatusCallCount())
 
-	commandPlugin.Process(ctx, &bus.Message{Topic: bus.InstanceHealthTopic, Data: protos.GetInstanceHealths()})
+	commandPlugin.Process(ctx, &bus.Message{Topic: bus.InstanceHealthTopic, Data: protos.InstanceHealths()})
 	require.Equal(t, 1, fakeCommandService.UpdateDataPlaneHealthCallCount())
 
 	commandPlugin.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: protos.OKDataPlaneResponse()})
@@ -139,7 +139,7 @@ func TestCommandPlugin_Process(t *testing.T) {
 
 	commandPlugin.Process(ctx, &bus.Message{
 		Topic: bus.DataPlaneHealthResponseTopic,
-		Data:  protos.GetHealthyInstanceHealth(),
+		Data:  protos.HealthyInstanceHealth(),
 	})
 	require.Equal(t, 1, fakeCommandService.UpdateDataPlaneHealthCallCount())
 	require.Equal(t, 1, fakeCommandService.SendDataPlaneResponseCallCount())
@@ -230,12 +230,12 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 
 			assert.Eventually(
 				t,
-				func() bool { return len(messagePipe.GetMessages()) == 1 },
+				func() bool { return len(messagePipe.Messages()) == 1 },
 				2*time.Second,
 				10*time.Millisecond,
 			)
 
-			messages := messagePipe.GetMessages()
+			messages := messagePipe.Messages()
 			assert.Len(tt, messages, 1)
 			assert.Equal(tt, test.expectedTopic.Topic, messages[0].Topic)
 

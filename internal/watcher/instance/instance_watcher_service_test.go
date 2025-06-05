@@ -25,15 +25,15 @@ import (
 func TestInstanceWatcherService_checkForUpdates(t *testing.T) {
 	ctx := context.Background()
 
-	nginxConfigContext := testModel.GetConfigContext()
+	nginxConfigContext := testModel.ConfigContext()
 
 	fakeProcessWatcher := &processfakes.FakeProcessOperatorInterface{}
 	fakeProcessWatcher.ProcessesReturns(nil, nil, nil)
 
 	fakeProcessParser := &instancefakes.FakeProcessParser{}
 	fakeProcessParser.ParseReturns(map[string]*mpi.Instance{
-		protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.
-			GetNginxOssInstance([]string{}),
+		protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.
+			NginxOssInstance([]string{}),
 	})
 
 	fakeNginxConfigParser := &instancefakes.FakeNginxConfigParser{}
@@ -63,9 +63,9 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 	ctx := context.Background()
 	processID := int32(123)
 
-	agentInstance := protos.GetAgentInstance(processID, types.AgentConfig())
-	nginxInstance := protos.GetNginxOssInstance([]string{})
-	nginxInstanceWithDifferentPID := protos.GetNginxOssInstance([]string{})
+	agentInstance := protos.AgentInstance(processID, types.AgentConfig())
+	nginxInstance := protos.NginxOssInstance([]string{})
+	nginxInstanceWithDifferentPID := protos.NginxOssInstance([]string{})
 	nginxInstanceWithDifferentPID.GetInstanceRuntime().ProcessId = 3526
 
 	tests := []struct {
@@ -117,13 +117,13 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 			name: "Test 4: Deleted instance",
 			oldInstances: map[string]*mpi.Instance{
 				agentInstance.GetInstanceMeta().GetInstanceId(): agentInstance,
-				protos.GetNginxOssInstance([]string{}).GetInstanceMeta().
-					GetInstanceId(): protos.GetNginxOssInstance([]string{}),
+				protos.NginxOssInstance([]string{}).GetInstanceMeta().
+					GetInstanceId(): protos.NginxOssInstance([]string{}),
 			},
 			parsedInstances: make(map[string]*mpi.Instance),
 			expectedInstanceUpdates: InstanceUpdates{
 				DeletedInstances: []*mpi.Instance{
-					protos.GetNginxOssInstance([]string{}),
+					protos.NginxOssInstance([]string{}),
 				},
 			},
 		},
@@ -247,19 +247,19 @@ func TestInstanceWatcherService_areInstancesEqual(t *testing.T) {
 func TestInstanceWatcherService_ReparseConfig(t *testing.T) {
 	ctx := context.Background()
 
-	nginxConfigContext := testModel.GetConfigContext()
-	updateNginxConfigContext := testModel.GetConfigContext()
+	nginxConfigContext := testModel.ConfigContext()
+	updateNginxConfigContext := testModel.ConfigContext()
 	updateNginxConfigContext.AccessLogs = []*model.AccessLog{
 		{
 			Name: "access2.log",
 		},
 	}
 
-	instance := protos.GetNginxOssInstance([]string{})
+	instance := protos.NginxOssInstance([]string{})
 	instance.GetInstanceRuntime().GetNginxRuntimeInfo().AccessLogs = []string{"access.logs"}
 	instance.GetInstanceRuntime().GetNginxRuntimeInfo().ErrorLogs = []string{"error.log"}
 
-	updatedInstance := protos.GetNginxOssInstance([]string{})
+	updatedInstance := protos.NginxOssInstance([]string{})
 	updatedInstance.GetInstanceRuntime().GetNginxRuntimeInfo().AccessLogs = []string{"access2.log"}
 	updatedInstance.GetInstanceRuntime().GetNginxRuntimeInfo().ErrorLogs = []string{"error.log"}
 

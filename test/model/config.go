@@ -10,7 +10,7 @@ import (
 	"github.com/nginx/agent/v3/internal/model"
 )
 
-func GetConfigContext() *model.NginxConfigContext {
+func ConfigContext() *model.NginxConfigContext {
 	return &model.NginxConfigContext{
 		StubStatus: &model.APIDetails{
 			URL:      "",
@@ -23,7 +23,7 @@ func GetConfigContext() *model.NginxConfigContext {
 }
 
 // nolint: revive
-func GetConfigContextWithNames(
+func ConfigContextWithNames(
 	accessLogName,
 	combinedAccessLogName,
 	ltsvAccessLogName,
@@ -76,7 +76,7 @@ func GetConfigContextWithNames(
 	}
 }
 
-func GetConfigContextWithoutErrorLog(
+func ConfigContextWithoutErrorLog(
 	accessLogName,
 	combinedAccessLogName,
 	ltsvAccessLogName,
@@ -120,7 +120,7 @@ func GetConfigContextWithoutErrorLog(
 	}
 }
 
-func GetConfigContextWithFiles(
+func ConfigContextWithFiles(
 	accessLogName,
 	errorLogName string,
 	files []*mpi.File,

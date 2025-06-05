@@ -12,8 +12,8 @@ import (
 	"testing"
 )
 
-// GetRandomPort generates a random port for testing and checks if a port is available by attempting to bind to it
-func GetRandomPort(t *testing.T) (int, error) {
+// RandomPort generates a random port for testing and checks if a port is available by attempting to bind to it
+func RandomPort(t *testing.T) (int, error) {
 	t.Helper()
 
 	// Define the range for dynamic ports (49152–65535 as per IANA recommendation)

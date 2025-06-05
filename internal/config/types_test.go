@@ -12,7 +12,7 @@ import (
 )
 
 func TestTypes_IsDirectoryAllowed(t *testing.T) {
-	config := getAgentConfig()
+	config := agentConfig()
 
 	tests := []struct {
 		name        string

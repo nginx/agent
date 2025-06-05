@@ -61,12 +61,12 @@ func TestInstanceWatcherService_updateNginxInstanceRuntime(t *testing.T) {
 		{
 			name:               "Test 1: OSS Instance",
 			nginxConfigContext: nginxOSSConfigContext,
-			instance:           protos.GetNginxOssInstance([]string{}),
+			instance:           protos.NginxOssInstance([]string{}),
 		},
 		{
 			name:               "Test 2: Plus Instance",
 			nginxConfigContext: nginxPlusConfigContext,
-			instance:           protos.GetNginxPlusInstance([]string{}),
+			instance:           protos.NginxPlusInstance([]string{}),
 		},
 	}
 

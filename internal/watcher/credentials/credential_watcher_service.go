@@ -147,7 +147,7 @@ func (cws *CredentialWatcherService) checkForUpdates(ctx context.Context, ch cha
 		)
 
 		slog.DebugContext(ctx, "Credential watcher has detected changes")
-		ch <- CredentialUpdateMessage{CorrelationID: logger.GetCorrelationIDAttr(newCtx)}
+		ch <- CredentialUpdateMessage{CorrelationID: logger.CorrelationIDAttr(newCtx)}
 		cws.filesChanged.Store(false)
 	}
 }

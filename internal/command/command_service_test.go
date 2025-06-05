@@ -56,7 +56,7 @@ func (*FakeConfigApplySubscribeClient) Send(*mpi.DataPlaneResponse) error {
 
 // nolint: nilnil
 func (*FakeConfigApplySubscribeClient) Recv() (*mpi.ManagementPlaneRequest, error) {
-	nginxInstance := protos.GetNginxOssInstance([]string{})
+	nginxInstance := protos.NginxOssInstance([]string{})
 
 	return &mpi.ManagementPlaneRequest{
 		MessageMeta: &mpi.MessageMeta{
@@ -95,7 +95,7 @@ func TestCommandService_receiveCallback_configApplyRequest(t *testing.T) {
 	go commandService.Subscribe(subscribeCtx)
 	defer subscribeCancel()
 
-	nginxInstance := protos.GetNginxOssInstance([]string{})
+	nginxInstance := protos.NginxOssInstance([]string{})
 	commandService.resourceMutex.Lock()
 	commandService.resource.Instances = append(commandService.resource.Instances, nginxInstance)
 	commandService.resourceMutex.Unlock()
@@ -136,11 +136,11 @@ func TestCommandService_UpdateDataPlaneStatus(t *testing.T) {
 		make(chan *mpi.ManagementPlaneRequest),
 	)
 	// Fail first time since there are no other instances besides the agent
-	err := commandService.UpdateDataPlaneStatus(ctx, protos.GetHostResource())
+	err := commandService.UpdateDataPlaneStatus(ctx, protos.HostResource())
 	require.Error(t, err)
 
-	resource := protos.GetHostResource()
-	resource.Instances = append(resource.Instances, protos.GetNginxOssInstance([]string{}))
+	resource := protos.HostResource()
+	resource.Instances = append(resource.Instances, protos.NginxOssInstance([]string{}))
 	_, connectionErr := commandService.CreateConnection(ctx, resource)
 	require.NoError(t, connectionErr)
 	err = commandService.UpdateDataPlaneStatus(ctx, resource)
@@ -174,7 +174,7 @@ func TestCommandService_UpdateDataPlaneStatusSubscribeError(t *testing.T) {
 
 	commandService.isConnected.Store(true)
 
-	err := commandService.UpdateDataPlaneStatus(ctx, protos.GetHostResource())
+	err := commandService.UpdateDataPlaneStatus(ctx, protos.HostResource())
 	require.Error(t, err)
 
 	helpers.ValidateLog(t, "Failed to send update data plane status", logBuf)
@@ -193,7 +193,7 @@ func TestCommandService_CreateConnection(t *testing.T) {
 	)
 
 	// connection created when no nginx instance found
-	resource := protos.GetHostResource()
+	resource := protos.HostResource()
 	_, err := commandService.CreateConnection(ctx, resource)
 	require.NoError(t, err)
 }
@@ -223,19 +223,19 @@ func TestCommandService_UpdateDataPlaneHealth(t *testing.T) {
 	)
 
 	// connection not created yet
-	err := commandService.UpdateDataPlaneHealth(ctx, protos.GetInstanceHealths())
+	err := commandService.UpdateDataPlaneHealth(ctx, protos.InstanceHealths())
 
 	require.Error(t, err)
 	assert.Equal(t, 0, commandServiceClient.UpdateDataPlaneHealthCallCount())
 
 	// connection created
-	resource := protos.GetHostResource()
-	resource.Instances = append(resource.Instances, protos.GetNginxOssInstance([]string{}))
+	resource := protos.HostResource()
+	resource.Instances = append(resource.Instances, protos.NginxOssInstance([]string{}))
 	_, err = commandService.CreateConnection(ctx, resource)
 	require.NoError(t, err)
 	assert.Equal(t, 1, commandServiceClient.CreateConnectionCallCount())
 
-	err = commandService.UpdateDataPlaneHealth(ctx, protos.GetInstanceHealths())
+	err = commandService.UpdateDataPlaneHealth(ctx, protos.InstanceHealths())
 
 	require.NoError(t, err)
 	assert.Equal(t, 1, commandServiceClient.UpdateDataPlaneHealthCallCount())
@@ -393,7 +393,7 @@ func TestCommandService_isValidRequest(t *testing.T) {
 	commandService.subscribeClient = subscribeClient
 	commandService.subscribeClientMutex.Unlock()
 
-	nginxInstance := protos.GetNginxOssInstance([]string{})
+	nginxInstance := protos.NginxOssInstance([]string{})
 
 	commandService.resourceMutex.Lock()
 	commandService.resource.Instances = append(commandService.resource.Instances, nginxInstance)
