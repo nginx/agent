@@ -933,12 +933,12 @@ func values(headers []Header) []Header {
 
 	for _, header := range headers {
 		value := header.Value
-		if value == "" {
-			filePath := header.FilePath
-
-			value, err = file.ReadFromFile(filePath)
+		if value == "" && header.FilePath != "" {
+			slog.Debug("Read value from file", "path", header.FilePath)
+			value, err = file.ReadFromFile(header.FilePath)
 			if err != nil {
-				slog.Error("Unable to read value from file path", "error", err, "file_path", filePath)
+				slog.Error("Unable to read value from file path",
+					"error", err, "file_path", header.FilePath)
 			}
 		}
 
