@@ -77,8 +77,6 @@ linters-settings:
     field-writes-are-uses: true
     # Treat IncDec statement (e.g. `i++` or `i--`) as both read and write operation instead of just wr◊ite. Default: false
     post-statements-are-reads: true
-    # Mark all exported identifiers as used. Default: true
-    exported-is-used: true
     # Mark all exported fields as used. Default: true
     exported-fields-are-used: false
     # Mark all function parameters as used. Default: true
@@ -770,7 +768,7 @@ linters-settings:
     # Enforce using attributes only (overrides no-mixed-args, incompatible with kv-only). Default: false
     attr-only: false
     # Enforce using methods that accept a context. Default: false
-    context-only: false
+    context: ""
     # Enforce using static values for log messages. Default: false
     static-msg: false
     # Enforce using constants instead of raw keys. Default: false
