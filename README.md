@@ -97,7 +97,7 @@ TBD
 
 ## Community
 
-- Our [Slack channel #nginx-agent](https://nginxcommunity.slack.com/), is the go-to place to start asking questions and sharing your thoughts.
+- Our [NGINX Community Forum ](https://community.nginx.org/tag/agent) is the go-to place to ask questions and share your thoughts.
 
 - Our [GitHub issues page](https://github.com/nginx/agent/issues) offers space for a more technical discussion at your own pace.
 
