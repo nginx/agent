@@ -12,6 +12,7 @@ import (
 
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pdata/plog"
+	"go.opentelemetry.io/collector/processor"
 )
 
 // Helper to generate logs with variable size and content
@@ -59,12 +60,12 @@ func BenchmarkGzipProcessor(b *testing.B) {
 		b.Run(bm.name, func(b *testing.B) {
 			b.ReportAllocs()
 			consumer := &consumertest.LogsSink{}
-			processor := newLogsGzipProcessor(consumer)
+			p := newLogsGzipProcessor(consumer, processor.Settings{})
 			logs := generateLogs(bm.numRecords, bm.recordSize)
 
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				_ = processor.ConsumeLogs(context.Background(), logs)
+				_ = p.ConsumeLogs(context.Background(), logs)
 			}
 		})
 	}
@@ -76,13 +77,13 @@ func BenchmarkGzipProcessor_Concurrent(b *testing.B) {
 	const workers = 8
 	logs := generateLogs(1000, 1000)
 	consumer := &consumertest.LogsSink{}
-	processor := newLogsGzipProcessor(consumer)
+	p := newLogsGzipProcessor(consumer, processor.Settings{})
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			_ = processor.ConsumeLogs(context.Background(), logs)
+			_ = p.ConsumeLogs(context.Background(), logs)
 		}
 	})
 }

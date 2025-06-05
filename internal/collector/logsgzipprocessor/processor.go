@@ -10,7 +10,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log/slog"
 	"sync"
 
 	"go.opentelemetry.io/collector/component"
@@ -19,6 +18,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/processor"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 // nolint: ireturn
@@ -34,11 +34,14 @@ func NewFactory() processor.Factory {
 
 // nolint: ireturn
 func createLogsGzipProcessor(_ context.Context,
-	_ processor.Settings,
+	settings processor.Settings,
 	cfg component.Config,
 	logs consumer.Logs,
 ) (processor.Logs, error) {
-	return newLogsGzipProcessor(logs), nil
+	logger := settings.Logger
+	logger.Info("Creating logs gzip processor")
+
+	return newLogsGzipProcessor(logs, settings), nil
 }
 
 // logsGzipProcessor is a custom-processor implementation for compressing individual log records into
@@ -51,7 +54,8 @@ type logsGzipProcessor struct {
 	// Otherwise, creating a new compressor for every log record would result in frequent memory allocations
 	// and increased garbage collection overhead, especially under high-throughput workload like this one.
 	// By pooling these objects, we minimize allocation churn, reduce GC pressure, and improve overall performance.
-	pool *sync.Pool
+	pool     *sync.Pool
+	settings processor.Settings
 }
 
 type GzipWriter interface {
@@ -60,7 +64,7 @@ type GzipWriter interface {
 	Reset(w io.Writer)
 }
 
-func newLogsGzipProcessor(logs consumer.Logs) *logsGzipProcessor {
+func newLogsGzipProcessor(logs consumer.Logs, settings processor.Settings) *logsGzipProcessor {
 	return &logsGzipProcessor{
 		nextConsumer: logs,
 		pool: &sync.Pool{
@@ -68,6 +72,7 @@ func newLogsGzipProcessor(logs consumer.Logs) *logsGzipProcessor {
 				return gzip.NewWriter(nil)
 			},
 		},
+		settings: settings,
 	}
 }
 
@@ -77,7 +82,7 @@ func (p *logsGzipProcessor) ConsumeLogs(ctx context.Context, ld plog.Logs) error
 	for i := range resourceLogs.Len() {
 		scopeLogs := resourceLogs.At(i).ScopeLogs()
 		for j := range scopeLogs.Len() {
-			err := p.processLogRecords(ctx, scopeLogs.At(j).LogRecords())
+			err := p.processLogRecords(scopeLogs.At(j).LogRecords())
 			if err != nil {
 				errs = multierr.Append(errs, err)
 			}
@@ -90,15 +95,19 @@ func (p *logsGzipProcessor) ConsumeLogs(ctx context.Context, ld plog.Logs) error
 	return p.nextConsumer.ConsumeLogs(ctx, ld)
 }
 
-func (p *logsGzipProcessor) processLogRecords(ctx context.Context, logRecords plog.LogRecordSlice) error {
+func (p *logsGzipProcessor) processLogRecords(logRecords plog.LogRecordSlice) error {
 	var errs error
 	// Filter out unsupported data types in the log before processing
 	logRecords.RemoveIf(func(lr plog.LogRecord) bool {
 		body := lr.Body()
 		// Keep only STRING or BYTES types
+		if body.Type() != pcommon.ValueTypeStr &&
+			body.Type() != pcommon.ValueTypeBytes {
+			p.settings.Logger.Debug("Skipping log record with unsupported body type", zap.Any("type", body.Type()))
+			return true
+		}
 
-		return body.Type() != pcommon.ValueTypeStr &&
-			body.Type() != pcommon.ValueTypeBytes
+		return false
 	})
 	// Process remaining valid records
 	for k := range logRecords.Len() {
@@ -114,15 +123,13 @@ func (p *logsGzipProcessor) processLogRecords(ctx context.Context, logRecords pl
 		}
 		gzipped, err := p.gzipCompress(data)
 		if err != nil {
-			slog.ErrorContext(ctx, "failed to compress log record", slog.Any("error", err))
-			errs = multierr.Append(errs, err)
+			errs = multierr.Append(errs, fmt.Errorf("failed to compress log record: %w", err))
 
 			continue
 		}
 		err = record.Body().FromRaw(gzipped)
 		if err != nil {
-			slog.ErrorContext(ctx, "failed to set gzipped data to log record body", slog.Any("error", err))
-			errs = multierr.Append(errs, err)
+			errs = multierr.Append(errs, fmt.Errorf("failed to set gzipped data to log record body: %w", err))
 
 			continue
 		}
@@ -133,6 +140,7 @@ func (p *logsGzipProcessor) processLogRecords(ctx context.Context, logRecords pl
 
 func (p *logsGzipProcessor) gzipCompress(data []byte) ([]byte, error) {
 	var buf bytes.Buffer
+	var err error
 	wIface := p.pool.Get()
 	w, ok := wIface.(GzipWriter)
 	if !ok {
@@ -140,11 +148,13 @@ func (p *logsGzipProcessor) gzipCompress(data []byte) ([]byte, error) {
 	}
 	w.Reset(&buf)
 	defer func() {
-		w.Close()
+		if err = w.Close(); err != nil {
+			p.settings.Logger.Error("Failed to close gzip writer", zap.Error(err))
+		}
 		p.pool.Put(w)
 	}()
 
-	_, err := w.Write(data)
+	_, err = w.Write(data)
 	if err != nil {
 		return nil, err
 	}
@@ -162,11 +172,11 @@ func (p *logsGzipProcessor) Capabilities() consumer.Capabilities {
 }
 
 func (p *logsGzipProcessor) Start(ctx context.Context, _ component.Host) error {
-	slog.DebugContext(ctx, "starting logs gzip processor")
+	p.settings.Logger.Info("Starting logs gzip processor")
 	return nil
 }
 
 func (p *logsGzipProcessor) Shutdown(ctx context.Context) error {
-	slog.DebugContext(ctx, "shutting down logs gzip processor")
+	p.settings.Logger.Info("Shutting down logs gzip processor")
 	return nil
 }

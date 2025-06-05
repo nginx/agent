@@ -17,6 +17,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pdata/plog"
+	"go.opentelemetry.io/collector/processor/processortest"
+	"go.uber.org/zap"
 )
 
 var dummyInputStr = "hello world"
@@ -27,15 +29,15 @@ func TestGzipProcessor(t *testing.T) {
 		name  string
 	}{
 		{
-			name:  "string content",
+			name:  "Test 1: string content",
 			input: dummyInputStr,
 		},
 		{
-			name:  "byte content",
+			name:  "Test 2: byte content",
 			input: []byte("binary data"),
 		},
 		{
-			name:  "integer content",
+			name:  "Test 3: integer content",
 			input: 12345,
 		},
 	}
@@ -43,6 +45,8 @@ func TestGzipProcessor(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
+			settings := processortest.NewNopSettings(processortest.NopType)
+			settings.Logger = zap.NewNop()
 			// Setup: create a log record with the test case content
 			logs := plog.NewLogs()
 			logRecord := logs.ResourceLogs().AppendEmpty().
@@ -60,7 +64,7 @@ func TestGzipProcessor(t *testing.T) {
 			}
 
 			next := &consumertest.LogsSink{}
-			processor := newLogsGzipProcessor(next)
+			processor := newLogsGzipProcessor(next, settings)
 			require.NoError(t, processor.Start(ctx, nil))
 
 			capability := processor.Capabilities()
@@ -121,11 +125,11 @@ func TestGzipProcessorFailure(t *testing.T) {
 		isGzipCloseError bool
 	}{
 		{
-			name:             "gzip write failure",
+			name:             "Test 1: gzip write failure",
 			isGzipWriteError: true,
 		},
 		{
-			name:             "gzip writer close failure",
+			name:             "Test 2: gzip writer close failure",
 			isGzipCloseError: true,
 		},
 	}
@@ -133,6 +137,8 @@ func TestGzipProcessorFailure(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
+			settings := processortest.NewNopSettings(processortest.NopType)
+			settings.Logger = zap.NewNop()
 			// Setup: create a log record with the test case content
 			logs := plog.NewLogs()
 			logRecord := logs.ResourceLogs().AppendEmpty().
@@ -151,6 +157,7 @@ func TestGzipProcessorFailure(t *testing.T) {
 						return mockWriter
 					},
 				},
+				settings: settings,
 			}
 			require.NoError(t, processor.Start(ctx, nil))
 
