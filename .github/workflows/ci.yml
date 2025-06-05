@@ -15,6 +15,9 @@ on:
     - reopened
     - synchronize
 
+permissions:
+  contents: read
+
 env:
   NFPM_VERSION: 'v2.35.3'
 
