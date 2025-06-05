@@ -10,7 +10,7 @@ on:
   push:
     branches:
       - main
-      - v3
+      - dev-v2
 
 # Declare default permissions as read only.
 permissions: read-all

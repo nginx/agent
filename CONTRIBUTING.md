@@ -10,11 +10,11 @@ The following is a set of guidelines for contributing to the NGINX Agent. We rea
 
 [Code Guidelines](#code-guidelines)
 
-[Code of Conduct](https://github.com/nginx/agent/blob/main/docs/CODE_OF_CONDUCT.md)
+[Code of Conduct](https://github.com/nginx/agent/blob/dev-v2/docs/CODE_OF_CONDUCT.md)
 
 ## Getting Started
 
-Follow our [Installation Guide](https://github.com/nginx/agent/blob/main/README.md#Installation) to get the NGINX Agent up and running.
+Follow our [Installation Guide](https://github.com/nginx/agent/blob/dev-v2/README.md#Installation) to get the NGINX Agent up and running.
 
 <!-- ### Project Structure (OPTIONAL) -->
 
@@ -31,13 +31,13 @@ To suggest a feature or enhancement, please create an issue on GitHub with the l
 ### Open a Pull Request
 
 * Fork the repo, create a branch, implement your changes, add any relevant tests, submit a PR when your changes are **tested** and ready for review.
-* Fill in [our pull request template](https://github.com/nginx/agent/blob/main/.github/pull_request_template.md).
+* Fill in [our pull request template](https://github.com/nginx/agent/blob/dev-v2/.github/pull_request_template.md).
 
 Note: if you'd like to implement a new feature, please consider creating a feature request issue first to start a discussion about the feature.
 
 ### F5 Contributor License Agreement (CLA)
 
-F5 requires all external contributors to agree to the terms of the F5 CLA (available [here](https://github.com/f5/.github/blob/main/CLA/cla-markdown.md))
+F5 requires all external contributors to agree to the terms of the F5 CLA (available [here](https://github.com/f5/.github/blob/dev-v2/CLA/cla-markdown.md))
 before any of their changes can be incorporated into an F5 Open Source repository.
 
 If you have not yet agreed to the F5 CLA terms and submit a PR to this repository, a bot will prompt you to view and
