@@ -168,6 +168,7 @@ func (oc *Collector) bootup(ctx context.Context) error {
 	go func() {
 		if oc.service == nil {
 			errChan <- fmt.Errorf("unable to start OTel collector: service is nil")
+			return
 		}
 
 		appErr := oc.service.Run(ctx)
@@ -182,8 +183,11 @@ func (oc *Collector) bootup(ctx context.Context) error {
 		case err := <-errChan:
 			return err
 		default:
-			state := oc.service.GetState()
+			if oc.service == nil {
+				return fmt.Errorf("unable to start otel collector: service is nil")
+			}
 
+			state := oc.service.GetState()
 			switch state {
 			case otelcol.StateStarting:
 				// NoOp
