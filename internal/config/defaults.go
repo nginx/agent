@@ -74,6 +74,9 @@ const (
 	DefCollectorExtensionsHealthTLSCAPath       = ""
 	DefCollectorExtensionsHealthTLSSkipVerify   = false
 	DefCollectorExtensionsHealthTLServerNameKey = ""
+
+	// File defaults
+	DefManifestDir = "/var/lib/nginx-agent"
 )
 
 func DefaultFeatures() []string {

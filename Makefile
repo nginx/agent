@@ -43,6 +43,8 @@ PROTO_DIR       := proto
 BINARY_NAME		:= nginx-agent
 PROJECT_DIR		= cmd/agent
 PROJECT_FILE	= main.go
+COLLECTOR_PATH  ?= /etc/nginx-agent/opentelemetry-collector-agent.yaml
+MANIFEST_DIR	?= /var/lib/nginx-agent
 DIRS            = $(BUILD_DIR) $(TEST_BUILD_DIR) $(BUILD_DIR)/$(DOCS_DIR) $(BUILD_DIR)/$(DOCS_DIR)/$(PROTO_DIR)
 $(shell mkdir -p $(DIRS))
 
@@ -181,7 +183,7 @@ run: build ## Run code
 
 dev: ## Run agent executable
 	@echo "🚀 Running App"
-	$(GORUN) -ldflags=$(DEBUG_LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
+	NGINX_AGENT_COLLECTOR_CONFIG_PATH=$(COLLECTOR_PATH) NGINX_AGENT_MANIFEST_DIR=$(MANIFEST_DIR) $(GORUN) -ldflags=$(DEBUG_LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
 
 race-condition-dev: ## Run agent executable with race condition detection
 	@echo "🏎️ Running app with race condition detection enabled"

@@ -23,6 +23,7 @@ const (
 	InstanceWatcherMonitoringFrequencyKey       = "watchers_instance_watcher_monitoring_frequency"
 	InstanceHealthWatcherMonitoringFrequencyKey = "watchers_instance_health_watcher_monitoring_frequency"
 	FileWatcherKey                              = "watchers_file_watcher"
+	ManifestDirPathKey                          = "manifest_dir"
 )
 
 var (

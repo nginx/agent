@@ -124,6 +124,7 @@ func ResolveConfig() (*Config, error) {
 		Watchers:           resolveWatchers(),
 		Features:           viperInstance.GetStringSlice(FeaturesKey),
 		Labels:             resolveLabels(),
+		ManifestDir:        viperInstance.GetString(ManifestDirPathKey),
 	}
 
 	checkCollectorConfiguration(collector, config)
@@ -231,7 +232,11 @@ func registerFlags() {
 		"The path to output log messages to. "+
 			"If the default path doesn't exist, log messages are output to stdout/stderr.",
 	)
-
+	fs.String(
+		ManifestDirPathKey,
+		DefManifestDir,
+		"Specifies the path to the directory containing the manifest files",
+	)
 	fs.Duration(
 		NginxReloadMonitoringPeriodKey,
 		DefNginxReloadMonitoringPeriod,
