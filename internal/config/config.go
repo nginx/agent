@@ -918,7 +918,7 @@ func resolveExtensions() Extensions {
 	}
 
 	if headersSetter != nil {
-		headersSetter.Headers = values(headersSetter.Headers)
+		headersSetter.Headers = updateHeaders(headersSetter.Headers)
 	}
 
 	return Extensions{
@@ -927,7 +927,7 @@ func resolveExtensions() Extensions {
 	}
 }
 
-func values(headers []Header) []Header {
+func updateHeaders(headers []Header) []Header {
 	var err error
 	newHeaders := []Header{}
 
