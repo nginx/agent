@@ -143,6 +143,9 @@ processors:
     timeout: {{ .Processors.Batch.Timeout }}
     send_batch_max_size: {{ .Processors.Batch.SendBatchMaxSize }}
 {{- end }}
+{{- if ne .Processors.LogsGzip nil }}
+  logsgzip: {}
+{{- end }}
 
 exporters:
 {{- range $index, $otlpExporter := .Exporters.OtlpExporters }}
@@ -293,6 +296,9 @@ service:
         {{- if .Processors.Resource.Attributes }}
         - resource
         {{- end }}
+        {{- end }}
+        {{- if ne .Processors.LogsGzip nil }}
+        - logsgzip
         {{- end }}
         {{- if ne .Processors.Batch nil }}
         - batch

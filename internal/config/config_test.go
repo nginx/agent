@@ -188,6 +188,7 @@ func TestResolveCollector(t *testing.T) {
 		viperInstance.Set(CollectorBatchProcessorSendBatchSizeKey, expected.Processors.Batch.SendBatchSize)
 		viperInstance.Set(CollectorBatchProcessorSendBatchMaxSizeKey, expected.Processors.Batch.SendBatchMaxSize)
 		viperInstance.Set(CollectorBatchProcessorTimeoutKey, expected.Processors.Batch.Timeout)
+		viperInstance.Set(CollectorLogsGzipProcessorKey, expected.Processors.LogsGzip)
 		viperInstance.Set(CollectorExportersKey, expected.Exporters)
 		viperInstance.Set(CollectorOtlpExportersKey, expected.Exporters.OtlpExporters)
 		viperInstance.Set(CollectorExtensionsHealthServerHostKey, expected.Extensions.Health.Server.Host)
@@ -693,6 +694,7 @@ func getAgentConfig() *Config {
 					SendBatchSize:    DefCollectorBatchProcessorSendBatchSize,
 					Timeout:          DefCollectorBatchProcessorTimeout,
 				},
+				LogsGzip: &LogsGzip{},
 			},
 			Receivers: Receivers{
 				OtlpReceivers: []OtlpReceiver{
@@ -856,6 +858,7 @@ func createConfig() *Config {
 						},
 					},
 				},
+				LogsGzip: &LogsGzip{},
 			},
 			Receivers: Receivers{
 				OtlpReceivers: []OtlpReceiver{

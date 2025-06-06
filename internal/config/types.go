@@ -153,6 +153,7 @@ type (
 		Attribute *Attribute `yaml:"attribute" mapstructure:"attribute"`
 		Resource  *Resource  `yaml:"resource"  mapstructure:"resource"`
 		Batch     *Batch     `yaml:"batch"     mapstructure:"batch"`
+		LogsGzip  *LogsGzip  `yaml:"logsgzip"  mapstructure:"logsgzip"`
 	}
 
 	Attribute struct {
@@ -180,6 +181,8 @@ type (
 		SendBatchMaxSize uint32        `yaml:"send_batch_max_size" mapstructure:"send_batch_max_size"`
 		Timeout          time.Duration `yaml:"timeout"             mapstructure:"timeout"`
 	}
+
+	LogsGzip struct{}
 
 	// OTel Collector Receiver configuration.
 	Receivers struct {
