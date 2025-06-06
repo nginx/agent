@@ -223,7 +223,9 @@ func (iw *InstanceWatcherService) checkForUpdates(
 				iw.sendNginxConfigContextUpdate(newCtx, nginxConfigContext)
 				iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
 				proto.UpdateNginxInstanceRuntime(newInstance, nginxConfigContext)
+				iw.cacheMutex.Lock()
 				iw.instanceCache[newInstance.GetInstanceMeta().GetInstanceId()] = newInstance
+				iw.cacheMutex.Unlock()
 			}
 		}
 	}
