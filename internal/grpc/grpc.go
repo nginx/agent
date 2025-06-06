@@ -363,30 +363,32 @@ func getTransportCredentials(agentConfig *config.Config) (credentials.TransportC
 	if agentConfig.Command.TLS == nil {
 		return defaultCredentials, nil
 	}
+	tlsConfig, err := getTLSConfigForCredentials(agentConfig.Command.TLS)
+	if err != nil {
+		return nil, err
+	}
 
-	if agentConfig.Command.TLS.SkipVerify {
+	return credentials.NewTLS(tlsConfig), nil
+}
+
+func getTLSConfigForCredentials(c *config.TLSConfig) (*tls.Config, error) {
+	if c.SkipVerify {
 		slog.Warn("Verification of the server's certificate chain and host name is disabled")
 	}
 
 	tlsConfig := &tls.Config{
 		MinVersion:         tls.VersionTLS12,
-		ServerName:         agentConfig.Command.TLS.ServerName,
-		InsecureSkipVerify: agentConfig.Command.TLS.SkipVerify,
+		ServerName:         c.ServerName,
+		InsecureSkipVerify: c.SkipVerify,
 	}
 
-	if agentConfig.Command.TLS.Key == "" {
-		return credentials.NewTLS(tlsConfig), nil
+	if err := appendRootCAs(tlsConfig, c.Ca); err != nil {
+		return nil, fmt.Errorf("invalid CA cert while building transport credentials: %w", err)
 	}
 
-	err := appendCertKeyPair(tlsConfig, agentConfig.Command.TLS.Cert, agentConfig.Command.TLS.Key)
-	if err != nil {
-		return nil, fmt.Errorf("append cert and key pair failed: %w", err)
+	if err := appendCertKeyPair(tlsConfig, c.Cert, c.Key); err != nil {
+		return nil, fmt.Errorf("invalid client cert while building transport credentials: %w", err)
 	}
 
-	err = appendRootCAs(tlsConfig, agentConfig.Command.TLS.Ca)
-	if err != nil {
-		slog.Debug("Unable to append root CA", "error", err)
-	}
-
-	return credentials.NewTLS(tlsConfig), nil
+	return tlsConfig, nil
 }
