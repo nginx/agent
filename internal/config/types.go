@@ -139,6 +139,7 @@ type (
 		Value        string `yaml:"value"         mapstructure:"value"`
 		DefaultValue string `yaml:"default_value" mapstructure:"default_value"`
 		FromContext  string `yaml:"from_context"  mapstructure:"from_context"`
+		FilePath     string `yaml:"file_path"     mapstructure:"file_path"`
 	}
 
 	DebugExporter struct{}
