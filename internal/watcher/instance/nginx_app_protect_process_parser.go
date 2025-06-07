@@ -7,6 +7,7 @@ package instance
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"os"
 	"strings"
@@ -26,7 +27,7 @@ const (
 )
 
 type (
-	NginxAppProtectProcessParser struct {
+	NginxAppProtectParser struct {
 		versionFilePath                string
 		releaseFilePath                string
 		attackSignatureVersionFilePath string
@@ -34,10 +35,8 @@ type (
 	}
 )
 
-var _ processParser = (*NginxAppProtectProcessParser)(nil)
-
-func NewNginxAppProtectProcessParser() *NginxAppProtectProcessParser {
-	return &NginxAppProtectProcessParser{
+func NewNginxAppProtectParser() *NginxAppProtectParser {
+	return &NginxAppProtectParser{
 		versionFilePath:                versionFilePath,
 		releaseFilePath:                releaseFilePath,
 		attackSignatureVersionFilePath: attackSignatureVersionFilePath,
@@ -45,53 +44,54 @@ func NewNginxAppProtectProcessParser() *NginxAppProtectProcessParser {
 	}
 }
 
-func (n NginxAppProtectProcessParser) Parse(
+func (n NginxAppProtectParser) Parse(
 	ctx context.Context,
-	processes []*nginxprocess.Process,
 ) map[string]*mpi.Instance {
 	instanceMap := make(map[string]*mpi.Instance) // key is instanceID
 
-	for _, process := range processes {
-		if process.Name == processName {
-			instanceID := n.instanceID(process)
+	if n.isNAPInstance() {
+		instanceID := id.Generate("")
 
-			binaryPath := process.Exe
-			if binaryPath == "" {
-				binaryPath = strings.Split(process.Cmd, " ")[0]
-			}
-
-			instanceMap[instanceID] = &mpi.Instance{
-				InstanceMeta: &mpi.InstanceMeta{
-					InstanceId:   instanceID,
-					InstanceType: mpi.InstanceMeta_INSTANCE_TYPE_NGINX_APP_PROTECT,
-					Version:      n.instanceVersion(ctx),
-				},
-				InstanceConfig: &mpi.InstanceConfig{},
-				InstanceRuntime: &mpi.InstanceRuntime{
-					ProcessId:  process.PID,
-					BinaryPath: binaryPath,
-					ConfigPath: "",
-					Details: &mpi.InstanceRuntime_NginxAppProtectRuntimeInfo{
-						NginxAppProtectRuntimeInfo: &mpi.NGINXAppProtectRuntimeInfo{
-							Release:                n.release(ctx),
-							AttackSignatureVersion: n.attackSignatureVersion(ctx),
-							ThreatCampaignVersion:  n.threatCampaignVersion(ctx),
-						},
+		instanceMap[instanceID] = &mpi.Instance{
+			InstanceMeta: &mpi.InstanceMeta{
+				InstanceId:   instanceID,
+				InstanceType: mpi.InstanceMeta_INSTANCE_TYPE_NGINX_APP_PROTECT,
+				Version:      n.instanceVersion(ctx),
+			},
+			InstanceConfig: &mpi.InstanceConfig{},
+			InstanceRuntime: &mpi.InstanceRuntime{
+				ProcessId:  0,
+				BinaryPath: "",
+				ConfigPath: "",
+				Details: &mpi.InstanceRuntime_NginxAppProtectRuntimeInfo{
+					NginxAppProtectRuntimeInfo: &mpi.NGINXAppProtectRuntimeInfo{
+						Release:                n.release(ctx),
+						AttackSignatureVersion: n.attackSignatureVersion(ctx),
+						ThreatCampaignVersion:  n.threatCampaignVersion(ctx),
 					},
-					InstanceChildren: make([]*mpi.InstanceChild, 0),
 				},
-			}
+				InstanceChildren: make([]*mpi.InstanceChild, 0),
+			},
 		}
 	}
 
 	return instanceMap
 }
 
-func (n NginxAppProtectProcessParser) instanceID(process *nginxprocess.Process) string {
+func (n NginxAppProtectParser) isNAPInstance() bool {
+	_, errVersion := os.Stat(n.versionFilePath)
+	_, errRelease := os.Stat(n.releaseFilePath)
+	if errors.Is(errVersion, os.ErrNotExist) || errors.Is(errRelease, os.ErrNotExist) {
+		return false
+	}
+	return true
+}
+
+func (n NginxAppProtectParser) instanceID(process *nginxprocess.Process) string {
 	return id.Generate("%s", process.Exe)
 }
 
-func (n NginxAppProtectProcessParser) instanceVersion(ctx context.Context) string {
+func (n NginxAppProtectParser) instanceVersion(ctx context.Context) string {
 	version, err := os.ReadFile(n.versionFilePath)
 	if err != nil {
 		slog.WarnContext(ctx, "Unable to read NAP version file", "file_path", n.versionFilePath, "error", err)
@@ -101,7 +101,7 @@ func (n NginxAppProtectProcessParser) instanceVersion(ctx context.Context) strin
 	return strings.TrimSuffix(string(version), "\n")
 }
 
-func (n NginxAppProtectProcessParser) release(ctx context.Context) string {
+func (n NginxAppProtectParser) release(ctx context.Context) string {
 	release, err := os.ReadFile(n.releaseFilePath)
 	if err != nil {
 		slog.WarnContext(ctx, "Unable to read NAP release file", "file_path", n.releaseFilePath, "error", err)
@@ -111,7 +111,7 @@ func (n NginxAppProtectProcessParser) release(ctx context.Context) string {
 	return strings.TrimSuffix(string(release), "\n")
 }
 
-func (n NginxAppProtectProcessParser) attackSignatureVersion(ctx context.Context) string {
+func (n NginxAppProtectParser) attackSignatureVersion(ctx context.Context) string {
 	attackSignatureVersion, err := os.ReadFile(n.attackSignatureVersionFilePath)
 	if err != nil {
 		slog.WarnContext(
@@ -127,7 +127,7 @@ func (n NginxAppProtectProcessParser) attackSignatureVersion(ctx context.Context
 	return string(attackSignatureVersion)
 }
 
-func (n NginxAppProtectProcessParser) threatCampaignVersion(ctx context.Context) string {
+func (n NginxAppProtectParser) threatCampaignVersion(ctx context.Context) string {
 	threatCampaignVersion, err := os.ReadFile(n.threatCampaignVersionFilePath)
 	if err != nil {
 		slog.WarnContext(

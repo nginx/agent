@@ -98,7 +98,7 @@ func TestNginxAppProtectProcessParser_Parse(t *testing.T) {
 	_, err = threatCampaignVersionFile.WriteString("2024.12.02")
 	require.NoError(t, err)
 
-	nginxAppProtectProcessParser := NewNginxAppProtectProcessParser()
+	nginxAppProtectProcessParser := NewNginxAppProtectParser()
 	nginxAppProtectProcessParser.versionFilePath = versionFile.Name()
 	nginxAppProtectProcessParser.releaseFilePath = releaseFile.Name()
 	nginxAppProtectProcessParser.attackSignatureVersionFilePath = attackSignatureVersionFile.Name()
