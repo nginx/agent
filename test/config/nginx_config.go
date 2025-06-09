@@ -25,6 +25,12 @@ var embedNginxConfWithMultipleSSLCerts string
 //go:embed nginx/nginx-ssl-certs-with-variables.conf
 var embedNginxConfWithSSLCertsWithVariables string
 
+//go:embed agent/nginx-agent-with-token.conf
+var agentConfigWithToken string
+
+//go:embed agent/nginx-agent-with-multiple-headers.conf
+var agentConfigWithMultipleHeaders string
+
 func NginxConfigWithMultipleAccessLogs(
 	errorLogName,
 	accessLogName,
@@ -54,4 +60,12 @@ func NginxConfigWithSSLCerts(errorLogFile, accessLogFile, certFile string) strin
 
 func NginxConfigWithMultipleSSLCerts(errorLogFile, accessLogFile, certFile1, certFile2 string) string {
 	return fmt.Sprintf(embedNginxConfWithMultipleSSLCerts, errorLogFile, accessLogFile, certFile1, certFile2)
+}
+
+func AgentConfigWithToken(value, path string) string {
+	return fmt.Sprintf(agentConfigWithToken, value, path)
+}
+
+func AgentConfigWithMultipleHeaders(value, path, value2, path2 string) string {
+	return fmt.Sprintf(agentConfigWithMultipleHeaders, value, path, value2, path2)
 }

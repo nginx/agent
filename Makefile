@@ -159,13 +159,13 @@ integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) DOCKERFILE_PATH=$(DOCKERFILE_PATH) IMAGE_PATH=$(IMAGE_PATH) TAG=${IMAGE_TAG} \
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) \
-	go test -v ./test/integration
+	go test -v ./test/integration/installuninstall ./test/integration/managementplane ./test/integration/nginxless
 	
 official-image-integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} BUILD_TARGET="install" \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) TAG=${TAG} PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) DOCKERFILE_PATH=$(OFFICIAL_IMAGE_DOCKERFILE_PATH) \
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) IMAGE_PATH=$(IMAGE_PATH) \
-	go test -v ./test/integration/grpc_management_plane_api_test.go
+	go test -v ./test/integration/managementplane
 
 performance-test:
 	@mkdir -p $(TEST_BUILD_DIR)
@@ -181,7 +181,7 @@ run: build ## Run code
 
 dev: ## Run agent executable
 	@echo "🚀 Running App"
-	$(GORUN) -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
+	$(GORUN) -ldflags=$(DEBUG_LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
 
 race-condition-dev: ## Run agent executable with race condition detection
 	@echo "🏎️ Running app with race condition detection enabled"

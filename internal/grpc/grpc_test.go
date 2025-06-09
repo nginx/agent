@@ -7,18 +7,19 @@ package grpc
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"testing"
 
-	"google.golang.org/grpc/credentials"
-
 	"github.com/cenkalti/backoff/v4"
-	"github.com/nginx/agent/v3/test/helpers"
-	"github.com/nginx/agent/v3/test/protos"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+
+	"github.com/nginx/agent/v3/test/helpers"
+	"github.com/nginx/agent/v3/test/protos"
 
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/test/types"
@@ -103,7 +104,7 @@ func Test_GetDialOptions(t *testing.T) {
 		{
 			name:        "Test 2: DialOptions mTLS",
 			agentConfig: types.AgentConfig(),
-			expected:    7,
+			expected:    8,
 			createCerts: true,
 		},
 		{
@@ -171,8 +172,8 @@ func Test_GetDialOptions(t *testing.T) {
 				key, cert := helpers.GenerateSelfSignedCert(t)
 				_, ca := helpers.GenerateSelfSignedCert(t)
 
-				keyContents := helpers.Cert{Name: keyFileName, Type: certificateType, Contents: key}
-				certContents := helpers.Cert{Name: certFileName, Type: privateKeyType, Contents: cert}
+				keyContents := helpers.Cert{Name: keyFileName, Type: privateKeyType, Contents: key}
+				certContents := helpers.Cert{Name: certFileName, Type: certificateType, Contents: cert}
 				caContents := helpers.Cert{Name: caFileName, Type: certificateType, Contents: ca}
 
 				helpers.WriteCertFiles(t, tmpDir, keyContents)
@@ -355,29 +356,137 @@ func Test_ValidateGrpcError(t *testing.T) {
 	assert.IsType(t, &backoff.PermanentError{}, result)
 }
 
-func Test_getTransportCredentials(t *testing.T) {
-	tests := []struct {
-		want    credentials.TransportCredentials
-		conf    *config.Config
-		wantErr assert.ErrorAssertionFunc
-		name    string
+func Test_transportCredentials(t *testing.T) {
+	tests := map[string]struct {
+		conf                *config.Config
+		wantSecurityProfile string
+		wantServerName      string
+		wantErr             bool
 	}{
-		{
-			name: "No TLS config returns default credentials",
+		"Test 1: No TLS config returns default credentials": {
 			conf: &config.Config{
 				Command: &config.Command{},
 			},
-			want:    defaultCredentials,
-			wantErr: assert.NoError,
+			wantErr:             false,
+			wantSecurityProfile: "insecure",
+		},
+		"Test 2: With tls config returns secure credentials": {
+			conf: &config.Config{
+				Command: &config.Command{
+					TLS: &config.TLSConfig{
+						ServerName: "foobar",
+						SkipVerify: true,
+					},
+				},
+			},
+			wantErr:             false,
+			wantSecurityProfile: "tls",
+		},
+		"Test 3: With invalid tls config should error": {
+			conf:    types.AgentConfig(), // references non-existent certs
+			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			got, err := transportCredentials(tt.conf)
-			if !tt.wantErr(t, err, fmt.Sprintf("transportCredentials(%v)", tt.conf)) {
+			if tt.wantErr {
+				require.Error(t, err, "transportCredentials(%v)", tt.conf)
+
 				return
 			}
-			assert.Equalf(t, tt.want, got, "transportCredentials(%v)", tt.conf)
+			require.NoError(t, err, "transportCredentials(%v)", tt.conf)
+			require.Equal(t, tt.wantSecurityProfile, got.Info().SecurityProtocol, "incorrect SecurityProtocol")
+		})
+	}
+}
+
+func Test_tlsConfig(t *testing.T) {
+	tmpDir := t.TempDir()
+	// not mTLS scripts
+	key, cert := helpers.GenerateSelfSignedCert(t)
+	_, ca := helpers.GenerateSelfSignedCert(t)
+
+	keyContents := helpers.Cert{Name: keyFileName, Type: privateKeyType, Contents: key}
+	certContents := helpers.Cert{Name: certFileName, Type: certificateType, Contents: cert}
+	caContents := helpers.Cert{Name: caFileName, Type: certificateType, Contents: ca}
+
+	keyPath := helpers.WriteCertFiles(t, tmpDir, keyContents)
+	certPath := helpers.WriteCertFiles(t, tmpDir, certContents)
+	caPath := helpers.WriteCertFiles(t, tmpDir, caContents)
+
+	tests := map[string]struct {
+		conf    *config.TLSConfig
+		verify  func(require.TestingT, *tls.Config)
+		wantErr bool
+	}{
+		"Test 1: all config should be translated": {
+			conf: &config.TLSConfig{
+				Cert:       certPath,
+				Key:        keyPath,
+				Ca:         caPath,
+				ServerName: "foobar",
+				SkipVerify: true,
+			},
+			wantErr: false,
+			verify: func(t require.TestingT, c *tls.Config) {
+				require.NotEmpty(t, c.Certificates)
+				require.Equal(t, "foobar", c.ServerName, "wrong servername")
+				require.True(t, c.InsecureSkipVerify, "InsecureSkipVerify not set")
+			},
+		},
+		"Test 2: CA only config should use CA": {
+			conf: &config.TLSConfig{
+				Ca: caPath,
+			},
+			wantErr: false,
+			verify: func(t require.TestingT, c *tls.Config) {
+				require.NotNil(t, c.RootCAs, "RootCAs should be initialized")
+				require.False(t, x509.NewCertPool().Equal(c.RootCAs),
+					"CertPool shouldn't be empty, valid CA cert was specified")
+				require.False(t, c.InsecureSkipVerify, "InsecureSkipVerify should not be set")
+			},
+		},
+		"Test 3: incorrect CA should not error": {
+			conf: &config.TLSConfig{
+				Ca: "customca.pem",
+			},
+			wantErr: true,
+		},
+		"Test 4: incorrect key path should error": {
+			conf: &config.TLSConfig{
+				Ca:   caPath,
+				Cert: certPath,
+				Key:  "badkey",
+			},
+			wantErr: true,
+		},
+		"Test 5: incorrect cert path should error": {
+			conf: &config.TLSConfig{
+				Ca:   caPath,
+				Cert: "badcert",
+				Key:  keyPath,
+			},
+			wantErr: true,
+		},
+		"Test 6: incomplete cert info should error": {
+			conf: &config.TLSConfig{
+				Key: keyPath,
+			},
+			wantErr: true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, err := tlsConfigForCredentials(tt.conf)
+			if tt.wantErr {
+				require.Error(t, err, "tlsConfigForCredentials(%v)", tt.conf)
+				return
+			}
+			require.NoError(t, err, "tlsConfigForCredentials(%v)", tt.conf)
+			if tt.verify != nil {
+				tt.verify(t, got)
+			}
 		})
 	}
 }
