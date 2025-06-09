@@ -409,7 +409,7 @@ func (oc *Collector) checkForNewReceivers(ctx context.Context, nginxConfigContex
 	nginxReceiverFound, reloadCollector := oc.updateExistingNginxPlusReceiver(nginxConfigContext)
 
 	if !nginxReceiverFound && nginxConfigContext.PlusAPI.URL != "" {
-		slog.Debug("Adding new Nginx Plus receiver", "url", nginxConfigContext.PlusAPI.URL)
+		slog.DebugContext(ctx, "Adding new NGINX Plus receiver", "url", nginxConfigContext.PlusAPI.URL)
 		oc.config.Collector.Receivers.NginxPlusReceivers = append(
 			oc.config.Collector.Receivers.NginxPlusReceivers,
 			config.NginxPlusReceiver{
@@ -446,6 +446,7 @@ func (oc *Collector) addNginxOssReceiver(ctx context.Context, nginxConfigContext
 	nginxReceiverFound, reloadCollector := oc.updateExistingNginxOSSReceiver(nginxConfigContext)
 
 	if !nginxReceiverFound && nginxConfigContext.StubStatus.URL != "" {
+		slog.DebugContext(ctx, "Adding new NGINX OSS receiver", "url", nginxConfigContext.StubStatus.URL)
 		oc.config.Collector.Receivers.NginxReceivers = append(
 			oc.config.Collector.Receivers.NginxReceivers,
 			config.NginxReceiver{
@@ -482,7 +483,7 @@ func (oc *Collector) updateExistingNginxPlusReceiver(
 					oc.config.Collector.Receivers.NginxPlusReceivers[index+1:]...,
 				)
 				if nginxConfigContext.PlusAPI.URL != "" {
-					slog.Debug("Updating existing Nginx Plus receiver", "url",
+					slog.Debug("Updating existing NGINX Plus receiver", "url",
 						nginxConfigContext.PlusAPI.URL)
 					nginxPlusReceiver.PlusAPI.URL = nginxConfigContext.PlusAPI.URL
 					oc.config.Collector.Receivers.NginxPlusReceivers = append(
@@ -515,7 +516,7 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 					oc.config.Collector.Receivers.NginxReceivers[index+1:]...,
 				)
 				if nginxConfigContext.StubStatus.URL != "" {
-					slog.Debug("Updating existing Nginx Oss receiver", "url",
+					slog.Debug("Updating existing NGINX OSS receiver", "url",
 						nginxConfigContext.StubStatus.URL)
 					nginxReceiver.StubStatus = config.APIDetails{
 						URL:      nginxConfigContext.StubStatus.URL,
