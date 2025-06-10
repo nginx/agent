@@ -121,7 +121,7 @@ func (fms *FileManagerService) UpdateOverview(
 	filesToUpdate []*mpi.File,
 	iteration int,
 ) error {
-	correlationID := logger.GetCorrelationID(ctx)
+	correlationID := logger.CorrelationID(ctx)
 
 	// error case for the UpdateOverview attempts
 	if iteration > maxAttempts {
@@ -157,11 +157,8 @@ func (fms *FileManagerService) UpdateOverview(
 			return nil, errors.New("CreateConnection rpc has not being called yet")
 		}
 
-		slog.InfoContext(newCtx, "Updating file overview",
-			"instance_id", request.GetOverview().GetConfigVersion().GetInstanceId(),
-			"parent_correlation_id", correlationID,
-		)
 		slog.DebugContext(newCtx, "Sending update overview request",
+			"instance_id", request.GetOverview().GetConfigVersion().GetInstanceId(),
 			"request", request, "parent_correlation_id", correlationID,
 		)
 
@@ -203,13 +200,13 @@ func (fms *FileManagerService) UpdateOverview(
 }
 
 func (fms *FileManagerService) setupIdentifiers(ctx context.Context, iteration int) (context.Context, string) {
-	correlationID := logger.GetCorrelationID(ctx)
+	correlationID := logger.CorrelationID(ctx)
 	var requestCorrelationID slog.Attr
 
 	if iteration == 0 {
 		requestCorrelationID = logger.GenerateCorrelationID()
 	} else {
-		requestCorrelationID = logger.GetCorrelationIDAttr(ctx)
+		requestCorrelationID = logger.CorrelationIDAttr(ctx)
 	}
 
 	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, requestCorrelationID)
@@ -234,7 +231,7 @@ func (fms *FileManagerService) updateFiles(
 	}
 
 	iteration++
-	slog.Debug("Updating file overview", "attempt_number", iteration)
+	slog.Info("Updating file overview after file updates", "attempt_number", iteration)
 
 	return fms.UpdateOverview(ctx, instanceID, fileOverview, iteration)
 }
@@ -244,7 +241,7 @@ func (fms *FileManagerService) UpdateFile(
 	instanceID string,
 	fileToUpdate *mpi.File,
 ) error {
-	slog.InfoContext(ctx, "Updating file", "instance_id", instanceID, "file_name", fileToUpdate.GetFileMeta().GetName())
+	slog.InfoContext(ctx, "Updating file", "file_name", fileToUpdate.GetFileMeta().GetName(), "instance_id", instanceID)
 
 	slog.DebugContext(ctx, "Checking file size",
 		"file_size", fileToUpdate.GetFileMeta().GetSize(),
@@ -264,7 +261,7 @@ func (fms *FileManagerService) sendUpdateFileRequest(
 ) error {
 	messageMeta := &mpi.MessageMeta{
 		MessageId:     id.GenerateMessageID(),
-		CorrelationId: logger.GetCorrelationID(ctx),
+		CorrelationId: logger.CorrelationID(ctx),
 		Timestamp:     timestamppb.Now(),
 	}
 
@@ -351,7 +348,7 @@ func (fms *FileManagerService) sendUpdateFileStreamHeader(
 ) error {
 	messageMeta := &mpi.MessageMeta{
 		MessageId:     id.GenerateMessageID(),
-		CorrelationId: logger.GetCorrelationID(ctx),
+		CorrelationId: logger.CorrelationID(ctx),
 		Timestamp:     timestamppb.Now(),
 	}
 
@@ -450,7 +447,7 @@ func (fms *FileManagerService) sendFileUpdateStreamChunk(
 ) error {
 	messageMeta := &mpi.MessageMeta{
 		MessageId:     id.GenerateMessageID(),
-		CorrelationId: logger.GetCorrelationID(ctx),
+		CorrelationId: logger.CorrelationID(ctx),
 		Timestamp:     timestamppb.Now(),
 	}
 
@@ -593,6 +590,7 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 	for _, fileAction := range fms.fileActions {
 		switch fileAction.Action {
 		case model.Delete:
+			slog.Debug("File action, deleting file", "file", fileAction.File.GetFileMeta().GetName())
 			if err := os.Remove(fileAction.File.GetFileMeta().GetName()); err != nil && !os.IsNotExist(err) {
 				return fmt.Errorf("error deleting file: %s error: %w",
 					fileAction.File.GetFileMeta().GetName(), err)
@@ -600,6 +598,7 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 
 			continue
 		case model.Add, model.Update:
+			slog.Debug("File action, add or update file", "file", fileAction.File.GetFileMeta().GetName())
 			updateErr := fms.fileUpdate(ctx, fileAction.File)
 			if updateErr != nil {
 				return updateErr
@@ -613,7 +612,6 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 }
 
 func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) error {
-	slog.DebugContext(ctx, "Updating file", "file", file.GetFileMeta().GetName())
 	if file.GetFileMeta().GetSize() <= int64(fms.agentConfig.Client.Grpc.MaxFileSize) {
 		return fms.file(ctx, file)
 	}
@@ -631,7 +629,7 @@ func (fms *FileManagerService) file(ctx context.Context, file *mpi.File) error {
 		return fms.fileServiceClient.GetFile(ctx, &mpi.GetFileRequest{
 			MessageMeta: &mpi.MessageMeta{
 				MessageId:     id.GenerateMessageID(),
-				CorrelationId: logger.GetCorrelationID(ctx),
+				CorrelationId: logger.CorrelationID(ctx),
 				Timestamp:     timestamppb.Now(),
 			},
 			FileMeta: file.GetFileMeta(),
@@ -661,7 +659,7 @@ func (fms *FileManagerService) chunkedFile(ctx context.Context, file *mpi.File) 
 	stream, err := fms.fileServiceClient.GetFileStream(ctx, &mpi.GetFileRequest{
 		MessageMeta: &mpi.MessageMeta{
 			MessageId:     id.GenerateMessageID(),
-			CorrelationId: logger.GetCorrelationID(ctx),
+			CorrelationId: logger.CorrelationID(ctx),
 			Timestamp:     timestamppb.Now(),
 		},
 		FileMeta: file.GetFileMeta(),

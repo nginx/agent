@@ -185,7 +185,7 @@ func Test_GetDialOptions(t *testing.T) {
 				test.agentConfig.Command.TLS.Ca = fmt.Sprintf("%s%s%s", tmpDir, pathSeparator, caFileName)
 			}
 
-			options := GetDialOptions(test.agentConfig, "123")
+			options := DialOptions(test.agentConfig, "123")
 			assert.NotNil(tt, options)
 			assert.Len(tt, options, test.expected)
 		})
@@ -216,19 +216,19 @@ func Test_ProtoValidatorUnaryClientInterceptor(t *testing.T) {
 		{
 			name:            "Test 1: Invalid request type",
 			request:         "invalid",
-			reply:           protos.GetNginxOssInstance([]string{}),
+			reply:           protos.NginxOssInstance([]string{}),
 			isErrorExpected: true,
 		},
 		{
 			name:            "Test 2: Invalid reply type",
-			request:         protos.GetNginxOssInstance([]string{}),
+			request:         protos.NginxOssInstance([]string{}),
 			reply:           "invalid",
 			isErrorExpected: true,
 		},
 		{
 			name:            "Test 3: Valid request & reply types",
-			request:         protos.GetNginxOssInstance([]string{}),
-			reply:           protos.GetNginxOssInstance([]string{}),
+			request:         protos.NginxOssInstance([]string{}),
+			reply:           protos.NginxOssInstance([]string{}),
 			isErrorExpected: false,
 		},
 	}
@@ -257,7 +257,7 @@ func Test_ProtoValidatorStreamClientInterceptor_RecvMsg(t *testing.T) {
 			isErrorExpected: true,
 		}, {
 			name:            "Test 2: Valid received message type",
-			receivedMessage: protos.GetNginxOssInstance([]string{}),
+			receivedMessage: protos.NginxOssInstance([]string{}),
 			isErrorExpected: false,
 		},
 	}
@@ -288,7 +288,7 @@ func Test_ProtoValidatorStreamClientInterceptor_SendMsg(t *testing.T) {
 			isErrorExpected: true,
 		}, {
 			name:            "Test 2: Valid sent message type",
-			sentMessage:     protos.GetNginxOssInstance([]string{}),
+			sentMessage:     protos.NginxOssInstance([]string{}),
 			isErrorExpected: false,
 		},
 	}
@@ -356,7 +356,7 @@ func Test_ValidateGrpcError(t *testing.T) {
 	assert.IsType(t, &backoff.PermanentError{}, result)
 }
 
-func Test_getTransportCredentials(t *testing.T) {
+func Test_transportCredentials(t *testing.T) {
 	tests := map[string]struct {
 		conf                *config.Config
 		wantSecurityProfile string
@@ -389,19 +389,19 @@ func Test_getTransportCredentials(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := getTransportCredentials(tt.conf)
+			got, err := transportCredentials(tt.conf)
 			if tt.wantErr {
-				require.Error(t, err, "getTransportCredentials(%v)", tt.conf)
+				require.Error(t, err, "transportCredentials(%v)", tt.conf)
 
 				return
 			}
-			require.NoError(t, err, "getTransportCredentials(%v)", tt.conf)
+			require.NoError(t, err, "transportCredentials(%v)", tt.conf)
 			require.Equal(t, tt.wantSecurityProfile, got.Info().SecurityProtocol, "incorrect SecurityProtocol")
 		})
 	}
 }
 
-func Test_getTLSConfig(t *testing.T) {
+func Test_tlsConfig(t *testing.T) {
 	tmpDir := t.TempDir()
 	// not mTLS scripts
 	key, cert := helpers.GenerateSelfSignedCert(t)
@@ -478,12 +478,12 @@ func Test_getTLSConfig(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := getTLSConfigForCredentials(tt.conf)
+			got, err := tlsConfigForCredentials(tt.conf)
 			if tt.wantErr {
-				require.Error(t, err, "getTLSConfigForCredentials(%v)", tt.conf)
+				require.Error(t, err, "tlsConfigForCredentials(%v)", tt.conf)
 				return
 			}
-			require.NoError(t, err, "getTLSConfigForCredentials(%v)", tt.conf)
+			require.NoError(t, err, "tlsConfigForCredentials(%v)", tt.conf)
 			if tt.verify != nil {
 				tt.verify(t, got)
 			}

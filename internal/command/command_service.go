@@ -78,7 +78,7 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 	ctx context.Context,
 	resource *mpi.Resource,
 ) error {
-	correlationID := logger.GetCorrelationID(ctx)
+	correlationID := logger.CorrelationID(ctx)
 	if !cs.isConnected.Load() {
 		return errors.New("command service client not connected yet")
 	}
@@ -138,7 +138,7 @@ func (cs *CommandService) UpdateDataPlaneHealth(ctx context.Context, instanceHea
 		return errors.New("command service client not connected yet")
 	}
 
-	correlationID := logger.GetCorrelationID(ctx)
+	correlationID := logger.CorrelationID(ctx)
 
 	request := &mpi.UpdateDataPlaneHealthRequest{
 		MessageMeta: &mpi.MessageMeta{
@@ -208,7 +208,7 @@ func (cs *CommandService) CreateConnection(
 	ctx context.Context,
 	resource *mpi.Resource,
 ) (*mpi.CreateConnectionResponse, error) {
-	correlationID := logger.GetCorrelationID(ctx)
+	correlationID := logger.CorrelationID(ctx)
 	if len(resource.GetInstances()) <= 1 {
 		slog.InfoContext(ctx, "No Data Plane Instance found")
 	}

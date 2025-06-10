@@ -93,7 +93,7 @@ func New(conf *config.Config) (*Collector, error) {
 	}, nil
 }
 
-func (oc *Collector) GetState() otelcol.State {
+func (oc *Collector) State() otelcol.State {
 	oc.mu.Lock()
 	defer oc.mu.Unlock()
 
@@ -263,6 +263,7 @@ func (oc *Collector) Subscriptions() []string {
 }
 
 func (oc *Collector) handleNginxConfigUpdate(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "OTel collector plugin received nginx config update message")
 	oc.mu.Lock()
 	defer oc.mu.Unlock()
 
@@ -287,6 +288,7 @@ func (oc *Collector) handleNginxConfigUpdate(ctx context.Context, msg *bus.Messa
 }
 
 func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "OTel collector plugin received resource update message")
 	oc.mu.Lock()
 	defer oc.mu.Unlock()
 
@@ -407,6 +409,7 @@ func (oc *Collector) checkForNewReceivers(ctx context.Context, nginxConfigContex
 	nginxReceiverFound, reloadCollector := oc.updateExistingNginxPlusReceiver(nginxConfigContext)
 
 	if !nginxReceiverFound && nginxConfigContext.PlusAPI.URL != "" {
+		slog.DebugContext(ctx, "Adding new NGINX Plus receiver", "url", nginxConfigContext.PlusAPI.URL)
 		oc.config.Collector.Receivers.NginxPlusReceivers = append(
 			oc.config.Collector.Receivers.NginxPlusReceivers,
 			config.NginxPlusReceiver{
@@ -443,6 +446,7 @@ func (oc *Collector) addNginxOssReceiver(ctx context.Context, nginxConfigContext
 	nginxReceiverFound, reloadCollector := oc.updateExistingNginxOSSReceiver(nginxConfigContext)
 
 	if !nginxReceiverFound && nginxConfigContext.StubStatus.URL != "" {
+		slog.DebugContext(ctx, "Adding new NGINX OSS receiver", "url", nginxConfigContext.StubStatus.URL)
 		oc.config.Collector.Receivers.NginxReceivers = append(
 			oc.config.Collector.Receivers.NginxReceivers,
 			config.NginxReceiver{
@@ -479,6 +483,8 @@ func (oc *Collector) updateExistingNginxPlusReceiver(
 					oc.config.Collector.Receivers.NginxPlusReceivers[index+1:]...,
 				)
 				if nginxConfigContext.PlusAPI.URL != "" {
+					slog.Debug("Updating existing NGINX Plus receiver", "url",
+						nginxConfigContext.PlusAPI.URL)
 					nginxPlusReceiver.PlusAPI.URL = nginxConfigContext.PlusAPI.URL
 					oc.config.Collector.Receivers.NginxPlusReceivers = append(
 						oc.config.Collector.Receivers.NginxPlusReceivers,
@@ -510,6 +516,8 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 					oc.config.Collector.Receivers.NginxReceivers[index+1:]...,
 				)
 				if nginxConfigContext.StubStatus.URL != "" {
+					slog.Debug("Updating existing NGINX OSS receiver", "url",
+						nginxConfigContext.StubStatus.URL)
 					nginxReceiver.StubStatus = config.APIDetails{
 						URL:      nginxConfigContext.StubStatus.URL,
 						Listen:   nginxConfigContext.StubStatus.Listen,
@@ -587,7 +595,7 @@ func (oc *Collector) updateTcplogReceivers(nginxConfigContext *model.NginxConfig
 }
 
 func (oc *Collector) areNapReceiversDeleted(nginxConfigContext *model.NginxConfigContext) bool {
-	listenAddressesToBeDeleted := oc.getConfigDeletedNapReceivers(nginxConfigContext)
+	listenAddressesToBeDeleted := oc.configDeletedNapReceivers(nginxConfigContext)
 	if len(listenAddressesToBeDeleted) != 0 {
 		oc.deleteNapReceivers(listenAddressesToBeDeleted)
 		return true
@@ -606,7 +614,7 @@ func (oc *Collector) deleteNapReceivers(listenAddressesToBeDeleted map[string]bo
 	oc.config.Collector.Receivers.TcplogReceivers = filteredReceivers
 }
 
-func (oc *Collector) getConfigDeletedNapReceivers(nginxConfigContext *model.NginxConfigContext) map[string]bool {
+func (oc *Collector) configDeletedNapReceivers(nginxConfigContext *model.NginxConfigContext) map[string]bool {
 	elements := make(map[string]bool)
 
 	for _, tcplogReceiver := range oc.config.Collector.Receivers.TcplogReceivers {

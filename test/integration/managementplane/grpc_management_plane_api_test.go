@@ -94,5 +94,5 @@ func TestGrpc_DataplaneHealthRequest(t *testing.T) {
 	responses = utils.ManagementPlaneResponses(t, 2)
 
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
-	assert.Equal(t, "Successfully sent the health status update", responses[1].GetCommandResponse().GetMessage())
+	assert.Equal(t, "Successfully sent health status update", responses[1].GetCommandResponse().GetMessage())
 }

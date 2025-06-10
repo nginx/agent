@@ -75,6 +75,7 @@ func (*Resource) Info() *bus.Info {
 func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
 	case bus.AddInstancesTopic:
+		slog.DebugContext(ctx, "Resource plugin received add instances message")
 		instanceList, ok := msg.Data.([]*mpi.Instance)
 		if !ok {
 			slog.ErrorContext(ctx, "Unable to cast message payload to []*mpi.Instance", "payload", msg.Data)
@@ -88,6 +89,7 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 
 		return
 	case bus.UpdatedInstancesTopic:
+		slog.DebugContext(ctx, "Resource plugin received update instances message")
 		instanceList, ok := msg.Data.([]*mpi.Instance)
 		if !ok {
 			slog.ErrorContext(ctx, "Unable to cast message payload to []*mpi.Instance", "payload", msg.Data)
@@ -101,6 +103,7 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 		return
 
 	case bus.DeletedInstancesTopic:
+		slog.DebugContext(ctx, "Resource plugin received delete instances message")
 		instanceList, ok := msg.Data.([]*mpi.Instance)
 		if !ok {
 			slog.ErrorContext(ctx, "Unable to cast message payload to []*mpi.Instance", "payload", msg.Data)
@@ -135,6 +138,7 @@ func (*Resource) Subscriptions() []string {
 }
 
 func (r *Resource) handleAPIActionRequest(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Resource plugin received api action request message")
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
 
 	if !ok {
@@ -161,7 +165,7 @@ func (r *Resource) handleAPIActionRequest(ctx context.Context, msg *bus.Message)
 }
 
 func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi.NGINXPlusAction, instanceID string) {
-	correlationID := logger.GetCorrelationID(ctx)
+	correlationID := logger.CorrelationID(ctx)
 	instance := r.resourceService.Instance(instanceID)
 	apiAction := APIAction{
 		ResourceService: r.resourceService,
@@ -214,6 +218,7 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 }
 
 func (r *Resource) handleWriteConfigSuccessful(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Resource plugin received write config successful message")
 	data, ok := msg.Data.(*model.ConfigApplyMessage)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplyMessage", "payload", msg.Data)
@@ -245,6 +250,7 @@ func (r *Resource) handleWriteConfigSuccessful(ctx context.Context, msg *bus.Mes
 }
 
 func (r *Resource) handleRollbackWrite(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Resource plugin received rollback write message")
 	data, ok := msg.Data.(*model.ConfigApplyMessage)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplyMessage", "payload", msg.Data)
