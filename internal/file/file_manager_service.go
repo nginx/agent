@@ -96,8 +96,9 @@ type FileManagerService struct {
 	// map of the contents of files which have been updated or deleted during config apply, used during rollback
 	rollbackFileContents map[string][]byte // key is file path
 	// map of the files currently on disk, used to determine the file action during config apply
-	currentFilesOnDisk map[string]*mpi.File // key is file path
-	filesMutex         sync.RWMutex
+	currentFilesOnDisk    map[string]*mpi.File // key is file path
+	previousManifestFiles map[string]*model.ManifestFile
+	filesMutex            sync.RWMutex
 }
 
 func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig *config.Config) *FileManagerService {
@@ -105,13 +106,14 @@ func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig 
 	isConnected.Store(false)
 
 	return &FileManagerService{
-		fileServiceClient:    fileServiceClient,
-		agentConfig:          agentConfig,
-		fileOperator:         NewFileOperator(),
-		fileActions:          make(map[string]*model.FileCache),
-		rollbackFileContents: make(map[string][]byte),
-		currentFilesOnDisk:   make(map[string]*mpi.File),
-		isConnected:          isConnected,
+		fileServiceClient:     fileServiceClient,
+		agentConfig:           agentConfig,
+		fileOperator:          NewFileOperator(),
+		fileActions:           make(map[string]*model.FileCache),
+		rollbackFileContents:  make(map[string][]byte),
+		currentFilesOnDisk:    make(map[string]*mpi.File),
+		previousManifestFiles: make(map[string]*model.ManifestFile),
+		isConnected:           isConnected,
 	}
 }
 
@@ -193,7 +195,7 @@ func (fms *FileManagerService) UpdateOverview(
 	delta := files.ConvertToMapOfFiles(response.GetOverview().GetFiles())
 
 	if len(delta) != 0 {
-		return fms.updateFiles(ctx, delta, request.GetOverview().GetFiles(), instanceID, iteration)
+		return fms.updateFiles(ctx, delta, instanceID, iteration)
 	}
 
 	return err
@@ -217,7 +219,6 @@ func (fms *FileManagerService) setupIdentifiers(ctx context.Context, iteration i
 func (fms *FileManagerService) updateFiles(
 	ctx context.Context,
 	delta map[string]*mpi.File,
-	fileOverview []*mpi.File,
 	instanceID string,
 	iteration int,
 ) error {
@@ -233,7 +234,7 @@ func (fms *FileManagerService) updateFiles(
 	iteration++
 	slog.Info("Updating file overview after file updates", "attempt_number", iteration)
 
-	return fms.UpdateOverview(ctx, instanceID, fileOverview, iteration)
+	return fms.UpdateOverview(ctx, instanceID, diffFiles, iteration)
 }
 
 func (fms *FileManagerService) UpdateFile(
@@ -538,12 +539,13 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 func (fms *FileManagerService) ClearCache() {
 	clear(fms.rollbackFileContents)
 	clear(fms.fileActions)
+	clear(fms.previousManifestFiles)
 }
 
 // nolint:revive,cyclop
 func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) error {
 	slog.InfoContext(ctx, "Rolling back config for instance", "instanceid", instanceID)
-	areFilesUpdated := false
+
 	fms.filesMutex.Lock()
 	defer fms.filesMutex.Unlock()
 	for _, fileAction := range fms.fileActions {
@@ -555,7 +557,6 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 
 			// currentFilesOnDisk needs to be updated after rollback action is performed
 			delete(fms.currentFilesOnDisk, fileAction.File.GetFileMeta().GetName())
-			areFilesUpdated = true
 
 			continue
 		case model.Delete, model.Update:
@@ -568,7 +569,6 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 			// currentFilesOnDisk needs to be updated after rollback action is performed
 			fileAction.File.GetFileMeta().Hash = files.GenerateHash(content)
 			fms.currentFilesOnDisk[fileAction.File.GetFileMeta().GetName()] = fileAction.File
-			areFilesUpdated = true
 		case model.Unchanged:
 			fallthrough
 		default:
@@ -576,11 +576,9 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 		}
 	}
 
-	if areFilesUpdated {
-		manifestFileErr := fms.UpdateManifestFile(fms.currentFilesOnDisk, true)
-		if manifestFileErr != nil {
-			return manifestFileErr
-		}
+	manifestFileErr := fms.writeManifestFile(fms.previousManifestFiles)
+	if manifestFileErr != nil {
+		return manifestFileErr
 	}
 
 	return nil
@@ -818,6 +816,7 @@ func (fms *FileManagerService) UpdateCurrentFilesOnDisk(
 // nolint: revive
 func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.File, referenced bool) (err error) {
 	currentManifestFiles, _, readError := fms.manifestFile()
+	fms.previousManifestFiles = currentManifestFiles
 	if readError != nil && !errors.Is(readError, os.ErrNotExist) {
 		return fmt.Errorf("unable to read manifest file: %w", readError)
 	}
