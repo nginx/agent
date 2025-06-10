@@ -33,6 +33,7 @@ func parseServerType(str string) (ServerType, bool) {
 type (
 	Config struct {
 		Command            *Command         `yaml:"command"             mapstructure:"command"`
+		Auxiliary          *Command         `yaml:"auxiliary_command"   mapstructure:"auxiliary_command"`
 		Log                *Log             `yaml:"log"                 mapstructure:"log"`
 		DataPlaneConfig    *DataPlaneConfig `yaml:"data_plane_config"   mapstructure:"data_plane_config"`
 		Client             *Client          `yaml:"client"              mapstructure:"client"`
@@ -360,6 +361,14 @@ func (c *Config) IsGrpcClientConfigured() bool {
 		c.Command.Server.Host != "" &&
 		c.Command.Server.Port != 0 &&
 		c.Command.Server.Type == Grpc
+}
+
+func (c *Config) IsAuxiliaryServerConfigured() bool {
+	return c.Auxiliary != nil &&
+		c.Auxiliary.Server != nil &&
+		c.Auxiliary.Server.Host != "" &&
+		c.Auxiliary.Server.Port != 0 &&
+		c.Auxiliary.Server.Type == Grpc
 }
 
 func (c *Config) IsAuthConfigured() bool {

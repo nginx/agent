@@ -90,7 +90,38 @@ func NewGrpcConnection(ctx context.Context, agentConfig *config.Config) (*GrpcCo
 
 	var err error
 	grpcConnection.mutex.Lock()
-	grpcConnection.conn, err = grpc.NewClient(serverAddr, GetDialOptions(agentConfig, resourceID)...)
+	grpcConnection.conn, err = grpc.NewClient(serverAddr, DialOptions(agentConfig, resourceID)...)
+	grpcConnection.mutex.Unlock()
+	if err != nil {
+		return nil, err
+	}
+
+	return grpcConnection, nil
+}
+
+// nolint: ireturn
+func NewAuxGrpcConnection(ctx context.Context, agentConfig *config.Config) (*GrpcConnection, error) {
+	if agentConfig == nil || agentConfig.Auxiliary.Server.Type != config.Grpc {
+		return nil, errors.New("invalid aux command server settings")
+	}
+
+	grpcConnection := &GrpcConnection{
+		config: agentConfig,
+	}
+
+	serverAddr := net.JoinHostPort(
+		agentConfig.Auxiliary.Server.Host,
+		fmt.Sprint(agentConfig.Auxiliary.Server.Port),
+	)
+
+	slog.InfoContext(ctx, "Dialing grpc server", "server_addr", serverAddr)
+
+	info := host.NewInfo()
+	resourceID := info.ResourceID(ctx)
+
+	var err error
+	grpcConnection.mutex.Lock()
+	grpcConnection.conn, err = grpc.NewClient(serverAddr, AuxDialOptions(agentConfig, resourceID)...)
 	grpcConnection.mutex.Unlock()
 	if err != nil {
 		return nil, err
@@ -160,7 +191,8 @@ func (w *wrappedStream) SendMsg(message any) error {
 	return w.ClientStream.SendMsg(message)
 }
 
-func GetDialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOption {
+// nolint: dupl
+func DialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOption {
 	streamClientInterceptors := []grpc.StreamClientInterceptor{grpcRetry.StreamClientInterceptor()}
 	unaryClientInterceptors := []grpc.UnaryClientInterceptor{grpcRetry.UnaryClientInterceptor()}
 
@@ -220,8 +252,88 @@ func GetDialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOp
 	return opts
 }
 
+// nolint: dupl
+func AuxDialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOption {
+	streamClientInterceptors := []grpc.StreamClientInterceptor{grpcRetry.StreamClientInterceptor()}
+	unaryClientInterceptors := []grpc.UnaryClientInterceptor{grpcRetry.UnaryClientInterceptor()}
+
+	protoValidatorStreamClientInterceptor, err := ProtoValidatorStreamClientInterceptor()
+	if err != nil {
+		slog.Error("Unable to add proto validation stream interceptor", "error", err)
+	} else {
+		streamClientInterceptors = append(streamClientInterceptors, protoValidatorStreamClientInterceptor)
+	}
+
+	protoValidatorUnaryClientInterceptor, err := ProtoValidatorUnaryClientInterceptor()
+	if err != nil {
+		slog.Error("Unable to add proto validation unary interceptor", "error", err)
+	} else {
+		unaryClientInterceptors = append(unaryClientInterceptors, protoValidatorUnaryClientInterceptor)
+	}
+
+	sendRecOpts := []grpc.DialOption{}
+	if agentConfig.Client != nil {
+		if agentConfig.Client.Grpc.MaxMessageSize != 0 {
+			sendRecOpts = append(sendRecOpts, grpc.WithDefaultCallOptions(
+				grpc.MaxCallRecvMsgSize(agentConfig.Client.Grpc.MaxMessageSize),
+				grpc.MaxCallSendMsgSize(agentConfig.Client.Grpc.MaxMessageSize),
+			))
+		} else {
+			sendRecOpts = append(sendRecOpts, grpc.WithDefaultCallOptions(
+				grpc.MaxCallRecvMsgSize(agentConfig.Client.Grpc.MaxMessageReceiveSize),
+				grpc.MaxCallSendMsgSize(agentConfig.Client.Grpc.MaxMessageSendSize),
+			))
+		}
+		keepAlive := keepalive.ClientParameters{
+			Time:                agentConfig.Client.Grpc.KeepAlive.Time,
+			Timeout:             agentConfig.Client.Grpc.KeepAlive.Timeout,
+			PermitWithoutStream: agentConfig.Client.Grpc.KeepAlive.PermitWithoutStream,
+		}
+
+		sendRecOpts = append(sendRecOpts,
+			grpc.WithKeepaliveParams(keepAlive),
+		)
+	}
+
+	opts := []grpc.DialOption{
+		grpc.WithChainStreamInterceptor(streamClientInterceptors...),
+		grpc.WithChainUnaryInterceptor(unaryClientInterceptors...),
+		grpc.WithUserAgent("nginx-agent/" + strings.TrimPrefix(agentConfig.Version, "v")),
+		grpc.WithDefaultServiceConfig(serviceConfig),
+	}
+
+	opts = append(opts, sendRecOpts...)
+
+	opts, skipToken := addAuxTransportCredentials(agentConfig, opts)
+
+	if agentConfig.Auxiliary.Auth != nil && !skipToken {
+		opts = addAuxPerRPCCredentials(agentConfig, resourceID, opts)
+	}
+
+	return opts
+}
+
 func addTransportCredentials(agentConfig *config.Config, opts []grpc.DialOption) ([]grpc.DialOption, bool) {
 	transportCredentials, err := getTransportCredentials(agentConfig)
+	if err != nil {
+		slog.Error("Unable to add transport credentials to gRPC dial options, adding "+
+			"default transport credentials", "error", err)
+		opts = append(opts,
+			grpc.WithTransportCredentials(defaultCredentials),
+		)
+
+		return opts, true
+	}
+	slog.Debug("Adding transport credentials to gRPC dial options")
+	opts = append(opts,
+		grpc.WithTransportCredentials(transportCredentials),
+	)
+
+	return opts, false
+}
+
+func addAuxTransportCredentials(agentConfig *config.Config, opts []grpc.DialOption) ([]grpc.DialOption, bool) {
+	transportCredentials, err := auxTransportCredentials(agentConfig)
 	if err != nil {
 		slog.Error("Unable to add transport credentials to gRPC dial options, adding "+
 			"default transport credentials", "error", err)
@@ -245,6 +357,31 @@ func addPerRPCCredentials(agentConfig *config.Config, resourceID string, opts []
 	if agentConfig.Command.Auth.TokenPath != "" {
 		slog.Debug("Reading token from file", "path", agentConfig.Command.Auth.TokenPath)
 		tk, err := file.ReadFromFile(agentConfig.Command.Auth.TokenPath)
+		if err == nil {
+			token = tk
+		} else {
+			slog.Error("Unable to add token to gRPC dial options", "error", err)
+		}
+	}
+
+	slog.Debug("Adding RPC credentials")
+	opts = append(opts,
+		grpc.WithPerRPCCredentials(
+			&PerRPCCredentials{
+				Token: token,
+				ID:    resourceID,
+			}),
+	)
+
+	return opts
+}
+
+func addAuxPerRPCCredentials(agentConfig *config.Config, resourceID string, opts []grpc.DialOption) []grpc.DialOption {
+	token := agentConfig.Auxiliary.Auth.Token
+
+	if agentConfig.Auxiliary.Auth.TokenPath != "" {
+		slog.Debug("Reading token from file", "path", agentConfig.Auxiliary.Auth.TokenPath)
+		tk, err := file.ReadFromFile(agentConfig.Auxiliary.Auth.TokenPath)
 		if err == nil {
 			token = tk
 		} else {
@@ -359,6 +496,7 @@ func validateMessage(validator protovalidate.Validator, message any) error {
 	return nil
 }
 
+// nolint: dupl
 func getTransportCredentials(agentConfig *config.Config) (credentials.TransportCredentials, error) {
 	if agentConfig.Command.TLS == nil {
 		return defaultCredentials, nil
@@ -384,6 +522,39 @@ func getTransportCredentials(agentConfig *config.Config) (credentials.TransportC
 	}
 
 	err = appendRootCAs(tlsConfig, agentConfig.Command.TLS.Ca)
+	if err != nil {
+		slog.Debug("Unable to append root CA", "error", err)
+	}
+
+	return credentials.NewTLS(tlsConfig), nil
+}
+
+// nolint: dupl
+func auxTransportCredentials(agentConfig *config.Config) (credentials.TransportCredentials, error) {
+	if agentConfig.Auxiliary.TLS == nil {
+		return defaultCredentials, nil
+	}
+
+	if agentConfig.Auxiliary.TLS.SkipVerify {
+		slog.Warn("Verification of the server's certificate chain and host name is disabled")
+	}
+
+	tlsConfig := &tls.Config{
+		MinVersion:         tls.VersionTLS12,
+		ServerName:         agentConfig.Auxiliary.TLS.ServerName,
+		InsecureSkipVerify: agentConfig.Auxiliary.TLS.SkipVerify,
+	}
+
+	if agentConfig.Auxiliary.TLS.Key == "" {
+		return credentials.NewTLS(tlsConfig), nil
+	}
+
+	err := appendCertKeyPair(tlsConfig, agentConfig.Auxiliary.TLS.Cert, agentConfig.Auxiliary.TLS.Key)
+	if err != nil {
+		return nil, fmt.Errorf("append cert and key pair failed: %w", err)
+	}
+
+	err = appendRootCAs(tlsConfig, agentConfig.Auxiliary.TLS.Ca)
 	if err != nil {
 		slog.Debug("Unable to append root CA", "error", err)
 	}

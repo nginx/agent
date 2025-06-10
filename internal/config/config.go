@@ -121,6 +121,7 @@ func ResolveConfig() (*Config, error) {
 		AllowedDirectories: allowedDirs,
 		Collector:          collector,
 		Command:            resolveCommand(),
+		Auxiliary:          resolveAuxiliary(),
 		Watchers:           resolveWatchers(),
 		Features:           viperInstance.GetStringSlice(FeaturesKey),
 		Labels:             resolveLabels(),
@@ -286,6 +287,7 @@ func registerFlags() {
 
 	registerCommonFlags(fs)
 	registerCommandFlags(fs)
+	registerAuxiliaryFlags(fs)
 	registerCollectorFlags(fs)
 	registerClientFlags(fs)
 
@@ -442,6 +444,65 @@ func registerCommandFlags(fs *flag.FlagSet) {
 	fs.String(
 		CommandTLSServerNameKey,
 		DefCommandTLServerNameKey,
+		"Specifies the name of the server sent in the TLS configuration.",
+	)
+}
+
+func registerAuxiliaryFlags(fs *flag.FlagSet) {
+	fs.String(
+		AuxiliaryServerHostKey,
+		DefAuxiliaryServerHostKey,
+		"The target hostname of the auxiliary server endpoint for read only mode.",
+	)
+	fs.String(
+		AuxiliaryTypeKey,
+		DefAuxiliaryServerTypeKey,
+		"The target hostname of the auxiliary server endpoint for read only mode.",
+	)
+	fs.Int32(
+		AuxiliaryServerPortKey,
+		DefAuxiliaryServerPortKey,
+		"The target port of the auxiliary server endpoint for read only mode.",
+	)
+	fs.String(
+		AuxiliaryServerTypeKey,
+		DefAuxiliaryServerTypeKey,
+		"The target protocol (gRPC or HTTP) the auxiliary server endpoint for read only mode.",
+	)
+	fs.String(
+		AuxiliaryAuthTokenKey,
+		DefAuxiliaryAuthTokenKey,
+		"The token used in the authentication handshake with the auxiliary server endpoint for read only mode.",
+	)
+	fs.String(
+		AuxiliaryAuthTokenPathKey,
+		DefAuxiliaryAuthTokenPathKey,
+		"The path to the file containing the token used in the authentication handshake with "+
+			"the auxiliary server endpoint for read only mode.",
+	)
+	fs.String(
+		AuxiliaryTLSCertKey,
+		DefAuxiliaryTLSCertKey,
+		"The path to the certificate file to use for TLS communication with the auxiliary server.",
+	)
+	fs.String(
+		AuxiliaryTLSKeyKey,
+		DefAuxiliaryTLSKeyKey,
+		"The path to the certificate key file to use for TLS communication with the auxiliary server.",
+	)
+	fs.String(
+		AuxiliaryTLSCaKey,
+		DefAuxiliaryTLSCaKey,
+		"The path to CA certificate file to use for TLS communication with the auxiliary server.",
+	)
+	fs.Bool(
+		AuxiliaryTLSSkipVerifyKey,
+		DefAuxiliaryTLSSkipVerifyKey,
+		"Testing only. Skip verify controls client verification of a server's certificate chain and host name.",
+	)
+	fs.String(
+		AuxiliaryTLSServerNameKey,
+		DefAuxiliaryTLServerNameKey,
 		"Specifies the name of the server sent in the TLS configuration.",
 	)
 }
@@ -954,14 +1015,14 @@ func resolveCommand() *Command {
 		},
 	}
 
-	if areAuthSettingsSet() {
+	if areCommandAuthSettingsSet() {
 		command.Auth = &AuthConfig{
 			Token:     viperInstance.GetString(CommandAuthTokenKey),
 			TokenPath: viperInstance.GetString(CommandAuthTokenPathKey),
 		}
 	}
 
-	if areTLSSettingsSet() {
+	if areCommandTLSSettingsSet() {
 		command.TLS = &TLSConfig{
 			Cert:       viperInstance.GetString(CommandTLSCertKey),
 			Key:        viperInstance.GetString(CommandTLSKeyKey),
@@ -974,17 +1035,68 @@ func resolveCommand() *Command {
 	return command
 }
 
-func areAuthSettingsSet() bool {
+func resolveAuxiliary() *Command {
+	serverType, ok := parseServerType(viperInstance.GetString(AuxiliaryTypeKey))
+	if !ok {
+		serverType = Grpc
+		slog.Error(
+			"Invalid value for auxiliary command server type, defaulting to gRPC server type",
+			"server_type", viperInstance.GetString(CommandServerTypeKey),
+		)
+	}
+
+	auxiliary := &Command{
+		Server: &ServerConfig{
+			Host: viperInstance.GetString(AuxiliaryServerHostKey),
+			Port: viperInstance.GetInt(AuxiliaryServerPortKey),
+			Type: serverType,
+		},
+	}
+
+	if areAuxiliaryAuthSettingsSet() {
+		auxiliary.Auth = &AuthConfig{
+			Token:     viperInstance.GetString(AuxiliaryAuthTokenKey),
+			TokenPath: viperInstance.GetString(AuxiliaryAuthTokenPathKey),
+		}
+	}
+
+	if areAuxiliaryTLSSettingsSet() {
+		auxiliary.TLS = &TLSConfig{
+			Cert:       viperInstance.GetString(AuxiliaryTLSCertKey),
+			Key:        viperInstance.GetString(AuxiliaryTLSKeyKey),
+			Ca:         viperInstance.GetString(AuxiliaryTLSCaKey),
+			SkipVerify: viperInstance.GetBool(AuxiliaryTLSSkipVerifyKey),
+			ServerName: viperInstance.GetString(AuxiliaryTLSServerNameKey),
+		}
+	}
+
+	return auxiliary
+}
+
+func areCommandAuthSettingsSet() bool {
 	return viperInstance.IsSet(CommandAuthTokenKey) ||
 		viperInstance.IsSet(CommandAuthTokenPathKey)
 }
 
-func areTLSSettingsSet() bool {
+func areAuxiliaryAuthSettingsSet() bool {
+	return viperInstance.IsSet(AuxiliaryAuthTokenKey) ||
+		viperInstance.IsSet(AuxiliaryAuthTokenPathKey)
+}
+
+func areCommandTLSSettingsSet() bool {
 	return viperInstance.IsSet(CommandTLSCertKey) ||
 		viperInstance.IsSet(CommandTLSKeyKey) ||
 		viperInstance.IsSet(CommandTLSCaKey) ||
 		viperInstance.IsSet(CommandTLSSkipVerifyKey) ||
 		viperInstance.IsSet(CommandTLSServerNameKey)
+}
+
+func areAuxiliaryTLSSettingsSet() bool {
+	return viperInstance.IsSet(AuxiliaryTLSCertKey) ||
+		viperInstance.IsSet(AuxiliaryTLSKeyKey) ||
+		viperInstance.IsSet(AuxiliaryTLSCaKey) ||
+		viperInstance.IsSet(AuxiliaryTLSSkipVerifyKey) ||
+		viperInstance.IsSet(AuxiliaryTLSServerNameKey)
 }
 
 func areHealthExtensionTLSSettingsSet() bool {

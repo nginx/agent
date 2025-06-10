@@ -957,6 +957,25 @@ func createConfig() *Config {
 				ServerName: "server-name",
 			},
 		},
+		Auxiliary: &Command{
+			Server: &ServerConfig{
+				Host: "second.management.plane",
+				Port: 9999,
+				Type: Grpc,
+			},
+			Auth: &AuthConfig{
+				Token:     "1234",
+				TokenPath: "path/to/my_token",
+			},
+			TLS: &TLSConfig{
+				Cert:       "some.cert",
+				Key:        "some.key",
+				Ca:         "some.ca",
+				SkipVerify: false,
+				ServerName: "server-name",
+			},
+		},
+
 		Watchers: &Watchers{
 			InstanceWatcher: InstanceWatcher{
 				MonitoringFrequency: 10 * time.Second,
