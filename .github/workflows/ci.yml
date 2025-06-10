@@ -48,6 +48,13 @@ jobs:
           working-directory: sdk
           args: -c ../scripts/.golangci.yml
           skip-cache: true
+      - name: Upload linter logs
+        if: success() || failure()
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        with:
+            name: result-linter-logs
+            path: /tmp/linter-logs.log
+            retention-days: 3
 
   unit-test:
     name: Unit Tests
@@ -63,6 +70,13 @@ jobs:
         uses: codecov/codecov-action@84508663e988701840491b86de86b666e8a86bed # v4.3.0
         with:
           files: ./build/test/coverage.out
+      - name: Upload unit-test logs
+        if: success() || failure()
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        with:
+            name: result-unit-test-logs
+            path: /tmp/unit-test-logs.log
+            retention-days: 3
 
   component-test:
     name: Component Tests
@@ -74,6 +88,13 @@ jobs:
           go-version-file: 'go.mod'
       - name: Run Component Tests
         run: make component-test
+      - name: Upload component test logs
+        if: success() || failure()
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        with:
+            name: result-component-test-logs
+            path: /tmp/component-test-logs.log
+            retention-days: 3
 
   build-unsigned-snapshot:
     name: Build unsigned snapshot
@@ -173,12 +194,12 @@ jobs:
                 dockerid=$(docker ps -a --format "{{.ID}}")
                 docker logs "$dockerid"
 
-          - name: Archive integration test logs
+          - name: Upload integration test logs
             if: success() || failure()
             uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
             with:
-                name: integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}
-                path: /tmp/integration-test-logs/
+                name: result-integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}
+                path: /tmp/integration-test-logs.log
                 retention-days: 3
 
   official-oss-image-integration-tests:
@@ -233,6 +254,14 @@ jobs:
           name: official-oss-integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}
           path: /tmp/integration-test-logs/
           retention-days: 3
+          
+      - name: Upload oss integration test logs
+        if: success() || failure()
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        with:
+            name: result-oss-integration-tests-logs
+            path: /tmp/oss-integration-tests-logs.log
+            retention-days: 3
 
   official-plus-image-integration-tests:
       name: Integration Tests - Official Plus Images
@@ -301,6 +330,14 @@ jobs:
                 name: official-plus-integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}-${{ matrix.container.plus }}
                 path: /tmp/integration-test-logs/
                 retention-days: 3
+                
+          - name: Upload plus integration test logs
+            if: success() || failure()
+            uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+            with:
+                name: result-plus-integration-tests-logs
+                path: /tmp/plus-integration-tests-logs.log
+                retention-days: 3
 
   performance-test:
     name: Performance Tests
@@ -324,6 +361,13 @@ jobs:
             "nginx-key=${{ secrets.NGINX_KEY }}"
       - name: Run Performance Tests
         run: docker run -v ${GITHUB_WORKSPACE}:/home/nginx/ --rm nginx-agent-benchmark:1.0.0
+      - name: Upload performance test logs
+        if: success() || failure()
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        with:
+            name: result-performance-test-logs
+            path: /tmp/performance-test-logs.log
+            retention-days: 3
 
   build-signed-snapshot:
     name: Build signed snapshot
@@ -409,3 +453,14 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      
+  merge-artifacts:
+    runs-on: ubuntu-22.04
+    needs: [ lint, unit-test, component-test, performance-test, integration-tests, official-plus-image-integration-tests, official-oss-image-integration-tests ]
+    steps:
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+            name: ci-test-workflow-logs
+            pattern: result-*
+            delete-merged: true
