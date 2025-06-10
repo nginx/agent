@@ -25,20 +25,6 @@ fi
 PKG_DIR="${PKG_REPO}/${PKG_NAME}"
 PKG_REPO_URL="https://${PKG_DIR}"
 
-# parsing xml in bash
-#read_dom () {
-#    local IFS=\>
-#    read -d \< ENTITY CONTENT
-#    local ret=$?
-#    TAG_NAME=${ENTITY%% *}
-#    ATTRIBUTES=${ENTITY#* }
-#    return $ret
-#}
-#
-#while read_dom; do
-#  if
-#done < ${PKG_REPO}/index.xml
-
 APK=(
   alpine/v3.21/main/aarch64/nginx-agent-$VERSION.apk
   alpine/v3.21/main/x86_64/nginx-agent-$VERSION.apk
@@ -81,7 +67,7 @@ CENTOS=(
   centos/8/x86_64/RPMS/nginx-agent-$VERSION.el8.ngx.x86_64.rpm
 )
 
-resources=(
+uris=(
   ${DEBIAN[@]}
   ${UBUNTU[@]}
   ${CENTOS[@]}
@@ -92,7 +78,7 @@ resources=(
 
 ## Check if nginx-agent packages are present and report missing or outdated files
 check_pkgs () {
-  for pkg in ${resources[@]}; do
+  for pkg in ${uris[@]}; do
     echo -n "CHECK: ${PKG_REPO_URL}/${pkg} -> "
     local ret=$(curl -I -s -E "${CERT}" --key "${KEY}" "https://${PKG_DIR}/${pkg}" | head -n1 | awk '{ print $2 }')
     if [[ ${ret} != 200 ]]; then
@@ -110,9 +96,14 @@ check_pkgs () {
 
 dl_pkg () {
     local url=${1}
-    echo -n "GET: ${url}"
+    echo -n "GET: ${url}... "
     mkdir -p "${PKG_DIR}/$(dirname ${pkg})"
-    curl -s -E "${CERT}" --key "${KEY}" "https://${PKG_DIR}/${pkg}" --output "${PKG_DIR}/${pkg}" && echo -e " ${GREEN}Done${NC}" || echo -e " ${RED}Download failed!${NC}"
+    local ret=$(curl -s --fail -E "${CERT}" --key "${KEY}" "${url}" --output "${PKG_DIR}/${pkg}")
+    if [[ $? != 0 ]]; then
+      echo -e "${RED}Download failed!${NC}"
+      return
+    fi
+    echo -e "${GREEN}Done${NC}"
 }
 
 check_repo() {
@@ -131,7 +122,7 @@ check_repo() {
   echo -n "Checking for nginx-agent version ${VERSION}... "
   grep -qnF "ver=\"${VERSION}\"" "${PKG_DIR}/index.xml"
   if [[ $? != 0 ]]; then
-    echo -e "${RED}*** Error: ${PKG_NAME} v${VERSION} not found in ${PKG_REPO} ***${NC}"
+    echo -e "${RED}not found${NC}"
     exit 1
   else
     echo -e "${GREEN}Found!${NC}"
