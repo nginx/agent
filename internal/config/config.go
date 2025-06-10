@@ -922,10 +922,36 @@ func resolveExtensions() Extensions {
 		}
 	}
 
+	if headersSetter != nil {
+		headersSetter.Headers = updateHeaders(headersSetter.Headers)
+	}
+
 	return Extensions{
 		Health:        health,
 		HeadersSetter: headersSetter,
 	}
+}
+
+func updateHeaders(headers []Header) []Header {
+	var err error
+	newHeaders := []Header{}
+
+	for _, header := range headers {
+		value := header.Value
+		if value == "" && header.FilePath != "" {
+			slog.Debug("Read value from file", "path", header.FilePath)
+			value, err = file.ReadFromFile(header.FilePath)
+			if err != nil {
+				slog.Error("Unable to read value from file path",
+					"error", err, "file_path", header.FilePath)
+			}
+		}
+
+		header.Value = value
+		newHeaders = append(newHeaders, header)
+	}
+
+	return newHeaders
 }
 
 func isHealthExtensionSet() bool {

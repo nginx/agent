@@ -161,10 +161,16 @@ func (oc *Collector) processReceivers(ctx context.Context, receivers []config.Ot
 	}
 }
 
+// nolint: revive, cyclop
 func (oc *Collector) bootup(ctx context.Context) error {
 	errChan := make(chan error)
 
 	go func() {
+		if oc.service == nil {
+			errChan <- fmt.Errorf("unable to start OTel collector: service is nil")
+			return
+		}
+
 		appErr := oc.service.Run(ctx)
 		if appErr != nil {
 			errChan <- appErr
@@ -177,8 +183,11 @@ func (oc *Collector) bootup(ctx context.Context) error {
 		case err := <-errChan:
 			return err
 		default:
-			state := oc.service.GetState()
+			if oc.service == nil {
+				return fmt.Errorf("unable to start otel collector: service is nil")
+			}
 
+			state := oc.service.GetState()
 			switch state {
 			case otelcol.StateStarting:
 				// NoOp
@@ -212,9 +221,9 @@ func (oc *Collector) Close(ctx context.Context) error {
 		oc.service.Shutdown()
 		oc.cancel()
 
-		settings := oc.config.Client.Backoff
+		settings := *oc.config.Client.Backoff
 		settings.MaxElapsedTime = maxTimeToWaitForShutdown
-		err := backoff.WaitUntil(ctx, settings, func() error {
+		err := backoff.WaitUntil(ctx, &settings, func() error {
 			if oc.service.GetState() == otelcol.StateClosed {
 				return nil
 			}

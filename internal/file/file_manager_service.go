@@ -175,9 +175,10 @@ func (fms *FileManagerService) UpdateOverview(
 		return response, nil
 	}
 
+	backoffSettings := fms.agentConfig.Client.Backoff
 	response, err := backoff.RetryWithData(
 		sendUpdateOverview,
-		backoffHelpers.Context(backOffCtx, fms.agentConfig.Client.Backoff),
+		backoffHelpers.Context(backOffCtx, backoffSettings),
 	)
 	if err != nil {
 		return err
@@ -843,7 +844,7 @@ func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.F
 	return fms.writeManifestFile(updatedFiles)
 }
 
-func (fms *FileManagerService) writeManifestFile(updatedFiles map[string]*model.ManifestFile) error {
+func (fms *FileManagerService) writeManifestFile(updatedFiles map[string]*model.ManifestFile) (writeError error) {
 	manifestJSON, err := json.MarshalIndent(updatedFiles, "", "  ")
 	if err != nil {
 		return fmt.Errorf("unable to marshal manifest file json: %w", err)
@@ -859,14 +860,18 @@ func (fms *FileManagerService) writeManifestFile(updatedFiles map[string]*model.
 	if err != nil {
 		return fmt.Errorf("failed to read manifest file: %w", err)
 	}
-	defer newFile.Close()
+	defer func() {
+		if closeErr := newFile.Close(); closeErr != nil {
+			writeError = closeErr
+		}
+	}()
 
 	_, err = newFile.Write(manifestJSON)
 	if err != nil {
 		return fmt.Errorf("failed to write manifest file: %w", err)
 	}
 
-	return nil
+	return writeError
 }
 
 func (fms *FileManagerService) manifestFile() (map[string]*model.ManifestFile, map[string]*mpi.File, error) {
