@@ -53,7 +53,7 @@ jobs:
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
             name: result-linter-logs
-            path: /tmp/linter-logs.log
+            path: .github/artifacts/
             retention-days: 3
 
   unit-test:
@@ -75,7 +75,7 @@ jobs:
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
             name: result-unit-test-logs
-            path: /tmp/unit-test-logs.log
+            path: .github/artifacts/
             retention-days: 3
 
   component-test:
