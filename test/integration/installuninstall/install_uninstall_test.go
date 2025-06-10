@@ -93,7 +93,7 @@ func verifyAgentPackage(tb testing.TB, testContainer testcontainers.Container) s
 	agentPkgPath, filePathErr := filepath.Abs("../../../build/")
 	require.NoError(tb, filePathErr, "Error finding local agent package build dir")
 
-	localAgentPkg, packageErr := os.Stat(getPackagePath(agentPkgPath, osRelease))
+	localAgentPkg, packageErr := os.Stat(packagePath(agentPkgPath, osRelease))
 	require.NoError(tb, packageErr, "Error accessing package at: "+agentPkgPath)
 
 	// Check the file size is less than or equal 30MB
@@ -103,7 +103,7 @@ func verifyAgentPackage(tb testing.TB, testContainer testcontainers.Container) s
 		updateDebRepo(tb, testContainer)
 	}
 
-	return getPackagePath(absContainerAgentPackageDir, osRelease)
+	return packagePath(absContainerAgentPackageDir, osRelease)
 }
 
 func verifyAgentInstall(ctx context.Context, tb testing.TB, testContainer testcontainers.Container,
@@ -244,7 +244,7 @@ func createInstallCommand(osReleaseContent, agentPackageFilePath string) []strin
 	return []string{"yum", "localinstall", "-y", agentPackageFilePath}
 }
 
-func getPackagePath(pkgDir, osReleaseContent string) string {
+func packagePath(pkgDir, osReleaseContent string) string {
 	pkgPath := path.Join(pkgDir, packageName)
 
 	if strings.Contains(osReleaseContent, "ubuntu") || strings.Contains(osReleaseContent, "Debian") {

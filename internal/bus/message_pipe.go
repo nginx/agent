@@ -35,7 +35,7 @@ type (
 		DeRegister(ctx context.Context, plugins []string) error
 		Process(ctx context.Context, messages ...*Message)
 		Run(ctx context.Context)
-		GetPlugins() []Plugin
+		Plugins() []Plugin
 		IsPluginRegistered(pluginName string) bool
 	}
 
@@ -93,7 +93,7 @@ func (p *MessagePipe) DeRegister(ctx context.Context, pluginNames []string) erro
 	plugins := p.findPlugins(pluginNames)
 
 	for _, plugin := range plugins {
-		index := p.GetIndex(plugin.Info().Name, p.plugins)
+		index := p.Index(plugin.Info().Name, p.plugins)
 
 		err := p.unsubscribePlugin(ctx, index, plugin)
 		if err != nil {
@@ -131,14 +131,14 @@ func (p *MessagePipe) Run(ctx context.Context) {
 	}
 }
 
-func (p *MessagePipe) GetPlugins() []Plugin {
+func (p *MessagePipe) Plugins() []Plugin {
 	return p.plugins
 }
 
 func (p *MessagePipe) IsPluginRegistered(pluginName string) bool {
 	isPluginRegistered := false
 
-	for _, plugin := range p.GetPlugins() {
+	for _, plugin := range p.Plugins() {
 		if plugin.Info().Name == pluginName {
 			isPluginRegistered = true
 		}
@@ -181,7 +181,7 @@ func (p *MessagePipe) findPlugins(pluginNames []string) []Plugin {
 	return plugins
 }
 
-func (p *MessagePipe) GetIndex(pluginName string, plugins []Plugin) int {
+func (p *MessagePipe) Index(pluginName string, plugins []Plugin) int {
 	for index, plugin := range plugins {
 		if pluginName == plugin.Info().Name {
 			return index

@@ -91,9 +91,10 @@ type FileManagerService struct {
 	// map of the contents of files which have been updated or deleted during config apply, used during rollback
 	rollbackFileContents map[string][]byte // key is file path
 	// map of the files currently on disk, used to determine the file action during config apply
-	currentFilesOnDisk map[string]*mpi.File // key is file path
-	manifestFilePath   string
-	filesMutex         sync.RWMutex
+	currentFilesOnDisk    map[string]*mpi.File // key is file path
+	previousManifestFiles map[string]*model.ManifestFile
+	manifestFilePath      string
+	filesMutex            sync.RWMutex
 }
 
 func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig *config.Config) *FileManagerService {
@@ -101,14 +102,15 @@ func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig 
 	isConnected.Store(false)
 
 	return &FileManagerService{
-		fileServiceClient:    fileServiceClient,
-		agentConfig:          agentConfig,
-		fileOperator:         NewFileOperator(),
-		fileActions:          make(map[string]*model.FileCache),
-		rollbackFileContents: make(map[string][]byte),
-		currentFilesOnDisk:   make(map[string]*mpi.File),
-		isConnected:          isConnected,
-		manifestFilePath:     agentConfig.ManifestDir + "/manifest.json",
+		fileServiceClient:     fileServiceClient,
+		agentConfig:           agentConfig,
+		fileOperator:          NewFileOperator(),
+		fileActions:           make(map[string]*model.FileCache),
+		rollbackFileContents:  make(map[string][]byte),
+		currentFilesOnDisk:    make(map[string]*mpi.File),
+		previousManifestFiles: make(map[string]*model.ManifestFile),
+		manifestFilePath:      agentConfig.ManifestDir + "/manifest.json",
+		isConnected:           isConnected,
 	}
 }
 
@@ -118,7 +120,7 @@ func (fms *FileManagerService) UpdateOverview(
 	filesToUpdate []*mpi.File,
 	iteration int,
 ) error {
-	correlationID := logger.GetCorrelationID(ctx)
+	correlationID := logger.CorrelationID(ctx)
 
 	// error case for the UpdateOverview attempts
 	if iteration > maxAttempts {
@@ -154,11 +156,8 @@ func (fms *FileManagerService) UpdateOverview(
 			return nil, errors.New("CreateConnection rpc has not being called yet")
 		}
 
-		slog.InfoContext(newCtx, "Updating file overview",
-			"instance_id", request.GetOverview().GetConfigVersion().GetInstanceId(),
-			"parent_correlation_id", correlationID,
-		)
 		slog.DebugContext(newCtx, "Sending update overview request",
+			"instance_id", request.GetOverview().GetConfigVersion().GetInstanceId(),
 			"request", request, "parent_correlation_id", correlationID,
 		)
 
@@ -193,20 +192,20 @@ func (fms *FileManagerService) UpdateOverview(
 	delta := files.ConvertToMapOfFiles(response.GetOverview().GetFiles())
 
 	if len(delta) != 0 {
-		return fms.updateFiles(ctx, delta, request.GetOverview().GetFiles(), instanceID, iteration)
+		return fms.updateFiles(ctx, delta, instanceID, iteration)
 	}
 
 	return err
 }
 
 func (fms *FileManagerService) setupIdentifiers(ctx context.Context, iteration int) (context.Context, string) {
-	correlationID := logger.GetCorrelationID(ctx)
+	correlationID := logger.CorrelationID(ctx)
 	var requestCorrelationID slog.Attr
 
 	if iteration == 0 {
 		requestCorrelationID = logger.GenerateCorrelationID()
 	} else {
-		requestCorrelationID = logger.GetCorrelationIDAttr(ctx)
+		requestCorrelationID = logger.CorrelationIDAttr(ctx)
 	}
 
 	newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, requestCorrelationID)
@@ -217,7 +216,6 @@ func (fms *FileManagerService) setupIdentifiers(ctx context.Context, iteration i
 func (fms *FileManagerService) updateFiles(
 	ctx context.Context,
 	delta map[string]*mpi.File,
-	fileOverview []*mpi.File,
 	instanceID string,
 	iteration int,
 ) error {
@@ -231,9 +229,9 @@ func (fms *FileManagerService) updateFiles(
 	}
 
 	iteration++
-	slog.Debug("Updating file overview", "attempt_number", iteration)
+	slog.Info("Updating file overview after file updates", "attempt_number", iteration)
 
-	return fms.UpdateOverview(ctx, instanceID, fileOverview, iteration)
+	return fms.UpdateOverview(ctx, instanceID, diffFiles, iteration)
 }
 
 func (fms *FileManagerService) UpdateFile(
@@ -241,7 +239,7 @@ func (fms *FileManagerService) UpdateFile(
 	instanceID string,
 	fileToUpdate *mpi.File,
 ) error {
-	slog.InfoContext(ctx, "Updating file", "instance_id", instanceID, "file_name", fileToUpdate.GetFileMeta().GetName())
+	slog.InfoContext(ctx, "Updating file", "file_name", fileToUpdate.GetFileMeta().GetName(), "instance_id", instanceID)
 
 	slog.DebugContext(ctx, "Checking file size",
 		"file_size", fileToUpdate.GetFileMeta().GetSize(),
@@ -261,7 +259,7 @@ func (fms *FileManagerService) sendUpdateFileRequest(
 ) error {
 	messageMeta := &mpi.MessageMeta{
 		MessageId:     id.GenerateMessageID(),
-		CorrelationId: logger.GetCorrelationID(ctx),
+		CorrelationId: logger.CorrelationID(ctx),
 		Timestamp:     timestamppb.Now(),
 	}
 
@@ -348,7 +346,7 @@ func (fms *FileManagerService) sendUpdateFileStreamHeader(
 ) error {
 	messageMeta := &mpi.MessageMeta{
 		MessageId:     id.GenerateMessageID(),
-		CorrelationId: logger.GetCorrelationID(ctx),
+		CorrelationId: logger.CorrelationID(ctx),
 		Timestamp:     timestamppb.Now(),
 	}
 
@@ -447,7 +445,7 @@ func (fms *FileManagerService) sendFileUpdateStreamChunk(
 ) error {
 	messageMeta := &mpi.MessageMeta{
 		MessageId:     id.GenerateMessageID(),
-		CorrelationId: logger.GetCorrelationID(ctx),
+		CorrelationId: logger.CorrelationID(ctx),
 		Timestamp:     timestamppb.Now(),
 	}
 
@@ -538,12 +536,13 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 func (fms *FileManagerService) ClearCache() {
 	clear(fms.rollbackFileContents)
 	clear(fms.fileActions)
+	clear(fms.previousManifestFiles)
 }
 
 // nolint:revive,cyclop
 func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) error {
 	slog.InfoContext(ctx, "Rolling back config for instance", "instanceid", instanceID)
-	areFilesUpdated := false
+
 	fms.filesMutex.Lock()
 	defer fms.filesMutex.Unlock()
 	for _, fileAction := range fms.fileActions {
@@ -555,7 +554,6 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 
 			// currentFilesOnDisk needs to be updated after rollback action is performed
 			delete(fms.currentFilesOnDisk, fileAction.File.GetFileMeta().GetName())
-			areFilesUpdated = true
 
 			continue
 		case model.Delete, model.Update:
@@ -568,7 +566,6 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 			// currentFilesOnDisk needs to be updated after rollback action is performed
 			fileAction.File.GetFileMeta().Hash = files.GenerateHash(content)
 			fms.currentFilesOnDisk[fileAction.File.GetFileMeta().GetName()] = fileAction.File
-			areFilesUpdated = true
 		case model.Unchanged:
 			fallthrough
 		default:
@@ -576,11 +573,9 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 		}
 	}
 
-	if areFilesUpdated {
-		manifestFileErr := fms.UpdateManifestFile(fms.currentFilesOnDisk, true)
-		if manifestFileErr != nil {
-			return manifestFileErr
-		}
+	manifestFileErr := fms.writeManifestFile(fms.previousManifestFiles)
+	if manifestFileErr != nil {
+		return manifestFileErr
 	}
 
 	return nil
@@ -590,6 +585,7 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 	for _, fileAction := range fms.fileActions {
 		switch fileAction.Action {
 		case model.Delete:
+			slog.Debug("File action, deleting file", "file", fileAction.File.GetFileMeta().GetName())
 			if err := os.Remove(fileAction.File.GetFileMeta().GetName()); err != nil && !os.IsNotExist(err) {
 				return fmt.Errorf("error deleting file: %s error: %w",
 					fileAction.File.GetFileMeta().GetName(), err)
@@ -597,6 +593,7 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 
 			continue
 		case model.Add, model.Update:
+			slog.Debug("File action, add or update file", "file", fileAction.File.GetFileMeta().GetName())
 			updateErr := fms.fileUpdate(ctx, fileAction.File)
 			if updateErr != nil {
 				return updateErr
@@ -610,7 +607,6 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 }
 
 func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) error {
-	slog.DebugContext(ctx, "Updating file", "file", file.GetFileMeta().GetName())
 	if file.GetFileMeta().GetSize() <= int64(fms.agentConfig.Client.Grpc.MaxFileSize) {
 		return fms.file(ctx, file)
 	}
@@ -628,7 +624,7 @@ func (fms *FileManagerService) file(ctx context.Context, file *mpi.File) error {
 		return fms.fileServiceClient.GetFile(ctx, &mpi.GetFileRequest{
 			MessageMeta: &mpi.MessageMeta{
 				MessageId:     id.GenerateMessageID(),
-				CorrelationId: logger.GetCorrelationID(ctx),
+				CorrelationId: logger.CorrelationID(ctx),
 				Timestamp:     timestamppb.Now(),
 			},
 			FileMeta: file.GetFileMeta(),
@@ -658,7 +654,7 @@ func (fms *FileManagerService) chunkedFile(ctx context.Context, file *mpi.File) 
 	stream, err := fms.fileServiceClient.GetFileStream(ctx, &mpi.GetFileRequest{
 		MessageMeta: &mpi.MessageMeta{
 			MessageId:     id.GenerateMessageID(),
-			CorrelationId: logger.GetCorrelationID(ctx),
+			CorrelationId: logger.CorrelationID(ctx),
 			Timestamp:     timestamppb.Now(),
 		},
 		FileMeta: file.GetFileMeta(),
@@ -817,6 +813,7 @@ func (fms *FileManagerService) UpdateCurrentFilesOnDisk(
 // nolint: revive
 func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.File, referenced bool) (err error) {
 	currentManifestFiles, _, readError := fms.manifestFile()
+	fms.previousManifestFiles = currentManifestFiles
 	if readError != nil && !errors.Is(readError, os.ErrNotExist) {
 		return fmt.Errorf("unable to read manifest file: %w", readError)
 	}

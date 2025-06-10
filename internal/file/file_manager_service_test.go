@@ -533,7 +533,7 @@ func TestFileManagerService_Rollback(t *testing.T) {
 		updateFile.Name(): oldFileContent,
 	}
 
-	instanceID := protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()
+	instanceID := protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
 	fileManagerService.rollbackFileContents = fileContentCache
