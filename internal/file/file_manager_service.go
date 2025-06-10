@@ -48,11 +48,6 @@ const (
 	filePerm    = 0o600
 )
 
-var (
-	manifestDirPath  = "/var/lib/nginx-agent"
-	manifestFilePath = manifestDirPath + "/manifest.json"
-)
-
 type (
 	fileOperator interface {
 		Write(ctx context.Context, fileContent []byte, file *mpi.FileMeta) error
@@ -98,6 +93,7 @@ type FileManagerService struct {
 	// map of the files currently on disk, used to determine the file action during config apply
 	currentFilesOnDisk    map[string]*mpi.File // key is file path
 	previousManifestFiles map[string]*model.ManifestFile
+	manifestFilePath      string
 	filesMutex            sync.RWMutex
 }
 
@@ -113,6 +109,7 @@ func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig 
 		rollbackFileContents:  make(map[string][]byte),
 		currentFilesOnDisk:    make(map[string]*mpi.File),
 		previousManifestFiles: make(map[string]*model.ManifestFile),
+		manifestFilePath:      agentConfig.ManifestDir + "/manifest.json",
 		isConnected:           isConnected,
 	}
 }
@@ -851,12 +848,12 @@ func (fms *FileManagerService) writeManifestFile(updatedFiles map[string]*model.
 	}
 
 	// 0755 allows read/execute for all, write for owner
-	if err = os.MkdirAll(manifestDirPath, dirPerm); err != nil {
-		return fmt.Errorf("unable to create directory %s: %w", manifestDirPath, err)
+	if err = os.MkdirAll(fms.agentConfig.ManifestDir, dirPerm); err != nil {
+		return fmt.Errorf("unable to create directory %s: %w", fms.agentConfig.ManifestDir, err)
 	}
 
 	// 0600 ensures only root can read/write
-	newFile, err := os.OpenFile(manifestFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, filePerm)
+	newFile, err := os.OpenFile(fms.manifestFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, filePerm)
 	if err != nil {
 		return fmt.Errorf("failed to read manifest file: %w", err)
 	}
@@ -875,11 +872,11 @@ func (fms *FileManagerService) writeManifestFile(updatedFiles map[string]*model.
 }
 
 func (fms *FileManagerService) manifestFile() (map[string]*model.ManifestFile, map[string]*mpi.File, error) {
-	if _, err := os.Stat(manifestFilePath); err != nil {
+	if _, err := os.Stat(fms.manifestFilePath); err != nil {
 		return nil, nil, err
 	}
 
-	file, err := os.ReadFile(manifestFilePath)
+	file, err := os.ReadFile(fms.manifestFilePath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to read manifest file: %w", err)
 	}
