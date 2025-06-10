@@ -5,9 +5,9 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
-if [[ -z ${CERT} ]] || [[ -z ${KEY} ]]; then
-  echo "Missing required credential"
-  exit 1
+CURL_OPTS=""
+if [[ ! -z ${CERT} ]] && [[ ! -z ${KEY} ]]; then
+  CURL_OPTS="-E ${CERT} --key ${KEY}"
 fi
 
 if [[ -z ${PKG_REPO} ]]; then
@@ -80,7 +80,7 @@ uris=(
 check_pkgs () {
   for pkg in ${uris[@]}; do
     echo -n "CHECK: ${PKG_REPO_URL}/${pkg} -> "
-    local ret=$(curl -I -s -E "${CERT}" --key "${KEY}" "https://${PKG_DIR}/${pkg}" | head -n1 | awk '{ print $2 }')
+    local ret=$(curl -I -s ${CURL_OPTS} "https://${PKG_DIR}/${pkg}" | head -n1 | awk '{ print $2 }')
     if [[ ${ret} != 200 ]]; then
       echo -e "${RED}${ret}${NC}"
       continue
@@ -98,7 +98,7 @@ dl_pkg () {
     local url=${1}
     echo -n "GET: ${url}... "
     mkdir -p "${PKG_DIR}/$(dirname ${pkg})"
-    local ret=$(curl -s --fail -E "${CERT}" --key "${KEY}" "${url}" --output "${PKG_DIR}/${pkg}")
+    local ret=$(curl -s --fail ${CURL_OPTS} "${url}" --output "${PKG_DIR}/${pkg}")
     if [[ $? != 0 ]]; then
       echo -e "${RED}Download failed!${NC}"
       return
@@ -108,16 +108,16 @@ dl_pkg () {
 
 check_repo() {
   echo -n "Checking package repository ${PKG_REPO_URL}... "
-  curl -s -I -E "${CERT}" --key "${KEY}" "${PKG_REPO_URL}/index.xml" > /dev/null
+  curl -s -I ${CURL_OPTS} "${PKG_REPO_URL}/index.xml" > /dev/null
   if [[ $? != 0 ]]; then
-    echo -e "${RED}*** Error: index.xml not found in $PKG_REPO repository ***${NC}"
+    echo -e "${RED}index.xml not found in ${PKG_REPO_URL} repository${NC}"
     exit 1
   else
     echo -e "${GREEN}Found!${NC}"
   fi
 
   mkdir -p ${PKG_DIR}
-  curl -s -E "${CERT}" --key "${KEY}" "${PKG_REPO_URL}/index.xml" --output "${PKG_DIR}/index.xml" || exit 2
+  curl -s ${CURL_OPTS} "${PKG_REPO_URL}/index.xml" --output "${PKG_DIR}/index.xml" || exit 2
 
   echo -n "Checking for nginx-agent version ${VERSION}... "
   grep -qnF "ver=\"${VERSION}\"" "${PKG_DIR}/index.xml"
