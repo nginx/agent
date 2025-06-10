@@ -11,10 +11,9 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"fmt"
 	"math/big"
 	"os"
-	"strings"
+	"path"
 	"testing"
 	"time"
 
@@ -31,7 +30,7 @@ const (
 	permission          = 0o600
 	serialNumber        = 123123
 	years, months, days = 5, 0, 0
-	bits                = 4096
+	bits                = 1024
 )
 
 func GenerateSelfSignedCert(t testing.TB) (keyBytes, certBytes []byte) {
@@ -73,12 +72,7 @@ func WriteCertFiles(t *testing.T, location string, cert Cert) string {
 		Bytes: cert.Contents,
 	})
 
-	var certFile string
-	if strings.HasSuffix(location, string(os.PathSeparator)) {
-		certFile = fmt.Sprintf("%s%s", location, cert.Name)
-	} else {
-		certFile = fmt.Sprintf("%s%s%s", location, string(os.PathSeparator), cert.Name)
-	}
+	certFile := path.Join(location, cert.Name)
 
 	err := os.WriteFile(certFile, pemContents, permission)
 	require.NoError(t, err)

@@ -69,6 +69,7 @@ func (s *CPUScraper) Scrape(context.Context) (pmetric.Metrics, error) {
 
 	s.settings.Logger.Debug("Collected container CPU metrics", zap.Any("cpu", stats))
 
+	s.mb.RecordSystemCPULogicalCountDataPoint(now, int64(stats.NumberOfLogicalCPUs))
 	s.mb.RecordSystemCPUUtilizationDataPoint(now, stats.User, metadata.AttributeStateUser)
 	s.mb.RecordSystemCPUUtilizationDataPoint(now, stats.System, metadata.AttributeStateSystem)
 

@@ -32,6 +32,7 @@ type APIDetails struct {
 }
 
 // Validate checks if the receiver configuration is valid
+// nolint: ireturn
 func (cfg *Config) Validate() error {
 	if cfg.APIDetails.URL == "" {
 		return errors.New("endpoint cannot be empty for nginxplusreceiver")

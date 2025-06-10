@@ -526,11 +526,12 @@ func TestInfo_ContainerInfo(t *testing.T) {
 			info := NewInfo()
 			info.mountInfoLocation = mountInfoFile.Name()
 			info.exec = execMock
+			info.osReleaseLocation = "/non/existent"
 			containerInfo := info.ContainerInfo(ctx)
 
 			assert.Equal(tt, test.expectContainerID, containerInfo.ContainerInfo.GetContainerId())
 			assert.Equal(tt, test.expectHostname, containerInfo.ContainerInfo.GetHostname())
-			assert.Equal(t, releaseInfo, containerInfo.ContainerInfo.GetReleaseInfo())
+			assert.Equal(tt, releaseInfo, containerInfo.ContainerInfo.GetReleaseInfo())
 		})
 	}
 }
