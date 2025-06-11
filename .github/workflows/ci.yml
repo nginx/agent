@@ -93,7 +93,7 @@ jobs:
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
             name: result-component-test-logs
-            path: /tmp/component-test-logs.log
+            path: .github/artifacts/
             retention-days: 3
 
   build-unsigned-snapshot:
@@ -199,7 +199,7 @@ jobs:
             uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
             with:
                 name: result-integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}
-                path: /tmp/integration-test-logs.log
+                path: .github/artifacts/
                 retention-days: 3
 
   official-oss-image-integration-tests:
@@ -260,7 +260,7 @@ jobs:
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
             name: result-oss-integration-tests-logs
-            path: /tmp/oss-integration-tests-logs.log
+            path: .github/artifacts/
             retention-days: 3
 
   official-plus-image-integration-tests:
@@ -328,7 +328,7 @@ jobs:
             uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
             with:
                 name: official-plus-integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}-${{ matrix.container.plus }}
-                path: /tmp/integration-test-logs/
+                path: .github/artifacts/
                 retention-days: 3
                 
           - name: Upload plus integration test logs
@@ -366,7 +366,7 @@ jobs:
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
             name: result-performance-test-logs
-            path: /tmp/performance-test-logs.log
+            path: .github/artifacts/
             retention-days: 3
 
   build-signed-snapshot:
