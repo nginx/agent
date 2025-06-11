@@ -50,7 +50,7 @@ jobs:
           skip-cache: true
       - name: Save lint logs
         run: |
-          mkdir test_results/lint-results.log
+          mkdir -p test_results/lint-results.log
           echo "Linting status: $(grep 'linting' < test_results/lint-results.log | awk '{print $2}')"
       - name: Upload artifact
         if: success() || failure()
