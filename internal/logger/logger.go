@@ -141,3 +141,11 @@ func GetCorrelationIDAttr(ctx context.Context) slog.Attr {
 
 	return value
 }
+
+func ServerType(ctx context.Context) string {
+	if ctx.Value("server_type") == nil {
+		return ""
+	}
+
+	return ctx.Value("server_type").(string)
+}

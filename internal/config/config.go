@@ -454,11 +454,6 @@ func registerAuxiliaryFlags(fs *flag.FlagSet) {
 		DefAuxiliaryServerHostKey,
 		"The target hostname of the auxiliary server endpoint for read only mode.",
 	)
-	fs.String(
-		AuxiliaryTypeKey,
-		DefAuxiliaryServerTypeKey,
-		"The target hostname of the auxiliary server endpoint for read only mode.",
-	)
 	fs.Int32(
 		AuxiliaryServerPortKey,
 		DefAuxiliaryServerPortKey,

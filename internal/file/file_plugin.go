@@ -64,12 +64,25 @@ func (fp *FilePlugin) Info() *bus.Info {
 func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
 	case bus.ConnectionResetTopic:
+		if logger.ServerType(ctx) != "command" {
+
+			return
+		}
 		fp.handleConnectionReset(ctx, msg)
 	case bus.ConnectionCreatedTopic:
+		if logger.ServerType(ctx) != "command" {
+
+			return
+		}
+		slog.Info("Connection Created for file plugin")
 		fp.fileManagerService.SetIsConnected(true)
 	case bus.NginxConfigUpdateTopic:
 		fp.handleNginxConfigUpdate(ctx, msg)
 	case bus.ConfigUploadRequestTopic:
+		if logger.ServerType(ctx) != "command" {
+
+			return
+		}
 		fp.handleConfigUploadRequest(ctx, msg)
 	case bus.ConfigApplyRequestTopic:
 		fp.handleConfigApplyRequest(ctx, msg)

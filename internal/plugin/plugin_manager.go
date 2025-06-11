@@ -27,6 +27,7 @@ func LoadPlugins(ctx context.Context, agentConfig *config.Config) []bus.Plugin {
 
 	plugins = addResourcePlugin(plugins, agentConfig)
 	plugins = addCommandAndFilePlugins(ctx, plugins, agentConfig)
+	plugins = addAuxCommandAndFilePlugins(ctx, plugins, agentConfig)
 	plugins = addCollectorPlugin(ctx, agentConfig, plugins)
 	plugins = addWatcherPlugin(plugins, agentConfig)
 
@@ -44,9 +45,9 @@ func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentCo
 	if agentConfig.IsGrpcClientConfigured() {
 		grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig)
 		if err != nil {
-			slog.WarnContext(ctx, "Failed to create gRPC connection", "error", err)
+			slog.WarnContext(ctx, "Failed to create gRPC connection for command server", "error", err)
 		} else {
-			commandPlugin := command.NewCommandPlugin(agentConfig, grpcConnection)
+			commandPlugin := command.NewCommandPlugin(agentConfig, grpcConnection, "command")
 			plugins = append(plugins, commandPlugin)
 			filePlugin := file.NewFilePlugin(agentConfig, grpcConnection)
 			plugins = append(plugins, filePlugin)
@@ -56,6 +57,24 @@ func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentCo
 			"Configure a command server to establish a connection with a management plane.")
 	}
 
+	return plugins
+}
+
+func addAuxCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentConfig *config.Config) []bus.Plugin {
+	if agentConfig.IsAuxiliaryServerConfigured() {
+		auxGRPCConnection, err := grpc.NewAuxGrpcConnection(ctx, agentConfig)
+		if err != nil {
+			slog.WarnContext(ctx, "Failed to create gRPC connection for auxiliary command server", "error", err)
+		} else {
+			auxCommandPlugin := command.NewCommandPlugin(agentConfig, auxGRPCConnection, "auxiliary")
+			plugins = append(plugins, auxCommandPlugin)
+			filePlugin := file.NewReadFilePlugin(agentConfig, auxGRPCConnection)
+			plugins = append(plugins, filePlugin)
+		}
+	} else {
+		slog.InfoContext(ctx, "Agent is not connected to an auxiliary management plane. "+
+			"Configure a auxiliary command server to establish a connection.")
+	}
 	return plugins
 }
 
