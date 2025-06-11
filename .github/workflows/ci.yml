@@ -46,18 +46,14 @@ jobs:
         with:
           version: "${{ env.GOLANGCI_LINT_VERSION }}"
           working-directory: sdk
-          args: -c ../scripts/.golangci.yml
+          args: -c ../scripts/.golangci.yml --output.json.path > test_results/lint-results.json
           skip-cache: true
-      - name: Save lint logs
-        run: |
-          mkdir -p test_results/lint-results.log
-          echo "Linting status: $(grep 'linting' < test_results/lint-results.log | awk '{print $2}')"
       - name: Upload artifact
         if: success() || failure()
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
         with:
             name: linting-test-results
-            path: test_results/lint-results.log
+            path: test_results/lint-results.json
             retention-days: 1
 
   unit-test:
