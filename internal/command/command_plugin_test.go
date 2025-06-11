@@ -32,14 +32,14 @@ import (
 )
 
 func TestCommandPlugin_Info(t *testing.T) {
-	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{}, "command")
 	info := commandPlugin.Info()
 
 	assert.Equal(t, "command", info.Name)
 }
 
 func TestCommandPlugin_Subscriptions(t *testing.T) {
-	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{}, "command")
 	subscriptions := commandPlugin.Subscriptions()
 
 	assert.Equal(
