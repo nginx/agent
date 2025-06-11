@@ -28,13 +28,16 @@ func TestInstanceWatcherService_checkForUpdates(t *testing.T) {
 	nginxConfigContext := testModel.ConfigContext()
 
 	fakeProcessWatcher := &processfakes.FakeProcessOperatorInterface{}
-	fakeProcessWatcher.ProcessesReturns(nil, nil, nil)
+	fakeProcessWatcher.ProcessesReturns(nil, nil)
 
 	fakeProcessParser := &instancefakes.FakeProcessParser{}
 	fakeProcessParser.ParseReturns(map[string]*mpi.Instance{
 		protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.
 			NginxOssInstance([]string{}),
 	})
+
+	fakeNginxAppProtectInstanceFinder := &instancefakes.FakeInstanceFinder{}
+	fakeNginxAppProtectInstanceFinder.FindReturns(protos.NginxAppProtectInstance())
 
 	fakeNginxConfigParser := &instancefakes.FakeNginxConfigParser{}
 	fakeNginxConfigParser.ParseReturns(nginxConfigContext, nil)
@@ -44,7 +47,7 @@ func TestInstanceWatcherService_checkForUpdates(t *testing.T) {
 	instanceWatcherService := NewInstanceWatcherService(types.AgentConfig())
 	instanceWatcherService.processOperator = fakeProcessWatcher
 	instanceWatcherService.nginxParser = fakeProcessParser
-	instanceWatcherService.nginxAppProtectProcessParser = fakeProcessParser
+	instanceWatcherService.nginxAppProtectInstanceFinder = fakeNginxAppProtectInstanceFinder
 	instanceWatcherService.nginxConfigParser = fakeNginxConfigParser
 	instanceWatcherService.instancesChannel = instanceUpdatesChannel
 	instanceWatcherService.nginxConfigContextChannel = nginxConfigContextChannel
@@ -52,7 +55,7 @@ func TestInstanceWatcherService_checkForUpdates(t *testing.T) {
 	instanceWatcherService.checkForUpdates(ctx)
 
 	instanceUpdatesMessage := <-instanceUpdatesChannel
-	assert.Len(t, instanceUpdatesMessage.InstanceUpdates.NewInstances, 2)
+	assert.Len(t, instanceUpdatesMessage.InstanceUpdates.NewInstances, 3)
 	assert.Empty(t, instanceUpdatesMessage.InstanceUpdates.DeletedInstances)
 
 	nginxConfigContextMessage := <-nginxConfigContextChannel
@@ -67,6 +70,7 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 	nginxInstance := protos.NginxOssInstance([]string{})
 	nginxInstanceWithDifferentPID := protos.NginxOssInstance([]string{})
 	nginxInstanceWithDifferentPID.GetInstanceRuntime().ProcessId = 3526
+	napInstance := protos.NginxAppProtectInstance()
 
 	tests := []struct {
 		name                    string
@@ -78,6 +82,7 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 			name: "Test 1: No updates",
 			oldInstances: map[string]*mpi.Instance{
 				agentInstance.GetInstanceMeta().GetInstanceId(): agentInstance,
+				napInstance.GetInstanceMeta().GetInstanceId():   napInstance,
 			},
 			parsedInstances:         make(map[string]*mpi.Instance),
 			expectedInstanceUpdates: InstanceUpdates{},
@@ -94,6 +99,7 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 			expectedInstanceUpdates: InstanceUpdates{
 				NewInstances: []*mpi.Instance{
 					nginxInstance,
+					napInstance,
 				},
 			},
 		},
@@ -102,6 +108,7 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 			oldInstances: map[string]*mpi.Instance{
 				agentInstance.GetInstanceMeta().GetInstanceId():                 agentInstance,
 				nginxInstanceWithDifferentPID.GetInstanceMeta().GetInstanceId(): nginxInstanceWithDifferentPID,
+				napInstance.GetInstanceMeta().GetInstanceId():                   napInstance,
 			},
 			parsedInstances: map[string]*mpi.Instance{
 				agentInstance.GetInstanceMeta().GetInstanceId(): agentInstance,
@@ -119,6 +126,7 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 				agentInstance.GetInstanceMeta().GetInstanceId(): agentInstance,
 				protos.NginxOssInstance([]string{}).GetInstanceMeta().
 					GetInstanceId(): protos.NginxOssInstance([]string{}),
+				napInstance.GetInstanceMeta().GetInstanceId(): napInstance,
 			},
 			parsedInstances: make(map[string]*mpi.Instance),
 			expectedInstanceUpdates: InstanceUpdates{
@@ -132,7 +140,7 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			fakeProcessWatcher := &processfakes.FakeProcessOperatorInterface{}
-			fakeProcessWatcher.ProcessesReturns(nil, nil, nil)
+			fakeProcessWatcher.ProcessesReturns(nil, nil)
 
 			fakeProcessParser := &instancefakes.FakeProcessParser{}
 			fakeProcessParser.ParseReturns(test.parsedInstances)
@@ -141,10 +149,13 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 			fakeExec.ExecutableReturns(defaultAgentPath, nil)
 			fakeExec.ProcessIDReturns(processID)
 
+			fakeNginxAppProtectInstanceFinder := &instancefakes.FakeInstanceFinder{}
+			fakeNginxAppProtectInstanceFinder.FindReturns(napInstance)
+
 			instanceWatcherService := NewInstanceWatcherService(types.AgentConfig())
 			instanceWatcherService.processOperator = fakeProcessWatcher
 			instanceWatcherService.nginxParser = fakeProcessParser
-			instanceWatcherService.nginxAppProtectProcessParser = fakeProcessParser
+			instanceWatcherService.nginxAppProtectInstanceFinder = fakeNginxAppProtectInstanceFinder
 			instanceWatcherService.instanceCache = test.oldInstances
 			instanceWatcherService.executer = fakeExec
 
