@@ -54,7 +54,7 @@ jobs:
         with:
             name: result-linter-logs
             path: .github/artifacts/
-            retention-days: 3
+            retention-days: 1
 
   unit-test:
     name: Unit Tests
@@ -76,7 +76,7 @@ jobs:
         with:
             name: result-unit-test-logs
             path: .github/artifacts/
-            retention-days: 3
+            retention-days: 1
 
   component-test:
     name: Component Tests
@@ -94,7 +94,7 @@ jobs:
         with:
             name: result-component-test-logs
             path: .github/artifacts/
-            retention-days: 3
+            retention-days: 1
 
   build-unsigned-snapshot:
     name: Build unsigned snapshot
@@ -200,7 +200,7 @@ jobs:
             with:
                 name: result-integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}
                 path: .github/artifacts/
-                retention-days: 3
+                retention-days: 1
 
   official-oss-image-integration-tests:
     name: Integration Tests - Official OSS Images
@@ -253,7 +253,7 @@ jobs:
         with:
           name: official-oss-integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}
           path: /tmp/integration-test-logs/
-          retention-days: 3
+          retention-days: 1
           
       - name: Upload oss integration test logs
         if: success() || failure()
@@ -261,7 +261,7 @@ jobs:
         with:
             name: result-oss-integration-tests-logs
             path: .github/artifacts/
-            retention-days: 3
+            retention-days: 1
 
   official-plus-image-integration-tests:
       name: Integration Tests - Official Plus Images
@@ -328,16 +328,16 @@ jobs:
             uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
             with:
                 name: official-plus-integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}-${{ matrix.container.plus }}
-                path: .github/artifacts/
-                retention-days: 3
+                path: /tmp/integration-test-logs/
+                retention-days: 1
                 
           - name: Upload plus integration test logs
             if: success() || failure()
             uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
             with:
                 name: result-plus-integration-tests-logs
-                path: /tmp/plus-integration-tests-logs.log
-                retention-days: 3
+                path: .github/artifacts/
+                retention-days: 1
 
   performance-test:
     name: Performance Tests
@@ -367,7 +367,7 @@ jobs:
         with:
             name: result-performance-test-logs
             path: .github/artifacts/
-            retention-days: 3
+            retention-days: 1
 
   build-signed-snapshot:
     name: Build signed snapshot
@@ -459,6 +459,7 @@ jobs:
     needs: [ lint, unit-test, component-test, performance-test, integration-tests, official-plus-image-integration-tests, official-oss-image-integration-tests ]
     steps:
       - name: Merge Artifacts
+        if: success() || failure()
         uses: actions/upload-artifact/merge@v4
         with:
             name: ci-test-workflow-logs
