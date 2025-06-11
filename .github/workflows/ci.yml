@@ -48,6 +48,17 @@ jobs:
           working-directory: sdk
           args: -c ../scripts/.golangci.yml
           skip-cache: true
+      - name: Save lint logs
+        run: |
+          mkdir test_results/lint-results.log
+          echo "Linting status: $(grep 'linting' < test_results/lint-results.log | awk '{print $2}')"
+      - name: Upload artifact
+        if: success() || failure()
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
+        with:
+            name: linting-test-results
+            path: test_results/lint-results.log
+            retention-days: 1
 
   unit-test:
     name: Unit Tests
