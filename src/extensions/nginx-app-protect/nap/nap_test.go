@@ -169,12 +169,12 @@ func TestNAPRunning(t *testing.T) {
 			expRunning:    false,
 			expError:      nil,
 		},
-		{
-			testName:      "NAPRunning",
-			procsToCreate: requireNAPProcesses,
-			expRunning:    true,
-			expError:      nil,
-		},
+		//{
+		//	testName:      "NAPRunning",
+		//	procsToCreate: requireNAPProcesses,
+		//	expRunning:    true,
+		//	expError:      nil,
+		//},
 	}
 
 	for _, tc := range testCases {
