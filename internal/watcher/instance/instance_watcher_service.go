@@ -32,30 +32,24 @@ const defaultAgentPath = "/run/nginx-agent"
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . processParser
-//counterfeiter:generate . instanceFinder
 
 type (
 	processParser interface {
 		Parse(ctx context.Context, processes []*nginxprocess.Process) map[string]*mpi.Instance
 	}
 
-	instanceFinder interface {
-		Find(ctx context.Context) *mpi.Instance
-	}
-
 	InstanceWatcherService struct {
-		processOperator               process.ProcessOperatorInterface
-		nginxConfigParser             parser.ConfigParser
-		executer                      exec.ExecInterface
-		enabled                       *atomic.Bool
-		agentConfig                   *config.Config
-		instanceCache                 map[string]*mpi.Instance
-		nginxConfigCache              map[string]*model.NginxConfigContext
-		instancesChannel              chan<- InstanceUpdatesMessage
-		nginxConfigContextChannel     chan<- NginxConfigContextMessage
-		nginxParser                   processParser
-		nginxAppProtectInstanceFinder instanceFinder
-		cacheMutex                    sync.Mutex
+		processOperator           process.ProcessOperatorInterface
+		nginxConfigParser         parser.ConfigParser
+		executer                  exec.ExecInterface
+		enabled                   *atomic.Bool
+		agentConfig               *config.Config
+		instanceCache             map[string]*mpi.Instance
+		nginxConfigCache          map[string]*model.NginxConfigContext
+		instancesChannel          chan<- InstanceUpdatesMessage
+		nginxConfigContextChannel chan<- NginxConfigContextMessage
+		nginxParser               processParser
+		cacheMutex                sync.Mutex
 	}
 
 	InstanceUpdates struct {
@@ -80,16 +74,15 @@ func NewInstanceWatcherService(agentConfig *config.Config) *InstanceWatcherServi
 	enabled.Store(true)
 
 	return &InstanceWatcherService{
-		agentConfig:                   agentConfig,
-		processOperator:               process.NewProcessOperator(),
-		nginxParser:                   NewNginxProcessParser(),
-		nginxAppProtectInstanceFinder: NewNginxAppProtectInstanceFinder(),
-		nginxConfigParser:             parser.NewNginxConfigParser(agentConfig),
-		instanceCache:                 make(map[string]*mpi.Instance),
-		cacheMutex:                    sync.Mutex{},
-		nginxConfigCache:              make(map[string]*model.NginxConfigContext),
-		executer:                      &exec.Exec{},
-		enabled:                       enabled,
+		agentConfig:       agentConfig,
+		processOperator:   process.NewProcessOperator(),
+		nginxParser:       NewNginxProcessParser(),
+		nginxConfigParser: parser.NewNginxConfigParser(agentConfig),
+		instanceCache:     make(map[string]*mpi.Instance),
+		cacheMutex:        sync.Mutex{},
+		nginxConfigCache:  make(map[string]*model.NginxConfigContext),
+		executer:          &exec.Exec{},
+		enabled:           enabled,
 	}
 }
 
@@ -283,11 +276,6 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 	nginxInstances := iw.nginxParser.Parse(ctx, nginxProcesses)
 	for _, instance := range nginxInstances {
 		instancesFound[instance.GetInstanceMeta().GetInstanceId()] = instance
-	}
-
-	nginxAppProtectInstance := iw.nginxAppProtectInstanceFinder.Find(ctx)
-	if nginxAppProtectInstance != nil {
-		instancesFound[nginxAppProtectInstance.GetInstanceMeta().GetInstanceId()] = nginxAppProtectInstance
 	}
 
 	newInstances, updatedInstances, deletedInstances := compareInstances(iw.instanceCache, instancesFound)
