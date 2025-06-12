@@ -31,7 +31,7 @@ var agentConfigWithToken string
 //go:embed agent/nginx-agent-with-multiple-headers.conf
 var agentConfigWithMultipleHeaders string
 
-func GetNginxConfigWithMultipleAccessLogs(
+func NginxConfigWithMultipleAccessLogs(
 	errorLogName,
 	accessLogName,
 	combinedAccessLogName,
@@ -46,23 +46,23 @@ func GetNginxConfigWithMultipleAccessLogs(
 	)
 }
 
-func GetNginxConfigWithNotAllowedDir(errorLogFile, notAllowedFile, allowedFileDir, accessLogFile string) string {
+func NginxConfigWithNotAllowedDir(errorLogFile, notAllowedFile, allowedFileDir, accessLogFile string) string {
 	return fmt.Sprintf(embedNginxConfWithNotAllowedDir, errorLogFile, notAllowedFile, allowedFileDir, accessLogFile)
 }
 
-func GetNginxConfWithSSLCertsWithVariables() string {
+func NginxConfWithSSLCertsWithVariables() string {
 	return embedNginxConfWithSSLCertsWithVariables
 }
 
-func GetNginxConfigWithSSLCerts(errorLogFile, accessLogFile, certFile string) string {
+func NginxConfigWithSSLCerts(errorLogFile, accessLogFile, certFile string) string {
 	return fmt.Sprintf(embedNginxConfWithSSLCerts, errorLogFile, accessLogFile, certFile)
 }
 
-func GetNginxConfigWithMultipleSSLCerts(errorLogFile, accessLogFile, certFile1, certFile2 string) string {
+func NginxConfigWithMultipleSSLCerts(errorLogFile, accessLogFile, certFile1, certFile2 string) string {
 	return fmt.Sprintf(embedNginxConfWithMultipleSSLCerts, errorLogFile, accessLogFile, certFile1, certFile2)
 }
 
-func GetAgentConfigWithToken(value, path string) string {
+func AgentConfigWithToken(value, path string) string {
 	return fmt.Sprintf(agentConfigWithToken, value, path)
 }
 

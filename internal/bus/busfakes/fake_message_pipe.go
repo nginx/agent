@@ -39,14 +39,14 @@ func (p *FakeMessagePipe) DeRegister(ctx context.Context, pluginNames []string) 
 	plugins = p.findPlugins(pluginNames, plugins)
 
 	for _, plugin := range plugins {
-		index := p.GetIndex(plugin.Info().Name, p.plugins)
+		index := p.Index(plugin.Info().Name, p.plugins)
 		p.unsubscribePlugin(ctx, index, plugin)
 	}
 
 	return nil
 }
 
-func (p *FakeMessagePipe) GetIndex(pluginName string, plugins []bus.Plugin) int {
+func (p *FakeMessagePipe) Index(pluginName string, plugins []bus.Plugin) int {
 	for index, plugin := range plugins {
 		if pluginName == plugin.Info().Name {
 			return index
@@ -85,14 +85,14 @@ func (p *FakeMessagePipe) Process(_ context.Context, msgs ...*bus.Message) {
 	p.messages = append(p.messages, msgs...)
 }
 
-func (p *FakeMessagePipe) GetMessages() []*bus.Message {
+func (p *FakeMessagePipe) Messages() []*bus.Message {
 	p.messagesLock.Lock()
 	defer p.messagesLock.Unlock()
 
 	return p.messages
 }
 
-func (p *FakeMessagePipe) GetProcessedMessages() []*bus.Message {
+func (p *FakeMessagePipe) ProcessedMessages() []*bus.Message {
 	return p.processedMessages
 }
 
@@ -127,14 +127,14 @@ func (p *FakeMessagePipe) RunWithoutInit(ctx context.Context) {
 	}
 }
 
-func (p *FakeMessagePipe) GetPlugins() []bus.Plugin {
+func (p *FakeMessagePipe) Plugins() []bus.Plugin {
 	return p.plugins
 }
 
 func (p *FakeMessagePipe) IsPluginRegistered(pluginName string) bool {
 	pluginAlreadyRegistered := false
 
-	for _, plugin := range p.GetPlugins() {
+	for _, plugin := range p.Plugins() {
 		if plugin.Info().Name == pluginName {
 			pluginAlreadyRegistered = true
 		}

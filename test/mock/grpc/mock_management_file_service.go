@@ -209,7 +209,7 @@ func (mgs *FileService) sendGetFileStreamHeader(ctx context.Context,
 ) error {
 	messageMeta := &v1.MessageMeta{
 		MessageId:     id.GenerateMessageID(),
-		CorrelationId: logger.GetCorrelationID(ctx),
+		CorrelationId: logger.CorrelationID(ctx),
 		Timestamp:     timestamppb.Now(),
 	}
 
@@ -254,7 +254,7 @@ func (mgs *FileService) sendGetFileStreamChunk(ctx context.Context, chunk v1.Fil
 ) error {
 	messageMeta := &v1.MessageMeta{
 		MessageId:     id.GenerateMessageID(),
-		CorrelationId: logger.GetCorrelationID(ctx),
+		CorrelationId: logger.CorrelationID(ctx),
 		Timestamp:     timestamppb.Now(),
 	}
 
@@ -334,7 +334,7 @@ func (mgs *FileService) UpdateFile(
 		}
 	}
 
-	err := os.WriteFile(fullFilePath, fileContents, getFileMode(filePermissions))
+	err := os.WriteFile(fullFilePath, fileContents, fileMode(filePermissions))
 	if err != nil {
 		slog.Info("Failed to create/update file", "full_file_path", fullFilePath, "error", err)
 		return nil, status.Errorf(codes.Internal, "Failed to create/update file")
@@ -430,7 +430,7 @@ func (mgs *FileService) findFile(fileMeta *v1.FileMeta) (fullFilePath string) {
 	return fullFilePath
 }
 
-func getFileMode(mode string) os.FileMode {
+func fileMode(mode string) os.FileMode {
 	result, err := strconv.ParseInt(mode, 8, 32)
 	if err != nil {
 		return os.FileMode(defaultFilePermissions)

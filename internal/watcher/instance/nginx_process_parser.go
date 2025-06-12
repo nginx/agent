@@ -77,7 +77,7 @@ func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*nginxproc
 
 				continue
 			}
-			nginxInfo, err := npp.getInfo(ctx, proc)
+			nginxInfo, err := npp.info(ctx, proc)
 			if err != nil {
 				slog.DebugContext(ctx, "Unable to get NGINX info", "pid", proc.PID, "error", err)
 
@@ -105,7 +105,7 @@ func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*nginxproc
 
 		// check if proc is a master process, process is not a worker but could be cache manager etc
 		if proc.IsMaster() {
-			nginxInfo, err := npp.getInfo(ctx, proc)
+			nginxInfo, err := npp.info(ctx, proc)
 			if err != nil {
 				slog.DebugContext(ctx, "Unable to get NGINX info", "pid", proc.PID, "error", err)
 
@@ -126,17 +126,17 @@ func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*nginxproc
 	return instanceMap
 }
 
-func (npp *NginxProcessParser) getInfo(ctx context.Context, proc *nginxprocess.Process) (*Info, error) {
+func (npp *NginxProcessParser) info(ctx context.Context, proc *nginxprocess.Process) (*Info, error) {
 	exePath := proc.Exe
 
 	if exePath == "" {
-		exePath = npp.getExe(ctx)
+		exePath = npp.exe(ctx)
 		if exePath == "" {
 			return nil, fmt.Errorf("unable to find NGINX exe for process %d", proc.PID)
 		}
 	}
 
-	confPath := getConfPathFromCommand(proc.Cmd)
+	confPath := confPathFromCommand(proc.Cmd)
 
 	var nginxInfo *Info
 
@@ -150,19 +150,19 @@ func (npp *NginxProcessParser) getInfo(ctx context.Context, proc *nginxprocess.P
 	nginxInfo.ExePath = exePath
 	nginxInfo.ProcessID = proc.PID
 
-	if nginxInfo.ConfPath = getNginxConfPath(ctx, nginxInfo); confPath != "" {
+	if nginxInfo.ConfPath = nginxConfPath(ctx, nginxInfo); confPath != "" {
 		nginxInfo.ConfPath = confPath
 	}
 
-	loadableModules := getLoadableModules(nginxInfo)
+	loadableModules := loadableModules(nginxInfo)
 	nginxInfo.LoadableModules = loadableModules
 
-	nginxInfo.DynamicModules = getDynamicModules(nginxInfo)
+	nginxInfo.DynamicModules = dynamicModules(nginxInfo)
 
 	return nginxInfo, err
 }
 
-func (npp *NginxProcessParser) getExe(ctx context.Context) string {
+func (npp *NginxProcessParser) exe(ctx context.Context) string {
 	exePath := ""
 
 	out, commandErr := npp.executer.RunCmd(ctx, "sh", "-c", "command -v nginx")
@@ -273,7 +273,7 @@ func parseNginxVersionCommandOutput(ctx context.Context, output *bytes.Buffer) *
 		}
 	}
 
-	nginxInfo.Prefix = getNginxPrefix(ctx, nginxInfo)
+	nginxInfo.Prefix = nginxPrefix(ctx, nginxInfo)
 
 	return nginxInfo
 }
@@ -299,7 +299,7 @@ func parseConfigureArguments(line string) map[string]interface{} {
 	return result
 }
 
-func getNginxPrefix(ctx context.Context, nginxInfo *Info) string {
+func nginxPrefix(ctx context.Context, nginxInfo *Info) string {
 	var prefix string
 
 	if nginxInfo.ConfigureArgs["prefix"] != nil {
@@ -315,7 +315,7 @@ func getNginxPrefix(ctx context.Context, nginxInfo *Info) string {
 	return prefix
 }
 
-func getNginxConfPath(ctx context.Context, nginxInfo *Info) string {
+func nginxConfPath(ctx context.Context, nginxInfo *Info) string {
 	var confPath string
 
 	if nginxInfo.ConfigureArgs["conf-path"] != nil {
@@ -339,7 +339,7 @@ func isKeyValueFlag(vals []string) bool {
 	return len(vals) == keyValueLen
 }
 
-func getLoadableModules(nginxInfo *Info) (modules []string) {
+func loadableModules(nginxInfo *Info) (modules []string) {
 	var err error
 	if mp, ok := nginxInfo.ConfigureArgs["modules-path"]; ok {
 		modulePath, pathOK := mp.(string)
@@ -361,7 +361,7 @@ func getLoadableModules(nginxInfo *Info) (modules []string) {
 	return modules
 }
 
-func getDynamicModules(nginxInfo *Info) (modules []string) {
+func dynamicModules(nginxInfo *Info) (modules []string) {
 	configArgs := nginxInfo.ConfigureArgs
 	for arg := range configArgs {
 		if strings.HasPrefix(arg, withWithPrefix) && strings.HasSuffix(arg, withModuleSuffix) {
@@ -398,7 +398,7 @@ func convertToMap(processes []*nginxprocess.Process) map[int32]*nginxprocess.Pro
 	return processesByPID
 }
 
-func getConfPathFromCommand(command string) string {
+func confPathFromCommand(command string) string {
 	commands := strings.Split(command, " ")
 
 	for i, command := range commands {
