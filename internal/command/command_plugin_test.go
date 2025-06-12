@@ -31,15 +31,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const serverType = "command"
+
 func TestCommandPlugin_Info(t *testing.T) {
-	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{}, serverType)
 	info := commandPlugin.Info()
 
 	assert.Equal(t, "command", info.Name)
 }
 
 func TestCommandPlugin_Subscriptions(t *testing.T) {
-	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{}, serverType)
 	subscriptions := commandPlugin.Subscriptions()
 
 	assert.Equal(
@@ -60,7 +62,7 @@ func TestCommandPlugin_Init(t *testing.T) {
 	messagePipe := busfakes.NewFakeMessagePipe()
 	fakeCommandService := &commandfakes.FakeCommandService{}
 
-	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{}, serverType)
 	err := commandPlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 
@@ -79,7 +81,7 @@ func TestCommandPlugin_createConnection(t *testing.T) {
 	commandService.CreateConnectionReturns(&mpi.CreateConnectionResponse{}, nil)
 	messagePipe := busfakes.NewFakeMessagePipe()
 
-	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{}, serverType)
 	err := commandPlugin.Init(ctx, messagePipe)
 	commandPlugin.commandService = commandService
 	require.NoError(t, err)
@@ -111,7 +113,7 @@ func TestCommandPlugin_Process(t *testing.T) {
 	messagePipe := busfakes.NewFakeMessagePipe()
 	fakeCommandService := &commandfakes.FakeCommandService{}
 
-	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{}, serverType)
 	err := commandPlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 	defer commandPlugin.Close(ctx)
@@ -219,7 +221,7 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 
 			agentConfig := types.AgentConfig()
 			agentConfig.Features = test.configFeatures
-			commandPlugin := NewCommandPlugin(agentConfig, &grpcfakes.FakeGrpcConnectionInterface{})
+			commandPlugin := NewCommandPlugin(agentConfig, &grpcfakes.FakeGrpcConnectionInterface{}, serverType)
 			err := commandPlugin.Init(ctx, messagePipe)
 			require.NoError(tt, err)
 			defer commandPlugin.Close(ctx)
@@ -319,7 +321,7 @@ func TestCommandPlugin_FeatureDisabled(t *testing.T) {
 
 			agentConfig.Features = test.configFeatures
 
-			commandPlugin := NewCommandPlugin(agentConfig, &grpcfakes.FakeGrpcConnectionInterface{})
+			commandPlugin := NewCommandPlugin(agentConfig, &grpcfakes.FakeGrpcConnectionInterface{}, serverType)
 			err := commandPlugin.Init(ctx, messagePipe)
 			commandPlugin.commandService = fakeCommandService
 			require.NoError(tt, err)
@@ -344,7 +346,7 @@ func TestMonitorSubscribeChannel(t *testing.T) {
 	logBuf := &bytes.Buffer{}
 	stub.StubLoggerWith(logBuf)
 
-	cp := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	cp := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{}, serverType)
 	cp.subscribeCancel = cncl
 
 	message := protos.CreateManagementPlaneRequest()
@@ -383,7 +385,7 @@ func Test_createDataPlaneResponse(t *testing.T) {
 			Error:   "",
 		},
 	}
-	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{}, serverType)
 	result := commandPlugin.createDataPlaneResponse(expected.GetMessageMeta().GetCorrelationId(),
 		expected.GetCommandResponse().GetStatus(),
 		expected.GetCommandResponse().GetMessage(), expected.GetCommandResponse().GetError())
