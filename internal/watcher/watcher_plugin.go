@@ -252,7 +252,8 @@ func (w *Watcher) handleCredentialUpdate(ctx context.Context) {
 	slog.DebugContext(ctx, "Watcher plugin received credential update message")
 
 	w.watcherMutex.Lock()
-	conn, err := grpc.NewGrpcConnection(ctx, w.agentConfig)
+	// This will be changed/moved during the credential watcher PR
+	conn, err := grpc.NewGrpcConnection(ctx, w.agentConfig, w.agentConfig.Command)
 	if err != nil {
 		slog.ErrorContext(ctx, "Unable to create new grpc connection", "error", err)
 		w.watcherMutex.Unlock()
