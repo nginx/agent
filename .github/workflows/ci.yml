@@ -37,16 +37,17 @@ jobs:
           go-version-file: 'go.mod'
       - name: Lint Agent Code
         uses: golangci/golangci-lint-action@82d40c283aeb1f2b6595839195e95c2d6a49081b # v5.0.0
+        run: mkdir -p test_results/lint-results.json
         with:
           version: "${{ env.GOLANGCI_LINT_VERSION }}"
-          args: -c ./scripts/.golangci.yml
+          args: -c ./scripts/.golangci.yml --output.json.path > test_results/lint-results.json
           skip-cache: true
       - name: Lint SDK Code
         uses: golangci/golangci-lint-action@82d40c283aeb1f2b6595839195e95c2d6a49081b # v5.0.0
         with:
           version: "${{ env.GOLANGCI_LINT_VERSION }}"
           working-directory: sdk
-          args: -c ../scripts/.golangci.yml --output.json.path > test_results/lint-results.json
+          args: -c ../scripts/.golangci.yml
           skip-cache: true
       - name: Upload artifact
         if: success() || failure()
