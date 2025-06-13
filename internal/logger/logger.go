@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -55,8 +56,9 @@ func New(logPath, level string) *slog.Logger {
 			if a.Key == slog.SourceKey {
 				source, ok := a.Value.Any().(*slog.Source)
 				if ok {
-					relativeFilePath := strings.Split(source.File, "/agent/")[1]
-					a.Value = slog.StringValue(relativeFilePath + ":" + strconv.Itoa(source.Line))
+					directory := filepath.Dir(source.File)
+					relativePath := path.Join(filepath.Base(directory), filepath.Base(source.File))
+					a.Value = slog.StringValue(relativePath + ":" + strconv.Itoa(source.Line))
 				}
 			}
 
