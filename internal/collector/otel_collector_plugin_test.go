@@ -405,6 +405,7 @@ func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
 	conf.Collector.Processors.Batch = nil
 	conf.Collector.Processors.Attribute = nil
 	conf.Collector.Processors.Resource = nil
+	conf.Collector.Processors.LogsGzip = nil
 	conf.Collector.Exporters.OtlpExporters = nil
 	conf.Collector.Exporters.PrometheusExporter = &config.PrometheusExporter{
 		Server: &config.ServerConfig{
@@ -457,6 +458,7 @@ func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
 					Batch:     nil,
 					Attribute: nil,
 					Resource:  nil,
+					LogsGzip:  nil,
 				},
 				collector.config.Collector.Processors)
 		})
@@ -727,7 +729,7 @@ func TestCollector_updateTcplogReceivers(t *testing.T) {
 	conf.Collector.Processors.Batch = nil
 	conf.Collector.Processors.Attribute = nil
 	conf.Collector.Processors.Resource = nil
-
+	conf.Collector.Processors.LogsGzip = nil
 	collector, err := New(conf)
 	require.NoError(t, err)
 
