@@ -73,14 +73,19 @@ type (
 
 	fileManagerServiceInterface interface {
 		UpdateOverview(ctx context.Context, instanceID string, filesToUpdate []*mpi.File, iteration int) error
-		ConfigApply(ctx context.Context, configApplyRequest *mpi.ConfigApplyRequest) (writeStatus model.WriteStatus,
-			err error)
+		ConfigApply(
+			ctx context.Context,
+			configApplyRequest *mpi.ConfigApplyRequest,
+		) (writeStatus model.WriteStatus, err error)
 		Rollback(ctx context.Context, instanceID string) error
 		UpdateFile(ctx context.Context, instanceID string, fileToUpdate *mpi.File) error
 		ClearCache()
 		UpdateCurrentFilesOnDisk(ctx context.Context, updateFiles map[string]*mpi.File, referenced bool) error
-		DetermineFileActions(currentFiles map[string]*mpi.File, modifiedFiles map[string]*model.FileCache) (
-			map[string]*model.FileCache, map[string][]byte, error)
+		DetermineFileActions(
+			ctx context.Context,
+			currentFiles map[string]*mpi.File,
+			modifiedFiles map[string]*model.FileCache,
+		) (map[string]*model.FileCache, map[string][]byte, error)
 		IsConnected() bool
 		SetIsConnected(isConnected bool)
 	}
@@ -510,8 +515,11 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 		return model.Error, allowedErr
 	}
 
-	diffFiles, fileContent, compareErr := fms.DetermineFileActions(fms.currentFilesOnDisk,
-		ConvertToMapOfFileCache(fileOverview.GetFiles()))
+	diffFiles, fileContent, compareErr := fms.DetermineFileActions(
+		ctx,
+		fms.currentFilesOnDisk,
+		ConvertToMapOfFileCache(fileOverview.GetFiles()),
+	)
 
 	if compareErr != nil {
 		return model.Error, compareErr
@@ -546,7 +554,7 @@ func (fms *FileManagerService) ClearCache() {
 
 // nolint:revive,cyclop
 func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) error {
-	slog.InfoContext(ctx, "Rolling back config for instance", "instanceid", instanceID)
+	slog.InfoContext(ctx, "Rolling back config for instance", "instance_id", instanceID)
 
 	fms.filesMutex.Lock()
 	defer fms.filesMutex.Unlock()
@@ -714,6 +722,7 @@ func (fms *FileManagerService) checkAllowedDirectory(checkFiles []*mpi.File) err
 // that have changed and a map of the contents for each updated and deleted file. Key to both maps is file path
 // nolint: revive,cyclop,gocognit
 func (fms *FileManagerService) DetermineFileActions(
+	ctx context.Context,
 	currentFiles map[string]*mpi.File,
 	modifiedFiles map[string]*model.FileCache,
 ) (
@@ -736,6 +745,7 @@ func (fms *FileManagerService) DetermineFileActions(
 			return nil, nil, manifestFileErr
 		}
 	}
+
 	// if file is in manifestFiles but not in modified files, file has been deleted
 	// copy contents, set file action
 	for fileName, manifestFile := range filesMap {
@@ -745,7 +755,12 @@ func (fms *FileManagerService) DetermineFileActions(
 			// Read file contents before marking it deleted
 			fileContent, readErr := os.ReadFile(fileName)
 			if readErr != nil {
-				return nil, nil, fmt.Errorf("error reading file %s: %w", fileName, readErr)
+				if errors.Is(readErr, os.ErrNotExist) {
+					slog.DebugContext(ctx, "Unable to backup file contents since file does not exist", "file", fileName)
+					continue
+				} else {
+					return nil, nil, fmt.Errorf("error reading file %s: %w", fileName, readErr)
+				}
 			}
 			fileContents[fileName] = fileContent
 
