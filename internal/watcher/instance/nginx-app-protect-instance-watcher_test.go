@@ -7,7 +7,6 @@ package instance
 
 import (
 	"context"
-	"log/slog"
 	"os"
 	"testing"
 	"time"
@@ -34,6 +33,7 @@ func TestNginxAppProtectInstanceWatcher_Watch(t *testing.T) {
 
 	versionFile := helpers.CreateFileWithErrorCheck(t, os.TempDir(), "version")
 	defer os.Remove(versionFile.Name())
+	defer versionFile.Close()
 
 	_, err := versionFile.WriteString("5.144.0")
 	require.NoError(t, err)
@@ -43,24 +43,28 @@ func TestNginxAppProtectInstanceWatcher_Watch(t *testing.T) {
 
 	releaseFile := helpers.CreateFileWithErrorCheck(t, os.TempDir(), "release")
 	defer helpers.RemoveFileWithErrorCheck(t, releaseFile.Name())
+	defer releaseFile.Close()
 
 	_, err = releaseFile.WriteString("4.11.0")
 	require.NoError(t, err)
 
 	attackSignatureVersionFile := helpers.CreateFileWithErrorCheck(t, os.TempDir(), "version")
 	defer helpers.RemoveFileWithErrorCheck(t, attackSignatureVersionFile.Name())
+	defer attackSignatureVersionFile.Close()
 
 	_, err = attackSignatureVersionFile.WriteString("2024.11.28")
 	require.NoError(t, err)
 
 	threatCampaignVersionFile := helpers.CreateFileWithErrorCheck(t, os.TempDir(), "version")
 	defer helpers.RemoveFileWithErrorCheck(t, threatCampaignVersionFile.Name())
+	defer threatCampaignVersionFile.Close()
 
 	_, err = threatCampaignVersionFile.WriteString("2024.12.02")
 	require.NoError(t, err)
 
 	enforcerEngineVersionFile := helpers.CreateFileWithErrorCheck(t, os.TempDir(), "enforcer_version")
 	defer helpers.RemoveFileWithErrorCheck(t, enforcerEngineVersionFile.Name())
+	defer enforcerEngineVersionFile.Close()
 
 	_, err = enforcerEngineVersionFile.WriteString("5.113.0")
 	require.NoError(t, err)
@@ -90,8 +94,6 @@ func TestNginxAppProtectInstanceWatcher_Watch(t *testing.T) {
 			},
 		},
 	)
-
-	slog.SetLogLoggerLevel(slog.LevelDebug)
 
 	go nginxAppProtectInstanceWatcher.Watch(ctx, instancesChannel)
 
@@ -133,6 +135,8 @@ func TestNginxAppProtectInstanceWatcher_Watch(t *testing.T) {
 	})
 	t.Run("Test 3: Delete instance", func(t *testing.T) {
 		helpers.RemoveFileWithErrorCheck(t, versionFile.Name())
+		closeErr := versionFile.Close()
+		require.NoError(t, closeErr)
 
 		select {
 		case instanceUpdates := <-instancesChannel:
