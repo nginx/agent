@@ -1,5 +1,28 @@
 #!/bin/bash
-# Script to help check for the presence of nginx-agent packages
+#   Usage:
+#
+#        Check package v3.0.0 availability for all platforms, no auth required:
+#            > ./package_check.sh 3.0.0
+#
+#        Check pkgs and download if present, with authentication:
+#            > CERT=<cert-path> KEY=<key-path> DL=1 ./package_check.sh 3.0.0
+#
+#        Required parameters:
+#
+#            version: the version of agent you wish to search for i.e 3.0.0
+#
+#        Optional parameters:
+#
+#            PKG_REPO: The root url for the repository you wish to check, defaults to packages.nginx.org
+#            CERT: Path to your cert file
+#            KEY: Path to your key file
+#            DL: Switch to download the package if it is present, set to 1 if download required, defaults to 0
+#
+#   Packages are downloaded to the local directory with the path of its corresponding repo url + uri i.e
+#
+#            packages.nginx.org/nginx-agent/debian/pool/agent/n/nginx-agent/nginx-agent_3.0.0~bullseye_arm64.deb
+#
+
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -76,7 +99,7 @@ uris=(
   ${SUSE[@]}
 )
 
-## Check if nginx-agent packages are present and report missing or outdated files
+## Check and download if nginx-agent packages are present in the repository
 check_pkgs () {
   for pkg in ${uris[@]}; do
     echo -n "CHECK: ${PKG_REPO_URL}/${pkg} -> "
@@ -94,18 +117,21 @@ check_pkgs () {
   done
 }
 
+## Download a package
 dl_pkg () {
     local url=${1}
     echo -n "GET: ${url}... "
     mkdir -p "${PKG_DIR}/$(dirname ${pkg})"
-    local ret=$(curl -s --fail ${CURL_OPTS} "${url}" --output "${PKG_DIR}/${pkg}")
+    local ret=$(curl -s ${CURL_OPTS} "${url}" --output "${PKG_DIR}/${pkg}")
     if [[ $? != 0 ]]; then
       echo -e "${RED}Download failed!${NC}"
       return
     fi
     echo -e "${GREEN}Done${NC}"
+    echo "SAVED: ${PKG_DIR}/${pkg}"
 }
 
+## Check for the presence of an nginx-agent version matching $VERSION
 check_repo() {
   echo -n "Checking package repository ${PKG_REPO_URL}... "
   curl -s -I ${CURL_OPTS} "${PKG_REPO_URL}/index.xml" > /dev/null
@@ -117,7 +143,7 @@ check_repo() {
   fi
 
   mkdir -p ${PKG_DIR}
-  curl -s ${CURL_OPTS} "${PKG_REPO_URL}/index.xml" --output "${PKG_DIR}/index.xml" || exit 2
+  curl -s ${CURL_OPTS} "${PKG_REPO_URL}/index.xml" --output "${PKG_DIR}/index.xml" || exit 1
 
   echo -n "Checking for nginx-agent version ${VERSION}... "
   grep -qnF "ver=\"${VERSION}\"" "${PKG_DIR}/index.xml"
