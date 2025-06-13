@@ -101,7 +101,7 @@ func (w *NginxAppProtectInstanceWatcher) Watch(ctx context.Context, instancesCha
 func (w *NginxAppProtectInstanceWatcher) watchDirectories(ctx context.Context) {
 	for _, versionFile := range versionFiles {
 		if !w.filesBeingWatcher[versionFile] {
-			if _, fileOs := os.Stat(versionFile); fileOs != nil && !os.IsNotExist(fileOs) {
+			if _, fileOs := os.Stat(versionFile); fileOs != nil && os.IsNotExist(fileOs) {
 				w.filesBeingWatcher[versionFile] = false
 				continue
 			}
@@ -131,6 +131,8 @@ func (w *NginxAppProtectInstanceWatcher) addWatcher(ctx context.Context, version
 			)
 		}
 	}
+
+	slog.DebugContext(ctx, "Added NGINX App Protect file watcher", "file", versionFile)
 }
 
 func (w *NginxAppProtectInstanceWatcher) readVersionFile(ctx context.Context, versionFile string) {
