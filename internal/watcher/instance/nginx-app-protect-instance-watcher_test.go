@@ -7,6 +7,7 @@ package instance
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"testing"
 	"time"
@@ -22,6 +23,8 @@ import (
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/stretchr/testify/require"
 )
+
+const timeout = 5 * time.Second
 
 func TestNginxAppProtectInstanceWatcher_Watch(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -88,6 +91,8 @@ func TestNginxAppProtectInstanceWatcher_Watch(t *testing.T) {
 		},
 	)
 
+	slog.SetLogLoggerLevel(slog.LevelDebug)
+
 	go nginxAppProtectInstanceWatcher.Watch(ctx, instancesChannel)
 
 	t.Run("Test 1: New instance", func(t *testing.T) {
@@ -101,7 +106,7 @@ func TestNginxAppProtectInstanceWatcher_Watch(t *testing.T) {
 				proto.Equal(instanceUpdates.InstanceUpdates.NewInstances[0], expectedInstance),
 				"expected %s, actual %s", expectedInstance, instanceUpdates.InstanceUpdates.NewInstances[0],
 			)
-		case <-time.After(5 * time.Second):
+		case <-time.After(timeout):
 			t.Fatalf("Timed out waiting for instance updates")
 		}
 	})
@@ -122,7 +127,7 @@ func TestNginxAppProtectInstanceWatcher_Watch(t *testing.T) {
 				proto.Equal(instanceUpdates.InstanceUpdates.UpdatedInstances[0], expectedInstance),
 				"expected %s, actual %s", expectedInstance, instanceUpdates.InstanceUpdates.UpdatedInstances[0],
 			)
-		case <-time.After(5 * time.Second):
+		case <-time.After(timeout):
 			t.Fatalf("Timed out waiting for instance updates")
 		}
 	})
@@ -139,7 +144,7 @@ func TestNginxAppProtectInstanceWatcher_Watch(t *testing.T) {
 				proto.Equal(instanceUpdates.InstanceUpdates.DeletedInstances[0], expectedInstance),
 				"expected %s, actual %s", expectedInstance, instanceUpdates.InstanceUpdates.DeletedInstances[0],
 			)
-		case <-time.After(5 * time.Second):
+		case <-time.After(timeout):
 			t.Fatalf("Timed out waiting for instance updates")
 		}
 	})

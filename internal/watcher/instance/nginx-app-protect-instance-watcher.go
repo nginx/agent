@@ -40,6 +40,7 @@ type NginxAppProtectInstanceWatcher struct {
 	watcher                 *fsnotify.Watcher
 	instancesChannel        chan<- InstanceUpdatesMessage
 	nginxAppProtectInstance *mpi.Instance
+	filesBeingWatcher       map[string]bool
 	version                 string
 	release                 string
 	attackSignatureVersion  string
@@ -49,7 +50,8 @@ type NginxAppProtectInstanceWatcher struct {
 
 func NewNginxAppProtectInstanceWatcher(agentConfig *config.Config) *NginxAppProtectInstanceWatcher {
 	return &NginxAppProtectInstanceWatcher{
-		agentConfig: agentConfig,
+		agentConfig:       agentConfig,
+		filesBeingWatcher: make(map[string]bool),
 	}
 }
 
@@ -85,6 +87,8 @@ func (w *NginxAppProtectInstanceWatcher) Watch(ctx context.Context, instancesCha
 
 			return
 		case <-instanceWatcherTicker.C:
+			// Need to keep watching directories in case NAP gets installed a while after NGINX Agent is started
+			w.watchDirectories(ctx)
 			w.checkForUpdates(ctx)
 		case event := <-w.watcher.Events:
 			w.handleEvent(ctx, event)
@@ -96,29 +100,52 @@ func (w *NginxAppProtectInstanceWatcher) Watch(ctx context.Context, instancesCha
 
 func (w *NginxAppProtectInstanceWatcher) watchDirectories(ctx context.Context) {
 	for _, versionFile := range versionFiles {
-		if err := w.watcher.Add(versionFile); err != nil {
-			slog.ErrorContext(
-				ctx,
-				"Failed to add NGINX App Protect file watcher",
-				"file", versionFile, "error", err,
-			)
-			removeError := w.watcher.Remove(versionFile)
-			if removeError != nil {
-				slog.ErrorContext(
-					ctx,
-					"Failed to remove NGINX App Protect file watcher",
-					"file", versionFile, "error", removeError,
-				)
+		if !w.filesBeingWatcher[versionFile] {
+			if _, fileOs := os.Stat(versionFile); fileOs != nil && !os.IsNotExist(fileOs) {
+				w.filesBeingWatcher[versionFile] = false
+				continue
 			}
+
+			w.addWatcher(ctx, versionFile)
+			w.filesBeingWatcher[versionFile] = true
+
+			// On startup we need to read the files initially if they are discovered for the first time
+			w.readVersionFile(ctx, versionFile)
 		}
 	}
+}
 
-	// Check if files exists on startup
-	w.version = w.readFile(ctx, versionFilePath)
-	w.release = w.readFile(ctx, releaseFilePath)
-	w.attackSignatureVersion = w.readFile(ctx, attackSignatureVersionFilePath)
-	w.threatCampaignVersion = w.readFile(ctx, threatCampaignVersionFilePath)
-	w.enforcerEngineVersion = w.readFile(ctx, enforcerEngineVersionFilePath)
+func (w *NginxAppProtectInstanceWatcher) addWatcher(ctx context.Context, versionFile string) {
+	if err := w.watcher.Add(versionFile); err != nil {
+		slog.ErrorContext(
+			ctx,
+			"Failed to add NGINX App Protect file watcher",
+			"file", versionFile, "error", err,
+		)
+		removeError := w.watcher.Remove(versionFile)
+		if removeError != nil {
+			slog.ErrorContext(
+				ctx,
+				"Failed to remove NGINX App Protect file watcher",
+				"file", versionFile, "error", removeError,
+			)
+		}
+	}
+}
+
+func (w *NginxAppProtectInstanceWatcher) readVersionFile(ctx context.Context, versionFile string) {
+	switch {
+	case versionFile == versionFilePath:
+		w.version = w.readFile(ctx, versionFilePath)
+	case versionFile == releaseFilePath:
+		w.release = w.readFile(ctx, releaseFilePath)
+	case versionFile == threatCampaignVersionFilePath:
+		w.threatCampaignVersion = w.readFile(ctx, threatCampaignVersionFilePath)
+	case versionFile == enforcerEngineVersionFilePath:
+		w.enforcerEngineVersion = w.readFile(ctx, enforcerEngineVersionFilePath)
+	case versionFile == attackSignatureVersionFilePath:
+		w.attackSignatureVersion = w.readFile(ctx, attackSignatureVersionFilePath)
+	}
 }
 
 func (w *NginxAppProtectInstanceWatcher) handleEvent(ctx context.Context, event fsnotify.Event) {
