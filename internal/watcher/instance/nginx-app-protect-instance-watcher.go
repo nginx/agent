@@ -40,7 +40,7 @@ type NginxAppProtectInstanceWatcher struct {
 	watcher                 *fsnotify.Watcher
 	instancesChannel        chan<- InstanceUpdatesMessage
 	nginxAppProtectInstance *mpi.Instance
-	filesBeingWatcher       map[string]bool
+	filesBeingWatched       map[string]bool
 	version                 string
 	release                 string
 	attackSignatureVersion  string
@@ -51,7 +51,7 @@ type NginxAppProtectInstanceWatcher struct {
 func NewNginxAppProtectInstanceWatcher(agentConfig *config.Config) *NginxAppProtectInstanceWatcher {
 	return &NginxAppProtectInstanceWatcher{
 		agentConfig:       agentConfig,
-		filesBeingWatcher: make(map[string]bool),
+		filesBeingWatched: make(map[string]bool),
 	}
 }
 
@@ -72,7 +72,7 @@ func (w *NginxAppProtectInstanceWatcher) Watch(ctx context.Context, instancesCha
 	w.watcher = watcher
 	w.instancesChannel = instancesChannel
 
-	w.watchDirectories(ctx)
+	w.watchVersionFiles(ctx)
 
 	instanceWatcherTicker := time.NewTicker(monitoringFrequency)
 	defer instanceWatcherTicker.Stop()
@@ -88,7 +88,7 @@ func (w *NginxAppProtectInstanceWatcher) Watch(ctx context.Context, instancesCha
 			return
 		case <-instanceWatcherTicker.C:
 			// Need to keep watching directories in case NAP gets installed a while after NGINX Agent is started
-			w.watchDirectories(ctx)
+			w.watchVersionFiles(ctx)
 			w.checkForUpdates(ctx)
 		case event := <-w.watcher.Events:
 			w.handleEvent(ctx, event)
@@ -98,16 +98,16 @@ func (w *NginxAppProtectInstanceWatcher) Watch(ctx context.Context, instancesCha
 	}
 }
 
-func (w *NginxAppProtectInstanceWatcher) watchDirectories(ctx context.Context) {
+func (w *NginxAppProtectInstanceWatcher) watchVersionFiles(ctx context.Context) {
 	for _, versionFile := range versionFiles {
-		if !w.filesBeingWatcher[versionFile] {
+		if !w.filesBeingWatched[versionFile] {
 			if _, fileOs := os.Stat(versionFile); fileOs != nil && os.IsNotExist(fileOs) {
-				w.filesBeingWatcher[versionFile] = false
+				w.filesBeingWatched[versionFile] = false
 				continue
 			}
 
 			w.addWatcher(ctx, versionFile)
-			w.filesBeingWatcher[versionFile] = true
+			w.filesBeingWatched[versionFile] = true
 
 			// On startup we need to read the files initially if they are discovered for the first time
 			w.readVersionFile(ctx, versionFile)
