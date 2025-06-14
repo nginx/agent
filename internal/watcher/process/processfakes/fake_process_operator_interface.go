@@ -24,20 +24,18 @@ type FakeProcessOperatorInterface struct {
 		result1 *nginxprocess.Process
 		result2 error
 	}
-	ProcessesStub        func(context.Context) ([]*nginxprocess.Process, []*nginxprocess.Process, error)
+	ProcessesStub        func(context.Context) ([]*nginxprocess.Process, error)
 	processesMutex       sync.RWMutex
 	processesArgsForCall []struct {
 		arg1 context.Context
 	}
 	processesReturns struct {
 		result1 []*nginxprocess.Process
-		result2 []*nginxprocess.Process
-		result3 error
+		result2 error
 	}
 	processesReturnsOnCall map[int]struct {
 		result1 []*nginxprocess.Process
-		result2 []*nginxprocess.Process
-		result3 error
+		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
@@ -108,7 +106,7 @@ func (fake *FakeProcessOperatorInterface) ProcessReturnsOnCall(i int, result1 *n
 	}{result1, result2}
 }
 
-func (fake *FakeProcessOperatorInterface) Processes(arg1 context.Context) ([]*nginxprocess.Process, []*nginxprocess.Process, error) {
+func (fake *FakeProcessOperatorInterface) Processes(arg1 context.Context) ([]*nginxprocess.Process, error) {
 	fake.processesMutex.Lock()
 	ret, specificReturn := fake.processesReturnsOnCall[len(fake.processesArgsForCall)]
 	fake.processesArgsForCall = append(fake.processesArgsForCall, struct {
@@ -122,9 +120,9 @@ func (fake *FakeProcessOperatorInterface) Processes(arg1 context.Context) ([]*ng
 		return stub(arg1)
 	}
 	if specificReturn {
-		return ret.result1, ret.result2, ret.result3
+		return ret.result1, ret.result2
 	}
-	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FakeProcessOperatorInterface) ProcessesCallCount() int {
@@ -133,7 +131,7 @@ func (fake *FakeProcessOperatorInterface) ProcessesCallCount() int {
 	return len(fake.processesArgsForCall)
 }
 
-func (fake *FakeProcessOperatorInterface) ProcessesCalls(stub func(context.Context) ([]*nginxprocess.Process, []*nginxprocess.Process, error)) {
+func (fake *FakeProcessOperatorInterface) ProcessesCalls(stub func(context.Context) ([]*nginxprocess.Process, error)) {
 	fake.processesMutex.Lock()
 	defer fake.processesMutex.Unlock()
 	fake.ProcessesStub = stub
@@ -146,33 +144,30 @@ func (fake *FakeProcessOperatorInterface) ProcessesArgsForCall(i int) context.Co
 	return argsForCall.arg1
 }
 
-func (fake *FakeProcessOperatorInterface) ProcessesReturns(result1 []*nginxprocess.Process, result2 []*nginxprocess.Process, result3 error) {
+func (fake *FakeProcessOperatorInterface) ProcessesReturns(result1 []*nginxprocess.Process, result2 error) {
 	fake.processesMutex.Lock()
 	defer fake.processesMutex.Unlock()
 	fake.ProcessesStub = nil
 	fake.processesReturns = struct {
 		result1 []*nginxprocess.Process
-		result2 []*nginxprocess.Process
-		result3 error
-	}{result1, result2, result3}
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *FakeProcessOperatorInterface) ProcessesReturnsOnCall(i int, result1 []*nginxprocess.Process, result2 []*nginxprocess.Process, result3 error) {
+func (fake *FakeProcessOperatorInterface) ProcessesReturnsOnCall(i int, result1 []*nginxprocess.Process, result2 error) {
 	fake.processesMutex.Lock()
 	defer fake.processesMutex.Unlock()
 	fake.ProcessesStub = nil
 	if fake.processesReturnsOnCall == nil {
 		fake.processesReturnsOnCall = make(map[int]struct {
 			result1 []*nginxprocess.Process
-			result2 []*nginxprocess.Process
-			result3 error
+			result2 error
 		})
 	}
 	fake.processesReturnsOnCall[i] = struct {
 		result1 []*nginxprocess.Process
-		result2 []*nginxprocess.Process
-		result3 error
-	}{result1, result2, result3}
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeProcessOperatorInterface) Invocations() map[string][][]interface{} {

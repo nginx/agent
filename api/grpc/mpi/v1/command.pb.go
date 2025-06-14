@@ -2320,6 +2320,8 @@ type NGINXAppProtectRuntimeInfo struct {
 	AttackSignatureVersion string `protobuf:"bytes,2,opt,name=attack_signature_version,json=attackSignatureVersion,proto3" json:"attack_signature_version,omitempty"`
 	// Threat campaign version
 	ThreatCampaignVersion string `protobuf:"bytes,3,opt,name=threat_campaign_version,json=threatCampaignVersion,proto3" json:"threat_campaign_version,omitempty"`
+	// Enforcer engine version
+	EnforcerEngineVersion string `protobuf:"bytes,4,opt,name=enforcer_engine_version,json=enforcerEngineVersion,proto3" json:"enforcer_engine_version,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -2371,6 +2373,13 @@ func (x *NGINXAppProtectRuntimeInfo) GetAttackSignatureVersion() string {
 func (x *NGINXAppProtectRuntimeInfo) GetThreatCampaignVersion() string {
 	if x != nil {
 		return x.ThreatCampaignVersion
+	}
+	return ""
+}
+
+func (x *NGINXAppProtectRuntimeInfo) GetEnforcerEngineVersion() string {
+	if x != nil {
+		return x.EnforcerEngineVersion
 	}
 	return ""
 }
@@ -2793,11 +2802,12 @@ const file_mpi_v1_command_proto_rawDesc = "" +
 	"\n" +
 	"APIDetails\x12\x1a\n" +
 	"\blocation\x18\x01 \x01(\tR\blocation\x12\x16\n" +
-	"\x06listen\x18\x02 \x01(\tR\x06listen\"\xa8\x01\n" +
+	"\x06listen\x18\x02 \x01(\tR\x06listen\"\xe0\x01\n" +
 	"\x1aNGINXAppProtectRuntimeInfo\x12\x18\n" +
 	"\arelease\x18\x01 \x01(\tR\arelease\x128\n" +
 	"\x18attack_signature_version\x18\x02 \x01(\tR\x16attackSignatureVersion\x126\n" +
-	"\x17threat_campaign_version\x18\x03 \x01(\tR\x15threatCampaignVersion\"\x10\n" +
+	"\x17threat_campaign_version\x18\x03 \x01(\tR\x15threatCampaignVersion\x126\n" +
+	"\x17enforcer_engine_version\x18\x04 \x01(\tR\x15enforcerEngineVersion\"\x10\n" +
 	"\x0eInstanceAction\"\x94\x02\n" +
 	"\vAgentConfig\x12/\n" +
 	"\acommand\x18\x01 \x01(\v2\x15.mpi.v1.CommandServerR\acommand\x12/\n" +

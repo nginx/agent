@@ -15,6 +15,7 @@ import (
 
 const (
 	ossInstanceID        = "e1374cb1-462d-3b6c-9f3b-f28332b5f10c"
+	napInstanceID        = "j4234cb1-462d-3b6c-9f3b-f28332b5f13g"
 	plusInstanceID       = "40f9dda0-e45f-34cf-bba7-f173700f50a2"
 	secondOssInstanceID  = "557cdf06-08fd-31eb-a8e7-daafd3a93db7"
 	unsuportedInstanceID = "fcd99f8f-00fb-3097-8d75-32ae269b46c3"
@@ -115,6 +116,30 @@ func NginxPlusInstance(expectedModules []string) *mpi.Instance {
 				},
 			},
 			InstanceChildren: []*mpi.InstanceChild{{ProcessId: childID}, {ProcessId: childID2}},
+		},
+	}
+}
+
+func NginxAppProtectInstance() *mpi.Instance {
+	return &mpi.Instance{
+		InstanceMeta: &mpi.InstanceMeta{
+			InstanceId:   napInstanceID,
+			InstanceType: mpi.InstanceMeta_INSTANCE_TYPE_NGINX_APP_PROTECT,
+			Version:      "5.144.0",
+		},
+		InstanceConfig: &mpi.InstanceConfig{},
+		InstanceRuntime: &mpi.InstanceRuntime{
+			ProcessId:  0,
+			BinaryPath: "",
+			Details: &mpi.InstanceRuntime_NginxAppProtectRuntimeInfo{
+				NginxAppProtectRuntimeInfo: &mpi.NGINXAppProtectRuntimeInfo{
+					Release:                "4.11.0",
+					AttackSignatureVersion: "2024.11.28",
+					ThreatCampaignVersion:  "2024.12.02",
+					EnforcerEngineVersion:  "5.113.0",
+				},
+			},
+			InstanceChildren: make([]*mpi.InstanceChild, 0),
 		},
 	}
 }
