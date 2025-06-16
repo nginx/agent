@@ -71,7 +71,6 @@ func TestCheckForProcesses(t *testing.T) {
 
 			assert.Equal(t, nil, err, fmt.Sprintf("Expected error to be nil but got %v", err))
 			assert.Equal(t, tc.expMissingProcs, missingProcesses, fmt.Sprintf("Expected missing processes to be %v but got %v", tc.expMissingProcs, missingProcesses))
-			assert.Equal(t, true, false)
 		})
 	}
 }
