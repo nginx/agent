@@ -225,7 +225,7 @@ jobs:
             if: success() || failure()
             uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
             with:
-                name: ${{ matrix.container.image }}-integration-test-status
+                name: integration-test-status-${{ matrix.container.image }}-${{ matrix.container.version }}
                 path: int-test-result.json
                 retention-days: 1
 
@@ -288,7 +288,7 @@ jobs:
         if: success() || failure()
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
-            name: ${{ matrix.container.image }}-oss-integration-test-status
+            name: oss-integration-test-status-${{ matrix.container.image }}-${{ matrix.container.version }}
             path: oss-logs-result.json
             retention-days: 1
 
@@ -368,7 +368,7 @@ jobs:
             if: success() || failure()
             uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
             with:
-                name: ${{ matrix.container.image }}-plus-integration-test-status
+                name: plus-integration-test-status-${{ matrix.container.image }}-${{ matrix.container.version }}-${{ matrix.container.plus }}
                 path: plus-logs-result.json
                 retention-days: 1
 
