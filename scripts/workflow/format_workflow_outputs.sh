@@ -17,7 +17,9 @@ else
   RESULT="skip"
 fi
 
+echo "CATTING"
 cat $IN_FILE
+echo "CATTED"
 
 if [[ -f "$IN_FILE" ]]; then  
   NUM_ISSUES=$(jq '.Issues | length' "$IN_FILE")
