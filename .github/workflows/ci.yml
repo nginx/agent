@@ -92,12 +92,24 @@ jobs:
     name: Component Tests
     runs-on: ubuntu-24.04
     steps:
+      - name: Set start time
+        run: echo "START_TIME=$(date +"%Y-%m-%dT%H:%M:%S.%NZ")" >> ${GITHUB_ENV}
       - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version-file: 'go.mod'
       - name: Run Component Tests
-        run: make component-test
+        run: make component-test > component-test-output.json
+      - name: Set Component Test Outputs
+        if: success() || failure()
+        run: bash ./scripts/workflow/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }} component-test-output.json component-test-result.json
+      - name: Upload Artifact
+        if: success() || failure()
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        with:
+            name: component-test-status
+            path: component-test-result.json
+            retention-days: 1
 
   build-unsigned-snapshot:
     name: Build unsigned snapshot
@@ -174,6 +186,8 @@ jobs:
                   - image: "debian"
                     version: "bookworm-slim"
       steps:
+          - name: Set start time
+            run: echo "START_TIME=$(date +"%Y-%m-%dT%H:%M:%S.%NZ")" >> ${GITHUB_ENV}
           - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
             with:
                 fetch-depth: 0
@@ -195,8 +209,7 @@ jobs:
             run: |
                 docker ps -a
                 dockerid=$(docker ps -a --format "{{.ID}}")
-                docker logs "$dockerid"
-
+                docker logs "$dockerid" > int-test-output.json
           - name: Archive integration test logs
             if: success() || failure()
             uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
@@ -204,6 +217,17 @@ jobs:
                 name: result-integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}
                 path: /tmp/integration-test-logs
                 retention-days: 3
+                
+          - name: Set Component Test Outputs
+            if: success() || failure()
+            run: bash ./scripts/workflow/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }} int-test-output.json int-test-result.json
+          - name: Upload Artifact
+            if: success() || failure()
+            uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+            with:
+                name: integration-test-status
+                path: integration-test-result.json
+                retention-days: 1
 
   official-oss-image-integration-tests:
     name: Integration Tests - Official OSS Images
@@ -435,12 +459,12 @@ jobs:
       pull-requests: write
 
 
-#  merge-artifacts:
-#      runs-on: ubuntu-22.04
-#      needs: [lint, unit-test, component-test, performance-test, integration-tests, official-plus-image-integration-tests, official-oss-image-integration-tests]
-#      steps:
-#        - name: Merge Artifacts
-#          if: success() || failure()
-#          uses: actions/upload-artifact/merge@v4
-#          with:
-#              name: ci-workflow-logs
+  merge-artifacts:
+      runs-on: ubuntu-22.04
+      needs: [lint, unit-test, component-test, integration-tests]
+      steps:
+        - name: Merge Artifacts
+          if: success() || failure()
+          uses: actions/upload-artifact/merge@v4
+          with:
+              name: ci-workflow-logs
