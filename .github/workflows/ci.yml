@@ -55,10 +55,10 @@ jobs:
         run: bash ./scripts/workflow/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }}
       - name: Upload Artifact
         if: success() || failure()
-        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
             name: lint-status
-            path: lint-results.json
+            path: build
             retention-days: 1
 
   unit-test:
