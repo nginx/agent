@@ -52,7 +52,7 @@ jobs:
           skip-cache: true
       - name: Set Linting Outputs
         if: success() || failure()
-        run: bash ./scripts/workflow/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }}
+        run: bash ./scripts/workflow/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }} lint-result.json
       - name: Upload Artifact
         if: success() || failure()
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
@@ -65,16 +65,28 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-24.04
     steps:
+      - name: Set start time
+        run: echo "START_TIME=$(date +"%Y-%m-%dT%H:%M:%S.%NZ")" >> ${GITHUB_ENV}
       - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version-file: 'go.mod'
       - name: Run Unit Tests
-        run: make unit-test
+        run: make unit-test > unit-test-output.json
       - name: Upload Test Coverage
         uses: codecov/codecov-action@84508663e988701840491b86de86b666e8a86bed # v4.3.0
         with:
           files: ./build/test/coverage.out
+      - name: Set Unit Test Outputs
+        if: success() || failure()
+        run: bash ./scripts/workflow/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }} unit-test-result.json
+      - name: Upload Artifact
+        if: success() || failure()
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        with:
+            name: unit-test-status
+            path: unit-test-result.json
+            retention-days: 1
 
   component-test:
     name: Component Tests
@@ -421,3 +433,14 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+
+
+#  merge-artifacts:
+#      runs-on: ubuntu-22.04
+#      needs: [lint, unit-test, component-test, performance-test, integration-tests, official-plus-image-integration-tests, official-oss-image-integration-tests]
+#      steps:
+#        - name: Merge Artifacts
+#          if: success() || failure()
+#          uses: actions/upload-artifact/merge@v4
+#          with:
+#              name: ci-workflow-logs

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-LINT_FILE="lint-output.json"
+LINT_FILE="$3"
 START_TIME="$2"
 END_TIME="`date "+%Y-%m-%dT%H:%M:%S.%NZ"`"
 START_SECONDS=$(date -d "$START_TIME" +%s.%N)
@@ -26,4 +26,4 @@ if [[ -f "$LINT_FILE" ]]; then
   fi
 fi
 
-echo "{\"start_at\": \"$START_TIME\", \"end_at\": \"$END_TIME\", \"duration_seconds\": \"$DURATION\", \"result\": \"$RESULT\", \"msg\": \"$MSG\"}" > lint-result.json
+echo "{\"start_at\": \"$START_TIME\", \"end_at\": \"$END_TIME\", \"duration_seconds\": \"$DURATION\", \"result\": \"$RESULT\", \"msg\": \"$MSG\"}" > $LINT_FILE
