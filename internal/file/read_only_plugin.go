@@ -7,6 +7,7 @@ package file
 
 import (
 	"context"
+	"github.com/nginx/agent/v3/internal/command"
 	"log/slog"
 
 	"github.com/nginx/agent/v3/pkg/id"
@@ -60,7 +61,7 @@ func (rp *ReadFilePlugin) Info() *bus.Info {
 }
 
 func (rp *ReadFilePlugin) Process(ctx context.Context, msg *bus.Message) {
-	if logger.ServerType(ctx) == "auxiliary" || logger.ServerType(ctx) == "" {
+	if logger.ServerType(ctx) == command.Auxiliary.String() || logger.ServerType(ctx) == "" {
 		switch msg.Topic {
 		case bus.ConnectionResetTopic:
 			rp.handleConnectionReset(ctx, msg)

@@ -7,6 +7,7 @@ package file
 
 import (
 	"context"
+	"github.com/nginx/agent/v3/internal/command"
 	"log/slog"
 
 	"github.com/nginx/agent/v3/pkg/files"
@@ -61,27 +62,30 @@ func (fp *FilePlugin) Info() *bus.Info {
 }
 
 func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
-	switch msg.Topic {
-	case bus.ConnectionResetTopic:
-		fp.handleConnectionReset(ctx, msg)
-	case bus.ConnectionCreatedTopic:
-		slog.DebugContext(ctx, "File plugin received connection created message")
-		fp.fileManagerService.SetIsConnected(true)
-	case bus.NginxConfigUpdateTopic:
-		fp.handleNginxConfigUpdate(ctx, msg)
-	case bus.ConfigUploadRequestTopic:
-		fp.handleConfigUploadRequest(ctx, msg)
-	case bus.ConfigApplyRequestTopic:
-		fp.handleConfigApplyRequest(ctx, msg)
-	case bus.ConfigApplyCompleteTopic:
-		fp.handleConfigApplyComplete(ctx, msg)
-	case bus.ConfigApplySuccessfulTopic:
-		fp.handleConfigApplySuccess(ctx, msg)
-	case bus.ConfigApplyFailedTopic:
-		fp.handleConfigApplyFailedRequest(ctx, msg)
-	default:
-		slog.DebugContext(ctx, "File plugin received unknown topic", "topic", msg.Topic)
+	if logger.ServerType(ctx) == command.Command.String() || logger.ServerType(ctx) == "" {
+		switch msg.Topic {
+		case bus.ConnectionResetTopic:
+			fp.handleConnectionReset(ctx, msg)
+		case bus.ConnectionCreatedTopic:
+			slog.DebugContext(ctx, "File plugin received connection created message")
+			fp.fileManagerService.SetIsConnected(true)
+		case bus.NginxConfigUpdateTopic:
+			fp.handleNginxConfigUpdate(ctx, msg)
+		case bus.ConfigUploadRequestTopic:
+			fp.handleConfigUploadRequest(ctx, msg)
+		case bus.ConfigApplyRequestTopic:
+			fp.handleConfigApplyRequest(ctx, msg)
+		case bus.ConfigApplyCompleteTopic:
+			fp.handleConfigApplyComplete(ctx, msg)
+		case bus.ConfigApplySuccessfulTopic:
+			fp.handleConfigApplySuccess(ctx, msg)
+		case bus.ConfigApplyFailedTopic:
+			fp.handleConfigApplyFailedRequest(ctx, msg)
+		default:
+			slog.DebugContext(ctx, "File plugin received unknown topic", "topic", msg.Topic)
+		}
 	}
+
 }
 
 func (fp *FilePlugin) Subscriptions() []string {
