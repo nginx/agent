@@ -8,11 +8,14 @@ package file
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
 	"os"
 	"path"
+
+	"github.com/nginx/agent/v3/internal/model"
 
 	"google.golang.org/grpc"
 
@@ -139,4 +142,36 @@ func (fo *FileOperator) ReadChunk(
 	}
 
 	return chunk, err
+}
+
+func (fo *FileOperator) WriteManifestFile(updatedFiles map[string]*model.ManifestFile, manifestDir,
+	manifestPath string,
+) (writeError error) {
+	manifestJSON, err := json.MarshalIndent(updatedFiles, "", "  ")
+	if err != nil {
+		return fmt.Errorf("unable to marshal manifest file json: %w", err)
+	}
+
+	// 0755 allows read/execute for all, write for owner
+	if err = os.MkdirAll(manifestDir, dirPerm); err != nil {
+		return fmt.Errorf("unable to create directory %s: %w", manifestDir, err)
+	}
+
+	// 0600 ensures only root can read/write
+	newFile, err := os.OpenFile(manifestPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, filePerm)
+	if err != nil {
+		return fmt.Errorf("failed to read manifest file: %w", err)
+	}
+	defer func() {
+		if closeErr := newFile.Close(); closeErr != nil {
+			writeError = closeErr
+		}
+	}()
+
+	_, err = newFile.Write(manifestJSON)
+	if err != nil {
+		return fmt.Errorf("failed to write manifest file: %w", err)
+	}
+
+	return writeError
 }

@@ -7,8 +7,9 @@ package file
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
+
+	"github.com/nginx/agent/v3/internal/command"
 
 	"github.com/nginx/agent/v3/pkg/files"
 	"github.com/nginx/agent/v3/pkg/id"
@@ -61,27 +62,30 @@ func (fp *FilePlugin) Info() *bus.Info {
 	}
 }
 
+// nolint: cyclop, revive
 func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
-	switch msg.Topic {
-	case bus.ConnectionResetTopic:
-		fp.handleConnectionReset(ctx, msg)
-	case bus.ConnectionCreatedTopic:
-		slog.DebugContext(ctx, "File plugin received connection created message")
-		fp.fileManagerService.SetIsConnected(true)
-	case bus.NginxConfigUpdateTopic:
-		fp.handleNginxConfigUpdate(ctx, msg)
-	case bus.ConfigUploadRequestTopic:
-		fp.handleConfigUploadRequest(ctx, msg)
-	case bus.ConfigApplyRequestTopic:
-		fp.handleConfigApplyRequest(ctx, msg)
-	case bus.ConfigApplyCompleteTopic:
-		fp.handleConfigApplyComplete(ctx, msg)
-	case bus.ConfigApplySuccessfulTopic:
-		fp.handleConfigApplySuccess(ctx, msg)
-	case bus.ConfigApplyFailedTopic:
-		fp.handleConfigApplyFailedRequest(ctx, msg)
-	default:
-		slog.DebugContext(ctx, "File plugin received unknown topic", "topic", msg.Topic)
+	if logger.ServerType(ctx) == command.Command.String() || logger.ServerType(ctx) == "" {
+		switch msg.Topic {
+		case bus.ConnectionResetTopic:
+			fp.handleConnectionReset(ctx, msg)
+		case bus.ConnectionCreatedTopic:
+			slog.DebugContext(ctx, "File plugin received connection created message")
+			fp.fileManagerService.SetIsConnected(true)
+		case bus.NginxConfigUpdateTopic:
+			fp.handleNginxConfigUpdate(ctx, msg)
+		case bus.ConfigUploadRequestTopic:
+			fp.handleConfigUploadRequest(ctx, msg)
+		case bus.ConfigApplyRequestTopic:
+			fp.handleConfigApplyRequest(ctx, msg)
+		case bus.ConfigApplyCompleteTopic:
+			fp.handleConfigApplyComplete(ctx, msg)
+		case bus.ConfigApplySuccessfulTopic:
+			fp.handleConfigApplySuccess(ctx, msg)
+		case bus.ConfigApplyFailedTopic:
+			fp.handleConfigApplyFailedRequest(ctx, msg)
+		default:
+			slog.DebugContext(ctx, "File plugin received unknown topic", "topic", msg.Topic)
+		}
 	}
 }
 
@@ -319,27 +323,10 @@ func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 		return
 	}
 
-	updateError := fp.fileManagerService.UpdateCurrentFilesOnDisk(
-		ctx,
-		files.ConvertToMapOfFiles(nginxConfigContext.Files),
-		true,
-	)
-	if updateError != nil {
-		slog.ErrorContext(ctx, "Unable to update current files on disk", "error", updateError)
-	}
-
-	slog.InfoContext(ctx, "Updating overview after nginx config update")
-	err := fp.fileManagerService.UpdateOverview(ctx, nginxConfigContext.InstanceID, nginxConfigContext.Files, 0)
-	if err != nil {
-		slog.ErrorContext(
-			ctx,
-			"Failed to update file overview",
-			"instance_id", nginxConfigContext.InstanceID,
-			"error", err,
-		)
-	}
+	fp.fileManagerService.ConfigUpdate(ctx, nginxConfigContext)
 }
 
+// nolint: dupl
 func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "File plugin received config upload request message")
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
@@ -357,36 +344,7 @@ func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Me
 
 	correlationID := logger.CorrelationID(ctx)
 
-	var updatingFilesError error
-
-	for _, file := range configUploadRequest.GetOverview().GetFiles() {
-		err := fp.fileManagerService.UpdateFile(
-			ctx,
-			configUploadRequest.GetOverview().GetConfigVersion().GetInstanceId(),
-			file,
-		)
-		if err != nil {
-			slog.ErrorContext(
-				ctx,
-				"Failed to update file",
-				"instance_id", configUploadRequest.GetOverview().GetConfigVersion().GetInstanceId(),
-				"file_name", file.GetFileMeta().GetName(),
-				"error", err,
-			)
-
-			response := fp.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
-				fmt.Sprintf("Failed to update file %s", file.GetFileMeta().GetName()),
-				configUploadRequest.GetOverview().GetConfigVersion().GetInstanceId(),
-				err.Error(),
-			)
-
-			updatingFilesError = err
-
-			fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
-
-			break
-		}
-	}
+	updatingFilesError := fp.fileManagerService.ConfigUpload(ctx, configUploadRequest)
 
 	response := &mpi.DataPlaneResponse{
 		MessageMeta: &mpi.MessageMeta{
