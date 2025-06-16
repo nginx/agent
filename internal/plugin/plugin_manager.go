@@ -47,7 +47,7 @@ func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentCo
 		if err != nil {
 			slog.WarnContext(ctx, "Failed to create gRPC connection for command server", "error", err)
 		} else {
-			commandPlugin := command.NewCommandPlugin(agentConfig, grpcConnection, "command")
+			commandPlugin := command.NewCommandPlugin(agentConfig, grpcConnection, command.Command)
 			plugins = append(plugins, commandPlugin)
 			filePlugin := file.NewFilePlugin(agentConfig, grpcConnection)
 			plugins = append(plugins, filePlugin)
@@ -68,12 +68,12 @@ func addAuxiliaryCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin
 		if err != nil {
 			slog.WarnContext(ctx, "Failed to create gRPC connection for auxiliary command server", "error", err)
 		} else {
-			auxCommandPlugin := command.NewCommandPlugin(agentConfig, auxGRPCConnection, "auxiliary")
+			auxCommandPlugin := command.NewCommandPlugin(agentConfig, auxGRPCConnection, command.Auxiliary)
 			plugins = append(plugins, auxCommandPlugin)
 			// Followup PR to add read plugin eventually
 		}
 	} else {
-		slog.InfoContext(ctx, "Agent is not connected to an auxiliary management plane. "+
+		slog.DebugContext(ctx, "Agent is not connected to an auxiliary management plane. "+
 			"Configure a auxiliary command server to establish a connection.")
 	}
 
