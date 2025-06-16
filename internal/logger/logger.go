@@ -22,6 +22,7 @@ const (
 	filePermission = 0o600
 
 	CorrelationIDKey = "correlation_id"
+	ServerTypeKey    = "server_type"
 )
 
 var (
@@ -33,6 +34,7 @@ var (
 	}
 
 	CorrelationIDContextKey = contextKey(CorrelationIDKey)
+	ServerTypeContextKey    = contextKey(ServerTypeKey)
 )
 
 type (
@@ -73,6 +75,7 @@ func New(logPath, level string) *slog.Logger {
 		contextHandler{
 			handler, []any{
 				CorrelationIDContextKey,
+				ServerTypeContextKey,
 			},
 		})
 }
@@ -155,6 +158,19 @@ func CorrelationIDAttr(ctx context.Context) slog.Attr {
 			correlationID)
 
 		return GenerateCorrelationID()
+	}
+
+	return value
+}
+
+func ServerType(ctx context.Context) string {
+	return ServerTypeAttr(ctx).Value.String()
+}
+
+func ServerTypeAttr(ctx context.Context) slog.Attr {
+	value, ok := ctx.Value(ServerTypeContextKey).(slog.Attr)
+	if !ok {
+		return slog.Any(ServerTypeKey, "")
 	}
 
 	return value
