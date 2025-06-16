@@ -259,6 +259,7 @@ jobs:
           PACKAGE_BUILD: ${{ inputs.packageBuildNo }}
         run: |
           export PATH=$PATH:~/go/bin
+          export GNUPGHOME=$(mktemp -d)
           echo "$GPG_KEY" | base64 --decode > ${NFPM_SIGNING_KEY_FILE}
           make package
 
