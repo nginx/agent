@@ -25,6 +25,17 @@ var _ bus.Plugin = (*CommandPlugin)(nil)
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . commandService
+type ServerType int
+
+const (
+	Command ServerType = iota
+	Auxiliary
+)
+
+var serverType = map[ServerType]string{
+	Command:   "command",
+	Auxiliary: "auxiliary",
+}
 
 type (
 	commandService interface {
@@ -44,13 +55,13 @@ type (
 		conn              grpc.GrpcConnectionInterface
 		commandService    commandService
 		subscribeChannel  chan *mpi.ManagementPlaneRequest
-		commandServerType string
+		commandServerType ServerType
 		subscribeMutex    sync.Mutex
 	}
 )
 
 func NewCommandPlugin(agentConfig *config.Config, grpcConnection grpc.GrpcConnectionInterface,
-	commandServerType string,
+	commandServerType ServerType,
 ) *CommandPlugin {
 	return &CommandPlugin{
 		config:            agentConfig,
@@ -61,22 +72,22 @@ func NewCommandPlugin(agentConfig *config.Config, grpcConnection grpc.GrpcConnec
 }
 
 func (cp *CommandPlugin) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
-	slog.DebugContext(ctx, "Starting command plugin", "command_server_type", cp.commandServerType)
+	newCtx := context.WithValue(
+		ctx,
+		logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey, cp.commandServerType.String()),
+	)
+	slog.DebugContext(newCtx, "Starting command plugin", "command_server_type", cp.commandServerType.String())
 
 	cp.messagePipe = messagePipe
 	cp.commandService = NewCommandService(cp.conn.CommandServiceClient(), cp.config, cp.subscribeChannel)
 
-	newCtx := context.WithValue(
-		ctx,
-		logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey, cp.commandServerType),
-	)
 	go cp.monitorSubscribeChannel(newCtx)
 
 	return nil
 }
 
 func (cp *CommandPlugin) Close(ctx context.Context) error {
-	slog.InfoContext(ctx, "Closing command plugin", "command_server_type", cp.commandServerType)
+	slog.InfoContext(ctx, "Closing command plugin", "command_server_type", cp.commandServerType.String())
 
 	cp.subscribeMutex.Lock()
 	if cp.subscribeCancel != nil {
@@ -89,14 +100,14 @@ func (cp *CommandPlugin) Close(ctx context.Context) error {
 
 func (cp *CommandPlugin) Info() *bus.Info {
 	return &bus.Info{
-		Name: cp.commandServerType,
+		Name: cp.commandServerType.String(),
 	}
 }
 
 func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "Processing command", "command_server_type", logger.ServerType(ctx))
 
-	if logger.ServerType(ctx) == cp.commandServerType || logger.ServerType(ctx) == "" {
+	if logger.ServerType(ctx) == cp.commandServerType.String() || logger.ServerType(ctx) == "" {
 		switch msg.Topic {
 		case bus.ConnectionResetTopic:
 			cp.processConnectionReset(ctx, msg)
@@ -111,9 +122,6 @@ func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 		default:
 			slog.DebugContext(ctx, "Command plugin received unknown topic", "topic", msg.Topic)
 		}
-	} else {
-		slog.Info("Sever type is not right ignoring message", "command_server_type",
-			logger.ServerType(ctx), "topic", msg.Topic)
 	}
 }
 
@@ -123,7 +131,7 @@ func (cp *CommandPlugin) processResourceUpdate(ctx context.Context, msg *bus.Mes
 		if !cp.commandService.IsConnected() {
 			newCtx := context.WithValue(
 				ctx,
-				logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey, cp.commandServerType),
+				logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey, cp.commandServerType.String()),
 			)
 			cp.createConnection(newCtx, resource)
 		} else {
@@ -185,7 +193,7 @@ func (cp *CommandPlugin) processInstanceHealth(ctx context.Context, msg *bus.Mes
 		err := cp.commandService.UpdateDataPlaneHealth(ctx, instances)
 		if err != nil {
 			slog.ErrorContext(ctx, "Unable to update data plane health", "error", err,
-				"command_server_type", cp.commandServerType)
+				"command_server_type", cp.commandServerType.String())
 		}
 	}
 }
@@ -248,9 +256,10 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 				slog.InfoContext(ctx, "Received management plane config upload request")
 				cp.handleConfigUploadRequest(newCtx, message)
 			case *mpi.ManagementPlaneRequest_ConfigApplyRequest:
-				if cp.commandServerType != "command" {
+				if cp.commandServerType != Command {
 					slog.WarnContext(newCtx, "Auxiliary command server can not perform config apply",
-						"command_server_type", cp.commandServerType)
+						"command_server_type", cp.commandServerType.String())
+					cp.handleInvalidRequest(newCtx, message)
 
 					return
 				}
@@ -260,9 +269,10 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 				slog.InfoContext(ctx, "Received management plane health request")
 				cp.handleHealthRequest(newCtx)
 			case *mpi.ManagementPlaneRequest_ActionRequest:
-				if cp.commandServerType != "command" {
+				if cp.commandServerType != Command {
 					slog.WarnContext(newCtx, "Auxiliary command server can not perform api action",
-						"command_server_type", cp.commandServerType)
+						"command_server_type", cp.commandServerType.String())
+					cp.handleInvalidRequest(newCtx, message)
 
 					return
 				}
@@ -354,6 +364,21 @@ func (cp *CommandPlugin) handleHealthRequest(newCtx context.Context) {
 	cp.messagePipe.Process(newCtx, &bus.Message{Topic: bus.DataPlaneHealthRequestTopic})
 }
 
+func (cp *CommandPlugin) handleInvalidRequest(ctx context.Context, message *mpi.ManagementPlaneRequest) {
+	err := cp.commandService.SendDataPlaneResponse(ctx, &mpi.DataPlaneResponse{
+		MessageMeta: message.GetMessageMeta(),
+		CommandResponse: &mpi.CommandResponse{
+			Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+			Message: "Can not perform write action as auxiliary command server",
+			Error:   "request not allowed",
+		},
+		InstanceId: message.GetActionRequest().GetInstanceId(),
+	})
+	if err != nil {
+		slog.ErrorContext(ctx, "Unable to send data plane response", "error", err)
+	}
+}
+
 func (cp *CommandPlugin) createDataPlaneResponse(correlationID string, status mpi.CommandResponse_CommandStatus,
 	message, err string,
 ) *mpi.DataPlaneResponse {
@@ -369,4 +394,8 @@ func (cp *CommandPlugin) createDataPlaneResponse(correlationID string, status mp
 			Error:   err,
 		},
 	}
+}
+
+func (s ServerType) String() string {
+	return serverType[s]
 }

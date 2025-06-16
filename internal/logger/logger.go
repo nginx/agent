@@ -75,6 +75,7 @@ func New(logPath, level string) *slog.Logger {
 		contextHandler{
 			handler, []any{
 				CorrelationIDContextKey,
+				ServerTypeContextKey,
 			},
 		})
 }

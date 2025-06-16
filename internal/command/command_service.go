@@ -261,7 +261,7 @@ func (cs *CommandService) UpdateClient(ctx context.Context, client mpi.CommandSe
 	cs.subscribeClientMutex.Unlock()
 
 	cs.isConnected.Store(false)
-	// Will this have the sever type ?
+
 	resp, err := cs.CreateConnection(ctx, cs.resource)
 	if err != nil {
 		return err
