@@ -79,7 +79,7 @@ jobs:
           files: ./build/test/coverage.out
       - name: Set Unit Test Outputs
         if: success() || failure()
-        run: bash ./scripts/workflow/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }} unit-test-output.json unit-test-result.json
+        run: bash ./scripts/workflow/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }} unit-test-output.log unit-test-result.json
       - name: Upload Artifact
         if: success() || failure()
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
@@ -102,7 +102,7 @@ jobs:
         run: make component-test > component-test-output.json
       - name: Set Component Test Outputs
         if: success() || failure()
-        run: bash ./scripts/workflow/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }} component-test-output.json component-test-result.json
+        run: bash ./scripts/workflow/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }} component-test-output.log component-test-result.json
       - name: Upload Artifact
         if: success() || failure()
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
@@ -209,7 +209,7 @@ jobs:
             run: |
                 docker ps -a
                 dockerid=$(docker ps -a --format "{{.ID}}")
-                docker logs "$dockerid" > int-test-output.json
+                docker logs "$dockerid" > int-test-output.log
           - name: Archive integration test logs
             if: success() || failure()
             uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
@@ -220,12 +220,12 @@ jobs:
                 
           - name: Set Component Test Outputs
             if: success() || failure()
-            run: bash ./scripts/workflow/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }} int-test-output.json int-test-result.json
+            run: bash ./scripts/workflow/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }} int-test-output.log int-test-result.json
           - name: Upload Artifact
             if: success() || failure()
             uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
             with:
-                name: integration-test-status
+                name: ${{ matrix.container.image }}-integration-test-status
                 path: int-test-result.json
                 retention-days: 1
 
@@ -266,13 +266,13 @@ jobs:
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           CONTAINER_NGINX_IMAGE_REGISTRY="${{ env.NGINX_OSS_REGISTRY }}" TAG="${{ matrix.container.version }}-${{ matrix.container.image }}" OS_RELEASE="${{ matrix.container.release }}"\
-            make official-image-integration-test
+            make official-image-integration-test > oss-logs-output.log
       - name: Container Output Logs 
         if: failure()
         run: |
           docker ps -a
           dockerid=$(docker ps -a --format "{{.ID}}")
-          docker logs "$dockerid" > oss-logs-output.log
+          docker logs "$dockerid" 
       - name: Archive integration test logs
         if: success() || failure()
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
@@ -288,7 +288,7 @@ jobs:
         if: success() || failure()
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
-            name: oss-integration-test-status
+            name: ${{ matrix.container.image }}-oss-integration-test-status
             path: oss-logs-result.json
             retention-days: 1
 
@@ -346,13 +346,13 @@ jobs:
                 go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
                 CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
                 OS_RELEASE="${{ matrix.container.release }}" IMAGE_PATH="${{ matrix.container.path }}" \
-                  make official-image-integration-test
+                  make official-image-integration-test > plus-logs-output.log
           - name: Container Output Logs
             if: failure()
             run: |
                 docker ps -a
                 dockerid=$(docker ps -a --format "{{.ID}}")
-                docker logs "$dockerid" > plus-logs-output.log
+                docker logs "$dockerid"
           - name: Archive integration test logs
             if: success() || failure()
             uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
@@ -368,7 +368,7 @@ jobs:
             if: success() || failure()
             uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
             with:
-                name: plus-integration-test-status
+                name: ${{ matrix.container.image }}-plus-integration-test-status
                 path: plus-logs-result.json
                 retention-days: 1
 
@@ -398,7 +398,7 @@ jobs:
         run: docker run -v ${GITHUB_WORKSPACE}:/home/nginx/ --rm nginx-agent-benchmark:1.0.0 > perf-test-output.json
       - name: Set Performance Test Outputs
         if: success() || failure()
-        run: bash ./scripts/workflow/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }} perf-test-output.json perf-test-result.json
+        run: bash ./scripts/workflow/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }} perf-test-output.log perf-test-result.json
       - name: Upload Artifact
         if: success() || failure()
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
