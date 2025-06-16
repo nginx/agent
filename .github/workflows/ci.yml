@@ -57,7 +57,7 @@ jobs:
         if: success() || failure()
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
         with:
-            name: lint-results
+            name: lint-status
             path: lint-results.json
             retention-days: 1
 
