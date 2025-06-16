@@ -31,6 +31,8 @@ jobs:
     name: Lint
     runs-on: ubuntu-24.04
     steps:
+      - name: Set start time
+        run: echo "START_TIME=$(date +"%Y-%m-%dT%H:%M:%S.%NZ")" >> ${GITHUB_ENV}
       - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
@@ -39,7 +41,7 @@ jobs:
         uses: golangci/golangci-lint-action@82d40c283aeb1f2b6595839195e95c2d6a49081b # v5.0.0
         with:
           version: "${{ env.GOLANGCI_LINT_VERSION }}"
-          args: -c ./scripts/.golangci.yml --output.json.path > test_results/lint-results.json
+          args: -c ./scripts/.golangci.yml --out-format=json > lint-output.json
           skip-cache: true
       - name: Lint SDK Code
         uses: golangci/golangci-lint-action@82d40c283aeb1f2b6595839195e95c2d6a49081b # v5.0.0
@@ -48,12 +50,15 @@ jobs:
           working-directory: sdk
           args: -c ../scripts/.golangci.yml
           skip-cache: true
-      - name: Upload artifact
+      - name: Set Linting Outputs
+        if: success() || failure()
+        run: bash ./scripts/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }}
+      - name: Upload Artifact
         if: success() || failure()
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
         with:
-            name: linting-test-results
-            path: test_results/lint-results.json
+            name: lint-results
+            path: lint-results.json
             retention-days: 1
 
   unit-test:
