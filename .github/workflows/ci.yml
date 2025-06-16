@@ -52,7 +52,7 @@ jobs:
           skip-cache: true
       - name: Set Linting Outputs
         if: success() || failure()
-        run: bash ./scripts/workflow/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }} lint-result.json
+        run: bash ./scripts/workflow/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }} lint-output.json lint-result.json
       - name: Upload Artifact
         if: success() || failure()
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
@@ -79,7 +79,7 @@ jobs:
           files: ./build/test/coverage.out
       - name: Set Unit Test Outputs
         if: success() || failure()
-        run: bash ./scripts/workflow/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }} unit-test-result.json
+        run: bash ./scripts/workflow/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }} unit-test-output.json unit-test-result.json
       - name: Upload Artifact
         if: success() || failure()
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3

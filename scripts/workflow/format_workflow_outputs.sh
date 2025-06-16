@@ -1,7 +1,8 @@
 #!/bin/sh
 
-LINT_FILE="$3"
 START_TIME="$2"
+IN_FILE="$3"
+OUT_FILE="$4"
 END_TIME="`date "+%Y-%m-%dT%H:%M:%S.%NZ"`"
 START_SECONDS=$(date -d "$START_TIME" +%s.%N)
 END_SECONDS=$(date -d "$END_TIME" +%s.%N)
@@ -16,14 +17,16 @@ else
   RESULT="skip"
 fi
 
-if [[ -f "$LINT_FILE" ]]; then  
-  NUM_ISSUES=$(jq '.Issues | length' "$LINT_FILE")
+cat $IN_FILE
+
+if [[ -f "$IN_FILE" ]]; then  
+  NUM_ISSUES=$(jq '.Issues | length' "$IN_FILE")
   echo "$NUM_ISSUES"
 
   if [[ "$NUM_ISSUES" -ge 1 ]]; then
-    MSG="`jq -r '.Issues[0].Text' "$LINT_FILE"`"
+    MSG="`jq -r '.Issues[0].Text' "$IN_FILE"`"
     echo
   fi
 fi
 
-echo "{\"start_at\": \"$START_TIME\", \"end_at\": \"$END_TIME\", \"duration_seconds\": \"$DURATION\", \"result\": \"$RESULT\", \"msg\": \"$MSG\"}" > $LINT_FILE
+echo "{\"start_at\": \"$START_TIME\", \"end_at\": \"$END_TIME\", \"duration_seconds\": \"$DURATION\", \"result\": \"$RESULT\", \"msg\": \"$MSG\"}" > $OUT_FILE

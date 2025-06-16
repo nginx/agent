@@ -36,30 +36,30 @@ func TestCheckForProcesses(t *testing.T) {
 			procsToCheck:    []string{},
 			expMissingProcs: []string{},
 		},
-		//{
-		//	testName:        "SingleProcessFound",
-		//	procsToCreate:   []string{fakeProcOne},
-		//	procsToCheck:    []string{fakeProcOne},
-		//	expMissingProcs: []string{},
-		//},
-		//{
-		//	testName:        "MultipleProcessesFound",
-		//	procsToCreate:   []string{fakeProcOne, fakeProcTwo, fakeProcThree},
-		//	procsToCheck:    []string{fakeProcOne, fakeProcTwo, fakeProcThree},
-		//	expMissingProcs: []string{},
-		//},
-		//{
-		//	testName:        "SingleMissingProcess",
-		//	procsToCreate:   []string{fakeProcOne, fakeProcThree},
-		//	procsToCheck:    []string{fakeProcOne, fakeProcTwo, fakeProcThree},
-		//	expMissingProcs: []string{fakeProcTwo},
-		//},
-		//{
-		//	testName:        "MultipleMissingProcesses",
-		//	procsToCreate:   []string{fakeProcTwo},
-		//	procsToCheck:    []string{fakeProcOne, fakeProcTwo, fakeProcThree},
-		//	expMissingProcs: []string{fakeProcOne, fakeProcThree},
-		//},
+		{
+			testName:        "SingleProcessFound",
+			procsToCreate:   []string{fakeProcOne},
+			procsToCheck:    []string{fakeProcOne},
+			expMissingProcs: []string{},
+		},
+		{
+			testName:        "MultipleProcessesFound",
+			procsToCreate:   []string{fakeProcOne, fakeProcTwo, fakeProcThree},
+			procsToCheck:    []string{fakeProcOne, fakeProcTwo, fakeProcThree},
+			expMissingProcs: []string{},
+		},
+		{
+			testName:        "SingleMissingProcess",
+			procsToCreate:   []string{fakeProcOne, fakeProcThree},
+			procsToCheck:    []string{fakeProcOne, fakeProcTwo, fakeProcThree},
+			expMissingProcs: []string{fakeProcTwo},
+		},
+		{
+			testName:        "MultipleMissingProcesses",
+			procsToCreate:   []string{fakeProcTwo},
+			procsToCheck:    []string{fakeProcOne, fakeProcTwo, fakeProcThree},
+			expMissingProcs: []string{fakeProcOne, fakeProcThree},
+		},
 	}
 
 	for _, tc := range testCases {
