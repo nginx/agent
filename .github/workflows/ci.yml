@@ -52,7 +52,7 @@ jobs:
           skip-cache: true
       - name: Set Linting Outputs
         if: success() || failure()
-        run: bash ./scripts/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }}
+        run: bash /scripts/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }}
       - name: Upload Artifact
         if: success() || failure()
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808

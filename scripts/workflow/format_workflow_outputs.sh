@@ -1,3 +1,5 @@
+#!/bin/sh
+
 LINT_FILE="lint-output.json"
 START_TIME="$2"
 END_TIME="`date "+%Y-%m-%dT%H:%M:%S.%NZ"`"
