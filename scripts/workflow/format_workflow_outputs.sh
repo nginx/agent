@@ -28,7 +28,7 @@ if [[ -f "$IN_FILE" ]]; then
   if [[ "$NUM_ISSUES" -ge 1 ]]; then
     MSG="`jq -r '.Issues[0].Text' "$IN_FILE"`"
   else
-    MSG="`grep -E 'Error Trace:|Error:'`"
+    MSG="`grep -E 'Error:|Error Trace:' $IN_FILE | sed -e 's/^\s*//' -e '/^$/d'`"
   fi
 fi
 
