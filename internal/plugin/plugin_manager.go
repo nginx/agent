@@ -70,7 +70,8 @@ func addAuxiliaryCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin
 		} else {
 			auxCommandPlugin := command.NewCommandPlugin(agentConfig, auxGRPCConnection, "auxiliary")
 			plugins = append(plugins, auxCommandPlugin)
-			// Followup PR to add read plugin eventually
+			readFilePlugin := file.NewReadFilePlugin(agentConfig, auxGRPCConnection)
+			plugins = append(plugins, readFilePlugin)
 		}
 	} else {
 		slog.InfoContext(ctx, "Agent is not connected to an auxiliary management plane. "+

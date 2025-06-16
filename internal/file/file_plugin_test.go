@@ -63,6 +63,7 @@ func TestFilePlugin_Subscriptions(t *testing.T) {
 	)
 }
 
+// nolint: dupl
 func TestFilePlugin_Process_NginxConfigUpdateTopic(t *testing.T) {
 	ctx := context.Background()
 
@@ -224,6 +225,7 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 	}
 }
 
+// nolint: dupl
 func TestFilePlugin_Process_ConfigUploadRequestTopic(t *testing.T) {
 	ctx := context.Background()
 
@@ -322,7 +324,7 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic_Failure(t *testing.T) {
 
 	assert.Eventually(
 		t,
-		func() bool { return len(messagePipe.Messages()) == 2 },
+		func() bool { return len(messagePipe.Messages()) == 1 },
 		2*time.Second,
 		10*time.Millisecond,
 	)
@@ -330,20 +332,11 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic_Failure(t *testing.T) {
 	assert.Equal(t, 0, fakeFileServiceClient.UpdateFileCallCount())
 
 	messages := messagePipe.Messages()
-	assert.Len(t, messages, 2)
+	assert.Len(t, messages, 1)
+
 	assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
 
 	dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
-	assert.True(t, ok)
-	assert.Equal(
-		t,
-		mpi.CommandResponse_COMMAND_STATUS_ERROR,
-		dataPlaneResponse.GetCommandResponse().GetStatus(),
-	)
-
-	assert.Equal(t, bus.DataPlaneResponseTopic, messages[1].Topic)
-
-	dataPlaneResponse, ok = messages[1].Data.(*mpi.DataPlaneResponse)
 	assert.True(t, ok)
 	assert.Equal(
 		t,

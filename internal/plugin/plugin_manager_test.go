@@ -48,12 +48,21 @@ func TestLoadPlugins(t *testing.T) {
 						Type: config.Grpc,
 					},
 				},
+				AuxiliaryCommand: &config.Command{
+					Server: &config.ServerConfig{
+						Host: "test.connect",
+						Port: 443,
+						Type: config.Grpc,
+					},
+				},
 				Features: config.DefaultFeatures(),
 			},
 			expected: []bus.Plugin{
 				&resource.Resource{},
 				&command.CommandPlugin{},
 				&file.FilePlugin{},
+				&command.CommandPlugin{},
+				&file.ReadFilePlugin{},
 				&watcher.Watcher{},
 			},
 		},
