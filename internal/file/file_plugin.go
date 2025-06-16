@@ -7,8 +7,9 @@ package file
 
 import (
 	"context"
-	"github.com/nginx/agent/v3/internal/command"
 	"log/slog"
+
+	"github.com/nginx/agent/v3/internal/command"
 
 	"github.com/nginx/agent/v3/pkg/files"
 	"github.com/nginx/agent/v3/pkg/id"
@@ -61,6 +62,7 @@ func (fp *FilePlugin) Info() *bus.Info {
 	}
 }
 
+// nolint: cyclop, revive
 func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 	if logger.ServerType(ctx) == command.Command.String() || logger.ServerType(ctx) == "" {
 		switch msg.Topic {
@@ -85,7 +87,6 @@ func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 			slog.DebugContext(ctx, "File plugin received unknown topic", "topic", msg.Topic)
 		}
 	}
-
 }
 
 func (fp *FilePlugin) Subscriptions() []string {

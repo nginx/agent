@@ -7,8 +7,9 @@ package file
 
 import (
 	"context"
-	"github.com/nginx/agent/v3/internal/command"
 	"log/slog"
+
+	"github.com/nginx/agent/v3/internal/command"
 
 	"github.com/nginx/agent/v3/pkg/id"
 
