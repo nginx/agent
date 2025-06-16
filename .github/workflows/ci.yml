@@ -226,7 +226,7 @@ jobs:
             uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
             with:
                 name: integration-test-status
-                path: integration-test-result.json
+                path: int-test-result.json
                 retention-days: 1
 
   official-oss-image-integration-tests:
@@ -272,8 +272,7 @@ jobs:
         run: |
           docker ps -a
           dockerid=$(docker ps -a --format "{{.ID}}")
-          docker logs "$dockerid"
-
+          docker logs "$dockerid" > oss-logs-output.log
       - name: Archive integration test logs
         if: success() || failure()
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
@@ -281,6 +280,17 @@ jobs:
           name: official-oss-integration-test-logs-${{ matrix.container.image }}-${{ matrix.container.version }}
           path: /tmp/integration-test-logs/
           retention-days: 1
+
+      - name: Set OSS Integration Test Outputs
+        if: success() || failure()
+        run: bash ./scripts/workflow/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }} oss-logs-output.log oss-logs-result.json
+      - name: Upload Artifact
+        if: success() || failure()
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        with:
+            name: oss-integration-test-status
+            path: oss-logs-result.json
+            retention-days: 1
 
   official-plus-image-integration-tests:
       name: Integration Tests - Official Plus Images
@@ -312,6 +322,8 @@ jobs:
                     release: "debian"
                     path: "/nginx-plus/agent"
       steps:
+          - name: Set start time
+            run: echo "START_TIME=$(date +"%Y-%m-%dT%H:%M:%S.%NZ")" >> ${GITHUB_ENV}
           - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
             with:
                 fetch-depth: 0
@@ -340,8 +352,7 @@ jobs:
             run: |
                 docker ps -a
                 dockerid=$(docker ps -a --format "{{.ID}}")
-                docker logs "$dockerid"
-
+                docker logs "$dockerid" > plus-logs-output.log
           - name: Archive integration test logs
             if: success() || failure()
             uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
@@ -350,11 +361,24 @@ jobs:
                 path: /tmp/integration-test-logs/
                 retention-days: 1
 
+          - name: Set Plus Integration Test Outputs
+            if: success() || failure()
+            run: bash ./scripts/workflow/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }} plus-logs-output.log plus-logs-result.json
+          - name: Upload Artifact
+            if: success() || failure()
+            uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+            with:
+                name: plus-integration-test-status
+                path: plus-logs-result.json
+                retention-days: 1
+
   performance-test:
     name: Performance Tests
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
     runs-on: ubuntu-22.04
     steps:
+      - name: Set start time
+        run: echo "START_TIME=$(date +"%Y-%m-%dT%H:%M:%S.%NZ")" >> ${GITHUB_ENV}
       - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - name: Set up Docker Build
         uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
@@ -371,7 +395,17 @@ jobs:
             "nginx-crt=${{ secrets.NGINX_CRT }}"
             "nginx-key=${{ secrets.NGINX_KEY }}"
       - name: Run Performance Tests
-        run: docker run -v ${GITHUB_WORKSPACE}:/home/nginx/ --rm nginx-agent-benchmark:1.0.0
+        run: docker run -v ${GITHUB_WORKSPACE}:/home/nginx/ --rm nginx-agent-benchmark:1.0.0 > perf-test-output.json
+      - name: Set Performance Test Outputs
+        if: success() || failure()
+        run: bash ./scripts/workflow/format_workflow_outputs.sh ${{ job.status }} ${{ env.START_TIME }} perf-test-output.json perf-test-result.json
+      - name: Upload Artifact
+        if: success() || failure()
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        with:
+           name: performance-test-status
+           path: perf-test-result.json
+           retention-days: 1
 
   build-signed-snapshot:
     name: Build signed snapshot
@@ -458,13 +492,13 @@ jobs:
       contents: write
       pull-requests: write
 
-
   merge-artifacts:
       runs-on: ubuntu-22.04
-      needs: [lint, unit-test, component-test, integration-tests]
+      needs: [lint, unit-test, component-test, integration-tests, performance-test, official-plus-image-integration-tests, official-oss-image-integration-tests]
       steps:
         - name: Merge Artifacts
           if: success() || failure()
           uses: actions/upload-artifact/merge@v4
           with:
               name: ci-workflow-logs
+              delete-merged: true
