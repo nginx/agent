@@ -11,9 +11,9 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/internal/command"
 
-	"github.com/nginx/agent/v3/internal/grpc"
+	"github.com/nginx/agent/v3/internal/model"
 
 	"github.com/nginx/agent/v3/internal/watcher/credentials"
 
@@ -40,12 +40,14 @@ type (
 		instanceWatcherService             instanceWatcherServiceInterface
 		healthWatcherService               *health.HealthWatcherService
 		fileWatcherService                 *file.FileWatcherService
-		credentialWatcherService           credentialWatcherServiceInterface
+		commandCredentialWatcherService    credentialWatcherServiceInterface
+		auxiliaryCredentialWatcherService  credentialWatcherServiceInterface
 		instanceUpdatesChannel             chan instance.InstanceUpdatesMessage
 		nginxConfigContextChannel          chan instance.NginxConfigContextMessage
 		instanceHealthChannel              chan health.InstanceHealthMessage
 		fileUpdatesChannel                 chan file.FileUpdateMessage
-		credentialUpdatesChannel           chan credentials.CredentialUpdateMessage
+		commandCredentialUpdatesChannel    chan credentials.CredentialUpdateMessage
+		auxiliaryCredentialUpdatesChannel  chan credentials.CredentialUpdateMessage
 		cancel                             context.CancelFunc
 		instancesWithConfigApplyInProgress []string
 		watcherMutex                       sync.Mutex
@@ -78,12 +80,14 @@ func NewWatcher(agentConfig *config.Config) *Watcher {
 		instanceWatcherService:             instance.NewInstanceWatcherService(agentConfig),
 		healthWatcherService:               health.NewHealthWatcherService(agentConfig),
 		fileWatcherService:                 file.NewFileWatcherService(agentConfig),
-		credentialWatcherService:           credentials.NewCredentialWatcherService(agentConfig),
+		commandCredentialWatcherService:    credentials.NewCredentialWatcherService(agentConfig, command.Command),
+		auxiliaryCredentialWatcherService:  credentials.NewCredentialWatcherService(agentConfig, command.Auxiliary),
 		instanceUpdatesChannel:             make(chan instance.InstanceUpdatesMessage),
 		nginxConfigContextChannel:          make(chan instance.NginxConfigContextMessage),
 		instanceHealthChannel:              make(chan health.InstanceHealthMessage),
 		fileUpdatesChannel:                 make(chan file.FileUpdateMessage),
-		credentialUpdatesChannel:           make(chan credentials.CredentialUpdateMessage),
+		commandCredentialUpdatesChannel:    make(chan credentials.CredentialUpdateMessage),
+		auxiliaryCredentialUpdatesChannel:  make(chan credentials.CredentialUpdateMessage),
 		instancesWithConfigApplyInProgress: []string{},
 		watcherMutex:                       sync.Mutex{},
 	}
@@ -100,7 +104,11 @@ func (w *Watcher) Init(ctx context.Context, messagePipe bus.MessagePipeInterface
 
 	go w.instanceWatcherService.Watch(watcherContext, w.instanceUpdatesChannel, w.nginxConfigContextChannel)
 	go w.healthWatcherService.Watch(watcherContext, w.instanceHealthChannel)
-	go w.credentialWatcherService.Watch(watcherContext, w.credentialUpdatesChannel)
+	go w.commandCredentialWatcherService.Watch(watcherContext, w.commandCredentialUpdatesChannel)
+
+	if w.agentConfig.AuxiliaryCommand != nil {
+		go w.auxiliaryCredentialWatcherService.Watch(watcherContext, w.auxiliaryCredentialUpdatesChannel)
+	}
 
 	if w.agentConfig.IsFeatureEnabled(pkgConfig.FeatureFileWatcher) {
 		go w.fileWatcherService.Watch(watcherContext, w.fileUpdatesChannel)
@@ -132,8 +140,6 @@ func (*Watcher) Info() *bus.Info {
 
 func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
-	case bus.CredentialUpdatedTopic:
-		w.handleCredentialUpdate(ctx)
 	case bus.ConfigApplyRequestTopic:
 		w.handleConfigApplyRequest(ctx, msg)
 	case bus.ConfigApplySuccessfulTopic:
@@ -149,7 +155,6 @@ func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
 
 func (*Watcher) Subscriptions() []string {
 	return []string{
-		bus.CredentialUpdatedTopic,
 		bus.ConfigApplyRequestTopic,
 		bus.ConfigApplySuccessfulTopic,
 		bus.ConfigApplyCompleteTopic,
@@ -248,34 +253,29 @@ func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Messag
 	w.fileWatcherService.SetEnabled(true)
 }
 
-func (w *Watcher) handleCredentialUpdate(ctx context.Context) {
-	slog.DebugContext(ctx, "Watcher plugin received credential update message")
-
-	w.watcherMutex.Lock()
-	// This will be changed/moved during the credential watcher PR
-	conn, err := grpc.NewGrpcConnection(ctx, w.agentConfig, w.agentConfig.Command)
-	if err != nil {
-		slog.ErrorContext(ctx, "Unable to create new grpc connection", "error", err)
-		w.watcherMutex.Unlock()
-
-		return
-	}
-	w.watcherMutex.Unlock()
-	w.messagePipe.Process(ctx, &bus.Message{
-		Topic: bus.ConnectionResetTopic, Data: conn,
-	})
-}
-
 func (w *Watcher) monitorWatchers(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case message := <-w.credentialUpdatesChannel:
-			slog.DebugContext(ctx, "Received credential update event")
-			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
+		case message := <-w.commandCredentialUpdatesChannel:
+			slog.DebugContext(ctx, "Received credential update event for command server")
+			newCtx := context.WithValue(context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID),
+				logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey,
+					message.SeverType.String()))
+
 			w.messagePipe.Process(newCtx, &bus.Message{
-				Topic: bus.CredentialUpdatedTopic, Data: nil,
+				Topic: bus.ConnectionResetTopic, Data: message.Conn,
+			})
+
+		case message := <-w.auxiliaryCredentialUpdatesChannel:
+			slog.DebugContext(ctx, "Received credential update event for auxiliary command server")
+			newCtx := context.WithValue(context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID),
+				logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey,
+					message.SeverType.String()))
+
+			w.messagePipe.Process(newCtx, &bus.Message{
+				Topic: bus.ConnectionResetTopic, Data: message.Conn,
 			})
 		case message := <-w.instanceUpdatesChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
