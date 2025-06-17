@@ -19,6 +19,7 @@ type NginxConfigContext struct {
 	AccessLogs       []*AccessLog
 	ErrorLogs        []*ErrorLog
 	NAPSysLogServers []string
+	Includes         []string
 }
 
 type APIDetails struct {

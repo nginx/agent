@@ -7,11 +7,14 @@ package cgroup
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path"
 	"runtime"
 	"strconv"
 	"testing"
+
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/shirou/gopsutil/v4/mem"
 	"github.com/stretchr/testify/assert"
@@ -115,7 +118,16 @@ func TestVirtualMemoryStat(t *testing.T) {
 			virtualMemoryStat, err := cgroupCPUSource.VirtualMemoryStat()
 
 			// Assert error
-			assert.IsType(tt, test.errorType, err)
+			if err != nil {
+				var multiError *multierror.Error
+				if errors.As(err, &multiError) {
+					assert.IsType(tt, test.errorType, multiError.Errors[0])
+				} else {
+					assert.IsType(tt, test.errorType, err)
+				}
+			} else {
+				assert.IsType(tt, test.errorType, err)
+			}
 
 			// Assert result
 			assert.Equal(tt, test.virtualMemoryStat, *virtualMemoryStat)

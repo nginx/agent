@@ -11,6 +11,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/hashicorp/go-multierror"
 )
 
 type Source interface {
@@ -22,12 +24,18 @@ func ReadLines(filename string) ([]string, error) {
 }
 
 // nolint: revive
-func ReadLinesOffsetN(filename string, offset uint, n int) ([]string, error) {
+func ReadLinesOffsetN(filename string, offset uint, n int) (lines []string, err error) {
 	f, err := os.Open(filename)
+	defer func() {
+		closeErr := f.Close()
+		if closeErr != nil {
+			err = multierror.Append(err, closeErr)
+		}
+	}()
+
 	if err != nil {
 		return []string{}, err
 	}
-	defer f.Close()
 
 	var ret []string
 
