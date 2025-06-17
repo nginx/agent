@@ -8,7 +8,6 @@ package file
 import (
 	"bytes"
 	"context"
-	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -221,7 +220,7 @@ func TestFileWatcherService_Watch(t *testing.T) {
 	testDirectory := path.Join(tempDir, "test_dir")
 	err := os.Mkdir(testDirectory, directoryPermissions)
 	require.NoError(t, err)
-	defer os.RemoveAll(testDirectory)
+	defer os.Remove(testDirectory)
 
 	agentConfig := types.AgentConfig()
 	agentConfig.Watchers.FileWatcher.MonitoringFrequency = 100 * time.Millisecond
@@ -276,9 +275,9 @@ func TestFileWatcherService_Watch(t *testing.T) {
 	})
 
 	t.Run("Test 3: Directory deleted", func(t *testing.T) {
-		slog.SetLogLoggerLevel(slog.LevelDebug)
-
-		dirDeleteError := os.RemoveAll(testDirectory)
+		fileDeleteError := os.Remove(file.Name())
+		require.NoError(t, fileDeleteError)
+		dirDeleteError := os.Remove(testDirectory)
 		require.NoError(t, dirDeleteError)
 
 		// Check that directory is no longer being watched
@@ -291,8 +290,6 @@ func TestFileWatcherService_Watch(t *testing.T) {
 			_, ok := fileWatcherService.directoriesBeingWatched.Load(testDirectory)
 			return !ok
 		}, 1*time.Second, 100*time.Millisecond)
-
-		slog.SetLogLoggerLevel(slog.LevelInfo)
 	})
 }
 
