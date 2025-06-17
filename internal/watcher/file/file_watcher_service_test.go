@@ -8,6 +8,7 @@ package file
 import (
 	"bytes"
 	"context"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -275,6 +276,8 @@ func TestFileWatcherService_Watch(t *testing.T) {
 	})
 
 	t.Run("Test 3: Directory deleted", func(t *testing.T) {
+		slog.SetLogLoggerLevel(slog.LevelDebug)
+
 		dirDeleteError := os.RemoveAll(testDirectory)
 		require.NoError(t, dirDeleteError)
 
@@ -288,6 +291,8 @@ func TestFileWatcherService_Watch(t *testing.T) {
 			_, ok := fileWatcherService.directoriesBeingWatched.Load(testDirectory)
 			return !ok
 		}, 1*time.Second, 100*time.Millisecond)
+
+		slog.SetLogLoggerLevel(slog.LevelInfo)
 	})
 }
 
