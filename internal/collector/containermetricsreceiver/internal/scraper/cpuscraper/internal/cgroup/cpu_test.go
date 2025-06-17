@@ -6,14 +6,11 @@
 package cgroup
 
 import (
-	"errors"
 	"os"
 	"path"
 	"runtime"
 	"strconv"
 	"testing"
-
-	"github.com/hashicorp/go-multierror"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -79,16 +76,7 @@ func TestCollectCPUStats(t *testing.T) {
 			cpuStat, err := cgroupCPUSource.collectCPUStats()
 
 			// Assert error
-			if err != nil {
-				var multiError *multierror.Error
-				if errors.As(err, &multiError) {
-					assert.IsType(tt, test.errorType, multiError.Errors[0])
-				} else {
-					assert.IsType(tt, test.errorType, err)
-				}
-			} else {
-				assert.IsType(tt, test.errorType, err)
-			}
+			assert.IsType(tt, test.errorType, err)
 
 			// Assert result
 			assert.Equal(tt, test.cpuStat, cpuStat)
