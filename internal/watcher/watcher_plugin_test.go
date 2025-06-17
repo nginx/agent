@@ -10,6 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/command"
+	"github.com/nginx/agent/v3/internal/grpc"
+
 	model2 "github.com/nginx/agent/v3/internal/model"
 
 	"github.com/nginx/agent/v3/internal/watcher/credentials"
@@ -77,12 +80,14 @@ func TestWatcher_Init(t *testing.T) {
 
 	credentialUpdateMessage := credentials.CredentialUpdateMessage{
 		CorrelationID: logger.GenerateCorrelationID(),
+		SeverType:     command.Command,
+		Conn:          &grpc.GrpcConnection{},
 	}
 
 	watcherPlugin.instanceUpdatesChannel <- instanceUpdatesMessage
 	watcherPlugin.nginxConfigContextChannel <- nginxConfigContextMessage
 	watcherPlugin.instanceHealthChannel <- instanceHealthMessage
-	watcherPlugin.credentialUpdatesChannel <- credentialUpdateMessage
+	watcherPlugin.commandCredentialUpdatesChannel <- credentialUpdateMessage
 
 	assert.Eventually(t, func() bool { return len(messagePipe.Messages()) == 6 }, 2*time.Second, 10*time.Millisecond)
 	messages = messagePipe.Messages()
@@ -113,7 +118,7 @@ func TestWatcher_Init(t *testing.T) {
 		messages[4],
 	)
 	assert.Equal(t,
-		&bus.Message{Topic: bus.CredentialUpdatedTopic, Data: nil},
+		&bus.Message{Topic: bus.ConnectionResetTopic, Data: &grpc.GrpcConnection{}},
 		messages[5])
 }
 
@@ -236,7 +241,6 @@ func TestWatcher_Subscriptions(t *testing.T) {
 	assert.Equal(
 		t,
 		[]string{
-			bus.CredentialUpdatedTopic,
 			bus.ConfigApplyRequestTopic,
 			bus.ConfigApplySuccessfulTopic,
 			bus.ConfigApplyCompleteTopic,

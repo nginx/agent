@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/command"
+
 	"github.com/nginx/agent/v3/internal/config"
 
 	"github.com/fsnotify/fsnotify"
@@ -22,7 +24,7 @@ import (
 )
 
 func TestCredentialWatcherService_TestNewCredentialWatcherService(t *testing.T) {
-	credentialWatcherService := NewCredentialWatcherService(types.AgentConfig())
+	credentialWatcherService := NewCredentialWatcherService(types.AgentConfig(), command.Command)
 
 	assert.Empty(t, credentialWatcherService.filesBeingWatched)
 	assert.False(t, credentialWatcherService.filesChanged.Load())
@@ -30,7 +32,7 @@ func TestCredentialWatcherService_TestNewCredentialWatcherService(t *testing.T) 
 
 func TestCredentialWatcherService_Watch(t *testing.T) {
 	ctx := context.Background()
-	cws := NewCredentialWatcherService(types.AgentConfig())
+	cws := NewCredentialWatcherService(types.AgentConfig(), command.Command)
 	watcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	cws.watcher = watcher
@@ -61,7 +63,7 @@ func TestCredentialWatcherService_Watch(t *testing.T) {
 }
 
 func TestCredentialWatcherService_isWatching(t *testing.T) {
-	cws := NewCredentialWatcherService(types.AgentConfig())
+	cws := NewCredentialWatcherService(types.AgentConfig(), command.Command)
 	assert.False(t, cws.isWatching("test-file"))
 	cws.filesBeingWatched.Store("test-file", true)
 	assert.True(t, cws.isWatching("test-file"))
@@ -80,7 +82,7 @@ func TestCredentialWatcherService_isEventSkippable(t *testing.T) {
 
 func TestCredentialWatcherService_addWatcher(t *testing.T) {
 	ctx := context.Background()
-	cws := NewCredentialWatcherService(types.AgentConfig())
+	cws := NewCredentialWatcherService(types.AgentConfig(), command.Command)
 	watcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	cws.watcher = watcher
@@ -105,7 +107,7 @@ func TestCredentialWatcherService_watchFiles(t *testing.T) {
 	var files []string
 
 	ctx := context.Background()
-	cws := NewCredentialWatcherService(types.AgentConfig())
+	cws := NewCredentialWatcherService(types.AgentConfig(), command.Command)
 	watcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	cws.watcher = watcher
@@ -137,7 +139,7 @@ func TestCredentialWatcherService_watchFiles(t *testing.T) {
 
 func TestCredentialWatcherService_checkForUpdates(t *testing.T) {
 	ctx := context.Background()
-	cws := NewCredentialWatcherService(types.AgentConfig())
+	cws := NewCredentialWatcherService(types.AgentConfig(), command.Command)
 	watcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	cws.watcher = watcher
@@ -164,7 +166,7 @@ func TestCredentialWatcherService_checkForUpdates(t *testing.T) {
 
 func TestCredentialWatcherService_handleEvent(t *testing.T) {
 	ctx := context.Background()
-	cws := NewCredentialWatcherService(types.AgentConfig())
+	cws := NewCredentialWatcherService(types.AgentConfig(), command.Command)
 	watcher, err := fsnotify.NewWatcher()
 	require.NoError(t, err)
 	cws.watcher = watcher
@@ -232,7 +234,7 @@ func Test_credentialPaths(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equalf(t, tt.want, credentialPaths(tt.agentConfig), "credentialPaths(%v)", tt.agentConfig)
+			assert.Equalf(t, tt.want, credentialPaths(tt.agentConfig.Command), "credentialPaths(%v)", tt.agentConfig)
 		})
 	}
 }
