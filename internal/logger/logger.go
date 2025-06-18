@@ -11,6 +11,8 @@ import (
 	"log/slog"
 	"os"
 	"path"
+	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/nginx/agent/v3/pkg/id"
@@ -44,11 +46,29 @@ type (
 )
 
 func New(logPath, level string) *slog.Logger {
+	handlerOptions := &slog.HandlerOptions{
+		Level: LogLevel(level),
+	}
+
+	if level == "debug" {
+		handlerOptions.AddSource = true
+		handlerOptions.ReplaceAttr = func(groups []string, a slog.Attr) slog.Attr {
+			if a.Key == slog.SourceKey {
+				source, ok := a.Value.Any().(*slog.Source)
+				if ok {
+					directory := filepath.Dir(source.File)
+					relativePath := path.Join(filepath.Base(directory), filepath.Base(source.File))
+					a.Value = slog.StringValue(relativePath + ":" + strconv.Itoa(source.Line))
+				}
+			}
+
+			return a
+		}
+	}
+
 	handler := slog.NewTextHandler(
-		getLogWriter(logPath),
-		&slog.HandlerOptions{
-			Level: GetLogLevel(level),
-		},
+		logWriter(logPath),
+		handlerOptions,
 	)
 
 	return slog.New(
@@ -59,7 +79,7 @@ func New(logPath, level string) *slog.Logger {
 		})
 }
 
-func GetLogLevel(level string) slog.Level {
+func LogLevel(level string) slog.Level {
 	if level == "" {
 		return slog.LevelInfo
 	}
@@ -67,7 +87,7 @@ func GetLogLevel(level string) slog.Level {
 	return logLevels[strings.ToLower(level)]
 }
 
-func getLogWriter(logFile string) io.Writer {
+func logWriter(logFile string) io.Writer {
 	logPath := logFile
 	if logFile != "" {
 		fileInfo, err := os.Stat(logPath)
@@ -123,11 +143,11 @@ func GenerateCorrelationID() slog.Attr {
 	return slog.Any(CorrelationIDKey, id.GenerateMessageID())
 }
 
-func GetCorrelationID(ctx context.Context) string {
-	return GetCorrelationIDAttr(ctx).Value.String()
+func CorrelationID(ctx context.Context) string {
+	return CorrelationIDAttr(ctx).Value.String()
 }
 
-func GetCorrelationIDAttr(ctx context.Context) slog.Attr {
+func CorrelationIDAttr(ctx context.Context) slog.Attr {
 	value, ok := ctx.Value(CorrelationIDContextKey).(slog.Attr)
 	if !ok {
 		correlationID := GenerateCorrelationID()

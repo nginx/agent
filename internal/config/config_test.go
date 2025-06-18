@@ -130,7 +130,7 @@ func TestResolveConfigFilePaths(t *testing.T) {
 	currentDirectory, err := os.Getwd()
 	require.NoError(t, err)
 
-	result := getConfigFilePaths()
+	result := configFilePaths()
 
 	assert.Len(t, result, 2)
 	assert.Equal(t, "/etc/nginx-agent/", result[0])
@@ -177,7 +177,7 @@ func TestResolveClient(t *testing.T) {
 }
 
 func TestResolveCollector(t *testing.T) {
-	testDefault := getAgentConfig()
+	testDefault := agentConfig()
 
 	t.Run("Test 1: Happy path", func(t *testing.T) {
 		expected := testDefault.Collector
@@ -220,7 +220,7 @@ func TestResolveCollector(t *testing.T) {
 
 func TestCommand(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
-	expected := getAgentConfig().Command
+	expected := agentConfig().Command
 
 	// Server
 	viperInstance.Set(CommandServerHostKey, expected.Server.Host)
@@ -253,7 +253,7 @@ func TestCommand(t *testing.T) {
 func TestMissingServerTLS(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 
-	expected := getAgentConfig().Command
+	expected := agentConfig().Command
 
 	viperInstance.Set(CommandServerHostKey, expected.Server.Host)
 	viperInstance.Set(CommandServerPortKey, expected.Server.Port)
@@ -272,7 +272,7 @@ func TestMissingServerTLS(t *testing.T) {
 
 func TestClient(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
-	expected := getAgentConfig().Client
+	expected := agentConfig().Client
 
 	viperInstance.Set(ClientGRPCMaxMessageSizeKey, expected.Grpc.MaxMessageSize)
 	viperInstance.Set(ClientKeepAlivePermitWithoutStreamKey, expected.Grpc.KeepAlive.PermitWithoutStream)
@@ -691,7 +691,7 @@ func TestResolveExtensions(t *testing.T) {
 			defer helpers.RemoveFileWithErrorCheck(t, tempFile.Name())
 
 			if len(tt.expected) == 1 {
-				confContent = []byte(conf.GetAgentConfigWithToken(tt.value, tt.path))
+				confContent = []byte(conf.AgentConfigWithToken(tt.value, tt.path))
 			} else {
 				confContent = []byte(conf.AgentConfigWithMultipleHeaders(tt.value, tt.path, tt.value2, tt.path2))
 			}
@@ -743,7 +743,7 @@ func TestResolveExtensions_MultipleHeaders(t *testing.T) {
 			tempFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx-agent.conf")
 			defer helpers.RemoveFileWithErrorCheck(t, tempFile.Name())
 
-			confContent := []byte(conf.GetAgentConfigWithToken(tt.token, tt.path))
+			confContent := []byte(conf.AgentConfigWithToken(tt.token, tt.path))
 			_, writeErr := tempFile.Write(confContent)
 			require.NoError(t, writeErr)
 
@@ -760,7 +760,7 @@ func TestResolveExtensions_MultipleHeaders(t *testing.T) {
 	}
 }
 
-func getAgentConfig() *Config {
+func agentConfig() *Config {
 	return &Config{
 		UUID:    "",
 		Version: "",

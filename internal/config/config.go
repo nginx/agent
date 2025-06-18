@@ -56,7 +56,7 @@ func Init(version, commit string) {
 }
 
 func RegisterConfigFile() error {
-	configPath, err := seekFileInPaths(ConfigFileName, getConfigFilePaths()...)
+	configPath, err := seekFileInPaths(ConfigFileName, configFilePaths()...)
 	if err != nil {
 		return err
 	}
@@ -124,6 +124,7 @@ func ResolveConfig() (*Config, error) {
 		Watchers:           resolveWatchers(),
 		Features:           viperInstance.GetStringSlice(FeaturesKey),
 		Labels:             resolveLabels(),
+		ManifestDir:        viperInstance.GetString(ManifestDirPathKey),
 	}
 
 	checkCollectorConfiguration(collector, config)
@@ -231,7 +232,11 @@ func registerFlags() {
 		"The path to output log messages to. "+
 			"If the default path doesn't exist, log messages are output to stdout/stderr.",
 	)
-
+	fs.String(
+		ManifestDirPathKey,
+		DefManifestDir,
+		"Specifies the path to the directory containing the manifest files",
+	)
 	fs.Duration(
 		NginxReloadMonitoringPeriodKey,
 		DefNginxReloadMonitoringPeriod,
@@ -543,7 +548,7 @@ func seekFileInPaths(fileName string, directories ...string) (string, error) {
 	return "", fmt.Errorf("a valid configuration has not been found in any of the search paths")
 }
 
-func getConfigFilePaths() []string {
+func configFilePaths() []string {
 	paths := []string{
 		"/etc/nginx-agent/",
 	}
