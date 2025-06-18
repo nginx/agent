@@ -69,7 +69,7 @@ jobs:
         run:
           |
           echo "Checking Packages in ${{inputs.pkgRepo}}/nginx-agent"
-          PKG_REPO=${{inputs.pkgRepo}} CERT=${{secrets.PUBTEST_CERT}} KEY=${{secrets.PUBTEST_KEY}} DL=1 scripts/packages/package_check.sh ${{inputs.pkgVersion}}
+          PKG_REPO=${{inputs.pkgRepo}} CERT=${{secrets.PUBTEST_CERT}} KEY=${{secrets.PUBTEST_KEY}} DL=1 scripts/packages/package-check.sh ${{inputs.pkgVersion}}
           find ${{inputs.pkgRepo}}/nginx-agent | grep -e "nginx-agent[_-]${{inputs.pkgVersion}}"
 
       - name: Azure Upload Release Packages
