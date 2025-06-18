@@ -3,54 +3,26 @@ name: Release Agent
 on:
   workflow_dispatch:
     inputs:
+      version:
+        description: 'Agent version'
+        type: string
+        default: ""
+      uploadAzure:
+        description: 'Publish packages Azure storage'
+        type: boolean
+        default: false
       githubRelease:
         description: 'Setup release in github'
         type: boolean
         default: false
-      packageVersion:
-        description: 'Package version number'
-        default: "3.0.0"
+      pkgRepo:
+        description: "Source repository to pull packages from"
         type: string
-      packageBuildNo:
-        description: 'Package Build number'
-        default: "1"
-        type: string
-      uploadAzure:
-        description: 'Publish packages Azure storage'
-        default: true
-        type: boolean
-      publishPackages:
-        description: 'Publish packages to nginx repo'
-        default: true
-        type: boolean
-      tagRelease:
-        description: 'Add tag to release branch'
-        default: false
-        type: boolean
-      createPullRequest:
-        description: 'Create pull request back into v3'
-        default: false
-        type: boolean
-      releaseBranch:
-        description: 'Release branch to build & publish from'
-        required: true
-        type: string
-      uploadUrl:
-        description: 'Location to publish packages to'
-        required: false
-        default: "https://up-ap.nginx.com"
-
-env:
-  NFPM_VERSION: 'v2.35.3'
-  GOPROXY: "https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@azr.artifactory.f5net.com/artifactory/api/go/f5-nginx-go-dev"
+        default: ""
 
 defaults:
   run:
     shell: bash
-
-concurrency:
-  group: ${{ github.ref_name }}-v3-release
-  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -62,9 +34,6 @@ jobs:
     outputs:
       github_release: ${{steps.vars.outputs.github_release }}
       upload_azure: ${{steps.vars.outputs.upload_azure }}
-      publish_packages: ${{steps.vars.outputs.publish_packages }}
-      tag_release: ${{steps.vars.outputs.tag_release }}
-      create_pull_request: ${{steps.vars.outputs.create_pull_request }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
@@ -76,9 +45,6 @@ jobs:
         run: |
           echo "github_release=${{ inputs.githubRelease }}" >> $GITHUB_OUTPUT
           echo "upload_azure=${{ inputs.uploadAzure }}" >> $GITHUB_OUTPUT
-          echo "publish_packages=${{ inputs.publishPackages }}" >> $GITHUB_OUTPUT
-          echo "tag_release=${{ inputs.tagRelease }}" >> $GITHUB_OUTPUT
-          echo "create_pull_request=${{ inputs.createPullRequest }}" >> $GITHUB_OUTPUT
           cat $GITHUB_OUTPUT
 
   release-draft:
@@ -204,69 +170,23 @@ jobs:
         run: |
           git push origin "v${{ inputs.packageVersion }}"
 
-  upload-packages:
-    name: Upload packages
+  upload-release-assets:
+    name: Upload assets
     runs-on: ubuntu-22.04-amd64
     needs: [vars,release-draft,tag-release]
     permissions:
       id-token: write
-      contents: write # Needed to update a github release
     steps:
       - name: Checkout Repository
         uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
         with:
           ref: ${{ inputs.releaseBranch }}
 
-      - name: Setup go
-        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+      - name: Azure Login
+        if: ${{ inputs.uploadAzure == true }}
+        uses: azure/login@8c334a195cbb38e46038007b304988d888bf676a # v2.0.0
         with:
-            go-version-file: 'go.mod'
-            cache: false
-
-      - name: Setup package build environment
-        run: |
-          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-          sudo apt-get update
-          sudo apt-get install -y gpgv1 monkeysphere
-          make install-tools
-          export PATH=$PATH:~/go/bin
-          nfpm --version
-
-      - name: Docker Buildx
-        uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
-
-      - name: Build Docker Image
-        uses: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0 # v5.3.0
-        with:
-          file: scripts/packages/packager/Dockerfile
-          tags: build-signed-packager:1.0.0
-          context: '.'
-          push: false
-          load: true
-          cache-from: type=gha,scope=build-signed-packager
-          cache-to: type=gha,scope=build-signed-packager,mode=max
-          build-args: |
-            package_type=signed-package
-
-      - name: Set the VERSION environment variable
-        run: echo VERSION=v${{ inputs.packageVersion }} >> $GITHUB_ENV
-
-      - name: Build Packages
-        env:
-          GPG_KEY: ${{ secrets.INDIGO_GPG_AGENT }}
-          NFPM_SIGNING_KEY_FILE: .key.asc
-          VERSION: ${{ env.VERSION }}
-          PACKAGE_BUILD: ${{ inputs.packageBuildNo }}
-        run: |
-          export PATH=$PATH:~/go/bin
-          echo "$GPG_KEY" | base64 --decode > ${NFPM_SIGNING_KEY_FILE}
-          make package
-
-      - name: Install GPG tools
-        if: ${{ inputs.publishPackages == true }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gpgv1 monkeysphere
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Get Id Token
         if: ${{ inputs.publishPackages == true }}
@@ -277,39 +197,31 @@ jobs:
             let id_token = await core.getIDToken()
             core.setOutput('id_token', id_token)
 
-      - name: Publish Release Packages
-        if: ${{ inputs.publishPackages == true }}
+      - name: Download Packages
         env:
-          TOKEN: ${{ steps.idtoken.outputs.id_token }}
-          UPLOAD_URL: ${{ inputs.uploadUrl }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run:
+          |
+          echo "Checking Packages in ${{inputs.pkgRepo}}/nginx-agent"
+          PKG_REPO=${{inputs.pkgRepo}} CERT=${{PUBTEST_CERT}} KEY=${{PUBTEST_KEY}} DL=1 scripts/packages/package_check.sh ${{version}}
+          find ${{inputs.pkgRepo}}/nginx-agent | grep -e "nginx-agent[_-]${{version}}"
+
+      - name: Azure Upload Release Packages
+        if: ${{ inputs.uploadAzure == true }}
+        uses: azure/CLI@965c8d7571d2231a54e321ddd07f7b10317f34d9 # v2.0.0
+        with:
+          inlineScript: |
+            for i in $(find pkgs-test.nginx.com/nginx-agent | grep -e "nginx-agent[_-]${{version}}"); do
+              echo "Uploading ${i} to nginx-agent/${GITHUB_REF##*/}/${i##*/}"
+              az storage blob upload --auth-mode=login -f "$i" -c ${{ secrets.AZURE_CONTAINER_NAME }} \
+              --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/${GITHUB_REF##*/}/${i##*/}
+            done
+
+      - name: Upload Release Assets
+        if: ${{ needs.vars.outputs.github_release == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # clobber overwrites existing assets of the same name
         run: |
-          make release
-
-  merge-release:
-    if: ${{ needs.vars.outputs.create_pull_request == 'true' }}
-    name: Merge release branch back into V3 branch
-    runs-on: ubuntu-22.04
-    needs: [vars,tag-release]
-    permissions:
-      pull-requests: write
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
-        with:
-          ref: ${{ inputs.releaseBranch }}
-
-      - name: Create Pull Request
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
-        with:
-          script: |
-            const { repo, owner } = context.repo;
-            const result = await github.rest.pulls.create({
-              title: 'Merge ${{ github.ref_name }} back into v3',
-              owner,
-              repo,
-              head: '${{ github.ref_name }}',
-              base: 'v3',
-              body: [
-                'This PR is auto-generated by the release workflow.'
-              ].join('\n')
-            });
+          gh release upload --clobber v${{ inputs.packageVersion }} \
+            $(find ${{inputs.pkgRepo}}/nginx-agent | grep -e "nginx-agent[_-]${{version}}")
