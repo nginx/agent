@@ -89,7 +89,12 @@ jobs:
               --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n ${dest}
             done
 
-      - name: Upload Release Assets
+      - name: Azure Logout
+        run: |
+          az logout
+        if: always()
+
+      - name: GitHub Upload Release Assets
         if: ${{ needs.vars.outputs.github_release == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
