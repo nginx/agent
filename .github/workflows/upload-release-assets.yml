@@ -1,9 +1,13 @@
-name: Release Agent
+name: Publish Release packages
 
 on:
   workflow_dispatch:
     inputs:
-      version:
+      pkgRepo:
+        description: "Source repository to pull packages from"
+        type: string
+        default: ""
+      pkgVersion:
         description: 'Agent version'
         type: string
         default: ""
@@ -11,14 +15,10 @@ on:
         description: 'Publish packages Azure storage'
         type: boolean
         default: false
-      githubRelease:
-        description: 'Setup release in github'
+      uploadGithub:
+        description: 'Publish packages to GitHub release'
         type: boolean
         default: false
-      pkgRepo:
-        description: "Source repository to pull packages from"
-        type: string
-        default: ""
 
 defaults:
   run:
@@ -43,7 +43,7 @@ jobs:
       - name: Set variables
         id: vars
         run: |
-          echo "github_release=${{ inputs.githubRelease }}" >> $GITHUB_OUTPUT
+          echo "github_release=${{ inputs.uploadGithub }}" >> $GITHUB_OUTPUT
           echo "upload_azure=${{ inputs.uploadAzure }}" >> $GITHUB_OUTPUT
           cat $GITHUB_OUTPUT
 
@@ -65,30 +65,19 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Get Id Token
-        if: ${{ inputs.publishPackages == true }}
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
-        id: idtoken
-        with:
-          script: |
-            let id_token = await core.getIDToken()
-            core.setOutput('id_token', id_token)
-
       - name: Download Packages
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run:
           |
           echo "Checking Packages in ${{inputs.pkgRepo}}/nginx-agent"
-          PKG_REPO=${{inputs.pkgRepo}} CERT=${{PUBTEST_CERT}} KEY=${{PUBTEST_KEY}} DL=1 scripts/packages/package_check.sh ${{version}}
-          find ${{inputs.pkgRepo}}/nginx-agent | grep -e "nginx-agent[_-]${{version}}"
+          PKG_REPO=${{inputs.pkgRepo}} CERT=${{secrets.PUBTEST_CERT}} KEY=${{secrets.PUBTEST_KEY}} DL=1 scripts/packages/package_check.sh ${{inputs.pkgVersion}}
+          find ${{inputs.pkgRepo}}/nginx-agent | grep -e "nginx-agent[_-]${{inputs.pkgVersion}}"
 
       - name: Azure Upload Release Packages
         if: ${{ inputs.uploadAzure == true }}
         uses: azure/CLI@965c8d7571d2231a54e321ddd07f7b10317f34d9 # v2.0.0
         with:
           inlineScript: |
-            for i in $(find pkgs-test.nginx.com/nginx-agent | grep -e "nginx-agent[_-]${{version}}"); do
+            for i in $(find ${{inputs.pkgRepo}}/nginx-agent | grep -e "nginx-agent[_-]${{inputs.pkgVersion}}"); do
               echo "Uploading ${i} to nginx-agent/${GITHUB_REF##*/}/${i##*/}"
               az storage blob upload --auth-mode=login -f "$i" -c ${{ secrets.AZURE_CONTAINER_NAME }} \
               --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/${GITHUB_REF##*/}/${i##*/}
@@ -100,5 +89,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # clobber overwrites existing assets of the same name
         run: |
-          gh release upload --clobber v${{ inputs.packageVersion }} \
-            $(find ${{inputs.pkgRepo}}/nginx-agent | grep -e "nginx-agent[_-]${{version}}")
+          gh release upload --clobber v${{ inputs.pkgVersion }} \
+            $(find ${{inputs.pkgRepo}}/nginx-agent | grep -e "nginx-agent[_-]${{inputs.pkgVersion}}")
