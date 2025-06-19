@@ -8,6 +8,7 @@ package file
 import (
 	"bytes"
 	"context"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -215,6 +216,9 @@ func TestFileWatcherService_Update(t *testing.T) {
 func TestFileWatcherService_Watch(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	slog.SetLogLoggerLevel(slog.LevelDebug)
+	defer slog.SetLogLoggerLevel(slog.LevelInfo)
 
 	tempDir := t.TempDir()
 	testDirectory := path.Join(tempDir, "test_dir")
