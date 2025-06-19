@@ -14,6 +14,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -32,11 +33,12 @@ import (
 )
 
 const (
-	ConfigFileName = "nginx-agent.conf"
-	EnvPrefix      = "NGINX_AGENT"
-	KeyDelimiter   = "_"
-	KeyValueNumber = 2
-	AgentDirName   = "/etc/nginx-agent/"
+	ConfigFileName   = "nginx-agent.conf"
+	EnvPrefix        = "NGINX_AGENT"
+	KeyDelimiter     = "_"
+	KeyValueNumber   = 2
+	AgentDirName     = "/etc/nginx-agent/"
+	regexInvalidPath = "%[0-9*][a-fA-F]|\\\\x[0-9]*|\\.\\./"
 )
 
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
@@ -87,19 +89,7 @@ func ResolveConfig() (*Config, error) {
 	slogger := logger.New(log.Path, log.Level)
 	slog.SetDefault(slogger)
 
-	// Check directories in allowed_directories are valid
-	for _, dir := range directories {
-		if dir == "" || !filepath.IsAbs(dir) {
-			slog.Warn("Invalid directory: ", "dir", dir)
-			continue
-		}
-
-		if !strings.HasSuffix(dir, "/") {
-			dir += "/"
-		}
-		allowedDirs = append(allowedDirs, dir)
-	}
-
+	allowedDirs = resolveAllowedDirectories(directories)
 	slog.Info("Configured allowed directories", "allowed_directories", allowedDirs)
 
 	// Collect all parsing errors before returning the error, so the user sees all issues with config
@@ -129,11 +119,33 @@ func ResolveConfig() (*Config, error) {
 
 	checkCollectorConfiguration(collector, config)
 
+	slog.Info(
+		"Excluded files from being watched for file changes",
+		"exclude_files",
+		config.Watchers.FileWatcher.ExcludeFiles,
+	)
+
 	slog.Debug("Agent config", "config", config)
-	slog.Info("Excluded files from being watched for file changes", "exclude_files",
-		config.Watchers.FileWatcher.ExcludeFiles)
 
 	return config, nil
+}
+
+func resolveAllowedDirectories(dirs []string) []string {
+	// Check directories are valid
+	var allowed []string
+	for _, dir := range dirs {
+		invalidChars, _ := regexp.MatchString(regexInvalidPath, dir)
+		if dir == "" || dir == "/" || !filepath.IsAbs(dir) || invalidChars {
+			slog.Warn("Ignoring invalid directory", "dir", dir)
+			continue
+		}
+		dir = filepath.Clean(dir)
+		if !strings.HasSuffix(dir, "/") {
+			dir += "/"
+		}
+		allowed = append(allowed, dir)
+	}
+	return allowed
 }
 
 func checkCollectorConfiguration(collector *Collector, config *Config) {

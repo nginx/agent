@@ -158,6 +158,85 @@ func TestNormalizeFunc(t *testing.T) {
 	assert.Equal(t, expected, result)
 }
 
+func TestResolveAllowedDirectories(t *testing.T) {
+	tests := []struct {
+		name           string
+		configuredDirs []string
+		expected       []string
+	}{
+		{
+			name:           "Empty path",
+			configuredDirs: []string{""},
+			expected:       []string(nil),
+		},
+		{
+			name:           "Absolute path",
+			configuredDirs: []string{"/etc/nginx-agent"},
+			expected:       []string{"/etc/nginx-agent/"},
+		},
+		{
+			name:           "Absolute paths",
+			configuredDirs: []string{"/etc/nginx-agent", "/etc/nginx/"},
+			expected:       []string{"/etc/nginx-agent/", "/etc/nginx/"},
+		},
+		{
+			name: "Mixed paths",
+			configuredDirs: []string{
+				"nginx-agent",
+				"",
+				"..",
+				"/",
+				"\\/",
+				".",
+				"/etc/nginx/",
+			},
+			expected: []string{"/etc/nginx/"},
+		},
+		{
+			name:           "Absolute path",
+			configuredDirs: []string{"/etc/nginx-agent"},
+			expected:       []string{"/etc/nginx-agent/"},
+		},
+		{
+			name:           "Relative path",
+			configuredDirs: []string{"nginx-agent"},
+			expected:       []string(nil),
+		},
+		{
+			name:           "Absolute path with directory traversal",
+			configuredDirs: []string{"/etc/nginx/../nginx-agent"},
+			expected:       []string(nil),
+		},
+		{
+			name:           "Absolute path with repeat directory traversal",
+			configuredDirs: []string{"/etc/nginx-agent/../../../../../nginx-agent"},
+			expected:       []string(nil),
+		},
+		{
+			name:           "Absolute path with unicode characters",
+			configuredDirs: []string{"/etc/nginx-agent/%2e%2e/tmp/"},
+			expected:       []string(nil),
+		},
+		{
+			name:           "Absolute path with control characters",
+			configuredDirs: []string{"/etc/nginx-agent/\\x08../tmp/"},
+			expected:       []string(nil),
+		},
+		{
+			name:           "Absolute path with escaped control characters",
+			configuredDirs: []string{"/etc/nginx-agent/\\\\x08/tmp/"},
+			expected:       []string(nil),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			allowed := make([]string, 0, len(test.configuredDirs))
+			allowed = resolveAllowedDirectories(test.configuredDirs)
+			assert.Equal(t, test.expected, allowed)
+		})
+	}
+}
+
 func TestResolveLog(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	viperInstance.Set(LogLevelKey, "error")
