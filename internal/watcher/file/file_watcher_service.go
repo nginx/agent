@@ -205,14 +205,14 @@ func (fws *FileWatcherService) addWatcher(ctx context.Context, directory string)
 
 		removeError := fws.watcher.Remove(directory)
 		if removeError != nil {
-			slog.ErrorContext(ctx, "Failed to remove file watcher", "directory_path", directory, "error", removeError)
+			slog.WarnContext(ctx, "Failed to remove file watcher", "directory_path", directory, "error", removeError)
 		}
 	}
 
 	slog.DebugContext(ctx, "Adding watcher", "directory", directory)
 
 	if err := fws.watcher.Add(directory); err != nil {
-		slog.ErrorContext(ctx, "Failed to add file watcher", "directory", directory, "error", err)
+		slog.WarnContext(ctx, "Failed to add file watcher", "directory", directory, "error", err)
 	}
 }
 
@@ -220,7 +220,7 @@ func (fws *FileWatcherService) removeWatcher(ctx context.Context, path string) {
 	slog.DebugContext(ctx, "Removing watcher", "directory", path)
 	err := fws.watcher.Remove(path)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to remove file watcher", "directory_path", path, "error", err)
+		slog.WarnContext(ctx, "Failed to remove file watcher", "directory_path", path, "error", err)
 		return
 	}
 }
