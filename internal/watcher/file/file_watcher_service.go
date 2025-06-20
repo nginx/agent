@@ -8,6 +8,7 @@ package file
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -163,6 +164,8 @@ func (fws *FileWatcherService) removeWatchers(ctx context.Context, directoriesTo
 }
 
 func (fws *FileWatcherService) handleEvent(ctx context.Context, event fsnotify.Event) {
+	fmt.Printf("Processing FSNotify event %v \n", event)
+
 	if fws.enabled.Load() {
 		if fws.isEventSkippable(event) {
 			return
