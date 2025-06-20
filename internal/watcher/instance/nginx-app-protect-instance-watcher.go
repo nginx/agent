@@ -292,7 +292,7 @@ func (w *NginxAppProtectInstanceWatcher) haveVersionsChanged() bool {
 func (w *NginxAppProtectInstanceWatcher) readFile(ctx context.Context, filePath string) string {
 	contents, err := os.ReadFile(filePath)
 	if err != nil && !os.IsNotExist(err) {
-		slog.WarnContext(ctx, "Unable to read NGINX App Protect file", "file_path", filePath, "error", err)
+		slog.DebugContext(ctx, "Unable to read NGINX App Protect file", "file_path", filePath, "error", err)
 		return ""
 	}
 
