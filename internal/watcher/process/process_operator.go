@@ -22,32 +22,11 @@ type (
 	ProcessOperatorInterface interface {
 		Processes(ctx context.Context) (
 			nginxProcesses []*nginxprocess.Process,
-			nginxAppProtectProcesses []*nginxprocess.Process,
 			err error,
 		)
 		Process(ctx context.Context, pid int32) (*nginxprocess.Process, error)
 	}
 )
-
-func nginxFilter(ctx context.Context, p *process.Process) bool {
-	name, _ := p.NameWithContext(ctx) // slow: shells out to ps
-	if name != "nginx" {
-		return false
-	}
-
-	cmdLine, _ := p.CmdlineWithContext(ctx) // slow: shells out to ps
-	// ignore nginx processes in the middle of an upgrade
-	if !strings.HasPrefix(cmdLine, "nginx:") || strings.Contains(cmdLine, "upgrade") {
-		return false
-	}
-
-	return true
-}
-
-func napFilter(ctx context.Context, p *process.Process) bool {
-	name, _ := p.NameWithContext(ctx) // slow: shells out to ps
-	return name == "bd-socket-plugin"
-}
 
 var _ ProcessOperatorInterface = (*ProcessOperator)(nil)
 
@@ -57,30 +36,14 @@ func NewProcessOperator() *ProcessOperator {
 
 func (pw *ProcessOperator) Processes(ctx context.Context) (
 	nginxProcesses []*nginxprocess.Process,
-	nginxAppProtectProcesses []*nginxprocess.Process,
 	err error,
 ) {
 	processes, err := process.ProcessesWithContext(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	var filteredNginxProcesses []*process.Process
-
-	for _, p := range processes {
-		if nginxFilter(ctx, p) {
-			filteredNginxProcesses = append(filteredNginxProcesses, p)
-		} else if napFilter(ctx, p) {
-			nginxAppProtectProcesses = append(nginxAppProtectProcesses, convertProcess(ctx, p))
-		}
-	}
-
-	nginxProcesses, err = nginxprocess.ListWithProcesses(ctx, filteredNginxProcesses)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return nginxProcesses, nginxAppProtectProcesses, nil
+	return nginxprocess.ListWithProcesses(ctx, processes)
 }
 
 func (pw *ProcessOperator) Process(ctx context.Context, pid int32) (*nginxprocess.Process, error) {

@@ -39,18 +39,17 @@ type (
 	}
 
 	InstanceWatcherService struct {
-		processOperator              process.ProcessOperatorInterface
-		nginxConfigParser            parser.ConfigParser
-		executer                     exec.ExecInterface
-		enabled                      *atomic.Bool
-		agentConfig                  *config.Config
-		instanceCache                map[string]*mpi.Instance
-		nginxConfigCache             map[string]*model.NginxConfigContext
-		instancesChannel             chan<- InstanceUpdatesMessage
-		nginxConfigContextChannel    chan<- NginxConfigContextMessage
-		nginxParser                  processParser
-		nginxAppProtectProcessParser processParser
-		cacheMutex                   sync.Mutex
+		processOperator           process.ProcessOperatorInterface
+		nginxConfigParser         parser.ConfigParser
+		executer                  exec.ExecInterface
+		enabled                   *atomic.Bool
+		agentConfig               *config.Config
+		instanceCache             map[string]*mpi.Instance
+		nginxConfigCache          map[string]*model.NginxConfigContext
+		instancesChannel          chan<- InstanceUpdatesMessage
+		nginxConfigContextChannel chan<- NginxConfigContextMessage
+		nginxParser               processParser
+		cacheMutex                sync.Mutex
 	}
 
 	InstanceUpdates struct {
@@ -75,16 +74,15 @@ func NewInstanceWatcherService(agentConfig *config.Config) *InstanceWatcherServi
 	enabled.Store(true)
 
 	return &InstanceWatcherService{
-		agentConfig:                  agentConfig,
-		processOperator:              process.NewProcessOperator(),
-		nginxParser:                  NewNginxProcessParser(),
-		nginxAppProtectProcessParser: NewNginxAppProtectProcessParser(),
-		nginxConfigParser:            parser.NewNginxConfigParser(agentConfig),
-		instanceCache:                make(map[string]*mpi.Instance),
-		cacheMutex:                   sync.Mutex{},
-		nginxConfigCache:             make(map[string]*model.NginxConfigContext),
-		executer:                     &exec.Exec{},
-		enabled:                      enabled,
+		agentConfig:       agentConfig,
+		processOperator:   process.NewProcessOperator(),
+		nginxParser:       NewNginxProcessParser(),
+		nginxConfigParser: parser.NewNginxConfigParser(agentConfig),
+		instanceCache:     make(map[string]*mpi.Instance),
+		cacheMutex:        sync.Mutex{},
+		nginxConfigCache:  make(map[string]*model.NginxConfigContext),
+		executer:          &exec.Exec{},
+		enabled:           enabled,
 	}
 }
 
@@ -265,7 +263,7 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 ) {
 	iw.cacheMutex.Lock()
 	defer iw.cacheMutex.Unlock()
-	nginxProcesses, nginxAppProtectProcesses, err := iw.processOperator.Processes(ctx)
+	nginxProcesses, err := iw.processOperator.Processes(ctx)
 	if err != nil {
 		return instanceUpdates, err
 	}
@@ -280,10 +278,6 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 		instancesFound[instance.GetInstanceMeta().GetInstanceId()] = instance
 	}
 
-	nginxAppProtectInstances := iw.nginxAppProtectProcessParser.Parse(ctx, nginxAppProtectProcesses)
-	for _, instance := range nginxAppProtectInstances {
-		instancesFound[instance.GetInstanceMeta().GetInstanceId()] = instance
-	}
 	newInstances, updatedInstances, deletedInstances := compareInstances(iw.instanceCache, instancesFound)
 
 	instanceUpdates.NewInstances = newInstances
