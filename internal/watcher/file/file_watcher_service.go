@@ -8,7 +8,6 @@ package file
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -34,13 +33,12 @@ type FileUpdateMessage struct {
 }
 
 type FileWatcherService struct {
-	agentConfig                 *config.Config
-	watcher                     *fsnotify.Watcher
-	directoriesBeingWatched     *sync.Map
-	filesChanged                *atomic.Bool
-	enabled                     *atomic.Bool
-	directoriesThatDontExistYet *sync.Map
-	mu                          sync.Mutex
+	agentConfig        *config.Config
+	watcher            *fsnotify.Watcher
+	filesChanged       *atomic.Bool
+	enabled            *atomic.Bool
+	directoriesToWatch map[string]struct{}
+	mu                 sync.Mutex
 }
 
 func NewFileWatcherService(agentConfig *config.Config) *FileWatcherService {
@@ -51,11 +49,10 @@ func NewFileWatcherService(agentConfig *config.Config) *FileWatcherService {
 	filesChanged.Store(false)
 
 	return &FileWatcherService{
-		agentConfig:                 agentConfig,
-		directoriesBeingWatched:     &sync.Map{},
-		directoriesThatDontExistYet: &sync.Map{},
-		enabled:                     enabled,
-		filesChanged:                filesChanged,
+		agentConfig:        agentConfig,
+		directoriesToWatch: make(map[string]struct{}),
+		enabled:            enabled,
+		filesChanged:       filesChanged,
 	}
 }
 
@@ -114,25 +111,21 @@ func (fws *FileWatcherService) Update(ctx context.Context, nginxConfigContext *m
 		directoriesToWatch[filepath.Dir(file)] = struct{}{}
 	}
 
-	// If watcher does not exist yet add directories to directoriesThatDontExistYet so that watchers can be created
-	// at the next file watcher monitoring period
-	if fws.watcher == nil {
-		for dir := range directoriesToWatch {
-			fws.directoriesThatDontExistYet.Store(dir, struct{}{})
-		}
-	} else {
+	fws.directoriesToWatch = directoriesToWatch
+
+	if fws.watcher != nil {
 		slog.InfoContext(ctx, "Updating file watcher", "allowed", fws.agentConfig.AllowedDirectories)
 
 		// Start watching new directories
-		fws.addWatchers(ctx, directoriesToWatch)
+		fws.addWatchers(ctx)
 
 		// Check if directories no longer need to be watched
-		fws.removeWatchers(ctx, directoriesToWatch)
+		fws.removeWatchers(ctx)
 	}
 }
 
-func (fws *FileWatcherService) addWatchers(ctx context.Context, directoriesToWatch map[string]struct{}) {
-	for directory := range directoriesToWatch {
+func (fws *FileWatcherService) addWatchers(ctx context.Context) {
+	for directory := range fws.directoriesToWatch {
 		if !fws.agentConfig.IsDirectoryAllowed(directory) {
 			slog.WarnContext(
 				ctx,
@@ -142,45 +135,26 @@ func (fws *FileWatcherService) addWatchers(ctx context.Context, directoriesToWat
 
 			continue
 		}
-		if fws.addWatcher(ctx, directory) {
-			fws.directoriesThatDontExistYet.Delete(directory)
-		} else {
-			fws.directoriesThatDontExistYet.Store(directory, struct{}{})
+
+		fws.addWatcher(ctx, directory)
+	}
+}
+
+func (fws *FileWatcherService) removeWatchers(ctx context.Context) {
+	for _, directoryBeingWatched := range fws.watcher.WatchList() {
+		if _, ok := fws.directoriesToWatch[directoryBeingWatched]; !ok {
+			fws.removeWatcher(ctx, directoryBeingWatched)
 		}
 	}
 }
 
-func (fws *FileWatcherService) removeWatchers(ctx context.Context, directoriesToWatch map[string]struct{}) {
-	fws.directoriesBeingWatched.Range(func(key, value interface{}) bool {
-		directory, ok := key.(string)
-
-		if _, exists := directoriesToWatch[directory]; !exists && ok {
-			fws.removeWatcher(ctx, directory)
-			fws.directoriesBeingWatched.Delete(directory)
-		}
-
-		return true
-	})
-}
-
 func (fws *FileWatcherService) handleEvent(ctx context.Context, event fsnotify.Event) {
-	fmt.Printf("Processing FSNotify event %v \n", event)
-
 	if fws.enabled.Load() {
 		if fws.isEventSkippable(event) {
 			return
 		}
 
 		slog.DebugContext(ctx, "Processing FSNotify event", "event", event)
-
-		if event.Has(fsnotify.Remove) || event.Has(fsnotify.Rename) {
-			if _, ok := fws.directoriesBeingWatched.Load(event.Name); ok {
-				fws.directoriesBeingWatched.Delete(event.Name)
-			}
-
-			fws.directoriesThatDontExistYet.Store(event.Name, struct{}{})
-		}
-
 		fws.filesChanged.Store(true)
 	}
 }
@@ -201,18 +175,11 @@ func (fws *FileWatcherService) checkForUpdates(ctx context.Context, ch chan<- Fi
 		fws.watcher = watcher
 	}
 
-	fws.directoriesThatDontExistYet.Range(func(key, value interface{}) bool {
-		directory, ok := key.(string)
-		if !ok {
-			return true
-		}
+	// Start watching new directories
+	fws.addWatchers(ctx)
 
-		if fws.addWatcher(ctx, directory) {
-			fws.directoriesThatDontExistYet.Delete(directory)
-		}
-
-		return true
-	})
+	// Check if directories no longer need to be watched
+	fws.removeWatchers(ctx)
 
 	if fws.filesChanged.Load() {
 		newCtx := context.WithValue(
@@ -227,39 +194,21 @@ func (fws *FileWatcherService) checkForUpdates(ctx context.Context, ch chan<- Fi
 	}
 }
 
-func (fws *FileWatcherService) addWatcher(ctx context.Context, directory string) bool {
+func (fws *FileWatcherService) addWatcher(ctx context.Context, directory string) {
 	slog.DebugContext(ctx, "Checking if file watcher needs to be added", "directory", directory)
 
-	if _, ok := fws.directoriesBeingWatched.Load(directory); !ok {
-		if _, err := os.Stat(directory); errors.Is(err, os.ErrNotExist) {
-			slog.DebugContext(
-				ctx, "Unable to watch directory that does not exist",
-				"directory", directory, "error", err,
-			)
-
-			return false
-		}
-
-		slog.DebugContext(ctx, "Adding watcher", "directory", directory)
-
-		if err := fws.watcher.Add(directory); err != nil {
-			slog.ErrorContext(ctx, "Failed to add file watcher", "directory", directory, "error", err)
-			removeError := fws.watcher.Remove(directory)
-			if removeError != nil {
-				slog.ErrorContext(
-					ctx,
-					"Failed to remove file watcher",
-					"directory", directory, "error", removeError,
-				)
-			}
-
-			return false
-		}
+	if _, err := os.Stat(directory); errors.Is(err, os.ErrNotExist) {
+		slog.DebugContext(
+			ctx, "Unable to watch directory that does not exist",
+			"directory", directory, "error", err,
+		)
 	}
 
-	fws.directoriesBeingWatched.Store(directory, struct{}{})
+	slog.DebugContext(ctx, "Adding watcher", "directory", directory)
 
-	return true
+	if err := fws.watcher.Add(directory); err != nil {
+		slog.ErrorContext(ctx, "Failed to add file watcher", "directory", directory, "error", err)
+	}
 }
 
 func (fws *FileWatcherService) removeWatcher(ctx context.Context, path string) {

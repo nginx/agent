@@ -8,7 +8,6 @@ package file
 import (
 	"bytes"
 	"context"
-	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -34,8 +33,7 @@ const (
 func TestFileWatcherService_NewFileWatcherService(t *testing.T) {
 	fileWatcherService := NewFileWatcherService(types.AgentConfig())
 
-	assert.Empty(t, fileWatcherService.directoriesBeingWatched)
-	assert.Empty(t, fileWatcherService.directoriesThatDontExistYet)
+	assert.Empty(t, fileWatcherService.directoriesToWatch)
 	assert.True(t, fileWatcherService.enabled.Load())
 	assert.False(t, fileWatcherService.filesChanged.Load())
 }
@@ -66,8 +64,9 @@ func TestFileWatcherService_addWatcher(t *testing.T) {
 
 	fileWatcherService.addWatcher(ctx, testDirectory)
 
-	_, ok := fileWatcherService.directoriesBeingWatched.Load(testDirectory)
-	assert.True(t, ok)
+	directoriesBeingWatched := fileWatcherService.watcher.WatchList()
+	assert.Len(t, directoriesBeingWatched, 1)
+	assert.Equal(t, testDirectory, directoriesBeingWatched[0])
 }
 
 func TestFileWatcherService_addWatcher_Error(t *testing.T) {
@@ -80,11 +79,10 @@ func TestFileWatcherService_addWatcher_Error(t *testing.T) {
 	tempDir := t.TempDir()
 	testDirectory := path.Join(tempDir, "test_dir")
 
-	success := fileWatcherService.addWatcher(ctx, testDirectory)
-	assert.False(t, success)
+	fileWatcherService.addWatcher(ctx, testDirectory)
 
-	_, ok := fileWatcherService.directoriesBeingWatched.Load(testDirectory)
-	assert.False(t, ok)
+	directoriesBeingWatched := fileWatcherService.watcher.WatchList()
+	assert.Empty(t, directoriesBeingWatched)
 }
 
 func TestFileWatcherService_removeWatcher(t *testing.T) {
@@ -158,11 +156,10 @@ func TestFileWatcherService_Update(t *testing.T) {
 			Includes: []string{filepath.Join(testDirectory, "*.conf")},
 		})
 
-		_, ok := fileWatcherService.directoriesThatDontExistYet.Load(testDirectory)
+		_, ok := fileWatcherService.directoriesToWatch[testDirectory]
 		assert.True(t, ok)
 
-		_, ok = fileWatcherService.directoriesBeingWatched.Load(testDirectory)
-		assert.False(t, ok)
+		assert.Nil(t, fileWatcherService.watcher)
 	})
 
 	t.Run("Test 2: watcher initialized", func(t *testing.T) {
@@ -175,11 +172,12 @@ func TestFileWatcherService_Update(t *testing.T) {
 			Includes: []string{filepath.Join(testDirectory, "*.conf")},
 		})
 
-		_, ok := fileWatcherService.directoriesThatDontExistYet.Load(testDirectory)
-		assert.False(t, ok)
-
-		_, ok = fileWatcherService.directoriesBeingWatched.Load(testDirectory)
+		_, ok := fileWatcherService.directoriesToWatch[testDirectory]
 		assert.True(t, ok)
+
+		directoriesBeingWatched := fileWatcherService.watcher.WatchList()
+		assert.Len(t, directoriesBeingWatched, 1)
+		assert.Equal(t, testDirectory, directoriesBeingWatched[0])
 	})
 
 	t.Run("Test 3: remove watchers", func(t *testing.T) {
@@ -187,11 +185,10 @@ func TestFileWatcherService_Update(t *testing.T) {
 			Includes: []string{},
 		})
 
-		_, ok := fileWatcherService.directoriesThatDontExistYet.Load(testDirectory)
-		assert.False(t, ok)
+		assert.Empty(t, fileWatcherService.directoriesToWatch)
 
-		_, ok = fileWatcherService.directoriesBeingWatched.Load(testDirectory)
-		assert.False(t, ok)
+		directoriesBeingWatched := fileWatcherService.watcher.WatchList()
+		assert.Empty(t, directoriesBeingWatched)
 	})
 
 	t.Run("Test 4: not allowed directory", func(t *testing.T) {
@@ -205,20 +202,17 @@ func TestFileWatcherService_Update(t *testing.T) {
 			},
 		})
 
-		_, ok := fileWatcherService.directoriesThatDontExistYet.Load("/unknown/location/test.conf")
+		_, ok := fileWatcherService.directoriesToWatch["/unknown/location/test.conf"]
 		assert.False(t, ok)
 
-		_, ok = fileWatcherService.directoriesBeingWatched.Load("/unknown/location/test.conf")
-		assert.False(t, ok)
+		directoriesBeingWatched := fileWatcherService.watcher.WatchList()
+		assert.Empty(t, directoriesBeingWatched)
 	})
 }
 
 func TestFileWatcherService_Watch(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	slog.SetLogLoggerLevel(slog.LevelDebug)
-	defer slog.SetLogLoggerLevel(slog.LevelInfo)
 
 	tempDir := t.TempDir()
 	testDirectory := path.Join(tempDir, "test_dir")
@@ -248,13 +242,13 @@ func TestFileWatcherService_Watch(t *testing.T) {
 	t.Run("Test 1: File updated", func(t *testing.T) {
 		// Check that directory is being watched
 		assert.Eventually(t, func() bool {
-			_, ok := fileWatcherService.directoriesThatDontExistYet.Load(testDirectory)
-			return !ok
+			_, ok := fileWatcherService.directoriesToWatch[testDirectory]
+			return ok
 		}, 1*time.Second, 100*time.Millisecond)
 
 		assert.Eventually(t, func() bool {
-			_, ok := fileWatcherService.directoriesBeingWatched.Load(testDirectory)
-			return ok
+			directoriesBeingWatched := fileWatcherService.watcher.WatchList()
+			return len(directoriesBeingWatched) == 1
 		}, 1*time.Second, 100*time.Millisecond)
 
 		select {
@@ -286,13 +280,13 @@ func TestFileWatcherService_Watch(t *testing.T) {
 
 		// Check that directory is no longer being watched
 		assert.Eventually(t, func() bool {
-			_, ok := fileWatcherService.directoriesThatDontExistYet.Load(testDirectory)
+			_, ok := fileWatcherService.directoriesToWatch[testDirectory]
 			return ok
 		}, 1*time.Second, 100*time.Millisecond)
 
 		assert.Eventually(t, func() bool {
-			_, ok := fileWatcherService.directoriesBeingWatched.Load(testDirectory)
-			return !ok
+			directoriesBeingWatched := fileWatcherService.watcher.WatchList()
+			return len(directoriesBeingWatched) == 0
 		}, 1*time.Second, 100*time.Millisecond)
 	})
 }
