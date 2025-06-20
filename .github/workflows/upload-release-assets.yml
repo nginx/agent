@@ -57,12 +57,6 @@ jobs:
         with:
           ref: ${{ inputs.releaseBranch }}
 
-      - name: Azure Login
-        if: ${{ inputs.uploadAzure == true }}
-        uses: azure/login@8c334a195cbb38e46038007b304988d888bf676a # v2.0.0
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
       - name: Download Packages
         run:
           |
@@ -80,6 +74,12 @@ jobs:
         run: |
           gh release upload --clobber v${{ inputs.pkgVersion }} \
             $(find ${{inputs.pkgRepo}}/nginx-agent | grep -e "nginx-agent[_-]${{inputs.pkgVersion}}")
+
+      - name: Azure Login
+        if: ${{ inputs.uploadAzure == true }}
+        uses: azure/login@8c334a195cbb38e46038007b304988d888bf676a # v2.0.0
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Azure Upload
         if: ${{ inputs.uploadAzure == true }}
@@ -99,6 +99,6 @@ jobs:
             done
 
       - name: Azure Logout
+        if: ${{ inputs.uploadAzure == true }}
         run: |
           az logout || exit 0
-        if: always()
