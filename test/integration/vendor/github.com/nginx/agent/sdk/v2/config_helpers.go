@@ -39,9 +39,10 @@ import (
 const (
 	plusAPIDirective          = "api"
 	stubStatusAPIDirective    = "stub_status"
-	apiFormat                 = "http://%s%s"
 	predefinedAccessLogFormat = "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\""
 	httpClientTimeout         = 1 * time.Second
+	httpPrefix                = "http://"
+	httpsPrefix               = "https://"
 )
 
 var readLock = sync.Mutex{}
@@ -698,6 +699,7 @@ func parseAddressesFromServerDirective(parent *crossplane.Directive) []string {
 
 	for _, dir := range parent.Block {
 		hostname := "127.0.0.1"
+		prefix := httpPrefix
 
 		switch dir.Directive {
 		case "listen":
@@ -718,14 +720,22 @@ func parseAddressesFromServerDirective(parent *crossplane.Directive) []string {
 					hostname = dir.Args[0]
 				}
 			}
-			hosts = append(hosts, hostname)
+
+			if len(dir.Args) > 1 {
+				secondArg := dir.Args[1]
+				if secondArg == "ssl" {
+					prefix = httpsPrefix
+				}
+			}
+
+			hosts = append(hosts, prefix+hostname)
 		case "server_name":
 			if dir.Args[0] == "_" {
 				// default server
 				continue
 			}
 			hostname = dir.Args[0]
-			hosts = append(hosts, hostname)
+			hosts = append(hosts, prefix+hostname)
 		}
 	}
 
@@ -952,11 +962,11 @@ func getUrlsForLocationDirective(parent *crossplane.Directive, current *crosspla
 		addresses := parseAddressesFromServerDirective(parent)
 
 		for _, address := range addresses {
-			path := parsePathFromLocationDirective(current)
+			pathFromLocationDirective := parsePathFromLocationDirective(current)
 
 			switch locChild.Directive {
 			case locationDirectiveName:
-				urls = append(urls, fmt.Sprintf(apiFormat, address, path))
+				urls = append(urls, address+pathFromLocationDirective)
 			}
 		}
 	}
