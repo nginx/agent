@@ -67,8 +67,8 @@ jobs:
         run:
           |
           echo "Checking Packages in ${{inputs.pkgRepo}}/nginx-agent"
-          cat "${{secrets.PUBTEST_CERT}}" > pubtest.crt
-          cat "${{secrets.PUBTEST_KEY}}" > pubtest.key
+          printf ${{secrets.PUBTEST_CERT}} > pubtest.crt
+          printf ${{secrets.PUBTEST_KEY}} > pubtest.key
           PKG_REPO=${{inputs.pkgRepo}} CERT=pubtest.crt KEY=pubtest.key DL=1 scripts/packages/package-check.sh ${{inputs.pkgVersion}}
           find ${{inputs.pkgRepo}}/nginx-agent | grep -e "nginx-agent[_-]${{inputs.pkgVersion}}"
 
