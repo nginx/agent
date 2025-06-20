@@ -205,15 +205,16 @@ func (i *Info) containerID() string {
 // mountInfo is the path: "/proc/self/mountinfo"
 func containerIDFromMountInfo(mountInfo string) (string, error) {
 	mInfoFile, err := os.Open(mountInfo)
-	if err != nil {
-		return "", fmt.Errorf("could not read %s: %w", mountInfo, err)
-	}
 	defer func(f *os.File, fileName string) {
 		closeErr := f.Close()
 		if closeErr != nil {
 			slog.Error("Unable to close file", "file", fileName, "error", closeErr)
 		}
 	}(mInfoFile, mountInfo)
+
+	if err != nil {
+		return "", fmt.Errorf("could not read %s: %w", mountInfo, err)
+	}
 
 	fileScanner := bufio.NewScanner(mInfoFile)
 	fileScanner.Split(bufio.ScanLines)
@@ -308,15 +309,15 @@ func (i *Info) releaseInfo(ctx context.Context, osReleaseLocation string) (relea
 
 func readOsRelease(path string) (map[string]string, error) {
 	f, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("release file %s is unreadable: %w", path, err)
-	}
 	defer func(f *os.File, fileName string) {
 		closeErr := f.Close()
 		if closeErr != nil {
 			slog.Error("Unable to close file", "file", fileName, "error", closeErr)
 		}
 	}(f, path)
+	if err != nil {
+		return nil, fmt.Errorf("release file %s is unreadable: %w", path, err)
+	}
 
 	info, err := parseOsReleaseFile(f)
 	if err != nil {
