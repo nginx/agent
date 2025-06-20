@@ -202,6 +202,11 @@ func (fws *FileWatcherService) addWatcher(ctx context.Context, directory string)
 			ctx, "Unable to watch directory that does not exist",
 			"directory", directory, "error", err,
 		)
+
+		removeError := fws.watcher.Remove(directory)
+		if removeError != nil {
+			slog.ErrorContext(ctx, "Failed to remove file watcher", "directory_path", directory, "error", removeError)
+		}
 	}
 
 	slog.DebugContext(ctx, "Adding watcher", "directory", directory)
