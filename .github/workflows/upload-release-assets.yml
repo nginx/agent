@@ -6,7 +6,7 @@ on:
       pkgRepo:
         description: "Source repository to pull packages from"
         type: string
-        default: ""
+        default: "packages.nginx.org"
       pkgVersion:
         description: 'Agent version'
         type: string
