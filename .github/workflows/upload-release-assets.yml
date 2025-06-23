@@ -1,4 +1,4 @@
-name: Upload Release Assets
+name: Publish Release packages
 
 on:
   workflow_dispatch:
