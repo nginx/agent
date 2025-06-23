@@ -51,7 +51,7 @@ func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentCo
 		} else {
 			commandPlugin := command.NewCommandPlugin(agentConfig, grpcConnection, model.Command)
 			plugins = append(plugins, commandPlugin)
-			filePlugin := file.NewFilePlugin(agentConfig, grpcConnection)
+			filePlugin := file.NewFilePlugin(agentConfig, grpcConnection, model.Command)
 			plugins = append(plugins, filePlugin)
 		}
 	} else {
@@ -72,7 +72,7 @@ func addAuxiliaryCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin
 		} else {
 			auxCommandPlugin := command.NewCommandPlugin(agentConfig, auxGRPCConnection, model.Auxiliary)
 			plugins = append(plugins, auxCommandPlugin)
-			readFilePlugin := file.NewReadFilePlugin(agentConfig, auxGRPCConnection)
+			readFilePlugin := file.NewFilePlugin(agentConfig, auxGRPCConnection, model.Auxiliary)
 			plugins = append(plugins, readFilePlugin)
 		}
 	} else {

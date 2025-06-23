@@ -31,12 +31,16 @@ type FilePlugin struct {
 	config             *config.Config
 	conn               grpc.GrpcConnectionInterface
 	fileManagerService fileManagerServiceInterface
+	serverType         model.ServerType
 }
 
-func NewFilePlugin(agentConfig *config.Config, grpcConnection grpc.GrpcConnectionInterface) *FilePlugin {
+func NewFilePlugin(agentConfig *config.Config, grpcConnection grpc.GrpcConnectionInterface,
+	serverType model.ServerType,
+) *FilePlugin {
 	return &FilePlugin{
-		config: agentConfig,
-		conn:   grpcConnection,
+		config:     agentConfig,
+		conn:       grpcConnection,
+		serverType: serverType,
 	}
 }
 
@@ -88,6 +92,15 @@ func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 }
 
 func (fp *FilePlugin) Subscriptions() []string {
+	if fp.serverType == model.Auxiliary {
+		return []string{
+			bus.ConnectionResetTopic,
+			bus.ConnectionCreatedTopic,
+			bus.NginxConfigUpdateTopic,
+			bus.ConfigUploadRequestTopic,
+		}
+	}
+
 	return []string{
 		bus.ConnectionResetTopic,
 		bus.ConnectionCreatedTopic,
