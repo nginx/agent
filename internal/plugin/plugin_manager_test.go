@@ -62,7 +62,7 @@ func TestLoadPlugins(t *testing.T) {
 				&command.CommandPlugin{},
 				&file.FilePlugin{},
 				&command.CommandPlugin{},
-				&file.ReadFilePlugin{},
+				&file.FilePlugin{},
 				&watcher.Watcher{},
 			},
 		},

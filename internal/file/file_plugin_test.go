@@ -31,7 +31,7 @@ import (
 )
 
 func TestFilePlugin_Info(t *testing.T) {
-	filePlugin := NewFilePlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	filePlugin := NewFilePlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{}, model.Command)
 	assert.Equal(t, "file", filePlugin.Info().Name)
 }
 
@@ -39,14 +39,14 @@ func TestFilePlugin_Close(t *testing.T) {
 	ctx := context.Background()
 	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
 
-	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection)
+	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection, model.Command)
 	filePlugin.Close(ctx)
 
 	assert.Equal(t, 1, fakeGrpcConnection.CloseCallCount())
 }
 
 func TestFilePlugin_Subscriptions(t *testing.T) {
-	filePlugin := NewFilePlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	filePlugin := NewFilePlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{}, model.Command)
 	assert.Equal(
 		t,
 		[]string{
@@ -61,9 +61,16 @@ func TestFilePlugin_Subscriptions(t *testing.T) {
 		},
 		filePlugin.Subscriptions(),
 	)
+
+	readOnlyFilePlugin := NewFilePlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{}, model.Auxiliary)
+	assert.Equal(t, []string{
+		bus.ConnectionResetTopic,
+		bus.ConnectionCreatedTopic,
+		bus.NginxConfigUpdateTopic,
+		bus.ConfigUploadRequestTopic,
+	}, readOnlyFilePlugin.Subscriptions())
 }
 
-// nolint: dupl
 func TestFilePlugin_Process_NginxConfigUpdateTopic(t *testing.T) {
 	ctx := context.Background()
 
@@ -86,7 +93,7 @@ func TestFilePlugin_Process_NginxConfigUpdateTopic(t *testing.T) {
 	fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
 	messagePipe := busfakes.NewFakeMessagePipe()
 
-	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection)
+	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection, model.Command)
 	err := filePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 
@@ -161,7 +168,7 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 			fakeFileManagerService := &filefakes.FakeFileManagerServiceInterface{}
 			fakeFileManagerService.ConfigApplyReturns(test.configApplyStatus, test.configApplyReturnsErr)
 			messagePipe := busfakes.NewFakeMessagePipe()
-			filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection)
+			filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection, model.Command)
 			err := filePlugin.Init(ctx, messagePipe)
 			filePlugin.fileManagerService = fakeFileManagerService
 			require.NoError(t, err)
@@ -225,7 +232,6 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 	}
 }
 
-// nolint: dupl
 func TestFilePlugin_Process_ConfigUploadRequestTopic(t *testing.T) {
 	ctx := context.Background()
 
@@ -260,7 +266,7 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic(t *testing.T) {
 	fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
 	messagePipe := busfakes.NewFakeMessagePipe()
 
-	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection)
+	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection, model.Command)
 	err := filePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 
@@ -315,7 +321,7 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic_Failure(t *testing.T) {
 	fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
 	messagePipe := busfakes.NewFakeMessagePipe()
 
-	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection)
+	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection, model.Command)
 	err := filePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 
@@ -383,7 +389,7 @@ func TestFilePlugin_Process_ConfigApplyFailedTopic(t *testing.T) {
 
 			messagePipe := busfakes.NewFakeMessagePipe()
 			agentConfig := types.AgentConfig()
-			filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection)
+			filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection, model.Command)
 
 			err := filePlugin.Init(ctx, messagePipe)
 			require.NoError(t, err)
@@ -430,7 +436,7 @@ func TestFilePlugin_Process_ConfigApplyRollbackCompleteTopic(t *testing.T) {
 	messagePipe := busfakes.NewFakeMessagePipe()
 	agentConfig := types.AgentConfig()
 	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
-	filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection)
+	filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection, model.Command)
 
 	err := filePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
@@ -475,7 +481,7 @@ func TestFilePlugin_Process_ConfigApplyCompleteTopic(t *testing.T) {
 	messagePipe := busfakes.NewFakeMessagePipe()
 	agentConfig := types.AgentConfig()
 	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
-	filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection)
+	filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection, model.Command)
 
 	err := filePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)

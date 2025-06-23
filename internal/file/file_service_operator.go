@@ -30,6 +30,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// File service operator handles requests to the grpc file service
+
 type FileServiceOperator struct {
 	fileServiceClient mpi.FileServiceClient
 	agentConfig       *config.Config

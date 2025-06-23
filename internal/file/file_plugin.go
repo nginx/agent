@@ -31,12 +31,16 @@ type FilePlugin struct {
 	config             *config.Config
 	conn               grpc.GrpcConnectionInterface
 	fileManagerService fileManagerServiceInterface
+	serverType         model.ServerType
 }
 
-func NewFilePlugin(agentConfig *config.Config, grpcConnection grpc.GrpcConnectionInterface) *FilePlugin {
+func NewFilePlugin(agentConfig *config.Config, grpcConnection grpc.GrpcConnectionInterface,
+	serverType model.ServerType,
+) *FilePlugin {
 	return &FilePlugin{
-		config: agentConfig,
-		conn:   grpcConnection,
+		config:     agentConfig,
+		conn:       grpcConnection,
+		serverType: serverType,
 	}
 }
 
@@ -60,31 +64,43 @@ func (fp *FilePlugin) Info() *bus.Info {
 	}
 }
 
+// nolint: cyclop, revive
 func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
-	switch msg.Topic {
-	case bus.ConnectionResetTopic:
-		fp.handleConnectionReset(ctx, msg)
-	case bus.ConnectionCreatedTopic:
-		slog.DebugContext(ctx, "File plugin received connection created message")
-		fp.fileManagerService.SetIsConnected(true)
-	case bus.NginxConfigUpdateTopic:
-		fp.handleNginxConfigUpdate(ctx, msg)
-	case bus.ConfigUploadRequestTopic:
-		fp.handleConfigUploadRequest(ctx, msg)
-	case bus.ConfigApplyRequestTopic:
-		fp.handleConfigApplyRequest(ctx, msg)
-	case bus.ConfigApplyCompleteTopic:
-		fp.handleConfigApplyComplete(ctx, msg)
-	case bus.ConfigApplySuccessfulTopic:
-		fp.handleConfigApplySuccess(ctx, msg)
-	case bus.ConfigApplyFailedTopic:
-		fp.handleConfigApplyFailedRequest(ctx, msg)
-	default:
-		slog.DebugContext(ctx, "File plugin received unknown topic", "topic", msg.Topic)
+	if logger.ServerType(ctx) == fp.serverType.String() || logger.ServerType(ctx) == "" {
+		switch msg.Topic {
+		case bus.ConnectionResetTopic:
+			fp.handleConnectionReset(ctx, msg)
+		case bus.ConnectionCreatedTopic:
+			slog.DebugContext(ctx, "File plugin received connection created message")
+			fp.fileManagerService.SetIsConnected(true)
+		case bus.NginxConfigUpdateTopic:
+			fp.handleNginxConfigUpdate(ctx, msg)
+		case bus.ConfigUploadRequestTopic:
+			fp.handleConfigUploadRequest(ctx, msg)
+		case bus.ConfigApplyRequestTopic:
+			fp.handleConfigApplyRequest(ctx, msg)
+		case bus.ConfigApplyCompleteTopic:
+			fp.handleConfigApplyComplete(ctx, msg)
+		case bus.ConfigApplySuccessfulTopic:
+			fp.handleConfigApplySuccess(ctx, msg)
+		case bus.ConfigApplyFailedTopic:
+			fp.handleConfigApplyFailedRequest(ctx, msg)
+		default:
+			slog.DebugContext(ctx, "File plugin received unknown topic", "topic", msg.Topic)
+		}
 	}
 }
 
 func (fp *FilePlugin) Subscriptions() []string {
+	if fp.serverType == model.Auxiliary {
+		return []string{
+			bus.ConnectionResetTopic,
+			bus.ConnectionCreatedTopic,
+			bus.NginxConfigUpdateTopic,
+			bus.ConfigUploadRequestTopic,
+		}
+	}
+
 	return []string{
 		bus.ConnectionResetTopic,
 		bus.ConnectionCreatedTopic,
