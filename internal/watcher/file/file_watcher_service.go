@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -136,7 +137,10 @@ func (fws *FileWatcherService) addWatchers(ctx context.Context) {
 			continue
 		}
 
-		fws.addWatcher(ctx, directory)
+		if !slices.Contains(fws.watcher.WatchList(), directory) {
+			fws.addWatcher(ctx, directory)
+			fws.filesChanged.Store(true)
+		}
 	}
 }
 
@@ -144,6 +148,7 @@ func (fws *FileWatcherService) removeWatchers(ctx context.Context) {
 	for _, directoryBeingWatched := range fws.watcher.WatchList() {
 		if _, ok := fws.directoriesToWatch[directoryBeingWatched]; !ok {
 			fws.removeWatcher(ctx, directoryBeingWatched)
+			fws.filesChanged.Store(true)
 		}
 	}
 }
@@ -202,11 +207,6 @@ func (fws *FileWatcherService) addWatcher(ctx context.Context, directory string)
 			ctx, "Unable to watch directory that does not exist",
 			"directory", directory, "error", err,
 		)
-
-		removeError := fws.watcher.Remove(directory)
-		if removeError != nil {
-			slog.WarnContext(ctx, "Failed to remove file watcher", "directory_path", directory, "error", removeError)
-		}
 	}
 
 	slog.DebugContext(ctx, "Adding watcher", "directory", directory)
