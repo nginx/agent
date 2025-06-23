@@ -11,8 +11,6 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/nginx/agent/v3/internal/command"
-
 	"github.com/nginx/agent/v3/internal/model"
 
 	"github.com/nginx/agent/v3/internal/watcher/credentials"
@@ -80,8 +78,8 @@ func NewWatcher(agentConfig *config.Config) *Watcher {
 		instanceWatcherService:             instance.NewInstanceWatcherService(agentConfig),
 		healthWatcherService:               health.NewHealthWatcherService(agentConfig),
 		fileWatcherService:                 file.NewFileWatcherService(agentConfig),
-		commandCredentialWatcherService:    credentials.NewCredentialWatcherService(agentConfig, command.Command),
-		auxiliaryCredentialWatcherService:  credentials.NewCredentialWatcherService(agentConfig, command.Auxiliary),
+		commandCredentialWatcherService:    credentials.NewCredentialWatcherService(agentConfig, model.Command),
+		auxiliaryCredentialWatcherService:  credentials.NewCredentialWatcherService(agentConfig, model.Auxiliary),
 		instanceUpdatesChannel:             make(chan instance.InstanceUpdatesMessage),
 		nginxConfigContextChannel:          make(chan instance.NginxConfigContextMessage),
 		instanceHealthChannel:              make(chan health.InstanceHealthMessage),
@@ -262,20 +260,20 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 			slog.DebugContext(ctx, "Received credential update event for command server")
 			newCtx := context.WithValue(context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID),
 				logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey,
-					message.SeverType.String()))
+					message.ServerType.String()))
 
 			w.messagePipe.Process(newCtx, &bus.Message{
-				Topic: bus.ConnectionResetTopic, Data: message.Conn,
+				Topic: bus.ConnectionResetTopic, Data: message.GrpcConnection,
 			})
 
 		case message := <-w.auxiliaryCredentialUpdatesChannel:
 			slog.DebugContext(ctx, "Received credential update event for auxiliary command server")
 			newCtx := context.WithValue(context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID),
 				logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey,
-					message.SeverType.String()))
+					message.ServerType.String()))
 
 			w.messagePipe.Process(newCtx, &bus.Message{
-				Topic: bus.ConnectionResetTopic, Data: message.Conn,
+				Topic: bus.ConnectionResetTopic, Data: message.GrpcConnection,
 			})
 		case message := <-w.instanceUpdatesChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)

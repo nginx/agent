@@ -10,10 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nginx/agent/v3/internal/command"
 	"github.com/nginx/agent/v3/internal/grpc"
 
-	model2 "github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/internal/model"
 
 	"github.com/nginx/agent/v3/internal/watcher/credentials"
 
@@ -28,7 +27,7 @@ import (
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/pkg/id"
-	"github.com/nginx/agent/v3/test/model"
+	testModel "github.com/nginx/agent/v3/test/model"
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/assert"
@@ -70,7 +69,7 @@ func TestWatcher_Init(t *testing.T) {
 
 	nginxConfigContextMessage := instance.NginxConfigContextMessage{
 		CorrelationID:      logger.GenerateCorrelationID(),
-		NginxConfigContext: model.ConfigContext(),
+		NginxConfigContext: testModel.ConfigContext(),
 	}
 
 	instanceHealthMessage := health.InstanceHealthMessage{
@@ -79,9 +78,9 @@ func TestWatcher_Init(t *testing.T) {
 	}
 
 	credentialUpdateMessage := credentials.CredentialUpdateMessage{
-		CorrelationID: logger.GenerateCorrelationID(),
-		SeverType:     command.Command,
-		Conn:          &grpc.GrpcConnection{},
+		CorrelationID:  logger.GenerateCorrelationID(),
+		ServerType:     model.Command,
+		GrpcConnection: &grpc.GrpcConnection{},
 	}
 
 	watcherPlugin.instanceUpdatesChannel <- instanceUpdatesMessage
@@ -170,8 +169,8 @@ func TestWatcher_Process_ConfigApplySuccessfulTopic(t *testing.T) {
 	ctx := context.Background()
 	data := protos.NginxOssInstance([]string{})
 
-	response := &model2.ConfigApplySuccess{
-		ConfigContext: &model2.NginxConfigContext{
+	response := &model.ConfigApplySuccess{
+		ConfigContext: &model.NginxConfigContext{
 			InstanceID: data.GetInstanceMeta().GetInstanceId(),
 		},
 		DataPlaneResponse: &mpi.DataPlaneResponse{

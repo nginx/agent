@@ -13,7 +13,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/nginx/agent/v3/internal/command"
+	"github.com/nginx/agent/v3/internal/model"
+
 	"github.com/nginx/agent/v3/internal/grpc"
 
 	"github.com/fsnotify/fsnotify"
@@ -31,9 +32,9 @@ var emptyEvent = fsnotify.Event{
 }
 
 type CredentialUpdateMessage struct {
-	CorrelationID slog.Attr
-	Conn          *grpc.GrpcConnection
-	SeverType     command.ServerType
+	CorrelationID  slog.Attr
+	GrpcConnection *grpc.GrpcConnection
+	ServerType     model.ServerType
 }
 
 type CredentialWatcherService struct {
@@ -41,11 +42,11 @@ type CredentialWatcherService struct {
 	watcher           *fsnotify.Watcher
 	filesBeingWatched *sync.Map
 	filesChanged      *atomic.Bool
-	serverType        command.ServerType
+	serverType        model.ServerType
 	watcherMutex      sync.Mutex
 }
 
-func NewCredentialWatcherService(agentConfig *config.Config, serverType command.ServerType) *CredentialWatcherService {
+func NewCredentialWatcherService(agentConfig *config.Config, serverType model.ServerType) *CredentialWatcherService {
 	filesChanged := &atomic.Bool{}
 	filesChanged.Store(false)
 
@@ -78,7 +79,7 @@ func (cws *CredentialWatcherService) Watch(ctx context.Context, ch chan<- Creden
 	cws.watcherMutex.Lock()
 	commandSever := cws.agentConfig.Command
 
-	if cws.serverType == command.Auxiliary {
+	if cws.serverType == model.Auxiliary {
 		commandSever = cws.agentConfig.AuxiliaryCommand
 	}
 
@@ -172,7 +173,7 @@ func (cws *CredentialWatcherService) checkForUpdates(ctx context.Context, ch cha
 		defer cws.watcherMutex.Unlock()
 
 		commandSever := cws.agentConfig.Command
-		if cws.serverType == command.Auxiliary {
+		if cws.serverType == model.Auxiliary {
 			commandSever = cws.agentConfig.AuxiliaryCommand
 		}
 
@@ -185,8 +186,9 @@ func (cws *CredentialWatcherService) checkForUpdates(ctx context.Context, ch cha
 		}
 		slog.DebugContext(ctx, "Credential watcher has detected changes")
 		ch <- CredentialUpdateMessage{
-			CorrelationID: logger.CorrelationIDAttr(newCtx),
-			SeverType:     cws.serverType, Conn: conn,
+			CorrelationID:  logger.CorrelationIDAttr(newCtx),
+			ServerType:     cws.serverType,
+			GrpcConnection: conn,
 		}
 		cws.filesChanged.Store(false)
 	}
