@@ -9,8 +9,6 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/nginx/agent/v3/internal/command"
-
 	"github.com/nginx/agent/v3/pkg/files"
 	"github.com/nginx/agent/v3/pkg/id"
 
@@ -64,7 +62,7 @@ func (fp *FilePlugin) Info() *bus.Info {
 
 // nolint: cyclop, revive
 func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
-	if logger.ServerType(ctx) == command.Command.String() || logger.ServerType(ctx) == "" {
+	if logger.ServerType(ctx) == model.Command.String() || logger.ServerType(ctx) == "" {
 		switch msg.Topic {
 		case bus.ConnectionResetTopic:
 			fp.handleConnectionReset(ctx, msg)

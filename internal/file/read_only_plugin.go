@@ -9,8 +9,6 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/nginx/agent/v3/internal/command"
-
 	"github.com/nginx/agent/v3/pkg/id"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -62,7 +60,7 @@ func (rp *ReadFilePlugin) Info() *bus.Info {
 }
 
 func (rp *ReadFilePlugin) Process(ctx context.Context, msg *bus.Message) {
-	if logger.ServerType(ctx) == command.Auxiliary.String() || logger.ServerType(ctx) == "" {
+	if logger.ServerType(ctx) == model.Auxiliary.String() || logger.ServerType(ctx) == "" {
 		switch msg.Topic {
 		case bus.ConnectionResetTopic:
 			rp.handleConnectionReset(ctx, msg)

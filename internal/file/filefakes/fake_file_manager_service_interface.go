@@ -46,11 +46,12 @@ type FakeFileManagerServiceInterface struct {
 	configUploadReturnsOnCall map[int]struct {
 		result1 error
 	}
-	DetermineFileActionsStub        func(map[string]*v1.File, map[string]*model.FileCache) (map[string]*model.FileCache, map[string][]byte, error)
+	DetermineFileActionsStub        func(context.Context, map[string]*v1.File, map[string]*model.FileCache) (map[string]*model.FileCache, map[string][]byte, error)
 	determineFileActionsMutex       sync.RWMutex
 	determineFileActionsArgsForCall []struct {
-		arg1 map[string]*v1.File
-		arg2 map[string]*model.FileCache
+		arg1 context.Context
+		arg2 map[string]*v1.File
+		arg3 map[string]*model.FileCache
 	}
 	determineFileActionsReturns struct {
 		result1 map[string]*model.FileCache
@@ -290,19 +291,20 @@ func (fake *FakeFileManagerServiceInterface) ConfigUploadReturnsOnCall(i int, re
 	}{result1}
 }
 
-func (fake *FakeFileManagerServiceInterface) DetermineFileActions(arg1 map[string]*v1.File, arg2 map[string]*model.FileCache) (map[string]*model.FileCache, map[string][]byte, error) {
+func (fake *FakeFileManagerServiceInterface) DetermineFileActions(arg1 context.Context, arg2 map[string]*v1.File, arg3 map[string]*model.FileCache) (map[string]*model.FileCache, map[string][]byte, error) {
 	fake.determineFileActionsMutex.Lock()
 	ret, specificReturn := fake.determineFileActionsReturnsOnCall[len(fake.determineFileActionsArgsForCall)]
 	fake.determineFileActionsArgsForCall = append(fake.determineFileActionsArgsForCall, struct {
-		arg1 map[string]*v1.File
-		arg2 map[string]*model.FileCache
-	}{arg1, arg2})
+		arg1 context.Context
+		arg2 map[string]*v1.File
+		arg3 map[string]*model.FileCache
+	}{arg1, arg2, arg3})
 	stub := fake.DetermineFileActionsStub
 	fakeReturns := fake.determineFileActionsReturns
-	fake.recordInvocation("DetermineFileActions", []interface{}{arg1, arg2})
+	fake.recordInvocation("DetermineFileActions", []interface{}{arg1, arg2, arg3})
 	fake.determineFileActionsMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2)
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2, ret.result3
@@ -316,17 +318,17 @@ func (fake *FakeFileManagerServiceInterface) DetermineFileActionsCallCount() int
 	return len(fake.determineFileActionsArgsForCall)
 }
 
-func (fake *FakeFileManagerServiceInterface) DetermineFileActionsCalls(stub func(map[string]*v1.File, map[string]*model.FileCache) (map[string]*model.FileCache, map[string][]byte, error)) {
+func (fake *FakeFileManagerServiceInterface) DetermineFileActionsCalls(stub func(context.Context, map[string]*v1.File, map[string]*model.FileCache) (map[string]*model.FileCache, map[string][]byte, error)) {
 	fake.determineFileActionsMutex.Lock()
 	defer fake.determineFileActionsMutex.Unlock()
 	fake.DetermineFileActionsStub = stub
 }
 
-func (fake *FakeFileManagerServiceInterface) DetermineFileActionsArgsForCall(i int) (map[string]*v1.File, map[string]*model.FileCache) {
+func (fake *FakeFileManagerServiceInterface) DetermineFileActionsArgsForCall(i int) (context.Context, map[string]*v1.File, map[string]*model.FileCache) {
 	fake.determineFileActionsMutex.RLock()
 	defer fake.determineFileActionsMutex.RUnlock()
 	argsForCall := fake.determineFileActionsArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
 func (fake *FakeFileManagerServiceInterface) DetermineFileActionsReturns(result1 map[string]*model.FileCache, result2 map[string][]byte, result3 error) {
