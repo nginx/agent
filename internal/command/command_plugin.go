@@ -10,6 +10,8 @@ import (
 	"log/slog"
 	"sync"
 
+	"github.com/nginx/agent/v3/internal/model"
+
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -25,17 +27,6 @@ var _ bus.Plugin = (*CommandPlugin)(nil)
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . commandService
-type ServerType int
-
-const (
-	Command ServerType = iota
-	Auxiliary
-)
-
-var serverType = map[ServerType]string{
-	Command:   "command",
-	Auxiliary: "auxiliary",
-}
 
 type (
 	commandService interface {
@@ -55,13 +46,13 @@ type (
 		conn              grpc.GrpcConnectionInterface
 		commandService    commandService
 		subscribeChannel  chan *mpi.ManagementPlaneRequest
-		commandServerType ServerType
+		commandServerType model.ServerType
 		subscribeMutex    sync.Mutex
 	}
 )
 
 func NewCommandPlugin(agentConfig *config.Config, grpcConnection grpc.GrpcConnectionInterface,
-	commandServerType ServerType,
+	commandServerType model.ServerType,
 ) *CommandPlugin {
 	return &CommandPlugin{
 		config:            agentConfig,
@@ -256,7 +247,7 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 				slog.InfoContext(ctx, "Received management plane config upload request")
 				cp.handleConfigUploadRequest(newCtx, message)
 			case *mpi.ManagementPlaneRequest_ConfigApplyRequest:
-				if cp.commandServerType != Command {
+				if cp.commandServerType != model.Command {
 					slog.WarnContext(newCtx, "Auxiliary command server can not perform config apply",
 						"command_server_type", cp.commandServerType.String())
 					cp.handleInvalidRequest(newCtx, message)
@@ -269,7 +260,7 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 				slog.InfoContext(ctx, "Received management plane health request")
 				cp.handleHealthRequest(newCtx)
 			case *mpi.ManagementPlaneRequest_ActionRequest:
-				if cp.commandServerType != Command {
+				if cp.commandServerType != model.Command {
 					slog.WarnContext(newCtx, "Auxiliary command server can not perform api action",
 						"command_server_type", cp.commandServerType.String())
 					cp.handleInvalidRequest(newCtx, message)
@@ -394,8 +385,4 @@ func (cp *CommandPlugin) createDataPlaneResponse(correlationID string, status mp
 			Error:   err,
 		},
 	}
-}
-
-func (s ServerType) String() string {
-	return serverType[s]
 }

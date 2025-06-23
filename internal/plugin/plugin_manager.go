@@ -9,6 +9,8 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/nginx/agent/v3/internal/model"
+
 	pkg "github.com/nginx/agent/v3/pkg/config"
 
 	"github.com/nginx/agent/v3/internal/collector"
@@ -47,7 +49,7 @@ func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentCo
 		if err != nil {
 			slog.WarnContext(ctx, "Failed to create gRPC connection for command server", "error", err)
 		} else {
-			commandPlugin := command.NewCommandPlugin(agentConfig, grpcConnection, command.Command)
+			commandPlugin := command.NewCommandPlugin(agentConfig, grpcConnection, model.Command)
 			plugins = append(plugins, commandPlugin)
 			filePlugin := file.NewFilePlugin(agentConfig, grpcConnection)
 			plugins = append(plugins, filePlugin)
@@ -68,7 +70,7 @@ func addAuxiliaryCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin
 		if err != nil {
 			slog.WarnContext(ctx, "Failed to create gRPC connection for auxiliary command server", "error", err)
 		} else {
-			auxCommandPlugin := command.NewCommandPlugin(agentConfig, auxGRPCConnection, command.Auxiliary)
+			auxCommandPlugin := command.NewCommandPlugin(agentConfig, auxGRPCConnection, model.Auxiliary)
 			plugins = append(plugins, auxCommandPlugin)
 			// Followup PR to add read plugin eventually
 		}
