@@ -146,7 +146,7 @@ func resolveAllowedDirectories(dirs []string) []string {
 		}
 		dir = filepath.Clean(dir)
 		if dir == AgentDirName {
-			slog.Warn("Ignoring reserved directory", "dir", dir)
+			// If the directory is the default agent directory, we skip adding it again.
 			continue
 		}
 		allowed = append(allowed, dir)
