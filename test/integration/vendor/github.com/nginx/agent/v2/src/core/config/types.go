@@ -8,6 +8,8 @@
 package config
 
 import (
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/nginx/agent/sdk/v2/backoff"
@@ -90,6 +92,20 @@ func (c *Config) GetMetricsBackoffSettings() backoff.BackoffSettings {
 	}
 }
 
+func (c *Config) IsFileAllowed(path string) bool {
+	if !filepath.IsAbs(path) {
+		return false
+	}
+
+	for dir := range c.AllowedDirectoriesMap {
+		if strings.HasPrefix(path, dir) {
+			return true
+		}
+	}
+
+	return false
+}
+
 type Server struct {
 	Host     string `mapstructure:"host" yaml:"-"`
 	GrpcPort int    `mapstructure:"grpcPort" yaml:"-"`
@@ -139,6 +155,7 @@ type Nginx struct {
 	NginxClientVersion           int           `mapstructure:"client_version" yaml:"-"`
 	ConfigReloadMonitoringPeriod time.Duration `mapstructure:"config_reload_monitoring_period" yaml:"-"`
 	TreatWarningsAsErrors        bool          `mapstructure:"treat_warnings_as_errors" yaml:"-"`
+	Ca                           string        `mapstructure:"ca" yaml:"-"`
 }
 
 type Dataplane struct {

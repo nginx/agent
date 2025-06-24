@@ -354,6 +354,7 @@ func getNginx() Nginx {
 		NginxClientVersion:           Viper.GetInt(NginxClientVersion),
 		ConfigReloadMonitoringPeriod: Viper.GetDuration(NginxConfigReloadMonitoringPeriod),
 		TreatWarningsAsErrors:        Viper.GetBool(NginxTreatWarningsAsErrors),
+		Ca:                           Viper.GetString(NginxCa),
 	}
 }
 
