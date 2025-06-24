@@ -38,22 +38,68 @@ func TestScraper(t *testing.T) {
 	// To test the nginx.http.response.count metric calculation we need to set the previousLocationZoneResponses &
 	// previousSeverZoneResponses then call scrape a second time as the first time it is called the previous responses
 	// are set using the API
+
+	/* Initial metrics for location zone:
+	{
+	  "location_test": {
+	    "requests": 34,
+	    "responses": {
+	      "1xx": 7,
+	      "2xx": 31,
+	      "3xx": 0,
+	      "4xx": 3,
+	      "5xx": 0,
+	      "codes": {
+	        "200": 31,
+	        "404": 3
+	      },
+	      "total": 34
+	    },
+	    "discarded": 0,
+	    "received": 3609,
+	    "sent": 23265
+	  }
+	}
+	*/
 	scraper.previousLocationZoneResponses = map[string]ResponseStatuses{
 		"location_test": {
-			oneHundredStatusRange:   3,  // 4
-			twoHundredStatusRange:   29, // 2
+			oneHundredStatusRange:   3,  // delta 4
+			twoHundredStatusRange:   29, // delta 2
 			threeHundredStatusRange: 0,
-			fourHundredStatusRange:  1, // 2
+			fourHundredStatusRange:  1, // delta 2
 			fiveHundredStatusRange:  0,
 		},
 	}
 
+	/* Initial metrics for server zone:
+	{
+	  "test": {
+	    "processing": 1,
+	    "requests": 32,
+	    "responses": {
+	      "1xx": 5,
+	      "2xx": 29,
+	      "3xx": 0,
+	      "4xx": 2,
+	      "5xx": 0,
+	      "codes": {
+	        "200": 29,
+	        "404": 2
+	      },
+	      "total": 31
+	    },
+	    "discarded": 0,
+	    "received": 3312,
+	    "sent": 21860
+	  }
+	}
+	*/
 	scraper.previousServerZoneResponses = map[string]ResponseStatuses{
 		"test": {
-			oneHundredStatusRange:   3, // 2
-			twoHundredStatusRange:   0, // 29
+			oneHundredStatusRange:   3, // delta 2
+			twoHundredStatusRange:   0, // delta 29
 			threeHundredStatusRange: 0,
-			fourHundredStatusRange:  1, // 1
+			fourHundredStatusRange:  1, // delta 1
 			fiveHundredStatusRange:  0,
 		},
 	}

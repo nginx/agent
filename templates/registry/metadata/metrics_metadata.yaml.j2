@@ -1,0 +1,30 @@
+
+metrics:
+{%- for group in ctx if not group.deprecated | sort(attribute="metric_name") %}
+{%- if group.type == "metric" %}
+  {{group.metric_name | safe}}:
+    enabled: true
+    description: {{group.brief | trim}}
+{%- if group.instrument == "counter" %}
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+{%- elif group.instrument == "updowncounter" %}
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: delta
+{%- else %}
+    gauge:
+      value_type: int
+{%- endif %}
+    unit: {{ group.unit }}
+{%- endif %}
+{%- if group.attributes %}
+    attributes:
+{%- for attribute in group.attributes | sort(attribute="name") %}  
+      - {{attribute.name | safe}}
+{%- endfor %}
+{%- endif %}
+{%- endfor %}
