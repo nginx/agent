@@ -33,12 +33,15 @@ import (
 )
 
 const (
-	ConfigFileName   = "nginx-agent.conf"
-	EnvPrefix        = "NGINX_AGENT"
-	KeyDelimiter     = "_"
-	KeyValueNumber   = 2
-	AgentDirName     = "/etc/nginx-agent/"
-	regexInvalidPath = "%[0-9*][a-fA-F]|\\\\x[0-9]*|\\.\\./"
+	ConfigFileName = "nginx-agent.conf"
+	EnvPrefix      = "NGINX_AGENT"
+	KeyDelimiter   = "_"
+	KeyValueNumber = 2
+	AgentDirName   = "/etc/nginx-agent"
+
+	// Regular expression to match invalid characters in paths.
+	// It matches whitespace, control characters, non-printable characters, and specific Unicode characters.
+	regexInvalidPath = "\\s|[[:cntrl:]]|[[:space:]]|[[^:print:]]|ㅤ|\\.\\.|\\*"
 )
 
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
@@ -81,15 +84,14 @@ func RegisterConfigFile() error {
 }
 
 func ResolveConfig() (*Config, error) {
-	// Collect allowed directories, so that paths in the config can be validated.
-	directories := viperInstance.GetStringSlice(AllowedDirectoriesKey)
-	allowedDirs := []string{AgentDirName}
 
 	log := resolveLog()
 	slogger := logger.New(log.Path, log.Level)
 	slog.SetDefault(slogger)
 
-	allowedDirs = resolveAllowedDirectories(directories)
+	// Collect allowed directories, so that paths in the config can be validated.
+	directories := viperInstance.GetStringSlice(AllowedDirectoriesKey)
+	allowedDirs := resolveAllowedDirectories(directories)
 	slog.Info("Configured allowed directories", "allowed_directories", allowedDirs)
 
 	// Collect all parsing errors before returning the error, so the user sees all issues with config
@@ -130,9 +132,12 @@ func ResolveConfig() (*Config, error) {
 	return config, nil
 }
 
+// resolveAllowedDirectories checks if the provided directories are valid and returns a slice of cleaned absolute paths.
+// It ignores empty paths, paths that are not absolute, and paths containing invalid characters.
+// Invalid paths are logged as warnings.
 func resolveAllowedDirectories(dirs []string) []string {
-	// Check directories are valid
 	var allowed []string
+	allowed = append(allowed, AgentDirName)
 	for _, dir := range dirs {
 		invalidChars, _ := regexp.MatchString(regexInvalidPath, dir)
 		if dir == "" || dir == "/" || !filepath.IsAbs(dir) || invalidChars {
@@ -140,8 +145,9 @@ func resolveAllowedDirectories(dirs []string) []string {
 			continue
 		}
 		dir = filepath.Clean(dir)
-		if !strings.HasSuffix(dir, "/") {
-			dir += "/"
+		if dir == AgentDirName {
+			slog.Warn("Ignoring reserved directory", "dir", dir)
+			continue
 		}
 		allowed = append(allowed, dir)
 	}
@@ -756,13 +762,15 @@ func resolveClient() *Client {
 }
 
 func resolveCollector(allowedDirs []string) (*Collector, error) {
-	var receivers Receivers
 
+	// Collect receiver configurations
+	var receivers Receivers
 	err := resolveMapStructure(CollectorReceiversKey, &receivers)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal collector receivers config: %w", err)
 	}
 
+	// Collect exporter configurations
 	exporters, err := resolveExporters()
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal collector exporters config: %w", err)

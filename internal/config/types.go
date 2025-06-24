@@ -8,7 +8,10 @@ package config
 import (
 	"errors"
 	"fmt"
+	"log/slog"
+	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -411,9 +414,37 @@ func (c *Config) AreReceiversConfigured() bool {
 		len(c.Collector.Receivers.TcplogReceivers) > 0
 }
 
-func isAllowedDir(dir string, allowedDirs []string) bool {
+// isAllowedDir checks if the given path is in the list of allowed directories.
+// It returns true if the path is allowed, false otherwise.
+// If the path does not exist, it logs a warning and returns false.
+// It also checks if the path is a file, in which case it checks the directory of the file.
+func isAllowedDir(path string, allowedDirs []string) bool {
+	if len(allowedDirs) == 0 {
+		slog.Warn("No allowed directories configured")
+		return false
+	}
+
+	directoryPath := path
+	isFilePath, err := regexp.MatchString(`\.(\w+)$`, directoryPath)
+	if err != nil {
+		slog.Error("Error matching path", "path", directoryPath, "error", err)
+		return false
+	}
+
+	if isFilePath {
+		directoryPath = filepath.Dir(directoryPath)
+		slog.Debug("File path detected, checking parent directory is allowed", "path", directoryPath)
+	}
+
+	_, err = os.Stat(directoryPath)
+	if err != nil {
+		slog.Warn("Path error", "path", path, "error", err)
+	}
+
 	for _, allowedDirectory := range allowedDirs {
-		if strings.HasPrefix(dir, allowedDirectory) {
+		// Check if the directoryPath starts with the allowedDirectory
+		// This allows for subdirectories within the allowed directories.
+		if strings.HasPrefix(directoryPath, allowedDirectory) {
 			return true
 		}
 	}

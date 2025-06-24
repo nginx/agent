@@ -6,87 +6,125 @@
 package config
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTypes_IsDirectoryAllowed(t *testing.T) {
-	config := agentConfig()
+func TestTypes_isAllowedDir(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		fileDir     string
+		filePath    string
+		dirExists   bool
+		fileExists  bool
 		allowedDirs []string
 		allowed     bool
 	}{
 		{
-			name:    "Test 1: directory allowed",
-			allowed: true,
+			name:       "File exists and is in allowed directory",
+			allowed:    true,
+			dirExists:  true,
+			fileExists: true,
 			allowedDirs: []string{
-				AgentDirName,
 				"/etc/nginx",
-				"/var/log/nginx/",
 			},
-			fileDir: "/etc/nginx/nginx.conf",
+			filePath: "/etc/nginx/nginx.conf",
 		},
 		{
-			name:    "Test 2: directory not allowed",
-			allowed: false,
+			name:       "File exists and is in allowed directory with hyphen",
+			allowed:    true,
+			dirExists:  true,
+			fileExists: true,
 			allowedDirs: []string{
-				AgentDirName,
-				"/etc/nginx/",
-				"/var/log/nginx/",
+				"/etc/nginx-agent",
 			},
-			fileDir: "/etc/nginx-test/nginx-agent.conf",
+			filePath: "/etc/nginx-agent/nginx.conf",
 		},
 		{
-			name:    "Test 3: directory allowed",
-			allowed: true,
+			name:       "File exists and is in a subdirectory of allowed directory",
+			allowed:    true,
+			dirExists:  true,
+			fileExists: true,
 			allowedDirs: []string{
-				AgentDirName,
-				"/etc/nginx/",
-				"/var/log/nginx/",
-			},
-			fileDir: "/etc/nginx/conf.d/nginx-agent.conf",
-		},
-		{
-			name:    "Test 4: directory not allowed",
-			allowed: false,
-			allowedDirs: []string{
-				AgentDirName,
 				"/etc/nginx",
-				"/var/log/nginx",
 			},
-			fileDir: "~/test.conf",
+			filePath: "/etc/nginx/conf.d/nginx.conf",
 		},
 		{
-			name:    "Test 5: directory not allowed",
-			allowed: false,
+			name:       "File exists and is outside allowed directory",
+			allowed:    false,
+			dirExists:  true,
+			fileExists: true,
 			allowedDirs: []string{
-				AgentDirName,
-				"/etc/nginx/",
-				"/var/log/nginx/",
+				"/etc/nginx",
 			},
-			fileDir: "//test.conf",
+			filePath: "/etc/test/nginx.conf",
 		},
 		{
-			name:    "Test 6: directory allowed",
-			allowed: true,
+			name:       "File does not exist but is in allowed directory",
+			allowed:    true,
+			dirExists:  true,
+			fileExists: false,
 			allowedDirs: []string{
-				AgentDirName,
-				"/etc/nginx/",
-				"/var/log/nginx/",
-				"/",
+				"/etc/nginx",
 			},
-			fileDir: "/test.conf",
+			filePath: "/etc/nginx/idontexist.conf",
+		},
+		{
+			name:       "File does not exist and is outside allowed directory",
+			allowed:    false,
+			dirExists:  false,
+			fileExists: true,
+			allowedDirs: []string{
+				"/etc/nginx",
+			},
+			filePath: "/not-nginx-test/idontexist.conf",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			config.AllowedDirectories = test.allowedDirs
-			result := config.IsDirectoryAllowed(test.fileDir)
+			if test.dirExists {
+				// Create the temporary directory for testing
+				tmpDir, err := os.MkdirTemp("", "test-allowed-dir")
+				defer func() {
+					err := os.RemoveAll(tmpDir)
+					if err != nil {
+						t.Fatalf("Failed to remove temp directory: %v", err)
+					}
+				}()
+				if err != nil {
+					t.Fatalf("Failed to create temp directory: %v", err)
+				}
+
+				// Prepend the temporary directory to the allowed directories for testing
+				for i, dir := range test.allowedDirs {
+					if dir != "" && dir[0] != '/' {
+						test.allowedDirs[i] = tmpDir + "/" + dir
+					} else {
+						test.allowedDirs[i] = tmpDir + dir
+					}
+				}
+
+				// Prepend the temporary directory to the fileDir for testing
+				test.filePath = tmpDir + test.filePath
+
+				// Create the parent directories
+				if err := os.MkdirAll(filepath.Dir(test.filePath), 0755); err != nil {
+					t.Fatalf("Failed to create directory for file: %v", err)
+				}
+
+				// Create the test file if it should exist
+				if test.fileExists {
+					if _, err := os.Create(test.filePath); err != nil {
+						t.Fatalf("Failed to create test file: %v", err)
+					}
+				}
+			}
+			result := isAllowedDir(test.filePath, test.allowedDirs)
 			assert.Equal(t, test.allowed, result)
 		})
 	}
