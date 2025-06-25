@@ -6,6 +6,8 @@
 package config
 
 import (
+	"github.com/stretchr/testify/require"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -74,4 +76,33 @@ func TestTypes_isAllowedDir(t *testing.T) {
 			assert.Equal(t, test.allowed, result)
 		})
 	}
+
+	t.Run("Symlink in allowed directory", func(t *testing.T) {
+		allowedDirs := []string{"/etc/nginx"}
+		filePath := "file.conf"
+		symlinkPath := "file_link"
+
+		// Create a temp directory for the symlink
+		tempDir, err := os.MkdirTemp("", "symlink_test")
+		assert.NoError(t, err)
+		defer os.RemoveAll(tempDir) // Clean up the temp directory after the test
+
+		// Ensure the temp directory is in the allowedDirs
+		allowedDirs = append(allowedDirs, tempDir)
+
+		//create filePath
+		filePath = tempDir + "/" + filePath
+		defer os.RemoveAll(filePath)
+		err = os.WriteFile(filePath, []byte("test content"), 0644)
+		require.NoError(t, err)
+
+		// Create a symlink for testing
+		symlinkPath = tempDir + "/" + symlinkPath
+		defer os.Remove(symlinkPath)
+		err = os.Symlink(filePath, symlinkPath)
+		assert.NoError(t, err)
+
+		result := isAllowedDir(symlinkPath, allowedDirs)
+		assert.False(t, result, "Symlink in allowed directory should return false")
+	})
 }
