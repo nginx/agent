@@ -468,7 +468,7 @@ func isSymlink(path string) bool {
 	}
 	if lInfo != nil && lInfo.Mode()&os.ModeSymlink != 0 {
 		slog.Warn("Path is a symlink", "path", path)
-		
+
 		return true
 	}
 
