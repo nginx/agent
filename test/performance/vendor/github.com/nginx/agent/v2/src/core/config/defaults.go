@@ -66,7 +66,9 @@ var (
 			NginxClientVersion:           7, // NGINX Plus R25+
 			ConfigReloadMonitoringPeriod: 10 * time.Second,
 			TreatWarningsAsErrors:        false,
-			Ca:                           "",
+			ApiTls: TLSConfig{
+				Ca: "",
+			},
 		},
 		ConfigDirs:            "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules:/etc/nms",
 		IgnoreDirectives:      []string{},
@@ -176,7 +178,7 @@ const (
 	NginxClientVersion                = NginxKey + agent_config.KeyDelimiter + "client_version"
 	NginxConfigReloadMonitoringPeriod = NginxKey + agent_config.KeyDelimiter + "config_reload_monitoring_period"
 	NginxTreatWarningsAsErrors        = NginxKey + agent_config.KeyDelimiter + "treat_warnings_as_errors"
-	NginxCa                           = NginxKey + agent_config.KeyDelimiter + "ca"
+	NginxApiTlsCa                     = NginxKey + agent_config.KeyDelimiter + "api_tls_ca"
 
 	// viper keys used in config
 	DataplaneKey = "dataplane"
@@ -324,9 +326,9 @@ var (
 			DefaultValue: Defaults.Nginx.TreatWarningsAsErrors,
 		},
 		&StringFlag{
-			Name:         NginxCa,
+			Name:         NginxApiTlsCa,
 			Usage:        "The NGINX Plus CA certificate file location needed to call the NGINX Plus API if SSL is enabled.",
-			DefaultValue: Defaults.Nginx.Ca,
+			DefaultValue: Defaults.Nginx.ApiTls.Ca,
 		},
 		// Metrics
 		&DurationFlag{
