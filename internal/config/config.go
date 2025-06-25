@@ -137,11 +137,7 @@ func ResolveConfig() (*Config, error) {
 func resolveAllowedDirectories(dirs []string) []string {
 	allowed := []string{AgentDirName}
 	for _, dir := range dirs {
-		re, err := regexp.Compile(regexInvalidPath)
-		if err != nil {
-			slog.Error("Failed to compile regex for invalid path characters", "error", err)
-			continue
-		}
+		re := regexp.MustCompile(regexInvalidPath)
 		invalidChars := re.MatchString(dir)
 		if dir == "" || dir == "/" || !filepath.IsAbs(dir) || invalidChars {
 			slog.Warn("Ignoring invalid directory", "dir", dir)
@@ -154,6 +150,7 @@ func resolveAllowedDirectories(dirs []string) []string {
 		}
 		allowed = append(allowed, dir)
 	}
+
 	return allowed
 }
 
