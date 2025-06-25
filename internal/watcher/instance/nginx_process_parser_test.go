@@ -130,7 +130,7 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 					TLS SNI support enabled
 					configure arguments: %s`, ossArgs),
 			expected: map[string]*mpi.Instance{
-				protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.GetNginxOssInstance(
+				protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.NginxOssInstance(
 					[]string{expectedModules}),
 			},
 		},
@@ -143,7 +143,7 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 				TLS SNI support enabled
 				configure arguments: %s`, plusArgs),
 			expected: map[string]*mpi.Instance{
-				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.GetNginxPlusInstance(
+				protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.NginxPlusInstance(
 					[]string{expectedModules}),
 			},
 		},
@@ -155,8 +155,8 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 					TLS SNI support enabled
 					configure arguments: %s`, noModuleArgs),
 			expected: map[string]*mpi.Instance{
-				protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.
-					GetNginxOssInstance(nil),
+				protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.
+					NginxOssInstance(nil),
 			},
 		},
 	}
@@ -202,24 +202,24 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 					TLS SNI support enabled
 					configure arguments: %s`, configArgs)
 
-	process1 := protos.GetNginxOssInstance(nil)
+	process1 := protos.NginxOssInstance(nil)
 	instancesTest1 := map[string]*mpi.Instance{
 		process1.GetInstanceMeta().GetInstanceId(): process1,
 	}
 
-	noChildrenInstance := protos.GetNginxOssInstance(nil)
+	noChildrenInstance := protos.NginxOssInstance(nil)
 	noChildrenInstance.GetInstanceRuntime().InstanceChildren = nil
 	instancesTest2 := map[string]*mpi.Instance{
 		noChildrenInstance.GetInstanceMeta().GetInstanceId(): noChildrenInstance,
 	}
 
-	noParentInstanceList := protos.GetInstancesNoParentProcess(nil)
+	noParentInstanceList := protos.InstancesNoParentProcess(nil)
 	instancesTest3 := map[string]*mpi.Instance{
 		noParentInstanceList[0].GetInstanceMeta().GetInstanceId(): noParentInstanceList[0],
 		noParentInstanceList[1].GetInstanceMeta().GetInstanceId(): noParentInstanceList[1],
 	}
 
-	instancesList := protos.GetMultipleInstances(nil)
+	instancesList := protos.MultipleInstances(nil)
 	instancesTest4 := map[string]*mpi.Instance{
 		instancesList[0].GetInstanceMeta().GetInstanceId(): instancesList[0],
 		instancesList[1].GetInstanceMeta().GetInstanceId(): instancesList[1],
@@ -482,7 +482,7 @@ func TestGetInfo(t *testing.T) {
 					"with-stream_ssl_preread_module": true,
 				},
 				LoadableModules: []string{expectedModules},
-				DynamicModules: protos.GetNginxOssInstance([]string{}).GetInstanceRuntime().GetNginxRuntimeInfo().
+				DynamicModules: protos.NginxOssInstance([]string{}).GetInstanceRuntime().GetNginxRuntimeInfo().
 					GetDynamicModules(),
 			},
 		},
@@ -558,7 +558,7 @@ func TestGetInfo(t *testing.T) {
 					"with-threads":                             true,
 				},
 				LoadableModules: []string{expectedModules},
-				DynamicModules: protos.GetNginxPlusInstance([]string{}).GetInstanceRuntime().GetNginxPlusRuntimeInfo().
+				DynamicModules: protos.NginxPlusInstance([]string{}).GetInstanceRuntime().GetNginxPlusRuntimeInfo().
 					GetDynamicModules(),
 			},
 		},
@@ -571,7 +571,7 @@ func TestGetInfo(t *testing.T) {
 
 			nginxProcessParser := NewNginxProcessParser()
 			nginxProcessParser.executer = mockExec
-			result, err := nginxProcessParser.getInfo(ctx, test.process)
+			result, err := nginxProcessParser.info(ctx, test.process)
 			sort.Strings(result.DynamicModules)
 
 			assert.Equal(tt, test.expected, result)
@@ -610,7 +610,7 @@ func TestNginxProcessParser_GetExe(t *testing.T) {
 
 			nginxProcessParser := NewNginxProcessParser()
 			nginxProcessParser.executer = mockExec
-			result := nginxProcessParser.getExe(ctx)
+			result := nginxProcessParser.exe(ctx)
 
 			assert.Equal(tt, test.expected, result)
 		})
@@ -618,12 +618,12 @@ func TestNginxProcessParser_GetExe(t *testing.T) {
 }
 
 func TestGetConfigPathFromCommand(t *testing.T) {
-	result := getConfPathFromCommand("nginx: master process nginx -c /tmp/nginx.conf")
+	result := confPathFromCommand("nginx: master process nginx -c /tmp/nginx.conf")
 	assert.Equal(t, "/tmp/nginx.conf", result)
 
-	result = getConfPathFromCommand("nginx: master process nginx -c")
+	result = confPathFromCommand("nginx: master process nginx -c")
 	assert.Equal(t, "", result)
 
-	result = getConfPathFromCommand("")
+	result = confPathFromCommand("")
 	assert.Equal(t, "", result)
 }

@@ -42,6 +42,7 @@ type (
 		Version            string           `yaml:"-"`
 		Path               string           `yaml:"-"`
 		UUID               string           `yaml:"-"`
+		ManifestDir        string           `yaml:"-"`
 		AllowedDirectories []string         `yaml:"allowed_directories" mapstructure:"allowed_directories"`
 		Features           []string         `yaml:"features"            mapstructure:"features"`
 	}
@@ -139,6 +140,7 @@ type (
 		Value        string `yaml:"value"         mapstructure:"value"`
 		DefaultValue string `yaml:"default_value" mapstructure:"default_value"`
 		FromContext  string `yaml:"from_context"  mapstructure:"from_context"`
+		FilePath     string `yaml:"file_path"     mapstructure:"file_path"`
 	}
 
 	DebugExporter struct{}

@@ -5,12 +5,15 @@
 package config
 
 import (
+	_ "embed"
 	"errors"
 	"os"
 	"path"
 	"strings"
 	"testing"
 	"time"
+
+	conf "github.com/nginx/agent/v3/test/config"
 
 	"github.com/nginx/agent/v3/pkg/config"
 
@@ -127,7 +130,7 @@ func TestResolveConfigFilePaths(t *testing.T) {
 	currentDirectory, err := os.Getwd()
 	require.NoError(t, err)
 
-	result := getConfigFilePaths()
+	result := configFilePaths()
 
 	assert.Len(t, result, 2)
 	assert.Equal(t, "/etc/nginx-agent/", result[0])
@@ -174,7 +177,7 @@ func TestResolveClient(t *testing.T) {
 }
 
 func TestResolveCollector(t *testing.T) {
-	testDefault := getAgentConfig()
+	testDefault := agentConfig()
 
 	t.Run("Test 1: Happy path", func(t *testing.T) {
 		expected := testDefault.Collector
@@ -218,7 +221,7 @@ func TestResolveCollector(t *testing.T) {
 
 func TestCommand(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
-	expected := getAgentConfig().Command
+	expected := agentConfig().Command
 
 	// Server
 	viperInstance.Set(CommandServerHostKey, expected.Server.Host)
@@ -251,7 +254,7 @@ func TestCommand(t *testing.T) {
 func TestMissingServerTLS(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 
-	expected := getAgentConfig().Command
+	expected := agentConfig().Command
 
 	viperInstance.Set(CommandServerHostKey, expected.Server.Host)
 	viperInstance.Set(CommandServerPortKey, expected.Server.Port)
@@ -270,7 +273,7 @@ func TestMissingServerTLS(t *testing.T) {
 
 func TestClient(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
-	expected := getAgentConfig().Client
+	expected := agentConfig().Client
 
 	viperInstance.Set(ClientGRPCMaxMessageSizeKey, expected.Grpc.MaxMessageSize)
 	viperInstance.Set(ClientKeepAlivePermitWithoutStreamKey, expected.Grpc.KeepAlive.PermitWithoutStream)
@@ -636,7 +639,129 @@ func TestValidateYamlFile(t *testing.T) {
 	}
 }
 
-func getAgentConfig() *Config {
+func TestResolveExtensions(t *testing.T) {
+	tests := []struct {
+		name     string
+		value    string
+		value2   string
+		path     string
+		path2    string
+		expected []string
+	}{
+		{
+			name:     "Test 1: User includes a single value header only",
+			value:    "super-secret-token",
+			path:     "",
+			expected: []string{"super-secret-token"},
+		},
+		{
+			name:     "Test 2: User includes a single filepath header only",
+			value:    "",
+			path:     "testdata/nginx-token.crt",
+			expected: []string{"super-secret-token"},
+		},
+		{
+			name:     "Test 3: User includes both a single token and a single filepath header",
+			value:    "very-secret-token",
+			path:     "testdata/nginx-token.crt",
+			expected: []string{"very-secret-token"},
+		},
+		{
+			name:     "Test 4: User includes neither token nor filepath header",
+			value:    "",
+			path:     "",
+			expected: []string{""},
+		},
+		{
+			name:     "Test 5: User includes multiple headers",
+			value:    "super-secret-token",
+			value2:   "very-secret-token",
+			path:     "",
+			path2:    "",
+			expected: []string{"super-secret-token", "very-secret-token"},
+		},
+	}
+
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
+	tempDir := t.TempDir()
+	var confContent []byte
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tempFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx-agent.conf")
+			defer helpers.RemoveFileWithErrorCheck(t, tempFile.Name())
+
+			if len(tt.expected) == 1 {
+				confContent = []byte(conf.AgentConfigWithToken(tt.value, tt.path))
+			} else {
+				confContent = []byte(conf.AgentConfigWithMultipleHeaders(tt.value, tt.path, tt.value2, tt.path2))
+			}
+
+			_, writeErr := tempFile.Write(confContent)
+			require.NoError(t, writeErr)
+
+			err := loadPropertiesFromFile(tempFile.Name())
+			require.NoError(t, err)
+
+			extension := resolveExtensions()
+			require.NotNil(t, extension)
+
+			var result []string
+			for _, header := range extension.HeadersSetter.Headers {
+				result = append(result, header.Value)
+			}
+
+			assert.Equal(t, tt.expected, result)
+
+			err = tempFile.Close()
+			require.NoError(t, err)
+		})
+	}
+}
+
+func TestResolveExtensions_MultipleHeaders(t *testing.T) {
+	tests := []struct {
+		name     string
+		token    string
+		token2   string
+		path     string
+		path2    string
+		expected string
+	}{
+		{
+			name:     "Test 1: User includes a single value header only",
+			token:    "super-secret-token",
+			path:     "",
+			expected: "super-secret-token",
+		},
+	}
+
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
+	tempDir := t.TempDir()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tempFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx-agent.conf")
+			defer helpers.RemoveFileWithErrorCheck(t, tempFile.Name())
+
+			confContent := []byte(conf.AgentConfigWithToken(tt.token, tt.path))
+			_, writeErr := tempFile.Write(confContent)
+			require.NoError(t, writeErr)
+
+			err := loadPropertiesFromFile(tempFile.Name())
+			require.NoError(t, err)
+
+			extension := resolveExtensions()
+			require.NotNil(t, extension)
+			assert.Equal(t, tt.expected, extension.HeadersSetter.Headers[0].Value)
+
+			err = tempFile.Close()
+			require.NoError(t, err)
+		})
+	}
+}
+
+func agentConfig() *Config {
 	return &Config{
 		UUID:    "",
 		Version: "",

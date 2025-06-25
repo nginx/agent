@@ -164,7 +164,7 @@ func (iw *InstanceWatcherService) HandleNginxConfigContextUpdate(ctx context.Con
 	updatesRequired := false
 	instance := iw.instanceCache[instanceID]
 	instanceType := instance.GetInstanceMeta().GetInstanceType()
-	correlationID := logger.GetCorrelationIDAttr(ctx)
+	correlationID := logger.CorrelationIDAttr(ctx)
 
 	if instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX ||
 		instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
@@ -223,7 +223,9 @@ func (iw *InstanceWatcherService) checkForUpdates(
 				iw.sendNginxConfigContextUpdate(newCtx, nginxConfigContext)
 				iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
 				proto.UpdateNginxInstanceRuntime(newInstance, nginxConfigContext)
+				iw.cacheMutex.Lock()
 				iw.instanceCache[newInstance.GetInstanceMeta().GetInstanceId()] = newInstance
+				iw.cacheMutex.Unlock()
 			}
 		}
 	}
@@ -251,7 +253,7 @@ func (iw *InstanceWatcherService) sendNginxConfigContextUpdate(
 		)
 
 		iw.nginxConfigContextChannel <- NginxConfigContextMessage{
-			CorrelationID:      logger.GetCorrelationIDAttr(ctx),
+			CorrelationID:      logger.CorrelationIDAttr(ctx),
 			NginxConfigContext: nginxConfigContext,
 		}
 	}

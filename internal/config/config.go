@@ -56,7 +56,7 @@ func Init(version, commit string) {
 }
 
 func RegisterConfigFile() error {
-	configPath, err := seekFileInPaths(ConfigFileName, getConfigFilePaths()...)
+	configPath, err := seekFileInPaths(ConfigFileName, configFilePaths()...)
 	if err != nil {
 		return err
 	}
@@ -124,6 +124,7 @@ func ResolveConfig() (*Config, error) {
 		Watchers:           resolveWatchers(),
 		Features:           viperInstance.GetStringSlice(FeaturesKey),
 		Labels:             resolveLabels(),
+		ManifestDir:        viperInstance.GetString(ManifestDirPathKey),
 	}
 
 	checkCollectorConfiguration(collector, config)
@@ -231,7 +232,11 @@ func registerFlags() {
 		"The path to output log messages to. "+
 			"If the default path doesn't exist, log messages are output to stdout/stderr.",
 	)
-
+	fs.String(
+		ManifestDirPathKey,
+		DefManifestDir,
+		"Specifies the path to the directory containing the manifest files",
+	)
 	fs.Duration(
 		NginxReloadMonitoringPeriodKey,
 		DefNginxReloadMonitoringPeriod,
@@ -543,7 +548,7 @@ func seekFileInPaths(fileName string, directories ...string) (string, error) {
 	return "", fmt.Errorf("a valid configuration has not been found in any of the search paths")
 }
 
-func getConfigFilePaths() []string {
+func configFilePaths() []string {
 	paths := []string{
 		"/etc/nginx-agent/",
 	}
@@ -918,10 +923,36 @@ func resolveExtensions() Extensions {
 		}
 	}
 
+	if headersSetter != nil {
+		headersSetter.Headers = updateHeaders(headersSetter.Headers)
+	}
+
 	return Extensions{
 		Health:        health,
 		HeadersSetter: headersSetter,
 	}
+}
+
+func updateHeaders(headers []Header) []Header {
+	var err error
+	newHeaders := []Header{}
+
+	for _, header := range headers {
+		value := header.Value
+		if value == "" && header.FilePath != "" {
+			slog.Debug("Read value from file", "path", header.FilePath)
+			value, err = file.ReadFromFile(header.FilePath)
+			if err != nil {
+				slog.Error("Unable to read value from file path",
+					"error", err, "file_path", header.FilePath)
+			}
+		}
+
+		header.Value = value
+		newHeaders = append(newHeaders, header)
+	}
+
+	return newHeaders
 }
 
 func isHealthExtensionSet() bool {

@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches:
-    - 'v3'
+    - 'main'
     - 'release-*'
     paths-ignore:
     - "**.md"
@@ -14,6 +14,9 @@ on:
     - opened
     - reopened
     - synchronize
+
+permissions:
+  contents: read
 
 env:
   NFPM_VERSION: 'v2.35.3'
@@ -90,8 +93,6 @@ jobs:
     strategy:
       matrix:
         container:
-        - image: "ubuntu"
-          version: "22.04"
         - image: "redhatenterprise"
           version: "9"
         - image: "alpine"

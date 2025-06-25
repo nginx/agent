@@ -37,7 +37,7 @@ const (
 	// 2024-11-16T17:19:24+00:00 ---> Nov 16 17:19:24
 	timestampConversionExpression = `'EXPR(let timestamp = split(split(body, ">")[1], " ")[0]; ` +
 		`let newTimestamp = ` +
-		`timestamp matches "(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2}):(\\d{2})([+-]\\d{2}:\\d{2}|Z)" ` +
+		`timestamp matches "(\\d{4})-(\\d{2})-(0\\d{1})T(\\d{2}):(\\d{2}):(\\d{2})([+-]\\d{2}:\\d{2}|Z)" ` +
 		`? (let utcTime = ` +
 		`date(timestamp).UTC(); utcTime.Format("Jan  2 15:04:05")) : date(timestamp).Format("Jan 02 15:04:05"); ` +
 		`split(body, ">")[0] + ">" + newTimestamp + " " + split(body, " ", 2)[1])'`
@@ -93,7 +93,7 @@ func New(conf *config.Config) (*Collector, error) {
 	}, nil
 }
 
-func (oc *Collector) GetState() otelcol.State {
+func (oc *Collector) State() otelcol.State {
 	oc.mu.Lock()
 	defer oc.mu.Unlock()
 
@@ -127,6 +127,7 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 		return errors.New("OTel collector already running")
 	}
 
+	slog.InfoContext(ctx, "Starting OTel collector")
 	bootErr := oc.bootup(runCtx)
 	if bootErr != nil {
 		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)
@@ -160,11 +161,16 @@ func (oc *Collector) processReceivers(ctx context.Context, receivers []config.Ot
 	}
 }
 
+// nolint: revive, cyclop
 func (oc *Collector) bootup(ctx context.Context) error {
-	slog.InfoContext(ctx, "Starting OTel collector")
 	errChan := make(chan error)
 
 	go func() {
+		if oc.service == nil {
+			errChan <- fmt.Errorf("unable to start OTel collector: service is nil")
+			return
+		}
+
 		appErr := oc.service.Run(ctx)
 		if appErr != nil {
 			errChan <- appErr
@@ -177,8 +183,11 @@ func (oc *Collector) bootup(ctx context.Context) error {
 		case err := <-errChan:
 			return err
 		default:
-			state := oc.service.GetState()
+			if oc.service == nil {
+				return fmt.Errorf("unable to start otel collector: service is nil")
+			}
 
+			state := oc.service.GetState()
 			switch state {
 			case otelcol.StateStarting:
 				// NoOp
@@ -212,9 +221,9 @@ func (oc *Collector) Close(ctx context.Context) error {
 		oc.service.Shutdown()
 		oc.cancel()
 
-		settings := oc.config.Client.Backoff
+		settings := *oc.config.Client.Backoff
 		settings.MaxElapsedTime = maxTimeToWaitForShutdown
-		err := backoff.WaitUntil(ctx, settings, func() error {
+		err := backoff.WaitUntil(ctx, &settings, func() error {
 			if oc.service.GetState() == otelcol.StateClosed {
 				return nil
 			}
@@ -254,6 +263,7 @@ func (oc *Collector) Subscriptions() []string {
 }
 
 func (oc *Collector) handleNginxConfigUpdate(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "OTel collector plugin received nginx config update message")
 	oc.mu.Lock()
 	defer oc.mu.Unlock()
 
@@ -263,10 +273,10 @@ func (oc *Collector) handleNginxConfigUpdate(ctx context.Context, msg *bus.Messa
 		return
 	}
 
-	reloadCollector := oc.checkForNewReceivers(nginxConfigContext)
+	reloadCollector := oc.checkForNewReceivers(ctx, nginxConfigContext)
 
 	if reloadCollector {
-		slog.InfoContext(ctx, "Reloading OTel collector config")
+		slog.InfoContext(ctx, "Reloading OTel collector config, nginx config updated")
 		err := writeCollectorConfig(oc.config.Collector)
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to write OTel Collector config", "error", err)
@@ -278,6 +288,7 @@ func (oc *Collector) handleNginxConfigUpdate(ctx context.Context, msg *bus.Messa
 }
 
 func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "OTel collector plugin received resource update message")
 	oc.mu.Lock()
 	defer oc.mu.Unlock()
 
@@ -291,7 +302,7 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 	headersSetterExtensionUpdated := oc.updateHeadersSetterExtension(ctx, resourceUpdateContext)
 
 	if resourceProcessorUpdated || headersSetterExtensionUpdated {
-		slog.InfoContext(ctx, "Reloading OTel collector config")
+		slog.InfoContext(ctx, "Reloading OTel collector config, resource updated")
 		err := writeCollectorConfig(oc.config.Collector)
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to write OTel Collector config", "error", err)
@@ -387,16 +398,18 @@ func (oc *Collector) restartCollector(ctx context.Context) {
 		return
 	}
 
+	slog.InfoContext(ctx, "Restarting OTel collector")
 	bootErr := oc.bootup(runCtx)
 	if bootErr != nil {
 		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)
 	}
 }
 
-func (oc *Collector) checkForNewReceivers(nginxConfigContext *model.NginxConfigContext) bool {
+func (oc *Collector) checkForNewReceivers(ctx context.Context, nginxConfigContext *model.NginxConfigContext) bool {
 	nginxReceiverFound, reloadCollector := oc.updateExistingNginxPlusReceiver(nginxConfigContext)
 
 	if !nginxReceiverFound && nginxConfigContext.PlusAPI.URL != "" {
+		slog.DebugContext(ctx, "Adding new NGINX Plus receiver", "url", nginxConfigContext.PlusAPI.URL)
 		oc.config.Collector.Receivers.NginxPlusReceivers = append(
 			oc.config.Collector.Receivers.NginxPlusReceivers,
 			config.NginxPlusReceiver{
@@ -409,10 +422,12 @@ func (oc *Collector) checkForNewReceivers(nginxConfigContext *model.NginxConfigC
 				CollectionInterval: defaultCollectionInterval,
 			},
 		)
+		slog.DebugContext(ctx, "NGINX Plus API found, NGINX Plus receiver enabled to scrape metrics")
 
 		reloadCollector = true
 	} else if nginxConfigContext.PlusAPI.URL == "" {
-		reloadCollector = oc.addNginxOssReceiver(nginxConfigContext)
+		slog.WarnContext(ctx, "NGINX Plus API is not configured, searching for stub status endpoint")
+		reloadCollector = oc.addNginxOssReceiver(ctx, nginxConfigContext)
 	}
 
 	if oc.config.IsFeatureEnabled(pkgConfig.FeatureLogsNap) {
@@ -427,10 +442,11 @@ func (oc *Collector) checkForNewReceivers(nginxConfigContext *model.NginxConfigC
 	return reloadCollector
 }
 
-func (oc *Collector) addNginxOssReceiver(nginxConfigContext *model.NginxConfigContext) bool {
+func (oc *Collector) addNginxOssReceiver(ctx context.Context, nginxConfigContext *model.NginxConfigContext) bool {
 	nginxReceiverFound, reloadCollector := oc.updateExistingNginxOSSReceiver(nginxConfigContext)
 
 	if !nginxReceiverFound && nginxConfigContext.StubStatus.URL != "" {
+		slog.DebugContext(ctx, "Adding new NGINX OSS receiver", "url", nginxConfigContext.StubStatus.URL)
 		oc.config.Collector.Receivers.NginxReceivers = append(
 			oc.config.Collector.Receivers.NginxReceivers,
 			config.NginxReceiver{
@@ -444,8 +460,11 @@ func (oc *Collector) addNginxOssReceiver(nginxConfigContext *model.NginxConfigCo
 				CollectionInterval: defaultCollectionInterval,
 			},
 		)
+		slog.DebugContext(ctx, "Stub status endpoint found, OSS receiver enabled to scrape metrics")
 
 		reloadCollector = true
+	} else if nginxConfigContext.StubStatus.URL == "" {
+		slog.WarnContext(ctx, "Stub status endpoint not found, NGINX metrics not available")
 	}
 
 	return reloadCollector
@@ -464,6 +483,8 @@ func (oc *Collector) updateExistingNginxPlusReceiver(
 					oc.config.Collector.Receivers.NginxPlusReceivers[index+1:]...,
 				)
 				if nginxConfigContext.PlusAPI.URL != "" {
+					slog.Debug("Updating existing NGINX Plus receiver", "url",
+						nginxConfigContext.PlusAPI.URL)
 					nginxPlusReceiver.PlusAPI.URL = nginxConfigContext.PlusAPI.URL
 					oc.config.Collector.Receivers.NginxPlusReceivers = append(
 						oc.config.Collector.Receivers.NginxPlusReceivers,
@@ -495,6 +516,8 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 					oc.config.Collector.Receivers.NginxReceivers[index+1:]...,
 				)
 				if nginxConfigContext.StubStatus.URL != "" {
+					slog.Debug("Updating existing NGINX OSS receiver", "url",
+						nginxConfigContext.StubStatus.URL)
 					nginxReceiver.StubStatus = config.APIDetails{
 						URL:      nginxConfigContext.StubStatus.URL,
 						Listen:   nginxConfigContext.StubStatus.Listen,
@@ -572,7 +595,7 @@ func (oc *Collector) updateTcplogReceivers(nginxConfigContext *model.NginxConfig
 }
 
 func (oc *Collector) areNapReceiversDeleted(nginxConfigContext *model.NginxConfigContext) bool {
-	listenAddressesToBeDeleted := oc.getConfigDeletedNapReceivers(nginxConfigContext)
+	listenAddressesToBeDeleted := oc.configDeletedNapReceivers(nginxConfigContext)
 	if len(listenAddressesToBeDeleted) != 0 {
 		oc.deleteNapReceivers(listenAddressesToBeDeleted)
 		return true
@@ -591,7 +614,7 @@ func (oc *Collector) deleteNapReceivers(listenAddressesToBeDeleted map[string]bo
 	oc.config.Collector.Receivers.TcplogReceivers = filteredReceivers
 }
 
-func (oc *Collector) getConfigDeletedNapReceivers(nginxConfigContext *model.NginxConfigContext) map[string]bool {
+func (oc *Collector) configDeletedNapReceivers(nginxConfigContext *model.NginxConfigContext) map[string]bool {
 	elements := make(map[string]bool)
 
 	for _, tcplogReceiver := range oc.config.Collector.Receivers.TcplogReceivers {

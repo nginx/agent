@@ -23,77 +23,63 @@
     "panels": [
         {
             "datasource": {
+                "default": true,
                 "type": "prometheus",
                 "uid": "otel-prometheus-scraper"
             },
-            "description": "The total number of client requests received, since the last collection interval.",
+            "description": "The total number of HTTP responses, grouped by status code range, since the last collection interval.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
                         "mode": "palette-classic"
                     },
                     "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "barWidthFactor": 0.6,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
                             "viz": false
-                        },
-                        "insertNulls": false,
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
                         }
                     },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green"
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
+                    "mappings": []
                 },
-                "overrides": []
+                "overrides": [
+                    {
+                        "__systemRef": "hideSeriesFrom",
+                        "matcher": {
+                            "id": "byNames",
+                            "options": {
+                                "mode": "exclude",
+                                "names": [
+                                    "Status: 4xx"
+                                ],
+                                "prefix": "All except:",
+                                "readOnly": true
+                            }
+                        },
+                        "properties": []
+                    }
+                ]
             },
             "gridPos": {
-                "h": 8,
-                "w": 12,
+                "h": 10,
+                "w": 7,
                 "x": 0,
                 "y": 0
             },
-            "id": 6,
+            "id": 5,
             "options": {
                 "legend": {
-                    "calcs": [],
                     "displayMode": "list",
                     "placement": "bottom",
                     "showLegend": true
+                },
+                "pieType": "pie",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
                 },
                 "tooltip": {
                     "hideZeros": false,
@@ -101,22 +87,27 @@
                     "sort": "none"
                 }
             },
-            "pluginVersion": "11.6.0",
+            "pluginVersion": "11.5.2",
             "targets": [
                 {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "otel-prometheus-scraper"
+                    },
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "nginx_http_request_count{instance_type=\"nginx\"}",
+                    "expr": "nginx_http_response_count{instance_type=\"nginx\"}",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
-                    "legendFormat": "__auto",
+                    "instant": false,
+                    "legendFormat": "Status: {{nginx_status_range}}",
                     "range": true,
                     "refId": "A",
                     "useBackend": false
                 }
             ],
-            "title": "HTTP Request Count",
-            "type": "timeseries"
+            "title": "HTTP Response Count",
+            "type": "piechart"
         },
         {
             "datasource": {
@@ -124,6 +115,7 @@
                 "type": "prometheus",
                 "uid": "otel-prometheus-scraper"
             },
+            "description": "The total number of client requests received, since NGINX was last started or reloaded.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -133,13 +125,14 @@
                         "axisBorderShow": false,
                         "axisCenteredZero": false,
                         "axisColorMode": "text",
+                        "axisGridShow": true,
                         "axisLabel": "",
                         "axisPlacement": "auto",
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
@@ -167,7 +160,8 @@
                         "mode": "absolute",
                         "steps": [
                             {
-                                "color": "green"
+                                "color": "green",
+                                "value": null
                             },
                             {
                                 "color": "red",
@@ -179,15 +173,17 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
+                "h": 18,
+                "w": 17,
+                "x": 7,
                 "y": 0
             },
-            "id": 4,
+            "id": 1,
             "options": {
                 "legend": {
-                    "calcs": [],
+                    "calcs": [
+                        "last"
+                    ],
                     "displayMode": "list",
                     "placement": "bottom",
                     "showLegend": true
@@ -199,7 +195,7 @@
                     "sort": "none"
                 }
             },
-            "pluginVersion": "11.6.0",
+            "pluginVersion": "11.5.2",
             "targets": [
                 {
                     "datasource": {
@@ -208,18 +204,85 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "nginx_http_connections{instance_type=\"nginx\"}",
+                    "expr": "nginx_http_requests{instance_type=\"nginx\"}",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
-                    "legendFormat": "{{nginx_conn_outcome}}",
+                    "legendFormat": "{{instance_type}} {{instance_id}}",
                     "range": true,
                     "refId": "A",
                     "useBackend": false
                 }
             ],
-            "title": "HTTP Connections",
+            "title": "Total HTTP Requests",
             "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "otel-prometheus-scraper"
+            },
+            "description": "The total number of client requests received, since the last collection interval.",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 7,
+                "x": 0,
+                "y": 10
+            },
+            "id": 6,
+            "options": {
+                "minVizHeight": 75,
+                "minVizWidth": 75,
+                "orientation": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showThresholdLabels": false,
+                "showThresholdMarkers": true,
+                "sizing": "auto"
+            },
+            "pluginVersion": "11.5.2",
+            "targets": [
+                {
+                    "disableTextWrap": false,
+                    "editorMode": "builder",
+                    "expr": "nginx_http_request_count{instance_type=\"nginx\"}",
+                    "fullMetaSearch": false,
+                    "includeNullMetadata": true,
+                    "legendFormat": "{{instance_type}} {{instance_id}}",
+                    "range": true,
+                    "refId": "A",
+                    "useBackend": false
+                }
+            ],
+            "title": "HTTP Request Count",
+            "type": "gauge"
         },
         {
             "datasource": {
@@ -227,6 +290,7 @@
                 "type": "prometheus",
                 "uid": "otel-prometheus-scraper"
             },
+            "description": "The current number of connections.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -241,8 +305,8 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
@@ -270,7 +334,8 @@
                         "mode": "absolute",
                         "steps": [
                             {
-                                "color": "green"
+                                "color": "green",
+                                "value": null
                             },
                             {
                                 "color": "red",
@@ -285,7 +350,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 8
+                "y": 18
             },
             "id": 3,
             "options": {
@@ -302,7 +367,7 @@
                     "sort": "none"
                 }
             },
-            "pluginVersion": "11.6.0",
+            "pluginVersion": "11.5.2",
             "targets": [
                 {
                     "datasource": {
@@ -315,7 +380,7 @@
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
-                    "legendFormat": "{{nginx_conn_outcome}}",
+                    "legendFormat": "{{nginx_connections_outcome}}",
                     "range": true,
                     "refId": "A",
                     "useBackend": false
@@ -330,7 +395,7 @@
                 "type": "prometheus",
                 "uid": "otel-prometheus-scraper"
             },
-            "description": "The total number of HTTP responses, grouped by status code range, since the last collection interval.",
+            "description": "The total number of connections.",
             "fieldConfig": {
                 "defaults": {
                     "color": {
@@ -345,8 +410,8 @@
                         "barAlignment": 0,
                         "barWidthFactor": 0.6,
                         "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
+                        "fillOpacity": 20,
+                        "gradientMode": "opacity",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
@@ -374,135 +439,8 @@
                         "mode": "absolute",
                         "steps": [
                             {
-                                "color": "green"
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
-                },
-                "overrides": [
-                    {
-                        "__systemRef": "hideSeriesFrom",
-                        "matcher": {
-                            "id": "byNames",
-                            "options": {
-                                "mode": "exclude",
-                                "names": [
-                                    "{__name__=\"nginx_http_response_count\", instance=\"otel-collector:9775\", instance_id=\"cd2d5dc0-c528-3f37-b83c-727fd4010777\", instance_type=\"nginx\", job=\"otel-collector\", nginx_status_range=\"2xx\", resource_id=\"145a800d-5f48-38be-b38b-54475b492cab\"}"
-                                ],
-                                "prefix": "All except:",
-                                "readOnly": true
-                            }
-                        },
-                        "properties": [
-                            {
-                                "id": "custom.hideFrom",
-                                "value": {
-                                    "legend": false,
-                                    "tooltip": false,
-                                    "viz": true
-                                }
-                            }
-                        ]
-                    }
-                ]
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 12,
-                "y": 8
-            },
-            "id": 5,
-            "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom",
-                    "showLegend": true
-                },
-                "tooltip": {
-                    "hideZeros": false,
-                    "mode": "single",
-                    "sort": "none"
-                }
-            },
-            "pluginVersion": "11.6.0",
-            "targets": [
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "otel-prometheus-scraper"
-                    },
-                    "disableTextWrap": false,
-                    "editorMode": "builder",
-                    "expr": "nginx_http_response_count{instance_type=\"nginx\"}",
-                    "fullMetaSearch": false,
-                    "includeNullMetadata": true,
-                    "instant": false,
-                    "legendFormat": "__auto",
-                    "range": true,
-                    "refId": "A",
-                    "useBackend": false
-                }
-            ],
-            "title": "HTTP Response Count",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "default": true,
-                "type": "prometheus",
-                "uid": "otel-prometheus-scraper"
-            },
-            "description": "",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisBorderShow": false,
-                        "axisCenteredZero": false,
-                        "axisColorMode": "text",
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "barWidthFactor": 0.6,
-                        "drawStyle": "line",
-                        "fillOpacity": 0,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "viz": false
-                        },
-                        "insertNulls": false,
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "auto",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green"
+                                "color": "green",
+                                "value": null
                             },
                             {
                                 "color": "red",
@@ -516,10 +454,10 @@
             "gridPos": {
                 "h": 8,
                 "w": 12,
-                "x": 0,
-                "y": 16
+                "x": 12,
+                "y": 18
             },
-            "id": 1,
+            "id": 4,
             "options": {
                 "legend": {
                     "calcs": [],
@@ -534,7 +472,7 @@
                     "sort": "none"
                 }
             },
-            "pluginVersion": "11.6.0",
+            "pluginVersion": "11.5.2",
             "targets": [
                 {
                     "datasource": {
@@ -543,23 +481,23 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "builder",
-                    "expr": "nginx_http_requests{instance_type=\"nginx\"}",
+                    "expr": "nginx_http_connections{instance_type=\"nginx\"}",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
-                    "legendFormat": "__auto",
+                    "legendFormat": "{{nginx_connections_outcome}}",
                     "range": true,
                     "refId": "A",
                     "useBackend": false
                 }
             ],
-            "title": "Total HTTP Requests",
+            "title": "HTTP Connections",
             "type": "timeseries"
         }
     ],
     "preload": false,
     "refresh": "5s",
-    "schemaVersion": 41,
+    "schemaVersion": 40,
     "tags": [],
     "templating": {
         "list": []
@@ -572,5 +510,6 @@
     "timezone": "browser",
     "title": "NGINX OSS",
     "uid": "bdogpq9khs9hcb",
-    "version": 1
+    "version": 2,
+    "weekStart": ""
 }

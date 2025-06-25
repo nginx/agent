@@ -146,11 +146,11 @@ func TestCollector_InitAndClose(t *testing.T) {
 
 	collector.service = createFakeCollector()
 
-	assert.Equal(t, otelcol.StateRunning, collector.GetState())
+	assert.Equal(t, otelcol.StateRunning, collector.State())
 
 	require.NoError(t, collector.Close(ctx), "Close should not return an error")
 
-	assert.Equal(t, otelcol.StateClosed, collector.GetState())
+	assert.Equal(t, otelcol.StateClosed, collector.State())
 }
 
 // nolint: revive
@@ -347,7 +347,7 @@ func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
 			name: "Test 1: Resource update adds resource id attribute",
 			message: &bus.Message{
 				Topic: bus.ResourceUpdateTopic,
-				Data:  protos.GetHostResource(),
+				Data:  protos.HostResource(),
 			},
 			processors: config.Processors{
 				Resource: &config.Resource{

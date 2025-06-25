@@ -13,15 +13,19 @@ NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus insta
 - Notifications of NGINX events
 
 ## Development Environment Setup
+
 ### Installing Prerequisite Packages
+
 The following packages need to be installed:
- - make
- - golang (https://go.dev/doc/install)
- - protoc (https://grpc.io/docs/protoc-installation/)
- - mdatagen (There is currently an issue installing mdatagen https://github.com/open-telemetry/opentelemetry-collector/issues/9281. See instructions below for workaround.)
+
+- make
+- golang (<https://go.dev/doc/install>)
+- protoc (<https://grpc.io/docs/protoc-installation/>)
+- mdatagen (There is currently an [issue installing mdatagen](https://github.com/open-telemetry/opentelemetry-collector/issues/9281). See instructions below for workaround.)
 
 #### Workaround to install mdatagen
-```
+
+```console
 git clone https://github.com/open-telemetry/opentelemetry-collector.git
 cd opentelemetry-collector
 git checkout v0.124.0
@@ -30,46 +34,59 @@ go install
 ```
 
 Before starting development on the NGINX Agent, it is important to download and install the necessary tool and dependencies required by the NGINX Agent. You can do this by running the following `make` command:
-```
+
+```console
 make install-tools
 ```
 
 ### Building NGINX Agent from Source Code
+
 Build NGINX Agent deb package:
-```
+
+```console
 OSARCH=<operating system archiecture> make local-deb-package
 ```
+
 Build NGINX Agent rpm package:
-```
+
+```console
 OSARCH=<operating system archiecture> make local-rpm-package
 ```
+
 Build NGINX Agent apk package:
-```
+
+```console
 OSARCH=<operating system archiecture> make local-apk-package
 ```
 
 ### Testing NGINX Agent
 
 #### Unit tests
+
 To run unit tests and check that there is enough test coverage run the following
-```
+
+```console
 make unit-test coverge
 ```
+
 To check for race conditions, the unit tests can also be run with a race condition detector
-```
+
+```console
 make race-condition-test
 ```
 
 #### Integration tests
+
 To run integration tests, run the following
-```
+
+```console
 make integration-test
 ```
 
 #### Testing with a mock management plane
+
 For testing command operations, there is a mock management gRPC server that can be used. See here: [mock management gRPC server](test/mock/grpc/README.md) \
 For testing metrics, there is a mock management OTel collector that can be used. See here: [mock management OTel collector](test/mock/collector/README.md)
-
 
 ## NGINX Agent Technical Specifications
 
@@ -97,7 +114,7 @@ TBD
 
 ## Community
 
-- Our [Slack channel #nginx-agent](https://nginxcommunity.slack.com/), is the go-to place to start asking questions and sharing your thoughts.
+- Our [NGINX Community Forum ](https://community.nginx.org/tag/agent) is the go-to place to ask questions and share your thoughts.
 
 - Our [GitHub issues page](https://github.com/nginx/agent/issues) offers space for a more technical discussion at your own pace.
 

@@ -25,7 +25,13 @@ var embedNginxConfWithMultipleSSLCerts string
 //go:embed nginx/nginx-ssl-certs-with-variables.conf
 var embedNginxConfWithSSLCertsWithVariables string
 
-func GetNginxConfigWithMultipleAccessLogs(
+//go:embed agent/nginx-agent-with-token.conf
+var agentConfigWithToken string
+
+//go:embed agent/nginx-agent-with-multiple-headers.conf
+var agentConfigWithMultipleHeaders string
+
+func NginxConfigWithMultipleAccessLogs(
 	errorLogName,
 	accessLogName,
 	combinedAccessLogName,
@@ -40,18 +46,26 @@ func GetNginxConfigWithMultipleAccessLogs(
 	)
 }
 
-func GetNginxConfigWithNotAllowedDir(errorLogFile, notAllowedFile, allowedFileDir, accessLogFile string) string {
+func NginxConfigWithNotAllowedDir(errorLogFile, notAllowedFile, allowedFileDir, accessLogFile string) string {
 	return fmt.Sprintf(embedNginxConfWithNotAllowedDir, errorLogFile, notAllowedFile, allowedFileDir, accessLogFile)
 }
 
-func GetNginxConfWithSSLCertsWithVariables() string {
+func NginxConfWithSSLCertsWithVariables() string {
 	return embedNginxConfWithSSLCertsWithVariables
 }
 
-func GetNginxConfigWithSSLCerts(errorLogFile, accessLogFile, certFile string) string {
+func NginxConfigWithSSLCerts(errorLogFile, accessLogFile, certFile string) string {
 	return fmt.Sprintf(embedNginxConfWithSSLCerts, errorLogFile, accessLogFile, certFile)
 }
 
-func GetNginxConfigWithMultipleSSLCerts(errorLogFile, accessLogFile, certFile1, certFile2 string) string {
+func NginxConfigWithMultipleSSLCerts(errorLogFile, accessLogFile, certFile1, certFile2 string) string {
 	return fmt.Sprintf(embedNginxConfWithMultipleSSLCerts, errorLogFile, accessLogFile, certFile1, certFile2)
+}
+
+func AgentConfigWithToken(value, path string) string {
+	return fmt.Sprintf(agentConfigWithToken, value, path)
+}
+
+func AgentConfigWithMultipleHeaders(value, path, value2, path2 string) string {
+	return fmt.Sprintf(agentConfigWithMultipleHeaders, value, path, value2, path2)
 }

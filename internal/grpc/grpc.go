@@ -90,7 +90,7 @@ func NewGrpcConnection(ctx context.Context, agentConfig *config.Config) (*GrpcCo
 
 	var err error
 	grpcConnection.mutex.Lock()
-	grpcConnection.conn, err = grpc.NewClient(serverAddr, GetDialOptions(agentConfig, resourceID)...)
+	grpcConnection.conn, err = grpc.NewClient(serverAddr, DialOptions(agentConfig, resourceID)...)
 	grpcConnection.mutex.Unlock()
 	if err != nil {
 		return nil, err
@@ -160,7 +160,7 @@ func (w *wrappedStream) SendMsg(message any) error {
 	return w.ClientStream.SendMsg(message)
 }
 
-func GetDialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOption {
+func DialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOption {
 	streamClientInterceptors := []grpc.StreamClientInterceptor{grpcRetry.StreamClientInterceptor()}
 	unaryClientInterceptors := []grpc.UnaryClientInterceptor{grpcRetry.UnaryClientInterceptor()}
 
@@ -221,7 +221,7 @@ func GetDialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOp
 }
 
 func addTransportCredentials(agentConfig *config.Config, opts []grpc.DialOption) ([]grpc.DialOption, bool) {
-	transportCredentials, err := getTransportCredentials(agentConfig)
+	transportCredentials, err := transportCredentials(agentConfig)
 	if err != nil {
 		slog.Error("Unable to add transport credentials to gRPC dial options, adding "+
 			"default transport credentials", "error", err)
@@ -359,34 +359,36 @@ func validateMessage(validator protovalidate.Validator, message any) error {
 	return nil
 }
 
-func getTransportCredentials(agentConfig *config.Config) (credentials.TransportCredentials, error) {
+func transportCredentials(agentConfig *config.Config) (credentials.TransportCredentials, error) {
 	if agentConfig.Command.TLS == nil {
 		return defaultCredentials, nil
 	}
+	tlsConfig, err := tlsConfigForCredentials(agentConfig.Command.TLS)
+	if err != nil {
+		return nil, err
+	}
 
-	if agentConfig.Command.TLS.SkipVerify {
+	return credentials.NewTLS(tlsConfig), nil
+}
+
+func tlsConfigForCredentials(c *config.TLSConfig) (*tls.Config, error) {
+	if c.SkipVerify {
 		slog.Warn("Verification of the server's certificate chain and host name is disabled")
 	}
 
 	tlsConfig := &tls.Config{
 		MinVersion:         tls.VersionTLS12,
-		ServerName:         agentConfig.Command.TLS.ServerName,
-		InsecureSkipVerify: agentConfig.Command.TLS.SkipVerify,
+		ServerName:         c.ServerName,
+		InsecureSkipVerify: c.SkipVerify,
 	}
 
-	if agentConfig.Command.TLS.Key == "" {
-		return credentials.NewTLS(tlsConfig), nil
+	if err := appendRootCAs(tlsConfig, c.Ca); err != nil {
+		return nil, fmt.Errorf("invalid CA cert while building transport credentials: %w", err)
 	}
 
-	err := appendCertKeyPair(tlsConfig, agentConfig.Command.TLS.Cert, agentConfig.Command.TLS.Key)
-	if err != nil {
-		return nil, fmt.Errorf("append cert and key pair failed: %w", err)
+	if err := appendCertKeyPair(tlsConfig, c.Cert, c.Key); err != nil {
+		return nil, fmt.Errorf("invalid client cert while building transport credentials: %w", err)
 	}
 
-	err = appendRootCAs(tlsConfig, agentConfig.Command.TLS.Ca)
-	if err != nil {
-		slog.Debug("Unable to append root CA", "error", err)
-	}
-
-	return credentials.NewTLS(tlsConfig), nil
+	return tlsConfig, nil
 }

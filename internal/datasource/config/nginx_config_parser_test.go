@@ -319,19 +319,19 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 	}{
 		{
 			name:     "Test 1: Valid response",
-			instance: protos.GetNginxOssInstance([]string{}),
-			content: testconfig.GetNginxConfigWithMultipleAccessLogs(
+			instance: protos.NginxOssInstance([]string{}),
+			content: testconfig.NginxConfigWithMultipleAccessLogs(
 				errorLog.Name(),
 				accessLog.Name(),
 				combinedAccessLog.Name(),
 				ltsvAccessLog.Name(),
 			),
-			expectedConfigContext: modelHelpers.GetConfigContextWithNames(
+			expectedConfigContext: modelHelpers.ConfigContextWithNames(
 				accessLog.Name(),
 				combinedAccessLog.Name(),
 				ltsvAccessLog.Name(),
 				errorLog.Name(),
-				protos.GetNginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 				[]string{"127.0.0.1:1515"},
 			),
 			expectedLog:        "",
@@ -339,19 +339,19 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 		},
 		{
 			name:     "Test 2: Error response",
-			instance: protos.GetNginxPlusInstance([]string{}),
-			content: testconfig.GetNginxConfigWithMultipleAccessLogs(
+			instance: protos.NginxPlusInstance([]string{}),
+			content: testconfig.NginxConfigWithMultipleAccessLogs(
 				errorLog.Name(),
 				accessLog.Name(),
 				combinedAccessLog.Name(),
 				ltsvAccessLog.Name(),
 			),
-			expectedConfigContext: modelHelpers.GetConfigContextWithNames(
+			expectedConfigContext: modelHelpers.ConfigContextWithNames(
 				accessLog.Name(),
 				combinedAccessLog.Name(),
 				ltsvAccessLog.Name(),
 				errorLog.Name(),
-				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 				[]string{"127.0.0.1:1515"},
 			),
 			expectedLog:        "",
@@ -359,14 +359,14 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 		},
 		{
 			name:     "Test 3: File outside allowed directories",
-			instance: protos.GetNginxPlusInstance([]string{}),
-			content: testconfig.GetNginxConfigWithNotAllowedDir(errorLog.Name(), allowedFile.Name(),
+			instance: protos.NginxPlusInstance([]string{}),
+			content: testconfig.NginxConfigWithNotAllowedDir(errorLog.Name(), allowedFile.Name(),
 				notAllowedFile.Name(), accessLog.Name()),
-			expectedConfigContext: modelHelpers.GetConfigContextWithFiles(
+			expectedConfigContext: modelHelpers.ConfigContextWithFiles(
 				accessLog.Name(),
 				errorLog.Name(),
 				[]*mpi.File{&allowedFileWithMetas},
-				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 				nil,
 			),
 			expectedLog:        "",
@@ -374,12 +374,12 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 		},
 		{
 			name:     "Test 4: SSL Certificate file path containing variables",
-			instance: protos.GetNginxPlusInstance([]string{}),
-			content:  testconfig.GetNginxConfWithSSLCertsWithVariables(),
+			instance: protos.NginxPlusInstance([]string{}),
+			content:  testconfig.NginxConfWithSSLCertsWithVariables(),
 			expectedConfigContext: &model.NginxConfigContext{
 				StubStatus:       &model.APIDetails{},
 				PlusAPI:          &model.APIDetails{},
-				InstanceID:       protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				InstanceID:       protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 				Files:            []*mpi.File{},
 				AccessLogs:       []*model.AccessLog{},
 				ErrorLogs:        []*model.ErrorLog{},
@@ -389,18 +389,18 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 		},
 		{
 			name:     "Test 5: Error Log outputting to stderr",
-			instance: protos.GetNginxPlusInstance([]string{}),
-			content: testconfig.GetNginxConfigWithMultipleAccessLogs(
+			instance: protos.NginxPlusInstance([]string{}),
+			content: testconfig.NginxConfigWithMultipleAccessLogs(
 				"stderr",
 				accessLog.Name(),
 				combinedAccessLog.Name(),
 				ltsvAccessLog.Name(),
 			),
-			expectedConfigContext: modelHelpers.GetConfigContextWithoutErrorLog(
+			expectedConfigContext: modelHelpers.ConfigContextWithoutErrorLog(
 				accessLog.Name(),
 				combinedAccessLog.Name(),
 				ltsvAccessLog.Name(),
-				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 				[]string{"127.0.0.1:1515"},
 			),
 			expectedLog: "Currently error log outputs to stderr. Log monitoring is disabled while applying a " +
@@ -409,18 +409,18 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 		},
 		{
 			name:     "Test 6: Error Log outputting to stdout",
-			instance: protos.GetNginxPlusInstance([]string{}),
-			content: testconfig.GetNginxConfigWithMultipleAccessLogs(
+			instance: protos.NginxPlusInstance([]string{}),
+			content: testconfig.NginxConfigWithMultipleAccessLogs(
 				"stdout",
 				accessLog.Name(),
 				combinedAccessLog.Name(),
 				ltsvAccessLog.Name(),
 			),
-			expectedConfigContext: modelHelpers.GetConfigContextWithoutErrorLog(
+			expectedConfigContext: modelHelpers.ConfigContextWithoutErrorLog(
 				accessLog.Name(),
 				combinedAccessLog.Name(),
 				ltsvAccessLog.Name(),
-				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 				[]string{"127.0.0.1:1515"},
 			),
 			expectedLog: "Currently error log outputs to stdout. Log monitoring is disabled while applying a " +
@@ -429,53 +429,53 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 		},
 		{
 			name:     "Test 7: Check Parser for SSL Certs",
-			instance: protos.GetNginxPlusInstance([]string{}),
-			content: testconfig.GetNginxConfigWithSSLCerts(
+			instance: protos.NginxPlusInstance([]string{}),
+			content: testconfig.NginxConfigWithSSLCerts(
 				errorLog.Name(),
 				accessLog.Name(),
 				certFile,
 			),
-			expectedConfigContext: modelHelpers.GetConfigContextWithFiles(
+			expectedConfigContext: modelHelpers.ConfigContextWithFiles(
 				accessLog.Name(),
 				errorLog.Name(),
 				[]*mpi.File{&certFileWithMetas},
-				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 				nil,
 			),
 			allowedDirectories: []string{dir},
 		},
 		{
 			name:     "Test 8: Check for multiple different SSL Certs",
-			instance: protos.GetNginxPlusInstance([]string{}),
-			content: testconfig.GetNginxConfigWithMultipleSSLCerts(
+			instance: protos.NginxPlusInstance([]string{}),
+			content: testconfig.NginxConfigWithMultipleSSLCerts(
 				errorLog.Name(),
 				accessLog.Name(),
 				certFile,
 				diffCertFile,
 			),
-			expectedConfigContext: modelHelpers.GetConfigContextWithFiles(
+			expectedConfigContext: modelHelpers.ConfigContextWithFiles(
 				accessLog.Name(),
 				errorLog.Name(),
 				[]*mpi.File{&diffCertFileWithMetas, &certFileWithMetas},
-				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 				nil,
 			),
 			allowedDirectories: []string{dir},
 		},
 		{
 			name:     "Test 9: Check for multiple same SSL Certs",
-			instance: protos.GetNginxPlusInstance([]string{}),
-			content: testconfig.GetNginxConfigWithMultipleSSLCerts(
+			instance: protos.NginxPlusInstance([]string{}),
+			content: testconfig.NginxConfigWithMultipleSSLCerts(
 				errorLog.Name(),
 				accessLog.Name(),
 				certFile,
 				certFile,
 			),
-			expectedConfigContext: modelHelpers.GetConfigContextWithFiles(
+			expectedConfigContext: modelHelpers.ConfigContextWithFiles(
 				accessLog.Name(),
 				errorLog.Name(),
 				[]*mpi.File{&certFileWithMetas},
-				protos.GetNginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 				nil,
 			),
 			allowedDirectories: []string{dir},
@@ -555,6 +555,120 @@ func TestNginxConfigParser_sslCert(t *testing.T) {
 	nginxConfig.agentConfig.AllowedDirectories = []string{dir}
 	sslCert = nginxConfig.sslCert(ctx, certFile, dir)
 	assert.Equal(t, certFile, sslCert.GetFileMeta().GetName())
+}
+
+func TestNginxConfigParser_checkLog(t *testing.T) {
+	logBuf := &bytes.Buffer{}
+	stub.StubLoggerWith(logBuf)
+	tests := []struct {
+		name               string
+		expectedLog        string
+		accessLog          *model.AccessLog
+		currentAccessLogs  []*model.AccessLog
+		expectedAccessLogs []*model.AccessLog
+	}{
+		{
+			name: "Test 1: valid access log",
+			accessLog: &model.AccessLog{
+				Name: "/var/log/nginx/access2.log",
+				Format: "$remote_addr - $remote_user [$time_local] \"$request\" \"$http_user_agent\" " +
+					"\"$http_x_forwarded_for\"$status $body_bytes_sent \"$http_referer\"",
+				Permissions: "",
+				Readable:    true,
+			},
+			currentAccessLogs: []*model.AccessLog{
+				{
+					Name: "/var/log/nginx/access.log",
+					Format: "$remote_addr - $remote_user [$time_local] \"$request\" \"$http_user_agent\" " +
+						"\"$http_x_forwarded_for\"$status $body_bytes_sent \"$http_referer\"",
+					Permissions: "",
+					Readable:    true,
+				},
+			},
+			expectedAccessLogs: []*model.AccessLog{
+				{
+					Name: "/var/log/nginx/access.log",
+					Format: "$remote_addr - $remote_user [$time_local] \"$request\" \"$http_user_agent\" " +
+						"\"$http_x_forwarded_for\"$status $body_bytes_sent \"$http_referer\"",
+					Permissions: "",
+					Readable:    true,
+				},
+				{
+					Name: "/var/log/nginx/access2.log",
+					Format: "$remote_addr - $remote_user [$time_local] \"$request\" \"$http_user_agent\" " +
+						"\"$http_x_forwarded_for\"$status $body_bytes_sent \"$http_referer\"",
+					Permissions: "",
+					Readable:    true,
+				},
+			},
+			expectedLog: "Found valid access log",
+		},
+		{
+			name: "Test 2: Duplicate access log, with same format",
+			accessLog: &model.AccessLog{
+				Name: "/var/log/nginx/access.log",
+				Format: "$remote_addr - $remote_user [$time_local] \"$request\" \"$http_user_agent\" " +
+					"\"$http_x_forwarded_for\"$status $body_bytes_sent \"$http_referer\"",
+				Permissions: "",
+				Readable:    true,
+			},
+			currentAccessLogs: []*model.AccessLog{
+				{
+					Name: "/var/log/nginx/access.log",
+					Format: "$remote_addr - $remote_user [$time_local] \"$request\" \"$http_user_agent\" " +
+						"\"$http_x_forwarded_for\"$status $body_bytes_sent \"$http_referer\"",
+					Permissions: "",
+					Readable:    true,
+				},
+			},
+			expectedAccessLogs: []*model.AccessLog{
+				{
+					Name: "/var/log/nginx/access.log",
+					Format: "$remote_addr - $remote_user [$time_local] \"$request\" \"$http_user_agent\" " +
+						"\"$http_x_forwarded_for\"$status $body_bytes_sent \"$http_referer\"",
+					Permissions: "",
+					Readable:    true,
+				},
+			},
+			expectedLog: "Found duplicate access log, skipping",
+		},
+
+		{
+			name: "Test 3: invalid access log, duplicate access log with different format",
+			accessLog: &model.AccessLog{
+				Name: "/var/log/nginx/access.log",
+				Format: "$remote_addr - $remote_user [$time_local] \"$request\" \"$http_user_agent\" " +
+					"\"$http_x_forwarded_for\"$status $body_bytes_sent",
+				Permissions: "",
+				Readable:    true,
+			},
+			currentAccessLogs: []*model.AccessLog{
+				{
+					Name: "/var/log/nginx/access.log",
+					Format: "$remote_addr - $remote_user [$time_local] \"$request\" \"$http_user_agent\" " +
+						"\"$http_x_forwarded_for\"$status $body_bytes_sent \"$http_referer\"",
+					Permissions: "",
+					Readable:    true,
+				},
+			},
+			expectedAccessLogs: []*model.AccessLog{},
+			expectedLog: "Found multiple log_format directives for the same access log. " +
+				"Multiple log formats are not supported in the same access log, metrics from this access log " +
+				"will not be collected",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ncp := NewNginxConfigParser(types.AgentConfig())
+			logs := ncp.addAccessLog(test.accessLog, test.currentAccessLogs)
+			assert.Equal(t, test.expectedAccessLogs, logs)
+
+			helpers.ValidateLog(t, test.expectedLog, logBuf)
+
+			logBuf.Reset()
+		})
+	}
 }
 
 // nolint: maintidx

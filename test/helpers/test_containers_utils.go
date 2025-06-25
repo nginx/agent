@@ -46,7 +46,7 @@ func StartContainer(
 
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
-			Context:       "../../",
+			Context:       "../../../",
 			Dockerfile:    dockerfilePath,
 			KeepImage:     false,
 			PrintBuildLog: true,
@@ -118,7 +118,7 @@ func StartAgentlessContainer(
 
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
-			Context:       "../../",
+			Context:       "../../../",
 			Dockerfile:    dockerfilePath,
 			KeepImage:     false,
 			PrintBuildLog: true,
@@ -179,7 +179,7 @@ func StartNginxLessContainer(
 
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
-			Context:       "../../",
+			Context:       "../../../",
 			Dockerfile:    dockerfilePath,
 			KeepImage:     false,
 			PrintBuildLog: true,
@@ -236,7 +236,7 @@ func StartMockManagementPlaneGrpcContainer(
 
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
-			Context:       "../../",
+			Context:       "../../../",
 			Dockerfile:    "./test/mock/grpc/Dockerfile",
 			KeepImage:     false,
 			PrintBuildLog: true,
