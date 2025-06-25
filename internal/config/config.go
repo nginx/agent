@@ -84,7 +84,6 @@ func RegisterConfigFile() error {
 }
 
 func ResolveConfig() (*Config, error) {
-
 	log := resolveLog()
 	slogger := logger.New(log.Path, log.Level)
 	slog.SetDefault(slogger)
@@ -136,10 +135,14 @@ func ResolveConfig() (*Config, error) {
 // It ignores empty paths, paths that are not absolute, and paths containing invalid characters.
 // Invalid paths are logged as warnings.
 func resolveAllowedDirectories(dirs []string) []string {
-	var allowed []string
-	allowed = append(allowed, AgentDirName)
+	allowed := []string{AgentDirName}
 	for _, dir := range dirs {
-		invalidChars, _ := regexp.MatchString(regexInvalidPath, dir)
+		re, err := regexp.Compile(regexInvalidPath)
+		if err != nil {
+			slog.Error("Failed to compile regex for invalid path characters", "error", err)
+			continue
+		}
+		invalidChars := re.MatchString(dir)
 		if dir == "" || dir == "/" || !filepath.IsAbs(dir) || invalidChars {
 			slog.Warn("Ignoring invalid directory", "dir", dir)
 			continue
@@ -762,7 +765,6 @@ func resolveClient() *Client {
 }
 
 func resolveCollector(allowedDirs []string) (*Collector, error) {
-
 	// Collect receiver configurations
 	var receivers Receivers
 	err := resolveMapStructure(CollectorReceiversKey, &receivers)

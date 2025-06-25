@@ -230,8 +230,7 @@ func TestResolveAllowedDirectories(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			allowed := make([]string, 0, len(test.configuredDirs))
-			allowed = resolveAllowedDirectories(test.configuredDirs)
+			allowed := resolveAllowedDirectories(test.configuredDirs)
 			assert.Equal(t, test.expected, allowed)
 		})
 	}

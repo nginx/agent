@@ -13,14 +13,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// nolint: nestif, gocognit
 func TestTypes_isAllowedDir(t *testing.T) {
 
 	tests := []struct {
 		name        string
 		filePath    string
+		allowedDirs []string
 		dirExists   bool
 		fileExists  bool
-		allowedDirs []string
 		allowed     bool
 	}{
 		{
@@ -89,43 +90,43 @@ func TestTypes_isAllowedDir(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			if test.dirExists {
 				// Create the temporary directory for testing
-				tmpDir, err := os.MkdirTemp("", "test-allowed-dir")
+				tmpDir, err := createTempDir(t, "test-allowed-dir")
 				defer func() {
-					err := os.RemoveAll(tmpDir)
-					if err != nil {
-						t.Fatalf("Failed to remove temp directory: %v", err)
+					rmErr := os.RemoveAll(tmpDir)
+					if rmErr != nil {
+						t.Log(rmErr)
 					}
 				}()
-				if err != nil {
-					t.Fatalf("Failed to create temp directory: %v", err)
-				}
-
-				// Prepend the temporary directory to the allowed directories for testing
-				for i, dir := range test.allowedDirs {
-					if dir != "" && dir[0] != '/' {
-						test.allowedDirs[i] = tmpDir + "/" + dir
-					} else {
-						test.allowedDirs[i] = tmpDir + dir
-					}
-				}
-
-				// Prepend the temporary directory to the fileDir for testing
-				test.filePath = tmpDir + test.filePath
-
-				// Create the parent directories
-				if err := os.MkdirAll(filepath.Dir(test.filePath), 0755); err != nil {
-					t.Fatalf("Failed to create directory for file: %v", err)
-				}
 
 				// Create the test file if it should exist
 				if test.fileExists {
-					if _, err := os.Create(test.filePath); err != nil {
-						t.Fatalf("Failed to create test file: %v", err)
+					// Prepend the temporary directory to the fileDir for testing
+					test.filePath = tmpDir + test.filePath
+
+					// Create the parent directories
+					if err = os.MkdirAll(filepath.Dir(test.filePath), 0755); err != nil {
+						t.Fatalf("Failed to create directory for file: %v", err)
 					}
+					createTempFile(t, test.filePath)
 				}
 			}
 			result := isAllowedDir(test.filePath, test.allowedDirs)
 			assert.Equal(t, test.allowed, result)
 		})
 	}
+}
+
+func createTempFile(t *testing.T, path string) {
+	if _, err := os.Create(path); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+}
+
+func createTempDir(t *testing.T, prefix string) (string, error) {
+	tmpDir, err := os.MkdirTemp("", prefix)
+	if err != nil {
+		t.Fatalf("Failed to create temp directory: %v", err)
+		return "", err
+	}
+	return tmpDir, nil
 }
