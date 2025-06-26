@@ -1053,6 +1053,7 @@ A set of runtime NGINX App Protect settings
 | release | [string](#string) |  | NGINX App Protect Release |
 | attack_signature_version | [string](#string) |  | Attack signature version |
 | threat_campaign_version | [string](#string) |  | Threat campaign version |
+| enforcer_engine_version | [string](#string) |  | Enforcer engine version |
 
 
 
