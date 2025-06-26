@@ -296,7 +296,7 @@ message InstanceRuntime {
     // the process identifier
     int32 process_id = 1;
     // the binary path location
-    string binary_path = 2 [(buf.validate.field).string.prefix = "/"];
+    string binary_path = 2 [(buf.validate.field).string.pattern = "^\\/.*|^$"];
     // the config path location
     string config_path = 3 [(buf.validate.field).string.pattern = "^\\/.*|^$"];
     // more detailed runtime objects
