@@ -77,13 +77,13 @@ func (cws *CredentialWatcherService) Watch(ctx context.Context, ch chan<- Creden
 	cws.watcher = watcher
 
 	cws.watcherMutex.Lock()
-	commandSever := cws.agentConfig.Command
+	commandServer := cws.agentConfig.Command
 
 	if cws.serverType == model.Auxiliary {
-		commandSever = cws.agentConfig.AuxiliaryCommand
+		commandServer = cws.agentConfig.AuxiliaryCommand
 	}
 
-	cws.watchFiles(newCtx, credentialPaths(commandSever))
+	cws.watchFiles(newCtx, credentialPaths(commandServer))
 	cws.watcherMutex.Unlock()
 
 	for {
@@ -172,12 +172,12 @@ func (cws *CredentialWatcherService) checkForUpdates(ctx context.Context, ch cha
 		cws.watcherMutex.Lock()
 		defer cws.watcherMutex.Unlock()
 
-		commandSever := cws.agentConfig.Command
+		commandServer := cws.agentConfig.Command
 		if cws.serverType == model.Auxiliary {
-			commandSever = cws.agentConfig.AuxiliaryCommand
+			commandServer = cws.agentConfig.AuxiliaryCommand
 		}
 
-		conn, err := grpc.NewGrpcConnection(newCtx, cws.agentConfig, commandSever)
+		conn, err := grpc.NewGrpcConnection(newCtx, cws.agentConfig, commandServer)
 		if err != nil {
 			slog.ErrorContext(newCtx, "Unable to create new grpc connection", "error", err)
 			cws.filesChanged.Store(false)
