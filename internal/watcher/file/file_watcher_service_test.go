@@ -275,7 +275,8 @@ func TestFileWatcherService_Watch(t *testing.T) {
 	t.Run("Test 3: Directory deleted", func(t *testing.T) {
 		fileDeleteError := os.Remove(file.Name())
 		require.NoError(t, fileDeleteError)
-		dirDeleteError := os.Remove(testDirectory)
+		t.Logf("Removing directory %s", testDirectory)
+		dirDeleteError := os.RemoveAll(testDirectory)
 		require.NoError(t, dirDeleteError)
 
 		// Check that directory is no longer being watched
