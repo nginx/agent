@@ -9,9 +9,15 @@ package sources
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"math"
+	"net/http"
+	"os"
 	"sync"
+
+	"github.com/nginx/agent/v2/src/core/config"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/metrics"
@@ -67,6 +73,7 @@ type NginxPlus struct {
 	init          sync.Once
 	clientVersion int
 	logger        *MetricSourceLogger
+	client        *http.Client
 }
 
 type ExtendedStats struct {
@@ -75,14 +82,44 @@ type ExtendedStats struct {
 	streamEndpoints []string
 }
 
-func NewNginxPlus(baseDimensions *metrics.CommonDim, nginxNamespace, plusNamespace, plusAPI string, clientVersion int) *NginxPlus {
+func NewNginxPlus(baseDimensions *metrics.CommonDim, nginxNamespace, plusNamespace, plusAPI string, clientVersion int, conf *config.Config) *NginxPlus {
 	log.Debug("Creating NGINX Plus metrics source")
-	return &NginxPlus{baseDimensions: baseDimensions, nginxNamespace: nginxNamespace, plusNamespace: plusNamespace, plusAPI: plusAPI, clientVersion: clientVersion, logger: NewMetricSourceLogger()}
+
+	client := http.DefaultClient
+
+	if conf.Nginx.ApiTls.Ca != "" && conf.IsFileAllowed(conf.Nginx.ApiTls.Ca) {
+		data, err := os.ReadFile(conf.Nginx.ApiTls.Ca)
+		if err != nil {
+			log.Errorf("Unable to collect NGINX Plus metrics. Failed to read NGINX CA certificate file: %v", err)
+			return nil
+		}
+
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(data)
+
+		client = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					RootCAs: caCertPool,
+				},
+			},
+		}
+	}
+
+	return &NginxPlus{
+		baseDimensions: baseDimensions,
+		nginxNamespace: nginxNamespace,
+		plusNamespace:  plusNamespace,
+		plusAPI:        plusAPI,
+		clientVersion:  clientVersion,
+		logger:         NewMetricSourceLogger(),
+		client:         client,
+	}
 }
 
 func (c *NginxPlus) Collect(ctx context.Context, m chan<- *metrics.StatsEntityWrapper) {
 	c.init.Do(func() {
-		cl, err := plusclient.NewNginxClient(c.plusAPI, plusclient.WithMaxAPIVersion())
+		cl, err := plusclient.NewNginxClient(c.plusAPI, plusclient.WithMaxAPIVersion(), plusclient.WithHTTPClient(c.client))
 		if err != nil {
 			c.logger.Log(fmt.Sprintf("Failed to create plus metrics client: %v", err))
 			SendNginxDownStatus(ctx, c.baseDimensions.ToDimensions(), m)

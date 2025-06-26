@@ -61,7 +61,10 @@ func buildSources(dimensions *metrics.CommonDim, binary core.NginxBinary, collec
 			nginxSources = append(nginxSources, sources.NewNginxAccessLog(dimensions, sources.OSSNamespace, binary, sources.OSSNginxType, collectorConf.CollectionInterval))
 			nginxSources = append(nginxSources, sources.NewNginxErrorLog(dimensions, sources.OSSNamespace, binary, sources.OSSNginxType, collectorConf.CollectionInterval))
 		} else if collectorConf.PlusAPI != "" {
-			nginxSources = append(nginxSources, sources.NewNginxPlus(dimensions, sources.OSSNamespace, sources.PlusNamespace, collectorConf.PlusAPI, collectorConf.ClientVersion))
+			nginxPlusSource := sources.NewNginxPlus(dimensions, sources.OSSNamespace, sources.PlusNamespace, collectorConf.PlusAPI, collectorConf.ClientVersion, conf)
+			if nginxPlusSource != nil {
+				nginxSources = append(nginxSources, nginxPlusSource)
+			}
 			nginxSources = append(nginxSources, sources.NewNginxAccessLog(dimensions, sources.OSSNamespace, binary, sources.PlusNginxType, collectorConf.CollectionInterval))
 			nginxSources = append(nginxSources, sources.NewNginxErrorLog(dimensions, sources.OSSNamespace, binary, sources.PlusNginxType, collectorConf.CollectionInterval))
 		} else {
