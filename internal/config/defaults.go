@@ -54,7 +54,7 @@ const (
 	DefFileWatcherMonitoringFrequency           = 5 * time.Second
 
 	// Collector defaults
-	DefCollectorConfigPath  = "/opt/homebrew/etc/nginx-agent/opentelemetry-collector-agent.yaml"
+	DefCollectorConfigPath  = "/etc/nginx-agent/opentelemetry-collector-agent.yaml"
 	DefCollectorLogLevel    = "INFO"
 	DefCollectorLogPath     = "/var/log/nginx-agent/opentelemetry-collector-agent.log"
 	DefCollectorTLSCertPath = "/var/lib/nginx-agent/cert.pem"
