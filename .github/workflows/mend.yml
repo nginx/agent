@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - release-*
+      - dev-v2
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+*"
     paths-ignore:
