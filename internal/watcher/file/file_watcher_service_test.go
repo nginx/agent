@@ -286,6 +286,7 @@ func TestFileWatcherService_Watch(t *testing.T) {
 
 		assert.Eventually(t, func() bool {
 			directoriesBeingWatched := fileWatcherService.watcher.WatchList()
+			t.Log(directoriesBeingWatched)
 			return len(directoriesBeingWatched) == 0
 		}, 1*time.Second, 100*time.Millisecond)
 	})
