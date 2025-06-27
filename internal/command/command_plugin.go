@@ -94,8 +94,13 @@ func (cp *CommandPlugin) Close(ctx context.Context) error {
 }
 
 func (cp *CommandPlugin) Info() *bus.Info {
+	name := "command"
+	if cp.commandServerType.String() == model.Auxiliary.String() {
+		name = "auxiliary-command"
+	}
+	
 	return &bus.Info{
-		Name: cp.commandServerType.String(),
+		Name: name,
 	}
 }
 

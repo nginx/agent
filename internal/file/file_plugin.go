@@ -45,6 +45,10 @@ func NewFilePlugin(agentConfig *config.Config, grpcConnection grpc.GrpcConnectio
 }
 
 func (fp *FilePlugin) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
+	ctx = context.WithValue(
+		ctx,
+		logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey, fp.serverType.String()),
+	)
 	slog.DebugContext(ctx, "Starting file plugin")
 
 	fp.messagePipe = messagePipe
@@ -54,18 +58,33 @@ func (fp *FilePlugin) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 }
 
 func (fp *FilePlugin) Close(ctx context.Context) error {
+	ctx = context.WithValue(
+		ctx,
+		logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey, fp.serverType.String()),
+	)
 	slog.InfoContext(ctx, "Closing file plugin")
 	return fp.conn.Close(ctx)
 }
 
 func (fp *FilePlugin) Info() *bus.Info {
+	name := "file"
+	if fp.serverType.String() == model.Auxiliary.String() {
+		name = "auxiliary-file"
+	}
 	return &bus.Info{
-		Name: "file",
+		Name: name,
 	}
 }
 
 // nolint: cyclop, revive
 func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
+	if logger.ServerType(ctx) == "" {
+		ctx = context.WithValue(
+			ctx,
+			logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey, fp.serverType.String()),
+		)
+	}
+
 	if logger.ServerType(ctx) == fp.serverType.String() || logger.ServerType(ctx) == "" {
 		switch msg.Topic {
 		case bus.ConnectionResetTopic:
