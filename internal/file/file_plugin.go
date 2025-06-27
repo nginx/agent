@@ -63,6 +63,7 @@ func (fp *FilePlugin) Close(ctx context.Context) error {
 		logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey, fp.serverType.String()),
 	)
 	slog.InfoContext(ctx, "Closing file plugin")
+
 	return fp.conn.Close(ctx)
 }
 
@@ -71,6 +72,7 @@ func (fp *FilePlugin) Info() *bus.Info {
 	if fp.serverType.String() == model.Auxiliary.String() {
 		name = "auxiliary-file"
 	}
+	
 	return &bus.Info{
 		Name: name,
 	}
