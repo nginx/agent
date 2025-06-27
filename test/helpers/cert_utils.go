@@ -30,7 +30,7 @@ const (
 	permission          = 0o600
 	serialNumber        = 123123
 	years, months, days = 5, 0, 0
-	bits                = 1024
+	bits                = 2048
 )
 
 func GenerateSelfSignedCert(t testing.TB) (keyBytes, certBytes []byte) {
