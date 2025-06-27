@@ -147,7 +147,10 @@ func (fws *FileWatcherService) addWatchers(ctx context.Context) {
 
 func (fws *FileWatcherService) removeWatchers(ctx context.Context) {
 	for _, directoryBeingWatched := range fws.watcher.WatchList() {
-		if _, ok := fws.directoriesToWatch[directoryBeingWatched]; !ok {
+		if _, err := os.Stat(directoryBeingWatched); errors.Is(err, os.ErrNotExist) {
+			fws.removeWatcher(ctx, directoryBeingWatched)
+			fws.filesChanged.Store(true)
+		} else if _, ok := fws.directoriesToWatch[directoryBeingWatched]; !ok {
 			fws.removeWatcher(ctx, directoryBeingWatched)
 			fws.filesChanged.Store(true)
 		}
