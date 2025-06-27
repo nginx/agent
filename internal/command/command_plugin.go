@@ -67,7 +67,7 @@ func (cp *CommandPlugin) Init(ctx context.Context, messagePipe bus.MessagePipeIn
 		ctx,
 		logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey, cp.commandServerType.String()),
 	)
-	slog.DebugContext(newCtx, "Starting command plugin", "command_server_type", cp.commandServerType.String())
+	slog.DebugContext(newCtx, "Starting command plugin")
 
 	cp.messagePipe = messagePipe
 	cp.commandService = NewCommandService(cp.conn.CommandServiceClient(), cp.config, cp.subscribeChannel)
@@ -78,7 +78,11 @@ func (cp *CommandPlugin) Init(ctx context.Context, messagePipe bus.MessagePipeIn
 }
 
 func (cp *CommandPlugin) Close(ctx context.Context) error {
-	slog.InfoContext(ctx, "Closing command plugin", "command_server_type", cp.commandServerType.String())
+	newCtx := context.WithValue(
+		ctx,
+		logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey, cp.commandServerType.String()),
+	)
+	slog.InfoContext(newCtx, "Closing command plugin")
 
 	cp.subscribeMutex.Lock()
 	if cp.subscribeCancel != nil {
@@ -86,7 +90,7 @@ func (cp *CommandPlugin) Close(ctx context.Context) error {
 	}
 	cp.subscribeMutex.Unlock()
 
-	return cp.conn.Close(ctx)
+	return cp.conn.Close(newCtx)
 }
 
 func (cp *CommandPlugin) Info() *bus.Info {
@@ -96,7 +100,7 @@ func (cp *CommandPlugin) Info() *bus.Info {
 }
 
 func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "Processing command", "command_server_type", logger.ServerType(ctx))
+	slog.DebugContext(ctx, "Processing command")
 
 	if logger.ServerType(ctx) == cp.commandServerType.String() || logger.ServerType(ctx) == "" {
 		switch msg.Topic {
@@ -183,8 +187,7 @@ func (cp *CommandPlugin) processInstanceHealth(ctx context.Context, msg *bus.Mes
 	if instances, ok := msg.Data.([]*mpi.InstanceHealth); ok {
 		err := cp.commandService.UpdateDataPlaneHealth(ctx, instances)
 		if err != nil {
-			slog.ErrorContext(ctx, "Unable to update data plane health", "error", err,
-				"command_server_type", cp.commandServerType.String())
+			slog.ErrorContext(ctx, "Unable to update data plane health", "error", err)
 		}
 	}
 }

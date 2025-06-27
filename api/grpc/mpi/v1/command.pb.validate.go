@@ -4998,6 +4998,8 @@ func (m *NGINXAppProtectRuntimeInfo) validate(all bool) error {
 
 	// no validation rules for ThreatCampaignVersion
 
+	// no validation rules for EnforcerEngineVersion
+
 	if len(errors) > 0 {
 		return NGINXAppProtectRuntimeInfoMultiError(errors)
 	}
