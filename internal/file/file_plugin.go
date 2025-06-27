@@ -72,7 +72,7 @@ func (fp *FilePlugin) Info() *bus.Info {
 	if fp.serverType.String() == model.Auxiliary.String() {
 		name = "auxiliary-file"
 	}
-	
+
 	return &bus.Info{
 		Name: name,
 	}

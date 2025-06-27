@@ -98,7 +98,7 @@ func (cp *CommandPlugin) Info() *bus.Info {
 	if cp.commandServerType.String() == model.Auxiliary.String() {
 		name = "auxiliary-command"
 	}
-	
+
 	return &bus.Info{
 		Name: name,
 	}
