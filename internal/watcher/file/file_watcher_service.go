@@ -154,6 +154,7 @@ func (fws *FileWatcherService) removeWatchers(ctx context.Context) {
 }
 
 func (fws *FileWatcherService) handleEvent(ctx context.Context, event fsnotify.Event) {
+	slog.ErrorContext(ctx, "handleEvent", "event", event)
 	if fws.enabled.Load() {
 		if fws.isEventSkippable(event) {
 			return
