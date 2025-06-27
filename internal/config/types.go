@@ -8,7 +8,10 @@ package config
 import (
 	"errors"
 	"fmt"
+	"log/slog"
+	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -411,11 +414,62 @@ func (c *Config) AreReceiversConfigured() bool {
 		len(c.Collector.Receivers.TcplogReceivers) > 0
 }
 
-func isAllowedDir(dir string, allowedDirs []string) bool {
+// isAllowedDir checks if the given path is in the list of allowed directories.
+// It returns true if the path is allowed, false otherwise.
+// If the path does not exist, it logs a warning and returns false.
+// It also checks if the path is a file, in which case it checks the directory of the file.
+func isAllowedDir(path string, allowedDirs []string) bool {
+	if len(allowedDirs) == 0 {
+		slog.Warn("No allowed directories configured")
+		return false
+	}
+
+	directoryPath := path
+	isFilePath, err := regexp.MatchString(`\.(\w+)$`, directoryPath)
+	if err != nil {
+		slog.Error("Error matching path", "path", directoryPath, "error", err)
+		return false
+	}
+
+	if isFilePath {
+		directoryPath = filepath.Dir(directoryPath)
+		slog.Debug("File path detected, checking parent directory is allowed", "path", directoryPath)
+	}
+
+	fInfo, statErr := os.Stat(directoryPath)
+	if statErr != nil {
+		slog.Warn("Stat: Path error", "path", path, "error", statErr)
+	}
+
+	if fInfo != nil {
+		if isSymlink(directoryPath) {
+			slog.Warn("Path is a symlink, skipping allowed directory check", "path", directoryPath)
+			return false
+		}
+	}
+
 	for _, allowedDirectory := range allowedDirs {
-		if strings.HasPrefix(dir, allowedDirectory) {
+		// Check if the directoryPath starts with the allowedDirectory
+		// This allows for subdirectories within the allowed directories.
+		if strings.HasPrefix(directoryPath, allowedDirectory) {
 			return true
 		}
+	}
+
+	return false
+}
+
+func isSymlink(path string) bool {
+	// check if it contains a symlink
+	lInfo, err := os.Lstat(path)
+	if err != nil {
+		slog.Warn("Lstat error", "path", path, "error", err)
+		return false
+	}
+	if lInfo != nil && lInfo.Mode()&os.ModeSymlink != 0 {
+		slog.Warn("Path is a symlink", "path", path)
+
+		return true
 	}
 
 	return false
