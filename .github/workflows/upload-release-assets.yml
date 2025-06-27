@@ -6,7 +6,7 @@ on:
       pkgRepo:
         description: "Source repository to pull packages from"
         type: string
-        default: ""
+        default: "packages.nginx.org"
       pkgVersion:
         description: 'Agent version'
         type: string
@@ -57,20 +57,31 @@ jobs:
         with:
           ref: ${{ inputs.releaseBranch }}
 
+      - name: Download Packages
+        run:
+          |
+          echo "Checking Packages in ${{inputs.pkgRepo}}/nginx-agent"
+          echo "${{secrets.PUBTEST_CERT}}" > pubtest.crt
+          echo "${{secrets.PUBTEST_KEY}}" > pubtest.key
+          PKG_REPO=${{inputs.pkgRepo}} CERT=pubtest.crt KEY=pubtest.key DL=1 scripts/packages/package-check.sh ${{inputs.pkgVersion}}
+          find ${{inputs.pkgRepo}}/nginx-agent | grep -e "nginx-agent[_-]${{inputs.pkgVersion}}"
+
+      - name: GitHub Upload
+        if: ${{ needs.vars.outputs.github_release == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # clobber overwrites existing assets of the same name
+        run: |
+          gh release upload --clobber v${{ inputs.pkgVersion }} \
+            $(find ${{inputs.pkgRepo}}/nginx-agent | grep -e "nginx-agent[_-]${{inputs.pkgVersion}}")
+
       - name: Azure Login
         if: ${{ inputs.uploadAzure == true }}
         uses: azure/login@8c334a195cbb38e46038007b304988d888bf676a # v2.0.0
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Download Packages
-        run:
-          |
-          echo "Checking Packages in ${{inputs.pkgRepo}}/nginx-agent"
-          PKG_REPO=${{inputs.pkgRepo}} CERT=${{secrets.PUBTEST_CERT}} KEY=${{secrets.PUBTEST_KEY}} DL=1 scripts/packages/package-check.sh ${{inputs.pkgVersion}}
-          find ${{inputs.pkgRepo}}/nginx-agent | grep -e "nginx-agent[_-]${{inputs.pkgVersion}}"
-
-      - name: Azure Upload Release Packages
+      - name: Azure Upload
         if: ${{ inputs.uploadAzure == true }}
         uses: azure/CLI@965c8d7571d2231a54e321ddd07f7b10317f34d9 # v2.0.0
         with:
@@ -88,15 +99,6 @@ jobs:
             done
 
       - name: Azure Logout
+        if: ${{ inputs.uploadAzure == true }}
         run: |
-          az logout
-        if: always()
-
-      - name: GitHub Upload Release Assets
-        if: ${{ needs.vars.outputs.github_release == 'true' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # clobber overwrites existing assets of the same name
-        run: |
-          gh release upload --clobber v${{ inputs.pkgVersion }} \
-            $(find ${{inputs.pkgRepo}}/nginx-agent | grep -e "nginx-agent[_-]${{inputs.pkgVersion}}")
+          az logout || exit 0
