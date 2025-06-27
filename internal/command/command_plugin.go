@@ -94,15 +94,27 @@ func (cp *CommandPlugin) Close(ctx context.Context) error {
 }
 
 func (cp *CommandPlugin) Info() *bus.Info {
+	name := "command"
+	if cp.commandServerType.String() == model.Auxiliary.String() {
+		name = "auxiliary-command"
+	}
+
 	return &bus.Info{
-		Name: cp.commandServerType.String(),
+		Name: name,
 	}
 }
 
 func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "Processing command")
 
-	if logger.ServerType(ctx) == cp.commandServerType.String() || logger.ServerType(ctx) == "" {
+	if logger.ServerType(ctx) == "" {
+		ctx = context.WithValue(
+			ctx,
+			logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey, cp.commandServerType.String()),
+		)
+	}
+
+	if logger.ServerType(ctx) == cp.commandServerType.String() {
 		switch msg.Topic {
 		case bus.ConnectionResetTopic:
 			cp.processConnectionReset(ctx, msg)
