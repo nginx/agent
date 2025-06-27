@@ -8,7 +8,6 @@ package file
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -148,6 +147,12 @@ func (fws *FileWatcherService) addWatchers(ctx context.Context) {
 func (fws *FileWatcherService) removeWatchers(ctx context.Context) {
 	for _, directoryBeingWatched := range fws.watcher.WatchList() {
 		if _, err := os.Stat(directoryBeingWatched); errors.Is(err, os.ErrNotExist) {
+			slog.DebugContext(
+				ctx,
+				"Directory does not exist removing watcher",
+				"directory", directoryBeingWatched,
+			)
+
 			fws.removeWatcher(ctx, directoryBeingWatched)
 			fws.filesChanged.Store(true)
 		} else if _, ok := fws.directoriesToWatch[directoryBeingWatched]; !ok {
@@ -158,7 +163,6 @@ func (fws *FileWatcherService) removeWatchers(ctx context.Context) {
 }
 
 func (fws *FileWatcherService) handleEvent(ctx context.Context, event fsnotify.Event) {
-	fmt.Println(event)
 	if fws.enabled.Load() {
 		if fws.isEventSkippable(event) {
 			return

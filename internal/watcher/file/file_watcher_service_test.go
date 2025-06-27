@@ -273,15 +273,8 @@ func TestFileWatcherService_Watch(t *testing.T) {
 	})
 
 	t.Run("Test 3: Directory deleted", func(t *testing.T) {
-		fileDeleteError := os.Remove(file.Name())
-		require.NoError(t, fileDeleteError)
-		t.Logf("Removing directory %s", testDirectory)
 		dirDeleteError := os.RemoveAll(testDirectory)
 		require.NoError(t, dirDeleteError)
-
-		if _, err := os.Stat(testDirectory); !os.IsNotExist(err) {
-			t.Fatalf("Expected directory to not exist")
-		}
 
 		// Check that directory is no longer being watched
 		assert.Eventually(t, func() bool {
@@ -291,7 +284,6 @@ func TestFileWatcherService_Watch(t *testing.T) {
 
 		assert.Eventually(t, func() bool {
 			directoriesBeingWatched := fileWatcherService.watcher.WatchList()
-			t.Log(directoriesBeingWatched)
 			return len(directoriesBeingWatched) == 0
 		}, 1*time.Second, 100*time.Millisecond)
 	})
