@@ -122,11 +122,13 @@ func FileMode(mode string) os.FileMode {
 func GenerateConfigVersion(fileSlice []*mpi.File) string {
 	var hashes string
 
-	slices.SortFunc(fileSlice, func(a, b *mpi.File) int {
+	files := make([]*mpi.File, len(fileSlice))
+	copy(files, fileSlice)
+	slices.SortFunc(files, func(a, b *mpi.File) int {
 		return cmp.Compare(a.GetFileMeta().GetName(), b.GetFileMeta().GetName())
 	})
 
-	for _, file := range fileSlice {
+	for _, file := range files {
 		hashes += file.GetFileMeta().GetHash()
 	}
 
