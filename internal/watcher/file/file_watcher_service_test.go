@@ -279,6 +279,10 @@ func TestFileWatcherService_Watch(t *testing.T) {
 		dirDeleteError := os.RemoveAll(testDirectory)
 		require.NoError(t, dirDeleteError)
 
+		if _, err := os.Stat(testDirectory); !os.IsNotExist(err) {
+			t.Fatalf("Expected directory to not exist")
+		}
+
 		// Check that directory is no longer being watched
 		assert.Eventually(t, func() bool {
 			_, ok := fileWatcherService.directoriesToWatch[testDirectory]
