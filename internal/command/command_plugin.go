@@ -102,7 +102,14 @@ func (cp *CommandPlugin) Info() *bus.Info {
 func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "Processing command")
 
-	if logger.ServerType(ctx) == cp.commandServerType.String() || logger.ServerType(ctx) == "" {
+	if logger.ServerType(ctx) == "" {
+		ctx = context.WithValue(
+			ctx,
+			logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey, cp.commandServerType.String()),
+		)
+	}
+
+	if logger.ServerType(ctx) == cp.commandServerType.String() {
 		switch msg.Topic {
 		case bus.ConnectionResetTopic:
 			cp.processConnectionReset(ctx, msg)
