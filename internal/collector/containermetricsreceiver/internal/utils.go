@@ -22,12 +22,20 @@ func ReadLines(filename string) ([]string, error) {
 }
 
 // nolint: revive
-func ReadLinesOffsetN(filename string, offset uint, n int) ([]string, error) {
+func ReadLinesOffsetN(filename string, offset uint, n int) (lines []string, err error) {
 	f, err := os.Open(filename)
+	defer func() {
+		closeErr := f.Close()
+		if closeErr != nil {
+			if err == nil {
+				err = closeErr
+			}
+		}
+	}()
+
 	if err != nil {
 		return []string{}, err
 	}
-	defer f.Close()
 
 	var ret []string
 

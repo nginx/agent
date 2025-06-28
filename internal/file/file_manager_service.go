@@ -869,14 +869,15 @@ func (fms *FileManagerService) writeManifestFile(updatedFiles map[string]*model.
 
 	// 0600 ensures only root can read/write
 	newFile, err := os.OpenFile(fms.manifestFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, filePerm)
-	if err != nil {
-		return fmt.Errorf("failed to read manifest file: %w", err)
-	}
 	defer func() {
 		if closeErr := newFile.Close(); closeErr != nil {
 			writeError = closeErr
 		}
 	}()
+
+	if err != nil {
+		return fmt.Errorf("failed to read manifest file: %w", err)
+	}
 
 	_, err = newFile.Write(manifestJSON)
 	if err != nil {
