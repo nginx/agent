@@ -18,11 +18,11 @@ import (
 
 func TestGrpc_FileWatcher(t *testing.T) {
 	ctx := context.Background()
-	teardownTest := utils.SetupConnectionTest(t, true, false,
+	teardownTest := utils.SetupConnectionTest(t, true, false, false,
 		"../../config/agent/nginx-config-with-grpc-client.conf")
 	defer teardownTest(t)
 
-	utils.VerifyConnection(t, 2)
+	utils.VerifyConnection(t, 2, utils.MockManagementPlaneAPIAddress)
 	assert.False(t, t.Failed())
 
 	err := utils.Container.CopyFileToContainer(

@@ -26,11 +26,11 @@ const (
 
 func TestGrpc_ConfigApply(t *testing.T) {
 	ctx := context.Background()
-	teardownTest := utils.SetupConnectionTest(t, false, false,
+	teardownTest := utils.SetupConnectionTest(t, false, false, false,
 		"../../config/agent/nginx-config-with-grpc-client.conf")
 	defer teardownTest(t)
 
-	nginxInstanceID := utils.VerifyConnection(t, 2)
+	nginxInstanceID := utils.VerifyConnection(t, 2, utils.MockManagementPlaneAPIAddress)
 
 	responses := utils.ManagementPlaneResponses(t, 1)
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
@@ -119,11 +119,11 @@ func TestGrpc_ConfigApply(t *testing.T) {
 
 func TestGrpc_ConfigApply_Chunking(t *testing.T) {
 	ctx := context.Background()
-	teardownTest := utils.SetupConnectionTest(t, false, false,
+	teardownTest := utils.SetupConnectionTest(t, false, false, false,
 		"../../config/agent/nginx-config-with-max-file-size.conf")
 	defer teardownTest(t)
 
-	nginxInstanceID := utils.VerifyConnection(t, 2)
+	nginxInstanceID := utils.VerifyConnection(t, 2, utils.MockManagementPlaneAPIAddress)
 
 	responses := utils.ManagementPlaneResponses(t, 1)
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())

@@ -22,7 +22,10 @@ const (
 	RetryMaxWaitTime = 6 * time.Second
 )
 
-var MockManagementPlaneAPIAddress string
+var (
+	MockManagementPlaneAPIAddress          string
+	AuxiliaryMockManagementPlaneAPIAddress string
+)
 
 func PerformConfigApply(t *testing.T, nginxInstanceID string) {
 	t.Helper()
