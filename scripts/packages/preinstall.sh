@@ -106,9 +106,9 @@ labels:
         allowed_directories=""
         IFS=":"
         for config_dir in $config_dirs; do
-            allowed_directories="${allowed_directories}"$'\n'"  - ${config_dir}"
+            allowed_directories="${allowed_directories}\n  - ${config_dir}"
         done
-        allowed_directories="${allowed_directories}"$'\n'"  - /var/log/nginx"
+        allowed_directories="${allowed_directories}\n  - /var/log/nginx"
 
         echo "Writing new v3 configuration to $v3_config_file"
         v3_config_contents="
@@ -130,8 +130,13 @@ command:
         skip_verify: false
 "
 
-        echo "$v3_config_contents" > "$v3_config_file" \
-            || err_exit "Failed to write v3 config"
+        if [ -n "$( echo -e )" ]; then
+            echo "$v3_config_contents" > "$v3_config_file" \
+                || err_exit "Failed to write v3 config"
+        else
+            echo -e "$v3_config_contents" > "$v3_config_file" \
+                || err_exit "Failed to write v3 config"
+        fi
     else
         echo "Existing NGINX Agent version is not v2, skipping config migration"
     fi
