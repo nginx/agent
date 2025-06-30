@@ -246,6 +246,7 @@ func (cs *CommandService) createServer(logger *slog.Logger) {
 	cs.addHealthEndpoint()
 	cs.addResponseAndRequestEndpoints()
 	cs.addConfigApplyEndpoint()
+	cs.addConfigEndpoint()
 }
 
 func (cs *CommandService) addConnectionEndpoint() {
@@ -381,6 +382,30 @@ func (cs *CommandService) addConfigApplyEndpoint() {
 		}
 
 		cs.requestChan <- &request
+
+		c.JSON(http.StatusOK, &request)
+	})
+}
+
+func (cs *CommandService) addConfigEndpoint() {
+	cs.server.GET("/api/v1/instance/:instanceID/config", func(c *gin.Context) {
+		instanceID := c.Param("instanceID")
+
+		configFiles, err := cs.findInstanceConfigFiles(instanceID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+
+		cs.instanceFiles[instanceID] = configFiles
+
+		request := mpi.FileOverview{
+			ConfigVersion: &mpi.ConfigVersion{
+				InstanceId: instanceID,
+				Version:    files.GenerateConfigVersion(cs.instanceFiles[instanceID]),
+			},
+			Files: cs.instanceFiles[instanceID],
+		}
 
 		c.JSON(http.StatusOK, &request)
 	})
