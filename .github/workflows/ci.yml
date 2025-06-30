@@ -93,6 +93,8 @@ jobs:
     strategy:
       matrix:
         container:
+        - image: "ubuntu"
+          version: "24.04"
         - image: "redhatenterprise"
           version: "9"
         - image: "alpine"
@@ -162,12 +164,12 @@ jobs:
       matrix:
         container:
         - image: "alpine"
-          version: "3.21"
+          version: "3.20"
           plus: "r32"
           release: "alpine"
           path: "/nginx-plus/agent"
         - image: "alpine"
-          version: "3.20"
+          version: "3.19"
           plus: "r31"
           release: "alpine"
           path: "/nginx-plus/agent"
