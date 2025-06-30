@@ -24,7 +24,7 @@ GOBIN 	?= $$(go env GOPATH)/bin
 # | almalinux        | 8, 9                                      |                                                                |
 # | alpine           | 3.18, 3.19, 3.20, 3.21              		 |                                                                |
 # | oraclelinux      | 8, 9                                		 |                                                                |
-# | suse             | sles12sp5, sle15                          |                                                                |
+# | suse             | sle15                          			 |                                                                |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 OS_RELEASE  ?= ubuntu
 OS_VERSION  ?= 22.04
