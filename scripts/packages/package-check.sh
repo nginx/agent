@@ -49,6 +49,8 @@ PKG_DIR="${PKG_REPO}/${PKG_NAME}"
 PKG_REPO_URL="https://${PKG_DIR}"
 
 APK=(
+  alpine/v3.22/main/aarch64/nginx-agent-$VERSION.apk
+  alpine/v3.22/main/x86_64/nginx-agent-$VERSION.apk
   alpine/v3.21/main/aarch64/nginx-agent-$VERSION.apk
   alpine/v3.21/main/x86_64/nginx-agent-$VERSION.apk
   alpine/v3.20/main/aarch64/nginx-agent-$VERSION.apk
@@ -81,7 +83,6 @@ AMZN=(
 )
 SUSE=(
   sles/15/x86_64/RPMS/nginx-agent-$VERSION.sles15.ngx.x86_64.rpm
-  sles/12/x86_64/RPMS/nginx-agent-$VERSION.sles12.ngx.x86_64.rpm
 )
 CENTOS=(
   centos/9/aarch64/RPMS/nginx-agent-$VERSION.el9.ngx.aarch64.rpm
