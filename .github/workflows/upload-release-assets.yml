@@ -66,8 +66,8 @@ jobs:
           PKG_REPO=${{inputs.pkgRepo}} CERT=pubtest.crt KEY=pubtest.key DL=1 scripts/packages/package-check.sh ${{inputs.pkgVersion}}
           for i in $(find ${{inputs.pkgRepo}}/nginx-agent | grep -e "nginx-agent[_-]${{inputs.pkgVersion}}"); do
             if [[ "$i" == *.deb ]]; then
-              echo "Renaming ${i} to ${dest/_/-/}"
-              mv "${i}" "${dest/_/-/}"
+              echo "Renaming ${i} to ${i/_/-/}"
+              mv "${i}" "${i/_/-/}"
             fi 
             if [[ "$i" == *.apk ]]; then
               ver=$(echo "$i" | grep -o -e "v[0-9]*\.[0-9]*")
