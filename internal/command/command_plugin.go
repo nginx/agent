@@ -260,7 +260,8 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 				if cp.commandServerType != model.Command {
 					slog.WarnContext(newCtx, "Auxiliary command server can not perform config apply",
 						"command_server_type", cp.commandServerType.String())
-					cp.handleInvalidRequest(newCtx, message, "Config apply failed")
+					cp.handleInvalidRequest(newCtx, message, "Config apply failed",
+						message.GetConfigApplyRequest().GetOverview().GetConfigVersion().GetInstanceId())
 
 					return
 				}
@@ -273,7 +274,8 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 				if cp.commandServerType != model.Command {
 					slog.WarnContext(newCtx, "Auxiliary command server can not perform api action",
 						"command_server_type", cp.commandServerType.String())
-					cp.handleInvalidRequest(newCtx, message, "API action failed")
+					cp.handleInvalidRequest(newCtx, message, "API action failed",
+						message.GetActionRequest().GetInstanceId())
 
 					return
 				}
@@ -366,7 +368,7 @@ func (cp *CommandPlugin) handleHealthRequest(newCtx context.Context) {
 }
 
 func (cp *CommandPlugin) handleInvalidRequest(ctx context.Context,
-	request *mpi.ManagementPlaneRequest, message string,
+	request *mpi.ManagementPlaneRequest, message, instanceID string,
 ) {
 	err := cp.commandService.SendDataPlaneResponse(ctx, &mpi.DataPlaneResponse{
 		MessageMeta: request.GetMessageMeta(),
@@ -375,7 +377,7 @@ func (cp *CommandPlugin) handleInvalidRequest(ctx context.Context,
 			Message: message,
 			Error:   "Can not perform write action as auxiliary command server",
 		},
-		InstanceId: request.GetActionRequest().GetInstanceId(),
+		InstanceId: instanceID,
 	})
 	if err != nil {
 		slog.ErrorContext(ctx, "Unable to send data plane response", "error", err)
