@@ -19,7 +19,7 @@ func TestOTelComponentFactoriesDefault(t *testing.T) {
 	assert.NotNil(t, factories, "factories should not be nil")
 
 	assert.Len(t, factories.Receivers, 6)
-	assert.Len(t, factories.Processors, 8)
+	assert.Len(t, factories.Processors, 9)
 	assert.Len(t, factories.Exporters, 4)
 	assert.Len(t, factories.Extensions, 3)
 	assert.Empty(t, factories.Connectors)
