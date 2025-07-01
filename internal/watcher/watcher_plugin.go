@@ -260,24 +260,9 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case message := <-w.commandCredentialUpdatesChannel:
-			slog.DebugContext(ctx, "Received credential update event for command server")
-			newCtx := context.WithValue(context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID),
-				logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey,
-					message.ServerType.String()))
-
-			w.messagePipe.Process(newCtx, &bus.Message{
-				Topic: bus.ConnectionResetTopic, Data: message.GrpcConnection,
-			})
-
+			w.handleCredentialUpdate(ctx, message)
 		case message := <-w.auxiliaryCredentialUpdatesChannel:
-			slog.DebugContext(ctx, "Received credential update event for auxiliary command server")
-			newCtx := context.WithValue(context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID),
-				logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey,
-					message.ServerType.String()))
-
-			w.messagePipe.Process(newCtx, &bus.Message{
-				Topic: bus.ConnectionResetTopic, Data: message.GrpcConnection,
-			})
+			w.handleCredentialUpdate(ctx, message)
 		case message := <-w.instanceUpdatesChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 			w.handleInstanceUpdates(newCtx, message)
@@ -315,6 +300,17 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 			go w.instanceWatcherService.ReparseConfigs(newCtx)
 		}
 	}
+}
+
+func (w *Watcher) handleCredentialUpdate(ctx context.Context, message credentials.CredentialUpdateMessage) {
+	newCtx := context.WithValue(context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID),
+		logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey,
+			message.ServerType.String()))
+
+	slog.DebugContext(newCtx, "Received credential update event for command server")
+	w.messagePipe.Process(newCtx, &bus.Message{
+		Topic: bus.ConnectionResetTopic, Data: message.GrpcConnection,
+	})
 }
 
 func (w *Watcher) handleInstanceUpdates(newCtx context.Context, message instance.InstanceUpdatesMessage) {
