@@ -7,6 +7,7 @@ package collector
 
 import (
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver"
+	"github.com/nginx/agent/v3/internal/collector/logsgzipprocessor"
 	nginxreceiver "github.com/nginx/agent/v3/internal/collector/nginxossreceiver"
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver"
 
@@ -104,6 +105,7 @@ func createProcessorFactories() map[component.Type]processor.Factory {
 		redactionprocessor.NewFactory(),
 		resourceprocessor.NewFactory(),
 		transformprocessor.NewFactory(),
+		logsgzipprocessor.NewFactory(),
 	}
 
 	processors := make(map[component.Type]processor.Factory)
