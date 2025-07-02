@@ -43,8 +43,8 @@ PROTO_DIR       := proto
 BINARY_NAME		:= nginx-agent
 PROJECT_DIR		= cmd/agent
 PROJECT_FILE	= main.go
-COLLECTOR_PATH  ?= /opt/homebrew/etc/nginx-agent/opentelemetry-collector-agent.yaml
-MANIFEST_DIR	?= /opt/homebrew/var/lib/nginx-agent
+COLLECTOR_PATH  ?= /etc/nginx-agent/opentelemetry-collector-agent.yaml
+MANIFEST_DIR	?= /var/lib/nginx-agent
 DIRS            = $(BUILD_DIR) $(TEST_BUILD_DIR) $(BUILD_DIR)/$(DOCS_DIR) $(BUILD_DIR)/$(DOCS_DIR)/$(PROTO_DIR)
 $(shell mkdir -p $(DIRS))
 
