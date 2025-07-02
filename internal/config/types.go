@@ -416,7 +416,7 @@ func (c *Config) AreReceiversConfigured() bool {
 
 // isAllowedDir checks if the given path is in the list of allowed directories.
 // It returns true if the path is allowed, false otherwise.
-// If the path does not exist, it logs a warning and returns false.
+// If the path is allowed but does not exist, it also logs a warning.
 // It also checks if the path is a file, in which case it checks the directory of the file.
 func isAllowedDir(path string, allowedDirs []string) bool {
 	if len(allowedDirs) == 0 {
