@@ -334,11 +334,9 @@ func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *mpi.Instan
 		},
 	}
 
-	if iw.agentConfig.AuxiliaryCommand != nil {
+	if iw.agentConfig.IsAuxiliaryCommandGrpcClientConfigured() {
 		instance.GetInstanceConfig().GetAgentConfig().AuxiliaryCommand = config.
 			ToAuxiliaryCommandServerProto(iw.agentConfig.AuxiliaryCommand)
-	} else {
-		instance.GetInstanceConfig().GetAgentConfig().AuxiliaryCommand = &mpi.AuxiliaryCommandServer{}
 	}
 
 	return instance
