@@ -33,11 +33,11 @@ func TestGrpc_FileWatcher(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	responses := utils.ManagementPlaneResponses(t, 2)
+	responses := utils.ManagementPlaneResponses(t, 2, utils.MockManagementPlaneAPIAddress)
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
 
-	utils.VerifyUpdateDataPlaneStatus(t)
+	utils.VerifyUpdateDataPlaneStatus(t, utils.MockManagementPlaneAPIAddress)
 }

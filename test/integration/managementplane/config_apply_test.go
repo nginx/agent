@@ -32,14 +32,14 @@ func TestGrpc_ConfigApply(t *testing.T) {
 
 	nginxInstanceID := utils.VerifyConnection(t, 2, utils.MockManagementPlaneAPIAddress)
 
-	responses := utils.ManagementPlaneResponses(t, 1)
+	responses := utils.ManagementPlaneResponses(t, 1, utils.MockManagementPlaneAPIAddress)
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 
 	t.Run("Test 1: No config changes", func(t *testing.T) {
-		utils.ClearManagementPlaneResponses(t)
-		utils.PerformConfigApply(t, nginxInstanceID)
-		responses = utils.ManagementPlaneResponses(t, 1)
+		utils.ClearManagementPlaneResponses(t, utils.MockManagementPlaneAPIAddress)
+		utils.PerformConfigApply(t, nginxInstanceID, utils.MockManagementPlaneAPIAddress)
+		responses = utils.ManagementPlaneResponses(t, 1, utils.MockManagementPlaneAPIAddress)
 		t.Logf("Config apply responses: %v", responses)
 
 		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
@@ -47,7 +47,7 @@ func TestGrpc_ConfigApply(t *testing.T) {
 	})
 
 	t.Run("Test 2: Valid config", func(t *testing.T) {
-		utils.ClearManagementPlaneResponses(t)
+		utils.ClearManagementPlaneResponses(t, utils.MockManagementPlaneAPIAddress)
 		newConfigFile := "../../config/nginx/nginx-with-test-location.conf"
 
 		if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
@@ -62,9 +62,9 @@ func TestGrpc_ConfigApply(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		utils.PerformConfigApply(t, nginxInstanceID)
+		utils.PerformConfigApply(t, nginxInstanceID, utils.MockManagementPlaneAPIAddress)
 
-		responses = utils.ManagementPlaneResponses(t, 2)
+		responses = utils.ManagementPlaneResponses(t, 2, utils.MockManagementPlaneAPIAddress)
 		t.Logf("Config apply responses: %v", responses)
 
 		sort.Slice(responses, func(i, j int) bool {
@@ -78,7 +78,7 @@ func TestGrpc_ConfigApply(t *testing.T) {
 	})
 
 	t.Run("Test 3: Invalid config", func(t *testing.T) {
-		utils.ClearManagementPlaneResponses(t)
+		utils.ClearManagementPlaneResponses(t, utils.MockManagementPlaneAPIAddress)
 		err := utils.MockManagementPlaneGrpcContainer.CopyFileToContainer(
 			ctx,
 			"../../config/nginx/invalid-nginx.conf",
@@ -87,9 +87,9 @@ func TestGrpc_ConfigApply(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		utils.PerformConfigApply(t, nginxInstanceID)
+		utils.PerformConfigApply(t, nginxInstanceID, utils.MockManagementPlaneAPIAddress)
 
-		responses = utils.ManagementPlaneResponses(t, 2)
+		responses = utils.ManagementPlaneResponses(t, 2, utils.MockManagementPlaneAPIAddress)
 		t.Logf("Config apply responses: %v", responses)
 
 		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_ERROR, responses[0].GetCommandResponse().GetStatus())
@@ -101,10 +101,10 @@ func TestGrpc_ConfigApply(t *testing.T) {
 	})
 
 	t.Run("Test 4: File not in allowed directory", func(t *testing.T) {
-		utils.ClearManagementPlaneResponses(t)
+		utils.ClearManagementPlaneResponses(t, utils.MockManagementPlaneAPIAddress)
 		utils.PerformInvalidConfigApply(t, nginxInstanceID)
 
-		responses = utils.ManagementPlaneResponses(t, 1)
+		responses = utils.ManagementPlaneResponses(t, 1, utils.MockManagementPlaneAPIAddress)
 		t.Logf("Config apply responses: %v", responses)
 
 		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_FAILURE, responses[0].GetCommandResponse().GetStatus())
@@ -125,11 +125,11 @@ func TestGrpc_ConfigApply_Chunking(t *testing.T) {
 
 	nginxInstanceID := utils.VerifyConnection(t, 2, utils.MockManagementPlaneAPIAddress)
 
-	responses := utils.ManagementPlaneResponses(t, 1)
+	responses := utils.ManagementPlaneResponses(t, 1, utils.MockManagementPlaneAPIAddress)
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 
-	utils.ClearManagementPlaneResponses(t)
+	utils.ClearManagementPlaneResponses(t, utils.MockManagementPlaneAPIAddress)
 
 	newConfigFile := "../../config/nginx/nginx-1mb-file.conf"
 
@@ -141,9 +141,9 @@ func TestGrpc_ConfigApply_Chunking(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	utils.PerformConfigApply(t, nginxInstanceID)
+	utils.PerformConfigApply(t, nginxInstanceID, utils.MockManagementPlaneAPIAddress)
 
-	responses = utils.ManagementPlaneResponses(t, 2)
+	responses = utils.ManagementPlaneResponses(t, 2, utils.MockManagementPlaneAPIAddress)
 	t.Logf("Config apply responses: %v", responses)
 
 	sort.Slice(responses, func(i, j int) bool {

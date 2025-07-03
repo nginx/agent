@@ -66,7 +66,7 @@ func TestGrpc_DataplaneHealthRequest(t *testing.T) {
 
 	utils.VerifyConnection(t, 2, utils.MockManagementPlaneAPIAddress)
 
-	responses := utils.ManagementPlaneResponses(t, 1)
+	responses := utils.ManagementPlaneResponses(t, 1, utils.MockManagementPlaneAPIAddress)
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 
@@ -91,7 +91,7 @@ func TestGrpc_DataplaneHealthRequest(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 
-	responses = utils.ManagementPlaneResponses(t, 2)
+	responses = utils.ManagementPlaneResponses(t, 2, utils.MockManagementPlaneAPIAddress)
 
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully sent health status update", responses[1].GetCommandResponse().GetMessage())

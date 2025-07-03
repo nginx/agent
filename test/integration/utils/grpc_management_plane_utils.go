@@ -215,7 +215,7 @@ func setupLocalEnvironment(tb testing.TB) {
 	}(tb)
 }
 
-func ManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int) []*mpi.DataPlaneResponse {
+func ManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int, mockManagementPlaneAPIAddress string) []*mpi.DataPlaneResponse {
 	t.Helper()
 
 	client := resty.New()
@@ -233,7 +233,7 @@ func ManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int) []*mp
 		},
 	)
 
-	url := fmt.Sprintf("http://%s/api/v1/responses", MockManagementPlaneAPIAddress)
+	url := fmt.Sprintf("http://%s/api/v1/responses", mockManagementPlaneAPIAddress)
 	resp, err := client.R().EnableTrace().Get(url)
 
 	require.NoError(t, err)
@@ -256,12 +256,12 @@ func ManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int) []*mp
 	return response
 }
 
-func ClearManagementPlaneResponses(t *testing.T) {
+func ClearManagementPlaneResponses(t *testing.T, mockManagementPlaneAPIAddress string) {
 	t.Helper()
 
 	client := resty.New()
 
-	url := fmt.Sprintf("http://%s/api/v1/responses", MockManagementPlaneAPIAddress)
+	url := fmt.Sprintf("http://%s/api/v1/responses", mockManagementPlaneAPIAddress)
 	resp, err := client.R().EnableTrace().Delete(url)
 
 	require.NoError(t, err)
@@ -422,14 +422,14 @@ func VerifyUpdateDataPlaneHealth(t *testing.T, mockManagementPlaneAPIAddress str
 	assert.Equal(t, mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY, healths[0].GetInstanceHealthStatus())
 }
 
-func VerifyUpdateDataPlaneStatus(t *testing.T) {
+func VerifyUpdateDataPlaneStatus(t *testing.T, mockManagementPlaneAPIAddress string) {
 	t.Helper()
 
 	client := resty.New()
 
 	client.SetRetryCount(statusRetryCount).SetRetryWaitTime(retryWait).SetRetryMaxWaitTime(retryMaxWait)
 
-	url := fmt.Sprintf("http://%s/api/v1/status", MockManagementPlaneAPIAddress)
+	url := fmt.Sprintf("http://%s/api/v1/status", mockManagementPlaneAPIAddress)
 
 	resp, err := client.R().EnableTrace().Get(url)
 
