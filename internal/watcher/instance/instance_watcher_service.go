@@ -335,8 +335,8 @@ func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *mpi.Instan
 	}
 
 	if iw.agentConfig.AuxiliaryCommand != nil {
-		instance.GetInstanceConfig().GetAgentConfig().AuxiliaryCommand =
-			config.ToAuxiliaryCommandServerProto(iw.agentConfig.AuxiliaryCommand)
+		instance.GetInstanceConfig().GetAgentConfig().AuxiliaryCommand = config.
+			ToAuxiliaryCommandServerProto(iw.agentConfig.AuxiliaryCommand)
 	}
 
 	return instance
