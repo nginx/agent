@@ -127,7 +127,7 @@ func (s *AuxiliaryTestSuite) TestAuxiliary_FileWatcher() {
 	// Check command server has 2 ManagementPlaneResponses from updating a file on disk
 	commandResponses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, commandResponses[0].GetCommandResponse().GetStatus())
-	git s.Equal("Successfully updated all files", commandResponses[0].GetCommandResponse().GetMessage())
+	s.Equal("Successfully updated all files", commandResponses[0].GetCommandResponse().GetMessage())
 
 	// Check auxiliary server has 2 ManagementPlaneResponses from updating a file on disk
 	auxResponses := utils.ManagementPlaneResponses(s.T(), 1, utils.AuxiliaryMockManagementPlaneAPIAddress)
