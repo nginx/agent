@@ -85,3 +85,40 @@ func ToCommandProto(cmd *Command) *mpi.CommandServer {
 
 	return protoConfig
 }
+
+// ToAuxiliaryCommandServerProto maps the AgentConfig Command struct back to the AuxiliaryCommandServer proto message
+func ToAuxiliaryCommandServerProto(cmd *Command) *mpi.AuxiliaryCommandServer {
+	protoConfig := &mpi.AuxiliaryCommandServer{}
+
+	// Map ServerConfig to the ServerSettings
+	if cmd.Server != nil {
+		protoServerType := mpi.ServerSettings_SERVER_SETTINGS_TYPE_UNDEFINED
+		if cmd.Server.Type == Grpc {
+			protoServerType = mpi.ServerSettings_SERVER_SETTINGS_TYPE_GRPC
+		}
+
+		protoConfig.Server = &mpi.ServerSettings{
+			Host: cmd.Server.Host,
+			Port: int32(cmd.Server.Port),
+			Type: protoServerType,
+		}
+	}
+
+	// Map AuthConfig to AuthSettings
+	if cmd.Auth != nil {
+		protoConfig.Auth = &mpi.AuthSettings{}
+	}
+
+	// Map TLSConfig to TLSSettings
+	if cmd.TLS != nil {
+		protoConfig.Tls = &mpi.TLSSettings{
+			Cert:       cmd.TLS.Cert,
+			Key:        cmd.TLS.Key,
+			Ca:         cmd.TLS.Ca,
+			ServerName: cmd.TLS.ServerName,
+			SkipVerify: cmd.TLS.SkipVerify,
+		}
+	}
+
+	return protoConfig
+}

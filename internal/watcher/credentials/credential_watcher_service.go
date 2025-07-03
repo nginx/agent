@@ -13,6 +13,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/model"
+
+	"github.com/nginx/agent/v3/internal/grpc"
+
 	"github.com/fsnotify/fsnotify"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/logger"
@@ -28,7 +32,9 @@ var emptyEvent = fsnotify.Event{
 }
 
 type CredentialUpdateMessage struct {
-	CorrelationID slog.Attr
+	CorrelationID  slog.Attr
+	GrpcConnection *grpc.GrpcConnection
+	ServerType     model.ServerType
 }
 
 type CredentialWatcherService struct {
@@ -36,9 +42,11 @@ type CredentialWatcherService struct {
 	watcher           *fsnotify.Watcher
 	filesBeingWatched *sync.Map
 	filesChanged      *atomic.Bool
+	serverType        model.ServerType
+	watcherMutex      sync.Mutex
 }
 
-func NewCredentialWatcherService(agentConfig *config.Config) *CredentialWatcherService {
+func NewCredentialWatcherService(agentConfig *config.Config, serverType model.ServerType) *CredentialWatcherService {
 	filesChanged := &atomic.Bool{}
 	filesChanged.Store(false)
 
@@ -46,38 +54,53 @@ func NewCredentialWatcherService(agentConfig *config.Config) *CredentialWatcherS
 		agentConfig:       agentConfig,
 		filesBeingWatched: &sync.Map{},
 		filesChanged:      filesChanged,
+		serverType:        serverType,
+		watcherMutex:      sync.Mutex{},
 	}
 }
 
 func (cws *CredentialWatcherService) Watch(ctx context.Context, ch chan<- CredentialUpdateMessage) {
-	slog.DebugContext(ctx, "Starting credential watcher monitoring")
+	newCtx := context.WithValue(
+		ctx,
+		logger.ServerTypeContextKey,
+		slog.Any(logger.ServerTypeKey, cws.serverType.String()),
+	)
+	slog.DebugContext(newCtx, "Starting credential watcher monitoring")
 
 	ticker := time.NewTicker(monitoringInterval)
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to create credential watcher", "error", err)
+		slog.ErrorContext(newCtx, "Failed to create credential watcher", "error", err)
 		return
 	}
 
 	cws.watcher = watcher
 
-	cws.watchFiles(ctx, credentialPaths(cws.agentConfig))
+	cws.watcherMutex.Lock()
+	commandServer := cws.agentConfig.Command
+
+	if cws.serverType == model.Auxiliary {
+		commandServer = cws.agentConfig.AuxiliaryCommand
+	}
+
+	cws.watchFiles(newCtx, credentialPaths(commandServer))
+	cws.watcherMutex.Unlock()
 
 	for {
 		select {
-		case <-ctx.Done():
+		case <-newCtx.Done():
 			closeError := cws.watcher.Close()
 			if closeError != nil {
-				slog.ErrorContext(ctx, "Unable to close credential watcher", "error", closeError)
+				slog.ErrorContext(newCtx, "Unable to close credential watcher", "error", closeError)
 			}
 
 			return
 		case event := <-cws.watcher.Events:
-			cws.handleEvent(ctx, event)
+			cws.handleEvent(newCtx, event)
 		case <-ticker.C:
-			cws.checkForUpdates(ctx, ch)
+			cws.checkForUpdates(newCtx, ch)
 		case watcherError := <-cws.watcher.Errors:
-			slog.ErrorContext(ctx, "Unexpected error in credential watcher", "error", watcherError)
+			slog.ErrorContext(newCtx, "Unexpected error in credential watcher", "error", watcherError)
 		}
 	}
 }
@@ -146,31 +169,50 @@ func (cws *CredentialWatcherService) checkForUpdates(ctx context.Context, ch cha
 			slog.Any(logger.CorrelationIDKey, logger.GenerateCorrelationID()),
 		)
 
+		cws.watcherMutex.Lock()
+		defer cws.watcherMutex.Unlock()
+
+		commandServer := cws.agentConfig.Command
+		if cws.serverType == model.Auxiliary {
+			commandServer = cws.agentConfig.AuxiliaryCommand
+		}
+
+		conn, err := grpc.NewGrpcConnection(newCtx, cws.agentConfig, commandServer)
+		if err != nil {
+			slog.ErrorContext(newCtx, "Unable to create new grpc connection", "error", err)
+			cws.filesChanged.Store(false)
+
+			return
+		}
 		slog.DebugContext(ctx, "Credential watcher has detected changes")
-		ch <- CredentialUpdateMessage{CorrelationID: logger.CorrelationIDAttr(newCtx)}
+		ch <- CredentialUpdateMessage{
+			CorrelationID:  logger.CorrelationIDAttr(newCtx),
+			ServerType:     cws.serverType,
+			GrpcConnection: conn,
+		}
 		cws.filesChanged.Store(false)
 	}
 }
 
-func credentialPaths(agentConfig *config.Config) []string {
+func credentialPaths(agentConfig *config.Command) []string {
 	var paths []string
 
-	if agentConfig.Command.Auth != nil {
-		if agentConfig.Command.Auth.TokenPath != "" {
-			paths = append(paths, agentConfig.Command.Auth.TokenPath)
+	if agentConfig.Auth != nil {
+		if agentConfig.Auth.TokenPath != "" {
+			paths = append(paths, agentConfig.Auth.TokenPath)
 		}
 	}
 
 	// agent's tls certs
-	if agentConfig.Command.TLS != nil {
-		if agentConfig.Command.TLS.Ca != "" {
-			paths = append(paths, agentConfig.Command.TLS.Ca)
+	if agentConfig.TLS != nil {
+		if agentConfig.TLS.Ca != "" {
+			paths = append(paths, agentConfig.TLS.Ca)
 		}
-		if agentConfig.Command.TLS.Cert != "" {
-			paths = append(paths, agentConfig.Command.TLS.Cert)
+		if agentConfig.TLS.Cert != "" {
+			paths = append(paths, agentConfig.TLS.Cert)
 		}
-		if agentConfig.Command.TLS.Key != "" {
-			paths = append(paths, agentConfig.Command.TLS.Key)
+		if agentConfig.TLS.Key != "" {
+			paths = append(paths, agentConfig.TLS.Key)
 		}
 	}
 

@@ -10,7 +10,9 @@ import (
 	"testing"
 	"time"
 
-	model2 "github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/internal/grpc"
+
+	"github.com/nginx/agent/v3/internal/model"
 
 	"github.com/nginx/agent/v3/internal/watcher/credentials"
 
@@ -25,7 +27,7 @@ import (
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/pkg/id"
-	"github.com/nginx/agent/v3/test/model"
+	testModel "github.com/nginx/agent/v3/test/model"
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/assert"
@@ -67,7 +69,7 @@ func TestWatcher_Init(t *testing.T) {
 
 	nginxConfigContextMessage := instance.NginxConfigContextMessage{
 		CorrelationID:      logger.GenerateCorrelationID(),
-		NginxConfigContext: model.ConfigContext(),
+		NginxConfigContext: testModel.ConfigContext(),
 	}
 
 	instanceHealthMessage := health.InstanceHealthMessage{
@@ -76,13 +78,15 @@ func TestWatcher_Init(t *testing.T) {
 	}
 
 	credentialUpdateMessage := credentials.CredentialUpdateMessage{
-		CorrelationID: logger.GenerateCorrelationID(),
+		CorrelationID:  logger.GenerateCorrelationID(),
+		ServerType:     model.Command,
+		GrpcConnection: &grpc.GrpcConnection{},
 	}
 
 	watcherPlugin.instanceUpdatesChannel <- instanceUpdatesMessage
 	watcherPlugin.nginxConfigContextChannel <- nginxConfigContextMessage
 	watcherPlugin.instanceHealthChannel <- instanceHealthMessage
-	watcherPlugin.credentialUpdatesChannel <- credentialUpdateMessage
+	watcherPlugin.commandCredentialUpdatesChannel <- credentialUpdateMessage
 
 	assert.Eventually(t, func() bool { return len(messagePipe.Messages()) == 6 }, 2*time.Second, 10*time.Millisecond)
 	messages = messagePipe.Messages()
@@ -113,7 +117,7 @@ func TestWatcher_Init(t *testing.T) {
 		messages[4],
 	)
 	assert.Equal(t,
-		&bus.Message{Topic: bus.CredentialUpdatedTopic, Data: nil},
+		&bus.Message{Topic: bus.ConnectionResetTopic, Data: &grpc.GrpcConnection{}},
 		messages[5])
 }
 
@@ -165,8 +169,8 @@ func TestWatcher_Process_ConfigApplySuccessfulTopic(t *testing.T) {
 	ctx := context.Background()
 	data := protos.NginxOssInstance([]string{})
 
-	response := &model2.ConfigApplySuccess{
-		ConfigContext: &model2.NginxConfigContext{
+	response := &model.ConfigApplySuccess{
+		ConfigContext: &model.NginxConfigContext{
 			InstanceID: data.GetInstanceMeta().GetInstanceId(),
 		},
 		DataPlaneResponse: &mpi.DataPlaneResponse{
@@ -236,7 +240,6 @@ func TestWatcher_Subscriptions(t *testing.T) {
 	assert.Equal(
 		t,
 		[]string{
-			bus.CredentialUpdatedTopic,
 			bus.ConfigApplyRequestTopic,
 			bus.ConfigApplySuccessfulTopic,
 			bus.ConfigApplyCompleteTopic,
