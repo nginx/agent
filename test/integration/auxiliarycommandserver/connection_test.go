@@ -8,16 +8,15 @@ package auxiliarycommandserver
 import (
 	"context"
 	"fmt"
-	"github.com/go-resty/resty/v2"
-	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/test/integration/utils"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 	"net"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/go-resty/resty/v2"
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/test/integration/utils"
+	"github.com/stretchr/testify/suite"
 )
 
 type AuxiliaryTestSuite struct {
@@ -35,7 +34,6 @@ func (s *AuxiliaryTestSuite) SetupSuite() {
 }
 
 func (s *AuxiliaryTestSuite) TearDownSuite() {
-
 	s.teardownTest(s.T())
 }
 
@@ -44,15 +42,13 @@ func TestSuite(t *testing.T) {
 }
 
 func (s *AuxiliaryTestSuite) TestAuxiliary_Connection() {
-
 	s.instanceID = utils.VerifyConnection(s.T(), 2, utils.MockManagementPlaneAPIAddress)
-	assert.False(s.T(), s.T().Failed())
+	s.False(s.T().Failed())
 	utils.VerifyUpdateDataPlaneHealth(s.T(), utils.MockManagementPlaneAPIAddress)
 
 	utils.VerifyConnection(s.T(), 2, utils.AuxiliaryMockManagementPlaneAPIAddress)
-	assert.False(s.T(), s.T().Failed())
+	s.False(s.T().Failed())
 	utils.VerifyUpdateDataPlaneHealth(s.T(), utils.AuxiliaryMockManagementPlaneAPIAddress)
-
 }
 
 func (s *AuxiliaryTestSuite) TestAuxiliary_Reconnection() {
@@ -62,26 +58,25 @@ func (s *AuxiliaryTestSuite) TestAuxiliary_Reconnection() {
 	originalID := utils.VerifyConnection(s.T(), 2, utils.AuxiliaryMockManagementPlaneAPIAddress)
 	stopErr := utils.AuxiliaryMockManagementPlaneGrpcContainer.Stop(context.Background(), &timeout)
 
-	require.NoError(s.T(), stopErr)
+	s.Require().NoError(stopErr)
 
 	utils.VerifyConnection(s.T(), 2, utils.MockManagementPlaneAPIAddress)
-	assert.False(s.T(), s.T().Failed())
+	s.False(s.T().Failed())
 
 	startErr := utils.AuxiliaryMockManagementPlaneGrpcContainer.Start(ctx)
-	require.NoError(s.T(), startErr)
+	s.Require().NoError(startErr)
 
 	ipAddress, err := utils.AuxiliaryMockManagementPlaneGrpcContainer.Host(ctx)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	ports, err := utils.AuxiliaryMockManagementPlaneGrpcContainer.Ports(ctx)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	utils.AuxiliaryMockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9096/tcp"][0].HostPort)
 
 	currentID := utils.VerifyConnection(s.T(), 2, utils.AuxiliaryMockManagementPlaneAPIAddress)
-	assert.Equal(s.T(), originalID, currentID)
+	s.Equal(originalID, currentID)
 }
 
 func (s *AuxiliaryTestSuite) TestAuxiliary_DataplaneHealthRequest() {
-
 	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
 	utils.ClearManagementPlaneResponses(s.T(), utils.AuxiliaryMockManagementPlaneAPIAddress)
 
@@ -101,18 +96,18 @@ func (s *AuxiliaryTestSuite) TestAuxiliary_DataplaneHealthRequest() {
 	url := fmt.Sprintf("http://%s/api/v1/requests", utils.MockManagementPlaneAPIAddress)
 	resp, err := client.R().EnableTrace().SetBody(request).Post(url)
 
-	require.NoError(s.T(), err)
-	assert.Equal(s.T(), http.StatusOK, resp.StatusCode())
+	s.Require().NoError(err)
+	s.Equal(http.StatusOK, resp.StatusCode())
 
 	// Check command server has 2 ManagementPlaneResponses as it has sent the request
 	commandResponses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
-	assert.Equal(s.T(), mpi.CommandResponse_COMMAND_STATUS_OK, commandResponses[0].GetCommandResponse().GetStatus())
-	assert.Equal(s.T(), "Successfully sent health status update", commandResponses[0].GetCommandResponse().GetMessage())
-	assert.False(s.T(), s.T().Failed())
+	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, commandResponses[0].GetCommandResponse().GetStatus())
+	s.Equal("Successfully sent health status update", commandResponses[0].GetCommandResponse().GetMessage())
+	s.False(s.T().Failed())
 
 	// Check auxiliary server still only has 1 ManagementPlaneResponses as it didn't sent the request
 	utils.ManagementPlaneResponses(s.T(), 0, utils.AuxiliaryMockManagementPlaneAPIAddress)
-	assert.False(s.T(), s.T().Failed())
+	s.False(s.T().Failed())
 }
 
 func (s *AuxiliaryTestSuite) TestAuxiliary_FileWatcher() {
@@ -127,20 +122,20 @@ func (s *AuxiliaryTestSuite) TestAuxiliary_FileWatcher() {
 		"/etc/nginx/nginx.conf",
 		0o666,
 	)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	// Check command server has 2 ManagementPlaneResponses from updating a file on disk
 	commandResponses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
-	assert.Equal(s.T(), mpi.CommandResponse_COMMAND_STATUS_OK, commandResponses[0].GetCommandResponse().GetStatus())
-	assert.Equal(s.T(), "Successfully updated all files", commandResponses[0].GetCommandResponse().GetMessage())
+	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, commandResponses[0].GetCommandResponse().GetStatus())
+	git s.Equal("Successfully updated all files", commandResponses[0].GetCommandResponse().GetMessage())
 
 	// Check auxiliary server has 2 ManagementPlaneResponses from updating a file on disk
 	auxResponses := utils.ManagementPlaneResponses(s.T(), 1, utils.AuxiliaryMockManagementPlaneAPIAddress)
-	assert.Equal(s.T(), mpi.CommandResponse_COMMAND_STATUS_OK, auxResponses[0].GetCommandResponse().GetStatus())
-	assert.Equal(s.T(), "Successfully updated all files", auxResponses[0].GetCommandResponse().GetMessage())
+	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, auxResponses[0].GetCommandResponse().GetStatus())
+	s.Equal("Successfully updated all files", auxResponses[0].GetCommandResponse().GetMessage())
 }
 
-//func (s *AuxiliaryTestSuite) TestAuxiliary_ConfigApply() {
+//  func (s *AuxiliaryTestSuite) TestAuxiliary_ConfigApply() {
 //	s.instanceID = utils.VerifyConnection(s.T(), 2, utils.MockManagementPlaneAPIAddress)
 //	// Perform config apply
 //	// Check new config is in both Mocks
@@ -170,7 +165,8 @@ func (s *AuxiliaryTestSuite) TestAuxiliary_FileWatcher() {
 //	commandResponses := utils.ManagementPlaneResponses(s.T(), 2, utils.MockManagementPlaneAPIAddress)
 //
 //	sort.Slice(commandResponses, func(i, j int) bool {
-//		return commandResponses[i].GetCommandResponse().GetMessage() < commandResponses[j].GetCommandResponse().GetMessage()
+//		return commandResponses[i].GetCommandResponse().GetMessage() <
+//		commandResponses[j].GetCommandResponse().GetMessage()
 //	})
 //
 //	assert.Equal(s.T(), mpi.CommandResponse_COMMAND_STATUS_OK, commandResponses[0].GetCommandResponse().GetStatus())
@@ -186,12 +182,12 @@ func (s *AuxiliaryTestSuite) TestAuxiliary_FileWatcher() {
 //	overview2 := utils.CurrentFileOverview(s.T(), s.instanceID, utils.AuxiliaryMockManagementPlaneAPIAddress)
 //	s.T().Logf("Overview: %v", overview.ConfigVersion)
 //	s.T().Logf("Overview 2: %v", overview2.ConfigVersion)
-//}
+// }
 
 //
-//func (s *AuxiliaryTestSuite) TestAuxiliary_ConfigApplyInvalid() {
+// func (s *AuxiliaryTestSuite) TestAuxiliary_ConfigApplyInvalid() {
 //	// Perform config apply with aux
 //	// Check new config is broken
 //	// Check using hash with new API endpoint which was added to get the file overview
 //
-//}
+// }

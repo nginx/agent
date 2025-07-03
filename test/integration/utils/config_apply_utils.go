@@ -7,11 +7,12 @@ package utils
 
 import (
 	"fmt"
-	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"google.golang.org/protobuf/encoding/protojson"
 	"net/http"
 	"testing"
 	"time"
+
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
@@ -29,7 +30,7 @@ var (
 	AuxiliaryMockManagementPlaneAPIAddress string
 )
 
-func PerformConfigApply(t *testing.T, nginxInstanceID string, mockManagementPlaneAPIAddress string) {
+func PerformConfigApply(t *testing.T, nginxInstanceID, mockManagementPlaneAPIAddress string) {
 	t.Helper()
 
 	client := resty.New()
@@ -43,7 +44,7 @@ func PerformConfigApply(t *testing.T, nginxInstanceID string, mockManagementPlan
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 }
 
-func CurrentFileOverview(t *testing.T, nginxInstanceID string, mockManagementPlaneAPIAddress string) *mpi.FileOverview {
+func CurrentFileOverview(t *testing.T, nginxInstanceID, mockManagementPlaneAPIAddress string) *mpi.FileOverview {
 	t.Helper()
 
 	client := resty.New()

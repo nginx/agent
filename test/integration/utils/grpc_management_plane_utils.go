@@ -215,7 +215,9 @@ func setupLocalEnvironment(tb testing.TB) {
 	}(tb)
 }
 
-func ManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int, mockManagementPlaneAPIAddress string) []*mpi.DataPlaneResponse {
+func ManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int,
+	mockManagementPlaneAPIAddress string,
+) []*mpi.DataPlaneResponse {
 	t.Helper()
 
 	client := resty.New()
