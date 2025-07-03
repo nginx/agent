@@ -307,7 +307,7 @@ func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *mpi.Instan
 		slog.WarnContext(ctx, "Unable to convert config to labels structure", "error", convertErr)
 	}
 
-	return &mpi.Instance{
+	instance := &mpi.Instance{
 		InstanceMeta: &mpi.InstanceMeta{
 			InstanceId:   iw.agentConfig.UUID,
 			InstanceType: mpi.InstanceMeta_INSTANCE_TYPE_AGENT,
@@ -318,7 +318,6 @@ func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *mpi.Instan
 			Config: &mpi.InstanceConfig_AgentConfig{
 				AgentConfig: &mpi.AgentConfig{
 					Command:           config.ToCommandProto(iw.agentConfig.Command),
-					AuxiliaryCommand:  config.ToAuxiliaryCommandServerProto(iw.agentConfig.AuxiliaryCommand),
 					Metrics:           &mpi.MetricsServer{},
 					File:              &mpi.FileServer{},
 					Labels:            labels,
@@ -334,6 +333,13 @@ func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *mpi.Instan
 			Details:    nil,
 		},
 	}
+
+	if iw.agentConfig.AuxiliaryCommand != nil {
+		instance.GetInstanceConfig().GetAgentConfig().AuxiliaryCommand =
+			config.ToAuxiliaryCommandServerProto(iw.agentConfig.AuxiliaryCommand)
+	}
+
+	return instance
 }
 
 func compareInstances(oldInstancesMap, instancesMap map[string]*mpi.Instance) (
