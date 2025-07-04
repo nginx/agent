@@ -86,19 +86,21 @@ func (cp *CommandPlugin) Info() *bus.Info {
 }
 
 func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
+	ctxWithMetadata := cp.config.NewContextWithLabels(ctx)
+
 	switch msg.Topic {
 	case bus.ConnectionResetTopic:
-		cp.processConnectionReset(ctx, msg)
+		cp.processConnectionReset(ctxWithMetadata, msg)
 	case bus.ResourceUpdateTopic:
-		cp.processResourceUpdate(ctx, msg)
+		cp.processResourceUpdate(ctxWithMetadata, msg)
 	case bus.InstanceHealthTopic:
-		cp.processInstanceHealth(ctx, msg)
+		cp.processInstanceHealth(ctxWithMetadata, msg)
 	case bus.DataPlaneHealthResponseTopic:
-		cp.processDataPlaneHealth(ctx, msg)
+		cp.processDataPlaneHealth(ctxWithMetadata, msg)
 	case bus.DataPlaneResponseTopic:
-		cp.processDataPlaneResponse(ctx, msg)
+		cp.processDataPlaneResponse(ctxWithMetadata, msg)
 	default:
-		slog.DebugContext(ctx, "Command plugin received unknown topic", "topic", msg.Topic)
+		slog.DebugContext(ctxWithMetadata, "Command plugin received unknown topic", "topic", msg.Topic)
 	}
 }
 
