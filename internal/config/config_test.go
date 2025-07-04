@@ -1144,6 +1144,7 @@ func createDefaultCollectorConfig() *Collector {
 				SendBatchSize:    DefCollectorBatchProcessorSendBatchSize,
 				Timeout:          DefCollectorBatchProcessorTimeout,
 			},
+			LogsGzip: &LogsGzip{},
 		},
 		Receivers: Receivers{
 			OtlpReceivers: []OtlpReceiver{
