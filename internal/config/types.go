@@ -6,11 +6,14 @@
 package config
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"google.golang.org/grpc/metadata"
 
 	"github.com/google/uuid"
 )
@@ -409,6 +412,18 @@ func (c *Config) AreReceiversConfigured() bool {
 		c.Collector.Receivers.ContainerMetrics != nil ||
 		c.Collector.Receivers.TcplogReceivers != nil ||
 		len(c.Collector.Receivers.TcplogReceivers) > 0
+}
+
+func (c *Config) NewContextWithLabels(ctx context.Context) context.Context {
+	md := metadata.Pairs()
+	for key, value := range c.Labels {
+		valueString, ok := value.(string)
+		if ok {
+			md.Set(key, valueString)
+		}
+	}
+
+	return metadata.NewOutgoingContext(ctx, md)
 }
 
 func isAllowedDir(dir string, allowedDirs []string) bool {
