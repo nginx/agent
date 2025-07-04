@@ -38,6 +38,7 @@ type (
 		messagePipe                        bus.MessagePipeInterface
 		agentConfig                        *config.Config
 		instanceWatcherService             instanceWatcherServiceInterface
+		nginxAppProtectInstanceWatcher     *instance.NginxAppProtectInstanceWatcher
 		healthWatcherService               *health.HealthWatcherService
 		fileWatcherService                 *file.FileWatcherService
 		credentialWatcherService           credentialWatcherServiceInterface
@@ -76,6 +77,7 @@ func NewWatcher(agentConfig *config.Config) *Watcher {
 	return &Watcher{
 		agentConfig:                        agentConfig,
 		instanceWatcherService:             instance.NewInstanceWatcherService(agentConfig),
+		nginxAppProtectInstanceWatcher:     instance.NewNginxAppProtectInstanceWatcher(agentConfig),
 		healthWatcherService:               health.NewHealthWatcherService(agentConfig),
 		fileWatcherService:                 file.NewFileWatcherService(agentConfig),
 		credentialWatcherService:           credentials.NewCredentialWatcherService(agentConfig),
@@ -98,6 +100,7 @@ func (w *Watcher) Init(ctx context.Context, messagePipe bus.MessagePipeInterface
 	watcherContext, cancel := context.WithCancel(ctx)
 	w.cancel = cancel
 
+	go w.nginxAppProtectInstanceWatcher.Watch(watcherContext, w.instanceUpdatesChannel)
 	go w.instanceWatcherService.Watch(watcherContext, w.instanceUpdatesChannel, w.nginxConfigContextChannel)
 	go w.healthWatcherService.Watch(watcherContext, w.instanceHealthChannel)
 	go w.credentialWatcherService.Watch(watcherContext, w.credentialUpdatesChannel)
@@ -282,6 +285,7 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 		case message := <-w.nginxConfigContextChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 			w.watcherMutex.Lock()
+
 			if !slices.Contains(w.instancesWithConfigApplyInProgress, message.NginxConfigContext.InstanceID) {
 				slog.DebugContext(
 					newCtx,
@@ -300,6 +304,9 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 					"nginx_config_context", message.NginxConfigContext,
 				)
 			}
+
+			w.fileWatcherService.Update(ctx, message.NginxConfigContext)
+
 			w.watcherMutex.Unlock()
 		case message := <-w.instanceHealthChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)

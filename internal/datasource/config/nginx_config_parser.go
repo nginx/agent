@@ -100,7 +100,7 @@ func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *mpi.Instance)
 	return ncp.createNginxConfigContext(ctx, instance, payload)
 }
 
-// nolint: cyclop,revive,gocognit
+// nolint: cyclop,revive,gocognit,gocyclo
 func (ncp *NginxConfigParser) createNginxConfigContext(
 	ctx context.Context,
 	instance *mpi.Instance,
@@ -138,6 +138,10 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 		err := ncp.crossplaneConfigTraverse(ctx, &conf,
 			func(ctx context.Context, parent, directive *crossplane.Directive) error {
 				switch directive.Directive {
+				case "include":
+					include := ncp.parseIncludeDirective(directive)
+
+					nginxConfigContext.Includes = append(nginxConfigContext.Includes, include)
 				case "log_format":
 					formatMap = ncp.formatMap(directive)
 				case "access_log":
@@ -212,6 +216,17 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 	}
 
 	return nginxConfigContext, nil
+}
+
+func (ncp *NginxConfigParser) parseIncludeDirective(directive *crossplane.Directive) string {
+	var include string
+	if filepath.IsAbs(directive.Args[0]) {
+		include = directive.Args[0]
+	} else {
+		include = filepath.Join(filepath.Dir(directive.File), directive.Args[0])
+	}
+
+	return include
 }
 
 func (ncp *NginxConfigParser) addAccessLog(accessLog *model.AccessLog,

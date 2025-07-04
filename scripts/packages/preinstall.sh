@@ -130,8 +130,13 @@ command:
         skip_verify: false
 "
 
-        echo "$v3_config_contents" > "$v3_config_file" \
-            || err_exit "Failed to write v3 config"
+        if [ -n "$( echo -e )" ]; then
+            echo "$v3_config_contents" > "$v3_config_file" \
+                || err_exit "Failed to write v3 config"
+        else
+            echo -e "$v3_config_contents" > "$v3_config_file" \
+                || err_exit "Failed to write v3 config"
+        fi
     else
         echo "Existing NGINX Agent version is not v2, skipping config migration"
     fi
