@@ -167,7 +167,7 @@ official-image-integration-test: $(SELECTED_PACKAGE) build-mock-management-plane
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} BUILD_TARGET="install" \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) TAG=${TAG} PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) DOCKERFILE_PATH=$(OFFICIAL_IMAGE_DOCKERFILE_PATH) \
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) IMAGE_PATH=$(IMAGE_PATH) \
-	go test -v ./test/integration/managementplane
+	go test -v ./test/integration/managementplane ./test/integration/managementplane
 
 performance-test:
 	@mkdir -p $(TEST_BUILD_DIR)
