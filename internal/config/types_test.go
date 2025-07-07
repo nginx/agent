@@ -25,10 +25,10 @@ func TestTypes_IsDirectoryAllowed(t *testing.T) {
 			allowed: true,
 			allowedDirs: []string{
 				AgentDirName,
-				"/etc/nginx",
+				"/etc/nginx/",
 				"/var/log/nginx/",
 			},
-			fileDir: "/etc/nginx/nginx.conf",
+			fileDir: "/etc/nginx",
 		},
 		{
 			name:    "Test 2: directory not allowed",

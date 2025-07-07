@@ -10,13 +10,17 @@ import (
 	"context"
 	"os"
 	"path"
+	"path/filepath"
 	"testing"
 	"time"
+
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/stub"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,7 +33,7 @@ const (
 func TestFileWatcherService_NewFileWatcherService(t *testing.T) {
 	fileWatcherService := NewFileWatcherService(types.AgentConfig())
 
-	assert.Empty(t, fileWatcherService.directoriesBeingWatched)
+	assert.Empty(t, fileWatcherService.directoriesToWatch)
 	assert.True(t, fileWatcherService.enabled.Load())
 	assert.False(t, fileWatcherService.filesChanged.Load())
 }
@@ -52,22 +56,17 @@ func TestFileWatcherService_addWatcher(t *testing.T) {
 	require.NoError(t, err)
 	fileWatcherService.watcher = watcher
 
-	tempDir := os.TempDir()
+	tempDir := t.TempDir()
 	testDirectory := path.Join(tempDir, "test_dir")
 	err = os.Mkdir(testDirectory, directoryPermissions)
 	require.NoError(t, err)
 	defer os.Remove(testDirectory)
 
-	info, err := os.Stat(testDirectory)
-	require.NoError(t, err)
+	fileWatcherService.addWatcher(ctx, testDirectory)
 
-	fileWatcherService.addWatcher(ctx, testDirectory, info)
-
-	value, ok := fileWatcherService.directoriesBeingWatched.Load(testDirectory)
-	assert.True(t, ok)
-	boolValue, ok := value.(bool)
-	assert.True(t, ok)
-	assert.True(t, boolValue)
+	directoriesBeingWatched := fileWatcherService.watcher.WatchList()
+	assert.Len(t, directoriesBeingWatched, 1)
+	assert.Equal(t, testDirectory, directoriesBeingWatched[0])
 }
 
 func TestFileWatcherService_addWatcher_Error(t *testing.T) {
@@ -77,25 +76,13 @@ func TestFileWatcherService_addWatcher_Error(t *testing.T) {
 	require.NoError(t, err)
 	fileWatcherService.watcher = watcher
 
-	tempDir := os.TempDir()
+	tempDir := t.TempDir()
 	testDirectory := path.Join(tempDir, "test_dir")
-	err = os.Mkdir(testDirectory, directoryPermissions)
-	require.NoError(t, err)
-	info, err := os.Stat(testDirectory)
-	require.NoError(t, err)
 
-	// Delete directory to cause the addWatcher function to fail
-	err = os.Remove(testDirectory)
-	require.NoError(t, err)
+	fileWatcherService.addWatcher(ctx, testDirectory)
 
-	fileWatcherService.addWatcher(ctx, testDirectory, info)
-
-	value, ok := fileWatcherService.directoriesBeingWatched.Load(testDirectory)
-	assert.True(t, ok)
-	boolValue, ok := value.(bool)
-	assert.True(t, ok)
-	assert.False(t, boolValue)
-	assert.True(t, ok)
+	directoriesBeingWatched := fileWatcherService.watcher.WatchList()
+	assert.Empty(t, directoriesBeingWatched)
 }
 
 func TestFileWatcherService_removeWatcher(t *testing.T) {
@@ -105,7 +92,7 @@ func TestFileWatcherService_removeWatcher(t *testing.T) {
 	require.NoError(t, err)
 	fileWatcherService.watcher = watcher
 
-	tempDir := os.TempDir()
+	tempDir := t.TempDir()
 	testDirectory := path.Join(tempDir, "test_dir")
 	err = os.Mkdir(testDirectory, directoryPermissions)
 	require.NoError(t, err)
@@ -113,23 +100,16 @@ func TestFileWatcherService_removeWatcher(t *testing.T) {
 
 	err = fileWatcherService.watcher.Add(testDirectory)
 	require.NoError(t, err)
-	fileWatcherService.directoriesBeingWatched.Store(testDirectory, true)
 
 	fileWatcherService.removeWatcher(ctx, testDirectory)
 
-	value, ok := fileWatcherService.directoriesBeingWatched.Load(testDirectory)
-	assert.Nil(t, value)
-	assert.False(t, ok)
-
 	logBuf := &bytes.Buffer{}
+	defer logBuf.Reset()
 	stub.StubLoggerWith(logBuf)
 
-	fileWatcherService.directoriesBeingWatched.Store(testDirectory, true)
 	fileWatcherService.removeWatcher(ctx, testDirectory)
 
 	helpers.ValidateLog(t, "Failed to remove file watcher", logBuf)
-
-	logBuf.Reset()
 }
 
 func TestFileWatcherService_isEventSkippable(t *testing.T) {
@@ -156,16 +136,89 @@ func TestFileWatcherService_isExcludedFile(t *testing.T) {
 	assert.False(t, isExcludedFile("/var/log/accesslog", excludeFiles))
 }
 
+func TestFileWatcherService_Update(t *testing.T) {
+	ctx := context.Background()
+
+	tempDir := t.TempDir()
+	testDirectory := path.Join(tempDir, "test_dir")
+	err := os.Mkdir(testDirectory, directoryPermissions)
+	require.NoError(t, err)
+	defer os.RemoveAll(testDirectory)
+
+	agentConfig := types.AgentConfig()
+	agentConfig.Watchers.FileWatcher.MonitoringFrequency = 100 * time.Millisecond
+	agentConfig.AllowedDirectories = []string{testDirectory, "/unknown/directory"}
+
+	fileWatcherService := NewFileWatcherService(agentConfig)
+
+	t.Run("Test 1: watcher not initialized yet", func(t *testing.T) {
+		fileWatcherService.Update(ctx, &model.NginxConfigContext{
+			Includes: []string{filepath.Join(testDirectory, "*.conf")},
+		})
+
+		_, ok := fileWatcherService.directoriesToWatch[testDirectory]
+		assert.True(t, ok)
+
+		assert.Nil(t, fileWatcherService.watcher)
+	})
+
+	t.Run("Test 2: watcher initialized", func(t *testing.T) {
+		watcher, newWatcherError := fsnotify.NewWatcher()
+		require.NoError(t, newWatcherError)
+
+		fileWatcherService.watcher = watcher
+
+		fileWatcherService.Update(ctx, &model.NginxConfigContext{
+			Includes: []string{filepath.Join(testDirectory, "*.conf")},
+		})
+
+		_, ok := fileWatcherService.directoriesToWatch[testDirectory]
+		assert.True(t, ok)
+
+		directoriesBeingWatched := fileWatcherService.watcher.WatchList()
+		assert.Len(t, directoriesBeingWatched, 1)
+		assert.Equal(t, testDirectory, directoriesBeingWatched[0])
+	})
+
+	t.Run("Test 3: remove watchers", func(t *testing.T) {
+		fileWatcherService.Update(ctx, &model.NginxConfigContext{
+			Includes: []string{},
+		})
+
+		assert.Empty(t, fileWatcherService.directoriesToWatch)
+
+		directoriesBeingWatched := fileWatcherService.watcher.WatchList()
+		assert.Empty(t, directoriesBeingWatched)
+	})
+
+	t.Run("Test 4: not allowed directory", func(t *testing.T) {
+		fileWatcherService.Update(ctx, &model.NginxConfigContext{
+			Files: []*mpi.File{
+				{
+					FileMeta: &mpi.FileMeta{
+						Name: "/unknown/location/test.conf",
+					},
+				},
+			},
+		})
+
+		_, ok := fileWatcherService.directoriesToWatch["/unknown/location/test.conf"]
+		assert.False(t, ok)
+
+		directoriesBeingWatched := fileWatcherService.watcher.WatchList()
+		assert.Empty(t, directoriesBeingWatched)
+	})
+}
+
 func TestFileWatcherService_Watch(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	tempDir := os.TempDir()
+	tempDir := t.TempDir()
 	testDirectory := path.Join(tempDir, "test_dir")
-	os.RemoveAll(testDirectory)
 	err := os.Mkdir(testDirectory, directoryPermissions)
 	require.NoError(t, err)
-	defer os.RemoveAll(testDirectory)
+	defer os.Remove(testDirectory)
 
 	agentConfig := types.AgentConfig()
 	agentConfig.Watchers.FileWatcher.MonitoringFrequency = 100 * time.Millisecond
@@ -178,13 +231,32 @@ func TestFileWatcherService_Watch(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 
+	fileWatcherService.Update(ctx, &model.NginxConfigContext{
+		Includes: []string{filepath.Join(testDirectory, "*.conf")},
+	})
+
 	file, err := os.CreateTemp(testDirectory, "test.conf")
 	require.NoError(t, err)
 	defer os.Remove(file.Name())
 
 	t.Run("Test 1: File updated", func(t *testing.T) {
-		fileUpdate := <-channel
-		assert.NotNil(t, fileUpdate.CorrelationID)
+		// Check that directory is being watched
+		assert.Eventually(t, func() bool {
+			_, ok := fileWatcherService.directoriesToWatch[testDirectory]
+			return ok
+		}, 1*time.Second, 100*time.Millisecond)
+
+		assert.Eventually(t, func() bool {
+			directoriesBeingWatched := fileWatcherService.watcher.WatchList()
+			return len(directoriesBeingWatched) == 1
+		}, 1*time.Second, 100*time.Millisecond)
+
+		select {
+		case fileUpdate := <-channel:
+			assert.NotNil(t, fileUpdate.CorrelationID)
+		case <-time.After(150 * time.Millisecond):
+			t.Fatalf("Expected file update event")
+		}
 	})
 
 	t.Run("Test 2: Skippable file updated", func(t *testing.T) {
@@ -199,4 +271,52 @@ func TestFileWatcherService_Watch(t *testing.T) {
 			return
 		}
 	})
+
+	t.Run("Test 3: Directory deleted", func(t *testing.T) {
+		dirDeleteError := os.RemoveAll(testDirectory)
+		require.NoError(t, dirDeleteError)
+
+		// Check that directory is no longer being watched
+		assert.Eventually(t, func() bool {
+			_, ok := fileWatcherService.directoriesToWatch[testDirectory]
+			return ok
+		}, 1*time.Second, 100*time.Millisecond)
+
+		assert.Eventually(t, func() bool {
+			directoriesBeingWatched := fileWatcherService.watcher.WatchList()
+			return len(directoriesBeingWatched) == 0
+		}, 1*time.Second, 100*time.Millisecond)
+	})
+}
+
+func TestFileWatcherService_checkForUpdates(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	tempDir := t.TempDir()
+	testDirectory := path.Join(tempDir, "test_dir")
+	err := os.Mkdir(testDirectory, directoryPermissions)
+	require.NoError(t, err)
+	defer os.RemoveAll(testDirectory)
+
+	agentConfig := types.AgentConfig()
+	agentConfig.Watchers.FileWatcher.MonitoringFrequency = 100 * time.Millisecond
+	agentConfig.AllowedDirectories = []string{testDirectory, "/unknown/directory"}
+
+	channel := make(chan FileUpdateMessage)
+
+	fileWatcherService := NewFileWatcherService(agentConfig)
+	fileWatcherService.filesChanged.Store(true)
+	assert.Nil(t, fileWatcherService.watcher)
+
+	go fileWatcherService.checkForUpdates(ctx, channel)
+
+	select {
+	case fileUpdate := <-channel:
+		assert.NotNil(t, fileUpdate.CorrelationID)
+		assert.NotNil(t, fileWatcherService.watcher)
+		assert.False(t, fileWatcherService.filesChanged.Load())
+	case <-time.After(150 * time.Millisecond):
+		t.Fatalf("Expected file update event")
+	}
 }
