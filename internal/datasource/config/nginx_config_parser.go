@@ -705,11 +705,12 @@ func (ncp *NginxConfigParser) parseListenDirective(
 }
 
 func (ncp *NginxConfigParser) parseListenHostAndPort(listenHost, listenPort string) (hostname, port string) {
-	if listenHost == "*" || listenHost == "" {
+	switch listenHost {
+	case "*", "":
 		hostname = "127.0.0.1"
-	} else if listenHost == "::" || listenHost == "::1" {
+	case "::", "::1":
 		hostname = "[::1]"
-	} else {
+	default:
 		hostname = listenHost
 	}
 	port = listenPort

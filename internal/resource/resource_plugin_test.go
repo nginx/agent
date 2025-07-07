@@ -879,7 +879,7 @@ func TestResource_Process_Rollback(t *testing.T) {
 				return messagePipe.Messages()[i].Topic < messagePipe.Messages()[j].Topic
 			})
 
-			assert.Equal(tt, len(test.topic), len(messagePipe.Messages()))
+			assert.Len(tt, messagePipe.Messages(), len(test.topic))
 
 			assert.Equal(t, test.topic[0], messagePipe.Messages()[0].Topic)
 

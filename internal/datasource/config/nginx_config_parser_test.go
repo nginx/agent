@@ -529,7 +529,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			assert.ElementsMatch(t, test.expectedConfigContext.ErrorLogs, result.ErrorLogs)
 			assert.Equal(t, test.expectedConfigContext.StubStatus, result.StubStatus)
 			assert.Equal(t, test.expectedConfigContext.InstanceID, result.InstanceID)
-			assert.Equal(t, len(test.expectedConfigContext.Files), len(result.Files))
+			assert.Len(t, result.Files, len(test.expectedConfigContext.Files))
 		})
 	}
 }

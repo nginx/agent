@@ -147,7 +147,7 @@ func TestLoadPlugins(t *testing.T) {
 		t.Run(test.name, func(tt *testing.T) {
 			t.Logf("running test %s", test.name)
 			result := LoadPlugins(ctx, test.input)
-			assert.Equal(tt, len(test.expected), len(result))
+			assert.Len(tt, result, len(test.expected))
 			for i, expectedPlugin := range test.expected {
 				assert.IsType(tt, expectedPlugin, result[i])
 			}

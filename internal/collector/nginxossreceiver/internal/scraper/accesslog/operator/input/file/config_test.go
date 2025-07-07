@@ -27,7 +27,7 @@ func TestNewConfig(t *testing.T) {
 	config := NewConfig()
 
 	assert.NotNil(t, config)
-	assert.Equal(t, "access_log_file_input", config.InputConfig.OperatorID)
+	assert.Equal(t, "access_log_file_input", config.OperatorID)
 }
 
 func TestConfig_Build(t *testing.T) {

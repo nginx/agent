@@ -8,7 +8,6 @@ package config
 import (
 	"context"
 	"fmt"
-	"io"
 	"log/slog"
 	"path/filepath"
 	"testing"
@@ -29,7 +28,7 @@ var configFilePaths = []string{
 
 func BenchmarkNginxConfigParser_Parse(b *testing.B) {
 	// Discard log messages
-	slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{})))
+	slog.SetDefault(slog.New(slog.DiscardHandler))
 	ctx := context.Background()
 	agentConfig := types.AgentConfig()
 
@@ -67,7 +66,7 @@ func BenchmarkNginxConfigParser_Parse(b *testing.B) {
 
 // These tests don't exercise the traversal very well, they are more to track the growth of configs in size
 func BenchmarkNginxConfigParserGeneratedConfig_Parse(b *testing.B) {
-	slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{})))
+	slog.SetDefault(slog.New(slog.DiscardHandler))
 	ctx := context.Background()
 	agentConfig := types.AgentConfig()
 

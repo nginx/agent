@@ -1,8 +1,8 @@
 module github.com/nginx/agent/v3
 
-go 1.23.7
+go 1.24.0
 
-toolchain go1.23.10
+toolchain go1.24.4
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.4-20250130201111-63bb56e20495.1
