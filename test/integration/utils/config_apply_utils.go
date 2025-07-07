@@ -58,13 +58,13 @@ func CurrentFileOverview(t *testing.T, nginxInstanceID, mockManagementPlaneAPIAd
 
 	responseData := resp.Body()
 
-	overview := mpi.FileOverview{}
+	overview := mpi.GetOverviewResponse{}
 
 	pb := protojson.UnmarshalOptions{DiscardUnknown: true}
 	unmarshalErr := pb.Unmarshal(responseData, &overview)
 	require.NoError(t, unmarshalErr)
 
-	return &overview
+	return overview.GetOverview()
 }
 
 func PerformInvalidConfigApply(t *testing.T, nginxInstanceID string) {

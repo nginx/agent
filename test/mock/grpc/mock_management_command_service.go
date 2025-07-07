@@ -181,9 +181,7 @@ func (cs *CommandService) handleConfigUploadRequest(
 	instanceID := upload.ConfigUploadRequest.GetOverview().GetConfigVersion().GetInstanceId()
 	overviewFiles := upload.ConfigUploadRequest.GetOverview().GetFiles()
 
-	if cs.instanceFiles[instanceID] == nil {
-		cs.instanceFiles[instanceID] = overviewFiles
-	} else {
+	if cs.instanceFiles[instanceID] != nil {
 		filesToDelete := cs.checkForDeletedFiles(instanceID, overviewFiles)
 		for _, fileToDelete := range filesToDelete {
 			err := os.Remove(fileToDelete)
@@ -192,6 +190,7 @@ func (cs *CommandService) handleConfigUploadRequest(
 			}
 		}
 	}
+	cs.instanceFiles[instanceID] = overviewFiles
 }
 
 func (cs *CommandService) checkForDeletedFiles(instanceID string, overviewFiles []*mpi.File) []string {
@@ -390,24 +389,24 @@ func (cs *CommandService) addConfigApplyEndpoint() {
 func (cs *CommandService) addConfigEndpoint() {
 	cs.server.GET("/api/v1/instance/:instanceID/config", func(c *gin.Context) {
 		instanceID := c.Param("instanceID")
+		var data map[string]interface{}
 
-		configFiles, err := cs.findInstanceConfigFiles(instanceID)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, err)
-			return
-		}
-
-		cs.instanceFiles[instanceID] = configFiles
-
-		request := mpi.FileOverview{
-			ConfigVersion: &mpi.ConfigVersion{
-				InstanceId: instanceID,
-				Version:    files.GenerateConfigVersion(cs.instanceFiles[instanceID]),
+		response := &mpi.GetOverviewResponse{
+			Overview: &mpi.FileOverview{
+				ConfigVersion: &mpi.ConfigVersion{
+					InstanceId: instanceID,
+					Version:    files.GenerateConfigVersion(cs.instanceFiles[instanceID]),
+				},
+				Files: cs.instanceFiles[instanceID],
 			},
-			Files: cs.instanceFiles[instanceID],
 		}
 
-		c.JSON(http.StatusOK, &request)
+		if err := json.Unmarshal([]byte(protojson.Format(response)), &data); err != nil {
+			slog.Error("Failed to return connection", "error", err)
+			c.JSON(http.StatusInternalServerError, nil)
+		}
+
+		c.JSON(http.StatusOK, data)
 	})
 }
 

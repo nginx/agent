@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
+	"sort"
 	"testing"
 	"time"
 
@@ -41,7 +43,7 @@ func TestSuite(t *testing.T) {
 	suite.Run(t, new(AuxiliaryTestSuite))
 }
 
-func (s *AuxiliaryTestSuite) TestAuxiliary_Connection() {
+func (s *AuxiliaryTestSuite) TestAuxiliary_Test1_Connection() {
 	s.instanceID = utils.VerifyConnection(s.T(), 2, utils.MockManagementPlaneAPIAddress)
 	s.False(s.T().Failed())
 	utils.VerifyUpdateDataPlaneHealth(s.T(), utils.MockManagementPlaneAPIAddress)
@@ -49,9 +51,13 @@ func (s *AuxiliaryTestSuite) TestAuxiliary_Connection() {
 	utils.VerifyConnection(s.T(), 2, utils.AuxiliaryMockManagementPlaneAPIAddress)
 	s.False(s.T().Failed())
 	utils.VerifyUpdateDataPlaneHealth(s.T(), utils.AuxiliaryMockManagementPlaneAPIAddress)
+
+	commandResponses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
+	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, commandResponses[0].GetCommandResponse().GetStatus())
+	s.Equal("Successfully updated all files", commandResponses[0].GetCommandResponse().GetMessage())
 }
 
-func (s *AuxiliaryTestSuite) TestAuxiliary_Reconnection() {
+func (s *AuxiliaryTestSuite) TestAuxiliary_Test2_Reconnection() {
 	ctx := context.Background()
 	timeout := 15 * time.Second
 
@@ -76,7 +82,7 @@ func (s *AuxiliaryTestSuite) TestAuxiliary_Reconnection() {
 	s.Equal(originalID, currentID)
 }
 
-func (s *AuxiliaryTestSuite) TestAuxiliary_DataplaneHealthRequest() {
+func (s *AuxiliaryTestSuite) TestAuxiliary_Test3_DataplaneHealthRequest() {
 	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
 	utils.ClearManagementPlaneResponses(s.T(), utils.AuxiliaryMockManagementPlaneAPIAddress)
 
@@ -105,12 +111,12 @@ func (s *AuxiliaryTestSuite) TestAuxiliary_DataplaneHealthRequest() {
 	s.Equal("Successfully sent health status update", commandResponses[0].GetCommandResponse().GetMessage())
 	s.False(s.T().Failed())
 
-	// Check auxiliary server still only has 1 ManagementPlaneResponses as it didn't sent the request
+	// Check auxiliary server still only has 1 ManagementPlaneResponses as it didn't send the request
 	utils.ManagementPlaneResponses(s.T(), 0, utils.AuxiliaryMockManagementPlaneAPIAddress)
 	s.False(s.T().Failed())
 }
 
-func (s *AuxiliaryTestSuite) TestAuxiliary_FileWatcher() {
+func (s *AuxiliaryTestSuite) TestAuxiliary_Test4_FileWatcher() {
 	// Clear any previous responses from previous tests
 	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
 	utils.ClearManagementPlaneResponses(s.T(), utils.AuxiliaryMockManagementPlaneAPIAddress)
@@ -135,59 +141,66 @@ func (s *AuxiliaryTestSuite) TestAuxiliary_FileWatcher() {
 	s.Equal("Successfully updated all files", auxResponses[0].GetCommandResponse().GetMessage())
 }
 
-//  func (s *AuxiliaryTestSuite) TestAuxiliary_ConfigApply() {
-//	s.instanceID = utils.VerifyConnection(s.T(), 2, utils.MockManagementPlaneAPIAddress)
-//	// Perform config apply
-//	// Check new config is in both Mocks
-//	// Check using hash with new API endpoint which was added to get the file overview
-//	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
-//	utils.ClearManagementPlaneResponses(s.T(), utils.AuxiliaryMockManagementPlaneAPIAddress)
-//
-//	ctx := context.Background()
-//
-//	newConfigFile := "../../config/nginx/nginx-with-test-location.conf"
-//
-//	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
-//		newConfigFile = "../../config/nginx/nginx-plus-with-test-location.conf"
-//	}
-//
-//	err := utils.MockManagementPlaneGrpcContainer.CopyFileToContainer(
-//		ctx,
-//		newConfigFile,
-//		fmt.Sprintf("/mock-management-plane-grpc/config/%s/etc/nginx/nginx.conf", s.instanceID),
-//		0o666,
-//	)
-//
-//	require.NoError(s.T(), err)
-//
-//	utils.PerformConfigApply(s.T(), s.instanceID, utils.MockManagementPlaneAPIAddress)
-//
-//	commandResponses := utils.ManagementPlaneResponses(s.T(), 2, utils.MockManagementPlaneAPIAddress)
-//
-//	sort.Slice(commandResponses, func(i, j int) bool {
-//		return commandResponses[i].GetCommandResponse().GetMessage() <
-//		commandResponses[j].GetCommandResponse().GetMessage()
-//	})
-//
-//	assert.Equal(s.T(), mpi.CommandResponse_COMMAND_STATUS_OK, commandResponses[0].GetCommandResponse().GetStatus())
-//	assert.Equal(s.T(), "Config apply successful", commandResponses[0].GetCommandResponse().GetMessage())
-//	assert.Equal(s.T(), mpi.CommandResponse_COMMAND_STATUS_OK, commandResponses[1].GetCommandResponse().GetStatus())
-//	assert.Equal(s.T(), "Successfully updated all files", commandResponses[1].GetCommandResponse().GetMessage())
-//
-//	auxResponses := utils.ManagementPlaneResponses(s.T(), 1, utils.AuxiliaryMockManagementPlaneAPIAddress)
-//	assert.Equal(s.T(), mpi.CommandResponse_COMMAND_STATUS_OK, auxResponses[1].GetCommandResponse().GetStatus())
-//	assert.Equal(s.T(), "Successfully updated all files", auxResponses[1].GetCommandResponse().GetMessage())
-//
-//	overview := utils.CurrentFileOverview(s.T(), s.instanceID, utils.MockManagementPlaneAPIAddress)
-//	overview2 := utils.CurrentFileOverview(s.T(), s.instanceID, utils.AuxiliaryMockManagementPlaneAPIAddress)
-//	s.T().Logf("Overview: %v", overview.ConfigVersion)
-//	s.T().Logf("Overview 2: %v", overview2.ConfigVersion)
-// }
+func (s *AuxiliaryTestSuite) TestAuxiliary_Test5_ConfigApply() {
+	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
+	utils.ClearManagementPlaneResponses(s.T(), utils.AuxiliaryMockManagementPlaneAPIAddress)
 
-//
-// func (s *AuxiliaryTestSuite) TestAuxiliary_ConfigApplyInvalid() {
-//	// Perform config apply with aux
-//	// Check new config is broken
-//	// Check using hash with new API endpoint which was added to get the file overview
-//
-// }
+	ctx := context.Background()
+
+	newConfigFile := "../../config/nginx/nginx-with-test-location.conf"
+
+	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+		newConfigFile = "../../config/nginx/nginx-plus-with-test-location.conf"
+	}
+
+	err := utils.MockManagementPlaneGrpcContainer.CopyFileToContainer(
+		ctx,
+		newConfigFile,
+		fmt.Sprintf("/mock-management-plane-grpc/config/%s/etc/nginx/nginx.conf", s.instanceID),
+		0o666,
+	)
+
+	s.Require().NoError(err)
+
+	utils.PerformConfigApply(s.T(), s.instanceID, utils.MockManagementPlaneAPIAddress)
+
+	commandResponses := utils.ManagementPlaneResponses(s.T(), 2, utils.MockManagementPlaneAPIAddress)
+
+	sort.Slice(commandResponses, func(i, j int) bool {
+		return commandResponses[i].GetCommandResponse().GetMessage() <
+			commandResponses[j].GetCommandResponse().GetMessage()
+	})
+
+	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, commandResponses[0].GetCommandResponse().GetStatus())
+	s.Equal("Config apply successful", commandResponses[0].GetCommandResponse().GetMessage())
+	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, commandResponses[1].GetCommandResponse().GetStatus())
+	s.Equal("Successfully updated all files", commandResponses[1].GetCommandResponse().GetMessage())
+
+	auxResponses := utils.ManagementPlaneResponses(s.T(), 1, utils.AuxiliaryMockManagementPlaneAPIAddress)
+	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, auxResponses[0].GetCommandResponse().GetStatus())
+	s.Equal("Successfully updated all files", auxResponses[0].GetCommandResponse().GetMessage())
+
+	// Check the config version is the same in both command and auxiliary servers
+	commandOverview := utils.CurrentFileOverview(s.T(), s.instanceID, utils.MockManagementPlaneAPIAddress)
+	auxOverview := utils.CurrentFileOverview(s.T(), s.instanceID, utils.AuxiliaryMockManagementPlaneAPIAddress)
+	s.Equal(commandOverview.GetConfigVersion(), auxOverview.GetConfigVersion())
+}
+
+func (s *AuxiliaryTestSuite) TestAuxiliary_Test6_ConfigApplyInvalid() {
+	// Perform config apply with aux
+	// Check new config is broken
+	// Check using hash with new API endpoint which was added to get the file overview
+
+	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
+	utils.ClearManagementPlaneResponses(s.T(), utils.AuxiliaryMockManagementPlaneAPIAddress)
+
+	utils.PerformConfigApply(s.T(), s.instanceID, utils.AuxiliaryMockManagementPlaneAPIAddress)
+
+	commandResponses := utils.ManagementPlaneResponses(s.T(), 1,
+		utils.AuxiliaryMockManagementPlaneAPIAddress)
+	s.Equal(mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+		commandResponses[0].GetCommandResponse().GetStatus())
+	s.Equal("Config apply failed", commandResponses[0].GetCommandResponse().GetMessage())
+	s.Equal("Unable to process request. Management plane is configured as read only.",
+		commandResponses[0].GetCommandResponse().GetError())
+}
