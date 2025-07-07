@@ -261,6 +261,31 @@ var (
     }
   }
 `
+
+	testConf22 = ` server {
+	listen unix:/var/lib/nginx/nginx-plus-api.sock;
+	access_log off;
+
+	# $config_version_mismatch is defined in /etc/nginx/config-version.conf
+	location /configVersionCheck {
+		if ($config_version_mismatch) {
+			return 503;
+		}
+		return 200;
+	}
+
+	location /api {
+		api write=on;
+	}
+}
+
+server {
+	listen unix:/var/lib/nginx/nginx-418-server.sock;
+	access_log off;
+
+	return 418;
+}
+`
 )
 
 // nolint: maintidx
@@ -965,8 +990,19 @@ func TestNginxConfigParser_urlsForLocationDirective(t *testing.T) {
 					Location: "/api",
 				},
 			},
-			name: "Test 21: listen unix:/var/run/nginx/nginx-plus-api.sock- Plus Unix Socket",
+			name: "Test 21: listen unix:/var/run/nginx/nginx-plus-api.sock - Plus Unix Socket",
 			conf: testConf21,
+		},
+		{
+			plus: []*model.APIDetails{
+				{
+					URL:      "http://nginx-plus-api/api",
+					Listen:   "unix:/var/lib/nginx/nginx-plus-api.sock",
+					Location: "/api",
+				},
+			},
+			name: "Test 22: Multiple Plus Unix Sockets",
+			conf: testConf22,
 		},
 	} {
 		ctx := context.Background()
