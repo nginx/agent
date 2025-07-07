@@ -87,7 +87,7 @@ func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 		)
 	}
 
-	if logger.ServerType(ctx) == fp.serverType.String() || logger.ServerType(ctx) == "" {
+	if logger.ServerType(ctx) == fp.serverType.String() {
 		switch msg.Topic {
 		case bus.ConnectionResetTopic:
 			fp.handleConnectionReset(ctx, msg)
@@ -358,7 +358,6 @@ func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 	fp.fileManagerService.ConfigUpdate(ctx, nginxConfigContext)
 }
 
-// nolint: dupl
 func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "File plugin received config upload request message")
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)
