@@ -380,7 +380,7 @@ func (cp *CommandPlugin) handleInvalidRequest(ctx context.Context,
 		CommandResponse: &mpi.CommandResponse{
 			Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			Message: message,
-			Error:   "Can not perform write action as auxiliary command server",
+			Error:   "Unable to process request. Management plane is configured as read only.",
 		},
 		InstanceId: instanceID,
 	})
