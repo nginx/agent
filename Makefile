@@ -22,12 +22,12 @@ GOBIN 	?= $$(go env GOPATH)/bin
 # | redhatenterprise | 8, 9                                  	 |                                                                |
 # | rockylinux       | 8, 9                                      |                                                                |
 # | almalinux        | 8, 9                                      |                                                                |
-# | alpine           | 3.17, 3.18, 3.19, 3.20, 3.21              |                                                                |
+# | alpine           | 3.18, 3.19, 3.20, 3.21 3.22               |                                                                |
 # | oraclelinux      | 8, 9                                		 |                                                                |
-# | suse             | sles12sp5, sle15                          |                                                                |
+# | suse             | sle15                          			 |                                                                |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 OS_RELEASE  ?= ubuntu
-OS_VERSION  ?= 22.04
+OS_VERSION  ?= 24.04
 BASE_IMAGE  = "docker.io/$(OS_RELEASE):$(OS_VERSION)"
 IMAGE_TAG   = "agent_$(OS_RELEASE)_$(OS_VERSION)"
 DOCKERFILE_PATH = "./test/docker/nginx-oss/$(CONTAINER_OS_TYPE)/Dockerfile"
@@ -62,7 +62,7 @@ APK_PACKAGE := ./build/$(PACKAGE_NAME).apk
 DEB_PACKAGE := ./build/$(PACKAGE_NAME).deb
 RPM_PACKAGE := ./build/$(PACKAGE_NAME).rpm
 
-MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY ?=
+MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY ?= 
 MOCK_MANAGEMENT_PLANE_LOG_LEVEL ?= INFO
 MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS ?= 127.0.0.1:0
 MOCK_MANAGEMENT_PLANE_API_ADDRESS ?= 127.0.0.1:0

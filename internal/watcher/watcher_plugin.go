@@ -286,6 +286,7 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 		case message := <-w.nginxConfigContextChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
 			w.watcherMutex.Lock()
+
 			if !slices.Contains(w.instancesWithConfigApplyInProgress, message.NginxConfigContext.InstanceID) {
 				slog.DebugContext(
 					newCtx,
@@ -304,6 +305,9 @@ func (w *Watcher) monitorWatchers(ctx context.Context) {
 					"nginx_config_context", message.NginxConfigContext,
 				)
 			}
+
+			w.fileWatcherService.Update(ctx, message.NginxConfigContext)
+
 			w.watcherMutex.Unlock()
 		case message := <-w.instanceHealthChannel:
 			newCtx := context.WithValue(ctx, logger.CorrelationIDContextKey, message.CorrelationID)
