@@ -25,7 +25,7 @@ defaults:
     shell: bash
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   vars:
@@ -81,8 +81,6 @@ jobs:
 
       - name: GitHub Upload
         continue-on-error: true
-        permissions:
-          contents: write
         if: ${{ needs.vars.outputs.github_release == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
