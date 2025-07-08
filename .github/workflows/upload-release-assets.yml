@@ -81,6 +81,8 @@ jobs:
 
       - name: GitHub Upload
         continue-on-error: true
+        permissions:
+          contents: write
         if: ${{ needs.vars.outputs.github_release == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
