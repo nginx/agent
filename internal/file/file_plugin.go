@@ -28,12 +28,12 @@ var _ bus.Plugin = (*FilePlugin)(nil)
 // the file plugin does not care about the instance type
 
 type FilePlugin struct {
+	manifestLock       *sync.RWMutex
 	messagePipe        bus.MessagePipeInterface
 	config             *config.Config
 	conn               grpc.GrpcConnectionInterface
 	fileManagerService fileManagerServiceInterface
 	serverType         model.ServerType
-	manifestLock       *sync.RWMutex
 }
 
 func NewFilePlugin(agentConfig *config.Config, grpcConnection grpc.GrpcConnectionInterface,

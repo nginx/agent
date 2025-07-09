@@ -46,7 +46,9 @@ func addResourcePlugin(plugins []bus.Plugin, agentConfig *config.Config) []bus.P
 	return plugins
 }
 
-func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentConfig *config.Config, manifestLock *sync.RWMutex) []bus.Plugin {
+func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentConfig *config.Config,
+	manifestLock *sync.RWMutex,
+) []bus.Plugin {
 	if agentConfig.IsCommandGrpcClientConfigured() {
 		grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig, agentConfig.Command)
 		if err != nil {

@@ -8,13 +8,14 @@ package auxiliarycommandserver
 import (
 	"context"
 	"fmt"
-	"github.com/go-resty/resty/v2"
 	"net"
 	"net/http"
 	"os"
 	"sort"
 	"testing"
 	"time"
+
+	"github.com/go-resty/resty/v2"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/test/integration/utils"

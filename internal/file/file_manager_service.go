@@ -88,6 +88,7 @@ type (
 )
 
 type FileManagerService struct {
+	manifestLock        *sync.RWMutex
 	agentConfig         *config.Config
 	fileOperator        fileOperator
 	fileServiceOperator fileServiceOperatorInterface
@@ -100,10 +101,11 @@ type FileManagerService struct {
 	previousManifestFiles map[string]*model.ManifestFile
 	manifestFilePath      string
 	filesMutex            sync.RWMutex
-	manifestLock          *sync.RWMutex
 }
 
-func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig *config.Config, manifestLock *sync.RWMutex) *FileManagerService {
+func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig *config.Config,
+	manifestLock *sync.RWMutex,
+) *FileManagerService {
 	return &FileManagerService{
 		agentConfig:           agentConfig,
 		fileOperator:          NewFileOperator(manifestLock),
@@ -431,6 +433,7 @@ func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.F
 	if readError != nil && !errors.Is(readError, os.ErrNotExist) {
 		slog.Debug("Error reading manifest file", "current_manifest_files",
 			currentManifestFiles, "updated_files", currentFiles, "referenced", referenced)
+
 		return fmt.Errorf("unable to read manifest file: %w", readError)
 	}
 
@@ -476,6 +479,7 @@ func (fms *FileManagerService) manifestFile() (map[string]*model.ManifestFile, m
 		if len(file) == 0 {
 			return nil, nil, fmt.Errorf("manifest file is empty: %w", err)
 		}
+
 		return nil, nil, fmt.Errorf("failed to parse manifest file: %w", err)
 	}
 

@@ -42,7 +42,9 @@ type FileServiceOperator struct {
 
 var _ fileServiceOperatorInterface = (*FileServiceOperator)(nil)
 
-func NewFileServiceOperator(agentConfig *config.Config, fileServiceClient mpi.FileServiceClient, manifestLock *sync.RWMutex) *FileServiceOperator {
+func NewFileServiceOperator(agentConfig *config.Config, fileServiceClient mpi.FileServiceClient,
+	manifestLock *sync.RWMutex,
+) *FileServiceOperator {
 	isConnected := &atomic.Bool{}
 	isConnected.Store(false)
 
