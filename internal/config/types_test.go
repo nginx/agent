@@ -73,7 +73,8 @@ func TestTypes_isAllowedDir(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := isAllowedDir(test.filePath, test.allowedDirs)
+			result, err := isAllowedDir(test.filePath, test.allowedDirs)
+			require.NoError(t, err)
 			assert.Equal(t, test.allowed, result)
 		})
 	}
@@ -102,7 +103,8 @@ func TestTypes_isAllowedDir(t *testing.T) {
 		err = os.Symlink(filePath, symlinkPath)
 		require.NoError(t, err)
 
-		result := isAllowedDir(symlinkPath, allowedDirs)
+		result, err := isAllowedDir(symlinkPath, allowedDirs)
+		require.Error(t, err)
 		require.False(t, result, "Symlink in allowed directory should return false")
 	})
 }

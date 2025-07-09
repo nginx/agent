@@ -324,9 +324,13 @@ type (
 
 func (col *Collector) Validate(allowedDirectories []string) error {
 	var err error
-	cleaned := filepath.Clean(col.ConfigPath)
+	cleanedConfPath := filepath.Clean(col.ConfigPath)
 
-	if !isAllowedDir(cleaned, allowedDirectories) {
+	allowed, err := isAllowedDir(cleanedConfPath, allowedDirectories)
+	if err != nil {
+		return err
+	}
+	if !allowed {
 		err = errors.Join(err, fmt.Errorf("collector path %s not allowed", col.ConfigPath))
 	}
 
@@ -344,8 +348,12 @@ func (nr *NginxReceiver) Validate(allowedDirectories []string) error {
 	}
 
 	for _, al := range nr.AccessLogs {
-		if !isAllowedDir(al.FilePath, allowedDirectories) {
+		allowed, err := isAllowedDir(al.FilePath, allowedDirectories)
+		if err != nil {
 			err = errors.Join(err, fmt.Errorf("invalid nginx receiver access log path: %s", al.FilePath))
+		}
+		if !allowed {
+			err = errors.Join(err, fmt.Errorf("nginx receiver access log path %s not allowed", al.FilePath))
 		}
 
 		if len(al.FilePath) != 0 {
@@ -359,7 +367,12 @@ func (nr *NginxReceiver) Validate(allowedDirectories []string) error {
 }
 
 func (c *Config) IsDirectoryAllowed(directory string) bool {
-	return isAllowedDir(directory, c.AllowedDirectories)
+	allow, err := isAllowedDir(directory, c.AllowedDirectories)
+	if err != nil {
+		slog.Warn("Unable to determine if directory is allowed", "error", err)
+		return false
+	}
+	return allow
 }
 
 func (c *Config) IsGrpcClientConfigured() bool {
@@ -421,17 +434,17 @@ func (c *Config) AreReceiversConfigured() bool {
 // It returns true if the path is allowed, false otherwise.
 // If the path is allowed but does not exist, it also logs a warning.
 // It also checks if the path is a file, in which case it checks the directory of the file.
-func isAllowedDir(path string, allowedDirs []string) bool {
+func isAllowedDir(path string, allowedDirs []string) (bool, error) {
 	if len(allowedDirs) == 0 {
 		slog.Warn("No allowed directories configured")
-		return false
+		return false, errors.New("no allowed directories configured")
 	}
 
 	directoryPath := path
 	isFilePath, err := regexp.MatchString(`\.(\w+)$`, directoryPath)
 	if err != nil {
 		slog.Error("Error matching path", "path", directoryPath, "error", err)
-		return false
+		return false, errors.New("error matching path" + directoryPath)
 	}
 
 	if isFilePath {
@@ -441,13 +454,12 @@ func isAllowedDir(path string, allowedDirs []string) bool {
 
 	fInfo, statErr := os.Stat(directoryPath)
 	if statErr != nil {
-		slog.Warn("Stat: Path error", "path", path, "error", statErr)
+		slog.Debug("Stat: Path error", "path", path, "error", statErr)
 	}
 
 	if fInfo != nil {
 		if isSymlink(directoryPath) {
-			slog.Warn("Path is a symlink, skipping allowed directory check", "path", directoryPath)
-			return false
+			return false, errors.New("path is a symlink, skipping " + directoryPath)
 		}
 	}
 
@@ -455,11 +467,11 @@ func isAllowedDir(path string, allowedDirs []string) bool {
 		// Check if the directoryPath starts with the allowedDirectory
 		// This allows for subdirectories within the allowed directories.
 		if strings.HasPrefix(directoryPath, allowedDirectory) {
-			return true
+			return true, nil
 		}
 	}
 
-	return false
+	return false, nil
 }
 
 func isSymlink(path string) bool {
