@@ -348,8 +348,8 @@ func (nr *NginxReceiver) Validate(allowedDirectories []string) error {
 	}
 
 	for _, al := range nr.AccessLogs {
-		allowed, err := isAllowedDir(al.FilePath, allowedDirectories)
-		if err != nil {
+		allowed, allowedError := isAllowedDir(al.FilePath, allowedDirectories)
+		if allowedError != nil {
 			err = errors.Join(err, fmt.Errorf("invalid nginx receiver access log path: %s", al.FilePath))
 		}
 		if !allowed {
@@ -372,6 +372,7 @@ func (c *Config) IsDirectoryAllowed(directory string) bool {
 		slog.Warn("Unable to determine if directory is allowed", "error", err)
 		return false
 	}
+
 	return allow
 }
 
