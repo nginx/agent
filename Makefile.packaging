@@ -9,23 +9,18 @@ AZURE_PACKAGES_DIR  := ./build/azure/packages
 BINARY_PATH         := $(BUILD_DIR)/$(BINARY_NAME)
 GPG_PUBLIC_KEY      := .key
 PACKAGE_BUILD       ?= 1
-PACKAGE_VERSION     := $(shell echo ${VERSION} | tr -d 'v')
+PACKAGE_VERSION     := $(shell git describe --match "v[0-9]*" --abbrev=0 --tags)
 TARBALL_NAME        := $(PACKAGE_PREFIX).tar.gz
 
-DEB_DISTROS         ?= ubuntu-noble-24.04 ubuntu-jammy-22.04 ubuntu-focal-20.04 debian-bookworm-12 debian-bullseye-11
+DEB_DISTROS         ?= ubuntu-plucky-25.04 ubuntu-noble-24.04 ubuntu-jammy-22.04 ubuntu-focal-20.04 debian-bookworm-12 debian-bullseye-11
 DEB_ARCHS           ?= arm64 amd64
 RPM_DISTROS         ?= oraclelinux-8-x86_64 oraclelinux-9-x86_64 suse-15-x86_64
 RPM_ARCH            := x86_64
-REDHAT_VERSIONS     ?= redhatenterprise-8 redhatenterprise-9
+REDHAT_VERSIONS     ?= redhatenterprise-8 redhatenterprise-9 redhatenterprise-10
 REDHAT_ARCHS        ?= aarch64 x86_64
-ROCKY_VERSIONS      ?= rocky-8 rocky-9
-ROCKY_ARCHS         ?= aarch64 x86_64
-FREEBSD_DISTROS     ?= "FreeBSD:13:amd64" "FreeBSD:14:amd64" 
 APK_VERSIONS        ?= 3.18 3.19 3.20 3.21 3.22
 APK_ARCHS           ?= aarch64 x86_64
 APK_REVISION 		?= 1
-ALMA_VERSIONS       ?= almalinux-8 almalinux-9
-ALMA_ARCHS          ?= aarch64 x86_64
 AMAZON_VERSIONS     ?= amazon-2 amazon-2023
 AMAZON_ARCHS        ?= aarch64 x86_64
 
@@ -35,20 +30,12 @@ AMAZON_ARCHS        ?= aarch64 x86_64
 .PHONY: clean-packages
 clean-packages: 
 	rm -rf $(PACKAGES_DIR)
-	rm -rf $(GITHUB_PACKAGES_DIR)
-	rm -rf $(AZURE_PACKAGES_DIR)
 
 $(PACKAGES_DIR):
-	@mkdir -p $(PACKAGES_DIR)/deb && mkdir -p $(PACKAGES_DIR)/rpm && mkdir -p $(PACKAGES_DIR)/apk && mkdir -p $(PACKAGES_DIR)/txz
-
-$(GITHUB_PACKAGES_DIR):
-	@mkdir -p $(GITHUB_PACKAGES_DIR)
-
-$(AZURE_PACKAGES_DIR):
-	@mkdir -p $(AZURE_PACKAGES_DIR)
+	@mkdir -p $(PACKAGES_DIR)/deb && mkdir -p $(PACKAGES_DIR)/rpm && mkdir -p $(PACKAGES_DIR)/apk
 
 .PHONY: package
-package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) #### Create final packages for all supported distros
+package: gpg-key $(PACKAGES_DIR) #### Create final packages for all supported distros
 	# Create deb packages
 	
 	@for arch in $(DEB_ARCHS); do \
@@ -83,7 +70,6 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) ##
 
 
 	# Create redhat rpm packages
-	
 	@for arch in $(REDHAT_ARCHS); do \
 		goarch=amd64; \
 		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
@@ -99,43 +85,8 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) ##
 		rm -rf $(BINARY_PATH); \
 	done; \
 
-	# Create almalinux rpm packages
-	
-	@for arch in $(ALMA_ARCHS); do \
-		goarch=amd64; \
-		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
-		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -pgo=auto -ldflags=${LDFLAGS} -o $(BINARY_PATH) $(PROJECT_DIR)/$(PROJECT_FILE); \
-		for distro in $(ALMA_VERSIONS); do \
-			rpm_distro=`echo $$distro | cut -d- -f 1`; \
-			rpm_major=`echo $$distro | cut -d- -f 2`; \
-			rpm_codename="almalinux$$rpm_major"; \
-			VERSION=$(PACKAGE_VERSION) ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm; \
-			cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm; \
-			cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm ${AZURE_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm; \
-		done; \
-		rm -rf $(BINARY_PATH); \
-	done; \
-	
-	# Create rocky rpm packages
-	
-	@for arch in $(ROCKY_ARCHS); do \
-		goarch=amd64; \
-		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
-		GOWORK=off CGO_ENABLED=0 GOARCH=$${goarch} GOOS=linux go build -pgo=auto -ldflags=${LDFLAGS} -o $(BINARY_PATH) $(PROJECT_DIR)/$(PROJECT_FILE); \
-		for distro in $(ROCKY_VERSIONS); do \
-			rpm_distro=`echo $$distro | cut -d- -f 1`; \
-			rpm_major=`echo $$distro | cut -d- -f 2`; \
-			rpm_codename='na'; \
-			if [ "$$rpm_distro" = "rocky" ]; then rpm_codename="rocky$$rpm_major"; fi; \
-			if [ "$$rpm_codename" != "na" ]; then \
-				VERSION=$(PACKAGE_VERSION) ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm; \
-				cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm; \
-				cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm ${AZURE_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm; \
-			fi; \
-		done; \
-		rm -rf $(BINARY_PATH); \
-	done; \
 
+	# Create amazon rpm packages
 	@for arch in $(AMAZON_ARCHS); do \
 		goarch=amd64; \
 		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
@@ -151,7 +102,6 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) ##
 	done; \
 	
 	# Create apk packages
-
 	@for arch in $(APK_ARCHS); do \
 		goarch=amd64; \
 		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
@@ -164,13 +114,7 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) ##
 		done; \
 		rm -rf $(BINARY_PATH); \
 	done; \
-	
-	# Create txz packages
-	
-	rm -rf $(BINARY_PATH)
-	@GOWORK=off CGO_ENABLED=0 GOOS=freebsd GOARCH=amd64 go build -pgo=auto -ldflags=${LDFLAGS} -o $(BINARY_PATH) $(PROJECT_DIR)/$(PROJECT_FILE)
-	
-	docker run -v ${PWD}:/nginx-agent/ -e VERSION=$(PACKAGE_VERSION) build-signed-packager:1.0.0
+
 	
 	# Package build complete
 
@@ -180,17 +124,7 @@ package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) ##
 	find $(PACKAGES_DIR)/rpm ;\
 	echo "APK packages:"; \
 	find $(PACKAGES_DIR)/apk ;\
-	echo "TXZ packages:"; \
-	find $(PACKAGES_DIR)/txz ;\
-	echo "Github packages:"; \
-	find $(GITHUB_PACKAGES_DIR) ;\
-	cd $(PACKAGES_DIR) && tar -czvf "./$(TARBALL_NAME)" * && cd ../.. && cp "${PACKAGES_DIR}/$(TARBALL_NAME)" "${AZURE_PACKAGES_DIR}/$(TARBALL_NAME)"; \
-	echo "Azure packages:"; \
-	find $(AZURE_PACKAGES_DIR) ;
-
-.PHONY: build-signed-packager
-build-signed-packager:
-	docker build -f scripts/packages/packager/Dockerfile --build-arg package_type=signed-package -t build-signed-packager:1.0.0 .
+	cd $(PACKAGES_DIR) && tar -czvf "./$(TARBALL_NAME)" * && cd ../.. && cp "${PACKAGES_DIR}/$(TARBALL_NAME)"; \
 
 .PHONY: gpg-key
 gpg-key: ## Generate GPG public key
