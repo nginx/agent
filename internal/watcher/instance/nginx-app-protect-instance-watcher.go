@@ -50,7 +50,7 @@ type NginxAppProtectInstanceWatcher struct {
 }
 
 func NewNginxAppProtectInstanceWatcher(agentConfig *config.Config) *NginxAppProtectInstanceWatcher {
-	agentConfig.AllowedDirectories = append(agentConfig.AllowedDirectories, "/opt/app_protect")
+	agentConfig.AllowedDirectories = append(agentConfig.AllowedDirectories, napDirPath)
 	return &NginxAppProtectInstanceWatcher{
 		agentConfig:       agentConfig,
 		filesBeingWatched: make(map[string]bool),
