@@ -20,6 +20,7 @@ import (
 )
 
 var (
+	napDirPath                     = "/opt/app_protect"
 	versionFilePath                = "/opt/app_protect/VERSION"
 	releaseFilePath                = "/opt/app_protect/RELEASE"
 	attackSignatureVersionFilePath = "/opt/app_protect/var/update_files/signatures/version"
@@ -49,6 +50,7 @@ type NginxAppProtectInstanceWatcher struct {
 }
 
 func NewNginxAppProtectInstanceWatcher(agentConfig *config.Config) *NginxAppProtectInstanceWatcher {
+	agentConfig.AllowedDirectories = append(agentConfig.AllowedDirectories, "/opt/app_protect")
 	return &NginxAppProtectInstanceWatcher{
 		agentConfig:       agentConfig,
 		filesBeingWatched: make(map[string]bool),

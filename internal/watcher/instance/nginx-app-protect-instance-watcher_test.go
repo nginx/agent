@@ -8,6 +8,7 @@ package instance
 import (
 	"context"
 	"os"
+	"slices"
 	"testing"
 	"time"
 
@@ -95,6 +96,13 @@ func TestNginxAppProtectInstanceWatcher_Watch(t *testing.T) {
 		},
 	)
 
+	assert.True(t,
+		slices.Contains(
+			nginxAppProtectInstanceWatcher.agentConfig.AllowedDirectories,
+			napDirPath,
+		),
+	)
+
 	go nginxAppProtectInstanceWatcher.Watch(ctx, instancesChannel)
 
 	t.Run("Test 1: New instance", func(t *testing.T) {
@@ -112,7 +120,6 @@ func TestNginxAppProtectInstanceWatcher_Watch(t *testing.T) {
 			t.Fatalf("Timed out waiting for instance updates")
 		}
 	})
-
 	t.Run("Test 2: Update instance", func(t *testing.T) {
 		_, err = enforcerEngineVersionFile.WriteAt([]byte("6.113.0"), 0)
 		require.NoError(t, err)

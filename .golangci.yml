@@ -340,6 +340,7 @@ linters-settings:
       - google.golang.org/grpc/credentials
       - github.com/testcontainers/testcontainers-go
       - google.golang.org/grpc
+      - github.com/nginx/agent/v3/api/grpc/mpi
   lll:
     # Max line length, lines longer will be reported.
     # '\t' is counted as 1 character by default, and can be changed with the tab-width option.
