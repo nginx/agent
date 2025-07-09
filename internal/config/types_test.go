@@ -22,7 +22,7 @@ func TestTypes_isAllowedDir(t *testing.T) {
 		allowed     bool
 	}{
 		{
-			name:    "File is in allowed directory",
+			name:    "Test 1:File is in allowed directory",
 			allowed: true,
 			allowedDirs: []string{
 				"/etc/nginx",
@@ -30,7 +30,7 @@ func TestTypes_isAllowedDir(t *testing.T) {
 			filePath: "/etc/nginx/nginx.conf",
 		},
 		{
-			name:    "File is in allowed directory with hyphen",
+			name:    "Test 2: File is in allowed directory with hyphen",
 			allowed: true,
 			allowedDirs: []string{
 				"/etc/nginx-agent",
@@ -38,7 +38,7 @@ func TestTypes_isAllowedDir(t *testing.T) {
 			filePath: "/etc/nginx-agent/nginx.conf",
 		},
 		{
-			name:    "File exists and is in a subdirectory of allowed directory",
+			name:    "Test 3: File exists and is in a subdirectory of allowed directory",
 			allowed: true,
 			allowedDirs: []string{
 				"/etc/nginx",
@@ -46,7 +46,7 @@ func TestTypes_isAllowedDir(t *testing.T) {
 			filePath: "/etc/nginx/conf.d/nginx.conf",
 		},
 		{
-			name:    "File exists and is outside allowed directory",
+			name:    "Test 4: File exists and is outside allowed directory",
 			allowed: false,
 			allowedDirs: []string{
 				"/etc/nginx",
@@ -54,7 +54,7 @@ func TestTypes_isAllowedDir(t *testing.T) {
 			filePath: "/etc/test/nginx.conf",
 		},
 		{
-			name:    "File does not exist but is in allowed directory",
+			name:    "Test 5: File does not exist but is in allowed directory",
 			allowed: true,
 			allowedDirs: []string{
 				"/etc/nginx",
@@ -62,7 +62,7 @@ func TestTypes_isAllowedDir(t *testing.T) {
 			filePath: "/etc/nginx/idontexist.conf",
 		},
 		{
-			name:    "File does not exist and is outside allowed directory",
+			name:    "Test 6: Test File does not exist and is outside allowed directory",
 			allowed: false,
 			allowedDirs: []string{
 				"/etc/nginx",
@@ -79,7 +79,7 @@ func TestTypes_isAllowedDir(t *testing.T) {
 		})
 	}
 
-	t.Run("Symlink in allowed directory", func(t *testing.T) {
+	t.Run("Test 7: Symlink in allowed directory", func(t *testing.T) {
 		allowedDirs := []string{"/etc/nginx"}
 		filePath := "file.conf"
 		symlinkPath := "file_link"

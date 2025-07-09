@@ -170,47 +170,47 @@ func TestResolveAllowedDirectories(t *testing.T) {
 			expected:       []string{"/etc/nginx-agent"},
 		},
 		{
-			name:           "Absolute path",
+			name:           "Test 1: Absolute path",
 			configuredDirs: []string{"/etc/agent/"},
 			expected:       []string{"/etc/nginx-agent", "/etc/agent"},
 		},
 		{
-			name:           "Absolute paths",
+			name:           "Test 2: Absolute paths",
 			configuredDirs: []string{"/etc/nginx/"},
 			expected:       []string{"/etc/nginx-agent", "/etc/nginx"},
 		},
 		{
-			name:           "Absolute path with multiple slashes",
+			name:           "Test 3: Absolute path with multiple slashes",
 			configuredDirs: []string{"/etc///////////nginx-agent/"},
 			expected:       []string{"/etc/nginx-agent"},
 		},
 		{
-			name:           "Absolute path with directory traversal",
+			name:           "Test 4: Absolute path with directory traversal",
 			configuredDirs: []string{"/etc/nginx/../nginx-agent"},
 			expected:       []string{"/etc/nginx-agent"},
 		},
 		{
-			name:           "Absolute path with repeat directory traversal",
+			name:           "Test 5: Absolute path with repeat directory traversal",
 			configuredDirs: []string{"/etc/nginx-agent/../../../../../nginx-agent"},
 			expected:       []string{"/etc/nginx-agent"},
 		},
 		{
-			name:           "Absolute path with control characters",
+			name:           "Test 6: Absolute path with control characters",
 			configuredDirs: []string{"/etc/nginx-agent/\\x08../tmp/"},
 			expected:       []string{"/etc/nginx-agent"},
 		},
 		{
-			name:           "Absolute path with invisible characters",
+			name:           "Test 7: Absolute path with invisible characters",
 			configuredDirs: []string{"/etc/nginx-agent/ㅤㅤㅤ/tmp/"},
 			expected:       []string{"/etc/nginx-agent"},
 		},
 		{
-			name:           "Absolute path with escaped invisible characters",
+			name:           "Test 8: Absolute path with escaped invisible characters",
 			configuredDirs: []string{"/etc/nginx-agent/\\\\ㅤ/tmp/"},
 			expected:       []string{"/etc/nginx-agent"},
 		},
 		{
-			name: "Mixed paths",
+			name: "Test 9: Mixed paths",
 			configuredDirs: []string{
 				"nginx-agent",
 				"",
@@ -223,7 +223,7 @@ func TestResolveAllowedDirectories(t *testing.T) {
 			expected: []string{"/etc/nginx-agent", "/etc/nginx"},
 		},
 		{
-			name:           "Relative path",
+			name:           "Test 10: Relative path",
 			configuredDirs: []string{"nginx-agent"},
 			expected:       []string{"/etc/nginx-agent"},
 		},
