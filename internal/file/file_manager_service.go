@@ -100,18 +100,20 @@ type FileManagerService struct {
 	previousManifestFiles map[string]*model.ManifestFile
 	manifestFilePath      string
 	filesMutex            sync.RWMutex
+	manifestLock          *sync.RWMutex
 }
 
-func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig *config.Config) *FileManagerService {
+func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig *config.Config, manifestLock *sync.RWMutex) *FileManagerService {
 	return &FileManagerService{
 		agentConfig:           agentConfig,
-		fileOperator:          NewFileOperator(),
-		fileServiceOperator:   NewFileServiceOperator(agentConfig, fileServiceClient),
+		fileOperator:          NewFileOperator(manifestLock),
+		fileServiceOperator:   NewFileServiceOperator(agentConfig, fileServiceClient, manifestLock),
 		fileActions:           make(map[string]*model.FileCache),
 		rollbackFileContents:  make(map[string][]byte),
 		currentFilesOnDisk:    make(map[string]*mpi.File),
 		previousManifestFiles: make(map[string]*model.ManifestFile),
 		manifestFilePath:      agentConfig.ManifestDir + "/manifest.json",
+		manifestLock:          manifestLock,
 	}
 }
 
@@ -423,9 +425,12 @@ func (fms *FileManagerService) UpdateCurrentFilesOnDisk(
 // seems to be a control flag, avoid control coupling
 // nolint: revive
 func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.File, referenced bool) (err error) {
+	slog.Debug("Updating manifest file", "current_files", currentFiles, "referenced", referenced)
 	currentManifestFiles, _, readError := fms.manifestFile()
 	fms.previousManifestFiles = currentManifestFiles
 	if readError != nil && !errors.Is(readError, os.ErrNotExist) {
+		slog.Debug("Error reading manifest file", "current_manifest_files",
+			currentManifestFiles, "updated_files", currentFiles, "referenced", referenced)
 		return fmt.Errorf("unable to read manifest file: %w", readError)
 	}
 
@@ -457,6 +462,8 @@ func (fms *FileManagerService) manifestFile() (map[string]*model.ManifestFile, m
 		return nil, nil, err
 	}
 
+	fms.manifestLock.Lock()
+	defer fms.manifestLock.Unlock()
 	file, err := os.ReadFile(fms.manifestFilePath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to read manifest file: %w", err)
@@ -466,6 +473,9 @@ func (fms *FileManagerService) manifestFile() (map[string]*model.ManifestFile, m
 
 	err = json.Unmarshal(file, &manifestFiles)
 	if err != nil {
+		if len(file) == 0 {
+			return nil, nil, fmt.Errorf("manifest file is empty: %w", err)
+		}
 		return nil, nil, fmt.Errorf("failed to parse manifest file: %w", err)
 	}
 

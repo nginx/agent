@@ -8,6 +8,7 @@ package auxiliarycommandserver
 import (
 	"context"
 	"fmt"
+	"github.com/go-resty/resty/v2"
 	"net"
 	"net/http"
 	"os"
@@ -15,7 +16,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-resty/resty/v2"
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/test/integration/utils"
 	"github.com/stretchr/testify/suite"
@@ -187,10 +187,6 @@ func (s *AuxiliaryTestSuite) TestAuxiliary_Test5_ConfigApply() {
 }
 
 func (s *AuxiliaryTestSuite) TestAuxiliary_Test6_ConfigApplyInvalid() {
-	// Perform config apply with aux
-	// Check new config is broken
-	// Check using hash with new API endpoint which was added to get the file overview
-
 	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
 	utils.ClearManagementPlaneResponses(s.T(), utils.AuxiliaryMockManagementPlaneAPIAddress)
 

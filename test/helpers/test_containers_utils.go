@@ -319,6 +319,8 @@ func LogAndTerminateContainers(
 	require.NoError(tb, err)
 	logs := string(buf)
 
+	assert.NotContains(tb, logs, "manifest file is empty",
+		"Error reading manifest file found in agent log")
 	tb.Log(logs)
 	if expectNoErrorsInLogs {
 		assert.NotContains(tb, logs, "level=ERROR", "agent log file contains logs at error level")

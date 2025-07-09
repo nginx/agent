@@ -8,6 +8,7 @@ package plugin
 import (
 	"context"
 	"log/slog"
+	"sync"
 
 	"github.com/nginx/agent/v3/internal/model"
 
@@ -27,9 +28,11 @@ import (
 func LoadPlugins(ctx context.Context, agentConfig *config.Config) []bus.Plugin {
 	plugins := make([]bus.Plugin, 0)
 
+	manifestLock := &sync.RWMutex{}
+
 	plugins = addResourcePlugin(plugins, agentConfig)
-	plugins = addCommandAndFilePlugins(ctx, plugins, agentConfig)
-	plugins = addAuxiliaryCommandAndFilePlugins(ctx, plugins, agentConfig)
+	plugins = addCommandAndFilePlugins(ctx, plugins, agentConfig, manifestLock)
+	plugins = addAuxiliaryCommandAndFilePlugins(ctx, plugins, agentConfig, manifestLock)
 	plugins = addCollectorPlugin(ctx, agentConfig, plugins)
 	plugins = addWatcherPlugin(plugins, agentConfig)
 
@@ -43,7 +46,7 @@ func addResourcePlugin(plugins []bus.Plugin, agentConfig *config.Config) []bus.P
 	return plugins
 }
 
-func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentConfig *config.Config) []bus.Plugin {
+func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentConfig *config.Config, manifestLock *sync.RWMutex) []bus.Plugin {
 	if agentConfig.IsCommandGrpcClientConfigured() {
 		grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig, agentConfig.Command)
 		if err != nil {
@@ -51,7 +54,7 @@ func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentCo
 		} else {
 			commandPlugin := command.NewCommandPlugin(agentConfig, grpcConnection, model.Command)
 			plugins = append(plugins, commandPlugin)
-			filePlugin := file.NewFilePlugin(agentConfig, grpcConnection, model.Command)
+			filePlugin := file.NewFilePlugin(agentConfig, grpcConnection, model.Command, manifestLock)
 			plugins = append(plugins, filePlugin)
 		}
 	} else {
@@ -63,7 +66,7 @@ func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentCo
 }
 
 func addAuxiliaryCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin,
-	agentConfig *config.Config,
+	agentConfig *config.Config, manifestLock *sync.RWMutex,
 ) []bus.Plugin {
 	if agentConfig.IsAuxiliaryCommandGrpcClientConfigured() {
 		auxGRPCConnection, err := grpc.NewGrpcConnection(ctx, agentConfig, agentConfig.AuxiliaryCommand)
@@ -72,7 +75,7 @@ func addAuxiliaryCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin
 		} else {
 			auxCommandPlugin := command.NewCommandPlugin(agentConfig, auxGRPCConnection, model.Auxiliary)
 			plugins = append(plugins, auxCommandPlugin)
-			readFilePlugin := file.NewFilePlugin(agentConfig, auxGRPCConnection, model.Auxiliary)
+			readFilePlugin := file.NewFilePlugin(agentConfig, auxGRPCConnection, model.Auxiliary, manifestLock)
 			plugins = append(plugins, readFilePlugin)
 		}
 	} else {
