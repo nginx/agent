@@ -43,8 +43,6 @@ package: gpg-key $(PACKAGES_DIR) #### Create final packages for all supported di
 		for distro in $(DEB_DISTROS); do \
 			deb_codename=`echo $$distro | cut -d- -f 2`; \
 			VERSION=$(PACKAGE_VERSION)~$${deb_codename} ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager deb --target ${PACKAGES_DIR}/deb/${PACKAGE_PREFIX}_$(PACKAGE_VERSION)~$${deb_codename}_$${arch}.deb; \
-			cp ${PACKAGES_DIR}/deb/${PACKAGE_PREFIX}_$(PACKAGE_VERSION)~$${deb_codename}_$${arch}.deb ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(PACKAGE_VERSION)~$${deb_codename}_$${arch}.deb; \
-			cp ${PACKAGES_DIR}/deb/${PACKAGE_PREFIX}_$(PACKAGE_VERSION)~$${deb_codename}_$${arch}.deb ${AZURE_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(PACKAGE_VERSION)~$${deb_codename}_$${arch}.deb; \
 		done; \
 		rm -rf $(BINARY_PATH); \
 	done; \
@@ -62,8 +60,6 @@ package: gpg-key $(PACKAGES_DIR) #### Create final packages for all supported di
 		fi; \
 		if [ "$$rpm_codename" != "na" ]; then \
 			VERSION=$(PACKAGE_VERSION) ARCH=amd64 nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.${RPM_ARCH}.rpm; \
-			cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$(RPM_ARCH).rpm ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.${RPM_ARCH}.rpm; \
-			cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$(RPM_ARCH).rpm ${AZURE_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.${RPM_ARCH}.rpm; \
 		fi; \
 	done; \
 	rm -rf $(BINARY_PATH)
@@ -79,8 +75,6 @@ package: gpg-key $(PACKAGES_DIR) #### Create final packages for all supported di
 			rpm_major=`echo $$distro | cut -d- -f 2`; \
 			rpm_codename="el$$rpm_major"; \
 			VERSION=$(PACKAGE_VERSION) ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm; \
-			cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm; \
-			cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm ${AZURE_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm; \
 		done; \
 		rm -rf $(BINARY_PATH); \
 	done; \
@@ -95,8 +89,6 @@ package: gpg-key $(PACKAGES_DIR) #### Create final packages for all supported di
 			rpm_major=`echo $$version | cut -d- -f 2`; \
 			rpm_codename="amzn$$rpm_major";\
 			VERSION=$(PACKAGE_VERSION) ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm; \
-			cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm; \
-			cp $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm ${AZURE_PACKAGES_DIR}/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm; \
 		done; \
 		rm -rf $(BINARY_PATH); \
 	done; \
@@ -109,8 +101,6 @@ package: gpg-key $(PACKAGES_DIR) #### Create final packages for all supported di
     	for version in $(APK_VERSIONS); do \
 			if [ ! -d "$(PACKAGES_DIR)/apk/v$${version}/$${arch}" ]; then mkdir -p $(PACKAGES_DIR)/apk/v$${version}/$${arch}; fi; \
 			VERSION=$(PACKAGE_VERSION) ARCH=$${arch} nfpm pkg --config .nfpm.yaml --packager apk --target $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).apk; \
-			cp $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).apk ${GITHUB_PACKAGES_DIR}/${PACKAGE_PREFIX}-v$(PACKAGE_VERSION)-r$(APK_REVISION).apk; \
-			cp $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).apk ${AZURE_PACKAGES_DIR}/${PACKAGE_PREFIX}-v$(PACKAGE_VERSION)-r$(APK_REVISION).apk; \
 		done; \
 		rm -rf $(BINARY_PATH); \
 	done; \
