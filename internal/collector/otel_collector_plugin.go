@@ -436,7 +436,7 @@ func (oc *Collector) checkForNewReceivers(ctx context.Context, nginxConfigContex
 			reloadCollector = true
 		}
 	} else {
-		slog.Debug("NAP logs feature disabled", "enabled_features", oc.config.Features)
+		slog.DebugContext(ctx, "NAP logs feature disabled", "enabled_features", oc.config.Features)
 	}
 
 	return reloadCollector

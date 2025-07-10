@@ -54,15 +54,15 @@ func NewFileService(configDirectory string, requestChan chan *v1.ManagementPlane
 }
 
 func (mgs *FileService) GetOverview(
-	_ context.Context,
+	ctx context.Context,
 	request *v1.GetOverviewRequest,
 ) (*v1.GetOverviewResponse, error) {
 	configVersion := request.GetConfigVersion()
 
-	slog.Info("Getting overview", "config_version", configVersion)
+	slog.InfoContext(ctx, "Getting overview", "config_version", configVersion)
 
 	if _, ok := mgs.instanceFiles[request.GetConfigVersion().GetInstanceId()]; !ok {
-		slog.Error("Config version not found", "config_version", configVersion)
+		slog.ErrorContext(ctx, "Config version not found", "config_version", configVersion)
 		return nil, status.Errorf(codes.NotFound, "Config version not found")
 	}
 
@@ -76,7 +76,7 @@ func (mgs *FileService) GetOverview(
 
 // nolint: unparam
 func (mgs *FileService) UpdateOverview(
-	_ context.Context,
+	ctx context.Context,
 	request *v1.UpdateOverviewRequest,
 ) (*v1.UpdateOverviewResponse, error) {
 	overview := request.GetOverview()
@@ -85,7 +85,7 @@ func (mgs *FileService) UpdateOverview(
 	if errMarshaledJSON != nil {
 		return nil, fmt.Errorf("failed to marshal struct back to JSON: %w", errMarshaledJSON)
 	}
-	slog.Info("Updating overview JSON", "overview", marshaledJSON)
+	slog.InfoContext(ctx, "Updating overview JSON", "overview", marshaledJSON)
 
 	mgs.instanceFiles[overview.GetConfigVersion().GetInstanceId()] = overview.GetFiles()
 
@@ -107,24 +107,24 @@ func (mgs *FileService) UpdateOverview(
 }
 
 func (mgs *FileService) GetFile(
-	_ context.Context,
+	ctx context.Context,
 	request *v1.GetFileRequest,
 ) (*v1.GetFileResponse, error) {
 	fileName := request.GetFileMeta().GetName()
 	fileHash := request.GetFileMeta().GetHash()
 
-	slog.Info("Getting file", "name", fileName, "hash", fileHash)
+	slog.InfoContext(ctx, "Getting file", "name", fileName, "hash", fileHash)
 
 	fullFilePath := mgs.findFile(request.GetFileMeta())
 
 	if fullFilePath == "" {
-		slog.Error("File not found", "file_name", fileName)
+		slog.ErrorContext(ctx, "File not found", "file_name", fileName)
 		return nil, status.Errorf(codes.NotFound, "File not found")
 	}
 
 	bytes, err := os.ReadFile(fullFilePath)
 	if err != nil {
-		slog.Error("Failed to get file contents", "full_file_path", fullFilePath, "error", err)
+		slog.ErrorContext(ctx, "Failed to get file contents", "full_file_path", fullFilePath, "error", err)
 		return nil, status.Errorf(codes.Internal, "Failed to get file contents")
 	}
 
@@ -271,7 +271,7 @@ func (mgs *FileService) sendGetFileStreamChunk(ctx context.Context, chunk v1.Fil
 			})
 		validatedError := internalgrpc.ValidateGrpcError(err)
 		if validatedError != nil {
-			slog.Error("Failed to send get file stream chunk", "error", validatedError)
+			slog.ErrorContext(ctx, "Failed to send get file stream chunk", "error", validatedError)
 
 			return validatedError
 		}
@@ -313,7 +313,7 @@ func readChunk(
 }
 
 func (mgs *FileService) UpdateFile(
-	_ context.Context,
+	ctx context.Context,
 	request *v1.UpdateFileRequest,
 ) (*v1.UpdateFileResponse, error) {
 	fileContents := request.GetContents().GetContents()
@@ -322,21 +322,21 @@ func (mgs *FileService) UpdateFile(
 	fileHash := fileMeta.GetHash()
 	filePermissions := fileMeta.GetPermissions()
 
-	slog.Info("Updating file", "name", fileName, "hash", fileHash)
+	slog.InfoContext(ctx, "Updating file", "name", fileName, "hash", fileHash)
 
 	fullFilePath := mgs.findFile(request.GetFile().GetFileMeta())
 
 	if _, err := os.Stat(fullFilePath); os.IsNotExist(err) {
 		statErr := os.MkdirAll(filepath.Dir(fullFilePath), os.ModePerm)
 		if statErr != nil {
-			slog.Info("Failed to create/update file", "full_file_path", fullFilePath, "error", statErr)
+			slog.InfoContext(ctx, "Failed to create/update file", "full_file_path", fullFilePath, "error", statErr)
 			return nil, status.Errorf(codes.Internal, "Failed to create/update file")
 		}
 	}
 
 	err := os.WriteFile(fullFilePath, fileContents, fileMode(filePermissions))
 	if err != nil {
-		slog.Info("Failed to create/update file", "full_file_path", fullFilePath, "error", err)
+		slog.InfoContext(ctx, "Failed to create/update file", "full_file_path", fullFilePath, "error", err)
 		return nil, status.Errorf(codes.Internal, "Failed to create/update file")
 	}
 

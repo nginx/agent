@@ -115,7 +115,7 @@ func (iw *InstanceWatcherService) Watch(
 			if iw.enabled.Load() {
 				iw.checkForUpdates(ctx)
 			} else {
-				slog.Debug("Skipping check for instance updates, instance watcher is disabled")
+				slog.DebugContext(ctx, "Skipping check for instance updates, instance watcher is disabled")
 			}
 		}
 	}

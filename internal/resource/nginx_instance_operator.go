@@ -92,7 +92,7 @@ func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instan
 		slog.InfoContext(ctx, "Message received in logErrorChannel", "error", logErr)
 		if logErr != nil {
 			errorsFound = errors.Join(errorsFound, logErr)
-			slog.Info("Errors Found", "", errorsFound)
+			slog.InfoContext(ctx, "Errors Found", "", errorsFound)
 		}
 	}
 

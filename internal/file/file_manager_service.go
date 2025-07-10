@@ -225,7 +225,7 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 	for _, fileAction := range fms.fileActions {
 		switch fileAction.Action {
 		case model.Delete:
-			slog.Debug("File action, deleting file", "file", fileAction.File.GetFileMeta().GetName())
+			slog.DebugContext(ctx, "File action, deleting file", "file", fileAction.File.GetFileMeta().GetName())
 			if err := os.Remove(fileAction.File.GetFileMeta().GetName()); err != nil && !os.IsNotExist(err) {
 				return fmt.Errorf("error deleting file: %s error: %w",
 					fileAction.File.GetFileMeta().GetName(), err)
@@ -233,7 +233,7 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 
 			continue
 		case model.Add, model.Update:
-			slog.Debug("File action, add or update file", "file", fileAction.File.GetFileMeta().GetName())
+			slog.DebugContext(ctx, "File action, add or update file", "file", fileAction.File.GetFileMeta().GetName())
 			updateErr := fms.fileUpdate(ctx, fileAction.File)
 			if updateErr != nil {
 				return updateErr

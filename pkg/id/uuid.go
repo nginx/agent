@@ -28,8 +28,14 @@ import (
 //
 //	A string representation of the generated UUID.
 func Generate(format string, a ...interface{}) string {
+	// need to set a default to avoid non-constant format string in call
+	f := ""
+	if format != "" {
+		f = format
+	}
+
 	h := sha256.New()
-	s := fmt.Sprintf(format, a...)
+	s := fmt.Sprintf(f, a...)
 	_, _ = h.Write([]byte(s))
 	id := fmt.Sprintf("%x", h.Sum(nil))
 
