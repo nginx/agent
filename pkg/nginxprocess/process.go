@@ -31,7 +31,10 @@ type Process struct {
 func (p *Process) IsWorker() bool { return strings.HasPrefix(p.Cmd, "nginx: worker") }
 
 // IsMaster returns true if the process is a NGINX master process.
-func (p *Process) IsMaster() bool { return strings.HasPrefix(p.Cmd, "nginx: master") }
+func (p *Process) IsMaster() bool {
+	return strings.HasPrefix(p.Cmd, "nginx: master") ||
+		strings.HasPrefix(p.Cmd, "{nginx-debug} nginx: master")
+}
 
 // IsShuttingDown returns true if the process is shutting down. This can identify workers that are in the process of a
 // graceful shutdown. See [changing NGINX configuration] for more details.
@@ -66,13 +69,14 @@ func convert(ctx context.Context, p *process.Process, o options) (*Process, erro
 	}
 
 	name, _ := p.NameWithContext(ctx) // slow: shells out to ps
-	if name != "nginx" {
+	if name != "nginx" && name != "nginx-debug" {
 		return nil, errNotAnNginxProcess
 	}
 
 	cmdLine, _ := p.CmdlineWithContext(ctx) // slow: shells out to ps
 	// ignore nginx processes in the middle of an upgrade
-	if !strings.HasPrefix(cmdLine, "nginx:") || strings.Contains(cmdLine, "upgrade") {
+	if !strings.HasPrefix(cmdLine, "nginx:") || !strings.HasPrefix(cmdLine, "{nginx-debug} nginx:") ||
+		strings.Contains(cmdLine, "upgrade") {
 		return nil, errNotAnNginxProcess
 	}
 
