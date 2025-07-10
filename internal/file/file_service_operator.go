@@ -15,6 +15,7 @@ import (
 	"math"
 	"os"
 	"slices"
+	"sync"
 	"sync/atomic"
 
 	"github.com/cenkalti/backoff/v4"
@@ -41,14 +42,16 @@ type FileServiceOperator struct {
 
 var _ fileServiceOperatorInterface = (*FileServiceOperator)(nil)
 
-func NewFileServiceOperator(agentConfig *config.Config, fileServiceClient mpi.FileServiceClient) *FileServiceOperator {
+func NewFileServiceOperator(agentConfig *config.Config, fileServiceClient mpi.FileServiceClient,
+	manifestLock *sync.RWMutex,
+) *FileServiceOperator {
 	isConnected := &atomic.Bool{}
 	isConnected.Store(false)
 
 	return &FileServiceOperator{
 		fileServiceClient: fileServiceClient,
 		agentConfig:       agentConfig,
-		fileOperator:      NewFileOperator(),
+		fileOperator:      NewFileOperator(manifestLock),
 		isConnected:       isConnected,
 	}
 }

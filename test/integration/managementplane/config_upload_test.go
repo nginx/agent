@@ -19,14 +19,14 @@ import (
 )
 
 func TestGrpc_ConfigUpload(t *testing.T) {
-	teardownTest := utils.SetupConnectionTest(t, true, false,
+	teardownTest := utils.SetupConnectionTest(t, true, false, false,
 		"../../config/agent/nginx-config-with-grpc-client.conf")
 	defer teardownTest(t)
 
-	nginxInstanceID := utils.VerifyConnection(t, 2)
+	nginxInstanceID := utils.VerifyConnection(t, 2, utils.MockManagementPlaneAPIAddress)
 	assert.False(t, t.Failed())
 
-	responses := utils.ManagementPlaneResponses(t, 1)
+	responses := utils.ManagementPlaneResponses(t, 1, utils.MockManagementPlaneAPIAddress)
 
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
@@ -58,7 +58,7 @@ func TestGrpc_ConfigUpload(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 
-	responses = utils.ManagementPlaneResponses(t, 2)
+	responses = utils.ManagementPlaneResponses(t, 2, utils.MockManagementPlaneAPIAddress)
 
 	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
