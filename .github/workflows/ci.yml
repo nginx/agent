@@ -94,9 +94,9 @@ jobs:
       matrix:
         container:
         - image: "ubuntu"
-          version: "24.04"
+          version: "25.04"
         - image: "redhatenterprise"
-          version: "9"
+          version: "10"
         - image: "alpine"
           version: "3.22"
     steps:
