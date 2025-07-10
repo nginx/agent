@@ -3,7 +3,7 @@ resourceMetrics:
       attributes:
         - key: instance.type
           value:
-            stringValue: nginx
+            stringValue: nginxoss
     scopeMetrics:
       - metrics:
           - description: The total number of connections, since NGINX was last started or reloaded.
@@ -69,5 +69,5 @@ resourceMetrics:
               isMonotonic: true
             unit: requests
         scope:
-          name: otelcol/nginxreceiver
+          name: otelcol/nginxossreceiver
           version: latest
