@@ -50,7 +50,6 @@ type NginxAppProtectInstanceWatcher struct {
 }
 
 func NewNginxAppProtectInstanceWatcher(agentConfig *config.Config) *NginxAppProtectInstanceWatcher {
-	agentConfig.AllowedDirectories = append(agentConfig.AllowedDirectories, napDirPath)
 	return &NginxAppProtectInstanceWatcher{
 		agentConfig:       agentConfig,
 		filesBeingWatched: make(map[string]bool),
@@ -235,6 +234,8 @@ func (w *NginxAppProtectInstanceWatcher) createInstance(ctx context.Context) {
 	}
 
 	slog.InfoContext(ctx, "Discovered a new NGINX App Protect instance")
+	w.agentConfig.AllowedDirectories = append(w.agentConfig.AllowedDirectories, napDirPath)
+	slog.InfoContext(ctx, "Added NAP directory to allowed directories", "directories", w.agentConfig.AllowedDirectories)
 
 	w.instancesChannel <- InstanceUpdatesMessage{
 		CorrelationID: logger.CorrelationIDAttr(ctx),
