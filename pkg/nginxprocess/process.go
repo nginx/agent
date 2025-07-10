@@ -56,6 +56,7 @@ type Option interface{ apply(opts *options) }
 
 type optionFunc func(*options)
 
+//nolint:ireturn
 func (f optionFunc) apply(o *options) { f(o) }
 
 // WithStatus runs an additional lookup to load the process status.
