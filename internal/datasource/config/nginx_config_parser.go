@@ -510,10 +510,10 @@ func (ncp *NginxConfigParser) apiCallback(ctx context.Context, parent,
 
 	for _, url := range urls {
 		if ncp.pingAPIEndpoint(ctx, url, apiType) {
-			slog.DebugContext(ctx, fmt.Sprintf("%s found", apiType), "url", url)
+			slog.DebugContext(ctx, apiType+" found", "url", url)
 			return url
 		}
-		slog.DebugContext(ctx, fmt.Sprintf("%s is not reachable", apiType), "url", url)
+		slog.DebugContext(ctx, apiType+" is not reachable", "url", url)
 	}
 
 	return &model.APIDetails{
@@ -548,7 +548,7 @@ func (ncp *NginxConfigParser) pingAPIEndpoint(ctx context.Context, statusAPIDeta
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		slog.DebugContext(ctx, fmt.Sprintf("%s API responded with unexpected status code", apiType), "status_code",
+		slog.DebugContext(ctx, apiType+" API responded with unexpected status code", "status_code",
 			resp.StatusCode, "expected", http.StatusOK)
 
 		return false

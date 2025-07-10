@@ -6,9 +6,11 @@ linters:
     - copyloopvar
     - cyclop
     - dupl
+    - decorder
     - errorlint
     - exhaustive
     - forcetypeassert
+    - funcorder
     - gocheckcompilerdirectives
     - gocognit
     - goconst
@@ -21,8 +23,10 @@ linters:
     - grouper
     - importas
     - inamedparam
+    - intrange
     - ireturn
     - lll
+    - loggercheck
     - maintidx
     - makezero
     - mirror
@@ -35,7 +39,9 @@ linters:
     - nilnil
     - nlreturn
     - noctx
+#    - nolintlint
     - nosprintfhostport
+    - perfsprint
     - prealloc
     - predeclared
     - promlinter
@@ -44,6 +50,7 @@ linters:
     - revive
     - rowserrcheck
     - sloglint
+    - spancheck
     - sqlclosecheck
     - staticcheck
     - tagalign
@@ -52,6 +59,7 @@ linters:
     - thelper
     - unconvert
     - unparam
+    - usetesting
     - usestdlibvars
     - wastedassign
     - whitespace

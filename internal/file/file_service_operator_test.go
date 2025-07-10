@@ -75,7 +75,7 @@ func TestFileServiceOperator_UpdateOverview_MaxIterations(t *testing.T) {
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 
 	// do 5 iterations
-	for i := 0; i <= 5; i++ {
+	for i := range 5 {
 		fakeFileServiceClient.UpdateOverviewReturnsOnCall(i, &mpi.UpdateOverviewResponse{
 			Overview: overview,
 		}, nil)

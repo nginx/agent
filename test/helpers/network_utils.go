@@ -6,6 +6,7 @@ package helpers
 
 import (
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"math/big"
 	"net"
@@ -21,7 +22,7 @@ func RandomPort(t *testing.T) (int, error) {
 	const maxPort = 65535
 
 	// try up to 10 times to get a random port
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		maxValue := &big.Int{}
 		maxValue.SetInt64(maxPort - minPort + 1)
 
@@ -37,7 +38,7 @@ func RandomPort(t *testing.T) (int, error) {
 		}
 	}
 
-	return 0, fmt.Errorf("could not find an available port after multiple attempts")
+	return 0, errors.New("could not find an available port after multiple attempts")
 }
 
 // isPortAvailable checks if a port is available by attempting to bind to it

@@ -602,7 +602,7 @@ func seekFileInPaths(fileName string, directories ...string) (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("a valid configuration has not been found in any of the search paths")
+	return "", errors.New("a valid configuration has not been found in any of the search paths")
 }
 
 func configFilePaths() []string {

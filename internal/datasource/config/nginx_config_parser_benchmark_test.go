@@ -45,7 +45,7 @@ func BenchmarkNginxConfigParser_Parse(b *testing.B) {
 
 				bb.ResetTimer()
 
-				for i := 0; i < bb.N; i++ {
+				for range bb.N {
 					_, err := nginxConfigParser.Parse(
 						ctx,
 						&mpi.Instance{
@@ -106,7 +106,7 @@ func BenchmarkNginxConfigParserGeneratedConfig_Parse(b *testing.B) {
 
 			bb.ResetTimer()
 
-			for i := 0; i < bb.N; i++ {
+			for range bb.N {
 				_, parseErr := nginxConfigParser.Parse(
 					ctx,
 					&mpi.Instance{
