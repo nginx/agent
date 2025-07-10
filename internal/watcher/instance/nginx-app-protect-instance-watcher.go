@@ -137,16 +137,16 @@ func (w *NginxAppProtectInstanceWatcher) addWatcher(ctx context.Context, version
 }
 
 func (w *NginxAppProtectInstanceWatcher) readVersionFile(ctx context.Context, versionFile string) {
-	switch {
-	case versionFile == versionFilePath:
+	switch versionFile {
+	case versionFilePath:
 		w.version = w.readFile(ctx, versionFilePath)
-	case versionFile == releaseFilePath:
+	case releaseFilePath:
 		w.release = w.readFile(ctx, releaseFilePath)
-	case versionFile == threatCampaignVersionFilePath:
+	case threatCampaignVersionFilePath:
 		w.threatCampaignVersion = w.readFile(ctx, threatCampaignVersionFilePath)
-	case versionFile == enforcerEngineVersionFilePath:
+	case enforcerEngineVersionFilePath:
 		w.enforcerEngineVersion = w.readFile(ctx, enforcerEngineVersionFilePath)
-	case versionFile == attackSignatureVersionFilePath:
+	case attackSignatureVersionFilePath:
 		w.attackSignatureVersion = w.readFile(ctx, attackSignatureVersionFilePath)
 	}
 }

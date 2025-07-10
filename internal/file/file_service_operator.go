@@ -183,7 +183,7 @@ func (fso *FileServiceOperator) UpdateOverview(
 	slog.DebugContext(newCtx, "UpdateOverview response", "response", response)
 
 	if response.GetOverview() == nil {
-		slog.Debug("UpdateOverview response is empty")
+		slog.DebugContext(ctx, "UpdateOverview response is empty")
 		return nil
 	}
 	delta := files.ConvertToMapOfFiles(response.GetOverview().GetFiles())
@@ -211,7 +211,7 @@ func (fso *FileServiceOperator) updateFiles(
 	}
 
 	iteration++
-	slog.Info("Updating file overview after file updates", "attempt_number", iteration)
+	slog.InfoContext(ctx, "Updating file overview after file updates", "attempt_number", iteration)
 
 	return fso.UpdateOverview(ctx, instanceID, diffFiles, iteration)
 }
