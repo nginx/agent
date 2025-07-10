@@ -157,7 +157,6 @@ func CorrelationIDAttr(ctx context.Context) slog.Attr {
 		slog.DebugContext(
 			ctx,
 			"Correlation ID not found in context, generating new correlation ID",
-			"correlation_id",
 			correlationID)
 
 		return GenerateCorrelationID()

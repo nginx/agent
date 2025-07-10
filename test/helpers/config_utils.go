@@ -75,7 +75,7 @@ func GenerateConfig(t testing.TB, outputFile string, targetSize int64) (fs.FileI
 		server, serverErr := generateRandomString(serverLength)
 		require.NoError(t, serverErr)
 
-		serverName := fmt.Sprintf("%s.com", server)
+		serverName := server + ".com"
 
 		proxy, proxyErr := generateRandomString(proxyLength)
 		require.NoError(t, proxyErr)

@@ -306,23 +306,23 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 		{
 			name:        "Test 2: Failed reload",
 			instanceID:  protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
-			reloadErr:   fmt.Errorf("something went wrong"),
+			reloadErr:   errors.New("something went wrong"),
 			validateErr: nil,
-			expected:    fmt.Errorf("failed to reload NGINX %w", fmt.Errorf("something went wrong")),
+			expected:    fmt.Errorf("failed to reload NGINX %w", errors.New("something went wrong")),
 		},
 		{
 			name:        "Test 3: Failed validate",
 			instanceID:  protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(),
 			reloadErr:   nil,
-			validateErr: fmt.Errorf("something went wrong"),
-			expected:    fmt.Errorf("failed validating config %w", fmt.Errorf("something went wrong")),
+			validateErr: errors.New("something went wrong"),
+			expected:    fmt.Errorf("failed validating config %w", errors.New("something went wrong")),
 		},
 		{
 			name:        "Test 4: Unknown instance ID",
 			instanceID:  "unknown",
 			reloadErr:   nil,
 			validateErr: nil,
-			expected:    fmt.Errorf("instance unknown not found"),
+			expected:    errors.New("instance unknown not found"),
 		},
 	}
 

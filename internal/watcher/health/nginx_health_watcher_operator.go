@@ -51,7 +51,7 @@ func (nhw *NginxHealthWatcher) Health(ctx context.Context, instance *mpi.Instanc
 	}
 
 	if len(instance.GetInstanceRuntime().GetInstanceChildren()) == 0 {
-		health.Description = fmt.Sprintf("%s, instance does not have enough children", health.GetDescription())
+		health.Description = health.GetDescription() + ", instance does not have enough children"
 		health.InstanceHealthStatus = mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_DEGRADED
 	}
 

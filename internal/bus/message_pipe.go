@@ -147,6 +147,16 @@ func (p *MessagePipe) IsPluginRegistered(pluginName string) bool {
 	return isPluginRegistered
 }
 
+func (p *MessagePipe) Index(pluginName string, plugins []Plugin) int {
+	for index, plugin := range plugins {
+		if pluginName == plugin.Info().Name {
+			return index
+		}
+	}
+
+	return -1
+}
+
 func (p *MessagePipe) unsubscribePlugin(ctx context.Context, index int, plugin Plugin) error {
 	if index != -1 {
 		p.plugins = append(p.plugins[:index], p.plugins[index+1:]...)
@@ -179,16 +189,6 @@ func (p *MessagePipe) findPlugins(pluginNames []string) []Plugin {
 	}
 
 	return plugins
-}
-
-func (p *MessagePipe) Index(pluginName string, plugins []Plugin) int {
-	for index, plugin := range plugins {
-		if pluginName == plugin.Info().Name {
-			return index
-		}
-	}
-
-	return -1
 }
 
 func (p *MessagePipe) initPlugins(ctx context.Context) {

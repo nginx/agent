@@ -8,6 +8,7 @@ package grpc
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"os"
 )
@@ -50,7 +51,7 @@ func appendCertKeyPair(tlsConfig *tls.Config, certFile, keyFile string) error {
 		return nil
 	}
 	if certFile == "" || keyFile == "" {
-		return fmt.Errorf("cert and key must both be provided")
+		return errors.New("cert and key must both be provided")
 	}
 
 	certificate, err := tls.LoadX509KeyPair(certFile, keyFile)

@@ -91,7 +91,7 @@ func TestFileManagerService_ConfigApply_Add_LargeFile(t *testing.T) {
 		fileName:       filePath,
 	}
 
-	for i := 0; i < len(fileContent); i++ {
+	for i := range fileContent {
 		fakeServerStreamingClient.chunks[uint32(i)] = []byte{fileContent[i]}
 	}
 
@@ -754,7 +754,7 @@ rQHX6DP4w6IwZY8JB8LS
 			if test.certContent == "" {
 				_, certBytes = helpers.GenerateSelfSignedCert(t)
 				certContents := helpers.Cert{
-					Name:     fmt.Sprintf("%s.pem", test.certName),
+					Name:     test.certName + ".pem",
 					Type:     "CERTIFICATE",
 					Contents: certBytes,
 				}

@@ -86,7 +86,7 @@ func generatePattern(n int) (string, error) {
 	pattern.WriteString(currDir)
 	pattern.WriteRune(os.PathSeparator)
 
-	for i := 0; i < n; i++ {
+	for range n {
 		pattern.WriteString("..")
 		pattern.WriteRune(os.PathSeparator)
 	}

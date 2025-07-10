@@ -21,6 +21,13 @@ import (
 
 const operatorType = "access_log_file_input"
 
+// Config is the configuration of a file input operator
+type Config struct {
+	helper.InputConfig  `mapstructure:",squash"`
+	AccessLogFormat     string `mapstructure:"access_log_format"`
+	fileconsumer.Config `mapstructure:",squash"`
+}
+
 func init() {
 	operator.Register(operatorType, func() operator.Builder { return NewConfig() })
 }
@@ -36,13 +43,6 @@ func NewConfigWithID(operatorID string) *Config {
 		InputConfig: helper.NewInputConfig(operatorID, operatorType),
 		Config:      *fileconsumer.NewConfig(),
 	}
-}
-
-// Config is the configuration of a file input operator
-type Config struct {
-	helper.InputConfig  `mapstructure:",squash"`
-	AccessLogFormat     string `mapstructure:"access_log_format"`
-	fileconsumer.Config `mapstructure:",squash"`
 }
 
 // Build will build a file input operator from the supplied configuration

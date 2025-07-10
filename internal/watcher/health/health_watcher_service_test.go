@@ -7,6 +7,7 @@ package health
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -105,7 +106,7 @@ func TestHealthWatcherService_health(t *testing.T) {
 	fakePlusHealthOp.HealthReturns(protos.UnhealthyInstanceHealth(), nil)
 
 	fakeUnspecifiedHealthOp := healthfakes.FakeHealthWatcherOperator{}
-	fakeUnspecifiedHealthOp.HealthReturns(nil, fmt.Errorf("unable to determine health"))
+	fakeUnspecifiedHealthOp.HealthReturns(nil, errors.New("unable to determine health"))
 
 	watchers[plusInstance.GetInstanceMeta().GetInstanceId()] = &fakePlusHealthOp
 	watchers[ossInstance.GetInstanceMeta().GetInstanceId()] = &fakeOSSHealthOp

@@ -330,7 +330,7 @@ func (cs *CommandService) sendResponseForQueuedConfigApplyRequests(
 	indexOfConfigApplyRequest int,
 ) error {
 	instanceID := response.GetInstanceId()
-	for i := 0; i < indexOfConfigApplyRequest; i++ {
+	for i := range indexOfConfigApplyRequest {
 		newResponse := response
 
 		newResponse.GetMessageMeta().MessageId = id.GenerateMessageID()
@@ -464,7 +464,7 @@ func (cs *CommandService) handleSubscribeError(ctx context.Context, err error, e
 		return nil
 	}
 
-	slog.ErrorContext(ctx, fmt.Sprintf("Failed to %s", errorMsg), "error", err)
+	slog.ErrorContext(ctx, "Failed to"+errorMsg, "error", err)
 
 	return err
 }

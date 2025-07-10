@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -82,7 +83,7 @@ func NewGrpcConnection(ctx context.Context, agentConfig *config.Config,
 
 	serverAddr := net.JoinHostPort(
 		commandConfig.Server.Host,
-		fmt.Sprint(commandConfig.Server.Port),
+		strconv.Itoa(commandConfig.Server.Port),
 	)
 
 	slog.InfoContext(ctx, "Dialing grpc server", "server_addr", serverAddr)

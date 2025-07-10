@@ -20,7 +20,7 @@ func generateLogs(numRecords, recordSize int) plog.Logs {
 	logs := plog.NewLogs()
 	rl := logs.ResourceLogs().AppendEmpty()
 	sl := rl.ScopeLogs().AppendEmpty()
-	for i := 0; i < numRecords; i++ {
+	for range numRecords {
 		lr := sl.LogRecords().AppendEmpty()
 		content, _ := randomString(recordSize)
 		lr.Body().SetStr(content)
@@ -64,7 +64,7 @@ func BenchmarkGzipProcessor(b *testing.B) {
 			logs := generateLogs(bm.numRecords, bm.recordSize)
 
 			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
+			for range b.N {
 				_ = p.ConsumeLogs(context.Background(), logs)
 			}
 		})
