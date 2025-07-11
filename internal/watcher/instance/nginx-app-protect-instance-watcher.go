@@ -20,13 +20,11 @@ import (
 )
 
 var (
-	napDirPath                     = "/opt/app_protect"
 	versionFilePath                = "/opt/app_protect/VERSION"
 	releaseFilePath                = "/opt/app_protect/RELEASE"
 	attackSignatureVersionFilePath = "/opt/app_protect/var/update_files/signatures/version"
 	threatCampaignVersionFilePath  = "/opt/app_protect/var/update_files/threat_campaigns/version"
 	enforcerEngineVersionFilePath  = "/opt/app_protect/bd_config/enforcer.version"
-	napConfigPath                  = "/etc/app_protect"
 
 	versionFiles = []string{
 		versionFilePath,
