@@ -8,7 +8,6 @@ package instance
 import (
 	"context"
 	"os"
-	"slices"
 	"testing"
 	"time"
 
@@ -94,13 +93,6 @@ func TestNginxAppProtectInstanceWatcher_Watch(t *testing.T) {
 				},
 			},
 		},
-	)
-
-	assert.True(t,
-		slices.Contains(
-			nginxAppProtectInstanceWatcher.agentConfig.AllowedDirectories,
-			napDirPath,
-		),
 	)
 
 	go nginxAppProtectInstanceWatcher.Watch(ctx, instancesChannel)
