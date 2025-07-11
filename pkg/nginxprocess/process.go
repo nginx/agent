@@ -76,34 +76,38 @@ func convert(ctx context.Context, p *process.Process, o options) (*Process, erro
 
 	cmdLine, _ := p.CmdlineWithContext(ctx) // slow: shells out to ps
 	// ignore nginx processes in the middle of an upgrade
-	if !strings.HasPrefix(cmdLine, "nginx:") || !strings.HasPrefix(cmdLine, "{nginx-debug} nginx:") ||
-		strings.Contains(cmdLine, "upgrade") {
+
+	if strings.Contains(cmdLine, "upgrade") {
 		return nil, errNotAnNginxProcess
 	}
 
-	var status string
-	if o.loadStatus {
-		flags, _ := p.StatusWithContext(ctx) // slow: shells out to ps
-		status = strings.Join(flags, " ")
-	}
+	if strings.HasPrefix(cmdLine, "nginx:") || strings.HasPrefix(cmdLine, "{nginx-debug} nginx:") {
 
-	// unconditionally run fast lookups
-	var created time.Time
-	if millisSinceEpoch, err := p.CreateTimeWithContext(ctx); err == nil {
-		created = time.UnixMilli(millisSinceEpoch)
-	}
-	ppid, _ := p.PpidWithContext(ctx)
-	exe, _ := p.ExeWithContext(ctx)
+		var status string
+		if o.loadStatus {
+			flags, _ := p.StatusWithContext(ctx) // slow: shells out to ps
+			status = strings.Join(flags, " ")
+		}
 
-	return &Process{
-		PID:     p.Pid,
-		PPID:    ppid,
-		Name:    name,
-		Cmd:     cmdLine,
-		Created: created,
-		Status:  status,
-		Exe:     exe,
-	}, ctx.Err()
+		// unconditionally run fast lookups
+		var created time.Time
+		if millisSinceEpoch, err := p.CreateTimeWithContext(ctx); err == nil {
+			created = time.UnixMilli(millisSinceEpoch)
+		}
+		ppid, _ := p.PpidWithContext(ctx)
+		exe, _ := p.ExeWithContext(ctx)
+
+		return &Process{
+			PID:     p.Pid,
+			PPID:    ppid,
+			Name:    name,
+			Cmd:     cmdLine,
+			Created: created,
+			Status:  status,
+			Exe:     exe,
+		}, ctx.Err()
+	}
+	return nil, errNotAnNginxProcess
 }
 
 // List returns a slice of all NGINX processes. Returns a zero-length slice if no NGINX processes are found.
