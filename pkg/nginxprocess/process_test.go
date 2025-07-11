@@ -87,6 +87,14 @@ func TestProcess_IsNginxMaster(t *testing.T) {
 			cmd:  "nginx: cache manager process",
 			want: false,
 		},
+		"Test 5: nginx debug master": {
+			cmd:  "{nginx-debug} nginx: master process /usr/sbin/nginx-debug -g daemon off;",
+			want: true,
+		},
+		"Test 6: nginx debug worker": {
+			cmd:  "{nginx-debug} nginx: worker process;",
+			want: false,
+		},
 	}
 	for name, tc := range testcases {
 		t.Run(name, func(t *testing.T) {
