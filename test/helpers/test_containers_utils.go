@@ -263,6 +263,39 @@ func StartMockManagementPlaneGrpcContainer(
 	return container
 }
 
+func StartAuxiliaryMockManagementPlaneGrpcContainer(ctx context.Context, tb testing.TB,
+	containerNetwork *testcontainers.DockerNetwork,
+) testcontainers.Container {
+	tb.Helper()
+	req := testcontainers.ContainerRequest{
+		FromDockerfile: testcontainers.FromDockerfile{
+			Context:       "../../../",
+			Dockerfile:    "./test/integration/auxiliarycommandserver/Dockerfile",
+			KeepImage:     false,
+			PrintBuildLog: true,
+		},
+		ExposedPorts: []string{"9095/tcp", "9096/tcp"},
+		Networks: []string{
+			containerNetwork.Name,
+		},
+		NetworkAliases: map[string][]string{
+			containerNetwork.Name: {
+				"managementPlaneAuxiliary",
+			},
+		},
+		WaitingFor: wait.ForLog("Starting mock management plane gRPC server"),
+	}
+
+	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          true,
+	})
+
+	require.NoError(tb, err)
+
+	return container
+}
+
 func ToPtr[T any](value T) *T {
 	return &value
 }
@@ -274,6 +307,7 @@ func LogAndTerminateContainers(
 	mockManagementPlaneContainer testcontainers.Container,
 	agentContainer testcontainers.Container,
 	expectNoErrorsInLogs bool,
+	auxiliaryMockManagementPlaneContainer testcontainers.Container,
 ) {
 	tb.Helper()
 
@@ -285,6 +319,8 @@ func LogAndTerminateContainers(
 	require.NoError(tb, err)
 	logs := string(buf)
 
+	assert.NotContains(tb, logs, "manifest file is empty",
+		"Error reading manifest file found in agent log")
 	tb.Log(logs)
 	if expectNoErrorsInLogs {
 		assert.NotContains(tb, logs, "level=ERROR", "agent log file contains logs at error level")
@@ -305,6 +341,21 @@ func LogAndTerminateContainers(
 		tb.Log(logs)
 
 		err = mockManagementPlaneContainer.Terminate(ctx)
+		require.NoError(tb, err)
+	}
+
+	if auxiliaryMockManagementPlaneContainer != nil {
+		tb.Log("======================== Logging Auxiliary Mock Management Container Logs ========================")
+		logReader, err = auxiliaryMockManagementPlaneContainer.Logs(ctx)
+		require.NoError(tb, err)
+
+		buf, err = io.ReadAll(logReader)
+		require.NoError(tb, err)
+		logs = string(buf)
+
+		tb.Log(logs)
+
+		err = auxiliaryMockManagementPlaneContainer.Terminate(ctx)
 		require.NoError(tb, err)
 	}
 }
