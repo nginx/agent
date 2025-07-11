@@ -231,9 +231,6 @@ func (w *NginxAppProtectInstanceWatcher) createInstance(ctx context.Context) {
 			InstanceChildren: make([]*mpi.InstanceChild, 0),
 		},
 	}
-
-	slog.InfoContext(ctx, "Discovered a new NGINX App Protect instance")
-
 	w.instancesChannel <- InstanceUpdatesMessage{
 		CorrelationID: logger.CorrelationIDAttr(ctx),
 		InstanceUpdates: InstanceUpdates{

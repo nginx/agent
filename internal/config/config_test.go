@@ -791,7 +791,7 @@ func agentConfig() *Config {
 		},
 		AllowedDirectories: []string{
 			"/etc/nginx/", "/etc/nginx-agent/", "/usr/local/etc/nginx/", "/var/run/nginx/", "/var/log/nginx/",
-			"/usr/share/nginx/modules/",
+			"/usr/share/nginx/modules/", "/opt/app_protect/", "/etc/app_protect/",
 		},
 		Collector: &Collector{
 			ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
