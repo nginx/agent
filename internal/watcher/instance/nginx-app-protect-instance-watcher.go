@@ -26,6 +26,7 @@ var (
 	attackSignatureVersionFilePath = "/opt/app_protect/var/update_files/signatures/version"
 	threatCampaignVersionFilePath  = "/opt/app_protect/var/update_files/threat_campaigns/version"
 	enforcerEngineVersionFilePath  = "/opt/app_protect/bd_config/enforcer.version"
+	napConfigPath                  = "/etc/app_protect"
 
 	versionFiles = []string{
 		versionFilePath,
@@ -232,11 +233,6 @@ func (w *NginxAppProtectInstanceWatcher) createInstance(ctx context.Context) {
 			InstanceChildren: make([]*mpi.InstanceChild, 0),
 		},
 	}
-
-	slog.InfoContext(ctx, "Discovered a new NGINX App Protect instance")
-	w.agentConfig.AllowedDirectories = append(w.agentConfig.AllowedDirectories, napDirPath)
-	slog.InfoContext(ctx, "Added NAP directory to allowed directories", "directories", w.agentConfig.AllowedDirectories)
-
 	w.instancesChannel <- InstanceUpdatesMessage{
 		CorrelationID: logger.CorrelationIDAttr(ctx),
 		InstanceUpdates: InstanceUpdates{
