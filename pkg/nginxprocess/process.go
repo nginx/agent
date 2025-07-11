@@ -82,7 +82,6 @@ func convert(ctx context.Context, p *process.Process, o options) (*Process, erro
 	}
 
 	if strings.HasPrefix(cmdLine, "nginx:") || strings.HasPrefix(cmdLine, "{nginx-debug} nginx:") {
-
 		var status string
 		if o.loadStatus {
 			flags, _ := p.StatusWithContext(ctx) // slow: shells out to ps
@@ -107,6 +106,7 @@ func convert(ctx context.Context, p *process.Process, o options) (*Process, erro
 			Exe:     exe,
 		}, ctx.Err()
 	}
+
 	return nil, errNotAnNginxProcess
 }
 
