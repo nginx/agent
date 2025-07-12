@@ -3,6 +3,7 @@
 ![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)
 [![Slack](https://img.shields.io/badge/slack-join%20us-brightgreen.svg?logo=slack)](https://nginxcommunity.slack.com/channels/nginx-agent)
 ![coverage](https://raw.githubusercontent.com/nginx/agent/badges/.badges/v3/coverage.svg)
+[![Visualise&nbsp;Repo](https://img.shields.io/badge/Visualise%20Repo-blue?style=flat)](https://repomapr.com/nginx/agent)
 
 # NGINX Agent
 
