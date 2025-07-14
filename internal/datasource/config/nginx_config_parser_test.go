@@ -621,7 +621,7 @@ func TestNginxConfigParser_SyslogServerParse(t *testing.T) {
 			expectedSyslogServers: "",
 			content: testconfig.NginxConfigWithMultipleSysLogs(errorLog.Name(), accessLog.Name(),
 				"random.domain:1515", "192.168.12.34:1517", "my.domain.com:1517"),
-			expectedLog: "Could not find valid Nap Syslog server",
+			expectedLog: "Could not find usable NAP syslog server, security violations will be unavailable",
 			portInUse:   false,
 		},
 		{
@@ -629,7 +629,7 @@ func TestNginxConfigParser_SyslogServerParse(t *testing.T) {
 			expectedSyslogServers: "localhost:1516",
 			content: testconfig.NginxConfigWithMultipleSysLogs(errorLog.Name(), accessLog.Name(),
 				"192.168.12.34:1517", "127.0.0.1:1515", "localhost:1516"),
-			expectedLog: "NAP syslog server is not reachable",
+			expectedLog: "\"Found valid NAP syslog server\" address=localhost:1516",
 			portInUse:   true,
 		},
 		{

@@ -175,7 +175,6 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 					}
 				case "app_protect_security_log":
 					if len(directive.Args) > 1 {
-						slog.Info("args", "", directive.Args)
 						sysLogServers := ncp.findValidSysLogServers(directive.Args)
 						if len(sysLogServers) == 0 {
 							slog.WarnContext(ctx, "Could not find usable NAP syslog server, "+
