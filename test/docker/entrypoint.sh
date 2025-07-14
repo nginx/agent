@@ -33,13 +33,14 @@ echo "starting nginx ..."
 nginx_pid=$!
 
 SECONDS=0
-
-while ! ps -ef | grep "nginx: master process" | grep -v grep; do 
+while [[ ! -f /var/run/nginx.pid ]]; do
     if (( SECONDS > 30 )); then
         echo "couldn't find nginx master process"
         exit 1
+        sleep 1
     fi
 done
+nginx_pid=$(cat /var/run/nginx.pid)
 
 cat /etc/nginx-agent/nginx-agent.conf;
 
