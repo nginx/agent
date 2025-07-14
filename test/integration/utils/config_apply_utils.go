@@ -11,6 +11,9 @@ import (
 	"testing"
 	"time"
 
+	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"google.golang.org/protobuf/encoding/protojson"
+
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,19 +25,46 @@ const (
 	RetryMaxWaitTime = 6 * time.Second
 )
 
-var MockManagementPlaneAPIAddress string
+var (
+	MockManagementPlaneAPIAddress          string
+	AuxiliaryMockManagementPlaneAPIAddress string
+)
 
-func PerformConfigApply(t *testing.T, nginxInstanceID string) {
+func PerformConfigApply(t *testing.T, nginxInstanceID, mockManagementPlaneAPIAddress string) {
 	t.Helper()
 
 	client := resty.New()
 	client.SetRetryCount(RetryCount).SetRetryWaitTime(RetryWaitTime).SetRetryMaxWaitTime(RetryMaxWaitTime)
 
-	url := fmt.Sprintf("http://%s/api/v1/instance/%s/config/apply", MockManagementPlaneAPIAddress, nginxInstanceID)
+	url := fmt.Sprintf("http://%s/api/v1/instance/%s/config/apply", mockManagementPlaneAPIAddress, nginxInstanceID)
 	resp, err := client.R().EnableTrace().Post(url)
+
+	t.Logf("Config ApplyResponse: %s", resp.String())
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode())
+}
+
+func CurrentFileOverview(t *testing.T, nginxInstanceID, mockManagementPlaneAPIAddress string) *mpi.FileOverview {
+	t.Helper()
+
+	client := resty.New()
+	client.SetRetryCount(RetryCount).SetRetryWaitTime(RetryWaitTime).SetRetryMaxWaitTime(RetryMaxWaitTime)
+
+	url := fmt.Sprintf("http://%s/api/v1/instance/%s/config", mockManagementPlaneAPIAddress, nginxInstanceID)
+	resp, err := client.R().EnableTrace().Get(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
+
+	responseData := resp.Body()
+
+	overview := mpi.GetOverviewResponse{}
+
+	pb := protojson.UnmarshalOptions{DiscardUnknown: true}
+	unmarshalErr := pb.Unmarshal(responseData, &overview)
+	require.NoError(t, unmarshalErr)
+
+	return overview.GetOverview()
 }
 
 func PerformInvalidConfigApply(t *testing.T, nginxInstanceID string) {

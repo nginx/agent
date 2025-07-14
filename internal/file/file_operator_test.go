@@ -9,6 +9,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/nginx/agent/v3/pkg/files"
@@ -28,7 +29,7 @@ func TestFileOperator_Write(t *testing.T) {
 	fileContent, err := os.ReadFile("../../test/config/nginx/nginx.conf")
 	require.NoError(t, err)
 	defer helpers.RemoveFileWithErrorCheck(t, filePath)
-	fileOp := NewFileOperator()
+	fileOp := NewFileOperator(&sync.RWMutex{})
 
 	fileMeta := protos.FileMeta(filePath, files.GenerateHash(fileContent))
 

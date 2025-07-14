@@ -15,6 +15,7 @@ import (
 	"math"
 	"os"
 	"slices"
+	"sync"
 	"sync/atomic"
 
 	"github.com/cenkalti/backoff/v4"
@@ -41,14 +42,16 @@ type FileServiceOperator struct {
 
 var _ fileServiceOperatorInterface = (*FileServiceOperator)(nil)
 
-func NewFileServiceOperator(agentConfig *config.Config, fileServiceClient mpi.FileServiceClient) *FileServiceOperator {
+func NewFileServiceOperator(agentConfig *config.Config, fileServiceClient mpi.FileServiceClient,
+	manifestLock *sync.RWMutex,
+) *FileServiceOperator {
 	isConnected := &atomic.Bool{}
 	isConnected.Store(false)
 
 	return &FileServiceOperator{
 		fileServiceClient: fileServiceClient,
 		agentConfig:       agentConfig,
-		fileOperator:      NewFileOperator(),
+		fileOperator:      NewFileOperator(manifestLock),
 		isConnected:       isConnected,
 	}
 }
@@ -95,20 +98,6 @@ func (fso *FileServiceOperator) File(ctx context.Context, file *mpi.File,
 	}
 
 	return fso.validateFileHash(file.GetFileMeta().GetName(), fileActions)
-}
-
-func (fso *FileServiceOperator) validateFileHash(filePath string, fileActions map[string]*model.FileCache) error {
-	content, err := os.ReadFile(filePath)
-	if err != nil {
-		return err
-	}
-	fileHash := files.GenerateHash(content)
-
-	if fileHash != fileActions[filePath].File.GetFileMeta().GetHash() {
-		return fmt.Errorf("error writing file, file hash does not match for file %s", filePath)
-	}
-
-	return nil
 }
 
 func (fso *FileServiceOperator) UpdateOverview(
@@ -195,25 +184,37 @@ func (fso *FileServiceOperator) UpdateOverview(
 	return err
 }
 
-func (fso *FileServiceOperator) updateFiles(
-	ctx context.Context,
-	delta map[string]*mpi.File,
-	instanceID string,
-	iteration int,
-) error {
-	diffFiles := slices.Collect(maps.Values(delta))
+func (fso *FileServiceOperator) ChunkedFile(ctx context.Context, file *mpi.File) error {
+	slog.DebugContext(ctx, "Getting chunked file", "file", file.GetFileMeta().GetName())
 
-	for _, file := range diffFiles {
-		updateErr := fso.UpdateFile(ctx, instanceID, file)
-		if updateErr != nil {
-			return updateErr
-		}
+	stream, err := fso.fileServiceClient.GetFileStream(ctx, &mpi.GetFileRequest{
+		MessageMeta: &mpi.MessageMeta{
+			MessageId:     id.GenerateMessageID(),
+			CorrelationId: logger.CorrelationID(ctx),
+			Timestamp:     timestamppb.Now(),
+		},
+		FileMeta: file.GetFileMeta(),
+	})
+	if err != nil {
+		return fmt.Errorf("error getting file stream for %s: %w", file.GetFileMeta().GetName(), err)
 	}
 
-	iteration++
-	slog.InfoContext(ctx, "Updating file overview after file updates", "attempt_number", iteration)
+	// Get header chunk first
+	headerChunk, recvHeaderChunkError := stream.Recv()
+	if recvHeaderChunkError != nil {
+		return recvHeaderChunkError
+	}
 
-	return fso.UpdateOverview(ctx, instanceID, diffFiles, iteration)
+	slog.DebugContext(ctx, "File header chunk received", "header_chunk", headerChunk)
+
+	header := headerChunk.GetHeader()
+
+	writeChunkedFileError := fso.fileOperator.WriteChunkedFile(ctx, file, header, stream)
+	if writeChunkedFileError != nil {
+		return writeChunkedFileError
+	}
+
+	return nil
 }
 
 func (fso *FileServiceOperator) UpdateFile(
@@ -233,6 +234,41 @@ func (fso *FileServiceOperator) UpdateFile(
 	}
 
 	return fso.sendUpdateFileStream(ctx, fileToUpdate, fso.agentConfig.Client.Grpc.FileChunkSize)
+}
+
+func (fso *FileServiceOperator) validateFileHash(filePath string, fileActions map[string]*model.FileCache) error {
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+	fileHash := files.GenerateHash(content)
+
+	if fileHash != fileActions[filePath].File.GetFileMeta().GetHash() {
+		return fmt.Errorf("error writing file, file hash does not match for file %s", filePath)
+	}
+
+	return nil
+}
+
+func (fso *FileServiceOperator) updateFiles(
+	ctx context.Context,
+	delta map[string]*mpi.File,
+	instanceID string,
+	iteration int,
+) error {
+	diffFiles := slices.Collect(maps.Values(delta))
+
+	for _, file := range diffFiles {
+		updateErr := fso.UpdateFile(ctx, instanceID, file)
+		if updateErr != nil {
+			return updateErr
+		}
+	}
+
+	iteration++
+	slog.InfoContext(ctx, "Updating file overview after file updates", "attempt_number", iteration)
+
+	return fso.UpdateOverview(ctx, instanceID, diffFiles, iteration)
 }
 
 func (fso *FileServiceOperator) sendUpdateFileRequest(
@@ -304,7 +340,7 @@ func (fso *FileServiceOperator) sendUpdateFileStream(
 	chunkSize uint32,
 ) error {
 	if chunkSize == 0 {
-		return fmt.Errorf("file chunk size must be greater than zero")
+		return errors.New("file chunk size must be greater than zero")
 	}
 
 	updateFileStreamClient, err := fso.fileServiceClient.UpdateFileStream(ctx)
@@ -463,39 +499,6 @@ func (fso *FileServiceOperator) sendFileUpdateStreamChunk(
 	}
 
 	return backoff.Retry(sendUpdateFileChunk, backoffHelpers.Context(backOffCtx, fso.agentConfig.Client.Backoff))
-}
-
-func (fso *FileServiceOperator) ChunkedFile(ctx context.Context, file *mpi.File) error {
-	slog.DebugContext(ctx, "Getting chunked file", "file", file.GetFileMeta().GetName())
-
-	stream, err := fso.fileServiceClient.GetFileStream(ctx, &mpi.GetFileRequest{
-		MessageMeta: &mpi.MessageMeta{
-			MessageId:     id.GenerateMessageID(),
-			CorrelationId: logger.CorrelationID(ctx),
-			Timestamp:     timestamppb.Now(),
-		},
-		FileMeta: file.GetFileMeta(),
-	})
-	if err != nil {
-		return fmt.Errorf("error getting file stream for %s: %w", file.GetFileMeta().GetName(), err)
-	}
-
-	// Get header chunk first
-	headerChunk, recvHeaderChunkError := stream.Recv()
-	if recvHeaderChunkError != nil {
-		return recvHeaderChunkError
-	}
-
-	slog.DebugContext(ctx, "File header chunk received", "header_chunk", headerChunk)
-
-	header := headerChunk.GetHeader()
-
-	writeChunkedFileError := fso.fileOperator.WriteChunkedFile(ctx, file, header, stream)
-	if writeChunkedFileError != nil {
-		return writeChunkedFileError
-	}
-
-	return nil
 }
 
 func (fso *FileServiceOperator) setupIdentifiers(ctx context.Context, iteration int) (context.Context, string) {
