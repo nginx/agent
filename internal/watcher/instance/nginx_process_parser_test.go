@@ -185,7 +185,7 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 				}
 			}
 
-			assert.Equal(tt, len(test.expected), len(result))
+			assert.Len(tt, result, len(test.expected))
 		})
 	}
 }
@@ -391,7 +391,7 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 				assert.True(tt, proto.Equal(test.expected[id], instance))
 			}
 
-			assert.Equal(tt, len(test.expected), len(result))
+			assert.Len(tt, result, len(test.expected))
 		})
 	}
 }
@@ -622,8 +622,8 @@ func TestGetConfigPathFromCommand(t *testing.T) {
 	assert.Equal(t, "/tmp/nginx.conf", result)
 
 	result = confPathFromCommand("nginx: master process nginx -c")
-	assert.Equal(t, "", result)
+	assert.Empty(t, result)
 
 	result = confPathFromCommand("")
-	assert.Equal(t, "", result)
+	assert.Empty(t, result)
 }
