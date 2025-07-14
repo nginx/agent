@@ -29,7 +29,7 @@ func ConfigContextWithNames(
 	ltsvAccessLogName,
 	errorLogName string,
 	instanceID string,
-	syslogServers []string,
+	syslogServers string,
 ) *model.NginxConfigContext {
 	return &model.NginxConfigContext{
 		StubStatus: &model.APIDetails{
@@ -71,8 +71,8 @@ func ConfigContextWithNames(
 				Permissions: "0600",
 			},
 		},
-		InstanceID:       instanceID,
-		NAPSysLogServers: syslogServers,
+		InstanceID:      instanceID,
+		NAPSysLogServer: syslogServers,
 	}
 }
 
@@ -81,7 +81,7 @@ func ConfigContextWithoutErrorLog(
 	combinedAccessLogName,
 	ltsvAccessLogName,
 	instanceID string,
-	syslogServers []string,
+	syslogServers string,
 ) *model.NginxConfigContext {
 	return &model.NginxConfigContext{
 		StubStatus: &model.APIDetails{
@@ -115,8 +115,8 @@ func ConfigContextWithoutErrorLog(
 				Permissions: "0600",
 			},
 		},
-		InstanceID:       instanceID,
-		NAPSysLogServers: syslogServers,
+		InstanceID:      instanceID,
+		NAPSysLogServer: syslogServers,
 	}
 }
 
@@ -125,7 +125,7 @@ func ConfigContextWithFiles(
 	errorLogName string,
 	files []*mpi.File,
 	instanceID string,
-	syslogServers []string,
+	syslogServers string,
 ) *model.NginxConfigContext {
 	return &model.NginxConfigContext{
 		StubStatus: &model.APIDetails{
@@ -156,7 +156,7 @@ func ConfigContextWithFiles(
 				Permissions: "0600",
 			},
 		},
-		InstanceID:       instanceID,
-		NAPSysLogServers: syslogServers,
+		InstanceID:      instanceID,
+		NAPSysLogServer: syslogServers,
 	}
 }

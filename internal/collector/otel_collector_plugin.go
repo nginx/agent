@@ -543,17 +543,12 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 
 func (oc *Collector) updateTcplogReceivers(nginxConfigContext *model.NginxConfigContext) bool {
 	newTcplogReceiverAdded := false
-	if nginxConfigContext.NAPSysLogServers != nil {
-	napLoop:
-		for _, napSysLogServer := range nginxConfigContext.NAPSysLogServers {
-			if oc.doesTcplogReceiverAlreadyExist(napSysLogServer) {
-				continue napLoop
-			}
-
+	if nginxConfigContext.NAPSysLogServer != "" {
+		if !oc.doesTcplogReceiverAlreadyExist(nginxConfigContext.NAPSysLogServer) {
 			oc.config.Collector.Receivers.TcplogReceivers = append(
 				oc.config.Collector.Receivers.TcplogReceivers,
 				config.TcplogReceiver{
-					ListenAddress: napSysLogServer,
+					ListenAddress: nginxConfigContext.NAPSysLogServer,
 					Operators: []config.Operator{
 						{
 							Type: "add",
@@ -621,12 +616,10 @@ func (oc *Collector) configDeletedNapReceivers(nginxConfigContext *model.NginxCo
 		elements[tcplogReceiver.ListenAddress] = true
 	}
 
-	if nginxConfigContext.NAPSysLogServers != nil {
+	if nginxConfigContext.NAPSysLogServer != "" {
 		addressesToDelete := make(map[string]bool)
-		for _, napAddress := range nginxConfigContext.NAPSysLogServers {
-			if !elements[napAddress] {
-				addressesToDelete[napAddress] = true
-			}
+		if !elements[nginxConfigContext.NAPSysLogServer] {
+			addressesToDelete[nginxConfigContext.NAPSysLogServer] = true
 		}
 
 		return addressesToDelete
