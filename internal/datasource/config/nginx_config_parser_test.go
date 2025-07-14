@@ -1181,7 +1181,6 @@ func TestNginxConfigParser_pingAPIEndpoint_PlusAPI(t *testing.T) {
 	})
 
 	fakeServer := httptest.NewServer(handler)
-	t.Logf(fakeServer.URL)
 	defer fakeServer.Close()
 
 	nginxConfigParser := NewNginxConfigParser(types.AgentConfig())
