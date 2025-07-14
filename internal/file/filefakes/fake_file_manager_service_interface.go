@@ -28,6 +28,24 @@ type FakeFileManagerServiceInterface struct {
 		result1 model.WriteStatus
 		result2 error
 	}
+	ConfigUpdateStub        func(context.Context, *model.NginxConfigContext)
+	configUpdateMutex       sync.RWMutex
+	configUpdateArgsForCall []struct {
+		arg1 context.Context
+		arg2 *model.NginxConfigContext
+	}
+	ConfigUploadStub        func(context.Context, *v1.ConfigUploadRequest) error
+	configUploadMutex       sync.RWMutex
+	configUploadArgsForCall []struct {
+		arg1 context.Context
+		arg2 *v1.ConfigUploadRequest
+	}
+	configUploadReturns struct {
+		result1 error
+	}
+	configUploadReturnsOnCall map[int]struct {
+		result1 error
+	}
 	DetermineFileActionsStub        func(context.Context, map[string]*v1.File, map[string]*model.FileCache) (map[string]*model.FileCache, map[string][]byte, error)
 	determineFileActionsMutex       sync.RWMutex
 	determineFileActionsArgsForCall []struct {
@@ -83,33 +101,6 @@ type FakeFileManagerServiceInterface struct {
 		result1 error
 	}
 	updateCurrentFilesOnDiskReturnsOnCall map[int]struct {
-		result1 error
-	}
-	UpdateFileStub        func(context.Context, string, *v1.File) error
-	updateFileMutex       sync.RWMutex
-	updateFileArgsForCall []struct {
-		arg1 context.Context
-		arg2 string
-		arg3 *v1.File
-	}
-	updateFileReturns struct {
-		result1 error
-	}
-	updateFileReturnsOnCall map[int]struct {
-		result1 error
-	}
-	UpdateOverviewStub        func(context.Context, string, []*v1.File, int) error
-	updateOverviewMutex       sync.RWMutex
-	updateOverviewArgsForCall []struct {
-		arg1 context.Context
-		arg2 string
-		arg3 []*v1.File
-		arg4 int
-	}
-	updateOverviewReturns struct {
-		result1 error
-	}
-	updateOverviewReturnsOnCall map[int]struct {
 		result1 error
 	}
 	invocations      map[string][][]interface{}
@@ -203,6 +194,101 @@ func (fake *FakeFileManagerServiceInterface) ConfigApplyReturnsOnCall(i int, res
 		result1 model.WriteStatus
 		result2 error
 	}{result1, result2}
+}
+
+func (fake *FakeFileManagerServiceInterface) ConfigUpdate(arg1 context.Context, arg2 *model.NginxConfigContext) {
+	fake.configUpdateMutex.Lock()
+	fake.configUpdateArgsForCall = append(fake.configUpdateArgsForCall, struct {
+		arg1 context.Context
+		arg2 *model.NginxConfigContext
+	}{arg1, arg2})
+	stub := fake.ConfigUpdateStub
+	fake.recordInvocation("ConfigUpdate", []interface{}{arg1, arg2})
+	fake.configUpdateMutex.Unlock()
+	if stub != nil {
+		fake.ConfigUpdateStub(arg1, arg2)
+	}
+}
+
+func (fake *FakeFileManagerServiceInterface) ConfigUpdateCallCount() int {
+	fake.configUpdateMutex.RLock()
+	defer fake.configUpdateMutex.RUnlock()
+	return len(fake.configUpdateArgsForCall)
+}
+
+func (fake *FakeFileManagerServiceInterface) ConfigUpdateCalls(stub func(context.Context, *model.NginxConfigContext)) {
+	fake.configUpdateMutex.Lock()
+	defer fake.configUpdateMutex.Unlock()
+	fake.ConfigUpdateStub = stub
+}
+
+func (fake *FakeFileManagerServiceInterface) ConfigUpdateArgsForCall(i int) (context.Context, *model.NginxConfigContext) {
+	fake.configUpdateMutex.RLock()
+	defer fake.configUpdateMutex.RUnlock()
+	argsForCall := fake.configUpdateArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeFileManagerServiceInterface) ConfigUpload(arg1 context.Context, arg2 *v1.ConfigUploadRequest) error {
+	fake.configUploadMutex.Lock()
+	ret, specificReturn := fake.configUploadReturnsOnCall[len(fake.configUploadArgsForCall)]
+	fake.configUploadArgsForCall = append(fake.configUploadArgsForCall, struct {
+		arg1 context.Context
+		arg2 *v1.ConfigUploadRequest
+	}{arg1, arg2})
+	stub := fake.ConfigUploadStub
+	fakeReturns := fake.configUploadReturns
+	fake.recordInvocation("ConfigUpload", []interface{}{arg1, arg2})
+	fake.configUploadMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeFileManagerServiceInterface) ConfigUploadCallCount() int {
+	fake.configUploadMutex.RLock()
+	defer fake.configUploadMutex.RUnlock()
+	return len(fake.configUploadArgsForCall)
+}
+
+func (fake *FakeFileManagerServiceInterface) ConfigUploadCalls(stub func(context.Context, *v1.ConfigUploadRequest) error) {
+	fake.configUploadMutex.Lock()
+	defer fake.configUploadMutex.Unlock()
+	fake.ConfigUploadStub = stub
+}
+
+func (fake *FakeFileManagerServiceInterface) ConfigUploadArgsForCall(i int) (context.Context, *v1.ConfigUploadRequest) {
+	fake.configUploadMutex.RLock()
+	defer fake.configUploadMutex.RUnlock()
+	argsForCall := fake.configUploadArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeFileManagerServiceInterface) ConfigUploadReturns(result1 error) {
+	fake.configUploadMutex.Lock()
+	defer fake.configUploadMutex.Unlock()
+	fake.ConfigUploadStub = nil
+	fake.configUploadReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeFileManagerServiceInterface) ConfigUploadReturnsOnCall(i int, result1 error) {
+	fake.configUploadMutex.Lock()
+	defer fake.configUploadMutex.Unlock()
+	fake.ConfigUploadStub = nil
+	if fake.configUploadReturnsOnCall == nil {
+		fake.configUploadReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.configUploadReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
 }
 
 func (fake *FakeFileManagerServiceInterface) DetermineFileActions(arg1 context.Context, arg2 map[string]*v1.File, arg3 map[string]*model.FileCache) (map[string]*model.FileCache, map[string][]byte, error) {
@@ -484,138 +570,6 @@ func (fake *FakeFileManagerServiceInterface) UpdateCurrentFilesOnDiskReturnsOnCa
 	}{result1}
 }
 
-func (fake *FakeFileManagerServiceInterface) UpdateFile(arg1 context.Context, arg2 string, arg3 *v1.File) error {
-	fake.updateFileMutex.Lock()
-	ret, specificReturn := fake.updateFileReturnsOnCall[len(fake.updateFileArgsForCall)]
-	fake.updateFileArgsForCall = append(fake.updateFileArgsForCall, struct {
-		arg1 context.Context
-		arg2 string
-		arg3 *v1.File
-	}{arg1, arg2, arg3})
-	stub := fake.UpdateFileStub
-	fakeReturns := fake.updateFileReturns
-	fake.recordInvocation("UpdateFile", []interface{}{arg1, arg2, arg3})
-	fake.updateFileMutex.Unlock()
-	if stub != nil {
-		return stub(arg1, arg2, arg3)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fakeReturns.result1
-}
-
-func (fake *FakeFileManagerServiceInterface) UpdateFileCallCount() int {
-	fake.updateFileMutex.RLock()
-	defer fake.updateFileMutex.RUnlock()
-	return len(fake.updateFileArgsForCall)
-}
-
-func (fake *FakeFileManagerServiceInterface) UpdateFileCalls(stub func(context.Context, string, *v1.File) error) {
-	fake.updateFileMutex.Lock()
-	defer fake.updateFileMutex.Unlock()
-	fake.UpdateFileStub = stub
-}
-
-func (fake *FakeFileManagerServiceInterface) UpdateFileArgsForCall(i int) (context.Context, string, *v1.File) {
-	fake.updateFileMutex.RLock()
-	defer fake.updateFileMutex.RUnlock()
-	argsForCall := fake.updateFileArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
-}
-
-func (fake *FakeFileManagerServiceInterface) UpdateFileReturns(result1 error) {
-	fake.updateFileMutex.Lock()
-	defer fake.updateFileMutex.Unlock()
-	fake.UpdateFileStub = nil
-	fake.updateFileReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeFileManagerServiceInterface) UpdateFileReturnsOnCall(i int, result1 error) {
-	fake.updateFileMutex.Lock()
-	defer fake.updateFileMutex.Unlock()
-	fake.UpdateFileStub = nil
-	if fake.updateFileReturnsOnCall == nil {
-		fake.updateFileReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.updateFileReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeFileManagerServiceInterface) UpdateOverview(arg1 context.Context, arg2 string, arg3 []*v1.File, arg4 int) error {
-	var arg3Copy []*v1.File
-	if arg3 != nil {
-		arg3Copy = make([]*v1.File, len(arg3))
-		copy(arg3Copy, arg3)
-	}
-	fake.updateOverviewMutex.Lock()
-	ret, specificReturn := fake.updateOverviewReturnsOnCall[len(fake.updateOverviewArgsForCall)]
-	fake.updateOverviewArgsForCall = append(fake.updateOverviewArgsForCall, struct {
-		arg1 context.Context
-		arg2 string
-		arg3 []*v1.File
-		arg4 int
-	}{arg1, arg2, arg3Copy, arg4})
-	stub := fake.UpdateOverviewStub
-	fakeReturns := fake.updateOverviewReturns
-	fake.recordInvocation("UpdateOverview", []interface{}{arg1, arg2, arg3Copy, arg4})
-	fake.updateOverviewMutex.Unlock()
-	if stub != nil {
-		return stub(arg1, arg2, arg3, arg4)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fakeReturns.result1
-}
-
-func (fake *FakeFileManagerServiceInterface) UpdateOverviewCallCount() int {
-	fake.updateOverviewMutex.RLock()
-	defer fake.updateOverviewMutex.RUnlock()
-	return len(fake.updateOverviewArgsForCall)
-}
-
-func (fake *FakeFileManagerServiceInterface) UpdateOverviewCalls(stub func(context.Context, string, []*v1.File, int) error) {
-	fake.updateOverviewMutex.Lock()
-	defer fake.updateOverviewMutex.Unlock()
-	fake.UpdateOverviewStub = stub
-}
-
-func (fake *FakeFileManagerServiceInterface) UpdateOverviewArgsForCall(i int) (context.Context, string, []*v1.File, int) {
-	fake.updateOverviewMutex.RLock()
-	defer fake.updateOverviewMutex.RUnlock()
-	argsForCall := fake.updateOverviewArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
-}
-
-func (fake *FakeFileManagerServiceInterface) UpdateOverviewReturns(result1 error) {
-	fake.updateOverviewMutex.Lock()
-	defer fake.updateOverviewMutex.Unlock()
-	fake.UpdateOverviewStub = nil
-	fake.updateOverviewReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeFileManagerServiceInterface) UpdateOverviewReturnsOnCall(i int, result1 error) {
-	fake.updateOverviewMutex.Lock()
-	defer fake.updateOverviewMutex.Unlock()
-	fake.UpdateOverviewStub = nil
-	if fake.updateOverviewReturnsOnCall == nil {
-		fake.updateOverviewReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.updateOverviewReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
 func (fake *FakeFileManagerServiceInterface) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -623,6 +577,10 @@ func (fake *FakeFileManagerServiceInterface) Invocations() map[string][][]interf
 	defer fake.clearCacheMutex.RUnlock()
 	fake.configApplyMutex.RLock()
 	defer fake.configApplyMutex.RUnlock()
+	fake.configUpdateMutex.RLock()
+	defer fake.configUpdateMutex.RUnlock()
+	fake.configUploadMutex.RLock()
+	defer fake.configUploadMutex.RUnlock()
 	fake.determineFileActionsMutex.RLock()
 	defer fake.determineFileActionsMutex.RUnlock()
 	fake.isConnectedMutex.RLock()
@@ -633,10 +591,6 @@ func (fake *FakeFileManagerServiceInterface) Invocations() map[string][][]interf
 	defer fake.setIsConnectedMutex.RUnlock()
 	fake.updateCurrentFilesOnDiskMutex.RLock()
 	defer fake.updateCurrentFilesOnDiskMutex.RUnlock()
-	fake.updateFileMutex.RLock()
-	defer fake.updateFileMutex.RUnlock()
-	fake.updateOverviewMutex.RLock()
-	defer fake.updateOverviewMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

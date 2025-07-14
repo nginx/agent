@@ -115,7 +115,7 @@ func (iw *InstanceWatcherService) Watch(
 			if iw.enabled.Load() {
 				iw.checkForUpdates(ctx)
 			} else {
-				slog.Debug("Skipping check for instance updates, instance watcher is disabled")
+				slog.DebugContext(ctx, "Skipping check for instance updates, instance watcher is disabled")
 			}
 		}
 	}
@@ -218,10 +218,11 @@ func (iw *InstanceWatcherService) checkForUpdates(
 					"error", parseErr,
 				)
 			} else {
-				iw.sendNginxConfigContextUpdate(newCtx, nginxConfigContext)
-				iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
-				proto.UpdateNginxInstanceRuntime(newInstance, nginxConfigContext)
 				iw.cacheMutex.Lock()
+				iw.sendNginxConfigContextUpdate(newCtx, nginxConfigContext)
+				proto.UpdateNginxInstanceRuntime(newInstance, nginxConfigContext)
+
+				iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
 				iw.instanceCache[newInstance.GetInstanceMeta().GetInstanceId()] = newInstance
 				iw.cacheMutex.Unlock()
 			}
@@ -307,7 +308,7 @@ func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *mpi.Instan
 		slog.WarnContext(ctx, "Unable to convert config to labels structure", "error", convertErr)
 	}
 
-	return &mpi.Instance{
+	instance := &mpi.Instance{
 		InstanceMeta: &mpi.InstanceMeta{
 			InstanceId:   iw.agentConfig.UUID,
 			InstanceType: mpi.InstanceMeta_INSTANCE_TYPE_AGENT,
@@ -333,6 +334,13 @@ func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *mpi.Instan
 			Details:    nil,
 		},
 	}
+
+	if iw.agentConfig.IsAuxiliaryCommandGrpcClientConfigured() {
+		instance.GetInstanceConfig().GetAgentConfig().AuxiliaryCommand = config.
+			ToAuxiliaryCommandServerProto(iw.agentConfig.AuxiliaryCommand)
+	}
+
+	return instance
 }
 
 func compareInstances(oldInstancesMap, instancesMap map[string]*mpi.Instance) (

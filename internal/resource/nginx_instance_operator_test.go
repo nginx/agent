@@ -75,7 +75,7 @@ func TestInstanceOperator_Validate(t *testing.T) {
 			name:     "Test 3: Validate Config failed",
 			out:      bytes.NewBufferString("nginx [emerg]"),
 			err:      nil,
-			expected: fmt.Errorf("error running nginx -t -c:\nnginx [emerg]"),
+			expected: errors.New("error running nginx -t -c:\nnginx [emerg]"),
 		},
 	}
 

@@ -36,6 +36,7 @@ func parseServerType(str string) (ServerType, bool) {
 type (
 	Config struct {
 		Command            *Command         `yaml:"command"             mapstructure:"command"`
+		AuxiliaryCommand   *Command         `yaml:"auxiliary_command"   mapstructure:"auxiliary_command"`
 		Log                *Log             `yaml:"log"                 mapstructure:"log"`
 		DataPlaneConfig    *DataPlaneConfig `yaml:"data_plane_config"   mapstructure:"data_plane_config"`
 		Client             *Client          `yaml:"client"              mapstructure:"client"`
@@ -376,7 +377,7 @@ func (c *Config) IsDirectoryAllowed(directory string) bool {
 	return allow
 }
 
-func (c *Config) IsGrpcClientConfigured() bool {
+func (c *Config) IsCommandGrpcClientConfigured() bool {
 	return c.Command != nil &&
 		c.Command.Server != nil &&
 		c.Command.Server.Host != "" &&
@@ -384,13 +385,30 @@ func (c *Config) IsGrpcClientConfigured() bool {
 		c.Command.Server.Type == Grpc
 }
 
-func (c *Config) IsAuthConfigured() bool {
+func (c *Config) IsAuxiliaryCommandGrpcClientConfigured() bool {
+	return c.AuxiliaryCommand != nil &&
+		c.AuxiliaryCommand.Server != nil &&
+		c.AuxiliaryCommand.Server.Host != "" &&
+		c.AuxiliaryCommand.Server.Port != 0 &&
+		c.AuxiliaryCommand.Server.Type == Grpc
+}
+
+func (c *Config) IsCommandAuthConfigured() bool {
 	return c.Command.Auth != nil &&
 		(c.Command.Auth.Token != "" || c.Command.Auth.TokenPath != "")
 }
 
-func (c *Config) IsTLSConfigured() bool {
+func (c *Config) IsAuxiliaryCommandAuthConfigured() bool {
+	return c.AuxiliaryCommand.Auth != nil &&
+		(c.AuxiliaryCommand.Auth.Token != "" || c.AuxiliaryCommand.Auth.TokenPath != "")
+}
+
+func (c *Config) IsCommandTLSConfigured() bool {
 	return c.Command.TLS != nil
+}
+
+func (c *Config) IsAuxiliaryCommandTLSConfigured() bool {
+	return c.AuxiliaryCommand.TLS != nil
 }
 
 func (c *Config) IsFeatureEnabled(feature string) bool {

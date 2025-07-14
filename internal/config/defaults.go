@@ -26,6 +26,17 @@ const (
 	DefCommandTLSSkipVerifyKey = false
 	DefCommandTLServerNameKey  = ""
 
+	DefAuxiliaryCommandServerHostKey    = ""
+	DefAuxiliaryCommandServerPortKey    = 0
+	DefAuxiliaryCommandServerTypeKey    = "grpc"
+	DefAuxiliaryCommandAuthTokenKey     = ""
+	DefAuxiliaryCommandAuthTokenPathKey = ""
+	DefAuxiliaryCommandTLSCertKey       = ""
+	DefAuxiliaryCommandTLSKeyKey        = ""
+	DefAuxiliaryCommandTLSCaKey         = ""
+	DefAuxiliaryCommandTLSSkipVerifyKey = false
+	DefAuxiliaryCommandTLServerNameKey  = ""
+
 	// Client GRPC Settings
 	DefMaxMessageSize               = 0       // 0 = unset
 	DefMaxMessageRecieveSize        = 4194304 // default 4 MB

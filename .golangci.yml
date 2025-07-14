@@ -1,40 +1,32 @@
-issues:
-  exclude-files:
-    - ".*gen.go"
-    - ".pb.go"
-    - ".pb.validate.go"
-    - ".*/generated_[A-Za-z_]*\\.go"
-  exclude-dirs:
-    - ".*fakes" # Skip mock directories
-run:
-  timeout: 3m
+version: "2"
 linters:
-  # By default, the enabled linters are:
-  # errcheck, gosimple, govet, ineffassign, staticcheck, unused
   enable:
     - bodyclose
-    - cyclop
-    - copyloopvar
     - contextcheck
+    - copyloopvar
+    - cyclop
     - dupl
+    - decorder
     - errorlint
     - exhaustive
     - forcetypeassert
+    - funcorder
     - gocheckcompilerdirectives
     - gocognit
     - goconst
     - gocritic
     - gocyclo
     - godox
-    - gofumpt
     - goheader
     - gomoddirectives
     - gosec
     - grouper
     - importas
     - inamedparam
+    - intrange
     - ireturn
     - lll
+    - loggercheck
     - maintidx
     - makezero
     - mirror
@@ -47,7 +39,9 @@ linters:
     - nilnil
     - nlreturn
     - noctx
+#    - nolintlint
     - nosprintfhostport
+    - perfsprint
     - prealloc
     - predeclared
     - promlinter
@@ -56,815 +50,585 @@ linters:
     - revive
     - rowserrcheck
     - sloglint
+    - spancheck
     - sqlclosecheck
-    - stylecheck
+    - staticcheck
     - tagalign
     - testableexamples
     - testifylint
     - thelper
     - unconvert
     - unparam
+    - usetesting
     - usestdlibvars
     - wastedassign
     - whitespace
     - zerologlint
+  settings:
+    cyclop:
+      max-complexity: 10
+      package-average: 0
+    errorlint:
+      errorf: true
+      errorf-multi: false
+      asserts: false
+      comparison: false
+    gocognit:
+      min-complexity: 20
+    goconst:
+      match-constant: true
+      min-len: 2
+      min-occurrences: 3
+      numbers: false
+      min: 3
+      max: 3
+      ignore-calls: true
+    gocritic:
+      settings:
+        captLocal:
+          paramsOnly: false
+        elseif:
+          skipBalanced: true
+        ifElseChain:
+          minThreshold: 4
+    gocyclo:
+      min-complexity: 20
+    godox:
+      keywords:
+        - TODO
+        - BUG
+        - FIXME
+        - HACK
+    goheader:
+      template: |-
+        Copyright (c) F5, Inc.
 
-# Allows configuring linters that support configuration.
-# Refer to full list of linters here: https://golangci-lint.run/usage/linters/.
-linters-settings:
-  unused:
-    # Mark all struct fields that have been written to as used. Default: true
-    field-writes-are-uses: true
-    # Treat IncDec statement (e.g. `i++` or `i--`) as both read and write operation instead of just wr◊ite. Default: false
-    post-statements-are-reads: true
-    # Mark all exported fields as used. Default: true
-    exported-fields-are-used: false
-    # Mark all function parameters as used. Default: true
-    parameters-are-used: true
-    # Mark all local variables as used. Default: true
-    local-variables-are-used: false
-    # Mark all identifiers inside generated files as used. Default: true
-    generated-is-used: true
-  cyclop:
-    # The maximal code complexity to report. Default: 10
-    max-complexity: 10
-    # The maximal average package complexity. If it's higher than 0.0 (float) the check is enabled. Default: 0.0
-    package-average: 0.0
-    skip-tests: true
-  govet:
-    settings:
-      shadow:
-        # Report about shadowed variables. Default: false
-        strict: true
-    # Each analyzer can be configured separately in the 'settings:' section.
-    # settings:
-    # Run `go tool vet help` to see all analyzers. Default: false
-    enable-all: true
-  errorlint:
-    # Check whether fmt.Errorf uses the %w verb for formatting errors.
-    # See the https://github.com/polyfloyd/go-errorlint for caveats. Default: true
-    errorf: true
-    # Permit more than 1 %w verb, valid per Go 1.20 (Requires errorf:true) Default: true
-    errorf-multi: false
-    # Check for plain type assertions and type switches. Default: true
-    asserts: false
-    # Check for plain error comparisons. Default: true
-    comparison: false
-  gci:
-    # Enable custom order of sections. If `true`, make the section order the same as the order of `sections`.
-    # Default: false
-    custom-order: true
-    # Section configuration to compare against.
-    # Section names are case-insensitive and may contain parameters in ().
-    # The default order of sections is `standard > default > custom > blank > dot`,
-    # If `custom-order` is `true`, it follows the order of `sections` option.
-    # Default: ["standard", "default"]
-    sections:
-      - standard # Standard section: captures all standard packages.
-      - default # Default section: contains all imports that could not be matched to another section type.
-      - prefix(github.com/nginx/agent) # Custom section: groups all imports with the specified Prefix.
-      - blank # Blank section: contains all blank imports. This section is not present unless explicitly enabled.
-      - dot # Dot section: contains all dot imports. This section is not present unless explicitly enabled.
-    # Skip generated files.
-    # Default: true
-    skip-generated: true
-  gocognit:
-    # Minimal code complexity to report. Default: 30 (but we recommend 10-20)
-    min-complexity: 20
-  goconst:
-    # Minimal length of string constant. Default: 3
-    min-len: 2
-    # Minimum occurrences of constant string count to trigger issue. Default: 3
-    min-occurrences: 3
-    # Ignore test files. Default: false
-    ignore-tests: true
-    # Look for existing constants matching the values. Default: true
-    match-constant: true
-    # Search also for duplicated numbers. Default: false
-    numbers: false
-    # Minimum value, only works with goconst.numbers. Default: 3
-    min: 3
-    # Maximum value, only works with goconst.numbers. Default: 3
-    max: 3
-    # Ignore when constant is not used as function argument. Default: true
-    ignore-calls: true
-  gocritic:
-    # Which checks should be enabled; can't be combined with 'disabled-checks'.
-    # See https://go-critic.github.io/overview#checks-overview.
-    # To check which checks are enabled run `GL_DEBUG=gocritic golangci-lint run`.
-    # By default, list of stable checks is used.
-    # enabled-checks:
-    #  - nestingReduce
-    #  - unnamedResult
-    #  - ruleguard
-    #  - truncateCmp
-    # Which checks should be disabled; can't be combined with 'enabled-checks'.
-    # Default: []
-    disabled-checks: []
-    # Settings passed to gocritic.
-    # The settings key is the name of a supported gocritic checker.
-    # The list of supported checkers can be find in https://go-critic.github.io/overview.
-    settings:
-      # Must be valid enabled check name.
-      captLocal:
-        # Whether to restrict checker to params only. Default: true
-        paramsOnly: false
-      elseif:
-        # Whether to skip balanced if-else pairs. Default: true
-        skipBalanced: true
-      ifElseChain:
-        # Min number of if-else blocks that makes the warning trigger. Default: 2
-        minThreshold: 4
-  gocyclo:
-    # Minimal code complexity to report. Default: 30 (but we recommend 10-20)
-    min-complexity: 20
-  godox:
-    # Report any comments starting with keywords, this is useful for TODO or FIXME comments that
-    # might be left in the code accidentally and should be resolved before merging. Default: ["TODO", "BUG", "FIXME"]
-    keywords:
-      - TODO
-      - BUG
-      - FIXME
-      - HACK
-  gofumpt:
-    # Module path which contains the source code being formatted. Default: ""
-    module-path: github.com/nginx/agent
-    # Choose whether to use the extra rules. Default: false
-    extra-rules: true
-  goheader:
-    # The template use for checking.
-    # Default: ""
-    template: |-
-      Copyright (c) F5, Inc.
-
-      This source code is licensed under the Apache License, Version 2.0 license found in the
-      LICENSE file in the root directory of this source tree.
-  gomoddirectives:
-    # Allow local `replace` directives. Default: false
-    replace-local: false
-    # List of allowed `replace` directives. Default: []
-    replace-allow-list: []
-    # Allow to not explain why the version has been retracted in the `retract` directives. Default: false
-    retract-allow-no-explanation: false
-    # Forbid the use of the `exclude` directives. Default: false
-    exclude-forbidden: false
-  gosec:
-    # To select a subset of rules to run.
-    # Available rules: https://github.com/securego/gosec#available-rules. Default: [] - means include all rules
-    includes:
-      - G101 # Look for hard coded credentials
-      - G102 # Bind to all interfaces
-      - G103 # Audit the use of unsafe block
-      - G104 # Audit errors not checked
-      - G106 # Audit the use of ssh.InsecureIgnoreHostKey
-      - G107 # Url provided to HTTP request as taint input
-      - G108 # Profiling endpoint automatically exposed on /debug/pprof
-      - G109 # Potential Integer overflow made by strconv.Atoi result conversion to int16/32
-      - G110 # Potential DoS vulnerability via decompression bomb
-      - G111 # Potential directory traversal
-      - G112 # Potential slowloris attack
-      - G113 # Usage of Rat.SetString in math/big with an overflow (CVE-2022-23772)
-      - G114 # Use of net/http serve function that has no support for setting timeouts
-      - G201 # SQL query construction using format string
-      - G202 # SQL query construction using string concatenation
-      - G203 # Use of unescaped data in HTML templates
-      - G204 # Audit use of command execution
-      - G301 # Poor file permissions used when creating a directory
-      - G302 # Poor file permissions used with chmod
-      - G303 # Creating tempfile using a predictable path
-      - G304 # File path provided as taint input
-      - G305 # File traversal when extracting zip/tar archive
-      - G306 # Poor file permissions used when writing to a new file
-      - G307 # Poor file permissions used when creating a file with host.Create
-      - G401 # Detect the usage of DES, RC4, MD5 or SHA1
-      - G402 # Look for bad TLS connection settings
-      - G403 # Ensure minimum RSA key length of 2048 bits
-      - G404 # Insecure random number source (rand)
-      - G501 # Import blocklist: crypto/md5
-      - G502 # Import blocklist: crypto/des
-      - G503 # Import blocklist: crypto/rc4
-      - G504 # Import blocklist: net/http/cgi
-      - G505 # Import blocklist: crypto/sha1
-      - G602 # Slice access out of bounds
-    # Exclude generated files
-    # Default: false
-    exclude-generated: true
-    # Filter out the issues with a lower severity than the given value.
-    # Valid options are: low, medium, high.
-    # Default: low
-    severity: low
-    # Filter out the issues with a lower confidence than the given value.
-    # Valid options are: low, medium, high. Default: low
-    confidence: medium
-    # To specify the configuration of rules.
-    config:
-      # Globals are applicable to all rules.
-      global:
-        # If true, ignore #nosec in comments (and an alternative as well).
-        # Default: false
-        nosec: false
-        # Add an alternative comment prefix to #nosec (both will work at the same time). Default: ""
-        "#nosec": ""
-        # Define whether nosec issues are counted as finding or not. Default: false
-        show-ignored: false
-        # Audit mode enables addition checks that for normal code analysis might be too nosy. Default: false
-        audit: false
-      G101:
-        # Regexp pattern for variables and constants to find.
-        # Default: "(?i)passwd|pass|password|pwd|secret|token|pw|apiKey|bearer|cred"
-        pattern: "(?i)passwd|pass|password|pwd|secret|token|pw|apiKey|bearer|cred"
-        # If true, complain about all cases (even with low entropy). Default: false
-        ignore_entropy: false
-        # Maximum allowed entropy of the string. Default: "80.0"
-        entropy_threshold: "80.0"
-        # Maximum allowed value of entropy/string length.
-        # Is taken into account if entropy >= entropy_threshold/2. Default: "3.0"
-        per_char_threshold: "3.0"
-        # Calculate entropy for first N chars of the string. Default: "16"
-        truncate: "16"
-      G111:
-        # Regexp pattern to find potential directory traversal. Default: "http\\.Dir\\(\"\\/\"\\)|http\\.Dir\\('\\/'\\)"
-        pattern: "http\\.Dir\\(\"\\/\"\\)|http\\.Dir\\('\\/'\\)"
-      # Maximum allowed permissions mode for host.Mkdir and host.MkdirAll. Default: "0750"
-      G301: "0750"
-      # Maximum allowed permissions mode for host.OpenFile and host.Chmod. Default: "0600"
-      G302: "0600"
-      # Maximum allowed permissions mode for host.WriteFile and ioutil.WriteFile. Default: "0600"
-      G306: "0600"
-  grouper:
-    # Require the use of a single global 'const' declaration only. Default: false
-    const-require-single-const: false
-    # Require the use of grouped global 'const' declarations. Default: false
-    const-require-grouping: false
-    # Require the use of a single 'import' declaration only. Default: false
-    import-require-single-import: false
-    # Require the use of grouped 'import' declarations. Default: false
-    import-require-grouping: false
-    # Require the use of a single global 'type' declaration only. Default: false
-    type-require-single-type: false
-    # Require the use of grouped global 'type' declarations. Default: false
-    type-require-grouping: false
-    # Require the use of a single global 'var' declaration only. Default: false
-    var-require-single-var: false
-    # Require the use of grouped global 'var' declarations.
-    # Default: false
-    var-require-grouping: false
-  importas:
-    # Do not allow unaliased imports of aliased packages. Default: false
-    no-unaliased: true
-    # Do not allow non-required aliases. Default: false
-    no-extra-aliases: false
-    # List of aliases. Default: []
-    alias:
-      - pkg: "go.opentelemetry.io/otel/sdk/metric"
-        alias: "metricSdk"
-  interfacebloat:
-    # The maximum number of methods allowed for an interface. Default: 10
-    max: 10
-  ireturn:
-    # ireturn does not allow using `allow` and `reject` settings at the same time.
-    # Both settings are lists of the keywords and regular expressions matched to interface or package names.
-    # keywords:
-    # - `empty` for `interface{}`
-    # - `error` for errors
-    # - `stdlib` for standard library
-    # - `anon` for anonymous interfaces
-    # - `generic` for generic interfaces added in go 1.18
-    # By default, it allows using errors, empty interfaces, anonymous interfaces,
-    # and interfaces provided by the standard library.
-    allow:
-      - anon
-      - error
-      - empty
-      - stdlib
-      - google.golang.org/grpc/credentials
-      - github.com/testcontainers/testcontainers-go
-      - google.golang.org/grpc
-  lll:
-    # Max line length, lines longer will be reported.
-    # '\t' is counted as 1 character by default, and can be changed with the tab-width option.
-    # Default: 120.
-    line-length: 120
-    # Tab width in spaces.
-    # Default: 1
-    tab-width: 4
-  maintidx:
-    # Show functions with maintainability index lower than N.
-    # A high index indicates better maintainability (it's kind of the opposite of complexity). Default: 20
-    under: 20
-  makezero:
-    # Allow only slices initialized with a length of zero. Default: false
-    always: false
-  misspell:
-    # Correct spellings using locale preferences for US or UK.
-    # Setting locale to US will correct the British spelling of 'colour' to 'color'.
-    # Default is to use a neutral variety of English.
-    locale: "US"
-    # Default: []
-    ignore-words: []
-  nakedret:
-    # Make an issue if func has more lines of code than this setting, and it has naked returns. Default: 30
-    max-func-lines: 31
-  nestif:
-    # Minimal complexity of if statements to report. Default: 5
-    min-complexity: 5
-  nilnil:
-    # Checks that there is no simultaneous return of `nil` error and an invalid value.
-    # Default: ["ptr", "func", "iface", "map", "chan"]
-    checked-types:
-      - ptr
-      - func
-      - iface
-      - map
-      - chan
-  nlreturn:
-    # Size of the block (including return statement that is still "OK") so no return split required. Default: 1
-    block-size: 2
-  prealloc:
-    # IMPORTANT: we don't recommend using this linter before doing performance profiling.
-    # For most programs usage of prealloc will be a premature optimization.
-    # Report pre-allocation suggestions only on simple loops that have no returns/breaks/continues/gotos in them.
-    # Default: true
-    simple: true
-    # Report pre-allocation suggestions on range loops.
-    # Default: true
-    range-loops: true
-    # Report pre-allocation suggestions on for loops.
-    # Default: false
-    for-loops: false
-  predeclared:
-    # Comma-separated list of predeclared identifiers to not report on. Default: ""
-    ignore: ""
-    # Include method names and field names (i.e., qualified names) in checks. Default: false
-    q: false
-  promlinter:
-    # Promlinter cannot infer all metrics name in static analysis.
-    # Enable strict mode will also include the errors caused by failing to parse the args.
-    # Default: false
-    strict: false
-    # Please refer to https://github.com/yeya24/promlinter#usage for detailed usage.
-    # Default: []
-    disabled-linters: []
-  reassign:
-    # Patterns for global variable names that are checked for reassignment.
-    # See https://github.com/curioswitch/go-reassign#usage
-    # Default: ["EOF", "Err.*"]
-    patterns:
-      - "Err.*"
-      - "EOF"
-  revive:
-    # Maximum number of open files at the same time. Defaults to unlimited.
-    max-open-files: 2048
-    # When set to false, ignores files with "GENERATED" header, similar to golint. Default: false
-    ignore-generated-header: false
-    # Sets the default severity. Default: warning
-    severity: warning
-    # Enable all available rules. Default: false
-    enable-all-rules: false
-    # Sets the default failure confidence. This means that linting errors with less than 0.8 confidence will be ignored.
-    # Default: 0.8
-    confidence: 0.8
+        This source code is licensed under the Apache License, Version 2.0 license found in the
+        LICENSE file in the root directory of this source tree.
+    gomoddirectives:
+      replace-local: false
+      exclude-forbidden: false
+      retract-allow-no-explanation: false
+    gosec:
+      includes:
+        - G101
+        - G102
+        - G103
+        - G104
+        - G106
+        - G107
+        - G108
+        - G109
+        - G110
+        - G111
+        - G112
+        - G113
+        - G114
+        - G201
+        - G202
+        - G203
+        - G204
+        - G301
+        - G302
+        - G303
+        - G304
+        - G305
+        - G306
+        - G307
+        - G401
+        - G402
+        - G403
+        - G404
+        - G501
+        - G502
+        - G503
+        - G504
+        - G505
+        - G602
+      severity: low
+      confidence: medium
+      config:
+        G101:
+          entropy_threshold: "80.0"
+          ignore_entropy: false
+          pattern: (?i)passwd|pass|password|pwd|secret|token|pw|apiKey|bearer|cred
+          per_char_threshold: "3.0"
+          truncate: "16"
+        G111:
+          pattern: http\.Dir\("\/"\)|http\.Dir\('\/'\)
+        G301: "0750"
+        G302: "0600"
+        G306: "0600"
+        global:
+          '#nosec': ""
+          audit: false
+          nosec: false
+          show-ignored: false
+    govet:
+      enable-all: true
+      settings:
+        shadow:
+          strict: true
+    grouper:
+      const-require-single-const: false
+      const-require-grouping: false
+      import-require-single-import: false
+      import-require-grouping: false
+      type-require-single-type: false
+      type-require-grouping: false
+      var-require-single-var: false
+      var-require-grouping: false
+    importas:
+      alias:
+        - pkg: go.opentelemetry.io/otel/sdk/metric
+          alias: metricSdk
+      no-unaliased: true
+      no-extra-aliases: false
+    interfacebloat:
+      max: 10
+    ireturn:
+      allow:
+        - anon
+        - error
+        - empty
+        - stdlib
+        - google.golang.org/grpc/credentials
+        - github.com/testcontainers/testcontainers-go
+        - google.golang.org/grpc
+    lll:
+      line-length: 120
+      tab-width: 4
+    maintidx:
+      under: 20
+    makezero:
+      always: false
+    misspell:
+      locale: US
+    nakedret:
+      max-func-lines: 31
+    nestif:
+      min-complexity: 5
+    nilnil:
+      checked-types:
+        - ptr
+        - func
+        - iface
+        - map
+        - chan
+    nlreturn:
+      block-size: 2
+#    nolintlint:
+#      # Disable to ensure that all nolint directives actually have an effect.
+#      # Default: false
+#      allow-unused: true
+#      # Exclude following linters from requiring an explanation.
+#      # Default: []
+#      allow-no-explanation: [ ]
+#      # Enable to require an explanation of nonzero length after each nolint directive.
+#      # Default: false
+#      require-explanation: true
+#      # Enable to require nolint directives to mention the specific linter being suppressed.
+#      # Default: false
+#      require-specific: true
+    prealloc:
+      simple: true
+      range-loops: true
+      for-loops: false
+    predeclared:
+      qualified-name: false
+    promlinter:
+      strict: false
+    reassign:
+      patterns:
+        - Err.*
+        - EOF
+    revive:
+      max-open-files: 2048
+      confidence: 0.8
+      severity: warning
+      enable-all-rules: false
+      rules:
+        - name: add-constant
+          arguments:
+            - allowFloats: 0.0,0.,1.0,1.,2.0,2.
+              allowInts: 0,1,2
+              allowStrs: '""'
+              ignoreFuncs: host\.*
+              maxLitCount: "3"
+          severity: warning
+          disabled: true
+        - name: argument-limit
+          arguments:
+            - 5
+          severity: warning
+          disabled: false
+        - name: atomic
+          severity: warning
+          disabled: false
+        - name: banned-characters
+          arguments:
+            - Ω
+            - Σ
+            - σ
+          severity: warning
+          disabled: false
+        - name: bare-return
+          severity: warning
+          disabled: false
+        - name: blank-imports
+          severity: warning
+          disabled: false
+        - name: bool-literal-in-expr
+          severity: warning
+          disabled: false
+        - name: call-to-gc
+          severity: warning
+          disabled: false
+        - name: cognitive-complexity
+          arguments:
+            - 10
+          severity: warning
+          disabled: false
+        - name: comment-spacings
+          severity: warning
+          disabled: true
+        - name: confusing-naming
+          severity: warning
+          disabled: false
+        - name: confusing-results
+          severity: warning
+          disabled: false
+        - name: constant-logical-expr
+          severity: warning
+          disabled: false
+        - name: context-as-argument
+          arguments:
+            - allowTypesBefore: '*testing.T'
+          severity: warning
+          disabled: false
+        - name: context-keys-type
+          severity: warning
+          disabled: false
+        - name: cyclomatic
+          arguments:
+            - 10
+          severity: warning
+          disabled: false
+        - name: datarace
+          severity: warning
+          disabled: false
+        - name: deep-exit
+          severity: warning
+          disabled: false
+        - name: defer
+          arguments:
+            - - call-chain
+              - loop
+          severity: warning
+          disabled: false
+        - name: dot-imports
+          severity: warning
+          disabled: false
+        - name: duplicated-imports
+          severity: warning
+          disabled: false
+        - name: early-return
+          arguments:
+            - preserveScope
+          severity: warning
+          disabled: false
+        - name: empty-block
+          severity: warning
+          disabled: false
+        - name: empty-lines
+          severity: warning
+          disabled: false
+        - name: enforce-map-style
+          arguments:
+            - make
+          severity: warning
+          disabled: false
+        - name: error-naming
+          severity: warning
+          disabled: false
+        - name: error-return
+          severity: warning
+          disabled: false
+        - name: error-strings
+          severity: warning
+          disabled: false
+        - name: errorf
+          severity: warning
+          disabled: false
+        - name: flag-parameter
+          severity: warning
+          disabled: false
+        - name: function-result-limit
+          arguments:
+            - 3
+          severity: warning
+          disabled: false
+        - name: get-return
+          severity: warning
+          disabled: false
+        - name: identical-branches
+          severity: warning
+          disabled: false
+        - name: if-return
+          severity: warning
+          disabled: false
+        - name: increment-decrement
+          severity: warning
+          disabled: false
+        - name: indent-error-flow
+          arguments:
+            - preserveScope
+          severity: warning
+          disabled: false
+        - name: import-alias-naming
+          arguments:
+            - ^[a-z][a-zA-Z0-9]{0,}$
+          severity: warning
+          disabled: false
+        - name: imports-blocklist
+          arguments:
+            - crypto/md5
+            - crypto/sha1
+          severity: warning
+          disabled: false
+        - name: import-shadowing
+          severity: warning
+          disabled: false
+        - name: max-public-structs
+          arguments:
+            - 3
+          severity: warning
+          disabled: true
+        - name: modifies-parameter
+          severity: warning
+          disabled: false
+        - name: modifies-value-receiver
+          severity: warning
+          disabled: false
+        - name: nested-structs
+          severity: warning
+          disabled: false
+        - name: optimize-operands-order
+          severity: warning
+          disabled: false
+        - name: package-comments
+          severity: warning
+          disabled: false
+        - name: range
+          severity: warning
+          disabled: false
+        - name: range-val-in-closure
+          severity: warning
+          disabled: false
+        - name: range-val-address
+          severity: warning
+          disabled: false
+        - name: receiver-naming
+          severity: warning
+          disabled: false
+        - name: redundant-import-alias
+          severity: warning
+          disabled: false
+        - name: redefines-builtin-id
+          severity: warning
+          disabled: false
+        - name: string-of-int
+          severity: warning
+          disabled: false
+        - name: string-format
+          arguments:
+            - - core.WriteError[1].Message
+              - /^([^A-Z]|$)/
+              - must not start with a capital letter
+            - - fmt.Errorf[0]
+              - /(^|[^\.!?])$/
+              - must not end in punctuation
+            - - panic
+              - /^[^\n]*$/
+              - must not contain line breaks
+          severity: warning
+          disabled: true
+        - name: struct-tag
+          arguments:
+            - json,inline
+            - bson,outline,gnu
+          severity: warning
+          disabled: false
+        - name: superfluous-else
+          arguments:
+            - preserveScope
+          severity: warning
+          disabled: false
+        - name: time-equal
+          severity: warning
+          disabled: false
+        - name: time-naming
+          severity: warning
+          disabled: false
+        - name: var-naming
+          arguments:
+            - - ID
+            - - VM
+            - - upperCaseConst: true
+          severity: warning
+          disabled: true
+        - name: var-declaration
+          severity: warning
+          disabled: false
+        - name: unconditional-recursion
+          severity: warning
+          disabled: false
+        - name: unexported-naming
+          severity: warning
+          disabled: false
+        - name: unexported-return
+          severity: warning
+          disabled: false
+        - name: unhandled-error
+          arguments:
+            - fmt.Printf
+            - myFunction
+          severity: warning
+          disabled: true
+        - name: unnecessary-stmt
+          severity: warning
+          disabled: false
+        - name: unreachable-code
+          severity: warning
+          disabled: false
+        - name: unused-parameter
+          arguments:
+            - allowRegex: ^_
+          severity: warning
+          disabled: true
+        - name: unused-receiver
+          arguments:
+            - allowRegex: ^_
+          severity: warning
+          disabled: true
+        - name: useless-break
+          severity: warning
+          disabled: false
+        - name: waitgroup-by-value
+          severity: warning
+          disabled: false
+    rowserrcheck:
+      packages:
+        - github.com/jmoiron/sqlx
+    sloglint:
+      no-mixed-args: true
+      kv-only: false
+      attr-only: false
+      context: "scope"
+      static-msg: false
+      no-raw-keys: false
+      key-naming-case: snake
+      args-on-sep-lines: false
+    tagalign:
+      align: true
+      sort: true
+      order:
+        - json
+        - yaml
+        - yml
+        - toml
+        - mapstructure
+        - binding
+        - validate
+      strict: false
+    testifylint:
+      enable-all: true
+      suite-extra-assert-call:
+        mode: remove
+    thelper:
+      test:
+        first: true
+        name: false
+        begin: true
+      fuzz:
+        first: true
+        name: false
+        begin: true
+      benchmark:
+        first: true
+        name: false
+        begin: true
+      tb:
+        first: true
+        name: false
+        begin: true
+    unparam:
+      check-exported: true
+    unused:
+      field-writes-are-uses: true
+      post-statements-are-reads: true
+      exported-fields-are-used: false
+      parameters-are-used: true
+      local-variables-are-used: false
+      generated-is-used: true
+    usestdlibvars:
+      http-method: true
+      http-status-code: true
+      time-weekday: true
+      time-month: true
+      time-layout: true
+      crypto-hash: true
+      default-rpc-path: true
+      sql-isolation-level: true
+      tls-signature-scheme: true
+      constant-kind: true
+    whitespace:
+      multi-if: false
+      multi-func: false
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
     rules:
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#add-constant:
-      - name: add-constant
-        severity: warning
-        disabled: true
-        arguments:
-          - maxLitCount: "3"
-            allowStrs: '""'
-            allowInts: "0,1,2"
-            allowFloats: "0.0,0.,1.0,1.,2.0,2."
-            ignoreFuncs: "host\\.*"
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#argument-limit
-      - name: argument-limit
-        severity: warning
-        disabled: false
-        arguments: [ 5 ]
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#atomic
-      - name: atomic
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#banned-characters
-      - name: banned-characters
-        severity: warning
-        disabled: false
-        arguments: [ "Ω", "Σ", "σ"]
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#bare-return
-      - name: bare-return
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#blank-imports
-      - name: blank-imports
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#bool-literal-in-expr
-      - name: bool-literal-in-expr
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#call-to-gc
-      - name: call-to-gc
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#cognitive-complexity
-      - name: cognitive-complexity
-        severity: warning
-        disabled: false
-        arguments: [ 10 ]
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#comment-spacings
-      - name: comment-spacings
-        severity: warning
-        disabled: true
-        arguments: []
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#confusing-naming
-      - name: confusing-naming
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#confusing-results
-      - name: confusing-results
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#constant-logical-expr
-      - name: constant-logical-expr
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#context-as-argument
-      - name: context-as-argument
-        severity: warning
-        disabled: false
-        arguments:
-          - allowTypesBefore: "*testing.T"
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#context-keys-type
-      - name: context-keys-type
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#cyclomatic
-      - name: cyclomatic
-        severity: warning
-        disabled: false
-        arguments: [ 10 ]
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#datarace
-      - name: datarace
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#deep-exit
-      - name: deep-exit
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#defer
-      - name: defer
-        severity: warning
-        disabled: false
-        arguments:
-          - [ "call-chain", "loop" ]
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#dot-imports
-      - name: dot-imports
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#duplicated-imports
-      - name: duplicated-imports
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#early-return
-      - name: early-return
-        severity: warning
-        disabled: false
-        arguments:
-          - "preserveScope"
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#empty-block
-      - name: empty-block
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#empty-lines
-      - name: empty-lines
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#enforce-map-style
-      - name: enforce-map-style
-        severity: warning
-        disabled: false
-        arguments:
-          - "make"
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#error-naming
-      - name: error-naming
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#error-return
-      - name: error-return
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#error-strings
-      - name: error-strings
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#errorf
-      - name: errorf
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#flag-parameter
-      - name: flag-parameter
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#function-result-limit
-      - name: function-result-limit
-        severity: warning
-        disabled: false
-        arguments: [ 3 ]
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#get-return
-      - name: get-return
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#identical-branches
-      - name: identical-branches
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#if-return
-      - name: if-return
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#increment-decrement
-      - name: increment-decrement
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#indent-error-flow
-      - name: indent-error-flow
-        severity: warning
-        disabled: false
-        arguments:
-          - "preserveScope"
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#import-alias-naming
-      - name: import-alias-naming
-        severity: warning
-        disabled: false
-        arguments:
-          - "^[a-z][a-zA-Z0-9]{0,}$"
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#imports-blacklist
-      - name: imports-blacklist
-        severity: warning
-        disabled: false
-        arguments:
-          - "crypto/md5"
-          - "crypto/sha1"
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#import-shadowing
-      - name: import-shadowing
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#max-public-structs
-      - name: max-public-structs
-        severity: warning
-        disabled: true
-        arguments: [ 3 ]
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#modifies-parameter
-      - name: modifies-parameter
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#modifies-value-receiver
-      - name: modifies-value-receiver
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#nested-structs
-      - name: nested-structs
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#optimize-operands-order
-      - name: optimize-operands-order
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#package-comments
-      - name: package-comments
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#range
-      - name: range
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#range-val-in-closure
-      - name: range-val-in-closure
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#range-val-address
-      - name: range-val-address
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#receiver-naming
-      - name: receiver-naming
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#redundant-import-alias
-      - name: redundant-import-alias
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#redefines-builtin-id
-      - name: redefines-builtin-id
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#string-of-int
-      - name: string-of-int
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#string-format
-      - name: string-format
-        severity: warning
-        disabled: true
-        arguments:
-          - - 'core.WriteError[1].Message'
-            - '/^([^A-Z]|$)/'
-            - must not start with a capital letter
-          - - 'fmt.Errorf[0]'
-            - '/(^|[^\.!?])$/'
-            - must not end in punctuation
-          - - panic
-            - '/^[^\n]*$/'
-            - must not contain line breaks
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#struct-tag
-      - name: struct-tag
-        arguments:
-          - "json,inline"
-          - "bson,outline,gnu"
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#superfluous-else
-      - name: superfluous-else
-        severity: warning
-        disabled: false
-        arguments:
-          - "preserveScope"
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#time-equal
-      - name: time-equal
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#time-naming
-      - name: time-naming
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#var-naming
-      - name: var-naming
-        severity: warning
-        disabled: true
-        arguments:
-          - [ "ID" ] # AllowList
-          - [ "VM" ] # DenyList
-          - - upperCaseConst: true
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#var-declaration
-      - name: var-declaration
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#unconditional-recursion
-      - name: unconditional-recursion
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#unexported-naming
-      - name: unexported-naming
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#unexported-return
-      - name: unexported-return
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#unhandled-error
-      - name: unhandled-error
-        severity: warning
-        disabled: true
-        arguments:
-          - "fmt.Printf"
-          - "myFunction"
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#unnecessary-stmt
-      - name: unnecessary-stmt
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#unreachable-code
-      - name: unreachable-code
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#unused-parameter
-      - name: unused-parameter
-        severity: warning
-        disabled: true
-        arguments:
-          - allowRegex: "^_"
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#unused-receiver
-      - name: unused-receiver
-        severity: warning
-        disabled: true
-        arguments:
-          - allowRegex: "^_"
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#useless-break
-      - name: useless-break
-        severity: warning
-        disabled: false
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#waitgroup-by-value
-      - name: waitgroup-by-value
-        severity: warning
-        disabled: false
-  rowserrcheck:
-    # database/sql is always checked
-    # Default: []
-    packages:
-      - github.com/jmoiron/sqlx
-  sloglint:
-    # Enforce not mixing key-value pairs and attributes. Default: true
-    no-mixed-args: true
-    # Enforce using key-value pairs only (overrides no-mixed-args, incompatible with attr-only). Default: false
-    kv-only: false
-    # Enforce using attributes only (overrides no-mixed-args, incompatible with kv-only). Default: false
-    attr-only: false
-    # Enforce using methods that accept a context. Default: false
-    context: ""
-    # Enforce using static values for log messages. Default: false
-    static-msg: false
-    # Enforce using constants instead of raw keys. Default: false
-    no-raw-keys: false
-    # Enforce a single key naming convention. Values: snake, kebab, camel, pascal. Default: ""
-    key-naming-case: snake
-    # Enforce putting arguments on separate lines. Default: false
-    args-on-sep-lines: false
-  tagalign:
-    # Whether enable align. If true, the struct tags will be aligned. Default: true.
-    align: true
-    # If true, the tags will be sorted by name in ascending order.
-    # eg: `xml:"bar" json:"bar" validate:"required"` -> `json:"bar" validate:"required" xml:"bar"`
-    # Default: true
-    sort: true
-    # Specify the order of tags, the other tags will be sorted by name.
-    # This option will be ignored if `sort` is false.
-    # Default: []
-    order:
-      - json
-      - yaml
-      - yml
-      - toml
-      - mapstructure
-      - binding
-      - validate
-    # Whether enable strict style.
-    # In this style, the tags will be sorted and aligned in the dictionary order,
-    # and the tags with the same name will be aligned together.
-    # Note: This option will be ignored if 'align' or 'sort' is false.
-    # Default: false
-    strict: false
-  testifylint:
-    # Enable all checkers (https://github.com/Antonboom/testifylint#checkers).
-    # Default: false
-    enable-all: true
-    suite-extra-assert-call:
-      # To require or remove extra Assert() call?
-      # Default: remove
-      mode: remove
-  thelper:
-    test:
-      # Check *testing.T is first param (or after context.Context) of helper function.
-      # Default: true
-      first: true
-      # Check *testing.T param has name t. Default: true
-      name: false
-      # Check t.Helper() begins helper function. Default: true
-      begin: true
-    benchmark:
-      # Check *testing.B is first param (or after context.Context) of helper function. Default: true
-      first: true
-      # Check *testing.B param has name b. Default: true
-      name: false
-      # Check b.Helper() begins helper function. Default: true
-      begin: true
-    tb:
-      # Check *testing.TB is first param (or after context.Context) of helper function. Default: true
-      first: true
-      # Check *testing.TB param has name tb. Default: true
-      name: false
-      # Check tb.Helper() begins helper function. Default: true
-      begin: true
-    fuzz:
-      # Check *testing.F is first param (or after context.Context) of helper function. Default: true
-      first: true
-      # Check *testing.F param has name f. Default: true
-      name: false
-      # Check f.Helper() begins helper function. Default: true
-      begin: true
-  unparam:
-    # Inspect exported functions. Default: false
-    check-exported: true
-  usestdlibvars:
-    # Suggest the use of http.MethodXX. Default: true
-    http-method: true
-    # Suggest the use of http.StatusXX. Default: true
-    http-status-code: true
-    # Suggest the use of time.Weekday.String(). Default: true
-    time-weekday: true
-    # Suggest the use of time.Month.String(). Default: false
-    time-month: true
-    # Suggest the use of time.Layout. Default: false
-    time-layout: true
-    # Suggest the use of crypto.Hash.String(). Default: false
-    crypto-hash: true
-    # Suggest the use of rpc.DefaultXXPath. Default: false
-    default-rpc-path: true
-    # Suggest the use of sql.LevelXX.String(). Default: false
-    sql-isolation-level: true
-    # Suggest the use of tls.SignatureScheme.String(). Default: false
-    tls-signature-scheme: true
-    # Suggest the use of constant.Kind.String(). Default: false
-    constant-kind: true
-  whitespace:
-    # Enforces newlines (or comments) after every multi-line if statement. Default: false
-    multi-if: false
-    # Enforces newlines (or comments) after every multi-line function signature. Default: false
-    multi-func: false
+      - linters:
+          - cyclop
+          - goconst
+        path: (.+)_test\.go
+    paths:
+      - .*gen.go
+      - .pb.go
+      - .pb.validate.go
+      - .*/generated_[A-Za-z_]*\.go
+      - .*fakes
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofumpt
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/nginx/agent)
+        - blank
+        - dot
+      custom-order: true
+    gofumpt:
+      module-path: github.com/nginx/agent
+      extra-rules: true
+  exclusions:
+    generated: lax
+    paths:
+      - .*gen.go
+      - .pb.go
+      - .pb.validate.go
+      - .*/generated_[A-Za-z_]*\.go
+      - .*fakes
+      - third_party$
+      - builtin$
+      - examples$

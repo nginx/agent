@@ -216,14 +216,14 @@ func BenchmarkList(b *testing.B) {
 	b.Skipf("skipping to prevent CI flake")
 	ctx := context.Background()
 	b.Run("base", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			_, err := nginxprocess.List(ctx)
 			require.NoError(b, err)
 		}
 	})
 
 	b.Run("WithStatus", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			_, err := nginxprocess.List(ctx, nginxprocess.WithStatus(true))
 			require.NoError(b, err)
 		}

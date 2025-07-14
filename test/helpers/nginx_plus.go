@@ -20,7 +20,7 @@ const (
 	serverID         = 1234
 )
 
-// nolint: gocyclo,revive,cyclop,maintidx
+//nolint:gocyclo,revive,cyclop,maintidx
 func NewMockNGINXPlusAPIServer(t *testing.T) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {

@@ -7,8 +7,8 @@ package file
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
+	"sync"
 
 	"github.com/nginx/agent/v3/pkg/files"
 	"github.com/nginx/agent/v3/pkg/id"
@@ -28,64 +28,103 @@ var _ bus.Plugin = (*FilePlugin)(nil)
 // the file plugin does not care about the instance type
 
 type FilePlugin struct {
+	manifestLock       *sync.RWMutex
 	messagePipe        bus.MessagePipeInterface
 	config             *config.Config
 	conn               grpc.GrpcConnectionInterface
 	fileManagerService fileManagerServiceInterface
+	serverType         model.ServerType
 }
 
-func NewFilePlugin(agentConfig *config.Config, grpcConnection grpc.GrpcConnectionInterface) *FilePlugin {
+func NewFilePlugin(agentConfig *config.Config, grpcConnection grpc.GrpcConnectionInterface,
+	serverType model.ServerType, manifestLock *sync.RWMutex,
+) *FilePlugin {
 	return &FilePlugin{
-		config: agentConfig,
-		conn:   grpcConnection,
+		config:       agentConfig,
+		conn:         grpcConnection,
+		serverType:   serverType,
+		manifestLock: manifestLock,
 	}
 }
 
 func (fp *FilePlugin) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
+	ctx = context.WithValue(
+		ctx,
+		logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey, fp.serverType.String()),
+	)
 	slog.DebugContext(ctx, "Starting file plugin")
 
 	fp.messagePipe = messagePipe
-	fp.fileManagerService = NewFileManagerService(fp.conn.FileServiceClient(), fp.config)
+	fp.fileManagerService = NewFileManagerService(fp.conn.FileServiceClient(), fp.config, fp.manifestLock)
 
 	return nil
 }
 
 func (fp *FilePlugin) Close(ctx context.Context) error {
+	ctx = context.WithValue(
+		ctx,
+		logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey, fp.serverType.String()),
+	)
 	slog.InfoContext(ctx, "Closing file plugin")
+
 	return fp.conn.Close(ctx)
 }
 
 func (fp *FilePlugin) Info() *bus.Info {
+	name := "file"
+	if fp.serverType.String() == model.Auxiliary.String() {
+		name = "auxiliary-file"
+	}
+
 	return &bus.Info{
-		Name: "file",
+		Name: name,
 	}
 }
 
+// nolint: cyclop, revive
 func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
-	switch msg.Topic {
-	case bus.ConnectionResetTopic:
-		fp.handleConnectionReset(ctx, msg)
-	case bus.ConnectionCreatedTopic:
-		slog.DebugContext(ctx, "File plugin received connection created message")
-		fp.fileManagerService.SetIsConnected(true)
-	case bus.NginxConfigUpdateTopic:
-		fp.handleNginxConfigUpdate(ctx, msg)
-	case bus.ConfigUploadRequestTopic:
-		fp.handleConfigUploadRequest(ctx, msg)
-	case bus.ConfigApplyRequestTopic:
-		fp.handleConfigApplyRequest(ctx, msg)
-	case bus.ConfigApplyCompleteTopic:
-		fp.handleConfigApplyComplete(ctx, msg)
-	case bus.ConfigApplySuccessfulTopic:
-		fp.handleConfigApplySuccess(ctx, msg)
-	case bus.ConfigApplyFailedTopic:
-		fp.handleConfigApplyFailedRequest(ctx, msg)
-	default:
-		slog.DebugContext(ctx, "File plugin received unknown topic", "topic", msg.Topic)
+	if logger.ServerType(ctx) == "" {
+		ctx = context.WithValue(
+			ctx,
+			logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey, fp.serverType.String()),
+		)
+	}
+
+	if logger.ServerType(ctx) == fp.serverType.String() {
+		switch msg.Topic {
+		case bus.ConnectionResetTopic:
+			fp.handleConnectionReset(ctx, msg)
+		case bus.ConnectionCreatedTopic:
+			slog.DebugContext(ctx, "File plugin received connection created message")
+			fp.fileManagerService.SetIsConnected(true)
+		case bus.NginxConfigUpdateTopic:
+			fp.handleNginxConfigUpdate(ctx, msg)
+		case bus.ConfigUploadRequestTopic:
+			fp.handleConfigUploadRequest(ctx, msg)
+		case bus.ConfigApplyRequestTopic:
+			fp.handleConfigApplyRequest(ctx, msg)
+		case bus.ConfigApplyCompleteTopic:
+			fp.handleConfigApplyComplete(ctx, msg)
+		case bus.ConfigApplySuccessfulTopic:
+			fp.handleConfigApplySuccess(ctx, msg)
+		case bus.ConfigApplyFailedTopic:
+			fp.handleConfigApplyFailedRequest(ctx, msg)
+		default:
+			slog.DebugContext(ctx, "File plugin received unknown topic", "topic", msg.Topic)
+		}
 	}
 }
 
 func (fp *FilePlugin) Subscriptions() []string {
+	if fp.serverType == model.Auxiliary {
+		return []string{
+			bus.ConnectionResetTopic,
+			bus.ConnectionCreatedTopic,
+			bus.NginxConfigUpdateTopic,
+			bus.ConfigUploadRequestTopic,
+		}
+	}
+
 	return []string{
 		bus.ConnectionResetTopic,
 		bus.ConnectionCreatedTopic,
@@ -109,7 +148,7 @@ func (fp *FilePlugin) handleConnectionReset(ctx context.Context, msg *bus.Messag
 		fp.conn = newConnection
 
 		reconnect = fp.fileManagerService.IsConnected()
-		fp.fileManagerService = NewFileManagerService(fp.conn.FileServiceClient(), fp.config)
+		fp.fileManagerService = NewFileManagerService(fp.conn.FileServiceClient(), fp.config, fp.manifestLock)
 		fp.fileManagerService.SetIsConnected(reconnect)
 
 		slog.DebugContext(ctx, "File manager service client reset successfully")
@@ -319,25 +358,7 @@ func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 		return
 	}
 
-	updateError := fp.fileManagerService.UpdateCurrentFilesOnDisk(
-		ctx,
-		files.ConvertToMapOfFiles(nginxConfigContext.Files),
-		true,
-	)
-	if updateError != nil {
-		slog.ErrorContext(ctx, "Unable to update current files on disk", "error", updateError)
-	}
-
-	slog.InfoContext(ctx, "Updating overview after nginx config update")
-	err := fp.fileManagerService.UpdateOverview(ctx, nginxConfigContext.InstanceID, nginxConfigContext.Files, 0)
-	if err != nil {
-		slog.ErrorContext(
-			ctx,
-			"Failed to update file overview",
-			"instance_id", nginxConfigContext.InstanceID,
-			"error", err,
-		)
-	}
+	fp.fileManagerService.ConfigUpdate(ctx, nginxConfigContext)
 }
 
 func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Message) {
@@ -357,36 +378,7 @@ func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Me
 
 	correlationID := logger.CorrelationID(ctx)
 
-	var updatingFilesError error
-
-	for _, file := range configUploadRequest.GetOverview().GetFiles() {
-		err := fp.fileManagerService.UpdateFile(
-			ctx,
-			configUploadRequest.GetOverview().GetConfigVersion().GetInstanceId(),
-			file,
-		)
-		if err != nil {
-			slog.ErrorContext(
-				ctx,
-				"Failed to update file",
-				"instance_id", configUploadRequest.GetOverview().GetConfigVersion().GetInstanceId(),
-				"file_name", file.GetFileMeta().GetName(),
-				"error", err,
-			)
-
-			response := fp.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
-				fmt.Sprintf("Failed to update file %s", file.GetFileMeta().GetName()),
-				configUploadRequest.GetOverview().GetConfigVersion().GetInstanceId(),
-				err.Error(),
-			)
-
-			updatingFilesError = err
-
-			fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
-
-			break
-		}
-	}
+	updatingFilesError := fp.fileManagerService.ConfigUpload(ctx, configUploadRequest)
 
 	response := &mpi.DataPlaneResponse{
 		MessageMeta: &mpi.MessageMeta{

@@ -261,6 +261,31 @@ var (
     }
   }
 `
+
+	testConf22 = ` server {
+	listen unix:/var/lib/nginx/nginx-plus-api.sock;
+	access_log off;
+
+	# $config_version_mismatch is defined in /etc/nginx/config-version.conf
+	location /configVersionCheck {
+		if ($config_version_mismatch) {
+			return 503;
+		}
+		return 200;
+	}
+
+	location /api {
+		api write=on;
+	}
+}
+
+server {
+	listen unix:/var/lib/nginx/nginx-418-server.sock;
+	access_log off;
+
+	return 418;
+}
+`
 )
 
 // nolint: maintidx
@@ -529,7 +554,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			assert.ElementsMatch(t, test.expectedConfigContext.ErrorLogs, result.ErrorLogs)
 			assert.Equal(t, test.expectedConfigContext.StubStatus, result.StubStatus)
 			assert.Equal(t, test.expectedConfigContext.InstanceID, result.InstanceID)
-			assert.Equal(t, len(test.expectedConfigContext.Files), len(result.Files))
+			assert.Len(t, result.Files, len(test.expectedConfigContext.Files))
 		})
 	}
 }
@@ -965,8 +990,19 @@ func TestNginxConfigParser_urlsForLocationDirective(t *testing.T) {
 					Location: "/api",
 				},
 			},
-			name: "Test 21: listen unix:/var/run/nginx/nginx-plus-api.sock- Plus Unix Socket",
+			name: "Test 21: listen unix:/var/run/nginx/nginx-plus-api.sock - Plus Unix Socket",
 			conf: testConf21,
+		},
+		{
+			plus: []*model.APIDetails{
+				{
+					URL:      "http://nginx-plus-api/api",
+					Listen:   "unix:/var/lib/nginx/nginx-plus-api.sock",
+					Location: "/api",
+				},
+			},
+			name: "Test 22: Multiple Plus Unix Sockets",
+			conf: testConf22,
 		},
 	} {
 		ctx := context.Background()
@@ -1341,7 +1377,7 @@ func TestNginxConfigParser_checkDuplicate(t *testing.T) {
 }
 
 func protoListEqual(protoListA, protoListB []*mpi.File) bool {
-	for i := 0; i < len(protoListA); i++ {
+	for i := range protoListA {
 		res := proto.Equal(protoListA[i], protoListB[i])
 		if !res {
 			return false
