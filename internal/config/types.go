@@ -437,14 +437,12 @@ func (c *Config) AreReceiversConfigured() bool {
 // It also checks if the path is a file, in which case it checks the directory of the file.
 func isAllowedDir(path string, allowedDirs []string) (bool, error) {
 	if len(allowedDirs) == 0 {
-		slog.Warn("No allowed directories configured")
 		return false, errors.New("no allowed directories configured")
 	}
 
 	directoryPath := path
 	isFilePath, err := regexp.MatchString(`\.(\w+)$`, directoryPath)
 	if err != nil {
-		slog.Error("Error matching path", "path", directoryPath, "error", err)
 		return false, errors.New("error matching path" + directoryPath)
 	}
 
