@@ -85,8 +85,7 @@ func TestTypes_isAllowedDir(t *testing.T) {
 		symlinkPath := "file_link"
 
 		// Create a temp directory for the symlink
-		tempDir, err := os.MkdirTemp("", "symlink_test")
-		require.NoError(t, err)
+		tempDir := t.TempDir()
 		defer os.RemoveAll(tempDir) // Clean up the temp directory after the test
 
 		// Ensure the temp directory is in the allowedDirs
@@ -94,7 +93,7 @@ func TestTypes_isAllowedDir(t *testing.T) {
 
 		filePath = tempDir + "/" + filePath
 		defer os.RemoveAll(filePath)
-		err = os.WriteFile(filePath, []byte("test content"), 0o600)
+		err := os.WriteFile(filePath, []byte("test content"), 0o600)
 		require.NoError(t, err)
 
 		// Create a symlink for testing
