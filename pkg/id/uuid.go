@@ -7,6 +7,7 @@ package id
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -37,7 +38,7 @@ func Generate(format string, a ...interface{}) string {
 	h := sha256.New()
 	s := fmt.Sprintf(f, a...)
 	_, _ = h.Write([]byte(s))
-	id := fmt.Sprintf("%x", h.Sum(nil))
+	id := hex.EncodeToString(h.Sum(nil))
 
 	return uuid.NewMD5(uuid.Nil, []byte(id)).String()
 }
