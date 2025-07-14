@@ -176,7 +176,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 						slog.Info("args", "", directive.Args)
 						sysLogServers := ncp.findValidSysLogServers(directive.Args)
 						if len(sysLogServers) == 0 {
-							slog.WarnContext(ctx, "Could not find valid Nap Syslog server")
+							slog.WarnContext(ctx, "Could not find usable NAP syslog server, security violations will be unavailable")
 						}
 						for i := range sysLogServers {
 							sysLogServer := sysLogServers[i]
@@ -237,7 +237,7 @@ func (ncp *NginxConfigParser) parseSyslogDirective(ctx context.Context, napSyslo
 
 		return napSyslogServer
 	}
-	slog.WarnContext(ctx, "Could not find usable NAP syslog server")
+	slog.WarnContext(ctx, "Could not find usable NAP syslog server, security violations will be unavailable")
 
 	return ""
 }
