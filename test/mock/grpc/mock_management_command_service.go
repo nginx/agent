@@ -109,12 +109,12 @@ func (cs *CommandService) CreateConnection(
 }
 
 func (cs *CommandService) UpdateDataPlaneStatus(
-	_ context.Context,
+	ctx context.Context,
 	request *mpi.UpdateDataPlaneStatusRequest) (
 	*mpi.UpdateDataPlaneStatusResponse,
 	error,
 ) {
-	slog.Debug("Update data plane status request", "request", request)
+	slog.DebugContext(ctx, "Update data plane status request", "request", request)
 
 	if request == nil {
 		return nil, errors.New("empty update data plane status request")
@@ -128,12 +128,12 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 }
 
 func (cs *CommandService) UpdateDataPlaneHealth(
-	_ context.Context,
+	ctx context.Context,
 	request *mpi.UpdateDataPlaneHealthRequest) (
 	*mpi.UpdateDataPlaneHealthResponse,
 	error,
 ) {
-	slog.Debug("Update data plane health request", "request", request)
+	slog.DebugContext(ctx, "Update data plane health request", "request", request)
 
 	if request == nil {
 		return nil, errors.New("empty update dataplane health request")

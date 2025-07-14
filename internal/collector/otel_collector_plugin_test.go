@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -252,7 +251,7 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 
 			if len(test.receivers.NginxPlusReceivers) == 1 {
 				apiDetails := config.APIDetails{
-					URL:      fmt.Sprintf("%s/api", nginxPlusMock.URL),
+					URL:      nginxPlusMock.URL + "/api",
 					Listen:   "",
 					Location: "",
 				}
@@ -270,7 +269,7 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 				model.PlusAPI.Location = apiDetails.Location
 			} else {
 				apiDetails := config.APIDetails{
-					URL:      fmt.Sprintf("%s/stub_status", nginxPlusMock.URL),
+					URL:      nginxPlusMock.URL + "/stub_status",
 					Listen:   "",
 					Location: "",
 				}

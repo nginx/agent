@@ -16,12 +16,13 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/nginx/agent/v3/pkg/files"
+
 	"github.com/cenkalti/backoff/v4"
 	backoffHelpers "github.com/nginx/agent/v3/internal/backoff"
 	"github.com/nginx/agent/v3/internal/config"
 	internalgrpc "github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/logger"
-	"github.com/nginx/agent/v3/pkg/files"
 	"google.golang.org/grpc"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -54,15 +55,15 @@ func NewFileService(configDirectory string, requestChan chan *v1.ManagementPlane
 }
 
 func (mgs *FileService) GetOverview(
-	_ context.Context,
+	ctx context.Context,
 	request *v1.GetOverviewRequest,
 ) (*v1.GetOverviewResponse, error) {
 	configVersion := request.GetConfigVersion()
 
-	slog.Info("Getting overview", "config_version", configVersion)
+	slog.InfoContext(ctx, "Getting overview", "config_version", configVersion)
 
 	if _, ok := mgs.instanceFiles[request.GetConfigVersion().GetInstanceId()]; !ok {
-		slog.Error("Config version not found", "config_version", configVersion)
+		slog.ErrorContext(ctx, "Config version not found", "config_version", configVersion)
 		return nil, status.Errorf(codes.NotFound, "Config version not found")
 	}
 
@@ -76,7 +77,7 @@ func (mgs *FileService) GetOverview(
 
 // nolint: unparam
 func (mgs *FileService) UpdateOverview(
-	_ context.Context,
+	ctx context.Context,
 	request *v1.UpdateOverviewRequest,
 ) (*v1.UpdateOverviewResponse, error) {
 	overview := request.GetOverview()
@@ -85,7 +86,7 @@ func (mgs *FileService) UpdateOverview(
 	if errMarshaledJSON != nil {
 		return nil, fmt.Errorf("failed to marshal struct back to JSON: %w", errMarshaledJSON)
 	}
-	slog.Info("Updating overview JSON", "overview", marshaledJSON)
+	slog.InfoContext(ctx, "Updating overview JSON", "overview", marshaledJSON)
 
 	mgs.instanceFiles[overview.GetConfigVersion().GetInstanceId()] = overview.GetFiles()
 
@@ -107,24 +108,24 @@ func (mgs *FileService) UpdateOverview(
 }
 
 func (mgs *FileService) GetFile(
-	_ context.Context,
+	ctx context.Context,
 	request *v1.GetFileRequest,
 ) (*v1.GetFileResponse, error) {
 	fileName := request.GetFileMeta().GetName()
 	fileHash := request.GetFileMeta().GetHash()
 
-	slog.Info("Getting file", "name", fileName, "hash", fileHash)
+	slog.InfoContext(ctx, "Getting file", "name", fileName, "hash", fileHash)
 
 	fullFilePath := mgs.findFile(request.GetFileMeta())
 
 	if fullFilePath == "" {
-		slog.Error("File not found", "file_name", fileName)
+		slog.ErrorContext(ctx, "File not found", "file_name", fileName)
 		return nil, status.Errorf(codes.NotFound, "File not found")
 	}
 
 	bytes, err := os.ReadFile(fullFilePath)
 	if err != nil {
-		slog.Error("Failed to get file contents", "full_file_path", fullFilePath, "error", err)
+		slog.ErrorContext(ctx, "Failed to get file contents", "full_file_path", fullFilePath, "error", err)
 		return nil, status.Errorf(codes.Internal, "Failed to get file contents")
 	}
 
@@ -160,6 +161,101 @@ func (mgs *FileService) GetFileStream(request *v1.GetFileRequest,
 
 	return mgs.sendGetFileStreamChunks(newCtx, fullFilePath, fileName, mgs.agentConfig.Client.Grpc.FileChunkSize,
 		streamingServer)
+}
+
+func (mgs *FileService) UpdateFile(
+	ctx context.Context,
+	request *v1.UpdateFileRequest,
+) (*v1.UpdateFileResponse, error) {
+	fileContents := request.GetContents().GetContents()
+	fileMeta := request.GetFile().GetFileMeta()
+	fileName := fileMeta.GetName()
+	fileHash := fileMeta.GetHash()
+	filePermissions := fileMeta.GetPermissions()
+
+	slog.InfoContext(ctx, "Updating file", "name", fileName, "hash", fileHash)
+
+	fullFilePath := mgs.findFile(request.GetFile().GetFileMeta())
+
+	if _, err := os.Stat(fullFilePath); os.IsNotExist(err) {
+		statErr := os.MkdirAll(filepath.Dir(fullFilePath), os.ModePerm)
+		if statErr != nil {
+			slog.InfoContext(ctx, "Failed to create/update file", "full_file_path", fullFilePath, "error", statErr)
+			return nil, status.Errorf(codes.Internal, "Failed to create/update file")
+		}
+	}
+
+	err := os.WriteFile(fullFilePath, fileContents, fileMode(filePermissions))
+	if err != nil {
+		slog.InfoContext(ctx, "Failed to create/update file", "full_file_path", fullFilePath, "error", err)
+		return nil, status.Errorf(codes.Internal, "Failed to create/update file")
+	}
+
+	return &v1.UpdateFileResponse{
+		FileMeta: fileMeta,
+	}, nil
+}
+
+func (mgs *FileService) UpdateFileStream(streamingServer grpc.ClientStreamingServer[v1.FileDataChunk,
+	v1.UpdateFileResponse],
+) error {
+	slog.Info("Updating file, stream")
+
+	headerChunk, headerChunkErr := streamingServer.Recv()
+	if headerChunkErr != nil {
+		return headerChunkErr
+	}
+
+	slog.Debug("File header chunk received", "header_chunk", headerChunk)
+
+	header := headerChunk.GetHeader()
+	writeChunkedFileError := mgs.WriteChunkFile(header.GetFileMeta(), header, streamingServer)
+	if writeChunkedFileError != nil {
+		return writeChunkedFileError
+	}
+
+	return nil
+}
+
+func (mgs *FileService) WriteChunkFile(fileMeta *v1.FileMeta, header *v1.FileDataChunkHeader,
+	stream grpc.ClientStreamingServer[v1.FileDataChunk, v1.UpdateFileResponse],
+) error {
+	fileName := mgs.findFile(fileMeta)
+	filePermissions := files.FileMode(fileMeta.GetPermissions())
+	fullFilePath := mgs.findFile(fileMeta)
+
+	if err := mgs.createDirectories(fullFilePath, filePermissions); err != nil {
+		return err
+	}
+
+	fileToWrite, createError := os.Create(fullFilePath)
+	defer func() {
+		closeError := fileToWrite.Close()
+		if closeError != nil {
+			slog.Warn("Failed to close file",
+				"file", fileMeta.GetName(),
+				"error", closeError,
+			)
+		}
+	}()
+
+	if createError != nil {
+		return createError
+	}
+	slog.Debug("Writing chunked file", "file", fileName)
+	for range header.GetChunks() {
+		chunk, recvError := stream.Recv()
+		if recvError != nil {
+			return recvError
+		}
+
+		_, chunkWriteError := fileToWrite.Write(chunk.GetContent().GetData())
+		if chunkWriteError != nil {
+			return fmt.Errorf("error writing chunk to file %s: %w", fileMeta.GetName(), chunkWriteError)
+		}
+	}
+
+	return nil
 }
 
 func (mgs *FileService) sendGetFileStreamChunks(ctx context.Context, fullFilePath, filePath string, chunkSize uint32,
@@ -271,7 +367,7 @@ func (mgs *FileService) sendGetFileStreamChunk(ctx context.Context, chunk v1.Fil
 			})
 		validatedError := internalgrpc.ValidateGrpcError(err)
 		if validatedError != nil {
-			slog.Error("Failed to send get file stream chunk", "error", validatedError)
+			slog.ErrorContext(ctx, "Failed to send get file stream chunk", "error", validatedError)
 
 			return validatedError
 		}
@@ -310,101 +406,6 @@ func readChunk(
 	}
 
 	return chunk, err
-}
-
-func (mgs *FileService) UpdateFile(
-	_ context.Context,
-	request *v1.UpdateFileRequest,
-) (*v1.UpdateFileResponse, error) {
-	fileContents := request.GetContents().GetContents()
-	fileMeta := request.GetFile().GetFileMeta()
-	fileName := fileMeta.GetName()
-	fileHash := fileMeta.GetHash()
-	filePermissions := fileMeta.GetPermissions()
-
-	slog.Info("Updating file", "name", fileName, "hash", fileHash)
-
-	fullFilePath := mgs.findFile(request.GetFile().GetFileMeta())
-
-	if _, err := os.Stat(fullFilePath); os.IsNotExist(err) {
-		statErr := os.MkdirAll(filepath.Dir(fullFilePath), os.ModePerm)
-		if statErr != nil {
-			slog.Info("Failed to create/update file", "full_file_path", fullFilePath, "error", statErr)
-			return nil, status.Errorf(codes.Internal, "Failed to create/update file")
-		}
-	}
-
-	err := os.WriteFile(fullFilePath, fileContents, fileMode(filePermissions))
-	if err != nil {
-		slog.Info("Failed to create/update file", "full_file_path", fullFilePath, "error", err)
-		return nil, status.Errorf(codes.Internal, "Failed to create/update file")
-	}
-
-	return &v1.UpdateFileResponse{
-		FileMeta: fileMeta,
-	}, nil
-}
-
-func (mgs *FileService) UpdateFileStream(streamingServer grpc.ClientStreamingServer[v1.FileDataChunk,
-	v1.UpdateFileResponse],
-) error {
-	slog.Info("Updating file, stream")
-
-	headerChunk, headerChunkErr := streamingServer.Recv()
-	if headerChunkErr != nil {
-		return headerChunkErr
-	}
-
-	slog.Debug("File header chunk received", "header_chunk", headerChunk)
-
-	header := headerChunk.GetHeader()
-	writeChunkedFileError := mgs.WriteChunkFile(header.GetFileMeta(), header, streamingServer)
-	if writeChunkedFileError != nil {
-		return writeChunkedFileError
-	}
-
-	return nil
-}
-
-func (mgs *FileService) WriteChunkFile(fileMeta *v1.FileMeta, header *v1.FileDataChunkHeader,
-	stream grpc.ClientStreamingServer[v1.FileDataChunk, v1.UpdateFileResponse],
-) error {
-	fileName := mgs.findFile(fileMeta)
-	filePermissions := files.FileMode(fileMeta.GetPermissions())
-	fullFilePath := mgs.findFile(fileMeta)
-
-	if err := mgs.createDirectories(fullFilePath, filePermissions); err != nil {
-		return err
-	}
-
-	fileToWrite, createError := os.Create(fullFilePath)
-	defer func() {
-		closeError := fileToWrite.Close()
-		if closeError != nil {
-			slog.Warn("Failed to close file",
-				"file", fileMeta.GetName(),
-				"error", closeError,
-			)
-		}
-	}()
-
-	if createError != nil {
-		return createError
-	}
-	slog.Debug("Writing chunked file", "file", fileName)
-	for i := uint32(0); i < header.GetChunks(); i++ {
-		chunk, recvError := stream.Recv()
-		if recvError != nil {
-			return recvError
-		}
-
-		_, chunkWriteError := fileToWrite.Write(chunk.GetContent().GetData())
-		if chunkWriteError != nil {
-			return fmt.Errorf("error writing chunk to file %s: %w", fileMeta.GetName(), chunkWriteError)
-		}
-	}
-
-	return nil
 }
 
 func (mgs *FileService) createDirectories(fullFilePath string, filePermissions os.FileMode) error {

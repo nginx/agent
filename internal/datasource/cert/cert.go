@@ -8,7 +8,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"fmt"
+	"errors"
 	"os"
 )
 
@@ -37,7 +37,7 @@ func LoadCertificate(certPath string) (*x509.Certificate, error) {
 
 	block, _ := pem.Decode(fileContents)
 	if block == nil || block.Type != "CERTIFICATE" {
-		return nil, fmt.Errorf("failed to decode PEM block containing the certificate")
+		return nil, errors.New("failed to decode PEM block containing the certificate")
 	}
 
 	cert, err := x509.ParseCertificate(block.Bytes)

@@ -133,7 +133,7 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	fileOverview := configApplyRequest.GetOverview()
 
 	if fileOverview == nil {
-		return model.Error, fmt.Errorf("fileOverview is nil")
+		return model.Error, errors.New("fileOverview is nil")
 	}
 
 	allowedErr := fms.checkAllowedDirectory(fileOverview.GetFiles())
@@ -216,50 +216,6 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 		fms.agentConfig.ManifestDir, fms.manifestFilePath)
 	if manifestFileErr != nil {
 		return manifestFileErr
-	}
-
-	return nil
-}
-
-func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
-	for _, fileAction := range fms.fileActions {
-		switch fileAction.Action {
-		case model.Delete:
-			slog.Debug("File action, deleting file", "file", fileAction.File.GetFileMeta().GetName())
-			if err := os.Remove(fileAction.File.GetFileMeta().GetName()); err != nil && !os.IsNotExist(err) {
-				return fmt.Errorf("error deleting file: %s error: %w",
-					fileAction.File.GetFileMeta().GetName(), err)
-			}
-
-			continue
-		case model.Add, model.Update:
-			slog.Debug("File action, add or update file", "file", fileAction.File.GetFileMeta().GetName())
-			updateErr := fms.fileUpdate(ctx, fileAction.File)
-			if updateErr != nil {
-				return updateErr
-			}
-		case model.Unchanged:
-			slog.DebugContext(ctx, "File unchanged")
-		}
-	}
-
-	return nil
-}
-
-func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) error {
-	if file.GetFileMeta().GetSize() <= int64(fms.agentConfig.Client.Grpc.MaxFileSize) {
-		return fms.fileServiceOperator.File(ctx, file, fms.fileActions)
-	}
-
-	return fms.fileServiceOperator.ChunkedFile(ctx, file)
-}
-
-func (fms *FileManagerService) checkAllowedDirectory(checkFiles []*mpi.File) error {
-	for _, file := range checkFiles {
-		allowed := fms.agentConfig.IsDirectoryAllowed(file.GetFileMeta().GetName())
-		if !allowed {
-			return fmt.Errorf("file not in allowed directories %s", file.GetFileMeta().GetName())
-		}
 	}
 
 	return nil
@@ -486,6 +442,50 @@ func (fms *FileManagerService) manifestFile() (map[string]*model.ManifestFile, m
 	fileMap := fms.convertToFileMap(manifestFiles)
 
 	return manifestFiles, fileMap, nil
+}
+
+func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
+	for _, fileAction := range fms.fileActions {
+		switch fileAction.Action {
+		case model.Delete:
+			slog.DebugContext(ctx, "File action, deleting file", "file", fileAction.File.GetFileMeta().GetName())
+			if err := os.Remove(fileAction.File.GetFileMeta().GetName()); err != nil && !os.IsNotExist(err) {
+				return fmt.Errorf("error deleting file: %s error: %w",
+					fileAction.File.GetFileMeta().GetName(), err)
+			}
+
+			continue
+		case model.Add, model.Update:
+			slog.DebugContext(ctx, "File action, add or update file", "file", fileAction.File.GetFileMeta().GetName())
+			updateErr := fms.fileUpdate(ctx, fileAction.File)
+			if updateErr != nil {
+				return updateErr
+			}
+		case model.Unchanged:
+			slog.DebugContext(ctx, "File unchanged")
+		}
+	}
+
+	return nil
+}
+
+func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) error {
+	if file.GetFileMeta().GetSize() <= int64(fms.agentConfig.Client.Grpc.MaxFileSize) {
+		return fms.fileServiceOperator.File(ctx, file, fms.fileActions)
+	}
+
+	return fms.fileServiceOperator.ChunkedFile(ctx, file)
+}
+
+func (fms *FileManagerService) checkAllowedDirectory(checkFiles []*mpi.File) error {
+	for _, file := range checkFiles {
+		allowed := fms.agentConfig.IsDirectoryAllowed(file.GetFileMeta().GetName())
+		if !allowed {
+			return fmt.Errorf("file not in allowed directories %s", file.GetFileMeta().GetName())
+		}
+	}
+
+	return nil
 }
 
 func (fms *FileManagerService) convertToManifestFileMap(

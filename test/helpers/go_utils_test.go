@@ -13,7 +13,7 @@ import (
 )
 
 func TestGoVersion(t *testing.T) {
-	expected := "1.23.0"
+	expected := "1.24.0"
 
 	actual, err := GoVersion(t, 2)
 

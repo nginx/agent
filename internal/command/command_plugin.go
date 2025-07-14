@@ -132,6 +132,16 @@ func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 	}
 }
 
+func (cp *CommandPlugin) Subscriptions() []string {
+	return []string{
+		bus.ConnectionResetTopic,
+		bus.ResourceUpdateTopic,
+		bus.InstanceHealthTopic,
+		bus.DataPlaneHealthResponseTopic,
+		bus.DataPlaneResponseTopic,
+	}
+}
+
 func (cp *CommandPlugin) processResourceUpdate(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "Command plugin received resource update message")
 	if resource, ok := msg.Data.(*mpi.Resource); ok {
@@ -230,16 +240,6 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 			return
 		}
 		slog.DebugContext(ctx, "Command service client reset successfully")
-	}
-}
-
-func (cp *CommandPlugin) Subscriptions() []string {
-	return []string{
-		bus.ConnectionResetTopic,
-		bus.ResourceUpdateTopic,
-		bus.InstanceHealthTopic,
-		bus.DataPlaneHealthResponseTopic,
-		bus.DataPlaneResponseTopic,
 	}
 }
 

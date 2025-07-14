@@ -7,6 +7,7 @@ package id
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -28,10 +29,16 @@ import (
 //
 //	A string representation of the generated UUID.
 func Generate(format string, a ...interface{}) string {
+	// need to set a default to avoid non-constant format string in call
+	f := ""
+	if format != "" {
+		f = format
+	}
+
 	h := sha256.New()
-	s := fmt.Sprintf(format, a...)
+	s := fmt.Sprintf(f, a...)
 	_, _ = h.Write([]byte(s))
-	id := fmt.Sprintf("%x", h.Sum(nil))
+	id := hex.EncodeToString(h.Sum(nil))
 
 	return uuid.NewMD5(uuid.Nil, []byte(id)).String()
 }
