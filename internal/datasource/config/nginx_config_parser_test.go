@@ -601,11 +601,12 @@ func TestNginxConfigParser_SyslogServerParse(t *testing.T) {
 	instance.InstanceRuntime.ConfigPath = file.Name()
 
 	tests := []struct {
-		name                  string
-		content               string
-		expectedLog           string
-		expectedSyslogServers string
-		portInUse             bool
+		name                    string
+		content                 string
+		expectedLog             string
+		expectedSyslogServers   string
+		previousNAPSysLogServer string
+		portInUse               bool
 	}{
 		{
 			name:                  "Test 1: Valid port",
@@ -639,6 +640,15 @@ func TestNginxConfigParser_SyslogServerParse(t *testing.T) {
 			expectedLog: "Could not find usable NAP syslog server",
 			portInUse:   true,
 		},
+		{
+			name:                  "Test 5: Server hasn't changed",
+			expectedSyslogServers: "127.0.0.1:1515",
+			content: testconfig.NginxConfigWithMultipleSysLogs(errorLog.Name(), accessLog.Name(),
+				"my.domain.com:1517", "127.0.0.1:1515", "my.domain.com:1517"),
+			expectedLog:             "Found NAP syslog server",
+			portInUse:               true,
+			previousNAPSysLogServer: "127.0.0.1:1515",
+		},
 	}
 
 	for _, test := range tests {
@@ -649,6 +659,7 @@ func TestNginxConfigParser_SyslogServerParse(t *testing.T) {
 			agentConfig := types.AgentConfig()
 			agentConfig.AllowedDirectories = []string{dir}
 			nginxConfig := NewNginxConfigParser(agentConfig)
+			nginxConfig.previousNAPSysLogServer = test.previousNAPSysLogServer
 
 			writeErr := os.WriteFile(file.Name(), []byte(test.content), 0o600)
 			require.NoError(t, writeErr)

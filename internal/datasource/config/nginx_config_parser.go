@@ -47,7 +47,8 @@ const (
 
 type (
 	NginxConfigParser struct {
-		agentConfig *config.Config
+		agentConfig             *config.Config
+		previousNAPSysLogServer string
 	}
 )
 
@@ -65,7 +66,8 @@ type (
 
 func NewNginxConfigParser(agentConfig *config.Config) *NginxConfigParser {
 	return &NginxConfigParser{
-		agentConfig: agentConfig,
+		agentConfig:             agentConfig,
+		previousNAPSysLogServer: "",
 	}
 }
 
@@ -176,7 +178,8 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 						slog.Info("args", "", directive.Args)
 						sysLogServers := ncp.findValidSysLogServers(directive.Args)
 						if len(sysLogServers) == 0 {
-							slog.WarnContext(ctx, "Could not find usable NAP syslog server, security violations will be unavailable")
+							slog.WarnContext(ctx, "Could not find usable NAP syslog server, "+
+								"security violations will be unavailable")
 						}
 						for i := range sysLogServers {
 							sysLogServer := sysLogServers[i]
@@ -209,6 +212,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 			syslogServer := ncp.parseSyslogDirective(ctx, napSyslogServersFound)
 			if syslogServer != "" {
 				nginxConfigContext.NAPSysLogServer = syslogServer
+				ncp.previousNAPSysLogServer = syslogServer
 			}
 		}
 
@@ -224,6 +228,12 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 }
 
 func (ncp *NginxConfigParser) parseSyslogDirective(ctx context.Context, napSyslogServers map[string]bool) string {
+	if ncp.previousNAPSysLogServer != "" {
+		if _, ok := napSyslogServers[ncp.previousNAPSysLogServer]; ok {
+			return ncp.previousNAPSysLogServer
+		}
+	}
+
 	for napSyslogServer := range napSyslogServers {
 		ln, err := net.Listen("tcp", napSyslogServer)
 		if err != nil {
