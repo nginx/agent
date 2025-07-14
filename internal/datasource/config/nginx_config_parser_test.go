@@ -554,7 +554,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			assert.ElementsMatch(t, test.expectedConfigContext.ErrorLogs, result.ErrorLogs)
 			assert.Equal(t, test.expectedConfigContext.StubStatus, result.StubStatus)
 			assert.Equal(t, test.expectedConfigContext.InstanceID, result.InstanceID)
-			assert.Equal(t, len(test.expectedConfigContext.Files), len(result.Files))
+			assert.Len(t, result.Files, len(test.expectedConfigContext.Files))
 		})
 	}
 }
@@ -1377,7 +1377,7 @@ func TestNginxConfigParser_checkDuplicate(t *testing.T) {
 }
 
 func protoListEqual(protoListA, protoListB []*mpi.File) bool {
-	for i := 0; i < len(protoListA); i++ {
+	for i := range protoListA {
 		res := proto.Equal(protoListA[i], protoListB[i])
 		if !res {
 			return false

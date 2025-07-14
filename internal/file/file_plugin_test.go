@@ -7,7 +7,7 @@ package file
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"os"
 	"sync"
 	"testing"
@@ -116,7 +116,7 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 	ctx := context.Background()
 	tempDir := t.TempDir()
 
-	filePath := fmt.Sprintf("%s/nginx.conf", tempDir)
+	filePath := tempDir + "/nginx.conf"
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 	fileHash := files.GenerateHash(fileContent)
 
@@ -143,19 +143,19 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 		},
 		{
 			name:                  "Test 2 - Fail, Rollback",
-			configApplyReturnsErr: fmt.Errorf("something went wrong"),
+			configApplyReturnsErr: errors.New("something went wrong"),
 			configApplyStatus:     model.RollbackRequired,
 			message:               message,
 		},
 		{
 			name:                  "Test 3 - Fail, No Rollback",
-			configApplyReturnsErr: fmt.Errorf("something went wrong"),
+			configApplyReturnsErr: errors.New("something went wrong"),
 			configApplyStatus:     model.Error,
 			message:               message,
 		},
 		{
 			name:                  "Test 4 - Fail to cast payload",
-			configApplyReturnsErr: fmt.Errorf("something went wrong"),
+			configApplyReturnsErr: errors.New("something went wrong"),
 			configApplyStatus:     model.Error,
 			message:               nil,
 		},
@@ -371,13 +371,13 @@ func TestFilePlugin_Process_ConfigApplyFailedTopic(t *testing.T) {
 		},
 		{
 			name:            "Test 2 - Rollback Fail",
-			rollbackReturns: fmt.Errorf("something went wrong"),
+			rollbackReturns: errors.New("something went wrong"),
 			instanceID:      instanceID,
 		},
 
 		{
 			name:            "Test 3 - Fail to cast payload",
-			rollbackReturns: fmt.Errorf("something went wrong"),
+			rollbackReturns: errors.New("something went wrong"),
 			instanceID:      "",
 		},
 	}
@@ -402,7 +402,7 @@ func TestFilePlugin_Process_ConfigApplyFailedTopic(t *testing.T) {
 			data := &model.ConfigApplyMessage{
 				CorrelationID: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
 				InstanceID:    test.instanceID,
-				Error:         fmt.Errorf("something went wrong with config apply"),
+				Error:         errors.New("something went wrong with config apply"),
 			}
 
 			filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigApplyFailedTopic, Data: data})

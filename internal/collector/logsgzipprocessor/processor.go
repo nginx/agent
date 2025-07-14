@@ -95,6 +95,22 @@ func (p *logsGzipProcessor) ConsumeLogs(ctx context.Context, ld plog.Logs) error
 	return p.nextConsumer.ConsumeLogs(ctx, ld)
 }
 
+func (p *logsGzipProcessor) Capabilities() consumer.Capabilities {
+	return consumer.Capabilities{
+		MutatesData: true,
+	}
+}
+
+func (p *logsGzipProcessor) Start(ctx context.Context, _ component.Host) error {
+	p.settings.Logger.Info("Starting logs gzip processor")
+	return nil
+}
+
+func (p *logsGzipProcessor) Shutdown(ctx context.Context) error {
+	p.settings.Logger.Info("Shutting down logs gzip processor")
+	return nil
+}
+
 func (p *logsGzipProcessor) processLogRecords(logRecords plog.LogRecordSlice) error {
 	var errs error
 	// Filter out unsupported data types in the log before processing
@@ -163,20 +179,4 @@ func (p *logsGzipProcessor) gzipCompress(data []byte) ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
-}
-
-func (p *logsGzipProcessor) Capabilities() consumer.Capabilities {
-	return consumer.Capabilities{
-		MutatesData: true,
-	}
-}
-
-func (p *logsGzipProcessor) Start(ctx context.Context, _ component.Host) error {
-	p.settings.Logger.Info("Starting logs gzip processor")
-	return nil
-}
-
-func (p *logsGzipProcessor) Shutdown(ctx context.Context) error {
-	p.settings.Logger.Info("Shutting down logs gzip processor")
-	return nil
 }
