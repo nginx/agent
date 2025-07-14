@@ -8,11 +8,15 @@ package file
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
 	"os"
 	"path"
+	"sync"
+
+	"github.com/nginx/agent/v3/internal/model"
 
 	"google.golang.org/grpc"
 
@@ -21,14 +25,18 @@ import (
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )
 
-type FileOperator struct{}
+type FileOperator struct {
+	manifestLock *sync.RWMutex
+}
 
 var _ fileOperator = (*FileOperator)(nil)
 
 // FileOperator only purpose is to write files,
 
-func NewFileOperator() *FileOperator {
-	return &FileOperator{}
+func NewFileOperator(manifestLock *sync.RWMutex) *FileOperator {
+	return &FileOperator{
+		manifestLock: manifestLock,
+	}
 }
 
 func (fo *FileOperator) Write(ctx context.Context, fileContent []byte, file *mpi.FileMeta) error {
@@ -95,7 +103,7 @@ func (fo *FileOperator) WriteChunkedFile(
 	}
 
 	slog.DebugContext(ctx, "Writing chunked file", "file", file.GetFileMeta().GetName())
-	for i := uint32(0); i < header.GetChunks(); i++ {
+	for range header.GetChunks() {
 		chunk, recvError := stream.Recv()
 		if recvError != nil {
 			return recvError
@@ -139,4 +147,38 @@ func (fo *FileOperator) ReadChunk(
 	}
 
 	return chunk, err
+}
+
+func (fo *FileOperator) WriteManifestFile(updatedFiles map[string]*model.ManifestFile, manifestDir,
+	manifestPath string,
+) (writeError error) {
+	manifestJSON, err := json.MarshalIndent(updatedFiles, "", "  ")
+	if err != nil {
+		return fmt.Errorf("unable to marshal manifest file json: %w", err)
+	}
+
+	fo.manifestLock.Lock()
+	defer fo.manifestLock.Unlock()
+	// 0755 allows read/execute for all, write for owner
+	if err = os.MkdirAll(manifestDir, dirPerm); err != nil {
+		return fmt.Errorf("unable to create directory %s: %w", manifestDir, err)
+	}
+
+	// 0600 ensures only root can read/write
+	newFile, err := os.OpenFile(manifestPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, filePerm)
+	if err != nil {
+		return fmt.Errorf("failed to read manifest file: %w", err)
+	}
+	defer func() {
+		if closeErr := newFile.Close(); closeErr != nil {
+			writeError = closeErr
+		}
+	}()
+
+	_, err = newFile.Write(manifestJSON)
+	if err != nil {
+		return fmt.Errorf("failed to write manifest file: %w", err)
+	}
+
+	return writeError
 }

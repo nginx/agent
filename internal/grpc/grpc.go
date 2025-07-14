@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -45,9 +46,9 @@ type (
 	}
 
 	GrpcConnection struct {
-		config *config.Config
-		conn   *grpc.ClientConn
-		mutex  sync.Mutex
+		commandConfig *config.Command
+		conn          *grpc.ClientConn
+		mutex         sync.Mutex
 	}
 
 	wrappedStream struct {
@@ -69,18 +70,20 @@ var (
 )
 
 // nolint: ireturn
-func NewGrpcConnection(ctx context.Context, agentConfig *config.Config) (*GrpcConnection, error) {
-	if agentConfig == nil || agentConfig.Command.Server.Type != config.Grpc {
+func NewGrpcConnection(ctx context.Context, agentConfig *config.Config,
+	commandConfig *config.Command,
+) (*GrpcConnection, error) {
+	if commandConfig == nil || commandConfig.Server.Type != config.Grpc {
 		return nil, errors.New("invalid command server settings")
 	}
 
 	grpcConnection := &GrpcConnection{
-		config: agentConfig,
+		commandConfig: commandConfig,
 	}
 
 	serverAddr := net.JoinHostPort(
-		agentConfig.Command.Server.Host,
-		fmt.Sprint(agentConfig.Command.Server.Port),
+		commandConfig.Server.Host,
+		strconv.Itoa(commandConfig.Server.Port),
 	)
 
 	slog.InfoContext(ctx, "Dialing grpc server", "server_addr", serverAddr)
@@ -90,7 +93,7 @@ func NewGrpcConnection(ctx context.Context, agentConfig *config.Config) (*GrpcCo
 
 	var err error
 	grpcConnection.mutex.Lock()
-	grpcConnection.conn, err = grpc.NewClient(serverAddr, DialOptions(agentConfig, resourceID)...)
+	grpcConnection.conn, err = grpc.NewClient(serverAddr, DialOptions(agentConfig, commandConfig, resourceID)...)
 	grpcConnection.mutex.Unlock()
 	if err != nil {
 		return nil, err
@@ -160,7 +163,7 @@ func (w *wrappedStream) SendMsg(message any) error {
 	return w.ClientStream.SendMsg(message)
 }
 
-func DialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOption {
+func DialOptions(agentConfig *config.Config, commandConfig *config.Command, resourceID string) []grpc.DialOption {
 	streamClientInterceptors := []grpc.StreamClientInterceptor{grpcRetry.StreamClientInterceptor()}
 	unaryClientInterceptors := []grpc.UnaryClientInterceptor{grpcRetry.UnaryClientInterceptor()}
 
@@ -211,17 +214,17 @@ func DialOptions(agentConfig *config.Config, resourceID string) []grpc.DialOptio
 
 	opts = append(opts, sendRecOpts...)
 
-	opts, skipToken := addTransportCredentials(agentConfig, opts)
+	opts, skipToken := addTransportCredentials(commandConfig, opts)
 
-	if agentConfig.Command.Auth != nil && !skipToken {
-		opts = addPerRPCCredentials(agentConfig, resourceID, opts)
+	if commandConfig.Auth != nil && !skipToken {
+		opts = addPerRPCCredentials(commandConfig, resourceID, opts)
 	}
 
 	return opts
 }
 
-func addTransportCredentials(agentConfig *config.Config, opts []grpc.DialOption) ([]grpc.DialOption, bool) {
-	transportCredentials, err := transportCredentials(agentConfig)
+func addTransportCredentials(commandConfig *config.Command, opts []grpc.DialOption) ([]grpc.DialOption, bool) {
+	transportCredentials, err := transportCredentials(commandConfig)
 	if err != nil {
 		slog.Error("Unable to add transport credentials to gRPC dial options, adding "+
 			"default transport credentials", "error", err)
@@ -239,12 +242,12 @@ func addTransportCredentials(agentConfig *config.Config, opts []grpc.DialOption)
 	return opts, false
 }
 
-func addPerRPCCredentials(agentConfig *config.Config, resourceID string, opts []grpc.DialOption) []grpc.DialOption {
-	token := agentConfig.Command.Auth.Token
+func addPerRPCCredentials(commandConfig *config.Command, resourceID string, opts []grpc.DialOption) []grpc.DialOption {
+	token := commandConfig.Auth.Token
 
-	if agentConfig.Command.Auth.TokenPath != "" {
-		slog.Debug("Reading token from file", "path", agentConfig.Command.Auth.TokenPath)
-		tk, err := file.ReadFromFile(agentConfig.Command.Auth.TokenPath)
+	if commandConfig.Auth.TokenPath != "" {
+		slog.Debug("Reading token from file", "path", commandConfig.Auth.TokenPath)
+		tk, err := file.ReadFromFile(commandConfig.Auth.TokenPath)
 		if err == nil {
 			token = tk
 		} else {
@@ -359,11 +362,11 @@ func validateMessage(validator protovalidate.Validator, message any) error {
 	return nil
 }
 
-func transportCredentials(agentConfig *config.Config) (credentials.TransportCredentials, error) {
-	if agentConfig.Command.TLS == nil {
+func transportCredentials(commandConfig *config.Command) (credentials.TransportCredentials, error) {
+	if commandConfig.TLS == nil {
 		return defaultCredentials, nil
 	}
-	tlsConfig, err := tlsConfigForCredentials(agentConfig.Command.TLS)
+	tlsConfig, err := tlsConfigForCredentials(commandConfig.TLS)
 	if err != nil {
 		return nil, err
 	}

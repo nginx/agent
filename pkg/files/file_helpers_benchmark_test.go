@@ -26,7 +26,7 @@ func BenchmarkGenerateConfigVersion(b *testing.B) {
 		},
 	}
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		files := []*mpi.File{
 			file1,
 			file2,

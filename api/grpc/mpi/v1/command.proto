@@ -296,7 +296,7 @@ message InstanceRuntime {
     // the process identifier
     int32 process_id = 1;
     // the binary path location
-    string binary_path = 2 [(buf.validate.field).string.prefix = "/"];
+    string binary_path = 2 [(buf.validate.field).string.pattern = "^\\/.*|^$"];
     // the config path location
     string config_path = 3 [(buf.validate.field).string.pattern = "^\\/.*|^$"];
     // more detailed runtime objects
@@ -322,7 +322,7 @@ message NGINXRuntimeInfo {
     // the stub status API details
     APIDetails stub_status = 1;
     // a list of access_logs
-    repeated string access_logs = 2; 
+    repeated string access_logs = 2;
     // a list of error_logs
     repeated string error_logs = 3;
     // List of NGINX potentially loadable modules (installed but not loaded).
@@ -362,13 +362,15 @@ message NGINXAppProtectRuntimeInfo {
     string attack_signature_version = 2;
     // Threat campaign version
     string threat_campaign_version = 3;
+    // Enforcer engine version
+    string enforcer_engine_version = 4;
 }
 
 // A set of actions that can be performed on an instance
 message InstanceAction {}
 
 // This contains a series of NGINX Agent configurations
-message AgentConfig { 
+message AgentConfig {
     // Command server settings
     CommandServer command = 1;
     // Metrics server settings
@@ -381,10 +383,22 @@ message AgentConfig {
     repeated string features = 5;
     // Message buffer size, maximum not acknowledged messages from the subscribe perspective
     string message_buffer_size = 6;
+    // Auxiliary Command server settings
+    AuxiliaryCommandServer auxiliary_command = 7;
 }
 
 // The command server settings, associated with messaging from an external source
 message CommandServer {
+    // Server configuration (e.g., host, port, type)
+    mpi.v1.ServerSettings server = 1;
+    // Authentication configuration (e.g., token)
+    mpi.v1.AuthSettings auth = 2;
+    // TLS configuration for secure communication
+    mpi.v1.TLSSettings tls = 3;
+}
+
+// The auxiliary server settings, associated with messaging from an external source
+message AuxiliaryCommandServer {
     // Server configuration (e.g., host, port, type)
     mpi.v1.ServerSettings server = 1;
     // Authentication configuration (e.g., token)

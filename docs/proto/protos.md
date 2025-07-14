@@ -44,6 +44,7 @@
     - [APIActionRequest](#mpi-v1-APIActionRequest)
     - [APIDetails](#mpi-v1-APIDetails)
     - [AgentConfig](#mpi-v1-AgentConfig)
+    - [AuxiliaryCommandServer](#mpi-v1-AuxiliaryCommandServer)
     - [CommandServer](#mpi-v1-CommandServer)
     - [CommandStatusRequest](#mpi-v1-CommandStatusRequest)
     - [ConfigApplyRequest](#mpi-v1-ConfigApplyRequest)
@@ -697,6 +698,24 @@ This contains a series of NGINX Agent configurations
 | labels | [google.protobuf.Struct](#google-protobuf-Struct) | repeated | A series of key/value pairs to add more data to the NGINX Agent instance |
 | features | [string](#string) | repeated | A list of features that the NGINX Agent has |
 | message_buffer_size | [string](#string) |  | Message buffer size, maximum not acknowledged messages from the subscribe perspective |
+| auxiliary_command | [AuxiliaryCommandServer](#mpi-v1-AuxiliaryCommandServer) |  | Auxiliary Command server settings |
+
+
+
+
+
+
+<a name="mpi-v1-AuxiliaryCommandServer"></a>
+
+### AuxiliaryCommandServer
+The auxiliary server settings, associated with messaging from an external source
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| server | [ServerSettings](#mpi-v1-ServerSettings) |  | Server configuration (e.g., host, port, type) |
+| auth | [AuthSettings](#mpi-v1-AuthSettings) |  | Authentication configuration (e.g., token) |
+| tls | [TLSSettings](#mpi-v1-TLSSettings) |  | TLS configuration for secure communication |
 
 
 
@@ -1053,6 +1072,7 @@ A set of runtime NGINX App Protect settings
 | release | [string](#string) |  | NGINX App Protect Release |
 | attack_signature_version | [string](#string) |  | Attack signature version |
 | threat_campaign_version | [string](#string) |  | Threat campaign version |
+| enforcer_engine_version | [string](#string) |  | Enforcer engine version |
 
 
 

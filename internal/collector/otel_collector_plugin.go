@@ -37,7 +37,7 @@ const (
 	// 2024-11-16T17:19:24+00:00 ---> Nov 16 17:19:24
 	timestampConversionExpression = `'EXPR(let timestamp = split(split(body, ">")[1], " ")[0]; ` +
 		`let newTimestamp = ` +
-		`timestamp matches "(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2}):(\\d{2})([+-]\\d{2}:\\d{2}|Z)" ` +
+		`timestamp matches "(\\d{4})-(\\d{2})-(0\\d{1})T(\\d{2}):(\\d{2}):(\\d{2})([+-]\\d{2}:\\d{2}|Z)" ` +
 		`? (let utcTime = ` +
 		`date(timestamp).UTC(); utcTime.Format("Jan  2 15:04:05")) : date(timestamp).Format("Jan 02 15:04:05"); ` +
 		`split(body, ">")[0] + ">" + newTimestamp + " " + split(body, " ", 2)[1])'`
@@ -136,75 +136,6 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 	return nil
 }
 
-// Process receivers and log warning for sub-optimal configurations
-func (oc *Collector) processReceivers(ctx context.Context, receivers []config.OtlpReceiver) {
-	for _, receiver := range receivers {
-		if receiver.OtlpTLSConfig == nil {
-			slog.WarnContext(ctx, "OTel receiver is configured without TLS. Connections are unencrypted.")
-			continue
-		}
-
-		if receiver.OtlpTLSConfig.GenerateSelfSignedCert {
-			slog.WarnContext(ctx,
-				"Self-signed certificate for OTel receiver requested, "+
-					"this is not recommended for production environments.",
-			)
-
-			if receiver.OtlpTLSConfig.ExistingCert {
-				slog.WarnContext(ctx,
-					"Certificate file already exists, skipping self-signed certificate generation",
-				)
-			}
-		} else {
-			slog.WarnContext(ctx, "OTel receiver is configured without TLS. Connections are unencrypted.")
-		}
-	}
-}
-
-// nolint: revive, cyclop
-func (oc *Collector) bootup(ctx context.Context) error {
-	errChan := make(chan error)
-
-	go func() {
-		if oc.service == nil {
-			errChan <- fmt.Errorf("unable to start OTel collector: service is nil")
-			return
-		}
-
-		appErr := oc.service.Run(ctx)
-		if appErr != nil {
-			errChan <- appErr
-		}
-		slog.InfoContext(ctx, "OTel collector run finished")
-	}()
-
-	for {
-		select {
-		case err := <-errChan:
-			return err
-		default:
-			if oc.service == nil {
-				return fmt.Errorf("unable to start otel collector: service is nil")
-			}
-
-			state := oc.service.GetState()
-			switch state {
-			case otelcol.StateStarting:
-				// NoOp
-				continue
-			case otelcol.StateRunning:
-				oc.stopped = false
-				return nil
-			case otelcol.StateClosing:
-			case otelcol.StateClosed:
-				oc.stopped = true
-			default:
-				return fmt.Errorf("unable to start, otelcol state is %s", state)
-			}
-		}
-	}
-}
-
 // Info the plugin.
 func (oc *Collector) Info() *bus.Info {
 	return &bus.Info{
@@ -259,6 +190,75 @@ func (oc *Collector) Subscriptions() []string {
 	return []string{
 		bus.ResourceUpdateTopic,
 		bus.NginxConfigUpdateTopic,
+	}
+}
+
+// Process receivers and log warning for sub-optimal configurations
+func (oc *Collector) processReceivers(ctx context.Context, receivers []config.OtlpReceiver) {
+	for _, receiver := range receivers {
+		if receiver.OtlpTLSConfig == nil {
+			slog.WarnContext(ctx, "OTel receiver is configured without TLS. Connections are unencrypted.")
+			continue
+		}
+
+		if receiver.OtlpTLSConfig.GenerateSelfSignedCert {
+			slog.WarnContext(ctx,
+				"Self-signed certificate for OTel receiver requested, "+
+					"this is not recommended for production environments.",
+			)
+
+			if receiver.OtlpTLSConfig.ExistingCert {
+				slog.WarnContext(ctx,
+					"Certificate file already exists, skipping self-signed certificate generation",
+				)
+			}
+		} else {
+			slog.WarnContext(ctx, "OTel receiver is configured without TLS. Connections are unencrypted.")
+		}
+	}
+}
+
+// nolint: revive, cyclop
+func (oc *Collector) bootup(ctx context.Context) error {
+	errChan := make(chan error)
+
+	go func() {
+		if oc.service == nil {
+			errChan <- errors.New("unable to start OTel collector: service is nil")
+			return
+		}
+
+		appErr := oc.service.Run(ctx)
+		if appErr != nil {
+			errChan <- appErr
+		}
+		slog.InfoContext(ctx, "OTel collector run finished")
+	}()
+
+	for {
+		select {
+		case err := <-errChan:
+			return err
+		default:
+			if oc.service == nil {
+				return errors.New("unable to start otel collector: service is nil")
+			}
+
+			state := oc.service.GetState()
+			switch state {
+			case otelcol.StateStarting:
+				// NoOp
+				continue
+			case otelcol.StateRunning:
+				oc.stopped = false
+				return nil
+			case otelcol.StateClosing:
+			case otelcol.StateClosed:
+				oc.stopped = true
+			default:
+				return fmt.Errorf("unable to start, otelcol state is %s", state)
+			}
+		}
 	}
 }
 
@@ -436,7 +436,7 @@ func (oc *Collector) checkForNewReceivers(ctx context.Context, nginxConfigContex
 			reloadCollector = true
 		}
 	} else {
-		slog.Debug("NAP logs feature disabled", "enabled_features", oc.config.Features)
+		slog.DebugContext(ctx, "NAP logs feature disabled", "enabled_features", oc.config.Features)
 	}
 
 	return reloadCollector

@@ -36,6 +36,7 @@ func parseServerType(str string) (ServerType, bool) {
 type (
 	Config struct {
 		Command            *Command         `yaml:"command"             mapstructure:"command"`
+		AuxiliaryCommand   *Command         `yaml:"auxiliary_command"   mapstructure:"auxiliary_command"`
 		Log                *Log             `yaml:"log"                 mapstructure:"log"`
 		DataPlaneConfig    *DataPlaneConfig `yaml:"data_plane_config"   mapstructure:"data_plane_config"`
 		Client             *Client          `yaml:"client"              mapstructure:"client"`
@@ -158,6 +159,7 @@ type (
 		Attribute *Attribute `yaml:"attribute" mapstructure:"attribute"`
 		Resource  *Resource  `yaml:"resource"  mapstructure:"resource"`
 		Batch     *Batch     `yaml:"batch"     mapstructure:"batch"`
+		LogsGzip  *LogsGzip  `yaml:"logsgzip"  mapstructure:"logsgzip"`
 	}
 
 	Attribute struct {
@@ -185,6 +187,8 @@ type (
 		SendBatchMaxSize uint32        `yaml:"send_batch_max_size" mapstructure:"send_batch_max_size"`
 		Timeout          time.Duration `yaml:"timeout"             mapstructure:"timeout"`
 	}
+
+	LogsGzip struct{}
 
 	// OTel Collector Receiver configuration.
 	Receivers struct {
@@ -359,7 +363,7 @@ func (c *Config) IsDirectoryAllowed(directory string) bool {
 	return isAllowedDir(directory, c.AllowedDirectories)
 }
 
-func (c *Config) IsGrpcClientConfigured() bool {
+func (c *Config) IsCommandGrpcClientConfigured() bool {
 	return c.Command != nil &&
 		c.Command.Server != nil &&
 		c.Command.Server.Host != "" &&
@@ -367,13 +371,30 @@ func (c *Config) IsGrpcClientConfigured() bool {
 		c.Command.Server.Type == Grpc
 }
 
-func (c *Config) IsAuthConfigured() bool {
+func (c *Config) IsAuxiliaryCommandGrpcClientConfigured() bool {
+	return c.AuxiliaryCommand != nil &&
+		c.AuxiliaryCommand.Server != nil &&
+		c.AuxiliaryCommand.Server.Host != "" &&
+		c.AuxiliaryCommand.Server.Port != 0 &&
+		c.AuxiliaryCommand.Server.Type == Grpc
+}
+
+func (c *Config) IsCommandAuthConfigured() bool {
 	return c.Command.Auth != nil &&
 		(c.Command.Auth.Token != "" || c.Command.Auth.TokenPath != "")
 }
 
-func (c *Config) IsTLSConfigured() bool {
+func (c *Config) IsAuxiliaryCommandAuthConfigured() bool {
+	return c.AuxiliaryCommand.Auth != nil &&
+		(c.AuxiliaryCommand.Auth.Token != "" || c.AuxiliaryCommand.Auth.TokenPath != "")
+}
+
+func (c *Config) IsCommandTLSConfigured() bool {
 	return c.Command.TLS != nil
+}
+
+func (c *Config) IsAuxiliaryCommandTLSConfigured() bool {
+	return c.AuxiliaryCommand.TLS != nil
 }
 
 func (c *Config) IsFeatureEnabled(feature string) bool {
@@ -427,6 +448,10 @@ func (c *Config) NewContextWithLabels(ctx context.Context) context.Context {
 }
 
 func isAllowedDir(dir string, allowedDirs []string) bool {
+	if !strings.HasSuffix(dir, "/") && filepath.Ext(dir) == "" {
+		dir += "/"
+	}
+
 	for _, allowedDirectory := range allowedDirs {
 		if strings.HasPrefix(dir, allowedDirectory) {
 			return true

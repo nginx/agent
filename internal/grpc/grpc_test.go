@@ -64,7 +64,7 @@ func (z TestError) Error() string {
 func Test_GrpcConnection(t *testing.T) {
 	ctx := context.Background()
 
-	conn, err := NewGrpcConnection(ctx, types.AgentConfig())
+	conn, err := NewGrpcConnection(ctx, types.AgentConfig(), types.AgentConfig().Command)
 
 	require.NoError(t, err)
 	assert.NotNil(t, conn)
@@ -185,7 +185,7 @@ func Test_GetDialOptions(t *testing.T) {
 				test.agentConfig.Command.TLS.Ca = fmt.Sprintf("%s%s%s", tmpDir, pathSeparator, caFileName)
 			}
 
-			options := DialOptions(test.agentConfig, "123")
+			options := DialOptions(test.agentConfig, test.agentConfig.Command, "123")
 			assert.NotNil(tt, options)
 			assert.Len(tt, options, test.expected)
 		})
@@ -389,7 +389,7 @@ func Test_transportCredentials(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := transportCredentials(tt.conf)
+			got, err := transportCredentials(tt.conf.Command)
 			if tt.wantErr {
 				require.Error(t, err, "transportCredentials(%v)", tt.conf)
 

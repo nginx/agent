@@ -100,7 +100,7 @@ func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *mpi.Instance)
 	return ncp.createNginxConfigContext(ctx, instance, payload)
 }
 
-// nolint: cyclop,revive,gocognit
+// nolint: cyclop,revive,gocognit,gocyclo
 func (ncp *NginxConfigParser) createNginxConfigContext(
 	ctx context.Context,
 	instance *mpi.Instance,
@@ -138,6 +138,10 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 		err := ncp.crossplaneConfigTraverse(ctx, &conf,
 			func(ctx context.Context, parent, directive *crossplane.Directive) error {
 				switch directive.Directive {
+				case "include":
+					include := ncp.parseIncludeDirective(directive)
+
+					nginxConfigContext.Includes = append(nginxConfigContext.Includes, include)
 				case "log_format":
 					formatMap = ncp.formatMap(directive)
 				case "access_log":
@@ -212,6 +216,17 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 	}
 
 	return nginxConfigContext, nil
+}
+
+func (ncp *NginxConfigParser) parseIncludeDirective(directive *crossplane.Directive) string {
+	var include string
+	if filepath.IsAbs(directive.Args[0]) {
+		include = directive.Args[0]
+	} else {
+		include = filepath.Join(filepath.Dir(directive.File), directive.Args[0])
+	}
+
+	return include
 }
 
 func (ncp *NginxConfigParser) addAccessLog(accessLog *model.AccessLog,
@@ -495,10 +510,10 @@ func (ncp *NginxConfigParser) apiCallback(ctx context.Context, parent,
 
 	for _, url := range urls {
 		if ncp.pingAPIEndpoint(ctx, url, apiType) {
-			slog.DebugContext(ctx, fmt.Sprintf("%s found", apiType), "url", url)
+			slog.DebugContext(ctx, apiType+" found", "url", url)
 			return url
 		}
-		slog.DebugContext(ctx, fmt.Sprintf("%s is not reachable", apiType), "url", url)
+		slog.DebugContext(ctx, apiType+" is not reachable", "url", url)
 	}
 
 	return &model.APIDetails{
@@ -533,7 +548,7 @@ func (ncp *NginxConfigParser) pingAPIEndpoint(ctx context.Context, statusAPIDeta
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		slog.DebugContext(ctx, fmt.Sprintf("%s API responded with unexpected status code", apiType), "status_code",
+		slog.DebugContext(ctx, apiType+" API responded with unexpected status code", "status_code",
 			resp.StatusCode, "expected", http.StatusOK)
 
 		return false
@@ -690,11 +705,12 @@ func (ncp *NginxConfigParser) parseListenDirective(
 }
 
 func (ncp *NginxConfigParser) parseListenHostAndPort(listenHost, listenPort string) (hostname, port string) {
-	if listenHost == "*" || listenHost == "" {
+	switch listenHost {
+	case "*", "":
 		hostname = "127.0.0.1"
-	} else if listenHost == "::" || listenHost == "::1" {
+	case "::", "::1":
 		hostname = "[::1]"
-	} else {
+	default:
 		hostname = listenHost
 	}
 	port = listenPort

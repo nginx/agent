@@ -109,12 +109,12 @@ func (cs *CommandService) CreateConnection(
 }
 
 func (cs *CommandService) UpdateDataPlaneStatus(
-	_ context.Context,
+	ctx context.Context,
 	request *mpi.UpdateDataPlaneStatusRequest) (
 	*mpi.UpdateDataPlaneStatusResponse,
 	error,
 ) {
-	slog.Debug("Update data plane status request", "request", request)
+	slog.DebugContext(ctx, "Update data plane status request", "request", request)
 
 	if request == nil {
 		return nil, errors.New("empty update data plane status request")
@@ -128,12 +128,12 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 }
 
 func (cs *CommandService) UpdateDataPlaneHealth(
-	_ context.Context,
+	ctx context.Context,
 	request *mpi.UpdateDataPlaneHealthRequest) (
 	*mpi.UpdateDataPlaneHealthResponse,
 	error,
 ) {
-	slog.Debug("Update data plane health request", "request", request)
+	slog.DebugContext(ctx, "Update data plane health request", "request", request)
 
 	if request == nil {
 		return nil, errors.New("empty update dataplane health request")
@@ -181,9 +181,7 @@ func (cs *CommandService) handleConfigUploadRequest(
 	instanceID := upload.ConfigUploadRequest.GetOverview().GetConfigVersion().GetInstanceId()
 	overviewFiles := upload.ConfigUploadRequest.GetOverview().GetFiles()
 
-	if cs.instanceFiles[instanceID] == nil {
-		cs.instanceFiles[instanceID] = overviewFiles
-	} else {
+	if cs.instanceFiles[instanceID] != nil {
 		filesToDelete := cs.checkForDeletedFiles(instanceID, overviewFiles)
 		for _, fileToDelete := range filesToDelete {
 			err := os.Remove(fileToDelete)
@@ -192,6 +190,7 @@ func (cs *CommandService) handleConfigUploadRequest(
 			}
 		}
 	}
+	cs.instanceFiles[instanceID] = overviewFiles
 }
 
 func (cs *CommandService) checkForDeletedFiles(instanceID string, overviewFiles []*mpi.File) []string {
@@ -246,6 +245,7 @@ func (cs *CommandService) createServer(logger *slog.Logger) {
 	cs.addHealthEndpoint()
 	cs.addResponseAndRequestEndpoints()
 	cs.addConfigApplyEndpoint()
+	cs.addConfigEndpoint()
 }
 
 func (cs *CommandService) addConnectionEndpoint() {
@@ -383,6 +383,30 @@ func (cs *CommandService) addConfigApplyEndpoint() {
 		cs.requestChan <- &request
 
 		c.JSON(http.StatusOK, &request)
+	})
+}
+
+func (cs *CommandService) addConfigEndpoint() {
+	cs.server.GET("/api/v1/instance/:instanceID/config", func(c *gin.Context) {
+		instanceID := c.Param("instanceID")
+		var data map[string]interface{}
+
+		response := &mpi.GetOverviewResponse{
+			Overview: &mpi.FileOverview{
+				ConfigVersion: &mpi.ConfigVersion{
+					InstanceId: instanceID,
+					Version:    files.GenerateConfigVersion(cs.instanceFiles[instanceID]),
+				},
+				Files: cs.instanceFiles[instanceID],
+			},
+		}
+
+		if err := json.Unmarshal([]byte(protojson.Format(response)), &data); err != nil {
+			slog.Error("Failed to return connection", "error", err)
+			c.JSON(http.StatusInternalServerError, nil)
+		}
+
+		c.JSON(http.StatusOK, data)
 	})
 }
 

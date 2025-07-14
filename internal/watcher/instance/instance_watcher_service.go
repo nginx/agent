@@ -39,18 +39,17 @@ type (
 	}
 
 	InstanceWatcherService struct {
-		processOperator              process.ProcessOperatorInterface
-		nginxConfigParser            parser.ConfigParser
-		executer                     exec.ExecInterface
-		enabled                      *atomic.Bool
-		agentConfig                  *config.Config
-		instanceCache                map[string]*mpi.Instance
-		nginxConfigCache             map[string]*model.NginxConfigContext
-		instancesChannel             chan<- InstanceUpdatesMessage
-		nginxConfigContextChannel    chan<- NginxConfigContextMessage
-		nginxParser                  processParser
-		nginxAppProtectProcessParser processParser
-		cacheMutex                   sync.Mutex
+		processOperator           process.ProcessOperatorInterface
+		nginxConfigParser         parser.ConfigParser
+		executer                  exec.ExecInterface
+		enabled                   *atomic.Bool
+		agentConfig               *config.Config
+		instanceCache             map[string]*mpi.Instance
+		nginxConfigCache          map[string]*model.NginxConfigContext
+		instancesChannel          chan<- InstanceUpdatesMessage
+		nginxConfigContextChannel chan<- NginxConfigContextMessage
+		nginxParser               processParser
+		cacheMutex                sync.Mutex
 	}
 
 	InstanceUpdates struct {
@@ -75,16 +74,15 @@ func NewInstanceWatcherService(agentConfig *config.Config) *InstanceWatcherServi
 	enabled.Store(true)
 
 	return &InstanceWatcherService{
-		agentConfig:                  agentConfig,
-		processOperator:              process.NewProcessOperator(),
-		nginxParser:                  NewNginxProcessParser(),
-		nginxAppProtectProcessParser: NewNginxAppProtectProcessParser(),
-		nginxConfigParser:            parser.NewNginxConfigParser(agentConfig),
-		instanceCache:                make(map[string]*mpi.Instance),
-		cacheMutex:                   sync.Mutex{},
-		nginxConfigCache:             make(map[string]*model.NginxConfigContext),
-		executer:                     &exec.Exec{},
-		enabled:                      enabled,
+		agentConfig:       agentConfig,
+		processOperator:   process.NewProcessOperator(),
+		nginxParser:       NewNginxProcessParser(),
+		nginxConfigParser: parser.NewNginxConfigParser(agentConfig),
+		instanceCache:     make(map[string]*mpi.Instance),
+		cacheMutex:        sync.Mutex{},
+		nginxConfigCache:  make(map[string]*model.NginxConfigContext),
+		executer:          &exec.Exec{},
+		enabled:           enabled,
 	}
 }
 
@@ -117,7 +115,7 @@ func (iw *InstanceWatcherService) Watch(
 			if iw.enabled.Load() {
 				iw.checkForUpdates(ctx)
 			} else {
-				slog.Debug("Skipping check for instance updates, instance watcher is disabled")
+				slog.DebugContext(ctx, "Skipping check for instance updates, instance watcher is disabled")
 			}
 		}
 	}
@@ -220,10 +218,11 @@ func (iw *InstanceWatcherService) checkForUpdates(
 					"error", parseErr,
 				)
 			} else {
-				iw.sendNginxConfigContextUpdate(newCtx, nginxConfigContext)
-				iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
-				proto.UpdateNginxInstanceRuntime(newInstance, nginxConfigContext)
 				iw.cacheMutex.Lock()
+				iw.sendNginxConfigContextUpdate(newCtx, nginxConfigContext)
+				proto.UpdateNginxInstanceRuntime(newInstance, nginxConfigContext)
+
+				iw.nginxConfigCache[nginxConfigContext.InstanceID] = nginxConfigContext
 				iw.instanceCache[newInstance.GetInstanceMeta().GetInstanceId()] = newInstance
 				iw.cacheMutex.Unlock()
 			}
@@ -265,7 +264,7 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 ) {
 	iw.cacheMutex.Lock()
 	defer iw.cacheMutex.Unlock()
-	nginxProcesses, nginxAppProtectProcesses, err := iw.processOperator.Processes(ctx)
+	nginxProcesses, err := iw.processOperator.Processes(ctx)
 	if err != nil {
 		return instanceUpdates, err
 	}
@@ -280,10 +279,6 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 		instancesFound[instance.GetInstanceMeta().GetInstanceId()] = instance
 	}
 
-	nginxAppProtectInstances := iw.nginxAppProtectProcessParser.Parse(ctx, nginxAppProtectProcesses)
-	for _, instance := range nginxAppProtectInstances {
-		instancesFound[instance.GetInstanceMeta().GetInstanceId()] = instance
-	}
 	newInstances, updatedInstances, deletedInstances := compareInstances(iw.instanceCache, instancesFound)
 
 	instanceUpdates.NewInstances = newInstances
@@ -313,7 +308,7 @@ func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *mpi.Instan
 		slog.WarnContext(ctx, "Unable to convert config to labels structure", "error", convertErr)
 	}
 
-	return &mpi.Instance{
+	instance := &mpi.Instance{
 		InstanceMeta: &mpi.InstanceMeta{
 			InstanceId:   iw.agentConfig.UUID,
 			InstanceType: mpi.InstanceMeta_INSTANCE_TYPE_AGENT,
@@ -339,6 +334,13 @@ func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *mpi.Instan
 			Details:    nil,
 		},
 	}
+
+	if iw.agentConfig.IsAuxiliaryCommandGrpcClientConfigured() {
+		instance.GetInstanceConfig().GetAgentConfig().AuxiliaryCommand = config.
+			ToAuxiliaryCommandServerProto(iw.agentConfig.AuxiliaryCommand)
+	}
+
+	return instance
 }
 
 func compareInstances(oldInstancesMap, instancesMap map[string]*mpi.Instance) (

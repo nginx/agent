@@ -1,8 +1,8 @@
 module github.com/nginx/agent/v3
 
-go 1.23.7
+go 1.24.0
 
-toolchain go1.23.10
+toolchain go1.24.4
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.4-20250130201111-63bb56e20495.1
@@ -66,6 +66,7 @@ require (
 	go.opentelemetry.io/collector/processor v1.30.0
 	go.opentelemetry.io/collector/processor/batchprocessor v0.124.0
 	go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.124.0
+	go.opentelemetry.io/collector/processor/processortest v0.124.0
 	go.opentelemetry.io/collector/receiver v1.30.0
 	go.opentelemetry.io/collector/receiver/otlpreceiver v0.124.0
 	go.opentelemetry.io/collector/receiver/receivertest v0.124.0
@@ -74,6 +75,7 @@ require (
 	go.opentelemetry.io/collector/scraper/scrapertest v0.124.0
 	go.opentelemetry.io/otel v1.35.0
 	go.uber.org/goleak v1.3.0
+	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/mod v0.23.0
 	golang.org/x/sync v0.13.0
@@ -120,7 +122,7 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.23.0 // indirect
-	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
+	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/gogo/googleapis v1.4.1 // indirect
@@ -260,7 +262,6 @@ require (
 	go.opentelemetry.io/collector/pipeline/xpipeline v0.124.0 // indirect
 	go.opentelemetry.io/collector/processor/processorhelper v0.124.0 // indirect
 	go.opentelemetry.io/collector/processor/processorhelper/xprocessorhelper v0.124.0 // indirect
-	go.opentelemetry.io/collector/processor/processortest v0.124.0 // indirect
 	go.opentelemetry.io/collector/processor/xprocessor v0.124.0 // indirect
 	go.opentelemetry.io/collector/receiver/receiverhelper v0.124.0 // indirect
 	go.opentelemetry.io/collector/receiver/xreceiver v0.124.0 // indirect
@@ -289,7 +290,6 @@ require (
 	go.opentelemetry.io/otel/sdk/log v0.11.0 // indirect
 	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.5.0 // indirect
-	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.12.0 // indirect
 	golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac // indirect
 	golang.org/x/tools v0.30.0 // indirect

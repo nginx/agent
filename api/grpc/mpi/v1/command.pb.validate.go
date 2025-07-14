@@ -4998,6 +4998,8 @@ func (m *NGINXAppProtectRuntimeInfo) validate(all bool) error {
 
 	// no validation rules for ThreatCampaignVersion
 
+	// no validation rules for EnforcerEngineVersion
+
 	if len(errors) > 0 {
 		return NGINXAppProtectRuntimeInfoMultiError(errors)
 	}
@@ -5323,6 +5325,35 @@ func (m *AgentConfig) validate(all bool) error {
 
 	// no validation rules for MessageBufferSize
 
+	if all {
+		switch v := interface{}(m.GetAuxiliaryCommand()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, AgentConfigValidationError{
+					field:  "AuxiliaryCommand",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, AgentConfigValidationError{
+					field:  "AuxiliaryCommand",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetAuxiliaryCommand()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return AgentConfigValidationError{
+				field:  "AuxiliaryCommand",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
 	if len(errors) > 0 {
 		return AgentConfigMultiError(errors)
 	}
@@ -5586,6 +5617,195 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = CommandServerValidationError{}
+
+// Validate checks the field values on AuxiliaryCommandServer with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *AuxiliaryCommandServer) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on AuxiliaryCommandServer with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// AuxiliaryCommandServerMultiError, or nil if none found.
+func (m *AuxiliaryCommandServer) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *AuxiliaryCommandServer) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetServer()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, AuxiliaryCommandServerValidationError{
+					field:  "Server",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, AuxiliaryCommandServerValidationError{
+					field:  "Server",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetServer()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return AuxiliaryCommandServerValidationError{
+				field:  "Server",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetAuth()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, AuxiliaryCommandServerValidationError{
+					field:  "Auth",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, AuxiliaryCommandServerValidationError{
+					field:  "Auth",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetAuth()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return AuxiliaryCommandServerValidationError{
+				field:  "Auth",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetTls()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, AuxiliaryCommandServerValidationError{
+					field:  "Tls",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, AuxiliaryCommandServerValidationError{
+					field:  "Tls",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetTls()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return AuxiliaryCommandServerValidationError{
+				field:  "Tls",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return AuxiliaryCommandServerMultiError(errors)
+	}
+
+	return nil
+}
+
+// AuxiliaryCommandServerMultiError is an error wrapping multiple validation
+// errors returned by AuxiliaryCommandServer.ValidateAll() if the designated
+// constraints aren't met.
+type AuxiliaryCommandServerMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m AuxiliaryCommandServerMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m AuxiliaryCommandServerMultiError) AllErrors() []error { return m }
+
+// AuxiliaryCommandServerValidationError is the validation error returned by
+// AuxiliaryCommandServer.Validate if the designated constraints aren't met.
+type AuxiliaryCommandServerValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e AuxiliaryCommandServerValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e AuxiliaryCommandServerValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e AuxiliaryCommandServerValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e AuxiliaryCommandServerValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e AuxiliaryCommandServerValidationError) ErrorName() string {
+	return "AuxiliaryCommandServerValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e AuxiliaryCommandServerValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sAuxiliaryCommandServer.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = AuxiliaryCommandServerValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = AuxiliaryCommandServerValidationError{}
 
 // Validate checks the field values on MetricsServer with the rules defined in
 // the proto definition for this message. If any rules are violated, the first

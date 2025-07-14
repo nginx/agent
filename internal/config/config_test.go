@@ -196,6 +196,7 @@ func TestResolveCollector(t *testing.T) {
 		viperInstance.Set(CollectorBatchProcessorSendBatchSizeKey, expected.Processors.Batch.SendBatchSize)
 		viperInstance.Set(CollectorBatchProcessorSendBatchMaxSizeKey, expected.Processors.Batch.SendBatchMaxSize)
 		viperInstance.Set(CollectorBatchProcessorTimeoutKey, expected.Processors.Batch.Timeout)
+		viperInstance.Set(CollectorLogsGzipProcessorKey, expected.Processors.LogsGzip)
 		viperInstance.Set(CollectorExportersKey, expected.Exporters)
 		viperInstance.Set(CollectorOtlpExportersKey, expected.Exporters.OtlpExporters)
 		viperInstance.Set(CollectorExtensionsHealthServerHostKey, expected.Extensions.Health.Server.Host)
@@ -823,6 +824,7 @@ func agentConfig() *Config {
 					SendBatchSize:    DefCollectorBatchProcessorSendBatchSize,
 					Timeout:          DefCollectorBatchProcessorTimeout,
 				},
+				LogsGzip: &LogsGzip{},
 			},
 			Receivers: Receivers{
 				OtlpReceivers: []OtlpReceiver{
@@ -986,6 +988,7 @@ func createConfig() *Config {
 						},
 					},
 				},
+				LogsGzip: &LogsGzip{},
 			},
 			Receivers: Receivers{
 				OtlpReceivers: []OtlpReceiver{
@@ -1083,6 +1086,24 @@ func createConfig() *Config {
 			Server: &ServerConfig{
 				Host: "127.0.0.1",
 				Port: 8888,
+				Type: Grpc,
+			},
+			Auth: &AuthConfig{
+				Token:     "1234",
+				TokenPath: "path/to/my_token",
+			},
+			TLS: &TLSConfig{
+				Cert:       "some.cert",
+				Key:        "some.key",
+				Ca:         "some.ca",
+				SkipVerify: false,
+				ServerName: "server-name",
+			},
+		},
+		AuxiliaryCommand: &Command{
+			Server: &ServerConfig{
+				Host: "second.management.plane",
+				Port: 9999,
 				Type: Grpc,
 			},
 			Auth: &AuthConfig{

@@ -7,8 +7,9 @@ package file
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -31,7 +32,8 @@ import (
 )
 
 func TestFilePlugin_Info(t *testing.T) {
-	filePlugin := NewFilePlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	filePlugin := NewFilePlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{},
+		model.Command, &sync.RWMutex{})
 	assert.Equal(t, "file", filePlugin.Info().Name)
 }
 
@@ -39,14 +41,15 @@ func TestFilePlugin_Close(t *testing.T) {
 	ctx := context.Background()
 	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
 
-	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection)
+	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
 	filePlugin.Close(ctx)
 
 	assert.Equal(t, 1, fakeGrpcConnection.CloseCallCount())
 }
 
 func TestFilePlugin_Subscriptions(t *testing.T) {
-	filePlugin := NewFilePlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{})
+	filePlugin := NewFilePlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{},
+		model.Command, &sync.RWMutex{})
 	assert.Equal(
 		t,
 		[]string{
@@ -61,6 +64,15 @@ func TestFilePlugin_Subscriptions(t *testing.T) {
 		},
 		filePlugin.Subscriptions(),
 	)
+
+	readOnlyFilePlugin := NewFilePlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{},
+		model.Auxiliary, &sync.RWMutex{})
+	assert.Equal(t, []string{
+		bus.ConnectionResetTopic,
+		bus.ConnectionCreatedTopic,
+		bus.NginxConfigUpdateTopic,
+		bus.ConfigUploadRequestTopic,
+	}, readOnlyFilePlugin.Subscriptions())
 }
 
 func TestFilePlugin_Process_NginxConfigUpdateTopic(t *testing.T) {
@@ -85,7 +97,7 @@ func TestFilePlugin_Process_NginxConfigUpdateTopic(t *testing.T) {
 	fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
 	messagePipe := busfakes.NewFakeMessagePipe()
 
-	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection)
+	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
 	err := filePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 
@@ -104,7 +116,7 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 	ctx := context.Background()
 	tempDir := t.TempDir()
 
-	filePath := fmt.Sprintf("%s/nginx.conf", tempDir)
+	filePath := tempDir + "/nginx.conf"
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 	fileHash := files.GenerateHash(fileContent)
 
@@ -131,19 +143,19 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 		},
 		{
 			name:                  "Test 2 - Fail, Rollback",
-			configApplyReturnsErr: fmt.Errorf("something went wrong"),
+			configApplyReturnsErr: errors.New("something went wrong"),
 			configApplyStatus:     model.RollbackRequired,
 			message:               message,
 		},
 		{
 			name:                  "Test 3 - Fail, No Rollback",
-			configApplyReturnsErr: fmt.Errorf("something went wrong"),
+			configApplyReturnsErr: errors.New("something went wrong"),
 			configApplyStatus:     model.Error,
 			message:               message,
 		},
 		{
 			name:                  "Test 4 - Fail to cast payload",
-			configApplyReturnsErr: fmt.Errorf("something went wrong"),
+			configApplyReturnsErr: errors.New("something went wrong"),
 			configApplyStatus:     model.Error,
 			message:               nil,
 		},
@@ -160,7 +172,7 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 			fakeFileManagerService := &filefakes.FakeFileManagerServiceInterface{}
 			fakeFileManagerService.ConfigApplyReturns(test.configApplyStatus, test.configApplyReturnsErr)
 			messagePipe := busfakes.NewFakeMessagePipe()
-			filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection)
+			filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection, model.Command, &sync.RWMutex{})
 			err := filePlugin.Init(ctx, messagePipe)
 			filePlugin.fileManagerService = fakeFileManagerService
 			require.NoError(t, err)
@@ -258,7 +270,7 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic(t *testing.T) {
 	fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
 	messagePipe := busfakes.NewFakeMessagePipe()
 
-	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection)
+	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
 	err := filePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 
@@ -313,7 +325,7 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic_Failure(t *testing.T) {
 	fakeGrpcConnection.FileServiceClientReturns(fakeFileServiceClient)
 	messagePipe := busfakes.NewFakeMessagePipe()
 
-	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection)
+	filePlugin := NewFilePlugin(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
 	err := filePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
 
@@ -322,7 +334,7 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic_Failure(t *testing.T) {
 
 	assert.Eventually(
 		t,
-		func() bool { return len(messagePipe.Messages()) == 2 },
+		func() bool { return len(messagePipe.Messages()) == 1 },
 		2*time.Second,
 		10*time.Millisecond,
 	)
@@ -330,20 +342,11 @@ func TestFilePlugin_Process_ConfigUploadRequestTopic_Failure(t *testing.T) {
 	assert.Equal(t, 0, fakeFileServiceClient.UpdateFileCallCount())
 
 	messages := messagePipe.Messages()
-	assert.Len(t, messages, 2)
+	assert.Len(t, messages, 1)
+
 	assert.Equal(t, bus.DataPlaneResponseTopic, messages[0].Topic)
 
 	dataPlaneResponse, ok := messages[0].Data.(*mpi.DataPlaneResponse)
-	assert.True(t, ok)
-	assert.Equal(
-		t,
-		mpi.CommandResponse_COMMAND_STATUS_ERROR,
-		dataPlaneResponse.GetCommandResponse().GetStatus(),
-	)
-
-	assert.Equal(t, bus.DataPlaneResponseTopic, messages[1].Topic)
-
-	dataPlaneResponse, ok = messages[1].Data.(*mpi.DataPlaneResponse)
 	assert.True(t, ok)
 	assert.Equal(
 		t,
@@ -368,13 +371,13 @@ func TestFilePlugin_Process_ConfigApplyFailedTopic(t *testing.T) {
 		},
 		{
 			name:            "Test 2 - Rollback Fail",
-			rollbackReturns: fmt.Errorf("something went wrong"),
+			rollbackReturns: errors.New("something went wrong"),
 			instanceID:      instanceID,
 		},
 
 		{
 			name:            "Test 3 - Fail to cast payload",
-			rollbackReturns: fmt.Errorf("something went wrong"),
+			rollbackReturns: errors.New("something went wrong"),
 			instanceID:      "",
 		},
 	}
@@ -390,7 +393,7 @@ func TestFilePlugin_Process_ConfigApplyFailedTopic(t *testing.T) {
 
 			messagePipe := busfakes.NewFakeMessagePipe()
 			agentConfig := types.AgentConfig()
-			filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection)
+			filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection, model.Command, &sync.RWMutex{})
 
 			err := filePlugin.Init(ctx, messagePipe)
 			require.NoError(t, err)
@@ -399,7 +402,7 @@ func TestFilePlugin_Process_ConfigApplyFailedTopic(t *testing.T) {
 			data := &model.ConfigApplyMessage{
 				CorrelationID: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
 				InstanceID:    test.instanceID,
-				Error:         fmt.Errorf("something went wrong with config apply"),
+				Error:         errors.New("something went wrong with config apply"),
 			}
 
 			filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigApplyFailedTopic, Data: data})
@@ -437,7 +440,7 @@ func TestFilePlugin_Process_ConfigApplyRollbackCompleteTopic(t *testing.T) {
 	messagePipe := busfakes.NewFakeMessagePipe()
 	agentConfig := types.AgentConfig()
 	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
-	filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection)
+	filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection, model.Command, &sync.RWMutex{})
 
 	err := filePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
@@ -482,7 +485,7 @@ func TestFilePlugin_Process_ConfigApplyCompleteTopic(t *testing.T) {
 	messagePipe := busfakes.NewFakeMessagePipe()
 	agentConfig := types.AgentConfig()
 	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
-	filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection)
+	filePlugin := NewFilePlugin(agentConfig, fakeGrpcConnection, model.Command, &sync.RWMutex{})
 
 	err := filePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)

@@ -31,9 +31,11 @@ import (
 )
 
 var (
-	Container                        testcontainers.Container
-	MockManagementPlaneGrpcContainer testcontainers.Container
-	MockManagementPlaneGrpcAddress   string
+	Container                                 testcontainers.Container
+	MockManagementPlaneGrpcContainer          testcontainers.Container
+	AuxiliaryMockManagementPlaneGrpcContainer testcontainers.Container
+	MockManagementPlaneGrpcAddress            string
+	AuxiliaryMockManagementPlaneGrpcAddress   string
 )
 
 const (
@@ -60,12 +62,14 @@ type (
 	}
 )
 
-func SetupConnectionTest(tb testing.TB, expectNoErrorsInLogs, nginxless bool, agentConfig string) func(tb testing.TB) {
+func SetupConnectionTest(tb testing.TB, expectNoErrorsInLogs, nginxless, auxiliaryServer bool,
+	agentConfig string,
+) func(tb testing.TB) {
 	tb.Helper()
 	ctx := context.Background()
 
 	if os.Getenv("TEST_ENV") == "Container" {
-		setupContainerEnvironment(ctx, tb, nginxless, agentConfig)
+		setupContainerEnvironment(ctx, tb, nginxless, auxiliaryServer, agentConfig)
 	} else {
 		setupLocalEnvironment(tb)
 	}
@@ -80,18 +84,25 @@ func SetupConnectionTest(tb testing.TB, expectNoErrorsInLogs, nginxless bool, ag
 				MockManagementPlaneGrpcContainer,
 				Container,
 				expectNoErrorsInLogs,
+				AuxiliaryMockManagementPlaneGrpcContainer,
 			)
 		}
 	}
 }
 
 // setupContainerEnvironment sets up the container environment for testing.
-func setupContainerEnvironment(ctx context.Context, tb testing.TB, nginxless bool, agentConfig string) {
+// nolint: revive
+func setupContainerEnvironment(ctx context.Context, tb testing.TB, nginxless, auxiliaryServer bool,
+	agentConfig string,
+) {
 	tb.Helper()
 	tb.Log("Running tests in a container environment")
 
 	containerNetwork := createContainerNetwork(ctx, tb)
 	setupMockManagementPlaneGrpc(ctx, tb, containerNetwork)
+	if auxiliaryServer {
+		setupAuxiliaryMockManagementPlaneGrpc(ctx, tb, containerNetwork)
+	}
 
 	params := &helpers.Parameters{
 		NginxAgentConfigPath: agentConfig,
@@ -132,6 +143,24 @@ func setupMockManagementPlaneGrpc(ctx context.Context, tb testing.TB, containerN
 
 	MockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9093/tcp"][0].HostPort)
 	tb.Logf("Mock management API server running on %s", MockManagementPlaneAPIAddress)
+}
+
+func setupAuxiliaryMockManagementPlaneGrpc(ctx context.Context, tb testing.TB,
+	containerNetwork *testcontainers.DockerNetwork,
+) {
+	tb.Helper()
+	AuxiliaryMockManagementPlaneGrpcContainer = helpers.StartAuxiliaryMockManagementPlaneGrpcContainer(ctx,
+		tb, containerNetwork)
+	AuxiliaryMockManagementPlaneGrpcAddress = "managementPlaneAuxiliary:9095"
+	tb.Logf("Auxiliary mock management gRPC server running on %s", AuxiliaryMockManagementPlaneGrpcAddress)
+
+	ipAddress, err := AuxiliaryMockManagementPlaneGrpcContainer.Host(ctx)
+	require.NoError(tb, err)
+	ports, err := AuxiliaryMockManagementPlaneGrpcContainer.Ports(ctx)
+	require.NoError(tb, err)
+
+	AuxiliaryMockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9096/tcp"][0].HostPort)
+	tb.Logf("Auxiliary mock management API server running on %s", AuxiliaryMockManagementPlaneAPIAddress)
 }
 
 // setupNginxContainer configures and starts the NGINX container.
@@ -186,7 +215,9 @@ func setupLocalEnvironment(tb testing.TB) {
 	}(tb)
 }
 
-func ManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int) []*mpi.DataPlaneResponse {
+func ManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int,
+	mockManagementPlaneAPIAddress string,
+) []*mpi.DataPlaneResponse {
 	t.Helper()
 
 	client := resty.New()
@@ -204,7 +235,7 @@ func ManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int) []*mp
 		},
 	)
 
-	url := fmt.Sprintf("http://%s/api/v1/responses", MockManagementPlaneAPIAddress)
+	url := fmt.Sprintf("http://%s/api/v1/responses", mockManagementPlaneAPIAddress)
 	resp, err := client.R().EnableTrace().Get(url)
 
 	require.NoError(t, err)
@@ -227,19 +258,19 @@ func ManagementPlaneResponses(t *testing.T, numberOfExpectedResponses int) []*mp
 	return response
 }
 
-func ClearManagementPlaneResponses(t *testing.T) {
+func ClearManagementPlaneResponses(t *testing.T, mockManagementPlaneAPIAddress string) {
 	t.Helper()
 
 	client := resty.New()
 
-	url := fmt.Sprintf("http://%s/api/v1/responses", MockManagementPlaneAPIAddress)
+	url := fmt.Sprintf("http://%s/api/v1/responses", mockManagementPlaneAPIAddress)
 	resp, err := client.R().EnableTrace().Delete(url)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 }
 
-func VerifyConnection(t *testing.T, instancesLength int) string {
+func VerifyConnection(t *testing.T, instancesLength int, mockManagementPlaneAPIAddress string) string {
 	t.Helper()
 
 	client := resty.New()
@@ -255,7 +286,7 @@ func VerifyConnection(t *testing.T, instancesLength int) string {
 			return r.StatusCode() == http.StatusNotFound || unmarshalErr != nil
 		},
 	)
-	url := fmt.Sprintf("http://%s/api/v1/connection", MockManagementPlaneAPIAddress)
+	url := fmt.Sprintf("http://%s/api/v1/connection", mockManagementPlaneAPIAddress)
 	t.Logf("Connecting to %s", url)
 	resp, err := client.R().EnableTrace().Get(url)
 
@@ -332,7 +363,7 @@ func VerifyConnection(t *testing.T, instancesLength int) string {
 	return nginxInstanceID
 }
 
-func VerifyUpdateDataPlaneHealth(t *testing.T) {
+func VerifyUpdateDataPlaneHealth(t *testing.T, mockManagementPlaneAPIAddress string) {
 	t.Helper()
 
 	client := resty.New()
@@ -346,7 +377,7 @@ func VerifyUpdateDataPlaneHealth(t *testing.T) {
 		},
 	)
 
-	url := fmt.Sprintf("http://%s/api/v1/health", MockManagementPlaneAPIAddress)
+	url := fmt.Sprintf("http://%s/api/v1/health", mockManagementPlaneAPIAddress)
 
 	resp, err := client.R().EnableTrace().Get(url)
 
@@ -393,14 +424,14 @@ func VerifyUpdateDataPlaneHealth(t *testing.T) {
 	assert.Equal(t, mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY, healths[0].GetInstanceHealthStatus())
 }
 
-func VerifyUpdateDataPlaneStatus(t *testing.T) {
+func VerifyUpdateDataPlaneStatus(t *testing.T, mockManagementPlaneAPIAddress string) {
 	t.Helper()
 
 	client := resty.New()
 
 	client.SetRetryCount(statusRetryCount).SetRetryWaitTime(retryWait).SetRetryMaxWaitTime(retryMaxWait)
 
-	url := fmt.Sprintf("http://%s/api/v1/status", MockManagementPlaneAPIAddress)
+	url := fmt.Sprintf("http://%s/api/v1/status", mockManagementPlaneAPIAddress)
 
 	resp, err := client.R().EnableTrace().Get(url)
 

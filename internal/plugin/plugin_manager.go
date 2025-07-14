@@ -8,6 +8,9 @@ package plugin
 import (
 	"context"
 	"log/slog"
+	"sync"
+
+	"github.com/nginx/agent/v3/internal/model"
 
 	pkg "github.com/nginx/agent/v3/pkg/config"
 
@@ -25,8 +28,11 @@ import (
 func LoadPlugins(ctx context.Context, agentConfig *config.Config) []bus.Plugin {
 	plugins := make([]bus.Plugin, 0)
 
+	manifestLock := &sync.RWMutex{}
+
 	plugins = addResourcePlugin(plugins, agentConfig)
-	plugins = addCommandAndFilePlugins(ctx, plugins, agentConfig)
+	plugins = addCommandAndFilePlugins(ctx, plugins, agentConfig, manifestLock)
+	plugins = addAuxiliaryCommandAndFilePlugins(ctx, plugins, agentConfig, manifestLock)
 	plugins = addCollectorPlugin(ctx, agentConfig, plugins)
 	plugins = addWatcherPlugin(plugins, agentConfig)
 
@@ -40,20 +46,43 @@ func addResourcePlugin(plugins []bus.Plugin, agentConfig *config.Config) []bus.P
 	return plugins
 }
 
-func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentConfig *config.Config) []bus.Plugin {
-	if agentConfig.IsGrpcClientConfigured() {
-		grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig)
+func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentConfig *config.Config,
+	manifestLock *sync.RWMutex,
+) []bus.Plugin {
+	if agentConfig.IsCommandGrpcClientConfigured() {
+		grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig, agentConfig.Command)
 		if err != nil {
-			slog.WarnContext(ctx, "Failed to create gRPC connection", "error", err)
+			slog.WarnContext(ctx, "Failed to create gRPC connection for command server", "error", err)
 		} else {
-			commandPlugin := command.NewCommandPlugin(agentConfig, grpcConnection)
+			commandPlugin := command.NewCommandPlugin(agentConfig, grpcConnection, model.Command)
 			plugins = append(plugins, commandPlugin)
-			filePlugin := file.NewFilePlugin(agentConfig, grpcConnection)
+			filePlugin := file.NewFilePlugin(agentConfig, grpcConnection, model.Command, manifestLock)
 			plugins = append(plugins, filePlugin)
 		}
 	} else {
 		slog.InfoContext(ctx, "Agent is not connected to a management plane. "+
 			"Configure a command server to establish a connection with a management plane.")
+	}
+
+	return plugins
+}
+
+func addAuxiliaryCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin,
+	agentConfig *config.Config, manifestLock *sync.RWMutex,
+) []bus.Plugin {
+	if agentConfig.IsAuxiliaryCommandGrpcClientConfigured() {
+		auxGRPCConnection, err := grpc.NewGrpcConnection(ctx, agentConfig, agentConfig.AuxiliaryCommand)
+		if err != nil {
+			slog.WarnContext(ctx, "Failed to create gRPC connection for auxiliary command server", "error", err)
+		} else {
+			auxCommandPlugin := command.NewCommandPlugin(agentConfig, auxGRPCConnection, model.Auxiliary)
+			plugins = append(plugins, auxCommandPlugin)
+			readFilePlugin := file.NewFilePlugin(agentConfig, auxGRPCConnection, model.Auxiliary, manifestLock)
+			plugins = append(plugins, readFilePlugin)
+		}
+	} else {
+		slog.DebugContext(ctx, "Agent is not connected to an auxiliary management plane. "+
+			"Configure a auxiliary command server to establish a connection.")
 	}
 
 	return plugins

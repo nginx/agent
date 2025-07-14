@@ -121,6 +121,7 @@ func ResolveConfig() (*Config, error) {
 		AllowedDirectories: allowedDirs,
 		Collector:          collector,
 		Command:            resolveCommand(),
+		AuxiliaryCommand:   resolveAuxiliaryCommand(),
 		Watchers:           resolveWatchers(),
 		Features:           viperInstance.GetStringSlice(FeaturesKey),
 		Labels:             resolveLabels(),
@@ -138,8 +139,9 @@ func ResolveConfig() (*Config, error) {
 }
 
 func checkCollectorConfiguration(collector *Collector, config *Config) {
-	if isOTelExporterConfigured(collector) && config.IsGrpcClientConfigured() && config.IsAuthConfigured() &&
-		config.IsTLSConfigured() {
+	if isOTelExporterConfigured(collector) && config.IsCommandGrpcClientConfigured() &&
+		config.IsCommandAuthConfigured() &&
+		config.IsCommandTLSConfigured() {
 		slog.Info("No collector configuration found in NGINX Agent config, command server configuration found." +
 			" Using default collector configuration")
 		defaultCollector(collector, config)
@@ -308,6 +310,7 @@ func registerFlags() {
 
 	registerCommonFlags(fs)
 	registerCommandFlags(fs)
+	registerAuxiliaryCommandFlags(fs)
 	registerCollectorFlags(fs)
 	registerClientFlags(fs)
 
@@ -468,6 +471,60 @@ func registerCommandFlags(fs *flag.FlagSet) {
 	)
 }
 
+func registerAuxiliaryCommandFlags(fs *flag.FlagSet) {
+	fs.String(
+		AuxiliaryCommandServerHostKey,
+		DefAuxiliaryCommandServerHostKey,
+		"The target hostname of the auxiliary server endpoint for read only mode.",
+	)
+	fs.Int32(
+		AuxiliaryCommandServerPortKey,
+		DefAuxiliaryCommandServerPortKey,
+		"The target port of the auxiliary server endpoint for read only mode.",
+	)
+	fs.String(
+		AuxiliaryCommandServerTypeKey,
+		DefAuxiliaryCommandServerTypeKey,
+		"The target protocol (gRPC or HTTP) the auxiliary server endpoint for read only mode.",
+	)
+	fs.String(
+		AuxiliaryCommandAuthTokenKey,
+		DefAuxiliaryCommandAuthTokenKey,
+		"The token used in the authentication handshake with the auxiliary server endpoint for read only mode.",
+	)
+	fs.String(
+		AuxiliaryCommandAuthTokenPathKey,
+		DefAuxiliaryCommandAuthTokenPathKey,
+		"The path to the file containing the token used in the authentication handshake with "+
+			"the auxiliary server endpoint for read only mode.",
+	)
+	fs.String(
+		AuxiliaryCommandTLSCertKey,
+		DefAuxiliaryCommandTLSCertKey,
+		"The path to the certificate file to use for TLS communication with the auxiliary command server.",
+	)
+	fs.String(
+		AuxiliaryCommandTLSKeyKey,
+		DefAuxiliaryCommandTLSKeyKey,
+		"The path to the certificate key file to use for TLS communication with the auxiliary command server.",
+	)
+	fs.String(
+		AuxiliaryCommandTLSCaKey,
+		DefAuxiliaryCommandTLSCaKey,
+		"The path to CA certificate file to use for TLS communication with the auxiliary command server.",
+	)
+	fs.Bool(
+		AuxiliaryCommandTLSSkipVerifyKey,
+		DefAuxiliaryCommandTLSSkipVerifyKey,
+		"Testing only. Skip verify controls client verification of a server's certificate chain and host name.",
+	)
+	fs.String(
+		AuxiliaryCommandTLSServerNameKey,
+		DefAuxiliaryCommandTLServerNameKey,
+		"Specifies the name of the server sent in the TLS configuration.",
+	)
+}
+
 func registerCollectorFlags(fs *flag.FlagSet) {
 	fs.String(
 		CollectorConfigPathKey,
@@ -562,7 +619,7 @@ func seekFileInPaths(fileName string, directories ...string) (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("a valid configuration has not been found in any of the search paths")
+	return "", errors.New("a valid configuration has not been found in any of the search paths")
 }
 
 func configFilePaths() []string {
@@ -845,6 +902,7 @@ func resolveProcessors() Processors {
 			SendBatchMaxSize: viperInstance.GetUint32(CollectorBatchProcessorSendBatchMaxSizeKey),
 			Timeout:          viperInstance.GetDuration(CollectorBatchProcessorTimeoutKey),
 		},
+		LogsGzip: &LogsGzip{},
 	}
 
 	if viperInstance.IsSet(CollectorAttributeProcessorKey) {
@@ -1002,14 +1060,14 @@ func resolveCommand() *Command {
 		},
 	}
 
-	if areAuthSettingsSet() {
+	if areCommandAuthSettingsSet() {
 		command.Auth = &AuthConfig{
 			Token:     viperInstance.GetString(CommandAuthTokenKey),
 			TokenPath: viperInstance.GetString(CommandAuthTokenPathKey),
 		}
 	}
 
-	if areTLSSettingsSet() {
+	if areCommandTLSSettingsSet() {
 		command.TLS = &TLSConfig{
 			Cert:       viperInstance.GetString(CommandTLSCertKey),
 			Key:        viperInstance.GetString(CommandTLSKeyKey),
@@ -1022,17 +1080,68 @@ func resolveCommand() *Command {
 	return command
 }
 
-func areAuthSettingsSet() bool {
+func resolveAuxiliaryCommand() *Command {
+	serverType, ok := parseServerType(viperInstance.GetString(AuxiliaryCommandServerTypeKey))
+	if !ok {
+		serverType = Grpc
+		slog.Error(
+			"Invalid value for auxiliary command server type, defaulting to gRPC server type",
+			"server_type", viperInstance.GetString(AuxiliaryCommandServerTypeKey),
+		)
+	}
+
+	auxiliary := &Command{
+		Server: &ServerConfig{
+			Host: viperInstance.GetString(AuxiliaryCommandServerHostKey),
+			Port: viperInstance.GetInt(AuxiliaryCommandServerPortKey),
+			Type: serverType,
+		},
+	}
+
+	if areAuxiliaryCommandAuthSettingsSet() {
+		auxiliary.Auth = &AuthConfig{
+			Token:     viperInstance.GetString(AuxiliaryCommandAuthTokenKey),
+			TokenPath: viperInstance.GetString(AuxiliaryCommandAuthTokenPathKey),
+		}
+	}
+
+	if areAuxiliaryCommandTLSSettingsSet() {
+		auxiliary.TLS = &TLSConfig{
+			Cert:       viperInstance.GetString(AuxiliaryCommandTLSCertKey),
+			Key:        viperInstance.GetString(AuxiliaryCommandTLSKeyKey),
+			Ca:         viperInstance.GetString(AuxiliaryCommandTLSCaKey),
+			SkipVerify: viperInstance.GetBool(AuxiliaryCommandTLSSkipVerifyKey),
+			ServerName: viperInstance.GetString(AuxiliaryCommandTLSServerNameKey),
+		}
+	}
+
+	return auxiliary
+}
+
+func areCommandAuthSettingsSet() bool {
 	return viperInstance.IsSet(CommandAuthTokenKey) ||
 		viperInstance.IsSet(CommandAuthTokenPathKey)
 }
 
-func areTLSSettingsSet() bool {
+func areAuxiliaryCommandAuthSettingsSet() bool {
+	return viperInstance.IsSet(AuxiliaryCommandAuthTokenKey) ||
+		viperInstance.IsSet(AuxiliaryCommandAuthTokenPathKey)
+}
+
+func areCommandTLSSettingsSet() bool {
 	return viperInstance.IsSet(CommandTLSCertKey) ||
 		viperInstance.IsSet(CommandTLSKeyKey) ||
 		viperInstance.IsSet(CommandTLSCaKey) ||
 		viperInstance.IsSet(CommandTLSSkipVerifyKey) ||
 		viperInstance.IsSet(CommandTLSServerNameKey)
+}
+
+func areAuxiliaryCommandTLSSettingsSet() bool {
+	return viperInstance.IsSet(AuxiliaryCommandTLSCertKey) ||
+		viperInstance.IsSet(AuxiliaryCommandTLSKeyKey) ||
+		viperInstance.IsSet(AuxiliaryCommandTLSCaKey) ||
+		viperInstance.IsSet(AuxiliaryCommandTLSSkipVerifyKey) ||
+		viperInstance.IsSet(AuxiliaryCommandTLSServerNameKey)
 }
 
 func areHealthExtensionTLSSettingsSet() bool {
