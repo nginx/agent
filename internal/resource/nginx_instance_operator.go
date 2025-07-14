@@ -52,20 +52,6 @@ func (i *NginxInstanceOperator) Validate(ctx context.Context, instance *mpi.Inst
 	return nil
 }
 
-func (i *NginxInstanceOperator) validateConfigCheckResponse(out []byte) error {
-	if bytes.Contains(out, []byte("[emerg]")) ||
-		bytes.Contains(out, []byte("[alert]")) ||
-		bytes.Contains(out, []byte("[crit]")) {
-		return fmt.Errorf("error running nginx -t -c:\n%s", out)
-	}
-
-	if i.treatWarningsAsErrors && bytes.Contains(out, []byte("[warn]")) {
-		return fmt.Errorf("error running nginx -t -c:\n%s", out)
-	}
-
-	return nil
-}
-
 func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instance) error {
 	var errorsFound error
 	slog.InfoContext(ctx, "Reloading NGINX PID", "pid",
@@ -87,12 +73,12 @@ func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instan
 
 	numberOfExpectedMessages := len(errorLogs)
 
-	for i := 0; i < numberOfExpectedMessages; i++ {
+	for range numberOfExpectedMessages {
 		logErr := <-logErrorChannel
 		slog.InfoContext(ctx, "Message received in logErrorChannel", "error", logErr)
 		if logErr != nil {
 			errorsFound = errors.Join(errorsFound, logErr)
-			slog.Info("Errors Found", "", errorsFound)
+			slog.InfoContext(ctx, "Errors Found", "", errorsFound)
 		}
 	}
 
@@ -100,6 +86,20 @@ func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instan
 
 	if errorsFound != nil {
 		return errorsFound
+	}
+
+	return nil
+}
+
+func (i *NginxInstanceOperator) validateConfigCheckResponse(out []byte) error {
+	if bytes.Contains(out, []byte("[emerg]")) ||
+		bytes.Contains(out, []byte("[alert]")) ||
+		bytes.Contains(out, []byte("[crit]")) {
+		return fmt.Errorf("error running nginx -t -c:\n%s", out)
+	}
+
+	if i.treatWarningsAsErrors && bytes.Contains(out, []byte("[warn]")) {
+		return fmt.Errorf("error running nginx -t -c:\n%s", out)
 	}
 
 	return nil

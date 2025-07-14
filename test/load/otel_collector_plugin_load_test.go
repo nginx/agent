@@ -23,7 +23,7 @@ func TestMetric10kDPS(t *testing.T) {
 
 	binary := parseBinary(os.Getenv("PACKAGE_NAME"))
 
-	otelTestBedCollector, err := filepath.Abs(fmt.Sprintf("../../%s", binary))
+	otelTestBedCollector, err := filepath.Abs("../../" + binary)
 	require.NoError(t, err)
 
 	t.Logf("Absolute path is %s", otelTestBedCollector)

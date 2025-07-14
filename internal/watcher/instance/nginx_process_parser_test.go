@@ -8,6 +8,7 @@ package instance
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"sort"
@@ -124,11 +125,11 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 	}{
 		{
 			name: "Test 1: NGINX open source",
-			nginxVersionCommandOutput: fmt.Sprintf(`nginx version: nginx/1.25.3
+			nginxVersionCommandOutput: `nginx version: nginx/1.25.3
 					built by clang 14.0.0 (clang-1400.0.29.202)
 					built with OpenSSL 1.1.1s  1 Nov 2022 (running with OpenSSL 1.1.1t  7 Feb 2023)
 					TLS SNI support enabled
-					configure arguments: %s`, ossArgs),
+					configure arguments: ` + ossArgs,
 			expected: map[string]*mpi.Instance{
 				protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.NginxOssInstance(
 					[]string{expectedModules}),
@@ -136,12 +137,12 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 		},
 		{
 			name: "Test 2: NGINX plus",
-			nginxVersionCommandOutput: fmt.Sprintf(`
+			nginxVersionCommandOutput: `
 				nginx version: nginx/1.25.3 (nginx-plus-r31-p1)
 				built by gcc 9.4.0 (Ubuntu 9.4.0-1ubuntu1~20.04.2)
 				built with OpenSSL 1.1.1f  31 Mar 2020
 				TLS SNI support enabled
-				configure arguments: %s`, plusArgs),
+				configure arguments: ` + plusArgs,
 			expected: map[string]*mpi.Instance{
 				protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.NginxPlusInstance(
 					[]string{expectedModules}),
@@ -149,11 +150,11 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 		},
 		{
 			name: "Test 3: No Modules",
-			nginxVersionCommandOutput: fmt.Sprintf(`nginx version: nginx/1.25.3
+			nginxVersionCommandOutput: `nginx version: nginx/1.25.3
 					built by clang 14.0.0 (clang-1400.0.29.202)
 					built with OpenSSL 1.1.1s  1 Nov 2022 (running with OpenSSL 1.1.1t  7 Feb 2023)
 					TLS SNI support enabled
-					configure arguments: %s`, noModuleArgs),
+					configure arguments: ` + noModuleArgs,
 			expected: map[string]*mpi.Instance{
 				protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId(): protos.
 					NginxOssInstance(nil),
@@ -185,7 +186,7 @@ func TestNginxProcessParser_Parse(t *testing.T) {
 				}
 			}
 
-			assert.Equal(tt, len(test.expected), len(result))
+			assert.Len(tt, result, len(test.expected))
 		})
 	}
 }
@@ -196,11 +197,11 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 
 	configArgs := fmt.Sprintf(ossConfigArgs, modulePath)
 
-	nginxVersionCommandOutput := fmt.Sprintf(`nginx version: nginx/1.25.3
+	nginxVersionCommandOutput := `nginx version: nginx/1.25.3
 					built by clang 14.0.0 (clang-1400.0.29.202)
 					built with OpenSSL 1.1.1s  1 Nov 2022 (running with OpenSSL 1.1.1t  7 Feb 2023)
 					TLS SNI support enabled
-					configure arguments: %s`, configArgs)
+					configure arguments: ` + configArgs
 
 	process1 := protos.NginxOssInstance(nil)
 	instancesTest1 := map[string]*mpi.Instance{
@@ -391,7 +392,7 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 				assert.True(tt, proto.Equal(test.expected[id], instance))
 			}
 
-			assert.Equal(tt, len(test.expected), len(result))
+			assert.Len(tt, result, len(test.expected))
 		})
 	}
 }
@@ -420,12 +421,12 @@ func TestGetInfo(t *testing.T) {
 	}{
 		{
 			name: "Test 1: NGINX open source",
-			nginxVersionCommandOutput: fmt.Sprintf(`
+			nginxVersionCommandOutput: `
 				nginx version: nginx/1.25.3
 				built by clang 14.0.3 (clang-1403.0.22.14.1)
 				built with OpenSSL 3.1.3 19 Sep 2023 (running with OpenSSL 3.2.0 23 Nov 2023)
 				TLS SNI support enabled
-				configure arguments: %s`, ossArgs),
+				configure arguments: ` + ossArgs,
 			process: &nginxprocess.Process{
 				PID: 1123,
 				Exe: exePath,
@@ -488,12 +489,12 @@ func TestGetInfo(t *testing.T) {
 		},
 		{
 			name: "Test 2: NGINX plus",
-			nginxVersionCommandOutput: fmt.Sprintf(`
+			nginxVersionCommandOutput: `
 				nginx version: nginx/1.25.3 (nginx-plus-r31-p1)
 				built by gcc 9.4.0 (Ubuntu 9.4.0-1ubuntu1~20.04.2)
 				built with OpenSSL 1.1.1f  31 Mar 2020
 				TLS SNI support enabled
-				configure arguments: %s`, plusArgs),
+				configure arguments: ` + plusArgs,
 			process: &nginxprocess.Process{
 				PID: 3141,
 				Exe: exePath,
@@ -592,7 +593,7 @@ func TestNginxProcessParser_GetExe(t *testing.T) {
 		{
 			name:          "Test 1: Default exe if error executing command -v nginx",
 			commandOutput: []byte{},
-			commandError:  fmt.Errorf("command error"),
+			commandError:  errors.New("command error"),
 			expected:      "/usr/bin/nginx",
 		},
 		{
@@ -622,8 +623,8 @@ func TestGetConfigPathFromCommand(t *testing.T) {
 	assert.Equal(t, "/tmp/nginx.conf", result)
 
 	result = confPathFromCommand("nginx: master process nginx -c")
-	assert.Equal(t, "", result)
+	assert.Empty(t, result)
 
 	result = confPathFromCommand("")
-	assert.Equal(t, "", result)
+	assert.Empty(t, result)
 }
