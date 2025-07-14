@@ -66,6 +66,7 @@ func installUninstallSetup(tb testing.TB, expectNoErrorsInLogs bool) (testcontai
 			nil,
 			testContainer,
 			expectNoErrorsInLogs,
+			nil,
 		)
 	}
 }

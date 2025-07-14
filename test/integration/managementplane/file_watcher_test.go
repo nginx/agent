@@ -18,11 +18,11 @@ import (
 
 func TestGrpc_FileWatcher(t *testing.T) {
 	ctx := context.Background()
-	teardownTest := utils.SetupConnectionTest(t, true, false,
+	teardownTest := utils.SetupConnectionTest(t, true, false, false,
 		"../../config/agent/nginx-config-with-grpc-client.conf")
 	defer teardownTest(t)
 
-	utils.VerifyConnection(t, 2)
+	utils.VerifyConnection(t, 2, utils.MockManagementPlaneAPIAddress)
 	assert.False(t, t.Failed())
 
 	t.Run("Test 1: update nginx config file on data plane", func(t *testing.T) {
@@ -34,13 +34,13 @@ func TestGrpc_FileWatcher(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		responses := utils.ManagementPlaneResponses(t, 2)
+		responses := utils.ManagementPlaneResponses(t, 2, utils.MockManagementPlaneAPIAddress)
 		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 		assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
 		assert.Equal(t, "Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
 
-		utils.VerifyUpdateDataPlaneStatus(t)
+		utils.VerifyUpdateDataPlaneStatus(t, utils.MockManagementPlaneAPIAddress)
 	})
 
 	t.Run("Test 2: create new nginx config file", func(t *testing.T) {
@@ -52,11 +52,11 @@ func TestGrpc_FileWatcher(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		responses := utils.ManagementPlaneResponses(t, 3)
+		responses := utils.ManagementPlaneResponses(t, 3, utils.MockManagementPlaneAPIAddress)
 		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[2].GetCommandResponse().GetStatus())
 		assert.Equal(t, "Successfully updated all files", responses[2].GetCommandResponse().GetMessage())
 
-		utils.VerifyUpdateDataPlaneStatus(t)
+		utils.VerifyUpdateDataPlaneStatus(t, utils.MockManagementPlaneAPIAddress)
 	})
 
 	t.Run("Test 3: delete nginx config file", func(t *testing.T) {
@@ -66,10 +66,10 @@ func TestGrpc_FileWatcher(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		responses := utils.ManagementPlaneResponses(t, 4)
+		responses := utils.ManagementPlaneResponses(t, 4, utils.MockManagementPlaneAPIAddress)
 		assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[3].GetCommandResponse().GetStatus())
 		assert.Equal(t, "Successfully updated all files", responses[3].GetCommandResponse().GetMessage())
 
-		utils.VerifyUpdateDataPlaneStatus(t)
+		utils.VerifyUpdateDataPlaneStatus(t, utils.MockManagementPlaneAPIAddress)
 	})
 }

@@ -8,6 +8,7 @@ package file
 import (
 	"context"
 	"log/slog"
+	"sync"
 
 	"github.com/nginx/agent/v3/pkg/files"
 	"github.com/nginx/agent/v3/pkg/id"
@@ -27,6 +28,7 @@ var _ bus.Plugin = (*FilePlugin)(nil)
 // the file plugin does not care about the instance type
 
 type FilePlugin struct {
+	manifestLock       *sync.RWMutex
 	messagePipe        bus.MessagePipeInterface
 	config             *config.Config
 	conn               grpc.GrpcConnectionInterface
@@ -35,12 +37,13 @@ type FilePlugin struct {
 }
 
 func NewFilePlugin(agentConfig *config.Config, grpcConnection grpc.GrpcConnectionInterface,
-	serverType model.ServerType,
+	serverType model.ServerType, manifestLock *sync.RWMutex,
 ) *FilePlugin {
 	return &FilePlugin{
-		config:     agentConfig,
-		conn:       grpcConnection,
-		serverType: serverType,
+		config:       agentConfig,
+		conn:         grpcConnection,
+		serverType:   serverType,
+		manifestLock: manifestLock,
 	}
 }
 
@@ -52,7 +55,7 @@ func (fp *FilePlugin) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 	slog.DebugContext(ctx, "Starting file plugin")
 
 	fp.messagePipe = messagePipe
-	fp.fileManagerService = NewFileManagerService(fp.conn.FileServiceClient(), fp.config)
+	fp.fileManagerService = NewFileManagerService(fp.conn.FileServiceClient(), fp.config, fp.manifestLock)
 
 	return nil
 }
@@ -145,7 +148,7 @@ func (fp *FilePlugin) handleConnectionReset(ctx context.Context, msg *bus.Messag
 		fp.conn = newConnection
 
 		reconnect = fp.fileManagerService.IsConnected()
-		fp.fileManagerService = NewFileManagerService(fp.conn.FileServiceClient(), fp.config)
+		fp.fileManagerService = NewFileManagerService(fp.conn.FileServiceClient(), fp.config, fp.manifestLock)
 		fp.fileManagerService.SetIsConnected(reconnect)
 
 		slog.DebugContext(ctx, "File manager service client reset successfully")

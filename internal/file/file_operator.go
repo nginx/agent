@@ -14,6 +14,7 @@ import (
 	"log/slog"
 	"os"
 	"path"
+	"sync"
 
 	"github.com/nginx/agent/v3/internal/model"
 
@@ -24,14 +25,18 @@ import (
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )
 
-type FileOperator struct{}
+type FileOperator struct {
+	manifestLock *sync.RWMutex
+}
 
 var _ fileOperator = (*FileOperator)(nil)
 
 // FileOperator only purpose is to write files,
 
-func NewFileOperator() *FileOperator {
-	return &FileOperator{}
+func NewFileOperator(manifestLock *sync.RWMutex) *FileOperator {
+	return &FileOperator{
+		manifestLock: manifestLock,
+	}
 }
 
 func (fo *FileOperator) Write(ctx context.Context, fileContent []byte, file *mpi.FileMeta) error {
@@ -152,6 +157,8 @@ func (fo *FileOperator) WriteManifestFile(updatedFiles map[string]*model.Manifes
 		return fmt.Errorf("unable to marshal manifest file json: %w", err)
 	}
 
+	fo.manifestLock.Lock()
+	defer fo.manifestLock.Unlock()
 	// 0755 allows read/execute for all, write for owner
 	if err = os.MkdirAll(manifestDir, dirPerm); err != nil {
 		return fmt.Errorf("unable to create directory %s: %w", manifestDir, err)
