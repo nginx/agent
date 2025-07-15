@@ -349,12 +349,14 @@ func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
 				Data:  protos.HostResource(),
 			},
 			processors: config.Processors{
-				Resource: &config.Resource{
-					Attributes: []config.ResourceAttribute{
-						{
-							Key:    "resource.id",
-							Action: "insert",
-							Value:  "1234",
+				Resource: map[string]*config.Resource{
+					"default": {
+						Attributes: []config.ResourceAttribute{
+							{
+								Key:    "resource.id",
+								Action: "insert",
+								Value:  "1234",
+							},
 						},
 					},
 				},
@@ -711,18 +713,19 @@ func TestCollector_updateResourceAttributes(t *testing.T) {
 			collector.service = createFakeCollector()
 
 			// set up Actions
-			conf.Collector.Processors.Resource = &config.Resource{Attributes: test.setup}
+			conf.Collector.Processors.Resource = make(map[string]*config.Resource)
+			conf.Collector.Processors.Resource["default"] = &config.Resource{Attributes: test.setup}
 
 			reloadRequired := collector.updateResourceAttributes(test.attributes)
 			assert.Equal(tt,
 				test.expectedAttribs,
-				conf.Collector.Processors.Resource.Attributes)
+				conf.Collector.Processors.Resource["default"].Attributes)
 			assert.Equal(tt, test.expectedReloadRequired, reloadRequired)
 		})
 	}
 }
 
-func TestCollector_updateTcplogReceivers(t *testing.T) {
+func TestCollector_updateNginxAppProtectTcplogReceivers(t *testing.T) {
 	conf := types.OTelConfig(t)
 	conf.Collector.Log.Path = ""
 	conf.Collector.Processors.Batch = nil
@@ -741,38 +744,43 @@ func TestCollector_updateTcplogReceivers(t *testing.T) {
 	assert.Empty(t, conf.Collector.Receivers.TcplogReceivers)
 
 	t.Run("Test 1: New TcplogReceiver added", func(tt *testing.T) {
-		tcplogReceiverAdded := collector.updateTcplogReceivers(nginxConfigContext)
+		tcplogReceiverAdded := collector.updateNginxAppProtectTcplogReceivers(nginxConfigContext)
 
 		assert.True(tt, tcplogReceiverAdded)
 		assert.Len(tt, conf.Collector.Receivers.TcplogReceivers, 1)
-		assert.Equal(tt, "localhost:151", conf.Collector.Receivers.TcplogReceivers[0].ListenAddress)
-		assert.Len(tt, conf.Collector.Receivers.TcplogReceivers[0].Operators, 4)
+		assert.Equal(tt, "localhost:151", conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].ListenAddress)
+		assert.Len(tt, conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].Operators, 4)
 	})
 
-	// Calling updateTcplogReceivers shouldn't update the TcplogReceivers slice
+	// Calling updateNginxAppProtectTcplogReceivers shouldn't update the TcplogReceivers slice
 	// since there is already a receiver with the same ListenAddress
 	t.Run("Test 2: TcplogReceiver already exists", func(tt *testing.T) {
-		tcplogReceiverAdded := collector.updateTcplogReceivers(nginxConfigContext)
+		tcplogReceiverAdded := collector.updateNginxAppProtectTcplogReceivers(nginxConfigContext)
 		assert.False(t, tcplogReceiverAdded)
 		assert.Len(t, conf.Collector.Receivers.TcplogReceivers, 1)
-		assert.Equal(t, "localhost:151", conf.Collector.Receivers.TcplogReceivers[0].ListenAddress)
-		assert.Len(t, conf.Collector.Receivers.TcplogReceivers[0].Operators, 4)
+		assert.Equal(t, "localhost:151", conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].ListenAddress)
+		assert.Len(t, conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].Operators, 4)
 	})
 
 	t.Run("Test 3: TcplogReceiver deleted", func(tt *testing.T) {
-		tcplogReceiverDeleted := collector.updateTcplogReceivers(&model.NginxConfigContext{})
+		tcplogReceiverDeleted := collector.updateNginxAppProtectTcplogReceivers(&model.NginxConfigContext{})
 		assert.True(t, tcplogReceiverDeleted)
 		assert.Empty(t, conf.Collector.Receivers.TcplogReceivers)
 	})
 
 	t.Run("Test 4: New tcplogReceiver added and deleted another", func(tt *testing.T) {
-		tcplogReceiverDeleted := collector.updateTcplogReceivers(&model.NginxConfigContext{NAPSysLogServers: []string{
-			"localhost:152",
-		}})
+		tcplogReceiverDeleted := collector.updateNginxAppProtectTcplogReceivers(
+			&model.NginxConfigContext{
+				NAPSysLogServers: []string{
+					"localhost:152",
+				},
+			},
+		)
+
 		assert.True(t, tcplogReceiverDeleted)
 		assert.Len(t, conf.Collector.Receivers.TcplogReceivers, 1)
-		assert.Equal(t, "localhost:152", conf.Collector.Receivers.TcplogReceivers[0].ListenAddress)
-		assert.Len(t, conf.Collector.Receivers.TcplogReceivers[0].Operators, 4)
+		assert.Equal(t, "localhost:152", conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].ListenAddress)
+		assert.Len(t, conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].Operators, 4)
 	})
 }
 

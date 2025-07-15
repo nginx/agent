@@ -54,12 +54,14 @@ func TestTemplateWrite(t *testing.T) {
 	cfg := types.AgentConfig()
 	actualConfPath := filepath.Join(tmpDir, "nginx-agent-otelcol-test.yaml")
 	cfg.Collector.ConfigPath = actualConfPath
-	cfg.Collector.Processors.Resource = &config.Resource{
-		Attributes: []config.ResourceAttribute{
-			{
-				Key:    "resource.id",
-				Action: "add",
-				Value:  "12345",
+	cfg.Collector.Processors.Resource = map[string]*config.Resource{
+		"default": {
+			Attributes: []config.ResourceAttribute{
+				{
+					Key:    "resource.id",
+					Action: "add",
+					Value:  "12345",
+				},
 			},
 		},
 	}
@@ -106,8 +108,7 @@ func TestTemplateWrite(t *testing.T) {
 		},
 	})
 	// Clear default config and test collector with TLS enabled
-	cfg.Collector.Receivers.OtlpReceivers = []config.OtlpReceiver{}
-	cfg.Collector.Receivers.OtlpReceivers = append(cfg.Collector.Receivers.OtlpReceivers, config.OtlpReceiver{
+	cfg.Collector.Receivers.OtlpReceivers["default"] = &config.OtlpReceiver{
 		Server: &config.ServerConfig{
 			Host: "localhost",
 			Port: 4317,
@@ -118,10 +119,10 @@ func TestTemplateWrite(t *testing.T) {
 			Key:  "/tmp/key.pem",
 			Ca:   "/tmp/ca.pem",
 		},
-	})
+	}
 
-	cfg.Collector.Receivers.TcplogReceivers = []config.TcplogReceiver{
-		{
+	cfg.Collector.Receivers.TcplogReceivers = map[string]*config.TcplogReceiver{
+		"default": {
 			ListenAddress: "localhost:151",
 			Operators: []config.Operator{
 				{
@@ -155,12 +156,25 @@ func TestTemplateWrite(t *testing.T) {
 		},
 	}
 
-	cfg.Collector.Exporters.OtlpExporters[0].Authenticator = "headers_setter"
+	cfg.Collector.Exporters.OtlpExporters["default"].Authenticator = "headers_setter"
 	// nolint: lll
-	cfg.Collector.Exporters.OtlpExporters[0].Compression = types.AgentConfig().Collector.Exporters.OtlpExporters[0].Compression
-	cfg.Collector.Exporters.OtlpExporters[0].Server.Port = 1234
-	cfg.Collector.Receivers.OtlpReceivers[0].Server.Port = 4317
+	cfg.Collector.Exporters.OtlpExporters["default"].Compression = types.AgentConfig().Collector.Exporters.OtlpExporters["default"].Compression
+	cfg.Collector.Exporters.OtlpExporters["default"].Server.Port = 1234
+	cfg.Collector.Receivers.OtlpReceivers["default"].Server.Port = 4317
 	cfg.Collector.Extensions.Health.Server.Port = 1337
+
+	cfg.Collector.Pipelines.Metrics = make(map[string]*config.Pipeline)
+	cfg.Collector.Pipelines.Metrics["default"] = &config.Pipeline{
+		Receivers:  []string{"hostmetrics", "containermetrics", "otlp/default", "nginx/123"},
+		Processors: []string{"resource/default", "batch/default"},
+		Exporters:  []string{"otlp/default", "prometheus", "debug"},
+	}
+	cfg.Collector.Pipelines.Logs = make(map[string]*config.Pipeline)
+	cfg.Collector.Pipelines.Logs["default"] = &config.Pipeline{
+		Receivers:  []string{"tcplog/default"},
+		Processors: []string{"resource/default", "batch/default"},
+		Exporters:  []string{"otlp/default", "debug"},
+	}
 
 	require.NotNil(t, cfg)
 

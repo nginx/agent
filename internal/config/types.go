@@ -104,13 +104,25 @@ type (
 		Exporters  Exporters  `yaml:"exporters"   mapstructure:"exporters"`
 		Extensions Extensions `yaml:"extensions"  mapstructure:"extensions"`
 		Processors Processors `yaml:"processors"  mapstructure:"processors"`
+		Pipelines  Pipelines  `yaml:"pipelines"   mapstructure:"pipelines"`
 		Receivers  Receivers  `yaml:"receivers"   mapstructure:"receivers"`
 	}
 
+	Pipelines struct {
+		Metrics map[string]*Pipeline `yaml:"metrics" mapstructure:"metrics"`
+		Logs    map[string]*Pipeline `yaml:"logs"    mapstructure:"logs"`
+	}
+
+	Pipeline struct {
+		Receivers  []string `yaml:"receivers"  mapstructure:"receivers"`
+		Processors []string `yaml:"processors" mapstructure:"processors"`
+		Exporters  []string `yaml:"exporters"  mapstructure:"exporters"`
+	}
+
 	Exporters struct {
-		Debug              *DebugExporter      `yaml:"debug"      mapstructure:"debug"`
-		PrometheusExporter *PrometheusExporter `yaml:"prometheus" mapstructure:"prometheus"`
-		OtlpExporters      []OtlpExporter      `yaml:"otlp"       mapstructure:"otlp"`
+		Debug              *DebugExporter           `yaml:"debug"      mapstructure:"debug"`
+		PrometheusExporter *PrometheusExporter      `yaml:"prometheus" mapstructure:"prometheus"`
+		OtlpExporters      map[string]*OtlpExporter `yaml:"otlp"       mapstructure:"otlp"`
 	}
 
 	OtlpExporter struct {
@@ -153,10 +165,10 @@ type (
 
 	// OTel Collector Processors configuration.
 	Processors struct {
-		Attribute *Attribute `yaml:"attribute" mapstructure:"attribute"`
-		Resource  *Resource  `yaml:"resource"  mapstructure:"resource"`
-		Batch     *Batch     `yaml:"batch"     mapstructure:"batch"`
-		LogsGzip  *LogsGzip  `yaml:"logsgzip"  mapstructure:"logsgzip"`
+		Attribute map[string]*Attribute `yaml:"attribute" mapstructure:"attribute"`
+		Resource  map[string]*Resource  `yaml:"resource"  mapstructure:"resource"`
+		Batch     map[string]*Batch     `yaml:"batch"     mapstructure:"batch"`
+		LogsGzip  map[string]*LogsGzip  `yaml:"logsgzip"  mapstructure:"logsgzip"`
 	}
 
 	Attribute struct {
@@ -189,12 +201,12 @@ type (
 
 	// OTel Collector Receiver configuration.
 	Receivers struct {
-		ContainerMetrics   *ContainerMetricsReceiver `yaml:"container_metrics" mapstructure:"container_metrics"`
-		HostMetrics        *HostMetrics              `yaml:"host_metrics"      mapstructure:"host_metrics"`
-		OtlpReceivers      []OtlpReceiver            `yaml:"otlp"              mapstructure:"otlp"`
-		NginxReceivers     []NginxReceiver           `yaml:"nginx"             mapstructure:"nginx"`
-		NginxPlusReceivers []NginxPlusReceiver       `yaml:"nginx_plus"        mapstructure:"nginx_plus"`
-		TcplogReceivers    []TcplogReceiver          `yaml:"tcplog"            mapstructure:"tcplog"`
+		ContainerMetrics   *ContainerMetricsReceiver  `yaml:"container_metrics" mapstructure:"container_metrics"`
+		HostMetrics        *HostMetrics               `yaml:"host_metrics"      mapstructure:"host_metrics"`
+		OtlpReceivers      map[string]*OtlpReceiver   `yaml:"otlp"              mapstructure:"otlp"`
+		TcplogReceivers    map[string]*TcplogReceiver `yaml:"tcplog"            mapstructure:"tcplog"`
+		NginxReceivers     []NginxReceiver            `yaml:"-"`
+		NginxPlusReceivers []NginxPlusReceiver        `yaml:"-"`
 	}
 
 	OtlpReceiver struct {
@@ -374,24 +386,6 @@ func (c *Config) IsAuxiliaryCommandGrpcClientConfigured() bool {
 		c.AuxiliaryCommand.Server.Host != "" &&
 		c.AuxiliaryCommand.Server.Port != 0 &&
 		c.AuxiliaryCommand.Server.Type == Grpc
-}
-
-func (c *Config) IsCommandAuthConfigured() bool {
-	return c.Command.Auth != nil &&
-		(c.Command.Auth.Token != "" || c.Command.Auth.TokenPath != "")
-}
-
-func (c *Config) IsAuxiliaryCommandAuthConfigured() bool {
-	return c.AuxiliaryCommand.Auth != nil &&
-		(c.AuxiliaryCommand.Auth.Token != "" || c.AuxiliaryCommand.Auth.TokenPath != "")
-}
-
-func (c *Config) IsCommandTLSConfigured() bool {
-	return c.Command.TLS != nil
-}
-
-func (c *Config) IsAuxiliaryCommandTLSConfigured() bool {
-	return c.AuxiliaryCommand.TLS != nil
 }
 
 func (c *Config) IsFeatureEnabled(feature string) bool {

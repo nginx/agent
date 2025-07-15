@@ -59,7 +59,7 @@ var (
 	initMutex            = &sync.Mutex{}
 )
 
-// NewCollector is the constructor for the Collector plugin.
+// New is the constructor for the Collector plugin.
 func New(conf *config.Config) (*Collector, error) {
 	initMutex.Lock()
 
@@ -194,7 +194,7 @@ func (oc *Collector) Subscriptions() []string {
 }
 
 // Process receivers and log warning for sub-optimal configurations
-func (oc *Collector) processReceivers(ctx context.Context, receivers []config.OtlpReceiver) {
+func (oc *Collector) processReceivers(ctx context.Context, receivers map[string]*config.OtlpReceiver) {
 	for _, receiver := range receivers {
 		if receiver.OtlpTLSConfig == nil {
 			slog.WarnContext(ctx, "OTel receiver is configured without TLS. Connections are unencrypted.")
@@ -317,12 +317,13 @@ func (oc *Collector) updateResourceProcessor(resourceUpdateContext *v1.Resource)
 	resourceProcessorUpdated := false
 
 	if oc.config.Collector.Processors.Resource == nil {
-		oc.config.Collector.Processors.Resource = &config.Resource{
+		oc.config.Collector.Processors.Resource = make(map[string]*config.Resource)
+		oc.config.Collector.Processors.Resource["default"] = &config.Resource{
 			Attributes: make([]config.ResourceAttribute, 0),
 		}
 	}
 
-	if oc.config.Collector.Processors.Resource != nil &&
+	if oc.config.Collector.Processors.Resource["default"] != nil &&
 		resourceUpdateContext.GetResourceId() != "" {
 		resourceProcessorUpdated = oc.updateResourceAttributes(
 			[]config.ResourceAttribute{
@@ -431,7 +432,7 @@ func (oc *Collector) checkForNewReceivers(ctx context.Context, nginxConfigContex
 	}
 
 	if oc.config.IsFeatureEnabled(pkgConfig.FeatureLogsNap) {
-		tcplogReceiversFound := oc.updateTcplogReceivers(nginxConfigContext)
+		tcplogReceiversFound := oc.updateNginxAppProtectTcplogReceivers(nginxConfigContext)
 		if tcplogReceiversFound {
 			reloadCollector = true
 		}
@@ -541,8 +542,13 @@ func (oc *Collector) updateExistingNginxOSSReceiver(
 	return nginxReceiverFound, reloadCollector
 }
 
-func (oc *Collector) updateTcplogReceivers(nginxConfigContext *model.NginxConfigContext) bool {
+func (oc *Collector) updateNginxAppProtectTcplogReceivers(nginxConfigContext *model.NginxConfigContext) bool {
 	newTcplogReceiverAdded := false
+
+	if oc.config.Collector.Receivers.TcplogReceivers == nil {
+		oc.config.Collector.Receivers.TcplogReceivers = make(map[string]*config.TcplogReceiver)
+	}
+
 	if nginxConfigContext.NAPSysLogServers != nil {
 	napLoop:
 		for _, napSysLogServer := range nginxConfigContext.NAPSysLogServers {
@@ -550,40 +556,37 @@ func (oc *Collector) updateTcplogReceivers(nginxConfigContext *model.NginxConfig
 				continue napLoop
 			}
 
-			oc.config.Collector.Receivers.TcplogReceivers = append(
-				oc.config.Collector.Receivers.TcplogReceivers,
-				config.TcplogReceiver{
-					ListenAddress: napSysLogServer,
-					Operators: []config.Operator{
-						{
-							Type: "add",
-							Fields: map[string]string{
-								"field": "body",
-								"value": timestampConversionExpression,
-							},
+			oc.config.Collector.Receivers.TcplogReceivers["nginx_app_protect"] = &config.TcplogReceiver{
+				ListenAddress: napSysLogServer,
+				Operators: []config.Operator{
+					{
+						Type: "add",
+						Fields: map[string]string{
+							"field": "body",
+							"value": timestampConversionExpression,
 						},
-						{
-							Type: "syslog_parser",
-							Fields: map[string]string{
-								"protocol": "rfc3164",
-							},
+					},
+					{
+						Type: "syslog_parser",
+						Fields: map[string]string{
+							"protocol": "rfc3164",
 						},
-						{
-							Type: "remove",
-							Fields: map[string]string{
-								"field": "attributes.message",
-							},
+					},
+					{
+						Type: "remove",
+						Fields: map[string]string{
+							"field": "attributes.message",
 						},
-						{
-							Type: "add",
-							Fields: map[string]string{
-								"field": "resource[\"instance.id\"]",
-								"value": nginxConfigContext.InstanceID,
-							},
+					},
+					{
+						Type: "add",
+						Fields: map[string]string{
+							"field": "resource[\"instance.id\"]",
+							"value": nginxConfigContext.InstanceID,
 						},
 					},
 				},
-			)
+			}
 
 			newTcplogReceiverAdded = true
 		}
@@ -597,21 +600,11 @@ func (oc *Collector) updateTcplogReceivers(nginxConfigContext *model.NginxConfig
 func (oc *Collector) areNapReceiversDeleted(nginxConfigContext *model.NginxConfigContext) bool {
 	listenAddressesToBeDeleted := oc.configDeletedNapReceivers(nginxConfigContext)
 	if len(listenAddressesToBeDeleted) != 0 {
-		oc.deleteNapReceivers(listenAddressesToBeDeleted)
+		delete(oc.config.Collector.Receivers.TcplogReceivers, "nginx_app_protect")
 		return true
 	}
 
 	return false
-}
-
-func (oc *Collector) deleteNapReceivers(listenAddressesToBeDeleted map[string]bool) {
-	filteredReceivers := (oc.config.Collector.Receivers.TcplogReceivers)[:0]
-	for _, receiver := range oc.config.Collector.Receivers.TcplogReceivers {
-		if !listenAddressesToBeDeleted[receiver.ListenAddress] {
-			filteredReceivers = append(filteredReceivers, receiver)
-		}
-	}
-	oc.config.Collector.Receivers.TcplogReceivers = filteredReceivers
 }
 
 func (oc *Collector) configDeletedNapReceivers(nginxConfigContext *model.NginxConfigContext) map[string]bool {
@@ -651,16 +644,16 @@ func (oc *Collector) updateResourceAttributes(
 ) (actionUpdated bool) {
 	actionUpdated = false
 
-	if oc.config.Collector.Processors.Resource.Attributes != nil {
+	if oc.config.Collector.Processors.Resource["default"].Attributes != nil {
 	OUTER:
 		for _, toAdd := range attributesToAdd {
-			for _, action := range oc.config.Collector.Processors.Resource.Attributes {
+			for _, action := range oc.config.Collector.Processors.Resource["default"].Attributes {
 				if action.Key == toAdd.Key {
 					continue OUTER
 				}
 			}
-			oc.config.Collector.Processors.Resource.Attributes = append(
-				oc.config.Collector.Processors.Resource.Attributes,
+			oc.config.Collector.Processors.Resource["default"].Attributes = append(
+				oc.config.Collector.Processors.Resource["default"].Attributes,
 				toAdd,
 			)
 			actionUpdated = true

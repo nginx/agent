@@ -1,6 +1,6 @@
 receivers:
   containermetrics:
-    collection_interval: 1s
+    collection_interval: "1s"
   hostmetrics:
     collection_interval: 1m0s
     initial_delay: 1s
@@ -18,7 +18,7 @@ receivers:
           system.memory.limit:
             enabled: true
       network:
-  otlp/0:
+  otlp/default:
     protocols:
       grpc:
         endpoint: "localhost:4317"
@@ -35,7 +35,7 @@ receivers:
     access_logs:
       - log_format: "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\"\"$upstream_cache_status\""
         file_path: "/var/log/nginx/access-custom.conf"
-  tcplog/0:
+  tcplog/default:
     listen_address: "localhost:151"
     operators:
       - type: add
@@ -45,18 +45,18 @@ receivers:
         field: attributes.message
 
 processors:
-  resource:
+  resource/default:
     attributes:
       - key: resource.id
         action: add
         value: 12345
-  batch:
+  batch/default:
     send_batch_size: 1000
     timeout: 30s
     send_batch_max_size: 1000
 
 exporters:
-  otlp/0:
+  otlp/default:
     endpoint: "127.0.0.1:1234"
     compression: none
     timeout: 10s
@@ -100,26 +100,27 @@ service:
   extensions:
     - health_check
     - headers_setter
+
   pipelines:
-    metrics:
+    metrics/default:
       receivers:
-        - containermetrics
         - hostmetrics
-        - otlp/0
+        - containermetrics
+        - otlp/default
         - nginx/123
       processors:
-        - resource
-        - batch
+        - resource/default
+        - batch/default
       exporters:
-        - otlp/0
+        - otlp/default
         - prometheus
         - debug
-    logs:
+    logs/default:
       receivers:
-        - tcplog/0
+        - tcplog/default
       processors:
-        - resource
-        - batch
+        - resource/default
+        - batch/default
       exporters:
-        - otlp/0
+        - otlp/default
         - debug
