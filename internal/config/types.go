@@ -459,6 +459,7 @@ func isAllowedDir(path string, allowedDirs []string) (bool, error) {
 	}
 
 	directoryPath := path
+	// Check if the path is a file, regex matches when end of string is /<filename>.<extension>
 	isFilePath, err := regexp.MatchString(`/(\w+)\.(\w+)$`, directoryPath)
 	if err != nil {
 		return false, errors.New("error matching path" + directoryPath)
