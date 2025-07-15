@@ -106,7 +106,6 @@ func DefaultAllowedDirectories() []string {
 		"/usr/share/nginx/modules",
 		"/var/run/nginx",
 		"/var/log/nginx",
-		"/opt/app_protect",
 		"/etc/app_protect",
 	}
 }
