@@ -103,7 +103,8 @@ func TestTypes_isAllowedDir(t *testing.T) {
 		require.NoError(t, err)
 
 		result, err := isAllowedDir(symlinkPath, allowedDirs)
- 
+		require.NoError(t, err)
+
 		require.False(t, result, "Symlink in allowed directory should return false")
 	})
 }
