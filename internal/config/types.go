@@ -466,14 +466,9 @@ func isAllowedDir(path string, allowedDirs []string) (bool, error) {
 
 	if isFilePath {
 		directoryPath = filepath.Dir(directoryPath)
-		slog.Debug("File path detected, checking parent directory is allowed", "path", directoryPath)
 	}
 
-	fInfo, statErr := os.Stat(directoryPath)
-	if statErr != nil {
-		slog.Debug("Stat: Path error", "path", path, "error", statErr)
-	}
-
+	fInfo, _ := os.Stat(directoryPath)
 	if fInfo != nil {
 		if isSymlink(directoryPath) {
 			return false, errors.New("path is a symlink, skipping " + directoryPath)
@@ -493,14 +488,8 @@ func isAllowedDir(path string, allowedDirs []string) (bool, error) {
 
 func isSymlink(path string) bool {
 	// check if it contains a symlink
-	lInfo, err := os.Lstat(path)
-	if err != nil {
-		slog.Warn("Lstat error", "path", path, "error", err)
-		return false
-	}
+	lInfo, _ := os.Lstat(path)
 	if lInfo != nil && lInfo.Mode()&os.ModeSymlink != 0 {
-		slog.Warn("Path is a symlink", "path", path)
-
 		return true
 	}
 
