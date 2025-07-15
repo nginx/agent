@@ -17,7 +17,7 @@ GOBIN 	?= $$(go env GOPATH)/bin
 # | OS_RELEASE       | OS_VERSION                                | NOTES                                                          |
 # | ---------------- | ----------------------------------------- | -------------------------------------------------------------- |
 # | amazonlinux      | 2, 2023                                   |                                                                |
-# | ubuntu           | 22.04, 24.04, 24.10, 25.04                |                                                                |
+# | ubuntu           | 22.04, 24.04 25.04                		 |                                                                |
 # | debian           | bullseye-slim, bookworm-slim 			 |                                                                |
 # | redhatenterprise | 8, 9, 10                                	 |                                                                |
 # | rockylinux       | 8, 9, 10                                  |                                                                |

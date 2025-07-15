@@ -12,7 +12,7 @@ PACKAGE_BUILD       ?= 1
 PACKAGE_VERSION     := $(shell git describe --match "v[0-9]*" --abbrev=0 --tags)
 TARBALL_NAME        := $(PACKAGE_PREFIX).tar.gz
 
-DEB_DISTROS         ?= ubuntu-plucky-25.04 ubuntu-oracular-24.10 ubuntu-noble-24.04 ubuntu-jammy-22.04 ubuntu-focal-20.04 debian-bookworm-12 debian-bullseye-11
+DEB_DISTROS         ?= ubuntu-plucky-25.04 ubuntu-noble-24.04 ubuntu-jammy-22.04 ubuntu-focal-20.04 debian-bookworm-12 debian-bullseye-11
 DEB_ARCHS           ?= arm64 amd64
 RPM_DISTROS         ?= suse-15-x86_64
 RPM_ARCH            := x86_64

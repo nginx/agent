@@ -61,11 +61,9 @@ APK=(
 UBUNTU=(
   ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~jammy_amd64.deb
   ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~noble_arm64.deb
-  ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~oracular_arm64.deb
-    ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~plucky_arm64.deb
+  ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~plucky_arm64.deb
   ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~jammy_arm64.deb
   ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~noble_amd64.deb
-  ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~oracular_amd64.deb
   ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~plucky_amd64.deb
 )
 DEBIAN=(
