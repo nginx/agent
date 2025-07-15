@@ -10,8 +10,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestTypes_isAllowedDir(t *testing.T) {
@@ -75,7 +73,7 @@ func TestTypes_isAllowedDir(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := isAllowedDir(test.filePath, test.allowedDirs)
 			require.NoError(t, err)
-			assert.Equal(t, test.allowed, result)
+			require.Equal(t, test.allowed, result)
 		})
 	}
 }
@@ -120,12 +118,12 @@ func TestTypes_isSymlink(t *testing.T) {
 		filePath := tempConf
 		err := os.WriteFile(filePath, []byte("test content"), 0o600)
 		require.NoError(t, err)
-		assert.False(t, isSymlink(filePath), "File is not a symlink")
+		require.False(t, isSymlink(filePath), "File is not a symlink")
 	})
 	t.Run("Test 2: File is a symlink", func(t *testing.T) {
 		filePath := tempDir + "test_conf_link"
 		err := os.Symlink(tempConf, filePath)
 		require.NoError(t, err)
-		assert.True(t, isSymlink(filePath), "File is a symlink")
+		require.True(t, isSymlink(filePath), "File is a symlink")
 	})
 }
