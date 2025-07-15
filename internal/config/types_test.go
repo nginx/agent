@@ -78,8 +78,10 @@ func TestTypes_isAllowedDir(t *testing.T) {
 			assert.Equal(t, test.allowed, result)
 		})
 	}
+}
 
-	t.Run("Test 7: Symlink in allowed directory", func(t *testing.T) {
+func TestTypes_isAllowedDirWithSymlink(t *testing.T) {
+	t.Run("Test 1: Symlink in allowed directory is not allowed", func(t *testing.T) {
 		allowedDirs := []string{"/etc/nginx"}
 		filePath := "file.conf"
 		symlinkPath := "file_link"
@@ -103,8 +105,7 @@ func TestTypes_isAllowedDir(t *testing.T) {
 		require.NoError(t, err)
 
 		result, err := isAllowedDir(symlinkPath, allowedDirs)
-		require.NoError(t, err)
-
+		require.Error(t, err)
 		require.False(t, result, "Symlink in allowed directory should return false")
 	})
 }
