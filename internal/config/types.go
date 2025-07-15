@@ -452,14 +452,14 @@ func (c *Config) AreReceiversConfigured() bool {
 // isAllowedDir checks if the given path is in the list of allowed directories.
 // It returns true if the path is allowed, false otherwise.
 // If the path is allowed but does not exist, it also logs a warning.
-// It also checks if the path is a file, in which case it checks the directory of the file.
+// It also checks if the path is a file, in which case it checks the parent directory of the file.
 func isAllowedDir(path string, allowedDirs []string) (bool, error) {
 	if len(allowedDirs) == 0 {
 		return false, errors.New("no allowed directories configured")
 	}
 
 	directoryPath := path
-	isFilePath, err := regexp.MatchString(`\.(\w+)$`, directoryPath)
+	isFilePath, err := regexp.MatchString(`/(\w+)\.(\w+)$`, directoryPath)
 	if err != nil {
 		return false, errors.New("error matching path" + directoryPath)
 	}

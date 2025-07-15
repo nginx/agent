@@ -20,7 +20,7 @@ func TestTypes_isAllowedDir(t *testing.T) {
 		allowed     bool
 	}{
 		{
-			name:    "Test 1:File is in allowed directory",
+			name:    "Test 1: File is in allowed directory",
 			allowed: true,
 			allowedDirs: []string{
 				"/etc/nginx",
