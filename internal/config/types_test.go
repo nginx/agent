@@ -109,3 +109,23 @@ func TestTypes_isAllowedDirWithSymlink(t *testing.T) {
 		require.False(t, result, "Symlink in allowed directory should return false")
 	})
 }
+
+func TestTypes_isSymlink(t *testing.T) {
+	// create temp dir
+	tempDir := t.TempDir()
+	tempConf := tempDir + "test.conf"
+	defer os.RemoveAll(tempDir)
+
+	t.Run("Test 1: File is not a symlink", func(t *testing.T) {
+		filePath := tempConf
+		err := os.WriteFile(filePath, []byte("test content"), 0o600)
+		require.NoError(t, err)
+		assert.False(t, isSymlink(filePath), "File is not a symlink")
+	})
+	t.Run("Test 2: File is a symlink", func(t *testing.T) {
+		filePath := tempDir + "test_conf_link"
+		err := os.Symlink(tempConf, filePath)
+		require.NoError(t, err)
+		assert.True(t, isSymlink(filePath), "File is a symlink")
+	})
+}
