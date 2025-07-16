@@ -506,6 +506,34 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			),
 			allowedDirectories: []string{dir},
 		},
+		{
+			name:     "Test 10: Check with multiple syslog servers",
+			instance: protos.NginxPlusInstance([]string{}),
+			content: testconfig.NginxConfigWithMultipleSysLogs(errorLog.Name(), accessLog.Name(),
+				"192.168.12.34:1517", "my.domain.com:1517", "127.0.0.1:1515"),
+			expectedConfigContext: modelHelpers.ConfigContextWithSysLog(
+				accessLog.Name(),
+				errorLog.Name(),
+				protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				"127.0.0.1:1515",
+			),
+			allowedDirectories: []string{dir},
+			expectedLog:        "Found valid NAP syslog server",
+		},
+		{
+			name:     "Test 10: Check with multiple syslog servers",
+			instance: protos.NginxPlusInstance([]string{}),
+			content: testconfig.NginxConfigWithMultipleSysLogs(errorLog.Name(), accessLog.Name(),
+				"192.168.12.34:1517", "my.domain.com:1517", "not.allowed:1515"),
+			expectedConfigContext: modelHelpers.ConfigContextWithSysLog(
+				accessLog.Name(),
+				errorLog.Name(),
+				protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				"",
+			),
+			allowedDirectories: []string{dir},
+			expectedLog:        "Could not find usable NAP syslog server, security violations will be unavailable",
+		},
 	}
 
 	for _, test := range tests {
@@ -637,7 +665,7 @@ func TestNginxConfigParser_SyslogServerParse(t *testing.T) {
 			expectedSyslogServers: "",
 			content: testconfig.NginxConfigWithMultipleSysLogs(errorLog.Name(), accessLog.Name(),
 				"my.domain.com:1517", "127.0.0.1:1515", "my.domain.com:1517"),
-			expectedLog: "Could not find usable NAP syslog server",
+			expectedLog: "NAP syslog server is not reachable",
 			portInUse:   true,
 		},
 		{
@@ -684,17 +712,17 @@ func TestNginxConfigParser_SyslogServerParse(t *testing.T) {
 
 func TestNginxConfigParser_findValidSysLogServers(t *testing.T) {
 	servers := []string{
-		"/etc/app_protect/conf/log_default.json", "syslog:server=192.168.12.34:1517",
-		"app_protect_security_log", "/etc/app_protect/conf/log_default1.json", "syslog:server=my.domain.com:1517",
-		"app_protect_security_log", "/etc/app_protect/conf/log_default2.json", "syslog:server=127.0.0.1:1515",
-		"app_protect_security_log", "/etc/app_protect/conf/log_default3.json", "syslog:server=localhost:1516",
-		"app_protect_security_log\", \"/etc/app_protect/conf/log_default3.json\", \"syslog:server=127.255.255.255:1517",
+		"syslog:server=192.168.12.34:1517", "syslog:server=my.domain.com:1517", "syslog:server=127.0.0.1:1515",
+		"syslog:server=localhost:1516", "syslog:server=127.255.255.255:1517",
 	}
-	expected := []string{"127.0.0.1:1515", "localhost:1516", "127.255.255.255:1517"}
+	expected := []string{"", "", "127.0.0.1:1515", "localhost:1516", "127.255.255.255:1517"}
 	ncp := NewNginxConfigParser(types.AgentConfig())
-	result := ncp.findValidSysLogServers(servers)
 
-	assert.Equal(t, expected, result)
+	for i, server := range servers {
+		result := ncp.findValidSysLogServers(server)
+
+		assert.Equal(t, expected[i], result)
+	}
 }
 
 func TestNginxConfigParser_checkLog(t *testing.T) {
