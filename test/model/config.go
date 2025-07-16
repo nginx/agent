@@ -160,3 +160,41 @@ func ConfigContextWithFiles(
 		NAPSysLogServer: syslogServers,
 	}
 }
+
+func ConfigContextWithSysLog(
+	accessLogName,
+	errorLogName string,
+	instanceID string,
+	syslogServers string,
+) *model.NginxConfigContext {
+	return &model.NginxConfigContext{
+		StubStatus: &model.APIDetails{
+			URL:      "",
+			Listen:   "",
+			Location: "",
+		},
+		PlusAPI: &model.APIDetails{
+			URL:      "",
+			Listen:   "",
+			Location: "",
+		},
+		AccessLogs: []*model.AccessLog{
+			{
+				Name:        accessLogName,
+				Format:      "$remote_addr - $remote_user [$time_local]",
+				Readable:    true,
+				Permissions: "0600",
+			},
+		},
+		ErrorLogs: []*model.ErrorLog{
+			{
+				Name:        errorLogName,
+				Readable:    true,
+				LogLevel:    "notice",
+				Permissions: "0600",
+			},
+		},
+		InstanceID:      instanceID,
+		NAPSysLogServer: syslogServers,
+	}
+}

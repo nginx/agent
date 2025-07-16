@@ -109,6 +109,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 	payload *crossplane.Payload,
 ) (*model.NginxConfigContext, error) {
 	napSyslogServersFound := make(map[string]bool)
+	napEnabled := false
 
 	nginxConfigContext := &model.NginxConfigContext{
 		InstanceID: instance.GetInstanceMeta().GetInstanceId(),
@@ -175,17 +176,11 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 					}
 				case "app_protect_security_log":
 					if len(directive.Args) > 1 {
-						sysLogServers := ncp.findValidSysLogServers(directive.Args)
-						if len(sysLogServers) == 0 {
-							slog.WarnContext(ctx, "Could not find usable NAP syslog server, "+
-								"security violations will be unavailable")
-						}
-						for i := range sysLogServers {
-							sysLogServer := sysLogServers[i]
-							if !napSyslogServersFound[sysLogServer] {
-								napSyslogServersFound[sysLogServer] = true
-								slog.DebugContext(ctx, "Found NAP syslog server", "address", sysLogServer)
-							}
+						napEnabled = true
+						sysLogServer := ncp.findValidSysLogServers(directive.Args[1])
+						if sysLogServer != "" && !napSyslogServersFound[sysLogServer] {
+							napSyslogServersFound[sysLogServer] = true
+							slog.DebugContext(ctx, "Found NAP syslog server", "address", sysLogServer)
 						}
 					}
 				}
@@ -213,6 +208,9 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 				nginxConfigContext.NAPSysLogServer = syslogServer
 				ncp.previousNAPSysLogServer = syslogServer
 			}
+		} else if napEnabled {
+			slog.WarnContext(ctx, "Could not find usable NAP syslog server, "+
+				"security violations will be unavailable")
 		}
 
 		fileMeta, err := files.FileMeta(conf.File)
@@ -236,34 +234,37 @@ func (ncp *NginxConfigParser) parseSyslogDirective(ctx context.Context, napSyslo
 	for napSyslogServer := range napSyslogServers {
 		ln, err := net.Listen("tcp", napSyslogServer)
 		if err != nil {
-			slog.WarnContext(ctx, "NAP syslog server is not reachable", "address", napSyslogServer,
+			slog.DebugContext(ctx, "NAP syslog server is not reachable", "address", napSyslogServer,
 				"error", err)
 
 			continue
 		}
 		ln.Close()
+
 		slog.DebugContext(ctx, "Found valid NAP syslog server", "address", napSyslogServer)
 
 		return napSyslogServer
 	}
-	slog.WarnContext(ctx, "Could not find usable NAP syslog server, security violations will be unavailable")
 
 	return ""
 }
 
-func (ncp *NginxConfigParser) findValidSysLogServers(sysLogServers []string) []string {
+func (ncp *NginxConfigParser) findValidSysLogServers(sysLogServer string) string {
 	re := regexp.MustCompile(`syslog:server=([\S]+)`)
-	var servers []string
-	for i := range sysLogServers {
-		matches := re.FindStringSubmatch(sysLogServers[i])
-		if len(matches) > 1 {
-			if strings.HasPrefix(matches[1], "localhost") || strings.HasPrefix(matches[1], "127.0.0.1") {
-				servers = append(servers, matches[1])
-			}
+	matches := re.FindStringSubmatch(sysLogServer)
+	if len(matches) > 1 {
+		host, _, err := net.SplitHostPort(matches[1])
+		if err != nil {
+			return ""
+		}
+
+		ip := net.ParseIP(host)
+		if ip.IsLoopback() || strings.EqualFold(host, "localhost") {
+			return matches[1]
 		}
 	}
 
-	return servers
+	return ""
 }
 
 func (ncp *NginxConfigParser) parseIncludeDirective(directive *crossplane.Directive) string {
