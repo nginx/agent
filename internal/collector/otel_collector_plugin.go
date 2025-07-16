@@ -550,6 +550,24 @@ func (oc *Collector) updateTcplogReceivers(nginxConfigContext *model.NginxConfig
 				config.TcplogReceiver{
 					ListenAddress: nginxConfigContext.NAPSysLogServer,
 					Operators: []config.Operator{
+						// regex captures the priority number from the log line
+						{
+							Type: "regex_parser",
+							Fields: map[string]string{
+								"regex":      "^<(?P<priority>\\d+)>",
+								"parse_from": "body",
+								"parse_to":   "attributes",
+							},
+						},
+						// filter drops all logs that have a severity above 4
+						// https://docs.secureauth.com/0902/en/how-to-read-a-syslog-message.html#severity-code-table
+						{
+							Type: "filter",
+							Fields: map[string]string{
+								"expr":       "'int(attributes.priority) % 8 > 4'",
+								"drop_ratio": "1.0",
+							},
+						},
 						{
 							Type: "add",
 							Fields: map[string]string{
@@ -561,15 +579,6 @@ func (oc *Collector) updateTcplogReceivers(nginxConfigContext *model.NginxConfig
 							Type: "syslog_parser",
 							Fields: map[string]string{
 								"protocol": "rfc3164",
-							},
-						},
-						// filter drops all logs that have a severity above 4
-						// https://docs.secureauth.com/0902/en/how-to-read-a-syslog-message.html#severity-code-table
-						{
-							Type: "filter",
-							Fields: map[string]string{
-								"expr":       "'attributes.priority % 8 > 4'",
-								"drop_ratio": "1.0",
 							},
 						},
 						{
