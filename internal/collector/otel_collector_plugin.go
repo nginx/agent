@@ -563,6 +563,15 @@ func (oc *Collector) updateTcplogReceivers(nginxConfigContext *model.NginxConfig
 								"protocol": "rfc3164",
 							},
 						},
+						// filter drops all logs that have a severity above 4
+						// https://docs.secureauth.com/0902/en/how-to-read-a-syslog-message.html#severity-code-table
+						{
+							Type: "filter",
+							Fields: map[string]string{
+								"expr":       "'attributes.priority % 8 > 4'",
+								"drop_ratio": "1.0",
+							},
+						},
 						{
 							Type: "remove",
 							Fields: map[string]string{
