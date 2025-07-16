@@ -6,72 +6,43 @@
 package managementplane
 
 import (
-	"context"
 	"fmt"
 	"net"
 	"net/http"
-	"testing"
 	"time"
 
 	"github.com/nginx/agent/v3/test/integration/utils"
 
 	"github.com/go-resty/resty/v2"
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-func TestGrpc_Reconnection(t *testing.T) {
-	ctx := context.Background()
-	teardownTest := utils.SetupConnectionTest(t, false, false, false,
-		"../../config/agent/nginx-config-with-grpc-client.conf")
-	defer teardownTest(t)
-
+func (s *ConfigApplyTestSuite) TestGrpc_Test1_Reconnection() {
 	timeout := 15 * time.Second
 
-	originalID := utils.VerifyConnection(t, 2, utils.MockManagementPlaneAPIAddress)
+	stopErr := utils.MockManagementPlaneGrpcContainer.Stop(s.ctx, &timeout)
 
-	stopErr := utils.MockManagementPlaneGrpcContainer.Stop(ctx, &timeout)
+	s.Require().NoError(stopErr)
 
-	require.NoError(t, stopErr)
+	startErr := utils.MockManagementPlaneGrpcContainer.Start(s.ctx)
+	s.Require().NoError(startErr)
 
-	startErr := utils.MockManagementPlaneGrpcContainer.Start(ctx)
-	require.NoError(t, startErr)
-
-	ipAddress, err := utils.MockManagementPlaneGrpcContainer.Host(ctx)
-	require.NoError(t, err)
-	ports, err := utils.MockManagementPlaneGrpcContainer.Ports(ctx)
-	require.NoError(t, err)
+	ipAddress, err := utils.MockManagementPlaneGrpcContainer.Host(s.ctx)
+	s.Require().NoError(err)
+	ports, err := utils.MockManagementPlaneGrpcContainer.Ports(s.ctx)
+	s.Require().NoError(err)
 	utils.MockManagementPlaneAPIAddress = net.JoinHostPort(ipAddress, ports["9093/tcp"][0].HostPort)
 
-	currentID := utils.VerifyConnection(t, 2, utils.MockManagementPlaneAPIAddress)
-	assert.Equal(t, originalID, currentID)
+	currentID := utils.VerifyConnection(s.T(), 2, utils.MockManagementPlaneAPIAddress)
+	s.Equal(s.nginxInstanceID, currentID)
 }
 
 // Verify that the agent sends a connection request and an update data plane status request
-func TestGrpc_StartUp(t *testing.T) {
-	teardownTest := utils.SetupConnectionTest(t, true, false, false,
-		"../../config/agent/nginx-config-with-grpc-client.conf")
-	defer teardownTest(t)
-
-	utils.VerifyConnection(t, 2, utils.MockManagementPlaneAPIAddress)
-	assert.False(t, t.Failed())
-	utils.VerifyUpdateDataPlaneHealth(t, utils.MockManagementPlaneAPIAddress)
+func (s *ConfigUploadMPIFileWatcherTestSuite) TestGrpc_Test2_StartUp() {
+	utils.VerifyUpdateDataPlaneHealth(s.T(), utils.MockManagementPlaneAPIAddress)
 }
 
-func TestGrpc_DataplaneHealthRequest(t *testing.T) {
-	teardownTest := utils.SetupConnectionTest(t, true, false, false,
-		"../../config/agent/nginx-config-with-grpc-client.conf")
-	defer teardownTest(t)
-
-	utils.VerifyConnection(t, 2, utils.MockManagementPlaneAPIAddress)
-
-	responses := utils.ManagementPlaneResponses(t, 1, utils.MockManagementPlaneAPIAddress)
-	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
-	assert.Equal(t, "Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
-
-	assert.False(t, t.Failed())
-
+func (s *ConfigUploadMPIFileWatcherTestSuite) TestGrpc_Test3_DataplaneHealthRequest() {
 	request := `{
 			"message_meta": {
 				"message_id": "5d0fa83e-351c-4009-90cd-1f2acce2d184",
@@ -88,11 +59,11 @@ func TestGrpc_DataplaneHealthRequest(t *testing.T) {
 	url := fmt.Sprintf("http://%s/api/v1/requests", utils.MockManagementPlaneAPIAddress)
 	resp, err := client.R().EnableTrace().SetBody(request).Post(url)
 
-	require.NoError(t, err)
-	assert.Equal(t, http.StatusOK, resp.StatusCode())
+	s.Require().NoError(err)
+	s.Equal(http.StatusOK, resp.StatusCode())
 
-	responses = utils.ManagementPlaneResponses(t, 2, utils.MockManagementPlaneAPIAddress)
+	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
 
-	assert.Equal(t, mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
-	assert.Equal(t, "Successfully sent health status update", responses[1].GetCommandResponse().GetMessage())
+	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+	s.Equal("Successfully sent health status update", responses[0].GetCommandResponse().GetMessage())
 }
