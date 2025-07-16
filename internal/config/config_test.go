@@ -9,6 +9,7 @@ import (
 	"errors"
 	"os"
 	"path"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -63,6 +64,10 @@ func TestResolveConfig(t *testing.T) {
 
 	actual, err := ResolveConfig()
 	require.NoError(t, err)
+	sort.Slice(actual.Collector.Extensions.HeadersSetter.Headers, func(i, j int) bool {
+		headers := actual.Collector.Extensions.HeadersSetter.Headers
+		return headers[i].Key < headers[j].Key
+	})
 	assert.Equal(t, createConfig(), actual)
 }
 
@@ -1127,6 +1132,16 @@ func createConfig() *Config {
 							Action: "action",
 							Key:    "key",
 							Value:  "value",
+						},
+						{
+							Action: "insert",
+							Key:    "label1",
+							Value:  "label 1",
+						},
+						{
+							Action: "insert",
+							Key:    "label2",
+							Value:  "new-value",
 						},
 					},
 				},

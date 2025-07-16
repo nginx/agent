@@ -133,6 +133,7 @@ func ResolveConfig() (*Config, error) {
 	}
 
 	defaultCollector(collector, config)
+	addLabelsAsOTelHeaders(collector, config.Labels)
 
 	slog.Debug("Agent config", "config", config)
 	slog.Info("Excluded files from being watched for file changes", "exclude_files",
@@ -309,6 +310,22 @@ func addDefaultVMHostMetricsReceiver(collector *Collector) {
 			},
 			CollectionInterval: 1 * time.Minute,
 			InitialDelay:       1 * time.Second,
+		}
+	}
+}
+
+func addLabelsAsOTelHeaders(collector *Collector, labels map[string]any) {
+	slog.Debug("Adding labels as headers to collector", "labels", labels)
+	if collector.Extensions.HeadersSetter != nil {
+		for key, value := range labels {
+			valueString, ok := value.(string)
+			if ok {
+				collector.Extensions.HeadersSetter.Headers = append(collector.Extensions.HeadersSetter.Headers, Header{
+					Action: "insert",
+					Key:    key,
+					Value:  valueString,
+				})
+			}
 		}
 	}
 }
