@@ -12,7 +12,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go.uber.org/zap"
 	"log/slog"
 	"net"
 	"net/http"
@@ -354,10 +353,10 @@ func (r *ResourceService) createPlusClient(instance *mpi.Instance) (*client.Ngin
 	httpClient := http.DefaultClient
 	CaCertLocation := plusAPI.GetCa()
 	if CaCertLocation != "" {
-		slog.Debug("Reading from Location for Ca Cert : ", zap.Any("CaCertLocation", CaCertLocation))
+		slog.Debug("Reading from Location for Ca Cert : ", "CaCertLocation", CaCertLocation)
 		CaCert, err := os.ReadFile(CaCertLocation)
 		if err != nil {
-			slog.Error("Unable to Create NGINX Plus client. Failed to read CA certificate : %v", zap.Error(err))
+			slog.Error("Unable to Create NGINX Plus client. Failed to read CA certificate : ", "err", err)
 			return nil, err
 		}
 		caCertPool := x509.NewCertPool()

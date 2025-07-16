@@ -1170,7 +1170,7 @@ Reading: 0 Writing: 1 Waiting: 1
 				URL:    fmt.Sprintf("%s%s", fakeServer.URL, test.endpoint),
 				Listen: "",
 			}
-			result := nginxConfigParser.pingAPIEndpoint(ctx, statusAPI, "stub_status")
+			result := nginxConfigParser.pingAPIEndpoint(ctx, statusAPI, "stub_status", false)
 			assert.Equal(t, test.expected, result)
 		})
 	}

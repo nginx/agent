@@ -532,10 +532,10 @@ func (ncp *NginxConfigParser) pingAPIEndpoint(ctx context.Context, statusAPIDeta
 	httpClient := http.DefaultClient
 	CaCertLocation := ncp.agentConfig.DataPlaneConfig.Nginx.ApiTls.Ca
 	if SSLTrue && CaCertLocation != "" && ncp.agentConfig.IsDirectoryAllowed(CaCertLocation) {
-		slog.Debug("Reading from Location for Ca Cert : ", CaCertLocation)
+		slog.Debug("Reading from Location for Ca Cert : ", "CaCertLocation", CaCertLocation)
 		CaCert, err := os.ReadFile(ncp.agentConfig.DataPlaneConfig.Nginx.ApiTls.Ca)
 		if err != nil {
-			slog.Error("Unable to Ping NGINX API Endpoint. Failed to read CA certificate : %v", err)
+			slog.Error("Unable to Ping NGINX API Endpoint. Failed to read CA certificate : ", "err", err)
 			return false
 		}
 		caCertPool := x509.NewCertPool()
@@ -614,7 +614,7 @@ func (ncp *NginxConfigParser) urlsForLocationDirectiveAPIDetails(
 	locationDirectiveName string,
 ) []*model.APIDetails {
 	var urls []*model.APIDetails
-	//Check to see if the ca cert location is allowed
+	// Check to see if the ca cert location is allowed
 	CaCertLocation := ncp.agentConfig.DataPlaneConfig.Nginx.ApiTls.Ca
 	if !ncp.agentConfig.IsDirectoryAllowed(CaCertLocation) {
 		CaCertLocation = ""
