@@ -66,6 +66,7 @@ func installUninstallSetup(tb testing.TB, expectNoErrorsInLogs bool) (testcontai
 			nil,
 			testContainer,
 			expectNoErrorsInLogs,
+			nil,
 		)
 	}
 }
@@ -154,7 +155,7 @@ func verifyAgentVersion(ctx context.Context, tb testing.TB, testContainer testco
 
 	replacer := strings.NewReplacer("nginx-agent-", "v", "SNAPSHOT-", "")
 	packageVersion := replacer.Replace(os.Getenv("PACKAGE_NAME"))
-	expectedVersionOutput := fmt.Sprintf("nginx-agent version %s", packageVersion)
+	expectedVersionOutput := "nginx-agent version " + packageVersion
 
 	exitCode, cmdOut, err := testContainer.Exec(ctx, []string{"nginx-agent", "--version"})
 	require.NoError(tb, err)

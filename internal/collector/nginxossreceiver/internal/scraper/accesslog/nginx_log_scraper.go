@@ -224,6 +224,12 @@ func (nls *NginxLogScraper) Shutdown(_ context.Context) error {
 	return err
 }
 
+func (nls *NginxLogScraper) ConsumerCallback(_ context.Context, entries []*entry.Entry) {
+	nls.mut.Lock()
+	nls.entries = append(nls.entries, entries...)
+	nls.mut.Unlock()
+}
+
 func (nls *NginxLogScraper) initStanzaPipeline(
 	operators []operator.Config,
 	logger *zap.Logger,
@@ -246,12 +252,6 @@ func (nls *NginxLogScraper) initStanzaPipeline(
 	}.Build(settings)
 
 	return pipe, err
-}
-
-func (nls *NginxLogScraper) ConsumerCallback(_ context.Context, entries []*entry.Entry) {
-	nls.mut.Lock()
-	nls.entries = append(nls.entries, entries...)
-	nls.mut.Unlock()
 }
 
 func (nls *NginxLogScraper) runConsumer(ctx context.Context) {

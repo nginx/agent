@@ -9,6 +9,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"sync"
 	"sync/atomic"
 	"testing"
 
@@ -45,7 +46,7 @@ func TestFileServiceOperator_UpdateOverview(t *testing.T) {
 
 	fakeFileServiceClient.UpdateFileReturns(&mpi.UpdateFileResponse{}, nil)
 
-	fileServiceOperator := NewFileServiceOperator(types.AgentConfig(), fakeFileServiceClient)
+	fileServiceOperator := NewFileServiceOperator(types.AgentConfig(), fakeFileServiceClient, &sync.RWMutex{})
 	fileServiceOperator.SetIsConnected(true)
 
 	err := fileServiceOperator.UpdateOverview(ctx, "123", []*mpi.File{
@@ -75,7 +76,7 @@ func TestFileServiceOperator_UpdateOverview_MaxIterations(t *testing.T) {
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 
 	// do 5 iterations
-	for i := 0; i <= 5; i++ {
+	for i := range 6 {
 		fakeFileServiceClient.UpdateOverviewReturnsOnCall(i, &mpi.UpdateOverviewResponse{
 			Overview: overview,
 		}, nil)
@@ -83,7 +84,7 @@ func TestFileServiceOperator_UpdateOverview_MaxIterations(t *testing.T) {
 
 	fakeFileServiceClient.UpdateFileReturns(&mpi.UpdateFileResponse{}, nil)
 
-	fileServiceOperator := NewFileServiceOperator(types.AgentConfig(), fakeFileServiceClient)
+	fileServiceOperator := NewFileServiceOperator(types.AgentConfig(), fakeFileServiceClient, &sync.RWMutex{})
 	fileServiceOperator.SetIsConnected(true)
 
 	err := fileServiceOperator.UpdateOverview(ctx, "123", []*mpi.File{
@@ -126,7 +127,7 @@ func TestFileManagerService_UpdateFile(t *testing.T) {
 		}
 
 		fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
-		fileServiceOperator := NewFileServiceOperator(types.AgentConfig(), fakeFileServiceClient)
+		fileServiceOperator := NewFileServiceOperator(types.AgentConfig(), fakeFileServiceClient, &sync.RWMutex{})
 		fileServiceOperator.SetIsConnected(true)
 
 		err := fileServiceOperator.UpdateFile(ctx, "123", &mpi.File{FileMeta: fileMeta})
@@ -150,7 +151,7 @@ func TestFileManagerService_UpdateFile_LargeFile(t *testing.T) {
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fakeClientStreamingClient := &FakeClientStreamingClient{sendCount: atomic.Int32{}}
 	fakeFileServiceClient.UpdateFileStreamReturns(fakeClientStreamingClient, nil)
-	fileServiceOperator := NewFileServiceOperator(types.AgentConfig(), fakeFileServiceClient)
+	fileServiceOperator := NewFileServiceOperator(types.AgentConfig(), fakeFileServiceClient, &sync.RWMutex{})
 
 	fileServiceOperator.SetIsConnected(true)
 	err := fileServiceOperator.UpdateFile(ctx, "123", &mpi.File{FileMeta: fileMeta})

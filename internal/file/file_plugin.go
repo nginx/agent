@@ -8,6 +8,7 @@ package file
 import (
 	"context"
 	"log/slog"
+	"sync"
 
 	"github.com/nginx/agent/v3/pkg/files"
 	"github.com/nginx/agent/v3/pkg/id"
@@ -27,6 +28,7 @@ var _ bus.Plugin = (*FilePlugin)(nil)
 // the file plugin does not care about the instance type
 
 type FilePlugin struct {
+	manifestLock       *sync.RWMutex
 	messagePipe        bus.MessagePipeInterface
 	config             *config.Config
 	conn               grpc.GrpcConnectionInterface
@@ -35,12 +37,13 @@ type FilePlugin struct {
 }
 
 func NewFilePlugin(agentConfig *config.Config, grpcConnection grpc.GrpcConnectionInterface,
-	serverType model.ServerType,
+	serverType model.ServerType, manifestLock *sync.RWMutex,
 ) *FilePlugin {
 	return &FilePlugin{
-		config:     agentConfig,
-		conn:       grpcConnection,
-		serverType: serverType,
+		config:       agentConfig,
+		conn:         grpcConnection,
+		serverType:   serverType,
+		manifestLock: manifestLock,
 	}
 }
 
@@ -52,7 +55,7 @@ func (fp *FilePlugin) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 	slog.DebugContext(ctx, "Starting file plugin")
 
 	fp.messagePipe = messagePipe
-	fp.fileManagerService = NewFileManagerService(fp.conn.FileServiceClient(), fp.config)
+	fp.fileManagerService = NewFileManagerService(fp.conn.FileServiceClient(), fp.config, fp.manifestLock)
 
 	return nil
 }
@@ -80,34 +83,36 @@ func (fp *FilePlugin) Info() *bus.Info {
 
 // nolint: cyclop, revive
 func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
+	ctxWithMetadata := fp.config.NewContextWithLabels(ctx)
+
 	if logger.ServerType(ctx) == "" {
-		ctx = context.WithValue(
-			ctx,
+		ctxWithMetadata = context.WithValue(
+			ctxWithMetadata,
 			logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey, fp.serverType.String()),
 		)
 	}
 
-	if logger.ServerType(ctx) == fp.serverType.String() {
+	if logger.ServerType(ctxWithMetadata) == fp.serverType.String() {
 		switch msg.Topic {
 		case bus.ConnectionResetTopic:
-			fp.handleConnectionReset(ctx, msg)
+			fp.handleConnectionReset(ctxWithMetadata, msg)
 		case bus.ConnectionCreatedTopic:
-			slog.DebugContext(ctx, "File plugin received connection created message")
+			slog.DebugContext(ctxWithMetadata, "File plugin received connection created message")
 			fp.fileManagerService.SetIsConnected(true)
 		case bus.NginxConfigUpdateTopic:
-			fp.handleNginxConfigUpdate(ctx, msg)
+			fp.handleNginxConfigUpdate(ctxWithMetadata, msg)
 		case bus.ConfigUploadRequestTopic:
-			fp.handleConfigUploadRequest(ctx, msg)
+			fp.handleConfigUploadRequest(ctxWithMetadata, msg)
 		case bus.ConfigApplyRequestTopic:
-			fp.handleConfigApplyRequest(ctx, msg)
+			fp.handleConfigApplyRequest(ctxWithMetadata, msg)
 		case bus.ConfigApplyCompleteTopic:
-			fp.handleConfigApplyComplete(ctx, msg)
+			fp.handleConfigApplyComplete(ctxWithMetadata, msg)
 		case bus.ConfigApplySuccessfulTopic:
-			fp.handleConfigApplySuccess(ctx, msg)
+			fp.handleConfigApplySuccess(ctxWithMetadata, msg)
 		case bus.ConfigApplyFailedTopic:
-			fp.handleConfigApplyFailedRequest(ctx, msg)
+			fp.handleConfigApplyFailedRequest(ctxWithMetadata, msg)
 		default:
-			slog.DebugContext(ctx, "File plugin received unknown topic", "topic", msg.Topic)
+			slog.DebugContext(ctxWithMetadata, "File plugin received unknown topic", "topic", msg.Topic)
 		}
 	}
 }
@@ -145,7 +150,7 @@ func (fp *FilePlugin) handleConnectionReset(ctx context.Context, msg *bus.Messag
 		fp.conn = newConnection
 
 		reconnect = fp.fileManagerService.IsConnected()
-		fp.fileManagerService = NewFileManagerService(fp.conn.FileServiceClient(), fp.config)
+		fp.fileManagerService = NewFileManagerService(fp.conn.FileServiceClient(), fp.config, fp.manifestLock)
 		fp.fileManagerService.SetIsConnected(reconnect)
 
 		slog.DebugContext(ctx, "File manager service client reset successfully")

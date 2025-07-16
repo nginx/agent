@@ -7,7 +7,7 @@ package credentials
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"os"
 	"path"
 	"testing"
@@ -58,7 +58,7 @@ func TestCredentialWatcherService_Watch(t *testing.T) {
 	}
 
 	func() {
-		cws.watcher.Errors <- fmt.Errorf("watch error")
+		cws.watcher.Errors <- errors.New("watch error")
 	}()
 }
 

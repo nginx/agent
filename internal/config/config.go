@@ -129,6 +129,7 @@ func ResolveConfig() (*Config, error) {
 	}
 
 	checkCollectorConfiguration(collector, config)
+	addLabelsAsOTelHeaders(collector, config.Labels)
 
 	slog.Debug("Agent config", "config", config)
 	slog.Info("Excluded files from being watched for file changes", "exclude_files",
@@ -206,6 +207,22 @@ func defaultCollector(collector *Collector, config *Config) {
 	}
 	collector.Extensions.HeadersSetter = &HeadersSetter{
 		Headers: header,
+	}
+}
+
+func addLabelsAsOTelHeaders(collector *Collector, labels map[string]any) {
+	slog.Debug("Adding labels as headers to collector", "labels", labels)
+	if collector.Extensions.HeadersSetter != nil {
+		for key, value := range labels {
+			valueString, ok := value.(string)
+			if ok {
+				collector.Extensions.HeadersSetter.Headers = append(collector.Extensions.HeadersSetter.Headers, Header{
+					Action: "insert",
+					Key:    key,
+					Value:  valueString,
+				})
+			}
+		}
 	}
 }
 
@@ -602,7 +619,7 @@ func seekFileInPaths(fileName string, directories ...string) (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("a valid configuration has not been found in any of the search paths")
+	return "", errors.New("a valid configuration has not been found in any of the search paths")
 }
 
 func configFilePaths() []string {

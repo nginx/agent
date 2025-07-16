@@ -40,7 +40,7 @@ func SendChunkedFile(
 	// since "send" is synchronous and data in buffer re-marshaled, we shouldn't
 	// need to reallocate for each chunk.
 	buf := make([]byte, chunkSize)
-	for i := 0; i < chunkCount; i++ {
+	for i := range chunkCount {
 		// using ReadFull here, since the Read may get partial fills depends on impl, due to Read being
 		// at most once op per call. But we want to fill our buffer every loop, for the defined chunk size.
 		// Set size of the buffer, so we don't get the error from io.ReadFull, if the data fits just right
@@ -104,7 +104,7 @@ func recvContents(
 	totalSize int,
 ) error {
 	// receive and write all content chunks
-	for i := 0; i < chunkCount; i++ {
+	for i := range chunkCount {
 		chunk, err := src.Recv()
 		if err != nil {
 			return fmt.Errorf("unable to receive chunk id %d: %w", i, err)

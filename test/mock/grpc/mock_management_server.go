@@ -52,6 +52,9 @@ var (
 		Time:    keepAliveTime,
 		Timeout: keepAliveTimeout,
 	}
+
+	errMissingMetadata = status.Errorf(codes.InvalidArgument, "missing metadata")
+	errInvalidToken    = status.Errorf(codes.Unauthenticated, "invalid token")
 )
 
 type MockManagementServer struct {
@@ -146,6 +149,7 @@ func serverOptions(agentConfig *config.Config) []grpc.ServerOption {
 		opts = append(opts, grpc.ChainUnaryInterceptor(
 			grpcvalidator.UnaryServerInterceptor(),
 			protovalidateInterceptor.UnaryServerInterceptor(validator),
+			logHeaders,
 		),
 		)
 	} else {
@@ -153,6 +157,7 @@ func serverOptions(agentConfig *config.Config) []grpc.ServerOption {
 			grpcvalidator.UnaryServerInterceptor(),
 			protovalidateInterceptor.UnaryServerInterceptor(validator),
 			ensureValidToken,
+			logHeaders,
 		),
 		)
 	}
@@ -242,10 +247,6 @@ func reportHealth(healthcheck *health.Server, agentConfig *config.Config) {
 }
 
 func ensureValidToken(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-	var (
-		errMissingMetadata = status.Errorf(codes.InvalidArgument, "missing metadata")
-		errInvalidToken    = status.Errorf(codes.Unauthenticated, "invalid token")
-	)
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return nil, errMissingMetadata
@@ -269,4 +270,15 @@ func valid(authorization []string) bool {
 	// here forgoes any of the usual OAuth2 token validation and instead checks
 	// for a token matching an arbitrary string.
 	return token == "1234"
+}
+
+func logHeaders(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, errMissingMetadata
+	}
+
+	slog.InfoContext(ctx, "Request headers", "headers", md)
+
+	return handler(ctx, req)
 }

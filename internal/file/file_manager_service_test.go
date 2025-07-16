@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/nginx/agent/v3/internal/model"
@@ -54,7 +55,7 @@ func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	agentConfig := types.AgentConfig()
 	agentConfig.AllowedDirectories = []string{tempDir}
 
-	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig)
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig, &sync.RWMutex{})
 	fileManagerService.agentConfig.ManifestDir = manifestDirPath
 	fileManagerService.manifestFilePath = manifestFilePath
 
@@ -91,7 +92,7 @@ func TestFileManagerService_ConfigApply_Add_LargeFile(t *testing.T) {
 		fileName:       filePath,
 	}
 
-	for i := 0; i < len(fileContent); i++ {
+	for i := range fileContent {
 		fakeServerStreamingClient.chunks[uint32(i)] = []byte{fileContent[i]}
 	}
 
@@ -101,7 +102,7 @@ func TestFileManagerService_ConfigApply_Add_LargeFile(t *testing.T) {
 	fakeFileServiceClient.GetFileStreamReturns(fakeServerStreamingClient, nil)
 	agentConfig := types.AgentConfig()
 	agentConfig.AllowedDirectories = []string{tempDir}
-	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig)
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig, &sync.RWMutex{})
 	fileManagerService.agentConfig.ManifestDir = manifestDirPath
 	fileManagerService.manifestFilePath = manifestFilePath
 
@@ -160,7 +161,7 @@ func TestFileManagerService_ConfigApply_Update(t *testing.T) {
 	agentConfig := types.AgentConfig()
 	agentConfig.AllowedDirectories = []string{tempDir}
 
-	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig)
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig, &sync.RWMutex{})
 	fileManagerService.agentConfig.ManifestDir = manifestDirPath
 	fileManagerService.manifestFilePath = manifestFilePath
 	err := fileManagerService.UpdateCurrentFilesOnDisk(ctx, filesOnDisk, false)
@@ -209,7 +210,7 @@ func TestFileManagerService_ConfigApply_Delete(t *testing.T) {
 	agentConfig := types.AgentConfig()
 	agentConfig.AllowedDirectories = []string{tempDir}
 
-	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig)
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig, &sync.RWMutex{})
 	fileManagerService.agentConfig.ManifestDir = manifestDirPath
 	fileManagerService.manifestFilePath = manifestFilePath
 	err := fileManagerService.UpdateCurrentFilesOnDisk(ctx, filesOnDisk, false)
@@ -247,7 +248,7 @@ func TestFileManagerService_ConfigApply_Delete(t *testing.T) {
 
 func TestFileManagerService_checkAllowedDirectory(t *testing.T) {
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
-	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
 
 	allowedFiles := []*mpi.File{
 		{
@@ -281,7 +282,7 @@ func TestFileManagerService_checkAllowedDirectory(t *testing.T) {
 
 func TestFileManagerService_ClearCache(t *testing.T) {
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
-	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
 
 	filesCache := map[string]*model.FileCache{
 		"file/path/test.conf": {
@@ -394,7 +395,7 @@ func TestFileManagerService_Rollback(t *testing.T) {
 
 	instanceID := protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
-	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
 	fileManagerService.rollbackFileContents = fileContentCache
 	fileManagerService.fileActions = filesCache
 	fileManagerService.agentConfig.ManifestDir = manifestDirPath
@@ -576,7 +577,7 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 			manifestFilePath := manifestFile.Name()
 
 			fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
-			fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
+			fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
 			fileManagerService.agentConfig.ManifestDir = manifestDirPath
 			fileManagerService.manifestFilePath = manifestFilePath
 
@@ -597,7 +598,7 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 func CreateTestManifestFile(t testing.TB, tempDir string, currentFiles map[string]*mpi.File) *os.File {
 	t.Helper()
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
-	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
 	manifestFiles := fileManagerService.convertToManifestFileMap(currentFiles, true)
 	manifestJSON, err := json.MarshalIndent(manifestFiles, "", "  ")
 	require.NoError(t, err)
@@ -685,7 +686,7 @@ func TestFileManagerService_fileActions(t *testing.T) {
 			Contents: newFileContent,
 		},
 	}, nil)
-	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig())
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
 
 	fileManagerService.fileActions = filesCache
 
@@ -754,7 +755,7 @@ rQHX6DP4w6IwZY8JB8LS
 			if test.certContent == "" {
 				_, certBytes = helpers.GenerateSelfSignedCert(t)
 				certContents := helpers.Cert{
-					Name:     fmt.Sprintf("%s.pem", test.certName),
+					Name:     test.certName + ".pem",
 					Type:     "CERTIFICATE",
 					Contents: certBytes,
 				}

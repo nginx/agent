@@ -195,7 +195,7 @@ func (fws *FileWatcherService) checkForUpdates(ctx context.Context, ch chan<- Fi
 	// Check if directories no longer need to be watched
 	fws.removeWatchers(ctx)
 
-	if fws.filesChanged.Load() {
+	if fws.filesChanged.Load() && fws.enabled.Load() {
 		newCtx := context.WithValue(
 			ctx,
 			logger.CorrelationIDContextKey,
