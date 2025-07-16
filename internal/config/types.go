@@ -64,6 +64,7 @@ type (
 		ExcludeLogs            []string      `yaml:"exclude_logs"             mapstructure:"exclude_logs"`
 		ReloadMonitoringPeriod time.Duration `yaml:"reload_monitoring_period" mapstructure:"reload_monitoring_period"`
 		TreatWarningsAsErrors  bool          `yaml:"treat_warnings_as_errors" mapstructure:"treat_warnings_as_errors"`
+		ApiTls                 TLSConfig     `yaml:"api_tls"                  mapstructure:"api_tls"`
 	}
 
 	Client struct {
@@ -230,6 +231,7 @@ type (
 		URL      string `yaml:"url"      mapstructure:"url"`
 		Listen   string `yaml:"listen"   mapstructure:"listen"`
 		Location string `yaml:"location" mapstructure:"location"`
+		Ca       string `yaml:"ca"       mapstructure:"ca"`
 	}
 
 	AccessLog struct {

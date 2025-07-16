@@ -6,9 +6,12 @@ package nginxplusreceiver
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -82,6 +85,25 @@ func (nps *NginxPlusScraper) ID() component.ID {
 func (nps *NginxPlusScraper) Start(_ context.Context, _ component.Host) error {
 	endpoint := strings.TrimPrefix(nps.cfg.APIDetails.URL, "unix:")
 	httpClient := http.DefaultClient
+	CaCertLocation := nps.cfg.APIDetails.Ca
+	if CaCertLocation != "" {
+		nps.logger.Debug("Reading from Location for Ca Cert : ", zap.Any(CaCertLocation, CaCertLocation))
+		CaCert, err := os.ReadFile(CaCertLocation)
+		if err != nil {
+			nps.logger.Error("Unable to start NGINX Plus scraper. Failed to read CA certificate: %v", zap.Error(err))
+			return err
+		}
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(CaCert)
+
+		httpClient = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					RootCAs: caCertPool,
+				},
+			},
+		}
+	}
 	httpClient.Timeout = nps.cfg.ClientConfig.Timeout
 
 	if strings.HasPrefix(nps.cfg.APIDetails.Listen, "unix:") {

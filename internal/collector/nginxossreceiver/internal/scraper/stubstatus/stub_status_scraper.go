@@ -7,8 +7,11 @@ package stubstatus
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -63,6 +66,25 @@ func (s *NginxStubStatusScraper) ID() component.ID {
 func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) error {
 	s.logger.Info("Starting NGINX stub status scraper")
 	httpClient := http.DefaultClient
+	CaCertLocation := s.cfg.APIDetails.Ca
+	if CaCertLocation != "" {
+		s.settings.Logger.Debug("Reading from Location for Ca Cert : ", zap.Any(CaCertLocation, CaCertLocation))
+		CaCert, err := os.ReadFile(CaCertLocation)
+		if err != nil {
+			s.settings.Logger.Error("Unable to start NGINX stub status scraper. Failed to read CA certificate : %v", zap.Error(err))
+			return nil
+		}
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(CaCert)
+
+		httpClient = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					RootCAs: caCertPool,
+				},
+			},
+		}
+	}
 	httpClient.Timeout = s.cfg.ClientConfig.Timeout
 
 	if strings.HasPrefix(s.cfg.APIDetails.Listen, "unix:") {

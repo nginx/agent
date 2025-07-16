@@ -7,6 +7,8 @@ package config
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -509,11 +511,12 @@ func (ncp *NginxConfigParser) apiCallback(ctx context.Context, parent,
 	}
 
 	for _, url := range urls {
-		if ncp.pingAPIEndpoint(ctx, url, apiType) {
-			slog.DebugContext(ctx, apiType+" found", "url", url)
+		SSLTrue := ncp.isSSLEnabled(parent)
+		if ncp.pingAPIEndpoint(ctx, url, apiType, SSLTrue) {
+			slog.DebugContext(ctx, fmt.Sprintf("%s found", apiType), "url", url)
 			return url
 		}
-		slog.DebugContext(ctx, apiType+" is not reachable", "url", url)
+		slog.DebugContext(ctx, fmt.Sprintf("%s is not reachable", apiType), "url", url)
 	}
 
 	return &model.APIDetails{
@@ -524,9 +527,28 @@ func (ncp *NginxConfigParser) apiCallback(ctx context.Context, parent,
 }
 
 func (ncp *NginxConfigParser) pingAPIEndpoint(ctx context.Context, statusAPIDetail *model.APIDetails,
-	apiType string,
+	apiType string, SSLTrue bool,
 ) bool {
 	httpClient := http.DefaultClient
+	CaCertLocation := ncp.agentConfig.DataPlaneConfig.Nginx.ApiTls.Ca
+	if SSLTrue && CaCertLocation != "" && ncp.agentConfig.IsDirectoryAllowed(CaCertLocation) {
+		slog.Debug("Reading from Location for Ca Cert : ", CaCertLocation)
+		CaCert, err := os.ReadFile(ncp.agentConfig.DataPlaneConfig.Nginx.ApiTls.Ca)
+		if err != nil {
+			slog.Error("Unable to Ping NGINX API Endpoint. Failed to read CA certificate : %v", err)
+			return false
+		}
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(CaCert)
+
+		httpClient = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					RootCAs: caCertPool,
+				},
+			},
+		}
+	}
 	listen := statusAPIDetail.Listen
 	statusAPI := statusAPIDetail.URL
 
@@ -548,7 +570,7 @@ func (ncp *NginxConfigParser) pingAPIEndpoint(ctx context.Context, statusAPIDeta
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		slog.DebugContext(ctx, apiType+" API responded with unexpected status code", "status_code",
+		slog.DebugContext(ctx, fmt.Sprintf("%s API responded with unexpected status code", apiType), "status_code",
 			resp.StatusCode, "expected", http.StatusOK)
 
 		return false
@@ -592,10 +614,18 @@ func (ncp *NginxConfigParser) urlsForLocationDirectiveAPIDetails(
 	locationDirectiveName string,
 ) []*model.APIDetails {
 	var urls []*model.APIDetails
+	//Check to see if the ca cert location is allowed
+	CaCertLocation := ncp.agentConfig.DataPlaneConfig.Nginx.ApiTls.Ca
+	if !ncp.agentConfig.IsDirectoryAllowed(CaCertLocation) {
+		CaCertLocation = ""
+	}
 	// process from the location block
 	if current.Directive != locationDirective {
 		return urls
 	}
+
+	// Check if SSL is enabled in the server block
+	isSSL := ncp.isSSLEnabled(parent)
 
 	for _, locChild := range current.Block {
 		if locChild.Directive != plusAPIDirective && locChild.Directive != stubStatusAPIDirective {
@@ -619,12 +649,14 @@ func (ncp *NginxConfigParser) urlsForLocationDirectiveAPIDetails(
 						URL:      fmt.Sprintf(format, path),
 						Listen:   address,
 						Location: path,
+						Ca:       CaCertLocation,
 					})
 				} else {
 					urls = append(urls, &model.APIDetails{
-						URL:      fmt.Sprintf(apiFormat, address, path),
+						URL:      fmt.Sprintf("%s://%s%s", map[bool]string{true: "https", false: "http"}[isSSL], address, path),
 						Listen:   address,
 						Location: path,
+						Ca:       CaCertLocation,
 					})
 				}
 			}
@@ -705,12 +737,11 @@ func (ncp *NginxConfigParser) parseListenDirective(
 }
 
 func (ncp *NginxConfigParser) parseListenHostAndPort(listenHost, listenPort string) (hostname, port string) {
-	switch listenHost {
-	case "*", "":
+	if listenHost == "*" || listenHost == "" {
 		hostname = "127.0.0.1"
-	case "::", "::1":
+	} else if listenHost == "::" || listenHost == "::1" {
 		hostname = "[::1]"
-	default:
+	} else {
 		hostname = listenHost
 	}
 	port = listenPort
@@ -722,6 +753,20 @@ func (ncp *NginxConfigParser) isPort(value string) bool {
 	port, err := strconv.Atoi(value)
 
 	return err == nil && port >= 1 && port <= 65535
+}
+
+func (ncp *NginxConfigParser) isSSLEnabled(serverBlock *crossplane.Directive) bool {
+	for _, dir := range serverBlock.Block {
+		switch dir.Directive {
+		case "listen":
+			for _, arg := range dir.Args[1:] {
+				if arg == "ssl" {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 func (ncp *NginxConfigParser) socketClient(socketPath string) *http.Client {
