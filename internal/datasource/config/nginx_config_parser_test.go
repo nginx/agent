@@ -688,8 +688,9 @@ func TestNginxConfigParser_findValidSysLogServers(t *testing.T) {
 		"app_protect_security_log", "/etc/app_protect/conf/log_default1.json", "syslog:server=my.domain.com:1517",
 		"app_protect_security_log", "/etc/app_protect/conf/log_default2.json", "syslog:server=127.0.0.1:1515",
 		"app_protect_security_log", "/etc/app_protect/conf/log_default3.json", "syslog:server=localhost:1516",
+		"app_protect_security_log\", \"/etc/app_protect/conf/log_default3.json\", \"syslog:server=127.255.255.255:1517",
 	}
-	expected := []string{"127.0.0.1:1515", "localhost:1516"}
+	expected := []string{"127.0.0.1:1515", "localhost:1516", "127.255.255.255:1517"}
 	ncp := NewNginxConfigParser(types.AgentConfig())
 	result := ncp.findValidSysLogServers(servers)
 

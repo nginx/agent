@@ -257,7 +257,13 @@ func (ncp *NginxConfigParser) findValidSysLogServers(sysLogServers []string) []s
 	for i := range sysLogServers {
 		matches := re.FindStringSubmatch(sysLogServers[i])
 		if len(matches) > 1 {
-			if strings.HasPrefix(matches[1], "localhost") || strings.HasPrefix(matches[1], "127.0.0.1") {
+			host, _, err := net.SplitHostPort(matches[1])
+			if err != nil {
+				continue
+			}
+
+			ip := net.ParseIP(host)
+			if ip.IsLoopback() || strings.EqualFold(host, "localhost") {
 				servers = append(servers, matches[1])
 			}
 		}
