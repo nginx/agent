@@ -99,7 +99,7 @@ receivers:
         url: "{{- .PlusAPI.URL -}}"
         listen: "{{- .PlusAPI.Listen -}}"
         location: "{{- .PlusAPI.Location -}}"
-        ca: "{{- .StubStatus.Ca -}}"
+        ca: "{{- .PlusAPI.Ca -}}"
     {{- if .CollectionInterval }}
     collection_interval: {{ .CollectionInterval }}
     {{- end }}
