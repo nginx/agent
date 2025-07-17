@@ -33,6 +33,7 @@ type APIDetails struct {
 	URL      string `mapstructure:"url"`
 	Listen   string `mapstructure:"listen"`
 	Location string `mapstructure:"location"`
+	Ca       string `mapstructure:"ca"`
 }
 
 type AccessLog struct {
@@ -56,6 +57,7 @@ func CreateDefaultConfig() component.Config {
 			URL:      "http://localhost:80/status",
 			Listen:   "localhost:80",
 			Location: "status",
+			Ca:       "",
 		},
 	}
 }

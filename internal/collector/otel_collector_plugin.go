@@ -418,6 +418,7 @@ func (oc *Collector) checkForNewReceivers(ctx context.Context, nginxConfigContex
 					URL:      nginxConfigContext.PlusAPI.URL,
 					Listen:   nginxConfigContext.PlusAPI.Listen,
 					Location: nginxConfigContext.PlusAPI.Location,
+					Ca:       nginxConfigContext.PlusAPI.Ca,
 				},
 				CollectionInterval: defaultCollectionInterval,
 			},

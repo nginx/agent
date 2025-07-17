@@ -267,6 +267,12 @@ func registerFlags() {
 		"Warning messages in the NGINX errors logs after a NGINX reload will be treated as an error.",
 	)
 
+	fs.String(
+		NginxApiTlsCa,
+		DefNginxApiTlsCa,
+		"The NGINX Plus CA certificate file location needed to call the NGINX Plus API if SSL is enabled.",
+	)
+
 	fs.StringSlice(
 		NginxExcludeLogsKey, []string{},
 		"A comma-separated list of one or more NGINX log paths that you want to exclude from metrics "+
@@ -786,6 +792,7 @@ func resolveDataPlaneConfig() *DataPlaneConfig {
 			ReloadMonitoringPeriod: viperInstance.GetDuration(NginxReloadMonitoringPeriodKey),
 			TreatWarningsAsErrors:  viperInstance.GetBool(NginxTreatWarningsAsErrorsKey),
 			ExcludeLogs:            viperInstance.GetStringSlice(NginxExcludeLogsKey),
+			ApiTls:                 TLSConfig{Ca: viperInstance.GetString(NginxApiTlsCa)},
 		},
 	}
 }
