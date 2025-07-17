@@ -31,7 +31,10 @@ type Process struct {
 func (p *Process) IsWorker() bool { return strings.HasPrefix(p.Cmd, "nginx: worker") }
 
 // IsMaster returns true if the process is a NGINX master process.
-func (p *Process) IsMaster() bool { return strings.HasPrefix(p.Cmd, "nginx: master") }
+func (p *Process) IsMaster() bool {
+	return strings.HasPrefix(p.Cmd, "nginx: master") ||
+		strings.HasPrefix(p.Cmd, "{nginx-debug} nginx: master")
+}
 
 // IsShuttingDown returns true if the process is shutting down. This can identify workers that are in the process of a
 // graceful shutdown. See [changing NGINX configuration] for more details.
@@ -53,6 +56,7 @@ type Option interface{ apply(opts *options) }
 
 type optionFunc func(*options)
 
+//nolint:ireturn
 func (f optionFunc) apply(o *options) { f(o) }
 
 // WithStatus runs an additional lookup to load the process status.
@@ -66,39 +70,44 @@ func convert(ctx context.Context, p *process.Process, o options) (*Process, erro
 	}
 
 	name, _ := p.NameWithContext(ctx) // slow: shells out to ps
-	if name != "nginx" {
+	if name != "nginx" && name != "nginx-debug" {
 		return nil, errNotAnNginxProcess
 	}
 
 	cmdLine, _ := p.CmdlineWithContext(ctx) // slow: shells out to ps
 	// ignore nginx processes in the middle of an upgrade
-	if !strings.HasPrefix(cmdLine, "nginx:") || strings.Contains(cmdLine, "upgrade") {
+
+	if strings.Contains(cmdLine, "upgrade") {
 		return nil, errNotAnNginxProcess
 	}
 
-	var status string
-	if o.loadStatus {
-		flags, _ := p.StatusWithContext(ctx) // slow: shells out to ps
-		status = strings.Join(flags, " ")
+	if strings.HasPrefix(cmdLine, "nginx:") || strings.HasPrefix(cmdLine, "{nginx-debug} nginx:") {
+		var status string
+		if o.loadStatus {
+			flags, _ := p.StatusWithContext(ctx) // slow: shells out to ps
+			status = strings.Join(flags, " ")
+		}
+
+		// unconditionally run fast lookups
+		var created time.Time
+		if millisSinceEpoch, err := p.CreateTimeWithContext(ctx); err == nil {
+			created = time.UnixMilli(millisSinceEpoch)
+		}
+		ppid, _ := p.PpidWithContext(ctx)
+		exe, _ := p.ExeWithContext(ctx)
+
+		return &Process{
+			PID:     p.Pid,
+			PPID:    ppid,
+			Name:    name,
+			Cmd:     cmdLine,
+			Created: created,
+			Status:  status,
+			Exe:     exe,
+		}, ctx.Err()
 	}
 
-	// unconditionally run fast lookups
-	var created time.Time
-	if millisSinceEpoch, err := p.CreateTimeWithContext(ctx); err == nil {
-		created = time.UnixMilli(millisSinceEpoch)
-	}
-	ppid, _ := p.PpidWithContext(ctx)
-	exe, _ := p.ExeWithContext(ctx)
-
-	return &Process{
-		PID:     p.Pid,
-		PPID:    ppid,
-		Name:    name,
-		Cmd:     cmdLine,
-		Created: created,
-		Status:  status,
-		Exe:     exe,
-	}, ctx.Err()
+	return nil, errNotAnNginxProcess
 }
 
 // List returns a slice of all NGINX processes. Returns a zero-length slice if no NGINX processes are found.
