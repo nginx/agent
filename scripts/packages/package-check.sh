@@ -55,18 +55,16 @@ APK=(
   alpine/v3.21/main/x86_64/nginx-agent-$VERSION.apk
   alpine/v3.20/main/aarch64/nginx-agent-$VERSION.apk
   alpine/v3.20/main/x86_64/nginx-agent-$VERSION.apk
-  alpine/v3.18/main/aarch64/nginx-agent-$VERSION.apk
-  alpine/v3.18/main/x86_64/nginx-agent-$VERSION.apk
   alpine/v3.19/main/aarch64/nginx-agent-$VERSION.apk
   alpine/v3.19/main/x86_64/nginx-agent-$VERSION.apk
 )
 UBUNTU=(
-  ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~focal_arm64.deb
   ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~jammy_amd64.deb
   ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~noble_arm64.deb
+  ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~plucky_arm64.deb
   ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~jammy_arm64.deb
   ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~noble_amd64.deb
-  ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~focal_amd64.deb
+  ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~plucky_amd64.deb
 )
 DEBIAN=(
   debian/pool/agent/n/nginx-agent/nginx-agent_$VERSION~bullseye_arm64.deb
@@ -85,6 +83,8 @@ SUSE=(
   sles/15/x86_64/RPMS/nginx-agent-$VERSION.sles15.ngx.x86_64.rpm
 )
 CENTOS=(
+  centos/10/aarch64/RPMS/nginx-agent-$VERSION.el10.ngx.aarch64.rpm
+  centos/10/x86_64/RPMS/nginx-agent-$VERSION.el10.ngx.x86_64.rpm
   centos/9/aarch64/RPMS/nginx-agent-$VERSION.el9.ngx.aarch64.rpm
   centos/9/x86_64/RPMS/nginx-agent-$VERSION.el9.ngx.x86_64.rpm
   centos/8/aarch64/RPMS/nginx-agent-$VERSION.el8.ngx.aarch64.rpm
