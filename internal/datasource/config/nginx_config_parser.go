@@ -740,18 +740,31 @@ func (ncp *NginxConfigParser) isPort(value string) bool {
 	return err == nil && port >= 1 && port <= 65535
 }
 
+// hasSSLArgument checks if any of the arguments contain "ssl".
+func (ncp *NginxConfigParser) hasSSLArgument(args []string) bool {
+	for i := 1; i < len(args); i++ {
+		if args[i] == "ssl" {
+			return true
+		}
+	}
+
+	return false
+}
+
+// isSSLListenDirective checks if a directive is a listen directive with ssl enabled.
+func (ncp *NginxConfigParser) isSSLListenDirective(dir *crossplane.Directive) bool {
+	return dir.Directive == "listen" && ncp.hasSSLArgument(dir.Args)
+}
+
+// isSSLEnabled checks if SSL is enabled for a given server block.
 func (ncp *NginxConfigParser) isSSLEnabled(serverBlock *crossplane.Directive) bool {
-	if serverBlock == nil || serverBlock.Block == nil {
+	if serverBlock == nil {
 		return false
 	}
 
 	for _, dir := range serverBlock.Block {
-		if dir.Directive == "listen" {
-			for _, arg := range dir.Args[1:] {
-				if arg == "ssl" {
-					return true
-				}
-			}
+		if ncp.isSSLListenDirective(dir) {
+			return true
 		}
 	}
 

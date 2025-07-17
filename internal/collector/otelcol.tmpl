@@ -81,6 +81,7 @@ receivers:
       url: "{{- .StubStatus.URL -}}"
       listen: "{{- .StubStatus.Listen -}}"
       location: "{{- .StubStatus.Location -}}"
+      ca: "{{- .StubStatus.Ca -}}"
     {{- if .CollectionInterval }}
     collection_interval: {{ .CollectionInterval }}
     {{- end }}
@@ -98,6 +99,7 @@ receivers:
         url: "{{- .PlusAPI.URL -}}"
         listen: "{{- .PlusAPI.Listen -}}"
         location: "{{- .PlusAPI.Location -}}"
+        ca: "{{- .PlusAPI.Ca -}}"
     {{- if .CollectionInterval }}
     collection_interval: {{ .CollectionInterval }}
     {{- end }}
