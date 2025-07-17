@@ -46,11 +46,11 @@ func TestStubStatusScraperTLS(t *testing.T) {
 		IsCA:                  true,
 	}
 
-	caPrivKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	require.NoError(t, err)
+	caPrivKey, caPrivKeyErr := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, caPrivKeyErr)
 
-	caBytes, err := x509.CreateCertificate(rand.Reader, ca, ca, &caPrivKey.PublicKey, caPrivKey)
-	require.NoError(t, err)
+	caBytes, caBytesErr := x509.CreateCertificate(rand.Reader, ca, ca, &caPrivKey.PublicKey, caPrivKey)
+	require.NoError(t, caBytesErr)
 
 	// Create a test server certificate signed by the CA
 	cert := &x509.Certificate{
@@ -67,11 +67,11 @@ func TestStubStatusScraperTLS(t *testing.T) {
 		DNSNames:     []string{"localhost"},
 	}
 
-	certPrivKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	require.NoError(t, err)
+	certPrivKey, certPrivKeyErr := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, certPrivKeyErr)
 
-	certBytes, err := x509.CreateCertificate(rand.Reader, cert, ca, &certPrivKey.PublicKey, caPrivKey)
-	require.NoError(t, err)
+	certBytes, certBytesErr := x509.CreateCertificate(rand.Reader, cert, ca, &certPrivKey.PublicKey, caPrivKey)
+	require.NoError(t, certBytesErr)
 
 	// Create a temporary directory for test files
 	tempDir := t.TempDir()
@@ -79,11 +79,12 @@ func TestStubStatusScraperTLS(t *testing.T) {
 	// Save CA certificate to a file
 	caFile := filepath.Join(tempDir, "ca.crt")
 	caPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: caBytes})
-	err = os.WriteFile(caFile, caPEM, 0o600)
-	require.NoError(t, err)
+	writeErr := os.WriteFile(caFile, caPEM, 0o600)
+	require.NoError(t, writeErr)
 
 	// Create a TLS config for the server
 	serverTLSConfig := &tls.Config{
+		MinVersion: tls.VersionTLS13,
 		Certificates: []tls.Certificate{
 			{
 				Certificate: [][]byte{certBytes},
@@ -101,6 +102,7 @@ server accepts handled requests
  16630948 16630946 31070465
 Reading: 6 Writing: 179 Waiting: 106
 `))
+
 			return
 		}
 		rw.WriteHeader(http.StatusNotFound)
@@ -129,14 +131,14 @@ Reading: 6 Writing: 179 Waiting: 106
 }
 
 func TestStubStatusScraperUnixSocket(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "TestStubStatusScraperUnixSocket")
-	require.NoError(t, err)
-	t.Cleanup(func() { os.RemoveAll(tempDir) })
-	socketPath := filepath.Join(tempDir, "nginx.sock")
+	// Use a shorter path for the socket to avoid path length issues
+	socketPath := filepath.Join(os.TempDir(), "test-nginx.sock")
+	// Clean up the socket file after the test
+	t.Cleanup(func() { os.Remove(socketPath) })
 
 	// Create a Unix domain socket listener
-	listener, err := net.Listen("unix", socketPath)
-	require.NoError(t, err)
+	listener, listenErr := net.Listen("unix", socketPath)
+	require.NoError(t, listenErr)
 	defer listener.Close()
 
 	// Start a simple HTTP server on the Unix socket
@@ -149,6 +151,7 @@ server accepts handled requests
  16630948 16630946 31070465
 Reading: 6 Writing: 179 Waiting: 106
 `))
+
 				return
 			}
 			rw.WriteHeader(http.StatusNotFound)

@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/nginx/agent/v3/internal/model"
@@ -240,13 +241,11 @@ func TestResourceService_GetResource(t *testing.T) {
 
 func TestResourceService_createPlusClient(t *testing.T) {
 	// Create a temporary file for testing CA certificate
-	tempCAFile, err := os.CreateTemp("", "test-ca.crt")
-	require.NoError(t, err)
-	defer os.Remove(tempCAFile.Name())
+	tempDir := t.TempDir()
+	caFile := filepath.Join(tempDir, "test-ca.crt")
 
-	_, err = tempCAFile.Write([]byte("-----BEGIN CERTIFICATE-----\nMII...\n-----END CERTIFICATE-----"))
+	err := os.WriteFile(caFile, []byte("-----BEGIN CERTIFICATE-----\nMII...\n-----END CERTIFICATE-----"), 0o600)
 	require.NoError(t, err)
-	tempCAFile.Close()
 
 	instanceWithAPI := protos.NginxPlusInstance([]string{})
 	instanceWithAPI.InstanceRuntime.GetNginxPlusRuntimeInfo().PlusApi = &v1.APIDetails{
@@ -264,7 +263,7 @@ func TestResourceService_createPlusClient(t *testing.T) {
 	instanceWithCACert.InstanceRuntime.GetNginxPlusRuntimeInfo().PlusApi = &v1.APIDetails{
 		Location: "/api",
 		Listen:   "localhost:443",
-		Ca:       tempCAFile.Name(),
+		Ca:       caFile,
 	}
 
 	ctx := context.Background()
@@ -303,12 +302,12 @@ func TestResourceService_createPlusClient(t *testing.T) {
 				protos.NginxPlusInstance([]string{}),
 			}
 
-			_, err := resourceService.createPlusClient(test.instance)
+			_, clientErr := resourceService.createPlusClient(test.instance)
 			if test.err != nil {
-				assert.Error(tt, err)
-				assert.Contains(tt, err.Error(), test.err.Error())
+				require.Error(tt, clientErr)
+				assert.Contains(tt, clientErr.Error(), test.err.Error())
 			} else {
-				assert.NoError(tt, err)
+				require.NoError(tt, clientErr)
 				// For the CA cert test, we can't easily verify the internal http.Client configuration
 				// without exporting it or adding test hooks, so we'll just verify no error is returned
 			}
