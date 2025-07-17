@@ -59,8 +59,8 @@ var (
 	initMutex            = &sync.Mutex{}
 )
 
-// New is the constructor for the Collector plugin.
-func New(conf *config.Config) (*Collector, error) {
+// NewCollector is the constructor for the Collector plugin.
+func NewCollector(conf *config.Config) (*Collector, error) {
 	initMutex.Lock()
 
 	defer initMutex.Unlock()

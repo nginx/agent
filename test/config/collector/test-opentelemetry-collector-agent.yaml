@@ -1,6 +1,6 @@
 receivers:
   containermetrics:
-    collection_interval: "1s"
+    collection_interval: 1s
   hostmetrics:
     collection_interval: 1m0s
     initial_delay: 1s

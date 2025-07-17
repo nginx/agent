@@ -1,8 +1,8 @@
 receivers:
-  {{- with .Receivers.ContainerMetrics }}
+{{- if ne .Receivers.ContainerMetrics nil }}
   containermetrics:
-    {{- with .CollectionInterval }}
-    collection_interval: "{{ . }}"
+    {{- if .Receivers.ContainerMetrics.CollectionInterval }}
+    collection_interval: {{ .Receivers.ContainerMetrics.CollectionInterval }}
     {{- end}}
 {{- end }}
 

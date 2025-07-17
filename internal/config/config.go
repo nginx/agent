@@ -143,10 +143,15 @@ func ResolveConfig() (*Config, error) {
 }
 
 func defaultCollector(collector *Collector, config *Config) {
+	// Always add default host metric receiver and default processor
 	addDefaultHostMetricsReceiver(collector)
 	addDefaultProcessors(collector)
-	addDefaultOtlpExporter(collector, config)
-	addDefaultPipelines(collector)
+
+	// Only add default otlp exporter and pipelines if connected to a management plane
+	if config.IsCommandGrpcClientConfigured() || config.IsAuxiliaryCommandGrpcClientConfigured() {
+		addDefaultOtlpExporter(collector, config)
+		addDefaultPipelines(collector)
+	}
 }
 
 func addDefaultPipelines(collector *Collector) {
