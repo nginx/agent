@@ -61,10 +61,10 @@ type (
 	}
 
 	NginxDataPlaneConfig struct {
+		ApiTls                 TLSConfig     `yaml:"api_tls"                  mapstructure:"api_tls"`
 		ExcludeLogs            []string      `yaml:"exclude_logs"             mapstructure:"exclude_logs"`
 		ReloadMonitoringPeriod time.Duration `yaml:"reload_monitoring_period" mapstructure:"reload_monitoring_period"`
 		TreatWarningsAsErrors  bool          `yaml:"treat_warnings_as_errors" mapstructure:"treat_warnings_as_errors"`
-		ApiTls                 TLSConfig     `yaml:"api_tls"                  mapstructure:"api_tls"`
 	}
 
 	Client struct {

@@ -351,21 +351,22 @@ func (r *ResourceService) createPlusClient(instance *mpi.Instance) (*client.Ngin
 	}
 
 	httpClient := http.DefaultClient
-	CaCertLocation := plusAPI.GetCa()
-	if CaCertLocation != "" {
-		slog.Debug("Reading from Location for Ca Cert : ", "CaCertLocation", CaCertLocation)
-		CaCert, err := os.ReadFile(CaCertLocation)
+	caCertLocation := plusAPI.GetCa()
+	if caCertLocation != "" {
+		slog.Debug("Reading from Location for Ca Cert : ", "cacertlocation", caCertLocation)
+		caCert, err := os.ReadFile(caCertLocation)
 		if err != nil {
 			slog.Error("Unable to Create NGINX Plus client. Failed to read CA certificate : ", "err", err)
 			return nil, err
 		}
 		caCertPool := x509.NewCertPool()
-		caCertPool.AppendCertsFromPEM(CaCert)
+		caCertPool.AppendCertsFromPEM(caCert)
 
 		httpClient = &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
-					RootCAs: caCertPool,
+					RootCAs:    caCertPool,
+					MinVersion: tls.VersionTLS13,
 				},
 			},
 		}

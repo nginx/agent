@@ -66,21 +66,24 @@ func (s *NginxStubStatusScraper) ID() component.ID {
 func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) error {
 	s.logger.Info("Starting NGINX stub status scraper")
 	httpClient := http.DefaultClient
-	CaCertLocation := s.cfg.APIDetails.Ca
-	if CaCertLocation != "" {
-		s.settings.Logger.Debug("Reading from Location for Ca Cert : ", zap.Any(CaCertLocation, CaCertLocation))
-		CaCert, err := os.ReadFile(CaCertLocation)
+	caCertLocation := s.cfg.APIDetails.Ca
+	if caCertLocation != "" {
+		s.settings.Logger.Debug("Reading from Location for Ca Cert : ", zap.Any(caCertLocation, caCertLocation))
+		caCert, err := os.ReadFile(caCertLocation)
 		if err != nil {
-			s.settings.Logger.Error("Unable to start NGINX stub status scraper. Failed to read CA certificate : %v", zap.Error(err))
+			s.settings.Logger.Error("Error starting NGINX stub scraper. "+
+				"Failed to read CA certificate : ", zap.Error(err))
+
 			return nil
 		}
 		caCertPool := x509.NewCertPool()
-		caCertPool.AppendCertsFromPEM(CaCert)
+		caCertPool.AppendCertsFromPEM(caCert)
 
 		httpClient = &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
-					RootCAs: caCertPool,
+					RootCAs:    caCertPool,
+					MinVersion: tls.VersionTLS13,
 				},
 			},
 		}

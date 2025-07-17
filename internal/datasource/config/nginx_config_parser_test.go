@@ -1099,7 +1099,7 @@ func TestNginxConfigParser_pingAPIEndpoint_PlusAPI(t *testing.T) {
 			result := nginxConfigParser.pingAPIEndpoint(ctx, &model.APIDetails{
 				URL:    fmt.Sprintf("%s%s", fakeServer.URL, test.endpoint),
 				Listen: "",
-			}, "api", false)
+			}, "api")
 			assert.Equal(t, test.expected, result)
 		})
 	}
@@ -1170,7 +1170,7 @@ Reading: 0 Writing: 1 Waiting: 1
 				URL:    fmt.Sprintf("%s%s", fakeServer.URL, test.endpoint),
 				Listen: "",
 			}
-			result := nginxConfigParser.pingAPIEndpoint(ctx, statusAPI, "stub_status", false)
+			result := nginxConfigParser.pingAPIEndpoint(ctx, statusAPI, "stub_status")
 			assert.Equal(t, test.expected, result)
 		})
 	}
