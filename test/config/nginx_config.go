@@ -13,6 +13,9 @@ import (
 //go:embed nginx/nginx-with-multiple-access-logs.conf
 var embedNginxConfWithMultipleAccessLogs string
 
+//go:embed nginx/nginx-with-multiple-syslog-servers.conf
+var embedNginxConfWithMultipleSysLogs string
+
 //go:embed nginx/nginx-not-allowed-dir.conf
 var embedNginxConfWithNotAllowedDir string
 
@@ -43,6 +46,23 @@ func NginxConfigWithMultipleAccessLogs(
 		accessLogName,
 		combinedAccessLogName,
 		ltsvAccessLogName,
+	)
+}
+
+func NginxConfigWithMultipleSysLogs(
+	errorLogName,
+	accessLogName,
+	syslogServer,
+	syslogServer3,
+	syslogServer4 string,
+) string {
+	return fmt.Sprintf(
+		embedNginxConfWithMultipleSysLogs,
+		errorLogName,
+		accessLogName,
+		syslogServer,
+		syslogServer3,
+		syslogServer4,
 	)
 }
 
