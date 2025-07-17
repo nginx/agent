@@ -719,7 +719,7 @@ func TestNginxConfigParser_findValidSysLogServers(t *testing.T) {
 	ncp := NewNginxConfigParser(types.AgentConfig())
 
 	for i, server := range servers {
-		result := ncp.findValidSysLogServers(server)
+		result := ncp.findLocalSysLogServers(server)
 
 		assert.Equal(t, expected[i], result)
 	}
