@@ -11,7 +11,7 @@ import (
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )
 
-func (s *ConfigUploadMPIFileWatcherTestSuite) TestFileWatcher_Test1_TestUpdateNGINXConfig() {
+func (s *MPITestSuite) TestFileWatcher_Test1_TestUpdateNGINXConfig() {
 	err := utils.Container.CopyFileToContainer(
 		s.ctx,
 		"../../config/nginx/nginx-with-server-block-access-log.conf",
@@ -28,7 +28,7 @@ func (s *ConfigUploadMPIFileWatcherTestSuite) TestFileWatcher_Test1_TestUpdateNG
 	utils.VerifyUpdateDataPlaneStatus(s.T(), utils.MockManagementPlaneAPIAddress)
 }
 
-func (s *ConfigUploadMPIFileWatcherTestSuite) TestFileWatcher_Test2_TestCreateNGINXConfig() {
+func (s *MPITestSuite) TestFileWatcher_Test2_TestCreateNGINXConfig() {
 	err := utils.Container.CopyFileToContainer(
 		s.ctx,
 		"../../config/nginx/empty-nginx.conf",
@@ -44,7 +44,7 @@ func (s *ConfigUploadMPIFileWatcherTestSuite) TestFileWatcher_Test2_TestCreateNG
 	utils.VerifyUpdateDataPlaneStatus(s.T(), utils.MockManagementPlaneAPIAddress)
 }
 
-func (s *ConfigUploadMPIFileWatcherTestSuite) TestFileWatcher_Test3_TestDeleteNGINXConfig() {
+func (s *MPITestSuite) TestFileWatcher_Test3_TestDeleteNGINXConfig() {
 	_, _, err := utils.Container.Exec(
 		s.ctx,
 		[]string{"rm", "-rf", "/etc/nginx/test"},

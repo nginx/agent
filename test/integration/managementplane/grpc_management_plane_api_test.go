@@ -38,11 +38,11 @@ func (s *ConfigApplyTestSuite) TestGrpc_Test1_Reconnection() {
 }
 
 // Verify that the agent sends a connection request and an update data plane status request
-func (s *ConfigUploadMPIFileWatcherTestSuite) TestGrpc_Test2_StartUp() {
+func (s *MPITestSuite) TestGrpc_Test2_StartUp() {
 	utils.VerifyUpdateDataPlaneHealth(s.T(), utils.MockManagementPlaneAPIAddress)
 }
 
-func (s *ConfigUploadMPIFileWatcherTestSuite) TestGrpc_Test3_DataplaneHealthRequest() {
+func (s *MPITestSuite) TestGrpc_Test3_DataplaneHealthRequest() {
 	request := `{
 			"message_meta": {
 				"message_id": "5d0fa83e-351c-4009-90cd-1f2acce2d184",

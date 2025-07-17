@@ -42,6 +42,9 @@ func (s *ConfigApplyTestSuite) SetupSuite() {
 	s.teardownTest = utils.SetupConnectionTest(s.T(), false, false, false,
 		"../../config/agent/nginx-config-with-grpc-client.conf")
 	s.nginxInstanceID = utils.VerifyConnection(s.T(), 2, utils.MockManagementPlaneAPIAddress)
+	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
+	s.Require().Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+	s.Require().Equal("Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 }
 
 func (s *ConfigApplyTestSuite) TearDownSuite() {
@@ -52,22 +55,18 @@ func (s *ConfigApplyTestSuite) TearDownTest() {
 	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
 }
 
-func (s *ConfigApplyTestSuite) TestConfigApply_Test1_TestSetup() {
-	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
-	s.Require().Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
-	s.Require().Equal("Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
-}
-
-func (s *ConfigApplyTestSuite) TestConfigApply_Test2_TestNoConfigChanges() {
+func (s *ConfigApplyTestSuite) TestConfigApply_Test1_TestNoConfigChanges() {
 	utils.PerformConfigApply(s.T(), s.nginxInstanceID, utils.MockManagementPlaneAPIAddress)
-	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
+	responses := utils.ManagementPlaneResponses(s.T(), 2, utils.MockManagementPlaneAPIAddress)
 	s.T().Logf("Config apply responses: %v", responses)
 
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
-	s.Equal("Config apply successful, no files to change", responses[0].GetCommandResponse().GetMessage())
+	s.Equal("Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
+	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
+	s.Equal("Config apply successful, no files to change", responses[1].GetCommandResponse().GetMessage())
 }
 
-func (s *ConfigApplyTestSuite) TestConfigApply_Test3_TestValidConfig() {
+func (s *ConfigApplyTestSuite) TestConfigApply_Test2_TestValidConfig() {
 	newConfigFile := "../../config/nginx/nginx-with-test-location.conf"
 
 	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
@@ -95,7 +94,7 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test3_TestValidConfig() {
 	s.Equal("Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
 }
 
-func (s *ConfigApplyTestSuite) TestConfigApply_Test4_TestInvalidConfig() {
+func (s *ConfigApplyTestSuite) TestConfigApply_Test3_TestInvalidConfig() {
 	err := utils.MockManagementPlaneGrpcContainer.CopyFileToContainer(
 		s.ctx,
 		"../../config/nginx/invalid-nginx.conf",
@@ -117,7 +116,7 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test4_TestInvalidConfig() {
 	s.Equal(configApplyErrorMessage, responses[1].GetCommandResponse().GetError())
 }
 
-func (s *ConfigApplyTestSuite) TestConfigApply_Test5_TestFileNotInAllowedDirectory() {
+func (s *ConfigApplyTestSuite) TestConfigApply_Test4_TestFileNotInAllowedDirectory() {
 	utils.PerformInvalidConfigApply(s.T(), s.nginxInstanceID)
 
 	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
@@ -131,32 +130,23 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test5_TestFileNotInAllowedDirecto
 	)
 }
 
-func TestConfigApplyTestSuite(t *testing.T) {
-	suite.Run(t, new(ConfigApplyTestSuite))
-}
-
 func (s *ConfigApplyChunkingTestSuite) SetupSuite() {
 	s.ctx = context.Background()
 	s.teardownTest = utils.SetupConnectionTest(s.T(), false, false, false,
 		"../../config/agent/nginx-config-with-max-file-size.conf")
 	s.nginxInstanceID = utils.VerifyConnection(s.T(), 2, utils.MockManagementPlaneAPIAddress)
+	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
+	s.Require().Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+	s.Require().Equal("Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 }
 
 func (s *ConfigApplyChunkingTestSuite) TearDownSuite() {
 	s.teardownTest(s.T())
 }
 
-func (s *ConfigApplyChunkingTestSuite) TearDownTest() {
+func (s *ConfigApplyChunkingTestSuite) TestConfigApplyChunking() {
 	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
-}
 
-func (s *ConfigApplyChunkingTestSuite) TestConfigApplyChunking_Test1_TestSetup() {
-	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
-	s.Require().Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
-	s.Require().Equal("Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
-}
-
-func (s *ConfigApplyChunkingTestSuite) TestConfigApplyChunking_Test2_TestChunkedConfigApply() {
 	newConfigFile := "../../config/nginx/nginx-1mb-file.conf"
 
 	err := utils.MockManagementPlaneGrpcContainer.CopyFileToContainer(
@@ -182,6 +172,7 @@ func (s *ConfigApplyChunkingTestSuite) TestConfigApplyChunking_Test2_TestChunked
 	s.Equal("Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
 }
 
-func TestConfigApplyChunkingTestSuite(t *testing.T) {
+func TestConfigApplyTestSuite(t *testing.T) {
+	suite.Run(t, new(ConfigApplyTestSuite))
 	suite.Run(t, new(ConfigApplyChunkingTestSuite))
 }

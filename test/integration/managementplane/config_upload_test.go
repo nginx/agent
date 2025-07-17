@@ -18,29 +18,26 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type ConfigUploadMPIFileWatcherTestSuite struct {
+type MPITestSuite struct {
 	suite.Suite
 	ctx             context.Context
 	teardownTest    func(testing.TB)
 	nginxInstanceID string
 }
 
-func (s *ConfigUploadMPIFileWatcherTestSuite) TearDownSuite() {
+func (s *MPITestSuite) TearDownSuite() {
 	s.teardownTest(s.T())
 }
 
-func (s *ConfigUploadMPIFileWatcherTestSuite) TearDownTest() {
+func (s *MPITestSuite) TearDownTest() {
 	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
 }
 
-func (s *ConfigUploadMPIFileWatcherTestSuite) SetupSuite() {
+func (s *MPITestSuite) SetupSuite() {
 	s.ctx = context.Background()
 	s.teardownTest = utils.SetupConnectionTest(s.T(), true, false, false,
 		"../../config/agent/nginx-config-with-grpc-client.conf")
 	s.nginxInstanceID = utils.VerifyConnection(s.T(), 2, utils.MockManagementPlaneAPIAddress)
-}
-
-func (s *ConfigUploadMPIFileWatcherTestSuite) TestConfigUploadMPTFileWatcher_1_TestSetup() {
 	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	s.Equal("Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
@@ -48,7 +45,7 @@ func (s *ConfigUploadMPIFileWatcherTestSuite) TestConfigUploadMPTFileWatcher_1_T
 	s.False(s.T().Failed())
 }
 
-func (s *ConfigUploadMPIFileWatcherTestSuite) TestConfigUploadMPTFileWatcher_TestConfigUpload() {
+func (s *MPITestSuite) TestConfigUpload() {
 	request := fmt.Sprintf(`{
 	"message_meta": {
 		"message_id": "5d0fa83e-351c-4009-90cd-1f2acce2d184",
@@ -76,12 +73,14 @@ func (s *ConfigUploadMPIFileWatcherTestSuite) TestConfigUploadMPTFileWatcher_Tes
 	s.Require().NoError(err)
 	s.Equal(http.StatusOK, resp.StatusCode())
 
-	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
+	responses := utils.ManagementPlaneResponses(s.T(), 2, utils.MockManagementPlaneAPIAddress)
 
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	s.Equal("Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
+	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
+	s.Equal("Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
 }
 
-func TestConfigUploadMPIFileWatcherTestSuite(t *testing.T) {
-	suite.Run(t, new(ConfigUploadMPIFileWatcherTestSuite))
+func TestMPITestSuite(t *testing.T) {
+	suite.Run(t, new(MPITestSuite))
 }
