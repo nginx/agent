@@ -598,18 +598,17 @@ func (ncp *NginxConfigParser) urlsForLocationDirectiveAPIDetails(
 	locationDirectiveName string,
 ) []*model.APIDetails {
 	var urls []*model.APIDetails
-	// Check to see if the ca cert location is allowed
-	caCertLocation := ncp.agentConfig.DataPlaneConfig.Nginx.ApiTls.Ca
-	if !ncp.agentConfig.IsDirectoryAllowed(caCertLocation) {
-		caCertLocation = ""
+	// Check if SSL is enabled in the server block
+	isSSL := ncp.isSSLEnabled(parent)
+	caCertLocation := ""
+	// If SSl is enabled, check if CA cert is provided and the location is allowed
+	if isSSL {
+		caCertLocation = ncp.getCACertLocation()
 	}
 	// process from the location block
 	if current.Directive != locationDirective {
 		return urls
 	}
-
-	// Check if SSL is enabled in the server block
-	isSSL := ncp.isSSLEnabled(parent)
 
 	for _, locChild := range current.Block {
 		if locChild.Directive != plusAPIDirective && locChild.Directive != stubStatusAPIDirective {
@@ -792,6 +791,19 @@ func (ncp *NginxConfigParser) prepareHTTPClient(ctx context.Context) (*http.Clie
 	}
 
 	return httpClient, nil
+}
+
+// New helper: Populate the CA cert location based ondirectory allowance.
+func (ncp *NginxConfigParser) getCACertLocation() string {
+	caCertLocation := ncp.agentConfig.DataPlaneConfig.Nginx.ApiTls.Ca
+
+	if caCertLocation != "" && !ncp.agentConfig.IsDirectoryAllowed(caCertLocation) {
+		// If SSL is enabled but CA cert is provided and not allowed, treat it as if no CA cert
+		slog.Warn("CA certificate location is not allowed, treating as if no CA cert provided.")
+		return ""
+	}
+
+	return caCertLocation
 }
 
 func (ncp *NginxConfigParser) isDuplicateFile(nginxConfigContextFiles []*mpi.File, newFile *mpi.File) bool {
