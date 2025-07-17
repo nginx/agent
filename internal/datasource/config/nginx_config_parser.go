@@ -209,8 +209,8 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 				ncp.previousNAPSysLogServer = syslogServer
 			}
 		} else if napEnabled {
-			slog.WarnContext(ctx, "Could not find usable NAP syslog server, "+
-				"security violations will be unavailable")
+			slog.WarnContext(ctx, "Could not find available local NGINX App Protect syslog server. "+
+				"Security violations will not be collected.")
 		}
 
 		fileMeta, err := files.FileMeta(conf.File)

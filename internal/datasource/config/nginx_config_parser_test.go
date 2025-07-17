@@ -532,7 +532,8 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 				"",
 			),
 			allowedDirectories: []string{dir},
-			expectedLog:        "Could not find usable NAP syslog server, security violations will be unavailable",
+			expectedLog: "Could not find available local NGINX App Protect syslog server. " +
+				"Security violations will not be collected.",
 		},
 	}
 
@@ -649,8 +650,9 @@ func TestNginxConfigParser_SyslogServerParse(t *testing.T) {
 			expectedSyslogServers: "",
 			content: testconfig.NginxConfigWithMultipleSysLogs(errorLog.Name(), accessLog.Name(),
 				"random.domain:1515", "192.168.12.34:1517", "my.domain.com:1517"),
-			expectedLog: "Could not find usable NAP syslog server, security violations will be unavailable",
-			portInUse:   false,
+			expectedLog: "Could not find available local NGINX App Protect syslog server. " +
+				"Security violations will not be collected.",
+			portInUse: false,
 		},
 		{
 			name:                  "Test 3: Port unavailable, use next valid sever",
