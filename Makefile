@@ -17,13 +17,13 @@ GOBIN 	?= $$(go env GOPATH)/bin
 # | OS_RELEASE       | OS_VERSION                                | NOTES                                                          |
 # | ---------------- | ----------------------------------------- | -------------------------------------------------------------- |
 # | amazonlinux      | 2, 2023                                   |                                                                |
-# | ubuntu           | 20.04, 22.04 24.04                        |                                                                |
+# | ubuntu           | 22.04, 24.04 25.04                		 |                                                                |
 # | debian           | bullseye-slim, bookworm-slim 			 |                                                                |
-# | redhatenterprise | 8, 9                                  	 |                                                                |
-# | rockylinux       | 8, 9                                      |                                                                |
-# | almalinux        | 8, 9                                      |                                                                |
-# | alpine           | 3.18, 3.19, 3.20, 3.21 3.22               |                                                                |
-# | oraclelinux      | 8, 9                                		 |                                                                |
+# | redhatenterprise | 8, 9, 10                                	 |                                                                |
+# | rockylinux       | 8, 9, 10                                  |                                                                |
+# | almalinux        | 8, 9, 10                                  |                                                                |
+# | alpine           | 3.19, 3.20, 3.21 3.22                     |                                                                |
+# | oraclelinux      | 8, 9, 10                                  |                                                                |
 # | suse             | sle15                          			 |                                                                |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 OS_RELEASE  ?= ubuntu
