@@ -741,6 +741,10 @@ func (ncp *NginxConfigParser) isPort(value string) bool {
 }
 
 func (ncp *NginxConfigParser) isSSLEnabled(serverBlock *crossplane.Directive) bool {
+	if serverBlock == nil || serverBlock.Block == nil {
+		return false
+	}
+
 	for _, dir := range serverBlock.Block {
 		if dir.Directive == "listen" {
 			for _, arg := range dir.Args[1:] {
