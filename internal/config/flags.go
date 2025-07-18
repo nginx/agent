@@ -118,6 +118,7 @@ var (
 	NginxReloadMonitoringPeriodKey = pre(DataPlaneConfigRootKey, "nginx") + "reload_monitoring_period"
 	NginxTreatWarningsAsErrorsKey  = pre(DataPlaneConfigRootKey, "nginx") + "treat_warnings_as_errors"
 	NginxExcludeLogsKey            = pre(DataPlaneConfigRootKey, "nginx") + "exclude_logs"
+	NginxApiTlsCa                  = pre(DataPlaneConfigRootKey, "nginx") + "api_tls_ca"
 
 	FileWatcherMonitoringFrequencyKey = pre(FileWatcherKey) + "monitoring_frequency"
 	NginxExcludeFilesKey              = pre(FileWatcherKey) + "exclude_files"

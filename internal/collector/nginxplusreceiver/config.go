@@ -29,6 +29,7 @@ type APIDetails struct {
 	URL      string `mapstructure:"url"`
 	Listen   string `mapstructure:"listen"`
 	Location string `mapstructure:"location"`
+	Ca       string `mapstructure:"ca"`
 }
 
 // Validate checks if the receiver configuration is valid
@@ -59,6 +60,7 @@ func createDefaultConfig() component.Config {
 			URL:      "http://localhost:80/api",
 			Listen:   "localhost:80",
 			Location: "/api",
+			Ca:       "",
 		},
 		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
 	}

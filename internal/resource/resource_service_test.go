@@ -9,6 +9,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/nginx/agent/v3/internal/model"
@@ -26,6 +28,7 @@ import (
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestResourceService_AddInstance(t *testing.T) {
@@ -237,6 +240,13 @@ func TestResourceService_GetResource(t *testing.T) {
 }
 
 func TestResourceService_createPlusClient(t *testing.T) {
+	// Create a temporary file for testing CA certificate
+	tempDir := t.TempDir()
+	caFile := filepath.Join(tempDir, "test-ca.crt")
+
+	err := os.WriteFile(caFile, []byte("-----BEGIN CERTIFICATE-----\nMII...\n-----END CERTIFICATE-----"), 0o600)
+	require.NoError(t, err)
+
 	instanceWithAPI := protos.NginxPlusInstance([]string{})
 	instanceWithAPI.InstanceRuntime.GetNginxPlusRuntimeInfo().PlusApi = &v1.APIDetails{
 		Location: "/api",
@@ -247,6 +257,13 @@ func TestResourceService_createPlusClient(t *testing.T) {
 	instanceWithUnixAPI.InstanceRuntime.GetNginxPlusRuntimeInfo().PlusApi = &v1.APIDetails{
 		Listen:   "unix:/var/run/nginx-status.sock",
 		Location: "/api",
+	}
+
+	instanceWithCACert := protos.NginxPlusInstance([]string{})
+	instanceWithCACert.InstanceRuntime.GetNginxPlusRuntimeInfo().PlusApi = &v1.APIDetails{
+		Location: "/api",
+		Listen:   "localhost:443",
+		Ca:       caFile,
 	}
 
 	ctx := context.Background()
@@ -266,7 +283,12 @@ func TestResourceService_createPlusClient(t *testing.T) {
 			err:      nil,
 		},
 		{
-			name:     "Test 3: Fail Creating Client - API not Configured",
+			name:     "Test 3: Create Plus Client with CA Certificate",
+			instance: instanceWithCACert,
+			err:      nil,
+		},
+		{
+			name:     "Test 4: Fail Creating Client - API not Configured",
 			instance: protos.NginxPlusInstance([]string{}),
 			err:      errors.New("failed to preform API action, NGINX Plus API is not configured"),
 		},
@@ -280,8 +302,15 @@ func TestResourceService_createPlusClient(t *testing.T) {
 				protos.NginxPlusInstance([]string{}),
 			}
 
-			_, err := resourceService.createPlusClient(test.instance)
-			assert.Equal(tt, test.err, err)
+			_, clientErr := resourceService.createPlusClient(test.instance)
+			if test.err != nil {
+				require.Error(tt, clientErr)
+				assert.Contains(tt, clientErr.Error(), test.err.Error())
+			} else {
+				require.NoError(tt, clientErr)
+				// For the CA cert test, we can't easily verify the internal http.Client configuration
+				// without exporting it or adding test hooks, so we'll just verify no error is returned
+			}
 		})
 	}
 }

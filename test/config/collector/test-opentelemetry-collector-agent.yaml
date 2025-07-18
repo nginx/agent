@@ -31,6 +31,7 @@ receivers:
       url: "http://localhost:80/status"
       listen: ""
       location: ""
+      ca: ""
     collection_interval: 30s
     access_logs:
       - log_format: "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\"\"$upstream_cache_status\""

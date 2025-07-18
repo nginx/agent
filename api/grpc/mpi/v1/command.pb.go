@@ -2262,7 +2262,9 @@ type APIDetails struct {
 	// the API location directive
 	Location string `protobuf:"bytes,1,opt,name=location,proto3" json:"location,omitempty"`
 	// the API listen directive
-	Listen        string `protobuf:"bytes,2,opt,name=listen,proto3" json:"listen,omitempty"`
+	Listen string `protobuf:"bytes,2,opt,name=listen,proto3" json:"listen,omitempty"`
+	// the API Ca directive
+	Ca            string `protobuf:"bytes,3,opt,name=Ca,proto3" json:"Ca,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2307,6 +2309,13 @@ func (x *APIDetails) GetLocation() string {
 func (x *APIDetails) GetListen() string {
 	if x != nil {
 		return x.Listen
+	}
+	return ""
+}
+
+func (x *APIDetails) GetCa() string {
+	if x != nil {
+		return x.Ca
 	}
 	return ""
 }
@@ -2872,11 +2881,12 @@ const file_mpi_v1_command_proto_rawDesc = "" +
 	"error_logs\x18\x03 \x03(\tR\terrorLogs\x12)\n" +
 	"\x10loadable_modules\x18\x04 \x03(\tR\x0floadableModules\x12'\n" +
 	"\x0fdynamic_modules\x18\x05 \x03(\tR\x0edynamicModules\x12-\n" +
-	"\bplus_api\x18\x06 \x01(\v2\x12.mpi.v1.APIDetailsR\aplusApi\"@\n" +
+	"\bplus_api\x18\x06 \x01(\v2\x12.mpi.v1.APIDetailsR\aplusApi\"P\n" +
 	"\n" +
 	"APIDetails\x12\x1a\n" +
 	"\blocation\x18\x01 \x01(\tR\blocation\x12\x16\n" +
-	"\x06listen\x18\x02 \x01(\tR\x06listen\"\xe0\x01\n" +
+	"\x06listen\x18\x02 \x01(\tR\x06listen\x12\x0e\n" +
+	"\x02Ca\x18\x03 \x01(\tR\x02Ca\"\xe0\x01\n" +
 	"\x1aNGINXAppProtectRuntimeInfo\x12\x18\n" +
 	"\arelease\x18\x01 \x01(\tR\arelease\x128\n" +
 	"\x18attack_signature_version\x18\x02 \x01(\tR\x16attackSignatureVersion\x126\n" +

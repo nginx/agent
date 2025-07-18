@@ -4893,6 +4893,8 @@ func (m *APIDetails) validate(all bool) error {
 
 	// no validation rules for Listen
 
+	// no validation rules for Ca
+
 	if len(errors) > 0 {
 		return APIDetailsMultiError(errors)
 	}

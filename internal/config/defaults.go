@@ -14,6 +14,7 @@ const (
 	DefGracefulShutdownPeriod      = 5 * time.Second
 	DefNginxReloadMonitoringPeriod = 10 * time.Second
 	DefTreatErrorsAsWarnings       = false
+	DefNginxApiTlsCa               = ""
 
 	DefCommandServerHostKey    = ""
 	DefCommandServerPortKey    = 0
