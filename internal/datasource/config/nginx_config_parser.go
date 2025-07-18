@@ -177,7 +177,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 				case "app_protect_security_log":
 					if len(directive.Args) > 1 {
 						napEnabled = true
-						sysLogServer := ncp.findValidSysLogServers(directive.Args[1])
+						sysLogServer := ncp.findLocalSysLogServers(directive.Args[1])
 						if sysLogServer != "" && !napSyslogServersFound[sysLogServer] {
 							napSyslogServersFound[sysLogServer] = true
 							slog.DebugContext(ctx, "Found NAP syslog server", "address", sysLogServer)
@@ -203,14 +203,14 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 		}
 
 		if len(napSyslogServersFound) > 0 {
-			syslogServer := ncp.parseSyslogDirective(ctx, napSyslogServersFound)
+			syslogServer := ncp.findAvailableSyslogServers(ctx, napSyslogServersFound)
 			if syslogServer != "" {
 				nginxConfigContext.NAPSysLogServer = syslogServer
 				ncp.previousNAPSysLogServer = syslogServer
 			}
 		} else if napEnabled {
-			slog.WarnContext(ctx, "Could not find usable NAP syslog server, "+
-				"security violations will be unavailable")
+			slog.WarnContext(ctx, "Could not find available local NGINX App Protect syslog server. "+
+				"Security violations will not be collected.")
 		}
 
 		fileMeta, err := files.FileMeta(conf.File)
@@ -224,7 +224,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 	return nginxConfigContext, nil
 }
 
-func (ncp *NginxConfigParser) parseSyslogDirective(ctx context.Context, napSyslogServers map[string]bool) string {
+func (ncp *NginxConfigParser) findAvailableSyslogServers(ctx context.Context, napSyslogServers map[string]bool) string {
 	if ncp.previousNAPSysLogServer != "" {
 		if _, ok := napSyslogServers[ncp.previousNAPSysLogServer]; ok {
 			return ncp.previousNAPSysLogServer
@@ -249,7 +249,7 @@ func (ncp *NginxConfigParser) parseSyslogDirective(ctx context.Context, napSyslo
 	return ""
 }
 
-func (ncp *NginxConfigParser) findValidSysLogServers(sysLogServer string) string {
+func (ncp *NginxConfigParser) findLocalSysLogServers(sysLogServer string) string {
 	re := regexp.MustCompile(`syslog:server=([\S]+)`)
 	matches := re.FindStringSubmatch(sysLogServer)
 	if len(matches) > 1 {
