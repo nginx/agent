@@ -521,7 +521,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			expectedLog:        "Found valid NAP syslog server",
 		},
 		{
-			name:     "Test 10: Check with multiple syslog servers",
+			name:     "Test 11: Check with multiple invalid syslog servers",
 			instance: protos.NginxPlusInstance([]string{}),
 			content: testconfig.NginxConfigWithMultipleSysLogs(errorLog.Name(), accessLog.Name(),
 				"192.168.12.34:1517", "my.domain.com:1517", "not.allowed:1515"),
