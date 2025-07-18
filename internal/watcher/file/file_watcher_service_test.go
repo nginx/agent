@@ -62,7 +62,7 @@ func TestFileWatcherService_addWatcher(t *testing.T) {
 	require.NoError(t, err)
 	defer os.Remove(testDirectory)
 
-	fileWatcherService.addWatcher(ctx, testDirectory)
+	require.NoError(t, fileWatcherService.addWatcher(ctx, testDirectory))
 
 	directoriesBeingWatched := fileWatcherService.watcher.WatchList()
 	assert.Len(t, directoriesBeingWatched, 1)
@@ -79,7 +79,7 @@ func TestFileWatcherService_addWatcher_Error(t *testing.T) {
 	tempDir := t.TempDir()
 	testDirectory := path.Join(tempDir, "test_dir")
 
-	fileWatcherService.addWatcher(ctx, testDirectory)
+	require.Error(t, fileWatcherService.addWatcher(ctx, testDirectory))
 
 	directoriesBeingWatched := fileWatcherService.watcher.WatchList()
 	assert.Empty(t, directoriesBeingWatched)
