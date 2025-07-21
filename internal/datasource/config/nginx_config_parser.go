@@ -144,7 +144,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 			func(ctx context.Context, parent, directive *crossplane.Directive) error {
 				switch directive.Directive {
 				case "include":
-					include := ncp.parseIncludeDirective(directive)
+					include := ncp.parseIncludeDirective(directive, &conf)
 
 					nginxConfigContext.Includes = append(nginxConfigContext.Includes, include)
 				case "log_format":
@@ -269,12 +269,15 @@ func (ncp *NginxConfigParser) findLocalSysLogServers(sysLogServer string) string
 	return ""
 }
 
-func (ncp *NginxConfigParser) parseIncludeDirective(directive *crossplane.Directive) string {
+func (ncp *NginxConfigParser) parseIncludeDirective(
+	directive *crossplane.Directive,
+	configFile *crossplane.Config,
+) string {
 	var include string
 	if filepath.IsAbs(directive.Args[0]) {
 		include = directive.Args[0]
 	} else {
-		include = filepath.Join(filepath.Dir(directive.File), directive.Args[0])
+		include = filepath.Join(filepath.Dir(configFile.File), directive.Args[0])
 	}
 
 	return include
