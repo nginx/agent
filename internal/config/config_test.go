@@ -929,8 +929,8 @@ func createConfig() *Config {
 			},
 		},
 		AllowedDirectories: []string{
-			"/etc/nginx-agent/", "/etc/nginx/", "/usr/local/etc/nginx/", "/var/run/nginx/",
-			"/usr/share/nginx/modules/", "/var/log/nginx/",
+			"/etc/nginx-agent", "/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx",
+			"/usr/share/nginx/modules", "/var/log/nginx",
 		},
 		DataPlaneConfig: &DataPlaneConfig{
 			Nginx: &NginxDataPlaneConfig{
