@@ -352,7 +352,7 @@ message APIDetails {
     string location = 1;
     // the API listen directive
     string listen =  2;
-    // the API Ca directive
+    // the API CA file path
     string Ca = 3;
 }
 

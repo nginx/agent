@@ -678,7 +678,7 @@ Perform an associated API action on an instance
 | ----- | ---- | ----- | ----------- |
 | location | [string](#string) |  | the API location directive |
 | listen | [string](#string) |  | the API listen directive |
-| Ca | [string](#string) |  | the API Ca directive |
+| Ca | [string](#string) |  | the API CA file path |
 
 
 

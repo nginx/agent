@@ -353,10 +353,9 @@ func (r *ResourceService) createPlusClient(instance *mpi.Instance) (*client.Ngin
 	httpClient := http.DefaultClient
 	caCertLocation := plusAPI.GetCa()
 	if caCertLocation != "" {
-		slog.Debug("Reading from Location for Ca Cert : ", "cacertlocation", caCertLocation)
+		slog.Debug("Reading CA certificate", "file_path", caCertLocation)
 		caCert, err := os.ReadFile(caCertLocation)
 		if err != nil {
-			slog.Error("Unable to Create NGINX Plus client. Failed to read CA certificate : ", "err", err)
 			return nil, err
 		}
 		caCertPool := x509.NewCertPool()

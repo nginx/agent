@@ -1172,9 +1172,9 @@ func TestNginxConfigParser_urlsForLocationDirective(t *testing.T) {
 			assert.Len(t, xpConf.Parsed, 1)
 			err = ncp.crossplaneConfigTraverse(ctx, &xpConf,
 				func(ctx context.Context, parent, directive *crossplane.Directive) error {
-					_oss := ncp.urlsForLocationDirectiveAPIDetails(parent, directive,
+					_oss := ncp.urlsForLocationDirectiveAPIDetails(ctx, parent, directive,
 						stubStatusAPIDirective)
-					_plus := ncp.urlsForLocationDirectiveAPIDetails(parent, directive, plusAPIDirective)
+					_plus := ncp.urlsForLocationDirectiveAPIDetails(ctx, parent, directive, plusAPIDirective)
 					oss = append(oss, _oss...)
 					plus = append(plus, _plus...)
 

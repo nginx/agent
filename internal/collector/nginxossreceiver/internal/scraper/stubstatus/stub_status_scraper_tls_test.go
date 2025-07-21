@@ -7,20 +7,13 @@ package stubstatus
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
-	"crypto/x509/pkix"
-	"encoding/pem"
-	"math/big"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,71 +22,39 @@ import (
 	"go.opentelemetry.io/collector/receiver/receivertest"
 
 	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/config"
+	"github.com/nginx/agent/v3/test/helpers"
 )
 
 func TestStubStatusScraperTLS(t *testing.T) {
-	// Create a test CA certificate and key
-	ca := &x509.Certificate{
-		SerialNumber: big.NewInt(1),
-		Subject: pkix.Name{
-			Organization: []string{"NGINX Agent Test CA"},
-		},
-		NotBefore:             time.Now(),
-		NotAfter:              time.Now().AddDate(10, 0, 0),
-		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
-		BasicConstraintsValid: true,
-		IsCA:                  true,
-	}
-
-	caPrivKey, caPrivKeyErr := rsa.GenerateKey(rand.Reader, 2048)
-	require.NoError(t, caPrivKeyErr)
-
-	caBytes, caBytesErr := x509.CreateCertificate(rand.Reader, ca, ca, &caPrivKey.PublicKey, caPrivKey)
-	require.NoError(t, caBytesErr)
-
-	// Create a test server certificate signed by the CA
-	cert := &x509.Certificate{
-		SerialNumber: big.NewInt(2),
-		Subject: pkix.Name{
-			Organization: []string{"NGINX Agent Test"},
-		},
-		NotBefore:    time.Now(),
-		NotAfter:     time.Now().AddDate(10, 0, 0),
-		SubjectKeyId: []byte{1, 2, 3, 4, 6},
-		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
-		KeyUsage:     x509.KeyUsageDigitalSignature,
-		IPAddresses:  []net.IP{net.IPv4(127, 0, 0, 1)},
-		DNSNames:     []string{"localhost"},
-	}
-
-	certPrivKey, certPrivKeyErr := rsa.GenerateKey(rand.Reader, 2048)
-	require.NoError(t, certPrivKeyErr)
-
-	certBytes, certBytesErr := x509.CreateCertificate(rand.Reader, cert, ca, &certPrivKey.PublicKey, caPrivKey)
-	require.NoError(t, certBytesErr)
+	// Generate self-signed certificate using helper
+	keyBytes, certBytes := helpers.GenerateSelfSignedCert(t)
 
 	// Create a temporary directory for test files
 	tempDir := t.TempDir()
 
-	// Save CA certificate to a file
-	caFile := filepath.Join(tempDir, "ca.crt")
-	caPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: caBytes})
-	writeErr := os.WriteFile(caFile, caPEM, 0o600)
-	require.NoError(t, writeErr)
+	// Save certificate to a file
+	certFile := helpers.WriteCertFiles(t, tempDir, helpers.Cert{
+		Name:     "server.crt",
+		Type:     "CERTIFICATE",
+		Contents: certBytes,
+	})
 
-	// Create a TLS config for the server
-	serverTLSConfig := &tls.Config{
-		MinVersion: tls.VersionTLS13,
-		Certificates: []tls.Certificate{
-			{
-				Certificate: [][]byte{certBytes},
-				PrivateKey:  certPrivKey,
-			},
-		},
+	// Parse the private key
+	key, err := x509.ParsePKCS1PrivateKey(keyBytes)
+	require.NoError(t, err)
+
+	// Create a TLS config with our self-signed certificate
+	tlsCert := tls.Certificate{
+		Certificate: [][]byte{certBytes},
+		PrivateKey:  key,
 	}
 
-	// Create a test server with TLS
+	serverTLSConfig := &tls.Config{
+		MinVersion:   tls.VersionTLS13,
+		Certificates: []tls.Certificate{tlsCert},
+	}
+
+	// Create a test server with our custom TLS config
 	server := httptest.NewUnstartedServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		if req.URL.Path == "/status" {
 			rw.WriteHeader(http.StatusOK)
@@ -112,56 +73,65 @@ Reading: 6 Writing: 179 Waiting: 106
 	server.StartTLS()
 	defer server.Close()
 
-	// Test with TLS configuration
-	t.Run("with TLS CA", func(t *testing.T) {
+	// Test with TLS configuration using our self-signed certificate
+	t.Run("with self-signed TLS", func(t *testing.T) {
 		cfg, ok := config.CreateDefaultConfig().(*config.Config)
 		require.True(t, ok)
 
 		cfg.APIDetails.URL = server.URL + "/status"
-		cfg.APIDetails.Ca = caFile
+		// Use the self-signed certificate for verification
+		cfg.APIDetails.Ca = certFile
 
 		scraper := NewScraper(receivertest.NewNopSettings(component.Type{}), cfg)
 
-		err := scraper.Start(context.Background(), componenttest.NewNopHost())
-		require.NoError(t, err)
+		startErr := scraper.Start(context.Background(), componenttest.NewNopHost())
+		require.NoError(t, startErr)
 
 		_, err = scraper.Scrape(context.Background())
-		assert.NoError(t, err)
+		assert.NoError(t, err, "Scraping with self-signed certificate should succeed")
 	})
 }
 
 func TestStubStatusScraperUnixSocket(t *testing.T) {
-	// Use a shorter path for the socket to avoid path length issues
-	socketPath := filepath.Join(os.TempDir(), "test-nginx.sock")
-	// Clean up the socket file after the test
-	t.Cleanup(func() { os.Remove(socketPath) })
-
-	// Create a Unix domain socket listener
-	listener, listenErr := net.Listen("unix", socketPath)
-	require.NoError(t, listenErr)
-	defer listener.Close()
-
-	// Start a simple HTTP server on the Unix socket
-	server := &http.Server{
-		Handler: http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-			if req.URL.Path == "/status" {
-				rw.WriteHeader(http.StatusOK)
-				_, _ = rw.Write([]byte(`Active connections: 291
+	// Create a test server with a Unix domain socket
+	handler := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		if req.URL.Path == "/status" {
+			rw.WriteHeader(http.StatusOK)
+			_, _ = rw.Write([]byte(`Active connections: 291
 server accepts handled requests
  16630948 16630946 31070465
 Reading: 6 Writing: 179 Waiting: 106
 `))
 
-				return
-			}
-			rw.WriteHeader(http.StatusNotFound)
-		}),
+			return
+		}
+		rw.WriteHeader(http.StatusNotFound)
+	})
+
+	// Create a socket file in a temporary directory with a shorter path
+	socketPath := "/tmp/nginx-test.sock"
+
+	// Clean up any existing socket file
+	os.Remove(socketPath)
+
+	// Create a listener for the Unix socket
+	listener, err := net.Listen("unix", socketPath)
+	require.NoError(t, err, "Failed to create Unix socket listener")
+
+	// Create a test server with our custom listener
+	server := &httptest.Server{
+		Listener: listener,
+		Config:   &http.Server{Handler: handler},
 	}
 
-	go func() {
-		_ = server.Serve(listener)
-	}()
-	defer server.Close()
+	// Start the server
+	server.Start()
+
+	// Ensure cleanup of the socket file
+	t.Cleanup(func() {
+		server.Close()
+		os.Remove(socketPath)
+	})
 
 	// Test with Unix socket
 	t.Run("with Unix socket", func(t *testing.T) {
@@ -173,8 +143,8 @@ Reading: 6 Writing: 179 Waiting: 106
 
 		scraper := NewScraper(receivertest.NewNopSettings(component.Type{}), cfg)
 
-		err := scraper.Start(context.Background(), componenttest.NewNopHost())
-		require.NoError(t, err)
+		startErr := scraper.Start(context.Background(), componenttest.NewNopHost())
+		require.NoError(t, startErr)
 
 		_, err = scraper.Scrape(context.Background())
 		assert.NoError(t, err)

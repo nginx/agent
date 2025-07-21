@@ -87,10 +87,12 @@ func (nps *NginxPlusScraper) Start(_ context.Context, _ component.Host) error {
 	httpClient := http.DefaultClient
 	caCertLocation := nps.cfg.APIDetails.Ca
 	if caCertLocation != "" {
-		nps.logger.Debug("Reading from Location for Ca Cert : ", zap.Any(caCertLocation, caCertLocation))
+		nps.logger.Debug("Reading CA certificate", zap.Any("file_path", caCertLocation))
 		caCert, err := os.ReadFile(caCertLocation)
 		if err != nil {
-			nps.logger.Error("Unable to start NGINX Plus scraper. Failed to read CA certificate: %v", zap.Error(err))
+			nps.logger.Error("Error starting NGINX stub status scraper. "+
+				"Failed to read CA certificate", zap.Error(err))
+
 			return err
 		}
 		caCertPool := x509.NewCertPool()

@@ -792,7 +792,7 @@ func resolveDataPlaneConfig() *DataPlaneConfig {
 			ReloadMonitoringPeriod: viperInstance.GetDuration(NginxReloadMonitoringPeriodKey),
 			TreatWarningsAsErrors:  viperInstance.GetBool(NginxTreatWarningsAsErrorsKey),
 			ExcludeLogs:            viperInstance.GetStringSlice(NginxExcludeLogsKey),
-			ApiTls:                 TLSConfig{Ca: viperInstance.GetString(NginxApiTlsCa)},
+			APITls:                 TLSConfig{Ca: viperInstance.GetString(NginxApiTlsCa)},
 		},
 	}
 }

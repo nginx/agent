@@ -68,11 +68,11 @@ func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) erro
 	httpClient := http.DefaultClient
 	caCertLocation := s.cfg.APIDetails.Ca
 	if caCertLocation != "" {
-		s.settings.Logger.Debug("Reading from Location for Ca Cert : ", zap.Any(caCertLocation, caCertLocation))
+		s.settings.Logger.Debug("Reading CA certificate", zap.Any("file_path", caCertLocation))
 		caCert, err := os.ReadFile(caCertLocation)
 		if err != nil {
-			s.settings.Logger.Error("Error starting NGINX stub scraper. "+
-				"Failed to read CA certificate : ", zap.Error(err))
+			s.settings.Logger.Error("Error starting NGINX stub status scraper. "+
+				"Failed to read CA certificate", zap.Error(err))
 
 			return nil
 		}

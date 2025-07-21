@@ -2263,7 +2263,7 @@ type APIDetails struct {
 	Location string `protobuf:"bytes,1,opt,name=location,proto3" json:"location,omitempty"`
 	// the API listen directive
 	Listen string `protobuf:"bytes,2,opt,name=listen,proto3" json:"listen,omitempty"`
-	// the API Ca directive
+	// the API CA file path
 	Ca            string `protobuf:"bytes,3,opt,name=Ca,proto3" json:"Ca,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
