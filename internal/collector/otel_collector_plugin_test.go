@@ -736,9 +736,7 @@ func TestCollector_updateNginxAppProtectTcplogReceivers(t *testing.T) {
 	require.NoError(t, err)
 
 	nginxConfigContext := &model.NginxConfigContext{
-		NAPSysLogServers: []string{
-			"localhost:151",
-		},
+		NAPSysLogServer: "localhost:151",
 	}
 
 	assert.Empty(t, conf.Collector.Receivers.TcplogReceivers)
@@ -771,9 +769,7 @@ func TestCollector_updateNginxAppProtectTcplogReceivers(t *testing.T) {
 	t.Run("Test 4: NewCollector tcplogReceiver added and deleted another", func(tt *testing.T) {
 		tcplogReceiverDeleted := collector.updateNginxAppProtectTcplogReceivers(
 			&model.NginxConfigContext{
-				NAPSysLogServers: []string{
-					"localhost:152",
-				},
+				NAPSysLogServer: "localhost:152",
 			},
 		)
 

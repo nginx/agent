@@ -47,7 +47,8 @@ const (
 
 type (
 	NginxConfigParser struct {
-		agentConfig *config.Config
+		agentConfig             *config.Config
+		previousNAPSysLogServer string
 	}
 )
 
@@ -65,7 +66,8 @@ type (
 
 func NewNginxConfigParser(agentConfig *config.Config) *NginxConfigParser {
 	return &NginxConfigParser{
-		agentConfig: agentConfig,
+		agentConfig:             agentConfig,
+		previousNAPSysLogServer: "",
 	}
 }
 
@@ -107,6 +109,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 	payload *crossplane.Payload,
 ) (*model.NginxConfigContext, error) {
 	napSyslogServersFound := make(map[string]bool)
+	napEnabled := false
 
 	nginxConfigContext := &model.NginxConfigContext{
 		InstanceID: instance.GetInstanceMeta().GetInstanceId(),
@@ -139,7 +142,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 			func(ctx context.Context, parent, directive *crossplane.Directive) error {
 				switch directive.Directive {
 				case "include":
-					include := ncp.parseIncludeDirective(directive)
+					include := ncp.parseIncludeDirective(directive, &conf)
 
 					nginxConfigContext.Includes = append(nginxConfigContext.Includes, include)
 				case "log_format":
@@ -173,19 +176,11 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 					}
 				case "app_protect_security_log":
 					if len(directive.Args) > 1 {
-						syslogArg := directive.Args[1]
-						re := regexp.MustCompile(`syslog:server=([\S]+)`)
-						matches := re.FindStringSubmatch(syslogArg)
-						if len(matches) > 1 {
-							syslogServer := matches[1]
-							if !napSyslogServersFound[syslogServer] {
-								nginxConfigContext.NAPSysLogServers = append(
-									nginxConfigContext.NAPSysLogServers,
-									syslogServer,
-								)
-								napSyslogServersFound[syslogServer] = true
-								slog.DebugContext(ctx, "Found NAP syslog server", "address", syslogServer)
-							}
+						napEnabled = true
+						sysLogServer := ncp.findLocalSysLogServers(directive.Args[1])
+						if sysLogServer != "" && !napSyslogServersFound[sysLogServer] {
+							napSyslogServersFound[sysLogServer] = true
+							slog.DebugContext(ctx, "Found NAP syslog server", "address", sysLogServer)
 						}
 					}
 				}
@@ -207,6 +202,17 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 			nginxConfigContext.PlusAPI = plusAPI
 		}
 
+		if len(napSyslogServersFound) > 0 {
+			syslogServer := ncp.findAvailableSyslogServers(ctx, napSyslogServersFound)
+			if syslogServer != "" {
+				nginxConfigContext.NAPSysLogServer = syslogServer
+				ncp.previousNAPSysLogServer = syslogServer
+			}
+		} else if napEnabled {
+			slog.WarnContext(ctx, "Could not find available local NGINX App Protect syslog server. "+
+				"Security violations will not be collected.")
+		}
+
 		fileMeta, err := files.FileMeta(conf.File)
 		if err != nil {
 			slog.WarnContext(ctx, "Unable to get file metadata", "file_name", conf.File, "error", err)
@@ -218,12 +224,58 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 	return nginxConfigContext, nil
 }
 
-func (ncp *NginxConfigParser) parseIncludeDirective(directive *crossplane.Directive) string {
+func (ncp *NginxConfigParser) findAvailableSyslogServers(ctx context.Context, napSyslogServers map[string]bool) string {
+	if ncp.previousNAPSysLogServer != "" {
+		if _, ok := napSyslogServers[ncp.previousNAPSysLogServer]; ok {
+			return ncp.previousNAPSysLogServer
+		}
+	}
+
+	for napSyslogServer := range napSyslogServers {
+		ln, err := net.Listen("tcp", napSyslogServer)
+		if err != nil {
+			slog.DebugContext(ctx, "NAP syslog server is not reachable", "address", napSyslogServer,
+				"error", err)
+
+			continue
+		}
+		ln.Close()
+
+		slog.DebugContext(ctx, "Found valid NAP syslog server", "address", napSyslogServer)
+
+		return napSyslogServer
+	}
+
+	return ""
+}
+
+func (ncp *NginxConfigParser) findLocalSysLogServers(sysLogServer string) string {
+	re := regexp.MustCompile(`syslog:server=([\S]+)`)
+	matches := re.FindStringSubmatch(sysLogServer)
+	if len(matches) > 1 {
+		host, _, err := net.SplitHostPort(matches[1])
+		if err != nil {
+			return ""
+		}
+
+		ip := net.ParseIP(host)
+		if ip.IsLoopback() || strings.EqualFold(host, "localhost") {
+			return matches[1]
+		}
+	}
+
+	return ""
+}
+
+func (ncp *NginxConfigParser) parseIncludeDirective(
+	directive *crossplane.Directive,
+	configFile *crossplane.Config,
+) string {
 	var include string
 	if filepath.IsAbs(directive.Args[0]) {
 		include = directive.Args[0]
 	} else {
-		include = filepath.Join(filepath.Dir(directive.File), directive.Args[0])
+		include = filepath.Join(filepath.Dir(configFile.File), directive.Args[0])
 	}
 
 	return include

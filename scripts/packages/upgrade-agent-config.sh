@@ -52,7 +52,8 @@ for config_dir in $config_dirs; do
 done
 
 allowed_directories="${allowed_directories}\n  - /var/log/nginx"
-       
+allowed_directories="${allowed_directories}\n  - /etc/app_protect"
+
 v3_config_contents="
 #
 # /etc/nginx-agent/nginx-agent.conf

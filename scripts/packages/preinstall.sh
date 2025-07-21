@@ -109,6 +109,7 @@ labels:
             allowed_directories="${allowed_directories}\n  - ${config_dir}"
         done
         allowed_directories="${allowed_directories}\n  - /var/log/nginx"
+        allowed_directories="${allowed_directories}\n  - /etc/app_protect"
 
         echo "Writing new v3 configuration to $v3_config_file"
         v3_config_contents="
