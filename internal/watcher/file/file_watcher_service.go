@@ -138,8 +138,12 @@ func (fws *FileWatcherService) addWatchers(ctx context.Context) {
 		}
 
 		if !slices.Contains(fws.watcher.WatchList(), directory) {
-			fws.addWatcher(ctx, directory)
-			fws.filesChanged.Store(true)
+			err := fws.addWatcher(ctx, directory)
+			if err != nil {
+				slog.DebugContext(ctx, "Failed to add file watcher", "directory", directory, "error", err)
+			} else {
+				fws.filesChanged.Store(true)
+			}
 		}
 	}
 }
@@ -208,7 +212,7 @@ func (fws *FileWatcherService) checkForUpdates(ctx context.Context, ch chan<- Fi
 	}
 }
 
-func (fws *FileWatcherService) addWatcher(ctx context.Context, directory string) {
+func (fws *FileWatcherService) addWatcher(ctx context.Context, directory string) error {
 	slog.DebugContext(ctx, "Checking if file watcher needs to be added", "directory", directory)
 
 	if _, err := os.Stat(directory); errors.Is(err, os.ErrNotExist) {
@@ -220,9 +224,7 @@ func (fws *FileWatcherService) addWatcher(ctx context.Context, directory string)
 
 	slog.DebugContext(ctx, "Adding watcher", "directory", directory)
 
-	if err := fws.watcher.Add(directory); err != nil {
-		slog.WarnContext(ctx, "Failed to add file watcher", "directory", directory, "error", err)
-	}
+	return fws.watcher.Add(directory)
 }
 
 func (fws *FileWatcherService) removeWatcher(ctx context.Context, path string) {
