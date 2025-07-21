@@ -848,7 +848,7 @@ func agentConfig() *Config {
 	return &Config{
 		UUID:    "",
 		Version: "",
-		Path:    "testdata/agent.conf",
+		Path:    "",
 		Log:     &Log{},
 		Client: &Client{
 			HTTP: &HTTP{
@@ -873,12 +873,8 @@ func agentConfig() *Config {
 			},
 		},
 		AllowedDirectories: []string{
-			"/etc/nginx",
-			"/etc/nginx-agent",
-			"/usr/local/etc/nginx",
-			"/var/run/nginx",
-			"/var/log/nginx",
-			"/usr/share/nginx/modules",
+			"/etc/nginx/", "/etc/nginx-agent/", "/usr/local/etc/nginx/", "/var/run/nginx/", "/var/log/nginx/",
+			"/usr/share/nginx/modules/", "/etc/app_protect/",
 		},
 		Collector: createDefaultCollectorConfig(),
 		Command: &Command{
@@ -933,12 +929,8 @@ func createConfig() *Config {
 			},
 		},
 		AllowedDirectories: []string{
-			"/etc/nginx-agent",
-			"/etc/nginx",
-			"/usr/local/etc/nginx",
-			"/var/run/nginx",
-			"/usr/share/nginx/modules",
-			"/var/log/nginx",
+			"/etc/nginx-agent/", "/etc/nginx/", "/usr/local/etc/nginx/", "/var/run/nginx/",
+			"/usr/share/nginx/modules/", "/var/log/nginx/",
 		},
 		DataPlaneConfig: &DataPlaneConfig{
 			Nginx: &NginxDataPlaneConfig{
