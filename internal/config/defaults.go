@@ -97,6 +97,7 @@ func DefaultFeatures() []string {
 		pkg.FeatureCertificates,
 		pkg.FeatureMetrics,
 		pkg.FeatureFileWatcher,
+		pkg.FeatureLogsNap,
 	}
 }
 
