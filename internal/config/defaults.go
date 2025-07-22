@@ -74,9 +74,12 @@ const (
 	DefCollectorTLSCAPath   = "/var/lib/nginx-agent/ca.pem"
 	DefCollectorTLSSANNames = "127.0.0.1,::1,localhost"
 
-	DefCollectorBatchProcessorSendBatchSize    = 1000
-	DefCollectorBatchProcessorSendBatchMaxSize = 1000
-	DefCollectorBatchProcessorTimeout          = 30 * time.Second
+	DefCollectorMetricsBatchProcessorSendBatchSize    = 1000
+	DefCollectorMetricsBatchProcessorSendBatchMaxSize = 1000
+	DefCollectorMetricsBatchProcessorTimeout          = 30 * time.Second
+	DefCollectorLogsBatchProcessorSendBatchSize       = 100
+	DefCollectorLogsBatchProcessorSendBatchMaxSize    = 100
+	DefCollectorLogsBatchProcessorTimeout             = 60 * time.Second
 
 	DefCollectorExtensionsHealthServerHost      = "localhost"
 	DefCollectorExtensionsHealthServerPort      = 13133
