@@ -266,7 +266,7 @@ func TestFileWatcherService_Watch(t *testing.T) {
 
 		select {
 		case <-channel:
-			t.Fatalf("Expected file to be skipped")
+			t.Fatalf("Expected file to be skipped: %v", skippableFile.Name())
 		case <-time.After(150 * time.Millisecond):
 			return
 		}

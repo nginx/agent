@@ -6,7 +6,6 @@
 package config
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -76,54 +75,4 @@ func TestTypes_isAllowedDir(t *testing.T) {
 			require.Equal(t, test.allowed, result)
 		})
 	}
-}
-
-func TestTypes_isAllowedDirWithSymlink(t *testing.T) {
-	t.Run("Test 1: Symlink in allowed directory is not allowed", func(t *testing.T) {
-		allowedDirs := []string{"/etc/nginx"}
-		filePath := "file.conf"
-		symlinkPath := "file_link"
-
-		// Create a temp directory for the symlink
-		tempDir := t.TempDir()
-		defer os.RemoveAll(tempDir) // Clean up the temp directory after the test
-
-		// Ensure the temp directory is in the allowedDirs
-		allowedDirs = append(allowedDirs, tempDir)
-
-		filePath = tempDir + "/" + filePath
-		defer os.RemoveAll(filePath)
-		err := os.WriteFile(filePath, []byte("test content"), 0o600)
-		require.NoError(t, err)
-
-		// Create a symlink for testing
-		symlinkPath = tempDir + "/" + symlinkPath
-		defer os.Remove(symlinkPath)
-		err = os.Symlink(filePath, symlinkPath)
-		require.NoError(t, err)
-
-		result, err := isAllowedDir(symlinkPath, allowedDirs)
-		require.Error(t, err)
-		require.False(t, result, "Symlink in allowed directory should return false")
-	})
-}
-
-func TestTypes_isSymlink(t *testing.T) {
-	// create temp dir
-	tempDir := t.TempDir()
-	tempConf := tempDir + "test.conf"
-	defer os.RemoveAll(tempDir)
-
-	t.Run("Test 1: File is not a symlink", func(t *testing.T) {
-		filePath := tempConf
-		err := os.WriteFile(filePath, []byte("test content"), 0o600)
-		require.NoError(t, err)
-		require.False(t, isSymlink(filePath), "File is not a symlink")
-	})
-	t.Run("Test 2: File is a symlink", func(t *testing.T) {
-		filePath := tempDir + "test_conf_link"
-		err := os.Symlink(tempConf, filePath)
-		require.NoError(t, err)
-		require.True(t, isSymlink(filePath), "File is a symlink")
-	})
 }

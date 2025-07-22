@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -484,13 +483,6 @@ func isAllowedDir(path string, allowedDirs []string) (bool, error) {
 		directoryPath = filepath.Dir(directoryPath)
 	}
 
-	fInfo, _ := os.Stat(directoryPath)
-	if fInfo != nil {
-		if isSymlink(directoryPath) {
-			return false, errors.New("path is a symlink, skipping " + directoryPath)
-		}
-	}
-
 	for _, allowedDirectory := range allowedDirs {
 		// Check if the directoryPath starts with the allowedDirectory
 		// This allows for subdirectories within the allowed directories.
@@ -500,14 +492,4 @@ func isAllowedDir(path string, allowedDirs []string) (bool, error) {
 	}
 
 	return false, nil
-}
-
-func isSymlink(path string) bool {
-	// check if it contains a symlink
-	lInfo, _ := os.Lstat(path)
-	if lInfo != nil && lInfo.Mode()&os.ModeSymlink != 0 {
-		return true
-	}
-
-	return false
 }
