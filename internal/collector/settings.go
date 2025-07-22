@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"text/template"
 
 	"github.com/nginx/agent/v3/internal/config"
@@ -89,43 +90,59 @@ func createFile(confPath string) error {
 	return nil
 }
 
-// Generates a OTel Collector config to a file by injecting the Metrics Config to a Go template.
+// Generates an OTel Collector config to a file by injecting the Metrics Config to a Go template.
 func writeCollectorConfig(conf *config.Collector) error {
-	otelcolTemplate, err := template.New(otelTemplatePath).Parse(otelcolTemplate)
-	if err != nil {
-		return err
+	if conf.Processors.Resource["default"] != nil {
+		addDefaultResourceProcessor(conf.Pipelines.Metrics)
+		addDefaultResourceProcessor(conf.Pipelines.Logs)
+	}
+
+	slog.Info("Writing OTel collector config")
+
+	otelcolTemplate, templateErr := template.New(otelTemplatePath).Parse(otelcolTemplate)
+	if templateErr != nil {
+		return templateErr
 	}
 
 	confPath := filepath.Clean(conf.ConfigPath)
 
-	// Check if file exists, if not create it.
-	_, err = os.Stat(confPath)
+	// Ensure file exists and has correct permissions
+	if err := ensureFileExists(confPath); err != nil {
+		return err
+	}
+
+	file, err := os.OpenFile(confPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, configFilePermission)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		fileCloseErr := file.Close()
+		if fileCloseErr != nil {
+			slog.Warn("Failed to close file", "file_path", confPath, "error", fileCloseErr)
+		}
+	}()
+
+	return otelcolTemplate.Execute(file, conf)
+}
+
+func addDefaultResourceProcessor(pipelines map[string]*config.Pipeline) {
+	for _, pipeline := range pipelines {
+		if !slices.Contains(pipeline.Processors, "resource/default") {
+			pipeline.Processors = append(pipeline.Processors, "resource/default")
+		}
+	}
+}
+
+func ensureFileExists(confPath string) error {
+	_, err := os.Stat(confPath)
 	if err != nil {
 		if !os.IsNotExist(err) {
 			return err
 		}
-
-		fileErr := createFile(confPath)
-		if fileErr != nil {
-			return fileErr
+		if createFileErr := createFile(confPath); createFileErr != nil {
+			return createFileErr
 		}
 	}
 
-	file, err := os.OpenFile(confPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, configFilePermission)
-	defer func() {
-		err = file.Close()
-		if err != nil {
-			slog.Warn("Failed to close file", "file_path", confPath)
-		}
-	}()
-	if err != nil {
-		return err
-	}
-
-	err = otelcolTemplate.Execute(file, conf)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return os.Chmod(confPath, configFilePermission)
 }
