@@ -192,11 +192,7 @@ func TestResolveCollector(t *testing.T) {
 		viperInstance.Set(CollectorLogPathKey, expected.Log.Path)
 		viperInstance.Set(CollectorLogLevelKey, expected.Log.Level)
 		viperInstance.Set(CollectorReceiversKey, expected.Receivers)
-		viperInstance.Set(CollectorBatchProcessorKey, expected.Processors.Batch)
-		viperInstance.Set(CollectorBatchProcessorSendBatchSizeKey, expected.Processors.Batch.SendBatchSize)
-		viperInstance.Set(CollectorBatchProcessorSendBatchMaxSizeKey, expected.Processors.Batch.SendBatchMaxSize)
-		viperInstance.Set(CollectorBatchProcessorTimeoutKey, expected.Processors.Batch.Timeout)
-		viperInstance.Set(CollectorLogsGzipProcessorKey, expected.Processors.LogsGzip)
+		viperInstance.Set(CollectorProcessorsKey, expected.Processors)
 		viperInstance.Set(CollectorExportersKey, expected.Exporters)
 		viperInstance.Set(CollectorOtlpExportersKey, expected.Exporters.OtlpExporters)
 		viperInstance.Set(CollectorExtensionsHealthServerHostKey, expected.Extensions.Health.Server.Host)
@@ -766,6 +762,79 @@ func TestResolveExtensions_MultipleHeaders(t *testing.T) {
 	}
 }
 
+func TestAddDefaultOtlpExporter(t *testing.T) {
+	t.Run("Test 1: Command server only", func(t *testing.T) {
+		collector := &Collector{}
+		agentConfig := &Config{
+			Command: &Command{
+				Server: &ServerConfig{
+					Host: "test.com",
+					Port: 8080,
+					Type: Grpc,
+				},
+				Auth: &AuthConfig{
+					Token: "token",
+				},
+				TLS: &TLSConfig{
+					SkipVerify: false,
+				},
+			},
+		}
+
+		addDefaultOtlpExporter(collector, agentConfig)
+
+		assert.Equal(t, "test.com", collector.Exporters.OtlpExporters["default"].Server.Host)
+		assert.Equal(t, 8080, collector.Exporters.OtlpExporters["default"].Server.Port)
+		assert.False(t, collector.Exporters.OtlpExporters["default"].TLS.SkipVerify)
+		assert.Equal(t, "headers_setter", collector.Exporters.OtlpExporters["default"].Authenticator)
+		assert.Equal(t, "insert", collector.Extensions.HeadersSetter.Headers[0].Action)
+		assert.Equal(t, "authorization", collector.Extensions.HeadersSetter.Headers[0].Key)
+		assert.Equal(t, "token", collector.Extensions.HeadersSetter.Headers[0].Value)
+	})
+
+	t.Run("Test 2: Command and Auxiliary Command servers", func(t *testing.T) {
+		collector := &Collector{}
+		agentConfig := &Config{
+			Command: &Command{
+				Server: &ServerConfig{
+					Host: "test.com",
+					Port: 8080,
+					Type: Grpc,
+				},
+				Auth: &AuthConfig{
+					Token: "token",
+				},
+				TLS: &TLSConfig{
+					SkipVerify: false,
+				},
+			},
+			AuxiliaryCommand: &Command{
+				Server: &ServerConfig{
+					Host: "aux-test.com",
+					Port: 9090,
+					Type: Grpc,
+				},
+				Auth: &AuthConfig{
+					Token: "aux-token",
+				},
+				TLS: &TLSConfig{
+					SkipVerify: false,
+				},
+			},
+		}
+
+		addDefaultOtlpExporter(collector, agentConfig)
+
+		assert.Equal(t, "aux-test.com", collector.Exporters.OtlpExporters["default"].Server.Host)
+		assert.Equal(t, 9090, collector.Exporters.OtlpExporters["default"].Server.Port)
+		assert.False(t, collector.Exporters.OtlpExporters["default"].TLS.SkipVerify)
+		assert.Equal(t, "headers_setter", collector.Exporters.OtlpExporters["default"].Authenticator)
+		assert.Equal(t, "insert", collector.Extensions.HeadersSetter.Headers[0].Action)
+		assert.Equal(t, "authorization", collector.Extensions.HeadersSetter.Headers[0].Key)
+		assert.Equal(t, "aux-token", collector.Extensions.HeadersSetter.Headers[0].Value)
+	})
+}
+
 func agentConfig() *Config {
 	return &Config{
 		UUID:    "",
@@ -796,13 +865,13 @@ func agentConfig() *Config {
 		},
 		AllowedDirectories: []string{
 			"/etc/nginx/", "/etc/nginx-agent/", "/usr/local/etc/nginx/", "/var/run/nginx/", "/var/log/nginx/",
-			"/usr/share/nginx/modules/",
+			"/usr/share/nginx/modules/", "/etc/app_protect/",
 		},
 		Collector: &Collector{
 			ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
 			Exporters: Exporters{
-				OtlpExporters: []OtlpExporter{
-					{
+				OtlpExporters: map[string]*OtlpExporter{
+					"default": {
 						Server: &ServerConfig{
 							Host: "127.0.0.1",
 							Port: 1234,
@@ -819,16 +888,20 @@ func agentConfig() *Config {
 				},
 			},
 			Processors: Processors{
-				Batch: &Batch{
-					SendBatchMaxSize: DefCollectorBatchProcessorSendBatchMaxSize,
-					SendBatchSize:    DefCollectorBatchProcessorSendBatchSize,
-					Timeout:          DefCollectorBatchProcessorTimeout,
+				Batch: map[string]*Batch{
+					"default_logs": {
+						SendBatchMaxSize: DefCollectorLogsBatchProcessorSendBatchMaxSize,
+						SendBatchSize:    DefCollectorLogsBatchProcessorSendBatchSize,
+						Timeout:          DefCollectorLogsBatchProcessorTimeout,
+					},
 				},
-				LogsGzip: &LogsGzip{},
+				LogsGzip: map[string]*LogsGzip{
+					"default": {},
+				},
 			},
 			Receivers: Receivers{
-				OtlpReceivers: []OtlpReceiver{
-					{
+				OtlpReceivers: map[string]*OtlpReceiver{
+					"default": {
 						Server: &ServerConfig{
 							Host: "localhost",
 							Port: 4317,
@@ -942,8 +1015,8 @@ func createConfig() *Config {
 		Collector: &Collector{
 			ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
 			Exporters: Exporters{
-				OtlpExporters: []OtlpExporter{
-					{
+				OtlpExporters: map[string]*OtlpExporter{
+					"default": {
 						Server: &ServerConfig{
 							Host: "127.0.0.1",
 							Port: 5643,
@@ -974,25 +1047,41 @@ func createConfig() *Config {
 				Debug: &DebugExporter{},
 			},
 			Processors: Processors{
-				Batch: &Batch{
-					SendBatchMaxSize: 1,
-					SendBatchSize:    8199,
-					Timeout:          30 * time.Second,
+				Batch: map[string]*Batch{
+					"default": {
+						SendBatchMaxSize: 1,
+						SendBatchSize:    8199,
+						Timeout:          30 * time.Second,
+					},
+					"default_metrics": {
+						SendBatchMaxSize: 1000,
+						SendBatchSize:    1000,
+						Timeout:          30 * time.Second,
+					},
+					"default_logs": {
+						SendBatchMaxSize: 100,
+						SendBatchSize:    100,
+						Timeout:          60 * time.Second,
+					},
 				},
-				Attribute: &Attribute{
-					Actions: []Action{
-						{
-							Key:    "test",
-							Action: "insert",
-							Value:  "value",
+				Attribute: map[string]*Attribute{
+					"default": {
+						Actions: []Action{
+							{
+								Key:    "test",
+								Action: "insert",
+								Value:  "value",
+							},
 						},
 					},
 				},
-				LogsGzip: &LogsGzip{},
+				LogsGzip: map[string]*LogsGzip{
+					"default": {},
+				},
 			},
 			Receivers: Receivers{
-				OtlpReceivers: []OtlpReceiver{
-					{
+				OtlpReceivers: map[string]*OtlpReceiver{
+					"default": {
 						Server: &ServerConfig{
 							Host: "127.0.0.1",
 							Port: 4317,
@@ -1008,26 +1097,6 @@ func createConfig() *Config {
 							SkipVerify:             true,
 							ServerName:             "test-local-server",
 						},
-					},
-				},
-				NginxReceivers: []NginxReceiver{
-					{
-						InstanceID: "cd7b8911-c2c5-4daf-b311-dbead151d938",
-						AccessLogs: []AccessLog{
-							{
-								LogFormat: "$remote_addr - $remote_user [$time_local] \"$request\"" +
-									" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\" " +
-									"\"$http_x_forwarded_for\"",
-								FilePath: "/var/log/nginx/access-custom.conf",
-							},
-						},
-						CollectionInterval: 30 * time.Second,
-					},
-				},
-				NginxPlusReceivers: []NginxPlusReceiver{
-					{
-						InstanceID:         "cd7b8911-c2c5-4daf-b311-dbead151d939",
-						CollectionInterval: 30 * time.Second,
 					},
 				},
 				HostMetrics: &HostMetrics{
@@ -1080,6 +1149,22 @@ func createConfig() *Config {
 			Log: &Log{
 				Level: "INFO",
 				Path:  "/var/log/nginx-agent/opentelemetry-collector-agent.log",
+			},
+			Pipelines: Pipelines{
+				Metrics: map[string]*Pipeline{
+					"default": {
+						Receivers:  []string{"host_metrics", "nginx_metrics"},
+						Processors: []string{"batch/default_metrics"},
+						Exporters:  []string{"otlp/default"},
+					},
+				},
+				Logs: map[string]*Pipeline{
+					"default": {
+						Receivers:  []string{"tcplog/nginx_app_protect"},
+						Processors: []string{"logsgzip/default", "batch/default_logs"},
+						Exporters:  []string{"otlp/default"},
+					},
+				},
 			},
 		},
 		Command: &Command{

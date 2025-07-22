@@ -65,8 +65,8 @@ func AgentConfig() *config.Config {
 		Collector: &config.Collector{
 			ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
 			Exporters: config.Exporters{
-				OtlpExporters: []config.OtlpExporter{
-					{
+				OtlpExporters: map[string]*config.OtlpExporter{
+					"default": {
 						Server: &config.ServerConfig{
 							Host: "127.0.0.1",
 							Port: 0,
@@ -76,15 +76,17 @@ func AgentConfig() *config.Config {
 				},
 			},
 			Processors: config.Processors{
-				Batch: &config.Batch{
-					SendBatchSize:    config.DefCollectorBatchProcessorSendBatchSize,
-					SendBatchMaxSize: config.DefCollectorBatchProcessorSendBatchMaxSize,
-					Timeout:          config.DefCollectorBatchProcessorTimeout,
+				Batch: map[string]*config.Batch{
+					"default": {
+						SendBatchSize:    config.DefCollectorMetricsBatchProcessorSendBatchMaxSize,
+						SendBatchMaxSize: config.DefCollectorMetricsBatchProcessorSendBatchMaxSize,
+						Timeout:          config.DefCollectorMetricsBatchProcessorTimeout,
+					},
 				},
 			},
 			Receivers: config.Receivers{
-				OtlpReceivers: []config.OtlpReceiver{
-					{
+				OtlpReceivers: map[string]*config.OtlpReceiver{
+					"default": {
 						Server: &config.ServerConfig{
 							Host: "127.0.0.1",
 							Port: 0,
@@ -127,6 +129,15 @@ func AgentConfig() *config.Config {
 			Log: &config.Log{
 				Level: "INFO",
 				Path:  "/var/log/nginx-agent/opentelemetry-collector-agent.log",
+			},
+			Pipelines: config.Pipelines{
+				Metrics: map[string]*config.Pipeline{
+					"default": {
+						Receivers:  []string{"host_metrics"},
+						Processors: []string{"batch/default"},
+						Exporters:  []string{"otlp/default"},
+					},
+				},
 			},
 		},
 		Command: &config.Command{
@@ -179,11 +190,11 @@ func OTelConfig(t *testing.T) *config.Config {
 
 	exporterPort, expErr := helpers.RandomPort(t)
 	require.NoError(t, expErr)
-	ac.Collector.Exporters.OtlpExporters[0].Server.Port = exporterPort
+	ac.Collector.Exporters.OtlpExporters["default"].Server.Port = exporterPort
 
 	receiverPort, recErr := helpers.RandomPort(t)
 	require.NoError(t, recErr)
-	ac.Collector.Receivers.OtlpReceivers[0].Server.Port = receiverPort
+	ac.Collector.Receivers.OtlpReceivers["default"].Server.Port = receiverPort
 
 	healthPort, healthErr := helpers.RandomPort(t)
 	require.NoError(t, healthErr)

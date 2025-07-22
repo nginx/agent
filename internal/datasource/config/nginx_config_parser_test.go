@@ -507,7 +507,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			allowedDirectories: []string{dir},
 		},
 		{
-			name:     "Test 10: Check with multiple syslog servers",
+			name:     "Test 10: Available NAP syslog server",
 			instance: protos.NginxPlusInstance([]string{}),
 			content: testconfig.NginxConfigWithMultipleSysLogs(errorLog.Name(), accessLog.Name(),
 				"192.168.12.34:1517", "my.domain.com:1517", "127.0.0.1:1515"),
@@ -521,7 +521,7 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			expectedLog:        "Found valid NAP syslog server",
 		},
 		{
-			name:     "Test 11: Check with multiple invalid syslog servers",
+			name:     "Test 11: Unavailable NAP syslog server",
 			instance: protos.NginxPlusInstance([]string{}),
 			content: testconfig.NginxConfigWithMultipleSysLogs(errorLog.Name(), accessLog.Name(),
 				"192.168.12.34:1517", "my.domain.com:1517", "not.allowed:1515"),
@@ -1517,6 +1517,62 @@ func TestNginxConfigParser_checkDuplicate(t *testing.T) {
 		ncp := NewNginxConfigParser(types.AgentConfig())
 		t.Run(test.name, func(t *testing.T) {
 			assert.Equal(t, test.expected, ncp.isDuplicateFile(nginxConfigContextFiles.Files, test.file))
+		})
+	}
+}
+
+func TestNginxConfigParser_parseIncludeDirective(t *testing.T) {
+	parser := NewNginxConfigParser(types.AgentConfig())
+
+	tests := []struct {
+		name     string
+		confFile string
+		expected string
+		args     []string
+	}{
+		{
+			name:     "Test 1: relative path",
+			args:     []string{"test.conf"},
+			confFile: "/etc/nginx/nginx.conf",
+			expected: "/etc/nginx/test.conf",
+		},
+		{
+			name:     "Test 2: absolute path",
+			args:     []string{"/usr/local/nginx/conf/vhost.conf"},
+			confFile: "/etc/nginx/nginx.conf",
+			expected: "/usr/local/nginx/conf/vhost.conf",
+		},
+		{
+			name:     "Test 3: wildcard",
+			args:     []string{"/etc/nginx/conf.d/*.conf"},
+			confFile: "/etc/nginx/nginx.conf",
+			expected: "/etc/nginx/conf.d/*.conf",
+		},
+		{
+			name:     "Test 4: relative path with subdirectory",
+			args:     []string{"conf.d/default.conf"},
+			confFile: "/etc/nginx/nginx.conf",
+			expected: "/etc/nginx/conf.d/default.conf",
+		},
+		{
+			name:     "Test 5: parent directory reference",
+			args:     []string{"../sites-enabled/*.conf"},
+			confFile: "/etc/nginx/conf.d/nginx.conf",
+			expected: "/etc/nginx/sites-enabled/*.conf",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			include := parser.parseIncludeDirective(
+				&crossplane.Directive{
+					Args: tc.args,
+				},
+				&crossplane.Config{
+					File: tc.confFile,
+				},
+			)
+			assert.Equal(t, tc.expected, include)
 		})
 	}
 }

@@ -67,7 +67,7 @@ func TestCollector_New(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			collector, err := New(tt.config)
+			collector, err := NewCollector(tt.config)
 
 			if tt.expectedError != nil {
 				require.Error(t, err)
@@ -114,7 +114,7 @@ func TestCollector_Init(t *testing.T) {
 				conf.Collector.Receivers = config.Receivers{}
 			}
 
-			collector, err = New(conf)
+			collector, err = NewCollector(conf)
 			require.NoError(t, err, "NewCollector should not return an error with valid config")
 
 			collector.service = createFakeCollector()
@@ -133,7 +133,7 @@ func TestCollector_InitAndClose(t *testing.T) {
 	conf := types.OTelConfig(t)
 	conf.Collector.Log.Path = ""
 
-	collector, err := New(conf)
+	collector, err := NewCollector(conf)
 	require.NoError(t, err, "NewCollector should not return an error with valid config")
 
 	ctx := context.Background()
@@ -293,7 +293,7 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 			conf.Collector.Extensions.HeadersSetter = nil
 			conf.Collector.Exporters.PrometheusExporter = nil
 
-			collector, err := New(conf)
+			collector, err := NewCollector(conf)
 			require.NoError(tt, err, "NewCollector should not return an error with valid config")
 
 			collector.service = createFakeCollector()
@@ -349,12 +349,14 @@ func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
 				Data:  protos.HostResource(),
 			},
 			processors: config.Processors{
-				Resource: &config.Resource{
-					Attributes: []config.ResourceAttribute{
-						{
-							Key:    "resource.id",
-							Action: "insert",
-							Value:  "1234",
+				Resource: map[string]*config.Resource{
+					"default": {
+						Attributes: []config.ResourceAttribute{
+							{
+								Key:    "resource.id",
+								Action: "insert",
+								Value:  "1234",
+							},
 						},
 					},
 				},
@@ -376,7 +378,7 @@ func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			collector, err := New(conf)
+			collector, err := NewCollector(conf)
 			require.NoError(tt, err, "NewCollector should not return an error with valid config")
 
 			collector.service = createFakeCollector()
@@ -437,7 +439,7 @@ func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			collector, err := New(conf)
+			collector, err := NewCollector(conf)
 			require.NoError(tt, err, "NewCollector should not return an error with valid config")
 
 			collector.service = createFakeCollector()
@@ -559,7 +561,7 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			conf.Collector.Receivers = test.existingReceivers
-			collector, err := New(conf)
+			collector, err := NewCollector(conf)
 			require.NoError(tt, err, "NewCollector should not return an error with valid config")
 
 			collector.service = createFakeCollector()
@@ -650,7 +652,7 @@ func TestCollector_updateExistingNginxPlusReceiver(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			conf.Collector.Receivers = test.existingReceivers
-			collector, err := New(conf)
+			collector, err := NewCollector(conf)
 			require.NoError(tt, err, "NewCollector should not return an error with valid config")
 
 			collector.service = createFakeCollector()
@@ -705,31 +707,32 @@ func TestCollector_updateResourceAttributes(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			collector, err := New(conf)
+			collector, err := NewCollector(conf)
 			require.NoError(tt, err, "NewCollector should not return an error with valid config")
 
 			collector.service = createFakeCollector()
 
 			// set up Actions
-			conf.Collector.Processors.Resource = &config.Resource{Attributes: test.setup}
+			conf.Collector.Processors.Resource = make(map[string]*config.Resource)
+			conf.Collector.Processors.Resource["default"] = &config.Resource{Attributes: test.setup}
 
 			reloadRequired := collector.updateResourceAttributes(test.attributes)
 			assert.Equal(tt,
 				test.expectedAttribs,
-				conf.Collector.Processors.Resource.Attributes)
+				conf.Collector.Processors.Resource["default"].Attributes)
 			assert.Equal(tt, test.expectedReloadRequired, reloadRequired)
 		})
 	}
 }
 
-func TestCollector_updateTcplogReceivers(t *testing.T) {
+func TestCollector_updateNginxAppProtectTcplogReceivers(t *testing.T) {
 	conf := types.OTelConfig(t)
 	conf.Collector.Log.Path = ""
 	conf.Collector.Processors.Batch = nil
 	conf.Collector.Processors.Attribute = nil
 	conf.Collector.Processors.Resource = nil
 	conf.Collector.Processors.LogsGzip = nil
-	collector, err := New(conf)
+	collector, err := NewCollector(conf)
 	require.NoError(t, err)
 
 	nginxConfigContext := &model.NginxConfigContext{
@@ -738,38 +741,42 @@ func TestCollector_updateTcplogReceivers(t *testing.T) {
 
 	assert.Empty(t, conf.Collector.Receivers.TcplogReceivers)
 
-	t.Run("Test 1: New TcplogReceiver added", func(tt *testing.T) {
-		tcplogReceiverAdded := collector.updateTcplogReceivers(nginxConfigContext)
+	t.Run("Test 1: NewCollector TcplogReceiver added", func(tt *testing.T) {
+		tcplogReceiverAdded := collector.updateNginxAppProtectTcplogReceivers(nginxConfigContext)
 
 		assert.True(tt, tcplogReceiverAdded)
 		assert.Len(tt, conf.Collector.Receivers.TcplogReceivers, 1)
-		assert.Equal(tt, "localhost:151", conf.Collector.Receivers.TcplogReceivers[0].ListenAddress)
-		assert.Len(tt, conf.Collector.Receivers.TcplogReceivers[0].Operators, 6)
+		assert.Equal(tt, "localhost:151", conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].ListenAddress)
+		assert.Len(tt, conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].Operators, 6)
 	})
 
-	// Calling updateTcplogReceivers shouldn't update the TcplogReceivers slice
+	// Calling updateNginxAppProtectTcplogReceivers shouldn't update the TcplogReceivers slice
 	// since there is already a receiver with the same ListenAddress
 	t.Run("Test 2: TcplogReceiver already exists", func(tt *testing.T) {
-		tcplogReceiverAdded := collector.updateTcplogReceivers(nginxConfigContext)
+		tcplogReceiverAdded := collector.updateNginxAppProtectTcplogReceivers(nginxConfigContext)
 		assert.False(t, tcplogReceiverAdded)
 		assert.Len(t, conf.Collector.Receivers.TcplogReceivers, 1)
-		assert.Equal(t, "localhost:151", conf.Collector.Receivers.TcplogReceivers[0].ListenAddress)
-		assert.Len(t, conf.Collector.Receivers.TcplogReceivers[0].Operators, 6)
+		assert.Equal(t, "localhost:151", conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].ListenAddress)
+		assert.Len(t, conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].Operators, 6)
 	})
 
 	t.Run("Test 3: TcplogReceiver deleted", func(tt *testing.T) {
-		tcplogReceiverDeleted := collector.updateTcplogReceivers(&model.NginxConfigContext{})
+		tcplogReceiverDeleted := collector.updateNginxAppProtectTcplogReceivers(&model.NginxConfigContext{})
 		assert.True(t, tcplogReceiverDeleted)
 		assert.Empty(t, conf.Collector.Receivers.TcplogReceivers)
 	})
 
-	t.Run("Test 4: New tcplogReceiver added and deleted another", func(tt *testing.T) {
-		tcplogReceiverDeleted := collector.
-			updateTcplogReceivers(&model.NginxConfigContext{NAPSysLogServer: "localhost:152"})
+	t.Run("Test 4: NewCollector tcplogReceiver added and deleted another", func(tt *testing.T) {
+		tcplogReceiverDeleted := collector.updateNginxAppProtectTcplogReceivers(
+			&model.NginxConfigContext{
+				NAPSysLogServer: "localhost:152",
+			},
+		)
+
 		assert.True(t, tcplogReceiverDeleted)
 		assert.Len(t, conf.Collector.Receivers.TcplogReceivers, 1)
-		assert.Equal(t, "localhost:152", conf.Collector.Receivers.TcplogReceivers[0].ListenAddress)
-		assert.Len(t, conf.Collector.Receivers.TcplogReceivers[0].Operators, 6)
+		assert.Equal(t, "localhost:152", conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].ListenAddress)
+		assert.Len(t, conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].Operators, 6)
 	})
 }
 
