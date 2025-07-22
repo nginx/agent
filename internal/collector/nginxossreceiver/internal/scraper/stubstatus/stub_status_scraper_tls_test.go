@@ -74,7 +74,7 @@ Reading: 6 Writing: 179 Waiting: 106
 	defer server.Close()
 
 	// Test with TLS configuration using our self-signed certificate
-	t.Run("with self-signed TLS", func(t *testing.T) {
+	t.Run("Test 1: self-signed TLS", func(t *testing.T) {
 		cfg, ok := config.CreateDefaultConfig().(*config.Config)
 		require.True(t, ok)
 
@@ -134,7 +134,7 @@ Reading: 6 Writing: 179 Waiting: 106
 	})
 
 	// Test with Unix socket
-	t.Run("with Unix socket", func(t *testing.T) {
+	t.Run("Test 1: Unix socket", func(t *testing.T) {
 		cfg, ok := config.CreateDefaultConfig().(*config.Config)
 		require.True(t, ok)
 

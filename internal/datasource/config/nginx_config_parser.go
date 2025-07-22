@@ -652,7 +652,7 @@ func (ncp *NginxConfigParser) urlsForLocationDirectiveAPIDetails(
 	caCertLocation := ""
 	// If SSl is enabled, check if CA cert is provided and the location is allowed
 	if isSSL {
-		caCertLocation = ncp.getCACertLocation(ctx)
+		caCertLocation = ncp.selfSignedCACertLocation(ctx)
 	}
 	// process from the location block
 	if current.Directive != locationDirective {
@@ -859,7 +859,7 @@ func (ncp *NginxConfigParser) prepareHTTPClient(ctx context.Context) (*http.Clie
 }
 
 // Populate the CA cert location based ondirectory allowance.
-func (ncp *NginxConfigParser) getCACertLocation(ctx context.Context) string {
+func (ncp *NginxConfigParser) selfSignedCACertLocation(ctx context.Context) string {
 	caCertLocation := ncp.agentConfig.DataPlaneConfig.Nginx.APITls.Ca
 
 	if caCertLocation != "" && !ncp.agentConfig.IsDirectoryAllowed(caCertLocation) {
