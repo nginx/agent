@@ -173,8 +173,9 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 				},
 			},
 			receivers: config.Receivers{
-				HostMetrics:   nil,
-				OtlpReceivers: nil,
+				HostMetrics:     nil,
+				OtlpReceivers:   nil,
+				TcplogReceivers: make(map[string]*config.TcplogReceiver),
 				NginxPlusReceivers: []config.NginxPlusReceiver{
 					{
 						InstanceID: "123",
@@ -213,8 +214,9 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 				},
 			},
 			receivers: config.Receivers{
-				HostMetrics:   nil,
-				OtlpReceivers: nil,
+				HostMetrics:     nil,
+				OtlpReceivers:   nil,
+				TcplogReceivers: make(map[string]*config.TcplogReceiver),
 				NginxReceivers: []config.NginxReceiver{
 					{
 						InstanceID: "123",
