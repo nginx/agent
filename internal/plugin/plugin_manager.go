@@ -96,7 +96,7 @@ func addCollectorPlugin(ctx context.Context, agentConfig *config.Config, plugins
 		return plugins
 	}
 	if agentConfig.IsACollectorExporterConfigured() {
-		oTelCollector, err := collector.New(agentConfig)
+		oTelCollector, err := collector.NewCollector(agentConfig)
 		if err == nil {
 			plugins = append(plugins, oTelCollector)
 		} else {

@@ -33,11 +33,15 @@ import (
 )
 
 const (
-	ConfigFileName = "nginx-agent.conf"
-	EnvPrefix      = "NGINX_AGENT"
-	KeyDelimiter   = "_"
-	KeyValueNumber = 2
-	AgentDirName   = "/etc/nginx-agent"
+	ConfigFileName               = "nginx-agent.conf"
+	EnvPrefix                    = "NGINX_AGENT"
+	KeyDelimiter                 = "_"
+	KeyValueNumber               = 2
+	AgentDirName                 = "/etc/nginx-agent/"
+	DefaultMetricsBatchProcessor = "default_metrics"
+	DefaultLogsBatchProcessor    = "default_logs"
+	DefaultExporter              = "default"
+	DefaultPipeline              = "default"
 
 	// Regular expression to match invalid characters in paths.
 	// It matches whitespace, control characters, non-printable characters, and specific Unicode characters.
@@ -119,16 +123,12 @@ func ResolveConfig() (*Config, error) {
 		ManifestDir:        viperInstance.GetString(ManifestDirPathKey),
 	}
 
-	checkCollectorConfiguration(collector, config)
+	defaultCollector(collector, config)
 	addLabelsAsOTelHeaders(collector, config.Labels)
 
-	slog.Info(
-		"Excluded files from being watched for file changes",
-		"exclude_files",
-		config.Watchers.FileWatcher.ExcludeFiles,
-	)
-
 	slog.Debug("Agent config", "config", config)
+	slog.Info("Excluded files from being watched for file changes", "exclude_files",
+		config.Watchers.FileWatcher.ExcludeFiles)
 
 	return config, nil
 }
@@ -156,34 +156,150 @@ func resolveAllowedDirectories(dirs []string) []string {
 	return allowed
 }
 
-func checkCollectorConfiguration(collector *Collector, config *Config) {
-	if isOTelExporterConfigured(collector) && config.IsCommandGrpcClientConfigured() &&
-		config.IsCommandAuthConfigured() &&
-		config.IsCommandTLSConfigured() {
-		slog.Info("No collector configuration found in NGINX Agent config, command server configuration found." +
-			" Using default collector configuration")
-		defaultCollector(collector, config)
+func defaultCollector(collector *Collector, config *Config) {
+	// Always add default host metric receiver and default processor
+	addDefaultHostMetricsReceiver(collector)
+	addDefaultProcessors(collector)
+
+	// Only add default otlp exporter and pipelines if connected to a management plane
+	if config.IsCommandGrpcClientConfigured() || config.IsAuxiliaryCommandGrpcClientConfigured() {
+		addDefaultOtlpExporter(collector, config)
+		addDefaultPipelines(collector)
 	}
 }
 
-func defaultCollector(collector *Collector, config *Config) {
-	token := config.Command.Auth.Token
-	if config.Command.Auth.TokenPath != "" {
-		slog.Debug("Reading token from file", "path", config.Command.Auth.TokenPath)
-		pathToken, err := file.ReadFromFile(config.Command.Auth.TokenPath)
+func addDefaultPipelines(collector *Collector) {
+	if collector.Pipelines.Metrics == nil {
+		collector.Pipelines.Metrics = make(map[string]*Pipeline)
+	}
+	if _, ok := collector.Pipelines.Metrics[DefaultPipeline]; !ok {
+		collector.Pipelines.Metrics[DefaultPipeline] = &Pipeline{
+			Receivers:  []string{"host_metrics", "nginx_metrics"},
+			Processors: []string{"batch/default_metrics"},
+			Exporters:  []string{"otlp/default"},
+		}
+	}
+
+	if collector.Pipelines.Logs == nil {
+		collector.Pipelines.Logs = make(map[string]*Pipeline)
+	}
+	if _, ok := collector.Pipelines.Logs[DefaultPipeline]; !ok {
+		collector.Pipelines.Logs[DefaultPipeline] = &Pipeline{
+			Receivers:  []string{"tcplog/nginx_app_protect"},
+			Processors: []string{"logsgzip/default", "batch/default_logs"},
+			Exporters:  []string{"otlp/default"},
+		}
+	}
+}
+
+func addDefaultOtlpExporter(collector *Collector, config *Config) {
+	if collector.Exporters.OtlpExporters == nil {
+		collector.Exporters.OtlpExporters = make(map[string]*OtlpExporter)
+	}
+
+	defaultCommandServer := config.Command
+
+	if config.IsAuxiliaryCommandGrpcClientConfigured() {
+		defaultCommandServer = config.AuxiliaryCommand
+	}
+
+	if _, ok := collector.Exporters.OtlpExporters[DefaultExporter]; !ok && defaultCommandServer != nil {
+		collector.Exporters.OtlpExporters[DefaultExporter] = &OtlpExporter{
+			Server:      defaultCommandServer.Server,
+			TLS:         defaultCommandServer.TLS,
+			Compression: "",
+		}
+
+		if defaultCommandServer.Auth != nil {
+			token := extractTokenFromAuth(defaultCommandServer.Auth)
+			if token != "" {
+				addAuthHeader(collector, token)
+				collector.Exporters.OtlpExporters[DefaultExporter].Authenticator = "headers_setter"
+			}
+		}
+	}
+}
+
+func extractTokenFromAuth(auth *AuthConfig) string {
+	token := auth.Token
+	if auth.TokenPath != "" {
+		slog.Debug("Reading token from file", "path", auth.TokenPath)
+		tokenFromFile, err := file.ReadFromFile(auth.TokenPath)
 		if err != nil {
 			slog.Error("Error adding token to default collector, "+
 				"default collector configuration not started", "error", err)
 
-			return
+			return ""
 		}
-		token = pathToken
+		token = tokenFromFile
 	}
 
+	return token
+}
+
+func addAuthHeader(collector *Collector, token string) {
+	header := []Header{
+		{
+			Action: "insert",
+			Key:    "authorization",
+			Value:  token,
+		},
+	}
+
+	if collector.Extensions.HeadersSetter == nil {
+		collector.Extensions.HeadersSetter = &HeadersSetter{
+			Headers: header,
+		}
+	} else {
+		// nolint: lll
+		collector.Extensions.HeadersSetter.Headers = append(collector.Extensions.HeadersSetter.Headers, header...)
+	}
+}
+
+func addDefaultProcessors(collector *Collector) {
+	if collector.Processors.Batch == nil {
+		collector.Processors.Batch = make(map[string]*Batch)
+	}
+
+	if _, ok := collector.Processors.Batch[DefaultMetricsBatchProcessor]; !ok {
+		collector.Processors.Batch[DefaultMetricsBatchProcessor] = &Batch{
+			SendBatchSize:    DefCollectorMetricsBatchProcessorSendBatchSize,
+			SendBatchMaxSize: DefCollectorMetricsBatchProcessorSendBatchMaxSize,
+			Timeout:          DefCollectorMetricsBatchProcessorTimeout,
+		}
+	}
+	if _, ok := collector.Processors.Batch[DefaultLogsBatchProcessor]; !ok {
+		collector.Processors.Batch[DefaultLogsBatchProcessor] = &Batch{
+			SendBatchSize:    DefCollectorLogsBatchProcessorSendBatchSize,
+			SendBatchMaxSize: DefCollectorLogsBatchProcessorSendBatchMaxSize,
+			Timeout:          DefCollectorLogsBatchProcessorTimeout,
+		}
+	}
+
+	if collector.Processors.LogsGzip == nil {
+		collector.Processors.LogsGzip = make(map[string]*LogsGzip)
+	}
+	if _, ok := collector.Processors.LogsGzip["default"]; !ok {
+		collector.Processors.LogsGzip["default"] = &LogsGzip{}
+	}
+}
+
+func addDefaultHostMetricsReceiver(collector *Collector) {
 	if host.NewInfo().IsContainer() {
+		addDefaultContainerHostMetricsReceiver(collector)
+	} else {
+		addDefaultVMHostMetricsReceiver(collector)
+	}
+}
+
+func addDefaultContainerHostMetricsReceiver(collector *Collector) {
+	if collector.Receivers.ContainerMetrics == nil {
 		collector.Receivers.ContainerMetrics = &ContainerMetricsReceiver{
 			CollectionInterval: 1 * time.Minute,
 		}
+	}
+
+	if collector.Receivers.HostMetrics == nil {
 		collector.Receivers.HostMetrics = &HostMetrics{
 			Scrapers: &HostMetricsScrapers{
 				Network: &NetworkScraper{},
@@ -191,11 +307,18 @@ func defaultCollector(collector *Collector, config *Config) {
 			CollectionInterval: 1 * time.Minute,
 			InitialDelay:       1 * time.Second,
 		}
+	}
+
+	if collector.Log == nil {
 		collector.Log = &Log{
 			Path:  "stdout",
 			Level: "info",
 		}
-	} else {
+	}
+}
+
+func addDefaultVMHostMetricsReceiver(collector *Collector) {
+	if collector.Receivers.HostMetrics == nil {
 		collector.Receivers.HostMetrics = &HostMetrics{
 			Scrapers: &HostMetricsScrapers{
 				CPU:        &CPUScraper{},
@@ -207,24 +330,6 @@ func defaultCollector(collector *Collector, config *Config) {
 			CollectionInterval: 1 * time.Minute,
 			InitialDelay:       1 * time.Second,
 		}
-	}
-
-	collector.Exporters.OtlpExporters = append(collector.Exporters.OtlpExporters, OtlpExporter{
-		Server:        config.Command.Server,
-		TLS:           config.Command.TLS,
-		Compression:   "",
-		Authenticator: "headers_setter",
-	})
-
-	header := []Header{
-		{
-			Action: "insert",
-			Key:    "authorization",
-			Value:  token,
-		},
-	}
-	collector.Extensions.HeadersSetter = &HeadersSetter{
-		Headers: header,
 	}
 }
 
@@ -565,24 +670,6 @@ func registerCollectorFlags(fs *flag.FlagSet) {
 			"If the default path doesn't exist, log messages are output to stdout/stderr.",
 	)
 
-	fs.Uint32(
-		CollectorBatchProcessorSendBatchSizeKey,
-		DefCollectorBatchProcessorSendBatchSize,
-		`Number of metric data points after which a batch will be sent regardless of the timeout.`,
-	)
-
-	fs.Uint32(
-		CollectorBatchProcessorSendBatchMaxSizeKey,
-		DefCollectorBatchProcessorSendBatchMaxSize,
-		`The upper limit of the batch size.`,
-	)
-
-	fs.Duration(
-		CollectorBatchProcessorTimeoutKey,
-		DefCollectorBatchProcessorTimeout,
-		`Time duration after which a batch will be sent regardless of size.`,
-	)
-
 	fs.String(
 		CollectorExtensionsHealthServerHostKey,
 		DefCollectorExtensionsHealthServerHost,
@@ -856,6 +943,7 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 		Receivers:  receivers,
 		Extensions: resolveExtensions(),
 		Log:        resolveCollectorLog(),
+		Pipelines:  resolvePipelines(),
 	}
 
 	// Check for self-signed certificate true in Agent conf
@@ -871,8 +959,33 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 	return col, nil
 }
 
+func resolvePipelines() Pipelines {
+	var metricsPipelines map[string]*Pipeline
+
+	if viperInstance.IsSet(CollectorMetricsPipelinesKey) {
+		err := resolveMapStructure(CollectorMetricsPipelinesKey, &metricsPipelines)
+		if err != nil {
+			metricsPipelines = nil
+		}
+	}
+
+	var logsPipelines map[string]*Pipeline
+
+	if viperInstance.IsSet(CollectorLogsPipelinesKey) {
+		err := resolveMapStructure(CollectorLogsPipelinesKey, &logsPipelines)
+		if err != nil {
+			logsPipelines = nil
+		}
+	}
+
+	return Pipelines{
+		Metrics: metricsPipelines,
+		Logs:    logsPipelines,
+	}
+}
+
 func resolveExporters() (Exporters, error) {
-	var otlpExporters []OtlpExporter
+	var otlpExporters map[string]*OtlpExporter
 	exporters := Exporters{}
 
 	if viperInstance.IsSet(CollectorDebugExporterKey) {
@@ -915,17 +1028,10 @@ func isPrometheusExporterSet() bool {
 }
 
 func resolveProcessors() Processors {
-	processors := Processors{
-		Batch: &Batch{
-			SendBatchSize:    viperInstance.GetUint32(CollectorBatchProcessorSendBatchSizeKey),
-			SendBatchMaxSize: viperInstance.GetUint32(CollectorBatchProcessorSendBatchMaxSizeKey),
-			Timeout:          viperInstance.GetDuration(CollectorBatchProcessorTimeoutKey),
-		},
-		LogsGzip: &LogsGzip{},
-	}
+	processors := Processors{}
 
-	if viperInstance.IsSet(CollectorAttributeProcessorKey) {
-		err := resolveMapStructure(CollectorAttributeProcessorKey, &processors.Attribute)
+	if viperInstance.IsSet(CollectorProcessorsKey) {
+		err := resolveMapStructure(CollectorProcessorsKey, &processors)
 		if err != nil {
 			return processors
 		}
@@ -1202,9 +1308,4 @@ func resolveMapStructure(key string, object any) error {
 	}
 
 	return nil
-}
-
-func isOTelExporterConfigured(collector *Collector) bool {
-	return len(collector.Exporters.OtlpExporters) == 0 && collector.Exporters.PrometheusExporter == nil &&
-		collector.Exporters.Debug == nil
 }
