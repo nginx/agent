@@ -296,7 +296,7 @@ service:
       receivers:
         {{- range $receiver := $pipeline.Receivers }}
           {{- if eq $receiver "tcplog/nginx_app_protect" }}
-        - tcplog/nginx_app_protect:
+        - tcplog/nginx_app_protect
           {{- else }}
         - {{ $receiver }}
           {{- end }}
