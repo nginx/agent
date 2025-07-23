@@ -749,7 +749,7 @@ func TestCollector_updateNginxAppProtectTcplogReceivers(t *testing.T) {
 		assert.True(tt, tcplogReceiverAdded)
 		assert.Len(tt, conf.Collector.Receivers.TcplogReceivers, 1)
 		assert.Equal(tt, "localhost:151", conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].ListenAddress)
-		assert.Len(tt, conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].Operators, 4)
+		assert.Len(tt, conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].Operators, 6)
 	})
 
 	// Calling updateNginxAppProtectTcplogReceivers shouldn't update the TcplogReceivers slice
@@ -759,7 +759,7 @@ func TestCollector_updateNginxAppProtectTcplogReceivers(t *testing.T) {
 		assert.False(t, tcplogReceiverAdded)
 		assert.Len(t, conf.Collector.Receivers.TcplogReceivers, 1)
 		assert.Equal(t, "localhost:151", conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].ListenAddress)
-		assert.Len(t, conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].Operators, 4)
+		assert.Len(t, conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].Operators, 6)
 	})
 
 	t.Run("Test 3: TcplogReceiver deleted", func(tt *testing.T) {
@@ -778,7 +778,7 @@ func TestCollector_updateNginxAppProtectTcplogReceivers(t *testing.T) {
 		assert.True(t, tcplogReceiverDeleted)
 		assert.Len(t, conf.Collector.Receivers.TcplogReceivers, 1)
 		assert.Equal(t, "localhost:152", conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].ListenAddress)
-		assert.Len(t, conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].Operators, 4)
+		assert.Len(t, conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].Operators, 6)
 	})
 }
 
