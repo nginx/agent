@@ -7,12 +7,15 @@ package resource
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 
@@ -348,6 +351,25 @@ func (r *ResourceService) createPlusClient(instance *mpi.Instance) (*client.Ngin
 	}
 
 	httpClient := http.DefaultClient
+	caCertLocation := plusAPI.GetCa()
+	if caCertLocation != "" {
+		slog.Debug("Reading CA certificate", "file_path", caCertLocation)
+		caCert, err := os.ReadFile(caCertLocation)
+		if err != nil {
+			return nil, err
+		}
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(caCert)
+
+		httpClient = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					RootCAs:    caCertPool,
+					MinVersion: tls.VersionTLS13,
+				},
+			},
+		}
+	}
 	if strings.HasPrefix(plusAPI.GetListen(), "unix:") {
 		httpClient = socketClient(strings.TrimPrefix(plusAPI.GetListen(), "unix:"))
 	}

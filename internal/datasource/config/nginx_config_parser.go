@@ -7,6 +7,8 @@ package config
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -555,7 +557,7 @@ func (ncp *NginxConfigParser) sslCert(ctx context.Context, file, rootDir string)
 func (ncp *NginxConfigParser) apiCallback(ctx context.Context, parent,
 	current *crossplane.Directive, apiType string,
 ) *model.APIDetails {
-	urls := ncp.urlsForLocationDirectiveAPIDetails(parent, current, apiType)
+	urls := ncp.urlsForLocationDirectiveAPIDetails(ctx, parent, current, apiType)
 	if len(urls) > 0 {
 		slog.DebugContext(ctx, fmt.Sprintf("%d potential %s urls", len(urls), apiType), "urls", urls)
 	}
@@ -578,7 +580,11 @@ func (ncp *NginxConfigParser) apiCallback(ctx context.Context, parent,
 func (ncp *NginxConfigParser) pingAPIEndpoint(ctx context.Context, statusAPIDetail *model.APIDetails,
 	apiType string,
 ) bool {
-	httpClient := http.DefaultClient
+	httpClient, err := ncp.prepareHTTPClient(ctx)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to prepare HTTP client", "error", err)
+		return false
+	}
 	listen := statusAPIDetail.Listen
 	statusAPI := statusAPIDetail.URL
 
@@ -640,10 +646,17 @@ func (ncp *NginxConfigParser) pingAPIEndpoint(ctx context.Context, statusAPIDeta
 
 // nolint: revive
 func (ncp *NginxConfigParser) urlsForLocationDirectiveAPIDetails(
-	parent, current *crossplane.Directive,
+	ctx context.Context, parent, current *crossplane.Directive,
 	locationDirectiveName string,
 ) []*model.APIDetails {
 	var urls []*model.APIDetails
+	// Check if SSL is enabled in the server block
+	isSSL := ncp.isSSLEnabled(parent)
+	caCertLocation := ""
+	// If SSl is enabled, check if CA cert is provided and the location is allowed
+	if isSSL {
+		caCertLocation = ncp.selfSignedCACertLocation(ctx)
+	}
 	// process from the location block
 	if current.Directive != locationDirective {
 		return urls
@@ -671,12 +684,15 @@ func (ncp *NginxConfigParser) urlsForLocationDirectiveAPIDetails(
 						URL:      fmt.Sprintf(format, path),
 						Listen:   address,
 						Location: path,
+						Ca:       caCertLocation,
 					})
 				} else {
 					urls = append(urls, &model.APIDetails{
-						URL:      fmt.Sprintf(apiFormat, address, path),
+						URL: fmt.Sprintf("%s://%s%s", map[bool]string{true: "https", false: "http"}[isSSL],
+							address, path),
 						Listen:   address,
 						Location: path,
+						Ca:       caCertLocation,
 					})
 				}
 			}
@@ -776,6 +792,37 @@ func (ncp *NginxConfigParser) isPort(value string) bool {
 	return err == nil && port >= 1 && port <= 65535
 }
 
+// checks if any of the arguments contain "ssl".
+func (ncp *NginxConfigParser) hasSSLArgument(args []string) bool {
+	for i := 1; i < len(args); i++ {
+		if args[i] == "ssl" {
+			return true
+		}
+	}
+
+	return false
+}
+
+// checks if a directive is a listen directive with ssl enabled.
+func (ncp *NginxConfigParser) isSSLListenDirective(dir *crossplane.Directive) bool {
+	return dir.Directive == "listen" && ncp.hasSSLArgument(dir.Args)
+}
+
+// checks if SSL is enabled for a given server block.
+func (ncp *NginxConfigParser) isSSLEnabled(serverBlock *crossplane.Directive) bool {
+	if serverBlock == nil {
+		return false
+	}
+
+	for _, dir := range serverBlock.Block {
+		if ncp.isSSLListenDirective(dir) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (ncp *NginxConfigParser) socketClient(socketPath string) *http.Client {
 	return &http.Client{
 		Timeout: ncp.agentConfig.Client.Grpc.KeepAlive.Timeout,
@@ -785,6 +832,46 @@ func (ncp *NginxConfigParser) socketClient(socketPath string) *http.Client {
 			},
 		},
 	}
+}
+
+// prepareHTTPClient handles TLS config
+func (ncp *NginxConfigParser) prepareHTTPClient(ctx context.Context) (*http.Client, error) {
+	httpClient := http.DefaultClient
+	caCertLocation := ncp.agentConfig.DataPlaneConfig.Nginx.APITls.Ca
+
+	if caCertLocation != "" && ncp.agentConfig.IsDirectoryAllowed(caCertLocation) {
+		slog.DebugContext(ctx, "Reading CA certificate", "file_path", caCertLocation)
+		caCert, err := os.ReadFile(caCertLocation)
+		if err != nil {
+			return nil, err
+		}
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(caCert)
+
+		httpClient = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					RootCAs:    caCertPool,
+					MinVersion: tls.VersionTLS13,
+				},
+			},
+		}
+	}
+
+	return httpClient, nil
+}
+
+// Populate the CA cert location based ondirectory allowance.
+func (ncp *NginxConfigParser) selfSignedCACertLocation(ctx context.Context) string {
+	caCertLocation := ncp.agentConfig.DataPlaneConfig.Nginx.APITls.Ca
+
+	if caCertLocation != "" && !ncp.agentConfig.IsDirectoryAllowed(caCertLocation) {
+		// If SSL is enabled but CA cert is provided and not allowed, treat it as if no CA cert
+		slog.WarnContext(ctx, "CA certificate location is not allowed, treating as if no CA cert provided.")
+		return ""
+	}
+
+	return caCertLocation
 }
 
 func (ncp *NginxConfigParser) isDuplicateFile(nginxConfigContextFiles []*mpi.File, newFile *mpi.File) bool {

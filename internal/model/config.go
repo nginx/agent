@@ -26,6 +26,7 @@ type APIDetails struct {
 	URL      string
 	Listen   string
 	Location string
+	Ca       string
 }
 
 type ManifestFile struct {
