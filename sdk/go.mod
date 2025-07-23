@@ -2,7 +2,7 @@ module github.com/nginx/agent/sdk/v2
 
 go 1.23.0
 
-toolchain go1.23.10
+toolchain go1.23.11
 
 require (
 	github.com/cenkalti/backoff/v4 v4.2.1

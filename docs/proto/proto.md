@@ -18,6 +18,9 @@
     - [AgentConnectStatus.StatusCode](#f5-nginx-agent-sdk-AgentConnectStatus-StatusCode)
     - [AgentLogging.Level](#f5-nginx-agent-sdk-AgentLogging-Level)
   
+- [command_svc.proto](#command_svc-proto)
+    - [Commander](#f5-nginx-agent-sdk-Commander)
+  
 - [command.proto](#command-proto)
     - [AgentActivityStatus](#f5-nginx-agent-sdk-AgentActivityStatus)
     - [ChunkedResourceChunk](#f5-nginx-agent-sdk-ChunkedResourceChunk)
@@ -38,9 +41,6 @@
     - [CommandStatusResponse.CommandStatus](#f5-nginx-agent-sdk-CommandStatusResponse-CommandStatus)
     - [NginxConfigStatus.Status](#f5-nginx-agent-sdk-NginxConfigStatus-Status)
     - [UploadStatus.TransferStatus](#f5-nginx-agent-sdk-UploadStatus-TransferStatus)
-  
-- [command_svc.proto](#command_svc-proto)
-    - [Commander](#f5-nginx-agent-sdk-Commander)
   
 - [common.proto](#common-proto)
     - [CertificateDates](#f5-nginx-agent-sdk-CertificateDates)
@@ -336,6 +336,34 @@ Log level enum
  
 
  
+
+ 
+
+
+
+<a name="command_svc-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## command_svc.proto
+
+
+ 
+
+ 
+
+ 
+
+
+<a name="f5-nginx-agent-sdk-Commander"></a>
+
+### Commander
+Represents a service used to sent command messages between the management server and the agent.
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+| CommandChannel | [Command](#f5-nginx-agent-sdk-Command) stream | [Command](#f5-nginx-agent-sdk-Command) stream | A Bidirectional streaming RPC established by the agent and is kept open |
+| Download | [DownloadRequest](#f5-nginx-agent-sdk-DownloadRequest) | [DataChunk](#f5-nginx-agent-sdk-DataChunk) stream | A streaming RPC established by the agent and is used to download resources associated with commands The download stream will be kept open for the duration of the data transfer and will be closed when its done. The transfer is a stream of chunks as follows: header -&gt; data chunk 1 -&gt; data chunk N. Each data chunk is of a size smaller than the maximum gRPC payload |
+| Upload | [DataChunk](#f5-nginx-agent-sdk-DataChunk) stream | [UploadStatus](#f5-nginx-agent-sdk-UploadStatus) | A streaming RPC established by the agent and is used to upload resources associated with commands |
 
  
 
@@ -647,34 +675,6 @@ Transfer status enum
  
 
  
-
- 
-
-
-
-<a name="command_svc-proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## command_svc.proto
-
-
- 
-
- 
-
- 
-
-
-<a name="f5-nginx-agent-sdk-Commander"></a>
-
-### Commander
-Represents a service used to sent command messages between the management server and the agent.
-
-| Method Name | Request Type | Response Type | Description |
-| ----------- | ------------ | ------------- | ------------|
-| CommandChannel | [Command](#f5-nginx-agent-sdk-Command) stream | [Command](#f5-nginx-agent-sdk-Command) stream | A Bidirectional streaming RPC established by the agent and is kept open |
-| Download | [DownloadRequest](#f5-nginx-agent-sdk-DownloadRequest) | [DataChunk](#f5-nginx-agent-sdk-DataChunk) stream | A streaming RPC established by the agent and is used to download resources associated with commands The download stream will be kept open for the duration of the data transfer and will be closed when its done. The transfer is a stream of chunks as follows: header -&gt; data chunk 1 -&gt; data chunk N. Each data chunk is of a size smaller than the maximum gRPC payload |
-| Upload | [DataChunk](#f5-nginx-agent-sdk-DataChunk) stream | [UploadStatus](#f5-nginx-agent-sdk-UploadStatus) | A streaming RPC established by the agent and is used to upload resources associated with commands |
 
  
 
