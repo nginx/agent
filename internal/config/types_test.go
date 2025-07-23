@@ -8,86 +8,71 @@ package config
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestTypes_IsDirectoryAllowed(t *testing.T) {
-	config := agentConfig()
-
+func TestTypes_isAllowedDir(t *testing.T) {
 	tests := []struct {
 		name        string
-		fileDir     string
+		filePath    string
 		allowedDirs []string
 		allowed     bool
 	}{
 		{
-			name:    "Test 1: directory allowed",
+			name:    "Test 1: File is in allowed directory",
 			allowed: true,
 			allowedDirs: []string{
-				AgentDirName,
-				"/etc/nginx/",
-				"/var/log/nginx/",
-			},
-			fileDir: "/etc/nginx",
-		},
-		{
-			name:    "Test 2: directory not allowed",
-			allowed: false,
-			allowedDirs: []string{
-				AgentDirName,
-				"/etc/nginx/",
-				"/var/log/nginx/",
-			},
-			fileDir: "/etc/nginx-test/nginx-agent.conf",
-		},
-		{
-			name:    "Test 3: directory allowed",
-			allowed: true,
-			allowedDirs: []string{
-				AgentDirName,
-				"/etc/nginx/",
-				"/var/log/nginx/",
-			},
-			fileDir: "/etc/nginx/conf.d/nginx-agent.conf",
-		},
-		{
-			name:    "Test 4: directory not allowed",
-			allowed: false,
-			allowedDirs: []string{
-				AgentDirName,
 				"/etc/nginx",
-				"/var/log/nginx",
 			},
-			fileDir: "~/test.conf",
+			filePath: "/etc/nginx/nginx.conf",
 		},
 		{
-			name:    "Test 5: directory not allowed",
-			allowed: false,
-			allowedDirs: []string{
-				AgentDirName,
-				"/etc/nginx/",
-				"/var/log/nginx/",
-			},
-			fileDir: "//test.conf",
-		},
-		{
-			name:    "Test 6: directory allowed",
+			name:    "Test 2: File is in allowed directory with hyphen",
 			allowed: true,
 			allowedDirs: []string{
-				AgentDirName,
-				"/etc/nginx/",
-				"/var/log/nginx/",
-				"/",
+				"/etc/nginx-agent",
 			},
-			fileDir: "/test.conf",
+			filePath: "/etc/nginx-agent/nginx.conf",
+		},
+		{
+			name:    "Test 3: File exists and is in a subdirectory of allowed directory",
+			allowed: true,
+			allowedDirs: []string{
+				"/etc/nginx",
+			},
+			filePath: "/etc/nginx/conf.d/nginx.conf",
+		},
+		{
+			name:    "Test 4: File exists and is outside allowed directory",
+			allowed: false,
+			allowedDirs: []string{
+				"/etc/nginx",
+			},
+			filePath: "/etc/test/nginx.conf",
+		},
+		{
+			name:    "Test 5: File does not exist but is in allowed directory",
+			allowed: true,
+			allowedDirs: []string{
+				"/etc/nginx",
+			},
+			filePath: "/etc/nginx/idontexist.conf",
+		},
+		{
+			name:    "Test 6: Test File does not exist and is outside allowed directory",
+			allowed: false,
+			allowedDirs: []string{
+				"/etc/nginx",
+			},
+			filePath: "/not-nginx-test/idontexist.conf",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			config.AllowedDirectories = test.allowedDirs
-			result := config.IsDirectoryAllowed(test.fileDir)
-			assert.Equal(t, test.allowed, result)
+			result, err := isAllowedDir(test.filePath, test.allowedDirs)
+			require.NoError(t, err)
+			require.Equal(t, test.allowed, result)
 		})
 	}
 }

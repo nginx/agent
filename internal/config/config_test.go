@@ -163,6 +163,84 @@ func TestNormalizeFunc(t *testing.T) {
 	assert.Equal(t, expected, result)
 }
 
+func TestResolveAllowedDirectories(t *testing.T) {
+	tests := []struct {
+		name           string
+		configuredDirs []string
+		expected       []string
+	}{
+		{
+			name:           "Test 1: Empty path",
+			configuredDirs: []string{""},
+			expected:       []string{"/etc/nginx-agent"},
+		},
+		{
+			name:           "Test 2: Absolute path",
+			configuredDirs: []string{"/etc/agent/"},
+			expected:       []string{"/etc/nginx-agent", "/etc/agent"},
+		},
+		{
+			name:           "Test 3: Absolute paths",
+			configuredDirs: []string{"/etc/nginx/"},
+			expected:       []string{"/etc/nginx-agent", "/etc/nginx"},
+		},
+		{
+			name:           "Test 4: Absolute path with multiple slashes",
+			configuredDirs: []string{"/etc///////////nginx-agent/"},
+			expected:       []string{"/etc/nginx-agent"},
+		},
+		{
+			name:           "Test 5: Absolute path with directory traversal",
+			configuredDirs: []string{"/etc/nginx/../nginx-agent"},
+			expected:       []string{"/etc/nginx-agent"},
+		},
+		{
+			name:           "Test 6: Absolute path with repeat directory traversal",
+			configuredDirs: []string{"/etc/nginx-agent/../../../../../nginx-agent"},
+			expected:       []string{"/etc/nginx-agent"},
+		},
+		{
+			name:           "Test 7: Absolute path with control characters",
+			configuredDirs: []string{"/etc/nginx-agent/\\x08../tmp/"},
+			expected:       []string{"/etc/nginx-agent"},
+		},
+		{
+			name:           "Test 8: Absolute path with invisible characters",
+			configuredDirs: []string{"/etc/nginx-agent/ㅤㅤㅤ/tmp/"},
+			expected:       []string{"/etc/nginx-agent"},
+		},
+		{
+			name:           "Test 9: Absolute path with escaped invisible characters",
+			configuredDirs: []string{"/etc/nginx-agent/\\\\ㅤ/tmp/"},
+			expected:       []string{"/etc/nginx-agent"},
+		},
+		{
+			name: "Test 10: Mixed paths",
+			configuredDirs: []string{
+				"nginx-agent",
+				"",
+				"..",
+				"/",
+				"\\/",
+				".",
+				"/etc/nginx/",
+			},
+			expected: []string{"/etc/nginx-agent", "/etc/nginx"},
+		},
+		{
+			name:           "Test 11: Relative path",
+			configuredDirs: []string{"nginx-agent"},
+			expected:       []string{"/etc/nginx-agent"},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			allowed := resolveAllowedDirectories(test.configuredDirs)
+			assert.Equal(t, test.expected, allowed)
+		})
+	}
+}
+
 func TestResolveLog(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	viperInstance.Set(LogLevelKey, "error")
@@ -867,89 +945,7 @@ func agentConfig() *Config {
 			"/etc/nginx/", "/etc/nginx-agent/", "/usr/local/etc/nginx/", "/var/run/nginx/", "/var/log/nginx/",
 			"/usr/share/nginx/modules/", "/etc/app_protect/",
 		},
-		Collector: &Collector{
-			ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
-			Exporters: Exporters{
-				OtlpExporters: map[string]*OtlpExporter{
-					"default": {
-						Server: &ServerConfig{
-							Host: "127.0.0.1",
-							Port: 1234,
-							Type: Grpc,
-						},
-						TLS: &TLSConfig{
-							Cert:       "/path/to/server-cert.pem",
-							Key:        "/path/to/server-cert.pem",
-							Ca:         "/path/to/server-cert.pem",
-							SkipVerify: true,
-							ServerName: "remote-saas-server",
-						},
-					},
-				},
-			},
-			Processors: Processors{
-				Batch: map[string]*Batch{
-					"default_logs": {
-						SendBatchMaxSize: DefCollectorLogsBatchProcessorSendBatchMaxSize,
-						SendBatchSize:    DefCollectorLogsBatchProcessorSendBatchSize,
-						Timeout:          DefCollectorLogsBatchProcessorTimeout,
-					},
-				},
-				LogsGzip: map[string]*LogsGzip{
-					"default": {},
-				},
-			},
-			Receivers: Receivers{
-				OtlpReceivers: map[string]*OtlpReceiver{
-					"default": {
-						Server: &ServerConfig{
-							Host: "localhost",
-							Port: 4317,
-							Type: Grpc,
-						},
-						Auth: &AuthConfig{
-							Token: "even-secreter-token",
-						},
-						OtlpTLSConfig: &OtlpTLSConfig{
-							GenerateSelfSignedCert: false,
-							Cert:                   "/path/to/server-cert.pem",
-							Key:                    "/path/to/server-cert.pem",
-							Ca:                     "/path/to/server-cert.pem",
-							SkipVerify:             true,
-							ServerName:             "local-data-plane-server",
-						},
-					},
-				},
-				NginxReceivers: []NginxReceiver{
-					{
-						InstanceID: "cd7b8911-c2c5-4daf-b311-dbead151d938",
-						StubStatus: APIDetails{
-							URL:    "http://localhost:4321/status",
-							Listen: "",
-						},
-						AccessLogs: []AccessLog{
-							{
-								LogFormat: accessLogFormat,
-								FilePath:  "/var/log/nginx/access-custom.conf",
-							},
-						},
-					},
-				},
-			},
-			Extensions: Extensions{
-				Health: &Health{
-					Server: &ServerConfig{
-						Host: "localhost",
-						Port: 1337,
-					},
-					Path: "/",
-				},
-			},
-			Log: &Log{
-				Level: "INFO",
-				Path:  "/var/log/nginx-agent/opentelemetry-collector-agent.log",
-			},
-		},
+		Collector: createDefaultCollectorConfig(),
 		Command: &Command{
 			Server: &ServerConfig{
 				Host: "127.0.0.1",
@@ -1002,8 +998,8 @@ func createConfig() *Config {
 			},
 		},
 		AllowedDirectories: []string{
-			"/etc/nginx-agent/", "/etc/nginx/", "/usr/local/etc/nginx/", "/var/run/nginx/",
-			"/usr/share/nginx/modules/", "/var/log/nginx/",
+			"/etc/nginx-agent", "/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx",
+			"/usr/share/nginx/modules", "/var/log/nginx",
 		},
 		DataPlaneConfig: &DataPlaneConfig{
 			Nginx: &NginxDataPlaneConfig{
@@ -1223,6 +1219,92 @@ func createConfig() *Config {
 		Features: []string{
 			config.FeatureCertificates, config.FeatureFileWatcher, config.FeatureMetrics,
 			config.FeatureAPIAction, config.FeatureLogsNap,
+		},
+	}
+}
+
+func createDefaultCollectorConfig() *Collector {
+	return &Collector{
+		ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
+		Exporters: Exporters{
+			OtlpExporters: map[string]*OtlpExporter{
+				"default": {
+					Server: &ServerConfig{
+						Host: "127.0.0.1",
+						Port: 1234,
+						Type: Grpc,
+					},
+					TLS: &TLSConfig{
+						Cert:       "/path/to/server-cert.pem",
+						Key:        "/path/to/server-cert.pem",
+						Ca:         "/path/to/server-cert.pem",
+						SkipVerify: true,
+						ServerName: "remote-saas-server",
+					},
+				},
+			},
+		},
+		Processors: Processors{
+			Batch: map[string]*Batch{
+				"default_logs": {
+					SendBatchMaxSize: DefCollectorLogsBatchProcessorSendBatchMaxSize,
+					SendBatchSize:    DefCollectorLogsBatchProcessorSendBatchSize,
+					Timeout:          DefCollectorLogsBatchProcessorTimeout,
+				},
+			},
+			LogsGzip: map[string]*LogsGzip{
+				"default": {},
+			},
+		},
+		Receivers: Receivers{
+			OtlpReceivers: map[string]*OtlpReceiver{
+				"default": {
+					Server: &ServerConfig{
+						Host: "localhost",
+						Port: 4317,
+						Type: Grpc,
+					},
+					Auth: &AuthConfig{
+						Token: "even-secreter-token",
+					},
+					OtlpTLSConfig: &OtlpTLSConfig{
+						GenerateSelfSignedCert: false,
+						Cert:                   "/path/to/server-cert.pem",
+						Key:                    "/path/to/server-cert.pem",
+						Ca:                     "/path/to/server-cert.pem",
+						SkipVerify:             true,
+						ServerName:             "local-data-plane-server",
+					},
+				},
+			},
+			NginxReceivers: []NginxReceiver{
+				{
+					InstanceID: "cd7b8911-c2c5-4daf-b311-dbead151d938",
+					StubStatus: APIDetails{
+						URL:    "http://localhost:4321/status",
+						Listen: "",
+					},
+					AccessLogs: []AccessLog{
+						{
+							LogFormat: accessLogFormat,
+							FilePath:  "/var/log/nginx/access-custom.conf",
+						},
+					},
+				},
+			},
+		},
+		Extensions: Extensions{
+			Health: &Health{
+				Server: &ServerConfig{
+					Host: "localhost",
+					Port: 1337,
+				},
+				Path: "/",
+			},
+		},
+		Log: &Log{
+			Level: "INFO",
+			Path:  "/var/log/nginx-agent/opentelemetry-collector-agent.log",
 		},
 	}
 }
