@@ -48,7 +48,7 @@ MANIFEST_DIR	?= /var/lib/nginx-agent
 DIRS            = $(BUILD_DIR) $(TEST_BUILD_DIR) $(BUILD_DIR)/$(DOCS_DIR) $(BUILD_DIR)/$(DOCS_DIR)/$(PROTO_DIR)
 $(shell mkdir -p $(DIRS))
 
-VERSION 		?= "v3.0.0"
+VERSION 		?= $(shell git describe --tags --abbrev=0)
 COMMIT  		= $(shell git rev-parse --short HEAD)
 DATE    		= $(shell date +%F_%H-%M-%S)
 LDFLAGS 		= "-s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)"
