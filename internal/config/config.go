@@ -37,7 +37,7 @@ const (
 	EnvPrefix                    = "NGINX_AGENT"
 	KeyDelimiter                 = "_"
 	KeyValueNumber               = 2
-	AgentDirName                 = "/etc/nginx-agent/"
+	AgentDirName                 = "/etc/nginx-agent"
 	DefaultMetricsBatchProcessor = "default_metrics"
 	DefaultLogsBatchProcessor    = "default_logs"
 	DefaultExporter              = "default"
