@@ -20,6 +20,7 @@ permissions:
 
 env:
   NFPM_VERSION: 'v2.35.3'
+  GOPROXY: "https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@azr.artifactory.f5net.com/artifactory/api/go/f5-nginx-go-dev"
 
 jobs:
   lint:
