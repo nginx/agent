@@ -16,8 +16,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"reflect"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -56,7 +54,7 @@ var (
 
 func SetVersion(version, commit string) {
 	ROOT_COMMAND.Version = version + "-" + commit
-	Viper.SetDefault(VersionKey, version)
+	Viper.Set(VersionKey, version)
 }
 
 func Execute() error {
@@ -256,7 +254,6 @@ func UpdateAgentConfig(systemId string, updateTags []string, updateFeatures []st
 		log.Errorf("Failed to register config: %v", err)
 		return false, err
 	}
-
 	// Update nil valued updateTags to empty slice for comparison
 	if updateTags == nil {
 		updateTags = []string{}
@@ -266,32 +263,11 @@ func UpdateAgentConfig(systemId string, updateTags []string, updateFeatures []st
 		updateFeatures = []string{}
 	}
 
-	// Sort tags and compare them
-	sort.Strings(updateTags)
-	sort.Strings(config.Tags)
-	synchronizedTags := reflect.DeepEqual(updateTags, config.Tags)
-
 	Viper.Set(TagsKey, updateTags)
 	config.Tags = Viper.GetStringSlice(TagsKey)
 
-	// Needed for legacy reasons.
-	// Remove Features_ prefix from the feature strings.
-	// This is needed for management servers that are sending features before sdk version v2.23.0
-	for index, feature := range updateFeatures {
-		updateFeatures[index] = strings.Replace(feature, "features_", "", 1)
-	}
-	sort.Strings(updateFeatures)
-	sort.Strings(config.Features)
-	synchronizedFeatures := reflect.DeepEqual(updateFeatures, config.Features)
-
 	Viper.Set(agent_config.FeaturesKey, updateFeatures)
 	config.Features = Viper.GetStringSlice(agent_config.FeaturesKey)
-
-	// If the features are already synchronized there is no need to overwrite
-	if synchronizedTags && synchronizedFeatures {
-		log.Debug("Manager and Local tags and features are already synchronized")
-		return false, nil
-	}
 
 	// Get the dynamic config path and use default dynamic config path if it's not
 	// already set.

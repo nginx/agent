@@ -100,7 +100,6 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 		}
 
 		synchronizeFeatures := false
-		synchronizeTags := false
 
 		if payloadAgentConfig.Details.Features != nil {
 			r.detailsMu.Lock()
@@ -128,20 +127,14 @@ func (r *ConfigReader) updateAgentConfig(payloadAgentConfig *proto.AgentConfig) 
 			r.detailsMu.Unlock()
 		}
 
-		sort.Strings(onDiskAgentConfig.Tags)
-		sort.Strings(payloadAgentConfig.Details.Tags)
-		synchronizeTags = !reflect.DeepEqual(payloadAgentConfig.Details.Tags, onDiskAgentConfig.Tags)
-
-		if synchronizeFeatures || synchronizeTags {
-			tags := payloadAgentConfig.Details.Tags
-			features := payloadAgentConfig.Details.Features
-			configUpdated, err := config.UpdateAgentConfig(r.config.ClientID, tags, features)
-			if err != nil {
-				log.Errorf("Failed updating Agent config - %v", err)
-			}
-			if configUpdated {
-				log.Debugf("Updated agent config on disk")
-			}
+		tags := payloadAgentConfig.Details.Tags
+		features := payloadAgentConfig.Details.Features
+		configUpdated, err := config.UpdateAgentConfig(r.config.ClientID, tags, features)
+		if err != nil {
+			log.Errorf("Failed updating Agent config - %v", err)
+		}
+		if configUpdated {
+			log.Debugf("Updated agent config on disk")
 		}
 
 		if payloadAgentConfig.Details.Extensions != nil {
