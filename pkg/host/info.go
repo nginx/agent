@@ -16,9 +16,10 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/nginx/agent/v3/pkg/host/exec"
+
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	"golang.org/x/sync/singleflight"
 )
 

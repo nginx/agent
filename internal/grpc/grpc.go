@@ -16,6 +16,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/nginx/agent/v3/pkg/host"
+
 	"github.com/nginx/agent/v3/internal/datasource/file"
 
 	"github.com/cenkalti/backoff/v4"
@@ -27,7 +29,6 @@ import (
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
-	"github.com/nginx/agent/v3/internal/datasource/host"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/keepalive"

@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/internal/datasource/host/exec"
+	"github.com/nginx/agent/v3/pkg/host/exec"
 )
 
 type FakeExecInterface struct {

@@ -13,6 +13,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/nginx/agent/v3/pkg/host/hostfakes"
+
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/watcher/instance/instancefakes"
 
@@ -22,8 +24,6 @@ import (
 
 	"github.com/nginx/agent/v3/internal/resource/resourcefakes"
 	"github.com/nginx/agent/v3/test/types"
-
-	"github.com/nginx/agent/v3/internal/datasource/host/hostfakes"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/test/protos"

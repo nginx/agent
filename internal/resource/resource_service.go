@@ -19,6 +19,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/nginx/agent/v3/pkg/host"
+
 	parser "github.com/nginx/agent/v3/internal/datasource/config"
 	datasource "github.com/nginx/agent/v3/internal/datasource/proto"
 	"github.com/nginx/agent/v3/internal/model"
@@ -29,8 +31,6 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/nginx/agent/v3/internal/config"
-
-	"github.com/nginx/agent/v3/internal/datasource/host"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )

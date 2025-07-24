@@ -9,8 +9,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/nginx/agent/v3/pkg/host/exec"
+
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	processwatcher "github.com/nginx/agent/v3/internal/watcher/process"
 	"github.com/nginx/agent/v3/pkg/nginxprocess"
 )
