@@ -17,8 +17,9 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/nginx/agent/v3/pkg/host/exec"
+
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	"github.com/nginx/agent/v3/pkg/id"
 	"github.com/nginx/agent/v3/pkg/nginxprocess"
 )

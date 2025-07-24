@@ -3,10 +3,10 @@ package hostfakes
 
 import (
 	"context"
+	"github.com/nginx/agent/v3/pkg/host"
 	"sync"
 
 	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/internal/datasource/host"
 )
 
 type FakeInfoInterface struct {

@@ -19,8 +19,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nginx/agent/v3/pkg/host"
+
 	"github.com/nginx/agent/v3/internal/datasource/file"
-	"github.com/nginx/agent/v3/internal/datasource/host"
 	"github.com/nginx/agent/v3/internal/logger"
 
 	"github.com/goccy/go-yaml"

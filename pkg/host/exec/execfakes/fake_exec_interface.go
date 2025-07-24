@@ -4,10 +4,10 @@ package execfakes
 import (
 	"bytes"
 	"context"
+	"github.com/nginx/agent/v3/pkg/host/exec"
 	"sync"
 
 	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 )
 
 type FakeExecInterface struct {

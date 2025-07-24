@@ -11,8 +11,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nginx/agent/v3/pkg/host/exec/execfakes"
+
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
