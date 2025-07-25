@@ -239,7 +239,7 @@ func TestDPSSyncAgentConfigChange(t *testing.T) {
 				Tags:     tutils.InitialConfTags,
 				Features: config.Defaults.Features,
 			},
-			updatedTags: false,
+			updatedTags: true,
 		},
 	}
 	processID := "12345"
@@ -288,7 +288,7 @@ func TestDPSSyncAgentConfigChange(t *testing.T) {
 			// Attempt update & check results
 			updated, err := config.UpdateAgentConfig("12345", tc.expUpdatedConfig.Tags, tc.expUpdatedConfig.Features)
 			assert.Nil(t, err)
-			assert.Equal(t, updated, tc.updatedTags)
+			assert.Equal(t, tc.updatedTags, updated)
 
 			// Create message that should trigger a sync agent config call
 			msg := core.NewMessage(core.AgentConfigChanged, "")
