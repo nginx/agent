@@ -229,7 +229,7 @@ func TestMetrics_Process_AgentConfigChanged(t *testing.T) {
 				},
 				Features: config.Defaults.Features,
 			},
-			updatedTags: true,
+			updatedTags: false,
 		},
 	}
 

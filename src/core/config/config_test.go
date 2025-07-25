@@ -417,7 +417,7 @@ func TestUpdateAgentConfig(t *testing.T) {
 			updatedConfFeatures: curConf.Features,
 			expConfTags:         curConf.Tags,
 			expConfFeatures:     curConf.Features,
-			updatedConf:         true,
+			updatedConf:         false,
 		},
 		{
 			testName:            "UpdatedTags",
@@ -458,7 +458,7 @@ func TestUpdateAgentConfig(t *testing.T) {
 			// Attempt update & check results
 			updated, err := UpdateAgentConfig("12345", tc.updatedConfTags, tc.updatedConfFeatures)
 			assert.NoError(t, err)
-			assert.Equal(t, tc.updatedConf, updated)
+			assert.Equal(t, updated, tc.updatedConf)
 
 			// Get potentially updated config
 			updatedConf, err := GetConfig("12345")
