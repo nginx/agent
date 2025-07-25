@@ -25,6 +25,7 @@ import (
 var delay = time.Duration(5 * time.Second)
 
 func TestAPI_Nginx(t *testing.T) {
+	t.Log("testing nginx api")
 	ctx := context.Background()
 	containerNetwork := utils.CreateContainerNetwork(ctx, t)
 
@@ -80,9 +81,11 @@ func TestAPI_Nginx(t *testing.T) {
 	assert.Equal(t, "/etc/nginx/nginx.conf", nginxDetailsResponse[0].ConfPath)
 
 	utils.TestAgentHasNoErrorLogs(t, testContainer)
+	t.Log("finished testing nginx api")
 }
 
 func TestAPI_Metrics(t *testing.T) {
+	t.Log("testing metrics api")
 	ctx := context.Background()
 	containerNetwork := utils.CreateContainerNetwork(ctx, t)
 
@@ -157,4 +160,5 @@ func TestAPI_Metrics(t *testing.T) {
 	}
 
 	utils.TestAgentHasNoErrorLogs(t, testContainer)
+	t.Log("finished testing metrics api")
 }

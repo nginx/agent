@@ -1,0 +1,135 @@
+server:
+    http_listen_port: 9080
+    grpc_listen_port: 0
+    log_level: info
+    
+positions:
+    filename: /tmp/positions.yaml
+    sync_period: "10s"
+
+clients:
+    - url: ${{ secrets.LOKI_DASHBOARD_URL }}
+      external_labels:
+          systest_project: agent_v2
+          systest_type: ${GITHUB_JOB}
+      timeout: 30s
+      backoff_config:
+          min_period: 500ms
+          max_period: 5s
+          max_retries: 5
+
+scrape_configs:
+    - job_name: test-results
+      static_configs:
+          - targets:
+                - localhost
+            labels:
+                systest_job: test-results
+                __path__: /var/log/**/result.json
+      pipeline_stages:
+          - json:
+                expressions:
+                    time:
+          - timestamp:
+                source: time
+                format: RFC3339Nano
+          - template:
+                source: ci_pipeline_id
+                template: "${GITHUB_RUN_ID}"
+          - template:
+                source: ci_pipeline_url
+                template: "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          - template:
+                source: ci_pipeline_name
+                template: "${WORKFLOW}"
+          - template:
+                source: ci_pipeline_source
+                template: "${GITHUB_EVENT_NAME}"
+          - template:
+                source: ci_job_name
+                template: "${GITHUB_JOB}"
+          - template:
+                source: ci_commit_ref
+                template: "${GITHUB_HEAD_REF}"
+          - template:
+                source: ci_commit_sha
+                template: "${GITHUB_SHA}"
+          - template:
+                source: ci_commit_author
+                template: "${GITHUB_ACTOR}"
+          - template:
+                source: systest_path
+                template: '{{ trimPrefix "${TEST_OUTDIR}/" .filename | dir | replace "." "/" }}'
+
+          - structured_metadata:
+                ci_pipeline_id:
+                ci_pipeline_url:
+                ci_pipeline_name:
+                ci_pipeline_source:
+                ci_job_name:
+                ci_commit_ref:
+                ci_commit_sha:
+                ci_commit_author:
+                filename:
+                systest_path:
+
+          - labeldrop:
+                - filename
+
+
+    - job_name: test-logs
+      static_configs:
+        - targets:
+            - localhost
+          labels:
+            systest_job: test-logs
+            __path__: /var/log/**/test.log
+      pipeline_stages:
+        - json:
+            expressions:
+              time:
+        - timestamp:
+            source: time
+            format: RFC3339Nano
+        - template:
+            source: ci_pipeline_id
+            template: "${GITHUB_RUN_ID}"
+        - template:
+            source: ci_pipeline_url
+            template: "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+        - template:
+            source: ci_pipeline_name
+            template: "${WORKFLOW}"
+        - template:
+            source: ci_pipeline_source
+            template: "${GITHUB_EVENT_NAME}"
+        - template:
+            source: ci_job_name
+            template: "${GITHUB_JOB}"
+        - template:
+            source: ci_commit_ref
+            template: "${GITHUB_HEAD_REF}"
+        - template:
+            source: ci_commit_sha
+            template: "${GITHUB_SHA}"
+        - template:
+            source: ci_commit_author
+            template: "${GITHUB_ACTOR}"
+        - template:
+            source: systest_path
+            template: '{{ trimPrefix "${TEST_OUTDIR}/" .filename | dir | replace "." "/" }}'
+
+        - structured_metadata:
+            ci_pipeline_id:
+            ci_pipeline_url:
+            ci_pipeline_name:
+            ci_pipeline_source:
+            ci_job_name:
+            ci_commit_ref:
+            ci_commit_sha:
+            ci_commit_author:
+            filename:
+            systest_path:
+
+        - labeldrop:
+            - filename
