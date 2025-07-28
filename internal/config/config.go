@@ -106,6 +106,10 @@ func ResolveConfig() (*Config, error) {
 		return nil, fmt.Errorf("invalid configuration: %w", err)
 	}
 
+	if !viperInstance.IsSet(CollectorLogLevelKey) && strings.ToLower(log.Level) == "debug" {
+		collector.Log.Level = "DEBUG"
+	}
+
 	config := &Config{
 		UUID:               viperInstance.GetString(UUIDKey),
 		Version:            viperInstance.GetString(VersionKey),
@@ -1168,10 +1172,12 @@ func isHealthExtensionSet() bool {
 }
 
 func resolveCollectorLog() *Log {
-	return &Log{
+	log := &Log{
 		Level: viperInstance.GetString(CollectorLogLevelKey),
 		Path:  viperInstance.GetString(CollectorLogPathKey),
 	}
+
+	return log
 }
 
 func resolveCommand() *Command {
