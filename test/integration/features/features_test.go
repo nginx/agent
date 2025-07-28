@@ -2,10 +2,11 @@ package features
 
 import (
 	"context"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"testing"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/nginx/agent/test/integration/utils"
 	"github.com/stretchr/testify/assert"

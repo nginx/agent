@@ -3,7 +3,6 @@ package install
 import (
 	"context"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"path"
@@ -11,6 +10,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/nginx/agent/test/integration/utils"
 
