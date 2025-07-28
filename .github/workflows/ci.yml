@@ -168,10 +168,11 @@ jobs:
           - name: Start Promtail
             uses: ./.github/actions/start-promtail
           - name: Run Integration Tests
+            shell: bash
             run: |
                 go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
                 OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
-                  make integration-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}-${{matrix.container.image}}-${{matrix.container.version}}/raw_logs.log && exit "${PIPESTATUS[0]}"
+                  make integration-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}.${{matrix.container.image}}.${{matrix.container.version}}/raw_logs.log && exit "${PIPESTATUS[0]}"
           - name: Generate Test Results
             if: always()
             run: bash ./scripts/workflow/generate_results.sh ${{job.status}} ${{env.START_TIME}} ${{github.job}}
@@ -230,10 +231,11 @@ jobs:
           name: nginx-agent-unsigned-snapshots
           path: build
       - name: Run Integration Tests
+        shell: bash
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           CONTAINER_NGINX_IMAGE_REGISTRY="${{ env.NGINX_OSS_REGISTRY }}" TAG="${{ matrix.container.version }}-${{ matrix.container.image }}" OS_RELEASE="${{ matrix.container.release }}"\
-            make official-image-integration-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}-${{matrix.container.image}}-${{matrix.container.version}}/raw_logs.log && exit "${PIPESTATUS[0]}"
+            make official-image-integration-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}.${{matrix.container.image}}.${{matrix.container.version}}/raw_logs.log && exit "${PIPESTATUS[0]}"
       - name: Generate Test Results
         if: always()
         run: bash ./scripts/workflow/generate_results.sh ${{job.status}} ${{env.START_TIME}} ${{github.job}}
@@ -306,11 +308,12 @@ jobs:
                 username: ${{ secrets.REGISTRY_USERNAME }}
                 password: ${{ secrets.REGISTRY_PASSWORD }}
           - name: Run Integration Tests
+            shell: bash
             run: |
                 go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
                 CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
                 OS_RELEASE="${{ matrix.container.release }}" IMAGE_PATH="${{ matrix.container.path }}" \
-                  make official-image-integration-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}-${{matrix.container.image}}-${{matrix.container.version}}/raw_logs.log && exit "${PIPESTATUS[0]}"
+                  make official-image-integration-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}.${{matrix.container.image}}.${{matrix.container.version}}/raw_logs.log && exit "${PIPESTATUS[0]}"
           - name: Generate Test Results
             if: always()
             run: bash ./scripts/workflow/generate_results.sh ${{job.status}} ${{env.START_TIME}} ${{github.job}}

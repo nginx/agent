@@ -2,6 +2,7 @@ package features
 
 import (
 	"context"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"testing"
@@ -11,7 +12,7 @@ import (
 )
 
 func TestFeatures_NginxCountingEnabled(t *testing.T) {
-	t.Log("testing nginx counting enabled")
+	log.Info("testing nginx counting enabled")
 	enabledFeatureLogs := []string{
 		"level=info msg=\"NGINX Counter initializing", "level=info msg=\"MetricsThrottle initializing\"", "level=info msg=\"DataPlaneStatus initializing\"",
 		"level=info msg=\"OneTimeRegistration initializing\"", "level=info msg=\"Metrics initializing\"",
@@ -57,11 +58,11 @@ func TestFeatures_NginxCountingEnabled(t *testing.T) {
 	for _, logLine := range disabledFeatureLogs {
 		assert.NotContains(t, string(agentLogContent), logLine, "agent log file contains disabled feature log")
 	}
-	t.Log("finished testing nginx counting enabled")
+	log.Info("finished testing nginx counting enabled")
 }
 
 func TestFeatures_MetricsEnabled(t *testing.T) {
-	t.Log("testing metrics enabled")
+	log.Info("testing metrics enabled")
 	enabledFeatureLogs := []string{"level=info msg=\"Metrics initializing\"", "level=info msg=\"MetricsThrottle initializing\"", "level=info msg=\"DataPlaneStatus initializing\""}
 	disabledFeatureLogs := []string{"level=info msg=\"OneTimeRegistration initializing\"", "level=info msg=\"Events initializing\"", "level=info msg=\"Agent API initializing\""}
 
@@ -104,11 +105,11 @@ func TestFeatures_MetricsEnabled(t *testing.T) {
 	for _, logLine := range disabledFeatureLogs {
 		assert.NotContains(t, string(agentLogContent), logLine, "agent log file contains disabled feature log")
 	}
-	t.Log("finished testing metrics enabled")
+	log.Info("finished testing metrics enabled")
 }
 
 func TestFeatures_ConfigEnabled(t *testing.T) {
-	t.Log("testing config enabled")
+	log.Info("testing config enabled")
 	enabledFeatureLogs := []string{"level=info msg=\"DataPlaneStatus initializing\""}
 	disabledFeatureLogs := []string{"level=info msg=\"Events initializing\"", "level=info msg=\"Agent API initializing\"", "level=info msg=\"Metrics initializing\"", "level=info msg=\"MetricsThrottle initializing\""}
 
@@ -151,5 +152,5 @@ func TestFeatures_ConfigEnabled(t *testing.T) {
 	for _, logLine := range disabledFeatureLogs {
 		assert.NotContains(t, string(agentLogContent), logLine, "agent log file contains disabled feature log")
 	}
-	t.Log("finished testing config enabled")
+	log.Info("finished testing config enabled")
 }

@@ -3,6 +3,7 @@ package install
 import (
 	"context"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"path"
@@ -64,7 +65,7 @@ func installUninstallSetup(tb testing.TB, expectNoErrorsInLogs bool) (testcontai
 // Verifies that agent installs with correct output and files.
 // Verifies that agent uninstalls and removes all the files.
 func TestAgentManualInstallUninstall(t *testing.T) {
-	t.Log("testing agent install uninstall")
+	log.Info("testing agent install uninstall")
 	expectedInstallLogMsgs := map[string]string{
 		"InstallFoundNginxAgent": "Found nginx-agent /usr/bin/nginx-agent",
 		"InstallAgentSuccess":    "NGINX Agent package has been successfully installed.",
@@ -149,7 +150,7 @@ func TestAgentManualInstallUninstall(t *testing.T) {
 		_, err = testContainer.CopyFileFromContainer(ctx, agentPath)
 		assert.Error(t, err)
 	}
-	t.Log("finished testing agent install uninstall")
+	log.Info("finished testing agent install uninstall")
 }
 
 // installAgent installs the agent returning total install time and install output

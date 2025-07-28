@@ -23,9 +23,9 @@ HAS_FAILED=false
 IS_RUNNING=false
 
 load_job_status(){
-    if [ $JOB_RESULT == "success" ]; then
+    if [ "$JOB_RESULT" == "success" ]; then
         RESULT="pass"
-    elif [ $JOB_RESULT == "failure" ]; then
+    elif [ "$JOB_RESULT" == "failure" ]; then
         RESULT="fail"
     else
         RESULT="skip"
@@ -62,7 +62,7 @@ format_results(){
             OUTPUT_FILE="${OUTPUT_PATH}${TEST_NAME}/result.json"
         elif [[ "$line" =~ ([0-9T:\.\-Z]+)[[:space:]]+testing ]]; then
             TEST_START="${BASH_REMATCH[1]}"
-        elif [[ "$line" =~ ([0-9T:\.\-Z]+)[[:space:]]+finished testing ]]; then
+        elif [[ "$line" =~ ([0-9T:\.\-Z]+)[[:space:]]+finished[[:space]]testing ]]; then
             TEST_END="${BASH_REMATCH[1]}"
         elif [[ "$line" == "FAIL" ]]; then
             HAS_FAILED=false
