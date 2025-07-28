@@ -1,13 +1,11 @@
 #!/bin/bash
 
-# TODO: `start_time` and `end_time`, separate test name from `$line`
-
 JOB_RESULT="$1"
 START_TIME="$2"
 TEST_TYPE="$3"
 
 INPUT_FILE="./test/dashboard/logs/$TEST_TYPE/raw_logs.log"
-JOB_OUTPUT_FILE="./test/dashboard/logs/$TEST_TYPE/result.json"
+RESULT_OUTPUT_FILE="./test/dashboard/logs/$TEST_TYPE/result.json"
 LOG_OUTPUT_FILE="./test/dashboard/logs/$TEST_TYPE/test.log"
 OUTPUT_PATH="./test/dashboard/logs/$TEST_TYPE/"
 
@@ -90,7 +88,7 @@ format_results(){
     done < "$INPUT_FILE"
             
     # Store the result of the whole job
-    echo "{\"start_at\": \"$START_TIME\", \"end_at\": \"$END_TIME\", \"duration_seconds\": \"$DURATION\", \"result\": \"$RESULT\", \"msg\": \"$FAIL_MSG\"}" > $JOB_OUTPUT_FILE
+    echo "{\"start_at\": \"$START_TIME\", \"end_at\": \"$END_TIME\", \"duration_seconds\": \"$DURATION\", \"result\": \"$RESULT\", \"msg\": \"$FAIL_MSG\"}" > $RESULT_OUTPUT_FILE
 }
 
 # Main body of the script
