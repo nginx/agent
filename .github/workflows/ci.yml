@@ -163,21 +163,18 @@ jobs:
                 path: build
           - name: Set Start Time
             run: echo "START_TIME=$(date +"%Y-%m-%dT%H:%M:%S.%NZ")" >> ${GITHUB_ENV}
-          - name: Create Directory for Results
-            run: mkdir -p ${{github.workspace}}/test/dashboard/logs/${{github.job}}
           - name: Start Promtail
             uses: ./.github/actions/start-promtail
           - name: Run Integration Tests
             run: |
-                mkdir -p ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}.${{matrix.container.version}}
+                mkdir -p ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/
                 go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
                 OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
-                  make integration-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}.${{matrix.container.version}}/raw_logs.log && exit "${PIPESTATUS[0]}" \
-                echo "THIS IS A DEBUG LINE" \
-                cat ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}.${{matrix.container.version}}/raw_logs.log
+                  make integration-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/raw_logs.log && exit "${PIPESTATUS[0]}"
+          - run: cat ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/raw_logs.log
           - name: Generate Test Results
             if: always()
-            run: bash ./scripts/workflow/generate_results.sh ${{job.status}} ${{env.START_TIME}} ${{github.job}} ${{ github.workspace }}
+            run: bash ./scripts/workflow/generate_results.sh ${{job.status}} ${{env.START_TIME}} ${{github.job}}/${{matrix.container.image}}${{matrix.container.version}} ${{github.workspace}}
           - name: Container Output Logs
             if: failure()
             run: |

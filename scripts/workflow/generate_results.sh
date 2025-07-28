@@ -6,9 +6,8 @@ TEST_TYPE="$3"
 WORKSPACE="$4"
 
 INPUT_FILE="$WORKSPACE/test/dashboard/logs/$TEST_TYPE/raw_logs.log"
-RESULT_OUTPUT_FILE="$WORKSPACE/test/dashboard/logs/$TEST_TYPE/result.json"
-LOG_OUTPUT_FILE="$WORKSPACE/test/dashboard/logs/$TEST_TYPE/test.log"
-OUTPUT_PATH="$WORKSPACE/test/dashboard/logs/$TEST_TYPE/"
+OUTPUT_PATH="$WORKSPACE/test/dashboard/logs/$TEST_TYPE"
+JOB_OUTPUT_FILE="$WORKSPACE/test/dashboard/logs/$TEST_TYPE/result.json"
 
 END_TIME="`date "+%Y-%m-%dT%H:%M:%S.%NZ"`"
 START_SECONDS=$(date -d "$START_TIME" +%s.%N)
@@ -58,7 +57,8 @@ format_results(){
             MSG=""
             TEST_START=""
             TEST_END=""
-            OUTPUT_FILE="${OUTPUT_PATH}${TEST_NAME}/result.json"
+            RESULT_FILE="$OUTPUT_PATH/$TEST_NAME/result.json"
+            LOG_FILE="$OUTPUT_PATH/$TEST_NAME/test.log"
         elif [[ "$line" =~ ([0-9T:\.\-Z]+)[[:space:]]+testing ]]; then
             TEST_START="${BASH_REMATCH[1]}"
         elif [[ "$line" =~ ([0-9T:\.\-Z]+)[[:space:]]+finished[[:space]]testing ]]; then
@@ -68,18 +68,18 @@ format_results(){
             MSG="$MSG_STR"
             FAIL_MSG+="$MSG"
             HAS_FAILED=false
-            echo "{\"start_at\": \"$START_TIME\", \"end_at\": \"$END_TIME\", \"duration_seconds\": \"$DURATION\", \"result\": \"$TEST_RES\", \"msg\": \"$MSG\"}" > $OUTPUT_FILE
+            echo "{\"start_at\": \"$START_TIME\", \"end_at\": \"$END_TIME\", \"duration_seconds\": \"$DURATION\", \"result\": \"$TEST_RES\", \"msg\": \"$MSG\"}" > $RESULT_FILE
         elif [[ "$line" == "--- PASS"* ]]; then
             TEST_RES="pass"
             IS_RUNNING=false
-            echo "{\"start_at\": \"$START_TIME\", \"end_at\": \"$END_TIME\", \"duration_seconds\": \"$DURATION\", \"result\": \"$TEST_RES\", \"msg\": \"$MSG\"}" > $OUTPUT_FILE
+            echo "{\"start_at\": \"$START_TIME\", \"end_at\": \"$END_TIME\", \"duration_seconds\": \"$DURATION\", \"result\": \"$TEST_RES\", \"msg\": \"$MSG\"}" > $RESULT_FILE
         elif [[ "$line" == "--- FAIL"* ]]; then
             TEST_RES="fail"
             HAS_FAILED=true
             IS_RUNNING=false
         elif [[ "$line" == time=* && "$line" == *level=* ]]; then
             LOG_LINE=$(format_logs_to_json "$line")
-            echo "$LOG_LINE" >> "$LOG_OUTPUT_FILE"
+            echo "$LOG_LINE" >> "$LOG_FILE"
         fi
         
         if [ $HAS_FAILED == true ]; then
@@ -89,7 +89,7 @@ format_results(){
     done < "$INPUT_FILE"
             
     # Store the result of the whole job
-    echo "{\"start_at\": \"$START_TIME\", \"end_at\": \"$END_TIME\", \"duration_seconds\": \"$DURATION\", \"result\": \"$RESULT\", \"msg\": \"$FAIL_MSG\"}" > $RESULT_OUTPUT_FILE
+    echo "{\"start_at\": \"$START_TIME\", \"end_at\": \"$END_TIME\", \"duration_seconds\": \"$DURATION\", \"result\": \"$RESULT\", \"msg\": \"$FAIL_MSG\"}" > $JOB_OUTPUT_FILE
 }
 
 # Main body of the script
