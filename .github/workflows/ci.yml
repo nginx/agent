@@ -172,7 +172,7 @@ jobs:
             run: |
                 go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
                 OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
-                  make integration-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}.${{matrix.container.image}}.${{matrix.container.version}}/raw_logs.log && exit "${PIPESTATUS[0]}"
+                  make integration-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}.${{matrix.container.image}}.${{matrix.container.version}}/raw_logs.log && echo "${PIPESTATUS}" && exit "${PIPESTATUS[0]}"
           - name: Generate Test Results
             if: always()
             run: bash ./scripts/workflow/generate_results.sh ${{job.status}} ${{env.START_TIME}} ${{github.job}}
