@@ -3,11 +3,12 @@
 JOB_RESULT="$1"
 START_TIME="$2"
 TEST_TYPE="$3"
+WORKSPACE="$4"
 
-INPUT_FILE="./test/dashboard/logs/$TEST_TYPE/raw_logs.log"
-RESULT_OUTPUT_FILE="./test/dashboard/logs/$TEST_TYPE/result.json"
-LOG_OUTPUT_FILE="./test/dashboard/logs/$TEST_TYPE/test.log"
-OUTPUT_PATH="./test/dashboard/logs/$TEST_TYPE/"
+INPUT_FILE="$WORKSPACE/test/dashboard/logs/$TEST_TYPE/raw_logs.log"
+RESULT_OUTPUT_FILE="$WORKSPACE/test/dashboard/logs/$TEST_TYPE/result.json"
+LOG_OUTPUT_FILE="$WORKSPACE/test/dashboard/logs/$TEST_TYPE/test.log"
+OUTPUT_PATH="$WORKSPACE/test/dashboard/logs/$TEST_TYPE/"
 
 END_TIME="`date "+%Y-%m-%dT%H:%M:%S.%NZ"`"
 START_SECONDS=$(date -d "$START_TIME" +%s.%N)
