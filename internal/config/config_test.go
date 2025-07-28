@@ -298,6 +298,32 @@ func TestResolveCollector(t *testing.T) {
 	})
 }
 
+func TestResolveCollectorLog(t *testing.T) {
+	t.Run("Test 1: OTel Log Level Set In Config", func(t *testing.T) {
+		viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
+
+		viperInstance.Set(CollectorLogLevelKey, "info")
+		viperInstance.Set(CollectorLogPathKey, "/tmp/collector.log")
+		viperInstance.Set(LogLevelKey, "debug")
+
+		log := resolveCollectorLog()
+
+		// Check
+		assert.Equal(t, "info", log.Level)
+		assert.Equal(t, "/tmp/collector.log", log.Path)
+	})
+
+	t.Run("Test 2: OTel Log Level Not Set In Config", func(t *testing.T) {
+		viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
+		viperInstance.Set(LogLevelKey, "debug")
+		viperInstance.Set(CollectorLogPathKey, "/tmp/collector.log")
+
+		log := resolveCollectorLog()
+		assert.Equal(t, "debug", log.Level)
+		assert.Equal(t, "/tmp/collector.log", log.Path)
+	})
+}
+
 func TestCommand(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 	expected := agentConfig().Command
