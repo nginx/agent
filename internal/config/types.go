@@ -289,9 +289,10 @@ type (
 	}
 
 	ServerConfig struct {
-		Type ServerType `yaml:"type" mapstructure:"type"`
-		Host string     `yaml:"host" mapstructure:"host"`
-		Port int        `yaml:"port" mapstructure:"port"`
+		Proxy *Proxy     `yaml:"proxy" mapstructure:"proxy"`
+		Type  ServerType `yaml:"type"  mapstructure:"type"`
+		Host  string     `yaml:"host"  mapstructure:"host"`
+		Port  int        `yaml:"port"  mapstructure:"port"`
 	}
 
 	AuthConfig struct {
@@ -336,6 +337,18 @@ type (
 	FileWatcher struct {
 		ExcludeFiles        []string      `yaml:"exclude_files"        mapstructure:"exclude_files"`
 		MonitoringFrequency time.Duration `yaml:"monitoring_frequency" mapstructure:"monitoring_frequency"`
+	}
+
+	// nolint: govet
+	Proxy struct {
+		TLS        *TLSConfig    `yaml:"tls,omitempty"         mapstructure:"tls"`
+		Timeout    time.Duration `yaml:"timeout"               mapstructure:"timeout"`
+		URL        string        `yaml:"url"                   mapstructure:"url"`
+		NoProxy    string        `yaml:"no_proxy,omitempty"    mapstructure:"no_proxy"`
+		AuthMethod string        `yaml:"auth_method,omitempty" mapstructure:"auth_method"`
+		Username   string        `yaml:"username,omitempty"    mapstructure:"username"`
+		Password   string        `yaml:"password,omitempty"    mapstructure:"password"`
+		Token      string        `yaml:"token,omitempty"       mapstructure:"token"`
 	}
 )
 
