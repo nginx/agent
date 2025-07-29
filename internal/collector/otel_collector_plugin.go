@@ -555,8 +555,6 @@ func (oc *Collector) updateNginxAppProtectTcplogReceivers(nginxConfigContext *mo
 
 	napSysLogServer := oc.findAvailableSyslogServers(nginxConfigContext.NAPSysLogServers)
 
-	slog.Error("Updating NAP SysLog Server list", "list", napSysLogServer)
-
 	if napSysLogServer != "" {
 		if !oc.doesTcplogReceiverAlreadyExist(napSysLogServer) {
 			oc.config.Collector.Receivers.TcplogReceivers["nginx_app_protect"] = &config.TcplogReceiver{
