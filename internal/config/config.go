@@ -1398,6 +1398,18 @@ func resolveProxy() *Proxy {
 		}
 	}
 
+	// If all fields are zero/nil/empty, return nil
+	if proxy.TLS == nil &&
+		proxy.Timeout == 0 &&
+		proxy.URL == "" &&
+		proxy.NoProxy == "" &&
+		proxy.AuthMethod == "" &&
+		proxy.Username == "" &&
+		proxy.Password == "" &&
+		proxy.Token == "" {
+		return nil
+	}
+
 	return proxy
 }
 
