@@ -59,6 +59,7 @@ format_results(){
             MSG=""
             TEST_START=""
             TEST_END=""
+            mkdir -p "$OUTPUT_PATH/$TEST_NAME/"
             RESULT_FILE="$OUTPUT_PATH/$TEST_NAME/result.json"
             LOG_FILE="$OUTPUT_PATH/$TEST_NAME/test.log"
         elif [[ "$line" =~ ([0-9T:\.\-Z]+)[[:space:]]+testing ]]; then
