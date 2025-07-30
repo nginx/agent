@@ -255,7 +255,7 @@ jobs:
         env:
           GPG_KEY: ${{ secrets.INDIGO_GPG_AGENT }}
           NFPM_SIGNING_KEY_FILE: .key.asc
-          PACKAGE_VERSION: ${{ env.VERSION }}
+          VERSION: ${{ env.VERSION }}
           PACKAGE_BUILD: ${{ inputs.packageBuildNo }}
         run: |
           export PATH=$PATH:~/go/bin
