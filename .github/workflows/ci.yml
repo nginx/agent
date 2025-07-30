@@ -169,8 +169,8 @@ jobs:
             run: echo "START_TIME=$(date +"%Y-%m-%dT%H:%M:%S.%NZ")" >> ${GITHUB_ENV}
           - name: Create Directory
             run: mkdir -p ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/
-          - name: Start Promtail
-            uses: ./.github/actions/start-promtail
+#          - name: Start Promtail
+#            uses: ./.github/actions/start-promtail
           - name: Run Integration Tests
             run: |
                 go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
