@@ -111,7 +111,7 @@ package: $(PACKAGES_DIR) #### Create final packages for all supported distros
 	find $(PACKAGES_DIR)/apk ;\
 
 	# Create tarball containing all packages
-	cd $(PACKAGES_DIR) && tar -czvf "./$(TARBALL_NAME)" * && cd ../.. && cp "${PACKAGES_DIR}/$(TARBALL_NAME)"; \
+	cd $(PACKAGES_DIR) && tar -czvf "./$(TARBALL_NAME)" * && cd ../..; \
 
 .PHONY: gpg-key
 gpg-key: ## Generate GPG public key
