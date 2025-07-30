@@ -31,20 +31,22 @@ load_job_status(){
 }
 
 format_logs_to_json(){
-    local LINE="$1"
-    local JSON="{"
-    local key value
+    line="$1"
+    json="{"
     
-    while [[ "$line" =~ ([a-zA-Z0-9_]+)=((\"[^\"]*\")|([:space:]]+)) ]]; do
+    while [[ "$line" =~ ([a-zA-Z0-9_]+)=((\"([^\"\\]|\\.)*\")|[^[:space:]]+) ]]; do
         key="${BASH_REMATCH[1]}"
         value="${BASH_REMATCH[2]}"
-        LINE="${line#*${BASH_REMATCH[0]}}"
-        json+="\"$key\": \"$value\", "
+        line="${line#*"${key}=${value}"}"
+        
+        if [[ "$value" == \"*\" ]]; then
+            value="${value:1:${#value}-2}"
+            value="${value//\"/\\\"}"
+        fi
+        json+="\"$key\":\"$value\","
     done
     
-    json="${json%, }"
-    json+="}"
-    
+    json="${json%,}}"    
     echo "$json"
 }
 
