@@ -184,7 +184,7 @@ jobs:
         if: ${{ inputs.publishPackages == true }}
         env:
           TOKEN: ${{ inputs.uploadJWT }}
-          UPLOAD_URL: ${{ secrets.UPLOAD_URL }}
+          UPLOAD_URL: "https://up-ap-tmp.nginx.com"
         run: |
           make release
       - name: Publish Github Release
