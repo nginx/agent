@@ -64,7 +64,7 @@ format_results(){
             LOG_FILE="$OUTPUT_PATH/$TEST_NAME/test.log"
         elif [[ "$line" =~ ([0-9T:\.\-Z]+)[[:space:]]+testing ]]; then
             TEST_START="${BASH_REMATCH[1]}"
-        elif [[ "$line" =~ ([0-9T:\.\-Z]+)[[:space:]]+finished[[:space]]testing ]]; then
+        elif [[ "$line" =~ ([0-9T:\.\-Z]+)[[:space:]]+finished[[:space:]]testing ]]; then
             TEST_END="${BASH_REMATCH[1]}"
         elif [[ "$line" == "FAIL" ]]; then
             HAS_FAILED=false
