@@ -6,8 +6,9 @@ runs:
         - name: Start Promtail container
           shell: bash
           run: |
+              CONTAINER_NAME="promtail=${{github.run_id}}"
               docker run -d \
-               --name=promtail \
+               --name="$CONTAINER_NAME" \
                -v "${{ github.workspace }}/test/dashboard/prep/promtail.yaml:/etc/promtail/config.yaml" \
                -v "${{ github.workspace }}/test/dashboard/logs:/var/log" \
                -e TEST_OUTDIR=test/dashboard/logs \
