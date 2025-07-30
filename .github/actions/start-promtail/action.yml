@@ -6,7 +6,7 @@ runs:
         - name: Start Promtail container
           shell: bash
           run: |
-              CONTAINER_NAME="promtail-${{github.run_id}}"
+              CONTAINER_NAME="promtail-${{ github.run_id }}-${{ matrix.container.image }}-${{ matrix.container.version }}"
               docker run -d \
                --name="$CONTAINER_NAME" \
                -v "${{ github.workspace }}/test/dashboard/prep/promtail.yaml:/etc/promtail/config.yaml" \
