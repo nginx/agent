@@ -789,8 +789,16 @@ func normalizeFunc(f *flag.FlagSet, name string) flag.NormalizedName {
 }
 
 func resolveLog() *Log {
+	logLevel := strings.ToLower(viperInstance.GetString(LogLevelKey))
+	validLevels := []string{"debug", "info", "warn", "error"}
+
+	if !slices.Contains(validLevels, logLevel) {
+		slog.Warn("Invalid log level set, defaulting to 'info'", "log_level", logLevel)
+		logLevel = "info"
+	}
+
 	return &Log{
-		Level: viperInstance.GetString(LogLevelKey),
+		Level: logLevel,
 		Path:  viperInstance.GetString(LogPathKey),
 	}
 }
@@ -1173,7 +1181,7 @@ func resolveCollectorLog() *Log {
 		Path:  viperInstance.GetString(CollectorLogPathKey),
 	}
 
-	if !viperInstance.IsSet(CollectorLogLevelKey) {
+	if !viperInstance.IsSet(CollectorLogLevelKey) && strings.ToLower(viperInstance.GetString(LogLevelKey)) != "warn" {
 		log.Level = viperInstance.GetString(LogLevelKey)
 	}
 
