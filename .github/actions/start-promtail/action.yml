@@ -20,6 +20,7 @@ runs:
                -e GITHUB_HEAD_REF=${{ github.head_ref }} \
                -e GITHUB_SHA=${{ github.sha }} \
                -e GITHUB_ACTOR=${{ github.actor }} \
+               -e LOKI_DASHBOARD_URL=${{ secrets.LOKI_DASHBOARD_URL }} \
                grafana/promtail:3.4.4 \
                -config.file=/etc/promtail/config.yaml \
                -config.expand-env=true

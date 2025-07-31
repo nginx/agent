@@ -8,10 +8,10 @@ positions:
     sync_period: "10s"
 
 clients:
-    - url: ${{ secrets.LOKI_DASHBOARD_URL }}
+    - url: "${LOKI_DASHBOARD_URL}"
       external_labels:
           systest_project: agent_v2
-          systest_type: ${GITHUB_JOB}
+          systest_type: "${GITHUB_JOB}"
       timeout: 30s
       backoff_config:
           min_period: 500ms

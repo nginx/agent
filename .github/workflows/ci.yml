@@ -165,6 +165,8 @@ jobs:
             run: echo "START_TIME=$(date +"%Y-%m-%dT%H:%M:%S.%NZ")" >> ${GITHUB_ENV}
           - name: Create Directory
             run: mkdir -p ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/
+          - name: Start Promtail
+            uses: ./.github/actions/start-promtail
           - name: Run Integration Tests
             run: |
                 go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
@@ -173,8 +175,6 @@ jobs:
           - name: Generate Test Results
             if: always()
             run: bash ./scripts/workflow/generate_results.sh ${{job.status}} ${{env.START_TIME}} ${{github.job}}/${{matrix.container.image}}${{matrix.container.version}} ${{github.workspace}}
-          - name: Start Promtail
-            uses: ./.github/actions/start-promtail
           - name: Container Output Logs
             if: failure()
             run: |
@@ -299,12 +299,21 @@ jobs:
                 registry: ${{ secrets.REGISTRY_URL }}
                 username: ${{ secrets.REGISTRY_USERNAME }}
                 password: ${{ secrets.REGISTRY_PASSWORD }}
+          - name: Set Start Time
+            run: echo "START_TIME=$(date +"%Y-%m-%dT%H:%M:%S.%NZ")" >> ${GITHUB_ENV}
+          - name: Create Directory
+            run: mkdir -p ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/
+          - name: Start Promtail
+            uses: ./.github/actions/start-promtail
           - name: Run Integration Tests
             run: |
                 go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
                 CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
                 OS_RELEASE="${{ matrix.container.release }}" IMAGE_PATH="${{ matrix.container.path }}" \
-                  make official-image-integration-test
+                  make official-image-integration-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/raw_logs.log && exit "${PIPESTATUS[0]}"
+          - name: Generate Test Results
+            if: always()
+            run: bash ./scripts/workflow/generate_results.sh ${{job.status}} ${{env.START_TIME}} ${{github.job}}/${{matrix.container.image}}${{matrix.container.version}} ${{github.workspace}}
           - name: Container Output Logs
             if: failure()
             run: |
