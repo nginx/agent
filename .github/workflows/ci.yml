@@ -165,8 +165,6 @@ jobs:
             run: echo "START_TIME=$(date +"%Y-%m-%dT%H:%M:%S.%NZ")" >> ${GITHUB_ENV}
           - name: Create Directory
             run: mkdir -p ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/
-          - name: Start Promtail
-            uses: ./.github/actions/start-promtail
           - name: Run Integration Tests
             run: |
                 go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
@@ -175,6 +173,8 @@ jobs:
           - name: Generate Test Results
             if: always()
             run: bash ./scripts/workflow/generate_results.sh ${{job.status}} ${{env.START_TIME}} ${{github.job}}/${{matrix.container.image}}${{matrix.container.version}} ${{github.workspace}}
+          - name: Start Promtail
+            uses: ./.github/actions/start-promtail
           - name: Container Output Logs
             if: failure()
             run: |
@@ -237,9 +237,6 @@ jobs:
       - name: Generate Test Results
         if: always()
         run: bash ./scripts/workflow/generate_results.sh ${{job.status}} ${{env.START_TIME}} ${{github.job}}/${{matrix.container.image}}${{matrix.container.version}} ${{github.workspace}}
-      - run: |
-            find ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/ -type f -name "test.log" -o -name "result.json"
-            cat ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/result.json
       - name: Container Output Logs 
         if: failure()
         run: |
