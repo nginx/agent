@@ -57,8 +57,19 @@ jobs:
       - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version-file: 'go.mod'
+      - name: Set Start Time
+        run: echo "START_TIME=$(date +"%Y-%m-%dT%H:%M:%S.%NZ")" >> ${GITHUB_ENV}
+      - name: Create Directory
+        run: mkdir -p ${{github.workspace}}/test/dashboard/logs/${{github.job}}/
+      - name: Start Promtail
+        uses: ./.github/actions/start-promtail
+        with:
+            loki-dashboard-url: ${{ secrets.LOKI_DASHBOARD_URL }}
       - name: Run Unit Tests
-        run: make unit-test
+        run: make unit-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/raw_logs.log && exit "${PIPESTATUS[0]}"
+      - name: Generate Test Results
+        if: always()
+        run: bash ./scripts/workflow/generate_results.sh ${{job.status}} ${{env.START_TIME}} ${{github.job}} ${{github.workspace}}
       - name: Upload Test Coverage
         uses: codecov/codecov-action@84508663e988701840491b86de86b666e8a86bed # v4.3.0
         with:
