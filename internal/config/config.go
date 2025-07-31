@@ -272,7 +272,11 @@ func addDefaultProcessors(collector *Collector) {
 }
 
 func addDefaultHostMetricsReceiver(collector *Collector) {
-	if host.NewInfo().IsContainer() {
+	isContainer, err := host.NewInfo().IsContainer()
+	if err != nil {
+		slog.Warn("Failed to get host info", "error", err)
+	}
+	if isContainer {
 		addDefaultContainerHostMetricsReceiver(collector)
 	} else {
 		addDefaultVMHostMetricsReceiver(collector)

@@ -9,9 +9,9 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
 	"regexp"
 	"strings"
@@ -72,11 +72,12 @@ var (
 //counterfeiter:generate . InfoInterface
 
 type (
+	// InfoInterface is an interface that defines methods to get information about the host or container.
 	InfoInterface interface {
-		IsContainer() bool
-		ResourceID(ctx context.Context) string
-		ContainerInfo(ctx context.Context) *v1.Resource_ContainerInfo
-		HostInfo(ctx context.Context) *v1.Resource_HostInfo
+		IsContainer() (bool, error)
+		ResourceID(ctx context.Context) (string, error)
+		ContainerInfo(ctx context.Context) (*v1.Resource_ContainerInfo, error)
+		HostInfo(ctx context.Context) (*v1.Resource_HostInfo, error)
 	}
 
 	Info struct {
@@ -104,7 +105,7 @@ func NewInfo() *Info {
 	}
 }
 
-func (i *Info) IsContainer() bool {
+func (i *Info) IsContainer() (bool, error) {
 	res, err, _ := singleflightGroup.Do(IsContainerKey, func() (interface{}, error) {
 		for _, filename := range i.containerSpecificFiles {
 			if _, err := os.Stat(filename); err == nil {
@@ -112,109 +113,125 @@ func (i *Info) IsContainer() bool {
 			}
 		}
 
-		return containsContainerReference(i.selfCgroupLocation), nil
+		return containsContainerReference(i.selfCgroupLocation)
 	})
-
 	if err != nil {
-		slog.Warn("Unable to determine if resource is a container or not", "error", err)
-		return false
+		return false, err
 	}
 
 	if result, ok := res.(bool); ok {
-		return result
+		return result, nil
 	}
 
-	return false
+	return false, nil
 }
 
-func (i *Info) ResourceID(ctx context.Context) string {
-	if i.IsContainer() {
+func (i *Info) ResourceID(ctx context.Context) (string, error) {
+	isContainer, _ := i.IsContainer()
+	if isContainer {
 		return i.containerID()
 	}
 
 	return i.hostID(ctx)
 }
 
-func (i *Info) ContainerInfo(ctx context.Context) *v1.Resource_ContainerInfo {
+func (i *Info) ContainerInfo(ctx context.Context) (*v1.Resource_ContainerInfo, error) {
+	var errs error
 	hostname, err := i.exec.Hostname()
 	if err != nil {
-		slog.WarnContext(ctx, "Unable to get hostname", "error", err)
+		errs = errors.Join(errs, errors.New("unable to get hostname -- "+err.Error()))
+	}
+	containerId, err := i.containerID()
+	if err != nil {
+		errs = errors.Join(errors.New("unable to get container id -- " + err.Error()))
+	}
+	releaseInfo, err := i.releaseInfo(ctx, i.osReleaseLocation)
+	if err != nil {
+		errs = errors.Join(errors.New("unable to get release info -- " + err.Error()))
 	}
 
 	return &v1.Resource_ContainerInfo{
 		ContainerInfo: &v1.ContainerInfo{
-			ContainerId: i.containerID(),
+			ContainerId: containerId,
 			Hostname:    hostname,
-			ReleaseInfo: i.releaseInfo(ctx, i.osReleaseLocation),
+			ReleaseInfo: releaseInfo,
 		},
-	}
+	}, errs
 }
 
-func (i *Info) HostInfo(ctx context.Context) *v1.Resource_HostInfo {
+func (i *Info) HostInfo(ctx context.Context) (*v1.Resource_HostInfo, error) {
 	hostname, err := i.exec.Hostname()
 	if err != nil {
-		slog.WarnContext(ctx, "Unable to get hostname", "error", err)
+		return &v1.Resource_HostInfo{}, errors.New("unable to get hostname -- " + err.Error())
+	}
+	hostID, err := i.hostID(ctx)
+	if err != nil {
+		return &v1.Resource_HostInfo{}, errors.New("unable to get host id -- " + err.Error())
+	}
+	releaseInfo, err := i.releaseInfo(ctx, i.osReleaseLocation)
+	if err != nil {
+		return &v1.Resource_HostInfo{}, errors.New("unable to get release info -- " + err.Error())
 	}
 
 	return &v1.Resource_HostInfo{
 		HostInfo: &v1.HostInfo{
-			HostId:      i.hostID(ctx),
+			HostId:      hostID,
 			Hostname:    hostname,
-			ReleaseInfo: i.releaseInfo(ctx, i.osReleaseLocation),
+			ReleaseInfo: releaseInfo,
 		},
-	}
+	}, nil
 }
 
-func containsContainerReference(cgroupFile string) bool {
+func containsContainerReference(cgroupFile string) (bool, error) {
+	var err error
 	data, err := os.ReadFile(cgroupFile)
 	if err != nil {
-		slog.Warn("Unable to check if cgroup file contains a container reference", "error", err)
-		return false
+		return false, errors.New("unable to check if cgroup file contains a container reference --" + err.Error())
 	}
 
 	scanner := bufio.NewScanner(bytes.NewReader(data))
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		if strings.Contains(line, k8sKind) || strings.Contains(line, docker) || strings.Contains(line, containerd) {
-			return true
+			return true, nil
 		}
 	}
 
-	return false
+	return false, nil
 }
 
-func (i *Info) containerID() string {
+// containerID returns the container ID of the current running environment.
+func (i *Info) containerID() (string, error) {
 	res, err, _ := singleflightGroup.Do(GetContainerIDKey, func() (interface{}, error) {
 		containerID, err := containerIDFromMountInfo(i.mountInfoLocation)
 		return uuid.NewMD5(uuid.NameSpaceDNS, []byte(containerID)).String(), err
 	})
-
 	if err != nil {
-		slog.Error("Could not get container ID", "error", err)
-		return ""
+		return "", errors.New("unable to get container ID -- " + err.Error())
 	}
 
 	if result, ok := res.(string); ok {
-		return result
+		return result, nil
 	}
 
-	return ""
+	return "", nil
 }
 
-// containerID returns the container ID of the current running environment.
+// containerIDFromMountInfo returns the container ID of the current running environment.
 // Supports cgroup v1 and v2. Reading "/proc/1/cpuset" would only work for cgroups v1
 // mountInfo is the path: "/proc/self/mountinfo"
 func containerIDFromMountInfo(mountInfo string) (string, error) {
+	var errs error
 	mInfoFile, err := os.Open(mountInfo)
 	defer func(f *os.File, fileName string) {
 		closeErr := f.Close()
 		if closeErr != nil {
-			slog.Error("Unable to close file", "file", fileName, "error", closeErr)
+			errs = errors.Join(err, errors.New("Unable to close file "+fileName+" -- error"+closeErr.Error()))
 		}
 	}(mInfoFile, mountInfo)
 
 	if err != nil {
-		return "", fmt.Errorf("could not read %s: %w", mountInfo, err)
+		return "", errors.Join(errs, fmt.Errorf("could not read %s: %w", mountInfo, err))
 	}
 
 	fileScanner := bufio.NewScanner(mInfoFile)
@@ -235,7 +252,7 @@ func containerIDFromMountInfo(mountInfo string) (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("container ID not found in %s", mountInfo)
+	return "", errors.Join(errs, fmt.Errorf("container ID not found in %s", mountInfo))
 }
 
 func containerIDFromPatterns(word string) string {
@@ -271,58 +288,57 @@ func containsContainerID(slices []string) bool {
 	return len(slices) >= 2 && len(slices[1]) == lengthOfContainerID
 }
 
-func (i *Info) hostID(ctx context.Context) string {
+func (i *Info) hostID(ctx context.Context) (string, error) {
 	res, err, _ := singleflightGroup.Do(GetSystemUUIDKey, func() (interface{}, error) {
 		var err error
 
 		hostID, err := i.exec.HostID(ctx)
 		if err != nil {
-			slog.WarnContext(ctx, "Unable to get host ID", "error", err)
-			return "", err
+			return "", errors.New("unable to get host id -- " + err.Error())
 		}
 
 		return uuid.NewMD5(uuid.Nil, []byte(hostID)).String(), err
 	})
-
 	if err != nil {
-		slog.WarnContext(ctx, "Unable to get host ID", "error", err)
-		return ""
+		return "", errors.New("unable to get host id -- " + err.Error())
 	}
 
 	if result, ok := res.(string); ok {
-		return result
+		return result, nil
 	}
 
-	return ""
+	return "", nil
 }
 
-func (i *Info) releaseInfo(ctx context.Context, osReleaseLocation string) (releaseInfo *v1.ReleaseInfo) {
-	hostReleaseInfo := i.exec.ReleaseInfo(ctx)
+func (i *Info) releaseInfo(ctx context.Context, osReleaseLocation string) (releaseInfo *v1.ReleaseInfo, err error) {
+	hostReleaseInfo, err := i.exec.ReleaseInfo(ctx)
+	if err != nil {
+		return hostReleaseInfo, errors.New("unable to get host release info -- " + err.Error())
+	}
 	osRelease, err := readOsRelease(osReleaseLocation)
 	if err != nil {
-		slog.WarnContext(ctx, "Unable to read from os release file", "error", err)
-
-		return hostReleaseInfo
+		return hostReleaseInfo, errors.New("unable to read os release info -- " + err.Error())
 	}
 
-	return mergeHostAndOsReleaseInfo(hostReleaseInfo, osRelease)
+	return mergeHostAndOsReleaseInfo(hostReleaseInfo, osRelease), nil
 }
 
 func readOsRelease(path string) (map[string]string, error) {
+	var errs error
 	f, err := os.Open(path)
 	defer func(f *os.File, fileName string) {
 		closeErr := f.Close()
 		if closeErr != nil {
-			slog.Error("Unable to close file", "file", fileName, "error", closeErr)
+			errs = errors.Join(err, closeErr)
 		}
 	}(f, path)
 	if err != nil {
-		return nil, fmt.Errorf("release file %s is unreadable: %w", path, err)
+		return nil, errors.Join(errs, fmt.Errorf("release file %s is unreadable: %w", path, err))
 	}
 
 	info, err := parseOsReleaseFile(f)
 	if err != nil {
-		return nil, fmt.Errorf("release file %s is unparsable: %w", path, err)
+		return nil, errors.Join(errs, fmt.Errorf("release file %s is unparsable: %w", path, err))
 	}
 
 	return info, nil

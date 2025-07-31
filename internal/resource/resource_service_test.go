@@ -211,17 +211,17 @@ func TestResourceService_GetResource(t *testing.T) {
 			mockInfo.ContainerInfoReturns(
 				&v1.Resource_ContainerInfo{
 					ContainerInfo: tc.expectedResource.GetContainerInfo(),
-				},
+				}, nil,
 			)
 		} else {
 			mockInfo.HostInfoReturns(
 				&v1.Resource_HostInfo{
 					HostInfo: tc.expectedResource.GetHostInfo(),
-				},
+				}, nil,
 			)
 		}
 
-		mockInfo.IsContainerReturns(tc.isContainer)
+		mockInfo.IsContainerReturns(tc.isContainer, nil)
 
 		resourceService := NewResourceService(ctx, types.AgentConfig())
 		resourceService.info = mockInfo

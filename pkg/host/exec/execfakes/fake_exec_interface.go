@@ -82,16 +82,18 @@ type FakeExecInterface struct {
 	processIDReturnsOnCall map[int]struct {
 		result1 int32
 	}
-	ReleaseInfoStub        func(context.Context) *v1.ReleaseInfo
+	ReleaseInfoStub        func(context.Context) (*v1.ReleaseInfo, error)
 	releaseInfoMutex       sync.RWMutex
 	releaseInfoArgsForCall []struct {
 		arg1 context.Context
 	}
 	releaseInfoReturns struct {
 		result1 *v1.ReleaseInfo
+		result2 error
 	}
 	releaseInfoReturnsOnCall map[int]struct {
 		result1 *v1.ReleaseInfo
+		result2 error
 	}
 	RunCmdStub        func(context.Context, string, ...string) (*bytes.Buffer, error)
 	runCmdMutex       sync.RWMutex
@@ -466,7 +468,7 @@ func (fake *FakeExecInterface) ProcessIDReturnsOnCall(i int, result1 int32) {
 	}{result1}
 }
 
-func (fake *FakeExecInterface) ReleaseInfo(arg1 context.Context) *v1.ReleaseInfo {
+func (fake *FakeExecInterface) ReleaseInfo(arg1 context.Context) (*v1.ReleaseInfo, error) {
 	fake.releaseInfoMutex.Lock()
 	ret, specificReturn := fake.releaseInfoReturnsOnCall[len(fake.releaseInfoArgsForCall)]
 	fake.releaseInfoArgsForCall = append(fake.releaseInfoArgsForCall, struct {
@@ -480,9 +482,9 @@ func (fake *FakeExecInterface) ReleaseInfo(arg1 context.Context) *v1.ReleaseInfo
 		return stub(arg1)
 	}
 	if specificReturn {
-		return ret.result1
+		return ret.result1, ret.result2
 	}
-	return fakeReturns.result1
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FakeExecInterface) ReleaseInfoCallCount() int {
@@ -491,7 +493,7 @@ func (fake *FakeExecInterface) ReleaseInfoCallCount() int {
 	return len(fake.releaseInfoArgsForCall)
 }
 
-func (fake *FakeExecInterface) ReleaseInfoCalls(stub func(context.Context) *v1.ReleaseInfo) {
+func (fake *FakeExecInterface) ReleaseInfoCalls(stub func(context.Context) (*v1.ReleaseInfo, error)) {
 	fake.releaseInfoMutex.Lock()
 	defer fake.releaseInfoMutex.Unlock()
 	fake.ReleaseInfoStub = stub
@@ -504,27 +506,30 @@ func (fake *FakeExecInterface) ReleaseInfoArgsForCall(i int) context.Context {
 	return argsForCall.arg1
 }
 
-func (fake *FakeExecInterface) ReleaseInfoReturns(result1 *v1.ReleaseInfo) {
+func (fake *FakeExecInterface) ReleaseInfoReturns(result1 *v1.ReleaseInfo, result2 error) {
 	fake.releaseInfoMutex.Lock()
 	defer fake.releaseInfoMutex.Unlock()
 	fake.ReleaseInfoStub = nil
 	fake.releaseInfoReturns = struct {
 		result1 *v1.ReleaseInfo
-	}{result1}
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *FakeExecInterface) ReleaseInfoReturnsOnCall(i int, result1 *v1.ReleaseInfo) {
+func (fake *FakeExecInterface) ReleaseInfoReturnsOnCall(i int, result1 *v1.ReleaseInfo, result2 error) {
 	fake.releaseInfoMutex.Lock()
 	defer fake.releaseInfoMutex.Unlock()
 	fake.ReleaseInfoStub = nil
 	if fake.releaseInfoReturnsOnCall == nil {
 		fake.releaseInfoReturnsOnCall = make(map[int]struct {
 			result1 *v1.ReleaseInfo
+			result2 error
 		})
 	}
 	fake.releaseInfoReturnsOnCall[i] = struct {
 		result1 *v1.ReleaseInfo
-	}{result1}
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeExecInterface) RunCmd(arg1 context.Context, arg2 string, arg3 ...string) (*bytes.Buffer, error) {

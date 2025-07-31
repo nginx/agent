@@ -89,10 +89,13 @@ func NewGrpcConnection(ctx context.Context, agentConfig *config.Config,
 
 	slog.InfoContext(ctx, "Dialing grpc server", "server_addr", serverAddr)
 
-	info := host.NewInfo()
-	resourceID := info.ResourceID(ctx)
-
 	var err error
+	info := host.NewInfo()
+	resourceID, err := info.ResourceID(ctx)
+	if err != nil {
+		slog.WarnContext(ctx, "Failed to get ResourceID from host info", "error", err.Error())
+	}
+
 	grpcConnection.mutex.Lock()
 	grpcConnection.conn, err = grpc.NewClient(serverAddr, DialOptions(agentConfig, commandConfig, resourceID)...)
 	grpcConnection.mutex.Unlock()

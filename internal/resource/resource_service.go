@@ -383,12 +383,23 @@ func (r *ResourceService) updateResourceInfo(ctx context.Context) {
 	r.resourceMutex.Lock()
 	defer r.resourceMutex.Unlock()
 
-	if r.info.IsContainer() {
-		r.resource.Info = r.info.ContainerInfo(ctx)
+	isContainer, err := r.info.IsContainer()
+	if err != nil {
+		slog.WarnContext(ctx, "Failed to check if resource is container", "error", err)
+	}
+
+	if isContainer {
+		r.resource.Info, err = r.info.ContainerInfo(ctx)
+		if err != nil {
+			slog.ErrorContext(ctx, "Failed to get container info", "error", err)
+		}
 		r.resource.ResourceId = r.resource.GetContainerInfo().GetContainerId()
 		r.resource.Instances = []*mpi.Instance{}
 	} else {
-		r.resource.Info = r.info.HostInfo(ctx)
+		r.resource.Info, err = r.info.HostInfo(ctx)
+		if err != nil {
+			slog.ErrorContext(ctx, "Failed to get host info", "error", err)
+		}
 		r.resource.ResourceId = r.resource.GetHostInfo().GetHostId()
 		r.resource.Instances = []*mpi.Instance{}
 	}
