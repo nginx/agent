@@ -277,7 +277,7 @@ func TestResolveLog(t *testing.T) {
 			logLevel:         "DEBUG",
 			logPath:          "./logs/nginx.log",
 			expectedLogPath:  "./logs/nginx.log",
-			expectedLogLevel: "debug",
+			expectedLogLevel: "DEBUG",
 		},
 	}
 
@@ -341,8 +341,6 @@ func TestResolveCollector(t *testing.T) {
 }
 
 func TestResolveCollectorLog(t *testing.T) {
-	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
-	viperInstance.SetDefault(CollectorLogLevelKey, DefCollectorLogLevel)
 	tests := []struct {
 		name             string
 		logLevel         string
@@ -357,7 +355,7 @@ func TestResolveCollectorLog(t *testing.T) {
 			logPath:          "/tmp/collector.log",
 			agentLogLevel:    "debug",
 			expectedLogPath:  "/tmp/collector.log",
-			expectedLogLevel: "debug",
+			expectedLogLevel: "DEBUG",
 		},
 		{
 			name:             "Test 2: Agent Log Level is Warn",
@@ -365,7 +363,7 @@ func TestResolveCollectorLog(t *testing.T) {
 			logPath:          "/tmp/collector.log",
 			agentLogLevel:    "warn",
 			expectedLogPath:  "/tmp/collector.log",
-			expectedLogLevel: "INFO",
+			expectedLogLevel: "WARN",
 		},
 		{
 			name:             "Test 3: OTel Log Level Set In Config",
@@ -379,6 +377,7 @@ func TestResolveCollectorLog(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 			viperInstance.Set(CollectorLogPathKey, test.logPath)
 			viperInstance.Set(LogLevelKey, test.agentLogLevel)
 

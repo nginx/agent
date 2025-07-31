@@ -794,11 +794,11 @@ func resolveLog() *Log {
 
 	if !slices.Contains(validLevels, logLevel) {
 		slog.Warn("Invalid log level set, defaulting to 'info'", "log_level", logLevel)
-		logLevel = "info"
+		viperInstance.Set(LogLevelKey, "info")
 	}
 
 	return &Log{
-		Level: logLevel,
+		Level: viperInstance.GetString(LogLevelKey),
 		Path:  viperInstance.GetString(LogPathKey),
 	}
 }
@@ -1176,16 +1176,14 @@ func isHealthExtensionSet() bool {
 }
 
 func resolveCollectorLog() *Log {
-	log := &Log{
+	if !viperInstance.IsSet(CollectorLogLevelKey) {
+		viperInstance.Set(CollectorLogLevelKey, strings.ToUpper(viperInstance.GetString(LogLevelKey)))
+	}
+
+	return &Log{
 		Level: viperInstance.GetString(CollectorLogLevelKey),
 		Path:  viperInstance.GetString(CollectorLogPathKey),
 	}
-
-	if !viperInstance.IsSet(CollectorLogLevelKey) && strings.ToLower(viperInstance.GetString(LogLevelKey)) != "warn" {
-		log.Level = viperInstance.GetString(LogLevelKey)
-	}
-
-	return log
 }
 
 func resolveCommand() *Command {
