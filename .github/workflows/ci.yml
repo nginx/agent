@@ -234,11 +234,13 @@ jobs:
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           CONTAINER_NGINX_IMAGE_REGISTRY="${{ env.NGINX_OSS_REGISTRY }}" TAG="${{ matrix.container.version }}-${{ matrix.container.image }}" OS_RELEASE="${{ matrix.container.release }}"\
             make official-image-integration-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/raw_logs.log && exit "${PIPESTATUS[0]}"
-      - run: cat ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/raw_logs.log
       - name: Generate Test Results
         if: always()
         run: bash ./scripts/workflow/generate_results.sh ${{job.status}} ${{env.START_TIME}} ${{github.job}}/${{matrix.container.image}}${{matrix.container.version}} ${{github.workspace}}
-      - run: find ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/ -type f -name "test.log" -o -name "result.json"
+      - run: |
+            find ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/ -type f -name "test.log" -o -name "result.json"
+            cat ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/test.log
+            cat ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/result.json
       - name: Container Output Logs 
         if: failure()
         run: |
