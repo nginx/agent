@@ -25,7 +25,7 @@ scrape_configs:
                 - localhost
             labels:
                 systest_job: test-results
-                __path__: /var/log/**/result.json
+                __path__: /var/log/test-results/**/result.json
       pipeline_stages:
           - json:
                 expressions:
@@ -82,7 +82,7 @@ scrape_configs:
             - localhost
           labels:
             systest_job: test-logs
-            __path__: /var/log/**/test.log
+            __path__: /var/log/test-logs/**/test.log
       pipeline_stages:
         - json:
             expressions:
