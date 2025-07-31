@@ -239,7 +239,6 @@ jobs:
         run: bash ./scripts/workflow/generate_results.sh ${{job.status}} ${{env.START_TIME}} ${{github.job}}/${{matrix.container.image}}${{matrix.container.version}} ${{github.workspace}}
       - run: |
             find ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/ -type f -name "test.log" -o -name "result.json"
-            cat ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/test.log
             cat ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/result.json
       - name: Container Output Logs 
         if: failure()
