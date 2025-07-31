@@ -1,5 +1,9 @@
 name: Start Promtail
 description: Start promtail in a Docker container to send test results to loki
+inputs:
+    loki-dashboard-url:
+        description: "URL of the Loki dashboard to send the logs"
+        required: true
 runs:
     using: "composite"
     steps:
@@ -20,7 +24,7 @@ runs:
                -e GITHUB_HEAD_REF=${{ github.head_ref }} \
                -e GITHUB_SHA=${{ github.sha }} \
                -e GITHUB_ACTOR=${{ github.actor }} \
-               -e LOKI_DASHBOARD_URL=${{ secrets.LOKI_DASHBOARD_URL }} \
+               -e LOKI_DASHBOARD_URL=${{ inputs.loki-dashboard-url }} \
                grafana/promtail:3.4.4 \
                -config.file=/etc/promtail/config.yaml \
                -config.expand-env=true

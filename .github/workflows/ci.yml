@@ -167,6 +167,8 @@ jobs:
             run: mkdir -p ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/
           - name: Start Promtail
             uses: ./.github/actions/start-promtail
+            with:
+                loki-dashboard-url: ${{ secrets.LOKI_DASHBOARD_URL }}
           - name: Run Integration Tests
             run: |
                 go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
@@ -229,6 +231,8 @@ jobs:
         run: mkdir -p ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/
       - name: Start Promtail
         uses: ./.github/actions/start-promtail
+        with:
+            loki-dashboard-url: ${{ secrets.LOKI_DASHBOARD_URL }}
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
@@ -305,6 +309,8 @@ jobs:
             run: mkdir -p ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/
           - name: Start Promtail
             uses: ./.github/actions/start-promtail
+            with:
+                loki-dashboard-url: ${{ secrets.LOKI_DASHBOARD_URL }}
           - name: Run Integration Tests
             run: |
                 go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
