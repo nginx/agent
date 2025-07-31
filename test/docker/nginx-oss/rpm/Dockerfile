@@ -8,7 +8,7 @@ ARG OS_VERSION
 ARG OS_RELEASE
 
 WORKDIR /agent
-COPY ./ /agent
+COPY ./build /agent/build
 COPY $ENTRY_POINT /agent/entrypoint.sh
 
 RUN if [ "$OS_VERSION" = "7" ] && [ "$OS_RELEASE" = "oraclelinux" ]; \

@@ -6,11 +6,14 @@ import (
 	"os"
 	"testing"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/nginx/agent/test/integration/utils"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestFeatures_NginxCountingEnabled(t *testing.T) {
+	log.Info("testing nginx counting enabled")
 	enabledFeatureLogs := []string{
 		"level=info msg=\"NGINX Counter initializing", "level=info msg=\"MetricsThrottle initializing\"", "level=info msg=\"DataPlaneStatus initializing\"",
 		"level=info msg=\"OneTimeRegistration initializing\"", "level=info msg=\"Metrics initializing\"",
@@ -56,9 +59,11 @@ func TestFeatures_NginxCountingEnabled(t *testing.T) {
 	for _, logLine := range disabledFeatureLogs {
 		assert.NotContains(t, string(agentLogContent), logLine, "agent log file contains disabled feature log")
 	}
+	log.Info("finished testing nginx counting enabled")
 }
 
 func TestFeatures_MetricsEnabled(t *testing.T) {
+	log.Info("testing metrics enabled")
 	enabledFeatureLogs := []string{"level=info msg=\"Metrics initializing\"", "level=info msg=\"MetricsThrottle initializing\"", "level=info msg=\"DataPlaneStatus initializing\""}
 	disabledFeatureLogs := []string{"level=info msg=\"OneTimeRegistration initializing\"", "level=info msg=\"Events initializing\"", "level=info msg=\"Agent API initializing\""}
 
@@ -101,9 +106,11 @@ func TestFeatures_MetricsEnabled(t *testing.T) {
 	for _, logLine := range disabledFeatureLogs {
 		assert.NotContains(t, string(agentLogContent), logLine, "agent log file contains disabled feature log")
 	}
+	log.Info("finished testing metrics enabled")
 }
 
 func TestFeatures_ConfigEnabled(t *testing.T) {
+	log.Info("testing config enabled")
 	enabledFeatureLogs := []string{"level=info msg=\"DataPlaneStatus initializing\""}
 	disabledFeatureLogs := []string{"level=info msg=\"Events initializing\"", "level=info msg=\"Agent API initializing\"", "level=info msg=\"Metrics initializing\"", "level=info msg=\"MetricsThrottle initializing\""}
 
@@ -146,4 +153,5 @@ func TestFeatures_ConfigEnabled(t *testing.T) {
 	for _, logLine := range disabledFeatureLogs {
 		assert.NotContains(t, string(agentLogContent), logLine, "agent log file contains disabled feature log")
 	}
+	log.Info("finished testing config enabled")
 }
