@@ -35,7 +35,7 @@ $(PACKAGES_DIR):
 	@mkdir -p $(PACKAGES_DIR)/deb && mkdir -p $(PACKAGES_DIR)/rpm && mkdir -p $(PACKAGES_DIR)/apk
 
 .PHONY: package
-package: $(PACKAGES_DIR) #### Create final packages for all supported distros
+package: gpg-key $(PACKAGES_DIR) #### Create final packages for all supported distros
 	# Create deb packages
 	@for arch in $(DEB_ARCHS); do \
 		GOWORK=off CGO_ENABLED=0 GOARCH=$${arch} GOOS=linux go build -pgo=auto -ldflags=${LDFLAGS} -o $(BINARY_PATH) $(PROJECT_DIR)/$(PROJECT_FILE); \
