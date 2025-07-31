@@ -80,12 +80,12 @@ jobs:
           find ${{inputs.pkgRepo}}/nginx-agent | grep -e "nginx-agent[_-]${{inputs.pkgVersion}}"
 
       - name: GitHub Upload
-        continue-on-error: true
         if: ${{ needs.vars.outputs.github_release == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # clobber overwrites existing assets of the same name
         run: |
+          gh release list
           gh release upload --clobber v${{ inputs.pkgVersion }} \
             $(find ${{inputs.pkgRepo}}/nginx-agent | grep -e "nginx-agent[_-]${{inputs.pkgVersion}}")
 
