@@ -8,7 +8,7 @@ package exec
 import (
 	"bytes"
 	"context"
-	"log/slog"
+	"errors"
 	"os"
 	"os/exec"
 	"syscall"
@@ -27,7 +27,7 @@ type ExecInterface interface {
 	KillProcess(pid int32) error
 	Hostname() (string, error)
 	HostID(ctx context.Context) (string, error)
-	ReleaseInfo(ctx context.Context) (releaseInfo *v1.ReleaseInfo)
+	ReleaseInfo(ctx context.Context) (releaseInfo *v1.ReleaseInfo, err error)
 }
 
 type Exec struct{}
@@ -67,11 +67,10 @@ func (*Exec) HostID(ctx context.Context) (string, error) {
 	return host.HostIDWithContext(ctx)
 }
 
-func (*Exec) ReleaseInfo(ctx context.Context) (releaseInfo *v1.ReleaseInfo) {
+func (*Exec) ReleaseInfo(ctx context.Context) (*v1.ReleaseInfo, error) {
 	hostInfo, err := host.InfoWithContext(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "Could not read release information for host", "error", err)
-		return &v1.ReleaseInfo{}
+		return &v1.ReleaseInfo{}, errors.New("Could not read release information for host error=" + err.Error())
 	}
 
 	return &v1.ReleaseInfo{
@@ -80,5 +79,5 @@ func (*Exec) ReleaseInfo(ctx context.Context) (releaseInfo *v1.ReleaseInfo) {
 		Codename:  hostInfo.OS,
 		Name:      hostInfo.PlatformFamily,
 		Id:        hostInfo.Platform,
-	}
+	}, nil
 }
