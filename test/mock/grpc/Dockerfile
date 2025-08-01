@@ -1,4 +1,4 @@
-FROM debian:buster-slim
+FROM debian:buster-slim@sha256:bb3dc79fddbca7e8903248ab916bb775c96ec61014b3d02b4f06043b604726dc
 
 WORKDIR /mock-management-plane-grpc
 COPY ./build/mock-management-plane-grpc ./
