@@ -1259,7 +1259,7 @@ func createConfig() *Config {
 				Logs: map[string]*Pipeline{
 					"default": {
 						Receivers:  []string{"tcplog/nginx_app_protect"},
-						Processors: []string{"logsgzip/default", "batch/default_logs"},
+						Processors: []string{"syslog/default", "logsgzip/default", "batch/default_logs"},
 						Exporters:  []string{"otlp/default"},
 					},
 				},
