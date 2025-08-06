@@ -27,18 +27,22 @@ jobs:
   set-vars:
     name: Set Variables
     runs-on: ubuntu-22.04
-    if: ${{ github.event.pull_request.head.repo.fork }}
     outputs:
       goproxy: ${{ steps.set-vars.outputs.goproxy }}
     steps:
       - name: Set Variables
-        run: echo "GOPROXY=direct" >> $GITHUB_ENV
-
+        run:
+          |
+          if [[ -z  ${{ github.event.pull_request.head.repo.fork }} ]]; then
+            echo "GOPROXY=${{ env.GOPROXY }}" >> $GITHUB_ENV
+          else
+            echo "GOPROXY=direct" >> $GITHUB_ENV
+          fi
   lint:
     name: Lint
     runs-on: ubuntu-22.04
     env:
-      GOPROXY: ${{ needs.set-vars.outputs.goproxy || env.GOPROXY }}
+      GOPROXY: ${{ needs.set-vars.outputs.goproxy }}
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
@@ -53,7 +57,7 @@ jobs:
       name: Unit Tests
       runs-on: ubuntu-22.04
       env:
-        GOPROXY: ${{ needs.set-vars.outputs.goproxy || env.GOPROXY }}
+        GOPROXY: ${{ needs.set-vars.outputs.goproxy }}
       steps:
           - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
           - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
@@ -74,7 +78,7 @@ jobs:
       name: Unit tests with race condition detection
       runs-on: ubuntu-22.04
       env:
-        GOPROXY: ${{ needs.set-vars.outputs.goproxy || env.GOPROXY }}
+        GOPROXY: ${{ needs.set-vars.outputs.goproxy }}
       steps:
           - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
           - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
@@ -87,7 +91,7 @@ jobs:
       name: Build Unsigned Snapshot
       runs-on: ubuntu-22.04
       env:
-        GOPROXY: ${{ needs.set-vars.outputs.goproxy || env.GOPROXY }}
+        GOPROXY: ${{ needs.set-vars.outputs.goproxy }}
       steps:
           - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
           - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
@@ -111,7 +115,7 @@ jobs:
     needs: build-unsigned-snapshot
     runs-on: ubuntu-22.04
     env:
-      GOPROXY: ${{ needs.set-vars.outputs.goproxy || env.GOPROXY }}
+      GOPROXY: ${{ needs.set-vars.outputs.goproxy }}
     strategy:
       matrix:
         container:
@@ -234,7 +238,7 @@ jobs:
     name: Performance Tests
     runs-on: ubuntu-22.04
     env:
-      GOPROXY: ${{ needs.set-vars.outputs.goproxy || env.GOPROXY }}
+      GOPROXY: ${{ needs.set-vars.outputs.goproxy }}
     permissions:
       contents: write
     steps:
