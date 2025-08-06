@@ -326,12 +326,12 @@ func (i *Info) releaseInfo(ctx context.Context, osReleaseLocation string) (relea
 func readOsRelease(path string) (map[string]string, error) {
 	var errs error
 	f, err := os.Open(path)
-	defer func(f *os.File, fileName string) {
+	defer func(f *os.File) {
 		closeErr := f.Close()
 		if closeErr != nil {
 			errs = errors.Join(err, closeErr)
 		}
-	}(f, path)
+	}(f)
 	if err != nil {
 		return nil, errors.Join(errs, fmt.Errorf("release file %s is unreadable: %w", path, err))
 	}

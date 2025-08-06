@@ -529,8 +529,8 @@ func TestInfo_ContainerInfo(t *testing.T) {
 			info.exec = execMock
 			info.osReleaseLocation = "/non/existent"
 
-			containerInfo, err := info.ContainerInfo(ctx)
-			if err != nil {
+			containerInfo, containerErr := info.ContainerInfo(ctx)
+			if containerErr != nil {
 				t.Logf("error %v", err)
 			}
 
