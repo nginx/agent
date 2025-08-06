@@ -20,18 +20,20 @@ permissions:
 
 env:
   NFPM_VERSION: 'v2.35.3'
-  GOPROXY: "https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@azr.artifactory.f5net.com/artifactory/api/go/f5-nginx-go-dev"
+  GOPROXY_DEV: "azr.artifactory.f5net.com/artifactory/api/go/f5-nginx-go-dev"
+  GOPROXY: "direct"
 
 jobs:
-  set-vars:
+
+  vars:
+    name: Set Workflow Variables
     runs-on: ubuntu-22.04
+    if: ${{ ! github.event.pull_request.head.repo.fork }}
     steps:
-      - name: Set Variables
+      - name: Set GOPROXY
         run: |
-          if  [[ -z ${{ secrets.ARTIFACTORY_USER }} ]] || 
-              [[ -z ${{ secrets.ARTIFACTORY_TOKEN }} ]] ||
-              ${{ github.event.pull_request.head.repo.fork }}; then
-          echo "GOPROXY=direct" >> $GITHUB_ENV
+          if [[ ! -z ${{ secrets.ARTIFACTORY_USER }} ]] && [[ ! -z ${{ secrets.ARTIFACTORY_TOKEN }} ]]; then
+            echo "GOPROXY=https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@${{ env.GOPROXY_DEV }}" >> $GITHUB_ENV
           fi
 
   lint:
