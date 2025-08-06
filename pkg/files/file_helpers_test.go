@@ -168,7 +168,7 @@ func TestGenerateHash(t *testing.T) {
 	}
 }
 
-func TestConvertIpBytes(t *testing.T) {
+func TestConvertIpToString(t *testing.T) {
 	tests := []struct {
 		input    []net.IP
 		expected []string
@@ -176,13 +176,13 @@ func TestConvertIpBytes(t *testing.T) {
 		{
 			input: []net.IP{net.IPv4(192, 168, 0, 1), net.IPv4(10, 0, 0, 1)},
 			expected: []string{
-				"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xc0\xa8\x00\x01",
-				"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\n\x00\x00\x01",
+				"192.168.0.1",
+				"10.0.0.1",
 			},
 		},
 		{
 			input:    []net.IP{net.ParseIP("2001:0db8::68")},
-			expected: []string{" \x01\r\xb8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h"},
+			expected: []string{"2001:db8::68"},
 		},
 		{
 			input:    []net.IP{},
@@ -191,7 +191,7 @@ func TestConvertIpBytes(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		result := convertIPBytes(test.input)
+		result := convertIPToString(test.input)
 		for i := range result {
 			assert.Equal(t, test.expected[i], result[i])
 		}

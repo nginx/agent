@@ -365,13 +365,13 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 			nginxParser := instancefakes.FakeNginxConfigParser{}
 
 			nginxParser.ParseReturns(&model.NginxConfigContext{
-				StubStatus:      &model.APIDetails{},
-				PlusAPI:         &model.APIDetails{},
-				InstanceID:      test.instanceID,
-				Files:           nil,
-				AccessLogs:      nil,
-				ErrorLogs:       nil,
-				NAPSysLogServer: "",
+				StubStatus:       &model.APIDetails{},
+				PlusAPI:          &model.APIDetails{},
+				InstanceID:       test.instanceID,
+				Files:            nil,
+				AccessLogs:       nil,
+				ErrorLogs:        nil,
+				NAPSysLogServers: []string{},
 			}, nil)
 
 			resourceService := NewResourceService(ctx, types.AgentConfig())

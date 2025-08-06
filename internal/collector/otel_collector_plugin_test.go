@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"net"
 	"path/filepath"
 	"testing"
 
@@ -738,7 +739,7 @@ func TestCollector_updateNginxAppProtectTcplogReceivers(t *testing.T) {
 	require.NoError(t, err)
 
 	nginxConfigContext := &model.NginxConfigContext{
-		NAPSysLogServer: "localhost:151",
+		NAPSysLogServers: []string{"localhost:15632"},
 	}
 
 	assert.Empty(t, conf.Collector.Receivers.TcplogReceivers)
@@ -748,7 +749,7 @@ func TestCollector_updateNginxAppProtectTcplogReceivers(t *testing.T) {
 
 		assert.True(tt, tcplogReceiverAdded)
 		assert.Len(tt, conf.Collector.Receivers.TcplogReceivers, 1)
-		assert.Equal(tt, "localhost:151", conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].ListenAddress)
+		assert.Equal(tt, "localhost:15632", conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].ListenAddress)
 		assert.Len(tt, conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].Operators, 6)
 	})
 
@@ -758,7 +759,7 @@ func TestCollector_updateNginxAppProtectTcplogReceivers(t *testing.T) {
 		tcplogReceiverAdded := collector.updateNginxAppProtectTcplogReceivers(nginxConfigContext)
 		assert.False(t, tcplogReceiverAdded)
 		assert.Len(t, conf.Collector.Receivers.TcplogReceivers, 1)
-		assert.Equal(t, "localhost:151", conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].ListenAddress)
+		assert.Equal(t, "localhost:15632", conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].ListenAddress)
 		assert.Len(t, conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].Operators, 6)
 	})
 
@@ -771,15 +772,83 @@ func TestCollector_updateNginxAppProtectTcplogReceivers(t *testing.T) {
 	t.Run("Test 4: NewCollector tcplogReceiver added and deleted another", func(tt *testing.T) {
 		tcplogReceiverDeleted := collector.updateNginxAppProtectTcplogReceivers(
 			&model.NginxConfigContext{
-				NAPSysLogServer: "localhost:152",
+				NAPSysLogServers: []string{"localhost:1555"},
 			},
 		)
 
 		assert.True(t, tcplogReceiverDeleted)
 		assert.Len(t, conf.Collector.Receivers.TcplogReceivers, 1)
-		assert.Equal(t, "localhost:152", conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].ListenAddress)
+		assert.Equal(t, "localhost:1555", conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].ListenAddress)
 		assert.Len(t, conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].Operators, 6)
 	})
+}
+
+func TestCollector_findAvailableSyslogServers(t *testing.T) {
+	conf := types.OTelConfig(t)
+	conf.Collector.Log.Path = ""
+	conf.Collector.Processors.Batch = nil
+	conf.Collector.Processors.Attribute = nil
+	conf.Collector.Processors.Resource = nil
+	conf.Collector.Processors.LogsGzip = nil
+	collector, err := NewCollector(conf)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name                    string
+		expectedSyslogServer    string
+		previousNAPSysLogServer string
+		syslogServers           []string
+		portInUse               bool
+	}{
+		{
+			name:                    "Test 1: port available",
+			expectedSyslogServer:    "localhost:15632",
+			previousNAPSysLogServer: "",
+			syslogServers:           []string{"localhost:15632"},
+			portInUse:               false,
+		},
+		{
+			name:                    "Test 2: port in use",
+			expectedSyslogServer:    "",
+			previousNAPSysLogServer: "",
+			syslogServers:           []string{"localhost:15632"},
+			portInUse:               true,
+		},
+		{
+			name:                    "Test 3: syslog server already configured",
+			expectedSyslogServer:    "localhost:15632",
+			previousNAPSysLogServer: "localhost:15632",
+			syslogServers:           []string{"localhost:15632"},
+			portInUse:               false,
+		},
+		{
+			name:                    "Test 4: new syslog server",
+			expectedSyslogServer:    "localhost:15632",
+			previousNAPSysLogServer: "localhost:1122",
+			syslogServers:           []string{"localhost:15632"},
+			portInUse:               false,
+		},
+		{
+			name:                    "Test 5: port in use find next server",
+			expectedSyslogServer:    "localhost:1122",
+			previousNAPSysLogServer: "",
+			syslogServers:           []string{"localhost:15632", "localhost:1122"},
+			portInUse:               true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			if test.portInUse {
+				ln, listenError := net.Listen("tcp", "localhost:15632")
+				require.NoError(t, listenError)
+				defer ln.Close()
+			}
+
+			actual := collector.findAvailableSyslogServers(test.syslogServers)
+			assert.Equal(tt, test.expectedSyslogServer, actual)
+		})
+	}
 }
 
 func createFakeCollector() *typesfakes.FakeCollectorInterface {
