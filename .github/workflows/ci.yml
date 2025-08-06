@@ -23,9 +23,22 @@ env:
   GOPROXY: "https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@azr.artifactory.f5net.com/artifactory/api/go/f5-nginx-go-dev"
 
 jobs:
+
+  set-vars:
+    name: Set Variables
+    runs-on: ubuntu-22.04
+    if: ${{ github.event.pull_request.head.repo.fork }}
+    output:
+      goproxy: ${{ steps.set-vars.outputs.goproxy }}
+    steps:
+      - name: Set Variables
+        run: |
+          echo "GOPROXY=direct" >> $GITHUB_ENV
   lint:
     name: Lint
     runs-on: ubuntu-22.04
+    env:
+      GOPROXY: ${{ needs.set-vars.outputs.goproxy || env.GOPROXY }}
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
@@ -39,6 +52,8 @@ jobs:
   unit-test:
       name: Unit Tests
       runs-on: ubuntu-22.04
+      env:
+        GOPROXY: ${{ needs.set-vars.outputs.goproxy || env.GOPROXY }}
       steps:
           - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
           - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
@@ -58,6 +73,8 @@ jobs:
   race-condition-test:
       name: Unit tests with race condition detection
       runs-on: ubuntu-22.04
+      env:
+        GOPROXY: ${{ needs.set-vars.outputs.goproxy || env.GOPROXY }}
       steps:
           - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
           - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
@@ -69,6 +86,8 @@ jobs:
   build-unsigned-snapshot:
       name: Build Unsigned Snapshot
       runs-on: ubuntu-22.04
+      env:
+        GOPROXY: ${{ needs.set-vars.outputs.goproxy || env.GOPROXY }}
       steps:
           - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
           - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
@@ -91,6 +110,8 @@ jobs:
     name: Integration Tests
     needs: build-unsigned-snapshot
     runs-on: ubuntu-22.04
+    env:
+      GOPROXY: ${{ needs.set-vars.outputs.goproxy || env.GOPROXY }}
     strategy:
       matrix:
         container:
@@ -212,6 +233,8 @@ jobs:
   performance-tests:
     name: Performance Tests
     runs-on: ubuntu-22.04
+    env:
+      GOPROXY: ${{ needs.set-vars.outputs.goproxy || env.GOPROXY }}
     permissions:
       contents: write
     steps:
