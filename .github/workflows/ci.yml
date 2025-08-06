@@ -28,12 +28,12 @@ jobs:
     name: Set Variables
     runs-on: ubuntu-22.04
     if: ${{ github.event.pull_request.head.repo.fork }}
-    output:
+    outputs:
       goproxy: ${{ steps.set-vars.outputs.goproxy }}
     steps:
       - name: Set Variables
-        run: |
-          echo "GOPROXY=direct" >> $GITHUB_ENV
+        run: echo "GOPROXY=direct" >> $GITHUB_ENV
+
   lint:
     name: Lint
     runs-on: ubuntu-22.04
