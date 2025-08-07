@@ -49,8 +49,7 @@ const (
 
 type (
 	NginxConfigParser struct {
-		agentConfig             *config.Config
-		previousNAPSysLogServer string
+		agentConfig *config.Config
 	}
 )
 
@@ -68,8 +67,7 @@ type (
 
 func NewNginxConfigParser(agentConfig *config.Config) *NginxConfigParser {
 	return &NginxConfigParser{
-		agentConfig:             agentConfig,
-		previousNAPSysLogServer: "",
+		agentConfig: agentConfig,
 	}
 }
 
@@ -125,6 +123,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 			Listen:   "",
 			Location: "",
 		},
+		NAPSysLogServers: make([]string, 0),
 	}
 
 	rootDir := filepath.Dir(instance.GetInstanceRuntime().GetConfigPath())
@@ -205,11 +204,11 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 		}
 
 		if len(napSyslogServersFound) > 0 {
-			syslogServer := ncp.findAvailableSyslogServers(ctx, napSyslogServersFound)
-			if syslogServer != "" {
-				nginxConfigContext.NAPSysLogServer = syslogServer
-				ncp.previousNAPSysLogServer = syslogServer
+			var napSyslogServer []string
+			for server := range napSyslogServersFound {
+				napSyslogServer = append(napSyslogServer, server)
 			}
+			nginxConfigContext.NAPSysLogServers = napSyslogServer
 		} else if napEnabled {
 			slog.WarnContext(ctx, "Could not find available local NGINX App Protect syslog server. "+
 				"Security violations will not be collected.")
@@ -224,31 +223,6 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 	}
 
 	return nginxConfigContext, nil
-}
-
-func (ncp *NginxConfigParser) findAvailableSyslogServers(ctx context.Context, napSyslogServers map[string]bool) string {
-	if ncp.previousNAPSysLogServer != "" {
-		if _, ok := napSyslogServers[ncp.previousNAPSysLogServer]; ok {
-			return ncp.previousNAPSysLogServer
-		}
-	}
-
-	for napSyslogServer := range napSyslogServers {
-		ln, err := net.Listen("tcp", napSyslogServer)
-		if err != nil {
-			slog.DebugContext(ctx, "NAP syslog server is not reachable", "address", napSyslogServer,
-				"error", err)
-
-			continue
-		}
-		ln.Close()
-
-		slog.DebugContext(ctx, "Found valid NAP syslog server", "address", napSyslogServer)
-
-		return napSyslogServer
-	}
-
-	return ""
 }
 
 func (ncp *NginxConfigParser) findLocalSysLogServers(sysLogServer string) string {

@@ -89,7 +89,7 @@ func FileMetaWithCertificate(filePath string) (*mpi.FileMeta, error) {
 			},
 			Sans: &mpi.SubjectAlternativeNames{
 				DnsNames:    loadedCert.DNSNames,
-				IpAddresses: convertIPBytes(loadedCert.IPAddresses),
+				IpAddresses: convertIPToString(loadedCert.IPAddresses),
 			},
 			Dates: &mpi.CertificateDates{
 				NotBefore: loadedCert.NotBefore.Unix(),
@@ -153,14 +153,14 @@ func ConvertToMapOfFiles(files []*mpi.File) map[string]*mpi.File {
 	return filesMap
 }
 
-func convertIPBytes(ips []net.IP) []string {
-	stringArray := make([]string, len(ips))
+func convertIPToString(ips []net.IP) []string {
+	ipArray := make([]string, len(ips))
 
-	for i, byteArray := range ips {
-		stringArray[i] = string(byteArray)
+	for i, ip := range ips {
+		ipArray[i] = ip.String()
 	}
 
-	return stringArray
+	return ipArray
 }
 
 func convertX509SignatureAlgorithm(alg x509.SignatureAlgorithm) mpi.SignatureAlgorithm {
