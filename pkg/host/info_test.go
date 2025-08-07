@@ -530,13 +530,15 @@ func TestInfo_ContainerInfo(t *testing.T) {
 			info.osReleaseLocation = "/non/existent"
 
 			containerInfo, containerErr := info.ContainerInfo(ctx)
-			if containerErr != nil {
-				t.Logf("error %v", err)
+			if test.expectContainerID != "" {
+				require.NoError(tt, containerErr)
+				assert.Equal(tt, test.expectContainerID, containerInfo.ContainerInfo.GetContainerId())
+				assert.Equal(tt, test.expectHostname, containerInfo.ContainerInfo.GetHostname())
+				assert.Equal(tt, releaseInfo, containerInfo.ContainerInfo.GetReleaseInfo())
+			} else {
+				require.Error(tt, containerErr)
+				assert.Nil(tt, containerInfo)
 			}
-
-			assert.Equal(tt, test.expectContainerID, containerInfo.ContainerInfo.GetContainerId())
-			assert.Equal(tt, test.expectHostname, containerInfo.ContainerInfo.GetHostname())
-			assert.Equal(tt, releaseInfo, containerInfo.ContainerInfo.GetReleaseInfo())
 		})
 	}
 }

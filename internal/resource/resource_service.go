@@ -392,6 +392,7 @@ func (r *ResourceService) updateResourceInfo(ctx context.Context) {
 		r.resource.Info, err = r.info.ContainerInfo(ctx)
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to get container info", "error", err)
+			return
 		}
 		r.resource.ResourceId = r.resource.GetContainerInfo().GetContainerId()
 		r.resource.Instances = []*mpi.Instance{}
@@ -399,6 +400,7 @@ func (r *ResourceService) updateResourceInfo(ctx context.Context) {
 		r.resource.Info, err = r.info.HostInfo(ctx)
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to get host info", "error", err)
+			return
 		}
 		r.resource.ResourceId = r.resource.GetHostInfo().GetHostId()
 		r.resource.Instances = []*mpi.Instance{}

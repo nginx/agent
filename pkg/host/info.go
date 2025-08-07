@@ -20,7 +20,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"golang.org/x/sync/singleflight"
 )
 
 const (
@@ -44,15 +43,9 @@ const (
 	codeName  = "VERSION_CODENAME"
 	id        = "ID"
 	name      = "NAME"
-
-	IsContainerKey    = "IsContainer"
-	GetContainerIDKey = "GetContainerID"
-	GetSystemUUIDKey  = "GetSystemUUIDKey"
 )
 
 var (
-	singleflightGroup = &singleflight.Group{}
-
 	// example: /docker/f244832c5a58377c3f1c7581b311c5bd8479808741f3e912d8bea8afe6431cb4
 	basePattern = regexp.MustCompile("/([a-f0-9]{64})$")
 	// nolint: lll
@@ -91,6 +84,8 @@ type (
 	}
 )
 
+// NewInfo creates and returns a new Info instance with default settings for container detection
+// and operating system information retrieval.
 func NewInfo() *Info {
 	return &Info{
 		containerSpecificFiles: []string{
@@ -105,27 +100,22 @@ func NewInfo() *Info {
 	}
 }
 
+// IsContainer determines if the current environment is running inside a container.
+// It checks for container-specific files and container references in cgroup.
+// Returns true if running in a container, false otherwise.
 func (i *Info) IsContainer() (bool, error) {
-	res, err, _ := singleflightGroup.Do(IsContainerKey, func() (interface{}, error) {
-		for _, filename := range i.containerSpecificFiles {
-			if _, err := os.Stat(filename); err == nil {
-				return true, nil
-			}
+	for _, filename := range i.containerSpecificFiles {
+		if _, err := os.Stat(filename); err == nil {
+			return true, nil
 		}
-
-		return containsContainerReference(i.selfCgroupLocation)
-	})
-	if err != nil {
-		return false, err
 	}
 
-	if result, ok := res.(bool); ok {
-		return result, nil
-	}
-
-	return false, nil
+	return containsContainerReference(i.selfCgroupLocation)
 }
 
+// ResourceID returns a unique identifier for the resource.
+// If running in a container, it returns the container ID.
+// Otherwise, it returns the host ID.
 func (i *Info) ResourceID(ctx context.Context) (string, error) {
 	isContainer, _ := i.IsContainer()
 	if isContainer {
@@ -135,19 +125,20 @@ func (i *Info) ResourceID(ctx context.Context) (string, error) {
 	return i.hostID(ctx)
 }
 
+// ContainerInfo returns container-specific information including container ID, hostname,
+// and operating system release details when running in a containerized environment.
 func (i *Info) ContainerInfo(ctx context.Context) (*v1.Resource_ContainerInfo, error) {
-	var errs error
 	hostname, err := i.exec.Hostname()
 	if err != nil {
-		errs = errors.Join(errs, errors.New("unable to get hostname -- "+err.Error()))
+		return nil, err
 	}
 	containerId, err := i.containerID()
 	if err != nil {
-		errs = errors.Join(errors.New("unable to get container id -- " + err.Error()))
+		return nil, err
 	}
 	releaseInfo, err := i.releaseInfo(ctx, i.osReleaseLocation)
 	if err != nil {
-		errs = errors.Join(errors.New("unable to get release info -- " + err.Error()))
+		return nil, err
 	}
 
 	return &v1.Resource_ContainerInfo{
@@ -156,21 +147,23 @@ func (i *Info) ContainerInfo(ctx context.Context) (*v1.Resource_ContainerInfo, e
 			Hostname:    hostname,
 			ReleaseInfo: releaseInfo,
 		},
-	}, errs
+	}, nil
 }
 
+// HostInfo returns information about the host system including host ID, hostname,
+// and operating system release details.
 func (i *Info) HostInfo(ctx context.Context) (*v1.Resource_HostInfo, error) {
 	hostname, err := i.exec.Hostname()
 	if err != nil {
-		return &v1.Resource_HostInfo{}, errors.New("unable to get hostname -- " + err.Error())
+		return nil, err
 	}
 	hostID, err := i.hostID(ctx)
 	if err != nil {
-		return &v1.Resource_HostInfo{}, errors.New("unable to get host id -- " + err.Error())
+		return nil, err
 	}
 	releaseInfo, err := i.releaseInfo(ctx, i.osReleaseLocation)
 	if err != nil {
-		return &v1.Resource_HostInfo{}, errors.New("unable to get release info -- " + err.Error())
+		return nil, err
 	}
 
 	return &v1.Resource_HostInfo{
@@ -183,10 +176,9 @@ func (i *Info) HostInfo(ctx context.Context) (*v1.Resource_HostInfo, error) {
 }
 
 func containsContainerReference(cgroupFile string) (bool, error) {
-	var err error
 	data, err := os.ReadFile(cgroupFile)
 	if err != nil {
-		return false, errors.New("unable to check if cgroup file contains a container reference --" + err.Error())
+		return false, err
 	}
 
 	scanner := bufio.NewScanner(bytes.NewReader(data))
@@ -202,19 +194,8 @@ func containsContainerReference(cgroupFile string) (bool, error) {
 
 // containerID returns the container ID of the current running environment.
 func (i *Info) containerID() (string, error) {
-	res, err, _ := singleflightGroup.Do(GetContainerIDKey, func() (interface{}, error) {
-		containerID, err := containerIDFromMountInfo(i.mountInfoLocation)
-		return uuid.NewMD5(uuid.NameSpaceDNS, []byte(containerID)).String(), err
-	})
-	if err != nil {
-		return "", errors.New("unable to get container ID -- " + err.Error())
-	}
-
-	if result, ok := res.(string); ok {
-		return result, nil
-	}
-
-	return "", nil
+	containerID, err := containerIDFromMountInfo(i.mountInfoLocation)
+	return uuid.NewMD5(uuid.NameSpaceDNS, []byte(containerID)).String(), err
 }
 
 // containerIDFromMountInfo returns the container ID of the current running environment.
@@ -223,15 +204,15 @@ func (i *Info) containerID() (string, error) {
 func containerIDFromMountInfo(mountInfo string) (string, error) {
 	var errs error
 	mInfoFile, err := os.Open(mountInfo)
-	defer func(f *os.File, fileName string) {
+	defer func(f *os.File) {
 		closeErr := f.Close()
 		if closeErr != nil {
-			errs = errors.Join(err, errors.New("Unable to close file "+fileName+" -- error"+closeErr.Error()))
+			errs = errors.Join(err, closeErr)
 		}
-	}(mInfoFile, mountInfo)
+	}(mInfoFile)
 
 	if err != nil {
-		return "", errors.Join(errs, fmt.Errorf("could not read %s: %w", mountInfo, err))
+		return "", errors.Join(errs, err)
 	}
 
 	fileScanner := bufio.NewScanner(mInfoFile)
@@ -289,35 +270,24 @@ func containsContainerID(slices []string) bool {
 }
 
 func (i *Info) hostID(ctx context.Context) (string, error) {
-	res, err, _ := singleflightGroup.Do(GetSystemUUIDKey, func() (interface{}, error) {
-		var err error
-
-		hostID, err := i.exec.HostID(ctx)
-		if err != nil {
-			return "", errors.New("unable to get host id -- " + err.Error())
-		}
-
-		return uuid.NewMD5(uuid.Nil, []byte(hostID)).String(), err
-	})
+	hostID, err := i.exec.HostID(ctx)
 	if err != nil {
-		return "", errors.New("unable to get host id -- " + err.Error())
+		return "", err
 	}
 
-	if result, ok := res.(string); ok {
-		return result, nil
-	}
-
-	return "", nil
+	return uuid.NewMD5(uuid.Nil, []byte(hostID)).String(), err
 }
 
-func (i *Info) releaseInfo(ctx context.Context, osReleaseLocation string) (releaseInfo *v1.ReleaseInfo, err error) {
+func (i *Info) releaseInfo(ctx context.Context, osReleaseLocation string) (*v1.ReleaseInfo, error) {
 	hostReleaseInfo, err := i.exec.ReleaseInfo(ctx)
 	if err != nil {
-		return hostReleaseInfo, errors.New("unable to get host release info -- " + err.Error())
+		return hostReleaseInfo, err
 	}
 	osRelease, err := readOsRelease(osReleaseLocation)
 	if err != nil {
-		return hostReleaseInfo, errors.New("unable to read os release info -- " + err.Error())
+		// If there is an error reading the OS release file just return the host release info instead
+		// nolint: nilerr
+		return hostReleaseInfo, nil
 	}
 
 	return mergeHostAndOsReleaseInfo(hostReleaseInfo, osRelease), nil
