@@ -8,9 +8,9 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"net"
 	"net/url"
 	"os"
-	"net"
 	"path/filepath"
 	"testing"
 
@@ -904,7 +904,7 @@ func TestSetExporterProxyEnvVars(t *testing.T) {
 				os.Unsetenv("HTTP_PROXY")
 				os.Unsetenv("HTTPS_PROXY")
 			}
-  	}
+		})
 	}
 }
 
