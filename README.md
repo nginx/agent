@@ -1,131 +1,40 @@
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/nginx/agent)
+![GitHub Release](https://img.shields.io/github/v/release/nginx/agent)
 ![GitHub License](https://img.shields.io/github/license/nginx/agent)
 ![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)
-[![Slack](https://img.shields.io/badge/slack-join%20us-brightgreen.svg?logo=slack)](https://nginxcommunity.slack.com/channels/nginx-agent)
-![coverage](https://raw.githubusercontent.com/nginx/agent/badges/.badges/v3/coverage.svg)
 
-# NGINX Agent
+![NGINX Agent Banner](docs/agent-banner.png "NGINX Agent Banner")
 
-NGINX Agent is a companion daemon for your NGINX Open Source or NGINX Plus instance. It enables:
+# F5 NGINX Agent 
 
-- Remote management of NGINX configurations
-- Collection and reporting of real-time NGINX performance and operating system metrics
-- Notifications of NGINX events
+F5 NGINX Agent is a companion application designed to efficiently manage NGINX instances. Key features include: 
 
-## Development Environment Setup
+- Remote management: Easily control and configure NGINX instances remotely.  
+- Real-time metrics: Monitor and analyze performance data for NGINX and the underlying operating system.
 
-### Installing Prerequisite Packages
+Discover more advanced features and capabilities by visiting [Try NGINX One: Free Enterprise Trial](https://www.f5.com/trials/nginx-one). 
 
-The following packages need to be installed:
 
-- make
-- golang (<https://go.dev/doc/install>)
-- protoc (<https://grpc.io/docs/protoc-installation/>)
-- mdatagen (There is currently an [issue installing mdatagen](https://github.com/open-telemetry/opentelemetry-collector/issues/9281). See instructions below for workaround.)
+## Installation
 
-#### Workaround to install mdatagen
+You can install **NGINX Agent** using one of the following methods:
 
-```console
-git clone https://github.com/open-telemetry/opentelemetry-collector.git
-cd opentelemetry-collector
-git checkout v0.124.0
-cd cmd/mdatagen
-go install
-```
+1. **Official documentation**  
+   Follow the step-by-step guide to add and configure instances:  
+   [How to add an instance](https://docs.nginx.com/nginx-one/how-to/nginx-configs/add-instance/)
 
-Before starting development on the NGINX Agent, it is important to download and install the necessary tool and dependencies required by the NGINX Agent. You can do this by running the following `make` command:
+2. **GitHub releases**  
+   Download the latest binaries or packages directly from the GitHub releases page:  
+   [NGINX Agent GitHub releases](https://github.com/nginx/agent/releases)  
 
-```console
-make install-tools
-```
+3. **Installation and upgrade guide**  
+   Access detailed instructions to install or upgrade NGINX Agent from the official NGINX documentation:  
+   [NGINX Agent Installation Guide](https://docs.nginx.com/nginx-agent/installation-upgrade/)
 
-### Building NGINX Agent from Source Code
+## Useful links
 
-Build NGINX Agent deb package:
+* [Offical NGINX Agent documentation](https://docs.nginx.com/nginx-agent/)
+* [F5 Support](https://my.f5.com/manage/s/)
 
-```console
-OSARCH=<operating system archiecture> make local-deb-package
-```
-
-Build NGINX Agent rpm package:
-
-```console
-OSARCH=<operating system archiecture> make local-rpm-package
-```
-
-Build NGINX Agent apk package:
-
-```console
-OSARCH=<operating system archiecture> make local-apk-package
-```
-
-### Testing NGINX Agent
-
-#### Unit tests
-
-To run unit tests and check that there is enough test coverage run the following
-
-```console
-make unit-test coverge
-```
-
-To check for race conditions, the unit tests can also be run with a race condition detector
-
-```console
-make race-condition-test
-```
-
-#### Integration tests
-
-To run integration tests, run the following
-
-```console
-make integration-test
-```
-
-#### Testing with a mock management plane
-
-For testing command operations, there is a mock management gRPC server that can be used. See here: [mock management gRPC server](test/mock/grpc/README.md) \
-For testing metrics, there is a mock management OTel collector that can be used. See here: [mock management OTel collector](test/mock/collector/README.md)
-
-## NGINX Agent Technical Specifications
-
-### Supported Distributions
-
-NGINX Agent can run in most environments. For a list of supported distributions, see the [NGINX Technical Specs](https://docs.nginx.com/nginx/technical-specs/#supported-distributions) guide.
-
-### Supported Deployment Environments
-
-NGINX Agent can be deployed in the following environments:
-
-- Bare Metal
-- Container
-- Public Cloud: AWS, Google Cloud Platform, and Microsoft Azure
-- Virtual Machine
-
-### Supported NGINX Product Versions
-
-NGINX Agent works with all supported versions of NGINX Open Source and NGINX Plus.
-
-### Sizing Recommendations
-
-Minimum system sizing recommendations for NGINX Agent:
-TBD
-
-## Community
-
-- Our [NGINX Community Forum ](https://community.nginx.org/tag/agent) is the go-to place to ask questions and share your thoughts.
-
-- Our [GitHub issues page](https://github.com/nginx/agent/issues) offers space for a more technical discussion at your own pace.
-
-## Contributing
-
-Get involved with the project by contributing! Please see our [contributing guide](CONTRIBUTING.md) for details.
-
-## Change Log
-
-See our [release page](https://github.com/nginx/agent/releases) to keep track of updates.
-
-## License
-
-[Apache License, Version 2.0](LICENSE)
+## Community 
+If you have any questions please reach out using the [NGINX Community](https://community.nginx.org/)
