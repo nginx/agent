@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -228,6 +229,8 @@ func (oc *Collector) bootup(ctx context.Context) error {
 			return
 		}
 
+		oc.setProxyIfNeeded(ctx)
+
 		appErr := oc.service.Run(ctx)
 		if appErr != nil {
 			errChan <- appErr
@@ -377,32 +380,65 @@ func (oc *Collector) updateHeadersSetterExtension(
 }
 
 func (oc *Collector) restartCollector(ctx context.Context) {
-	err := oc.Close(ctx)
-	if err != nil {
-		slog.ErrorContext(ctx, "Failed to shutdown OTel Collector", "error", err)
+	if !oc.canRestartCollector(ctx) {
 		return
 	}
-
-	settings := OTelCollectorSettings(oc.config)
-	oTelCollector, err := otelcol.NewCollector(settings)
-	if err != nil {
-		slog.ErrorContext(ctx, "Failed to create OTel Collector", "error", err)
+	if !oc.tryCloseCollector(ctx) {
 		return
 	}
-	oc.service = oTelCollector
-
+	if !oc.tryCreateCollector(ctx) {
+		return
+	}
+	oc.setProxyIfNeeded(ctx)
 	var runCtx context.Context
 	runCtx, oc.cancel = context.WithCancel(ctx)
-
 	if !oc.stopped {
 		slog.ErrorContext(ctx, "Unable to restart OTel collector, failed to stop collector")
 		return
 	}
-
 	slog.InfoContext(ctx, "Restarting OTel collector")
 	bootErr := oc.bootup(runCtx)
 	if bootErr != nil {
 		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)
+	}
+}
+
+func (oc *Collector) canRestartCollector(ctx context.Context) bool {
+	if oc == nil || oc.config == nil || oc.config.Command == nil || oc.config.Collector == nil {
+		slog.ErrorContext(ctx, "Collector or required config is nil; cannot restart collector")
+		return false
+	}
+
+	return true
+}
+
+func (oc *Collector) tryCloseCollector(ctx context.Context) bool {
+	err := oc.Close(ctx)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to shutdown OTel Collector", "error", err)
+		return false
+	}
+
+	return true
+}
+
+func (oc *Collector) tryCreateCollector(ctx context.Context) bool {
+	settings := OTelCollectorSettings(oc.config)
+	oTelCollector, err := otelcol.NewCollector(settings)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to create OTel Collector", "error", err)
+		return false
+	}
+	oc.service = oTelCollector
+
+	return true
+}
+
+func (oc *Collector) setProxyIfNeeded(ctx context.Context) {
+	if oc.config.Collector.Exporters.OtlpExporters != nil ||
+		oc.config.Collector.Exporters.PrometheusExporter != nil {
+		// Set proxy env vars for OTLP exporter if proxy is configured.
+		oc.setExporterProxyEnvVars(ctx)
 	}
 }
 
@@ -701,4 +737,68 @@ func escapeString(input string) string {
 	output = strings.ReplaceAll(output, "\"", "\\\"")
 
 	return output
+}
+
+func (oc *Collector) setExporterProxyEnvVars(ctx context.Context) {
+	// Validate proxy fields
+	if oc.config.Command.Server.Proxy == nil {
+		slog.InfoContext(ctx, "Proxy configuration is not setup; skipping Proxy setup")
+		return
+	}
+
+	proxy := oc.config.Command.Server.Proxy
+	if proxy.URL == "" {
+		slog.WarnContext(ctx, "Proxy URL is empty; skipping Proxy setup")
+		return
+	}
+	proxyURL := proxy.URL
+	u, err := url.Parse(proxyURL)
+	if err != nil {
+		slog.ErrorContext(ctx, "Malformed proxy URL; skipping Proxy setup", "url", proxyURL, "error", err)
+		return
+	}
+
+	auth := ""
+	if oc.config.Command.Server.Proxy.AuthMethod != "" &&
+		strings.TrimSpace(oc.config.Command.Server.Proxy.AuthMethod) != "" {
+		auth = strings.TrimSpace(oc.config.Command.Server.Proxy.AuthMethod)
+		slog.DebugContext(ctx, "auth string", "auth", auth)
+	}
+
+	// Use the standalone setProxyWithBasicAuth function
+	if auth == "" {
+		setProxyEnvs(ctx, proxyURL, "Setting Proxy from command.Proxy (no auth)")
+		return
+	}
+	authLower := strings.ToLower(auth)
+	slog.DebugContext(ctx, "auth To Lower string", "authlower", authLower)
+	if authLower == "basic" {
+		setProxyWithBasicAuth(ctx, proxy, u)
+	} else {
+		slog.ErrorContext(ctx, "Unknown auth type for proxy; Aborting Proxy Setup", "auth", auth, "url", proxyURL)
+	}
+}
+
+// setProxyEnvs sets the HTTP_PROXY and HTTPS_PROXY environment variables and logs the action.
+func setProxyEnvs(ctx context.Context, proxyEnvURL, msg string) {
+	slog.DebugContext(ctx, msg, "url", proxyEnvURL)
+	if setenvErr := os.Setenv("HTTP_PROXY", proxyEnvURL); setenvErr != nil {
+		slog.ErrorContext(ctx, "Failed to set Proxy", "error", setenvErr)
+	}
+	if setenvErr := os.Setenv("HTTPS_PROXY", proxyEnvURL); setenvErr != nil {
+		slog.ErrorContext(ctx, "Failed to set Proxy", "error", setenvErr)
+	}
+}
+
+// setProxyWithBasicAuth sets the proxy environment variables with basic auth credentials.
+func setProxyWithBasicAuth(ctx context.Context, proxy *config.Proxy, u *url.URL) {
+	username := proxy.Username
+	password := proxy.Password
+	if username == "" || password == "" {
+		slog.ErrorContext(ctx, "Username or password missing for basic auth")
+		return
+	}
+	u.User = url.UserPassword(username, password)
+	proxyURL := u.String()
+	setProxyEnvs(ctx, proxyURL, "Setting Proxy with basic auth")
 }
