@@ -33,7 +33,8 @@ You can install **NGINX Agent** using one of the following methods:
 
 ## Useful links
 
-* [Offical NGINX Agent documentation](https://docs.nginx.com/nginx-agent/)
+* [v2 - Offical NGINX Agent documentation](https://docs.nginx.com/nginx-agent/)
+* [v3 - Offical NGINX Agent documentation](https://docs.nginx.com/nginx-one/agent/)
 * [F5 Support](https://my.f5.com/manage/s/)
 
 ## Community 
