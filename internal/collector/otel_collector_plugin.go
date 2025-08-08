@@ -232,7 +232,9 @@ func (oc *Collector) bootup(ctx context.Context) error {
 			return
 		}
 
-		oc.setProxyIfNeeded(ctx)
+		if oc.config.IsCommandServerProxyConfigured() {
+			oc.setProxyIfNeeded(ctx)
+		}
 
 		appErr := oc.service.Run(ctx)
 		if appErr != nil {
@@ -392,7 +394,10 @@ func (oc *Collector) restartCollector(ctx context.Context) {
 	if !oc.tryCreateCollector(ctx) {
 		return
 	}
-	oc.setProxyIfNeeded(ctx)
+
+	if oc.config.IsCommandServerProxyConfigured() {
+		oc.setProxyIfNeeded(ctx)
+	}
 	var runCtx context.Context
 	runCtx, oc.cancel = context.WithCancel(ctx)
 	if !oc.stopped {
@@ -778,29 +783,17 @@ func escapeString(input string) string {
 }
 
 func (oc *Collector) setExporterProxyEnvVars(ctx context.Context) {
-	// Validate proxy fields
-	if oc.config.Command.Server.Proxy == nil {
-		slog.InfoContext(ctx, "Proxy configuration is not setup; skipping Proxy setup")
-		return
-	}
-
 	proxy := oc.config.Command.Server.Proxy
-	if proxy.URL == "" {
-		slog.WarnContext(ctx, "Proxy URL is empty; skipping Proxy setup")
-		return
-	}
 	proxyURL := proxy.URL
-	u, err := url.Parse(proxyURL)
+	parsedProxyURL, err := url.Parse(proxyURL)
 	if err != nil {
 		slog.ErrorContext(ctx, "Malformed proxy URL; skipping Proxy setup", "url", proxyURL, "error", err)
 		return
 	}
 
 	auth := ""
-	if oc.config.Command.Server.Proxy.AuthMethod != "" &&
-		strings.TrimSpace(oc.config.Command.Server.Proxy.AuthMethod) != "" {
-		auth = strings.TrimSpace(oc.config.Command.Server.Proxy.AuthMethod)
-		slog.DebugContext(ctx, "auth string", "auth", auth)
+	if proxy.AuthMethod != "" && strings.TrimSpace(proxy.AuthMethod) != "" {
+		auth = strings.TrimSpace(proxy.AuthMethod)
 	}
 
 	// Use the standalone setProxyWithBasicAuth function
@@ -809,9 +802,8 @@ func (oc *Collector) setExporterProxyEnvVars(ctx context.Context) {
 		return
 	}
 	authLower := strings.ToLower(auth)
-	slog.DebugContext(ctx, "auth To Lower string", "authlower", authLower)
 	if authLower == "basic" {
-		setProxyWithBasicAuth(ctx, proxy, u)
+		setProxyWithBasicAuth(ctx, proxy, parsedProxyURL)
 	} else {
 		slog.ErrorContext(ctx, "Unknown auth type for proxy; Aborting Proxy Setup", "auth", auth, "url", proxyURL)
 	}
@@ -829,14 +821,14 @@ func setProxyEnvs(ctx context.Context, proxyEnvURL, msg string) {
 }
 
 // setProxyWithBasicAuth sets the proxy environment variables with basic auth credentials.
-func setProxyWithBasicAuth(ctx context.Context, proxy *config.Proxy, u *url.URL) {
+func setProxyWithBasicAuth(ctx context.Context, proxy *config.Proxy, parsedProxyURL *url.URL) {
 	username := proxy.Username
 	password := proxy.Password
 	if username == "" || password == "" {
 		slog.ErrorContext(ctx, "Username or password missing for basic auth")
 		return
 	}
-	u.User = url.UserPassword(username, password)
-	proxyURL := u.String()
+	parsedProxyURL.User = url.UserPassword(username, password)
+	proxyURL := parsedProxyURL.String()
 	setProxyEnvs(ctx, proxyURL, "Setting Proxy with basic auth")
 }

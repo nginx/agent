@@ -472,6 +472,14 @@ func (c *Config) NewContextWithLabels(ctx context.Context) context.Context {
 	return metadata.NewOutgoingContext(ctx, md)
 }
 
+func (c *Config) IsCommandServerProxyConfigured() bool {
+	if c.Command.Server.Proxy == nil {
+		return false
+	}
+
+	return c.Command.Server.Proxy.URL != ""
+}
+
 // isAllowedDir checks if the given path is in the list of allowed directories.
 // It returns true if the path is allowed, false otherwise.
 // If the path is allowed but does not exist, it also logs a warning.

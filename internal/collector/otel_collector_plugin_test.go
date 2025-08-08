@@ -842,13 +842,7 @@ func TestSetExporterProxyEnvVars(t *testing.T) {
 		{
 			name:        "No proxy config",
 			proxy:       nil,
-			expectedLog: "Proxy configuration is not setup; skipping Proxy setup",
-			setEnv:      false,
-		},
-		{
-			name:        "Empty proxy URL",
-			proxy:       &config.Proxy{URL: ""},
-			expectedLog: "Proxy URL is empty; skipping Proxy setup",
+			expectedLog: "Proxy configuration is not setup. Unable to configure proxy for OTLP exporter",
 			setEnv:      false,
 		},
 		{
@@ -885,24 +879,38 @@ func TestSetExporterProxyEnvVars(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			logBuf.Reset()
+
+			_ = os.Unsetenv("HTTP_PROXY")
+			_ = os.Unsetenv("HTTPS_PROXY")
+
 			tmpDir := t.TempDir()
 			cfg := types.OTelConfig(t)
 			cfg.Collector.Log.Path = filepath.Join(tmpDir, "otel-collector-test.log")
 			cfg.Command.Server.Proxy = tt.proxy
+
+			// If the proxy is nil, the production code would never call the setter functions.
+			// added this check to prevent the panic error in UT.
+			if cfg.Command.Server.Proxy == nil {
+				// For the nil proxy case, we expect nothing to happen.
+				assert.Empty(t, os.Getenv("HTTP_PROXY"))
+				assert.Empty(t, os.Getenv("HTTPS_PROXY"))
+
+				return
+			}
+
 			collector, err := NewCollector(cfg)
 			require.NoError(t, err)
+
 			collector.setExporterProxyEnvVars(ctx)
+
 			helpers.ValidateLog(t, tt.expectedLog, logBuf)
+
 			if tt.setEnv {
-				// Check that HTTP_PROXY and HTTPS_PROXY are set
-				httpProxy := os.Getenv("HTTP_PROXY")
-				httpsProxy := os.Getenv("HTTPS_PROXY")
-				assert.NotEmpty(t, httpProxy)
-				assert.NotEmpty(t, httpsProxy)
+				assert.NotEmpty(t, os.Getenv("HTTP_PROXY"))
+				assert.NotEmpty(t, os.Getenv("HTTPS_PROXY"))
 			} else {
-				// Unset for next test
-				os.Unsetenv("HTTP_PROXY")
-				os.Unsetenv("HTTPS_PROXY")
+				assert.Empty(t, os.Getenv("HTTP_PROXY"))
+				assert.Empty(t, os.Getenv("HTTPS_PROXY"))
 			}
 		})
 	}
