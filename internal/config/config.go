@@ -20,8 +20,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nginx/agent/v3/pkg/host"
+
 	"github.com/nginx/agent/v3/internal/datasource/file"
-	"github.com/nginx/agent/v3/internal/datasource/host"
 	"github.com/nginx/agent/v3/internal/logger"
 
 	"github.com/goccy/go-yaml"
@@ -285,7 +286,11 @@ func addDefaultProcessors(collector *Collector) {
 }
 
 func addDefaultHostMetricsReceiver(collector *Collector) {
-	if host.NewInfo().IsContainer() {
+	isContainer, err := host.NewInfo().IsContainer()
+	if err != nil {
+		slog.Debug("No container information found", "error", err)
+	}
+	if isContainer {
 		addDefaultContainerHostMetricsReceiver(collector)
 	} else {
 		addDefaultVMHostMetricsReceiver(collector)
