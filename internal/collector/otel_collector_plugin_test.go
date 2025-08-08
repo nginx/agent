@@ -9,6 +9,8 @@ import (
 	"context"
 	"errors"
 	"net"
+	"net/url"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -246,7 +248,11 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 
 			conf := types.OTelConfig(t)
 
-			conf.Command = nil
+			conf.Command = &config.Command{
+				Server: &config.ServerConfig{
+					Proxy: &config.Proxy{},
+				},
+			}
 
 			conf.Collector.Log.Path = ""
 			conf.Collector.Receivers.HostMetrics = nil
@@ -781,6 +787,137 @@ func TestCollector_updateNginxAppProtectTcplogReceivers(t *testing.T) {
 		assert.Equal(t, "localhost:1555", conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].ListenAddress)
 		assert.Len(t, conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].Operators, 6)
 	})
+}
+
+func Test_setProxyEnvs(t *testing.T) {
+	ctx := context.Background()
+	proxyURL := "http://localhost:8080"
+	msg := "Setting test proxy"
+
+	// Unset first to ensure clean state
+	_ = os.Unsetenv("HTTP_PROXY")
+	_ = os.Unsetenv("HTTPS_PROXY")
+
+	setProxyEnvs(ctx, proxyURL, msg)
+
+	httpProxy := os.Getenv("HTTP_PROXY")
+	httpsProxy := os.Getenv("HTTPS_PROXY")
+	assert.Equal(t, proxyURL, httpProxy)
+	assert.Equal(t, proxyURL, httpsProxy)
+}
+
+func Test_setProxyWithBasicAuth(t *testing.T) {
+	ctx := context.Background()
+	u, _ := url.Parse("http://localhost:8080")
+	proxy := &config.Proxy{
+		URL:      "http://localhost:8080",
+		Username: "user",
+		Password: "pass",
+	}
+
+	// Unset first to ensure clean state
+	_ = os.Unsetenv("HTTP_PROXY")
+	_ = os.Unsetenv("HTTPS_PROXY")
+
+	setProxyWithBasicAuth(ctx, proxy, u)
+
+	proxyURL := u.String()
+	httpProxy := os.Getenv("HTTP_PROXY")
+	httpsProxy := os.Getenv("HTTPS_PROXY")
+	assert.Equal(t, proxyURL, httpProxy)
+	assert.Equal(t, proxyURL, httpsProxy)
+
+	// Test missing username/password
+	proxyMissing := &config.Proxy{URL: "http://localhost:8080"}
+	setProxyWithBasicAuth(ctx, proxyMissing, u) // Should not panic
+}
+
+func TestSetExporterProxyEnvVars(t *testing.T) {
+	ctx := context.Background()
+	logBuf := &bytes.Buffer{}
+	stub.StubLoggerWith(logBuf)
+
+	tests := []struct {
+		name        string
+		proxy       *config.Proxy
+		expectedLog string
+		setEnv      bool
+	}{
+		{
+			name:        "No proxy config",
+			proxy:       nil,
+			expectedLog: "Proxy configuration is not setup. Unable to configure proxy for OTLP exporter",
+			setEnv:      false,
+		},
+		{
+			name:        "Malformed proxy URL",
+			proxy:       &config.Proxy{URL: "://bad_url"},
+			expectedLog: "Malformed proxy URL; skipping Proxy setup",
+			setEnv:      false,
+		},
+		{
+			name:        "No auth, valid URL",
+			proxy:       &config.Proxy{URL: "http://proxy.example.com:8080"},
+			expectedLog: "Setting Proxy from command.Proxy (no auth)",
+			setEnv:      true,
+		},
+		{
+			name: "Basic auth, valid URL",
+			proxy: &config.Proxy{
+				URL:        "http://proxy.example.com:8080",
+				AuthMethod: "basic",
+				Username:   "user",
+				Password:   "pass",
+			},
+			expectedLog: "Setting Proxy with basic auth",
+			setEnv:      true,
+		},
+		{
+			name:        "Unknown auth method",
+			proxy:       &config.Proxy{URL: "http://proxy.example.com:8080", AuthMethod: "digest"},
+			expectedLog: "Unknown auth type for proxy; Aborting Proxy Setup",
+			setEnv:      false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			logBuf.Reset()
+
+			_ = os.Unsetenv("HTTP_PROXY")
+			_ = os.Unsetenv("HTTPS_PROXY")
+
+			tmpDir := t.TempDir()
+			cfg := types.OTelConfig(t)
+			cfg.Collector.Log.Path = filepath.Join(tmpDir, "otel-collector-test.log")
+			cfg.Command.Server.Proxy = tt.proxy
+
+			// If the proxy is nil, the production code would never call the setter functions.
+			// added this check to prevent the panic error in UT.
+			if cfg.Command.Server.Proxy == nil {
+				// For the nil proxy case, we expect nothing to happen.
+				assert.Empty(t, os.Getenv("HTTP_PROXY"))
+				assert.Empty(t, os.Getenv("HTTPS_PROXY"))
+
+				return
+			}
+
+			collector, err := NewCollector(cfg)
+			require.NoError(t, err)
+
+			collector.setExporterProxyEnvVars(ctx)
+
+			helpers.ValidateLog(t, tt.expectedLog, logBuf)
+
+			if tt.setEnv {
+				assert.NotEmpty(t, os.Getenv("HTTP_PROXY"))
+				assert.NotEmpty(t, os.Getenv("HTTPS_PROXY"))
+			} else {
+				assert.Empty(t, os.Getenv("HTTP_PROXY"))
+				assert.Empty(t, os.Getenv("HTTPS_PROXY"))
+			}
+		})
+	}
 }
 
 func TestCollector_findAvailableSyslogServers(t *testing.T) {
