@@ -328,6 +328,7 @@ func (w *Watcher) handleInstanceUpdates(newCtx context.Context, message instance
 	}
 	if len(message.InstanceUpdates.UpdatedInstances) > 0 {
 		slog.DebugContext(newCtx, "Instances updated", "instances", message.InstanceUpdates.UpdatedInstances)
+		w.healthWatcherService.UpdateHealthWatcher(message.InstanceUpdates.UpdatedInstances)
 		w.messagePipe.Process(
 			newCtx,
 			&bus.Message{Topic: bus.UpdatedInstancesTopic, Data: message.InstanceUpdates.UpdatedInstances},

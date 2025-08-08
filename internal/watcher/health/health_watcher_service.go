@@ -54,6 +54,7 @@ func NewHealthWatcherService(agentConfig *config.Config) *HealthWatcherService {
 func (hw *HealthWatcherService) AddHealthWatcher(instances []*mpi.Instance) {
 	hw.healthWatcherMutex.Lock()
 	defer hw.healthWatcherMutex.Unlock()
+
 	for _, instance := range instances {
 		switch instance.GetInstanceMeta().GetInstanceType() {
 		case mpi.InstanceMeta_INSTANCE_TYPE_NGINX, mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS:
@@ -73,12 +74,18 @@ func (hw *HealthWatcherService) AddHealthWatcher(instances []*mpi.Instance) {
 }
 
 func (hw *HealthWatcherService) UpdateHealthWatcher(instances []*mpi.Instance) {
+	hw.healthWatcherMutex.Lock()
+	defer hw.healthWatcherMutex.Unlock()
+
 	for _, instance := range instances {
 		hw.instances[instance.GetInstanceMeta().GetInstanceId()] = instance
 	}
 }
 
 func (hw *HealthWatcherService) DeleteHealthWatcher(instances []*mpi.Instance) {
+	hw.healthWatcherMutex.Lock()
+	defer hw.healthWatcherMutex.Unlock()
+
 	for _, instance := range instances {
 		delete(hw.watchers, instance.GetInstanceMeta().GetInstanceId())
 		delete(hw.instances, instance.GetInstanceMeta().GetInstanceId())
