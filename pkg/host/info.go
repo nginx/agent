@@ -48,14 +48,18 @@ const (
 var (
 	// example: /docker/f244832c5a58377c3f1c7581b311c5bd8479808741f3e912d8bea8afe6431cb4
 	basePattern = regexp.MustCompile("/([a-f0-9]{64})$")
+
 	// nolint: lll
 	// example: /system.slice/containerd.service/kubepods-besteffort-pod214f3ba8_4b69_4bdb_a7d5_5ecc73f04ae9.slice:cri-containerd:d4e8e05a546c86b6443f101966c618e47753ed01fa9929cae00d3b692f7a9f80
 	colonPattern = regexp.MustCompile(":([a-f0-9]{64})$")
+
 	// example: /system.slice/crio-9e524432d716aa750574c9b6c01dee49e4b453445006684aad94c3d6df849e5c.scope
 	scopePattern = regexp.MustCompile(`/.+-(.+?).scope$`)
+
 	// nolint: lll
 	// example: /containers/storage/overlay-containers/ba0be90007be48bca767be0a462390ad2c9b0e910608158f79c8d6a984302b7e/userdata/hostname
 	containersPattern = regexp.MustCompile("containers/([a-f0-9]{64})")
+
 	// nolint: lll
 	// example: /var/lib/containerd/io.containerd.grpc.v1.cri/sandboxes/d7cb24ec5dede02990283dec30bd1e6ae1f93e3e19b152b708b7e0e133c6baec/hostname
 	containerdPattern = regexp.MustCompile("sandboxes/([a-f0-9]{64})")
@@ -74,12 +78,13 @@ type (
 	}
 
 	Info struct {
+		exec               exec.ExecInterface
+		selfCgroupLocation string
+		mountInfoLocation  string
+		osReleaseLocation  string
+
 		// containerSpecificFiles are files that are only created in containers.
 		// We use this to determine if an instance is running in a container or not
-		exec                   exec.ExecInterface
-		selfCgroupLocation     string
-		mountInfoLocation      string
-		osReleaseLocation      string
 		containerSpecificFiles []string
 	}
 )
@@ -175,6 +180,39 @@ func (i *Info) HostInfo(ctx context.Context) (*v1.Resource_HostInfo, error) {
 	}, nil
 }
 
+// hostID returns a unique identifier for the host system.
+func (i *Info) hostID(ctx context.Context) (string, error) {
+	hostID, err := i.exec.HostID(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return uuid.NewMD5(uuid.Nil, []byte(hostID)).String(), err
+}
+
+// releaseInfo retrieves the operating system release information.
+func (i *Info) releaseInfo(ctx context.Context, osReleaseLocation string) (*v1.ReleaseInfo, error) {
+	hostReleaseInfo, err := i.exec.ReleaseInfo(ctx)
+	if err != nil {
+		return hostReleaseInfo, err
+	}
+	osRelease, err := readOsRelease(osReleaseLocation)
+	if err != nil {
+		// If there is an error reading the OS release file just return the host release info instead
+		// nolint: nilerr
+		return hostReleaseInfo, nil
+	}
+
+	return mergeHostAndOsReleaseInfo(hostReleaseInfo, osRelease), nil
+}
+
+// containerID returns the container ID of the current running environment.
+func (i *Info) containerID() (string, error) {
+	containerID, err := containerIDFromMountInfo(i.mountInfoLocation)
+	return uuid.NewMD5(uuid.NameSpaceDNS, []byte(containerID)).String(), err
+}
+
+// containsContainerReference checks if the cgroup file contains references to container runtimes.
 func containsContainerReference(cgroupFile string) (bool, error) {
 	data, err := os.ReadFile(cgroupFile)
 	if err != nil {
@@ -190,12 +228,6 @@ func containsContainerReference(cgroupFile string) (bool, error) {
 	}
 
 	return false, nil
-}
-
-// containerID returns the container ID of the current running environment.
-func (i *Info) containerID() (string, error) {
-	containerID, err := containerIDFromMountInfo(i.mountInfoLocation)
-	return uuid.NewMD5(uuid.NameSpaceDNS, []byte(containerID)).String(), err
 }
 
 // containerIDFromMountInfo returns the container ID of the current running environment.
@@ -236,6 +268,7 @@ func containerIDFromMountInfo(mountInfo string) (string, error) {
 	return "", errors.Join(errs, fmt.Errorf("container ID not found in %s", mountInfo))
 }
 
+// containerIDFromPatterns checks a word against multiple regex patterns to extract the container ID.
 func containerIDFromPatterns(word string) string {
 	slices := scopePattern.FindStringSubmatch(word)
 	if containsContainerID(slices) {
@@ -265,32 +298,9 @@ func containerIDFromPatterns(word string) string {
 	return ""
 }
 
+// containsContainerID checks if the provided slices contain a valid container ID.
 func containsContainerID(slices []string) bool {
 	return len(slices) >= 2 && len(slices[1]) == lengthOfContainerID
-}
-
-func (i *Info) hostID(ctx context.Context) (string, error) {
-	hostID, err := i.exec.HostID(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	return uuid.NewMD5(uuid.Nil, []byte(hostID)).String(), err
-}
-
-func (i *Info) releaseInfo(ctx context.Context, osReleaseLocation string) (*v1.ReleaseInfo, error) {
-	hostReleaseInfo, err := i.exec.ReleaseInfo(ctx)
-	if err != nil {
-		return hostReleaseInfo, err
-	}
-	osRelease, err := readOsRelease(osReleaseLocation)
-	if err != nil {
-		// If there is an error reading the OS release file just return the host release info instead
-		// nolint: nilerr
-		return hostReleaseInfo, nil
-	}
-
-	return mergeHostAndOsReleaseInfo(hostReleaseInfo, osRelease), nil
 }
 
 func readOsRelease(path string) (map[string]string, error) {
