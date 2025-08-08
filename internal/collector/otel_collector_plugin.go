@@ -385,61 +385,37 @@ func (oc *Collector) updateHeadersSetterExtension(
 }
 
 func (oc *Collector) restartCollector(ctx context.Context) {
-	if !oc.canRestartCollector(ctx) {
+	err := oc.Close(ctx)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to shutdown OTel Collector", "error", err)
 		return
 	}
-	if !oc.tryCloseCollector(ctx) {
+
+	settings := OTelCollectorSettings(oc.config)
+	oTelCollector, err := otelcol.NewCollector(settings)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to create OTel Collector", "error", err)
 		return
 	}
-	if !oc.tryCreateCollector(ctx) {
-		return
-	}
+	oc.service = oTelCollector
 
 	if oc.config.IsCommandServerProxyConfigured() {
 		oc.setProxyIfNeeded(ctx)
 	}
+
 	var runCtx context.Context
 	runCtx, oc.cancel = context.WithCancel(ctx)
+
 	if !oc.stopped {
 		slog.ErrorContext(ctx, "Unable to restart OTel collector, failed to stop collector")
 		return
 	}
+
 	slog.InfoContext(ctx, "Restarting OTel collector")
 	bootErr := oc.bootup(runCtx)
 	if bootErr != nil {
 		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)
 	}
-}
-
-func (oc *Collector) canRestartCollector(ctx context.Context) bool {
-	if oc == nil || oc.config == nil || oc.config.Command == nil || oc.config.Collector == nil {
-		slog.ErrorContext(ctx, "Collector or required config is nil; cannot restart collector")
-		return false
-	}
-
-	return true
-}
-
-func (oc *Collector) tryCloseCollector(ctx context.Context) bool {
-	err := oc.Close(ctx)
-	if err != nil {
-		slog.ErrorContext(ctx, "Failed to shutdown OTel Collector", "error", err)
-		return false
-	}
-
-	return true
-}
-
-func (oc *Collector) tryCreateCollector(ctx context.Context) bool {
-	settings := OTelCollectorSettings(oc.config)
-	oTelCollector, err := otelcol.NewCollector(settings)
-	if err != nil {
-		slog.ErrorContext(ctx, "Failed to create OTel Collector", "error", err)
-		return false
-	}
-	oc.service = oTelCollector
-
-	return true
 }
 
 func (oc *Collector) setProxyIfNeeded(ctx context.Context) {

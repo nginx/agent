@@ -248,7 +248,11 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 
 			conf := types.OTelConfig(t)
 
-			conf.Command = nil
+			conf.Command = &config.Command{
+				Server: &config.ServerConfig{
+					Proxy: &config.Proxy{},
+				},
+			}
 
 			conf.Collector.Log.Path = ""
 			conf.Collector.Receivers.HostMetrics = nil
