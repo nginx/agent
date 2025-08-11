@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/config"
+
 	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/protos"
@@ -38,12 +40,17 @@ func TestInstanceOperator_ValidateConfigCheckResponse(t *testing.T) {
 			out:      "nginx [emerg]",
 			expected: errors.New("error running nginx -t -c:\nnginx [emerg]"),
 		},
+		{
+			name:     "Test 3: Warn response",
+			out:      "nginx [warn]",
+			expected: errors.New("error running nginx -t -c:\nnginx [warn]"),
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			operator := NewInstanceOperator(types.AgentConfig())
-
+			operator.treatWarningsAsErrors = true
 			err := operator.validateConfigCheckResponse([]byte(test.out))
 			assert.Equal(t, test.expected, err)
 		})
@@ -126,7 +133,15 @@ func TestInstanceOperator_Reload(t *testing.T) {
 
 			instance := protos.NginxOssInstance([]string{})
 
-			operator := NewInstanceOperator(types.AgentConfig())
+			agentConfig := types.AgentConfig()
+			agentConfig.Client.Backoff = &config.BackOff{
+				InitialInterval:     1 * time.Millisecond,
+				MaxInterval:         1 * time.Millisecond,
+				MaxElapsedTime:      1 * time.Second,
+				RandomizationFactor: 1,
+				Multiplier:          1,
+			}
+			operator := NewInstanceOperator(agentConfig)
 			operator.executer = mockExec
 
 			err := operator.Reload(ctx, instance)
@@ -179,7 +194,14 @@ func TestInstanceOperator_ReloadAndMonitor(t *testing.T) {
 
 			agentConfig := types.AgentConfig()
 			agentConfig.DataPlaneConfig.Nginx.ReloadMonitoringPeriod = 10 * time.Second
-			operator := NewInstanceOperator(types.AgentConfig())
+			agentConfig.Client.Backoff = &config.BackOff{
+				InitialInterval:     1 * time.Millisecond,
+				MaxInterval:         1 * time.Millisecond,
+				MaxElapsedTime:      1 * time.Second,
+				RandomizationFactor: 1,
+				Multiplier:          1,
+			}
+			operator := NewInstanceOperator(agentConfig)
 			operator.executer = mockExec
 
 			var wg sync.WaitGroup
@@ -201,4 +223,3 @@ func TestInstanceOperator_ReloadAndMonitor(t *testing.T) {
 		})
 	}
 }
-
