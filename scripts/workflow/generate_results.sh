@@ -7,7 +7,6 @@ WORKSPACE="$4"
 
 INPUT_FILE="$WORKSPACE/test/dashboard/logs/$TEST_TYPE/raw_logs.log"
 OUTPUT_PATH="$WORKSPACE/test/dashboard/logs/$TEST_TYPE"
-JOB_OUTPUT_FILE="$WORKSPACE/test/dashboard/logs/$TEST_TYPE/result.json"
 
 END_TIME="`date "+%Y-%m-%dT%H:%M:%S.%NZ"`"
 START_SECONDS=$(date -d "$START_TIME" +%s.%N)
@@ -90,9 +89,6 @@ format_results(){
         fi
 
     done < "$INPUT_FILE"
-            
-    # Store the result of the whole job
-    echo "{\"start_at\": \"$START_TIME\", \"end_at\": \"$END_TIME\", \"duration_seconds\": \"$DURATION\", \"result\": \"$RESULT\", \"msg\": \"$FAIL_MSG\"}" > $JOB_OUTPUT_FILE
 }
 
 # Main body of the script
