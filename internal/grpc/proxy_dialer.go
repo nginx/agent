@@ -104,8 +104,7 @@ func readConnectResponse(conn net.Conn) (*http.Response, error) {
 }
 
 func wrapProxyError(ctx context.Context, msg string, err error, proxyURL string) error {
-	slog.ErrorContext(ctx, "Failed to connect via proxy", "proxyurl", proxyURL, "error", err)
-	return fmt.Errorf("%s: %w", msg, err)
+	return fmt.Errorf("%s: %s : proxyurl : %s : %w", ctx, msg, proxyURL, err)
 }
 
 func dialProxy(ctx context.Context, proxyURL *url.URL, proxyConf *config.Proxy) (net.Conn, error) {

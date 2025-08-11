@@ -767,6 +767,11 @@ func (oc *Collector) setExporterProxyEnvVars(ctx context.Context) {
 		return
 	}
 
+	if parsedProxyURL.Scheme == "https" {
+		slog.ErrorContext(ctx, "Protocol not supported, unable to configure proxy", "url", proxyURL)
+		return
+	}
+
 	auth := ""
 	if proxy.AuthMethod != "" && strings.TrimSpace(proxy.AuthMethod) != "" {
 		auth = strings.TrimSpace(proxy.AuthMethod)
@@ -781,7 +786,7 @@ func (oc *Collector) setExporterProxyEnvVars(ctx context.Context) {
 	if authLower == "basic" {
 		setProxyWithBasicAuth(ctx, proxy, parsedProxyURL)
 	} else {
-		slog.ErrorContext(ctx, "Unknown auth type for proxy; Aborting Proxy Setup", "auth", auth, "url", proxyURL)
+		slog.ErrorContext(ctx, "Unknown auth type for proxy; unable to configure proxy", "auth", auth, "url", proxyURL)
 	}
 }
 
@@ -789,9 +794,6 @@ func (oc *Collector) setExporterProxyEnvVars(ctx context.Context) {
 func setProxyEnvs(ctx context.Context, proxyEnvURL, msg string) {
 	slog.DebugContext(ctx, msg, "url", proxyEnvURL)
 	if setenvErr := os.Setenv("HTTP_PROXY", proxyEnvURL); setenvErr != nil {
-		slog.ErrorContext(ctx, "Failed to set Proxy", "error", setenvErr)
-	}
-	if setenvErr := os.Setenv("HTTPS_PROXY", proxyEnvURL); setenvErr != nil {
 		slog.ErrorContext(ctx, "Failed to set Proxy", "error", setenvErr)
 	}
 }

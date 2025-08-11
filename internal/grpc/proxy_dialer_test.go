@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDialViaHTTPProxy_NoProxy(t *testing.T) {
@@ -27,9 +28,7 @@ func TestDialViaHTTPProxy_NoProxy(t *testing.T) {
 		Timeout: 2 * time.Second,
 	}
 	_, err := DialViaHTTPProxy(ctx, proxyConf, "localhost:80")
-	if err == nil {
-		t.Errorf("expected failure with empty proxy URL, got no error")
-	}
+	require.Error(t, err, "expected failure with empty proxy URL")
 }
 
 func TestDialViaHTTPProxy_InvalidProxy(t *testing.T) {
@@ -41,9 +40,7 @@ func TestDialViaHTTPProxy_InvalidProxy(t *testing.T) {
 		Timeout: 2 * time.Second,
 	}
 	_, err := DialViaHTTPProxy(ctx, proxyConf, "localhost:80")
-	if err == nil {
-		t.Errorf("expected failure with invalid proxy, got no error")
-	}
+	require.Error(t, err, "expected failure with invalid proxy")
 }
 
 // To fully test with a real proxy, set the env var TEST_HTTP_PROXY_URL and have a proxy listening.
@@ -60,9 +57,7 @@ func TestDialViaHTTPProxy_RealProxy(t *testing.T) {
 		Timeout: 3 * time.Second,
 	}
 	conn, err := DialViaHTTPProxy(ctx, proxyConf, "example.com:80")
-	if err != nil {
-		t.Fatalf("failed to connect via proxy: %v", err)
-	}
+	require.NoError(t, err, "failed to connect via proxy")
 	defer conn.Close()
 
 	// Basic write/read to check tunnel
@@ -82,9 +77,7 @@ func TestDialViaHTTPProxy_RealProxy(t *testing.T) {
 
 func TestDialViaHTTPProxy_BearerTokenHeader(t *testing.T) {
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatalf("failed to listen: %v", err)
-	}
+	require.NoError(t, err, "failed to listen")
 	defer ln.Close()
 
 	done := make(chan struct{})
@@ -160,9 +153,7 @@ func TestDialViaHTTPProxy_InvalidCAPath(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	_, err := DialViaHTTPProxy(ctx, proxyConf, "example.com:443")
-	if err == nil {
-		t.Error("expected error for invalid CA path, got nil")
-	}
+	require.Error(t, err, "expected error for invalid CA path")
 }
 
 func TestDialViaHTTPProxy_MissingCertKey(t *testing.T) {
@@ -175,9 +166,7 @@ func TestDialViaHTTPProxy_MissingCertKey(t *testing.T) {
 	defer cancel()
 	_, err := DialViaHTTPProxy(ctx, proxyConf, "example.com:443")
 	// No assert needed: just covers the branch
-	if err == nil {
-		t.Error("expected error for missing cert, got nil")
-	}
+	require.Error(t, err, "expected error for missing cert")
 }
 
 func TestDialViaHTTPProxy_InvalidProxyURL(t *testing.T) {
@@ -188,7 +177,5 @@ func TestDialViaHTTPProxy_InvalidProxyURL(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	_, err := DialViaHTTPProxy(ctx, proxyConf, "example.com:443")
-	if err == nil {
-		t.Error("expected error for invalid proxy URL, got nil")
-	}
+	require.Error(t, err, "expected error for invalid proxy URL")
 }

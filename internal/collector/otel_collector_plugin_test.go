@@ -796,14 +796,11 @@ func Test_setProxyEnvs(t *testing.T) {
 
 	// Unset first to ensure clean state
 	_ = os.Unsetenv("HTTP_PROXY")
-	_ = os.Unsetenv("HTTPS_PROXY")
 
 	setProxyEnvs(ctx, proxyURL, msg)
 
 	httpProxy := os.Getenv("HTTP_PROXY")
-	httpsProxy := os.Getenv("HTTPS_PROXY")
 	assert.Equal(t, proxyURL, httpProxy)
-	assert.Equal(t, proxyURL, httpsProxy)
 }
 
 func Test_setProxyWithBasicAuth(t *testing.T) {
@@ -817,15 +814,12 @@ func Test_setProxyWithBasicAuth(t *testing.T) {
 
 	// Unset first to ensure clean state
 	_ = os.Unsetenv("HTTP_PROXY")
-	_ = os.Unsetenv("HTTPS_PROXY")
 
 	setProxyWithBasicAuth(ctx, proxy, u)
 
 	proxyURL := u.String()
 	httpProxy := os.Getenv("HTTP_PROXY")
-	httpsProxy := os.Getenv("HTTPS_PROXY")
 	assert.Equal(t, proxyURL, httpProxy)
-	assert.Equal(t, proxyURL, httpsProxy)
 
 	// Test missing username/password
 	proxyMissing := &config.Proxy{URL: "http://localhost:8080"}
@@ -875,7 +869,7 @@ func TestSetExporterProxyEnvVars(t *testing.T) {
 		{
 			name:        "Unknown auth method",
 			proxy:       &config.Proxy{URL: "http://proxy.example.com:8080", AuthMethod: "digest"},
-			expectedLog: "Unknown auth type for proxy; Aborting Proxy Setup",
+			expectedLog: "Unknown auth type for proxy; unable to configure proxy",
 			setEnv:      false,
 		},
 	}
@@ -885,7 +879,6 @@ func TestSetExporterProxyEnvVars(t *testing.T) {
 			logBuf.Reset()
 
 			_ = os.Unsetenv("HTTP_PROXY")
-			_ = os.Unsetenv("HTTPS_PROXY")
 
 			tmpDir := t.TempDir()
 			cfg := types.OTelConfig(t)
@@ -897,7 +890,6 @@ func TestSetExporterProxyEnvVars(t *testing.T) {
 			if cfg.Command.Server.Proxy == nil {
 				// For the nil proxy case, we expect nothing to happen.
 				assert.Empty(t, os.Getenv("HTTP_PROXY"))
-				assert.Empty(t, os.Getenv("HTTPS_PROXY"))
 
 				return
 			}
@@ -911,10 +903,8 @@ func TestSetExporterProxyEnvVars(t *testing.T) {
 
 			if tt.setEnv {
 				assert.NotEmpty(t, os.Getenv("HTTP_PROXY"))
-				assert.NotEmpty(t, os.Getenv("HTTPS_PROXY"))
 			} else {
 				assert.Empty(t, os.Getenv("HTTP_PROXY"))
-				assert.Empty(t, os.Getenv("HTTPS_PROXY"))
 			}
 		})
 	}
