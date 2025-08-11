@@ -257,7 +257,7 @@ jobs:
           benchmark-data-dir-path: ""
           # Set auto-push to false since GitHub API token is not given
           auto-push: false
-          alert-threshold: '150%'
+          alert-threshold: '125%'
           gh-pages-branch: "benchmark-results"
           fail-on-alert: true
       - name: Push benchmark result
@@ -270,6 +270,7 @@ jobs:
       contents: write
     runs-on: ubuntu-22.04
     needs: build-unsigned-snapshot
+
     steps:
       - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
