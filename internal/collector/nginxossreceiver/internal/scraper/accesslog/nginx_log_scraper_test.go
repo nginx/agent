@@ -35,7 +35,7 @@ const (
 
 func TestAccessLogScraper_ID(t *testing.T) {
 	nls := &NginxLogScraper{}
-	assert.Equal(t, "nginx", nls.ID().Type().String())
+	assert.Equal(t, "nginxoss", nls.ID().Type().String())
 }
 
 func TestAccessLogScraper(t *testing.T) {
