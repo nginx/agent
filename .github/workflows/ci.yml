@@ -23,8 +23,8 @@ env:
   GOPROXY: "direct"
 
 jobs:
-  sanity-check:
-    name: Sanity Check
+  proxy-sanity-check:
+    name: Proxy Sanity Check
     runs-on: ubuntu-22.04
     if: ${{ !github.event.pull_request.head.repo.fork }}
     env:
@@ -37,7 +37,7 @@ jobs:
         with:
             go-version-file: 'go.mod'
             cache: false
-      - name: run sanity-check
+      - name: run goproxy-sanity-check
         run: |
           make build
 
