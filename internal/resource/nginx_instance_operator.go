@@ -106,13 +106,13 @@ func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instan
 			}
 		}
 
-		slog.InfoContext(ctx, "All NGINX workers have been reloaded", "worker_count", len(currentWorkers))
-
 		return nil
 	})
 	if err != nil {
-		slog.WarnContext(ctx, "Failed to check if NGINX worker processes have successfully reloaded",
-			"error", err)
+		slog.WarnContext(ctx, "Failed to check if NGINX worker processes have successfully reloaded, "+
+			"timed out waiting", "error", err)
+	} else {
+		slog.InfoContext(ctx, "All NGINX workers have been reloaded")
 	}
 
 	slog.InfoContext(ctx, "NGINX reloaded", "processid", instance.GetInstanceRuntime().GetProcessId())
