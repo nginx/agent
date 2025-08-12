@@ -789,6 +789,14 @@ func normalizeFunc(f *flag.FlagSet, name string) flag.NormalizedName {
 }
 
 func resolveLog() *Log {
+	logLevel := strings.ToLower(viperInstance.GetString(LogLevelKey))
+	validLevels := []string{"debug", "info", "warn", "error"}
+
+	if !slices.Contains(validLevels, logLevel) {
+		slog.Warn("Invalid log level set, defaulting to 'info'", "log_level", logLevel)
+		viperInstance.Set(LogLevelKey, "info")
+	}
+
 	return &Log{
 		Level: viperInstance.GetString(LogLevelKey),
 		Path:  viperInstance.GetString(LogPathKey),
@@ -1168,6 +1176,10 @@ func isHealthExtensionSet() bool {
 }
 
 func resolveCollectorLog() *Log {
+	if !viperInstance.IsSet(CollectorLogLevelKey) {
+		viperInstance.Set(CollectorLogLevelKey, strings.ToUpper(viperInstance.GetString(LogLevelKey)))
+	}
+
 	return &Log{
 		Level: viperInstance.GetString(CollectorLogLevelKey),
 		Path:  viperInstance.GetString(CollectorLogPathKey),

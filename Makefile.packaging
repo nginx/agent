@@ -9,7 +9,7 @@ AZURE_PACKAGES_DIR  := ./build/azure/packages
 BINARY_PATH         := $(BUILD_DIR)/$(BINARY_NAME)
 GPG_PUBLIC_KEY      := .key
 PACKAGE_BUILD       ?= 1
-PACKAGE_VERSION     := $(shell git describe --match "v[0-9]*" --abbrev=0 --tags)
+PACKAGE_VERSION     ?= $(shell echo ${VERSION} | tr -d 'v')
 TARBALL_NAME        := $(PACKAGE_PREFIX).tar.gz
 
 DEB_DISTROS         ?= ubuntu-plucky-25.04 ubuntu-noble-24.04 ubuntu-jammy-22.04 ubuntu-focal-20.04 debian-bookworm-12 debian-bullseye-11
@@ -35,7 +35,7 @@ $(PACKAGES_DIR):
 	@mkdir -p $(PACKAGES_DIR)/deb && mkdir -p $(PACKAGES_DIR)/rpm && mkdir -p $(PACKAGES_DIR)/apk
 
 .PHONY: package
-package: $(PACKAGES_DIR) #### Create final packages for all supported distros
+package: gpg-key $(PACKAGES_DIR) #### Create final packages for all supported distros
 	# Create deb packages
 	@for arch in $(DEB_ARCHS); do \
 		GOWORK=off CGO_ENABLED=0 GOARCH=$${arch} GOOS=linux go build -pgo=auto -ldflags=${LDFLAGS} -o $(BINARY_PATH) $(PROJECT_DIR)/$(PROJECT_FILE); \
@@ -111,7 +111,7 @@ package: $(PACKAGES_DIR) #### Create final packages for all supported distros
 	find $(PACKAGES_DIR)/apk ;\
 
 	# Create tarball containing all packages
-	cd $(PACKAGES_DIR) && tar -czvf "./$(TARBALL_NAME)" * && cd ../.. && cp "${PACKAGES_DIR}/$(TARBALL_NAME)"; \
+	cd $(PACKAGES_DIR) && tar -czvf "./$(TARBALL_NAME)" * && cd ../..; \
 
 .PHONY: gpg-key
 gpg-key: ## Generate GPG public key
