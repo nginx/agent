@@ -11,7 +11,6 @@ ARG PACKAGE_NAME
 ARG CONTAINER_OS_TYPE
 
 WORKDIR /agent
-COPY ./ /agent
 COPY ./build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE} /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE}
 
 RUN  apt-get update \ 
