@@ -26,6 +26,7 @@ type Parameters struct {
 }
 
 type MockCollectorContainers struct {
+	// AgentPlus  testcontainers.Container
 	AgentOSS   testcontainers.Container
 	Otel       testcontainers.Container
 	Prometheus testcontainers.Container
@@ -310,52 +311,57 @@ func StartMockCollectorStack(ctx context.Context, tb testing.TB,
 	packageName := Env(tb, "PACKAGE_NAME")
 	packageRepo := Env(tb, "PACKAGES_REPO")
 	baseImage := Env(tb, "BASE_IMAGE")
+	// osRelease := Env(tb, "OS_RELEASE")
+	// osVersion := Env(tb, "OS_VERSION")
 	buildTarget := Env(tb, "BUILD_TARGET")
 	dockerfilePath := Env(tb, "DOCKERFILE_PATH")
+	// containerRegistry := Env(tb, "CONTAINER_NGINX_IMAGE_REGISTRY")
+	// tag := Env(tb, "TAG")
+	// imagePath := Env(tb, "IMAGE_PATH")
 
 	// agentPlus, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-	// 	ContainerRequest: testcontainers.ContainerRequest{
-	// 		FromDockerfile: testcontainers.FromDockerfile{
-	// 			Context:       "../../../",
-	// 			Dockerfile:    "./test/docker/nginx-plus/deb/Dockerfile",
-	// 			KeepImage:     false,
-	// 			PrintBuildLog: true,
-	// 			BuildArgs: map[string]*string{
-	// 				"PACKAGE_NAME":                   ToPtr(packageName),
-	// 				"PACKAGES_REPO":                  ToPtr(packageRepo),
-	// 				"BASE_IMAGE":                     ToPtr(baseImage),
-	// 				"OS_RELEASE":                     ToPtr(osRelease),
-	// 				"OS_VERSION":                     ToPtr(osVersion),
-	// 				"ENTRY_POINT":                    ToPtr("./test/docker/entrypoint.sh"),
-	// 				"CONTAINER_NGINX_IMAGE_REGISTRY": ToPtr(containerRegistry),
-	// 				"IMAGE_PATH":                     ToPtr(imagePath),
-	// 				"TAG":                            ToPtr(tag),
-	// 			},
-	// 			BuildOptionsModifier: func(buildOptions *types.ImageBuildOptions) {
-	// 				buildOptions.Target = buildTarget
-	// 			},
-	// 		},
-	// 		Name:     "agent-with-nginx-plus",
-	// 		Networks: []string{containerNetwork.Name},
-	// 		Files: []testcontainers.ContainerFile{
-	// 			{
-	// 				HostFilePath:      "../../mock/collector/nginx-agent.conf",
-	// 				ContainerFilePath: "/etc/nginx-agent/nginx-agent.conf",
-	// 				FileMode:          configFilePermissions,
-	// 			},
-	// 			{
-	// 				HostFilePath:      "../../mock/collector/nginx-plus/nginx.conf",
-	// 				ContainerFilePath: "/etc/nginx/nginx.conf",
-	// 				FileMode:          configFilePermissions,
-	// 			},
-	// 			{
-	// 				HostFilePath:      "../../mock/collector/nginx-plus/conf.d/default.conf",
-	// 				ContainerFilePath: "/etc/nginx/conf.d/default.conf",
-	// 				FileMode:          configFilePermissions,
-	// 			},
-	// 		},
-	// 	},
-	// 	Started: true,
+	//	ContainerRequest: testcontainers.ContainerRequest{
+	//		FromDockerfile: testcontainers.FromDockerfile{
+	//			Context:       "../../../",
+	//			Dockerfile:    "./test/docker/nginx-plus/deb/Dockerfile",
+	//			KeepImage:     false,
+	//			PrintBuildLog: true,
+	//			BuildArgs: map[string]*string{
+	//				"PACKAGE_NAME":                   ToPtr(packageName),
+	//				"PACKAGES_REPO":                  ToPtr(packageRepo),
+	//				"BASE_IMAGE":                     ToPtr(baseImage),
+	//				"OS_RELEASE":                     ToPtr(osRelease),
+	//				"OS_VERSION":                     ToPtr(osVersion),
+	//				"ENTRY_POINT":                    ToPtr("./test/docker/entrypoint.sh"),
+	//				"CONTAINER_NGINX_IMAGE_REGISTRY": ToPtr(containerRegistry),
+	//				"IMAGE_PATH":                     ToPtr(imagePath),
+	//				"TAG":                            ToPtr(tag),
+	//			},
+	//			BuildOptionsModifier: func(buildOptions *types.ImageBuildOptions) {
+	//				buildOptions.Target = "install-nginx"
+	//			},
+	//		},
+	//		Name:     "agent-with-nginx-plus",
+	//		Networks: []string{containerNetwork.Name},
+	//		Files: []testcontainers.ContainerFile{
+	//			{
+	//				HostFilePath:      agentConfig,
+	//				ContainerFilePath: "/etc/nginx-agent/nginx-agent.conf",
+	//				FileMode:          configFilePermissions,
+	//			},
+	//			{
+	//				HostFilePath:      "../../mock/collector/nginx-plus/nginx.conf",
+	//				ContainerFilePath: "/etc/nginx/nginx.conf",
+	//				FileMode:          configFilePermissions,
+	//			},
+	//			{
+	//				HostFilePath:      "../../mock/collector/nginx-plus/conf.d/default.conf",
+	//				ContainerFilePath: "/etc/nginx/conf.d/default.conf",
+	//				FileMode:          configFilePermissions,
+	//			},
+	//		},
+	//	},
+	//	Started: true,
 	// })
 	// require.NoError(tb, err)
 
@@ -367,10 +373,10 @@ func StartMockCollectorStack(ctx context.Context, tb testing.TB,
 				KeepImage:     false,
 				PrintBuildLog: true,
 				BuildArgs: map[string]*string{
-					"PACKAGE_NAME":                   ToPtr(packageName),
-					"PACKAGES_REPO":                  ToPtr(packageRepo),
-					"BASE_IMAGE":                     ToPtr(baseImage),
-					"ENTRY_POINT":                    ToPtr("./test/docker/entrypoint.sh"),
+					"PACKAGE_NAME":  ToPtr(packageName),
+					"PACKAGES_REPO": ToPtr(packageRepo),
+					"BASE_IMAGE":    ToPtr(baseImage),
+					"ENTRY_POINT":   ToPtr("./test/docker/entrypoint.sh"),
 				},
 				BuildOptionsModifier: func(buildOptions *types.ImageBuildOptions) {
 					buildOptions.Target = buildTarget
@@ -443,7 +449,7 @@ func StartMockCollectorStack(ctx context.Context, tb testing.TB,
 		Started: true,
 	})
 	require.NoError(tb, err)
-	
+
 	return &MockCollectorContainers{
 		// AgentPlus:  agentPlus,
 		AgentOSS:   agentOSS,
