@@ -13,6 +13,9 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/datasource/nginx"
+	"github.com/nginx/agent/v3/pkg/id"
+
 	"github.com/nginx/agent/v3/internal/backoff"
 	"github.com/nginx/agent/v3/pkg/nginxprocess"
 	"github.com/shirou/gopsutil/v4/process"
@@ -23,9 +26,9 @@ import (
 )
 
 type NginxInstanceOperator struct {
+	agentConfig           *config.Config
 	executer              exec.ExecInterface
 	logTailer             logTailerOperator
-	agentConfig           *config.Config
 	treatWarningsAsErrors bool
 }
 
@@ -59,14 +62,14 @@ func (i *NginxInstanceOperator) Validate(ctx context.Context, instance *mpi.Inst
 	return nil
 }
 
-// nolint: revive
 func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instance) error {
 	var reloadTime time.Time
 	var errorsFound error
 	slog.InfoContext(ctx, "Reloading NGINX PID", "pid",
 		instance.GetInstanceRuntime().GetProcessId())
 
-	workers := nginxWorkerProcesses(ctx)
+	pid := instance.GetInstanceRuntime().GetProcessId()
+	workers := nginxWorkerProcesses(ctx, pid)
 
 	if len(workers) > 0 {
 		reloadTime = workers[0].Created
@@ -84,36 +87,7 @@ func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instan
 		return err
 	}
 
-	backoffSettings := &config.BackOff{
-		InitialInterval:     i.agentConfig.Client.Backoff.InitialInterval,
-		MaxInterval:         i.agentConfig.Client.Backoff.MaxInterval,
-		MaxElapsedTime:      i.agentConfig.Client.Backoff.MaxElapsedTime,
-		RandomizationFactor: i.agentConfig.Client.Backoff.RandomizationFactor,
-		Multiplier:          i.agentConfig.Client.Backoff.Multiplier,
-	}
-
-	slog.DebugContext(ctx, "Waiting for NGINX to finish reloading")
-	err = backoff.WaitUntil(ctx, backoffSettings, func() error {
-		currentWorkers := nginxWorkerProcesses(ctx)
-		if len(currentWorkers) == 0 {
-			return errors.New("waiting for NGINX worker processes")
-		}
-
-		for _, worker := range currentWorkers {
-			if !worker.Created.After(reloadTime) {
-				return fmt.Errorf("waiting for all NGINX workers to be newer "+
-					"than %v, found worker with time %v", reloadTime, worker.Created)
-			}
-		}
-
-		return nil
-	})
-	if err != nil {
-		slog.WarnContext(ctx, "Failed to check if NGINX worker processes have successfully reloaded, "+
-			"timed out waiting", "error", err)
-	} else {
-		slog.InfoContext(ctx, "All NGINX workers have been reloaded")
-	}
+	i.checkWorkers(ctx, instance.GetInstanceMeta().GetInstanceId(), reloadTime)
 
 	slog.InfoContext(ctx, "NGINX reloaded", "process_id", instance.GetInstanceRuntime().GetProcessId())
 
@@ -137,7 +111,51 @@ func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instan
 	return nil
 }
 
-func nginxWorkerProcesses(ctx context.Context) []*nginxprocess.Process {
+func (i *NginxInstanceOperator) checkWorkers(ctx context.Context, instanceID string, reloadTime time.Time) {
+	backoffSettings := &config.BackOff{
+		InitialInterval:     i.agentConfig.Client.Backoff.InitialInterval,
+		MaxInterval:         i.agentConfig.Client.Backoff.MaxInterval,
+		MaxElapsedTime:      i.agentConfig.Client.Backoff.MaxElapsedTime,
+		RandomizationFactor: i.agentConfig.Client.Backoff.RandomizationFactor,
+		Multiplier:          i.agentConfig.Client.Backoff.Multiplier,
+	}
+
+	slog.DebugContext(ctx, "Waiting for NGINX to finish reloading")
+	newPid, findErr := i.findParentProcessID(ctx, instanceID)
+
+	if findErr != nil {
+		slog.WarnContext(ctx, "Error finding parent process ID, unable to check if NGINX worker "+
+			"processes have reloaded", "error", findErr)
+
+		return
+	}
+
+	err := backoff.WaitUntil(ctx, backoffSettings, func() error {
+		currentWorkers := nginxWorkerProcesses(ctx, newPid)
+		if len(currentWorkers) == 0 {
+			return errors.New("waiting for NGINX worker processes")
+		}
+
+		for _, worker := range currentWorkers {
+			if !worker.Created.After(reloadTime) {
+				return fmt.Errorf("waiting for all NGINX workers to be newer "+
+					"than %v, found worker with time %v", reloadTime, worker.Created)
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		slog.WarnContext(ctx, "Failed to check if NGINX worker processes have successfully reloaded, "+
+			"timed out waiting", "error", err)
+
+		return
+	}
+
+	slog.InfoContext(ctx, "All NGINX workers have been reloaded")
+}
+
+func nginxWorkerProcesses(ctx context.Context, pid int32) []*nginxprocess.Process {
 	slog.DebugContext(ctx, "Getting NGINX worker processes for NGINX reload")
 	var workers []*nginxprocess.Process
 	processes, err := process.ProcessesWithContext(ctx)
@@ -151,12 +169,44 @@ func nginxWorkerProcesses(ctx context.Context) []*nginxprocess.Process {
 	}
 
 	for _, nginxProcess := range nginxProcesses {
-		if nginxProcess.IsWorker() {
+		if nginxProcess.IsWorker() && nginxProcess.PPID == pid {
 			workers = append(workers, nginxProcess)
 		}
 	}
 
 	return workers
+}
+
+// nolint: revive
+func (i *NginxInstanceOperator) findParentProcessID(ctx context.Context, instanceID string) (int32, error) {
+	var pid int32
+
+	processes, err := process.ProcessesWithContext(ctx)
+	if err != nil {
+		slog.WarnContext(ctx, "Failed to get processes", "error", err)
+	}
+
+	nginxProcesses, err := nginxprocess.ListWithProcesses(ctx, processes)
+	if err != nil {
+		slog.WarnContext(ctx, "Failed to get NGINX processes", "error", err)
+	}
+
+	for _, proc := range nginxProcesses {
+		if proc.IsMaster() {
+			info, infoErr := nginx.ProcessInfo(ctx, proc, i.executer)
+			if infoErr != nil {
+				slog.WarnContext(ctx, "Failed to get NGINX process info from master process", "error", infoErr)
+				continue
+			}
+			processInstanceID := id.Generate("%s_%s_%s", info.ExePath, info.ConfPath, info.Prefix)
+			if instanceID == processInstanceID {
+				slog.DebugContext(ctx, "Found NGINX process ID", "process_id", processInstanceID)
+				return proc.PID, nil
+			}
+		}
+	}
+
+	return pid, errors.New("unable to find parent process")
 }
 
 func (i *NginxInstanceOperator) validateConfigCheckResponse(out []byte) error {
