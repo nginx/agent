@@ -10,6 +10,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -21,6 +22,8 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/nginx/agent/v3/internal/backoff"
 
 	pkg "github.com/nginx/agent/v3/pkg/config"
 
@@ -551,6 +554,7 @@ func (ncp *NginxConfigParser) apiCallback(ctx context.Context, parent,
 	}
 }
 
+// nolint: revive, cyclop
 func (ncp *NginxConfigParser) pingAPIEndpoint(ctx context.Context, statusAPIDetail *model.APIDetails,
 	apiType string,
 ) bool {
@@ -573,45 +577,65 @@ func (ncp *NginxConfigParser) pingAPIEndpoint(ctx context.Context, statusAPIDeta
 		return false
 	}
 
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		slog.WarnContext(ctx, fmt.Sprintf("Unable to GET %s from API request", apiType), "error", err)
-		return false
+	backoffSettings := &config.BackOff{
+		InitialInterval:     ncp.agentConfig.Client.Backoff.InitialInterval,
+		MaxInterval:         ncp.agentConfig.Client.Backoff.MaxInterval,
+		MaxElapsedTime:      ncp.agentConfig.Client.Backoff.MaxElapsedTime,
+		RandomizationFactor: ncp.agentConfig.Client.Backoff.RandomizationFactor,
+		Multiplier:          ncp.agentConfig.Client.Backoff.Multiplier,
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		slog.DebugContext(ctx, apiType+" API responded with unexpected status code", "status_code",
-			resp.StatusCode, "expected", http.StatusOK)
+	backoffErr := backoff.WaitUntil(ctx, backoffSettings, func() error {
+		resp, reqErr := httpClient.Do(req)
+		if err != nil {
+			slog.WarnContext(ctx, fmt.Sprintf("Unable to GET %s from API request", apiType), "error", reqErr)
+			return errors.New("Unable to GET " + apiType + " from API request")
+		}
 
-		return false
-	}
+		if resp.StatusCode != http.StatusOK {
+			slog.DebugContext(ctx, apiType+" API responded with unexpected status code", "status_code",
+				resp.StatusCode, "expected", http.StatusOK)
 
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		slog.WarnContext(ctx, fmt.Sprintf("Unable to read %s API response body", apiType), "error", err)
-		return false
-	}
+			return errors.New("Unable to GET " + apiType + " from API request, unexpected status code")
+		}
+		bodyBytes, readErr := io.ReadAll(resp.Body)
+		if err != nil {
+			slog.WarnContext(ctx, fmt.Sprintf("Unable to read %s API response body", apiType), "error", readErr)
+			return errors.New("Unable to GET " + apiType + " from API request, unable to read response body")
+		}
 
-	// Expecting API to return data like this:
-	//
-	// Active connections: 2
-	// server accepts handled requests
-	//  18 18 3266
-	// Reading: 0 Writing: 1 Waiting: 1
+		// Expecting API to return data like this:
+		//
+		// Active connections: 2
+		// server accepts handled requests
+		//  18 18 3266
+		// Reading: 0 Writing: 1 Waiting: 1
 
-	if apiType == stubStatusAPIDirective {
-		body := string(bodyBytes)
-		defer resp.Body.Close()
+		if apiType == stubStatusAPIDirective {
+			body := string(bodyBytes)
+			defer resp.Body.Close()
 
-		return strings.Contains(body, "Active connections") && strings.Contains(body, "server accepts handled requests")
-	}
-	// Expecting API to return the API versions in an array of positive integers
-	// subset example: [ ... 6,7,8,9 ...]
-	var responseBody []int
-	err = json.Unmarshal(bodyBytes, &responseBody)
-	defer resp.Body.Close()
-	if err != nil {
-		slog.DebugContext(ctx, "Unable to unmarshal NGINX Plus API response body", "error", err)
+			if !strings.Contains(body, "Active connections") &&
+				!strings.Contains(body, "server accepts handled requests") {
+				return errors.New("Unable to GET " + apiType + " API responded with unexpected status code")
+			}
+		} else {
+			// Expecting API to return the API versions in an array of positive integers
+			// subset example: [ ... 6,7,8,9 ...]
+			var responseBody []int
+			err = json.Unmarshal(bodyBytes, &responseBody)
+			defer resp.Body.Close()
+			if err != nil {
+				slog.DebugContext(ctx, "Unable to unmarshal NGINX Plus API response body", "error", err)
+				return errors.New("unable to unmarshal NGINX Plus API response body")
+			}
+		}
+
+		return nil
+	})
+
+	if backoffErr != nil {
+		slog.WarnContext(ctx, fmt.Sprintf("Unable to GET %s from API request", apiType), "error", backoffErr)
 		return false
 	}
 
