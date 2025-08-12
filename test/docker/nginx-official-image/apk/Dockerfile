@@ -11,6 +11,7 @@ ARG CONTAINER_OS_TYPE
 
 WORKDIR /agent
 COPY ./build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE} /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE}
+COPY ./ /agent
 
 RUN apk add --allow-untrusted /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE}
 
