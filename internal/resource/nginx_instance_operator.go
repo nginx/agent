@@ -115,7 +115,7 @@ func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instan
 		slog.InfoContext(ctx, "All NGINX workers have been reloaded")
 	}
 
-	slog.InfoContext(ctx, "NGINX reloaded", "processid", instance.GetInstanceRuntime().GetProcessId())
+	slog.InfoContext(ctx, "NGINX reloaded", "process_id", instance.GetInstanceRuntime().GetProcessId())
 
 	numberOfExpectedMessages := len(errorLogs)
 
