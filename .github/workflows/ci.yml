@@ -196,7 +196,7 @@ jobs:
           path: "/nginx-plus/agent"
         - image: "alpine"
           version: "3.19"
-          plus: "r33"
+          plus: "r32"
           release: "alpine"
           path: "/nginx-plus/agent"
         - image: "debian"
@@ -206,7 +206,7 @@ jobs:
           path: "/nginx-plus/agent"
         - image: "debian"
           version: "bookworm"
-          plus: "r33"
+          plus: "r32"
           release: "debian"
           path: "/nginx-plus/agent"
     steps:
