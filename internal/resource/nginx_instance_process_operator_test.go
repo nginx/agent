@@ -10,12 +10,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
 	"github.com/nginx/agent/v3/pkg/nginxprocess"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestProcessOperator_FindParentProcessID(t *testing.T) {
@@ -31,12 +32,11 @@ func TestProcessOperator_FindParentProcessID(t *testing.T) {
 					configure arguments: ` + configArgs
 
 	tests := []struct {
-		expectedLog    string
-		name           string
-		instanceID     string
-		expectErr      error
+		name           string                  // 16 bytes
+		instanceID     string                  // 16 bytes
+		expectErr      error                   // 16 bytes (interface)
+		nginxProcesses []*nginxprocess.Process // 24 bytes (slice header)
 		expectedPPID   int32
-		nginxProcesses []*nginxprocess.Process
 	}{
 		{
 			name:         "Test 1: Found parent process",
@@ -168,13 +168,12 @@ func TestProcessOperator_FindParentProcessID(t *testing.T) {
 			ppid, err := processOperator.FindParentProcessID(ctx, test.instanceID, test.nginxProcesses, mockExec)
 
 			if test.expectErr != nil {
-				assert.Error(tt, err)
+				require.Error(tt, err)
 			} else {
 				require.NoError(tt, err)
 			}
 
 			assert.Equal(tt, test.expectedPPID, ppid)
-
 		})
 	}
 }
