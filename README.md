@@ -3,8 +3,6 @@
 ![GitHub License](https://img.shields.io/github/license/nginx/agent)
 ![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)
 
-![NGINX Agent Banner](docs/agent-banner.png "NGINX Agent Banner")
-
 # F5 NGINX Agent 
 
 F5 NGINX Agent is a companion application designed to efficiently manage NGINX instances. Key features include: 
@@ -33,8 +31,8 @@ You can install **NGINX Agent** using one of the following methods:
 
 ## Useful links
 
-* [v2 - Offical NGINX Agent documentation](https://docs.nginx.com/nginx-agent/)
-* [v3 - Offical NGINX Agent documentation](https://docs.nginx.com/nginx-one/agent/)
+* [v2 - Official NGINX Agent documentation](https://docs.nginx.com/nginx-agent/)
+* [v3 - Official NGINX Agent documentation](https://docs.nginx.com/nginx-one/agent/)
 * [F5 Support](https://my.f5.com/manage/s/)
 
 ## Community 
