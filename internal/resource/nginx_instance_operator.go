@@ -25,7 +25,7 @@ type NginxInstanceOperator struct {
 	agentConfig           *config.Config
 	executer              exec.ExecInterface
 	logTailer             logTailerOperator
-	nginxProccessOperator processOperator
+	nginxProcessOperator  processOperator
 	treatWarningsAsErrors bool
 }
 
@@ -35,7 +35,7 @@ func NewInstanceOperator(agentConfig *config.Config) *NginxInstanceOperator {
 	return &NginxInstanceOperator{
 		executer:              &exec.Exec{},
 		logTailer:             NewLogTailerOperator(agentConfig),
-		nginxProccessOperator: NewNginxInstanceProcessOperator(),
+		nginxProcessOperator:  NewNginxInstanceProcessOperator(),
 		treatWarningsAsErrors: agentConfig.DataPlaneConfig.Nginx.TreatWarningsAsErrors,
 		agentConfig:           agentConfig,
 	}
@@ -67,7 +67,7 @@ func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instan
 		instance.GetInstanceRuntime().GetProcessId())
 
 	pid := instance.GetInstanceRuntime().GetProcessId()
-	workers := i.nginxProccessOperator.NginxWorkerProcesses(ctx, pid)
+	workers := i.nginxProcessOperator.NginxWorkerProcesses(ctx, pid)
 
 	if len(workers) > 0 {
 		reloadTime = workers[0].Created
@@ -85,7 +85,7 @@ func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instan
 		return err
 	}
 
-	processes, procErr := i.nginxProccessOperator.FindNginxProcesses(ctx)
+	processes, procErr := i.nginxProcessOperator.FindNginxProcesses(ctx)
 	if procErr != nil {
 		slog.WarnContext(ctx, "Error finding parent process ID, unable to check if NGINX worker "+
 			"processes have reloaded", "error", procErr)
@@ -128,7 +128,7 @@ func (i *NginxInstanceOperator) checkWorkers(ctx context.Context, instanceID str
 
 	slog.DebugContext(ctx, "Waiting for NGINX to finish reloading")
 
-	newPid, findErr := i.nginxProccessOperator.FindParentProcessID(ctx, instanceID, processes, i.executer)
+	newPid, findErr := i.nginxProcessOperator.FindParentProcessID(ctx, instanceID, processes, i.executer)
 	if findErr != nil {
 		slog.WarnContext(ctx, "Error finding parent process ID, unable to check if NGINX worker "+
 			"processes have reloaded", "error", findErr)
@@ -139,7 +139,7 @@ func (i *NginxInstanceOperator) checkWorkers(ctx context.Context, instanceID str
 	slog.DebugContext(ctx, "Found parent process ID", "process_id", newPid)
 
 	err := backoff.WaitUntil(ctx, backoffSettings, func() error {
-		currentWorkers := i.nginxProccessOperator.NginxWorkerProcesses(ctx, newPid)
+		currentWorkers := i.nginxProcessOperator.NginxWorkerProcesses(ctx, newPid)
 		if len(currentWorkers) == 0 {
 			return errors.New("waiting for NGINX worker processes")
 		}
