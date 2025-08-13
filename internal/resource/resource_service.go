@@ -12,13 +12,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	"log/slog"
 	"net"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
+
+	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 
 	"github.com/nginx/agent/v3/pkg/nginxprocess"
 

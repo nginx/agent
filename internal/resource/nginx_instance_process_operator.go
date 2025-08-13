@@ -8,10 +8,11 @@ package resource
 import (
 	"context"
 	"errors"
+	"log/slog"
+
 	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	"github.com/nginx/agent/v3/internal/datasource/nginx"
 	"github.com/nginx/agent/v3/pkg/id"
-	"log/slog"
 
 	"github.com/nginx/agent/v3/pkg/nginxprocess"
 	"github.com/shirou/gopsutil/v4/process"
@@ -39,7 +40,9 @@ func (p *NginxInstanceProcessOperator) FindNginxProcesses(ctx context.Context) (
 	return nginxProcesses, nil
 }
 
-func (p *NginxInstanceProcessOperator) NginxWorkerProcesses(ctx context.Context, masterProcessPid int32) []*nginxprocess.Process {
+func (p *NginxInstanceProcessOperator) NginxWorkerProcesses(ctx context.Context,
+	masterProcessPid int32,
+) []*nginxprocess.Process {
 	slog.DebugContext(ctx, "Getting NGINX worker processes for NGINX reload")
 	var workers []*nginxprocess.Process
 	nginxProcesses, err := p.FindNginxProcesses(ctx)
