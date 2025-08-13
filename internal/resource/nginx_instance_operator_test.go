@@ -14,6 +14,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/resource/resourcefakes"
+
+	"github.com/nginx/agent/v3/test/stub"
+
+	"github.com/nginx/agent/v3/pkg/nginxprocess"
+
 	"github.com/nginx/agent/v3/internal/config"
 
 	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
@@ -22,6 +28,30 @@ import (
 	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+)
+
+const (
+	exePath       = "/usr/local/Cellar/nginx/1.25.3/bin/nginx"
+	ossConfigArgs = "--prefix=/usr/local/Cellar/nginx/1.25.3 --sbin-path=/usr/local/Cellar/nginx/1.25.3/bin/nginx " +
+		"--modules-path=%s --with-cc-opt='-I/usr/local/opt/pcre2/include -I/usr/local/opt/openssl@1.1/include' " +
+		"--with-ld-opt='-L/usr/local/opt/pcre2/lib -L/usr/local/opt/openssl@1.1/lib' " +
+		"--conf-path=/usr/local/etc/nginx/nginx.conf --pid-path=/usr/local/var/run/nginx.pid " +
+		"--lock-path=/usr/local/var/run/nginx.lock " +
+		"--http-client-body-temp-path=/usr/local/var/run/nginx/client_body_temp " +
+		"--http-proxy-temp-path=/usr/local/var/run/nginx/proxy_temp " +
+		"--http-fastcgi-temp-path=/usr/local/var/run/nginx/fastcgi_temp " +
+		"--http-uwsgi-temp-path=/usr/local/var/run/nginx/uwsgi_temp " +
+		"--http-scgi-temp-path=/usr/local/var/run/nginx/scgi_temp " +
+		"--http-log-path=/usr/local/var/log/nginx/access.log " +
+		"--error-log-path=/usr/local/var/log/nginx/error.log --with-compat --with-debug " +
+		"--with-http_addition_module --with-http_auth_request_module --with-http_dav_module " +
+		"--with-http_degradation_module --with-http_flv_module --with-http_gunzip_module " +
+		"--with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module " +
+		"--with-http_realip_module --with-http_secure_link_module --with-http_slice_module " +
+		"--with-http_ssl_module --with-http_stub_status_module --with-http_sub_module " +
+		"--with-http_v2_module --with-ipv6 --with-mail --with-mail_ssl_module --with-pcre " +
+		"--with-pcre-jit --with-stream --with-stream_realip_module --with-stream_ssl_module " +
+		"--with-stream_ssl_preread_module"
 )
 
 func TestInstanceOperator_ValidateConfigCheckResponse(t *testing.T) {
@@ -220,6 +250,97 @@ func TestInstanceOperator_ReloadAndMonitor(t *testing.T) {
 			}
 
 			wg.Wait()
+		})
+	}
+}
+
+func TestInstanceOperator_checkWorkers(t *testing.T) {
+	ctx := context.Background()
+
+	modulePath := t.TempDir() + "/usr/lib/nginx/modules"
+
+	configArgs := fmt.Sprintf(ossConfigArgs, modulePath)
+	nginxVersionCommandOutput := `nginx version: nginx/1.25.3
+					built by clang 14.0.0 (clang-1400.0.29.202)
+					built with OpenSSL 1.1.1s  1 Nov 2022 (running with OpenSSL 1.1.1t  7 Feb 2023)
+					TLS SNI support enabled
+					configure arguments: ` + configArgs
+
+	tests := []struct {
+		expectedLog string
+		name        string
+		instanceID  string
+		reloadTime  time.Time
+		processes   []*nginxprocess.Process
+	}{
+		{
+			name:        "Test 1: Successful reload",
+			expectedLog: "All NGINX workers have been reloaded",
+			reloadTime:  time.Date(2025, 8, 13, 8, 0, 0, 0, time.Local),
+			instanceID:  "e1374cb1-462d-3b6c-9f3b-f28332b5f10c",
+			processes: []*nginxprocess.Process{
+				{
+					PID:     567,
+					Created: time.Date(2025, 8, 13, 8, 1, 0, 0, time.Local),
+					PPID:    1234,
+					Name:    "nginx",
+					Cmd:     "nginx: worker process",
+					Exe:     exePath,
+				},
+				{
+					PID:     789,
+					PPID:    1234,
+					Created: time.Date(2025, 8, 13, 8, 1, 0, 0, time.Local),
+					Name:    "nginx",
+					Cmd:     "nginx: worker process",
+					Exe:     exePath,
+				},
+				{
+					PID:     1234,
+					Created: time.Date(2025, 8, 13, 8, 1, 0, 0, time.Local),
+					PPID:    1,
+					Name:    "nginx",
+					Cmd:     "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
+					Exe:     exePath,
+				},
+			},
+			// Add another test with 2 nginx processes that will result in a different ID
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			mockExec := &execfakes.FakeExecInterface{}
+			mockExec.RunCmdReturnsOnCall(0, bytes.NewBufferString(nginxVersionCommandOutput), nil)
+			mockExec.RunCmdReturnsOnCall(1, bytes.NewBufferString(nginxVersionCommandOutput), nil)
+			mockExec.RunCmdReturnsOnCall(2, bytes.NewBufferString(nginxVersionCommandOutput), nil)
+			mockExec.RunCmdReturnsOnCall(3, bytes.NewBufferString(nginxVersionCommandOutput), nil)
+
+			mockProcessOp := &resourcefakes.FakeProcessOperator{}
+			mockProcessOp.FindNginxProcessesReturnsOnCall(0, test.processes, nil)
+
+			logBuf := &bytes.Buffer{}
+			stub.StubLoggerWith(logBuf)
+
+			agentConfig := types.AgentConfig()
+			agentConfig.DataPlaneConfig.Nginx.ReloadMonitoringPeriod = 10 * time.Second
+			agentConfig.Client.Backoff = &config.BackOff{
+				InitialInterval:     config.DefBackoffInitialInterval,
+				MaxInterval:         config.DefBackoffMaxInterval,
+				MaxElapsedTime:      10 * time.Second,
+				RandomizationFactor: config.DefBackoffRandomizationFactor,
+				Multiplier:          config.DefBackoffMultiplier,
+			}
+			operator := NewInstanceOperator(agentConfig)
+			operator.executer = mockExec
+			operator.nginxProccessOperator = mockProcessOp
+
+			operator.checkWorkers(ctx, test.instanceID, test.reloadTime, test.processes)
+
+			helpers.ValidateLog(t, test.expectedLog, logBuf)
+
+			t.Logf("%v ", logBuf.String())
+			logBuf.Reset()
 		})
 	}
 }
