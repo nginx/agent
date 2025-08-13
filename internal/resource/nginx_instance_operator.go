@@ -63,10 +63,11 @@ func (i *NginxInstanceOperator) Validate(ctx context.Context, instance *mpi.Inst
 func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instance) error {
 	var reloadTime time.Time
 	var errorsFound error
-	slog.InfoContext(ctx, "Reloading NGINX PID", "pid",
-		instance.GetInstanceRuntime().GetProcessId())
-
 	pid := instance.GetInstanceRuntime().GetProcessId()
+
+	slog.InfoContext(ctx, "Reloading NGINX PID", "pid",
+		pid)
+
 	workers := i.nginxProcessOperator.NginxWorkerProcesses(ctx, pid)
 
 	if len(workers) > 0 {
@@ -80,7 +81,7 @@ func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instan
 
 	go i.monitorLogs(ctx, errorLogs, logErrorChannel)
 
-	err := i.executer.KillProcess(instance.GetInstanceRuntime().GetProcessId())
+	err := i.executer.KillProcess(pid)
 	if err != nil {
 		return err
 	}
@@ -93,7 +94,7 @@ func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instan
 		i.checkWorkers(ctx, instance.GetInstanceMeta().GetInstanceId(), reloadTime, processes)
 	}
 
-	slog.InfoContext(ctx, "NGINX reloaded", "process_id", instance.GetInstanceRuntime().GetProcessId())
+	slog.InfoContext(ctx, "NGINX reloaded", "process_id", pid)
 
 	numberOfExpectedMessages := len(errorLogs)
 

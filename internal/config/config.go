@@ -459,31 +459,31 @@ func registerDataPlaneFlags(fs *flag.FlagSet) {
 			"collection or error monitoring. This includes absolute paths or regex patterns",
 	)
 
-	// Nginx Reload Backoff Flags
+	// NGINX Reload Backoff Flags
 	fs.Duration(
 		NginxReloadBackoffInitialIntervalKey,
 		DefNginxReloadBackoffInitialInterval,
-		"The client backoff initial interval, value in seconds")
+		"The NGINX reload backoff initial interval, value in seconds")
 
 	fs.Duration(
 		NginxReloadBackoffMaxIntervalKey,
 		DefNginxReloadBackoffMaxInterval,
-		"The client backoff max interval, value in seconds")
+		"The NGINX reload backoff max interval, value in seconds")
 
 	fs.Duration(
 		NginxReloadBackoffMaxElapsedTimeKey,
 		DefNginxReloadBackoffMaxElapsedTime,
-		"The client backoff max elapsed time, value in seconds")
+		"The NGINX reload backoff max elapsed time, value in seconds")
 
 	fs.Float64(
 		NginxReloadBackoffRandomizationFactorKey,
 		DefNginxReloadBackoffRandomizationFactor,
-		"The client backoff randomization factor, value float")
+		"The NGINX reload backoff randomization factor, value float")
 
 	fs.Float64(
 		NginxReloadBackoffMultiplierKey,
 		DefNginxReloadBackoffMultiplier,
-		"The client backoff multiplier, value float")
+		"The NGINX reload backoff multiplier, value float")
 }
 
 func registerCommonFlags(fs *flag.FlagSet) {
