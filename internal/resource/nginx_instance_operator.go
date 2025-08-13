@@ -119,11 +119,11 @@ func (i *NginxInstanceOperator) checkWorkers(ctx context.Context, instanceID str
 	processes []*nginxprocess.Process,
 ) {
 	backoffSettings := &config.BackOff{
-		InitialInterval:     i.agentConfig.Client.Backoff.InitialInterval,
-		MaxInterval:         i.agentConfig.Client.Backoff.MaxInterval,
-		MaxElapsedTime:      i.agentConfig.Client.Backoff.MaxElapsedTime,
-		RandomizationFactor: i.agentConfig.Client.Backoff.RandomizationFactor,
-		Multiplier:          i.agentConfig.Client.Backoff.Multiplier,
+		InitialInterval:     i.agentConfig.DataPlaneConfig.Nginx.ReloadBackoff.InitialInterval,
+		MaxInterval:         i.agentConfig.DataPlaneConfig.Nginx.ReloadBackoff.MaxInterval,
+		MaxElapsedTime:      i.agentConfig.DataPlaneConfig.Nginx.ReloadBackoff.MaxElapsedTime,
+		RandomizationFactor: i.agentConfig.DataPlaneConfig.Nginx.ReloadBackoff.RandomizationFactor,
+		Multiplier:          i.agentConfig.DataPlaneConfig.Nginx.ReloadBackoff.Multiplier,
 	}
 
 	slog.DebugContext(ctx, "Waiting for NGINX to finish reloading")
@@ -139,6 +139,7 @@ func (i *NginxInstanceOperator) checkWorkers(ctx context.Context, instanceID str
 	slog.DebugContext(ctx, "Found parent process ID", "process_id", newPid)
 
 	err := backoff.WaitUntil(ctx, backoffSettings, func() error {
+		slog.Info(" ============ Checking NGINX worker processes have reloaded")
 		currentWorkers := i.nginxProcessOperator.NginxWorkerProcesses(ctx, newPid)
 		if len(currentWorkers) == 0 {
 			return errors.New("waiting for NGINX worker processes")

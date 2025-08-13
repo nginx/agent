@@ -166,12 +166,12 @@ func TestInstanceOperator_Reload(t *testing.T) {
 			instance := protos.NginxOssInstance([]string{})
 
 			agentConfig := types.AgentConfig()
-			agentConfig.Client.Backoff = &config.BackOff{
-				InitialInterval:     1 * time.Millisecond,
-				MaxInterval:         1 * time.Millisecond,
-				MaxElapsedTime:      1 * time.Second,
-				RandomizationFactor: 1,
-				Multiplier:          1,
+			agentConfig.DataPlaneConfig.Nginx.ReloadBackoff = &config.BackOff{
+				InitialInterval:     config.DefNginxReloadBackoffInitialInterval,
+				MaxInterval:         config.DefNginxReloadBackoffMaxInterval,
+				MaxElapsedTime:      config.DefNginxReloadBackoffMaxElapsedTime,
+				RandomizationFactor: config.DefNginxReloadBackoffRandomizationFactor,
+				Multiplier:          config.DefNginxReloadBackoffMultiplier,
 			}
 			operator := NewInstanceOperator(agentConfig)
 			operator.executer = mockExec
@@ -226,12 +226,12 @@ func TestInstanceOperator_ReloadAndMonitor(t *testing.T) {
 
 			agentConfig := types.AgentConfig()
 			agentConfig.DataPlaneConfig.Nginx.ReloadMonitoringPeriod = 10 * time.Second
-			agentConfig.Client.Backoff = &config.BackOff{
-				InitialInterval:     1 * time.Millisecond,
-				MaxInterval:         1 * time.Millisecond,
-				MaxElapsedTime:      1 * time.Second,
-				RandomizationFactor: 1,
-				Multiplier:          1,
+			agentConfig.DataPlaneConfig.Nginx.ReloadBackoff = &config.BackOff{
+				InitialInterval:     config.DefNginxReloadBackoffInitialInterval,
+				MaxInterval:         config.DefNginxReloadBackoffMaxInterval,
+				MaxElapsedTime:      config.DefNginxReloadBackoffMaxElapsedTime,
+				RandomizationFactor: config.DefNginxReloadBackoffRandomizationFactor,
+				Multiplier:          config.DefNginxReloadBackoffMultiplier,
 			}
 			operator := NewInstanceOperator(agentConfig)
 			operator.executer = mockExec
@@ -366,12 +366,12 @@ func TestInstanceOperator_checkWorkers(t *testing.T) {
 
 			agentConfig := types.AgentConfig()
 			agentConfig.DataPlaneConfig.Nginx.ReloadMonitoringPeriod = 10 * time.Second
-			agentConfig.Client.Backoff = &config.BackOff{
-				InitialInterval:     config.DefBackoffInitialInterval,
-				MaxInterval:         config.DefBackoffMaxInterval,
-				MaxElapsedTime:      10 * time.Second,
-				RandomizationFactor: config.DefBackoffRandomizationFactor,
-				Multiplier:          config.DefBackoffMultiplier,
+			agentConfig.DataPlaneConfig.Nginx.ReloadBackoff = &config.BackOff{
+				InitialInterval:     config.DefNginxReloadBackoffInitialInterval,
+				MaxInterval:         config.DefNginxReloadBackoffMaxInterval,
+				MaxElapsedTime:      config.DefNginxReloadBackoffMaxElapsedTime,
+				RandomizationFactor: config.DefNginxReloadBackoffRandomizationFactor,
+				Multiplier:          config.DefNginxReloadBackoffMultiplier,
 			}
 			operator := NewInstanceOperator(agentConfig)
 			operator.executer = mockExec
@@ -381,6 +381,7 @@ func TestInstanceOperator_checkWorkers(t *testing.T) {
 
 			helpers.ValidateLog(t, test.expectedLog, logBuf)
 
+			t.Logf("Logs: %s", logBuf.String())
 			logBuf.Reset()
 		})
 	}
