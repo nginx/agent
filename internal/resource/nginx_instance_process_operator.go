@@ -7,6 +7,11 @@ package resource
 
 import (
 	"context"
+	"errors"
+	"github.com/nginx/agent/v3/internal/datasource/host/exec"
+	"github.com/nginx/agent/v3/internal/datasource/nginx"
+	"github.com/nginx/agent/v3/pkg/id"
+	"log/slog"
 
 	"github.com/nginx/agent/v3/pkg/nginxprocess"
 	"github.com/shirou/gopsutil/v4/process"
@@ -32,4 +37,45 @@ func (p *NginxInstanceProcessOperator) FindNginxProcesses(ctx context.Context) (
 	}
 
 	return nginxProcesses, nil
+}
+
+func (p *NginxInstanceProcessOperator) NginxWorkerProcesses(ctx context.Context, masterProcessPid int32) []*nginxprocess.Process {
+	slog.DebugContext(ctx, "Getting NGINX worker processes for NGINX reload")
+	var workers []*nginxprocess.Process
+	nginxProcesses, err := p.FindNginxProcesses(ctx)
+	if err != nil {
+		slog.WarnContext(ctx, "Failed to get NGINX processes", "error", err)
+		return workers
+	}
+
+	for _, nginxProcess := range nginxProcesses {
+		if nginxProcess.IsWorker() && nginxProcess.PPID == masterProcessPid {
+			workers = append(workers, nginxProcess)
+		}
+	}
+
+	return workers
+}
+
+func (p *NginxInstanceProcessOperator) FindParentProcessID(ctx context.Context, instanceID string,
+	nginxProcesses []*nginxprocess.Process, executer exec.ExecInterface,
+) (int32, error) {
+	var pid int32
+
+	for _, proc := range nginxProcesses {
+		if proc.IsMaster() {
+			info, infoErr := nginx.ProcessInfo(ctx, proc, executer)
+			if infoErr != nil {
+				slog.WarnContext(ctx, "Failed to get NGINX process info from master process", "error", infoErr)
+				continue
+			}
+			processInstanceID := id.Generate("%s_%s_%s", info.ExePath, info.ConfPath, info.Prefix)
+			if instanceID == processInstanceID {
+				slog.DebugContext(ctx, "Found NGINX process ID", "process_id", processInstanceID)
+				return proc.PID, nil
+			}
+		}
+	}
+
+	return pid, errors.New("unable to find parent process")
 }

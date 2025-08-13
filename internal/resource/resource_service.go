@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	"log/slog"
 	"net"
 	"net/http"
@@ -82,6 +83,9 @@ type (
 
 	processOperator interface {
 		FindNginxProcesses(ctx context.Context) ([]*nginxprocess.Process, error)
+		NginxWorkerProcesses(ctx context.Context, masterProcessPid int32) []*nginxprocess.Process
+		FindParentProcessID(ctx context.Context, instanceID string, nginxProcesses []*nginxprocess.Process,
+			executer exec.ExecInterface) (int32, error)
 	}
 )
 

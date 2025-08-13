@@ -5,6 +5,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	"github.com/nginx/agent/v3/pkg/nginxprocess"
 )
 
@@ -21,6 +22,34 @@ type FakeProcessOperator struct {
 	findNginxProcessesReturnsOnCall map[int]struct {
 		result1 []*nginxprocess.Process
 		result2 error
+	}
+	FindParentProcessIDStub        func(context.Context, string, []*nginxprocess.Process, exec.ExecInterface) (int32, error)
+	findParentProcessIDMutex       sync.RWMutex
+	findParentProcessIDArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 []*nginxprocess.Process
+		arg4 exec.ExecInterface
+	}
+	findParentProcessIDReturns struct {
+		result1 int32
+		result2 error
+	}
+	findParentProcessIDReturnsOnCall map[int]struct {
+		result1 int32
+		result2 error
+	}
+	NginxWorkerProcessesStub        func(context.Context, int32) []*nginxprocess.Process
+	nginxWorkerProcessesMutex       sync.RWMutex
+	nginxWorkerProcessesArgsForCall []struct {
+		arg1 context.Context
+		arg2 int32
+	}
+	nginxWorkerProcessesReturns struct {
+		result1 []*nginxprocess.Process
+	}
+	nginxWorkerProcessesReturnsOnCall map[int]struct {
+		result1 []*nginxprocess.Process
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
@@ -90,11 +119,149 @@ func (fake *FakeProcessOperator) FindNginxProcessesReturnsOnCall(i int, result1 
 	}{result1, result2}
 }
 
+func (fake *FakeProcessOperator) FindParentProcessID(arg1 context.Context, arg2 string, arg3 []*nginxprocess.Process, arg4 exec.ExecInterface) (int32, error) {
+	var arg3Copy []*nginxprocess.Process
+	if arg3 != nil {
+		arg3Copy = make([]*nginxprocess.Process, len(arg3))
+		copy(arg3Copy, arg3)
+	}
+	fake.findParentProcessIDMutex.Lock()
+	ret, specificReturn := fake.findParentProcessIDReturnsOnCall[len(fake.findParentProcessIDArgsForCall)]
+	fake.findParentProcessIDArgsForCall = append(fake.findParentProcessIDArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 []*nginxprocess.Process
+		arg4 exec.ExecInterface
+	}{arg1, arg2, arg3Copy, arg4})
+	stub := fake.FindParentProcessIDStub
+	fakeReturns := fake.findParentProcessIDReturns
+	fake.recordInvocation("FindParentProcessID", []interface{}{arg1, arg2, arg3Copy, arg4})
+	fake.findParentProcessIDMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeProcessOperator) FindParentProcessIDCallCount() int {
+	fake.findParentProcessIDMutex.RLock()
+	defer fake.findParentProcessIDMutex.RUnlock()
+	return len(fake.findParentProcessIDArgsForCall)
+}
+
+func (fake *FakeProcessOperator) FindParentProcessIDCalls(stub func(context.Context, string, []*nginxprocess.Process, exec.ExecInterface) (int32, error)) {
+	fake.findParentProcessIDMutex.Lock()
+	defer fake.findParentProcessIDMutex.Unlock()
+	fake.FindParentProcessIDStub = stub
+}
+
+func (fake *FakeProcessOperator) FindParentProcessIDArgsForCall(i int) (context.Context, string, []*nginxprocess.Process, exec.ExecInterface) {
+	fake.findParentProcessIDMutex.RLock()
+	defer fake.findParentProcessIDMutex.RUnlock()
+	argsForCall := fake.findParentProcessIDArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeProcessOperator) FindParentProcessIDReturns(result1 int32, result2 error) {
+	fake.findParentProcessIDMutex.Lock()
+	defer fake.findParentProcessIDMutex.Unlock()
+	fake.FindParentProcessIDStub = nil
+	fake.findParentProcessIDReturns = struct {
+		result1 int32
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeProcessOperator) FindParentProcessIDReturnsOnCall(i int, result1 int32, result2 error) {
+	fake.findParentProcessIDMutex.Lock()
+	defer fake.findParentProcessIDMutex.Unlock()
+	fake.FindParentProcessIDStub = nil
+	if fake.findParentProcessIDReturnsOnCall == nil {
+		fake.findParentProcessIDReturnsOnCall = make(map[int]struct {
+			result1 int32
+			result2 error
+		})
+	}
+	fake.findParentProcessIDReturnsOnCall[i] = struct {
+		result1 int32
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeProcessOperator) NginxWorkerProcesses(arg1 context.Context, arg2 int32) []*nginxprocess.Process {
+	fake.nginxWorkerProcessesMutex.Lock()
+	ret, specificReturn := fake.nginxWorkerProcessesReturnsOnCall[len(fake.nginxWorkerProcessesArgsForCall)]
+	fake.nginxWorkerProcessesArgsForCall = append(fake.nginxWorkerProcessesArgsForCall, struct {
+		arg1 context.Context
+		arg2 int32
+	}{arg1, arg2})
+	stub := fake.NginxWorkerProcessesStub
+	fakeReturns := fake.nginxWorkerProcessesReturns
+	fake.recordInvocation("NginxWorkerProcesses", []interface{}{arg1, arg2})
+	fake.nginxWorkerProcessesMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeProcessOperator) NginxWorkerProcessesCallCount() int {
+	fake.nginxWorkerProcessesMutex.RLock()
+	defer fake.nginxWorkerProcessesMutex.RUnlock()
+	return len(fake.nginxWorkerProcessesArgsForCall)
+}
+
+func (fake *FakeProcessOperator) NginxWorkerProcessesCalls(stub func(context.Context, int32) []*nginxprocess.Process) {
+	fake.nginxWorkerProcessesMutex.Lock()
+	defer fake.nginxWorkerProcessesMutex.Unlock()
+	fake.NginxWorkerProcessesStub = stub
+}
+
+func (fake *FakeProcessOperator) NginxWorkerProcessesArgsForCall(i int) (context.Context, int32) {
+	fake.nginxWorkerProcessesMutex.RLock()
+	defer fake.nginxWorkerProcessesMutex.RUnlock()
+	argsForCall := fake.nginxWorkerProcessesArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeProcessOperator) NginxWorkerProcessesReturns(result1 []*nginxprocess.Process) {
+	fake.nginxWorkerProcessesMutex.Lock()
+	defer fake.nginxWorkerProcessesMutex.Unlock()
+	fake.NginxWorkerProcessesStub = nil
+	fake.nginxWorkerProcessesReturns = struct {
+		result1 []*nginxprocess.Process
+	}{result1}
+}
+
+func (fake *FakeProcessOperator) NginxWorkerProcessesReturnsOnCall(i int, result1 []*nginxprocess.Process) {
+	fake.nginxWorkerProcessesMutex.Lock()
+	defer fake.nginxWorkerProcessesMutex.Unlock()
+	fake.NginxWorkerProcessesStub = nil
+	if fake.nginxWorkerProcessesReturnsOnCall == nil {
+		fake.nginxWorkerProcessesReturnsOnCall = make(map[int]struct {
+			result1 []*nginxprocess.Process
+		})
+	}
+	fake.nginxWorkerProcessesReturnsOnCall[i] = struct {
+		result1 []*nginxprocess.Process
+	}{result1}
+}
+
 func (fake *FakeProcessOperator) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.findNginxProcessesMutex.RLock()
 	defer fake.findNginxProcessesMutex.RUnlock()
+	fake.findParentProcessIDMutex.RLock()
+	defer fake.findParentProcessIDMutex.RUnlock()
+	fake.nginxWorkerProcessesMutex.RLock()
+	defer fake.nginxWorkerProcessesMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

@@ -13,9 +13,6 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/nginx/agent/v3/internal/datasource/nginx"
-	"github.com/nginx/agent/v3/pkg/id"
-
 	"github.com/nginx/agent/v3/internal/backoff"
 	"github.com/nginx/agent/v3/pkg/nginxprocess"
 
@@ -70,7 +67,7 @@ func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instan
 		instance.GetInstanceRuntime().GetProcessId())
 
 	pid := instance.GetInstanceRuntime().GetProcessId()
-	workers := i.nginxWorkerProcesses(ctx, pid)
+	workers := i.nginxProccessOperator.NginxWorkerProcesses(ctx, pid)
 
 	if len(workers) > 0 {
 		reloadTime = workers[0].Created
@@ -130,9 +127,8 @@ func (i *NginxInstanceOperator) checkWorkers(ctx context.Context, instanceID str
 	}
 
 	slog.DebugContext(ctx, "Waiting for NGINX to finish reloading")
-	newPid, findErr := i.findParentProcessID(ctx, instanceID, processes)
-	slog.InfoContext(ctx, "ppid", "", newPid)
 
+	newPid, findErr := i.nginxProccessOperator.FindParentProcessID(ctx, instanceID, processes, i.executer)
 	if findErr != nil {
 		slog.WarnContext(ctx, "Error finding parent process ID, unable to check if NGINX worker "+
 			"processes have reloaded", "error", findErr)
@@ -140,8 +136,10 @@ func (i *NginxInstanceOperator) checkWorkers(ctx context.Context, instanceID str
 		return
 	}
 
+	slog.DebugContext(ctx, "Found parent process ID", "process_id", newPid)
+
 	err := backoff.WaitUntil(ctx, backoffSettings, func() error {
-		currentWorkers := i.nginxWorkerProcesses(ctx, newPid)
+		currentWorkers := i.nginxProccessOperator.NginxWorkerProcesses(ctx, newPid)
 		if len(currentWorkers) == 0 {
 			return errors.New("waiting for NGINX worker processes")
 		}
@@ -163,47 +161,6 @@ func (i *NginxInstanceOperator) checkWorkers(ctx context.Context, instanceID str
 	}
 
 	slog.InfoContext(ctx, "All NGINX workers have been reloaded")
-}
-
-func (i *NginxInstanceOperator) nginxWorkerProcesses(ctx context.Context, pid int32) []*nginxprocess.Process {
-	slog.DebugContext(ctx, "Getting NGINX worker processes for NGINX reload")
-	var workers []*nginxprocess.Process
-	nginxProcesses, err := i.nginxProccessOperator.FindNginxProcesses(ctx)
-	if err != nil {
-		slog.WarnContext(ctx, "Failed to get NGINX processes", "error", err)
-		return workers
-	}
-
-	for _, nginxProcess := range nginxProcesses {
-		if nginxProcess.IsWorker() && nginxProcess.PPID == pid {
-			workers = append(workers, nginxProcess)
-		}
-	}
-
-	return workers
-}
-
-func (i *NginxInstanceOperator) findParentProcessID(ctx context.Context, instanceID string,
-	nginxProcesses []*nginxprocess.Process,
-) (int32, error) {
-	var pid int32
-
-	for _, proc := range nginxProcesses {
-		if proc.IsMaster() {
-			info, infoErr := nginx.ProcessInfo(ctx, proc, i.executer)
-			if infoErr != nil {
-				slog.WarnContext(ctx, "Failed to get NGINX process info from master process", "error", infoErr)
-				continue
-			}
-			processInstanceID := id.Generate("%s_%s_%s", info.ExePath, info.ConfPath, info.Prefix)
-			if instanceID == processInstanceID {
-				slog.DebugContext(ctx, "Found NGINX process ID", "process_id", processInstanceID)
-				return proc.PID, nil
-			}
-		}
-	}
-
-	return pid, errors.New("unable to find parent process")
 }
 
 func (i *NginxInstanceOperator) validateConfigCheckResponse(out []byte) error {

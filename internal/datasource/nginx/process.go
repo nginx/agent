@@ -10,8 +10,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log/slog"
-	"path"
 	"regexp"
 	"strings"
 
@@ -53,7 +51,7 @@ func ProcessInfo(ctx context.Context, proc *nginxprocess.Process,
 	nginxInfo.ExePath = exePath
 	nginxInfo.ProcessID = proc.PID
 
-	if nginxInfo.ConfPath = NginxConfPath(ctx, nginxInfo); confPath != "" {
+	if nginxInfo.ConfPath = model.NginxConfPath(ctx, nginxInfo); confPath != "" {
 		nginxInfo.ConfPath = confPath
 	}
 
@@ -111,22 +109,6 @@ func ConfPathFromCommand(command string) string {
 	return ""
 }
 
-func NginxConfPath(ctx context.Context, nginxInfo *model.ProcessInfo) string {
-	var confPath string
-
-	if nginxInfo.ConfigureArgs["conf-path"] != nil {
-		var ok bool
-		confPath, ok = nginxInfo.ConfigureArgs["conf-path"].(string)
-		if !ok {
-			slog.DebugContext(ctx, "failed to cast nginxInfo conf-path to string")
-		}
-	} else {
-		confPath = path.Join(nginxInfo.Prefix, "/conf/nginx.conf")
-	}
-
-	return confPath
-}
-
 func ParseNginxVersionCommandOutput(ctx context.Context, output *bytes.Buffer) *model.ProcessInfo {
 	nginxInfo := &model.ProcessInfo{}
 
@@ -141,7 +123,7 @@ func ParseNginxVersionCommandOutput(ctx context.Context, output *bytes.Buffer) *
 		}
 	}
 
-	nginxInfo.Prefix = nginxPrefix(ctx, nginxInfo)
+	nginxInfo.Prefix = model.NginxPrefix(ctx, nginxInfo)
 
 	return nginxInfo
 }
@@ -165,22 +147,6 @@ func parseConfigureArguments(line string) map[string]interface{} {
 	}
 
 	return result
-}
-
-func nginxPrefix(ctx context.Context, nginxInfo *model.ProcessInfo) string {
-	var prefix string
-
-	if nginxInfo.ConfigureArgs["prefix"] != nil {
-		var ok bool
-		prefix, ok = nginxInfo.ConfigureArgs["prefix"].(string)
-		if !ok {
-			slog.DebugContext(ctx, "Failed to cast nginxInfo prefix to string")
-		}
-	} else {
-		prefix = "/usr/local/nginx"
-	}
-
-	return prefix
 }
 
 func isFlag(vals []string) bool {

@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -268,18 +269,19 @@ func TestInstanceOperator_checkWorkers(t *testing.T) {
 					configure arguments: ` + configArgs
 
 	tests := []struct {
-		expectedLog string
-		name        string
-		instanceID  string
-		reloadTime  time.Time
-		processes   []*nginxprocess.Process
+		expectedLog   string
+		name          string
+		instanceID    string
+		reloadTime    time.Time
+		workers       []*nginxprocess.Process
+		masterProcess []*nginxprocess.Process
 	}{
 		{
 			name:        "Test 1: Successful reload",
 			expectedLog: "All NGINX workers have been reloaded",
 			reloadTime:  time.Date(2025, 8, 13, 8, 0, 0, 0, time.Local),
 			instanceID:  "e1374cb1-462d-3b6c-9f3b-f28332b5f10c",
-			processes: []*nginxprocess.Process{
+			workers: []*nginxprocess.Process{
 				{
 					PID:     567,
 					Created: time.Date(2025, 8, 13, 8, 1, 0, 0, time.Local),
@@ -296,6 +298,8 @@ func TestInstanceOperator_checkWorkers(t *testing.T) {
 					Cmd:     "nginx: worker process",
 					Exe:     exePath,
 				},
+			},
+			masterProcess: []*nginxprocess.Process{
 				{
 					PID:     1234,
 					Created: time.Date(2025, 8, 13, 8, 1, 0, 0, time.Local),
@@ -308,25 +312,17 @@ func TestInstanceOperator_checkWorkers(t *testing.T) {
 		},
 		{
 			name:        "Test 2: Successful reload with 2 NGINX processes",
-			expectedLog: "Found NGINX process ID\" process_id=e1374cb1-462d-3b6c-9f3b-f28332b5f10c",
+			expectedLog: "Found parent process ID\" process_id=1234",
 			reloadTime:  time.Date(2025, 8, 13, 8, 0, 0, 0, time.Local),
 			instanceID:  "e1374cb1-462d-3b6c-9f3b-f28332b5f10c",
-			processes: []*nginxprocess.Process{
+			masterProcess: []*nginxprocess.Process{
 				{
-					PID:     567,
-					Created: time.Date(2025, 8, 13, 5, 1, 0, 0, time.Local),
-					PPID:    5678,
+					PID:     1234,
+					Created: time.Date(2025, 8, 13, 8, 1, 0, 0, time.Local),
+					PPID:    1,
 					Name:    "nginx",
-					Cmd:     "nginx: worker process",
-					Exe:     exePath2,
-				},
-				{
-					PID:     789,
-					PPID:    5678,
-					Created: time.Date(2025, 8, 13, 5, 1, 0, 0, time.Local),
-					Name:    "nginx",
-					Cmd:     "nginx: worker process",
-					Exe:     exePath2,
+					Cmd:     "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
+					Exe:     exePath,
 				},
 				{
 					PID:     5678,
@@ -336,6 +332,24 @@ func TestInstanceOperator_checkWorkers(t *testing.T) {
 					Cmd:     "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
 					Exe:     exePath2,
 				},
+			},
+			workers: []*nginxprocess.Process{
+				{
+					PID:     567,
+					Created: time.Date(2025, 8, 13, 5, 1, 0, 0, time.Local),
+					PPID:    5678,
+					Name:    "nginx",
+					Cmd:     "nginx: worker process",
+					Exe:     exePath2,
+				},
+				{
+					PID:     789,
+					PPID:    5678,
+					Created: time.Date(2025, 8, 13, 5, 1, 0, 0, time.Local),
+					Name:    "nginx",
+					Cmd:     "nginx: worker process",
+					Exe:     exePath2,
+				},
 				{
 					PID:     567,
 					Created: time.Date(2025, 8, 13, 8, 1, 0, 0, time.Local),
@@ -350,14 +364,6 @@ func TestInstanceOperator_checkWorkers(t *testing.T) {
 					Created: time.Date(2025, 8, 13, 8, 1, 0, 0, time.Local),
 					Name:    "nginx",
 					Cmd:     "nginx: worker process",
-					Exe:     exePath,
-				},
-				{
-					PID:     1234,
-					Created: time.Date(2025, 8, 13, 8, 1, 0, 0, time.Local),
-					PPID:    1,
-					Name:    "nginx",
-					Cmd:     "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
 					Exe:     exePath,
 				},
 			},
@@ -368,7 +374,17 @@ func TestInstanceOperator_checkWorkers(t *testing.T) {
 				"waiting\" error=\"waiting for NGINX worker processes\"",
 			reloadTime: time.Date(2025, 8, 13, 8, 0, 0, 0, time.Local),
 			instanceID: "e1374cb1-462d-3b6c-9f3b-f28332b5f10c",
-			processes: []*nginxprocess.Process{
+			masterProcess: []*nginxprocess.Process{
+				{
+					PID:     1234,
+					Created: time.Date(2025, 8, 13, 8, 1, 0, 0, time.Local),
+					PPID:    1,
+					Name:    "nginx",
+					Cmd:     "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
+					Exe:     exePath,
+				},
+			},
+			workers: []*nginxprocess.Process{
 				{
 					PID:     567,
 					Created: time.Date(2025, 8, 13, 8, 1, 0, 0, time.Local),
@@ -385,14 +401,6 @@ func TestInstanceOperator_checkWorkers(t *testing.T) {
 					Cmd:     "nginx: worker process",
 					Exe:     exePath,
 				},
-				{
-					PID:     1234,
-					Created: time.Date(2025, 8, 13, 8, 1, 0, 0, time.Local),
-					PPID:    1,
-					Name:    "nginx",
-					Cmd:     "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
-					Exe:     exePath,
-				},
 			},
 		},
 	}
@@ -406,7 +414,14 @@ func TestInstanceOperator_checkWorkers(t *testing.T) {
 			mockExec.RunCmdReturnsOnCall(3, bytes.NewBufferString(nginxVersionCommandOutput), nil)
 
 			mockProcessOp := &resourcefakes.FakeProcessOperator{}
-			mockProcessOp.FindNginxProcessesReturnsOnCall(0, test.processes, nil)
+			allProcesses := slices.Concat(test.workers, test.masterProcess)
+			mockProcessOp.FindNginxProcessesReturnsOnCall(0, allProcesses, nil)
+			mockProcessOp.NginxWorkerProcessesReturnsOnCall(0, test.workers[0:2])
+			mockProcessOp.FindParentProcessIDReturnsOnCall(0, test.masterProcess[0].PID, nil)
+			if len(test.masterProcess) > 1 {
+				t.Logf("")
+				mockProcessOp.FindParentProcessIDReturnsOnCall(1, test.masterProcess[1].PID, nil)
+			}
 
 			logBuf := &bytes.Buffer{}
 			stub.StubLoggerWith(logBuf)
@@ -424,7 +439,7 @@ func TestInstanceOperator_checkWorkers(t *testing.T) {
 			operator.executer = mockExec
 			operator.nginxProccessOperator = mockProcessOp
 
-			operator.checkWorkers(ctx, test.instanceID, test.reloadTime, test.processes)
+			operator.checkWorkers(ctx, test.instanceID, test.reloadTime, allProcesses)
 
 			helpers.ValidateLog(t, test.expectedLog, logBuf)
 
