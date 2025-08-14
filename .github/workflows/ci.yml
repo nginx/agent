@@ -21,7 +21,6 @@ permissions:
 env:
   NFPM_VERSION: 'v2.35.3'
   GOPROXY: "direct"
-  PLUS_VERSION: "r33"
 
 jobs:
   proxy-sanity-check:
@@ -187,6 +186,8 @@ jobs:
     needs: build-unsigned-snapshot
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
     runs-on: ubuntu-22.04
+    env:
+      PLUS_VERSION: "r33"
     strategy:
       matrix:
         container:
@@ -197,17 +198,17 @@ jobs:
           path: "/nginx-plus/agent"
         - image: "alpine"
           version: "3.19"
-          plus: "r$((${{ env.PLUS_VERSION#r }} - 1 ))"
+          plus: ${{  steps.set_plus_versions.outputs.PREV_PLUS_VERSION  }}
           release: "alpine"
           path: "/nginx-plus/agent"
         - image: "debian"
           version: "bookworm"
-          plus: "r33"
+          plus: ${{ env.PLUS_VERSION }}
           release: "debian"
           path: "/nginx-plus/agent"
         - image: "debian"
           version: "bookworm"
-          plus: "r$((${{ env.PLUS_VERSION#r }} - 1 ))"
+          plus: ${{  steps.set_plus_versions.outputs.PREV_PLUS_VERSION  }}
           release: "debian"
           path: "/nginx-plus/agent"
     steps:
@@ -221,6 +222,11 @@ jobs:
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
+      - name: Set Plus Versions
+        id : set_plus_versions
+        run: |
+          latest = ${ env.PLUS_VERSION#r }
+                echo "PREV_PLUS_VERSION = r$((latest - 1))" >> $GITHUB_OUTPUT
       - name: Login to Docker Registry
         uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
         with:
