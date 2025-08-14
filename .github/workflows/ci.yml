@@ -21,6 +21,7 @@ permissions:
 env:
   NFPM_VERSION: 'v2.35.3'
   GOPROXY: "direct"
+  PLUS_VERSION: "r33"
 
 jobs:
   proxy-sanity-check:
@@ -191,12 +192,12 @@ jobs:
         container:
         - image: "alpine"
           version: "3.20"
-          plus: "r33"
+          plus: ${{ env.PLUS_VERSION }}
           release: "alpine"
           path: "/nginx-plus/agent"
         - image: "alpine"
           version: "3.19"
-          plus: "r32"
+          plus: "r$((${{ env.PLUS_VERSION#r }} - 1 ))"
           release: "alpine"
           path: "/nginx-plus/agent"
         - image: "debian"
@@ -206,7 +207,7 @@ jobs:
           path: "/nginx-plus/agent"
         - image: "debian"
           version: "bookworm"
-          plus: "r32"
+          plus: "r$((${{ env.PLUS_VERSION#r }} - 1 ))"
           release: "debian"
           path: "/nginx-plus/agent"
     steps:
