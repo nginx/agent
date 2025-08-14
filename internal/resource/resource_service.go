@@ -19,6 +19,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/nginx/agent/v3/internal/datasource/host/exec"
+
+	"github.com/nginx/agent/v3/pkg/nginxprocess"
+
 	parser "github.com/nginx/agent/v3/internal/datasource/config"
 	datasource "github.com/nginx/agent/v3/internal/datasource/proto"
 	"github.com/nginx/agent/v3/internal/model"
@@ -49,6 +53,9 @@ const (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . instanceOperator
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//counterfeiter:generate . processOperator
+
 type resourceServiceInterface interface {
 	AddInstances(instanceList []*mpi.Instance) *mpi.Resource
 	UpdateInstances(ctx context.Context, instanceList []*mpi.Instance) *mpi.Resource
@@ -73,6 +80,13 @@ type (
 
 	logTailerOperator interface {
 		Tail(ctx context.Context, errorLogs string, errorChannel chan error)
+	}
+
+	processOperator interface {
+		FindNginxProcesses(ctx context.Context) ([]*nginxprocess.Process, error)
+		NginxWorkerProcesses(ctx context.Context, masterProcessPid int32) []*nginxprocess.Process
+		FindParentProcessID(ctx context.Context, instanceID string, nginxProcesses []*nginxprocess.Process,
+			executer exec.ExecInterface) (int32, error)
 	}
 )
 

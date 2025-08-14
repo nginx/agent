@@ -8,12 +8,13 @@ package instance
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/nginx/agent/v3/internal/model"
 
 	"google.golang.org/protobuf/proto"
 
@@ -415,7 +416,7 @@ func TestGetInfo(t *testing.T) {
 
 	tests := []struct {
 		process                   *nginxprocess.Process
-		expected                  *Info
+		expected                  *model.ProcessInfo
 		name                      string
 		nginxVersionCommandOutput string
 	}{
@@ -431,7 +432,7 @@ func TestGetInfo(t *testing.T) {
 				PID: 1123,
 				Exe: exePath,
 			},
-			expected: &Info{
+			expected: &model.ProcessInfo{
 				ProcessID: 1123,
 				Version:   "1.25.3",
 				Prefix:    "/usr/local/Cellar/nginx/1.25.3",
@@ -499,7 +500,7 @@ func TestGetInfo(t *testing.T) {
 				PID: 3141,
 				Exe: exePath,
 			},
-			expected: &Info{
+			expected: &model.ProcessInfo{
 				ProcessID: 3141,
 				Version:   "1.25.3 (nginx-plus-r31-p1)",
 				Prefix:    "/etc/nginx",
@@ -579,52 +580,4 @@ func TestGetInfo(t *testing.T) {
 			require.NoError(tt, err)
 		})
 	}
-}
-
-func TestNginxProcessParser_GetExe(t *testing.T) {
-	ctx := context.Background()
-
-	tests := []struct {
-		commandError  error
-		name          string
-		expected      string
-		commandOutput []byte
-	}{
-		{
-			name:          "Test 1: Default exe if error executing command -v nginx",
-			commandOutput: []byte{},
-			commandError:  errors.New("command error"),
-			expected:      "/usr/bin/nginx",
-		},
-		{
-			name:          "Test 2: Sanitize Exe Deleted Path",
-			commandOutput: []byte("/usr/sbin/nginx (deleted)"),
-			commandError:  nil,
-			expected:      "/usr/sbin/nginx",
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(tt *testing.T) {
-			mockExec := &execfakes.FakeExecInterface{}
-			mockExec.RunCmdReturns(bytes.NewBuffer(test.commandOutput), test.commandError)
-			mockExec.FindExecutableReturns("/usr/bin/nginx", nil)
-
-			nginxProcessParser := NewNginxProcessParser()
-			nginxProcessParser.executer = mockExec
-			result := nginxProcessParser.exe(ctx)
-
-			assert.Equal(tt, test.expected, result)
-		})
-	}
-}
-
-func TestGetConfigPathFromCommand(t *testing.T) {
-	result := confPathFromCommand("nginx: master process nginx -c /tmp/nginx.conf")
-	assert.Equal(t, "/tmp/nginx.conf", result)
-
-	result = confPathFromCommand("nginx: master process nginx -c")
-	assert.Empty(t, result)
-
-	result = confPathFromCommand("")
-	assert.Empty(t, result)
 }
