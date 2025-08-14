@@ -56,7 +56,7 @@ var (
 
 func SetVersion(version, commit string) {
 	ROOT_COMMAND.Version = version + "-" + commit
-	Viper.SetDefault(VersionKey, version)
+	Viper.Set(VersionKey, version)
 }
 
 func Execute() error {
