@@ -8,7 +8,6 @@ package exec
 import (
 	"bytes"
 	"context"
-	"log/slog"
 	"os"
 	"os/exec"
 	"syscall"
@@ -27,11 +26,14 @@ type ExecInterface interface {
 	KillProcess(pid int32) error
 	Hostname() (string, error)
 	HostID(ctx context.Context) (string, error)
-	ReleaseInfo(ctx context.Context) (releaseInfo *v1.ReleaseInfo)
+	ReleaseInfo(ctx context.Context) (releaseInfo *v1.ReleaseInfo, err error)
 }
 
 type Exec struct{}
 
+// RunCmd executes a command with the given arguments and returns its output.
+// It combines stdout and stderr into a single buffer.
+// If the command fails, the error is returned along with any output that was produced.
 func (*Exec) RunCmd(ctx context.Context, cmd string, args ...string) (*bytes.Buffer, error) {
 	command := exec.CommandContext(ctx, cmd, args...)
 
@@ -43,35 +45,44 @@ func (*Exec) RunCmd(ctx context.Context, cmd string, args ...string) (*bytes.Buf
 	return bytes.NewBuffer(output), nil
 }
 
+// Executable returns the path to the current executable.
 func (*Exec) Executable() (string, error) {
 	return os.Executable()
 }
 
+// FindExecutable searches for an executable named by the given file name in the
+// directories listed in the PATH environment variable.
 func (*Exec) FindExecutable(name string) (string, error) {
 	return exec.LookPath(name)
 }
 
+// ProcessID returns the process ID of the current process.
 func (*Exec) ProcessID() int32 {
 	return int32(os.Getpid())
 }
 
+// KillProcess sends a SIGHUP signal to the process with the given pid.
 func (*Exec) KillProcess(pid int32) error {
 	return syscall.Kill(int(pid), syscall.SIGHUP)
 }
 
+// Hostname returns the host name reported by the kernel.
 func (*Exec) Hostname() (string, error) {
 	return os.Hostname()
 }
 
+// HostID returns a unique ID for the host machine.
+// The context can be used to cancel the operation.
 func (*Exec) HostID(ctx context.Context) (string, error) {
 	return host.HostIDWithContext(ctx)
 }
 
-func (*Exec) ReleaseInfo(ctx context.Context) (releaseInfo *v1.ReleaseInfo) {
+// ReleaseInfo returns operating system release information.
+// It provides details about the platform, version, and other system information.
+func (*Exec) ReleaseInfo(ctx context.Context) (*v1.ReleaseInfo, error) {
 	hostInfo, err := host.InfoWithContext(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "Could not read release information for host", "error", err)
-		return &v1.ReleaseInfo{}
+		return &v1.ReleaseInfo{}, err
 	}
 
 	return &v1.ReleaseInfo{
@@ -80,5 +91,5 @@ func (*Exec) ReleaseInfo(ctx context.Context) (releaseInfo *v1.ReleaseInfo) {
 		Codename:  hostInfo.OS,
 		Name:      hostInfo.PlatformFamily,
 		Id:        hostInfo.Platform,
-	}
+	}, nil
 }

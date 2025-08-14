@@ -9,11 +9,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/nginx/agent/v3/pkg/host/exec/execfakes"
+
 	"github.com/nginx/agent/v3/internal/watcher/instance/instancefakes"
 	"github.com/nginx/agent/v3/internal/watcher/process/processfakes"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
 	"github.com/nginx/agent/v3/internal/model"
 	testModel "github.com/nginx/agent/v3/test/model"
 	"github.com/nginx/agent/v3/test/protos"
