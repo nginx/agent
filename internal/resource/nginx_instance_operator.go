@@ -137,10 +137,10 @@ func (i *NginxInstanceOperator) checkWorkers(ctx context.Context, instanceID str
 		return
 	}
 
-	slog.DebugContext(ctx, "Found parent process ID", "process_id", newPid)
+	slog.DebugContext(ctx, "Found parent process ID, checking NGINX worker processes have reloaded",
+		"process_id", newPid)
 
 	err := backoff.WaitUntil(ctx, backoffSettings, func() error {
-		slog.Info(" ============ Checking NGINX worker processes have reloaded")
 		currentWorkers := i.nginxProcessOperator.NginxWorkerProcesses(ctx, newPid)
 		if len(currentWorkers) == 0 {
 			return errors.New("waiting for NGINX worker processes")
