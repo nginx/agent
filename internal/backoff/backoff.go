@@ -65,7 +65,8 @@ func WaitUntil(
 
 // WaitUntilWithData Implementation of backoff operations that increases the back off period for each retry
 // attempt using a randomization function that grows exponentially. This does not allow for parameters.
-// nolint: ireturn
+//
+//nolint:ireturn // must return an interface
 func WaitUntilWithData[T any](
 	ctx context.Context,
 	backoffSettings *config.BackOff,
@@ -76,7 +77,7 @@ func WaitUntilWithData[T any](
 	return backoff.RetryWithData(operation, backoffWithContext)
 }
 
-// nolint: ireturn
+//nolint:ireturn // must return an interface
 func Context(ctx context.Context, backoffSettings *config.BackOff) backoff.BackOffContext {
 	eb := backoff.NewExponentialBackOff()
 	eb.InitialInterval = backoffSettings.InitialInterval

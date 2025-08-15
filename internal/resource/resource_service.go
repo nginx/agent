@@ -266,7 +266,8 @@ func (r *ResourceService) GetStreamUpstreams(ctx context.Context, instance *mpi.
 }
 
 // max number of returns from function is 3
-// nolint: revive
+//
+//nolint:revive // maximum return allowed is 3
 func (r *ResourceService) UpdateStreamServers(ctx context.Context, instance *mpi.Instance, upstream string,
 	upstreams []*structpb.Struct,
 ) (added, updated, deleted []client.StreamUpstreamServer, err error) {
@@ -286,7 +287,8 @@ func (r *ResourceService) UpdateStreamServers(ctx context.Context, instance *mpi
 }
 
 // max number of returns from function is 3
-// nolint: revive
+//
+//nolint:revive // maximum return allowed is 3
 func (r *ResourceService) UpdateHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance, upstream string,
 	upstreams []*structpb.Struct,
 ) (added, updated, deleted []client.UpstreamServer, err error) {

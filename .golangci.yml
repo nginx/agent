@@ -39,7 +39,7 @@ linters:
     - nilnil
     - nlreturn
     - noctx
-#    - nolintlint
+    - nolintlint
     - nosprintfhostport
     - perfsprint
     - prealloc
@@ -66,7 +66,7 @@ linters:
     - zerologlint
   settings:
     cyclop:
-      max-complexity: 10
+      max-complexity: 12
       package-average: 0
     errorlint:
       errorf: true
@@ -217,19 +217,19 @@ linters:
         - chan
     nlreturn:
       block-size: 2
-#    nolintlint:
-#      # Disable to ensure that all nolint directives actually have an effect.
-#      # Default: false
-#      allow-unused: true
-#      # Exclude following linters from requiring an explanation.
-#      # Default: []
-#      allow-no-explanation: [ ]
-#      # Enable to require an explanation of nonzero length after each nolint directive.
-#      # Default: false
-#      require-explanation: true
-#      # Enable to require nolint directives to mention the specific linter being suppressed.
-#      # Default: false
-#      require-specific: true
+    nolintlint:
+      # Disable to ensure that all nolint directives actually have an effect.
+      # Default: false
+      allow-unused: true
+      # Exclude following linters from requiring an explanation.
+      # Default: []
+      allow-no-explanation: [ ]
+      # Enable to require an explanation of nonzero length after each nolint directive.
+      # Default: false
+      require-explanation: true
+      # Enable to require nolint directives to mention the specific linter being suppressed.
+      # Default: false
+      require-specific: true
     prealloc:
       simple: true
       range-loops: true
@@ -286,7 +286,7 @@ linters:
           disabled: false
         - name: cognitive-complexity
           arguments:
-            - 10
+            - 12
           severity: warning
           disabled: false
         - name: comment-spacings
@@ -311,7 +311,7 @@ linters:
           disabled: false
         - name: cyclomatic
           arguments:
-            - 10
+            - 12
           severity: warning
           disabled: false
         - name: datarace

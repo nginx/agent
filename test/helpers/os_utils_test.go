@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//nolint:staticcheck
+//nolint:staticcheck,gofumpt // required for testing
 func TestRemoveASCIIControlSignals(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -24,11 +24,11 @@ func TestRemoveASCIIControlSignals(t *testing.T) {
 			expected: "Hello, World!",
 		},
 		{
-			name: "With control characters",
+			name:  "With control characters",
 			input: "Hello, World!", expected: "Hello, World!",
 		},
 		{
-			name: "Only control characters",
+			name:  "Only control characters",
 			input: "", expected: "",
 		},
 		{
@@ -42,7 +42,7 @@ func TestRemoveASCIIControlSignals(t *testing.T) {
 			expected: "",
 		},
 		{
-			name: "Agent version example",
+			name:  "Agent version example",
 			input: "nginx-agent version v3.0.0-4a64a94", expected: "nginx-agent version v3.0.0-4a64a94",
 		},
 		{

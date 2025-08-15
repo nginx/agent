@@ -880,8 +880,7 @@ func (nps *NginxPlusScraper) recordServerZoneMetrics(stats *plusapi.Stats, now p
 	}
 }
 
-// Duplicate of recordLocationZoneHTTPMetrics but same function can not be used due to plusapi.ServerZone
-// nolint: dupl
+//nolint:dupl // Duplicate of recordLocationZoneHTTPMetrics but same function can not be used due to plusapi.ServerZone
 func (nps *NginxPlusScraper) recordServerZoneHTTPMetrics(sz plusapi.ServerZone, szName string, now pcommon.Timestamp) {
 	nps.mb.RecordNginxHTTPResponseStatusDataPoint(now, int64(sz.Responses.Responses1xx),
 		metadata.AttributeNginxStatusRange1xx,
@@ -985,8 +984,7 @@ func (nps *NginxPlusScraper) recordLocationZoneMetrics(stats *plusapi.Stats, now
 	}
 }
 
-// Duplicate of recordServerZoneHTTPMetrics but same function can not be used due to plusapi.LocationZone
-// nolint: dupl
+//nolint:dupl // Duplicate of recordServerZoneHTTPMetrics but same function can not be used due to plusapi.LocationZone
 func (nps *NginxPlusScraper) recordLocationZoneHTTPMetrics(lz plusapi.LocationZone,
 	lzName string, now pcommon.Timestamp,
 ) {
@@ -1218,7 +1216,7 @@ func socketClient(socketPath string) *http.Client {
 	}
 }
 
-// nolint: revive
+//nolint:revive // booleanValue flag is mandatory
 func boolToInt64(booleanValue bool) int64 {
 	if booleanValue {
 		return 1

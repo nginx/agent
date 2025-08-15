@@ -73,7 +73,7 @@ func BenchmarkGzipProcessor(b *testing.B) {
 
 // Optional: Benchmark with concurrency to simulate real pipeline load
 func BenchmarkGzipProcessor_Concurrent(b *testing.B) {
-	// nolint:unused // concurrent runs require total parallel workers to be specified
+	//nolint: unused // concurrent runs require total parallel workers to be specified
 	const workers = 8
 	logs := generateLogs(1000, 1000)
 	consumer := &consumertest.LogsSink{}
