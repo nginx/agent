@@ -187,7 +187,7 @@ jobs:
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
     runs-on: ubuntu-22.04
     env:
-      NGINX_LICENSE_JWT: ${{ secrets.NGINX_JWT }}
+      NGINX_LICENSE_JWT: ${{ secrets.NGINX_LICENSE_JWT }}
     strategy:
       matrix:
         container:
