@@ -400,7 +400,8 @@ func (cs *CommandService) dataPlaneHealthCallback(
 }
 
 // Retry callback for receiving messages from the Management Plane subscription.
-// nolint: revive
+//
+//nolint:revive // cognitive complexity is 18
 func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
 	return func() error {
 		cs.subscribeClientMutex.Lock()

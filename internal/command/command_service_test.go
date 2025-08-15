@@ -39,7 +39,7 @@ func (*FakeSubscribeClient) Send(*mpi.DataPlaneResponse) error {
 	return nil
 }
 
-// nolint: nilnil
+//nolint:nilnil // required nil return
 func (*FakeSubscribeClient) Recv() (*mpi.ManagementPlaneRequest, error) {
 	time.Sleep(1 * time.Second)
 
@@ -54,7 +54,6 @@ func (*FakeConfigApplySubscribeClient) Send(*mpi.DataPlaneResponse) error {
 	return nil
 }
 
-// nolint: nilnil
 func (*FakeConfigApplySubscribeClient) Recv() (*mpi.ManagementPlaneRequest, error) {
 	nginxInstance := protos.NginxOssInstance([]string{})
 

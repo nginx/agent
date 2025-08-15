@@ -22,7 +22,7 @@ func ConfigContext() *model.NginxConfigContext {
 	}
 }
 
-// nolint: revive
+//nolint:revive // all the aruments are necessary.
 func ConfigContextWithNames(
 	accessLogName,
 	combinedAccessLogName,

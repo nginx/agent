@@ -300,7 +300,7 @@ func ToPtr[T any](value T) *T {
 	return &value
 }
 
-// nolint: revive
+//nolint:revive // expectNoErrorsInLogs flag is required
 func LogAndTerminateContainers(
 	ctx context.Context,
 	tb testing.TB,

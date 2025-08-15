@@ -85,7 +85,8 @@ func TestAccessLogScraper(t *testing.T) {
 // Copies the contents of one file to another with the given delay. Used to simulate writing log entries to a log file.
 // Reason for nolint: we must use testify's assert instead of require,
 // for more info see https://github.com/stretchr/testify/issues/772#issuecomment-945166599
-// nolint: testifylint
+//
+//nolint:testifylint // we must use testify's assert instead of require
 func simulateLogging(t *testing.T, sourcePath, destinationPath string, writeDelay time.Duration) {
 	t.Helper()
 

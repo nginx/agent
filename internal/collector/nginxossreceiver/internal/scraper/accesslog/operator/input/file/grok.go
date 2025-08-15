@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	//nolint: gocritic
+	//nolint:gocritic // this is required for request key
 	formatVariables = map[string]string{
 		"$remote_addr":              "%{IPORHOST:remote_addr}",
 		"$remote_user":              "%{USERNAME:remote_user}",

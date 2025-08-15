@@ -178,7 +178,6 @@ func (fms *FileManagerService) ClearCache() {
 	clear(fms.previousManifestFiles)
 }
 
-// nolint:revive,cyclop
 func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) error {
 	slog.InfoContext(ctx, "Rolling back config for instance", "instance_id", instanceID)
 
@@ -272,7 +271,8 @@ func (fms *FileManagerService) ConfigUpload(ctx context.Context, configUploadReq
 
 // DetermineFileActions compares two sets of files to determine the file action for each file. Returns a map of files
 // that have changed and a map of the contents for each updated and deleted file. Key to both maps is file path
-// nolint: revive,cyclop,gocognit
+//
+//nolint:gocognit,revive,cyclop // cognitive complexity is 23
 func (fms *FileManagerService) DetermineFileActions(
 	ctx context.Context,
 	currentFiles map[string]*mpi.File,
@@ -291,11 +291,10 @@ func (fms *FileManagerService) DetermineFileActions(
 	_, filesMap, manifestFileErr := fms.manifestFile()
 
 	if manifestFileErr != nil {
-		if errors.Is(manifestFileErr, os.ErrNotExist) {
-			filesMap = currentFiles
-		} else {
+		if !errors.Is(manifestFileErr, os.ErrNotExist) {
 			return nil, nil, manifestFileErr
 		}
+		filesMap = currentFiles
 	}
 
 	// if file is in manifestFiles but not in modified files, file has been deleted
@@ -310,9 +309,9 @@ func (fms *FileManagerService) DetermineFileActions(
 				if errors.Is(readErr, os.ErrNotExist) {
 					slog.DebugContext(ctx, "Unable to backup file contents since file does not exist", "file", fileName)
 					continue
-				} else {
-					return nil, nil, fmt.Errorf("error reading file %s: %w", fileName, readErr)
 				}
+
+				return nil, nil, fmt.Errorf("error reading file %s: %w", fileName, readErr)
 			}
 			fileContents[fileName] = fileContent
 
@@ -381,7 +380,8 @@ func (fms *FileManagerService) UpdateCurrentFilesOnDisk(
 }
 
 // seems to be a control flag, avoid control coupling
-// nolint: revive
+//
+//nolint:revive // referenced is a required flag
 func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.File, referenced bool) (err error) {
 	slog.Debug("Updating manifest file", "current_files", currentFiles, "referenced", referenced)
 	currentManifestFiles, _, readError := fms.manifestFile()

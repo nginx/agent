@@ -288,7 +288,7 @@ server {
 `
 )
 
-// nolint: maintidx
+//nolint:maintidx // The test cannot be refactored
 func TestNginxConfigParser_Parse(t *testing.T) {
 	ctx := context.Background()
 	dir := t.TempDir()
@@ -805,7 +805,7 @@ func TestNginxConfigParser_checkLog(t *testing.T) {
 	}
 }
 
-// nolint: maintidx
+//nolint:maintidx // test can not be refactored
 func TestNginxConfigParser_urlsForLocationDirective(t *testing.T) {
 	tmpDir := t.TempDir()
 	for _, tt := range []struct {
@@ -1153,7 +1153,7 @@ func TestNginxConfigParser_urlsForLocationDirective(t *testing.T) {
 }
 
 // linter doesn't like the duplicate handler and server function
-// nolint: dupl
+
 func TestNginxConfigParser_pingAPIEndpoint_PlusAPI(t *testing.T) {
 	handler := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		if req.URL.String() == "/good_api" {
@@ -1215,7 +1215,7 @@ func TestNginxConfigParser_pingAPIEndpoint_PlusAPI(t *testing.T) {
 }
 
 // linter doesn't like the duplicate handler and server function
-// nolint: dupl
+
 func TestNginxConfigParser_pingAPIEndpoint_StubStatus(t *testing.T) {
 	handler := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		if req.URL.String() == "/good_api" {

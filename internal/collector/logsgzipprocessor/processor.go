@@ -21,7 +21,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// nolint: ireturn
+//nolint:ireturn // must return factory processor interface for collector
 func NewFactory() processor.Factory {
 	return processor.NewFactory(
 		component.MustNewType("logsgzip"),
@@ -32,7 +32,7 @@ func NewFactory() processor.Factory {
 	)
 }
 
-// nolint: ireturn
+//nolint:ireturn // returns a zip processor interface
 func createLogsGzipProcessor(_ context.Context,
 	settings processor.Settings,
 	cfg component.Config,

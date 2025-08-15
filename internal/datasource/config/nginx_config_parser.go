@@ -102,7 +102,7 @@ func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *mpi.Instance)
 	return ncp.createNginxConfigContext(ctx, instance, payload)
 }
 
-// nolint: cyclop,revive,gocognit,gocyclo
+//nolint:gocognit,gocyclo,revive,cyclop //  cognitive complexity is 51
 func (ncp *NginxConfigParser) createNginxConfigContext(
 	ctx context.Context,
 	instance *mpi.Instance,
@@ -618,7 +618,7 @@ func (ncp *NginxConfigParser) pingAPIEndpoint(ctx context.Context, statusAPIDeta
 	return true
 }
 
-// nolint: revive
+//nolint:revive // cognitive complexity is 18
 func (ncp *NginxConfigParser) urlsForLocationDirectiveAPIDetails(
 	ctx context.Context, parent, current *crossplane.Directive,
 	locationDirectiveName string,

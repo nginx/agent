@@ -14,7 +14,7 @@ type Config struct {
 	scraperhelper.ControllerConfig `mapstructure:",squash"`
 }
 
-// nolint: ireturn
+//nolint:ireturn // must return a default metrics controller interface
 func CreateDefaultConfig() component.Config {
 	cfg := scraperhelper.NewDefaultControllerConfig()
 	return &Config{

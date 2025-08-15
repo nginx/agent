@@ -79,8 +79,7 @@ type ConfigApplySuccess struct {
 	DataPlaneResponse *v1.DataPlaneResponse
 }
 
-// Complexity is 11, allowed is 10
-// nolint: revive, cyclop
+//nolint:revive,cyclop // cyclomatic complexity is 16
 func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext) bool {
 	if ncc.StubStatus != nil && otherNginxConfigContext.StubStatus != nil {
 		if ncc.StubStatus.URL != otherNginxConfigContext.StubStatus.URL || ncc.StubStatus.Listen !=

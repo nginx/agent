@@ -81,7 +81,6 @@ func (fp *FilePlugin) Info() *bus.Info {
 	}
 }
 
-// nolint: cyclop, revive
 func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 	ctxWithMetadata := fp.config.NewContextWithLabels(ctx)
 

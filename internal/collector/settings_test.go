@@ -157,8 +157,8 @@ func TestTemplateWrite(t *testing.T) {
 	}
 
 	cfg.Collector.Exporters.OtlpExporters["default"].Authenticator = "headers_setter"
-	// nolint: lll
-	cfg.Collector.Exporters.OtlpExporters["default"].Compression = types.AgentConfig().Collector.Exporters.OtlpExporters["default"].Compression
+	cfg.Collector.Exporters.OtlpExporters["default"].Compression = types.AgentConfig().
+		Collector.Exporters.OtlpExporters["default"].Compression
 	cfg.Collector.Exporters.OtlpExporters["default"].Server.Port = 1234
 	cfg.Collector.Receivers.OtlpReceivers["default"].Server.Port = 4317
 	cfg.Collector.Extensions.Health.Server.Port = 1337

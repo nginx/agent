@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//nolint:revive,gocognit
+//nolint:gocognit,revive //  cognitive complexity is 24
 func TestGenerateSelfSignedCert(t *testing.T) {
 	// Setup temp file paths
 	caPath := "/tmp/test_ca.pem"

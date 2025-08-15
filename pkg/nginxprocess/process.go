@@ -56,11 +56,12 @@ type Option interface{ apply(opts *options) }
 
 type optionFunc func(*options)
 
-//nolint:ireturn
 func (f optionFunc) apply(o *options) { f(o) }
 
 // WithStatus runs an additional lookup to load the process status.
-func WithStatus(v bool) Option { //nolint:ireturn // functional options can be opaque
+//
+//nolint:ireturn // functional options can be opaque
+func WithStatus(v bool) Option {
 	return optionFunc(func(o *options) { o.loadStatus = v })
 }
 
