@@ -43,6 +43,7 @@ func StartContainer(
 	containerRegistry := Env(tb, "CONTAINER_NGINX_IMAGE_REGISTRY")
 	tag := Env(tb, "TAG")
 	imagePath := Env(tb, "IMAGE_PATH")
+	nginxJWTLicense := Env(tb, "NGINX_LICENSE_JWT")
 
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
@@ -60,6 +61,7 @@ func StartContainer(
 				"CONTAINER_NGINX_IMAGE_REGISTRY": ToPtr(containerRegistry),
 				"IMAGE_PATH":                     ToPtr(imagePath),
 				"TAG":                            ToPtr(tag),
+				"NGINX_LICENSE_JWT":              ToPtr(nginxJWTLicense),
 			},
 			BuildOptionsModifier: func(buildOptions *types.ImageBuildOptions) {
 				buildOptions.Target = buildTarget
