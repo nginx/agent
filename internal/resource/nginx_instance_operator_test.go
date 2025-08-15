@@ -15,6 +15,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/resource/resourcefakes"
+	"github.com/nginx/agent/v3/pkg/nginxprocess"
+	"github.com/nginx/agent/v3/test/stub"
+
 	"github.com/nginx/agent/v3/pkg/host/exec/execfakes"
 
 	"github.com/nginx/agent/v3/test/helpers"

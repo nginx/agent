@@ -19,6 +19,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/nginx/agent/v3/pkg/host/exec"
+	"github.com/nginx/agent/v3/pkg/nginxprocess"
+
 	"github.com/nginx/agent/v3/pkg/host"
 
 	parser "github.com/nginx/agent/v3/internal/datasource/config"

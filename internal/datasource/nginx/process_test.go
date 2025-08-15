@@ -11,7 +11,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
+	"github.com/nginx/agent/v3/pkg/host/exec/execfakes"
 	"github.com/stretchr/testify/assert"
 )
 
