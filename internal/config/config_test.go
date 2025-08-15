@@ -1101,6 +1101,13 @@ func createConfig() *Config {
 				ExcludeLogs:            []string{"/var/log/nginx/error.log", "^/var/log/nginx/.*.log$"},
 				ReloadMonitoringPeriod: 30 * time.Second,
 				TreatWarningsAsErrors:  true,
+				ReloadBackoff: &BackOff{
+					InitialInterval:     100 * time.Millisecond,
+					MaxInterval:         20 * time.Second,
+					MaxElapsedTime:      15 * time.Second,
+					RandomizationFactor: 1.5,
+					Multiplier:          1.5,
+				},
 			},
 		},
 		Collector: &Collector{
