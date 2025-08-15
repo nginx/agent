@@ -67,6 +67,7 @@ config_dirs: "/etc/nginx:/usr/local/etc/nginx:/usr/share/nginx/modules:/etc/nms:
 )
 
 func TestRegistrationAndConfigApply(t *testing.T) {
+	log.Info("testing registration and config apply")
 	ctx := context.Background()
 	grpcListener, grpcClose := createListener()
 	defer grpcClose()
@@ -210,6 +211,7 @@ messageLoop:
 			}
 		})
 	}
+	log.Info("finished testing registration and config apply")
 }
 
 func createListener() (listener net.Listener, close func() error) {
