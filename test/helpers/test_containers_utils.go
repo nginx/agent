@@ -65,6 +65,9 @@ func StartContainer(
 				buildOptions.Target = buildTarget
 			},
 		},
+		Env: map[string]string{
+			"NGINX_LICENSE_JWT": Env(tb, "NGINX_LICENSE_JWT"),
+		},
 		ExposedPorts: []string{"9091/tcp"},
 		WaitingFor:   wait.ForLog(parameters.LogMessage),
 		Networks: []string{
