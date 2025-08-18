@@ -8,6 +8,7 @@ package auxiliarycommandserver
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -32,11 +33,13 @@ func (s *AuxiliaryTestSuite) SetupSuite() {
 	t := s.T()
 	// Expect errors in logs should be false for recconnection tests
 	// For now for these test we will skip checking the logs for errors
+	slog.Info("starting auxiliary command server tests")
 	s.teardownTest = utils.SetupConnectionTest(t, false, false, true,
 		"../../config/agent/nginx-agent-with-auxiliary-command.conf")
 }
 
 func (s *AuxiliaryTestSuite) TearDownSuite() {
+	slog.Info("finished auxiliary command server tests")
 	s.teardownTest(s.T())
 }
 

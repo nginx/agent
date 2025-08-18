@@ -8,6 +8,7 @@ package managementplane
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"testing"
 
@@ -26,6 +27,7 @@ type MPITestSuite struct {
 }
 
 func (s *MPITestSuite) TearDownSuite() {
+	slog.Info("finished MPI tests")
 	s.teardownTest(s.T())
 }
 
@@ -34,6 +36,7 @@ func (s *MPITestSuite) TearDownTest() {
 }
 
 func (s *MPITestSuite) SetupSuite() {
+	slog.Info("starting MPI tests")
 	s.ctx = context.Background()
 	s.teardownTest = utils.SetupConnectionTest(s.T(), true, false, false,
 		"../../config/agent/nginx-config-with-grpc-client.conf")

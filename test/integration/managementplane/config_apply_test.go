@@ -8,6 +8,7 @@ package managementplane
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"sort"
 	"testing"
@@ -38,6 +39,7 @@ type ConfigApplyChunkingTestSuite struct {
 }
 
 func (s *ConfigApplyTestSuite) SetupSuite() {
+	slog.Info("starting config apply tests")
 	s.ctx = context.Background()
 	s.teardownTest = utils.SetupConnectionTest(s.T(), false, false, false,
 		"../../config/agent/nginx-config-with-grpc-client.conf")
@@ -48,6 +50,7 @@ func (s *ConfigApplyTestSuite) SetupSuite() {
 }
 
 func (s *ConfigApplyTestSuite) TearDownSuite() {
+	slog.Info("finished config apply tests")
 	s.teardownTest(s.T())
 }
 
@@ -131,6 +134,7 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test4_TestFileNotInAllowedDirecto
 }
 
 func (s *ConfigApplyChunkingTestSuite) SetupSuite() {
+	slog.Info("starting config apply chunking tests")
 	s.ctx = context.Background()
 	s.teardownTest = utils.SetupConnectionTest(s.T(), false, false, false,
 		"../../config/agent/nginx-config-with-max-file-size.conf")
@@ -141,6 +145,7 @@ func (s *ConfigApplyChunkingTestSuite) SetupSuite() {
 }
 
 func (s *ConfigApplyChunkingTestSuite) TearDownSuite() {
+	slog.Info("finished config apply chunking tests")
 	s.teardownTest(s.T())
 }
 
