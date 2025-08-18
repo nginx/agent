@@ -63,6 +63,7 @@ type (
 	}
 
 	NginxDataPlaneConfig struct {
+		ReloadBackoff          *BackOff      `yaml:"reload_backoff"           mapstructure:"reload_backoff"`
 		APITls                 TLSConfig     `yaml:"api_tls"                  mapstructure:"api_tls"`
 		ExcludeLogs            []string      `yaml:"exclude_logs"             mapstructure:"exclude_logs"`
 		ReloadMonitoringPeriod time.Duration `yaml:"reload_monitoring_period" mapstructure:"reload_monitoring_period"`
