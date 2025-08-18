@@ -20,9 +20,27 @@ permissions:
 
 env:
   NFPM_VERSION: 'v2.35.3'
-  GOPROXY: "https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@azr.artifactory.f5net.com/artifactory/api/go/f5-nginx-go-dev"
+  GOPROXY: "direct"
 
 jobs:
+  proxy-sanity-check:
+    name: Proxy Sanity Check
+    runs-on: ubuntu-22.04
+    if: ${{ !github.event.pull_request.head.repo.fork }}
+    env:
+      GOPROXY: "https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@azr.artifactory.f5net.com/artifactory/api/go/f5-nginx-go-dev"
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+            fetch-tags: 'true'
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        with:
+            go-version-file: 'go.mod'
+            cache: false
+      - name: run goproxy-sanity-check
+        run: |
+          make build
+
   lint:
     name: Lint
     runs-on: ubuntu-22.04
@@ -36,9 +54,12 @@ jobs:
         run: make install-tools
       - name: run lint
         run: make lint
+
   unit-test:
       name: Unit Tests
       runs-on: ubuntu-22.04
+      permissions:
+        contents: write
       steps:
           - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
           - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
@@ -52,9 +73,10 @@ jobs:
             with:
               config: ./.testcoverage.yaml
               ## when token is not specified (value '') this feature is turned off
-              git-token: ${{ github.ref_name == 'v3' && secrets.GITHUB_TOKEN || '' }}
+              git-token: ${{ github.ref_name == 'main' && secrets.GITHUB_TOKEN || '' }}
               ## name of orphaned branch where badges are stored
               git-branch: badges
+
   race-condition-test:
       name: Unit tests with race condition detection
       runs-on: ubuntu-22.04
@@ -66,11 +88,14 @@ jobs:
                 cache: false
           - name: Run unit tests with race condition detection
             run: make race-condition-test
+
   build-unsigned-snapshot:
       name: Build Unsigned Snapshot
       runs-on: ubuntu-22.04
       steps:
           - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+            with:
+              fetch-tags: 'true'
           - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
             with:
                 go-version-file: 'go.mod'
@@ -280,15 +305,17 @@ jobs:
           benchmark-data-dir-path: ""
           # Set auto-push to false since GitHub API token is not given
           auto-push: false
-          alert-threshold: '125%'
+          alert-threshold: '150%'
           gh-pages-branch: "benchmark-results"
           fail-on-alert: true
       - name: Push benchmark result
-        if:  ${{ success() && github.ref_name == 'v3'}}
+        if:  ${{ success() && github.ref_name == 'main'}}
         run: git push 'https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/nginx/agent.git' benchmark-results:benchmark-results
   load-tests:
     name: Load Tests
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
+    permissions:
+      contents: write
     runs-on: ubuntu-22.04
     needs: build-unsigned-snapshot
 
@@ -351,10 +378,10 @@ jobs:
           benchmark-data-dir-path: ""
           # Set auto-push to false since GitHub API token is not given
           auto-push: false
-          alert-threshold: '175%'
+          alert-threshold: '150%'
           gh-pages-branch: "benchmark-results"
           fail-on-alert: true
 
       - name: Push load test result
-        if:  ${{ success() && github.ref_name == 'v3'}}
+        if:  ${{ success() && github.ref_name == 'main' }}
         run: git push 'https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/nginx/agent.git' benchmark-results:benchmark-results

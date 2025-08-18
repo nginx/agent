@@ -243,12 +243,54 @@ func TestResolveAllowedDirectories(t *testing.T) {
 
 func TestResolveLog(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
-	viperInstance.Set(LogLevelKey, "error")
-	viperInstance.Set(LogPathKey, "/var/log/test/test.log")
 
-	result := resolveLog()
-	assert.Equal(t, "error", result.Level)
-	assert.Equal(t, "/var/log/test/test.log", result.Path)
+	tests := []struct {
+		name             string
+		logLevel         string
+		logPath          string
+		expectedLogPath  string
+		expectedLogLevel string
+	}{
+		{
+			name:             "Test 1: Log level set to info",
+			logLevel:         "info",
+			logPath:          "/var/log/test/test.log",
+			expectedLogPath:  "/var/log/test/test.log",
+			expectedLogLevel: "info",
+		},
+		{
+			name:             "Test 2: Invalid log level set",
+			logLevel:         "trace",
+			logPath:          "/var/log/test/test.log",
+			expectedLogPath:  "/var/log/test/test.log",
+			expectedLogLevel: "info",
+		},
+		{
+			name:             "Test 3: Log level set to debug",
+			logLevel:         "debug",
+			logPath:          "/var/log/test/test.log",
+			expectedLogPath:  "/var/log/test/test.log",
+			expectedLogLevel: "debug",
+		},
+		{
+			name:             "Test 4: Log level set with capitalization",
+			logLevel:         "DEBUG",
+			logPath:          "./logs/nginx.log",
+			expectedLogPath:  "./logs/nginx.log",
+			expectedLogLevel: "DEBUG",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			viperInstance.Set(LogLevelKey, test.logLevel)
+			viperInstance.Set(LogPathKey, test.logPath)
+
+			result := resolveLog()
+			assert.Equal(t, test.expectedLogLevel, result.Level)
+			assert.Equal(t, test.expectedLogPath, result.Path)
+		})
+	}
 }
 
 func TestResolveClient(t *testing.T) {
@@ -296,6 +338,59 @@ func TestResolveCollector(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), errMsg)
 	})
+}
+
+func TestResolveCollectorLog(t *testing.T) {
+	tests := []struct {
+		name             string
+		logLevel         string
+		logPath          string
+		agentLogLevel    string
+		expectedLogPath  string
+		expectedLogLevel string
+	}{
+		{
+			name:             "Test 1: OTel Log Level Set In Config",
+			logLevel:         "",
+			logPath:          "/tmp/collector.log",
+			agentLogLevel:    "debug",
+			expectedLogPath:  "/tmp/collector.log",
+			expectedLogLevel: "DEBUG",
+		},
+		{
+			name:             "Test 2: Agent Log Level is Warn",
+			logLevel:         "",
+			logPath:          "/tmp/collector.log",
+			agentLogLevel:    "warn",
+			expectedLogPath:  "/tmp/collector.log",
+			expectedLogLevel: "WARN",
+		},
+		{
+			name:             "Test 3: OTel Log Level Set In Config",
+			logLevel:         "INFO",
+			logPath:          "/tmp/collector.log",
+			agentLogLevel:    "debug",
+			expectedLogPath:  "/tmp/collector.log",
+			expectedLogLevel: "INFO",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
+			viperInstance.Set(CollectorLogPathKey, test.logPath)
+			viperInstance.Set(LogLevelKey, test.agentLogLevel)
+
+			if test.logLevel != "" {
+				viperInstance.Set(CollectorLogLevelKey, test.logLevel)
+			}
+
+			log := resolveCollectorLog()
+
+			assert.Equal(t, test.expectedLogLevel, log.Level)
+			assert.Equal(t, test.expectedLogPath, log.Path)
+		})
+	}
 }
 
 func TestCommand(t *testing.T) {
@@ -1006,6 +1101,13 @@ func createConfig() *Config {
 				ExcludeLogs:            []string{"/var/log/nginx/error.log", "^/var/log/nginx/.*.log$"},
 				ReloadMonitoringPeriod: 30 * time.Second,
 				TreatWarningsAsErrors:  true,
+				ReloadBackoff: &BackOff{
+					InitialInterval:     100 * time.Millisecond,
+					MaxInterval:         20 * time.Second,
+					MaxElapsedTime:      15 * time.Second,
+					RandomizationFactor: 1.5,
+					Multiplier:          1.5,
+				},
 			},
 		},
 		Collector: &Collector{
