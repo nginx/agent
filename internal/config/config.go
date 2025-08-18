@@ -601,36 +601,36 @@ func registerCommandFlags(fs *flag.FlagSet) {
 	fs.Duration(
 		CommandServerProxyTimeoutKey,
 		DefCommandServerProxyTimeoutKey,
-		"The EFP HTTP Timeout, value in seconds")
+		"The explicit forward proxy HTTP Timeout, value in seconds")
 	fs.String(
 		CommandServerProxyURLKey,
 		DefCommandServerProxyURlKey,
-		"The Proxy URL to use for EFP.",
+		"The Proxy URL to use for explicit forward proxy.",
 	)
 	fs.String(
 		CommandServerProxyNoProxyKey,
 		DefCommandServerProxyNoProxyKey,
-		"The No-Proxy URL to use for EFP.",
+		"The No-Proxy URL to use for explicit forward proxy.",
 	)
 	fs.String(
 		CommandServerProxyAuthMethodKey,
 		DefCommandServerProxyAuthMethodKey,
-		"The Authentication method used for EFP.",
+		"The Authentication method used for explicit forward proxy.",
 	)
 	fs.String(
 		CommandServerProxyUsernameKey,
 		DefCommandServerProxyUsernameKey,
-		"The Username used for basic authentication for EFP.",
+		"The Username used for basic authentication for explicit forward proxy.",
 	)
 	fs.String(
 		CommandServerProxyPasswordKey,
 		DefCommandServerProxyPasswordKey,
-		"The Password used for basic authentication for EFP.",
+		"The Password used for basic authentication for explicit forward proxy.",
 	)
 	fs.String(
 		CommandServerProxyTokenKey,
 		DefCommandServerProxyTokenKey,
-		"The bearer token used for authentication for EFP.",
+		"The bearer token used for authentication for explicit forward proxy.",
 	)
 	fs.String(
 		CommandServerProxyTLSCertKey,

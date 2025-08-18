@@ -769,7 +769,6 @@ func (oc *Collector) setExporterProxyEnvVars(ctx context.Context) {
 
 	if parsedProxyURL.Scheme == "https" {
 		slog.ErrorContext(ctx, "Protocol not supported, unable to configure proxy", "url", proxyURL)
-		return
 	}
 
 	auth := ""
