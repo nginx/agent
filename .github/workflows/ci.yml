@@ -187,8 +187,6 @@ jobs:
     needs: build-unsigned-snapshot
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
     runs-on: ubuntu-22.04
-    env:
-      NGINX_LICENSE_JWT: ${{ secrets.NGINX_LICENSE_JWT }}
     strategy:
       matrix:
         container:
@@ -232,7 +230,7 @@ jobs:
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" \
+          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" NGINX_LICENSE_JWT="${{ secrets.NGINX_LICENSE_JWT }}"\
           TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
           OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" IMAGE_PATH="${{ matrix.container.path }}" \
             make official-image-integration-test
