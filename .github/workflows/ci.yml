@@ -156,7 +156,7 @@ jobs:
 
       - name: Format Results
         if: always()
-        run: bash ./scripts/workflow/format_results.sh ${{job.status}} ${{github.job}}/${{matrix.container.image}}${{matrix.container.version}} ${{github.workspace}}
+        run: bash ./scripts/dashboard/format_results.sh ${{job.status}} ${{github.job}}/${{matrix.container.image}}${{matrix.container.version}} ${{github.workspace}}
 
   official-oss-image-integration-tests:
     name: Integration Tests - Official OSS Images
@@ -211,7 +211,7 @@ jobs:
 
       - name: Format Results
         if: always()
-        run: bash ./scripts/workflow/format_results.sh ${{job.status}} ${{github.job}}/${{matrix.container.image}}${{matrix.container.version}} ${{github.workspace}}
+        run: bash ./scripts/dashboard/format_results.sh ${{job.status}} ${{github.job}}/${{matrix.container.image}}${{matrix.container.version}} ${{github.workspace}}
 
   official-plus-image-integration-tests:
     name: Integration Tests - Official Plus Images
@@ -280,7 +280,7 @@ jobs:
 
       - name: Format Results
         if: always()
-        run: bash ./scripts/workflow/format_results.sh ${{job.status}} ${{github.job}}/${{matrix.container.image}}${{matrix.container.version}} ${{github.workspace}}
+        run: bash ./scripts/dashboard/format_results.sh ${{job.status}} ${{github.job}}/${{matrix.container.image}}${{matrix.container.version}} ${{github.workspace}}
 
   performance-tests:
     name: Performance Tests
