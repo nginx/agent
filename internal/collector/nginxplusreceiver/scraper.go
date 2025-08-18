@@ -82,7 +82,7 @@ func (nps *NginxPlusScraper) ID() component.ID {
 	return component.NewID(metadata.Type)
 }
 
-func (nps *NginxPlusScraper) Start(_ context.Context, _ component.Host) error {
+func (nps *NginxPlusScraper) Start(ctx context.Context, _ component.Host) error {
 	endpoint := strings.TrimPrefix(nps.cfg.APIDetails.URL, "unix:")
 	httpClient := http.DefaultClient
 	caCertLocation := nps.cfg.APIDetails.Ca
@@ -110,7 +110,7 @@ func (nps *NginxPlusScraper) Start(_ context.Context, _ component.Host) error {
 	httpClient.Timeout = nps.cfg.ClientConfig.Timeout
 
 	if strings.HasPrefix(nps.cfg.APIDetails.Listen, "unix:") {
-		httpClient = socketClient(strings.TrimPrefix(nps.cfg.APIDetails.Listen, "unix:"))
+		httpClient = socketClient(ctx, strings.TrimPrefix(nps.cfg.APIDetails.Listen, "unix:"))
 	}
 
 	plusClient, err := plusapi.NewNginxClient(endpoint,
@@ -1208,11 +1208,12 @@ func (nps *NginxPlusScraper) recordCacheMetrics(stats *plusapi.Stats, now pcommo
 	}
 }
 
-func socketClient(socketPath string) *http.Client {
+func socketClient(ctx context.Context, socketPath string) *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{
 			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-				return net.Dial("unix", socketPath)
+				dialler := &net.Dialer{}
+				return dialler.DialContext(ctx, "unix", socketPath)
 			},
 		},
 	}

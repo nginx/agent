@@ -76,7 +76,7 @@ func main() {
 
 	slog.DebugContext(ctx, "Config directory", "directory", *configDirectory)
 
-	_, err = grpc.NewMockManagementServer(*apiAddress, agentConfig, configDirectory)
+	_, err = grpc.NewMockManagementServer(ctx, *apiAddress, agentConfig, configDirectory)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to start mock management server", "error", err)
 		os.Exit(1)
