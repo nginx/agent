@@ -104,7 +104,7 @@ func (nls *NginxLogScraper) ID() component.ID {
 	return component.NewID(metadata.Type)
 }
 
-//nolint:unparam //// Result is always nil
+//nolint:unparam // Result is always nil
 func (nls *NginxLogScraper) Start(parentCtx context.Context, _ component.Host) error {
 	nls.logger.Info("NGINX access log scraper started")
 	ctx, cancel := context.WithCancel(parentCtx)

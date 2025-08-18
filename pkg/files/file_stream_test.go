@@ -22,7 +22,7 @@ import (
 
 var letters = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-//nolint:gosec // random number generater if fine for test case.
+//nolint:gosec // random number generater is fine for test case.
 func randBytes(n int) []byte {
 	b := make([]byte, n)
 	for i := range b {
