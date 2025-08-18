@@ -8,6 +8,8 @@ package helpers
 import (
 	"context"
 	"io"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/docker/docker/api/types"
@@ -65,9 +67,6 @@ func StartContainer(
 				buildOptions.Target = buildTarget
 			},
 		},
-		Env: map[string]string{
-			"NGINX_LICENSE_JWT": Env(tb, "NGINX_LICENSE_JWT"),
-		},
 		ExposedPorts: []string{"9091/tcp"},
 		WaitingFor:   wait.ForLog(parameters.LogMessage),
 		Networks: []string{
@@ -87,6 +86,11 @@ func StartContainer(
 			{
 				HostFilePath:      parameters.NginxConfigPath,
 				ContainerFilePath: "/etc/nginx/nginx.conf",
+				FileMode:          configFilePermissions,
+			},
+			{
+				HostFilePath:      filepath.Join(os.TempDir(), "license.jwt"),
+				ContainerFilePath: "/etc/nginx/license.jwt",
 				FileMode:          configFilePermissions,
 			},
 		},

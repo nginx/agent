@@ -180,7 +180,7 @@ jobs:
           CONTAINER_NGINX_IMAGE_REGISTRY="docker-registry.nginx.com" \
           TAG="${{ matrix.container.version }}-${{ matrix.container.image }}" \
           OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" \
-          NGINX_LICENSE_JWT="${{ secrets.NGINX_LICENSE_JWT }}"
+          NGINX_LICENSE_JWT="${{ secrets.NGINX_LICENSE_JWT }}" \
             make official-image-integration-test
 
   official-plus-image-integration-tests:
