@@ -30,7 +30,6 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . instanceWatcherServiceInterface
 
-// nolint
 type (
 	Watcher struct {
 		messagePipe                        bus.MessagePipeInterface
@@ -93,7 +92,6 @@ func NewWatcher(agentConfig *config.Config) *Watcher {
 	}
 }
 
-// nolint: unparam
 // error is always nil
 func (w *Watcher) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
 	slog.DebugContext(ctx, "Starting watcher plugin")
@@ -123,7 +121,6 @@ func (w *Watcher) Init(ctx context.Context, messagePipe bus.MessagePipeInterface
 	return nil
 }
 
-// nolint: unparam
 // error is always nil
 func (w *Watcher) Close(ctx context.Context) error {
 	slog.InfoContext(ctx, "Closing watcher plugin")

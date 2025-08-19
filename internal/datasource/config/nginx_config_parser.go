@@ -102,7 +102,7 @@ func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *mpi.Instance)
 	return ncp.createNginxConfigContext(ctx, instance, payload)
 }
 
-// nolint: cyclop,revive,gocognit,gocyclo
+//nolint:gocognit,gocyclo,revive,cyclop //  cognitive complexity is 51
 func (ncp *NginxConfigParser) createNginxConfigContext(
 	ctx context.Context,
 	instance *mpi.Instance,
@@ -618,7 +618,7 @@ func (ncp *NginxConfigParser) pingAPIEndpoint(ctx context.Context, statusAPIDeta
 	return true
 }
 
-// nolint: revive
+//nolint:revive // cognitive complexity is 18
 func (ncp *NginxConfigParser) urlsForLocationDirectiveAPIDetails(
 	ctx context.Context, parent, current *crossplane.Directive,
 	locationDirectiveName string,
@@ -801,8 +801,9 @@ func (ncp *NginxConfigParser) socketClient(socketPath string) *http.Client {
 	return &http.Client{
 		Timeout: ncp.agentConfig.Client.Grpc.KeepAlive.Timeout,
 		Transport: &http.Transport{
-			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-				return net.Dial("unix", socketPath)
+			DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+				dialer := &net.Dialer{}
+				return dialer.DialContext(ctx, "unix", socketPath)
 			},
 		},
 	}

@@ -64,6 +64,7 @@ type MockManagementServer struct {
 }
 
 func NewMockManagementServer(
+	ctx context.Context,
 	apiAddress string,
 	agentConfig *config.Config,
 	configDirectory *string,
@@ -71,7 +72,7 @@ func NewMockManagementServer(
 	var err error
 	requestChan := make(chan *v1.ManagementPlaneRequest)
 
-	commandService := serveCommandService(apiAddress, agentConfig, requestChan, *configDirectory)
+	commandService := serveCommandService(ctx, apiAddress, agentConfig, requestChan, *configDirectory)
 
 	var fileServer *FileService
 
@@ -82,10 +83,11 @@ func NewMockManagementServer(
 	fileServiceLock.Lock()
 	defer fileServiceLock.Unlock()
 
-	grpcListener, err := net.Listen(connectionType,
+	listenConfig := &net.ListenConfig{}
+	grpcListener, err := listenConfig.Listen(ctx, connectionType,
 		fmt.Sprintf("%s:%d", agentConfig.Command.Server.Host, agentConfig.Command.Server.Port))
 	if err != nil {
-		slog.Error("Failed to listen", "error", err)
+		slog.ErrorContext(ctx, "Failed to listen", "error", err)
 		return nil, err
 	}
 
@@ -179,6 +181,7 @@ func serverOptions(agentConfig *config.Config) []grpc.ServerOption {
 }
 
 func serveCommandService(
+	ctx context.Context,
 	apiAddress string,
 	agentConfig *config.Config,
 	requestChan chan *v1.ManagementPlaneRequest,
@@ -187,7 +190,7 @@ func serveCommandService(
 	commandServer := NewCommandService(requestChan, configDirectory)
 
 	go func() {
-		cmdListener, listenerErr := createListener(apiAddress, agentConfig)
+		cmdListener, listenerErr := createListener(ctx, apiAddress, agentConfig)
 		if listenerErr != nil {
 			return
 		}
@@ -202,12 +205,12 @@ func serveCommandService(
 	return commandServer
 }
 
-func createListener(apiAddress string, agentConfig *config.Config) (net.Listener, error) {
+func createListener(ctx context.Context, apiAddress string, agentConfig *config.Config) (net.Listener, error) {
 	if agentConfig.Command.TLS != nil {
 		cert, keyPairErr := tls.LoadX509KeyPair(agentConfig.Command.TLS.Cert, agentConfig.Command.TLS.Key)
 
 		if keyPairErr == nil {
-			slog.Error("Failed to load key and cert pair", "error", keyPairErr)
+			slog.ErrorContext(ctx, "Failed to load key and cert pair", "error", keyPairErr)
 			return tls.Listen(connectionType, apiAddress, &tls.Config{
 				Certificates: []tls.Certificate{cert},
 				MinVersion:   tls.VersionTLS12,
@@ -215,7 +218,9 @@ func createListener(apiAddress string, agentConfig *config.Config) (net.Listener
 		}
 	}
 
-	return net.Listen(connectionType, apiAddress)
+	listenConfig := &net.ListenConfig{}
+
+	return listenConfig.Listen(ctx, connectionType, apiAddress)
 }
 
 func reportHealth(healthcheck *health.Server, agentConfig *config.Config) {

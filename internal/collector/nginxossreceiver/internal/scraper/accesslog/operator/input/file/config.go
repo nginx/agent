@@ -46,7 +46,8 @@ func NewConfigWithID(operatorID string) *Config {
 }
 
 // Build will build a file input operator from the supplied configuration
-// nolint: ireturn
+//
+//nolint:ireturn // The function returns a specific interface type as required by the OpenTelemetry Collector framework.
 func (c Config) Build(set component.TelemetrySettings) (operator.Operator, error) {
 	logger := set.Logger
 
