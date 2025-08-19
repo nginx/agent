@@ -71,7 +71,7 @@ UBUNTU_CODENAME=focal
 `
 )
 
-// nolint: lll
+//nolint:lll // single lines are required
 var envMountInfo = [10]string{
 	`NO CONTAINER ID PRESENT IN MOUNTINFO`,
 	`822 773 0:55 / / rw,relatime master:312 - overlay overlay rw,lowerdir=/var/lib/docker/overlay2/l/OVIJO6CZHWIXJDDHZXRECADDI3:/var/lib/docker/overlay2/l/3D3QYHJJTMCK6GLLVY7MMM6K4V:/var/lib/docker/overlay2/l/OKH52ZN3IE727BHLU3G3LEVI6S:/var/lib/docker/overlay2/l/K3BV3TCWQS2WDAY3ZVXO5GIHLQ:/var/lib/docker/overlay2/l/2KZOTUQIESHNC4FHZHYULXIKZ5,upperdir=/var/lib/docker/overlay2/f8c1fa1c3a6eb3731265dc674bf238c60fb594eedc4639cdbefef93ad443f55d/diff,workdir=/var/lib/docker/overlay2/f8c1fa1c3a6eb3731265dc674bf238c60fb594eedc4639cdbefef93ad443f55d/work,xino=off

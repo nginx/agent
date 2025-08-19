@@ -212,7 +212,6 @@ func TestResource_createPlusAPIError(t *testing.T) {
 	assert.Equal(t, errors.New(string(expectedJSON)), result)
 }
 
-// nolint: dupl
 func TestResource_Process_APIAction_GetHTTPServers(t *testing.T) {
 	ctx := context.Background()
 
@@ -288,42 +287,13 @@ func TestResource_Process_APIAction_GetHTTPServers(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(tt *testing.T) {
-			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
-			fakeResourceService.GetHTTPUpstreamServersReturns(test.upstreams, test.err)
-			if test.instance.GetInstanceMeta().GetInstanceId() != "e1374cb1-462d-3b6c-9f3b-f28332b5f10f" {
-				fakeResourceService.InstanceReturns(test.instance)
-			}
-
-			messagePipe := busfakes.NewFakeMessagePipe()
-
-			resourcePlugin := NewResource(types.AgentConfig())
-			resourcePlugin.resourceService = fakeResourceService
-
-			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
-			require.NoError(t, err)
-
-			resourcePlugin.messagePipe = messagePipe
-
-			resourcePlugin.Process(ctx, test.message)
-
-			assert.Equal(t, test.topic[0], messagePipe.Messages()[0].Topic)
-
-			response, ok := messagePipe.Messages()[0].Data.(*mpi.DataPlaneResponse)
-			assert.True(tt, ok)
-
-			if test.err != nil {
-				assert.Equal(tt, test.err.Error(), response.GetCommandResponse().GetError())
-				assert.Equal(tt, mpi.CommandResponse_COMMAND_STATUS_FAILURE, response.GetCommandResponse().GetStatus())
-			} else {
-				assert.Empty(t, response.GetCommandResponse().GetError())
-				assert.Equal(tt, mpi.CommandResponse_COMMAND_STATUS_OK, response.GetCommandResponse().GetStatus())
-			}
-		})
+		runResourceTestHelper(t, ctx, test.name, func(fakeService *resourcefakes.FakeResourceServiceInterface) {
+			fakeService.GetHTTPUpstreamServersReturns(test.upstreams, test.err)
+		}, test.instance, test.message, test.topic, test.err)
 	}
 }
 
-// nolint: dupl
+//nolint:dupl // need to refactor so that redundant code can be removed
 func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
@@ -426,7 +396,7 @@ func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 	}
 }
 
-// nolint: dupl
+//nolint:dupl // need to refactor so that redundant code can be removed
 func TestResource_Process_APIAction_UpdateStreamServers(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
@@ -529,7 +499,6 @@ func TestResource_Process_APIAction_UpdateStreamServers(t *testing.T) {
 	}
 }
 
-// nolint: dupl
 func TestResource_Process_APIAction_GetStreamUpstreams(t *testing.T) {
 	ctx := context.Background()
 
@@ -671,7 +640,6 @@ func TestResource_Process_APIAction_GetStreamUpstreams(t *testing.T) {
 	}
 }
 
-// nolint: dupl
 func TestResource_Process_APIAction_GetUpstreams(t *testing.T) {
 	ctx := context.Background()
 
@@ -786,38 +754,9 @@ func TestResource_Process_APIAction_GetUpstreams(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(tt *testing.T) {
-			fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
-			fakeResourceService.GetUpstreamsReturns(test.upstreams, test.err)
-			if test.instance.GetInstanceMeta().GetInstanceId() != "e1374cb1-462d-3b6c-9f3b-f28332b5f10f" {
-				fakeResourceService.InstanceReturns(test.instance)
-			}
-
-			messagePipe := busfakes.NewFakeMessagePipe()
-
-			resourcePlugin := NewResource(types.AgentConfig())
-			resourcePlugin.resourceService = fakeResourceService
-
-			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
-			require.NoError(t, err)
-
-			resourcePlugin.messagePipe = messagePipe
-
-			resourcePlugin.Process(ctx, test.message)
-
-			assert.Equal(t, test.topic[0], messagePipe.Messages()[0].Topic)
-
-			response, ok := messagePipe.Messages()[0].Data.(*mpi.DataPlaneResponse)
-			assert.True(tt, ok)
-
-			if test.err != nil {
-				assert.Equal(tt, test.err.Error(), response.GetCommandResponse().GetError())
-				assert.Equal(tt, mpi.CommandResponse_COMMAND_STATUS_FAILURE, response.GetCommandResponse().GetStatus())
-			} else {
-				assert.Empty(t, response.GetCommandResponse().GetError())
-				assert.Equal(tt, mpi.CommandResponse_COMMAND_STATUS_OK, response.GetCommandResponse().GetStatus())
-			}
-		})
+		runResourceTestHelper(t, ctx, test.name, func(fakeService *resourcefakes.FakeResourceServiceInterface) {
+			fakeService.GetUpstreamsReturns(test.upstreams, test.err)
+		}, test.instance, test.message, test.topic, test.err)
 	}
 }
 
@@ -930,4 +869,41 @@ func TestResource_Init(t *testing.T) {
 	messages := messagePipe.Messages()
 
 	assert.Empty(t, messages)
+}
+
+//nolint:revive,lll // maximum number of arguments exceed
+func runResourceTestHelper(t *testing.T, ctx context.Context, testName string, getUpstreamsFunc func(*resourcefakes.FakeResourceServiceInterface), instance *mpi.Instance, message *bus.Message, topic []string, err error) {
+	t.Helper()
+
+	t.Run(testName, func(tt *testing.T) {
+		fakeResourceService := &resourcefakes.FakeResourceServiceInterface{}
+		getUpstreamsFunc(fakeResourceService)
+
+		if instance.GetInstanceMeta().GetInstanceId() != "e1374cb1-462d-3b6c-9f3b-f28332b5f10f" {
+			fakeResourceService.InstanceReturns(instance)
+		}
+
+		messagePipe := busfakes.NewFakeMessagePipe()
+		resourcePlugin := NewResource(types.AgentConfig())
+		resourcePlugin.resourceService = fakeResourceService
+
+		registerErr := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
+		require.NoError(t, registerErr)
+
+		resourcePlugin.messagePipe = messagePipe
+		resourcePlugin.Process(ctx, message)
+
+		assert.Equal(tt, topic[0], messagePipe.Messages()[0].Topic)
+
+		response, ok := messagePipe.Messages()[0].Data.(*mpi.DataPlaneResponse)
+		assert.True(tt, ok)
+
+		if err != nil {
+			assert.Equal(tt, err.Error(), response.GetCommandResponse().GetError())
+			assert.Equal(tt, mpi.CommandResponse_COMMAND_STATUS_FAILURE, response.GetCommandResponse().GetStatus())
+		} else {
+			assert.Empty(tt, response.GetCommandResponse().GetError())
+			assert.Equal(tt, mpi.CommandResponse_COMMAND_STATUS_OK, response.GetCommandResponse().GetStatus())
+		}
+	})
 }

@@ -16,7 +16,8 @@ import (
 )
 
 // NewFactory for CPU scraper.
-// nolint: ireturn
+//
+//nolint:ireturn // must return a CPU scraper
 func NewFactory() scraper.Factory {
 	return scraper.NewFactory(
 		metadata.Type,
@@ -26,7 +27,8 @@ func NewFactory() scraper.Factory {
 }
 
 // createDefaultConfig creates the default configuration for the Scraper.
-// nolint: ireturn
+//
+//nolint:ireturn // must return a default configuration for scraper
 func createDefaultConfig() component.Config {
 	return &Config{
 		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
@@ -34,7 +36,8 @@ func createDefaultConfig() component.Config {
 }
 
 // createMetricsScraper creates a scraper based on provided config.
-// nolint: ireturn
+//
+//nolint:ireturn // must return a metric scraper interface
 func createMetricsScraper(
 	ctx context.Context,
 	settings scraper.Settings,
