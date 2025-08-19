@@ -75,6 +75,7 @@ format_results() {
     end_at=""
     result=""
     msg=""
+    isRunning=false
     
     while IFS= read -r line; do
         # Detect if the line is a test start
@@ -84,7 +85,7 @@ format_results() {
             fi
             
             current_test="${BASH_REMATCH[1]}"
-            start_at=""
+            start_at=$start_at
             end_at=""
             result="pass"
             msg=""

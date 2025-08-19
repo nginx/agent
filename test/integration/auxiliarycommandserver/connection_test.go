@@ -43,11 +43,12 @@ func (s *AuxiliaryTestSuite) TearDownSuite() {
 	s.teardownTest(s.T())
 }
 
-func TestSuite(t *testing.T) {
+func TestAuxiliaryTestSuite(t *testing.T) {
 	suite.Run(t, new(AuxiliaryTestSuite))
 }
 
 func (s *AuxiliaryTestSuite) TestAuxiliary_Test1_Connection() {
+	slog.Info("starting auxiliary command server connection tests")
 	s.instanceID = utils.VerifyConnection(s.T(), 2, utils.MockManagementPlaneAPIAddress)
 	s.False(s.T().Failed())
 	utils.VerifyUpdateDataPlaneHealth(s.T(), utils.MockManagementPlaneAPIAddress)
