@@ -34,6 +34,7 @@ DOCKERFILE_PATH = "./test/docker/nginx-oss/$(CONTAINER_OS_TYPE)/Dockerfile"
 OFFICIAL_IMAGE_DOCKERFILE_PATH = "./test/docker/nginx-official-image/$(CONTAINER_OS_TYPE)/Dockerfile"
 IMAGE_PATH ?= "/nginx/agent"
 TAG ?= ""
+NGINX_LICENSE_JWT ?= ""
 
 BUILD_DIR		:= build
 TEST_BUILD_DIR  := build/test
