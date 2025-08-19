@@ -3,13 +3,13 @@
 set -euo pipefail
 
 # parameters
-JOB_RESULT="$1"
+RESULT="$1"
 TEST_TYPE="$2"
 WORKSPACE="$3"
 
 # file paths
 INPUT_FILE="$WORKSPACE/test/dashboard/logs/$TEST_TYPE/raw_logs.log"
-TEST_LOG="$WORKSPACE/test/dashboard/logs/$TEST_TYPE/test.log"
+OUTPUT_DIR="$WORKSPACE/test/dashboard/logs/$TEST_TYPE"
 
 # Validate input file exists
 if [ ! -f "$INPUT_FILE" ]; then
@@ -49,30 +49,28 @@ format_log() {
 
 write_result() {
     local test_name="$1"
-    local start_at="${start_time[$test]}"
-    local end_at="${end_time[$test]}"
-    local duration=0
+    local start_at="$2"
+    local end_at="$3"
     local result="$4"
     local msg="$5"
+    local duration_seconds=0
     [[ -n "$start_at" && -n "$end_at" ]] && duration_seconds=$(( $(date -d "$end_at" +%s) - $(date -d "$start_at" +%s) ))
     
     local start_iso=""
     local end_iso=""
-    
     [[ -n "$start_at" ]] && start_iso=$(date -d "$start_at" +"%Y-%m-%dT%H:%M:%S.%NZ")
     [[ -n "$end_at" ]] && end_iso=$(date -d "$end_at" +"%Y-%m-%dT%H:%M:%S.%NZ")
     
-    output_dir="$WORKSPACE/test/dashboard/logs/$TEST_TYPE/$test/"
+    output_dir="$WORKSPACE/test/dashboard/logs/$TEST_TYPE/$current_test/"
     mkdir -p "$output_dir"
     result_file="$output_dir/result.json"
     
-    echo "{\"start_at\":\"$start_iso\", \"end_at\":\"$end_iso\", \"duration_seconds\":$duration_seconds, \"result\":\"${test_results[$test]}\", \"msg\":\"${test_msg[$test]}\"}" > "$result_file"
+    echo "{\"start_at\":\"$start_iso\", \"end_at\":\"$end_iso\", \"duration_seconds\":$duration_seconds, \"result\":\"$result\", \"msg\":\"$msg\"}" > "$result_file"
 }
 
 format_results() {
     test_stack=()
     current_test=""
-    
     start_at=""
     end_at=""
     result=""
@@ -82,7 +80,6 @@ format_results() {
         # Detect if the line is a test start
         if [[ "$line" =~ ^===\ RUN[[:space:]]+(.+) ]]; then
             if [[ -n "$current_test" ]]; then
-                write_result "$current_test" "$start_at" "$end_at" "$result" "$msg"
                 test_stack+=("$current_test|$start_at|$end_at|$result|$msg")
             fi
             
