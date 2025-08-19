@@ -1,0 +1,30 @@
+name: Start Promtail
+description: Start promtail in a Docker container to send test results to loki
+inputs:
+    loki-dashboard-url:
+        description: "URL of the Loki dashboard to send the logs"
+        required: true
+runs:
+    using: "composite"
+    steps:
+        - name: Start Promtail container
+          shell: bash
+          run: |
+              docker run -d \
+               --name=promtail \
+               -v "${{ github.workspace }}/test/dashboard/prep/promtail.yaml:/etc/promtail/config.yaml" \
+               -v "${{ github.workspace }}/test/dashboard/logs:/var/log" \
+               -e TEST_OUTDIR=test/dashboard/logs \
+               -e GITHUB_RUN_ID=${{ github.run_id }} \
+               -e GITHUB_JOB=${{ github.job }} \
+               -e GITHUB_WORKFLOW=${{ github.workflow }} \
+               -e GITHUB_EVENT_NAME=${{ github.event_name }} \
+               -e GITHUB_SERVER_URL=${{ github.server_url }} \
+               -e GITHUB_REPOSITORY=${{ github.repository }} \
+               -e GITHUB_HEAD_REF=${{ github.head_ref }} \
+               -e GITHUB_SHA=${{ github.sha }} \
+               -e GITHUB_ACTOR=${{ github.actor }} \
+               -e LOKI_DASHBOARD_URL=${{ inputs.loki-dashboard-url }} \
+               grafana/promtail:3.4.4 \
+               -config.file=/etc/promtail/config.yaml \
+               -config.expand-env=true

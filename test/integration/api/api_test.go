@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/nginx/agent/sdk/v2/proto"
@@ -25,6 +27,7 @@ import (
 var delay = time.Duration(5 * time.Second)
 
 func TestAPI_Nginx(t *testing.T) {
+	log.Info("testing nginx api")
 	ctx := context.Background()
 	containerNetwork := utils.CreateContainerNetwork(ctx, t)
 
@@ -80,9 +83,11 @@ func TestAPI_Nginx(t *testing.T) {
 	assert.Equal(t, "/etc/nginx/nginx.conf", nginxDetailsResponse[0].ConfPath)
 
 	utils.TestAgentHasNoErrorLogs(t, testContainer)
+	log.Info("finished testing nginx api")
 }
 
 func TestAPI_Metrics(t *testing.T) {
+	log.Info("testing metrics api")
 	ctx := context.Background()
 	containerNetwork := utils.CreateContainerNetwork(ctx, t)
 
@@ -157,4 +162,5 @@ func TestAPI_Metrics(t *testing.T) {
 	}
 
 	utils.TestAgentHasNoErrorLogs(t, testContainer)
+	log.Info("finished testing metrics api")
 }
