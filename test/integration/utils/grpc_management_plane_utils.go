@@ -184,6 +184,7 @@ func setupNginxContainer(
 func setupLocalEnvironment(tb testing.TB) {
 	tb.Helper()
 	tb.Log("Running tests on local machine")
+	ctx := context.Background()
 
 	requestChan := make(chan *mpi.ManagementPlaneRequest)
 	server := mockGrpc.NewCommandService(requestChan, os.TempDir())
@@ -191,7 +192,8 @@ func setupLocalEnvironment(tb testing.TB) {
 	go func(tb testing.TB) {
 		tb.Helper()
 
-		listener, err := net.Listen("tcp", "localhost:0")
+		listenConfig := &net.ListenConfig{}
+		listener, err := listenConfig.Listen(ctx, "tcp", "localhost:0")
 		assert.NoError(tb, err)
 
 		MockManagementPlaneAPIAddress = listener.Addr().String()
@@ -202,7 +204,8 @@ func setupLocalEnvironment(tb testing.TB) {
 	go func(tb testing.TB) {
 		tb.Helper()
 
-		listener, err := net.Listen("tcp", "localhost:0")
+		listenConfig := &net.ListenConfig{}
+		listener, err := listenConfig.Listen(ctx, "tcp", "localhost:0")
 		assert.NoError(tb, err)
 		var opts []grpc.ServerOption
 
