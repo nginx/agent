@@ -201,14 +201,14 @@ jobs:
           release: "alpine"
           path: "/nginx-plus/agent"
         - image: "debian"
-          version: "3.21"
+          version: "bookworm"
           plus: "r35"
-          release: "bookworm"
+          release: "debian"
           path: "/nginx-plus/agent"
         - image: "debian"
-          version: "3.21"
+          version: "bookworm"
           plus: "r34"
-          release: "bookworm"
+          release: "debian"
           path: "/nginx-plus/agent"
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
