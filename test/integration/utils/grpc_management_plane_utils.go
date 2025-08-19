@@ -178,6 +178,7 @@ func setupNginxContainer(
 	}
 	if os.Getenv("NGINX_LICENSE_JWT") != "" {
 		tb.Log("Using NGINX license JWT from environment variable")
+		tb.Log("jwt contents: %s", os.Getenv("NGINX_LICENSE_JWT"))
 		licensePath := filepath.Join(os.TempDir(), "license.jwt")
 		license, err := os.Create(licensePath)
 		if err != nil {
