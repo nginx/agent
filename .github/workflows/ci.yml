@@ -21,7 +21,6 @@ permissions:
 env:
   NFPM_VERSION: 'v2.35.3'
   GOPROXY: "direct"
-  NGINX_LICENSE_JWT: ${{ secrets.NGINX_LICENSE_JWT }}
 
 jobs:
   proxy-sanity-check:
@@ -192,9 +191,24 @@ jobs:
       matrix:
         container:
         - image: "alpine"
+          version: "3.22"
+          plus: "r35"
+          release: "alpine"
+          path: "/nginx-plus/agent"
+        - image: "alpine"
           version: "3.21"
           plus: "r34"
           release: "alpine"
+          path: "/nginx-plus/agent"
+        - image: "debian"
+          version: "3.21"
+          plus: "r35"
+          release: "bookworm"
+          path: "/nginx-plus/agent"
+        - image: "debian"
+          version: "3.21"
+          plus: "r34"
+          release: "bookworm"
           path: "/nginx-plus/agent"
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1

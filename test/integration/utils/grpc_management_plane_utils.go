@@ -12,7 +12,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"path/filepath"
 	"slices"
 	"sort"
 	"testing"
@@ -175,21 +174,6 @@ func setupNginxContainer(
 	nginxConfPath := "../../config/nginx/nginx.conf"
 	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
 		nginxConfPath = "../../config/nginx/nginx-plus.conf"
-	}
-	if os.Getenv("NGINX_LICENSE_JWT") != "" {
-		tb.Log("Using NGINX license JWT from environment variable")
-		tb.Logf("jwt contents: %s", os.Getenv("NGINX_LICENSE_JWT"))
-		licensePath := filepath.Join(os.TempDir(), "license.jwt")
-		license, err := os.Create(licensePath)
-		if err != nil {
-			tb.Fatalf("Failed to create license file: %v", err)
-		}
-		defer license.Close()
-
-		_, err = license.WriteString((os.Getenv("NGINX_LICENSE")))
-		if err != nil {
-			tb.Fatalf("Failed to write license to file: %v", err)
-		}
 	}
 	params.NginxConfigPath = nginxConfPath
 
