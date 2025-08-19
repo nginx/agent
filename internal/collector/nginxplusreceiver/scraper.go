@@ -1212,8 +1212,8 @@ func socketClient(ctx context.Context, socketPath string) *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{
 			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-				dialler := &net.Dialer{}
-				return dialler.DialContext(ctx, "unix", socketPath)
+				dialer := &net.Dialer{}
+				return dialer.DialContext(ctx, "unix", socketPath)
 			},
 		},
 	}
