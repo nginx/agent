@@ -1,7 +1,7 @@
 [Unit]
 Description=NGINX Agent
 Documentation=https://github.com/nginx/agent#readme
-After=network.target
+After=network-online.target
 Wants=network-online.target
 StartLimitIntervalSec=15
 StartLimitBurst=5
@@ -11,24 +11,21 @@ User=${AGENT_USER}
 Group=${AGENT_GROUP}
 Type=simple
 
-ExecStartPre=/bin/mkdir -p ${AGENT_RUN_DIR}
-ExecStartPre=/bin/mkdir -p ${AGENT_LOG_DIR}
-
+ExecStartPre=/bin/mkdir -p ${AGENT_RUN_DIR} ${AGENT_LOG_DIR}
+ExecStartPre=/bin/chown -R ${AGENT_USER}:${AGENT_GROUP} ${AGENT_RUN_DIR} ${AGENT_LOG_DIR}
 ExecStart=${AGENT_EXE}
 
 RestartSec=5
-Restart=always
-
+Restart=on-failure
 PermissionsStartOnly=true
-PIDFile=${AGENT_RUN_DIR}/nginx-agent.pid
-Environment=
 
-StandardOutput=syslog
-StandardError=syslog
-SyslogIdentifier=nginx-agent
+KillSignal=SIGINT
+TimeoutStopSec=5s
 
-ExecStop=/bin/kill -2 $MAINPID
-ExecStop=/bin/sleep 3
+NoNewPrivileges=true
+ProtectSystem=yes
+ProtectHome=off
+PrivateTmp=true
 
 [Install]
 WantedBy=multi-user.target
