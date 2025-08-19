@@ -7,6 +7,7 @@ package cgroup
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"os/exec"
 	"path"
@@ -63,8 +64,8 @@ func NewCPUSource(basePath string) *CPUSource {
 	}
 }
 
-func (cs *CPUSource) Collect() (ContainerCPUStats, error) {
-	cpuStats, err := cs.collectCPUStats()
+func (cs *CPUSource) Collect(ctx context.Context) (ContainerCPUStats, error) {
+	cpuStats, err := cs.collectCPUStats(ctx)
 	if err != nil {
 		return ContainerCPUStats{}, err
 	}
@@ -73,8 +74,8 @@ func (cs *CPUSource) Collect() (ContainerCPUStats, error) {
 }
 
 // nolint: mnd
-func (cs *CPUSource) collectCPUStats() (ContainerCPUStats, error) {
-	clockTicks, err := clockTicks()
+func (cs *CPUSource) collectCPUStats(ctx context.Context) (ContainerCPUStats, error) {
+	clockTicks, err := clockTicks(ctx)
 	if err != nil {
 		return ContainerCPUStats{}, err
 	}
@@ -191,8 +192,8 @@ func systemCPUUsage(clockTicks int) (float64, error) {
 	return 0, errors.New("unable to process " + CPUStatsPath + ". No cpu found")
 }
 
-func clockTicks() (int, error) {
-	cmd := exec.Command("getconf", "CLK_TCK")
+func clockTicks(ctx context.Context) (int, error) {
+	cmd := exec.CommandContext(ctx, "getconf", "CLK_TCK")
 	out := new(bytes.Buffer)
 	cmd.Stdout = out
 

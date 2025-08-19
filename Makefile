@@ -125,6 +125,7 @@ build: ## Build agent executable
 
 lint: ## Run linter
 	@$(GOVET) ./...
+	@$(GORUN) $(GOLANGCILINT) config verify -c ./.golangci.yml
 	@$(GORUN) $(GOLANGCILINT) run -c ./.golangci.yml
 	@cd api/grpc && $(GORUN) $(BUF) generate
 	@echo "🏯 Linting Done"

@@ -92,8 +92,9 @@ func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) erro
 
 	if strings.HasPrefix(s.cfg.APIDetails.Listen, "unix:") {
 		httpClient.Transport = &http.Transport{
-			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-				return net.Dial("unix", strings.TrimPrefix(s.cfg.APIDetails.Listen, "unix:"))
+			DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+				dialer := &net.Dialer{}
+				return dialer.DialContext(ctx, "unix", strings.TrimPrefix(s.cfg.APIDetails.Listen, "unix:"))
 			},
 		}
 	}
