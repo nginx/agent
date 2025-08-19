@@ -1,8 +1,8 @@
 [Unit]
 Description=NGINX Agent
 Documentation=https://github.com/nginx/agent#readme
-After=network-online.target
-Wants=network-online.target
+After=network.target
+Wants=network.target
 StartLimitIntervalSec=15
 StartLimitBurst=5
 
@@ -18,8 +18,6 @@ ExecStart=${AGENT_EXE}
 RestartSec=5
 Restart=on-failure
 PermissionsStartOnly=true
-
-KillSignal=SIGINT
 TimeoutStopSec=5s
 
 NoNewPrivileges=true
