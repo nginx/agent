@@ -19,6 +19,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/nginx/agent/v3/internal/datasource/host/exec"
+
+	"github.com/nginx/agent/v3/pkg/nginxprocess"
+
 	parser "github.com/nginx/agent/v3/internal/datasource/config"
 	datasource "github.com/nginx/agent/v3/internal/datasource/proto"
 	"github.com/nginx/agent/v3/internal/model"
@@ -49,6 +53,9 @@ const (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . instanceOperator
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//counterfeiter:generate . processOperator
+
 type resourceServiceInterface interface {
 	AddInstances(instanceList []*mpi.Instance) *mpi.Resource
 	UpdateInstances(ctx context.Context, instanceList []*mpi.Instance) *mpi.Resource
@@ -73,6 +80,13 @@ type (
 
 	logTailerOperator interface {
 		Tail(ctx context.Context, errorLogs string, errorChannel chan error)
+	}
+
+	processOperator interface {
+		FindNginxProcesses(ctx context.Context) ([]*nginxprocess.Process, error)
+		NginxWorkerProcesses(ctx context.Context, masterProcessPid int32) []*nginxprocess.Process
+		FindParentProcessID(ctx context.Context, instanceID string, nginxProcesses []*nginxprocess.Process,
+			executer exec.ExecInterface) (int32, error)
 	}
 )
 
@@ -222,7 +236,7 @@ func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) (*
 func (r *ResourceService) GetHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance,
 	upstream string,
 ) ([]client.UpstreamServer, error) {
-	plusClient, err := r.createPlusClient(instance)
+	plusClient, err := r.createPlusClient(ctx, instance)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
 		return nil, err
@@ -237,7 +251,7 @@ func (r *ResourceService) GetHTTPUpstreamServers(ctx context.Context, instance *
 
 func (r *ResourceService) GetUpstreams(ctx context.Context, instance *mpi.Instance,
 ) (*client.Upstreams, error) {
-	plusClient, err := r.createPlusClient(instance)
+	plusClient, err := r.createPlusClient(ctx, instance)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
 		return nil, err
@@ -252,7 +266,7 @@ func (r *ResourceService) GetUpstreams(ctx context.Context, instance *mpi.Instan
 
 func (r *ResourceService) GetStreamUpstreams(ctx context.Context, instance *mpi.Instance,
 ) (*client.StreamUpstreams, error) {
-	plusClient, err := r.createPlusClient(instance)
+	plusClient, err := r.createPlusClient(ctx, instance)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
 		return nil, err
@@ -271,7 +285,7 @@ func (r *ResourceService) GetStreamUpstreams(ctx context.Context, instance *mpi.
 func (r *ResourceService) UpdateStreamServers(ctx context.Context, instance *mpi.Instance, upstream string,
 	upstreams []*structpb.Struct,
 ) (added, updated, deleted []client.StreamUpstreamServer, err error) {
-	plusClient, err := r.createPlusClient(instance)
+	plusClient, err := r.createPlusClient(ctx, instance)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
 		return nil, nil, nil, err
@@ -292,7 +306,7 @@ func (r *ResourceService) UpdateStreamServers(ctx context.Context, instance *mpi
 func (r *ResourceService) UpdateHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance, upstream string,
 	upstreams []*structpb.Struct,
 ) (added, updated, deleted []client.UpstreamServer, err error) {
-	plusClient, err := r.createPlusClient(instance)
+	plusClient, err := r.createPlusClient(ctx, instance)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
 		return nil, nil, nil, err
@@ -337,7 +351,7 @@ func convertToStreamUpstreamServer(streamUpstreams []*structpb.Struct) []client.
 	return servers
 }
 
-func (r *ResourceService) createPlusClient(instance *mpi.Instance) (*client.NginxClient, error) {
+func (r *ResourceService) createPlusClient(ctx context.Context, instance *mpi.Instance) (*client.NginxClient, error) {
 	plusAPI := instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo().GetPlusApi()
 	var endpoint string
 
@@ -345,7 +359,6 @@ func (r *ResourceService) createPlusClient(instance *mpi.Instance) (*client.Ngin
 		return nil, errors.New("failed to preform API action, NGINX Plus API is not configured")
 	}
 
-	slog.Info("location", "", plusAPI.GetListen())
 	if strings.HasPrefix(plusAPI.GetListen(), "unix:") {
 		endpoint = fmt.Sprintf(unixPlusAPIFormat, plusAPI.GetLocation())
 	} else {
@@ -355,7 +368,7 @@ func (r *ResourceService) createPlusClient(instance *mpi.Instance) (*client.Ngin
 	httpClient := http.DefaultClient
 	caCertLocation := plusAPI.GetCa()
 	if caCertLocation != "" {
-		slog.Debug("Reading CA certificate", "file_path", caCertLocation)
+		slog.DebugContext(ctx, "Reading CA certificate", "file_path", caCertLocation)
 		caCert, err := os.ReadFile(caCertLocation)
 		if err != nil {
 			return nil, err
@@ -373,7 +386,7 @@ func (r *ResourceService) createPlusClient(instance *mpi.Instance) (*client.Ngin
 		}
 	}
 	if strings.HasPrefix(plusAPI.GetListen(), "unix:") {
-		httpClient = socketClient(strings.TrimPrefix(plusAPI.GetListen(), "unix:"))
+		httpClient = socketClient(ctx, strings.TrimPrefix(plusAPI.GetListen(), "unix:"))
 	}
 
 	return client.NewNginxClient(endpoint,
@@ -396,11 +409,12 @@ func (r *ResourceService) updateResourceInfo(ctx context.Context) {
 	}
 }
 
-func socketClient(socketPath string) *http.Client {
+func socketClient(ctx context.Context, socketPath string) *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{
 			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-				return net.Dial("unix", socketPath)
+				dialer := &net.Dialer{}
+				return dialer.DialContext(ctx, "unix", socketPath)
 			},
 		},
 	}

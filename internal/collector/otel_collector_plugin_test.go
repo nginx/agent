@@ -727,6 +727,7 @@ func TestCollector_updateResourceAttributes(t *testing.T) {
 }
 
 func TestCollector_updateNginxAppProtectTcplogReceivers(t *testing.T) {
+	ctx := context.Background()
 	conf := types.OTelConfig(t)
 	conf.Collector.Log.Path = ""
 	conf.Collector.Processors.Batch = nil
@@ -743,7 +744,7 @@ func TestCollector_updateNginxAppProtectTcplogReceivers(t *testing.T) {
 	assert.Empty(t, conf.Collector.Receivers.TcplogReceivers)
 
 	t.Run("Test 1: NewCollector TcplogReceiver added", func(tt *testing.T) {
-		tcplogReceiverAdded := collector.updateNginxAppProtectTcplogReceivers(nginxConfigContext)
+		tcplogReceiverAdded := collector.updateNginxAppProtectTcplogReceivers(ctx, nginxConfigContext)
 
 		assert.True(tt, tcplogReceiverAdded)
 		assert.Len(tt, conf.Collector.Receivers.TcplogReceivers, 1)
@@ -754,7 +755,7 @@ func TestCollector_updateNginxAppProtectTcplogReceivers(t *testing.T) {
 	// Calling updateNginxAppProtectTcplogReceivers shouldn't update the TcplogReceivers slice
 	// since there is already a receiver with the same ListenAddress
 	t.Run("Test 2: TcplogReceiver already exists", func(tt *testing.T) {
-		tcplogReceiverAdded := collector.updateNginxAppProtectTcplogReceivers(nginxConfigContext)
+		tcplogReceiverAdded := collector.updateNginxAppProtectTcplogReceivers(ctx, nginxConfigContext)
 		assert.False(t, tcplogReceiverAdded)
 		assert.Len(t, conf.Collector.Receivers.TcplogReceivers, 1)
 		assert.Equal(t, "localhost:15632", conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].ListenAddress)
@@ -762,13 +763,13 @@ func TestCollector_updateNginxAppProtectTcplogReceivers(t *testing.T) {
 	})
 
 	t.Run("Test 3: TcplogReceiver deleted", func(tt *testing.T) {
-		tcplogReceiverDeleted := collector.updateNginxAppProtectTcplogReceivers(&model.NginxConfigContext{})
+		tcplogReceiverDeleted := collector.updateNginxAppProtectTcplogReceivers(ctx, &model.NginxConfigContext{})
 		assert.True(t, tcplogReceiverDeleted)
 		assert.Empty(t, conf.Collector.Receivers.TcplogReceivers)
 	})
 
 	t.Run("Test 4: NewCollector tcplogReceiver added and deleted another", func(tt *testing.T) {
-		tcplogReceiverDeleted := collector.updateNginxAppProtectTcplogReceivers(
+		tcplogReceiverDeleted := collector.updateNginxAppProtectTcplogReceivers(ctx,
 			&model.NginxConfigContext{
 				NAPSysLogServers: []string{"localhost:1555"},
 			},
@@ -782,6 +783,7 @@ func TestCollector_updateNginxAppProtectTcplogReceivers(t *testing.T) {
 }
 
 func TestCollector_findAvailableSyslogServers(t *testing.T) {
+	ctx := context.Background()
 	conf := types.OTelConfig(t)
 	conf.Collector.Log.Path = ""
 	conf.Collector.Processors.Batch = nil
@@ -838,12 +840,13 @@ func TestCollector_findAvailableSyslogServers(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			if test.portInUse {
-				ln, listenError := net.Listen("tcp", "localhost:15632")
+				listenConfig := &net.ListenConfig{}
+				ln, listenError := listenConfig.Listen(ctx, "tcp", "localhost:15632")
 				require.NoError(t, listenError)
 				defer ln.Close()
 			}
 
-			actual := collector.findAvailableSyslogServers(test.syslogServers)
+			actual := collector.findAvailableSyslogServers(ctx, test.syslogServers)
 			assert.Equal(tt, test.expectedSyslogServer, actual)
 		})
 	}

@@ -5,6 +5,7 @@
 package helpers
 
 import (
+	"context"
 	"crypto/rand"
 	"errors"
 	"fmt"
@@ -14,7 +15,7 @@ import (
 )
 
 // RandomPort generates a random port for testing and checks if a port is available by attempting to bind to it
-func RandomPort(t *testing.T) (int, error) {
+func RandomPort(t *testing.T, ctx context.Context) (int, error) {
 	t.Helper()
 
 	// Define the range for dynamic ports (49152–65535 as per IANA recommendation)
@@ -33,7 +34,7 @@ func RandomPort(t *testing.T) (int, error) {
 
 		portNumber := int(port.Int64()) + minPort
 
-		if isPortAvailable(portNumber) {
+		if isPortAvailable(ctx, portNumber) {
 			return portNumber, nil
 		}
 	}
@@ -42,9 +43,10 @@ func RandomPort(t *testing.T) (int, error) {
 }
 
 // isPortAvailable checks if a port is available by attempting to bind to it
-func isPortAvailable(port int) bool {
+func isPortAvailable(ctx context.Context, port int) bool {
 	address := fmt.Sprintf("127.0.0.1:%d", port)
-	conn, err := net.Dial("tcp", address)
+	dialer := &net.Dialer{}
+	conn, err := dialer.DialContext(ctx, "tcp", address)
 	if conn != nil {
 		conn.Close()
 	}

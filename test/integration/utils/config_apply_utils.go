@@ -20,9 +20,9 @@ import (
 )
 
 const (
-	RetryCount       = 8
+	RetryCount       = 10
 	RetryWaitTime    = 5 * time.Second
-	RetryMaxWaitTime = 6 * time.Second
+	RetryMaxWaitTime = 1 * time.Minute
 )
 
 var (

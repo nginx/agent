@@ -302,7 +302,7 @@ func TestResourceService_createPlusClient(t *testing.T) {
 				protos.NginxPlusInstance([]string{}),
 			}
 
-			_, clientErr := resourceService.createPlusClient(test.instance)
+			_, clientErr := resourceService.createPlusClient(ctx, test.instance)
 			if test.err != nil {
 				require.Error(tt, clientErr)
 				assert.Contains(tt, clientErr.Error(), test.err.Error())
