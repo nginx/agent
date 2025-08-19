@@ -23,7 +23,6 @@ KillSignal=SIGINT
 TimeoutStopSec=5s
 
 NoNewPrivileges=true
-ProtectSystem=yes
 ProtectHome=off
 PrivateTmp=true
 
