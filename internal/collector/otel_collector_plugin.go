@@ -222,7 +222,7 @@ func (oc *Collector) processReceivers(ctx context.Context, receivers map[string]
 	}
 }
 
-// nolint: revive, cyclop
+//nolint:revive // cognitive complexity is 13
 func (oc *Collector) bootup(ctx context.Context) error {
 	errChan := make(chan error)
 
@@ -674,7 +674,6 @@ func (oc *Collector) doesTcplogReceiverAlreadyExist(listenAddress string) bool {
 	return false
 }
 
-// nolint: revive
 func (oc *Collector) updateResourceAttributes(
 	attributesToAdd []config.ResourceAttribute,
 ) (actionUpdated bool) {

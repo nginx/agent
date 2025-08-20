@@ -73,9 +73,9 @@ func (cs *CPUSource) Collect(ctx context.Context) (ContainerCPUStats, error) {
 	return cpuStats, nil
 }
 
-// nolint: mnd
 func (cs *CPUSource) collectCPUStats(ctx context.Context) (ContainerCPUStats, error) {
 	clockTicks, err := clockTicks(ctx)
+	const nanosecondsPerMillisecond = 1000
 	if err != nil {
 		return ContainerCPUStats{}, err
 	}
@@ -85,7 +85,7 @@ func (cs *CPUSource) collectCPUStats(ctx context.Context) (ContainerCPUStats, er
 	userKey := V2UserKey
 	sysKey := V2SystemKey
 	convertUsage := func(usage float64) float64 {
-		return usage * 1000
+		return usage * nanosecondsPerMillisecond
 	}
 
 	if !cs.isCgroupV2 { // cgroup v1
@@ -162,7 +162,7 @@ func (cs *CPUSource) cpuUsageTimes(filePath, userKey, systemKey string) (*Contai
 	return cpuTimes, nil
 }
 
-// nolint: revive, gocritic
+//nolint:revive // cognitive complexity is 14
 func systemCPUUsage(clockTicks int) (float64, error) {
 	lines, err := internal.ReadLines(CPUStatsPath)
 	if err != nil {
@@ -171,8 +171,7 @@ func systemCPUUsage(clockTicks int) (float64, error) {
 
 	for _, line := range lines {
 		parts := strings.Fields(line)
-		switch parts[0] {
-		case "cpu":
+		if parts[0] == "cpu" {
 			if len(parts) < CPUStatsFileLineLength {
 				return 0, errors.New("unable to process " + CPUStatsPath + ". Invalid number of fields for cpu line")
 			}

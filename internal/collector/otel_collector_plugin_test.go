@@ -155,7 +155,7 @@ func TestCollector_InitAndClose(t *testing.T) {
 	assert.Equal(t, otelcol.StateClosed, collector.State())
 }
 
-// nolint: revive
+//nolint:revive // cognitive complexity is 13
 func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -475,7 +475,6 @@ func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
 	}
 }
 
-// nolint: dupl
 func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 	conf := types.OTelConfig(t)
 	conf.Collector.Log.Path = ""
@@ -584,7 +583,6 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 	}
 }
 
-// nolint: dupl
 func TestCollector_updateExistingNginxPlusReceiver(t *testing.T) {
 	conf := types.OTelConfig(t)
 	conf.Collector.Log.Path = ""

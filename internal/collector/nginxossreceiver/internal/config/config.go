@@ -41,7 +41,7 @@ type AccessLog struct {
 	FilePath  string `mapstructure:"file_path"`
 }
 
-// nolint: ireturn
+//nolint:ireturn // Return default interface required by Collector
 func CreateDefaultConfig() component.Config {
 	cfg := scraperhelper.NewDefaultControllerConfig()
 	cfg.CollectionInterval = defaultCollectInterval

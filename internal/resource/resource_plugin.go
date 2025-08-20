@@ -71,7 +71,7 @@ func (*Resource) Info() *bus.Info {
 }
 
 // cyclomatic complexity 11 max is 10
-// nolint: revive, cyclop
+
 func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
 	case bus.AddInstancesTopic:

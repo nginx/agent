@@ -62,7 +62,7 @@ func (s *NginxStubStatusScraper) ID() component.ID {
 	return component.NewID(metadata.Type)
 }
 
-// nolint: unparam
+//nolint:unparam // Result is always nil
 func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) error {
 	s.logger.Info("Starting NGINX stub status scraper")
 	httpClient := http.DefaultClient
@@ -103,7 +103,7 @@ func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) erro
 	return nil
 }
 
-// nolint: unparam
+//nolint:unparam // Result is always nil
 func (s *NginxStubStatusScraper) Shutdown(_ context.Context) error {
 	s.logger.Info("Shutting down NGINX stub status scraper")
 	return nil

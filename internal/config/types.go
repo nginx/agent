@@ -323,7 +323,7 @@ type (
 	Watchers struct {
 		FileWatcher     FileWatcher     `yaml:"file_watcher"     mapstructure:"file_watcher"`
 		InstanceWatcher InstanceWatcher `yaml:"instance_watcher" mapstructure:"instance_watcher"`
-		// nolint: lll
+		//nolint:lll // this needs to be in one line
 		InstanceHealthWatcher InstanceHealthWatcher `yaml:"instance_health_watcher" mapstructure:"instance_health_watcher"`
 	}
 
@@ -443,7 +443,6 @@ func (c *Config) IsACollectorExporterConfigured() bool {
 		c.Collector.Exporters.Debug != nil
 }
 
-// nolint: cyclop, revive
 func (c *Config) AreReceiversConfigured() bool {
 	if c.Collector == nil {
 		return false
