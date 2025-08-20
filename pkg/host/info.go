@@ -195,8 +195,7 @@ func (i *Info) releaseInfo(ctx context.Context, osReleaseLocation string) (*v1.R
 	}
 	osRelease, err := readOsRelease(osReleaseLocation)
 	if err != nil {
-		// If there is an error reading the OS release file just return the host release info instead
-		// nolint: nilerr
+		//nolint:nilerr // If there is an error reading the OS release file just return the host release info instead
 		return hostReleaseInfo, nil
 	}
 
