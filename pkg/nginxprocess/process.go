@@ -7,11 +7,24 @@
 package nginxprocess
 
 import (
+	"bufio"
 	"context"
+	"fmt"
+	"github.com/nginx/agent/v3/internal/datasource/host/exec"
+	"log/slog"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/shirou/gopsutil/v4/process"
+)
+
+const (
+	keyValueLen  = 2
+	flagLen      = 1
+	workerString = "nginx: worker %s"
+	masterString = "nginx: master %s"
 )
 
 // Process contains a snapshot of read-only data about an OS-level NGINX process. Create using [List] or [Find].
@@ -25,6 +38,8 @@ type Process struct {
 	Status  string // process status, only present if this process was created using [WithStatus]
 	PID     int32
 	PPID    int32 // parent PID
+	// TODO: after this is out of spike I will be using this for returning a map
+	Master bool
 }
 
 // IsWorker returns true if the process is a NGINX worker process.
@@ -81,7 +96,19 @@ func convert(ctx context.Context, p *process.Process, o options) (*Process, erro
 		return nil, errNotAnNginxProcess
 	}
 
-	if strings.HasPrefix(cmdLine, "nginx:") || strings.HasPrefix(cmdLine, "{nginx-debug} nginx:") {
+	var sbin string
+	var pidPath string
+	configArgs := nginxArgs(ctx)
+	if configArgs["sbin-path"] != nil {
+		sbin = configArgs["sbin-path"].(string)
+	}
+
+	if configArgs["pid-path"] != nil {
+		pidPath = configArgs["pid-path"].(string)
+	}
+
+	if strings.HasPrefix(cmdLine, "nginx:") || strings.HasPrefix(cmdLine, "{nginx-debug} nginx:") ||
+		strings.HasPrefix(cmdLine, "/run/rosetta/rosetta") {
 		var status string
 		if o.loadStatus {
 			flags, _ := p.StatusWithContext(ctx) // slow: shells out to ps
@@ -96,7 +123,7 @@ func convert(ctx context.Context, p *process.Process, o options) (*Process, erro
 		ppid, _ := p.PpidWithContext(ctx)
 		exe, _ := p.ExeWithContext(ctx)
 
-		return &Process{
+		nginxProcess := &Process{
 			PID:     p.Pid,
 			PPID:    ppid,
 			Name:    name,
@@ -104,10 +131,100 @@ func convert(ctx context.Context, p *process.Process, o options) (*Process, erro
 			Created: created,
 			Status:  status,
 			Exe:     exe,
-		}, ctx.Err()
+		}
+
+		// Check if process is master process
+		if strings.HasPrefix(cmdLine, "nginx: master") ||
+			strings.HasPrefix(cmdLine, "{nginx-debug} nginx: master") {
+			slog.InfoContext(ctx, "Nginx master process - cmd", "pid", nginxProcess)
+			nginxProcess.Master = true
+			// Check if process is worker process
+		} else if strings.HasPrefix(cmdLine, "nginx: worker") {
+			nginxProcess.Master = false
+			slog.InfoContext(ctx, "Nginx worker process - cmd", "pid", nginxProcess)
+			// if process is not either could be running on rosetta check nginx pid file
+			// Check if process is master by checking pid matches nginx pid file
+		} else if p.Pid == nginxPID(ctx, pidPath) {
+			nginxProcess.Master = true
+			nginxProcess.Cmd = fmt.Sprintf(masterString, sbin)
+			nginxProcess.Exe = sbin
+			slog.InfoContext(ctx, "Nginx master process - file", "pid", nginxProcess)
+			// Check if process is worker by checking ppid matches nginx pid file
+		} else if ppid == nginxPID(ctx, pidPath) {
+			slog.InfoContext(ctx, "Nginx worker process - file", "pid", nginxProcess)
+			nginxProcess.Master = false
+			nginxProcess.Cmd = fmt.Sprintf(workerString, sbin)
+		}
+
+		return nginxProcess, ctx.Err()
 	}
 
 	return nil, errNotAnNginxProcess
+}
+
+func nginxArgs(ctx context.Context) map[string]interface{} {
+	configArgs := make(map[string]interface{})
+	executer := &exec.Exec{}
+	outputBuffer, err := executer.RunCmd(ctx, "nginx", "-V")
+	if err != nil {
+		return nil
+	}
+
+	scanner := bufio.NewScanner(outputBuffer)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		switch {
+		case strings.HasPrefix(line, "configure arguments"):
+			configArgs = parseConfigureArguments(line)
+		}
+	}
+
+	return configArgs
+}
+
+func nginxPID(ctx context.Context, pidPath string) int32 {
+	if _, err := os.Stat(pidPath); os.IsNotExist(err) {
+		return 0
+	}
+	pidBytes, err := os.ReadFile(pidPath)
+	if err != nil {
+		return 0
+	}
+
+	pidString := string(pidBytes)
+	pidString = strings.TrimSpace(pidString)
+	pid, err := strconv.ParseInt(pidString, 10, 32)
+
+	if err != nil {
+		return 0
+	}
+
+	return int32(pid)
+}
+
+func parseConfigureArguments(line string) map[string]interface{} {
+	// need to check for empty strings
+	flags := strings.Split(line[len("configure arguments:"):], " --")
+	result := make(map[string]interface{})
+
+	for _, flag := range flags {
+		vals := strings.Split(flag, "=")
+		if isFlag(vals) {
+			result[vals[0]] = true
+		} else if isKeyValueFlag(vals) {
+			result[vals[0]] = vals[1]
+		}
+	}
+
+	return result
+}
+
+func isFlag(vals []string) bool {
+	return len(vals) == flagLen && vals[0] != ""
+}
+
+func isKeyValueFlag(vals []string) bool {
+	return len(vals) == keyValueLen
 }
 
 // List returns a slice of all NGINX processes. Returns a zero-length slice if no NGINX processes are found.
