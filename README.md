@@ -2,6 +2,7 @@
 ![GitHub Release](https://img.shields.io/github/v/release/nginx/agent)
 ![GitHub License](https://img.shields.io/github/license/nginx/agent)
 ![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)
+![coverage](https://raw.githubusercontent.com/nginx/agent/badges/.badges/v3/coverage.svg)
 
 # F5 NGINX Agent 
 
