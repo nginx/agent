@@ -11,8 +11,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nginx/agent/v3/pkg/host/exec/execfakes"
+
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -418,8 +419,8 @@ func TestInfo_IsContainer(t *testing.T) {
 			info := NewInfo()
 			info.containerSpecificFiles = test.containerSpecificFiles
 			info.selfCgroupLocation = test.selfCgroupLocation
-
-			assert.Equal(tt, test.expected, info.IsContainer())
+			isContainer, _ := info.IsContainer()
+			assert.Equal(tt, test.expected, isContainer)
 		})
 	}
 }
@@ -515,7 +516,7 @@ func TestInfo_ContainerInfo(t *testing.T) {
 
 			execMock := &execfakes.FakeExecInterface{}
 			execMock.HostnameReturns(test.expectHostname, nil)
-			execMock.ReleaseInfoReturns(releaseInfo)
+			execMock.ReleaseInfoReturns(releaseInfo, nil)
 
 			_, err = mountInfoFile.WriteString(test.mountInfo)
 			require.NoError(tt, err)
@@ -527,11 +528,17 @@ func TestInfo_ContainerInfo(t *testing.T) {
 			info.mountInfoLocation = mountInfoFile.Name()
 			info.exec = execMock
 			info.osReleaseLocation = "/non/existent"
-			containerInfo := info.ContainerInfo(ctx)
 
-			assert.Equal(tt, test.expectContainerID, containerInfo.ContainerInfo.GetContainerId())
-			assert.Equal(tt, test.expectHostname, containerInfo.ContainerInfo.GetHostname())
-			assert.Equal(tt, releaseInfo, containerInfo.ContainerInfo.GetReleaseInfo())
+			containerInfo, containerErr := info.ContainerInfo(ctx)
+			if test.expectContainerID != "" {
+				require.NoError(tt, containerErr)
+				assert.Equal(tt, test.expectContainerID, containerInfo.ContainerInfo.GetContainerId())
+				assert.Equal(tt, test.expectHostname, containerInfo.ContainerInfo.GetHostname())
+				assert.Equal(tt, releaseInfo, containerInfo.ContainerInfo.GetReleaseInfo())
+			} else {
+				require.Error(tt, containerErr)
+				assert.Nil(tt, containerInfo)
+			}
 		})
 	}
 }
@@ -555,12 +562,13 @@ func TestInfo_HostInfo(t *testing.T) {
 	execMock := &execfakes.FakeExecInterface{}
 	execMock.HostnameReturns("server.com", nil)
 	execMock.HostIDReturns("test-host-id", nil)
-	execMock.ReleaseInfoReturns(releaseInfo)
+	execMock.ReleaseInfoReturns(releaseInfo, nil)
 
 	info := NewInfo()
 	info.exec = execMock
 	info.osReleaseLocation = osReleaseFile.Name()
-	hostInfo := info.HostInfo(ctx)
+	hostInfo, err := info.HostInfo(ctx)
+	require.NoError(t, err)
 
 	expectedReleaseInfo := &v1.ReleaseInfo{
 		Codename:  "focal",
