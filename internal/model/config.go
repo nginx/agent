@@ -20,6 +20,7 @@ type NginxConfigContext struct {
 	ErrorLogs        []*ErrorLog
 	NAPSysLogServers []string
 	Includes         []string
+	ConfigPath       string
 }
 
 type APIDetails struct {
@@ -97,6 +98,9 @@ func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext
 		}
 	}
 
+	if ncc.ConfigPath != otherNginxConfigContext.ConfigPath {
+		return false
+	}
 	if ncc.InstanceID != otherNginxConfigContext.InstanceID {
 		return false
 	}

@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"strings"
 
@@ -39,14 +40,18 @@ func ProcessInfo(ctx context.Context, proc *nginxprocess.Process,
 
 	confPath := ConfPathFromCommand(proc.Cmd)
 
-	var nginxInfo *model.ProcessInfo
+	nginxInfo := &model.ProcessInfo{}
 
 	outputBuffer, err := executer.RunCmd(ctx, exePath, "-V")
 	if err != nil {
 		return nil, err
 	}
 
-	nginxInfo = ParseNginxVersionCommandOutput(ctx, outputBuffer)
+	if outputBuffer == nil {
+		slog.WarnContext(ctx, "Unable to get NGINX version output")
+	} else {
+		nginxInfo = ParseNginxVersionCommandOutput(ctx, outputBuffer)
+	}
 
 	nginxInfo.ExePath = exePath
 	nginxInfo.ProcessID = proc.PID

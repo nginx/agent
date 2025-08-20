@@ -625,6 +625,8 @@ type FileOverview struct {
 	Files []*File `protobuf:"bytes,1,rep,name=files,proto3" json:"files,omitempty"`
 	// The configuration version of the current set of files
 	ConfigVersion *ConfigVersion `protobuf:"bytes,2,opt,name=config_version,json=configVersion,proto3" json:"config_version,omitempty"`
+	// The config file path of an instance
+	ConfigPath    string `protobuf:"bytes,3,opt,name=config_path,json=configPath,proto3" json:"config_path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -671,6 +673,13 @@ func (x *FileOverview) GetConfigVersion() *ConfigVersion {
 		return x.ConfigVersion
 	}
 	return nil
+}
+
+func (x *FileOverview) GetConfigPath() string {
+	if x != nil {
+		return x.ConfigPath
+	}
+	return ""
 }
 
 // Represents meta data about a file
@@ -1535,10 +1544,12 @@ const file_mpi_v1_files_proto_rawDesc = "" +
 	"\rConfigVersion\x12)\n" +
 	"\vinstance_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\n" +
 	"instanceId\x12\x18\n" +
-	"\aversion\x18\x02 \x01(\tR\aversion\"p\n" +
+	"\aversion\x18\x02 \x01(\tR\aversion\"\x91\x01\n" +
 	"\fFileOverview\x12\"\n" +
 	"\x05files\x18\x01 \x03(\v2\f.mpi.v1.FileR\x05files\x12<\n" +
-	"\x0econfig_version\x18\x02 \x01(\v2\x15.mpi.v1.ConfigVersionR\rconfigVersion\"S\n" +
+	"\x0econfig_version\x18\x02 \x01(\v2\x15.mpi.v1.ConfigVersionR\rconfigVersion\x12\x1f\n" +
+	"\vconfig_path\x18\x03 \x01(\tR\n" +
+	"configPath\"S\n" +
 	"\x04File\x12-\n" +
 	"\tfile_meta\x18\x01 \x01(\v2\x10.mpi.v1.FileMetaR\bfileMeta\x12\x1c\n" +
 	"\tunmanaged\x18\x02 \x01(\bR\tunmanaged\"w\n" +

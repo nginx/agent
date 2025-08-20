@@ -416,6 +416,7 @@ Represents a collection of files
 | ----- | ---- | ----- | ----------- |
 | files | [File](#mpi-v1-File) | repeated | A list of files |
 | config_version | [ConfigVersion](#mpi-v1-ConfigVersion) |  | The configuration version of the current set of files |
+| config_path | [string](#string) |  | The config file path of an instance |
 
 
 
