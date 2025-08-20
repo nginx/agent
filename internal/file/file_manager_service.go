@@ -58,7 +58,8 @@ type (
 
 	fileServiceOperatorInterface interface {
 		File(ctx context.Context, file *mpi.File, fileActions map[string]*model.FileCache) error
-		UpdateOverview(ctx context.Context, instanceID string, filesToUpdate []*mpi.File, configPath string, iteration int) error
+		UpdateOverview(ctx context.Context, instanceID string, filesToUpdate []*mpi.File, configPath string,
+			iteration int) error
 		ChunkedFile(ctx context.Context, file *mpi.File) error
 		IsConnected() bool
 		UpdateFile(

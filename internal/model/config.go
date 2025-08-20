@@ -15,12 +15,12 @@ type NginxConfigContext struct {
 	StubStatus       *APIDetails
 	PlusAPI          *APIDetails
 	InstanceID       string
+	ConfigPath       string
 	Files            []*v1.File
 	AccessLogs       []*AccessLog
 	ErrorLogs        []*ErrorLog
 	NAPSysLogServers []string
 	Includes         []string
-	ConfigPath       string
 }
 
 type APIDetails struct {
