@@ -794,11 +794,11 @@ func Test_setProxyEnvs(t *testing.T) {
 	msg := "Setting test proxy"
 
 	// Unset first to ensure clean state
-	_ = os.Unsetenv("HTTP_PROXY")
+	_ = os.Unsetenv("HTTPS_PROXY")
 
 	setProxyEnvs(ctx, proxyURL, msg)
 
-	httpProxy := os.Getenv("HTTP_PROXY")
+	httpProxy := os.Getenv("HTTPS_PROXY")
 	assert.Equal(t, proxyURL, httpProxy)
 }
 
@@ -812,12 +812,12 @@ func Test_setProxyWithBasicAuth(t *testing.T) {
 	}
 
 	// Unset first to ensure clean state
-	_ = os.Unsetenv("HTTP_PROXY")
+	_ = os.Unsetenv("HTTPS_PROXY")
 
 	setProxyWithBasicAuth(ctx, proxy, u)
 
 	proxyURL := u.String()
-	httpProxy := os.Getenv("HTTP_PROXY")
+	httpProxy := os.Getenv("HTTPS_PROXY")
 	assert.Equal(t, proxyURL, httpProxy)
 
 	// Test missing username/password
@@ -878,7 +878,7 @@ func TestSetExporterProxyEnvVars(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			logBuf.Reset()
 
-			_ = os.Unsetenv("HTTP_PROXY")
+			_ = os.Unsetenv("HTTPS_PROXY")
 
 			tmpDir := t.TempDir()
 			cfg := types.OTelConfig(t)
@@ -889,7 +889,7 @@ func TestSetExporterProxyEnvVars(t *testing.T) {
 			// added this check to prevent the panic error in UT.
 			if cfg.Command.Server.Proxy == nil {
 				// For the nil proxy case, we expect nothing to happen.
-				assert.Empty(t, os.Getenv("HTTP_PROXY"))
+				assert.Empty(t, os.Getenv("HTTPS_PROXY"))
 
 				return
 			}
@@ -902,9 +902,9 @@ func TestSetExporterProxyEnvVars(t *testing.T) {
 			helpers.ValidateLog(t, tt.expectedLog, logBuf)
 
 			if tt.setEnv {
-				assert.NotEmpty(t, os.Getenv("HTTP_PROXY"))
+				assert.NotEmpty(t, os.Getenv("HTTPS_PROXY"))
 			} else {
-				assert.Empty(t, os.Getenv("HTTP_PROXY"))
+				assert.Empty(t, os.Getenv("HTTPS_PROXY"))
 			}
 		})
 	}
