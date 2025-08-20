@@ -17,7 +17,6 @@ import (
 	"time"
 )
 
-// TODO: time and size requirements
 const (
 	maxFileSize    = 60000000
 	maxUpgradeTime = 30 * time.Second
@@ -63,7 +62,7 @@ func TestUpgradeToV3(t *testing.T) {
 	// check the size of the upgraded agent package
 	verifyAgentPackageSize(ctx, t, testContainer)
 
-	// validate the nginx-agent v3 configuration file
+	// validate the nginx-agent config is upgraded and correct
 	verifyAgentConfigFile(ctx, t, testContainer)
 }
 
