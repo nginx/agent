@@ -838,19 +838,19 @@ func TestSetExporterProxyEnvVars(t *testing.T) {
 		setEnv      bool
 	}{
 		{
-			name:        "No proxy config",
+			name:        "Test 1: No proxy config",
 			proxy:       nil,
 			expectedLog: "Proxy configuration is not setup. Unable to configure proxy for OTLP exporter",
 			setEnv:      false,
 		},
 		{
-			name:        "Malformed proxy URL",
+			name:        "Test 2: Malformed proxy URL",
 			proxy:       &config.Proxy{URL: "://bad_url"},
 			expectedLog: "Malformed proxy URL; skipping Proxy setup",
 			setEnv:      false,
 		},
 		{
-			name:        "No auth, valid URL",
+			name:        "Test 3: No auth, valid URL",
 			proxy:       &config.Proxy{URL: "http://proxy.example.com:8080"},
 			expectedLog: "Setting Proxy from command.Proxy (no auth)",
 			setEnv:      true,
@@ -869,7 +869,7 @@ func TestSetExporterProxyEnvVars(t *testing.T) {
 		{
 			name:        "Unknown auth method",
 			proxy:       &config.Proxy{URL: "http://proxy.example.com:8080", AuthMethod: "digest"},
-			expectedLog: "Unknown auth type for proxy; unable to configure proxy",
+			expectedLog: "Unknown auth type for proxy, unable to configure proxy for OTLP exporter",
 			setEnv:      false,
 		},
 	}

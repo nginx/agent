@@ -770,7 +770,8 @@ func (oc *Collector) setExporterProxyEnvVars(ctx context.Context) {
 	}
 
 	if parsedProxyURL.Scheme == "https" {
-		slog.ErrorContext(ctx, "Protocol not supported, unable to configure proxy", "url", proxyURL)
+		slog.ErrorContext(ctx, "HTTPS protocol not supported by OTLP exporter, unable to configure proxy for "+
+			"OTLP exporter", "url", proxyURL)
 	}
 
 	auth := ""
@@ -787,15 +788,16 @@ func (oc *Collector) setExporterProxyEnvVars(ctx context.Context) {
 	if authLower == "basic" {
 		setProxyWithBasicAuth(ctx, proxy, parsedProxyURL)
 	} else {
-		slog.ErrorContext(ctx, "Unknown auth type for proxy; unable to configure proxy", "auth", auth, "url", proxyURL)
+		slog.ErrorContext(ctx, "Unknown auth type for proxy, unable to configure proxy for OTLP exporter",
+			"auth", auth, "url", proxyURL)
 	}
 }
 
 // setProxyEnvs sets the HTTP_PROXY and HTTPS_PROXY environment variables and logs the action.
 func setProxyEnvs(ctx context.Context, proxyEnvURL, msg string) {
 	slog.DebugContext(ctx, msg, "url", proxyEnvURL)
-	if setenvErr := os.Setenv("HTTP_PROXY", proxyEnvURL); setenvErr != nil {
-		slog.ErrorContext(ctx, "Failed to set Proxy", "error", setenvErr)
+	if setenvErr := os.Setenv("HTTPS_PROXY", proxyEnvURL); setenvErr != nil {
+		slog.ErrorContext(ctx, "Failed to set OTLP exporter proxy environment variables", "error", setenvErr)
 	}
 }
 
@@ -804,7 +806,7 @@ func setProxyWithBasicAuth(ctx context.Context, proxy *config.Proxy, parsedProxy
 	username := proxy.Username
 	password := proxy.Password
 	if username == "" || password == "" {
-		slog.ErrorContext(ctx, "Username or password missing for basic auth")
+		slog.ErrorContext(ctx, "Unable to configure OTLP exporter proxy, username or password missing for basic auth")
 		return
 	}
 	parsedProxyURL.User = url.UserPassword(username, password)
