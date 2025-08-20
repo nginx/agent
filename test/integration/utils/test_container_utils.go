@@ -73,6 +73,7 @@ func StartContainer(
 				buildOptions.Target = buildTarget
 			},
 		},
+		Env:          map[string]string{"NGINX_AGENT_SERVER_HOST": "127.0.0.1"},
 		ExposedPorts: []string{"9091/tcp"},
 		WaitingFor:   wait.ForLog(parameters.LogMessage),
 		HostConfigModifier: func(hostConfig *container.HostConfig) {

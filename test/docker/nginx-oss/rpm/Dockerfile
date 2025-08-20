@@ -8,8 +8,11 @@ ARG OS_VERSION
 ARG OS_RELEASE
 
 WORKDIR /agent
-COPY ./ /agent
+COPY ./build /agent/build
+COPY ./test/integration/upgrade/test_configs/nginx-agent.conf /agent/nginx-agent.conf
 COPY $ENTRY_POINT /agent/entrypoint.sh
+
+RUN echo ""
 
 RUN if [ "$OS_VERSION" = "7" ] && [ "$OS_RELEASE" = "oraclelinux" ]; \
         then yum install -y oracle-epel-release-el7; \
@@ -21,11 +24,15 @@ RUN if [ "$OS_VERSION" = "2" ] && [ "$OS_RELEASE" = "amazonlinux" ]; \
     fi
 
 RUN if [ "$OS_RELEASE" = "amazonlinux" ]; \
-        then yum install -y shadow-utils; \
+        then yum install -y shadow-utils && yum install -y findutils; \
     fi
 
 RUN if [ "$OS_RELEASE" = "centos" ] && [ "$OS_VERSION" = "7" ]; \
         then yum install -y epel-release; \
+    fi 
+
+RUN if [ "$OS_RELEASE" = "rockylinux" ] && [ "$OS_VERSION" = "8" ]; \
+        then yum install -y findutils; \
     fi
 
 RUN if [ "$OS_RELEASE" = "redhatenterprise" ] && [ "$OS_VERSION" != "9" ]; \
@@ -87,7 +94,7 @@ FROM install-nginx as install-agent-local
 
 ARG PACKAGE_NAME
 
-RUN yum localinstall -y /agent/build/${PACKAGE_NAME}.rpm
+RUN yum localinstall -y /agent/build/$PACKAGE_NAME.rpm
 
 
 FROM install-nginx as install-agent-repo
