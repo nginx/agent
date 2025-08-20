@@ -251,8 +251,8 @@ func addAuthHeader(collector *Collector, token string) {
 			Headers: header,
 		}
 	} else {
-		// nolint: lll
-		collector.Extensions.HeadersSetter.Headers = append(collector.Extensions.HeadersSetter.Headers, header...)
+		collector.Extensions.HeadersSetter.Headers = append(collector.Extensions.HeadersSetter.
+			Headers, header...)
 	}
 }
 
@@ -379,28 +379,6 @@ func registerFlags() {
 		DefManifestDir,
 		"Specifies the path to the directory containing the manifest files",
 	)
-	fs.Duration(
-		NginxReloadMonitoringPeriodKey,
-		DefNginxReloadMonitoringPeriod,
-		"The amount of time to monitor NGINX after a reload of configuration.",
-	)
-	fs.Bool(
-		NginxTreatWarningsAsErrorsKey,
-		DefTreatErrorsAsWarnings,
-		"Warning messages in the NGINX errors logs after a NGINX reload will be treated as an error.",
-	)
-
-	fs.String(
-		NginxApiTlsCa,
-		DefNginxApiTlsCa,
-		"The NGINX Plus CA certificate file location needed to call the NGINX Plus API if SSL is enabled.",
-	)
-
-	fs.StringSlice(
-		NginxExcludeLogsKey, []string{},
-		"A comma-separated list of one or more NGINX log paths that you want to exclude from metrics "+
-			"collection or error monitoring. This includes absolute paths or regex patterns",
-	)
 
 	fs.StringSlice(AllowedDirectoriesKey,
 		DefaultAllowedDirectories(),
@@ -442,6 +420,7 @@ func registerFlags() {
 	registerAuxiliaryCommandFlags(fs)
 	registerCollectorFlags(fs)
 	registerClientFlags(fs)
+	registerDataPlaneFlags(fs)
 
 	fs.SetNormalizeFunc(normalizeFunc)
 
@@ -454,6 +433,57 @@ func registerFlags() {
 			slog.Warn("Error occurred binding env", "env", flag.Name, "error", err)
 		}
 	})
+}
+
+func registerDataPlaneFlags(fs *flag.FlagSet) {
+	fs.Duration(
+		NginxReloadMonitoringPeriodKey,
+		DefNginxReloadMonitoringPeriod,
+		"The amount of time to monitor NGINX after a reload of configuration.",
+	)
+	fs.Bool(
+		NginxTreatWarningsAsErrorsKey,
+		DefTreatErrorsAsWarnings,
+		"Warning messages in the NGINX errors logs after a NGINX reload will be treated as an error.",
+	)
+
+	fs.String(
+		NginxApiTlsCa,
+		DefNginxApiTlsCa,
+		"The NGINX Plus CA certificate file location needed to call the NGINX Plus API if SSL is enabled.",
+	)
+
+	fs.StringSlice(
+		NginxExcludeLogsKey, []string{},
+		"A comma-separated list of one or more NGINX log paths that you want to exclude from metrics "+
+			"collection or error monitoring. This includes absolute paths or regex patterns",
+	)
+
+	// NGINX Reload Backoff Flags
+	fs.Duration(
+		NginxReloadBackoffInitialIntervalKey,
+		DefNginxReloadBackoffInitialInterval,
+		"The NGINX reload backoff initial interval, value in seconds")
+
+	fs.Duration(
+		NginxReloadBackoffMaxIntervalKey,
+		DefNginxReloadBackoffMaxInterval,
+		"The NGINX reload backoff max interval, value in seconds")
+
+	fs.Duration(
+		NginxReloadBackoffMaxElapsedTimeKey,
+		DefNginxReloadBackoffMaxElapsedTime,
+		"The NGINX reload backoff max elapsed time, value in seconds")
+
+	fs.Float64(
+		NginxReloadBackoffRandomizationFactorKey,
+		DefNginxReloadBackoffRandomizationFactor,
+		"The NGINX reload backoff randomization factor, value float")
+
+	fs.Float64(
+		NginxReloadBackoffMultiplierKey,
+		DefNginxReloadBackoffMultiplier,
+		"The NGINX reload backoff multiplier, value float")
 }
 
 func registerCommonFlags(fs *flag.FlagSet) {
@@ -906,6 +936,13 @@ func resolveDataPlaneConfig() *DataPlaneConfig {
 			TreatWarningsAsErrors:  viperInstance.GetBool(NginxTreatWarningsAsErrorsKey),
 			ExcludeLogs:            viperInstance.GetStringSlice(NginxExcludeLogsKey),
 			APITls:                 TLSConfig{Ca: viperInstance.GetString(NginxApiTlsCa)},
+			ReloadBackoff: &BackOff{
+				InitialInterval:     viperInstance.GetDuration(NginxReloadBackoffInitialIntervalKey),
+				MaxInterval:         viperInstance.GetDuration(NginxReloadBackoffMaxIntervalKey),
+				MaxElapsedTime:      viperInstance.GetDuration(NginxReloadBackoffMaxElapsedTimeKey),
+				RandomizationFactor: viperInstance.GetFloat64(NginxReloadBackoffRandomizationFactorKey),
+				Multiplier:          viperInstance.GetFloat64(NginxReloadBackoffMultiplierKey),
+			},
 		},
 	}
 }
@@ -1056,7 +1093,7 @@ func resolveProcessors() Processors {
 }
 
 // generate self-signed certificate for OTel receiver
-// nolint: revive
+
 func handleSelfSignedCertificates(col *Collector) error {
 	if col.Receivers.OtlpReceivers != nil {
 		for _, receiver := range col.Receivers.OtlpReceivers {

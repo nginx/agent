@@ -48,7 +48,10 @@ MANIFEST_DIR	?= /var/lib/nginx-agent
 DIRS            = $(BUILD_DIR) $(TEST_BUILD_DIR) $(BUILD_DIR)/$(DOCS_DIR) $(BUILD_DIR)/$(DOCS_DIR)/$(PROTO_DIR)
 $(shell mkdir -p $(DIRS))
 
-VERSION 		?= "v3.0.0"
+VERSION ?= $(shell git describe --match "v[0-9]*" --abbrev=0 --tags)
+ifeq ($(strip $(VERSION)),)
+	VERSION := $(shell curl https://api.github.com/repos/nginx/agent/releases/latest -s | jq .name -r)
+endif
 COMMIT  		= $(shell git rev-parse --short HEAD)
 DATE    		= $(shell date +%F_%H-%M-%S)
 LDFLAGS 		= "-s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)"
@@ -104,7 +107,6 @@ include Makefile.containers
 include Makefile.packaging
 
 .PHONY: help clean no-local-changes build lint format unit-test integration-test run dev run-mock-management-grpc-server generate generate-mocks local-apk-package local-deb-package local-rpm-package
-
 help: ## Show help message
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\033[36m\033[0m\n"} /^[$$()% 0-9a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-24s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
@@ -123,6 +125,7 @@ build: ## Build agent executable
 
 lint: ## Run linter
 	@$(GOVET) ./...
+	@$(GORUN) $(GOLANGCILINT) config verify -c ./.golangci.yml
 	@$(GORUN) $(GOLANGCILINT) run -c ./.golangci.yml
 	@cd api/grpc && $(GORUN) $(BUF) generate
 	@echo "🏯 Linting Done"

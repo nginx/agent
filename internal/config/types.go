@@ -63,6 +63,7 @@ type (
 	}
 
 	NginxDataPlaneConfig struct {
+		ReloadBackoff          *BackOff      `yaml:"reload_backoff"           mapstructure:"reload_backoff"`
 		APITls                 TLSConfig     `yaml:"api_tls"                  mapstructure:"api_tls"`
 		ExcludeLogs            []string      `yaml:"exclude_logs"             mapstructure:"exclude_logs"`
 		ReloadMonitoringPeriod time.Duration `yaml:"reload_monitoring_period" mapstructure:"reload_monitoring_period"`
@@ -321,7 +322,7 @@ type (
 	Watchers struct {
 		FileWatcher     FileWatcher     `yaml:"file_watcher"     mapstructure:"file_watcher"`
 		InstanceWatcher InstanceWatcher `yaml:"instance_watcher" mapstructure:"instance_watcher"`
-		// nolint: lll
+		//nolint:lll // this needs to be in one line
 		InstanceHealthWatcher InstanceHealthWatcher `yaml:"instance_health_watcher" mapstructure:"instance_health_watcher"`
 	}
 
@@ -429,7 +430,6 @@ func (c *Config) IsACollectorExporterConfigured() bool {
 		c.Collector.Exporters.Debug != nil
 }
 
-// nolint: cyclop, revive
 func (c *Config) AreReceiversConfigured() bool {
 	if c.Collector == nil {
 		return false
