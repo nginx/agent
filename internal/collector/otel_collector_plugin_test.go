@@ -825,6 +825,7 @@ func Test_setProxyWithBasicAuth(t *testing.T) {
 	setProxyWithBasicAuth(ctx, proxyMissing, u) // Should not panic
 }
 
+//nolint:contextcheck // Can not update the "OTelConfig" function definition
 func TestSetExporterProxyEnvVars(t *testing.T) {
 	ctx := context.Background()
 	logBuf := &bytes.Buffer{}

@@ -340,7 +340,7 @@ type (
 		MonitoringFrequency time.Duration `yaml:"monitoring_frequency" mapstructure:"monitoring_frequency"`
 	}
 
-	// nolint: govet
+	//nolint:govet // Tried different sequences but not able to fix the lint issue.
 	Proxy struct {
 		TLS        *TLSConfig    `yaml:"tls,omitempty"         mapstructure:"tls"`
 		Timeout    time.Duration `yaml:"timeout"               mapstructure:"timeout"`

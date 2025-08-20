@@ -75,6 +75,7 @@ func TestDialViaHTTPProxy_RealProxy(t *testing.T) {
 	}
 }
 
+//nolint:noctx //No need for ctx in test cases.
 func TestDialViaHTTPProxy_BearerTokenHeader(t *testing.T) {
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err, "failed to listen")

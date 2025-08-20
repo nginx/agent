@@ -72,9 +72,15 @@ func buildProxyTLSConfig(proxyConf *config.Proxy) (*tls.Config, error) {
 	return tlsConf, nil
 }
 
-func dialToProxyTLS(proxyURL *url.URL, tlsConf *tls.Config, timeout time.Duration) (net.Conn, error) {
+//nolint:lll //This needs to be in a single line.
+func dialToProxyTLS(ctx context.Context, proxyURL *url.URL, tlsConf *tls.Config, timeout time.Duration) (net.Conn, error) {
 	dialer := &net.Dialer{Timeout: timeout}
-	return tls.DialWithDialer(dialer, "tcp", proxyURL.Host, tlsConf)
+	tlsDialer := &tls.Dialer{
+		NetDialer: dialer,
+		Config:    tlsConf,
+	}
+
+	return tlsDialer.DialContext(ctx, "tcp", proxyURL.Host)
 }
 
 func dialToProxyTCP(ctx context.Context, proxyURL *url.URL, timeout time.Duration) (net.Conn, error) {
@@ -114,7 +120,7 @@ func dialProxy(ctx context.Context, proxyURL *url.URL, proxyConf *config.Proxy) 
 			return nil, wrapProxyError(ctx, "Failed to build TLS config", err, proxyConf.URL)
 		}
 
-		return dialToProxyTLS(proxyURL, tlsConf, proxyConf.Timeout)
+		return dialToProxyTLS(ctx, proxyURL, tlsConf, proxyConf.Timeout)
 	}
 
 	return dialToProxyTCP(ctx, proxyURL, proxyConf.Timeout)

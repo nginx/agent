@@ -222,7 +222,7 @@ func (oc *Collector) processReceivers(ctx context.Context, receivers map[string]
 	}
 }
 
-//nolint:revive // cognitive complexity is 13
+//nolint:revive,cyclop // cognitive complexity is 13
 func (oc *Collector) bootup(ctx context.Context) error {
 	errChan := make(chan error)
 
