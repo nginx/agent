@@ -173,9 +173,9 @@ official-image-integration-test: $(SELECTED_PACKAGE) build-mock-management-plane
 	go test -v ./test/integration/managementplane ./test/integration/auxiliarycommandserver
 
 performance-test:
-	@mkdir -p $(TEST_BUILD_DIR)
-	@CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 6m -bench=. -benchmem -run=^$$ ./... > $(TEST_BUILD_DIR)/benchmark.txt
-	@cat $(TEST_BUILD_DIR)/benchmark.txt
+	mkdir -p $(TEST_BUILD_DIR)
+	CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 6m -bench=. -benchmem -run=^$$ ./... | tee $(TEST_BUILD_DIR)/benchmark.txt
+	cat $(TEST_BUILD_DIR)/benchmark.txt
 
 compare-performance-benchmark-results:
 	@$(GORUN) $(BENCHSTAT) $(OLD_BENCHMARK_RESULTS_FILE) $(TEST_BUILD_DIR)/benchmark.txt
