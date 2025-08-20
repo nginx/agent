@@ -70,7 +70,6 @@ var (
 	_ GrpcConnectionInterface = (*GrpcConnection)(nil)
 )
 
-// nolint: ireturn
 func NewGrpcConnection(ctx context.Context, agentConfig *config.Config,
 	commandConfig *config.Command,
 ) (*GrpcConnection, error) {
@@ -106,7 +105,7 @@ func NewGrpcConnection(ctx context.Context, agentConfig *config.Config,
 	return grpcConnection, nil
 }
 
-// nolint: ireturn
+//nolint:ireturn // gRPC generated interface
 func (gc *GrpcConnection) CommandServiceClient() mpi.CommandServiceClient {
 	gc.mutex.Lock()
 	defer gc.mutex.Unlock()
@@ -114,7 +113,7 @@ func (gc *GrpcConnection) CommandServiceClient() mpi.CommandServiceClient {
 	return mpi.NewCommandServiceClient(gc.conn)
 }
 
-// nolint: ireturn
+//nolint:ireturn // gRPC generated interface
 func (gc *GrpcConnection) FileServiceClient() mpi.FileServiceClient {
 	gc.mutex.Lock()
 	defer gc.mutex.Unlock()

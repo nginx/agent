@@ -252,8 +252,8 @@ func addAuthHeader(collector *Collector, token string) {
 			Headers: header,
 		}
 	} else {
-		// nolint: lll
-		collector.Extensions.HeadersSetter.Headers = append(collector.Extensions.HeadersSetter.Headers, header...)
+		collector.Extensions.HeadersSetter.Headers = append(collector.Extensions.HeadersSetter.
+			Headers, header...)
 	}
 }
 
@@ -1098,7 +1098,7 @@ func resolveProcessors() Processors {
 }
 
 // generate self-signed certificate for OTel receiver
-// nolint: revive
+
 func handleSelfSignedCertificates(col *Collector) error {
 	if col.Receivers.OtlpReceivers != nil {
 		for _, receiver := range col.Receivers.OtlpReceivers {
