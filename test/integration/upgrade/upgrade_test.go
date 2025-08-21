@@ -3,11 +3,6 @@ package upgrade
 import (
 	"bytes"
 	"context"
-	"github.com/nginx/agent/test/integration/utils"
-	log "github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go"
 	"io"
 	"os"
 	"regexp"
@@ -15,6 +10,12 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/nginx/agent/test/integration/utils"
+	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/testcontainers/testcontainers-go"
 )
 
 const (
