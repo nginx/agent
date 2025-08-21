@@ -6,8 +6,9 @@
 package managementplane
 
 import (
-	"github.com/nginx/agent/v3/test/integration/utils"
 	"log/slog"
+
+	"github.com/nginx/agent/v3/test/integration/utils"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )
