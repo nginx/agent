@@ -70,8 +70,7 @@ write_result() {
     # Format timestamps
     if [[ "$start_at" =~ ^[0-9]{4}/[0-9]{2}/[0-9]{2}\ [0-9]{2}:[0-9]{2}:[0-9]{2}$ && \
           "$end_at" =~ ^[0-9]{4}/[0-9]{2}/[0-9]{2}\ [0-9]{2}:[0-9]{2}:[0-9]{2}$ ]]; then
-      duration_seconds=$(( $(date -d "%Y/%m/%d %H:%M:%S" "$end_at" +%s) - \
-                          $(date -d "%Y/%m/%d %H:%M:%S" "$start_at" +%s) ))
+      duration_seconds=$(( $(date -d "$end_at" +%s) - $(date -d "$start_at" +%s) ))
       start_iso=""
       end_iso=""
       start_iso=$(date -d "%Y/%m/%d %H:%M:%S" "$start_at" +"%Y-%m-%dT%H:%M:%S.%NZ")
@@ -189,7 +188,6 @@ format_results() {
       # Write results for individual tests in the queue
       if [[ "${test_group[0]}" == "name" && "${#test_queue[@]}" -gt 0 ]]; then
         test_match=("${test_queue[0]}" "${test_queue[1]}" "${test_queue[2]}" "${test_queue[3]}" "${test_queue[4]}")
-        #TODO: validate the arguments
         test_match[3]="$result_val"
         if [[ "$result_val" == "fail" ]]; then
           test_match[4]+="$error_trace"
