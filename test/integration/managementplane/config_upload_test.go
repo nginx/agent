@@ -49,6 +49,7 @@ func (s *MPITestSuite) SetupSuite() {
 }
 
 func (s *MPITestSuite) TestConfigUpload() {
+	slog.Info("starting MPI config upload test")
 	request := fmt.Sprintf(`{
 	"message_meta": {
 		"message_id": "5d0fa83e-351c-4009-90cd-1f2acce2d184",
@@ -82,6 +83,7 @@ func (s *MPITestSuite) TestConfigUpload() {
 	s.Equal("Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
 	s.Equal("Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
+	slog.Info("finished MPI config upload test")
 }
 
 func TestMPITestSuite(t *testing.T) {

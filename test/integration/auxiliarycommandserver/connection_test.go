@@ -48,7 +48,7 @@ func TestAuxiliaryTestSuite(t *testing.T) {
 }
 
 func (s *AuxiliaryTestSuite) TestAuxiliary_Test1_Connection() {
-	slog.Info("starting auxiliary command server connection tests")
+	slog.Info("starting auxiliary command server connection test")
 	s.instanceID = utils.VerifyConnection(s.T(), 2, utils.MockManagementPlaneAPIAddress)
 	s.False(s.T().Failed())
 	utils.VerifyUpdateDataPlaneHealth(s.T(), utils.MockManagementPlaneAPIAddress)
@@ -60,9 +60,11 @@ func (s *AuxiliaryTestSuite) TestAuxiliary_Test1_Connection() {
 	commandResponses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, commandResponses[0].GetCommandResponse().GetStatus())
 	s.Equal("Successfully updated all files", commandResponses[0].GetCommandResponse().GetMessage())
+	slog.Info("finished auxiliary command server connection test")
 }
 
 func (s *AuxiliaryTestSuite) TestAuxiliary_Test2_Reconnection() {
+	slog.Info("starting auxiliary command server reconnection test")
 	ctx := context.Background()
 	timeout := 15 * time.Second
 
@@ -85,9 +87,11 @@ func (s *AuxiliaryTestSuite) TestAuxiliary_Test2_Reconnection() {
 
 	currentID := utils.VerifyConnection(s.T(), 2, utils.AuxiliaryMockManagementPlaneAPIAddress)
 	s.Equal(originalID, currentID)
+	slog.Info("finished auxiliary command server reconnection test")
 }
 
 func (s *AuxiliaryTestSuite) TestAuxiliary_Test3_DataplaneHealthRequest() {
+	slog.Info("starting auxiliary command server data plane health request test")
 	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
 	utils.ClearManagementPlaneResponses(s.T(), utils.AuxiliaryMockManagementPlaneAPIAddress)
 
@@ -119,9 +123,11 @@ func (s *AuxiliaryTestSuite) TestAuxiliary_Test3_DataplaneHealthRequest() {
 	// Check auxiliary server still only has 1 ManagementPlaneResponses as it didn't send the request
 	utils.ManagementPlaneResponses(s.T(), 0, utils.AuxiliaryMockManagementPlaneAPIAddress)
 	s.False(s.T().Failed())
+	slog.Info("finished auxiliary command server data plane health request test")
 }
 
 func (s *AuxiliaryTestSuite) TestAuxiliary_Test4_FileWatcher() {
+	slog.Info("starting auxiliary command server file watcher test")
 	// Clear any previous responses from previous tests
 	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
 	utils.ClearManagementPlaneResponses(s.T(), utils.AuxiliaryMockManagementPlaneAPIAddress)
@@ -144,9 +150,11 @@ func (s *AuxiliaryTestSuite) TestAuxiliary_Test4_FileWatcher() {
 	auxResponses := utils.ManagementPlaneResponses(s.T(), 1, utils.AuxiliaryMockManagementPlaneAPIAddress)
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, auxResponses[0].GetCommandResponse().GetStatus())
 	s.Equal("Successfully updated all files", auxResponses[0].GetCommandResponse().GetMessage())
+	slog.Info("finished auxiliary command server file watcher test")
 }
 
 func (s *AuxiliaryTestSuite) TestAuxiliary_Test5_ConfigApply() {
+	slog.Info("starting auxiliary command server config apply test")
 	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
 	utils.ClearManagementPlaneResponses(s.T(), utils.AuxiliaryMockManagementPlaneAPIAddress)
 
@@ -189,9 +197,11 @@ func (s *AuxiliaryTestSuite) TestAuxiliary_Test5_ConfigApply() {
 	commandOverview := utils.CurrentFileOverview(s.T(), s.instanceID, utils.MockManagementPlaneAPIAddress)
 	auxOverview := utils.CurrentFileOverview(s.T(), s.instanceID, utils.AuxiliaryMockManagementPlaneAPIAddress)
 	s.Equal(commandOverview.GetConfigVersion(), auxOverview.GetConfigVersion())
+	slog.Info("finished auxiliary command server config apply test")
 }
 
 func (s *AuxiliaryTestSuite) TestAuxiliary_Test6_ConfigApplyInvalid() {
+	slog.Info("starting auxiliary command server invalid config apply test")
 	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
 	utils.ClearManagementPlaneResponses(s.T(), utils.AuxiliaryMockManagementPlaneAPIAddress)
 
@@ -204,4 +214,5 @@ func (s *AuxiliaryTestSuite) TestAuxiliary_Test6_ConfigApplyInvalid() {
 	s.Equal("Config apply failed", commandResponses[0].GetCommandResponse().GetMessage())
 	s.Equal("Unable to process request. Management plane is configured as read only.",
 		commandResponses[0].GetCommandResponse().GetError())
+	slog.Info("finished auxiliary command server invalid config apply test")
 }
