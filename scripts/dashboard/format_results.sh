@@ -73,8 +73,8 @@ write_result() {
       duration_seconds=$(( $(date -d "$end_at" +%s) - $(date -d "$start_at" +%s) ))
       start_iso=""
       end_iso=""
-      start_iso=$(date -d "%Y/%m/%d %H:%M:%S" "$start_at" +"%Y-%m-%dT%H:%M:%S.%NZ")
-      end_iso=$(date -d "%Y/%m/%d %H:%M:%S" "$end_at" +"%Y-%m-%dT%H:%M:%S.%NZ")
+      start_iso=$(date -j -f "%Y/%m/%d %H:%M:%S" "$start_at" +"%Y-%m-%dT%H:%M:%S.%NZ")
+      end_iso=$(date -j -f "%Y/%m/%d %H:%M:%S" "$end_at" +"%Y-%m-%dT%H:%M:%S.%NZ")
     else
       duration_seconds=0
     fi
