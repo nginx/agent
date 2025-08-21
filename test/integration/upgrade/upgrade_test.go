@@ -26,7 +26,8 @@ const (
 var (
 	osRelease  = os.Getenv("OS_RELEASE")
 	serverHost = map[string]string{
-		"NGINX_AGENT_SERVER_HOST": "127.0.0.1"}
+		"NGINX_AGENT_SERVER_HOST": "127.0.0.1",
+	}
 
 	expectedUpgradeLogMsgs = map[string]string{
 		"UpgradeFoundNginxAgent": "Found nginx-agent /usr/bin/nginx-agent",
