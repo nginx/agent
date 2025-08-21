@@ -29,7 +29,8 @@ type Process struct {
 
 // IsWorker returns true if the process is a NGINX worker process.
 func (p *Process) IsWorker() bool {
-	return strings.HasPrefix(p.Cmd, "nginx: worker")
+	return strings.HasPrefix(p.Cmd, "nginx: worker") ||
+		strings.HasPrefix(p.Cmd, "{nginx-debug} nginx: worker")
 }
 
 // IsMaster returns true if the process is a NGINX master process.
