@@ -70,12 +70,12 @@ write_result() {
     # Format timestamps
     if [[ "$start_at" =~ ^[0-9]{4}/[0-9]{2}/[0-9]{2}\ [0-9]{2}:[0-9]{2}:[0-9]{2}$ && \
           "$end_at" =~ ^[0-9]{4}/[0-9]{2}/[0-9]{2}\ [0-9]{2}:[0-9]{2}:[0-9]{2}$ ]]; then
-      duration_seconds=$(( $(date -j -f "%Y/%m/%d %H:%M:%S" "$end_at" +%s) - \
-                          $(date -j -f "%Y/%m/%d %H:%M:%S" "$start_at" +%s) ))
+      duration_seconds=$(( $(date -d "%Y/%m/%d %H:%M:%S" "$end_at" +%s) - \
+                          $(date -d "%Y/%m/%d %H:%M:%S" "$start_at" +%s) ))
       start_iso=""
       end_iso=""
-      start_iso=$(date -j -f "%Y/%m/%d %H:%M:%S" "$start_at" +"%Y-%m-%dT%H:%M:%S.%NZ")
-      end_iso=$(date -j -f "%Y/%m/%d %H:%M:%S" "$end_at" +"%Y-%m-%dT%H:%M:%S.%NZ")
+      start_iso=$(date -d "%Y/%m/%d %H:%M:%S" "$start_at" +"%Y-%m-%dT%H:%M:%S.%NZ")
+      end_iso=$(date -d "%Y/%m/%d %H:%M:%S" "$end_at" +"%Y-%m-%dT%H:%M:%S.%NZ")
     else
       duration_seconds=0
     fi
