@@ -3,8 +3,8 @@ package upgrade
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"github.com/nginx/agent/test/integration/utils"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	maxFileSize    = 60000000
+	maxFileSize    = 70000000 // Max Size: 70 MB
 	maxUpgradeTime = 30 * time.Second
 )
 
@@ -32,6 +32,7 @@ var (
 )
 
 func TestUpgradeToV3(t *testing.T) {
+	log.Info("testing agent upgrade to v3")
 	ctx := context.Background()
 	containerNetwork := utils.CreateContainerNetwork(ctx, t)
 
@@ -64,6 +65,8 @@ func TestUpgradeToV3(t *testing.T) {
 
 	// validate the nginx-agent config is upgraded and correct
 	verifyAgentConfigFile(ctx, t, testContainer)
+
+	log.Info("finished testing agent upgrade to v3")
 }
 
 func upgradeAgent(ctx context.Context, t *testing.T, testContainer testcontainers.Container) {
@@ -79,7 +82,6 @@ func upgradeAgent(ctx context.Context, t *testing.T, testContainer testcontainer
 	assert.LessOrEqual(t, upgradeTime, maxUpgradeTime)
 
 	upgradeLog, err := io.ReadAll(cmdOut)
-	fmt.Println(string(upgradeLog))
 	require.NoError(t, err)
 	assert.Equal(t, 0, exitCode)
 
@@ -96,28 +98,6 @@ func verifyAgentVersion(ctx context.Context, t *testing.T, testContainer testcon
 	agentVersion, err := io.ReadAll(agentVersionString)
 	require.NoError(t, err)
 	assert.Contains(t, string(agentVersion), "nginx-agent version v3.")
-}
-
-func createUpgradeCommand() []string {
-	if strings.Contains(osRelease, "ubuntu") || strings.Contains(osRelease, "debian") {
-		return []string{"apt-get", "install", "-y", "--only-upgrade", "nginx-agent", "-o", "Dpkg::Options::=--force-confold"}
-	}
-
-	return []string{"yum", "update", "-y", "nginx-agent"}
-}
-
-func updatePackageRepo(ctx context.Context, t *testing.T, testContainer testcontainers.Container) {
-	var updateCmd []string
-
-	if strings.Contains(osRelease, "ubuntu") || strings.Contains(osRelease, "debian") {
-		updateCmd = []string{"apt-get", "update"}
-	} else {
-		updateCmd = []string{"yum", "-y", "makecache"}
-	}
-
-	exitCode, _, err := testContainer.Exec(ctx, updateCmd)
-	require.NoError(t, err)
-	assert.Equal(t, 0, exitCode)
 }
 
 func verifyAgentPackageSize(ctx context.Context, t *testing.T, testContainer testcontainers.Container) {
@@ -141,6 +121,11 @@ func verifyAgentPackageSize(ctx context.Context, t *testing.T, testContainer tes
 	packageSize, err := strconv.Atoi(string(packageSizeStr))
 	require.NoError(t, err)
 
+	// convert apt package size from KB to bytes
+	if strings.Contains(osRelease, "ubuntu") || strings.Contains(osRelease, "debian") {
+		packageSize *= 1024
+	}
+
 	assert.LessOrEqual(t, packageSize, maxFileSize)
 }
 
@@ -158,4 +143,26 @@ func verifyAgentConfigFile(ctx context.Context, t *testing.T, testContainer test
 	agentConfig = bytes.TrimSpace(agentConfig)
 
 	assert.Equal(t, expectedConfig, agentConfig)
+}
+
+func updatePackageRepo(ctx context.Context, t *testing.T, testContainer testcontainers.Container) {
+	var updateCmd []string
+
+	if strings.Contains(osRelease, "ubuntu") || strings.Contains(osRelease, "debian") {
+		updateCmd = []string{"apt-get", "update"}
+	} else {
+		updateCmd = []string{"yum", "-y", "makecache"}
+	}
+
+	exitCode, _, err := testContainer.Exec(ctx, updateCmd)
+	require.NoError(t, err)
+	assert.Equal(t, 0, exitCode)
+}
+
+func createUpgradeCommand() []string {
+	if strings.Contains(osRelease, "ubuntu") || strings.Contains(osRelease, "debian") {
+		return []string{"apt-get", "install", "-y", "--only-upgrade", "nginx-agent", "-o", "Dpkg::Options::=--force-confold"}
+	}
+
+	return []string{"yum", "update", "-y", "nginx-agent"}
 }
