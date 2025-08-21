@@ -10,7 +10,6 @@ ARG OS_RELEASE
 
 WORKDIR /agent
 COPY ./build /agent/build
-COPY ./test/integration/upgrade/test_configs/nginx-agent.conf /agent/nginx-agent.conf
 COPY $ENTRY_POINT /agent/entrypoint.sh
 
 RUN set -x \

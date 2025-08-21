@@ -24,7 +24,10 @@ const (
 )
 
 var (
-	osRelease              = os.Getenv("OS_RELEASE")
+	osRelease  = os.Getenv("OS_RELEASE")
+	serverHost = map[string]string{
+		"NGINX_AGENT_SERVER_HOST": "127.0.0.1"}
+
 	expectedUpgradeLogMsgs = map[string]string{
 		"UpgradeFoundNginxAgent": "Found nginx-agent /usr/bin/nginx-agent",
 		"UpgradeAgentSuccess":    "NGINX Agent package has been successfully installed.",
@@ -46,6 +49,7 @@ func TestUpgradeToV3(t *testing.T) {
 		NginxAgentConfigPath: "./test_configs/nginx-agent.conf",
 		NginxConfigPath:      nginxConf,
 		LogMessage:           "NGINX Agent v",
+		ServerHost:           serverHost,
 	}
 
 	testContainer := utils.StartContainer(
