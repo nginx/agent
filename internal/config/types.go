@@ -473,7 +473,7 @@ func (c *Config) NewContextWithLabels(ctx context.Context) context.Context {
 }
 
 func (c *Config) IsCommandServerProxyConfigured() bool {
-	if c.Command.Server.Proxy == nil {
+	if c.Command == nil || c.Command.Server == nil || c.Command.Server.Proxy == nil {
 		return false
 	}
 
