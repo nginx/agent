@@ -143,8 +143,8 @@ jobs:
       - name: Start Promtail
         uses: ./.github/actions/start-promtail
         with:
-          log_dir: ${{ github.workspace }}/test/dashboard/logs/
           promtail_config: ${{ github.workspace }}/test/dashboard/promtail/promtail-config.yaml
+          log_dir: ${{ github.workspace }}/test/dashboard/logs/
           loki_url: ${{ secrets.LOKI_DASHBOARD_URL }}
 
       - name: Run Integration Tests
@@ -196,8 +196,8 @@ jobs:
       - name: Start Promtail
         uses: ./.github/actions/start-promtail
         with:
-          log_dir: ${{ github.workspace }}/test/dashboard/logs/
           promtail_config: ${{ github.workspace }}/test/dashboard/promtail/promtail-config.yaml
+          log_dir: ${{ github.workspace }}/test/dashboard/logs/
           loki_url: ${{ secrets.LOKI_DASHBOARD_URL }}
 
       - name: Run Integration Tests
@@ -265,8 +265,8 @@ jobs:
       - name: Start Promtail
         uses: ./.github/actions/start-promtail
         with:
-          log_dir: ${{ github.workspace }}/test/dashboard/logs/
           promtail_config: ${{ github.workspace }}/test/dashboard/promtail/promtail-config.yaml
+          log_dir: ${{ github.workspace }}/test/dashboard/logs/
           loki_url: ${{ secrets.LOKI_DASHBOARD_URL }}
 
       - name: Run Integration Tests
