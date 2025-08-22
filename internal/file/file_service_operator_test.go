@@ -53,7 +53,7 @@ func TestFileServiceOperator_UpdateOverview(t *testing.T) {
 		{
 			FileMeta: fileMeta,
 		},
-	}, 0)
+	}, filePath, 0)
 
 	require.NoError(t, err)
 	assert.Equal(t, 2, fakeFileServiceClient.UpdateOverviewCallCount())
@@ -91,7 +91,7 @@ func TestFileServiceOperator_UpdateOverview_MaxIterations(t *testing.T) {
 		{
 			FileMeta: fileMeta,
 		},
-	}, 0)
+	}, filePath, 0)
 
 	require.Error(t, err)
 	assert.Equal(t, "too many UpdateOverview attempts", err.Error())

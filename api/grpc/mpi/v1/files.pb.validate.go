@@ -1263,6 +1263,8 @@ func (m *FileOverview) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for ConfigPath
+
 	if len(errors) > 0 {
 		return FileOverviewMultiError(errors)
 	}

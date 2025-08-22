@@ -104,6 +104,7 @@ func (fso *FileServiceOperator) UpdateOverview(
 	ctx context.Context,
 	instanceID string,
 	filesToUpdate []*mpi.File,
+	configPath string,
 	iteration int,
 ) error {
 	correlationID := logger.CorrelationID(ctx)
@@ -127,6 +128,7 @@ func (fso *FileServiceOperator) UpdateOverview(
 				InstanceId: instanceID,
 				Version:    files.GenerateConfigVersion(filesToUpdate),
 			},
+			ConfigPath: configPath,
 		},
 	}
 
@@ -178,7 +180,7 @@ func (fso *FileServiceOperator) UpdateOverview(
 	delta := files.ConvertToMapOfFiles(response.GetOverview().GetFiles())
 
 	if len(delta) != 0 {
-		return fso.updateFiles(ctx, delta, instanceID, iteration)
+		return fso.updateFiles(ctx, delta, instanceID, configPath, iteration)
 	}
 
 	return err
@@ -254,6 +256,7 @@ func (fso *FileServiceOperator) updateFiles(
 	ctx context.Context,
 	delta map[string]*mpi.File,
 	instanceID string,
+	configPath string,
 	iteration int,
 ) error {
 	diffFiles := slices.Collect(maps.Values(delta))
@@ -268,7 +271,7 @@ func (fso *FileServiceOperator) updateFiles(
 	iteration++
 	slog.InfoContext(ctx, "Updating file overview after file updates", "attempt_number", iteration)
 
-	return fso.UpdateOverview(ctx, instanceID, diffFiles, iteration)
+	return fso.UpdateOverview(ctx, instanceID, diffFiles, configPath, iteration)
 }
 
 func (fso *FileServiceOperator) sendUpdateFileRequest(

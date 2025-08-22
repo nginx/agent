@@ -158,8 +158,14 @@ func TestInstanceOperator_Reload(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			versionOut := `nginx version: nginx/1.25.3
+					built by clang 14.0.0 (clang-1400.0.29.202)
+					built with OpenSSL 1.1.1s  1 Nov 2022 (running with OpenSSL 1.1.1t  7 Feb 2023)
+					TLS SNI support enabled
+					configure arguments: ` + ossConfigArgs
 			mockExec := &execfakes.FakeExecInterface{}
 			mockExec.KillProcessReturns(test.err)
+			mockExec.RunCmdReturns(bytes.NewBufferString(versionOut), nil)
 
 			instance := protos.NginxOssInstance([]string{})
 

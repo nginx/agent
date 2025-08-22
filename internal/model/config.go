@@ -15,6 +15,7 @@ type NginxConfigContext struct {
 	StubStatus       *APIDetails
 	PlusAPI          *APIDetails
 	InstanceID       string
+	ConfigPath       string
 	Files            []*v1.File
 	AccessLogs       []*AccessLog
 	ErrorLogs        []*ErrorLog
@@ -97,6 +98,9 @@ func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext
 		}
 	}
 
+	if ncc.ConfigPath != otherNginxConfigContext.ConfigPath {
+		return false
+	}
 	if ncc.InstanceID != otherNginxConfigContext.InstanceID {
 		return false
 	}
