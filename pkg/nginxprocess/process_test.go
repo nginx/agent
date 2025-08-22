@@ -55,6 +55,10 @@ func TestProcess_IsNginxWorker(t *testing.T) {
 			cmd:  "nginx: cache manager process",
 			want: false,
 		},
+		"Test 5 nginx debug": {
+			cmd:  "{nginx-debug} nginx: worker process",
+			want: true,
+		},
 	}
 	for name, tc := range testcases {
 		t.Run(name, func(t *testing.T) {
