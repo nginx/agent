@@ -8,7 +8,7 @@ positions:
   sync_period: "10s"
 
 clients:
-  - url: "${LOKI_DASHBOARD_URL}"
+  - url: "${LOKI_URL}"
     external_labels:
       systest_project: agent_v3
       systest_type: "${GITHUB_JOB}"
