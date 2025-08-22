@@ -9,13 +9,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	dto "github.com/prometheus/client_model/go"
+	"github.com/prometheus/common/expfmt"
 	"net"
 	"net/http"
 	"os"
 	"testing"
-
-	dto "github.com/prometheus/client_model/go"
-	"github.com/prometheus/common/expfmt"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/testcontainers/testcontainers-go"
@@ -92,6 +92,116 @@ func ScrapeCollectorMetricFamilies(t *testing.T, ctx context.Context,
 	}
 
 	return metricFamilies
+}
+
+func GenerateMetrics(ctx context.Context, t *testing.T, container testcontainers.Container, requestCount int, expectedCode string) {
+	t.Helper()
+
+	t.Logf("Generating %d requests with expected response code %s", requestCount, expectedCode)
+
+	var url string
+	switch expectedCode {
+	case "1xx":
+		url = "http://127.0.0.1:9091/"
+	case "2xx":
+		url = "http://127.0.0.1:9092/"
+	case "3xx":
+		url = "http://127.0.0.1:9093/"
+	case "4xx":
+		url = "http://127.0.0.1:9094/"
+	case "5xx":
+		url = "http://127.0.0.1:9095/"
+	default:
+		url = "http://127.0.0.1/"
+	}
+
+	for range requestCount {
+		_, _, err := container.Exec(
+			ctx,
+			[]string{"curl", "-s", url},
+		)
+		if err != nil {
+			t.Fatalf("failed to curl nginx: %s", err)
+		}
+	}
+}
+
+func PollingForMetrics(t *testing.T, ctx context.Context, metricFamilies map[string]*dto.MetricFamily, metricName string, labelKey string, labelValues []string, baselineValue []float64,
+) []float64 {
+	t.Helper()
+
+	pollCtx, cancel := context.WithTimeout(ctx, 200*time.Second)
+	defer cancel()
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	family := metricFamilies[metricName]
+
+	var res = make([]float64, len(baselineValue))
+	for {
+		select {
+		case <-pollCtx.Done():
+			t.Fatalf("timed out waiting for metric %s to be greater than %v", metricName, baselineValue)
+			return res
+		case <-ticker.C:
+			metricFamilies = ScrapeCollectorMetricFamilies(t, ctx, MockCollectorStack.Otel)
+			family = metricFamilies[metricName]
+			if family == nil {
+				t.Logf("Metric %s not found, retrying...", metricName)
+				continue
+			}
+
+			if len(family.GetMetric()) == 1 {
+				metric := SumMetricFamily(family)
+				if metric != baselineValue[0] {
+					return []float64{metric}
+				}
+			}
+			if len(family.GetMetric()) > 1 {
+				foundAllMetrics := true
+				for val := range labelValues {
+					metric := SumMetricFamilyLabel(family, labelKey, labelValues[val])
+					if metric != baselineValue[val] {
+						res[val] = metric
+					} else {
+						foundAllMetrics = false
+					}
+				}
+
+				if foundAllMetrics && len(res) > 0 {
+
+					return res
+				}
+			}
+		}
+	}
+}
+
+func WaitUntilNextScrapeCycle(t *testing.T, ctx context.Context) {
+	t.Helper()
+	
+	waitCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-waitCtx.Done():
+			t.Fatalf("Timed out waiting for next scrape")
+			return
+		case <-ticker.C:
+			freshMetrics := ScrapeCollectorMetricFamilies(t, ctx, MockCollectorStack.Otel)
+			got := PollingForMetrics(t, ctx, freshMetrics, "nginx_http_request_count", "", []string{}, []float64{0})
+
+			if len(got) > 0 && got[0] == 1 {
+				t.Logf("Successfully detected new scrape cycle, request count: %f", got[0])
+				return
+			}
+		}
+	}
 }
 
 func SumMetricFamily(metricFamily *dto.MetricFamily) float64 {

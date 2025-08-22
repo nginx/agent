@@ -159,11 +159,11 @@ build-mock-management-otel-collector:
 	mkdir -p $(BUILD_DIR)/mock-management-otel-collector
 	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/mock-management-otel-collector/collector test/mock/collector/mock-collector/main.go
 
-integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc
+integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc build-mock-management-otel-collector
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) DOCKERFILE_PATH=$(DOCKERFILE_PATH) IMAGE_PATH=$(IMAGE_PATH) TAG=${IMAGE_TAG} \
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) \
-	go test -v ./test/integration/installuninstall ./test/integration/managementplane ./test/integration/auxiliarycommandserver ./test/integration/nginxless
+	go test -v ./test/integration/installuninstall ./test/integration/managementplane ./test/integration/auxiliarycommandserver ./test/integration/nginxless ./test/integration/metrics
 	
 official-image-integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} BUILD_TARGET="install" \
