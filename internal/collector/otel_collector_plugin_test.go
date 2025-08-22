@@ -790,8 +790,6 @@ func TestCollector_findAvailableSyslogServers(t *testing.T) {
 	conf.Collector.Processors.Attribute = nil
 	conf.Collector.Processors.Resource = nil
 	conf.Collector.Processors.LogsGzip = nil
-	collector, err := NewCollector(conf)
-	require.NoError(t, err)
 
 	tests := []struct {
 		name                    string
@@ -835,10 +833,22 @@ func TestCollector_findAvailableSyslogServers(t *testing.T) {
 			syslogServers:           []string{"localhost:15632", "localhost:1122"},
 			portInUse:               true,
 		},
+		{
+			name:                    "Test 6: port hasn't changed",
+			expectedSyslogServer:    "localhost:1122",
+			previousNAPSysLogServer: "localhost:1122",
+			syslogServers:           []string{"localhost:1122"},
+			portInUse:               true,
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
+			collector, err := NewCollector(conf)
+			require.NoError(t, err)
+
+			collector.previousNAPSysLogServer = test.previousNAPSysLogServer
+
 			if test.portInUse {
 				listenConfig := &net.ListenConfig{}
 				ln, listenError := listenConfig.Listen(ctx, "tcp", "localhost:15632")

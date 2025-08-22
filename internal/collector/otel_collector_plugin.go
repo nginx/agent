@@ -709,6 +709,8 @@ func (oc *Collector) findAvailableSyslogServers(ctx context.Context, napSyslogSe
 
 		slog.DebugContext(ctx, "Found valid NAP syslog server", "address", napSyslogServer)
 
+		oc.previousNAPSysLogServer = napSyslogServer
+
 		return napSyslogServer
 	}
 
