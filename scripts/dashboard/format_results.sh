@@ -10,12 +10,12 @@ if [ $# -lt 3 ]; then
     exit 1
 fi
 
-# parameters
+# Parameters
 RESULT="$1"
 TEST_TYPE="$2"
 WORKSPACE="$3"
 
-# file paths
+# File paths
 INPUT_FILE="$WORKSPACE/test/dashboard/logs/$TEST_TYPE/raw_logs.log"
 OUTPUT_DIR="$WORKSPACE/test/dashboard/logs/$TEST_TYPE"
 
@@ -24,16 +24,6 @@ if [ ! -f "$INPUT_FILE" ]; then
   echo "Error: Input file $INPUT_FILE does not exist."
   exit 1
 fi
-
-load_job_status(){
-    if [ "$RESULT" == "success" ]; then
-        JOB_RESULT="pass"
-    elif [ "$RESULT" == "failure" ]; then
-        JOB_RESULT="fail"
-    else
-        JOB_RESULT="skip"
-    fi
-}
 
 format_log() {
     local line="$1"
@@ -101,6 +91,7 @@ format_results() {
     # Detect if the line is a test start
     if [[ "$line" =~ ^===\ RUN[[:space:]]+(.+) ]]; then
       test_name="${BASH_REMATCH[1]}"
+      has_failed=false
   
       if [[ "${test_group[0]}" == "name" && "$is_running" == false ]]; then
         is_running=true
@@ -126,7 +117,7 @@ format_results() {
         continue
     fi
     
-    #Get end time
+    # Get end time
     if [[ "$line" =~ ^([0-9]{4}/[0-9]{2}/[0-9]{2}[[:space:]][0-9]{2}:[0-9]{2}:[0-9]{2}).*INFO[[:space:]]+finished.*test* ]]; then
         test_end="${BASH_REMATCH[1]}"
         if [[ "${current_test[2]}" == "end_at" ]]; then
@@ -143,13 +134,9 @@ format_results() {
     # Capture error messages
     if [[ "$line" == *"Error Trace"* || "$line" == *"runtime error"* ]]; then
       has_failed=true
-      error_trace+="$line\n"
+      error_trace+="${line}"$'\n'
       continue
     fi
-    
-#    if [[ has_failed==true ]]; then
-#      error_trace+="$line\n"
-#    fi
     
     # Detect result
     if [[ "$line" == *"--- PASS"* || "$line" == *"--- FAIL"* ]]; then
@@ -177,6 +164,9 @@ format_results() {
         fi 
         test_group[3]="$result_val"
         if [[ "$result_val" == "fail" ]]; then
+          if [[ ${test_group[4]} == "msg" ]]; then
+            test_group[4]=""
+          fi
           test_group[4]+="$error_trace"
         fi
         write_result "${test_group[1]}" "${test_group[2]}" "${test_group[3]}" "${test_group[4]}" "$OUTPUT_DIR/${test_group[0]}"
@@ -190,6 +180,9 @@ format_results() {
         test_match=("${test_queue[0]}" "${test_queue[1]}" "${test_queue[2]}" "${test_queue[3]}" "${test_queue[4]}")
         test_match[3]="$result_val"
         if [[ "$result_val" == "fail" ]]; then
+          if [[ ${test_match[4]} == "msg" ]]; then
+            test_match[4]=""
+          fi
           test_match[4]+="$error_trace"
         fi
         write_result "${test_match[1]}" "${test_match[2]}" "${test_match[3]}" "${test_match[4]}" "$OUTPUT_DIR/${test_match[0]}"
@@ -202,8 +195,14 @@ format_results() {
       
       # No tests to analyze
       if [[ "${test_group[0]}" == "name" && "${#test_queue[@]}" -eq 0 ]]; then
+        error_trace=""
         continue
       fi
+    fi
+    
+    # Capture error messages
+    if [[ $has_failed == true ]]; then
+      error_trace+="${line}"$'\n'
     fi
     
     # Capture logs
@@ -221,6 +220,5 @@ format_results() {
 }
 
 {
-    load_job_status
     format_results
 }
