@@ -846,7 +846,7 @@ func TestSetExporterProxyEnvVars(t *testing.T) {
 		{
 			name:        "Test 2: Malformed proxy URL",
 			proxy:       &config.Proxy{URL: "://bad_url"},
-			expectedLog: "Malformed proxy URL; skipping Proxy setup",
+			expectedLog: "Malformed proxy URL, unable to configure proxy for OTLP exporter",
 			setEnv:      false,
 		},
 		{

@@ -765,7 +765,9 @@ func (oc *Collector) setExporterProxyEnvVars(ctx context.Context) {
 	proxyURL := proxy.URL
 	parsedProxyURL, err := url.Parse(proxyURL)
 	if err != nil {
-		slog.ErrorContext(ctx, "Malformed proxy URL; skipping Proxy setup", "url", proxyURL, "error", err)
+		slog.ErrorContext(ctx, "Malformed proxy URL, unable to configure proxy for OTLP exporter",
+			"url", proxyURL, "error", err)
+
 		return
 	}
 
