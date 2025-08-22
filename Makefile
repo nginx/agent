@@ -174,8 +174,7 @@ official-image-integration-test: $(SELECTED_PACKAGE) build-mock-management-plane
 
 performance-test:
 	mkdir -p $(TEST_BUILD_DIR)
-	CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 6m -bench=. -benchmem -run=^$$ ./... | tee $(TEST_BUILD_DIR)/benchmark.txt
-	cat $(TEST_BUILD_DIR)/benchmark.txt
+	CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 6m -bench=. -benchmem -run=^$$ ./... | tee $(TEST_BUILD_DIR)/benchmark.txt; test $${PIPESTATUS[0]} -eq 0
 
 compare-performance-benchmark-results:
 	@$(GORUN) $(BENCHSTAT) $(OLD_BENCHMARK_RESULTS_FILE) $(TEST_BUILD_DIR)/benchmark.txt
