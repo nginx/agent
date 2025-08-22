@@ -65,10 +65,9 @@ func (p *syslogProcessor) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
 	var errs error
 
 	rl := ld.ResourceLogs()
-	for i := range rl.Len() {
-		sl := rl.At(i).ScopeLogs()
-		for j := range sl.Len() {
-			if err := p.processLogRecords(sl.At(j).LogRecords()); err != nil {
+	for _, sl := range rl.All() {
+		for _, lr := range sl.ScopeLogs().All() {
+			if err := p.processLogRecords(lr.LogRecords()); err != nil {
 				errs = multierr.Append(errs, err)
 			}
 		}
@@ -83,22 +82,31 @@ func (p *syslogProcessor) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
 
 func (p *syslogProcessor) processLogRecords(lrs plog.LogRecordSlice) error {
 	// Drop anything that isn't a string-bodied log before processing.
+	var skipped, errCount int
+	var t pcommon.ValueType
+	var errs error
 	lrs.RemoveIf(func(lr plog.LogRecord) bool {
-		t := lr.Body().Type()
+		t = lr.Body().Type()
 		if t == pcommon.ValueTypeStr {
 			return false
 		}
-		p.settings.Logger.Debug("Skipping log record with unsupported body type", zap.Any("type", t))
 
+		skipped++
 		return true
 	})
-
-	for k := range lrs.Len() {
-		lr := lrs.At(k)
+	if skipped > 0 {
+		p.settings.Logger.Debug("Skipping log record with unsupported body type", zap.Any("type", t))
+	}
+	errCount = 0
+	for _, lr := range lrs.All() {
 		if err := p.processLogRecord(lr); err != nil {
-			p.settings.Logger.Debug("failed to process log record", zap.Error(err))
-			return err
+			errs = multierr.Append(errs, err)
+			errCount++
 		}
+	}
+	if errCount > 0 {
+		p.settings.Logger.Debug("Some log records failed to process", zap.Int("count", errCount))
+		return errs
 	}
 
 	return nil
@@ -137,9 +145,6 @@ func (p *syslogProcessor) setSyslogAttributes(lr plog.LogRecord, m *rfc3164.Sysl
 	attrs := lr.Attributes()
 	if m.Timestamp != nil {
 		attrs.PutStr("syslog.timestamp", m.Timestamp.Format(time.RFC3339))
-	}
-	if m.Hostname != nil {
-		attrs.PutStr("syslog.hostname", *m.Hostname)
 	}
 	if m.Appname != nil {
 		attrs.PutStr("syslog.appname", *m.Appname)
@@ -417,17 +422,22 @@ func (p *syslogProcessor) extractSignatureData(kvMap map[string]string) []Signat
 }
 
 func splitAndTrim(value string) []string {
-	if value == "" || value == notAvailable {
+	if strings.TrimSpace(value) == "" || value == notAvailable {
 		return nil
 	}
+
 	parts := strings.Split(value, ",")
-	for i := range parts {
-		parts[i] = strings.TrimSpace(parts[i])
+
+	var trimmedParts []string
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed != "" {
+			trimmedParts = append(trimmedParts, trimmed)
+		}
 	}
 
-	return parts
+	return trimmedParts
 }
-
 func buildSignatures(ids, names []string, mask, offset, length string) []SignatureData {
 	signatures := make([]SignatureData, 0, len(ids))
 	for i, id := range ids {

@@ -187,7 +187,7 @@ func addDefaultPipelines(collector *Collector) {
 	if _, ok := collector.Pipelines.Logs[DefaultPipeline]; !ok {
 		collector.Pipelines.Logs[DefaultPipeline] = &Pipeline{
 			Receivers:  []string{"tcplog/nginx_app_protect"},
-			Processors: []string{"syslog/default", "logsgzip/default", "batch/default_logs"},
+			Processors: []string{"logsgzip/default", "batch/default_logs"},
 			Exporters:  []string{"otlp/default"},
 		}
 	}
