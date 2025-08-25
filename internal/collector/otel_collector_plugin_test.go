@@ -820,9 +820,13 @@ func Test_setProxyWithBasicAuth(t *testing.T) {
 	httpProxy := os.Getenv("HTTPS_PROXY")
 	assert.Equal(t, proxyURL, httpProxy)
 
+	logBuf := &bytes.Buffer{}
+	stub.StubLoggerWith(logBuf)
 	// Test missing username/password
 	proxyMissing := &config.Proxy{URL: "http://localhost:8080"}
-	setProxyWithBasicAuth(ctx, proxyMissing, u) // Should not panic
+	setProxyWithBasicAuth(ctx, proxyMissing, u)
+	helpers.ValidateLog(t, "Unable to configure OTLP exporter proxy, "+
+		"username or password missing for basic auth", logBuf)
 }
 
 //nolint:contextcheck // Can not update the "OTelConfig" function definition

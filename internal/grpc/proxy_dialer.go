@@ -72,7 +72,7 @@ func buildProxyTLSConfig(proxyConf *config.Proxy) (*tls.Config, error) {
 	return tlsConf, nil
 }
 
-//nolint:lll //This needs to be in a single line.
+//nolint:lll //This needs to be in a single line else getting gofumpt or compiler error.
 func dialToProxyTLS(ctx context.Context, proxyURL *url.URL, tlsConf *tls.Config, timeout time.Duration) (net.Conn, error) {
 	dialer := &net.Dialer{Timeout: timeout}
 	tlsDialer := &tls.Dialer{

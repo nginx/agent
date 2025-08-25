@@ -33,7 +33,6 @@ const (
 	DefCommandTLSCaKey                    = ""
 	DefCommandTLSSkipVerifyKey            = false
 	DefCommandTLServerNameKey             = ""
-	DefCommandServerProxyTimeoutKey       = 0
 	DefCommandServerProxyURlKey           = ""
 	DefCommandServerProxyNoProxyKey       = ""
 	DefCommandServerProxyAuthMethodKey    = ""
@@ -45,6 +44,7 @@ const (
 	DefCommandServerProxyTLSCaKey         = ""
 	DefCommandServerProxyTLSSkipVerifyKey = false
 	DefCommandServerProxyTLServerNameKey  = ""
+	DefCommandServerProxyTimeoutKey       = 10 * time.Second
 
 	DefAuxiliaryCommandServerHostKey    = ""
 	DefAuxiliaryCommandServerPortKey    = 0

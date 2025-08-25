@@ -340,16 +340,15 @@ type (
 		MonitoringFrequency time.Duration `yaml:"monitoring_frequency" mapstructure:"monitoring_frequency"`
 	}
 
-	//nolint:govet // Tried different sequences but not able to fix the lint issue.
 	Proxy struct {
 		TLS        *TLSConfig    `yaml:"tls,omitempty"         mapstructure:"tls"`
-		Timeout    time.Duration `yaml:"timeout"               mapstructure:"timeout"`
 		URL        string        `yaml:"url"                   mapstructure:"url"`
 		NoProxy    string        `yaml:"no_proxy,omitempty"    mapstructure:"no_proxy"`
 		AuthMethod string        `yaml:"auth_method,omitempty" mapstructure:"auth_method"`
 		Username   string        `yaml:"username,omitempty"    mapstructure:"username"`
 		Password   string        `yaml:"password,omitempty"    mapstructure:"password"`
 		Token      string        `yaml:"token,omitempty"       mapstructure:"token"`
+		Timeout    time.Duration `yaml:"timeout"               mapstructure:"timeout"`
 	}
 )
 

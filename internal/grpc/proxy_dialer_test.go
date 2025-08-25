@@ -65,17 +65,15 @@ func TestDialViaHTTPProxy_RealProxy(t *testing.T) {
 		t.Errorf("failed to write to tunnel: %v", err)
 	}
 	buf := make([]byte, 128)
-	if deadlineErr := conn.SetReadDeadline(time.Now().Add(2 * time.Second)); deadlineErr != nil {
-		// Optionally log
-		t.Logf("Failed to set read deadline: %v", deadlineErr)
-	}
+	require.NoError(t, conn.SetReadDeadline(time.Now().Add(2*time.Second)), "failed to set read deadline")
+
 	_, err = conn.Read(buf)
-	if err != nil && err != context.DeadlineExceeded && !isTimeout(err) {
+	if err != nil && err != context.DeadlineExceeded && !os.IsTimeout(err) {
 		t.Errorf("failed to read from tunnel: %v", err)
 	}
 }
 
-//nolint:noctx //No need for ctx in test cases.
+//nolint:noctx,revive //No need for ctx in test cases.
 func TestDialViaHTTPProxy_BearerTokenHeader(t *testing.T) {
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err, "failed to listen")
@@ -91,8 +89,21 @@ func TestDialViaHTTPProxy_BearerTokenHeader(t *testing.T) {
 		defer conn.Close()
 		reader := bufio.NewReader(conn)
 		headerLines := readHeaders(reader)
-		if hasBearerHeader(headerLines, "testtoken") {
-			close(done)
+
+		if !hasBearerHeader(headerLines, "testtoken") {
+			_, writeErr := conn.Write([]byte("HTTP/1.1 407 Proxy Authentication Required\r\n" +
+				"Proxy-Authenticate: Bearer realm=\"nginx-agent\"\r\n\r\n"))
+			if writeErr != nil {
+				t.Errorf("Warning: mock proxy failed to write 407 response: %v", writeErr)
+			}
+			t.Errorf("Proxy-Authorization Bearer header with token 'testtoken' was not found in received request")
+
+			return
+		}
+
+		_, writeErr := conn.Write([]byte("HTTP/1.1 200 Connection established\r\n\r\n"))
+		if writeErr != nil {
+			t.Errorf("mock proxy failed to write 200 OK response: %v", writeErr)
 			return
 		}
 		close(done)
@@ -106,19 +117,21 @@ func TestDialViaHTTPProxy_BearerTokenHeader(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	_, _ = DialViaHTTPProxy(ctx, proxyConf, "example.com:443")
+	_, err = DialViaHTTPProxy(ctx, proxyConf, "example.com:443")
+
+	if err != nil && err != context.DeadlineExceeded && !os.IsTimeout(err) {
+		require.NoError(t, err, "DialViaHTTPProxy returned an unexpected non-timeout error")
+	}
 
 	select {
 	case <-done:
 		// success
 	case <-time.After(1 * time.Second):
-		t.Errorf("Proxy-Authorization Bearer header was not sent")
+		if err == context.DeadlineExceeded {
+			t.Fatalf("Test timed out (DialViaHTTPProxy context deadline exceeded): %v", err)
+		}
+		t.Fatalf("Test timed out: Proxy-Authorization Bearer header was not sent or verified within %v", err)
 	}
-}
-
-func isTimeout(err error) bool {
-	nerr, ok := err.(net.Error)
-	return ok && nerr.Timeout()
 }
 
 func readHeaders(reader *bufio.Reader) []string {
@@ -166,7 +179,6 @@ func TestDialViaHTTPProxy_MissingCertKey(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	_, err := DialViaHTTPProxy(ctx, proxyConf, "example.com:443")
-	// No assert needed: just covers the branch
 	require.Error(t, err, "expected error for missing cert")
 }
 
