@@ -166,7 +166,7 @@ func (cws *CredentialWatcherService) checkForUpdates(ctx context.Context, ch cha
 		newCtx := context.WithValue(
 			ctx,
 			logger.CorrelationIDContextKey,
-			slog.Any(logger.CorrelationIDKey, logger.GenerateCorrelationID()),
+			logger.GenerateCorrelationID(),
 		)
 
 		cws.watcherMutex.Lock()

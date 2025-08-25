@@ -203,7 +203,7 @@ func (fws *FileWatcherService) checkForUpdates(ctx context.Context, ch chan<- Fi
 		newCtx := context.WithValue(
 			ctx,
 			logger.CorrelationIDContextKey,
-			slog.Any(logger.CorrelationIDKey, logger.GenerateCorrelationID()),
+			logger.GenerateCorrelationID(),
 		)
 
 		slog.DebugContext(newCtx, "File watcher detected a file change")
