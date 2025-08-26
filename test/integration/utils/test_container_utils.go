@@ -51,6 +51,7 @@ func StartContainer(
 	tag := Env(tb, "TAG")
 	imagePath := Env(tb, "IMAGE_PATH")
 	containerOsType := Env(tb, "CONTAINER_OS_TYPE")
+	osArch := Env(tb, "ARCH")
 
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
@@ -69,6 +70,7 @@ func StartContainer(
 				"IMAGE_PATH":                     ToPtr(imagePath),
 				"TAG":                            ToPtr(tag),
 				"CONTAINER_OS_TYPE":              ToPtr(containerOsType),
+				"ARCH":                           ToPtr(osArch),
 			},
 			BuildOptionsModifier: func(buildOptions *types.ImageBuildOptions) {
 				buildOptions.Target = buildTarget
