@@ -217,6 +217,14 @@ func DialOptions(agentConfig *config.Config, commandConfig *config.Command, reso
 
 	opts = append(opts, sendRecOpts...)
 
+	// Proxy support: If proxy config exists, use HTTP CONNECT dialer
+	if commandConfig.Server.Proxy != nil && commandConfig.Server.Proxy.URL != "" {
+		opts = append(opts, grpc.WithContextDialer(func(ctx context.Context, addr string) (net.Conn, error) {
+			slog.InfoContext(ctx, "Dialing grpc server via proxy")
+			return DialViaHTTPProxy(ctx, commandConfig.Server.Proxy, addr)
+		}))
+	}
+
 	opts, skipToken := addTransportCredentials(commandConfig, opts)
 
 	if commandConfig.Auth != nil && !skipToken {

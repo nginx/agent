@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -221,7 +222,7 @@ func (oc *Collector) processReceivers(ctx context.Context, receivers map[string]
 	}
 }
 
-//nolint:revive // cognitive complexity is 13
+//nolint:revive,cyclop // cognitive complexity is 13
 func (oc *Collector) bootup(ctx context.Context) error {
 	errChan := make(chan error)
 
@@ -229,6 +230,10 @@ func (oc *Collector) bootup(ctx context.Context) error {
 		if oc.service == nil {
 			errChan <- errors.New("unable to start OTel collector: service is nil")
 			return
+		}
+
+		if oc.config.IsCommandServerProxyConfigured() {
+			oc.setProxyIfNeeded(ctx)
 		}
 
 		appErr := oc.service.Run(ctx)
@@ -394,6 +399,10 @@ func (oc *Collector) restartCollector(ctx context.Context) {
 	}
 	oc.service = oTelCollector
 
+	if oc.config.IsCommandServerProxyConfigured() {
+		oc.setProxyIfNeeded(ctx)
+	}
+
 	var runCtx context.Context
 	runCtx, oc.cancel = context.WithCancel(ctx)
 
@@ -406,6 +415,14 @@ func (oc *Collector) restartCollector(ctx context.Context) {
 	bootErr := oc.bootup(runCtx)
 	if bootErr != nil {
 		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)
+	}
+}
+
+func (oc *Collector) setProxyIfNeeded(ctx context.Context) {
+	if oc.config.Collector.Exporters.OtlpExporters != nil ||
+		oc.config.Collector.Exporters.PrometheusExporter != nil {
+		// Set proxy env vars for OTLP exporter if proxy is configured.
+		oc.setExporterProxyEnvVars(ctx)
 	}
 }
 
@@ -743,4 +760,60 @@ func escapeString(input string) string {
 	output = strings.ReplaceAll(output, "\"", "\\\"")
 
 	return output
+}
+
+func (oc *Collector) setExporterProxyEnvVars(ctx context.Context) {
+	proxy := oc.config.Command.Server.Proxy
+	proxyURL := proxy.URL
+	parsedProxyURL, err := url.Parse(proxyURL)
+	if err != nil {
+		slog.ErrorContext(ctx, "Malformed proxy URL, unable to configure proxy for OTLP exporter",
+			"url", proxyURL, "error", err)
+
+		return
+	}
+
+	if parsedProxyURL.Scheme == "https" {
+		slog.ErrorContext(ctx, "HTTPS protocol not supported by OTLP exporter, unable to configure proxy for "+
+			"OTLP exporter", "url", proxyURL)
+	}
+
+	auth := ""
+	if proxy.AuthMethod != "" && strings.TrimSpace(proxy.AuthMethod) != "" {
+		auth = strings.TrimSpace(proxy.AuthMethod)
+	}
+
+	// Use the standalone setProxyWithBasicAuth function
+	if auth == "" {
+		setProxyEnvs(ctx, proxyURL, "Setting Proxy from command.Proxy (no auth)")
+		return
+	}
+	authLower := strings.ToLower(auth)
+	if authLower == "basic" {
+		setProxyWithBasicAuth(ctx, proxy, parsedProxyURL)
+	} else {
+		slog.ErrorContext(ctx, "Unknown auth type for proxy, unable to configure proxy for OTLP exporter",
+			"auth", auth, "url", proxyURL)
+	}
+}
+
+// setProxyEnvs sets the HTTP_PROXY and HTTPS_PROXY environment variables and logs the action.
+func setProxyEnvs(ctx context.Context, proxyEnvURL, msg string) {
+	slog.DebugContext(ctx, msg, "url", proxyEnvURL)
+	if setenvErr := os.Setenv("HTTPS_PROXY", proxyEnvURL); setenvErr != nil {
+		slog.ErrorContext(ctx, "Failed to set OTLP exporter proxy environment variables", "error", setenvErr)
+	}
+}
+
+// setProxyWithBasicAuth sets the proxy environment variables with basic auth credentials.
+func setProxyWithBasicAuth(ctx context.Context, proxy *config.Proxy, parsedProxyURL *url.URL) {
+	username := proxy.Username
+	password := proxy.Password
+	if username == "" || password == "" {
+		slog.ErrorContext(ctx, "Unable to configure OTLP exporter proxy, username or password missing for basic auth")
+		return
+	}
+	parsedProxyURL.User = url.UserPassword(username, password)
+	proxyURL := parsedProxyURL.String()
+	setProxyEnvs(ctx, proxyURL, "Setting Proxy with basic auth")
 }
