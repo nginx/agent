@@ -26,7 +26,7 @@ jobs:
   proxy-sanity-check:
     name: Proxy Sanity Check
     runs-on: ubuntu-22.04
-    if: ${{ !github.event.pull_request.head.repo.fork }}
+    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
     env:
       GOPROXY: "https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@azr.artifactory.f5net.com/artifactory/api/go/f5-nginx-go-dev"
     steps:
@@ -92,6 +92,7 @@ jobs:
   build-unsigned-snapshot:
       name: Build Unsigned Snapshot
       runs-on: ubuntu-22.04
+      if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
       steps:
           - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
             with:
@@ -239,6 +240,7 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       contents: write
+    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
