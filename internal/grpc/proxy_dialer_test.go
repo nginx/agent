@@ -15,32 +15,77 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestDialViaHTTPProxy_NoProxy(t *testing.T) {
-	// This test attempts to connect directly to a known open port (localhost:80)
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-
-	proxyConf := &config.Proxy{
-		URL:     "",
-		Timeout: 2 * time.Second,
+func TestDialViaHTTPProxy_ErrorScenarios(t *testing.T) {
+	tests := []struct {
+		expectedErr func(error) bool
+		proxyConf   *config.Proxy
+		name        string
+		dialAddress string
+		timeout     time.Duration
+	}{
+		{
+			name: "Test 1: Invalid CA Path",
+			proxyConf: &config.Proxy{
+				URL: "https://localhost:9999",
+				TLS: &config.TLSConfig{Ca: "/invalid/path/to/ca.pem"},
+			},
+			dialAddress: "example.com:443",
+			expectedErr: func(err error) bool { return err != nil },
+			timeout:     1 * time.Second,
+		},
+		{
+			name: "Test 2: Missing TLS Cert/Key",
+			proxyConf: &config.Proxy{
+				URL: "https://localhost:9999",
+				TLS: &config.TLSConfig{},
+			},
+			dialAddress: "example.com:443",
+			expectedErr: func(err error) bool { return err != nil },
+			timeout:     1 * time.Second,
+		},
+		{
+			name: "Test 3: Invalid Proxy URL Format",
+			proxyConf: &config.Proxy{
+				URL: "://bad-url",
+			},
+			dialAddress: "example.com:443",
+			expectedErr: func(err error) bool { return err != nil },
+			timeout:     1 * time.Second,
+		},
+		{
+			name: "Test 4: No Proxy URL (Direct connection expected to fail for invalid address)",
+			proxyConf: &config.Proxy{
+				URL: "",
+			},
+			dialAddress: "localhost:80",
+			expectedErr: func(err error) bool { return err != nil },
+			timeout:     2 * time.Second,
+		},
+		{
+			name: "Test 5: Invalid Proxy Address (Unresolvable/Unavailable Host)",
+			proxyConf: &config.Proxy{
+				URL: "http://invalid:9999",
+			},
+			dialAddress: "localhost:80",
+			expectedErr: func(err error) bool { return err != nil },
+			timeout:     2 * time.Second,
+		},
 	}
-	_, err := DialViaHTTPProxy(ctx, proxyConf, "localhost:80")
-	require.Error(t, err, "expected failure with empty proxy URL")
-}
 
-func TestDialViaHTTPProxy_InvalidProxy(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), test.timeout)
+			defer cancel()
 
-	proxyConf := &config.Proxy{
-		URL:     "http://invalid:9999",
-		Timeout: 2 * time.Second,
+			_, err := DialViaHTTPProxy(ctx, test.proxyConf, test.dialAddress)
+			require.Error(t, err, "expected error for scenario: %s", test.name)
+			assert.True(t, test.expectedErr(err), "error did not match expected criteria: %v", err)
+		})
 	}
-	_, err := DialViaHTTPProxy(ctx, proxyConf, "localhost:80")
-	require.Error(t, err, "expected failure with invalid proxy")
 }
 
 // To fully test with a real proxy, set the env var TEST_HTTP_PROXY_URL and have a proxy listening.
@@ -156,39 +201,4 @@ func hasBearerHeader(headerLines []string, token string) bool {
 	}
 
 	return false
-}
-
-func TestDialViaHTTPProxy_InvalidCAPath(t *testing.T) {
-	proxyConf := &config.Proxy{
-		URL:     "https://localhost:9999",
-		TLS:     &config.TLSConfig{Ca: "/invalid/path/to/ca.pem"},
-		Timeout: 1 * time.Second,
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-	_, err := DialViaHTTPProxy(ctx, proxyConf, "example.com:443")
-	require.Error(t, err, "expected error for invalid CA path")
-}
-
-func TestDialViaHTTPProxy_MissingCertKey(t *testing.T) {
-	proxyConf := &config.Proxy{
-		URL:     "https://localhost:9999",
-		TLS:     &config.TLSConfig{}, // No cert/key
-		Timeout: 1 * time.Second,
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-	_, err := DialViaHTTPProxy(ctx, proxyConf, "example.com:443")
-	require.Error(t, err, "expected error for missing cert")
-}
-
-func TestDialViaHTTPProxy_InvalidProxyURL(t *testing.T) {
-	proxyConf := &config.Proxy{
-		URL:     "://bad-url",
-		Timeout: 1 * time.Second,
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-	_, err := DialViaHTTPProxy(ctx, proxyConf, "example.com:443")
-	require.Error(t, err, "expected error for invalid proxy URL")
 }
