@@ -44,7 +44,7 @@ require (
 	go.opentelemetry.io/collector/component v1.30.0
 	go.opentelemetry.io/collector/component/componenttest v0.124.0
 	go.opentelemetry.io/collector/config/confighttp v0.124.0
-	go.opentelemetry.io/collector/confmap v1.30.0
+	go.opentelemetry.io/collector/confmap v1.39.0
 	go.opentelemetry.io/collector/confmap/provider/envprovider v1.30.0
 	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.30.0
 	go.opentelemetry.io/collector/confmap/provider/httpprovider v1.30.0
@@ -60,7 +60,7 @@ require (
 	go.opentelemetry.io/collector/extension v1.30.0
 	go.opentelemetry.io/collector/extension/extensionauth v1.30.0
 	go.opentelemetry.io/collector/extension/xextension v0.124.0
-	go.opentelemetry.io/collector/filter v0.124.0
+	go.opentelemetry.io/collector/filter v0.133.0
 	go.opentelemetry.io/collector/otelcol v0.124.0
 	go.opentelemetry.io/collector/pdata v1.30.0
 	go.opentelemetry.io/collector/processor v1.30.0
@@ -147,8 +147,8 @@ require (
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.9 // indirect
 	github.com/knadh/koanf/maps v0.1.2 // indirect
-	github.com/knadh/koanf/providers/confmap v0.1.0 // indirect
-	github.com/knadh/koanf/v2 v2.1.2 // indirect
+	github.com/knadh/koanf/providers/confmap v1.0.0 // indirect
+	github.com/knadh/koanf/v2 v2.2.2 // indirect
 	github.com/leodido/go-syslog/v4 v4.2.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/leodido/ragel-machinery v0.0.0-20190525184631-5f46317e436b // indirect
@@ -250,7 +250,7 @@ require (
 	go.opentelemetry.io/collector/extension/extensioncapabilities v0.124.0 // indirect
 	go.opentelemetry.io/collector/extension/extensiontest v0.124.0 // indirect
 	go.opentelemetry.io/collector/extension/zpagesextension v0.124.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.30.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.39.0 // indirect
 	go.opentelemetry.io/collector/internal/fanoutconsumer v0.124.0 // indirect
 	go.opentelemetry.io/collector/internal/memorylimiter v0.124.0 // indirect
 	go.opentelemetry.io/collector/internal/sharedcomponent v0.124.0 // indirect
@@ -289,6 +289,7 @@ require (
 	go.opentelemetry.io/otel/sdk/log v0.11.0 // indirect
 	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.5.0 // indirect
+	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/arch v0.12.0 // indirect
 	golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac // indirect
 	golang.org/x/sync v0.13.0 // indirect
