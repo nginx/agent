@@ -16,6 +16,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/nginx/agent/v3/pkg/host"
+
 	"github.com/nginx/agent/v3/internal/datasource/file"
 
 	"github.com/cenkalti/backoff/v4"
@@ -27,7 +29,6 @@ import (
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
-	"github.com/nginx/agent/v3/internal/datasource/host"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/keepalive"
@@ -87,10 +88,13 @@ func NewGrpcConnection(ctx context.Context, agentConfig *config.Config,
 
 	slog.InfoContext(ctx, "Dialing grpc server", "server_addr", serverAddr)
 
-	info := host.NewInfo()
-	resourceID := info.ResourceID(ctx)
-
 	var err error
+	info := host.NewInfo()
+	resourceID, err := info.ResourceID(ctx)
+	if err != nil {
+		slog.WarnContext(ctx, "Failed to get ResourceID from host info", "error", err.Error())
+	}
+
 	grpcConnection.mutex.Lock()
 	grpcConnection.conn, err = grpc.NewClient(serverAddr, DialOptions(agentConfig, commandConfig, resourceID)...)
 	grpcConnection.mutex.Unlock()

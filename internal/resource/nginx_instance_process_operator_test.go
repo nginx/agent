@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
+	"github.com/nginx/agent/v3/pkg/host/exec/execfakes"
 	"github.com/nginx/agent/v3/pkg/nginxprocess"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
