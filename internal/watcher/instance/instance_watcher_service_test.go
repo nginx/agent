@@ -9,6 +9,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/nginx/agent/v3/internal/datasource/config/configfakes"
 	"github.com/nginx/agent/v3/pkg/host/exec/execfakes"
 
 	"github.com/nginx/agent/v3/internal/watcher/instance/instancefakes"
@@ -37,7 +38,7 @@ func TestInstanceWatcherService_checkForUpdates(t *testing.T) {
 			NginxOssInstance([]string{}),
 	})
 
-	fakeNginxConfigParser := &instancefakes.FakeNginxConfigParser{}
+	fakeNginxConfigParser := &configfakes.FakeConfigParser{}
 	fakeNginxConfigParser.ParseReturns(nginxConfigContext, nil)
 	instanceUpdatesChannel := make(chan InstanceUpdatesMessage, 1)
 	nginxConfigContextChannel := make(chan NginxConfigContextMessage, 1)
