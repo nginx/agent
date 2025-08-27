@@ -97,9 +97,9 @@ func verifyAgentVersion(ctx context.Context, t *testing.T, testContainer testcon
 	assert.Equal(t, 0, exitCode)
 
 	agentVersion, err := io.ReadAll(agentVersionString)
-	t.Log("agent version:", string(agentVersion))
 	require.NoError(t, err)
 	assert.Contains(t, string(agentVersion), "nginx-agent version v3.")
+	t.Log("agent version:", string(agentVersion))
 }
 
 func verifyAgentPackageSize(ctx context.Context, t *testing.T, testContainer testcontainers.Container) {
