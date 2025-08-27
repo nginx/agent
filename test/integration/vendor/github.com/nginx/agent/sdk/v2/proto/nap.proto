@@ -21,6 +21,8 @@ message AppProtectWAFDetails {
   bool precompiled_publication = 6 [(gogoproto.jsontag) = "precompiled_publication"];
   // WAF release
   string waf_release = 7 [(gogoproto.jsontag) = "waf_release"];
+  // Bot Signatures version
+  string bot_signatures_version = 8 [(gogoproto.jsontag) = "bot_signatures_version"];
 }
 
 // Represents the health of App Protect WAF
