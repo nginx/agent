@@ -4,14 +4,11 @@ ARG IMAGE_PATH
 FROM ${CONTAINER_NGINX_IMAGE_REGISTRY}${IMAGE_PATH}:${TAG} AS install
 LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 
-ARG TAG
 ARG OS_RELEASE
 ARG OS_VERSION
 ARG DEBIAN_FRONTEND=noninteractive
 ARG PACKAGE_NAME
-ARG PACKAGES_REPO
 ARG CONTAINER_OS_TYPE
-ARG ARCH
 
 WORKDIR /agent
 COPY ./build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE} /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE}
@@ -19,10 +16,6 @@ COPY ./build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE} /agent/build/${PACKAGE_NAME}.$
 RUN  apt-get update \
     && apt install --no-install-recommends --no-install-suggests --allow-downgrades -y /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE} \
     &&  rm /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE} 
-
-RUN if echo "$TAG" | grep -q "bookworm" ; then \
-        curl -O https://${PACKAGES_REPO}/nginx-agent/debian/pool/agent/n/nginx-agent/nginx-agent_3.2.1~bookworm_${ARCH}.deb; \
-    fi
 
 RUN unlink /var/log/nginx/access.log
 RUN unlink /var/log/nginx/error.log

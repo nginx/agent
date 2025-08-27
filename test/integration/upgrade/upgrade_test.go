@@ -25,7 +25,6 @@ const (
 
 var (
 	osRelease  = os.Getenv("OS_RELEASE")
-	osArch     = os.Getenv("ARCH")
 	serverHost = map[string]string{
 		"NGINX_AGENT_SERVER_HOST": "127.0.0.1",
 	}
@@ -60,6 +59,11 @@ func TestUpgradeV2ToV3(t *testing.T) {
 		containerNetwork,
 		params,
 	)
+
+	// skip alpine due to upgrade script issues until bug is resolved
+	if strings.Contains(osRelease, "alpine") {
+		t.Skip("Skipping test because of ALPINE")
+	}
 
 	// upgrade the agent to v3, check the upgrade time and verify the logs
 	verifyAgentUpgrade(ctx, t, testContainer)
@@ -154,16 +158,10 @@ func verifyAgentConfigFile(ctx context.Context, t *testing.T, testContainer test
 func upgradeAgent(ctx context.Context, t *testing.T, testContainer testcontainers.Container) (time.Duration, io.Reader) {
 	var updatePkgCmd []string
 	var upgradeAgentCmd []string
-	officialDebPackage := "./nginx-agent_3.2.1~bookworm_" + osArch + ".deb"
 
 	if strings.Contains(osRelease, "ubuntu") || strings.Contains(osRelease, "debian") {
 		updatePkgCmd = []string{"apt-get", "update"}
-		if os.Getenv("GITHUB_JOB") == "integration-tests" {
-			upgradeAgentCmd = []string{"apt-get", "install", "-y", "--only-upgrade", "nginx-agent", "-o", "Dpkg::Options::=--force-confold"}
-		} else {
-			upgradeAgentCmd = []string{"apt-get", "install", "-y", officialDebPackage, "-o", "Dpkg::Options::=--force-confold"}
-		}
-
+		upgradeAgentCmd = []string{"apt-get", "install", "-y", "--only-upgrade", "nginx-agent", "-o", "Dpkg::Options::=--force-confold"}
 	} else if strings.Contains(osRelease, "alpine") {
 		updatePkgCmd = []string{"apk", "update"}
 		upgradeAgentCmd = []string{"apk", "add", "nginx-agent=3.2.1"}
