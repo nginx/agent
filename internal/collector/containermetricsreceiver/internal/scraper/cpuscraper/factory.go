@@ -15,8 +15,7 @@ import (
 	"go.opentelemetry.io/collector/scraper"
 )
 
-// NewFactory for CPU scraper.
-// nolint: ireturn
+//nolint:ireturn // must return a CPU scraper interface.
 func NewFactory() scraper.Factory {
 	return scraper.NewFactory(
 		metadata.Type,
@@ -25,16 +24,14 @@ func NewFactory() scraper.Factory {
 	)
 }
 
-// createDefaultConfig creates the default configuration for the Scraper.
-// nolint: ireturn
+//nolint:ireturn // must create the default configuration for the Scraper.
 func createDefaultConfig() component.Config {
 	return &Config{
 		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
 	}
 }
 
-// createMetricsScraper creates a scraper based on provided config.
-// nolint: ireturn
+//nolint:ireturn // must create and return a scraper based on provided config.
 func createMetricsScraper(
 	ctx context.Context,
 	settings scraper.Settings,

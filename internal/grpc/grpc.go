@@ -16,6 +16,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/nginx/agent/v3/pkg/host"
+
 	"github.com/nginx/agent/v3/internal/datasource/file"
 
 	"github.com/cenkalti/backoff/v4"
@@ -27,7 +29,6 @@ import (
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
-	"github.com/nginx/agent/v3/internal/datasource/host"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/keepalive"
@@ -69,7 +70,6 @@ var (
 	_ GrpcConnectionInterface = (*GrpcConnection)(nil)
 )
 
-// nolint: ireturn
 func NewGrpcConnection(ctx context.Context, agentConfig *config.Config,
 	commandConfig *config.Command,
 ) (*GrpcConnection, error) {
@@ -88,10 +88,13 @@ func NewGrpcConnection(ctx context.Context, agentConfig *config.Config,
 
 	slog.InfoContext(ctx, "Dialing grpc server", "server_addr", serverAddr)
 
-	info := host.NewInfo()
-	resourceID := info.ResourceID(ctx)
-
 	var err error
+	info := host.NewInfo()
+	resourceID, err := info.ResourceID(ctx)
+	if err != nil {
+		slog.WarnContext(ctx, "Failed to get ResourceID from host info", "error", err.Error())
+	}
+
 	grpcConnection.mutex.Lock()
 	grpcConnection.conn, err = grpc.NewClient(serverAddr, DialOptions(agentConfig, commandConfig, resourceID)...)
 	grpcConnection.mutex.Unlock()
@@ -102,7 +105,7 @@ func NewGrpcConnection(ctx context.Context, agentConfig *config.Config,
 	return grpcConnection, nil
 }
 
-// nolint: ireturn
+//nolint:ireturn // gRPC generated interface
 func (gc *GrpcConnection) CommandServiceClient() mpi.CommandServiceClient {
 	gc.mutex.Lock()
 	defer gc.mutex.Unlock()
@@ -110,7 +113,7 @@ func (gc *GrpcConnection) CommandServiceClient() mpi.CommandServiceClient {
 	return mpi.NewCommandServiceClient(gc.conn)
 }
 
-// nolint: ireturn
+//nolint:ireturn // gRPC generated interface
 func (gc *GrpcConnection) FileServiceClient() mpi.FileServiceClient {
 	gc.mutex.Lock()
 	defer gc.mutex.Unlock()
@@ -213,6 +216,14 @@ func DialOptions(agentConfig *config.Config, commandConfig *config.Command, reso
 	}
 
 	opts = append(opts, sendRecOpts...)
+
+	// Proxy support: If proxy config exists, use HTTP CONNECT dialer
+	if commandConfig.Server.Proxy != nil && commandConfig.Server.Proxy.URL != "" {
+		opts = append(opts, grpc.WithContextDialer(func(ctx context.Context, addr string) (net.Conn, error) {
+			slog.InfoContext(ctx, "Dialing grpc server via proxy")
+			return DialViaHTTPProxy(ctx, commandConfig.Server.Proxy, addr)
+		}))
+	}
 
 	opts, skipToken := addTransportCredentials(commandConfig, opts)
 

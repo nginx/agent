@@ -19,9 +19,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/nginx/agent/v3/internal/datasource/host/exec"
-
+	"github.com/nginx/agent/v3/pkg/host/exec"
 	"github.com/nginx/agent/v3/pkg/nginxprocess"
+
+	"github.com/nginx/agent/v3/pkg/host"
 
 	parser "github.com/nginx/agent/v3/internal/datasource/config"
 	datasource "github.com/nginx/agent/v3/internal/datasource/proto"
@@ -33,8 +34,6 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/nginx/agent/v3/internal/config"
-
-	"github.com/nginx/agent/v3/internal/datasource/host"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )
@@ -280,7 +279,8 @@ func (r *ResourceService) GetStreamUpstreams(ctx context.Context, instance *mpi.
 }
 
 // max number of returns from function is 3
-// nolint: revive
+//
+//nolint:revive // maximum return allowed is 3
 func (r *ResourceService) UpdateStreamServers(ctx context.Context, instance *mpi.Instance, upstream string,
 	upstreams []*structpb.Struct,
 ) (added, updated, deleted []client.StreamUpstreamServer, err error) {
@@ -300,7 +300,8 @@ func (r *ResourceService) UpdateStreamServers(ctx context.Context, instance *mpi
 }
 
 // max number of returns from function is 3
-// nolint: revive
+//
+//nolint:revive // maximum return allowed is 3
 func (r *ResourceService) UpdateHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance, upstream string,
 	upstreams []*structpb.Struct,
 ) (added, updated, deleted []client.UpstreamServer, err error) {
@@ -396,12 +397,25 @@ func (r *ResourceService) updateResourceInfo(ctx context.Context) {
 	r.resourceMutex.Lock()
 	defer r.resourceMutex.Unlock()
 
-	if r.info.IsContainer() {
-		r.resource.Info = r.info.ContainerInfo(ctx)
+	isContainer, err := r.info.IsContainer()
+	if err != nil {
+		slog.WarnContext(ctx, "Failed to check if resource is container", "error", err)
+	}
+
+	if isContainer {
+		r.resource.Info, err = r.info.ContainerInfo(ctx)
+		if err != nil {
+			slog.ErrorContext(ctx, "Failed to get container info", "error", err)
+			return
+		}
 		r.resource.ResourceId = r.resource.GetContainerInfo().GetContainerId()
 		r.resource.Instances = []*mpi.Instance{}
 	} else {
-		r.resource.Info = r.info.HostInfo(ctx)
+		r.resource.Info, err = r.info.HostInfo(ctx)
+		if err != nil {
+			slog.ErrorContext(ctx, "Failed to get host info", "error", err)
+			return
+		}
 		r.resource.ResourceId = r.resource.GetHostInfo().GetHostId()
 		r.resource.Instances = []*mpi.Instance{}
 	}

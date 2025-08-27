@@ -16,9 +16,10 @@ import (
 	"github.com/nginx/agent/v3/internal/backoff"
 	"github.com/nginx/agent/v3/pkg/nginxprocess"
 
+	"github.com/nginx/agent/v3/pkg/host/exec"
+
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
-	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 )
 
 type NginxInstanceOperator struct {

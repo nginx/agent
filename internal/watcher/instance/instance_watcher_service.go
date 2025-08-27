@@ -13,6 +13,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/nginx/agent/v3/pkg/host/exec"
+
 	"github.com/nginx/agent/v3/internal/datasource/proto"
 
 	parser "github.com/nginx/agent/v3/internal/datasource/config"
@@ -23,7 +25,6 @@ import (
 	"github.com/nginx/agent/v3/internal/watcher/process"
 
 	"github.com/nginx/agent/v3/internal/config"
-	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/model"
 )
