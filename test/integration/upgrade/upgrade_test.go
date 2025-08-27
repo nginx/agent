@@ -154,7 +154,7 @@ func verifyAgentConfigFile(ctx context.Context, t *testing.T, testContainer test
 func upgradeAgent(ctx context.Context, t *testing.T, testContainer testcontainers.Container) (time.Duration, io.Reader) {
 	var updatePkgCmd []string
 	var upgradeAgentCmd []string
-	officialDebPackage := "nginx-agent_3.2.1~bookworm_" + osArch + ".deb"
+	officialDebPackage := "./nginx-agent_3.2.1~bookworm_" + osArch + ".deb"
 
 	if strings.Contains(osRelease, "ubuntu") || strings.Contains(osRelease, "debian") {
 		updatePkgCmd = []string{"apt-get", "update"}
