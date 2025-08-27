@@ -20,9 +20,7 @@ RUN  apt-get update \
     && apt install --no-install-recommends --no-install-suggests --allow-downgrades -y /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE} \
     &&  rm /agent/build/${PACKAGE_NAME}.${CONTAINER_OS_TYPE} 
 
-RUN echo "$TAG"
-
-RUN if [ "$TAG" = "mainline-bookworm" ] || [ "$TAG" = "stable-bookworm" ]; then \
+RUN if [[ "$TAG" == *bookworm* ]]; then \
         curl -O https://${PACKAGES_REPO}/nginx-agent/debian/pool/agent/n/nginx-agent/nginx-agent_3.2.1~bookworm_${ARCH}.deb; \
     fi
 
