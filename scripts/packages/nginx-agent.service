@@ -11,10 +11,11 @@ User=${AGENT_USER}
 Group=${AGENT_GROUP}
 Type=simple
 
-ExecStartPre=/bin/mkdir -p ${AGENT_RUN_DIR} ${AGENT_LOG_DIR}
-ExecStartPre=/bin/chown -R ${AGENT_USER}:${AGENT_GROUP} ${AGENT_RUN_DIR} ${AGENT_LOG_DIR}
-ExecStart=${AGENT_EXE}
+LogsDirectory=nginx-agent
+RuntimeDirectory=nginx-agent
+StateDirectory=nginx-agent
 
+ExecStart=${AGENT_EXE}
 RestartSec=5
 Restart=on-failure
 PermissionsStartOnly=true
