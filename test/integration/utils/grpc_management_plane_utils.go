@@ -91,7 +91,8 @@ func SetupConnectionTest(tb testing.TB, expectNoErrorsInLogs, nginxless, auxilia
 }
 
 // setupContainerEnvironment sets up the container environment for testing.
-// nolint: revive
+//
+//nolint:revive // "auxiliaryServer" flag is required for container
 func setupContainerEnvironment(ctx context.Context, tb testing.TB, nginxless, auxiliaryServer bool,
 	agentConfig string,
 ) {

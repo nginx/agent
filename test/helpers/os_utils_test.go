@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//nolint:staticcheck
+//nolint:staticcheck,gofumpt // required for testing
 func TestRemoveASCIIControlSignals(t *testing.T) {
 	tests := []struct {
 		name     string

@@ -114,8 +114,6 @@ func GenerateCA(now time.Time, caCertPath string) (*x509.Certificate, *ecdsa.Pri
 // GenerateServerCerts creates a server CA, Cert and Key and writes them to specified destinations.
 // Hostnames are a list of subject alternative names.
 // If cert files are already present, does nothing, returns true.
-//
-//nolint:revive
 func GenerateServerCerts(hostnames []string, caPath, certPath, keyPath string) (existingCert bool, err error) {
 	// Check for and return existing cert if it already exists
 	existingCert, existingCertErr := DoesCertAlreadyExist(certPath)

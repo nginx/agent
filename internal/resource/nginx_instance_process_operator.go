@@ -10,8 +10,8 @@ import (
 	"errors"
 	"log/slog"
 
-	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	"github.com/nginx/agent/v3/internal/datasource/nginx"
+	"github.com/nginx/agent/v3/pkg/host/exec"
 	"github.com/nginx/agent/v3/pkg/id"
 
 	"github.com/nginx/agent/v3/pkg/nginxprocess"

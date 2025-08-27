@@ -17,7 +17,7 @@ import (
 	"github.com/nginx/agent/v3/internal/model"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/internal/datasource/host/exec"
+	"github.com/nginx/agent/v3/pkg/host/exec"
 	"github.com/nginx/agent/v3/pkg/id"
 	"github.com/nginx/agent/v3/pkg/nginxprocess"
 )
@@ -45,7 +45,8 @@ func NewNginxProcessParser() *NginxProcessParser {
 
 // cognitive complexity of 16 because of the if statements in the for loop
 // don't think can be avoided due to the need for continue
-// nolint: revive
+//
+//nolint:revive // cognitive complexity of 20 because of the if statements in the for loop
 func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*nginxprocess.Process) map[string]*mpi.Instance {
 	instanceMap := make(map[string]*mpi.Instance)   // key is instanceID
 	workers := make(map[int32][]*mpi.InstanceChild) // key is ppid of process

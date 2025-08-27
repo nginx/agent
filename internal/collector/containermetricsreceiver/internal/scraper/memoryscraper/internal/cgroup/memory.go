@@ -64,7 +64,6 @@ func (ms *MemorySource) Collect() {
 	}
 }
 
-// nolint: unparam
 func (ms *MemorySource) VirtualMemoryStatWithContext(ctx context.Context) (*mem.VirtualMemoryStat, error) {
 	var cgroupStat mem.VirtualMemoryStat
 	var memoryStat MemoryStat
@@ -146,8 +145,8 @@ func MemoryLimitInBytes(ctx context.Context, filePath string) (uint64, error) {
 	return strconv.ParseUint(memTotalString, 10, 64)
 }
 
-// nolint: revive, mnd
 func CalculateMemoryStat(statFile, cachedKey, sharedKey string) (MemoryStat, error) {
+	const requiredFields = 2
 	memoryStat := MemoryStat{}
 	lines, err := internal.ReadLines(statFile)
 	if err != nil {
@@ -155,7 +154,7 @@ func CalculateMemoryStat(statFile, cachedKey, sharedKey string) (MemoryStat, err
 	}
 	for _, line := range lines {
 		fields := strings.Fields(line)
-		if len(fields) != 2 {
+		if len(fields) != requiredFields {
 			return memoryStat, fmt.Errorf("%+v required 2 fields", fields)
 		}
 

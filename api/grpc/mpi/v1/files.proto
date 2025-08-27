@@ -120,6 +120,8 @@ message FileOverview {
     repeated File files = 1;
     // The configuration version of the current set of files
     ConfigVersion config_version = 2;
+    // The config file path of an instance
+    string config_path = 3;
 }
 
 // Represents meta data about a file

@@ -11,8 +11,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nginx/agent/v3/pkg/host/exec/execfakes"
+
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/internal/datasource/host/exec/execfakes"
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -71,7 +72,7 @@ UBUNTU_CODENAME=focal
 `
 )
 
-// nolint: lll
+//nolint:lll // single lines are required
 var envMountInfo = [10]string{
 	`NO CONTAINER ID PRESENT IN MOUNTINFO`,
 	`822 773 0:55 / / rw,relatime master:312 - overlay overlay rw,lowerdir=/var/lib/docker/overlay2/l/OVIJO6CZHWIXJDDHZXRECADDI3:/var/lib/docker/overlay2/l/3D3QYHJJTMCK6GLLVY7MMM6K4V:/var/lib/docker/overlay2/l/OKH52ZN3IE727BHLU3G3LEVI6S:/var/lib/docker/overlay2/l/K3BV3TCWQS2WDAY3ZVXO5GIHLQ:/var/lib/docker/overlay2/l/2KZOTUQIESHNC4FHZHYULXIKZ5,upperdir=/var/lib/docker/overlay2/f8c1fa1c3a6eb3731265dc674bf238c60fb594eedc4639cdbefef93ad443f55d/diff,workdir=/var/lib/docker/overlay2/f8c1fa1c3a6eb3731265dc674bf238c60fb594eedc4639cdbefef93ad443f55d/work,xino=off
@@ -418,8 +419,8 @@ func TestInfo_IsContainer(t *testing.T) {
 			info := NewInfo()
 			info.containerSpecificFiles = test.containerSpecificFiles
 			info.selfCgroupLocation = test.selfCgroupLocation
-
-			assert.Equal(tt, test.expected, info.IsContainer())
+			isContainer, _ := info.IsContainer()
+			assert.Equal(tt, test.expected, isContainer)
 		})
 	}
 }
@@ -515,7 +516,7 @@ func TestInfo_ContainerInfo(t *testing.T) {
 
 			execMock := &execfakes.FakeExecInterface{}
 			execMock.HostnameReturns(test.expectHostname, nil)
-			execMock.ReleaseInfoReturns(releaseInfo)
+			execMock.ReleaseInfoReturns(releaseInfo, nil)
 
 			_, err = mountInfoFile.WriteString(test.mountInfo)
 			require.NoError(tt, err)
@@ -527,11 +528,17 @@ func TestInfo_ContainerInfo(t *testing.T) {
 			info.mountInfoLocation = mountInfoFile.Name()
 			info.exec = execMock
 			info.osReleaseLocation = "/non/existent"
-			containerInfo := info.ContainerInfo(ctx)
 
-			assert.Equal(tt, test.expectContainerID, containerInfo.ContainerInfo.GetContainerId())
-			assert.Equal(tt, test.expectHostname, containerInfo.ContainerInfo.GetHostname())
-			assert.Equal(tt, releaseInfo, containerInfo.ContainerInfo.GetReleaseInfo())
+			containerInfo, containerErr := info.ContainerInfo(ctx)
+			if test.expectContainerID != "" {
+				require.NoError(tt, containerErr)
+				assert.Equal(tt, test.expectContainerID, containerInfo.ContainerInfo.GetContainerId())
+				assert.Equal(tt, test.expectHostname, containerInfo.ContainerInfo.GetHostname())
+				assert.Equal(tt, releaseInfo, containerInfo.ContainerInfo.GetReleaseInfo())
+			} else {
+				require.Error(tt, containerErr)
+				assert.Nil(tt, containerInfo)
+			}
 		})
 	}
 }
@@ -555,12 +562,13 @@ func TestInfo_HostInfo(t *testing.T) {
 	execMock := &execfakes.FakeExecInterface{}
 	execMock.HostnameReturns("server.com", nil)
 	execMock.HostIDReturns("test-host-id", nil)
-	execMock.ReleaseInfoReturns(releaseInfo)
+	execMock.ReleaseInfoReturns(releaseInfo, nil)
 
 	info := NewInfo()
 	info.exec = execMock
 	info.osReleaseLocation = osReleaseFile.Name()
-	hostInfo := info.HostInfo(ctx)
+	hostInfo, err := info.HostInfo(ctx)
+	require.NoError(t, err)
 
 	expectedReleaseInfo := &v1.ReleaseInfo{
 		Codename:  "focal",

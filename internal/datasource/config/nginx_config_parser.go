@@ -102,20 +102,22 @@ func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *mpi.Instance)
 		return nil, err
 	}
 
-	return ncp.createNginxConfigContext(ctx, instance, payload)
+	return ncp.createNginxConfigContext(ctx, instance, payload, configPath)
 }
 
-// nolint: cyclop,revive,gocognit,gocyclo
+//nolint:gocognit,gocyclo,revive,cyclop //  cognitive complexity is 51
 func (ncp *NginxConfigParser) createNginxConfigContext(
 	ctx context.Context,
 	instance *mpi.Instance,
 	payload *crossplane.Payload,
+	configPath string,
 ) (*model.NginxConfigContext, error) {
 	napSyslogServersFound := make(map[string]bool)
 	napEnabled := false
 
 	nginxConfigContext := &model.NginxConfigContext{
 		InstanceID: instance.GetInstanceMeta().GetInstanceId(),
+		ConfigPath: configPath,
 		PlusAPI: &model.APIDetails{
 			URL:      "",
 			Listen:   "",
@@ -642,7 +644,7 @@ func (ncp *NginxConfigParser) pingAPIEndpoint(ctx context.Context, statusAPIDeta
 	return true
 }
 
-// nolint: revive
+//nolint:revive // cognitive complexity is 18
 func (ncp *NginxConfigParser) urlsForLocationDirectiveAPIDetails(
 	ctx context.Context, parent, current *crossplane.Directive,
 	locationDirectiveName string,
