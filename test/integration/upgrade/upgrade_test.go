@@ -37,6 +37,11 @@ var (
 )
 
 func TestUpgradeV2ToV3(t *testing.T) {
+	// skip alpine due to upgrade script issues until bug is resolved
+	if strings.Contains(osRelease, "alpine") {
+		t.Skip("Skipping test because of alpine upgrade issues")
+	}
+
 	log.Info("testing agent upgrade to v3")
 	ctx := context.Background()
 	containerNetwork := utils.CreateContainerNetwork(ctx, t)
@@ -59,11 +64,6 @@ func TestUpgradeV2ToV3(t *testing.T) {
 		containerNetwork,
 		params,
 	)
-
-	// skip alpine due to upgrade script issues until bug is resolved
-	if strings.Contains(osRelease, "alpine") {
-		t.Skip("Skipping test because of ALPINE")
-	}
 
 	// upgrade the agent to v3, check the upgrade time and verify the logs
 	verifyAgentUpgrade(ctx, t, testContainer)
