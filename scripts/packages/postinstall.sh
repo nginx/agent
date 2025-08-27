@@ -6,7 +6,7 @@
 
 
 AGENT_EXE="/usr/bin/nginx-agent"
-AGENT_RUN_DIR="/var/run/nginx-agent"
+AGENT_RUN_DIR="/run/nginx-agent"
 AGENT_LOG_DIR="/var/log/nginx-agent"
 AGENT_ETC_DIR="/etc/nginx-agent"
 AGENT_LIB_DIR="/var/lib/nginx-agent/"
