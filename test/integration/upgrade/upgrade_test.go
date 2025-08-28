@@ -8,10 +8,7 @@ package upgrade
 import (
 	"bytes"
 	"context"
-	"github.com/nginx/agent/v3/test/helpers"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go"
+	"github.com/nginx/agent/v3/test/integration/utils"
 	"io"
 	"log/slog"
 	"os"
@@ -20,6 +17,11 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/nginx/agent/v3/test/helpers"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/testcontainers/testcontainers-go"
 )
 
 const (
@@ -30,52 +32,52 @@ const (
 )
 
 var (
-	osRelease      = os.Getenv("OS_RELEASE")
-	oldPackageName = os.Getenv("OLD_PACKAGE_NAME")
-	packageName    = os.Getenv("PACKAGE_NAME")
+	osRelease        = os.Getenv("OS_RELEASE")
+	packageName      = os.Getenv("NGINX_AGENT_PACKAGE_NAME")
+	agentConfig      = "./configs/nginx-agent.conf"
+	agentValidConfig = "./configs/nginx-agent-v3-valid-config.conf"
 )
 
 func TestV3toV3Upgrade(t *testing.T) {
 	ctx := context.Background()
-	testContainer, teardownTest := upgradeSetup(t, true)
+	containerNetwork := utils.CreateContainerNetwork(ctx, t)
+	testContainer, teardownTest := upgradeSetup(t, true, containerNetwork)
 	defer teardownTest(t)
 
-	slog.Info("starting upgrade to latest agent v3 tests")
+	slog.Info("starting agent v3 upgrade tests")
 
-	// Verify Agent Package Path & Install Agent
-	agentPackagePath := verifyAgentPackageSize(t, testContainer)
+	// Verify Agent Package Path & get the path
+	agentPackagePath := verifyAgentPackageSize(ctx, t, testContainer)
 
 	// verify agent upgrade
-	upgradeAgent(ctx, t, testContainer)
+	verifyAgentUpgrade(ctx, t, testContainer, agentPackagePath)
 
 	// verify version of agent
 	verifyAgentVersion(ctx, t, testContainer, agentPackageName)
 
 	// verify agent v3 config has not changed
+	validateAgentConfig(t, agentValidConfig, agentConfig)
 
 	// Validate expected logs
 
 	// validate agent manifest file
 
-	// verify agent package size and get its path
-	packagePath := verifyAgentPackage(t, testContainer)
-
-	// verify size of agent package and get path to agent package
-	containerAgentPackagePath := verifyAgentPackage(t, testContainer)
 }
 
-func upgradeSetup(tb testing.TB, expectNoErrorsInLogs bool) (testcontainers.Container, func(tb testing.TB)) {
+func upgradeSetup(tb testing.TB, expectNoErrorsInLogs bool, containerNetwork *testcontainers.DockerNetwork) (testcontainers.Container, func(tb testing.TB)) {
 	tb.Helper()
 	ctx := context.Background()
 
 	params := &helpers.Parameters{
-		NginxConfigPath: "./config/nginx/nginx.conf",
-		LogMessage:      "nginx_pid",
+		NginxConfigPath:      "./configs/nginx-oss.conf",
+		NginxAgentConfigPath: "./configs/nginx-agent.conf",
+		LogMessage:           "nginx_pid",
 	}
 
-	testContainer := helpers.StartAgentlessContainer(
+	testContainer := helpers.StartContainer(
 		ctx,
 		tb,
+		containerNetwork,
 		params,
 	)
 
@@ -92,7 +94,33 @@ func upgradeSetup(tb testing.TB, expectNoErrorsInLogs bool) (testcontainers.Cont
 	}
 }
 
-func upgradeAgent(tb testing.TB, testContainer testcontainers.Container) (string, time.Duration) {
+func verifyAgentPackageSize(ctx context.Context, tb testing.TB, testContainer testcontainers.Container) string {
+	tb.Helper()
+	agentPkgPath, filePathErr := filepath.Abs("../../../build/")
+	require.NoError(tb, filePathErr, "Error finding local agent package build dir")
+
+	localAgentPkg, packageErr := os.Stat(packagePath(agentPkgPath, osRelease))
+	require.NoError(tb, packageErr, "Error accessing package at: "+agentPkgPath)
+
+	// check if file size is less than 70MB
+	assert.Less(tb, localAgentPkg.Size(), maxFileSize)
+
+	return packagePath(agentBuildDir, osRelease)
+}
+
+func verifyAgentUpgrade(ctx context.Context, tb testing.TB, testContainer testcontainers.Container, agentPackagePath string) {
+	tb.Helper()
+
+	//cmdOut, upgradeTime := upgradeAgent(ctx, tb, testContainer)
+
+	//assert.LessOrEqual(tb, upgradeTime, maxUpgradeTime)
+	//tb.Log("Upgrade time: ", upgradeTime)
+
+	// validate logs here
+	//cmdOut, err :=
+}
+
+func upgradeAgent(ctx context.Context, tb testing.TB, testContainer testcontainers.Container) (io.Reader, time.Duration) {
 	tb.Helper()
 
 	var updateCmd, upgradeCmd []string
@@ -107,25 +135,16 @@ func upgradeAgent(tb testing.TB, testContainer testcontainers.Container) (string
 
 	start := time.Now()
 
-	var output []byte
-
-	exitCode, cmdOut, err := testContainer.Exec(ctx, updateCmd)
+	exitCode, _, err := testContainer.Exec(ctx, updateCmd)
 	require.NoError(tb, err)
-	stdourStderr, err := io.ReadAll(cmdOut)
-	require.NoError(tb, err)
-	output = append(output, stdourStderr...)
 	assert.Equal(tb, 0, exitCode)
 
-	exitCode, cmdOut, err = testContainer.Exec(ctx, upgradeCmd)
+	exitCode, cmdOut, err := testContainer.Exec(ctx, upgradeCmd)
 	require.NoError(tb, err)
-	stdourStderr, err = io.ReadAll(cmdOut)
-	require.NoError(tb, err)
-	output = append(output, stdourStderr...)
 	assert.Equal(tb, 0, exitCode)
 
 	duration := time.Since(start)
-	return string(output), duration
-
+	return cmdOut, duration
 }
 
 func verifyAgentVersion(ctx context.Context, tb testing.TB, testContainer testcontainers.Container, oldVersion string) {
@@ -144,24 +163,6 @@ func verifyAgentVersion(ctx context.Context, tb testing.TB, testContainer testco
 		tb.Logf("expected version %s, got %s", oldVersion, output)
 	}
 	tb.Logf("agent upgraded to version %s successfully", output)
-}
-
-func verifyAgentPackageSize(tb testing.TB, testContainer testcontainers.Container) string {
-	tb.Helper()
-	agentPkgPath, filePathErr := filepath.Abs("../../../build/")
-	require.NoError(tb, filePathErr, "Error finding local agent package build dir")
-
-	localAgentPkg, packageErr := os.Stat(packagePath(agentPkgPath, osRelease))
-	require.NoError(tb, packageErr, "Error accessing package at: "+agentPkgPath)
-
-	// Check if file size is less than 70MB
-	assert.Less(tb, localAgentPkg.Size(), maxFileSize)
-
-	if strings.Contains(osRelease, "ubuntu") || strings.Contains(osRelease, "debian") {
-		upgradeAgent(tb, testContainer)
-	}
-
-	return packagePath(agentBuildDir, osRelease)
 }
 
 func packagePath(pkgDir, osReleaseContent string) string {
