@@ -322,7 +322,7 @@ jobs:
       - name: Run Load Test with CPU profiling
         #if: ${{ github.ref_name == 'main' }}
         run: |
-          make run-load-test-image-profile
+          make run-load-test-with-cpu-profiling
 
       - name: Archive CPU profile
         #if: ${{ github.ref_name == 'main' }}
