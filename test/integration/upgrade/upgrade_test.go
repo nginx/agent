@@ -115,13 +115,11 @@ func verifyAgentUpgrade(ctx context.Context, tb testing.TB,
 ) {
 	tb.Helper()
 
-	cmdOut, upgradeTime := upgradeAgent(ctx, tb, testContainer)
+	// cmdOut for validating logs
+	_, upgradeTime := upgradeAgent(ctx, tb, testContainer)
 
 	assert.LessOrEqual(tb, upgradeTime, maxUpgradeTime)
 	tb.Log("Upgrade time: ", upgradeTime)
-
-	// validate logs here
-	validateLogs(tb, cmdOut)
 }
 
 func upgradeAgent(ctx context.Context, tb testing.TB, testContainer testcontainers.Container,
@@ -201,7 +199,4 @@ func validateAgentConfig(tb testing.TB, expectedConfigPath, updatedConfigPath st
 		tb.Fatalf("expected no changes in the config file")
 	}
 	tb.Logf("config file validation was successful")
-}
-
-func validateLogs(tb testing.TB, expectedLogs io.Reader) {
 }
