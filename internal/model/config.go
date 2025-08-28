@@ -14,6 +14,8 @@ import (
 type NginxConfigContext struct {
 	StubStatus       *APIDetails
 	PlusAPI          *APIDetails
+	StubStatuses     []*APIDetails
+	PlusAPIs         []*APIDetails
 	InstanceID       string
 	ConfigPath       string
 	Files            []*v1.File

@@ -21,10 +21,10 @@ func NginxPlusRuntimeInfoEqual(nginxPlusRuntimeInfo *mpi.NGINXPlusRuntimeInfo,
 		nginxPlusRuntimeInfo.GetPlusApi().GetListen() != nginxConfigContext.PlusAPI.Listen ||
 		nginxPlusRuntimeInfo.GetStubStatus().GetLocation() != nginxConfigContext.StubStatus.Location ||
 		nginxPlusRuntimeInfo.GetPlusApi().GetLocation() != nginxConfigContext.PlusAPI.Location {
-		return true
+		return false
 	}
 
-	return false
+	return true
 }
 
 func NginxRuntimeInfoEqual(nginxRuntimeInfo *mpi.NGINXRuntimeInfo, nginxConfigContext *model.NginxConfigContext,
@@ -34,10 +34,10 @@ func NginxRuntimeInfoEqual(nginxRuntimeInfo *mpi.NGINXRuntimeInfo, nginxConfigCo
 		!reflect.DeepEqual(nginxRuntimeInfo.GetErrorLogs(), errorLogs) ||
 		nginxRuntimeInfo.GetStubStatus().GetListen() != nginxConfigContext.StubStatus.Listen ||
 		nginxRuntimeInfo.GetStubStatus().GetLocation() != nginxConfigContext.StubStatus.Location {
-		return true
+		return false
 	}
 
-	return false
+	return true
 }
 
 func UpdateNginxInstanceRuntime(
@@ -52,7 +52,7 @@ func UpdateNginxInstanceRuntime(
 	if instanceType == mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
 		nginxPlusRuntimeInfo := instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo()
 
-		if NginxPlusRuntimeInfoEqual(nginxPlusRuntimeInfo, nginxConfigContext, accessLogs, errorLogs) {
+		if !NginxPlusRuntimeInfoEqual(nginxPlusRuntimeInfo, nginxConfigContext, accessLogs, errorLogs) {
 			nginxPlusRuntimeInfo.AccessLogs = accessLogs
 			nginxPlusRuntimeInfo.ErrorLogs = errorLogs
 			nginxPlusRuntimeInfo.StubStatus.Listen = nginxConfigContext.StubStatus.Listen
@@ -64,7 +64,7 @@ func UpdateNginxInstanceRuntime(
 	} else {
 		nginxRuntimeInfo := instance.GetInstanceRuntime().GetNginxRuntimeInfo()
 
-		if NginxRuntimeInfoEqual(nginxRuntimeInfo, nginxConfigContext, accessLogs, errorLogs) {
+		if !NginxRuntimeInfoEqual(nginxRuntimeInfo, nginxConfigContext, accessLogs, errorLogs) {
 			nginxRuntimeInfo.AccessLogs = accessLogs
 			nginxRuntimeInfo.ErrorLogs = errorLogs
 			nginxRuntimeInfo.StubStatus.Location = nginxConfigContext.StubStatus.Location

@@ -15,9 +15,8 @@ import (
 
 	"github.com/nginx/agent/v3/pkg/host/hostfakes"
 
+	"github.com/nginx/agent/v3/internal/datasource/config/configfakes"
 	"github.com/nginx/agent/v3/internal/model"
-	"github.com/nginx/agent/v3/internal/watcher/instance/instancefakes"
-
 	"github.com/nginxinc/nginx-plus-go-client/v2/client"
 
 	"google.golang.org/protobuf/types/known/structpb"
@@ -362,7 +361,7 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 			instanceOp.ReloadReturns(test.reloadErr)
 			instanceOp.ValidateReturns(test.validateErr)
 
-			nginxParser := instancefakes.FakeNginxConfigParser{}
+			nginxParser := configfakes.FakeConfigParser{}
 
 			nginxParser.ParseReturns(&model.NginxConfigContext{
 				StubStatus:       &model.APIDetails{},
@@ -373,6 +372,20 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 				ErrorLogs:        nil,
 				NAPSysLogServers: []string{},
 			}, nil)
+
+			nginxParser.FindStubStatusAPIReturns(&model.APIDetails{
+				URL:      "",
+				Listen:   "",
+				Location: "",
+				Ca:       "",
+			})
+
+			nginxParser.FindPlusAPIReturns(&model.APIDetails{
+				URL:      "",
+				Listen:   "",
+				Location: "",
+				Ca:       "",
+			})
 
 			resourceService := NewResourceService(ctx, types.AgentConfig())
 			resourceOpMap := make(map[string]instanceOperator)
