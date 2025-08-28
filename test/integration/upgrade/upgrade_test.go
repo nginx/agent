@@ -8,7 +8,6 @@ package upgrade
 import (
 	"bytes"
 	"context"
-	"github.com/nginx/agent/v3/test/integration/utils"
 	"io"
 	"log/slog"
 	"os"
@@ -17,6 +16,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/nginx/agent/v3/test/integration/utils"
 
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/stretchr/testify/assert"
@@ -47,10 +48,10 @@ func TestV3toV3Upgrade(t *testing.T) {
 	slog.Info("starting agent v3 upgrade tests")
 
 	// Verify Agent Package Path & get the path
-	agentPackagePath := verifyAgentPackageSize(ctx, t, testContainer)
+	verifyAgentPackageSize(t)
 
 	// verify agent upgrade
-	verifyAgentUpgrade(ctx, t, testContainer, agentPackagePath)
+	verifyAgentUpgrade(ctx, t, testContainer)
 
 	// verify version of agent
 	verifyAgentVersion(ctx, t, testContainer, agentPackageName)
@@ -61,10 +62,11 @@ func TestV3toV3Upgrade(t *testing.T) {
 	// Validate expected logs
 
 	// validate agent manifest file
-
 }
 
-func upgradeSetup(tb testing.TB, expectNoErrorsInLogs bool, containerNetwork *testcontainers.DockerNetwork) (testcontainers.Container, func(tb testing.TB)) {
+func upgradeSetup(tb testing.TB, expectNoErrorsInLogs bool,
+	containerNetwork *testcontainers.DockerNetwork,
+) (testcontainers.Container, func(tb testing.TB)) {
 	tb.Helper()
 	ctx := context.Background()
 
@@ -94,7 +96,7 @@ func upgradeSetup(tb testing.TB, expectNoErrorsInLogs bool, containerNetwork *te
 	}
 }
 
-func verifyAgentPackageSize(ctx context.Context, tb testing.TB, testContainer testcontainers.Container) string {
+func verifyAgentPackageSize(tb testing.TB) string {
 	tb.Helper()
 	agentPkgPath, filePathErr := filepath.Abs("../../../build/")
 	require.NoError(tb, filePathErr, "Error finding local agent package build dir")
@@ -108,26 +110,32 @@ func verifyAgentPackageSize(ctx context.Context, tb testing.TB, testContainer te
 	return packagePath(agentBuildDir, osRelease)
 }
 
-func verifyAgentUpgrade(ctx context.Context, tb testing.TB, testContainer testcontainers.Container, agentPackagePath string) {
+func verifyAgentUpgrade(ctx context.Context, tb testing.TB,
+	testContainer testcontainers.Container,
+) {
 	tb.Helper()
 
-	//cmdOut, upgradeTime := upgradeAgent(ctx, tb, testContainer)
+	cmdOut, upgradeTime := upgradeAgent(ctx, tb, testContainer)
 
-	//assert.LessOrEqual(tb, upgradeTime, maxUpgradeTime)
-	//tb.Log("Upgrade time: ", upgradeTime)
+	assert.LessOrEqual(tb, upgradeTime, maxUpgradeTime)
+	tb.Log("Upgrade time: ", upgradeTime)
 
 	// validate logs here
-	//cmdOut, err :=
+	validateLogs(tb, cmdOut)
 }
 
-func upgradeAgent(ctx context.Context, tb testing.TB, testContainer testcontainers.Container) (io.Reader, time.Duration) {
+func upgradeAgent(ctx context.Context, tb testing.TB, testContainer testcontainers.Container,
+) (io.Reader, time.Duration) {
 	tb.Helper()
 
 	var updateCmd, upgradeCmd []string
 
 	if strings.Contains(osRelease, "Ubuntu") || strings.Contains(osRelease, "Debian") {
 		updateCmd = []string{"apt-get", "update"}
-		upgradeCmd = []string{"apt-get", "install", "-y", "--only-upgrade", "nginx-agent", "-o", "Dpkg::Options::=--force-confold"}
+		upgradeCmd = []string{
+			"apt-get", "install", "-y", "--only-upgrade",
+			"nginx-agent", "-o", "Dpkg::Options::=--force-confold",
+		}
 	} else {
 		updateCmd = []string{"yum", "-y", "makecache"}
 		upgradeCmd = []string{"yum", "update", "-y", "nginx-agent"}
@@ -144,6 +152,7 @@ func upgradeAgent(ctx context.Context, tb testing.TB, testContainer testcontaine
 	assert.Equal(tb, 0, exitCode)
 
 	duration := time.Since(start)
+
 	return cmdOut, duration
 }
 
@@ -192,4 +201,7 @@ func validateAgentConfig(tb testing.TB, expectedConfigPath, updatedConfigPath st
 		tb.Fatalf("expected no changes in the config file")
 	}
 	tb.Logf("config file validation was successful")
+}
+
+func validateLogs(tb testing.TB, expectedLogs io.Reader) {
 }
