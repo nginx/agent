@@ -8,6 +8,7 @@ NFPM            = github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.36.1
 GOTESTCOVERAGE  = github.com/vladopajic/go-test-coverage/v2@v2.10.1
 BENCHSTAT       = golang.org/x/perf/cmd/benchstat@v0.0.0-20240404204407-f3e401e020e4
 BUF             = github.com/bufbuild/buf/cmd/buf@v1.30.1
+PROMTAIL	    = github.com/prometheus/promtail/cmd/promtail@v2.10.0
 
 install-tools: ## Install tool dependencies
 	@echo "Installing Tools"
@@ -22,4 +23,5 @@ install-tools: ## Install tool dependencies
 	@$(GOINST) $(GOTESTCOVERAGE)
 	@$(GOINST) $(BENCHSTAT)
 	@$(GOINST) $(BUF)
+	@$(GOINST) $(PROMTAIL)
 	@$(GORUN) $(LEFTHOOK) install

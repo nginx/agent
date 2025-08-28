@@ -7,6 +7,7 @@ package managementplane
 
 import (
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"time"
@@ -18,6 +19,7 @@ import (
 )
 
 func (s *ConfigApplyTestSuite) TestGrpc_Test1_Reconnection() {
+	slog.Info("starting grpc reconnection test")
 	timeout := 15 * time.Second
 
 	stopErr := utils.MockManagementPlaneGrpcContainer.Stop(s.ctx, &timeout)
@@ -35,14 +37,18 @@ func (s *ConfigApplyTestSuite) TestGrpc_Test1_Reconnection() {
 
 	currentID := utils.VerifyConnection(s.T(), 2, utils.MockManagementPlaneAPIAddress)
 	s.Equal(s.nginxInstanceID, currentID)
+	slog.Info("finished grpc reconnection test")
 }
 
 // Verify that the agent sends a connection request and an update data plane status request
 func (s *MPITestSuite) TestGrpc_Test2_StartUp() {
+	slog.Info("starting grpc startup test")
 	utils.VerifyUpdateDataPlaneHealth(s.T(), utils.MockManagementPlaneAPIAddress)
+	slog.Info("finished grpc startup test")
 }
 
 func (s *MPITestSuite) TestGrpc_Test3_DataplaneHealthRequest() {
+	slog.Info("starting grpc dataplane health request test")
 	request := `{
 			"message_meta": {
 				"message_id": "5d0fa83e-351c-4009-90cd-1f2acce2d184",
@@ -66,4 +72,5 @@ func (s *MPITestSuite) TestGrpc_Test3_DataplaneHealthRequest() {
 
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	s.Equal("Successfully sent health status update", responses[0].GetCommandResponse().GetMessage())
+	slog.Info("finished grpc dataplane health request test")
 }
