@@ -179,6 +179,7 @@ jobs:
           CONTAINER_NGINX_IMAGE_REGISTRY="docker-registry.nginx.com" \
           TAG="${{ matrix.container.version }}-${{ matrix.container.image }}" \
           OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" \
+          NGINX_LICENSE_JWT="${{ secrets.NGINX_LICENSE_JWT }}" \
             make official-image-integration-test
 
   official-plus-image-integration-tests:
@@ -190,24 +191,14 @@ jobs:
       matrix:
         container:
         - image: "alpine"
-          version: "3.20"
-          plus: "r32"
+          version: "3.21"
+          plus: "r34"
           release: "alpine"
           path: "/nginx-plus/agent"
         - image: "alpine"
-          version: "3.19"
-          plus: "r31"
+          version: "3.20"
+          plus: "r33"
           release: "alpine"
-          path: "/nginx-plus/agent"
-        - image: "debian"
-          version: "bookworm"
-          plus: "r32"
-          release: "debian"
-          path: "/nginx-plus/agent"
-        - image: "debian"
-          version: "bookworm"
-          plus: "r31"
-          release: "debian"
           path: "/nginx-plus/agent"
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -224,14 +215,15 @@ jobs:
         uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
         with:
           registry: ${{ secrets.REGISTRY_URL }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
+          username: ${{ secrets.NGINX_LICENSE_JWT }}
+          password: "none"
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" \
           TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
           OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" IMAGE_PATH="${{ matrix.container.path }}" \
+          NGINX_LICENSE_JWT='${{ secrets.NGINX_LICENSE_JWT }}' \
             make official-image-integration-test
 
   performance-tests:
