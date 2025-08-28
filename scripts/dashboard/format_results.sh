@@ -5,7 +5,7 @@
 set -euo pipefail
 
 # Check if required arguments are provided
-if [ $# -lt 3 ]; then
+if [ "$#" -ne 3 ]; then
     echo "Usage: $0 <job_result> <test_type> <workspace>"
     exit 1
 fi
@@ -21,12 +21,12 @@ OUTPUT_DIR="$WORKSPACE/test/dashboard/logs/$TEST_TYPE"
 
 # Validate input file exists
 if [ ! -f "$INPUT_FILE" ]; then
-  echo "Error: Input file $INPUT_FILE does not exist."
+  echo "Error: Input file not found: $INPUT_FILE"
   exit 1
 fi
 
 format_log() {
-    local line="$1"
+    line="$1"
     json="{"
 
     while [[ "$line" =~ ([a-zA-Z0-9_]+)=((\"([^\"\\]|\\.)*\")|[^[:space:]]+) ]]; do
