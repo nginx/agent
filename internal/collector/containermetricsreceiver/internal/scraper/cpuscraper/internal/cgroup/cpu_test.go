@@ -6,6 +6,7 @@
 package cgroup
 
 import (
+	"context"
 	"os"
 	"path"
 	"runtime"
@@ -18,6 +19,8 @@ import (
 func TestCollectCPUStats(t *testing.T) {
 	_, filename, _, _ := runtime.Caller(0)
 	localDirectory := path.Dir(filename)
+
+	ctx := context.Background()
 
 	tests := []struct {
 		errorType error
@@ -73,7 +76,7 @@ func TestCollectCPUStats(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			cgroupCPUSource := NewCPUSource(test.basePath)
-			cpuStat, err := cgroupCPUSource.collectCPUStats()
+			cpuStat, err := cgroupCPUSource.collectCPUStats(ctx)
 
 			// Assert error
 			assert.IsType(tt, test.errorType, err)

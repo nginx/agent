@@ -290,9 +290,10 @@ type (
 	}
 
 	ServerConfig struct {
-		Type ServerType `yaml:"type" mapstructure:"type"`
-		Host string     `yaml:"host" mapstructure:"host"`
-		Port int        `yaml:"port" mapstructure:"port"`
+		Proxy *Proxy     `yaml:"proxy" mapstructure:"proxy"`
+		Type  ServerType `yaml:"type"  mapstructure:"type"`
+		Host  string     `yaml:"host"  mapstructure:"host"`
+		Port  int        `yaml:"port"  mapstructure:"port"`
 	}
 
 	AuthConfig struct {
@@ -322,7 +323,7 @@ type (
 	Watchers struct {
 		FileWatcher     FileWatcher     `yaml:"file_watcher"     mapstructure:"file_watcher"`
 		InstanceWatcher InstanceWatcher `yaml:"instance_watcher" mapstructure:"instance_watcher"`
-		// nolint: lll
+		//nolint:lll // this needs to be in one line
 		InstanceHealthWatcher InstanceHealthWatcher `yaml:"instance_health_watcher" mapstructure:"instance_health_watcher"`
 	}
 
@@ -337,6 +338,17 @@ type (
 	FileWatcher struct {
 		ExcludeFiles        []string      `yaml:"exclude_files"        mapstructure:"exclude_files"`
 		MonitoringFrequency time.Duration `yaml:"monitoring_frequency" mapstructure:"monitoring_frequency"`
+	}
+
+	Proxy struct {
+		TLS        *TLSConfig    `yaml:"tls,omitempty"         mapstructure:"tls"`
+		URL        string        `yaml:"url"                   mapstructure:"url"`
+		NoProxy    string        `yaml:"no_proxy,omitempty"    mapstructure:"no_proxy"`
+		AuthMethod string        `yaml:"auth_method,omitempty" mapstructure:"auth_method"`
+		Username   string        `yaml:"username,omitempty"    mapstructure:"username"`
+		Password   string        `yaml:"password,omitempty"    mapstructure:"password"`
+		Token      string        `yaml:"token,omitempty"       mapstructure:"token"`
+		Timeout    time.Duration `yaml:"timeout"               mapstructure:"timeout"`
 	}
 )
 
@@ -430,7 +442,6 @@ func (c *Config) IsACollectorExporterConfigured() bool {
 		c.Collector.Exporters.Debug != nil
 }
 
-// nolint: cyclop, revive
 func (c *Config) AreReceiversConfigured() bool {
 	if c.Collector == nil {
 		return false
@@ -458,6 +469,14 @@ func (c *Config) NewContextWithLabels(ctx context.Context) context.Context {
 	}
 
 	return metadata.NewOutgoingContext(ctx, md)
+}
+
+func (c *Config) IsCommandServerProxyConfigured() bool {
+	if c.Command == nil || c.Command.Server == nil || c.Command.Server.Proxy == nil {
+		return false
+	}
+
+	return c.Command.Server.Proxy.URL != ""
 }
 
 // isAllowedDir checks if the given path is in the list of allowed directories.

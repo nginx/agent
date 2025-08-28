@@ -62,7 +62,7 @@ func (s *NginxStubStatusScraper) ID() component.ID {
 	return component.NewID(metadata.Type)
 }
 
-// nolint: unparam
+//nolint:unparam // Result is always nil
 func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) error {
 	s.logger.Info("Starting NGINX stub status scraper")
 	httpClient := http.DefaultClient
@@ -92,8 +92,9 @@ func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) erro
 
 	if strings.HasPrefix(s.cfg.APIDetails.Listen, "unix:") {
 		httpClient.Transport = &http.Transport{
-			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-				return net.Dial("unix", strings.TrimPrefix(s.cfg.APIDetails.Listen, "unix:"))
+			DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+				dialer := &net.Dialer{}
+				return dialer.DialContext(ctx, "unix", strings.TrimPrefix(s.cfg.APIDetails.Listen, "unix:"))
 			},
 		}
 	}
@@ -102,7 +103,7 @@ func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) erro
 	return nil
 }
 
-// nolint: unparam
+//nolint:unparam // Result is always nil
 func (s *NginxStubStatusScraper) Shutdown(_ context.Context) error {
 	s.logger.Info("Shutting down NGINX stub status scraper")
 	return nil

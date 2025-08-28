@@ -13,6 +13,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/nginx/agent/v3/pkg/host/hostfakes"
+
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/internal/watcher/instance/instancefakes"
 
@@ -22,8 +24,6 @@ import (
 
 	"github.com/nginx/agent/v3/internal/resource/resourcefakes"
 	"github.com/nginx/agent/v3/test/types"
-
-	"github.com/nginx/agent/v3/internal/datasource/host/hostfakes"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/test/protos"
@@ -211,17 +211,17 @@ func TestResourceService_GetResource(t *testing.T) {
 			mockInfo.ContainerInfoReturns(
 				&v1.Resource_ContainerInfo{
 					ContainerInfo: tc.expectedResource.GetContainerInfo(),
-				},
+				}, nil,
 			)
 		} else {
 			mockInfo.HostInfoReturns(
 				&v1.Resource_HostInfo{
 					HostInfo: tc.expectedResource.GetHostInfo(),
-				},
+				}, nil,
 			)
 		}
 
-		mockInfo.IsContainerReturns(tc.isContainer)
+		mockInfo.IsContainerReturns(tc.isContainer, nil)
 
 		resourceService := NewResourceService(ctx, types.AgentConfig())
 		resourceService.info = mockInfo
@@ -302,7 +302,7 @@ func TestResourceService_createPlusClient(t *testing.T) {
 				protos.NginxPlusInstance([]string{}),
 			}
 
-			_, clientErr := resourceService.createPlusClient(test.instance)
+			_, clientErr := resourceService.createPlusClient(ctx, test.instance)
 			if test.err != nil {
 				require.Error(tt, clientErr)
 				assert.Contains(tt, clientErr.Error(), test.err.Error())
@@ -392,7 +392,6 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 	}
 }
 
-// nolint: dupl
 func Test_convertToUpstreamServer(t *testing.T) {
 	expectedMax := 2
 	expectedFails := 0
@@ -412,30 +411,11 @@ func Test_convertToUpstreamServer(t *testing.T) {
 		},
 	}
 
-	test := []*structpb.Struct{
-		{
-			Fields: map[string]*structpb.Value{
-				"max_conns": structpb.NewNumberValue(2),
-				"max_fails": structpb.NewNumberValue(0),
-				"backup":    structpb.NewBoolValue(expectedBackup),
-				"server":    structpb.NewStringValue("test_server"),
-			},
-		},
-		{
-			Fields: map[string]*structpb.Value{
-				"max_conns": structpb.NewNumberValue(2),
-				"max_fails": structpb.NewNumberValue(0),
-				"backup":    structpb.NewBoolValue(expectedBackup),
-				"server":    structpb.NewStringValue("test_server2"),
-			},
-		},
-	}
-
-	result := convertToUpstreamServer(test)
-	assert.Equal(t, expected, result)
+	runUpstreamServerConversionTest(t, expected, func(data []*structpb.Struct) interface{} {
+		return convertToUpstreamServer(data)
+	})
 }
 
-// nolint: dupl
 func Test_convertToStreamUpstreamServer(t *testing.T) {
 	expectedMax := 2
 	expectedFails := 0
@@ -455,25 +435,37 @@ func Test_convertToStreamUpstreamServer(t *testing.T) {
 		},
 	}
 
-	test := []*structpb.Struct{
+	runUpstreamServerConversionTest(t, expected, func(data []*structpb.Struct) interface{} {
+		return convertToStreamUpstreamServer(data)
+	})
+}
+
+//nolint:lll // this need to be in one line else we will get gofumpt error
+func runUpstreamServerConversionTest(t *testing.T, expectedUpstreamServers interface{}, conversionFunc func([]*structpb.Struct) interface{}) {
+	t.Helper()
+	expectedMax := 2
+	expectedFails := 0
+	expectedBackup := true
+
+	testData := []*structpb.Struct{
 		{
 			Fields: map[string]*structpb.Value{
-				"max_conns": structpb.NewNumberValue(2),
-				"max_fails": structpb.NewNumberValue(0),
+				"max_conns": structpb.NewNumberValue(float64(expectedMax)),
+				"max_fails": structpb.NewNumberValue(float64(expectedFails)),
 				"backup":    structpb.NewBoolValue(expectedBackup),
 				"server":    structpb.NewStringValue("test_server"),
 			},
 		},
 		{
 			Fields: map[string]*structpb.Value{
-				"max_conns": structpb.NewNumberValue(2),
-				"max_fails": structpb.NewNumberValue(0),
+				"max_conns": structpb.NewNumberValue(float64(expectedMax)),
+				"max_fails": structpb.NewNumberValue(float64(expectedFails)),
 				"backup":    structpb.NewBoolValue(expectedBackup),
 				"server":    structpb.NewStringValue("test_server2"),
 			},
 		},
 	}
 
-	result := convertToStreamUpstreamServer(test)
-	assert.Equal(t, expected, result)
+	result := conversionFunc(testData)
+	assert.Equal(t, expectedUpstreamServers, result)
 }

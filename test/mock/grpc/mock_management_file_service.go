@@ -75,7 +75,6 @@ func (mgs *FileService) GetOverview(
 	}, nil
 }
 
-// nolint: unparam
 func (mgs *FileService) UpdateOverview(
 	ctx context.Context,
 	request *v1.UpdateOverviewRequest,

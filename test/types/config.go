@@ -6,6 +6,7 @@
 package types
 
 import (
+	"context"
 	"path/filepath"
 	"testing"
 	"time"
@@ -184,23 +185,24 @@ func AgentConfig() *config.Config {
 // Produces a populated Agent Config with a temp Collector config path for testing usage.
 func OTelConfig(t *testing.T) *config.Config {
 	t.Helper()
+	ctx := context.Background()
 
 	ac := AgentConfig()
 	ac.Collector.ConfigPath = filepath.Join(t.TempDir(), "otel-collector-config.yaml")
 
-	exporterPort, expErr := helpers.RandomPort(t)
+	exporterPort, expErr := helpers.RandomPort(t, ctx)
 	require.NoError(t, expErr)
 	ac.Collector.Exporters.OtlpExporters["default"].Server.Port = exporterPort
 
-	receiverPort, recErr := helpers.RandomPort(t)
+	receiverPort, recErr := helpers.RandomPort(t, ctx)
 	require.NoError(t, recErr)
 	ac.Collector.Receivers.OtlpReceivers["default"].Server.Port = receiverPort
 
-	healthPort, healthErr := helpers.RandomPort(t)
+	healthPort, healthErr := helpers.RandomPort(t, ctx)
 	require.NoError(t, healthErr)
 	ac.Collector.Extensions.Health.Server.Port = healthPort
 
-	commandPort, commandErr := helpers.RandomPort(t)
+	commandPort, commandErr := helpers.RandomPort(t, ctx)
 	require.NoError(t, commandErr)
 	ac.Command.Server.Port = commandPort
 

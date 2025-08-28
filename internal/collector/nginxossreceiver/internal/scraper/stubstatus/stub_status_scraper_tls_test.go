@@ -94,6 +94,7 @@ Reading: 6 Writing: 179 Waiting: 106
 
 func TestStubStatusScraperUnixSocket(t *testing.T) {
 	// Create a test server with a Unix domain socket
+	ctx := context.Background()
 	handler := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		if req.URL.Path == "/status" {
 			rw.WriteHeader(http.StatusOK)
@@ -115,7 +116,8 @@ Reading: 6 Writing: 179 Waiting: 106
 	os.Remove(socketPath)
 
 	// Create a listener for the Unix socket
-	listener, err := net.Listen("unix", socketPath)
+	listenConfig := &net.ListenConfig{}
+	listener, err := listenConfig.Listen(ctx, "unix", socketPath)
 	require.NoError(t, err, "Failed to create Unix socket listener")
 
 	// Create a test server with our custom listener

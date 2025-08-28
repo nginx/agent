@@ -82,7 +82,7 @@ func (nps *NginxPlusScraper) ID() component.ID {
 	return component.NewID(metadata.Type)
 }
 
-func (nps *NginxPlusScraper) Start(_ context.Context, _ component.Host) error {
+func (nps *NginxPlusScraper) Start(ctx context.Context, _ component.Host) error {
 	endpoint := strings.TrimPrefix(nps.cfg.APIDetails.URL, "unix:")
 	httpClient := http.DefaultClient
 	caCertLocation := nps.cfg.APIDetails.Ca
@@ -110,7 +110,7 @@ func (nps *NginxPlusScraper) Start(_ context.Context, _ component.Host) error {
 	httpClient.Timeout = nps.cfg.ClientConfig.Timeout
 
 	if strings.HasPrefix(nps.cfg.APIDetails.Listen, "unix:") {
-		httpClient = socketClient(strings.TrimPrefix(nps.cfg.APIDetails.Listen, "unix:"))
+		httpClient = socketClient(ctx, strings.TrimPrefix(nps.cfg.APIDetails.Listen, "unix:"))
 	}
 
 	plusClient, err := plusapi.NewNginxClient(endpoint,
@@ -880,8 +880,7 @@ func (nps *NginxPlusScraper) recordServerZoneMetrics(stats *plusapi.Stats, now p
 	}
 }
 
-// Duplicate of recordLocationZoneHTTPMetrics but same function can not be used due to plusapi.ServerZone
-// nolint: dupl
+//nolint:dupl // Duplicate of recordLocationZoneHTTPMetrics but same function can not be used due to plusapi.ServerZone
 func (nps *NginxPlusScraper) recordServerZoneHTTPMetrics(sz plusapi.ServerZone, szName string, now pcommon.Timestamp) {
 	nps.mb.RecordNginxHTTPResponseStatusDataPoint(now, int64(sz.Responses.Responses1xx),
 		metadata.AttributeNginxStatusRange1xx,
@@ -985,8 +984,7 @@ func (nps *NginxPlusScraper) recordLocationZoneMetrics(stats *plusapi.Stats, now
 	}
 }
 
-// Duplicate of recordServerZoneHTTPMetrics but same function can not be used due to plusapi.LocationZone
-// nolint: dupl
+//nolint:dupl // Duplicate of recordServerZoneHTTPMetrics but same function can not be used due to plusapi.LocationZone
 func (nps *NginxPlusScraper) recordLocationZoneHTTPMetrics(lz plusapi.LocationZone,
 	lzName string, now pcommon.Timestamp,
 ) {
@@ -1208,17 +1206,18 @@ func (nps *NginxPlusScraper) recordCacheMetrics(stats *plusapi.Stats, now pcommo
 	}
 }
 
-func socketClient(socketPath string) *http.Client {
+func socketClient(ctx context.Context, socketPath string) *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{
 			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-				return net.Dial("unix", socketPath)
+				dialer := &net.Dialer{}
+				return dialer.DialContext(ctx, "unix", socketPath)
 			},
 		},
 	}
 }
 
-// nolint: revive
+//nolint:revive // booleanValue flag is mandatory
 func boolToInt64(booleanValue bool) int64 {
 	if booleanValue {
 		return 1

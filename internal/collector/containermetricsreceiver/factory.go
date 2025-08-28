@@ -21,7 +21,7 @@ import (
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver/internal/metadata"
 )
 
-// nolint: ireturn
+//nolint:ireturn // must return metrics interface
 func NewFactory() receiver.Factory {
 	return receiver.NewFactory(
 		metadata.Type,
@@ -33,7 +33,7 @@ func NewFactory() receiver.Factory {
 	)
 }
 
-// nolint: ireturn
+//nolint:ireturn // must return metrics interface
 func createMetricsReceiver(
 	_ context.Context,
 	params receiver.Settings,
