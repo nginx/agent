@@ -288,7 +288,8 @@ generate-pgo-profile: build-mock-management-plane-grpc load-test-image
 # run under sudo locally
 load-test-image: ## Build performance load testing image
 	@echo "🚚 Building load test image"
-	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t $(IMAGE_TAG)_load_test . \
+	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build \
+		-t $(IMAGE_TAG)_load_test . \
 		-f ./test/docker/load/Dockerfile \
 		--secret id=nginx-crt,src=$(CERTS_DIR)/nginx-repo.crt \
 		--secret id=nginx-key,src=$(CERTS_DIR)/nginx-repo.key \
