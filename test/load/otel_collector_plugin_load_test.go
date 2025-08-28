@@ -39,11 +39,11 @@ func TestMetric10kDPS(t *testing.T) {
 		compression string
 	}{
 		{
-			name:        fmt.Sprintf("%s-none", name),
+			name:        name + "-none",
 			compression: "none",
 		},
 		{
-			name:        fmt.Sprintf("%s-gzip", name),
+			name:        name + "-gzip",
 			compression: "gzip",
 		},
 	}
@@ -98,10 +98,8 @@ func TestMetric10kDPS(t *testing.T) {
 			tc.ValidateData()
 		})
 
-		defer testbed.SaveResults(performanceResultsSummary)
-
+		testbed.SaveResults(performanceResultsSummary)
 	}
-
 }
 
 func parseBinary(s string) string {
