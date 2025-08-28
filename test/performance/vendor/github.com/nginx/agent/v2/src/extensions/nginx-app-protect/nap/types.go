@@ -17,6 +17,7 @@ type NginxAppProtect struct {
 	Release                 NAPRelease
 	AttackSignaturesVersion string
 	ThreatCampaignsVersion  string
+	BotSignaturesVersion    string
 	optDirPath              string
 	symLinkDir              string
 }
@@ -28,6 +29,7 @@ type NAPReport struct {
 	NAPRelease              string
 	AttackSignaturesVersion string
 	ThreatCampaignsVersion  string
+	BotSignaturesVersion    string
 }
 
 // NAPReportBundle is meant to capture the NAPReport before an update
@@ -100,6 +102,8 @@ type Metadata struct {
 	AttackSignatureUID               string            `json:"attackSignatureUID,omitempty"`
 	ThreatCampaignRevisionTimestamp  string            `json:"threatCampaignRevisionTimestamp,omitempty"`
 	ThreatCampaignUID                string            `json:"threatCampaignUID,omitempty"`
+	BotSignatureRevisionTimestamp    string            `json:"botSignatureRevisionTimestamp,omitempty"`
+	BotSignatureUID                  string            `json:"botSignatureUID,omitempty"`
 	Policies                         []*BundleMetadata `json:"policyMetadata,omitempty"`
 	Profiles                         []*BundleMetadata `json:"logProfileMetadata,omitempty"`
 }

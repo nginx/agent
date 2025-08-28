@@ -1278,6 +1278,7 @@ Represents App Protect WAF details
 | waf_location | [string](#string) |  | Location of WAF metadata file |
 | precompiled_publication | [bool](#bool) |  | Determines whether the publication of NGINX App Protect pre-compiled content from an external source is supported |
 | waf_release | [string](#string) |  | WAF release |
+| bot_signatures_version | [string](#string) |  | Bot Signatures version |
 
 
 

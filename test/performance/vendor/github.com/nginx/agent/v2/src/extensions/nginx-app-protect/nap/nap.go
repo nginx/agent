@@ -46,6 +46,7 @@ func NewNginxAppProtect(optDirPath, symLinkDir string) (*NginxAppProtect, error)
 		Release:                 NAPRelease{},
 		AttackSignaturesVersion: "",
 		ThreatCampaignsVersion:  "",
+		BotSignaturesVersion:    "",
 		optDirPath:              optDirPath,
 		symLinkDir:              symLinkDir,
 	}
@@ -77,10 +78,18 @@ func NewNginxAppProtect(optDirPath, symLinkDir string) (*NginxAppProtect, error)
 		return nil, err
 	}
 
+	// Get bot signatures version
+	botSigsVersion, err := getBotSignaturesVersion(BOT_SIGNATURES_UPDATE_FILE)
+	if err != nil && err.Error() != fmt.Sprintf(FILE_NOT_FOUND, BOT_SIGNATURES_UPDATE_FILE) {
+		return nil, err
+	}
+
 	// Update the NAP object with the values from NAP on the system
 	nap.Status = status.String()
 	nap.AttackSignaturesVersion = attackSigsVersion
 	nap.ThreatCampaignsVersion = threatCampaignsVersion
+	nap.BotSignaturesVersion = botSigsVersion
+
 	if napRelease != nil {
 		nap.Release = *napRelease
 	}
@@ -156,6 +165,7 @@ func (nap *NginxAppProtect) monitor(ctx context.Context, msgChannel chan NAPRepo
 			nap.Release = newNap.Release
 			nap.AttackSignaturesVersion = newNap.AttackSignaturesVersion
 			nap.ThreatCampaignsVersion = newNap.ThreatCampaignsVersion
+			nap.BotSignaturesVersion = newNap.BotSignaturesVersion
 			mu.Unlock()
 
 			// Send the update message through the channel
@@ -255,6 +265,7 @@ func (nap *NginxAppProtect) GenerateNAPReport() NAPReport {
 		Status:                  nap.Status,
 		AttackSignaturesVersion: nap.AttackSignaturesVersion,
 		ThreatCampaignsVersion:  nap.ThreatCampaignsVersion,
+		BotSignaturesVersion:    nap.BotSignaturesVersion,
 	}
 }
 
@@ -265,7 +276,8 @@ func (nap *NginxAppProtect) napReportIsEqual(incomingNAPReport NAPReport) bool {
 	return (currentNAPReport.NAPVersion == incomingNAPReport.NAPVersion) &&
 		(currentNAPReport.Status == incomingNAPReport.Status) &&
 		(currentNAPReport.AttackSignaturesVersion == incomingNAPReport.AttackSignaturesVersion) &&
-		(currentNAPReport.ThreatCampaignsVersion == incomingNAPReport.ThreatCampaignsVersion)
+		(currentNAPReport.ThreatCampaignsVersion == incomingNAPReport.ThreatCampaignsVersion) &&
+		(currentNAPReport.BotSignaturesVersion == incomingNAPReport.BotSignaturesVersion)
 }
 
 // napInstalled determines if NAP is installed on the system. If NAP is NOT installed on the
