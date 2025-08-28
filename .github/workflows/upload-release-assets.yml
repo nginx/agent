@@ -91,7 +91,7 @@ jobs:
 
       - name: Azure Login
         if: ${{ inputs.uploadAzure == true }}
-        uses: azure/login@8c334a195cbb38e46038007b304988d888bf676a # v2.0.0
+        uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2.3.0
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
