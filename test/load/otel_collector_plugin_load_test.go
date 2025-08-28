@@ -33,54 +33,75 @@ func TestMetric10kDPS(t *testing.T) {
 	name := fmt.Sprintf("OTLP-%s-%s", runtime.GOOS, binary)
 	sender := testbed.NewOTLPMetricDataSender(testbed.DefaultHost, 4317)
 	receiver := testbed.NewOTLPDataReceiver(5643)
-	receiver = receiver.WithCompression("none")
 
-	t.Run(name, func(t *testing.T) {
-		require.NoError(t, err)
+	tests := []struct {
+		name        string
+		compression string
+	}{
+		{
+			name:        fmt.Sprintf("%s-none", name),
+			compression: "none",
+		},
+		{
+			name:        fmt.Sprintf("%s-gzip", name),
+			compression: "gzip",
+		},
+	}
 
-		options := testbed.LoadOptions{
-			DataItemsPerSecond: 10_000,
-			ItemsPerBatch:      100,
-			Parallel:           1,
-		}
+	for _, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			require.NoError(t, err)
 
-		agentProc := NewNginxAgentProcessCollector(WithEnvVar("GOMAXPROCS", "10"))
+			options := testbed.LoadOptions{
+				DataItemsPerSecond: 10_000,
+				ItemsPerBatch:      100,
+				Parallel:           1,
+			}
 
-		dataProvider := testbed.NewPerfTestDataProvider(options)
-		tc := testbed.NewTestCase(
-			t,
-			dataProvider,
-			sender,
-			receiver,
-			agentProc,
-			&testbed.PerfTestValidator{},
-			performanceResultsSummary,
-			// this resource spec is overwritten in the agent process collector
-			testbed.WithResourceLimits(testbed.ResourceSpec{}),
-		)
+			t.Logf("Running test case: %s (compression=%s)x", test.name, test.compression)
 
-		t.Cleanup(tc.Stop)
+			agentProc := NewNginxAgentProcessCollector(WithEnvVar("GOMAXPROCS", "10"))
 
-		tc.StartBackend()
-		tc.StartAgent()
+			receiver = receiver.WithCompression(test.compression)
 
-		tc.StartLoad(options)
+			dataProvider := testbed.NewPerfTestDataProvider(options)
+			tc := testbed.NewTestCase(
+				t,
+				dataProvider,
+				sender,
+				receiver,
+				agentProc,
+				&testbed.PerfTestValidator{},
+				performanceResultsSummary,
+				// this resource spec is overwritten in the agent process collector
+				testbed.WithResourceLimits(testbed.ResourceSpec{}),
+			)
 
-		tc.WaitFor(func() bool { return tc.LoadGenerator.IsReady() }, "load generator ready")
+			t.Cleanup(tc.Stop)
 
-		tc.WaitFor(func() bool { return tc.LoadGenerator.DataItemsSent() > 0 }, "load generator started")
+			tc.StartBackend()
+			tc.StartAgent()
 
-		tc.Sleep(tc.Duration)
+			tc.StartLoad(options)
 
-		tc.StopLoad()
+			tc.WaitFor(func() bool { return tc.LoadGenerator.IsReady() }, "load generator ready")
 
-		tc.WaitFor(func() bool { return tc.LoadGenerator.DataItemsSent() == tc.MockBackend.DataItemsReceived() },
-			"all data items received")
+			tc.WaitFor(func() bool { return tc.LoadGenerator.DataItemsSent() > 0 }, "load generator started")
 
-		tc.ValidateData()
-	})
+			tc.Sleep(tc.Duration)
 
-	defer testbed.SaveResults(performanceResultsSummary)
+			tc.StopLoad()
+
+			tc.WaitFor(func() bool { return tc.LoadGenerator.DataItemsSent() == tc.MockBackend.DataItemsReceived() },
+				"all data items received")
+
+			tc.ValidateData()
+		})
+
+		defer testbed.SaveResults(performanceResultsSummary)
+
+	}
+
 }
 
 func parseBinary(s string) string {

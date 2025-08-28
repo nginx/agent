@@ -4,9 +4,6 @@ LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
 # https://askubuntu.com/questions/909277/avoiding-user-interaction-with-tzdata-when-installing-certbot-in-a-docker-contai
 ARG DEBIAN_FRONTEND=noninteractive
 
-WORKDIR /agent
-COPY . /agent
-
 RUN --mount=type=secret,id=nginx-crt,dst=nginx-repo.crt \
     --mount=type=secret,id=nginx-key,dst=nginx-repo.key \
     set -x \
@@ -69,21 +66,21 @@ ENV CGO_ENABLED=0
 ENV PATH="/usr/local/go/bin:${PATH}" 
 ENV PATH=$PATH:/usr/local/go/bin
 
-RUN mv /agent/test/config/agent/nginx-agent-otel-load.conf /agent/test/load/nginx-agent.conf
-RUN mkdir /var/run/nginx-agent/ /var/log/nginx-agent/ /etc/nginx-agent/ 
+WORKDIR /agent
+COPY . /agent/
 
-WORKDIR /agent/
+RUN mv /agent/test/config/agent/nginx-agent-otel-load.conf /agent/test/load/nginx-agent.conf
+RUN mkdir /var/run/nginx-agent/ /var/log/nginx-agent/ /etc/nginx-agent/
+
 CMD make install-tools
 
 FROM configure-go as run-tests
 
 WORKDIR /agent/
 
-RUN make build
-RUN chmod -R +x ./build
+## Pre-download Go modules
+RUN go mod tidy
 
-WORKDIR /agent/test/load
-
-RUN go test -v -timeout 1m ./...
-
-CMD ["entrypoint.sh"]
+COPY test/docker/load/entrypoint.sh entrypoint.sh
+RUN chmod +x entrypoint.sh
+CMD ["/agent/test/docker/load/entrypoint.sh"]
