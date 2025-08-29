@@ -12,6 +12,7 @@ To override these behaviours the following environment variables can be set to o
 MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS=127.0.0.1:9091
 MOCK_MANAGEMENT_PLANE_API_ADDRESS=127.0.0.1:9092
 MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY=/tmp/
+MOCK_MANAGEMENT_PLANE_EXTERNAL_FILE_SERVER=/tmp/
 ```
 
 Before starting the NGINX Agent, update the agent configuration with the following command config block
@@ -35,6 +36,8 @@ GET http://127.0.0.1:9092/api/v1/responses
 POST http://127.0.0.1:9092/api/v1/requests
 
 POST http://127.0.0.1:9092/api/v1/instance/<instance id>/config/apply
+
+GET http://127.0.0.1:9092/api/v1/externalfile/<filename>
 ```
 
 # Endpoints
@@ -410,7 +413,6 @@ Example request body to get stream upstreams example:
     }
 }
 ```
-
 ## POST /api/v1/instance/\<instance id\>/config/apply
 Used to send management plane config apply request over the Subscribe rpc stream to the NGINX Agent for a particular data plane instance.
 
@@ -421,4 +423,74 @@ In the example above the `instance id` would be `6cb1a2bc-7552-33b1-9e7c-cb6658b
 So the full path to the file used by the mock management plane would be `/tmp/config/6cb1a2bc-7552-33b1-9e7c-cb6658b82ebb/etc/nginx-agent/nginx.conf`.
 
 Simply edit this file and then perform a POST request against the `/api/v1/instance/<instance id>/config/apply` endpoint to execute a config apply request.
+
+We can also send a JSON body with this POST request to point to a configuration file located on an external server.
+
+```
+POST /api/v1/instance/\<instance id\>/config/apply -H "Content-Type:application/json" -d
+{
+  "externalDataSources": [
+    {
+      "filePath": "/path/to/my/file.txt",
+      "location": "s3://my-bucket/data/"
+    },
+    {
+      "filePath": "/etc/nginx/secret.pem",
+      "location": "http://localhost:9092/external/secret.pem"
+    }
+  ]
+}
+```
+
+## GET /api/v1/externalfile/\<filename>
+
+Used to get files from a directory which can be used to mock an external file server.
+
+For example if we set the external file server as the location where our nginx-agent.conf file is located.
+
+Updated the Makefile:
+
+MOCK_MANAGEMENT_PLANE_EXTERNAL_FILE_SERVER ?= /Users/<user>/go/src/github.com/nginx/agent/
+
+Sample API request:
+GET /api/v1/externalfile/nginx-agent.conf 
+
+Response:
+```
+#
+# /etc/nginx-agent/nginx-agent.conf
+#
+# Configuration file for NGINX Agent.
+#
+
+log:
+  # set log level (error, warn, info, debug; default "info")
+  level: info
+  # set log path. if empty, don't log to file.
+  path: /var/log/nginx-agent/
+
+allowed_directories: 
+    - /etc/nginx
+    - /etc/app_protect
+    - /usr/local/etc/nginx
+    - /usr/share/nginx/modules
+    - /var/run/nginx
+    - /var/log/nginx
+#
+# Command server settings to connect to a management plane server
+#
+#command:
+#  server:
+#    host: "agent.connect.nginx.com"
+#    port: 443
+#  auth:
+#    token: ""
+#  tls:
+#    skip_verify: false
+command:
+  server:
+    host: localhost
+    port: 9091
+
+```
 
