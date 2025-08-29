@@ -9,13 +9,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	dto "github.com/prometheus/client_model/go"
-	"github.com/prometheus/common/expfmt"
 	"net"
 	"net/http"
 	"os"
 	"testing"
 	"time"
+
+	dto "github.com/prometheus/client_model/go"
+	"github.com/prometheus/common/expfmt"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/testcontainers/testcontainers-go"
@@ -25,7 +26,17 @@ import (
 
 var MockCollectorStack *helpers.MockCollectorContainers
 
-const envContainer = "Container"
+const (
+	envContainer  = "Container"
+	tickerTime    = 5 * time.Second
+	timeoutTime   = 110 * time.Second
+	plusImagePath = "/nginx-plus/agent"
+)
+
+type LabelFilter struct {
+	Key    string
+	Values []string
+}
 
 func SetupMetricsTest(tb testing.TB) func(testing.TB) {
 	tb.Helper()
@@ -61,8 +72,19 @@ func setupMockCollectorStack(ctx context.Context, tb testing.TB, containerNetwor
 
 	tb.Log("Starting mock collector stack")
 
+	nginxConfPath := "../../mock/collector/nginx-oss/"
+	if os.Getenv("IMAGE_PATH") == plusImagePath {
+		nginxConfPath = "../../mock/collector/nginx-plus/"
+	}
 	agentConfig := "../../mock/collector/nginx-agent.conf"
-	MockCollectorStack = helpers.StartMockCollectorStack(ctx, tb, containerNetwork, agentConfig)
+
+	params := &helpers.Parameters{
+		NginxConfigPath:      nginxConfPath,
+		NginxAgentConfigPath: agentConfig,
+		LogMessage:           "Starting NGINX Agent",
+	}
+
+	MockCollectorStack = helpers.StartMockCollectorStack(ctx, tb, containerNetwork, params)
 }
 
 func ScrapeCollectorMetricFamilies(t *testing.T, ctx context.Context,
@@ -94,7 +116,9 @@ func ScrapeCollectorMetricFamilies(t *testing.T, ctx context.Context,
 	return metricFamilies
 }
 
-func GenerateMetrics(ctx context.Context, t *testing.T, container testcontainers.Container, requestCount int, expectedCode string) {
+func GenerateMetrics(ctx context.Context, t *testing.T, container testcontainers.Container,
+	requestCount int, expectedCode string,
+) {
 	t.Helper()
 
 	t.Logf("Generating %d requests with expected response code %s", requestCount, expectedCode)
@@ -126,82 +150,108 @@ func GenerateMetrics(ctx context.Context, t *testing.T, container testcontainers
 	}
 }
 
-func PollingForMetrics(t *testing.T, ctx context.Context, metricFamilies map[string]*dto.MetricFamily, metricName string, labelKey string, labelValues []string, baselineValue []float64,
+func PollingForMetrics(t *testing.T, ctx context.Context, metricName string,
+	labelFilter LabelFilter, baselineValues []float64,
 ) []float64 {
 	t.Helper()
 
-	pollCtx, cancel := context.WithTimeout(ctx, 200*time.Second)
+	pollCtx, cancel := context.WithTimeout(ctx, timeoutTime)
 	defer cancel()
 
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(tickerTime)
 	defer ticker.Stop()
 
-	family := metricFamilies[metricName]
-
-	var res = make([]float64, len(baselineValue))
 	for {
 		select {
 		case <-pollCtx.Done():
-			t.Fatalf("timed out waiting for metric %s to be greater than %v", metricName, baselineValue)
-			return res
+			t.Fatalf("timed out waiting for metric %s to be greater than %v", metricName, baselineValues)
+			return nil
 		case <-ticker.C:
-			metricFamilies = ScrapeCollectorMetricFamilies(t, ctx, MockCollectorStack.Otel)
-			family = metricFamilies[metricName]
+			family := ScrapeCollectorMetricFamilies(t, ctx, MockCollectorStack.Otel)[metricName]
 			if family == nil {
 				t.Logf("Metric %s not found, retrying...", metricName)
 				continue
 			}
 
-			if len(family.GetMetric()) == 1 {
-				metric := SumMetricFamily(family)
-				if metric != baselineValue[0] {
-					return []float64{metric}
-				}
+			values, changed := metricValueChangeCheck(t, family, labelFilter.Key, labelFilter.Values, baselineValues)
+			if !changed {
+				continue
 			}
-			if len(family.GetMetric()) > 1 {
-				foundAllMetrics := true
-				for val := range labelValues {
-					metric := SumMetricFamilyLabel(family, labelKey, labelValues[val])
-					if metric != baselineValue[val] {
-						res[val] = metric
-					} else {
-						foundAllMetrics = false
-					}
-				}
 
-				if foundAllMetrics && len(res) > 0 {
-
-					return res
-				}
-			}
+			return values
 		}
 	}
 }
 
 func WaitUntilNextScrapeCycle(t *testing.T, ctx context.Context) {
 	t.Helper()
-	
-	waitCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
+
+	waitCtx, cancel := context.WithTimeout(ctx, timeoutTime)
 	defer cancel()
 
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(tickerTime)
+	defer ticker.Stop()
+
+	waitForMetricToExist(t, ctx, "nginx_http_request_count")
+	prevScrapeValue, err := getRequestCountMetric(t, ctx)
+	if err != nil {
+		t.Fatalf("Failed to get initial scrape value: %v", err)
+		return
+	}
+
+	for {
+		select {
+		case <-waitCtx.Done():
+			t.Fatalf("Timed out waiting for new scrape cycle")
+			return
+		case <-ticker.C:
+			currentMetric, err2 := getRequestCountMetric(t, ctx)
+			if err2 != nil {
+				continue
+			}
+
+			if currentMetric != prevScrapeValue {
+				t.Log("Successfully detected new scrape cycle")
+
+				return
+			}
+		}
+	}
+}
+
+func waitForMetricToExist(t *testing.T, ctx context.Context, metricName string) {
+	t.Helper()
+
+	waitCtx, cancel := context.WithTimeout(ctx, timeoutTime)
+	defer cancel()
+
+	ticker := time.NewTicker(tickerTime)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-waitCtx.Done():
-			t.Fatalf("Timed out waiting for next scrape")
+			t.Fatalf("Timed out waiting for metric %s to exist", metricName)
 			return
 		case <-ticker.C:
-			freshMetrics := ScrapeCollectorMetricFamilies(t, ctx, MockCollectorStack.Otel)
-			got := PollingForMetrics(t, ctx, freshMetrics, "nginx_http_request_count", "", []string{}, []float64{0})
-
-			if len(got) > 0 && got[0] == 1 {
-				t.Logf("Successfully detected new scrape cycle, request count: %f", got[0])
+			family := ScrapeCollectorMetricFamilies(t, ctx, MockCollectorStack.Otel)[metricName]
+			if family != nil {
 				return
 			}
+			t.Logf("Metric %s not found, retrying...", metricName)
 		}
 	}
+}
+
+func getRequestCountMetric(t *testing.T, ctx context.Context) (float64, error) {
+	t.Helper()
+
+	family := ScrapeCollectorMetricFamilies(t, ctx, MockCollectorStack.Otel)["nginx_http_request_count"]
+	if family == nil {
+		return 0, fmt.Errorf("metric nginx_http_request_count not found: %v", family)
+	}
+
+	return SumMetricFamily(family), nil
 }
 
 func SumMetricFamily(metricFamily *dto.MetricFamily) float64 {
@@ -293,4 +343,53 @@ func getHistogramValue(metric *dto.Metric) *float64 {
 	}
 
 	return nil
+}
+
+func metricValueChangeCheck(t *testing.T, family *dto.MetricFamily, labelKey string,
+	labelValues []string, baselineValues []float64) (
+	[]float64, bool,
+) {
+	t.Helper()
+
+	if len(family.GetMetric()) == 1 {
+		value, changed := singleMetricValue(t, family, baselineValues[0])
+		if changed {
+			return []float64{value}, true
+		}
+	}
+
+	if len(family.GetMetric()) > 1 {
+		values, allChanged := labeledMetricValue(t, family, labelKey, labelValues, baselineValues)
+		if allChanged {
+			return values, true
+		}
+	}
+
+	return []float64{0}, false
+}
+
+func singleMetricValue(t *testing.T, family *dto.MetricFamily, baselineValue float64) (float64, bool) {
+	t.Helper()
+	metric := SumMetricFamily(family)
+
+	return metric, metric != baselineValue
+}
+
+func labeledMetricValue(t *testing.T, family *dto.MetricFamily, labelKey string,
+	labelValues []string, baselineValues []float64,
+) ([]float64, bool) {
+	t.Helper()
+	results := make([]float64, len(baselineValues))
+	allDifferent := true
+
+	for val := range labelValues {
+		metric := SumMetricFamilyLabel(family, labelKey, labelValues[val])
+		if metric != baselineValues[val] {
+			results[val] = metric
+		} else {
+			allDifferent = false
+		}
+	}
+
+	return results, allDifferent && len(results) > 0
 }
