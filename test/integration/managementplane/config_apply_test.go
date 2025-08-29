@@ -8,7 +8,7 @@ package managementplane
 import (
 	"context"
 	"fmt"
-	"os"
+	"github.com/nginx/agent/v3/internal/model"
 	"sort"
 	"testing"
 
@@ -60,6 +60,27 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test1_TestNoConfigChanges() {
 	responses := utils.ManagementPlaneResponses(s.T(), 2, utils.MockManagementPlaneAPIAddress)
 	s.T().Logf("Config apply responses: %v", responses)
 
+	manifestFiles := map[string]*model.ManifestFile{
+		"/etc/nginx/mime.types": &model.ManifestFile{
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/mime.types",
+				Hash:       "Nsd9qi2FgD6HyRunI90rxqqmVDrkvUpWkDSnv4vORk0=",
+				Size:       5465,
+				Referenced: true,
+			},
+		},
+		"/etc/nginx/nginx.conf": &model.ManifestFile{
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/nginx.conf",
+				Hash:       "gJ1slpIAUmHAiSo5ZIalKvE40b1hJCgaXasQOMab6kc=",
+				Size:       1172,
+				Referenced: true,
+			},
+		},
+	}
+
+	utils.CheckManifestFile(s.T(), utils.Container, manifestFiles)
+
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	s.Equal("Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
@@ -67,22 +88,32 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test1_TestNoConfigChanges() {
 }
 
 func (s *ConfigApplyTestSuite) TestConfigApply_Test2_TestValidConfig() {
-	newConfigFile := "../../config/nginx/nginx-with-test-location.conf"
-
-	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
-		newConfigFile = "../../config/nginx/nginx-plus-with-test-location.conf"
-	}
-	err := utils.MockManagementPlaneGrpcContainer.CopyFileToContainer(
-		s.ctx,
-		newConfigFile,
-		fmt.Sprintf("/mock-management-plane-grpc/config/%s/etc/nginx/nginx.conf", s.nginxInstanceID),
-		0o666,
-	)
-	s.Require().NoError(err)
+	utils.WriteConfigFile(s.T(), s.ctx, s.nginxInstanceID)
 
 	utils.PerformConfigApply(s.T(), s.nginxInstanceID, utils.MockManagementPlaneAPIAddress)
 	responses := utils.ManagementPlaneResponses(s.T(), 2, utils.MockManagementPlaneAPIAddress)
 	s.T().Logf("Config apply responses: %v", responses)
+
+	manifestFiles := map[string]*model.ManifestFile{
+		"/etc/nginx/mime.types": &model.ManifestFile{
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/mime.types",
+				Hash:       "Nsd9qi2FgD6HyRunI90rxqqmVDrkvUpWkDSnv4vORk0=",
+				Size:       5465,
+				Referenced: true,
+			},
+		},
+		"/etc/nginx/nginx.conf": &model.ManifestFile{
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/nginx.conf",
+				Hash:       "TayMLv+/KYDqc2Toyr534vQTloNfdVdPtXL3mtYFe8o=",
+				Size:       1310,
+				Referenced: true,
+			},
+		},
+	}
+
+	utils.CheckManifestFile(s.T(), utils.Container, manifestFiles)
 
 	sort.Slice(responses, func(i, j int) bool {
 		return responses[i].GetCommandResponse().GetMessage() < responses[j].GetCommandResponse().GetMessage()
@@ -92,6 +123,7 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test2_TestValidConfig() {
 	s.Equal("Config apply successful", responses[0].GetCommandResponse().GetMessage())
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
 	s.Equal("Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
+
 }
 
 func (s *ConfigApplyTestSuite) TestConfigApply_Test3_TestInvalidConfig() {
@@ -108,6 +140,27 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test3_TestInvalidConfig() {
 	responses := utils.ManagementPlaneResponses(s.T(), 2, utils.MockManagementPlaneAPIAddress)
 	s.T().Logf("Config apply responses: %v", responses)
 
+	manifestFiles := map[string]*model.ManifestFile{
+		"/etc/nginx/mime.types": &model.ManifestFile{
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/mime.types",
+				Hash:       "Nsd9qi2FgD6HyRunI90rxqqmVDrkvUpWkDSnv4vORk0=",
+				Size:       5465,
+				Referenced: true,
+			},
+		},
+		"/etc/nginx/nginx.conf": &model.ManifestFile{
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/nginx.conf",
+				Hash:       "TayMLv+/KYDqc2Toyr534vQTloNfdVdPtXL3mtYFe8o=",
+				Size:       1310,
+				Referenced: true,
+			},
+		},
+	}
+
+	utils.CheckManifestFile(s.T(), utils.Container, manifestFiles)
+
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_ERROR, responses[0].GetCommandResponse().GetStatus())
 	s.Equal("Config apply failed, rolling back config", responses[0].GetCommandResponse().GetMessage())
 	s.Equal(configApplyErrorMessage, responses[0].GetCommandResponse().GetError())
@@ -121,6 +174,26 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test4_TestFileNotInAllowedDirecto
 
 	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
 	s.T().Logf("Config apply responses: %v", responses)
+
+	manifestFiles := map[string]*model.ManifestFile{
+		"/etc/nginx/mime.types": &model.ManifestFile{
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/mime.types",
+				Hash:       "Nsd9qi2FgD6HyRunI90rxqqmVDrkvUpWkDSnv4vORk0=",
+				Size:       5465,
+				Referenced: true,
+			},
+		},
+		"/etc/nginx/nginx.conf": &model.ManifestFile{
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/nginx.conf",
+				Hash:       "TayMLv+/KYDqc2Toyr534vQTloNfdVdPtXL3mtYFe8o=",
+				Size:       1310,
+				Referenced: true,
+			},
+		},
+	}
+	utils.CheckManifestFile(s.T(), utils.Container, manifestFiles)
 
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_FAILURE, responses[0].GetCommandResponse().GetStatus())
 	s.Equal("Config apply failed", responses[0].GetCommandResponse().GetMessage())
@@ -165,6 +238,27 @@ func (s *ConfigApplyChunkingTestSuite) TestConfigApplyChunking() {
 	sort.Slice(responses, func(i, j int) bool {
 		return responses[i].GetCommandResponse().GetMessage() < responses[j].GetCommandResponse().GetMessage()
 	})
+
+	manifestFiles := map[string]*model.ManifestFile{
+		"/etc/nginx/mime.types": &model.ManifestFile{
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/mime.types",
+				Hash:       "Nsd9qi2FgD6HyRunI90rxqqmVDrkvUpWkDSnv4vORk0=",
+				Size:       5465,
+				Referenced: true,
+			},
+		},
+		"/etc/nginx/nginx.conf": &model.ManifestFile{
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/nginx.conf",
+				Hash:       "dfDpjGOjOhWWhX43y/d+zBulXCisx+BVYj2eEEud6ac=",
+				Size:       886910,
+				Referenced: true,
+			},
+		},
+	}
+
+	utils.CheckManifestFile(s.T(), utils.Container, manifestFiles)
 
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	s.Equal("Config apply successful", responses[0].GetCommandResponse().GetMessage())

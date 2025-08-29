@@ -6,8 +6,16 @@
 package utils
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/test/helpers"
+	"github.com/nginx/agent/v3/test/integration/managementplane/configs"
+	"github.com/testcontainers/testcontainers-go"
+	"io"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
@@ -113,4 +121,47 @@ func PerformInvalidConfigApply(t *testing.T, nginxInstanceID string) {
 	resp, err := client.R().EnableTrace().SetBody(body).Post(url)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
+}
+
+func CheckManifestFile(t *testing.T, container testcontainers.Container, expectedContent map[string]*model.ManifestFile) {
+	t.Helper()
+	ctx := context.Background()
+	file, err := container.CopyFileFromContainer(ctx, "/var/lib/nginx-agent/manifest.json")
+	require.NoError(t, err)
+	fileContent, err := io.ReadAll(file)
+	require.NoError(t, err)
+
+	var manifestFiles map[string]*model.ManifestFile
+
+	err = json.Unmarshal(fileContent, &manifestFiles)
+	assert.NotEqual(t, len(fileContent), 0)
+	require.NoError(t, err)
+
+	assert.Equal(t, expectedContent, manifestFiles)
+}
+
+func WriteConfigFile(t *testing.T, ctx context.Context, nginxInstanceID string) {
+	t.Helper()
+	tempDir := t.TempDir()
+
+	file := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
+	t.Logf("File: %s", file.Name())
+
+	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+		writeErr := os.WriteFile(file.Name(), []byte(configs.NginxPlusConfigWithMultipleInclude(
+			"mime.types", "mime.types", "mime.types")), 0o600)
+		require.NoError(t, writeErr)
+	} else {
+		writeErr := os.WriteFile(file.Name(), []byte(configs.NginxConfigWithMultipleInclude(
+			"mime.types", "mime.types", "mime.types")), 0o600)
+		require.NoError(t, writeErr)
+	}
+
+	err := MockManagementPlaneGrpcContainer.CopyFileToContainer(
+		ctx,
+		file.Name(),
+		fmt.Sprintf("/mock-management-plane-grpc/config/%s/etc/nginx/nginx.conf", nginxInstanceID),
+		0o666,
+	)
+	require.NoError(t, err)
 }
