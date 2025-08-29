@@ -18,7 +18,7 @@ import (
 	"syscall"
 	"time"
 
-	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
 
 	"github.com/bufbuild/protovalidate-go"

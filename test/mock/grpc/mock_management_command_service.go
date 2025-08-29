@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net"
@@ -54,7 +55,8 @@ func init() {
 func NewCommandService(
 	requestChan chan *mpi.ManagementPlaneRequest,
 	configDirectory string,
-	externalFileServer string) *CommandService {
+	externalFileServer string,
+) *CommandService {
 	cs := &CommandService{
 		requestChan:                requestChan,
 		connectionMutex:            sync.Mutex{},
@@ -78,6 +80,17 @@ func NewCommandService(
 	cs.createServer(logger)
 
 	return cs
+}
+
+// Adding a struct to represent the external data source.
+type ExternalDataSource struct {
+	FilePath string `json:"filePath"`
+	Location string `json:"location"`
+}
+
+// Adding a struct for the request body of the config apply endpoint.
+type ConfigApplyRequestBody struct {
+	ExternalDataSources []*ExternalDataSource `json:"externalDataSources"`
 }
 
 func (cs *CommandService) StartServer(listener net.Listener) {
@@ -365,7 +378,15 @@ func (cs *CommandService) addConfigApplyEndpoint() {
 			return
 		}
 
-		cs.instanceFiles[instanceID] = configFiles
+		updatedConfigFiles, externalFilesWereUpdated, err := processConfigApplyRequestBody(c, configFiles)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if externalFilesWereUpdated {
+			cs.instanceFiles[instanceID] = updatedConfigFiles
+		}
 
 		request := mpi.ManagementPlaneRequest{
 			MessageMeta: &mpi.MessageMeta{
@@ -494,4 +515,34 @@ func createFile(fullPath, filePath string) (*mpi.File, error) {
 
 func isValidFile(info os.FileInfo, fileFullPath string) bool {
 	return !info.IsDir() && !strings.HasSuffix(fileFullPath, ".DS_Store")
+}
+
+func processConfigApplyRequestBody(c *gin.Context, initialFiles []*mpi.File) ([]*mpi.File, bool, error) {
+	if c.Request.ContentLength == 0 {
+		return initialFiles, false, nil
+	}
+
+	var body ConfigApplyRequestBody
+	if bindErr := c.BindJSON(&body); bindErr != nil {
+		return initialFiles, false, fmt.Errorf("invalid request body: %w", bindErr)
+	}
+
+	filesMap := make(map[string]*mpi.File)
+	for _, file := range initialFiles {
+		if file.GetFileMeta() != nil {
+			filesMap[file.GetFileMeta().GetName()] = file
+		}
+	}
+
+	var externalFilesWereUpdated bool
+	for _, ed := range body.ExternalDataSources {
+		if file, ok := filesMap[ed.FilePath]; ok {
+			file.ExternalDataSource = &mpi.ExternalDataSource{
+				Location: ed.Location,
+			}
+			externalFilesWereUpdated = true
+		}
+	}
+
+	return initialFiles, externalFilesWereUpdated, nil
 }
