@@ -44,22 +44,24 @@ done
 cat /etc/nginx-agent/nginx-agent.conf;
 
 # start nginx-agent, pass args
-echo "starting nginx-agent ..."
-nginx-agent "$@" &
+#echo "starting nginx-agent ..."
+#nginx-agent "$@" &
 
-agent_pid=$!
+#agent_pid=$!
+#
+#if [ $? != 0 ]; then
+#    echo "couldn't start the agent, please check the log file"
+#    exit 1
+#fi
 
-if [ $? != 0 ]; then
-    echo "couldn't start the agent, please check the log file"
-    exit 1
-fi
+echo "Not starting Nginx Agent as part of this test container"
 
 wait_term()
 {
-    wait ${agent_pid}
+#    wait ${agent_pid}
     wait ${nginx_pid}
 }
 
 wait_term
 
-echo "nginx-agent process has stopped, exiting."
+#echo "nginx-agent process has stopped, exiting."
