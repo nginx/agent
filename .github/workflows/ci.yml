@@ -310,7 +310,7 @@ jobs:
 
       - name: Build Docker Image
         run: | 
-          make build-load-test-image
+          make load-test-image
 
       - name: Run Load Tests
         run: |
