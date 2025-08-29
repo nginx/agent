@@ -39,6 +39,7 @@ type CommandService struct {
 	updateDataPlaneHealthRequest *mpi.UpdateDataPlaneHealthRequest
 	instanceFiles                map[string][]*mpi.File // key is instanceID
 	configDirectory              string
+	externalFileServer           string
 	dataPlaneResponses           []*mpi.DataPlaneResponse
 	updateDataPlaneHealthMutex   sync.Mutex
 	connectionMutex              sync.Mutex
@@ -50,7 +51,10 @@ func init() {
 	gin.SetMode(gin.ReleaseMode)
 }
 
-func NewCommandService(requestChan chan *mpi.ManagementPlaneRequest, configDirectory string) *CommandService {
+func NewCommandService(
+	requestChan chan *mpi.ManagementPlaneRequest,
+	configDirectory string,
+	externalFileServer string) *CommandService {
 	cs := &CommandService{
 		requestChan:                requestChan,
 		connectionMutex:            sync.Mutex{},
@@ -58,6 +62,7 @@ func NewCommandService(requestChan chan *mpi.ManagementPlaneRequest, configDirec
 		updateDataPlaneHealthMutex: sync.Mutex{},
 		dataPlaneResponsesMutex:    sync.Mutex{},
 		configDirectory:            configDirectory,
+		externalFileServer:         externalFileServer,
 		instanceFiles:              make(map[string][]*mpi.File),
 	}
 
@@ -246,6 +251,7 @@ func (cs *CommandService) createServer(logger *slog.Logger) {
 	cs.addResponseAndRequestEndpoints()
 	cs.addConfigApplyEndpoint()
 	cs.addConfigEndpoint()
+	cs.addExternalFileServerEndpoint()
 }
 
 func (cs *CommandService) addConnectionEndpoint() {
@@ -408,6 +414,26 @@ func (cs *CommandService) addConfigEndpoint() {
 
 		c.JSON(http.StatusOK, data)
 	})
+}
+
+func (cs *CommandService) addExternalFileServerEndpoint() {
+	// This API will serve individual files from the external directory
+	cs.server.GET("/api/v1/externalfile/:filename", func(c *gin.Context) {
+		filename := c.Param("filename")
+		filePath := filepath.Join(cs.externalFileServer, filename)
+
+		// Check if the file exists
+		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
+
+			return
+		}
+
+		// Serve the file
+		c.File(filePath)
+	})
+
+	slog.Info("Serving individual external files from", "directory", cs.externalFileServer)
 }
 
 func (cs *CommandService) findInstanceConfigFiles(instanceID string) (configFiles []*mpi.File, err error) {

@@ -12,6 +12,7 @@ To override these behaviours the following environment variables can be set to o
 MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS=127.0.0.1:9091
 MOCK_MANAGEMENT_PLANE_API_ADDRESS=127.0.0.1:9092
 MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY=/tmp/
+MOCK_MANAGEMENT_PLANE_EXTERNAL_FILE_SERVER=/tmp/
 ```
 
 Before starting the NGINX Agent, update the agent configuration with the following command config block
@@ -35,6 +36,8 @@ GET http://127.0.0.1:9092/api/v1/responses
 POST http://127.0.0.1:9092/api/v1/requests
 
 POST http://127.0.0.1:9092/api/v1/instance/<instance id>/config/apply
+
+GET http://127.0.0.1:9092/api/v1/externalfile/<filename>
 ```
 
 # Endpoints
