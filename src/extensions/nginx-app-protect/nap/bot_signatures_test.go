@@ -24,7 +24,7 @@ revisionDatetime: 2025-08-21T11:30:33Z
 `
 )
 
-func TestGetBotSignaturesVersion(t *testing.T) {
+func Test_BotSignaturesVersion(t *testing.T) {
 	testCases := []struct {
 		testName       string
 		versionFile    string
@@ -63,7 +63,7 @@ func TestGetBotSignaturesVersion(t *testing.T) {
 				}()
 			}
 
-			version, err := getBotSignaturesVersion(tc.versionFile)
+			version, err := botSignaturesVersion(tc.versionFile)
 			assert.Equal(t, err, tc.expError)
 			assert.Equal(t, tc.expVersion, version)
 		})

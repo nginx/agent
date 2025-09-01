@@ -17,9 +17,9 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// getBotSignaturesVersion gets the version of the bot signatures package that is
+// botSignaturesVersion gets the version of the bot signatures package that is
 // installed on the system, the version format is YYYY.MM.DD.
-func getBotSignaturesVersion(versionFile string) (string, error) {
+func botSignaturesVersion(versionFile string) (string, error) {
 	// Check if bot signatures version file exists
 	logger.Debugf("Checking for the required NAP bot signatures version file - %v\n", versionFile)
 	installed, err := core.FileExists(versionFile)

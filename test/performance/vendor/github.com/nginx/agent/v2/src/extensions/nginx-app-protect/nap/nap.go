@@ -79,7 +79,7 @@ func NewNginxAppProtect(optDirPath, symLinkDir string) (*NginxAppProtect, error)
 	}
 
 	// Get bot signatures version
-	botSigsVersion, err := getBotSignaturesVersion(BOT_SIGNATURES_UPDATE_FILE)
+	botSigsVersion, err := botSignaturesVersion(BOT_SIGNATURES_UPDATE_FILE)
 	if err != nil && err.Error() != fmt.Sprintf(FILE_NOT_FOUND, BOT_SIGNATURES_UPDATE_FILE) {
 		return nil, err
 	}
