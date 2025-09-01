@@ -181,6 +181,7 @@ func (n *NginxAppProtect) generateNAPDetailsProtoCommand() *proto.DataplaneSoftw
 			WafRelease:              napReport.NAPRelease,
 			AttackSignaturesVersion: napReport.AttackSignaturesVersion,
 			ThreatCampaignsVersion:  napReport.ThreatCampaignsVersion,
+			BotSignaturesVersion:    napReport.BotSignaturesVersion,
 			PrecompiledPublication:  n.precompiledPublication,
 			Health: &proto.AppProtectWAFHealth{
 				SystemId:            n.env.GetSystemUUID(),
