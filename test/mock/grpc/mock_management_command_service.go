@@ -463,7 +463,7 @@ func (cs *CommandService) addExternalFileServerEndpoint() {
 		}
 
 		// Check if the file exists
-		if _, err := os.Stat(absFile); os.IsNotExist(err) {
+		if _, file_err := os.Stat(absFile); os.IsNotExist(file_err) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
 			return
 		}
