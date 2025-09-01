@@ -441,17 +441,35 @@ func (cs *CommandService) addExternalFileServerEndpoint() {
 	// This API will serve individual files from the external directory
 	cs.server.GET("/api/v1/externalfile/:filename", func(c *gin.Context) {
 		filename := c.Param("filename")
+		// Validate that the filename does not contain path separators or ".."
+		if strings.Contains(filename, "/") || strings.Contains(filename, "\\") || strings.Contains(filename, "..") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file name"})
+			return
+		}
 		filePath := filepath.Join(cs.externalFileServer, filename)
+		absBase, err := filepath.Abs(cs.externalFileServer)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal error"})
+			return
+		}
+		absFile, err := filepath.Abs(filePath)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file name"})
+			return
+		}
+		if !strings.HasPrefix(absFile, absBase) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file name"})
+			return
+		}
 
 		// Check if the file exists
-		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		if _, err := os.Stat(absFile); os.IsNotExist(err) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
-
 			return
 		}
 
 		// Serve the file
-		c.File(filePath)
+		c.File(absFile)
 	})
 
 	slog.Info("Serving individual external files from", "directory", cs.externalFileServer)
