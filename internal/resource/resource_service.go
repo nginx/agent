@@ -19,6 +19,11 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/nginx/agent/v3/pkg/host/exec"
+	"github.com/nginx/agent/v3/pkg/nginxprocess"
+
+	"github.com/nginx/agent/v3/pkg/host"
+
 	parser "github.com/nginx/agent/v3/internal/datasource/config"
 	datasource "github.com/nginx/agent/v3/internal/datasource/proto"
 	"github.com/nginx/agent/v3/internal/model"
@@ -29,8 +34,6 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/nginx/agent/v3/internal/config"
-
-	"github.com/nginx/agent/v3/internal/datasource/host"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )
@@ -48,6 +51,9 @@ const (
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . instanceOperator
+
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//counterfeiter:generate . processOperator
 
 type resourceServiceInterface interface {
 	AddInstances(instanceList []*mpi.Instance) *mpi.Resource
@@ -73,6 +79,13 @@ type (
 
 	logTailerOperator interface {
 		Tail(ctx context.Context, errorLogs string, errorChannel chan error)
+	}
+
+	processOperator interface {
+		FindNginxProcesses(ctx context.Context) ([]*nginxprocess.Process, error)
+		NginxWorkerProcesses(ctx context.Context, masterProcessPid int32) []*nginxprocess.Process
+		FindParentProcessID(ctx context.Context, instanceID string, nginxProcesses []*nginxprocess.Process,
+			executer exec.ExecInterface) (int32, error)
 	}
 )
 
@@ -197,6 +210,7 @@ func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) (*
 		}
 	}
 
+	// Need to parse config to determine what error logs to watch if new ones are added as part of the NGINX reload
 	nginxConfigContext, parseErr := r.nginxConfigParser.Parse(ctx, instance)
 	if parseErr != nil || nginxConfigContext == nil {
 		return nil, fmt.Errorf("failed to parse config %w", parseErr)
@@ -216,13 +230,22 @@ func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) (*
 		return nil, fmt.Errorf("failed to reload NGINX %w", reloadErr)
 	}
 
+	// Check if APIs have been added/updated/removed
+	nginxConfigContext.StubStatus = r.nginxConfigParser.FindStubStatusAPI(ctx, nginxConfigContext)
+	nginxConfigContext.PlusAPI = r.nginxConfigParser.FindPlusAPI(ctx, nginxConfigContext)
+
+	datasource.UpdateNginxInstanceRuntime(instance, nginxConfigContext)
+	r.UpdateInstances(ctx, []*mpi.Instance{instance})
+
+	slog.DebugContext(ctx, "Updated Instance Runtime after reloading NGINX", "instance", instance.GetInstanceRuntime())
+
 	return nginxConfigContext, nil
 }
 
 func (r *ResourceService) GetHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance,
 	upstream string,
 ) ([]client.UpstreamServer, error) {
-	plusClient, err := r.createPlusClient(instance)
+	plusClient, err := r.createPlusClient(ctx, instance)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
 		return nil, err
@@ -237,7 +260,7 @@ func (r *ResourceService) GetHTTPUpstreamServers(ctx context.Context, instance *
 
 func (r *ResourceService) GetUpstreams(ctx context.Context, instance *mpi.Instance,
 ) (*client.Upstreams, error) {
-	plusClient, err := r.createPlusClient(instance)
+	plusClient, err := r.createPlusClient(ctx, instance)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
 		return nil, err
@@ -252,7 +275,7 @@ func (r *ResourceService) GetUpstreams(ctx context.Context, instance *mpi.Instan
 
 func (r *ResourceService) GetStreamUpstreams(ctx context.Context, instance *mpi.Instance,
 ) (*client.StreamUpstreams, error) {
-	plusClient, err := r.createPlusClient(instance)
+	plusClient, err := r.createPlusClient(ctx, instance)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
 		return nil, err
@@ -266,11 +289,12 @@ func (r *ResourceService) GetStreamUpstreams(ctx context.Context, instance *mpi.
 }
 
 // max number of returns from function is 3
-// nolint: revive
+//
+//nolint:revive // maximum return allowed is 3
 func (r *ResourceService) UpdateStreamServers(ctx context.Context, instance *mpi.Instance, upstream string,
 	upstreams []*structpb.Struct,
 ) (added, updated, deleted []client.StreamUpstreamServer, err error) {
-	plusClient, err := r.createPlusClient(instance)
+	plusClient, err := r.createPlusClient(ctx, instance)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
 		return nil, nil, nil, err
@@ -286,11 +310,12 @@ func (r *ResourceService) UpdateStreamServers(ctx context.Context, instance *mpi
 }
 
 // max number of returns from function is 3
-// nolint: revive
+//
+//nolint:revive // maximum return allowed is 3
 func (r *ResourceService) UpdateHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance, upstream string,
 	upstreams []*structpb.Struct,
 ) (added, updated, deleted []client.UpstreamServer, err error) {
-	plusClient, err := r.createPlusClient(instance)
+	plusClient, err := r.createPlusClient(ctx, instance)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to create plus client ", "error", err)
 		return nil, nil, nil, err
@@ -335,7 +360,7 @@ func convertToStreamUpstreamServer(streamUpstreams []*structpb.Struct) []client.
 	return servers
 }
 
-func (r *ResourceService) createPlusClient(instance *mpi.Instance) (*client.NginxClient, error) {
+func (r *ResourceService) createPlusClient(ctx context.Context, instance *mpi.Instance) (*client.NginxClient, error) {
 	plusAPI := instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo().GetPlusApi()
 	var endpoint string
 
@@ -343,7 +368,6 @@ func (r *ResourceService) createPlusClient(instance *mpi.Instance) (*client.Ngin
 		return nil, errors.New("failed to preform API action, NGINX Plus API is not configured")
 	}
 
-	slog.Info("location", "", plusAPI.GetListen())
 	if strings.HasPrefix(plusAPI.GetListen(), "unix:") {
 		endpoint = fmt.Sprintf(unixPlusAPIFormat, plusAPI.GetLocation())
 	} else {
@@ -353,7 +377,7 @@ func (r *ResourceService) createPlusClient(instance *mpi.Instance) (*client.Ngin
 	httpClient := http.DefaultClient
 	caCertLocation := plusAPI.GetCa()
 	if caCertLocation != "" {
-		slog.Debug("Reading CA certificate", "file_path", caCertLocation)
+		slog.DebugContext(ctx, "Reading CA certificate", "file_path", caCertLocation)
 		caCert, err := os.ReadFile(caCertLocation)
 		if err != nil {
 			return nil, err
@@ -371,7 +395,7 @@ func (r *ResourceService) createPlusClient(instance *mpi.Instance) (*client.Ngin
 		}
 	}
 	if strings.HasPrefix(plusAPI.GetListen(), "unix:") {
-		httpClient = socketClient(strings.TrimPrefix(plusAPI.GetListen(), "unix:"))
+		httpClient = socketClient(ctx, strings.TrimPrefix(plusAPI.GetListen(), "unix:"))
 	}
 
 	return client.NewNginxClient(endpoint,
@@ -383,22 +407,36 @@ func (r *ResourceService) updateResourceInfo(ctx context.Context) {
 	r.resourceMutex.Lock()
 	defer r.resourceMutex.Unlock()
 
-	if r.info.IsContainer() {
-		r.resource.Info = r.info.ContainerInfo(ctx)
+	isContainer, err := r.info.IsContainer()
+	if err != nil {
+		slog.WarnContext(ctx, "Failed to check if resource is container", "error", err)
+	}
+
+	if isContainer {
+		r.resource.Info, err = r.info.ContainerInfo(ctx)
+		if err != nil {
+			slog.ErrorContext(ctx, "Failed to get container info", "error", err)
+			return
+		}
 		r.resource.ResourceId = r.resource.GetContainerInfo().GetContainerId()
 		r.resource.Instances = []*mpi.Instance{}
 	} else {
-		r.resource.Info = r.info.HostInfo(ctx)
+		r.resource.Info, err = r.info.HostInfo(ctx)
+		if err != nil {
+			slog.ErrorContext(ctx, "Failed to get host info", "error", err)
+			return
+		}
 		r.resource.ResourceId = r.resource.GetHostInfo().GetHostId()
 		r.resource.Instances = []*mpi.Instance{}
 	}
 }
 
-func socketClient(socketPath string) *http.Client {
+func socketClient(ctx context.Context, socketPath string) *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{
 			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-				return net.Dial("unix", socketPath)
+				dialer := &net.Dialer{}
+				return dialer.DialContext(ctx, "unix", socketPath)
 			},
 		},
 	}

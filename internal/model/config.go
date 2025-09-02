@@ -14,7 +14,10 @@ import (
 type NginxConfigContext struct {
 	StubStatus       *APIDetails
 	PlusAPI          *APIDetails
+	StubStatuses     []*APIDetails
+	PlusAPIs         []*APIDetails
 	InstanceID       string
+	ConfigPath       string
 	Files            []*v1.File
 	AccessLogs       []*AccessLog
 	ErrorLogs        []*ErrorLog
@@ -79,8 +82,7 @@ type ConfigApplySuccess struct {
 	DataPlaneResponse *v1.DataPlaneResponse
 }
 
-// Complexity is 11, allowed is 10
-// nolint: revive, cyclop
+//nolint:revive,cyclop // cyclomatic complexity is 16
 func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext) bool {
 	if ncc.StubStatus != nil && otherNginxConfigContext.StubStatus != nil {
 		if ncc.StubStatus.URL != otherNginxConfigContext.StubStatus.URL || ncc.StubStatus.Listen !=
@@ -98,6 +100,9 @@ func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext
 		}
 	}
 
+	if ncc.ConfigPath != otherNginxConfigContext.ConfigPath {
+		return false
+	}
 	if ncc.InstanceID != otherNginxConfigContext.InstanceID {
 		return false
 	}

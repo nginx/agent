@@ -20,8 +20,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nginx/agent/v3/pkg/host"
+
 	"github.com/nginx/agent/v3/internal/datasource/file"
-	"github.com/nginx/agent/v3/internal/datasource/host"
 	"github.com/nginx/agent/v3/internal/logger"
 
 	"github.com/goccy/go-yaml"
@@ -251,8 +252,8 @@ func addAuthHeader(collector *Collector, token string) {
 			Headers: header,
 		}
 	} else {
-		// nolint: lll
-		collector.Extensions.HeadersSetter.Headers = append(collector.Extensions.HeadersSetter.Headers, header...)
+		collector.Extensions.HeadersSetter.Headers = append(collector.Extensions.HeadersSetter.
+			Headers, header...)
 	}
 }
 
@@ -285,7 +286,11 @@ func addDefaultProcessors(collector *Collector) {
 }
 
 func addDefaultHostMetricsReceiver(collector *Collector) {
-	if host.NewInfo().IsContainer() {
+	isContainer, err := host.NewInfo().IsContainer()
+	if err != nil {
+		slog.Debug("No container information found", "error", err)
+	}
+	if isContainer {
 		addDefaultContainerHostMetricsReceiver(collector)
 	} else {
 		addDefaultVMHostMetricsReceiver(collector)
@@ -379,28 +384,6 @@ func registerFlags() {
 		DefManifestDir,
 		"Specifies the path to the directory containing the manifest files",
 	)
-	fs.Duration(
-		NginxReloadMonitoringPeriodKey,
-		DefNginxReloadMonitoringPeriod,
-		"The amount of time to monitor NGINX after a reload of configuration.",
-	)
-	fs.Bool(
-		NginxTreatWarningsAsErrorsKey,
-		DefTreatErrorsAsWarnings,
-		"Warning messages in the NGINX errors logs after a NGINX reload will be treated as an error.",
-	)
-
-	fs.String(
-		NginxApiTlsCa,
-		DefNginxApiTlsCa,
-		"The NGINX Plus CA certificate file location needed to call the NGINX Plus API if SSL is enabled.",
-	)
-
-	fs.StringSlice(
-		NginxExcludeLogsKey, []string{},
-		"A comma-separated list of one or more NGINX log paths that you want to exclude from metrics "+
-			"collection or error monitoring. This includes absolute paths or regex patterns",
-	)
 
 	fs.StringSlice(AllowedDirectoriesKey,
 		DefaultAllowedDirectories(),
@@ -442,6 +425,7 @@ func registerFlags() {
 	registerAuxiliaryCommandFlags(fs)
 	registerCollectorFlags(fs)
 	registerClientFlags(fs)
+	registerDataPlaneFlags(fs)
 
 	fs.SetNormalizeFunc(normalizeFunc)
 
@@ -454,6 +438,57 @@ func registerFlags() {
 			slog.Warn("Error occurred binding env", "env", flag.Name, "error", err)
 		}
 	})
+}
+
+func registerDataPlaneFlags(fs *flag.FlagSet) {
+	fs.Duration(
+		NginxReloadMonitoringPeriodKey,
+		DefNginxReloadMonitoringPeriod,
+		"The amount of time to monitor NGINX after a reload of configuration.",
+	)
+	fs.Bool(
+		NginxTreatWarningsAsErrorsKey,
+		DefTreatErrorsAsWarnings,
+		"Warning messages in the NGINX errors logs after a NGINX reload will be treated as an error.",
+	)
+
+	fs.String(
+		NginxApiTlsCa,
+		DefNginxApiTlsCa,
+		"The NGINX Plus CA certificate file location needed to call the NGINX Plus API if SSL is enabled.",
+	)
+
+	fs.StringSlice(
+		NginxExcludeLogsKey, []string{},
+		"A comma-separated list of one or more NGINX log paths that you want to exclude from metrics "+
+			"collection or error monitoring. This includes absolute paths or regex patterns",
+	)
+
+	// NGINX Reload Backoff Flags
+	fs.Duration(
+		NginxReloadBackoffInitialIntervalKey,
+		DefNginxReloadBackoffInitialInterval,
+		"The NGINX reload backoff initial interval, value in seconds")
+
+	fs.Duration(
+		NginxReloadBackoffMaxIntervalKey,
+		DefNginxReloadBackoffMaxInterval,
+		"The NGINX reload backoff max interval, value in seconds")
+
+	fs.Duration(
+		NginxReloadBackoffMaxElapsedTimeKey,
+		DefNginxReloadBackoffMaxElapsedTime,
+		"The NGINX reload backoff max elapsed time, value in seconds")
+
+	fs.Float64(
+		NginxReloadBackoffRandomizationFactorKey,
+		DefNginxReloadBackoffRandomizationFactor,
+		"The NGINX reload backoff randomization factor, value float")
+
+	fs.Float64(
+		NginxReloadBackoffMultiplierKey,
+		DefNginxReloadBackoffMultiplier,
+		"The NGINX reload backoff multiplier, value float")
 }
 
 func registerCommonFlags(fs *flag.FlagSet) {
@@ -596,6 +631,65 @@ func registerCommandFlags(fs *flag.FlagSet) {
 	fs.String(
 		CommandTLSServerNameKey,
 		DefCommandTLServerNameKey,
+		"Specifies the name of the server sent in the TLS configuration.",
+	)
+	fs.Duration(
+		CommandServerProxyTimeoutKey,
+		DefCommandServerProxyTimeoutKey,
+		"The explicit forward proxy HTTP Timeout, value in seconds")
+	fs.String(
+		CommandServerProxyURLKey,
+		DefCommandServerProxyURlKey,
+		"The Proxy URL to use for explicit forward proxy.",
+	)
+	fs.String(
+		CommandServerProxyNoProxyKey,
+		DefCommandServerProxyNoProxyKey,
+		"The No-Proxy URL to use for explicit forward proxy.",
+	)
+	fs.String(
+		CommandServerProxyAuthMethodKey,
+		DefCommandServerProxyAuthMethodKey,
+		"The Authentication method used for explicit forward proxy.",
+	)
+	fs.String(
+		CommandServerProxyUsernameKey,
+		DefCommandServerProxyUsernameKey,
+		"The Username used for basic authentication for explicit forward proxy.",
+	)
+	fs.String(
+		CommandServerProxyPasswordKey,
+		DefCommandServerProxyPasswordKey,
+		"The Password used for basic authentication for explicit forward proxy.",
+	)
+	fs.String(
+		CommandServerProxyTokenKey,
+		DefCommandServerProxyTokenKey,
+		"The bearer token used for authentication for explicit forward proxy.",
+	)
+	fs.String(
+		CommandServerProxyTLSCertKey,
+		DefCommandServerProxyTLSCertKey,
+		"The path to the certificate file to use for TLS communication with the command server.",
+	)
+	fs.String(
+		CommandServerProxyTLSKeyKey,
+		DefCommandServerProxyTLSKeyKey,
+		"The path to the certificate key file to use for TLS communication with the command server.",
+	)
+	fs.String(
+		CommandServerProxyTLSCaKey,
+		DefCommandServerProxyTLSCaKey,
+		"The path to CA certificate file to use for TLS communication with the command server.",
+	)
+	fs.Bool(
+		CommandServerProxyTLSSkipVerifyKey,
+		DefCommandServerProxyTLSSkipVerifyKey,
+		"Testing only. Skip verify controls client verification of a server's certificate chain and host name.",
+	)
+	fs.String(
+		CommandServerProxyTLSServerNameKey,
+		DefCommandServerProxyTLServerNameKey,
 		"Specifies the name of the server sent in the TLS configuration.",
 	)
 }
@@ -906,6 +1000,13 @@ func resolveDataPlaneConfig() *DataPlaneConfig {
 			TreatWarningsAsErrors:  viperInstance.GetBool(NginxTreatWarningsAsErrorsKey),
 			ExcludeLogs:            viperInstance.GetStringSlice(NginxExcludeLogsKey),
 			APITls:                 TLSConfig{Ca: viperInstance.GetString(NginxApiTlsCa)},
+			ReloadBackoff: &BackOff{
+				InitialInterval:     viperInstance.GetDuration(NginxReloadBackoffInitialIntervalKey),
+				MaxInterval:         viperInstance.GetDuration(NginxReloadBackoffMaxIntervalKey),
+				MaxElapsedTime:      viperInstance.GetDuration(NginxReloadBackoffMaxElapsedTimeKey),
+				RandomizationFactor: viperInstance.GetFloat64(NginxReloadBackoffRandomizationFactorKey),
+				Multiplier:          viperInstance.GetFloat64(NginxReloadBackoffMultiplierKey),
+			},
 		},
 	}
 }
@@ -1056,7 +1157,7 @@ func resolveProcessors() Processors {
 }
 
 // generate self-signed certificate for OTel receiver
-// nolint: revive
+
 func handleSelfSignedCertificates(col *Collector) error {
 	if col.Receivers.OtlpReceivers != nil {
 		for _, receiver := range col.Receivers.OtlpReceivers {
@@ -1198,9 +1299,10 @@ func resolveCommand() *Command {
 
 	command := &Command{
 		Server: &ServerConfig{
-			Host: viperInstance.GetString(CommandServerHostKey),
-			Port: viperInstance.GetInt(CommandServerPortKey),
-			Type: serverType,
+			Host:  viperInstance.GetString(CommandServerHostKey),
+			Port:  viperInstance.GetInt(CommandServerPortKey),
+			Type:  serverType,
+			Proxy: resolveProxy(),
 		},
 	}
 
@@ -1327,4 +1429,48 @@ func resolveMapStructure(key string, object any) error {
 	}
 
 	return nil
+}
+
+func resolveProxy() *Proxy {
+	proxy := &Proxy{
+		Timeout:    viperInstance.GetDuration(CommandServerProxyTimeoutKey),
+		URL:        viperInstance.GetString(CommandServerProxyURLKey),
+		NoProxy:    viperInstance.GetString(CommandServerProxyNoProxyKey),
+		Username:   viperInstance.GetString(CommandServerProxyUsernameKey),
+		Password:   viperInstance.GetString(CommandServerProxyPasswordKey),
+		Token:      viperInstance.GetString(CommandServerProxyTokenKey),
+		AuthMethod: viperInstance.GetString(CommandServerProxyAuthMethodKey),
+	}
+
+	if areCommandServerProxyTLSSettingsSet() {
+		proxy.TLS = &TLSConfig{
+			Cert:       viperInstance.GetString(CommandServerProxyTLSCertKey),
+			Key:        viperInstance.GetString(CommandServerProxyTLSKeyKey),
+			Ca:         viperInstance.GetString(CommandServerProxyTLSCaKey),
+			SkipVerify: viperInstance.GetBool(CommandServerProxyTLSSkipVerifyKey),
+			ServerName: viperInstance.GetString(CommandServerProxyTLSServerNameKey),
+		}
+	}
+
+	// If all fields are zero/nil/empty, return nil
+	if proxy.TLS == nil &&
+		proxy.Timeout == 0 &&
+		proxy.URL == "" &&
+		proxy.NoProxy == "" &&
+		proxy.AuthMethod == "" &&
+		proxy.Username == "" &&
+		proxy.Password == "" &&
+		proxy.Token == "" {
+		return nil
+	}
+
+	return proxy
+}
+
+func areCommandServerProxyTLSSettingsSet() bool {
+	return viperInstance.IsSet(CommandServerProxyTLSCertKey) ||
+		viperInstance.IsSet(CommandServerProxyTLSKeyKey) ||
+		viperInstance.IsSet(CommandServerProxyTLSCaKey) ||
+		viperInstance.IsSet(CommandServerProxyTLSSkipVerifyKey) ||
+		viperInstance.IsSet(CommandServerProxyTLSServerNameKey)
 }

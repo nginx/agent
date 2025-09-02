@@ -22,7 +22,7 @@ import (
 
 var letters = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-//nolint:gosec
+//nolint:gosec // random number generater is fine for test case.
 func randBytes(n int) []byte {
 	b := make([]byte, n)
 	for i := range b {
@@ -32,7 +32,7 @@ func randBytes(n int) []byte {
 	return b
 }
 
-//nolint:gocognit,revive
+//nolint:gocognit,revive // cognitive complexity is 26
 func TestSendChunkedFile(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -217,7 +217,7 @@ func (b badWriter) Write(p []byte) (n int, err error) {
 	return 0, errors.New("error")
 }
 
-//nolint:revive,govet,maintidx
+//nolint:revive,maintidx,govet // cognitive complexity is 14
 func TestRecvChunkedFile(t *testing.T) {
 	recvErr := errors.New("recv error")
 	type recvReturn struct {

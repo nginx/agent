@@ -28,7 +28,10 @@ type Process struct {
 }
 
 // IsWorker returns true if the process is a NGINX worker process.
-func (p *Process) IsWorker() bool { return strings.HasPrefix(p.Cmd, "nginx: worker") }
+func (p *Process) IsWorker() bool {
+	return strings.HasPrefix(p.Cmd, "nginx: worker") ||
+		strings.HasPrefix(p.Cmd, "{nginx-debug} nginx: worker")
+}
 
 // IsMaster returns true if the process is a NGINX master process.
 func (p *Process) IsMaster() bool {
@@ -56,11 +59,12 @@ type Option interface{ apply(opts *options) }
 
 type optionFunc func(*options)
 
-//nolint:ireturn
 func (f optionFunc) apply(o *options) { f(o) }
 
 // WithStatus runs an additional lookup to load the process status.
-func WithStatus(v bool) Option { //nolint:ireturn // functional options can be opaque
+//
+//nolint:ireturn // functional options can be opaque
+func WithStatus(v bool) Option {
 	return optionFunc(func(o *options) { o.loadStatus = v })
 }
 

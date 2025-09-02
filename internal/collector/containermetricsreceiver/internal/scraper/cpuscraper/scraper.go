@@ -57,12 +57,12 @@ func (s *CPUScraper) Start(_ context.Context, _ component.Host) error {
 	return nil
 }
 
-func (s *CPUScraper) Scrape(context.Context) (pmetric.Metrics, error) {
+func (s *CPUScraper) Scrape(ctx context.Context) (pmetric.Metrics, error) {
 	s.settings.Logger.Debug("Scraping container CPU metrics")
 
 	now := pcommon.NewTimestampFromTime(time.Now())
 
-	stats, err := s.cpuSource.Collect()
+	stats, err := s.cpuSource.Collect(ctx)
 	if err != nil {
 		return pmetric.NewMetrics(), err
 	}
