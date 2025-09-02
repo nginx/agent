@@ -227,19 +227,7 @@ build-test-oss-image:
 		--build-arg PACKAGES_REPO=$(OSS_PACKAGES_REPO) \
 		--build-arg BASE_IMAGE=$(BASE_IMAGE) \
 		--build-arg ENTRY_POINT=./test/docker/entrypoint.sh
-
-build-test-oss-image-apk:
-	CONTAINER_OS_TYPE=apk
-	BASE_IMAGE=docker.io/alpine:3.22
-	IMAGE_TAG=agent_alpine_3.22
-	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t nginx_oss_agent_alpine_3.22 . \
-		--no-cache -f ./test/docker/nginx-oss/apk/Dockerfile \
-		--target install-agent-repo \
-		--build-arg PACKAGE_NAME=$(PACKAGE_NAME) \
-		--build-arg PACKAGES_REPO=$(OSS_PACKAGES_REPO) \
-		--build-arg BASE_IMAGE=docker.io/alpine:3.22 \
-		--build-arg ENTRY_POINT=./test/docker/entrypoint.sh
-
+		
 .PHONY: build-mock-management-otel-collector-image
 build-mock-management-otel-collector-image: build-mock-management-otel-collector
 	$(CONTAINER_BUILDENV) $(CONTAINER_CLITOOL) build -t mock-collector . \
