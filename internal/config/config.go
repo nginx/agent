@@ -20,8 +20,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nginx/agent/v3/pkg/host"
+
 	"github.com/nginx/agent/v3/internal/datasource/file"
-	"github.com/nginx/agent/v3/internal/datasource/host"
 	"github.com/nginx/agent/v3/internal/logger"
 
 	"github.com/goccy/go-yaml"
@@ -285,7 +286,11 @@ func addDefaultProcessors(collector *Collector) {
 }
 
 func addDefaultHostMetricsReceiver(collector *Collector) {
-	if host.NewInfo().IsContainer() {
+	isContainer, err := host.NewInfo().IsContainer()
+	if err != nil {
+		slog.Debug("No container information found", "error", err)
+	}
+	if isContainer {
 		addDefaultContainerHostMetricsReceiver(collector)
 	} else {
 		addDefaultVMHostMetricsReceiver(collector)
@@ -626,6 +631,65 @@ func registerCommandFlags(fs *flag.FlagSet) {
 	fs.String(
 		CommandTLSServerNameKey,
 		DefCommandTLServerNameKey,
+		"Specifies the name of the server sent in the TLS configuration.",
+	)
+	fs.Duration(
+		CommandServerProxyTimeoutKey,
+		DefCommandServerProxyTimeoutKey,
+		"The explicit forward proxy HTTP Timeout, value in seconds")
+	fs.String(
+		CommandServerProxyURLKey,
+		DefCommandServerProxyURlKey,
+		"The Proxy URL to use for explicit forward proxy.",
+	)
+	fs.String(
+		CommandServerProxyNoProxyKey,
+		DefCommandServerProxyNoProxyKey,
+		"The No-Proxy URL to use for explicit forward proxy.",
+	)
+	fs.String(
+		CommandServerProxyAuthMethodKey,
+		DefCommandServerProxyAuthMethodKey,
+		"The Authentication method used for explicit forward proxy.",
+	)
+	fs.String(
+		CommandServerProxyUsernameKey,
+		DefCommandServerProxyUsernameKey,
+		"The Username used for basic authentication for explicit forward proxy.",
+	)
+	fs.String(
+		CommandServerProxyPasswordKey,
+		DefCommandServerProxyPasswordKey,
+		"The Password used for basic authentication for explicit forward proxy.",
+	)
+	fs.String(
+		CommandServerProxyTokenKey,
+		DefCommandServerProxyTokenKey,
+		"The bearer token used for authentication for explicit forward proxy.",
+	)
+	fs.String(
+		CommandServerProxyTLSCertKey,
+		DefCommandServerProxyTLSCertKey,
+		"The path to the certificate file to use for TLS communication with the command server.",
+	)
+	fs.String(
+		CommandServerProxyTLSKeyKey,
+		DefCommandServerProxyTLSKeyKey,
+		"The path to the certificate key file to use for TLS communication with the command server.",
+	)
+	fs.String(
+		CommandServerProxyTLSCaKey,
+		DefCommandServerProxyTLSCaKey,
+		"The path to CA certificate file to use for TLS communication with the command server.",
+	)
+	fs.Bool(
+		CommandServerProxyTLSSkipVerifyKey,
+		DefCommandServerProxyTLSSkipVerifyKey,
+		"Testing only. Skip verify controls client verification of a server's certificate chain and host name.",
+	)
+	fs.String(
+		CommandServerProxyTLSServerNameKey,
+		DefCommandServerProxyTLServerNameKey,
 		"Specifies the name of the server sent in the TLS configuration.",
 	)
 }
@@ -1235,9 +1299,10 @@ func resolveCommand() *Command {
 
 	command := &Command{
 		Server: &ServerConfig{
-			Host: viperInstance.GetString(CommandServerHostKey),
-			Port: viperInstance.GetInt(CommandServerPortKey),
-			Type: serverType,
+			Host:  viperInstance.GetString(CommandServerHostKey),
+			Port:  viperInstance.GetInt(CommandServerPortKey),
+			Type:  serverType,
+			Proxy: resolveProxy(),
 		},
 	}
 
@@ -1364,4 +1429,48 @@ func resolveMapStructure(key string, object any) error {
 	}
 
 	return nil
+}
+
+func resolveProxy() *Proxy {
+	proxy := &Proxy{
+		Timeout:    viperInstance.GetDuration(CommandServerProxyTimeoutKey),
+		URL:        viperInstance.GetString(CommandServerProxyURLKey),
+		NoProxy:    viperInstance.GetString(CommandServerProxyNoProxyKey),
+		Username:   viperInstance.GetString(CommandServerProxyUsernameKey),
+		Password:   viperInstance.GetString(CommandServerProxyPasswordKey),
+		Token:      viperInstance.GetString(CommandServerProxyTokenKey),
+		AuthMethod: viperInstance.GetString(CommandServerProxyAuthMethodKey),
+	}
+
+	if areCommandServerProxyTLSSettingsSet() {
+		proxy.TLS = &TLSConfig{
+			Cert:       viperInstance.GetString(CommandServerProxyTLSCertKey),
+			Key:        viperInstance.GetString(CommandServerProxyTLSKeyKey),
+			Ca:         viperInstance.GetString(CommandServerProxyTLSCaKey),
+			SkipVerify: viperInstance.GetBool(CommandServerProxyTLSSkipVerifyKey),
+			ServerName: viperInstance.GetString(CommandServerProxyTLSServerNameKey),
+		}
+	}
+
+	// If all fields are zero/nil/empty, return nil
+	if proxy.TLS == nil &&
+		proxy.Timeout == 0 &&
+		proxy.URL == "" &&
+		proxy.NoProxy == "" &&
+		proxy.AuthMethod == "" &&
+		proxy.Username == "" &&
+		proxy.Password == "" &&
+		proxy.Token == "" {
+		return nil
+	}
+
+	return proxy
+}
+
+func areCommandServerProxyTLSSettingsSet() bool {
+	return viperInstance.IsSet(CommandServerProxyTLSCertKey) ||
+		viperInstance.IsSet(CommandServerProxyTLSKeyKey) ||
+		viperInstance.IsSet(CommandServerProxyTLSCaKey) ||
+		viperInstance.IsSet(CommandServerProxyTLSSkipVerifyKey) ||
+		viperInstance.IsSet(CommandServerProxyTLSServerNameKey)
 }

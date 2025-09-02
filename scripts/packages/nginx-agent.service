@@ -2,7 +2,7 @@
 Description=NGINX Agent
 Documentation=https://github.com/nginx/agent#readme
 After=network.target
-Wants=network-online.target
+Wants=network.target
 StartLimitIntervalSec=15
 StartLimitBurst=5
 
@@ -11,24 +11,19 @@ User=${AGENT_USER}
 Group=${AGENT_GROUP}
 Type=simple
 
-ExecStartPre=/bin/mkdir -p ${AGENT_RUN_DIR}
-ExecStartPre=/bin/mkdir -p ${AGENT_LOG_DIR}
+LogsDirectory=nginx-agent
+RuntimeDirectory=nginx-agent
+StateDirectory=nginx-agent
 
 ExecStart=${AGENT_EXE}
-
 RestartSec=5
-Restart=always
-
+Restart=on-failure
 PermissionsStartOnly=true
-PIDFile=${AGENT_RUN_DIR}/nginx-agent.pid
-Environment=
+TimeoutStopSec=5s
 
-StandardOutput=syslog
-StandardError=syslog
-SyslogIdentifier=nginx-agent
-
-ExecStop=/bin/kill -2 $MAINPID
-ExecStop=/bin/sleep 3
+NoNewPrivileges=true
+ProtectHome=off
+PrivateTmp=true
 
 [Install]
 WantedBy=multi-user.target

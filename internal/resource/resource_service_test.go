@@ -13,17 +13,16 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/nginx/agent/v3/internal/model"
-	"github.com/nginx/agent/v3/internal/watcher/instance/instancefakes"
+	"github.com/nginx/agent/v3/pkg/host/hostfakes"
 
+	"github.com/nginx/agent/v3/internal/datasource/config/configfakes"
+	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginxinc/nginx-plus-go-client/v2/client"
 
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/nginx/agent/v3/internal/resource/resourcefakes"
 	"github.com/nginx/agent/v3/test/types"
-
-	"github.com/nginx/agent/v3/internal/datasource/host/hostfakes"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/test/protos"
@@ -211,17 +210,17 @@ func TestResourceService_GetResource(t *testing.T) {
 			mockInfo.ContainerInfoReturns(
 				&v1.Resource_ContainerInfo{
 					ContainerInfo: tc.expectedResource.GetContainerInfo(),
-				},
+				}, nil,
 			)
 		} else {
 			mockInfo.HostInfoReturns(
 				&v1.Resource_HostInfo{
 					HostInfo: tc.expectedResource.GetHostInfo(),
-				},
+				}, nil,
 			)
 		}
 
-		mockInfo.IsContainerReturns(tc.isContainer)
+		mockInfo.IsContainerReturns(tc.isContainer, nil)
 
 		resourceService := NewResourceService(ctx, types.AgentConfig())
 		resourceService.info = mockInfo
@@ -362,7 +361,7 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 			instanceOp.ReloadReturns(test.reloadErr)
 			instanceOp.ValidateReturns(test.validateErr)
 
-			nginxParser := instancefakes.FakeNginxConfigParser{}
+			nginxParser := configfakes.FakeConfigParser{}
 
 			nginxParser.ParseReturns(&model.NginxConfigContext{
 				StubStatus:       &model.APIDetails{},
@@ -373,6 +372,20 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 				ErrorLogs:        nil,
 				NAPSysLogServers: []string{},
 			}, nil)
+
+			nginxParser.FindStubStatusAPIReturns(&model.APIDetails{
+				URL:      "",
+				Listen:   "",
+				Location: "",
+				Ca:       "",
+			})
+
+			nginxParser.FindPlusAPIReturns(&model.APIDetails{
+				URL:      "",
+				Listen:   "",
+				Location: "",
+				Ca:       "",
+			})
 
 			resourceService := NewResourceService(ctx, types.AgentConfig())
 			resourceOpMap := make(map[string]instanceOperator)

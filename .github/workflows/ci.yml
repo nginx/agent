@@ -26,14 +26,14 @@ jobs:
   proxy-sanity-check:
     name: Proxy Sanity Check
     runs-on: ubuntu-22.04
-    if: ${{ !github.event.pull_request.head.repo.fork }}
+    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
     env:
       GOPROXY: "https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@azr.artifactory.f5net.com/artifactory/api/go/f5-nginx-go-dev"
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
             fetch-tags: 'true'
-      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
             go-version-file: 'go.mod'
             cache: false
@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
             go-version-file: 'go.mod'
             cache: false
@@ -62,7 +62,7 @@ jobs:
         contents: write
       steps:
           - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-          - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+          - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
             with:
                 go-version-file: 'go.mod'
                 cache: false
@@ -82,7 +82,7 @@ jobs:
       runs-on: ubuntu-22.04
       steps:
           - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-          - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+          - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
             with:
                 go-version-file: 'go.mod'
                 cache: false
@@ -96,7 +96,7 @@ jobs:
           - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
             with:
               fetch-tags: 'true'
-          - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+          - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
             with:
                 go-version-file: 'go.mod'
                 cache: false
@@ -127,7 +127,7 @@ jobs:
           version: "3.22"
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version-file: 'go.mod'
           cache: false
@@ -136,16 +136,30 @@ jobs:
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
+
+      - name: Create Results Directory
+        run: mkdir -p ${{ github.workspace }}/test/dashboard/logs/${{ github.job }}/${{matrix.container.image}}-${{matrix.container.version}}
+
+      - name: Start Promtail
+        uses: ./.github/actions/start-promtail
+        with:
+          loki_url: ${{ secrets.LOKI_DASHBOARD_URL }}
+
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
-            make integration-test
+          make integration-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}}/raw_logs.log
+          exit "${PIPESTATUS[0]}"
+
+      - name: Format Results
+        if: always()
+        run: bash ./scripts/dashboard/format_results.sh ${{job.status}} ${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}} ${{github.workspace}}
 
   official-oss-image-integration-tests:
     name: Integration Tests - Official OSS Images
     needs: build-unsigned-snapshot
-    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
+    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
     runs-on: ubuntu-22.04
     strategy:
       matrix:
@@ -164,7 +178,7 @@ jobs:
             release: "alpine"
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version-file: 'go.mod'
           cache: false
@@ -173,18 +187,32 @@ jobs:
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
+
+      - name: Create Results Directory
+        run: mkdir -p ${{ github.workspace }}/test/dashboard/logs/${{ github.job }}/${{matrix.container.image}}-${{matrix.container.version}}
+
+      - name: Start Promtail
+        uses: ./.github/actions/start-promtail
+        with:
+          loki_url: ${{ secrets.LOKI_DASHBOARD_URL }}
+
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           CONTAINER_NGINX_IMAGE_REGISTRY="docker-registry.nginx.com" \
           TAG="${{ matrix.container.version }}-${{ matrix.container.image }}" \
           OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" \
-            make official-image-integration-test
+          make official-image-integration-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}}/raw_logs.log
+          exit "${PIPESTATUS[0]}"
+
+      - name: Format Results
+        if: always()
+        run: bash ./scripts/dashboard/format_results.sh ${{job.status}} ${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}} ${{github.workspace}}
 
   official-plus-image-integration-tests:
     name: Integration Tests - Official Plus Images
     needs: build-unsigned-snapshot
-    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
+    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
     runs-on: ubuntu-22.04
     strategy:
       matrix:
@@ -201,7 +229,7 @@ jobs:
           path: "/nginx-plus/agent"
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version-file: 'go.mod'
           cache: false
@@ -216,6 +244,15 @@ jobs:
           registry: ${{ secrets.REGISTRY_URL }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Create Results Directory
+        run: mkdir -p ${{ github.workspace }}/test/dashboard/logs/${{ github.job }}/${{matrix.container.image}}-${{matrix.container.version}}
+
+      - name: Start Promtail
+        uses: ./.github/actions/start-promtail
+        with:
+          loki_url: ${{ secrets.LOKI_DASHBOARD_URL }}
+
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
@@ -223,7 +260,12 @@ jobs:
           TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
           OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" IMAGE_PATH="${{ matrix.container.path }}" \
           NGINX_LICENSE_JWT='${{ secrets.NGINX_LICENSE_JWT }}' \
-            make official-image-integration-test
+            make official-image-integration-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}}/raw_logs.log
+          exit "${PIPESTATUS[0]}"
+
+      - name: Format Results
+        if: always()
+        run: bash ./scripts/dashboard/format_results.sh ${{job.status}} ${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}} ${{github.workspace}}
 
   performance-tests:
     name: Performance Tests
@@ -232,7 +274,7 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version-file: 'go.mod'
           cache: false
@@ -256,7 +298,7 @@ jobs:
         run: git push 'https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/nginx/agent.git' benchmark-results:benchmark-results
   load-tests:
     name: Load Tests
-    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
+    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
     permissions:
       contents: write
     runs-on: ubuntu-22.04
@@ -264,7 +306,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
-      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version-file: 'go.mod'
           cache: false
