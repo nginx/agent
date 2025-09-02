@@ -9,6 +9,7 @@ import (
 	"context"
 	"os"
 	"testing"
+	"log/slog"
 
 	"github.com/nginx/agent/v3/test/integration/utils"
 	dto "github.com/prometheus/client_model/go"
@@ -23,6 +24,7 @@ type MetricsTestSuite struct {
 }
 
 func (s *MetricsTestSuite) SetupSuite() {
+	slog.Info("starting metric tests")
 	s.ctx = context.Background()
 	s.teardownTest = utils.SetupMetricsTest(s.T())
 	utils.WaitUntilNextScrapeCycle(s.T(), s.ctx)
@@ -40,11 +42,13 @@ func (s *MetricsTestSuite) TearDownTest() {
 }
 
 func (s *MetricsTestSuite) TearDownSuite() {
+	slog.Info("finished metric tests")
 	s.teardownTest(s.T())
 }
 
 // Check that the NGINX request count metric increases after generating some requests
-func (s *MetricsTestSuite) TestNginx_TestRequestCount() {
+func (s *MetricsTestSuite) TestNginxMetrics_TestRequestCount() {
+	slog.Info("starting nginx request count metric test")
 	metricName := "nginx_http_request_count"
 	family := s.metricFamilies[metricName]
 	s.Require().NotNil(family)
@@ -63,14 +67,15 @@ func (s *MetricsTestSuite) TestNginx_TestRequestCount() {
 
 	s.T().Logf("NGINX HTTP request count total: %v", got[0])
 	s.Require().Greater(got[0], baselineMetric[0])
+	slog.Info("finished nginx request count metric test")
 }
 
 // Check that the NGINX response count metric increases after generating some requests for each response code
-func (s *MetricsTestSuite) TestNginx_TestResponseCode() {
+func (s *MetricsTestSuite) TestNginxMetrics_TestResponseCode() {
 	if os.Getenv("IMAGE_PATH") != "/nginx/agent" {
 		s.T().Skip("Skipping test for NGINX OSS specific metric")
 	}
-
+	slog.Info("starting nginx response count metric test")
 	metricName := "nginx_http_response_count"
 	family := s.metricFamilies[metricName]
 	s.Require().NotNil(family)
@@ -96,10 +101,12 @@ func (s *MetricsTestSuite) TestNginx_TestResponseCode() {
 		s.T().Logf("NGINX HTTP response code %s total: %v", responseCodes[code], got[code])
 		s.Require().Greater(got[code], respBaseline[code])
 	}
+	slog.Info("finished nginx response count metric test")
 }
 
 // Check that the system CPU utilization metric increases after generating some requests
 func (s *MetricsTestSuite) TestHostMetrics_TestSystemCPUUtilization() {
+	slog.Info("starting host cpu utilization metric test")
 	family := s.metricFamilies["system_cpu_utilization"]
 	s.Require().NotNil(family)
 
@@ -123,10 +130,13 @@ func (s *MetricsTestSuite) TestHostMetrics_TestSystemCPUUtilization() {
 		s.T().Logf("CPU utilization for %s: %v", states[state], got[state])
 		s.Require().Greater(got[state], respBaseline[state])
 	}
+
+	slog.Info("finished host cpu utilization metric test")
 }
 
 // Check that the system memory usage metric changes after generating some requests
 func (s *MetricsTestSuite) TestHostMetrics_TestSystemMemoryUsage() {
+	slog.Info("starting host memory usage metric test")
 	family := s.metricFamilies["system_memory_usage"]
 	s.Require().NotNil(family)
 
@@ -150,6 +160,8 @@ func (s *MetricsTestSuite) TestHostMetrics_TestSystemMemoryUsage() {
 	}
 	s.Require().Less(got[0], respBaseline[0])
 	s.Require().Greater(got[1], respBaseline[1])
+
+	slog.Info("finished host memory usage metric test")
 }
 
 func TestMetricsTestSuite(t *testing.T) {
