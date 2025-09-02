@@ -239,19 +239,11 @@ func verifyManifestFile(ctx context.Context, tb testing.TB, testContainer testco
 	require.NoError(tb, err)
 
 	expected := `{
-  "/etc/nginx/mime.types": {
-    "manifest_file_meta": {
-      "name": "/etc/nginx/mime.types",
-      "hash": "Nsd9qi2FgD6HyRunI90rxqqmVDrkvUpWkDSnv4vORk0=",
-      "size": 5465,
-      "referenced": true
-    }
-  },
   "/etc/nginx/nginx.conf": {
     "manifest_file_meta": {
       "name": "/etc/nginx/nginx.conf",
-      "hash": "gJ1slpIAUmHAiSo5ZIalKvE40b1hJCgaXasQOMab6kc=",
-      "size": 1172,
+      "hash": "XEaOA4w+aT5fmNMISPwavBroLVYlkJf9sjKFTnWkTP8=",
+      "size": 1142,
       "referenced": true
     }
   }
