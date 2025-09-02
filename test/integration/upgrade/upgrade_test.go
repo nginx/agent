@@ -139,6 +139,10 @@ func upgradeAgent(ctx context.Context, tb testing.TB, testContainer testcontaine
 			"apt-get", "install", "-y", "--only-upgrade",
 			"/agent/build/" + packageName + ".deb", "-o", "Dpkg::Options::=--force-confold",
 		}
+	} else if strings.Contains(osRelease, "alpine") {
+		upgradeCmd = []string{
+			"apk", "add", "--allow-untrusted", "/agent/build/" + packageName + ".apk",
+		}
 	} else {
 		upgradeCmd = []string{"yum", "install", "-y", "/agent/build/" + packageName + ".rpm"}
 	}
