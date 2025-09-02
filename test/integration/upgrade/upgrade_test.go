@@ -26,42 +26,48 @@ import (
 )
 
 const (
-	maxFileSize      = 70000000
-	maxUpgradeTime   = 30 * time.Second
-	agentBuildDir    = "../agent/build"
-	agentPackageName = "nginx-agent"
+	maxFileSize    int64 = 70000000
+	maxUpgradeTime       = 30 * time.Second
+	agentBuildDir        = "../agent/build"
 )
 
 var (
-	osRelease        = os.Getenv("OS_RELEASE")
-	packageName      = os.Getenv("NGINX_AGENT_PACKAGE_NAME")
-	agentConfig      = "./configs/nginx-agent.conf"
-	agentValidConfig = "./configs/nginx-agent-v3-valid-config.conf"
+	osRelease   = os.Getenv("OS_RELEASE")
+	packageName = os.Getenv("PACKAGE_NAME")
 )
 
-func TestV3toV3Upgrade(t *testing.T) {
+func Test_UpgradeFromV3(t *testing.T) {
 	ctx := context.Background()
+
 	containerNetwork := utils.CreateContainerNetwork(ctx, t)
+	utils.SetupMockManagementPlaneGrpc(ctx, t, containerNetwork)
+	defer func(ctx context.Context) {
+		err := utils.MockManagementPlaneGrpcContainer.Terminate(ctx)
+		require.NoError(t, err)
+	}(ctx)
+
 	testContainer, teardownTest := upgradeSetup(t, true, containerNetwork)
 	defer teardownTest(t)
 
 	slog.Info("starting agent v3 upgrade tests")
 
-	// Verify Agent Package Path & get the path
-	verifyAgentPackageSize(t)
+	// get currently installed agent version
+	oldVersion := agentVersion(ctx, t, testContainer)
 
 	// verify agent upgrade
 	verifyAgentUpgrade(ctx, t, testContainer)
 
 	// verify version of agent
-	verifyAgentVersion(ctx, t, testContainer, agentPackageName)
+	verifyAgentVersion(ctx, t, testContainer, oldVersion)
+
+	// Verify Agent Package Path & get the path
+	verifyAgentPackageSize(t)
 
 	// verify agent v3 config has not changed
-	validateAgentConfig(t, agentValidConfig, agentConfig)
-
-	// Validate expected logs
+	validateAgentConfig(ctx, t, testContainer)
 
 	// validate agent manifest file
+	verifyManifestFile(ctx, t, testContainer)
 }
 
 func upgradeSetup(tb testing.TB, expectNoErrorsInLogs bool,
@@ -126,28 +132,30 @@ func upgradeAgent(ctx context.Context, tb testing.TB, testContainer testcontaine
 ) (io.Reader, time.Duration) {
 	tb.Helper()
 
-	var updateCmd, upgradeCmd []string
+	var upgradeCmd []string
 
-	if strings.Contains(osRelease, "Ubuntu") || strings.Contains(osRelease, "Debian") {
-		updateCmd = []string{"apt-get", "update"}
+	if strings.Contains(osRelease, "ubuntu") || strings.Contains(osRelease, "debian") {
 		upgradeCmd = []string{
 			"apt-get", "install", "-y", "--only-upgrade",
-			"nginx-agent", "-o", "Dpkg::Options::=--force-confold",
+			"/agent/build/" + packageName + ".deb", "-o", "Dpkg::Options::=--force-confold",
 		}
 	} else {
-		updateCmd = []string{"yum", "-y", "makecache"}
-		upgradeCmd = []string{"yum", "update", "-y", "nginx-agent"}
+		upgradeCmd = []string{"yum", "install", "-y", "/agent/build/" + packageName + ".rpm"}
 	}
 
 	start := time.Now()
 
-	exitCode, _, err := testContainer.Exec(ctx, updateCmd)
-	require.NoError(tb, err)
-	assert.Equal(tb, 0, exitCode)
-
 	exitCode, cmdOut, err := testContainer.Exec(ctx, upgradeCmd)
 	require.NoError(tb, err)
+
+	stdoutStderr, err := io.ReadAll(cmdOut)
+	require.NoError(tb, err)
+
+	output := strings.TrimSpace(string(stdoutStderr))
+
+	require.NoError(tb, err)
 	assert.Equal(tb, 0, exitCode)
+	tb.Logf("Upgrade command output: %s", output)
 
 	duration := time.Since(start)
 
@@ -156,20 +164,26 @@ func upgradeAgent(ctx context.Context, tb testing.TB, testContainer testcontaine
 
 func verifyAgentVersion(ctx context.Context, tb testing.TB, testContainer testcontainers.Container, oldVersion string) {
 	tb.Helper()
+
+	newVersion := agentVersion(ctx, tb, testContainer)
+	assert.NotEqual(tb, oldVersion, newVersion)
+	tb.Logf("agent upgraded to version %s successfully", newVersion)
+}
+
+func agentVersion(ctx context.Context, tb testing.TB, testContainer testcontainers.Container) string {
+	tb.Helper()
+
 	cmd := []string{"nginx-agent", "--version"}
 	exitCode, cmdOut, err := testContainer.Exec(ctx, cmd)
 	require.NoError(tb, err)
+	assert.Equal(tb, 0, exitCode)
 
 	stdoutStderr, err := io.ReadAll(cmdOut)
 	require.NoError(tb, err)
 
 	output := strings.TrimSpace(string(stdoutStderr))
 
-	assert.Equal(tb, 0, exitCode)
-	if output != oldVersion {
-		tb.Logf("expected version %s, got %s", oldVersion, output)
-	}
-	tb.Logf("agent upgraded to version %s successfully", output)
+	return output
 }
 
 func packagePath(pkgDir, osReleaseContent string) string {
@@ -184,19 +198,64 @@ func packagePath(pkgDir, osReleaseContent string) string {
 	return pkgPath + ".rpm"
 }
 
-func validateAgentConfig(tb testing.TB, expectedConfigPath, updatedConfigPath string) {
+func validateAgentConfig(ctx context.Context, tb testing.TB, testContainer testcontainers.Container) {
 	tb.Helper()
 
-	// valid config file
-	expectedContent, err := os.ReadFile(expectedConfigPath)
+	agentConfigContent, err := testContainer.CopyFileFromContainer(ctx, "/etc/nginx-agent/nginx-agent.conf")
 	require.NoError(tb, err)
 
-	// new config file
-	updated, err := os.ReadFile(updatedConfigPath)
+	agentConfig, err := io.ReadAll(agentConfigContent)
 	require.NoError(tb, err)
 
-	if !bytes.Equal(expectedContent, updated) {
-		tb.Fatalf("expected no changes in the config file")
+	expectedConfig, err := os.ReadFile("./configs/nginx-agent-v3-valid-config.conf")
+	require.NoError(tb, err)
+
+	expectedConfig = bytes.TrimSpace(expectedConfig)
+	agentConfig = bytes.TrimSpace(agentConfig)
+
+	assert.Equal(tb, string(expectedConfig), string(agentConfig))
+	tb.Log("agent config:", string(agentConfig))
+}
+
+func verifyManifestFile(ctx context.Context, tb testing.TB, testContainer testcontainers.Container) {
+	tb.Helper()
+
+	var manifestFileContent io.ReadCloser
+	var err error
+
+	retries := 5
+	for i := range retries {
+		manifestFileContent, err = testContainer.CopyFileFromContainer(ctx, "/var/lib/nginx-agent/manifest.json")
+		if err == nil {
+			break
+		}
+		tb.Logf("Error copying manifest file, retry %d/%d: %v", i+1, retries, err)
+		time.Sleep(2 * time.Second)
 	}
-	tb.Logf("config file validation was successful")
+
+	require.NoError(tb, err)
+
+	manifestFile, err := io.ReadAll(manifestFileContent)
+	require.NoError(tb, err)
+
+	expected := `{
+  "/etc/nginx/mime.types": {
+    "manifest_file_meta": {
+      "name": "/etc/nginx/mime.types",
+      "hash": "Nsd9qi2FgD6HyRunI90rxqqmVDrkvUpWkDSnv4vORk0=",
+      "size": 5465,
+      "referenced": true
+    }
+  },
+  "/etc/nginx/nginx.conf": {
+    "manifest_file_meta": {
+      "name": "/etc/nginx/nginx.conf",
+      "hash": "gJ1slpIAUmHAiSo5ZIalKvE40b1hJCgaXasQOMab6kc=",
+      "size": 1172,
+      "referenced": true
+    }
+  }
+}`
+
+	assert.Equal(tb, expected, string(manifestFile))
 }

@@ -41,8 +41,6 @@ func StartContainer(
 	buildTarget := Env(tb, "BUILD_TARGET")
 	dockerfilePath := Env(tb, "DOCKERFILE_PATH")
 	containerRegistry := Env(tb, "CONTAINER_NGINX_IMAGE_REGISTRY")
-	nginxAgentVersion := Env(tb, "NGINX_AGENT_VERSION")
-	nginxAgentPackageName := Env(tb, "NGINX_AGENT_PACKAGE_NAME")
 	tag := Env(tb, "TAG")
 	imagePath := Env(tb, "IMAGE_PATH")
 
@@ -60,8 +58,6 @@ func StartContainer(
 				"OS_VERSION":                     ToPtr(osVersion),
 				"ENTRY_POINT":                    ToPtr("./test/docker/entrypoint.sh"),
 				"CONTAINER_NGINX_IMAGE_REGISTRY": ToPtr(containerRegistry),
-				"NGINX_AGENT_VERSION":            ToPtr(nginxAgentVersion),
-				"NGINX_AGENT_PACKAGE_NAME":       ToPtr(nginxAgentPackageName),
 				"IMAGE_PATH":                     ToPtr(imagePath),
 				"TAG":                            ToPtr(tag),
 			},
