@@ -384,9 +384,8 @@ func labeledMetricValue(t *testing.T, family *dto.MetricFamily, labelKey string,
 
 	for val := range labelValues {
 		metric := SumMetricFamilyLabel(family, labelKey, labelValues[val])
-		if metric != baselineValues[val] {
-			results[val] = metric
-		} else {
+		results[val] = metric
+		if metric == baselineValues[val] {
 			allDifferent = false
 		}
 	}

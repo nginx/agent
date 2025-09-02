@@ -349,7 +349,7 @@ func StartMockCollectorStack(ctx context.Context, tb testing.TB,
 					FileMode:          configFilePermissions,
 				},
 				{
-					HostFilePath:      parameters.NginxConfigPath,
+					HostFilePath:      filepath.Join(parameters.NginxConfigPath, "nginx.conf"),
 					ContainerFilePath: "/etc/nginx/nginx.conf",
 					FileMode:          configFilePermissions,
 				},
