@@ -290,27 +290,27 @@ jobs:
       - name: Set env
         run: echo "GO_VERSION=$(cat go.mod | grep toolchain | sed 's/toolchain //; s/go//')" >> $GITHUB_ENV
 
-#      - name: Build Docker Image
-#        uses: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0 # v5.3.0
-#        env:
-#          GO_VERSION: ${{ env.GO_VERSION }}
-#        with:
-#          file: test/docker/load/Dockerfile
-#          tags: agent_ubuntu_24.04_load_test:1.0.0
-#          context: '.'
-#          push: false
-#          load: true
-#          no-cache: true
-#          secrets: |
-#            "nginx-crt=${{ secrets.NGINX_CRT }}"
-#            "nginx-key=${{ secrets.NGINX_KEY }}"
-#          build-args: |
-#            OSARCH=amd64
-#            GO_VERSION=${{ env.GO_VERSION }}
-
       - name: Build Docker Image
-        run: | 
-          make load-test-image
+        uses: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0 # v5.3.0
+        env:
+          GO_VERSION: ${{ env.GO_VERSION }}
+        with:
+          file: test/docker/load/Dockerfile
+          tags: agent_ubuntu_24.04_load_test:1.0.0
+          context: '.'
+          push: false
+          load: true
+          no-cache: true
+          secrets: |
+            "nginx-crt=${{ secrets.NGINX_CRT }}"
+            "nginx-key=${{ secrets.NGINX_KEY }}"
+          build-args: |
+            OSARCH=amd64
+            GO_VERSION=${{ env.GO_VERSION }}
+
+#      - name: Build Docker Image
+#        run: |
+#          make load-test-image
 
       - name: Run Load Tests
         run: |
