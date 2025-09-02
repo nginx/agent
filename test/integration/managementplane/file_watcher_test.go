@@ -6,12 +6,15 @@
 package managementplane
 
 import (
+	"log/slog"
+
 	"github.com/nginx/agent/v3/test/integration/utils"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )
 
 func (s *MPITestSuite) TestFileWatcher_Test1_TestUpdateNGINXConfig() {
+	slog.Info("starting MPI update NGINX config test")
 	err := utils.Container.CopyFileToContainer(
 		s.ctx,
 		"../../config/nginx/nginx-with-server-block-access-log.conf",
@@ -26,9 +29,11 @@ func (s *MPITestSuite) TestFileWatcher_Test1_TestUpdateNGINXConfig() {
 	s.Equal("Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 
 	utils.VerifyUpdateDataPlaneStatus(s.T(), utils.MockManagementPlaneAPIAddress)
+	slog.Info("finished MPI update NGINX config test")
 }
 
 func (s *MPITestSuite) TestFileWatcher_Test2_TestCreateNGINXConfig() {
+	slog.Info("starting MPI create NGINX config test")
 	err := utils.Container.CopyFileToContainer(
 		s.ctx,
 		"../../config/nginx/empty-nginx.conf",
@@ -42,9 +47,11 @@ func (s *MPITestSuite) TestFileWatcher_Test2_TestCreateNGINXConfig() {
 	s.Equal("Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 
 	utils.VerifyUpdateDataPlaneStatus(s.T(), utils.MockManagementPlaneAPIAddress)
+	slog.Info("finished MPI create NGINX config test")
 }
 
 func (s *MPITestSuite) TestFileWatcher_Test3_TestDeleteNGINXConfig() {
+	slog.Info("starting MPI delete NGINX config test")
 	_, _, err := utils.Container.Exec(
 		s.ctx,
 		[]string{"rm", "-rf", "/etc/nginx/test"},
@@ -56,4 +63,5 @@ func (s *MPITestSuite) TestFileWatcher_Test3_TestDeleteNGINXConfig() {
 	s.Equal("Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 
 	utils.VerifyUpdateDataPlaneStatus(s.T(), utils.MockManagementPlaneAPIAddress)
+	slog.Info("finished MPI delete NGINX config test")
 }

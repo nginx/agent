@@ -6,6 +6,7 @@
 package nginxless
 
 import (
+	"log/slog"
 	"testing"
 
 	"github.com/nginx/agent/v3/test/integration/utils"
@@ -15,10 +16,13 @@ import (
 
 // Verify that the agent sends a connection request to Management Plane even when Nginx is not present
 func TestNginxLessGrpc_Connection(t *testing.T) {
+	slog.Info("starting nginxless connection test")
 	teardownTest := utils.SetupConnectionTest(t, true, true, false,
 		"../../config/agent/nginx-config-with-grpc-client.conf")
 	defer teardownTest(t)
 
 	utils.VerifyConnection(t, 1, utils.MockManagementPlaneAPIAddress)
 	assert.False(t, t.Failed())
+
+	slog.Info("Finished nginxless connection test")
 }
