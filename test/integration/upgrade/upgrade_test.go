@@ -144,7 +144,7 @@ func upgradeAgent(ctx context.Context, tb testing.TB, testContainer testcontaine
 			"apk", "add", "--allow-untrusted", "/agent/build/" + packageName + ".apk",
 		}
 	} else {
-		upgradeCmd = []string{"yum", "install", "-y", "/agent/build/" + packageName + ".rpm"}
+		upgradeCmd = []string{"yum", "reinstall", "-y", "/agent/build/" + packageName + ".rpm"}
 	}
 
 	start := time.Now()
