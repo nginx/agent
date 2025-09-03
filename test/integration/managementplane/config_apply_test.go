@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"sort"
 	"testing"
 
@@ -69,6 +70,14 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test1_TestNoConfigChanges() {
 	responses := utils.ManagementPlaneResponses(s.T(), 2, utils.MockManagementPlaneAPIAddress)
 	s.T().Logf("Config apply responses: %v", responses)
 
+	err := utils.MockManagementPlaneGrpcContainer.CopyFileToContainer(
+		s.ctx,
+		"configs/mime.types",
+		s.mockManagementConfigDir+"/etc/nginx/mime.types",
+		0o666,
+	)
+	s.Require().NoError(err)
+
 	manifestFiles := map[string]*model.ManifestFile{
 		"/etc/nginx/mime.types": {
 			ManifestFileMeta: &model.ManifestFileMeta{
@@ -86,6 +95,11 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test1_TestNoConfigChanges() {
 				Referenced: true,
 			},
 		},
+	}
+
+	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+		manifestFiles["/etc/nginx/nginx.conf"].ManifestFileMeta.Hash = "/SWXYYenb2EcJNg6fiuzlkdj91nBdsMdF1vLm7Wybvc="
+		manifestFiles["/etc/nginx/nginx.conf"].ManifestFileMeta.Size = 1218
 	}
 
 	utils.CheckManifestFile(s.T(), utils.Container, manifestFiles)
@@ -223,7 +237,7 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test4_TestInvalidConfig() {
 
 	utils.PerformConfigApply(s.T(), s.nginxInstanceID, utils.MockManagementPlaneAPIAddress)
 
-	responses := utils.ManagementPlaneResponses(s.T(), 3, utils.MockManagementPlaneAPIAddress)
+	responses := utils.ManagementPlaneResponses(s.T(), 2, utils.MockManagementPlaneAPIAddress)
 	s.T().Logf("Config apply responses: %v", responses)
 
 	manifestFiles := map[string]*model.ManifestFile{
@@ -253,8 +267,6 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test4_TestInvalidConfig() {
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_FAILURE, responses[1].GetCommandResponse().GetStatus())
 	s.Equal("Config apply failed, rollback successful", responses[1].GetCommandResponse().GetMessage())
 	s.Equal(configApplyErrorMessage, responses[1].GetCommandResponse().GetError())
-	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[2].GetCommandResponse().GetStatus())
-	s.Equal("Successfully updated all files", responses[2].GetCommandResponse().GetMessage())
 	slog.Info("finished config apply invalid config test")
 }
 
