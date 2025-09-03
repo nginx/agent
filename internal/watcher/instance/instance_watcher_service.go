@@ -172,7 +172,6 @@ func (iw *InstanceWatcherService) HandleNginxConfigContextUpdate(ctx context.Con
 		updatesRequired = proto.UpdateNginxInstanceRuntime(instance, nginxConfigContext)
 	}
 
-	slog.InfoContext(ctx, "------- Updating NGINX instance config", "updates_required", updatesRequired)
 	if updatesRequired {
 		instanceUpdates := InstanceUpdates{}
 		instanceUpdates.UpdatedInstances = append(instanceUpdates.UpdatedInstances, instance)
