@@ -70,19 +70,11 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test1_TestNoConfigChanges() {
 	responses := utils.ManagementPlaneResponses(s.T(), 2, utils.MockManagementPlaneAPIAddress)
 	s.T().Logf("Config apply responses: %v", responses)
 
-	err := utils.MockManagementPlaneGrpcContainer.CopyFileToContainer(
-		s.ctx,
-		"configs/mime.types",
-		s.mockManagementConfigDir+"/etc/nginx/mime.types",
-		0o666,
-	)
-	s.Require().NoError(err)
-
 	manifestFiles := map[string]*model.ManifestFile{
 		"/etc/nginx/mime.types": {
 			ManifestFileMeta: &model.ManifestFileMeta{
 				Name:       "/etc/nginx/mime.types",
-				Hash:       "Nsd9qi2FgD6HyRunI90rxqqmVDrkvUpWkDSnv4vORk0=",
+				Hash:       "b5XR19dePAcpB9hFYipp0jEQ0SZsFv8SKzEJuLIfOuk=",
 				Size:       5465,
 				Referenced: true,
 			},
