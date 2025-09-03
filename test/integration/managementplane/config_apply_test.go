@@ -340,7 +340,7 @@ func (s *ConfigApplyChunkingTestSuite) TestConfigApplyChunking() {
 		"/etc/nginx/mime.types": {
 			ManifestFileMeta: &model.ManifestFileMeta{
 				Name:       "/etc/nginx/mime.types",
-				Hash:       "Nsd9qi2FgD6HyRunI90rxqqmVDrkvUpWkDSnv4vORk0=",
+				Hash:       "b5XR19dePAcpB9hFYipp0jEQ0SZsFv8SKzEJuLIfOuk=",
 				Size:       5465,
 				Referenced: true,
 			},
