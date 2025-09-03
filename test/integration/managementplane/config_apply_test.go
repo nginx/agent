@@ -8,6 +8,7 @@ package managementplane
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sort"
 	"testing"
 
@@ -39,6 +40,7 @@ type ConfigApplyChunkingTestSuite struct {
 }
 
 func (s *ConfigApplyTestSuite) SetupSuite() {
+	slog.Info("starting config apply tests")
 	s.ctx = context.Background()
 	s.teardownTest = utils.SetupConnectionTest(s.T(), false, false, false,
 		"../../config/agent/nginx-config-with-grpc-client.conf")
@@ -52,6 +54,7 @@ func (s *ConfigApplyTestSuite) SetupSuite() {
 }
 
 func (s *ConfigApplyTestSuite) TearDownSuite() {
+	slog.Info("finished config apply tests")
 	s.teardownTest(s.T())
 }
 
@@ -61,6 +64,7 @@ func (s *ConfigApplyTestSuite) TearDownTest() {
 
 // Config Apply wit no changes to config
 func (s *ConfigApplyTestSuite) TestConfigApply_Test1_TestNoConfigChanges() {
+	slog.Info("starting config apply no config changes test")
 	utils.PerformConfigApply(s.T(), s.nginxInstanceID, utils.MockManagementPlaneAPIAddress)
 	responses := utils.ManagementPlaneResponses(s.T(), 2, utils.MockManagementPlaneAPIAddress)
 	s.T().Logf("Config apply responses: %v", responses)
@@ -90,10 +94,12 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test1_TestNoConfigChanges() {
 	s.Equal("Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
 	s.Equal("Config apply successful, no files to change", responses[1].GetCommandResponse().GetMessage())
+	slog.Info("finished config apply no config changes test")
 }
 
 // Config apply -  Add, Update and Delete Referenced file from Management Plane
 func (s *ConfigApplyTestSuite) TestConfigApply_Test2_TestValidConfig() {
+	slog.Info("starting config apply valid config test")
 	// Update nginx.conf
 	utils.WriteConfigFileMock(s.T(), s.nginxInstanceID, "/etc/nginx/test/test.conf",
 		"/etc/nginx/test/test.conf", "/etc/nginx/test/test.conf")
@@ -149,10 +155,12 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test2_TestValidConfig() {
 	s.Equal("Config apply successful", responses[0].GetCommandResponse().GetMessage())
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
 	s.Equal("Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
+	slog.Info("finished config apply valid config test")
 }
 
 // Add, Update and Delete file on DataPlane - Trigger update file overview
 func (s *ConfigApplyTestSuite) TestConfigApply_Test3_DataPlaneUpdate() {
+	slog.Info("starting config apply data plane update test")
 	// Add test2.conf to dataplane
 	err := utils.Container.CopyFileToContainer(
 		s.ctx,
@@ -200,9 +208,11 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test3_DataPlaneUpdate() {
 
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	s.Equal("Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
+	slog.Info("finished config apply data plane update test")
 }
 
 func (s *ConfigApplyTestSuite) TestConfigApply_Test4_TestInvalidConfig() {
+	slog.Info("starting config apply invalid config test")
 	err := utils.MockManagementPlaneGrpcContainer.CopyFileToContainer(
 		s.ctx,
 		"../../config/nginx/invalid-nginx.conf",
@@ -245,9 +255,11 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test4_TestInvalidConfig() {
 	s.Equal(configApplyErrorMessage, responses[1].GetCommandResponse().GetError())
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[2].GetCommandResponse().GetStatus())
 	s.Equal("Successfully updated all files", responses[2].GetCommandResponse().GetMessage())
+	slog.Info("finished config apply invalid config test")
 }
 
 func (s *ConfigApplyTestSuite) TestConfigApply_Test5_TestFileNotInAllowedDirectory() {
+	slog.Info("starting config apply file not in allowed directory test")
 	utils.PerformInvalidConfigApply(s.T(), s.nginxInstanceID)
 
 	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
@@ -279,9 +291,11 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test5_TestFileNotInAllowedDirecto
 		"file not in allowed directories /unknown/nginx.conf",
 		responses[0].GetCommandResponse().GetError(),
 	)
+	slog.Info("finished config apply file not in allowed directory test")
 }
 
 func (s *ConfigApplyChunkingTestSuite) SetupSuite() {
+	slog.Info("starting config apply chunking tests")
 	s.ctx = context.Background()
 	s.teardownTest = utils.SetupConnectionTest(s.T(), false, false, false,
 		"../../config/agent/nginx-config-with-max-file-size.conf")
@@ -292,6 +306,7 @@ func (s *ConfigApplyChunkingTestSuite) SetupSuite() {
 }
 
 func (s *ConfigApplyChunkingTestSuite) TearDownSuite() {
+	slog.Info("finished config apply chunking tests")
 	s.teardownTest(s.T())
 }
 
