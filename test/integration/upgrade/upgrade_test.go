@@ -68,6 +68,8 @@ func Test_UpgradeFromV3(t *testing.T) {
 
 	// validate agent manifest file
 	verifyManifestFile(ctx, t, testContainer)
+
+	slog.Info("finished agent v3 upgrade tests")
 }
 
 func upgradeSetup(tb testing.TB, expectNoErrorsInLogs bool,
