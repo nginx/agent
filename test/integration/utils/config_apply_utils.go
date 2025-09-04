@@ -6,7 +6,6 @@
 package utils
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -129,8 +128,7 @@ func CheckManifestFile(t *testing.T, container testcontainers.Container,
 	expectedContent map[string]*model.ManifestFile,
 ) {
 	t.Helper()
-	ctx := context.Background()
-	file, err := container.CopyFileFromContainer(ctx, "/var/lib/nginx-agent/manifest.json")
+	file, err := container.CopyFileFromContainer(t.Context(), "/var/lib/nginx-agent/manifest.json")
 	require.NoError(t, err)
 	fileContent, err := io.ReadAll(file)
 	require.NoError(t, err)

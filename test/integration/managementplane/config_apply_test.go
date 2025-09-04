@@ -63,7 +63,7 @@ func (s *ConfigApplyTestSuite) TearDownTest() {
 	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
 }
 
-// Config Apply wit no changes to config
+// Config Apply with no changes to config
 func (s *ConfigApplyTestSuite) TestConfigApply_Test1_TestNoConfigChanges() {
 	slog.Info("starting config apply no config changes test")
 	utils.PerformConfigApply(s.T(), s.nginxInstanceID, utils.MockManagementPlaneAPIAddress)
