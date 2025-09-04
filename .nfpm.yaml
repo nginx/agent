@@ -51,7 +51,8 @@ apk:
   signature:
     key_file: ".key.rsa"
   scripts:
-    postupgrade: "./scripts/packages/postupgrade.sh"
+    preupgrade: "./scripts/packages/preinstall.sh"
+    postupgrade: "./scripts/packages/postinstall.sh"
 scripts:
   preinstall: "./scripts/packages/preinstall.sh"
   postinstall: "./scripts/packages/postinstall.sh"
