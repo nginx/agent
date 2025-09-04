@@ -217,6 +217,16 @@ jobs:
     strategy:
       matrix:
         container:
+        - image: "alpine"
+          version: "3.22"
+          plus: "r35"
+          release: "alpine"
+          path: "/nginx-plus/agent"
+        - image: "alpine"
+          version: "3.21"
+          plus: "r34"
+          release: "alpine"
+          path: "/nginx-plus/agent"
         - image: "debian"
           version: "bookworm"
           plus: "r35"
@@ -241,7 +251,7 @@ jobs:
       - name: Login to Docker Registry
         uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
         with:
-          registry: ${{ secrets.REGISTRY_URL }}
+          registry: ${{ secrets.TEST_REGISTRY_URL }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
@@ -256,7 +266,7 @@ jobs:
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" \
+          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.TEST_REGISTRY_URL }}" \
           TAG="nginx-plus-${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
           OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" IMAGE_PATH="${{ matrix.container.path }}" \
           NGINX_LICENSE_JWT='${{ secrets.TEST_JWT }}' \
