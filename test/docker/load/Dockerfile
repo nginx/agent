@@ -58,7 +58,8 @@ ARG OSARCH
 # Install Go
 RUN wget -q https://go.dev/dl/go${GO_VERSION}.linux-${OSARCH}.tar.gz \
     && tar -xvf go${GO_VERSION}.linux-${OSARCH}.tar.gz \
-    && mv go /usr/local
+    && mv go /usr/local > /dev/null \
+    && rm go${GO_VERSION}.linux-${OSARCH}.tar.gz
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV GOROOT=/usr/local/go
@@ -80,6 +81,7 @@ WORKDIR /agent/
 
 ## Pre-download Go modules
 RUN go mod tidy
+RUN make build && ls -la /agent/build && /agent/build/nginx-agent -v
 
 COPY test/docker/load/entrypoint.sh entrypoint.sh
 RUN chmod +x entrypoint.sh
