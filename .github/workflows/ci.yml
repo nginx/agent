@@ -217,16 +217,6 @@ jobs:
     strategy:
       matrix:
         container:
-        - image: "alpine"
-          version: "3.22"
-          plus: "r35"
-          release: "alpine"
-          path: "/nginx-plus/agent"
-        - image: "alpine"
-          version: "3.21"
-          plus: "r34"
-          release: "alpine"
-          path: "/nginx-plus/agent"
         - image: "debian"
           version: "bookworm"
           plus: "r35"
