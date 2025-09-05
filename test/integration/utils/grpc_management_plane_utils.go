@@ -43,6 +43,7 @@ const (
 	statusRetryCount = 3
 	retryWait        = 50 * time.Millisecond
 	retryMaxWait     = 200 * time.Millisecond
+	plusPath         = "/nginx-plus/agent"
 )
 
 type (
@@ -173,7 +174,7 @@ func setupNginxContainer(
 ) {
 	tb.Helper()
 	nginxConfPath := "../../config/nginx/nginx.conf"
-	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+	if os.Getenv("IMAGE_PATH") == plusPath {
 		nginxConfPath = "../../config/nginx/nginx-plus.conf"
 	}
 	params.NginxConfigPath = nginxConfPath
@@ -501,7 +502,7 @@ func VerifyUpdateDataPlaneStatus(t *testing.T, mockManagementPlaneAPIAddress str
 
 	assert.NotEmpty(t, instances[1].GetInstanceMeta().GetInstanceId())
 
-	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+	if os.Getenv("IMAGE_PATH") == plusPath {
 		assert.Equal(t, mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS, instances[1].GetInstanceMeta().GetInstanceType())
 	} else {
 		assert.Equal(t, mpi.InstanceMeta_INSTANCE_TYPE_NGINX, instances[1].GetInstanceMeta().GetInstanceType())
