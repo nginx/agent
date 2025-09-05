@@ -8,6 +8,7 @@ package helpers
 import (
 	"context"
 	"io"
+	"os"
 	"testing"
 
 	"github.com/docker/docker/api/types"
@@ -43,6 +44,14 @@ func StartContainer(
 	containerRegistry := Env(tb, "CONTAINER_NGINX_IMAGE_REGISTRY")
 	tag := Env(tb, "TAG")
 	imagePath := Env(tb, "IMAGE_PATH")
+
+	var env map[string]string
+	if os.Getenv("NGINX_LICENSE_JWT") != "" {
+		nginxLicenseJwt := os.Getenv("NGINX_LICENSE_JWT")
+		env = map[string]string{
+			"NGINX_LICENSE_JWT": nginxLicenseJwt,
+		}
+	}
 
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
@@ -92,6 +101,7 @@ func StartContainer(
 				FileMode:          configFilePermissions,
 			},
 		},
+		Env: env,
 	}
 
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
