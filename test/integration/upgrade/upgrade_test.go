@@ -17,9 +17,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nginx/agent/v3/test/integration/utils"
-
+	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/test/helpers"
+	"github.com/nginx/agent/v3/test/integration/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -67,7 +67,17 @@ func Test_UpgradeFromV3(t *testing.T) {
 	validateAgentConfig(ctx, t, testContainer)
 
 	// validate agent manifest file
-	verifyManifestFile(ctx, t, testContainer)
+	expected := map[string]*model.ManifestFile{
+		"/etc/nginx/nginx.conf": {
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/nginx.conf",
+				Hash:       "XEaOA4w+aT5fmNMISPwavBroLVYlkJf9sjKFTnWkTP8=",
+				Size:       1142,
+				Referenced: true,
+			},
+		},
+	}
+	utils.CheckManifestFile(t, testContainer, expected)
 
 	slog.Info("finished agent v3 upgrade tests")
 }
@@ -221,39 +231,4 @@ func validateAgentConfig(ctx context.Context, tb testing.TB, testContainer testc
 
 	assert.Equal(tb, string(expectedConfig), string(agentConfig))
 	tb.Log("agent config:", string(agentConfig))
-}
-
-func verifyManifestFile(ctx context.Context, tb testing.TB, testContainer testcontainers.Container) {
-	tb.Helper()
-
-	var manifestFileContent io.ReadCloser
-	var err error
-
-	retries := 5
-	for i := range retries {
-		manifestFileContent, err = testContainer.CopyFileFromContainer(ctx, "/var/lib/nginx-agent/manifest.json")
-		if err == nil {
-			break
-		}
-		tb.Logf("Error copying manifest file, retry %d/%d: %v", i+1, retries, err)
-		time.Sleep(2 * time.Second)
-	}
-
-	require.NoError(tb, err)
-
-	manifestFile, err := io.ReadAll(manifestFileContent)
-	require.NoError(tb, err)
-
-	expected := `{
-  "/etc/nginx/nginx.conf": {
-    "manifest_file_meta": {
-      "name": "/etc/nginx/nginx.conf",
-      "hash": "XEaOA4w+aT5fmNMISPwavBroLVYlkJf9sjKFTnWkTP8=",
-      "size": 1142,
-      "referenced": true
-    }
-  }
-}`
-
-	assert.Equal(tb, expected, string(manifestFile))
 }
