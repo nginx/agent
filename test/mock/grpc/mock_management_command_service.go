@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net"
@@ -39,6 +40,7 @@ type CommandService struct {
 	updateDataPlaneHealthRequest *mpi.UpdateDataPlaneHealthRequest
 	instanceFiles                map[string][]*mpi.File // key is instanceID
 	configDirectory              string
+	externalFileServer           string
 	dataPlaneResponses           []*mpi.DataPlaneResponse
 	updateDataPlaneHealthMutex   sync.Mutex
 	connectionMutex              sync.Mutex
@@ -50,7 +52,11 @@ func init() {
 	gin.SetMode(gin.ReleaseMode)
 }
 
-func NewCommandService(requestChan chan *mpi.ManagementPlaneRequest, configDirectory string) *CommandService {
+func NewCommandService(
+	requestChan chan *mpi.ManagementPlaneRequest,
+	configDirectory string,
+	externalFileServer string,
+) *CommandService {
 	cs := &CommandService{
 		requestChan:                requestChan,
 		connectionMutex:            sync.Mutex{},
@@ -58,6 +64,7 @@ func NewCommandService(requestChan chan *mpi.ManagementPlaneRequest, configDirec
 		updateDataPlaneHealthMutex: sync.Mutex{},
 		dataPlaneResponsesMutex:    sync.Mutex{},
 		configDirectory:            configDirectory,
+		externalFileServer:         externalFileServer,
 		instanceFiles:              make(map[string][]*mpi.File),
 	}
 
@@ -73,6 +80,17 @@ func NewCommandService(requestChan chan *mpi.ManagementPlaneRequest, configDirec
 	cs.createServer(logger)
 
 	return cs
+}
+
+// Adding a struct to represent the external data source.
+type ExternalDataSource struct {
+	FilePath string `json:"filePath"`
+	Location string `json:"location"`
+}
+
+// Adding a struct for the request body of the config apply endpoint.
+type ConfigApplyRequestBody struct {
+	ExternalDataSources []*ExternalDataSource `json:"externalDataSources"`
 }
 
 func (cs *CommandService) StartServer(listener net.Listener) {
@@ -246,6 +264,7 @@ func (cs *CommandService) createServer(logger *slog.Logger) {
 	cs.addResponseAndRequestEndpoints()
 	cs.addConfigApplyEndpoint()
 	cs.addConfigEndpoint()
+	cs.addExternalFileServerEndpoint()
 }
 
 func (cs *CommandService) addConnectionEndpoint() {
@@ -359,7 +378,15 @@ func (cs *CommandService) addConfigApplyEndpoint() {
 			return
 		}
 
-		cs.instanceFiles[instanceID] = configFiles
+		updatedConfigFiles, externalFilesWereUpdated, err := processConfigApplyRequestBody(c, configFiles)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if externalFilesWereUpdated {
+			cs.instanceFiles[instanceID] = updatedConfigFiles
+		}
 
 		request := mpi.ManagementPlaneRequest{
 			MessageMeta: &mpi.MessageMeta{
@@ -408,6 +435,44 @@ func (cs *CommandService) addConfigEndpoint() {
 
 		c.JSON(http.StatusOK, data)
 	})
+}
+
+func (cs *CommandService) addExternalFileServerEndpoint() {
+	// This API will serve individual files from the external directory
+	cs.server.GET("/api/v1/externalfile/:filename", func(c *gin.Context) {
+		filename := c.Param("filename")
+		// Validate that the filename does not contain path separators or ".."
+		if strings.Contains(filename, "/") || strings.Contains(filename, "\\") || strings.Contains(filename, "..") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file name"})
+			return
+		}
+		filePath := filepath.Join(cs.externalFileServer, filename)
+		absBase, err := filepath.Abs(cs.externalFileServer)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal error"})
+			return
+		}
+		absFile, err := filepath.Abs(filePath)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file name"})
+			return
+		}
+		if !strings.HasPrefix(absFile, absBase) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file name"})
+			return
+		}
+
+		// Check if the file exists
+		if _, file_err := os.Stat(absFile); os.IsNotExist(file_err) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
+			return
+		}
+
+		// Serve the file
+		c.File(absFile)
+	})
+
+	slog.Info("Serving individual external files from", "directory", cs.externalFileServer)
 }
 
 func (cs *CommandService) findInstanceConfigFiles(instanceID string) (configFiles []*mpi.File, err error) {
@@ -468,4 +533,34 @@ func createFile(fullPath, filePath string) (*mpi.File, error) {
 
 func isValidFile(info os.FileInfo, fileFullPath string) bool {
 	return !info.IsDir() && !strings.HasSuffix(fileFullPath, ".DS_Store")
+}
+
+func processConfigApplyRequestBody(c *gin.Context, initialFiles []*mpi.File) ([]*mpi.File, bool, error) {
+	if c.Request.ContentLength == 0 {
+		return initialFiles, false, nil
+	}
+
+	var body ConfigApplyRequestBody
+	if bindErr := c.BindJSON(&body); bindErr != nil {
+		return initialFiles, false, fmt.Errorf("invalid request body: %w", bindErr)
+	}
+
+	filesMap := make(map[string]*mpi.File)
+	for _, file := range initialFiles {
+		if file.GetFileMeta() != nil {
+			filesMap[file.GetFileMeta().GetName()] = file
+		}
+	}
+
+	var externalFilesWereUpdated bool
+	for _, ed := range body.ExternalDataSources {
+		if file, ok := filesMap[ed.FilePath]; ok {
+			file.ExternalDataSource = &mpi.ExternalDataSource{
+				Location: ed.Location,
+			}
+			externalFilesWereUpdated = true
+		}
+	}
+
+	return initialFiles, externalFilesWereUpdated, nil
 }
