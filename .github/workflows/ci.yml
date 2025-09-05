@@ -156,6 +156,50 @@ jobs:
         if: always()
         run: bash ./scripts/dashboard/format_results.sh ${{job.status}} ${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}} ${{github.workspace}}
 
+  upgrade-tests:
+    name: Upgrade Tests
+    needs: build-unsigned-snapshot
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        container:
+          - image: "ubuntu"
+            version: "24.04"
+          - image: "redhatenterprise"
+            version: "9"
+          - image: "alpine"
+            version: "3.22"
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version-file: 'go.mod'
+          cache: false
+      - name: Download Packages
+        uses: actions/download-artifact@eaceaf801fd36c7dee90939fad912460b18a1ffe # v4.1.2
+        with:
+          name: nginx-agent-unsigned-snapshots
+          path: build
+
+      - name: Create Results Directory
+        run: mkdir -p ${{ github.workspace }}/test/dashboard/logs/${{ github.job }}/${{matrix.container.image}}-${{matrix.container.version}}
+
+      - name: Start Promtail
+        uses: ./.github/actions/start-promtail
+        with:
+          loki_url: ${{ secrets.LOKI_DASHBOARD_URL }}
+
+      - name: Run Upgrade Tests
+        run: |
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
+          OS_RELEASE="${{ matrix.container.image }}" OS_VERSION="${{ matrix.container.version }}" \
+          make upgrade-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}}/raw_logs.log
+          exit "${PIPESTATUS[0]}"
+
+      - name: Format Results
+        if: always()
+        run: bash ./scripts/dashboard/format_results.sh ${{job.status}} ${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}} ${{github.workspace}}
+
   official-oss-image-integration-tests:
     name: Integration Tests - Official OSS Images
     needs: build-unsigned-snapshot

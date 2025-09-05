@@ -100,8 +100,8 @@ func setupContainerEnvironment(ctx context.Context, tb testing.TB, nginxless, au
 	tb.Helper()
 	tb.Log("Running tests in a container environment")
 
-	containerNetwork := createContainerNetwork(ctx, tb)
-	setupMockManagementPlaneGrpc(ctx, tb, containerNetwork)
+	containerNetwork := CreateContainerNetwork(ctx, tb)
+	SetupMockManagementPlaneGrpc(ctx, tb, containerNetwork)
 	if auxiliaryServer {
 		setupAuxiliaryMockManagementPlaneGrpc(ctx, tb, containerNetwork)
 	}
@@ -118,8 +118,8 @@ func setupContainerEnvironment(ctx context.Context, tb testing.TB, nginxless, au
 	}
 }
 
-// createContainerNetwork creates and configures a container network.
-func createContainerNetwork(ctx context.Context, tb testing.TB) *testcontainers.DockerNetwork {
+// CreateContainerNetwork creates and configures a container network.
+func CreateContainerNetwork(ctx context.Context, tb testing.TB) *testcontainers.DockerNetwork {
 	tb.Helper()
 	containerNetwork, err := network.New(ctx, network.WithAttachable())
 	require.NoError(tb, err)
@@ -131,8 +131,8 @@ func createContainerNetwork(ctx context.Context, tb testing.TB) *testcontainers.
 	return containerNetwork
 }
 
-// setupMockManagementPlaneGrpc initializes the mock management plane gRPC container.
-func setupMockManagementPlaneGrpc(ctx context.Context, tb testing.TB, containerNetwork *testcontainers.DockerNetwork) {
+// SetupMockManagementPlaneGrpc initializes the mock management plane gRPC container.
+func SetupMockManagementPlaneGrpc(ctx context.Context, tb testing.TB, containerNetwork *testcontainers.DockerNetwork) {
 	tb.Helper()
 	MockManagementPlaneGrpcContainer = helpers.StartMockManagementPlaneGrpcContainer(ctx, tb, containerNetwork)
 	MockManagementPlaneGrpcAddress = "managementPlane:9092"

@@ -28,10 +28,11 @@ import (
 )
 
 const (
-	RetryCount       = 10
-	RetryWaitTime    = 5 * time.Second
-	RetryMaxWaitTime = 1 * time.Minute
-	permissions      = 0o666
+	RetryCount                = 10
+	RetryWaitTime             = 5 * time.Second
+	RetryMaxWaitTime          = 1 * time.Minute
+	permissions               = 0o666
+	manifestFileRetryWaitTime = 2 * time.Second
 )
 
 var (
@@ -128,8 +129,21 @@ func CheckManifestFile(t *testing.T, container testcontainers.Container,
 	expectedContent map[string]*model.ManifestFile,
 ) {
 	t.Helper()
-	file, err := container.CopyFileFromContainer(t.Context(), "/var/lib/nginx-agent/manifest.json")
+
+	var file io.ReadCloser
+	var err error
+
+	retries := 5
+	for i := range retries {
+		file, err = container.CopyFileFromContainer(t.Context(), "/var/lib/nginx-agent/manifest.json")
+		if err == nil {
+			break
+		}
+		t.Logf("Error copying manifest file, retry %d/%d: %v", i+1, retries, err)
+		time.Sleep(manifestFileRetryWaitTime)
+	}
 	require.NoError(t, err)
+
 	fileContent, err := io.ReadAll(file)
 	require.NoError(t, err)
 
