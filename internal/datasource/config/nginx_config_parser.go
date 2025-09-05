@@ -37,8 +37,6 @@ const (
 		" \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\""
 	ltsvArg                           = "ltsv"
 	defaultNumberOfDirectiveArguments = 2
-	plusAPIName                       = "plus"
-	stubStatusAPIName                 = "stub status"
 	plusAPIDirective                  = "api"
 	stubStatusAPIDirective            = "stub_status"
 	unixStubStatusFormat              = "http://config-status%s"
@@ -66,7 +64,7 @@ var _ ConfigParser = (*NginxConfigParser)(nil)
 type (
 	crossplaneTraverseCallback           = func(ctx context.Context, parent, current *crossplane.Directive) error
 	crossplaneTraverseCallbackAPIDetails = func(ctx context.Context, parent,
-		current *crossplane.Directive, apiType string) *model.APIDetails
+		current *crossplane.Directive, apiType string) []*model.APIDetails
 )
 
 func NewNginxConfigParser(agentConfig *config.Config) *NginxConfigParser {
@@ -111,7 +109,7 @@ func (ncp *NginxConfigParser) FindStubStatusAPI(
 ) *model.APIDetails {
 	for _, stubStatus := range nginxConfigContext.StubStatuses {
 		if stubStatus != nil && stubStatus.URL != "" {
-			if ncp.pingAPIEndpoint(ctx, stubStatus, stubStatusAPIName) {
+			if ncp.pingAPIEndpoint(ctx, stubStatus, stubStatusAPIDirective) {
 				slog.InfoContext(ctx, "Found NGINX stub status API", "url", stubStatus.URL)
 				return stubStatus
 			}
@@ -131,7 +129,7 @@ func (ncp *NginxConfigParser) FindPlusAPI(
 ) *model.APIDetails {
 	for _, plusAPI := range nginxConfigContext.PlusAPIs {
 		if plusAPI != nil && plusAPI.URL != "" {
-			if ncp.pingAPIEndpoint(ctx, plusAPI, plusAPIName) {
+			if ncp.pingAPIEndpoint(ctx, plusAPI, plusAPIDirective) {
 				slog.InfoContext(ctx, "Found NGINX Plus API", "url", plusAPI.URL)
 				return plusAPI
 			}
@@ -385,12 +383,12 @@ func (ncp *NginxConfigParser) crossplaneConfigTraverseAPIDetails(
 	for _, dir := range root.Parsed {
 		response := callback(ctx, nil, dir, apiType)
 		if response != nil {
-			responses = append(responses, response)
+			responses = append(responses, response...)
 			continue
 		}
 		response = traverseAPIDetails(ctx, dir, callback, &stop, apiType)
 		if response != nil {
-			responses = append(responses, response)
+			responses = append(responses, response...)
 		}
 	}
 
@@ -403,14 +401,14 @@ func traverseAPIDetails(
 	callback crossplaneTraverseCallbackAPIDetails,
 	stop *bool,
 	apiType string,
-) (response *model.APIDetails) {
+) (response []*model.APIDetails) {
 	if *stop {
 		return nil
 	}
 
 	for _, child := range root.Block {
 		response = callback(ctx, root, child, apiType)
-		if response != nil && response.URL != "" {
+		if len(response) > 0 {
 			*stop = true
 			return response
 		}
@@ -573,9 +571,9 @@ func (ncp *NginxConfigParser) sslCert(ctx context.Context, file, rootDir string)
 
 func (ncp *NginxConfigParser) apiCallback(
 	ctx context.Context, parent, current *crossplane.Directive, apiType string,
-) *model.APIDetails {
-	details := ncp.apiDetailsFromLocationDirective(ctx, parent, current, apiType)
-	if details != nil {
+) (details []*model.APIDetails) {
+	details = append(details, ncp.apiDetailsFromLocationDirective(ctx, parent, current, apiType)...)
+	if len(details) > 0 {
 		slog.DebugContext(ctx, "Found "+apiType, "api_details", details)
 	}
 
@@ -679,7 +677,7 @@ func validateAPIResponse(apiType string, bodyBytes []byte) error {
 func (ncp *NginxConfigParser) apiDetailsFromLocationDirective(
 	ctx context.Context, parent, current *crossplane.Directive,
 	locationDirectiveName string,
-) (details *model.APIDetails) {
+) (details []*model.APIDetails) {
 	// Check if SSL is enabled in the server block
 	isSSL := ncp.isSSLEnabled(parent)
 
@@ -698,11 +696,16 @@ func (ncp *NginxConfigParser) apiDetailsFromLocationDirective(
 			continue
 		}
 
-		address := ncp.parseAddressFromServerDirective(parent)
+		addresses := ncp.parseAddressFromServerDirective(parent)
 		path := ncp.parsePathFromLocationDirective(current)
 
 		if locChild.Directive == locationDirectiveName {
-			details = ncp.createAPIDetails(locationDirectiveName, address, path, caCertLocation, isSSL)
+			for _, address := range addresses {
+				details = append(
+					details,
+					ncp.createAPIDetails(locationDirectiveName, address, path, caCertLocation, isSSL),
+				)
+			}
 		}
 	}
 
@@ -738,21 +741,24 @@ func (ncp *NginxConfigParser) createAPIDetails(
 	return details
 }
 
-func (ncp *NginxConfigParser) parseAddressFromServerDirective(parent *crossplane.Directive) string {
+func (ncp *NginxConfigParser) parseAddressFromServerDirective(parent *crossplane.Directive) (addresses []string) {
 	port := "80"
-	host := "localhost"
+	hosts := []string{"localhost", "127.0.0.1"}
 
 	if parent == nil {
-		return ""
+		return addresses
 	}
 
 	for _, dir := range parent.Block {
 		if dir.Directive == "listen" {
-			port, host = ncp.parseListenDirectiveAddress(dir, port, host)
+			for _, host := range hosts {
+				port, host = ncp.parseListenDirectiveAddress(dir, port, host)
+				addresses = append(addresses, host+":"+port)
+			}
 		}
 	}
 
-	return host + ":" + port
+	return addresses
 }
 
 func (ncp *NginxConfigParser) parseListenDirectiveAddress(

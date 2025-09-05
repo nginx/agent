@@ -93,6 +93,11 @@ func StartContainer(
 				ContainerFilePath: "/etc/nginx/nginx.conf",
 				FileMode:          configFilePermissions,
 			},
+			{
+				HostFilePath:      "../../config/nginx/mime.types",
+				ContainerFilePath: "/etc/nginx/mime.types",
+				FileMode:          configFilePermissions,
+			},
 		},
 	}
 
