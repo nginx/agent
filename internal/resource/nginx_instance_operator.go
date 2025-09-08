@@ -62,7 +62,7 @@ func (i *NginxInstanceOperator) Validate(ctx context.Context, instance *mpi.Inst
 }
 
 func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instance) error {
-	var reloadTime time.Time
+	var createdTime time.Time
 	var errorsFound error
 	pid := instance.GetInstanceRuntime().GetProcessId()
 
@@ -72,7 +72,7 @@ func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instan
 	workers := i.nginxProcessOperator.NginxWorkerProcesses(ctx, pid)
 
 	if len(workers) > 0 {
-		reloadTime = workers[0].Created
+		createdTime = workers[0].Created
 	}
 
 	errorLogs := i.errorLogs(instance)
@@ -92,7 +92,7 @@ func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instan
 		slog.WarnContext(ctx, "Error finding parent process ID, unable to check if NGINX worker "+
 			"processes have reloaded", "error", procErr)
 	} else {
-		i.checkWorkers(ctx, instance.GetInstanceMeta().GetInstanceId(), reloadTime, processes)
+		i.checkWorkers(ctx, instance.GetInstanceMeta().GetInstanceId(), createdTime, processes)
 	}
 
 	slog.InfoContext(ctx, "NGINX reloaded", "process_id", pid)
@@ -117,7 +117,7 @@ func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instan
 	return nil
 }
 
-func (i *NginxInstanceOperator) checkWorkers(ctx context.Context, instanceID string, reloadTime time.Time,
+func (i *NginxInstanceOperator) checkWorkers(ctx context.Context, instanceID string, createdTime time.Time,
 	processes []*nginxprocess.Process,
 ) {
 	backoffSettings := &config.BackOff{
@@ -148,13 +148,13 @@ func (i *NginxInstanceOperator) checkWorkers(ctx context.Context, instanceID str
 		}
 
 		for _, worker := range currentWorkers {
-			if !worker.Created.After(reloadTime) {
-				return fmt.Errorf("waiting for all NGINX workers to be newer "+
-					"than %v, found worker with time %v", reloadTime, worker.Created)
+			if worker.Created.After(createdTime) {
+				return nil
 			}
 		}
 
-		return nil
+		return fmt.Errorf("waiting for NGINX worker to be newer "+
+			"than %v", createdTime)
 	})
 	if err != nil {
 		slog.WarnContext(ctx, "Failed to check if NGINX worker processes have successfully reloaded, "+
@@ -163,7 +163,7 @@ func (i *NginxInstanceOperator) checkWorkers(ctx context.Context, instanceID str
 		return
 	}
 
-	slog.InfoContext(ctx, "All NGINX workers have been reloaded")
+	slog.InfoContext(ctx, "NGINX workers have been reloaded")
 }
 
 func (i *NginxInstanceOperator) validateConfigCheckResponse(out []byte) error {
