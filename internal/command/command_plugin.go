@@ -230,7 +230,6 @@ func (cp *CommandPlugin) processDataPlaneResponse(ctx context.Context, msg *bus.
 func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "Command plugin received connection reset message")
 	if newConnection, ok := msg.Data.(grpc.GrpcConnectionInterface); ok {
-
 		slog.InfoContext(ctx, "Resetting Subscribe")
 		ctxWithMetadata := cp.config.NewContextWithLabels(ctx)
 		cp.subscribeMutex.Lock()
@@ -246,6 +245,7 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 		} else {
 			cp.subscribeMutex.Unlock()
 			slog.InfoContext(ctxWithMetadata, "Unable to Reset Subscribe")
+
 			return
 		}
 
