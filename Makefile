@@ -305,6 +305,7 @@ run-load-test-image: ## Run performance load testing image
 		agent-load-test:/agent/performance/load-tests \
 		$(TEST_BUILD_DIR)/load
 	@echo "Benchmarks saved to $(TEST_BUILD_DIR)/load"
+	@find $(TEST_BUILD_DIR)/load -type f -exec ls -lh {} \;
 
 	## Stop and remove the container
 	$(CONTAINER_CLITOOL) stop agent-load-test && $(CONTAINER_CLITOOL) rm -f agent-load-test

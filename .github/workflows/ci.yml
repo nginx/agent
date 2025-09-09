@@ -420,24 +420,12 @@ jobs:
           path: build/test/load/benchmarks.json
           if-no-files-found: error
 
-#      - name: Run Load Test with CPU profiling
-#        #if: ${{ github.ref_name == 'main' }}
-#        run: |
-#          make run-load-test-with-cpu-profiling
-#
-#      - name: Archive CPU profile
-#        #if: ${{ github.ref_name == 'main' }}
-#        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
-#        with:
-#          name: cpu-profile
-#          path: build/test/load/profile.pgo
-
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@4de1bed97a47495fc4c5404952da0499e31f5c29 # v1.20.3
         with:
           name: Compare Benchmark Results
           tool: 'customSmallerIsBetter'
-          output-file-path: benchmarks.json
+          output-file-path: build/test/load/benchmarks.json
           benchmark-data-dir-path: ""
           # Set auto-push to false since GitHub API token is not given
           auto-push: false
