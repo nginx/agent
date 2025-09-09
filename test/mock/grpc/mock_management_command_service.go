@@ -386,6 +386,8 @@ func (cs *CommandService) addConfigApplyEndpoint() {
 
 		if externalFilesWereUpdated {
 			cs.instanceFiles[instanceID] = updatedConfigFiles
+		} else {
+			cs.instanceFiles[instanceID] = configFiles
 		}
 
 		request := mpi.ManagementPlaneRequest{
