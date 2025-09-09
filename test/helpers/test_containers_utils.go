@@ -8,7 +8,6 @@ package helpers
 import (
 	"context"
 	"io"
-	"path/filepath"
 	"testing"
 
 	"github.com/docker/docker/api/types"
@@ -309,65 +308,65 @@ func StartAuxiliaryMockManagementPlaneGrpcContainer(ctx context.Context, tb test
 }
 
 func StartMockCollectorStack(ctx context.Context, tb testing.TB,
-	containerNetwork *testcontainers.DockerNetwork, parameters *Parameters,
+	containerNetwork *testcontainers.DockerNetwork,
 ) *MockCollectorContainers {
 	tb.Helper()
 
-	packageName := Env(tb, "PACKAGE_NAME")
-	packageRepo := Env(tb, "PACKAGES_REPO")
-	baseImage := Env(tb, "BASE_IMAGE")
-	buildTarget := Env(tb, "BUILD_TARGET")
-	osRelease := Env(tb, "OS_RELEASE")
-	osVersion := Env(tb, "OS_VERSION")
-	dockerfilePath := Env(tb, "DOCKERFILE_PATH")
-	tag := Env(tb, "TAG")
-	imagePath := Env(tb, "IMAGE_PATH")
-	containerRegistry := Env(tb, "CONTAINER_NGINX_IMAGE_REGISTRY")
-
-	agent, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: testcontainers.ContainerRequest{
-			FromDockerfile: testcontainers.FromDockerfile{
-				Context:       "../../../",
-				Dockerfile:    dockerfilePath,
-				KeepImage:     false,
-				PrintBuildLog: true,
-				BuildArgs: map[string]*string{
-					"PACKAGE_NAME":                   ToPtr(packageName),
-					"PACKAGES_REPO":                  ToPtr(packageRepo),
-					"BASE_IMAGE":                     ToPtr(baseImage),
-					"OS_RELEASE":                     ToPtr(osRelease),
-					"OS_VERSION":                     ToPtr(osVersion),
-					"ENTRY_POINT":                    ToPtr("./test/docker/nginxless-entrypoint.sh"),
-					"CONTAINER_NGINX_IMAGE_REGISTRY": ToPtr(containerRegistry),
-					"IMAGE_PATH":                     ToPtr(imagePath),
-					"TAG":                            ToPtr(tag),
-				},
-				BuildOptionsModifier: func(buildOptions *types.ImageBuildOptions) {
-					buildOptions.Target = buildTarget
-				},
-			},
-			Networks: []string{containerNetwork.Name},
-			Files: []testcontainers.ContainerFile{
-				{
-					HostFilePath:      parameters.NginxAgentConfigPath,
-					ContainerFilePath: "/etc/nginx-agent/nginx-agent.conf",
-					FileMode:          configFilePermissions,
-				},
-				{
-					HostFilePath:      filepath.Join(parameters.NginxConfigPath, "nginx.conf"),
-					ContainerFilePath: "/etc/nginx/nginx.conf",
-					FileMode:          configFilePermissions,
-				},
-				{
-					HostFilePath:      filepath.Join(parameters.NginxConfigPath, "/conf.d/default.conf"),
-					ContainerFilePath: "/etc/nginx/conf.d/default.conf",
-					FileMode:          configFilePermissions,
-				},
-			},
-		},
-		Started: true,
-	})
-	require.NoError(tb, err)
+	//packageName := Env(tb, "PACKAGE_NAME")
+	//packageRepo := Env(tb, "PACKAGES_REPO")
+	//baseImage := Env(tb, "BASE_IMAGE")
+	//buildTarget := Env(tb, "BUILD_TARGET")
+	//osRelease := Env(tb, "OS_RELEASE")
+	//osVersion := Env(tb, "OS_VERSION")
+	//dockerfilePath := Env(tb, "DOCKERFILE_PATH")
+	//tag := Env(tb, "TAG")
+	//imagePath := Env(tb, "IMAGE_PATH")
+	//containerRegistry := Env(tb, "CONTAINER_NGINX_IMAGE_REGISTRY")
+	//
+	//agent, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+	//	ContainerRequest: testcontainers.ContainerRequest{
+	//		FromDockerfile: testcontainers.FromDockerfile{
+	//			Context:       "../../../",
+	//			Dockerfile:    dockerfilePath,
+	//			KeepImage:     false,
+	//			PrintBuildLog: true,
+	//			BuildArgs: map[string]*string{
+	//				"PACKAGE_NAME":                   ToPtr(packageName),
+	//				"PACKAGES_REPO":                  ToPtr(packageRepo),
+	//				"BASE_IMAGE":                     ToPtr(baseImage),
+	//				"OS_RELEASE":                     ToPtr(osRelease),
+	//				"OS_VERSION":                     ToPtr(osVersion),
+	//				"ENTRY_POINT":                    ToPtr("./test/docker/nginxless-entrypoint.sh"),
+	//				"CONTAINER_NGINX_IMAGE_REGISTRY": ToPtr(containerRegistry),
+	//				"IMAGE_PATH":                     ToPtr(imagePath),
+	//				"TAG":                            ToPtr(tag),
+	//			},
+	//			BuildOptionsModifier: func(buildOptions *types.ImageBuildOptions) {
+	//				buildOptions.Target = buildTarget
+	//			},
+	//		},
+	//		Networks: []string{containerNetwork.Name},
+	//		Files: []testcontainers.ContainerFile{
+	//			{
+	//				HostFilePath:      parameters.NginxAgentConfigPath,
+	//				ContainerFilePath: "/etc/nginx-agent/nginx-agent.conf",
+	//				FileMode:          configFilePermissions,
+	//			},
+	//			{
+	//				HostFilePath:      filepath.Join(parameters.NginxConfigPath, "nginx.conf"),
+	//				ContainerFilePath: "/etc/nginx/nginx.conf",
+	//				FileMode:          configFilePermissions,
+	//			},
+	//			{
+	//				HostFilePath:      filepath.Join(parameters.NginxConfigPath, "/conf.d/default.conf"),
+	//				ContainerFilePath: "/etc/nginx/conf.d/default.conf",
+	//				FileMode:          configFilePermissions,
+	//			},
+	//		},
+	//	},
+	//	Started: true,
+	//})
+	//require.NoError(tb, err)
 
 	otel, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
@@ -422,7 +421,7 @@ func StartMockCollectorStack(ctx context.Context, tb testing.TB,
 	require.NoError(tb, err)
 
 	return &MockCollectorContainers{
-		Agent:      agent,
+		//Agent:      agent,
 		Otel:       otel,
 		Prometheus: prometheus,
 	}

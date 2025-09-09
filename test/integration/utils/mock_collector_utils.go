@@ -28,8 +28,8 @@ var MockCollectorStack *helpers.MockCollectorContainers
 
 const (
 	envContainer  = "Container"
-	tickerTime    = 5 * time.Second
-	timeoutTime   = 110 * time.Second
+	tickerTime    = 1 * time.Second
+	timeoutTime   = 100 * time.Second
 	plusImagePath = "/nginx-plus/agent"
 )
 
@@ -72,9 +72,9 @@ func setupMockCollectorStack(ctx context.Context, tb testing.TB, containerNetwor
 
 	tb.Log("Starting mock collector stack")
 
-	nginxConfPath := "../../mock/collector/nginx-oss/"
+	nginxConfPath := "../../config/nginx/nginx-for-metric-testing.conf"
 	if os.Getenv("IMAGE_PATH") == plusImagePath {
-		nginxConfPath = "../../mock/collector/nginx-plus/"
+		nginxConfPath = "../../config/nginx/nginx-plus-for-metric-testing.conf"
 	}
 	agentConfig := "../../mock/collector/nginx-agent.conf"
 
@@ -84,7 +84,8 @@ func setupMockCollectorStack(ctx context.Context, tb testing.TB, containerNetwor
 		LogMessage:           "Starting NGINX Agent",
 	}
 
-	MockCollectorStack = helpers.StartMockCollectorStack(ctx, tb, containerNetwork, params)
+	MockCollectorStack = helpers.StartMockCollectorStack(ctx, tb, containerNetwork)
+	MockCollectorStack.Agent = helpers.StartContainer(ctx, tb, containerNetwork, params)
 }
 
 func ScrapeCollectorMetricFamilies(t *testing.T, ctx context.Context,
@@ -126,15 +127,16 @@ func GenerateMetrics(ctx context.Context, t *testing.T, container testcontainers
 	var url string
 	switch expectedCode {
 	case "1xx":
-		url = "http://127.0.0.1:9091/"
+		url = "http://127.0.0.1:80/1xx"
 	case "2xx":
-		url = "http://127.0.0.1:9092/"
+		url = "http://127.0.0.1:80/2xx"
 	case "3xx":
-		url = "http://127.0.0.1:9093/"
+		url = "http://127.0.0.1:80/3xx"
 	case "4xx":
-		url = "http://127.0.0.1:9094/"
+		url = "http://127.0.0.1:80/4xx"
 	case "5xx":
-		url = "http://127.0.0.1:9095/"
+		url = "http://127.0.0.1:80/5xx"
+
 	default:
 		url = "http://127.0.0.1/"
 	}
@@ -192,7 +194,7 @@ func WaitUntilNextScrapeCycle(t *testing.T, ctx context.Context) {
 	ticker := time.NewTicker(tickerTime)
 	defer ticker.Stop()
 
-	waitForMetricToExist(t, ctx, "nginx_http_request_count")
+	waitForMetricToExist(t, ctx)
 	prevScrapeValue, err := getRequestCountMetric(t, ctx)
 	if err != nil {
 		t.Fatalf("Failed to get initial scrape value: %v", err)
@@ -219,7 +221,7 @@ func WaitUntilNextScrapeCycle(t *testing.T, ctx context.Context) {
 	}
 }
 
-func waitForMetricToExist(t *testing.T, ctx context.Context, metricName string) {
+func waitForMetricToExist(t *testing.T, ctx context.Context) {
 	t.Helper()
 
 	waitCtx, cancel := context.WithTimeout(ctx, timeoutTime)
@@ -231,14 +233,14 @@ func waitForMetricToExist(t *testing.T, ctx context.Context, metricName string) 
 	for {
 		select {
 		case <-waitCtx.Done():
-			t.Fatalf("Timed out waiting for metric %s to exist", metricName)
+			t.Fatal("Timed out waiting for NGINX metrics to exist")
 			return
 		case <-ticker.C:
-			family := ScrapeCollectorMetricFamilies(t, ctx, MockCollectorStack.Otel)[metricName]
+			family := ScrapeCollectorMetricFamilies(t, ctx, MockCollectorStack.Otel)["nginx_http_request_count"]
 			if family != nil {
 				return
 			}
-			t.Logf("Metric %s not found, retrying...", metricName)
+			t.Log("NGINX metrics not found, retrying...")
 		}
 	}
 }

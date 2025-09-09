@@ -7,9 +7,9 @@ package metrics
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"testing"
-	"log/slog"
 
 	"github.com/nginx/agent/v3/test/integration/utils"
 	dto "github.com/prometheus/client_model/go"
@@ -58,7 +58,7 @@ func (s *MetricsTestSuite) TestNginxMetrics_TestRequestCount() {
 	s.T().Logf("NGINX HTTP request count total: %v", baselineMetric[0])
 
 	requestCount := 50
-	utils.GenerateMetrics(s.ctx, s.T(), utils.MockCollectorStack.Agent, requestCount, "")
+	utils.GenerateMetrics(s.ctx, s.T(), utils.MockCollectorStack.Agent, requestCount, "2xx")
 
 	got := utils.PollingForMetrics(s.T(), s.ctx, metricName, utils.LabelFilter{
 		Key:    "",
@@ -88,7 +88,7 @@ func (s *MetricsTestSuite) TestNginxMetrics_TestResponseCode() {
 		s.Require().NotNil(respBaseline[code])
 	}
 
-	requestCount := 50
+	requestCount := 20
 	for code := range responseCodes {
 		utils.GenerateMetrics(s.ctx, s.T(), utils.MockCollectorStack.Agent, requestCount, responseCodes[code])
 	}
@@ -148,7 +148,12 @@ func (s *MetricsTestSuite) TestHostMetrics_TestSystemMemoryUsage() {
 		s.Require().NotNil(respBaseline[state])
 	}
 
-	utils.GenerateMetrics(s.ctx, s.T(), utils.MockCollectorStack.Agent, 20, "2xx")
+	const allocSize = 100 * 1024 * 1024
+	memoryHog := make([]byte, allocSize)
+	for i := range memoryHog {
+		memoryHog[i] = byte(i % 256)
+	}
+	s.T().Logf("Allocated %d bytes of memory", allocSize)
 
 	got := utils.PollingForMetrics(s.T(), s.ctx, "system_memory_usage", utils.LabelFilter{
 		Key:    "state",
