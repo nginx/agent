@@ -282,7 +282,7 @@ func TestInstanceOperator_checkWorkers(t *testing.T) {
 	}{
 		{
 			name:        "Test 1: Successful reload",
-			expectedLog: "All NGINX workers have been reloaded",
+			expectedLog: "NGINX workers have been reloaded",
 			reloadTime:  time.Date(2025, 8, 13, 8, 0, 0, 0, time.Local),
 			instanceID:  "e1374cb1-462d-3b6c-9f3b-f28332b5f10c",
 			workers: []*nginxprocess.Process{
@@ -316,7 +316,7 @@ func TestInstanceOperator_checkWorkers(t *testing.T) {
 		},
 		{
 			name:        "Test 2: Successful reload - one workers is reloaded",
-			expectedLog: "All NGINX workers have been reloaded",
+			expectedLog: "NGINX workers have been reloaded",
 			reloadTime:  time.Date(2025, 8, 13, 8, 0, 0, 0, time.Local),
 			instanceID:  "e1374cb1-462d-3b6c-9f3b-f28332b5f10c",
 			masterProcess: []*nginxprocess.Process{
