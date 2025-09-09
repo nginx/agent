@@ -63,7 +63,7 @@ func setupStackEnvironment(ctx context.Context, tb testing.TB) {
 	tb.Helper()
 	tb.Log("Running tests in a container environment")
 
-	containerNetwork := createContainerNetwork(ctx, tb)
+	containerNetwork := CreateContainerNetwork(ctx, tb)
 	setupMockCollectorStack(ctx, tb, containerNetwork)
 }
 
