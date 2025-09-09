@@ -366,7 +366,7 @@ jobs:
           CONTAINER_NGINX_IMAGE_REGISTRY="docker-registry.nginx.com" \
           TAG="${{ matrix.container.version }}-${{ matrix.container.image }}" \
           OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" \
-          make official-image-metrics-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}}/raw_logs.log
+          make metrics-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}}/raw_logs.log
           exit "${PIPESTATUS[0]}"
 
       - name: Format Results
@@ -434,7 +434,7 @@ jobs:
           TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
           OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" IMAGE_PATH="${{ matrix.container.path }}" \
           NGINX_LICENSE_JWT="${{ secrets.TEST_JWT }}" \
-            make official-image-metrics-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}}/raw_logs.log
+            make metrics-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}}/raw_logs.log
           exit "${PIPESTATUS[0]}"
 
       - name: Format Results
