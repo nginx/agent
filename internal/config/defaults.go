@@ -17,11 +17,11 @@ const (
 	DefNginxApiTlsCa               = ""
 
 	// Nginx Reload Backoff defaults
-	DefNginxReloadBackoffInitialInterval     = 1 * time.Second
+	DefNginxReloadBackoffInitialInterval     = 500 * time.Millisecond
 	DefNginxReloadBackoffRandomizationFactor = 0.5 // the value is 0 <= and < 1
-	DefNginxReloadBackoffMultiplier          = 5
-	DefNginxReloadBackoffMaxInterval         = 10 * time.Second
-	DefNginxReloadBackoffMaxElapsedTime      = 30 * time.Second
+	DefNginxReloadBackoffMultiplier          = 2
+	DefNginxReloadBackoffMaxInterval         = 3 * time.Second
+	DefNginxReloadBackoffMaxElapsedTime      = 10 * time.Second
 
 	DefCommandServerHostKey               = ""
 	DefCommandServerPortKey               = 0
