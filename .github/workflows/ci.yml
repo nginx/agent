@@ -27,6 +27,7 @@ jobs:
   generate-cpu-profile:
     name: Generate CPU Profile
     runs-on: ubuntu-22.04
+    needs: build-unsigned-snapshot
     permissions:
       contents: write
     if: ${{ startsWith(github.head_ref, 'pgo-') && !github.event.pull_request.head.repo.fork }}
@@ -41,6 +42,9 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
+
+      - name: Set env
+        run: echo "GO_VERSION=$(cat go.mod | grep toolchain | sed 's/toolchain //; s/go//')" >> $GITHUB_ENV
 
       - name: Build Load Test Image
         uses: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0 # v5.3.0
