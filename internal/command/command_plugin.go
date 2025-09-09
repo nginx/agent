@@ -241,7 +241,7 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 			cp.subscribeCancel()
 			slog.InfoContext(ctxWithMetadata, "Successfully Reset Subscribe")
 		}
-		
+
 		connectionErr := cp.conn.Close(ctx)
 		if connectionErr != nil {
 			slog.ErrorContext(ctx, "Command plugin: unable to close connection", "error", connectionErr)
