@@ -131,7 +131,14 @@ func (fso *FileServiceOperator) UpdateOverview(
 			ConfigPath: configPath,
 		},
 	}
-	backoffSettings := fso.agentConfig.Client.Backoff
+
+	backoffSettings := &config.BackOff{
+		InitialInterval:     fso.agentConfig.Client.Backoff.InitialInterval,
+		MaxInterval:         fso.agentConfig.Client.Backoff.MaxInterval,
+		MaxElapsedTime:      fso.agentConfig.Client.Backoff.MaxElapsedTime,
+		RandomizationFactor: fso.agentConfig.Client.Backoff.RandomizationFactor,
+		Multiplier:          fso.agentConfig.Client.Backoff.Multiplier,
+	}
 
 	// If the create connection takes a long time that we wait indefinitely to do
 	// the initial file overview update to ensure that the management plane has a file overview
@@ -194,8 +201,10 @@ func (fso *FileServiceOperator) UpdateOverview(
 	}
 	delta := files.ConvertToMapOfFiles(response.GetOverview().GetFiles())
 
+	// Make sure that the original context is used if a file upload is required so that original correlation ID
+	// can be used again for update file overview request
 	if len(delta) != 0 {
-		return fso.updateFiles(newCtx, delta, instanceID, configPath, iteration)
+		return fso.updateFiles(ctx, delta, instanceID, configPath, iteration)
 	}
 
 	return err
