@@ -378,13 +378,13 @@ func (cs *CommandService) addConfigApplyEndpoint() {
 			return
 		}
 
-		updatedConfigFiles, externalFilesWereUpdated, err := processConfigApplyRequestBody(c, configFiles)
+		updatedConfigFiles, externalFilesUpdated, err := processConfigApplyRequestBody(c, configFiles)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		if externalFilesWereUpdated {
+		if externalFilesUpdated {
 			cs.instanceFiles[instanceID] = updatedConfigFiles
 		} else {
 			cs.instanceFiles[instanceID] = configFiles
@@ -443,38 +443,22 @@ func (cs *CommandService) addExternalFileServerEndpoint() {
 	// This API will serve individual files from the external directory
 	cs.server.GET("/api/v1/externalfile/:filename", func(c *gin.Context) {
 		filename := c.Param("filename")
-		// Validate that the filename does not contain path separators or ".."
-		if strings.Contains(filename, "/") || strings.Contains(filename, "\\") || strings.Contains(filename, "..") {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file name"})
-			return
-		}
-		filePath := filepath.Join(cs.externalFileServer, filename)
-		absBase, err := filepath.Abs(cs.externalFileServer)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal error"})
-			return
-		}
-		absFile, err := filepath.Abs(filePath)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file name"})
-			return
-		}
-		if !strings.HasPrefix(absFile, absBase) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file name"})
-			return
-		}
 
-		// Check if the file exists
-		if _, file_err := os.Stat(absFile); os.IsNotExist(file_err) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
+		absFile, err := validateFile(cs.externalFileServer, filename)
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				c.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
+			} else {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			}
+
 			return
 		}
-
 		// Serve the file
 		c.File(absFile)
 	})
 
-	slog.Info("Serving individual external files from", "directory", cs.externalFileServer)
+	slog.Info("Serving individual external files from", "external_file_server", cs.externalFileServer)
 }
 
 func (cs *CommandService) findInstanceConfigFiles(instanceID string) (configFiles []*mpi.File, err error) {
@@ -537,6 +521,34 @@ func isValidFile(info os.FileInfo, fileFullPath string) bool {
 	return !info.IsDir() && !strings.HasSuffix(fileFullPath, ".DS_Store")
 }
 
+func validateFile(externalFileServer, filename string) (string, error) {
+	if strings.Contains(filename, "/") || strings.Contains(filename, "\\") || strings.Contains(filename, "..") {
+		return "", errors.New("invalid file name")
+	}
+
+	filePath := filepath.Join(externalFileServer, filename)
+
+	absBase, err := filepath.Abs(externalFileServer)
+	if err != nil {
+		return "", fmt.Errorf("internal error: %w", err)
+	}
+
+	absFile, err := filepath.Abs(filePath)
+	if err != nil {
+		return "", fmt.Errorf("invalid file name: %w", err)
+	}
+
+	if !strings.HasPrefix(absFile, absBase) {
+		return "", errors.New("invalid file name")
+	}
+
+	if _, fileErr := os.Stat(absFile); os.IsNotExist(fileErr) {
+		return "", os.ErrNotExist
+	}
+
+	return absFile, nil
+}
+
 func processConfigApplyRequestBody(c *gin.Context, initialFiles []*mpi.File) ([]*mpi.File, bool, error) {
 	if c.Request.ContentLength == 0 {
 		return initialFiles, false, nil
@@ -555,14 +567,26 @@ func processConfigApplyRequestBody(c *gin.Context, initialFiles []*mpi.File) ([]
 	}
 
 	var externalFilesWereUpdated bool
+	updatedFiles := initialFiles
+
 	for _, ed := range body.ExternalDataSources {
 		if file, ok := filesMap[ed.FilePath]; ok {
 			file.ExternalDataSource = &mpi.ExternalDataSource{
 				Location: ed.Location,
 			}
-			externalFilesWereUpdated = true
+		} else {
+			newFile := &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name: ed.FilePath,
+				},
+				ExternalDataSource: &mpi.ExternalDataSource{
+					Location: ed.Location,
+				},
+			}
+			updatedFiles = append(updatedFiles, newFile)
 		}
+		externalFilesWereUpdated = true
 	}
 
-	return initialFiles, externalFilesWereUpdated, nil
+	return updatedFiles, externalFilesWereUpdated, nil
 }

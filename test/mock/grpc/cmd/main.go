@@ -79,7 +79,7 @@ func main() {
 		defaultExternalFileServer, externalFileServerErr := generateDefaultExternalFileSevrevDirectory()
 		externalFileServer = &defaultExternalFileServer
 		if externalFileServerErr != nil {
-			slog.ErrorContext(ctx, "Failed to create default config directory", "error", err)
+			slog.ErrorContext(ctx, "Failed to create external file server directory", "error", err)
 			os.Exit(1)
 		}
 	}
@@ -117,7 +117,6 @@ func generateDefaultExternalFileSevrevDirectory() (string, error) {
 
 	err := os.MkdirAll(externalFileServer, directoryPermissions)
 	if err != nil {
-		slog.Error("Failed to create external file server directory", "error", err)
 		return "", err
 	}
 
