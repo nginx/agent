@@ -56,6 +56,10 @@ func NewFileServiceOperator(agentConfig *config.Config, fileServiceClient mpi.Fi
 	}
 }
 
+func (fso *FileServiceOperator) UpdateClient(fileServiceClient mpi.FileServiceClient) {
+	fso.fileServiceClient = fileServiceClient
+}
+
 func (fso *FileServiceOperator) SetIsConnected(isConnected bool) {
 	fso.isConnected.Store(isConnected)
 }

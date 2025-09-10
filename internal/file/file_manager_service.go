@@ -68,6 +68,7 @@ type (
 			fileToUpdate *mpi.File,
 		) error
 		SetIsConnected(isConnected bool)
+		UpdateClient(fileServiceClient mpi.FileServiceClient)
 	}
 
 	fileManagerServiceInterface interface {
@@ -85,6 +86,7 @@ type (
 		) (map[string]*model.FileCache, map[string][]byte, error)
 		IsConnected() bool
 		SetIsConnected(isConnected bool)
+		ResetClient(fileServiceClient mpi.FileServiceClient)
 	}
 )
 
@@ -118,6 +120,10 @@ func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig 
 		manifestFilePath:      agentConfig.ManifestDir + "/manifest.json",
 		manifestLock:          manifestLock,
 	}
+}
+
+func (fms *FileManagerService) ResetClient(fileServiceClient mpi.FileServiceClient) {
+	fms.fileServiceOperator.UpdateClient(fileServiceClient)
 }
 
 func (fms *FileManagerService) IsConnected() bool {
@@ -212,6 +218,8 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 		}
 	}
 
+	slog.InfoContext(ctx, "Rolling back config for instance, writing manifest file",
+		"manifest_previous", fms.previousManifestFiles)
 	manifestFileErr := fms.fileOperator.WriteManifestFile(fms.previousManifestFiles,
 		fms.agentConfig.ManifestDir, fms.manifestFilePath)
 	if manifestFileErr != nil {
@@ -387,6 +395,11 @@ func (fms *FileManagerService) UpdateCurrentFilesOnDisk(
 func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.File, referenced bool) (err error) {
 	slog.Debug("Updating manifest file", "current_files", currentFiles, "referenced", referenced)
 	currentManifestFiles, _, readError := fms.manifestFile()
+
+	if len(currentManifestFiles) == 0 {
+		currentManifestFiles = fms.convertToManifestFileMap(currentFiles, referenced)
+	}
+
 	fms.previousManifestFiles = currentManifestFiles
 	if readError != nil && !errors.Is(readError, os.ErrNotExist) {
 		slog.Debug("Error reading manifest file", "current_manifest_files",

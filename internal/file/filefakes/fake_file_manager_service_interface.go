@@ -73,6 +73,11 @@ type FakeFileManagerServiceInterface struct {
 	isConnectedReturnsOnCall map[int]struct {
 		result1 bool
 	}
+	ResetClientStub        func(v1.FileServiceClient)
+	resetClientMutex       sync.RWMutex
+	resetClientArgsForCall []struct {
+		arg1 v1.FileServiceClient
+	}
 	RollbackStub        func(context.Context, string) error
 	rollbackMutex       sync.RWMutex
 	rollbackArgsForCall []struct {
@@ -413,6 +418,38 @@ func (fake *FakeFileManagerServiceInterface) IsConnectedReturnsOnCall(i int, res
 	}{result1}
 }
 
+func (fake *FakeFileManagerServiceInterface) ResetClient(arg1 v1.FileServiceClient) {
+	fake.resetClientMutex.Lock()
+	fake.resetClientArgsForCall = append(fake.resetClientArgsForCall, struct {
+		arg1 v1.FileServiceClient
+	}{arg1})
+	stub := fake.ResetClientStub
+	fake.recordInvocation("ResetClient", []interface{}{arg1})
+	fake.resetClientMutex.Unlock()
+	if stub != nil {
+		fake.ResetClientStub(arg1)
+	}
+}
+
+func (fake *FakeFileManagerServiceInterface) ResetClientCallCount() int {
+	fake.resetClientMutex.RLock()
+	defer fake.resetClientMutex.RUnlock()
+	return len(fake.resetClientArgsForCall)
+}
+
+func (fake *FakeFileManagerServiceInterface) ResetClientCalls(stub func(v1.FileServiceClient)) {
+	fake.resetClientMutex.Lock()
+	defer fake.resetClientMutex.Unlock()
+	fake.ResetClientStub = stub
+}
+
+func (fake *FakeFileManagerServiceInterface) ResetClientArgsForCall(i int) v1.FileServiceClient {
+	fake.resetClientMutex.RLock()
+	defer fake.resetClientMutex.RUnlock()
+	argsForCall := fake.resetClientArgsForCall[i]
+	return argsForCall.arg1
+}
+
 func (fake *FakeFileManagerServiceInterface) Rollback(arg1 context.Context, arg2 string) error {
 	fake.rollbackMutex.Lock()
 	ret, specificReturn := fake.rollbackReturnsOnCall[len(fake.rollbackArgsForCall)]
@@ -585,6 +622,8 @@ func (fake *FakeFileManagerServiceInterface) Invocations() map[string][][]interf
 	defer fake.determineFileActionsMutex.RUnlock()
 	fake.isConnectedMutex.RLock()
 	defer fake.isConnectedMutex.RUnlock()
+	fake.resetClientMutex.RLock()
+	defer fake.resetClientMutex.RUnlock()
 	fake.rollbackMutex.RLock()
 	defer fake.rollbackMutex.RUnlock()
 	fake.setIsConnectedMutex.RLock()

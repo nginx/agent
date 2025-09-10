@@ -152,6 +152,7 @@ func (fo *FileOperator) ReadChunk(
 func (fo *FileOperator) WriteManifestFile(updatedFiles map[string]*model.ManifestFile, manifestDir,
 	manifestPath string,
 ) (writeError error) {
+	slog.Info("Writing manifest file")
 	manifestJSON, err := json.MarshalIndent(updatedFiles, "", "  ")
 	if err != nil {
 		return fmt.Errorf("unable to marshal manifest file json: %w", err)
