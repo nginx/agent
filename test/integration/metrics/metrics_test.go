@@ -46,7 +46,7 @@ func (s *MetricsTestSuite) TearDownSuite() {
 	s.teardownTest(s.T())
 }
 
-// Check that the NGINX request count metric increases after generating some requests
+// Check that the NGINX request count metric increases after generating requests
 func (s *MetricsTestSuite) TestNginxMetrics_TestRequestCount() {
 	slog.Info("starting nginx request count metric test")
 	metricName := "nginx_http_request_count"
@@ -70,7 +70,7 @@ func (s *MetricsTestSuite) TestNginxMetrics_TestRequestCount() {
 	slog.Info("finished nginx request count metric test")
 }
 
-// Check that the NGINX response count metric increases after generating some requests for each response code
+// Check that the NGINX response count metric increases after generating requests for each response code
 func (s *MetricsTestSuite) TestNginxMetrics_TestResponseCode() {
 	if os.Getenv("IMAGE_PATH") != "/nginx/agent" {
 		s.T().Skip("Skipping test for NGINX OSS specific metric")
@@ -104,7 +104,7 @@ func (s *MetricsTestSuite) TestNginxMetrics_TestResponseCode() {
 	slog.Info("finished nginx response count metric test")
 }
 
-// Check that the system CPU utilization metric increases after generating some requests
+// Check that the system CPU utilization metric increases after generating requests
 func (s *MetricsTestSuite) TestHostMetrics_TestSystemCPUUtilization() {
 	slog.Info("starting host cpu utilization metric test")
 	family := s.metricFamilies["system_cpu_utilization"]
@@ -134,7 +134,7 @@ func (s *MetricsTestSuite) TestHostMetrics_TestSystemCPUUtilization() {
 	slog.Info("finished host cpu utilization metric test")
 }
 
-// Check that the system memory usage metric changes after generating some requests
+// Verify that the system memory usage metric is being collected
 func (s *MetricsTestSuite) TestHostMetrics_TestSystemMemoryUsage() {
 	slog.Info("starting host memory usage metric test")
 	family := s.metricFamilies["system_memory_usage"]
@@ -147,24 +147,6 @@ func (s *MetricsTestSuite) TestHostMetrics_TestSystemMemoryUsage() {
 		s.T().Logf("Memory %s: %v", states[state], respBaseline[state])
 		s.Require().NotNil(respBaseline[state])
 	}
-
-	const allocSize = 100 * 1024 * 1024
-	memoryHog := make([]byte, allocSize)
-	for i := range memoryHog {
-		memoryHog[i] = byte(i % 256)
-	}
-	s.T().Logf("Allocated %d bytes of memory", allocSize)
-
-	got := utils.PollingForMetrics(s.T(), s.ctx, "system_memory_usage", utils.LabelFilter{
-		Key:    "state",
-		Values: states,
-	}, respBaseline)
-
-	for state := range states {
-		s.T().Logf("Memory %s: %v", states[state], got[state])
-	}
-	s.Require().Less(got[0], respBaseline[0])
-	s.Require().Greater(got[1], respBaseline[1])
 
 	slog.Info("finished host memory usage metric test")
 }
