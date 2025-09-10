@@ -335,7 +335,7 @@ jobs:
         run: |
           make performance-test
       - name: Store benchmark result
-        uses: benchmark-action/github-action-benchmark@4de1bed97a47495fc4c5404952da0499e31f5c29 # v1.20.3
+        uses: benchmark-action/github-action-benchmark@4bdcce38c94cec68da58d012ac24b7b1155efe8b # v1.20.7
         with:
           name: Compare Benchmark Results
           tool: 'go'
@@ -408,7 +408,7 @@ jobs:
           if-no-files-found: error
 
       - name: Store benchmark result
-        uses: benchmark-action/github-action-benchmark@4de1bed97a47495fc4c5404952da0499e31f5c29 # v1.20.3
+        uses: benchmark-action/github-action-benchmark@4bdcce38c94cec68da58d012ac24b7b1155efe8b # v1.20.7
         with:
           name: Compare Benchmark Results
           tool: 'customSmallerIsBetter'
