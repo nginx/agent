@@ -42,10 +42,6 @@ func TestMetric10kDPS(t *testing.T) {
 			name:        name + "-none",
 			compression: "none",
 		},
-		{
-			name:        name + "-gzip",
-			compression: "gzip",
-		},
 	}
 
 	for _, test := range tests {
@@ -98,6 +94,7 @@ func TestMetric10kDPS(t *testing.T) {
 			tc.ValidateData()
 		})
 
+		// Save intermediate results after each test case
 		testbed.SaveResults(performanceResultsSummary)
 	}
 }

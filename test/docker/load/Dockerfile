@@ -57,7 +57,7 @@ ARG OSARCH
 
 # Install Go
 RUN wget -q https://go.dev/dl/go${GO_VERSION}.linux-${OSARCH}.tar.gz \
-    && tar -xvf go${GO_VERSION}.linux-${OSARCH}.tar.gz \
+    && tar -xf go${GO_VERSION}.linux-${OSARCH}.tar.gz \
     && mv go /usr/local > /dev/null \
     && rm go${GO_VERSION}.linux-${OSARCH}.tar.gz
 

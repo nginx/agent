@@ -67,6 +67,7 @@ jobs:
       - name: Run Load Test with CPU profiling
         run: |
           make run-load-test-with-cpu-profiling
+          make generate-pgo-profile
 
       - name: Archive Load Test CPU profile
         uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
@@ -74,10 +75,6 @@ jobs:
           name: cpu-profile
           path: build/test/load/profile.pgo
           if-no-files-found: error
-
-      - name: Run Profiling script
-        run: |
-          make generate-pgo-profile
 
       - name: Push PGO profile
         run: |
