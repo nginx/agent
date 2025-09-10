@@ -194,7 +194,6 @@ func WaitUntilNextScrapeCycle(t *testing.T, ctx context.Context) {
 	ticker := time.NewTicker(tickerTime)
 	defer ticker.Stop()
 
-	waitForMetricToExist(t, ctx)
 	prevScrapeValue, err := getRequestCountMetric(t, ctx)
 	if err != nil {
 		t.Fatalf("Failed to get initial scrape value: %v", err)
@@ -221,7 +220,7 @@ func WaitUntilNextScrapeCycle(t *testing.T, ctx context.Context) {
 	}
 }
 
-func waitForMetricToExist(t *testing.T, ctx context.Context) {
+func WaitForMetricsToExist(t *testing.T, ctx context.Context) {
 	t.Helper()
 
 	waitCtx, cancel := context.WithTimeout(ctx, timeoutTime)
@@ -238,6 +237,7 @@ func waitForMetricToExist(t *testing.T, ctx context.Context) {
 		case <-ticker.C:
 			family := ScrapeCollectorMetricFamilies(t, ctx, MockCollectorStack.Otel)["nginx_http_request_count"]
 			if family != nil {
+				t.Log("NGINX metrics found")
 				return
 			}
 			t.Log("NGINX metrics not found, retrying...")

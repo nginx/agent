@@ -27,7 +27,7 @@ func (s *MetricsTestSuite) SetupSuite() {
 	slog.Info("starting metric tests")
 	s.ctx = context.Background()
 	s.teardownTest = utils.SetupMetricsTest(s.T())
-	utils.WaitUntilNextScrapeCycle(s.T(), s.ctx)
+	utils.WaitForMetricsToExist(s.T(), s.ctx)
 }
 
 func (s *MetricsTestSuite) SetupTest() {
