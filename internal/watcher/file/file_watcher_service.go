@@ -82,12 +82,17 @@ func (fws *FileWatcherService) Watch(ctx context.Context, ch chan<- FileUpdateMe
 			}
 
 			return
-		case event := <-fws.watcher.Events:
-			fws.handleEvent(ctx, event)
 		case <-instanceWatcherTicker.C:
 			fws.checkForUpdates(ctx, ch)
-		case watcherError := <-fws.watcher.Errors:
-			slog.ErrorContext(ctx, "Unexpected error in file watcher", "error", watcherError)
+		}
+
+		if fws.watcher != nil {
+			select {
+			case event := <-fws.watcher.Events:
+				fws.handleEvent(ctx, event)
+			case watcherError := <-fws.watcher.Errors:
+				slog.ErrorContext(ctx, "Unexpected error in file watcher", "error", watcherError)
+			}
 		}
 	}
 }

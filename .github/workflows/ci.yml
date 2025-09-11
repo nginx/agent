@@ -106,7 +106,7 @@ jobs:
             run: |
                 make clean local-deb-package local-rpm-package local-apk-package
           - name: Upload Artifacts
-            uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
+            uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
             with:
               name: nginx-agent-unsigned-snapshots
               path: build
@@ -262,23 +262,23 @@ jobs:
       matrix:
         container:
         - image: "alpine"
-          version: "3.20"
-          plus: "r32"
+          version: "3.22"
+          plus: "r35"
           release: "alpine"
           path: "/nginx-plus/agent"
         - image: "alpine"
-          version: "3.19"
-          plus: "r31"
+          version: "3.21"
+          plus: "r34"
           release: "alpine"
           path: "/nginx-plus/agent"
         - image: "debian"
           version: "bookworm"
-          plus: "r32"
+          plus: "r35"
           release: "debian"
           path: "/nginx-plus/agent"
         - image: "debian"
           version: "bookworm"
-          plus: "r31"
+          plus: "r34"
           release: "debian"
           path: "/nginx-plus/agent"
     steps:
@@ -293,9 +293,9 @@ jobs:
           name: nginx-agent-unsigned-snapshots
           path: build
       - name: Login to Docker Registry
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
         with:
-          registry: ${{ secrets.REGISTRY_URL }}
+          registry: ${{ secrets.TEST_REGISTRY_URL }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
@@ -310,9 +310,10 @@ jobs:
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.REGISTRY_URL }}" \
+          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.TEST_REGISTRY_URL }}" \
           TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
           OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" IMAGE_PATH="${{ matrix.container.path }}" \
+          NGINX_LICENSE_JWT='${{ secrets.TEST_JWT }}' \
             make official-image-integration-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}}/raw_logs.log
           exit "${PIPESTATUS[0]}"
 
@@ -456,7 +457,7 @@ jobs:
         run: |
           make performance-test
       - name: Store benchmark result
-        uses: benchmark-action/github-action-benchmark@4de1bed97a47495fc4c5404952da0499e31f5c29 # v1.20.3
+        uses: benchmark-action/github-action-benchmark@4bdcce38c94cec68da58d012ac24b7b1155efe8b # v1.20.7
         with:
           name: Compare Benchmark Results
           tool: 'go'
@@ -498,7 +499,7 @@ jobs:
         run: echo "GO_VERSION=$(cat go.mod | grep toolchain | sed 's/toolchain //; s/go//')" >> $GITHUB_ENV
 
       - name: Build Docker Image
-        uses: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0 # v5.3.0
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
         env:
           GO_VERSION: ${{ env.GO_VERSION }}
         with:
@@ -522,14 +523,14 @@ jobs:
           echo "$results"
 
       - name: Upload Load Test Results
-        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: load-test-results
           path: benchmarks.json
           if-no-files-found: error
 
       - name: Store benchmark result
-        uses: benchmark-action/github-action-benchmark@4de1bed97a47495fc4c5404952da0499e31f5c29 # v1.20.3
+        uses: benchmark-action/github-action-benchmark@4bdcce38c94cec68da58d012ac24b7b1155efe8b # v1.20.7
         with:
           name: Compare Benchmark Results
           tool: 'customSmallerIsBetter'
