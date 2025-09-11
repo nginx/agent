@@ -15,7 +15,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	// "time"
 
 	"github.com/nginx/agent/v3/pkg/files"
 
@@ -43,7 +42,6 @@ type FileService struct {
 	instanceID      string
 	requestChan     chan *v1.ManagementPlaneRequest
 	configDirectory string
-	// tryCount        int
 }
 
 func NewFileService(configDirectory string, requestChan chan *v1.ManagementPlaneRequest,
@@ -55,7 +53,6 @@ func NewFileService(configDirectory string, requestChan chan *v1.ManagementPlane
 		instanceID:      "",
 		requestChan:     requestChan,
 		agentConfig:     agentConfig,
-		// tryCount:        0,
 	}
 }
 
@@ -134,13 +131,6 @@ func (mgs *FileService) GetFile(
 		slog.ErrorContext(ctx, "Failed to get file contents", "full_file_path", fullFilePath, "error", err)
 		return nil, status.Errorf(codes.Internal, "Failed to get file contents")
 	}
-
-	// if mgs.tryCount == 0 {
-	//	time.Sleep(2 * time.Minute)
-	//	slog.ErrorContext(ctx, "File not found", "file_name", fileName)
-	//	return nil, status.Errorf(codes.Internal, "Failed to get file contents")
-	//
-	// }
 
 	return &v1.GetFileResponse{
 		Contents: &v1.FileContents{

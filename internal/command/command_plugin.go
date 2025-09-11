@@ -232,14 +232,14 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 	slog.DebugContext(ctx, "Command plugin received connection reset message")
 
 	if newConnection, ok := msg.Data.(grpc.GrpcConnectionInterface); ok {
-		slog.InfoContext(ctx, "Resetting Subscribe")
+		slog.DebugContext(ctx, "Canceling Subscribe after connection reset")
 		ctxWithMetadata := cp.config.NewContextWithLabels(ctx)
 		cp.subscribeMutex.Lock()
 		defer cp.subscribeMutex.Unlock()
 
 		if cp.subscribeCancel != nil {
 			cp.subscribeCancel()
-			slog.InfoContext(ctxWithMetadata, "Successfully Reset Subscribe")
+			slog.DebugContext(ctxWithMetadata, "Successfully canceled subscribe after connection reset")
 		}
 
 		connectionErr := cp.conn.Close(ctx)
@@ -254,6 +254,7 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 			return
 		}
 
+		slog.DebugContext(ctxWithMetadata, "Starting new subscribe after connection reset")
 		subscribeCtx, cp.subscribeCancel = context.WithCancel(ctxWithMetadata)
 		go cp.commandService.Subscribe(subscribeCtx)
 

@@ -231,10 +231,6 @@ func DialOptions(agentConfig *config.Config, commandConfig *config.Command, reso
 		opts = addPerRPCCredentials(commandConfig, resourceID, opts)
 	}
 
-	// opts = append(opts,
-	//	grpc.WithTransportCredentials(defaultCredentials),
-	// )
-
 	return opts
 }
 

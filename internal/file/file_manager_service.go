@@ -52,7 +52,7 @@ type (
 			reader *bufio.Reader,
 			chunkID uint32,
 		) (mpi.FileDataChunk_Content, error)
-		WriteManifestFile(updatedFiles map[string]*model.ManifestFile,
+		WriteManifestFile(ctx context.Context, updatedFiles map[string]*model.ManifestFile,
 			manifestDir, manifestPath string) (writeError error)
 	}
 
@@ -68,7 +68,7 @@ type (
 			fileToUpdate *mpi.File,
 		) error
 		SetIsConnected(isConnected bool)
-		UpdateClient(fileServiceClient mpi.FileServiceClient)
+		UpdateClient(ctx context.Context, fileServiceClient mpi.FileServiceClient)
 	}
 
 	fileManagerServiceInterface interface {
@@ -86,7 +86,7 @@ type (
 		) (map[string]*model.FileCache, map[string][]byte, error)
 		IsConnected() bool
 		SetIsConnected(isConnected bool)
-		ResetClient(fileServiceClient mpi.FileServiceClient)
+		ResetClient(ctx context.Context, fileServiceClient mpi.FileServiceClient)
 	}
 )
 
@@ -103,6 +103,7 @@ type FileManagerService struct {
 	currentFilesOnDisk    map[string]*mpi.File // key is file path
 	previousManifestFiles map[string]*model.ManifestFile
 	manifestFilePath      string
+	rollbackManifest      bool
 	filesMutex            sync.RWMutex
 }
 
@@ -118,12 +119,14 @@ func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig 
 		currentFilesOnDisk:    make(map[string]*mpi.File),
 		previousManifestFiles: make(map[string]*model.ManifestFile),
 		manifestFilePath:      agentConfig.ManifestDir + "/manifest.json",
+		rollbackManifest:      true,
 		manifestLock:          manifestLock,
 	}
 }
 
-func (fms *FileManagerService) ResetClient(fileServiceClient mpi.FileServiceClient) {
-	fms.fileServiceOperator.UpdateClient(fileServiceClient)
+func (fms *FileManagerService) ResetClient(ctx context.Context, fileServiceClient mpi.FileServiceClient) {
+	fms.fileServiceOperator.UpdateClient(ctx, fileServiceClient)
+	slog.DebugContext(ctx, "File manager service reset client successfully")
 }
 
 func (fms *FileManagerService) IsConnected() bool {
@@ -167,6 +170,7 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 
 	fileErr := fms.executeFileActions(ctx)
 	if fileErr != nil {
+		fms.rollbackManifest = false
 		return model.RollbackRequired, fileErr
 	}
 	fileOverviewFiles := files.ConvertToMapOfFiles(fileOverview.GetFiles())
@@ -185,6 +189,7 @@ func (fms *FileManagerService) ClearCache() {
 	clear(fms.previousManifestFiles)
 }
 
+//nolint:revive // cognitive-complexity of 13 max is 12, loop is needed cant be broken up
 func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) error {
 	slog.InfoContext(ctx, "Rolling back config for instance", "instance_id", instanceID)
 
@@ -218,12 +223,13 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 		}
 	}
 
-	slog.InfoContext(ctx, "Rolling back config for instance, writing manifest file",
-		"manifest_previous", fms.previousManifestFiles)
-	manifestFileErr := fms.fileOperator.WriteManifestFile(fms.previousManifestFiles,
-		fms.agentConfig.ManifestDir, fms.manifestFilePath)
-	if manifestFileErr != nil {
-		return manifestFileErr
+	if fms.rollbackManifest {
+		slog.DebugContext(ctx, "Rolling back manifest file", "manifest_previous", fms.previousManifestFiles)
+		manifestFileErr := fms.fileOperator.WriteManifestFile(ctx, fms.previousManifestFiles,
+			fms.agentConfig.ManifestDir, fms.manifestFilePath)
+		if manifestFileErr != nil {
+			return manifestFileErr
+		}
 	}
 
 	return nil
@@ -382,7 +388,7 @@ func (fms *FileManagerService) UpdateCurrentFilesOnDisk(
 		fms.currentFilesOnDisk[currentFile.GetFileMeta().GetName()] = currentFile
 	}
 
-	err := fms.UpdateManifestFile(currentFiles, referenced)
+	err := fms.UpdateManifestFile(ctx, currentFiles, referenced)
 	if err != nil {
 		return fmt.Errorf("failed to update manifest file: %w", err)
 	}
@@ -393,17 +399,24 @@ func (fms *FileManagerService) UpdateCurrentFilesOnDisk(
 // seems to be a control flag, avoid control coupling
 //
 //nolint:revive // referenced is a required flag
-func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.File, referenced bool) (err error) {
-	slog.Debug("Updating manifest file", "current_files", currentFiles, "referenced", referenced)
+func (fms *FileManagerService) UpdateManifestFile(ctx context.Context,
+	currentFiles map[string]*mpi.File, referenced bool,
+) (err error) {
+	slog.DebugContext(ctx, "Updating manifest file", "current_files", currentFiles, "referenced", referenced)
 	currentManifestFiles, _, readError := fms.manifestFile()
 
+	// When agent is first started the manifest is updated when an NGINX instance is found, but the manifest file
+	// will be empty leading to previousManifestFiles being empty. This was causing issues if the first config
+	// apply failed leading to the manifest file being rolled back to an empty file.
+	// If the currentManifestFiles is empty then we can assume the Agent has just started and this is the first
+	// write of the Manifest file, so set previousManifestFiles to be the currentFiles.
 	if len(currentManifestFiles) == 0 {
 		currentManifestFiles = fms.convertToManifestFileMap(currentFiles, referenced)
 	}
 
 	fms.previousManifestFiles = currentManifestFiles
 	if readError != nil && !errors.Is(readError, os.ErrNotExist) {
-		slog.Debug("Error reading manifest file", "current_manifest_files",
+		slog.DebugContext(ctx, "Error reading manifest file", "current_manifest_files",
 			currentManifestFiles, "updated_files", currentFiles, "referenced", referenced)
 
 		return fmt.Errorf("unable to read manifest file: %w", readError)
@@ -429,7 +442,7 @@ func (fms *FileManagerService) UpdateManifestFile(currentFiles map[string]*mpi.F
 		updatedFiles = manifestFiles
 	}
 
-	return fms.fileOperator.WriteManifestFile(updatedFiles, fms.agentConfig.ManifestDir, fms.manifestFilePath)
+	return fms.fileOperator.WriteManifestFile(ctx, updatedFiles, fms.agentConfig.ManifestDir, fms.manifestFilePath)
 }
 
 func (fms *FileManagerService) manifestFile() (map[string]*model.ManifestFile, map[string]*mpi.File, error) {

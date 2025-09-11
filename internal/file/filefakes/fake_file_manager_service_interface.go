@@ -73,10 +73,11 @@ type FakeFileManagerServiceInterface struct {
 	isConnectedReturnsOnCall map[int]struct {
 		result1 bool
 	}
-	ResetClientStub        func(v1.FileServiceClient)
+	ResetClientStub        func(context.Context, v1.FileServiceClient)
 	resetClientMutex       sync.RWMutex
 	resetClientArgsForCall []struct {
-		arg1 v1.FileServiceClient
+		arg1 context.Context
+		arg2 v1.FileServiceClient
 	}
 	RollbackStub        func(context.Context, string) error
 	rollbackMutex       sync.RWMutex
@@ -418,16 +419,17 @@ func (fake *FakeFileManagerServiceInterface) IsConnectedReturnsOnCall(i int, res
 	}{result1}
 }
 
-func (fake *FakeFileManagerServiceInterface) ResetClient(arg1 v1.FileServiceClient) {
+func (fake *FakeFileManagerServiceInterface) ResetClient(arg1 context.Context, arg2 v1.FileServiceClient) {
 	fake.resetClientMutex.Lock()
 	fake.resetClientArgsForCall = append(fake.resetClientArgsForCall, struct {
-		arg1 v1.FileServiceClient
-	}{arg1})
+		arg1 context.Context
+		arg2 v1.FileServiceClient
+	}{arg1, arg2})
 	stub := fake.ResetClientStub
-	fake.recordInvocation("ResetClient", []interface{}{arg1})
+	fake.recordInvocation("ResetClient", []interface{}{arg1, arg2})
 	fake.resetClientMutex.Unlock()
 	if stub != nil {
-		fake.ResetClientStub(arg1)
+		fake.ResetClientStub(arg1, arg2)
 	}
 }
 
@@ -437,17 +439,17 @@ func (fake *FakeFileManagerServiceInterface) ResetClientCallCount() int {
 	return len(fake.resetClientArgsForCall)
 }
 
-func (fake *FakeFileManagerServiceInterface) ResetClientCalls(stub func(v1.FileServiceClient)) {
+func (fake *FakeFileManagerServiceInterface) ResetClientCalls(stub func(context.Context, v1.FileServiceClient)) {
 	fake.resetClientMutex.Lock()
 	defer fake.resetClientMutex.Unlock()
 	fake.ResetClientStub = stub
 }
 
-func (fake *FakeFileManagerServiceInterface) ResetClientArgsForCall(i int) v1.FileServiceClient {
+func (fake *FakeFileManagerServiceInterface) ResetClientArgsForCall(i int) (context.Context, v1.FileServiceClient) {
 	fake.resetClientMutex.RLock()
 	defer fake.resetClientMutex.RUnlock()
 	argsForCall := fake.resetClientArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeFileManagerServiceInterface) Rollback(arg1 context.Context, arg2 string) error {
