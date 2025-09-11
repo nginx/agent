@@ -16,7 +16,8 @@ import (
 const typeStr = "syslog"
 
 // NewFactory creates a factory for the syslog processor.
-// nolint: ireturn
+//
+//nolint:ireturn // factory methods return interfaces by design
 func NewFactory() processor.Factory {
 	return processor.NewFactory(
 		component.MustNewType(typeStr),
@@ -26,7 +27,8 @@ func NewFactory() processor.Factory {
 }
 
 // createSyslogProcessor instantiates the logs processor.
-// nolint: ireturn
+//
+//nolint:ireturn // required to comply with component factory interface
 func createSyslogProcessor(
 	_ context.Context,
 	settings processor.Settings,

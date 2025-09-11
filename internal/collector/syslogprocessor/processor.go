@@ -92,6 +92,7 @@ func (p *syslogProcessor) processLogRecords(lrs plog.LogRecordSlice) error {
 		}
 
 		skipped++
+
 		return true
 	})
 	if skipped > 0 {
@@ -145,9 +146,6 @@ func (p *syslogProcessor) setSyslogAttributes(lr plog.LogRecord, m *rfc3164.Sysl
 	attrs := lr.Attributes()
 	if m.Timestamp != nil {
 		attrs.PutStr("syslog.timestamp", m.Timestamp.Format(time.RFC3339))
-	}
-	if m.Appname != nil {
-		attrs.PutStr("syslog.appname", *m.Appname)
 	}
 	if m.ProcID != nil {
 		attrs.PutStr("syslog.procid", *m.ProcID)
@@ -216,10 +214,11 @@ func (p *syslogProcessor) assignHostnames(log *SecurityViolationEvent, hostname 
 	}
 }
 
-// nolint: lll
 // parseCSVLog parses comma-separated syslog messages where fields are in a
 // order : blocking_exception_reason,dest_port,ip_client,is_truncated_bool,method,policy_name,protocol,request_status,response_code,severity,sig_cves,sig_set_names,src_port,sub_violations,support_id,threat_campaign_names,violation_rating,vs_name,x_forwarded_for_header_value,outcome,outcome_reason,violations,violation_details,bot_signature_name,bot_category,bot_anomalies,enforced_bot_anomalies,client_class,client_application,client_application_version,transport_protocol,uri,request (secops_dashboard-log profile format).
 // versions when key-value logging isn't enabled.
+//
+//nolint:lll //long test string kept for log profile readability
 func (p *syslogProcessor) parseCSVLog(message string) map[string]string {
 	kvMap := make(map[string]string)
 
@@ -438,6 +437,7 @@ func splitAndTrim(value string) []string {
 
 	return trimmedParts
 }
+
 func buildSignatures(ids, names []string, mask, offset, length string) []SignatureData {
 	signatures := make([]SignatureData, 0, len(ids))
 	for i, id := range ids {

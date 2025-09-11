@@ -19,7 +19,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// nolint: lll,revive
+//nolint:lll,revive // long test string kept for readability
 func TestSyslogProcessor(t *testing.T) {
 	testCases := []struct {
 		expectAttrs   map[string]string
@@ -32,7 +32,6 @@ func TestSyslogProcessor(t *testing.T) {
 			name: "csv nginx app protect syslog message",
 			body: `<130>Aug 22 03:28:35 ip-172-16-0-213 ASM:N/A,80,127.0.0.1,false,GET,nms_app_protect_default_policy,HTTP,blocked,0,N/A,N/A::N/A,{High Accuracy Signatures;Cross Site Scripting Signatures}::{High Accuracy Signatures; Cross Site Scripting Signatures},56064,N/A,5377540117854870581,N/A,5,1-localhost:1-/,N/A,REJECTED,SECURITY_WAF_VIOLATION,Illegal meta character in URL::Attack signature detected::Violation Rating Threat detected::Bot Client Detected,<?xml version='1.0' encoding='UTF-8'?><BAD_MSG><violation_masks><block>414000000200c00-3a03030c30000072-8000000000000000-0</block><alarm>475f0ffcbbd0fea-befbf35cb000007e-f400000000000000-0</alarm><learn>0-0-0-0</learn><staging>0-0-0-0</staging></violation_masks><request-violations><violation><viol_index>42</viol_index><viol_name>VIOL_ATTACK_SIGNATURE</viol_name><context>url</context><sig_data><sig_id>200000099</sig_id><blocking_mask>3</blocking_mask><kw_data><buffer>Lzw+PHNjcmlwdD4=</buffer><offset>3</offset><length>7</length></kw_data></sig_data><sig_data><sig_id>200000093</sig_id><blocking_mask>3</blocking_mask><kw_data><buffer>Lzw+PHNjcmlwdD4=</buffer><offset>4</offset><length>7</length></kw_data></sig_data></violation><violation><viol_index>26</viol_index><viol_name>VIOL_URL_METACHAR</viol_name><uri>Lzw+PHNjcmlwdD4=</uri><metachar_index>60</metachar_index><wildcard_entity>*</wildcard_entity><staging>0</staging></violation><violation><viol_index>26</viol_index><viol_name>VIOL_URL_METACHAR</viol_name><uri>Lzw+PHNjcmlwdD4=</uri><metachar_index>62</metachar_index><wildcard_entity>*</wildcard_entity><staging>0</staging></violation><violation><viol_index>122</viol_index><viol_name>VIOL_BOT_CLIENT</viol_name></violation><violation><viol_index>93</viol_index><viol_name>VIOL_RATING_THREAT</viol_name></violation></request-violations></BAD_MSG>,curl,HTTP Library,N/A,N/A,Untrusted Bot,N/A,N/A,HTTP/1.1,/<><script>,GET /<><script> HTTP/1.1\\r\\nHost: localhost\\r\\nUser-Agent: curl/7.81.0\\r\\nAccept: */*\\r\\n\\r\\n`,
 			expectAttrs: map[string]string{
-				"syslog.appname":          "ASM",
 				"app_protect.policy_name": "nms_app_protect_default_policy",
 				"app_protect.support_id":  "5377540117854870581",
 				"app_protect.outcome":     "REJECTED",
@@ -44,7 +43,7 @@ func TestSyslogProcessor(t *testing.T) {
 			name: "simple valid syslog message",
 			body: "<34>Oct 11 22:14:15 mymachine su: 'su root' failed for lonvick on /dev/pts/8",
 			expectAttrs: map[string]string{
-				"syslog.appname": "su",
+				"syslog.facility": "auth",
 			},
 			expectRecords: 1,
 		},
@@ -91,7 +90,7 @@ func TestSyslogProcessor(t *testing.T) {
 
 			for k, v := range tc.expectAttrs {
 				val, ok := lrOut.Attributes().Get(k)
-				assert.True(t, ok, "attribute %s missing", k)
+				assert.True(t, ok, "attribute %s missing %v", k, v)
 				assert.Equal(t, v, val.Str())
 			}
 
@@ -158,8 +157,8 @@ func TestSyslogProcessor(t *testing.T) {
 
 func TestSyslogProcessorFailure(t *testing.T) {
 	testCases := []struct {
-		name          string
 		body          any
+		name          string
 		expectRecords int
 	}{
 		{
