@@ -40,6 +40,7 @@ type FileService struct {
 	agentConfig *config.Config
 	v1.UnimplementedFileServiceServer
 	instanceFiles   map[string][]*v1.File // key is instanceID
+	instanceID      string
 	requestChan     chan *v1.ManagementPlaneRequest
 	configDirectory string
 	// tryCount        int
@@ -51,6 +52,7 @@ func NewFileService(configDirectory string, requestChan chan *v1.ManagementPlane
 	return &FileService{
 		configDirectory: configDirectory,
 		instanceFiles:   make(map[string][]*v1.File),
+		instanceID:      "",
 		requestChan:     requestChan,
 		agentConfig:     agentConfig,
 		// tryCount:        0,
@@ -65,7 +67,8 @@ func (mgs *FileService) GetOverview(
 
 	slog.InfoContext(ctx, "Getting overview", "config_version", configVersion)
 
-	if _, ok := mgs.instanceFiles[request.GetConfigVersion().GetInstanceId()]; !ok {
+	mgs.instanceID = request.GetConfigVersion().GetInstanceId()
+	if _, ok := mgs.instanceFiles[mgs.instanceID]; !ok {
 		slog.ErrorContext(ctx, "Config version not found", "config_version", configVersion)
 		return nil, status.Errorf(codes.NotFound, "Config version not found")
 	}
@@ -73,7 +76,7 @@ func (mgs *FileService) GetOverview(
 	return &v1.GetOverviewResponse{
 		Overview: &v1.FileOverview{
 			ConfigVersion: configVersion,
-			Files:         mgs.instanceFiles[configVersion.GetInstanceId()],
+			Files:         mgs.instanceFiles[mgs.instanceID],
 		},
 	}, nil
 }
@@ -84,13 +87,15 @@ func (mgs *FileService) UpdateOverview(
 ) (*v1.UpdateOverviewResponse, error) {
 	overview := request.GetOverview()
 
+	mgs.instanceID = overview.GetConfigVersion().GetInstanceId()
+
 	marshaledJSON, errMarshaledJSON := protojson.Marshal(request)
 	if errMarshaledJSON != nil {
 		return nil, fmt.Errorf("failed to marshal struct back to JSON: %w", errMarshaledJSON)
 	}
 	slog.InfoContext(ctx, "Updating overview JSON", "overview", marshaledJSON)
 
-	mgs.instanceFiles[overview.GetConfigVersion().GetInstanceId()] = overview.GetFiles()
+	mgs.instanceFiles[mgs.instanceID] = overview.GetFiles()
 
 	configUploadRequest := &v1.ManagementPlaneRequest{
 		MessageMeta: &v1.MessageMeta{
@@ -117,7 +122,6 @@ func (mgs *FileService) GetFile(
 	fileHash := request.GetFileMeta().GetHash()
 
 	slog.InfoContext(ctx, "Getting file", "name", fileName, "hash", fileHash)
-
 	fullFilePath := mgs.findFile(request.GetFileMeta())
 
 	if fullFilePath == "" {
@@ -429,13 +433,7 @@ func (mgs *FileService) createDirectories(fullFilePath string, filePermissions o
 }
 
 func (mgs *FileService) findFile(fileMeta *v1.FileMeta) (fullFilePath string) {
-	for instanceID, instanceFiles := range mgs.instanceFiles {
-		for _, file := range instanceFiles {
-			if file.GetFileMeta().GetName() == fileMeta.GetName() {
-				fullFilePath = filepath.Join(mgs.configDirectory, instanceID, fileMeta.GetName())
-			}
-		}
-	}
+	fullFilePath = filepath.Join(mgs.configDirectory, mgs.instanceID, fileMeta.GetName())
 
 	return fullFilePath
 }

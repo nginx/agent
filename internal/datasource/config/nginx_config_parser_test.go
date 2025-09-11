@@ -1036,15 +1036,19 @@ func TestNginxConfigParser_urlsForLocationDirective(t *testing.T) {
 
 			oss, plus := traverseConfigForAPIs(t, ctx, payload)
 
-			assert.Equal(t, test.plus, plus)
-			assert.Equal(t, test.oss, oss)
+			if test.oss != nil {
+				assert.Equal(t, test.oss, oss[0])
+			}
+			if test.plus != nil {
+				assert.Equal(t, test.plus, plus[0])
+			}
 		})
 	}
 }
 
 func traverseConfigForAPIs(
 	t *testing.T, ctx context.Context, payload *crossplane.Payload,
-) (oss, plus *model.APIDetails) {
+) (oss, plus []*model.APIDetails) {
 	t.Helper()
 
 	ncp := NewNginxConfigParser(types.AgentConfig())

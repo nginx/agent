@@ -282,7 +282,7 @@ func TestInstanceOperator_checkWorkers(t *testing.T) {
 	}{
 		{
 			name:        "Test 1: Successful reload",
-			expectedLog: "All NGINX workers have been reloaded",
+			expectedLog: "NGINX workers have been reloaded",
 			reloadTime:  time.Date(2025, 8, 13, 8, 0, 0, 0, time.Local),
 			instanceID:  "e1374cb1-462d-3b6c-9f3b-f28332b5f10c",
 			workers: []*nginxprocess.Process{
@@ -315,7 +315,41 @@ func TestInstanceOperator_checkWorkers(t *testing.T) {
 			},
 		},
 		{
-			name: "Test 2: Unsuccessful reload",
+			name:        "Test 2: Successful reload - one workers is reloaded",
+			expectedLog: "NGINX workers have been reloaded",
+			reloadTime:  time.Date(2025, 8, 13, 8, 0, 0, 0, time.Local),
+			instanceID:  "e1374cb1-462d-3b6c-9f3b-f28332b5f10c",
+			masterProcess: []*nginxprocess.Process{
+				{
+					PID:     1234,
+					Created: time.Date(2025, 8, 13, 8, 1, 0, 0, time.Local),
+					PPID:    1,
+					Name:    "nginx",
+					Cmd:     "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
+					Exe:     exePath,
+				},
+			},
+			workers: []*nginxprocess.Process{
+				{
+					PID:     567,
+					Created: time.Date(2025, 8, 13, 8, 1, 0, 0, time.Local),
+					PPID:    1234,
+					Name:    "nginx",
+					Cmd:     "nginx: worker process",
+					Exe:     exePath,
+				},
+				{
+					PID:     789,
+					PPID:    1234,
+					Created: time.Date(2025, 8, 13, 7, 1, 0, 0, time.Local),
+					Name:    "nginx",
+					Cmd:     "nginx: worker process",
+					Exe:     exePath,
+				},
+			},
+		},
+		{
+			name: "Test 3: Unsuccessful reload",
 			expectedLog: "\"Failed to check if NGINX worker processes have successfully reloaded, timed out " +
 				"waiting\" error=\"waiting for NGINX worker processes\"",
 			reloadTime: time.Date(2025, 8, 13, 8, 0, 0, 0, time.Local),
@@ -333,7 +367,7 @@ func TestInstanceOperator_checkWorkers(t *testing.T) {
 			workers: []*nginxprocess.Process{
 				{
 					PID:     567,
-					Created: time.Date(2025, 8, 13, 8, 1, 0, 0, time.Local),
+					Created: time.Date(2025, 8, 13, 7, 1, 0, 0, time.Local),
 					PPID:    1234,
 					Name:    "nginx",
 					Cmd:     "nginx: worker process",
