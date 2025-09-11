@@ -981,7 +981,6 @@ func TestCollector_findAvailableSyslogServers(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			collector, err := NewCollector(conf)
 			require.NoError(t, err)
 
 			collector.previousNAPSysLogServer = test.previousNAPSysLogServer
