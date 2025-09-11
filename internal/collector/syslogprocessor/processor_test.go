@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/leodido/go-syslog/v4/rfc3164"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/consumer/consumertest"
@@ -204,4 +205,35 @@ func TestSyslogProcessorFailure(t *testing.T) {
 			require.NoError(t, processor.Shutdown(ctx))
 		})
 	}
+}
+
+func TestExtractIPFromHostname(t *testing.T) {
+	assert.Equal(t, "127.0.0.1", extractIPFromHostname("127.0.0.1"))
+	assert.Equal(t, "172.16.0.213", extractIPFromHostname("ip-172-16-0-213"))
+	assert.Empty(t, extractIPFromHostname("not-an-ip"))
+}
+
+func TestSplitAndTrim(t *testing.T) {
+	assert.Nil(t, splitAndTrim(""))
+	assert.Nil(t, splitAndTrim("N/A"))
+	assert.Equal(t, []string{"a", "b"}, splitAndTrim(" a , b "))
+}
+
+func TestBuildSignatures(t *testing.T) {
+	ids := []string{"1", "2"}
+	names := []string{"buf1", "buf2"}
+	sigs := buildSignatures(ids, names, "mask", "off", "len")
+	assert.Len(t, sigs, 2)
+	assert.Equal(t, "1", sigs[0].ID)
+	assert.Equal(t, "buf1", sigs[0].Buffer)
+	assert.Equal(t, "mask", sigs[0].BlockingMask)
+}
+
+func TestSetSyslogAttributesNilFields(t *testing.T) {
+	lr := plog.NewLogRecord()
+	m := &rfc3164.SyslogMessage{}
+	p := newSyslogProcessor(&consumertest.LogsSink{}, processortest.NewNopSettings(processortest.NopType))
+	p.setSyslogAttributes(lr, m)
+	attrs := lr.Attributes()
+	assert.Equal(t, 0, attrs.Len())
 }
