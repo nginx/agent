@@ -8,6 +8,7 @@ package managementplane
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"testing"
 
@@ -26,6 +27,7 @@ type MPITestSuite struct {
 }
 
 func (s *MPITestSuite) TearDownSuite() {
+	slog.Info("finished MPI tests")
 	s.teardownTest(s.T())
 }
 
@@ -34,6 +36,7 @@ func (s *MPITestSuite) TearDownTest() {
 }
 
 func (s *MPITestSuite) SetupSuite() {
+	slog.Info("starting MPI tests")
 	s.ctx = context.Background()
 	s.teardownTest = utils.SetupConnectionTest(s.T(), true, false, false,
 		"../../config/agent/nginx-config-with-grpc-client.conf")
@@ -46,6 +49,7 @@ func (s *MPITestSuite) SetupSuite() {
 }
 
 func (s *MPITestSuite) TestConfigUpload() {
+	slog.Info("starting MPI config upload test")
 	request := fmt.Sprintf(`{
 	"message_meta": {
 		"message_id": "5d0fa83e-351c-4009-90cd-1f2acce2d184",
@@ -79,6 +83,7 @@ func (s *MPITestSuite) TestConfigUpload() {
 	s.Equal("Successfully updated all files", responses[0].GetCommandResponse().GetMessage())
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
 	s.Equal("Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
+	slog.Info("finished MPI config upload test")
 }
 
 func TestMPITestSuite(t *testing.T) {

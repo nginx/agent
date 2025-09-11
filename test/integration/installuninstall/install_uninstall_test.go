@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -51,6 +52,8 @@ func installUninstallSetup(tb testing.TB, expectNoErrorsInLogs bool) (testcontai
 		LogMessage:      "nginx_pid",
 	}
 
+	slog.Info("starting install uninstall tests")
+
 	// start container without agent installed
 	testContainer := helpers.StartAgentlessContainer(
 		ctx,
@@ -68,6 +71,7 @@ func installUninstallSetup(tb testing.TB, expectNoErrorsInLogs bool) (testcontai
 			expectNoErrorsInLogs,
 			nil,
 		)
+		slog.Info("finished install uninstall tests")
 	}
 }
 

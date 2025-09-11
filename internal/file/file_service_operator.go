@@ -104,6 +104,7 @@ func (fso *FileServiceOperator) UpdateOverview(
 	ctx context.Context,
 	instanceID string,
 	filesToUpdate []*mpi.File,
+	configPath string,
 	iteration int,
 ) error {
 	correlationID := logger.CorrelationID(ctx)
@@ -127,11 +128,35 @@ func (fso *FileServiceOperator) UpdateOverview(
 				InstanceId: instanceID,
 				Version:    files.GenerateConfigVersion(filesToUpdate),
 			},
+			ConfigPath: configPath,
 		},
 	}
 
-	backOffCtx, backoffCancel := context.WithTimeout(newCtx, fso.agentConfig.Client.Backoff.MaxElapsedTime)
-	defer backoffCancel()
+	backoffSettings := &config.BackOff{
+		InitialInterval:     fso.agentConfig.Client.Backoff.InitialInterval,
+		MaxInterval:         fso.agentConfig.Client.Backoff.MaxInterval,
+		MaxElapsedTime:      fso.agentConfig.Client.Backoff.MaxElapsedTime,
+		RandomizationFactor: fso.agentConfig.Client.Backoff.RandomizationFactor,
+		Multiplier:          fso.agentConfig.Client.Backoff.Multiplier,
+	}
+
+	// If the create connection takes a long time that we wait indefinitely to do
+	// the initial file overview update to ensure that the management plane has a file overview
+	// on agent startup.
+	if !fso.isConnected.Load() {
+		slog.DebugContext(
+			newCtx,
+			"Not connected to management plane yet, "+
+				"retrying indefinitely to update file overview until connection is created",
+		)
+		backoffSettings = &config.BackOff{
+			InitialInterval:     fso.agentConfig.Client.Backoff.InitialInterval,
+			MaxInterval:         fso.agentConfig.Client.Backoff.MaxInterval,
+			MaxElapsedTime:      0,
+			RandomizationFactor: fso.agentConfig.Client.Backoff.RandomizationFactor,
+			Multiplier:          fso.agentConfig.Client.Backoff.Multiplier,
+		}
+	}
 
 	sendUpdateOverview := func() (*mpi.UpdateOverviewResponse, error) {
 		if fso.fileServiceClient == nil {
@@ -160,10 +185,9 @@ func (fso *FileServiceOperator) UpdateOverview(
 		return response, nil
 	}
 
-	backoffSettings := fso.agentConfig.Client.Backoff
 	response, err := backoff.RetryWithData(
 		sendUpdateOverview,
-		backoffHelpers.Context(backOffCtx, backoffSettings),
+		backoffHelpers.Context(newCtx, backoffSettings),
 	)
 	if err != nil {
 		return err
@@ -172,13 +196,15 @@ func (fso *FileServiceOperator) UpdateOverview(
 	slog.DebugContext(newCtx, "UpdateOverview response", "response", response)
 
 	if response.GetOverview() == nil {
-		slog.DebugContext(ctx, "UpdateOverview response is empty")
+		slog.DebugContext(newCtx, "UpdateOverview response is empty")
 		return nil
 	}
 	delta := files.ConvertToMapOfFiles(response.GetOverview().GetFiles())
 
+	// Make sure that the original context is used if a file upload is required so that original correlation ID
+	// can be used again for update file overview request
 	if len(delta) != 0 {
-		return fso.updateFiles(ctx, delta, instanceID, iteration)
+		return fso.updateFiles(ctx, delta, instanceID, configPath, iteration)
 	}
 
 	return err
@@ -254,6 +280,7 @@ func (fso *FileServiceOperator) updateFiles(
 	ctx context.Context,
 	delta map[string]*mpi.File,
 	instanceID string,
+	configPath string,
 	iteration int,
 ) error {
 	diffFiles := slices.Collect(maps.Values(delta))
@@ -268,7 +295,7 @@ func (fso *FileServiceOperator) updateFiles(
 	iteration++
 	slog.InfoContext(ctx, "Updating file overview after file updates", "attempt_number", iteration)
 
-	return fso.UpdateOverview(ctx, instanceID, diffFiles, iteration)
+	return fso.UpdateOverview(ctx, instanceID, diffFiles, configPath, iteration)
 }
 
 func (fso *FileServiceOperator) sendUpdateFileRequest(

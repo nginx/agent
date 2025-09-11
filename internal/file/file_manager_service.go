@@ -58,7 +58,8 @@ type (
 
 	fileServiceOperatorInterface interface {
 		File(ctx context.Context, file *mpi.File, fileActions map[string]*model.FileCache) error
-		UpdateOverview(ctx context.Context, instanceID string, filesToUpdate []*mpi.File, iteration int) error
+		UpdateOverview(ctx context.Context, instanceID string, filesToUpdate []*mpi.File, configPath string,
+			iteration int) error
 		ChunkedFile(ctx context.Context, file *mpi.File) error
 		IsConnected() bool
 		UpdateFile(
@@ -233,7 +234,8 @@ func (fms *FileManagerService) ConfigUpdate(ctx context.Context,
 	}
 
 	slog.InfoContext(ctx, "Updating overview after nginx config update")
-	err := fms.fileServiceOperator.UpdateOverview(ctx, nginxConfigContext.InstanceID, nginxConfigContext.Files, 0)
+	err := fms.fileServiceOperator.UpdateOverview(ctx, nginxConfigContext.InstanceID,
+		nginxConfigContext.Files, nginxConfigContext.ConfigPath, 0)
 	if err != nil {
 		slog.ErrorContext(
 			ctx,
@@ -242,6 +244,7 @@ func (fms *FileManagerService) ConfigUpdate(ctx context.Context,
 			"error", err,
 		)
 	}
+	slog.InfoContext(ctx, "Finished updating file overview")
 }
 
 func (fms *FileManagerService) ConfigUpload(ctx context.Context, configUploadRequest *mpi.ConfigUploadRequest) error {

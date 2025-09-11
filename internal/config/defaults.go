@@ -17,22 +17,34 @@ const (
 	DefNginxApiTlsCa               = ""
 
 	// Nginx Reload Backoff defaults
-	DefNginxReloadBackoffInitialInterval     = 1 * time.Second
+	DefNginxReloadBackoffInitialInterval     = 500 * time.Millisecond
 	DefNginxReloadBackoffRandomizationFactor = 0.5 // the value is 0 <= and < 1
-	DefNginxReloadBackoffMultiplier          = 5
-	DefNginxReloadBackoffMaxInterval         = 10 * time.Second
-	DefNginxReloadBackoffMaxElapsedTime      = 30 * time.Second
+	DefNginxReloadBackoffMultiplier          = 2
+	DefNginxReloadBackoffMaxInterval         = 3 * time.Second
+	DefNginxReloadBackoffMaxElapsedTime      = 10 * time.Second
 
-	DefCommandServerHostKey    = ""
-	DefCommandServerPortKey    = 0
-	DefCommandServerTypeKey    = "grpc"
-	DefCommandAuthTokenKey     = ""
-	DefCommandAuthTokenPathKey = ""
-	DefCommandTLSCertKey       = ""
-	DefCommandTLSKeyKey        = ""
-	DefCommandTLSCaKey         = ""
-	DefCommandTLSSkipVerifyKey = false
-	DefCommandTLServerNameKey  = ""
+	DefCommandServerHostKey               = ""
+	DefCommandServerPortKey               = 0
+	DefCommandServerTypeKey               = "grpc"
+	DefCommandAuthTokenKey                = ""
+	DefCommandAuthTokenPathKey            = ""
+	DefCommandTLSCertKey                  = ""
+	DefCommandTLSKeyKey                   = ""
+	DefCommandTLSCaKey                    = ""
+	DefCommandTLSSkipVerifyKey            = false
+	DefCommandTLServerNameKey             = ""
+	DefCommandServerProxyURlKey           = ""
+	DefCommandServerProxyNoProxyKey       = ""
+	DefCommandServerProxyAuthMethodKey    = ""
+	DefCommandServerProxyUsernameKey      = ""
+	DefCommandServerProxyPasswordKey      = ""
+	DefCommandServerProxyTokenKey         = ""
+	DefCommandServerProxyTLSCertKey       = ""
+	DefCommandServerProxyTLSKeyKey        = ""
+	DefCommandServerProxyTLSCaKey         = ""
+	DefCommandServerProxyTLSSkipVerifyKey = false
+	DefCommandServerProxyTLServerNameKey  = ""
+	DefCommandServerProxyTimeoutKey       = 10 * time.Second
 
 	DefAuxiliaryCommandServerHostKey    = ""
 	DefAuxiliaryCommandServerPortKey    = 0

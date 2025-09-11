@@ -6,10 +6,18 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"testing"
 	"time"
+
+	"github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/test/helpers"
+	"github.com/nginx/agent/v3/test/integration/managementplane/configs"
+	"github.com/testcontainers/testcontainers-go"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -20,9 +28,11 @@ import (
 )
 
 const (
-	RetryCount       = 10
-	RetryWaitTime    = 5 * time.Second
-	RetryMaxWaitTime = 1 * time.Minute
+	RetryCount                = 10
+	RetryWaitTime             = 5 * time.Second
+	RetryMaxWaitTime          = 1 * time.Minute
+	permissions               = 0o666
+	manifestFileRetryWaitTime = 2 * time.Second
 )
 
 var (
@@ -113,4 +123,87 @@ func PerformInvalidConfigApply(t *testing.T, nginxInstanceID string) {
 	resp, err := client.R().EnableTrace().SetBody(body).Post(url)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
+}
+
+func CheckManifestFile(t *testing.T, container testcontainers.Container,
+	expectedContent map[string]*model.ManifestFile,
+) {
+	t.Helper()
+
+	var file io.ReadCloser
+	var err error
+
+	retries := 5
+	for i := range retries {
+		file, err = container.CopyFileFromContainer(t.Context(), "/var/lib/nginx-agent/manifest.json")
+		if err == nil {
+			break
+		}
+		t.Logf("Error copying manifest file, retry %d/%d: %v", i+1, retries, err)
+		time.Sleep(manifestFileRetryWaitTime)
+	}
+	require.NoError(t, err)
+
+	fileContent, err := io.ReadAll(file)
+	require.NoError(t, err)
+
+	var manifestFiles map[string]*model.ManifestFile
+
+	err = json.Unmarshal(fileContent, &manifestFiles)
+	assert.NotEmpty(t, fileContent)
+	require.NoError(t, err)
+
+	assert.Equal(t, expectedContent, manifestFiles)
+}
+
+func WriteConfigFileMock(t *testing.T, nginxInstanceID, file1, file2, file3 string) {
+	t.Helper()
+	tempDir := t.TempDir()
+
+	file := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
+	t.Logf("File: %s", file.Name())
+
+	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+		writeErr := os.WriteFile(file.Name(), []byte(configs.NginxPlusConfigWithMultipleInclude(
+			file1, file2, file3)), permissions)
+		require.NoError(t, writeErr)
+	} else {
+		writeErr := os.WriteFile(file.Name(), []byte(configs.NginxConfigWithMultipleInclude(
+			file1, file2, file3)), permissions)
+		require.NoError(t, writeErr)
+	}
+
+	err := MockManagementPlaneGrpcContainer.CopyFileToContainer(
+		t.Context(),
+		file.Name(),
+		fmt.Sprintf("/mock-management-plane-grpc/config/%s/etc/nginx/nginx.conf", nginxInstanceID),
+		permissions,
+	)
+	require.NoError(t, err)
+}
+
+func WriteConfigFileDataplane(t *testing.T, file1, file2, file3 string) {
+	t.Helper()
+	tempDir := t.TempDir()
+
+	file := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx.conf")
+	t.Logf("File: %s", file.Name())
+
+	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+		writeErr := os.WriteFile(file.Name(), []byte(configs.NginxPlusConfigWithMultipleInclude(
+			file1, file2, file3)), permissions)
+		require.NoError(t, writeErr)
+	} else {
+		writeErr := os.WriteFile(file.Name(), []byte(configs.NginxConfigWithMultipleInclude(
+			file1, file2, file3)), permissions)
+		require.NoError(t, writeErr)
+	}
+
+	err := Container.CopyFileToContainer(
+		t.Context(),
+		file.Name(),
+		"/etc/nginx/nginx.conf",
+		permissions,
+	)
+	require.NoError(t, err)
 }
