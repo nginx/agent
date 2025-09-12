@@ -430,7 +430,7 @@ jobs:
     needs: build-unsigned-snapshot
     permissions:
       contents: write
-    if: ${{ startsWith(github.ref_name, 'pgo-') && !github.event.pull_request.head.repo.fork }}
+    if: ${{ startsWith(github.head_ref, 'pgo-') && !github.event.pull_request.head.repo.fork }}
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
