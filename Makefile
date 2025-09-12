@@ -281,14 +281,17 @@ local-rpm-package: ## Create local rpm package
 	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) -pgo=default.pgo -ldflags=$(LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
 	ARCH=$(OSARCH) VERSION=$(shell echo $(VERSION) | tr -d 'v') $(GORUN) $(NFPM) pkg --config ./scripts/packages/.local-nfpm.yaml --packager rpm --target $(RPM_PACKAGE);
 
-generate-pgo-profile: build-mock-management-plane-grpc ## Generate PGO profile
+generate-pgo-profile: build-mock-management-plane-grpc run-load-test-with-cpu-profiling ## Generate PGO profile
 	@echo "Generating PGO profile"
-	cp default.pgo profile.pprof
+	cp default.pgo old.pprof
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) \
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) DOCKERFILE_PATH=$(DOCKERFILE_PATH) \
 	IMAGE_PATH=$(IMAGE_PATH) TAG=${IMAGE_TAG} CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} \
 	scripts/performance/profiling.sh
+
+	@(GOTOOL) pprof -proto -output=default.pgo merged.pprof build/test/load-cpu-profiling/load/metrics_load_cpu.pprof
+
 
 # run under sudo locally
 load-test-image: ## Build performance load testing image
