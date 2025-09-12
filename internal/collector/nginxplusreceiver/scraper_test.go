@@ -58,6 +58,14 @@ func TestScraper(t *testing.T) {
 		},
 	}
 
+	scraper.previousLocationZoneRequests = map[string]int64{
+		"location_test": 30, // 5
+	}
+
+	scraper.previousServerZoneRequests = map[string]int64{
+		"test": 29, // 3
+	}
+
 	scraper.previousHTTPRequestsTotal = 3
 
 	actualMetrics, err := scraper.Scrape(context.Background())

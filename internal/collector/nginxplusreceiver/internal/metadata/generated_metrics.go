@@ -1173,9 +1173,10 @@ func (m *metricNginxHTTPRequestCount) init() {
 	m.data.SetDescription("The total number of client requests received, since the last collection interval.")
 	m.data.SetUnit("requests")
 	m.data.SetEmptyGauge()
+	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
 }
 
-func (m *metricNginxHTTPRequestCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64) {
+func (m *metricNginxHTTPRequestCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxZoneTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -1183,6 +1184,8 @@ func (m *metricNginxHTTPRequestCount) recordDataPoint(start pcommon.Timestamp, t
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
 	dp.SetIntValue(val)
+	dp.Attributes().PutStr("nginx.zone.name", nginxZoneNameAttributeValue)
+	dp.Attributes().PutStr("nginx.zone.type", nginxZoneTypeAttributeValue)
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -4225,8 +4228,8 @@ func (mb *MetricsBuilder) RecordNginxHTTPLimitReqRequestsDataPoint(ts pcommon.Ti
 }
 
 // RecordNginxHTTPRequestCountDataPoint adds a data point to nginx.http.request.count metric.
-func (mb *MetricsBuilder) RecordNginxHTTPRequestCountDataPoint(ts pcommon.Timestamp, val int64) {
-	mb.metricNginxHTTPRequestCount.recordDataPoint(mb.startTime, ts, val)
+func (mb *MetricsBuilder) RecordNginxHTTPRequestCountDataPoint(ts pcommon.Timestamp, val int64, nginxZoneNameAttributeValue string, nginxZoneTypeAttributeValue AttributeNginxZoneType) {
+	mb.metricNginxHTTPRequestCount.recordDataPoint(mb.startTime, ts, val, nginxZoneNameAttributeValue, nginxZoneTypeAttributeValue.String())
 }
 
 // RecordNginxHTTPRequestDiscardedDataPoint adds a data point to nginx.http.request.discarded metric.
