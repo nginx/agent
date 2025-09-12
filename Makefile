@@ -289,7 +289,7 @@ generate-pgo-profile: build-mock-management-plane-grpc run-load-test-with-cpu-pr
 	IMAGE_PATH=$(IMAGE_PATH) TAG=${IMAGE_TAG} CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} \
 	scripts/performance/profiling.sh
 
-	@$(GOTOOL) pprof -proto -output=default.pgo merged.pprof build/test/load-cpu-profiling/load/metrics_load_cpu.pprof \
+	@$(GOTOOL) pprof -proto -output=default.pgo build/test/profiles/merged.pprof build/test/load-cpu-profiling/load/metrics_load_cpu.pprof \
 		|| { echo "Failed to generate PGO profile"; exit 1; }
 
 # run under sudo locally
