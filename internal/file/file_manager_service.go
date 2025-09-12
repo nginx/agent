@@ -140,6 +140,7 @@ func (fms *FileManagerService) SetIsConnected(isConnected bool) {
 func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	configApplyRequest *mpi.ConfigApplyRequest,
 ) (status model.WriteStatus, err error) {
+	fms.rollbackManifest = true
 	fileOverview := configApplyRequest.GetOverview()
 
 	if fileOverview == nil {
