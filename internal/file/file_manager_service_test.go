@@ -284,7 +284,6 @@ func TestFileManagerService_ConfigApply_Failed(t *testing.T) {
 	require.Error(t, err)
 	assert.Equal(t, model.RollbackRequired, writeStatus)
 	assert.False(t, fileManagerService.rollbackManifest)
-
 }
 
 func TestFileManagerService_checkAllowedDirectory(t *testing.T) {
@@ -658,12 +657,12 @@ func TestFileManagerService_UpdateManifestFile(t *testing.T) {
 	fileHash := files.GenerateHash(fileContent)
 
 	tests := []struct {
-		name                 string
 		currentFiles         map[string]*mpi.File
-		referenced           bool
-		previousRefrenced    bool
-		expectedFiles        map[string]*model.ManifestFile
 		currentManifestFiles map[string]*model.ManifestFile
+		expectedFiles        map[string]*model.ManifestFile
+		name                 string
+		referenced           bool
+		previousReferenced   bool
 	}{
 		{
 			name: "Test 1: Manifest file empty",
@@ -674,7 +673,7 @@ func TestFileManagerService_UpdateManifestFile(t *testing.T) {
 			},
 			expectedFiles: map[string]*model.ManifestFile{
 				"/etc/nginx/nginx.conf": {
-					&model.ManifestFileMeta{
+					ManifestFileMeta: &model.ManifestFileMeta{
 						Name:       "/etc/nginx/nginx.conf",
 						Hash:       fileHash,
 						Size:       0,
@@ -682,9 +681,9 @@ func TestFileManagerService_UpdateManifestFile(t *testing.T) {
 					},
 				},
 			},
-			currentManifestFiles: map[string]*model.ManifestFile{},
+			currentManifestFiles: make(map[string]*model.ManifestFile),
 			referenced:           true,
-			previousRefrenced:    true,
+			previousReferenced:   true,
 		},
 		{
 			name: "Test 2: Manifest file populated - unreferenced",
@@ -698,7 +697,7 @@ func TestFileManagerService_UpdateManifestFile(t *testing.T) {
 			},
 			expectedFiles: map[string]*model.ManifestFile{
 				"/etc/nginx/nginx.conf": {
-					&model.ManifestFileMeta{
+					ManifestFileMeta: &model.ManifestFileMeta{
 						Name:       "/etc/nginx/nginx.conf",
 						Hash:       fileHash,
 						Size:       0,
@@ -706,7 +705,7 @@ func TestFileManagerService_UpdateManifestFile(t *testing.T) {
 					},
 				},
 				"/etc/nginx/unref.conf": {
-					&model.ManifestFileMeta{
+					ManifestFileMeta: &model.ManifestFileMeta{
 						Name:       "/etc/nginx/unref.conf",
 						Hash:       fileHash,
 						Size:       0,
@@ -716,7 +715,7 @@ func TestFileManagerService_UpdateManifestFile(t *testing.T) {
 			},
 			currentManifestFiles: map[string]*model.ManifestFile{
 				"/etc/nginx/nginx.conf": {
-					&model.ManifestFileMeta{
+					ManifestFileMeta: &model.ManifestFileMeta{
 						Name:       "/etc/nginx/nginx.conf",
 						Hash:       fileHash,
 						Size:       0,
@@ -724,8 +723,8 @@ func TestFileManagerService_UpdateManifestFile(t *testing.T) {
 					},
 				},
 			},
-			referenced:        false,
-			previousRefrenced: true,
+			referenced:         false,
+			previousReferenced: true,
 		},
 		{
 			name: "Test 3: Manifest file populated - referenced",
@@ -739,7 +738,7 @@ func TestFileManagerService_UpdateManifestFile(t *testing.T) {
 			},
 			expectedFiles: map[string]*model.ManifestFile{
 				"/etc/nginx/nginx.conf": {
-					&model.ManifestFileMeta{
+					ManifestFileMeta: &model.ManifestFileMeta{
 						Name:       "/etc/nginx/nginx.conf",
 						Hash:       fileHash,
 						Size:       0,
@@ -747,7 +746,7 @@ func TestFileManagerService_UpdateManifestFile(t *testing.T) {
 					},
 				},
 				"/etc/nginx/test.conf": {
-					&model.ManifestFileMeta{
+					ManifestFileMeta: &model.ManifestFileMeta{
 						Name:       "/etc/nginx/test.conf",
 						Hash:       fileHash,
 						Size:       0,
@@ -755,7 +754,7 @@ func TestFileManagerService_UpdateManifestFile(t *testing.T) {
 					},
 				},
 				"/etc/nginx/unref.conf": {
-					&model.ManifestFileMeta{
+					ManifestFileMeta: &model.ManifestFileMeta{
 						Name:       "/etc/nginx/unref.conf",
 						Hash:       fileHash,
 						Size:       0,
@@ -765,7 +764,7 @@ func TestFileManagerService_UpdateManifestFile(t *testing.T) {
 			},
 			currentManifestFiles: map[string]*model.ManifestFile{
 				"/etc/nginx/nginx.conf": {
-					&model.ManifestFileMeta{
+					ManifestFileMeta: &model.ManifestFileMeta{
 						Name:       "/etc/nginx/nginx.conf",
 						Hash:       fileHash,
 						Size:       0,
@@ -773,7 +772,7 @@ func TestFileManagerService_UpdateManifestFile(t *testing.T) {
 					},
 				},
 				"/etc/nginx/unref.conf": {
-					&model.ManifestFileMeta{
+					ManifestFileMeta: &model.ManifestFileMeta{
 						Name:       "/etc/nginx/unref.conf",
 						Hash:       fileHash,
 						Size:       0,
@@ -781,8 +780,8 @@ func TestFileManagerService_UpdateManifestFile(t *testing.T) {
 					},
 				},
 			},
-			referenced:        true,
-			previousRefrenced: false,
+			referenced:         true,
+			previousReferenced: false,
 		},
 	}
 
