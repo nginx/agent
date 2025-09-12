@@ -33,19 +33,19 @@ for pkg in $packages; do
     echo "Profile saved to: ${PROFILES_DIR}/$(basename $pkg)_watcher_cpu.pprof"
 done
 
-## Run integration tests with CPU profiling for each package
-echo "Starting integration tests cpu profiling tests..."
-packages=$(find test/integration -type f -name '*_test.go' -exec dirname {} \; | sort -u)
-echo "Found packages:"
-echo "$packages"
-for pkg in $packages; do
-    echo "Running tests in package: ${pkg}"
-    go test -v \
-      -count 3 -timeout 3m \
-      -cpuprofile "${PROFILES_DIR}/$(basename $pkg)_integration_cpu.pprof" \
-      "./${pkg}" || { echo "Tests failed in package: ${pkg}, but continuing..."; continue; }
-    echo "Profile saved to: ${PROFILES_DIR}/$(basename $pkg)_integration_cpu.pprof"
-done
+### Run integration tests with CPU profiling for each package
+#echo "Starting integration tests cpu profiling tests..."
+#packages=$(find test/integration -type f -name '*_test.go' -exec dirname {} \; | sort -u)
+#echo "Found packages:"
+#echo "$packages"
+#for pkg in $packages; do
+#    echo "Running tests in package: ${pkg}"
+#    go test \
+#      -count 3 -timeout 3m \
+#      -cpuprofile "${PROFILES_DIR}/$(basename $pkg)_integration_cpu.pprof" \
+#      "./${pkg}" || { echo "Tests failed in package: ${pkg}, but continuing..."; continue; }
+#    echo "Profile saved to: ${PROFILES_DIR}/$(basename $pkg)_integration_cpu.pprof"
+#done
 
 ## Merge all CPU profiles
 files=$(ls ${PROFILES_DIR}/*.pprof)
