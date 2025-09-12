@@ -35,7 +35,8 @@ OFFICIAL_IMAGE_DOCKERFILE_PATH = "./test/docker/nginx-official-image/$(CONTAINER
 IMAGE_PATH ?= "/nginx/agent"
 TAG ?= ""
 
-BUILD_DIR		:= build
+BUILD_DIR		:= $(shell pwd)/build
+RUN_DIR         := $(BUILD_DIR)/run
 TEST_BUILD_DIR  := build/test
 CERTS_DIR       := build/certs
 DOCS_DIR        := docs
@@ -43,9 +44,9 @@ PROTO_DIR       := proto
 BINARY_NAME		:= nginx-agent
 PROJECT_DIR		= cmd/agent
 PROJECT_FILE	= main.go
-COLLECTOR_PATH  ?= /etc/nginx-agent/opentelemetry-collector-agent.yaml
-MANIFEST_DIR	?= /var/lib/nginx-agent
-DIRS            = $(BUILD_DIR) $(TEST_BUILD_DIR) $(BUILD_DIR)/$(DOCS_DIR) $(BUILD_DIR)/$(DOCS_DIR)/$(PROTO_DIR)
+COLLECTOR_PATH  ?= $(RUN_DIR)/opentelemetry-collector-agent.yaml
+MANIFEST_DIR	?= $(RUN_DIR)
+DIRS            = $(BUILD_DIR) $(RUN_DIR) $(TEST_BUILD_DIR) $(BUILD_DIR)/$(DOCS_DIR) $(BUILD_DIR)/$(DOCS_DIR)/$(PROTO_DIR)
 $(shell mkdir -p $(DIRS))
 
 VERSION ?= $(shell git describe --match "v[0-9]*" --abbrev=0 --tags)
