@@ -66,8 +66,9 @@ jobs:
 
       - name: Run CPU Profiling Tests
         run: |
+          make build
           cp profile.pgo old_profile.pgo || echo "No previous pgo profile found"
-          make generate-pgo-profile || echo "No changes to profile"
+          make generate-pgo-profile
           ls -l profile.pgo
           diff old_profile.pgo profile.pgo || echo "No differences found"
 
