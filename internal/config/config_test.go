@@ -1322,6 +1322,21 @@ func createConfig() *Config {
 			config.FeatureCertificates, config.FeatureFileWatcher, config.FeatureMetrics,
 			config.FeatureAPIAction, config.FeatureLogsNap,
 		},
+		ExternalDataSource: &ExternalDataSource{
+			Mode: "",
+			Helper: &HelperConfig{
+				Path:           "",
+				AllowedDomains: nil,
+			},
+			MaxBytes: 0,
+			TLS: &TLSConfig{
+				Cert:       "",
+				Key:        "",
+				Ca:         "",
+				ServerName: "",
+				SkipVerify: false,
+			},
+		},
 	}
 }
 

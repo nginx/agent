@@ -25,6 +25,7 @@ const (
 	InstanceHealthWatcherMonitoringFrequencyKey = "watchers_instance_health_watcher_monitoring_frequency"
 	FileWatcherKey                              = "watchers_file_watcher"
 	ManifestDirPathKey                          = "manifest_dir"
+	ExternalDataSourceRootKey                   = "external_data_source"
 )
 
 var (
@@ -137,6 +138,16 @@ var (
 
 	FileWatcherMonitoringFrequencyKey = pre(FileWatcherKey) + "monitoring_frequency"
 	NginxExcludeFilesKey              = pre(FileWatcherKey) + "exclude_files"
+
+	ExternalDataSourceModeKey          = pre(ExternalDataSourceRootKey) + "mode"
+	ExternalDataSourceHelperKey        = pre(ExternalDataSourceRootKey) + "helper"
+	ExternalDataSourceHelperPathKey    = pre(ExternalDataSourceRootKey) + "helper_path"
+	ExternalDataSourceMaxBytesKey      = pre(ExternalDataSourceRootKey) + "max_bytes"
+	ExternalDataSourceAllowDomainsKey  = pre(ExternalDataSourceRootKey) + "allowed_domains"
+	ExternalDataSourceTLSKey           = pre(ExternalDataSourceRootKey) + "tls"
+	ExternalDataSourceTLSSkipVerifyKey = pre(ExternalDataSourceRootKey) + "tls_skip_verify"
+	ExternalDataSourceTLSCaKey         = pre(ExternalDataSourceRootKey) + "tls_ca"
+	ExternalDataSourceTLSServerNameKey = pre(ExternalDataSourceRootKey) + "tls_server_name"
 )
 
 func pre(prefixes ...string) string {

@@ -130,6 +130,13 @@ message File {
     FileMeta file_meta = 1;
     // Unmanaged files will not be modified
     bool unmanaged = 2;
+    // A external URL for the file source
+    optional ExternalDataSource external_data_source = 3;
+}
+
+message ExternalDataSource {
+    // A location to a file
+    string location = 1;
 }
 
 // Represents the get file request
