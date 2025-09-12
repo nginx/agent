@@ -321,6 +321,127 @@ jobs:
         if: always()
         run: bash ./scripts/dashboard/format_results.sh ${{job.status}} ${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}} ${{github.workspace}}
 
+  oss-metrics-tests:
+    name: Metrics Integration Tests - Official OSS Images
+    needs: build-unsigned-snapshot
+    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        container:
+          - image: "bookworm"
+            version: "stable"
+            release: "debian"
+          - image: "bookworm"
+            version: "mainline"
+            release: "debian"
+          - image: "alpine"
+            version: "stable"
+            release: "alpine"
+          - image: "alpine"
+            version: "mainline"
+            release: "alpine"
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version-file: 'go.mod'
+          cache: false
+      - name: Download Packages
+        uses: actions/download-artifact@eaceaf801fd36c7dee90939fad912460b18a1ffe # v4.1.2
+        with:
+          name: nginx-agent-unsigned-snapshots
+          path: build
+
+      - name: Create Results Directory
+        run: mkdir -p ${{ github.workspace }}/test/dashboard/logs/${{ github.job }}/${{matrix.container.image}}-${{matrix.container.version}}
+
+      - name: Start Promtail
+        uses: ./.github/actions/start-promtail
+        with:
+          loki_url: ${{ secrets.LOKI_DASHBOARD_URL }}
+
+      - name: Run Integration Tests
+        run: |
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
+          CONTAINER_NGINX_IMAGE_REGISTRY="docker-registry.nginx.com" \
+          TAG="${{ matrix.container.version }}-${{ matrix.container.image }}" \
+          OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" \
+          make metrics-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}}/raw_logs.log
+          exit "${PIPESTATUS[0]}"
+
+      - name: Format Results
+        if: always()
+        run: bash ./scripts/dashboard/format_results.sh ${{job.status}} ${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}} ${{github.workspace}}
+
+  plus-metrics-tests:
+    name: Metrics Integration Tests - Official Plus Images
+    needs: build-unsigned-snapshot
+    if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        container:
+          - image: "alpine"
+            version: "3.22"
+            plus: "r35"
+            release: "alpine"
+            path: "/nginx-plus/agent"
+          - image: "alpine"
+            version: "3.21"
+            plus: "r34"
+            release: "alpine"
+            path: "/nginx-plus/agent"
+          - image: "debian"
+            version: "bookworm"
+            plus: "r35"
+            release: "debian"
+            path: "/nginx-plus/agent"
+          - image: "debian"
+            version: "bookworm"
+            plus: "r34"
+            release: "debian"
+            path: "/nginx-plus/agent"
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version-file: 'go.mod'
+          cache: false
+      - name: Download Packages
+        uses: actions/download-artifact@eaceaf801fd36c7dee90939fad912460b18a1ffe # v4.1.2
+        with:
+          name: nginx-agent-unsigned-snapshots
+          path: build
+      - name: Login to Docker Registry
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        with:
+          registry: ${{ secrets.TEST_REGISTRY_URL }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Create Results Directory
+        run: mkdir -p ${{ github.workspace }}/test/dashboard/logs/${{ github.job }}/${{matrix.container.image}}-${{matrix.container.version}}
+
+      - name: Start Promtail
+        uses: ./.github/actions/start-promtail
+        with:
+          loki_url: ${{ secrets.LOKI_DASHBOARD_URL }}
+
+      - name: Run Integration Tests
+        run: |
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
+          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.TEST_REGISTRY_URL }}" \
+          TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
+          OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" IMAGE_PATH="${{ matrix.container.path }}" \
+          NGINX_LICENSE_JWT="${{ secrets.TEST_JWT }}" \
+            make metrics-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}}/raw_logs.log
+          exit "${PIPESTATUS[0]}"
+
+      - name: Format Results
+        if: always()
+        run: bash ./scripts/dashboard/format_results.sh ${{job.status}} ${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}} ${{github.workspace}}
+
   performance-tests:
     name: Performance Tests
     runs-on: ubuntu-22.04

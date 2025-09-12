@@ -24,6 +24,11 @@ To start run everything run the following
 make run-mock-management-otel-collector
 ```
 
+To start everything except the NGINX Plus & NGINX App Protect run the following
+```
+make run-mock-otel-collector-without-nap
+```
+
 Once everything is started there should be 7 containers running
 ```
 CONTAINER ID  IMAGE                                                   COMMAND               CREATED         STATUS         PORTS                                           NAMES
@@ -42,4 +47,9 @@ To view the metrics & logs, the grafana UI can be used by accessing this URL htt
 To stop everything run the following
 ```
 make stop-mock-management-otel-collector
+```
+
+Or run the following if you started everything except the NGINX Plus & NGINX App Protect
+```
+make stop-mock-otel-collector-without-nap
 ```
