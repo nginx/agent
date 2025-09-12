@@ -283,7 +283,6 @@ local-rpm-package: ## Create local rpm package
 
 generate-pgo-profile: build-mock-management-plane-grpc run-load-test-with-cpu-profiling ## Generate PGO profile
 	@echo "Generating PGO profile"
-	cp default.pgo old.pprof
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) \
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) DOCKERFILE_PATH=$(DOCKERFILE_PATH) \
@@ -291,7 +290,7 @@ generate-pgo-profile: build-mock-management-plane-grpc run-load-test-with-cpu-pr
 	scripts/performance/profiling.sh
 
 	@(GOTOOL) pprof -proto -output=default.pgo merged.pprof build/test/load-cpu-profiling/load/metrics_load_cpu.pprof
-
+	rm $(find . -type f -name "*.test" | xargs)
 
 # run under sudo locally
 load-test-image: ## Build performance load testing image
