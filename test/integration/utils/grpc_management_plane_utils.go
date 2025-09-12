@@ -189,7 +189,7 @@ func setupLocalEnvironment(tb testing.TB) {
 	ctx := context.Background()
 
 	requestChan := make(chan *mpi.ManagementPlaneRequest)
-	server := mockGrpc.NewCommandService(requestChan, os.TempDir())
+	server := mockGrpc.NewCommandService(requestChan, os.TempDir(), os.TempDir())
 
 	go func(tb testing.TB) {
 		tb.Helper()

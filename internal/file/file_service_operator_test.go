@@ -12,6 +12,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1/v1fakes"
@@ -95,6 +96,30 @@ func TestFileServiceOperator_UpdateOverview_MaxIterations(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Equal(t, "too many UpdateOverview attempts", err.Error())
+}
+
+func TestFileServiceOperator_UpdateOverview_NoConnection(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), 500*time.Millisecond)
+	defer cancel()
+
+	filePath := filepath.Join(t.TempDir(), "nginx.conf")
+	fileMeta := protos.FileMeta(filePath, "")
+
+	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+
+	agentConfig := types.AgentConfig()
+	agentConfig.Client.Backoff.MaxElapsedTime = 200 * time.Millisecond
+
+	fileServiceOperator := NewFileServiceOperator(types.AgentConfig(), fakeFileServiceClient, &sync.RWMutex{})
+	fileServiceOperator.SetIsConnected(false)
+
+	err := fileServiceOperator.UpdateOverview(ctx, "123", []*mpi.File{
+		{
+			FileMeta: fileMeta,
+		},
+	}, filePath, 0)
+
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
 }
 
 func TestFileManagerService_UpdateFile(t *testing.T) {

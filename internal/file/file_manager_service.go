@@ -244,6 +244,7 @@ func (fms *FileManagerService) ConfigUpdate(ctx context.Context,
 			"error", err,
 		)
 	}
+	slog.InfoContext(ctx, "Finished updating file overview")
 }
 
 func (fms *FileManagerService) ConfigUpload(ctx context.Context, configUploadRequest *mpi.ConfigUploadRequest) error {

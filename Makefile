@@ -34,6 +34,7 @@ DOCKERFILE_PATH = "./test/docker/nginx-oss/$(CONTAINER_OS_TYPE)/Dockerfile"
 OFFICIAL_IMAGE_DOCKERFILE_PATH = "./test/docker/nginx-official-image/$(CONTAINER_OS_TYPE)/Dockerfile"
 IMAGE_PATH ?= "/nginx/agent"
 TAG ?= ""
+NGINX_LICENSE_JWT ?= ""
 
 BUILD_DIR		:= build
 TEST_BUILD_DIR  := build/test
@@ -68,6 +69,7 @@ DEB_PACKAGE := ./build/$(PACKAGE_NAME).deb
 RPM_PACKAGE := ./build/$(PACKAGE_NAME).rpm
 
 MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY ?= 
+MOCK_MANAGEMENT_PLANE_EXTERNAL_FILE_SERVER ?= 
 MOCK_MANAGEMENT_PLANE_LOG_LEVEL ?= INFO
 MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS ?= 127.0.0.1:0
 MOCK_MANAGEMENT_PLANE_API_ADDRESS ?= 127.0.0.1:0
@@ -178,6 +180,7 @@ official-image-integration-test: $(SELECTED_PACKAGE) build-mock-management-plane
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} BUILD_TARGET="install" \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) TAG=${TAG} PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) DOCKERFILE_PATH=$(OFFICIAL_IMAGE_DOCKERFILE_PATH) \
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) IMAGE_PATH=$(IMAGE_PATH) \
+	NGINX_LICENSE_JWT=$(NGINX_LICENSE_JWT) \
 	go test -v ./test/integration/managementplane ./test/integration/auxiliarycommandserver
 
 performance-test:
@@ -201,7 +204,7 @@ race-condition-dev: ## Run agent executable with race condition detection
 
 run-mock-management-grpc-server: ## Run mock management plane gRPC server
 	@echo "🖲️ Running mock management plane gRPC server"
-	$(GORUN) test/mock/grpc/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY) -logLevel=$(MOCK_MANAGEMENT_PLANE_LOG_LEVEL) -grpcAddress=$(MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS) -apiAddress=$(MOCK_MANAGEMENT_PLANE_API_ADDRESS)
+	$(GORUN) test/mock/grpc/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY) -logLevel=$(MOCK_MANAGEMENT_PLANE_LOG_LEVEL) -grpcAddress=$(MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS) -apiAddress=$(MOCK_MANAGEMENT_PLANE_API_ADDRESS) -externalFileServer=$(MOCK_MANAGEMENT_PLANE_EXTERNAL_FILE_SERVER)
 
 
 .PHONY: build-test-nginx-plus-and-nap-image
