@@ -176,6 +176,7 @@ type (
 		Resource  map[string]*Resource  `yaml:"resource"  mapstructure:"resource"`
 		Batch     map[string]*Batch     `yaml:"batch"     mapstructure:"batch"`
 		LogsGzip  map[string]*LogsGzip  `yaml:"logsgzip"  mapstructure:"logsgzip"`
+		Syslog    map[string]*Syslog    `yaml:"syslog"    mapstructure:"syslog"`
 	}
 
 	Attribute struct {
@@ -205,6 +206,7 @@ type (
 	}
 
 	LogsGzip struct{}
+	Syslog   struct{}
 
 	// OTel Collector Receiver configuration.
 	Receivers struct {
