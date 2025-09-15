@@ -194,7 +194,7 @@ func WaitUntilNextScrapeCycle(t *testing.T, ctx context.Context) {
 	ticker := time.NewTicker(tickerTime)
 	defer ticker.Stop()
 
-	prevScrapeValue, err := getRequestCountMetric(t, ctx)
+	prevScrapeValue, err := requestCountMetric(t, ctx)
 	if err != nil {
 		t.Fatalf("Failed to get initial scrape value: %v", err)
 		return
@@ -206,8 +206,8 @@ func WaitUntilNextScrapeCycle(t *testing.T, ctx context.Context) {
 			t.Fatalf("Timed out waiting for new scrape cycle")
 			return
 		case <-ticker.C:
-			currentMetric, err2 := getRequestCountMetric(t, ctx)
-			if err2 != nil {
+			currentMetric, requestErr := requestCountMetric(t, ctx)
+			if requestErr != nil {
 				continue
 			}
 
@@ -245,7 +245,7 @@ func WaitForMetricsToExist(t *testing.T, ctx context.Context) {
 	}
 }
 
-func getRequestCountMetric(t *testing.T, ctx context.Context) (float64, error) {
+func requestCountMetric(t *testing.T, ctx context.Context) (float64, error) {
 	t.Helper()
 
 	family := ScrapeCollectorMetricFamilies(t, ctx, MockCollectorStack.Otel)["nginx_http_request_count"]
@@ -256,97 +256,7 @@ func getRequestCountMetric(t *testing.T, ctx context.Context) (float64, error) {
 	return SumMetricFamily(family), nil
 }
 
-func SumMetricFamily(metricFamily *dto.MetricFamily) float64 {
-	var total float64
-	for _, metric := range metricFamily.GetMetric() {
-		if value := metricValue(metricFamily, metric); value != nil {
-			total += *value
-		}
-	}
-
-	return total
-}
-
-func SumMetricFamilyLabel(metricFamily *dto.MetricFamily, key, val string) float64 {
-	var total float64
-	for _, metric := range metricFamily.GetMetric() {
-		labels := make(map[string]string)
-		for _, labelPair := range metric.GetLabel() {
-			labels[labelPair.GetName()] = labelPair.GetValue()
-		}
-		if labels[key] != val {
-			continue
-		}
-		if value := metricValue(metricFamily, metric); value != nil {
-			total += *value
-		}
-	}
-
-	return total
-}
-
-func metricValue(metricFamily *dto.MetricFamily, metric *dto.Metric) *float64 {
-	switch metricFamily.GetType() {
-	case dto.MetricType_COUNTER:
-		return getCounterValue(metric)
-	case dto.MetricType_GAUGE:
-		return getGaugeValue(metric)
-	case dto.MetricType_SUMMARY:
-		return getSummaryValue(metric)
-	case dto.MetricType_UNTYPED:
-		return getUntypedValue(metric)
-	case dto.MetricType_HISTOGRAM, dto.MetricType_GAUGE_HISTOGRAM:
-		return getHistogramValue(metric)
-	}
-
-	return nil
-}
-
-func getCounterValue(metric *dto.Metric) *float64 {
-	if counter := metric.GetCounter(); counter != nil {
-		val := counter.GetValue()
-		return &val
-	}
-
-	return nil
-}
-
-func getGaugeValue(metric *dto.Metric) *float64 {
-	if gauge := metric.GetGauge(); gauge != nil {
-		val := gauge.GetValue()
-		return &val
-	}
-
-	return nil
-}
-
-func getSummaryValue(metric *dto.Metric) *float64 {
-	if summary := metric.GetSummary(); summary != nil {
-		val := summary.GetSampleSum()
-		return &val
-	}
-
-	return nil
-}
-
-func getUntypedValue(metric *dto.Metric) *float64 {
-	if untyped := metric.GetUntyped(); untyped != nil {
-		val := untyped.GetValue()
-		return &val
-	}
-
-	return nil
-}
-
-func getHistogramValue(metric *dto.Metric) *float64 {
-	if histogram := metric.GetHistogram(); histogram != nil {
-		val := histogram.GetSampleSum()
-		return &val
-	}
-
-	return nil
-}
-
+// metricValueChangeCheck checks if the metric values in a MetricFamily have changed
 func metricValueChangeCheck(t *testing.T, family *dto.MetricFamily, labelKey string,
 	labelValues []string, baselineValues []float64) (
 	[]float64, bool,
@@ -354,43 +264,18 @@ func metricValueChangeCheck(t *testing.T, family *dto.MetricFamily, labelKey str
 	t.Helper()
 
 	if len(family.GetMetric()) == 1 {
-		value, changed := singleMetricValue(t, family, baselineValues[0])
+		value, changed := checkSingleMetricValue(t, family, baselineValues[0])
 		if changed {
 			return []float64{value}, true
 		}
 	}
 
 	if len(family.GetMetric()) > 1 {
-		values, allChanged := labeledMetricValue(t, family, labelKey, labelValues, baselineValues)
+		values, allChanged := checkLabeledMetricValue(t, family, labelKey, labelValues, baselineValues)
 		if allChanged {
 			return values, true
 		}
 	}
 
 	return []float64{0}, false
-}
-
-func singleMetricValue(t *testing.T, family *dto.MetricFamily, baselineValue float64) (float64, bool) {
-	t.Helper()
-	metric := SumMetricFamily(family)
-
-	return metric, metric != baselineValue
-}
-
-func labeledMetricValue(t *testing.T, family *dto.MetricFamily, labelKey string,
-	labelValues []string, baselineValues []float64,
-) ([]float64, bool) {
-	t.Helper()
-	results := make([]float64, len(baselineValues))
-	allDifferent := true
-
-	for val := range labelValues {
-		metric := SumMetricFamilyLabel(family, labelKey, labelValues[val])
-		results[val] = metric
-		if metric == baselineValues[val] {
-			allDifferent = false
-		}
-	}
-
-	return results, allDifferent && len(results) > 0
 }
