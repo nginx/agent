@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver/record"
 	"go.opentelemetry.io/collector/component/componenttest"
 
 	"github.com/nginx/agent/v3/test/helpers"
@@ -38,35 +39,35 @@ func TestScraper(t *testing.T) {
 	// To test the nginx.http.response.count metric calculation we need to set the previousLocationZoneResponses &
 	// previousSeverZoneResponses then call scrape a second time as the first time it is called the previous responses
 	// are set using the API
-	scraper.previousLocationZoneResponses = map[string]ResponseStatuses{
+	scraper.locationZoneMetrics.PreviousLocationZoneResponses = map[string]record.ResponseStatuses{
 		"location_test": {
-			oneHundredStatusRange:   3,  // 4
-			twoHundredStatusRange:   29, // 2
-			threeHundredStatusRange: 0,
-			fourHundredStatusRange:  1, // 2
-			fiveHundredStatusRange:  0,
+			OneHundredStatusRange:   3,  // 4
+			TwoHundredStatusRange:   29, // 2
+			ThreeHundredStatusRange: 0,
+			FourHundredStatusRange:  1, // 2
+			FiveHundredStatusRange:  0,
 		},
 	}
 
-	scraper.previousServerZoneResponses = map[string]ResponseStatuses{
+	scraper.serverZoneMetrics.PreviousServerZoneResponses = map[string]record.ResponseStatuses{
 		"test": {
-			oneHundredStatusRange:   3, // 2
-			twoHundredStatusRange:   0, // 29
-			threeHundredStatusRange: 0,
-			fourHundredStatusRange:  1, // 1
-			fiveHundredStatusRange:  0,
+			OneHundredStatusRange:   3, // 2
+			TwoHundredStatusRange:   0, // 29
+			ThreeHundredStatusRange: 0,
+			FourHundredStatusRange:  1, // 1
+			FiveHundredStatusRange:  0,
 		},
 	}
 
-	scraper.previousLocationZoneRequests = map[string]int64{
+	scraper.locationZoneMetrics.PreviousLocationZoneRequests = map[string]int64{
 		"location_test": 30, // 5
 	}
 
-	scraper.previousServerZoneRequests = map[string]int64{
+	scraper.serverZoneMetrics.PreviousServerZoneRequests = map[string]int64{
 		"test": 29, // 3
 	}
 
-	scraper.previousHTTPRequestsTotal = 3
+	scraper.httpMetrics.PreviousHTTPRequestsTotal = 3
 
 	actualMetrics, err := scraper.Scrape(context.Background())
 	require.NoError(t, err)
