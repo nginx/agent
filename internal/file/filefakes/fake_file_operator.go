@@ -4,7 +4,6 @@ package filefakes
 import (
 	"bufio"
 	"context"
-	"io/fs"
 	"sync"
 
 	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -13,12 +12,11 @@ import (
 )
 
 type FakeFileOperator struct {
-	CreateFileDirectoriesStub        func(context.Context, *v1.FileMeta, fs.FileMode) error
+	CreateFileDirectoriesStub        func(context.Context, string) error
 	createFileDirectoriesMutex       sync.RWMutex
 	createFileDirectoriesArgsForCall []struct {
 		arg1 context.Context
-		arg2 *v1.FileMeta
-		arg3 fs.FileMode
+		arg2 string
 	}
 	createFileDirectoriesReturns struct {
 		result1 error
@@ -42,12 +40,13 @@ type FakeFileOperator struct {
 		result1 v1.FileDataChunk_Content
 		result2 error
 	}
-	WriteStub        func(context.Context, []byte, *v1.FileMeta) error
+	WriteStub        func(context.Context, []byte, string, string) error
 	writeMutex       sync.RWMutex
 	writeArgsForCall []struct {
 		arg1 context.Context
 		arg2 []byte
-		arg3 *v1.FileMeta
+		arg3 string
+		arg4 string
 	}
 	writeReturns struct {
 		result1 error
@@ -55,13 +54,14 @@ type FakeFileOperator struct {
 	writeReturnsOnCall map[int]struct {
 		result1 error
 	}
-	WriteChunkedFileStub        func(context.Context, *v1.File, *v1.FileDataChunkHeader, grpc.ServerStreamingClient[v1.FileDataChunk]) error
+	WriteChunkedFileStub        func(context.Context, string, string, *v1.FileDataChunkHeader, grpc.ServerStreamingClient[v1.FileDataChunk]) error
 	writeChunkedFileMutex       sync.RWMutex
 	writeChunkedFileArgsForCall []struct {
 		arg1 context.Context
-		arg2 *v1.File
-		arg3 *v1.FileDataChunkHeader
-		arg4 grpc.ServerStreamingClient[v1.FileDataChunk]
+		arg2 string
+		arg3 string
+		arg4 *v1.FileDataChunkHeader
+		arg5 grpc.ServerStreamingClient[v1.FileDataChunk]
 	}
 	writeChunkedFileReturns struct {
 		result1 error
@@ -86,20 +86,19 @@ type FakeFileOperator struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeFileOperator) CreateFileDirectories(arg1 context.Context, arg2 *v1.FileMeta, arg3 fs.FileMode) error {
+func (fake *FakeFileOperator) CreateFileDirectories(arg1 context.Context, arg2 string) error {
 	fake.createFileDirectoriesMutex.Lock()
 	ret, specificReturn := fake.createFileDirectoriesReturnsOnCall[len(fake.createFileDirectoriesArgsForCall)]
 	fake.createFileDirectoriesArgsForCall = append(fake.createFileDirectoriesArgsForCall, struct {
 		arg1 context.Context
-		arg2 *v1.FileMeta
-		arg3 fs.FileMode
-	}{arg1, arg2, arg3})
+		arg2 string
+	}{arg1, arg2})
 	stub := fake.CreateFileDirectoriesStub
 	fakeReturns := fake.createFileDirectoriesReturns
-	fake.recordInvocation("CreateFileDirectories", []interface{}{arg1, arg2, arg3})
+	fake.recordInvocation("CreateFileDirectories", []interface{}{arg1, arg2})
 	fake.createFileDirectoriesMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
@@ -113,17 +112,17 @@ func (fake *FakeFileOperator) CreateFileDirectoriesCallCount() int {
 	return len(fake.createFileDirectoriesArgsForCall)
 }
 
-func (fake *FakeFileOperator) CreateFileDirectoriesCalls(stub func(context.Context, *v1.FileMeta, fs.FileMode) error) {
+func (fake *FakeFileOperator) CreateFileDirectoriesCalls(stub func(context.Context, string) error) {
 	fake.createFileDirectoriesMutex.Lock()
 	defer fake.createFileDirectoriesMutex.Unlock()
 	fake.CreateFileDirectoriesStub = stub
 }
 
-func (fake *FakeFileOperator) CreateFileDirectoriesArgsForCall(i int) (context.Context, *v1.FileMeta, fs.FileMode) {
+func (fake *FakeFileOperator) CreateFileDirectoriesArgsForCall(i int) (context.Context, string) {
 	fake.createFileDirectoriesMutex.RLock()
 	defer fake.createFileDirectoriesMutex.RUnlock()
 	argsForCall := fake.createFileDirectoriesArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeFileOperator) CreateFileDirectoriesReturns(result1 error) {
@@ -216,7 +215,7 @@ func (fake *FakeFileOperator) ReadChunkReturnsOnCall(i int, result1 v1.FileDataC
 	}{result1, result2}
 }
 
-func (fake *FakeFileOperator) Write(arg1 context.Context, arg2 []byte, arg3 *v1.FileMeta) error {
+func (fake *FakeFileOperator) Write(arg1 context.Context, arg2 []byte, arg3 string, arg4 string) error {
 	var arg2Copy []byte
 	if arg2 != nil {
 		arg2Copy = make([]byte, len(arg2))
@@ -227,14 +226,15 @@ func (fake *FakeFileOperator) Write(arg1 context.Context, arg2 []byte, arg3 *v1.
 	fake.writeArgsForCall = append(fake.writeArgsForCall, struct {
 		arg1 context.Context
 		arg2 []byte
-		arg3 *v1.FileMeta
-	}{arg1, arg2Copy, arg3})
+		arg3 string
+		arg4 string
+	}{arg1, arg2Copy, arg3, arg4})
 	stub := fake.WriteStub
 	fakeReturns := fake.writeReturns
-	fake.recordInvocation("Write", []interface{}{arg1, arg2Copy, arg3})
+	fake.recordInvocation("Write", []interface{}{arg1, arg2Copy, arg3, arg4})
 	fake.writeMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3)
+		return stub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1
@@ -248,17 +248,17 @@ func (fake *FakeFileOperator) WriteCallCount() int {
 	return len(fake.writeArgsForCall)
 }
 
-func (fake *FakeFileOperator) WriteCalls(stub func(context.Context, []byte, *v1.FileMeta) error) {
+func (fake *FakeFileOperator) WriteCalls(stub func(context.Context, []byte, string, string) error) {
 	fake.writeMutex.Lock()
 	defer fake.writeMutex.Unlock()
 	fake.WriteStub = stub
 }
 
-func (fake *FakeFileOperator) WriteArgsForCall(i int) (context.Context, []byte, *v1.FileMeta) {
+func (fake *FakeFileOperator) WriteArgsForCall(i int) (context.Context, []byte, string, string) {
 	fake.writeMutex.RLock()
 	defer fake.writeMutex.RUnlock()
 	argsForCall := fake.writeArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
 }
 
 func (fake *FakeFileOperator) WriteReturns(result1 error) {
@@ -284,21 +284,22 @@ func (fake *FakeFileOperator) WriteReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeFileOperator) WriteChunkedFile(arg1 context.Context, arg2 *v1.File, arg3 *v1.FileDataChunkHeader, arg4 grpc.ServerStreamingClient[v1.FileDataChunk]) error {
+func (fake *FakeFileOperator) WriteChunkedFile(arg1 context.Context, arg2 string, arg3 string, arg4 *v1.FileDataChunkHeader, arg5 grpc.ServerStreamingClient[v1.FileDataChunk]) error {
 	fake.writeChunkedFileMutex.Lock()
 	ret, specificReturn := fake.writeChunkedFileReturnsOnCall[len(fake.writeChunkedFileArgsForCall)]
 	fake.writeChunkedFileArgsForCall = append(fake.writeChunkedFileArgsForCall, struct {
 		arg1 context.Context
-		arg2 *v1.File
-		arg3 *v1.FileDataChunkHeader
-		arg4 grpc.ServerStreamingClient[v1.FileDataChunk]
-	}{arg1, arg2, arg3, arg4})
+		arg2 string
+		arg3 string
+		arg4 *v1.FileDataChunkHeader
+		arg5 grpc.ServerStreamingClient[v1.FileDataChunk]
+	}{arg1, arg2, arg3, arg4, arg5})
 	stub := fake.WriteChunkedFileStub
 	fakeReturns := fake.writeChunkedFileReturns
-	fake.recordInvocation("WriteChunkedFile", []interface{}{arg1, arg2, arg3, arg4})
+	fake.recordInvocation("WriteChunkedFile", []interface{}{arg1, arg2, arg3, arg4, arg5})
 	fake.writeChunkedFileMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3, arg4)
+		return stub(arg1, arg2, arg3, arg4, arg5)
 	}
 	if specificReturn {
 		return ret.result1
@@ -312,17 +313,17 @@ func (fake *FakeFileOperator) WriteChunkedFileCallCount() int {
 	return len(fake.writeChunkedFileArgsForCall)
 }
 
-func (fake *FakeFileOperator) WriteChunkedFileCalls(stub func(context.Context, *v1.File, *v1.FileDataChunkHeader, grpc.ServerStreamingClient[v1.FileDataChunk]) error) {
+func (fake *FakeFileOperator) WriteChunkedFileCalls(stub func(context.Context, string, string, *v1.FileDataChunkHeader, grpc.ServerStreamingClient[v1.FileDataChunk]) error) {
 	fake.writeChunkedFileMutex.Lock()
 	defer fake.writeChunkedFileMutex.Unlock()
 	fake.WriteChunkedFileStub = stub
 }
 
-func (fake *FakeFileOperator) WriteChunkedFileArgsForCall(i int) (context.Context, *v1.File, *v1.FileDataChunkHeader, grpc.ServerStreamingClient[v1.FileDataChunk]) {
+func (fake *FakeFileOperator) WriteChunkedFileArgsForCall(i int) (context.Context, string, string, *v1.FileDataChunkHeader, grpc.ServerStreamingClient[v1.FileDataChunk]) {
 	fake.writeChunkedFileMutex.RLock()
 	defer fake.writeChunkedFileMutex.RUnlock()
 	argsForCall := fake.writeChunkedFileArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
 }
 
 func (fake *FakeFileOperator) WriteChunkedFileReturns(result1 error) {

@@ -33,7 +33,7 @@ func TestFileOperator_Write(t *testing.T) {
 
 	fileMeta := protos.FileMeta(filePath, files.GenerateHash(fileContent))
 
-	writeErr := fileOp.Write(ctx, fileContent, fileMeta)
+	writeErr := fileOp.Write(ctx, fileContent, fileMeta.GetName(), fileMeta.GetPermissions())
 	require.NoError(t, writeErr)
 	assert.FileExists(t, filePath)
 

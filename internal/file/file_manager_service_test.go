@@ -33,6 +33,7 @@ func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	tempDir := t.TempDir()
 
 	filePath := filepath.Join(tempDir, "nginx.conf")
+
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 	fileHash := files.GenerateHash(fileContent)
 	defer helpers.RemoveFileWithErrorCheck(t, filePath)
@@ -40,7 +41,7 @@ func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	overview := protos.FileOverview(filePath, fileHash)
 
 	manifestDirPath := tempDir
-	manifestFilePath := manifestDirPath + "/manifest.json"
+	manifestFilePath := filepath.Join(manifestDirPath, "manifest.json")
 	helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
@@ -97,7 +98,7 @@ func TestFileManagerService_ConfigApply_Add_LargeFile(t *testing.T) {
 	}
 
 	manifestDirPath := tempDir
-	manifestFilePath := manifestDirPath + "/manifest.json"
+	manifestFilePath := filepath.Join(manifestDirPath, "manifest.json")
 
 	fakeFileServiceClient.GetFileStreamReturns(fakeServerStreamingClient, nil)
 	agentConfig := types.AgentConfig()

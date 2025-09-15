@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"google.golang.org/grpc"
@@ -38,11 +39,11 @@ const (
 
 type (
 	fileOperator interface {
-		Write(ctx context.Context, fileContent []byte, file *mpi.FileMeta) error
-		CreateFileDirectories(ctx context.Context, fileMeta *mpi.FileMeta, filePermission os.FileMode) error
+		Write(ctx context.Context, fileContent []byte, fileName, filePermissions string) error
+		CreateFileDirectories(ctx context.Context, fileName string) error
 		WriteChunkedFile(
 			ctx context.Context,
-			file *mpi.File,
+			fileName, filePermissions string,
 			header *mpi.FileDataChunkHeader,
 			stream grpc.ServerStreamingClient[mpi.FileDataChunk],
 		) error
@@ -57,10 +58,10 @@ type (
 	}
 
 	fileServiceOperatorInterface interface {
-		File(ctx context.Context, file *mpi.File, fileActions map[string]*model.FileCache) error
+		File(ctx context.Context, file *mpi.File, tempFilePath, expectedHash string) error
 		UpdateOverview(ctx context.Context, instanceID string, filesToUpdate []*mpi.File, configPath string,
 			iteration int) error
-		ChunkedFile(ctx context.Context, file *mpi.File) error
+		ChunkedFile(ctx context.Context, file *mpi.File, tempFilePath, expectedHash string) error
 		IsConnected() bool
 		UpdateFile(
 			ctx context.Context,
@@ -68,6 +69,7 @@ type (
 			fileToUpdate *mpi.File,
 		) error
 		SetIsConnected(isConnected bool)
+		ValidateFileHash(filePath, expectedHash string) error
 	}
 
 	fileManagerServiceInterface interface {
@@ -196,15 +198,16 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 
 			continue
 		case model.Delete, model.Update:
-			content := fms.rollbackFileContents[fileAction.File.GetFileMeta().GetName()]
-			err := fms.fileOperator.Write(ctx, content, fileAction.File.GetFileMeta())
+			fileMeta := fileAction.File.GetFileMeta()
+			content := fms.rollbackFileContents[fileMeta.GetName()]
+			err := fms.fileOperator.Write(ctx, content, fileMeta.GetName(), fileMeta.GetPermissions())
 			if err != nil {
 				return err
 			}
 
 			// currentFilesOnDisk needs to be updated after rollback action is performed
-			fileAction.File.GetFileMeta().Hash = files.GenerateHash(content)
-			fms.currentFilesOnDisk[fileAction.File.GetFileMeta().GetName()] = fileAction.File
+			fileMeta.Hash = files.GenerateHash(content)
+			fms.currentFilesOnDisk[fileMeta.GetName()] = fileAction.File
 		case model.Unchanged:
 			fallthrough
 		default:
@@ -448,10 +451,19 @@ func (fms *FileManagerService) manifestFile() (map[string]*model.ManifestFile, m
 }
 
 func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
+	tempDir := os.TempDir()
+
+	// Download files to temporary location
+	downloadError := fms.downloadUpdatedFilesToTempLocation(ctx, tempDir)
+	if downloadError != nil {
+		return downloadError
+	}
+
+	// Move/Delete files
 	for _, fileAction := range fms.fileActions {
 		switch fileAction.Action {
 		case model.Delete:
-			slog.DebugContext(ctx, "File action, deleting file", "file", fileAction.File.GetFileMeta().GetName())
+			slog.DebugContext(ctx, "Deleting file", "file", fileAction.File.GetFileMeta().GetName())
 			if err := os.Remove(fileAction.File.GetFileMeta().GetName()); err != nil && !os.IsNotExist(err) {
 				return fmt.Errorf("error deleting file: %s error: %w",
 					fileAction.File.GetFileMeta().GetName(), err)
@@ -459,10 +471,9 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 
 			continue
 		case model.Add, model.Update:
-			slog.DebugContext(ctx, "File action, add or update file", "file", fileAction.File.GetFileMeta().GetName())
-			updateErr := fms.fileUpdate(ctx, fileAction.File)
-			if updateErr != nil {
-				return updateErr
+			err := fms.moveFilesFromTempDirectory(ctx, fileAction, tempDir)
+			if err != nil {
+				return err
 			}
 		case model.Unchanged:
 			slog.DebugContext(ctx, "File unchanged")
@@ -472,12 +483,64 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) error {
 	return nil
 }
 
-func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File) error {
-	if file.GetFileMeta().GetSize() <= int64(fms.agentConfig.Client.Grpc.MaxFileSize) {
-		return fms.fileServiceOperator.File(ctx, file, fms.fileActions)
+func (fms *FileManagerService) moveFilesFromTempDirectory(
+	ctx context.Context, fileAction *model.FileCache, tempDir string,
+) error {
+	fileName := fileAction.File.GetFileMeta().GetName()
+	slog.DebugContext(ctx, "Updating file", "file", fileName)
+	tempFilePath := filepath.Join(tempDir, fileName)
+
+	// Create parent directories for the target file if they don't exist
+	if err := os.MkdirAll(filepath.Dir(fileName), dirPerm); err != nil {
+		return fmt.Errorf("failed to create directories for %s: %w", fileName, err)
 	}
 
-	return fms.fileServiceOperator.ChunkedFile(ctx, file)
+	moveErr := os.Rename(tempFilePath, fileName)
+	if moveErr != nil {
+		return fmt.Errorf("failed to rename file: %w", moveErr)
+	}
+
+	if removeError := os.Remove(tempFilePath); removeError != nil && !os.IsNotExist(removeError) {
+		slog.ErrorContext(
+			ctx,
+			"Error deleting temp file",
+			"file", fileName,
+			"error", removeError,
+		)
+	}
+
+	return fms.fileServiceOperator.ValidateFileHash(fileName, fileAction.File.GetFileMeta().GetHash())
+}
+
+func (fms *FileManagerService) downloadUpdatedFilesToTempLocation(ctx context.Context, tempDir string) error {
+	for _, fileAction := range fms.fileActions {
+		if fileAction.Action == model.Add || fileAction.Action == model.Update {
+			tempFilePath := filepath.Join(tempDir, fileAction.File.GetFileMeta().GetName())
+
+			slog.DebugContext(
+				ctx,
+				"Downloading file to temp location",
+				"file", tempFilePath,
+			)
+
+			updateErr := fms.fileUpdate(ctx, fileAction.File, tempFilePath)
+			if updateErr != nil {
+				return updateErr
+			}
+		}
+	}
+
+	return nil
+}
+
+func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File, tempFilePath string) error {
+	expectedHash := fms.fileActions[file.GetFileMeta().GetName()].File.GetFileMeta().GetHash()
+
+	if file.GetFileMeta().GetSize() <= int64(fms.agentConfig.Client.Grpc.MaxFileSize) {
+		return fms.fileServiceOperator.File(ctx, file, tempFilePath, expectedHash)
+	}
+
+	return fms.fileServiceOperator.ChunkedFile(ctx, file, tempFilePath, expectedHash)
 }
 
 func (fms *FileManagerService) checkAllowedDirectory(checkFiles []*mpi.File) error {
