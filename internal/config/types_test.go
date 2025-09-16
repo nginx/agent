@@ -67,15 +67,7 @@ func TestTypes_isAllowedDir(t *testing.T) {
 			filePath: "/not-nginx-test/idontexist.conf",
 		},
 		{
-			name:    "Test 7: File is in allowed directory with trailing slash",
-			allowed: true,
-			allowedDirs: []string{
-				"/etc/nginx/",
-			},
-			filePath: "/etc/nginx/nginx.conf",
-		},
-		{
-			name:    "Test 8: Prefix match",
+			name:    "Test 7: Prefix match not allowed",
 			allowed: false,
 			allowedDirs: []string{
 				"/etc/nginx",

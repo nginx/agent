@@ -504,16 +504,14 @@ func isAllowedDir(path string, allowedDirs []string) (bool, error) {
 		path = filepath.Dir(path)
 	}
 	if err != nil {
-		if os.IsNotExist(err) {
-			// Path does not exist, we can still check if it's an allowed directory
-		} else {
+		if !os.IsNotExist(err) {
 			// Some other error occurred
 			return false, fmt.Errorf("PathError %s %w", path, err)
-		}
+		} // else the path does not exist, we will check if it's in an allowed directory
 	}
 
 	for _, dir := range allowedDirs {
-		// Check if the path is a subdirectory of the allowed directory
+		// Check if the path is a direct match, or is a subdirectory of the allowed directory
 		if slices.Contains(allowedDirs, path) || strings.HasPrefix(path, dir+"/") {
 			slog.Info(fmt.Sprintf("Allowed directory %s is allowed", path))
 			return true, nil
