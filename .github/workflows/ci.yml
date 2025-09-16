@@ -39,6 +39,7 @@ jobs:
             cache: false
       - name: run goproxy-sanity-check
         run: |
+          make install-tools
           make build
 
   lint:
