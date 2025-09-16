@@ -228,7 +228,7 @@ jobs:
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           sudo apt-get update
           sudo apt-get install -y gpgv1 monkeysphere
-          make install-tools
+          make install-build-tools
           export PATH=$PATH:~/go/bin
           nfpm --version
 

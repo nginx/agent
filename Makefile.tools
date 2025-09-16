@@ -10,18 +10,27 @@ BENCHSTAT       = golang.org/x/perf/cmd/benchstat@v0.0.0-20240404204407-f3e401e0
 BUF             = github.com/bufbuild/buf/cmd/buf@v1.30.1
 PROMTAIL	    = github.com/prometheus/promtail/cmd/promtail@v2.10.0
 
-install-tools: ## Install tool dependencies
-	@echo "Installing Tools"
-	
-	@$(GOINST) $(OAPICODEGEN)
-	@$(GOINST) $(LEFTHOOK)
+install-test-tools: ## Install tool dependencies for testing
+	@echo "Installing Test Tools"
 	@$(GOINST) $(GOLANGCILINT)
-	@$(GOINST) $(PROTOCGENGO)
 	@$(GOINST) $(GOFUMPT)
-	@$(GOINST) $(COUNTERFEITER)
-	@$(GOINST) $(NFPM)
 	@$(GOINST) $(GOTESTCOVERAGE)
 	@$(GOINST) $(BENCHSTAT)
+	@$(GOINST) $(COUNTERFEITER)
 	@$(GOINST) $(BUF)
-	@$(GOINST) $(PROMTAIL)
+	@$(GOINST) $(LEFTHOOK)
 	@$(GORUN) $(LEFTHOOK) install
+
+install-build-tools: ## Install tool dependencies for building
+	@echo "Installing Build Tools"
+	@$(GOINST) $(NFPM)
+	@$(GOINST) $(PROTOCGENGO)
+	@$(GOINST) $(OAPICODEGEN)
+	@$(GOINST) $(BUF)
+	@$(GOINST) $(LEFTHOOK)
+	@$(GORUN) $(LEFTHOOK) install
+
+install-tools: ## Install tool dependencies
+	@echo "Installing All Tools"
+	@$(MAKE) install-build-tools
+	@$(MAKE) install-test-tools
