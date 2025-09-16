@@ -35,7 +35,7 @@ func TestScraper(t *testing.T) {
 	caContents := helpers.Cert{Name: "ca.pem", Type: "CERTIFICATE", Contents: cert}
 	caFile := helpers.WriteCertFiles(t, tmpDir, caContents)
 	t.Logf("Ca File: %s", caFile)
-	
+
 	cfg.APIDetails.Ca = caFile
 
 	scraper := newNginxPlusScraper(receivertest.NewNopSettings(component.Type{}), cfg)
