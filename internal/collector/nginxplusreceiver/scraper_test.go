@@ -29,6 +29,15 @@ func TestScraper(t *testing.T) {
 	assert.True(t, ok)
 	cfg.APIDetails.URL = nginxPlusMock.URL + "/api"
 
+	tmpDir := t.TempDir()
+	_, cert := helpers.GenerateSelfSignedCert(t)
+
+	caContents := helpers.Cert{Name: "ca.pem", Type: "CERTIFICATE", Contents: cert}
+	caFile := helpers.WriteCertFiles(t, tmpDir, caContents)
+	t.Logf("Ca File: %s", caFile)
+	
+	cfg.APIDetails.Ca = caFile
+
 	scraper := newNginxPlusScraper(receivertest.NewNopSettings(component.Type{}), cfg)
 	err := scraper.Start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
