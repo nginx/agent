@@ -10,8 +10,9 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"os"
 	"path/filepath"
-	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -396,8 +397,9 @@ func (nr *NginxReceiver) Validate(allowedDirectories []string) error {
 	return err
 }
 
-func (c *Config) IsDirectoryAllowed(directory string) bool {
-	allow, err := isAllowedDir(directory, c.AllowedDirectories)
+// IsAllowedDirectory checks if the given path is in the list of allowed directories.
+func (c *Config) IsDirectoryAllowed(path string) bool {
+	allow, err := isAllowedDir(path, c.AllowedDirectories)
 	if err != nil {
 		slog.Warn("Unable to determine if directory is allowed", "error", err)
 		return false
@@ -480,29 +482,40 @@ func (c *Config) IsCommandServerProxyConfigured() bool {
 }
 
 // isAllowedDir checks if the given path is in the list of allowed directories.
-// It returns true if the path is allowed, false otherwise.
-// If the path is allowed but does not exist, it also logs a warning.
-// It also checks if the path is a file, in which case it checks the parent directory of the file.
+// It works on files and directories.
+// If the path is a file, it checks the directory of the file.
+// If the path is a directory, it checks the directory itself.
+// It also allows subdirectories within the allowed directories.
 func isAllowedDir(path string, allowedDirs []string) (bool, error) {
 	if len(allowedDirs) == 0 {
 		return false, errors.New("no allowed directories configured")
 	}
 
-	directoryPath := path
-	// Check if the path is a file, regex matches when end of string is /<filename>.<extension>
-	isFilePath, err := regexp.MatchString(`/(\w+)\.(\w+)$`, directoryPath)
+	// Check if the path is absolute
+	if !filepath.IsAbs(path) {
+		return false, fmt.Errorf("PathError: %s is not absolute", path)
+	}
+
+	// Does the path exist?
+	info, err := os.Stat(path)
+	if err == nil && !info.IsDir() {
+		// Path exists and is not a directory
+		// It's a file so get the parent directory
+		path = filepath.Dir(path)
+	}
 	if err != nil {
-		return false, errors.New("error matching path" + directoryPath)
+		if os.IsNotExist(err) {
+			// Path does not exist, we can still check if it's an allowed directory
+		} else {
+			// Some other error occurred
+			return false, fmt.Errorf("PathError %s %w", path, err)
+		}
 	}
 
-	if isFilePath {
-		directoryPath = filepath.Dir(directoryPath)
-	}
-
-	for _, allowedDirectory := range allowedDirs {
-		// Check if the directoryPath starts with the allowedDirectory
-		// This allows for subdirectories within the allowed directories.
-		if strings.HasPrefix(directoryPath, allowedDirectory) {
+	for _, dir := range allowedDirs {
+		// Check if the path is a subdirectory of the allowed directory
+		if slices.Contains(allowedDirs, path) || strings.HasPrefix(path, dir+"/") {
+			slog.Info(fmt.Sprintf("Allowed directory %s is allowed", path))
 			return true, nil
 		}
 	}
