@@ -3,7 +3,7 @@ name: Generate and Sign Assertion Document
 
 on:
   push:
-    branches: [ "add-dependency-assertion" ]
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
@@ -28,7 +28,6 @@ jobs:
       agent_binary: ${{ steps.check_binary.outputs.agent_binary }}
       goversionm: ${{ steps.godeps.outputs.goversionm }}
       assertion_document: ${{ steps.assertiondoc.outputs.assertion-document-path }}
-      signed_assertion_document: ${{ steps.sign.outputs.signed-assertion-document-path }}
 
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -43,17 +42,13 @@ jobs:
         id: build
         run: |
           make build
-
-      - name: Check Binary
-        id: check_binary
-        run: |
           echo "agent_binary=$(find build -type f -name "nginx-agent" | head -n 1)" >> $GITHUB_OUTPUT
           cat $GITHUB_OUTPUT
 
       - name: Check dependencies
         id: godeps
         run: |
-          go version -m ${{ steps.check_binary.outputs.ptd_binary_path }} > goversionm_${{ github.run_id }}_${{ github.run_number }}.txt
+          go version -m ${{ steps.check_binary.outputs.agent_binary }} > goversionm_${{ github.run_id }}_${{ github.run_number }}.txt
           echo "goversionm=$(find -type f -name "goversionm*.txt" | head -n 1)" >> $GITHUB_OUTPUT
           cat $GITHUB_OUTPUT
 
