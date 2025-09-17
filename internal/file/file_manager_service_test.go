@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"sync"
 	"testing"
@@ -57,7 +58,7 @@ func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	agentConfig.AllowedDirectories = []string{tempDir}
 
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig, &sync.RWMutex{})
-	fileManagerService.agentConfig.ManifestDir = manifestDirPath
+	fileManagerService.agentConfig.LibDir = manifestDirPath
 	fileManagerService.manifestFilePath = manifestFilePath
 
 	request := protos.CreateConfigApplyRequest(overview)
@@ -104,7 +105,7 @@ func TestFileManagerService_ConfigApply_Add_LargeFile(t *testing.T) {
 	agentConfig := types.AgentConfig()
 	agentConfig.AllowedDirectories = []string{tempDir}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig, &sync.RWMutex{})
-	fileManagerService.agentConfig.ManifestDir = manifestDirPath
+	fileManagerService.agentConfig.LibDir = manifestDirPath
 	fileManagerService.manifestFilePath = manifestFilePath
 
 	request := protos.CreateConfigApplyRequest(overview)
@@ -163,7 +164,7 @@ func TestFileManagerService_ConfigApply_Update(t *testing.T) {
 	agentConfig.AllowedDirectories = []string{tempDir}
 
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig, &sync.RWMutex{})
-	fileManagerService.agentConfig.ManifestDir = manifestDirPath
+	fileManagerService.agentConfig.LibDir = manifestDirPath
 	fileManagerService.manifestFilePath = manifestFilePath
 	err := fileManagerService.UpdateCurrentFilesOnDisk(ctx, filesOnDisk, false)
 	require.NoError(t, err)
@@ -212,7 +213,7 @@ func TestFileManagerService_ConfigApply_Delete(t *testing.T) {
 	agentConfig.AllowedDirectories = []string{tempDir}
 
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig, &sync.RWMutex{})
-	fileManagerService.agentConfig.ManifestDir = manifestDirPath
+	fileManagerService.agentConfig.LibDir = manifestDirPath
 	fileManagerService.manifestFilePath = manifestFilePath
 	err := fileManagerService.UpdateCurrentFilesOnDisk(ctx, filesOnDisk, false)
 	require.NoError(t, err)
@@ -399,7 +400,7 @@ func TestFileManagerService_Rollback(t *testing.T) {
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
 	fileManagerService.rollbackFileContents = fileContentCache
 	fileManagerService.fileActions = filesCache
-	fileManagerService.agentConfig.ManifestDir = manifestDirPath
+	fileManagerService.agentConfig.LibDir = manifestDirPath
 	fileManagerService.manifestFilePath = manifestFilePath
 
 	err := fileManagerService.Rollback(ctx, instanceID)
@@ -579,7 +580,7 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 
 			fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 			fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
-			fileManagerService.agentConfig.ManifestDir = manifestDirPath
+			fileManagerService.agentConfig.LibDir = manifestDirPath
 			fileManagerService.manifestFilePath = manifestFilePath
 
 			require.NoError(tt, err)
@@ -691,7 +692,7 @@ func TestFileManagerService_fileActions(t *testing.T) {
 
 	fileManagerService.fileActions = filesCache
 
-	actionErr := fileManagerService.executeFileActions(ctx)
+	actionErr := fileManagerService.executeFileActions(ctx, os.TempDir())
 	require.NoError(t, actionErr)
 
 	assert.FileExists(t, addFilePath)
@@ -773,4 +774,108 @@ rQHX6DP4w6IwZY8JB8LS
 			assert.Equal(t, test.expectedSerial, certFileMeta.GetCertificateMeta().GetSerialNumber())
 		})
 	}
+}
+
+func TestFileManagerService_deleteTempFiles(t *testing.T) {
+	tempDir := t.TempDir()
+	tempFile := path.Join(tempDir, "/etc/nginx/nginx.conf")
+
+	err := os.MkdirAll(path.Dir(tempFile), 0o755)
+	require.NoError(t, err)
+
+	_, err = os.Create(tempFile)
+	require.NoError(t, err)
+
+	fileManagerService := FileManagerService{
+		fileActions: map[string]*model.FileCache{
+			"/etc/nginx/nginx.conf": {
+				File: &mpi.File{
+					FileMeta: &mpi.FileMeta{
+						Name: "/etc/nginx/nginx.conf",
+					},
+				},
+				Action: model.Update,
+			},
+			"/etc/nginx/test.conf": {
+				File: &mpi.File{
+					FileMeta: &mpi.FileMeta{
+						Name: "/etc/nginx/test.conf",
+					},
+				},
+				Action: model.Add,
+			},
+		},
+	}
+
+	fileManagerService.deleteTempFiles(t.Context(), tempDir)
+
+	assert.NoFileExists(t, tempFile)
+}
+
+func TestFileManagerService_createTempConfigDirectory(t *testing.T) {
+	agentConfig := types.AgentConfig()
+	agentConfig.LibDir = t.TempDir()
+
+	fileManagerService := FileManagerService{
+		agentConfig: agentConfig,
+	}
+
+	dir, err := fileManagerService.createTempConfigDirectory(t.Context())
+	assert.NotEmpty(t, dir)
+	require.NoError(t, err)
+
+	// Test for unknown directory path
+	agentConfig.LibDir = "/unknown/"
+
+	dir, err = fileManagerService.createTempConfigDirectory(t.Context())
+	assert.Empty(t, dir)
+	require.Error(t, err)
+}
+
+func Test_moveFile_fileExists(t *testing.T) {
+	tempDir := t.TempDir()
+	tempFile := path.Join(tempDir, "/etc/nginx/nginx.conf")
+	newFile := path.Join(tempDir, "/etc/nginx/new_test.conf")
+
+	err := os.MkdirAll(path.Dir(tempFile), 0o755)
+	require.NoError(t, err)
+
+	_, err = os.Create(tempFile)
+	require.NoError(t, err)
+
+	err = moveFile(t.Context(), tempFile, newFile)
+	require.NoError(t, err)
+
+	assert.NoFileExists(t, tempFile)
+	assert.FileExists(t, newFile)
+}
+
+func Test_moveFile_sourceFileDoesNotExist(t *testing.T) {
+	tempDir := t.TempDir()
+	tempFile := path.Join(tempDir, "/etc/nginx/nginx.conf")
+	newFile := path.Join(tempDir, "/etc/nginx/new_test.conf")
+
+	err := moveFile(t.Context(), tempFile, newFile)
+	require.Error(t, err)
+
+	assert.NoFileExists(t, tempFile)
+	assert.NoFileExists(t, newFile)
+}
+
+func Test_moveFile_destFileDoesNotExist(t *testing.T) {
+	tempDir := t.TempDir()
+	tempFile := path.Join(tempDir, "/etc/nginx/nginx.conf")
+	newFile := "/unknown/nginx/new_test.conf"
+
+	err := os.MkdirAll(path.Dir(tempFile), 0o755)
+	require.NoError(t, err)
+
+	_, err = os.Create(tempFile)
+	require.NoError(t, err)
+
+	err = moveFile(t.Context(), tempFile, newFile)
+	require.Error(t, err)
+
+	assert.FileExists(t, tempFile)
+	assert.NoFileExists(t, newFile)
 }

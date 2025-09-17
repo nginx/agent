@@ -121,7 +121,7 @@ func ResolveConfig() (*Config, error) {
 		Watchers:           resolveWatchers(),
 		Features:           viperInstance.GetStringSlice(FeaturesKey),
 		Labels:             resolveLabels(),
-		ManifestDir:        viperInstance.GetString(ManifestDirPathKey),
+		LibDir:             viperInstance.GetString(LibDirPathKey),
 	}
 
 	defaultCollector(collector, config)
@@ -380,9 +380,9 @@ func registerFlags() {
 			"If the default path doesn't exist, log messages are output to stdout/stderr.",
 	)
 	fs.String(
-		ManifestDirPathKey,
-		DefManifestDir,
-		"Specifies the path to the directory containing the manifest files",
+		LibDirPathKey,
+		DefLibDir,
+		"Specifies the path to the nginx-agent lib directory",
 	)
 
 	fs.StringSlice(AllowedDirectoriesKey,

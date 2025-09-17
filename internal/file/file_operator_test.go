@@ -15,6 +15,7 @@ import (
 	"github.com/nginx/agent/v3/pkg/files"
 	"github.com/nginx/agent/v3/test/protos"
 
+	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/test/helpers"
 
 	"github.com/stretchr/testify/assert"
@@ -40,4 +41,13 @@ func TestFileOperator_Write(t *testing.T) {
 	data, readErr := os.ReadFile(filePath)
 	require.NoError(t, readErr)
 	assert.Equal(t, fileContent, data)
+}
+
+func TestFileOperator_WriteManifestFile_fileMissing(t *testing.T) {
+	tempDir := t.TempDir()
+	manifestPath := "/unknown/manifest.json"
+
+	fileOperator := NewFileOperator(&sync.RWMutex{})
+	err := fileOperator.WriteManifestFile(make(map[string]*model.ManifestFile), tempDir, manifestPath)
+	assert.Error(t, err)
 }

@@ -152,8 +152,8 @@ func (fo *FileOperator) ReadChunk(
 	return chunk, err
 }
 
-func (fo *FileOperator) WriteManifestFile(updatedFiles map[string]*model.ManifestFile, manifestDir,
-	manifestPath string,
+func (fo *FileOperator) WriteManifestFile(
+	updatedFiles map[string]*model.ManifestFile, manifestDir, manifestPath string,
 ) (writeError error) {
 	manifestJSON, err := json.MarshalIndent(updatedFiles, "", "  ")
 	if err != nil {
