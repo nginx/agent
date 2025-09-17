@@ -1,0 +1,83 @@
+
+name: Generate and Sign Assertion Document
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      branch:
+        type: string
+        description: "The branch to run the assertion workflow on"
+        required: false
+        default: main
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    if: ${{ !github.event.pull_request.head.repo.fork }}
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      GOPROXY: "https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@azr.artifactory.f5net.com/artifactory/api/go/f5-nginx-go-dev"
+
+    outputs:
+      agent_binary: ${{ steps.check_binary.outputs.agent_binary }}
+      goversionm: ${{ steps.godeps.outputs.goversionm }}
+      assertion_document: ${{ steps.assertiondoc.outputs.assertion-document-path }}
+      signed_assertion_document: ${{ steps.sign.outputs.signed-assertion-document-path }}
+
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Set up Go
+        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Build
+        id: build
+        run: |
+          make build
+
+      - name: Check Binary
+        id: check_binary
+        run: |
+          echo "agent_binary=$(find build -type f -name "nginx-agent" | head -n 1)" >> $GITHUB_OUTPUT
+          cat $GITHUB_OUTPUT
+
+      - name: Check dependencies
+        id: godeps
+        run: |
+          go version -m ${{ steps.check_binary.outputs.ptd_binary_path }} > goversionm_${{ github.run_id }}_${{ github.run_number }}.txt
+          echo "goversionm=$(find -type f -name "goversionm*.txt" | head -n 1)" >> $GITHUB_OUTPUT
+          cat $GITHUB_OUTPUT
+
+      - name: Generate Assertion Document
+        id: assertiondoc
+        uses: nginxinc/compliance-rules/.github/actions/assertion@main
+        with:
+          artifact-name: nginx-agent_${{ github.ref_name }}
+          artifact-digest: 'test-digest'
+          build-type: 'github'
+          builder-id: 'github.com'
+          builder-version: '0.1.0-xyz'
+          invocation-id: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
+          artifactory-user: ${{ secrets.ARTIFACTORY_USER }}
+          artifactory-api-token: ${{ secrets.ARTIFACTORY_TOKEN }}
+          artifactory-url: ${{ secrets.ARTIFACTORY_URL }}
+          artifactory-repo: 'f5-nginx-go-local-approved-dependency'
+          assertion-doc-file: assertion_nginx-agent_${{ github.ref_name }}.json
+          build-content-path: ${{ steps.godeps.outputs.goversionm }}
+          started-on: ''
+          finished-on: ''
+
+      - name: Sign and Store Assertion Document
+        id: sign
+        uses: nginxinc/compliance-rules/.github/actions/sign@main
+        with:
+          assertion-doc: ${{ steps.assertiondoc.outputs.assertion-document-path }}
