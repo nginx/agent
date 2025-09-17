@@ -42,13 +42,11 @@ jobs:
         id: build
         run: |
           make build
-          echo "agent_binary=$(find build -type f -name "nginx-agent" | head -n 1)" >> $GITHUB_OUTPUT
-          cat $GITHUB_OUTPUT
 
       - name: Check dependencies
         id: godeps
         run: |
-          go version -m ${{ steps.check_binary.outputs.agent_binary }} > goversionm_${{ github.run_id }}_${{ github.run_number }}.txt
+          go version -m build/nginx-agent > goversionm_${{ github.run_id }}_${{ github.run_number }}.txt
           echo "goversionm=$(find -type f -name "goversionm*.txt" | head -n 1)" >> $GITHUB_OUTPUT
           cat $GITHUB_OUTPUT
 
