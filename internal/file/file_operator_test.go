@@ -48,6 +48,6 @@ func TestFileOperator_WriteManifestFile_fileMissing(t *testing.T) {
 	manifestPath := "/unknown/manifest.json"
 
 	fileOperator := NewFileOperator(&sync.RWMutex{})
-	err := fileOperator.WriteManifestFile(make(map[string]*model.ManifestFile), tempDir, manifestPath)
+	err := fileOperator.WriteManifestFile(t.Context(), make(map[string]*model.ManifestFile), tempDir, manifestPath)
 	assert.Error(t, err)
 }

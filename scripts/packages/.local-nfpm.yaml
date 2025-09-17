@@ -47,4 +47,5 @@ scripts:
     postremove: "./scripts/packages/postremove.sh"
 apk:
     scripts:
-        postupgrade: "./scripts/packages/postupgrade.sh"
+        preupgrade: "./scripts/packages/preinstall.sh"
+        postupgrade: "./scripts/packages/postinstall.sh"
