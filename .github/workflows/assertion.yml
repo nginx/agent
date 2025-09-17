@@ -64,7 +64,7 @@ jobs:
           artifactory-api-token: ${{ secrets.ARTIFACTORY_TOKEN }}
           artifactory-url: ${{ secrets.ARTIFACTORY_URL }}
           artifactory-repo: 'f5-nginx-go-local-approved-dependency'
-          assertion-doc-file: assertion_nginx-agent_${{ github.ref_name }}.json
+          assertion-doc-file: assertion_nginx-agent_main.json
           build-content-path: ${{ steps.godeps.outputs.goversionm }}
           started-on: ''
           finished-on: ''
