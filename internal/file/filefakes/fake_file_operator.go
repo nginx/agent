@@ -24,6 +24,19 @@ type FakeFileOperator struct {
 	createFileDirectoriesReturnsOnCall map[int]struct {
 		result1 error
 	}
+	MoveFileStub        func(context.Context, string, string) error
+	moveFileMutex       sync.RWMutex
+	moveFileArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+	}
+	moveFileReturns struct {
+		result1 error
+	}
+	moveFileReturnsOnCall map[int]struct {
+		result1 error
+	}
 	ReadChunkStub        func(context.Context, uint32, *bufio.Reader, uint32) (v1.FileDataChunk_Content, error)
 	readChunkMutex       sync.RWMutex
 	readChunkArgsForCall []struct {
@@ -145,6 +158,69 @@ func (fake *FakeFileOperator) CreateFileDirectoriesReturnsOnCall(i int, result1 
 		})
 	}
 	fake.createFileDirectoriesReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeFileOperator) MoveFile(arg1 context.Context, arg2 string, arg3 string) error {
+	fake.moveFileMutex.Lock()
+	ret, specificReturn := fake.moveFileReturnsOnCall[len(fake.moveFileArgsForCall)]
+	fake.moveFileArgsForCall = append(fake.moveFileArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+	}{arg1, arg2, arg3})
+	stub := fake.MoveFileStub
+	fakeReturns := fake.moveFileReturns
+	fake.recordInvocation("MoveFile", []interface{}{arg1, arg2, arg3})
+	fake.moveFileMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeFileOperator) MoveFileCallCount() int {
+	fake.moveFileMutex.RLock()
+	defer fake.moveFileMutex.RUnlock()
+	return len(fake.moveFileArgsForCall)
+}
+
+func (fake *FakeFileOperator) MoveFileCalls(stub func(context.Context, string, string) error) {
+	fake.moveFileMutex.Lock()
+	defer fake.moveFileMutex.Unlock()
+	fake.MoveFileStub = stub
+}
+
+func (fake *FakeFileOperator) MoveFileArgsForCall(i int) (context.Context, string, string) {
+	fake.moveFileMutex.RLock()
+	defer fake.moveFileMutex.RUnlock()
+	argsForCall := fake.moveFileArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeFileOperator) MoveFileReturns(result1 error) {
+	fake.moveFileMutex.Lock()
+	defer fake.moveFileMutex.Unlock()
+	fake.MoveFileStub = nil
+	fake.moveFileReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeFileOperator) MoveFileReturnsOnCall(i int, result1 error) {
+	fake.moveFileMutex.Lock()
+	defer fake.moveFileMutex.Unlock()
+	fake.MoveFileStub = nil
+	if fake.moveFileReturnsOnCall == nil {
+		fake.moveFileReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.moveFileReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
 }
@@ -419,6 +495,8 @@ func (fake *FakeFileOperator) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.createFileDirectoriesMutex.RLock()
 	defer fake.createFileDirectoriesMutex.RUnlock()
+	fake.moveFileMutex.RLock()
+	defer fake.moveFileMutex.RUnlock()
 	fake.readChunkMutex.RLock()
 	defer fake.readChunkMutex.RUnlock()
 	fake.writeMutex.RLock()

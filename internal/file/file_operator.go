@@ -186,3 +186,38 @@ func (fo *FileOperator) WriteManifestFile(
 
 	return writeError
 }
+
+func (fo *FileOperator) MoveFile(ctx context.Context, sourcePath, destPath string) error {
+	inputFile, err := os.Open(sourcePath)
+	if err != nil {
+		return err
+	}
+
+	outputFile, err := os.Create(destPath)
+	if err != nil {
+		return err
+	}
+	defer closeFile(ctx, outputFile)
+
+	_, err = io.Copy(outputFile, inputFile)
+	if err != nil {
+		closeFile(ctx, inputFile)
+		return err
+	}
+
+	closeFile(ctx, inputFile)
+
+	err = os.Remove(sourcePath)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func closeFile(ctx context.Context, file *os.File) {
+	err := file.Close()
+	if err != nil {
+		slog.ErrorContext(ctx, "Error closing file", "error", err, "file", file.Name())
+	}
+}

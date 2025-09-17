@@ -14,6 +14,7 @@ import (
 	"maps"
 	"math"
 	"os"
+	"path/filepath"
 	"slices"
 	"sync"
 	"sync/atomic"
@@ -24,6 +25,7 @@ import (
 	"github.com/nginx/agent/v3/internal/config"
 	internalgrpc "github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/logger"
+	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/pkg/files"
 	"github.com/nginx/agent/v3/pkg/id"
 	"google.golang.org/grpc"
@@ -106,7 +108,7 @@ func (fso *FileServiceOperator) File(
 		return writeErr
 	}
 
-	return fso.ValidateFileHash(tempFilePath, expectedHash)
+	return fso.validateFileHash(tempFilePath, expectedHash)
 }
 
 func (fso *FileServiceOperator) UpdateOverview(
@@ -253,7 +255,7 @@ func (fso *FileServiceOperator) ChunkedFile(
 		return writeChunkedFileError
 	}
 
-	return fso.ValidateFileHash(tempFilePath, expectedHash)
+	return fso.validateFileHash(tempFilePath, expectedHash)
 }
 
 func (fso *FileServiceOperator) UpdateFile(
@@ -275,7 +277,36 @@ func (fso *FileServiceOperator) UpdateFile(
 	return fso.sendUpdateFileStream(ctx, fileToUpdate, fso.agentConfig.Client.Grpc.FileChunkSize)
 }
 
-func (fso *FileServiceOperator) ValidateFileHash(filePath, expectedHash string) error {
+func (fso *FileServiceOperator) MoveFilesFromTempDirectory(
+	ctx context.Context, fileAction *model.FileCache, tempDir string,
+) error {
+	fileName := fileAction.File.GetFileMeta().GetName()
+	slog.DebugContext(ctx, "Updating file", "file", fileName)
+	tempFilePath := filepath.Join(tempDir, fileName)
+
+	// Create parent directories for the target file if they don't exist
+	if err := os.MkdirAll(filepath.Dir(fileName), dirPerm); err != nil {
+		return fmt.Errorf("failed to create directories for %s: %w", fileName, err)
+	}
+
+	moveErr := fso.fileOperator.MoveFile(ctx, tempFilePath, fileName)
+	if moveErr != nil {
+		return fmt.Errorf("failed to move file: %w", moveErr)
+	}
+
+	if removeError := os.Remove(tempFilePath); removeError != nil && !os.IsNotExist(removeError) {
+		slog.ErrorContext(
+			ctx,
+			"Error deleting temp file",
+			"file", fileName,
+			"error", removeError,
+		)
+	}
+
+	return fso.validateFileHash(fileName, fileAction.File.GetFileMeta().GetHash())
+}
+
+func (fso *FileServiceOperator) validateFileHash(filePath, expectedHash string) error {
 	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return err

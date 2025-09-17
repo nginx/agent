@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"os"
 	"path"
@@ -57,6 +56,7 @@ type (
 		) (mpi.FileDataChunk_Content, error)
 		WriteManifestFile(ctx context.Context, updatedFiles map[string]*model.ManifestFile,
 			manifestDir, manifestPath string) (writeError error)
+		MoveFile(ctx context.Context, sourcePath, destPath string) error
 	}
 
 	fileServiceOperatorInterface interface {
@@ -71,7 +71,7 @@ type (
 			fileToUpdate *mpi.File,
 		) error
 		SetIsConnected(isConnected bool)
-		ValidateFileHash(filePath, expectedHash string) error
+		MoveFilesFromTempDirectory(ctx context.Context, fileAction *model.FileCache, tempDir string) error
 		UpdateClient(ctx context.Context, fileServiceClient mpi.FileServiceClient)
 	}
 
@@ -492,81 +492,13 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context, tempDir s
 		return downloadError
 	}
 
-	// Move/Delete files
-	for _, fileAction := range fms.fileActions {
-		switch fileAction.Action {
-		case model.Delete:
-			slog.DebugContext(ctx, "Deleting file", "file", fileAction.File.GetFileMeta().GetName())
-			if err := os.Remove(fileAction.File.GetFileMeta().GetName()); err != nil && !os.IsNotExist(err) {
-				actionError = fmt.Errorf("error deleting file: %s error: %w",
-					fileAction.File.GetFileMeta().GetName(), err)
-
-				break
-			}
-
-			continue
-		case model.Add, model.Update:
-			err := fms.moveFilesFromTempDirectory(ctx, fileAction, tempDir)
-			if err != nil {
-				actionError = err
-
-				break
-			}
-		case model.Unchanged:
-			slog.DebugContext(ctx, "File unchanged")
-		}
-	}
-
 	// Remove temp files if there is a failure moving or deleting files
+	actionError = fms.moveOrDeleteFiles(ctx, tempDir, actionError)
 	if actionError != nil {
 		fms.deleteTempFiles(ctx, tempDir)
 	}
 
 	return actionError
-}
-
-func (fms *FileManagerService) moveFilesFromTempDirectory(
-	ctx context.Context, fileAction *model.FileCache, tempDir string,
-) error {
-	fileName := fileAction.File.GetFileMeta().GetName()
-	slog.DebugContext(ctx, "Updating file", "file", fileName)
-	tempFilePath := filepath.Join(tempDir, fileName)
-
-	// Create parent directories for the target file if they don't exist
-	if err := os.MkdirAll(filepath.Dir(fileName), dirPerm); err != nil {
-		return fmt.Errorf("failed to create directories for %s: %w", fileName, err)
-	}
-
-	moveErr := moveFile(ctx, tempFilePath, fileName)
-	if moveErr != nil {
-		return fmt.Errorf("failed to move file: %w", moveErr)
-	}
-
-	if removeError := os.Remove(tempFilePath); removeError != nil && !os.IsNotExist(removeError) {
-		slog.ErrorContext(
-			ctx,
-			"Error deleting temp file",
-			"file", fileName,
-			"error", removeError,
-		)
-	}
-
-	return fms.fileServiceOperator.ValidateFileHash(fileName, fileAction.File.GetFileMeta().GetHash())
-}
-
-func (fms *FileManagerService) deleteTempFiles(ctx context.Context, tempDir string) {
-	for _, fileAction := range fms.fileActions {
-		if fileAction.Action == model.Add || fileAction.Action == model.Update {
-			tempFile := path.Join(tempDir, fileAction.File.GetFileMeta().GetName())
-			if err := os.Remove(tempFile); err != nil && !os.IsNotExist(err) {
-				slog.ErrorContext(
-					ctx, "Error deleting temp file",
-					"file", fileAction.File.GetFileMeta().GetName(),
-					"error", err,
-				)
-			}
-		}
-	}
 }
 
 func (fms *FileManagerService) downloadUpdatedFilesToTempLocation(
@@ -596,6 +528,50 @@ func (fms *FileManagerService) downloadUpdatedFilesToTempLocation(
 	}
 
 	return updateError
+}
+
+func (fms *FileManagerService) moveOrDeleteFiles(ctx context.Context, tempDir string, actionError error) error {
+actionsLoop:
+	for _, fileAction := range fms.fileActions {
+		switch fileAction.Action {
+		case model.Delete:
+			slog.DebugContext(ctx, "Deleting file", "file", fileAction.File.GetFileMeta().GetName())
+			if err := os.Remove(fileAction.File.GetFileMeta().GetName()); err != nil && !os.IsNotExist(err) {
+				actionError = fmt.Errorf("error deleting file: %s error: %w",
+					fileAction.File.GetFileMeta().GetName(), err)
+
+				break actionsLoop
+			}
+
+			continue
+		case model.Add, model.Update:
+			err := fms.fileServiceOperator.MoveFilesFromTempDirectory(ctx, fileAction, tempDir)
+			if err != nil {
+				actionError = err
+
+				break actionsLoop
+			}
+		case model.Unchanged:
+			slog.DebugContext(ctx, "File unchanged")
+		}
+	}
+
+	return actionError
+}
+
+func (fms *FileManagerService) deleteTempFiles(ctx context.Context, tempDir string) {
+	for _, fileAction := range fms.fileActions {
+		if fileAction.Action == model.Add || fileAction.Action == model.Update {
+			tempFile := path.Join(tempDir, fileAction.File.GetFileMeta().GetName())
+			if err := os.Remove(tempFile); err != nil && !os.IsNotExist(err) {
+				slog.ErrorContext(
+					ctx, "Error deleting temp file",
+					"file", fileAction.File.GetFileMeta().GetName(),
+					"error", err,
+				)
+			}
+		}
+	}
 }
 
 func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File, tempFilePath string) error {
@@ -692,39 +668,4 @@ func ConvertToMapOfFileCache(convertFiles []*mpi.File) map[string]*model.FileCac
 	}
 
 	return filesMap
-}
-
-func moveFile(ctx context.Context, sourcePath, destPath string) error {
-	inputFile, err := os.Open(sourcePath)
-	if err != nil {
-		return err
-	}
-
-	outputFile, err := os.Create(destPath)
-	if err != nil {
-		return err
-	}
-	defer closeFile(ctx, outputFile)
-
-	_, err = io.Copy(outputFile, inputFile)
-	if err != nil {
-		closeFile(ctx, inputFile)
-		return err
-	}
-
-	closeFile(ctx, inputFile)
-
-	err = os.Remove(sourcePath)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func closeFile(ctx context.Context, file *os.File) {
-	err := file.Close()
-	if err != nil {
-		slog.ErrorContext(ctx, "Error closing file", "error", err, "file", file.Name())
-	}
 }

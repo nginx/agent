@@ -8,6 +8,7 @@ package file
 import (
 	"context"
 	"os"
+	"path"
 	"path/filepath"
 	"sync"
 	"testing"
@@ -50,4 +51,55 @@ func TestFileOperator_WriteManifestFile_fileMissing(t *testing.T) {
 	fileOperator := NewFileOperator(&sync.RWMutex{})
 	err := fileOperator.WriteManifestFile(t.Context(), make(map[string]*model.ManifestFile), tempDir, manifestPath)
 	assert.Error(t, err)
+}
+
+func TestFileOperator_MoveFile_fileExists(t *testing.T) {
+	tempDir := t.TempDir()
+	tempFile := path.Join(tempDir, "/etc/nginx/nginx.conf")
+	newFile := path.Join(tempDir, "/etc/nginx/new_test.conf")
+
+	err := os.MkdirAll(path.Dir(tempFile), 0o755)
+	require.NoError(t, err)
+
+	_, err = os.Create(tempFile)
+	require.NoError(t, err)
+
+	fileOperator := NewFileOperator(&sync.RWMutex{})
+	err = fileOperator.MoveFile(t.Context(), tempFile, newFile)
+	require.NoError(t, err)
+
+	assert.NoFileExists(t, tempFile)
+	assert.FileExists(t, newFile)
+}
+
+func TestFileOperator_MoveFile_sourceFileDoesNotExist(t *testing.T) {
+	tempDir := t.TempDir()
+	tempFile := path.Join(tempDir, "/etc/nginx/nginx.conf")
+	newFile := path.Join(tempDir, "/etc/nginx/new_test.conf")
+
+	fileOperator := NewFileOperator(&sync.RWMutex{})
+	err := fileOperator.MoveFile(t.Context(), tempFile, newFile)
+	require.Error(t, err)
+
+	assert.NoFileExists(t, tempFile)
+	assert.NoFileExists(t, newFile)
+}
+
+func TestFileOperator_MoveFile_destFileDoesNotExist(t *testing.T) {
+	tempDir := t.TempDir()
+	tempFile := path.Join(tempDir, "/etc/nginx/nginx.conf")
+	newFile := "/unknown/nginx/new_test.conf"
+
+	err := os.MkdirAll(path.Dir(tempFile), 0o755)
+	require.NoError(t, err)
+
+	_, err = os.Create(tempFile)
+	require.NoError(t, err)
+
+	fileOperator := NewFileOperator(&sync.RWMutex{})
+	err = fileOperator.MoveFile(t.Context(), tempFile, newFile)
+	require.Error(t, err)
+
+	assert.FileExists(t, tempFile)
+	assert.NoFileExists(t, newFile)
 }
