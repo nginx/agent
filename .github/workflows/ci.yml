@@ -132,7 +132,7 @@ jobs:
           go-version-file: 'go.mod'
           cache: false
       - name: Download Packages
-        uses: actions/download-artifact@eaceaf801fd36c7dee90939fad912460b18a1ffe # v4.1.2
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
@@ -176,7 +176,7 @@ jobs:
           go-version-file: 'go.mod'
           cache: false
       - name: Download Packages
-        uses: actions/download-artifact@eaceaf801fd36c7dee90939fad912460b18a1ffe # v4.1.2
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
@@ -227,7 +227,7 @@ jobs:
           go-version-file: 'go.mod'
           cache: false
       - name: Download Packages
-        uses: actions/download-artifact@eaceaf801fd36c7dee90939fad912460b18a1ffe # v4.1.2
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
@@ -288,7 +288,7 @@ jobs:
           go-version-file: 'go.mod'
           cache: false
       - name: Download Packages
-        uses: actions/download-artifact@eaceaf801fd36c7dee90939fad912460b18a1ffe # v4.1.2
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
@@ -366,7 +366,7 @@ jobs:
           cache: false
 
       - name: Download Packages
-        uses: actions/download-artifact@eaceaf801fd36c7dee90939fad912460b18a1ffe # v4.1.2
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
