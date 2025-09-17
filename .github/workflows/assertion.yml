@@ -3,7 +3,7 @@ name: Generate and Sign Assertion Document
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "add-dependency-assertion" ]
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
