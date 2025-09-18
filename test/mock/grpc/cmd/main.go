@@ -27,11 +27,12 @@ const (
 )
 
 var (
-	sleepDuration   = flag.Duration("sleepDuration", defaultSleepDuration, "duration between changes in health")
-	configDirectory = flag.String("configDirectory", "", "set the directory where the config files are stored")
-	grpcAddress     = flag.String("grpcAddress", "127.0.0.1:0", "set the gRPC address to run the server on")
-	apiAddress      = flag.String("apiAddress", "127.0.0.1:0", "set the API address to run the server on")
-	logLevel        = flag.String("logLevel", "INFO", "set the log level")
+	sleepDuration      = flag.Duration("sleepDuration", defaultSleepDuration, "duration between changes in health")
+	configDirectory    = flag.String("configDirectory", "", "set the directory where the config files are stored")
+	externalFileServer = flag.String("externalFileServer", "", "set the directory for external file server")
+	grpcAddress        = flag.String("grpcAddress", "127.0.0.1:0", "set the gRPC address to run the server on")
+	apiAddress         = flag.String("apiAddress", "127.0.0.1:0", "set the API address to run the server on")
+	logLevel           = flag.String("logLevel", "INFO", "set the log level")
 )
 
 func main() {
@@ -74,9 +75,18 @@ func main() {
 		}
 	}
 
+	if externalFileServer == nil || *externalFileServer == "" {
+		defaultExternalFileServer, externalFileServerErr := generateDefaultExternalFileSevrevDirectory()
+		externalFileServer = &defaultExternalFileServer
+		if externalFileServerErr != nil {
+			slog.ErrorContext(ctx, "Failed to create external file server directory", "error", err)
+			os.Exit(1)
+		}
+	}
+
 	slog.DebugContext(ctx, "Config directory", "directory", *configDirectory)
 
-	_, err = grpc.NewMockManagementServer(ctx, *apiAddress, agentConfig, configDirectory)
+	_, err = grpc.NewMockManagementServer(ctx, *apiAddress, agentConfig, configDirectory, externalFileServer)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to start mock management server", "error", err)
 		os.Exit(1)
@@ -98,4 +108,19 @@ func generateDefaultConfigDirectory() (string, error) {
 	slog.Info("Created default config directory", "directory", configDirectory)
 
 	return configDirectory, nil
+}
+
+func generateDefaultExternalFileSevrevDirectory() (string, error) {
+	slog.Info("Generating external file server directory")
+	tempDirectory := os.TempDir()
+	externalFileServer := filepath.Join(tempDirectory, "externalfileserver")
+
+	err := os.MkdirAll(externalFileServer, directoryPermissions)
+	if err != nil {
+		return "", err
+	}
+
+	slog.Info("Created default external file server directory", "directory", externalFileServer)
+
+	return externalFileServer, nil
 }
