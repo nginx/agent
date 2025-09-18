@@ -39,34 +39,33 @@ func NewFileOperator(manifestLock *sync.RWMutex) *FileOperator {
 	}
 }
 
-func (fo *FileOperator) Write(ctx context.Context, fileContent []byte, file *mpi.FileMeta) error {
-	filePermission := files.FileMode(file.GetPermissions())
-	err := fo.CreateFileDirectories(ctx, file, filePermission)
+func (fo *FileOperator) Write(ctx context.Context, fileContent []byte, fileName, filePermissions string) error {
+	filePermission := files.FileMode(filePermissions)
+	err := fo.CreateFileDirectories(ctx, fileName)
 	if err != nil {
 		return err
 	}
 
-	writeErr := os.WriteFile(file.GetName(), fileContent, filePermission)
+	writeErr := os.WriteFile(fileName, fileContent, filePermission)
 	if writeErr != nil {
-		return fmt.Errorf("error writing to file %s: %w", file.GetName(), writeErr)
+		return fmt.Errorf("error writing to file %s: %w", fileName, writeErr)
 	}
-	slog.DebugContext(ctx, "Content written to file", "file_path", file.GetName())
+	slog.DebugContext(ctx, "Content written to file", "file_path", fileName)
 
 	return nil
 }
 
 func (fo *FileOperator) CreateFileDirectories(
 	ctx context.Context,
-	fileMeta *mpi.FileMeta,
-	filePermission os.FileMode,
+	fileName string,
 ) error {
-	if _, err := os.Stat(fileMeta.GetName()); os.IsNotExist(err) {
-		parentDirectory := path.Dir(fileMeta.GetName())
+	if _, err := os.Stat(fileName); os.IsNotExist(err) {
+		parentDirectory := path.Dir(fileName)
 		slog.DebugContext(
 			ctx, "File does not exist, creating parent directory",
 			"directory_path", parentDirectory,
 		)
-		err = os.MkdirAll(parentDirectory, filePermission)
+		err = os.MkdirAll(parentDirectory, dirPerm)
 		if err != nil {
 			return fmt.Errorf("error creating directory %s: %w", parentDirectory, err)
 		}
@@ -77,23 +76,22 @@ func (fo *FileOperator) CreateFileDirectories(
 
 func (fo *FileOperator) WriteChunkedFile(
 	ctx context.Context,
-	file *mpi.File,
+	fileName, filePermissions string,
 	header *mpi.FileDataChunkHeader,
 	stream grpc.ServerStreamingClient[mpi.FileDataChunk],
 ) error {
-	filePermissions := files.FileMode(file.GetFileMeta().GetPermissions())
-	createFileDirectoriesError := fo.CreateFileDirectories(ctx, file.GetFileMeta(), filePermissions)
+	createFileDirectoriesError := fo.CreateFileDirectories(ctx, fileName)
 	if createFileDirectoriesError != nil {
 		return createFileDirectoriesError
 	}
 
-	fileToWrite, createError := os.Create(file.GetFileMeta().GetName())
+	fileToWrite, createError := os.Create(fileName)
 	defer func() {
 		closeError := fileToWrite.Close()
 		if closeError != nil {
 			slog.WarnContext(
 				ctx, "Failed to close file",
-				"file", file.GetFileMeta().GetName(),
+				"file", fileName,
 				"error", closeError,
 			)
 		}
@@ -102,7 +100,12 @@ func (fo *FileOperator) WriteChunkedFile(
 		return createError
 	}
 
-	slog.DebugContext(ctx, "Writing chunked file", "file", file.GetFileMeta().GetName())
+	filePermission := files.FileMode(filePermissions)
+	if err := os.Chmod(fileName, filePermission); err != nil {
+		return fmt.Errorf("error setting permissions for %s file: %w", fileName, err)
+	}
+
+	slog.DebugContext(ctx, "Writing chunked file", "file", fileName)
 	for range header.GetChunks() {
 		chunk, recvError := stream.Recv()
 		if recvError != nil {
@@ -111,7 +114,7 @@ func (fo *FileOperator) WriteChunkedFile(
 
 		_, chunkWriteError := fileToWrite.Write(chunk.GetContent().GetData())
 		if chunkWriteError != nil {
-			return fmt.Errorf("error writing chunk to file %s: %w", file.GetFileMeta().GetName(), chunkWriteError)
+			return fmt.Errorf("error writing chunk to file %s: %w", fileName, chunkWriteError)
 		}
 	}
 
@@ -149,8 +152,8 @@ func (fo *FileOperator) ReadChunk(
 	return chunk, err
 }
 
-func (fo *FileOperator) WriteManifestFile(ctx context.Context, updatedFiles map[string]*model.ManifestFile, manifestDir,
-	manifestPath string,
+func (fo *FileOperator) WriteManifestFile(
+	ctx context.Context, updatedFiles map[string]*model.ManifestFile, manifestDir, manifestPath string,
 ) (writeError error) {
 	slog.DebugContext(ctx, "Writing manifest file", "updated_files", updatedFiles)
 	manifestJSON, err := json.MarshalIndent(updatedFiles, "", "  ")
@@ -182,4 +185,39 @@ func (fo *FileOperator) WriteManifestFile(ctx context.Context, updatedFiles map[
 	}
 
 	return writeError
+}
+
+func (fo *FileOperator) MoveFile(ctx context.Context, sourcePath, destPath string) error {
+	inputFile, err := os.Open(sourcePath)
+	if err != nil {
+		return err
+	}
+
+	outputFile, err := os.Create(destPath)
+	if err != nil {
+		return err
+	}
+	defer closeFile(ctx, outputFile)
+
+	_, err = io.Copy(outputFile, inputFile)
+	if err != nil {
+		closeFile(ctx, inputFile)
+		return err
+	}
+
+	closeFile(ctx, inputFile)
+
+	err = os.Remove(sourcePath)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func closeFile(ctx context.Context, file *os.File) {
+	err := file.Close()
+	if err != nil {
+		slog.ErrorContext(ctx, "Error closing file", "error", err, "file", file.Name())
+	}
 }
