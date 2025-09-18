@@ -2,10 +2,6 @@
 name: Generate and Sign Assertion Document
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
   workflow_dispatch:
     inputs:
       branch:
@@ -15,20 +11,20 @@ on:
         default: main
 
 jobs:
-  build:
+  build-assertion-document:
     runs-on: ubuntu-22.04
     if: ${{ !github.event.pull_request.head.repo.fork }}
     permissions:
-      id-token: write
       contents: read
     env:
       GOPROXY: "https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@azr.artifactory.f5net.com/artifactory/api/go/f5-nginx-go-dev"
-
     outputs:
       agent_binary: ${{ steps.check_binary.outputs.agent_binary }}
       goversionm: ${{ steps.godeps.outputs.goversionm }}
       assertion_document: ${{ steps.assertiondoc.outputs.assertion-document-path }}
-
+    strategy:
+        matrix:
+            osarch: [amd64, arm64]
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
@@ -38,33 +34,31 @@ jobs:
           go-version-file: go.mod
           cache: false
 
-      - name: Build
-        id: build
-        run: |
-          make build
-
-      - name: Check dependencies
+      - name: Gather build dependencies
         id: godeps
         run: |
+          GO_VERSION=$(go version | awk '{print $3}' | sed 's/go//')
+          echo "GO_VERSION=$GO_VERSION" >> $GITHUB_ENV
+          OSARCH=${{matrix.osarch}} make build
+          echo "agent-digest=$(sha256sum build/nginx-agent | awk '{print $1}')" >> $GITHUB_ENV
           go version -m build/nginx-agent > goversionm_${{ github.run_id }}_${{ github.run_number }}.txt
-          echo "goversionm=$(find -type f -name "goversionm*.txt" | head -n 1)" >> $GITHUB_OUTPUT
-          cat $GITHUB_OUTPUT
+          echo "goversionm=$(find -type f -name "goversionm*.txt" | head -n 1)" >> $GITHUB_ENV
 
       - name: Generate Assertion Document
         id: assertiondoc
         uses: nginxinc/compliance-rules/.github/actions/assertion@main
         with:
-          artifact-name: nginx-agent_${{ github.ref_name }}
-          artifact-digest: 'test-digest'
+          artifact-name: nginx-agent_${{ github.ref_name }}_${{ matrix.osarch }}
+          artifact-digest: ${{ env.agent-digest }}
           build-type: 'github'
           builder-id: 'github.com'
-          builder-version: '0.1.0-xyz'
+          builder-version: '${{env.GO_VERSION}}_${{inputs.branch}}'
           invocation-id: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
           artifactory-user: ${{ secrets.ARTIFACTORY_USER }}
           artifactory-api-token: ${{ secrets.ARTIFACTORY_TOKEN }}
           artifactory-url: ${{ secrets.ARTIFACTORY_URL }}
           artifactory-repo: 'f5-nginx-go-local-approved-dependency'
-          assertion-doc-file: assertion_nginx-agent_main.json
+          assertion-doc-file: assertion_nginx-agent_${{ inputs.branch }}_${{matrix.osarch}}.json
           build-content-path: ${{ steps.godeps.outputs.goversionm }}
           started-on: ''
           finished-on: ''
