@@ -42,6 +42,8 @@ const (
 type NginxPlusScraper struct {
 	previousServerZoneResponses   map[string]ResponseStatuses
 	previousLocationZoneResponses map[string]ResponseStatuses
+	previousServerZoneRequests    map[string]int64
+	previousLocationZoneRequests  map[string]int64
 	plusClient                    *plusapi.NginxClient
 	cfg                           *Config
 	mb                            *metadata.MetricsBuilder
@@ -137,6 +139,8 @@ func (nps *NginxPlusScraper) Scrape(ctx context.Context) (pmetric.Metrics, error
 		nps.previousHTTPRequestsTotal = stats.HTTPRequests.Total
 		nps.createPreviousServerZoneResponses(stats)
 		nps.createPreviousLocationZoneResponses(stats)
+		nps.createPreviousServerZoneRequests(stats)
+		nps.createPreviousLocationZoneRequests(stats)
 	})
 
 	stats, err := nps.plusClient.GetStats(ctx)
@@ -173,6 +177,22 @@ func (nps *NginxPlusScraper) createPreviousLocationZoneResponses(stats *plusapi.
 	}
 
 	nps.previousLocationZoneResponses = previousLocationZoneResponses
+}
+
+func (nps *NginxPlusScraper) createPreviousServerZoneRequests(stats *plusapi.Stats) {
+	previousServerZoneRequests := make(map[string]int64)
+	for szName, sz := range stats.ServerZones {
+		previousServerZoneRequests[szName] = int64(sz.Requests)
+	}
+	nps.previousServerZoneRequests = previousServerZoneRequests
+}
+
+func (nps *NginxPlusScraper) createPreviousLocationZoneRequests(stats *plusapi.Stats) {
+	previousLocationZoneRequests := make(map[string]int64)
+	for lzName, lz := range stats.LocationZones {
+		previousLocationZoneRequests[lzName] = lz.Requests
+	}
+	nps.previousLocationZoneRequests = previousLocationZoneRequests
 }
 
 func (nps *NginxPlusScraper) createPreviousServerZoneResponses(stats *plusapi.Stats) {
@@ -224,7 +244,7 @@ func (nps *NginxPlusScraper) recordMetrics(stats *plusapi.Stats) {
 	nps.mb.RecordNginxHTTPRequestsDataPoint(now, int64(stats.HTTPRequests.Total), "", 0)
 
 	requestsDiff := int64(stats.HTTPRequests.Total) - int64(nps.previousHTTPRequestsTotal)
-	nps.mb.RecordNginxHTTPRequestCountDataPoint(now, requestsDiff)
+	nps.mb.RecordNginxHTTPRequestCountDataPoint(now, requestsDiff, "", 0)
 	nps.previousHTTPRequestsTotal = stats.HTTPRequests.Total
 
 	nps.recordCacheMetrics(stats, now)
@@ -866,6 +886,13 @@ func (nps *NginxPlusScraper) recordServerZoneMetrics(stats *plusapi.Stats, now p
 
 		nps.mb.RecordNginxHTTPRequestsDataPoint(now, int64(sz.Requests), szName, metadata.AttributeNginxZoneTypeSERVER)
 
+		nps.mb.RecordNginxHTTPRequestCountDataPoint(now,
+			int64(sz.Requests)-nps.previousServerZoneRequests[szName],
+			szName,
+			metadata.AttributeNginxZoneTypeSERVER,
+		)
+		nps.previousServerZoneRequests[szName] = int64(sz.Requests)
+
 		nps.recordServerZoneHTTPMetrics(sz, szName, now)
 
 		nps.mb.RecordNginxHTTPRequestDiscardedDataPoint(now, int64(sz.Discarded),
@@ -974,6 +1001,14 @@ func (nps *NginxPlusScraper) recordLocationZoneMetrics(stats *plusapi.Stats, now
 			lzName,
 			metadata.AttributeNginxZoneTypeLOCATION,
 		)
+
+		nps.mb.RecordNginxHTTPRequestCountDataPoint(now,
+			lz.Requests-nps.previousLocationZoneRequests[lzName],
+			lzName,
+			metadata.AttributeNginxZoneTypeLOCATION,
+		)
+
+		nps.previousLocationZoneRequests[lzName] = lz.Requests
 
 		nps.recordLocationZoneHTTPMetrics(lz, lzName, now)
 
