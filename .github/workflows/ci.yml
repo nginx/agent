@@ -446,6 +446,11 @@ jobs:
       - name: Set env
         run: | 
           echo "GO_VERSION=$(cat go.mod | grep toolchain | sed 's/toolchain //; s/go//')" >> $GITHUB_ENV
+          if [ ${{ github.head_ref }} ]; then
+            BRANCH_NAME=${{ github.head_ref }}
+          else
+            BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          fi
           echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
 
       - name: Download Packages
