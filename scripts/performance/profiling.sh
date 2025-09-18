@@ -50,5 +50,5 @@ done
 ## Merge all CPU profiles
 files=$(ls ${PROFILES_DIR}/*.pprof)
 echo "Merging CPU profiles: $files"
-go tool pprof -proto -output=${PROFILES_DIR}/merged.pgo $files
-echo "Merged CPU profile saved to: ${PROFILES_DIR}/merged.pgo"
+go tool pprof -proto -output=${PROFILES_DIR}/merged.pprof $files
+echo "Merged CPU profile saved to: ${PROFILES_DIR}/merged.pprof"
