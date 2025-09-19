@@ -144,6 +144,13 @@ The total number of client requests received, since the last collection interval
 | ---- | ----------- | ---------- |
 | requests | Gauge | Int |
 
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| nginx.zone.name | The name of the shared memory zone. | Any Str |
+| nginx.zone.type | The type of shared memory zone, depending on what block it was defined in the NGINX configuration. | Str: ``SERVER``, ``LOCATION`` |
+
 ### nginx.http.request.discarded
 
 The total number of requests completed without sending a response.

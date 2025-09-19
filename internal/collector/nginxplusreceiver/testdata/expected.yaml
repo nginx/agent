@@ -297,6 +297,31 @@ resourceMetrics:
               dataPoints:
                 - asInt: "44"
                   timeUnixNano: "1000000"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: ""
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: ""
+                - asInt: "3"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: SERVER
+                  timeUnixNano: "1000000"
+                - asInt: "4"
+                  attributes:
+                    - key: nginx.zone.name
+                      value:
+                        stringValue: location_test
+                    - key: nginx.zone.type
+                      value:
+                        stringValue: LOCATION
+                  timeUnixNano: "1000000"
               isMonotonic: true
             unit: requests
           - description: The total number of bytes read from the cache or proxied server.
