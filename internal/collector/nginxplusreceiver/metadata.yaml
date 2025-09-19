@@ -173,6 +173,9 @@ metrics:
     gauge:
       value_type: int
     unit: "requests"
+    attributes:
+      - nginx.zone.name
+      - nginx.zone.type
   nginx.cache.bytes_read:
     enabled: true
     description: The total number of bytes read from the cache or proxied server.

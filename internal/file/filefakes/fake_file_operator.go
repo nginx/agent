@@ -69,12 +69,13 @@ type FakeFileOperator struct {
 	writeChunkedFileReturnsOnCall map[int]struct {
 		result1 error
 	}
-	WriteManifestFileStub        func(map[string]*model.ManifestFile, string, string) error
+	WriteManifestFileStub        func(context.Context, map[string]*model.ManifestFile, string, string) error
 	writeManifestFileMutex       sync.RWMutex
 	writeManifestFileArgsForCall []struct {
-		arg1 map[string]*model.ManifestFile
-		arg2 string
+		arg1 context.Context
+		arg2 map[string]*model.ManifestFile
 		arg3 string
+		arg4 string
 	}
 	writeManifestFileReturns struct {
 		result1 error
@@ -348,20 +349,21 @@ func (fake *FakeFileOperator) WriteChunkedFileReturnsOnCall(i int, result1 error
 	}{result1}
 }
 
-func (fake *FakeFileOperator) WriteManifestFile(arg1 map[string]*model.ManifestFile, arg2 string, arg3 string) error {
+func (fake *FakeFileOperator) WriteManifestFile(arg1 context.Context, arg2 map[string]*model.ManifestFile, arg3 string, arg4 string) error {
 	fake.writeManifestFileMutex.Lock()
 	ret, specificReturn := fake.writeManifestFileReturnsOnCall[len(fake.writeManifestFileArgsForCall)]
 	fake.writeManifestFileArgsForCall = append(fake.writeManifestFileArgsForCall, struct {
-		arg1 map[string]*model.ManifestFile
-		arg2 string
+		arg1 context.Context
+		arg2 map[string]*model.ManifestFile
 		arg3 string
-	}{arg1, arg2, arg3})
+		arg4 string
+	}{arg1, arg2, arg3, arg4})
 	stub := fake.WriteManifestFileStub
 	fakeReturns := fake.writeManifestFileReturns
-	fake.recordInvocation("WriteManifestFile", []interface{}{arg1, arg2, arg3})
+	fake.recordInvocation("WriteManifestFile", []interface{}{arg1, arg2, arg3, arg4})
 	fake.writeManifestFileMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3)
+		return stub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1
@@ -375,17 +377,17 @@ func (fake *FakeFileOperator) WriteManifestFileCallCount() int {
 	return len(fake.writeManifestFileArgsForCall)
 }
 
-func (fake *FakeFileOperator) WriteManifestFileCalls(stub func(map[string]*model.ManifestFile, string, string) error) {
+func (fake *FakeFileOperator) WriteManifestFileCalls(stub func(context.Context, map[string]*model.ManifestFile, string, string) error) {
 	fake.writeManifestFileMutex.Lock()
 	defer fake.writeManifestFileMutex.Unlock()
 	fake.WriteManifestFileStub = stub
 }
 
-func (fake *FakeFileOperator) WriteManifestFileArgsForCall(i int) (map[string]*model.ManifestFile, string, string) {
+func (fake *FakeFileOperator) WriteManifestFileArgsForCall(i int) (context.Context, map[string]*model.ManifestFile, string, string) {
 	fake.writeManifestFileMutex.RLock()
 	defer fake.writeManifestFileMutex.RUnlock()
 	argsForCall := fake.writeManifestFileArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
 }
 
 func (fake *FakeFileOperator) WriteManifestFileReturns(result1 error) {

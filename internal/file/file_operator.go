@@ -149,9 +149,10 @@ func (fo *FileOperator) ReadChunk(
 	return chunk, err
 }
 
-func (fo *FileOperator) WriteManifestFile(updatedFiles map[string]*model.ManifestFile, manifestDir,
+func (fo *FileOperator) WriteManifestFile(ctx context.Context, updatedFiles map[string]*model.ManifestFile, manifestDir,
 	manifestPath string,
 ) (writeError error) {
+	slog.DebugContext(ctx, "Writing manifest file", "updated_files", updatedFiles)
 	manifestJSON, err := json.MarshalIndent(updatedFiles, "", "  ")
 	if err != nil {
 		return fmt.Errorf("unable to marshal manifest file json: %w", err)

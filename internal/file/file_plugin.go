@@ -149,7 +149,7 @@ func (fp *FilePlugin) handleConnectionReset(ctx context.Context, msg *bus.Messag
 		fp.conn = newConnection
 
 		reconnect = fp.fileManagerService.IsConnected()
-		fp.fileManagerService = NewFileManagerService(fp.conn.FileServiceClient(), fp.config, fp.manifestLock)
+		fp.fileManagerService.ResetClient(ctx, fp.conn.FileServiceClient())
 		fp.fileManagerService.SetIsConnected(reconnect)
 
 		slog.DebugContext(ctx, "File manager service client reset successfully")
