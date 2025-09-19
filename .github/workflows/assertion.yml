@@ -48,11 +48,20 @@ jobs:
       - name: Gather build dependencies
         id: godeps
         run: |
+          if [ -z ${{inputs.branch}} ]; then
+            echo "No branch input provided, using current branch: $GITHUB_REF_NAME"
+          else
+            echo "Checking out branch: ${{inputs.branch}}"
+            git checkout ${{inputs.branch}}
+          fi
+          echo "Current branch: $GITHUB_REF_NAME"
+          echo "branch_name=$GITHUB_REF_NAME" >> $GITHUB_ENV
           GO_VERSION=$(go version | awk '{print $3}' | sed 's/go//')
           echo "GO_VERSION=$GO_VERSION" >> $GITHUB_ENV
-          time_start=$(date +%s)
+          echo "GO_VERSION=$GO_VERSION"
+          echo "time_start=$(date +%s)" >> $GITHUB_ENV
           OSARCH=${{matrix.osarch}} make build
-          time_end=$(date +%s)
+          echo "time_end=$(date +%s)" >> $GITHUB_ENV
           echo "Build time: $((time_end - time_start)) seconds"
           
           echo "Getting sha256sum of the built nginx-agent binary..."
@@ -67,7 +76,7 @@ jobs:
         id: assertiondoc
         uses: nginxinc/compliance-rules/.github/actions/assertion@main
         with:
-          artifact-name: nginx-agent_${{ github.ref_name }}_${{ matrix.osarch }}
+          artifact-name: nginx-agent_${{ env.branch_name }}_${{ matrix.osarch }}
           artifact-digest: ${{ env.agent-digest }}
           build-type: 'github'
           builder-id: 'github.com'
@@ -77,10 +86,10 @@ jobs:
           artifactory-api-token: ${{ secrets.ARTIFACTORY_TOKEN }}
           artifactory-url: ${{ secrets.ARTIFACTORY_URL }}
           artifactory-repo: 'f5-nginx-go-local-approved-dependency'
-          assertion-doc-file: assertion_nginx-agent_test_${{matrix.osarch}}.json
+          assertion-doc-file: assertion_nginx-agent_${{env.branch_name}}_${{matrix.osarch}}.json
           build-content-path: ${{ env.goversionm }}
-          started-on: ''
-          finished-on: ''
+          started-on: '${{ env.time_start }}'
+          finished-on: '${{ env.time_end }}'
 
       - name: Sign and Store Assertion Document
         id: sign
