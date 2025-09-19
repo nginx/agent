@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -483,37 +482,17 @@ func (c *Config) IsCommandServerProxyConfigured() bool {
 
 // isAllowedDir checks if the given path is in the list of allowed directories.
 // It works on files and directories.
-// If the path is a file, it checks the directory of the file.
-// If the path is a directory, it checks the directory itself.
-// It also allows subdirectories within the allowed directories.
+// If allowedDirs is empty, it returns an error.
+// If path is exactly equal to an allowed directory, it is considered allowed.
+// If path is a subdirectory or file within an allowed directory, it is considered allowed.
 func isAllowedDir(path string, allowedDirs []string) (bool, error) {
 	if len(allowedDirs) == 0 {
 		return false, errors.New("no allowed directories configured")
 	}
 
-	// Check if the path is absolute
-	if !filepath.IsAbs(path) {
-		return false, fmt.Errorf("PathError: %s is not absolute", path)
-	}
-
-	// Does the path exist?
-	info, err := os.Stat(path)
-	if err == nil && !info.IsDir() {
-		// Path exists and is not a directory
-		// It's a file so get the parent directory
-		path = filepath.Dir(path)
-	}
-	if err != nil {
-		if !os.IsNotExist(err) {
-			// Some other error occurred
-			return false, fmt.Errorf("PathError %s %w", path, err)
-		} // else the path does not exist, we will check if it's in an allowed directory
-	}
-
 	for _, dir := range allowedDirs {
 		// Check if the path is a direct match, or is a subdirectory of the allowed directory
 		if slices.Contains(allowedDirs, path) || strings.HasPrefix(path, dir+"/") {
-			slog.Info(fmt.Sprintf("Allowed directory %s is allowed", path))
 			return true, nil
 		}
 	}

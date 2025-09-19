@@ -1037,7 +1037,7 @@ func agentConfig() *Config {
 			},
 		},
 		AllowedDirectories: []string{
-			"/etc/nginx/", "/etc/nginx-agent/", "/usr/local/etc/nginx", "/var/run/nginx", "/var/log/nginx",
+			"/etc/nginx", "/etc/nginx-agent", "/usr/local/etc/nginx", "/var/run/nginx", "/var/log/nginx",
 			"/usr/share/nginx/modules", "/etc/app_protect",
 		},
 		Collector: createDefaultCollectorConfig(),
