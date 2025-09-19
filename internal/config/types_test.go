@@ -66,6 +66,14 @@ func TestTypes_isAllowedDir(t *testing.T) {
 			},
 			filePath: "/not-nginx-test/idontexist.conf",
 		},
+		{
+			name:    "Test 7: Prefix match not allowed",
+			allowed: false,
+			allowedDirs: []string{
+				"/etc/nginx",
+			},
+			filePath: "/etc/nginx-test/nginx.conf",
+		},
 	}
 
 	for _, test := range tests {
