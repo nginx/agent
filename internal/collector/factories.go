@@ -10,6 +10,7 @@ import (
 	"github.com/nginx/agent/v3/internal/collector/logsgzipprocessor"
 	nginxreceiver "github.com/nginx/agent/v3/internal/collector/nginxossreceiver"
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver"
+	"github.com/nginx/agent/v3/internal/collector/syslogprocessor"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/headerssetterextension"
@@ -104,6 +105,7 @@ func createProcessorFactories() map[component.Type]processor.Factory {
 		memorylimiterprocessor.NewFactory(),
 		redactionprocessor.NewFactory(),
 		resourceprocessor.NewFactory(),
+		syslogprocessor.NewFactory(),
 		transformprocessor.NewFactory(),
 		logsgzipprocessor.NewFactory(),
 	}
