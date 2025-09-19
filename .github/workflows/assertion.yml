@@ -22,6 +22,7 @@ on:
 
 jobs:
   build-assertion-document:
+    name: Build and Generate Assertion Document
     runs-on: ubuntu-22.04
     if: ${{ !github.event.pull_request.head.repo.fork }}
     permissions:
@@ -49,7 +50,10 @@ jobs:
         run: |
           GO_VERSION=$(go version | awk '{print $3}' | sed 's/go//')
           echo "GO_VERSION=$GO_VERSION" >> $GITHUB_ENV
+          time_start=$(date +%s)
           OSARCH=${{matrix.osarch}} make build
+          time_end=$(date +%s)
+          echo "Build time: $((time_end - time_start)) seconds"
           
           echo "Getting sha256sum of the built nginx-agent binary..."
           echo "agent-digest=$(sha256sum build/nginx-agent | awk '{print $1}')" >> $GITHUB_ENV
@@ -74,7 +78,7 @@ jobs:
           artifactory-url: ${{ secrets.ARTIFACTORY_URL }}
           artifactory-repo: 'f5-nginx-go-local-approved-dependency'
           assertion-doc-file: assertion_nginx-agent_test_${{matrix.osarch}}.json
-          build-content-path: ${{ steps.godeps.outputs.goversionm }}
+          build-content-path: ${{ env.goversionm }}
           started-on: ''
           finished-on: ''
 
