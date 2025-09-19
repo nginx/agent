@@ -4,14 +4,14 @@ name: Generate and Sign Assertion Document
 on:
   push:
     branches:
-      - 'add-assertion-document'
+      - 'add-dependency-assertion'
   pull_request:
     types:
       - opened
       - synchronize
       - reopened
     branches:
-      - 'add-assertion-document'
+      - 'add-dependency-assertion'
   workflow_dispatch:
     inputs:
       branch:
