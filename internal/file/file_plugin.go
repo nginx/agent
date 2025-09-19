@@ -347,6 +347,26 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 		}
 
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.WriteConfigSuccessfulTopic, Data: data})
+	case model.PermissionChange:
+		slog.WarnContext(ctx, "Files with execute permissions found and reset",
+			"details", err.Error())
+		dpResponse := fp.createDataPlaneResponse(
+			correlationID,
+			mpi.CommandResponse_COMMAND_STATUS_OK,
+			"Config apply successful, files updated with permission changes",
+			instanceID,
+			"",
+		)
+
+		successMessage := &model.ConfigApplySuccess{
+			ConfigContext:     &model.NginxConfigContext{},
+			DataPlaneResponse: dpResponse,
+		}
+
+		fp.fileManagerService.ClearCache()
+		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplySuccessfulTopic, Data: successMessage})
+
+		return
 	}
 }
 
