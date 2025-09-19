@@ -110,7 +110,7 @@ const (
 	DefCollectorExtensionsHealthTLServerNameKey = ""
 
 	// File defaults
-	DefManifestDir = "/var/lib/nginx-agent"
+	DefLibDir = "/var/lib/nginx-agent"
 )
 
 func DefaultFeatures() []string {
