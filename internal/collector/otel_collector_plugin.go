@@ -623,6 +623,13 @@ func (oc *Collector) updateNginxAppProtectTcplogReceivers(
 							"value": nginxConfigContext.InstanceID,
 						},
 					},
+					{
+						Type: "add",
+						Fields: map[string]string{
+							"field": "resource[\"instance.type\"]",
+							"value": "nginx-app-protect",
+						},
+					},
 				},
 			}
 
