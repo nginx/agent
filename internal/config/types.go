@@ -490,9 +490,13 @@ func isAllowedDir(path string, allowedDirs []string) (bool, error) {
 		return false, errors.New("no allowed directories configured")
 	}
 
-	for _, dir := range allowedDirs {
-		// Check if the path is a direct match, or is a subdirectory of the allowed directory
-		if slices.Contains(allowedDirs, path) || strings.HasPrefix(path, dir+"/") {
+	if slices.Contains(allowedDirs, path) { // exact match
+		return true, nil
+	}
+
+	for _, dir := range allowedDirs { // check subdirectory
+		// Check if the path is is a subdirectory of the allowed directory
+		if strings.HasPrefix(path, dir+"/") {
 			return true, nil
 		}
 	}
