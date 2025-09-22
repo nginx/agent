@@ -3,6 +3,9 @@ name: Generate and Sign Assertion Document
 
 on:
   workflow_dispatch:
+    push:
+      branches:
+        - add-dependency-assertion
     inputs:
       branch:
         type: string
@@ -19,7 +22,7 @@ jobs:
       id-token: write
       contents: read
     env:
-      GOPROXY: "https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@azr.artifactory.f5net.com/artifactory/api/go/f5-nginx-go-dev"
+      GOPROXY: "https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@azr.artifactory.f5net.com/artifactory/api/go/f5-nginx-go-local-approved-dependency"
     outputs:
       agent_binary: ${{ steps.check_binary.outputs.agent_binary }}
       goversionm: ${{ steps.godeps.outputs.goversionm }}
@@ -65,7 +68,7 @@ jobs:
 
       - name: Generate Assertion Document
         id: assertiondoc
-        uses: nginxinc/compliance-rules/.github/actions/assertion@feat/cosign-installation
+        uses: nginxinc/compliance-rules/.github/actions/assertion@main
         with:
           artifact-name: nginx-agent_${{ env.branch_name }}_${{ matrix.osarch }}
           artifact-digest: ${{ env.agent-digest }}
@@ -84,6 +87,6 @@ jobs:
 
       - name: Sign and Store Assertion Document
         id: sign
-        uses: nginxinc/compliance-rules/.github/actions/sign@feat/cosign-installation
+        uses: nginxinc/compliance-rules/.github/actions/sign@main
         with:
           assertion-doc: ${{ steps.assertiondoc.outputs.assertion-document-path }}
