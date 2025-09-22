@@ -18,7 +18,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-const configFilePermissions = 0o700
+const configFilePermissions = 0o600
 
 type Parameters struct {
 	NginxConfigPath      string
