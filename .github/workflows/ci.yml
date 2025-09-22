@@ -511,9 +511,9 @@ jobs:
               return;
             }
             
-            print('Creating a new pull request to update the pgo profile...');
-            print('If the PR creation fails, please ensure that the workflow has write permissions and try again.');
-            print('Base: main, Head: $BRANCH_NAME-update-profile');
+            console.log('Creating a new pull request to update the pgo profile...');
+            console.log('If the PR creation fails, please ensure that the workflow has write permissions and try again.');
+            console.log('Base: main, Head: $BRANCH_NAME-update-profile');
             
             const result = await github.rest.pulls.create({
               title: 'Update pgo profile',
