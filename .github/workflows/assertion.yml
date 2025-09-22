@@ -2,10 +2,10 @@
 name: Generate and Sign Assertion Document
 
 on:
+  push:
+    branches:
+      - add-dependency-assertion
   workflow_dispatch:
-    push:
-      branches:
-        - add-dependency-assertion
     inputs:
       branch:
         type: string
