@@ -6,7 +6,6 @@
 package file
 
 import (
-	"context"
 	"testing"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer"
@@ -37,10 +36,10 @@ func TestInput_emit(t *testing.T) {
 
 	token := []byte(accessLogLine)
 
-	err := input.emit(context.Background(), [][]byte{token}, map[string]any{"attribute1": "test"}, 1)
+	err := input.emit(t.Context(), [][]byte{token}, map[string]any{"attribute1": "test"}, 1, []int64{})
 	require.NoError(t, err)
 
 	// nil token check
-	err = input.emit(context.Background(), nil, map[string]any{"attribute1": "test"}, 1)
+	err = input.emit(t.Context(), nil, map[string]any{"attribute1": "test"}, 1, []int64{})
 	require.NoError(t, err)
 }

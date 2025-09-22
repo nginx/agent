@@ -106,7 +106,7 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
-			mb.RecordNginxHTTPRequestCountDataPoint(ts, 1)
+			mb.RecordNginxHTTPRequestCountDataPoint(ts, 1, "nginx.zone.name-val", AttributeNginxZoneTypeSERVER)
 
 			defaultMetricsCount++
 			allMetricsCount++
@@ -497,6 +497,12 @@ func TestMetricsBuilder(t *testing.T) {
 					assert.Equal(t, ts, dp.Timestamp())
 					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
 					assert.Equal(t, int64(1), dp.IntValue())
+					attrVal, ok := dp.Attributes().Get("nginx.zone.name")
+					assert.True(t, ok)
+					assert.Equal(t, "nginx.zone.name-val", attrVal.Str())
+					attrVal, ok = dp.Attributes().Get("nginx.zone.type")
+					assert.True(t, ok)
+					assert.Equal(t, "SERVER", attrVal.Str())
 				case "nginx.http.request.discarded":
 					assert.False(t, validatedMetrics["nginx.http.request.discarded"], "Found a duplicate in the metrics slice: nginx.http.request.discarded")
 					validatedMetrics["nginx.http.request.discarded"] = true
