@@ -14,6 +14,7 @@ import (
 	"log/slog"
 	"os"
 	"path"
+	"path/filepath"
 	"sync"
 
 	"github.com/nginx/agent/v3/internal/model"
@@ -188,28 +189,33 @@ func (fo *FileOperator) WriteManifestFile(
 }
 
 func (fo *FileOperator) MoveFile(ctx context.Context, sourcePath, destPath string) error {
-	inputFile, err := os.Open(sourcePath)
-	if err != nil {
-		return err
+	inputFile, openErr := os.Open(sourcePath)
+	if openErr != nil {
+		return openErr
 	}
 
-	outputFile, err := os.Create(destPath)
-	if err != nil {
-		return err
+	if dirErr := os.MkdirAll(filepath.Dir(destPath), dirPerm); dirErr != nil {
+		return fmt.Errorf("failed to create directories for %s: %w", destPath, dirErr)
+	}
+
+	outputFile, createErr := os.Create(destPath)
+	if createErr != nil {
+		return createErr
 	}
 	defer closeFile(ctx, outputFile)
 
-	_, err = io.Copy(outputFile, inputFile)
-	if err != nil {
+	_, copyErr := io.Copy(outputFile, inputFile)
+	if copyErr != nil {
 		closeFile(ctx, inputFile)
-		return err
+
+		return copyErr
 	}
 
 	closeFile(ctx, inputFile)
 
-	err = os.Remove(sourcePath)
-	if err != nil {
-		return err
+	removeErr := os.Remove(sourcePath)
+	if removeErr != nil {
+		return removeErr
 	}
 
 	return nil

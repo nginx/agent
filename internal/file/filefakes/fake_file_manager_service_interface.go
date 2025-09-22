@@ -46,7 +46,7 @@ type FakeFileManagerServiceInterface struct {
 	configUploadReturnsOnCall map[int]struct {
 		result1 error
 	}
-	DetermineFileActionsStub        func(context.Context, map[string]*v1.File, map[string]*model.FileCache) (map[string]*model.FileCache, map[string][]byte, error)
+	DetermineFileActionsStub        func(context.Context, map[string]*v1.File, map[string]*model.FileCache) (map[string]*model.FileCache, error)
 	determineFileActionsMutex       sync.RWMutex
 	determineFileActionsArgsForCall []struct {
 		arg1 context.Context
@@ -55,13 +55,11 @@ type FakeFileManagerServiceInterface struct {
 	}
 	determineFileActionsReturns struct {
 		result1 map[string]*model.FileCache
-		result2 map[string][]byte
-		result3 error
+		result2 error
 	}
 	determineFileActionsReturnsOnCall map[int]struct {
 		result1 map[string]*model.FileCache
-		result2 map[string][]byte
-		result3 error
+		result2 error
 	}
 	IsConnectedStub        func() bool
 	isConnectedMutex       sync.RWMutex
@@ -297,7 +295,7 @@ func (fake *FakeFileManagerServiceInterface) ConfigUploadReturnsOnCall(i int, re
 	}{result1}
 }
 
-func (fake *FakeFileManagerServiceInterface) DetermineFileActions(arg1 context.Context, arg2 map[string]*v1.File, arg3 map[string]*model.FileCache) (map[string]*model.FileCache, map[string][]byte, error) {
+func (fake *FakeFileManagerServiceInterface) DetermineFileActions(arg1 context.Context, arg2 map[string]*v1.File, arg3 map[string]*model.FileCache) (map[string]*model.FileCache, error) {
 	fake.determineFileActionsMutex.Lock()
 	ret, specificReturn := fake.determineFileActionsReturnsOnCall[len(fake.determineFileActionsArgsForCall)]
 	fake.determineFileActionsArgsForCall = append(fake.determineFileActionsArgsForCall, struct {
@@ -313,9 +311,9 @@ func (fake *FakeFileManagerServiceInterface) DetermineFileActions(arg1 context.C
 		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
-		return ret.result1, ret.result2, ret.result3
+		return ret.result1, ret.result2
 	}
-	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FakeFileManagerServiceInterface) DetermineFileActionsCallCount() int {
@@ -324,7 +322,7 @@ func (fake *FakeFileManagerServiceInterface) DetermineFileActionsCallCount() int
 	return len(fake.determineFileActionsArgsForCall)
 }
 
-func (fake *FakeFileManagerServiceInterface) DetermineFileActionsCalls(stub func(context.Context, map[string]*v1.File, map[string]*model.FileCache) (map[string]*model.FileCache, map[string][]byte, error)) {
+func (fake *FakeFileManagerServiceInterface) DetermineFileActionsCalls(stub func(context.Context, map[string]*v1.File, map[string]*model.FileCache) (map[string]*model.FileCache, error)) {
 	fake.determineFileActionsMutex.Lock()
 	defer fake.determineFileActionsMutex.Unlock()
 	fake.DetermineFileActionsStub = stub
@@ -337,33 +335,30 @@ func (fake *FakeFileManagerServiceInterface) DetermineFileActionsArgsForCall(i i
 	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
-func (fake *FakeFileManagerServiceInterface) DetermineFileActionsReturns(result1 map[string]*model.FileCache, result2 map[string][]byte, result3 error) {
+func (fake *FakeFileManagerServiceInterface) DetermineFileActionsReturns(result1 map[string]*model.FileCache, result2 error) {
 	fake.determineFileActionsMutex.Lock()
 	defer fake.determineFileActionsMutex.Unlock()
 	fake.DetermineFileActionsStub = nil
 	fake.determineFileActionsReturns = struct {
 		result1 map[string]*model.FileCache
-		result2 map[string][]byte
-		result3 error
-	}{result1, result2, result3}
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *FakeFileManagerServiceInterface) DetermineFileActionsReturnsOnCall(i int, result1 map[string]*model.FileCache, result2 map[string][]byte, result3 error) {
+func (fake *FakeFileManagerServiceInterface) DetermineFileActionsReturnsOnCall(i int, result1 map[string]*model.FileCache, result2 error) {
 	fake.determineFileActionsMutex.Lock()
 	defer fake.determineFileActionsMutex.Unlock()
 	fake.DetermineFileActionsStub = nil
 	if fake.determineFileActionsReturnsOnCall == nil {
 		fake.determineFileActionsReturnsOnCall = make(map[int]struct {
 			result1 map[string]*model.FileCache
-			result2 map[string][]byte
-			result3 error
+			result2 error
 		})
 	}
 	fake.determineFileActionsReturnsOnCall[i] = struct {
 		result1 map[string]*model.FileCache
-		result2 map[string][]byte
-		result3 error
-	}{result1, result2, result3}
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeFileManagerServiceInterface) IsConnected() bool {

@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -179,7 +180,6 @@ func TestFileManagerService_ConfigApply_Update(t *testing.T) {
 	data, readErr := os.ReadFile(tempFile.Name())
 	require.NoError(t, readErr)
 	assert.Equal(t, fileContent, data)
-	assert.Equal(t, fileManagerService.rollbackFileContents[tempFile.Name()], previousFileContent)
 	assert.Equal(t, fileManagerService.fileActions[tempFile.Name()].File, overview.GetFiles()[0])
 	assert.True(t, fileManagerService.rollbackManifest)
 }
@@ -236,7 +236,6 @@ func TestFileManagerService_ConfigApply_Delete(t *testing.T) {
 	writeStatus, err := fileManagerService.ConfigApply(ctx, request)
 	require.NoError(t, err)
 	assert.NoFileExists(t, tempFile.Name())
-	assert.Equal(t, fileManagerService.rollbackFileContents[tempFile.Name()], fileContent)
 	assert.Equal(t,
 		fileManagerService.fileActions[tempFile.Name()].File.GetFileMeta().GetName(),
 		filesOnDisk[tempFile.Name()].GetFileMeta().GetName(),
@@ -340,24 +339,25 @@ func TestFileManagerService_ClearCache(t *testing.T) {
 		},
 	}
 
-	contentsCache := map[string][]byte{
-		"file/path/test.conf": []byte("some test data"),
-	}
-
 	fileManagerService.fileActions = filesCache
-	fileManagerService.rollbackFileContents = contentsCache
 	assert.NotEmpty(t, fileManagerService.fileActions)
-	assert.NotEmpty(t, fileManagerService.rollbackFileContents)
 
 	fileManagerService.ClearCache()
 
 	assert.Empty(t, fileManagerService.fileActions)
-	assert.Empty(t, fileManagerService.rollbackFileContents)
 }
 
+//nolint:usetesting // need to use MkDirTemp instead of t.tempDir for rollback as t.tempDir does not accept a pattern
 func TestFileManagerService_Rollback(t *testing.T) {
 	ctx := context.Background()
 	tempDir := t.TempDir()
+
+	rollbackDir, err := os.MkdirTemp(tempDir, "rollback")
+	require.NoError(t, err)
+	defer os.RemoveAll(rollbackDir)
+
+	createErr := os.MkdirAll(rollbackDir+tempDir, dirPerm)
+	require.NoError(t, createErr)
 
 	deleteFilePath := filepath.Join(tempDir, "nginx_delete.conf")
 
@@ -376,6 +376,17 @@ func TestFileManagerService_Rollback(t *testing.T) {
 	manifestDirPath := tempDir
 	manifestFilePath := manifestDirPath + "/manifest.json"
 	helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
+
+	updateFileRollback, err := os.Create(rollbackDir + updateFile.Name())
+	require.NoError(t, err)
+	_, writeErr = updateFileRollback.Write(oldFileContent)
+	require.NoError(t, writeErr)
+	t.Logf("file %s", updateFileRollback.Name())
+
+	deleteFileRollback, err := os.Create(rollbackDir + deleteFilePath)
+	require.NoError(t, err)
+	_, writeErr = deleteFileRollback.Write(oldFileContent)
+	require.NoError(t, writeErr)
 
 	filesCache := map[string]*model.FileCache{
 		addFile.Name(): {
@@ -430,20 +441,17 @@ func TestFileManagerService_Rollback(t *testing.T) {
 			},
 		},
 	}
-	fileContentCache := map[string][]byte{
-		deleteFilePath:    oldFileContent,
-		updateFile.Name(): oldFileContent,
-	}
 
 	instanceID := protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
-	fileManagerService.rollbackFileContents = fileContentCache
 	fileManagerService.fileActions = filesCache
 	fileManagerService.agentConfig.LibDir = manifestDirPath
+	fileManagerService.rollbackTempDir = rollbackDir
 	fileManagerService.manifestFilePath = manifestFilePath
 
-	err := fileManagerService.Rollback(ctx, instanceID)
+	slog.Info("name", "", updateFile.Name())
+	err = fileManagerService.Rollback(ctx, instanceID)
 	require.NoError(t, err)
 
 	assert.NoFileExists(t, addFile.Name())
@@ -556,10 +564,6 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 					Action: model.Add,
 				},
 			},
-			expectedContent: map[string][]byte{
-				deleteTestFile.Name(): fileContent,
-				updateTestFile.Name(): updatedFileContent,
-			},
 			expectedError: nil,
 		},
 		{
@@ -592,9 +596,8 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 					FileMeta: protos.FileMeta(addTestFile.Name(), files.GenerateHash(fileContent)),
 				},
 			},
-			expectedCache:   make(map[string]*model.FileCache),
-			expectedContent: make(map[string][]byte),
-			expectedError:   nil,
+			expectedCache: make(map[string]*model.FileCache),
+			expectedError: nil,
 		},
 		{
 			name:          "Test 3: File being deleted already doesn't exist",
@@ -604,9 +607,8 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 					FileMeta: protos.FileMeta("/unknown/file.conf", files.GenerateHash(fileContent)),
 				},
 			},
-			expectedCache:   make(map[string]*model.FileCache),
-			expectedContent: make(map[string][]byte),
-			expectedError:   nil,
+			expectedCache: make(map[string]*model.FileCache),
+			expectedError: nil,
 		},
 	}
 
@@ -625,13 +627,12 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 
 			require.NoError(tt, err)
 
-			diff, contents, fileActionErr := fileManagerService.DetermineFileActions(
+			diff, fileActionErr := fileManagerService.DetermineFileActions(
 				ctx,
 				test.currentFiles,
 				test.modifiedFiles,
 			)
 			require.NoError(tt, fileActionErr)
-			assert.Equal(tt, test.expectedContent, contents)
 			assert.Equal(tt, test.expectedCache, diff)
 		})
 	}
@@ -1020,14 +1021,14 @@ func TestFileManagerService_createTempConfigDirectory(t *testing.T) {
 		agentConfig: agentConfig,
 	}
 
-	dir, err := fileManagerService.createTempConfigDirectory(t.Context())
+	dir, err := fileManagerService.createTempConfigDirectory("config")
 	assert.NotEmpty(t, dir)
 	require.NoError(t, err)
 
 	// Test for unknown directory path
 	agentConfig.LibDir = "/unknown/"
 
-	dir, err = fileManagerService.createTempConfigDirectory(t.Context())
+	dir, err = fileManagerService.createTempConfigDirectory("config")
 	assert.Empty(t, dir)
 	require.Error(t, err)
 }

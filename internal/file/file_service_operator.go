@@ -284,11 +284,6 @@ func (fso *FileServiceOperator) MoveFilesFromTempDirectory(
 	slog.DebugContext(ctx, "Updating file", "file", fileName)
 	tempFilePath := filepath.Join(tempDir, fileName)
 
-	// Create parent directories for the target file if they don't exist
-	if err := os.MkdirAll(filepath.Dir(fileName), dirPerm); err != nil {
-		return fmt.Errorf("failed to create directories for %s: %w", fileName, err)
-	}
-
 	moveErr := fso.fileOperator.MoveFile(ctx, tempFilePath, fileName)
 	if moveErr != nil {
 		return fmt.Errorf("failed to move file: %w", moveErr)
