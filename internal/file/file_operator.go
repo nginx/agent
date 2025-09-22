@@ -18,8 +18,6 @@ import (
 	"path"
 	"sync"
 
-	"github.com/nginx/agent/v3/internal/config"
-
 	"github.com/nginx/agent/v3/internal/model"
 
 	"google.golang.org/grpc"
@@ -28,6 +26,10 @@ import (
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )
+
+var execCommandContext = exec.CommandContext
+
+const bufferSize = 4096
 
 // Helper struct to unmarshal the JSON error from stderr.
 type helperError struct {
@@ -194,126 +196,90 @@ func (fo *FileOperator) WriteManifestFile(updatedFiles map[string]*model.Manifes
 	return writeError
 }
 
-// Executes the external helper script to download a file using URL.
 func (fo *FileOperator) runHelper(
 	ctx context.Context,
 	helperPath string,
 	url string,
 	maxBytes int64,
-	tlsConfig *config.TLSConfig,
-) (string, error) {
-	args := []string{}
+) (tmpFilePath string, err error) {
+	args := []string{"--url", url}
+	cmd := execCommandContext(ctx, helperPath, args...)
 
-	// Add TLS arguments if configured in nginx-config.
-	if tlsConfig != nil {
-		if tlsConfig.SkipVerify {
-			args = append(args, "--skip-verify")
-		}
-		if tlsConfig.Ca != "" {
-			args = append(args, "--ca", tlsConfig.Ca)
-		}
-		if tlsConfig.ServerName != "" {
-			args = append(args, "--server-name", tlsConfig.ServerName)
-		}
+	tmpFile, createErr := os.CreateTemp("", "external-file-*.tmp")
+	if createErr != nil {
+		return "", fmt.Errorf("failed to create temp file: %w", createErr)
 	}
+	tmpFilePath = tmpFile.Name()
+	defer tmpFile.Close()
 
-	// Adding the arguments in the command while calling helper script.
-	args = append(args, "--url", url)
-
-	cmd := exec.CommandContext(ctx, helperPath, args...)
-
-	// Create a temporary file to store the downloaded content.
-	tmpFile, err := os.CreateTemp("", "external-file-*.tmp")
-	if err != nil {
-		return "", fmt.Errorf("failed to create temp file: %w", err)
-	}
-	// Use a variable to track if the file needs to be removed. Set it to true by default for error cases.
-	removeTmpFile := true
 	defer func() {
-		if removeTmpFile {
-			os.Remove(tmpFile.Name())
+		if err != nil {
+			os.Remove(tmpFilePath)
 		}
 	}()
-	defer tmpFile.Close() // Closing the file handle.
 
-	// Set up stdout to stream the output from the helper.
-	stdoutPipe, err := cmd.StdoutPipe()
-	if err != nil {
-		return "", fmt.Errorf("failed to create stdout pipe: %w", err)
+	stdoutPipe, pipeErr := cmd.StdoutPipe()
+	if pipeErr != nil {
+		return "", fmt.Errorf("failed to create stdout pipe: %w", pipeErr)
 	}
 
-	// Set up stderr to capture error messages from the helper script if any.
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 
-	// Execute the command using the helper Script and the URL.
-	if err := cmd.Start(); err != nil {
-		return "", fmt.Errorf("failed to start helper process: %w", err)
+	if startErr := cmd.Start(); startErr != nil {
+		return "", fmt.Errorf("failed to start helper process: %w", startErr)
 	}
 
-	// Read from stdout in chunks and check the size on the fly.
-	var totalBytesRead int64
-	reader := bufio.NewReader(stdoutPipe)
-	chunk := make([]byte, 4096) // Read in 4KB chunks.
+	streamErr := fo.streamProcessOutput(stdoutPipe, tmpFile, maxBytes)
+
+	waitErr := cmd.Wait()
+
+	if streamErr != nil {
+		return "", streamErr
+	}
+
+	if waitErr != nil {
+		var errObj helperError
+		if json.Unmarshal(stderr.Bytes(), &errObj) == nil {
+			return "", fmt.Errorf("helper process failed with error '%s' and message '%s'",
+				errObj.Error, errObj.Message)
+		}
+
+		return "", fmt.Errorf("helper process failed with exit code %d, stderr: %s",
+			cmd.ProcessState.ExitCode(), stderr.String())
+	}
+
+	return tmpFilePath, nil
+}
+
+func (fo *FileOperator) streamProcessOutput(stdout io.Reader, destFile io.Writer, maxBytes int64) error {
+	totalBytesRead := int64(0)
+	reader := bufio.NewReader(stdout)
+	chunk := make([]byte, bufferSize)
 
 	for {
 		n, readErr := reader.Read(chunk)
-		if n > 0 {
-			totalBytesRead += int64(n)
-			// Check if the total downloaded size exceeds the maximum allowed.
-			if totalBytesRead > maxBytes {
-				// Kill the helper process to stop further downloads if the file exceeds the limit.
-				if killErr := cmd.Process.Kill(); killErr != nil {
-					slog.WarnContext(ctx, "Failed to kill helper process after exceeding maxBytes", "error", killErr)
-				}
-				// Clean up the partially downloaded temp file.
-				os.Remove(tmpFile.Name())
 
-				return "", fmt.Errorf("downloaded file size (%d bytes) exceeds the maximum allowed size of %d bytes",
-					totalBytesRead, maxBytes)
-			}
-			// Write the chunk to the temporary file.
-			if _, writeErr := tmpFile.Write(chunk[:n]); writeErr != nil {
-				if killErr := cmd.Process.Kill(); killErr != nil {
-					slog.WarnContext(ctx, "Failed to kill helper process after write error", "error", killErr)
-				}
-				os.Remove(tmpFile.Name())
-
-				return "", fmt.Errorf("error writing to temp file: %w", writeErr)
-			}
-		}
-		// Handle read errors.
 		if readErr != nil {
 			if readErr == io.EOF {
-				break // End of file, download complete.
+				return nil
 			}
-			// If there's another read error, kill the process and clean up.
-			if killErr := cmd.Process.Kill(); killErr != nil {
-				slog.WarnContext(ctx, "Failed to kill helper process after read error", "error", killErr)
-			}
-			os.Remove(tmpFile.Name())
 
-			return "", fmt.Errorf("error reading from helper stdout: %w", readErr)
+			return fmt.Errorf("error reading from helper stdout: %w", readErr)
+		}
+
+		if n == 0 {
+			continue
+		}
+
+		totalBytesRead += int64(n)
+		if totalBytesRead > maxBytes {
+			return fmt.Errorf("downloaded file size (%d bytes) exceeds the maximum allowed size of %d bytes",
+				totalBytesRead, maxBytes)
+		}
+
+		if _, writeErr := destFile.Write(chunk[:n]); writeErr != nil {
+			return fmt.Errorf("error writing to temp file: %w", writeErr)
 		}
 	}
-
-	// Wait for the helper process to finish.
-	if err := cmd.Wait(); err != nil {
-		// Clean up if the helper process exited with an error.
-		os.Remove(tmpFile.Name())
-		// Parse stderr for structured error messages.
-		var errObj helperError
-		if unmarshalErr := json.Unmarshal(stderr.Bytes(), &errObj); unmarshalErr != nil {
-			// If JSON parsing fails, return the raw stderr.
-			return "", fmt.Errorf("helper process failed with exit code %d, stderr: %s", cmd.ProcessState.ExitCode(),
-				stderr.String())
-		}
-		// Return a formatted error from the parsed JSON object.
-		return "", fmt.Errorf("helper process failed with error '%s' and message '%s'", errObj.Error, errObj.Message)
-	}
-
-	// If successful, set removeTmpFile to false so the deferred cleanup doesn't remove it,
-	removeTmpFile = false
-	// If successful, return the path to the temporary file.
-	return tmpFile.Name(), nil
 }

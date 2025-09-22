@@ -82,6 +82,22 @@ type FakeFileOperator struct {
 	writeManifestFileReturnsOnCall map[int]struct {
 		result1 error
 	}
+	runHelperStub        func(context.Context, string, string, int64) (string, error)
+	runHelperMutex       sync.RWMutex
+	runHelperArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 int64
+	}
+	runHelperReturns struct {
+		result1 string
+		result2 error
+	}
+	runHelperReturnsOnCall map[int]struct {
+		result1 string
+		result2 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -411,6 +427,73 @@ func (fake *FakeFileOperator) WriteManifestFileReturnsOnCall(i int, result1 erro
 	}{result1}
 }
 
+func (fake *FakeFileOperator) runHelper(arg1 context.Context, arg2 string, arg3 string, arg4 int64) (string, error) {
+	fake.runHelperMutex.Lock()
+	ret, specificReturn := fake.runHelperReturnsOnCall[len(fake.runHelperArgsForCall)]
+	fake.runHelperArgsForCall = append(fake.runHelperArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+		arg4 int64
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.runHelperStub
+	fakeReturns := fake.runHelperReturns
+	fake.recordInvocation("runHelper", []interface{}{arg1, arg2, arg3, arg4})
+	fake.runHelperMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3, arg4)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeFileOperator) RunHelperCallCount() int {
+	fake.runHelperMutex.RLock()
+	defer fake.runHelperMutex.RUnlock()
+	return len(fake.runHelperArgsForCall)
+}
+
+func (fake *FakeFileOperator) RunHelperCalls(stub func(context.Context, string, string, int64) (string, error)) {
+	fake.runHelperMutex.Lock()
+	defer fake.runHelperMutex.Unlock()
+	fake.runHelperStub = stub
+}
+
+func (fake *FakeFileOperator) RunHelperArgsForCall(i int) (context.Context, string, string, int64) {
+	fake.runHelperMutex.RLock()
+	defer fake.runHelperMutex.RUnlock()
+	argsForCall := fake.runHelperArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *FakeFileOperator) RunHelperReturns(result1 string, result2 error) {
+	fake.runHelperMutex.Lock()
+	defer fake.runHelperMutex.Unlock()
+	fake.runHelperStub = nil
+	fake.runHelperReturns = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeFileOperator) RunHelperReturnsOnCall(i int, result1 string, result2 error) {
+	fake.runHelperMutex.Lock()
+	defer fake.runHelperMutex.Unlock()
+	fake.runHelperStub = nil
+	if fake.runHelperReturnsOnCall == nil {
+		fake.runHelperReturnsOnCall = make(map[int]struct {
+			result1 string
+			result2 error
+		})
+	}
+	fake.runHelperReturnsOnCall[i] = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeFileOperator) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -424,6 +507,8 @@ func (fake *FakeFileOperator) Invocations() map[string][][]interface{} {
 	defer fake.writeChunkedFileMutex.RUnlock()
 	fake.writeManifestFileMutex.RLock()
 	defer fake.writeManifestFileMutex.RUnlock()
+	fake.runHelperMutex.RLock()
+	defer fake.runHelperMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

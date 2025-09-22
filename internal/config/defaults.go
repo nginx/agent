@@ -112,12 +112,9 @@ const (
 	// File defaults
 	DefManifestDir = "/var/lib/nginx-agent"
 
-	DefExternalDataSourceMode          = ""
-	DefExternalDataSourceHelperPath    = ""
-	DefExternalDataSourceMaxBytes      = 100 * 1024 * 1024
-	DefExternalDataSourceTLSCa         = ""
-	DefExternalDataSourceTLSSkipVerify = false
-	DefExternalDataSourceTLSServerName = ""
+	DefExternalDataSourceMode       = ""
+	DefExternalDataSourceHelperPath = ""
+	DefExternalDataSourceMaxBytes   = 100 * 1024 * 1024
 )
 
 func DefaultFeatures() []string {

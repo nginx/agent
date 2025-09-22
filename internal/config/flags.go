@@ -139,15 +139,11 @@ var (
 	FileWatcherMonitoringFrequencyKey = pre(FileWatcherKey) + "monitoring_frequency"
 	NginxExcludeFilesKey              = pre(FileWatcherKey) + "exclude_files"
 
-	ExternalDataSourceModeKey          = pre(ExternalDataSourceRootKey) + "mode"
-	ExternalDataSourceHelperKey        = pre(ExternalDataSourceRootKey) + "helper"
-	ExternalDataSourceHelperPathKey    = pre(ExternalDataSourceRootKey) + "helper_path"
-	ExternalDataSourceMaxBytesKey      = pre(ExternalDataSourceRootKey) + "max_bytes"
-	ExternalDataSourceAllowDomainsKey  = pre(ExternalDataSourceRootKey) + "allowed_domains"
-	ExternalDataSourceTLSKey           = pre(ExternalDataSourceRootKey) + "tls"
-	ExternalDataSourceTLSSkipVerifyKey = pre(ExternalDataSourceRootKey) + "tls_skip_verify"
-	ExternalDataSourceTLSCaKey         = pre(ExternalDataSourceRootKey) + "tls_ca"
-	ExternalDataSourceTLSServerNameKey = pre(ExternalDataSourceRootKey) + "tls_server_name"
+	ExternalDataSourceModeKey         = pre(ExternalDataSourceRootKey) + "mode"
+	ExternalDataSourceHelperKey       = pre(ExternalDataSourceRootKey) + "helper"
+	ExternalDataSourceHelperPathKey   = pre(ExternalDataSourceRootKey) + "helper_path"
+	ExternalDataSourceMaxBytesKey     = pre(ExternalDataSourceRootKey) + "max_bytes"
+	ExternalDataSourceAllowDomainsKey = pre(ExternalDataSourceRootKey) + "allowed_domains"
 )
 
 func pre(prefixes ...string) string {

@@ -1329,13 +1329,6 @@ func createConfig() *Config {
 				AllowedDomains: nil,
 			},
 			MaxBytes: 0,
-			TLS: &TLSConfig{
-				Cert:       "",
-				Key:        "",
-				Ca:         "",
-				ServerName: "",
-				SkipVerify: false,
-			},
 		},
 	}
 }

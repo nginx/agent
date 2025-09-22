@@ -464,21 +464,6 @@ func registerExternalDataSourceFlags(fs *flag.FlagSet) {
 		DefExternalDataSourceMaxBytes,
 		"Maximum size in bytes for external data sources.",
 	)
-	fs.String(
-		ExternalDataSourceTLSCaKey,
-		DefExternalDataSourceTLSCa,
-		"Path to the CA certificate for TLS verification of external data sources.",
-	)
-	fs.Bool(
-		ExternalDataSourceTLSSkipVerifyKey,
-		DefExternalDataSourceTLSSkipVerify,
-		"Skip TLS verification for external data sources.",
-	)
-	fs.String(
-		ExternalDataSourceTLSServerNameKey,
-		DefExternalDataSourceTLSServerName,
-		"Server name for TLS verification of external data sources.",
-	)
 }
 
 func registerDataPlaneFlags(fs *flag.FlagSet) {
@@ -1522,47 +1507,9 @@ func resolveExternalDataSource() *ExternalDataSource {
 		MaxBytes: viperInstance.GetInt64(ExternalDataSourceMaxBytesKey),
 	}
 
-	externalDataSource.TLS = &TLSConfig{
-		SkipVerify: viperInstance.GetBool(ExternalDataSourceTLSSkipVerifyKey),
-		Ca:         viperInstance.GetString(ExternalDataSourceTLSCaKey),
-		ServerName: viperInstance.GetString(ExternalDataSourceTLSServerNameKey),
-	}
-
 	externalDataSource.Helper = &HelperConfig{
 		Path:           viperInstance.GetString(ExternalDataSourceHelperPathKey),
 		AllowedDomains: viperInstance.GetStringSlice(ExternalDataSourceAllowDomainsKey),
-	}
-
-	// Validation
-	if externalDataSource.Mode == "helper" && externalDataSource.Helper.Path == "" {
-		slog.Error("external data source helper path is required when mode is 'helper'")
-		return nil
-	}
-
-	// Check if helper path is in allowed directories if mode is 'helper'
-	if externalDataSource.Mode == "helper" {
-		allowed, err := isAllowedDir(externalDataSource.Helper.Path, externalDataSource.Helper.AllowedDomains)
-		if err != nil {
-			slog.Error("error checking allowed directory for helper path ", "external_datasource_path",
-				externalDataSource.Helper.Path)
-			return nil
-		}
-		if !allowed {
-			slog.Error("external_data_source.helper.path is not in allowed directories", "external_datasource_path",
-				externalDataSource.Helper.Path)
-			return nil
-		}
-	}
-
-	// Validate domains
-	if len(externalDataSource.Helper.AllowedDomains) > 0 {
-		for _, domain := range externalDataSource.Helper.AllowedDomains {
-			// Basic validation: check if it's a valid domain format. More robust validation might be needed.
-			if strings.ContainsAny(domain, "/\\ ") || domain == "" {
-				slog.Error("domain is not specified in allowed_domains")
-				return nil
-			}
-		}
 	}
 
 	return externalDataSource

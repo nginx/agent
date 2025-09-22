@@ -354,7 +354,6 @@ type (
 
 	ExternalDataSource struct {
 		Helper   *HelperConfig `yaml:"helper"    mapstructure:"helper"`
-		TLS      *TLSConfig    `yaml:"tls"       mapstructure:"tls"`
 		Mode     string        `yaml:"mode"      mapstructure:"mode"`
 		MaxBytes int64         `yaml:"max_bytes" mapstructure:"max_bytes"`
 	}
@@ -490,6 +489,25 @@ func (c *Config) IsCommandServerProxyConfigured() bool {
 	}
 
 	return c.Command.Server.Proxy.URL != ""
+}
+
+func (c *Config) IsDomainAllowed(hostname string) bool {
+	allowedDomains := c.ExternalDataSource.Helper.AllowedDomains
+
+	for _, allowed := range allowedDomains {
+		// Handle wildcard domains like "*.vault.azure.com"
+		if strings.HasPrefix(allowed, "*.") {
+			suffix := strings.TrimPrefix(allowed, "*")
+			if strings.HasSuffix(hostname, suffix) {
+				return true
+			}
+		} else if hostname == allowed {
+			// Handle exact matches
+			return true
+		}
+	}
+
+	return false
 }
 
 // isAllowedDir checks if the given path is in the list of allowed directories.

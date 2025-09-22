@@ -12,7 +12,10 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/url"
 	"os"
+	"path/filepath"
+	"strconv"
 	"sync"
 
 	"google.golang.org/grpc"
@@ -54,7 +57,12 @@ type (
 		) (mpi.FileDataChunk_Content, error)
 		WriteManifestFile(updatedFiles map[string]*model.ManifestFile,
 			manifestDir, manifestPath string) (writeError error)
-		runHelper(ctx context.Context, helperPath string, url string, maxBytes int64, tlsConfig *config.TLSConfig) (string, error)
+		runHelper(
+			ctx context.Context,
+			helperPath string,
+			fileUrl string,
+			maxBytes int64,
+		) (string, error)
 	}
 
 	fileServiceOperatorInterface interface {
@@ -143,9 +151,17 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 		return model.Error, allowedErr
 	}
 
-	if err := fms.downloadExternalFiles(ctx, fileOverview.GetFiles()); err != nil {
-		// If any download fails, we return an error and stop the config apply process.
-		return model.Error, err
+	isExternalFileReferenced := fms.isExternalFilePresent(fileOverview.GetFiles())
+
+	if isExternalFileReferenced {
+		helperAllowedErr := fms.checkHelperDirectory()
+		if helperAllowedErr != nil {
+			return model.Error, helperAllowedErr
+		}
+
+		if extern_file_err := fms.downloadExternalFiles(ctx, fileOverview.GetFiles()); extern_file_err != nil {
+			return model.Error, extern_file_err
+		}
 	}
 
 	diffFiles, fileContent, compareErr := fms.DetermineFileActions(
@@ -158,7 +174,7 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 		return model.Error, compareErr
 	}
 
-	if len(diffFiles) == 0 {
+	if len(diffFiles) == 0 && !isExternalFileReferenced {
 		return model.NoChange, nil
 	}
 
@@ -497,6 +513,29 @@ func (fms *FileManagerService) checkAllowedDirectory(checkFiles []*mpi.File) err
 	return nil
 }
 
+func (fms *FileManagerService) isExternalFilePresent(checkFiles []*mpi.File) bool {
+	for _, file := range checkFiles {
+		if file.GetExternalDataSource() != nil && file.GetExternalDataSource().GetLocation() != "" {
+			slog.Debug("External file source is present in file overview",
+				"location", file.GetExternalDataSource().GetLocation())
+
+			return true
+		}
+	}
+
+	return false
+}
+
+func (fms *FileManagerService) checkHelperDirectory() error {
+	allowed := fms.agentConfig.IsDirectoryAllowed(fms.agentConfig.ExternalDataSource.Helper.Path)
+	if !allowed {
+		return fmt.Errorf("helper file is not present in allowed directories %s",
+			fms.agentConfig.ExternalDataSource.Helper.Path)
+	}
+
+	return nil
+}
+
 func (fms *FileManagerService) convertToManifestFileMap(
 	currentFiles map[string]*mpi.File,
 	referenced bool,
@@ -559,67 +598,82 @@ func ConvertToMapOfFileCache(convertFiles []*mpi.File) map[string]*model.FileCac
 
 // Downloads files from external URLs using the helper script.
 func (fms *FileManagerService) downloadExternalFiles(ctx context.Context, files_list []*mpi.File) error {
-	downloadedFiles := make(map[string]string) // Cache: key=location, value=local_path
+	downloadedFiles := make(map[string]string)
 
 	for _, file := range files_list {
-		if file.GetExternalDataSource() != nil {
-			location := file.GetExternalDataSource().GetLocation()
+		if file.GetExternalDataSource() == nil {
+			continue
+		}
+		location := file.GetExternalDataSource().GetLocation()
 
-			// Check if file is already in the cache for this apply operation to avoid duplication
-			if _, ok := downloadedFiles[location]; ok {
-				slog.DebugContext(ctx, "File already downloaded from external source", "location", location)
-				continue
-			}
+		if fms.agentConfig.ExternalDataSource.Mode != "helper" {
+			return fmt.Errorf("unsupported external data source mode: %s", fms.agentConfig.ExternalDataSource.Mode)
+		}
 
-			if fms.agentConfig.ExternalDataSource.Mode == "helper" {
-				// Create a temporary file to store the external file content
-				tmpFile, err := os.CreateTemp("", "external-file-*.tmp")
-				if err != nil {
-					return fmt.Errorf("failed to create temp file: %w", err)
-				}
-				defer os.Remove(tmpFile.Name()) // Clean up the temp file on function exit
+		if parsedURL, err := url.Parse(location); err != nil {
+			return fmt.Errorf("invalid URL %s: %w", location, err)
+		} else if !fms.agentConfig.IsDomainAllowed(parsedURL.Hostname()) {
+			return fmt.Errorf("domain %s is not in the allowed list", parsedURL.Hostname())
+		}
 
-				var tlsConfig *config.TLSConfig
-				if fms.agentConfig.ExternalDataSource.TLS != nil {
-					tlsConfig = &config.TLSConfig{
-						SkipVerify: fms.agentConfig.ExternalDataSource.TLS.SkipVerify,
-						Ca:         fms.agentConfig.ExternalDataSource.TLS.Ca,
-						ServerName: fms.agentConfig.ExternalDataSource.TLS.ServerName,
-					}
-				}
+		if _, ok := downloadedFiles[location]; ok {
+			slog.DebugContext(ctx, "File already downloaded from external source", "location", location)
+			continue
+		}
 
-				// Download the file using the helper function
-				tmpFilePath, err := fms.fileOperator.runHelper(
-					ctx,
-					fms.agentConfig.ExternalDataSource.Helper.Path,
-					location,
-					fms.agentConfig.ExternalDataSource.MaxBytes,
-					tlsConfig, // Pass the TLS configuration
-				)
-				if err != nil {
-					// The `runHelper` function returns a detailed error, including the JSON message.
-					return fmt.Errorf("failed to download file from %s: %w", location, err)
-				}
+		if processErr := fms.processSingleExternalFile(ctx, file, location); processErr != nil {
+			return processErr
+		}
 
-				// Read the downloaded file to get its hash and size
-				content, err := os.ReadFile(tmpFilePath)
-				if err != nil {
-					return fmt.Errorf("failed to read downloaded file from %s: %w", tmpFile.Name(), err)
-				}
+		downloadedFiles[location] = file.GetFileMeta().GetName()
+	}
 
-				// Update the file's metadata for the config apply
-				file.FileMeta.Hash = files.GenerateHash(content)
-				file.FileMeta.Size = int64(len(content))
-				file.Unmanaged = true // ISO that we do not upload this file back to the management plane
+	return nil
+}
 
-				downloadedFiles[location] = tmpFilePath
-				slog.DebugContext(ctx, "Successfully downloaded file using helper", "location", location,
-					"tmp_path", tmpFilePath)
-			} else {
-				return fmt.Errorf("unsupported external data source mode: %s", fms.agentConfig.ExternalDataSource.Mode)
-			}
+func (fms *FileManagerService) processSingleExternalFile(ctx context.Context, file *mpi.File, location string) error {
+	tmpFilePath, downloadErr := fms.fileOperator.runHelper(
+		ctx,
+		fms.agentConfig.ExternalDataSource.Helper.Path,
+		location,
+		fms.agentConfig.ExternalDataSource.MaxBytes,
+	)
+	if downloadErr != nil {
+		return fmt.Errorf("failed to download file from %s: %w", location, downloadErr)
+	}
+
+	content, readErr := os.ReadFile(tmpFilePath)
+	if readErr != nil {
+		os.Remove(tmpFilePath)
+		return fmt.Errorf("failed to read downloaded file from %s: %w", tmpFilePath, readErr)
+	}
+	os.Remove(tmpFilePath)
+
+	destPath := file.GetFileMeta().GetName()
+	destDir := filepath.Dir(destPath)
+
+	if _, statErr := os.Stat(destDir); os.IsNotExist(statErr) {
+		if mkdirErr := os.MkdirAll(destDir, os.ModePerm); mkdirErr != nil {
+			return fmt.Errorf("failed to create destination directory %s: %w", destDir, mkdirErr)
 		}
 	}
+
+	permission, parseErr := strconv.ParseUint(file.GetFileMeta().GetPermissions(), 8, 32)
+	if parseErr != nil {
+		slog.WarnContext(ctx, "failed to parse file permissions, using default 0644", "permissions",
+			file.GetFileMeta().GetPermissions())
+		permission = 0o644
+	}
+
+	if writeErr := os.WriteFile(destPath, content, os.FileMode(permission)); writeErr != nil {
+		return fmt.Errorf("failed to write content to final file %s: %w", destPath, writeErr)
+	}
+
+	file.FileMeta.Hash = files.GenerateHash(content)
+	file.FileMeta.Size = int64(len(content))
+	file.Unmanaged = true
+
+	slog.DebugContext(ctx, "Successfully downloaded file using helper", "location", location, "dest_path", destPath)
 
 	return nil
 }
