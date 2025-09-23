@@ -37,20 +37,21 @@ func parseServerType(str string) (ServerType, bool) {
 
 type (
 	Config struct {
-		Command            *Command         `yaml:"command"             mapstructure:"command"`
-		AuxiliaryCommand   *Command         `yaml:"auxiliary_command"   mapstructure:"auxiliary_command"`
-		Log                *Log             `yaml:"log"                 mapstructure:"log"`
-		DataPlaneConfig    *DataPlaneConfig `yaml:"data_plane_config"   mapstructure:"data_plane_config"`
-		Client             *Client          `yaml:"client"              mapstructure:"client"`
-		Collector          *Collector       `yaml:"collector"           mapstructure:"collector"`
-		Watchers           *Watchers        `yaml:"watchers"            mapstructure:"watchers"`
-		Labels             map[string]any   `yaml:"labels"              mapstructure:"labels"`
-		Version            string           `yaml:"-"`
-		Path               string           `yaml:"-"`
-		UUID               string           `yaml:"-"`
-		LibDir             string           `yaml:"-"`
-		AllowedDirectories []string         `yaml:"allowed_directories" mapstructure:"allowed_directories"`
-		Features           []string         `yaml:"features"            mapstructure:"features"`
+		Command            *Command            `yaml:"command"              mapstructure:"command"`
+		AuxiliaryCommand   *Command            `yaml:"auxiliary_command"    mapstructure:"auxiliary_command"`
+		ExternalDataSource *ExternalDataSource `yaml:"external_data_source" mapstructure:"external_data_source"`
+		Log                *Log                `yaml:"log"                  mapstructure:"log"`
+		DataPlaneConfig    *DataPlaneConfig    `yaml:"data_plane_config"    mapstructure:"data_plane_config"`
+		Client             *Client             `yaml:"client"               mapstructure:"client"`
+		Collector          *Collector          `yaml:"collector"            mapstructure:"collector"`
+		Watchers           *Watchers           `yaml:"watchers"             mapstructure:"watchers"`
+		Labels             map[string]any      `yaml:"labels"               mapstructure:"labels"`
+		Version            string              `yaml:"-"`
+		Path               string              `yaml:"-"`
+		UUID               string              `yaml:"-"`
+		LibDir             string              `yaml:"-"`
+		AllowedDirectories []string            `yaml:"allowed_directories"  mapstructure:"allowed_directories"`
+		Features           []string            `yaml:"features"             mapstructure:"features"`
 	}
 
 	Log struct {
@@ -350,6 +351,17 @@ type (
 		Token      string        `yaml:"token,omitempty"       mapstructure:"token"`
 		Timeout    time.Duration `yaml:"timeout"               mapstructure:"timeout"`
 	}
+
+	ExternalDataSource struct {
+		Helper         *HelperConfig `yaml:"helper"          mapstructure:"helper"`
+		Mode           string        `yaml:"mode"            mapstructure:"mode"`
+		AllowedDomains []string      `yaml:"allowed_domains" mapstructure:"allowed_domains"`
+		MaxBytes       int64         `yaml:"max_bytes"       mapstructure:"max_bytes"`
+	}
+
+	HelperConfig struct {
+		Path string `yaml:"path" mapstructure:"path"`
+	}
 )
 
 func (col *Collector) Validate(allowedDirectories []string) error {
@@ -477,6 +489,25 @@ func (c *Config) IsCommandServerProxyConfigured() bool {
 	}
 
 	return c.Command.Server.Proxy.URL != ""
+}
+
+func (c *Config) IsDomainAllowed(hostname string) bool {
+	allowedDomains := c.ExternalDataSource.AllowedDomains
+
+	for _, allowed := range allowedDomains {
+		// Handle wildcard domains like "*.vault.azure.com"
+		if strings.HasPrefix(allowed, "*.") {
+			suffix := strings.TrimPrefix(allowed, "*")
+			if strings.HasSuffix(hostname, suffix) {
+				return true
+			}
+		} else if hostname == allowed {
+			// Handle exact matches
+			return true
+		}
+	}
+
+	return false
 }
 
 // isAllowedDir checks if the given path is in the list of allowed directories.

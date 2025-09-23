@@ -1322,6 +1322,14 @@ func createConfig() *Config {
 			config.FeatureCertificates, config.FeatureFileWatcher, config.FeatureMetrics,
 			config.FeatureAPIAction, config.FeatureLogsNap,
 		},
+		ExternalDataSource: &ExternalDataSource{
+			Mode:           "",
+			AllowedDomains: nil,
+			Helper: &HelperConfig{
+				Path: "",
+			},
+			MaxBytes: 0,
+		},
 	}
 }
 
