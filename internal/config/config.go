@@ -1503,13 +1503,13 @@ func areCommandServerProxyTLSSettingsSet() bool {
 
 func resolveExternalDataSource() *ExternalDataSource {
 	externalDataSource := &ExternalDataSource{
-		Mode:     viperInstance.GetString(ExternalDataSourceModeKey),
-		MaxBytes: viperInstance.GetInt64(ExternalDataSourceMaxBytesKey),
+		Mode:           viperInstance.GetString(ExternalDataSourceModeKey),
+		AllowedDomains: viperInstance.GetStringSlice(ExternalDataSourceAllowDomainsKey),
+		MaxBytes:       viperInstance.GetInt64(ExternalDataSourceMaxBytesKey),
 	}
 
 	externalDataSource.Helper = &HelperConfig{
-		Path:           viperInstance.GetString(ExternalDataSourceHelperPathKey),
-		AllowedDomains: viperInstance.GetStringSlice(ExternalDataSourceAllowDomainsKey),
+		Path: viperInstance.GetString(ExternalDataSourceHelperPathKey),
 	}
 
 	return externalDataSource

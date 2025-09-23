@@ -42,11 +42,11 @@ func setupTest(t *testing.T) (*FileManagerService, *v1fakes.FakeFileServiceClien
 		AllowedDirectories: []string{tempDir, "/tmp/local/etc/nginx"},
 		ExternalDataSource: &config.ExternalDataSource{
 			Helper: &config.HelperConfig{
-				Path:           filepath.Join(tempDir, "helperfile.txt"),
-				AllowedDomains: []string{"test.com"},
+				Path: filepath.Join(tempDir, "helperfile.txt"),
 			},
-			Mode:     "helper",
-			MaxBytes: 1000,
+			Mode:           "helper",
+			AllowedDomains: []string{"test.com"},
+			MaxBytes:       1000,
 		},
 		Client: &config.Client{
 			Grpc: &config.GRPC{

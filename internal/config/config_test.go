@@ -1323,10 +1323,10 @@ func createConfig() *Config {
 			config.FeatureAPIAction, config.FeatureLogsNap,
 		},
 		ExternalDataSource: &ExternalDataSource{
-			Mode: "",
+			Mode:           "",
+			AllowedDomains: nil,
 			Helper: &HelperConfig{
-				Path:           "",
-				AllowedDomains: nil,
+				Path: "",
 			},
 			MaxBytes: 0,
 		},

@@ -140,7 +140,6 @@ var (
 	NginxExcludeFilesKey              = pre(FileWatcherKey) + "exclude_files"
 
 	ExternalDataSourceModeKey         = pre(ExternalDataSourceRootKey) + "mode"
-	ExternalDataSourceHelperKey       = pre(ExternalDataSourceRootKey) + "helper"
 	ExternalDataSourceHelperPathKey   = pre(ExternalDataSourceRootKey) + "helper_path"
 	ExternalDataSourceMaxBytesKey     = pre(ExternalDataSourceRootKey) + "max_bytes"
 	ExternalDataSourceAllowDomainsKey = pre(ExternalDataSourceRootKey) + "allowed_domains"
