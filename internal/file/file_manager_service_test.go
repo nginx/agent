@@ -322,6 +322,130 @@ func TestFileManagerService_checkAllowedDirectory(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestFileManagerService_validateAndFixPermissions(t *testing.T) {
+	ctx := context.Background()
+	fileManagerService := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
+
+	tempDir := t.TempDir()
+	execFile := helpers.CreateFileWithErrorCheck(t, tempDir, "exec.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, execFile.Name())
+
+	normalFile := helpers.CreateFileWithErrorCheck(t, tempDir, "normal.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, normalFile.Name())
+
+	err := os.Chmod(execFile.Name(), 0o700)
+	require.NoError(t, err)
+	err = os.Chmod(normalFile.Name(), 0o600)
+	require.NoError(t, err)
+
+	fileList := []*mpi.File{
+		{
+			FileMeta: &mpi.FileMeta{
+				Name:        execFile.Name(),
+				Permissions: "0700",
+			},
+		},
+		{
+			FileMeta: &mpi.FileMeta{
+				Name:        normalFile.Name(),
+				Permissions: "0600",
+			},
+		},
+	}
+
+	err = fileManagerService.validateAndFixPermissions(ctx, fileList)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "reset execute permissions for files")
+	assert.Contains(t, err.Error(), execFile.Name())
+
+	info, err := os.Stat(execFile.Name())
+	require.NoError(t, err)
+	assert.Equal(t, os.FileMode(0o644), info.Mode().Perm())
+
+	info, err = os.Stat(normalFile.Name())
+	require.NoError(t, err)
+	assert.Equal(t, os.FileMode(0o600), info.Mode().Perm())
+}
+
+func TestFileManagerService_checkFilePermissions(t *testing.T) {
+	fileManagerService := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
+
+	tests := []struct {
+		name        string
+		permissions string
+		errorMsg    string
+		expectError bool
+	}{
+		{
+			name:        "File with read and write permissions for owner",
+			permissions: "0600",
+			expectError: false,
+		},
+		{
+			name:        "File with read permissions for all",
+			permissions: "0444",
+			expectError: false,
+		},
+		{
+			name:        "File with read/write and execute permissions for owner",
+			permissions: "0700",
+			expectError: true,
+			errorMsg:    "has execute permissions",
+		},
+		{
+			name:        "File with execute permission for all",
+			permissions: "0777",
+			expectError: true,
+			errorMsg:    "has execute permissions",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			file := &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name:        "test.conf",
+					Permissions: test.permissions,
+				},
+			}
+
+			err := fileManagerService.checkFilePermissions(file)
+
+			if test.expectError {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), test.errorMsg)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestFileManagerService_resetFilePermissions(t *testing.T) {
+	fileManagerService := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
+
+	tempDir := t.TempDir()
+	tempFile := helpers.CreateFileWithErrorCheck(t, tempDir, "test.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, tempFile.Name())
+
+	err := os.Chmod(tempFile.Name(), 0o700)
+	require.NoError(t, err)
+
+	file := &mpi.File{
+		FileMeta: &mpi.FileMeta{
+			Name: tempFile.Name(),
+		},
+	}
+
+	err = fileManagerService.resetFilePermissions(file)
+	require.NoError(t, err)
+
+	info, err := os.Stat(tempFile.Name())
+	require.NoError(t, err)
+	assert.Equal(t, os.FileMode(0o644), info.Mode().Perm())
+}
+
 func TestFileManagerService_ClearCache(t *testing.T) {
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
