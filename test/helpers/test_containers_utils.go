@@ -11,7 +11,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/build"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -76,7 +76,7 @@ func StartContainer(
 				"IMAGE_PATH":                     ToPtr(imagePath),
 				"TAG":                            ToPtr(tag),
 			},
-			BuildOptionsModifier: func(buildOptions *types.ImageBuildOptions) {
+			BuildOptionsModifier: func(buildOptions *build.ImageBuildOptions) {
 				buildOptions.Target = buildTarget
 			},
 		},
@@ -154,7 +154,7 @@ func StartAgentlessContainer(
 				"IMAGE_PATH":                     ToPtr(imagePath),
 				"TAG":                            ToPtr(tag),
 			},
-			BuildOptionsModifier: func(buildOptions *types.ImageBuildOptions) {
+			BuildOptionsModifier: func(buildOptions *build.ImageBuildOptions) {
 				buildOptions.Target = "install-nginx"
 			},
 		},
@@ -215,7 +215,7 @@ func StartNginxLessContainer(
 				"IMAGE_PATH":                     ToPtr(imagePath),
 				"TAG":                            ToPtr(tag),
 			},
-			BuildOptionsModifier: func(buildOptions *types.ImageBuildOptions) {
+			BuildOptionsModifier: func(buildOptions *build.ImageBuildOptions) {
 				buildOptions.Target = buildTarget
 			},
 		},

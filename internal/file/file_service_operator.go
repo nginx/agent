@@ -14,6 +14,7 @@ import (
 	"maps"
 	"math"
 	"os"
+	"path/filepath"
 	"slices"
 	"sync"
 	"sync/atomic"
@@ -31,8 +32,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// File service operator handles requests to the grpc file service
-
+// FileServiceOperator handles requests to the grpc file service
 type FileServiceOperator struct {
 	fileServiceClient mpi.FileServiceClient
 	agentConfig       *config.Config
@@ -69,8 +69,10 @@ func (fso *FileServiceOperator) IsConnected() bool {
 	return fso.isConnected.Load()
 }
 
-func (fso *FileServiceOperator) File(ctx context.Context, file *mpi.File,
-	fileActions map[string]*model.FileCache,
+func (fso *FileServiceOperator) File(
+	ctx context.Context,
+	file *mpi.File,
+	tempFilePath, expectedHash string,
 ) error {
 	slog.DebugContext(ctx, "Getting file", "file", file.GetFileMeta().GetName())
 
@@ -97,12 +99,16 @@ func (fso *FileServiceOperator) File(ctx context.Context, file *mpi.File,
 		return fmt.Errorf("error getting file data for %s: %w", file.GetFileMeta(), getFileErr)
 	}
 
-	if writeErr := fso.fileOperator.Write(ctx, getFileResp.GetContents().GetContents(),
-		file.GetFileMeta()); writeErr != nil {
+	if writeErr := fso.fileOperator.Write(
+		ctx,
+		getFileResp.GetContents().GetContents(),
+		tempFilePath,
+		file.GetFileMeta().GetPermissions(),
+	); writeErr != nil {
 		return writeErr
 	}
 
-	return fso.validateFileHash(file.GetFileMeta().GetName(), fileActions)
+	return fso.validateFileHash(tempFilePath, expectedHash)
 }
 
 func (fso *FileServiceOperator) UpdateOverview(
@@ -215,7 +221,9 @@ func (fso *FileServiceOperator) UpdateOverview(
 	return err
 }
 
-func (fso *FileServiceOperator) ChunkedFile(ctx context.Context, file *mpi.File) error {
+func (fso *FileServiceOperator) ChunkedFile(
+	ctx context.Context, file *mpi.File, tempFilePath, expectedHash string,
+) error {
 	slog.DebugContext(ctx, "Getting chunked file", "file", file.GetFileMeta().GetName())
 
 	stream, err := fso.fileServiceClient.GetFileStream(ctx, &mpi.GetFileRequest{
@@ -240,12 +248,14 @@ func (fso *FileServiceOperator) ChunkedFile(ctx context.Context, file *mpi.File)
 
 	header := headerChunk.GetHeader()
 
-	writeChunkedFileError := fso.fileOperator.WriteChunkedFile(ctx, file, header, stream)
+	writeChunkedFileError := fso.fileOperator.WriteChunkedFile(
+		ctx, tempFilePath, file.GetFileMeta().GetPermissions(), header, stream,
+	)
 	if writeChunkedFileError != nil {
 		return writeChunkedFileError
 	}
 
-	return nil
+	return fso.validateFileHash(tempFilePath, expectedHash)
 }
 
 func (fso *FileServiceOperator) UpdateFile(
@@ -267,15 +277,47 @@ func (fso *FileServiceOperator) UpdateFile(
 	return fso.sendUpdateFileStream(ctx, fileToUpdate, fso.agentConfig.Client.Grpc.FileChunkSize)
 }
 
-func (fso *FileServiceOperator) validateFileHash(filePath string, fileActions map[string]*model.FileCache) error {
+func (fso *FileServiceOperator) MoveFilesFromTempDirectory(
+	ctx context.Context, fileAction *model.FileCache, tempDir string,
+) error {
+	fileName := fileAction.File.GetFileMeta().GetName()
+	slog.DebugContext(ctx, "Updating file", "file", fileName)
+	tempFilePath := filepath.Join(tempDir, fileName)
+
+	// Create parent directories for the target file if they don't exist
+	if err := os.MkdirAll(filepath.Dir(fileName), dirPerm); err != nil {
+		return fmt.Errorf("failed to create directories for %s: %w", fileName, err)
+	}
+
+	moveErr := fso.fileOperator.MoveFile(ctx, tempFilePath, fileName)
+	if moveErr != nil {
+		return fmt.Errorf("failed to move file: %w", moveErr)
+	}
+
+	if removeError := os.Remove(tempFilePath); removeError != nil && !os.IsNotExist(removeError) {
+		slog.ErrorContext(
+			ctx,
+			"Error deleting temp file",
+			"file", fileName,
+			"error", removeError,
+		)
+	}
+
+	return fso.validateFileHash(fileName, fileAction.File.GetFileMeta().GetHash())
+}
+
+func (fso *FileServiceOperator) validateFileHash(filePath, expectedHash string) error {
 	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
 	}
 	fileHash := files.GenerateHash(content)
 
-	if fileHash != fileActions[filePath].File.GetFileMeta().GetHash() {
-		return fmt.Errorf("error writing file, file hash does not match for file %s", filePath)
+	if fileHash != expectedHash {
+		return fmt.Errorf(
+			"error writing file, file hash does not match for file %s, expected hash: %s actual hash: %s",
+			filePath, fileHash, expectedHash,
+		)
 	}
 
 	return nil
