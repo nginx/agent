@@ -107,7 +107,6 @@ func TestFileOperator_MoveFile_destFileDoesNotExist(t *testing.T) {
 }
 
 func TestFileOperator_runHelper(t *testing.T) {
-	// Common setup for all subtests.
 	fo := NewFileOperator(&sync.RWMutex{})
 	ctx := context.Background()
 	tmpDir := t.TempDir()

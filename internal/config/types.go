@@ -502,7 +502,6 @@ func (c *Config) IsDomainAllowed(hostname string) bool {
 				return true
 			}
 		} else if hostname == allowed {
-			// Handle exact matches
 			return true
 		}
 	}

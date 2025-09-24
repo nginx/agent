@@ -84,8 +84,9 @@ func NewCommandService(
 
 // Adding a struct to represent the external data source.
 type ExternalDataSource struct {
-	FilePath string `json:"filePath"`
-	Location string `json:"location"`
+	FilePath    string `json:"filePath"`
+	Location    string `json:"location"`
+	Permissions string `json:"permissions"`
 }
 
 // Adding a struct for the request body of the config apply endpoint.
@@ -574,10 +575,15 @@ func processConfigApplyRequestBody(c *gin.Context, initialFiles []*mpi.File) ([]
 			file.ExternalDataSource = &mpi.ExternalDataSource{
 				Location: ed.Location,
 			}
+			if file.GetFileMeta() == nil {
+				file.FileMeta = &mpi.FileMeta{}
+			}
+			file.FileMeta.Permissions = ed.Permissions
 		} else {
 			newFile := &mpi.File{
 				FileMeta: &mpi.FileMeta{
-					Name: ed.FilePath,
+					Name:        ed.FilePath,
+					Permissions: ed.Permissions,
 				},
 				ExternalDataSource: &mpi.ExternalDataSource{
 					Location: ed.Location,
