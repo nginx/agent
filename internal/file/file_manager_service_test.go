@@ -13,6 +13,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"testing"
 
@@ -335,7 +336,7 @@ func TestFileManagerService_validateAndFixPermissions(t *testing.T) {
 
 	err := os.Chmod(execFile.Name(), 0o700)
 	require.NoError(t, err)
-	err = os.Chmod(normalFile.Name(), 0o600)
+	err = os.Chmod(normalFile.Name(), 0o620)
 	require.NoError(t, err)
 
 	fileList := []*mpi.File{
@@ -348,7 +349,7 @@ func TestFileManagerService_validateAndFixPermissions(t *testing.T) {
 		{
 			FileMeta: &mpi.FileMeta{
 				Name:        normalFile.Name(),
-				Permissions: "0600",
+				Permissions: "0620",
 			},
 		},
 	}
@@ -361,11 +362,11 @@ func TestFileManagerService_validateAndFixPermissions(t *testing.T) {
 
 	info, err := os.Stat(execFile.Name())
 	require.NoError(t, err)
-	assert.Equal(t, os.FileMode(0o644), info.Mode().Perm())
+	assert.Equal(t, os.FileMode(0o600), info.Mode().Perm())
 
 	info, err = os.Stat(normalFile.Name())
 	require.NoError(t, err)
-	assert.Equal(t, os.FileMode(0o600), info.Mode().Perm())
+	assert.Equal(t, os.FileMode(0o620), info.Mode().Perm())
 }
 
 func TestFileManagerService_checkFilePermissions(t *testing.T) {
@@ -383,21 +384,16 @@ func TestFileManagerService_checkFilePermissions(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name:        "File with read permissions for all",
-			permissions: "0444",
-			expectError: false,
-		},
-		{
 			name:        "File with read/write and execute permissions for owner",
 			permissions: "0700",
 			expectError: true,
 			errorMsg:    "has execute permissions",
 		},
 		{
-			name:        "File with execute permission for all",
-			permissions: "0777",
+			name:        "File with malformed permissions",
+			permissions: "abcde",
 			expectError: true,
-			errorMsg:    "has execute permissions",
+			errorMsg:    "has malformed permissions",
 		},
 	}
 
@@ -424,26 +420,59 @@ func TestFileManagerService_checkFilePermissions(t *testing.T) {
 
 func TestFileManagerService_resetFilePermissions(t *testing.T) {
 	fileManagerService := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
-
 	tempDir := t.TempDir()
-	tempFile := helpers.CreateFileWithErrorCheck(t, tempDir, "test.conf")
-	defer helpers.RemoveFileWithErrorCheck(t, tempFile.Name())
 
-	err := os.Chmod(tempFile.Name(), 0o700)
-	require.NoError(t, err)
-
-	file := &mpi.File{
-		FileMeta: &mpi.FileMeta{
-			Name: tempFile.Name(),
+	tests := []struct {
+		name              string
+		permissions       string
+		errorMsg          string
+		expectPermissions string
+		expectError       bool
+	}{
+		{
+			name:              "File with execute permissions for owner and others",
+			permissions:       "0703",
+			expectError:       false,
+			expectPermissions: "0602",
+		},
+		{
+			name:              "File with malformed permissions",
+			permissions:       "abcde",
+			expectError:       true,
+			expectPermissions: "0600",
+			errorMsg:          "falied to parse file permissions",
 		},
 	}
 
-	err = fileManagerService.resetFilePermissions(file)
-	require.NoError(t, err)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			tempFile := helpers.CreateFileWithErrorCheck(t, tempDir, "test.conf")
+			defer helpers.RemoveFileWithErrorCheck(t, tempFile.Name())
 
-	info, err := os.Stat(tempFile.Name())
-	require.NoError(t, err)
-	assert.Equal(t, os.FileMode(0o644), info.Mode().Perm())
+			file := &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name:        tempFile.Name(),
+					Permissions: test.permissions,
+				},
+			}
+
+			parseErr := fileManagerService.resetFilePermissions(file)
+
+			info, err := os.Stat(tempFile.Name())
+			require.NoError(t, err)
+
+			actual := "0" + strconv.FormatUint(uint64(info.Mode().Perm()), 8)
+
+			if test.expectError {
+				require.Error(t, parseErr)
+				assert.Equal(t, test.expectPermissions, actual)
+				assert.Contains(t, parseErr.Error(), test.errorMsg)
+			} else {
+				require.NoError(t, parseErr)
+				assert.Equal(t, test.expectPermissions, actual)
+			}
+		})
+	}
 }
 
 func TestFileManagerService_ClearCache(t *testing.T) {

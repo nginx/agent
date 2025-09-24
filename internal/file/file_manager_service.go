@@ -38,6 +38,7 @@ const (
 	maxAttempts = 5
 	dirPerm     = 0o755
 	filePerm    = 0o600
+	executePerm = 0o111
 )
 
 type (
@@ -627,26 +628,34 @@ func (fms *FileManagerService) validateAndFixPermissions(ctx context.Context, fi
 func (fms *FileManagerService) checkFilePermissions(file *mpi.File) error {
 	filePermission := file.GetFileMeta().GetPermissions()
 
-	permissionCodes := filePermission[1:]
+	permissionOctal, err := strconv.ParseUint(filePermission, 8, 32)
+	if err != nil {
+		return fmt.Errorf("file %s has malformed permissions", file.GetFileMeta().GetName())
+	}
 
-	for _, digit := range permissionCodes {
-		singleCode := digit - '0'
-
-		if singleCode&1 != 0 {
-			return fmt.Errorf("file %s has execute permissions", file.GetFileMeta().GetName())
-		}
+	if permissionOctal&executePerm > 0 {
+		return fmt.Errorf("file %s has execute permissions", file.GetFileMeta().GetName())
 	}
 
 	return nil
 }
 
 func (fms *FileManagerService) resetFilePermissions(file *mpi.File) error {
-	perm, err := strconv.ParseUint("0644", 8, 32)
+	filePermission := file.GetFileMeta().GetPermissions()
+
+	permissionOctal, err := strconv.ParseUint(filePermission, 8, 32)
 	if err != nil {
-		return fmt.Errorf("error parsing file permissions: %w", err)
+		chmodErr := os.Chmod(file.GetFileMeta().GetName(), os.FileMode(filePerm))
+		if chmodErr != nil {
+			return fmt.Errorf("failed to set file permissions: %w", err)
+		}
+
+		return fmt.Errorf("falied to parse file permissions, permissions set to 0o644: %w", err)
 	}
 
-	err = os.Chmod(file.GetFileMeta().GetName(), os.FileMode(perm))
+	newPermission := permissionOctal &^ executePerm
+
+	err = os.Chmod(file.GetFileMeta().GetName(), os.FileMode(newPermission))
 	if err != nil {
 		return fmt.Errorf("failed to set file permissions: %w", err)
 	}
