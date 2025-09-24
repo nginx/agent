@@ -116,6 +116,14 @@ func TestTypes_isAllowedDir(t *testing.T) {
 			},
 			filePath: "/etc/nginx/level1/level2/level3/level4/nginx.conf",
 		},
+		{
+			name:    "Test 13: Root directory is allowed, file in subdirectory",
+			allowed: true,
+			allowedDirs: []string{
+				"/",
+			},
+			filePath: "/etc/nginx/nginx.conf",
+		},
 	}
 
 	for _, test := range tests {
