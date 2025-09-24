@@ -9,7 +9,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -476,14 +475,11 @@ func isAllowedDir(path string, allowedDirs []string) bool {
 }
 
 func checkDirIsAllowed(path string, allowedDirs []string) bool {
-	slog.Info(filepath.Clean(path))
 	if slices.Contains(allowedDirs, path) {
-		slog.Info("Path is allowed", "path", path)
 		return true
 	}
 
-	if path == "/" { // root directory reached, path is not allowed
-		slog.Info("Path is not allowed")
+	if path == "/" || !strings.HasPrefix(path, "/") { // root directory reached with no match, path is not allowed
 		return false
 	}
 
