@@ -74,12 +74,53 @@ func TestTypes_isAllowedDir(t *testing.T) {
 			},
 			filePath: "/etc/nginx-test/nginx.conf",
 		},
+		{
+			name:    "Test 8: Empty allowed directories",
+			allowed: false,
+			allowedDirs: []string{
+				"",
+			},
+			filePath: "/etc/nginx/nginx.conf",
+		},
+		{
+			name:    "Test 9: Multiple allowed directories, file in one of them",
+			allowed: true,
+			allowedDirs: []string{
+				"/etc/nginx",
+				"/usr/local/nginx",
+			},
+			filePath: "/usr/local/nginx/nginx.conf",
+		},
+		{
+			name:    "Test 10: Multiple allowed directories, file not in any of them",
+			allowed: false,
+			allowedDirs: []string{
+				"/etc/nginx",
+				"/usr/local/nginx",
+			},
+			filePath: "/opt/nginx/nginx.conf",
+		},
+		{
+			name:    "Test 11: Allowed directory is root",
+			allowed: false,
+			allowedDirs: []string{
+				"/etc/nginx",
+			},
+			filePath: "/",
+		},
+		{
+			name:    "Test 12: File is in directory nested 5 levels deep within allowed directory",
+			allowed: true,
+			allowedDirs: []string{
+				"/etc/nginx",
+			},
+			filePath: "/etc/nginx/level1/level2/level3/level4/nginx.conf",
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := isAllowedDir(test.filePath, test.allowedDirs)
-			require.NoError(t, err)
+			result := isAllowedDir(test.filePath, test.allowedDirs)
 			require.Equal(t, test.allowed, result)
 		})
 	}
