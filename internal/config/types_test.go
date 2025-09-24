@@ -101,7 +101,7 @@ func TestTypes_isAllowedDir(t *testing.T) {
 			filePath: "/opt/nginx/nginx.conf",
 		},
 		{
-			name:    "Test 11: Allowed directory is root",
+			name:    "Test 11: Path is root directory, not in allowed directories",
 			allowed: false,
 			allowedDirs: []string{
 				"/etc/nginx",
