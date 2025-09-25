@@ -74,7 +74,7 @@ func NewNginxConfigParser(agentConfig *config.Config) *NginxConfigParser {
 }
 
 func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *mpi.Instance) (*model.NginxConfigContext, error) {
-	configPath := instance.GetInstanceRuntime().GetConfigPath()
+	configPath, _ := filepath.Abs(instance.GetInstanceRuntime().GetConfigPath())
 
 	if !ncp.agentConfig.IsDirectoryAllowed(configPath) {
 		return nil, fmt.Errorf("config path %s is not in allowed directories", configPath)
