@@ -15,8 +15,12 @@ import (
 	"path/filepath"
 	"sync"
 	"testing"
+	"time"
+
+	"github.com/nginx/agent/v3/internal/config"
 
 	"github.com/nginx/agent/v3/internal/model"
+	"go.uber.org/mock/gomock"
 
 	"github.com/nginx/agent/v3/pkg/files"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -29,6 +33,42 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+//nolint:unparam //setupTest is a helper function for tests that returns multiple values
+func setupTest(t *testing.T) (*FileManagerService, *v1fakes.FakeFileServiceClient, string) {
+	t.Helper()
+	tempDir := t.TempDir()
+	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+
+	// Default agentConfig with reusable settings
+	agentConfig := &config.Config{
+		AllowedDirectories: []string{tempDir, "/tmp/local/etc/nginx"},
+		ExternalDataSource: &config.ExternalDataSource{
+			Helper: &config.HelperConfig{
+				Path: filepath.Join(tempDir, "helperfile.txt"),
+			},
+			Mode:           "helper",
+			AllowedDomains: []string{"test.com"},
+			MaxBytes:       1000,
+		},
+		Client: &config.Client{
+			Grpc: &config.GRPC{
+				MaxFileSize: 1024,
+			},
+			Backoff: &config.BackOff{
+				InitialInterval: 500 * time.Millisecond,
+				MaxInterval:     10 * time.Second,
+				MaxElapsedTime:  20 * time.Second,
+			},
+		},
+		LibDir: tempDir,
+	}
+
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig, &sync.RWMutex{})
+	fileManagerService.manifestFilePath = filepath.Join(tempDir, "manifest.json")
+
+	return fileManagerService, fakeFileServiceClient, tempDir
+}
 
 func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	ctx := context.Background()
@@ -1030,4 +1070,244 @@ func TestFileManagerService_createTempConfigDirectory(t *testing.T) {
 	dir, err = fileManagerService.createTempConfigDirectory(t.Context())
 	assert.Empty(t, dir)
 	require.Error(t, err)
+}
+
+func TestFileManagerService_isExternalFilePresent(t *testing.T) {
+	fms := &FileManagerService{
+		manifestLock: &sync.RWMutex{},
+	}
+
+	t.Run("Test 1 : ReturnsTrueWhenExternalFileIsPresent", func(t *testing.T) {
+		filesWithExternalSource := []*mpi.File{
+			{
+				FileMeta: &mpi.FileMeta{Name: "config1.conf"},
+			},
+			{
+				FileMeta:           &mpi.FileMeta{Name: "external-source-file.conf"},
+				ExternalDataSource: &mpi.ExternalDataSource{Location: "http://example.com/file.txt"},
+			},
+			{
+				FileMeta: &mpi.FileMeta{Name: "config2.conf"},
+			},
+		}
+
+		isPresent := fms.isExternalFilePresent(filesWithExternalSource)
+		assert.True(t, isPresent, "should return true because an external file is present")
+	})
+
+	t.Run("Test 2 : ReturnsFalseWhenNoExternalFileIsPresent", func(t *testing.T) {
+		filesWithoutExternalSource := []*mpi.File{
+			{
+				FileMeta: &mpi.FileMeta{Name: "config1.conf"},
+			},
+			{
+				FileMeta: &mpi.FileMeta{Name: "config2.conf"},
+			},
+		}
+
+		isPresent := fms.isExternalFilePresent(filesWithoutExternalSource)
+		assert.False(t, isPresent, "should return false because no external files are present")
+	})
+
+	t.Run("Test 3 : ReturnsFalseWhenSliceIsEmpty", func(t *testing.T) {
+		emptyFiles := []*mpi.File{}
+
+		isPresent := fms.isExternalFilePresent(emptyFiles)
+		assert.False(t, isPresent, "should return false because the input slice is empty")
+	})
+}
+
+func TestFileManagerService_checkHelperDirectory_Allowed(t *testing.T) {
+	tempDir := t.TempDir()
+	helperPath := filepath.Join(tempDir, "helper_scripts", "my_helper")
+
+	agentConfig := &config.Config{
+		AllowedDirectories: []string{filepath.Dir(helperPath)},
+		ExternalDataSource: &config.ExternalDataSource{
+			Helper: &config.HelperConfig{
+				Path: helperPath,
+			},
+		},
+	}
+
+	fms := &FileManagerService{
+		agentConfig: agentConfig,
+	}
+
+	err := fms.checkHelperDirectory()
+	require.NoError(t, err)
+}
+
+func TestFileManagerService_checkHelperDirectory_NotAllowed(t *testing.T) {
+	tempDir := t.TempDir()
+	helperPath := filepath.Join(tempDir, "my_helper")
+
+	agentConfig := &config.Config{
+		AllowedDirectories: []string{filepath.Join(tempDir, "some_other_dir")},
+		ExternalDataSource: &config.ExternalDataSource{
+			Helper: &config.HelperConfig{
+				Path: helperPath,
+			},
+		},
+	}
+
+	fms := &FileManagerService{
+		agentConfig: agentConfig,
+	}
+
+	err := fms.checkHelperDirectory()
+	require.Error(t, err)
+	expectedErrorMsg := "helper file is not present in allowed directories " + helperPath
+	assert.EqualError(t, err, expectedErrorMsg)
+}
+
+func TestFileManagerService_downloadExternalFiles_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockFileOperator := NewMockfileOperator(ctrl)
+
+	fms, _, tempDir := setupTest(t)
+	fms.fileOperator = mockFileOperator
+
+	destPath := filepath.Join(tempDir, "nginx.conf")
+	defer os.Remove(destPath)
+
+	tmpFile, _ := os.CreateTemp(tempDir, "downloaded_file")
+	defer os.Remove(tmpFile.Name())
+	_, err := tmpFile.WriteString("test content")
+	if err != nil {
+		t.Fatalf("Failed to write to temporary file: %v", err)
+	}
+
+	mockFileOperator.EXPECT().
+		runHelper(
+			gomock.Any(),
+			gomock.Any(),
+			gomock.Any(),
+			gomock.Any(),
+		).Return(tmpFile.Name(), nil)
+
+	fileMeta := &mpi.FileMeta{
+		Name:        destPath,
+		Permissions: "644",
+	}
+	file := &mpi.File{
+		FileMeta: fileMeta,
+		ExternalDataSource: &mpi.ExternalDataSource{
+			Location: "http://test.com/nginx.conf",
+		},
+	}
+
+	errDownloadExternalFile := fms.downloadExternalFiles(context.Background(), []*mpi.File{file})
+	require.NoError(t, errDownloadExternalFile)
+}
+
+func TestFileManagerService_downloadExternalFiles_DownloadFails(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockFileOperator := NewMockfileOperator(ctrl)
+
+	fms, _, _ := setupTest(t)
+	fms.fileOperator = mockFileOperator
+
+	expectedErr := errors.New("helper download failed")
+	mockFileOperator.EXPECT().
+		runHelper(
+			gomock.Any(),
+			gomock.Any(),
+			gomock.Any(),
+			gomock.Any(),
+		).Return("", expectedErr)
+
+	file := &mpi.File{
+		ExternalDataSource: &mpi.ExternalDataSource{
+			Location: "http://test.com/nginx.conf",
+		},
+	}
+
+	err := fms.downloadExternalFiles(context.Background(), []*mpi.File{file})
+	require.Error(t, err)
+	assert.EqualError(t, err, "failed to download file from http://test.com/nginx.conf: helper download failed")
+}
+
+func TestFileManagerService_downloadExternalFiles_UnsupportedMode(t *testing.T) {
+	fms, _, _ := setupTest(t)
+
+	file := &mpi.File{
+		ExternalDataSource: &mpi.ExternalDataSource{
+			Location: "http://test.com/nginx.conf",
+		},
+	}
+
+	fms.agentConfig.ExternalDataSource.Mode = "unsupported_mode"
+
+	err := fms.downloadExternalFiles(context.Background(), []*mpi.File{file})
+	require.Error(t, err)
+	assert.EqualError(t, err, "unsupported external data source mode: unsupported_mode")
+}
+
+func TestFileManagerService_downloadExternalFiles_NotAllowedDomain(t *testing.T) {
+	fms, _, _ := setupTest(t)
+
+	file := &mpi.File{
+		ExternalDataSource: &mpi.ExternalDataSource{
+			Location: "http://bad-domain.com/nginx.conf",
+		},
+	}
+
+	err := fms.downloadExternalFiles(context.Background(), []*mpi.File{file})
+	require.Error(t, err)
+	assert.EqualError(t, err, "domain bad-domain.com is not in the allowed list")
+}
+
+func TestFileManagerService_processSingleExternalFile_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockFileOperator := NewMockfileOperator(ctrl)
+
+	fms, _, tempDir := setupTest(t)
+	fms.fileOperator = mockFileOperator
+
+	tmpFile, err := os.CreateTemp(tempDir, "downloaded_file")
+	require.NoError(t, err)
+	defer os.Remove(tmpFile.Name())
+
+	_, err = tmpFile.WriteString("test content")
+	require.NoError(t, err)
+	tmpFile.Close()
+
+	destPath := filepath.Join(tempDir, "nginx.conf")
+
+	mockFileOperator.EXPECT().
+		runHelper(
+			gomock.Any(),
+			gomock.Any(),
+			gomock.Any(),
+			gomock.Any(),
+		).Return(tmpFile.Name(), nil)
+
+	fileMeta := &mpi.FileMeta{
+		Name:        destPath,
+		Permissions: "644",
+	}
+	file := &mpi.File{
+		FileMeta: fileMeta,
+		ExternalDataSource: &mpi.ExternalDataSource{
+			Location: "http://test.com/nginx.conf",
+		},
+	}
+
+	err = fms.processSingleExternalFile(context.Background(), file, "http://test.com/nginx.conf")
+
+	require.NoError(t, err)
+
+	_, err = os.Stat(destPath)
+	require.NoError(t, err)
+
+	content, err := os.ReadFile(destPath)
+	require.NoError(t, err)
+	assert.Equal(t, "test content", string(content))
 }

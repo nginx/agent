@@ -7,12 +7,14 @@ package file
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
 	"os"
+	"os/exec"
 	"path"
 	"sync"
 
@@ -24,6 +26,18 @@ import (
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )
+
+var execCommandContext = exec.CommandContext
+
+const bufferSize = 4096
+
+// Helper struct to unmarshal the JSON error from stderr.
+type helperError struct {
+	Error     string `json:"error"`
+	Message   string `json:"message"`
+	Retryable bool   `json:"retryable"`
+	Status    int    `json:"status"`
+}
 
 type FileOperator struct {
 	manifestLock *sync.RWMutex
@@ -219,5 +233,93 @@ func closeFile(ctx context.Context, file *os.File) {
 	err := file.Close()
 	if err != nil {
 		slog.ErrorContext(ctx, "Error closing file", "error", err, "file", file.Name())
+	}
+}
+
+func (fo *FileOperator) runHelper(
+	ctx context.Context,
+	helperPath string,
+	url string,
+	maxBytes int64,
+) (tmpFilePath string, err error) {
+	args := []string{"--url", url}
+	cmd := execCommandContext(ctx, helperPath, args...)
+
+	tmpFile, createErr := os.CreateTemp("", "external-file-*.tmp")
+	if createErr != nil {
+		return "", fmt.Errorf("failed to create temp file: %w", createErr)
+	}
+	tmpFilePath = tmpFile.Name()
+	defer tmpFile.Close()
+
+	defer func() {
+		if err != nil {
+			os.Remove(tmpFilePath)
+		}
+	}()
+
+	stdoutPipe, pipeErr := cmd.StdoutPipe()
+	if pipeErr != nil {
+		return "", fmt.Errorf("failed to create stdout pipe: %w", pipeErr)
+	}
+
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+
+	if startErr := cmd.Start(); startErr != nil {
+		return "", fmt.Errorf("failed to start helper process: %w", startErr)
+	}
+
+	streamErr := fo.streamProcessOutput(stdoutPipe, tmpFile, maxBytes)
+
+	waitErr := cmd.Wait()
+
+	if streamErr != nil {
+		return "", streamErr
+	}
+
+	if waitErr != nil {
+		var errObj helperError
+		if json.Unmarshal(stderr.Bytes(), &errObj) == nil {
+			return "", fmt.Errorf("helper process failed with error '%s' and message '%s'",
+				errObj.Error, errObj.Message)
+		}
+
+		return "", fmt.Errorf("helper process failed with exit code %d, stderr: %s",
+			cmd.ProcessState.ExitCode(), stderr.String())
+	}
+
+	return tmpFilePath, nil
+}
+
+func (fo *FileOperator) streamProcessOutput(stdout io.Reader, destFile io.Writer, maxBytes int64) error {
+	totalBytesRead := int64(0)
+	reader := bufio.NewReader(stdout)
+	chunk := make([]byte, bufferSize)
+
+	for {
+		n, readErr := reader.Read(chunk)
+
+		if readErr != nil {
+			if readErr == io.EOF {
+				return nil
+			}
+
+			return fmt.Errorf("error reading from helper stdout: %w", readErr)
+		}
+
+		if n == 0 {
+			continue
+		}
+
+		totalBytesRead += int64(n)
+		if totalBytesRead > maxBytes {
+			return fmt.Errorf("downloaded file size (%d bytes) exceeds the maximum allowed size of %d bytes",
+				totalBytesRead, maxBytes)
+		}
+
+		if _, writeErr := destFile.Write(chunk[:n]); writeErr != nil {
+			return fmt.Errorf("error writing to temp file: %w", writeErr)
+		}
 	}
 }
