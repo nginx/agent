@@ -17,6 +17,7 @@ import (
 
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
+	"github.com/prometheus/common/model"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/testcontainers/testcontainers-go"
@@ -108,7 +109,7 @@ func ScrapeCollectorMetricFamilies(t *testing.T, ctx context.Context,
 		t.Fatalf("Unexpected status code: %d", resp.StatusCode())
 	}
 
-	parser := expfmt.TextParser{}
+	parser := expfmt.NewTextParser(model.UTF8Validation)
 	metricFamilies, err := parser.TextToMetricFamilies(bytes.NewReader(resp.Body()))
 	if err != nil {
 		t.Fatalf("failed to parse metrics: %v", err)
