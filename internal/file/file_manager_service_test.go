@@ -13,6 +13,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"testing"
 
@@ -320,6 +321,158 @@ func TestFileManagerService_checkAllowedDirectory(t *testing.T) {
 	require.NoError(t, err)
 	err = fileManagerService.checkAllowedDirectory(notAllowed)
 	require.Error(t, err)
+}
+
+func TestFileManagerService_validateAndFixPermissions(t *testing.T) {
+	ctx := context.Background()
+	fileManagerService := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
+
+	tempDir := t.TempDir()
+	execFile := helpers.CreateFileWithErrorCheck(t, tempDir, "exec.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, execFile.Name())
+
+	normalFile := helpers.CreateFileWithErrorCheck(t, tempDir, "normal.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, normalFile.Name())
+
+	err := os.Chmod(execFile.Name(), 0o700)
+	require.NoError(t, err)
+	err = os.Chmod(normalFile.Name(), 0o620)
+	require.NoError(t, err)
+
+	fileList := []*mpi.File{
+		{
+			FileMeta: &mpi.FileMeta{
+				Name:        execFile.Name(),
+				Permissions: "0700",
+			},
+		},
+		{
+			FileMeta: &mpi.FileMeta{
+				Name:        normalFile.Name(),
+				Permissions: "0620",
+			},
+		},
+	}
+
+	err = fileManagerService.validateAndFixPermissions(ctx, fileList)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "reset execute permissions for files")
+	assert.Contains(t, err.Error(), execFile.Name())
+
+	info, err := os.Stat(execFile.Name())
+	require.NoError(t, err)
+	assert.Equal(t, os.FileMode(0o600), info.Mode().Perm())
+
+	info, err = os.Stat(normalFile.Name())
+	require.NoError(t, err)
+	assert.Equal(t, os.FileMode(0o620), info.Mode().Perm())
+}
+
+func TestFileManagerService_checkFilePermissions(t *testing.T) {
+	fileManagerService := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
+
+	tests := []struct {
+		name        string
+		permissions string
+		errorMsg    string
+		expectError bool
+	}{
+		{
+			name:        "File with read and write permissions for owner",
+			permissions: "0600",
+			expectError: false,
+		},
+		{
+			name:        "File with read/write and execute permissions for owner",
+			permissions: "0700",
+			expectError: true,
+			errorMsg:    "has execute permissions",
+		},
+		{
+			name:        "File with malformed permissions",
+			permissions: "abcde",
+			expectError: true,
+			errorMsg:    "has malformed permissions",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			file := &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name:        "test.conf",
+					Permissions: test.permissions,
+				},
+			}
+
+			err := fileManagerService.checkFilePermissions(file)
+
+			if test.expectError {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), test.errorMsg)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestFileManagerService_resetFilePermissions(t *testing.T) {
+	fileManagerService := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
+	tempDir := t.TempDir()
+
+	tests := []struct {
+		name              string
+		permissions       string
+		errorMsg          string
+		expectPermissions string
+		expectError       bool
+	}{
+		{
+			name:              "File with execute permissions for owner and others",
+			permissions:       "0703",
+			expectError:       false,
+			expectPermissions: "0602",
+		},
+		{
+			name:              "File with malformed permissions",
+			permissions:       "abcde",
+			expectError:       true,
+			expectPermissions: "0600",
+			errorMsg:          "falied to parse file permissions",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			tempFile := helpers.CreateFileWithErrorCheck(t, tempDir, "test.conf")
+			defer helpers.RemoveFileWithErrorCheck(t, tempFile.Name())
+
+			file := &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name:        tempFile.Name(),
+					Permissions: test.permissions,
+				},
+			}
+
+			parseErr := fileManagerService.resetFilePermissions(file)
+
+			info, err := os.Stat(tempFile.Name())
+			require.NoError(t, err)
+
+			actual := "0" + strconv.FormatUint(uint64(info.Mode().Perm()), 8)
+
+			if test.expectError {
+				require.Error(t, parseErr)
+				assert.Equal(t, test.expectPermissions, actual)
+				assert.Contains(t, parseErr.Error(), test.errorMsg)
+			} else {
+				require.NoError(t, parseErr)
+				assert.Equal(t, test.expectPermissions, actual)
+			}
+		})
+	}
 }
 
 func TestFileManagerService_ClearCache(t *testing.T) {

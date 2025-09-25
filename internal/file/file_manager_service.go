@@ -15,6 +15,8 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"sync"
 
 	"google.golang.org/grpc"
@@ -36,6 +38,7 @@ const (
 	maxAttempts = 5
 	dirPerm     = 0o755
 	filePerm    = 0o600
+	executePerm = 0o111
 )
 
 type (
@@ -154,6 +157,11 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	allowedErr := fms.checkAllowedDirectory(fileOverview.GetFiles())
 	if allowedErr != nil {
 		return model.Error, allowedErr
+	}
+
+	permissionErr := fms.validateAndFixPermissions(ctx, fileOverview.GetFiles())
+	if permissionErr != nil {
+		return model.PermissionChange, permissionErr
 	}
 
 	diffFiles, fileContent, compareErr := fms.DetermineFileActions(
@@ -590,6 +598,66 @@ func (fms *FileManagerService) checkAllowedDirectory(checkFiles []*mpi.File) err
 		if !allowed {
 			return fmt.Errorf("file not in allowed directories %s", file.GetFileMeta().GetName())
 		}
+	}
+
+	return nil
+}
+
+func (fms *FileManagerService) validateAndFixPermissions(ctx context.Context, fileList []*mpi.File) error {
+	var permissionIssues []string
+
+	for _, file := range fileList {
+		if err := fms.checkFilePermissions(file); err != nil {
+			permissionIssues = append(permissionIssues, file.GetFileMeta().GetName())
+
+			if resetErr := fms.resetFilePermissions(file); resetErr != nil {
+				return fmt.Errorf("failed to reset permissions for %s: %w", file.GetFileMeta().GetName(), resetErr)
+			}
+
+			slog.InfoContext(ctx, "Reset execute permissions", "file", file.GetFileMeta().GetName())
+		}
+	}
+
+	if len(permissionIssues) > 0 {
+		return fmt.Errorf("reset execute permissions for files: %s", strings.Join(permissionIssues, ", "))
+	}
+
+	return nil
+}
+
+func (fms *FileManagerService) checkFilePermissions(file *mpi.File) error {
+	filePermission := file.GetFileMeta().GetPermissions()
+
+	permissionOctal, err := strconv.ParseUint(filePermission, 8, 32)
+	if err != nil {
+		return fmt.Errorf("file %s has malformed permissions", file.GetFileMeta().GetName())
+	}
+
+	if permissionOctal&executePerm > 0 {
+		return fmt.Errorf("file %s has execute permissions", file.GetFileMeta().GetName())
+	}
+
+	return nil
+}
+
+func (fms *FileManagerService) resetFilePermissions(file *mpi.File) error {
+	filePermission := file.GetFileMeta().GetPermissions()
+
+	permissionOctal, err := strconv.ParseUint(filePermission, 8, 32)
+	if err != nil {
+		chmodErr := os.Chmod(file.GetFileMeta().GetName(), os.FileMode(filePerm))
+		if chmodErr != nil {
+			return fmt.Errorf("failed to set file permissions: %w", err)
+		}
+
+		return fmt.Errorf("falied to parse file permissions, permissions set to 0o644: %w", err)
+	}
+
+	newPermission := permissionOctal &^ executePerm
+
+	err = os.Chmod(file.GetFileMeta().GetName(), os.FileMode(newPermission))
+	if err != nil {
+		return fmt.Errorf("failed to set file permissions: %w", err)
 	}
 
 	return nil
