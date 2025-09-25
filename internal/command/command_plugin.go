@@ -168,7 +168,7 @@ func (cp *CommandPlugin) createConnection(ctx context.Context, resource *mpi.Res
 	if err != nil {
 		slog.ErrorContext(ctx, "Unable to create connection", "error", err)
 	}
-
+	
 	if createConnectionResponse != nil {
 		cp.subscribeMutex.Lock()
 		subscribeCtx, cp.subscribeCancel = context.WithCancel(ctx)

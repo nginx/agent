@@ -165,8 +165,9 @@ func (fp *FilePlugin) handleConfigApplyComplete(ctx context.Context, msg *bus.Me
 		return
 	}
 
-	fp.fileManagerService.ClearCache()
 	fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
+	fp.fileManagerService.ClearCache()
+	fp.messagePipe.Process(context.Background(), &bus.Message{Topic: bus.EnableWatchersTopic, Data: response})
 }
 
 func (fp *FilePlugin) handleConfigApplySuccess(ctx context.Context, msg *bus.Message) {
@@ -216,7 +217,7 @@ func (fp *FilePlugin) handleConfigApplyFailedRequest(ctx context.Context, msg *b
 			mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"Config apply failed, rollback failed", data.InstanceID, data.Error.Error())
 
-		fp.fileManagerService.ClearCache()
+		fp.messagePipe.Process(context.Background(), &bus.Message{Topic: bus.EnableWatchersTopic, Data: applyResponse})
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: applyResponse})
 
@@ -289,6 +290,7 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 		)
 
 		fp.fileManagerService.ClearCache()
+		fp.messagePipe.Process(context.Background(), &bus.Message{Topic: bus.EnableWatchersTopic, Data: response})
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: response})
 
 		return
@@ -322,6 +324,7 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 				rollbackErr.Error())
 
 			fp.fileManagerService.ClearCache()
+			fp.messagePipe.Process(context.Background(), &bus.Message{Topic: bus.EnableWatchersTopic, Data: response})
 			fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: rollbackResponse})
 
 			return
@@ -335,6 +338,7 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			err.Error())
 
 		fp.fileManagerService.ClearCache()
+		fp.messagePipe.Process(context.Background(), &bus.Message{Topic: bus.EnableWatchersTopic, Data: response})
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: response})
 
 		return
@@ -359,6 +363,7 @@ func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 		return
 	}
 
+	fp.fileManagerService.SetConfigPath(nginxConfigContext.ConfigPath)
 	fp.fileManagerService.ConfigUpdate(ctx, nginxConfigContext)
 }
 

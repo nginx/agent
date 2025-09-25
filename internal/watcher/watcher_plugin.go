@@ -142,8 +142,8 @@ func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
 		w.handleConfigApplyRequest(ctx, msg)
 	case bus.ConfigApplySuccessfulTopic:
 		w.handleConfigApplySuccess(ctx, msg)
-	case bus.ConfigApplyCompleteTopic:
-		w.handleConfigApplyComplete(ctx, msg)
+	case bus.EnableWatchersTopic:
+		w.handleEnableWatchersTopic(ctx, msg)
 	case bus.DataPlaneHealthRequestTopic:
 		w.handleHealthRequest(ctx)
 	default:
@@ -155,7 +155,7 @@ func (*Watcher) Subscriptions() []string {
 	return []string{
 		bus.ConfigApplyRequestTopic,
 		bus.ConfigApplySuccessfulTopic,
-		bus.ConfigApplyCompleteTopic,
+		bus.EnableWatchersTopic,
 		bus.DataPlaneHealthRequestTopic,
 	}
 }
@@ -226,7 +226,7 @@ func (w *Watcher) handleHealthRequest(ctx context.Context) {
 	})
 }
 
-func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Message) {
+func (w *Watcher) handleEnableWatchersTopic(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "Watcher plugin received config apply complete message")
 	response, ok := msg.Data.(*mpi.DataPlaneResponse)
 	if !ok {

@@ -127,6 +127,8 @@ func (fso *FileServiceOperator) UpdateOverview(
 
 	newCtx, correlationID := fso.setupIdentifiers(ctx, iteration)
 
+	
+	slog.Info("Update Overview")
 	request := &mpi.UpdateOverviewRequest{
 		MessageMeta: &mpi.MessageMeta{
 			MessageId:     id.GenerateMessageID(),
@@ -277,16 +279,25 @@ func (fso *FileServiceOperator) UpdateFile(
 	return fso.sendUpdateFileStream(ctx, fileToUpdate, fso.agentConfig.Client.Grpc.FileChunkSize)
 }
 
-func (fso *FileServiceOperator) MoveFilesFromTempDirectory(
+func (fso *FileServiceOperator) MoveFileFromTempDirectory(
 	ctx context.Context, fileAction *model.FileCache, tempDir string,
 ) error {
 	fileName := fileAction.File.GetFileMeta().GetName()
 	slog.DebugContext(ctx, "Updating file", "file", fileName)
 	tempFilePath := filepath.Join(tempDir, fileName)
-
-	moveErr := fso.fileOperator.MoveFile(ctx, tempFilePath, fileName)
-	if moveErr != nil {
-		return fmt.Errorf("failed to move file: %w", moveErr)
+	slog.Info("Moving file from temp dir", "tempFilePath", tempFilePath, "fileAction", fileName)
+	
+	mkDirErr := os.MkdirAll(filepath.Dir(fileName), os.ModePerm)
+	
+	if mkDirErr != nil {
+		slog.Info("Failed to create directory", "filepath.Dir(fileName)", filepath.Dir(fileName), "fileAction", fileName)
+		return mkDirErr
+	}
+	
+	err := os.Rename(tempFilePath, fileName)
+	if err != nil {
+		slog.Info("Failed to move file from temp dir", "error", err, "tempFilePath", tempFilePath, "fileAction", fileName)
+		return err
 	}
 
 	if removeError := os.Remove(tempFilePath); removeError != nil && !os.IsNotExist(removeError) {

@@ -7,6 +7,7 @@ package file
 
 import (
 	"context"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -55,20 +56,28 @@ func TestFileOperator_WriteManifestFile_fileMissing(t *testing.T) {
 
 func TestFileOperator_MoveFile_fileExists(t *testing.T) {
 	tempDir := t.TempDir()
+	fileMode := fs.FileMode(0655)
 	tempFile := path.Join(tempDir, "/etc/nginx/nginx.conf")
 	newFile := path.Join(tempDir, "/etc/nginx/new_test.conf")
+	content := []byte("Testing moving files")
 
 	err := os.MkdirAll(path.Dir(tempFile), 0o755)
 	require.NoError(t, err)
 
-	_, err = os.Create(tempFile)
+	err = os.WriteFile(tempFile, content, fileMode)
+	require.NoError(t, err)
+
+	err = os.WriteFile(newFile, content, fs.FileMode(0666))
 	require.NoError(t, err)
 
 	fileOperator := NewFileOperator(&sync.RWMutex{})
 	err = fileOperator.MoveFile(t.Context(), tempFile, newFile)
 	require.NoError(t, err)
 
-	assert.NoFileExists(t, tempFile)
+	info, err := os.Stat(newFile)
+	require.NoError(t, err)
+	assert.Equal(t, fileMode.Perm().String(), info.Mode().Perm().String())
+
 	assert.FileExists(t, newFile)
 }
 

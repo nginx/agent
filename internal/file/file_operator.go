@@ -193,12 +193,19 @@ func (fo *FileOperator) MoveFile(ctx context.Context, sourcePath, destPath strin
 	if openErr != nil {
 		return openErr
 	}
+	defer inputFile.Close()
+
+	fileInfo, statErr := inputFile.Stat()
+	slog.Info("File Stat", "file", inputFile.Name(), "mode", fileInfo.Mode())
+	if statErr != nil {
+		return statErr
+	}
 
 	if dirErr := os.MkdirAll(filepath.Dir(destPath), dirPerm); dirErr != nil {
 		return fmt.Errorf("failed to create directories for %s: %w", destPath, dirErr)
 	}
 
-	outputFile, createErr := os.Create(destPath)
+	outputFile, createErr := os.OpenFile(destPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, fileInfo.Mode())
 	if createErr != nil {
 		return createErr
 	}
@@ -206,17 +213,15 @@ func (fo *FileOperator) MoveFile(ctx context.Context, sourcePath, destPath strin
 
 	_, copyErr := io.Copy(outputFile, inputFile)
 	if copyErr != nil {
-		closeFile(ctx, inputFile)
-
 		return copyErr
 	}
 
-	closeFile(ctx, inputFile)
-
-	removeErr := os.Remove(sourcePath)
-	if removeErr != nil {
-		return removeErr
+	if err := os.Chmod(outputFile.Name(), fileInfo.Mode()); err != nil {
+		return fmt.Errorf("chmod: %w", err)
 	}
+
+	info, _ := outputFile.Stat()
+	slog.Info("File Stat After move", "file", outputFile.Name(), "mode", info.Mode())
 
 	return nil
 }

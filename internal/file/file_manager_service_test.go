@@ -1021,14 +1021,14 @@ func TestFileManagerService_createTempConfigDirectory(t *testing.T) {
 		agentConfig: agentConfig,
 	}
 
-	dir, err := fileManagerService.createTempConfigDirectory("config")
+	dir, err := fileManagerService.createTempConfigDirectory(agentConfig.LibDir, "config")
 	assert.NotEmpty(t, dir)
 	require.NoError(t, err)
 
 	// Test for unknown directory path
 	agentConfig.LibDir = "/unknown/"
 
-	dir, err = fileManagerService.createTempConfigDirectory("config")
+	dir, err = fileManagerService.createTempConfigDirectory(agentConfig.LibDir,"config")
 	assert.Empty(t, dir)
 	require.Error(t, err)
 }

@@ -13,7 +13,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"path"
 	"path/filepath"
 	"sync"
 
@@ -71,7 +70,7 @@ type (
 			fileToUpdate *mpi.File,
 		) error
 		SetIsConnected(isConnected bool)
-		MoveFilesFromTempDirectory(ctx context.Context, fileAction *model.FileCache, tempDir string) error
+		MoveFileFromTempDirectory(ctx context.Context, fileAction *model.FileCache, tempDir string) error
 		UpdateClient(ctx context.Context, fileServiceClient mpi.FileServiceClient)
 	}
 
@@ -91,6 +90,7 @@ type (
 		IsConnected() bool
 		SetIsConnected(isConnected bool)
 		ResetClient(ctx context.Context, fileServiceClient mpi.FileServiceClient)
+		SetConfigPath(path string)
 	}
 )
 
@@ -105,6 +105,7 @@ type FileManagerService struct {
 	currentFilesOnDisk    map[string]*mpi.File // key is file path
 	previousManifestFiles map[string]*model.ManifestFile
 	manifestFilePath      string
+	configPath            string
 	configTempDir         string
 	rollbackTempDir       string
 	rollbackManifest      bool
@@ -122,6 +123,7 @@ func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig 
 		currentFilesOnDisk:    make(map[string]*mpi.File),
 		previousManifestFiles: make(map[string]*model.ManifestFile),
 		rollbackManifest:      true,
+		configPath:            "/etc/nginx/",
 		manifestFilePath:      agentConfig.LibDir + "/manifest.json",
 		manifestLock:          manifestLock,
 	}
@@ -134,6 +136,10 @@ func (fms *FileManagerService) ResetClient(ctx context.Context, fileServiceClien
 
 func (fms *FileManagerService) IsConnected() bool {
 	return fms.fileServiceOperator.IsConnected()
+}
+
+func (fms *FileManagerService) SetConfigPath(path string) {
+	fms.configPath = filepath.Dir(path)
 }
 
 func (fms *FileManagerService) SetIsConnected(isConnected bool) {
@@ -174,13 +180,13 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 
 	fms.fileActions = diffFiles
 
-	fms.configTempDir, configTempError = fms.createTempConfigDirectory("config")
-
+	fms.configTempDir, configTempError = fms.createTempConfigDirectory(fms.configPath, "config")
+	slog.Info("Temp config dir: ", fms.configTempDir)
 	if configTempError != nil {
 		return model.Error, configTempError
 	}
 
-	fms.rollbackTempDir, rollbackTempErr = fms.createTempConfigDirectory("rollback")
+	fms.rollbackTempDir, rollbackTempErr = fms.createTempConfigDirectory(fms.agentConfig.LibDir, "rollback")
 	if rollbackTempErr != nil {
 		return model.Error, rollbackTempErr
 	}
@@ -351,10 +357,7 @@ func (fms *FileManagerService) DetermineFileActions(
 	ctx context.Context,
 	currentFiles map[string]*mpi.File,
 	modifiedFiles map[string]*model.FileCache,
-) (
-	map[string]*model.FileCache,
-	error,
-) {
+) (map[string]*model.FileCache, error) {
 	fms.filesMutex.Lock()
 	defer fms.filesMutex.Unlock()
 
@@ -533,28 +536,26 @@ func (fms *FileManagerService) manifestFile() (map[string]*model.ManifestFile, m
 	return manifestFiles, fileMap, nil
 }
 
-func (fms *FileManagerService) executeFileActions(ctx context.Context, tempDir string) (actionError error) {
-	// Download files to temporary location
-	downloadError := fms.downloadUpdatedFilesToTempLocation(ctx, tempDir)
+func (fms *FileManagerService) executeFileActions(ctx context.Context, configPath string) (actionError error) {
+
+	slog.Info("Executing file actions", "path", configPath)
+	downloadError := fms.downloadUpdatedFilesToTempLocation(ctx, configPath)
 	if downloadError != nil {
 		return downloadError
 	}
 
 	// Remove temp files if there is a failure moving or deleting files
-	actionError = fms.moveOrDeleteFiles(ctx, tempDir, actionError)
-	if actionError != nil {
-		fms.deleteTempFiles(ctx, tempDir)
-	}
+	actionError = fms.moveOrDeleteFiles(ctx, configPath, actionError)
 
 	return actionError
 }
 
 func (fms *FileManagerService) downloadUpdatedFilesToTempLocation(
-	ctx context.Context, tempDir string,
+	ctx context.Context, configPath string,
 ) (updateError error) {
 	for _, fileAction := range fms.fileActions {
 		if fileAction.Action == model.Add || fileAction.Action == model.Update {
-			tempFilePath := filepath.Join(tempDir, fileAction.File.GetFileMeta().GetName())
+			tempFilePath := filepath.Join(configPath, fileAction.File.GetFileMeta().GetName())
 
 			slog.DebugContext(
 				ctx,
@@ -568,11 +569,6 @@ func (fms *FileManagerService) downloadUpdatedFilesToTempLocation(
 				break
 			}
 		}
-	}
-
-	// Remove temp files if there is an error downloading any files
-	if updateError != nil {
-		fms.deleteTempFiles(ctx, tempDir)
 	}
 
 	return updateError
@@ -593,7 +589,7 @@ actionsLoop:
 
 			continue
 		case model.Add, model.Update:
-			err := fms.fileServiceOperator.MoveFilesFromTempDirectory(ctx, fileAction, tempDir)
+			err := fms.fileServiceOperator.MoveFileFromTempDirectory(ctx, fileAction, tempDir)
 			if err != nil {
 				actionError = err
 
@@ -605,21 +601,6 @@ actionsLoop:
 	}
 
 	return actionError
-}
-
-func (fms *FileManagerService) deleteTempFiles(ctx context.Context, tempDir string) {
-	for _, fileAction := range fms.fileActions {
-		if fileAction.Action == model.Add || fileAction.Action == model.Update {
-			tempFile := path.Join(tempDir, fileAction.File.GetFileMeta().GetName())
-			if err := os.Remove(tempFile); err != nil && !os.IsNotExist(err) {
-				slog.ErrorContext(
-					ctx, "Error deleting temp file",
-					"file", fileAction.File.GetFileMeta().GetName(),
-					"error", err,
-				)
-			}
-		}
-	}
 }
 
 func (fms *FileManagerService) fileUpdate(ctx context.Context, file *mpi.File, tempFilePath string) error {
@@ -691,8 +672,9 @@ func (fms *FileManagerService) convertToFile(manifestFile *model.ManifestFile) *
 	}
 }
 
-func (fms *FileManagerService) createTempConfigDirectory(pattern string) (string, error) {
-	tempDir, tempDirError := os.MkdirTemp(fms.agentConfig.LibDir, pattern)
+func (fms *FileManagerService) createTempConfigDirectory(configDir, pattern string) (string, error) {
+	slog.Info("Creating temp config dir", "configDir", configDir, "pattern", pattern)
+	tempDir, tempDirError := os.MkdirTemp(configDir, pattern)
 	if tempDirError != nil {
 		return "", fmt.Errorf("failed creating temp config directory: %w", tempDirError)
 	}

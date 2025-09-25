@@ -22,6 +22,7 @@ const (
 	ConfigApplySuccessfulTopic   = "config-apply-successful"
 	ConfigApplyFailedTopic       = "config-apply-failed"
 	ConfigApplyCompleteTopic     = "config-apply-complete"
+	EnableWatchersTopic = "enable-watchers"
 	RollbackWriteTopic           = "rollback-write"
 	DataPlaneHealthRequestTopic  = "data-plane-health-request"
 	DataPlaneHealthResponseTopic = "data-plane-health-response"
