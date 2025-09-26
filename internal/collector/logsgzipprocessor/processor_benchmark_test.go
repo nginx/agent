@@ -83,7 +83,9 @@ func BenchmarkGzipProcessor_Concurrent(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			_ = p.ConsumeLogs(context.Background(), logs)
+			logsCopy := plog.NewLogs()
+			logs.CopyTo(logsCopy)
+			_ = p.ConsumeLogs(context.Background(), logsCopy)
 		}
 	})
 }
