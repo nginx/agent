@@ -36,7 +36,9 @@ func (i *Input) Stop() error {
 	return i.fileConsumer.Stop()
 }
 
-func (i *Input) emit(ctx context.Context, tokens [][]byte, attributes map[string]any, lastRecordNumber int64) error {
+func (i *Input) emit(
+	ctx context.Context, tokens [][]byte, attributes map[string]any, lastRecordNumber int64, offsets []int64,
+) error {
 	for _, token := range tokens {
 		ent, err := i.NewEntry(i.toBody(token))
 		if err != nil {
