@@ -48,7 +48,7 @@ type (
 		Version            string           `yaml:"-"`
 		Path               string           `yaml:"-"`
 		UUID               string           `yaml:"-"`
-		ManifestDir        string           `yaml:"-"`
+		LibDir             string           `yaml:"-"`
 		AllowedDirectories []string         `yaml:"allowed_directories" mapstructure:"allowed_directories"`
 		Features           []string         `yaml:"features"            mapstructure:"features"`
 	}

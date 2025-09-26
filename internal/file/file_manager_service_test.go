@@ -8,8 +8,10 @@ package file
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"sync"
 	"testing"
@@ -33,6 +35,7 @@ func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	tempDir := t.TempDir()
 
 	filePath := filepath.Join(tempDir, "nginx.conf")
+
 	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
 	fileHash := files.GenerateHash(fileContent)
 	defer helpers.RemoveFileWithErrorCheck(t, filePath)
@@ -40,7 +43,7 @@ func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	overview := protos.FileOverview(filePath, fileHash)
 
 	manifestDirPath := tempDir
-	manifestFilePath := manifestDirPath + "/manifest.json"
+	manifestFilePath := filepath.Join(manifestDirPath, "manifest.json")
 	helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
 
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
@@ -56,7 +59,7 @@ func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	agentConfig.AllowedDirectories = []string{tempDir}
 
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig, &sync.RWMutex{})
-	fileManagerService.agentConfig.ManifestDir = manifestDirPath
+	fileManagerService.agentConfig.LibDir = manifestDirPath
 	fileManagerService.manifestFilePath = manifestFilePath
 
 	request := protos.CreateConfigApplyRequest(overview)
@@ -68,6 +71,7 @@ func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	assert.Equal(t, fileContent, data)
 	assert.Equal(t, fileManagerService.fileActions[filePath].File, overview.GetFiles()[0])
 	assert.Equal(t, 1, fakeFileServiceClient.GetFileCallCount())
+	assert.True(t, fileManagerService.rollbackManifest)
 }
 
 func TestFileManagerService_ConfigApply_Add_LargeFile(t *testing.T) {
@@ -97,13 +101,13 @@ func TestFileManagerService_ConfigApply_Add_LargeFile(t *testing.T) {
 	}
 
 	manifestDirPath := tempDir
-	manifestFilePath := manifestDirPath + "/manifest.json"
+	manifestFilePath := filepath.Join(manifestDirPath, "manifest.json")
 
 	fakeFileServiceClient.GetFileStreamReturns(fakeServerStreamingClient, nil)
 	agentConfig := types.AgentConfig()
 	agentConfig.AllowedDirectories = []string{tempDir}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig, &sync.RWMutex{})
-	fileManagerService.agentConfig.ManifestDir = manifestDirPath
+	fileManagerService.agentConfig.LibDir = manifestDirPath
 	fileManagerService.manifestFilePath = manifestFilePath
 
 	request := protos.CreateConfigApplyRequest(overview)
@@ -116,6 +120,7 @@ func TestFileManagerService_ConfigApply_Add_LargeFile(t *testing.T) {
 	assert.Equal(t, fileManagerService.fileActions[filePath].File, overview.GetFiles()[0])
 	assert.Equal(t, 0, fakeFileServiceClient.GetFileCallCount())
 	assert.Equal(t, 53, int(fakeServerStreamingClient.currentChunkID))
+	assert.True(t, fileManagerService.rollbackManifest)
 }
 
 func TestFileManagerService_ConfigApply_Update(t *testing.T) {
@@ -162,7 +167,7 @@ func TestFileManagerService_ConfigApply_Update(t *testing.T) {
 	agentConfig.AllowedDirectories = []string{tempDir}
 
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig, &sync.RWMutex{})
-	fileManagerService.agentConfig.ManifestDir = manifestDirPath
+	fileManagerService.agentConfig.LibDir = manifestDirPath
 	fileManagerService.manifestFilePath = manifestFilePath
 	err := fileManagerService.UpdateCurrentFilesOnDisk(ctx, filesOnDisk, false)
 	require.NoError(t, err)
@@ -176,6 +181,7 @@ func TestFileManagerService_ConfigApply_Update(t *testing.T) {
 	assert.Equal(t, fileContent, data)
 	assert.Equal(t, fileManagerService.rollbackFileContents[tempFile.Name()], previousFileContent)
 	assert.Equal(t, fileManagerService.fileActions[tempFile.Name()].File, overview.GetFiles()[0])
+	assert.True(t, fileManagerService.rollbackManifest)
 }
 
 func TestFileManagerService_ConfigApply_Delete(t *testing.T) {
@@ -211,7 +217,7 @@ func TestFileManagerService_ConfigApply_Delete(t *testing.T) {
 	agentConfig.AllowedDirectories = []string{tempDir}
 
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig, &sync.RWMutex{})
-	fileManagerService.agentConfig.ManifestDir = manifestDirPath
+	fileManagerService.agentConfig.LibDir = manifestDirPath
 	fileManagerService.manifestFilePath = manifestFilePath
 	err := fileManagerService.UpdateCurrentFilesOnDisk(ctx, filesOnDisk, false)
 	require.NoError(t, err)
@@ -244,6 +250,42 @@ func TestFileManagerService_ConfigApply_Delete(t *testing.T) {
 		filesOnDisk[tempFile.Name()].GetFileMeta().GetSize(),
 	)
 	assert.Equal(t, model.OK, writeStatus)
+	assert.True(t, fileManagerService.rollbackManifest)
+}
+
+func TestFileManagerService_ConfigApply_Failed(t *testing.T) {
+	ctx := t.Context()
+	tempDir := t.TempDir()
+
+	filePath := filepath.Join(tempDir, "nginx.conf")
+	fileContent := []byte("# this is going to fail")
+	fileHash := files.GenerateHash(fileContent)
+
+	overview := protos.FileOverview(filePath, fileHash)
+
+	manifestDirPath := tempDir
+	manifestFilePath := manifestDirPath + "/manifest.json"
+	helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
+
+	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+	fakeFileServiceClient.GetOverviewReturns(&mpi.GetOverviewResponse{
+		Overview: overview,
+	}, nil)
+	fakeFileServiceClient.GetFileReturns(nil, errors.New("file not found"))
+
+	agentConfig := types.AgentConfig()
+	agentConfig.AllowedDirectories = []string{tempDir}
+
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig, &sync.RWMutex{})
+	fileManagerService.agentConfig.LibDir = manifestDirPath
+	fileManagerService.manifestFilePath = manifestFilePath
+
+	request := protos.CreateConfigApplyRequest(overview)
+	writeStatus, err := fileManagerService.ConfigApply(ctx, request)
+
+	require.Error(t, err)
+	assert.Equal(t, model.RollbackRequired, writeStatus)
+	assert.False(t, fileManagerService.rollbackManifest)
 }
 
 func TestFileManagerService_checkAllowedDirectory(t *testing.T) {
@@ -398,7 +440,7 @@ func TestFileManagerService_Rollback(t *testing.T) {
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
 	fileManagerService.rollbackFileContents = fileContentCache
 	fileManagerService.fileActions = filesCache
-	fileManagerService.agentConfig.ManifestDir = manifestDirPath
+	fileManagerService.agentConfig.LibDir = manifestDirPath
 	fileManagerService.manifestFilePath = manifestFilePath
 
 	err := fileManagerService.Rollback(ctx, instanceID)
@@ -571,14 +613,14 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			// Delete manifest file if it already exists
-			manifestFile := CreateTestManifestFile(t, tempDir, test.currentFiles)
+			manifestFile := CreateTestManifestFile(t, tempDir, test.currentFiles, true)
 			defer manifestFile.Close()
 			manifestDirPath := tempDir
 			manifestFilePath := manifestFile.Name()
 
 			fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 			fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
-			fileManagerService.agentConfig.ManifestDir = manifestDirPath
+			fileManagerService.agentConfig.LibDir = manifestDirPath
 			fileManagerService.manifestFilePath = manifestFilePath
 
 			require.NoError(tt, err)
@@ -595,11 +637,11 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 	}
 }
 
-func CreateTestManifestFile(t testing.TB, tempDir string, currentFiles map[string]*mpi.File) *os.File {
+func CreateTestManifestFile(t testing.TB, tempDir string, currentFiles map[string]*mpi.File, refrenced bool) *os.File {
 	t.Helper()
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
-	manifestFiles := fileManagerService.convertToManifestFileMap(currentFiles, true)
+	manifestFiles := fileManagerService.convertToManifestFileMap(currentFiles, refrenced)
 	manifestJSON, err := json.MarshalIndent(manifestFiles, "", "  ")
 	require.NoError(t, err)
 	file, err := os.CreateTemp(tempDir, "manifest.json")
@@ -609,6 +651,166 @@ func CreateTestManifestFile(t testing.TB, tempDir string, currentFiles map[strin
 	require.NoError(t, err)
 
 	return file
+}
+
+func TestFileManagerService_UpdateManifestFile(t *testing.T) {
+	ctx := t.Context()
+	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
+	fileHash := files.GenerateHash(fileContent)
+
+	tests := []struct {
+		currentFiles         map[string]*mpi.File
+		currentManifestFiles map[string]*model.ManifestFile
+		expectedFiles        map[string]*model.ManifestFile
+		name                 string
+		referenced           bool
+		previousReferenced   bool
+	}{
+		{
+			name: "Test 1: Manifest file empty",
+			currentFiles: map[string]*mpi.File{
+				"/etc/nginx/nginx.conf": {
+					FileMeta: protos.FileMeta("/etc/nginx/nginx.conf", fileHash),
+				},
+			},
+			expectedFiles: map[string]*model.ManifestFile{
+				"/etc/nginx/nginx.conf": {
+					ManifestFileMeta: &model.ManifestFileMeta{
+						Name:       "/etc/nginx/nginx.conf",
+						Hash:       fileHash,
+						Size:       0,
+						Referenced: true,
+					},
+				},
+			},
+			currentManifestFiles: make(map[string]*model.ManifestFile),
+			referenced:           true,
+			previousReferenced:   true,
+		},
+		{
+			name: "Test 2: Manifest file populated - unreferenced",
+			currentFiles: map[string]*mpi.File{
+				"/etc/nginx/nginx.conf": {
+					FileMeta: protos.FileMeta("/etc/nginx/nginx.conf", fileHash),
+				},
+				"/etc/nginx/unref.conf": {
+					FileMeta: protos.FileMeta("/etc/nginx/unref.conf", fileHash),
+				},
+			},
+			expectedFiles: map[string]*model.ManifestFile{
+				"/etc/nginx/nginx.conf": {
+					ManifestFileMeta: &model.ManifestFileMeta{
+						Name:       "/etc/nginx/nginx.conf",
+						Hash:       fileHash,
+						Size:       0,
+						Referenced: false,
+					},
+				},
+				"/etc/nginx/unref.conf": {
+					ManifestFileMeta: &model.ManifestFileMeta{
+						Name:       "/etc/nginx/unref.conf",
+						Hash:       fileHash,
+						Size:       0,
+						Referenced: false,
+					},
+				},
+			},
+			currentManifestFiles: map[string]*model.ManifestFile{
+				"/etc/nginx/nginx.conf": {
+					ManifestFileMeta: &model.ManifestFileMeta{
+						Name:       "/etc/nginx/nginx.conf",
+						Hash:       fileHash,
+						Size:       0,
+						Referenced: true,
+					},
+				},
+			},
+			referenced:         false,
+			previousReferenced: true,
+		},
+		{
+			name: "Test 3: Manifest file populated - referenced",
+			currentFiles: map[string]*mpi.File{
+				"/etc/nginx/nginx.conf": {
+					FileMeta: protos.FileMeta("/etc/nginx/nginx.conf", fileHash),
+				},
+				"/etc/nginx/test.conf": {
+					FileMeta: protos.FileMeta("/etc/nginx/test.conf", fileHash),
+				},
+			},
+			expectedFiles: map[string]*model.ManifestFile{
+				"/etc/nginx/nginx.conf": {
+					ManifestFileMeta: &model.ManifestFileMeta{
+						Name:       "/etc/nginx/nginx.conf",
+						Hash:       fileHash,
+						Size:       0,
+						Referenced: true,
+					},
+				},
+				"/etc/nginx/test.conf": {
+					ManifestFileMeta: &model.ManifestFileMeta{
+						Name:       "/etc/nginx/test.conf",
+						Hash:       fileHash,
+						Size:       0,
+						Referenced: true,
+					},
+				},
+				"/etc/nginx/unref.conf": {
+					ManifestFileMeta: &model.ManifestFileMeta{
+						Name:       "/etc/nginx/unref.conf",
+						Hash:       fileHash,
+						Size:       0,
+						Referenced: false,
+					},
+				},
+			},
+			currentManifestFiles: map[string]*model.ManifestFile{
+				"/etc/nginx/nginx.conf": {
+					ManifestFileMeta: &model.ManifestFileMeta{
+						Name:       "/etc/nginx/nginx.conf",
+						Hash:       fileHash,
+						Size:       0,
+						Referenced: false,
+					},
+				},
+				"/etc/nginx/unref.conf": {
+					ManifestFileMeta: &model.ManifestFileMeta{
+						Name:       "/etc/nginx/unref.conf",
+						Hash:       fileHash,
+						Size:       0,
+						Referenced: false,
+					},
+				},
+			},
+			referenced:         true,
+			previousReferenced: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			manifestDirPath := t.TempDir()
+			file := helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
+
+			fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+			fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
+			fileManagerService.agentConfig.LibDir = manifestDirPath
+			fileManagerService.manifestFilePath = file.Name()
+
+			manifestJSON, err := json.MarshalIndent(test.currentManifestFiles, "", "  ")
+			require.NoError(t, err)
+
+			_, err = file.Write(manifestJSON)
+			require.NoError(t, err)
+
+			updateErr := fileManagerService.UpdateManifestFile(ctx, test.currentFiles, test.referenced)
+			require.NoError(tt, updateErr)
+
+			manifestFiles, _, manifestErr := fileManagerService.manifestFile()
+			require.NoError(tt, manifestErr)
+			assert.Equal(tt, test.expectedFiles, manifestFiles)
+		})
+	}
 }
 
 func TestFileManagerService_fileActions(t *testing.T) {
@@ -690,7 +892,7 @@ func TestFileManagerService_fileActions(t *testing.T) {
 
 	fileManagerService.fileActions = filesCache
 
-	actionErr := fileManagerService.executeFileActions(ctx)
+	actionErr := fileManagerService.executeFileActions(ctx, os.TempDir())
 	require.NoError(t, actionErr)
 
 	assert.FileExists(t, addFilePath)
@@ -772,4 +974,60 @@ rQHX6DP4w6IwZY8JB8LS
 			assert.Equal(t, test.expectedSerial, certFileMeta.GetCertificateMeta().GetSerialNumber())
 		})
 	}
+}
+
+func TestFileManagerService_deleteTempFiles(t *testing.T) {
+	tempDir := t.TempDir()
+	tempFile := path.Join(tempDir, "/etc/nginx/nginx.conf")
+
+	err := os.MkdirAll(path.Dir(tempFile), 0o755)
+	require.NoError(t, err)
+
+	_, err = os.Create(tempFile)
+	require.NoError(t, err)
+
+	fileManagerService := FileManagerService{
+		fileActions: map[string]*model.FileCache{
+			"/etc/nginx/nginx.conf": {
+				File: &mpi.File{
+					FileMeta: &mpi.FileMeta{
+						Name: "/etc/nginx/nginx.conf",
+					},
+				},
+				Action: model.Update,
+			},
+			"/etc/nginx/test.conf": {
+				File: &mpi.File{
+					FileMeta: &mpi.FileMeta{
+						Name: "/etc/nginx/test.conf",
+					},
+				},
+				Action: model.Add,
+			},
+		},
+	}
+
+	fileManagerService.deleteTempFiles(t.Context(), tempDir)
+
+	assert.NoFileExists(t, tempFile)
+}
+
+func TestFileManagerService_createTempConfigDirectory(t *testing.T) {
+	agentConfig := types.AgentConfig()
+	agentConfig.LibDir = t.TempDir()
+
+	fileManagerService := FileManagerService{
+		agentConfig: agentConfig,
+	}
+
+	dir, err := fileManagerService.createTempConfigDirectory(t.Context())
+	assert.NotEmpty(t, dir)
+	require.NoError(t, err)
+
+	// Test for unknown directory path
+	agentConfig.LibDir = "/unknown/"
+
+	dir, err = fileManagerService.createTempConfigDirectory(t.Context())
+	assert.Empty(t, dir)
+	require.Error(t, err)
 }

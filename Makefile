@@ -45,7 +45,7 @@ BINARY_NAME		:= nginx-agent
 PROJECT_DIR		= cmd/agent
 PROJECT_FILE	= main.go
 COLLECTOR_PATH  ?= /etc/nginx-agent/opentelemetry-collector-agent.yaml
-MANIFEST_DIR	?= /var/lib/nginx-agent
+LIB_DIR	        ?= /var/lib/nginx-agent
 DIRS            = $(BUILD_DIR) $(TEST_BUILD_DIR) $(BUILD_DIR)/$(DOCS_DIR) $(BUILD_DIR)/$(DOCS_DIR)/$(PROTO_DIR)
 $(shell mkdir -p $(DIRS))
 
@@ -68,6 +68,7 @@ DEB_PACKAGE := ./build/$(PACKAGE_NAME).deb
 RPM_PACKAGE := ./build/$(PACKAGE_NAME).rpm
 
 MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY ?= 
+MOCK_MANAGEMENT_PLANE_EXTERNAL_FILE_SERVER ?= 
 MOCK_MANAGEMENT_PLANE_LOG_LEVEL ?= INFO
 MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS ?= 127.0.0.1:0
 MOCK_MANAGEMENT_PLANE_API_ADDRESS ?= 127.0.0.1:0
@@ -162,7 +163,7 @@ build-mock-management-otel-collector:
 	mkdir -p $(BUILD_DIR)/mock-management-otel-collector
 	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/mock-management-otel-collector/collector test/mock/collector/mock-collector/main.go
 
-integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc
+integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc 
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) DOCKERFILE_PATH=$(DOCKERFILE_PATH) IMAGE_PATH=$(IMAGE_PATH) TAG=${IMAGE_TAG} \
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) \
@@ -180,6 +181,13 @@ official-image-integration-test: $(SELECTED_PACKAGE) build-mock-management-plane
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) IMAGE_PATH=$(IMAGE_PATH) \
 	NGINX_LICENSE_JWT=$(NGINX_LICENSE_JWT) \
 	go test -v ./test/integration/managementplane ./test/integration/auxiliarycommandserver
+	
+metrics-test: $(SELECTED_PACKAGE) build-mock-management-otel-collector
+	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} BUILD_TARGET="install" \
+	PACKAGES_REPO=$(OSS_PACKAGES_REPO) TAG=${TAG} PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) DOCKERFILE_PATH=$(OFFICIAL_IMAGE_DOCKERFILE_PATH) \
+	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) IMAGE_PATH=$(IMAGE_PATH) \
+	NGINX_LICENSE_JWT=$(NGINX_LICENSE_JWT) \
+	go test -v ./test/integration/metrics
 
 performance-test:
 	mkdir -p $(TEST_BUILD_DIR)
@@ -194,7 +202,7 @@ run: build ## Run code
 
 dev: ## Run agent executable
 	@echo "🚀 Running App"
-	NGINX_AGENT_COLLECTOR_CONFIG_PATH=$(COLLECTOR_PATH) NGINX_AGENT_MANIFEST_DIR=$(MANIFEST_DIR) $(GORUN) -ldflags=$(DEBUG_LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
+	NGINX_AGENT_COLLECTOR_CONFIG_PATH=$(COLLECTOR_PATH) NGINX_AGENT_LIB_DIR=$(LIB_DIR) $(GORUN) -ldflags=$(DEBUG_LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
 
 race-condition-dev: ## Run agent executable with race condition detection
 	@echo "🏎️ Running app with race condition detection enabled"
@@ -202,7 +210,7 @@ race-condition-dev: ## Run agent executable with race condition detection
 
 run-mock-management-grpc-server: ## Run mock management plane gRPC server
 	@echo "🖲️ Running mock management plane gRPC server"
-	$(GORUN) test/mock/grpc/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY) -logLevel=$(MOCK_MANAGEMENT_PLANE_LOG_LEVEL) -grpcAddress=$(MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS) -apiAddress=$(MOCK_MANAGEMENT_PLANE_API_ADDRESS)
+	$(GORUN) test/mock/grpc/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY) -logLevel=$(MOCK_MANAGEMENT_PLANE_LOG_LEVEL) -grpcAddress=$(MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS) -apiAddress=$(MOCK_MANAGEMENT_PLANE_API_ADDRESS) -externalFileServer=$(MOCK_MANAGEMENT_PLANE_EXTERNAL_FILE_SERVER)
 
 
 .PHONY: build-test-nginx-plus-and-nap-image

@@ -21,7 +21,7 @@ import (
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
 
-	"github.com/bufbuild/protovalidate-go"
+	"buf.build/go/protovalidate"
 	protovalidateInterceptor "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	grpcvalidator "github.com/grpc-ecosystem/go-grpc-middleware/validator"
 	"google.golang.org/grpc"
@@ -68,11 +68,13 @@ func NewMockManagementServer(
 	apiAddress string,
 	agentConfig *config.Config,
 	configDirectory *string,
+	externalFileServer *string,
 ) (*MockManagementServer, error) {
 	var err error
 	requestChan := make(chan *v1.ManagementPlaneRequest)
 
-	commandService := serveCommandService(ctx, apiAddress, agentConfig, requestChan, *configDirectory)
+	commandService := serveCommandService(ctx, apiAddress, agentConfig, requestChan, *configDirectory,
+		*externalFileServer)
 
 	var fileServer *FileService
 
@@ -180,14 +182,16 @@ func serverOptions(agentConfig *config.Config) []grpc.ServerOption {
 	return opts
 }
 
+//nolint:revive // Have to add a new parameter here to support external file server
 func serveCommandService(
 	ctx context.Context,
 	apiAddress string,
 	agentConfig *config.Config,
 	requestChan chan *v1.ManagementPlaneRequest,
 	configDirectory string,
+	externalFileServer string,
 ) *CommandService {
-	commandServer := NewCommandService(requestChan, configDirectory)
+	commandServer := NewCommandService(requestChan, configDirectory, externalFileServer)
 
 	go func() {
 		cmdListener, listenerErr := createListener(ctx, apiAddress, agentConfig)

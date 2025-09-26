@@ -23,7 +23,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	grpcRetry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 
-	"github.com/bufbuild/protovalidate-go"
+	"buf.build/go/protovalidate"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 

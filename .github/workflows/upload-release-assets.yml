@@ -36,7 +36,7 @@ jobs:
       upload_azure: ${{steps.vars.outputs.upload_azure }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           ref: ${{ inputs.releaseBranch }}
 
@@ -53,7 +53,7 @@ jobs:
     needs: [vars]
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           ref: ${{ inputs.releaseBranch }}
 
@@ -97,7 +97,7 @@ jobs:
 
       - name: Azure Upload
         if: ${{ inputs.uploadAzure == true }}
-        uses: azure/CLI@965c8d7571d2231a54e321ddd07f7b10317f34d9 # v2.0.0
+        uses: azure/CLI@9f7ce6f37c31b777ec6c6b6d1dfe7db79f497956 # v2.2.0
         with:
           inlineScript: |
             for i in $(find ${{inputs.pkgRepo}}/nginx-agent | grep -e "nginx-agent[_-]${{inputs.pkgVersion}}"); do
