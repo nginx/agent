@@ -65,7 +65,7 @@ jobs:
 
       - name: Generate Assertion Document
         id: assertiondoc
-        uses: nginxinc/compliance-rules/.github/actions/assertion@0bd61ed16c8a847b19854af300bb111e676513e7 # update to tag when available
+        uses: nginxinc/compliance-rules/.github/actions/assertion@83e452166aaf0ad8f07caf91a4f1f903b3dea1e6 # v0.3.0
         with:
           artifact-name: nginx-agent_${{ env.branch_name }}_${{ matrix.osarch }}
           artifact-digest: ${{ env.agent-digest }}
@@ -84,6 +84,6 @@ jobs:
 
       - name: Sign and Store Assertion Document
         id: sign
-        uses: nginxinc/compliance-rules/.github/actions/sign@0bd61ed16c8a847b19854af300bb111e676513e7 # update to tag when available
+        uses: nginxinc/compliance-rules/.github/actions/sign@83e452166aaf0ad8f07caf91a4f1f903b3dea1e6 # v0.3.0
         with:
           assertion-doc: ${{ steps.assertiondoc.outputs.assertion-document-path }}
