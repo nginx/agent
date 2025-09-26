@@ -552,7 +552,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs: build-unsigned-snapshot
     if: ${{ github.event_name == 'push' &&
-            startsWith(github.ref_name, 'pgo-') && 
+            startsWith(github.ref_name, 'release-') && 
             !github.event.pull_request.head.repo.fork }}
     permissions:
       contents: write
