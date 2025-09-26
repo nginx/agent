@@ -1,0 +1,41 @@
+# Codecov configuration file
+# This file configures code coverage reporting and requirements for the project
+coverage:
+
+  # Coverage status configuration
+  status:
+
+    # Project-level coverage settings
+    project:
+
+      # Default status check configuration
+      default:
+
+        # The minimum required coverage value for the project
+        target: 80%
+
+        # The allowed coverage decrease before failing the status check
+        threshold: 0%
+
+    # Patch-level coverage settings
+    patch:
+
+      default:
+
+        target: 80%
+        threshold: 0%
+
+# Ignore files or packages matching their paths
+ignore:
+  - '\.pb\.go$'       # Excludes all protobuf generated files
+  - '\.gen\.go'      # Excludes generated files
+  - '^fake_.*\.go'    # Excludes fakes
+  - '^test/.*$'
+  - 'app.go'          # app.go and main.go should be tested by integration tests.
+  - 'main.go'
+  # ignore metadata generated files
+  - 'metadata/generated_.*\.go'
+  # ignore wrappers around gopsutil
+  - 'internal/datasource/host'
+  - 'internal/watcher/process'
+  - 'pkg/nginxprocess'
