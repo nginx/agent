@@ -242,12 +242,12 @@ func (r *Resource) handleWriteConfigSuccessful(ctx context.Context, msg *bus.Mes
 	dpResponse := response.CreateDataPlaneResponse(data.CorrelationID, mpi.CommandResponse_COMMAND_STATUS_OK,
 		"Config apply successful", data.InstanceID, "")
 
-	successMessage := &model.ConfigApplySuccess{
+	successMessage := &model.ReloadSuccess{
 		ConfigContext:     configContext,
 		DataPlaneResponse: dpResponse,
 	}
 
-	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplySuccessfulTopic, Data: successMessage})
+	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ReloadSuccessfulTopic, Data: successMessage})
 }
 
 func (r *Resource) handleRollbackWrite(ctx context.Context, msg *bus.Message) {

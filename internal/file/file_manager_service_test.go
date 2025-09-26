@@ -625,13 +625,12 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 
 			require.NoError(tt, err)
 
-			diff, contents, fileActionErr := fileManagerService.DetermineFileActions(
+			diff, fileActionErr := fileManagerService.DetermineFileActions(
 				ctx,
 				test.currentFiles,
 				test.modifiedFiles,
 			)
 			require.NoError(tt, fileActionErr)
-			assert.Equal(tt, test.expectedContent, contents)
 			assert.Equal(tt, test.expectedCache, diff)
 		})
 	}
@@ -892,7 +891,7 @@ func TestFileManagerService_fileActions(t *testing.T) {
 
 	fileManagerService.fileActions = filesCache
 
-	actionErr := fileManagerService.executeFileActions(ctx, os.TempDir())
+	actionErr := fileManagerService.executeFileActions(ctx)
 	require.NoError(t, actionErr)
 
 	assert.FileExists(t, addFilePath)
@@ -1020,14 +1019,14 @@ func TestFileManagerService_createTempConfigDirectory(t *testing.T) {
 		agentConfig: agentConfig,
 	}
 
-	dir, err := fileManagerService.createTempConfigDirectory(t.Context())
+	dir, err := fileManagerService.createTempConfigDirectory(t.Context(), "config")
 	assert.NotEmpty(t, dir)
 	require.NoError(t, err)
 
 	// Test for unknown directory path
 	agentConfig.LibDir = "/unknown/"
 
-	dir, err = fileManagerService.createTempConfigDirectory(t.Context())
+	dir, err = fileManagerService.createTempConfigDirectory(t.Context(), "config")
 	assert.Empty(t, dir)
 	require.Error(t, err)
 }

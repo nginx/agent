@@ -142,7 +142,7 @@ func TestResource_Process_Apply(t *testing.T) {
 				},
 			},
 			applyErr: nil,
-			topic:    []string{bus.ConfigApplySuccessfulTopic},
+			topic:    []string{bus.ReloadSuccessfulTopic},
 		},
 		{
 			name: "Test 2: Write Config Successful Topic - Fail Status",

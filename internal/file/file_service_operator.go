@@ -277,7 +277,7 @@ func (fso *FileServiceOperator) UpdateFile(
 	return fso.sendUpdateFileStream(ctx, fileToUpdate, fso.agentConfig.Client.Grpc.FileChunkSize)
 }
 
-func (fso *FileServiceOperator) MoveFilesFromTempDirectory(
+func (fso *FileServiceOperator) MoveFileFromTempDirectory(
 	ctx context.Context, fileAction *model.FileCache, tempDir string,
 ) error {
 	fileName := fileAction.File.GetFileMeta().GetName()
@@ -289,18 +289,9 @@ func (fso *FileServiceOperator) MoveFilesFromTempDirectory(
 		return fmt.Errorf("failed to create directories for %s: %w", fileName, err)
 	}
 
-	moveErr := fso.fileOperator.MoveFile(ctx, tempFilePath, fileName)
+	moveErr := os.Rename(tempFilePath, fileName)
 	if moveErr != nil {
-		return fmt.Errorf("failed to move file: %w", moveErr)
-	}
-
-	if removeError := os.Remove(tempFilePath); removeError != nil && !os.IsNotExist(removeError) {
-		slog.ErrorContext(
-			ctx,
-			"Error deleting temp file",
-			"file", fileName,
-			"error", removeError,
-		)
+		return fmt.Errorf("failed to rename file: %w", moveErr)
 	}
 
 	return fso.validateFileHash(fileName, fileAction.File.GetFileMeta().GetHash())

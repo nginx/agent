@@ -146,7 +146,7 @@ func (cws *CredentialWatcherService) handleEvent(ctx context.Context, event fsno
 		return
 	}
 
-	slog.DebugContext(ctx, "Processing FSNotify event", "event", event)
+	slog.InfoContext(ctx, "Credential Processing FSNotify event", "event", event)
 
 	switch {
 	case event.Has(fsnotify.Remove):
