@@ -142,12 +142,13 @@ func (fp *FilePlugin) CleanUpConfigApply(ctx context.Context,
 	configContext *model.NginxConfigContext,
 	instanceID string,
 ) {
+	fp.fileManagerService.ClearCache()
+
+	slog.InfoContext(ctx, "Cleaned up temp files")
 	enableWatcher := &model.EnableWatchers{
 		ConfigContext: configContext,
 		InstanceID:    instanceID,
 	}
-
-	fp.fileManagerService.ClearCache()
 
 	fp.messagePipe.Process(ctx, &bus.Message{
 		Data:  enableWatcher,
@@ -235,7 +236,6 @@ func (fp *FilePlugin) handleConfigApplyFailedRequest(ctx context.Context, msg *b
 			mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"Config apply failed, rollback failed", data.InstanceID, data.Error.Error())
 
-		fp.fileManagerService.ClearCache()
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: applyResponse})
 
@@ -283,7 +283,6 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			"",
 		)
 
-		fp.fileManagerService.ClearCache()
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: dpResponse})
 
 		return
@@ -302,7 +301,6 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			err.Error(),
 		)
 
-		fp.fileManagerService.ClearCache()
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: response})
 
 		return
@@ -335,7 +333,6 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 				instanceID,
 				rollbackErr.Error())
 
-			fp.fileManagerService.ClearCache()
 			fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: rollbackResponse})
 
 			return
@@ -348,7 +345,6 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			instanceID,
 			err.Error())
 
-		fp.fileManagerService.ClearCache()
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: response})
 
 		return
@@ -373,6 +369,7 @@ func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 		return
 	}
 
+	fp.fileManagerService.SetConfigPath(nginxConfigContext.ConfigPath)
 	fp.fileManagerService.ConfigUpdate(ctx, nginxConfigContext)
 }
 

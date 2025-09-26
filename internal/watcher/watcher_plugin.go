@@ -186,6 +186,7 @@ func (w *Watcher) handleEnableWatchers(ctx context.Context, msg *bus.Message) {
 
 	w.fileWatcherService.SetEnabled(true)
 	w.instanceWatcherService.SetEnabled(true)
+	slog.InfoContext(ctx, "Enabled Watchers")
 	w.watcherMutex.Unlock()
 }
 

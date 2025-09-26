@@ -71,7 +71,7 @@ type (
 			fileToUpdate *mpi.File,
 		) error
 		SetIsConnected(isConnected bool)
-		MoveFilesFromTempDirectory(ctx context.Context, fileAction *model.FileCache, tempDir string) error
+		MoveFileFromTempDirectory(ctx context.Context, fileAction *model.FileCache, tempDir string) error
 		UpdateClient(ctx context.Context, fileServiceClient mpi.FileServiceClient)
 	}
 
@@ -80,6 +80,7 @@ type (
 			err error)
 		Rollback(ctx context.Context, instanceID string) error
 		ClearCache()
+		SetConfigPath(configPath string)
 		ConfigUpload(ctx context.Context, configUploadRequest *mpi.ConfigUploadRequest) error
 		ConfigUpdate(ctx context.Context, nginxConfigContext *model.NginxConfigContext)
 		UpdateCurrentFilesOnDisk(ctx context.Context, updateFiles map[string]*mpi.File, referenced bool) error
@@ -87,7 +88,7 @@ type (
 			ctx context.Context,
 			currentFiles map[string]*mpi.File,
 			modifiedFiles map[string]*model.FileCache,
-		) (map[string]*model.FileCache, map[string][]byte, error)
+		) (map[string]*model.FileCache, error)
 		IsConnected() bool
 		SetIsConnected(isConnected bool)
 		ResetClient(ctx context.Context, fileServiceClient mpi.FileServiceClient)
@@ -107,6 +108,9 @@ type FileManagerService struct {
 	currentFilesOnDisk    map[string]*mpi.File // key is file path
 	previousManifestFiles map[string]*model.ManifestFile
 	manifestFilePath      string
+	tempConfigDir         string
+	tempRollbackDir       string
+	configPath            string
 	rollbackManifest      bool
 	filesMutex            sync.RWMutex
 }
@@ -124,8 +128,13 @@ func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig 
 		previousManifestFiles: make(map[string]*model.ManifestFile),
 		rollbackManifest:      true,
 		manifestFilePath:      agentConfig.LibDir + "/manifest.json",
+		configPath:            "/etc/nginx/",
 		manifestLock:          manifestLock,
 	}
+}
+
+func (fms *FileManagerService) SetConfigPath(configPath string) {
+	fms.configPath = filepath.Dir(configPath)
 }
 
 func (fms *FileManagerService) ResetClient(ctx context.Context, fileServiceClient mpi.FileServiceClient) {
@@ -144,6 +153,9 @@ func (fms *FileManagerService) SetIsConnected(isConnected bool) {
 func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	configApplyRequest *mpi.ConfigApplyRequest,
 ) (status model.WriteStatus, err error) {
+	var configTempErr error
+	var rollbackTempErr error
+
 	fms.rollbackManifest = true
 	fileOverview := configApplyRequest.GetOverview()
 
@@ -156,7 +168,7 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 		return model.Error, allowedErr
 	}
 
-	diffFiles, fileContent, compareErr := fms.DetermineFileActions(
+	diffFiles, compareErr := fms.DetermineFileActions(
 		ctx,
 		fms.currentFilesOnDisk,
 		ConvertToMapOfFileCache(fileOverview.GetFiles()),
@@ -170,15 +182,25 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 		return model.NoChange, nil
 	}
 
-	fms.rollbackFileContents = fileContent
+	// fms.rollbackFileContents = fileContent
 	fms.fileActions = diffFiles
 
-	tempDir, tempDirError := fms.createTempConfigDirectory(ctx)
-	if tempDirError != nil {
-		return model.Error, tempDirError
+	fms.tempConfigDir, configTempErr = fms.createTempConfigDirectory(ctx, "config")
+	if configTempErr != nil {
+		return model.Error, configTempErr
 	}
 
-	fileErr := fms.executeFileActions(ctx, tempDir)
+	fms.tempRollbackDir, rollbackTempErr = fms.createTempConfigDirectory(ctx, "rollback")
+	if rollbackTempErr != nil {
+		return model.Error, rollbackTempErr
+	}
+
+	rollbackTempFilesErr := fms.RollbackTempFiles(ctx)
+	if rollbackTempFilesErr != nil {
+		return model.Error, rollbackTempFilesErr
+	}
+
+	fileErr := fms.executeFileActions(ctx)
 	if fileErr != nil {
 		fms.rollbackManifest = false
 		return model.RollbackRequired, fileErr
@@ -193,13 +215,54 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	return model.OK, nil
 }
 
+func (fms *FileManagerService) RollbackTempFiles(ctx context.Context) error {
+	for _, file := range fms.fileActions {
+		if file.Action == model.Add || file.Action == model.Unchanged {
+			continue
+		}
+
+		filePath := file.File.GetFileMeta().GetName()
+
+		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+			slog.DebugContext(ctx, "Unable to backup file content since file does not exist",
+				"file", filePath)
+
+			continue
+		}
+
+		tempFilePath := filepath.Join(fms.tempRollbackDir, filePath)
+		slog.DebugContext(ctx, "Attempting to backup file content since file exists", "temp_path", tempFilePath)
+
+		moveErr := fms.fileOperator.MoveFile(ctx, filePath, tempFilePath)
+
+		if moveErr != nil {
+			return moveErr
+		}
+	}
+
+	return nil
+}
+
 func (fms *FileManagerService) ClearCache() {
+	slog.Debug("Clearing cache and temp files after config apply")
 	clear(fms.rollbackFileContents)
 	clear(fms.fileActions)
 	clear(fms.previousManifestFiles)
+
+	configErr := os.RemoveAll(fms.tempConfigDir)
+	if configErr != nil {
+		slog.Error("error removing temp config directory", "path", fms.tempConfigDir, "err", configErr)
+	}
+
+	rollbackErr := os.RemoveAll(fms.tempRollbackDir)
+	if rollbackErr != nil {
+		slog.Error("error removing temp rollback directory", "path", fms.tempRollbackDir, "err", rollbackErr)
+	}
+
+	slog.Info("Cleaned up temp files")
 }
 
-//nolint:revive // cognitive-complexity of 13 max is 12, loop is needed cant be broken up
+//nolint:revive,cyclop // cognitive-complexity of 13 max is 12, loop is needed cant be broken up
 func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) error {
 	slog.InfoContext(ctx, "Rolling back config for instance", "instance_id", instanceID)
 
@@ -218,10 +281,25 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 			continue
 		case model.Delete, model.Update:
 			fileMeta := fileAction.File.GetFileMeta()
-			content := fms.rollbackFileContents[fileMeta.GetName()]
-			err := fms.fileOperator.Write(ctx, content, fileMeta.GetName(), fileMeta.GetPermissions())
-			if err != nil {
-				return err
+			fileName := fileMeta.GetName()
+
+			tempFilePath := filepath.Join(fms.tempRollbackDir, fileName)
+
+			// Create parent directories for the target file if they don't exist
+			if err := os.MkdirAll(filepath.Dir(fileName), dirPerm); err != nil {
+				return fmt.Errorf("failed to create directories for %s: %w", fileName, err)
+			}
+
+			slog.InfoContext(ctx, "Moving files during rollback")
+			moveErr := os.Rename(tempFilePath, fileName)
+			if moveErr != nil {
+				return fmt.Errorf("failed to rename file, %s to %s: %w", tempFilePath, fileName, moveErr)
+			}
+
+			content, readErr := os.ReadFile(fileMeta.GetName())
+			if readErr != nil {
+				return fmt.Errorf("error reading file, unable to generate hash: %s error: %w",
+					fileMeta.GetName(), readErr)
 			}
 
 			// currentFilesOnDisk needs to be updated after rollback action is performed
@@ -308,20 +386,18 @@ func (fms *FileManagerService) DetermineFileActions(
 	modifiedFiles map[string]*model.FileCache,
 ) (
 	map[string]*model.FileCache,
-	map[string][]byte,
 	error,
 ) {
 	fms.filesMutex.Lock()
 	defer fms.filesMutex.Unlock()
 
 	fileDiff := make(map[string]*model.FileCache) // Files that have changed, key is file name
-	fileContents := make(map[string][]byte)       // contents of the file, key is file name
 
 	_, filesMap, manifestFileErr := fms.manifestFile()
 
 	if manifestFileErr != nil {
 		if !errors.Is(manifestFileErr, os.ErrNotExist) {
-			return nil, nil, manifestFileErr
+			return nil, manifestFileErr
 		}
 		filesMap = currentFiles
 	}
@@ -332,18 +408,6 @@ func (fms *FileManagerService) DetermineFileActions(
 		_, exists := modifiedFiles[fileName]
 
 		if !exists {
-			// Read file contents before marking it deleted
-			fileContent, readErr := os.ReadFile(fileName)
-			if readErr != nil {
-				if errors.Is(readErr, os.ErrNotExist) {
-					slog.DebugContext(ctx, "Unable to backup file contents since file does not exist", "file", fileName)
-					continue
-				}
-
-				return nil, nil, fmt.Errorf("error reading file %s: %w", fileName, readErr)
-			}
-			fileContents[fileName] = fileContent
-
 			fileDiff[fileName] = &model.FileCache{
 				File:   manifestFile,
 				Action: model.Delete,
@@ -353,7 +417,7 @@ func (fms *FileManagerService) DetermineFileActions(
 
 	for _, modifiedFile := range modifiedFiles {
 		fileName := modifiedFile.File.GetFileMeta().GetName()
-		currentFile, ok := filesMap[modifiedFile.File.GetFileMeta().GetName()]
+		currentFile, ok := filesMap[fileName]
 		// default to unchanged action
 		modifiedFile.Action = model.Unchanged
 
@@ -363,25 +427,20 @@ func (fms *FileManagerService) DetermineFileActions(
 		}
 		// if file doesn't exist in the current files, file has been added
 		// set file action
-		if _, statErr := os.Stat(modifiedFile.File.GetFileMeta().GetName()); errors.Is(statErr, os.ErrNotExist) {
+		if _, statErr := os.Stat(fileName); errors.Is(statErr, os.ErrNotExist) {
 			modifiedFile.Action = model.Add
-			fileDiff[modifiedFile.File.GetFileMeta().GetName()] = modifiedFile
+			fileDiff[fileName] = modifiedFile
 
 			continue
 			// if file currently exists and file hash is different, file has been updated
 			// copy contents, set file action
 		} else if ok && modifiedFile.File.GetFileMeta().GetHash() != currentFile.GetFileMeta().GetHash() {
-			fileContent, readErr := os.ReadFile(fileName)
-			if readErr != nil {
-				return nil, nil, fmt.Errorf("error reading file %s, error: %w", fileName, readErr)
-			}
 			modifiedFile.Action = model.Update
-			fileContents[fileName] = fileContent
-			fileDiff[modifiedFile.File.GetFileMeta().GetName()] = modifiedFile
+			fileDiff[fileName] = modifiedFile
 		}
 	}
 
-	return fileDiff, fileContents, nil
+	return fileDiff, nil
 }
 
 // UpdateCurrentFilesOnDisk updates the FileManagerService currentFilesOnDisk slice which contains the files
@@ -485,17 +544,17 @@ func (fms *FileManagerService) manifestFile() (map[string]*model.ManifestFile, m
 	return manifestFiles, fileMap, nil
 }
 
-func (fms *FileManagerService) executeFileActions(ctx context.Context, tempDir string) (actionError error) {
+func (fms *FileManagerService) executeFileActions(ctx context.Context) (actionError error) {
 	// Download files to temporary location
-	downloadError := fms.downloadUpdatedFilesToTempLocation(ctx, tempDir)
+	downloadError := fms.downloadUpdatedFilesToTempLocation(ctx, fms.tempConfigDir)
 	if downloadError != nil {
 		return downloadError
 	}
 
 	// Remove temp files if there is a failure moving or deleting files
-	actionError = fms.moveOrDeleteFiles(ctx, tempDir, actionError)
+	actionError = fms.moveOrDeleteFiles(ctx, fms.tempConfigDir, actionError)
 	if actionError != nil {
-		fms.deleteTempFiles(ctx, tempDir)
+		fms.deleteTempFiles(ctx, fms.tempConfigDir)
 	}
 
 	return actionError
@@ -522,11 +581,6 @@ func (fms *FileManagerService) downloadUpdatedFilesToTempLocation(
 		}
 	}
 
-	// Remove temp files if there is an error downloading any files
-	if updateError != nil {
-		fms.deleteTempFiles(ctx, tempDir)
-	}
-
 	return updateError
 }
 
@@ -545,7 +599,7 @@ actionsLoop:
 
 			continue
 		case model.Add, model.Update:
-			err := fms.fileServiceOperator.MoveFilesFromTempDirectory(ctx, fileAction, tempDir)
+			err := fms.fileServiceOperator.MoveFileFromTempDirectory(ctx, fileAction, tempDir)
 			if err != nil {
 				actionError = err
 
@@ -643,8 +697,8 @@ func (fms *FileManagerService) convertToFile(manifestFile *model.ManifestFile) *
 	}
 }
 
-func (fms *FileManagerService) createTempConfigDirectory(ctx context.Context) (string, error) {
-	tempDir, tempDirError := os.MkdirTemp(fms.agentConfig.LibDir, "config")
+func (fms *FileManagerService) createTempConfigDirectory(ctx context.Context, pattern string) (string, error) {
+	tempDir, tempDirError := os.MkdirTemp(fms.configPath, pattern)
 	if tempDirError != nil {
 		return "", fmt.Errorf("failed creating temp config directory: %w", tempDirError)
 	}

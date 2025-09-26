@@ -89,6 +89,7 @@ func (fws *FileWatcherService) Watch(ctx context.Context, ch chan<- FileUpdateMe
 		if fws.watcher != nil {
 			select {
 			case event := <-fws.watcher.Events:
+				slog.InfoContext(ctx, "--------- Event received", "event", event)
 				fws.handleEvent(ctx, event)
 			case watcherError := <-fws.watcher.Errors:
 				slog.ErrorContext(ctx, "Unexpected error in file watcher", "error", watcherError)
@@ -172,13 +173,16 @@ func (fws *FileWatcherService) removeWatchers(ctx context.Context) {
 }
 
 func (fws *FileWatcherService) handleEvent(ctx context.Context, event fsnotify.Event) {
+	slog.InfoContext(ctx, "Is enabled", "bool", fws.enabled.Load())
 	if fws.enabled.Load() {
 		if fws.isEventSkippable(event) {
 			return
 		}
 
-		slog.DebugContext(ctx, "Processing FSNotify event", "event", event)
+		slog.InfoContext(ctx, "Processing FSNotify event", "event", event)
 		fws.filesChanged.Store(true)
+	} else {
+		slog.InfoContext(ctx, "Ignoring FSNotify event", "event", event)
 	}
 }
 
