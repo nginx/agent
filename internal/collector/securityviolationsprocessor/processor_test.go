@@ -3,12 +3,11 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package syslogprocessor
+package securityviolationsprocessor
 
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/leodido/go-syslog/v4/rfc3164"
@@ -21,16 +20,17 @@ import (
 )
 
 //nolint:lll,revive // long test string kept for readability
-func TestSyslogProcessor(t *testing.T) {
+func TestSecurityViolationsProcessor(t *testing.T) {
 	testCases := []struct {
 		expectAttrs   map[string]string
 		body          any
 		name          string
 		expectJSON    string
 		expectRecords int
+		expectError   bool
 	}{
 		{
-			name: "csv nginx app protect syslog message",
+			name: "Test 1: CSV NGINX App Protect syslog message",
 			body: `<130>Aug 22 03:28:35 ip-172-16-0-213 ASM:N/A,80,127.0.0.1,false,GET,nms_app_protect_default_policy,HTTP,blocked,0,N/A,N/A::N/A,{High Accuracy Signatures;Cross Site Scripting Signatures}::{High Accuracy Signatures; Cross Site Scripting Signatures},56064,N/A,5377540117854870581,N/A,5,1-localhost:1-/,N/A,REJECTED,SECURITY_WAF_VIOLATION,Illegal meta character in URL::Attack signature detected::Violation Rating Threat detected::Bot Client Detected,<?xml version='1.0' encoding='UTF-8'?><BAD_MSG><violation_masks><block>414000000200c00-3a03030c30000072-8000000000000000-0</block><alarm>475f0ffcbbd0fea-befbf35cb000007e-f400000000000000-0</alarm><learn>0-0-0-0</learn><staging>0-0-0-0</staging></violation_masks><request-violations><violation><viol_index>42</viol_index><viol_name>VIOL_ATTACK_SIGNATURE</viol_name><context>url</context><sig_data><sig_id>200000099</sig_id><blocking_mask>3</blocking_mask><kw_data><buffer>Lzw+PHNjcmlwdD4=</buffer><offset>3</offset><length>7</length></kw_data></sig_data><sig_data><sig_id>200000093</sig_id><blocking_mask>3</blocking_mask><kw_data><buffer>Lzw+PHNjcmlwdD4=</buffer><offset>4</offset><length>7</length></kw_data></sig_data></violation><violation><viol_index>26</viol_index><viol_name>VIOL_URL_METACHAR</viol_name><uri>Lzw+PHNjcmlwdD4=</uri><metachar_index>60</metachar_index><wildcard_entity>*</wildcard_entity><staging>0</staging></violation><violation><viol_index>26</viol_index><viol_name>VIOL_URL_METACHAR</viol_name><uri>Lzw+PHNjcmlwdD4=</uri><metachar_index>62</metachar_index><wildcard_entity>*</wildcard_entity><staging>0</staging></violation><violation><viol_index>122</viol_index><viol_name>VIOL_BOT_CLIENT</viol_name></violation><violation><viol_index>93</viol_index><viol_name>VIOL_RATING_THREAT</viol_name></violation></request-violations></BAD_MSG>,curl,HTTP Library,N/A,N/A,Untrusted Bot,N/A,N/A,HTTP/1.1,/<><script>,GET /<><script> HTTP/1.1\\r\\nHost: localhost\\r\\nUser-Agent: curl/7.81.0\\r\\nAccept: */*\\r\\n\\r\\n`,
 			expectAttrs: map[string]string{
 				"app_protect.policy_name": "nms_app_protect_default_policy",
@@ -41,7 +41,7 @@ func TestSyslogProcessor(t *testing.T) {
 			expectRecords: 1,
 		},
 		{
-			name: "simple valid syslog message",
+			name: "Test 2: Simple valid syslog message",
 			body: "<34>Oct 11 22:14:15 mymachine su: 'su root' failed for lonvick on /dev/pts/8",
 			expectAttrs: map[string]string{
 				"syslog.facility": "auth",
@@ -49,9 +49,15 @@ func TestSyslogProcessor(t *testing.T) {
 			expectRecords: 1,
 		},
 		{
-			name:          "unsupported body type",
+			name:          "Test 3: Unsupported body type",
 			body:          12345,
 			expectRecords: 0,
+		},
+		{
+			name:          "Test 4: Invalid syslog message",
+			body:          "not a syslog line",
+			expectRecords: 0,
+			expectError:   true,
 		},
 	}
 
@@ -73,11 +79,15 @@ func TestSyslogProcessor(t *testing.T) {
 			}
 
 			sink := &consumertest.LogsSink{}
-			p := newSyslogProcessor(sink, settings)
+			p := newSecurityViolationsProcessor(sink, settings)
 			require.NoError(t, p.Start(ctx, nil))
 
 			err := p.ConsumeLogs(ctx, logs)
-			require.NoError(t, err)
+			if tc.expectError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
 
 			if tc.expectRecords == 0 {
 				assert.Equal(t, 0, sink.LogRecordCount(), "no logs should be produced")
@@ -95,7 +105,7 @@ func TestSyslogProcessor(t *testing.T) {
 				assert.Equal(t, v, val.Str())
 			}
 
-			if tc.name == "csv nginx app protect syslog message" {
+			if tc.name == "Test 1: CSV NGINX App Protect syslog message" {
 				processedBody := lrOut.Body().Str()
 
 				var actualEvent SecurityViolationEvent
@@ -156,58 +166,7 @@ func TestSyslogProcessor(t *testing.T) {
 	}
 }
 
-func TestSyslogProcessorFailure(t *testing.T) {
-	testCases := []struct {
-		body          any
-		name          string
-		expectRecords int
-	}{
-		{
-			name:          "invalid syslog message",
-			body:          "not a syslog line",
-			expectRecords: 0,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
-			settings := processortest.NewNopSettings(processortest.NopType)
-			settings.Logger = zap.NewNop()
-			logs := plog.NewLogs()
-			logRecord := logs.ResourceLogs().
-				AppendEmpty().
-				ScopeLogs().
-				AppendEmpty().
-				LogRecords().
-				AppendEmpty()
-
-			switch v := tc.body.(type) {
-			case string:
-				logRecord.Body().SetStr(v)
-			case int:
-				logRecord.Body().SetInt(int64(v))
-			case []byte:
-				logRecord.Body().SetEmptyBytes().FromRaw(v)
-			}
-
-			// Create sink and processor.
-			sink := &consumertest.LogsSink{}
-			processor := newSyslogProcessor(sink, settings)
-
-			require.NoError(t, processor.Start(ctx, nil))
-			err := processor.ConsumeLogs(ctx, logs)
-			fmt.Println(err)
-			require.Error(t, err)
-
-			assert.Equal(t, tc.expectRecords, sink.LogRecordCount(), "unexpected number of logs produced")
-
-			require.NoError(t, processor.Shutdown(ctx))
-		})
-	}
-}
-
-func TestExtractIPFromHostname(t *testing.T) {
+func TestSecurityViolationsProcessor_ExtractIPFromHostname(t *testing.T) {
 	assert.Equal(t, "127.0.0.1", extractIPFromHostname("127.0.0.1"))
 	assert.Equal(t, "172.16.0.213", extractIPFromHostname("ip-172-16-0-213"))
 	assert.Empty(t, extractIPFromHostname("not-an-ip"))
@@ -232,7 +191,7 @@ func TestBuildSignatures(t *testing.T) {
 func TestSetSyslogAttributesNilFields(t *testing.T) {
 	lr := plog.NewLogRecord()
 	m := &rfc3164.SyslogMessage{}
-	p := newSyslogProcessor(&consumertest.LogsSink{}, processortest.NewNopSettings(processortest.NopType))
+	p := newSecurityViolationsProcessor(&consumertest.LogsSink{}, processortest.NewNopSettings(processortest.NopType))
 	p.setSyslogAttributes(lr, m)
 	attrs := lr.Attributes()
 	assert.Equal(t, 0, attrs.Len())

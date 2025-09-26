@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package syslogprocessor
+package securityviolationsprocessor
 
 import (
 	"context"
@@ -22,20 +22,20 @@ func NewFactory() processor.Factory {
 	return processor.NewFactory(
 		component.MustNewType(typeStr),
 		func() component.Config { return &struct{}{} },
-		processor.WithLogs(createSyslogProcessor, component.StabilityLevelAlpha),
+		processor.WithLogs(createSecurityViolationsProcessor, component.StabilityLevelAlpha),
 	)
 }
 
-// createSyslogProcessor instantiates the logs processor.
+// createSecurityViolationsProcessor instantiates the logs processor.
 //
 //nolint:ireturn // required to comply with component factory interface
-func createSyslogProcessor(
+func createSecurityViolationsProcessor(
 	_ context.Context,
 	settings processor.Settings,
 	_ component.Config,
 	next consumer.Logs,
 ) (processor.Logs, error) {
-	settings.Logger.Info("Creating syslog processor")
+	settings.Logger.Info("Creating security violations processor")
 
-	return newSyslogProcessor(next, settings), nil
+	return newSecurityViolationsProcessor(next, settings), nil
 }

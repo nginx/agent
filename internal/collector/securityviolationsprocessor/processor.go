@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package syslogprocessor
+package securityviolationsprocessor
 
 import (
 	"context"
@@ -31,43 +31,43 @@ const (
 	maxSplitParts = 2
 )
 
-// syslogProcessor parses syslog-formatted log records and annotates
+// securityViolationsProcessor parses syslog-formatted log records and annotates
 // them with structured SecurityEvent attributes.
-type syslogProcessor struct {
+type securityViolationsProcessor struct {
 	nextConsumer consumer.Logs
 	parser       syslog.Machine
 	settings     processor.Settings
 }
 
-func newSyslogProcessor(next consumer.Logs, settings processor.Settings) *syslogProcessor {
-	return &syslogProcessor{
+func newSecurityViolationsProcessor(next consumer.Logs, settings processor.Settings) *securityViolationsProcessor {
+	return &securityViolationsProcessor{
 		nextConsumer: next,
 		parser:       rfc3164.NewParser(rfc3164.WithBestEffort()),
 		settings:     settings,
 	}
 }
 
-func (p *syslogProcessor) Start(ctx context.Context, _ component.Host) error {
+func (p *securityViolationsProcessor) Start(ctx context.Context, _ component.Host) error {
 	p.settings.Logger.Info("Starting syslog processor")
 	return nil
 }
 
-func (p *syslogProcessor) Shutdown(ctx context.Context) error {
+func (p *securityViolationsProcessor) Shutdown(ctx context.Context) error {
 	p.settings.Logger.Info("Shutting down syslog processor")
 	return nil
 }
 
-func (p *syslogProcessor) Capabilities() consumer.Capabilities {
+func (p *securityViolationsProcessor) Capabilities() consumer.Capabilities {
 	return consumer.Capabilities{MutatesData: true}
 }
 
-func (p *syslogProcessor) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
+func (p *securityViolationsProcessor) ConsumeLogs(ctx context.Context, logs plog.Logs) error {
 	var errs error
 
-	rl := ld.ResourceLogs()
-	for _, sl := range rl.All() {
-		for _, lr := range sl.ScopeLogs().All() {
-			if err := p.processLogRecords(lr.LogRecords()); err != nil {
+	resourceLogs := logs.ResourceLogs()
+	for _, scopeLog := range resourceLogs.All() {
+		for _, logRecord := range scopeLog.ScopeLogs().All() {
+			if err := p.processLogRecords(logRecord.LogRecords()); err != nil {
 				errs = multierr.Append(errs, err)
 			}
 		}
@@ -77,17 +77,17 @@ func (p *syslogProcessor) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
 		return fmt.Errorf("failed processing log records: %w", errs)
 	}
 
-	return p.nextConsumer.ConsumeLogs(ctx, ld)
+	return p.nextConsumer.ConsumeLogs(ctx, logs)
 }
 
-func (p *syslogProcessor) processLogRecords(lrs plog.LogRecordSlice) error {
+func (p *securityViolationsProcessor) processLogRecords(logRecordSlice plog.LogRecordSlice) error {
 	// Drop anything that isn't a string-bodied log before processing.
 	var skipped, errCount int
-	var t pcommon.ValueType
+	var logType pcommon.ValueType
 	var errs error
-	lrs.RemoveIf(func(lr plog.LogRecord) bool {
-		t = lr.Body().Type()
-		if t == pcommon.ValueTypeStr {
+	logRecordSlice.RemoveIf(func(lr plog.LogRecord) bool {
+		logType = lr.Body().Type()
+		if logType == pcommon.ValueTypeStr {
 			return false
 		}
 
@@ -96,11 +96,11 @@ func (p *syslogProcessor) processLogRecords(lrs plog.LogRecordSlice) error {
 		return true
 	})
 	if skipped > 0 {
-		p.settings.Logger.Debug("Skipping log record with unsupported body type", zap.Any("type", t))
+		p.settings.Logger.Debug("Skipping log record with unsupported body type", zap.Any("type", logType))
 	}
 	errCount = 0
-	for _, lr := range lrs.All() {
-		if err := p.processLogRecord(lr); err != nil {
+	for _, logRecord := range logRecordSlice.All() {
+		if err := p.processLogRecord(logRecord); err != nil {
 			errs = multierr.Append(errs, err)
 			errCount++
 		}
@@ -113,23 +113,17 @@ func (p *syslogProcessor) processLogRecords(lrs plog.LogRecordSlice) error {
 	return nil
 }
 
-func (p *syslogProcessor) processLogRecord(lr plog.LogRecord) error {
+func (p *securityViolationsProcessor) processLogRecord(lr plog.LogRecord) error {
 	// Read the string body once.
 	bodyStr := lr.Body().Str()
 
 	msg, err := p.parser.Parse([]byte(bodyStr))
 	if err != nil {
-		p.settings.Logger.Debug("failed to parse syslog message",
-			zap.Error(err),
-			zap.String("body", bodyStr))
-
 		return err
 	}
 
 	m, ok := msg.(*rfc3164.SyslogMessage)
 	if !ok || !m.Valid() {
-		p.settings.Logger.Debug("Invalid syslog message")
-
 		return errors.New("invalid syslog message")
 	}
 
@@ -142,7 +136,7 @@ func (p *syslogProcessor) processLogRecord(lr plog.LogRecord) error {
 	return nil
 }
 
-func (p *syslogProcessor) setSyslogAttributes(lr plog.LogRecord, m *rfc3164.SyslogMessage) {
+func (p *securityViolationsProcessor) setSyslogAttributes(lr plog.LogRecord, m *rfc3164.SyslogMessage) {
 	attrs := lr.Attributes()
 	if m.Timestamp != nil {
 		attrs.PutStr("syslog.timestamp", m.Timestamp.Format(time.RFC3339))
@@ -158,13 +152,11 @@ func (p *syslogProcessor) setSyslogAttributes(lr plog.LogRecord, m *rfc3164.Sysl
 	}
 }
 
-func (p *syslogProcessor) processAppProtectMessage(lr plog.LogRecord, message string, hostname *string) error {
+func (p *securityViolationsProcessor) processAppProtectMessage(lr plog.LogRecord, message string, hostname *string) error {
 	appProtectLog := p.parseAppProtectLog(message, hostname)
 
 	jsonData, marshalErr := json.Marshal(appProtectLog)
 	if marshalErr != nil {
-		p.settings.Logger.Debug("failed to marshal App Protect log to JSON", zap.Error(marshalErr))
-		lr.Body().SetStr(message)
 
 		return marshalErr
 	}
@@ -179,7 +171,7 @@ func (p *syslogProcessor) processAppProtectMessage(lr plog.LogRecord, message st
 	return nil
 }
 
-func (p *syslogProcessor) parseAppProtectLog(message string, hostname *string) *SecurityViolationEvent {
+func (p *securityViolationsProcessor) parseAppProtectLog(message string, hostname *string) *SecurityViolationEvent {
 	log := &SecurityViolationEvent{}
 
 	p.assignHostnames(log, hostname)
@@ -200,7 +192,7 @@ func (p *syslogProcessor) parseAppProtectLog(message string, hostname *string) *
 	return log
 }
 
-func (p *syslogProcessor) assignHostnames(log *SecurityViolationEvent, hostname *string) {
+func (p *securityViolationsProcessor) assignHostnames(log *SecurityViolationEvent, hostname *string) {
 	if hostname == nil {
 		return
 	}
@@ -219,8 +211,8 @@ func (p *syslogProcessor) assignHostnames(log *SecurityViolationEvent, hostname 
 // versions when key-value logging isn't enabled.
 //
 //nolint:lll //long test string kept for log profile readability
-func (p *syslogProcessor) parseCSVLog(message string) map[string]string {
-	kvMap := make(map[string]string)
+func (p *securityViolationsProcessor) parseCSVLog(message string) map[string]string {
+	fieldValueMap := make(map[string]string)
 
 	// Remove the "ASM:" prefix if present so we only process the values
 	if idx := strings.Index(message, ":"); idx >= 0 {
@@ -270,30 +262,30 @@ func (p *syslogProcessor) parseCSVLog(message string) map[string]string {
 		if i >= len(fieldOrder) {
 			break
 		}
-		kvMap[fieldOrder[i]] = strings.TrimSpace(field)
+		fieldValueMap[fieldOrder[i]] = strings.TrimSpace(field)
 	}
 
 	// combine multiple values separated by '::'
-	if combined, ok := kvMap["sig_cves"]; ok {
+	if combined, ok := fieldValueMap["sig_cves"]; ok {
 		parts := strings.SplitN(combined, "::", maxSplitParts)
-		kvMap["sig_ids"] = parts[0]
+		fieldValueMap["sig_ids"] = parts[0]
 		if len(parts) > 1 {
-			kvMap["sig_names"] = parts[1]
+			fieldValueMap["sig_names"] = parts[1]
 		}
 	}
 
-	if combined, ok := kvMap["sig_set_names"]; ok {
+	if combined, ok := fieldValueMap["sig_set_names"]; ok {
 		parts := strings.SplitN(combined, "::", maxSplitParts)
-		kvMap["sig_set_names"] = parts[0]
+		fieldValueMap["sig_set_names"] = parts[0]
 		if len(parts) > 1 {
-			kvMap["sig_cves"] = parts[1]
+			fieldValueMap["sig_cves"] = parts[1]
 		}
 	}
 
-	return kvMap
+	return fieldValueMap
 }
 
-func (p *syslogProcessor) mapKVToSecurityViolationEvent(log *SecurityViolationEvent, kvMap map[string]string) {
+func (p *securityViolationsProcessor) mapKVToSecurityViolationEvent(log *SecurityViolationEvent, kvMap map[string]string) {
 	log.PolicyName = kvMap["policy_name"]
 	log.SupportID = kvMap["support_id"]
 	log.Outcome = kvMap["outcome"]
@@ -339,7 +331,7 @@ func (p *syslogProcessor) mapKVToSecurityViolationEvent(log *SecurityViolationEv
 }
 
 // parseViolationsData extracts violation data from the syslog key-value map
-func (p *syslogProcessor) parseViolationsData(kvMap map[string]string) []ViolationData {
+func (p *securityViolationsProcessor) parseViolationsData(kvMap map[string]string) []ViolationData {
 	var violationsData []ViolationData
 
 	// Extract violation name from violation_details XML - this is the only source
@@ -371,7 +363,7 @@ func (p *syslogProcessor) parseViolationsData(kvMap map[string]string) []Violati
 }
 
 // extractViolationContext extracts the violation context from syslog data
-func (p *syslogProcessor) extractViolationContext(kvMap map[string]string) string {
+func (p *securityViolationsProcessor) extractViolationContext(kvMap map[string]string) string {
 	if uri := kvMap["uri"]; uri != "" {
 		return uri
 	}
@@ -383,7 +375,7 @@ func (p *syslogProcessor) extractViolationContext(kvMap map[string]string) strin
 }
 
 // extractContextData extracts context data from syslog
-func (p *syslogProcessor) extractContextData(kvMap map[string]string) ContextData {
+func (p *securityViolationsProcessor) extractContextData(kvMap map[string]string) ContextData {
 	contextData := ContextData{}
 
 	if paramName := kvMap["parameter_name"]; paramName != "" {
@@ -403,7 +395,7 @@ func (p *syslogProcessor) extractContextData(kvMap map[string]string) ContextDat
 }
 
 // extractSignatureData extracts signature data from syslog
-func (p *syslogProcessor) extractSignatureData(kvMap map[string]string) []SignatureData {
+func (p *securityViolationsProcessor) extractSignatureData(kvMap map[string]string) []SignatureData {
 	sigIDs := kvMap["sig_ids"]
 	sigNames := kvMap["sig_names"]
 	blockingMask := kvMap["blocking_mask"]
