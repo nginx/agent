@@ -473,6 +473,7 @@ jobs:
       - name: Push benchmark result
         if:  ${{ success() && github.ref_name == 'main'}}
         run: git push 'https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/nginx/agent.git' benchmark-results:benchmark-results
+
   load-tests:
     name: Load Tests
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
@@ -634,7 +635,7 @@ jobs:
             
             console.log('Creating a new pull request to update the pgo profile...');
             console.log('If the PR creation fails, please ensure that the workflow has write permissions and try again.');
-            console.log('Base: main, Head: $BRANCH_NAME-update-profile');
+            console.log('Base: ${{ github.ref_name }}, Head: ${{ github.ref_name }}-update-profile');
             
             const result = await github.rest.pulls.create({
               title: 'Update pgo profile',
