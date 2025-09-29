@@ -152,12 +152,14 @@ func (p *securityViolationsProcessor) setSyslogAttributes(lr plog.LogRecord, m *
 	}
 }
 
-func (p *securityViolationsProcessor) processAppProtectMessage(lr plog.LogRecord, message string, hostname *string) error {
+func (p *securityViolationsProcessor) processAppProtectMessage(lr plog.LogRecord,
+	message string,
+	hostname *string,
+) error {
 	appProtectLog := p.parseAppProtectLog(message, hostname)
 
 	jsonData, marshalErr := json.Marshal(appProtectLog)
 	if marshalErr != nil {
-
 		return marshalErr
 	}
 
@@ -285,7 +287,9 @@ func (p *securityViolationsProcessor) parseCSVLog(message string) map[string]str
 	return fieldValueMap
 }
 
-func (p *securityViolationsProcessor) mapKVToSecurityViolationEvent(log *SecurityViolationEvent, kvMap map[string]string) {
+func (p *securityViolationsProcessor) mapKVToSecurityViolationEvent(log *SecurityViolationEvent,
+	kvMap map[string]string,
+) {
 	log.PolicyName = kvMap["policy_name"]
 	log.SupportID = kvMap["support_id"]
 	log.Outcome = kvMap["outcome"]
