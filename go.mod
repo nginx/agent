@@ -189,7 +189,6 @@ require (
 	github.com/lufia/plan9stats v0.0.0-20250317134145-8bc96cf8fc35 // indirect
 	github.com/magefile/mage v1.15.0 // indirect
 	github.com/magiconair/properties v1.8.10 // indirect
-	github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
@@ -362,7 +361,7 @@ require (
 require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/nginxinc/nginx-go-crossplane v0.4.46
+	github.com/nginxinc/nginx-go-crossplane v0.4.81
 	github.com/prometheus/client_golang v1.23.0 // indirect
 	github.com/samber/slog-gin v1.11.0
 	github.com/spf13/cobra v1.10.1
