@@ -144,7 +144,6 @@ func (fp *FilePlugin) CleanUpConfigApply(ctx context.Context,
 ) {
 	fp.fileManagerService.ClearCache()
 
-	slog.InfoContext(ctx, "Cleaned up temp files")
 	enableWatcher := &model.EnableWatchers{
 		ConfigContext: configContext,
 		InstanceID:    instanceID,
@@ -188,7 +187,7 @@ func (fp *FilePlugin) handleConfigApplyComplete(ctx context.Context, msg *bus.Me
 }
 
 func (fp *FilePlugin) handleReloadSuccess(ctx context.Context, msg *bus.Message) {
-	slog.InfoContext(ctx, "File plugin received reload success message", "data", msg.Data)
+	slog.DebugContext(ctx, "File plugin received reload success message", "data", msg.Data)
 
 	successMessage, ok := msg.Data.(*model.ReloadSuccess)
 
@@ -210,7 +209,6 @@ func (fp *FilePlugin) handleReloadSuccess(ctx context.Context, msg *bus.Message)
 			slog.ErrorContext(ctx, "Unable to update current files on disk", "error", updateError)
 		}
 	}
-
 	fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: successMessage.DataPlaneResponse})
 }
 

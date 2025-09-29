@@ -89,7 +89,6 @@ func (fws *FileWatcherService) Watch(ctx context.Context, ch chan<- FileUpdateMe
 		if fws.watcher != nil {
 			select {
 			case event := <-fws.watcher.Events:
-				slog.InfoContext(ctx, "--------- Event received", "event", event)
 				fws.handleEvent(ctx, event)
 			case watcherError := <-fws.watcher.Errors:
 				slog.ErrorContext(ctx, "Unexpected error in file watcher", "error", watcherError)
@@ -98,8 +97,25 @@ func (fws *FileWatcherService) Watch(ctx context.Context, ch chan<- FileUpdateMe
 	}
 }
 
-func (fws *FileWatcherService) SetEnabled(enabled bool) {
-	fws.enabled.Store(enabled)
+func (fws *FileWatcherService) DisableWatcher(ctx context.Context) {
+	if fws.watcher != nil && fws.watcher.WatchList() != nil {
+		paths := fws.watcher.WatchList()
+		slog.DebugContext(ctx, "Removing watchers", "paths", paths)
+		for _, filePath := range paths {
+			err := fws.watcher.Remove(filePath)
+			if err != nil {
+				slog.ErrorContext(ctx, "Unable to remove watcher file", "path", filePath, "error", err)
+			}
+		}
+	}
+	fws.enabled.Store(false)
+}
+
+func (fws *FileWatcherService) EnableWatcher(ctx context.Context) {
+	if fws.watcher != nil && fws.watcher.WatchList() != nil && len(fws.watcher.WatchList()) == 0 {
+		fws.addWatchers(ctx)
+	}
+	fws.enabled.Store(true)
 }
 
 func (fws *FileWatcherService) Update(ctx context.Context, nginxConfigContext *model.NginxConfigContext) {
@@ -173,16 +189,13 @@ func (fws *FileWatcherService) removeWatchers(ctx context.Context) {
 }
 
 func (fws *FileWatcherService) handleEvent(ctx context.Context, event fsnotify.Event) {
-	slog.InfoContext(ctx, "Is enabled", "bool", fws.enabled.Load())
 	if fws.enabled.Load() {
 		if fws.isEventSkippable(event) {
 			return
 		}
 
-		slog.InfoContext(ctx, "Processing FSNotify event", "event", event)
+		slog.DebugContext(ctx, "Processing FSNotify event", "event", event)
 		fws.filesChanged.Store(true)
-	} else {
-		slog.InfoContext(ctx, "Ignoring FSNotify event", "event", event)
 	}
 }
 

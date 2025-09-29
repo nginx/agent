@@ -102,8 +102,6 @@ type FileManagerService struct {
 	fileServiceOperator fileServiceOperatorInterface
 	// map of files and the actions performed on them during config apply
 	fileActions map[string]*model.FileCache // key is file path
-	// map of the contents of files which have been updated or deleted during config apply, used during rollback
-	rollbackFileContents map[string][]byte // key is file path
 	// map of the files currently on disk, used to determine the file action during config apply
 	currentFilesOnDisk    map[string]*mpi.File // key is file path
 	previousManifestFiles map[string]*model.ManifestFile
@@ -123,7 +121,6 @@ func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig 
 		fileOperator:          NewFileOperator(manifestLock),
 		fileServiceOperator:   NewFileServiceOperator(agentConfig, fileServiceClient, manifestLock),
 		fileActions:           make(map[string]*model.FileCache),
-		rollbackFileContents:  make(map[string][]byte),
 		currentFilesOnDisk:    make(map[string]*mpi.File),
 		previousManifestFiles: make(map[string]*model.ManifestFile),
 		rollbackManifest:      true,
@@ -182,15 +179,14 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 		return model.NoChange, nil
 	}
 
-	// fms.rollbackFileContents = fileContent
 	fms.fileActions = diffFiles
 
-	fms.tempConfigDir, configTempErr = fms.createTempConfigDirectory(ctx, "config")
+	fms.tempConfigDir, configTempErr = fms.createTempConfigDirectory("config")
 	if configTempErr != nil {
 		return model.Error, configTempErr
 	}
 
-	fms.tempRollbackDir, rollbackTempErr = fms.createTempConfigDirectory(ctx, "rollback")
+	fms.tempRollbackDir, rollbackTempErr = fms.createTempConfigDirectory("rollback")
 	if rollbackTempErr != nil {
 		return model.Error, rollbackTempErr
 	}
@@ -245,7 +241,6 @@ func (fms *FileManagerService) RollbackTempFiles(ctx context.Context) error {
 
 func (fms *FileManagerService) ClearCache() {
 	slog.Debug("Clearing cache and temp files after config apply")
-	clear(fms.rollbackFileContents)
 	clear(fms.fileActions)
 	clear(fms.previousManifestFiles)
 
@@ -258,8 +253,6 @@ func (fms *FileManagerService) ClearCache() {
 	if rollbackErr != nil {
 		slog.Error("error removing temp rollback directory", "path", fms.tempRollbackDir, "err", rollbackErr)
 	}
-
-	slog.Info("Cleaned up temp files")
 }
 
 //nolint:revive,cyclop // cognitive-complexity of 13 max is 12, loop is needed cant be broken up
@@ -290,7 +283,6 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 				return fmt.Errorf("failed to create directories for %s: %w", fileName, err)
 			}
 
-			slog.InfoContext(ctx, "Moving files during rollback")
 			moveErr := os.Rename(tempFilePath, fileName)
 			if moveErr != nil {
 				return fmt.Errorf("failed to rename file, %s to %s: %w", tempFilePath, fileName, moveErr)
@@ -406,6 +398,11 @@ func (fms *FileManagerService) DetermineFileActions(
 	// copy contents, set file action
 	for fileName, manifestFile := range filesMap {
 		_, exists := modifiedFiles[fileName]
+
+		if _, err := os.Stat(fileName); os.IsNotExist(err) {
+			slog.DebugContext(ctx, "File already deleted, skipping", "file", fileName)
+			continue
+		}
 
 		if !exists {
 			fileDiff[fileName] = &model.FileCache{
@@ -697,17 +694,11 @@ func (fms *FileManagerService) convertToFile(manifestFile *model.ManifestFile) *
 	}
 }
 
-func (fms *FileManagerService) createTempConfigDirectory(ctx context.Context, pattern string) (string, error) {
+func (fms *FileManagerService) createTempConfigDirectory(pattern string) (string, error) {
 	tempDir, tempDirError := os.MkdirTemp(fms.configPath, pattern)
 	if tempDirError != nil {
 		return "", fmt.Errorf("failed creating temp config directory: %w", tempDirError)
 	}
-	defer func(path string) {
-		err := os.RemoveAll(path)
-		if err != nil {
-			slog.ErrorContext(ctx, "error removing temp config directory", "path", path, "err", err)
-		}
-	}(tempDir)
 
 	return tempDir, nil
 }

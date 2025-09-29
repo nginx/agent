@@ -184,9 +184,8 @@ func (w *Watcher) handleEnableWatchers(ctx context.Context, msg *bus.Message) {
 		},
 	)
 
-	w.fileWatcherService.SetEnabled(true)
+	w.fileWatcherService.EnableWatcher(ctx)
 	w.instanceWatcherService.SetEnabled(true)
-	slog.InfoContext(ctx, "Enabled Watchers")
 	w.watcherMutex.Unlock()
 }
 
@@ -214,7 +213,7 @@ func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message
 	defer w.watcherMutex.Unlock()
 	w.instancesWithConfigApplyInProgress = append(w.instancesWithConfigApplyInProgress, instanceID)
 
-	w.fileWatcherService.SetEnabled(false)
+	w.fileWatcherService.DisableWatcher(ctx)
 	w.instanceWatcherService.SetEnabled(false)
 }
 
