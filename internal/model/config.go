@@ -75,7 +75,6 @@ const (
 	NoChange
 	Error
 	OK
-	PermissionChange = 5
 )
 
 type ConfigApplySuccess struct {
