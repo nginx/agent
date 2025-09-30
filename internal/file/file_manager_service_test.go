@@ -405,13 +405,25 @@ func TestFileManagerService_checkFilePermissions(t *testing.T) {
 			errorMsg:    "has execute permissions",
 		},
 		{
-			name:        "Test 3: File with malformed permissions",
+			name:        "Test 3: File with read/write and execute permissions for owner and group",
+			permissions: "0770",
+			expectError: true,
+			errorMsg:    "has execute permissions",
+		},
+		{
+			name:        "Test 4: File with read and execute permissions for everyone",
+			permissions: "0555",
+			expectError: true,
+			errorMsg:    "has execute permissions",
+		},
+		{
+			name:        "Test 5: File with malformed permissions",
 			permissions: "abcde",
 			expectError: true,
 			errorMsg:    "has malformed permissions",
 		},
 		{
-			name:        "Test 4: File with invalid permissions",
+			name:        "Test 6: File with invalid permissions",
 			permissions: "000070",
 			expectError: true,
 			errorMsg:    "has malformed permissions",
@@ -456,11 +468,10 @@ func TestFileManagerService_resetFilePermissions(t *testing.T) {
 			expectPermissions: "0602",
 		},
 		{
-			name:              "Test 2: File with malformed permissions",
-			permissions:       "abcde",
-			expectError:       true,
-			expectPermissions: "0600",
-			errorMsg:          "falied to parse file permissions",
+			name:        "Test 2: File with malformed permissions",
+			permissions: "abcde",
+			expectError: true,
+			errorMsg:    "falied to parse file permissions",
 		},
 	}
 
