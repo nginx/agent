@@ -344,6 +344,12 @@ func (fms *FileManagerService) DetermineFileActions(
 			}
 			fileContents[fileName] = fileContent
 
+			// Allowed directories could have been modified since file was created,
+			// so we should check before marking for deletion
+			if !fms.agentConfig.IsDirectoryAllowed(fileName) {
+				return nil, nil, fmt.Errorf("error deleting file %s: file not in allowed directories", fileName)
+			}
+
 			fileDiff[fileName] = &model.FileCache{
 				File:   manifestFile,
 				Action: model.Delete,
