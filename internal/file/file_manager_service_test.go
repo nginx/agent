@@ -492,13 +492,13 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 	require.NoError(t, addErr)
 
 	tests := []struct {
-		allowedDirs     []string
 		expectedError   error
 		modifiedFiles   map[string]*model.FileCache
 		currentFiles    map[string]*mpi.File
 		expectedCache   map[string]*model.FileCache
 		expectedContent map[string][]byte
 		name            string
+		allowedDirs     []string
 	}{
 		{
 			name:        "Test 1: Add, Update & Delete Files",
