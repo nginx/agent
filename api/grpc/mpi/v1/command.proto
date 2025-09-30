@@ -345,6 +345,8 @@ message NGINXPlusRuntimeInfo {
     repeated string dynamic_modules = 5;
     // the plus API details
     APIDetails plus_api = 6;
+    // to store all the endpoints details
+    repeated APIDetails plus_apis = 7;
 }
 
 message APIDetails {
@@ -354,6 +356,8 @@ message APIDetails {
     string listen =  2;
     // the API CA file path
     string Ca = 3;
+    // flag to know if this API location was configured with 'api write=on;'
+    bool write_enabled = 4;
 }
 
 // A set of runtime NGINX App Protect settings

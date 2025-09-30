@@ -26,10 +26,11 @@ type NginxConfigContext struct {
 }
 
 type APIDetails struct {
-	URL      string
-	Listen   string
-	Location string
-	Ca       string
+	URL          string
+	Listen       string
+	Location     string
+	Ca           string
+	WriteEnabled bool
 }
 
 type ManifestFile struct {

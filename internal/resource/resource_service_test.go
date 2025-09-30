@@ -246,24 +246,29 @@ func TestResourceService_createPlusClient(t *testing.T) {
 	err := os.WriteFile(caFile, []byte("-----BEGIN CERTIFICATE-----\nMII...\n-----END CERTIFICATE-----"), 0o600)
 	require.NoError(t, err)
 
-	instanceWithAPI := protos.NginxPlusInstance([]string{})
-	instanceWithAPI.InstanceRuntime.GetNginxPlusRuntimeInfo().PlusApi = &v1.APIDetails{
-		Location: "/api",
-		Listen:   "localhost:80",
+	createPlusInstanceWithApis := func(details []*v1.APIDetails) *v1.Instance {
+		inst := protos.NginxPlusInstance([]string{})
+		if inst.GetInstanceRuntime().GetNginxPlusRuntimeInfo() == nil {
+			inst.InstanceRuntime.Details = &v1.InstanceRuntime_NginxPlusRuntimeInfo{
+				NginxPlusRuntimeInfo: &v1.NGINXPlusRuntimeInfo{},
+			}
+		}
+		inst.InstanceRuntime.GetNginxPlusRuntimeInfo().PlusApis = details
+
+		return inst
 	}
 
-	instanceWithUnixAPI := protos.NginxPlusInstance([]string{})
-	instanceWithUnixAPI.InstanceRuntime.GetNginxPlusRuntimeInfo().PlusApi = &v1.APIDetails{
-		Listen:   "unix:/var/run/nginx-status.sock",
-		Location: "/api",
-	}
+	instanceWithAPI := createPlusInstanceWithApis([]*v1.APIDetails{
+		{Location: "/api", Listen: "localhost:80"},
+	})
 
-	instanceWithCACert := protos.NginxPlusInstance([]string{})
-	instanceWithCACert.InstanceRuntime.GetNginxPlusRuntimeInfo().PlusApi = &v1.APIDetails{
-		Location: "/api",
-		Listen:   "localhost:443",
-		Ca:       caFile,
-	}
+	instanceWithUnixAPI := createPlusInstanceWithApis([]*v1.APIDetails{
+		{Listen: "unix:/var/run/nginx-status.sock", Location: "/api"},
+	})
+
+	instanceWithCACert := createPlusInstanceWithApis([]*v1.APIDetails{
+		{Location: "/api", Listen: "localhost:443", Ca: caFile},
+	})
 
 	ctx := context.Background()
 	tests := []struct {
