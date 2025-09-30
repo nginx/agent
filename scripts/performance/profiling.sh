@@ -2,9 +2,8 @@
 
 # This script runs Go tests with CPU profiling enabled for all test packages found under the directories:
 #   - internal/watcher
-#   - test/integration
 # It saves the CPU profiles in the $PROFILES_DIR directory with the format <package-name>_<test_type>.pprof
-#   e.g. <package-name>_watcher_cpu.pprof or <package-name>_integration_cpu.pprof
+#   e.g. <package-name>_watcher_cpu.pprof
 
 # The variables below can be set to customize the environment for the integration tests:
 # Example using variables defined in our Makefile:
@@ -32,20 +31,6 @@ for pkg in $packages; do
       "./${pkg}" || { echo "Tests failed in package: ${pkg}, but continuing..."; continue; }
     echo "Profile saved to: ${PROFILES_DIR}/$(basename $pkg)_watcher_cpu.pprof"
 done
-
-### Run integration tests with CPU profiling for each package
-#echo "Starting integration tests cpu profiling tests..."
-#packages=$(find test/integration -type f -name '*_test.go' -exec dirname {} \; | sort -u)
-#echo "Found packages:"
-#echo "$packages"
-#for pkg in $packages; do
-#    echo "Running tests in package: ${pkg}"
-#    go test \
-#      -count 3 -timeout 3m \
-#      -cpuprofile "${PROFILES_DIR}/$(basename $pkg)_integration_cpu.pprof" \
-#      "./${pkg}" || { echo "Tests failed in package: ${pkg}, but continuing..."; continue; }
-#    echo "Profile saved to: ${PROFILES_DIR}/$(basename $pkg)_integration_cpu.pprof"
-#done
 
 ## Merge all CPU profiles
 files=$(ls ${PROFILES_DIR}/*.pprof)
