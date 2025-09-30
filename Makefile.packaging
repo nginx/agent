@@ -40,10 +40,13 @@ package: $(PACKAGES_DIR) #### Create final packages for all supported distros
 	# Build binaries for both amd64 and arm64
 	for arch in $(DEB_ARCHS); do \
 		mkdir -p $(BUILD_DIR)/$${arch}; \
+		cp .nfpm.yaml .nfpm.$$arch.yaml; \
+		sed -i.bak "s/\^BUILD_PATH\^/\.\/build\/$${arch}/g" ".nfpm.$$arch.yaml"; \
 		GOWORK=off CGO_ENABLED=0 GOARCH=$${arch} GOOS=linux \
 			go build -pgo=auto -ldflags=${LDFLAGS} \
 			-o $(BUILD_DIR)/$${arch}/$(BINARY_NAME) \
 			$(PROJECT_DIR)/$(PROJECT_FILE); \
+		rm -f .nfpm.$$arch.yaml.bak; \
 	done; \
 
 	@echo "Built binaries:"; \
