@@ -98,6 +98,7 @@ func (fws *FileWatcherService) Watch(ctx context.Context, ch chan<- FileUpdateMe
 }
 
 func (fws *FileWatcherService) DisableWatcher(ctx context.Context) {
+	slog.DebugContext(ctx, "Disabling file watcher")
 	if fws.watcher != nil && fws.watcher.WatchList() != nil {
 		paths := fws.watcher.WatchList()
 		slog.DebugContext(ctx, "Removing watchers", "paths", paths)
@@ -112,6 +113,7 @@ func (fws *FileWatcherService) DisableWatcher(ctx context.Context) {
 }
 
 func (fws *FileWatcherService) EnableWatcher(ctx context.Context) {
+	slog.DebugContext(ctx, "Enabling file watcher")
 	if fws.watcher != nil && fws.watcher.WatchList() != nil && len(fws.watcher.WatchList()) == 0 {
 		fws.addWatchers(ctx)
 	}

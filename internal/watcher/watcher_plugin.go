@@ -161,7 +161,7 @@ func (w *Watcher) handleEnableWatchers(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "Watcher plugin received enable watchers message")
 	enableWatchersMessage, ok := msg.Data.(*model.EnableWatchers)
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *model.EnableWatchers", "payload",
+		slog.ErrorContext(ctx, "Unable to cast message payload to *model.enableWatchers", "payload",
 			msg.Data, "topic", msg.Topic)
 
 		return

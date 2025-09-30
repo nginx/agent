@@ -138,12 +138,10 @@ func (fp *FilePlugin) Subscriptions() []string {
 	}
 }
 
-func (fp *FilePlugin) CleanUpConfigApply(ctx context.Context,
+func (fp *FilePlugin) enableWatchers(ctx context.Context,
 	configContext *model.NginxConfigContext,
 	instanceID string,
 ) {
-	fp.fileManagerService.ClearCache()
-
 	enableWatcher := &model.EnableWatchers{
 		ConfigContext: configContext,
 		InstanceID:    instanceID,
@@ -183,7 +181,8 @@ func (fp *FilePlugin) handleConfigApplyComplete(ctx context.Context, msg *bus.Me
 	}
 
 	fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
-	fp.CleanUpConfigApply(ctx, &model.NginxConfigContext{}, response.GetInstanceId())
+	fp.fileManagerService.ClearCache()
+	fp.enableWatchers(ctx, &model.NginxConfigContext{}, response.GetInstanceId())
 }
 
 func (fp *FilePlugin) handleReloadSuccess(ctx context.Context, msg *bus.Message) {
@@ -196,7 +195,8 @@ func (fp *FilePlugin) handleReloadSuccess(ctx context.Context, msg *bus.Message)
 		return
 	}
 
-	fp.CleanUpConfigApply(ctx, successMessage.ConfigContext, successMessage.DataPlaneResponse.GetInstanceId())
+	fp.fileManagerService.ClearCache()
+	fp.enableWatchers(ctx, successMessage.ConfigContext, successMessage.DataPlaneResponse.GetInstanceId())
 
 	if successMessage.ConfigContext.Files != nil {
 		slog.DebugContext(ctx, "Changes made during config apply, update files on disk")

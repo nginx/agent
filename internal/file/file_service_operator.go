@@ -25,7 +25,6 @@ import (
 	"github.com/nginx/agent/v3/internal/config"
 	internalgrpc "github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/logger"
-	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/pkg/files"
 	"github.com/nginx/agent/v3/pkg/id"
 	"google.golang.org/grpc"
@@ -277,12 +276,12 @@ func (fso *FileServiceOperator) UpdateFile(
 	return fso.sendUpdateFileStream(ctx, fileToUpdate, fso.agentConfig.Client.Grpc.FileChunkSize)
 }
 
-func (fso *FileServiceOperator) MoveFileFromTempDirectory(
-	ctx context.Context, fileAction *model.FileCache, tempDir string,
+// renameFile, renames (moves) file from tempDir to new location to update file.
+func (fso *FileServiceOperator) renameFile(
+	ctx context.Context, hash, fileName, dir string,
 ) error {
-	fileName := fileAction.File.GetFileMeta().GetName()
-	slog.DebugContext(ctx, "Updating file", "file", fileName)
-	tempFilePath := filepath.Join(tempDir, fileName)
+	slog.DebugContext(ctx, "Renaming file", "file", fileName)
+	tempFilePath := filepath.Join(dir, fileName)
 
 	// Create parent directories for the target file if they don't exist
 	if err := os.MkdirAll(filepath.Dir(fileName), dirPerm); err != nil {
@@ -294,7 +293,7 @@ func (fso *FileServiceOperator) MoveFileFromTempDirectory(
 		return fmt.Errorf("failed to rename file: %w", moveErr)
 	}
 
-	return fso.validateFileHash(fileName, fileAction.File.GetFileMeta().GetHash())
+	return fso.validateFileHash(fileName, hash)
 }
 
 func (fso *FileServiceOperator) validateFileHash(filePath, expectedHash string) error {

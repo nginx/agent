@@ -71,7 +71,7 @@ type (
 			fileToUpdate *mpi.File,
 		) error
 		SetIsConnected(isConnected bool)
-		MoveFileFromTempDirectory(ctx context.Context, fileAction *model.FileCache, tempDir string) error
+		renameFile(ctx context.Context, hash, fileName, tempDir string) error
 		UpdateClient(ctx context.Context, fileServiceClient mpi.FileServiceClient)
 	}
 
@@ -191,7 +191,7 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 		return model.Error, rollbackTempErr
 	}
 
-	rollbackTempFilesErr := fms.RollbackTempFiles(ctx)
+	rollbackTempFilesErr := fms.backupFiles(ctx)
 	if rollbackTempFilesErr != nil {
 		return model.Error, rollbackTempFilesErr
 	}
@@ -211,34 +211,6 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	return model.OK, nil
 }
 
-func (fms *FileManagerService) RollbackTempFiles(ctx context.Context) error {
-	for _, file := range fms.fileActions {
-		if file.Action == model.Add || file.Action == model.Unchanged {
-			continue
-		}
-
-		filePath := file.File.GetFileMeta().GetName()
-
-		if _, err := os.Stat(filePath); os.IsNotExist(err) {
-			slog.DebugContext(ctx, "Unable to backup file content since file does not exist",
-				"file", filePath)
-
-			continue
-		}
-
-		tempFilePath := filepath.Join(fms.tempRollbackDir, filePath)
-		slog.DebugContext(ctx, "Attempting to backup file content since file exists", "temp_path", tempFilePath)
-
-		moveErr := fms.fileOperator.MoveFile(ctx, filePath, tempFilePath)
-
-		if moveErr != nil {
-			return moveErr
-		}
-	}
-
-	return nil
-}
-
 func (fms *FileManagerService) ClearCache() {
 	slog.Debug("Clearing cache and temp files after config apply")
 	clear(fms.fileActions)
@@ -246,12 +218,12 @@ func (fms *FileManagerService) ClearCache() {
 
 	configErr := os.RemoveAll(fms.tempConfigDir)
 	if configErr != nil {
-		slog.Error("error removing temp config directory", "path", fms.tempConfigDir, "err", configErr)
+		slog.Error("Error removing temp config directory", "path", fms.tempConfigDir, "err", configErr)
 	}
 
 	rollbackErr := os.RemoveAll(fms.tempRollbackDir)
 	if rollbackErr != nil {
-		slog.Error("error removing temp rollback directory", "path", fms.tempRollbackDir, "err", rollbackErr)
+		slog.Error("Error removing temp rollback directory", "path", fms.tempRollbackDir, "err", rollbackErr)
 	}
 }
 
@@ -273,30 +245,14 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 
 			continue
 		case model.Delete, model.Update:
-			fileMeta := fileAction.File.GetFileMeta()
-			fileName := fileMeta.GetName()
-
-			tempFilePath := filepath.Join(fms.tempRollbackDir, fileName)
-
-			// Create parent directories for the target file if they don't exist
-			if err := os.MkdirAll(filepath.Dir(fileName), dirPerm); err != nil {
-				return fmt.Errorf("failed to create directories for %s: %w", fileName, err)
-			}
-
-			moveErr := os.Rename(tempFilePath, fileName)
-			if moveErr != nil {
-				return fmt.Errorf("failed to rename file, %s to %s: %w", tempFilePath, fileName, moveErr)
-			}
-
-			content, readErr := os.ReadFile(fileMeta.GetName())
-			if readErr != nil {
-				return fmt.Errorf("error reading file, unable to generate hash: %s error: %w",
-					fileMeta.GetName(), readErr)
+			content, err := fms.restoreFiles(fileAction)
+			if err != nil {
+				return err
 			}
 
 			// currentFilesOnDisk needs to be updated after rollback action is performed
-			fileMeta.Hash = files.GenerateHash(content)
-			fms.currentFilesOnDisk[fileMeta.GetName()] = fileAction.File
+			fileAction.File.FileMeta.Hash = files.GenerateHash(content)
+			fms.currentFilesOnDisk[fileAction.File.GetFileMeta().GetName()] = fileAction.File
 		case model.Unchanged:
 			fallthrough
 		default:
@@ -513,6 +469,59 @@ func (fms *FileManagerService) UpdateManifestFile(ctx context.Context,
 	return fms.fileOperator.WriteManifestFile(ctx, updatedFiles, fms.agentConfig.LibDir, fms.manifestFilePath)
 }
 
+func (fms *FileManagerService) backupFiles(ctx context.Context) error {
+	for _, file := range fms.fileActions {
+		if file.Action == model.Add || file.Action == model.Unchanged {
+			continue
+		}
+
+		filePath := file.File.GetFileMeta().GetName()
+
+		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+			slog.DebugContext(ctx, "Unable to backup file content since file does not exist",
+				"file", filePath)
+
+			continue
+		}
+
+		tempFilePath := filepath.Join(fms.tempRollbackDir, filePath)
+		slog.DebugContext(ctx, "Attempting to backup file content since file exists", "temp_path", tempFilePath)
+
+		moveErr := fms.fileOperator.MoveFile(ctx, filePath, tempFilePath)
+
+		if moveErr != nil {
+			return moveErr
+		}
+	}
+
+	return nil
+}
+
+func (fms *FileManagerService) restoreFiles(fileAction *model.FileCache) ([]byte, error) {
+	fileMeta := fileAction.File.GetFileMeta()
+	fileName := fileMeta.GetName()
+
+	tempFilePath := filepath.Join(fms.tempRollbackDir, fileName)
+
+	// Create parent directories for the target file if they don't exist
+	if err := os.MkdirAll(filepath.Dir(fileName), dirPerm); err != nil {
+		return nil, fmt.Errorf("failed to create directories for %s: %w", fileName, err)
+	}
+
+	moveErr := os.Rename(tempFilePath, fileName)
+	if moveErr != nil {
+		return nil, fmt.Errorf("failed to rename file, %s to %s: %w", tempFilePath, fileName, moveErr)
+	}
+
+	content, readErr := os.ReadFile(fileMeta.GetName())
+	if readErr != nil {
+		return nil, fmt.Errorf("error reading file, unable to generate hash: %s error: %w",
+			fileMeta.GetName(), readErr)
+	}
+
+	return content, nil
+}
+
 func (fms *FileManagerService) manifestFile() (map[string]*model.ManifestFile, map[string]*mpi.File, error) {
 	if _, err := os.Stat(fms.manifestFilePath); err != nil {
 		return nil, nil, err
@@ -596,7 +605,8 @@ actionsLoop:
 
 			continue
 		case model.Add, model.Update:
-			err := fms.fileServiceOperator.MoveFileFromTempDirectory(ctx, fileAction, tempDir)
+			fileMeta := fileAction.File.GetFileMeta()
+			err := fms.fileServiceOperator.renameFile(ctx, fileMeta.GetHash(), fileMeta.GetName(), tempDir)
 			if err != nil {
 				actionError = err
 

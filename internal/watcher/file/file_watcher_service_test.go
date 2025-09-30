@@ -8,7 +8,6 @@ package file
 import (
 	"bytes"
 	"context"
-	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -266,8 +265,7 @@ func TestFileWatcherService_Watch(t *testing.T) {
 		defer os.Remove(skippableFile.Name())
 
 		select {
-		case file := <-channel:
-			slog.Info("Skippable file updated", "", file)
+		case <-channel:
 			t.Fatalf("Expected file to be skipped: %v", skippableFile.Name())
 		case <-time.After(150 * time.Millisecond):
 			return
