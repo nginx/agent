@@ -355,6 +355,10 @@ func (fms *FileManagerService) DetermineFileActions(
 	for fileName, manifestFile := range filesMap {
 		_, exists := modifiedFiles[fileName]
 
+		if !fms.agentConfig.IsDirectoryAllowed(fileName) {
+			return nil, fmt.Errorf("error deleting file %s: file not in allowed directories", fileName)
+		}
+		
 		if _, err := os.Stat(fileName); os.IsNotExist(err) {
 			slog.DebugContext(ctx, "File already deleted, skipping", "file", fileName)
 			continue

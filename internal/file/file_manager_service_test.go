@@ -502,7 +502,7 @@ func TestFileManagerService_Rollback(t *testing.T) {
 
 func TestFileManagerService_DetermineFileActions(t *testing.T) {
 	ctx := context.Background()
-	tempDir := os.TempDir()
+	tempDir := filepath.Clean(os.TempDir())
 
 	deleteTestFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx_delete.conf")
 	defer helpers.RemoveFileWithErrorCheck(t, deleteTestFile.Name())
@@ -538,9 +538,11 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 		expectedCache   map[string]*model.FileCache
 		expectedContent map[string][]byte
 		name            string
+		allowedDirs     []string
 	}{
 		{
-			name: "Test 1: Add, Update & Delete Files",
+			name:        "Test 1: Add, Update & Delete Files",
+			allowedDirs: []string{tempDir},
 			modifiedFiles: map[string]*model.FileCache{
 				addTestFileName: {
 					File: &mpi.File{
@@ -603,7 +605,8 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 			expectedError: nil,
 		},
 		{
-			name: "Test 2: Files same as on disk",
+			name:        "Test 2: Files same as on disk",
+			allowedDirs: []string{tempDir},
 			modifiedFiles: map[string]*model.FileCache{
 				addTestFile.Name(): {
 					File: &mpi.File{
@@ -638,6 +641,7 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 		},
 		{
 			name:          "Test 3: File being deleted already doesn't exist",
+			allowedDirs:   []string{tempDir},
 			modifiedFiles: make(map[string]*model.FileCache),
 			currentFiles: map[string]*mpi.File{
 				"/unknown/file.conf": {
@@ -660,6 +664,7 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 
 			fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 			fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
+			fileManagerService.agentConfig.AllowedDirectories = test.allowedDirs
 			fileManagerService.agentConfig.LibDir = manifestDirPath
 			fileManagerService.manifestFilePath = manifestFilePath
 			fileManagerService.configPath = filepath.Dir(updateTestFile.Name())
@@ -834,6 +839,7 @@ func TestFileManagerService_UpdateManifestFile(t *testing.T) {
 
 			fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 			fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
+			fileManagerService.agentConfig.AllowedDirectories = []string{"manifestDirPath"}
 			fileManagerService.agentConfig.LibDir = manifestDirPath
 			fileManagerService.manifestFilePath = file.Name()
 
