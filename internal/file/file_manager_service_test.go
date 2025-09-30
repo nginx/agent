@@ -641,7 +641,7 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 		},
 		{
 			name:          "Test 3: File being deleted already doesn't exist",
-			allowedDirs:   []string{tempDir},
+			allowedDirs:   []string{tempDir, "/unknown"},
 			modifiedFiles: make(map[string]*model.FileCache),
 			currentFiles: map[string]*mpi.File{
 				"/unknown/file.conf": {
