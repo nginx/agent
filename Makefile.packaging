@@ -46,7 +46,8 @@ package: $(PACKAGES_DIR) #### Create final packages for all supported distros
 			$(PROJECT_DIR)/$(PROJECT_FILE); \
 	done; \
 
-	find $(BUILD_DIR) -type f -name $(BINARY_NAME) -exec cp {} $(BINARY_PATH) \;; \
+	@echo "Built binaries:"; \
+	find $(BUILD_DIR) -type f -name $(BINARY_NAME) \
 
 	# Create deb packages
 	for arch in $(DEB_ARCHS); do \
@@ -104,15 +105,16 @@ package: $(PACKAGES_DIR) #### Create final packages for all supported distros
 	done; \
 
 	# Package build complete
-
 	echo "DEB packages:"; \
-	find $(PACKAGES_DIR)/deb ;\
+	find $(PACKAGES_DIR)/deb -type f | grep -E "${BINARY_NAME}[-_]${PACKAGE_VERSION}" | sort; \
 	echo "RPM packages:"; \
-	find $(PACKAGES_DIR)/rpm ;\
+	find $(PACKAGES_DIR)/rpm -type f | grep -E "${BINARY_NAME}[-_]${PACKAGE_VERSION}" | sort; \
 	echo "APK packages:"; \
-	find $(PACKAGES_DIR)/apk ;\
+	find $(PACKAGES_DIR)/apk -type f | grep -E "${BINARY_NAME}[-_]${PACKAGE_VERSION}" | sort; \
 
 	# Create tarball containing all packages
+	@echo "Creating tarball: $(TARBALL_NAME)"; \
+	rm -f $(PACKAGES_DIR)/$(TARBALL_NAME); \
 	pushd $(PACKAGES_DIR) && tar -czvf "./$(TARBALL_NAME)" * && popd; \
 
 .PHONY: gpg-key
