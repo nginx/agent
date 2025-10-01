@@ -7,6 +7,7 @@ package collector
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 	"time"
 
@@ -107,6 +108,28 @@ func TestTemplateWrite(t *testing.T) {
 			},
 		},
 	})
+
+	cfg.Collector.Receivers.NginxPlusReceivers = slices.Concat(cfg.Collector.Receivers.NginxPlusReceivers,
+		[]config.NginxPlusReceiver{
+			{
+				InstanceID: "456",
+				PlusAPI: config.APIDetails{
+					URL:      "http://localhost:80/api",
+					Listen:   "",
+					Location: "",
+				},
+				CollectionInterval: 20 * time.Second,
+			},
+			{
+				InstanceID: "789",
+				PlusAPI: config.APIDetails{
+					URL:      "http://localhost:90/api",
+					Listen:   "",
+					Location: "",
+				},
+				CollectionInterval: 20 * time.Second,
+			},
+		})
 	// Clear default config and test collector with TLS enabled
 	cfg.Collector.Receivers.OtlpReceivers["default"] = &config.OtlpReceiver{
 		Server: &config.ServerConfig{
@@ -165,7 +188,10 @@ func TestTemplateWrite(t *testing.T) {
 
 	cfg.Collector.Pipelines.Metrics = make(map[string]*config.Pipeline)
 	cfg.Collector.Pipelines.Metrics["default"] = &config.Pipeline{
-		Receivers:  []string{"hostmetrics", "containermetrics", "otlp/default", "nginx/123"},
+		Receivers: []string{
+			"hostmetrics", "containermetrics",
+			"otlp/default", "nginx", "nginxplus/456", "nginxplus/789",
+		},
 		Processors: []string{"resource/default", "batch/default"},
 		Exporters:  []string{"otlp/default", "prometheus", "debug"},
 	}

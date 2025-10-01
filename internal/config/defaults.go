@@ -85,13 +85,13 @@ const (
 	DefFileWatcherMonitoringFrequency           = 5 * time.Second
 
 	// Collector defaults
-	DefCollectorConfigPath            = "/etc/nginx-agent/opentelemetry-collector-agent.yaml"
-	DefCollectorLogLevel              = "INFO"
-	DefCollectorLogPath               = "/var/log/nginx-agent/opentelemetry-collector-agent.log"
-	DefCollectorTLSCertPath           = "/var/lib/nginx-agent/cert.pem"
-	DefCollectorTLSKeyPath            = "/var/lib/nginx-agent/key.pem"
-	DefCollectorTLSCAPath             = "/var/lib/nginx-agent/ca.pem"
-	DefCollectorTLSSANNames           = "127.0.0.1,::1,localhost"
+	DefCollectorConfigPath  = "/etc/nginx-agent/opentelemetry-collector-agent.yaml"
+	DefCollectorLogLevel    = "INFO"
+	DefCollectorLogPath     = "/var/log/nginx-agent/opentelemetry-collector-agent.log"
+	DefCollectorTLSCertPath = "/var/lib/nginx-agent/cert.pem"
+	DefCollectorTLSKeyPath  = "/var/lib/nginx-agent/key.pem"
+	DefCollectorTLSCAPath   = "/var/lib/nginx-agent/ca.pem"
+	DefCollectorTLSSANNames = "127.0.0.1,::1,localhost"
 
 	DefCollectorMetricsBatchProcessorSendBatchSize    = 1000
 	DefCollectorMetricsBatchProcessorSendBatchMaxSize = 1000

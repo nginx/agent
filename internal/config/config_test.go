@@ -1111,7 +1111,7 @@ func createConfig() *Config {
 			},
 		},
 		Collector: &Collector{
-			ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
+			ConfigPath:      "/etc/nginx-agent/nginx-agent-otelcol.yaml",
 			AdditionalPaths: []string{"/configs/my_config.yaml", "/etc/nginx-agent/nginx-agent-otelcol.yaml"},
 			Exporters: Exporters{
 				OtlpExporters: map[string]*OtlpExporter{

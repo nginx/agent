@@ -16,7 +16,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/goccy/go-yaml"
 	pkgConfig "github.com/nginx/agent/v3/pkg/config"
+	"go.opentelemetry.io/collector/confmap"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/backoff"
@@ -384,6 +386,31 @@ func (oc *Collector) updateHeadersSetterExtension(
 	return headersSetterExtensionUpdated
 }
 
+func (oc *Collector) writeRunningConfig(ctx context.Context, settings otelcol.CollectorSettings) error {
+	slog.DebugContext(ctx, "Writing running OTel collector config", "path",
+		"/var/lib/nginx-agent/opentelemetry-collector-agent-debug.yaml")
+	resolver, err := confmap.NewResolver(settings.ConfigProviderSettings.ResolverSettings)
+	if err != nil {
+		return fmt.Errorf("unable to create resolver: %w", err)
+	}
+
+	con, err := resolver.Resolve(ctx)
+	if err != nil {
+		return fmt.Errorf("error while resolving config: %w", err)
+	}
+	b, err := yaml.Marshal(con.ToStringMap())
+	if err != nil {
+		return fmt.Errorf("error while marshaling to YAML: %w", err)
+	}
+
+	writeErr := os.WriteFile("/var/lib/nginx-agent/opentelemetry-collector-agent-debug.yaml", b, filePermission)
+	if writeErr != nil {
+		return fmt.Errorf("error while writing debug config: %w", err)
+	}
+
+	return nil
+}
+
 func (oc *Collector) restartCollector(ctx context.Context) {
 	err := oc.Close(ctx)
 	if err != nil {
@@ -392,6 +419,14 @@ func (oc *Collector) restartCollector(ctx context.Context) {
 	}
 
 	settings := OTelCollectorSettings(oc.config)
+
+	if strings.ToLower(oc.config.Log.Level) == "debug" {
+		writeErr := oc.writeRunningConfig(ctx, settings)
+		if writeErr != nil {
+			slog.ErrorContext(ctx, "Failed to write debug OTel Collector config", "error", writeErr)
+		}
+	}
+
 	oTelCollector, err := otelcol.NewCollector(settings)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to create OTel Collector", "error", err)

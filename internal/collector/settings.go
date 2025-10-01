@@ -71,7 +71,11 @@ func createConverterFactories() []confmap.ConverterFactory {
 }
 
 func createURIs(cfg *config.Config) []string {
-	return []string{cfg.Collector.ConfigPath}
+	configFiles := []string{cfg.Collector.ConfigPath}
+	configFiles = slices.Concat(configFiles, cfg.Collector.AdditionalPaths)
+	slog.Info("Additional config files:", "", configFiles)
+
+	return configFiles
 }
 
 func createFile(confPath string) error {
