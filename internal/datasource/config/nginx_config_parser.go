@@ -703,25 +703,18 @@ func (ncp *NginxConfigParser) apiDetailsFromLocationDirective(
 		return nil
 	}
 
+	isWriteEnabled := false
 	for _, locChild := range current.Block {
-		if locChild.Directive != plusAPIDirective && locChild.Directive != stubStatusAPIDirective {
-			continue
+		if ncp.isPlusAPIWriteEnabled(ctx, locChild, current.Args[0]) {
+			isWriteEnabled = true
+			break
 		}
-		
-		isWriteEnabled := false
-		if locChild.Directive == plusAPIDirective {
-			for _, arg := range locChild.Args {
-				if arg == "write=on" {
-					isWriteEnabled = true
-					slog.DebugContext(ctx, "Found NGINX Plus API with write=on", "location", current.Args[0])
-					break
-				}
-			}
-		}
+	}
 
-		addresses := ncp.parseAddressFromServerDirective(parent)
-		path := ncp.parsePathFromLocationDirective(current)
+	addresses := ncp.parseAddressFromServerDirective(parent)
+	path := ncp.parsePathFromLocationDirective(current)
 
+	for _, locChild := range current.Block {
 		if locChild.Directive == locationDirectiveName {
 			for _, address := range addresses {
 				details = append(
@@ -735,6 +728,7 @@ func (ncp *NginxConfigParser) apiDetailsFromLocationDirective(
 	return details
 }
 
+//nolint:revive // isWriteEnabled flag is required for selecting Plus API
 func (ncp *NginxConfigParser) createAPIDetails(
 	locationDirectiveName, address, path, caCertLocation string, isSSL bool,
 	isWriteEnabled bool,
@@ -908,6 +902,25 @@ func (ncp *NginxConfigParser) selfSignedCACertLocation(ctx context.Context) stri
 func (ncp *NginxConfigParser) isDuplicateFile(nginxConfigContextFiles []*mpi.File, newFile *mpi.File) bool {
 	for _, nginxConfigContextFile := range nginxConfigContextFiles {
 		if nginxConfigContextFile.GetFileMeta().GetName() == newFile.GetFileMeta().GetName() {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (ncp *NginxConfigParser) isPlusAPIWriteEnabled(ctx context.Context,
+	directive *crossplane.Directive,
+	locationPath string,
+) bool {
+	// Only check plus_api directives
+	if directive.Directive != plusAPIDirective {
+		return false
+	}
+
+	for _, arg := range directive.Args {
+		if arg == "write=on" {
+			slog.DebugContext(ctx, "Found NGINX Plus API with write=on", "location", locationPath)
 			return true
 		}
 	}
