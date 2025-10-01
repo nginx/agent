@@ -106,6 +106,7 @@ type (
 
 	Collector struct {
 		ConfigPath string     `yaml:"config_path" mapstructure:"config_path"`
+		AdditionalPaths []string `yaml:"additional_config_paths" mapstructure:"additional_config_paths"`
 		Log        *Log       `yaml:"log"         mapstructure:"log"`
 		Exporters  Exporters  `yaml:"exporters"   mapstructure:"exporters"`
 		Extensions Extensions `yaml:"extensions"  mapstructure:"extensions"`
