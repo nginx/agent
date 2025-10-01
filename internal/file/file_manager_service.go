@@ -71,7 +71,7 @@ type (
 			fileToUpdate *mpi.File,
 		) error
 		SetIsConnected(isConnected bool)
-		renameFile(ctx context.Context, hash, fileName, tempDir string) error
+		RenameFile(ctx context.Context, hash, fileName, tempDir string) error
 		UpdateClient(ctx context.Context, fileServiceClient mpi.FileServiceClient)
 	}
 
@@ -610,7 +610,7 @@ actionsLoop:
 			continue
 		case model.Add, model.Update:
 			fileMeta := fileAction.File.GetFileMeta()
-			err := fms.fileServiceOperator.renameFile(ctx, fileMeta.GetHash(), fileMeta.GetName(), tempDir)
+			err := fms.fileServiceOperator.RenameFile(ctx, fileMeta.GetHash(), fileMeta.GetName(), tempDir)
 			if err != nil {
 				actionError = err
 

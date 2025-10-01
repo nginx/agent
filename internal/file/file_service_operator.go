@@ -277,7 +277,7 @@ func (fso *FileServiceOperator) UpdateFile(
 }
 
 // renameFile, renames (moves) file from tempDir to new location to update file.
-func (fso *FileServiceOperator) renameFile(
+func (fso *FileServiceOperator) RenameFile(
 	ctx context.Context, hash, fileName, dir string,
 ) error {
 	slog.DebugContext(ctx, "Renaming file", "file", fileName)
