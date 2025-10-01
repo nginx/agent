@@ -365,6 +365,14 @@ func (col *Collector) Validate(allowedDirectories []string) error {
 		err = errors.Join(err, nginxReceiver.Validate(allowedDirectories))
 	}
 
+	for _, path := range col.AdditionalPaths {
+		cleanPath := filepath.Clean(path)
+		pathAllowed := isAllowedDir(cleanPath, allowedDirectories)
+		if !pathAllowed {
+			err = errors.Join(err, fmt.Errorf("additional config path %s not in allowed directories", path))
+		}
+	}
+
 	return err
 }
 
