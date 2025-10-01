@@ -322,7 +322,7 @@ func TestFileManagerService_checkAllowedDirectory(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestFileManagerService_validateAndFixPermissions(t *testing.T) {
+func TestFileManagerService_validateAndUpdateFilePermissions(t *testing.T) {
 	ctx := context.Background()
 	fileManagerService := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
 
@@ -373,7 +373,7 @@ func TestFileManagerService_validateAndFixPermissions(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := fileManagerService.validateAndFixPermissions(ctx, test.files)
+			err := fileManagerService.validateAndUpdateFilePermissions(ctx, test.files)
 			if test.expectError {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), test.errorMsg)
@@ -384,49 +384,43 @@ func TestFileManagerService_validateAndFixPermissions(t *testing.T) {
 	}
 }
 
-func TestFileManagerService_checkFilePermissions(t *testing.T) {
+func TestFileManagerService_areExecuteFilePermissionsSet(t *testing.T) {
 	fileManagerService := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
 
 	tests := []struct {
 		name        string
 		permissions string
-		errorMsg    string
-		expectError bool
+		expectBool  bool
 	}{
 		{
 			name:        "Test 1: File with read and write permissions for owner",
 			permissions: "0600",
-			expectError: false,
+			expectBool:  false,
 		},
 		{
 			name:        "Test 2: File with read/write and execute permissions for owner",
 			permissions: "0700",
-			expectError: true,
-			errorMsg:    "has execute permissions",
+			expectBool:  true,
 		},
 		{
 			name:        "Test 3: File with read/write and execute permissions for owner and group",
 			permissions: "0770",
-			expectError: true,
-			errorMsg:    "has execute permissions",
+			expectBool:  true,
 		},
 		{
 			name:        "Test 4: File with read and execute permissions for everyone",
 			permissions: "0555",
-			expectError: true,
-			errorMsg:    "has execute permissions",
+			expectBool:  true,
 		},
 		{
 			name:        "Test 5: File with malformed permissions",
 			permissions: "abcde",
-			expectError: true,
-			errorMsg:    "has malformed permissions",
+			expectBool:  false,
 		},
 		{
 			name:        "Test 6: File with invalid permissions",
 			permissions: "000070",
-			expectError: true,
-			errorMsg:    "has malformed permissions",
+			expectBool:  false,
 		},
 	}
 
@@ -439,19 +433,13 @@ func TestFileManagerService_checkFilePermissions(t *testing.T) {
 				},
 			}
 
-			err := fileManagerService.checkFilePermissions(file)
-
-			if test.expectError {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), test.errorMsg)
-			} else {
-				assert.NoError(t, err)
-			}
+			got := fileManagerService.areExecuteFilePermissionsSet(file)
+			assert.Equal(t, test.expectBool, got)
 		})
 	}
 }
 
-func TestFileManagerService_resetFilePermissions(t *testing.T) {
+func TestFileManagerService_removeExecuteFilePermissions(t *testing.T) {
 	fileManagerService := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
 
 	tests := []struct {
@@ -484,7 +472,7 @@ func TestFileManagerService_resetFilePermissions(t *testing.T) {
 				},
 			}
 
-			parseErr := fileManagerService.resetFilePermissions(t.Context(), file)
+			parseErr := fileManagerService.removeExecuteFilePermissions(t.Context(), file)
 
 			if test.expectError {
 				require.Error(t, parseErr)
