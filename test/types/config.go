@@ -62,7 +62,7 @@ func AgentConfig() *config.Config {
 				Multiplier:          commonMultiplier,
 			},
 		},
-		AllowedDirectories: []string{"/tmp/"},
+		AllowedDirectories: []string{"/tmp"},
 		Collector: &config.Collector{
 			ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
 			Exporters: config.Exporters{

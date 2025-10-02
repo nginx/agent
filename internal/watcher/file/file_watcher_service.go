@@ -97,8 +97,27 @@ func (fws *FileWatcherService) Watch(ctx context.Context, ch chan<- FileUpdateMe
 	}
 }
 
-func (fws *FileWatcherService) SetEnabled(enabled bool) {
-	fws.enabled.Store(enabled)
+func (fws *FileWatcherService) DisableWatcher(ctx context.Context) {
+	slog.DebugContext(ctx, "Disabling file watcher")
+	if fws.watcher != nil && fws.watcher.WatchList() != nil {
+		paths := fws.watcher.WatchList()
+		slog.DebugContext(ctx, "Removing watchers", "paths", paths)
+		for _, filePath := range paths {
+			err := fws.watcher.Remove(filePath)
+			if err != nil {
+				slog.ErrorContext(ctx, "Unable to remove watcher file", "path", filePath, "error", err)
+			}
+		}
+	}
+	fws.enabled.Store(false)
+}
+
+func (fws *FileWatcherService) EnableWatcher(ctx context.Context) {
+	slog.DebugContext(ctx, "Enabling file watcher")
+	if fws.watcher != nil && fws.watcher.WatchList() != nil && len(fws.watcher.WatchList()) == 0 {
+		fws.addWatchers(ctx)
+	}
+	fws.enabled.Store(true)
 }
 
 func (fws *FileWatcherService) Update(ctx context.Context, nginxConfigContext *model.NginxConfigContext) {
