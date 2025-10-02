@@ -111,72 +111,94 @@ func NewLTSVTailer(file string) (*LTSVTailer, error) {
 	return &LTSVTailer{t}, nil
 }
 
+//nolint:revive // Can't extract anymore functions to reduce complexity
 func (t *Tailer) Tail(ctx context.Context, data chan<- string) {
 	for {
 		select {
 		case line := <-t.handle.Lines:
-			lineContent := t.parseLine(line)
+			if line == nil {
+				return
+			}
+
+			if line.Err != nil {
+				continue
+			}
+
+			lineContent := line.Text
 			if lineContent != "" {
 				data <- lineContent
 			}
 		case <-ctx.Done():
 			handleContextDone(ctx)
 
+			err := t.handle.Stop()
+			if err != nil {
+				slog.ErrorContext(ctx, "Error stopping tailer", "error", err)
+			}
+
 			return
 		}
 	}
 }
 
-func (t *Tailer) parseLine(line *tail.Line) string {
-	if line == nil {
-		return ""
-	}
-
-	if line.Err != nil {
-		return ""
-	}
-
-	return line.Text
-}
-
+//nolint:revive // Can't extract anymore functions to reduce complexity
 func (t *PatternTailer) Tail(ctx context.Context, data chan<- map[string]string) {
 	for {
 		select {
 		case line := <-t.handle.Lines:
-			lineContent := t.parseLine(line)
+			if line == nil {
+				return
+			}
+
+			if line.Err != nil {
+				continue
+			}
+
+			lineContent := t.gc.ParseString(line.Text)
 			if lineContent != nil {
 				data <- lineContent
 			}
 		case <-ctx.Done():
 			handleContextDone(ctx)
 
+			err := t.handle.Stop()
+			if err != nil {
+				slog.ErrorContext(ctx, "Error stopping tailer", "error", err)
+			}
+
+			slog.DebugContext(ctx, "Tailer is done")
+
 			return
 		}
 	}
 }
 
-func (t *PatternTailer) parseLine(line *tail.Line) map[string]string {
-	if line == nil {
-		return nil
-	}
-
-	if line.Err != nil {
-		return nil
-	}
-
-	return t.gc.ParseString(line.Text)
-}
-
+//nolint:revive // Can't extract anymore functions to reduce complexity
 func (t *LTSVTailer) Tail(ctx context.Context, data chan<- map[string]string) {
 	for {
 		select {
 		case line := <-t.handle.Lines:
-			lineText := t.parseLine(line)
+			if line == nil {
+				return
+			}
+
+			if line.Err != nil {
+				continue
+			}
+
+			lineText := t.parse(line.Text)
 			if lineText != nil {
 				data <- lineText
 			}
 		case <-ctx.Done():
 			handleContextDone(ctx)
+
+			err := t.handle.Stop()
+			if err != nil {
+				slog.ErrorContext(ctx, "Error stopping tailer", "error", err)
+			}
+
+			slog.DebugContext(ctx, "Tailer is done")
 
 			return
 		}
@@ -199,18 +221,6 @@ func (t *LTSVTailer) parse(line string) map[string]string {
 	return lineMap
 }
 
-func (t *LTSVTailer) parseLine(line *tail.Line) map[string]string {
-	if line == nil {
-		return nil
-	}
-
-	if line.Err != nil {
-		return nil
-	}
-
-	return t.parse(line.Text)
-}
-
 func handleContextDone(ctx context.Context) {
 	ctxErr := ctx.Err()
 	switch ctxErr {
@@ -219,5 +229,4 @@ func handleContextDone(ctx context.Context) {
 	case context.Canceled:
 		slog.DebugContext(ctx, "Tailer forcibly canceled", "error", ctxErr)
 	}
-	slog.DebugContext(ctx, "Tailer is done")
 }

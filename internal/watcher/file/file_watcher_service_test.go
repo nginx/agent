@@ -42,10 +42,10 @@ func TestFileWatcherService_SetEnabled(t *testing.T) {
 	fileWatcherService := NewFileWatcherService(types.AgentConfig())
 	assert.True(t, fileWatcherService.enabled.Load())
 
-	fileWatcherService.SetEnabled(false)
+	fileWatcherService.DisableWatcher(t.Context())
 	assert.False(t, fileWatcherService.enabled.Load())
 
-	fileWatcherService.SetEnabled(true)
+	fileWatcherService.EnableWatcher(t.Context())
 	assert.True(t, fileWatcherService.enabled.Load())
 }
 

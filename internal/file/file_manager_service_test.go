@@ -59,6 +59,7 @@ func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	agentConfig.AllowedDirectories = []string{tempDir}
 
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig, &sync.RWMutex{})
+	fileManagerService.configPath = filepath.Dir(filePath)
 	fileManagerService.agentConfig.LibDir = manifestDirPath
 	fileManagerService.manifestFilePath = manifestFilePath
 
@@ -108,6 +109,7 @@ func TestFileManagerService_ConfigApply_Add_LargeFile(t *testing.T) {
 	agentConfig.AllowedDirectories = []string{tempDir}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig, &sync.RWMutex{})
 	fileManagerService.agentConfig.LibDir = manifestDirPath
+	fileManagerService.configPath = filepath.Dir(filePath)
 	fileManagerService.manifestFilePath = manifestFilePath
 
 	request := protos.CreateConfigApplyRequest(overview)
@@ -168,6 +170,7 @@ func TestFileManagerService_ConfigApply_Update(t *testing.T) {
 
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig, &sync.RWMutex{})
 	fileManagerService.agentConfig.LibDir = manifestDirPath
+	fileManagerService.configPath = filepath.Dir(tempFile.Name())
 	fileManagerService.manifestFilePath = manifestFilePath
 	err := fileManagerService.UpdateCurrentFilesOnDisk(ctx, filesOnDisk, false)
 	require.NoError(t, err)
@@ -179,7 +182,11 @@ func TestFileManagerService_ConfigApply_Update(t *testing.T) {
 	data, readErr := os.ReadFile(tempFile.Name())
 	require.NoError(t, readErr)
 	assert.Equal(t, fileContent, data)
-	assert.Equal(t, fileManagerService.rollbackFileContents[tempFile.Name()], previousFileContent)
+
+	content, err := os.ReadFile(fileManagerService.tempRollbackDir + tempFile.Name())
+	require.NoError(t, err)
+	assert.Equal(t, previousFileContent, content)
+
 	assert.Equal(t, fileManagerService.fileActions[tempFile.Name()].File, overview.GetFiles()[0])
 	assert.True(t, fileManagerService.rollbackManifest)
 }
@@ -219,6 +226,7 @@ func TestFileManagerService_ConfigApply_Delete(t *testing.T) {
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig, &sync.RWMutex{})
 	fileManagerService.agentConfig.LibDir = manifestDirPath
 	fileManagerService.manifestFilePath = manifestFilePath
+	fileManagerService.configPath = filepath.Dir(tempFile.Name())
 	err := fileManagerService.UpdateCurrentFilesOnDisk(ctx, filesOnDisk, false)
 	require.NoError(t, err)
 
@@ -236,7 +244,11 @@ func TestFileManagerService_ConfigApply_Delete(t *testing.T) {
 	writeStatus, err := fileManagerService.ConfigApply(ctx, request)
 	require.NoError(t, err)
 	assert.NoFileExists(t, tempFile.Name())
-	assert.Equal(t, fileManagerService.rollbackFileContents[tempFile.Name()], fileContent)
+
+	content, err := os.ReadFile(fileManagerService.tempRollbackDir + tempFile.Name())
+	require.NoError(t, err)
+	assert.Equal(t, fileContent, content)
+
 	assert.Equal(t,
 		fileManagerService.fileActions[tempFile.Name()].File.GetFileMeta().GetName(),
 		filesOnDisk[tempFile.Name()].GetFileMeta().GetName(),
@@ -278,6 +290,7 @@ func TestFileManagerService_ConfigApply_Failed(t *testing.T) {
 
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig, &sync.RWMutex{})
 	fileManagerService.agentConfig.LibDir = manifestDirPath
+	fileManagerService.configPath = filepath.Dir(filePath)
 	fileManagerService.manifestFilePath = manifestFilePath
 
 	request := protos.CreateConfigApplyRequest(overview)
@@ -326,62 +339,25 @@ func TestFileManagerService_validateAndUpdateFilePermissions(t *testing.T) {
 	ctx := context.Background()
 	fileManagerService := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
 
-	tests := []struct {
-		name        string
-		errorMsg    string
-		files       []*mpi.File
-		expectError bool
-	}{
+	testFiles := []*mpi.File{
 		{
-			name:        "Test 1: File list with valid permissions",
-			expectError: false,
-			files: []*mpi.File{
-				{
-					FileMeta: &mpi.FileMeta{
-						Name:        "exec.conf",
-						Permissions: "0700",
-					},
-				},
-				{
-					FileMeta: &mpi.FileMeta{
-						Name:        "normal.conf",
-						Permissions: "0620",
-					},
-				},
+			FileMeta: &mpi.FileMeta{
+				Name:        "exec.conf",
+				Permissions: "0700",
 			},
 		},
 		{
-			name:        "Test 2: File list with invalid permissions",
-			expectError: true,
-			errorMsg:    "failed to reset permissions",
-			files: []*mpi.File{
-				{
-					FileMeta: &mpi.FileMeta{
-						Name:        "malformed.conf",
-						Permissions: "07000",
-					},
-				},
-				{
-					FileMeta: &mpi.FileMeta{
-						Name:        "invalid.conf",
-						Permissions: "abcde",
-					},
-				},
+			FileMeta: &mpi.FileMeta{
+				Name:        "normal.conf",
+				Permissions: "0620",
 			},
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			err := fileManagerService.validateAndUpdateFilePermissions(ctx, test.files)
-			if test.expectError {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), test.errorMsg)
-			} else {
-				require.NoError(t, err)
-			}
-		})
-	}
+	err := fileManagerService.validateAndUpdateFilePermissions(ctx, testFiles)
+	require.NoError(t, err)
+	assert.Equal(t, "0600", testFiles[0].GetFileMeta().GetPermissions())
+	assert.Equal(t, "0620", testFiles[1].GetFileMeta().GetPermissions())
 }
 
 func TestFileManagerService_areExecuteFilePermissionsSet(t *testing.T) {
@@ -485,9 +461,18 @@ func TestFileManagerService_removeExecuteFilePermissions(t *testing.T) {
 	}
 }
 
+//nolint:usetesting // need to use MkDirTemp instead of t.tempDir for rollback as t.tempDir does not accept a pattern
 func TestFileManagerService_ClearCache(t *testing.T) {
+	tempDir := t.TempDir()
+	rollbackDir, err := os.MkdirTemp(tempDir, "rollback")
+	require.NoError(t, err)
+	configDir, err := os.MkdirTemp(tempDir, "config")
+	require.NoError(t, err)
+
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
+	fileManagerService.tempConfigDir = configDir
+	fileManagerService.tempRollbackDir = rollbackDir
 
 	filesCache := map[string]*model.FileCache{
 		"file/path/test.conf": {
@@ -503,24 +488,26 @@ func TestFileManagerService_ClearCache(t *testing.T) {
 		},
 	}
 
-	contentsCache := map[string][]byte{
-		"file/path/test.conf": []byte("some test data"),
-	}
-
 	fileManagerService.fileActions = filesCache
-	fileManagerService.rollbackFileContents = contentsCache
 	assert.NotEmpty(t, fileManagerService.fileActions)
-	assert.NotEmpty(t, fileManagerService.rollbackFileContents)
 
 	fileManagerService.ClearCache()
 
 	assert.Empty(t, fileManagerService.fileActions)
-	assert.Empty(t, fileManagerService.rollbackFileContents)
+
+	_, statErr := os.Stat(fileManagerService.tempRollbackDir)
+	assert.True(t, os.IsNotExist(statErr))
+	_, statConfigErr := os.Stat(fileManagerService.tempConfigDir)
+	assert.True(t, os.IsNotExist(statConfigErr))
 }
 
+//nolint:usetesting // need to use MkDirTemp instead of t.tempDir for rollback as t.tempDir does not accept a pattern
 func TestFileManagerService_Rollback(t *testing.T) {
 	ctx := context.Background()
 	tempDir := t.TempDir()
+
+	rollbackDir, mkdirErr := os.MkdirTemp(tempDir, "rollback")
+	require.NoError(t, mkdirErr)
 
 	deleteFilePath := filepath.Join(tempDir, "nginx_delete.conf")
 
@@ -535,6 +522,25 @@ func TestFileManagerService_Rollback(t *testing.T) {
 	updateFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx_update.conf")
 	_, writeErr = updateFile.Write(newFileContent)
 	require.NoError(t, writeErr)
+
+	helpers.CreateDirWithErrorCheck(t, rollbackDir+tempDir)
+
+	tempAddFile, createErr := os.Create(rollbackDir + addFile.Name())
+	require.NoError(t, createErr)
+	_, writeErr = tempAddFile.Write(oldFileContent)
+	require.NoError(t, writeErr)
+
+	tempUpdateFile, createErr := os.Create(rollbackDir + updateFile.Name())
+	require.NoError(t, createErr)
+	_, writeErr = tempUpdateFile.Write(oldFileContent)
+	require.NoError(t, writeErr)
+	t.Log(tempUpdateFile.Name())
+
+	tempDeleteFile, createErr := os.Create(rollbackDir + tempDir + "/nginx_delete.conf")
+	require.NoError(t, createErr)
+	_, writeErr = tempDeleteFile.Write(oldFileContent)
+	require.NoError(t, writeErr)
+	t.Log(tempDeleteFile.Name())
 
 	manifestDirPath := tempDir
 	manifestFilePath := manifestDirPath + "/manifest.json"
@@ -593,17 +599,14 @@ func TestFileManagerService_Rollback(t *testing.T) {
 			},
 		},
 	}
-	fileContentCache := map[string][]byte{
-		deleteFilePath:    oldFileContent,
-		updateFile.Name(): oldFileContent,
-	}
 
 	instanceID := protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
-	fileManagerService.rollbackFileContents = fileContentCache
 	fileManagerService.fileActions = filesCache
 	fileManagerService.agentConfig.LibDir = manifestDirPath
+	fileManagerService.tempRollbackDir = rollbackDir
+	fileManagerService.configPath = filepath.Dir(updateFile.Name())
 	fileManagerService.manifestFilePath = manifestFilePath
 
 	err := fileManagerService.Rollback(ctx, instanceID)
@@ -625,7 +628,7 @@ func TestFileManagerService_Rollback(t *testing.T) {
 
 func TestFileManagerService_DetermineFileActions(t *testing.T) {
 	ctx := context.Background()
-	tempDir := os.TempDir()
+	tempDir := filepath.Clean(os.TempDir())
 
 	deleteTestFile := helpers.CreateFileWithErrorCheck(t, tempDir, "nginx_delete.conf")
 	defer helpers.RemoveFileWithErrorCheck(t, deleteTestFile.Name())
@@ -661,9 +664,11 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 		expectedCache   map[string]*model.FileCache
 		expectedContent map[string][]byte
 		name            string
+		allowedDirs     []string
 	}{
 		{
-			name: "Test 1: Add, Update & Delete Files",
+			name:        "Test 1: Add, Update & Delete Files",
+			allowedDirs: []string{tempDir},
 			modifiedFiles: map[string]*model.FileCache{
 				addTestFileName: {
 					File: &mpi.File{
@@ -726,7 +731,8 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 			expectedError: nil,
 		},
 		{
-			name: "Test 2: Files same as on disk",
+			name:        "Test 2: Files same as on disk",
+			allowedDirs: []string{tempDir},
 			modifiedFiles: map[string]*model.FileCache{
 				addTestFile.Name(): {
 					File: &mpi.File{
@@ -761,6 +767,7 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 		},
 		{
 			name:          "Test 3: File being deleted already doesn't exist",
+			allowedDirs:   []string{tempDir, "/unknown"},
 			modifiedFiles: make(map[string]*model.FileCache),
 			currentFiles: map[string]*mpi.File{
 				"/unknown/file.conf": {
@@ -783,18 +790,19 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 
 			fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 			fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
+			fileManagerService.agentConfig.AllowedDirectories = test.allowedDirs
 			fileManagerService.agentConfig.LibDir = manifestDirPath
 			fileManagerService.manifestFilePath = manifestFilePath
+			fileManagerService.configPath = filepath.Dir(updateTestFile.Name())
 
 			require.NoError(tt, err)
 
-			diff, contents, fileActionErr := fileManagerService.DetermineFileActions(
+			diff, fileActionErr := fileManagerService.DetermineFileActions(
 				ctx,
 				test.currentFiles,
 				test.modifiedFiles,
 			)
 			require.NoError(tt, fileActionErr)
-			assert.Equal(tt, test.expectedContent, contents)
 			assert.Equal(tt, test.expectedCache, diff)
 		})
 	}
@@ -957,6 +965,7 @@ func TestFileManagerService_UpdateManifestFile(t *testing.T) {
 
 			fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 			fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
+			fileManagerService.agentConfig.AllowedDirectories = []string{"manifestDirPath"}
 			fileManagerService.agentConfig.LibDir = manifestDirPath
 			fileManagerService.manifestFilePath = file.Name()
 
@@ -1055,7 +1064,7 @@ func TestFileManagerService_fileActions(t *testing.T) {
 
 	fileManagerService.fileActions = filesCache
 
-	actionErr := fileManagerService.executeFileActions(ctx, os.TempDir())
+	actionErr := fileManagerService.executeFileActions(ctx)
 	require.NoError(t, actionErr)
 
 	assert.FileExists(t, addFilePath)
@@ -1177,20 +1186,22 @@ func TestFileManagerService_deleteTempFiles(t *testing.T) {
 
 func TestFileManagerService_createTempConfigDirectory(t *testing.T) {
 	agentConfig := types.AgentConfig()
-	agentConfig.LibDir = t.TempDir()
+	tempDir := t.TempDir()
+	configPath := tempDir
 
 	fileManagerService := FileManagerService{
 		agentConfig: agentConfig,
+		configPath:  configPath,
 	}
 
-	dir, err := fileManagerService.createTempConfigDirectory(t.Context())
+	dir, err := fileManagerService.createTempConfigDirectory("config")
 	assert.NotEmpty(t, dir)
 	require.NoError(t, err)
 
 	// Test for unknown directory path
-	agentConfig.LibDir = "/unknown/"
+	fileManagerService.configPath = "/unknown/"
 
-	dir, err = fileManagerService.createTempConfigDirectory(t.Context())
+	dir, err = fileManagerService.createTempConfigDirectory("config")
 	assert.Empty(t, dir)
 	require.Error(t, err)
 }
