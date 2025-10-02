@@ -64,6 +64,7 @@ func TestResolveConfig(t *testing.T) {
 
 	actual, err := ResolveConfig()
 	require.NoError(t, err)
+	t.Logf("Actual: %+v", actual.AllowedDirectories)
 	sort.Slice(actual.Collector.Extensions.HeadersSetter.Headers, func(i, j int) bool {
 		headers := actual.Collector.Extensions.HeadersSetter.Headers
 		return headers[i].Key < headers[j].Key
@@ -1094,7 +1095,7 @@ func createConfig() *Config {
 		},
 		AllowedDirectories: []string{
 			"/etc/nginx-agent", "/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx",
-			"/usr/share/nginx/modules", "/var/log/nginx",
+			"/usr/share/nginx/modules", "/var/log/nginx", "/configs",
 		},
 		DataPlaneConfig: &DataPlaneConfig{
 			Nginx: &NginxDataPlaneConfig{
