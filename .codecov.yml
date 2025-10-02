@@ -12,10 +12,16 @@ coverage:
       default:
 
         # The minimum required coverage value for the project
-        target: 80%
+        target: 90%
 
         # The allowed coverage decrease before failing the status check
         threshold: 0%
+
+        # Code coverage check behaviour if the CI fails
+        if_ci_failed: error
+
+        # Whether to run coverage checks only on pull requests
+        only_pulls: false
 
     # Patch-level coverage settings
     patch:
@@ -24,6 +30,8 @@ coverage:
 
         target: 80%
         threshold: 0%
+        if_ci_failed: error
+        only_pulls: false
 
 # Ignore files or packages matching their paths
 ignore:
