@@ -333,6 +333,132 @@ func TestFileManagerService_checkAllowedDirectory(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestFileManagerService_validateAndUpdateFilePermissions(t *testing.T) {
+	ctx := context.Background()
+	fileManagerService := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
+
+	testFiles := []*mpi.File{
+		{
+			FileMeta: &mpi.FileMeta{
+				Name:        "exec.conf",
+				Permissions: "0700",
+			},
+		},
+		{
+			FileMeta: &mpi.FileMeta{
+				Name:        "normal.conf",
+				Permissions: "0620",
+			},
+		},
+	}
+
+	err := fileManagerService.validateAndUpdateFilePermissions(ctx, testFiles)
+	require.NoError(t, err)
+	assert.Equal(t, "0600", testFiles[0].GetFileMeta().GetPermissions())
+	assert.Equal(t, "0620", testFiles[1].GetFileMeta().GetPermissions())
+}
+
+func TestFileManagerService_areExecuteFilePermissionsSet(t *testing.T) {
+	fileManagerService := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
+
+	tests := []struct {
+		name        string
+		permissions string
+		expectBool  bool
+	}{
+		{
+			name:        "Test 1: File with read and write permissions for owner",
+			permissions: "0600",
+			expectBool:  false,
+		},
+		{
+			name:        "Test 2: File with read/write and execute permissions for owner",
+			permissions: "0700",
+			expectBool:  true,
+		},
+		{
+			name:        "Test 3: File with read/write and execute permissions for owner and group",
+			permissions: "0770",
+			expectBool:  true,
+		},
+		{
+			name:        "Test 4: File with read and execute permissions for everyone",
+			permissions: "0555",
+			expectBool:  true,
+		},
+		{
+			name:        "Test 5: File with malformed permissions",
+			permissions: "abcde",
+			expectBool:  false,
+		},
+		{
+			name:        "Test 6: File with invalid permissions",
+			permissions: "000070",
+			expectBool:  false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			file := &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name:        "test.conf",
+					Permissions: test.permissions,
+				},
+			}
+
+			got := fileManagerService.areExecuteFilePermissionsSet(file)
+			assert.Equal(t, test.expectBool, got)
+		})
+	}
+}
+
+func TestFileManagerService_removeExecuteFilePermissions(t *testing.T) {
+	fileManagerService := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
+
+	tests := []struct {
+		name              string
+		permissions       string
+		errorMsg          string
+		expectPermissions string
+		expectError       bool
+	}{
+		{
+			name:              "Test 1: File with execute permissions for owner and others",
+			permissions:       "0703",
+			expectError:       false,
+			expectPermissions: "0602",
+		},
+		{
+			name:        "Test 2: File with malformed permissions",
+			permissions: "abcde",
+			expectError: true,
+			errorMsg:    "falied to parse file permissions",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			file := &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name:        "test.conf",
+					Permissions: test.permissions,
+				},
+			}
+
+			parseErr := fileManagerService.removeExecuteFilePermissions(t.Context(), file)
+
+			if test.expectError {
+				require.Error(t, parseErr)
+				assert.Contains(t, parseErr.Error(), test.errorMsg)
+			} else {
+				require.NoError(t, parseErr)
+				assert.Equal(t, test.expectPermissions, file.GetFileMeta().GetPermissions())
+			}
+		})
+	}
+}
+
 //nolint:usetesting // need to use MkDirTemp instead of t.tempDir for rollback as t.tempDir does not accept a pattern
 func TestFileManagerService_ClearCache(t *testing.T) {
 	tempDir := t.TempDir()
