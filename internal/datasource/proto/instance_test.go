@@ -121,12 +121,16 @@ func TestInstanceWatcherService_updateNginxInstanceRuntime(t *testing.T) {
 			nginxConfigContext: nginxPlusConfigContextForUpdate,
 			instance:           protos.NginxPlusInstance([]string{}),
 		},
+		{
+			name:               "Test 4: Plus Instance - No Update Required",
+			nginxConfigContext: nginxPlusConfigContextForUpdate,
+			instance:           createPopulatedNginxPlusInstance(nginxPlusConfigContextForUpdate),
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			updatesRequired := UpdateNginxInstanceRuntime(test.instance, test.nginxConfigContext)
-			UpdateNginxInstanceRuntime(test.instance, test.nginxConfigContext)
 			switch test.name {
 			case "Test 3: Plus Instance - PlusAPIs Update":
 				assert.True(t, updatesRequired,
@@ -140,6 +144,9 @@ func TestInstanceWatcherService_updateNginxInstanceRuntime(t *testing.T) {
 					GetNginxPlusRuntimeInfo().GetPlusApi().GetCa())
 				assert.Equal(t, test.nginxConfigContext.PlusAPI.Listen, test.instance.GetInstanceRuntime().
 					GetNginxPlusRuntimeInfo().GetPlusApi().GetListen())
+			case "Test 4: Plus Instance - No Update Required":
+				assert.False(t, updatesRequired,
+					"UpdateNginxInstanceRuntime should return false when runtime already matches config")
 
 			case "Test 2: Plus Instance":
 				assert.Equal(t, test.nginxConfigContext.AccessLogs[0].Name, test.instance.GetInstanceRuntime().
@@ -171,4 +178,24 @@ func TestInstanceWatcherService_updateNginxInstanceRuntime(t *testing.T) {
 			}
 		})
 	}
+}
+
+func createPopulatedNginxPlusInstance(configContext *model.NginxConfigContext) *mpi.Instance {
+	instance := protos.NginxPlusInstance([]string{})
+	runtimeInfo := instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo()
+	runtimeInfo.PlusApi.Listen = configContext.PlusAPI.Listen
+
+	runtimeInfo.PlusApi.Location = configContext.PlusAPI.Location
+	runtimeInfo.PlusApi.WriteEnabled = configContext.PlusAPI.WriteEnabled
+	runtimeInfo.PlusApi.Ca = configContext.PlusAPI.Ca
+
+	runtimeInfo.PlusApis = convertAPIDetailsSliceForTest(configContext.PlusAPIs)
+
+	runtimeInfo.AccessLogs = model.ConvertAccessLogs(configContext.AccessLogs)
+	runtimeInfo.ErrorLogs = model.ConvertErrorLogs(configContext.ErrorLogs)
+
+	runtimeInfo.StubStatus.Listen = configContext.StubStatus.Listen
+	runtimeInfo.StubStatus.Location = configContext.StubStatus.Location
+
+	return instance
 }
