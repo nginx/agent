@@ -697,7 +697,7 @@ Perform an associated API action on an instance
 | location | [string](#string) |  | the API location directive |
 | listen | [string](#string) |  | the API listen directive |
 | Ca | [string](#string) |  | the API CA file path |
-| write_enabled | [bool](#bool) |  | flag to know if this API location was configured with &#39;api write=on;&#39; |
+| write_enabled | [bool](#bool) |  | flag to know API is configured with &#39;write=on;&#39; |
 
 
 
@@ -1132,7 +1132,7 @@ A set of runtime NGINX Plus settings
 | loadable_modules | [string](#string) | repeated | List of NGINX potentially loadable modules (installed but not loaded). |
 | dynamic_modules | [string](#string) | repeated | List of NGINX dynamic modules. |
 | plus_api | [APIDetails](#mpi-v1-APIDetails) |  | the plus API details |
-| plus_apis | [APIDetails](#mpi-v1-APIDetails) | repeated | to store all the endpoints details |
+| plus_apis | [APIDetails](#mpi-v1-APIDetails) | repeated | to parse all the plus API |
 
 
 
