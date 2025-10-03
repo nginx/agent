@@ -167,6 +167,11 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 		return model.Error, allowedErr
 	}
 
+	permissionErr := fms.validateAndUpdateFilePermissions(ctx, fileOverview.GetFiles())
+	if permissionErr != nil {
+		return model.RollbackRequired, permissionErr
+	}
+
 	diffFiles, compareErr := fms.DetermineFileActions(
 		ctx,
 		fms.currentFilesOnDisk,

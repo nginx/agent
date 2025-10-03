@@ -301,6 +301,54 @@ func TestFileManagerService_ConfigApply_Failed(t *testing.T) {
 	assert.False(t, fileManagerService.rollbackManifest)
 }
 
+func TestFileManagerService_ConfigApply_FileWithExecutePermissions(t *testing.T) {
+	ctx := context.Background()
+	tempDir := t.TempDir()
+
+	filePath := filepath.Join(tempDir, "nginx.conf")
+
+	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
+	fileHash := files.GenerateHash(fileContent)
+	defer helpers.RemoveFileWithErrorCheck(t, filePath)
+
+	overview := protos.FileOverview(filePath, fileHash)
+
+	overview.GetFiles()[0].GetFileMeta().Permissions = "0755"
+
+	manifestDirPath := tempDir
+	manifestFilePath := filepath.Join(manifestDirPath, "manifest.json")
+	helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
+
+	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+	fakeFileServiceClient.GetOverviewReturns(&mpi.GetOverviewResponse{
+		Overview: overview,
+	}, nil)
+	fakeFileServiceClient.GetFileReturns(&mpi.GetFileResponse{
+		Contents: &mpi.FileContents{
+			Contents: fileContent,
+		},
+	}, nil)
+	agentConfig := types.AgentConfig()
+	agentConfig.AllowedDirectories = []string{tempDir}
+
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig, &sync.RWMutex{})
+	fileManagerService.configPath = filepath.Dir(filePath)
+	fileManagerService.agentConfig.LibDir = manifestDirPath
+	fileManagerService.manifestFilePath = manifestFilePath
+
+	request := protos.CreateConfigApplyRequest(overview)
+	writeStatus, err := fileManagerService.ConfigApply(ctx, request)
+	require.NoError(t, err)
+	assert.Equal(t, model.OK, writeStatus)
+	assert.Equal(t, "0644", fileManagerService.fileActions[filePath].File.GetFileMeta().GetPermissions())
+	data, readErr := os.ReadFile(filePath)
+	require.NoError(t, readErr)
+	assert.Equal(t, fileContent, data)
+	assert.Equal(t, fileManagerService.fileActions[filePath].File, overview.GetFiles()[0])
+	assert.Equal(t, 1, fakeFileServiceClient.GetFileCallCount())
+	assert.True(t, fileManagerService.rollbackManifest)
+}
+
 func TestFileManagerService_checkAllowedDirectory(t *testing.T) {
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
