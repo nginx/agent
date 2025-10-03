@@ -66,6 +66,7 @@ comment:
   layout: "reach,diff,tree,reach"
   behavior: default
   require_changes: false
+  require_base: false
 
 # Ignore files or packages matching their paths
 ignore:
