@@ -43,6 +43,7 @@ type (
 		Client             *Client          `yaml:"client"              mapstructure:"client"`
 		Collector          *Collector       `yaml:"collector"           mapstructure:"collector"`
 		Watchers           *Watchers        `yaml:"watchers"            mapstructure:"watchers"`
+		SyslogServer       *SyslogServer    `yaml:"syslog_server"       mapstructure:"syslog_server"`
 		Labels             map[string]any   `yaml:"labels"              mapstructure:"labels"`
 		Version            string           `yaml:"-"`
 		Path               string           `yaml:"-"`
@@ -61,6 +62,9 @@ type (
 		Nginx *NginxDataPlaneConfig `yaml:"nginx" mapstructure:"nginx"`
 	}
 
+	SyslogServer struct {
+		Port string `yaml:"port" mapstructure:"port"`
+	}
 	NginxDataPlaneConfig struct {
 		ReloadBackoff          *BackOff      `yaml:"reload_backoff"           mapstructure:"reload_backoff"`
 		APITls                 TLSConfig     `yaml:"api_tls"                  mapstructure:"api_tls"`

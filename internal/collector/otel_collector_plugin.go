@@ -572,7 +572,7 @@ func (oc *Collector) updateNginxAppProtectTcplogReceivers(
 		oc.config.Collector.Receivers.TcplogReceivers = make(map[string]*config.TcplogReceiver)
 	}
 
-	napSysLogServer := oc.findAvailableSyslogServers(ctx, nginxConfigContext.NAPSysLogServers)
+	napSysLogServer := oc.findAvailableSyslogServers(ctx, nginxConfigContext.NAPSysLogServer)
 
 	if napSysLogServer != "" {
 		if !oc.doesTcplogReceiverAlreadyExist(napSysLogServer) {
@@ -705,40 +705,30 @@ func (oc *Collector) updateResourceAttributes(
 	return actionUpdated
 }
 
-func (oc *Collector) findAvailableSyslogServers(ctx context.Context, napSyslogServers []string) string {
-	napSyslogServersMap := make(map[string]bool)
-	for _, server := range napSyslogServers {
-		napSyslogServersMap[server] = true
+func (oc *Collector) findAvailableSyslogServers(ctx context.Context, napSyslogServer string) string {
+	if oc.previousNAPSysLogServer != "" && oc.previousNAPSysLogServer == napSyslogServer {
+		return oc.previousNAPSysLogServer
 	}
 
-	if oc.previousNAPSysLogServer != "" {
-		if _, ok := napSyslogServersMap[oc.previousNAPSysLogServer]; ok {
-			return oc.previousNAPSysLogServer
-		}
+	listenConfig := &net.ListenConfig{}
+	ln, err := listenConfig.Listen(ctx, "tcp", napSyslogServer)
+	if err != nil {
+		slog.DebugContext(ctx, "NAP syslog server is not reachable", "address", napSyslogServer,
+			"error", err)
+
+		return ""
 	}
 
-	for _, napSyslogServer := range napSyslogServers {
-		listenConfig := &net.ListenConfig{}
-		ln, err := listenConfig.Listen(ctx, "tcp", napSyslogServer)
-		if err != nil {
-			slog.DebugContext(ctx, "NAP syslog server is not reachable", "address", napSyslogServer,
-				"error", err)
-
-			continue
-		}
-		closeError := ln.Close()
-		if closeError != nil {
-			slog.DebugContext(ctx, "Failed to close syslog server", "address", napSyslogServer, "error", closeError)
-		}
-
-		slog.DebugContext(ctx, "Found valid NAP syslog server", "address", napSyslogServer)
-
-		oc.previousNAPSysLogServer = napSyslogServer
-
-		return napSyslogServer
+	closeError := ln.Close()
+	if closeError != nil {
+		slog.DebugContext(ctx, "Failed to close syslog server", "address", napSyslogServer, "error", closeError)
 	}
 
-	return ""
+	slog.InfoContext(ctx, "Found valid NAP syslog server", "address", napSyslogServer)
+
+	oc.previousNAPSysLogServer = napSyslogServer
+
+	return napSyslogServer
 }
 
 func isOSSReceiverChanged(nginxReceiver config.NginxReceiver, nginxConfigContext *model.NginxConfigContext) bool {

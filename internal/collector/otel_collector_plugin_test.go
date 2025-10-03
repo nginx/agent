@@ -744,7 +744,7 @@ func TestCollector_updateNginxAppProtectTcplogReceivers(t *testing.T) {
 	require.NoError(t, err)
 
 	nginxConfigContext := &model.NginxConfigContext{
-		NAPSysLogServers: []string{"localhost:15632"},
+		NAPSysLogServer: "localhost:15632",
 	}
 
 	assert.Empty(t, conf.Collector.Receivers.TcplogReceivers)
@@ -777,7 +777,7 @@ func TestCollector_updateNginxAppProtectTcplogReceivers(t *testing.T) {
 	t.Run("Test 4: NewCollector tcplogReceiver added and deleted another", func(tt *testing.T) {
 		tcplogReceiverDeleted := collector.updateNginxAppProtectTcplogReceivers(ctx,
 			&model.NginxConfigContext{
-				NAPSysLogServers: []string{"localhost:1555"},
+				NAPSysLogServer: "localhost:1555",
 			},
 		)
 
@@ -927,49 +927,49 @@ func TestCollector_findAvailableSyslogServers(t *testing.T) {
 		name                    string
 		expectedSyslogServer    string
 		previousNAPSysLogServer string
-		syslogServers           []string
+		syslogServers           string
 		portInUse               bool
 	}{
 		{
 			name:                    "Test 1: port available",
 			expectedSyslogServer:    "localhost:15632",
 			previousNAPSysLogServer: "",
-			syslogServers:           []string{"localhost:15632"},
+			syslogServers:           "localhost:15632",
 			portInUse:               false,
 		},
 		{
 			name:                    "Test 2: port in use",
 			expectedSyslogServer:    "",
 			previousNAPSysLogServer: "",
-			syslogServers:           []string{"localhost:15632"},
+			syslogServers:           "localhost:15632",
 			portInUse:               true,
 		},
 		{
 			name:                    "Test 3: syslog server already configured",
 			expectedSyslogServer:    "localhost:15632",
 			previousNAPSysLogServer: "localhost:15632",
-			syslogServers:           []string{"localhost:15632"},
+			syslogServers:           "localhost:15632",
 			portInUse:               false,
 		},
 		{
 			name:                    "Test 4: new syslog server",
 			expectedSyslogServer:    "localhost:15632",
 			previousNAPSysLogServer: "localhost:1122",
-			syslogServers:           []string{"localhost:15632"},
+			syslogServers:           "localhost:15632",
 			portInUse:               false,
 		},
 		{
 			name:                    "Test 5: port in use find next server",
 			expectedSyslogServer:    "localhost:1122",
 			previousNAPSysLogServer: "",
-			syslogServers:           []string{"localhost:15632", "localhost:1122"},
+			syslogServers:           "localhost:1122",
 			portInUse:               true,
 		},
 		{
 			name:                    "Test 6: port hasn't changed",
 			expectedSyslogServer:    "localhost:1122",
 			previousNAPSysLogServer: "localhost:1122",
-			syslogServers:           []string{"localhost:1122"},
+			syslogServers:           "localhost:1122",
 			portInUse:               true,
 		},
 	}
