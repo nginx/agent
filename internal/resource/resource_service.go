@@ -361,21 +361,42 @@ func convertToStreamUpstreamServer(streamUpstreams []*structpb.Struct) []client.
 }
 
 func (r *ResourceService) createPlusClient(ctx context.Context, instance *mpi.Instance) (*client.NginxClient, error) {
-	plusAPI := instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo().GetPlusApi()
+	plusAPIs := instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo().GetPlusApis()
 	var endpoint string
+	var selectedAPI *mpi.APIDetails
 
-	if plusAPI.GetLocation() == "" || plusAPI.GetListen() == "" {
+	if len(plusAPIs) == 0 {
 		return nil, errors.New("failed to preform API action, NGINX Plus API is not configured")
 	}
 
-	if strings.HasPrefix(plusAPI.GetListen(), "unix:") {
-		endpoint = fmt.Sprintf(unixPlusAPIFormat, plusAPI.GetLocation())
+	for _, api := range plusAPIs {
+		if api.GetWriteEnabled() {
+			selectedAPI = api
+			slog.DebugContext(ctx, "Selected write-enabled NGINX Plus API for action",
+				"url", selectedAPI.GetLocation(), "listen", selectedAPI.GetListen())
+
+			break
+		}
+	}
+
+	if selectedAPI == nil {
+		selectedAPI = plusAPIs[0]
+		slog.InfoContext(ctx, "No write-enabled NGINX Plus API found. Write operations may fail.",
+			"url", selectedAPI.GetLocation(), "listen", selectedAPI.GetListen())
+	}
+
+	if selectedAPI.GetLocation() == "" || selectedAPI.GetListen() == "" {
+		return nil, errors.New("failed to preform API action, NGINX Plus API is not configured")
+	}
+
+	if strings.HasPrefix(selectedAPI.GetListen(), "unix:") {
+		endpoint = fmt.Sprintf(unixPlusAPIFormat, selectedAPI.GetLocation())
 	} else {
-		endpoint = fmt.Sprintf(apiFormat, plusAPI.GetListen(), plusAPI.GetLocation())
+		endpoint = fmt.Sprintf(apiFormat, selectedAPI.GetListen(), selectedAPI.GetLocation())
 	}
 
 	httpClient := http.DefaultClient
-	caCertLocation := plusAPI.GetCa()
+	caCertLocation := selectedAPI.GetCa()
 	if caCertLocation != "" {
 		slog.DebugContext(ctx, "Reading CA certificate", "file_path", caCertLocation)
 		caCert, err := os.ReadFile(caCertLocation)
@@ -394,8 +415,8 @@ func (r *ResourceService) createPlusClient(ctx context.Context, instance *mpi.In
 			},
 		}
 	}
-	if strings.HasPrefix(plusAPI.GetListen(), "unix:") {
-		httpClient = socketClient(ctx, strings.TrimPrefix(plusAPI.GetListen(), "unix:"))
+	if strings.HasPrefix(selectedAPI.GetListen(), "unix:") {
+		httpClient = socketClient(ctx, strings.TrimPrefix(selectedAPI.GetListen(), "unix:"))
 	}
 
 	return client.NewNginxClient(endpoint,

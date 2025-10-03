@@ -57,6 +57,7 @@ type ConfigParser interface {
 	Parse(ctx context.Context, instance *mpi.Instance) (*model.NginxConfigContext, error)
 	FindStubStatusAPI(ctx context.Context, nginxConfigContext *model.NginxConfigContext) *model.APIDetails
 	FindPlusAPI(ctx context.Context, nginxConfigContext *model.NginxConfigContext) *model.APIDetails
+	FindAllPlusAPIs(ctx context.Context, nginxConfigContext *model.NginxConfigContext) []*model.APIDetails
 }
 
 var _ ConfigParser = (*NginxConfigParser)(nil)
@@ -66,6 +67,14 @@ type (
 	crossplaneTraverseCallbackAPIDetails = func(ctx context.Context, parent,
 		current *crossplane.Directive, apiType string) []*model.APIDetails
 )
+
+type apiCreationParams struct {
+	locationDirectiveName string
+	path                  string
+	caCertLocation        string
+	isSSL                 bool
+	isWriteEnabled        bool
+}
 
 func NewNginxConfigParser(agentConfig *config.Config) *NginxConfigParser {
 	return &NginxConfigParser{
@@ -142,6 +151,16 @@ func (ncp *NginxConfigParser) FindPlusAPI(
 		Location: "",
 		Ca:       "",
 	}
+}
+
+func (ncp *NginxConfigParser) FindAllPlusAPIs(
+	ctx context.Context, nginxConfigContext *model.NginxConfigContext,
+) []*model.APIDetails {
+	if nginxConfigContext.PlusAPIs == nil {
+		return []*model.APIDetails{}
+	}
+
+	return nginxConfigContext.PlusAPIs
 }
 
 //nolint:gocognit,gocyclo,revive,cyclop //  cognitive complexity is 51, cyclomatic complexity is 24
@@ -691,21 +710,29 @@ func (ncp *NginxConfigParser) apiDetailsFromLocationDirective(
 		return nil
 	}
 
+	addresses := ncp.parseAddressFromServerDirective(parent)
+	path := ncp.parsePathFromLocationDirective(current)
+
 	for _, locChild := range current.Block {
 		if locChild.Directive != plusAPIDirective && locChild.Directive != stubStatusAPIDirective {
 			continue
 		}
 
-		addresses := ncp.parseAddressFromServerDirective(parent)
-		path := ncp.parsePathFromLocationDirective(current)
-
 		if locChild.Directive == locationDirectiveName {
-			for _, address := range addresses {
-				details = append(
-					details,
-					ncp.createAPIDetails(locationDirectiveName, address, path, caCertLocation, isSSL),
-				)
+			isWriteEnabled := ncp.isPlusAPIWriteEnabled(ctx, locChild, current.Args[0])
+
+			params := apiCreationParams{
+				locationDirectiveName: locationDirectiveName,
+				path:                  path,
+				caCertLocation:        caCertLocation,
+				isSSL:                 isSSL,
+				isWriteEnabled:        isWriteEnabled,
 			}
+
+			details = append(details, ncp.createAPIDetailsForAddresses(
+				params,
+				addresses,
+			)...)
 		}
 	}
 
@@ -713,28 +740,30 @@ func (ncp *NginxConfigParser) apiDetailsFromLocationDirective(
 }
 
 func (ncp *NginxConfigParser) createAPIDetails(
-	locationDirectiveName, address, path, caCertLocation string, isSSL bool,
+	params apiCreationParams, address string,
 ) (details *model.APIDetails) {
 	if strings.HasPrefix(address, "unix:") {
 		format := unixStubStatusFormat
 
-		if locationDirectiveName == plusAPIDirective {
+		if params.locationDirectiveName == plusAPIDirective {
 			format = unixPlusAPIFormat
 		}
 
 		details = &model.APIDetails{
-			URL:      fmt.Sprintf(format, path),
-			Listen:   address,
-			Location: path,
-			Ca:       caCertLocation,
+			URL:          fmt.Sprintf(format, params.path),
+			Listen:       address,
+			Location:     params.path,
+			Ca:           params.caCertLocation,
+			WriteEnabled: params.isWriteEnabled,
 		}
 	} else {
 		details = &model.APIDetails{
-			URL: fmt.Sprintf("%s://%s%s", map[bool]string{true: "https", false: "http"}[isSSL],
-				address, path),
-			Listen:   address,
-			Location: path,
-			Ca:       caCertLocation,
+			URL: fmt.Sprintf("%s://%s%s", map[bool]string{true: "https", false: "http"}[params.isSSL],
+				address, params.path),
+			Listen:       address,
+			Location:     params.path,
+			Ca:           params.caCertLocation,
+			WriteEnabled: params.isWriteEnabled,
 		}
 	}
 
@@ -882,6 +911,41 @@ func (ncp *NginxConfigParser) selfSignedCACertLocation(ctx context.Context) stri
 func (ncp *NginxConfigParser) isDuplicateFile(nginxConfigContextFiles []*mpi.File, newFile *mpi.File) bool {
 	for _, nginxConfigContextFile := range nginxConfigContextFiles {
 		if nginxConfigContextFile.GetFileMeta().GetName() == newFile.GetFileMeta().GetName() {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (ncp *NginxConfigParser) createAPIDetailsForAddresses(
+	params apiCreationParams,
+	addresses []string,
+) (details []*model.APIDetails) {
+	for _, address := range addresses {
+		details = append(details,
+			ncp.createAPIDetails(
+				params,
+				address,
+			),
+		)
+	}
+
+	return details
+}
+
+func (ncp *NginxConfigParser) isPlusAPIWriteEnabled(ctx context.Context,
+	directive *crossplane.Directive,
+	locationPath string,
+) bool {
+	// Only check plus_api directives
+	if directive.Directive != plusAPIDirective {
+		return false
+	}
+
+	for _, arg := range directive.Args {
+		if arg == "write=on" {
+			slog.DebugContext(ctx, "Found NGINX Plus API with write=on", "location", locationPath)
 			return true
 		}
 	}

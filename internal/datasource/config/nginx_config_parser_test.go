@@ -150,7 +150,7 @@ var (
     listen [::]:8000;
 	server_name _;
     location /api/ {
-        api write=on;
+        api write=off;
         allow 127.0.0.1;
         deny all;
     }
@@ -275,7 +275,7 @@ var (
 	}
 
 	location /api {
-		api write=on;
+		api write=off;
 	}
 }
 
@@ -286,6 +286,14 @@ server {
 	return 418;
 }
 `
+	testConf23 = `server {
+       listen 127.0.0.1:9090;
+       location /writeapi {
+          api write=on;
+          allow 127.0.0.1;
+          deny all;
+       }
+}`
 )
 
 //nolint:maintidx // The test cannot be refactored
@@ -815,108 +823,120 @@ func TestNginxConfigParser_urlsForLocationDirective(t *testing.T) {
 	}{
 		{
 			plus: &model.APIDetails{
-				URL:      "http://localhost:80/api/",
-				Listen:   "localhost:80",
-				Location: "/api/",
+				URL:          "http://localhost:80/api/",
+				Listen:       "localhost:80",
+				Location:     "/api/",
+				WriteEnabled: true,
 			},
 			name: "Test 1: listen localhost 80, allow 127.0.0.1 - Plus",
 			conf: testConf01,
 		},
 		{
 			plus: &model.APIDetails{
-				URL:      "http://localhost:80/api/",
-				Listen:   "localhost:80",
-				Location: "/api/",
+				URL:          "http://localhost:80/api/",
+				Listen:       "localhost:80",
+				Location:     "/api/",
+				WriteEnabled: true,
 			},
 			name: "Test 2: listen *:80 - Plus",
 			conf: testConf02,
 		},
 		{
 			plus: &model.APIDetails{
-				URL:      "http://localhost:80/api/",
-				Listen:   "localhost:80",
-				Location: "/api/",
+				URL:          "http://localhost:80/api/",
+				Listen:       "localhost:80",
+				Location:     "/api/",
+				WriteEnabled: true,
 			},
 			name: "Test 3: server_name _ - Plus",
 			conf: testConf03,
 		},
 		{
 			plus: &model.APIDetails{
-				URL:      "http://localhost:8888/api/",
-				Listen:   "localhost:8888",
-				Location: "/api/",
+				URL:          "http://localhost:8888/api/",
+				Listen:       "localhost:8888",
+				Location:     "/api/",
+				WriteEnabled: true,
 			},
 			name: "Test 4:  server_name status.internal.com - Plus",
 			conf: testConf04,
 		},
 		{
 			plus: &model.APIDetails{
-				URL:      "http://localhost:8080/privateapi",
-				Listen:   "localhost:8080",
-				Location: "/privateapi",
+				URL:          "http://localhost:8080/privateapi",
+				Listen:       "localhost:8080",
+				Location:     "/privateapi",
+				WriteEnabled: true,
 			},
 			name: "Test 5:  location /privateapi - Plus",
 			conf: testConf05,
 		},
 		{
 			plus: &model.APIDetails{
-				URL:      "http://localhost:80/api/",
-				Listen:   "localhost:80",
-				Location: "/api/",
+				URL:          "http://localhost:80/api/",
+				Listen:       "localhost:80",
+				Location:     "/api/",
+				WriteEnabled: true,
 			},
 			name: "Test 6:  listen [::]:80 default_server - Plus",
 			conf: testConf06,
 		},
 		{
 			plus: &model.APIDetails{
-				URL:      "http://localhost:80/api/",
-				Listen:   "localhost:80",
-				Location: "/api/",
+				URL:          "http://localhost:80/api/",
+				Listen:       "localhost:80",
+				Location:     "/api/",
+				WriteEnabled: true,
 			},
 			name: "Test 7:  listen 127.0.0.1, server_name _ - Plus",
 			conf: testConf07,
 		},
 		{
 			plus: &model.APIDetails{
-				URL:      "http://localhost:80/api/",
-				Listen:   "localhost:80",
-				Location: "/api/",
+				URL:          "http://localhost:80/api/",
+				Listen:       "localhost:80",
+				Location:     "/api/",
+				WriteEnabled: true,
 			},
 			name: "Test 8: location = /api/, listen 127.0.0.1 - Plus",
 			conf: testConf08,
 		},
 		{
 			plus: &model.APIDetails{
-				URL:      "http://localhost:80/api/",
-				Listen:   "localhost:80",
-				Location: "/api/",
+				URL:          "http://localhost:80/api/",
+				Listen:       "localhost:80",
+				Location:     "/api/",
+				WriteEnabled: true,
 			},
 			name: "Test 9:  location = /api/ , listen 80 - Plus",
 			conf: testConf09,
 		},
 		{
 			plus: &model.APIDetails{
-				URL:      "http://localhost:80/api/",
-				Listen:   "localhost:80",
-				Location: "/api/",
+				URL:          "http://localhost:80/api/",
+				Listen:       "localhost:80",
+				Location:     "/api/",
+				WriteEnabled: true,
 			},
 			name: "Test 10: listen :80 - Plus",
 			conf: testConf10,
 		},
 		{
 			plus: &model.APIDetails{
-				URL:      "http://localhost:80/api/",
-				Listen:   "localhost:80",
-				Location: "/api/",
+				URL:          "http://localhost:80/api/",
+				Listen:       "localhost:80",
+				Location:     "/api/",
+				WriteEnabled: true,
 			},
 			name: "Test 11: listen localhost - Plus",
 			conf: testConf11,
 		},
 		{
 			plus: &model.APIDetails{
-				URL:      "http://localhost:80/api/",
-				Listen:   "localhost:80",
-				Location: "/api/",
+				URL:          "http://localhost:80/api/",
+				Listen:       "localhost:80",
+				Location:     "/api/",
+				WriteEnabled: true,
 			},
 			name: "Test 12: listen [::1] - Plus",
 			conf: testConf12,
@@ -973,9 +993,10 @@ func TestNginxConfigParser_urlsForLocationDirective(t *testing.T) {
 				Location: "/stub_status",
 			},
 			plus: &model.APIDetails{
-				URL:      "http://localhost:80/api/",
-				Listen:   "localhost:80",
-				Location: "/api/",
+				URL:          "http://localhost:80/api/",
+				Listen:       "localhost:80",
+				Location:     "/api/",
+				WriteEnabled: true,
 			},
 			name: "Test 18: listen 80 - OSS & Plus",
 			conf: testConf18,
@@ -1000,9 +1021,10 @@ func TestNginxConfigParser_urlsForLocationDirective(t *testing.T) {
 		},
 		{
 			plus: &model.APIDetails{
-				URL:      "http://nginx-plus-api/api",
-				Listen:   "unix:/var/run/nginx/nginx-plus-api.sock",
-				Location: "/api",
+				URL:          "http://nginx-plus-api/api",
+				Listen:       "unix:/var/run/nginx/nginx-plus-api.sock",
+				Location:     "/api",
+				WriteEnabled: true,
 			},
 			name: "Test 21: listen unix:/var/run/nginx/nginx-plus-api.sock - Plus Unix Socket",
 			conf: testConf21,
@@ -1015,6 +1037,16 @@ func TestNginxConfigParser_urlsForLocationDirective(t *testing.T) {
 			},
 			name: "Test 22: Multiple Plus Unix Sockets",
 			conf: testConf22,
+		},
+		{
+			plus: &model.APIDetails{
+				URL:          "http://localhost:9090/writeapi",
+				Listen:       "localhost:9090",
+				Location:     "/writeapi",
+				WriteEnabled: true,
+			},
+			name: "Test 23: Explicitly Write-Enabled Plus API",
+			conf: testConf23,
 		},
 	}
 

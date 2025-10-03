@@ -11,6 +11,18 @@ import (
 )
 
 type FakeConfigParser struct {
+	FindAllPlusAPIsStub        func(context.Context, *model.NginxConfigContext) []*model.APIDetails
+	findAllPlusAPIsMutex       sync.RWMutex
+	findAllPlusAPIsArgsForCall []struct {
+		arg1 context.Context
+		arg2 *model.NginxConfigContext
+	}
+	findAllPlusAPIsReturns struct {
+		result1 []*model.APIDetails
+	}
+	findAllPlusAPIsReturnsOnCall map[int]struct {
+		result1 []*model.APIDetails
+	}
 	FindPlusAPIStub        func(context.Context, *model.NginxConfigContext) *model.APIDetails
 	findPlusAPIMutex       sync.RWMutex
 	findPlusAPIArgsForCall []struct {
@@ -51,6 +63,68 @@ type FakeConfigParser struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *FakeConfigParser) FindAllPlusAPIs(arg1 context.Context, arg2 *model.NginxConfigContext) []*model.APIDetails {
+	fake.findAllPlusAPIsMutex.Lock()
+	ret, specificReturn := fake.findAllPlusAPIsReturnsOnCall[len(fake.findAllPlusAPIsArgsForCall)]
+	fake.findAllPlusAPIsArgsForCall = append(fake.findAllPlusAPIsArgsForCall, struct {
+		arg1 context.Context
+		arg2 *model.NginxConfigContext
+	}{arg1, arg2})
+	stub := fake.FindAllPlusAPIsStub
+	fakeReturns := fake.findAllPlusAPIsReturns
+	fake.recordInvocation("FindAllPlusAPIs", []interface{}{arg1, arg2})
+	fake.findAllPlusAPIsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeConfigParser) FindAllPlusAPIsCallCount() int {
+	fake.findAllPlusAPIsMutex.RLock()
+	defer fake.findAllPlusAPIsMutex.RUnlock()
+	return len(fake.findAllPlusAPIsArgsForCall)
+}
+
+func (fake *FakeConfigParser) FindAllPlusAPIsCalls(stub func(context.Context, *model.NginxConfigContext) []*model.APIDetails) {
+	fake.findAllPlusAPIsMutex.Lock()
+	defer fake.findAllPlusAPIsMutex.Unlock()
+	fake.FindAllPlusAPIsStub = stub
+}
+
+func (fake *FakeConfigParser) FindAllPlusAPIsArgsForCall(i int) (context.Context, *model.NginxConfigContext) {
+	fake.findAllPlusAPIsMutex.RLock()
+	defer fake.findAllPlusAPIsMutex.RUnlock()
+	argsForCall := fake.findAllPlusAPIsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeConfigParser) FindAllPlusAPIsReturns(result1 []*model.APIDetails) {
+	fake.findAllPlusAPIsMutex.Lock()
+	defer fake.findAllPlusAPIsMutex.Unlock()
+	fake.FindAllPlusAPIsStub = nil
+	fake.findAllPlusAPIsReturns = struct {
+		result1 []*model.APIDetails
+	}{result1}
+}
+
+func (fake *FakeConfigParser) FindAllPlusAPIsReturnsOnCall(i int, result1 []*model.APIDetails) {
+	fake.findAllPlusAPIsMutex.Lock()
+	defer fake.findAllPlusAPIsMutex.Unlock()
+	fake.FindAllPlusAPIsStub = nil
+	if fake.findAllPlusAPIsReturnsOnCall == nil {
+		fake.findAllPlusAPIsReturnsOnCall = make(map[int]struct {
+			result1 []*model.APIDetails
+		})
+	}
+	fake.findAllPlusAPIsReturnsOnCall[i] = struct {
+		result1 []*model.APIDetails
+	}{result1}
 }
 
 func (fake *FakeConfigParser) FindPlusAPI(arg1 context.Context, arg2 *model.NginxConfigContext) *model.APIDetails {
@@ -245,6 +319,8 @@ func (fake *FakeConfigParser) ParseReturnsOnCall(i int, result1 *model.NginxConf
 func (fake *FakeConfigParser) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.findAllPlusAPIsMutex.RLock()
+	defer fake.findAllPlusAPIsMutex.RUnlock()
 	fake.findPlusAPIMutex.RLock()
 	defer fake.findPlusAPIMutex.RUnlock()
 	fake.findStubStatusAPIMutex.RLock()
