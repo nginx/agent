@@ -24,6 +24,7 @@ const (
 type Config struct {
 	confighttp.ClientConfig        `mapstructure:",squash"`
 	APIDetails                     APIDetails                    `mapstructure:"api_details"`
+	InstanceID                     string                        `mapstructure:"instance_id"`
 	AccessLogs                     []AccessLog                   `mapstructure:"access_logs"`
 	MetricsBuilderConfig           metadata.MetricsBuilderConfig `mapstructure:",squash"`
 	scraperhelper.ControllerConfig `mapstructure:",squash"`

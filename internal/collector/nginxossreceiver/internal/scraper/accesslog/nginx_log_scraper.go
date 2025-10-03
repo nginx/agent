@@ -171,7 +171,7 @@ func (nls *NginxLogScraper) Scrape(_ context.Context) (pmetric.Metrics, error) {
 	nls.entries = make([]*entry.Entry, 0)
 	timeNow := pcommon.NewTimestampFromTime(time.Now())
 
-	nls.rb.SetInstanceID(nls.settings.ID.Name())
+	nls.rb.SetInstanceID(nls.cfg.InstanceID)
 	nls.rb.SetInstanceType("nginx")
 	nls.logger.Debug("NGINX OSS access log resource info", zap.Any("resource", nls.rb))
 

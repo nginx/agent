@@ -127,7 +127,7 @@ func (nps *NginxPlusScraper) Scrape(ctx context.Context) (pmetric.Metrics, error
 		return pmetric.Metrics{}, fmt.Errorf("failed to get stats from plus API: %w", err)
 	}
 
-	nps.rb.SetInstanceID(nps.settings.ID.Name())
+	nps.rb.SetInstanceID(nps.cfg.InstanceID)
 	nps.rb.SetInstanceType("nginxplus")
 	nps.logger.Debug("NGINX Plus resource info", zap.Any("resource", nps.rb))
 
