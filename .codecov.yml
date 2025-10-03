@@ -33,6 +33,40 @@ coverage:
         if_ci_failed: error
         only_pulls: false
 
+component_management:
+    default_rules:
+      statuses:
+        - type: project
+          target: 80%
+        - type: patch
+          target: 80%
+
+    individual_components:
+      - component_id: "internal"
+        name: "Internal Packages"
+        paths:
+            - "internal/**"
+
+      - component_id: "pkg"
+        name: "Public Packages"
+        paths:
+          - "pkg/**"
+
+      - component_id: "cmd"
+        name: "Commands"
+        paths:
+          - "cmd/**"
+
+      - component_id: "api"
+        name: "API"
+        paths:
+          - "api/**"
+
+comment:
+  layout: "reach,diff,tree,reach"
+  behavior: default
+  require_changes: false
+
 # Ignore files or packages matching their paths
 ignore:
   - '\.pb\.go$'       # Excludes all protobuf generated files
