@@ -14,6 +14,54 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var plusAPIs = []*model.APIDetails{
+	{
+		URL:          "http://127.0.0.1:8081/api",
+		Listen:       "127.0.0.1:8081",
+		Location:     "/api",
+		WriteEnabled: false,
+		Ca:           "",
+	},
+	{
+		URL:          "unix:/var/run/nginx/api.sock",
+		Listen:       "unix:/var/run/nginx/api.sock",
+		Location:     "/api",
+		WriteEnabled: true, // Crucial for selection logic
+		Ca:           "/etc/certs/my_ca.pem",
+	},
+}
+
+var nginxPlusConfigContextForUpdate = &model.NginxConfigContext{
+	AccessLogs: []*model.AccessLog{
+		{
+			Name: "/usr/local/var/log/nginx/access.log",
+		},
+	},
+	ErrorLogs: []*model.ErrorLog{
+		{
+			Name: "/usr/local/var/log/nginx/error.log",
+		},
+	},
+	PlusAPI: plusAPIs[1],
+	StubStatus: &model.APIDetails{
+		URL:    "http://127.0.0.1:8081/status",
+		Listen: "127.0.0.1:8081",
+	},
+	PlusAPIs: plusAPIs,
+}
+
+func convertAPIDetailsSliceForTest(modelAPIs []*model.APIDetails) []*mpi.APIDetails {
+	if modelAPIs == nil {
+		return nil
+	}
+	mpiAPIs := make([]*mpi.APIDetails, 0, len(modelAPIs))
+	for _, api := range modelAPIs {
+		mpiAPIs = append(mpiAPIs, convertToMpiAPIDetails(api))
+	}
+
+	return mpiAPIs
+}
+
 func TestInstanceWatcherService_updateNginxInstanceRuntime(t *testing.T) {
 	nginxOSSConfigContext := &model.NginxConfigContext{
 		AccessLogs: []*model.AccessLog{
@@ -68,12 +116,32 @@ func TestInstanceWatcherService_updateNginxInstanceRuntime(t *testing.T) {
 			nginxConfigContext: nginxPlusConfigContext,
 			instance:           protos.NginxPlusInstance([]string{}),
 		},
+		{
+			name:               "Test 3: Plus Instance - PlusAPIs Update",
+			nginxConfigContext: nginxPlusConfigContextForUpdate,
+			instance:           protos.NginxPlusInstance([]string{}),
+		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(tt *testing.T) {
+		t.Run(test.name, func(t *testing.T) {
+			updatesRequired := UpdateNginxInstanceRuntime(test.instance, test.nginxConfigContext)
 			UpdateNginxInstanceRuntime(test.instance, test.nginxConfigContext)
-			if test.name == "Test 2: Plus Instance" {
+			switch test.name {
+			case "Test 3: Plus Instance - PlusAPIs Update":
+				assert.True(t, updatesRequired,
+					"UpdateNginxInstanceRuntime should return true when PlusAPIs are updated")
+				expectedAPIs := convertAPIDetailsSliceForTest(test.nginxConfigContext.PlusAPIs)
+				assert.ElementsMatch(t, expectedAPIs,
+					test.instance.GetInstanceRuntime().GetNginxPlusRuntimeInfo().GetPlusApis())
+				assert.Equal(t, test.nginxConfigContext.PlusAPI.WriteEnabled, test.instance.GetInstanceRuntime().
+					GetNginxPlusRuntimeInfo().GetPlusApi().GetWriteEnabled())
+				assert.Equal(t, test.nginxConfigContext.PlusAPI.Ca, test.instance.GetInstanceRuntime().
+					GetNginxPlusRuntimeInfo().GetPlusApi().GetCa())
+				assert.Equal(t, test.nginxConfigContext.PlusAPI.Listen, test.instance.GetInstanceRuntime().
+					GetNginxPlusRuntimeInfo().GetPlusApi().GetListen())
+
+			case "Test 2: Plus Instance":
 				assert.Equal(t, test.nginxConfigContext.AccessLogs[0].Name, test.instance.GetInstanceRuntime().
 					GetNginxPlusRuntimeInfo().GetAccessLogs()[0])
 				assert.Equal(t, test.nginxConfigContext.ErrorLogs[0].Name, test.instance.GetInstanceRuntime().
@@ -86,7 +154,12 @@ func TestInstanceWatcherService_updateNginxInstanceRuntime(t *testing.T) {
 					GetNginxPlusRuntimeInfo().GetStubStatus().GetListen())
 				assert.Equal(t, test.nginxConfigContext.PlusAPI.Listen, test.instance.GetInstanceRuntime().
 					GetNginxPlusRuntimeInfo().GetPlusApi().GetListen())
-			} else {
+				assert.Equal(t, test.nginxConfigContext.PlusAPI.WriteEnabled, test.instance.GetInstanceRuntime().
+					GetNginxPlusRuntimeInfo().GetPlusApi().GetWriteEnabled())
+				assert.Equal(t, test.nginxConfigContext.PlusAPI.Ca, test.instance.GetInstanceRuntime().
+					GetNginxPlusRuntimeInfo().GetPlusApi().GetCa())
+
+			default:
 				assert.Equal(t, test.nginxConfigContext.AccessLogs[0].Name, test.instance.GetInstanceRuntime().
 					GetNginxRuntimeInfo().GetAccessLogs()[0])
 				assert.Equal(t, test.nginxConfigContext.ErrorLogs[0].Name, test.instance.GetInstanceRuntime().

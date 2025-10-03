@@ -15,6 +15,17 @@ import (
 func NginxPlusRuntimeInfoEqual(nginxPlusRuntimeInfo *mpi.NGINXPlusRuntimeInfo,
 	nginxConfigContext *model.NginxConfigContext, accessLogs, errorLogs []string,
 ) bool {
+	convertedPlusAPIs := convertToMpiAPIDetailsSlice(nginxConfigContext.PlusAPIs)
+
+	if !reflect.DeepEqual(nginxPlusRuntimeInfo.GetPlusApis(), convertedPlusAPIs) {
+		return false
+	}
+
+	if nginxPlusRuntimeInfo.GetPlusApi().GetWriteEnabled() != nginxConfigContext.PlusAPI.WriteEnabled ||
+		nginxPlusRuntimeInfo.GetPlusApi().GetCa() != nginxConfigContext.PlusAPI.Ca {
+		return false
+	}
+
 	if !reflect.DeepEqual(nginxPlusRuntimeInfo.GetAccessLogs(), accessLogs) ||
 		!reflect.DeepEqual(nginxPlusRuntimeInfo.GetErrorLogs(), errorLogs) ||
 		nginxPlusRuntimeInfo.GetStubStatus().GetListen() != nginxConfigContext.StubStatus.Listen ||
@@ -59,6 +70,11 @@ func UpdateNginxInstanceRuntime(
 			nginxPlusRuntimeInfo.PlusApi.Listen = nginxConfigContext.PlusAPI.Listen
 			nginxPlusRuntimeInfo.StubStatus.Location = nginxConfigContext.StubStatus.Location
 			nginxPlusRuntimeInfo.PlusApi.Location = nginxConfigContext.PlusAPI.Location
+
+			nginxPlusRuntimeInfo.PlusApi.WriteEnabled = nginxConfigContext.PlusAPI.WriteEnabled
+			nginxPlusRuntimeInfo.PlusApi.Ca = nginxConfigContext.PlusAPI.Ca
+
+			nginxPlusRuntimeInfo.PlusApis = convertToMpiAPIDetailsSlice(nginxConfigContext.PlusAPIs)
 			updatesRequired = true
 		}
 	} else {
@@ -74,4 +90,29 @@ func UpdateNginxInstanceRuntime(
 	}
 
 	return updatesRequired
+}
+
+func convertToMpiAPIDetails(modelAPI *model.APIDetails) *mpi.APIDetails {
+	if modelAPI == nil {
+		return nil
+	}
+
+	return &mpi.APIDetails{
+		Listen:       modelAPI.Listen,
+		Location:     modelAPI.Location,
+		Ca:           modelAPI.Ca,
+		WriteEnabled: modelAPI.WriteEnabled,
+	}
+}
+
+func convertToMpiAPIDetailsSlice(modelAPIs []*model.APIDetails) []*mpi.APIDetails {
+	if modelAPIs == nil {
+		return nil
+	}
+	mpiAPIs := make([]*mpi.APIDetails, 0, len(modelAPIs))
+	for _, api := range modelAPIs {
+		mpiAPIs = append(mpiAPIs, convertToMpiAPIDetails(api))
+	}
+
+	return mpiAPIs
 }
