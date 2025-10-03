@@ -23,6 +23,8 @@ const (
 	DefNginxReloadBackoffMaxInterval         = 3 * time.Second
 	DefNginxReloadBackoffMaxElapsedTime      = 10 * time.Second
 
+	DefSyslogServerPort = "1514"
+
 	DefCommandServerHostKey               = ""
 	DefCommandServerPortKey               = 0
 	DefCommandServerTypeKey               = "grpc"

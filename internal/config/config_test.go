@@ -1068,6 +1068,9 @@ func createConfig() *Config {
 			Level: "debug",
 			Path:  "./test-path",
 		},
+		SyslogServer: &SyslogServer{
+			Port: "1512",
+		},
 		Client: &Client{
 			HTTP: &HTTP{
 				Timeout: 15 * time.Second,
