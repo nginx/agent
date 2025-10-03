@@ -710,24 +710,8 @@ func (ncp *NginxConfigParser) apiDetailsFromLocationDirective(
 		return nil
 	}
 
-	isWriteEnabled := false
-	for _, locChild := range current.Block {
-		if ncp.isPlusAPIWriteEnabled(ctx, locChild, current.Args[0]) {
-			isWriteEnabled = true
-			break
-		}
-	}
-
 	addresses := ncp.parseAddressFromServerDirective(parent)
 	path := ncp.parsePathFromLocationDirective(current)
-
-	params := apiCreationParams{
-		locationDirectiveName: locationDirectiveName,
-		path:                  path,
-		caCertLocation:        caCertLocation,
-		isSSL:                 isSSL,
-		isWriteEnabled:        isWriteEnabled,
-	}
 
 	for _, locChild := range current.Block {
 		if locChild.Directive != plusAPIDirective && locChild.Directive != stubStatusAPIDirective {
@@ -735,6 +719,16 @@ func (ncp *NginxConfigParser) apiDetailsFromLocationDirective(
 		}
 
 		if locChild.Directive == locationDirectiveName {
+			isWriteEnabled := ncp.isPlusAPIWriteEnabled(ctx, locChild, current.Args[0])
+
+			params := apiCreationParams{
+				locationDirectiveName: locationDirectiveName,
+				path:                  path,
+				caCertLocation:        caCertLocation,
+				isSSL:                 isSSL,
+				isWriteEnabled:        isWriteEnabled,
+			}
+
 			details = append(details, ncp.createAPIDetailsForAddresses(
 				params,
 				addresses,
