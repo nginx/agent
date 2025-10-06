@@ -124,7 +124,7 @@ component_management:
           - "api/**"
 
 comment:
-  layout: "header.diff,components,files,footer"
+  layout: "header,diff,components,files,footer"
   behavior: default
   require_changes: false
   require_base: false
