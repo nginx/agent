@@ -9,7 +9,7 @@ import (
 	"strconv"
 
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver/internal/metadata"
-	plusapi "github.com/nginx/nginx-plus-go-client/v3/client"
+	plusapi "github.com/nginxinc/nginx-plus-go-client/v2/client"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.uber.org/zap"
 )

@@ -17,7 +17,7 @@ import (
 
 	"github.com/nginx/agent/v3/internal/datasource/config/configfakes"
 	"github.com/nginx/agent/v3/internal/model"
-	"github.com/nginx/nginx-plus-go-client/v3/client"
+	"github.com/nginxinc/nginx-plus-go-client/v2/client"
 
 	"google.golang.org/protobuf/types/known/structpb"
 
