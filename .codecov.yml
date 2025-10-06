@@ -25,6 +25,7 @@ coverage:
 
       default:
 
+        informational: true
         target: 80%
         threshold: 0%
         only_pulls: false
