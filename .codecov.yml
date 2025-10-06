@@ -118,12 +118,6 @@ component_management:
         paths:
           - "api/**"
 
-comment:
-  layout: "header,diff,components,files,footer"
-  behavior: default
-  require_changes: false
-  require_base: false
-  require_head: true
 
 # Ignore files or packages matching their paths
 ignore:
