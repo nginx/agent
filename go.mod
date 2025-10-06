@@ -43,8 +43,8 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.39.0
 	github.com/trivago/grok v1.0.0
-	go.opentelemetry.io/collector/component v1.41.0
-	go.opentelemetry.io/collector/component/componenttest v0.135.0
+	go.opentelemetry.io/collector/component v1.42.0
+	go.opentelemetry.io/collector/component/componenttest v0.136.0
 	go.opentelemetry.io/collector/config/confighttp v0.135.0
 	go.opentelemetry.io/collector/confmap v1.41.0
 	go.opentelemetry.io/collector/confmap/provider/envprovider v1.30.0
@@ -64,7 +64,7 @@ require (
 	go.opentelemetry.io/collector/extension/xextension v0.135.0
 	go.opentelemetry.io/collector/filter v0.135.0
 	go.opentelemetry.io/collector/otelcol v0.135.0
-	go.opentelemetry.io/collector/pdata v1.41.0
+	go.opentelemetry.io/collector/pdata v1.42.0
 	go.opentelemetry.io/collector/processor v1.41.0
 	go.opentelemetry.io/collector/processor/batchprocessor v0.135.0
 	go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.135.0
@@ -72,9 +72,9 @@ require (
 	go.opentelemetry.io/collector/receiver v1.41.0
 	go.opentelemetry.io/collector/receiver/otlpreceiver v0.135.0
 	go.opentelemetry.io/collector/receiver/receivertest v0.135.0
-	go.opentelemetry.io/collector/scraper v0.135.0
+	go.opentelemetry.io/collector/scraper v0.136.0
 	go.opentelemetry.io/collector/scraper/scraperhelper v0.135.0
-	go.opentelemetry.io/collector/scraper/scrapertest v0.135.0
+	go.opentelemetry.io/collector/scraper/scrapertest v0.136.0
 	go.opentelemetry.io/otel v1.38.0
 	go.uber.org/goleak v1.3.0
 	go.uber.org/multierr v1.11.0
@@ -294,15 +294,15 @@ require (
 	go.opentelemetry.io/collector/extension/extensionmiddleware v0.135.0 // indirect
 	go.opentelemetry.io/collector/extension/extensiontest v0.135.0 // indirect
 	go.opentelemetry.io/collector/extension/zpagesextension v0.135.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.41.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.42.0 // indirect
 	go.opentelemetry.io/collector/internal/fanoutconsumer v0.135.0 // indirect
 	go.opentelemetry.io/collector/internal/memorylimiter v0.135.0 // indirect
 	go.opentelemetry.io/collector/internal/sharedcomponent v0.135.0 // indirect
-	go.opentelemetry.io/collector/internal/telemetry v0.135.0 // indirect
+	go.opentelemetry.io/collector/internal/telemetry v0.136.0 // indirect
 	go.opentelemetry.io/collector/pdata/pprofile v0.135.0 // indirect
 	go.opentelemetry.io/collector/pdata/testdata v0.135.0 // indirect
 	go.opentelemetry.io/collector/pdata/xpdata v0.135.0 // indirect
-	go.opentelemetry.io/collector/pipeline v1.41.0 // indirect
+	go.opentelemetry.io/collector/pipeline v1.42.0 // indirect
 	go.opentelemetry.io/collector/pipeline/xpipeline v0.135.0 // indirect
 	go.opentelemetry.io/collector/processor/processorhelper v0.135.0 // indirect
 	go.opentelemetry.io/collector/processor/processorhelper/xprocessorhelper v0.135.0 // indirect
@@ -374,5 +374,5 @@ require (
 	golang.org/x/net v0.43.0 // indirect
 	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
-	google.golang.org/grpc v1.75.0
+	google.golang.org/grpc v1.75.1
 )
