@@ -57,7 +57,6 @@ type ConfigParser interface {
 	Parse(ctx context.Context, instance *mpi.Instance) (*model.NginxConfigContext, error)
 	FindStubStatusAPI(ctx context.Context, nginxConfigContext *model.NginxConfigContext) *model.APIDetails
 	FindPlusAPI(ctx context.Context, nginxConfigContext *model.NginxConfigContext) *model.APIDetails
-	FindAllPlusAPIs(ctx context.Context, nginxConfigContext *model.NginxConfigContext) []*model.APIDetails
 }
 
 var _ ConfigParser = (*NginxConfigParser)(nil)
@@ -68,12 +67,13 @@ type (
 		current *crossplane.Directive, apiType string) []*model.APIDetails
 )
 
-type apiCreationParams struct {
+type createAPIDetailsParams struct {
 	locationDirectiveName string
+	address               string
 	path                  string
 	caCertLocation        string
 	isSSL                 bool
-	isWriteEnabled        bool
+	writeEnabled          bool
 }
 
 func NewNginxConfigParser(agentConfig *config.Config) *NginxConfigParser {
@@ -151,16 +151,6 @@ func (ncp *NginxConfigParser) FindPlusAPI(
 		Location: "",
 		Ca:       "",
 	}
-}
-
-func (ncp *NginxConfigParser) FindAllPlusAPIs(
-	ctx context.Context, nginxConfigContext *model.NginxConfigContext,
-) []*model.APIDetails {
-	if nginxConfigContext.PlusAPIs == nil {
-		return []*model.APIDetails{}
-	}
-
-	return nginxConfigContext.PlusAPIs
 }
 
 //nolint:gocognit,gocyclo,revive,cyclop //  cognitive complexity is 51, cyclomatic complexity is 24
@@ -269,6 +259,8 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 		if plusAPIs != nil {
 			nginxConfigContext.PlusAPIs = append(nginxConfigContext.PlusAPIs, plusAPIs...)
 		}
+
+		nginxConfigContext.PlusAPIs = ncp.sortPlusAPIs(nginxConfigContext.PlusAPIs)
 
 		if len(napSyslogServersFound) > 0 {
 			var napSyslogServer []string
@@ -693,6 +685,7 @@ func validateAPIResponse(apiType string, bodyBytes []byte) error {
 	return nil
 }
 
+//nolint:revive //need to reduce cognitive complexity
 func (ncp *NginxConfigParser) apiDetailsFromLocationDirective(
 	ctx context.Context, parent, current *crossplane.Directive,
 	locationDirectiveName string,
@@ -710,29 +703,40 @@ func (ncp *NginxConfigParser) apiDetailsFromLocationDirective(
 		return nil
 	}
 
-	addresses := ncp.parseAddressFromServerDirective(parent)
-	path := ncp.parsePathFromLocationDirective(current)
-
 	for _, locChild := range current.Block {
 		if locChild.Directive != plusAPIDirective && locChild.Directive != stubStatusAPIDirective {
 			continue
 		}
 
-		if locChild.Directive == locationDirectiveName {
-			isWriteEnabled := ncp.isPlusAPIWriteEnabled(ctx, locChild, current.Args[0])
+		addresses := ncp.parseAddressFromServerDirective(parent)
+		path := ncp.parsePathFromLocationDirective(current)
 
-			params := apiCreationParams{
-				locationDirectiveName: locationDirectiveName,
-				path:                  path,
-				caCertLocation:        caCertLocation,
-				isSSL:                 isSSL,
-				isWriteEnabled:        isWriteEnabled,
+		writeEnabled := false
+		if locChild.Directive == plusAPIDirective {
+			for _, arg := range locChild.Args {
+				if strings.EqualFold(arg, "write=on") {
+					writeEnabled = true
+					break
+				}
 			}
+		}
 
-			details = append(details, ncp.createAPIDetailsForAddresses(
-				params,
-				addresses,
-			)...)
+		if locChild.Directive == locationDirectiveName {
+			for _, address := range addresses {
+				params := createAPIDetailsParams{
+					locationDirectiveName: locationDirectiveName,
+					address:               address,
+					path:                  path,
+					caCertLocation:        caCertLocation,
+					isSSL:                 isSSL,
+					writeEnabled:          writeEnabled,
+				}
+
+				details = append(
+					details,
+					ncp.createAPIDetails(params),
+				)
+			}
 		}
 	}
 
@@ -740,9 +744,9 @@ func (ncp *NginxConfigParser) apiDetailsFromLocationDirective(
 }
 
 func (ncp *NginxConfigParser) createAPIDetails(
-	params apiCreationParams, address string,
+	params createAPIDetailsParams,
 ) (details *model.APIDetails) {
-	if strings.HasPrefix(address, "unix:") {
+	if strings.HasPrefix(params.address, "unix:") {
 		format := unixStubStatusFormat
 
 		if params.locationDirectiveName == plusAPIDirective {
@@ -751,19 +755,19 @@ func (ncp *NginxConfigParser) createAPIDetails(
 
 		details = &model.APIDetails{
 			URL:          fmt.Sprintf(format, params.path),
-			Listen:       address,
+			Listen:       params.address,
 			Location:     params.path,
 			Ca:           params.caCertLocation,
-			WriteEnabled: params.isWriteEnabled,
+			WriteEnabled: params.writeEnabled,
 		}
 	} else {
 		details = &model.APIDetails{
 			URL: fmt.Sprintf("%s://%s%s", map[bool]string{true: "https", false: "http"}[params.isSSL],
-				address, params.path),
-			Listen:       address,
+				params.address, params.path),
+			Listen:       params.address,
 			Location:     params.path,
 			Ca:           params.caCertLocation,
-			WriteEnabled: params.isWriteEnabled,
+			WriteEnabled: params.writeEnabled,
 		}
 	}
 
@@ -918,37 +922,18 @@ func (ncp *NginxConfigParser) isDuplicateFile(nginxConfigContextFiles []*mpi.Fil
 	return false
 }
 
-func (ncp *NginxConfigParser) createAPIDetailsForAddresses(
-	params apiCreationParams,
-	addresses []string,
-) (details []*model.APIDetails) {
-	for _, address := range addresses {
-		details = append(details,
-			ncp.createAPIDetails(
-				params,
-				address,
-			),
-		)
-	}
-
-	return details
-}
-
-func (ncp *NginxConfigParser) isPlusAPIWriteEnabled(ctx context.Context,
-	directive *crossplane.Directive,
-	locationPath string,
-) bool {
-	// Only check plus_api directives
-	if directive.Directive != plusAPIDirective {
-		return false
-	}
-
-	for _, arg := range directive.Args {
-		if arg == "write=on" {
-			slog.DebugContext(ctx, "Found NGINX Plus API with write=on", "location", locationPath)
-			return true
+func (ncp *NginxConfigParser) sortPlusAPIs(apis []*model.APIDetails) []*model.APIDetails {
+	slices.SortFunc(apis, func(a, b *model.APIDetails) int {
+		if a.WriteEnabled && !b.WriteEnabled {
+			return -1
 		}
-	}
 
-	return false
+		if b.WriteEnabled && !a.WriteEnabled {
+			return 1
+		}
+
+		return 0
+	})
+
+	return apis
 }

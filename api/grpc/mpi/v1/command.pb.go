@@ -2180,9 +2180,7 @@ type NGINXPlusRuntimeInfo struct {
 	// List of NGINX dynamic modules.
 	DynamicModules []string `protobuf:"bytes,5,rep,name=dynamic_modules,json=dynamicModules,proto3" json:"dynamic_modules,omitempty"`
 	// the plus API details
-	PlusApi *APIDetails `protobuf:"bytes,6,opt,name=plus_api,json=plusApi,proto3" json:"plus_api,omitempty"`
-	// to parse all the plus API
-	PlusApis      []*APIDetails `protobuf:"bytes,7,rep,name=plus_apis,json=plusApis,proto3" json:"plus_apis,omitempty"`
+	PlusApi       *APIDetails `protobuf:"bytes,6,opt,name=plus_api,json=plusApi,proto3" json:"plus_api,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2255,13 +2253,6 @@ func (x *NGINXPlusRuntimeInfo) GetDynamicModules() []string {
 func (x *NGINXPlusRuntimeInfo) GetPlusApi() *APIDetails {
 	if x != nil {
 		return x.PlusApi
-	}
-	return nil
-}
-
-func (x *NGINXPlusRuntimeInfo) GetPlusApis() []*APIDetails {
-	if x != nil {
-		return x.PlusApis
 	}
 	return nil
 }
@@ -2889,7 +2880,7 @@ const file_mpi_v1_command_proto_rawDesc = "" +
 	"\n" +
 	"error_logs\x18\x03 \x03(\tR\terrorLogs\x12)\n" +
 	"\x10loadable_modules\x18\x04 \x03(\tR\x0floadableModules\x12'\n" +
-	"\x0fdynamic_modules\x18\x05 \x03(\tR\x0edynamicModules\"\xbf\x02\n" +
+	"\x0fdynamic_modules\x18\x05 \x03(\tR\x0edynamicModules\"\x8e\x02\n" +
 	"\x14NGINXPlusRuntimeInfo\x123\n" +
 	"\vstub_status\x18\x01 \x01(\v2\x12.mpi.v1.APIDetailsR\n" +
 	"stubStatus\x12\x1f\n" +
@@ -2899,8 +2890,7 @@ const file_mpi_v1_command_proto_rawDesc = "" +
 	"error_logs\x18\x03 \x03(\tR\terrorLogs\x12)\n" +
 	"\x10loadable_modules\x18\x04 \x03(\tR\x0floadableModules\x12'\n" +
 	"\x0fdynamic_modules\x18\x05 \x03(\tR\x0edynamicModules\x12-\n" +
-	"\bplus_api\x18\x06 \x01(\v2\x12.mpi.v1.APIDetailsR\aplusApi\x12/\n" +
-	"\tplus_apis\x18\a \x03(\v2\x12.mpi.v1.APIDetailsR\bplusApis\"u\n" +
+	"\bplus_api\x18\x06 \x01(\v2\x12.mpi.v1.APIDetailsR\aplusApi\"u\n" +
 	"\n" +
 	"APIDetails\x12\x1a\n" +
 	"\blocation\x18\x01 \x01(\tR\blocation\x12\x16\n" +
@@ -3050,31 +3040,30 @@ var file_mpi_v1_command_proto_depIdxs = []int32{
 	34, // 43: mpi.v1.NGINXRuntimeInfo.stub_status:type_name -> mpi.v1.APIDetails
 	34, // 44: mpi.v1.NGINXPlusRuntimeInfo.stub_status:type_name -> mpi.v1.APIDetails
 	34, // 45: mpi.v1.NGINXPlusRuntimeInfo.plus_api:type_name -> mpi.v1.APIDetails
-	34, // 46: mpi.v1.NGINXPlusRuntimeInfo.plus_apis:type_name -> mpi.v1.APIDetails
-	38, // 47: mpi.v1.AgentConfig.command:type_name -> mpi.v1.CommandServer
-	40, // 48: mpi.v1.AgentConfig.metrics:type_name -> mpi.v1.MetricsServer
-	41, // 49: mpi.v1.AgentConfig.file:type_name -> mpi.v1.FileServer
-	45, // 50: mpi.v1.AgentConfig.labels:type_name -> google.protobuf.Struct
-	39, // 51: mpi.v1.AgentConfig.auxiliary_command:type_name -> mpi.v1.AuxiliaryCommandServer
-	46, // 52: mpi.v1.CommandServer.server:type_name -> mpi.v1.ServerSettings
-	47, // 53: mpi.v1.CommandServer.auth:type_name -> mpi.v1.AuthSettings
-	48, // 54: mpi.v1.CommandServer.tls:type_name -> mpi.v1.TLSSettings
-	46, // 55: mpi.v1.AuxiliaryCommandServer.server:type_name -> mpi.v1.ServerSettings
-	47, // 56: mpi.v1.AuxiliaryCommandServer.auth:type_name -> mpi.v1.AuthSettings
-	48, // 57: mpi.v1.AuxiliaryCommandServer.tls:type_name -> mpi.v1.TLSSettings
-	2,  // 58: mpi.v1.CommandService.CreateConnection:input_type -> mpi.v1.CreateConnectionRequest
-	8,  // 59: mpi.v1.CommandService.UpdateDataPlaneStatus:input_type -> mpi.v1.UpdateDataPlaneStatusRequest
-	11, // 60: mpi.v1.CommandService.UpdateDataPlaneHealth:input_type -> mpi.v1.UpdateDataPlaneHealthRequest
-	13, // 61: mpi.v1.CommandService.Subscribe:input_type -> mpi.v1.DataPlaneResponse
-	7,  // 62: mpi.v1.CommandService.CreateConnection:output_type -> mpi.v1.CreateConnectionResponse
-	9,  // 63: mpi.v1.CommandService.UpdateDataPlaneStatus:output_type -> mpi.v1.UpdateDataPlaneStatusResponse
-	12, // 64: mpi.v1.CommandService.UpdateDataPlaneHealth:output_type -> mpi.v1.UpdateDataPlaneHealthResponse
-	14, // 65: mpi.v1.CommandService.Subscribe:output_type -> mpi.v1.ManagementPlaneRequest
-	62, // [62:66] is the sub-list for method output_type
-	58, // [58:62] is the sub-list for method input_type
-	58, // [58:58] is the sub-list for extension type_name
-	58, // [58:58] is the sub-list for extension extendee
-	0,  // [0:58] is the sub-list for field type_name
+	38, // 46: mpi.v1.AgentConfig.command:type_name -> mpi.v1.CommandServer
+	40, // 47: mpi.v1.AgentConfig.metrics:type_name -> mpi.v1.MetricsServer
+	41, // 48: mpi.v1.AgentConfig.file:type_name -> mpi.v1.FileServer
+	45, // 49: mpi.v1.AgentConfig.labels:type_name -> google.protobuf.Struct
+	39, // 50: mpi.v1.AgentConfig.auxiliary_command:type_name -> mpi.v1.AuxiliaryCommandServer
+	46, // 51: mpi.v1.CommandServer.server:type_name -> mpi.v1.ServerSettings
+	47, // 52: mpi.v1.CommandServer.auth:type_name -> mpi.v1.AuthSettings
+	48, // 53: mpi.v1.CommandServer.tls:type_name -> mpi.v1.TLSSettings
+	46, // 54: mpi.v1.AuxiliaryCommandServer.server:type_name -> mpi.v1.ServerSettings
+	47, // 55: mpi.v1.AuxiliaryCommandServer.auth:type_name -> mpi.v1.AuthSettings
+	48, // 56: mpi.v1.AuxiliaryCommandServer.tls:type_name -> mpi.v1.TLSSettings
+	2,  // 57: mpi.v1.CommandService.CreateConnection:input_type -> mpi.v1.CreateConnectionRequest
+	8,  // 58: mpi.v1.CommandService.UpdateDataPlaneStatus:input_type -> mpi.v1.UpdateDataPlaneStatusRequest
+	11, // 59: mpi.v1.CommandService.UpdateDataPlaneHealth:input_type -> mpi.v1.UpdateDataPlaneHealthRequest
+	13, // 60: mpi.v1.CommandService.Subscribe:input_type -> mpi.v1.DataPlaneResponse
+	7,  // 61: mpi.v1.CommandService.CreateConnection:output_type -> mpi.v1.CreateConnectionResponse
+	9,  // 62: mpi.v1.CommandService.UpdateDataPlaneStatus:output_type -> mpi.v1.UpdateDataPlaneStatusResponse
+	12, // 63: mpi.v1.CommandService.UpdateDataPlaneHealth:output_type -> mpi.v1.UpdateDataPlaneHealthResponse
+	14, // 64: mpi.v1.CommandService.Subscribe:output_type -> mpi.v1.ManagementPlaneRequest
+	61, // [61:65] is the sub-list for method output_type
+	57, // [57:61] is the sub-list for method input_type
+	57, // [57:57] is the sub-list for extension type_name
+	57, // [57:57] is the sub-list for extension extendee
+	0,  // [0:57] is the sub-list for field type_name
 }
 
 func init() { file_mpi_v1_command_proto_init() }

@@ -96,7 +96,8 @@ func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext
 	if ncc.PlusAPI != nil && otherNginxConfigContext.PlusAPI != nil {
 		if ncc.PlusAPI.URL != otherNginxConfigContext.PlusAPI.URL || ncc.PlusAPI.Listen !=
 			otherNginxConfigContext.PlusAPI.Listen || ncc.PlusAPI.Location !=
-			otherNginxConfigContext.PlusAPI.Location {
+			otherNginxConfigContext.PlusAPI.Location ||
+			ncc.PlusAPI.WriteEnabled != otherNginxConfigContext.PlusAPI.WriteEnabled {
 			return false
 		}
 	}

@@ -1132,7 +1132,6 @@ A set of runtime NGINX Plus settings
 | loadable_modules | [string](#string) | repeated | List of NGINX potentially loadable modules (installed but not loaded). |
 | dynamic_modules | [string](#string) | repeated | List of NGINX dynamic modules. |
 | plus_api | [APIDetails](#mpi-v1-APIDetails) |  | the plus API details |
-| plus_apis | [APIDetails](#mpi-v1-APIDetails) | repeated | to parse all the plus API |
 
 
 

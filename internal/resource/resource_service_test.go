@@ -6,11 +6,9 @@
 package resource
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"testing"
@@ -248,43 +246,30 @@ func TestResourceService_createPlusClient(t *testing.T) {
 	err := os.WriteFile(caFile, []byte("-----BEGIN CERTIFICATE-----\nMII...\n-----END CERTIFICATE-----"), 0o600)
 	require.NoError(t, err)
 
-	createPlusInstanceWithApis := func(details []*v1.APIDetails) *v1.Instance {
-		inst := protos.NginxPlusInstance([]string{})
-		if inst.GetInstanceRuntime().GetNginxPlusRuntimeInfo() == nil {
-			inst.InstanceRuntime.Details = &v1.InstanceRuntime_NginxPlusRuntimeInfo{
-				NginxPlusRuntimeInfo: &v1.NGINXPlusRuntimeInfo{},
-			}
-		}
-		inst.InstanceRuntime.GetNginxPlusRuntimeInfo().PlusApis = details
-
-		return inst
+	instanceWithAPI := protos.NginxPlusInstance([]string{})
+	instanceWithAPI.InstanceRuntime.GetNginxPlusRuntimeInfo().PlusApi = &v1.APIDetails{
+		Location: "/api",
+		Listen:   "localhost:80",
 	}
 
-	instanceWithAPI := createPlusInstanceWithApis([]*v1.APIDetails{
-		{Location: "/api", Listen: "localhost:80"},
-	})
+	instanceWithUnixAPI := protos.NginxPlusInstance([]string{})
+	instanceWithUnixAPI.InstanceRuntime.GetNginxPlusRuntimeInfo().PlusApi = &v1.APIDetails{
+		Listen:   "unix:/var/run/nginx-status.sock",
+		Location: "/api",
+	}
 
-	instanceWithUnixAPI := createPlusInstanceWithApis([]*v1.APIDetails{
-		{Listen: "unix:/var/run/nginx-status.sock", Location: "/api"},
-	})
-
-	instanceWithCACert := createPlusInstanceWithApis([]*v1.APIDetails{
-		{Location: "/api", Listen: "localhost:443", Ca: caFile},
-	})
-
-	var logBuffer bytes.Buffer
-
-	tempHandler := slog.NewTextHandler(&logBuffer, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
-	})
-	tempLogger := slog.New(tempHandler)
+	instanceWithCACert := protos.NginxPlusInstance([]string{})
+	instanceWithCACert.InstanceRuntime.GetNginxPlusRuntimeInfo().PlusApi = &v1.APIDetails{
+		Location: "/api",
+		Listen:   "localhost:443",
+		Ca:       caFile,
+	}
 
 	ctx := context.Background()
 	tests := []struct {
-		err         error
-		instance    *v1.Instance
-		name        string
-		expectedLog string
+		err      error
+		instance *v1.Instance
+		name     string
 	}{
 		{
 			name:     "Test 1: Create Plus Client",
@@ -306,32 +291,10 @@ func TestResourceService_createPlusClient(t *testing.T) {
 			instance: protos.NginxPlusInstance([]string{}),
 			err:      errors.New("failed to preform API action, NGINX Plus API is not configured"),
 		},
-		{
-			name: "Test 5: Fallback to First API (No Write-Enabled)",
-			instance: createPlusInstanceWithApis([]*v1.APIDetails{
-				{Location: "/read1", Listen: "localhost:80"},
-				{Location: "/read2", Listen: "localhost:8080"},
-			}),
-			err:         nil,
-			expectedLog: "No write-enabled NGINX Plus API found. Write operations may fail.",
-		},
-		{
-			name: "Test 6: Prioritize Write-Enabled API",
-			instance: createPlusInstanceWithApis([]*v1.APIDetails{
-				{Location: "/read", Listen: "localhost:80"},
-				{Location: "/write", Listen: "localhost:8080", WriteEnabled: true},
-			}),
-			err:         nil,
-			expectedLog: "Selected write-enabled NGINX Plus API for action",
-		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			logBuffer.Reset()
-			originalLogger := slog.Default()
-			slog.SetDefault(tempLogger)
-			defer slog.SetDefault(originalLogger)
 			resourceService := NewResourceService(ctx, types.AgentConfig())
 			resourceService.resource.Instances = []*v1.Instance{
 				protos.NginxOssInstance([]string{}),
@@ -346,10 +309,6 @@ func TestResourceService_createPlusClient(t *testing.T) {
 				require.NoError(tt, clientErr)
 				// For the CA cert test, we can't easily verify the internal http.Client configuration
 				// without exporting it or adding test hooks, so we'll just verify no error is returned
-			}
-			if test.expectedLog != "" {
-				logOutput := logBuffer.String()
-				assert.Contains(tt, logOutput, test.expectedLog)
 			}
 		})
 	}
