@@ -46,7 +46,7 @@ require (
 	go.opentelemetry.io/collector/component v1.41.0
 	go.opentelemetry.io/collector/component/componenttest v0.135.0
 	go.opentelemetry.io/collector/config/confighttp v0.135.0
-	go.opentelemetry.io/collector/confmap v1.41.0
+	go.opentelemetry.io/collector/confmap v1.42.0
 	go.opentelemetry.io/collector/confmap/provider/envprovider v1.30.0
 	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.41.0
 	go.opentelemetry.io/collector/confmap/provider/httpprovider v1.30.0
@@ -62,7 +62,7 @@ require (
 	go.opentelemetry.io/collector/extension v1.41.0
 	go.opentelemetry.io/collector/extension/extensionauth v1.41.0
 	go.opentelemetry.io/collector/extension/xextension v0.135.0
-	go.opentelemetry.io/collector/filter v0.135.0
+	go.opentelemetry.io/collector/filter v0.136.0
 	go.opentelemetry.io/collector/otelcol v0.135.0
 	go.opentelemetry.io/collector/pdata v1.41.0
 	go.opentelemetry.io/collector/processor v1.41.0
@@ -180,7 +180,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.9 // indirect
 	github.com/knadh/koanf/maps v0.1.2 // indirect
 	github.com/knadh/koanf/providers/confmap v1.0.0 // indirect
-	github.com/knadh/koanf/v2 v2.2.2 // indirect
+	github.com/knadh/koanf/v2 v2.3.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/leodido/go-syslog/v4 v4.2.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
@@ -294,7 +294,7 @@ require (
 	go.opentelemetry.io/collector/extension/extensionmiddleware v0.135.0 // indirect
 	go.opentelemetry.io/collector/extension/extensiontest v0.135.0 // indirect
 	go.opentelemetry.io/collector/extension/zpagesextension v0.135.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.41.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.42.0 // indirect
 	go.opentelemetry.io/collector/internal/fanoutconsumer v0.135.0 // indirect
 	go.opentelemetry.io/collector/internal/memorylimiter v0.135.0 // indirect
 	go.opentelemetry.io/collector/internal/sharedcomponent v0.135.0 // indirect
