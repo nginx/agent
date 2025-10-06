@@ -31,14 +31,18 @@ coverage:
 
 component_management:
     default_rules:
-      statuses: []
+      statuses:
+        - type: project
+          informational: true
+        - type: patch
+          informational: true
 
     individual_components:
       - component_id: "internal/backoff"
         paths:
           - "internal/backoff/**"
 
-      - component_id: "internal-bus"
+      - component_id: "internal/bus"
         paths:
           - "internal/bus/**"
 
