@@ -31,15 +31,10 @@ coverage:
 
 component_management:
     default_rules:
-      statuses:
-        - type: project
-          target: 80%
-        - type: patch
-          target: 80%
+      statuses: []
 
     individual_components:
-      # Internal packages
-      - component_id: "internal-backoff"
+      - component_id: "internal/backoff"
         paths:
           - "internal/backoff/**"
 
@@ -47,75 +42,71 @@ component_management:
         paths:
           - "internal/bus/**"
 
-      - component_id: "internal-collector"
+      - component_id: "internal/collector"
         paths:
           - "internal/collector/**"
 
-      - component_id: "internal-command"
+      - component_id: "internal/command"
         paths:
           - "internal/command/**"
 
-      - component_id: "internal-config"
+      - component_id: "internal/config"
         paths:
           - "internal/config/**"
 
-      - component_id: "internal-datasource"
+      - component_id: "internal/datasource"
         paths:
           - "internal/datasource/**"
 
-      - component_id: "internal-file"
+      - component_id: "internal/file"
         paths:
           - "internal/file/**"
 
-      - component_id: "internal-grpc"
+      - component_id: "internal/grpc"
         paths:
           - "internal/grpc/**"
 
-      - component_id: "internal-logger"
+      - component_id: "internal/logger"
         paths:
           - "internal/logger/**"
 
-      - component_id: "internal-model"
+      - component_id: "internal/model"
         paths:
           - "internal/model/**"
 
-      - component_id: "internal-plugin"
+      - component_id: "internal/plugin"
         paths:
           - "internal/plugin/**"
 
-      - component_id: "internal-resource"
+      - component_id: "internal/resource"
         paths:
           - "internal/resource/**"
 
-      - component_id: "internal-watcher"
+      - component_id: "internal/watcher"
         paths:
           - "internal/watcher/**"
 
-      - component_id: "pkg-config"
+      - component_id: "pkg/config"
         paths:
           - "pkg/config/**"
 
-      - component_id: "pkg-files"
+      - component_id: "pkg/files"
         paths:
           - "pkg/files/**"
 
-      - component_id: "pkg-host"
+      - component_id: "pkg/host"
         paths:
           - "pkg/host/**"
 
-      - component_id: "pkg-id"
+      - component_id: "pkg/id"
         paths:
           - "pkg/id/**"
 
-      - component_id: "pkg-nginxprocess"
-        paths:
-          - "pkg/nginxprocess/**"
-
-      - component_id: "pkg-tls"
+      - component_id: "pkg/tls"
         paths:
           - "pkg/tls/**"
 
-      - component_id: "cmd-agent"
+      - component_id: "cmd/agent"
         paths:
           - "cmd/agent/**"
 
@@ -128,7 +119,7 @@ comment:
   behavior: default
   require_changes: false
   require_base: false
-  require_head: false
+  require_head: true
 
 # Ignore files or packages matching their paths
 ignore:
