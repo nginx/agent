@@ -17,7 +17,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/nginx/agent/v3/test/helpers"
-	"github.com/nginx/nginx-plus-go-client/v3/client"
+	"github.com/nginxinc/nginx-plus-go-client/v2/client"
 
 	"github.com/nginx/agent/v3/internal/bus/busfakes"
 
