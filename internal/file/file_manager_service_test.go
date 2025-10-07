@@ -301,6 +301,54 @@ func TestFileManagerService_ConfigApply_Failed(t *testing.T) {
 	assert.False(t, fileManagerService.rollbackManifest)
 }
 
+func TestFileManagerService_ConfigApply_FileWithExecutePermissions(t *testing.T) {
+	ctx := context.Background()
+	tempDir := t.TempDir()
+
+	filePath := filepath.Join(tempDir, "nginx.conf")
+
+	fileContent := []byte("location /test {\n    return 200 \"Test location\\n\";\n}")
+	fileHash := files.GenerateHash(fileContent)
+	defer helpers.RemoveFileWithErrorCheck(t, filePath)
+
+	overview := protos.FileOverview(filePath, fileHash)
+
+	overview.GetFiles()[0].GetFileMeta().Permissions = "0755"
+
+	manifestDirPath := tempDir
+	manifestFilePath := filepath.Join(manifestDirPath, "manifest.json")
+	helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
+
+	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+	fakeFileServiceClient.GetOverviewReturns(&mpi.GetOverviewResponse{
+		Overview: overview,
+	}, nil)
+	fakeFileServiceClient.GetFileReturns(&mpi.GetFileResponse{
+		Contents: &mpi.FileContents{
+			Contents: fileContent,
+		},
+	}, nil)
+	agentConfig := types.AgentConfig()
+	agentConfig.AllowedDirectories = []string{tempDir}
+
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, agentConfig, &sync.RWMutex{})
+	fileManagerService.configPath = filepath.Dir(filePath)
+	fileManagerService.agentConfig.LibDir = manifestDirPath
+	fileManagerService.manifestFilePath = manifestFilePath
+
+	request := protos.CreateConfigApplyRequest(overview)
+	writeStatus, err := fileManagerService.ConfigApply(ctx, request)
+	require.NoError(t, err)
+	assert.Equal(t, model.OK, writeStatus)
+	assert.Equal(t, "0644", fileManagerService.fileActions[filePath].File.GetFileMeta().GetPermissions())
+	data, readErr := os.ReadFile(filePath)
+	require.NoError(t, readErr)
+	assert.Equal(t, fileContent, data)
+	assert.Equal(t, fileManagerService.fileActions[filePath].File, overview.GetFiles()[0])
+	assert.Equal(t, 1, fakeFileServiceClient.GetFileCallCount())
+	assert.True(t, fileManagerService.rollbackManifest)
+}
+
 func TestFileManagerService_checkAllowedDirectory(t *testing.T) {
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
@@ -333,6 +381,132 @@ func TestFileManagerService_checkAllowedDirectory(t *testing.T) {
 	require.NoError(t, err)
 	err = fileManagerService.checkAllowedDirectory(notAllowed)
 	require.Error(t, err)
+}
+
+func TestFileManagerService_validateAndUpdateFilePermissions(t *testing.T) {
+	ctx := context.Background()
+	fileManagerService := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
+
+	testFiles := []*mpi.File{
+		{
+			FileMeta: &mpi.FileMeta{
+				Name:        "exec.conf",
+				Permissions: "0700",
+			},
+		},
+		{
+			FileMeta: &mpi.FileMeta{
+				Name:        "normal.conf",
+				Permissions: "0620",
+			},
+		},
+	}
+
+	err := fileManagerService.validateAndUpdateFilePermissions(ctx, testFiles)
+	require.NoError(t, err)
+	assert.Equal(t, "0600", testFiles[0].GetFileMeta().GetPermissions())
+	assert.Equal(t, "0620", testFiles[1].GetFileMeta().GetPermissions())
+}
+
+func TestFileManagerService_areExecuteFilePermissionsSet(t *testing.T) {
+	fileManagerService := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
+
+	tests := []struct {
+		name        string
+		permissions string
+		expectBool  bool
+	}{
+		{
+			name:        "Test 1: File with read and write permissions for owner",
+			permissions: "0600",
+			expectBool:  false,
+		},
+		{
+			name:        "Test 2: File with read/write and execute permissions for owner",
+			permissions: "0700",
+			expectBool:  true,
+		},
+		{
+			name:        "Test 3: File with read/write and execute permissions for owner and group",
+			permissions: "0770",
+			expectBool:  true,
+		},
+		{
+			name:        "Test 4: File with read and execute permissions for everyone",
+			permissions: "0555",
+			expectBool:  true,
+		},
+		{
+			name:        "Test 5: File with malformed permissions",
+			permissions: "abcde",
+			expectBool:  false,
+		},
+		{
+			name:        "Test 6: File with invalid permissions",
+			permissions: "000070",
+			expectBool:  false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			file := &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name:        "test.conf",
+					Permissions: test.permissions,
+				},
+			}
+
+			got := fileManagerService.areExecuteFilePermissionsSet(file)
+			assert.Equal(t, test.expectBool, got)
+		})
+	}
+}
+
+func TestFileManagerService_removeExecuteFilePermissions(t *testing.T) {
+	fileManagerService := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
+
+	tests := []struct {
+		name              string
+		permissions       string
+		errorMsg          string
+		expectPermissions string
+		expectError       bool
+	}{
+		{
+			name:              "Test 1: File with execute permissions for owner and others",
+			permissions:       "0703",
+			expectError:       false,
+			expectPermissions: "0602",
+		},
+		{
+			name:        "Test 2: File with malformed permissions",
+			permissions: "abcde",
+			expectError: true,
+			errorMsg:    "falied to parse file permissions",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			file := &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name:        "test.conf",
+					Permissions: test.permissions,
+				},
+			}
+
+			parseErr := fileManagerService.removeExecuteFilePermissions(t.Context(), file)
+
+			if test.expectError {
+				require.Error(t, parseErr)
+				assert.Contains(t, parseErr.Error(), test.errorMsg)
+			} else {
+				require.NoError(t, parseErr)
+				assert.Equal(t, test.expectPermissions, file.GetFileMeta().GetPermissions())
+			}
+		})
+	}
 }
 
 //nolint:usetesting // need to use MkDirTemp instead of t.tempDir for rollback as t.tempDir does not accept a pattern

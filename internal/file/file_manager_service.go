@@ -15,6 +15,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"sync"
 
 	"google.golang.org/grpc"
@@ -36,6 +37,7 @@ const (
 	maxAttempts = 5
 	dirPerm     = 0o755
 	filePerm    = 0o600
+	executePerm = 0o111
 )
 
 type (
@@ -163,6 +165,11 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 	allowedErr := fms.checkAllowedDirectory(fileOverview.GetFiles())
 	if allowedErr != nil {
 		return model.Error, allowedErr
+	}
+
+	permissionErr := fms.validateAndUpdateFilePermissions(ctx, fileOverview.GetFiles())
+	if permissionErr != nil {
+		return model.RollbackRequired, permissionErr
 	}
 
 	diffFiles, compareErr := fms.DetermineFileActions(
@@ -656,6 +663,49 @@ func (fms *FileManagerService) checkAllowedDirectory(checkFiles []*mpi.File) err
 			return fmt.Errorf("file not in allowed directories %s", file.GetFileMeta().GetName())
 		}
 	}
+
+	return nil
+}
+
+func (fms *FileManagerService) validateAndUpdateFilePermissions(ctx context.Context, fileList []*mpi.File) error {
+	for _, file := range fileList {
+		if fms.areExecuteFilePermissionsSet(file) {
+			resetErr := fms.removeExecuteFilePermissions(ctx, file)
+			if resetErr != nil {
+				return fmt.Errorf("failed to reset permissions for %s: %w", file.GetFileMeta().GetName(), resetErr)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (fms *FileManagerService) areExecuteFilePermissionsSet(file *mpi.File) bool {
+	filePermission := file.GetFileMeta().GetPermissions()
+
+	permissionOctal, err := strconv.ParseUint(filePermission, 8, 32)
+	if err != nil || len(filePermission) != 4 {
+		return false
+	}
+
+	return permissionOctal&executePerm > 0
+}
+
+func (fms *FileManagerService) removeExecuteFilePermissions(ctx context.Context, file *mpi.File) error {
+	filePermission := file.GetFileMeta().GetPermissions()
+
+	permissionOctal, err := strconv.ParseUint(filePermission, 8, 32)
+	if err != nil {
+		return fmt.Errorf("falied to parse file permissions: %w", err)
+	}
+
+	permissionOctal &^= executePerm
+
+	newPermission := "0" + strconv.FormatUint(permissionOctal, 8)
+	file.FileMeta.Permissions = newPermission
+
+	slog.DebugContext(ctx, "Permissions have been changed", "file", file.GetFileMeta().GetName(),
+		"old_permissions", filePermission, "new_permissions", newPermission)
 
 	return nil
 }
