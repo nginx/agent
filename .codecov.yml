@@ -3,11 +3,11 @@ coverage:
     project:
       default:
         informational: true
-        target: auto
+        target: 80%
         threshold: 0%
     patch:
       default:
         informational: true
-        target: auto
+        target: 80%
         threshold: 0%
     changes: false
