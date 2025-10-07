@@ -685,7 +685,6 @@ func validateAPIResponse(apiType string, bodyBytes []byte) error {
 	return nil
 }
 
-//nolint:revive //need to reduce cognitive complexity
 func (ncp *NginxConfigParser) apiDetailsFromLocationDirective(
 	ctx context.Context, parent, current *crossplane.Directive,
 	locationDirectiveName string,
@@ -711,15 +710,7 @@ func (ncp *NginxConfigParser) apiDetailsFromLocationDirective(
 		addresses := ncp.parseAddressFromServerDirective(parent)
 		path := ncp.parsePathFromLocationDirective(current)
 
-		writeEnabled := false
-		if locChild.Directive == plusAPIDirective {
-			for _, arg := range locChild.Args {
-				if strings.EqualFold(arg, "write=on") {
-					writeEnabled = true
-					break
-				}
-			}
-		}
+		writeEnabled := ncp.isWriteEnabled(locChild)
 
 		if locChild.Directive == locationDirectiveName {
 			for _, address := range addresses {
@@ -915,6 +906,20 @@ func (ncp *NginxConfigParser) selfSignedCACertLocation(ctx context.Context) stri
 func (ncp *NginxConfigParser) isDuplicateFile(nginxConfigContextFiles []*mpi.File, newFile *mpi.File) bool {
 	for _, nginxConfigContextFile := range nginxConfigContextFiles {
 		if nginxConfigContextFile.GetFileMeta().GetName() == newFile.GetFileMeta().GetName() {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (ncp *NginxConfigParser) isWriteEnabled(locChild *crossplane.Directive) bool {
+	if locChild.Directive != plusAPIDirective {
+		return false
+	}
+
+	for _, arg := range locChild.Args {
+		if strings.EqualFold(arg, "write=on") {
 			return true
 		}
 	}
