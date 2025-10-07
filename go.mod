@@ -1,6 +1,6 @@
 module github.com/nginx/agent/v3
 
-go 1.24.2
+go 1.24.0
 
 toolchain go1.24.7
 
