@@ -927,7 +927,7 @@ func (ncp *NginxConfigParser) isWriteEnabled(locChild *crossplane.Directive) boo
 	return false
 }
 
-// sort the API endpoints by prioritising any API that has 'write=on'.
+// sort the API endpoints by prioritizing any API that has 'write=on'.
 func (ncp *NginxConfigParser) sortPlusAPIs(ctx context.Context, apis []*model.APIDetails) []*model.APIDetails {
 	foundWriteEnabled := false
 	for _, api := range apis {
