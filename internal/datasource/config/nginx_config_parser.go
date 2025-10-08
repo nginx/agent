@@ -260,7 +260,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 			nginxConfigContext.PlusAPIs = append(nginxConfigContext.PlusAPIs, plusAPIs...)
 		}
 
-		nginxConfigContext.PlusAPIs = ncp.sortPlusAPIs(nginxConfigContext.PlusAPIs)
+		nginxConfigContext.PlusAPIs = ncp.sortPlusAPIs(ctx, nginxConfigContext.PlusAPIs)
 
 		if len(napSyslogServersFound) > 0 {
 			var napSyslogServer []string
@@ -927,7 +927,21 @@ func (ncp *NginxConfigParser) isWriteEnabled(locChild *crossplane.Directive) boo
 	return false
 }
 
-func (ncp *NginxConfigParser) sortPlusAPIs(apis []*model.APIDetails) []*model.APIDetails {
+// sort the API endpoints by prioritising any API that has 'write=on'.
+func (ncp *NginxConfigParser) sortPlusAPIs(ctx context.Context, apis []*model.APIDetails) []*model.APIDetails {
+	foundWriteEnabled := false
+	for _, api := range apis {
+		if api.WriteEnabled {
+			foundWriteEnabled = true
+			break
+		}
+	}
+
+	if !foundWriteEnabled && len(apis) > 0 {
+		slog.WarnContext(ctx, "No write-enabled NGINX Plus API found. Defaulting to read-only API")
+		return apis
+	}
+
 	slices.SortFunc(apis, func(a, b *model.APIDetails) int {
 		if a.WriteEnabled && !b.WriteEnabled {
 			return -1
