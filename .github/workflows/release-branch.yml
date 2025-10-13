@@ -232,22 +232,6 @@ jobs:
           export PATH=$PATH:~/go/bin
           nfpm --version
 
-      - name: Docker Buildx
-        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
-
-      - name: Build Docker Image
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
-        with:
-          file: scripts/packages/packager/Dockerfile
-          tags: build-signed-packager:1.0.0
-          context: '.'
-          push: false
-          load: true
-          cache-from: type=gha,scope=build-signed-packager
-          cache-to: type=gha,scope=build-signed-packager,mode=max
-          build-args: |
-            package_type=signed-package
-
       - name: Set the VERSION environment variable
         run: echo VERSION=v${{ inputs.packageVersion }} >> $GITHUB_ENV
 
