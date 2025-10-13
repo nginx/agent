@@ -110,7 +110,7 @@ type FileManagerService struct {
 	manifestFilePath      string
 	tempConfigDir         string
 	tempRollbackDir       string
-	configPath            string
+	tempConfigPath        string
 	rollbackManifest      bool
 	filesMutex            sync.RWMutex
 }
@@ -127,13 +127,13 @@ func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig 
 		previousManifestFiles: make(map[string]*model.ManifestFile),
 		rollbackManifest:      true,
 		manifestFilePath:      agentConfig.LibDir + "/manifest.json",
-		configPath:            "/etc/nginx/",
 		manifestLock:          manifestLock,
 	}
 }
 
 func (fms *FileManagerService) SetConfigPath(configPath string) {
-	fms.configPath = filepath.Dir(configPath)
+	fms.tempConfigPath = fmt.Sprintf("%s/.agent-%s", filepath.Dir(configPath), fms.agentConfig.UUID)
+	fms.ClearCache()
 }
 
 func (fms *FileManagerService) ResetClient(ctx context.Context, fileServiceClient mpi.FileServiceClient) {
@@ -219,18 +219,13 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 }
 
 func (fms *FileManagerService) ClearCache() {
-	slog.Debug("Clearing cache and temp files after config apply")
+	slog.Debug("Clearing cache and temp files")
 	clear(fms.fileActions)
 	clear(fms.previousManifestFiles)
 
-	configErr := os.RemoveAll(fms.tempConfigDir)
-	if configErr != nil {
-		slog.Error("Error removing temp config directory", "path", fms.tempConfigDir, "err", configErr)
-	}
-
-	rollbackErr := os.RemoveAll(fms.tempRollbackDir)
-	if rollbackErr != nil {
-		slog.Error("Error removing temp rollback directory", "path", fms.tempRollbackDir, "err", rollbackErr)
+	configErr := os.RemoveAll(fms.tempConfigPath)
+	if configErr != nil && !os.IsNotExist(configErr) {
+		slog.Error("Error removing temp directory", "path", fms.tempConfigDir, "err", configErr)
 	}
 }
 
@@ -759,7 +754,13 @@ func (fms *FileManagerService) convertToFile(manifestFile *model.ManifestFile) *
 }
 
 func (fms *FileManagerService) createTempConfigDirectory(pattern string) (string, error) {
-	tempDir, tempDirError := os.MkdirTemp(fms.configPath, pattern)
+	if _, err := os.Stat(fms.tempConfigPath); os.IsNotExist(err) {
+		mkdirErr := os.MkdirAll(fms.tempConfigPath, dirPerm)
+		if mkdirErr != nil {
+			return "", mkdirErr
+		}
+	}
+	tempDir, tempDirError := os.MkdirTemp(fms.tempConfigPath, pattern)
 	if tempDirError != nil {
 		return "", fmt.Errorf("failed creating temp config directory: %w", tempDirError)
 	}
