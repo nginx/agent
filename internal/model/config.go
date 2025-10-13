@@ -77,9 +77,14 @@ const (
 	OK
 )
 
-type ConfigApplySuccess struct {
+type ReloadSuccess struct {
 	ConfigContext     *NginxConfigContext
 	DataPlaneResponse *v1.DataPlaneResponse
+}
+
+type EnableWatchers struct {
+	ConfigContext *NginxConfigContext
+	InstanceID    string
 }
 
 //nolint:revive,cyclop // cyclomatic complexity is 16

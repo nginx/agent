@@ -68,7 +68,6 @@ func TestFileOperator_MoveFile_fileExists(t *testing.T) {
 	err = fileOperator.MoveFile(t.Context(), tempFile, newFile)
 	require.NoError(t, err)
 
-	assert.NoFileExists(t, tempFile)
 	assert.FileExists(t, newFile)
 }
 

@@ -7,7 +7,7 @@ package record
 
 import (
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver/internal/metadata"
-	plusapi "github.com/nginxinc/nginx-plus-go-client/v2/client"
+	plusapi "github.com/nginx/nginx-plus-go-client/v3/client"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 )
 
@@ -35,22 +35,22 @@ func (hm *HTTPMetrics) RecordHTTPMetrics(stats *plusapi.Stats, now pcommon.Times
 	// Connections
 	hm.mb.RecordNginxHTTPConnectionsDataPoint(
 		now,
-		int64(stats.Connections.Accepted),
+		stats.Connections.Accepted,
 		metadata.AttributeNginxConnectionsOutcomeACCEPTED,
 	)
 	hm.mb.RecordNginxHTTPConnectionsDataPoint(
 		now,
-		int64(stats.Connections.Dropped),
+		stats.Connections.Dropped,
 		metadata.AttributeNginxConnectionsOutcomeDROPPED,
 	)
 	hm.mb.RecordNginxHTTPConnectionCountDataPoint(
 		now,
-		int64(stats.Connections.Active),
+		stats.Connections.Active,
 		metadata.AttributeNginxConnectionsOutcomeACTIVE,
 	)
 	hm.mb.RecordNginxHTTPConnectionCountDataPoint(
 		now,
-		int64(stats.Connections.Idle),
+		stats.Connections.Idle,
 		metadata.AttributeNginxConnectionsOutcomeIDLE,
 	)
 }

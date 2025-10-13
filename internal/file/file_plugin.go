@@ -106,8 +106,8 @@ func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 			fp.handleConfigApplyRequest(ctxWithMetadata, msg)
 		case bus.ConfigApplyCompleteTopic:
 			fp.handleConfigApplyComplete(ctxWithMetadata, msg)
-		case bus.ConfigApplySuccessfulTopic:
-			fp.handleConfigApplySuccess(ctxWithMetadata, msg)
+		case bus.ReloadSuccessfulTopic:
+			fp.handleReloadSuccess(ctxWithMetadata, msg)
 		case bus.ConfigApplyFailedTopic:
 			fp.handleConfigApplyFailedRequest(ctxWithMetadata, msg)
 		default:
@@ -133,9 +133,24 @@ func (fp *FilePlugin) Subscriptions() []string {
 		bus.ConfigUploadRequestTopic,
 		bus.ConfigApplyRequestTopic,
 		bus.ConfigApplyFailedTopic,
-		bus.ConfigApplySuccessfulTopic,
+		bus.ReloadSuccessfulTopic,
 		bus.ConfigApplyCompleteTopic,
 	}
+}
+
+func (fp *FilePlugin) enableWatchers(ctx context.Context,
+	configContext *model.NginxConfigContext,
+	instanceID string,
+) {
+	enableWatcher := &model.EnableWatchers{
+		ConfigContext: configContext,
+		InstanceID:    instanceID,
+	}
+
+	fp.messagePipe.Process(ctx, &bus.Message{
+		Data:  enableWatcher,
+		Topic: bus.EnableWatchersTopic,
+	})
 }
 
 func (fp *FilePlugin) handleConnectionReset(ctx context.Context, msg *bus.Message) {
@@ -165,20 +180,23 @@ func (fp *FilePlugin) handleConfigApplyComplete(ctx context.Context, msg *bus.Me
 		return
 	}
 
-	fp.fileManagerService.ClearCache()
 	fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
+	fp.fileManagerService.ClearCache()
+	fp.enableWatchers(ctx, &model.NginxConfigContext{}, response.GetInstanceId())
 }
 
-func (fp *FilePlugin) handleConfigApplySuccess(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "File plugin received config success message")
-	successMessage, ok := msg.Data.(*model.ConfigApplySuccess)
+func (fp *FilePlugin) handleReloadSuccess(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "File plugin received reload success message", "data", msg.Data)
+
+	successMessage, ok := msg.Data.(*model.ReloadSuccess)
 
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplySuccess", "payload", msg.Data)
+		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ReloadSuccess", "payload", msg.Data)
 		return
 	}
 
 	fp.fileManagerService.ClearCache()
+	fp.enableWatchers(ctx, successMessage.ConfigContext, successMessage.DataPlaneResponse.GetInstanceId())
 
 	if successMessage.ConfigContext.Files != nil {
 		slog.DebugContext(ctx, "Changes made during config apply, update files on disk")
@@ -216,7 +234,6 @@ func (fp *FilePlugin) handleConfigApplyFailedRequest(ctx context.Context, msg *b
 			mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"Config apply failed, rollback failed", data.InstanceID, data.Error.Error())
 
-		fp.fileManagerService.ClearCache()
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: applyResponse})
 
@@ -264,13 +281,7 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			"",
 		)
 
-		successMessage := &model.ConfigApplySuccess{
-			ConfigContext:     &model.NginxConfigContext{},
-			DataPlaneResponse: dpResponse,
-		}
-
-		fp.fileManagerService.ClearCache()
-		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplySuccessfulTopic, Data: successMessage})
+		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: dpResponse})
 
 		return
 	case model.Error:
@@ -288,7 +299,6 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			err.Error(),
 		)
 
-		fp.fileManagerService.ClearCache()
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: response})
 
 		return
@@ -321,7 +331,6 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 				instanceID,
 				rollbackErr.Error())
 
-			fp.fileManagerService.ClearCache()
 			fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: rollbackResponse})
 
 			return
@@ -334,7 +343,6 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			instanceID,
 			err.Error())
 
-		fp.fileManagerService.ClearCache()
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: response})
 
 		return
@@ -359,6 +367,7 @@ func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 		return
 	}
 
+	fp.fileManagerService.SetConfigPath(nginxConfigContext.ConfigPath)
 	fp.fileManagerService.ConfigUpdate(ctx, nginxConfigContext)
 }
 
