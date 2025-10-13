@@ -1,7 +1,7 @@
 # this is the base "template" for the package
 name: nginx-agent
 description: NGINX Agent
-arch: ${ARCH} # Duplicate this file to create .nfpm.amd64.yaml and .nfpm.arm64.yaml with amd64/arm64 values
+arch: ^ARCH^ # substituted in Makefile.packaging
 version: ${VERSION}
 priority: optional
 vendor: NGINX Software, Inc.
@@ -9,7 +9,7 @@ maintainer: NGINX Inc. <agent@nginx.org>
 homepage: https://github.com/nginx/agent
 license: Apache 2.0
 contents:
-  - src: ^BUILD_PATH^/nginx-agent
+  - src: ^BUILD_PATH^/nginx-agent # substituted in Makefile.packaging
     dst: /usr/bin/nginx-agent
   - src: nginx-agent.conf
     dst: /etc/nginx-agent/nginx-agent.conf
