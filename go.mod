@@ -1,6 +1,6 @@
 module github.com/nginx/agent/v3
 
-go 1.24.0
+go 1.24.2
 
 toolchain go1.24.7
 
@@ -17,7 +17,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.2
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c
-	github.com/nginxinc/nginx-plus-go-client/v2 v2.0.1
+	github.com/nginx/nginx-plus-go-client/v3 v3.0.1
 	github.com/nginxinc/nginx-prometheus-exporter v1.3.0
 	github.com/nxadm/tail v1.4.11
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter v0.135.0
@@ -340,7 +340,7 @@ require (
 	golang.org/x/arch v0.12.0 // indirect
 	golang.org/x/exp v0.0.0-20250808145144-a408d31f581a // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
 	golang.org/x/tools v0.36.0 // indirect
 	gonum.org/v1/gonum v0.16.0 // indirect
