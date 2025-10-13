@@ -59,7 +59,7 @@ func TestFilePlugin_Subscriptions(t *testing.T) {
 			bus.ConfigUploadRequestTopic,
 			bus.ConfigApplyRequestTopic,
 			bus.ConfigApplyFailedTopic,
-			bus.ConfigApplySuccessfulTopic,
+			bus.ReloadSuccessfulTopic,
 			bus.ConfigApplyCompleteTopic,
 		},
 		filePlugin.Subscriptions(),
@@ -210,13 +210,13 @@ func TestFilePlugin_Process_ConfigApplyRequestTopic(t *testing.T) {
 			case test.configApplyStatus == model.NoChange:
 				assert.Len(t, messages, 1)
 
-				response, ok := messages[0].Data.(*model.ConfigApplySuccess)
+				response, ok := messages[0].Data.(*mpi.DataPlaneResponse)
 				assert.True(t, ok)
-				assert.Equal(t, bus.ConfigApplySuccessfulTopic, messages[0].Topic)
+				assert.Equal(t, bus.ConfigApplyCompleteTopic, messages[0].Topic)
 				assert.Equal(
 					t,
 					mpi.CommandResponse_COMMAND_STATUS_OK,
-					response.DataPlaneResponse.GetCommandResponse().GetStatus(),
+					response.GetCommandResponse().GetStatus(),
 				)
 			case test.message == nil:
 				assert.Empty(t, messages)
@@ -432,7 +432,7 @@ func TestFilePlugin_Process_ConfigApplyFailedTopic(t *testing.T) {
 	}
 }
 
-func TestFilePlugin_Process_ConfigApplyRollbackCompleteTopic(t *testing.T) {
+func TestFilePlugin_Process_ConfigApplyReloadSuccessTopic(t *testing.T) {
 	ctx := context.Background()
 	instance := protos.NginxOssInstance([]string{})
 	mockFileManager := &filefakes.FakeFileManagerServiceInterface{}
@@ -460,14 +460,22 @@ func TestFilePlugin_Process_ConfigApplyRollbackCompleteTopic(t *testing.T) {
 		InstanceId: instance.GetInstanceMeta().GetInstanceId(),
 	}
 
-	filePlugin.Process(ctx, &bus.Message{Topic: bus.ConfigApplySuccessfulTopic, Data: &model.ConfigApplySuccess{
+	filePlugin.Process(ctx, &bus.Message{Topic: bus.ReloadSuccessfulTopic, Data: &model.ReloadSuccess{
 		ConfigContext:     &model.NginxConfigContext{},
 		DataPlaneResponse: expectedResponse,
 	}})
 
 	messages := messagePipe.Messages()
-	response, ok := messages[0].Data.(*mpi.DataPlaneResponse)
+
+	watchers, ok := messages[0].Data.(*model.EnableWatchers)
 	assert.True(t, ok)
+	assert.Equal(t, bus.EnableWatchersTopic, messages[0].Topic)
+	assert.Equal(t, &model.NginxConfigContext{}, watchers.ConfigContext)
+	assert.Equal(t, instance.GetInstanceMeta().GetInstanceId(), watchers.InstanceID)
+
+	response, ok := messages[1].Data.(*mpi.DataPlaneResponse)
+	assert.True(t, ok)
+	assert.Equal(t, bus.DataPlaneResponseTopic, messages[1].Topic)
 
 	assert.Equal(t, expectedResponse.GetCommandResponse().GetStatus(), response.GetCommandResponse().GetStatus())
 	assert.Equal(t, expectedResponse.GetCommandResponse().GetMessage(), response.GetCommandResponse().GetMessage())
