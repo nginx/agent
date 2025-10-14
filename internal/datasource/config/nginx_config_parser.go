@@ -938,7 +938,7 @@ func (ncp *NginxConfigParser) sortPlusAPIs(ctx context.Context, apis []*model.AP
 	}
 
 	if !foundWriteEnabled && len(apis) > 0 {
-		slog.WarnContext(ctx, "No write-enabled NGINX Plus API found. Defaulting to read-only API")
+		slog.InfoContext(ctx, "No write-enabled NGINX Plus API found. Defaulting to read-only API")
 		return apis
 	}
 
