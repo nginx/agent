@@ -1061,14 +1061,14 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 	}
 
 	col := &Collector{
-		ConfigPath:      viperInstance.GetString(CollectorConfigPathKey),
-		AdditionalPaths: viperInstance.GetStringSlice(CollectorAdditionalConfigPathsKey),
-		Exporters:       exporters,
-		Processors:      resolveProcessors(),
-		Receivers:       receivers,
-		Extensions:      resolveExtensions(),
-		Log:             resolveCollectorLog(),
-		Pipelines:       resolvePipelines(),
+		ConfigPath:            viperInstance.GetString(CollectorConfigPathKey),
+		AdditionalConfigPaths: viperInstance.GetStringSlice(CollectorAdditionalConfigPathsKey),
+		Exporters:             exporters,
+		Processors:            resolveProcessors(),
+		Receivers:             receivers,
+		Extensions:            resolveExtensions(),
+		Log:                   resolveCollectorLog(),
+		Pipelines:             resolvePipelines(),
 	}
 
 	// Check for self-signed certificate true in Agent conf

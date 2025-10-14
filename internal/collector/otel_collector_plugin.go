@@ -45,6 +45,7 @@ const (
 		`? (let utcTime = ` +
 		`date(timestamp).UTC(); utcTime.Format("Jan  2 15:04:05")) : date(timestamp).Format("Jan 02 15:04:05"); ` +
 		`split(body, ">")[0] + ">" + newTimestamp + " " + split(body, " ", 2)[1])'`
+	debugOTelConfigPath = "/var/lib/nginx-agent/opentelemetry-collector-agent-debug.yaml"
 )
 
 type (
@@ -388,7 +389,7 @@ func (oc *Collector) updateHeadersSetterExtension(
 
 func (oc *Collector) writeRunningConfig(ctx context.Context, settings otelcol.CollectorSettings) error {
 	slog.DebugContext(ctx, "Writing running OTel collector config", "path",
-		"/var/lib/nginx-agent/opentelemetry-collector-agent-debug.yaml")
+		debugOTelConfigPath)
 	resolver, err := confmap.NewResolver(settings.ConfigProviderSettings.ResolverSettings)
 	if err != nil {
 		return fmt.Errorf("unable to create resolver: %w", err)
@@ -403,7 +404,7 @@ func (oc *Collector) writeRunningConfig(ctx context.Context, settings otelcol.Co
 		return fmt.Errorf("error while marshaling to YAML: %w", err)
 	}
 
-	writeErr := os.WriteFile("/var/lib/nginx-agent/opentelemetry-collector-agent-debug.yaml", b, filePermission)
+	writeErr := os.WriteFile(debugOTelConfigPath, b, filePermission)
 	if writeErr != nil {
 		return fmt.Errorf("error while writing debug config: %w", err)
 	}

@@ -72,8 +72,8 @@ func createConverterFactories() []confmap.ConverterFactory {
 
 func createURIs(cfg *config.Config) []string {
 	configFiles := []string{cfg.Collector.ConfigPath}
-	configFiles = slices.Concat(configFiles, cfg.Collector.AdditionalPaths)
-	slog.Info("Additional config files:", "", configFiles)
+	configFiles = slices.Concat(configFiles, cfg.Collector.AdditionalConfigPaths)
+	slog.Info("Merging additional OTel config files", "config_files", configFiles)
 
 	return configFiles
 }
