@@ -741,7 +741,7 @@ func (fms *FileManagerService) convertToManifestFile(file *mpi.File, referenced 
 			Size:       file.GetFileMeta().GetSize(),
 			Hash:       file.GetFileMeta().GetHash(),
 			Referenced: referenced,
-			Unmanaged:  file.Unmanaged,
+			Unmanaged:  file.GetUnmanaged(),
 		},
 	}
 }
