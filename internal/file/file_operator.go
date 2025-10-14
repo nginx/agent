@@ -14,6 +14,7 @@ import (
 	"log/slog"
 	"os"
 	"path"
+	"path/filepath"
 	"sync"
 
 	"github.com/nginx/agent/v3/internal/model"
@@ -188,28 +189,34 @@ func (fo *FileOperator) WriteManifestFile(
 }
 
 func (fo *FileOperator) MoveFile(ctx context.Context, sourcePath, destPath string) error {
-	inputFile, err := os.Open(sourcePath)
-	if err != nil {
-		return err
+	inputFile, openErr := os.Open(sourcePath)
+	if openErr != nil {
+		return fmt.Errorf("failed to open source file %s: %w", sourcePath, openErr)
+	}
+	defer closeFile(ctx, inputFile)
+
+	fileInfo, statErr := inputFile.Stat()
+	if statErr != nil {
+		return fmt.Errorf("failed to stat source file %s: %w", sourcePath, statErr)
 	}
 
-	outputFile, err := os.Create(destPath)
-	if err != nil {
-		return err
+	if dirErr := os.MkdirAll(filepath.Dir(destPath), dirPerm); dirErr != nil {
+		return fmt.Errorf("failed to create directories for %s: %w", destPath, dirErr)
+	}
+
+	outputFile, createErr := os.OpenFile(destPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, fileInfo.Mode())
+	if createErr != nil {
+		return fmt.Errorf("failed to create destination file %s: %w", destPath, createErr)
 	}
 	defer closeFile(ctx, outputFile)
 
-	_, err = io.Copy(outputFile, inputFile)
-	if err != nil {
-		closeFile(ctx, inputFile)
-		return err
+	_, copyErr := io.Copy(outputFile, inputFile)
+	if copyErr != nil {
+		return fmt.Errorf("failed to copy data from %s to %s: %w", sourcePath, destPath, copyErr)
 	}
 
-	closeFile(ctx, inputFile)
-
-	err = os.Remove(sourcePath)
-	if err != nil {
-		return err
+	if err := os.Chmod(outputFile.Name(), fileInfo.Mode()); err != nil {
+		return fmt.Errorf("failed to change file permissions chmod: %w", err)
 	}
 
 	return nil

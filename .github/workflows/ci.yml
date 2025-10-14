@@ -68,14 +68,11 @@ jobs:
                 cache: false
           - name: Run Unit Tests
             run: make unit-test
-          - name: Check Coverage
-            uses: vladopajic/go-test-coverage@dd4b1f21c4e48db0425e1187d2845404b1206919
+          - name: Uplaod Test Coverage
+            uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
             with:
-              config: ./.testcoverage.yaml
-              ## when token is not specified (value '') this feature is turned off
-              git-token: ${{ github.ref_name == 'main' && secrets.GITHUB_TOKEN || '' }}
-              ## name of orphaned branch where badges are stored
-              git-branch: badges
+              files: ./build/test/coverage.out
+              token: ${{ secrets.CODECOV_TOKEN }}
 
   race-condition-test:
       name: Unit tests with race condition detection
@@ -293,7 +290,7 @@ jobs:
           name: nginx-agent-unsigned-snapshots
           path: build
       - name: Login to Docker Registry
-        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           registry: ${{ secrets.TEST_REGISTRY_URL }}
           username: ${{ secrets.REGISTRY_USERNAME }}
@@ -414,7 +411,7 @@ jobs:
           name: nginx-agent-unsigned-snapshots
           path: build
       - name: Login to Docker Registry
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           registry: ${{ secrets.TEST_REGISTRY_URL }}
           username: ${{ secrets.REGISTRY_USERNAME }}
