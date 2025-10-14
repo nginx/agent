@@ -988,7 +988,7 @@ func TestCollector_findAvailableSyslogServers(t *testing.T) {
 				defer ln.Close()
 			}
 
-			actual := collector.findAvailableSyslogServers(ctx, test.syslogServers)
+			actual := collector.findAvailableSyslogServer(ctx, test.syslogServers)
 			assert.Equal(tt, test.expectedSyslogServer, actual)
 		})
 	}

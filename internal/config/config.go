@@ -424,7 +424,7 @@ func registerFlags() {
 	fs.String(
 		SyslogServerPort,
 		DefSyslogServerPort,
-		"The port Agent will start the syslog server for Nginx App Protect Security violations on",
+		"The port Agent will start the syslog server on for logs collection",
 	)
 
 	registerCommonFlags(fs)

@@ -572,7 +572,7 @@ func (oc *Collector) updateNginxAppProtectTcplogReceivers(
 		oc.config.Collector.Receivers.TcplogReceivers = make(map[string]*config.TcplogReceiver)
 	}
 
-	napSysLogServer := oc.findAvailableSyslogServers(ctx, nginxConfigContext.NAPSysLogServer)
+	napSysLogServer := oc.findAvailableSyslogServer(ctx, nginxConfigContext.NAPSysLogServer)
 
 	if napSysLogServer != "" {
 		if !oc.doesTcplogReceiverAlreadyExist(napSysLogServer) {
@@ -705,7 +705,7 @@ func (oc *Collector) updateResourceAttributes(
 	return actionUpdated
 }
 
-func (oc *Collector) findAvailableSyslogServers(ctx context.Context, napSyslogServer string) string {
+func (oc *Collector) findAvailableSyslogServer(ctx context.Context, napSyslogServer string) string {
 	if oc.previousNAPSysLogServer != "" && oc.previousNAPSysLogServer == napSyslogServer {
 		return oc.previousNAPSysLogServer
 	}
