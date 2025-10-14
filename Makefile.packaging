@@ -37,26 +37,26 @@ $(PACKAGES_DIR):
 .PHONY: package
 package: $(PACKAGES_DIR) #### Create final packages for all supported distros
 
-	# Build binaries for both amd64 and arm64
-	for arch in $(DEB_ARCHS); do \
+	# Build binaries for all supported architectures
+	@for arch in $(DEB_ARCHS); do \
 		mkdir -p $(BUILD_DIR)/$${arch}; \
 		cp .nfpm.yaml .nfpm.$$arch.yaml; \
+		sed -i.bak "s/\^ARCH\^/$${arch}/g" ".nfpm.$$arch.yaml"; \
 		sed -i.bak "s/\^BUILD_PATH\^/\.\/build\/$${arch}/g" ".nfpm.$$arch.yaml"; \
+		echo "Building for architecture: $${arch}"; \
 		GOWORK=off CGO_ENABLED=0 GOARCH=$${arch} GOOS=linux \
 			go build -pgo=auto -ldflags=${LDFLAGS} \
 			-o $(BUILD_DIR)/$${arch}/$(BINARY_NAME) \
 			$(PROJECT_DIR)/$(PROJECT_FILE); \
-		rm -f .nfpm.$$arch.yaml.bak; \
+		rm -f .nfpm.$$arch.yaml.bak \
+		@echo "Binary built: $(BUILD_DIR)/$${arch}/$(BINARY_NAME)"; \
 	done; \
-
-	@echo "Built binaries:"; \
-	find $(BUILD_DIR) -type f -name $(BINARY_NAME) \
 
 	# Create deb packages
 	for arch in $(DEB_ARCHS); do \
 		for distro in $(DEB_DISTROS); do \
 			deb_codename=`echo $$distro | cut -d- -f 2`; \
-			VERSION=$(PACKAGE_VERSION)~$${deb_codename} nfpm pkg --config .nfpm.$$arch.yaml --packager deb --target ${PACKAGES_DIR}/deb/${PACKAGE_PREFIX}_$(PACKAGE_VERSION)~$${deb_codename}_$${arch}.deb; \
+			VERSION=$(PACKAGE_VERSION)~$${deb_codename} nfpm pkg --config .nfpm.$${arch}.yaml --packager deb --target ${PACKAGES_DIR}/deb/${PACKAGE_PREFIX}_$(PACKAGE_VERSION)~$${deb_codename}_$${arch}.deb; \
 		done; \
 	done; \
 	
@@ -81,7 +81,7 @@ package: $(PACKAGES_DIR) #### Create final packages for all supported distros
 			rpm_distro=`echo $$distro | cut -d- -f 1`; \
 			rpm_major=`echo $$distro | cut -d- -f 2`; \
 			rpm_codename="el$$rpm_major"; \
-			VERSION=$(PACKAGE_VERSION) ARCH=$${arch} nfpm pkg --config .nfpm.$$goarch.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm; \
+			VERSION=$(PACKAGE_VERSION) ARCH=$${arch} nfpm pkg --config .nfpm.$${goarch}.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm; \
 		done; \
 	done; \
 
@@ -108,12 +108,17 @@ package: $(PACKAGES_DIR) #### Create final packages for all supported distros
 	done; \
 
 	# Package build complete
-	echo "DEB packages:"; \
-	find $(PACKAGES_DIR)/deb -type f | grep -E "${BINARY_NAME}[-_]${PACKAGE_VERSION}" | sort; \
-	echo "RPM packages:"; \
-	find $(PACKAGES_DIR)/rpm -type f | grep -E "${BINARY_NAME}[-_]${PACKAGE_VERSION}" | sort; \
-	echo "APK packages:"; \
-	find $(PACKAGES_DIR)/apk -type f | grep -E "${BINARY_NAME}[-_]${PACKAGE_VERSION}" | sort; \
+	@echo "DEB packages:"; \
+	@find $(PACKAGES_DIR)/deb -type f | grep -E "${BINARY_NAME}[-_]${PACKAGE_VERSION}" | sort; \
+	@echo "RPM packages:"; \
+	@find $(PACKAGES_DIR)/rpm -type f | grep -E "${BINARY_NAME}[-_]${PACKAGE_VERSION}" | sort; \
+	@echo "APK packages:"; \
+	@find $(PACKAGES_DIR)/apk -type f | grep -E "${BINARY_NAME}[-_]${PACKAGE_VERSION}" | sort; \
+
+	# Clean up temporary nfpm config files
+	for arch in $(DEB_ARCHS); do \
+		rm -f .nfpm.$$arch.yaml; \
+	done; \
 
 	# Create tarball containing all packages
 	@echo "Creating tarball: $(TARBALL_NAME)"; \
