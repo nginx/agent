@@ -153,7 +153,7 @@ $(TEST_BUILD_DIR)/coverage.out:
 .PHONY: coverage
 coverage: $(TEST_BUILD_DIR)/coverage.out
 	@echo "Checking code coverage"
-	@$(GORUN) $(GOTESTCOVERAGE) --config=./.testcoverage.yaml
+	@printf "Total code coverage: " && $(GOTOOL) cover -func=$(TEST_BUILD_DIR)/coverage.out | grep 'total:' | awk '{print $$3}'
 
 build-mock-management-plane-grpc:
 	mkdir -p $(BUILD_DIR)/mock-management-plane-grpc
