@@ -356,8 +356,10 @@ func (fms *FileManagerService) DetermineFileActions(
 	// if file is in manifestFiles but not in modified files, file has been deleted
 	// copy contents, set file action
 	for fileName, manifestFile := range filesMap {
-		_, existsOnDisk := modifiedFiles[fileName]
+		_, existsInReq := modifiedFiles[fileName]
 
+		// allowed directories may have been updated since manifest file was written
+		// if file is outside allowed directories skip deletion and return error
 		if !fms.agentConfig.IsDirectoryAllowed(fileName) {
 			return nil, fmt.Errorf("error deleting file %s: file not in allowed directories", fileName)
 		}
@@ -368,12 +370,14 @@ func (fms *FileManagerService) DetermineFileActions(
 			continue
 		}
 
+		// if file doesn't exist on disk skip deletion
 		if _, err := os.Stat(fileName); os.IsNotExist(err) {
 			slog.DebugContext(ctx, "File already deleted, skipping", "file", fileName)
 			continue
 		}
 
-		if !existsOnDisk {
+		// go ahead and delete the file
+		if !existsInReq {
 			fileDiff[fileName] = &model.FileCache{
 				File:   manifestFile,
 				Action: model.Delete,
