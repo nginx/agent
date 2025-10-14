@@ -393,7 +393,7 @@ func (fms *FileManagerService) DetermineFileActions(
 
 		// if file is unmanaged, action is set to unchanged so file is skipped when performing actions
 		if modifiedFile.File.GetUnmanaged() {
-			slog.DebugContext(ctx, "skipping unmanaged file updates", "file_name", fileName)
+			slog.DebugContext(ctx, "Skipping unmanaged file updates", "file_name", fileName)
 			continue
 		}
 		// if file doesn't exist in the current files, file has been added
