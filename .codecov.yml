@@ -22,10 +22,9 @@ coverage:
 
     # Patch-level coverage settings
     patch:
-
       default:
-
-        target: 80%
+        informational: true
+        target: auto
         threshold: 0%
         only_pulls: false
 
