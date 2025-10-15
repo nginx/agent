@@ -354,8 +354,6 @@ message APIDetails {
     string listen =  2;
     // the API CA file path
     string Ca = 3;
-    // flag to know API is configured with 'write=on;'
-    bool write_enabled = 4;
 }
 
 // A set of runtime NGINX App Protect settings

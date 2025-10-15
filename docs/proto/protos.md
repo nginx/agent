@@ -697,7 +697,6 @@ Perform an associated API action on an instance
 | location | [string](#string) |  | the API location directive |
 | listen | [string](#string) |  | the API listen directive |
 | Ca | [string](#string) |  | the API CA file path |
-| write_enabled | [bool](#bool) |  | flag to know API is configured with &#39;write=on;&#39; |
 
 
 

@@ -20,8 +20,7 @@ func NginxPlusRuntimeInfoEqual(nginxPlusRuntimeInfo *mpi.NGINXPlusRuntimeInfo,
 		nginxPlusRuntimeInfo.GetStubStatus().GetListen() != nginxConfigContext.StubStatus.Listen ||
 		nginxPlusRuntimeInfo.GetPlusApi().GetListen() != nginxConfigContext.PlusAPI.Listen ||
 		nginxPlusRuntimeInfo.GetStubStatus().GetLocation() != nginxConfigContext.StubStatus.Location ||
-		nginxPlusRuntimeInfo.GetPlusApi().GetLocation() != nginxConfigContext.PlusAPI.Location ||
-		nginxPlusRuntimeInfo.GetPlusApi().GetWriteEnabled() != nginxConfigContext.PlusAPI.WriteEnabled {
+		nginxPlusRuntimeInfo.GetPlusApi().GetLocation() != nginxConfigContext.PlusAPI.Location {
 		return false
 	}
 
@@ -60,7 +59,6 @@ func UpdateNginxInstanceRuntime(
 			nginxPlusRuntimeInfo.PlusApi.Listen = nginxConfigContext.PlusAPI.Listen
 			nginxPlusRuntimeInfo.StubStatus.Location = nginxConfigContext.StubStatus.Location
 			nginxPlusRuntimeInfo.PlusApi.Location = nginxConfigContext.PlusAPI.Location
-			nginxPlusRuntimeInfo.PlusApi.WriteEnabled = nginxConfigContext.PlusAPI.WriteEnabled
 			updatesRequired = true
 		}
 	} else {

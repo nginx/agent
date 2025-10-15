@@ -4895,8 +4895,6 @@ func (m *APIDetails) validate(all bool) error {
 
 	// no validation rules for Ca
 
-	// no validation rules for WriteEnabled
-
 	if len(errors) > 0 {
 		return APIDetailsMultiError(errors)
 	}
