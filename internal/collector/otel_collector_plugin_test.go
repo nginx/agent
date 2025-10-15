@@ -1038,7 +1038,8 @@ func TestCollector_writeRunningConfig(t *testing.T) {
 					ResolverSettings: confmap.ResolverSettings{},
 				},
 			},
-			writeConfigErr: errors.New("unable to create resolver: invalid 'confmap.ResolverSettings' configuration: no URIs"),
+			writeConfigErr: errors.New("unable to create resolver: invalid " +
+				"'confmap.ResolverSettings' configuration: no URIs"),
 		},
 	}
 
@@ -1063,7 +1064,6 @@ func TestCollector_writeRunningConfig(t *testing.T) {
 			} else {
 				assert.Equal(t, tt.writeConfigErr.Error(), writeErr.Error())
 			}
-
 		})
 	}
 }
