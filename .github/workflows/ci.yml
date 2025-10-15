@@ -160,6 +160,8 @@ jobs:
                     version: "bullseye-slim"
                   - image: "debian"
                     version: "bookworm-slim"
+                  - image: "debian"
+                    version: "trixie-slim"
       steps:
           - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
             with:
