@@ -2,6 +2,7 @@
 //
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
+
 package collector
 
 import (
@@ -56,6 +57,7 @@ type (
 		mu                      *sync.Mutex
 		cancel                  context.CancelFunc
 		previousNAPSysLogServer string
+		debugOTelConfigPath     string
 		stopped                 bool
 	}
 )
@@ -97,6 +99,7 @@ func NewCollector(conf *config.Config) (*Collector, error) {
 		stopped:                 true,
 		mu:                      &sync.Mutex{},
 		previousNAPSysLogServer: "",
+		debugOTelConfigPath:     debugOTelConfigPath,
 	}, nil
 }
 
@@ -389,7 +392,7 @@ func (oc *Collector) updateHeadersSetterExtension(
 
 func (oc *Collector) writeRunningConfig(ctx context.Context, settings otelcol.CollectorSettings) error {
 	slog.DebugContext(ctx, "Writing running OTel collector config", "path",
-		debugOTelConfigPath)
+		oc.debugOTelConfigPath)
 	resolver, err := confmap.NewResolver(settings.ConfigProviderSettings.ResolverSettings)
 	if err != nil {
 		return fmt.Errorf("unable to create resolver: %w", err)
@@ -404,9 +407,9 @@ func (oc *Collector) writeRunningConfig(ctx context.Context, settings otelcol.Co
 		return fmt.Errorf("error while marshaling to YAML: %w", err)
 	}
 
-	writeErr := os.WriteFile(debugOTelConfigPath, b, filePermission)
+	writeErr := os.WriteFile(oc.debugOTelConfigPath, b, filePermission)
 	if writeErr != nil {
-		return fmt.Errorf("error while writing debug config: %w", err)
+		return fmt.Errorf("error while writing debug config: %w", writeErr)
 	}
 
 	return nil
