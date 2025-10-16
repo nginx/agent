@@ -29,6 +29,7 @@ type Parameters struct {
 	NginxConfigPath      string
 	NginxAgentConfigPath string
 	LogMessage           string
+	ServerHost           map[string]string
 }
 
 func StartContainer(
@@ -73,6 +74,7 @@ func StartContainer(
 				buildOptions.Target = buildTarget
 			},
 		},
+		Env:          parameters.ServerHost,
 		ExposedPorts: []string{"9091/tcp"},
 		WaitingFor:   wait.ForLog(parameters.LogMessage),
 		HostConfigModifier: func(hostConfig *container.HostConfig) {

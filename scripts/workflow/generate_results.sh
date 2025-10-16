@@ -32,19 +32,8 @@ DURATION=$(echo "$END_SECONDS - $START_SECONDS" | bc)
 
 MSG=""        # individual test msg
 FAIL_MSG=""   # msg for entire job run
-RESULT=""
 HAS_FAILED=false
 IS_RUNNING=false
-
-load_job_status(){
-    if [ "$JOB_RESULT" == "success" ]; then
-        RESULT="pass"
-    elif [ "$JOB_RESULT" == "failure" ]; then
-        RESULT="fail"
-    else
-        RESULT="skip"
-    fi
-}
 
 format_logs_to_json(){
     line="$1"
@@ -110,6 +99,5 @@ format_results(){
 
 # Main body of the script
 {
-    load_job_status
     format_results
 }

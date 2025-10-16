@@ -21,11 +21,15 @@ RUN if [ "$OS_VERSION" = "2" ] && [ "$OS_RELEASE" = "amazonlinux" ]; \
     fi
 
 RUN if [ "$OS_RELEASE" = "amazonlinux" ]; \
-        then yum install -y shadow-utils; \
+        then yum install -y shadow-utils && yum install -y findutils; \
     fi
 
 RUN if [ "$OS_RELEASE" = "centos" ] && [ "$OS_VERSION" = "7" ]; \
         then yum install -y epel-release; \
+    fi 
+
+RUN if [ "$OS_RELEASE" = "rockylinux" ] && [ "$OS_VERSION" = "8" ]; \
+        then yum install -y findutils; \
     fi
 
 RUN if [ "$OS_RELEASE" = "redhatenterprise" ] && [ "$OS_VERSION" != "9" ]; \
@@ -87,7 +91,7 @@ FROM install-nginx as install-agent-local
 
 ARG PACKAGE_NAME
 
-RUN yum localinstall -y /agent/build/${PACKAGE_NAME}.rpm
+RUN yum localinstall -y /agent/build/$PACKAGE_NAME.rpm
 
 
 FROM install-nginx as install-agent-repo
