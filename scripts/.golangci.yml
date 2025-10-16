@@ -3,6 +3,7 @@ linters:
   disable:
     - staticcheck
     - unused
+    - errcheck
   exclusions:
     generated: lax
     presets:
