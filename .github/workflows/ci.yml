@@ -19,7 +19,7 @@ permissions:
   contents: read
 
 env:
-  GOLANGCI_LINT_VERSION: 'v1.61.0'
+  GOLANGCI_LINT_VERSION: 'v2.2.1'
   NFPM_VERSION: 'v2.35.3'
   NGINX_OSS_REGISTRY: 'docker-registry.nginx.com'
 
