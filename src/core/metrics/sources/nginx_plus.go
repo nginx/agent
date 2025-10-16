@@ -22,7 +22,7 @@ import (
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/v2/src/core/metrics"
 
-	plusclient "github.com/nginxinc/nginx-plus-go-client/v2/client"
+	plusclient "github.com/nginx/nginx-plus-go-client/v3/client"
 	log "github.com/sirupsen/logrus"
 )
 

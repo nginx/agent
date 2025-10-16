@@ -27,7 +27,7 @@ require (
 	github.com/trivago/grok v1.0.0
 	github.com/vardius/message-bus v1.1.5
 	go.uber.org/atomic v1.11.0
-	golang.org/x/sync v0.15.0
+	golang.org/x/sync v0.17.0
 	google.golang.org/grpc v1.64.1
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
@@ -37,7 +37,7 @@ require (
 require (
 	github.com/go-resty/resty/v2 v2.11.0
 	github.com/nginx/agent/sdk/v2 v2.0.0-00010101000000-000000000000
-	github.com/nginxinc/nginx-plus-go-client/v2 v2.0.1
+	github.com/nginx/nginx-plus-go-client/v3 v3.0.1
 	github.com/prometheus/client_golang v1.19.1
 	github.com/rs/cors v1.11.0
 	go.uber.org/goleak v1.3.0

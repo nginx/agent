@@ -9,7 +9,9 @@ import (
 	"io"
 	"net/http"
 	"reflect"
+	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -41,12 +43,23 @@ var (
 )
 
 var (
-	ErrParameterRequired = errors.New("parameter is required")
-	ErrServerNotFound    = errors.New("server not found")
-	ErrServerExists      = errors.New("server already exists")
-	ErrNotSupported      = errors.New("not supported")
-	ErrInvalidTimeout    = errors.New("invalid timeout")
+	ErrParameterRequired   = errors.New("parameter is required")
+	ErrServerNotFound      = errors.New("server not found")
+	ErrServerExists        = errors.New("server already exists")
+	ErrNotSupported        = errors.New("not supported")
+	ErrInvalidTimeout      = errors.New("invalid timeout")
+	ErrParameterMismatch   = errors.New("encountered duplicate server with different parameters")
+	ErrPlusVersionNotFound = errors.New("plus version not found in the input string")
 )
+
+// StatusError is an interface that defines our API with consumers of the plus client errors.
+// The error will return a http status code and an NGINX error code.
+type StatusError interface {
+	Status() int
+	Code() string
+}
+
+var _ StatusError = (*internalError)(nil)
 
 // NginxClient lets you access NGINX Plus API.
 type NginxClient struct {
@@ -108,8 +121,18 @@ type apiError struct {
 }
 
 type internalError struct {
-	err string
-	apiError
+	err      string
+	apiError apiError
+}
+
+// Status returns the HTTP status code of the error.
+func (internalError *internalError) Status() int {
+	return internalError.apiError.Status
+}
+
+// Status returns the NGINX error code on the response.
+func (internalError *internalError) Code() string {
+	return internalError.apiError.Code
 }
 
 // Error allows internalError to match the Error interface.
@@ -193,6 +216,20 @@ type NginxInfo struct {
 	ParentProcessID uint64 `json:"ppid"`
 }
 
+// LicenseReporting contains information about license status for NGINX Plus.
+type LicenseReporting struct {
+	Healthy bool
+	Fails   uint64
+	Grace   uint64
+}
+
+// NginxLicense contains licensing information about NGINX Plus.
+type NginxLicense struct {
+	Reporting  *LicenseReporting
+	ActiveTill uint64 `json:"active_till"`
+	Eval       bool
+}
+
 // Caches is a map of cache stats by cache zone.
 type Caches = map[string]HTTPCache
 
@@ -225,10 +262,10 @@ type ExtendedCacheStats struct {
 
 // Connections represents connection related stats.
 type Connections struct {
-	Accepted uint64
-	Dropped  uint64
-	Active   uint64
-	Idle     uint64
+	Accepted int64
+	Dropped  int64
+	Active   int64
+	Idle     int64
 }
 
 // Slabs is map of slab stats by zone name.
@@ -758,9 +795,13 @@ func (client *NginxClient) AddHTTPServer(ctx context.Context, upstream string, s
 	if id != -1 {
 		return fmt.Errorf("failed to add %v server to %v upstream: %w", server.Server, upstream, ErrServerExists)
 	}
+	err = client.addHTTPServer(ctx, upstream, server)
+	return err
+}
 
+func (client *NginxClient) addHTTPServer(ctx context.Context, upstream string, server UpstreamServer) error {
 	path := fmt.Sprintf("http/upstreams/%v/servers/", upstream)
-	err = client.post(ctx, path, &server)
+	err := client.post(ctx, path, &server)
 	if err != nil {
 		return fmt.Errorf("failed to add %v server to %v upstream: %w", server.Server, upstream, err)
 	}
@@ -777,9 +818,13 @@ func (client *NginxClient) DeleteHTTPServer(ctx context.Context, upstream string
 	if id == -1 {
 		return fmt.Errorf("failed to remove %v server from %v upstream: %w", server, upstream, ErrServerNotFound)
 	}
+	err = client.deleteHTTPServer(ctx, upstream, server, id)
+	return err
+}
 
-	path := fmt.Sprintf("http/upstreams/%v/servers/%v", upstream, id)
-	err = client.delete(ctx, path, http.StatusOK)
+func (client *NginxClient) deleteHTTPServer(ctx context.Context, upstream, server string, serverID int) error {
+	path := fmt.Sprintf("http/upstreams/%v/servers/%v", upstream, serverID)
+	err := client.delete(ctx, path, http.StatusOK)
 	if err != nil {
 		return fmt.Errorf("failed to remove %v server from %v upstream: %w", server, upstream, err)
 	}
@@ -791,6 +836,9 @@ func (client *NginxClient) DeleteHTTPServer(ctx context.Context, upstream string
 // Servers that are in the slice, but don't exist in NGINX will be added to NGINX.
 // Servers that aren't in the slice, but exist in NGINX, will be removed from NGINX.
 // Servers that are in the slice and exist in NGINX, but have different parameters, will be updated.
+// The client will attempt to update all servers, returning all the errors that occurred.
+// If there are duplicate servers with equivalent parameters, the duplicates will be ignored.
+// If there are duplicate servers with different parameters, those server entries will be ignored and an error returned.
 func (client *NginxClient) UpdateHTTPServers(ctx context.Context, upstream string, servers []UpstreamServer) (added []UpstreamServer, deleted []UpstreamServer, updated []UpstreamServer, err error) {
 	serversInNginx, err := client.GetHTTPServers(ctx, upstream)
 	if err != nil {
@@ -804,72 +852,120 @@ func (client *NginxClient) UpdateHTTPServers(ctx context.Context, upstream strin
 		formattedServers = append(formattedServers, server)
 	}
 
+	formattedServers, err = deduplicateServers(upstream, formattedServers)
+
 	toAdd, toDelete, toUpdate := determineUpdates(formattedServers, serversInNginx)
 
 	for _, server := range toAdd {
-		err := client.AddHTTPServer(ctx, upstream, server)
-		if err != nil {
-			return nil, nil, nil, fmt.Errorf("failed to update servers of %v upstream: %w", upstream, err)
+		addErr := client.addHTTPServer(ctx, upstream, server)
+		if addErr != nil {
+			err = errors.Join(err, addErr)
+			continue
 		}
+		added = append(added, server)
 	}
 
 	for _, server := range toDelete {
-		err := client.DeleteHTTPServer(ctx, upstream, server.Server)
-		if err != nil {
-			return nil, nil, nil, fmt.Errorf("failed to update servers of %v upstream: %w", upstream, err)
+		deleteErr := client.deleteHTTPServer(ctx, upstream, server.Server, server.ID)
+		if deleteErr != nil {
+			err = errors.Join(err, deleteErr)
+			continue
 		}
+		deleted = append(deleted, server)
 	}
 
 	for _, server := range toUpdate {
-		err := client.UpdateHTTPServer(ctx, upstream, server)
-		if err != nil {
-			return nil, nil, nil, fmt.Errorf("failed to update servers of %v upstream: %w", upstream, err)
+		updateErr := client.UpdateHTTPServer(ctx, upstream, server)
+		if updateErr != nil {
+			err = errors.Join(err, updateErr)
+			continue
 		}
+		updated = append(updated, server)
 	}
 
-	return toAdd, toDelete, toUpdate, nil
+	if err != nil {
+		err = fmt.Errorf("failed to update servers of %s upstream: %w", upstream, err)
+	}
+
+	return added, deleted, updated, err
 }
 
-// haveSameParameters checks if a given server has the same parameters as a server already present in NGINX. Order matters.
-func haveSameParameters(newServer UpstreamServer, serverNGX UpstreamServer) bool {
-	newServer.ID = serverNGX.ID
-
-	if serverNGX.MaxConns != nil && newServer.MaxConns == nil {
-		newServer.MaxConns = &defaultMaxConns
+func deduplicateServers(upstream string, servers []UpstreamServer) ([]UpstreamServer, error) {
+	type serverCheck struct {
+		server UpstreamServer
+		valid  bool
 	}
 
-	if serverNGX.MaxFails != nil && newServer.MaxFails == nil {
-		newServer.MaxFails = &defaultMaxFails
+	serverMap := make(map[string]*serverCheck, len(servers))
+	var err error
+	for _, server := range servers {
+		if prev, ok := serverMap[server.Server]; ok {
+			if !prev.valid {
+				continue
+			}
+			if !server.hasSameParametersAs(prev.server) {
+				prev.valid = false
+				err = errors.Join(err, fmt.Errorf(
+					"failed to update %s server to %s upstream: %w",
+					server.Server, upstream, ErrParameterMismatch))
+			}
+			continue
+		}
+		serverMap[server.Server] = &serverCheck{server, true}
+	}
+	retServers := make([]UpstreamServer, 0, len(serverMap))
+	for _, server := range servers {
+		if check, ok := serverMap[server.Server]; ok && check.valid {
+			retServers = append(retServers, server)
+			delete(serverMap, server.Server)
+		}
+	}
+	return retServers, err
+}
+
+// hasSameParametersAs checks if a given server has the same parameters.
+func (s UpstreamServer) hasSameParametersAs(compareServer UpstreamServer) bool {
+	s.ID = compareServer.ID
+	s.applyDefaults()
+	compareServer.applyDefaults()
+	return reflect.DeepEqual(s, compareServer)
+}
+
+func (s *UpstreamServer) applyDefaults() {
+	if s.MaxConns == nil {
+		s.MaxConns = &defaultMaxConns
 	}
 
-	if serverNGX.FailTimeout != "" && newServer.FailTimeout == "" {
-		newServer.FailTimeout = defaultFailTimeout
+	if s.MaxFails == nil {
+		s.MaxFails = &defaultMaxFails
 	}
 
-	if serverNGX.SlowStart != "" && newServer.SlowStart == "" {
-		newServer.SlowStart = defaultSlowStart
+	if s.FailTimeout == "" {
+		s.FailTimeout = defaultFailTimeout
 	}
 
-	if serverNGX.Backup != nil && newServer.Backup == nil {
-		newServer.Backup = &defaultBackup
+	if s.SlowStart == "" {
+		s.SlowStart = defaultSlowStart
 	}
 
-	if serverNGX.Down != nil && newServer.Down == nil {
-		newServer.Down = &defaultDown
+	if s.Backup == nil {
+		s.Backup = &defaultBackup
 	}
 
-	if serverNGX.Weight != nil && newServer.Weight == nil {
-		newServer.Weight = &defaultWeight
+	if s.Down == nil {
+		s.Down = &defaultDown
 	}
 
-	return reflect.DeepEqual(newServer, serverNGX)
+	if s.Weight == nil {
+		s.Weight = &defaultWeight
+	}
 }
 
 func determineUpdates(updatedServers []UpstreamServer, nginxServers []UpstreamServer) (toAdd []UpstreamServer, toRemove []UpstreamServer, toUpdate []UpstreamServer) {
 	for _, server := range updatedServers {
 		updateFound := false
 		for _, serverNGX := range nginxServers {
-			if server.Server == serverNGX.Server && !haveSameParameters(server, serverNGX) {
+			if server.Server == serverNGX.Server && !server.hasSameParametersAs(serverNGX) {
 				server.ID = serverNGX.ID
 				updateFound = true
 				break
@@ -906,7 +1002,7 @@ func determineUpdates(updatedServers []UpstreamServer, nginxServers []UpstreamSe
 		}
 	}
 
-	return
+	return toAdd, toRemove, toUpdate
 }
 
 func (client *NginxClient) getIDOfHTTPServer(ctx context.Context, upstream string, name string) (int, error) {
@@ -1018,6 +1114,7 @@ func (client *NginxClient) patch(ctx context.Context, path string, input interfa
 	if err != nil {
 		return fmt.Errorf("failed to create a patch request: %w", err)
 	}
+	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := client.httpClient.Do(req)
 	if err != nil {
@@ -1060,9 +1157,13 @@ func (client *NginxClient) AddStreamServer(ctx context.Context, upstream string,
 	if id != -1 {
 		return fmt.Errorf("failed to add %v stream server to %v upstream: %w", server.Server, upstream, ErrServerExists)
 	}
+	err = client.addStreamServer(ctx, upstream, server)
+	return err
+}
 
+func (client *NginxClient) addStreamServer(ctx context.Context, upstream string, server StreamUpstreamServer) error {
 	path := fmt.Sprintf("stream/upstreams/%v/servers/", upstream)
-	err = client.post(ctx, path, &server)
+	err := client.post(ctx, path, &server)
 	if err != nil {
 		return fmt.Errorf("failed to add %v stream server to %v upstream: %w", server.Server, upstream, err)
 	}
@@ -1078,9 +1179,13 @@ func (client *NginxClient) DeleteStreamServer(ctx context.Context, upstream stri
 	if id == -1 {
 		return fmt.Errorf("failed to remove %v stream server from %v upstream: %w", server, upstream, ErrServerNotFound)
 	}
+	err = client.deleteStreamServer(ctx, upstream, server, id)
+	return err
+}
 
-	path := fmt.Sprintf("stream/upstreams/%v/servers/%v", upstream, id)
-	err = client.delete(ctx, path, http.StatusOK)
+func (client *NginxClient) deleteStreamServer(ctx context.Context, upstream, server string, serverID int) error {
+	path := fmt.Sprintf("stream/upstreams/%v/servers/%v", upstream, serverID)
+	err := client.delete(ctx, path, http.StatusOK)
 	if err != nil {
 		return fmt.Errorf("failed to remove %v stream server from %v upstream: %w", server, upstream, err)
 	}
@@ -1091,6 +1196,9 @@ func (client *NginxClient) DeleteStreamServer(ctx context.Context, upstream stri
 // Servers that are in the slice, but don't exist in NGINX will be added to NGINX.
 // Servers that aren't in the slice, but exist in NGINX, will be removed from NGINX.
 // Servers that are in the slice and exist in NGINX, but have different parameters, will be updated.
+// The client will attempt to update all servers, returning all the errors that occurred.
+// If there are duplicate servers with equivalent parameters, the duplicates will be ignored.
+// If there are duplicate servers with different parameters, those server entries will be ignored and an error returned.
 func (client *NginxClient) UpdateStreamServers(ctx context.Context, upstream string, servers []StreamUpstreamServer) (added []StreamUpstreamServer, deleted []StreamUpstreamServer, updated []StreamUpstreamServer, err error) {
 	serversInNginx, err := client.GetStreamServers(ctx, upstream)
 	if err != nil {
@@ -1103,30 +1211,42 @@ func (client *NginxClient) UpdateStreamServers(ctx context.Context, upstream str
 		formattedServers = append(formattedServers, server)
 	}
 
+	formattedServers, err = deduplicateStreamServers(upstream, formattedServers)
+
 	toAdd, toDelete, toUpdate := determineStreamUpdates(formattedServers, serversInNginx)
 
 	for _, server := range toAdd {
-		err := client.AddStreamServer(ctx, upstream, server)
-		if err != nil {
-			return nil, nil, nil, fmt.Errorf("failed to update stream servers of %v upstream: %w", upstream, err)
+		addErr := client.addStreamServer(ctx, upstream, server)
+		if addErr != nil {
+			err = errors.Join(err, addErr)
+			continue
 		}
+		added = append(added, server)
 	}
 
 	for _, server := range toDelete {
-		err := client.DeleteStreamServer(ctx, upstream, server.Server)
-		if err != nil {
-			return nil, nil, nil, fmt.Errorf("failed to update stream servers of %v upstream: %w", upstream, err)
+		deleteErr := client.deleteStreamServer(ctx, upstream, server.Server, server.ID)
+		if deleteErr != nil {
+			err = errors.Join(err, deleteErr)
+			continue
 		}
+		deleted = append(deleted, server)
 	}
 
 	for _, server := range toUpdate {
-		err := client.UpdateStreamServer(ctx, upstream, server)
-		if err != nil {
-			return nil, nil, nil, fmt.Errorf("failed to update stream servers of %v upstream: %w", upstream, err)
+		updateErr := client.UpdateStreamServer(ctx, upstream, server)
+		if updateErr != nil {
+			err = errors.Join(err, updateErr)
+			continue
 		}
+		updated = append(updated, server)
 	}
 
-	return toAdd, toDelete, toUpdate, nil
+	if err != nil {
+		err = fmt.Errorf("failed to update stream servers of %s upstream: %w", upstream, err)
+	}
+
+	return added, deleted, updated, err
 }
 
 func (client *NginxClient) getIDOfStreamServer(ctx context.Context, upstream string, name string) (int, error) {
@@ -1144,45 +1264,82 @@ func (client *NginxClient) getIDOfStreamServer(ctx context.Context, upstream str
 	return -1, nil
 }
 
-// haveSameParametersForStream checks if a given server has the same parameters as a server already present in NGINX. Order matters.
-func haveSameParametersForStream(newServer StreamUpstreamServer, serverNGX StreamUpstreamServer) bool {
-	newServer.ID = serverNGX.ID
-	if serverNGX.MaxConns != nil && newServer.MaxConns == nil {
-		newServer.MaxConns = &defaultMaxConns
+func deduplicateStreamServers(upstream string, servers []StreamUpstreamServer) ([]StreamUpstreamServer, error) {
+	type serverCheck struct {
+		server StreamUpstreamServer
+		valid  bool
 	}
 
-	if serverNGX.MaxFails != nil && newServer.MaxFails == nil {
-		newServer.MaxFails = &defaultMaxFails
+	serverMap := make(map[string]*serverCheck, len(servers))
+	var err error
+	for _, server := range servers {
+		if prev, ok := serverMap[server.Server]; ok {
+			if !prev.valid {
+				continue
+			}
+			if !server.hasSameParametersAs(prev.server) {
+				prev.valid = false
+				err = errors.Join(err, fmt.Errorf(
+					"failed to update stream %s server to %s upstream: %w",
+					server.Server, upstream, ErrParameterMismatch))
+			}
+			continue
+		}
+		serverMap[server.Server] = &serverCheck{server, true}
+	}
+	retServers := make([]StreamUpstreamServer, 0, len(serverMap))
+	for _, server := range servers {
+		if check, ok := serverMap[server.Server]; ok && check.valid {
+			retServers = append(retServers, server)
+			delete(serverMap, server.Server)
+		}
+	}
+	return retServers, err
+}
+
+// hasSameParametersAs checks if a given server has the same parameters.
+func (s StreamUpstreamServer) hasSameParametersAs(compareServer StreamUpstreamServer) bool {
+	s.ID = compareServer.ID
+	s.applyDefaults()
+	compareServer.applyDefaults()
+	return reflect.DeepEqual(s, compareServer)
+}
+
+func (s *StreamUpstreamServer) applyDefaults() {
+	if s.MaxConns == nil {
+		s.MaxConns = &defaultMaxConns
 	}
 
-	if serverNGX.FailTimeout != "" && newServer.FailTimeout == "" {
-		newServer.FailTimeout = defaultFailTimeout
+	if s.MaxFails == nil {
+		s.MaxFails = &defaultMaxFails
 	}
 
-	if serverNGX.SlowStart != "" && newServer.SlowStart == "" {
-		newServer.SlowStart = defaultSlowStart
+	if s.FailTimeout == "" {
+		s.FailTimeout = defaultFailTimeout
 	}
 
-	if serverNGX.Backup != nil && newServer.Backup == nil {
-		newServer.Backup = &defaultBackup
+	if s.SlowStart == "" {
+		s.SlowStart = defaultSlowStart
 	}
 
-	if serverNGX.Down != nil && newServer.Down == nil {
-		newServer.Down = &defaultDown
+	if s.Backup == nil {
+		s.Backup = &defaultBackup
 	}
 
-	if serverNGX.Weight != nil && newServer.Weight == nil {
-		newServer.Weight = &defaultWeight
+	if s.Down == nil {
+		s.Down = &defaultDown
 	}
 
-	return reflect.DeepEqual(newServer, serverNGX)
+	if s.Weight == nil {
+		s.Weight = &defaultWeight
+	}
 }
 
 func determineStreamUpdates(updatedServers []StreamUpstreamServer, nginxServers []StreamUpstreamServer) (toAdd []StreamUpstreamServer, toRemove []StreamUpstreamServer, toUpdate []StreamUpstreamServer) {
 	for _, server := range updatedServers {
 		updateFound := false
 		for _, serverNGX := range nginxServers {
-			if server.Server == serverNGX.Server && !haveSameParametersForStream(server, serverNGX) {
+			if server.Server == serverNGX.Server && !server.hasSameParametersAs(serverNGX) {
 				server.ID = serverNGX.ID
 				updateFound = true
 				break
@@ -1219,7 +1376,7 @@ func determineStreamUpdates(updatedServers []StreamUpstreamServer, nginxServers 
 		}
 	}
 
-	return
+	return toAdd, toRemove, toUpdate
 }
 
 // GetStats gets process, slab, connection, request, ssl, zone, stream zone, upstream and stream upstream related stats from the NGINX Plus API.
@@ -1553,6 +1710,30 @@ func (client *NginxClient) GetNginxInfo(ctx context.Context) (*NginxInfo, error)
 	return &info, nil
 }
 
+// GetNginxLicense returns Nginx License data with a context.
+func (client *NginxClient) GetNginxLicense(ctx context.Context) (*NginxLicense, error) {
+	var data NginxLicense
+
+	info, err := client.GetNginxInfo(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get nginx info: %w", err)
+	}
+	release, err := extractPlusVersionValues(info.Build)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get nginx plus release: %w", err)
+	}
+
+	if (client.apiVersion < 9) || (release < 33) {
+		return &data, nil
+	}
+
+	err = client.get(ctx, "license", &data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get license: %w", err)
+	}
+	return &data, nil
+}
+
 // GetCaches returns Cache stats with a context.
 func (client *NginxClient) GetCaches(ctx context.Context) (*Caches, error) {
 	var caches Caches
@@ -1620,7 +1801,7 @@ func (client *NginxClient) GetStreamServerZones(ctx context.Context) (*StreamSer
 	if err != nil {
 		var ie *internalError
 		if errors.As(err, &ie) {
-			if ie.Code == pathNotFoundCode {
+			if ie.Code() == pathNotFoundCode {
 				return &zones, nil
 			}
 		}
@@ -1646,7 +1827,7 @@ func (client *NginxClient) GetStreamUpstreams(ctx context.Context) (*StreamUpstr
 	if err != nil {
 		var ie *internalError
 		if errors.As(err, &ie) {
-			if ie.Code == pathNotFoundCode {
+			if ie.Code() == pathNotFoundCode {
 				return &upstreams, nil
 			}
 		}
@@ -1662,7 +1843,7 @@ func (client *NginxClient) GetStreamZoneSync(ctx context.Context) (*StreamZoneSy
 	if err != nil {
 		var ie *internalError
 		if errors.As(err, &ie) {
-			if ie.Code == pathNotFoundCode {
+			if ie.Code() == pathNotFoundCode {
 				return nil, nil
 			}
 		}
@@ -1886,9 +2067,13 @@ func (client *NginxClient) deleteKeyValPairs(ctx context.Context, zone string, s
 	return nil
 }
 
-// UpdateHTTPServer updates the server of the upstream.
+// UpdateHTTPServer updates the server of the upstream with the matching server ID.
 func (client *NginxClient) UpdateHTTPServer(ctx context.Context, upstream string, server UpstreamServer) error {
 	path := fmt.Sprintf("http/upstreams/%v/servers/%v", upstream, server.ID)
+	// The server ID is expected in the URI, but not expected in the body.
+	// The NGINX API will return
+	//   {"error":{"status":400,"text":"unknown parameter \"id\"","code":"UpstreamConfFormatError"}
+	// if the ID field is present.
 	server.ID = 0
 	err := client.patch(ctx, path, &server, http.StatusOK)
 	if err != nil {
@@ -1898,9 +2083,13 @@ func (client *NginxClient) UpdateHTTPServer(ctx context.Context, upstream string
 	return nil
 }
 
-// UpdateStreamServer updates the stream server of the upstream.
+// UpdateStreamServer updates the stream server of the upstream with the matching server ID.
 func (client *NginxClient) UpdateStreamServer(ctx context.Context, upstream string, server StreamUpstreamServer) error {
 	path := fmt.Sprintf("stream/upstreams/%v/servers/%v", upstream, server.ID)
+	// The server ID is expected in the URI, but not expected in the body.
+	// The NGINX API will return
+	//   {"error":{"status":400,"text":"unknown parameter \"id\"","code":"UpstreamConfFormatError"}
+	// if the ID field is present.
 	server.ID = 0
 	err := client.patch(ctx, path, &server, http.StatusOK)
 	if err != nil {
@@ -1967,7 +2156,7 @@ func (client *NginxClient) GetStreamConnectionsLimit(ctx context.Context) (*Stre
 	if err != nil {
 		var ie *internalError
 		if errors.As(err, &ie) {
-			if ie.Code == pathNotFoundCode {
+			if ie.Code() == pathNotFoundCode {
 				return &limitConns, nil
 			}
 		}
@@ -1987,4 +2176,23 @@ func (client *NginxClient) GetWorkers(ctx context.Context) ([]*Workers, error) {
 		return nil, fmt.Errorf("failed to get workers: %w", err)
 	}
 	return workers, nil
+}
+
+var rePlus = regexp.MustCompile(`-r(\d+)`)
+
+// extractPlusVersionValues.
+func extractPlusVersionValues(input string) (int, error) {
+	var rValue int
+	matches := rePlus.FindStringSubmatch(input)
+
+	if len(matches) < 1 {
+		return 0, fmt.Errorf("%w [%s]", ErrPlusVersionNotFound, input)
+	}
+
+	rValue, err := strconv.Atoi(matches[1])
+	if err != nil {
+		return 0, fmt.Errorf("failed to convert NGINX Plus release to integer: %w", err)
+	}
+
+	return rValue, nil
 }
