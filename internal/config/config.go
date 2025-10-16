@@ -931,13 +931,26 @@ func resolveLabels() map[string]interface{} {
 			result[trimmedKey] = parseJSON(trimmedValue)
 
 		default: // String
-			result[trimmedKey] = trimmedValue
+			if validateLabel(trimmedValue) {
+				result[trimmedKey] = trimmedValue
+			}
 		}
 	}
 
 	slog.Info("Configured labels", "labels", result)
 
 	return result
+}
+
+func validateLabel(labelValue string) bool {
+	const maxLength = 256
+	labelPattern := regexp.MustCompile("^[a-zA-Z0-9]([a-zA-Z0-9-_]{0,254}[a-zA-Z0-9])?$")
+	if len(labelValue) > maxLength || !labelPattern.MatchString(labelValue) {
+		slog.Warn("Label value contains unsupported character ", "label_value", labelValue)
+		return false
+	}
+
+	return true
 }
 
 func resolveEnvironmentVariableLabels() map[string]string {

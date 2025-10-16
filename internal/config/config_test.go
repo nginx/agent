@@ -1234,7 +1234,7 @@ func createConfig() *Config {
 						{
 							Action: "insert",
 							Key:    "label1",
-							Value:  "label 1",
+							Value:  "label-1",
 						},
 						{
 							Action: "insert",
@@ -1314,7 +1314,7 @@ func createConfig() *Config {
 			},
 		},
 		Labels: map[string]any{
-			"label1": "label 1",
+			"label1": "label-1",
 			"label2": "new-value",
 			"label3": 123,
 		},
