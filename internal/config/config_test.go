@@ -5,8 +5,10 @@
 package config
 
 import (
+	"bytes"
 	_ "embed"
 	"errors"
+	"log/slog"
 	"os"
 	"path"
 	"sort"
@@ -161,6 +163,100 @@ func TestNormalizeFunc(t *testing.T) {
 	var expected pflag.NormalizedName = "test-flag-name"
 	result := normalizeFunc(&pflag.FlagSet{}, "test_flag.name")
 	assert.Equal(t, expected, result)
+}
+
+type deprecatedEnvVarsTest struct {
+	name                 string
+	expectedLogContent   string
+	unexpectedLogContent string
+	envVars              map[string]string
+	viperKeys            []string
+	expectWarning        bool
+}
+
+func TestCheckDeprecatedEnvVars(t *testing.T) {
+	tests := []deprecatedEnvVarsTest{
+		{
+			name: "Test 1: should log warning for deprecated env var",
+			envVars: map[string]string{
+				"NGINX_AGENT_SERVER_HOST": "value",
+			},
+			viperKeys:          []string{"some_other_key"},
+			expectedLogContent: "NGINX_AGENT_SERVER_HOST",
+			expectWarning:      true,
+		},
+		{
+			name: "Test 2: should not log warning for valid env var",
+			envVars: map[string]string{
+				"NGINX_AGENT_LOG_LEVEL": "info",
+			},
+			viperKeys:            []string{"log_level"},
+			unexpectedLogContent: "NGINX_AGENT_LOG_LEVEL",
+			expectWarning:        false,
+		},
+		{
+			name: "Test 3: should handle mixed valid and deprecated env vars",
+			envVars: map[string]string{
+				"NGINX_AGENT_LOG_LEVEL":      "info",
+				"NGINX_AGENT_DEPRECATED_VAR": "value",
+			},
+			viperKeys:            []string{"log_level"},
+			expectedLogContent:   "NGINX_AGENT_DEPRECATED_VAR",
+			unexpectedLogContent: "NGINX_AGENT_LOG_LEVEL",
+			expectWarning:        true,
+		},
+		{
+			name: "Test 4: should ignore non-agent env vars",
+			envVars: map[string]string{
+				"NGINX_LICENSE": "value",
+			},
+			viperKeys:     []string{},
+			expectWarning: false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			runDeprecatedEnvVarsTest(t, tc)
+		})
+	}
+}
+
+func runDeprecatedEnvVarsTest(t *testing.T, tc deprecatedEnvVarsTest) {
+	t.Helper()
+
+	originalViper := viperInstance
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
+	defer func() { viperInstance = originalViper }()
+
+	for key, value := range tc.envVars {
+		t.Setenv(key, value)
+	}
+
+	for _, key := range tc.viperKeys {
+		viperInstance.Set(key, "any-value")
+	}
+
+	var logBuffer bytes.Buffer
+	handler := slog.NewTextHandler(&logBuffer, nil)
+	slog.SetDefault(slog.New(handler))
+
+	checkDeprecatedEnvVars()
+
+	logOutput := logBuffer.String()
+
+	if tc.expectWarning {
+		require.NotEmpty(t, logOutput, "Expected a warning log, but got none")
+		assert.Contains(t, logOutput, "Detected deprecated or unknown environment variables")
+		if tc.expectedLogContent != "" {
+			assert.Contains(t, logOutput, tc.expectedLogContent)
+		}
+		if tc.unexpectedLogContent != "" {
+			assert.NotContains(t, logOutput, tc.unexpectedLogContent)
+		}
+	} else {
+		assert.Empty(t, logOutput, "Expected no warning logs")
+	}
 }
 
 func TestResolveAllowedDirectories(t *testing.T) {

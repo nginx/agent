@@ -90,7 +90,7 @@ func checkDeprecatedEnvVars() {
 		viperKey = strings.ToLower(viperKey)
 
 		if _, exists := allViperKeys[viperKey]; !exists {
-			slog.Warn("Detected deprecated environment variables. "+
+			slog.Warn("Detected deprecated or unknown environment variables. "+
 				"Please update to use the latest environment variables. For more information, visit "+
 				"https://docs.nginx.com/nginx-one/agent/configure-instances/configuration-overview/.",
 				"deprecated_env_var", envKey,
