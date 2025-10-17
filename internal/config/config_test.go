@@ -1410,3 +1410,54 @@ func createDefaultCollectorConfig() *Collector {
 		},
 	}
 }
+
+func TestValidateLabel(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     string
+		wantValid bool
+	}{
+		{
+			name:      "Test 1: Valid label - simple",
+			input:     "label123",
+			wantValid: true,
+		},
+		{
+			name:      "Test 2: Valid label - with dash and underscore",
+			input:     "label-123_abc",
+			wantValid: true,
+		},
+		{
+			name:      "Test 3: Invalid label - too long",
+			input:     strings.Repeat("a", 257),
+			wantValid: false,
+		},
+		{
+			name:      "Test 4: Invalid label - special char",
+			input:     "label$",
+			wantValid: false,
+		},
+		{
+			name:      "Test 5: Invalid label - starts with dash",
+			input:     "-label",
+			wantValid: false,
+		},
+		{
+			name:      "Test 6: Invalid label - ends with dash",
+			input:     "label-",
+			wantValid: false,
+		},
+		{
+			name:      "Test 7: Invalid label - empty",
+			input:     "",
+			wantValid: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := validateLabel(tt.input)
+			assert.Equal(t, tt.wantValid, got)
+		})
+	}
+}
