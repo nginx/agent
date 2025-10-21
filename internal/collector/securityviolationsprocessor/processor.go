@@ -48,12 +48,12 @@ func newSecurityViolationsProcessor(next consumer.Logs, settings processor.Setti
 }
 
 func (p *securityViolationsProcessor) Start(ctx context.Context, _ component.Host) error {
-	p.settings.Logger.Info("Starting syslog processor")
+	p.settings.Logger.Info("Starting securityviolations processor")
 	return nil
 }
 
 func (p *securityViolationsProcessor) Shutdown(ctx context.Context) error {
-	p.settings.Logger.Info("Shutting down syslog processor")
+	p.settings.Logger.Info("Shutting down securityviolations processor")
 	return nil
 }
 

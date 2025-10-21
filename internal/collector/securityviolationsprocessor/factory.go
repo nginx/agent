@@ -13,9 +13,9 @@ import (
 	"go.opentelemetry.io/collector/processor"
 )
 
-const typeStr = "syslog"
+const typeStr = "securityviolations"
 
-// NewFactory creates a factory for the syslog processor.
+// NewFactory creates a factory for the securityviolations processor.
 //
 //nolint:ireturn // factory methods return interfaces by design
 func NewFactory() processor.Factory {

@@ -156,9 +156,9 @@ processors:
     send_batch_max_size: {{ $batch.SendBatchMaxSize }}
 {{- end }}
 {{- end }}
-{{- if ne .Processors.Syslog nil }}
-{{- range $key, $value := .Processors.Syslog }}
-  syslog/{{$key}}: {}
+{{- if ne .Processors.SecurityViolations nil }}
+{{- range $key, $value := .Processors.SecurityViolations }}
+  securityviolations/{{$key}}: {}
 {{- end }}
 {{- end }}
 {{- if ne .Processors.LogsGzip nil }}

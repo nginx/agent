@@ -284,11 +284,11 @@ func addDefaultProcessors(collector *Collector) {
 		collector.Processors.LogsGzip["default"] = &LogsGzip{}
 	}
 
-	if collector.Processors.Syslog == nil {
-		collector.Processors.Syslog = make(map[string]*Syslog)
+	if collector.Processors.SecurityViolations == nil {
+		collector.Processors.SecurityViolations = make(map[string]*SecurityViolations)
 	}
-	if _, ok := collector.Processors.Syslog["default"]; !ok {
-		collector.Processors.Syslog["default"] = &Syslog{}
+	if _, ok := collector.Processors.SecurityViolations["default"]; !ok {
+		collector.Processors.SecurityViolations["default"] = &SecurityViolations{}
 	}
 }
 
