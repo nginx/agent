@@ -1176,7 +1176,7 @@ func createConfig() *Config {
 				LogsGzip: map[string]*LogsGzip{
 					"default": {},
 				},
-				Syslog: map[string]*Syslog{"default": {}},
+				SecurityViolations: map[string]*SecurityViolations{"default": {}},
 			},
 			Receivers: Receivers{
 				OtlpReceivers: map[string]*OtlpReceiver{
