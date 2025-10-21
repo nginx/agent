@@ -197,7 +197,20 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 }
 
 func (fms *FileManagerService) ClearCache() {
-	slog.Debug("Clearing cache and temp files")
+	slog.Debug("Clearing cache and backup files")
+
+	for _, fileAction := range fms.fileActions {
+		if fileAction.Action == model.Update || fileAction.Action == model.Delete {
+			tempFilePath := tempBackupFilePath(fileAction.File.GetFileMeta().GetName())
+			if err := os.Remove(tempFilePath); err != nil && !os.IsNotExist(err) {
+				slog.Warn("Unable to delete backup file",
+					"file", fileAction.File.GetFileMeta().GetName(),
+					"error", err,
+				)
+			}
+		}
+	}
+
 	clear(fms.fileActions)
 	clear(fms.previousManifestFiles)
 }
