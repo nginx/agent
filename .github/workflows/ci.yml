@@ -46,6 +46,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: ./.github/actions/configure-goproxy
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
             go-version-file: 'go.mod'
@@ -62,6 +63,7 @@ jobs:
         contents: write
       steps:
           - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+          - uses: ./.github/actions/configure-goproxy
           - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
             with:
                 go-version-file: 'go.mod'
