@@ -162,6 +162,7 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 		return model.Error, errors.New("fileOverview is nil")
 	}
 
+	// check if any file in request is outside the allowed directories
 	allowedErr := fms.checkAllowedDirectory(fileOverview.GetFiles())
 	if allowedErr != nil {
 		return model.Error, allowedErr
@@ -355,18 +356,28 @@ func (fms *FileManagerService) DetermineFileActions(
 	// if file is in manifestFiles but not in modified files, file has been deleted
 	// copy contents, set file action
 	for fileName, manifestFile := range filesMap {
-		_, exists := modifiedFiles[fileName]
+		_, existsInReq := modifiedFiles[fileName]
 
+		// allowed directories may have been updated since manifest file was written
+		// if file is outside allowed directories skip deletion and return error
 		if !fms.agentConfig.IsDirectoryAllowed(fileName) {
 			return nil, fmt.Errorf("error deleting file %s: file not in allowed directories", fileName)
 		}
 
+		// if file is unmanaged skip deletion
+		if manifestFile.GetUnmanaged() {
+			slog.DebugContext(ctx, "Skipping unmanaged file deletion", "file_name", fileName)
+			continue
+		}
+
+		// if file doesn't exist on disk skip deletion
 		if _, err := os.Stat(fileName); os.IsNotExist(err) {
 			slog.DebugContext(ctx, "File already deleted, skipping", "file", fileName)
 			continue
 		}
 
-		if !exists {
+		// go ahead and delete the file
+		if !existsInReq {
 			fileDiff[fileName] = &model.FileCache{
 				File:   manifestFile,
 				Action: model.Delete,
@@ -382,6 +393,7 @@ func (fms *FileManagerService) DetermineFileActions(
 
 		// if file is unmanaged, action is set to unchanged so file is skipped when performing actions
 		if modifiedFile.File.GetUnmanaged() {
+			slog.DebugContext(ctx, "Skipping unmanaged file updates", "file_name", fileName)
 			continue
 		}
 		// if file doesn't exist in the current files, file has been added
@@ -729,6 +741,7 @@ func (fms *FileManagerService) convertToManifestFile(file *mpi.File, referenced 
 			Size:       file.GetFileMeta().GetSize(),
 			Hash:       file.GetFileMeta().GetHash(),
 			Referenced: referenced,
+			Unmanaged:  file.GetUnmanaged(),
 		},
 	}
 }
@@ -750,6 +763,7 @@ func (fms *FileManagerService) convertToFile(manifestFile *model.ManifestFile) *
 			Hash: manifestFile.ManifestFileMeta.Hash,
 			Size: manifestFile.ManifestFileMeta.Size,
 		},
+		Unmanaged: manifestFile.ManifestFileMeta.Unmanaged,
 	}
 }
 
