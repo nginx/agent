@@ -69,8 +69,10 @@ UBUNTU=(
 DEBIAN=(
   debian/pool/agent/n/nginx-agent/nginx-agent_$VERSION~bullseye_arm64.deb
   debian/pool/agent/n/nginx-agent/nginx-agent_$VERSION~bookworm_amd64.deb
+  debian/pool/agent/n/nginx-agent/nginx-agent_$VERSION~trixie_arm64.deb
   debian/pool/agent/n/nginx-agent/nginx-agent_$VERSION~bookworm_arm64.deb
   debian/pool/agent/n/nginx-agent/nginx-agent_$VERSION~bullseye_amd64.deb
+  debian/pool/agent/n/nginx-agent/nginx-agent_$VERSION~trixie_amd64.deb
 )
 AMZN=(
   amzn/2023/aarch64/RPMS/nginx-agent-$VERSION.amzn2023.ngx.aarch64.rpm
