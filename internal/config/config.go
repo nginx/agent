@@ -947,7 +947,9 @@ func validateLabel(labelValue string) bool {
 	const maxLength = 256
 	labelPattern := regexp.MustCompile(regexLabelPattern)
 	if len(labelValue) > maxLength || !labelPattern.MatchString(labelValue) {
-		slog.Warn("Label value contains unsupported character ", "label_value", labelValue)
+		slog.Warn("Label value contains unsupported character or exceed maximum length of 256 characters ",
+			"label_value", labelValue)
+
 		return false
 	}
 
