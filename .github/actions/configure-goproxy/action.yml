@@ -24,8 +24,8 @@ runs:
         if [[ -z "${{ inputs.user }}" ]] || \
         [[ -z "${{ inputs.token }}" ]] || \
         [[ -z "${{ inputs.url }}" ]] || \
-        [[ "${{ github.event.pull_request.head.repo.fork" }} == 'true' ]] ||
-        [[ ${{ startsWith(github.head_ref, 'dependabot-')}} == 'true' ]] ; then
+        [[ "${{ github.event.pull_request.head.repo.fork }}" == 'true' ]] ||
+        [[ "${{ startsWith(github.head_ref, 'dependabot-')}}" == 'true' ]] ; then
           echo "No Artifactory secrets available - using direct GOPROXY"
           GOPROXY_VALUE="direct"
         else
