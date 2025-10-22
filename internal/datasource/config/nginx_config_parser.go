@@ -388,7 +388,6 @@ func (ncp *NginxConfigParser) crossplaneConfigTraverseAPIDetails(
 	callback crossplaneTraverseCallbackAPIDetails,
 	apiType string,
 ) []*model.APIDetails {
-	stop := false
 	var responses []*model.APIDetails
 
 	for _, dir := range root.Parsed {
@@ -397,7 +396,7 @@ func (ncp *NginxConfigParser) crossplaneConfigTraverseAPIDetails(
 			responses = append(responses, response...)
 			continue
 		}
-		response = traverseAPIDetails(ctx, dir, callback, &stop, apiType)
+		response = traverseAPIDetails(ctx, dir, callback, apiType)
 		if response != nil {
 			responses = append(responses, response...)
 		}
@@ -410,26 +409,23 @@ func traverseAPIDetails(
 	ctx context.Context,
 	root *crossplane.Directive,
 	callback crossplaneTraverseCallbackAPIDetails,
-	stop *bool,
 	apiType string,
 ) (response []*model.APIDetails) {
-	if *stop {
-		return nil
-	}
+	var collectedResponses []*model.APIDetails
 
 	for _, child := range root.Block {
-		response = callback(ctx, root, child, apiType)
-		if len(response) > 0 {
-			*stop = true
-			return response
+		currentResponse := callback(ctx, root, child, apiType)
+		if len(currentResponse) > 0 {
+			collectedResponses = append(collectedResponses, currentResponse...)
 		}
-		response = traverseAPIDetails(ctx, child, callback, stop, apiType)
-		if *stop {
-			return response
+
+		recursiveResponse := traverseAPIDetails(ctx, child, callback, apiType)
+		if len(recursiveResponse) > 0 {
+			collectedResponses = append(collectedResponses, recursiveResponse...)
 		}
 	}
 
-	return response
+	return collectedResponses
 }
 
 func (ncp *NginxConfigParser) formatMap(directive *crossplane.Directive) map[string]string {
