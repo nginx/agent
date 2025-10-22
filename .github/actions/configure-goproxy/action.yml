@@ -10,6 +10,10 @@ inputs:
     description: Artifactory token secret name
     required: false
     default: ""
+  url:
+    description: Artifactory URL
+    required: false
+    default: ""
 runs:
   using: 'composite'
   steps:
@@ -24,7 +28,7 @@ runs:
           GOPROXY_VALUE="direct"
         else
           echo "Development mode - using dev Artifactory"
-          GOPROXY_VALUE="https://${{ inputs.user }}:${{ inputs.token }}@${{ secrets.ARTIFACTORY_URL }}"
+          GOPROXY_VALUE="https://${{ inputs.user }}:${{ inputs.token }}@${{ inputs.url }}"
         fi
         echo "GOPROXY=${GOPROXY_VALUE}" >> $GITHUB_ENV
     
