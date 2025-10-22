@@ -46,7 +46,8 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - uses: ./.github/actions/configure-goproxy
+      - name: Configure Go Proxy
+        uses: ./.github/actions/configure-goproxy
         with:
           user: ${{ secrets.ARTIFACTORY_USER }}
           token: ${{ secrets.ARTIFACTORY_TOKEN }}
@@ -67,13 +68,12 @@ jobs:
         contents: write
       steps:
           - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-
-          - uses: ./.github/actions/configure-goproxy
+          - name: Configure Go Proxy
+            uses: ./.github/actions/configure-goproxy
             with:
               user: ${{ secrets.ARTIFACTORY_USER }}
               token: ${{ secrets.ARTIFACTORY_TOKEN }}
               url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-
           - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
             with:
                 go-version-file: 'go.mod'
@@ -91,6 +91,12 @@ jobs:
       runs-on: ubuntu-22.04
       steps:
           - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+          - name: Configure Go Proxy
+            uses: ./.github/actions/configure-goproxy
+            with:
+              user: ${{ secrets.ARTIFACTORY_USER }}
+              token: ${{ secrets.ARTIFACTORY_TOKEN }}
+              url: ${{ secrets.ARTIFACTORY_URL_DEV }}
           - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
             with:
                 go-version-file: 'go.mod'
@@ -105,6 +111,12 @@ jobs:
           - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
             with:
               fetch-tags: 'true'
+          - name: Configure Go Proxy
+            uses: ./.github/actions/configure-goproxy
+            with:
+              user: ${{ secrets.ARTIFACTORY_USER }}
+              token: ${{ secrets.ARTIFACTORY_TOKEN }}
+              url: ${{ secrets.ARTIFACTORY_URL_DEV }}
           - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
             with:
                 go-version-file: 'go.mod'
@@ -136,6 +148,12 @@ jobs:
           version: "3.22"
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Configure Go Proxy
+        uses: ./.github/actions/configure-goproxy
+        with:
+          user: ${{ secrets.ARTIFACTORY_USER }}
+          token: ${{ secrets.ARTIFACTORY_TOKEN }}
+          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version-file: 'go.mod'
@@ -180,6 +198,12 @@ jobs:
             version: "3.22"
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Configure Go Proxy
+        uses: ./.github/actions/configure-goproxy
+        with:
+          user: ${{ secrets.ARTIFACTORY_USER }}
+          token: ${{ secrets.ARTIFACTORY_TOKEN }}
+          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version-file: 'go.mod'
@@ -231,6 +255,12 @@ jobs:
             release: "alpine"
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Configure Go Proxy
+        uses: ./.github/actions/configure-goproxy
+        with:
+          user: ${{ secrets.ARTIFACTORY_USER }}
+          token: ${{ secrets.ARTIFACTORY_TOKEN }}
+          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version-file: 'go.mod'
@@ -292,6 +322,12 @@ jobs:
           path: "/nginx-plus/agent"
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Configure Go Proxy
+        uses: ./.github/actions/configure-goproxy
+        with:
+          user: ${{ secrets.ARTIFACTORY_USER }}
+          token: ${{ secrets.ARTIFACTORY_TOKEN }}
+          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version-file: 'go.mod'
@@ -351,7 +387,13 @@ jobs:
             version: "mainline"
             release: "alpine"
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Configure Go Proxy
+        uses: ./.github/actions/configure-goproxy
+        with:
+          user: ${{ secrets.ARTIFACTORY_USER }}
+          token: ${{ secrets.ARTIFACTORY_TOKEN }}
+          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version-file: 'go.mod'
@@ -412,7 +454,13 @@ jobs:
             release: "debian"
             path: "/nginx-plus/agent"
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Configure Go Proxy
+        uses: ./.github/actions/configure-goproxy
+        with:
+          user: ${{ secrets.ARTIFACTORY_USER }}
+          token: ${{ secrets.ARTIFACTORY_TOKEN }}
+          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version-file: 'go.mod'
@@ -458,6 +506,12 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Configure Go Proxy
+        uses: ./.github/actions/configure-goproxy
+        with:
+          user: ${{ secrets.ARTIFACTORY_USER }}
+          token: ${{ secrets.ARTIFACTORY_TOKEN }}
+          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version-file: 'go.mod'
