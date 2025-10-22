@@ -17,14 +17,14 @@ runs:
       id: configure-goproxy
       shell: bash
       run: |
-        if [[ "${{ secrets.ARTIFACTORY_USER }}" == "" ]] || 
+        if [[ "${{ inputs.user }}" == "" ]] || 
         [[ ${{ github.event.pull_request.head.repo.fork }} ]] ||
         [[ ${{ startsWith(github.head_ref, 'dependabot-')}} ]] ; then
           echo "No Artifactory secrets available - using direct GOPROXY"
           GOPROXY_VALUE="direct"
         else
           echo "Development mode - using dev Artifactory"
-          GOPROXY_VALUE="https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@${{ secrets.ARTIFACTORY_URL }}"
+          GOPROXY_VALUE="https://${{ inputs.user }}:${{ inputs.token }}@${{ secrets.ARTIFACTORY_URL }}"
         fi
         echo "GOPROXY=${GOPROXY_VALUE}" >> $GITHUB_ENV
     
