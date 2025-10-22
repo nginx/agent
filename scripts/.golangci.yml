@@ -1,8 +1,24 @@
-run:
-  timeout: 3m
-  go: '1.23.2'
+version: "2"
 linters:
   disable:
-    - gosimple
     - staticcheck
     - unused
+    - errcheck
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
