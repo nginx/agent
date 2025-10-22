@@ -21,7 +21,7 @@ runs:
       id: configure-goproxy
       shell: bash
       run: |
-        if [[ "${{ inputs.user }}" == "" ]] || 
+        if [[ ! -z ${{ inputs.user }} ]] || 
         [[ ${{ github.event.pull_request.head.repo.fork }} ]] ||
         [[ ${{ startsWith(github.head_ref, 'dependabot-')}} ]] ; then
           echo "No Artifactory secrets available - using direct GOPROXY"
