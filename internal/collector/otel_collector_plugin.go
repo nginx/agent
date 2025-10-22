@@ -46,7 +46,7 @@ const (
 		`? (let utcTime = ` +
 		`date(timestamp).UTC(); utcTime.Format("Jan  2 15:04:05")) : date(timestamp).Format("Jan 02 15:04:05"); ` +
 		`split(body, ">")[0] + ">" + newTimestamp + " " + split(body, " ", 2)[1])'`
-	debugOTelConfigPath = "/var/lib/nginx-agent/opentelemetry-collector-agent-debug.yaml"
+	debugOTelConfigFile = "/opentelemetry-collector-agent-debug.yaml"
 )
 
 type (
@@ -92,6 +92,8 @@ func NewCollector(conf *config.Config) (*Collector, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	debugOTelConfigPath := conf.LibDir + debugOTelConfigFile
 
 	return &Collector{
 		config:                  conf,
