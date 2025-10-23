@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-22.04
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
     env:
-      GOPROXY: "https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@azr.artifactory.f5net.com/artifactory/api/go/f5-nginx-go-dev"
+      GOPROXY: "https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@${{ secrets.ARTIFACTORY_URL_DEV }}"
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
@@ -46,6 +46,12 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Configure Go Proxy
+        uses: ./.github/actions/configure-goproxy
+        with:
+          user: ${{ secrets.ARTIFACTORY_USER }}
+          token: ${{ secrets.ARTIFACTORY_TOKEN }}
+          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
             go-version-file: 'go.mod'
@@ -62,26 +68,35 @@ jobs:
         contents: write
       steps:
           - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+          - name: Configure Go Proxy
+            uses: ./.github/actions/configure-goproxy
+            with:
+              user: ${{ secrets.ARTIFACTORY_USER }}
+              token: ${{ secrets.ARTIFACTORY_TOKEN }}
+              url: ${{ secrets.ARTIFACTORY_URL_DEV }}
           - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
             with:
                 go-version-file: 'go.mod'
                 cache: false
           - name: Run Unit Tests
             run: make unit-test
-          - name: Check Coverage
-            uses: vladopajic/go-test-coverage@dd4b1f21c4e48db0425e1187d2845404b1206919
+          - name: Uplaod Test Coverage
+            uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
             with:
-              config: ./.testcoverage.yaml
-              ## when token is not specified (value '') this feature is turned off
-              git-token: ${{ github.ref_name == 'main' && secrets.GITHUB_TOKEN || '' }}
-              ## name of orphaned branch where badges are stored
-              git-branch: badges
+              files: ./build/test/coverage.out
+              token: ${{ secrets.CODECOV_TOKEN }}
 
   race-condition-test:
       name: Unit tests with race condition detection
       runs-on: ubuntu-22.04
       steps:
           - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+          - name: Configure Go Proxy
+            uses: ./.github/actions/configure-goproxy
+            with:
+              user: ${{ secrets.ARTIFACTORY_USER }}
+              token: ${{ secrets.ARTIFACTORY_TOKEN }}
+              url: ${{ secrets.ARTIFACTORY_URL_DEV }}
           - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
             with:
                 go-version-file: 'go.mod'
@@ -96,6 +111,12 @@ jobs:
           - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
             with:
               fetch-tags: 'true'
+          - name: Configure Go Proxy
+            uses: ./.github/actions/configure-goproxy
+            with:
+              user: ${{ secrets.ARTIFACTORY_USER }}
+              token: ${{ secrets.ARTIFACTORY_TOKEN }}
+              url: ${{ secrets.ARTIFACTORY_URL_DEV }}
           - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
             with:
                 go-version-file: 'go.mod'
@@ -127,6 +148,12 @@ jobs:
           version: "3.22"
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Configure Go Proxy
+        uses: ./.github/actions/configure-goproxy
+        with:
+          user: ${{ secrets.ARTIFACTORY_USER }}
+          token: ${{ secrets.ARTIFACTORY_TOKEN }}
+          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version-file: 'go.mod'
@@ -171,6 +198,12 @@ jobs:
             version: "3.22"
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Configure Go Proxy
+        uses: ./.github/actions/configure-goproxy
+        with:
+          user: ${{ secrets.ARTIFACTORY_USER }}
+          token: ${{ secrets.ARTIFACTORY_TOKEN }}
+          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version-file: 'go.mod'
@@ -222,6 +255,12 @@ jobs:
             release: "alpine"
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Configure Go Proxy
+        uses: ./.github/actions/configure-goproxy
+        with:
+          user: ${{ secrets.ARTIFACTORY_USER }}
+          token: ${{ secrets.ARTIFACTORY_TOKEN }}
+          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version-file: 'go.mod'
@@ -283,6 +322,12 @@ jobs:
           path: "/nginx-plus/agent"
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Configure Go Proxy
+        uses: ./.github/actions/configure-goproxy
+        with:
+          user: ${{ secrets.ARTIFACTORY_USER }}
+          token: ${{ secrets.ARTIFACTORY_TOKEN }}
+          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version-file: 'go.mod'
@@ -293,7 +338,7 @@ jobs:
           name: nginx-agent-unsigned-snapshots
           path: build
       - name: Login to Docker Registry
-        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           registry: ${{ secrets.TEST_REGISTRY_URL }}
           username: ${{ secrets.REGISTRY_USERNAME }}
@@ -342,7 +387,13 @@ jobs:
             version: "mainline"
             release: "alpine"
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Configure Go Proxy
+        uses: ./.github/actions/configure-goproxy
+        with:
+          user: ${{ secrets.ARTIFACTORY_USER }}
+          token: ${{ secrets.ARTIFACTORY_TOKEN }}
+          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version-file: 'go.mod'
@@ -403,7 +454,13 @@ jobs:
             release: "debian"
             path: "/nginx-plus/agent"
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Configure Go Proxy
+        uses: ./.github/actions/configure-goproxy
+        with:
+          user: ${{ secrets.ARTIFACTORY_USER }}
+          token: ${{ secrets.ARTIFACTORY_TOKEN }}
+          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version-file: 'go.mod'
@@ -414,7 +471,7 @@ jobs:
           name: nginx-agent-unsigned-snapshots
           path: build
       - name: Login to Docker Registry
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           registry: ${{ secrets.TEST_REGISTRY_URL }}
           username: ${{ secrets.REGISTRY_USERNAME }}
@@ -449,6 +506,12 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Configure Go Proxy
+        uses: ./.github/actions/configure-goproxy
+        with:
+          user: ${{ secrets.ARTIFACTORY_USER }}
+          token: ${{ secrets.ARTIFACTORY_TOKEN }}
+          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version-file: 'go.mod'

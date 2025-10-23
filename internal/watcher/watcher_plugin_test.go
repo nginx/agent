@@ -17,8 +17,6 @@ import (
 	"github.com/nginx/agent/v3/internal/watcher/credentials"
 
 	"github.com/nginx/agent/v3/internal/bus/busfakes"
-	"google.golang.org/protobuf/types/known/timestamppb"
-
 	"github.com/nginx/agent/v3/internal/watcher/health"
 	"github.com/nginx/agent/v3/internal/watcher/instance"
 	"github.com/nginx/agent/v3/internal/watcher/watcherfakes"
@@ -26,7 +24,6 @@ import (
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/logger"
-	"github.com/nginx/agent/v3/pkg/id"
 	testModel "github.com/nginx/agent/v3/test/model"
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/nginx/agent/v3/test/types"
@@ -169,70 +166,78 @@ func TestWatcher_Process_ConfigApplySuccessfulTopic(t *testing.T) {
 	ctx := context.Background()
 	data := protos.NginxOssInstance([]string{})
 
-	response := &model.ConfigApplySuccess{
-		ConfigContext: &model.NginxConfigContext{
-			InstanceID: data.GetInstanceMeta().GetInstanceId(),
-		},
-		DataPlaneResponse: &mpi.DataPlaneResponse{
-			MessageMeta: &mpi.MessageMeta{
-				MessageId:     id.GenerateMessageID(),
-				CorrelationId: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
-				Timestamp:     timestamppb.Now(),
+	tests := []struct {
+		data       *model.EnableWatchers
+		name       string
+		inProgress []string
+		callCount  int
+		empty      bool
+	}{
+		{
+			name: "Test 1: Reparse Config",
+			data: &model.EnableWatchers{
+				ConfigContext: &model.NginxConfigContext{
+					InstanceID: data.GetInstanceMeta().GetInstanceId(),
+				},
+				InstanceID: data.GetInstanceMeta().GetInstanceId(),
 			},
-			CommandResponse: &mpi.CommandResponse{
-				Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
-				Message: "Config apply successful",
-				Error:   "",
+			callCount: 1,
+			empty:     true,
+			inProgress: []string{
+				data.GetInstanceMeta().GetInstanceId(),
 			},
-			InstanceId: data.GetInstanceMeta().GetInstanceId(),
+		},
+		{
+			name: "Test 2: Don't Reparse Config",
+			data: &model.EnableWatchers{
+				ConfigContext: &model.NginxConfigContext{},
+				InstanceID:    data.GetInstanceMeta().GetInstanceId(),
+			},
+			callCount: 0,
+			empty:     true,
+			inProgress: []string{
+				data.GetInstanceMeta().GetInstanceId(),
+			},
+		},
+		{
+			name: "Test 3: More than one inProgress Config",
+			data: &model.EnableWatchers{
+				ConfigContext: &model.NginxConfigContext{
+					InstanceID: data.GetInstanceMeta().GetInstanceId(),
+				},
+				InstanceID: data.GetInstanceMeta().GetInstanceId(),
+			},
+			callCount: 1,
+			empty:     false,
+			inProgress: []string{
+				data.GetInstanceMeta().GetInstanceId(),
+				protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+			},
 		},
 	}
 
-	message := &bus.Message{
-		Topic: bus.ConfigApplySuccessfulTopic,
-		Data:  response,
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			message := &bus.Message{
+				Topic: bus.EnableWatchersTopic,
+				Data:  test.data,
+			}
+
+			fakeWatcherService := &watcherfakes.FakeInstanceWatcherServiceInterface{}
+			watcherPlugin := NewWatcher(types.AgentConfig())
+			watcherPlugin.instanceWatcherService = fakeWatcherService
+			watcherPlugin.instancesWithConfigApplyInProgress = test.inProgress
+
+			watcherPlugin.Process(ctx, message)
+
+			assert.Equal(t, test.callCount, fakeWatcherService.HandleNginxConfigContextUpdateCallCount())
+			if test.empty {
+				assert.Empty(t, watcherPlugin.instancesWithConfigApplyInProgress)
+			} else {
+				assert.NotEmpty(t, watcherPlugin.instancesWithConfigApplyInProgress)
+			}
+		})
 	}
-
-	fakeWatcherService := &watcherfakes.FakeInstanceWatcherServiceInterface{}
-	watcherPlugin := NewWatcher(types.AgentConfig())
-	watcherPlugin.instanceWatcherService = fakeWatcherService
-	watcherPlugin.instancesWithConfigApplyInProgress = []string{data.GetInstanceMeta().GetInstanceId()}
-
-	watcherPlugin.Process(ctx, message)
-
-	assert.Equal(t, 1, fakeWatcherService.HandleNginxConfigContextUpdateCallCount())
-	assert.Empty(t, watcherPlugin.instancesWithConfigApplyInProgress)
-}
-
-func TestWatcher_Process_RollbackCompleteTopic(t *testing.T) {
-	ctx := context.Background()
-	ossInstance := protos.NginxOssInstance([]string{})
-
-	response := &mpi.DataPlaneResponse{
-		MessageMeta: &mpi.MessageMeta{
-			MessageId:     id.GenerateMessageID(),
-			CorrelationId: "dfsbhj6-bc92-30c1-a9c9-85591422068e",
-			Timestamp:     timestamppb.Now(),
-		},
-		CommandResponse: &mpi.CommandResponse{
-			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
-			Message: "Config apply successful",
-			Error:   "",
-		},
-		InstanceId: ossInstance.GetInstanceMeta().GetInstanceId(),
-	}
-
-	message := &bus.Message{
-		Topic: bus.ConfigApplyCompleteTopic,
-		Data:  response,
-	}
-
-	watcherPlugin := NewWatcher(types.AgentConfig())
-	watcherPlugin.instancesWithConfigApplyInProgress = []string{ossInstance.GetInstanceMeta().GetInstanceId()}
-
-	watcherPlugin.Process(ctx, message)
-
-	assert.Empty(t, watcherPlugin.instancesWithConfigApplyInProgress)
 }
 
 func TestWatcher_Subscriptions(t *testing.T) {
@@ -241,9 +246,8 @@ func TestWatcher_Subscriptions(t *testing.T) {
 		t,
 		[]string{
 			bus.ConfigApplyRequestTopic,
-			bus.ConfigApplySuccessfulTopic,
-			bus.ConfigApplyCompleteTopic,
 			bus.DataPlaneHealthRequestTopic,
+			bus.EnableWatchersTopic,
 		},
 		watcherPlugin.Subscriptions(),
 	)

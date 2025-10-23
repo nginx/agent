@@ -35,8 +35,9 @@ func BenchmarkNginxConfigParser_Parse(b *testing.B) {
 	for _, configFilePath := range configFilePaths {
 		func(configFilePath string) {
 			b.Run(configFilePath, func(bb *testing.B) {
+				absPath, _ := filepath.Abs(configFilePath)
 				agentConfig.AllowedDirectories = []string{
-					filepath.Dir(configFilePath),
+					filepath.Dir(absPath),
 				}
 
 				nginxConfigParser := NewNginxConfigParser(

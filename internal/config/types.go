@@ -9,9 +9,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"path/filepath"
-	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -358,10 +357,7 @@ func (col *Collector) Validate(allowedDirectories []string) error {
 	var err error
 	cleanedConfPath := filepath.Clean(col.ConfigPath)
 
-	allowed, err := isAllowedDir(cleanedConfPath, allowedDirectories)
-	if err != nil {
-		return err
-	}
+	allowed := isAllowedDir(cleanedConfPath, allowedDirectories)
 	if !allowed {
 		err = errors.Join(err, fmt.Errorf("collector path %s not allowed", col.ConfigPath))
 	}
@@ -380,10 +376,7 @@ func (nr *NginxReceiver) Validate(allowedDirectories []string) error {
 	}
 
 	for _, al := range nr.AccessLogs {
-		allowed, allowedError := isAllowedDir(al.FilePath, allowedDirectories)
-		if allowedError != nil {
-			err = errors.Join(err, fmt.Errorf("invalid nginx receiver access log path: %s", al.FilePath))
-		}
+		allowed := isAllowedDir(al.FilePath, allowedDirectories)
 		if !allowed {
 			err = errors.Join(err, fmt.Errorf("nginx receiver access log path %s not allowed", al.FilePath))
 		}
@@ -398,13 +391,9 @@ func (nr *NginxReceiver) Validate(allowedDirectories []string) error {
 	return err
 }
 
-func (c *Config) IsDirectoryAllowed(directory string) bool {
-	allow, err := isAllowedDir(directory, c.AllowedDirectories)
-	if err != nil {
-		slog.Warn("Unable to determine if directory is allowed", "error", err)
-		return false
-	}
-
+// IsAllowedDirectory checks if the given path is in the list of allowed directories.
+func (c *Config) IsDirectoryAllowed(path string) bool {
+	allow := isAllowedDir(path, c.AllowedDirectories)
 	return allow
 }
 
@@ -482,32 +471,19 @@ func (c *Config) IsCommandServerProxyConfigured() bool {
 }
 
 // isAllowedDir checks if the given path is in the list of allowed directories.
-// It returns true if the path is allowed, false otherwise.
-// If the path is allowed but does not exist, it also logs a warning.
-// It also checks if the path is a file, in which case it checks the parent directory of the file.
-func isAllowedDir(path string, allowedDirs []string) (bool, error) {
-	if len(allowedDirs) == 0 {
-		return false, errors.New("no allowed directories configured")
+// It recursively checks the parent directories of the path, until it finds a match or reaches the root directory.
+func isAllowedDir(path string, allowedDirs []string) bool {
+	return checkDirIsAllowed(filepath.Clean(path), allowedDirs)
+}
+
+func checkDirIsAllowed(path string, allowedDirs []string) bool {
+	if slices.Contains(allowedDirs, path) {
+		return true
 	}
 
-	directoryPath := path
-	// Check if the path is a file, regex matches when end of string is /<filename>.<extension>
-	isFilePath, err := regexp.MatchString(`/(\w+)\.(\w+)$`, directoryPath)
-	if err != nil {
-		return false, errors.New("error matching path" + directoryPath)
+	if path == "/" || !strings.HasPrefix(path, "/") { // root directory reached with no match, path is not allowed
+		return false
 	}
 
-	if isFilePath {
-		directoryPath = filepath.Dir(directoryPath)
-	}
-
-	for _, allowedDirectory := range allowedDirs {
-		// Check if the directoryPath starts with the allowedDirectory
-		// This allows for subdirectories within the allowed directories.
-		if strings.HasPrefix(directoryPath, allowedDirectory) {
-			return true, nil
-		}
-	}
-
-	return false, nil
+	return checkDirIsAllowed(filepath.Dir(path), allowedDirs)
 }
