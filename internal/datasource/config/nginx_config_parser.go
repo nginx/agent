@@ -250,18 +250,21 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 			nginxConfigContext.PlusAPIs = append(nginxConfigContext.PlusAPIs, plusAPIs...)
 		}
 
-		if napEnabled && nginxConfigContext.NAPSysLogServer == "" {
-			slog.WarnContext(ctx, fmt.Sprintf("Could not find available local NGINX App Protect syslog"+
-				" server configured on port %s. Security violations will not be collected.",
-				ncp.agentConfig.SyslogServer.Port))
-		}
-
 		fileMeta, err := files.FileMeta(conf.File)
 		if err != nil {
 			slog.WarnContext(ctx, "Unable to get file metadata", "file_name", conf.File, "error", err)
 		} else {
 			nginxConfigContext.Files = append(nginxConfigContext.Files, &mpi.File{FileMeta: fileMeta})
 		}
+	}
+
+	if napEnabled && nginxConfigContext.NAPSysLogServer == "" {
+		slog.WarnContext(ctx, fmt.Sprintf("Could not find available local NGINX App Protect syslog"+
+			" server configured on port %s. Security violations will not be collected.",
+			ncp.agentConfig.SyslogServer.Port))
+	} else {
+		slog.InfoContext(ctx, fmt.Sprintf("Found available local NGINX App Protect syslog"+
+			"server configured on port %s", ncp.agentConfig.SyslogServer.Port))
 	}
 
 	nginxConfigContext.StubStatus = ncp.FindStubStatusAPI(ctx, nginxConfigContext)

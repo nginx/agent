@@ -724,8 +724,6 @@ func (oc *Collector) findAvailableSyslogServer(ctx context.Context, napSyslogSer
 		slog.DebugContext(ctx, "Failed to close syslog server", "address", napSyslogServer, "error", closeError)
 	}
 
-	slog.InfoContext(ctx, "Found valid NAP syslog server", "address", napSyslogServer)
-
 	oc.previousNAPSysLogServer = napSyslogServer
 
 	return napSyslogServer
