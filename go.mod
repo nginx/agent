@@ -61,7 +61,7 @@ require (
 	go.opentelemetry.io/collector/exporter/otlpexporter v0.136.0
 	go.opentelemetry.io/collector/exporter/otlphttpexporter v0.136.0
 	go.opentelemetry.io/collector/extension v1.43.0
-	go.opentelemetry.io/collector/extension/extensionauth v1.42.0
+	go.opentelemetry.io/collector/extension/extensionauth v1.44.0
 	go.opentelemetry.io/collector/extension/xextension v0.137.0
 	go.opentelemetry.io/collector/filter v0.138.0
 	go.opentelemetry.io/collector/otelcol v0.136.0
@@ -369,5 +369,5 @@ require (
 	golang.org/x/net v0.44.0 // indirect
 	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
-	google.golang.org/grpc v1.75.1
+	google.golang.org/grpc v1.76.0
 )
