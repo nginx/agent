@@ -34,7 +34,7 @@ if [[ ! -z ${CERT} ]] && [[ ! -z ${KEY} ]]; then
 fi
 
 if [[ -z ${PKG_REPO} ]]; then
-  echo "defaulting to packages.nginx.com"
+  echo "defaulting to packages.nginx.org"
   PKG_REPO="packages.nginx.org"
 fi
 
@@ -44,7 +44,6 @@ if [[ -z $VERSION ]]; then
   echo "no version provided"
   exit 1
 fi
-
 PKG_DIR="${PKG_REPO}/${PKG_NAME}"
 PKG_REPO_URL="https://${PKG_DIR}"
 
@@ -93,6 +92,11 @@ CENTOS=(
   centos/8/x86_64/RPMS/nginx-agent-$VERSION.el8.ngx.x86_64.rpm
 )
 
+FREEBSD=(
+  freebsd/FreeBSD:12:amd64/latest/nginx-agent-$VERSION.pkg
+  freebsd/FreeBSD:13:amd64/latest/nginx-agent-$VERSION.pkg
+)
+
 uris=(
   ${DEBIAN[@]}
   ${UBUNTU[@]}
@@ -101,6 +105,13 @@ uris=(
   ${AMZN[@]}
   ${SUSE[@]}
 )
+
+majorVersion=$(echo ${VERSION} | cut -d. -f1)
+if [[ ${majorVersion} == 2 ]]; then
+  uris+=(${FREEBSD[@]})
+fi
+
+# Functions
 
 ## Check and download if nginx-agent packages are present in the repository
 check_pkgs () {
@@ -156,7 +167,12 @@ check_repo() {
   else
     echo -e "${GREEN}Found!${NC}"
   fi
+
+  # Grep index.xml for all supported operating system versions
+
 }
+
+# Main
 
 check_repo
 check_pkgs
