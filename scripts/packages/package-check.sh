@@ -167,9 +167,6 @@ check_repo() {
   else
     echo -e "${GREEN}Found!${NC}"
   fi
-
-  # Grep index.xml for all supported operating system versions
-
 }
 
 # Main
