@@ -423,6 +423,7 @@ func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
 	conf.Collector.Processors.Attribute = nil
 	conf.Collector.Processors.Resource = nil
 	conf.Collector.Processors.LogsGzip = nil
+	conf.Collector.Processors.SecurityViolations = nil
 	conf.Collector.Exporters.OtlpExporters = nil
 	conf.Collector.Exporters.PrometheusExporter = &config.PrometheusExporter{
 		Server: &config.ServerConfig{
@@ -747,6 +748,7 @@ func TestCollector_updateNginxAppProtectTcplogReceivers(t *testing.T) {
 	conf.Collector.Processors.Attribute = nil
 	conf.Collector.Processors.Resource = nil
 	conf.Collector.Processors.LogsGzip = nil
+	conf.Collector.Processors.SecurityViolations = nil
 	collector, err := NewCollector(conf)
 	require.NoError(t, err)
 
@@ -929,6 +931,9 @@ func TestCollector_findAvailableSyslogServers(t *testing.T) {
 	conf.Collector.Processors.Attribute = nil
 	conf.Collector.Processors.Resource = nil
 	conf.Collector.Processors.LogsGzip = nil
+	conf.Collector.Processors.SecurityViolations = nil
+	collector, err := NewCollector(conf)
+	require.NoError(t, err)
 
 	tests := []struct {
 		name                    string
@@ -983,7 +988,6 @@ func TestCollector_findAvailableSyslogServers(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			collector, err := NewCollector(conf)
 			require.NoError(t, err)
 
 			collector.previousNAPSysLogServer = test.previousNAPSysLogServer

@@ -283,6 +283,13 @@ func addDefaultProcessors(collector *Collector) {
 	if _, ok := collector.Processors.LogsGzip["default"]; !ok {
 		collector.Processors.LogsGzip["default"] = &LogsGzip{}
 	}
+
+	if collector.Processors.SecurityViolations == nil {
+		collector.Processors.SecurityViolations = make(map[string]*SecurityViolations)
+	}
+	if _, ok := collector.Processors.SecurityViolations["default"]; !ok {
+		collector.Processors.SecurityViolations["default"] = &SecurityViolations{}
+	}
 }
 
 func addDefaultHostMetricsReceiver(collector *Collector) {
