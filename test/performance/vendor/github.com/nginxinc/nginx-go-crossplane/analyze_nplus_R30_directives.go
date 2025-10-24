@@ -15,7 +15,7 @@
 package crossplane
 
 //nolint:gochecknoglobals
-var ngxPlusR30Directives = map[string][]uint{
+var nginxPlusR30Directives = map[string][]uint{
 	"absolute_redirect": {
 		ngxHTTPMainConf | ngxHTTPSrvConf | ngxHTTPLocConf | ngxConfFlag,
 	},
@@ -1612,7 +1612,7 @@ var ngxPlusR30Directives = map[string][]uint{
 		ngxStreamMainConf | ngxStreamSrvConf | ngxConfTake1,
 	},
 	"ssl_ocsp": {
-		ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfFlag,
+		ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfTake1,
 	},
 	"ssl_ocsp_cache": {
 		ngxHTTPMainConf | ngxHTTPSrvConf | ngxConfTake1,
@@ -2106,7 +2106,7 @@ var ngxPlusR30Directives = map[string][]uint{
 	},
 }
 
-func NgxPlusR30DirectivesMatchFn(directive string) ([]uint, bool) {
-	masks, matched := ngxPlusR30Directives[directive]
+func MatchNginxPlusR30(directive string) ([]uint, bool) {
+	masks, matched := nginxPlusR30Directives[directive]
 	return masks, matched
 }

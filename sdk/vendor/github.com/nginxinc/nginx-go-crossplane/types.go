@@ -45,7 +45,10 @@ type Directive struct {
 	Includes  []int      `json:"includes,omitempty"`
 	Block     Directives `json:"block,omitempty"`
 	Comment   *string    `json:"comment,omitempty"`
+	// IsMapBlockParameter is true if the directive represents a parameter in the body of a "map-like" directive.
+	IsMapBlockParameter bool `json:"mapBlockParameter,omitempty"`
 }
+
 type Directives []*Directive
 
 // IsBlock returns true if this is a block directive.
@@ -109,6 +112,8 @@ func (d *Directive) Equal(a *Directive) bool {
 	case a.Line != d.Line:
 		return false
 	case a.File != d.File:
+		return false
+	case a.IsMapBlockParameter != d.IsMapBlockParameter:
 		return false
 	}
 	for i, inc := range a.Includes {

@@ -1,6 +1,5 @@
 PACKAGE           = $(notdir $(patsubst %/,%,$(dir $(realpath $(lastword $(MAKEFILE_LIST))))))
 OUT_DIR          ?= build
-VENDOR_DIR       ?= vendor
 RESULTS_DIR		 ?= results
 DOCKER_REGISTRY  ?= local
 DOCKER_TAG       ?= latest
@@ -18,14 +17,12 @@ SHELL=/bin/bash
 init:
 	git config core.hooksPath .githooks
 	go install golang.org/x/tools/cmd/goimports
-	go install github.com/maxbrunsfeld/counterfeiter/v6
 	go install github.com/jstemmer/go-junit-report
 
 deps:
 	go mod download
 	go mod tidy
 	go mod verify
-	go mod vendor
 
 deps-upgrade:
 	GOFLAGS="" go get -u ./...
@@ -36,7 +33,7 @@ deps-upgrade:
 #######################################
 fmt:
 	$(info Running goimports...)
-	@goimports -w -e $$(find . -type f -name '*.go' -not -path "./vendor/*")
+	@goimports -w -e $$(find . -type f -name '*.go')
 
 test:
 	$(info Running unit tests...)
@@ -60,7 +57,7 @@ lint-docker:
 	docker run --rm -v "${PWD}":/app -w /app golangci/golangci-lint:v1.51.2 golangci-lint run
 
 lint-shell:
-	shellcheck -x $$(find . -name "*.sh" -type f -not -path "./vendor/*")
+	shellcheck -x $$(find . -name "*.sh" -type f)
 
 gen:
 	go generate -x ./...

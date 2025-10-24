@@ -7,6 +7,51 @@
 
 package crossplane
 
+// Upgrade for .gen.go files. If you don't have access to some private modules,
+// please use -skip options to skip them. e.g. go generate -skip="nap".
+
+// Update for headersmore
+//go:generate sh -c "sh ./scripts/generate/generate.sh --url https://github.com/openresty/headers-more-nginx-module.git --config-path ./scripts/generate/configs/headersmore_config.json > ./analyze_headersMore_directives.gen.go"
+
+// Update for njs
+//go:generate sh -c "sh ./scripts/generate/generate.sh --url https://github.com/nginx/njs.git --config-path ./scripts/generate/configs/njs_config.json > ./analyze_njs_directives.gen.go"
+
+// Update for OSS, filter in config is the directives not in https://nginx.org/en/docs/dirindex.html but in source code.
+// Override in config is for the "if" directive. We create a bitmask ngxConfExpr for it in crossplane, which is not in source code.
+//go:generate sh -c "sh ./scripts/generate/generate.sh --url https://github.com/nginx/nginx.git --config-path ./scripts/generate/configs/oss_latest_config.json > ./analyze_oss_latest_directives.gen.go"
+//go:generate sh -c "sh ./scripts/generate/generate.sh --url https://github.com/nginx/nginx.git --config-path ./scripts/generate/configs/oss_126_config.json --branch stable-1.26 > ./analyze_oss_126_directives.gen.go"
+//go:generate sh -c "sh ./scripts/generate/generate.sh --url https://github.com/nginx/nginx.git --config-path ./scripts/generate/configs/oss_124_config.json --branch stable-1.24 > ./analyze_oss_124_directives.gen.go"
+
+// Update for lua, override is for the lua block directives, see https://github.com/nginxinc/nginx-go-crossplane/pull/86.
+//go:generate sh -c "sh ./scripts/generate/generate.sh --url https://github.com/openresty/lua-nginx-module.git --config-path ./scripts/generate/configs/lua_config.json  --path ./src > ./analyze_lua_directives.gen.go"
+
+// Update for otel. Filter is for some directives without context.
+// Otel provides its own config handler for some directives and they don't have context. Currently we don't support them.
+//go:generate sh -c "sh ./scripts/generate/generate.sh --url https://github.com/nginxinc/nginx-otel.git --config-path ./scripts/generate/configs/otel_config.json --branch main > ./analyze_otel_directives.gen.go"
+
+// Update for NAP v4 and v5.
+// NAP is a private module. Please ensure you have correct access and put the url.
+// and branch of it in environment variable NAP_URL, NAP_V4_BRANCH, and NAP_V5_BRANCH.
+// Override is for flag directives. NAP used ngxConfTake1 for flag directives, we change them to ngxConfFlag in crossplane.
+// NAP v4
+//go:generate sh -c "sh ./scripts/generate/generate.sh --url $NAP_URL --config-path ./scripts/generate/configs/nap_v4_config.json --branch $NAP_V4_BRANCH --path ./src > analyze_appProtectWAFv4_directives.gen.go"
+// NAP v5
+//go:generate sh -c "sh ./scripts/generate/generate.sh --url $NAP_URL --config-path ./scripts/generate/configs/nap_v5_config.json --branch $NAP_V5_BRANCH --path ./src > analyze_appProtectWAFv5_directives.gen.go"
+
+// Update for geoip2
+//go:generate sh -c "sh ./scripts/generate/generate.sh --url https://github.com/leev/ngx_http_geoip2_module.git --config-path ./scripts/generate/configs/geoip2_config.json > ./analyze_geoip2_directives.gen.go"
+
+// Update for NPlus.
+// NPlus source code is private. Please ensure you have the correct access
+// and set the URL and branch in the environment variables NPLUS_URL and NPLUS_BRANCH.
+// Filter in config is the directives not in https://nginx.org/en/docs/dirindex.html but in source code.
+// Override for NPlus R33 and the latest version is for mgmt directives and if directive.
+// For mgmt directives, we create a ngxMgmtMainConf as the context, which is not included in the source code.
+// For the "if" directive, we create a bitmask ngxConfExpr in crossplane, which is not included in the source code.
+//go:generate sh -c "sh ./scripts/generate/generate.sh --url $NPLUS_URL --config-path ./scripts/generate/configs/nplus_latest_config.json --branch $NPLUS_BRANCH --path ./src > ./analyze_nplus_latest_directives.gen.go"
+//go:generate sh -c "sh ./scripts/generate/generate.sh --url $NPLUS_URL --config-path ./scripts/generate/configs/nplus_R33_config.json --branch $NPLUS_BRANCH --path ./src > analyze_nplus_R33_directives.gen.go"
+//go:generate sh -c "sh ./scripts/generate/generate.sh --url $NPLUS_URL --config-path ./scripts/generate/configs/nplus_R34_config.json --branch $NPLUS_BRANCH --path ./src > analyze_nplus_R34_directives.gen.go"
+
 import (
 	"fmt"
 )
@@ -37,22 +82,23 @@ const (
 	ngxConfTake1234 = ngxConfTake123 | ngxConfTake4
 
 	// bit masks for different directive locations.
-	ngxDirectConf     = 0x00010000 // main file (not used)
-	ngxMgmtMainConf   = 0x00020000 // mgmt // unique bitmask that may not match NGINX source
-	ngxMainConf       = 0x00040000 // main context
-	ngxEventConf      = 0x00080000 // events
-	ngxMailMainConf   = 0x00100000 // mail
-	ngxMailSrvConf    = 0x00200000 // mail > server
-	ngxStreamMainConf = 0x00400000 // stream
-	ngxStreamSrvConf  = 0x00800000 // stream > server
-	ngxStreamUpsConf  = 0x01000000 // stream > upstream
-	ngxHTTPMainConf   = 0x02000000 // http
-	ngxHTTPSrvConf    = 0x04000000 // http > server
-	ngxHTTPLocConf    = 0x08000000 // http > location
-	ngxHTTPUpsConf    = 0x10000000 // http > upstream
-	ngxHTTPSifConf    = 0x20000000 // http > server > if
-	ngxHTTPLifConf    = 0x40000000 // http > location > if
-	ngxHTTPLmtConf    = 0x80000000 // http > location > limit_except
+	ngxDirectConf     = 0x000010000 // main file (not used)
+	ngxMgmtMainConf   = 0x000020000 // mgmt // unique bitmask that may not match NGINX source
+	ngxMainConf       = 0x000040000 // main context
+	ngxEventConf      = 0x000080000 // events
+	ngxMailMainConf   = 0x000100000 // mail
+	ngxMailSrvConf    = 0x000200000 // mail > server
+	ngxStreamMainConf = 0x000400000 // stream
+	ngxStreamSrvConf  = 0x000800000 // stream > server
+	ngxStreamUpsConf  = 0x001000000 // stream > upstream
+	ngxHTTPMainConf   = 0x002000000 // http
+	ngxHTTPSrvConf    = 0x004000000 // http > server
+	ngxHTTPLocConf    = 0x008000000 // http > location
+	ngxHTTPUpsConf    = 0x010000000 // http > upstream
+	ngxHTTPSifConf    = 0x020000000 // http > server > if
+	ngxHTTPLifConf    = 0x040000000 // http > location > if
+	ngxHTTPLmtConf    = 0x080000000 // http > location > limit_except
+	ngxHTTPOIDCConf   = 0x100000000 // http > oidc_provider
 )
 
 // helpful directive location alias describing "any" context
@@ -81,6 +127,7 @@ var contexts = map[string]uint{
 	blockCtx{"http", "location", "if"}.key():           ngxHTTPLifConf,
 	blockCtx{"http", "location", "limit_except"}.key(): ngxHTTPLmtConf,
 	blockCtx{"mgmt"}.key():                             ngxMgmtMainConf,
+	blockCtx{"http", "oidc_provider"}.key():            ngxHTTPOIDCConf,
 }
 
 func enterBlockCtx(stmt *Directive, ctx blockCtx) blockCtx {
@@ -219,7 +266,7 @@ func unionBitmaskMaps(maps ...map[string][]uint) map[string][]uint {
 // not provided. It is union of latest Nplus, Njs, and Otel.
 //
 //nolint:gochecknoglobals
-var defaultDirectives = unionBitmaskMaps(ngxPlusLatestDirectives, moduleNjsDirectives, moduleOtelDirectives)
+var defaultDirectives = unionBitmaskMaps(nginxPlusLatestDirectives, njsDirectives, otelDirectives)
 
 func DefaultDirectivesMatchFunc(directive string) ([]uint, bool) {
 	masks, matched := defaultDirectives[directive]
