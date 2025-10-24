@@ -24,6 +24,7 @@ const (
 type Config struct {
 	confighttp.ClientConfig        `mapstructure:",squash"`
 	APIDetails                     APIDetails                    `mapstructure:"api_details"`
+	InstanceID                     string                        `mapstructure:"instance_id"`
 	AccessLogs                     []AccessLog                   `mapstructure:"access_logs"`
 	MetricsBuilderConfig           metadata.MetricsBuilderConfig `mapstructure:",squash"`
 	scraperhelper.ControllerConfig `mapstructure:",squash"`
@@ -33,6 +34,7 @@ type APIDetails struct {
 	URL      string `mapstructure:"url"`
 	Listen   string `mapstructure:"listen"`
 	Location string `mapstructure:"location"`
+	Ca       string `mapstructure:"ca"`
 }
 
 type AccessLog struct {
@@ -40,7 +42,7 @@ type AccessLog struct {
 	FilePath  string `mapstructure:"file_path"`
 }
 
-// nolint: ireturn
+//nolint:ireturn // Return default interface required by Collector
 func CreateDefaultConfig() component.Config {
 	cfg := scraperhelper.NewDefaultControllerConfig()
 	cfg.CollectionInterval = defaultCollectInterval
@@ -56,6 +58,7 @@ func CreateDefaultConfig() component.Config {
 			URL:      "http://localhost:80/status",
 			Listen:   "localhost:80",
 			Location: "status",
+			Ca:       "",
 		},
 	}
 }

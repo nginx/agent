@@ -120,6 +120,8 @@ message FileOverview {
     repeated File files = 1;
     // The configuration version of the current set of files
     ConfigVersion config_version = 2;
+    // The config file path of an instance
+    string config_path = 3;
 }
 
 // Represents meta data about a file
@@ -128,6 +130,13 @@ message File {
     FileMeta file_meta = 1;
     // Unmanaged files will not be modified
     bool unmanaged = 2;
+    // external file source
+    optional ExternalDataSource external_data_source = 3;
+}
+
+message ExternalDataSource {
+    // URL to the location of an external file
+    string location = 1;
 }
 
 // Represents the get file request

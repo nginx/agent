@@ -8,6 +8,7 @@ package file
 import (
 	"context"
 	"log/slog"
+	"sync"
 
 	"github.com/nginx/agent/v3/pkg/files"
 	"github.com/nginx/agent/v3/pkg/id"
@@ -27,6 +28,7 @@ var _ bus.Plugin = (*FilePlugin)(nil)
 // the file plugin does not care about the instance type
 
 type FilePlugin struct {
+	manifestLock       *sync.RWMutex
 	messagePipe        bus.MessagePipeInterface
 	config             *config.Config
 	conn               grpc.GrpcConnectionInterface
@@ -35,12 +37,13 @@ type FilePlugin struct {
 }
 
 func NewFilePlugin(agentConfig *config.Config, grpcConnection grpc.GrpcConnectionInterface,
-	serverType model.ServerType,
+	serverType model.ServerType, manifestLock *sync.RWMutex,
 ) *FilePlugin {
 	return &FilePlugin{
-		config:     agentConfig,
-		conn:       grpcConnection,
-		serverType: serverType,
+		config:       agentConfig,
+		conn:         grpcConnection,
+		serverType:   serverType,
+		manifestLock: manifestLock,
 	}
 }
 
@@ -52,7 +55,7 @@ func (fp *FilePlugin) Init(ctx context.Context, messagePipe bus.MessagePipeInter
 	slog.DebugContext(ctx, "Starting file plugin")
 
 	fp.messagePipe = messagePipe
-	fp.fileManagerService = NewFileManagerService(fp.conn.FileServiceClient(), fp.config)
+	fp.fileManagerService = NewFileManagerService(fp.conn.FileServiceClient(), fp.config, fp.manifestLock)
 
 	return nil
 }
@@ -78,36 +81,37 @@ func (fp *FilePlugin) Info() *bus.Info {
 	}
 }
 
-// nolint: cyclop, revive
 func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
+	ctxWithMetadata := fp.config.NewContextWithLabels(ctx)
+
 	if logger.ServerType(ctx) == "" {
-		ctx = context.WithValue(
-			ctx,
+		ctxWithMetadata = context.WithValue(
+			ctxWithMetadata,
 			logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey, fp.serverType.String()),
 		)
 	}
 
-	if logger.ServerType(ctx) == fp.serverType.String() {
+	if logger.ServerType(ctxWithMetadata) == fp.serverType.String() {
 		switch msg.Topic {
 		case bus.ConnectionResetTopic:
-			fp.handleConnectionReset(ctx, msg)
+			fp.handleConnectionReset(ctxWithMetadata, msg)
 		case bus.ConnectionCreatedTopic:
-			slog.DebugContext(ctx, "File plugin received connection created message")
+			slog.DebugContext(ctxWithMetadata, "File plugin received connection created message")
 			fp.fileManagerService.SetIsConnected(true)
 		case bus.NginxConfigUpdateTopic:
-			fp.handleNginxConfigUpdate(ctx, msg)
+			fp.handleNginxConfigUpdate(ctxWithMetadata, msg)
 		case bus.ConfigUploadRequestTopic:
-			fp.handleConfigUploadRequest(ctx, msg)
+			fp.handleConfigUploadRequest(ctxWithMetadata, msg)
 		case bus.ConfigApplyRequestTopic:
-			fp.handleConfigApplyRequest(ctx, msg)
+			fp.handleConfigApplyRequest(ctxWithMetadata, msg)
 		case bus.ConfigApplyCompleteTopic:
-			fp.handleConfigApplyComplete(ctx, msg)
-		case bus.ConfigApplySuccessfulTopic:
-			fp.handleConfigApplySuccess(ctx, msg)
+			fp.handleConfigApplyComplete(ctxWithMetadata, msg)
+		case bus.ReloadSuccessfulTopic:
+			fp.handleReloadSuccess(ctxWithMetadata, msg)
 		case bus.ConfigApplyFailedTopic:
-			fp.handleConfigApplyFailedRequest(ctx, msg)
+			fp.handleConfigApplyFailedRequest(ctxWithMetadata, msg)
 		default:
-			slog.DebugContext(ctx, "File plugin received unknown topic", "topic", msg.Topic)
+			slog.DebugContext(ctxWithMetadata, "File plugin received unknown topic", "topic", msg.Topic)
 		}
 	}
 }
@@ -129,9 +133,24 @@ func (fp *FilePlugin) Subscriptions() []string {
 		bus.ConfigUploadRequestTopic,
 		bus.ConfigApplyRequestTopic,
 		bus.ConfigApplyFailedTopic,
-		bus.ConfigApplySuccessfulTopic,
+		bus.ReloadSuccessfulTopic,
 		bus.ConfigApplyCompleteTopic,
 	}
+}
+
+func (fp *FilePlugin) enableWatchers(ctx context.Context,
+	configContext *model.NginxConfigContext,
+	instanceID string,
+) {
+	enableWatcher := &model.EnableWatchers{
+		ConfigContext: configContext,
+		InstanceID:    instanceID,
+	}
+
+	fp.messagePipe.Process(ctx, &bus.Message{
+		Data:  enableWatcher,
+		Topic: bus.EnableWatchersTopic,
+	})
 }
 
 func (fp *FilePlugin) handleConnectionReset(ctx context.Context, msg *bus.Message) {
@@ -145,7 +164,7 @@ func (fp *FilePlugin) handleConnectionReset(ctx context.Context, msg *bus.Messag
 		fp.conn = newConnection
 
 		reconnect = fp.fileManagerService.IsConnected()
-		fp.fileManagerService = NewFileManagerService(fp.conn.FileServiceClient(), fp.config)
+		fp.fileManagerService.ResetClient(ctx, fp.conn.FileServiceClient())
 		fp.fileManagerService.SetIsConnected(reconnect)
 
 		slog.DebugContext(ctx, "File manager service client reset successfully")
@@ -161,20 +180,23 @@ func (fp *FilePlugin) handleConfigApplyComplete(ctx context.Context, msg *bus.Me
 		return
 	}
 
-	fp.fileManagerService.ClearCache()
 	fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
+	fp.fileManagerService.ClearCache()
+	fp.enableWatchers(ctx, &model.NginxConfigContext{}, response.GetInstanceId())
 }
 
-func (fp *FilePlugin) handleConfigApplySuccess(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "File plugin received config success message")
-	successMessage, ok := msg.Data.(*model.ConfigApplySuccess)
+func (fp *FilePlugin) handleReloadSuccess(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "File plugin received reload success message", "data", msg.Data)
+
+	successMessage, ok := msg.Data.(*model.ReloadSuccess)
 
 	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplySuccess", "payload", msg.Data)
+		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ReloadSuccess", "payload", msg.Data)
 		return
 	}
 
 	fp.fileManagerService.ClearCache()
+	fp.enableWatchers(ctx, successMessage.ConfigContext, successMessage.DataPlaneResponse.GetInstanceId())
 
 	if successMessage.ConfigContext.Files != nil {
 		slog.DebugContext(ctx, "Changes made during config apply, update files on disk")
@@ -212,7 +234,6 @@ func (fp *FilePlugin) handleConfigApplyFailedRequest(ctx context.Context, msg *b
 			mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"Config apply failed, rollback failed", data.InstanceID, data.Error.Error())
 
-		fp.fileManagerService.ClearCache()
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: applyResponse})
 
@@ -260,13 +281,7 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			"",
 		)
 
-		successMessage := &model.ConfigApplySuccess{
-			ConfigContext:     &model.NginxConfigContext{},
-			DataPlaneResponse: dpResponse,
-		}
-
-		fp.fileManagerService.ClearCache()
-		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplySuccessfulTopic, Data: successMessage})
+		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: dpResponse})
 
 		return
 	case model.Error:
@@ -284,7 +299,6 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			err.Error(),
 		)
 
-		fp.fileManagerService.ClearCache()
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: response})
 
 		return
@@ -317,7 +331,6 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 				instanceID,
 				rollbackErr.Error())
 
-			fp.fileManagerService.ClearCache()
 			fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: rollbackResponse})
 
 			return
@@ -330,7 +343,6 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			instanceID,
 			err.Error())
 
-		fp.fileManagerService.ClearCache()
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: response})
 
 		return

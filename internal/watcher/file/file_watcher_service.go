@@ -82,18 +82,42 @@ func (fws *FileWatcherService) Watch(ctx context.Context, ch chan<- FileUpdateMe
 			}
 
 			return
-		case event := <-fws.watcher.Events:
-			fws.handleEvent(ctx, event)
 		case <-instanceWatcherTicker.C:
 			fws.checkForUpdates(ctx, ch)
-		case watcherError := <-fws.watcher.Errors:
-			slog.ErrorContext(ctx, "Unexpected error in file watcher", "error", watcherError)
+		}
+
+		if fws.watcher != nil {
+			select {
+			case event := <-fws.watcher.Events:
+				fws.handleEvent(ctx, event)
+			case watcherError := <-fws.watcher.Errors:
+				slog.ErrorContext(ctx, "Unexpected error in file watcher", "error", watcherError)
+			}
 		}
 	}
 }
 
-func (fws *FileWatcherService) SetEnabled(enabled bool) {
-	fws.enabled.Store(enabled)
+func (fws *FileWatcherService) DisableWatcher(ctx context.Context) {
+	slog.DebugContext(ctx, "Disabling file watcher")
+	if fws.watcher != nil && fws.watcher.WatchList() != nil {
+		paths := fws.watcher.WatchList()
+		slog.DebugContext(ctx, "Removing watchers", "paths", paths)
+		for _, filePath := range paths {
+			err := fws.watcher.Remove(filePath)
+			if err != nil {
+				slog.ErrorContext(ctx, "Unable to remove watcher file", "path", filePath, "error", err)
+			}
+		}
+	}
+	fws.enabled.Store(false)
+}
+
+func (fws *FileWatcherService) EnableWatcher(ctx context.Context) {
+	slog.DebugContext(ctx, "Enabling file watcher")
+	if fws.watcher != nil && fws.watcher.WatchList() != nil && len(fws.watcher.WatchList()) == 0 {
+		fws.addWatchers(ctx)
+	}
+	fws.enabled.Store(true)
 }
 
 func (fws *FileWatcherService) Update(ctx context.Context, nginxConfigContext *model.NginxConfigContext) {
@@ -138,8 +162,12 @@ func (fws *FileWatcherService) addWatchers(ctx context.Context) {
 		}
 
 		if !slices.Contains(fws.watcher.WatchList(), directory) {
-			fws.addWatcher(ctx, directory)
-			fws.filesChanged.Store(true)
+			err := fws.addWatcher(ctx, directory)
+			if err != nil {
+				slog.DebugContext(ctx, "Failed to add file watcher", "directory", directory, "error", err)
+			} else {
+				fws.filesChanged.Store(true)
+			}
 		}
 	}
 }
@@ -195,11 +223,11 @@ func (fws *FileWatcherService) checkForUpdates(ctx context.Context, ch chan<- Fi
 	// Check if directories no longer need to be watched
 	fws.removeWatchers(ctx)
 
-	if fws.filesChanged.Load() {
+	if fws.filesChanged.Load() && fws.enabled.Load() {
 		newCtx := context.WithValue(
 			ctx,
 			logger.CorrelationIDContextKey,
-			slog.Any(logger.CorrelationIDKey, logger.GenerateCorrelationID()),
+			logger.GenerateCorrelationID(),
 		)
 
 		slog.DebugContext(newCtx, "File watcher detected a file change")
@@ -208,7 +236,7 @@ func (fws *FileWatcherService) checkForUpdates(ctx context.Context, ch chan<- Fi
 	}
 }
 
-func (fws *FileWatcherService) addWatcher(ctx context.Context, directory string) {
+func (fws *FileWatcherService) addWatcher(ctx context.Context, directory string) error {
 	slog.DebugContext(ctx, "Checking if file watcher needs to be added", "directory", directory)
 
 	if _, err := os.Stat(directory); errors.Is(err, os.ErrNotExist) {
@@ -220,9 +248,7 @@ func (fws *FileWatcherService) addWatcher(ctx context.Context, directory string)
 
 	slog.DebugContext(ctx, "Adding watcher", "directory", directory)
 
-	if err := fws.watcher.Add(directory); err != nil {
-		slog.WarnContext(ctx, "Failed to add file watcher", "directory", directory, "error", err)
-	}
+	return fws.watcher.Add(directory)
 }
 
 func (fws *FileWatcherService) removeWatcher(ctx context.Context, path string) {

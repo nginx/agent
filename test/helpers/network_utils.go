@@ -5,7 +5,9 @@
 package helpers
 
 import (
+	"context"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"math/big"
 	"net"
@@ -13,7 +15,7 @@ import (
 )
 
 // RandomPort generates a random port for testing and checks if a port is available by attempting to bind to it
-func RandomPort(t *testing.T) (int, error) {
+func RandomPort(t *testing.T, ctx context.Context) (int, error) {
 	t.Helper()
 
 	// Define the range for dynamic ports (49152–65535 as per IANA recommendation)
@@ -21,7 +23,7 @@ func RandomPort(t *testing.T) (int, error) {
 	const maxPort = 65535
 
 	// try up to 10 times to get a random port
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		maxValue := &big.Int{}
 		maxValue.SetInt64(maxPort - minPort + 1)
 
@@ -32,18 +34,19 @@ func RandomPort(t *testing.T) (int, error) {
 
 		portNumber := int(port.Int64()) + minPort
 
-		if isPortAvailable(portNumber) {
+		if isPortAvailable(ctx, portNumber) {
 			return portNumber, nil
 		}
 	}
 
-	return 0, fmt.Errorf("could not find an available port after multiple attempts")
+	return 0, errors.New("could not find an available port after multiple attempts")
 }
 
 // isPortAvailable checks if a port is available by attempting to bind to it
-func isPortAvailable(port int) bool {
+func isPortAvailable(ctx context.Context, port int) bool {
 	address := fmt.Sprintf("127.0.0.1:%d", port)
-	conn, err := net.Dial("tcp", address)
+	dialer := &net.Dialer{}
+	conn, err := dialer.DialContext(ctx, "tcp", address)
 	if conn != nil {
 		conn.Close()
 	}

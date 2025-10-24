@@ -7,8 +7,11 @@ package stubstatus
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -59,16 +62,39 @@ func (s *NginxStubStatusScraper) ID() component.ID {
 	return component.NewID(metadata.Type)
 }
 
-// nolint: unparam
+//nolint:unparam // Result is always nil
 func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) error {
 	s.logger.Info("Starting NGINX stub status scraper")
 	httpClient := http.DefaultClient
+	caCertLocation := s.cfg.APIDetails.Ca
+	if caCertLocation != "" {
+		s.settings.Logger.Debug("Reading CA certificate", zap.Any("file_path", caCertLocation))
+		caCert, err := os.ReadFile(caCertLocation)
+		if err != nil {
+			s.settings.Logger.Error("Error starting NGINX stub status scraper. "+
+				"Failed to read CA certificate", zap.Error(err))
+
+			return nil
+		}
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(caCert)
+
+		httpClient = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					RootCAs:    caCertPool,
+					MinVersion: tls.VersionTLS13,
+				},
+			},
+		}
+	}
 	httpClient.Timeout = s.cfg.ClientConfig.Timeout
 
 	if strings.HasPrefix(s.cfg.APIDetails.Listen, "unix:") {
 		httpClient.Transport = &http.Transport{
-			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-				return net.Dial("unix", strings.TrimPrefix(s.cfg.APIDetails.Listen, "unix:"))
+			DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+				dialer := &net.Dialer{}
+				return dialer.DialContext(ctx, "unix", strings.TrimPrefix(s.cfg.APIDetails.Listen, "unix:"))
 			},
 		}
 	}
@@ -77,7 +103,7 @@ func (s *NginxStubStatusScraper) Start(_ context.Context, _ component.Host) erro
 	return nil
 }
 
-// nolint: unparam
+//nolint:unparam // Result is always nil
 func (s *NginxStubStatusScraper) Shutdown(_ context.Context) error {
 	s.logger.Info("Shutting down NGINX stub status scraper")
 	return nil
@@ -112,7 +138,7 @@ func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error
 		return pmetric.Metrics{}, err
 	}
 
-	s.rb.SetInstanceID(s.settings.ID.Name())
+	s.rb.SetInstanceID(s.cfg.InstanceID)
 	s.rb.SetInstanceType("nginx")
 	s.settings.Logger.Debug("NGINX OSS stub status resource info", zap.Any("resource", s.rb))
 

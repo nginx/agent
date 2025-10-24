@@ -171,7 +171,7 @@ func TestGzipProcessorFailure(t *testing.T) {
 	}
 }
 
-// nolint: revive
+//nolint:revive // isGzipWriteErr flag is mandatory
 func customMockWriter(isGzipWriteErr, isGzipCloseErr bool) *mockGzipWriter {
 	return &mockGzipWriter{
 		WriteFunc: func(p []byte) (int, error) {

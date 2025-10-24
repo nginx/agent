@@ -18,6 +18,7 @@
     - [CertificateDates](#mpi-v1-CertificateDates)
     - [CertificateMeta](#mpi-v1-CertificateMeta)
     - [ConfigVersion](#mpi-v1-ConfigVersion)
+    - [ExternalDataSource](#mpi-v1-ExternalDataSource)
     - [File](#mpi-v1-File)
     - [FileContents](#mpi-v1-FileContents)
     - [FileDataChunk](#mpi-v1-FileDataChunk)
@@ -295,6 +296,21 @@ Represents a specific configuration version associated with an instance
 
 
 
+<a name="mpi-v1-ExternalDataSource"></a>
+
+### ExternalDataSource
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| location | [string](#string) |  | URL to the location of an external file |
+
+
+
+
+
+
 <a name="mpi-v1-File"></a>
 
 ### File
@@ -305,6 +321,7 @@ Represents meta data about a file
 | ----- | ---- | ----- | ----------- |
 | file_meta | [FileMeta](#mpi-v1-FileMeta) |  | Meta information about the file, the name (including path) and hash |
 | unmanaged | [bool](#bool) |  | Unmanaged files will not be modified |
+| external_data_source | [ExternalDataSource](#mpi-v1-ExternalDataSource) | optional | external file source |
 
 
 
@@ -416,6 +433,7 @@ Represents a collection of files
 | ----- | ---- | ----- | ----------- |
 | files | [File](#mpi-v1-File) | repeated | A list of files |
 | config_version | [ConfigVersion](#mpi-v1-ConfigVersion) |  | The configuration version of the current set of files |
+| config_path | [string](#string) |  | The config file path of an instance |
 
 
 
@@ -678,6 +696,7 @@ Perform an associated API action on an instance
 | ----- | ---- | ----- | ----------- |
 | location | [string](#string) |  | the API location directive |
 | listen | [string](#string) |  | the API listen directive |
+| Ca | [string](#string) |  | the API CA file path |
 
 
 

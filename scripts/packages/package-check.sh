@@ -55,26 +55,24 @@ APK=(
   alpine/v3.21/main/x86_64/nginx-agent-$VERSION.apk
   alpine/v3.20/main/aarch64/nginx-agent-$VERSION.apk
   alpine/v3.20/main/x86_64/nginx-agent-$VERSION.apk
-  alpine/v3.18/main/aarch64/nginx-agent-$VERSION.apk
-  alpine/v3.18/main/x86_64/nginx-agent-$VERSION.apk
   alpine/v3.19/main/aarch64/nginx-agent-$VERSION.apk
   alpine/v3.19/main/x86_64/nginx-agent-$VERSION.apk
 )
 UBUNTU=(
-  ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~plucky_arm64.deb
-  ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~plucky_amd64.deb
   ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~jammy_amd64.deb
-  ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~jammy_arm64.deb
   ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~noble_arm64.deb
+  ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~plucky_arm64.deb
+  ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~jammy_arm64.deb
   ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~noble_amd64.deb
-  ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~focal_arm64.deb
-  ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~focal_amd64.deb
+  ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~plucky_amd64.deb
 )
 DEBIAN=(
   debian/pool/agent/n/nginx-agent/nginx-agent_$VERSION~bullseye_arm64.deb
-  debian/pool/agent/n/nginx-agent/nginx-agent_$VERSION~bullseye_amd64.deb
-  debian/pool/agent/n/nginx-agent/nginx-agent_$VERSION~bookworm_arm64.deb
   debian/pool/agent/n/nginx-agent/nginx-agent_$VERSION~bookworm_amd64.deb
+  debian/pool/agent/n/nginx-agent/nginx-agent_$VERSION~trixie_arm64.deb
+  debian/pool/agent/n/nginx-agent/nginx-agent_$VERSION~bookworm_arm64.deb
+  debian/pool/agent/n/nginx-agent/nginx-agent_$VERSION~bullseye_amd64.deb
+  debian/pool/agent/n/nginx-agent/nginx-agent_$VERSION~trixie_amd64.deb
 )
 AMZN=(
   amzn/2023/aarch64/RPMS/nginx-agent-$VERSION.amzn2023.ngx.aarch64.rpm

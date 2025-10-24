@@ -6,6 +6,7 @@
 package types
 
 import (
+	"context"
 	"path/filepath"
 	"testing"
 	"time"
@@ -61,12 +62,12 @@ func AgentConfig() *config.Config {
 				Multiplier:          commonMultiplier,
 			},
 		},
-		AllowedDirectories: []string{"/tmp/"},
+		AllowedDirectories: []string{"/tmp"},
 		Collector: &config.Collector{
 			ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
 			Exporters: config.Exporters{
-				OtlpExporters: []config.OtlpExporter{
-					{
+				OtlpExporters: map[string]*config.OtlpExporter{
+					"default": {
 						Server: &config.ServerConfig{
 							Host: "127.0.0.1",
 							Port: 0,
@@ -76,15 +77,17 @@ func AgentConfig() *config.Config {
 				},
 			},
 			Processors: config.Processors{
-				Batch: &config.Batch{
-					SendBatchSize:    config.DefCollectorBatchProcessorSendBatchSize,
-					SendBatchMaxSize: config.DefCollectorBatchProcessorSendBatchMaxSize,
-					Timeout:          config.DefCollectorBatchProcessorTimeout,
+				Batch: map[string]*config.Batch{
+					"default": {
+						SendBatchSize:    config.DefCollectorMetricsBatchProcessorSendBatchMaxSize,
+						SendBatchMaxSize: config.DefCollectorMetricsBatchProcessorSendBatchMaxSize,
+						Timeout:          config.DefCollectorMetricsBatchProcessorTimeout,
+					},
 				},
 			},
 			Receivers: config.Receivers{
-				OtlpReceivers: []config.OtlpReceiver{
-					{
+				OtlpReceivers: map[string]*config.OtlpReceiver{
+					"default": {
 						Server: &config.ServerConfig{
 							Host: "127.0.0.1",
 							Port: 0,
@@ -127,6 +130,15 @@ func AgentConfig() *config.Config {
 			Log: &config.Log{
 				Level: "INFO",
 				Path:  "/var/log/nginx-agent/opentelemetry-collector-agent.log",
+			},
+			Pipelines: config.Pipelines{
+				Metrics: map[string]*config.Pipeline{
+					"default": {
+						Receivers:  []string{"host_metrics"},
+						Processors: []string{"batch/default"},
+						Exporters:  []string{"otlp/default"},
+					},
+				},
 			},
 		},
 		Command: &config.Command{
@@ -173,23 +185,24 @@ func AgentConfig() *config.Config {
 // Produces a populated Agent Config with a temp Collector config path for testing usage.
 func OTelConfig(t *testing.T) *config.Config {
 	t.Helper()
+	ctx := context.Background()
 
 	ac := AgentConfig()
 	ac.Collector.ConfigPath = filepath.Join(t.TempDir(), "otel-collector-config.yaml")
 
-	exporterPort, expErr := helpers.RandomPort(t)
+	exporterPort, expErr := helpers.RandomPort(t, ctx)
 	require.NoError(t, expErr)
-	ac.Collector.Exporters.OtlpExporters[0].Server.Port = exporterPort
+	ac.Collector.Exporters.OtlpExporters["default"].Server.Port = exporterPort
 
-	receiverPort, recErr := helpers.RandomPort(t)
+	receiverPort, recErr := helpers.RandomPort(t, ctx)
 	require.NoError(t, recErr)
-	ac.Collector.Receivers.OtlpReceivers[0].Server.Port = receiverPort
+	ac.Collector.Receivers.OtlpReceivers["default"].Server.Port = receiverPort
 
-	healthPort, healthErr := helpers.RandomPort(t)
+	healthPort, healthErr := helpers.RandomPort(t, ctx)
 	require.NoError(t, healthErr)
 	ac.Collector.Extensions.Health.Server.Port = healthPort
 
-	commandPort, commandErr := helpers.RandomPort(t)
+	commandPort, commandErr := helpers.RandomPort(t, ctx)
 	require.NoError(t, commandErr)
 	ac.Command.Server.Port = commandPort
 

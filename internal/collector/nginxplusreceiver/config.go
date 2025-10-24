@@ -21,6 +21,7 @@ const defaultCollectInterval = 10 * time.Second
 type Config struct {
 	confighttp.ClientConfig        `mapstructure:",squash"`
 	APIDetails                     APIDetails                    `mapstructure:"api_details"`
+	InstanceID                     string                        `mapstructure:"instance_id"`
 	MetricsBuilderConfig           metadata.MetricsBuilderConfig `mapstructure:",squash"`
 	scraperhelper.ControllerConfig `mapstructure:",squash"`
 }
@@ -29,10 +30,11 @@ type APIDetails struct {
 	URL      string `mapstructure:"url"`
 	Listen   string `mapstructure:"listen"`
 	Location string `mapstructure:"location"`
+	Ca       string `mapstructure:"ca"`
 }
 
 // Validate checks if the receiver configuration is valid
-// nolint: ireturn
+
 func (cfg *Config) Validate() error {
 	if cfg.APIDetails.URL == "" {
 		return errors.New("endpoint cannot be empty for nginxplusreceiver")
@@ -45,7 +47,7 @@ func (cfg *Config) Validate() error {
 	return nil
 }
 
-// nolint: ireturn
+//nolint:ireturn // must return default controller interface
 func createDefaultConfig() component.Config {
 	cfg := scraperhelper.NewDefaultControllerConfig()
 	cfg.CollectionInterval = defaultCollectInterval
@@ -59,6 +61,7 @@ func createDefaultConfig() component.Config {
 			URL:      "http://localhost:80/api",
 			Listen:   "localhost:80",
 			Location: "/api",
+			Ca:       "",
 		},
 		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
 	}

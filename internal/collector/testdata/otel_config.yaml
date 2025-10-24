@@ -1,0 +1,64 @@
+receivers:
+  hostmetrics:
+    collection_interval: 1m0s
+    initial_delay: 1s
+    scrapers:
+      cpu:
+        metrics:
+          system.cpu.utilization:
+            enabled: true
+          system.cpu.logical.count:
+            enabled: true
+      disk:
+      filesystem:
+      memory:
+        metrics:
+          system.memory.limit:
+            enabled: true
+      network:
+
+processors:
+  resource/default:
+    attributes:
+      - key: resource.id
+        action: insert
+        value: f16dedd7-929f-3642-b823-4ac8d295cc23
+  batch/default_logs:
+    send_batch_size: 100
+    timeout: 1m0s
+    send_batch_max_size: 100
+  batch/default_metrics:
+    send_batch_size: 1000
+    timeout: 30s
+    send_batch_max_size: 1000
+
+  logsgzip/default: {}
+
+exporters:
+  otlp/default:
+    endpoint: "127.0.0.1:9091"
+    timeout: 10s
+    retry_on_failure:
+      enabled: true
+      initial_interval: 10s
+      max_interval: 60s
+      max_elapsed_time: 10m
+    tls:
+      insecure: true
+extensions:
+
+service:
+  telemetry:
+    metrics:
+      level: none
+  extensions:
+
+  pipelines:
+    metrics/default:
+      receivers:
+        - hostmetrics
+      processors:
+        - batch/default_metrics
+        - resource/default
+      exporters:
+        - otlp/default

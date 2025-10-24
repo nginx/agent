@@ -42,10 +42,10 @@ func TestFileWatcherService_SetEnabled(t *testing.T) {
 	fileWatcherService := NewFileWatcherService(types.AgentConfig())
 	assert.True(t, fileWatcherService.enabled.Load())
 
-	fileWatcherService.SetEnabled(false)
+	fileWatcherService.DisableWatcher(t.Context())
 	assert.False(t, fileWatcherService.enabled.Load())
 
-	fileWatcherService.SetEnabled(true)
+	fileWatcherService.EnableWatcher(t.Context())
 	assert.True(t, fileWatcherService.enabled.Load())
 }
 
@@ -62,7 +62,7 @@ func TestFileWatcherService_addWatcher(t *testing.T) {
 	require.NoError(t, err)
 	defer os.Remove(testDirectory)
 
-	fileWatcherService.addWatcher(ctx, testDirectory)
+	require.NoError(t, fileWatcherService.addWatcher(ctx, testDirectory))
 
 	directoriesBeingWatched := fileWatcherService.watcher.WatchList()
 	assert.Len(t, directoriesBeingWatched, 1)
@@ -79,7 +79,7 @@ func TestFileWatcherService_addWatcher_Error(t *testing.T) {
 	tempDir := t.TempDir()
 	testDirectory := path.Join(tempDir, "test_dir")
 
-	fileWatcherService.addWatcher(ctx, testDirectory)
+	require.Error(t, fileWatcherService.addWatcher(ctx, testDirectory))
 
 	directoriesBeingWatched := fileWatcherService.watcher.WatchList()
 	assert.Empty(t, directoriesBeingWatched)
@@ -266,7 +266,7 @@ func TestFileWatcherService_Watch(t *testing.T) {
 
 		select {
 		case <-channel:
-			t.Fatalf("Expected file to be skipped")
+			t.Fatalf("Expected file to be skipped: %v", skippableFile.Name())
 		case <-time.After(150 * time.Millisecond):
 			return
 		}

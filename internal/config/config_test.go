@@ -9,6 +9,7 @@ import (
 	"errors"
 	"os"
 	"path"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -63,6 +64,11 @@ func TestResolveConfig(t *testing.T) {
 
 	actual, err := ResolveConfig()
 	require.NoError(t, err)
+	t.Logf("Actual: %+v", actual.AllowedDirectories)
+	sort.Slice(actual.Collector.Extensions.HeadersSetter.Headers, func(i, j int) bool {
+		headers := actual.Collector.Extensions.HeadersSetter.Headers
+		return headers[i].Key < headers[j].Key
+	})
 	assert.Equal(t, createConfig(), actual)
 }
 
@@ -158,14 +164,134 @@ func TestNormalizeFunc(t *testing.T) {
 	assert.Equal(t, expected, result)
 }
 
+func TestResolveAllowedDirectories(t *testing.T) {
+	tests := []struct {
+		name           string
+		configuredDirs []string
+		expected       []string
+	}{
+		{
+			name:           "Test 1: Empty path",
+			configuredDirs: []string{""},
+			expected:       []string{"/etc/nginx-agent"},
+		},
+		{
+			name:           "Test 2: Absolute path",
+			configuredDirs: []string{"/etc/agent/"},
+			expected:       []string{"/etc/nginx-agent", "/etc/agent"},
+		},
+		{
+			name:           "Test 3: Absolute paths",
+			configuredDirs: []string{"/etc/nginx/"},
+			expected:       []string{"/etc/nginx-agent", "/etc/nginx"},
+		},
+		{
+			name:           "Test 4: Absolute path with multiple slashes",
+			configuredDirs: []string{"/etc///////////nginx-agent/"},
+			expected:       []string{"/etc/nginx-agent"},
+		},
+		{
+			name:           "Test 5: Absolute path with directory traversal",
+			configuredDirs: []string{"/etc/nginx/../nginx-agent"},
+			expected:       []string{"/etc/nginx-agent"},
+		},
+		{
+			name:           "Test 6: Absolute path with repeat directory traversal",
+			configuredDirs: []string{"/etc/nginx-agent/../../../../../nginx-agent"},
+			expected:       []string{"/etc/nginx-agent"},
+		},
+		{
+			name:           "Test 7: Absolute path with control characters",
+			configuredDirs: []string{"/etc/nginx-agent/\\x08../tmp/"},
+			expected:       []string{"/etc/nginx-agent"},
+		},
+		{
+			name:           "Test 8: Absolute path with invisible characters",
+			configuredDirs: []string{"/etc/nginx-agent/ㅤㅤㅤ/tmp/"},
+			expected:       []string{"/etc/nginx-agent"},
+		},
+		{
+			name:           "Test 9: Absolute path with escaped invisible characters",
+			configuredDirs: []string{"/etc/nginx-agent/\\\\ㅤ/tmp/"},
+			expected:       []string{"/etc/nginx-agent"},
+		},
+		{
+			name: "Test 10: Mixed paths",
+			configuredDirs: []string{
+				"nginx-agent",
+				"",
+				"..",
+				"/",
+				"\\/",
+				".",
+				"/etc/nginx/",
+			},
+			expected: []string{"/etc/nginx-agent", "/etc/nginx"},
+		},
+		{
+			name:           "Test 11: Relative path",
+			configuredDirs: []string{"nginx-agent"},
+			expected:       []string{"/etc/nginx-agent"},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			allowed := resolveAllowedDirectories(test.configuredDirs)
+			assert.Equal(t, test.expected, allowed)
+		})
+	}
+}
+
 func TestResolveLog(t *testing.T) {
 	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
-	viperInstance.Set(LogLevelKey, "error")
-	viperInstance.Set(LogPathKey, "/var/log/test/test.log")
 
-	result := resolveLog()
-	assert.Equal(t, "error", result.Level)
-	assert.Equal(t, "/var/log/test/test.log", result.Path)
+	tests := []struct {
+		name             string
+		logLevel         string
+		logPath          string
+		expectedLogPath  string
+		expectedLogLevel string
+	}{
+		{
+			name:             "Test 1: Log level set to info",
+			logLevel:         "info",
+			logPath:          "/var/log/test/test.log",
+			expectedLogPath:  "/var/log/test/test.log",
+			expectedLogLevel: "info",
+		},
+		{
+			name:             "Test 2: Invalid log level set",
+			logLevel:         "trace",
+			logPath:          "/var/log/test/test.log",
+			expectedLogPath:  "/var/log/test/test.log",
+			expectedLogLevel: "info",
+		},
+		{
+			name:             "Test 3: Log level set to debug",
+			logLevel:         "debug",
+			logPath:          "/var/log/test/test.log",
+			expectedLogPath:  "/var/log/test/test.log",
+			expectedLogLevel: "debug",
+		},
+		{
+			name:             "Test 4: Log level set with capitalization",
+			logLevel:         "DEBUG",
+			logPath:          "./logs/nginx.log",
+			expectedLogPath:  "./logs/nginx.log",
+			expectedLogLevel: "DEBUG",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			viperInstance.Set(LogLevelKey, test.logLevel)
+			viperInstance.Set(LogPathKey, test.logPath)
+
+			result := resolveLog()
+			assert.Equal(t, test.expectedLogLevel, result.Level)
+			assert.Equal(t, test.expectedLogPath, result.Path)
+		})
+	}
 }
 
 func TestResolveClient(t *testing.T) {
@@ -187,11 +313,7 @@ func TestResolveCollector(t *testing.T) {
 		viperInstance.Set(CollectorLogPathKey, expected.Log.Path)
 		viperInstance.Set(CollectorLogLevelKey, expected.Log.Level)
 		viperInstance.Set(CollectorReceiversKey, expected.Receivers)
-		viperInstance.Set(CollectorBatchProcessorKey, expected.Processors.Batch)
-		viperInstance.Set(CollectorBatchProcessorSendBatchSizeKey, expected.Processors.Batch.SendBatchSize)
-		viperInstance.Set(CollectorBatchProcessorSendBatchMaxSizeKey, expected.Processors.Batch.SendBatchMaxSize)
-		viperInstance.Set(CollectorBatchProcessorTimeoutKey, expected.Processors.Batch.Timeout)
-		viperInstance.Set(CollectorLogsGzipProcessorKey, expected.Processors.LogsGzip)
+		viperInstance.Set(CollectorProcessorsKey, expected.Processors)
 		viperInstance.Set(CollectorExportersKey, expected.Exporters)
 		viperInstance.Set(CollectorOtlpExportersKey, expected.Exporters.OtlpExporters)
 		viperInstance.Set(CollectorExtensionsHealthServerHostKey, expected.Extensions.Health.Server.Host)
@@ -217,6 +339,59 @@ func TestResolveCollector(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), errMsg)
 	})
+}
+
+func TestResolveCollectorLog(t *testing.T) {
+	tests := []struct {
+		name             string
+		logLevel         string
+		logPath          string
+		agentLogLevel    string
+		expectedLogPath  string
+		expectedLogLevel string
+	}{
+		{
+			name:             "Test 1: OTel Log Level Set In Config",
+			logLevel:         "",
+			logPath:          "/tmp/collector.log",
+			agentLogLevel:    "debug",
+			expectedLogPath:  "/tmp/collector.log",
+			expectedLogLevel: "DEBUG",
+		},
+		{
+			name:             "Test 2: Agent Log Level is Warn",
+			logLevel:         "",
+			logPath:          "/tmp/collector.log",
+			agentLogLevel:    "warn",
+			expectedLogPath:  "/tmp/collector.log",
+			expectedLogLevel: "WARN",
+		},
+		{
+			name:             "Test 3: OTel Log Level Set In Config",
+			logLevel:         "INFO",
+			logPath:          "/tmp/collector.log",
+			agentLogLevel:    "debug",
+			expectedLogPath:  "/tmp/collector.log",
+			expectedLogLevel: "INFO",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
+			viperInstance.Set(CollectorLogPathKey, test.logPath)
+			viperInstance.Set(LogLevelKey, test.agentLogLevel)
+
+			if test.logLevel != "" {
+				viperInstance.Set(CollectorLogLevelKey, test.logLevel)
+			}
+
+			log := resolveCollectorLog()
+
+			assert.Equal(t, test.expectedLogLevel, log.Level)
+			assert.Equal(t, test.expectedLogPath, log.Path)
+		})
+	}
 }
 
 func TestCommand(t *testing.T) {
@@ -761,6 +936,79 @@ func TestResolveExtensions_MultipleHeaders(t *testing.T) {
 	}
 }
 
+func TestAddDefaultOtlpExporter(t *testing.T) {
+	t.Run("Test 1: Command server only", func(t *testing.T) {
+		collector := &Collector{}
+		agentConfig := &Config{
+			Command: &Command{
+				Server: &ServerConfig{
+					Host: "test.com",
+					Port: 8080,
+					Type: Grpc,
+				},
+				Auth: &AuthConfig{
+					Token: "token",
+				},
+				TLS: &TLSConfig{
+					SkipVerify: false,
+				},
+			},
+		}
+
+		addDefaultOtlpExporter(collector, agentConfig)
+
+		assert.Equal(t, "test.com", collector.Exporters.OtlpExporters["default"].Server.Host)
+		assert.Equal(t, 8080, collector.Exporters.OtlpExporters["default"].Server.Port)
+		assert.False(t, collector.Exporters.OtlpExporters["default"].TLS.SkipVerify)
+		assert.Equal(t, "headers_setter", collector.Exporters.OtlpExporters["default"].Authenticator)
+		assert.Equal(t, "insert", collector.Extensions.HeadersSetter.Headers[0].Action)
+		assert.Equal(t, "authorization", collector.Extensions.HeadersSetter.Headers[0].Key)
+		assert.Equal(t, "token", collector.Extensions.HeadersSetter.Headers[0].Value)
+	})
+
+	t.Run("Test 2: Command and Auxiliary Command servers", func(t *testing.T) {
+		collector := &Collector{}
+		agentConfig := &Config{
+			Command: &Command{
+				Server: &ServerConfig{
+					Host: "test.com",
+					Port: 8080,
+					Type: Grpc,
+				},
+				Auth: &AuthConfig{
+					Token: "token",
+				},
+				TLS: &TLSConfig{
+					SkipVerify: false,
+				},
+			},
+			AuxiliaryCommand: &Command{
+				Server: &ServerConfig{
+					Host: "aux-test.com",
+					Port: 9090,
+					Type: Grpc,
+				},
+				Auth: &AuthConfig{
+					Token: "aux-token",
+				},
+				TLS: &TLSConfig{
+					SkipVerify: false,
+				},
+			},
+		}
+
+		addDefaultOtlpExporter(collector, agentConfig)
+
+		assert.Equal(t, "aux-test.com", collector.Exporters.OtlpExporters["default"].Server.Host)
+		assert.Equal(t, 9090, collector.Exporters.OtlpExporters["default"].Server.Port)
+		assert.False(t, collector.Exporters.OtlpExporters["default"].TLS.SkipVerify)
+		assert.Equal(t, "headers_setter", collector.Exporters.OtlpExporters["default"].Authenticator)
+		assert.Equal(t, "insert", collector.Extensions.HeadersSetter.Headers[0].Action)
+		assert.Equal(t, "authorization", collector.Extensions.HeadersSetter.Headers[0].Key)
+		assert.Equal(t, "aux-token", collector.Extensions.HeadersSetter.Headers[0].Value)
+	})
+}
+
 func agentConfig() *Config {
 	return &Config{
 		UUID:    "",
@@ -790,88 +1038,10 @@ func agentConfig() *Config {
 			},
 		},
 		AllowedDirectories: []string{
-			"/etc/nginx/", "/etc/nginx-agent/", "/usr/local/etc/nginx/", "/var/run/nginx/", "/var/log/nginx/",
-			"/usr/share/nginx/modules/",
+			"/etc/nginx", "/etc/nginx-agent", "/usr/local/etc/nginx", "/var/run/nginx", "/var/log/nginx",
+			"/usr/share/nginx/modules", "/etc/app_protect",
 		},
-		Collector: &Collector{
-			ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
-			Exporters: Exporters{
-				OtlpExporters: []OtlpExporter{
-					{
-						Server: &ServerConfig{
-							Host: "127.0.0.1",
-							Port: 1234,
-							Type: Grpc,
-						},
-						TLS: &TLSConfig{
-							Cert:       "/path/to/server-cert.pem",
-							Key:        "/path/to/server-cert.pem",
-							Ca:         "/path/to/server-cert.pem",
-							SkipVerify: true,
-							ServerName: "remote-saas-server",
-						},
-					},
-				},
-			},
-			Processors: Processors{
-				Batch: &Batch{
-					SendBatchMaxSize: DefCollectorBatchProcessorSendBatchMaxSize,
-					SendBatchSize:    DefCollectorBatchProcessorSendBatchSize,
-					Timeout:          DefCollectorBatchProcessorTimeout,
-				},
-				LogsGzip: &LogsGzip{},
-			},
-			Receivers: Receivers{
-				OtlpReceivers: []OtlpReceiver{
-					{
-						Server: &ServerConfig{
-							Host: "localhost",
-							Port: 4317,
-							Type: Grpc,
-						},
-						Auth: &AuthConfig{
-							Token: "even-secreter-token",
-						},
-						OtlpTLSConfig: &OtlpTLSConfig{
-							GenerateSelfSignedCert: false,
-							Cert:                   "/path/to/server-cert.pem",
-							Key:                    "/path/to/server-cert.pem",
-							Ca:                     "/path/to/server-cert.pem",
-							SkipVerify:             true,
-							ServerName:             "local-data-plane-server",
-						},
-					},
-				},
-				NginxReceivers: []NginxReceiver{
-					{
-						InstanceID: "cd7b8911-c2c5-4daf-b311-dbead151d938",
-						StubStatus: APIDetails{
-							URL:    "http://localhost:4321/status",
-							Listen: "",
-						},
-						AccessLogs: []AccessLog{
-							{
-								LogFormat: accessLogFormat,
-								FilePath:  "/var/log/nginx/access-custom.conf",
-							},
-						},
-					},
-				},
-			},
-			Extensions: Extensions{
-				Health: &Health{
-					Server: &ServerConfig{
-						Host: "localhost",
-						Port: 1337,
-					},
-					Path: "/",
-				},
-			},
-			Log: &Log{
-				Level: "INFO",
-				Path:  "/var/log/nginx-agent/opentelemetry-collector-agent.log",
-			},
-		},
+		Collector: createDefaultCollectorConfig(),
 		Command: &Command{
 			Server: &ServerConfig{
 				Host: "127.0.0.1",
@@ -924,21 +1094,29 @@ func createConfig() *Config {
 			},
 		},
 		AllowedDirectories: []string{
-			"/etc/nginx-agent/", "/etc/nginx/", "/usr/local/etc/nginx/", "/var/run/nginx/",
-			"/usr/share/nginx/modules/", "/var/log/nginx/",
+			"/etc/nginx-agent", "/etc/nginx", "/usr/local/etc/nginx", "/var/run/nginx",
+			"/usr/share/nginx/modules", "/var/log/nginx", "/configs",
 		},
 		DataPlaneConfig: &DataPlaneConfig{
 			Nginx: &NginxDataPlaneConfig{
 				ExcludeLogs:            []string{"/var/log/nginx/error.log", "^/var/log/nginx/.*.log$"},
 				ReloadMonitoringPeriod: 30 * time.Second,
 				TreatWarningsAsErrors:  true,
+				ReloadBackoff: &BackOff{
+					InitialInterval:     100 * time.Millisecond,
+					MaxInterval:         20 * time.Second,
+					MaxElapsedTime:      15 * time.Second,
+					RandomizationFactor: 1.5,
+					Multiplier:          1.5,
+				},
 			},
 		},
 		Collector: &Collector{
-			ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
+			ConfigPath:            "/etc/nginx-agent/nginx-agent-otelcol.yaml",
+			AdditionalConfigPaths: []string{"/configs/my_config.yaml", "/etc/nginx-agent/nginx-agent-otelcol.yaml"},
 			Exporters: Exporters{
-				OtlpExporters: []OtlpExporter{
-					{
+				OtlpExporters: map[string]*OtlpExporter{
+					"default": {
 						Server: &ServerConfig{
 							Host: "127.0.0.1",
 							Port: 5643,
@@ -969,25 +1147,42 @@ func createConfig() *Config {
 				Debug: &DebugExporter{},
 			},
 			Processors: Processors{
-				Batch: &Batch{
-					SendBatchMaxSize: 1,
-					SendBatchSize:    8199,
-					Timeout:          30 * time.Second,
+				Batch: map[string]*Batch{
+					"default": {
+						SendBatchMaxSize: 1,
+						SendBatchSize:    8199,
+						Timeout:          30 * time.Second,
+					},
+					"default_metrics": {
+						SendBatchMaxSize: 1000,
+						SendBatchSize:    1000,
+						Timeout:          30 * time.Second,
+					},
+					"default_logs": {
+						SendBatchMaxSize: 100,
+						SendBatchSize:    100,
+						Timeout:          60 * time.Second,
+					},
 				},
-				Attribute: &Attribute{
-					Actions: []Action{
-						{
-							Key:    "test",
-							Action: "insert",
-							Value:  "value",
+				Attribute: map[string]*Attribute{
+					"default": {
+						Actions: []Action{
+							{
+								Key:    "test",
+								Action: "insert",
+								Value:  "value",
+							},
 						},
 					},
 				},
-				LogsGzip: &LogsGzip{},
+				LogsGzip: map[string]*LogsGzip{
+					"default": {},
+				},
+				SecurityViolations: map[string]*SecurityViolations{"default": {}},
 			},
 			Receivers: Receivers{
-				OtlpReceivers: []OtlpReceiver{
-					{
+				OtlpReceivers: map[string]*OtlpReceiver{
+					"default": {
 						Server: &ServerConfig{
 							Host: "127.0.0.1",
 							Port: 4317,
@@ -1003,26 +1198,6 @@ func createConfig() *Config {
 							SkipVerify:             true,
 							ServerName:             "test-local-server",
 						},
-					},
-				},
-				NginxReceivers: []NginxReceiver{
-					{
-						InstanceID: "cd7b8911-c2c5-4daf-b311-dbead151d938",
-						AccessLogs: []AccessLog{
-							{
-								LogFormat: "$remote_addr - $remote_user [$time_local] \"$request\"" +
-									" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\" " +
-									"\"$http_x_forwarded_for\"",
-								FilePath: "/var/log/nginx/access-custom.conf",
-							},
-						},
-						CollectionInterval: 30 * time.Second,
-					},
-				},
-				NginxPlusReceivers: []NginxPlusReceiver{
-					{
-						InstanceID:         "cd7b8911-c2c5-4daf-b311-dbead151d939",
-						CollectionInterval: 30 * time.Second,
 					},
 				},
 				HostMetrics: &HostMetrics{
@@ -1059,12 +1234,38 @@ func createConfig() *Config {
 							Key:    "key",
 							Value:  "value",
 						},
+						{
+							Action: "insert",
+							Key:    "label1",
+							Value:  "label 1",
+						},
+						{
+							Action: "insert",
+							Key:    "label2",
+							Value:  "new-value",
+						},
 					},
 				},
 			},
 			Log: &Log{
 				Level: "INFO",
 				Path:  "/var/log/nginx-agent/opentelemetry-collector-agent.log",
+			},
+			Pipelines: Pipelines{
+				Metrics: map[string]*Pipeline{
+					"default": {
+						Receivers:  []string{"host_metrics", "nginx_metrics"},
+						Processors: []string{"batch/default_metrics"},
+						Exporters:  []string{"otlp/default"},
+					},
+				},
+				Logs: map[string]*Pipeline{
+					"default": {
+						Receivers:  []string{"tcplog/nginx_app_protect"},
+						Processors: []string{"logsgzip/default", "batch/default_logs"},
+						Exporters:  []string{"otlp/default"},
+					},
+				},
 			},
 		},
 		Command: &Command{
@@ -1123,6 +1324,92 @@ func createConfig() *Config {
 		Features: []string{
 			config.FeatureCertificates, config.FeatureFileWatcher, config.FeatureMetrics,
 			config.FeatureAPIAction, config.FeatureLogsNap,
+		},
+	}
+}
+
+func createDefaultCollectorConfig() *Collector {
+	return &Collector{
+		ConfigPath: "/etc/nginx-agent/nginx-agent-otelcol.yaml",
+		Exporters: Exporters{
+			OtlpExporters: map[string]*OtlpExporter{
+				"default": {
+					Server: &ServerConfig{
+						Host: "127.0.0.1",
+						Port: 1234,
+						Type: Grpc,
+					},
+					TLS: &TLSConfig{
+						Cert:       "/path/to/server-cert.pem",
+						Key:        "/path/to/server-cert.pem",
+						Ca:         "/path/to/server-cert.pem",
+						SkipVerify: true,
+						ServerName: "remote-saas-server",
+					},
+				},
+			},
+		},
+		Processors: Processors{
+			Batch: map[string]*Batch{
+				"default_logs": {
+					SendBatchMaxSize: DefCollectorLogsBatchProcessorSendBatchMaxSize,
+					SendBatchSize:    DefCollectorLogsBatchProcessorSendBatchSize,
+					Timeout:          DefCollectorLogsBatchProcessorTimeout,
+				},
+			},
+			LogsGzip: map[string]*LogsGzip{
+				"default": {},
+			},
+		},
+		Receivers: Receivers{
+			OtlpReceivers: map[string]*OtlpReceiver{
+				"default": {
+					Server: &ServerConfig{
+						Host: "localhost",
+						Port: 4317,
+						Type: Grpc,
+					},
+					Auth: &AuthConfig{
+						Token: "even-secreter-token",
+					},
+					OtlpTLSConfig: &OtlpTLSConfig{
+						GenerateSelfSignedCert: false,
+						Cert:                   "/path/to/server-cert.pem",
+						Key:                    "/path/to/server-cert.pem",
+						Ca:                     "/path/to/server-cert.pem",
+						SkipVerify:             true,
+						ServerName:             "local-data-plane-server",
+					},
+				},
+			},
+			NginxReceivers: []NginxReceiver{
+				{
+					InstanceID: "cd7b8911-c2c5-4daf-b311-dbead151d938",
+					StubStatus: APIDetails{
+						URL:    "http://localhost:4321/status",
+						Listen: "",
+					},
+					AccessLogs: []AccessLog{
+						{
+							LogFormat: accessLogFormat,
+							FilePath:  "/var/log/nginx/access-custom.conf",
+						},
+					},
+				},
+			},
+		},
+		Extensions: Extensions{
+			Health: &Health{
+				Server: &ServerConfig{
+					Host: "localhost",
+					Port: 1337,
+				},
+				Path: "/",
+			},
+		},
+		Log: &Log{
+			Level: "INFO",
+			Path:  "/var/log/nginx-agent/opentelemetry-collector-agent.log",
 		},
 	}
 }

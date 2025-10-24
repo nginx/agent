@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -51,6 +52,8 @@ func installUninstallSetup(tb testing.TB, expectNoErrorsInLogs bool) (testcontai
 		LogMessage:      "nginx_pid",
 	}
 
+	slog.Info("starting install uninstall tests")
+
 	// start container without agent installed
 	testContainer := helpers.StartAgentlessContainer(
 		ctx,
@@ -66,7 +69,9 @@ func installUninstallSetup(tb testing.TB, expectNoErrorsInLogs bool) (testcontai
 			nil,
 			testContainer,
 			expectNoErrorsInLogs,
+			nil,
 		)
+		slog.Info("finished install uninstall tests")
 	}
 }
 
@@ -154,7 +159,7 @@ func verifyAgentVersion(ctx context.Context, tb testing.TB, testContainer testco
 
 	replacer := strings.NewReplacer("nginx-agent-", "v", "SNAPSHOT-", "")
 	packageVersion := replacer.Replace(os.Getenv("PACKAGE_NAME"))
-	expectedVersionOutput := fmt.Sprintf("nginx-agent version %s", packageVersion)
+	expectedVersionOutput := "nginx-agent version " + packageVersion
 
 	exitCode, cmdOut, err := testContainer.Exec(ctx, []string{"nginx-agent", "--version"})
 	require.NoError(tb, err)

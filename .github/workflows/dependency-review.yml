@@ -22,9 +22,9 @@ jobs:
       pull-requests: write # for actions/dependency-review-action to post comments
     steps:
       - name: "Checkout Repository"
-        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: "Dependency Review"
-        uses: actions/dependency-review-action@5bbc3ba658137598168acb2ab73b21c432dd411b # v4.2.5
+        uses: actions/dependency-review-action@40c09b7dc99638e5ddb0bfd91c1673effc064d8a # v4.8.1
         with:
           config-file: "nginxinc/k8s-common/dependency-review-config.yml@main"

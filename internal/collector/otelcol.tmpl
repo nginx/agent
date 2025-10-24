@@ -5,6 +5,7 @@ receivers:
     collection_interval: {{ .Receivers.ContainerMetrics.CollectionInterval }}
     {{- end}}
 {{- end }}
+
 {{- if ne .Receivers.HostMetrics nil }}
   hostmetrics:
     {{- if .Receivers.HostMetrics.CollectionInterval }}
@@ -39,7 +40,8 @@ receivers:
       network:
       {{- end }}
       {{- end }}
-{{- end }}  
+{{- end }}
+
 {{- range $index, $otlpReceiver := .Receivers.OtlpReceivers }}
   otlp/{{$index}}:
     protocols:
@@ -75,12 +77,19 @@ receivers:
         {{- end }}
       {{- end }}
 {{- end }}
+
 {{- range .Receivers.NginxReceivers }}
+{{- if gt (len $.Receivers.NginxReceivers) 1 }}
   nginx/{{- .InstanceID -}}:
+{{- else }}
+  nginx:
+{{- end}}
+    instance_id: "{{- .InstanceID -}}"
     api_details:
       url: "{{- .StubStatus.URL -}}"
       listen: "{{- .StubStatus.Listen -}}"
       location: "{{- .StubStatus.Location -}}"
+      ca: "{{- .StubStatus.Ca -}}"
     {{- if .CollectionInterval }}
     collection_interval: {{ .CollectionInterval }}
     {{- end }}
@@ -92,16 +101,24 @@ receivers:
     {{- end }}
     {{- end }}
 {{- end }}
+
 {{- range .Receivers.NginxPlusReceivers }}
+{{- if gt (len $.Receivers.NginxPlusReceivers) 1 }}
   nginxplus/{{- .InstanceID -}}:
+{{- else }}
+  nginxplus:
+{{- end}}
+    instance_id: "{{- .InstanceID -}}"
     api_details:
-        url: "{{- .PlusAPI.URL -}}"
-        listen: "{{- .PlusAPI.Listen -}}"
-        location: "{{- .PlusAPI.Location -}}"
+      url: "{{- .PlusAPI.URL -}}"
+      listen: "{{- .PlusAPI.Listen -}}"
+      location: "{{- .PlusAPI.Location -}}"
+      ca: "{{- .PlusAPI.Ca -}}"
     {{- if .CollectionInterval }}
     collection_interval: {{ .CollectionInterval }}
     {{- end }}
 {{- end }}
+
 {{- range $index, $tcplogReceiver := .Receivers.TcplogReceivers }}
   tcplog/{{$index}}:
     listen_address: "{{- .ListenAddress -}}"
@@ -116,35 +133,48 @@ receivers:
 
 processors:
 {{- if ne .Processors.Resource nil }}
-{{- if .Processors.Resource.Attributes }}
-  resource:
+  {{- range $key, $resource := .Processors.Resource }}
+    {{- if $resource.Attributes }}
+  resource/{{$key}}:
     attributes:
-{{- range .Processors.Resource.Attributes }}
+      {{- range $resource.Attributes }}
       - key: {{ .Key }}
         action: {{ .Action }}
         value: {{ .Value }}
-{{- end }}
-{{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
 {{- end }}
 {{- if ne .Processors.Attribute nil }}
-{{- if .Processors.Attribute.Actions }}
-  attributes:
+  {{- range $key, $attribute := .Processors.Attribute }}
+    {{- if $attribute.Actions }}
+  attributes/{{$key}}:
     actions:
-{{- range .Processors.Attribute.Actions }}
+      {{- range $attribute.Actions }}
       - key: {{ .Key }}
         action: {{ .Action }}
         value: {{ .Value }}
-{{- end }}
-{{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
 {{- end }}
 {{- if ne .Processors.Batch nil }}
-  batch:
-    send_batch_size: {{ .Processors.Batch.SendBatchSize }}
-    timeout: {{ .Processors.Batch.Timeout }}
-    send_batch_max_size: {{ .Processors.Batch.SendBatchMaxSize }}
+  {{- range $key, $batch := .Processors.Batch }}
+  batch/{{$key}}:
+    send_batch_size: {{ $batch.SendBatchSize }}
+    timeout: {{ $batch.Timeout }}
+    send_batch_max_size: {{ $batch.SendBatchMaxSize }}
+{{- end }}
+{{- end }}
+{{- if ne .Processors.SecurityViolations nil }}
+{{- range $key, $value := .Processors.SecurityViolations }}
+  securityviolations/{{$key}}: {}
+{{- end }}
 {{- end }}
 {{- if ne .Processors.LogsGzip nil }}
-  logsgzip: {}
+{{ range $key, $value := .Processors.LogsGzip }}
+  logsgzip/{{$key}}: {}
+{{- end }}
 {{- end }}
 
 exporters:
@@ -167,12 +197,14 @@ exporters:
       {{ if gt (len .TLS.Ca) 0 -}}ca_file: "{{- .TLS.Ca -}}"{{- end }}
       {{ if gt (len .TLS.Cert) 0 -}}cert_file: "{{- .TLS.Cert -}}"{{- end }}
       {{ if gt (len .TLS.Key) 0 -}}key_file: "{{- .TLS.Key -}}"{{- end }}
+      {{ if gt (len .TLS.ServerName) 0 -}}server_name_override: "{{- .TLS.ServerName -}}"{{- end }}
       {{- end }}
     {{- if .Authenticator }}
     auth:
       authenticator: {{ .Authenticator -}}
     {{- end }} 
 {{- end }}
+
 {{- if ne .Exporters.PrometheusExporter nil }}
   prometheus:
     endpoint: "{{ .Exporters.PrometheusExporter.Server.Host -}}:{{- .Exporters.PrometheusExporter.Server.Port }}"
@@ -241,73 +273,67 @@ service:
     - headers_setter
     {{- end}}
   {{- end}}
+
   pipelines:
-    {{- if or (ne .Receivers.HostMetrics nil) (ne .Receivers.ContainerMetrics nil) (gt (len .Receivers.OtlpReceivers) 0) (gt (len .Receivers.NginxReceivers) 0) (gt (len .Receivers.NginxPlusReceivers) 0) }}
-    metrics:
+    {{- range $pipelineName, $pipeline := .Pipelines.Metrics }}
+      {{- if or (ne $.Receivers.HostMetrics nil) (ne $.Receivers.ContainerMetrics nil) (gt (len $.Receivers.OtlpReceivers) 0) (gt (len $.Receivers.NginxReceivers) 0) (gt (len $.Receivers.NginxPlusReceivers) 0) }}
+    metrics/{{$pipelineName}}:
       receivers:
-        {{- if ne .Receivers.ContainerMetrics nil }}
+        {{- range $receiver := $pipeline.Receivers }}
+          {{- if eq $receiver "host_metrics" }}
+            {{- if ne $.Receivers.ContainerMetrics nil }}
         - containermetrics
-        {{- end }}
-        {{- if ne .Receivers.HostMetrics nil }}
+            {{- end }}
+            {{- if ne $.Receivers.HostMetrics nil }}
         - hostmetrics
-        {{- end }}
-        {{- range $index, $otlpReceiver := .Receivers.OtlpReceivers }}
-        - otlp/{{$index}}
-        {{- end }}
-        {{- range .Receivers.NginxReceivers }}
+            {{- end }}
+          {{- else if eq $receiver "nginx_metrics" }}
+            {{- range $.Receivers.NginxReceivers }}
+            {{- if gt (len $.Receivers.NginxReceivers) 1 }}
         - nginx/{{- .InstanceID -}}
-        {{- end }}
-        {{- range .Receivers.NginxPlusReceivers }}
+            {{- else }}
+        - nginx
+            {{- end }}
+            {{- end }}
+            {{- range $.Receivers.NginxPlusReceivers }}
+            {{- if gt (len $.Receivers.NginxReceivers) 1 }}
         - nginxplus/{{- .InstanceID -}}
+            {{- else }}
+        - nginxplus
+            {{- end }}
+            {{- end }}
+          {{- else }}
+        - {{ $receiver }}
+          {{- end }}
         {{- end }}
       processors:
-        {{- if ne .Processors.Resource nil }}
-        {{- if .Processors.Resource.Attributes }}
-        - resource
-        {{- end }}
-        {{- end }}
-        {{- if ne .Processors.Attribute nil }}
-        {{- if .Processors.Attribute.Actions }}
-        - attributes
-        {{- end }}
-        {{- end }}
-        {{- if ne .Processors.Batch nil }}
-        - batch
+        {{- range $pipeline.Processors }}
+        - {{ . }}
         {{- end }}
       exporters:
-        {{- range $index, $otlpExporter := .Exporters.OtlpExporters }}
-        - otlp/{{$index}}
-        {{- end }}
-        {{- if ne .Exporters.PrometheusExporter nil }}
-        - prometheus
-        {{- end }}
-        {{- if ne .Exporters.Debug nil }}
-        - debug
-        {{- end  }}
-    {{- end }}    
-    {{- if gt (len .Receivers.TcplogReceivers) 0 }}
-    logs:
+        {{- range $pipeline.Exporters }}
+        - {{ . }}
+        {{- end }}   
+      {{- end }}
+    {{- end }}
+    {{- range $pipelineName, $pipeline := .Pipelines.Logs }}
+      {{- if gt (len $.Receivers.TcplogReceivers) 0 }}
+    logs/{{$pipelineName}}:
       receivers:
-        {{- range $index, $tcplogReceiver := .Receivers.TcplogReceivers }}
-        - tcplog/{{$index}}
+        {{- range $receiver := $pipeline.Receivers }}
+          {{- if eq $receiver "tcplog/nginx_app_protect" }}
+        - tcplog/nginx_app_protect
+          {{- else }}
+        - {{ $receiver }}
+          {{- end }}
         {{- end }}
       processors:
-        {{- if ne .Processors.Resource nil }}
-        {{- if .Processors.Resource.Attributes }}
-        - resource
-        {{- end }}
-        {{- end }}
-        {{- if ne .Processors.LogsGzip nil }}
-        - logsgzip
-        {{- end }}
-        {{- if ne .Processors.Batch nil }}
-        - batch
+        {{- range $pipeline.Processors }}
+        - {{ . }}
         {{- end }}
       exporters:
-        {{- range $index, $otlpExporter := .Exporters.OtlpExporters }}
-        - otlp/{{$index}}
+        {{- range $pipeline.Exporters }}
+        - {{ . }}
         {{- end }}
-        {{- if ne .Exporters.Debug nil }}
-        - debug
-        {{- end  }}
-    {{- end  }}
+    {{- end }}
+  {{- end }}

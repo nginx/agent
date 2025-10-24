@@ -20,7 +20,7 @@ func generateLogs(numRecords, recordSize int) plog.Logs {
 	logs := plog.NewLogs()
 	rl := logs.ResourceLogs().AppendEmpty()
 	sl := rl.ScopeLogs().AppendEmpty()
-	for i := 0; i < numRecords; i++ {
+	for range numRecords {
 		lr := sl.LogRecords().AppendEmpty()
 		content, _ := randomString(recordSize)
 		lr.Body().SetStr(content)
@@ -64,7 +64,7 @@ func BenchmarkGzipProcessor(b *testing.B) {
 			logs := generateLogs(bm.numRecords, bm.recordSize)
 
 			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
+			for range b.N {
 				_ = p.ConsumeLogs(context.Background(), logs)
 			}
 		})
@@ -73,7 +73,7 @@ func BenchmarkGzipProcessor(b *testing.B) {
 
 // Optional: Benchmark with concurrency to simulate real pipeline load
 func BenchmarkGzipProcessor_Concurrent(b *testing.B) {
-	// nolint:unused // concurrent runs require total parallel workers to be specified
+	//nolint: unused // concurrent runs require total parallel workers to be specified
 	const workers = 8
 	logs := generateLogs(1000, 1000)
 	consumer := &consumertest.LogsSink{}
@@ -83,7 +83,9 @@ func BenchmarkGzipProcessor_Concurrent(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			_ = p.ConsumeLogs(context.Background(), logs)
+			logsCopy := plog.NewLogs()
+			logs.CopyTo(logsCopy)
+			_ = p.ConsumeLogs(context.Background(), logsCopy)
 		}
 	})
 }

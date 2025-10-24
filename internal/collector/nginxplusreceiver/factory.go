@@ -19,10 +19,9 @@ import (
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver/internal/metadata"
 )
 
-// nolint: ireturn
 const defaultTimeout = 10 * time.Second
 
-// nolint: ireturn
+//nolint:ireturn // must return metrics receiver interface
 func NewFactory() receiver.Factory {
 	return receiver.NewFactory(
 		metadata.Type,
@@ -30,7 +29,7 @@ func NewFactory() receiver.Factory {
 		receiver.WithMetrics(createMetricsReceiver, metadata.MetricsStability))
 }
 
-// nolint: ireturn
+//nolint:ireturn // must return metrics receiver interface
 func createMetricsReceiver(
 	ctx context.Context,
 	params receiver.Settings,

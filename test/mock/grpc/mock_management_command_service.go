@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net"
@@ -39,6 +40,7 @@ type CommandService struct {
 	updateDataPlaneHealthRequest *mpi.UpdateDataPlaneHealthRequest
 	instanceFiles                map[string][]*mpi.File // key is instanceID
 	configDirectory              string
+	externalFileServer           string
 	dataPlaneResponses           []*mpi.DataPlaneResponse
 	updateDataPlaneHealthMutex   sync.Mutex
 	connectionMutex              sync.Mutex
@@ -50,7 +52,11 @@ func init() {
 	gin.SetMode(gin.ReleaseMode)
 }
 
-func NewCommandService(requestChan chan *mpi.ManagementPlaneRequest, configDirectory string) *CommandService {
+func NewCommandService(
+	requestChan chan *mpi.ManagementPlaneRequest,
+	configDirectory string,
+	externalFileServer string,
+) *CommandService {
 	cs := &CommandService{
 		requestChan:                requestChan,
 		connectionMutex:            sync.Mutex{},
@@ -58,6 +64,7 @@ func NewCommandService(requestChan chan *mpi.ManagementPlaneRequest, configDirec
 		updateDataPlaneHealthMutex: sync.Mutex{},
 		dataPlaneResponsesMutex:    sync.Mutex{},
 		configDirectory:            configDirectory,
+		externalFileServer:         externalFileServer,
 		instanceFiles:              make(map[string][]*mpi.File),
 	}
 
@@ -73,6 +80,17 @@ func NewCommandService(requestChan chan *mpi.ManagementPlaneRequest, configDirec
 	cs.createServer(logger)
 
 	return cs
+}
+
+// Adding a struct to represent the external data source.
+type ExternalDataSource struct {
+	FilePath string `json:"filePath"`
+	Location string `json:"location"`
+}
+
+// Adding a struct for the request body of the config apply endpoint.
+type ConfigApplyRequestBody struct {
+	ExternalDataSources []*ExternalDataSource `json:"externalDataSources"`
 }
 
 func (cs *CommandService) StartServer(listener net.Listener) {
@@ -109,12 +127,12 @@ func (cs *CommandService) CreateConnection(
 }
 
 func (cs *CommandService) UpdateDataPlaneStatus(
-	_ context.Context,
+	ctx context.Context,
 	request *mpi.UpdateDataPlaneStatusRequest) (
 	*mpi.UpdateDataPlaneStatusResponse,
 	error,
 ) {
-	slog.Debug("Update data plane status request", "request", request)
+	slog.DebugContext(ctx, "Update data plane status request", "request", request)
 
 	if request == nil {
 		return nil, errors.New("empty update data plane status request")
@@ -128,12 +146,12 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 }
 
 func (cs *CommandService) UpdateDataPlaneHealth(
-	_ context.Context,
+	ctx context.Context,
 	request *mpi.UpdateDataPlaneHealthRequest) (
 	*mpi.UpdateDataPlaneHealthResponse,
 	error,
 ) {
-	slog.Debug("Update data plane health request", "request", request)
+	slog.DebugContext(ctx, "Update data plane health request", "request", request)
 
 	if request == nil {
 		return nil, errors.New("empty update dataplane health request")
@@ -181,9 +199,7 @@ func (cs *CommandService) handleConfigUploadRequest(
 	instanceID := upload.ConfigUploadRequest.GetOverview().GetConfigVersion().GetInstanceId()
 	overviewFiles := upload.ConfigUploadRequest.GetOverview().GetFiles()
 
-	if cs.instanceFiles[instanceID] == nil {
-		cs.instanceFiles[instanceID] = overviewFiles
-	} else {
+	if cs.instanceFiles[instanceID] != nil {
 		filesToDelete := cs.checkForDeletedFiles(instanceID, overviewFiles)
 		for _, fileToDelete := range filesToDelete {
 			err := os.Remove(fileToDelete)
@@ -192,6 +208,7 @@ func (cs *CommandService) handleConfigUploadRequest(
 			}
 		}
 	}
+	cs.instanceFiles[instanceID] = overviewFiles
 }
 
 func (cs *CommandService) checkForDeletedFiles(instanceID string, overviewFiles []*mpi.File) []string {
@@ -246,6 +263,8 @@ func (cs *CommandService) createServer(logger *slog.Logger) {
 	cs.addHealthEndpoint()
 	cs.addResponseAndRequestEndpoints()
 	cs.addConfigApplyEndpoint()
+	cs.addConfigEndpoint()
+	cs.addExternalFileServerEndpoint()
 }
 
 func (cs *CommandService) addConnectionEndpoint() {
@@ -359,7 +378,17 @@ func (cs *CommandService) addConfigApplyEndpoint() {
 			return
 		}
 
-		cs.instanceFiles[instanceID] = configFiles
+		updatedConfigFiles, externalFilesUpdated, err := processConfigApplyRequestBody(c, configFiles)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if externalFilesUpdated {
+			cs.instanceFiles[instanceID] = updatedConfigFiles
+		} else {
+			cs.instanceFiles[instanceID] = configFiles
+		}
 
 		request := mpi.ManagementPlaneRequest{
 			MessageMeta: &mpi.MessageMeta{
@@ -384,6 +413,52 @@ func (cs *CommandService) addConfigApplyEndpoint() {
 
 		c.JSON(http.StatusOK, &request)
 	})
+}
+
+func (cs *CommandService) addConfigEndpoint() {
+	cs.server.GET("/api/v1/instance/:instanceID/config", func(c *gin.Context) {
+		instanceID := c.Param("instanceID")
+		var data map[string]interface{}
+
+		response := &mpi.GetOverviewResponse{
+			Overview: &mpi.FileOverview{
+				ConfigVersion: &mpi.ConfigVersion{
+					InstanceId: instanceID,
+					Version:    files.GenerateConfigVersion(cs.instanceFiles[instanceID]),
+				},
+				Files: cs.instanceFiles[instanceID],
+			},
+		}
+
+		if err := json.Unmarshal([]byte(protojson.Format(response)), &data); err != nil {
+			slog.Error("Failed to return connection", "error", err)
+			c.JSON(http.StatusInternalServerError, nil)
+		}
+
+		c.JSON(http.StatusOK, data)
+	})
+}
+
+func (cs *CommandService) addExternalFileServerEndpoint() {
+	// This API will serve individual files from the external directory
+	cs.server.GET("/api/v1/externalfile/:filename", func(c *gin.Context) {
+		filename := c.Param("filename")
+
+		absFile, err := validateFile(cs.externalFileServer, filename)
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				c.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
+			} else {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			}
+
+			return
+		}
+		// Serve the file
+		c.File(absFile)
+	})
+
+	slog.Info("Serving individual external files from", "external_file_server", cs.externalFileServer)
 }
 
 func (cs *CommandService) findInstanceConfigFiles(instanceID string) (configFiles []*mpi.File, err error) {
@@ -444,4 +519,74 @@ func createFile(fullPath, filePath string) (*mpi.File, error) {
 
 func isValidFile(info os.FileInfo, fileFullPath string) bool {
 	return !info.IsDir() && !strings.HasSuffix(fileFullPath, ".DS_Store")
+}
+
+func validateFile(externalFileServer, filename string) (string, error) {
+	if strings.Contains(filename, "/") || strings.Contains(filename, "\\") || strings.Contains(filename, "..") {
+		return "", errors.New("invalid file name")
+	}
+
+	filePath := filepath.Join(externalFileServer, filename)
+
+	absBase, err := filepath.Abs(externalFileServer)
+	if err != nil {
+		return "", fmt.Errorf("internal error: %w", err)
+	}
+
+	absFile, err := filepath.Abs(filePath)
+	if err != nil {
+		return "", fmt.Errorf("invalid file name: %w", err)
+	}
+
+	if !strings.HasPrefix(absFile, absBase) {
+		return "", errors.New("invalid file name")
+	}
+
+	if _, fileErr := os.Stat(absFile); os.IsNotExist(fileErr) {
+		return "", os.ErrNotExist
+	}
+
+	return absFile, nil
+}
+
+func processConfigApplyRequestBody(c *gin.Context, initialFiles []*mpi.File) ([]*mpi.File, bool, error) {
+	if c.Request.ContentLength == 0 {
+		return initialFiles, false, nil
+	}
+
+	var body ConfigApplyRequestBody
+	if bindErr := c.BindJSON(&body); bindErr != nil {
+		return initialFiles, false, fmt.Errorf("invalid request body: %w", bindErr)
+	}
+
+	filesMap := make(map[string]*mpi.File)
+	for _, file := range initialFiles {
+		if file.GetFileMeta() != nil {
+			filesMap[file.GetFileMeta().GetName()] = file
+		}
+	}
+
+	var externalFilesWereUpdated bool
+	updatedFiles := initialFiles
+
+	for _, ed := range body.ExternalDataSources {
+		if file, ok := filesMap[ed.FilePath]; ok {
+			file.ExternalDataSource = &mpi.ExternalDataSource{
+				Location: ed.Location,
+			}
+		} else {
+			newFile := &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name: ed.FilePath,
+				},
+				ExternalDataSource: &mpi.ExternalDataSource{
+					Location: ed.Location,
+				},
+			}
+			updatedFiles = append(updatedFiles, newFile)
+		}
+		externalFilesWereUpdated = true
+	}
+
+	return updatedFiles, externalFilesWereUpdated, nil
 }

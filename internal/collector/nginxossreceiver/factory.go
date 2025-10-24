@@ -21,7 +21,7 @@ import (
 	"go.opentelemetry.io/collector/scraper/scraperhelper"
 )
 
-// nolint: ireturn
+//nolint:ireturn // return a factory interface
 func NewFactory() receiver.Factory {
 	return receiver.NewFactory(
 		metadata.Type,
@@ -30,7 +30,7 @@ func NewFactory() receiver.Factory {
 	)
 }
 
-// nolint: ireturn
+//nolint:ireturn // returns a metric interface which is required
 func createMetrics(
 	_ context.Context,
 	params receiver.Settings,

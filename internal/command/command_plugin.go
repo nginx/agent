@@ -106,29 +106,40 @@ func (cp *CommandPlugin) Info() *bus.Info {
 
 func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "Processing command")
+	ctxWithMetadata := cp.config.NewContextWithLabels(ctx)
 
-	if logger.ServerType(ctx) == "" {
-		ctx = context.WithValue(
-			ctx,
+	if logger.ServerType(ctxWithMetadata) == "" {
+		ctxWithMetadata = context.WithValue(
+			ctxWithMetadata,
 			logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey, cp.commandServerType.String()),
 		)
 	}
 
-	if logger.ServerType(ctx) == cp.commandServerType.String() {
+	if logger.ServerType(ctxWithMetadata) == cp.commandServerType.String() {
 		switch msg.Topic {
 		case bus.ConnectionResetTopic:
-			cp.processConnectionReset(ctx, msg)
+			cp.processConnectionReset(ctxWithMetadata, msg)
 		case bus.ResourceUpdateTopic:
-			cp.processResourceUpdate(ctx, msg)
+			cp.processResourceUpdate(ctxWithMetadata, msg)
 		case bus.InstanceHealthTopic:
-			cp.processInstanceHealth(ctx, msg)
+			cp.processInstanceHealth(ctxWithMetadata, msg)
 		case bus.DataPlaneHealthResponseTopic:
-			cp.processDataPlaneHealth(ctx, msg)
+			cp.processDataPlaneHealth(ctxWithMetadata, msg)
 		case bus.DataPlaneResponseTopic:
-			cp.processDataPlaneResponse(ctx, msg)
+			cp.processDataPlaneResponse(ctxWithMetadata, msg)
 		default:
-			slog.DebugContext(ctx, "Command plugin received unknown topic", "topic", msg.Topic)
+			slog.DebugContext(ctxWithMetadata, "Command plugin received unknown topic", "topic", msg.Topic)
 		}
+	}
+}
+
+func (cp *CommandPlugin) Subscriptions() []string {
+	return []string{
+		bus.ConnectionResetTopic,
+		bus.ResourceUpdateTopic,
+		bus.InstanceHealthTopic,
+		bus.DataPlaneHealthResponseTopic,
+		bus.DataPlaneResponseTopic,
 	}
 }
 
@@ -217,33 +228,41 @@ func (cp *CommandPlugin) processDataPlaneResponse(ctx context.Context, msg *bus.
 }
 
 func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Message) {
+	var subscribeCtx context.Context
 	slog.DebugContext(ctx, "Command plugin received connection reset message")
+
 	if newConnection, ok := msg.Data.(grpc.GrpcConnectionInterface); ok {
+		slog.DebugContext(ctx, "Canceling Subscribe after connection reset")
+		ctxWithMetadata := cp.config.NewContextWithLabels(ctx)
+		cp.subscribeMutex.Lock()
+		defer cp.subscribeMutex.Unlock()
+
+		if cp.subscribeCancel != nil {
+			cp.subscribeCancel()
+			slog.DebugContext(ctxWithMetadata, "Successfully canceled subscribe after connection reset")
+		}
+
 		connectionErr := cp.conn.Close(ctx)
 		if connectionErr != nil {
 			slog.ErrorContext(ctx, "Command plugin: unable to close connection", "error", connectionErr)
 		}
+
 		cp.conn = newConnection
 		err := cp.commandService.UpdateClient(ctx, cp.conn.CommandServiceClient())
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to reset connection", "error", err)
 			return
 		}
+
+		slog.DebugContext(ctxWithMetadata, "Starting new subscribe after connection reset")
+		subscribeCtx, cp.subscribeCancel = context.WithCancel(ctxWithMetadata)
+		go cp.commandService.Subscribe(subscribeCtx)
+
 		slog.DebugContext(ctx, "Command service client reset successfully")
 	}
 }
 
-func (cp *CommandPlugin) Subscriptions() []string {
-	return []string{
-		bus.ConnectionResetTopic,
-		bus.ResourceUpdateTopic,
-		bus.InstanceHealthTopic,
-		bus.DataPlaneHealthResponseTopic,
-		bus.DataPlaneResponseTopic,
-	}
-}
-
-// nolint: revive, cyclop
+//nolint:revive // cognitive complexity is 14
 func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 	for {
 		select {

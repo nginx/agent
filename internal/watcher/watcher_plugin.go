@@ -30,7 +30,6 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . instanceWatcherServiceInterface
 
-// nolint
 type (
 	Watcher struct {
 		messagePipe                        bus.MessagePipeInterface
@@ -93,7 +92,6 @@ func NewWatcher(agentConfig *config.Config) *Watcher {
 	}
 }
 
-// nolint: unparam
 // error is always nil
 func (w *Watcher) Init(ctx context.Context, messagePipe bus.MessagePipeInterface) error {
 	slog.DebugContext(ctx, "Starting watcher plugin")
@@ -123,7 +121,6 @@ func (w *Watcher) Init(ctx context.Context, messagePipe bus.MessagePipeInterface
 	return nil
 }
 
-// nolint: unparam
 // error is always nil
 func (w *Watcher) Close(ctx context.Context) error {
 	slog.InfoContext(ctx, "Closing watcher plugin")
@@ -143,12 +140,10 @@ func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
 	case bus.ConfigApplyRequestTopic:
 		w.handleConfigApplyRequest(ctx, msg)
-	case bus.ConfigApplySuccessfulTopic:
-		w.handleConfigApplySuccess(ctx, msg)
-	case bus.ConfigApplyCompleteTopic:
-		w.handleConfigApplyComplete(ctx, msg)
 	case bus.DataPlaneHealthRequestTopic:
 		w.handleHealthRequest(ctx)
+	case bus.EnableWatchersTopic:
+		w.handleEnableWatchers(ctx, msg)
 	default:
 		slog.DebugContext(ctx, "Watcher plugin unknown topic", "topic", msg.Topic)
 	}
@@ -157,10 +152,41 @@ func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
 func (*Watcher) Subscriptions() []string {
 	return []string{
 		bus.ConfigApplyRequestTopic,
-		bus.ConfigApplySuccessfulTopic,
-		bus.ConfigApplyCompleteTopic,
 		bus.DataPlaneHealthRequestTopic,
+		bus.EnableWatchersTopic,
 	}
+}
+
+func (w *Watcher) handleEnableWatchers(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Watcher plugin received enable watchers message")
+	enableWatchersMessage, ok := msg.Data.(*model.EnableWatchers)
+	if !ok {
+		slog.ErrorContext(ctx, "Unable to cast message payload to *model.enableWatchers", "payload",
+			msg.Data, "topic", msg.Topic)
+
+		return
+	}
+
+	instanceID := enableWatchersMessage.InstanceID
+	configContext := enableWatchersMessage.ConfigContext
+
+	// if config apply ended in a reload there is no need to reparse the config so an empty config context is sent
+	// from the file plugin
+	if configContext.InstanceID != "" {
+		w.instanceWatcherService.HandleNginxConfigContextUpdate(ctx, instanceID, configContext)
+	}
+
+	w.watcherMutex.Lock()
+	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
+		w.instancesWithConfigApplyInProgress,
+		func(element string) bool {
+			return element == instanceID
+		},
+	)
+
+	w.fileWatcherService.EnableWatcher(ctx)
+	w.instanceWatcherService.SetEnabled(true)
+	w.watcherMutex.Unlock()
 }
 
 func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message) {
@@ -187,39 +213,8 @@ func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message
 	defer w.watcherMutex.Unlock()
 	w.instancesWithConfigApplyInProgress = append(w.instancesWithConfigApplyInProgress, instanceID)
 
-	w.fileWatcherService.SetEnabled(false)
+	w.fileWatcherService.DisableWatcher(ctx)
 	w.instanceWatcherService.SetEnabled(false)
-}
-
-func (w *Watcher) handleConfigApplySuccess(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "Watcher plugin received config apply success message")
-	successMessage, ok := msg.Data.(*model.ConfigApplySuccess)
-	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *model.ConfigApplySuccess", "payload",
-			msg.Data, "topic", msg.Topic)
-
-		return
-	}
-
-	instanceID := successMessage.DataPlaneResponse.GetInstanceId()
-
-	// If the config apply had no changes to any files, it is results in a ConfigApplySuccessfulTopic with an empty
-	// configContext being sent, there is no need to reparse the config as no change has occurred.
-	if successMessage.ConfigContext.InstanceID != "" {
-		w.instanceWatcherService.HandleNginxConfigContextUpdate(ctx, instanceID, successMessage.ConfigContext)
-	}
-
-	w.watcherMutex.Lock()
-	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
-		w.instancesWithConfigApplyInProgress,
-		func(element string) bool {
-			return element == instanceID
-		},
-	)
-
-	w.fileWatcherService.SetEnabled(true)
-	w.instanceWatcherService.SetEnabled(true)
-	w.watcherMutex.Unlock()
 }
 
 func (w *Watcher) handleHealthRequest(ctx context.Context) {
@@ -227,31 +222,6 @@ func (w *Watcher) handleHealthRequest(ctx context.Context) {
 	w.messagePipe.Process(ctx, &bus.Message{
 		Topic: bus.DataPlaneHealthResponseTopic, Data: w.healthWatcherService.InstancesHealth(),
 	})
-}
-
-func (w *Watcher) handleConfigApplyComplete(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "Watcher plugin received config apply complete message")
-	response, ok := msg.Data.(*mpi.DataPlaneResponse)
-	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *mpi.DataPlaneResponse", "payload",
-			msg.Data, "topic", msg.Topic)
-
-		return
-	}
-
-	instanceID := response.GetInstanceId()
-
-	w.watcherMutex.Lock()
-	defer w.watcherMutex.Unlock()
-	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
-		w.instancesWithConfigApplyInProgress,
-		func(element string) bool {
-			return element == instanceID
-		},
-	)
-
-	w.instanceWatcherService.SetEnabled(true)
-	w.fileWatcherService.SetEnabled(true)
 }
 
 func (w *Watcher) monitorWatchers(ctx context.Context) {
@@ -328,6 +298,7 @@ func (w *Watcher) handleInstanceUpdates(newCtx context.Context, message instance
 	}
 	if len(message.InstanceUpdates.UpdatedInstances) > 0 {
 		slog.DebugContext(newCtx, "Instances updated", "instances", message.InstanceUpdates.UpdatedInstances)
+		w.healthWatcherService.UpdateHealthWatcher(message.InstanceUpdates.UpdatedInstances)
 		w.messagePipe.Process(
 			newCtx,
 			&bus.Message{Topic: bus.UpdatedInstancesTopic, Data: message.InstanceUpdates.UpdatedInstances},

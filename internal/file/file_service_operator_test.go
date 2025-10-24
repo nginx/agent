@@ -9,8 +9,10 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1/v1fakes"
@@ -45,14 +47,14 @@ func TestFileServiceOperator_UpdateOverview(t *testing.T) {
 
 	fakeFileServiceClient.UpdateFileReturns(&mpi.UpdateFileResponse{}, nil)
 
-	fileServiceOperator := NewFileServiceOperator(types.AgentConfig(), fakeFileServiceClient)
+	fileServiceOperator := NewFileServiceOperator(types.AgentConfig(), fakeFileServiceClient, &sync.RWMutex{})
 	fileServiceOperator.SetIsConnected(true)
 
 	err := fileServiceOperator.UpdateOverview(ctx, "123", []*mpi.File{
 		{
 			FileMeta: fileMeta,
 		},
-	}, 0)
+	}, filePath, 0)
 
 	require.NoError(t, err)
 	assert.Equal(t, 2, fakeFileServiceClient.UpdateOverviewCallCount())
@@ -75,7 +77,7 @@ func TestFileServiceOperator_UpdateOverview_MaxIterations(t *testing.T) {
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 
 	// do 5 iterations
-	for i := 0; i <= 5; i++ {
+	for i := range 6 {
 		fakeFileServiceClient.UpdateOverviewReturnsOnCall(i, &mpi.UpdateOverviewResponse{
 			Overview: overview,
 		}, nil)
@@ -83,17 +85,41 @@ func TestFileServiceOperator_UpdateOverview_MaxIterations(t *testing.T) {
 
 	fakeFileServiceClient.UpdateFileReturns(&mpi.UpdateFileResponse{}, nil)
 
-	fileServiceOperator := NewFileServiceOperator(types.AgentConfig(), fakeFileServiceClient)
+	fileServiceOperator := NewFileServiceOperator(types.AgentConfig(), fakeFileServiceClient, &sync.RWMutex{})
 	fileServiceOperator.SetIsConnected(true)
 
 	err := fileServiceOperator.UpdateOverview(ctx, "123", []*mpi.File{
 		{
 			FileMeta: fileMeta,
 		},
-	}, 0)
+	}, filePath, 0)
 
 	require.Error(t, err)
 	assert.Equal(t, "too many UpdateOverview attempts", err.Error())
+}
+
+func TestFileServiceOperator_UpdateOverview_NoConnection(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), 500*time.Millisecond)
+	defer cancel()
+
+	filePath := filepath.Join(t.TempDir(), "nginx.conf")
+	fileMeta := protos.FileMeta(filePath, "")
+
+	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+
+	agentConfig := types.AgentConfig()
+	agentConfig.Client.Backoff.MaxElapsedTime = 200 * time.Millisecond
+
+	fileServiceOperator := NewFileServiceOperator(types.AgentConfig(), fakeFileServiceClient, &sync.RWMutex{})
+	fileServiceOperator.SetIsConnected(false)
+
+	err := fileServiceOperator.UpdateOverview(ctx, "123", []*mpi.File{
+		{
+			FileMeta: fileMeta,
+		},
+	}, filePath, 0)
+
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
 }
 
 func TestFileManagerService_UpdateFile(t *testing.T) {
@@ -126,7 +152,7 @@ func TestFileManagerService_UpdateFile(t *testing.T) {
 		}
 
 		fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
-		fileServiceOperator := NewFileServiceOperator(types.AgentConfig(), fakeFileServiceClient)
+		fileServiceOperator := NewFileServiceOperator(types.AgentConfig(), fakeFileServiceClient, &sync.RWMutex{})
 		fileServiceOperator.SetIsConnected(true)
 
 		err := fileServiceOperator.UpdateFile(ctx, "123", &mpi.File{FileMeta: fileMeta})
@@ -150,7 +176,7 @@ func TestFileManagerService_UpdateFile_LargeFile(t *testing.T) {
 	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 	fakeClientStreamingClient := &FakeClientStreamingClient{sendCount: atomic.Int32{}}
 	fakeFileServiceClient.UpdateFileStreamReturns(fakeClientStreamingClient, nil)
-	fileServiceOperator := NewFileServiceOperator(types.AgentConfig(), fakeFileServiceClient)
+	fileServiceOperator := NewFileServiceOperator(types.AgentConfig(), fakeFileServiceClient, &sync.RWMutex{})
 
 	fileServiceOperator.SetIsConnected(true)
 	err := fileServiceOperator.UpdateFile(ctx, "123", &mpi.File{FileMeta: fileMeta})

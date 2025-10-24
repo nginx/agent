@@ -352,6 +352,8 @@ message APIDetails {
     string location = 1;
     // the API listen directive
     string listen =  2;
+    // the API CA file path
+    string Ca = 3;
 }
 
 // A set of runtime NGINX App Protect settings

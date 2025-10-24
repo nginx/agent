@@ -14,7 +14,10 @@ import (
 type NginxConfigContext struct {
 	StubStatus       *APIDetails
 	PlusAPI          *APIDetails
+	StubStatuses     []*APIDetails
+	PlusAPIs         []*APIDetails
 	InstanceID       string
+	ConfigPath       string
 	Files            []*v1.File
 	AccessLogs       []*AccessLog
 	ErrorLogs        []*ErrorLog
@@ -26,6 +29,7 @@ type APIDetails struct {
 	URL      string
 	Listen   string
 	Location string
+	Ca       string
 }
 
 type ManifestFile struct {
@@ -41,6 +45,8 @@ type ManifestFileMeta struct {
 	Size int64 `json:"size"`
 	// File referenced in the NGINX config
 	Referenced bool `json:"referenced"`
+	// File is not managed by the agent
+	Unmanaged bool `json:"unmanaged"`
 }
 type ConfigApplyMessage struct {
 	Error         error
@@ -73,13 +79,17 @@ const (
 	OK
 )
 
-type ConfigApplySuccess struct {
+type ReloadSuccess struct {
 	ConfigContext     *NginxConfigContext
 	DataPlaneResponse *v1.DataPlaneResponse
 }
 
-// Complexity is 11, allowed is 10
-// nolint: revive, cyclop
+type EnableWatchers struct {
+	ConfigContext *NginxConfigContext
+	InstanceID    string
+}
+
+//nolint:revive,cyclop // cyclomatic complexity is 16
 func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext) bool {
 	if ncc.StubStatus != nil && otherNginxConfigContext.StubStatus != nil {
 		if ncc.StubStatus.URL != otherNginxConfigContext.StubStatus.URL || ncc.StubStatus.Listen !=
@@ -97,6 +107,9 @@ func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext
 		}
 	}
 
+	if ncc.ConfigPath != otherNginxConfigContext.ConfigPath {
+		return false
+	}
 	if ncc.InstanceID != otherNginxConfigContext.InstanceID {
 		return false
 	}

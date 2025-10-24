@@ -25,9 +25,9 @@ var _ logTailerOperator = (*NginxLogTailerOperator)(nil)
 
 var (
 	// Line is over 120 characters long, regex needs to be on one line so needs to be ignored by linter
-	// nolint: lll
+	//nolint:lll // needs to be on one line
 	reloadErrorList = re.MustCompile(`\d{1,4}\/\d{1,2}\/\d{1,2} ([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9] ?(nginx\:|) (\[emerg\]|\[alert\]|\[crit\])`)
-	// nolint: lll
+	//nolint:lll // needs to be on one line
 	warningRegex    = re.MustCompile(`\d{1,4}\/\d{1,2}\/\d{1,2} ([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9] ?(nginx\:|) (\[warn\])`)
 	ignoreErrorList = re.MustCompile(`.*(usage report| license expired).*`)
 )

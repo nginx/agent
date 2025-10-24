@@ -21,6 +21,13 @@ import (
 
 const operatorType = "access_log_file_input"
 
+// Config is the configuration of a file input operator
+type Config struct {
+	helper.InputConfig  `mapstructure:",squash"`
+	AccessLogFormat     string `mapstructure:"access_log_format"`
+	fileconsumer.Config `mapstructure:",squash"`
+}
+
 func init() {
 	operator.Register(operatorType, func() operator.Builder { return NewConfig() })
 }
@@ -38,15 +45,9 @@ func NewConfigWithID(operatorID string) *Config {
 	}
 }
 
-// Config is the configuration of a file input operator
-type Config struct {
-	helper.InputConfig  `mapstructure:",squash"`
-	AccessLogFormat     string `mapstructure:"access_log_format"`
-	fileconsumer.Config `mapstructure:",squash"`
-}
-
 // Build will build a file input operator from the supplied configuration
-// nolint: ireturn
+//
+//nolint:ireturn // The function returns a specific interface type as required by the OpenTelemetry Collector framework.
 func (c Config) Build(set component.TelemetrySettings) (operator.Operator, error) {
 	logger := set.Logger
 

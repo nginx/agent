@@ -9,8 +9,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/nginx/agent/v3/pkg/host/exec"
+
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
-	"github.com/nginx/agent/v3/internal/datasource/host/exec"
 	processwatcher "github.com/nginx/agent/v3/internal/watcher/process"
 	"github.com/nginx/agent/v3/pkg/nginxprocess"
 )
@@ -51,7 +52,7 @@ func (nhw *NginxHealthWatcher) Health(ctx context.Context, instance *mpi.Instanc
 	}
 
 	if len(instance.GetInstanceRuntime().GetInstanceChildren()) == 0 {
-		health.Description = fmt.Sprintf("%s, instance does not have enough children", health.GetDescription())
+		health.Description = health.GetDescription() + ", instance does not have enough children"
 		health.InstanceHealthStatus = mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_DEGRADED
 	}
 

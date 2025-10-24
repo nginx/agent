@@ -8,7 +8,9 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
+	"net"
+	"net/url"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -16,6 +18,13 @@ import (
 	"github.com/nginx/agent/v3/test/stub"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/confmap"
+	"go.opentelemetry.io/collector/confmap/provider/envprovider"
+	"go.opentelemetry.io/collector/confmap/provider/fileprovider"
+	"go.opentelemetry.io/collector/confmap/provider/httpprovider"
+	"go.opentelemetry.io/collector/confmap/provider/httpsprovider"
+	"go.opentelemetry.io/collector/confmap/provider/yamlprovider"
+
 	"go.opentelemetry.io/collector/otelcol"
 
 	"github.com/nginx/agent/v3/internal/bus"
@@ -68,7 +77,7 @@ func TestCollector_New(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			collector, err := New(tt.config)
+			collector, err := NewCollector(tt.config)
 
 			if tt.expectedError != nil {
 				require.Error(t, err)
@@ -115,7 +124,7 @@ func TestCollector_Init(t *testing.T) {
 				conf.Collector.Receivers = config.Receivers{}
 			}
 
-			collector, err = New(conf)
+			collector, err = NewCollector(conf)
 			require.NoError(t, err, "NewCollector should not return an error with valid config")
 
 			collector.service = createFakeCollector()
@@ -134,7 +143,7 @@ func TestCollector_InitAndClose(t *testing.T) {
 	conf := types.OTelConfig(t)
 	conf.Collector.Log.Path = ""
 
-	collector, err := New(conf)
+	collector, err := NewCollector(conf)
 	require.NoError(t, err, "NewCollector should not return an error with valid config")
 
 	ctx := context.Background()
@@ -153,7 +162,7 @@ func TestCollector_InitAndClose(t *testing.T) {
 	assert.Equal(t, otelcol.StateClosed, collector.State())
 }
 
-// nolint: revive
+//nolint:revive // cognitive complexity is 13
 func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -174,8 +183,9 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 				},
 			},
 			receivers: config.Receivers{
-				HostMetrics:   nil,
-				OtlpReceivers: nil,
+				HostMetrics:     nil,
+				OtlpReceivers:   nil,
+				TcplogReceivers: make(map[string]*config.TcplogReceiver),
 				NginxPlusReceivers: []config.NginxPlusReceiver{
 					{
 						InstanceID: "123",
@@ -214,8 +224,9 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 				},
 			},
 			receivers: config.Receivers{
-				HostMetrics:   nil,
-				OtlpReceivers: nil,
+				HostMetrics:     nil,
+				OtlpReceivers:   nil,
+				TcplogReceivers: make(map[string]*config.TcplogReceiver),
 				NginxReceivers: []config.NginxReceiver{
 					{
 						InstanceID: "123",
@@ -244,7 +255,11 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 
 			conf := types.OTelConfig(t)
 
-			conf.Command = nil
+			conf.Command = &config.Command{
+				Server: &config.ServerConfig{
+					Proxy: &config.Proxy{},
+				},
+			}
 
 			conf.Collector.Log.Path = ""
 			conf.Collector.Receivers.HostMetrics = nil
@@ -252,7 +267,7 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 
 			if len(test.receivers.NginxPlusReceivers) == 1 {
 				apiDetails := config.APIDetails{
-					URL:      fmt.Sprintf("%s/api", nginxPlusMock.URL),
+					URL:      nginxPlusMock.URL + "/api",
 					Listen:   "",
 					Location: "",
 				}
@@ -270,7 +285,7 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 				model.PlusAPI.Location = apiDetails.Location
 			} else {
 				apiDetails := config.APIDetails{
-					URL:      fmt.Sprintf("%s/stub_status", nginxPlusMock.URL),
+					URL:      nginxPlusMock.URL + "/stub_status",
 					Listen:   "",
 					Location: "",
 				}
@@ -294,7 +309,7 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 			conf.Collector.Extensions.HeadersSetter = nil
 			conf.Collector.Exporters.PrometheusExporter = nil
 
-			collector, err := New(conf)
+			collector, err := NewCollector(conf)
 			require.NoError(tt, err, "NewCollector should not return an error with valid config")
 
 			collector.service = createFakeCollector()
@@ -350,12 +365,14 @@ func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
 				Data:  protos.HostResource(),
 			},
 			processors: config.Processors{
-				Resource: &config.Resource{
-					Attributes: []config.ResourceAttribute{
-						{
-							Key:    "resource.id",
-							Action: "insert",
-							Value:  "1234",
+				Resource: map[string]*config.Resource{
+					"default": {
+						Attributes: []config.ResourceAttribute{
+							{
+								Key:    "resource.id",
+								Action: "insert",
+								Value:  "1234",
+							},
 						},
 					},
 				},
@@ -377,7 +394,7 @@ func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			collector, err := New(conf)
+			collector, err := NewCollector(conf)
 			require.NoError(tt, err, "NewCollector should not return an error with valid config")
 
 			collector.service = createFakeCollector()
@@ -406,6 +423,7 @@ func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
 	conf.Collector.Processors.Attribute = nil
 	conf.Collector.Processors.Resource = nil
 	conf.Collector.Processors.LogsGzip = nil
+	conf.Collector.Processors.SecurityViolations = nil
 	conf.Collector.Exporters.OtlpExporters = nil
 	conf.Collector.Exporters.PrometheusExporter = &config.PrometheusExporter{
 		Server: &config.ServerConfig{
@@ -438,7 +456,7 @@ func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			collector, err := New(conf)
+			collector, err := NewCollector(conf)
 			require.NoError(tt, err, "NewCollector should not return an error with valid config")
 
 			collector.service = createFakeCollector()
@@ -465,7 +483,6 @@ func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
 	}
 }
 
-// nolint: dupl
 func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 	conf := types.OTelConfig(t)
 	conf.Collector.Log.Path = ""
@@ -560,7 +577,7 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			conf.Collector.Receivers = test.existingReceivers
-			collector, err := New(conf)
+			collector, err := NewCollector(conf)
 			require.NoError(tt, err, "NewCollector should not return an error with valid config")
 
 			collector.service = createFakeCollector()
@@ -574,7 +591,6 @@ func TestCollector_updateExistingNginxOSSReceiver(t *testing.T) {
 	}
 }
 
-// nolint: dupl
 func TestCollector_updateExistingNginxPlusReceiver(t *testing.T) {
 	conf := types.OTelConfig(t)
 	conf.Collector.Log.Path = ""
@@ -651,7 +667,7 @@ func TestCollector_updateExistingNginxPlusReceiver(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
 			conf.Collector.Receivers = test.existingReceivers
-			collector, err := New(conf)
+			collector, err := NewCollector(conf)
 			require.NoError(tt, err, "NewCollector should not return an error with valid config")
 
 			collector.service = createFakeCollector()
@@ -706,75 +722,354 @@ func TestCollector_updateResourceAttributes(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			collector, err := New(conf)
+			collector, err := NewCollector(conf)
 			require.NoError(tt, err, "NewCollector should not return an error with valid config")
 
 			collector.service = createFakeCollector()
 
 			// set up Actions
-			conf.Collector.Processors.Resource = &config.Resource{Attributes: test.setup}
+			conf.Collector.Processors.Resource = make(map[string]*config.Resource)
+			conf.Collector.Processors.Resource["default"] = &config.Resource{Attributes: test.setup}
 
 			reloadRequired := collector.updateResourceAttributes(test.attributes)
 			assert.Equal(tt,
 				test.expectedAttribs,
-				conf.Collector.Processors.Resource.Attributes)
+				conf.Collector.Processors.Resource["default"].Attributes)
 			assert.Equal(tt, test.expectedReloadRequired, reloadRequired)
 		})
 	}
 }
 
-func TestCollector_updateTcplogReceivers(t *testing.T) {
+func TestCollector_updateNginxAppProtectTcplogReceivers(t *testing.T) {
+	ctx := context.Background()
 	conf := types.OTelConfig(t)
 	conf.Collector.Log.Path = ""
 	conf.Collector.Processors.Batch = nil
 	conf.Collector.Processors.Attribute = nil
 	conf.Collector.Processors.Resource = nil
 	conf.Collector.Processors.LogsGzip = nil
-	collector, err := New(conf)
+	conf.Collector.Processors.SecurityViolations = nil
+	collector, err := NewCollector(conf)
 	require.NoError(t, err)
 
 	nginxConfigContext := &model.NginxConfigContext{
-		NAPSysLogServers: []string{
-			"localhost:151",
-		},
+		NAPSysLogServers: []string{"localhost:15632"},
 	}
 
 	assert.Empty(t, conf.Collector.Receivers.TcplogReceivers)
 
-	t.Run("Test 1: New TcplogReceiver added", func(tt *testing.T) {
-		tcplogReceiverAdded := collector.updateTcplogReceivers(nginxConfigContext)
+	t.Run("Test 1: NewCollector TcplogReceiver added", func(tt *testing.T) {
+		tcplogReceiverAdded := collector.updateNginxAppProtectTcplogReceivers(ctx, nginxConfigContext)
 
 		assert.True(tt, tcplogReceiverAdded)
 		assert.Len(tt, conf.Collector.Receivers.TcplogReceivers, 1)
-		assert.Equal(tt, "localhost:151", conf.Collector.Receivers.TcplogReceivers[0].ListenAddress)
-		assert.Len(tt, conf.Collector.Receivers.TcplogReceivers[0].Operators, 4)
+		assert.Equal(tt, "localhost:15632", conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].ListenAddress)
+		assert.Len(tt, conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].Operators, 7)
 	})
 
-	// Calling updateTcplogReceivers shouldn't update the TcplogReceivers slice
+	// Calling updateNginxAppProtectTcplogReceivers shouldn't update the TcplogReceivers slice
 	// since there is already a receiver with the same ListenAddress
 	t.Run("Test 2: TcplogReceiver already exists", func(tt *testing.T) {
-		tcplogReceiverAdded := collector.updateTcplogReceivers(nginxConfigContext)
+		tcplogReceiverAdded := collector.updateNginxAppProtectTcplogReceivers(ctx, nginxConfigContext)
 		assert.False(t, tcplogReceiverAdded)
 		assert.Len(t, conf.Collector.Receivers.TcplogReceivers, 1)
-		assert.Equal(t, "localhost:151", conf.Collector.Receivers.TcplogReceivers[0].ListenAddress)
-		assert.Len(t, conf.Collector.Receivers.TcplogReceivers[0].Operators, 4)
+		assert.Equal(t, "localhost:15632", conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].ListenAddress)
+		assert.Len(t, conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].Operators, 7)
 	})
 
 	t.Run("Test 3: TcplogReceiver deleted", func(tt *testing.T) {
-		tcplogReceiverDeleted := collector.updateTcplogReceivers(&model.NginxConfigContext{})
+		tcplogReceiverDeleted := collector.updateNginxAppProtectTcplogReceivers(ctx, &model.NginxConfigContext{})
 		assert.True(t, tcplogReceiverDeleted)
 		assert.Empty(t, conf.Collector.Receivers.TcplogReceivers)
 	})
 
-	t.Run("Test 4: New tcplogReceiver added and deleted another", func(tt *testing.T) {
-		tcplogReceiverDeleted := collector.updateTcplogReceivers(&model.NginxConfigContext{NAPSysLogServers: []string{
-			"localhost:152",
-		}})
+	t.Run("Test 4: NewCollector tcplogReceiver added and deleted another", func(tt *testing.T) {
+		tcplogReceiverDeleted := collector.updateNginxAppProtectTcplogReceivers(ctx,
+			&model.NginxConfigContext{
+				NAPSysLogServers: []string{"localhost:1555"},
+			},
+		)
+
 		assert.True(t, tcplogReceiverDeleted)
 		assert.Len(t, conf.Collector.Receivers.TcplogReceivers, 1)
-		assert.Equal(t, "localhost:152", conf.Collector.Receivers.TcplogReceivers[0].ListenAddress)
-		assert.Len(t, conf.Collector.Receivers.TcplogReceivers[0].Operators, 4)
+		assert.Equal(t, "localhost:1555", conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].ListenAddress)
+		assert.Len(t, conf.Collector.Receivers.TcplogReceivers["nginx_app_protect"].Operators, 7)
 	})
+}
+
+func Test_setProxyEnvs(t *testing.T) {
+	ctx := context.Background()
+	proxyURL := "http://localhost:8080"
+	msg := "Setting test proxy"
+
+	// Unset first to ensure clean state
+	_ = os.Unsetenv("HTTPS_PROXY")
+
+	setProxyEnvs(ctx, proxyURL, msg)
+
+	httpProxy := os.Getenv("HTTPS_PROXY")
+	assert.Equal(t, proxyURL, httpProxy)
+}
+
+func Test_setProxyWithBasicAuth(t *testing.T) {
+	ctx := context.Background()
+	u, _ := url.Parse("http://localhost:8080")
+	proxy := &config.Proxy{
+		URL:      "http://localhost:8080",
+		Username: "user",
+		Password: "pass",
+	}
+
+	// Unset first to ensure clean state
+	_ = os.Unsetenv("HTTPS_PROXY")
+
+	setProxyWithBasicAuth(ctx, proxy, u)
+
+	proxyURL := u.String()
+	httpProxy := os.Getenv("HTTPS_PROXY")
+	assert.Equal(t, proxyURL, httpProxy)
+
+	logBuf := &bytes.Buffer{}
+	stub.StubLoggerWith(logBuf)
+	// Test missing username/password
+	proxyMissing := &config.Proxy{URL: "http://localhost:8080"}
+	setProxyWithBasicAuth(ctx, proxyMissing, u)
+	helpers.ValidateLog(t, "Unable to configure OTLP exporter proxy, "+
+		"username or password missing for basic auth", logBuf)
+}
+
+//nolint:contextcheck // Can not update the "OTelConfig" function definition
+func TestSetExporterProxyEnvVars(t *testing.T) {
+	ctx := context.Background()
+	logBuf := &bytes.Buffer{}
+	stub.StubLoggerWith(logBuf)
+
+	tests := []struct {
+		name        string
+		proxy       *config.Proxy
+		expectedLog string
+		setEnv      bool
+	}{
+		{
+			name:        "Test 1: No proxy config",
+			proxy:       nil,
+			expectedLog: "Proxy configuration is not setup. Unable to configure proxy for OTLP exporter",
+			setEnv:      false,
+		},
+		{
+			name:        "Test 2: Malformed proxy URL",
+			proxy:       &config.Proxy{URL: "://bad_url"},
+			expectedLog: "Malformed proxy URL, unable to configure proxy for OTLP exporter",
+			setEnv:      false,
+		},
+		{
+			name:        "Test 3: No auth, valid URL",
+			proxy:       &config.Proxy{URL: "http://proxy.example.com:8080"},
+			expectedLog: "Setting Proxy from command.Proxy (no auth)",
+			setEnv:      true,
+		},
+		{
+			name: "Basic auth, valid URL",
+			proxy: &config.Proxy{
+				URL:        "http://proxy.example.com:8080",
+				AuthMethod: "basic",
+				Username:   "user",
+				Password:   "pass",
+			},
+			expectedLog: "Setting Proxy with basic auth",
+			setEnv:      true,
+		},
+		{
+			name:        "Unknown auth method",
+			proxy:       &config.Proxy{URL: "http://proxy.example.com:8080", AuthMethod: "digest"},
+			expectedLog: "Unknown auth type for proxy, unable to configure proxy for OTLP exporter",
+			setEnv:      false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			logBuf.Reset()
+
+			_ = os.Unsetenv("HTTPS_PROXY")
+
+			tmpDir := t.TempDir()
+			cfg := types.OTelConfig(t)
+			cfg.Collector.Log.Path = filepath.Join(tmpDir, "otel-collector-test.log")
+			cfg.Command.Server.Proxy = tt.proxy
+
+			// If the proxy is nil, the production code would never call the setter functions.
+			// added this check to prevent the panic error in UT.
+			if cfg.Command.Server.Proxy == nil {
+				// For the nil proxy case, we expect nothing to happen.
+				assert.Empty(t, os.Getenv("HTTPS_PROXY"))
+
+				return
+			}
+
+			collector, err := NewCollector(cfg)
+			require.NoError(t, err)
+
+			collector.setExporterProxyEnvVars(ctx)
+
+			helpers.ValidateLog(t, tt.expectedLog, logBuf)
+
+			if tt.setEnv {
+				assert.NotEmpty(t, os.Getenv("HTTPS_PROXY"))
+			} else {
+				assert.Empty(t, os.Getenv("HTTPS_PROXY"))
+			}
+		})
+	}
+}
+
+func TestCollector_findAvailableSyslogServers(t *testing.T) {
+	ctx := context.Background()
+	conf := types.OTelConfig(t)
+	conf.Collector.Log.Path = ""
+	conf.Collector.Processors.Batch = nil
+	conf.Collector.Processors.Attribute = nil
+	conf.Collector.Processors.Resource = nil
+	conf.Collector.Processors.LogsGzip = nil
+	conf.Collector.Processors.SecurityViolations = nil
+	collector, err := NewCollector(conf)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name                    string
+		expectedSyslogServer    string
+		previousNAPSysLogServer string
+		syslogServers           []string
+		portInUse               bool
+	}{
+		{
+			name:                    "Test 1: port available",
+			expectedSyslogServer:    "localhost:15632",
+			previousNAPSysLogServer: "",
+			syslogServers:           []string{"localhost:15632"},
+			portInUse:               false,
+		},
+		{
+			name:                    "Test 2: port in use",
+			expectedSyslogServer:    "",
+			previousNAPSysLogServer: "",
+			syslogServers:           []string{"localhost:15632"},
+			portInUse:               true,
+		},
+		{
+			name:                    "Test 3: syslog server already configured",
+			expectedSyslogServer:    "localhost:15632",
+			previousNAPSysLogServer: "localhost:15632",
+			syslogServers:           []string{"localhost:15632"},
+			portInUse:               false,
+		},
+		{
+			name:                    "Test 4: new syslog server",
+			expectedSyslogServer:    "localhost:15632",
+			previousNAPSysLogServer: "localhost:1122",
+			syslogServers:           []string{"localhost:15632"},
+			portInUse:               false,
+		},
+		{
+			name:                    "Test 5: port in use find next server",
+			expectedSyslogServer:    "localhost:1122",
+			previousNAPSysLogServer: "",
+			syslogServers:           []string{"localhost:15632", "localhost:1122"},
+			portInUse:               true,
+		},
+		{
+			name:                    "Test 6: port hasn't changed",
+			expectedSyslogServer:    "localhost:1122",
+			previousNAPSysLogServer: "localhost:1122",
+			syslogServers:           []string{"localhost:1122"},
+			portInUse:               true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(tt *testing.T) {
+			require.NoError(t, err)
+
+			collector.previousNAPSysLogServer = test.previousNAPSysLogServer
+
+			if test.portInUse {
+				listenConfig := &net.ListenConfig{}
+				ln, listenError := listenConfig.Listen(ctx, "tcp", "localhost:15632")
+				require.NoError(t, listenError)
+				defer ln.Close()
+			}
+
+			actual := collector.findAvailableSyslogServers(ctx, test.syslogServers)
+			assert.Equal(tt, test.expectedSyslogServer, actual)
+		})
+	}
+}
+
+func TestCollector_writeRunningConfig(t *testing.T) {
+	tempDir := t.TempDir()
+
+	tests := []struct {
+		name           string
+		writeConfigErr error
+		settings       otelcol.CollectorSettings
+	}{
+		{
+			name: "Test 1: Write Config Success",
+			settings: otelcol.CollectorSettings{
+				ConfigProviderSettings: otelcol.ConfigProviderSettings{
+					ResolverSettings: confmap.ResolverSettings{
+						URIs: []string{"./testdata/otel_config.yaml", "./testdata/custom_otel_config.yaml"},
+						ProviderFactories: []confmap.ProviderFactory{
+							envprovider.NewFactory(),
+							fileprovider.NewFactory(),
+							httpprovider.NewFactory(),
+							httpsprovider.NewFactory(),
+							yamlprovider.NewFactory(),
+						},
+						DefaultScheme:      "",
+						ProviderSettings:   confmap.ProviderSettings{},
+						ConverterFactories: nil,
+						ConverterSettings:  confmap.ConverterSettings{},
+					},
+				},
+			},
+			writeConfigErr: nil,
+		},
+		{
+			name: "Test 2: Write Config Failed",
+			settings: otelcol.CollectorSettings{
+				ConfigProviderSettings: otelcol.ConfigProviderSettings{
+					ResolverSettings: confmap.ResolverSettings{},
+				},
+			},
+			writeConfigErr: errors.New("unable to create resolver: invalid " +
+				"'confmap.ResolverSettings' configuration: no URIs"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			conf := types.OTelConfig(t)
+			conf.Collector.Log.Path = filepath.Join(tempDir, "otel-collector-test.log")
+			newCollector, err := NewCollector(conf)
+			newCollector.debugOTelConfigPath = filepath.Join(tempDir, "otel-collector-debug-config.yaml")
+			require.NoError(t, err)
+
+			writeErr := newCollector.writeRunningConfig(context.Background(), tt.settings)
+
+			if tt.writeConfigErr == nil {
+				actual, readErr := os.ReadFile(newCollector.debugOTelConfigPath)
+				require.NoError(t, readErr)
+
+				expected, expectedFileErr := os.ReadFile("./testdata/merge_config.yaml")
+				require.NoError(t, expectedFileErr)
+
+				assert.Equal(t, string(expected), string(actual))
+			} else {
+				assert.Equal(t, tt.writeConfigErr.Error(), writeErr.Error())
+			}
+		})
+	}
 }
 
 func createFakeCollector() *typesfakes.FakeCollectorInterface {

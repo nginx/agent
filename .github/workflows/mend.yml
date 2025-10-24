@@ -25,7 +25,11 @@ permissions:
 
 jobs:
   mend:
-    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) || (github.event_name == 'push' && github.event.repository.fork == false) }}
+    if: >-
+      ${{ 
+        (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-')) ||
+        (github.event_name == 'push' && !github.event.repository.fork)
+      }}
     uses: nginxinc/compliance-rules/.github/workflows/mend.yml@a27656f8f9a8748085b434ebe007f5b572709aad # v0.2
     secrets: inherit
     with:

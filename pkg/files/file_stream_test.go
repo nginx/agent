@@ -7,7 +7,7 @@ package files_test
 
 import (
 	"bytes"
-	"fmt"
+	"errors"
 	"io"
 	"math/rand"
 	"testing"
@@ -22,7 +22,7 @@ import (
 
 var letters = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-//nolint:gosec
+//nolint:gosec // random number generater is fine for test case.
 func randBytes(n int) []byte {
 	b := make([]byte, n)
 	for i := range b {
@@ -32,7 +32,7 @@ func randBytes(n int) []byte {
 	return b
 }
 
-//nolint:gocognit,revive
+//nolint:gocognit,revive // cognitive complexity is 26
 func TestSendChunkedFile(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -126,7 +126,7 @@ func TestSendChunkedFile(t *testing.T) {
 			// we send up to the Size in the file meta
 			content: randBytes(2300),
 			clientFunc: func(cl *v1fakes.FakeFileService_GetFileStreamServer) {
-				cl.SendReturns(fmt.Errorf("error"))
+				cl.SendReturns(errors.New("error"))
 			},
 			expectedErrString: "unable to send header chunk",
 		},
@@ -146,7 +146,7 @@ func TestSendChunkedFile(t *testing.T) {
 			clientFunc: func(cl *v1fakes.FakeFileService_GetFileStreamServer) {
 				cl.SendCalls(func(chunk *v1.FileDataChunk) error {
 					if cl.SendCallCount() > 1 {
-						return fmt.Errorf("foo")
+						return errors.New("foo")
 					}
 
 					return nil
@@ -191,7 +191,7 @@ func TestSendChunkedFile(t *testing.T) {
 
 			chunks := test.header.Header.GetChunks()
 			assert.EqualValues(t, chunks+1, cl.SendCallCount())
-			for i := 0; i < int(chunks+1); i++ {
+			for i := range int(chunks + 1) {
 				arg := cl.SendArgsForCall(i)
 				switch i {
 				case 0:
@@ -214,12 +214,12 @@ func TestSendChunkedFile(t *testing.T) {
 type badWriter struct{}
 
 func (b badWriter) Write(p []byte) (n int, err error) {
-	return 0, fmt.Errorf("error")
+	return 0, errors.New("error")
 }
 
-// nolint: revive,govet,maintidx
+//nolint:revive,maintidx,govet // cognitive complexity is 14
 func TestRecvChunkedFile(t *testing.T) {
-	recvErr := fmt.Errorf("recv error")
+	recvErr := errors.New("recv error")
 	type recvReturn struct {
 		chunk *v1.FileDataChunk
 		err   error

@@ -22,7 +22,7 @@ func ConfigContext() *model.NginxConfigContext {
 	}
 }
 
-// nolint: revive
+//nolint:revive // all the arguments are necessary.
 func ConfigContextWithNames(
 	accessLogName,
 	combinedAccessLogName,
@@ -153,6 +153,44 @@ func ConfigContextWithFiles(
 			{
 				Name:        errorLogName,
 				Readable:    true,
+				Permissions: "0600",
+			},
+		},
+		InstanceID:       instanceID,
+		NAPSysLogServers: syslogServers,
+	}
+}
+
+func ConfigContextWithSysLog(
+	accessLogName,
+	errorLogName string,
+	instanceID string,
+	syslogServers []string,
+) *model.NginxConfigContext {
+	return &model.NginxConfigContext{
+		StubStatus: &model.APIDetails{
+			URL:      "",
+			Listen:   "",
+			Location: "",
+		},
+		PlusAPI: &model.APIDetails{
+			URL:      "",
+			Listen:   "",
+			Location: "",
+		},
+		AccessLogs: []*model.AccessLog{
+			{
+				Name:        accessLogName,
+				Format:      "$remote_addr - $remote_user [$time_local]",
+				Readable:    true,
+				Permissions: "0600",
+			},
+		},
+		ErrorLogs: []*model.ErrorLog{
+			{
+				Name:        errorLogName,
+				Readable:    true,
+				LogLevel:    "notice",
 				Permissions: "0600",
 			},
 		},
