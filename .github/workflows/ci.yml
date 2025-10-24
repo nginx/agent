@@ -444,12 +444,3 @@ jobs:
         run: make build-grafana-example
       - name: Clean Grafana example
         run: make clean-grafana-example
-
-  trigger-release-workflow:
-    if: ${{ startsWith(github.ref_name, 'release-') && !github.event.pull_request.head.repo.fork }}
-    needs: [ lint, unit-test, component-test, performance-test, integration-tests ]
-    uses: ./.github/workflows/release-branch.yml
-    secrets: inherit
-    permissions:
-      contents: write
-      pull-requests: write
