@@ -278,22 +278,21 @@ func (fso *FileServiceOperator) UpdateFile(
 
 // renameFile, renames (moves) file from tempDir to new location to update file.
 func (fso *FileServiceOperator) RenameFile(
-	ctx context.Context, hash, fileName, dir string,
+	ctx context.Context, hash, source, desination string,
 ) error {
-	slog.DebugContext(ctx, "Renaming file", "file", fileName)
-	tempFilePath := filepath.Join(dir, fileName)
+	slog.DebugContext(ctx, fmt.Sprintf("Renaming file %s to %s", source, desination))
 
 	// Create parent directories for the target file if they don't exist
-	if err := os.MkdirAll(filepath.Dir(fileName), dirPerm); err != nil {
-		return fmt.Errorf("failed to create directories for %s: %w", fileName, err)
+	if err := os.MkdirAll(filepath.Dir(desination), dirPerm); err != nil {
+		return fmt.Errorf("failed to create directories for %s: %w", desination, err)
 	}
 
-	moveErr := os.Rename(tempFilePath, fileName)
+	moveErr := os.Rename(source, desination)
 	if moveErr != nil {
 		return fmt.Errorf("failed to rename file: %w", moveErr)
 	}
 
-	return fso.validateFileHash(fileName, hash)
+	return fso.validateFileHash(desination, hash)
 }
 
 func (fso *FileServiceOperator) validateFileHash(filePath, expectedHash string) error {
