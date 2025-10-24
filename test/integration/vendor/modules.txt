@@ -131,8 +131,6 @@ github.com/hashicorp/hcl/json/token
 github.com/inconshreveable/mousetrap
 # github.com/jstemmer/go-junit-report v1.0.0
 ## explicit; go 1.2
-github.com/jstemmer/go-junit-report
-github.com/jstemmer/go-junit-report/formatter
 github.com/jstemmer/go-junit-report/parser
 # github.com/klauspost/compress v1.18.0
 ## explicit; go 1.22
@@ -153,12 +151,6 @@ github.com/lufia/plan9stats
 # github.com/magiconair/properties v1.8.9
 ## explicit; go 1.19
 github.com/magiconair/properties
-# github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1
-## explicit; go 1.20
-github.com/maxbrunsfeld/counterfeiter/v6
-github.com/maxbrunsfeld/counterfeiter/v6/arguments
-github.com/maxbrunsfeld/counterfeiter/v6/command
-github.com/maxbrunsfeld/counterfeiter/v6/generator
 # github.com/mitchellh/mapstructure v1.5.0
 ## explicit; go 1.14
 github.com/mitchellh/mapstructure
@@ -219,7 +211,7 @@ github.com/nginx/agent/v2/src/extensions/advanced-metrics/tables/sample
 github.com/nginx/agent/v2/src/extensions/advanced-metrics/tables/schema
 github.com/nginx/agent/v2/test/utils
 github.com/nginx/agent/v2/test/utils/system
-# github.com/nginxinc/nginx-go-crossplane v0.4.48
+# github.com/nginxinc/nginx-go-crossplane v0.4.84
 ## explicit; go 1.19
 github.com/nginxinc/nginx-go-crossplane
 # github.com/opencontainers/go-digest v1.0.0
@@ -426,17 +418,11 @@ golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
 # golang.org/x/text v0.26.0
 ## explicit; go 1.23.0
-golang.org/x/text/cases
 golang.org/x/text/encoding
 golang.org/x/text/encoding/internal
 golang.org/x/text/encoding/internal/identifier
 golang.org/x/text/encoding/unicode
-golang.org/x/text/internal
-golang.org/x/text/internal/language
-golang.org/x/text/internal/language/compact
-golang.org/x/text/internal/tag
 golang.org/x/text/internal/utf8internal
-golang.org/x/text/language
 golang.org/x/text/runes
 golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
@@ -444,29 +430,17 @@ golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
 # golang.org/x/tools v0.34.0
 ## explicit; go 1.23.0
-golang.org/x/tools/cmd/goimports
 golang.org/x/tools/go/ast/astutil
-golang.org/x/tools/go/gcexportdata
-golang.org/x/tools/go/packages
-golang.org/x/tools/go/types/objectpath
-golang.org/x/tools/go/types/typeutil
 golang.org/x/tools/imports
-golang.org/x/tools/internal/aliases
 golang.org/x/tools/internal/event
 golang.org/x/tools/internal/event/core
 golang.org/x/tools/internal/event/keys
 golang.org/x/tools/internal/event/label
-golang.org/x/tools/internal/gcimporter
 golang.org/x/tools/internal/gocommand
 golang.org/x/tools/internal/gopathwalk
 golang.org/x/tools/internal/imports
 golang.org/x/tools/internal/modindex
-golang.org/x/tools/internal/packagesinternal
-golang.org/x/tools/internal/pkgbits
 golang.org/x/tools/internal/stdlib
-golang.org/x/tools/internal/typeparams
-golang.org/x/tools/internal/typesinternal
-golang.org/x/tools/internal/versions
 # google.golang.org/genproto/googleapis/rpc v0.0.0-20240318140521-94a12d6c2237
 ## explicit; go 1.19
 google.golang.org/genproto/googleapis/rpc/status

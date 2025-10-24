@@ -14,7 +14,7 @@ import (
 
 // Creator abstracts file creation (to write configs to something other than files).
 type Creator interface {
-	Create(string) (io.WriteCloser, error)
+	Create(path string) (io.WriteCloser, error)
 	Reset()
 }
 

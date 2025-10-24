@@ -37,7 +37,6 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/lufia/plan9stats v0.0.0-20231016141302-07b5767bb0ed // indirect
 	github.com/magiconair/properties v1.8.9 // indirect
-	github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1 // indirect
 	github.com/minio/highwayhash v1.0.3 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
@@ -45,7 +44,7 @@ require (
 	github.com/nats-io/nkeys v0.4.10 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/nginx/nginx-plus-go-client/v3 v3.0.1 // indirect
-	github.com/nginxinc/nginx-go-crossplane v0.4.48 // indirect
+	github.com/nginxinc/nginx-go-crossplane v0.4.84 // indirect
 	github.com/nginxinc/nginx-prometheus-exporter v1.2.0 // indirect
 	github.com/nxadm/tail v1.4.11 // indirect
 	github.com/orcaman/concurrent-map v1.0.0 // indirect

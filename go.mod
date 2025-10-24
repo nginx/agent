@@ -12,7 +12,6 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/klauspost/cpuid/v2 v2.2.5
-	github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nginxinc/nginx-prometheus-exporter v1.2.0
 	github.com/nxadm/tail v1.4.11
@@ -59,7 +58,7 @@ require (
 	github.com/lufia/plan9stats v0.0.0-20231016141302-07b5767bb0ed // indirect
 	github.com/magiconair/properties v1.8.9 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/nginxinc/nginx-go-crossplane v0.4.48 // indirect
+	github.com/nginxinc/nginx-go-crossplane v0.4.84 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20221212215047-62379fc7944b // indirect
