@@ -1,0 +1,15 @@
+exporters:
+  prometheus:
+    endpoint: "127.0.0.1:5643"
+    resource_to_telemetry_conversion:
+      enabled: true
+
+service:
+  pipelines:
+    metrics/prometheus-example-pipeline:
+      receivers:
+        - nginxplus
+      processors:
+        - resource/default
+      exporters:
+        - prometheus

@@ -105,13 +105,14 @@ type (
 	}
 
 	Collector struct {
-		ConfigPath string     `yaml:"config_path" mapstructure:"config_path"`
-		Log        *Log       `yaml:"log"         mapstructure:"log"`
-		Exporters  Exporters  `yaml:"exporters"   mapstructure:"exporters"`
-		Extensions Extensions `yaml:"extensions"  mapstructure:"extensions"`
-		Processors Processors `yaml:"processors"  mapstructure:"processors"`
-		Pipelines  Pipelines  `yaml:"pipelines"   mapstructure:"pipelines"`
-		Receivers  Receivers  `yaml:"receivers"   mapstructure:"receivers"`
+		ConfigPath            string     `yaml:"config_path"             mapstructure:"config_path"`
+		AdditionalConfigPaths []string   `yaml:"additional_config_paths" mapstructure:"additional_config_paths"`
+		Log                   *Log       `yaml:"log"                     mapstructure:"log"`
+		Exporters             Exporters  `yaml:"exporters"               mapstructure:"exporters"`
+		Extensions            Extensions `yaml:"extensions"              mapstructure:"extensions"`
+		Processors            Processors `yaml:"processors"              mapstructure:"processors"`
+		Pipelines             Pipelines  `yaml:"pipelines"               mapstructure:"pipelines"`
+		Receivers             Receivers  `yaml:"receivers"               mapstructure:"receivers"`
 	}
 
 	Pipelines struct {
@@ -362,6 +363,14 @@ func (col *Collector) Validate(allowedDirectories []string) error {
 
 	for _, nginxReceiver := range col.Receivers.NginxReceivers {
 		err = errors.Join(err, nginxReceiver.Validate(allowedDirectories))
+	}
+
+	for _, path := range col.AdditionalConfigPaths {
+		cleanPath := filepath.Clean(path)
+		pathAllowed := isAllowedDir(cleanPath, allowedDirectories)
+		if !pathAllowed {
+			err = errors.Join(err, fmt.Errorf("additional config path %s not in allowed directories", path))
+		}
 	}
 
 	return err

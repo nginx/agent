@@ -755,6 +755,14 @@ func registerCollectorFlags(fs *flag.FlagSet) {
 		"The path to the Opentelemetry Collector configuration file.",
 	)
 
+	fs.StringSlice(
+		CollectorAdditionalConfigPathsKey,
+		[]string{},
+		"Paths to additional OpenTelemetry Collector configuration files. The order of the configuration files"+
+			" determines which config file takes priority. The last config file will take precedent over other files "+
+			"if they have the same setting. Paths to configuration files must be absolute",
+	)
+
 	fs.String(
 		CollectorLogLevelKey,
 		DefCollectorLogLevel,
@@ -1053,13 +1061,14 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 	}
 
 	col := &Collector{
-		ConfigPath: viperInstance.GetString(CollectorConfigPathKey),
-		Exporters:  exporters,
-		Processors: resolveProcessors(),
-		Receivers:  receivers,
-		Extensions: resolveExtensions(),
-		Log:        resolveCollectorLog(),
-		Pipelines:  resolvePipelines(),
+		ConfigPath:            viperInstance.GetString(CollectorConfigPathKey),
+		AdditionalConfigPaths: viperInstance.GetStringSlice(CollectorAdditionalConfigPathsKey),
+		Exporters:             exporters,
+		Processors:            resolveProcessors(),
+		Receivers:             receivers,
+		Extensions:            resolveExtensions(),
+		Log:                   resolveCollectorLog(),
+		Pipelines:             resolvePipelines(),
 	}
 
 	// Check for self-signed certificate true in Agent conf

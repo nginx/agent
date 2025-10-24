@@ -26,7 +26,8 @@ receivers:
           cert_file: /tmp/cert.pem
           key_file: /tmp/key.pem
           ca_file: /tmp/ca.pem
-  nginx/123:
+  nginx:
+    instance_id: "123"
     api_details:
       url: "http://localhost:80/status"
       listen: ""
@@ -36,6 +37,22 @@ receivers:
     access_logs:
       - log_format: "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\" \"$http_x_forwarded_for\"\"$upstream_cache_status\""
         file_path: "/var/log/nginx/access-custom.conf"
+  nginxplus/456:
+    instance_id: "456"
+    api_details:
+      url: "http://localhost:80/api"
+      listen: ""
+      location: ""
+      ca: ""
+    collection_interval: 20s
+  nginxplus/789:
+    instance_id: "789"
+    api_details:
+      url: "http://localhost:90/api"
+      listen: ""
+      location: ""
+      ca: ""
+    collection_interval: 20s
   tcplog/default:
     listen_address: "localhost:151"
     operators:
@@ -108,7 +125,9 @@ service:
         - hostmetrics
         - containermetrics
         - otlp/default
-        - nginx/123
+        - nginx
+        - nginxplus/456
+        - nginxplus/789
       processors:
         - resource/default
         - batch/default

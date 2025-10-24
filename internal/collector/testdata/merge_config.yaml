@@ -1,0 +1,70 @@
+exporters:
+  otlp/default:
+    endpoint: 127.0.0.1:9091
+    retry_on_failure:
+      enabled: true
+      initial_interval: 10s
+      max_elapsed_time: 10m
+      max_interval: 60s
+    timeout: 10s
+    tls:
+      insecure: true
+  prometheus:
+    endpoint: 127.0.0.1:5643
+    resource_to_telemetry_conversion:
+      enabled: true
+extensions: null
+processors:
+  batch/default_logs:
+    send_batch_max_size: 100
+    send_batch_size: 100
+    timeout: 1m0s
+  batch/default_metrics:
+    send_batch_max_size: 1000
+    send_batch_size: 1000
+    timeout: 30s
+  logsgzip/default: {}
+  resource/default:
+    attributes:
+    - action: insert
+      key: resource.id
+      value: f16dedd7-929f-3642-b823-4ac8d295cc23
+receivers:
+  hostmetrics:
+    collection_interval: 1m0s
+    initial_delay: 1s
+    scrapers:
+      cpu:
+        metrics:
+          system.cpu.logical.count:
+            enabled: true
+          system.cpu.utilization:
+            enabled: true
+      disk: null
+      filesystem: null
+      memory:
+        metrics:
+          system.memory.limit:
+            enabled: true
+      network: null
+service:
+  extensions: null
+  pipelines:
+    metrics/default:
+      exporters:
+      - otlp/default
+      processors:
+      - batch/default_metrics
+      - resource/default
+      receivers:
+      - hostmetrics
+    metrics/prometheus-example-pipeline:
+      exporters:
+      - prometheus
+      processors:
+      - resource/default
+      receivers:
+      - nginxplus
+  telemetry:
+    metrics:
+      level: none

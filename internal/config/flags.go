@@ -48,6 +48,7 @@ var (
 	ClientBackoffMultiplierKey          = pre(ClientRootKey) + "backoff_multiplier"
 
 	CollectorConfigPathKey                      = pre(CollectorRootKey) + "config_path"
+	CollectorAdditionalConfigPathsKey           = pre(CollectorRootKey) + "additional_config_paths"
 	CollectorExportersKey                       = pre(CollectorRootKey) + "exporters"
 	CollectorDebugExporterKey                   = pre(CollectorExportersKey) + "debug"
 	CollectorPrometheusExporterKey              = pre(CollectorExportersKey) + "prometheus"
