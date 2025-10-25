@@ -357,7 +357,7 @@ require (
 require (
 	github.com/gin-gonic/gin v1.10.1
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/nginxinc/nginx-go-crossplane v0.4.81
+	github.com/nginxinc/nginx-go-crossplane v0.4.84
 	github.com/prometheus/client_golang v1.23.2 // indirect
 	github.com/samber/slog-gin v1.17.2
 	github.com/spf13/cobra v1.10.1
