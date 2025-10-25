@@ -1237,7 +1237,7 @@ func createConfig() *Config {
 						{
 							Action: "insert",
 							Key:    "label1",
-							Value:  "label 1",
+							Value:  "label-1",
 						},
 						{
 							Action: "insert",
@@ -1317,7 +1317,7 @@ func createConfig() *Config {
 			},
 		},
 		Labels: map[string]any{
-			"label1": "label 1",
+			"label1": "label-1",
 			"label2": "new-value",
 			"label3": 123,
 		},
@@ -1411,5 +1411,61 @@ func createDefaultCollectorConfig() *Collector {
 			Level: "INFO",
 			Path:  "/var/log/nginx-agent/opentelemetry-collector-agent.log",
 		},
+	}
+}
+
+func TestValidateLabel(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected bool
+	}{
+		{
+			name:     "Test 1: Valid label - simple",
+			input:    "label123",
+			expected: true,
+		},
+		{
+			name:     "Test 2: Valid label - with dash and underscore",
+			input:    "label-123_abc",
+			expected: true,
+		},
+		{
+			name:     "Test 3: Invalid label - too long",
+			input:    strings.Repeat("a", 257),
+			expected: false,
+		},
+		{
+			name:     "Test 4: Invalid label - special char",
+			input:    "label$",
+			expected: false,
+		},
+		{
+			name:     "Test 5: Invalid label - starts with dash",
+			input:    "-label",
+			expected: false,
+		},
+		{
+			name:     "Test 6: Invalid label - ends with dash",
+			input:    "label-",
+			expected: false,
+		},
+		{
+			name:     "Test 7: Invalid label - empty",
+			input:    "",
+			expected: false,
+		},
+		{
+			name:     "Test 8: Invalid label - contains spaces",
+			input:    "label 123",
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := validateLabel(tt.input)
+			assert.Equal(t, tt.expected, actual)
+		})
 	}
 }
