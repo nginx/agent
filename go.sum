@@ -792,8 +792,8 @@ go.opentelemetry.io/collector/exporter/xexporter v0.137.0 h1:2fSmBDB+tuFoYKJSHbR
 go.opentelemetry.io/collector/exporter/xexporter v0.137.0/go.mod h1:9gudRad3ijkbzcnTLE0y+CzUDtC4TaPyZQDUKB2yzVs=
 go.opentelemetry.io/collector/extension v1.43.0 h1:39cGAGMJIZEhhm4KbsvJJrG8AheS6wOc++ydY0Wpdp0=
 go.opentelemetry.io/collector/extension v1.43.0/go.mod h1:HVCPnRqx70Qn9BAmnqJt393er4l1OwcgAytLv1fSOSo=
-go.opentelemetry.io/collector/extension/extensionauth v1.42.0 h1:Re0wxZOplHtdV8YaypVaktHYPiaWPwVDt+hrBFXHEoI=
-go.opentelemetry.io/collector/extension/extensionauth v1.42.0/go.mod h1:m8A4ZoWKvE91c5fF7HFvnZvwxbXtPJiNSoreGYoXt6A=
+go.opentelemetry.io/collector/extension/extensionauth v1.44.0 h1:30JTv1rjRE+2R3wV8tA/ENz013il5IsKeyGFHTHG8U0=
+go.opentelemetry.io/collector/extension/extensionauth v1.44.0/go.mod h1:6Sh0hqPfPqpg0ErCoNPO/ky2NdfGmUX+G5wekPx7A7U=
 go.opentelemetry.io/collector/extension/extensionauth/extensionauthtest v0.136.0 h1:yx0474FuJHinlSbAXU/IZov6TXc5LPSGRPsQRiMGRG4=
 go.opentelemetry.io/collector/extension/extensionauth/extensionauthtest v0.136.0/go.mod h1:etBi3U/UCSa9x5Lao6CRcj7CmuULJbkxqXUoaSDeLOA=
 go.opentelemetry.io/collector/extension/extensioncapabilities v0.136.0 h1:hFqIp1TiXdIDlGJRMlV+Xm4GwTxRO6Wmaxe/uYH6U7E=
@@ -1108,8 +1108,8 @@ google.golang.org/grpc v1.23.0/go.mod h1:Y5yQAOtifL1yxbo5wqy6BxZv8vAUGQwXBOALyac
 google.golang.org/grpc v1.25.1/go.mod h1:c3i+UQWmh7LiEpx4sFZnkU36qjEYZ0imhYfXVyQciAY=
 google.golang.org/grpc v1.27.0/go.mod h1:qbnxyOmOxrQa7FizSgH+ReBfzJrCY1pSN7KXBS8abTk=
 google.golang.org/grpc v1.29.1/go.mod h1:itym6AZVZYACWQqET3MqgPpjcuV5QH3BxFS3IjizoKk=
-google.golang.org/grpc v1.75.1 h1:/ODCNEuf9VghjgO3rqLcfg8fiOP0nSluljWFlDxELLI=
-google.golang.org/grpc v1.75.1/go.mod h1:JtPAzKiq4v1xcAB2hydNlWI2RnF85XXcV0mhKXr2ecQ=
+google.golang.org/grpc v1.76.0 h1:UnVkv1+uMLYXoIz6o7chp59WfQUYA2ex/BXQ9rHZu7A=
+google.golang.org/grpc v1.76.0/go.mod h1:Ju12QI8M6iQJtbcsV+awF5a4hfJMLi4X0JLo94ULZ6c=
 google.golang.org/protobuf v1.36.9 h1:w2gp2mA27hUeUzj9Ex9FBjsBm40zfaDtEWow293U7Iw=
 google.golang.org/protobuf v1.36.9/go.mod h1:fuxRtAxBytpl4zzqUh6/eyUujkJdNiuEkXntxiD/uRU=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
