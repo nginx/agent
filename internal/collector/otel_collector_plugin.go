@@ -706,7 +706,8 @@ func (oc *Collector) updateResourceAttributes(
 }
 
 func (oc *Collector) findAvailableSyslogServer(ctx context.Context, napSyslogServer string) string {
-	if oc.previousNAPSysLogServer != "" && normaliseAddress(oc.previousNAPSysLogServer) == normaliseAddress(napSyslogServer) {
+	if oc.previousNAPSysLogServer != "" &&
+		normaliseAddress(oc.previousNAPSysLogServer) == normaliseAddress(napSyslogServer) {
 		return napSyslogServer
 	}
 
