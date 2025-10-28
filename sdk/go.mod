@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nginxinc/nginx-go-crossplane v0.4.48
+	github.com/nginxinc/nginx-go-crossplane v0.4.84
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
 	google.golang.org/grpc v1.64.1
@@ -21,8 +21,6 @@ require (
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/jstemmer/go-junit-report v1.0.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/maxbrunsfeld/counterfeiter/v6 v6.8.1 // indirect
-	github.com/onsi/gomega v1.33.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect

@@ -39,6 +39,7 @@ var mapBodies = map[string]mapParameterMasks{
 		defaultMasks: ngxConfTake1,
 	},
 	"geoip2": {
+		specialParameterMasks: map[string]uint{"auto_reload": ngxConfTake1},
 		defaultMasks: ngxConf1More,
 	},
 	"otel_exporter": {
