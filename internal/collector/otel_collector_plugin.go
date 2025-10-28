@@ -706,8 +706,8 @@ func (oc *Collector) updateResourceAttributes(
 }
 
 func (oc *Collector) findAvailableSyslogServer(ctx context.Context, napSyslogServer string) string {
-	if oc.previousNAPSysLogServer != "" && oc.previousNAPSysLogServer == napSyslogServer {
-		return oc.previousNAPSysLogServer
+	if oc.previousNAPSysLogServer != "" && normaliseAddress(oc.previousNAPSysLogServer) == normaliseAddress(napSyslogServer) {
+		return napSyslogServer
 	}
 
 	listenConfig := &net.ListenConfig{}
@@ -811,4 +811,17 @@ func setProxyWithBasicAuth(ctx context.Context, proxy *config.Proxy, parsedProxy
 	parsedProxyURL.User = url.UserPassword(username, password)
 	proxyURL := parsedProxyURL.String()
 	setProxyEnvs(ctx, proxyURL, "Setting Proxy with basic auth")
+}
+
+func normaliseAddress(address string) string {
+	host, port, err := net.SplitHostPort(address)
+	if err != nil {
+		return address
+	}
+
+	if host == "localhost" {
+		host = "127.0.0.1"
+	}
+
+	return net.JoinHostPort(host, port)
 }
