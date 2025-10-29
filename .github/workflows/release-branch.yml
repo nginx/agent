@@ -5,8 +5,17 @@ env:
 on:
   workflow_dispatch:
     inputs:
+      releaseBranch:
+        description: 'Release branch to build & publish from'
+        required: true
+        type: string
+      packageVersion:
+        description: 'Agent version'
+        required: false
+        type: string
+        default: ''
       publishPackages:
-        description: 'Publish packages to up-ap.nginx.com'
+        description: 'Publish packages to upload host'
         required: true
         type: boolean
         default: false
@@ -22,35 +31,32 @@ permissions:
 
 jobs:
   update-draft:
+    name: Update Release
+    runs-on: ubuntu-22.04-amd64
     permissions:
       contents: write
       pull-requests: write
 
-    name: Update Release
-    runs-on: ubuntu-22.04-amd64
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
+          ref: ${{ inputs.releaseBranch }}
 
       - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version-file: 'go.mod'
 
-      - uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
-
-      - run: npm install semver@7.6.2
-
       - name: Create Draft Release
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         id: release
+        env:
+          version: ${{ inputs.packageVersion }}
         with:
           script: |
-            const semver = require('semver');
             const ref = context.ref.split("/")[2]
-            const version_number = ref.split("-")[1]
-            const version = "v"+version_number
-            console.log(`The release version is ${version}`)
+            const {version} = process.env
+            console.log(`The release version is v${version}`)
             
             const releases = (await github.rest.repos.listReleases({
               owner: context.payload.repository.owner.login,
@@ -65,7 +71,7 @@ jobs:
             
             console.log(`The latest release was ${latest_release}`)
 
-            if (latest_release === version) {
+            if (latest_release === "v"+version) {
                 core.setFailed(`A published release already exists for ${latest_release}`)
             } else {
                 const draft = releases.find((r) => r.draft && r.tag_name === version)
@@ -97,7 +103,7 @@ jobs:
                 release = (await github.rest.repos.createRelease({
                     owner: context.payload.repository.owner.login,
                     repo: context.payload.repository.name,
-                    tag_name: version,
+                    tag_name: "v"+version,
                     target_commitish: ref,
                     name: version,
                     body: release_notes.data.body + footer,
@@ -110,7 +116,7 @@ jobs:
                 console.log(`Release Upload URL: ${release.data.upload_url}`)
                 
                 return {
-                    version: version_number,
+                    version: version,
                     release_id: release.data.id,
                     release_upload_url: release.data.upload_url,
                 }
