@@ -65,12 +65,10 @@ jobs:
           echo "${{secrets.PUBTEST_KEY}}" > pubtest.key
           PKG_REPO=${{inputs.pkgRepo}} CERT=pubtest.crt KEY=pubtest.key DL=1 scripts/packages/package-check.sh ${{inputs.pkgVersion}}
           for i in $(find ${{inputs.pkgRepo}}/nginx-agent | grep -e "nginx-agent[_-]${{inputs.pkgVersion}}"); do
-            echo "Processing deb packages..."
             if [[ "$i" == *.deb ]]; then
               echo "Renaming ${i} to ${i/_/-}"
               mv "${i}" "${i/_/-}"
             fi
-            echo "Processing apk packages..."
             if [[ "$i" == *.apk ]]; then
               ver=$(echo "$i" | grep -o -e "v[0-9]*\.[0-9]*")
               arch=$(echo "$i" | grep -o -F -e "x86_64" -e "aarch64")
@@ -79,7 +77,7 @@ jobs:
               mv "${i}" "${dest}"
             fi
             if [[ "$i" == *.pkg ]]; then
-                bsd=$(echo "$i" | "FreeBSD:[0-9]*:[A-z][0-9]*")
+                bsd=$(echo "$i" | grep -e "FreeBSD:[0-9]*")
                 ver=$(echo "$bsd" | cut -d':' -f2)
                 arch=$(echo "$i" | grep -o -F -e "amd64" -e "arm64")
                 dest="$(dirname "$i")/nginx-agent-${{inputs.pkgVersion}}-FreeBSD.$ver.$arch.pkg"
