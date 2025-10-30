@@ -114,7 +114,7 @@ fi
 # Functions
 
 ## Check and download if nginx-agent packages are present in the repository
-check_pkgs () {
+check_pkgs() {
   for pkg in ${uris[@]}; do
     echo -n "CHECK: ${PKG_REPO_URL}/${pkg} -> "
     local ret=$(curl -I -s ${CURL_OPTS} "https://${PKG_DIR}/${pkg}" | head -n1 | awk '{ print $2 }')
@@ -127,12 +127,11 @@ check_pkgs () {
     if [[ ${DL} == 1 ]]; then
       dl_pkg "${PKG_REPO_URL}/${pkg}"
     fi
-
   done
 }
 
 ## Download a package
-dl_pkg () {
+dl_pkg() {
     local url=${1}
     echo -n "GET: ${url}... "
     mkdir -p "${PKG_DIR}/$(dirname ${pkg})"
@@ -169,7 +168,88 @@ check_repo() {
   fi
 }
 
+prep_deb() {
+  echo "Preparing deb packages for upload..."
+  mkdir -p "${PKG_DIR}/azure/deb"
+  for i in $(find "${PKG_DIR}" | grep -e "nginx-agent[_-]${VERSION}.*\.deb"); do
+    az_dest="${PKG_DIR}/azure/deb/$(basename "$i")"
+    echo "Copying ${i} to ${az_dest}"
+    cp "${i}" "${az_dest}"
+    echo "Renaming ${i} to ${i/_/-}"
+    mv "${i}" "${i/_/-}"
+  done
+}
+
+prep_apk() {
+  echo "Preparing apk packages..."
+  mkdir -p "${PKG_DIR}/azure/apk"
+  for i in $(find "${PKG_DIR}/alpine" | grep -e "nginx-agent[_-]${VERSION}.apk"); do
+    ver=$(echo "$i" | grep -o -e "v[0-9]*\.[0-9]*")
+    arch=$(echo "$i" | grep -o -F -e "x86_64" -e "aarch64")
+    dest="$(dirname "$i")/nginx-agent-${VERSION}-$ver-$arch.apk"
+    az_dest="${PKG_DIR}/azure/apk/$ver/$arch/nginx-agent-${VERSION}.apk"
+    echo "Copying ${i} to ${az_dest}"
+    mkdir -p "$(dirname "$az_dest")"
+    cp "${i}" "${az_dest}"
+    echo "Renaming ${i} to ${dest}"
+    cp "${i}" "${dest}"
+  done
+}
+
+prep_rpm() {
+  echo "Preparing rpm packages..."
+  mkdir -p "${PKG_DIR}/azure/rpm"
+  for i in $(find "${PKG_DIR}" | grep -e "nginx-agent-${VERSION}.*.rpm"); do
+    az_dest="${PKG_DIR}/azure/rpm/$(basename "$i")"
+    echo "Copying ${i} to ${az_dest}"
+    mkdir -p "$(dirname "$az_dest")"
+    cp "${i}" "${az_dest}"
+  done
+}
+
+prep_txz() {
+  echo "Preparing txz packages..."
+  mkdir -p "${PKG_DIR}/azure/txz"
+  for i in $(find "${PKG_DIR}" | grep -e "nginx-agent[_-]${VERSION}.pkg"); do
+    bsd=$(echo "$i" | grep -e "FreeBSD:[0-9]*")
+    ver=$(echo "$bsd" | cut -d':' -f2)
+    arch=$(echo "$i" | grep -o -F -e "amd64" -e "arm64")
+    dest="$(dirname "$i")/nginx-agent-${VERSION}-FreeBSD.$ver.$arch.pkg"
+    az_dest="${PKG_DIR}/azure/txz/FreeBSD:$ver:$arch/nginx-agent-${VERSION}.pkg"
+    echo "Copying ${i} to ${az_dest/latest\//}"
+    mkdir -p "$(dirname "$az_dest")"
+    cp "${i}" "${az_dest}"
+  done
+}
+
+prepare_packages() {
+  echo "Preparing packages for upload..."
+
+  prep_deb
+  prep_apk
+  prep_rpm
+  if [[ ${majorVersion} == 2 ]]; then
+    prep_txz
+  fi
+
+  echo "Prepared packages:"
+  find "${PKG_DIR}/azure" -type f
+}
+
+create_tarball() {
+  echo -n "Creating tarball of downloaded packages... "
+  tar -czvf "${PKG_DIR}/nginx-agent.tar.gz" ${PKG_DIR}/azure/*
+  if [[ $? != 0 ]]; then
+    echo -e "${RED}Failed to create tarball!${NC}"
+    return
+  fi
+  echo -e "${GREEN}Done${NC}"
+  echo "SAVED: ${PKG_DIR}/nginx-agent/nginx-agent.tar.gz"
+}
+
 # Main
 
 check_repo
 check_pkgs
+prepare_packages
+create_tarball
