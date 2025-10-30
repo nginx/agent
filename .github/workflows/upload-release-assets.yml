@@ -63,8 +63,10 @@ jobs:
           echo "Checking Packages in ${{inputs.pkgRepo}}/nginx-agent"
           echo "${{secrets.PUBTEST_CERT}}" > pubtest.crt
           echo "${{secrets.PUBTEST_KEY}}" > pubtest.key
-          PKG_REPO=${{inputs.pkgRepo}} CERT=pubtest.crt KEY=pubtest.key DL=1 scripts/packages/package-check.sh ${{inputs.pkgVersion}}
-          find ${{inputs.pkgRepo}}/nginx-agent | grep -e "nginx-agent[_-]${{inputs.pkgVersion}}"
+          
+          DL=1 PKG_REPO=${{inputs.pkgRepo}} \
+          CERT=pubtest.crt KEY=pubtest.key \
+            scripts/packages/package-check.sh ${{inputs.pkgVersion}}
 
       - name: GitHub Upload
         if: ${{ needs.vars.outputs.github_release == 'true' }}
@@ -87,10 +89,10 @@ jobs:
         uses: azure/CLI@9f7ce6f37c31b777ec6c6b6d1dfe7db79f497956 # v2.2.0
         with:
           inlineScript: |
-            echo "Uploading tarball to Azure Storage Account"
+            echo "Uploading tarball to Azure..."
             az storage blob upload --auth-mode=login -f "${{ inputs.pkgRepo }}/nginx-agent/nginx-agent.tar.gz" \
               -c ${{ secrets.AZURE_CONTAINER_NAME }} \
-              --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n ${dest}
+              --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/release-${{ inputs.pkgVersion }}/nginx-agent.tar.gz
             for i in $(find ${{ inputs.pkgRepo }}/nginx-agent | grep -e "nginx-agent[_-]${{ inputs.pkgVersion }}"); do
               dest="nginx-agent/release-${{ inputs.pkgVersion }}/${i##*/}"
               echo "Uploading ${i} to ${dest}"
