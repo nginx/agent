@@ -262,7 +262,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 		slog.WarnContext(ctx, fmt.Sprintf("Could not find available local NGINX App Protect syslog"+
 			" server configured on port %s. Security violations will not be collected.",
 			ncp.agentConfig.SyslogServer.Port))
-	} else {
+	} else if napEnabled && nginxConfigContext.NAPSysLogServer != "" {
 		slog.InfoContext(ctx, fmt.Sprintf("Found available local NGINX App Protect syslog"+
 			"server configured on port %s", ncp.agentConfig.SyslogServer.Port))
 	}
