@@ -18,6 +18,13 @@ import (
 	"github.com/nginx/agent/v3/test/stub"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/confmap"
+	"go.opentelemetry.io/collector/confmap/provider/envprovider"
+	"go.opentelemetry.io/collector/confmap/provider/fileprovider"
+	"go.opentelemetry.io/collector/confmap/provider/httpprovider"
+	"go.opentelemetry.io/collector/confmap/provider/httpsprovider"
+	"go.opentelemetry.io/collector/confmap/provider/yamlprovider"
+
 	"go.opentelemetry.io/collector/otelcol"
 
 	"github.com/nginx/agent/v3/internal/bus"
@@ -416,6 +423,7 @@ func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
 	conf.Collector.Processors.Attribute = nil
 	conf.Collector.Processors.Resource = nil
 	conf.Collector.Processors.LogsGzip = nil
+	conf.Collector.Processors.SecurityViolations = nil
 	conf.Collector.Exporters.OtlpExporters = nil
 	conf.Collector.Exporters.PrometheusExporter = &config.PrometheusExporter{
 		Server: &config.ServerConfig{
@@ -740,6 +748,7 @@ func TestCollector_updateNginxAppProtectTcplogReceivers(t *testing.T) {
 	conf.Collector.Processors.Attribute = nil
 	conf.Collector.Processors.Resource = nil
 	conf.Collector.Processors.LogsGzip = nil
+	conf.Collector.Processors.SecurityViolations = nil
 	collector, err := NewCollector(conf)
 	require.NoError(t, err)
 
@@ -922,6 +931,9 @@ func TestCollector_findAvailableSyslogServers(t *testing.T) {
 	conf.Collector.Processors.Attribute = nil
 	conf.Collector.Processors.Resource = nil
 	conf.Collector.Processors.LogsGzip = nil
+	conf.Collector.Processors.SecurityViolations = nil
+	collector, err := NewCollector(conf)
+	require.NoError(t, err)
 
 	tests := []struct {
 		name                    string
@@ -976,7 +988,6 @@ func TestCollector_findAvailableSyslogServers(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			collector, err := NewCollector(conf)
 			require.NoError(t, err)
 
 			collector.previousNAPSysLogServer = test.previousNAPSysLogServer
@@ -990,6 +1001,73 @@ func TestCollector_findAvailableSyslogServers(t *testing.T) {
 
 			actual := collector.findAvailableSyslogServer(ctx, test.syslogServers)
 			assert.Equal(tt, test.expectedSyslogServer, actual)
+		})
+	}
+}
+
+func TestCollector_writeRunningConfig(t *testing.T) {
+	tempDir := t.TempDir()
+
+	tests := []struct {
+		name           string
+		writeConfigErr error
+		settings       otelcol.CollectorSettings
+	}{
+		{
+			name: "Test 1: Write Config Success",
+			settings: otelcol.CollectorSettings{
+				ConfigProviderSettings: otelcol.ConfigProviderSettings{
+					ResolverSettings: confmap.ResolverSettings{
+						URIs: []string{"./testdata/otel_config.yaml", "./testdata/custom_otel_config.yaml"},
+						ProviderFactories: []confmap.ProviderFactory{
+							envprovider.NewFactory(),
+							fileprovider.NewFactory(),
+							httpprovider.NewFactory(),
+							httpsprovider.NewFactory(),
+							yamlprovider.NewFactory(),
+						},
+						DefaultScheme:      "",
+						ProviderSettings:   confmap.ProviderSettings{},
+						ConverterFactories: nil,
+						ConverterSettings:  confmap.ConverterSettings{},
+					},
+				},
+			},
+			writeConfigErr: nil,
+		},
+		{
+			name: "Test 2: Write Config Failed",
+			settings: otelcol.CollectorSettings{
+				ConfigProviderSettings: otelcol.ConfigProviderSettings{
+					ResolverSettings: confmap.ResolverSettings{},
+				},
+			},
+			writeConfigErr: errors.New("unable to create resolver: invalid " +
+				"'confmap.ResolverSettings' configuration: no URIs"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			conf := types.OTelConfig(t)
+			conf.Collector.Log.Path = filepath.Join(tempDir, "otel-collector-test.log")
+			newCollector, err := NewCollector(conf)
+			newCollector.debugOTelConfigPath = filepath.Join(tempDir, "otel-collector-debug-config.yaml")
+			require.NoError(t, err)
+
+			writeErr := newCollector.writeRunningConfig(context.Background(), tt.settings)
+
+			if tt.writeConfigErr == nil {
+				actual, readErr := os.ReadFile(newCollector.debugOTelConfigPath)
+				require.NoError(t, readErr)
+
+				expected, expectedFileErr := os.ReadFile("./testdata/merge_config.yaml")
+				require.NoError(t, expectedFileErr)
+
+				assert.Equal(t, string(expected), string(actual))
+			} else {
+				assert.Equal(t, tt.writeConfigErr.Error(), writeErr.Error())
+			}
 		})
 	}
 }

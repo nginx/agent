@@ -44,6 +44,29 @@ const (
 	locationDirective                 = "location"
 )
 
+var globFunction = func(path string) ([]string, error) {
+	matches, err := filepath.Glob(path)
+	if err != nil {
+		return nil, err
+	}
+
+	// Exclude hidden files unless the glob pattern itself starts with a dot
+	if !strings.HasPrefix(filepath.Base(path), ".") {
+		filteredMatches := make([]string, 0)
+
+		for _, match := range matches {
+			base := filepath.Base(match)
+			if !strings.HasPrefix(base, ".") {
+				filteredMatches = append(filteredMatches, match)
+			}
+		}
+
+		return filteredMatches, nil
+	}
+
+	return matches, nil
+}
+
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . ConfigParser
 
@@ -95,6 +118,7 @@ func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *mpi.Instance)
 			LexOptions: crossplane.LexOptions{
 				Lexers: []crossplane.RegisterLexer{lua.RegisterLexer()},
 			},
+			Glob: globFunction,
 		},
 	)
 	if err != nil {

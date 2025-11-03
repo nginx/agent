@@ -367,7 +367,6 @@ func (fp *FilePlugin) handleNginxConfigUpdate(ctx context.Context, msg *bus.Mess
 		return
 	}
 
-	fp.fileManagerService.SetConfigPath(nginxConfigContext.ConfigPath)
 	fp.fileManagerService.ConfigUpdate(ctx, nginxConfigContext)
 }
 

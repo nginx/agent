@@ -45,6 +45,8 @@ type ManifestFileMeta struct {
 	Size int64 `json:"size"`
 	// File referenced in the NGINX config
 	Referenced bool `json:"referenced"`
+	// File is not managed by the agent
+	Unmanaged bool `json:"unmanaged"`
 }
 type ConfigApplyMessage struct {
 	Error         error
