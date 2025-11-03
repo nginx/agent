@@ -260,8 +260,6 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 			nginxConfigContext.PlusAPIs = append(nginxConfigContext.PlusAPIs, plusAPIs...)
 		}
 
-		nginxConfigContext.PlusAPIs = ncp.sortPlusAPIs(ctx, nginxConfigContext.PlusAPIs)
-
 		if len(napSyslogServersFound) > 0 {
 			var napSyslogServer []string
 			for server := range napSyslogServersFound {
@@ -280,6 +278,8 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 			nginxConfigContext.Files = append(nginxConfigContext.Files, &mpi.File{FileMeta: fileMeta})
 		}
 	}
+
+	nginxConfigContext.PlusAPIs = ncp.sortPlusAPIs(ctx, nginxConfigContext.PlusAPIs)
 
 	nginxConfigContext.StubStatus = ncp.FindStubStatusAPI(ctx, nginxConfigContext)
 	nginxConfigContext.PlusAPI = ncp.FindPlusAPI(ctx, nginxConfigContext)
