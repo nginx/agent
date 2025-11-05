@@ -238,7 +238,7 @@ prepare_packages() {
 
 create_tarball() {
   echo "Creating tarball of downloaded packages... "
-  tar -czvf "${PKG_DIR}/nginx-agent.tar.gz" ${PKG_DIR}/azure/*
+  tar -czvf "${PKG_DIR}/nginx-agent.tar.gz" -C ${PKG_DIR}/azure .
   if [[ $? != 0 ]]; then
     echo -e "${RED}Failed to create tarball!${NC}"
     return
