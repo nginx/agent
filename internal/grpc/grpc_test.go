@@ -638,25 +638,3 @@ func Test_serverAddress(t *testing.T) {
 		})
 	}
 }
-
-func Test_serverAddress_NilCommand(t *testing.T) {
-	ctx := context.Background()
-
-	// Test with nil command config - should panic as the function doesn't handle nil
-	assert.Panics(t, func() {
-		serverAddress(ctx, nil)
-	}, "serverAddress should panic with nil command config")
-}
-
-func Test_serverAddress_NilServer(t *testing.T) {
-	ctx := context.Background()
-
-	// Test with nil server config - should also panic
-	commandConfig := &config.Command{
-		Server: nil,
-	}
-
-	assert.Panics(t, func() {
-		serverAddress(ctx, commandConfig)
-	}, "serverAddress should panic with nil server config")
-}

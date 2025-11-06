@@ -73,7 +73,7 @@ var (
 func NewGrpcConnection(ctx context.Context, agentConfig *config.Config,
 	commandConfig *config.Command,
 ) (*GrpcConnection, error) {
-	if commandConfig == nil || commandConfig.Server.Type != config.Grpc {
+	if commandConfig == nil || commandConfig.Server == nil || commandConfig.Server.Type != config.Grpc {
 		return nil, errors.New("invalid command server settings")
 	}
 
