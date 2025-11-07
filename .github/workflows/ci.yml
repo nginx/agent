@@ -137,6 +137,12 @@ jobs:
           with:
             go-version-file: 'go.mod'
             cache: false
+        - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+          with:
+            path: |
+              ~/.cache/go-build
+              ~/go/pkg/mod
+            key: ${{ runner.os }}-go-
         - name: Run unit tests with race condition detection
           run: make race-condition-test
 
@@ -165,6 +171,12 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
+      - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-
       - name: Download Packages
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
@@ -215,6 +227,12 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
+      - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-
       - name: Download Packages
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
@@ -272,6 +290,12 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
+      - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-
       - name: Download Packages
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
@@ -339,6 +363,12 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
+      - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-
       - name: Download Packages
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
@@ -405,6 +435,12 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
+      - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-
       - name: Download Packages
         uses: actions/download-artifact@eaceaf801fd36c7dee90939fad912460b18a1ffe # v4.1.2
         with:
@@ -472,6 +508,12 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
+      - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-
       - name: Download Packages
         uses: actions/download-artifact@eaceaf801fd36c7dee90939fad912460b18a1ffe # v4.1.2
         with:
@@ -524,6 +566,12 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
+      - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-
       - name: Run Performance Tests
         run: |
           make performance-test
@@ -556,6 +604,13 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
+          
+      - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-
 
       - name: Download Packages
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
