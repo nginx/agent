@@ -1014,7 +1014,9 @@ func agentConfig() *Config {
 		UUID:    "",
 		Version: "",
 		Path:    "",
-		Log:     &Log{},
+		Log:     &Log{
+			Level: "info",
+		},
 		Client: &Client{
 			HTTP: &HTTP{
 				Timeout: 10 * time.Second,

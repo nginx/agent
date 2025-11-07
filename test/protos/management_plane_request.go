@@ -123,3 +123,14 @@ func CreateAPIActionRequestNginxPlusUpdateStreamServers(upstream, instanceID str
 		},
 	}
 }
+
+func CreateAgentConfigurationUpdateRequest(config *mpi.AgentConfig) *mpi.ManagementPlaneRequest {
+	return &mpi.ManagementPlaneRequest{
+		MessageMeta: CreateMessageMeta(),
+		Request: &mpi.ManagementPlaneRequest_UpdateNginxAgentConfigurationRequest{
+			UpdateNginxAgentConfigurationRequest: &mpi.UpdateNginxAgentConfigurationRequest{
+				AgentConfig: config,
+			},
+		},
+	}
+}

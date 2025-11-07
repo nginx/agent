@@ -151,6 +151,17 @@ func TestCommandPlugin_Process(t *testing.T) {
 		Data:  commandPlugin.conn,
 	})
 	require.Equal(t, 1, fakeCommandService.UpdateClientCallCount())
+
+	commandPlugin.Process(ctx, &bus.Message{
+		Topic: bus.AgentConfigUpdateTopic,
+		Data: mpi.AgentConfig{
+			Log: &mpi.Log{
+				LogLevel: mpi.Log_LOG_LEVEL_DEBUG,
+				LogPath:  "somewhere",
+			},
+		},
+	})
+	require.Equal(t, 1, fakeCommandService.UpdateAgentConfigurationCallCount())
 }
 
 func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {

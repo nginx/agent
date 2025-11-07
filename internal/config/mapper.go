@@ -122,3 +122,49 @@ func ToAuxiliaryCommandServerProto(cmd *Command) *mpi.AuxiliaryCommandServer {
 
 	return protoConfig
 }
+
+func FromAgentConfigLogProto(mpiConfig *mpi.AgentConfig) *Log {
+	return &Log{
+		Level: MapConfigLogLevelToSlogLevel(mpiConfig.GetLog().GetLogLevel()),
+		Path:  mpiConfig.Log.GetLogPath(),
+	}
+}
+
+func ToAgentConfigLogProto(agentLogConfig *Log) *mpi.Log {
+	return &mpi.Log{
+		LogLevel: MapSlogLevelToConfigLogLevel(agentLogConfig.Level),
+		LogPath:  agentLogConfig.Path,
+	}
+}
+
+func MapConfigLogLevelToSlogLevel(level mpi.Log_LogLevel) string {
+	switch level {
+	case mpi.Log_LOG_LEVEL_DEBUG:
+		return "DEBUG"
+	case mpi.Log_LOG_LEVEL_INFO:
+		return "INFO"
+	case mpi.Log_LOG_LEVEL_WARN:
+		return "WARN"
+	case mpi.Log_LOG_LEVEL_ERROR:
+		return "ERROR"
+	case mpi.Log_LOG_LEVEL_UNSPECIFIED:
+		fallthrough
+	default:
+		return "INFO"
+	}
+}
+
+func MapSlogLevelToConfigLogLevel(level string) mpi.Log_LogLevel {
+	switch level {
+	case "DEBUG":
+		return mpi.Log_LOG_LEVEL_DEBUG
+	case "INFO":
+		return mpi.Log_LOG_LEVEL_INFO
+	case "WARN":
+		return mpi.Log_LOG_LEVEL_WARN
+	case "ERROR":
+		return mpi.Log_LOG_LEVEL_ERROR
+	default:
+		return mpi.Log_LOG_LEVEL_UNSPECIFIED
+	}
+}

@@ -377,6 +377,39 @@ func TestCommandService_SendDataPlaneResponse_configApplyRequest(t *testing.T) {
 	wg.Wait()
 }
 
+func TestCommandService_UpdateAgentConfiguration(t *testing.T) {
+	ctx := context.Background()
+	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
+
+	initialConfig := types.AgentConfig()
+	initialConfig.Log.Level = "INFO"
+	initialConfig.Log.Path = ""
+
+	commandService := NewCommandService(
+		commandServiceClient,
+		initialConfig,
+		make(chan *mpi.ManagementPlaneRequest),
+	)
+	commandService.isConnected.Store(true)
+
+	originalLogger := slog.Default()
+
+	updatedConfig := &mpi.AgentConfig{
+		Log: &mpi.Log{
+			LogLevel: mpi.Log_LOG_LEVEL_DEBUG,
+			LogPath:  "/etc/nginx-agent",
+		},
+	}
+	
+	err := commandService.UpdateAgentConfiguration(ctx, updatedConfig)
+	require.NoError(t, err)
+	require.Equal(t, "DEBUG", commandService.agentConfig.Log.Level)
+	require.Equal(t, "/etc/nginx-agent", commandService.agentConfig.Log.Path)
+
+	updatedLogger := slog.Default()
+	require.NotEqual(t, originalLogger, updatedLogger)
+}
+
 func TestCommandService_isValidRequest(t *testing.T) {
 	ctx := context.Background()
 	commandServiceClient := &v1fakes.FakeCommandServiceClient{}

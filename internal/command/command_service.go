@@ -182,6 +182,32 @@ func (cs *CommandService) SendDataPlaneResponse(ctx context.Context, response *m
 	)
 }
 
+func (cs *CommandService) UpdateAgentConfiguration(ctx context.Context, mpiConfig *mpi.AgentConfig) error {
+	if !cs.isConnected.Load() {
+		return errors.New("command service client not connected yet")
+	}
+	slog.DebugContext(ctx, "Updating agent configuration", "config", mpiConfig)
+
+	if mpiConfig.Log != nil {
+		slog.DebugContext(ctx, "Updating log configuration", "log", mpiConfig.Log)
+		logConf := config.Log{
+			Level: config.MapConfigLogLevelToSlogLevel(mpiConfig.Log.LogLevel),
+			Path:  mpiConfig.Log.LogPath,
+		}
+		cs.agentConfig.Log = &logConf
+
+		// Reinitialize logger with new configuration
+		slogger := logger.New(
+			cs.agentConfig.Log.Path,
+			cs.agentConfig.Log.Level,
+		)
+		slog.SetDefault(slogger)
+	}
+
+	return nil
+}
+
+// Subscribe to the Management Plane for incoming commands.
 func (cs *CommandService) Subscribe(ctx context.Context) {
 	commonSettings := &config.BackOff{
 		InitialInterval:     cs.agentConfig.Client.Backoff.InitialInterval,

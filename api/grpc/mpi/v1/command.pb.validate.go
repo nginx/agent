@@ -1215,6 +1215,303 @@ var _ interface {
 	ErrorName() string
 } = UpdateDataPlaneStatusResponseValidationError{}
 
+// Validate checks the field values on UpdateNginxAgentConfigurationRequest
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the first error encountered is returned, or nil if
+// there are no violations.
+func (m *UpdateNginxAgentConfigurationRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UpdateNginxAgentConfigurationRequest
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the result is a list of violation errors wrapped in
+// UpdateNginxAgentConfigurationRequestMultiError, or nil if none found.
+func (m *UpdateNginxAgentConfigurationRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UpdateNginxAgentConfigurationRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetMessageMeta()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, UpdateNginxAgentConfigurationRequestValidationError{
+					field:  "MessageMeta",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, UpdateNginxAgentConfigurationRequestValidationError{
+					field:  "MessageMeta",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetMessageMeta()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return UpdateNginxAgentConfigurationRequestValidationError{
+				field:  "MessageMeta",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetAgentConfig()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, UpdateNginxAgentConfigurationRequestValidationError{
+					field:  "AgentConfig",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, UpdateNginxAgentConfigurationRequestValidationError{
+					field:  "AgentConfig",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetAgentConfig()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return UpdateNginxAgentConfigurationRequestValidationError{
+				field:  "AgentConfig",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return UpdateNginxAgentConfigurationRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// UpdateNginxAgentConfigurationRequestMultiError is an error wrapping multiple
+// validation errors returned by
+// UpdateNginxAgentConfigurationRequest.ValidateAll() if the designated
+// constraints aren't met.
+type UpdateNginxAgentConfigurationRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UpdateNginxAgentConfigurationRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UpdateNginxAgentConfigurationRequestMultiError) AllErrors() []error { return m }
+
+// UpdateNginxAgentConfigurationRequestValidationError is the validation error
+// returned by UpdateNginxAgentConfigurationRequest.Validate if the designated
+// constraints aren't met.
+type UpdateNginxAgentConfigurationRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UpdateNginxAgentConfigurationRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UpdateNginxAgentConfigurationRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UpdateNginxAgentConfigurationRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UpdateNginxAgentConfigurationRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UpdateNginxAgentConfigurationRequestValidationError) ErrorName() string {
+	return "UpdateNginxAgentConfigurationRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UpdateNginxAgentConfigurationRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUpdateNginxAgentConfigurationRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UpdateNginxAgentConfigurationRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UpdateNginxAgentConfigurationRequestValidationError{}
+
+// Validate checks the field values on UpdateNginxAgentConfigurationResponse
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the first error encountered is returned, or nil if
+// there are no violations.
+func (m *UpdateNginxAgentConfigurationResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UpdateNginxAgentConfigurationResponse
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the result is a list of violation errors wrapped in
+// UpdateNginxAgentConfigurationResponseMultiError, or nil if none found.
+func (m *UpdateNginxAgentConfigurationResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UpdateNginxAgentConfigurationResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetResponse()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, UpdateNginxAgentConfigurationResponseValidationError{
+					field:  "Response",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, UpdateNginxAgentConfigurationResponseValidationError{
+					field:  "Response",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetResponse()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return UpdateNginxAgentConfigurationResponseValidationError{
+				field:  "Response",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return UpdateNginxAgentConfigurationResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// UpdateNginxAgentConfigurationResponseMultiError is an error wrapping
+// multiple validation errors returned by
+// UpdateNginxAgentConfigurationResponse.ValidateAll() if the designated
+// constraints aren't met.
+type UpdateNginxAgentConfigurationResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UpdateNginxAgentConfigurationResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UpdateNginxAgentConfigurationResponseMultiError) AllErrors() []error { return m }
+
+// UpdateNginxAgentConfigurationResponseValidationError is the validation error
+// returned by UpdateNginxAgentConfigurationResponse.Validate if the
+// designated constraints aren't met.
+type UpdateNginxAgentConfigurationResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UpdateNginxAgentConfigurationResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UpdateNginxAgentConfigurationResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UpdateNginxAgentConfigurationResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UpdateNginxAgentConfigurationResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UpdateNginxAgentConfigurationResponseValidationError) ErrorName() string {
+	return "UpdateNginxAgentConfigurationResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UpdateNginxAgentConfigurationResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUpdateNginxAgentConfigurationResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UpdateNginxAgentConfigurationResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UpdateNginxAgentConfigurationResponseValidationError{}
+
 // Validate checks the field values on InstanceHealth with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -2044,6 +2341,47 @@ func (m *ManagementPlaneRequest) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return ManagementPlaneRequestValidationError{
 					field:  "CommandStatusRequest",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *ManagementPlaneRequest_UpdateNginxAgentConfigurationRequest:
+		if v == nil {
+			err := ManagementPlaneRequestValidationError{
+				field:  "Request",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetUpdateNginxAgentConfigurationRequest()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ManagementPlaneRequestValidationError{
+						field:  "UpdateNginxAgentConfigurationRequest",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ManagementPlaneRequestValidationError{
+						field:  "UpdateNginxAgentConfigurationRequest",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetUpdateNginxAgentConfigurationRequest()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ManagementPlaneRequestValidationError{
+					field:  "UpdateNginxAgentConfigurationRequest",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -5356,6 +5694,35 @@ func (m *AgentConfig) validate(all bool) error {
 		}
 	}
 
+	if all {
+		switch v := interface{}(m.GetLog()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, AgentConfigValidationError{
+					field:  "Log",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, AgentConfigValidationError{
+					field:  "Log",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetLog()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return AgentConfigValidationError{
+				field:  "Log",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
 	if len(errors) > 0 {
 		return AgentConfigMultiError(errors)
 	}
@@ -5432,6 +5799,108 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = AgentConfigValidationError{}
+
+// Validate checks the field values on Log with the rules defined in the proto
+// definition for this message. If any rules are violated, the first error
+// encountered is returned, or nil if there are no violations.
+func (m *Log) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on Log with the rules defined in the
+// proto definition for this message. If any rules are violated, the result is
+// a list of violation errors wrapped in LogMultiError, or nil if none found.
+func (m *Log) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *Log) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for LogLevel
+
+	// no validation rules for LogPath
+
+	if len(errors) > 0 {
+		return LogMultiError(errors)
+	}
+
+	return nil
+}
+
+// LogMultiError is an error wrapping multiple validation errors returned by
+// Log.ValidateAll() if the designated constraints aren't met.
+type LogMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m LogMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m LogMultiError) AllErrors() []error { return m }
+
+// LogValidationError is the validation error returned by Log.Validate if the
+// designated constraints aren't met.
+type LogValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e LogValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e LogValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e LogValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e LogValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e LogValidationError) ErrorName() string { return "LogValidationError" }
+
+// Error satisfies the builtin error interface
+func (e LogValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sLog.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = LogValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = LogValidationError{}
 
 // Validate checks the field values on CommandServer with the rules defined in
 // the proto definition for this message. If any rules are violated, the first

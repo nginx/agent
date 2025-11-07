@@ -27,4 +27,5 @@ const (
 	DataPlaneHealthRequestTopic  = "data-plane-health-request"
 	DataPlaneHealthResponseTopic = "data-plane-health-response"
 	APIActionRequestTopic        = "api-action-request"
+	AgentConfigUpdateTopic       = "agent-config-update"
 )

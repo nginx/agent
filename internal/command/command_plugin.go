@@ -37,6 +37,7 @@ type (
 		Subscribe(ctx context.Context)
 		IsConnected() bool
 		CreateConnection(ctx context.Context, resource *mpi.Resource) (*mpi.CreateConnectionResponse, error)
+		UpdateAgentConfiguration(ctx context.Context, request *mpi.AgentConfig) error
 	}
 
 	CommandPlugin struct {
@@ -127,6 +128,8 @@ func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 			cp.processDataPlaneHealth(ctxWithMetadata, msg)
 		case bus.DataPlaneResponseTopic:
 			cp.processDataPlaneResponse(ctxWithMetadata, msg)
+		case bus.AgentConfigUpdateTopic:
+			cp.processAgentConfigUpdate(ctxWithMetadata, msg)
 		default:
 			slog.DebugContext(ctxWithMetadata, "Command plugin received unknown topic", "topic", msg.Topic)
 		}
@@ -140,6 +143,7 @@ func (cp *CommandPlugin) Subscriptions() []string {
 		bus.InstanceHealthTopic,
 		bus.DataPlaneHealthResponseTopic,
 		bus.DataPlaneResponseTopic,
+		bus.AgentConfigUpdateTopic,
 	}
 }
 
@@ -179,6 +183,13 @@ func (cp *CommandPlugin) createConnection(ctx context.Context, resource *mpi.Res
 		cp.messagePipe.Process(ctx, &bus.Message{
 			Topic: bus.ConnectionCreatedTopic,
 			Data:  createConnectionResponse,
+		})
+
+		// update agent configuration after connection is created, and notify other plugins
+		_ = cp.commandService.UpdateAgentConfiguration(ctx, createConnectionResponse.AgentConfig)
+		cp.messagePipe.Process(ctx, &bus.Message{
+			Topic: bus.AgentConfigUpdateTopic,
+			Data:  createConnectionResponse.AgentConfig,
 		})
 	}
 }
@@ -262,6 +273,19 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 	}
 }
 
+func (cp *CommandPlugin) processAgentConfigUpdate(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Command plugin received agent config update message", "data", msg.Data)
+	//
+	if mpiConf, ok := msg.Data.(*mpi.AgentConfig); ok {
+		err := cp.commandService.UpdateAgentConfiguration(ctx, mpiConf)
+		if err != nil {
+			slog.ErrorContext(ctx, "Unable to update agent configuration", "error", err)
+		}
+	} else {
+		slog.ErrorContext(ctx, "Invalid data for agent config update message", "data", msg.Data)
+	}
+}
+
 //nolint:revive // cognitive complexity is 14
 func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 	for {
@@ -305,6 +329,9 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 				}
 				slog.InfoContext(ctx, "Received management plane action request")
 				cp.handleAPIActionRequest(newCtx, message)
+			case *mpi.ManagementPlaneRequest_UpdateNginxAgentConfigurationRequest:
+				slog.InfoContext(ctx, "Received management plane request - update agent configuration")
+				cp.handleAgentConfigUpdateRequest(newCtx, message)
 			default:
 				slog.DebugContext(newCtx, "Management plane request not implemented yet")
 			}
@@ -406,6 +433,11 @@ func (cp *CommandPlugin) handleInvalidRequest(ctx context.Context,
 	if err != nil {
 		slog.ErrorContext(ctx, "Unable to send data plane response", "error", err)
 	}
+}
+
+func (cp *CommandPlugin) handleAgentConfigUpdateRequest(ctx context.Context, request *mpi.ManagementPlaneRequest) {
+	// notify plugins about the agent config update request
+	cp.Process(ctx, &bus.Message{Topic: bus.AgentConfigUpdateTopic, Data: request})
 }
 
 func (cp *CommandPlugin) createDataPlaneResponse(correlationID string, status mpi.CommandResponse_CommandStatus,
