@@ -42,6 +42,8 @@ jobs:
               cache: false
           - name: Download Go modules
             run: go mod download
+          - name: Fix permissions
+            run: chmod -R 0755 ~/go/pkg/mod ~/.cache/go-build
           - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
             with:
               path: |
@@ -604,7 +606,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
-          
+
       - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: |
