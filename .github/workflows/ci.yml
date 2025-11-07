@@ -38,7 +38,18 @@ jobs:
               url: ${{ secrets.ARTIFACTORY_URL_DEV }}
           - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
             with:
-                go-version-file: 'go.mod'
+              go-version-file: 'go.mod'
+              cache: false
+          - name: Download Go modules
+            run: go mod download
+          - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+            with:
+              path: |
+                ~/.cache/go-build
+                ~/go/pkg/mod
+              key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+              restore-keys: |
+                ${{ runner.os }}-go-
           - name: Setup Build Environment
             run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           - name: Build Packages
@@ -50,14 +61,6 @@ jobs:
               name: nginx-agent-unsigned-snapshots
               path: build
               retention-days: 1
-          - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-            with:
-              path: |
-                ~/.cache/go-build
-                ~/go/pkg/mod
-              key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-              restore-keys: |
-                ${{ runner.os }}-go-
 
   lint:
     name: Lint
@@ -73,7 +76,8 @@ jobs:
           url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
-            go-version-file: 'go.mod'
+          go-version-file: 'go.mod'
+          cache: false
       - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: |
@@ -101,7 +105,8 @@ jobs:
             url: ${{ secrets.ARTIFACTORY_URL_DEV }}
         - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
           with:
-              go-version-file: 'go.mod'
+            go-version-file: 'go.mod'
+            cache: false
         - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
           with:
             path: |
@@ -130,7 +135,8 @@ jobs:
             url: ${{ secrets.ARTIFACTORY_URL_DEV }}
         - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
           with:
-              go-version-file: 'go.mod'
+            go-version-file: 'go.mod'
+            cache: false
         - name: Run unit tests with race condition detection
           run: make race-condition-test
 
@@ -158,6 +164,7 @@ jobs:
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version-file: 'go.mod'
+          cache: false
       - name: Download Packages
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
@@ -207,6 +214,7 @@ jobs:
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version-file: 'go.mod'
+          cache: false
       - name: Download Packages
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
@@ -263,6 +271,7 @@ jobs:
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version-file: 'go.mod'
+          cache: false
       - name: Download Packages
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
@@ -329,6 +338,7 @@ jobs:
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version-file: 'go.mod'
+          cache: false
       - name: Download Packages
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
@@ -394,6 +404,7 @@ jobs:
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version-file: 'go.mod'
+          cache: false
       - name: Download Packages
         uses: actions/download-artifact@eaceaf801fd36c7dee90939fad912460b18a1ffe # v4.1.2
         with:
@@ -460,6 +471,7 @@ jobs:
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version-file: 'go.mod'
+          cache: false
       - name: Download Packages
         uses: actions/download-artifact@eaceaf801fd36c7dee90939fad912460b18a1ffe # v4.1.2
         with:
@@ -511,6 +523,7 @@ jobs:
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version-file: 'go.mod'
+          cache: false
       - name: Run Performance Tests
         run: |
           make performance-test
@@ -542,6 +555,7 @@ jobs:
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version-file: 'go.mod'
+          cache: false
 
       - name: Download Packages
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
