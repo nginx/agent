@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/internal/file"
 	"github.com/nginx/agent/v3/internal/model"
 )
 
@@ -645,3 +646,5 @@ func (fake *FakeFileManagerServiceInterface) recordInvocation(key string, args [
 	}
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
+
+var _ file.FileManagerServiceInterface = new(FakeFileManagerServiceInterface)
