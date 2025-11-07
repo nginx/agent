@@ -90,6 +90,15 @@ type (
 		current *crossplane.Directive, apiType string) []*model.APIDetails
 )
 
+type createAPIDetailsParams struct {
+	locationDirectiveName string
+	address               string
+	path                  string
+	caCertLocation        string
+	isSSL                 bool
+	writeEnabled          bool
+}
+
 func NewNginxConfigParser(agentConfig *config.Config) *NginxConfigParser {
 	return &NginxConfigParser{
 		agentConfig: agentConfig,
@@ -291,6 +300,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 			"server configured on port %s", ncp.agentConfig.SyslogServer.Port))
 	}
 
+	nginxConfigContext.PlusAPIs = ncp.sortPlusAPIs(ctx, nginxConfigContext.PlusAPIs)
 	nginxConfigContext.StubStatus = ncp.FindStubStatusAPI(ctx, nginxConfigContext)
 	nginxConfigContext.PlusAPI = ncp.FindPlusAPI(ctx, nginxConfigContext)
 
@@ -402,7 +412,6 @@ func (ncp *NginxConfigParser) crossplaneConfigTraverseAPIDetails(
 	callback crossplaneTraverseCallbackAPIDetails,
 	apiType string,
 ) []*model.APIDetails {
-	stop := false
 	var responses []*model.APIDetails
 
 	for _, dir := range root.Parsed {
@@ -411,7 +420,7 @@ func (ncp *NginxConfigParser) crossplaneConfigTraverseAPIDetails(
 			responses = append(responses, response...)
 			continue
 		}
-		response = traverseAPIDetails(ctx, dir, callback, &stop, apiType)
+		response = traverseAPIDetails(ctx, dir, callback, apiType)
 		if response != nil {
 			responses = append(responses, response...)
 		}
@@ -424,26 +433,23 @@ func traverseAPIDetails(
 	ctx context.Context,
 	root *crossplane.Directive,
 	callback crossplaneTraverseCallbackAPIDetails,
-	stop *bool,
 	apiType string,
 ) (response []*model.APIDetails) {
-	if *stop {
-		return nil
-	}
+	var collectedResponses []*model.APIDetails
 
 	for _, child := range root.Block {
-		response = callback(ctx, root, child, apiType)
-		if len(response) > 0 {
-			*stop = true
-			return response
+		currentResponse := callback(ctx, root, child, apiType)
+		if len(currentResponse) > 0 {
+			collectedResponses = append(collectedResponses, currentResponse...)
 		}
-		response = traverseAPIDetails(ctx, child, callback, stop, apiType)
-		if *stop {
-			return response
+
+		recursiveResponse := traverseAPIDetails(ctx, child, callback, apiType)
+		if len(recursiveResponse) > 0 {
+			collectedResponses = append(collectedResponses, recursiveResponse...)
 		}
 	}
 
-	return response
+	return collectedResponses
 }
 
 func (ncp *NginxConfigParser) formatMap(directive *crossplane.Directive) map[string]string {
@@ -724,11 +730,22 @@ func (ncp *NginxConfigParser) apiDetailsFromLocationDirective(
 		addresses := ncp.parseAddressFromServerDirective(parent)
 		path := ncp.parsePathFromLocationDirective(current)
 
+		writeEnabled := ncp.isWriteEnabled(locChild)
+
 		if locChild.Directive == locationDirectiveName {
 			for _, address := range addresses {
+				params := createAPIDetailsParams{
+					locationDirectiveName: locationDirectiveName,
+					address:               address,
+					path:                  path,
+					caCertLocation:        caCertLocation,
+					isSSL:                 isSSL,
+					writeEnabled:          writeEnabled,
+				}
+
 				details = append(
 					details,
-					ncp.createAPIDetails(locationDirectiveName, address, path, caCertLocation, isSSL),
+					ncp.createAPIDetails(params),
 				)
 			}
 		}
@@ -738,28 +755,30 @@ func (ncp *NginxConfigParser) apiDetailsFromLocationDirective(
 }
 
 func (ncp *NginxConfigParser) createAPIDetails(
-	locationDirectiveName, address, path, caCertLocation string, isSSL bool,
+	params createAPIDetailsParams,
 ) (details *model.APIDetails) {
-	if strings.HasPrefix(address, "unix:") {
+	if strings.HasPrefix(params.address, "unix:") {
 		format := unixStubStatusFormat
 
-		if locationDirectiveName == plusAPIDirective {
+		if params.locationDirectiveName == plusAPIDirective {
 			format = unixPlusAPIFormat
 		}
 
 		details = &model.APIDetails{
-			URL:      fmt.Sprintf(format, path),
-			Listen:   address,
-			Location: path,
-			Ca:       caCertLocation,
+			URL:          fmt.Sprintf(format, params.path),
+			Listen:       params.address,
+			Location:     params.path,
+			Ca:           params.caCertLocation,
+			WriteEnabled: params.writeEnabled,
 		}
 	} else {
 		details = &model.APIDetails{
-			URL: fmt.Sprintf("%s://%s%s", map[bool]string{true: "https", false: "http"}[isSSL],
-				address, path),
-			Listen:   address,
-			Location: path,
-			Ca:       caCertLocation,
+			URL: fmt.Sprintf("%s://%s%s", map[bool]string{true: "https", false: "http"}[params.isSSL],
+				params.address, params.path),
+			Listen:       params.address,
+			Location:     params.path,
+			Ca:           params.caCertLocation,
+			WriteEnabled: params.writeEnabled,
 		}
 	}
 
@@ -912,4 +931,48 @@ func (ncp *NginxConfigParser) isDuplicateFile(nginxConfigContextFiles []*mpi.Fil
 	}
 
 	return false
+}
+
+func (ncp *NginxConfigParser) isWriteEnabled(locChild *crossplane.Directive) bool {
+	if locChild.Directive != plusAPIDirective {
+		return false
+	}
+
+	for _, arg := range locChild.Args {
+		if strings.EqualFold(arg, "write=on") {
+			return true
+		}
+	}
+
+	return false
+}
+
+// sort the API endpoints by prioritizing any API that has 'write=on'.
+func (ncp *NginxConfigParser) sortPlusAPIs(ctx context.Context, apis []*model.APIDetails) []*model.APIDetails {
+	foundWriteEnabled := false
+	for _, api := range apis {
+		if api.WriteEnabled {
+			foundWriteEnabled = true
+			break
+		}
+	}
+
+	if !foundWriteEnabled && len(apis) > 0 {
+		slog.InfoContext(ctx, "No write-enabled NGINX Plus API found. Defaulting to read-only API")
+		return apis
+	}
+
+	slices.SortFunc(apis, func(a, b *model.APIDetails) int {
+		if a.WriteEnabled && !b.WriteEnabled {
+			return -1
+		}
+
+		if b.WriteEnabled && !a.WriteEnabled {
+			return 1
+		}
+
+		return 0
+	})
+
+	return apis
 }
