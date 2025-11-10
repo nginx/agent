@@ -38,7 +38,7 @@ func (s *MPITestSuite) TearDownTest() {
 func (s *MPITestSuite) SetupSuite() {
 	slog.Info("starting MPI tests")
 	s.ctx = context.Background()
-	s.teardownTest = utils.SetupConnectionTest(s.T(), true, false, false,
+	s.teardownTest = utils.SetupConnectionTest(s.T(), false, false, false,
 		"../../config/agent/nginx-config-with-grpc-client.conf")
 	s.nginxInstanceID = utils.VerifyConnection(s.T(), 2, utils.MockManagementPlaneAPIAddress)
 	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
