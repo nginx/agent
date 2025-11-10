@@ -113,19 +113,16 @@ func (cs *CommandService) CreateConnection(
 ) {
 	slog.DebugContext(ctx, "Create connection request", "request", request)
 
-	cs.connectionMutex.Lock()
-
 	if !cs.firstConnectionCallFlag {
 		cs.firstConnectionCallFlag = true
-		cs.connectionMutex.Unlock()
 		slog.DebugContext(ctx, "First CreateConnection call: blocking until second call")
 		<-cs.firstConnectionCallCh
-		cs.connectionMutex.Lock()
 	} else {
 		slog.DebugContext(ctx, "Second CreateConnection call: unblocking first call")
 		close(cs.firstConnectionCallCh)
 	}
 
+	cs.connectionMutex.Lock()
 	defer cs.connectionMutex.Unlock()
 
 	if request == nil {
