@@ -37,7 +37,7 @@ type (
 		Subscribe(ctx context.Context)
 		IsConnected() bool
 		CreateConnection(ctx context.Context, resource *mpi.Resource) (*mpi.CreateConnectionResponse, error)
-		UpdateAgentConfiguration(ctx context.Context, request *mpi.AgentConfig) error
+		UpdateAgentConfig(ctx context.Context, request *mpi.AgentConfig) (*config.Config, error)
 	}
 
 	CommandPlugin struct {
@@ -128,8 +128,6 @@ func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 			cp.processDataPlaneHealth(ctxWithMetadata, msg)
 		case bus.DataPlaneResponseTopic:
 			cp.processDataPlaneResponse(ctxWithMetadata, msg)
-		case bus.AgentConfigUpdateTopic:
-			cp.processAgentConfigUpdate(ctxWithMetadata, msg)
 		default:
 			slog.DebugContext(ctxWithMetadata, "Command plugin received unknown topic", "topic", msg.Topic)
 		}
@@ -143,7 +141,6 @@ func (cp *CommandPlugin) Subscriptions() []string {
 		bus.InstanceHealthTopic,
 		bus.DataPlaneHealthResponseTopic,
 		bus.DataPlaneResponseTopic,
-		bus.AgentConfigUpdateTopic,
 	}
 }
 
@@ -185,12 +182,23 @@ func (cp *CommandPlugin) createConnection(ctx context.Context, resource *mpi.Res
 			Data:  createConnectionResponse,
 		})
 
-		// update agent configuration after connection is created, and notify other plugins
-		_ = cp.commandService.UpdateAgentConfiguration(ctx, createConnectionResponse.AgentConfig)
-		cp.messagePipe.Process(ctx, &bus.Message{
-			Topic: bus.AgentConfigUpdateTopic,
-			Data:  createConnectionResponse.AgentConfig,
-		})
+		if createConnectionResponse.GetAgentConfig() != nil {
+			newAgentConfig, updateConfigError := cp.commandService.UpdateAgentConfig(
+				ctx,
+				createConnectionResponse.GetAgentConfig(),
+			)
+			if updateConfigError != nil {
+				slog.ErrorContext(ctx, "Unable to update agent configuration", "error", updateConfigError)
+			} else {
+				slog.DebugContext(
+					ctx, "Notifying other plugins of agent configuration update from create connection response",
+				)
+				cp.messagePipe.Process(ctx, &bus.Message{
+					Topic: bus.AgentConfigUpdateTopic,
+					Data:  newAgentConfig,
+				})
+			}
+		}
 	}
 }
 
@@ -270,19 +278,6 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 		go cp.commandService.Subscribe(subscribeCtx)
 
 		slog.DebugContext(ctx, "Command service client reset successfully")
-	}
-}
-
-func (cp *CommandPlugin) processAgentConfigUpdate(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "Command plugin received agent config update message", "data", msg.Data)
-	//
-	if mpiConf, ok := msg.Data.(*mpi.AgentConfig); ok {
-		err := cp.commandService.UpdateAgentConfiguration(ctx, mpiConf)
-		if err != nil {
-			slog.ErrorContext(ctx, "Unable to update agent configuration", "error", err)
-		}
-	} else {
-		slog.ErrorContext(ctx, "Invalid data for agent config update message", "data", msg.Data)
 	}
 }
 
@@ -436,8 +431,47 @@ func (cp *CommandPlugin) handleInvalidRequest(ctx context.Context,
 }
 
 func (cp *CommandPlugin) handleAgentConfigUpdateRequest(ctx context.Context, request *mpi.ManagementPlaneRequest) {
-	// notify plugins about the agent config update request
-	cp.Process(ctx, &bus.Message{Topic: bus.AgentConfigUpdateTopic, Data: request})
+	newAgentConfig, err := cp.commandService.UpdateAgentConfig(
+		ctx,
+		request.GetUpdateNginxAgentConfigurationRequest().GetAgentConfig(),
+	)
+	if err != nil {
+		slog.ErrorContext(ctx, "Command service was unable to update agent configuration", "error", err)
+
+		responseError := cp.commandService.SendDataPlaneResponse(ctx, &mpi.DataPlaneResponse{
+			MessageMeta: &mpi.MessageMeta{
+				MessageId:     id.GenerateMessageID(),
+				CorrelationId: request.GetMessageMeta().GetCorrelationId(),
+				Timestamp:     timestamppb.Now(),
+			},
+			CommandResponse: &mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "Failed to update agent configuration",
+			},
+		})
+
+		if responseError != nil {
+			slog.ErrorContext(ctx, "Unable to send data plane response", "error", responseError)
+		}
+	} else {
+		cp.Process(ctx, &bus.Message{Topic: bus.AgentConfigUpdateTopic, Data: newAgentConfig})
+
+		responseError := cp.commandService.SendDataPlaneResponse(ctx, &mpi.DataPlaneResponse{
+			MessageMeta: &mpi.MessageMeta{
+				MessageId:     id.GenerateMessageID(),
+				CorrelationId: request.GetMessageMeta().GetCorrelationId(),
+				Timestamp:     timestamppb.Now(),
+			},
+			CommandResponse: &mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+				Message: "Successfully updated agent configuration",
+			},
+		})
+
+		if responseError != nil {
+			slog.ErrorContext(ctx, "Unable to send data plane response", "error", responseError)
+		}
+	}
 }
 
 func (cp *CommandPlugin) createDataPlaneResponse(correlationID string, status mpi.CommandResponse_CommandStatus,

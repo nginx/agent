@@ -7,6 +7,7 @@ package config
 
 import (
 	"log/slog"
+	"strings"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )
@@ -123,10 +124,10 @@ func ToAuxiliaryCommandServerProto(cmd *Command) *mpi.AuxiliaryCommandServer {
 	return protoConfig
 }
 
-func FromAgentConfigLogProto(mpiConfig *mpi.AgentConfig) *Log {
+func FromAgentConfigLogProto(mpiLog *mpi.Log) *Log {
 	return &Log{
-		Level: MapConfigLogLevelToSlogLevel(mpiConfig.GetLog().GetLogLevel()),
-		Path:  mpiConfig.Log.GetLogPath(),
+		Level: MapConfigLogLevelToSlogLevel(mpiLog.GetLogLevel()),
+		Path:  mpiLog.GetLogPath(),
 	}
 }
 
@@ -138,24 +139,23 @@ func ToAgentConfigLogProto(agentLogConfig *Log) *mpi.Log {
 }
 
 func MapConfigLogLevelToSlogLevel(level mpi.Log_LogLevel) string {
+	slogLevel := "INFO"
+
 	switch level {
 	case mpi.Log_LOG_LEVEL_DEBUG:
-		return "DEBUG"
-	case mpi.Log_LOG_LEVEL_INFO:
-		return "INFO"
+		slogLevel = "DEBUG"
 	case mpi.Log_LOG_LEVEL_WARN:
-		return "WARN"
+		slogLevel = "WARN"
 	case mpi.Log_LOG_LEVEL_ERROR:
-		return "ERROR"
-	case mpi.Log_LOG_LEVEL_UNSPECIFIED:
-		fallthrough
-	default:
-		return "INFO"
+		slogLevel = "ERROR"
+	case mpi.Log_LOG_LEVEL_INFO, mpi.Log_LOG_LEVEL_UNSPECIFIED:
 	}
+
+	return slogLevel
 }
 
 func MapSlogLevelToConfigLogLevel(level string) mpi.Log_LogLevel {
-	switch level {
+	switch strings.ToUpper(level) {
 	case "DEBUG":
 		return mpi.Log_LOG_LEVEL_DEBUG
 	case "INFO":

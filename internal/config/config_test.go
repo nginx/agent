@@ -1014,7 +1014,7 @@ func agentConfig() *Config {
 		UUID:    "",
 		Version: "",
 		Path:    "",
-		Log:     &Log{
+		Log: &Log{
 			Level: "info",
 		},
 		Client: &Client{

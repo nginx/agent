@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"reflect"
 	"sync"
 	"sync/atomic"
 
@@ -182,21 +183,21 @@ func (cs *CommandService) SendDataPlaneResponse(ctx context.Context, response *m
 	)
 }
 
-func (cs *CommandService) UpdateAgentConfiguration(ctx context.Context, mpiConfig *mpi.AgentConfig) error {
+func (cs *CommandService) UpdateAgentConfig(
+	ctx context.Context,
+	mpiConfig *mpi.AgentConfig,
+) (*config.Config, error) {
 	if !cs.isConnected.Load() {
-		return errors.New("command service client not connected yet")
+		return nil, errors.New("command service client not connected yet")
 	}
-	slog.DebugContext(ctx, "Updating agent configuration", "config", mpiConfig)
+	slog.InfoContext(ctx, "Updating agent configuration", "config", mpiConfig)
 
-	if mpiConfig.Log != nil {
-		slog.DebugContext(ctx, "Updating log configuration", "log", mpiConfig.Log)
-		logConf := config.Log{
-			Level: config.MapConfigLogLevelToSlogLevel(mpiConfig.Log.LogLevel),
-			Path:  mpiConfig.Log.LogPath,
-		}
-		cs.agentConfig.Log = &logConf
+	updatedLog := config.FromAgentConfigLogProto(mpiConfig.GetLog())
 
-		// Reinitialize logger with new configuration
+	if mpiConfig.GetLog() != nil && !reflect.DeepEqual(cs.agentConfig.Log, updatedLog) {
+		slog.InfoContext(ctx, "Updating log configuration", "log", updatedLog)
+		cs.agentConfig.Log = updatedLog
+
 		slogger := logger.New(
 			cs.agentConfig.Log.Path,
 			cs.agentConfig.Log.Level,
@@ -204,7 +205,7 @@ func (cs *CommandService) UpdateAgentConfiguration(ctx context.Context, mpiConfi
 		slog.SetDefault(slogger)
 	}
 
-	return nil
+	return cs.agentConfig, nil
 }
 
 // Subscribe to the Management Plane for incoming commands.

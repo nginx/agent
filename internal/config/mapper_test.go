@@ -321,11 +321,11 @@ func TestMapper_ToAgentConfigLogProto(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			protoLog := ToAgentConfigLogProto(tt.log)
-			assert.Equal(t, tt.expected.LogLevel, protoLog.LogLevel)
-			assert.Equal(t, tt.expected.LogPath, protoLog.LogPath)
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			protoLog := ToAgentConfigLogProto(testCase.log)
+			assert.Equal(t, testCase.expected.GetLogLevel(), protoLog.GetLogLevel())
+			assert.Equal(t, testCase.expected.GetLogPath(), protoLog.GetLogPath())
 		})
 	}
 }

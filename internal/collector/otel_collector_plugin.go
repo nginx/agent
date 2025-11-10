@@ -192,6 +192,8 @@ func (oc *Collector) Process(ctx context.Context, msg *bus.Message) {
 		oc.handleNginxConfigUpdate(ctx, msg)
 	case bus.ResourceUpdateTopic:
 		oc.handleResourceUpdate(ctx, msg)
+	case bus.AgentConfigUpdateTopic:
+		oc.handleAgentConfigUpdate(ctx, msg)
 	default:
 		slog.DebugContext(ctx, "OTel collector plugin unknown topic", "topic", msg.Topic)
 	}
@@ -202,6 +204,7 @@ func (oc *Collector) Subscriptions() []string {
 	return []string{
 		bus.ResourceUpdateTopic,
 		bus.NginxConfigUpdateTopic,
+		bus.AgentConfigUpdateTopic,
 	}
 }
 
@@ -327,6 +330,17 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 
 		oc.restartCollector(ctx)
 	}
+}
+
+func (oc *Collector) handleAgentConfigUpdate(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "OTel collector plugin received agent config update message")
+	agentConfig, ok := msg.Data.(*config.Config)
+	if !ok {
+		slog.ErrorContext(ctx, "Unable to cast message payload to *config.Config", "payload", msg.Data)
+		return
+	}
+
+	oc.config = agentConfig
 }
 
 func (oc *Collector) updateResourceProcessor(resourceUpdateContext *v1.Resource) bool {

@@ -400,11 +400,13 @@ func TestCommandService_UpdateAgentConfiguration(t *testing.T) {
 			LogPath:  "/etc/nginx-agent",
 		},
 	}
-	
-	err := commandService.UpdateAgentConfiguration(ctx, updatedConfig)
+
+	newAgentConfig, err := commandService.UpdateAgentConfig(ctx, updatedConfig)
 	require.NoError(t, err)
 	require.Equal(t, "DEBUG", commandService.agentConfig.Log.Level)
 	require.Equal(t, "/etc/nginx-agent", commandService.agentConfig.Log.Path)
+	require.Equal(t, "DEBUG", newAgentConfig.Log.Level)
+	require.Equal(t, "/etc/nginx-agent", newAgentConfig.Log.Path)
 
 	updatedLogger := slog.Default()
 	require.NotEqual(t, originalLogger, updatedLogger)

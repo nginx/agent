@@ -77,8 +77,20 @@ func TestCommandPlugin_Init(t *testing.T) {
 
 func TestCommandPlugin_createConnection(t *testing.T) {
 	ctx := context.Background()
+	response := &mpi.CreateConnectionResponse{
+		Response: &mpi.CommandResponse{
+			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+			Message: "Connection created successfully",
+		},
+		AgentConfig: &mpi.AgentConfig{
+			Log: &mpi.Log{
+				LogLevel: mpi.Log_LOG_LEVEL_DEBUG,
+			},
+		},
+	}
+
 	commandService := &commandfakes.FakeCommandService{}
-	commandService.CreateConnectionReturns(&mpi.CreateConnectionResponse{}, nil)
+	commandService.CreateConnectionReturns(response, nil)
 	messagePipe := busfakes.NewFakeMessagePipe()
 
 	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{}, model.Command)
@@ -98,14 +110,15 @@ func TestCommandPlugin_createConnection(t *testing.T) {
 
 	assert.Eventually(
 		t,
-		func() bool { return len(messagePipe.Messages()) == 1 },
+		func() bool { return len(messagePipe.Messages()) == 2 },
 		2*time.Second,
 		10*time.Millisecond,
 	)
 
 	messages := messagePipe.Messages()
-	assert.Len(t, messages, 1)
+	assert.Len(t, messages, 2)
 	assert.Equal(t, bus.ConnectionCreatedTopic, messages[0].Topic)
+	assert.Equal(t, bus.AgentConfigUpdateTopic, messages[1].Topic)
 }
 
 func TestCommandPlugin_Process(t *testing.T) {
@@ -151,17 +164,6 @@ func TestCommandPlugin_Process(t *testing.T) {
 		Data:  commandPlugin.conn,
 	})
 	require.Equal(t, 1, fakeCommandService.UpdateClientCallCount())
-
-	commandPlugin.Process(ctx, &bus.Message{
-		Topic: bus.AgentConfigUpdateTopic,
-		Data: mpi.AgentConfig{
-			Log: &mpi.Log{
-				LogLevel: mpi.Log_LOG_LEVEL_DEBUG,
-				LogPath:  "somewhere",
-			},
-		},
-	})
-	require.Equal(t, 1, fakeCommandService.UpdateAgentConfigurationCallCount())
 }
 
 func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
