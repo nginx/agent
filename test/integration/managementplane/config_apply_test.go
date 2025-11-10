@@ -43,7 +43,7 @@ type ConfigApplyChunkingTestSuite struct {
 func (s *ConfigApplyTestSuite) SetupSuite() {
 	slog.Info("starting config apply tests")
 	s.ctx = context.Background()
-	s.teardownTest = utils.SetupConnectionTest(s.T(), true, false, false,
+	s.teardownTest = utils.SetupConnectionTest(s.T(), false, false, false,
 		"../../config/agent/nginx-config-with-grpc-client.conf")
 	s.nginxInstanceID = utils.VerifyConnection(s.T(), 2, utils.MockManagementPlaneAPIAddress)
 
@@ -301,7 +301,7 @@ func (s *ConfigApplyTestSuite) TestConfigApply_Test5_TestFileNotInAllowedDirecto
 func (s *ConfigApplyChunkingTestSuite) SetupSuite() {
 	slog.Info("starting config apply chunking tests")
 	s.ctx = context.Background()
-	s.teardownTest = utils.SetupConnectionTest(s.T(), true, false, false,
+	s.teardownTest = utils.SetupConnectionTest(s.T(), false, false, false,
 		"../../config/agent/nginx-config-with-max-file-size.conf")
 	s.nginxInstanceID = utils.VerifyConnection(s.T(), 2, utils.MockManagementPlaneAPIAddress)
 	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
