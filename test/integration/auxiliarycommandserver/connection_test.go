@@ -34,7 +34,7 @@ func (s *AuxiliaryTestSuite) SetupSuite() {
 	// Expect errors in logs should be false for recconnection tests
 	// For now for these test we will skip checking the logs for errors
 	slog.Info("starting auxiliary command server tests")
-	s.teardownTest = utils.SetupConnectionTest(t, true, false, true,
+	s.teardownTest = utils.SetupConnectionTest(t, false, false, true,
 		"../../config/agent/nginx-agent-with-auxiliary-command.conf")
 }
 
