@@ -625,7 +625,7 @@ func registerClientFlags(fs *flag.FlagSet) {
 	fs.Int(
 		ClientGRPCMaxParallelFileOperationsKey,
 		DefMaxParallelFileOperations,
-		"Max number of files downloaded or uploaded in parallel",
+		"Maximum number of file downloads or uploads performed in parallel",
 	)
 }
 
