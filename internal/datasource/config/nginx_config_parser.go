@@ -184,7 +184,6 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 	payload *crossplane.Payload,
 	configPath string,
 ) (*model.NginxConfigContext, error) {
-	napSyslogServersFound := make(map[string]bool)
 	napEnabled := false
 
 	nginxConfigContext := &model.NginxConfigContext{
@@ -200,7 +199,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 			Listen:   "",
 			Location: "",
 		},
-		NAPSysLogServers: make([]string, 0),
+		NAPSysLogServer: "",
 	}
 
 	rootDir := filepath.Dir(instance.GetInstanceRuntime().GetConfigPath())
@@ -256,8 +255,8 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 					if len(directive.Args) > 1 {
 						napEnabled = true
 						sysLogServer := ncp.findLocalSysLogServers(directive.Args[1])
-						if sysLogServer != "" && !napSyslogServersFound[sysLogServer] {
-							napSyslogServersFound[sysLogServer] = true
+						if sysLogServer != "" {
+							nginxConfigContext.NAPSysLogServer = sysLogServer
 							slog.DebugContext(ctx, "Found NAP syslog server", "address", sysLogServer)
 						}
 					}
@@ -284,17 +283,6 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 			nginxConfigContext.PlusAPIs = append(nginxConfigContext.PlusAPIs, plusAPIs...)
 		}
 
-		if len(napSyslogServersFound) > 0 {
-			var napSyslogServer []string
-			for server := range napSyslogServersFound {
-				napSyslogServer = append(napSyslogServer, server)
-			}
-			nginxConfigContext.NAPSysLogServers = napSyslogServer
-		} else if napEnabled {
-			slog.WarnContext(ctx, "Could not find available local NGINX App Protect syslog server. "+
-				"Security violations will not be collected.")
-		}
-
 		fileMeta, err := files.FileMeta(conf.File)
 		if err != nil {
 			slog.WarnContext(ctx, "Unable to get file metadata", "file_name", conf.File, "error", err)
@@ -303,8 +291,16 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 		}
 	}
 
-	nginxConfigContext.PlusAPIs = ncp.sortPlusAPIs(ctx, nginxConfigContext.PlusAPIs)
+	if napEnabled && nginxConfigContext.NAPSysLogServer == "" {
+		slog.WarnContext(ctx, fmt.Sprintf("Could not find available local NGINX App Protect syslog"+
+			" server configured on port %s. Security violations will not be collected.",
+			ncp.agentConfig.SyslogServer.Port))
+	} else if napEnabled && nginxConfigContext.NAPSysLogServer != "" {
+		slog.InfoContext(ctx, fmt.Sprintf("Found available local NGINX App Protect syslog"+
+			"server configured on port %s", ncp.agentConfig.SyslogServer.Port))
+	}
 
+	nginxConfigContext.PlusAPIs = ncp.sortPlusAPIs(ctx, nginxConfigContext.PlusAPIs)
 	nginxConfigContext.StubStatus = ncp.FindStubStatusAPI(ctx, nginxConfigContext)
 	nginxConfigContext.PlusAPI = ncp.FindPlusAPI(ctx, nginxConfigContext)
 
@@ -315,8 +311,12 @@ func (ncp *NginxConfigParser) findLocalSysLogServers(sysLogServer string) string
 	re := regexp.MustCompile(`syslog:server=([\S]+)`)
 	matches := re.FindStringSubmatch(sysLogServer)
 	if len(matches) > 1 {
-		host, _, err := net.SplitHostPort(matches[1])
+		host, port, err := net.SplitHostPort(matches[1])
 		if err != nil {
+			return ""
+		}
+
+		if port != ncp.agentConfig.SyslogServer.Port {
 			return ""
 		}
 

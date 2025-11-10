@@ -157,6 +157,7 @@ func ResolveConfig() (*Config, error) {
 		Features:           viperInstance.GetStringSlice(FeaturesKey),
 		Labels:             resolveLabels(),
 		LibDir:             viperInstance.GetString(LibDirPathKey),
+		SyslogServer:       resolveSyslogServer(),
 	}
 
 	defaultCollector(collector, config)
@@ -460,6 +461,12 @@ func registerFlags() {
 		FeaturesKey,
 		DefaultFeatures(),
 		"A comma-separated list of features enabled for the agent.",
+	)
+
+	fs.String(
+		SyslogServerPort,
+		DefSyslogServerPort,
+		"The port Agent will start the syslog server on for logs collection",
 	)
 
 	registerCommonFlags(fs)
@@ -944,6 +951,12 @@ func resolveLog() *Log {
 	return &Log{
 		Level: viperInstance.GetString(LogLevelKey),
 		Path:  viperInstance.GetString(LogPathKey),
+	}
+}
+
+func resolveSyslogServer() *SyslogServer {
+	return &SyslogServer{
+		Port: viperInstance.GetString(SyslogServerPort),
 	}
 }
 

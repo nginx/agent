@@ -39,6 +39,9 @@ func AgentConfig() *config.Config {
 		UUID:    "75442486-0878-440c-9db1-a7006c25a39f",
 		Path:    "/etc/nginx-agent",
 		Log:     &config.Log{},
+		SyslogServer: &config.SyslogServer{
+			Port: "1514",
+		},
 		Client: &config.Client{
 			HTTP: &config.HTTP{
 				Timeout: clientHTTPTimeout,
