@@ -63,6 +63,7 @@ const (
 	DefMaxMessageSendSize           = 4194304 // default 4 MB
 	DefMaxFileSize           uint32 = 1048576 // 1MB
 	DefFileChunkSize         uint32 = 524288  // 0.5MB
+	DefResponseTimeout              = 10 * time.Second
 
 	// Client HTTP Settings
 	DefHTTPTimeout = 10 * time.Second

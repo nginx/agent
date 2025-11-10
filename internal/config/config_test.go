@@ -1180,6 +1180,7 @@ func createConfig() *Config {
 				MaxMessageSendSize:    1048575,
 				MaxFileSize:           485753,
 				FileChunkSize:         48575,
+				ResponseTimeout:       30 * time.Second,
 			},
 			Backoff: &BackOff{
 				InitialInterval:     200 * time.Millisecond,
