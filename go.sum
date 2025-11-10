@@ -791,8 +791,8 @@ go.opentelemetry.io/collector/confmap/provider/envprovider v1.42.0 h1:I4ijuuEUBt
 go.opentelemetry.io/collector/confmap/provider/envprovider v1.42.0/go.mod h1:Nd5diM9jWG9sg6d6eHvR3sIuYgnU9PptExuCgELKTIs=
 go.opentelemetry.io/collector/confmap/provider/fileprovider v1.45.0 h1:Q0QcNZ2bdTW1HfEPPN23vmdhs5EroCTbjQQN9ewiZHQ=
 go.opentelemetry.io/collector/confmap/provider/fileprovider v1.45.0/go.mod h1:km4EomfOXyJnkF+FY5kP7LmWjNNrErimTO4/yBzZYgE=
-go.opentelemetry.io/collector/confmap/provider/httpprovider v1.42.0 h1:tPhbreOfST0w8RUnEIM0P5Ukba2O2rURkXWGRpI9Je0=
-go.opentelemetry.io/collector/confmap/provider/httpprovider v1.42.0/go.mod h1:vNYEoxKJ6HFVMWnRmCqPOD8/9d5omUsienkhFegrAGE=
+go.opentelemetry.io/collector/confmap/provider/httpprovider v1.45.0 h1:J92NezBH0ZB1JUjyQfW1sFKVuMXmMtzDoJGO6SHBnGQ=
+go.opentelemetry.io/collector/confmap/provider/httpprovider v1.45.0/go.mod h1:bRhQRVpNYWEuZhvc6wWiC70p10MMS42ItCBXQGA0lRk=
 go.opentelemetry.io/collector/confmap/provider/httpsprovider v1.42.0 h1:HbRBG1OFfahgMxw0fJpYEvJRt8N4Ma+nU+WftURmcUE=
 go.opentelemetry.io/collector/confmap/provider/httpsprovider v1.42.0/go.mod h1:u+66CfjmaavNaNIx39rHgxeITx7Qd0NWAZ/URm+O4Jw=
 go.opentelemetry.io/collector/confmap/provider/yamlprovider v1.42.0 h1:M0Vo2jp1LJrtudwGO4jdhNGKnRxh3D0NsJV/pY6Nnwk=
