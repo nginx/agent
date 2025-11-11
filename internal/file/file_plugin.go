@@ -41,10 +41,11 @@ func NewFilePlugin(agentConfig *config.Config, grpcConnection grpc.GrpcConnectio
 	serverType model.ServerType, manifestLock *sync.RWMutex,
 ) *FilePlugin {
 	return &FilePlugin{
-		config:       agentConfig,
-		conn:         grpcConnection,
-		serverType:   serverType,
-		manifestLock: manifestLock,
+		config:           agentConfig,
+		conn:             grpcConnection,
+		serverType:       serverType,
+		manifestLock:     manifestLock,
+		agentConfigMutex: &sync.Mutex{},
 	}
 }
 

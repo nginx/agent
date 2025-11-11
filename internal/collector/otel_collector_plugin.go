@@ -101,6 +101,7 @@ func NewCollector(conf *config.Config) (*Collector, error) {
 		service:                 oTelCollector,
 		stopped:                 true,
 		mu:                      &sync.Mutex{},
+		agentConfigMutex:        &sync.Mutex{},
 		previousNAPSysLogServer: "",
 		debugOTelConfigPath:     debugOTelConfigPath,
 	}, nil

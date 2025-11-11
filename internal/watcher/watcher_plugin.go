@@ -90,6 +90,7 @@ func NewWatcher(agentConfig *config.Config) *Watcher {
 		auxiliaryCredentialUpdatesChannel:  make(chan credentials.CredentialUpdateMessage),
 		instancesWithConfigApplyInProgress: []string{},
 		watcherMutex:                       sync.Mutex{},
+		agentConfigMutex:                   sync.Mutex{},
 	}
 }
 
