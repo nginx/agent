@@ -1215,23 +1215,22 @@ var _ interface {
 	ErrorName() string
 } = UpdateDataPlaneStatusResponseValidationError{}
 
-// Validate checks the field values on UpdateNginxAgentConfigurationRequest
-// with the rules defined in the proto definition for this message. If any
-// rules are violated, the first error encountered is returned, or nil if
-// there are no violations.
-func (m *UpdateNginxAgentConfigurationRequest) Validate() error {
+// Validate checks the field values on UpdateAgentConfigRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *UpdateAgentConfigRequest) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on UpdateNginxAgentConfigurationRequest
-// with the rules defined in the proto definition for this message. If any
-// rules are violated, the result is a list of violation errors wrapped in
-// UpdateNginxAgentConfigurationRequestMultiError, or nil if none found.
-func (m *UpdateNginxAgentConfigurationRequest) ValidateAll() error {
+// ValidateAll checks the field values on UpdateAgentConfigRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// UpdateAgentConfigRequestMultiError, or nil if none found.
+func (m *UpdateAgentConfigRequest) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *UpdateNginxAgentConfigurationRequest) validate(all bool) error {
+func (m *UpdateAgentConfigRequest) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -1242,7 +1241,7 @@ func (m *UpdateNginxAgentConfigurationRequest) validate(all bool) error {
 		switch v := interface{}(m.GetMessageMeta()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
-				errors = append(errors, UpdateNginxAgentConfigurationRequestValidationError{
+				errors = append(errors, UpdateAgentConfigRequestValidationError{
 					field:  "MessageMeta",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -1250,7 +1249,7 @@ func (m *UpdateNginxAgentConfigurationRequest) validate(all bool) error {
 			}
 		case interface{ Validate() error }:
 			if err := v.Validate(); err != nil {
-				errors = append(errors, UpdateNginxAgentConfigurationRequestValidationError{
+				errors = append(errors, UpdateAgentConfigRequestValidationError{
 					field:  "MessageMeta",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -1259,7 +1258,7 @@ func (m *UpdateNginxAgentConfigurationRequest) validate(all bool) error {
 		}
 	} else if v, ok := interface{}(m.GetMessageMeta()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
-			return UpdateNginxAgentConfigurationRequestValidationError{
+			return UpdateAgentConfigRequestValidationError{
 				field:  "MessageMeta",
 				reason: "embedded message failed validation",
 				cause:  err,
@@ -1271,7 +1270,7 @@ func (m *UpdateNginxAgentConfigurationRequest) validate(all bool) error {
 		switch v := interface{}(m.GetAgentConfig()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
-				errors = append(errors, UpdateNginxAgentConfigurationRequestValidationError{
+				errors = append(errors, UpdateAgentConfigRequestValidationError{
 					field:  "AgentConfig",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -1279,7 +1278,7 @@ func (m *UpdateNginxAgentConfigurationRequest) validate(all bool) error {
 			}
 		case interface{ Validate() error }:
 			if err := v.Validate(); err != nil {
-				errors = append(errors, UpdateNginxAgentConfigurationRequestValidationError{
+				errors = append(errors, UpdateAgentConfigRequestValidationError{
 					field:  "AgentConfig",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -1288,7 +1287,7 @@ func (m *UpdateNginxAgentConfigurationRequest) validate(all bool) error {
 		}
 	} else if v, ok := interface{}(m.GetAgentConfig()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
-			return UpdateNginxAgentConfigurationRequestValidationError{
+			return UpdateAgentConfigRequestValidationError{
 				field:  "AgentConfig",
 				reason: "embedded message failed validation",
 				cause:  err,
@@ -1297,20 +1296,19 @@ func (m *UpdateNginxAgentConfigurationRequest) validate(all bool) error {
 	}
 
 	if len(errors) > 0 {
-		return UpdateNginxAgentConfigurationRequestMultiError(errors)
+		return UpdateAgentConfigRequestMultiError(errors)
 	}
 
 	return nil
 }
 
-// UpdateNginxAgentConfigurationRequestMultiError is an error wrapping multiple
-// validation errors returned by
-// UpdateNginxAgentConfigurationRequest.ValidateAll() if the designated
+// UpdateAgentConfigRequestMultiError is an error wrapping multiple validation
+// errors returned by UpdateAgentConfigRequest.ValidateAll() if the designated
 // constraints aren't met.
-type UpdateNginxAgentConfigurationRequestMultiError []error
+type UpdateAgentConfigRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m UpdateNginxAgentConfigurationRequestMultiError) Error() string {
+func (m UpdateAgentConfigRequestMultiError) Error() string {
 	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -1319,12 +1317,11 @@ func (m UpdateNginxAgentConfigurationRequestMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m UpdateNginxAgentConfigurationRequestMultiError) AllErrors() []error { return m }
+func (m UpdateAgentConfigRequestMultiError) AllErrors() []error { return m }
 
-// UpdateNginxAgentConfigurationRequestValidationError is the validation error
-// returned by UpdateNginxAgentConfigurationRequest.Validate if the designated
-// constraints aren't met.
-type UpdateNginxAgentConfigurationRequestValidationError struct {
+// UpdateAgentConfigRequestValidationError is the validation error returned by
+// UpdateAgentConfigRequest.Validate if the designated constraints aren't met.
+type UpdateAgentConfigRequestValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -1332,24 +1329,24 @@ type UpdateNginxAgentConfigurationRequestValidationError struct {
 }
 
 // Field function returns field value.
-func (e UpdateNginxAgentConfigurationRequestValidationError) Field() string { return e.field }
+func (e UpdateAgentConfigRequestValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e UpdateNginxAgentConfigurationRequestValidationError) Reason() string { return e.reason }
+func (e UpdateAgentConfigRequestValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e UpdateNginxAgentConfigurationRequestValidationError) Cause() error { return e.cause }
+func (e UpdateAgentConfigRequestValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e UpdateNginxAgentConfigurationRequestValidationError) Key() bool { return e.key }
+func (e UpdateAgentConfigRequestValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e UpdateNginxAgentConfigurationRequestValidationError) ErrorName() string {
-	return "UpdateNginxAgentConfigurationRequestValidationError"
+func (e UpdateAgentConfigRequestValidationError) ErrorName() string {
+	return "UpdateAgentConfigRequestValidationError"
 }
 
 // Error satisfies the builtin error interface
-func (e UpdateNginxAgentConfigurationRequestValidationError) Error() string {
+func (e UpdateAgentConfigRequestValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -1361,14 +1358,14 @@ func (e UpdateNginxAgentConfigurationRequestValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sUpdateNginxAgentConfigurationRequest.%s: %s%s",
+		"invalid %sUpdateAgentConfigRequest.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = UpdateNginxAgentConfigurationRequestValidationError{}
+var _ error = UpdateAgentConfigRequestValidationError{}
 
 var _ interface {
 	Field() string
@@ -1376,141 +1373,7 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = UpdateNginxAgentConfigurationRequestValidationError{}
-
-// Validate checks the field values on UpdateNginxAgentConfigurationResponse
-// with the rules defined in the proto definition for this message. If any
-// rules are violated, the first error encountered is returned, or nil if
-// there are no violations.
-func (m *UpdateNginxAgentConfigurationResponse) Validate() error {
-	return m.validate(false)
-}
-
-// ValidateAll checks the field values on UpdateNginxAgentConfigurationResponse
-// with the rules defined in the proto definition for this message. If any
-// rules are violated, the result is a list of violation errors wrapped in
-// UpdateNginxAgentConfigurationResponseMultiError, or nil if none found.
-func (m *UpdateNginxAgentConfigurationResponse) ValidateAll() error {
-	return m.validate(true)
-}
-
-func (m *UpdateNginxAgentConfigurationResponse) validate(all bool) error {
-	if m == nil {
-		return nil
-	}
-
-	var errors []error
-
-	if all {
-		switch v := interface{}(m.GetResponse()).(type) {
-		case interface{ ValidateAll() error }:
-			if err := v.ValidateAll(); err != nil {
-				errors = append(errors, UpdateNginxAgentConfigurationResponseValidationError{
-					field:  "Response",
-					reason: "embedded message failed validation",
-					cause:  err,
-				})
-			}
-		case interface{ Validate() error }:
-			if err := v.Validate(); err != nil {
-				errors = append(errors, UpdateNginxAgentConfigurationResponseValidationError{
-					field:  "Response",
-					reason: "embedded message failed validation",
-					cause:  err,
-				})
-			}
-		}
-	} else if v, ok := interface{}(m.GetResponse()).(interface{ Validate() error }); ok {
-		if err := v.Validate(); err != nil {
-			return UpdateNginxAgentConfigurationResponseValidationError{
-				field:  "Response",
-				reason: "embedded message failed validation",
-				cause:  err,
-			}
-		}
-	}
-
-	if len(errors) > 0 {
-		return UpdateNginxAgentConfigurationResponseMultiError(errors)
-	}
-
-	return nil
-}
-
-// UpdateNginxAgentConfigurationResponseMultiError is an error wrapping
-// multiple validation errors returned by
-// UpdateNginxAgentConfigurationResponse.ValidateAll() if the designated
-// constraints aren't met.
-type UpdateNginxAgentConfigurationResponseMultiError []error
-
-// Error returns a concatenation of all the error messages it wraps.
-func (m UpdateNginxAgentConfigurationResponseMultiError) Error() string {
-	msgs := make([]string, 0, len(m))
-	for _, err := range m {
-		msgs = append(msgs, err.Error())
-	}
-	return strings.Join(msgs, "; ")
-}
-
-// AllErrors returns a list of validation violation errors.
-func (m UpdateNginxAgentConfigurationResponseMultiError) AllErrors() []error { return m }
-
-// UpdateNginxAgentConfigurationResponseValidationError is the validation error
-// returned by UpdateNginxAgentConfigurationResponse.Validate if the
-// designated constraints aren't met.
-type UpdateNginxAgentConfigurationResponseValidationError struct {
-	field  string
-	reason string
-	cause  error
-	key    bool
-}
-
-// Field function returns field value.
-func (e UpdateNginxAgentConfigurationResponseValidationError) Field() string { return e.field }
-
-// Reason function returns reason value.
-func (e UpdateNginxAgentConfigurationResponseValidationError) Reason() string { return e.reason }
-
-// Cause function returns cause value.
-func (e UpdateNginxAgentConfigurationResponseValidationError) Cause() error { return e.cause }
-
-// Key function returns key value.
-func (e UpdateNginxAgentConfigurationResponseValidationError) Key() bool { return e.key }
-
-// ErrorName returns error name.
-func (e UpdateNginxAgentConfigurationResponseValidationError) ErrorName() string {
-	return "UpdateNginxAgentConfigurationResponseValidationError"
-}
-
-// Error satisfies the builtin error interface
-func (e UpdateNginxAgentConfigurationResponseValidationError) Error() string {
-	cause := ""
-	if e.cause != nil {
-		cause = fmt.Sprintf(" | caused by: %v", e.cause)
-	}
-
-	key := ""
-	if e.key {
-		key = "key for "
-	}
-
-	return fmt.Sprintf(
-		"invalid %sUpdateNginxAgentConfigurationResponse.%s: %s%s",
-		key,
-		e.field,
-		e.reason,
-		cause)
-}
-
-var _ error = UpdateNginxAgentConfigurationResponseValidationError{}
-
-var _ interface {
-	Field() string
-	Reason() string
-	Key() bool
-	Cause() error
-	ErrorName() string
-} = UpdateNginxAgentConfigurationResponseValidationError{}
+} = UpdateAgentConfigRequestValidationError{}
 
 // Validate checks the field values on InstanceHealth with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
@@ -2347,7 +2210,7 @@ func (m *ManagementPlaneRequest) validate(all bool) error {
 			}
 		}
 
-	case *ManagementPlaneRequest_UpdateNginxAgentConfigurationRequest:
+	case *ManagementPlaneRequest_UpdateAgentConfigRequest:
 		if v == nil {
 			err := ManagementPlaneRequestValidationError{
 				field:  "Request",
@@ -2360,11 +2223,11 @@ func (m *ManagementPlaneRequest) validate(all bool) error {
 		}
 
 		if all {
-			switch v := interface{}(m.GetUpdateNginxAgentConfigurationRequest()).(type) {
+			switch v := interface{}(m.GetUpdateAgentConfigRequest()).(type) {
 			case interface{ ValidateAll() error }:
 				if err := v.ValidateAll(); err != nil {
 					errors = append(errors, ManagementPlaneRequestValidationError{
-						field:  "UpdateNginxAgentConfigurationRequest",
+						field:  "UpdateAgentConfigRequest",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
@@ -2372,16 +2235,16 @@ func (m *ManagementPlaneRequest) validate(all bool) error {
 			case interface{ Validate() error }:
 				if err := v.Validate(); err != nil {
 					errors = append(errors, ManagementPlaneRequestValidationError{
-						field:  "UpdateNginxAgentConfigurationRequest",
+						field:  "UpdateAgentConfigRequest",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
 				}
 			}
-		} else if v, ok := interface{}(m.GetUpdateNginxAgentConfigurationRequest()).(interface{ Validate() error }); ok {
+		} else if v, ok := interface{}(m.GetUpdateAgentConfigRequest()).(interface{ Validate() error }); ok {
 			if err := v.Validate(); err != nil {
 				return ManagementPlaneRequestValidationError{
-					field:  "UpdateNginxAgentConfigurationRequest",
+					field:  "UpdateAgentConfigRequest",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}

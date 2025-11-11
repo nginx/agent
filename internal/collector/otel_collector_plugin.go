@@ -55,6 +55,7 @@ type (
 		service                 types.CollectorInterface
 		config                  *config.Config
 		mu                      *sync.Mutex
+		agentConfigMutex        *sync.Mutex
 		cancel                  context.CancelFunc
 		previousNAPSysLogServer string
 		debugOTelConfigPath     string
@@ -334,6 +335,10 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 
 func (oc *Collector) handleAgentConfigUpdate(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "OTel collector plugin received agent config update message")
+
+	oc.agentConfigMutex.Lock()
+	defer oc.agentConfigMutex.Unlock()
+
 	agentConfig, ok := msg.Data.(*config.Config)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *config.Config", "payload", msg.Data)

@@ -8,6 +8,7 @@ package command
 import (
 	"bytes"
 	"context"
+	"log/slog"
 	"testing"
 	"time"
 
@@ -167,6 +168,10 @@ func TestCommandPlugin_Process(t *testing.T) {
 }
 
 func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
+	defer func() {
+		slog.SetDefault(slog.Default())
+	}()
+
 	tests := []struct {
 		managementPlaneRequest *mpi.ManagementPlaneRequest
 		expectedTopic          *bus.Message
@@ -224,6 +229,24 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 				pkg.FeatureAPIAction,
 			},
 		},
+
+		{
+			name: "Test 5: Update Agent Config Request",
+			managementPlaneRequest: &mpi.ManagementPlaneRequest{
+				Request: &mpi.ManagementPlaneRequest_UpdateAgentConfigRequest{
+					UpdateAgentConfigRequest: &mpi.UpdateAgentConfigRequest{
+						AgentConfig: &mpi.AgentConfig{
+							Log: &mpi.Log{
+								LogLevel: mpi.Log_LOG_LEVEL_DEBUG,
+							},
+						},
+					},
+				},
+			},
+			expectedTopic:  &bus.Message{Topic: bus.AgentConfigUpdateTopic},
+			request:        "UpdateAgentConfigRequest",
+			configFeatures: config.DefaultFeatures(),
+		},
 	}
 
 	for _, test := range tests {
@@ -254,18 +277,24 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 			assert.Len(tt, messages, 1)
 			assert.Equal(tt, test.expectedTopic.Topic, messages[0].Topic)
 
-			mp, ok := messages[0].Data.(*mpi.ManagementPlaneRequest)
+			if test.request == "UpdateAgentConfigRequest" {
+				data, ok := messages[0].Data.(*config.Config)
+				assert.True(tt, ok)
+				require.NotNil(tt, data)
+			} else {
+				mp, ok := messages[0].Data.(*mpi.ManagementPlaneRequest)
 
-			switch test.request {
-			case "UploadRequest":
-				assert.True(tt, ok)
-				require.NotNil(tt, mp.GetConfigUploadRequest())
-			case "ApplyRequest":
-				assert.True(tt, ok)
-				require.NotNil(tt, mp.GetConfigApplyRequest())
-			case "APIActionRequest":
-				assert.True(tt, ok)
-				require.NotNil(tt, mp.GetActionRequest())
+				switch test.request {
+				case "UploadRequest":
+					assert.True(tt, ok)
+					require.NotNil(tt, mp.GetConfigUploadRequest())
+				case "ApplyRequest":
+					assert.True(tt, ok)
+					require.NotNil(tt, mp.GetConfigApplyRequest())
+				case "APIActionRequest":
+					assert.True(tt, ok)
+					require.NotNil(tt, mp.GetActionRequest())
+				}
 			}
 		})
 	}

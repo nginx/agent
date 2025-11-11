@@ -267,27 +267,7 @@ func TestMapper_ToAgentConfigLogProto(t *testing.T) {
 			},
 		},
 		{
-			name: "Test 5: Log level UNKNOWN",
-			log: &Log{
-				Level: "UNKNOWN",
-			},
-			expected: &mpi.Log{
-				LogLevel: mpi.Log_LOG_LEVEL_UNSPECIFIED,
-				LogPath:  "",
-			},
-		},
-		{
-			name: "Test 6: Log level empty",
-			log: &Log{
-				Level: "",
-			},
-			expected: &mpi.Log{
-				LogLevel: mpi.Log_LOG_LEVEL_UNSPECIFIED,
-				LogPath:  "",
-			},
-		},
-		{
-			name: "Test 7: Log path set",
+			name: "Test 5: Log path set",
 			log: &Log{
 				Level: "INFO",
 				Path:  "/path/to/agent.log",
@@ -298,7 +278,7 @@ func TestMapper_ToAgentConfigLogProto(t *testing.T) {
 			},
 		},
 		{
-			name: "Test 8: Log path empty",
+			name: "Test 6: Log path empty",
 			log: &Log{
 				Level: "INFO",
 				Path:  "",
@@ -309,7 +289,7 @@ func TestMapper_ToAgentConfigLogProto(t *testing.T) {
 			},
 		},
 		{
-			name: "Test 9: Both log level and path set",
+			name: "Test 7: Both log level and path set",
 			log: &Log{
 				Level: "DEBUG",
 				Path:  "/other/path/to/agent.log",

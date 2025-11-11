@@ -29,6 +29,7 @@ var _ bus.Plugin = (*FilePlugin)(nil)
 
 type FilePlugin struct {
 	manifestLock       *sync.RWMutex
+	agentConfigMutex   *sync.Mutex
 	messagePipe        bus.MessagePipeInterface
 	config             *config.Config
 	conn               grpc.GrpcConnectionInterface
@@ -416,6 +417,10 @@ func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Me
 
 func (fp *FilePlugin) handleAgentConfigUpdate(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "File plugin received agent config update message")
+
+	fp.agentConfigMutex.Lock()
+	defer fp.agentConfigMutex.Unlock()
+
 	agentConfig, ok := msg.Data.(*config.Config)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *config.Config", "payload", msg.Data)

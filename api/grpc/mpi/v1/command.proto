@@ -113,16 +113,11 @@ message UpdateDataPlaneStatusRequest {
 // Respond to a UpdateDataPlaneStatusRequest - intentionally empty
 message UpdateDataPlaneStatusResponse {}
 
-message UpdateNginxAgentConfigurationRequest {
+message UpdateAgentConfigRequest {
     // Meta-information associated with a message
     mpi.v1.MessageMeta message_meta = 1;
-    // the NGINX Agent configuration to update
+    // The NGINX Agent configuration to update
     AgentConfig agent_config = 2;
-}
-
-message UpdateNginxAgentConfigurationResponse {
-    // The success or failure of the UpdateNginxAgentConfigurationRequest
-    mpi.v1.CommandResponse response = 1;
 }
 
 message InstanceHealth {
@@ -183,8 +178,8 @@ message ManagementPlaneRequest {
         APIActionRequest action_request = 7;
         // triggers a DataPlaneResponse with a command_response for a particular correlation_id
         CommandStatusRequest command_status_request = 8;
-        // triggers an UpdateNginxAgentConfiguration rpc, returning an UpdateNginxAgentConfigurationResponse
-        UpdateNginxAgentConfigurationRequest update_nginx_agent_configuration_request = 9;
+        // triggers an update to the NGINX Agent configuration
+        UpdateAgentConfigRequest update_agent_config_request = 9;
     }
 }
 
@@ -409,16 +404,14 @@ message AgentConfig {
 message Log {
     LogLevel log_level = 1;
     enum LogLevel {
-        // Unspecified log level
-        LOG_LEVEL_UNSPECIFIED = 0;
+        // Info log level
+        LOG_LEVEL_INFO = 0;
         // Error log level
         LOG_LEVEL_ERROR = 1;
         // Warning log level
         LOG_LEVEL_WARN = 2;
-        // Info log level
-        LOG_LEVEL_INFO = 3;
         // Debug log level
-        LOG_LEVEL_DEBUG = 4;
+        LOG_LEVEL_DEBUG = 3;
     }
     string log_path = 2;
 }

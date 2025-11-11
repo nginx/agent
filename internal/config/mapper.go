@@ -124,17 +124,17 @@ func ToAuxiliaryCommandServerProto(cmd *Command) *mpi.AuxiliaryCommandServer {
 	return protoConfig
 }
 
-func FromAgentConfigLogProto(mpiLog *mpi.Log) *Log {
+func FromAgentConfigLogProto(log *mpi.Log) *Log {
 	return &Log{
-		Level: MapConfigLogLevelToSlogLevel(mpiLog.GetLogLevel()),
-		Path:  mpiLog.GetLogPath(),
+		Level: MapConfigLogLevelToSlogLevel(log.GetLogLevel()),
+		Path:  log.GetLogPath(),
 	}
 }
 
-func ToAgentConfigLogProto(agentLogConfig *Log) *mpi.Log {
+func ToAgentConfigLogProto(log *Log) *mpi.Log {
 	return &mpi.Log{
-		LogLevel: MapSlogLevelToConfigLogLevel(agentLogConfig.Level),
-		LogPath:  agentLogConfig.Path,
+		LogLevel: MapSlogLevelToConfigLogLevel(log.Level),
+		LogPath:  log.Path,
 	}
 }
 
@@ -148,7 +148,7 @@ func MapConfigLogLevelToSlogLevel(level mpi.Log_LogLevel) string {
 		slogLevel = "WARN"
 	case mpi.Log_LOG_LEVEL_ERROR:
 		slogLevel = "ERROR"
-	case mpi.Log_LOG_LEVEL_INFO, mpi.Log_LOG_LEVEL_UNSPECIFIED:
+	case mpi.Log_LOG_LEVEL_INFO:
 	}
 
 	return slogLevel
@@ -158,13 +158,11 @@ func MapSlogLevelToConfigLogLevel(level string) mpi.Log_LogLevel {
 	switch strings.ToUpper(level) {
 	case "DEBUG":
 		return mpi.Log_LOG_LEVEL_DEBUG
-	case "INFO":
-		return mpi.Log_LOG_LEVEL_INFO
 	case "WARN":
 		return mpi.Log_LOG_LEVEL_WARN
 	case "ERROR":
 		return mpi.Log_LOG_LEVEL_ERROR
 	default:
-		return mpi.Log_LOG_LEVEL_UNSPECIFIED
+		return mpi.Log_LOG_LEVEL_INFO
 	}
 }

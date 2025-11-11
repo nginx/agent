@@ -187,9 +187,6 @@ func (cs *CommandService) UpdateAgentConfig(
 	ctx context.Context,
 	mpiConfig *mpi.AgentConfig,
 ) (*config.Config, error) {
-	if !cs.isConnected.Load() {
-		return nil, errors.New("command service client not connected yet")
-	}
 	slog.InfoContext(ctx, "Updating agent configuration", "config", mpiConfig)
 
 	updatedLog := config.FromAgentConfigLogProto(mpiConfig.GetLog())

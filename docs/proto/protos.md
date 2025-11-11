@@ -77,13 +77,12 @@
     - [ReleaseInfo](#mpi-v1-ReleaseInfo)
     - [Resource](#mpi-v1-Resource)
     - [StatusRequest](#mpi-v1-StatusRequest)
+    - [UpdateAgentConfigRequest](#mpi-v1-UpdateAgentConfigRequest)
     - [UpdateDataPlaneHealthRequest](#mpi-v1-UpdateDataPlaneHealthRequest)
     - [UpdateDataPlaneHealthResponse](#mpi-v1-UpdateDataPlaneHealthResponse)
     - [UpdateDataPlaneStatusRequest](#mpi-v1-UpdateDataPlaneStatusRequest)
     - [UpdateDataPlaneStatusResponse](#mpi-v1-UpdateDataPlaneStatusResponse)
     - [UpdateHTTPUpstreamServers](#mpi-v1-UpdateHTTPUpstreamServers)
-    - [UpdateNginxAgentConfigurationRequest](#mpi-v1-UpdateNginxAgentConfigurationRequest)
-    - [UpdateNginxAgentConfigurationResponse](#mpi-v1-UpdateNginxAgentConfigurationResponse)
     - [UpdateStreamServers](#mpi-v1-UpdateStreamServers)
   
     - [InstanceHealth.InstanceHealthStatus](#mpi-v1-InstanceHealth-InstanceHealthStatus)
@@ -1085,7 +1084,7 @@ A Management Plane request for information, triggers an associated rpc on the Da
 | config_upload_request | [ConfigUploadRequest](#mpi-v1-ConfigUploadRequest) |  | triggers a series of rpc UpdateFile(File) for that instances |
 | action_request | [APIActionRequest](#mpi-v1-APIActionRequest) |  | triggers a DataPlaneResponse with a command_response for a particular action |
 | command_status_request | [CommandStatusRequest](#mpi-v1-CommandStatusRequest) |  | triggers a DataPlaneResponse with a command_response for a particular correlation_id |
-| update_nginx_agent_configuration_request | [UpdateNginxAgentConfigurationRequest](#mpi-v1-UpdateNginxAgentConfigurationRequest) |  | triggers an UpdateNginxAgentConfiguration rpc, returning an UpdateNginxAgentConfigurationResponse |
+| update_agent_config_request | [UpdateAgentConfigRequest](#mpi-v1-UpdateAgentConfigRequest) |  | triggers an update to the NGINX Agent configuration |
 
 
 
@@ -1225,6 +1224,22 @@ Additional information associated with a StatusRequest
 
 
 
+<a name="mpi-v1-UpdateAgentConfigRequest"></a>
+
+### UpdateAgentConfigRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
+| agent_config | [AgentConfig](#mpi-v1-AgentConfig) |  | The NGINX Agent configuration to update |
+
+
+
+
+
+
 <a name="mpi-v1-UpdateDataPlaneHealthRequest"></a>
 
 ### UpdateDataPlaneHealthRequest
@@ -1293,37 +1308,6 @@ Update HTTP Upstream Servers for an instance
 
 
 
-<a name="mpi-v1-UpdateNginxAgentConfigurationRequest"></a>
-
-### UpdateNginxAgentConfigurationRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
-| agent_config | [AgentConfig](#mpi-v1-AgentConfig) |  | the NGINX Agent configuration to update |
-
-
-
-
-
-
-<a name="mpi-v1-UpdateNginxAgentConfigurationResponse"></a>
-
-### UpdateNginxAgentConfigurationResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| response | [CommandResponse](#mpi-v1-CommandResponse) |  | The success or failure of the UpdateNginxAgentConfigurationRequest |
-
-
-
-
-
-
 <a name="mpi-v1-UpdateStreamServers"></a>
 
 ### UpdateStreamServers
@@ -1379,11 +1363,10 @@ the types of instances possible
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| LOG_LEVEL_UNSPECIFIED | 0 | Unspecified log level |
+| LOG_LEVEL_INFO | 0 | Info log level |
 | LOG_LEVEL_ERROR | 1 | Error log level |
 | LOG_LEVEL_WARN | 2 | Warning log level |
-| LOG_LEVEL_INFO | 3 | Info log level |
-| LOG_LEVEL_DEBUG | 4 | Debug log level |
+| LOG_LEVEL_DEBUG | 3 | Debug log level |
 
 
  

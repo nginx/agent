@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"sync"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
@@ -25,9 +26,10 @@ import (
 // This is done in the resource plugin to make the file plugin usable for every type of instance.
 
 type Resource struct {
-	messagePipe     bus.MessagePipeInterface
-	resourceService resourceServiceInterface
-	agentConfig     *config.Config
+	messagePipe      bus.MessagePipeInterface
+	resourceService  resourceServiceInterface
+	agentConfig      *config.Config
+	agentConfigMutex *sync.Mutex
 }
 
 type errResponse struct {
@@ -287,6 +289,10 @@ func (r *Resource) handleRollbackWrite(ctx context.Context, msg *bus.Message) {
 
 func (r *Resource) handleAgentConfigUpdate(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "Resource plugin received agent config update message")
+
+	r.agentConfigMutex.Lock()
+	defer r.agentConfigMutex.Unlock()
+
 	agentConfig, ok := msg.Data.(*config.Config)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *config.Config", "payload", msg.Data)

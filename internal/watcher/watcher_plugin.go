@@ -49,6 +49,7 @@ type (
 		cancel                             context.CancelFunc
 		instancesWithConfigApplyInProgress []string
 		watcherMutex                       sync.Mutex
+		agentConfigMutex                   sync.Mutex
 	}
 
 	instanceWatcherServiceInterface interface {
@@ -320,6 +321,10 @@ func (w *Watcher) handleInstanceUpdates(newCtx context.Context, message instance
 
 func (w *Watcher) handleAgentConfigUpdate(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "Watcher plugin received agent config update message")
+
+	w.agentConfigMutex.Lock()
+	defer w.agentConfigMutex.Unlock()
+
 	agentConfig, ok := msg.Data.(*config.Config)
 	if !ok {
 		slog.ErrorContext(ctx, "Unable to cast message payload to *config.Config", "payload", msg.Data)
