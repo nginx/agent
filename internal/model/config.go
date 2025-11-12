@@ -42,16 +42,16 @@ type ManifestFileMeta struct {
 	Name string `json:"name"`
 	// The hash of the file contents sha256, hex encoded
 	Hash string `json:"hash"`
+	// ETag of the 3rd Party external file
+	ETag string `json:"etag"`
+	// Last modified time of the 3rd Party external file
+	LastModified string `json:"last_modified"`
 	// The size of the file in bytes
 	Size int64 `json:"size"`
 	// File referenced in the NGINX config
 	Referenced bool `json:"referenced"`
 	// File is not managed by the agent
 	Unmanaged bool `json:"unmanaged"`
-	// ETag of the 3rd Party external file
-	ETag string `json:"etag"`
-	// Last modified time of the 3rd Party external file
-	LastModified string `json:"last_modified"`
 }
 type ConfigApplyMessage struct {
 	Error         error
