@@ -285,6 +285,23 @@ func (fso *FileServiceOperator) UpdateFile(
 	return fso.sendUpdateFileStream(ctx, fileToUpdate, fso.agentConfig.Client.Grpc.FileChunkSize)
 }
 
+func (fso *FileServiceOperator) RenameExternalFile(
+	ctx context.Context, source, desination string,
+) error {
+	slog.DebugContext(ctx, fmt.Sprintf("Moving file %s to %s (no hash validation)", source, desination))
+
+	if err := os.MkdirAll(filepath.Dir(desination), dirPerm); err != nil {
+		return fmt.Errorf("failed to create directories for %s: %w", desination, err)
+	}
+
+	moveErr := os.Rename(source, desination)
+	if moveErr != nil {
+		return fmt.Errorf("failed to move file: %w", moveErr)
+	}
+
+	return nil
+}
+
 // renameFile, renames (moves) file from tempDir to new location to update file.
 func (fso *FileServiceOperator) RenameFile(
 	ctx context.Context, source, desination string,

@@ -410,12 +410,12 @@ func (fms *FileManagerService) DetermineFileActions(
 		// If it's external, we DON'T care about disk state or hashes here.
 		// We tag it as ExternalFile and let the downloader handle the rest.
 		if modifiedFile.File.GetExternalDataSource() != nil || (ok && currentFile.GetExternalDataSource() != nil) {
-			slog.DebugContext(ctx, "External file URI detected - flagging for fetch", "file_name", fileName)
+			slog.DebugContext(ctx, "External file detected - flagging for fetch", "file_name", fileName)
 			modifiedFile.Action = model.ExternalFile
 			fileDiff[fileName] = modifiedFile
 			continue
 		}
-		
+
 		// If file currently exists on disk, is being tracked in manifest and file hash is different.
 		// Treat it as a file update.
 		if ok && modifiedFile.File.GetFileMeta().GetHash() != currentFile.GetFileMeta().GetHash() {
@@ -467,7 +467,6 @@ func (fms *FileManagerService) DetermineFileActions(
 
 	return fileDiff, nil
 }
-
 
 // UpdateCurrentFilesOnDisk updates the FileManagerService currentFilesOnDisk slice which contains the files
 // currently on disk
