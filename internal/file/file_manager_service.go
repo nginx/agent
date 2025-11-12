@@ -11,11 +11,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
+	"time"
 
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
@@ -39,6 +44,11 @@ const (
 	filePerm    = 0o600
 	executePerm = 0o111
 )
+
+type DownloadHeader struct {
+	ETag         string
+	LastModified string
+}
 
 type (
 	fileOperator interface {
@@ -74,6 +84,7 @@ type (
 		) error
 		SetIsConnected(isConnected bool)
 		RenameFile(ctx context.Context, hash, fileName, tempDir string) error
+		RenameExternalFile(ctx context.Context, fileName, tempDir string) error
 		UpdateClient(ctx context.Context, fileServiceClient mpi.FileServiceClient)
 	}
 
@@ -104,26 +115,28 @@ type FileManagerService struct {
 	// map of files and the actions performed on them during config apply
 	fileActions map[string]*model.FileCache // key is file path
 	// map of the files currently on disk, used to determine the file action during config apply
-	currentFilesOnDisk    map[string]*mpi.File // key is file path
-	previousManifestFiles map[string]*model.ManifestFile
-	manifestFilePath      string
-	rollbackManifest      bool
-	filesMutex            sync.RWMutex
+	currentFilesOnDisk     map[string]*mpi.File // key is file path
+	previousManifestFiles  map[string]*model.ManifestFile
+	newExternalFileHeaders map[string]DownloadHeader
+	manifestFilePath       string
+	rollbackManifest       bool
+	filesMutex             sync.RWMutex
 }
 
 func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig *config.Config,
 	manifestLock *sync.RWMutex,
 ) *FileManagerService {
 	return &FileManagerService{
-		agentConfig:           agentConfig,
-		fileOperator:          NewFileOperator(manifestLock),
-		fileServiceOperator:   NewFileServiceOperator(agentConfig, fileServiceClient, manifestLock),
-		fileActions:           make(map[string]*model.FileCache),
-		currentFilesOnDisk:    make(map[string]*mpi.File),
-		previousManifestFiles: make(map[string]*model.ManifestFile),
-		rollbackManifest:      true,
-		manifestFilePath:      agentConfig.LibDir + "/manifest.json",
-		manifestLock:          manifestLock,
+		agentConfig:            agentConfig,
+		fileOperator:           NewFileOperator(manifestLock),
+		fileServiceOperator:    NewFileServiceOperator(agentConfig, fileServiceClient, manifestLock),
+		fileActions:            make(map[string]*model.FileCache),
+		currentFilesOnDisk:     make(map[string]*mpi.File),
+		previousManifestFiles:  make(map[string]*model.ManifestFile),
+		newExternalFileHeaders: make(map[string]DownloadHeader),
+		rollbackManifest:       true,
+		manifestFilePath:       agentConfig.LibDir + "/manifest.json",
+		manifestLock:           manifestLock,
 	}
 }
 
@@ -235,7 +248,7 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 			delete(fms.currentFilesOnDisk, fileAction.File.GetFileMeta().GetName())
 
 			continue
-		case model.Delete, model.Update:
+		case model.Delete, model.Update, model.ExternalFile:
 			content, err := fms.restoreFiles(fileAction)
 			if err != nil {
 				return err
@@ -389,6 +402,15 @@ func (fms *FileManagerService) DetermineFileActions(
 		// If file is unmanaged, action is set to unchanged so file is skipped when performing actions.
 		if modifiedFile.File.GetUnmanaged() {
 			slog.DebugContext(ctx, "Skipping unmanaged file updates", "file_name", fileName)
+			continue
+		}
+
+		// If it's external, we DON'T care about disk state or hashes here.
+		// We tag it as ExternalFile and let the downloader handle the rest.
+		if modifiedFile.File.GetExternalDataSource() != nil || (ok && currentFile.GetExternalDataSource() != nil) {
+			slog.DebugContext(ctx, "External file detected - flagging for fetch", "file_name", fileName)
+			modifiedFile.Action = model.ExternalFile
+			fileDiff[fileName] = modifiedFile
 			continue
 		}
 
@@ -617,7 +639,7 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) (actionEr
 func (fms *FileManagerService) downloadUpdatedFilesToTempLocation(ctx context.Context) (updateError error) {
 	var downloadFiles []*model.FileCache
 	for _, fileAction := range fms.fileActions {
-		if fileAction.Action == model.Add || fileAction.Action == model.Update {
+		if fileAction.Action == model.Add || fileAction.Action == model.Update || fileAction.Action == model.ExternalFile {
 			downloadFiles = append(downloadFiles, fileAction)
 		}
 	}
@@ -650,28 +672,35 @@ func (fms *FileManagerService) downloadUpdatedFilesToTempLocation(ctx context.Co
 func (fms *FileManagerService) moveOrDeleteFiles(ctx context.Context, actionError error) error {
 actionsLoop:
 	for _, fileAction := range fms.fileActions {
+		var err error
+		fileMeta := fileAction.File.GetFileMeta()
+		tempFilePath := tempFilePath(fileAction.File.GetFileMeta().GetName())
 		switch fileAction.Action {
 		case model.Delete:
-			slog.DebugContext(ctx, "Deleting file", "file", fileAction.File.GetFileMeta().GetName())
-			if err := os.Remove(fileAction.File.GetFileMeta().GetName()); err != nil && !os.IsNotExist(err) {
+			slog.DebugContext(ctx, "Deleting file", "file", fileMeta.GetName())
+			if err = os.Remove(fileMeta.GetName()); err != nil && !os.IsNotExist(err) {
 				actionError = fmt.Errorf("error deleting file: %s error: %w",
-					fileAction.File.GetFileMeta().GetName(), err)
+					fileMeta.GetName(), err)
 
 				break actionsLoop
 			}
 
 			continue
 		case model.Add, model.Update:
-			fileMeta := fileAction.File.GetFileMeta()
-			tempFilePath := tempFilePath(fileAction.File.GetFileMeta().GetName())
-			err := fms.fileServiceOperator.RenameFile(ctx, fileMeta.GetHash(), tempFilePath, fileMeta.GetName())
+			err = fms.fileServiceOperator.RenameFile(ctx, tempFilePath, fileMeta.GetName())
 			if err != nil {
 				actionError = err
-
 				break actionsLoop
 			}
+			err = fms.fileServiceOperator.ValidateFileHash(ctx, fileMeta.GetName(), fileMeta.GetHash())
+		case model.ExternalFile:
+			err = fms.fileServiceOperator.RenameFile(ctx, tempFilePath, fileMeta.GetName())
 		case model.Unchanged:
 			slog.DebugContext(ctx, "File unchanged")
+		}
+		if err != nil {
+			actionError = err
+			break actionsLoop
 		}
 	}
 
@@ -827,4 +856,217 @@ func tempFilePath(fileName string) string {
 func tempBackupFilePath(fileName string) string {
 	tempFileName := "." + filepath.Base(fileName) + ".agent.backup"
 	return filepath.Join(filepath.Dir(fileName), tempFileName)
+}
+
+func (fms *FileManagerService) handleExternalFileDownload(ctx context.Context, fileAction *model.FileCache,
+	tempFilePath string,
+) error {
+	location := fileAction.File.GetExternalDataSource().GetLocation()
+	slog.InfoContext(ctx, "Downloading external file from", "location", location)
+
+	var contentToWrite []byte
+	var downloadErr, updateError error
+	var headers DownloadHeader
+
+	contentToWrite, headers, downloadErr = fms.downloadFileContent(ctx, fileAction.File)
+
+	if downloadErr != nil {
+		updateError = fmt.Errorf("failed to download file %s from %s: %w",
+			fileAction.File.GetFileMeta().GetName(), location, downloadErr)
+
+		return updateError
+	}
+
+	if contentToWrite == nil {
+		slog.DebugContext(ctx, "External file unchanged (304), skipping disk write.",
+			"file", fileAction.File.GetFileMeta().GetName())
+		return nil
+	}
+
+	fileName := fileAction.File.GetFileMeta().GetName()
+	fms.newExternalFileHeaders[fileName] = headers
+
+	updateErr := fms.writeContentToTempFile(ctx, contentToWrite, tempFilePath)
+
+	return updateErr
+}
+
+func (fms *FileManagerService) writeContentToTempFile(
+	ctx context.Context,
+	content []byte,
+	path string,
+) error {
+	writeErr := fms.fileOperator.Write(
+		ctx,
+		content,
+		path,
+		"0600",
+	)
+
+	if writeErr != nil {
+		return fmt.Errorf("failed to write downloaded content to temp file %s: %w", path, writeErr)
+	}
+
+	return nil
+}
+
+// downloadFileContent performs an HTTP GET request to the given URL and returns the file content as a byte slice.
+func (fms *FileManagerService) downloadFileContent(
+	ctx context.Context,
+	file *mpi.File,
+) (content []byte, headers DownloadHeader, err error) {
+	fileName := file.GetFileMeta().GetName()
+	downloadURL := file.GetExternalDataSource().GetLocation()
+	externalConfig := fms.agentConfig.ExternalDataSource
+
+	if !isDomainAllowed(downloadURL, externalConfig.AllowedDomain) {
+		return nil, DownloadHeader{}, fmt.Errorf("download URL %s is not in the allowed domains list", downloadURL)
+	}
+
+	httpClient, err := fms.setupHTTPClient(ctx, externalConfig.ProxyURL.URL)
+	if err != nil {
+		return nil, DownloadHeader{}, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL, nil)
+	if err != nil {
+		return nil, DownloadHeader{}, fmt.Errorf("failed to create request for %s: %w", downloadURL, err)
+	}
+
+	if externalConfig.ProxyURL.URL != "" {
+		fms.addConditionalHeaders(ctx, req, fileName)
+	} else {
+		slog.DebugContext(ctx, "No proxy configured; sending plain HTTP request without caching headers.")
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, DownloadHeader{}, fmt.Errorf("failed to execute download request for %s: %w", downloadURL, err)
+	}
+	defer resp.Body.Close()
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		headers.ETag = resp.Header.Get("ETag")
+		headers.LastModified = resp.Header.Get("Last-Modified")
+	case http.StatusNotModified:
+		slog.InfoContext(ctx, "File content unchanged (304 Not Modified)", "file_name", fileName)
+		return nil, DownloadHeader{}, nil
+	default:
+		return nil, DownloadHeader{}, fmt.Errorf("download failed with status code %d", resp.StatusCode)
+	}
+
+	reader := io.Reader(resp.Body)
+	if fms.agentConfig.ExternalDataSource.MaxBytes > 0 {
+		reader = io.LimitReader(resp.Body, fms.agentConfig.ExternalDataSource.MaxBytes)
+	}
+
+	content, err = io.ReadAll(reader)
+	if err != nil {
+		return nil, DownloadHeader{}, fmt.Errorf("failed to read content from response body: %w", err)
+	}
+
+	slog.InfoContext(ctx, "Successfully downloaded file content", "file_name", fileName, "size", len(content))
+
+	return content, headers, nil
+}
+
+func isDomainAllowed(downloadURL string, allowedDomains []string) bool {
+	u, err := url.Parse(downloadURL)
+	if err != nil {
+		slog.Debug("Failed to parse download URL for domain check", "url", downloadURL, "error", err)
+		return false
+	}
+
+	hostname := u.Hostname()
+	if hostname == "" {
+		return false
+	}
+
+	for _, pattern := range allowedDomains {
+		if pattern == "" {
+			continue
+		}
+
+		if pattern == hostname {
+			return true
+		}
+
+		if isWildcardMatch(hostname, pattern) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (fms *FileManagerService) setupHTTPClient(ctx context.Context, proxyURLString string) (*http.Client, error) {
+	var transport *http.Transport
+
+	if proxyURLString != "" {
+		proxyURL, err := url.Parse(proxyURLString)
+		if err != nil {
+			return nil, fmt.Errorf("invalid proxy URL configured: %w", err)
+		}
+		slog.DebugContext(ctx, "Configuring HTTP client to use proxy", "proxy_url", proxyURLString)
+		transport = &http.Transport{
+			Proxy: http.ProxyURL(proxyURL),
+		}
+	} else {
+		slog.DebugContext(ctx, "Configuring HTTP client for direct connection (no proxy)")
+		transport = &http.Transport{
+			Proxy: nil,
+		}
+	}
+
+	httpClient := &http.Client{
+		Transport: transport,
+		Timeout:   fileDownloadTimeout,
+	}
+
+	return httpClient, nil
+}
+
+func (fms *FileManagerService) addConditionalHeaders(ctx context.Context, req *http.Request, fileName string) {
+	slog.DebugContext(ctx, "Proxy configured; adding headers to GET request.")
+
+	manifestFiles, _, manifestFileErr := fms.manifestFile()
+
+	if manifestFileErr != nil && !errors.Is(manifestFileErr, os.ErrNotExist) {
+		slog.WarnContext(ctx, "Error reading manifest file for headers", "error", manifestFileErr)
+	}
+
+	manifestFile, ok := manifestFiles[fileName]
+
+	if ok && manifestFile != nil && manifestFile.ManifestFileMeta != nil {
+		fileMeta := manifestFile.ManifestFileMeta
+
+		if fileMeta.ETag != "" {
+			req.Header.Set("If-None-Match", fileMeta.ETag)
+		}
+		if fileMeta.LastModified != "" {
+			req.Header.Set("If-Modified-Since", fileMeta.LastModified)
+		}
+	} else {
+		slog.DebugContext(ctx, "File not found in manifest or missing metadata; skipping conditional headers.",
+			"file", fileName)
+	}
+}
+
+func isWildcardMatch(hostname, pattern string) bool {
+	if !strings.HasPrefix(pattern, "*.") {
+		return false
+	}
+
+	baseDomain := pattern[2:]
+	if strings.HasSuffix(hostname, baseDomain) {
+		// Check to ensure it's a true subdomain match (e.g., must have a '.'
+		// before baseDomain unless it IS the baseDomain)
+		// This handles cases like preventing 'foo.com' matching '*.oo.com'
+		if hostname == baseDomain || hostname[len(hostname)-len(baseDomain)-1] == '.' {
+			return true
+		}
+	}
+
+	return false
 }

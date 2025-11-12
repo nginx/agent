@@ -1428,6 +1428,13 @@ func createConfig() *Config {
 			config.FeatureCertificates, config.FeatureFileWatcher, config.FeatureMetrics,
 			config.FeatureAPIAction, config.FeatureLogsNap,
 		},
+		ExternalDataSource: &ExternalDataSource{
+			ProxyURL: ProxyURL{
+				URL: "",
+			},
+			AllowedDomains: nil,
+			MaxBytes:       0,
+		},
 	}
 }
 

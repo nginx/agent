@@ -43,6 +43,7 @@ type (
 		Client             *Client          `yaml:"client"              mapstructure:"client"`
 		Collector          *Collector       `yaml:"collector"           mapstructure:"collector"`
 		Watchers           *Watchers        `yaml:"watchers"            mapstructure:"watchers"`
+		ExternalDataSource *ExternalDataSource `yaml:"external_data_source" mapstructure:"external_data_source"`
 		SyslogServer       *SyslogServer    `yaml:"syslog_server"       mapstructure:"syslog_server"`
 		Labels             map[string]any   `yaml:"labels"              mapstructure:"labels"`
 		Version            string           `yaml:"-"`
@@ -359,6 +360,16 @@ type (
 		Password   string        `yaml:"password,omitempty"    mapstructure:"password"`
 		Token      string        `yaml:"token,omitempty"       mapstructure:"token"`
 		Timeout    time.Duration `yaml:"timeout"               mapstructure:"timeout"`
+	}
+
+	ProxyURL struct {
+		URL string `yaml:"url" mapstructure:"url"`
+	}
+
+	ExternalDataSource struct {
+		ProxyURL       ProxyURL `yaml:"proxy"           mapstructure:"proxy"`
+		AllowedDomains []string `yaml:"allowed_domains" mapstructure:"allowed_domains"`
+		MaxBytes       int64    `yaml:"max_bytes"       mapstructure:"max_bytes"`
 	}
 )
 
