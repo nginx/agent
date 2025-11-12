@@ -36,20 +36,21 @@ func parseServerType(str string) (ServerType, bool) {
 
 type (
 	Config struct {
-		Command            *Command         `yaml:"command"             mapstructure:"command"`
-		AuxiliaryCommand   *Command         `yaml:"auxiliary_command"   mapstructure:"auxiliary_command"`
-		Log                *Log             `yaml:"log"                 mapstructure:"log"`
-		DataPlaneConfig    *DataPlaneConfig `yaml:"data_plane_config"   mapstructure:"data_plane_config"`
-		Client             *Client          `yaml:"client"              mapstructure:"client"`
-		Collector          *Collector       `yaml:"collector"           mapstructure:"collector"`
-		Watchers           *Watchers        `yaml:"watchers"            mapstructure:"watchers"`
-		Labels             map[string]any   `yaml:"labels"              mapstructure:"labels"`
-		Version            string           `yaml:"-"`
-		Path               string           `yaml:"-"`
-		UUID               string           `yaml:"-"`
-		LibDir             string           `yaml:"-"`
-		AllowedDirectories []string         `yaml:"allowed_directories" mapstructure:"allowed_directories"`
-		Features           []string         `yaml:"features"            mapstructure:"features"`
+		Watchers           *Watchers           `yaml:"watchers"             mapstructure:"watchers"`
+		Labels             map[string]any      `yaml:"labels"               mapstructure:"labels"`
+		Log                *Log                `yaml:"log"                  mapstructure:"log"`
+		DataPlaneConfig    *DataPlaneConfig    `yaml:"data_plane_config"    mapstructure:"data_plane_config"`
+		Client             *Client             `yaml:"client"               mapstructure:"client"`
+		Collector          *Collector          `yaml:"collector"            mapstructure:"collector"`
+		AuxiliaryCommand   *Command            `yaml:"auxiliary_command"    mapstructure:"auxiliary_command"`
+		ExternalDataSource *ExternalDataSource `yaml:"external_data_source" mapstructure:"external_data_source"`
+		Command            *Command            `yaml:"command"              mapstructure:"command"`
+		Path               string              `yaml:"-"`
+		Version            string              `yaml:"-"`
+		LibDir             string              `yaml:"-"`
+		UUID               string              `yaml:"-"`
+		AllowedDirectories []string            `yaml:"allowed_directories"  mapstructure:"allowed_directories"`
+		Features           []string            `yaml:"features"             mapstructure:"features"`
 	}
 
 	Log struct {
@@ -351,6 +352,16 @@ type (
 		Password   string        `yaml:"password,omitempty"    mapstructure:"password"`
 		Token      string        `yaml:"token,omitempty"       mapstructure:"token"`
 		Timeout    time.Duration `yaml:"timeout"               mapstructure:"timeout"`
+	}
+
+	ProxyURL struct {
+		URL string `yaml:"url" mapstructure:"url"`
+	}
+
+	ExternalDataSource struct {
+		ProxyURL       ProxyURL `yaml:"proxy"           mapstructure:"proxy"`
+		AllowedDomains []string `yaml:"allowed_domains" mapstructure:"allowed_domains"`
+		MaxBytes       int64    `yaml:"max_bytes"       mapstructure:"max_bytes"`
 	}
 )
 
