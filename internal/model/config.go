@@ -12,24 +12,25 @@ import (
 )
 
 type NginxConfigContext struct {
-	StubStatus       *APIDetails
-	PlusAPI          *APIDetails
-	StubStatuses     []*APIDetails
-	PlusAPIs         []*APIDetails
-	InstanceID       string
-	ConfigPath       string
-	Files            []*v1.File
-	AccessLogs       []*AccessLog
-	ErrorLogs        []*ErrorLog
-	NAPSysLogServers []string
-	Includes         []string
+	StubStatus      *APIDetails
+	PlusAPI         *APIDetails
+	StubStatuses    []*APIDetails
+	PlusAPIs        []*APIDetails
+	InstanceID      string
+	ConfigPath      string
+	Files           []*v1.File
+	AccessLogs      []*AccessLog
+	ErrorLogs       []*ErrorLog
+	NAPSysLogServer string
+	Includes        []string
 }
 
 type APIDetails struct {
-	URL      string
-	Listen   string
-	Location string
-	Ca       string
+	URL          string
+	Listen       string
+	Location     string
+	Ca           string
+	WriteEnabled bool
 }
 
 type ManifestFile struct {
@@ -106,7 +107,8 @@ func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext
 	if ncc.PlusAPI != nil && otherNginxConfigContext.PlusAPI != nil {
 		if ncc.PlusAPI.URL != otherNginxConfigContext.PlusAPI.URL || ncc.PlusAPI.Listen !=
 			otherNginxConfigContext.PlusAPI.Listen || ncc.PlusAPI.Location !=
-			otherNginxConfigContext.PlusAPI.Location {
+			otherNginxConfigContext.PlusAPI.Location ||
+			ncc.PlusAPI.WriteEnabled != otherNginxConfigContext.PlusAPI.WriteEnabled {
 			return false
 		}
 	}
@@ -130,7 +132,7 @@ func (ncc *NginxConfigContext) Equal(otherNginxConfigContext *NginxConfigContext
 		return false
 	}
 
-	if !reflect.DeepEqual(ncc.NAPSysLogServers, otherNginxConfigContext.NAPSysLogServers) {
+	if !reflect.DeepEqual(ncc.NAPSysLogServer, otherNginxConfigContext.NAPSysLogServer) {
 		return false
 	}
 

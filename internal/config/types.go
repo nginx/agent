@@ -36,19 +36,20 @@ func parseServerType(str string) (ServerType, bool) {
 
 type (
 	Config struct {
-		Watchers           *Watchers           `yaml:"watchers"             mapstructure:"watchers"`
-		Labels             map[string]any      `yaml:"labels"               mapstructure:"labels"`
+		Command            *Command            `yaml:"command"              mapstructure:"command"`
+		AuxiliaryCommand   *Command            `yaml:"auxiliary_command"    mapstructure:"auxiliary_command"`
 		Log                *Log                `yaml:"log"                  mapstructure:"log"`
 		DataPlaneConfig    *DataPlaneConfig    `yaml:"data_plane_config"    mapstructure:"data_plane_config"`
 		Client             *Client             `yaml:"client"               mapstructure:"client"`
 		Collector          *Collector          `yaml:"collector"            mapstructure:"collector"`
-		AuxiliaryCommand   *Command            `yaml:"auxiliary_command"    mapstructure:"auxiliary_command"`
+		Watchers           *Watchers           `yaml:"watchers"             mapstructure:"watchers"`
+		SyslogServer       *SyslogServer       `yaml:"syslog_server"        mapstructure:"syslog_server"`
 		ExternalDataSource *ExternalDataSource `yaml:"external_data_source" mapstructure:"external_data_source"`
-		Command            *Command            `yaml:"command"              mapstructure:"command"`
-		Path               string              `yaml:"-"`
+		Labels             map[string]any      `yaml:"labels"               mapstructure:"labels"`
 		Version            string              `yaml:"-"`
-		LibDir             string              `yaml:"-"`
+		Path               string              `yaml:"-"`
 		UUID               string              `yaml:"-"`
+		LibDir             string              `yaml:"-"`
 		AllowedDirectories []string            `yaml:"allowed_directories"  mapstructure:"allowed_directories"`
 		Features           []string            `yaml:"features"             mapstructure:"features"`
 	}
@@ -62,6 +63,9 @@ type (
 		Nginx *NginxDataPlaneConfig `yaml:"nginx" mapstructure:"nginx"`
 	}
 
+	SyslogServer struct {
+		Port string `yaml:"port" mapstructure:"port"`
+	}
 	NginxDataPlaneConfig struct {
 		ReloadBackoff          *BackOff      `yaml:"reload_backoff"           mapstructure:"reload_backoff"`
 		APITls                 TLSConfig     `yaml:"api_tls"                  mapstructure:"api_tls"`
@@ -376,14 +380,6 @@ func (col *Collector) Validate(allowedDirectories []string) error {
 
 	for _, nginxReceiver := range col.Receivers.NginxReceivers {
 		err = errors.Join(err, nginxReceiver.Validate(allowedDirectories))
-	}
-
-	for _, path := range col.AdditionalConfigPaths {
-		cleanPath := filepath.Clean(path)
-		pathAllowed := isAllowedDir(cleanPath, allowedDirectories)
-		if !pathAllowed {
-			err = errors.Join(err, fmt.Errorf("additional config path %s not in allowed directories", path))
-		}
 	}
 
 	return err
