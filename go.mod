@@ -254,6 +254,8 @@ require (
 	github.com/prometheus/procfs v0.19.1 // indirect
 	github.com/prometheus/prometheus v0.307.1 // indirect
 	github.com/prometheus/sigv4 v0.2.1 // indirect
+	github.com/quic-go/qpack v0.5.1 // indirect
+	github.com/quic-go/quic-go v0.54.0 // indirect
 	github.com/rs/cors v1.11.1 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
@@ -348,6 +350,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.38.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.7.1 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
+	go.uber.org/mock v0.6.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/arch v0.20.0 // indirect
@@ -372,7 +375,7 @@ require (
 )
 
 require (
-	github.com/gin-gonic/gin v1.10.1
+	github.com/gin-gonic/gin v1.11.0
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/nginxinc/nginx-go-crossplane v0.4.84
 	github.com/prometheus/client_golang v1.23.2 // indirect
