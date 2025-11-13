@@ -1165,6 +1165,9 @@ func createConfig() *Config {
 			Level: "debug",
 			Path:  "./test-path",
 		},
+		SyslogServer: &SyslogServer{
+			Port: "1512",
+		},
 		Client: &Client{
 			HTTP: &HTTP{
 				Timeout: 15 * time.Second,
@@ -1175,12 +1178,13 @@ func createConfig() *Config {
 					Time:                10 * time.Second,
 					PermitWithoutStream: false,
 				},
-				MaxMessageSize:        1048575,
-				MaxMessageReceiveSize: 1048575,
-				MaxMessageSendSize:    1048575,
-				MaxFileSize:           485753,
-				FileChunkSize:         48575,
-				ResponseTimeout:       30 * time.Second,
+				MaxMessageSize:            1048575,
+				MaxMessageReceiveSize:     1048575,
+				MaxMessageSendSize:        1048575,
+				MaxFileSize:               485753,
+				FileChunkSize:             48575,
+				MaxParallelFileOperations: 10,
+				ResponseTimeout:           30 * time.Second,
 			},
 			Backoff: &BackOff{
 				InitialInterval:     200 * time.Millisecond,

@@ -34,13 +34,14 @@ var (
 	ClientKeepAliveTimeKey                = pre(GrpcKeepAlive) + "time"
 	ClientKeepAliveTimeoutKey             = pre(GrpcKeepAlive) + "timeout"
 
-	ClientHTTPTimeoutKey               = pre(ClientRootKey) + "http_timeout"
-	ClientGRPCMaxMessageSendSizeKey    = pre(ClientRootKey) + "grpc_max_message_send_size"
-	ClientGRPCMaxMessageReceiveSizeKey = pre(ClientRootKey) + "grpc_max_message_receive_size"
-	ClientGRPCMaxMessageSizeKey        = pre(ClientRootKey) + "grpc_max_message_size"
-	ClientGRPCMaxFileSizeKey           = pre(ClientRootKey) + "grpc_max_file_size"
-	ClientGRPCFileChunkSizeKey         = pre(ClientRootKey) + "grpc_file_chunk_size"
-	ClientGRPCResponseTimeoutKey       = pre(ClientRootKey) + "grpc_response_timeout"
+	ClientHTTPTimeoutKey                   = pre(ClientRootKey) + "http_timeout"
+	ClientGRPCMaxMessageSendSizeKey        = pre(ClientRootKey) + "grpc_max_message_send_size"
+	ClientGRPCMaxMessageReceiveSizeKey     = pre(ClientRootKey) + "grpc_max_message_receive_size"
+	ClientGRPCMaxMessageSizeKey            = pre(ClientRootKey) + "grpc_max_message_size"
+	ClientGRPCMaxFileSizeKey               = pre(ClientRootKey) + "grpc_max_file_size"
+	ClientGRPCFileChunkSizeKey             = pre(ClientRootKey) + "grpc_file_chunk_size"
+	ClientGRPCMaxParallelFileOperationsKey = pre(ClientRootKey) + "grpc_max_parallel_file_operations"
+	ClientGRPCResponseTimeoutKey           = pre(ClientRootKey) + "grpc_response_timeout"
 
 	ClientBackoffInitialIntervalKey     = pre(ClientRootKey) + "backoff_initial_interval"
 	ClientBackoffMaxIntervalKey         = pre(ClientRootKey) + "backoff_max_interval"
@@ -136,6 +137,8 @@ var (
 	NginxReloadBackoffMultiplierKey          = pre(NginxReloadBackoffKey) + "multiplier"
 	NginxExcludeLogsKey                      = pre(DataPlaneConfigRootKey, "nginx") + "exclude_logs"
 	NginxApiTlsCa                            = pre(DataPlaneConfigRootKey, "nginx") + "api_tls_ca"
+
+	SyslogServerPort = pre("syslog_server") + "port"
 
 	FileWatcherMonitoringFrequencyKey = pre(FileWatcherKey) + "monitoring_frequency"
 	NginxExcludeFilesKey              = pre(FileWatcherKey) + "exclude_files"

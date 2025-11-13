@@ -157,6 +157,7 @@ func ResolveConfig() (*Config, error) {
 		Features:           viperInstance.GetStringSlice(FeaturesKey),
 		Labels:             resolveLabels(),
 		LibDir:             viperInstance.GetString(LibDirPathKey),
+		SyslogServer:       resolveSyslogServer(),
 	}
 
 	defaultCollector(collector, config)
@@ -462,6 +463,12 @@ func registerFlags() {
 		"A comma-separated list of features enabled for the agent.",
 	)
 
+	fs.String(
+		SyslogServerPort,
+		DefSyslogServerPort,
+		"The port Agent will start the syslog server on for logs collection",
+	)
+
 	registerCommonFlags(fs)
 	registerCommandFlags(fs)
 	registerAuxiliaryCommandFlags(fs)
@@ -626,6 +633,12 @@ func registerClientFlags(fs *flag.FlagSet) {
 		ClientGRPCResponseTimeoutKey,
 		DefResponseTimeout,
 		"Duration to wait for a response before retrying request",
+	)
+
+	fs.Int(
+		ClientGRPCMaxParallelFileOperationsKey,
+		DefMaxParallelFileOperations,
+		"Maximum number of file downloads or uploads performed in parallel",
 	)
 }
 
@@ -953,6 +966,12 @@ func resolveLog() *Log {
 	}
 }
 
+func resolveSyslogServer() *SyslogServer {
+	return &SyslogServer{
+		Port: viperInstance.GetString(SyslogServerPort),
+	}
+}
+
 func resolveLabels() map[string]interface{} {
 	input := viperInstance.GetStringMapString(LabelsRootKey)
 
@@ -1093,12 +1112,13 @@ func resolveClient() *Client {
 				Time:                viperInstance.GetDuration(ClientKeepAliveTimeKey),
 				PermitWithoutStream: viperInstance.GetBool(ClientKeepAlivePermitWithoutStreamKey),
 			},
-			MaxMessageSize:        viperInstance.GetInt(ClientGRPCMaxMessageSizeKey),
-			MaxMessageReceiveSize: viperInstance.GetInt(ClientGRPCMaxMessageReceiveSizeKey),
-			MaxMessageSendSize:    viperInstance.GetInt(ClientGRPCMaxMessageSendSizeKey),
-			MaxFileSize:           viperInstance.GetUint32(ClientGRPCMaxFileSizeKey),
-			ResponseTimeout:       viperInstance.GetDuration(ClientGRPCResponseTimeoutKey),
-			FileChunkSize:         viperInstance.GetUint32(ClientGRPCFileChunkSizeKey),
+			MaxMessageSize:            viperInstance.GetInt(ClientGRPCMaxMessageSizeKey),
+			MaxMessageReceiveSize:     viperInstance.GetInt(ClientGRPCMaxMessageReceiveSizeKey),
+			MaxMessageSendSize:        viperInstance.GetInt(ClientGRPCMaxMessageSendSizeKey),
+			MaxFileSize:               viperInstance.GetUint32(ClientGRPCMaxFileSizeKey),
+			FileChunkSize:             viperInstance.GetUint32(ClientGRPCFileChunkSizeKey),
+			ResponseTimeout:           viperInstance.GetDuration(ClientGRPCResponseTimeoutKey),
+			MaxParallelFileOperations: viperInstance.GetInt(ClientGRPCMaxParallelFileOperationsKey),
 		},
 		Backoff: &BackOff{
 			InitialInterval:     viperInstance.GetDuration(ClientBackoffInitialIntervalKey),
