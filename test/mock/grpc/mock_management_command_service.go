@@ -113,6 +113,8 @@ func (cs *CommandService) CreateConnection(
 ) {
 	slog.DebugContext(ctx, "Create connection request", "request", request)
 
+	// This checks if this is the first create connection call, this is done to test the logic in Agent where
+	// if Agent does not get a response to a request after a certain amount of time it will resend the request
 	if !cs.firstConnectionCallFlag {
 		cs.firstConnectionCallFlag = true
 		slog.DebugContext(ctx, "First CreateConnection call: blocking until second call")
