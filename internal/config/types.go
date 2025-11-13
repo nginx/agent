@@ -93,15 +93,17 @@ type (
 		Multiplier          float64       `yaml:"multiplier"           mapstructure:"multiplier"`
 	}
 
+	//nolint:lll // max line limit exceeded
 	GRPC struct {
 		KeepAlive *KeepAlive `yaml:"keepalive" mapstructure:"keepalive"`
 		// if MaxMessageSize is size set then we use that value,
 		// otherwise MaxMessageRecieveSize and MaxMessageSendSize for individual settings
-		MaxMessageSize        int    `yaml:"max_message_size"         mapstructure:"max_message_size"`
-		MaxMessageReceiveSize int    `yaml:"max_message_receive_size" mapstructure:"max_message_receive_size"`
-		MaxMessageSendSize    int    `yaml:"max_message_send_size"    mapstructure:"max_message_send_size"`
-		MaxFileSize           uint32 `yaml:"max_file_size"            mapstructure:"max_file_size"`
-		FileChunkSize         uint32 `yaml:"file_chunk_size"          mapstructure:"file_chunk_size"`
+		MaxMessageSize            int    `yaml:"max_message_size"             mapstructure:"max_message_size"`
+		MaxMessageReceiveSize     int    `yaml:"max_message_receive_size"     mapstructure:"max_message_receive_size"`
+		MaxMessageSendSize        int    `yaml:"max_message_send_size"        mapstructure:"max_message_send_size"`
+		MaxFileSize               uint32 `yaml:"max_file_size"                mapstructure:"max_file_size"`
+		FileChunkSize             uint32 `yaml:"file_chunk_size"              mapstructure:"file_chunk_size"`
+		MaxParallelFileOperations int    `yaml:"max_parallel_file_operations" mapstructure:"max_parallel_file_operations"`
 	}
 
 	KeepAlive struct {

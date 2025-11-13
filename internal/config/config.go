@@ -653,6 +653,12 @@ func registerClientFlags(fs *flag.FlagSet) {
 		DefClientFileDownloadTimeout,
 		"Timeout value in seconds, to downloading file for config apply.",
 	)
+
+	fs.Int(
+		ClientGRPCMaxParallelFileOperationsKey,
+		DefMaxParallelFileOperations,
+		"Maximum number of file downloads or uploads performed in parallel",
+	)
 }
 
 func registerCommandFlags(fs *flag.FlagSet) {
@@ -1125,11 +1131,12 @@ func resolveClient() *Client {
 				Time:                viperInstance.GetDuration(ClientKeepAliveTimeKey),
 				PermitWithoutStream: viperInstance.GetBool(ClientKeepAlivePermitWithoutStreamKey),
 			},
-			MaxMessageSize:        viperInstance.GetInt(ClientGRPCMaxMessageSizeKey),
-			MaxMessageReceiveSize: viperInstance.GetInt(ClientGRPCMaxMessageReceiveSizeKey),
-			MaxMessageSendSize:    viperInstance.GetInt(ClientGRPCMaxMessageSendSizeKey),
-			MaxFileSize:           viperInstance.GetUint32(ClientGRPCMaxFileSizeKey),
-			FileChunkSize:         viperInstance.GetUint32(ClientGRPCFileChunkSizeKey),
+			MaxMessageSize:            viperInstance.GetInt(ClientGRPCMaxMessageSizeKey),
+			MaxMessageReceiveSize:     viperInstance.GetInt(ClientGRPCMaxMessageReceiveSizeKey),
+			MaxMessageSendSize:        viperInstance.GetInt(ClientGRPCMaxMessageSendSizeKey),
+			MaxFileSize:               viperInstance.GetUint32(ClientGRPCMaxFileSizeKey),
+			FileChunkSize:             viperInstance.GetUint32(ClientGRPCFileChunkSizeKey),
+			MaxParallelFileOperations: viperInstance.GetInt(ClientGRPCMaxParallelFileOperationsKey),
 		},
 		Backoff: &BackOff{
 			InitialInterval:     viperInstance.GetDuration(ClientBackoffInitialIntervalKey),

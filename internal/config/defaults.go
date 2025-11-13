@@ -60,11 +60,12 @@ const (
 	DefAuxiliaryCommandTLServerNameKey  = ""
 
 	// Client GRPC Settings
-	DefMaxMessageSize               = 0       // 0 = unset
-	DefMaxMessageRecieveSize        = 4194304 // default 4 MB
-	DefMaxMessageSendSize           = 4194304 // default 4 MB
-	DefMaxFileSize           uint32 = 1048576 // 1MB
-	DefFileChunkSize         uint32 = 524288  // 0.5MB
+	DefMaxMessageSize                   = 0       // 0 = unset
+	DefMaxMessageRecieveSize            = 4194304 // default 4 MB
+	DefMaxMessageSendSize               = 4194304 // default 4 MB
+	DefMaxFileSize               uint32 = 1048576 // 1MB
+	DefFileChunkSize             uint32 = 524288  // 0.5MB
+	DefMaxParallelFileOperations        = 5
 
 	// Client HTTP Settings
 	DefHTTPTimeout = 10 * time.Second
