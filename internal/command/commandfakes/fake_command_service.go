@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/internal/config"
 )
 
 type FakeCommandService struct {
@@ -49,6 +50,20 @@ type FakeCommandService struct {
 	subscribeMutex       sync.RWMutex
 	subscribeArgsForCall []struct {
 		arg1 context.Context
+	}
+	UpdateAgentConfigStub        func(context.Context, *v1.AgentConfig) (*config.Config, error)
+	updateAgentConfigMutex       sync.RWMutex
+	updateAgentConfigArgsForCall []struct {
+		arg1 context.Context
+		arg2 *v1.AgentConfig
+	}
+	updateAgentConfigReturns struct {
+		result1 *config.Config
+		result2 error
+	}
+	updateAgentConfigReturnsOnCall map[int]struct {
+		result1 *config.Config
+		result2 error
 	}
 	UpdateClientStub        func(context.Context, v1.CommandServiceClient) error
 	updateClientMutex       sync.RWMutex
@@ -302,6 +317,71 @@ func (fake *FakeCommandService) SubscribeArgsForCall(i int) context.Context {
 	return argsForCall.arg1
 }
 
+func (fake *FakeCommandService) UpdateAgentConfig(arg1 context.Context, arg2 *v1.AgentConfig) (*config.Config, error) {
+	fake.updateAgentConfigMutex.Lock()
+	ret, specificReturn := fake.updateAgentConfigReturnsOnCall[len(fake.updateAgentConfigArgsForCall)]
+	fake.updateAgentConfigArgsForCall = append(fake.updateAgentConfigArgsForCall, struct {
+		arg1 context.Context
+		arg2 *v1.AgentConfig
+	}{arg1, arg2})
+	stub := fake.UpdateAgentConfigStub
+	fakeReturns := fake.updateAgentConfigReturns
+	fake.recordInvocation("UpdateAgentConfig", []interface{}{arg1, arg2})
+	fake.updateAgentConfigMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeCommandService) UpdateAgentConfigCallCount() int {
+	fake.updateAgentConfigMutex.RLock()
+	defer fake.updateAgentConfigMutex.RUnlock()
+	return len(fake.updateAgentConfigArgsForCall)
+}
+
+func (fake *FakeCommandService) UpdateAgentConfigCalls(stub func(context.Context, *v1.AgentConfig) (*config.Config, error)) {
+	fake.updateAgentConfigMutex.Lock()
+	defer fake.updateAgentConfigMutex.Unlock()
+	fake.UpdateAgentConfigStub = stub
+}
+
+func (fake *FakeCommandService) UpdateAgentConfigArgsForCall(i int) (context.Context, *v1.AgentConfig) {
+	fake.updateAgentConfigMutex.RLock()
+	defer fake.updateAgentConfigMutex.RUnlock()
+	argsForCall := fake.updateAgentConfigArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeCommandService) UpdateAgentConfigReturns(result1 *config.Config, result2 error) {
+	fake.updateAgentConfigMutex.Lock()
+	defer fake.updateAgentConfigMutex.Unlock()
+	fake.UpdateAgentConfigStub = nil
+	fake.updateAgentConfigReturns = struct {
+		result1 *config.Config
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeCommandService) UpdateAgentConfigReturnsOnCall(i int, result1 *config.Config, result2 error) {
+	fake.updateAgentConfigMutex.Lock()
+	defer fake.updateAgentConfigMutex.Unlock()
+	fake.UpdateAgentConfigStub = nil
+	if fake.updateAgentConfigReturnsOnCall == nil {
+		fake.updateAgentConfigReturnsOnCall = make(map[int]struct {
+			result1 *config.Config
+			result2 error
+		})
+	}
+	fake.updateAgentConfigReturnsOnCall[i] = struct {
+		result1 *config.Config
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeCommandService) UpdateClient(arg1 context.Context, arg2 v1.CommandServiceClient) error {
 	fake.updateClientMutex.Lock()
 	ret, specificReturn := fake.updateClientReturnsOnCall[len(fake.updateClientArgsForCall)]
@@ -504,6 +584,8 @@ func (fake *FakeCommandService) Invocations() map[string][][]interface{} {
 	defer fake.sendDataPlaneResponseMutex.RUnlock()
 	fake.subscribeMutex.RLock()
 	defer fake.subscribeMutex.RUnlock()
+	fake.updateAgentConfigMutex.RLock()
+	defer fake.updateAgentConfigMutex.RUnlock()
 	fake.updateClientMutex.RLock()
 	defer fake.updateClientMutex.RUnlock()
 	fake.updateDataPlaneHealthMutex.RLock()

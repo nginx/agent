@@ -7,6 +7,7 @@ package config
 
 import (
 	"log/slog"
+	"strings"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 )
@@ -121,4 +122,47 @@ func ToAuxiliaryCommandServerProto(cmd *Command) *mpi.AuxiliaryCommandServer {
 	}
 
 	return protoConfig
+}
+
+func FromAgentConfigLogProto(log *mpi.Log) *Log {
+	return &Log{
+		Level: MapConfigLogLevelToSlogLevel(log.GetLogLevel()),
+		Path:  log.GetLogPath(),
+	}
+}
+
+func ToAgentConfigLogProto(log *Log) *mpi.Log {
+	return &mpi.Log{
+		LogLevel: MapSlogLevelToConfigLogLevel(log.Level),
+		LogPath:  log.Path,
+	}
+}
+
+func MapConfigLogLevelToSlogLevel(level mpi.Log_LogLevel) string {
+	slogLevel := "INFO"
+
+	switch level {
+	case mpi.Log_LOG_LEVEL_DEBUG:
+		slogLevel = "DEBUG"
+	case mpi.Log_LOG_LEVEL_WARN:
+		slogLevel = "WARN"
+	case mpi.Log_LOG_LEVEL_ERROR:
+		slogLevel = "ERROR"
+	case mpi.Log_LOG_LEVEL_INFO:
+	}
+
+	return slogLevel
+}
+
+func MapSlogLevelToConfigLogLevel(level string) mpi.Log_LogLevel {
+	switch strings.ToUpper(level) {
+	case "DEBUG":
+		return mpi.Log_LOG_LEVEL_DEBUG
+	case "WARN":
+		return mpi.Log_LOG_LEVEL_WARN
+	case "ERROR":
+		return mpi.Log_LOG_LEVEL_ERROR
+	default:
+		return mpi.Log_LOG_LEVEL_INFO
+	}
 }

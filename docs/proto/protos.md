@@ -67,6 +67,7 @@
     - [InstanceHealth](#mpi-v1-InstanceHealth)
     - [InstanceMeta](#mpi-v1-InstanceMeta)
     - [InstanceRuntime](#mpi-v1-InstanceRuntime)
+    - [Log](#mpi-v1-Log)
     - [ManagementPlaneRequest](#mpi-v1-ManagementPlaneRequest)
     - [MetricsServer](#mpi-v1-MetricsServer)
     - [NGINXAppProtectRuntimeInfo](#mpi-v1-NGINXAppProtectRuntimeInfo)
@@ -76,6 +77,7 @@
     - [ReleaseInfo](#mpi-v1-ReleaseInfo)
     - [Resource](#mpi-v1-Resource)
     - [StatusRequest](#mpi-v1-StatusRequest)
+    - [UpdateAgentConfigRequest](#mpi-v1-UpdateAgentConfigRequest)
     - [UpdateDataPlaneHealthRequest](#mpi-v1-UpdateDataPlaneHealthRequest)
     - [UpdateDataPlaneHealthResponse](#mpi-v1-UpdateDataPlaneHealthResponse)
     - [UpdateDataPlaneStatusRequest](#mpi-v1-UpdateDataPlaneStatusRequest)
@@ -85,6 +87,7 @@
   
     - [InstanceHealth.InstanceHealthStatus](#mpi-v1-InstanceHealth-InstanceHealthStatus)
     - [InstanceMeta.InstanceType](#mpi-v1-InstanceMeta-InstanceType)
+    - [Log.LogLevel](#mpi-v1-Log-LogLevel)
   
     - [CommandService](#mpi-v1-CommandService)
   
@@ -718,6 +721,7 @@ This contains a series of NGINX Agent configurations
 | features | [string](#string) | repeated | A list of features that the NGINX Agent has |
 | message_buffer_size | [string](#string) |  | Message buffer size, maximum not acknowledged messages from the subscribe perspective |
 | auxiliary_command | [AuxiliaryCommandServer](#mpi-v1-AuxiliaryCommandServer) |  | Auxiliary Command server settings |
+| log | [Log](#mpi-v1-Log) |  | Log settings |
 
 
 
@@ -1049,6 +1053,22 @@ Meta-information relating to the reported instance
 
 
 
+<a name="mpi-v1-Log"></a>
+
+### Log
+The log settings associated with NGINX Agent
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| log_level | [Log.LogLevel](#mpi-v1-Log-LogLevel) |  |  |
+| log_path | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="mpi-v1-ManagementPlaneRequest"></a>
 
 ### ManagementPlaneRequest
@@ -1064,6 +1084,7 @@ A Management Plane request for information, triggers an associated rpc on the Da
 | config_upload_request | [ConfigUploadRequest](#mpi-v1-ConfigUploadRequest) |  | triggers a series of rpc UpdateFile(File) for that instances |
 | action_request | [APIActionRequest](#mpi-v1-APIActionRequest) |  | triggers a DataPlaneResponse with a command_response for a particular action |
 | command_status_request | [CommandStatusRequest](#mpi-v1-CommandStatusRequest) |  | triggers a DataPlaneResponse with a command_response for a particular correlation_id |
+| update_agent_config_request | [UpdateAgentConfigRequest](#mpi-v1-UpdateAgentConfigRequest) |  | triggers an update to the NGINX Agent configuration |
 
 
 
@@ -1203,6 +1224,22 @@ Additional information associated with a StatusRequest
 
 
 
+<a name="mpi-v1-UpdateAgentConfigRequest"></a>
+
+### UpdateAgentConfigRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
+| agent_config | [AgentConfig](#mpi-v1-AgentConfig) |  | The NGINX Agent configuration to update |
+
+
+
+
+
+
 <a name="mpi-v1-UpdateDataPlaneHealthRequest"></a>
 
 ### UpdateDataPlaneHealthRequest
@@ -1316,6 +1353,20 @@ the types of instances possible
 | INSTANCE_TYPE_NGINX_PLUS | 3 | NGINX Plus |
 | INSTANCE_TYPE_UNIT | 4 | NGINX Unit |
 | INSTANCE_TYPE_NGINX_APP_PROTECT | 5 | NGINX App Protect |
+
+
+
+<a name="mpi-v1-Log-LogLevel"></a>
+
+### Log.LogLevel
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| LOG_LEVEL_INFO | 0 | Info log level |
+| LOG_LEVEL_ERROR | 1 | Error log level |
+| LOG_LEVEL_WARN | 2 | Warning log level |
+| LOG_LEVEL_DEBUG | 3 | Debug log level |
 
 
  

@@ -74,3 +74,37 @@ func (s *MPITestSuite) TestGrpc_Test3_DataplaneHealthRequest() {
 	s.Equal("Successfully sent health status update", responses[0].GetCommandResponse().GetMessage())
 	slog.Info("finished grpc dataplane health request test")
 }
+
+func (s *MPITestSuite) TestGrpc_Test4_UpdateNginxAgentConfigurationRequest() {
+	slog.Info("starting grpc update nginx agent configuration request test")
+	request := `{
+		"message_meta": {
+			"message_id": "6c0fa83e-351c-4009-90cd-1f2acce2d184",
+			"correlation_id": "11114c1c-8e91-47c1-a92c-b9a0c3f1a263",
+			"timestamp": "2025-01-15T01:30:15.01Z"
+		},
+		"update_agent_config_request": {
+			"agent_config": {
+				"log": {
+					"log_level": 1
+				}
+			}
+		}
+	}`
+
+	client := resty.New()
+	client.SetRetryCount(utils.RetryCount).SetRetryWaitTime(utils.RetryWaitTime).SetRetryMaxWaitTime(
+		utils.RetryMaxWaitTime)
+
+	url := fmt.Sprintf("http://%s/api/v1/requests", utils.MockManagementPlaneAPIAddress)
+	resp, err := client.R().EnableTrace().SetBody(request).Post(url)
+
+	s.Require().NoError(err)
+	s.Equal(http.StatusOK, resp.StatusCode())
+
+	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
+
+	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+	s.Equal("Successfully updated agent configuration", responses[0].GetCommandResponse().GetMessage())
+	slog.Info("finished grpc update nginx agent configuration request test")
+}

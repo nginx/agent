@@ -37,6 +37,7 @@ type (
 		Subscribe(ctx context.Context)
 		IsConnected() bool
 		CreateConnection(ctx context.Context, resource *mpi.Resource) (*mpi.CreateConnectionResponse, error)
+		UpdateAgentConfig(ctx context.Context, request *mpi.AgentConfig) (*config.Config, error)
 	}
 
 	CommandPlugin struct {
@@ -180,6 +181,24 @@ func (cp *CommandPlugin) createConnection(ctx context.Context, resource *mpi.Res
 			Topic: bus.ConnectionCreatedTopic,
 			Data:  createConnectionResponse,
 		})
+
+		if createConnectionResponse.GetAgentConfig() != nil {
+			newAgentConfig, updateConfigError := cp.commandService.UpdateAgentConfig(
+				ctx,
+				createConnectionResponse.GetAgentConfig(),
+			)
+			if updateConfigError != nil {
+				slog.ErrorContext(ctx, "Unable to update agent configuration", "error", updateConfigError)
+			} else {
+				slog.DebugContext(
+					ctx, "Notifying other plugins of agent configuration update from create connection response",
+				)
+				cp.messagePipe.Process(ctx, &bus.Message{
+					Topic: bus.AgentConfigUpdateTopic,
+					Data:  newAgentConfig,
+				})
+			}
+		}
 	}
 }
 
@@ -262,7 +281,7 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 	}
 }
 
-//nolint:revive // cognitive complexity is 14
+//nolint:revive,cyclop // cognitive complexity is 14
 func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 	for {
 		select {
@@ -305,6 +324,17 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 				}
 				slog.InfoContext(ctx, "Received management plane action request")
 				cp.handleAPIActionRequest(newCtx, message)
+			case *mpi.ManagementPlaneRequest_UpdateAgentConfigRequest:
+				slog.InfoContext(ctx, "Received management plane update agent config request")
+				if cp.commandServerType != model.Command {
+					slog.WarnContext(newCtx, "Auxiliary command server can not perform agent config update",
+						"command_server_type", cp.commandServerType.String())
+					cp.handleInvalidRequest(newCtx, message, "Updating agent config failed", "")
+
+					return
+				}
+
+				cp.handleAgentConfigUpdateRequest(newCtx, message)
 			default:
 				slog.DebugContext(newCtx, "Management plane request not implemented yet")
 			}
@@ -405,6 +435,50 @@ func (cp *CommandPlugin) handleInvalidRequest(ctx context.Context,
 	})
 	if err != nil {
 		slog.ErrorContext(ctx, "Unable to send data plane response", "error", err)
+	}
+}
+
+func (cp *CommandPlugin) handleAgentConfigUpdateRequest(ctx context.Context, request *mpi.ManagementPlaneRequest) {
+	newAgentConfig, err := cp.commandService.UpdateAgentConfig(
+		ctx,
+		request.GetUpdateAgentConfigRequest().GetAgentConfig(),
+	)
+	if err != nil {
+		slog.ErrorContext(ctx, "Unable to update agent configuration", "error", err)
+
+		responseError := cp.commandService.SendDataPlaneResponse(ctx, &mpi.DataPlaneResponse{
+			MessageMeta: &mpi.MessageMeta{
+				MessageId:     id.GenerateMessageID(),
+				CorrelationId: request.GetMessageMeta().GetCorrelationId(),
+				Timestamp:     timestamppb.Now(),
+			},
+			CommandResponse: &mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "Failed to update agent configuration",
+			},
+		})
+
+		if responseError != nil {
+			slog.ErrorContext(ctx, "Unable to send data plane response", "error", responseError)
+		}
+	} else {
+		cp.messagePipe.Process(ctx, &bus.Message{Topic: bus.AgentConfigUpdateTopic, Data: newAgentConfig})
+
+		responseError := cp.commandService.SendDataPlaneResponse(ctx, &mpi.DataPlaneResponse{
+			MessageMeta: &mpi.MessageMeta{
+				MessageId:     id.GenerateMessageID(),
+				CorrelationId: request.GetMessageMeta().GetCorrelationId(),
+				Timestamp:     timestamppb.Now(),
+			},
+			CommandResponse: &mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+				Message: "Successfully updated agent configuration",
+			},
+		})
+
+		if responseError != nil {
+			slog.ErrorContext(ctx, "Unable to send data plane response", "error", responseError)
+		}
 	}
 }
 
