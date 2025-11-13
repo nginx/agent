@@ -79,7 +79,10 @@ func (fso *FileServiceOperator) File(
 	defer backoffCancel()
 
 	getFile := func() (*mpi.GetFileResponse, error) {
-		return fso.fileServiceClient.GetFile(ctx, &mpi.GetFileRequest{
+		grpcCtx, cancel := context.WithTimeout(ctx, fso.agentConfig.Client.FileDownloadTimeout)
+		defer cancel()
+
+		return fso.fileServiceClient.GetFile(grpcCtx, &mpi.GetFileRequest{
 			MessageMeta: &mpi.MessageMeta{
 				MessageId:     id.GenerateMessageID(),
 				CorrelationId: logger.CorrelationID(ctx),
@@ -225,7 +228,10 @@ func (fso *FileServiceOperator) ChunkedFile(
 ) error {
 	slog.DebugContext(ctx, "Getting chunked file", "file", file.GetFileMeta().GetName())
 
-	stream, err := fso.fileServiceClient.GetFileStream(ctx, &mpi.GetFileRequest{
+	grpcCtx, cancel := context.WithTimeout(ctx, fso.agentConfig.Client.FileDownloadTimeout)
+	defer cancel()
+
+	stream, err := fso.fileServiceClient.GetFileStream(grpcCtx, &mpi.GetFileRequest{
 		MessageMeta: &mpi.MessageMeta{
 			MessageId:     id.GenerateMessageID(),
 			CorrelationId: logger.CorrelationID(ctx),
@@ -274,6 +280,23 @@ func (fso *FileServiceOperator) UpdateFile(
 	}
 
 	return fso.sendUpdateFileStream(ctx, fileToUpdate, fso.agentConfig.Client.Grpc.FileChunkSize)
+}
+
+func (fso *FileServiceOperator) RenameExternalFile(
+	ctx context.Context, source, desination string,
+) error {
+	slog.DebugContext(ctx, fmt.Sprintf("Moving file %s to %s (no hash validation)", source, desination))
+
+	if err := os.MkdirAll(filepath.Dir(desination), dirPerm); err != nil {
+		return fmt.Errorf("failed to create directories for %s: %w", desination, err)
+	}
+
+	moveErr := os.Rename(source, desination)
+	if moveErr != nil {
+		return fmt.Errorf("failed to move file: %w", moveErr)
+	}
+
+	return nil
 }
 
 // renameFile, renames (moves) file from tempDir to new location to update file.
@@ -371,12 +394,15 @@ func (fso *FileServiceOperator) sendUpdateFileRequest(
 			return nil, errors.New("CreateConnection rpc has not being called yet")
 		}
 
-		response, updateError := fso.fileServiceClient.UpdateFile(ctx, request)
+		grpcCtx, cancel := context.WithTimeout(ctx, fso.agentConfig.Client.FileDownloadTimeout)
+		defer cancel()
+
+		response, updateError := fso.fileServiceClient.UpdateFile(grpcCtx, request)
 
 		validatedError := internalgrpc.ValidateGrpcError(updateError)
 
 		if validatedError != nil {
-			slog.ErrorContext(ctx, "Failed to send update file", "error", validatedError)
+			slog.ErrorContext(grpcCtx, "Failed to send update file", "error", validatedError)
 
 			return nil, validatedError
 		}
@@ -406,7 +432,10 @@ func (fso *FileServiceOperator) sendUpdateFileStream(
 		return errors.New("file chunk size must be greater than zero")
 	}
 
-	updateFileStreamClient, err := fso.fileServiceClient.UpdateFileStream(ctx)
+	grpcCtx, cancel := context.WithTimeout(ctx, fso.agentConfig.Client.FileDownloadTimeout)
+	defer cancel()
+
+	updateFileStreamClient, err := fso.fileServiceClient.UpdateFileStream(grpcCtx)
 	if err != nil {
 		return err
 	}

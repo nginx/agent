@@ -157,6 +157,7 @@ func ResolveConfig() (*Config, error) {
 		Features:           viperInstance.GetStringSlice(FeaturesKey),
 		Labels:             resolveLabels(),
 		LibDir:             viperInstance.GetString(LibDirPathKey),
+		ExternalDataSource: resolveExternalDataSource(),
 		SyslogServer:       resolveSyslogServer(),
 	}
 
@@ -475,6 +476,7 @@ func registerFlags() {
 	registerCollectorFlags(fs)
 	registerClientFlags(fs)
 	registerDataPlaneFlags(fs)
+	registerExternalDataSourceFlags(fs)
 
 	fs.SetNormalizeFunc(normalizeFunc)
 
@@ -487,6 +489,24 @@ func registerFlags() {
 			slog.Warn("Error occurred binding env", "env", flag.Name, "error", err)
 		}
 	})
+}
+
+func registerExternalDataSourceFlags(fs *flag.FlagSet) {
+	fs.String(
+		ExternalDataSourceProxyUrlKey,
+		DefExternalDataSourceProxyUrl,
+		"Url to the proxy service to fetch the external file.",
+	)
+	fs.StringSlice(
+		ExternalDataSourceAllowDomainsKey,
+		[]string{},
+		"List of allowed domains for external data sources.",
+	)
+	fs.Int64(
+		ExternalDataSourceMaxBytesKey,
+		DefExternalDataSourceMaxBytes,
+		"Maximum size in bytes for external data sources.",
+	)
 }
 
 func registerDataPlaneFlags(fs *flag.FlagSet) {
@@ -627,6 +647,11 @@ func registerClientFlags(fs *flag.FlagSet) {
 		ClientGRPCMaxFileSizeKey,
 		DefMaxFileSize,
 		"Max file size in bytes.",
+	)
+	fs.Duration(
+		ClientFileDownloadTimeoutKey,
+		DefClientFileDownloadTimeout,
+		"Timeout value in seconds, to downloading file for config apply.",
 	)
 
 	fs.Int(
@@ -1120,6 +1145,7 @@ func resolveClient() *Client {
 			RandomizationFactor: viperInstance.GetFloat64(ClientBackoffRandomizationFactorKey),
 			Multiplier:          viperInstance.GetFloat64(ClientBackoffMultiplierKey),
 		},
+		FileDownloadTimeout: viperInstance.GetDuration(ClientFileDownloadTimeoutKey),
 	}
 }
 
@@ -1559,4 +1585,27 @@ func areCommandServerProxyTLSSettingsSet() bool {
 		viperInstance.IsSet(CommandServerProxyTLSCaKey) ||
 		viperInstance.IsSet(CommandServerProxyTLSSkipVerifyKey) ||
 		viperInstance.IsSet(CommandServerProxyTLSServerNameKey)
+}
+
+func resolveExternalDataSource() *ExternalDataSource {
+	proxyURLStruct := ProxyURL{
+		URL: viperInstance.GetString(ExternalDataSourceProxyUrlKey),
+	}
+	externalDataSource := &ExternalDataSource{
+		ProxyURL:       proxyURLStruct,
+		AllowedDomains: viperInstance.GetStringSlice(ExternalDataSourceAllowDomainsKey),
+		MaxBytes:       viperInstance.GetInt64(ExternalDataSourceMaxBytesKey),
+	}
+
+	// Validate domains
+	if len(externalDataSource.AllowedDomains) > 0 {
+		for _, domain := range externalDataSource.AllowedDomains {
+			if strings.ContainsAny(domain, "/\\ ") || domain == "" {
+				slog.Error("domain is not specified in allowed_domains")
+				return nil
+			}
+		}
+	}
+
+	return externalDataSource
 }

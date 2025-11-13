@@ -82,6 +82,8 @@ const (
 	DefBackoffMaxInterval         = 20 * time.Second
 	DefBackoffMaxElapsedTime      = 1 * time.Minute
 
+	DefClientFileDownloadTimeout = 60 * time.Second
+
 	// Watcher defaults
 	DefInstanceWatcherMonitoringFrequency       = 5 * time.Second
 	DefInstanceHealthWatcherMonitoringFrequency = 5 * time.Second
@@ -114,6 +116,9 @@ const (
 
 	// File defaults
 	DefLibDir = "/var/lib/nginx-agent"
+
+	DefExternalDataSourceProxyUrl = ""
+	DefExternalDataSourceMaxBytes = 100 * 1024 * 1024
 )
 
 func DefaultFeatures() []string {
