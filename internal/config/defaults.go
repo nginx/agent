@@ -84,6 +84,8 @@ const (
 	DefBackoffMaxInterval         = 20 * time.Second
 	DefBackoffMaxElapsedTime      = 1 * time.Minute
 
+	DefClientFileDownloadTimeout = 60 * time.Second
+
 	// Watcher defaults
 	DefInstanceWatcherMonitoringFrequency       = 5 * time.Second
 	DefInstanceHealthWatcherMonitoringFrequency = 5 * time.Second

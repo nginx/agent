@@ -666,6 +666,11 @@ func registerClientFlags(fs *flag.FlagSet) {
 		DefMaxParallelFileOperations,
 		"Maximum number of file downloads or uploads performed in parallel",
 	)
+	fs.Duration(
+		ClientFileDownloadTimeoutKey,
+		DefClientFileDownloadTimeout,
+		"Timeout value in seconds, to downloading file for config apply.",
+	)
 }
 
 func registerCommandFlags(fs *flag.FlagSet) {
@@ -1154,6 +1159,7 @@ func resolveClient() *Client {
 			RandomizationFactor: viperInstance.GetFloat64(ClientBackoffRandomizationFactorKey),
 			Multiplier:          viperInstance.GetFloat64(ClientBackoffMultiplierKey),
 		},
+		FileDownloadTimeout: viperInstance.GetDuration(ClientFileDownloadTimeoutKey),
 	}
 }
 

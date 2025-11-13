@@ -50,6 +50,7 @@ var (
 	ClientBackoffMaxElapsedTimeKey      = pre(ClientRootKey) + "backoff_max_elapsed_time"
 	ClientBackoffRandomizationFactorKey = pre(ClientRootKey) + "backoff_randomization_factor"
 	ClientBackoffMultiplierKey          = pre(ClientRootKey) + "backoff_multiplier"
+	ClientFileDownloadTimeoutKey        = pre(ClientRootKey) + "file_download_timeout"
 
 	CollectorConfigPathKey                      = pre(CollectorRootKey) + "config_path"
 	CollectorAdditionalConfigPathsKey           = pre(CollectorRootKey) + "additional_config_paths"
