@@ -20,7 +20,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"google.golang.org/grpc"
 
@@ -43,8 +42,6 @@ const (
 	filePerm    = 0o600
 	executePerm = 0o111
 )
-
-const fileDownloadTimeout = 60 * time.Second
 
 type DownloadHeaders struct {
 	ETag         string
@@ -961,7 +958,7 @@ func (fms *FileManagerService) setupHTTPClient(ctx context.Context, proxyURLStri
 
 	httpClient := &http.Client{
 		Transport: transport,
-		Timeout:   fileDownloadTimeout,
+		Timeout:   fms.agentConfig.Client.FileDownloadTimeout,
 	}
 
 	return httpClient, nil

@@ -75,9 +75,10 @@ type (
 	}
 
 	Client struct {
-		HTTP    *HTTP    `yaml:"http"    mapstructure:"http"`
-		Grpc    *GRPC    `yaml:"grpc"    mapstructure:"grpc"`
-		Backoff *BackOff `yaml:"backoff" mapstructure:"backoff"`
+		HTTP                *HTTP         `yaml:"http"                  mapstructure:"http"`
+		Grpc                *GRPC         `yaml:"grpc"                  mapstructure:"grpc"`
+		Backoff             *BackOff      `yaml:"backoff"               mapstructure:"backoff"`
+		FileDownloadTimeout time.Duration `yaml:"file_download_timeout" mapstructure:"file_download_timeout"`
 	}
 
 	HTTP struct {
