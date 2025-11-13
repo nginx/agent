@@ -33,19 +33,21 @@ import (
 
 type CommandService struct {
 	mpi.UnimplementedCommandServiceServer
+	instanceFiles                map[string][]*mpi.File
+	firstConnectionCallCh        chan struct{}
 	server                       *gin.Engine
 	connectionRequest            *mpi.CreateConnectionRequest
 	requestChan                  chan *mpi.ManagementPlaneRequest
 	updateDataPlaneStatusRequest *mpi.UpdateDataPlaneStatusRequest
 	updateDataPlaneHealthRequest *mpi.UpdateDataPlaneHealthRequest
-	instanceFiles                map[string][]*mpi.File // key is instanceID
-	configDirectory              string
 	externalFileServer           string
+	configDirectory              string
 	dataPlaneResponses           []*mpi.DataPlaneResponse
-	updateDataPlaneHealthMutex   sync.Mutex
-	connectionMutex              sync.Mutex
-	updateDataPlaneStatusMutex   sync.Mutex
 	dataPlaneResponsesMutex      sync.Mutex
+	updateDataPlaneStatusMutex   sync.Mutex
+	connectionMutex              sync.Mutex
+	updateDataPlaneHealthMutex   sync.Mutex
+	firstConnectionCallFlag      bool
 }
 
 func init() {
@@ -66,6 +68,8 @@ func NewCommandService(
 		configDirectory:            configDirectory,
 		externalFileServer:         externalFileServer,
 		instanceFiles:              make(map[string][]*mpi.File),
+		firstConnectionCallCh:      make(chan struct{}),
+		firstConnectionCallFlag:    false,
 	}
 
 	handler := slog.NewTextHandler(
@@ -109,13 +113,25 @@ func (cs *CommandService) CreateConnection(
 ) {
 	slog.DebugContext(ctx, "Create connection request", "request", request)
 
+	// This checks if this is the first create connection call, this is done to test the logic in Agent where
+	// if Agent does not get a response to a request after a certain amount of time it will resend the request
+	if !cs.firstConnectionCallFlag {
+		cs.firstConnectionCallFlag = true
+		slog.DebugContext(ctx, "First CreateConnection call: blocking until second call")
+		<-cs.firstConnectionCallCh
+	} else {
+		slog.DebugContext(ctx, "Second CreateConnection call: unblocking first call")
+		close(cs.firstConnectionCallCh)
+	}
+
+	cs.connectionMutex.Lock()
+	defer cs.connectionMutex.Unlock()
+
 	if request == nil {
 		return nil, errors.New("empty connection request")
 	}
 
-	cs.connectionMutex.Lock()
 	cs.connectionRequest = request
-	cs.connectionMutex.Unlock()
 
 	return &mpi.CreateConnectionResponse{
 		Response: &mpi.CommandResponse{

@@ -17,7 +17,7 @@ import (
 // Verify that the agent sends a connection request to Management Plane even when Nginx is not present
 func TestNginxLessGrpc_Connection(t *testing.T) {
 	slog.Info("starting nginxless connection test")
-	teardownTest := utils.SetupConnectionTest(t, true, true, false,
+	teardownTest := utils.SetupConnectionTest(t, false, true, false,
 		"../../config/agent/nginx-config-with-grpc-client.conf")
 	defer teardownTest(t)
 
