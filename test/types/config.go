@@ -29,7 +29,8 @@ const (
 	commonRandomizationFactor = 0.1
 	commonMultiplier          = 0.2
 
-	reloadMonitoringPeriod = 400 * time.Millisecond
+	maxParallelFileOperations = 5
+	reloadMonitoringPeriod    = 400 * time.Millisecond
 )
 
 // Produces a populated Agent Config for testing usage.
@@ -52,10 +53,11 @@ func AgentConfig() *config.Config {
 					Time:                clientTime,
 					PermitWithoutStream: clientPermitWithoutStream,
 				},
-				MaxMessageReceiveSize: 1,
-				MaxMessageSendSize:    1,
-				MaxFileSize:           1,
-				FileChunkSize:         1,
+				MaxMessageReceiveSize:     1,
+				MaxMessageSendSize:        1,
+				MaxFileSize:               1,
+				FileChunkSize:             1,
+				MaxParallelFileOperations: maxParallelFileOperations,
 			},
 			Backoff: &config.BackOff{
 				InitialInterval:     commonInitialInterval,

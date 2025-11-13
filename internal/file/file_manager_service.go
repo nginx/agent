@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"sync"
 
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 
 	"github.com/nginx/agent/v3/internal/model"
@@ -288,28 +289,36 @@ func (fms *FileManagerService) ConfigUpdate(ctx context.Context,
 }
 
 func (fms *FileManagerService) ConfigUpload(ctx context.Context, configUploadRequest *mpi.ConfigUploadRequest) error {
-	var updatingFilesError error
-
-	for _, file := range configUploadRequest.GetOverview().GetFiles() {
-		err := fms.fileServiceOperator.UpdateFile(
-			ctx,
-			configUploadRequest.GetOverview().GetConfigVersion().GetInstanceId(),
-			file,
-		)
-		if err != nil {
-			slog.ErrorContext(
-				ctx,
-				"Failed to update file",
-				"instance_id", configUploadRequest.GetOverview().GetConfigVersion().GetInstanceId(),
-				"file_name", file.GetFileMeta().GetName(),
-				"error", err,
-			)
-
-			updatingFilesError = errors.Join(updatingFilesError, err)
-		}
+	uploadFiles := configUploadRequest.GetOverview().GetFiles()
+	if len(uploadFiles) == 0 {
+		return nil
 	}
 
-	return updatingFilesError
+	errGroup, errGroupCtx := errgroup.WithContext(ctx)
+	errGroup.SetLimit(fms.agentConfig.Client.Grpc.MaxParallelFileOperations)
+
+	for _, file := range uploadFiles {
+		errGroup.Go(func() error {
+			err := fms.fileServiceOperator.UpdateFile(
+				errGroupCtx,
+				configUploadRequest.GetOverview().GetConfigVersion().GetInstanceId(),
+				file,
+			)
+			if err != nil {
+				slog.ErrorContext(
+					errGroupCtx,
+					"Failed to update file",
+					"instance_id", configUploadRequest.GetOverview().GetConfigVersion().GetInstanceId(),
+					"file_name", file.GetFileMeta().GetName(),
+					"error", err,
+				)
+			}
+
+			return err
+		})
+	}
+
+	return errGroup.Wait()
 }
 
 // DetermineFileActions compares two sets of files to determine the file action for each file. Returns a map of files
@@ -570,25 +579,36 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) (actionEr
 }
 
 func (fms *FileManagerService) downloadUpdatedFilesToTempLocation(ctx context.Context) (updateError error) {
+	var downloadFiles []*model.FileCache
 	for _, fileAction := range fms.fileActions {
 		if fileAction.Action == model.Add || fileAction.Action == model.Update {
+			downloadFiles = append(downloadFiles, fileAction)
+		}
+	}
+
+	if len(downloadFiles) == 0 {
+		slog.DebugContext(ctx, "No updated files to download")
+		return nil
+	}
+
+	errGroup, errGroupCtx := errgroup.WithContext(ctx)
+	errGroup.SetLimit(fms.agentConfig.Client.Grpc.MaxParallelFileOperations)
+
+	for _, fileAction := range downloadFiles {
+		errGroup.Go(func() error {
 			tempFilePath := tempFilePath(fileAction.File.GetFileMeta().GetName())
 
 			slog.DebugContext(
-				ctx,
+				errGroupCtx,
 				"Downloading file to temp location",
 				"file", tempFilePath,
 			)
 
-			updateErr := fms.fileUpdate(ctx, fileAction.File, tempFilePath)
-			if updateErr != nil {
-				updateError = updateErr
-				break
-			}
-		}
+			return fms.fileUpdate(errGroupCtx, fileAction.File, tempFilePath)
+		})
 	}
 
-	return updateError
+	return errGroup.Wait()
 }
 
 func (fms *FileManagerService) moveOrDeleteFiles(ctx context.Context, actionError error) error {
