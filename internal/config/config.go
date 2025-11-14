@@ -47,7 +47,7 @@ const (
 	// Regular expression to match invalid characters in paths.
 	// It matches whitespace, control characters, non-printable characters, and specific Unicode characters.
 	regexInvalidPath  = "\\s|[[:cntrl:]]|[[:space:]]|[[^:print:]]|ㅤ|\\.\\.|\\*"
-	regexLabelPattern = "^[a-zA-Z0-9]([a-zA-Z0-9-_]{0,254}[a-zA-Z0-9])?$"
+	regexLabelPattern = "^[a-zA-Z0-9]([a-zA-Z0-9-_.]{0,254}[a-zA-Z0-9])?$"
 )
 
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
