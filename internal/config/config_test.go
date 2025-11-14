@@ -1559,6 +1559,31 @@ func TestValidateLabel(t *testing.T) {
 			input:    "label 123",
 			expected: false,
 		},
+		{
+			name:     "Test 9: Valid label - cluster id",
+			input:    "73623aef-1d5b-4f6b-b73d-5561c36851cc",
+			expected: true,
+		},
+		{
+			name:     "Test 10: Valid label - installation name",
+			input:    "my-release-nginx-ingress-controller",
+			expected: true,
+		},
+		{
+			name:     "Test 11: Valid label - product",
+			input:    "nic",
+			expected: true,
+		},
+		{
+			name:     "Test 12: Valid label - version",
+			input:    "5.3.0",
+			expected: true,
+		},
+		{
+			name:     "Test 13: Valid label - version snapshot",
+			input:    "5.3.0-SNAPSHOT",
+			expected: true,
+		},
 	}
 
 	for _, tt := range tests {
