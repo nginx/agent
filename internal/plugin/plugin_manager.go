@@ -16,7 +16,6 @@ import (
 
 	"github.com/nginx/agent/v3/internal/collector"
 	"github.com/nginx/agent/v3/internal/command"
-	"github.com/nginx/agent/v3/internal/file"
 	"github.com/nginx/agent/v3/internal/grpc"
 	"github.com/nginx/agent/v3/internal/resource"
 
@@ -30,7 +29,7 @@ func LoadPlugins(ctx context.Context, agentConfig *config.Config) []bus.Plugin {
 
 	manifestLock := &sync.RWMutex{}
 
-	plugins = addResourcePlugin(plugins, agentConfig)
+	// plugins = addResourcePlugin(plugins, agentConfig)
 	plugins = addCommandAndFilePlugins(ctx, plugins, agentConfig, manifestLock)
 	plugins = addAuxiliaryCommandAndFilePlugins(ctx, plugins, agentConfig, manifestLock)
 	plugins = addCollectorPlugin(ctx, agentConfig, plugins)
@@ -39,12 +38,12 @@ func LoadPlugins(ctx context.Context, agentConfig *config.Config) []bus.Plugin {
 	return plugins
 }
 
-func addResourcePlugin(plugins []bus.Plugin, agentConfig *config.Config) []bus.Plugin {
-	resourcePlugin := resource.NewResource(agentConfig)
-	plugins = append(plugins, resourcePlugin)
-
-	return plugins
-}
+//func addResourcePlugin(plugins []bus.Plugin, agentConfig *config.Config) []bus.Plugin {
+//	resourcePlugin := resource.NewResource(agentConfig)
+//	plugins = append(plugins, resourcePlugin)
+//
+//	return plugins
+//}
 
 func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentConfig *config.Config,
 	manifestLock *sync.RWMutex,
@@ -56,8 +55,8 @@ func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentCo
 		} else {
 			commandPlugin := command.NewCommandPlugin(agentConfig, grpcConnection, model.Command)
 			plugins = append(plugins, commandPlugin)
-			filePlugin := file.NewFilePlugin(agentConfig, grpcConnection, model.Command, manifestLock)
-			plugins = append(plugins, filePlugin)
+			resourcePlugin := resource.NewResource(agentConfig, grpcConnection, model.Command, manifestLock)
+			plugins = append(plugins, resourcePlugin)
 		}
 	} else {
 		slog.InfoContext(ctx, "Agent is not connected to a management plane. "+
@@ -77,8 +76,8 @@ func addAuxiliaryCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin
 		} else {
 			auxCommandPlugin := command.NewCommandPlugin(agentConfig, auxGRPCConnection, model.Auxiliary)
 			plugins = append(plugins, auxCommandPlugin)
-			readFilePlugin := file.NewFilePlugin(agentConfig, auxGRPCConnection, model.Auxiliary, manifestLock)
-			plugins = append(plugins, readFilePlugin)
+			resourceReadPlugin := resource.NewResource(agentConfig, auxGRPCConnection, model.Auxiliary, manifestLock)
+			plugins = append(plugins, resourceReadPlugin)
 		}
 	} else {
 		slog.DebugContext(ctx, "Agent is not connected to an auxiliary management plane. "+

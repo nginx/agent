@@ -13,7 +13,6 @@ import (
 
 	"github.com/nginx/agent/v3/internal/collector"
 	"github.com/nginx/agent/v3/internal/command"
-	"github.com/nginx/agent/v3/internal/file"
 	"github.com/nginx/agent/v3/internal/resource"
 
 	"github.com/nginx/agent/v3/internal/bus"
@@ -60,9 +59,7 @@ func TestLoadPlugins(t *testing.T) {
 			expected: []bus.Plugin{
 				&resource.Resource{},
 				&command.CommandPlugin{},
-				&file.FilePlugin{},
 				&command.CommandPlugin{},
-				&file.FilePlugin{},
 				&watcher.Watcher{},
 			},
 		},
@@ -105,7 +102,6 @@ func TestLoadPlugins(t *testing.T) {
 			expected: []bus.Plugin{
 				&resource.Resource{},
 				&command.CommandPlugin{},
-				&file.FilePlugin{},
 				&watcher.Watcher{},
 			},
 		},
@@ -136,7 +132,6 @@ func TestLoadPlugins(t *testing.T) {
 			expected: []bus.Plugin{
 				&resource.Resource{},
 				&command.CommandPlugin{},
-				&file.FilePlugin{},
 				&collector.Collector{},
 				&watcher.Watcher{},
 			},

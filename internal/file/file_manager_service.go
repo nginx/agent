@@ -28,10 +28,10 @@ import (
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
-//counterfeiter:generate . fileOperator
+//counterfeiter:generate . FileOperatorInterface
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
-//counterfeiter:generate . fileManagerServiceInterface
+//counterfeiter:generate . FileManagerServiceInterface
 
 const (
 	maxAttempts = 5
@@ -41,7 +41,7 @@ const (
 )
 
 type (
-	fileOperator interface {
+	FileOperatorInterface interface {
 		Write(ctx context.Context, fileContent []byte, fileName, filePermissions string) error
 		CreateFileDirectories(ctx context.Context, fileName string) error
 		WriteChunkedFile(
@@ -61,7 +61,7 @@ type (
 		MoveFile(ctx context.Context, sourcePath, destPath string) error
 	}
 
-	fileServiceOperatorInterface interface {
+	FileServiceOperatorInterface interface {
 		File(ctx context.Context, file *mpi.File, tempFilePath, expectedHash string) error
 		UpdateOverview(ctx context.Context, instanceID string, filesToUpdate []*mpi.File, configPath string,
 			iteration int) error
@@ -77,7 +77,7 @@ type (
 		UpdateClient(ctx context.Context, fileServiceClient mpi.FileServiceClient)
 	}
 
-	fileManagerServiceInterface interface {
+	FileManagerServiceInterface interface {
 		ConfigApply(ctx context.Context, configApplyRequest *mpi.ConfigApplyRequest) (writeStatus model.WriteStatus,
 			err error)
 		Rollback(ctx context.Context, instanceID string) error
@@ -99,8 +99,8 @@ type (
 type FileManagerService struct {
 	manifestLock        *sync.RWMutex
 	agentConfig         *config.Config
-	fileOperator        fileOperator
-	fileServiceOperator fileServiceOperatorInterface
+	fileOperator        FileOperatorInterface
+	fileServiceOperator FileServiceOperatorInterface
 	// map of files and the actions performed on them during config apply
 	fileActions map[string]*model.FileCache // key is file path
 	// map of the files currently on disk, used to determine the file action during config apply

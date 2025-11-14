@@ -30,7 +30,7 @@ type FileOperator struct {
 	manifestLock *sync.RWMutex
 }
 
-var _ fileOperator = (*FileOperator)(nil)
+var _ FileOperatorInterface = (*FileOperator)(nil)
 
 // FileOperator only purpose is to write files,
 

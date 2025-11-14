@@ -35,11 +35,11 @@ import (
 type FileServiceOperator struct {
 	fileServiceClient mpi.FileServiceClient
 	agentConfig       *config.Config
-	fileOperator      fileOperator
+	fileOperator      FileOperatorInterface
 	isConnected       *atomic.Bool
 }
 
-var _ fileServiceOperatorInterface = (*FileServiceOperator)(nil)
+var _ FileServiceOperatorInterface = (*FileServiceOperator)(nil)
 
 func NewFileServiceOperator(agentConfig *config.Config, fileServiceClient mpi.FileServiceClient,
 	manifestLock *sync.RWMutex,
