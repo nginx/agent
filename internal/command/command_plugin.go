@@ -118,7 +118,9 @@ func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 	if logger.ServerType(ctxWithMetadata) == cp.commandServerType.String() {
 		switch msg.Topic {
 		case bus.ConnectionResetTopic:
-			cp.processConnectionReset(ctxWithMetadata, msg)
+			// Running as a separate go routine so that the command plugin can continue to process data plane responses
+			// while the connection reset is in progress
+			go cp.processConnectionReset(ctxWithMetadata, msg)
 		case bus.ResourceUpdateTopic:
 			cp.processResourceUpdate(ctxWithMetadata, msg)
 		case bus.InstanceHealthTopic:
@@ -232,11 +234,19 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 	slog.DebugContext(ctx, "Command plugin received connection reset message")
 
 	if newConnection, ok := msg.Data.(grpc.GrpcConnectionInterface); ok {
-		slog.DebugContext(ctx, "Canceling Subscribe after connection reset")
 		ctxWithMetadata := cp.config.NewContextWithLabels(ctx)
 		cp.subscribeMutex.Lock()
 		defer cp.subscribeMutex.Unlock()
 
+		// Update the command service with the new client first
+		err := cp.commandService.UpdateClient(ctxWithMetadata, newConnection.CommandServiceClient())
+		if err != nil {
+			slog.ErrorContext(ctx, "Failed to reset connection", "error", err)
+			return
+		}
+
+		// Once the command service is updated, we close the old connection
+		slog.DebugContext(ctx, "Canceling Subscribe after connection reset")
 		if cp.subscribeCancel != nil {
 			cp.subscribeCancel()
 			slog.DebugContext(ctxWithMetadata, "Successfully canceled subscribe after connection reset")
@@ -248,12 +258,6 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 		}
 
 		cp.conn = newConnection
-		err := cp.commandService.UpdateClient(ctx, cp.conn.CommandServiceClient())
-		if err != nil {
-			slog.ErrorContext(ctx, "Failed to reset connection", "error", err)
-			return
-		}
-
 		slog.DebugContext(ctxWithMetadata, "Starting new subscribe after connection reset")
 		subscribeCtx, cp.subscribeCancel = context.WithCancel(ctxWithMetadata)
 		go cp.commandService.Subscribe(subscribeCtx)

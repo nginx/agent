@@ -150,7 +150,14 @@ func TestCommandPlugin_Process(t *testing.T) {
 		Topic: bus.ConnectionResetTopic,
 		Data:  commandPlugin.conn,
 	})
-	require.Equal(t, 1, fakeCommandService.UpdateClientCallCount())
+
+	// Separate goroutine is executed so need to wait for it to complete
+	assert.Eventually(
+		t,
+		func() bool { return fakeCommandService.UpdateClientCallCount() == 1 },
+		2*time.Second,
+		10*time.Millisecond,
+	)
 }
 
 func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
