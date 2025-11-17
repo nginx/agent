@@ -182,6 +182,7 @@ func (fp *FilePlugin) handleConfigApplyComplete(ctx context.Context, msg *bus.Me
 
 	fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
 	fp.fileManagerService.ClearCache()
+	slog.DebugContext(ctx, "File manager service cleared successfully, enabling watchers after config apply complete")
 	fp.enableWatchers(ctx, &model.NginxConfigContext{}, response.GetInstanceId())
 }
 

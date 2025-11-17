@@ -173,6 +173,7 @@ func (w *Watcher) handleEnableWatchers(ctx context.Context, msg *bus.Message) {
 	// if config apply ended in a reload there is no need to reparse the config so an empty config context is sent
 	// from the file plugin
 	if configContext.InstanceID != "" {
+		slog.DebugContext(ctx, "Empty instance ID in enable watchers")
 		w.instanceWatcherService.HandleNginxConfigContextUpdate(ctx, instanceID, configContext)
 	}
 
@@ -213,8 +214,10 @@ func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message
 	defer w.watcherMutex.Unlock()
 	w.instancesWithConfigApplyInProgress = append(w.instancesWithConfigApplyInProgress, instanceID)
 
+	slog.DebugContext(ctx, "Watcher plugin disabling watchers for config apply request")
 	w.fileWatcherService.DisableWatcher(ctx)
 	w.instanceWatcherService.SetEnabled(false)
+	slog.DebugContext(ctx, "Watcher plugin successfully disabled watchers for config apply request")
 }
 
 func (w *Watcher) handleHealthRequest(ctx context.Context) {

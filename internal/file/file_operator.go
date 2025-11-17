@@ -157,6 +157,10 @@ func (fo *FileOperator) WriteManifestFile(
 	ctx context.Context, updatedFiles map[string]*model.ManifestFile, manifestDir, manifestPath string,
 ) (writeError error) {
 	slog.DebugContext(ctx, "Writing manifest file", "updated_files", updatedFiles)
+	for _, file := range updatedFiles {
+		slog.DebugContext(ctx, "Updated File: ", "file", file.ManifestFileMeta.Name, "hash",
+			file.ManifestFileMeta.Hash, "referenced", file.ManifestFileMeta.Referenced)
+	}
 	manifestJSON, err := json.MarshalIndent(updatedFiles, "", "  ")
 	if err != nil {
 		return fmt.Errorf("unable to marshal manifest file json: %w", err)

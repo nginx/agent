@@ -214,6 +214,7 @@ func (fms *FileManagerService) ClearCache() {
 
 	clear(fms.fileActions)
 	clear(fms.previousManifestFiles)
+	slog.Debug("File manager service cleared successfully")
 }
 
 //nolint:revive,cyclop // cognitive-complexity of 13 max is 12, loop is needed cant be broken up
