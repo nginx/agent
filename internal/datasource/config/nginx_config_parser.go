@@ -44,6 +44,29 @@ const (
 	locationDirective                 = "location"
 )
 
+var globFunction = func(path string) ([]string, error) {
+	matches, err := filepath.Glob(path)
+	if err != nil {
+		return nil, err
+	}
+
+	// Exclude hidden files unless the glob pattern itself starts with a dot
+	if !strings.HasPrefix(filepath.Base(path), ".") {
+		filteredMatches := make([]string, 0)
+
+		for _, match := range matches {
+			base := filepath.Base(match)
+			if !strings.HasPrefix(base, ".") {
+				filteredMatches = append(filteredMatches, match)
+			}
+		}
+
+		return filteredMatches, nil
+	}
+
+	return matches, nil
+}
+
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . ConfigParser
 
@@ -66,6 +89,15 @@ type (
 	crossplaneTraverseCallbackAPIDetails = func(ctx context.Context, parent,
 		current *crossplane.Directive, apiType string) []*model.APIDetails
 )
+
+type createAPIDetailsParams struct {
+	locationDirectiveName string
+	address               string
+	path                  string
+	caCertLocation        string
+	isSSL                 bool
+	writeEnabled          bool
+}
 
 func NewNginxConfigParser(agentConfig *config.Config) *NginxConfigParser {
 	return &NginxConfigParser{
@@ -95,6 +127,7 @@ func (ncp *NginxConfigParser) Parse(ctx context.Context, instance *mpi.Instance)
 			LexOptions: crossplane.LexOptions{
 				Lexers: []crossplane.RegisterLexer{lua.RegisterLexer()},
 			},
+			Glob: globFunction,
 		},
 	)
 	if err != nil {
@@ -151,7 +184,6 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 	payload *crossplane.Payload,
 	configPath string,
 ) (*model.NginxConfigContext, error) {
-	napSyslogServersFound := make(map[string]bool)
 	napEnabled := false
 
 	nginxConfigContext := &model.NginxConfigContext{
@@ -167,7 +199,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 			Listen:   "",
 			Location: "",
 		},
-		NAPSysLogServers: make([]string, 0),
+		NAPSysLogServer: "",
 	}
 
 	rootDir := filepath.Dir(instance.GetInstanceRuntime().GetConfigPath())
@@ -223,8 +255,8 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 					if len(directive.Args) > 1 {
 						napEnabled = true
 						sysLogServer := ncp.findLocalSysLogServers(directive.Args[1])
-						if sysLogServer != "" && !napSyslogServersFound[sysLogServer] {
-							napSyslogServersFound[sysLogServer] = true
+						if sysLogServer != "" {
+							nginxConfigContext.NAPSysLogServer = sysLogServer
 							slog.DebugContext(ctx, "Found NAP syslog server", "address", sysLogServer)
 						}
 					}
@@ -251,17 +283,6 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 			nginxConfigContext.PlusAPIs = append(nginxConfigContext.PlusAPIs, plusAPIs...)
 		}
 
-		if len(napSyslogServersFound) > 0 {
-			var napSyslogServer []string
-			for server := range napSyslogServersFound {
-				napSyslogServer = append(napSyslogServer, server)
-			}
-			nginxConfigContext.NAPSysLogServers = napSyslogServer
-		} else if napEnabled {
-			slog.WarnContext(ctx, "Could not find available local NGINX App Protect syslog server. "+
-				"Security violations will not be collected.")
-		}
-
 		fileMeta, err := files.FileMeta(conf.File)
 		if err != nil {
 			slog.WarnContext(ctx, "Unable to get file metadata", "file_name", conf.File, "error", err)
@@ -270,6 +291,16 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 		}
 	}
 
+	if napEnabled && nginxConfigContext.NAPSysLogServer == "" {
+		slog.WarnContext(ctx, fmt.Sprintf("Could not find available local NGINX App Protect syslog"+
+			" server configured on port %s. Security violations will not be collected.",
+			ncp.agentConfig.SyslogServer.Port))
+	} else if napEnabled && nginxConfigContext.NAPSysLogServer != "" {
+		slog.InfoContext(ctx, fmt.Sprintf("Found available local NGINX App Protect syslog"+
+			"server configured on port %s", ncp.agentConfig.SyslogServer.Port))
+	}
+
+	nginxConfigContext.PlusAPIs = ncp.sortPlusAPIs(ctx, nginxConfigContext.PlusAPIs)
 	nginxConfigContext.StubStatus = ncp.FindStubStatusAPI(ctx, nginxConfigContext)
 	nginxConfigContext.PlusAPI = ncp.FindPlusAPI(ctx, nginxConfigContext)
 
@@ -280,8 +311,12 @@ func (ncp *NginxConfigParser) findLocalSysLogServers(sysLogServer string) string
 	re := regexp.MustCompile(`syslog:server=([\S]+)`)
 	matches := re.FindStringSubmatch(sysLogServer)
 	if len(matches) > 1 {
-		host, _, err := net.SplitHostPort(matches[1])
+		host, port, err := net.SplitHostPort(matches[1])
 		if err != nil {
+			return ""
+		}
+
+		if port != ncp.agentConfig.SyslogServer.Port {
 			return ""
 		}
 
@@ -377,7 +412,6 @@ func (ncp *NginxConfigParser) crossplaneConfigTraverseAPIDetails(
 	callback crossplaneTraverseCallbackAPIDetails,
 	apiType string,
 ) []*model.APIDetails {
-	stop := false
 	var responses []*model.APIDetails
 
 	for _, dir := range root.Parsed {
@@ -386,7 +420,7 @@ func (ncp *NginxConfigParser) crossplaneConfigTraverseAPIDetails(
 			responses = append(responses, response...)
 			continue
 		}
-		response = traverseAPIDetails(ctx, dir, callback, &stop, apiType)
+		response = traverseAPIDetails(ctx, dir, callback, apiType)
 		if response != nil {
 			responses = append(responses, response...)
 		}
@@ -399,26 +433,23 @@ func traverseAPIDetails(
 	ctx context.Context,
 	root *crossplane.Directive,
 	callback crossplaneTraverseCallbackAPIDetails,
-	stop *bool,
 	apiType string,
 ) (response []*model.APIDetails) {
-	if *stop {
-		return nil
-	}
+	var collectedResponses []*model.APIDetails
 
 	for _, child := range root.Block {
-		response = callback(ctx, root, child, apiType)
-		if len(response) > 0 {
-			*stop = true
-			return response
+		currentResponse := callback(ctx, root, child, apiType)
+		if len(currentResponse) > 0 {
+			collectedResponses = append(collectedResponses, currentResponse...)
 		}
-		response = traverseAPIDetails(ctx, child, callback, stop, apiType)
-		if *stop {
-			return response
+
+		recursiveResponse := traverseAPIDetails(ctx, child, callback, apiType)
+		if len(recursiveResponse) > 0 {
+			collectedResponses = append(collectedResponses, recursiveResponse...)
 		}
 	}
 
-	return response
+	return collectedResponses
 }
 
 func (ncp *NginxConfigParser) formatMap(directive *crossplane.Directive) map[string]string {
@@ -699,11 +730,22 @@ func (ncp *NginxConfigParser) apiDetailsFromLocationDirective(
 		addresses := ncp.parseAddressFromServerDirective(parent)
 		path := ncp.parsePathFromLocationDirective(current)
 
+		writeEnabled := ncp.isWriteEnabled(locChild)
+
 		if locChild.Directive == locationDirectiveName {
 			for _, address := range addresses {
+				params := createAPIDetailsParams{
+					locationDirectiveName: locationDirectiveName,
+					address:               address,
+					path:                  path,
+					caCertLocation:        caCertLocation,
+					isSSL:                 isSSL,
+					writeEnabled:          writeEnabled,
+				}
+
 				details = append(
 					details,
-					ncp.createAPIDetails(locationDirectiveName, address, path, caCertLocation, isSSL),
+					ncp.createAPIDetails(params),
 				)
 			}
 		}
@@ -713,28 +755,30 @@ func (ncp *NginxConfigParser) apiDetailsFromLocationDirective(
 }
 
 func (ncp *NginxConfigParser) createAPIDetails(
-	locationDirectiveName, address, path, caCertLocation string, isSSL bool,
+	params createAPIDetailsParams,
 ) (details *model.APIDetails) {
-	if strings.HasPrefix(address, "unix:") {
+	if strings.HasPrefix(params.address, "unix:") {
 		format := unixStubStatusFormat
 
-		if locationDirectiveName == plusAPIDirective {
+		if params.locationDirectiveName == plusAPIDirective {
 			format = unixPlusAPIFormat
 		}
 
 		details = &model.APIDetails{
-			URL:      fmt.Sprintf(format, path),
-			Listen:   address,
-			Location: path,
-			Ca:       caCertLocation,
+			URL:          fmt.Sprintf(format, params.path),
+			Listen:       params.address,
+			Location:     params.path,
+			Ca:           params.caCertLocation,
+			WriteEnabled: params.writeEnabled,
 		}
 	} else {
 		details = &model.APIDetails{
-			URL: fmt.Sprintf("%s://%s%s", map[bool]string{true: "https", false: "http"}[isSSL],
-				address, path),
-			Listen:   address,
-			Location: path,
-			Ca:       caCertLocation,
+			URL: fmt.Sprintf("%s://%s%s", map[bool]string{true: "https", false: "http"}[params.isSSL],
+				params.address, params.path),
+			Listen:       params.address,
+			Location:     params.path,
+			Ca:           params.caCertLocation,
+			WriteEnabled: params.writeEnabled,
 		}
 	}
 
@@ -887,4 +931,48 @@ func (ncp *NginxConfigParser) isDuplicateFile(nginxConfigContextFiles []*mpi.Fil
 	}
 
 	return false
+}
+
+func (ncp *NginxConfigParser) isWriteEnabled(locChild *crossplane.Directive) bool {
+	if locChild.Directive != plusAPIDirective {
+		return false
+	}
+
+	for _, arg := range locChild.Args {
+		if strings.EqualFold(arg, "write=on") {
+			return true
+		}
+	}
+
+	return false
+}
+
+// sort the API endpoints by prioritizing any API that has 'write=on'.
+func (ncp *NginxConfigParser) sortPlusAPIs(ctx context.Context, apis []*model.APIDetails) []*model.APIDetails {
+	foundWriteEnabled := false
+	for _, api := range apis {
+		if api.WriteEnabled {
+			foundWriteEnabled = true
+			break
+		}
+	}
+
+	if !foundWriteEnabled && len(apis) > 0 {
+		slog.InfoContext(ctx, "No write-enabled NGINX Plus API found. Defaulting to read-only API")
+		return apis
+	}
+
+	slices.SortFunc(apis, func(a, b *model.APIDetails) int {
+		if a.WriteEnabled && !b.WriteEnabled {
+			return -1
+		}
+
+		if b.WriteEnabled && !a.WriteEnabled {
+			return 1
+		}
+
+		return 0
+	})
+
+	return apis
 }

@@ -89,11 +89,6 @@ type FakeFileManagerServiceInterface struct {
 	rollbackReturnsOnCall map[int]struct {
 		result1 error
 	}
-	SetConfigPathStub        func(string)
-	setConfigPathMutex       sync.RWMutex
-	setConfigPathArgsForCall []struct {
-		arg1 string
-	}
 	SetIsConnectedStub        func(bool)
 	setIsConnectedMutex       sync.RWMutex
 	setIsConnectedArgsForCall []struct {
@@ -514,38 +509,6 @@ func (fake *FakeFileManagerServiceInterface) RollbackReturnsOnCall(i int, result
 	}{result1}
 }
 
-func (fake *FakeFileManagerServiceInterface) SetConfigPath(arg1 string) {
-	fake.setConfigPathMutex.Lock()
-	fake.setConfigPathArgsForCall = append(fake.setConfigPathArgsForCall, struct {
-		arg1 string
-	}{arg1})
-	stub := fake.SetConfigPathStub
-	fake.recordInvocation("SetConfigPath", []interface{}{arg1})
-	fake.setConfigPathMutex.Unlock()
-	if stub != nil {
-		fake.SetConfigPathStub(arg1)
-	}
-}
-
-func (fake *FakeFileManagerServiceInterface) SetConfigPathCallCount() int {
-	fake.setConfigPathMutex.RLock()
-	defer fake.setConfigPathMutex.RUnlock()
-	return len(fake.setConfigPathArgsForCall)
-}
-
-func (fake *FakeFileManagerServiceInterface) SetConfigPathCalls(stub func(string)) {
-	fake.setConfigPathMutex.Lock()
-	defer fake.setConfigPathMutex.Unlock()
-	fake.SetConfigPathStub = stub
-}
-
-func (fake *FakeFileManagerServiceInterface) SetConfigPathArgsForCall(i int) string {
-	fake.setConfigPathMutex.RLock()
-	defer fake.setConfigPathMutex.RUnlock()
-	argsForCall := fake.setConfigPathArgsForCall[i]
-	return argsForCall.arg1
-}
-
 func (fake *FakeFileManagerServiceInterface) SetIsConnected(arg1 bool) {
 	fake.setIsConnectedMutex.Lock()
 	fake.setIsConnectedArgsForCall = append(fake.setIsConnectedArgsForCall, struct {
@@ -660,8 +623,6 @@ func (fake *FakeFileManagerServiceInterface) Invocations() map[string][][]interf
 	defer fake.resetClientMutex.RUnlock()
 	fake.rollbackMutex.RLock()
 	defer fake.rollbackMutex.RUnlock()
-	fake.setConfigPathMutex.RLock()
-	defer fake.setConfigPathMutex.RUnlock()
 	fake.setIsConnectedMutex.RLock()
 	defer fake.setIsConnectedMutex.RUnlock()
 	fake.updateCurrentFilesOnDiskMutex.RLock()

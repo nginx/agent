@@ -46,7 +46,8 @@ const (
 
 	// Regular expression to match invalid characters in paths.
 	// It matches whitespace, control characters, non-printable characters, and specific Unicode characters.
-	regexInvalidPath = "\\s|[[:cntrl:]]|[[:space:]]|[[^:print:]]|ㅤ|\\.\\.|\\*"
+	regexInvalidPath  = "\\s|[[:cntrl:]]|[[:space:]]|[[^:print:]]|ㅤ|\\.\\.|\\*"
+	regexLabelPattern = "^[a-zA-Z0-9]([a-zA-Z0-9-_]{0,254}[a-zA-Z0-9])?$"
 )
 
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
@@ -63,6 +64,40 @@ func Execute(ctx context.Context) error {
 func Init(version, commit string) {
 	setVersion(version, commit)
 	registerFlags()
+	checkDeprecatedEnvVars()
+}
+
+func checkDeprecatedEnvVars() {
+	allViperKeys := make(map[string]struct{})
+	for _, key := range viperInstance.AllKeys() {
+		allViperKeys[key] = struct{}{}
+	}
+
+	const v3Prefix = EnvPrefix + KeyDelimiter
+
+	for _, env := range os.Environ() {
+		parts := strings.SplitN(env, "=", KeyValueNumber)
+		if len(parts) != KeyValueNumber {
+			continue
+		}
+		envKey := parts[0]
+
+		if !strings.HasPrefix(envKey, v3Prefix) {
+			continue
+		}
+
+		viperKey := strings.TrimPrefix(envKey, v3Prefix)
+
+		viperKey = strings.ToLower(viperKey)
+
+		if _, exists := allViperKeys[viperKey]; !exists {
+			slog.Warn("Detected deprecated or unknown environment variables. "+
+				"Please update to use the latest environment variables. For more information, visit "+
+				"https://docs.nginx.com/nginx-one/agent/configure-instances/configuration-overview/.",
+				"deprecated_env_var", envKey,
+			)
+		}
+	}
 }
 
 func RegisterConfigFile() error {
@@ -122,6 +157,7 @@ func ResolveConfig() (*Config, error) {
 		Features:           viperInstance.GetStringSlice(FeaturesKey),
 		Labels:             resolveLabels(),
 		LibDir:             viperInstance.GetString(LibDirPathKey),
+		SyslogServer:       resolveSyslogServer(),
 	}
 
 	defaultCollector(collector, config)
@@ -283,6 +319,13 @@ func addDefaultProcessors(collector *Collector) {
 	if _, ok := collector.Processors.LogsGzip["default"]; !ok {
 		collector.Processors.LogsGzip["default"] = &LogsGzip{}
 	}
+
+	if collector.Processors.SecurityViolations == nil {
+		collector.Processors.SecurityViolations = make(map[string]*SecurityViolations)
+	}
+	if _, ok := collector.Processors.SecurityViolations["default"]; !ok {
+		collector.Processors.SecurityViolations["default"] = &SecurityViolations{}
+	}
 }
 
 func addDefaultHostMetricsReceiver(collector *Collector) {
@@ -418,6 +461,12 @@ func registerFlags() {
 		FeaturesKey,
 		DefaultFeatures(),
 		"A comma-separated list of features enabled for the agent.",
+	)
+
+	fs.String(
+		SyslogServerPort,
+		DefSyslogServerPort,
+		"The port Agent will start the syslog server on for logs collection",
 	)
 
 	registerCommonFlags(fs)
@@ -578,6 +627,12 @@ func registerClientFlags(fs *flag.FlagSet) {
 		ClientGRPCMaxFileSizeKey,
 		DefMaxFileSize,
 		"Max file size in bytes.",
+	)
+
+	fs.Int(
+		ClientGRPCMaxParallelFileOperationsKey,
+		DefMaxParallelFileOperations,
+		"Maximum number of file downloads or uploads performed in parallel",
 	)
 }
 
@@ -755,6 +810,14 @@ func registerCollectorFlags(fs *flag.FlagSet) {
 		"The path to the Opentelemetry Collector configuration file.",
 	)
 
+	fs.StringSlice(
+		CollectorAdditionalConfigPathsKey,
+		[]string{},
+		"Paths to additional OpenTelemetry Collector configuration files. The order of the configuration files"+
+			" determines which config file takes priority. The last config file will take precedent over other files "+
+			"if they have the same setting. Paths to configuration files must be absolute",
+	)
+
 	fs.String(
 		CollectorLogLevelKey,
 		DefCollectorLogLevel,
@@ -897,6 +960,12 @@ func resolveLog() *Log {
 	}
 }
 
+func resolveSyslogServer() *SyslogServer {
+	return &SyslogServer{
+		Port: viperInstance.GetString(SyslogServerPort),
+	}
+}
+
 func resolveLabels() map[string]interface{} {
 	input := viperInstance.GetStringMapString(LabelsRootKey)
 
@@ -931,13 +1000,28 @@ func resolveLabels() map[string]interface{} {
 			result[trimmedKey] = parseJSON(trimmedValue)
 
 		default: // String
-			result[trimmedKey] = trimmedValue
+			if validateLabel(trimmedValue) {
+				result[trimmedKey] = trimmedValue
+			}
 		}
 	}
 
 	slog.Info("Configured labels", "labels", result)
 
 	return result
+}
+
+func validateLabel(labelValue string) bool {
+	const maxLength = 256
+	labelPattern := regexp.MustCompile(regexLabelPattern)
+	if len(labelValue) > maxLength || !labelPattern.MatchString(labelValue) {
+		slog.Warn("Label value contains unsupported character or exceed maximum length of 256 characters ",
+			"label_value", labelValue)
+
+		return false
+	}
+
+	return true
 }
 
 func resolveEnvironmentVariableLabels() map[string]string {
@@ -1022,11 +1106,12 @@ func resolveClient() *Client {
 				Time:                viperInstance.GetDuration(ClientKeepAliveTimeKey),
 				PermitWithoutStream: viperInstance.GetBool(ClientKeepAlivePermitWithoutStreamKey),
 			},
-			MaxMessageSize:        viperInstance.GetInt(ClientGRPCMaxMessageSizeKey),
-			MaxMessageReceiveSize: viperInstance.GetInt(ClientGRPCMaxMessageReceiveSizeKey),
-			MaxMessageSendSize:    viperInstance.GetInt(ClientGRPCMaxMessageSendSizeKey),
-			MaxFileSize:           viperInstance.GetUint32(ClientGRPCMaxFileSizeKey),
-			FileChunkSize:         viperInstance.GetUint32(ClientGRPCFileChunkSizeKey),
+			MaxMessageSize:            viperInstance.GetInt(ClientGRPCMaxMessageSizeKey),
+			MaxMessageReceiveSize:     viperInstance.GetInt(ClientGRPCMaxMessageReceiveSizeKey),
+			MaxMessageSendSize:        viperInstance.GetInt(ClientGRPCMaxMessageSendSizeKey),
+			MaxFileSize:               viperInstance.GetUint32(ClientGRPCMaxFileSizeKey),
+			FileChunkSize:             viperInstance.GetUint32(ClientGRPCFileChunkSizeKey),
+			MaxParallelFileOperations: viperInstance.GetInt(ClientGRPCMaxParallelFileOperationsKey),
 		},
 		Backoff: &BackOff{
 			InitialInterval:     viperInstance.GetDuration(ClientBackoffInitialIntervalKey),
@@ -1053,13 +1138,14 @@ func resolveCollector(allowedDirs []string) (*Collector, error) {
 	}
 
 	col := &Collector{
-		ConfigPath: viperInstance.GetString(CollectorConfigPathKey),
-		Exporters:  exporters,
-		Processors: resolveProcessors(),
-		Receivers:  receivers,
-		Extensions: resolveExtensions(),
-		Log:        resolveCollectorLog(),
-		Pipelines:  resolvePipelines(),
+		ConfigPath:            viperInstance.GetString(CollectorConfigPathKey),
+		AdditionalConfigPaths: viperInstance.GetStringSlice(CollectorAdditionalConfigPathsKey),
+		Exporters:             exporters,
+		Processors:            resolveProcessors(),
+		Receivers:             receivers,
+		Extensions:            resolveExtensions(),
+		Log:                   resolveCollectorLog(),
+		Pipelines:             resolvePipelines(),
 	}
 
 	// Check for self-signed certificate true in Agent conf

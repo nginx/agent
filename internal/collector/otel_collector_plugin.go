@@ -2,6 +2,7 @@
 //
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
+
 package collector
 
 import (
@@ -16,7 +17,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/goccy/go-yaml"
 	pkgConfig "github.com/nginx/agent/v3/pkg/config"
+	"go.opentelemetry.io/collector/confmap"
 
 	"github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/backoff"
@@ -43,6 +46,7 @@ const (
 		`? (let utcTime = ` +
 		`date(timestamp).UTC(); utcTime.Format("Jan  2 15:04:05")) : date(timestamp).Format("Jan 02 15:04:05"); ` +
 		`split(body, ">")[0] + ">" + newTimestamp + " " + split(body, " ", 2)[1])'`
+	debugOTelConfigFile = "/opentelemetry-collector-agent-debug.yaml"
 )
 
 type (
@@ -53,6 +57,7 @@ type (
 		mu                      *sync.Mutex
 		cancel                  context.CancelFunc
 		previousNAPSysLogServer string
+		debugOTelConfigPath     string
 		stopped                 bool
 	}
 )
@@ -88,12 +93,15 @@ func NewCollector(conf *config.Config) (*Collector, error) {
 		return nil, err
 	}
 
+	debugOTelConfigPath := conf.LibDir + debugOTelConfigFile
+
 	return &Collector{
 		config:                  conf,
 		service:                 oTelCollector,
 		stopped:                 true,
 		mu:                      &sync.Mutex{},
 		previousNAPSysLogServer: "",
+		debugOTelConfigPath:     debugOTelConfigPath,
 	}, nil
 }
 
@@ -384,6 +392,31 @@ func (oc *Collector) updateHeadersSetterExtension(
 	return headersSetterExtensionUpdated
 }
 
+func (oc *Collector) writeRunningConfig(ctx context.Context, settings otelcol.CollectorSettings) error {
+	slog.DebugContext(ctx, "Writing running OTel collector config", "path",
+		oc.debugOTelConfigPath)
+	resolver, err := confmap.NewResolver(settings.ConfigProviderSettings.ResolverSettings)
+	if err != nil {
+		return fmt.Errorf("unable to create resolver: %w", err)
+	}
+
+	con, err := resolver.Resolve(ctx)
+	if err != nil {
+		return fmt.Errorf("error while resolving config: %w", err)
+	}
+	b, err := yaml.Marshal(con.ToStringMap())
+	if err != nil {
+		return fmt.Errorf("error while marshaling to YAML: %w", err)
+	}
+
+	writeErr := os.WriteFile(oc.debugOTelConfigPath, b, filePermission)
+	if writeErr != nil {
+		return fmt.Errorf("error while writing debug config: %w", writeErr)
+	}
+
+	return nil
+}
+
 func (oc *Collector) restartCollector(ctx context.Context) {
 	err := oc.Close(ctx)
 	if err != nil {
@@ -392,6 +425,14 @@ func (oc *Collector) restartCollector(ctx context.Context) {
 	}
 
 	settings := OTelCollectorSettings(oc.config)
+
+	if strings.ToLower(oc.config.Log.Level) == "debug" {
+		writeErr := oc.writeRunningConfig(ctx, settings)
+		if writeErr != nil {
+			slog.ErrorContext(ctx, "Failed to write debug OTel Collector config", "error", writeErr)
+		}
+	}
+
 	oTelCollector, err := otelcol.NewCollector(settings)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to create OTel Collector", "error", err)
@@ -572,7 +613,7 @@ func (oc *Collector) updateNginxAppProtectTcplogReceivers(
 		oc.config.Collector.Receivers.TcplogReceivers = make(map[string]*config.TcplogReceiver)
 	}
 
-	napSysLogServer := oc.findAvailableSyslogServers(ctx, nginxConfigContext.NAPSysLogServers)
+	napSysLogServer := oc.findAvailableSyslogServer(ctx, nginxConfigContext.NAPSysLogServer)
 
 	if napSysLogServer != "" {
 		if !oc.doesTcplogReceiverAlreadyExist(napSysLogServer) {
@@ -705,40 +746,29 @@ func (oc *Collector) updateResourceAttributes(
 	return actionUpdated
 }
 
-func (oc *Collector) findAvailableSyslogServers(ctx context.Context, napSyslogServers []string) string {
-	napSyslogServersMap := make(map[string]bool)
-	for _, server := range napSyslogServers {
-		napSyslogServersMap[server] = true
-	}
-
-	if oc.previousNAPSysLogServer != "" {
-		if _, ok := napSyslogServersMap[oc.previousNAPSysLogServer]; ok {
-			return oc.previousNAPSysLogServer
-		}
-	}
-
-	for _, napSyslogServer := range napSyslogServers {
-		listenConfig := &net.ListenConfig{}
-		ln, err := listenConfig.Listen(ctx, "tcp", napSyslogServer)
-		if err != nil {
-			slog.DebugContext(ctx, "NAP syslog server is not reachable", "address", napSyslogServer,
-				"error", err)
-
-			continue
-		}
-		closeError := ln.Close()
-		if closeError != nil {
-			slog.DebugContext(ctx, "Failed to close syslog server", "address", napSyslogServer, "error", closeError)
-		}
-
-		slog.DebugContext(ctx, "Found valid NAP syslog server", "address", napSyslogServer)
-
-		oc.previousNAPSysLogServer = napSyslogServer
-
+func (oc *Collector) findAvailableSyslogServer(ctx context.Context, napSyslogServer string) string {
+	if oc.previousNAPSysLogServer != "" &&
+		normaliseAddress(oc.previousNAPSysLogServer) == normaliseAddress(napSyslogServer) {
 		return napSyslogServer
 	}
 
-	return ""
+	listenConfig := &net.ListenConfig{}
+	ln, err := listenConfig.Listen(ctx, "tcp", napSyslogServer)
+	if err != nil {
+		slog.DebugContext(ctx, "NAP syslog server is not reachable", "address", napSyslogServer,
+			"error", err)
+
+		return ""
+	}
+
+	closeError := ln.Close()
+	if closeError != nil {
+		slog.DebugContext(ctx, "Failed to close syslog server", "address", napSyslogServer, "error", closeError)
+	}
+
+	oc.previousNAPSysLogServer = napSyslogServer
+
+	return napSyslogServer
 }
 
 func isOSSReceiverChanged(nginxReceiver config.NginxReceiver, nginxConfigContext *model.NginxConfigContext) bool {
@@ -823,4 +853,17 @@ func setProxyWithBasicAuth(ctx context.Context, proxy *config.Proxy, parsedProxy
 	parsedProxyURL.User = url.UserPassword(username, password)
 	proxyURL := parsedProxyURL.String()
 	setProxyEnvs(ctx, proxyURL, "Setting Proxy with basic auth")
+}
+
+func normaliseAddress(address string) string {
+	host, port, err := net.SplitHostPort(address)
+	if err != nil {
+		return address
+	}
+
+	if host == "localhost" {
+		host = "127.0.0.1"
+	}
+
+	return net.JoinHostPort(host, port)
 }

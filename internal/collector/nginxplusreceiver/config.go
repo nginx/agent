@@ -21,6 +21,7 @@ const defaultCollectInterval = 10 * time.Second
 type Config struct {
 	confighttp.ClientConfig        `mapstructure:",squash"`
 	APIDetails                     APIDetails                    `mapstructure:"api_details"`
+	InstanceID                     string                        `mapstructure:"instance_id"`
 	MetricsBuilderConfig           metadata.MetricsBuilderConfig `mapstructure:",squash"`
 	scraperhelper.ControllerConfig `mapstructure:",squash"`
 }

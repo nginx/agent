@@ -79,7 +79,12 @@ receivers:
 {{- end }}
 
 {{- range .Receivers.NginxReceivers }}
+{{- if gt (len $.Receivers.NginxReceivers) 1 }}
   nginx/{{- .InstanceID -}}:
+{{- else }}
+  nginx:
+{{- end}}
+    instance_id: "{{- .InstanceID -}}"
     api_details:
       url: "{{- .StubStatus.URL -}}"
       listen: "{{- .StubStatus.Listen -}}"
@@ -98,12 +103,17 @@ receivers:
 {{- end }}
 
 {{- range .Receivers.NginxPlusReceivers }}
+{{- if gt (len $.Receivers.NginxPlusReceivers) 1 }}
   nginxplus/{{- .InstanceID -}}:
+{{- else }}
+  nginxplus:
+{{- end}}
+    instance_id: "{{- .InstanceID -}}"
     api_details:
-        url: "{{- .PlusAPI.URL -}}"
-        listen: "{{- .PlusAPI.Listen -}}"
-        location: "{{- .PlusAPI.Location -}}"
-        ca: "{{- .PlusAPI.Ca -}}"
+      url: "{{- .PlusAPI.URL -}}"
+      listen: "{{- .PlusAPI.Listen -}}"
+      location: "{{- .PlusAPI.Location -}}"
+      ca: "{{- .PlusAPI.Ca -}}"
     {{- if .CollectionInterval }}
     collection_interval: {{ .CollectionInterval }}
     {{- end }}
@@ -154,6 +164,11 @@ processors:
     send_batch_size: {{ $batch.SendBatchSize }}
     timeout: {{ $batch.Timeout }}
     send_batch_max_size: {{ $batch.SendBatchMaxSize }}
+{{- end }}
+{{- end }}
+{{- if ne .Processors.SecurityViolations nil }}
+{{- range $key, $value := .Processors.SecurityViolations }}
+  securityviolations/{{$key}}: {}
 {{- end }}
 {{- end }}
 {{- if ne .Processors.LogsGzip nil }}
@@ -274,10 +289,18 @@ service:
             {{- end }}
           {{- else if eq $receiver "nginx_metrics" }}
             {{- range $.Receivers.NginxReceivers }}
+            {{- if gt (len $.Receivers.NginxReceivers) 1 }}
         - nginx/{{- .InstanceID -}}
+            {{- else }}
+        - nginx
+            {{- end }}
             {{- end }}
             {{- range $.Receivers.NginxPlusReceivers }}
+            {{- if gt (len $.Receivers.NginxReceivers) 1 }}
         - nginxplus/{{- .InstanceID -}}
+            {{- else }}
+        - nginxplus
+            {{- end }}
             {{- end }}
           {{- else }}
         - {{ $receiver }}
