@@ -29,7 +29,8 @@ const (
 	commonRandomizationFactor = 0.1
 	commonMultiplier          = 0.2
 
-	reloadMonitoringPeriod = 400 * time.Millisecond
+	maxParallelFileOperations = 5
+	reloadMonitoringPeriod    = 400 * time.Millisecond
 )
 
 // Produces a populated Agent Config for testing usage.
@@ -39,6 +40,9 @@ func AgentConfig() *config.Config {
 		UUID:    "75442486-0878-440c-9db1-a7006c25a39f",
 		Path:    "/etc/nginx-agent",
 		Log:     &config.Log{},
+		SyslogServer: &config.SyslogServer{
+			Port: "1514",
+		},
 		Client: &config.Client{
 			HTTP: &config.HTTP{
 				Timeout: clientHTTPTimeout,
@@ -49,10 +53,11 @@ func AgentConfig() *config.Config {
 					Time:                clientTime,
 					PermitWithoutStream: clientPermitWithoutStream,
 				},
-				MaxMessageReceiveSize: 1,
-				MaxMessageSendSize:    1,
-				MaxFileSize:           1,
-				FileChunkSize:         1,
+				MaxMessageReceiveSize:     1,
+				MaxMessageSendSize:        1,
+				MaxFileSize:               1,
+				FileChunkSize:             1,
+				MaxParallelFileOperations: maxParallelFileOperations,
 			},
 			Backoff: &config.BackOff{
 				InitialInterval:     commonInitialInterval,

@@ -490,3 +490,151 @@ func Test_tlsConfig(t *testing.T) {
 		})
 	}
 }
+
+func Test_serverAddress(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		commandConfig *config.Command
+		name          string
+		expectedAddr  string
+		logMessage    string
+		expectLog     bool
+	}{
+		{
+			name: "Test 1: No proxy configuration",
+			commandConfig: &config.Command{
+				Server: &config.ServerConfig{
+					Host: "example.com",
+					Port: 443,
+					Type: config.Grpc,
+				},
+			},
+			expectedAddr: "example.com:443",
+		},
+		{
+			name: "Test 2: Proxy with nil proxy config",
+			commandConfig: &config.Command{
+				Server: &config.ServerConfig{
+					Host:  "example.com",
+					Port:  443,
+					Type:  config.Grpc,
+					Proxy: nil,
+				},
+			},
+			expectedAddr: "example.com:443",
+		},
+		{
+			name: "Test 3: Proxy with empty URL",
+			commandConfig: &config.Command{
+				Server: &config.ServerConfig{
+					Host: "example.com",
+					Port: 443,
+					Type: config.Grpc,
+					Proxy: &config.Proxy{
+						URL: "",
+					},
+				},
+			},
+			expectedAddr: "example.com:443",
+		},
+		{
+			name: "Test 4: Proxy with valid URL",
+			commandConfig: &config.Command{
+				Server: &config.ServerConfig{
+					Host: "agent.connect.nginxlab.net",
+					Port: 443,
+					Type: config.Grpc,
+					Proxy: &config.Proxy{
+						URL: "http://squid-container:3128",
+					},
+				},
+			},
+			expectedAddr: "passthrough:///agent.connect.nginxlab.net:443",
+		},
+		{
+			name: "Test 5: IPv6 address with proxy",
+			commandConfig: &config.Command{
+				Server: &config.ServerConfig{
+					Host: "2001:db8::1",
+					Port: 443,
+					Type: config.Grpc,
+					Proxy: &config.Proxy{
+						URL: "http://proxy.example.com:8080",
+					},
+				},
+			},
+			expectedAddr: "passthrough:///[2001:db8::1]:443",
+		},
+		{
+			name: "Test 6: Already has passthrough prefix - no double prefix",
+			commandConfig: &config.Command{
+				Server: &config.ServerConfig{
+					Host: "example.com",
+					Port: 443,
+					Type: config.Grpc,
+					Proxy: &config.Proxy{
+						URL: "http://proxy.example.com:8080",
+					},
+				},
+			},
+			expectedAddr: "passthrough:///example.com:443",
+		},
+		{
+			name: "Test 7: Localhost with proxy",
+			commandConfig: &config.Command{
+				Server: &config.ServerConfig{
+					Host: "localhost",
+					Port: 8080,
+					Type: config.Grpc,
+					Proxy: &config.Proxy{
+						URL:        "http://proxy.local:3128",
+						AuthMethod: "basic",
+						Username:   "user",
+						Password:   "pass",
+					},
+				},
+			},
+			expectedAddr: "passthrough:///localhost:8080",
+		},
+		{
+			name: "Test 8: Custom port with proxy",
+			commandConfig: &config.Command{
+				Server: &config.ServerConfig{
+					Host: "api.example.com",
+					Port: 9090,
+					Type: config.Grpc,
+					Proxy: &config.Proxy{
+						URL:     "https://secure-proxy.example.com:8443",
+						Timeout: 30000000000, // 30 seconds in nanoseconds
+					},
+				},
+			},
+			expectedAddr: "passthrough:///api.example.com:9090",
+		},
+		{
+			name: "Test 9: Edge case - hostname that looks like passthrough but isn't",
+			commandConfig: &config.Command{
+				Server: &config.ServerConfig{
+					Host: "passthrough.example.com", // hostname that contains "passthrough" but isn't a passthrough URL
+					Port: 443,
+					Type: config.Grpc,
+					Proxy: &config.Proxy{
+						URL: "http://proxy.example.com:8080",
+					},
+				},
+			},
+			expectedAddr: "passthrough:///passthrough.example.com:443",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Call the function
+			result := serverAddress(ctx, tt.commandConfig)
+
+			// Verify the result
+			assert.Equal(t, tt.expectedAddr, result, "serverAddress() should return expected address")
+		})
+	}
+}

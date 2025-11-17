@@ -73,7 +73,7 @@ var (
 func NewGrpcConnection(ctx context.Context, agentConfig *config.Config,
 	commandConfig *config.Command,
 ) (*GrpcConnection, error) {
-	if commandConfig == nil || commandConfig.Server.Type != config.Grpc {
+	if commandConfig == nil || commandConfig.Server == nil || commandConfig.Server.Type != config.Grpc {
 		return nil, errors.New("invalid command server settings")
 	}
 
@@ -81,10 +81,7 @@ func NewGrpcConnection(ctx context.Context, agentConfig *config.Config,
 		commandConfig: commandConfig,
 	}
 
-	serverAddr := net.JoinHostPort(
-		commandConfig.Server.Host,
-		strconv.Itoa(commandConfig.Server.Port),
-	)
+	serverAddr := serverAddress(ctx, commandConfig)
 
 	slog.InfoContext(ctx, "Dialing grpc server", "server_addr", serverAddr)
 
@@ -405,4 +402,22 @@ func tlsConfigForCredentials(c *config.TLSConfig) (*tls.Config, error) {
 	}
 
 	return tlsConfig, nil
+}
+
+func serverAddress(ctx context.Context, commandConfig *config.Command) string {
+	serverAddr := net.JoinHostPort(
+		commandConfig.Server.Host,
+		strconv.Itoa(commandConfig.Server.Port),
+	)
+
+	// If using proxy, modify the server address to use passthrough resolver
+	// This prevents gRPC from trying to resolve DNS before calling our dialer
+	if commandConfig.Server.Proxy != nil &&
+		commandConfig.Server.Proxy.URL != "" &&
+		!strings.HasPrefix(serverAddr, "passthrough:///") {
+		serverAddr = "passthrough:///" + serverAddr
+		slog.InfoContext(ctx, "Using passthrough resolver for proxy", "updated_server_address", serverAddr)
+	}
+
+	return serverAddr
 }
