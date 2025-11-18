@@ -763,12 +763,12 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 			modifiedFiles: map[string]*model.FileCache{
 				addTestFile.Name(): {
 					File: &mpi.File{
-						FileMeta: protos.FileMeta(addTestFile.Name(), files.GenerateHash(fileContent)),
+						FileMeta: protos.FileMeta(addTestFile.Name(), files.GenerateHash(addFileContent)),
 					},
 				},
 				updateTestFile.Name(): {
 					File: &mpi.File{
-						FileMeta: protos.FileMeta(updateTestFile.Name(), files.GenerateHash(fileContent)),
+						FileMeta: protos.FileMeta(updateTestFile.Name(), files.GenerateHash(updatedFileContent)),
 					},
 				},
 				deleteTestFile.Name(): {
@@ -782,10 +782,10 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 					FileMeta: protos.FileMeta(deleteTestFile.Name(), files.GenerateHash(fileContent)),
 				},
 				updateTestFile.Name(): {
-					FileMeta: protos.FileMeta(updateTestFile.Name(), files.GenerateHash(fileContent)),
+					FileMeta: protos.FileMeta(updateTestFile.Name(), files.GenerateHash(updatedFileContent)),
 				},
 				addTestFile.Name(): {
-					FileMeta: protos.FileMeta(addTestFile.Name(), files.GenerateHash(fileContent)),
+					FileMeta: protos.FileMeta(addTestFile.Name(), files.GenerateHash(addFileContent)),
 				},
 			},
 			expectedCache:   make(map[string]*model.FileCache),
