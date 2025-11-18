@@ -1584,6 +1584,31 @@ func TestValidateLabel(t *testing.T) {
 			input:    "5.3.0-SNAPSHOT",
 			expected: true,
 		},
+		{
+			name:     "Test 14: Invalid label - newlines",
+			input:    "label-2\n\n",
+			expected: false,
+		},
+		{
+			name:     "Test 15: Valid label - only numbers",
+			input:    "1234567",
+			expected: true,
+		},
+		{
+			name:     "Test 16: Invalid label - start and end with .",
+			input:    ".label.",
+			expected: false,
+		},
+		{
+			name:     "Test 17: Invalid label - lots of blank spaces",
+			input:    "                 label",
+			expected: false,
+		},
+		{
+			name:     "Test 18: Invalid label - start and end with blank space",
+			input:    " label ",
+			expected: false,
+		},
 	}
 
 	for _, tt := range tests {
