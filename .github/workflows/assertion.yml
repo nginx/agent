@@ -19,7 +19,7 @@ jobs:
       id-token: write
       contents: read
     env:
-      GOPROXY: "https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@azr.artifactory.f5net.com/artifactory/api/go/f5-nginx-go-local-approved-dependency"
+      GOPROXY: "https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@${{ secrets.ARTIFACTORY_URL_PROD }}"
     outputs:
       agent_binary: ${{ steps.check_binary.outputs.agent_binary }}
       goversionm: ${{ steps.godeps.outputs.goversionm }}
@@ -65,7 +65,7 @@ jobs:
 
       - name: Generate Assertion Document
         id: assertiondoc
-        uses: nginxinc/compliance-rules/.github/actions/assertion@83e452166aaf0ad8f07caf91a4f1f903b3dea1e6 # v0.3.0
+        uses: nginxinc/compliance-rules/.github/actions/assertion@0aab935582c35a00e2c671d8fe25b7fdd72a927b # v0.3.1
         with:
           artifact-name: nginx-agent_${{ env.branch_name }}_${{ matrix.osarch }}
           artifact-digest: ${{ env.agent-digest }}
@@ -84,6 +84,6 @@ jobs:
 
       - name: Sign and Store Assertion Document
         id: sign
-        uses: nginxinc/compliance-rules/.github/actions/sign@83e452166aaf0ad8f07caf91a4f1f903b3dea1e6 # v0.3.0
+        uses: nginxinc/compliance-rules/.github/actions/sign@0aab935582c35a00e2c671d8fe25b7fdd72a927b # v0.3.1
         with:
           assertion-doc: ${{ steps.assertiondoc.outputs.assertion-document-path }}
