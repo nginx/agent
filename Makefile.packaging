@@ -37,93 +37,111 @@ $(PACKAGES_DIR):
 .PHONY: package
 package: $(PACKAGES_DIR) #### Create final packages for all supported distros
 
-	# Build binaries for all supported architectures
+# Build binaries for all supported architectures
 	@for arch in $(DEB_ARCHS); do \
 		mkdir -p $(BUILD_DIR)/$${arch}; \
-		cp .nfpm.yaml .nfpm.$$arch.yaml; \
-		sed -i.bak "s/\^ARCH\^/$${arch}/g" ".nfpm.$$arch.yaml"; \
-		sed -i.bak "s/\^BUILD_PATH\^/\.\/build\/$${arch}/g" ".nfpm.$$arch.yaml"; \
-		echo "Building for architecture: $${arch}"; \
+		cp .nfpm.yaml .nfpm.$${arch}.yaml; \
+		sed -i.bak "s/\^ARCH\^/$${arch}/g" ".nfpm.$${arch}.yaml"; \
+		sed -i.bak "s/\^BUILD_PATH\^/\.\/build\/$${arch}/g" ".nfpm.$${arch}.yaml"; \
+		echo "Building linux/$${arch}"; \
 		GOWORK=off CGO_ENABLED=0 GOARCH=$${arch} GOOS=linux \
 			go build -pgo=auto -ldflags=${LDFLAGS} \
 			-o $(BUILD_DIR)/$${arch}/$(BINARY_NAME) \
 			$(PROJECT_DIR)/$(PROJECT_FILE); \
-		rm -f .nfpm.$$arch.yaml.bak \
-		@echo "Binary built: $(BUILD_DIR)/$${arch}/$(BINARY_NAME)"; \
+		rm -f .nfpm.$$arch.yaml.bak; \
+		ls -la "$(BUILD_DIR)/$${arch}/$(BINARY_NAME)"; \
 	done; \
 
-	# Create deb packages
-	for arch in $(DEB_ARCHS); do \
+# Create deb packages
+	@for arch in $(DEB_ARCHS); do \
 		for distro in $(DEB_DISTROS); do \
-			deb_codename=`echo $$distro | cut -d- -f 2`; \
-			VERSION=$(PACKAGE_VERSION)~$${deb_codename} nfpm pkg --config .nfpm.$${arch}.yaml --packager deb --target ${PACKAGES_DIR}/deb/${PACKAGE_PREFIX}_$(PACKAGE_VERSION)~$${deb_codename}_$${arch}.deb; \
+			deb_codename=`echo $${distro} | cut -d- -f 2`; \
+			VERSION=$(PACKAGE_VERSION)~$${deb_codename} \
+				nfpm pkg --config .nfpm.$${arch}.yaml \
+					--packager deb \
+					--target ${PACKAGES_DIR}/deb/${PACKAGE_PREFIX}_$(PACKAGE_VERSION)~$${deb_codename}_$${arch}.deb; \
 		done; \
 	done; \
 	
-	# Create rpm packages
-	for distro in $(RPM_DISTROS); do \
+# Create rpm packages
+	@for distro in $(RPM_DISTROS); do \
 		rpm_distro=`echo $$distro | cut -d- -f 1`; \
 		rpm_major=`echo $$distro | cut -d- -f 2`; \
 		rpm_codename='na'; \
 		if [ "$$rpm_distro" = "suse" ]; then rpm_codename="sles$$rpm_major"; \
 		fi; \
 		if [ "$$rpm_codename" != "na" ]; then \
-			VERSION=$(PACKAGE_VERSION) ARCH=amd64 nfpm pkg --config .nfpm.amd64.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.${RPM_ARCH}.rpm; \
+			VERSION=$(PACKAGE_VERSION) ARCH=amd64 \
+				nfpm pkg --config .nfpm.amd64.yaml \
+					--packager rpm \
+					--target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.${RPM_ARCH}.rpm; \
 		fi; \
 	done; \
 
 
-	# Create redhat rpm packages
-	for arch in $(REDHAT_ARCHS); do \
+# Create redhat rpm packages
+	@for arch in $(REDHAT_ARCHS); do \
 		goarch=amd64; \
 		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
 		for distro in $(REDHAT_VERSIONS); do \
 			rpm_distro=`echo $$distro | cut -d- -f 1`; \
 			rpm_major=`echo $$distro | cut -d- -f 2`; \
 			rpm_codename="el$$rpm_major"; \
-			VERSION=$(PACKAGE_VERSION) ARCH=$${arch} nfpm pkg --config .nfpm.$${goarch}.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm; \
+			VERSION=$(PACKAGE_VERSION) ARCH=$${arch} \
+				nfpm pkg --config .nfpm.$${goarch}.yaml \
+					--packager rpm \
+					--target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm; \
 		done; \
 	done; \
 
 
-	# Create amazon rpm packages
-	for arch in $(AMAZON_ARCHS); do \
+# Create amazon rpm packages
+	@for arch in $(AMAZON_ARCHS); do \
 		goarch=amd64; \
 		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
 		for version in $(AMAZON_VERSIONS); do \
 			rpm_major=`echo $$version | cut -d- -f 2`; \
 			rpm_codename="amzn$$rpm_major";\
-			VERSION=$(PACKAGE_VERSION) ARCH=$${arch} nfpm pkg --config .nfpm.$$goarch.yaml --packager rpm --target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm; \
+			VERSION=$(PACKAGE_VERSION) ARCH=$${arch} \
+			nfpm pkg --config .nfpm.$$goarch.yaml \
+				--packager rpm \
+				--target $(PACKAGES_DIR)/rpm/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).$${rpm_codename}.ngx.$${arch}.rpm; \
 		done; \
 	done; \
 	
-	# Create apk packages
+# Create apk packages
 	@for arch in $(APK_ARCHS); do \
 		goarch=amd64; \
 		if [ "$$arch" = "aarch64" ]; then goarch="arm64"; fi; \
     	for version in $(APK_VERSIONS); do \
 			if [ ! -d "$(PACKAGES_DIR)/apk/v$${version}/$${arch}" ]; then mkdir -p $(PACKAGES_DIR)/apk/v$${version}/$${arch}; fi; \
-			VERSION=$(PACKAGE_VERSION) ARCH=$${arch} nfpm pkg --config .nfpm.$$goarch.yaml --packager apk --target $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).apk; \
+			VERSION=$(PACKAGE_VERSION) ARCH=$${arch} \
+				nfpm pkg --config .nfpm.$$goarch.yaml \
+					--packager apk \
+					--target $(PACKAGES_DIR)/apk/v$${version}/$${arch}/${PACKAGE_PREFIX}-$(PACKAGE_VERSION).apk; \
 		done; \
-	done; \
+	done;
 
-	# Package build complete
+# Package build complete
 	@echo "DEB packages:"; \
-	@find $(PACKAGES_DIR)/deb -type f | grep -E "${BINARY_NAME}[-_]${PACKAGE_VERSION}" | sort; \
+	find $(PACKAGES_DIR)/deb -type f | grep -E "${BINARY_NAME}[-_]${PACKAGE_VERSION}" | sort;
 	@echo "RPM packages:"; \
-	@find $(PACKAGES_DIR)/rpm -type f | grep -E "${BINARY_NAME}[-_]${PACKAGE_VERSION}" | sort; \
+	find $(PACKAGES_DIR)/rpm -type f | grep -E "${BINARY_NAME}[-_]${PACKAGE_VERSION}" | sort;
 	@echo "APK packages:"; \
-	@find $(PACKAGES_DIR)/apk -type f | grep -E "${BINARY_NAME}[-_]${PACKAGE_VERSION}" | sort; \
+	find $(PACKAGES_DIR)/apk -type f | grep -E "${BINARY_NAME}[-_]${PACKAGE_VERSION}" | sort;
 
-	# Clean up temporary nfpm config files
-	for arch in $(DEB_ARCHS); do \
+# Clean up temporary nfpm config files
+	@for arch in $(DEB_ARCHS); do \
 		rm -f .nfpm.$$arch.yaml; \
 	done; \
 
-	# Create tarball containing all packages
+# Create tarball containing all packages
 	@echo "Creating tarball: $(TARBALL_NAME)"; \
 	rm -f $(PACKAGES_DIR)/$(TARBALL_NAME); \
-	pushd $(PACKAGES_DIR) && tar -czvf "./$(TARBALL_NAME)" * && popd; \
+	pushd $(PACKAGES_DIR) > /dev/null; \
+	tar -czvf "./$(TARBALL_NAME)" *; \
+	popd > /dev/null; \
+	ls -la $(PACKAGES_DIR)/$(TARBALL_NAME);
 
 .PHONY: gpg-key
 gpg-key: ## Generate GPG public key
