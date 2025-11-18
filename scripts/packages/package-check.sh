@@ -275,8 +275,8 @@ create_tarball() {
 
 # Main
 
-#check_repo
-#check_pkgs
+check_repo
+check_pkgs
 
 # Prepare packages for upload
 if [[ $DL == 1 ]]; then
