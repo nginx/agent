@@ -386,6 +386,7 @@ func (fms *FileManagerService) DetermineFileActions(
 		// If file currently exists on disk, is being tracked in manifest and file hash is different.
 		// Treat it as a file update.
 		if ok && modifiedFile.File.GetFileMeta().GetHash() != currentFile.GetFileMeta().GetHash() {
+			slog.DebugContext(ctx, "Tracked file requires updating", "file_name", fileName)
 			modifiedFile.Action = model.Update
 			fileDiff[fileName] = modifiedFile
 
@@ -395,6 +396,7 @@ func (fms *FileManagerService) DetermineFileActions(
 		// If file doesn't exist on disk.
 		// Treat it as adding a new file.
 		if fileStats, statErr := os.Stat(fileName); errors.Is(statErr, os.ErrNotExist) {
+			slog.DebugContext(ctx, "New untracked file to created", "file_name", fileName)
 			modifiedFile.Action = model.Add
 			fileDiff[fileName] = modifiedFile
 
@@ -415,6 +417,7 @@ func (fms *FileManagerService) DetermineFileActions(
 			}
 
 			if metadataOfFileOnDisk.GetHash() != modifiedFile.File.GetFileMeta().GetHash() {
+				slog.DebugContext(ctx, "Untracked file requires updating", "file_name", fileName)
 				modifiedFile.Action = model.Update
 				fileDiff[fileName] = modifiedFile
 			}

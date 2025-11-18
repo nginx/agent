@@ -805,6 +805,24 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 			expectedContent: make(map[string][]byte),
 			expectedError:   nil,
 		},
+		{
+			name:        "Test 4: File is actually a directory",
+			allowedDirs: []string{tempDir},
+			modifiedFiles: map[string]*model.FileCache{
+				tempDir: {
+					File: &mpi.File{
+						FileMeta: protos.FileMeta(tempDir, files.GenerateHash(fileContent)),
+					},
+				},
+			},
+			currentFiles:    make(map[string]*mpi.File),
+			expectedCache:   map[string]*model.FileCache(nil),
+			expectedContent: make(map[string][]byte),
+			expectedError: fmt.Errorf(
+				"unable to create file %s since a directory with the same name already exists on the data plane",
+				tempDir,
+			),
+		},
 	}
 
 	for _, test := range tests {
@@ -828,7 +846,13 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 				test.currentFiles,
 				test.modifiedFiles,
 			)
-			require.NoError(tt, fileActionErr)
+
+			if test.expectedError != nil {
+				require.EqualError(tt, fileActionErr, test.expectedError.Error())
+			} else {
+				require.NoError(tt, fileActionErr)
+			}
+
 			assert.Equal(tt, test.expectedCache, diff)
 		})
 	}
