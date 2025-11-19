@@ -1597,15 +1597,24 @@ func resolveExternalDataSource() *ExternalDataSource {
 		MaxBytes:       viperInstance.GetInt64(ExternalDataSourceMaxBytesKey),
 	}
 
-	// Validate domains
-	if len(externalDataSource.AllowedDomains) > 0 {
-		for _, domain := range externalDataSource.AllowedDomains {
-			if strings.ContainsAny(domain, "/\\ ") || domain == "" {
-				slog.Error("domain is not specified in allowed_domains")
-				return nil
-			}
-		}
+	if err := validateAllowedDomains(externalDataSource.AllowedDomains); err != nil {
+		return nil
 	}
 
 	return externalDataSource
+}
+
+func validateAllowedDomains(domains []string) error {
+	if len(domains) == 0 {
+		return nil
+	}
+
+	for _, domain := range domains {
+		if strings.ContainsAny(domain, "/\\ ") || domain == "" {
+			slog.Error("domain is not specified in allowed_domains")
+			return errors.New("invalid domain found in allowed_domains")
+		}
+	}
+
+	return nil
 }
