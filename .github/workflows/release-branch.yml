@@ -5,26 +5,26 @@ on:
     inputs:
       packageVersion:
         description: 'Package version number'
-        default: "3.0.0"
+        default: "3.x.x"
         type: string
       packageBuildNo:
-        description: 'Package Build number'
+        description: 'Package build number'
         default: "1"
         type: string
       releaseBranch:
-        description: 'Release branch to build & publish from'
+        description: 'Release branch to build from'
         required: true
         type: string
       tagRelease:
-        description: 'Add tag to release branch'
+        description: 'Add tag for release'
         default: false
         type: boolean
       githubRelease:
-        description: 'Setup release in github'
+        description: 'Draft release'
         type: boolean
         default: false
       createPullRequest:
-        description: 'Create pull request back into main'
+        description: 'Create pull request into main'
         default: false
         type: boolean
       publishPackages:
