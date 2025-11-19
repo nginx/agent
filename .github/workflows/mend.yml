@@ -30,7 +30,7 @@ jobs:
         (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-')) ||
         (github.event_name == 'push' && !github.event.repository.fork)
       }}
-    uses: nginxinc/compliance-rules/.github/workflows/mend.yml@a27656f8f9a8748085b434ebe007f5b572709aad # v0.2
+    uses: nginxinc/compliance-rules/.github/workflows/mend.yml@aac50b01e486fc4ba559c9150a91471bdcee70df5ad # v0.3.1
     secrets: inherit
     with:
       product_name: nginx-agent-v3_${{ github.ref_name }}
