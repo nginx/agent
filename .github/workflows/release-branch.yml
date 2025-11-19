@@ -4,27 +4,29 @@ on:
   workflow_dispatch:
     inputs:
       packageVersion:
-        description: 'Package version number'
-        default: "3.x.x"
+        required: true
+        description: 'Package version number (3.x.x)'
+        default: ""
         type: string
       packageBuildNo:
+        required: true
         description: 'Package build number'
         default: "1"
         type: string
       releaseBranch:
-        description: 'Release branch to build from'
+        description: 'Release branch to build from (release-3.x.x)'
         required: true
         type: string
       tagRelease:
-        description: 'Add tag for release'
+        description: 'Add tag for release (v3.x.x)'
         default: false
         type: boolean
       githubRelease:
-        description: 'Draft release'
+        description: 'Draft release (v3.x.x) on GitHub'
         type: boolean
         default: false
       createPullRequest:
-        description: 'Create pull request into main'
+        description: 'Create pull request into main (required if release branch has diverged from main)'
         default: false
         type: boolean
       publishPackages:
@@ -45,7 +47,7 @@ defaults:
     shell: bash
 
 concurrency:
-  group: ${{ github.ref_name }}-v3-release
+  group: ${{ github.ref_name }}-release
   cancel-in-progress: true
 
 permissions:
@@ -204,7 +206,7 @@ jobs:
     needs: [vars,release-draft,tag-release]
     permissions:
       id-token: write
-      contents: write # Needed to update a github release
+      contents: write # Needed to update a release
     steps:
       - name: Checkout Repository
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
