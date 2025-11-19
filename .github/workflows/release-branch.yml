@@ -249,10 +249,15 @@ jobs:
 
       - name: Archive Binaries
         uses: actions/upload-artifact@v3.1.2 # v3.1.2
+        matrix:
+          osarch: [amd64, arm64]
         with:
-          name: nginx-agent-binaries-${{ inputs.packageVersion }}
+          name: nginx-agent-binaries-${{ inputs.packageVersion }}-${{ matrix.osarch }}
           path: |
-            build/a*64
+            build/${{ matrix.osarch }}/nginx-agent
+            build/${{ matrix.osarch }}/nginx-agent.sha256
+            build/${{ matrix.osarch }}/nginx-agent.buildstart
+            build/${{ matrix.osarch }}/nginx-agent.buildend
 
       - name: Install GPG tools
         if: ${{ inputs.publishPackages == true }}
@@ -280,7 +285,7 @@ jobs:
       - name: Generate assertion documents
         uses: .github/workflows/assertion.yml@${{ github.ref_name }}
         continue-on-error: true
-        secrets:
+        with:
           ARTIFACTORY_USER: ${{ secrets.ARTIFACTORY_USER }}
           ARTIFACTORY_TOKEN: ${{ secrets.ARTIFACTORY_TOKEN }}
           ARTIFACTORY_URL: ${{ secrets.ARTIFACTORY_URL_PROD }}

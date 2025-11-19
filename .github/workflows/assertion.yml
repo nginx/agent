@@ -4,19 +4,15 @@ name: Generate and Sign Assertion Document
 on:
   workflow_call:
     inputs:
-      packageVersion:
-          required: true
-          type: string
-      arm64_sha:
-        required: true
-        type: string
-      amd64_sha:
+      artifact_name:
         required: true
         type: string
     secrets:
       ARTIFACTORY_USER:
         required: true
       ARTIFACTORY_TOKEN:
+        required: true
+      ARTIFACTORY_URL:
         required: true
 
 jobs:
@@ -36,16 +32,16 @@ jobs:
       - name: Download nginx-agent binaries
         uses: actions/download-artifact@v3.0.2
         with:
-          name: nginx-agent-binaries-${{ inputs.packageVersion }}
+          name: nginx-agent-binaries-${{ inputs.packageVersion }}-${{ matrix.osarch }}
           path: ./artifacts
 
       - name: Gather build dependencies
         id: godeps
         run: |
-          ls -la artifacts/${{ matrix.osarch }}
-          echo "agent_digest=$(cat artifacts/${{ matrix.osarch }}/nginx-agent.sha256)" >> $GITHUB_ENV
-          echo "agent_buildstart=$(cat artifacts/${{ matrix.osarch }}/nginx-agent.buildstart)" >> $GITHUB_ENV
-          echo "agent_buildend=$(cat artifacts/${{ matrix.osarch }}/nginx-agent.buildend)" >> $GITHUB_ENV
+          ls -la artifacts
+          echo "agent_digest=$(cat artifacts/nginx-agent.sha256)" >> $GITHUB_ENV
+          echo "agent_buildstart=$(cat artifacts/nginx-agent.buildstart)" >> $GITHUB_ENV
+          echo "agent_buildend=$(cat artifacts/nginx-agent.buildend)" >> $GITHUB_ENV
       
           echo "Checking dependencies..."
           go version -m build/${{ matrix.osarch }}/nginx-agent > goversionm_${{ github.run_id }}_${{ github.run_number }}.txt
