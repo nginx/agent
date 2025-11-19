@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -33,6 +34,39 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+type fakeFSO struct {
+	renameSrc, renameDst string
+	renameExternalCalled bool
+}
+
+func (f *fakeFSO) File(ctx context.Context, file *mpi.File, tempFilePath, expectedHash string) error {
+	return nil
+}
+
+func (f *fakeFSO) UpdateOverview(ctx context.Context, instanceID string, filesToUpdate []*mpi.File, configPath string,
+	iteration int,
+) error {
+	return nil
+}
+
+func (f *fakeFSO) ChunkedFile(ctx context.Context, file *mpi.File, tempFilePath, expectedHash string) error {
+	return nil
+}
+func (f *fakeFSO) IsConnected() bool { return true }
+func (f *fakeFSO) UpdateFile(ctx context.Context, instanceID string, fileToUpdate *mpi.File) error {
+	return nil
+}
+func (f *fakeFSO) SetIsConnected(isConnected bool)                                      {}
+func (f *fakeFSO) RenameFile(ctx context.Context, hash, fileName, tempDir string) error { return nil }
+func (f *fakeFSO) RenameExternalFile(ctx context.Context, fileName, tempDir string) error {
+	f.renameExternalCalled = true
+	f.renameSrc = fileName
+	f.renameDst = tempDir
+
+	return nil
+}
+func (f *fakeFSO) UpdateClient(ctx context.Context, fileServiceClient mpi.FileServiceClient) {}
 
 func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	ctx := context.Background()
@@ -1422,4 +1456,108 @@ func TestFileManagerService_downloadExternalFiles_Cases(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMoveOrDeleteFiles_ExternalFileRenameCalled(t *testing.T) {
+	ctx := context.Background()
+	fms := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
+
+	fake := &fakeFSO{}
+	fms.fileServiceOperator = fake
+
+	fileName := filepath.Join(t.TempDir(), "ext.conf")
+	fms.fileActions = map[string]*model.FileCache{
+		fileName: {
+			File:   &mpi.File{FileMeta: &mpi.FileMeta{Name: fileName}},
+			Action: model.ExternalFile,
+		},
+	}
+
+	tempPath := tempFilePath(fileName)
+	reqDir := filepath.Dir(tempPath)
+	require.NoError(t, os.MkdirAll(reqDir, 0o755))
+	require.NoError(t, os.WriteFile(tempPath, []byte("data"), 0o600))
+
+	err := fms.moveOrDeleteFiles(ctx, nil)
+	require.NoError(t, err)
+	assert.True(t, fake.renameExternalCalled)
+	assert.Equal(t, tempPath, fake.renameSrc)
+	assert.Equal(t, fileName, fake.renameDst)
+}
+
+func TestDownloadFileContent_MaxBytesLimit(t *testing.T) {
+	ctx := context.Background()
+	fms := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
+
+	// test server returns 10 bytes, we set MaxBytes to 4 and expect only 4 bytes returned
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("ETag", "etag-1")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("0123456789"))
+	}))
+	defer ts.Close()
+
+	u, err := url.Parse(ts.URL)
+	require.NoError(t, err)
+
+	fms.agentConfig.ExternalDataSource = &config.ExternalDataSource{
+		AllowedDomains: []string{u.Hostname()},
+		MaxBytes:       4,
+	}
+
+	fileName := filepath.Join(t.TempDir(), "external.conf")
+	file := &mpi.File{
+		FileMeta:           &mpi.FileMeta{Name: fileName},
+		ExternalDataSource: &mpi.ExternalDataSource{Location: ts.URL},
+	}
+
+	content, headers, err := fms.downloadFileContent(ctx, file)
+	require.NoError(t, err)
+	assert.Len(t, content, 4)
+	assert.Equal(t, "etag-1", headers.ETag)
+}
+
+func TestDownloadFileContent_InvalidProxyURL(t *testing.T) {
+	ctx := context.Background()
+	fms := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
+
+	downURL := "http://example.com/file"
+	fms.agentConfig.ExternalDataSource = &config.ExternalDataSource{
+		AllowedDomains: []string{"example.com"},
+		ProxyURL:       config.ProxyURL{URL: "http://:"},
+	}
+
+	file := &mpi.File{
+		FileMeta:           &mpi.FileMeta{Name: "/tmp/file"},
+		ExternalDataSource: &mpi.ExternalDataSource{Location: downURL},
+	}
+
+	_, _, err := fms.downloadFileContent(ctx, file)
+	require.Error(t, err)
+	if !strings.Contains(err.Error(), "invalid proxy URL configured") &&
+		!strings.Contains(err.Error(), "failed to execute download request") &&
+		!strings.Contains(err.Error(), "proxyconnect") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestIsDomainAllowed_EdgeCases(t *testing.T) {
+	ok := isDomainAllowed("http://%", []string{"example.com"})
+	assert.False(t, ok)
+
+	ok = isDomainAllowed("http://", []string{"example.com"})
+	assert.False(t, ok)
+
+	ok = isDomainAllowed("http://example.com/path", []string{""})
+	assert.False(t, ok)
+
+	ok = isDomainAllowed("http://example.com/path", []string{"example.com"})
+	assert.True(t, ok)
+
+	ok = isDomainAllowed("http://sub.example.com/path", []string{"*.example.com"})
+	assert.True(t, ok)
+
+	assert.True(t, isWildcardMatch("example.com", "*.example.com"))
+	assert.True(t, isWildcardMatch("sub.example.com", "*.example.com"))
+	assert.False(t, isWildcardMatch("badexample.com", "*.example.com"))
 }
