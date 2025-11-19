@@ -15,7 +15,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
-	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.2
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3
 	github.com/leodido/go-syslog/v4 v4.3.0
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c
 	github.com/nginx/nginx-plus-go-client/v3 v3.0.1
@@ -39,7 +39,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/testbed v0.139.0
 	github.com/prometheus/client_model v0.6.2
 	github.com/prometheus/common v0.67.2
-	github.com/shirou/gopsutil/v4 v4.25.9
+	github.com/shirou/gopsutil/v4 v4.25.10
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.40.0
@@ -47,10 +47,10 @@ require (
 	go.opentelemetry.io/collector/component v1.45.0
 	go.opentelemetry.io/collector/component/componenttest v0.139.0
 	go.opentelemetry.io/collector/config/confighttp v0.139.0
-	go.opentelemetry.io/collector/confmap v1.45.0
+	go.opentelemetry.io/collector/confmap v1.46.0
 	go.opentelemetry.io/collector/confmap/provider/envprovider v1.42.0
 	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.45.0
-	go.opentelemetry.io/collector/confmap/provider/httpprovider v1.42.0
+	go.opentelemetry.io/collector/confmap/provider/httpprovider v1.46.0
 	go.opentelemetry.io/collector/confmap/provider/httpsprovider v1.42.0
 	go.opentelemetry.io/collector/confmap/provider/yamlprovider v1.42.0
 	go.opentelemetry.io/collector/connector v0.139.0
@@ -307,7 +307,7 @@ require (
 	go.opentelemetry.io/collector/extension/extensionmiddleware v0.139.0 // indirect
 	go.opentelemetry.io/collector/extension/extensiontest v0.139.0 // indirect
 	go.opentelemetry.io/collector/extension/zpagesextension v0.139.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.45.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.46.0 // indirect
 	go.opentelemetry.io/collector/internal/fanoutconsumer v0.139.0 // indirect
 	go.opentelemetry.io/collector/internal/memorylimiter v0.139.0 // indirect
 	go.opentelemetry.io/collector/internal/sharedcomponent v0.139.0 // indirect
