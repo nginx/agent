@@ -120,7 +120,7 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test1_TestSubDir
 
 // Config apply to update unreferenced file in DataPlane
 func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test2_TestUpdateUnreferencedInDataPlane() {
-	slog.Info("starting updating unreferenced file in data plane test")
+	slog.Info("starting update unreferenced file in data plane test")
 
 	originalContent, readErr := os.ReadFile("configs/unreferenced_file.conf")
 	s.Require().NoError(readErr)
@@ -157,7 +157,7 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test2_TestUpdate
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	s.Equal("Config apply successful, no files to change", responses[0].GetCommandResponse().GetMessage())
 	s.NotEqual(originalContent, output)
-	slog.Info("finished updating unreferenced file in data plane test")
+	slog.Info("finished update unreferenced file in data plane test")
 }
 
 // Config apply to delete unreferenced file from DataPlane

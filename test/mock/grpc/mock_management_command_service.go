@@ -567,25 +567,44 @@ func processConfigApplyRequestBody(c *gin.Context, initialFiles []*mpi.File) ([]
 		}
 	}
 
-	var filesWereUpdated bool
+	updatedFiles := filterReferencedFiles(initialFiles, body.UnreferencedFiles)
 
+	filesWereUpdated := false
+
+	if len(body.ExternalDataSources) > 0 {
+		updatedFiles = addExternalDataSources(updatedFiles, filesMap, body.ExternalDataSources)
+		filesWereUpdated = true
+	}
+
+	if len(body.UnreferencedFiles) > 0 {
+		updatedFiles = addUnreferencedFiles(updatedFiles, filesMap, body.UnreferencedFiles)
+		filesWereUpdated = true
+	}
+
+	return updatedFiles, filesWereUpdated, nil
+}
+
+func filterReferencedFiles(initialFiles, unreferencedFiles []*mpi.File) []*mpi.File {
 	unreferencedSet := make(map[string]bool)
-	for _, unref := range body.UnreferencedFiles {
+	for _, unref := range unreferencedFiles {
 		unreferencedSet[unref.GetFileMeta().GetName()] = true
 	}
 
 	filteredFiles := make([]*mpi.File, 0, len(initialFiles))
 	for _, file := range initialFiles {
-		if file.GetFileMeta() != nil {
-			if !unreferencedSet[file.GetFileMeta().GetName()] {
-				filteredFiles = append(filteredFiles, file)
-			}
+		if file.GetFileMeta() != nil && !unreferencedSet[file.GetFileMeta().GetName()] {
+			filteredFiles = append(filteredFiles, file)
 		}
 	}
 
-	updatedFiles := filteredFiles
+	return filteredFiles
+}
 
-	for _, ed := range body.ExternalDataSources {
+func addExternalDataSources(filesList []*mpi.File, filesMap map[string]*mpi.File,
+	externalDataSources []*ExternalDataSource,
+) []*mpi.File {
+	updatedFiles := filesList
+	for _, ed := range externalDataSources {
 		if file, ok := filesMap[ed.FilePath]; ok {
 			file.ExternalDataSource = &mpi.ExternalDataSource{
 				Location: ed.Location,
@@ -601,10 +620,16 @@ func processConfigApplyRequestBody(c *gin.Context, initialFiles []*mpi.File) ([]
 			}
 			updatedFiles = append(updatedFiles, newFile)
 		}
-		filesWereUpdated = true
 	}
 
-	for _, unref := range body.UnreferencedFiles {
+	return updatedFiles
+}
+
+func addUnreferencedFiles(filesList []*mpi.File, filesMap map[string]*mpi.File,
+	unreferencedFiles []*mpi.File,
+) []*mpi.File {
+	updatedFiles := filesList
+	for _, unref := range unreferencedFiles {
 		if file, ok := filesMap[unref.GetFileMeta().GetName()]; ok {
 			if file.GetFileMeta().GetHash() != unref.GetFileMeta().GetHash() || unref.GetFileMeta().GetHash() == "" {
 				updatedFiles = append(updatedFiles, file)
@@ -617,8 +642,7 @@ func processConfigApplyRequestBody(c *gin.Context, initialFiles []*mpi.File) ([]
 			}
 			updatedFiles = append(updatedFiles, newFile)
 		}
-		filesWereUpdated = true
 	}
 
-	return updatedFiles, filesWereUpdated, nil
+	return updatedFiles
 }
