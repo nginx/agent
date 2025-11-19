@@ -29,7 +29,7 @@ on:
         type: boolean
       publishPackages:
         description: 'Publish packages to nginx repo'
-        default: true
+        default: false
         type: boolean
       uploadUrl:
         description: 'Location to publish packages to'
@@ -38,7 +38,7 @@ on:
 
 env:
   NFPM_VERSION: 'v2.35.3'
-  GOPROXY: "https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@azr.artifactory.f5net.com/artifactory/api/go/f5-nginx-go-local-approved-dependency"
+  GOPROXY: "https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@${{ secrets.ARTIFACTORY_URL_PROD }}"
 
 defaults:
   run:
