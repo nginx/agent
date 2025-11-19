@@ -54,6 +54,20 @@ func PerformConfigApply(t *testing.T, nginxInstanceID, mockManagementPlaneAPIAdd
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 }
 
+func PerformConfigApplyWithRequestBody(t *testing.T, nginxInstanceID, mockManagementPlaneAPIAddress, body string) {
+	t.Helper()
+
+	client := resty.New()
+	client.SetRetryCount(RetryCount).SetRetryWaitTime(RetryWaitTime).SetRetryMaxWaitTime(RetryMaxWaitTime)
+
+	url := fmt.Sprintf("http://%s/api/v1/instance/%s/config/apply", mockManagementPlaneAPIAddress, nginxInstanceID)
+	resp, err := client.R().EnableTrace().SetBody(body).Post(url)
+
+	t.Logf("Config ApplyResponse: %s", resp.String())
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode())
+}
+
 func CurrentFileOverview(t *testing.T, nginxInstanceID, mockManagementPlaneAPIAddress string) *mpi.FileOverview {
 	t.Helper()
 
