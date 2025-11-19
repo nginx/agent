@@ -1207,7 +1207,7 @@ func TestFileManagerService_DetermineFileActions_ExternalFile(t *testing.T) {
 	assert.Equal(t, model.ExternalFile, fc.Action)
 }
 
-//nolint:gocognit,revive,govet // cognitive complexity is 25
+//nolint:gocognit,revive,govet // cognitive complexity is 22
 func TestFileManagerService_downloadExternalFiles_Cases(t *testing.T) {
 	type tc struct {
 		allowedDomains      []string
@@ -1224,14 +1224,14 @@ func TestFileManagerService_downloadExternalFiles_Cases(t *testing.T) {
 
 	tests := []tc{
 		{
-			name: "Success",
+			name: "Test 1: Success",
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("ETag", "test-etag")
 				w.Header().Set("Last-Modified", time.RFC1123)
 				w.WriteHeader(http.StatusOK)
 				_, _ = w.Write([]byte("external file content"))
 			},
-			allowedDomains:      nil, // will be set per test from ts
+			allowedDomains:      nil,
 			maxBytes:            0,
 			expectError:         false,
 			expectTempFile:      true,
@@ -1240,7 +1240,7 @@ func TestFileManagerService_downloadExternalFiles_Cases(t *testing.T) {
 			expectHeaderLastMod: time.RFC1123,
 		},
 		{
-			name: "NotModified",
+			name: "Test 2: NotModified",
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusNotModified)
 			},
@@ -1253,7 +1253,7 @@ func TestFileManagerService_downloadExternalFiles_Cases(t *testing.T) {
 			expectHeaderLastMod: "",
 		},
 		{
-			name: "NotAllowedDomain",
+			name: "Test 3: NotAllowedDomain",
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
 				_, _ = w.Write([]byte("external file content"))
@@ -1265,7 +1265,7 @@ func TestFileManagerService_downloadExternalFiles_Cases(t *testing.T) {
 			expectTempFile:    false,
 		},
 		{
-			name: "NotFound",
+			name: "Test 4: NotFound",
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusNotFound)
 			},
@@ -1274,6 +1274,32 @@ func TestFileManagerService_downloadExternalFiles_Cases(t *testing.T) {
 			expectError:       true,
 			expectErrContains: "status code 404",
 			expectTempFile:    false,
+		},
+		{
+			name: "Test 5: ProxyWithConditionalHeaders",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				// verify conditional headers from manifest are added
+				if r.Header.Get("If-None-Match") != "manifest-test-etag" {
+					http.Error(w, "missing If-None-Match", http.StatusBadRequest)
+					return
+				}
+				if r.Header.Get("If-Modified-Since") != time.RFC1123 {
+					http.Error(w, "missing If-Modified-Since", http.StatusBadRequest)
+					return
+				}
+				w.Header().Set("ETag", "resp-etag")
+				w.Header().Set("Last-Modified", time.RFC1123)
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte("external file via proxy"))
+			},
+			allowedDomains:      nil,
+			maxBytes:            0,
+			expectError:         false,
+			expectTempFile:      true,
+			expectContent:       []byte("external file via proxy"),
+			expectHeaderETag:    "resp-etag",
+			expectHeaderLastMod: time.RFC1123,
+			expectErrContains:   "",
 		},
 	}
 
@@ -1293,20 +1319,42 @@ func TestFileManagerService_downloadExternalFiles_Cases(t *testing.T) {
 			fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
 			fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
 
-			// If the test provided allowedDomains, use it; otherwise allow this test server's host
-			if test.allowedDomains == nil {
-				fileManagerService.agentConfig.ExternalDataSource = &config.ExternalDataSource{
-					ProxyURL:       config.ProxyURL{URL: ""},
-					AllowedDomains: []string{host},
-					MaxBytes:       int64(test.maxBytes),
-				}
-			} else {
-				fileManagerService.agentConfig.ExternalDataSource = &config.ExternalDataSource{
-					ProxyURL:       config.ProxyURL{URL: ""},
-					AllowedDomains: test.allowedDomains,
-					MaxBytes:       int64(test.maxBytes),
-				}
+			eds := &config.ExternalDataSource{
+				ProxyURL:       config.ProxyURL{URL: ""},
+				AllowedDomains: []string{host},
+				MaxBytes:       int64(test.maxBytes),
 			}
+
+			if test.allowedDomains != nil {
+				eds.AllowedDomains = test.allowedDomains
+			}
+
+			if test.name == "Test 5: ProxyWithConditionalHeaders" {
+				manifestFiles := map[string]*model.ManifestFile{
+					fileName: {
+						ManifestFileMeta: &model.ManifestFileMeta{
+							Name:         fileName,
+							ETag:         "manifest-test-etag",
+							LastModified: time.RFC1123,
+						},
+					},
+				}
+				manifestJSON, mErr := json.MarshalIndent(manifestFiles, "", "  ")
+				require.NoError(t, mErr)
+
+				manifestFile, mErr := os.CreateTemp(tempDir, "manifest.json")
+				require.NoError(t, mErr)
+				_, mErr = manifestFile.Write(manifestJSON)
+				require.NoError(t, mErr)
+				_ = manifestFile.Close()
+
+				fileManagerService.agentConfig.LibDir = tempDir
+				fileManagerService.manifestFilePath = manifestFile.Name()
+
+				eds.ProxyURL = config.ProxyURL{URL: ts.URL}
+			}
+
+			fileManagerService.agentConfig.ExternalDataSource = eds
 
 			fileManagerService.fileActions = map[string]*model.FileCache{
 				fileName: {
@@ -1325,7 +1373,6 @@ func TestFileManagerService_downloadExternalFiles_Cases(t *testing.T) {
 				if test.expectErrContains != "" {
 					assert.Contains(t, err.Error(), test.expectErrContains)
 				}
-				// ensure no temp file left
 				_, statErr := os.Stat(tempFilePath(fileName))
 				assert.True(t, os.IsNotExist(statErr))
 

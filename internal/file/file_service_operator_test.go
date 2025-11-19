@@ -187,3 +187,86 @@ func TestFileManagerService_UpdateFile_LargeFile(t *testing.T) {
 
 	helpers.RemoveFileWithErrorCheck(t, testFile.Name())
 }
+
+func TestFileServiceOperator_RenameExternalFile(t *testing.T) {
+	tests := []struct {
+		prepare    func(t *testing.T) (src, dst string)
+		name       string
+		wantErrMsg string
+		wantErr    bool
+	}{
+		{
+			name: "Test 1: success",
+			prepare: func(t *testing.T) (string, string) {
+				t.Helper()
+				tmp := t.TempDir()
+				src := filepath.Join(tmp, "src.txt")
+				dst := filepath.Join(tmp, "subdir", "dest.txt")
+				content := []byte("hello world")
+				require.NoError(t, os.WriteFile(src, content, 0o600))
+
+				return src, dst
+			},
+			wantErr: false,
+		},
+		{
+			name: "Test 2: mkdirall_fail",
+			prepare: func(t *testing.T) (string, string) {
+				t.Helper()
+				tmp := t.TempDir()
+				parentFile := filepath.Join(tmp, "not_a_dir")
+				require.NoError(t, os.WriteFile(parentFile, []byte("block"), 0o600))
+				dst := filepath.Join(parentFile, "dest.txt")
+				src := filepath.Join(tmp, "src.txt")
+				require.NoError(t, os.WriteFile(src, []byte("content"), 0o600))
+
+				return src, dst
+			},
+			wantErr:    true,
+			wantErrMsg: "failed to create directories for",
+		},
+		{
+			name: "Test 3: rename_fail",
+			prepare: func(t *testing.T) (string, string) {
+				t.Helper()
+				tmp := t.TempDir()
+				src := filepath.Join(tmp, "does_not_exist.txt")
+				dst := filepath.Join(tmp, "subdir", "dest.txt")
+
+				return src, dst
+			},
+			wantErr:    true,
+			wantErrMsg: "failed to move file",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+			fso := NewFileServiceOperator(types.AgentConfig(), nil, &sync.RWMutex{})
+
+			src, dst := tc.prepare(t)
+
+			err := fso.RenameExternalFile(ctx, src, dst)
+			if tc.wantErr {
+				require.Error(t, err)
+				if tc.wantErrMsg != "" {
+					require.Contains(t, err.Error(), tc.wantErrMsg)
+				}
+
+				return
+			}
+
+			require.NoError(t, err)
+
+			dstContent, readErr := os.ReadFile(dst)
+			require.NoError(t, readErr)
+			if tc.name == "success" {
+				require.Equal(t, []byte("hello world"), dstContent)
+			}
+
+			_, statErr := os.Stat(src)
+			require.True(t, os.IsNotExist(statErr))
+		})
+	}
+}
