@@ -182,6 +182,13 @@ official-image-integration-test: $(SELECTED_PACKAGE) build-mock-management-plane
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) IMAGE_PATH=$(IMAGE_PATH) \
 	go test -v ./test/integration/managementplane ./test/integration/auxiliarycommandserver
 
+metrics-test: $(SELECTED_PACKAGE) build-mock-management-otel-collector
+	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} BUILD_TARGET="install" \
+	PACKAGES_REPO=$(OSS_PACKAGES_REPO) TAG=${TAG} PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) DOCKERFILE_PATH=$(OFFICIAL_IMAGE_DOCKERFILE_PATH) \
+	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) IMAGE_PATH=$(IMAGE_PATH) \
+	NGINX_LICENSE_JWT=$(NGINX_LICENSE_JWT) \
+	go test -v ./test/integration/metrics
+
 performance-test:
 	mkdir -p $(TEST_BUILD_DIR)
 	bash -c 'CGO_ENABLED=0 $(GOTEST) -count 10 -timeout 6m -bench=. -benchmem -run=^$$ ./... | tee $(TEST_BUILD_DIR)/benchmark.txt; test $${PIPESTATUS[0]} -eq 0'
