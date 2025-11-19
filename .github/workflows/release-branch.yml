@@ -281,7 +281,7 @@ jobs:
             let id_token = await core.getIDToken()
             core.setOutput('id_token', id_token)
 
-      - name: Upload Release Packages
+      - name: Upload Release Packages to NGINX repo
         if: ${{ inputs.publishPackages == true }}
         env:
           TOKEN: ${{ steps.idtoken.outputs.id_token }}
@@ -290,9 +290,11 @@ jobs:
           make release
 
       - name: Generate assertion documents
-        uses: ./github/workflows/assertion.yml
+        uses: ./.github/workflows/assertion.yml
         continue-on-error: true
         with:
+          packageVersion: ${{ inputs.packageVersion }}
+        secrets:
           ARTIFACTORY_USER: ${{ secrets.ARTIFACTORY_USER }}
           ARTIFACTORY_TOKEN: ${{ secrets.ARTIFACTORY_TOKEN }}
           ARTIFACTORY_URL: ${{ secrets.ARTIFACTORY_URL_PROD }}
