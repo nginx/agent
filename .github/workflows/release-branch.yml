@@ -247,17 +247,25 @@ jobs:
           echo "$GPG_KEY" | base64 --decode > ${NFPM_SIGNING_KEY_FILE}
           make package
 
-      - name: Archive Binaries
+      - name: Archive AMD64 Binaries
         uses: actions/upload-artifact@v3.1.2 # v3.1.2
-        matrix:
-          osarch: [amd64, arm64]
         with:
-          name: nginx-agent-binaries-${{ inputs.packageVersion }}-${{ matrix.osarch }}
+          name: nginx-agent-binaries-${{ inputs.packageVersion }}-amd64
           path: |
-            build/${{ matrix.osarch }}/nginx-agent
-            build/${{ matrix.osarch }}/nginx-agent.sha256
-            build/${{ matrix.osarch }}/nginx-agent.buildstart
-            build/${{ matrix.osarch }}/nginx-agent.buildend
+            build/amd64/nginx-agent
+            build/amd64/nginx-agent.sha256
+            build/amd64/nginx-agent.buildstart
+            build/amd64/nginx-agent.buildend
+
+      - name: Archive ARM64 Binaries
+        uses: actions/upload-artifact@v3.1.2 # v3.1.2
+        with:
+          name: nginx-agent-binaries-${{ inputs.packageVersion }}-arm64
+          path: |
+            build/arm64/nginx-agent
+            build/arm64/nginx-agent.sha256
+            build/arm64/nginx-agent.buildstart
+            build/arm64/nginx-agent.buildend
 
       - name: Install GPG tools
         if: ${{ inputs.publishPackages == true }}
