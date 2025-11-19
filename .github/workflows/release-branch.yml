@@ -294,7 +294,6 @@ jobs:
         continue-on-error: true
         with:
           packageVersion: ${{ inputs.packageVersion }}
-        secrets:
           ARTIFACTORY_USER: ${{ secrets.ARTIFACTORY_USER }}
           ARTIFACTORY_TOKEN: ${{ secrets.ARTIFACTORY_TOKEN }}
           ARTIFACTORY_URL: ${{ secrets.ARTIFACTORY_URL_PROD }}
