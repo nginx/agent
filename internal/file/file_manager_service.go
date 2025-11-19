@@ -398,7 +398,7 @@ func (fms *FileManagerService) DetermineFileActions(
 		// If file doesn't exist on disk.
 		// Treat it as adding a new file.
 		if errors.Is(statErr, os.ErrNotExist) {
-			slog.DebugContext(ctx, "New untracked file to created", "file_name", fileName)
+			slog.DebugContext(ctx, "New untracked file needs to be created", "file_name", fileName)
 			modifiedFile.Action = model.Add
 			fileDiff[fileName] = modifiedFile
 
