@@ -291,7 +291,7 @@ jobs:
           make release
 
       - name: Generate assertion documents
-        uses: .github/workflows/assertion.yml@${{ github.ref_name }}
+        uses: .github/workflows/assertion.yml@improve-assertion-doc-generation
         continue-on-error: true
         with:
           ARTIFACTORY_USER: ${{ secrets.ARTIFACTORY_USER }}
