@@ -819,7 +819,7 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 			expectedCache:   map[string]*model.FileCache(nil),
 			expectedContent: make(map[string][]byte),
 			expectedError: fmt.Errorf(
-				"unable to create file %s since a directory with the same name already exists on the data plane",
+				"unable to create file %s since a directory with the same name already exists",
 				tempDir,
 			),
 		},

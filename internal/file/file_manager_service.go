@@ -393,34 +393,42 @@ func (fms *FileManagerService) DetermineFileActions(
 			continue
 		}
 
+		fileStats, statErr := os.Stat(fileName)
+
 		// If file doesn't exist on disk.
 		// Treat it as adding a new file.
-		if fileStats, statErr := os.Stat(fileName); errors.Is(statErr, os.ErrNotExist) {
+		if errors.Is(statErr, os.ErrNotExist) {
 			slog.DebugContext(ctx, "New untracked file to created", "file_name", fileName)
 			modifiedFile.Action = model.Add
 			fileDiff[fileName] = modifiedFile
 
 			continue
-			// If file already exists on disk but is not being tracked in manifest and the file hash is different.
-			// Treat it as a file update.
-		} else if statErr == nil {
-			if fileStats.IsDir() {
-				return nil, fmt.Errorf(
-					"unable to create file %s since a directory with the same name already exists on the data plane",
-					fileName,
-				)
-			}
+		}
 
-			metadataOfFileOnDisk, err := files.FileMeta(fileName)
-			if err != nil {
-				return nil, fmt.Errorf("unable to get file metadata for %s: %w", fileName, err)
-			}
+		// If there is an error other than not existing, return that error.
+		if statErr != nil {
+			return nil, fmt.Errorf("unable to stat file %s: %w", fileName, statErr)
+		}
 
-			if metadataOfFileOnDisk.GetHash() != modifiedFile.File.GetFileMeta().GetHash() {
-				slog.DebugContext(ctx, "Untracked file requires updating", "file_name", fileName)
-				modifiedFile.Action = model.Update
-				fileDiff[fileName] = modifiedFile
-			}
+		// If there is a directory with the same name, return an error.
+		if fileStats.IsDir() {
+			return nil, fmt.Errorf(
+				"unable to create file %s since a directory with the same name already exists",
+				fileName,
+			)
+		}
+
+		// If file already exists on disk but is not being tracked in manifest and the file hash is different.
+		// Treat it as a file update.
+		metadataOfFileOnDisk, err := files.FileMeta(fileName)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get file metadata for %s: %w", fileName, err)
+		}
+
+		if metadataOfFileOnDisk.GetHash() != modifiedFile.File.GetFileMeta().GetHash() {
+			slog.DebugContext(ctx, "Untracked file requires updating", "file_name", fileName)
+			modifiedFile.Action = model.Update
+			fileDiff[fileName] = modifiedFile
 		}
 	}
 
