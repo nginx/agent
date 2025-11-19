@@ -10,11 +10,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sync"
 	"testing"
 
+	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/model"
 
 	"github.com/nginx/agent/v3/pkg/files"
@@ -1170,6 +1174,178 @@ rQHX6DP4w6IwZY8JB8LS
 			require.NoError(t, certFileMetaErr)
 
 			assert.Equal(t, test.expectedSerial, certFileMeta.GetCertificateMeta().GetSerialNumber())
+		})
+	}
+}
+
+func TestFileManagerService_DetermineFileActions_ExternalFile(t *testing.T) {
+	ctx := context.Background()
+	tempDir := t.TempDir()
+	fileName := filepath.Join(tempDir, "external.conf")
+
+	modifiedFiles := map[string]*model.FileCache{
+		fileName: {
+			File: &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name: fileName,
+				},
+				ExternalDataSource: &mpi.ExternalDataSource{Location: "http://example.com/file"},
+			},
+		},
+	}
+
+	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
+	fileManagerService.agentConfig.AllowedDirectories = []string{tempDir}
+
+	diff, err := fileManagerService.DetermineFileActions(ctx, map[string]*mpi.File{}, modifiedFiles)
+	require.NoError(t, err)
+
+	fc, ok := diff[fileName]
+	require.True(t, ok, "expected file to be present in diff")
+	assert.Equal(t, model.ExternalFile, fc.Action)
+}
+
+func TestFileManagerService_downloadExternalFiles_Cases(t *testing.T) {
+	type tc struct {
+		name                string
+		handler             http.HandlerFunc
+		allowedDomains      []string
+		maxBytes            int
+		expectError         bool
+		expectErrContains   string
+		expectTempFile      bool
+		expectContent       []byte
+		expectHeaderETag    string
+		expectHeaderLastMod string
+	}
+
+	tests := []tc{
+		{
+			name: "Success",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("ETag", "test-etag")
+				w.Header().Set("Last-Modified", "Mon, 02 Jan 2006 15:04:05 MST")
+				w.WriteHeader(200)
+				_, _ = w.Write([]byte("external file content"))
+			},
+			allowedDomains:      nil, // will be set per test from ts
+			maxBytes:            0,
+			expectError:         false,
+			expectTempFile:      true,
+			expectContent:       []byte("external file content"),
+			expectHeaderETag:    "test-etag",
+			expectHeaderLastMod: "Mon, 02 Jan 2006 15:04:05 MST",
+		},
+		{
+			name: "NotModified",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusNotModified)
+			},
+			allowedDomains:      nil,
+			maxBytes:            0,
+			expectError:         false,
+			expectTempFile:      false,
+			expectContent:       nil,
+			expectHeaderETag:    "",
+			expectHeaderLastMod: "",
+		},
+		{
+			name: "NotAllowedDomain",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(200)
+				_, _ = w.Write([]byte("external file content"))
+			},
+			allowedDomains:    []string{"not-the-host"},
+			maxBytes:          0,
+			expectError:       true,
+			expectErrContains: "not in the allowed domains",
+			expectTempFile:    false,
+		},
+		{
+			name: "NotFound",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusNotFound)
+			},
+			allowedDomains:    nil,
+			maxBytes:          0,
+			expectError:       true,
+			expectErrContains: "status code 404",
+			expectTempFile:    false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := context.Background()
+			tempDir := t.TempDir()
+			fileName := filepath.Join(tempDir, "external.conf")
+
+			ts := httptest.NewServer(http.HandlerFunc(test.handler))
+			defer ts.Close()
+
+			u, err := url.Parse(ts.URL)
+			require.NoError(t, err)
+			host := u.Hostname()
+
+			fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+			fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
+
+			// If the test provided allowedDomains, use it; otherwise allow this test server's host
+			if test.allowedDomains == nil {
+				fileManagerService.agentConfig.ExternalDataSource = &config.ExternalDataSource{
+					ProxyURL:       config.ProxyURL{URL: ""},
+					AllowedDomains: []string{host},
+					MaxBytes:       int64(test.maxBytes),
+				}
+			} else {
+				fileManagerService.agentConfig.ExternalDataSource = &config.ExternalDataSource{
+					ProxyURL:       config.ProxyURL{URL: ""},
+					AllowedDomains: test.allowedDomains,
+					MaxBytes:       int64(test.maxBytes),
+				}
+			}
+
+			fileManagerService.fileActions = map[string]*model.FileCache{
+				fileName: {
+					File: &mpi.File{
+						FileMeta:           &mpi.FileMeta{Name: fileName},
+						ExternalDataSource: &mpi.ExternalDataSource{Location: ts.URL},
+					},
+					Action: model.ExternalFile,
+				},
+			}
+
+			err = fileManagerService.downloadUpdatedFilesToTempLocation(ctx)
+
+			if test.expectError {
+				require.Error(t, err)
+				if test.expectErrContains != "" {
+					assert.Contains(t, err.Error(), test.expectErrContains)
+				}
+				// ensure no temp file left
+				_, statErr := os.Stat(tempFilePath(fileName))
+				assert.True(t, os.IsNotExist(statErr))
+				return
+			}
+
+			require.NoError(t, err)
+
+			if test.expectTempFile {
+				b, readErr := os.ReadFile(tempFilePath(fileName))
+				require.NoError(t, readErr)
+				assert.Equal(t, test.expectContent, b)
+
+				h, ok := fileManagerService.newExternalFileHeaders[fileName]
+				require.True(t, ok)
+				assert.Equal(t, test.expectHeaderETag, h.ETag)
+				assert.Equal(t, test.expectHeaderLastMod, h.LastModified)
+
+				_ = os.Remove(tempFilePath(fileName))
+			} else {
+				_, statErr := os.Stat(tempFilePath(fileName))
+				assert.True(t, os.IsNotExist(statErr))
+			}
 		})
 	}
 }
