@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/model"
@@ -1198,7 +1199,7 @@ func TestFileManagerService_DetermineFileActions_ExternalFile(t *testing.T) {
 	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
 	fileManagerService.agentConfig.AllowedDirectories = []string{tempDir}
 
-	diff, err := fileManagerService.DetermineFileActions(ctx, map[string]*mpi.File{}, modifiedFiles)
+	diff, err := fileManagerService.DetermineFileActions(ctx, make(map[string]*mpi.File), modifiedFiles)
 	require.NoError(t, err)
 
 	fc, ok := diff[fileName]
@@ -1206,18 +1207,19 @@ func TestFileManagerService_DetermineFileActions_ExternalFile(t *testing.T) {
 	assert.Equal(t, model.ExternalFile, fc.Action)
 }
 
+//nolint:gocognit,revive,govet // cognitive complexity is 25
 func TestFileManagerService_downloadExternalFiles_Cases(t *testing.T) {
 	type tc struct {
-		name                string
-		handler             http.HandlerFunc
 		allowedDomains      []string
-		maxBytes            int
-		expectError         bool
-		expectErrContains   string
-		expectTempFile      bool
 		expectContent       []byte
+		name                string
 		expectHeaderETag    string
 		expectHeaderLastMod string
+		expectErrContains   string
+		handler             http.HandlerFunc
+		maxBytes            int
+		expectError         bool
+		expectTempFile      bool
 	}
 
 	tests := []tc{
@@ -1225,8 +1227,8 @@ func TestFileManagerService_downloadExternalFiles_Cases(t *testing.T) {
 			name: "Success",
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("ETag", "test-etag")
-				w.Header().Set("Last-Modified", "Mon, 02 Jan 2006 15:04:05 MST")
-				w.WriteHeader(200)
+				w.Header().Set("Last-Modified", time.RFC1123)
+				w.WriteHeader(http.StatusOK)
 				_, _ = w.Write([]byte("external file content"))
 			},
 			allowedDomains:      nil, // will be set per test from ts
@@ -1235,7 +1237,7 @@ func TestFileManagerService_downloadExternalFiles_Cases(t *testing.T) {
 			expectTempFile:      true,
 			expectContent:       []byte("external file content"),
 			expectHeaderETag:    "test-etag",
-			expectHeaderLastMod: "Mon, 02 Jan 2006 15:04:05 MST",
+			expectHeaderLastMod: time.RFC1123,
 		},
 		{
 			name: "NotModified",
@@ -1253,7 +1255,7 @@ func TestFileManagerService_downloadExternalFiles_Cases(t *testing.T) {
 		{
 			name: "NotAllowedDomain",
 			handler: func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(200)
+				w.WriteHeader(http.StatusOK)
 				_, _ = w.Write([]byte("external file content"))
 			},
 			allowedDomains:    []string{"not-the-host"},
@@ -1281,7 +1283,7 @@ func TestFileManagerService_downloadExternalFiles_Cases(t *testing.T) {
 			tempDir := t.TempDir()
 			fileName := filepath.Join(tempDir, "external.conf")
 
-			ts := httptest.NewServer(http.HandlerFunc(test.handler))
+			ts := httptest.NewServer(test.handler)
 			defer ts.Close()
 
 			u, err := url.Parse(ts.URL)
@@ -1326,6 +1328,7 @@ func TestFileManagerService_downloadExternalFiles_Cases(t *testing.T) {
 				// ensure no temp file left
 				_, statErr := os.Stat(tempFilePath(fileName))
 				assert.True(t, os.IsNotExist(statErr))
+
 				return
 			}
 
