@@ -12,7 +12,7 @@ on:
         type: string
         default: ""
       uploadAzure:
-        description: 'Publish packages Azure storage'
+        description: 'Publish packages to Azure blob storage'
         type: boolean
         default: false
       uploadGithub:
