@@ -91,6 +91,7 @@ type ExternalDataSource struct {
 // Adding a struct for the request body of the config apply endpoint.
 type ConfigApplyRequestBody struct {
 	ExternalDataSources []*ExternalDataSource `json:"externalDataSources"`
+	UnreferencedFiles   []*mpi.File           `json:"unreferencedFiles"`
 }
 
 func (cs *CommandService) StartServer(listener net.Listener) {
@@ -378,13 +379,13 @@ func (cs *CommandService) addConfigApplyEndpoint() {
 			return
 		}
 
-		updatedConfigFiles, externalFilesUpdated, err := processConfigApplyRequestBody(c, configFiles)
+		updatedConfigFiles, filesUpdated, err := processConfigApplyRequestBody(c, configFiles)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		if externalFilesUpdated {
+		if filesUpdated {
 			cs.instanceFiles[instanceID] = updatedConfigFiles
 		} else {
 			cs.instanceFiles[instanceID] = configFiles
@@ -566,8 +567,23 @@ func processConfigApplyRequestBody(c *gin.Context, initialFiles []*mpi.File) ([]
 		}
 	}
 
-	var externalFilesWereUpdated bool
-	updatedFiles := initialFiles
+	var filesWereUpdated bool
+
+	unreferencedSet := make(map[string]bool)
+	for _, unref := range body.UnreferencedFiles {
+		unreferencedSet[unref.GetFileMeta().GetName()] = true
+	}
+
+	filteredFiles := make([]*mpi.File, 0, len(initialFiles))
+	for _, file := range initialFiles {
+		if file.GetFileMeta() != nil {
+			if !unreferencedSet[file.GetFileMeta().GetName()] {
+				filteredFiles = append(filteredFiles, file)
+			}
+		}
+	}
+
+	updatedFiles := filteredFiles
 
 	for _, ed := range body.ExternalDataSources {
 		if file, ok := filesMap[ed.FilePath]; ok {
@@ -585,8 +601,24 @@ func processConfigApplyRequestBody(c *gin.Context, initialFiles []*mpi.File) ([]
 			}
 			updatedFiles = append(updatedFiles, newFile)
 		}
-		externalFilesWereUpdated = true
+		filesWereUpdated = true
 	}
 
-	return updatedFiles, externalFilesWereUpdated, nil
+	for _, unref := range body.UnreferencedFiles {
+		if file, ok := filesMap[unref.GetFileMeta().GetName()]; ok {
+			if file.GetFileMeta().GetHash() != unref.GetFileMeta().GetHash() || unref.GetFileMeta().GetHash() == "" {
+				updatedFiles = append(updatedFiles, file)
+			} else {
+				updatedFiles = append(updatedFiles, unref)
+			}
+		} else {
+			newFile := &mpi.File{
+				FileMeta: unref.GetFileMeta(),
+			}
+			updatedFiles = append(updatedFiles, newFile)
+		}
+		filesWereUpdated = true
+	}
+
+	return updatedFiles, filesWereUpdated, nil
 }
