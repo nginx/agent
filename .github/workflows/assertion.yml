@@ -1,6 +1,16 @@
 name: Generate and Sign Assertion Document
 
 on:
+  workflow_dispatch:
+    inputs:
+      packageVersion:
+        description: 'Agent version'
+        type: string
+        required: true
+      artifactId:
+        description: 'Artifact ID'
+        type: string
+        required: false
   workflow_call:
     inputs:
       packageVersion:
@@ -40,11 +50,19 @@ jobs:
           go-version-file: 'go.mod'
           cache: false
 
-      - name: Download nginx-agent binaries
+      - name: Download nginx-agent binary artifacts
+        if: ${{ inputs.artifactId == '' }}
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # 6.0.0
         with:
           name: nginx-agent-binaries-${{ inputs.packageVersion }}-${{ matrix.osarch }}
           path: binaries
+
+      - name: Download nginx-agent binary artifact by ID
+        if: ${{ inputs.artifactId != '' }}
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # 6.0.0
+        with:
+            artifact-ids: '${{ inputs.artifactId }}'
+            path: binaries
 
       - name: Gather build dependencies
         id: godeps
@@ -83,4 +101,3 @@ jobs:
         uses: nginxinc/compliance-rules/.github/actions/sign@83e452166aaf0ad8f07caf91a4f1f903b3dea1e6 # v0.3.0
         with:
           assertion-doc: ${{ steps.assertiondoc.outputs.assertion-document-path }}
-          path: ./artifacts
