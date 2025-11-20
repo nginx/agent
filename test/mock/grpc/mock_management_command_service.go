@@ -577,7 +577,8 @@ func processConfigApplyRequestBody(c *gin.Context, initialFiles []*mpi.File) ([]
 		} else {
 			newFile := &mpi.File{
 				FileMeta: &mpi.FileMeta{
-					Name: ed.FilePath,
+					Name:        ed.FilePath,
+					Permissions: "0644",
 				},
 				ExternalDataSource: &mpi.ExternalDataSource{
 					Location: ed.Location,
