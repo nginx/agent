@@ -145,9 +145,9 @@ package: gpg-key $(PACKAGES_DIR) #### Create final packages for all supported di
 # Create tarball containing all packages
 	@echo "Creating tarball: $(TARBALL_NAME)"; \
 	rm -f $(PACKAGES_DIR)/$(TARBALL_NAME); \
-	pushd $(PACKAGES_DIR) > /dev/null; \
+	cd $(PACKAGES_DIR); \
 	tar -czvf "./$(TARBALL_NAME)" *; \
-	popd > /dev/null; \
+	cd ../.. \
 	ls -la $(PACKAGES_DIR)/$(TARBALL_NAME);
 
 .PHONY: gpg-key
