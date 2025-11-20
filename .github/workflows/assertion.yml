@@ -10,7 +10,7 @@ on:
       runId:
         description: 'Run ID of the workflow that built the artifacts'
         type: string
-        required: false
+        required: true
       signAssertion:
         description: 'Sign and store the assertion document'
         type: boolean
@@ -68,10 +68,10 @@ jobs:
         if: ${{ inputs.runId != '' }}
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # 6.0.0
         with:
-          run-id: ${{ inputs.runId }}
-          github-token: ${{ github.token }}
           name: nginx-agent-binaries-${{ inputs.packageVersion }}-${{ matrix.osarch }}
           path: binaries
+          run-id: ${{ inputs.runId }}
+          github-token: ${{ github.token }}
 
       - name: Gather build dependencies
         id: godeps

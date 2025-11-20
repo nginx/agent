@@ -54,7 +54,7 @@ defaults:
     shell: bash
 
 concurrency:
-  group: ${{ github.ref_name }}-v3-release
+  group: ${{ github.ref_name }}-release
   cancel-in-progress: true
 
 permissions:
