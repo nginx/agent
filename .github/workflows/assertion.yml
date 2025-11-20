@@ -7,16 +7,30 @@ on:
         description: 'Agent version'
         type: string
         required: true
-      artifactId:
-        description: 'Artifact ID'
+      runId:
+        description: 'Run ID of the workflow that built the artifacts'
         type: string
         required: false
+      signAssertion:
+        description: 'Sign and store the assertion document'
+        type: boolean
+        required: false
+        default: false
   workflow_call:
     inputs:
       packageVersion:
         description: 'Agent version'
         type: string
         required: true
+      runId:
+        description: 'Run ID of the workflow that built the artifacts'
+        type: string
+        required: false
+      signAssertion:
+        description: 'Sign and store the assertion document'
+        type: boolean
+        required: false
+        default: false
     secrets:
       ARTIFACTORY_USER:
         required: true
@@ -51,18 +65,11 @@ jobs:
           cache: false
 
       - name: Download nginx-agent binary artifacts
-        if: ${{ inputs.artifactId == '' }}
+        if: ${{ inputs.runId != '' }}
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # 6.0.0
         with:
-          name: nginx-agent-binaries-${{ inputs.packageVersion }}-${{ matrix.osarch }}
-          path: binaries
-
-      - name: Download nginx-agent binary artifact by ID
-        if: ${{ inputs.artifactId != '' }}
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # 6.0.0
-        with:
-            artifact-ids: '${{ inputs.artifactId }}'
-            path: binaries
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.runId }}
 
       - name: Gather build dependencies
         id: godeps
@@ -98,6 +105,7 @@ jobs:
 
       - name: Sign and Store Assertion Document
         id: sign
+        if: ${{ inputs.signAssertion == true }}
         uses: nginxinc/compliance-rules/.github/actions/sign@83e452166aaf0ad8f07caf91a4f1f903b3dea1e6 # v0.3.0
         with:
           assertion-doc: ${{ steps.assertiondoc.outputs.assertion-document-path }}

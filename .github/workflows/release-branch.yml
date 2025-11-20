@@ -244,6 +244,8 @@ jobs:
           VERSION: ${{ env.VERSION }}
           PACKAGE_BUILD: ${{ inputs.packageBuildNo }}
         run: |
+          echo "Run ID: ${{ github.run_id }}"
+          echo "Run Number: ${{ github.run_number }}"
           export PATH=$PATH:~/go/bin
           echo "$GPG_KEY" | base64 --decode > ${NFPM_SIGNING_KEY_FILE}
           make package
@@ -302,6 +304,7 @@ jobs:
       contents: read
     with:
       packageVersion: ${{ inputs.packageVersion }}
+      runId: ${{ github.run_id }}
     secrets:
       ARTIFACTORY_USER: ${{ secrets.ARTIFACTORY_USER }}
       ARTIFACTORY_TOKEN: ${{ secrets.ARTIFACTORY_TOKEN }}
