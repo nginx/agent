@@ -105,6 +105,11 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test1_TestSubDir
 		},
 	}
 
+	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+		manifestFiles["/etc/nginx/nginx.conf"].ManifestFileMeta.Hash = "/SWXYYenb2EcJNg6fiuzlkdj91nBdsMdF1vLm7Wybvc="
+		manifestFiles["/etc/nginx/nginx.conf"].ManifestFileMeta.Size = 1218
+	}
+
 	utils.CheckManifestFile(s.T(), utils.Container, manifestFiles)
 
 	sort.Slice(responses, func(i, j int) bool {
@@ -297,6 +302,11 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test5_TestUnrefe
 		},
 	}
 
+	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+		manifestFiles["/etc/nginx/nginx.conf"].ManifestFileMeta.Hash = "/SWXYYenb2EcJNg6fiuzlkdj91nBdsMdF1vLm7Wybvc="
+		manifestFiles["/etc/nginx/nginx.conf"].ManifestFileMeta.Size = 1218
+	}
+
 	utils.CheckManifestFile(s.T(), utils.Container, manifestFiles)
 	utils.WriteConfigFileMock(s.T(), s.nginxInstanceID, "/etc/nginx/test/unreferenced_file.conf",
 		"/etc/nginx/test/unreferenced_file.conf", "/etc/nginx/mime.types")
@@ -341,8 +351,82 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test5_TestUnrefe
 	slog.Info("finished unreferenced file to referenced file test")
 }
 
+// Config apply to change referenced file to unreferenced file
+func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test6_TestReferencedToUnreferenced() {
+	slog.Info("starting referenced file to unreferenced file test")
+
+	manifestFiles := map[string]*model.ManifestFile{
+		"/etc/nginx/mime.types": {
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/mime.types",
+				Hash:       "b5XR19dePAcpB9hFYipp0jEQ0SZsFv8SKzEJuLIfOuk=",
+				Size:       5349,
+				Referenced: true,
+			},
+		},
+		"/etc/nginx/nginx.conf": {
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/nginx.conf",
+				Hash:       "NIs0JY8C/mhUGfarLe28m3oQmeqc8+4MKXzLtWAgwGI=",
+				Size:       1382,
+				Referenced: true,
+			},
+		},
+		"/etc/nginx/test/unreferenced_file.conf": {
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/test/unreferenced_file.conf",
+				Hash:       "ucNsmG0hN5ojrMVkQKveSGlt00uIaEkZ1rTDa1QNUY0=",
+				Size:       189,
+				Referenced: true,
+			},
+		},
+	}
+
+	utils.CheckManifestFile(s.T(), utils.Container, manifestFiles)
+	utils.WriteConfigFileMock(s.T(), s.nginxInstanceID, "/etc/nginx/mime.types",
+		"/etc/nginx/mime.types", "/etc/nginx/mime.types")
+
+	utils.PerformConfigApply(s.T(), s.nginxInstanceID, utils.MockManagementPlaneAPIAddress)
+	responses := utils.ManagementPlaneResponses(s.T(), 2, utils.MockManagementPlaneAPIAddress)
+
+	manifestFiles = map[string]*model.ManifestFile{
+		"/etc/nginx/mime.types": {
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/mime.types",
+				Hash:       "b5XR19dePAcpB9hFYipp0jEQ0SZsFv8SKzEJuLIfOuk=",
+				Size:       5349,
+				Referenced: true,
+			},
+		},
+		"/etc/nginx/nginx.conf": {
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/nginx.conf",
+				Hash:       "r+khc9eBiffYMXGIdkQ3CeGar4/MBzuMUkaSlcSXsOw=",
+				Size:       1348,
+				Referenced: true,
+			},
+		},
+		"/etc/nginx/test/unreferenced_file.conf": {
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/test/unreferenced_file.conf",
+				Hash:       "ucNsmG0hN5ojrMVkQKveSGlt00uIaEkZ1rTDa1QNUY0=",
+				Size:       189,
+				Referenced: false,
+			},
+		},
+	}
+
+	utils.CheckManifestFile(s.T(), utils.Container, manifestFiles)
+
+	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
+	s.Equal("Config apply successful", responses[0].GetCommandResponse().GetMessage())
+	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
+	s.Equal("Successfully updated all files", responses[1].GetCommandResponse().GetMessage())
+	slog.Info("finished referenced file to unreferenced file test")
+}
+
 // Config apply with invalid config and unreferenced file to test rollback
-func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test6_TestRollbackWithUnreferencedFile() {
+func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test7_TestRollbackWithUnreferencedFile() {
 	slog.Info("starting invalid config apply with unreferenced file test")
 
 	err := utils.MockManagementPlaneGrpcContainer.CopyFileToContainer(
@@ -388,8 +472,8 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test6_TestRollba
 		"/etc/nginx/nginx.conf": {
 			ManifestFileMeta: &model.ManifestFileMeta{
 				Name:       "/etc/nginx/nginx.conf",
-				Hash:       "NIs0JY8C/mhUGfarLe28m3oQmeqc8+4MKXzLtWAgwGI=",
-				Size:       1382,
+				Hash:       "r+khc9eBiffYMXGIdkQ3CeGar4/MBzuMUkaSlcSXsOw=",
+				Size:       1348,
 				Referenced: true,
 			},
 		},
@@ -398,14 +482,9 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test6_TestRollba
 				Name:       "/etc/nginx/test/unreferenced_file.conf",
 				Hash:       "ucNsmG0hN5ojrMVkQKveSGlt00uIaEkZ1rTDa1QNUY0=",
 				Size:       189,
-				Referenced: true,
+				Referenced: false,
 			},
 		},
-	}
-
-	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
-		manifestFiles["/etc/nginx/nginx.conf"].ManifestFileMeta.Hash = "/SWXYYenb2EcJNg6fiuzlkdj91nBdsMdF1vLm7Wybvc="
-		manifestFiles["/etc/nginx/nginx.conf"].ManifestFileMeta.Size = 1218
 	}
 
 	utils.CheckManifestFile(s.T(), utils.Container, manifestFiles)
