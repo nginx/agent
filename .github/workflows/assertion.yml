@@ -4,9 +4,10 @@ name: Generate and Sign Assertion Document
 on:
   workflow_call:
     inputs:
-      artifact_name:
-        required: true
+      packageVersion:
+        description: 'Agent version'
         type: string
+        required: true
     secrets:
       ARTIFACTORY_USER:
         required: true
@@ -29,8 +30,13 @@ jobs:
       matrix:
         osarch: [amd64, arm64]
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          ref: refs/heads/improve-assertion-doc-generation
+
       - name: Download nginx-agent binaries
-        uses: actions/download-artifact@v3.0.2
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # 6.0.0
         with:
           name: nginx-agent-binaries-${{ inputs.packageVersion }}-${{ matrix.osarch }}
           path: ./artifacts
@@ -60,7 +66,7 @@ jobs:
           invocation-id: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
           artifactory-user: ${{ inputs.ARTIFACTORY_USER }}
           artifactory-api-token: ${{ inputs.ARTIFACTORY_TOKEN }}
-          artifactory-url: ${{ secrets.ARTIFACTORY_URL }}
+          artifactory-url: ${{ inputs.ARTIFACTORY_URL }}
           artifactory-repo: 'f5-nginx-go-local-approved-dependency'
           assertion-doc-file: assertion_nginx-agent_${{ github.ref_name }}_${{matrix.osarch}}.json
           build-content-path: ${{ env.goversionm }}
