@@ -297,6 +297,9 @@ jobs:
     needs: [build-and-upload-packages]
     if : ${{ inputs.assertionDoc == true }}
     uses: ./.github/workflows/assertion.yml
+    permissions:
+      id-token: write
+      contents: read
     with:
       packageVersion: ${{ inputs.packageVersion }}
     secrets:
