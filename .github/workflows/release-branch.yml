@@ -221,6 +221,7 @@ jobs:
 
       - name: Setup package build environment
         run: |
+          go mod tidy
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           sudo apt-get update
           sudo apt-get install -y gpgv1 monkeysphere
@@ -301,18 +302,25 @@ jobs:
         with:
           ref: improve-assertion-doc-generation
 
+      - name: Setup go
+        uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+        with:
+            go-version-file: 'go.mod'
+            cache: false
+
       - name: Download nginx-agent binaries
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # 6.0.0
         with:
-          name: nginx-agent-binaries-${{ inputs.packageVersion }}-${{ matrix.osarch }}
+          name: nginx-agent-binaries-${{ inputs.packageVersion }}-${{ matrix.osarch }}]
+          path: binaries
 
       - name: Gather build dependencies
         id: godeps
         run: |
-          ls -la artifacts
-          echo "agent_digest=$(cat artifacts/nginx-agent.sha256)" >> $GITHUB_ENV
-          echo "agent_buildstart=$(cat artifacts/nginx-agent.buildstart)" >> $GITHUB_ENV
-          echo "agent_buildend=$(cat artifacts/nginx-agent.buildend)" >> $GITHUB_ENV
+          ls -la binaries
+          echo "agent_digest=$(cat binaries/nginx-agent.sha256)" >> $GITHUB_ENV
+          echo "agent_buildstart=$(cat binaries/nginx-agent.buildstart)" >> $GITHUB_ENV
+          echo "agent_buildend=$(cat binaries/nginx-agent.buildend)" >> $GITHUB_ENV
 
           echo "Checking dependencies..."
           go version -m build/${{ matrix.osarch }}/nginx-agent > goversionm_${{ github.run_id }}_${{ github.run_number }}.txt
