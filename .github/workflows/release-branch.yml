@@ -17,11 +17,11 @@ on:
         type: string
       uploadAzure:
         description: 'Publish packages Azure storage'
-        default: true
+        default: false
         type: boolean
       publishPackages:
         description: 'Publish packages to nginx repo'
-        default: true
+        default: false
         type: boolean
       tagRelease:
         description: 'Add tag to release branch'
@@ -39,6 +39,11 @@ on:
         description: 'Location to publish packages to'
         required: false
         default: "https://up-ap.nginx.com"
+        type: string
+      assertionDoc:
+        description: 'Generate assertion document'
+        default: false
+        type: boolean
 
 env:
   NFPM_VERSION: 'v2.35.3'
@@ -291,6 +296,7 @@ jobs:
     name: Build and Generate Assertion Document
     runs-on: ubuntu-22.04
     needs: [build-and-upload-packages]
+    if : ${{ inputs.assertionDoc == true }}
     continue-on-error: true
     permissions:
       contents: read
