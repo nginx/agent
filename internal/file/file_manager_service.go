@@ -881,6 +881,8 @@ func (fms *FileManagerService) handleExternalFileDownload(ctx context.Context, f
 		slog.DebugContext(ctx, "External file unchanged (304), skipping disk write.",
 			"file", fileAction.File.GetFileMeta().GetName())
 
+		fileAction.Action = model.Unchanged
+
 		return nil
 	}
 
