@@ -311,7 +311,7 @@ jobs:
       - name: Download nginx-agent binaries
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # 6.0.0
         with:
-          name: nginx-agent-binaries-${{ inputs.packageVersion }}-${{ matrix.osarch }}]
+          name: nginx-agent-binaries-${{ inputs.packageVersion }}-${{ matrix.osarch }}
           path: binaries
 
       - name: Gather build dependencies
