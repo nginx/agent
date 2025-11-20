@@ -251,7 +251,7 @@ jobs:
           make package
 
       - name: Archive AMD64 Binaries
-        uses: actions/upload-artifact@v3.1.2 # v3.1.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: nginx-agent-binaries-${{ inputs.packageVersion }}-amd64
           path: |
@@ -261,7 +261,7 @@ jobs:
             build/amd64/nginx-agent.buildend
 
       - name: Archive ARM64 Binaries
-        uses: actions/upload-artifact@v3.1.2 # v3.1.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: nginx-agent-binaries-${{ inputs.packageVersion }}-arm64
           path: |
