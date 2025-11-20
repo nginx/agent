@@ -291,6 +291,7 @@ jobs:
     name: Build and Generate Assertion Document
     runs-on: ubuntu-22.04
     needs: [build-and-upload-packages]
+    continue-on-error: true
     permissions:
       contents: read
     strategy:
@@ -337,9 +338,9 @@ jobs:
           builder-id: 'github.com'
           builder-version: '${{env.GO_VERSION}}_test'
           invocation-id: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
-          artifactory-user: ${{ inputs.ARTIFACTORY_USER }}
-          artifactory-api-token: ${{ inputs.ARTIFACTORY_TOKEN }}
-          artifactory-url: ${{ inputs.ARTIFACTORY_URL }}
+          artifactory-user: ${{ secrets.ARTIFACTORY_USER }}
+          artifactory-api-token: ${{ secrets.ARTIFACTORY_TOKEN }}
+          artifactory-url: ${{ secrets.ARTIFACTORY_URL }}
           artifactory-repo: 'f5-nginx-go-local-approved-dependency'
           assertion-doc-file: assertion_nginx-agent_${{ inputs.packageVersion }}_${{ matrix.osarch }}.json
           build-content-path: ${{ env.goversionm }}
