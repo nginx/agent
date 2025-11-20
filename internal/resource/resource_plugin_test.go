@@ -845,7 +845,6 @@ func TestResource_Subscriptions(t *testing.T) {
 			bus.WriteConfigSuccessfulTopic,
 			bus.RollbackWriteTopic,
 			bus.APIActionRequestTopic,
-			bus.AgentConfigUpdateTopic,
 		},
 		resourcePlugin.Subscriptions())
 }

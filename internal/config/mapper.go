@@ -124,11 +124,21 @@ func ToAuxiliaryCommandServerProto(cmd *Command) *mpi.AuxiliaryCommandServer {
 	return protoConfig
 }
 
-func FromAgentConfigLogProto(log *mpi.Log) *Log {
-	return &Log{
-		Level: MapConfigLogLevelToSlogLevel(log.GetLogLevel()),
-		Path:  log.GetLogPath(),
+func FromAgentRemoteConfigProto(config *mpi.AgentConfig) *Config {
+	conf := &Config{}
+
+	if config.GetLabels() != nil {
+		conf.Labels = mpi.ConvertToMap(config.GetLabels())
 	}
+
+	if config.GetLog() != nil {
+		conf.Log = &Log{
+			Level: MapConfigLogLevelToSlogLevel(config.GetLog().GetLogLevel()),
+			Path:  config.GetLog().GetLogPath(),
+		}
+	}
+
+	return conf
 }
 
 func ToAgentConfigLogProto(log *Log) *mpi.Log {

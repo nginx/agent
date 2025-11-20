@@ -125,7 +125,7 @@ func ResolveConfig() (*Config, error) {
 	}
 
 	defaultCollector(collector, config)
-	addLabelsAsOTelHeaders(collector, config.Labels)
+	AddLabelsAsOTelHeaders(collector, config.Labels)
 
 	slog.Debug("Agent config", "config", config)
 	slog.Info("Excluded files from being watched for file changes", "exclude_files",
@@ -345,7 +345,7 @@ func addDefaultVMHostMetricsReceiver(collector *Collector) {
 	}
 }
 
-func addLabelsAsOTelHeaders(collector *Collector, labels map[string]any) {
+func AddLabelsAsOTelHeaders(collector *Collector, labels map[string]any) {
 	slog.Debug("Adding labels as headers to collector", "labels", labels)
 	if collector.Extensions.HeadersSetter != nil {
 		for key, value := range labels {

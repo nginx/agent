@@ -119,7 +119,7 @@ func TestCommandPlugin_createConnection(t *testing.T) {
 	messages := messagePipe.Messages()
 	assert.Len(t, messages, 2)
 	assert.Equal(t, bus.ConnectionCreatedTopic, messages[0].Topic)
-	assert.Equal(t, bus.AgentConfigUpdateTopic, messages[1].Topic)
+	assert.Equal(t, bus.ConnectionAgentConfigUpdateTopic, messages[1].Topic)
 }
 
 func TestCommandPlugin_Process(t *testing.T) {
@@ -244,7 +244,7 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 				},
 			},
 			expectedTopic:  &bus.Message{Topic: bus.AgentConfigUpdateTopic},
-			request:        "UpdateAgentConfigRequest",
+			request:        "AgentConfigUpdateTopic",
 			configFeatures: config.DefaultFeatures(),
 		},
 	}
@@ -277,24 +277,21 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 			assert.Len(tt, messages, 1)
 			assert.Equal(tt, test.expectedTopic.Topic, messages[0].Topic)
 
-			if test.request == "UpdateAgentConfigRequest" {
-				data, ok := messages[0].Data.(*config.Config)
-				assert.True(tt, ok)
-				require.NotNil(tt, data)
-			} else {
-				mp, ok := messages[0].Data.(*mpi.ManagementPlaneRequest)
+			mp, ok := messages[0].Data.(*mpi.ManagementPlaneRequest)
 
-				switch test.request {
-				case "UploadRequest":
-					assert.True(tt, ok)
-					require.NotNil(tt, mp.GetConfigUploadRequest())
-				case "ApplyRequest":
-					assert.True(tt, ok)
-					require.NotNil(tt, mp.GetConfigApplyRequest())
-				case "APIActionRequest":
-					assert.True(tt, ok)
-					require.NotNil(tt, mp.GetActionRequest())
-				}
+			switch test.request {
+			case "UploadRequest":
+				assert.True(tt, ok)
+				require.NotNil(tt, mp.GetConfigUploadRequest())
+			case "ApplyRequest":
+				assert.True(tt, ok)
+				require.NotNil(tt, mp.GetConfigApplyRequest())
+			case "APIActionRequest":
+				assert.True(tt, ok)
+				require.NotNil(tt, mp.GetActionRequest())
+			case "AgentConfigUpdateTopic":
+				assert.True(tt, ok)
+				require.NotNil(tt, mp.GetUpdateAgentConfigRequest())
 			}
 		})
 	}

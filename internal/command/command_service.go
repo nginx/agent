@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"reflect"
 	"sync"
 	"sync/atomic"
 
@@ -48,6 +47,7 @@ type (
 		subscribeClientMutex         sync.Mutex
 		configApplyRequestQueueMutex sync.Mutex
 		resourceMutex                sync.Mutex
+		agentConfigMutex             sync.Mutex
 	}
 )
 
@@ -183,26 +183,14 @@ func (cs *CommandService) SendDataPlaneResponse(ctx context.Context, response *m
 	)
 }
 
-func (cs *CommandService) UpdateAgentConfig(
-	ctx context.Context,
-	mpiConfig *mpi.AgentConfig,
-) (*config.Config, error) {
-	slog.InfoContext(ctx, "Updating agent configuration", "config", mpiConfig)
+func (cs *CommandService) Reconfigure(ctx context.Context, agentConfig *config.Config) error {
+	cs.agentConfigMutex.Lock()
+	defer cs.agentConfigMutex.Unlock()
 
-	updatedLog := config.FromAgentConfigLogProto(mpiConfig.GetLog())
+	slog.DebugContext(ctx, "Command plugin is reconfiguring to update agent configuration", "config", agentConfig)
+	cs.agentConfig = agentConfig
 
-	if mpiConfig.GetLog() != nil && !reflect.DeepEqual(cs.agentConfig.Log, updatedLog) {
-		slog.InfoContext(ctx, "Updating log configuration", "log", updatedLog)
-		cs.agentConfig.Log = updatedLog
-
-		slogger := logger.New(
-			cs.agentConfig.Log.Path,
-			cs.agentConfig.Log.Level,
-		)
-		slog.SetDefault(slogger)
-	}
-
-	return cs.agentConfig, nil
+	return nil
 }
 
 // Subscribe to the Management Plane for incoming commands.

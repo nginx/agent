@@ -61,7 +61,6 @@ func TestFilePlugin_Subscriptions(t *testing.T) {
 			bus.ConfigApplyFailedTopic,
 			bus.ReloadSuccessfulTopic,
 			bus.ConfigApplyCompleteTopic,
-			bus.AgentConfigUpdateTopic,
 		},
 		filePlugin.Subscriptions(),
 	)

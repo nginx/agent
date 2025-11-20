@@ -113,8 +113,6 @@ func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 			fp.handleReloadSuccess(ctxWithMetadata, msg)
 		case bus.ConfigApplyFailedTopic:
 			fp.handleConfigApplyFailedRequest(ctxWithMetadata, msg)
-		case bus.AgentConfigUpdateTopic:
-			fp.handleAgentConfigUpdate(ctxWithMetadata, msg)
 		default:
 			slog.DebugContext(ctxWithMetadata, "File plugin received unknown topic", "topic", msg.Topic)
 		}
@@ -140,8 +138,18 @@ func (fp *FilePlugin) Subscriptions() []string {
 		bus.ConfigApplyFailedTopic,
 		bus.ReloadSuccessfulTopic,
 		bus.ConfigApplyCompleteTopic,
-		bus.AgentConfigUpdateTopic,
 	}
+}
+
+func (fp *FilePlugin) Reconfigure(ctx context.Context, agentConfig *config.Config) error {
+	slog.DebugContext(ctx, "File plugin is reconfiguring to update agent configuration")
+
+	fp.agentConfigMutex.Lock()
+	defer fp.agentConfigMutex.Unlock()
+
+	fp.config = agentConfig
+
+	return nil
 }
 
 func (fp *FilePlugin) enableWatchers(ctx context.Context,
@@ -414,21 +422,6 @@ func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Me
 	}
 
 	fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
-}
-
-func (fp *FilePlugin) handleAgentConfigUpdate(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "File plugin received agent config update message")
-
-	fp.agentConfigMutex.Lock()
-	defer fp.agentConfigMutex.Unlock()
-
-	agentConfig, ok := msg.Data.(*config.Config)
-	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *config.Config", "payload", msg.Data)
-		return
-	}
-
-	fp.config = agentConfig
 }
 
 func (fp *FilePlugin) createDataPlaneResponse(correlationID string, status mpi.CommandResponse_CommandStatus,
