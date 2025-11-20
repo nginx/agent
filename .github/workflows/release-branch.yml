@@ -221,7 +221,7 @@ jobs:
 
       - name: Setup package build environment
         run: |
-          go mod tidy
+          go mod download
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
           sudo apt-get update
           sudo apt-get install -y gpgv1 monkeysphere
