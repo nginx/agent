@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-22.04
     if: ${{ !github.event.pull_request.head.repo.fork }}
     permissions:
-      id-token: read
+      id-token: write
       contents: read
     env:
       GOPROXY: "https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@${{ secrets.ARTIFACTORY_URL }}"
