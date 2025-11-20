@@ -85,7 +85,6 @@ jobs:
     name: Update Release Draft
     runs-on: ubuntu-22.04
     needs: [vars]
-    if: ${{ needs.vars.outputs.github_release == 'true' }}
     permissions:
       contents: write # Needed to create draft release
     outputs:
