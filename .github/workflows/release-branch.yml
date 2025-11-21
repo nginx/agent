@@ -189,6 +189,7 @@ jobs:
           ref: ${{ inputs.releaseBranch }}
 
       - name: Tag release
+        if: ${{ needs.vars.outputs.tag_release == 'true' }}
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -241,12 +242,6 @@ jobs:
           export PATH=$PATH:~/go/bin
           echo "$GPG_KEY" | base64 --decode > ${NFPM_SIGNING_KEY_FILE}
           make package
-
-      - name: Install GPG tools
-        if: ${{ inputs.publishPackages == true }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gpgv1 monkeysphere
 
       - name: Get Id Token
         if: ${{ inputs.publishPackages == true }}
