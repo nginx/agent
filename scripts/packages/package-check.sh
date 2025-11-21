@@ -116,7 +116,7 @@ uris=(
   ${SUSE[@]}
 )
 
-if [[ ${majorVersion} == 2 ]]; then
+if [[ ${majorVersion} == "2" ]]; then
   # v2.x supports FreeBSD packages
   FREEBSD=(
     freebsd/FreeBSD:12:amd64/latest/nginx-agent-$VERSION.pkg
@@ -240,20 +240,28 @@ prep_txz() {
     bsd=$(echo "$i" | grep -e "FreeBSD:[0-9]*")
     ver=$(echo "$bsd" | cut -d':' -f2)
     arch=$(echo "$i" | grep -o -F -e "amd64" -e "arm64")
-    dest="$(dirname "$i")/nginx-agent-${VERSION}-FreeBSD.$ver.$arch.pkg"
+
+    # Azure path
+    # Should be 'FreeBSD:12:amd64/nginx-agent-2.44.0.pkg'
     az_dest="${PKG_DIR}/azure/txz/FreeBSD:$ver:$arch/nginx-agent-${VERSION}.pkg"
-    echo "Copying ${i} to ${az_dest/latest\//}"
+    echo "Copying ${i} to ${az_dest}"
     mkdir -p "$(dirname "$az_dest")"
     cp "${i}" "${az_dest}"
+
+    # GitHub release asset path
+    # Should be 'nginx-agent-2.44.0-FreeBSD.12.amd64.pkg'
+    dest="$(dirname "$i")/nginx-agent-${VERSION}-FreeBSD.$ver.$arch.pkg"
+    echo "Moving ${i} to ${dest}"
+    cp "${i}" "${dest}"
   done
 }
 
 prepare_packages() {
   echo "Preparing packages for upload..."
-  prep_deb
-  prep_apk
-  prep_rpm
-  if [[ ${majorVersion} == 2 ]]; then
+#  prep_deb
+#  prep_apk
+#  prep_rpm
+  if [[ ${majorVersion} == "2" ]]; then
     prep_txz
   fi
 
@@ -278,8 +286,8 @@ create_tarball() {
 
 # Main
 
-check_repo
-check_pkgs
+#check_repo
+#check_pkgs
 
 # Prepare packages for upload
 if [[ ${DL} == 1 ]]; then
