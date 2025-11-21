@@ -69,7 +69,8 @@ APK_PACKAGE := ./build/$(PACKAGE_NAME).apk
 DEB_PACKAGE := ./build/$(PACKAGE_NAME).deb
 RPM_PACKAGE := ./build/$(PACKAGE_NAME).rpm
 
-MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY ?= 
+MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY ?=
+MOCK_MANAGEMENT_PLANE_EXTERNAL_FILE_SERVER ?=
 MOCK_MANAGEMENT_PLANE_LOG_LEVEL ?= INFO
 MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS ?= 127.0.0.1:0
 MOCK_MANAGEMENT_PLANE_API_ADDRESS ?= 127.0.0.1:0
@@ -215,7 +216,12 @@ race-condition-dev: ## Run agent executable with race condition detection
 
 run-mock-management-grpc-server: ## Run mock management plane gRPC server
 	@echo "🖲️ Running mock management plane gRPC server"
-	$(GORUN) test/mock/grpc/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY) -logLevel=$(MOCK_MANAGEMENT_PLANE_LOG_LEVEL) -grpcAddress=$(MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS) -apiAddress=$(MOCK_MANAGEMENT_PLANE_API_ADDRESS)
+	$(GORUN) test/mock/grpc/cmd/main.go \
+		-configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY) \
+		-logLevel=$(MOCK_MANAGEMENT_PLANE_LOG_LEVEL) \
+		-grpcAddress=$(MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS) \
+		-apiAddress=$(MOCK_MANAGEMENT_PLANE_API_ADDRESS) \
+		-externalFileServer=$(MOCK_MANAGEMENT_PLANE_EXTERNAL_FILE_SERVER)
 
 
 .PHONY: build-test-nginx-plus-and-nap-image
