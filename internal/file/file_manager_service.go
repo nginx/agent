@@ -442,6 +442,12 @@ func (fms *FileManagerService) UpdateManifestFile(ctx context.Context,
 	slog.DebugContext(ctx, "Updating manifest file", "current_files", currentFiles, "referenced", referenced)
 	currentManifestFiles, _, readError := fms.manifestFile()
 
+	slog.DebugContext(ctx, "Current manifest file")
+	for _, file := range currentManifestFiles {
+		slog.DebugContext(ctx, "Manifest File: ", "file", file.ManifestFileMeta.Name, "hash",
+			file.ManifestFileMeta.Hash, "unmanaged", file.ManifestFileMeta.Unmanaged)
+	}
+
 	// When agent is first started the manifest is updated when an NGINX instance is found, but the manifest file
 	// will be empty leading to previousManifestFiles being empty. This was causing issues if the first config
 	// apply failed leading to the manifest file being rolled back to an empty file.
@@ -462,10 +468,17 @@ func (fms *FileManagerService) UpdateManifestFile(ctx context.Context,
 	updatedFiles := make(map[string]*model.ManifestFile)
 
 	manifestFiles := fms.convertToManifestFileMap(currentFiles, referenced)
+	slog.DebugContext(ctx, "Files being updated")
+	for _, file := range currentFiles {
+		slog.DebugContext(ctx, "Updated File: ", "file", file.GetFileMeta().GetName(), "hash",
+			file.GetFileMeta().GetHash(), "unmanaged", file.GetUnmanaged())
+	}
+
 	// During a config apply every file is set to unreferenced
 	// When a new NGINX config context is detected
 	// we update the files in the manifest by setting the referenced bool to true
 	if currentManifestFiles != nil && referenced {
+		slog.DebugContext(ctx, "Referenced set to ture, add current files to updated files  ")
 		for _, currentManifestFile := range currentManifestFiles {
 			// if file from manifest file is unreferenced add it to updatedFiles map
 			if !currentManifestFile.ManifestFileMeta.Referenced {
