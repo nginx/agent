@@ -207,7 +207,7 @@ jobs:
 
   build-and-upload-packages:
     name: Build and upload release packages
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-22.04-amd64
     needs: [vars,release-draft,tag-release]
     permissions:
       id-token: write
