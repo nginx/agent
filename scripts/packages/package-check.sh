@@ -258,9 +258,9 @@ prep_txz() {
 
 prepare_packages() {
   echo "Preparing packages for upload..."
-#  prep_deb
-#  prep_apk
-#  prep_rpm
+  prep_deb
+  prep_apk
+  prep_rpm
   if [[ ${majorVersion} == "2" ]]; then
     prep_txz
   fi
@@ -286,8 +286,8 @@ create_tarball() {
 
 # Main
 
-#check_repo
-#check_pkgs
+check_repo
+check_pkgs
 
 # Prepare packages for upload
 if [[ ${DL} == 1 ]]; then
