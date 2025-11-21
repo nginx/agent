@@ -52,9 +52,6 @@ concurrency:
   group: ${{ github.ref_name }}-v3-release
   cancel-in-progress: true
 
-permissions:
-  contents: read
-
 jobs:
   vars:
     name: Set workflow variables
