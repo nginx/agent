@@ -259,11 +259,11 @@ prepare_packages() {
 
   echo
   echo "Prepared packages for Azure:"
-  find "${PKG_DIR}/azure" -type f | grep "${VERSION}" | sed "s|${PKG_DIR}/azure/||"
+  find "${PKG_DIR}/azure" -type f | grep "${VERSION}" | sed "s|${PKG_DIR}/azure/||" | sort
 
   echo
   echo "Prepared packages for GitHub Release v${VERSION}:"
-  find "${PKG_DIR}" -type f | grep "${VERSION}" | grep -v "/azure/" | awk -F/ '{print $NF}'
+  find "${PKG_DIR}" -type f | grep "${VERSION}" | grep -v "/azure/" | awk -F/ '{print $NF}' | sort
 }
 
 create_tarball() {
