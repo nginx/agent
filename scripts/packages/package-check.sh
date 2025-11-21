@@ -186,14 +186,17 @@ check_repo() {
 prep_deb() {
   echo "Preparing deb packages..."
   mkdir -p "${PKG_DIR}/azure/deb"
-  for i in $(find "${PKG_DIR}" | grep -e "nginx-agent[_-]${VERSION}.*\.deb"); do
+  for i in $(find "${PKG_DIR}" | grep -e "nginx-agent[_-]${VERSION}.*\.deb" | grep -v "azure"); do
     az_dest="${PKG_DIR}/azure/deb/$(basename "$i")"
     # Azure path
+    # Should be 'nginx-agent_3.5.0~bullseye_arm64.deb'
     echo "Copying ${i} to ${az_dest}"
     cp "${i}" "${az_dest}"
     # GitHub release asset path
-    echo "Moving ${i} to ${i/_/-}"
-    mv "${i}" "${i/_/-}"
+    # Should be 'nginx-agent-3.5.0.bullseye_arm64.deb'
+    gh_dest=$(echo ${i} | sed -E "s/_/-/" | sed -E "s/~/./")
+    echo "Moving ${i} to ${gh_dest}"
+    mv "${i}" "${gh_dest}"
   done
 }
 
@@ -279,7 +282,7 @@ check_repo
 check_pkgs
 
 # Prepare packages for upload
-if [[ $DL == 1 ]]; then
+if [[ ${DL} == 1 ]]; then
   prepare_packages
   create_tarball
 fi
