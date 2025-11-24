@@ -51,7 +51,7 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TearDownTest() {
 	utils.ClearManagementPlaneResponses(s.T(), utils.MockManagementPlaneAPIAddress)
 }
 
-// Config apply with unreferenced file in sub directory
+// Config apply with unreferenced file in subdirectory
 func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test1_TestSubDirectory() {
 	slog.Info("starting config apply unreferenced file in sub directory test")
 
@@ -159,6 +159,40 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test2_TestUpdate
 	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
 	s.T().Logf("Config apply responses: %v", responses)
 
+	manifestFiles := map[string]*model.ManifestFile{
+		"/etc/nginx/mime.types": {
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/mime.types",
+				Hash:       "b5XR19dePAcpB9hFYipp0jEQ0SZsFv8SKzEJuLIfOuk=",
+				Size:       5349,
+				Referenced: true,
+			},
+		},
+		"/etc/nginx/nginx.conf": {
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/nginx.conf",
+				Hash:       "gJ1slpIAUmHAiSo5ZIalKvE40b1hJCgaXasQOMab6kc=",
+				Size:       1172,
+				Referenced: true,
+			},
+		},
+		"/etc/nginx/test/unreferenced_file.conf": {
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/test/unreferenced_file.conf",
+				Hash:       "ucNsmG0hN5ojrMVkQKveSGlt00uIaEkZ1rTDa1QNUY0=",
+				Size:       189,
+				Referenced: false,
+			},
+		},
+	}
+
+	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+		manifestFiles["/etc/nginx/nginx.conf"].ManifestFileMeta.Hash = "/SWXYYenb2EcJNg6fiuzlkdj91nBdsMdF1vLm7Wybvc="
+		manifestFiles["/etc/nginx/nginx.conf"].ManifestFileMeta.Size = 1218
+	}
+
+	utils.CheckManifestFile(s.T(), utils.Container, manifestFiles)
+
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	s.Equal("Config apply successful, no files to change", responses[0].GetCommandResponse().GetMessage())
 	s.NotEqual(originalContent, output)
@@ -198,6 +232,40 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test3_TestDelete
 	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
 	s.T().Logf("Config apply responses: %v", responses)
 
+	manifestFiles := map[string]*model.ManifestFile{
+		"/etc/nginx/mime.types": {
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/mime.types",
+				Hash:       "b5XR19dePAcpB9hFYipp0jEQ0SZsFv8SKzEJuLIfOuk=",
+				Size:       5349,
+				Referenced: true,
+			},
+		},
+		"/etc/nginx/nginx.conf": {
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/nginx.conf",
+				Hash:       "gJ1slpIAUmHAiSo5ZIalKvE40b1hJCgaXasQOMab6kc=",
+				Size:       1172,
+				Referenced: true,
+			},
+		},
+		"/etc/nginx/test/unreferenced_file.conf": {
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/test/unreferenced_file.conf",
+				Hash:       "ucNsmG0hN5ojrMVkQKveSGlt00uIaEkZ1rTDa1QNUY0=",
+				Size:       189,
+				Referenced: false,
+			},
+		},
+	}
+
+	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+		manifestFiles["/etc/nginx/nginx.conf"].ManifestFileMeta.Hash = "/SWXYYenb2EcJNg6fiuzlkdj91nBdsMdF1vLm7Wybvc="
+		manifestFiles["/etc/nginx/nginx.conf"].ManifestFileMeta.Size = 1218
+	}
+
+	utils.CheckManifestFile(s.T(), utils.Container, manifestFiles)
+
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	s.Equal("Config apply successful", responses[0].GetCommandResponse().GetMessage())
 
@@ -224,6 +292,32 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test4_TestDelete
 	utils.PerformConfigApply(s.T(), s.nginxInstanceID, utils.MockManagementPlaneAPIAddress)
 	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
 	s.T().Logf("Config apply responses: %v", responses)
+
+	manifestFiles := map[string]*model.ManifestFile{
+		"/etc/nginx/mime.types": {
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/mime.types",
+				Hash:       "b5XR19dePAcpB9hFYipp0jEQ0SZsFv8SKzEJuLIfOuk=",
+				Size:       5349,
+				Referenced: true,
+			},
+		},
+		"/etc/nginx/nginx.conf": {
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/nginx.conf",
+				Hash:       "gJ1slpIAUmHAiSo5ZIalKvE40b1hJCgaXasQOMab6kc=",
+				Size:       1172,
+				Referenced: true,
+			},
+		},
+	}
+
+	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
+		manifestFiles["/etc/nginx/nginx.conf"].ManifestFileMeta.Hash = "/SWXYYenb2EcJNg6fiuzlkdj91nBdsMdF1vLm7Wybvc="
+		manifestFiles["/etc/nginx/nginx.conf"].ManifestFileMeta.Size = 1218
+	}
+
+	utils.CheckManifestFile(s.T(), utils.Container, manifestFiles)
 
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	s.Equal("Config apply successful", responses[0].GetCommandResponse().GetMessage())
