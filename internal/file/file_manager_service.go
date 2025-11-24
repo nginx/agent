@@ -114,28 +114,28 @@ type FileManagerService struct {
 	// map of files and the actions performed on them during config apply
 	fileActions map[string]*model.FileCache // key is file path
 	// map of the files currently on disk, used to determine the file action during config apply
-	currentFilesOnDisk     map[string]*mpi.File // key is file path
-	previousManifestFiles  map[string]*model.ManifestFile
-	newExternalFileHeaders map[string]DownloadHeader
-	manifestFilePath       string
-	rollbackManifest       bool
-	filesMutex             sync.RWMutex
+	currentFilesOnDisk    map[string]*mpi.File // key is file path
+	previousManifestFiles map[string]*model.ManifestFile
+	externalFileHeaders   map[string]DownloadHeader
+	manifestFilePath      string
+	rollbackManifest      bool
+	filesMutex            sync.RWMutex
 }
 
 func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig *config.Config,
 	manifestLock *sync.RWMutex,
 ) *FileManagerService {
 	return &FileManagerService{
-		agentConfig:            agentConfig,
-		fileOperator:           NewFileOperator(manifestLock),
-		fileServiceOperator:    NewFileServiceOperator(agentConfig, fileServiceClient, manifestLock),
-		fileActions:            make(map[string]*model.FileCache),
-		currentFilesOnDisk:     make(map[string]*mpi.File),
-		previousManifestFiles:  make(map[string]*model.ManifestFile),
-		newExternalFileHeaders: make(map[string]DownloadHeader),
-		rollbackManifest:       true,
-		manifestFilePath:       agentConfig.LibDir + "/manifest.json",
-		manifestLock:           manifestLock,
+		agentConfig:           agentConfig,
+		fileOperator:          NewFileOperator(manifestLock),
+		fileServiceOperator:   NewFileServiceOperator(agentConfig, fileServiceClient, manifestLock),
+		fileActions:           make(map[string]*model.FileCache),
+		currentFilesOnDisk:    make(map[string]*mpi.File),
+		previousManifestFiles: make(map[string]*model.ManifestFile),
+		externalFileHeaders:   make(map[string]DownloadHeader),
+		rollbackManifest:      true,
+		manifestFilePath:      agentConfig.LibDir + "/manifest.json",
+		manifestLock:          manifestLock,
 	}
 }
 
@@ -465,7 +465,6 @@ func (fms *FileManagerService) DetermineFileActions(
 	return fileDiff, nil
 }
 
-
 // UpdateCurrentFilesOnDisk updates the FileManagerService currentFilesOnDisk slice which contains the files
 // currently on disk
 func (fms *FileManagerService) UpdateCurrentFilesOnDisk(
@@ -656,13 +655,22 @@ func (fms *FileManagerService) downloadUpdatedFilesToTempLocation(ctx context.Co
 		errGroup.Go(func() error {
 			tempFilePath := tempFilePath(fileAction.File.GetFileMeta().GetName())
 
-			slog.DebugContext(
-				errGroupCtx,
-				"Downloading file to temp location",
-				"file", tempFilePath,
-			)
+			switch fileAction.Action {
+			case model.ExternalFile:
+				return fms.downloadExternalFile(errGroupCtx, fileAction, tempFilePath)
+			case model.Add, model.Update:
+				slog.DebugContext(
+					errGroupCtx,
+					"Downloading file to temp location",
+					"file", tempFilePath,
+				)
 
-			return fms.fileUpdate(errGroupCtx, fileAction.File, tempFilePath)
+				return fms.fileUpdate(errGroupCtx, fileAction.File, tempFilePath)
+			case model.Delete, model.Unchanged: // had to add for linter
+				return nil
+			default:
+				return nil
+			}
 		})
 	}
 
@@ -858,10 +866,12 @@ func tempBackupFilePath(fileName string) string {
 	return filepath.Join(filepath.Dir(fileName), tempFileName)
 }
 
-func (fms *FileManagerService) handleExternalFileDownload(ctx context.Context, fileAction *model.FileCache,
-	tempFilePath string,
+func (fms *FileManagerService) downloadExternalFile(ctx context.Context, fileAction *model.FileCache,
+	filePath string,
 ) error {
 	location := fileAction.File.GetExternalDataSource().GetLocation()
+	permission := fileAction.File.GetFileMeta().GetPermissions()
+
 	slog.InfoContext(ctx, "Downloading external file from", "location", location)
 
 	var contentToWrite []byte
@@ -887,9 +897,9 @@ func (fms *FileManagerService) handleExternalFileDownload(ctx context.Context, f
 	}
 
 	fileName := fileAction.File.GetFileMeta().GetName()
-	fms.newExternalFileHeaders[fileName] = headers
+	fms.externalFileHeaders[fileName] = headers
 
-	updateErr := fms.writeContentToTempFile(ctx, contentToWrite, tempFilePath)
+	updateErr := fms.writeContentToTempFile(ctx, contentToWrite, filePath, permission)
 
 	return updateErr
 }
@@ -898,12 +908,13 @@ func (fms *FileManagerService) writeContentToTempFile(
 	ctx context.Context,
 	content []byte,
 	path string,
+	permission string,
 ) error {
 	writeErr := fms.fileOperator.Write(
 		ctx,
 		content,
 		path,
-		"0600",
+		permission,
 	)
 
 	if writeErr != nil {
@@ -922,7 +933,7 @@ func (fms *FileManagerService) downloadFileContent(
 	downloadURL := file.GetExternalDataSource().GetLocation()
 	externalConfig := fms.agentConfig.ExternalDataSource
 
-	if !isDomainAllowed(downloadURL, externalConfig.AllowedDomain) {
+	if !isDomainAllowed(downloadURL, externalConfig.AllowedDomains) {
 		return nil, DownloadHeader{}, fmt.Errorf("download URL %s is not in the allowed domains list", downloadURL)
 	}
 
@@ -953,7 +964,7 @@ func (fms *FileManagerService) downloadFileContent(
 		headers.ETag = resp.Header.Get("ETag")
 		headers.LastModified = resp.Header.Get("Last-Modified")
 	case http.StatusNotModified:
-		slog.InfoContext(ctx, "File content unchanged (304 Not Modified)", "file_name", fileName)
+		slog.DebugContext(ctx, "File content unchanged (304 Not Modified)", "file_name", fileName)
 		return nil, DownloadHeader{}, nil
 	default:
 		return nil, DownloadHeader{}, fmt.Errorf("download failed with status code %d", resp.StatusCode)
@@ -986,16 +997,16 @@ func isDomainAllowed(downloadURL string, allowedDomains []string) bool {
 		return false
 	}
 
-	for _, pattern := range allowedDomains {
-		if pattern == "" {
+	for _, domain := range allowedDomains {
+		if domain == "" {
 			continue
 		}
 
-		if pattern == hostname {
+		if domain == hostname {
 			return true
 		}
 
-		if isWildcardMatch(hostname, pattern) {
+		if isWildcardMatch(hostname, domain) {
 			return true
 		}
 	}

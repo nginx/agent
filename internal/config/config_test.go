@@ -1430,10 +1430,10 @@ func createConfig() *Config {
 		},
 		ExternalDataSource: &ExternalDataSource{
 			ProxyURL: ProxyURL{
-				URL: "",
+				URL: "http://proxy.example.com",
 			},
-			AllowedDomains: nil,
-			MaxBytes:       0,
+			AllowedDomains: []string{"example.com", "api.example.com"},
+			MaxBytes:       1048576,
 		},
 	}
 }
@@ -1691,7 +1691,7 @@ func TestValidateAllowedDomains(t *testing.T) {
 
 			if tt.wantErr {
 				require.Error(t, actualErr, "Expected an error but got nil.")
-				assert.Contains(t, logBuffer.String(), "domain is not specified in allowed_domains",
+				assert.Contains(t, logBuffer.String(), "domain specified in allowed_domains is invalid",
 					"Expected the error log message to be present in the output.")
 			} else {
 				assert.NoError(t, actualErr, "Did not expect an error but got one: %v", actualErr)

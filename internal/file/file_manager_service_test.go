@@ -1444,7 +1444,7 @@ func TestFileManagerService_downloadExternalFiles_Cases(t *testing.T) {
 				require.NoError(t, readErr)
 				assert.Equal(t, test.expectContent, b)
 
-				h, ok := fileManagerService.newExternalFileHeaders[fileName]
+				h, ok := fileManagerService.externalFileHeaders[fileName]
 				require.True(t, ok)
 				assert.Equal(t, test.expectHeaderETag, h.ETag)
 				assert.Equal(t, test.expectHeaderLastMod, h.LastModified)
