@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/internal/file/filefakes"
 	"github.com/nginx/agent/v3/internal/model"
 
 	"github.com/nginx/agent/v3/pkg/files"
@@ -34,39 +35,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-type fakeFSO struct {
-	renameSrc, renameDst string
-	renameExternalCalled bool
-}
-
-func (f *fakeFSO) File(ctx context.Context, file *mpi.File, tempFilePath, expectedHash string) error {
-	return nil
-}
-
-func (f *fakeFSO) UpdateOverview(ctx context.Context, instanceID string, filesToUpdate []*mpi.File, configPath string,
-	iteration int,
-) error {
-	return nil
-}
-
-func (f *fakeFSO) ChunkedFile(ctx context.Context, file *mpi.File, tempFilePath, expectedHash string) error {
-	return nil
-}
-func (f *fakeFSO) IsConnected() bool { return true }
-func (f *fakeFSO) UpdateFile(ctx context.Context, instanceID string, fileToUpdate *mpi.File) error {
-	return nil
-}
-func (f *fakeFSO) SetIsConnected(isConnected bool)                                      {}
-func (f *fakeFSO) RenameFile(ctx context.Context, hash, fileName, tempDir string) error { return nil }
-func (f *fakeFSO) RenameExternalFile(ctx context.Context, fileName, tempDir string) error {
-	f.renameExternalCalled = true
-	f.renameSrc = fileName
-	f.renameDst = tempDir
-
-	return nil
-}
-func (f *fakeFSO) UpdateClient(ctx context.Context, fileServiceClient mpi.FileServiceClient) {}
 
 func TestFileManagerService_ConfigApply_Add(t *testing.T) {
 	ctx := context.Background()
@@ -1438,8 +1406,13 @@ func TestMoveOrDeleteFiles_ExternalFileRenameCalled(t *testing.T) {
 	ctx := context.Background()
 	fms := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
 
-	fake := &fakeFSO{}
-	fms.fileServiceOperator = fake
+	fakeFSO := &filefakes.FakeFileServiceOperatorInterface{}
+
+	fakeFSO.RenameExternalFileStub = func(ctx context.Context, fileName, tempDir string) error {
+		return nil
+	}
+
+	fms.fileServiceOperator = fakeFSO
 
 	fileName := filepath.Join(t.TempDir(), "ext.conf")
 	fms.fileActions = map[string]*model.FileCache{
@@ -1456,9 +1429,13 @@ func TestMoveOrDeleteFiles_ExternalFileRenameCalled(t *testing.T) {
 
 	err := fms.moveOrDeleteFiles(ctx, nil)
 	require.NoError(t, err)
-	assert.True(t, fake.renameExternalCalled)
-	assert.Equal(t, tempPath, fake.renameSrc)
-	assert.Equal(t, fileName, fake.renameDst)
+
+	assert.Equal(t, 1, fakeFSO.RenameExternalFileCallCount(), "RenameExternalFile should be called once")
+
+	_, srcArg, dstArg := fakeFSO.RenameExternalFileArgsForCall(0)
+
+	assert.Equal(t, tempPath, srcArg, "RenameExternalFile source argument mismatch")
+	assert.Equal(t, fileName, dstArg, "RenameExternalFile destination argument mismatch")
 }
 
 func TestDownloadFileContent_MaxBytesLimit(t *testing.T) {
@@ -1533,7 +1510,7 @@ func TestIsDomainAllowed_EdgeCases(t *testing.T) {
 	ok = isDomainAllowed("http://sub.example.com/path", []string{"*.example.com"})
 	assert.True(t, ok)
 
-	assert.True(t, isWildcardMatch("example.com", "*.example.com"))
-	assert.True(t, isWildcardMatch("sub.example.com", "*.example.com"))
-	assert.False(t, isWildcardMatch("badexample.com", "*.example.com"))
+	assert.True(t, isMatchesWildcardDomain("example.com", "*.example.com"))
+	assert.True(t, isMatchesWildcardDomain("sub.example.com", "*.example.com"))
+	assert.False(t, isMatchesWildcardDomain("badexample.com", "*.example.com"))
 }

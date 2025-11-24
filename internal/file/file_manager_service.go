@@ -37,6 +37,9 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . fileManagerServiceInterface
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//counterfeiter:generate . fileServiceOperatorInterface
+
 const (
 	maxAttempts = 5
 	dirPerm     = 0o755
@@ -967,7 +970,7 @@ func isDomainAllowed(downloadURL string, allowedDomains []string) bool {
 			return true
 		}
 
-		if isWildcardMatch(hostname, domain) {
+		if isMatchesWildcardDomain(hostname, domain) {
 			return true
 		}
 	}
@@ -1028,7 +1031,7 @@ func (fms *FileManagerService) addConditionalHeaders(ctx context.Context, req *h
 	}
 }
 
-func isWildcardMatch(hostname, pattern string) bool {
+func isMatchesWildcardDomain(hostname, pattern string) bool {
 	if !strings.HasPrefix(pattern, "*.") {
 		return false
 	}
