@@ -119,13 +119,13 @@ func logFilePath(logPath string) (logFilePath string, err error) {
 	logFilePath = logPath
 	fileInfo, err := os.Stat(logPath)
 
-	if err != nil && !os.IsNotExist(err) {
-		return "", err
-	} else if os.IsNotExist(err) && !strings.HasSuffix(logPath, string(os.PathSeparator)) {
+	if err != nil && os.IsNotExist(err) && !strings.HasSuffix(logPath, string(os.PathSeparator)) {
 		_, dirStatError := os.Stat(filepath.Dir(logPath))
 		if dirStatError != nil {
 			return "", dirStatError
 		}
+	} else if err != nil {
+		return "", err
 	} else if fileInfo.IsDir() {
 		logFilePath = path.Join(logPath, defaultLogFile)
 	}
