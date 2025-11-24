@@ -50,6 +50,10 @@ const (
 	regexLabelPattern = "^[a-zA-Z0-9]([a-zA-Z0-9-_]{0,254}[a-zA-Z0-9])?$"
 )
 
+var domainRegex = regexp.MustCompile(
+	`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`,
+)
+
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 
 func RegisterRunner(r func(cmd *cobra.Command, args []string)) {
@@ -495,7 +499,7 @@ func registerExternalDataSourceFlags(fs *flag.FlagSet) {
 	fs.String(
 		ExternalDataSourceProxyUrlKey,
 		DefExternalDataSourceProxyUrl,
-		"Url to the proxy service to fetch the external file.",
+		"Url to the proxy service for fetching external files.",
 	)
 	fs.StringSlice(
 		ExternalDataSourceAllowDomainsKey,
@@ -651,7 +655,7 @@ func registerClientFlags(fs *flag.FlagSet) {
 	fs.Duration(
 		ClientFileDownloadTimeoutKey,
 		DefClientFileDownloadTimeout,
-		"Timeout value in seconds, to downloading file for config apply.",
+		"Timeout value in seconds, for downloading a file during a config apply.",
 	)
 
 	fs.Int(
@@ -1610,8 +1614,9 @@ func validateAllowedDomains(domains []string) error {
 	}
 
 	for _, domain := range domains {
-		if strings.ContainsAny(domain, "/\\ ") || domain == "" {
-			slog.Error("domain is not specified in allowed_domains")
+		// Validating syntax using the RFC-compliant regex
+		if !domainRegex.MatchString(domain) || domain == "" {
+			slog.Error("domain specified in allowed_domains is invalid", "domain", domain)
 			return errors.New("invalid domain found in allowed_domains")
 		}
 	}

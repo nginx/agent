@@ -44,7 +44,7 @@ const (
 	executePerm = 0o111
 )
 
-type DownloadHeaders struct {
+type DownloadHeader struct {
 	ETag         string
 	LastModified string
 }
@@ -114,28 +114,28 @@ type FileManagerService struct {
 	// map of files and the actions performed on them during config apply
 	fileActions map[string]*model.FileCache // key is file path
 	// map of the files currently on disk, used to determine the file action during config apply
-	currentFilesOnDisk     map[string]*mpi.File // key is file path
-	previousManifestFiles  map[string]*model.ManifestFile
-	newExternalFileHeaders map[string]DownloadHeaders
-	manifestFilePath       string
-	rollbackManifest       bool
-	filesMutex             sync.RWMutex
+	currentFilesOnDisk    map[string]*mpi.File // key is file path
+	previousManifestFiles map[string]*model.ManifestFile
+	externalFileHeaders   map[string]DownloadHeader
+	manifestFilePath      string
+	rollbackManifest      bool
+	filesMutex            sync.RWMutex
 }
 
 func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig *config.Config,
 	manifestLock *sync.RWMutex,
 ) *FileManagerService {
 	return &FileManagerService{
-		agentConfig:            agentConfig,
-		fileOperator:           NewFileOperator(manifestLock),
-		fileServiceOperator:    NewFileServiceOperator(agentConfig, fileServiceClient, manifestLock),
-		fileActions:            make(map[string]*model.FileCache),
-		currentFilesOnDisk:     make(map[string]*mpi.File),
-		previousManifestFiles:  make(map[string]*model.ManifestFile),
-		newExternalFileHeaders: make(map[string]DownloadHeaders),
-		rollbackManifest:       true,
-		manifestFilePath:       agentConfig.LibDir + "/manifest.json",
-		manifestLock:           manifestLock,
+		agentConfig:           agentConfig,
+		fileOperator:          NewFileOperator(manifestLock),
+		fileServiceOperator:   NewFileServiceOperator(agentConfig, fileServiceClient, manifestLock),
+		fileActions:           make(map[string]*model.FileCache),
+		currentFilesOnDisk:    make(map[string]*mpi.File),
+		previousManifestFiles: make(map[string]*model.ManifestFile),
+		externalFileHeaders:   make(map[string]DownloadHeader),
+		rollbackManifest:      true,
+		manifestFilePath:      agentConfig.LibDir + "/manifest.json",
+		manifestLock:          manifestLock,
 	}
 }
 
@@ -402,20 +402,28 @@ func (fms *FileManagerService) DetermineFileActions(
 			slog.DebugContext(ctx, "Skipping unmanaged file updates", "file_name", fileName)
 			continue
 		}
+
+		// If either the modified file or the current file is an external data source,
+		// treat this as an ExternalFile and skip the regular Add/Update checks. This
+		// ensures external files are downloaded/validated every single time.
+		if modifiedFile.File.GetExternalDataSource() != nil || (ok && currentFile.GetExternalDataSource() != nil) {
+			modifiedFile.Action = model.ExternalFile
+			fileDiff[fileName] = modifiedFile
+
+			continue
+		}
+
 		// if file doesn't exist in the current files, file has been added
 		// set file action
 		if _, statErr := os.Stat(fileName); errors.Is(statErr, os.ErrNotExist) {
 			modifiedFile.Action = model.Add
 			fileDiff[fileName] = modifiedFile
 
+			continue
 			// if file currently exists and file hash is different, file has been updated
 			// copy contents, set file action
 		} else if ok && modifiedFile.File.GetFileMeta().GetHash() != currentFile.GetFileMeta().GetHash() {
 			modifiedFile.Action = model.Update
-			fileDiff[fileName] = modifiedFile
-		}
-		if modifiedFile.File.GetExternalDataSource() != nil || currentFile.GetExternalDataSource() != nil {
-			modifiedFile.Action = model.ExternalFile
 			fileDiff[fileName] = modifiedFile
 		}
 	}
@@ -615,7 +623,7 @@ func (fms *FileManagerService) downloadUpdatedFilesToTempLocation(ctx context.Co
 
 			switch fileAction.Action {
 			case model.ExternalFile:
-				return fms.handleExternalFileDownload(errGroupCtx, fileAction, tempFilePath)
+				return fms.downloadExternalFile(errGroupCtx, fileAction, tempFilePath)
 			case model.Add, model.Update:
 				slog.DebugContext(
 					errGroupCtx,
@@ -819,15 +827,17 @@ func tempBackupFilePath(fileName string) string {
 	return filepath.Join(filepath.Dir(fileName), tempFileName)
 }
 
-func (fms *FileManagerService) handleExternalFileDownload(ctx context.Context, fileAction *model.FileCache,
-	tempFilePath string,
+func (fms *FileManagerService) downloadExternalFile(ctx context.Context, fileAction *model.FileCache,
+	filePath string,
 ) error {
 	location := fileAction.File.GetExternalDataSource().GetLocation()
+	permission := fileAction.File.GetFileMeta().GetPermissions()
+
 	slog.InfoContext(ctx, "Downloading external file from", "location", location)
 
 	var contentToWrite []byte
 	var downloadErr, updateError error
-	var headers DownloadHeaders
+	var headers DownloadHeader
 
 	contentToWrite, headers, downloadErr = fms.downloadFileContent(ctx, fileAction.File)
 
@@ -848,9 +858,9 @@ func (fms *FileManagerService) handleExternalFileDownload(ctx context.Context, f
 	}
 
 	fileName := fileAction.File.GetFileMeta().GetName()
-	fms.newExternalFileHeaders[fileName] = headers
+	fms.externalFileHeaders[fileName] = headers
 
-	updateErr := fms.writeContentToTempFile(ctx, contentToWrite, tempFilePath)
+	updateErr := fms.writeContentToTempFile(ctx, contentToWrite, filePath, permission)
 
 	return updateErr
 }
@@ -859,12 +869,13 @@ func (fms *FileManagerService) writeContentToTempFile(
 	ctx context.Context,
 	content []byte,
 	path string,
+	permission string,
 ) error {
 	writeErr := fms.fileOperator.Write(
 		ctx,
 		content,
 		path,
-		"0600",
+		permission,
 	)
 
 	if writeErr != nil {
@@ -878,23 +889,23 @@ func (fms *FileManagerService) writeContentToTempFile(
 func (fms *FileManagerService) downloadFileContent(
 	ctx context.Context,
 	file *mpi.File,
-) (content []byte, headers DownloadHeaders, err error) {
+) (content []byte, headers DownloadHeader, err error) {
 	fileName := file.GetFileMeta().GetName()
 	downloadURL := file.GetExternalDataSource().GetLocation()
 	externalConfig := fms.agentConfig.ExternalDataSource
 
 	if !isDomainAllowed(downloadURL, externalConfig.AllowedDomains) {
-		return nil, DownloadHeaders{}, fmt.Errorf("download URL %s is not in the allowed domains list", downloadURL)
+		return nil, DownloadHeader{}, fmt.Errorf("download URL %s is not in the allowed domains list", downloadURL)
 	}
 
 	httpClient, err := fms.setupHTTPClient(ctx, externalConfig.ProxyURL.URL)
 	if err != nil {
-		return nil, DownloadHeaders{}, err
+		return nil, DownloadHeader{}, err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL, nil)
 	if err != nil {
-		return nil, DownloadHeaders{}, fmt.Errorf("failed to create request for %s: %w", downloadURL, err)
+		return nil, DownloadHeader{}, fmt.Errorf("failed to create request for %s: %w", downloadURL, err)
 	}
 
 	if externalConfig.ProxyURL.URL != "" {
@@ -905,7 +916,7 @@ func (fms *FileManagerService) downloadFileContent(
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return nil, DownloadHeaders{}, fmt.Errorf("failed to execute download request for %s: %w", downloadURL, err)
+		return nil, DownloadHeader{}, fmt.Errorf("failed to execute download request for %s: %w", downloadURL, err)
 	}
 	defer resp.Body.Close()
 
@@ -914,10 +925,10 @@ func (fms *FileManagerService) downloadFileContent(
 		headers.ETag = resp.Header.Get("ETag")
 		headers.LastModified = resp.Header.Get("Last-Modified")
 	case http.StatusNotModified:
-		slog.InfoContext(ctx, "File content unchanged (304 Not Modified)", "file_name", fileName)
-		return nil, DownloadHeaders{}, nil
+		slog.DebugContext(ctx, "File content unchanged (304 Not Modified)", "file_name", fileName)
+		return nil, DownloadHeader{}, nil
 	default:
-		return nil, DownloadHeaders{}, fmt.Errorf("download failed with status code %d", resp.StatusCode)
+		return nil, DownloadHeader{}, fmt.Errorf("download failed with status code %d", resp.StatusCode)
 	}
 
 	reader := io.Reader(resp.Body)
@@ -927,7 +938,7 @@ func (fms *FileManagerService) downloadFileContent(
 
 	content, err = io.ReadAll(reader)
 	if err != nil {
-		return nil, DownloadHeaders{}, fmt.Errorf("failed to read content from response body: %w", err)
+		return nil, DownloadHeader{}, fmt.Errorf("failed to read content from response body: %w", err)
 	}
 
 	slog.InfoContext(ctx, "Successfully downloaded file content", "file_name", fileName, "size", len(content))
@@ -947,16 +958,16 @@ func isDomainAllowed(downloadURL string, allowedDomains []string) bool {
 		return false
 	}
 
-	for _, pattern := range allowedDomains {
-		if pattern == "" {
+	for _, domain := range allowedDomains {
+		if domain == "" {
 			continue
 		}
 
-		if pattern == hostname {
+		if domain == hostname {
 			return true
 		}
 
-		if isWildcardMatch(hostname, pattern) {
+		if isWildcardMatch(hostname, domain) {
 			return true
 		}
 	}
