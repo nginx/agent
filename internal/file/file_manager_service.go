@@ -266,6 +266,36 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 func (fms *FileManagerService) ConfigUpdate(ctx context.Context,
 	nginxConfigContext *model.NginxConfigContext,
 ) {
+
+	slog.DebugContext(ctx, "Before  Config Context -- ConfigUpdate")
+	for _, configFile := range nginxConfigContext.Files {
+		slog.DebugContext(ctx, "Before Config file -- ConfigUpdate", "file", configFile.GetFileMeta().GetName(),
+			"unmanaged", configFile.GetUnmanaged(),
+		)
+	}
+
+	manifestFiles, _, manifestErr := fms.manifestFile()
+	if manifestErr != nil {
+		slog.ErrorContext(ctx, "Error getting manifest files", "error", manifestErr)
+	}
+
+	for _, manifestFiles := range manifestFiles {
+		if manifestFiles.ManifestFileMeta.Unmanaged == true {
+			for _, configFile := range nginxConfigContext.Files {
+				if configFile.GetFileMeta().GetName() == manifestFiles.ManifestFileMeta.Name {
+					configFile.Unmanaged = true
+				}
+			}
+		}
+	}
+
+	slog.DebugContext(ctx, "Changed Config Context -- ConfigUpdate")
+	for _, configFile := range nginxConfigContext.Files {
+		slog.DebugContext(ctx, "After Config file -- ConfigUpdate", "file", configFile.GetFileMeta().GetName(),
+			"unmanaged", configFile.GetUnmanaged(),
+		)
+	}
+
 	updateError := fms.UpdateCurrentFilesOnDisk(
 		ctx,
 		files.ConvertToMapOfFiles(nginxConfigContext.Files),
