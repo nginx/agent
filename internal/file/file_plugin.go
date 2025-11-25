@@ -200,6 +200,11 @@ func (fp *FilePlugin) handleReloadSuccess(ctx context.Context, msg *bus.Message)
 	fp.enableWatchers(ctx, successMessage.ConfigContext, successMessage.DataPlaneResponse.GetInstanceId())
 
 	if successMessage.ConfigContext.Files != nil {
+		slog.InfoContext(ctx, "New handleReloadSuccess", "config", successMessage.ConfigContext.Files)
+		for _, file := range successMessage.ConfigContext.Files {
+			slog.DebugContext(ctx, "Config context Updating file", "file", file.GetFileMeta().GetName(), "unmanaged", file.GetUnmanaged())
+		}
+
 		slog.DebugContext(ctx, "Changes made during config apply, update files on disk")
 		updateError := fp.fileManagerService.UpdateCurrentFilesOnDisk(
 			ctx,

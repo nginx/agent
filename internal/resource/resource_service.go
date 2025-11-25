@@ -239,6 +239,10 @@ func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) (*
 
 	slog.DebugContext(ctx, "Updated Instance Runtime after reloading NGINX", "instance", instance.GetInstanceRuntime())
 
+	slog.InfoContext(ctx, "New Nginx config Context in Apply Config", "config", nginxConfigContext.Files)
+	for _, file := range nginxConfigContext.Files {
+		slog.DebugContext(ctx, "Config context Updating file", "file", file.GetFileMeta().GetName(), "unmanaged", file.GetUnmanaged())
+	}
 	return nginxConfigContext, nil
 }
 
