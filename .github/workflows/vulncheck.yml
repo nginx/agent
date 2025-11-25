@@ -1,29 +1,43 @@
 name: vulncheck.yaml
 on:
-  push:
-    branches:
-      - main
-      - dev-v2
-      - 'release-*'
   schedule:
-    - 0 0 * * *
+    - cron: "0 0 * * *" # daily at midnight UTC
+  workflow_call:
+    inputs:
+      go-version-input:
+        description: 'Go version to use for vulncheck'
+        type: string
+        required: false
+        default: '1.24.10'
+      targetBranch:
+        description: 'Target branch to run vulncheck against'
+        type: string
+        required: false
+        default: 'main'
   workflow_dispatch:
+    inputs:
+      go-version-input:
+        description: 'Go version to use for vulncheck'
+        required: false
+        default: '1.24.10'
+      targetBranch:
+        description: 'Target branch to run vulncheck against'
+        required: false
+        default: 'main'
 
 jobs:
   vulncheck:
     name: Vulnerability Check
-    runs-on: ubuntu-amd64
+    runs-on: ubuntu-22.04
+    permissions:
+      security-events: write # for reporting vulnerabilities via code-scanning API
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-
-      - name: Set up Go
-        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
-          go-version-file: go.mod
-          cache: false
+            fetch-depth: 0
+            ref: ${{ inputs.targetBranch || 'main' }}
 
-      - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/vulncheck@latest
-
-      - name: Run vulncheck
-        run: govulncheck ./...
+      - id: govulncheck
+        uses: golang/govulncheck-action@b625fbe08f3bccbe446d94fbf87fcc875a4f50ee # v1.0.4
+        with:
+          go-version-input: ${{ inputs.go-version-input || '1.24.10' }}

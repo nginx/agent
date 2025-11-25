@@ -82,6 +82,15 @@ jobs:
         with:
           version: v2.4.0
 
+  vulnerability-scan:
+    name: Vulnerability Scan
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: ./.github/workflows/vulncheck.yml
+        with:
+          go-version-input: '1.24.10'
+          targetBranch: 'main'
+
   unit-test:
     name: Unit Tests
     runs-on: ubuntu-22.04
