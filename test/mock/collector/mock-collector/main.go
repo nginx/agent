@@ -13,7 +13,7 @@ import (
 	"go.opentelemetry.io/collector/confmap/provider/httpprovider"
 	"go.opentelemetry.io/collector/confmap/provider/httpsprovider"
 	"go.opentelemetry.io/collector/confmap/provider/yamlprovider"
-	"go.opentelemetry.io/collector/service/telemetry"
+	"go.opentelemetry.io/collector/service/telemetry/otelconftelemetry"
 
 	"github.com/nginx/agent/v3/test/mock/collector/mock-collector/auth"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter"
@@ -100,9 +100,7 @@ func components() (otelcol.Factories, error) {
 
 	factories.Connectors = make(map[component.Type]connector.Factory)
 
-	factories.Telemetry = telemetry.NewFactory(func() component.Config {
-		return nil
-	})
+	factories.Telemetry = otelconftelemetry.NewFactory()
 
 	return factories, nil
 }

@@ -38,7 +38,7 @@ import (
 	"go.opentelemetry.io/collector/processor/memorylimiterprocessor"
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
-	"go.opentelemetry.io/collector/service/telemetry"
+	"go.opentelemetry.io/collector/service/telemetry/otelconftelemetry"
 )
 
 // OTelComponentFactories returns all the OTel collector components supported
@@ -56,9 +56,7 @@ func OTelComponentFactories() (otelcol.Factories, error) {
 		Receivers:  receivers,
 		Processors: processors,
 		Exporters:  exporters,
-		Telemetry: telemetry.NewFactory(func() component.Config {
-			return nil
-		}),
+		Telemetry:  otelconftelemetry.NewFactory(),
 	}
 
 	return factories, nil
