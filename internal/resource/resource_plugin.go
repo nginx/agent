@@ -29,7 +29,7 @@ type Resource struct {
 	messagePipe      bus.MessagePipeInterface
 	resourceService  resourceServiceInterface
 	agentConfig      *config.Config
-	agentConfigMutex sync.Mutex
+	agentConfigMutex *sync.Mutex
 }
 
 type errResponse struct {
@@ -48,7 +48,8 @@ var _ bus.Plugin = (*Resource)(nil)
 
 func NewResource(agentConfig *config.Config) *Resource {
 	return &Resource{
-		agentConfig: agentConfig,
+		agentConfig:      agentConfig,
+		agentConfigMutex: &sync.Mutex{},
 	}
 }
 
