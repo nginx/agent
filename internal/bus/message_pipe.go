@@ -144,7 +144,6 @@ func (p *MessagePipe) Run(ctx context.Context) {
 				case ConnectionAgentConfigUpdateTopic:
 					p.handleConnectionAgentConfigUpdateTopic(m.ctx, m.message)
 				default:
-					slog.InfoContext(ctx, "Publishing message", "topic", m.message.Topic, "message----", m.message)
 					p.bus.Publish(m.message.Topic, m.ctx, m.message)
 				}
 			}
@@ -193,7 +192,7 @@ func (p *MessagePipe) Reconfigure(ctx context.Context, agentConfig *mpi.AgentCon
 
 	// Reconfigure each plugin with the new agent config
 	for _, plugin := range p.plugins {
-		slog.InfoContext(ctx, "Reconfigure plugin", "plugin", plugin.Info().Name)
+		slog.DebugContext(ctx, "Reconfigure plugin", "plugin", plugin.Info().Name)
 		reconfigureError = plugin.Reconfigure(ctx, p.agentConfig)
 		if reconfigureError != nil {
 			slog.ErrorContext(ctx, "Reconfigure plugin failed", "plugin", plugin.Info().Name)
@@ -221,7 +220,7 @@ func (p *MessagePipe) Reconfigure(ctx context.Context, agentConfig *mpi.AgentCon
 		}
 	}
 
-	slog.InfoContext(ctx, "Finished reconfigure plugin", "plugins", p.plugins)
+	slog.InfoContext(ctx, "Finished reconfiguring plugins", "plugins", p.plugins)
 	if topic == AgentConfigUpdateTopic {
 		response := p.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
 			"Successfully updated agent config", "")

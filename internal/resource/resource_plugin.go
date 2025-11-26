@@ -29,7 +29,7 @@ type Resource struct {
 	messagePipe      bus.MessagePipeInterface
 	resourceService  resourceServiceInterface
 	agentConfig      *config.Config
-	agentConfigMutex *sync.Mutex
+	agentConfigMutex sync.Mutex
 }
 
 type errResponse struct {

@@ -214,9 +214,15 @@ func (oc *Collector) Reconfigure(ctx context.Context, agentConfig *config.Config
 	oc.agentConfigMutex.Lock()
 	defer oc.agentConfigMutex.Unlock()
 
-	if !reflect.DeepEqual(oc.config.Collector.Extensions.HeadersSetter.Headers,
-		agentConfig.Collector.Extensions.HeadersSetter.Headers) {
-		slog.DebugContext(ctx, "OTel collector headers have changed, restarting collector")
+	if oc.config.Collector != nil && oc.config.Collector.Extensions.HeadersSetter != nil &&
+		oc.config.Collector.Extensions.HeadersSetter.Headers != nil {
+		if !reflect.DeepEqual(oc.config.Collector.Extensions.HeadersSetter.Headers,
+			agentConfig.Collector.Extensions.HeadersSetter.Headers) {
+			slog.InfoContext(ctx, "OTel collector headers have changed, restarting collector")
+			oc.config = agentConfig
+			oc.restartCollector(ctx)
+		}
+	} else {
 		oc.config = agentConfig
 		oc.restartCollector(ctx)
 	}
