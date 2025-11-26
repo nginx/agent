@@ -105,6 +105,6 @@ func (s *MPITestSuite) TestGrpc_Test4_UpdateNginxAgentConfigurationRequest() {
 	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
 
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
-	s.Equal("Successfully updated agent configuration", responses[0].GetCommandResponse().GetMessage())
+	s.Equal("Successfully updated agent config", responses[0].GetCommandResponse().GetMessage())
 	slog.Info("finished grpc update nginx agent configuration request test")
 }
