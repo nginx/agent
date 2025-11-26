@@ -152,7 +152,12 @@ package: gpg-key $(PACKAGES_DIR) #### Create final packages for all supported di
 
 .PHONY: gpg-key
 gpg-key: ## Generate GPG public key
-	$$(gpg --import $(NFPM_SIGNING_KEY_FILE)); \
+	@if [ -z "$(NFPM_SIGNING_KEY_FILE)" ]; then \
+		echo "NFPM_SIGNING_KEY_FILE is not set. Exiting..."; \
+		exit 1; \
+	fi
+	@echo "Generating GPG public key for package signing...";
+	@$$(gpg --import $(NFPM_SIGNING_KEY_FILE)); \
 	keyid=$$(gpg --list-keys NGINX | egrep -A1 "^pub" | egrep -v "^pub" | tr -d '[:space:]'); \
 	if [ -z "$$keyid" ]; then echo "Error: GPG key not found."; exit 1; fi; \
 	# Check if the key is expired \
