@@ -36,7 +36,6 @@ $(PACKAGES_DIR):
 
 .PHONY: package
 package: gpg-key $(PACKAGES_DIR) #### Create final packages for all supported distros
-
 # Build binaries for all supported architectures
 	@for arch in $(DEB_ARCHS); do \
 		mkdir -p $(BUILD_DIR)/$${arch}; \
@@ -44,12 +43,20 @@ package: gpg-key $(PACKAGES_DIR) #### Create final packages for all supported di
 		sed -i.bak "s/\^ARCH\^/$${arch}/g" ".nfpm.$${arch}.yaml"; \
 		sed -i.bak "s/\^BUILD_PATH\^/\.\/build\/$${arch}/g" ".nfpm.$${arch}.yaml"; \
 		echo "Building linux/$${arch}"; \
+		start_time=$$(date +%s); \
 		GOWORK=off CGO_ENABLED=0 GOARCH=$${arch} GOOS=linux \
 			go build -pgo=auto -ldflags=${LDFLAGS} \
 			-o $(BUILD_DIR)/$${arch}/$(BINARY_NAME) \
 			$(PROJECT_DIR)/$(PROJECT_FILE); \
-		rm -f .nfpm.$$arch.yaml.bak; \
+		end_time=$$(date +%s); \
+		rm -f .nfpm.$${arch}.yaml.bak; \
+		sha256sum build/$${arch}/nginx-agent | awk '{print $$1}' > $(BUILD_DIR)/$${arch}/$(BINARY_NAME).sha256; \
+		echo $${start_time} > $(BUILD_DIR)/$${arch}/$(BINARY_NAME).buildstart; \
+		echo $${end_time} > $(BUILD_DIR)/$${arch}/$(BINARY_NAME).buildend; \
+		echo "Built binary:"; \
 		ls -la "$(BUILD_DIR)/$${arch}/$(BINARY_NAME)"; \
+		cat $(BUILD_DIR)/$${arch}/$(BINARY_NAME).sha256; \
+		echo "Built took "$$((end_time - start_time))" seconds"; \
 	done; \
 
 # Create deb packages
@@ -138,9 +145,9 @@ package: gpg-key $(PACKAGES_DIR) #### Create final packages for all supported di
 # Create tarball containing all packages
 	@echo "Creating tarball: $(TARBALL_NAME)"; \
 	rm -f $(PACKAGES_DIR)/$(TARBALL_NAME); \
-	pushd $(PACKAGES_DIR) > /dev/null; \
+	cd $(PACKAGES_DIR); \
 	tar -czvf "./$(TARBALL_NAME)" *; \
-	popd > /dev/null; \
+	cd ../.. \
 	ls -la $(PACKAGES_DIR)/$(TARBALL_NAME);
 
 .PHONY: gpg-key
