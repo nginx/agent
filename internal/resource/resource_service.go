@@ -216,6 +216,35 @@ func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) (*
 		return nil, fmt.Errorf("failed to parse config %w", parseErr)
 	}
 
+	slog.DebugContext(ctx, "Before  Config Context -- ConfigUpdate")
+	for _, configFile := range nginxConfigContext.Files {
+		slog.DebugContext(ctx, "Before Config file -- ConfigUpdate", "file", configFile.GetFileMeta().GetName(),
+			"unmanaged", configFile.GetUnmanaged(),
+		)
+	}
+
+	manifestFiles, manifestErr := r.manifestFile()
+	if manifestErr != nil {
+		slog.ErrorContext(ctx, "Error getting manifest files", "error", manifestErr)
+	}
+
+	for _, manifestFiles := range manifestFiles {
+		if manifestFiles.ManifestFileMeta.Unmanaged == true {
+			for _, configFile := range nginxConfigContext.Files {
+				if configFile.GetFileMeta().GetName() == manifestFiles.ManifestFileMeta.Name {
+					configFile.Unmanaged = true
+				}
+			}
+		}
+	}
+
+	slog.DebugContext(ctx, "Changed Config Context -- ConfigUpdate")
+	for _, configFile := range nginxConfigContext.Files {
+		slog.DebugContext(ctx, "After Config file -- ConfigUpdate", "file", configFile.GetFileMeta().GetName(),
+			"unmanaged", configFile.GetUnmanaged(),
+		)
+	}
+
 	datasource.UpdateNginxInstanceRuntime(instance, nginxConfigContext)
 
 	slog.DebugContext(ctx, "Updated Instance Runtime after parsing config", "instance", instance.GetInstanceRuntime())
@@ -244,6 +273,30 @@ func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) (*
 		slog.DebugContext(ctx, "Config context Updating file", "file", file.GetFileMeta().GetName(), "unmanaged", file.GetUnmanaged())
 	}
 	return nginxConfigContext, nil
+}
+
+func (r *ResourceService) manifestFile() (map[string]*model.ManifestFile, error) {
+	if _, err := os.Stat(r.agentConfig.LibDir + "/manifest.json"); err != nil {
+		return nil, err
+	}
+
+	file, err := os.ReadFile(r.agentConfig.LibDir + "/manifest.json")
+	if err != nil {
+		return nil, fmt.Errorf("failed to read manifest file: %w", err)
+	}
+
+	var manifestFiles map[string]*model.ManifestFile
+
+	err = json.Unmarshal(file, &manifestFiles)
+	if err != nil {
+		if len(file) == 0 {
+			return nil, fmt.Errorf("manifest file is empty: %w", err)
+		}
+
+		return nil, fmt.Errorf("failed to parse manifest file: %w", err)
+	}
+
+	return manifestFiles, nil
 }
 
 func (r *ResourceService) GetHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance,
