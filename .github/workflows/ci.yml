@@ -37,7 +37,7 @@ jobs:
             user: ${{ secrets.ARTIFACTORY_USER }}
             token: ${{ secrets.ARTIFACTORY_TOKEN }}
             url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-        - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+        - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
           with:
             go-version-file: 'go.mod'
             cache: false
@@ -67,7 +67,7 @@ jobs:
           user: ${{ secrets.ARTIFACTORY_USER }}
           token: ${{ secrets.ARTIFACTORY_TOKEN }}
           url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-      - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+      - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
           cache: false
@@ -104,7 +104,7 @@ jobs:
             user: ${{ secrets.ARTIFACTORY_USER }}
             token: ${{ secrets.ARTIFACTORY_TOKEN }}
             url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-        - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+        - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
           with:
             go-version-file: 'go.mod'
             cache: false
@@ -133,7 +133,7 @@ jobs:
             user: ${{ secrets.ARTIFACTORY_USER }}
             token: ${{ secrets.ARTIFACTORY_TOKEN }}
             url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-        - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+        - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
           with:
             go-version-file: 'go.mod'
             cache: false
@@ -159,7 +159,7 @@ jobs:
             user: ${{ secrets.ARTIFACTORY_USER }}
             token: ${{ secrets.ARTIFACTORY_TOKEN }}
             url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-        - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+        - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
           with:
             go-version-file: 'go.mod'
             cache: false
@@ -206,7 +206,7 @@ jobs:
           user: ${{ secrets.ARTIFACTORY_USER }}
           token: ${{ secrets.ARTIFACTORY_TOKEN }}
           url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-      - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+      - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
           cache: false
@@ -262,7 +262,7 @@ jobs:
           user: ${{ secrets.ARTIFACTORY_USER }}
           token: ${{ secrets.ARTIFACTORY_TOKEN }}
           url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-      - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+      - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
           cache: false
@@ -325,7 +325,7 @@ jobs:
           user: ${{ secrets.ARTIFACTORY_USER }}
           token: ${{ secrets.ARTIFACTORY_TOKEN }}
           url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-      - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+      - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
           cache: false
@@ -398,7 +398,7 @@ jobs:
           user: ${{ secrets.ARTIFACTORY_USER }}
           token: ${{ secrets.ARTIFACTORY_TOKEN }}
           url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-      - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+      - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
           cache: false
@@ -470,7 +470,7 @@ jobs:
           user: ${{ secrets.ARTIFACTORY_USER }}
           token: ${{ secrets.ARTIFACTORY_TOKEN }}
           url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-      - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+      - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
           cache: false
@@ -543,7 +543,7 @@ jobs:
           user: ${{ secrets.ARTIFACTORY_USER }}
           token: ${{ secrets.ARTIFACTORY_TOKEN }}
           url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-      - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+      - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
           cache: false
@@ -601,7 +601,7 @@ jobs:
           user: ${{ secrets.ARTIFACTORY_USER }}
           token: ${{ secrets.ARTIFACTORY_TOKEN }}
           url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-      - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+      - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
           cache: false
@@ -639,7 +639,7 @@ jobs:
     needs: build-unsigned-snapshot
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-      - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+      - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
           cache: false
