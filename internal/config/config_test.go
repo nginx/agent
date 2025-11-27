@@ -1184,6 +1184,7 @@ func createConfig() *Config {
 				MaxFileSize:               485753,
 				FileChunkSize:             48575,
 				MaxParallelFileOperations: 10,
+				ResponseTimeout:           30 * time.Second,
 			},
 			Backoff: &BackOff{
 				InitialInterval:     200 * time.Millisecond,

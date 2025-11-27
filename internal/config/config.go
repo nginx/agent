@@ -629,6 +629,12 @@ func registerClientFlags(fs *flag.FlagSet) {
 		"Max file size in bytes.",
 	)
 
+	fs.Duration(
+		ClientGRPCResponseTimeoutKey,
+		DefResponseTimeout,
+		"Duration to wait for a response before retrying request",
+	)
+
 	fs.Int(
 		ClientGRPCMaxParallelFileOperationsKey,
 		DefMaxParallelFileOperations,
@@ -1111,6 +1117,7 @@ func resolveClient() *Client {
 			MaxMessageSendSize:        viperInstance.GetInt(ClientGRPCMaxMessageSendSizeKey),
 			MaxFileSize:               viperInstance.GetUint32(ClientGRPCMaxFileSizeKey),
 			FileChunkSize:             viperInstance.GetUint32(ClientGRPCFileChunkSizeKey),
+			ResponseTimeout:           viperInstance.GetDuration(ClientGRPCResponseTimeoutKey),
 			MaxParallelFileOperations: viperInstance.GetInt(ClientGRPCMaxParallelFileOperationsKey),
 		},
 		Backoff: &BackOff{

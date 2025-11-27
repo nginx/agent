@@ -41,6 +41,7 @@ var (
 	ClientGRPCMaxFileSizeKey               = pre(ClientRootKey) + "grpc_max_file_size"
 	ClientGRPCFileChunkSizeKey             = pre(ClientRootKey) + "grpc_file_chunk_size"
 	ClientGRPCMaxParallelFileOperationsKey = pre(ClientRootKey) + "grpc_max_parallel_file_operations"
+	ClientGRPCResponseTimeoutKey           = pre(ClientRootKey) + "grpc_response_timeout"
 
 	ClientBackoffInitialIntervalKey     = pre(ClientRootKey) + "backoff_initial_interval"
 	ClientBackoffMaxIntervalKey         = pre(ClientRootKey) + "backoff_max_interval"
