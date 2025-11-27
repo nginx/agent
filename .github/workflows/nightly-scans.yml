@@ -10,11 +10,9 @@ jobs:
     uses: ./.github/workflows/vulncheck.yml
     with:
       target-branch: 'main'
-      go-version-input: '1.24.10'
 
   scan-v2:
     name: Vulnerability Scan - dev-v2
     uses: ./.github/workflows/vulncheck.yml
     with:
       target-branch: 'dev-v2'
-      go-version-input: '1.24.10'
