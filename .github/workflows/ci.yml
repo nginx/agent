@@ -84,14 +84,10 @@ jobs:
 
   vulnerability-scan:
     name: Vulnerability Scan
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-
-      - uses: ./.github/workflows/vulncheck.yml
-        with:
-          go-version-input: '1.24.10'
-          targetBranch: ${{ github.ref_name }}
+    uses: ./.github/workflows/vulncheck.yml
+    with:
+      target-branch: ${{ github.event.pull_request.base.ref || github.ref_name }}
+      go-version-input: '1.24.10'
 
   unit-test:
     name: Unit Tests
