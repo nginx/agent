@@ -108,6 +108,12 @@ func TestCommandService_receiveCallback_configApplyRequest(t *testing.T) {
 		wg.Done()
 	}()
 
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		wg.Wait()
+	}()
+
 	assert.Eventually(
 		t,
 		func() bool { return commandServiceClient.SubscribeCallCount() > 0 },
@@ -118,7 +124,12 @@ func TestCommandService_receiveCallback_configApplyRequest(t *testing.T) {
 	commandService.configApplyRequestQueueMutex.Lock()
 	defer commandService.configApplyRequestQueueMutex.Unlock()
 	assert.Len(t, commandService.configApplyRequestQueue, 1)
-	wg.Wait()
+
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatalf("Request was not found in subscribe channel in time")
+	}
 }
 
 func TestCommandService_UpdateDataPlaneStatus(t *testing.T) {
