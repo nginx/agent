@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"reflect"
 	"sync"
 	"sync/atomic"
 
@@ -186,6 +187,29 @@ func (cs *CommandService) SendDataPlaneResponse(ctx context.Context, response *m
 	)
 }
 
+func (cs *CommandService) UpdateAgentConfig(
+	ctx context.Context,
+	mpiConfig *mpi.AgentConfig,
+) (*config.Config, error) {
+	slog.InfoContext(ctx, "Updating agent configuration", "config", mpiConfig)
+
+	updatedLog := config.FromAgentConfigLogProto(mpiConfig.GetLog())
+
+	if mpiConfig.GetLog() != nil && !reflect.DeepEqual(cs.agentConfig.Log, updatedLog) {
+		slog.InfoContext(ctx, "Updating log configuration", "log", updatedLog)
+		cs.agentConfig.Log = updatedLog
+
+		slogger := logger.New(
+			cs.agentConfig.Log.Path,
+			cs.agentConfig.Log.Level,
+		)
+		slog.SetDefault(slogger)
+	}
+
+	return cs.agentConfig, nil
+}
+
+// Subscribe to the Management Plane for incoming commands.
 func (cs *CommandService) Subscribe(ctx context.Context) {
 	commonSettings := &config.BackOff{
 		InitialInterval:     cs.agentConfig.Client.Backoff.InitialInterval,
