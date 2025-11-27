@@ -79,14 +79,14 @@ func (s *MPITestSuite) TestGrpc_Test4_UpdateNginxAgentConfigurationRequest() {
 	slog.Info("starting grpc update nginx agent configuration request test")
 	request := `{
 		"message_meta": {
-			"message_id": "5d0fa83e-351c-4009-90cd-1f2acce2d184",
-			"correlation_id": "79794c1c-8e91-47c1-a92c-b9a0c3f1a263",
-			"timestamp": "2023-01-15T01:30:15.01Z"
+			"message_id": "6c0fa83e-351c-4009-90cd-1f2acce2d184",
+			"correlation_id": "11114c1c-8e91-47c1-a92c-b9a0c3f1a263",
+			"timestamp": "2025-01-15T01:30:15.01Z"
 		},
-		"update_nginx_agent_configuration_request": {
+		"update_agent_config_request": {
 			"agent_config": {
 				"log": {
-					"log_level": 4
+					"log_level": 1
 				}
 			}
 		}
