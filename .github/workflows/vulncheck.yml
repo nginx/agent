@@ -30,12 +30,14 @@ jobs:
     permissions:
       security-events: write # for reporting vulnerabilities via code-scanning API
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - name: Checkout Repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
             fetch-depth: 0
             ref: ${{ inputs.targetBranch || 'main' }}
 
-      - id: govulncheck
+      - name: Run govulncheck
+        id: govulncheck
         uses: golang/govulncheck-action@b625fbe08f3bccbe446d94fbf87fcc875a4f50ee # v1.0.4
         with:
           go-version-input: ${{ inputs.go-version-input || '1.24.10' }}
