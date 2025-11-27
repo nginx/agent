@@ -61,6 +61,7 @@ type (
 		debugOTelConfigPath     string
 		stopped                 bool
 		agentConfigMutex        sync.Mutex
+		restartMutex            sync.Mutex
 	}
 )
 
@@ -220,10 +221,14 @@ func (oc *Collector) Reconfigure(ctx context.Context, agentConfig *config.Config
 			agentConfig.Collector.Extensions.HeadersSetter.Headers) {
 			slog.InfoContext(ctx, "OTel collector headers have changed, restarting collector")
 			oc.config = agentConfig
+			oc.restartMutex.Lock()
+			defer oc.restartMutex.Unlock()
 			oc.restartCollector(ctx)
 		}
 	} else {
 		oc.config = agentConfig
+		oc.restartMutex.Lock()
+		defer oc.restartMutex.Unlock()
 		oc.restartCollector(ctx)
 	}
 
@@ -324,6 +329,8 @@ func (oc *Collector) handleNginxConfigUpdate(ctx context.Context, msg *bus.Messa
 			return
 		}
 
+		oc.restartMutex.Lock()
+		defer oc.restartMutex.Unlock()
 		oc.restartCollector(ctx)
 	}
 }
@@ -350,6 +357,8 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 			return
 		}
 
+		oc.restartMutex.Lock()
+		defer oc.restartMutex.Unlock()
 		oc.restartCollector(ctx)
 	}
 }
