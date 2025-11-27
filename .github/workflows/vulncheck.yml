@@ -37,13 +37,12 @@ jobs:
             ref: ${{ inputs.targetBranch || 'main' }}
 
       - name: Check Go version
-        outputs:
-          go-version: ${{ steps.get-go-version.outputs.go-version }}
         id: get-go-version
         run: |
           echo "Reading from go.mod"
           GO_VERSION=$(grep '^go ' go.mod | awk '{print $2}')
           echo "Found $GO_VERSION"
+          echo "go-version="$GO_VERSION"" >> $GITHUB_OUTPUT
           
 
       - name: Run govulncheck
