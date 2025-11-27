@@ -1,7 +1,5 @@
 name: vulncheck.yaml
 on:
-  schedule:
-    - cron: "0 0 * * *" # daily at midnight UTC
   workflow_call:
     inputs:
       go-version-input:
