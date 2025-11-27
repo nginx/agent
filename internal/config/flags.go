@@ -25,6 +25,7 @@ const (
 	InstanceHealthWatcherMonitoringFrequencyKey = "watchers_instance_health_watcher_monitoring_frequency"
 	FileWatcherKey                              = "watchers_file_watcher"
 	LibDirPathKey                               = "lib_dir"
+	MaxAccessLogFilesKey                        = "max_access_log_files"
 )
 
 var (

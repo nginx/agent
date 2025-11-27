@@ -158,6 +158,7 @@ func ResolveConfig() (*Config, error) {
 		Labels:             resolveLabels(),
 		LibDir:             viperInstance.GetString(LibDirPathKey),
 		SyslogServer:       resolveSyslogServer(),
+		MaxAccessLogFiles:  viperInstance.GetInt(MaxAccessLogFilesKey),
 	}
 
 	defaultCollector(collector, config)
@@ -467,6 +468,12 @@ func registerFlags() {
 		SyslogServerPort,
 		DefSyslogServerPort,
 		"The port Agent will start the syslog server on for logs collection",
+	)
+
+	fs.Int(
+		MaxAccessLogFilesKey,
+		DefMaxAccessLogFiles,
+		"The maximum number of access log files to monitor",
 	)
 
 	registerCommonFlags(fs)

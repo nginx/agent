@@ -36,21 +36,22 @@ func parseServerType(str string) (ServerType, bool) {
 
 type (
 	Config struct {
-		Command            *Command         `yaml:"command"             mapstructure:"command"`
-		AuxiliaryCommand   *Command         `yaml:"auxiliary_command"   mapstructure:"auxiliary_command"`
-		Log                *Log             `yaml:"log"                 mapstructure:"log"`
-		DataPlaneConfig    *DataPlaneConfig `yaml:"data_plane_config"   mapstructure:"data_plane_config"`
-		Client             *Client          `yaml:"client"              mapstructure:"client"`
-		Collector          *Collector       `yaml:"collector"           mapstructure:"collector"`
-		Watchers           *Watchers        `yaml:"watchers"            mapstructure:"watchers"`
-		SyslogServer       *SyslogServer    `yaml:"syslog_server"       mapstructure:"syslog_server"`
-		Labels             map[string]any   `yaml:"labels"              mapstructure:"labels"`
+		Command            *Command         `yaml:"command"              mapstructure:"command"`
+		AuxiliaryCommand   *Command         `yaml:"auxiliary_command"    mapstructure:"auxiliary_command"`
+		Log                *Log             `yaml:"log"                  mapstructure:"log"`
+		DataPlaneConfig    *DataPlaneConfig `yaml:"data_plane_config"    mapstructure:"data_plane_config"`
+		Client             *Client          `yaml:"client"               mapstructure:"client"`
+		Collector          *Collector       `yaml:"collector"            mapstructure:"collector"`
+		Watchers           *Watchers        `yaml:"watchers"             mapstructure:"watchers"`
+		SyslogServer       *SyslogServer    `yaml:"syslog_server"        mapstructure:"syslog_server"`
+		Labels             map[string]any   `yaml:"labels"               mapstructure:"labels"`
 		Version            string           `yaml:"-"`
 		Path               string           `yaml:"-"`
 		UUID               string           `yaml:"-"`
 		LibDir             string           `yaml:"-"`
-		AllowedDirectories []string         `yaml:"allowed_directories" mapstructure:"allowed_directories"`
-		Features           []string         `yaml:"features"            mapstructure:"features"`
+		AllowedDirectories []string         `yaml:"allowed_directories"  mapstructure:"allowed_directories"`
+		Features           []string         `yaml:"features"             mapstructure:"features"`
+		MaxAccessLogFiles  int              `yaml:"max_access_log_files" mapstructure:"max_access_log_files"`
 	}
 
 	Log struct {
@@ -475,6 +476,10 @@ func (c *Config) IsCommandServerProxyConfigured() bool {
 	}
 
 	return c.Command.Server.Proxy.URL != ""
+}
+
+func (c *Config) IsMaxAccessLogFilesConfigured() bool {
+	return c.MaxAccessLogFiles != 0
 }
 
 // isAllowedDir checks if the given path is in the list of allowed directories.

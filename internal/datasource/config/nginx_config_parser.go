@@ -228,7 +228,13 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 					if !ncp.ignoreLog(directive.Args[0]) {
 						accessLog := ncp.accessLog(directive.Args[0], ncp.accessLogDirectiveFormat(directive),
 							formatMap)
-						nginxConfigContext.AccessLogs = ncp.addAccessLog(accessLog, nginxConfigContext.AccessLogs)
+						if ncp.agentConfig.IsMaxAccessLogFilesConfigured() {
+							nginxConfigContext.AccessLogs = ncp.addAccessLog(accessLog,
+								nginxConfigContext.AccessLogs, ncp.agentConfig.MaxAccessLogFiles)
+						} else {
+							nginxConfigContext.AccessLogs = ncp.addAccessLog(accessLog,
+								nginxConfigContext.AccessLogs, config.DefMaxAccessLogFiles)
+						}
 					}
 				case "error_log":
 					if !ncp.ignoreLog(directive.Args[0]) {
@@ -344,7 +350,7 @@ func (ncp *NginxConfigParser) parseIncludeDirective(
 }
 
 func (ncp *NginxConfigParser) addAccessLog(accessLog *model.AccessLog,
-	accessLogs []*model.AccessLog,
+	accessLogs []*model.AccessLog, maxAccessLogFiles int,
 ) []*model.AccessLog {
 	for i, log := range accessLogs {
 		if accessLog.Name == log.Name {
@@ -359,6 +365,11 @@ func (ncp *NginxConfigParser) addAccessLog(accessLog *model.AccessLog,
 
 			return accessLogs
 		}
+	}
+
+	if len(accessLogs) >= maxAccessLogFiles {
+		slog.Warn("Maximum access log files have been reached, additional logs will be skipped")
+		return accessLogs
 	}
 
 	slog.Debug("Found valid access log", "access_log", accessLog.Name)

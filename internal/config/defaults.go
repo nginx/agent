@@ -15,6 +15,7 @@ const (
 	DefNginxReloadMonitoringPeriod = 10 * time.Second
 	DefTreatErrorsAsWarnings       = false
 	DefNginxApiTlsCa               = ""
+	DefMaxAccessLogFiles           = 10
 
 	// Nginx Reload Backoff defaults
 	DefNginxReloadBackoffInitialInterval     = 500 * time.Millisecond

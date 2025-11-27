@@ -755,6 +755,7 @@ func TestNginxConfigParser_checkLog(t *testing.T) {
 		accessLog          *model.AccessLog
 		currentAccessLogs  []*model.AccessLog
 		expectedAccessLogs []*model.AccessLog
+		maxAccessLogFiles  int
 	}{
 		{
 			name: "Test 1: valid access log",
@@ -790,7 +791,8 @@ func TestNginxConfigParser_checkLog(t *testing.T) {
 					Readable:    true,
 				},
 			},
-			expectedLog: "Found valid access log",
+			expectedLog:       "Found valid access log",
+			maxAccessLogFiles: 3,
 		},
 		{
 			name: "Test 2: Duplicate access log, with same format",
@@ -819,7 +821,8 @@ func TestNginxConfigParser_checkLog(t *testing.T) {
 					Readable:    true,
 				},
 			},
-			expectedLog: "Found duplicate access log, skipping",
+			expectedLog:       "Found duplicate access log, skipping",
+			maxAccessLogFiles: 3,
 		},
 
 		{
@@ -844,13 +847,59 @@ func TestNginxConfigParser_checkLog(t *testing.T) {
 			expectedLog: "Found multiple log_format directives for the same access log. " +
 				"Multiple log formats are not supported in the same access log, metrics from this access log " +
 				"will not be collected",
+			maxAccessLogFiles: 3,
+		},
+
+		{
+			name: "Test 4: valid access log, maximum access logs reached",
+			accessLog: &model.AccessLog{
+				Name: "/var/log/nginx/access3.log",
+				Format: "$remote_addr - $remote_user [$time_local] \"$request\" \"$http_user_agent\" " +
+					"\"$http_x_forwarded_for\"$status $body_bytes_sent \"$http_referer\"",
+				Permissions: "",
+				Readable:    true,
+			},
+			currentAccessLogs: []*model.AccessLog{
+				{
+					Name: "/var/log/nginx/access.log",
+					Format: "$remote_addr - $remote_user [$time_local] \"$request\" \"$http_user_agent\" " +
+						"\"$http_x_forwarded_for\"$status $body_bytes_sent \"$http_referer\"",
+					Permissions: "",
+					Readable:    true,
+				},
+				{
+					Name: "/var/log/nginx/access2.log",
+					Format: "$remote_addr - $remote_user [$time_local] \"$request\" \"$http_user_agent\" " +
+						"\"$http_x_forwarded_for\"$status $body_bytes_sent \"$http_referer\"",
+					Permissions: "",
+					Readable:    true,
+				},
+			},
+			expectedAccessLogs: []*model.AccessLog{
+				{
+					Name: "/var/log/nginx/access.log",
+					Format: "$remote_addr - $remote_user [$time_local] \"$request\" \"$http_user_agent\" " +
+						"\"$http_x_forwarded_for\"$status $body_bytes_sent \"$http_referer\"",
+					Permissions: "",
+					Readable:    true,
+				},
+				{
+					Name: "/var/log/nginx/access2.log",
+					Format: "$remote_addr - $remote_user [$time_local] \"$request\" \"$http_user_agent\" " +
+						"\"$http_x_forwarded_for\"$status $body_bytes_sent \"$http_referer\"",
+					Permissions: "",
+					Readable:    true,
+				},
+			},
+			expectedLog:       "Maximum access log files have been reached, additional logs will be skipped",
+			maxAccessLogFiles: 2,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ncp := NewNginxConfigParser(types.AgentConfig())
-			logs := ncp.addAccessLog(test.accessLog, test.currentAccessLogs)
+			logs := ncp.addAccessLog(test.accessLog, test.currentAccessLogs, test.maxAccessLogFiles)
 			assert.Equal(t, test.expectedAccessLogs, logs)
 
 			helpers.ValidateLog(t, test.expectedLog, logBuf)
