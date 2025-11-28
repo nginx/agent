@@ -118,8 +118,7 @@ const (
 	DefLibDir = "/var/lib/nginx-agent"
 
 	DefExternalDataSourceProxyUrl = ""
-	// Default allow external data sources up to 100 MB
-	DefExternalDataSourceMaxBytes = 100 * 1024 * 1024
+	DefExternalDataSourceMaxBytes = 100 * 1024 * 1024 // default 100MB
 )
 
 func DefaultFeatures() []string {

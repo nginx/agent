@@ -188,66 +188,112 @@ func TestFileManagerService_UpdateFile_LargeFile(t *testing.T) {
 	helpers.RemoveFileWithErrorCheck(t, testFile.Name())
 }
 
+//nolint:revive // complexity is 21.
 func TestFileServiceOperator_RenameExternalFile(t *testing.T) {
-	tests := []struct {
-		prepare    func(t *testing.T) (src, dst string)
-		name       string
-		wantErrMsg string
-		wantErr    bool
-	}{
-		{
-			name: "Test 1: success",
-			prepare: func(t *testing.T) (string, string) {
-				t.Helper()
-				tmp := t.TempDir()
-				src := filepath.Join(tmp, "src.txt")
-				dst := filepath.Join(tmp, "subdir", "dest.txt")
-				content := []byte("hello world")
-				require.NoError(t, os.WriteFile(src, content, 0o600))
+	type testCase struct {
+		name               string
+		wantErrMsg         string
+		setupFailurePath   string
+		destinationPath    string
+		expectedDstContent []byte
+		srcContent         []byte
+		wantErr            bool
+	}
 
-				return src, dst
-			},
-			wantErr: false,
+	tests := []testCase{
+		{
+			name:               "Test 1: success",
+			srcContent:         []byte("hello world"),
+			setupFailurePath:   "",
+			destinationPath:    "subdir/dest.txt",
+			wantErr:            false,
+			expectedDstContent: []byte("hello world"),
 		},
 		{
-			name: "Test 2: mkdirall_fail",
-			prepare: func(t *testing.T) (string, string) {
-				t.Helper()
-				tmp := t.TempDir()
-				parentFile := filepath.Join(tmp, "not_a_dir")
-				require.NoError(t, os.WriteFile(parentFile, []byte("block"), 0o600))
-				dst := filepath.Join(parentFile, "dest.txt")
-				src := filepath.Join(tmp, "src.txt")
-				require.NoError(t, os.WriteFile(src, []byte("content"), 0o600))
-
-				return src, dst
-			},
-			wantErr:    true,
-			wantErrMsg: "failed to create directories for",
+			name:               "Test 2: mkdirall_fail",
+			srcContent:         []byte("content"),
+			setupFailurePath:   "not_a_dir",
+			destinationPath:    "not_a_dir/dest.txt",
+			wantErr:            true,
+			wantErrMsg:         "failed to create directories for",
+			expectedDstContent: nil,
 		},
 		{
-			name: "Test 3: rename_fail",
-			prepare: func(t *testing.T) (string, string) {
-				t.Helper()
-				tmp := t.TempDir()
-				src := filepath.Join(tmp, "does_not_exist.txt")
-				dst := filepath.Join(tmp, "subdir", "dest.txt")
-
-				return src, dst
-			},
-			wantErr:    true,
-			wantErrMsg: "failed to move file",
+			name:               "Test 3: rename_fail (src does not exist)",
+			srcContent:         nil,
+			setupFailurePath:   "",
+			destinationPath:    "subdir/dest.txt",
+			wantErr:            true,
+			wantErrMsg:         "failed to move file",
+			expectedDstContent: nil,
+		},
+		{
+			name:               "Test 4: No destination specified (empty dst path)",
+			srcContent:         []byte("source content"),
+			setupFailurePath:   "",
+			destinationPath:    "",
+			wantErr:            true,
+			wantErrMsg:         "failed to move file:",
+			expectedDstContent: nil,
+		},
+		{
+			name:               "Test 5: Restricted directory (simulated permission fail)",
+			srcContent:         []byte("source content"),
+			setupFailurePath:   "",
+			destinationPath:    "restricted_dir/dest.txt",
+			wantErr:            true,
+			wantErrMsg:         "permission denied",
+			expectedDstContent: nil,
+		},
+		{
+			name:               "Test 6: Two files to the same destination",
+			srcContent:         []byte("source content 1"),
+			setupFailurePath:   "",
+			destinationPath:    "collision_dir/file.txt",
+			wantErr:            false,
+			expectedDstContent: []byte("source content 2"),
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Helper()
 			ctx := context.Background()
 			fso := NewFileServiceOperator(types.AgentConfig(), nil, &sync.RWMutex{})
+			tmp := t.TempDir()
 
-			src, dst := tc.prepare(t)
+			src := filepath.Join(tmp, "src.txt")
+			dst := filepath.Join(tmp, tc.destinationPath)
+
+			if tc.setupFailurePath != "" {
+				parentFile := filepath.Join(tmp, tc.setupFailurePath)
+				require.NoError(t, os.WriteFile(parentFile, []byte("block"), 0o600))
+			}
+
+			if tc.srcContent != nil {
+				require.NoError(t, os.WriteFile(src, tc.srcContent, 0o600))
+			}
+
+			if tc.name == "Test 6: Two files to the same destination" {
+				src1 := src
+				dstCollision := dst
+				require.NoError(t, fso.RenameExternalFile(ctx, src1, dstCollision), "initial rename must succeed")
+
+				src2 := filepath.Join(tmp, "src2.txt")
+				content2 := []byte("source content 2")
+				require.NoError(t, os.WriteFile(src2, content2, 0o600))
+
+				src = src2
+				dst = dstCollision
+			}
+
+			if tc.name == "Test 5: Restricted directory (simulated permission fail)" {
+				parentDir := filepath.Dir(dst)
+				require.NoError(t, os.MkdirAll(parentDir, 0o500))
+			}
 
 			err := fso.RenameExternalFile(ctx, src, dst)
+
 			if tc.wantErr {
 				require.Error(t, err)
 				if tc.wantErrMsg != "" {
@@ -261,12 +307,10 @@ func TestFileServiceOperator_RenameExternalFile(t *testing.T) {
 
 			dstContent, readErr := os.ReadFile(dst)
 			require.NoError(t, readErr)
-			if tc.name == "success" {
-				require.Equal(t, []byte("hello world"), dstContent)
-			}
+			require.Equal(t, tc.expectedDstContent, dstContent)
 
 			_, statErr := os.Stat(src)
-			require.True(t, os.IsNotExist(statErr))
+			require.True(t, os.IsNotExist(statErr), "Source file should not exist after successful rename")
 		})
 	}
 }

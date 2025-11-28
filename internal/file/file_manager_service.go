@@ -863,26 +863,15 @@ func (fms *FileManagerService) downloadExternalFile(ctx context.Context, fileAct
 	fileName := fileAction.File.GetFileMeta().GetName()
 	fms.externalFileHeaders[fileName] = headers
 
-	updateErr := fms.writeContentToTempFile(ctx, contentToWrite, filePath, permission)
-
-	return updateErr
-}
-
-func (fms *FileManagerService) writeContentToTempFile(
-	ctx context.Context,
-	content []byte,
-	path string,
-	permission string,
-) error {
 	writeErr := fms.fileOperator.Write(
 		ctx,
-		content,
-		path,
+		contentToWrite,
+		filePath,
 		permission,
 	)
 
 	if writeErr != nil {
-		return fmt.Errorf("failed to write downloaded content to temp file %s: %w", path, writeErr)
+		return fmt.Errorf("failed to write downloaded content to temp file %s: %w", filePath, writeErr)
 	}
 
 	return nil
@@ -966,11 +955,7 @@ func isDomainAllowed(downloadURL string, allowedDomains []string) bool {
 			continue
 		}
 
-		if domain == hostname {
-			return true
-		}
-
-		if isMatchesWildcardDomain(hostname, domain) {
+		if domain == hostname || isMatchesWildcardDomain(hostname, domain) {
 			return true
 		}
 	}
