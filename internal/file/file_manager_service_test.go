@@ -1234,7 +1234,7 @@ func TestFileManagerService_DetermineFileActions_ExternalFile(t *testing.T) {
 }
 
 //nolint:gocognit,revive,govet // cognitive complexity is 22
-func TestFileManagerService_downloadExternalFiles_Cases(t *testing.T) {
+func TestFileManagerService_downloadExternalFiles(t *testing.T) {
 	type tc struct {
 		allowedDomains      []string
 		expectContent       []byte
@@ -1426,7 +1426,7 @@ func TestFileManagerService_downloadExternalFiles_Cases(t *testing.T) {
 	}
 }
 
-func TestMoveOrDeleteFiles_ExternalFileRenameCalled(t *testing.T) {
+func TestFileManagerService_ExternalFileRenameCalled(t *testing.T) {
 	ctx := context.Background()
 	fms := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
 
@@ -1462,7 +1462,7 @@ func TestMoveOrDeleteFiles_ExternalFileRenameCalled(t *testing.T) {
 	assert.Equal(t, fileName, dstArg, "RenameExternalFile destination argument mismatch")
 }
 
-func TestDownloadFileContent_MaxBytesLimit(t *testing.T) {
+func TestFileManagerService_DownloadFileContent_MaxBytesLimit(t *testing.T) {
 	ctx := context.Background()
 	fms := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
 
@@ -1494,7 +1494,7 @@ func TestDownloadFileContent_MaxBytesLimit(t *testing.T) {
 	assert.Equal(t, "etag-1", headers.ETag)
 }
 
-func TestDownloadFileContent_InvalidProxyURL(t *testing.T) {
+func TestFileManagerService_TestDownloadFileContent_InvalidProxyURL(t *testing.T) {
 	ctx := context.Background()
 	fms := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
 
@@ -1518,23 +1518,100 @@ func TestDownloadFileContent_InvalidProxyURL(t *testing.T) {
 	}
 }
 
-func TestIsDomainAllowed_EdgeCases(t *testing.T) {
-	ok := isDomainAllowed("http://%", []string{"example.com"})
-	assert.False(t, ok)
+func TestFileManagerService_IsDomainAllowed(t *testing.T) {
+	type testCase struct {
+		name           string
+		url            string
+		allowedDomains []string
+		expected       bool
+	}
 
-	ok = isDomainAllowed("http://", []string{"example.com"})
-	assert.False(t, ok)
+	tests := []testCase{
+		{
+			name:           "Invalid URL (Percent)",
+			url:            "http://%",
+			allowedDomains: []string{"example.com"},
+			expected:       false,
+		},
+		{
+			name:           "Invalid URL (Empty Host)",
+			url:            "http://",
+			allowedDomains: []string{"example.com"},
+			expected:       false,
+		},
+		{
+			name:           "Empty Allowed List",
+			url:            "http://example.com/path",
+			allowedDomains: []string{""},
+			expected:       false,
+		},
+		{
+			name:           "Basic Match",
+			url:            "http://example.com/path",
+			allowedDomains: []string{"example.com"},
+			expected:       true,
+		},
+		{
+			name:           "Wildcard Subdomain Match",
+			url:            "http://sub.example.com/path",
+			allowedDomains: []string{"*.example.com"},
+			expected:       true,
+		},
+	}
 
-	ok = isDomainAllowed("http://example.com/path", []string{""})
-	assert.False(t, ok)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			actual := isDomainAllowed(tc.url, tc.allowedDomains)
+			assert.Equal(t, tc.expected, actual, "for URL: %s and domains: %v", tc.url, tc.allowedDomains)
+		})
+	}
+}
 
-	ok = isDomainAllowed("http://example.com/path", []string{"example.com"})
-	assert.True(t, ok)
+func TestFileManagerService_IsMatchesWildcardDomain(t *testing.T) {
+	type testCase struct {
+		name     string
+		hostname string
+		pattern  string
+		expected bool
+	}
 
-	ok = isDomainAllowed("http://sub.example.com/path", []string{"*.example.com"})
-	assert.True(t, ok)
+	tests := []testCase{
+		{
+			name:     "True Match - Subdomain",
+			hostname: "sub.example.com",
+			pattern:  "*.example.com",
+			expected: true,
+		},
+		{
+			name:     "True Match - Exact Base Domain",
+			hostname: "example.com",
+			pattern:  "*.example.com",
+			expected: true,
+		},
+		{
+			name:     "False Match - Bad Domain Suffix",
+			hostname: "badexample.com",
+			pattern:  "*.example.com",
+			expected: false,
+		},
+		{
+			name:     "False Match - No Wildcard Prefix",
+			hostname: "test.com",
+			pattern:  "google.com",
+			expected: false,
+		},
+		{
+			name:     "False Match - Different Suffix",
+			hostname: "sub.anotherexample.com",
+			pattern:  "*.example.com",
+			expected: false,
+		},
+	}
 
-	assert.True(t, isMatchesWildcardDomain("example.com", "*.example.com"))
-	assert.True(t, isMatchesWildcardDomain("sub.example.com", "*.example.com"))
-	assert.False(t, isMatchesWildcardDomain("badexample.com", "*.example.com"))
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			actual := isMatchesWildcardDomain(tc.hostname, tc.pattern)
+			assert.Equal(t, tc.expected, actual, "Hostname: %s, Pattern: %s", tc.hostname, tc.pattern)
+		})
+	}
 }
