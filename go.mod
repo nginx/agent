@@ -61,7 +61,7 @@ require (
 	go.opentelemetry.io/collector/exporter/otlpexporter v0.139.0
 	go.opentelemetry.io/collector/exporter/otlphttpexporter v0.139.0
 	go.opentelemetry.io/collector/extension v1.45.0
-	go.opentelemetry.io/collector/extension/extensionauth v1.45.0
+	go.opentelemetry.io/collector/extension/extensionauth v1.47.0
 	go.opentelemetry.io/collector/extension/xextension v0.139.0
 	go.opentelemetry.io/collector/filter v0.139.0
 	go.opentelemetry.io/collector/otelcol v0.139.0
@@ -359,8 +359,8 @@ require (
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	gonum.org/v1/gonum v0.16.0 // indirect
 	google.golang.org/api v0.250.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250929231259-57b25ae835d4 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250929231259-57b25ae835d4 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20251022142026-3a174f9686a8 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251022142026-3a174f9686a8 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
@@ -386,5 +386,5 @@ require (
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
-	google.golang.org/grpc v1.76.0
+	google.golang.org/grpc v1.77.0
 )
