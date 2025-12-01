@@ -124,6 +124,8 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 		r.handleRollbackWrite(ctx, msg)
 	case bus.APIActionRequestTopic:
 		r.handleAPIActionRequest(ctx, msg)
+	case bus.AgentConfigUpdateTopic:
+		r.handleAgentConfigUpdate(ctx, msg)
 	default:
 		slog.DebugContext(ctx, "Unknown topic", "topic", msg.Topic)
 	}
@@ -137,6 +139,7 @@ func (*Resource) Subscriptions() []string {
 		bus.WriteConfigSuccessfulTopic,
 		bus.RollbackWriteTopic,
 		bus.APIActionRequestTopic,
+		bus.AgentConfigUpdateTopic,
 	}
 }
 
@@ -294,4 +297,19 @@ func (r *Resource) handleRollbackWrite(ctx context.Context, msg *bus.Message) {
 		"Config apply failed, rollback successful", data.InstanceID, data.Error.Error())
 
 	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: applyResponse})
+}
+
+func (r *Resource) handleAgentConfigUpdate(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Resource plugin received agent config update message")
+
+	r.agentConfigMutex.Lock()
+	defer r.agentConfigMutex.Unlock()
+
+	agentConfig, ok := msg.Data.(*config.Config)
+	if !ok {
+		slog.ErrorContext(ctx, "Unable to cast message payload to *config.Config", "payload", msg.Data)
+		return
+	}
+
+	r.agentConfig = agentConfig
 }

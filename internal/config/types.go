@@ -43,6 +43,7 @@ type (
 		Client             *Client          `yaml:"client"              mapstructure:"client"`
 		Collector          *Collector       `yaml:"collector"           mapstructure:"collector"`
 		Watchers           *Watchers        `yaml:"watchers"            mapstructure:"watchers"`
+		SyslogServer       *SyslogServer    `yaml:"syslog_server"       mapstructure:"syslog_server"`
 		Labels             map[string]any   `yaml:"labels"              mapstructure:"labels"`
 		Version            string           `yaml:"-"`
 		Path               string           `yaml:"-"`
@@ -61,6 +62,9 @@ type (
 		Nginx *NginxDataPlaneConfig `yaml:"nginx" mapstructure:"nginx"`
 	}
 
+	SyslogServer struct {
+		Port string `yaml:"port" mapstructure:"port"`
+	}
 	NginxDataPlaneConfig struct {
 		ReloadBackoff          *BackOff      `yaml:"reload_backoff"           mapstructure:"reload_backoff"`
 		APITls                 TLSConfig     `yaml:"api_tls"                  mapstructure:"api_tls"`
@@ -87,15 +91,18 @@ type (
 		Multiplier          float64       `yaml:"multiplier"           mapstructure:"multiplier"`
 	}
 
+	//nolint:lll // max line limit exceeded
 	GRPC struct {
-		KeepAlive *KeepAlive `yaml:"keepalive" mapstructure:"keepalive"`
+		KeepAlive       *KeepAlive    `yaml:"keepalive"        mapstructure:"keepalive"`
+		ResponseTimeout time.Duration `yaml:"response_timeout" mapstructure:"response_timeout"`
 		// if MaxMessageSize is size set then we use that value,
 		// otherwise MaxMessageRecieveSize and MaxMessageSendSize for individual settings
-		MaxMessageSize        int    `yaml:"max_message_size"         mapstructure:"max_message_size"`
-		MaxMessageReceiveSize int    `yaml:"max_message_receive_size" mapstructure:"max_message_receive_size"`
-		MaxMessageSendSize    int    `yaml:"max_message_send_size"    mapstructure:"max_message_send_size"`
-		MaxFileSize           uint32 `yaml:"max_file_size"            mapstructure:"max_file_size"`
-		FileChunkSize         uint32 `yaml:"file_chunk_size"          mapstructure:"file_chunk_size"`
+		MaxMessageSize            int    `yaml:"max_message_size"             mapstructure:"max_message_size"`
+		MaxMessageReceiveSize     int    `yaml:"max_message_receive_size"     mapstructure:"max_message_receive_size"`
+		MaxMessageSendSize        int    `yaml:"max_message_send_size"        mapstructure:"max_message_send_size"`
+		MaxFileSize               uint32 `yaml:"max_file_size"                mapstructure:"max_file_size"`
+		FileChunkSize             uint32 `yaml:"file_chunk_size"              mapstructure:"file_chunk_size"`
+		MaxParallelFileOperations int    `yaml:"max_parallel_file_operations" mapstructure:"max_parallel_file_operations"`
 	}
 
 	KeepAlive struct {
@@ -365,14 +372,6 @@ func (col *Collector) Validate(allowedDirectories []string) error {
 
 	for _, nginxReceiver := range col.Receivers.NginxReceivers {
 		err = errors.Join(err, nginxReceiver.Validate(allowedDirectories))
-	}
-
-	for _, path := range col.AdditionalConfigPaths {
-		cleanPath := filepath.Clean(path)
-		pathAllowed := isAllowedDir(cleanPath, allowedDirectories)
-		if !pathAllowed {
-			err = errors.Join(err, fmt.Errorf("additional config path %s not in allowed directories", path))
-		}
 	}
 
 	return err

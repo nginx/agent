@@ -146,6 +146,8 @@ func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
 		w.handleHealthRequest(ctx)
 	case bus.EnableWatchersTopic:
 		w.handleEnableWatchers(ctx, msg)
+	case bus.AgentConfigUpdateTopic:
+		w.handleAgentConfigUpdate(ctx, msg)
 	default:
 		slog.DebugContext(ctx, "Watcher plugin unknown topic", "topic", msg.Topic)
 	}
@@ -156,6 +158,7 @@ func (*Watcher) Subscriptions() []string {
 		bus.ConfigApplyRequestTopic,
 		bus.DataPlaneHealthRequestTopic,
 		bus.EnableWatchersTopic,
+		bus.AgentConfigUpdateTopic,
 	}
 }
 
@@ -326,4 +329,19 @@ func (w *Watcher) handleInstanceUpdates(newCtx context.Context, message instance
 			&bus.Message{Topic: bus.DeletedInstancesTopic, Data: message.InstanceUpdates.DeletedInstances},
 		)
 	}
+}
+
+func (w *Watcher) handleAgentConfigUpdate(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Watcher plugin received agent config update message")
+
+	w.agentConfigMutex.Lock()
+	defer w.agentConfigMutex.Unlock()
+
+	agentConfig, ok := msg.Data.(*config.Config)
+	if !ok {
+		slog.ErrorContext(ctx, "Unable to cast message payload to *config.Config", "payload", msg.Data)
+		return
+	}
+
+	w.agentConfig = agentConfig
 }

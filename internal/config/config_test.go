@@ -5,8 +5,10 @@
 package config
 
 import (
+	"bytes"
 	_ "embed"
 	"errors"
+	"log/slog"
 	"os"
 	"path"
 	"sort"
@@ -162,6 +164,100 @@ func TestNormalizeFunc(t *testing.T) {
 	var expected pflag.NormalizedName = "test-flag-name"
 	result := normalizeFunc(&pflag.FlagSet{}, "test_flag.name")
 	assert.Equal(t, expected, result)
+}
+
+type deprecatedEnvVarsTest struct {
+	name                 string
+	expectedLogContent   string
+	unexpectedLogContent string
+	envVars              map[string]string
+	viperKeys            []string
+	expectWarning        bool
+}
+
+func TestCheckDeprecatedEnvVars(t *testing.T) {
+	tests := []deprecatedEnvVarsTest{
+		{
+			name: "Test 1: should log warning for deprecated env var",
+			envVars: map[string]string{
+				"NGINX_AGENT_SERVER_HOST": "value",
+			},
+			viperKeys:          []string{"some_other_key"},
+			expectedLogContent: "NGINX_AGENT_SERVER_HOST",
+			expectWarning:      true,
+		},
+		{
+			name: "Test 2: should not log warning for valid env var",
+			envVars: map[string]string{
+				"NGINX_AGENT_LOG_LEVEL": "info",
+			},
+			viperKeys:            []string{"log_level"},
+			unexpectedLogContent: "NGINX_AGENT_LOG_LEVEL",
+			expectWarning:        false,
+		},
+		{
+			name: "Test 3: should handle mixed valid and deprecated env vars",
+			envVars: map[string]string{
+				"NGINX_AGENT_LOG_LEVEL":      "info",
+				"NGINX_AGENT_DEPRECATED_VAR": "value",
+			},
+			viperKeys:            []string{"log_level"},
+			expectedLogContent:   "NGINX_AGENT_DEPRECATED_VAR",
+			unexpectedLogContent: "NGINX_AGENT_LOG_LEVEL",
+			expectWarning:        true,
+		},
+		{
+			name: "Test 4: should ignore non-agent env vars",
+			envVars: map[string]string{
+				"NGINX_LICENSE": "value",
+			},
+			viperKeys:     []string{},
+			expectWarning: false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			runDeprecatedEnvVarsTest(t, tc)
+		})
+	}
+}
+
+func runDeprecatedEnvVarsTest(t *testing.T, tc deprecatedEnvVarsTest) {
+	t.Helper()
+
+	originalViper := viperInstance
+	viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
+	defer func() { viperInstance = originalViper }()
+
+	for key, value := range tc.envVars {
+		t.Setenv(key, value)
+	}
+
+	for _, key := range tc.viperKeys {
+		viperInstance.Set(key, "any-value")
+	}
+
+	var logBuffer bytes.Buffer
+	handler := slog.NewTextHandler(&logBuffer, nil)
+	slog.SetDefault(slog.New(handler))
+
+	checkDeprecatedEnvVars()
+
+	logOutput := logBuffer.String()
+
+	if tc.expectWarning {
+		require.NotEmpty(t, logOutput, "Expected a warning log, but got none")
+		assert.Contains(t, logOutput, "Detected deprecated or unknown environment variables")
+		if tc.expectedLogContent != "" {
+			assert.Contains(t, logOutput, tc.expectedLogContent)
+		}
+		if tc.unexpectedLogContent != "" {
+			assert.NotContains(t, logOutput, tc.unexpectedLogContent)
+		}
+	} else {
+		assert.Empty(t, logOutput, "Expected no warning logs")
+	}
 }
 
 func TestResolveAllowedDirectories(t *testing.T) {
@@ -1071,6 +1167,9 @@ func createConfig() *Config {
 			Level: "debug",
 			Path:  "./test-path",
 		},
+		SyslogServer: &SyslogServer{
+			Port: "1512",
+		},
 		Client: &Client{
 			HTTP: &HTTP{
 				Timeout: 15 * time.Second,
@@ -1081,11 +1180,13 @@ func createConfig() *Config {
 					Time:                10 * time.Second,
 					PermitWithoutStream: false,
 				},
-				MaxMessageSize:        1048575,
-				MaxMessageReceiveSize: 1048575,
-				MaxMessageSendSize:    1048575,
-				MaxFileSize:           485753,
-				FileChunkSize:         48575,
+				MaxMessageSize:            1048575,
+				MaxMessageReceiveSize:     1048575,
+				MaxMessageSendSize:        1048575,
+				MaxFileSize:               485753,
+				FileChunkSize:             48575,
+				MaxParallelFileOperations: 10,
+				ResponseTimeout:           30 * time.Second,
 			},
 			Backoff: &BackOff{
 				InitialInterval:     200 * time.Millisecond,
@@ -1239,7 +1340,7 @@ func createConfig() *Config {
 						{
 							Action: "insert",
 							Key:    "label1",
-							Value:  "label 1",
+							Value:  "label-1",
 						},
 						{
 							Action: "insert",
@@ -1319,7 +1420,7 @@ func createConfig() *Config {
 			},
 		},
 		Labels: map[string]any{
-			"label1": "label 1",
+			"label1": "label-1",
 			"label2": "new-value",
 			"label3": 123,
 		},
@@ -1413,5 +1514,111 @@ func createDefaultCollectorConfig() *Collector {
 			Level: "INFO",
 			Path:  "/var/log/nginx-agent/opentelemetry-collector-agent.log",
 		},
+	}
+}
+
+func TestValidateLabel(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected bool
+	}{
+		{
+			name:     "Test 1: Valid label - simple",
+			input:    "label123",
+			expected: true,
+		},
+		{
+			name:     "Test 2: Valid label - with dash and underscore",
+			input:    "label-123_abc",
+			expected: true,
+		},
+		{
+			name:     "Test 3: Invalid label - too long",
+			input:    strings.Repeat("a", 257),
+			expected: false,
+		},
+		{
+			name:     "Test 4: Invalid label - special char",
+			input:    "label$",
+			expected: false,
+		},
+		{
+			name:     "Test 5: Invalid label - starts with dash",
+			input:    "-label",
+			expected: false,
+		},
+		{
+			name:     "Test 6: Invalid label - ends with dash",
+			input:    "label-",
+			expected: false,
+		},
+		{
+			name:     "Test 7: Invalid label - empty",
+			input:    "",
+			expected: false,
+		},
+		{
+			name:     "Test 8: Invalid label - contains spaces",
+			input:    "label 123",
+			expected: false,
+		},
+		{
+			name:     "Test 9: Valid label - cluster id",
+			input:    "73623aef-1d5b-4f6b-b73d-5561c36851cc",
+			expected: true,
+		},
+		{
+			name:     "Test 10: Valid label - installation name",
+			input:    "my-release-nginx-ingress-controller",
+			expected: true,
+		},
+		{
+			name:     "Test 11: Valid label - product",
+			input:    "nic",
+			expected: true,
+		},
+		{
+			name:     "Test 12: Valid label - version",
+			input:    "5.3.0",
+			expected: true,
+		},
+		{
+			name:     "Test 13: Valid label - version snapshot",
+			input:    "5.3.0-SNAPSHOT",
+			expected: true,
+		},
+		{
+			name:     "Test 14: Invalid label - newlines",
+			input:    "label-2\n\n",
+			expected: false,
+		},
+		{
+			name:     "Test 15: Valid label - only numbers",
+			input:    "1234567",
+			expected: true,
+		},
+		{
+			name:     "Test 16: Invalid label - start and end with .",
+			input:    ".label.",
+			expected: false,
+		},
+		{
+			name:     "Test 17: Invalid label - lots of blank spaces",
+			input:    "                 label",
+			expected: false,
+		},
+		{
+			name:     "Test 18: Invalid label - start and end with blank space",
+			input:    " label ",
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := validateLabel(tt.input)
+			assert.Equal(t, tt.expected, actual)
+		})
 	}
 }

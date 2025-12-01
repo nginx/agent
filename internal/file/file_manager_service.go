@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"sync"
 
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 
 	"github.com/nginx/agent/v3/internal/model"
@@ -176,6 +177,8 @@ func (fms *FileManagerService) ConfigApply(ctx context.Context,
 
 	fms.fileActions = diffFiles
 
+	slog.DebugContext(ctx, "Executing config apply file actions", "actions", diffFiles)
+
 	rollbackTempFilesErr := fms.backupFiles(ctx)
 	if rollbackTempFilesErr != nil {
 		return model.Error, rollbackTempFilesErr
@@ -288,28 +291,36 @@ func (fms *FileManagerService) ConfigUpdate(ctx context.Context,
 }
 
 func (fms *FileManagerService) ConfigUpload(ctx context.Context, configUploadRequest *mpi.ConfigUploadRequest) error {
-	var updatingFilesError error
-
-	for _, file := range configUploadRequest.GetOverview().GetFiles() {
-		err := fms.fileServiceOperator.UpdateFile(
-			ctx,
-			configUploadRequest.GetOverview().GetConfigVersion().GetInstanceId(),
-			file,
-		)
-		if err != nil {
-			slog.ErrorContext(
-				ctx,
-				"Failed to update file",
-				"instance_id", configUploadRequest.GetOverview().GetConfigVersion().GetInstanceId(),
-				"file_name", file.GetFileMeta().GetName(),
-				"error", err,
-			)
-
-			updatingFilesError = errors.Join(updatingFilesError, err)
-		}
+	uploadFiles := configUploadRequest.GetOverview().GetFiles()
+	if len(uploadFiles) == 0 {
+		return nil
 	}
 
-	return updatingFilesError
+	errGroup, errGroupCtx := errgroup.WithContext(ctx)
+	errGroup.SetLimit(fms.agentConfig.Client.Grpc.MaxParallelFileOperations)
+
+	for _, file := range uploadFiles {
+		errGroup.Go(func() error {
+			err := fms.fileServiceOperator.UpdateFile(
+				errGroupCtx,
+				configUploadRequest.GetOverview().GetConfigVersion().GetInstanceId(),
+				file,
+			)
+			if err != nil {
+				slog.ErrorContext(
+					errGroupCtx,
+					"Failed to update file",
+					"instance_id", configUploadRequest.GetOverview().GetConfigVersion().GetInstanceId(),
+					"file_name", file.GetFileMeta().GetName(),
+					"error", err,
+				)
+			}
+
+			return err
+		})
+	}
+
+	return errGroup.Wait()
 }
 
 // DetermineFileActions compares two sets of files to determine the file action for each file. Returns a map of files
@@ -373,24 +384,58 @@ func (fms *FileManagerService) DetermineFileActions(
 	for _, modifiedFile := range modifiedFiles {
 		fileName := modifiedFile.File.GetFileMeta().GetName()
 		currentFile, ok := filesMap[fileName]
-		// default to unchanged action
 		modifiedFile.Action = model.Unchanged
 
-		// if file is unmanaged, action is set to unchanged so file is skipped when performing actions
+		// If file is unmanaged, action is set to unchanged so file is skipped when performing actions.
 		if modifiedFile.File.GetUnmanaged() {
 			slog.DebugContext(ctx, "Skipping unmanaged file updates", "file_name", fileName)
 			continue
 		}
-		// if file doesn't exist in the current files, file has been added
-		// set file action
-		if _, statErr := os.Stat(fileName); errors.Is(statErr, os.ErrNotExist) {
+
+		// If file currently exists on disk, is being tracked in manifest and file hash is different.
+		// Treat it as a file update.
+		if ok && modifiedFile.File.GetFileMeta().GetHash() != currentFile.GetFileMeta().GetHash() {
+			slog.DebugContext(ctx, "Tracked file requires updating", "file_name", fileName)
+			modifiedFile.Action = model.Update
+			fileDiff[fileName] = modifiedFile
+
+			continue
+		}
+
+		fileStats, statErr := os.Stat(fileName)
+
+		// If file doesn't exist on disk.
+		// Treat it as adding a new file.
+		if errors.Is(statErr, os.ErrNotExist) {
+			slog.DebugContext(ctx, "New untracked file needs to be created", "file_name", fileName)
 			modifiedFile.Action = model.Add
 			fileDiff[fileName] = modifiedFile
 
 			continue
-			// if file currently exists and file hash is different, file has been updated
-			// copy contents, set file action
-		} else if ok && modifiedFile.File.GetFileMeta().GetHash() != currentFile.GetFileMeta().GetHash() {
+		}
+
+		// If there is an error other than not existing, return that error.
+		if statErr != nil {
+			return nil, fmt.Errorf("unable to stat file %s: %w", fileName, statErr)
+		}
+
+		// If there is a directory with the same name, return an error.
+		if fileStats.IsDir() {
+			return nil, fmt.Errorf(
+				"unable to create file %s since a directory with the same name already exists",
+				fileName,
+			)
+		}
+
+		// If file already exists on disk but is not being tracked in manifest and the file hash is different.
+		// Treat it as a file update.
+		metadataOfFileOnDisk, err := files.FileMeta(fileName)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get file metadata for %s: %w", fileName, err)
+		}
+
+		if metadataOfFileOnDisk.GetHash() != modifiedFile.File.GetFileMeta().GetHash() {
+			slog.DebugContext(ctx, "Untracked file requires updating", "file_name", fileName)
 			modifiedFile.Action = model.Update
 			fileDiff[fileName] = modifiedFile
 		}
@@ -570,25 +615,36 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) (actionEr
 }
 
 func (fms *FileManagerService) downloadUpdatedFilesToTempLocation(ctx context.Context) (updateError error) {
+	var downloadFiles []*model.FileCache
 	for _, fileAction := range fms.fileActions {
 		if fileAction.Action == model.Add || fileAction.Action == model.Update {
+			downloadFiles = append(downloadFiles, fileAction)
+		}
+	}
+
+	if len(downloadFiles) == 0 {
+		slog.DebugContext(ctx, "No updated files to download")
+		return nil
+	}
+
+	errGroup, errGroupCtx := errgroup.WithContext(ctx)
+	errGroup.SetLimit(fms.agentConfig.Client.Grpc.MaxParallelFileOperations)
+
+	for _, fileAction := range downloadFiles {
+		errGroup.Go(func() error {
 			tempFilePath := tempFilePath(fileAction.File.GetFileMeta().GetName())
 
 			slog.DebugContext(
-				ctx,
+				errGroupCtx,
 				"Downloading file to temp location",
 				"file", tempFilePath,
 			)
 
-			updateErr := fms.fileUpdate(ctx, fileAction.File, tempFilePath)
-			if updateErr != nil {
-				updateError = updateErr
-				break
-			}
-		}
+			return fms.fileUpdate(errGroupCtx, fileAction.File, tempFilePath)
+		})
 	}
 
-	return updateError
+	return errGroup.Wait()
 }
 
 func (fms *FileManagerService) moveOrDeleteFiles(ctx context.Context, actionError error) error {
