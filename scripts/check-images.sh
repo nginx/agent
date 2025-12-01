@@ -1,41 +1,82 @@
 #!/usr/bin/env bash
-
 set -euo pipefail
-#set -x
-
-REGISTRY_URL="docker-registry.nginx.com/nginx"
-IMAGE_NAME=${1:-""}
-
-search=${2:-""}
+#set -x # Uncomment for debugging
 
 usage() {
-    echo "Usage: $0 <image-name> [search-pattern]"
-    echo "Example: $0 agentv3 alpine"
-    exit 1
+    echo "$0"
+    echo
+    echo "  Check and pull NGINX Agent Docker images from the official NGINX Docker registry."
+    echo "    Args:"
+    echo "      1. Registry URL (default: docker-registry.nginx.com/nginx)"
+    echo "      2. Image Name (default: agentv3)"
+    echo "      3. Search Pattern (optional): A regex pattern to filter tags before checking versions"
+    echo
+    echo "  Usage:"
+    echo "    > $0 <registry-url> <image-name> [search-pattern]"
+    echo
+    echo "  Example:"
+    echo "    Search for all tags for the 'agentv3' image in the NGINX Docker registry:"
+    echo "      > $0 docker-registry.nginx.com/nginx agentv3"
+    echo
+    echo "    Search for all tags containing 'alpine' for the 'agentv3' image in the NGINX Docker registry:"
+    echo "      > $0 docker-registry.nginx.com/nginx agentv3 alpine"
+    exit 0
 }
 
-if [[ -z "${IMAGE_NAME}" ]]; then
-    usage
+while getopts "h" opt; do
+    case ${opt} in
+        h )
+            usage
+            ;;
+        \? )
+            usage
+            ;;
+    esac
+done
+
+# Input parameters with defaults
+REGISTRY_URL=${1:-"docker-registry.nginx.com/nginx"}
+IMAGE_NAME=${2:-"agentv3"}
+RE_PATTERN=${3:-""}
+IMAGE_PATH="${REGISTRY_URL}/${IMAGE_NAME}"
+CONTAINER_TOOL=docker
+
+# Check for skopeo installation
+if ! command -v skopeo &> /dev/null; then
+    echo "skopeo could not be found. Please install skopeo to proceed."
+    exit 1
 fi
 
+# Check for docker installation
+if ! command -v ${CONTAINER_TOOL} &> /dev/null; then
+    echo "${CONTAINER_TOOL} could not be found."
+    # check podman as an alternative
+    CONTAINER_TOOL=podman
+    if ! command -v ${CONTAINER_TOOL} &> /dev/null; then
+        echo "Neither docker nor podman could be found. Please install one of them to proceed."
+        exit 1
+    fi
+fi
+echo "Using container tool: ${CONTAINER_TOOL}"
+
 echo "Checking images in ${REGISTRY_URL}/${IMAGE_NAME}"
+echo "Saving all tags to ${IMAGE_NAME}_tags.txt"
+skopeo list-tags docker://${IMAGE_PATH} | jq -r '.Tags[]' > ${IMAGE_NAME}_tags.txt
+echo $(wc -l < ${IMAGE_NAME}_tags.txt) "tags fetched."
 
-# Fetch all tags from the remote registry
-skopeo list-tags docker://${REGISTRY_URL}/${IMAGE_NAME} | jq -r '.Tags[]' > all_tags.txt
-echo $(wc -l < all_tags.txt) "tags fetched."
+# Filter out tags that end with four or more digits (nightly/build tags)
+grep -Ev '\d{4,}$' ${IMAGE_NAME}_tags.txt | sort -u > ${IMAGE_NAME}_filteredtags.txt
+echo $(wc -l < ${IMAGE_NAME}_filteredtags.txt) "tags after filtering."
 
-# Filter out tags that end with three or more digits (nightly/build tags)
-grep -Ev '\d{3,}$' all_tags.txt | sort -u > filtered_tags.txt
-echo $(wc -l < filtered_tags.txt) "tags after filtering."
-
-FOUND=($(grep -E "${search}" filtered_tags.txt | sort)) || { echo "No tags found matching '${search}'"; exit 1; }
-echo "tags matching '${search}':" ${#FOUND[@]}
+# Search for tags matching the provided pattern
+FOUND=($(grep -E "${RE_PATTERN}" ${IMAGE_NAME}_filteredtags.txt))
+echo "tags matching '${RE_PATTERN}':" ${#FOUND[@]}
+echo "${FOUND[@]}" | sed 's/ /\n/g'
 
 for tag in "${FOUND[@]}"; do
-    echo ":: ${REGISTRY_URL}/${IMAGE_NAME}:$tag"
-    podman pull ${REGISTRY_URL}/${IMAGE_NAME}:$tag > /dev/null 2>&1
-    podman run ${REGISTRY_URL}/${IMAGE_NAME}:$tag nginx -v
-    podman run ${REGISTRY_URL}/${IMAGE_NAME}:$tag nginx-agent --version
-    podman rm -f $(podman ps -a -q) > /dev/null 2>&1 || true
+    echo ":: ${IMAGE_PATH}:$tag"
+    ${CONTAINER_TOOL} pull ${IMAGE_PATH}:$tag > /dev/null 2>&1
+    ${CONTAINER_TOOL} run ${IMAGE_PATH}:$tag nginx -v
+    ${CONTAINER_TOOL} run --rm ${IMAGE_PATH}:$tag nginx-agent --version | sed 's/version/version:/g' # --rm to clean up container after run
 done
 
