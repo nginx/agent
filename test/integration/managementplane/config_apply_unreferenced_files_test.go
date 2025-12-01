@@ -25,7 +25,7 @@ const unrefConfigApplyRequestBody = `{
 				{
 					"file_meta": {
 						"name": "/etc/nginx/test/unreferenced_file.conf",
-						"permissions": "0644"
+						"permissions": "0600"
 					}
 				}
 			]
@@ -70,7 +70,7 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test1_TestSubDir
 		s.ctx,
 		"configs/unreferenced_file.conf",
 		fmt.Sprintf("/mock-management-plane-grpc/config/%s/etc/nginx/test/unreferenced_file.conf", s.nginxInstanceID),
-		0o666,
+		0o600,
 	)
 	s.Require().NoError(err)
 
@@ -111,9 +111,6 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test1_TestSubDir
 func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test2_TestUpdateUnreferencedInDataPlane() {
 	slog.Info("starting update unreferenced file in data plane test")
 
-	originalContent, readErr := os.ReadFile("configs/unreferenced_file.conf")
-	s.Require().NoError(readErr)
-
 	code, _, updateErr := utils.Container.Exec(s.ctx, []string{
 		"sh", "-c", "echo '# Updated unreferenced file' >> /etc/nginx/test/unreferenced_file.conf",
 	})
@@ -124,11 +121,18 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test2_TestUpdate
 	utils.PerformConfigApplyWithRequestBody(s.T(), s.nginxInstanceID,
 		utils.MockManagementPlaneAPIAddress, unrefConfigApplyRequestBody)
 
-	code, output, outputErr := utils.Container.Exec(s.ctx, []string{
+	dataPlaneCode, dataPlaneFileContent, dataPlaneOutputErr := utils.Container.Exec(s.ctx, []string{
 		"cat", "/etc/nginx/test/unreferenced_file.conf",
 	})
-	s.Require().NoError(outputErr)
-	s.Equal(0, code)
+	s.Require().NoError(dataPlaneOutputErr)
+	s.Equal(0, dataPlaneCode)
+
+	mockCode, mockFileContent, mockOutputErr := utils.MockManagementPlaneGrpcContainer.Exec(s.ctx, []string{
+		"cat",
+		fmt.Sprintf("/mock-management-plane-grpc/config/%s/etc/nginx/test/unreferenced_file.conf", s.nginxInstanceID),
+	})
+	s.Require().NoError(mockOutputErr)
+	s.Equal(0, mockCode)
 
 	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
 	s.T().Logf("Config apply responses: %v", responses)
@@ -143,8 +147,8 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test2_TestUpdate
 	utils.CheckManifestFile(s.T(), utils.Container, manifestFiles)
 
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
-	s.Equal("Config apply successful, no files to change", responses[0].GetCommandResponse().GetMessage())
-	s.NotEqual(originalContent, output)
+	s.Equal("Config apply successful", responses[0].GetCommandResponse().GetMessage())
+	s.NotEqual(dataPlaneFileContent, mockFileContent)
 	slog.Info("finished update unreferenced file in data plane test")
 }
 
