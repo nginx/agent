@@ -95,9 +95,9 @@ type ResourceService struct {
 	agentConfig       *config.Config
 	instanceOperators map[string]instanceOperator // key is instance ID
 	info              host.InfoInterface
+	manifestFilePath  string
 	resourceMutex     sync.Mutex
 	operatorsMutex    sync.Mutex
-	manifestFilePath  string
 }
 
 func NewResourceService(ctx context.Context, agentConfig *config.Config) *ResourceService {
