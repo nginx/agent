@@ -102,46 +102,6 @@ func TestConvertToMaps(t *testing.T) {
 				},
 			},
 		},
-		{
-			name: "Test 2: Valid input with simple key-value pairs, struct and list ",
-			expected: map[string]any{
-				"key1": "value1",
-				"key2": &structpb.ListValue{Values: []*structpb.Value{
-					structpb.NewStringValue("value1"),
-					structpb.NewStringValue("value2"),
-				}},
-				"key3": &structpb.Struct{
-					Fields: map[string]*structpb.Value{
-						"key1": structpb.NewStringValue("value1"),
-					},
-				},
-			},
-			input: []*structpb.Struct{
-				{
-					Fields: map[string]*structpb.Value{
-						"key1": structpb.NewStringValue("value1"),
-					},
-				},
-				{
-					Fields: map[string]*structpb.Value{
-						"key2": structpb.NewListValue(&structpb.ListValue{
-							Values: []*structpb.Value{
-								structpb.NewStringValue("value1"),
-								structpb.NewStringValue("value2"),
-							},
-						}),
-					},
-				},
-
-				{
-					Fields: map[string]*structpb.Value{
-						"key3": structpb.NewStructValue(&structpb.Struct{
-							Fields: map[string]*structpb.Value{"key1": structpb.NewStringValue("value1")},
-						}),
-					},
-				},
-			},
-		},
 	}
 
 	for _, tt := range tests {

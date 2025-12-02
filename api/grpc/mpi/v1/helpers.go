@@ -58,10 +58,6 @@ func ConvertToMap(input []*structpb.Struct) map[string]any {
 				convertedMap[key] = field.GetStringValue()
 			case *structpb.Value_NumberValue:
 				convertedMap[key] = int(field.GetNumberValue())
-			case *structpb.Value_StructValue:
-				convertedMap[key] = field.GetStructValue()
-			case *structpb.Value_ListValue:
-				convertedMap[key] = field.GetListValue()
 			case *structpb.Value_BoolValue:
 				convertedMap[key] = field.GetBoolValue()
 			default:
