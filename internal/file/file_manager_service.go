@@ -7,6 +7,7 @@ package file
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -862,6 +863,7 @@ func (fms *FileManagerService) downloadExternalFile(ctx context.Context, fileAct
 
 	fileName := fileAction.File.GetFileMeta().GetName()
 	fms.externalFileHeaders[fileName] = headers
+	expectedType := determineExpectedContentType(fileName)
 
 	writeErr := fms.fileOperator.Write(
 		ctx,
@@ -872,6 +874,16 @@ func (fms *FileManagerService) downloadExternalFile(ctx context.Context, fileAct
 
 	if writeErr != nil {
 		return fmt.Errorf("failed to write downloaded content to temp file %s: %w", filePath, writeErr)
+	}
+
+	validationErr := fms.validateFileContent(ctx, contentToWrite, fileName, expectedType)
+	if validationErr != nil {
+		slog.ErrorContext(ctx, "Security alert: Content validation failed, rejecting file download",
+			"file", fileName,
+			"path", filePath,
+			"error", validationErr)
+
+		return validationErr
 	}
 
 	return nil
@@ -1032,4 +1044,81 @@ func isMatchesWildcardDomain(hostname, pattern string) bool {
 	}
 
 	return false
+}
+
+const (
+	expectedTypeBinaryModule = "binary_module"
+	expectedTypeCertOrKey    = "cert_or_key_file"
+	expectedTypeNginxConfig  = "nginx_config_or_text"
+	expectedTypeUnknownText  = "unknown_text_default"
+)
+
+//nolint:revive,cyclop //  calculated cyclomatic is 13
+func (fms *FileManagerService) validateFileContent(
+	ctx context.Context,
+	content []byte,
+	fileName string,
+	expectedType string,
+) error {
+	contentType := http.DetectContentType(content)
+	slog.DebugContext(ctx, "Detected file content type", "file", fileName, "type",
+		contentType, "expected", expectedType)
+
+	if strings.Contains(contentType, "application/x-executable") ||
+		strings.Contains(contentType, "application/x-mach-binary") ||
+		strings.Contains(contentType, "application/x-elf") {
+		if expectedType != expectedTypeBinaryModule {
+			return fmt.Errorf("security violation: file is a binary executable (%s), but expected a safe file type",
+				contentType)
+		}
+	}
+	if expectedType != expectedTypeBinaryModule && strings.Contains(contentType, "application/octet-stream") {
+		return fmt.Errorf("security violation: file is an unrecognized binary (%s), but expected a text file",
+			contentType)
+	}
+
+	switch expectedType {
+	case expectedTypeCertOrKey:
+		if !strings.HasPrefix(contentType, "text/") {
+			return fmt.Errorf("expected certificate/key file (text), but detected non-text content (%s)", contentType)
+		}
+
+		if !bytes.Contains(content, []byte("-----BEGIN")) {
+			return errors.New("expected PEM file, but missing the required '-----BEGIN' header")
+		}
+
+	case expectedTypeNginxConfig:
+		if !strings.HasPrefix(contentType, "text/") {
+			return fmt.Errorf("expected NGINX configuration/text file, but detected non-text content (%s)",
+				contentType)
+		}
+
+	case expectedTypeBinaryModule:
+		if strings.HasPrefix(contentType, "text/") || strings.Contains(contentType, "application/octet-stream") {
+			return fmt.Errorf("expected binary module, but file is not a recognized executable format (%s)",
+				contentType)
+		}
+
+	case expectedTypeUnknownText:
+		if !strings.HasPrefix(contentType, "text/") {
+			return fmt.Errorf("expected general text file, but detected non-text content (%s)", contentType)
+		}
+	}
+
+	return nil
+}
+
+func determineExpectedContentType(fileName string) string {
+	ext := strings.ToLower(filepath.Ext(fileName))
+
+	switch ext {
+	case ".pem", ".crt", ".key":
+		return expectedTypeCertOrKey
+	case ".conf", ".cfg", ".txt", ".yaml", ".yml":
+		return expectedTypeNginxConfig
+	case ".so":
+		return expectedTypeBinaryModule
+	default:
+		return expectedTypeUnknownText
+	}
 }
