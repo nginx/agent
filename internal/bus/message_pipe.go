@@ -260,7 +260,7 @@ func (p *MessagePipe) handleAgentConfigUpdateTopic(ctx context.Context, msg *Mes
 func (p *MessagePipe) updateConfig(ctx context.Context, updateAgentConfig *config.Config) {
 	slog.InfoContext(ctx, "Updating agent config")
 	if updateAgentConfig.Log != nil && !reflect.DeepEqual(p.agentConfig.Log, updateAgentConfig.Log) {
-		slog.DebugContext(ctx, "Agent log level has been updated", "previous", p.agentConfig.Log,
+		slog.InfoContext(ctx, "Agent log level has been updated", "previous", p.agentConfig.Log,
 			"update", updateAgentConfig.Log)
 		p.agentConfig.Log = updateAgentConfig.Log
 
@@ -272,7 +272,7 @@ func (p *MessagePipe) updateConfig(ctx context.Context, updateAgentConfig *confi
 	}
 
 	if updateAgentConfig.Labels != nil && !reflect.DeepEqual(p.agentConfig.Labels, updateAgentConfig.Labels) {
-		slog.DebugContext(ctx, "Agent labels have been updated", "previous", p.agentConfig.Labels,
+		slog.InfoContext(ctx, "Agent labels have been updated", "previous", p.agentConfig.Labels,
 			"update", updateAgentConfig.Labels)
 		p.agentConfig.Labels = updateAgentConfig.Labels
 
