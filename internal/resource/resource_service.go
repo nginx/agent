@@ -97,6 +97,7 @@ type ResourceService struct {
 	info              host.InfoInterface
 	resourceMutex     sync.Mutex
 	operatorsMutex    sync.Mutex
+	manifestFilePath  string
 }
 
 func NewResourceService(ctx context.Context, agentConfig *config.Config) *ResourceService {
@@ -108,6 +109,7 @@ func NewResourceService(ctx context.Context, agentConfig *config.Config) *Resour
 		instanceOperators: make(map[string]instanceOperator),
 		nginxConfigParser: parser.NewNginxConfigParser(agentConfig),
 		agentConfig:       agentConfig,
+		manifestFilePath:  agentConfig.LibDir + "/manifest.json",
 	}
 
 	resourceService.updateResourceInfo(ctx)
@@ -356,11 +358,11 @@ func (r *ResourceService) updateConfigContextFiles(ctx context.Context,
 }
 
 func (r *ResourceService) manifestFile() (map[string]*model.ManifestFile, error) {
-	if _, err := os.Stat(r.agentConfig.LibDir + "/manifest.json"); err != nil {
+	if _, err := os.Stat(r.manifestFilePath); err != nil {
 		return nil, err
 	}
 
-	file, err := os.ReadFile(r.agentConfig.LibDir + "/manifest.json")
+	file, err := os.ReadFile(r.manifestFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read manifest file: %w", err)
 	}
