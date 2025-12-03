@@ -359,7 +359,7 @@ func (p *MessagePipe) createDataPlaneResponse(correlationID string, status mpi.C
 func validateLabels(labels map[string]any) bool {
 	for _, value := range labels {
 		if val, ok := value.(string); ok {
-			if config.ValidateLabel(val) {
+			if !config.ValidateLabel(val) {
 				return false
 			}
 		}
