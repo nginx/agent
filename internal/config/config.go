@@ -161,7 +161,7 @@ func ResolveConfig() (*Config, error) {
 	}
 
 	defaultCollector(collector, config)
-	addLabelsAsOTelHeaders(collector, config.Labels)
+	AddLabelsAsOTelHeaders(collector, config.Labels)
 
 	slog.Debug("Agent config", "config", config)
 	slog.Info("Excluded files from being watched for file changes", "exclude_files",
@@ -381,7 +381,7 @@ func addDefaultVMHostMetricsReceiver(collector *Collector) {
 	}
 }
 
-func addLabelsAsOTelHeaders(collector *Collector, labels map[string]any) {
+func AddLabelsAsOTelHeaders(collector *Collector, labels map[string]any) {
 	slog.Debug("Adding labels as headers to collector", "labels", labels)
 	if collector.Extensions.HeadersSetter != nil {
 		for key, value := range labels {
@@ -1006,7 +1006,7 @@ func resolveLabels() map[string]interface{} {
 			result[trimmedKey] = parseJSON(trimmedValue)
 
 		default: // String
-			if validateLabel(trimmedValue) {
+			if ValidateLabel(trimmedValue) {
 				result[trimmedKey] = trimmedValue
 			}
 		}
@@ -1017,7 +1017,7 @@ func resolveLabels() map[string]interface{} {
 	return result
 }
 
-func validateLabel(labelValue string) bool {
+func ValidateLabel(labelValue string) bool {
 	const maxLength = 256
 	labelPattern := regexp.MustCompile(regexLabelPattern)
 	if len(labelValue) > maxLength || !labelPattern.MatchString(labelValue) {

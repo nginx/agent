@@ -37,7 +37,7 @@ type (
 		Subscribe(ctx context.Context)
 		IsConnected() bool
 		CreateConnection(ctx context.Context, resource *mpi.Resource) (*mpi.CreateConnectionResponse, error)
-		UpdateAgentConfig(ctx context.Context, request *mpi.AgentConfig) (*config.Config, error)
+		Reconfigure(ctx context.Context, request *config.Config) error
 	}
 
 	CommandPlugin struct {
@@ -49,6 +49,7 @@ type (
 		subscribeChannel  chan *mpi.ManagementPlaneRequest
 		commandServerType model.ServerType
 		subscribeMutex    sync.Mutex
+		agentConfigMutex  sync.Mutex
 	}
 )
 
@@ -144,6 +145,16 @@ func (cp *CommandPlugin) Subscriptions() []string {
 	}
 }
 
+func (cp *CommandPlugin) Reconfigure(ctx context.Context, agentConfig *config.Config) error {
+	cp.agentConfigMutex.Lock()
+	defer cp.agentConfigMutex.Unlock()
+
+	cp.config = agentConfig
+	err := cp.commandService.Reconfigure(ctx, agentConfig)
+
+	return err
+}
+
 func (cp *CommandPlugin) processResourceUpdate(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "Command plugin received resource update message")
 	if resource, ok := msg.Data.(*mpi.Resource); ok {
@@ -183,21 +194,13 @@ func (cp *CommandPlugin) createConnection(ctx context.Context, resource *mpi.Res
 		})
 
 		if createConnectionResponse.GetAgentConfig() != nil {
-			newAgentConfig, updateConfigError := cp.commandService.UpdateAgentConfig(
-				ctx,
-				createConnectionResponse.GetAgentConfig(),
+			slog.DebugContext(
+				ctx, "Notifying other plugins of agent configuration update from create connection response",
 			)
-			if updateConfigError != nil {
-				slog.ErrorContext(ctx, "Unable to update agent configuration", "error", updateConfigError)
-			} else {
-				slog.DebugContext(
-					ctx, "Notifying other plugins of agent configuration update from create connection response",
-				)
-				cp.messagePipe.Process(ctx, &bus.Message{
-					Topic: bus.AgentConfigUpdateTopic,
-					Data:  newAgentConfig,
-				})
-			}
+			cp.messagePipe.Process(ctx, &bus.Message{
+				Topic: bus.ConnectionAgentConfigUpdateTopic,
+				Data:  createConnectionResponse.GetAgentConfig(),
+			})
 		}
 	}
 }
@@ -334,7 +337,7 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 					return
 				}
 
-				cp.handleAgentConfigUpdateRequest(newCtx, message)
+				cp.messagePipe.Process(ctx, &bus.Message{Topic: bus.AgentConfigUpdateTopic, Data: message})
 			default:
 				slog.DebugContext(newCtx, "Management plane request not implemented yet")
 			}
@@ -435,50 +438,6 @@ func (cp *CommandPlugin) handleInvalidRequest(ctx context.Context,
 	})
 	if err != nil {
 		slog.ErrorContext(ctx, "Unable to send data plane response", "error", err)
-	}
-}
-
-func (cp *CommandPlugin) handleAgentConfigUpdateRequest(ctx context.Context, request *mpi.ManagementPlaneRequest) {
-	newAgentConfig, err := cp.commandService.UpdateAgentConfig(
-		ctx,
-		request.GetUpdateAgentConfigRequest().GetAgentConfig(),
-	)
-	if err != nil {
-		slog.ErrorContext(ctx, "Unable to update agent configuration", "error", err)
-
-		responseError := cp.commandService.SendDataPlaneResponse(ctx, &mpi.DataPlaneResponse{
-			MessageMeta: &mpi.MessageMeta{
-				MessageId:     id.GenerateMessageID(),
-				CorrelationId: request.GetMessageMeta().GetCorrelationId(),
-				Timestamp:     timestamppb.Now(),
-			},
-			CommandResponse: &mpi.CommandResponse{
-				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-				Message: "Failed to update agent configuration",
-			},
-		})
-
-		if responseError != nil {
-			slog.ErrorContext(ctx, "Unable to send data plane response", "error", responseError)
-		}
-	} else {
-		cp.messagePipe.Process(ctx, &bus.Message{Topic: bus.AgentConfigUpdateTopic, Data: newAgentConfig})
-
-		responseError := cp.commandService.SendDataPlaneResponse(ctx, &mpi.DataPlaneResponse{
-			MessageMeta: &mpi.MessageMeta{
-				MessageId:     id.GenerateMessageID(),
-				CorrelationId: request.GetMessageMeta().GetCorrelationId(),
-				Timestamp:     timestamppb.Now(),
-			},
-			CommandResponse: &mpi.CommandResponse{
-				Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
-				Message: "Successfully updated agent configuration",
-			},
-		})
-
-		if responseError != nil {
-			slog.ErrorContext(ctx, "Unable to send data plane response", "error", responseError)
-		}
 	}
 }
 

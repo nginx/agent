@@ -143,6 +143,17 @@ func (*Resource) Subscriptions() []string {
 	}
 }
 
+func (r *Resource) Reconfigure(ctx context.Context, agentConfig *config.Config) error {
+	slog.DebugContext(ctx, "Resource plugin is reconfiguring to update agent configuration")
+
+	r.agentConfigMutex.Lock()
+	defer r.agentConfigMutex.Unlock()
+
+	r.agentConfig = agentConfig
+
+	return nil
+}
+
 func (r *Resource) handleAPIActionRequest(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "Resource plugin received api action request message")
 	managementPlaneRequest, ok := msg.Data.(*mpi.ManagementPlaneRequest)

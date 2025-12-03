@@ -144,6 +144,17 @@ func (fp *FilePlugin) Subscriptions() []string {
 	}
 }
 
+func (fp *FilePlugin) Reconfigure(ctx context.Context, agentConfig *config.Config) error {
+	slog.DebugContext(ctx, "File plugin is reconfiguring to update agent configuration")
+
+	fp.agentConfigMutex.Lock()
+	defer fp.agentConfigMutex.Unlock()
+
+	fp.config = agentConfig
+
+	return nil
+}
+
 func (fp *FilePlugin) enableWatchers(ctx context.Context,
 	configContext *model.NginxConfigContext,
 	instanceID string,

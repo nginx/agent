@@ -162,6 +162,17 @@ func (*Watcher) Subscriptions() []string {
 	}
 }
 
+func (w *Watcher) Reconfigure(ctx context.Context, agentConfig *config.Config) error {
+	slog.DebugContext(ctx, "Watcher plugin is reconfiguring to update agent configuration")
+
+	w.agentConfigMutex.Lock()
+	defer w.agentConfigMutex.Unlock()
+
+	w.agentConfig = agentConfig
+
+	return nil
+}
+
 func (w *Watcher) handleEnableWatchers(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "Watcher plugin received enable watchers message")
 	enableWatchersMessage, ok := msg.Data.(*model.EnableWatchers)

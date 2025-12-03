@@ -13,6 +13,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -55,11 +56,12 @@ type (
 		service                 types.CollectorInterface
 		config                  *config.Config
 		mu                      *sync.Mutex
-		agentConfigMutex        *sync.Mutex
 		cancel                  context.CancelFunc
 		previousNAPSysLogServer string
 		debugOTelConfigPath     string
 		stopped                 bool
+		agentConfigMutex        sync.Mutex
+		restartMutex            sync.Mutex
 	}
 )
 
@@ -101,7 +103,7 @@ func NewCollector(conf *config.Config) (*Collector, error) {
 		service:                 oTelCollector,
 		stopped:                 true,
 		mu:                      &sync.Mutex{},
-		agentConfigMutex:        &sync.Mutex{},
+		agentConfigMutex:        sync.Mutex{},
 		previousNAPSysLogServer: "",
 		debugOTelConfigPath:     debugOTelConfigPath,
 	}, nil
@@ -194,8 +196,6 @@ func (oc *Collector) Process(ctx context.Context, msg *bus.Message) {
 		oc.handleNginxConfigUpdate(ctx, msg)
 	case bus.ResourceUpdateTopic:
 		oc.handleResourceUpdate(ctx, msg)
-	case bus.AgentConfigUpdateTopic:
-		oc.handleAgentConfigUpdate(ctx, msg)
 	default:
 		slog.DebugContext(ctx, "OTel collector plugin unknown topic", "topic", msg.Topic)
 	}
@@ -206,8 +206,34 @@ func (oc *Collector) Subscriptions() []string {
 	return []string{
 		bus.ResourceUpdateTopic,
 		bus.NginxConfigUpdateTopic,
-		bus.AgentConfigUpdateTopic,
 	}
+}
+
+func (oc *Collector) Reconfigure(ctx context.Context, agentConfig *config.Config) error {
+	slog.DebugContext(ctx, "OTel collector plugin received agent config update message")
+
+	oc.agentConfigMutex.Lock()
+	defer oc.agentConfigMutex.Unlock()
+
+	if oc.config.Collector != nil && oc.config.Collector.Extensions.HeadersSetter != nil &&
+		oc.config.Collector.Extensions.HeadersSetter.Headers != nil {
+		if !reflect.DeepEqual(oc.config.Collector.Extensions.HeadersSetter.Headers,
+			agentConfig.Collector.Extensions.HeadersSetter.Headers) {
+			slog.InfoContext(ctx, "OTel collector headers have changed, restarting collector")
+			oc.config = agentConfig
+			oc.restartMutex.Lock()
+			defer oc.restartMutex.Unlock()
+			oc.restartCollector(ctx)
+		}
+	} else {
+		slog.InfoContext(ctx, "OTel collector headers have been added, restarting collector")
+		oc.config = agentConfig
+		oc.restartMutex.Lock()
+		defer oc.restartMutex.Unlock()
+		oc.restartCollector(ctx)
+	}
+
+	return nil
 }
 
 // Process receivers and log warning for sub-optimal configurations
@@ -304,6 +330,8 @@ func (oc *Collector) handleNginxConfigUpdate(ctx context.Context, msg *bus.Messa
 			return
 		}
 
+		oc.restartMutex.Lock()
+		defer oc.restartMutex.Unlock()
 		oc.restartCollector(ctx)
 	}
 }
@@ -330,23 +358,10 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 			return
 		}
 
+		oc.restartMutex.Lock()
+		defer oc.restartMutex.Unlock()
 		oc.restartCollector(ctx)
 	}
-}
-
-func (oc *Collector) handleAgentConfigUpdate(ctx context.Context, msg *bus.Message) {
-	slog.DebugContext(ctx, "OTel collector plugin received agent config update message")
-
-	oc.agentConfigMutex.Lock()
-	defer oc.agentConfigMutex.Unlock()
-
-	agentConfig, ok := msg.Data.(*config.Config)
-	if !ok {
-		slog.ErrorContext(ctx, "Unable to cast message payload to *config.Config", "payload", msg.Data)
-		return
-	}
-
-	oc.config = agentConfig
 }
 
 func (oc *Collector) updateResourceProcessor(resourceUpdateContext *v1.Resource) bool {

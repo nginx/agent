@@ -6,9 +6,12 @@ package bus
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/config"
+	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
@@ -41,6 +44,11 @@ func (*testPlugin) Subscriptions() []string {
 	return []string{"test.message"}
 }
 
+func (p *testPlugin) Reconfigure(ctx context.Context, agentConfig *config.Config) error {
+	p.Called()
+	return nil
+}
+
 func TestMessagePipe(t *testing.T) {
 	messages := []*Message{
 		{Topic: "test.message", Data: 1},
@@ -58,7 +66,7 @@ func TestMessagePipe(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	pipelineDone := make(chan bool)
 
-	messagePipe := NewMessagePipe(100)
+	messagePipe := NewMessagePipe(100, types.AgentConfig())
 	err := messagePipe.Register(10, []Plugin{plugin})
 
 	require.NoError(t, err)
@@ -84,7 +92,7 @@ func TestMessagePipe_DeRegister(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	messagePipe := NewMessagePipe(100)
+	messagePipe := NewMessagePipe(100, types.AgentConfig())
 	err := messagePipe.Register(100, []Plugin{plugin})
 
 	require.NoError(t, err)
@@ -105,7 +113,7 @@ func TestMessagePipe_IsPluginRegistered(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	pipelineDone := make(chan bool)
 
-	messagePipe := NewMessagePipe(100)
+	messagePipe := NewMessagePipe(100, types.AgentConfig())
 	err := messagePipe.Register(10, []Plugin{plugin})
 
 	require.NoError(t, err)
@@ -120,4 +128,34 @@ func TestMessagePipe_IsPluginRegistered(t *testing.T) {
 
 	assert.True(t, messagePipe.IsPluginRegistered(plugin.Info().Name))
 	assert.False(t, messagePipe.IsPluginRegistered("metrics"))
+}
+
+func TestMessagePipe_updateConfig(t *testing.T) {
+	initialConfig := types.AgentConfig()
+	initialConfig.Log.Level = "INFO"
+	initialConfig.Log.Path = ""
+	initialConfig.Labels = map[string]any{"old": "value"}
+
+	messagePipe := NewMessagePipe(100, initialConfig)
+	originalLogger := slog.Default()
+
+	updatedConfig := &config.Config{
+		Log: &config.Log{
+			Path:  "/etc/nginx-agent/",
+			Level: "DEBUG",
+		},
+		Labels: map[string]any{
+			"version": "5.0",
+			"test":    "config",
+		},
+	}
+
+	messagePipe.updateConfig(context.Background(), updatedConfig)
+
+	require.Equal(t, messagePipe.agentConfig.Log.Path, updatedConfig.Log.Path)
+	require.Equal(t, messagePipe.agentConfig.Log.Level, updatedConfig.Log.Level)
+	require.Equal(t, messagePipe.agentConfig.Labels, updatedConfig.Labels)
+
+	newLogger := slog.Default()
+	require.NotEqual(t, originalLogger, newLogger)
 }

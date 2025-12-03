@@ -70,3 +70,45 @@ func TestConvertToStructs(t *testing.T) {
 		})
 	}
 }
+
+func TestConvertToMaps(t *testing.T) {
+	tests := []struct {
+		name     string
+		expected map[string]any
+		input    []*structpb.Struct
+	}{
+		{
+			name: "Test 1: Valid input with simple key-value pairs",
+			expected: map[string]any{
+				"key1": "value1",
+				"key2": 123,
+				"key3": true,
+			},
+			input: []*structpb.Struct{
+				{
+					Fields: map[string]*structpb.Value{
+						"key1": structpb.NewStringValue("value1"),
+					},
+				},
+				{
+					Fields: map[string]*structpb.Value{
+						"key2": structpb.NewNumberValue(123),
+					},
+				},
+				{
+					Fields: map[string]*structpb.Value{
+						"key3": structpb.NewBoolValue(true),
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ConvertToMap(tt.input)
+
+			assert.Equal(t, tt.expected, got)
+		})
+	}
+}
