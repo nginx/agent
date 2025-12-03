@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"reflect"
 	"sync"
 	"sync/atomic"
 
@@ -104,12 +105,16 @@ func (cs *CommandService) UpdateDataPlaneStatus(
 			cs.subscribeClientMutex.Unlock()
 			return nil, errors.New("command service client is not initialized")
 		}
-		response, updateError := cs.commandServiceClient.UpdateDataPlaneStatus(ctx, request)
+
+		grpcCtx, cancel := context.WithTimeout(ctx, cs.agentConfig.Client.Grpc.ResponseTimeout)
+		defer cancel()
+
+		response, updateError := cs.commandServiceClient.UpdateDataPlaneStatus(grpcCtx, request)
 		cs.subscribeClientMutex.Unlock()
 
 		validatedError := grpc.ValidateGrpcError(updateError)
 		if validatedError != nil {
-			slog.ErrorContext(ctx, "Failed to send update data plane status", "error", validatedError)
+			slog.ErrorContext(grpcCtx, "Failed to send update data plane status", "error", validatedError)
 
 			return nil, validatedError
 		}
@@ -182,6 +187,29 @@ func (cs *CommandService) SendDataPlaneResponse(ctx context.Context, response *m
 	)
 }
 
+func (cs *CommandService) UpdateAgentConfig(
+	ctx context.Context,
+	mpiConfig *mpi.AgentConfig,
+) (*config.Config, error) {
+	slog.InfoContext(ctx, "Updating agent configuration", "config", mpiConfig)
+
+	updatedLog := config.FromAgentConfigLogProto(mpiConfig.GetLog())
+
+	if mpiConfig.GetLog() != nil && !reflect.DeepEqual(cs.agentConfig.Log, updatedLog) {
+		slog.InfoContext(ctx, "Updating log configuration", "log", updatedLog)
+		cs.agentConfig.Log = updatedLog
+
+		slogger := logger.New(
+			cs.agentConfig.Log.Path,
+			cs.agentConfig.Log.Level,
+		)
+		slog.SetDefault(slogger)
+	}
+
+	return cs.agentConfig, nil
+}
+
+// Subscribe to the Management Plane for incoming commands.
 func (cs *CommandService) Subscribe(ctx context.Context) {
 	commonSettings := &config.BackOff{
 		InitialInterval:     cs.agentConfig.Client.Backoff.InitialInterval,
@@ -384,13 +412,16 @@ func (cs *CommandService) dataPlaneHealthCallback(
 			return nil, errors.New("command service client is not initialized")
 		}
 
-		response, updateError := cs.commandServiceClient.UpdateDataPlaneHealth(ctx, request)
+		grpcCtx, cancel := context.WithTimeout(ctx, cs.agentConfig.Client.Grpc.ResponseTimeout)
+		defer cancel()
+
+		response, updateError := cs.commandServiceClient.UpdateDataPlaneHealth(grpcCtx, request)
 		cs.subscribeClientMutex.Unlock()
 
 		validatedError := grpc.ValidateGrpcError(updateError)
 
 		if validatedError != nil {
-			slog.ErrorContext(ctx, "Failed to send update data plane health", "error", validatedError)
+			slog.ErrorContext(grpcCtx, "Failed to send update data plane health", "error", validatedError)
 
 			return nil, validatedError
 		}
@@ -558,13 +589,16 @@ func (cs *CommandService) connectCallback(
 	request *mpi.CreateConnectionRequest,
 ) func() (*mpi.CreateConnectionResponse, error) {
 	return func() (*mpi.CreateConnectionResponse, error) {
+		grpcCtx, cancel := context.WithTimeout(ctx, cs.agentConfig.Client.Grpc.ResponseTimeout)
+		defer cancel()
+
 		cs.subscribeClientMutex.Lock()
-		response, connectErr := cs.commandServiceClient.CreateConnection(ctx, request)
+		response, connectErr := cs.commandServiceClient.CreateConnection(grpcCtx, request)
 		cs.subscribeClientMutex.Unlock()
 
 		validatedError := grpc.ValidateGrpcError(connectErr)
 		if validatedError != nil {
-			slog.ErrorContext(ctx, "Failed to create connection", "error", validatedError)
+			slog.ErrorContext(grpcCtx, "Failed to create connection", "error", validatedError)
 
 			return nil, validatedError
 		}

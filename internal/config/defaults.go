@@ -66,6 +66,7 @@ const (
 	DefMaxFileSize               uint32 = 1048576 // 1MB
 	DefFileChunkSize             uint32 = 524288  // 0.5MB
 	DefMaxParallelFileOperations        = 5
+	DefResponseTimeout                  = 10 * time.Second
 
 	// Client HTTP Settings
 	DefHTTPTimeout = 10 * time.Second

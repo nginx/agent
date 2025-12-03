@@ -413,6 +413,25 @@ Example request body to get stream upstreams example:
     }
 }
 ```
+
+Example remote agent config update to change log level to debug:
+```
+{
+    "message_meta": {
+        "message_id": "6c0fa83e-351c-4009-90cd-1f2acce2d184",
+        "correlation_id": "11114c1c-8e91-47c1-a92c-b9a0c3f1a263",
+        "timestamp": "2025-01-15T01:30:15.01Z"
+    },
+    "update_agent_config_request": {
+        "agent_config": {
+            "log": {
+                "log_level": 3
+            }
+        }
+    }
+}
+```
+
 ## POST /api/v1/instance/\<instance id\>/config/apply
 Used to send management plane config apply request over the Subscribe rpc stream to the NGINX Agent for a particular data plane instance.
 
