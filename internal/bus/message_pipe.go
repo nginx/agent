@@ -271,7 +271,8 @@ func (p *MessagePipe) updateConfig(ctx context.Context, updateAgentConfig *confi
 		slog.SetDefault(slogger)
 	}
 
-	if updateAgentConfig.Labels != nil && !reflect.DeepEqual(p.agentConfig.Labels, updateAgentConfig.Labels) {
+	if updateAgentConfig.Labels != nil && validateLabels(updateAgentConfig.Labels) &&
+		!reflect.DeepEqual(p.agentConfig.Labels, updateAgentConfig.Labels) {
 		slog.InfoContext(ctx, "Agent labels have been updated", "previous", p.agentConfig.Labels,
 			"update", updateAgentConfig.Labels)
 		p.agentConfig.Labels = updateAgentConfig.Labels
@@ -353,4 +354,15 @@ func (p *MessagePipe) createDataPlaneResponse(correlationID string, status mpi.C
 			Error:   err,
 		},
 	}
+}
+
+func validateLabels(labels map[string]any) bool {
+	for _, value := range labels {
+		if val, ok := value.(string); ok {
+			if config.ValidateLabel(val) == false {
+				return false
+			}
+		}
+	}
+	return true
 }

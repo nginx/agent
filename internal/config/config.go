@@ -1006,7 +1006,7 @@ func resolveLabels() map[string]interface{} {
 			result[trimmedKey] = parseJSON(trimmedValue)
 
 		default: // String
-			if validateLabel(trimmedValue) {
+			if ValidateLabel(trimmedValue) {
 				result[trimmedKey] = trimmedValue
 			}
 		}
@@ -1017,7 +1017,7 @@ func resolveLabels() map[string]interface{} {
 	return result
 }
 
-func validateLabel(labelValue string) bool {
+func ValidateLabel(labelValue string) bool {
 	const maxLength = 256
 	labelPattern := regexp.MustCompile(regexLabelPattern)
 	if len(labelValue) > maxLength || !labelPattern.MatchString(labelValue) {

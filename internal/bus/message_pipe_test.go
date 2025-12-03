@@ -134,6 +134,7 @@ func TestMessagePipe_updateConfig(t *testing.T) {
 	initialConfig := types.AgentConfig()
 	initialConfig.Log.Level = "INFO"
 	initialConfig.Log.Path = ""
+	initialConfig.Labels = map[string]any{"old": "value"}
 
 	messagePipe := NewMessagePipe(100, initialConfig)
 	originalLogger := slog.Default()
@@ -143,12 +144,17 @@ func TestMessagePipe_updateConfig(t *testing.T) {
 			Path:  "/etc/nginx-agent/",
 			Level: "DEBUG",
 		},
+		Labels: map[string]any{
+			"version": "5.0",
+			"test":    "config",
+		},
 	}
 
 	messagePipe.updateConfig(context.Background(), updatedConfig)
 
 	require.Equal(t, messagePipe.agentConfig.Log.Path, updatedConfig.Log.Path)
 	require.Equal(t, messagePipe.agentConfig.Log.Level, updatedConfig.Log.Level)
+	require.Equal(t, messagePipe.agentConfig.Labels, updatedConfig.Labels)
 
 	newLogger := slog.Default()
 	require.NotEqual(t, originalLogger, newLogger)
