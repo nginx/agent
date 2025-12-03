@@ -7,18 +7,18 @@ package resource
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/nginx/agent/v3/pkg/host/hostfakes"
-
 	"github.com/nginx/agent/v3/internal/datasource/config/configfakes"
 	"github.com/nginx/agent/v3/internal/model"
+	"github.com/nginx/agent/v3/pkg/host/hostfakes"
+	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/nginx-plus-go-client/v3/client"
-
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/nginx/agent/v3/internal/resource/resourcefakes"
@@ -399,10 +399,87 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 			}
 			resourceService.resource.Instances = instances
 
-			_, reloadError := resourceService.ApplyConfig(ctx, test.instanceID)
+			configContext, reloadError := resourceService.ApplyConfig(ctx, test.instanceID)
 			assert.Equal(t, test.expected, reloadError)
+			t.Log("configContext:", configContext)
 		})
 	}
+}
+
+func Test_updateConfigContextFiles(t *testing.T) {
+	ctx := t.Context()
+	resourceService := NewResourceService(ctx, types.AgentConfig())
+
+	manifestFileContents := map[string]*model.ManifestFile{
+		"/etc/nginx/nginx.conf": {
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:       "/etc/nginx/nginx.conf",
+				Referenced: true,
+				Unmanaged:  false,
+			},
+		},
+		"/etc/nginx/unmanaged.conf": {
+			ManifestFileMeta: &model.ManifestFileMeta{
+				Name:      "/etc/nginx/unmanaged.conf",
+				Unmanaged: true,
+			},
+		},
+	}
+
+	tempDir := t.TempDir()
+	manifestDirPath := tempDir
+	manifestFile := helpers.CreateFileWithErrorCheck(t, manifestDirPath, "manifest.json")
+
+	resourceService.manifestFilePath = manifestFile.Name()
+	manifestJSON, err := json.MarshalIndent(manifestFileContents, "", "  ")
+	require.NoError(t, err)
+
+	_, err = manifestFile.Write(manifestJSON)
+	require.NoError(t, err)
+
+	nginxConfigContext := &model.NginxConfigContext{
+		Files: []*mpi.File{
+			{
+				FileMeta: &mpi.FileMeta{
+					Name:     "/etc/nginx/unmanaged.conf",
+					Hash:     "",
+					FileType: nil,
+				},
+				Unmanaged: false,
+			},
+			{
+				FileMeta: &mpi.FileMeta{
+					Name:     "/etc/nginx/nginx.conf",
+					Hash:     "",
+					FileType: nil,
+				},
+				Unmanaged: false,
+			},
+		},
+	}
+
+	expected := &model.NginxConfigContext{
+		Files: []*mpi.File{
+			{
+				FileMeta: &mpi.FileMeta{
+					Name:     "/etc/nginx/unmanaged.conf",
+					Hash:     "",
+					FileType: nil,
+				},
+				Unmanaged: true,
+			},
+			{
+				FileMeta: &mpi.FileMeta{
+					Name:     "/etc/nginx/nginx.conf",
+					Hash:     "",
+					FileType: nil,
+				},
+				Unmanaged: false,
+			},
+		},
+	}
+	configContext := resourceService.updateConfigContextFiles(ctx, nginxConfigContext)
+	assert.Equal(t, expected, configContext)
 }
 
 func Test_convertToUpstreamServer(t *testing.T) {
