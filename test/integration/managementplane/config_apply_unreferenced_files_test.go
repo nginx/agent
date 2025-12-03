@@ -79,7 +79,7 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test1_TestSubDir
 	responses := utils.ManagementPlaneResponses(s.T(), 2, utils.MockManagementPlaneAPIAddress)
 	s.T().Logf("Config apply responses: %v", responses)
 
-	manifestFiles := utils.GetManifestFiles()
+	manifestFiles := utils.ManifestFiles()
 	manifestFiles["/etc/nginx/test/unreferenced_file.conf"] = &model.ManifestFile{
 		ManifestFileMeta: &model.ManifestFileMeta{
 			Name:       "/etc/nginx/test/unreferenced_file.conf",
@@ -137,7 +137,7 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test2_TestUpdate
 	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
 	s.T().Logf("Config apply responses: %v", responses)
 
-	manifestFiles := utils.GetManifestFiles()
+	manifestFiles := utils.ManifestFiles()
 
 	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
 		manifestFiles["/etc/nginx/nginx.conf"].ManifestFileMeta.Hash = "/SWXYYenb2EcJNg6fiuzlkdj91nBdsMdF1vLm7Wybvc="
@@ -175,7 +175,7 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test3_TestDelete
 	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
 	s.T().Logf("Config apply responses: %v", responses)
 
-	manifestFiles := utils.GetManifestFiles()
+	manifestFiles := utils.ManifestFiles()
 
 	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
 		manifestFiles["/etc/nginx/nginx.conf"].ManifestFileMeta.Hash = "/SWXYYenb2EcJNg6fiuzlkdj91nBdsMdF1vLm7Wybvc="
@@ -211,7 +211,7 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test4_TestDelete
 	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
 	s.T().Logf("Config apply responses: %v", responses)
 
-	manifestFiles := utils.GetManifestFiles()
+	manifestFiles := utils.ManifestFiles()
 	delete(manifestFiles, "/etc/nginx/test/unreferenced_file.conf")
 
 	if os.Getenv("IMAGE_PATH") == "/nginx-plus/agent" {
@@ -261,7 +261,7 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test5_TestUnrefe
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	s.Equal("Config apply successful", responses[0].GetCommandResponse().GetMessage())
 
-	manifestFiles := utils.GetManifestFiles()
+	manifestFiles := utils.ManifestFiles()
 	manifestFiles["/etc/nginx/test/unreferenced_file.conf"] = &model.ManifestFile{
 		ManifestFileMeta: &model.ManifestFileMeta{
 			Name:       "/etc/nginx/test/unreferenced_file.conf",
@@ -301,7 +301,7 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test5_TestUnrefe
 func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test6_TestReferencedToUnreferenced() {
 	slog.Info("starting referenced file to unreferenced file test")
 
-	manifestFiles := utils.GetManifestFiles()
+	manifestFiles := utils.ManifestFiles()
 
 	utils.CheckManifestFile(s.T(), utils.Container, manifestFiles)
 	utils.WriteConfigFileMock(s.T(), s.nginxInstanceID, "/etc/nginx/mime.types",
@@ -358,7 +358,7 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test7_TestRollba
 	responses := utils.ManagementPlaneResponses(s.T(), 2, utils.MockManagementPlaneAPIAddress)
 	s.T().Logf("Config apply responses: %v", responses)
 
-	manifestFiles := utils.GetManifestFiles()
+	manifestFiles := utils.ManifestFiles()
 
 	utils.CheckManifestFile(s.T(), utils.Container, manifestFiles)
 

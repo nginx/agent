@@ -38,7 +38,7 @@ const (
 var (
 	MockManagementPlaneAPIAddress          string
 	AuxiliaryMockManagementPlaneAPIAddress string
-	ManifestFiles                          map[string]*model.ManifestFile
+	mockManifestFiles                      map[string]*model.ManifestFile
 )
 
 func PerformConfigApply(t *testing.T, nginxInstanceID, mockManagementPlaneAPIAddress string) {
@@ -171,12 +171,12 @@ func CheckManifestFile(t *testing.T, container testcontainers.Container,
 	assert.Equal(t, expectedContent, manifestFiles)
 }
 
-func GetManifestFiles() map[string]*model.ManifestFile {
+func ManifestFiles() map[string]*model.ManifestFile {
 	nginxConfSize := 1172
 	mimeTypeSize := 5349
 
-	if len(ManifestFiles) == 0 {
-		ManifestFiles = map[string]*model.ManifestFile{
+	if len(mockManifestFiles) == 0 {
+		mockManifestFiles = map[string]*model.ManifestFile{
 			"/etc/nginx/mime.types": {
 				ManifestFileMeta: &model.ManifestFileMeta{
 					Name:       "/etc/nginx/mime.types",
@@ -196,7 +196,7 @@ func GetManifestFiles() map[string]*model.ManifestFile {
 		}
 	}
 
-	return ManifestFiles
+	return mockManifestFiles
 }
 
 func WriteConfigFileMock(t *testing.T, nginxInstanceID, file1, file2, file3 string) {
