@@ -226,6 +226,7 @@ func (oc *Collector) Reconfigure(ctx context.Context, agentConfig *config.Config
 			oc.restartCollector(ctx)
 		}
 	} else {
+		slog.InfoContext(ctx, "OTel collector headers have been added, restarting collector")
 		oc.config = agentConfig
 		oc.restartMutex.Lock()
 		defer oc.restartMutex.Unlock()

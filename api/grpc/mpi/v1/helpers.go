@@ -61,7 +61,7 @@ func ConvertToMap(input []*structpb.Struct) map[string]any {
 			case *structpb.Value_BoolValue:
 				convertedMap[key] = field.GetBoolValue()
 			default:
-				slog.Warn("unknown type for map conversion", "value", kind)
+				slog.Warn("Unknown type for map conversion", "value", kind)
 			}
 		}
 	}
