@@ -62,7 +62,7 @@ majorVersion=$(echo ${VERSION} | cut -d. -f1)
 # Define package URIs to check for each platform
 
 APK=()
-ALPINE_VERSIONS=("3.22" "3.21" "3.20" "3.19")
+ALPINE_VERSIONS=("3.22" "3.21" "3.20")
 ALPINE_ARCH=("x86_64" "aarch64")
 for alpine_version in "${ALPINE_VERSIONS[@]}"; do
     for arch in ${ALPINE_ARCH[@]}; do
@@ -102,9 +102,11 @@ for arch in ${RPM_ARCH[@]}; do
     AMZN+=("amzn2/2/${arch}/RPMS/nginx-agent-$VERSION.amzn2.ngx.${arch}.rpm")
 done
 
-SUSE=(
-  sles/15/x86_64/RPMS/nginx-agent-$VERSION.sles15.ngx.x86_64.rpm
-)
+SUSE=()
+SUSE_VERSIONS=("15", "16")
+for suse_version in "${SUSE_VERSIONS[@]}"; do
+    SUSE+=("sles/${suse_version}/x86_64/RPMS/nginx-agent-$VERSION.sles${suse_version}.ngx.x86_64.rpm")
+done
 
 # Aggregate all URIs to fetch
 uris=(

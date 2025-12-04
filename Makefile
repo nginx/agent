@@ -17,14 +17,14 @@ GOBIN 	?= $$(go env GOPATH)/bin
 # | OS_RELEASE       | OS_VERSION                                | NOTES                                                          |
 # | ---------------- | ----------------------------------------- | -------------------------------------------------------------- |
 # | amazonlinux      | 2, 2023                                   |                                                                |
-# | ubuntu           | 22.04, 24.04 25.04                		 |                                                                |
+# | ubuntu           | 22.04, 24.04, 25.04 25.10                 |                                                                |
 # | debian           | bullseye-slim, bookworm-slim, trixie-slim |                                                                |
 # | redhatenterprise | 8, 9, 10                                	 |                                                                |
 # | rockylinux       | 8, 9, 10                                  |                                                                |
 # | almalinux        | 8, 9, 10                                  |                                                                |
-# | alpine           | 3.19, 3.20, 3.21 3.22                     |                                                                |
+# | alpine           | 3.20, 3.21 3.22                           |                                                                |
 # | oraclelinux      | 8, 9, 10                                  |                                                                |
-# | suse             | sle15                          			 |                                                                |
+# | suse             | sle15, sle16                           	 |                                                                |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 OS_RELEASE  ?= ubuntu
 OS_VERSION  ?= 24.04
