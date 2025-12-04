@@ -8,14 +8,14 @@ require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.9-20250912141014-52f32327d4b0.1
 	buf.build/go/protovalidate v1.0.0
 	github.com/cenkalti/backoff/v4 v4.3.0
-	github.com/docker/docker v28.4.0+incompatible
+	github.com/docker/docker v28.5.1+incompatible
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/go-resty/resty/v2 v2.16.5
 	github.com/goccy/go-yaml v1.18.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
-	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.2
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3
 	github.com/leodido/go-syslog/v4 v4.3.0
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c
 	github.com/nginx/nginx-plus-go-client/v3 v3.0.1
@@ -39,18 +39,18 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/testbed v0.139.0
 	github.com/prometheus/client_model v0.6.2
 	github.com/prometheus/common v0.67.2
-	github.com/shirou/gopsutil/v4 v4.25.9
+	github.com/shirou/gopsutil/v4 v4.25.10
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
-	github.com/testcontainers/testcontainers-go v0.39.0
+	github.com/testcontainers/testcontainers-go v0.40.0
 	github.com/trivago/grok v1.0.0
 	go.opentelemetry.io/collector/component v1.45.0
 	go.opentelemetry.io/collector/component/componenttest v0.139.0
 	go.opentelemetry.io/collector/config/confighttp v0.139.0
-	go.opentelemetry.io/collector/confmap v1.45.0
+	go.opentelemetry.io/collector/confmap v1.46.0
 	go.opentelemetry.io/collector/confmap/provider/envprovider v1.42.0
 	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.45.0
-	go.opentelemetry.io/collector/confmap/provider/httpprovider v1.42.0
+	go.opentelemetry.io/collector/confmap/provider/httpprovider v1.46.0
 	go.opentelemetry.io/collector/confmap/provider/httpsprovider v1.42.0
 	go.opentelemetry.io/collector/confmap/provider/yamlprovider v1.42.0
 	go.opentelemetry.io/collector/connector v0.139.0
@@ -80,8 +80,8 @@ require (
 	go.uber.org/goleak v1.3.0
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/mod v0.29.0
-	golang.org/x/sync v0.17.0
+	golang.org/x/mod v0.30.0
+	golang.org/x/sync v0.18.0
 	google.golang.org/protobuf v1.36.10
 )
 
@@ -307,7 +307,7 @@ require (
 	go.opentelemetry.io/collector/extension/extensionmiddleware v0.139.0 // indirect
 	go.opentelemetry.io/collector/extension/extensiontest v0.139.0 // indirect
 	go.opentelemetry.io/collector/extension/zpagesextension v0.139.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.45.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.46.0 // indirect
 	go.opentelemetry.io/collector/internal/fanoutconsumer v0.139.0 // indirect
 	go.opentelemetry.io/collector/internal/memorylimiter v0.139.0 // indirect
 	go.opentelemetry.io/collector/internal/sharedcomponent v0.139.0 // indirect
@@ -382,9 +382,9 @@ require (
 	github.com/vardius/message-bus v1.1.5
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.38.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.38.0
-	golang.org/x/crypto v0.43.0 // indirect
-	golang.org/x/net v0.46.0 // indirect
-	golang.org/x/sys v0.37.0 // indirect
-	golang.org/x/text v0.30.0 // indirect
+	golang.org/x/crypto v0.45.0 // indirect
+	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	google.golang.org/grpc v1.76.0
 )

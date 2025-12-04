@@ -93,7 +93,8 @@ type (
 
 	//nolint:lll // max line limit exceeded
 	GRPC struct {
-		KeepAlive *KeepAlive `yaml:"keepalive" mapstructure:"keepalive"`
+		KeepAlive       *KeepAlive    `yaml:"keepalive"        mapstructure:"keepalive"`
+		ResponseTimeout time.Duration `yaml:"response_timeout" mapstructure:"response_timeout"`
 		// if MaxMessageSize is size set then we use that value,
 		// otherwise MaxMessageRecieveSize and MaxMessageSendSize for individual settings
 		MaxMessageSize            int           `yaml:"max_message_size"             mapstructure:"max_message_size"`
