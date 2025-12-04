@@ -89,7 +89,6 @@ jobs:
       security-events: write
     with:
       target-branch: ${{ github.event.pull_request.base.ref || github.ref_name }}
-      go-version-input: '1.24.10'
 
   unit-test:
     name: Unit Tests

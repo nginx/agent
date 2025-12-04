@@ -42,8 +42,7 @@ jobs:
           echo "Reading from go.mod"
           GO_VERSION=$(grep -E "^toolchain " go.mod | awk -F' ' '{print $2}' | tr -d 'go')
           echo "Found $GO_VERSION"
-          echo "go-version="$GO_VERSION"" >> $GITHUB_OUTPUT
-          
+          echo "go-version="$GO_VERSION"" >> $GITHUB_OUTPUT      
 
       - name: Run govulncheck
         id: govulncheck
