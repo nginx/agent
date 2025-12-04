@@ -40,12 +40,7 @@ IMAGE_NAME=${2:-"agentv3"}
 RE_PATTERN=${3:-""}
 IMAGE_PATH="${REGISTRY_URL}/${IMAGE_NAME}"
 CONTAINER_TOOL=docker
-
-# Check for skopeo installation
-if ! command -v skopeo &> /dev/null; then
-    echo "skopeo could not be found. Please install skopeo to proceed."
-    exit 1
-fi
+SKOPEO_IMAGE="quay.io/skopeo/stable:latest"
 
 # Check for docker installation
 if ! command -v ${CONTAINER_TOOL} &> /dev/null; then
@@ -57,11 +52,16 @@ if ! command -v ${CONTAINER_TOOL} &> /dev/null; then
         exit 1
     fi
 fi
+
 echo "Using container tool: ${CONTAINER_TOOL}"
+${CONTAINER_TOOL} --version
+
+echo "Getting skopeo tool..."
+${CONTAINER_TOOL} pull docker://${SKOPEO_IMAGE}
 
 echo "Checking images in ${REGISTRY_URL}/${IMAGE_NAME}"
 echo "Saving all tags to ${IMAGE_NAME}_tags.txt"
-skopeo list-tags docker://${IMAGE_PATH} | jq -r '.Tags[]' > ${IMAGE_NAME}_tags.txt
+${CONTAINER_TOOL} run quay.io/skopeo/stable list-tags docker://${IMAGE_PATH} | jq -r '.Tags[]' > ${IMAGE_NAME}_tags.txt
 echo $(wc -l < ${IMAGE_NAME}_tags.txt) "tags fetched."
 
 # Filter out tags that end with four or more digits (nightly/build tags)
