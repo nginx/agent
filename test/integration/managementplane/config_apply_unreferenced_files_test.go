@@ -96,6 +96,12 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test1_TestSubDir
 
 	utils.CheckManifestFile(s.T(), utils.Container, manifestFiles)
 
+	code, _, err := utils.Container.Exec(s.ctx, []string{
+		"test", "-f", "/etc/nginx/test/unreferenced_file.conf",
+	})
+	s.Require().NoError(err)
+	s.Equal(0, code)
+
 	sort.Slice(responses, func(i, j int) bool {
 		return responses[i].GetCommandResponse().GetMessage() < responses[j].GetCommandResponse().GetMessage()
 	})
@@ -145,6 +151,12 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test2_TestUpdate
 	}
 
 	utils.CheckManifestFile(s.T(), utils.Container, manifestFiles)
+
+	code, _, err := utils.Container.Exec(s.ctx, []string{
+		"test", "-f", "/etc/nginx/test/unreferenced_file.conf",
+	})
+	s.Require().NoError(err)
+	s.Equal(0, code)
 
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	s.Equal("Config apply successful", responses[0].GetCommandResponse().GetMessage())
@@ -230,7 +242,7 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test4_TestDelete
 		fmt.Sprintf("/mock-management-plane-grpc/config/%s/etc/nginx/test/unreferenced_file.conf", s.nginxInstanceID),
 	})
 	s.Require().NoError(err)
-	s.NotEqual(0, code)
+	s.Equal(1, code)
 
 	code, _, err = utils.Container.Exec(s.ctx, []string{
 		"test", "-f", "/etc/nginx/test/unreferenced_file.conf",
@@ -255,6 +267,13 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test5_TestUnrefe
 
 	utils.PerformConfigApplyWithRequestBody(s.T(), s.nginxInstanceID,
 		utils.MockManagementPlaneAPIAddress, unrefConfigApplyRequestBody)
+
+	code, _, err := utils.Container.Exec(s.ctx, []string{
+		"test", "-f", "/etc/nginx/test/unreferenced_file.conf",
+	})
+	s.Require().NoError(err)
+	s.Equal(0, code)
+
 	responses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
 	s.T().Logf("Config apply responses: %v", responses)
 
@@ -290,6 +309,12 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test5_TestUnrefe
 
 	utils.CheckManifestFile(s.T(), utils.Container, manifestFiles)
 
+	code, _, err = utils.Container.Exec(s.ctx, []string{
+		"test", "-f", "/etc/nginx/test/unreferenced_file.conf",
+	})
+	s.Require().NoError(err)
+	s.Equal(0, code)
+
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	s.Equal("Config apply successful", responses[0].GetCommandResponse().GetMessage())
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[1].GetCommandResponse().GetStatus())
@@ -303,7 +328,6 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test6_TestRefere
 
 	manifestFiles := utils.ManifestFiles()
 
-	utils.CheckManifestFile(s.T(), utils.Container, manifestFiles)
 	utils.WriteConfigFileMock(s.T(), s.nginxInstanceID, "/etc/nginx/mime.types",
 		"/etc/nginx/mime.types", "/etc/nginx/mime.types")
 
@@ -315,6 +339,12 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test6_TestRefere
 	manifestFiles["/etc/nginx/test/unreferenced_file.conf"].ManifestFileMeta.Referenced = false
 
 	utils.CheckManifestFile(s.T(), utils.Container, manifestFiles)
+
+	code, _, err := utils.Container.Exec(s.ctx, []string{
+		"test", "-f", "/etc/nginx/test/unreferenced_file.conf",
+	})
+	s.Require().NoError(err)
+	s.Equal(0, code)
 
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, responses[0].GetCommandResponse().GetStatus())
 	s.Equal("Config apply successful", responses[0].GetCommandResponse().GetMessage())
@@ -361,6 +391,12 @@ func (s *ConfigApplyUnreferencedFilesTestSuite) TestConfigApply_Test7_TestRollba
 	manifestFiles := utils.ManifestFiles()
 
 	utils.CheckManifestFile(s.T(), utils.Container, manifestFiles)
+
+	code, _, err := utils.Container.Exec(s.ctx, []string{
+		"test", "-f", "/etc/nginx/unreferenced_file.conf",
+	})
+	s.Require().NoError(err)
+	s.Equal(1, code)
 
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_ERROR, responses[0].GetCommandResponse().GetStatus())
 	s.Equal("Config apply failed, rolling back config", responses[0].GetCommandResponse().GetMessage())
