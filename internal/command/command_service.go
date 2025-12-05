@@ -12,6 +12,7 @@ import (
 	"log/slog"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -31,9 +32,9 @@ import (
 
 var _ commandService = (*CommandService)(nil)
 
-const (
-	createConnectionMaxElapsedTime = 0
-)
+const createConnectionMaxElapsedTime = 0
+
+var timeToWaitBetweenChecks = 5 * time.Second
 
 type (
 	CommandService struct {
@@ -41,8 +42,10 @@ type (
 		subscribeClient              mpi.CommandService_SubscribeClient
 		agentConfig                  *config.Config
 		isConnected                  *atomic.Bool
+		connectionResetInProgress    *atomic.Bool
 		subscribeChannel             chan *mpi.ManagementPlaneRequest
 		configApplyRequestQueue      map[string][]*mpi.ManagementPlaneRequest // key is the instance ID
+		requestsInProgress           map[string]*mpi.ManagementPlaneRequest   // key is the correlation ID
 		resource                     *mpi.Resource
 		subscribeClientMutex         sync.Mutex
 		configApplyRequestQueueMutex sync.Mutex
@@ -56,19 +59,16 @@ func NewCommandService(
 	agentConfig *config.Config,
 	subscribeChannel chan *mpi.ManagementPlaneRequest,
 ) *CommandService {
-	isConnected := &atomic.Bool{}
-	isConnected.Store(false)
-
-	commandService := &CommandService{
-		commandServiceClient:    commandServiceClient,
-		agentConfig:             agentConfig,
-		isConnected:             isConnected,
-		subscribeChannel:        subscribeChannel,
-		configApplyRequestQueue: make(map[string][]*mpi.ManagementPlaneRequest),
-		resource:                &mpi.Resource{},
+	return &CommandService{
+		commandServiceClient:      commandServiceClient,
+		agentConfig:               agentConfig,
+		isConnected:               &atomic.Bool{},
+		connectionResetInProgress: &atomic.Bool{},
+		subscribeChannel:          subscribeChannel,
+		configApplyRequestQueue:   make(map[string][]*mpi.ManagementPlaneRequest),
+		resource:                  &mpi.Resource{},
+		requestsInProgress:        make(map[string]*mpi.ManagementPlaneRequest),
 	}
-
-	return commandService
 }
 
 func (cs *CommandService) IsConnected() bool {
@@ -181,6 +181,11 @@ func (cs *CommandService) SendDataPlaneResponse(ctx context.Context, response *m
 		return err
 	}
 
+	if response.GetCommandResponse().GetStatus() == mpi.CommandResponse_COMMAND_STATUS_OK ||
+		response.GetCommandResponse().GetStatus() == mpi.CommandResponse_COMMAND_STATUS_FAILURE {
+		delete(cs.requestsInProgress, response.GetMessageMeta().GetCorrelationId())
+	}
+
 	return backoff.Retry(
 		cs.sendDataPlaneResponseCallback(ctx, response),
 		backoffHelpers.Context(backOffCtx, cs.agentConfig.Client.Backoff),
@@ -272,6 +277,33 @@ func (cs *CommandService) CreateConnection(
 }
 
 func (cs *CommandService) UpdateClient(ctx context.Context, client mpi.CommandServiceClient) error {
+	cs.connectionResetInProgress.Store(true)
+	defer cs.connectionResetInProgress.Store(false)
+
+	// Wait for any in-progress requests to complete before updating the client
+	start := time.Now()
+
+	for len(cs.requestsInProgress) > 0 {
+		if time.Since(start) >= cs.agentConfig.Client.Grpc.ConnectionResetTimeout {
+			slog.WarnContext(
+				ctx,
+				"Timeout reached while waiting for in-progress requests to complete",
+				"number_of_requests_in_progress", len(cs.requestsInProgress),
+			)
+
+			break
+		}
+
+		slog.InfoContext(
+			ctx,
+			"Waiting for in-progress requests to complete before updating command service gRPC client",
+			"max_wait_time", cs.agentConfig.Client.Grpc.ConnectionResetTimeout,
+			"number_of_requests_in_progress", len(cs.requestsInProgress),
+		)
+
+		time.Sleep(timeToWaitBetweenChecks)
+	}
+
 	cs.subscribeClientMutex.Lock()
 	cs.commandServiceClient = client
 	cs.subscribeClientMutex.Unlock()
@@ -379,7 +411,7 @@ func (cs *CommandService) sendResponseForQueuedConfigApplyRequests(
 	cs.configApplyRequestQueue[instanceID] = cs.configApplyRequestQueue[instanceID][indexOfConfigApplyRequest+1:]
 	slog.DebugContext(ctx, "Removed config apply requests from queue", "queue", cs.configApplyRequestQueue[instanceID])
 
-	if len(cs.configApplyRequestQueue[instanceID]) > 0 {
+	if len(cs.configApplyRequestQueue[instanceID]) > 0 && !cs.connectionResetInProgress.Load() {
 		cs.subscribeChannel <- cs.configApplyRequestQueue[instanceID][len(cs.configApplyRequestQueue[instanceID])-1]
 	}
 
@@ -423,6 +455,12 @@ func (cs *CommandService) dataPlaneHealthCallback(
 //nolint:revive // cognitive complexity is 18
 func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
 	return func() error {
+		if cs.connectionResetInProgress.Load() {
+			slog.DebugContext(ctx, "Connection reset in progress, skipping receive from subscribe stream")
+
+			return nil
+		}
+
 		cs.subscribeClientMutex.Lock()
 
 		if cs.subscribeClient == nil {
@@ -463,6 +501,8 @@ func (cs *CommandService) receiveCallback(ctx context.Context) func() error {
 			default:
 				cs.subscribeChannel <- request
 			}
+
+			cs.requestsInProgress[request.GetMessageMeta().GetCorrelationId()] = request
 		}
 
 		return nil
@@ -495,7 +535,7 @@ func (cs *CommandService) queueConfigApplyRequests(ctx context.Context, request 
 
 	instanceID := request.GetConfigApplyRequest().GetOverview().GetConfigVersion().GetInstanceId()
 	cs.configApplyRequestQueue[instanceID] = append(cs.configApplyRequestQueue[instanceID], request)
-	if len(cs.configApplyRequestQueue[instanceID]) == 1 {
+	if len(cs.configApplyRequestQueue[instanceID]) == 1 && !cs.connectionResetInProgress.Load() {
 		cs.subscribeChannel <- request
 	} else {
 		slog.DebugContext(
