@@ -158,7 +158,6 @@ func ResolveConfig() (*Config, error) {
 		Labels:             resolveLabels(),
 		LibDir:             viperInstance.GetString(LibDirPathKey),
 		SyslogServer:       resolveSyslogServer(),
-		MaxAccessLogFiles:  viperInstance.GetInt(MaxAccessLogFilesKey),
 	}
 
 	defaultCollector(collector, config)
@@ -1098,6 +1097,7 @@ func resolveDataPlaneConfig() *DataPlaneConfig {
 				RandomizationFactor: viperInstance.GetFloat64(NginxReloadBackoffRandomizationFactorKey),
 				Multiplier:          viperInstance.GetFloat64(NginxReloadBackoffMultiplierKey),
 			},
+			MaxAccessLogFiles: viperInstance.GetInt(MaxAccessLogFilesKey),
 		},
 	}
 }

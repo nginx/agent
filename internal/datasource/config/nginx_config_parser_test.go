@@ -891,7 +891,7 @@ func TestNginxConfigParser_checkLog(t *testing.T) {
 					Readable:    true,
 				},
 			},
-			expectedLog:       "Maximum access log files have been reached, additional logs will be skipped",
+			expectedLog:       "Maximum access log files have been reached",
 			maxAccessLogFiles: 2,
 		},
 	}
@@ -899,7 +899,8 @@ func TestNginxConfigParser_checkLog(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ncp := NewNginxConfigParser(types.AgentConfig())
-			logs := ncp.addAccessLog(test.accessLog, test.currentAccessLogs, test.maxAccessLogFiles)
+			ncp.agentConfig.DataPlaneConfig.Nginx.MaxAccessLogFiles = test.maxAccessLogFiles
+			logs := ncp.addAccessLog(test.accessLog, test.currentAccessLogs)
 			assert.Equal(t, test.expectedAccessLogs, logs)
 
 			helpers.ValidateLog(t, test.expectedLog, logBuf)

@@ -228,13 +228,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 					if !ncp.ignoreLog(directive.Args[0]) {
 						accessLog := ncp.accessLog(directive.Args[0], ncp.accessLogDirectiveFormat(directive),
 							formatMap)
-						if ncp.agentConfig.IsMaxAccessLogFilesConfigured() {
-							nginxConfigContext.AccessLogs = ncp.addAccessLog(accessLog,
-								nginxConfigContext.AccessLogs, ncp.agentConfig.MaxAccessLogFiles)
-						} else {
-							nginxConfigContext.AccessLogs = ncp.addAccessLog(accessLog,
-								nginxConfigContext.AccessLogs, config.DefMaxAccessLogFiles)
-						}
+						nginxConfigContext.AccessLogs = ncp.addAccessLog(accessLog, nginxConfigContext.AccessLogs)
 					}
 				case "error_log":
 					if !ncp.ignoreLog(directive.Args[0]) {
@@ -350,7 +344,7 @@ func (ncp *NginxConfigParser) parseIncludeDirective(
 }
 
 func (ncp *NginxConfigParser) addAccessLog(accessLog *model.AccessLog,
-	accessLogs []*model.AccessLog, maxAccessLogFiles int,
+	accessLogs []*model.AccessLog,
 ) []*model.AccessLog {
 	for i, log := range accessLogs {
 		if accessLog.Name == log.Name {
@@ -367,8 +361,10 @@ func (ncp *NginxConfigParser) addAccessLog(accessLog *model.AccessLog,
 		}
 	}
 
-	if len(accessLogs) >= maxAccessLogFiles {
-		slog.Warn("Maximum access log files have been reached, additional logs will be skipped")
+	if len(accessLogs) >= ncp.agentConfig.DataPlaneConfig.Nginx.MaxAccessLogFiles {
+		slog.Warn("Maximum access log files have been reached, unable to monitor access log",
+			"access_log", accessLog.Name)
+
 		return accessLogs
 	}
 
