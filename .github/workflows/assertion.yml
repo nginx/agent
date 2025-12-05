@@ -1,73 +1,94 @@
-
 name: Generate and Sign Assertion Document
 
 on:
   workflow_dispatch:
     inputs:
-      branch:
+      packageVersion:
+        description: 'Agent version'
         type: string
-        description: "The branch to run the assertion workflow on"
+        required: true
+      runId:
+        description: 'Run ID of the workflow that built the artifacts'
+        type: string
+        required: true
+      signAssertion:
+        description: 'Sign and store the assertion document'
+        type: boolean
         required: false
-        default: main
+        default: false
+  workflow_call:
+    inputs:
+      packageVersion:
+        description: 'Agent version'
+        type: string
+        required: true
+      runId:
+        description: 'Run ID of the workflow that built the artifacts'
+        type: string
+        required: false
+      signAssertion:
+        description: 'Sign and store the assertion document'
+        type: boolean
+        required: false
+        default: false
+    secrets:
+      ARTIFACTORY_USER:
+        required: true
+      ARTIFACTORY_TOKEN:
+        required: true
+      ARTIFACTORY_URL:
+        required: true
 
 jobs:
   build-assertion-document:
-    name: Build and Generate Assertion Document
+    name: Create Assertion Document
     runs-on: ubuntu-22.04
     if: ${{ !github.event.pull_request.head.repo.fork }}
     permissions:
       id-token: write
       contents: read
     env:
-      GOPROXY: "https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@azr.artifactory.f5net.com/artifactory/api/go/f5-nginx-go-local-approved-dependency"
-    outputs:
-      agent_binary: ${{ steps.check_binary.outputs.agent_binary }}
-      goversionm: ${{ steps.godeps.outputs.goversionm }}
-      assertion_document: ${{ steps.assertiondoc.outputs.assertion-document-path }}
+      GOPROXY: "https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@${{ secrets.ARTIFACTORY_URL }}"
     strategy:
-        matrix:
-            osarch: [amd64, arm64]
+      matrix:
+        osarch: [amd64, arm64]
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - name: Checkout Repository
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Set up Go
-        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
-          go-version-file: go.mod
+          go-version-file: 'go.mod'
           cache: false
+
+      - name: Download nginx-agent binary artifacts
+        if: ${{ inputs.runId != '' }}
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # 6.0.0
+        with:
+          name: nginx-agent-binaries-${{ inputs.packageVersion }}-${{ matrix.osarch }}
+          path: binaries
+          run-id: ${{ inputs.runId }}
+          github-token: ${{ github.token }}
 
       - name: Gather build dependencies
         id: godeps
         run: |
-          if [ -z ${{inputs.branch}} ]; then
-            echo "No branch input provided, using current branch: $GITHUB_REF_NAME"
-          else
-            echo "Checking out branch: ${{inputs.branch}}"
-            git checkout ${{inputs.branch}}
-          fi
-          echo "Current branch: $GITHUB_REF_NAME"
-          echo "branch_name=$GITHUB_REF_NAME" >> $GITHUB_ENV
-          GO_VERSION=$(go version | awk '{print $3}' | sed 's/go//')
-          echo "GO_VERSION=$GO_VERSION" >> $GITHUB_ENV
-          echo "GO_VERSION=$GO_VERSION"
-          echo "time_start=$(date +%s)" >> $GITHUB_ENV
-          OSARCH=${{matrix.osarch}} make build
-          echo "time_end=$(date +%s)" >> $GITHUB_ENV
-          echo "Build time: $((time_end - time_start)) seconds"
-          
-          echo "Getting sha256sum of the built nginx-agent binary..."
-          echo "agent-digest=$(sha256sum build/nginx-agent | awk '{print $1}')" >> $GITHUB_ENV
-          
+          ls -la binaries
+          echo "agent_digest=$(cat binaries/nginx-agent.sha256)" >> $GITHUB_ENV
+          echo "agent_buildstart=$(cat binaries/nginx-agent.buildstart)" >> $GITHUB_ENV
+          echo "agent_buildend=$(cat binaries/nginx-agent.buildend)" >> $GITHUB_ENV
+
           echo "Checking dependencies..."
-          go version -m build/nginx-agent > goversionm_${{ github.run_id }}_${{ github.run_number }}.txt
+          go version -m binaries/nginx-agent > goversionm_${{ github.run_id }}_${{ github.run_number }}.txt
           ls -l goversionm_*.txt
           echo "goversionm=$(find -type f -name "goversionm*.txt" | head -n 1)" >> $GITHUB_ENV
 
       - name: Generate Assertion Document
         id: assertiondoc
-        uses: nginxinc/compliance-rules/.github/actions/assertion@83e452166aaf0ad8f07caf91a4f1f903b3dea1e6 # v0.3.0
+        uses: nginxinc/compliance-rules/.github/actions/assertion@0aab935582c35a00e2c671d8fe25b7fdd72a927b # v0.3.1
         with:
-          artifact-name: nginx-agent_${{ env.branch_name }}_${{ matrix.osarch }}
+          artifact-name: nginx-agent_${{ inputs.packageVersion }}_${{ matrix.osarch }}
           artifact-digest: ${{ env.agent-digest }}
           build-type: 'github'
           builder-id: 'github.com'
@@ -77,13 +98,14 @@ jobs:
           artifactory-api-token: ${{ secrets.ARTIFACTORY_TOKEN }}
           artifactory-url: ${{ secrets.ARTIFACTORY_URL }}
           artifactory-repo: 'f5-nginx-go-local-approved-dependency'
-          assertion-doc-file: assertion_nginx-agent_${{env.branch_name}}_${{matrix.osarch}}.json
+          assertion-doc-file: assertion_nginx-agent_${{ inputs.packageVersion }}_${{ matrix.osarch }}.json
           build-content-path: ${{ env.goversionm }}
-          started-on: '${{ env.time_start }}'
-          finished-on: '${{ env.time_end }}'
+          started-on: '${{ env.agent_buildstart }}'
+          finished-on: '${{ env.agent_buildend }}'
 
       - name: Sign and Store Assertion Document
         id: sign
-        uses: nginxinc/compliance-rules/.github/actions/sign@83e452166aaf0ad8f07caf91a4f1f903b3dea1e6 # v0.3.0
+        if: ${{ inputs.signAssertion == true }}
+        uses: nginxinc/compliance-rules/.github/actions/sign@0aab935582c35a00e2c671d8fe25b7fdd72a927b # v0.3.1
         with:
           assertion-doc: ${{ steps.assertiondoc.outputs.assertion-document-path }}

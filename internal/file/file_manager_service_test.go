@@ -763,12 +763,12 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 			modifiedFiles: map[string]*model.FileCache{
 				addTestFile.Name(): {
 					File: &mpi.File{
-						FileMeta: protos.FileMeta(addTestFile.Name(), files.GenerateHash(fileContent)),
+						FileMeta: protos.FileMeta(addTestFile.Name(), files.GenerateHash(addFileContent)),
 					},
 				},
 				updateTestFile.Name(): {
 					File: &mpi.File{
-						FileMeta: protos.FileMeta(updateTestFile.Name(), files.GenerateHash(fileContent)),
+						FileMeta: protos.FileMeta(updateTestFile.Name(), files.GenerateHash(updatedFileContent)),
 					},
 				},
 				deleteTestFile.Name(): {
@@ -782,10 +782,10 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 					FileMeta: protos.FileMeta(deleteTestFile.Name(), files.GenerateHash(fileContent)),
 				},
 				updateTestFile.Name(): {
-					FileMeta: protos.FileMeta(updateTestFile.Name(), files.GenerateHash(fileContent)),
+					FileMeta: protos.FileMeta(updateTestFile.Name(), files.GenerateHash(updatedFileContent)),
 				},
 				addTestFile.Name(): {
-					FileMeta: protos.FileMeta(addTestFile.Name(), files.GenerateHash(fileContent)),
+					FileMeta: protos.FileMeta(addTestFile.Name(), files.GenerateHash(addFileContent)),
 				},
 			},
 			expectedCache:   make(map[string]*model.FileCache),
@@ -804,6 +804,24 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 			expectedCache:   make(map[string]*model.FileCache),
 			expectedContent: make(map[string][]byte),
 			expectedError:   nil,
+		},
+		{
+			name:        "Test 4: File is actually a directory",
+			allowedDirs: []string{tempDir},
+			modifiedFiles: map[string]*model.FileCache{
+				tempDir: {
+					File: &mpi.File{
+						FileMeta: protos.FileMeta(tempDir, files.GenerateHash(fileContent)),
+					},
+				},
+			},
+			currentFiles:    make(map[string]*mpi.File),
+			expectedCache:   map[string]*model.FileCache(nil),
+			expectedContent: make(map[string][]byte),
+			expectedError: fmt.Errorf(
+				"unable to create file %s since a directory with the same name already exists",
+				tempDir,
+			),
 		},
 	}
 
@@ -828,7 +846,13 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 				test.currentFiles,
 				test.modifiedFiles,
 			)
-			require.NoError(tt, fileActionErr)
+
+			if test.expectedError != nil {
+				require.EqualError(tt, fileActionErr, test.expectedError.Error())
+			} else {
+				require.NoError(tt, fileActionErr)
+			}
+
 			assert.Equal(tt, test.expectedCache, diff)
 		})
 	}

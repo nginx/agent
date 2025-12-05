@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-22.04
     if: github.ref == 'refs/heads/main'
     steps:
-        - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
           with:
             fetch-tags: 'true'
         - name: Configure Go Proxy
@@ -37,7 +37,7 @@ jobs:
             user: ${{ secrets.ARTIFACTORY_USER }}
             token: ${{ secrets.ARTIFACTORY_TOKEN }}
             url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-        - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+        - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
           with:
             go-version-file: 'go.mod'
             cache: false
@@ -60,14 +60,14 @@ jobs:
     name: Lint
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
         with:
           user: ${{ secrets.ARTIFACTORY_USER }}
           token: ${{ secrets.ARTIFACTORY_TOKEN }}
           url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-      - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+      - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
           cache: false
@@ -78,7 +78,7 @@ jobs:
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-
       - name: Lint Go
-        uses: golangci/golangci-lint-action@0a35821d5c230e903fcfe077583637dea1b27b47 # v9.0.0
+        uses: golangci/golangci-lint-action@e7fa5ac41e1cf5b7d48e45e42232ce7ada589601 # v9.1.0
         with:
           version: v2.4.0
 
@@ -88,14 +88,14 @@ jobs:
     permissions:
       contents: write
     steps:
-        - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         - name: Configure Go Proxy
           uses: ./.github/actions/configure-goproxy
           with:
             user: ${{ secrets.ARTIFACTORY_USER }}
             token: ${{ secrets.ARTIFACTORY_TOKEN }}
             url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-        - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+        - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
           with:
             go-version-file: 'go.mod'
             cache: false
@@ -117,14 +117,14 @@ jobs:
     name: Unit tests with race condition detection
     runs-on: ubuntu-22.04
     steps:
-        - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         - name: Configure Go Proxy
           uses: ./.github/actions/configure-goproxy
           with:
             user: ${{ secrets.ARTIFACTORY_USER }}
             token: ${{ secrets.ARTIFACTORY_TOKEN }}
             url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-        - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+        - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
           with:
             go-version-file: 'go.mod'
             cache: false
@@ -141,7 +141,7 @@ jobs:
     name: Build Unsigned Snapshot
     runs-on: ubuntu-22.04
     steps:
-        - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
           with:
             fetch-tags: 'true'
         - name: Configure Go Proxy
@@ -150,7 +150,7 @@ jobs:
             user: ${{ secrets.ARTIFACTORY_USER }}
             token: ${{ secrets.ARTIFACTORY_TOKEN }}
             url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-        - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+        - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
           with:
             go-version-file: 'go.mod'
             cache: false
@@ -190,14 +190,14 @@ jobs:
         - image: "alpine"
           version: "3.22"
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
         with:
           user: ${{ secrets.ARTIFACTORY_USER }}
           token: ${{ secrets.ARTIFACTORY_TOKEN }}
           url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-      - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+      - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
           cache: false
@@ -246,14 +246,14 @@ jobs:
           - image: "alpine"
             version: "3.22"
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
         with:
           user: ${{ secrets.ARTIFACTORY_USER }}
           token: ${{ secrets.ARTIFACTORY_TOKEN }}
           url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-      - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+      - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
           cache: false
@@ -309,14 +309,14 @@ jobs:
             version: "mainline"
             release: "alpine"
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
         with:
           user: ${{ secrets.ARTIFACTORY_USER }}
           token: ${{ secrets.ARTIFACTORY_TOKEN }}
           url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-      - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+      - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
           cache: false
@@ -382,14 +382,14 @@ jobs:
           release: "debian"
           path: "/nginx-plus/agent"
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
         with:
           user: ${{ secrets.ARTIFACTORY_USER }}
           token: ${{ secrets.ARTIFACTORY_TOKEN }}
           url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-      - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+      - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
           cache: false
@@ -454,14 +454,14 @@ jobs:
             version: "mainline"
             release: "alpine"
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
         with:
           user: ${{ secrets.ARTIFACTORY_USER }}
           token: ${{ secrets.ARTIFACTORY_TOKEN }}
           url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-      - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+      - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
           cache: false
@@ -527,14 +527,14 @@ jobs:
             release: "debian"
             path: "/nginx-plus/agent"
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
         with:
           user: ${{ secrets.ARTIFACTORY_USER }}
           token: ${{ secrets.ARTIFACTORY_TOKEN }}
           url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-      - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+      - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
           cache: false
@@ -585,14 +585,14 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
         with:
           user: ${{ secrets.ARTIFACTORY_USER }}
           token: ${{ secrets.ARTIFACTORY_TOKEN }}
           url: ${{ secrets.ARTIFACTORY_URL_DEV }}
-      - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+      - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
           cache: false
@@ -629,8 +629,8 @@ jobs:
     runs-on: ubuntu-22.04
     needs: build-unsigned-snapshot
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-      - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
           cache: false
