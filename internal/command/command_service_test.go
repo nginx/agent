@@ -237,8 +237,6 @@ func TestCommandService_UpdateClient_requestInProgress(t *testing.T) {
 		wg.Done()
 	}()
 
-	time.Sleep(100 * time.Millisecond)
-	delete(commandService.requestsInProgress, instanceID)
 	wg.Wait()
 
 	require.NoError(t, updateClientErr)
