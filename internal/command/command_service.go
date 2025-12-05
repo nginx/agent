@@ -32,10 +32,9 @@ import (
 
 var _ commandService = (*CommandService)(nil)
 
-const (
-	createConnectionMaxElapsedTime = 0
-	timeToWaitBetweenChecks        = 5 * time.Second
-)
+const createConnectionMaxElapsedTime = 0
+
+var timeToWaitBetweenChecks = 5 * time.Second
 
 type (
 	CommandService struct {

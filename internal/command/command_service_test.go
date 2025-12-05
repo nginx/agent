@@ -18,6 +18,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/nginx/agent/v3/internal/logger"
+	"github.com/nginx/agent/v3/pkg/id"
 	"github.com/nginx/agent/v3/test/helpers"
 	"github.com/nginx/agent/v3/test/stub"
 
@@ -208,6 +209,39 @@ func TestCommandService_UpdateClient(t *testing.T) {
 	)
 	err := commandService.UpdateClient(ctx, commandServiceClient)
 	require.NoError(t, err)
+	assert.NotNil(t, commandService.commandServiceClient)
+}
+
+func TestCommandService_UpdateClient_requestInProgress(t *testing.T) {
+	commandServiceClient := &v1fakes.FakeCommandServiceClient{}
+	ctx := context.Background()
+
+	commandService := NewCommandService(
+		commandServiceClient,
+		types.AgentConfig(),
+		make(chan *mpi.ManagementPlaneRequest),
+	)
+
+	instanceID := id.GenerateMessageID()
+
+	commandService.requestsInProgress[instanceID] = &mpi.ManagementPlaneRequest{}
+	timeToWaitBetweenChecks = 100 * time.Millisecond
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
+	var updateClientErr error
+
+	go func() {
+		updateClientErr = commandService.UpdateClient(ctx, commandServiceClient)
+		wg.Done()
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+	delete(commandService.requestsInProgress, instanceID)
+	wg.Wait()
+
+	require.NoError(t, updateClientErr)
 	assert.NotNil(t, commandService.commandServiceClient)
 }
 
