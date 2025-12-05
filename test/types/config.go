@@ -169,6 +169,7 @@ func AgentConfig() *config.Config {
 				TreatWarningsAsErrors:  true,
 				ReloadMonitoringPeriod: reloadMonitoringPeriod,
 				ExcludeLogs:            []string{},
+				MaxAccessLogFiles:      config.DefMaxAccessLogFiles,
 			},
 		},
 		Watchers: &config.Watchers{

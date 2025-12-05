@@ -137,6 +137,7 @@ var (
 	NginxReloadBackoffMultiplierKey          = pre(NginxReloadBackoffKey) + "multiplier"
 	NginxExcludeLogsKey                      = pre(DataPlaneConfigRootKey, "nginx") + "exclude_logs"
 	NginxApiTlsCa                            = pre(DataPlaneConfigRootKey, "nginx") + "api_tls_ca"
+	MaxAccessLogFilesKey                     = pre(DataPlaneConfigRootKey, "nginx") + "max_access_log_files"
 
 	SyslogServerPort = pre("syslog_server") + "port"
 
