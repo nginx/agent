@@ -95,6 +95,7 @@ type ExternalDataSource struct {
 // Adding a struct for the request body of the config apply endpoint.
 type ConfigApplyRequestBody struct {
 	ExternalDataSources []*ExternalDataSource `json:"externalDataSources"`
+	UnreferencedFiles   []*mpi.File           `json:"unreferencedFiles"`
 }
 
 func (cs *CommandService) StartServer(listener net.Listener) {
@@ -394,13 +395,13 @@ func (cs *CommandService) addConfigApplyEndpoint() {
 			return
 		}
 
-		updatedConfigFiles, externalFilesUpdated, err := processConfigApplyRequestBody(c, configFiles)
+		updatedConfigFiles, filesUpdated, err := processConfigApplyRequestBody(c, configFiles)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		if externalFilesUpdated {
+		if filesUpdated {
 			cs.instanceFiles[instanceID] = updatedConfigFiles
 		} else {
 			cs.instanceFiles[instanceID] = configFiles
@@ -582,10 +583,44 @@ func processConfigApplyRequestBody(c *gin.Context, initialFiles []*mpi.File) ([]
 		}
 	}
 
-	var externalFilesWereUpdated bool
-	updatedFiles := initialFiles
+	updatedFiles := filterReferencedFiles(initialFiles, body.UnreferencedFiles)
 
-	for _, ed := range body.ExternalDataSources {
+	filesWereUpdated := false
+
+	if len(body.ExternalDataSources) > 0 {
+		updatedFiles = addExternalDataSources(updatedFiles, filesMap, body.ExternalDataSources)
+		filesWereUpdated = true
+	}
+
+	if len(body.UnreferencedFiles) > 0 {
+		updatedFiles = addUnreferencedFiles(updatedFiles, filesMap, body.UnreferencedFiles)
+		filesWereUpdated = true
+	}
+
+	return updatedFiles, filesWereUpdated, nil
+}
+
+func filterReferencedFiles(initialFiles, unreferencedFiles []*mpi.File) []*mpi.File {
+	unreferencedSet := make(map[string]bool)
+	for _, unref := range unreferencedFiles {
+		unreferencedSet[unref.GetFileMeta().GetName()] = true
+	}
+
+	filteredFiles := make([]*mpi.File, 0, len(initialFiles))
+	for _, file := range initialFiles {
+		if file.GetFileMeta() != nil && !unreferencedSet[file.GetFileMeta().GetName()] {
+			filteredFiles = append(filteredFiles, file)
+		}
+	}
+
+	return filteredFiles
+}
+
+func addExternalDataSources(filesList []*mpi.File, filesMap map[string]*mpi.File,
+	externalDataSources []*ExternalDataSource,
+) []*mpi.File {
+	updatedFiles := filesList
+	for _, ed := range externalDataSources {
 		if file, ok := filesMap[ed.FilePath]; ok {
 			file.ExternalDataSource = &mpi.ExternalDataSource{
 				Location: ed.Location,
@@ -601,8 +636,29 @@ func processConfigApplyRequestBody(c *gin.Context, initialFiles []*mpi.File) ([]
 			}
 			updatedFiles = append(updatedFiles, newFile)
 		}
-		externalFilesWereUpdated = true
 	}
 
-	return updatedFiles, externalFilesWereUpdated, nil
+	return updatedFiles
+}
+
+func addUnreferencedFiles(filesList []*mpi.File, filesMap map[string]*mpi.File,
+	unreferencedFiles []*mpi.File,
+) []*mpi.File {
+	updatedFiles := filesList
+	for _, unref := range unreferencedFiles {
+		if file, ok := filesMap[unref.GetFileMeta().GetName()]; ok {
+			if file.GetFileMeta().GetHash() != unref.GetFileMeta().GetHash() || unref.GetFileMeta().GetHash() == "" {
+				updatedFiles = append(updatedFiles, file)
+			} else {
+				updatedFiles = append(updatedFiles, unref)
+			}
+		} else {
+			newFile := &mpi.File{
+				FileMeta: unref.GetFileMeta(),
+			}
+			updatedFiles = append(updatedFiles, newFile)
+		}
+	}
+
+	return updatedFiles
 }

@@ -366,4 +366,5 @@ func (s *ConfigApplyChunkingTestSuite) TestConfigApplyChunking() {
 func TestConfigApplyTestSuite(t *testing.T) {
 	suite.Run(t, new(ConfigApplyTestSuite))
 	suite.Run(t, new(ConfigApplyChunkingTestSuite))
+	suite.Run(t, new(ConfigApplyUnreferencedFilesTestSuite))
 }
