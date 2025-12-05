@@ -1,0 +1,5 @@
+name: az-sync
+author: s.breen
+description: az-sync
+runs:
+  using:
