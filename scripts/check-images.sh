@@ -57,7 +57,7 @@ echo "Using container tool: ${CONTAINER_TOOL}"
 ${CONTAINER_TOOL} --version
 
 echo "Getting skopeo tool..."
-${CONTAINER_TOOL} pull docker://${SKOPEO_IMAGE}
+${CONTAINER_TOOL} pull ${SKOPEO_IMAGE}
 
 echo "Checking images in ${REGISTRY_URL}/${IMAGE_NAME}"
 echo "Saving all tags to ${IMAGE_NAME}_tags.txt"
