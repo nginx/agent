@@ -40,7 +40,8 @@ IMAGE_NAME=${2:-"agentv3"}
 RE_PATTERN=${3:-""}
 IMAGE_PATH="${REGISTRY_URL}/${IMAGE_NAME}"
 CONTAINER_TOOL=docker
-SKOPEO_IMAGE="quay.io/skopeo/stable:latest"
+SKOPEO_IMAGE="quay.io/skopeo/stable"
+SKOPEO_TAG="latest"
 
 # Check for docker installation
 if ! command -v ${CONTAINER_TOOL} &> /dev/null; then
@@ -57,7 +58,7 @@ echo "Using container tool: ${CONTAINER_TOOL}"
 ${CONTAINER_TOOL} --version
 
 echo "Getting skopeo tool..."
-${CONTAINER_TOOL} pull ${SKOPEO_IMAGE}
+${CONTAINER_TOOL} pull ${SKOPEO_IMAGE}:${SKOPEO_TAG} || { echo "Failed to pull skopeo image"; exit 1; }
 
 echo "Checking images in ${REGISTRY_URL}/${IMAGE_NAME}"
 echo "Saving all tags to ${IMAGE_NAME}_tags.txt"
