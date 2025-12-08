@@ -325,6 +325,7 @@ func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *mpi.Instan
 					Labels:            labels,
 					Features:          iw.agentConfig.Features,
 					MessageBufferSize: "",
+					Log:               config.ToAgentConfigLogProto(iw.agentConfig.Log),
 				},
 			},
 		},

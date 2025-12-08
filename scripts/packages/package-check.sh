@@ -1,24 +1,33 @@
 #!/bin/bash
+#
+#   package_check.sh
+#
+#   Check for the presence of nginx-agent packages in a given package repository,
+#   and download them if required. Defaults to packages.nginx.org if no repository is specified.
+#
+#   If DL=1 and files are downloaded, it also prepares the packages for upload to Azure and GitHub Releases by
+#   modifying paths to match the expected format for each platform.
+#
 #   Usage:
 #
 #        Check package v3.0.0 availability for all platforms, no auth required:
 #            > ./package_check.sh 3.0.0
 #
 #        Check pkgs and download if present, with authentication:
-#            > CERT=<cert-path> KEY=<key-path> DL=1 ./package_check.sh 3.0.0
+#            > DL=1 CERT=<cert-path> KEY=<key-path> ./package_check.sh 3.5.0
 #
 #        Required parameters:
 #
-#            version: the version of agent you wish to search for i.e 3.0.0
+#            version: the version of agent you wish to search for i.e 3.5.0
 #
-#        Optional parameters:
+#        Optional env variables:
 #
 #            PKG_REPO: The root url for the repository you wish to check, defaults to packages.nginx.org
 #            CERT: Path to your cert file
 #            KEY: Path to your key file
 #            DL: Switch to download the package if it is present, set to 1 if download required, defaults to 0
 #
-#   Packages are downloaded to the local directory with the path of its corresponding repo url + uri i.e
+#   Packages are downloaded to the local directory with the path of its corresponding repo url + uri, i.e
 #
 #            packages.nginx.org/nginx-agent/debian/pool/agent/n/nginx-agent/nginx-agent_3.0.0~bullseye_arm64.deb
 #
@@ -34,7 +43,7 @@ if [[ ! -z ${CERT} ]] && [[ ! -z ${KEY} ]]; then
 fi
 
 if [[ -z ${PKG_REPO} ]]; then
-  echo "defaulting to packages.nginx.com"
+  echo "defaulting to packages.nginx.org"
   PKG_REPO="packages.nginx.org"
 fi
 
@@ -44,55 +53,62 @@ if [[ -z $VERSION ]]; then
   echo "no version provided"
   exit 1
 fi
-
 PKG_DIR="${PKG_REPO}/${PKG_NAME}"
 PKG_REPO_URL="https://${PKG_DIR}"
+DL=${DL:-0}
 
-APK=(
-  alpine/v3.22/main/aarch64/nginx-agent-$VERSION.apk
-  alpine/v3.22/main/x86_64/nginx-agent-$VERSION.apk
-  alpine/v3.21/main/aarch64/nginx-agent-$VERSION.apk
-  alpine/v3.21/main/x86_64/nginx-agent-$VERSION.apk
-  alpine/v3.20/main/aarch64/nginx-agent-$VERSION.apk
-  alpine/v3.20/main/x86_64/nginx-agent-$VERSION.apk
-  alpine/v3.19/main/aarch64/nginx-agent-$VERSION.apk
-  alpine/v3.19/main/x86_64/nginx-agent-$VERSION.apk
-)
-UBUNTU=(
-  ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~jammy_amd64.deb
-  ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~noble_arm64.deb
-  ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~plucky_arm64.deb
-  ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~jammy_arm64.deb
-  ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~noble_amd64.deb
-  ubuntu/pool/agent/n/nginx-agent/nginx-agent_$VERSION~plucky_amd64.deb
-)
-DEBIAN=(
-  debian/pool/agent/n/nginx-agent/nginx-agent_$VERSION~bullseye_arm64.deb
-  debian/pool/agent/n/nginx-agent/nginx-agent_$VERSION~bookworm_amd64.deb
-  debian/pool/agent/n/nginx-agent/nginx-agent_$VERSION~trixie_arm64.deb
-  debian/pool/agent/n/nginx-agent/nginx-agent_$VERSION~bookworm_arm64.deb
-  debian/pool/agent/n/nginx-agent/nginx-agent_$VERSION~bullseye_amd64.deb
-  debian/pool/agent/n/nginx-agent/nginx-agent_$VERSION~trixie_amd64.deb
-)
-AMZN=(
-  amzn/2023/aarch64/RPMS/nginx-agent-$VERSION.amzn2023.ngx.aarch64.rpm
-  amzn/2023/x86_64/RPMS/nginx-agent-$VERSION.amzn2023.ngx.x86_64.rpm
+majorVersion=$(echo ${VERSION} | cut -d. -f1)
 
-  amzn2/2/aarch64/RPMS/nginx-agent-$VERSION.amzn2.ngx.aarch64.rpm
-  amzn2/2/x86_64/RPMS/nginx-agent-$VERSION.amzn2.ngx.x86_64.rpm
-)
-SUSE=(
-  sles/15/x86_64/RPMS/nginx-agent-$VERSION.sles15.ngx.x86_64.rpm
-)
-CENTOS=(
-  centos/10/aarch64/RPMS/nginx-agent-$VERSION.el10.ngx.aarch64.rpm
-  centos/10/x86_64/RPMS/nginx-agent-$VERSION.el10.ngx.x86_64.rpm
-  centos/9/aarch64/RPMS/nginx-agent-$VERSION.el9.ngx.aarch64.rpm
-  centos/9/x86_64/RPMS/nginx-agent-$VERSION.el9.ngx.x86_64.rpm
-  centos/8/aarch64/RPMS/nginx-agent-$VERSION.el8.ngx.aarch64.rpm
-  centos/8/x86_64/RPMS/nginx-agent-$VERSION.el8.ngx.x86_64.rpm
-)
+# Define package URIs to check for each platform
 
+APK=()
+ALPINE_VERSIONS=("3.22" "3.21" "3.20")
+ALPINE_ARCH=("x86_64" "aarch64")
+for alpine_version in "${ALPINE_VERSIONS[@]}"; do
+    for arch in ${ALPINE_ARCH[@]}; do
+      APK+=("alpine/v${alpine_version}/main/${arch}/nginx-agent-${VERSION}.apk")
+    done
+done
+
+UBUNTU=()
+UBUNTU_VERSIONS=("jammy" "noble" "plucky")
+DEB_ARCH=("amd64" "arm64")
+for ubuntu_version in "${UBUNTU_VERSIONS[@]}"; do
+    for arch in ${DEB_ARCH[@]}; do
+      UBUNTU+=("ubuntu/pool/agent/n/nginx-agent/nginx-agent_${VERSION}~${ubuntu_version}_${arch}.deb")
+    done
+done
+
+DEBIAN=()
+DEBIAN_VERSIONS=("bullseye" "bookworm" "trixie")
+for deb_version in "${DEBIAN_VERSIONS[@]}"; do
+    for arch in ${DEB_ARCH[@]}; do
+      DEBIAN+=("debian/pool/agent/n/nginx-agent/nginx-agent_${VERSION}~${deb_version}_${arch}.deb")
+    done
+done
+
+CENTOS=()
+CENTOS_VERSIONS=("10" "9" "8")
+RPM_ARCH=("aarch64" "x86_64")
+for centos_version in "${CENTOS_VERSIONS[@]}"; do
+    for arch in ${RPM_ARCH[@]}; do
+      CENTOS+=("centos/${centos_version}/${arch}/RPMS/nginx-agent-${VERSION}.el${centos_version}.ngx.${arch}.rpm")
+    done
+done
+
+AMZN=()
+for arch in ${RPM_ARCH[@]}; do
+    AMZN+=("amzn/2023/${arch}/RPMS/nginx-agent-$VERSION.amzn2023.ngx.${arch}.rpm")
+    AMZN+=("amzn2/2/${arch}/RPMS/nginx-agent-$VERSION.amzn2.ngx.${arch}.rpm")
+done
+
+SUSE=()
+SUSE_VERSIONS=("15", "16")
+for suse_version in "${SUSE_VERSIONS[@]}"; do
+    SUSE+=("sles/${suse_version}/x86_64/RPMS/nginx-agent-$VERSION.sles${suse_version}.ngx.x86_64.rpm")
+done
+
+# Aggregate all URIs to fetch
 uris=(
   ${DEBIAN[@]}
   ${UBUNTU[@]}
@@ -102,8 +118,19 @@ uris=(
   ${SUSE[@]}
 )
 
+if [[ ${majorVersion} == "2" ]]; then
+  # v2.x supports FreeBSD packages
+  FREEBSD=(
+    freebsd/FreeBSD:12:amd64/latest/nginx-agent-$VERSION.pkg
+    freebsd/FreeBSD:13:amd64/latest/nginx-agent-$VERSION.pkg
+  )
+  uris+=(${FREEBSD[@]})
+fi
+
+# Functions
+
 ## Check and download if nginx-agent packages are present in the repository
-check_pkgs () {
+check_pkgs() {
   for pkg in ${uris[@]}; do
     echo -n "CHECK: ${PKG_REPO_URL}/${pkg} -> "
     local ret=$(curl -I -s ${CURL_OPTS} "https://${PKG_DIR}/${pkg}" | head -n1 | awk '{ print $2 }')
@@ -116,12 +143,11 @@ check_pkgs () {
     if [[ ${DL} == 1 ]]; then
       dl_pkg "${PKG_REPO_URL}/${pkg}"
     fi
-
   done
 }
 
 ## Download a package
-dl_pkg () {
+dl_pkg() {
     local url=${1}
     echo -n "GET: ${url}... "
     mkdir -p "${PKG_DIR}/$(dirname ${pkg})"
@@ -158,5 +184,115 @@ check_repo() {
   fi
 }
 
+# Prepare packages for upload to Azure
+prep_deb() {
+  echo "Preparing deb packages..."
+  mkdir -p "${PKG_DIR}/azure/deb"
+  for i in $(find "${PKG_DIR}" | grep -e "nginx-agent[_-]${VERSION}.*\.deb" | grep -v "azure"); do
+    az_dest="${PKG_DIR}/azure/deb/$(basename "$i")"
+    # Azure path
+    # Should be 'nginx-agent_3.5.0~bullseye_arm64.deb'
+    echo "Copying ${i} to ${az_dest}"
+    cp "${i}" "${az_dest}"
+    # GitHub release asset path
+    # Should be 'nginx-agent-3.5.0.bullseye_arm64.deb'
+    gh_dest=$(echo ${i} | sed -E "s/_/-/" | sed -E "s/~/./")
+    echo "Moving ${i} to ${gh_dest}"
+    mv "${i}" "${gh_dest}"
+  done
+}
+
+prep_apk() {
+  echo "Preparing apk packages..."
+  mkdir -p "${PKG_DIR}/azure/apk"
+  for i in $(find "${PKG_DIR}/alpine" | grep -e "nginx-agent[_-]${VERSION}.apk"); do
+    ver=$(echo "$i" | grep -o -e "v[0-9]*\.[0-9]*")
+    arch=$(echo "$i" | grep -o -F -e "x86_64" -e "aarch64")
+    dest="$(dirname "$i")/nginx-agent-${VERSION}-$ver-$arch.apk"
+    az_dest="${PKG_DIR}/azure/apk/$ver/$arch/nginx-agent-${VERSION}.apk"
+
+    # Azure path
+    mkdir -p "$(dirname "$az_dest")"
+    echo "Copying ${i} to ${az_dest}"
+    cp "${i}" "${az_dest}"
+
+    # GitHub release asset path
+    echo "Moving ${i} to ${dest}"
+    mv "${i}" "${dest}"
+  done
+}
+
+prep_rpm() {
+  echo "Preparing rpm packages..."
+  mkdir -p "${PKG_DIR}/azure/rpm"
+  for i in $(find "${PKG_DIR}" | grep -e "nginx-agent-${VERSION}.*.rpm"); do
+    az_dest="${PKG_DIR}/azure/rpm/$(basename "$i")"
+    # Azure path
+    echo "Copying ${i} to ${az_dest}"
+    mkdir -p "$(dirname "$az_dest")"
+    cp "${i}" "${az_dest}"
+    # No path changes needed for GitHub release
+  done
+}
+
+prep_txz() {
+  echo "Preparing txz packages..."
+  mkdir -p "${PKG_DIR}/azure/txz"
+  for i in $(find "${PKG_DIR}" | grep -e "nginx-agent[_-]${VERSION}.pkg"); do
+    bsd=$(echo "$i" | grep -e "FreeBSD:[0-9]*")
+    ver=$(echo "$bsd" | cut -d':' -f2)
+    arch=$(echo "$i" | grep -o -F -e "amd64" -e "arm64")
+
+    # Azure path
+    # Should be 'FreeBSD:12:amd64/nginx-agent-2.44.0.pkg'
+    az_dest="${PKG_DIR}/azure/txz/FreeBSD:$ver:$arch/nginx-agent-${VERSION}.pkg"
+    echo "Copying ${i} to ${az_dest}"
+    mkdir -p "$(dirname "$az_dest")"
+    cp "${i}" "${az_dest}"
+
+    # GitHub release asset path
+    # Should be 'nginx-agent-2.44.0-FreeBSD.12.amd64.pkg'
+    dest="$(dirname "$i")/nginx-agent-${VERSION}-FreeBSD.$ver.$arch.pkg"
+    echo "Moving ${i} to ${dest}"
+    cp "${i}" "${dest}"
+  done
+}
+
+prepare_packages() {
+  echo "Preparing packages for upload..."
+  prep_deb
+  prep_apk
+  prep_rpm
+  if [[ ${majorVersion} == "2" ]]; then
+    prep_txz
+  fi
+
+  echo
+  echo "Prepared packages for Azure:"
+  find "${PKG_DIR}/azure" -type f | grep "${VERSION}" | sed "s|${PKG_DIR}/azure/||" | sort
+
+  echo
+  echo "Prepared packages for GitHub Release v${VERSION}:"
+  find "${PKG_DIR}" -type f | grep "${VERSION}" | grep -v "/azure/" | awk -F/ '{print $NF}' | sort
+}
+
+create_tarball() {
+  echo "Creating tarball... "
+  tar -czvf "${PKG_DIR}/nginx-agent.tar.gz" -C ${PKG_DIR}/azure .
+  if [[ $? != 0 ]]; then
+    echo -e "${RED}Failed to create tarball!${NC}"
+    return
+  fi
+  echo "SAVED: ${PKG_DIR}/nginx-agent.tar.gz"
+}
+
+# Main
+
 check_repo
 check_pkgs
+
+# Prepare packages for upload
+if [[ ${DL} == 1 ]]; then
+  prepare_packages
+  create_tarball
+fi

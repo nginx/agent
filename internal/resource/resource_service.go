@@ -95,6 +95,7 @@ type ResourceService struct {
 	agentConfig       *config.Config
 	instanceOperators map[string]instanceOperator // key is instance ID
 	info              host.InfoInterface
+	manifestFilePath  string
 	resourceMutex     sync.Mutex
 	operatorsMutex    sync.Mutex
 }
@@ -108,6 +109,7 @@ func NewResourceService(ctx context.Context, agentConfig *config.Config) *Resour
 		instanceOperators: make(map[string]instanceOperator),
 		nginxConfigParser: parser.NewNginxConfigParser(agentConfig),
 		agentConfig:       agentConfig,
+		manifestFilePath:  agentConfig.LibDir + "/manifest.json",
 	}
 
 	resourceService.updateResourceInfo(ctx)
@@ -215,6 +217,8 @@ func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) (*
 	if parseErr != nil || nginxConfigContext == nil {
 		return nil, fmt.Errorf("failed to parse config %w", parseErr)
 	}
+
+	nginxConfigContext = r.updateConfigContextFiles(ctx, nginxConfigContext)
 
 	datasource.UpdateNginxInstanceRuntime(instance, nginxConfigContext)
 
@@ -330,6 +334,51 @@ func (r *ResourceService) UpdateHTTPUpstreamServers(ctx context.Context, instanc
 	}
 
 	return added, updated, deleted, createPlusAPIError(updateError)
+}
+
+func (r *ResourceService) updateConfigContextFiles(ctx context.Context,
+	nginxConfigContext *model.NginxConfigContext,
+) *model.NginxConfigContext {
+	manifestFiles, manifestErr := r.manifestFile()
+	if manifestErr != nil {
+		slog.ErrorContext(ctx, "Error getting manifest files", "error", manifestErr)
+	}
+
+	for _, manifestFile := range manifestFiles {
+		if manifestFile.ManifestFileMeta.Unmanaged {
+			for _, configFile := range nginxConfigContext.Files {
+				if configFile.GetFileMeta().GetName() == manifestFile.ManifestFileMeta.Name {
+					configFile.Unmanaged = true
+				}
+			}
+		}
+	}
+
+	return nginxConfigContext
+}
+
+func (r *ResourceService) manifestFile() (map[string]*model.ManifestFile, error) {
+	if _, err := os.Stat(r.manifestFilePath); err != nil {
+		return nil, err
+	}
+
+	file, err := os.ReadFile(r.manifestFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read manifest file: %w", err)
+	}
+
+	var manifestFiles map[string]*model.ManifestFile
+
+	err = json.Unmarshal(file, &manifestFiles)
+	if err != nil {
+		if len(file) == 0 {
+			return nil, fmt.Errorf("manifest file is empty: %w", err)
+		}
+
+		return nil, fmt.Errorf("failed to parse manifest file: %w", err)
+	}
+
+	return manifestFiles, nil
 }
 
 func convertToUpstreamServer(upstreams []*structpb.Struct) []client.UpstreamServer {
