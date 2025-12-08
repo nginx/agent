@@ -785,10 +785,10 @@ go.opentelemetry.io/collector/config/configtelemetry v0.139.0 h1:RHzZhecU1VosHa2
 go.opentelemetry.io/collector/config/configtelemetry v0.139.0/go.mod h1:Xjw2+DpNLjYtx596EHSWBy0dNQRiJ2H+BlWU907lO40=
 go.opentelemetry.io/collector/config/configtls v1.45.0 h1:VNHnT1KIBw5YaxRMLla6pxwxnWDebEosRKKd5uyBKS0=
 go.opentelemetry.io/collector/config/configtls v1.45.0/go.mod h1:rwZ0MBOuRJH1nKICMAunH7F3Ien+6PA/fANRF6v7Kgc=
-go.opentelemetry.io/collector/confmap v1.46.0 h1:C/LfkYsKGWgGOvsUz70iUuxbSzSLaXZMSi3QVX6oJsw=
-go.opentelemetry.io/collector/confmap v1.46.0/go.mod h1:uqrwOuf+1PeZ9Zo/IDV9hJlvFy2eRKYUajkM1Lsmyto=
-go.opentelemetry.io/collector/confmap/provider/envprovider v1.42.0 h1:I4ijuuEUBtePNu7v3C8S/uwEwcXsQnos6d/lvCKby6k=
-go.opentelemetry.io/collector/confmap/provider/envprovider v1.42.0/go.mod h1:Nd5diM9jWG9sg6d6eHvR3sIuYgnU9PptExuCgELKTIs=
+go.opentelemetry.io/collector/confmap v1.47.0 h1:iXx4Pm1VbGboQCuY442mbBgihPv6gNpEItsod4rkW04=
+go.opentelemetry.io/collector/confmap v1.47.0/go.mod h1:ipnIWHs3VdMOxkIjQnOw3Qou2hjXZELrphHuqjTh4QM=
+go.opentelemetry.io/collector/confmap/provider/envprovider v1.47.0 h1:PfAkFHDpt8ZbSk67LqZeXrQk9OARJNBTooXtt6CHSIw=
+go.opentelemetry.io/collector/confmap/provider/envprovider v1.47.0/go.mod h1:KSkJ7gCv5jQj7ulJV147rzUcBBuHdmpxIeDeGf7QDeo=
 go.opentelemetry.io/collector/confmap/provider/fileprovider v1.45.0 h1:Q0QcNZ2bdTW1HfEPPN23vmdhs5EroCTbjQQN9ewiZHQ=
 go.opentelemetry.io/collector/confmap/provider/fileprovider v1.45.0/go.mod h1:km4EomfOXyJnkF+FY5kP7LmWjNNrErimTO4/yBzZYgE=
 go.opentelemetry.io/collector/confmap/provider/httpprovider v1.46.0 h1:bI2BLc6PI4YC3A/G7VgMkuy9jxU19tnvulJS4eudZGo=
@@ -849,8 +849,8 @@ go.opentelemetry.io/collector/extension/xextension v0.139.0 h1:PRryDG/tYukoE2KTC
 go.opentelemetry.io/collector/extension/xextension v0.139.0/go.mod h1:uBAqHW0OO35D2LM4j/k3E3H/g4sGd5bgedC7Jefg1sY=
 go.opentelemetry.io/collector/extension/zpagesextension v0.139.0 h1:JycTcFQtOrM60bbYKpWnprghZolhXDRj8MC7Ae+yUCk=
 go.opentelemetry.io/collector/extension/zpagesextension v0.139.0/go.mod h1:N/+vl3IM6/kBs21Zk5f47h/a1YUyZ8jvJIjMvzRXKlw=
-go.opentelemetry.io/collector/featuregate v1.46.0 h1:z3JlymFdWW6aDo9cYAJ6bCqT+OI2DlurJ9P8HqfuKWQ=
-go.opentelemetry.io/collector/featuregate v1.46.0/go.mod h1:d0tiRzVYrytB6LkcYgz2ESFTv7OktRPQe0QEQcPt1L4=
+go.opentelemetry.io/collector/featuregate v1.47.0 h1:LuJnDngViDzPKds5QOGxVYNL1QCCVWN/m61lHTV8Pf4=
+go.opentelemetry.io/collector/featuregate v1.47.0/go.mod h1:d0tiRzVYrytB6LkcYgz2ESFTv7OktRPQe0QEQcPt1L4=
 go.opentelemetry.io/collector/filter v0.139.0 h1:KVvMzDvyFPZhjouPEjea2fYunbkueI3FWla8caMUmCI=
 go.opentelemetry.io/collector/filter v0.139.0/go.mod h1:IVeDBEUR9YLqffxtOUItUM1xwTBAiHZU6bK+TjOXuss=
 go.opentelemetry.io/collector/internal/fanoutconsumer v0.139.0 h1:Dz/RpyAHXdjE+rrE4dIuLCbPYpLzoI+Sz3gSEBm8OwY=
@@ -988,8 +988,8 @@ go.uber.org/multierr v1.6.0/go.mod h1:cdWPpRnG4AhwMwsgIHip0KRBQjJy5kYEpYjJxpXp9i
 go.uber.org/multierr v1.11.0 h1:blXXJkSxSSfBVBlC76pxqeO+LN3aDfLQo+309xJstO0=
 go.uber.org/multierr v1.11.0/go.mod h1:20+QtiLqy0Nd6FdQB9TLXag12DsQkrbs3htMFfDN80Y=
 go.uber.org/zap v1.18.1/go.mod h1:xg/QME4nWcxGxrpdeYfq7UvYrLh66cuVKdrbD1XF/NI=
-go.uber.org/zap v1.27.0 h1:aJMhYGrd5QSmlpLMr2MftRKl7t8J8PTZPA732ud/XR8=
-go.uber.org/zap v1.27.0/go.mod h1:GB2qFLM7cTU87MWRP2mPIjqfIDnGu+VIO4V/SdhGo2E=
+go.uber.org/zap v1.27.1 h1:08RqriUEv8+ArZRYSTXy1LeBScaMpVSTBhCeaZYfMYc=
+go.uber.org/zap v1.27.1/go.mod h1:GB2qFLM7cTU87MWRP2mPIjqfIDnGu+VIO4V/SdhGo2E=
 go.uber.org/zap/exp v0.3.0 h1:6JYzdifzYkGmTdRR59oYH+Ng7k49H9qVpWwNSsGJj3U=
 go.uber.org/zap/exp v0.3.0/go.mod h1:5I384qq7XGxYyByIhHm6jg5CHkGY0nsTfbDLgDDlgJQ=
 go.yaml.in/yaml/v2 v2.4.3 h1:6gvOSjQoTB3vt1l+CU+tSyi/HOjfOjRLJ4YwYZGwRO0=
