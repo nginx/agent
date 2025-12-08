@@ -47,11 +47,11 @@ require (
 	go.opentelemetry.io/collector/component v1.45.0
 	go.opentelemetry.io/collector/component/componenttest v0.139.0
 	go.opentelemetry.io/collector/config/confighttp v0.139.0
-	go.opentelemetry.io/collector/confmap v1.46.0
+	go.opentelemetry.io/collector/confmap v1.47.0
 	go.opentelemetry.io/collector/confmap/provider/envprovider v1.42.0
 	go.opentelemetry.io/collector/confmap/provider/fileprovider v1.45.0
 	go.opentelemetry.io/collector/confmap/provider/httpprovider v1.46.0
-	go.opentelemetry.io/collector/confmap/provider/httpsprovider v1.42.0
+	go.opentelemetry.io/collector/confmap/provider/httpsprovider v1.47.0
 	go.opentelemetry.io/collector/confmap/provider/yamlprovider v1.42.0
 	go.opentelemetry.io/collector/connector v0.139.0
 	go.opentelemetry.io/collector/consumer v1.45.0
@@ -79,7 +79,7 @@ require (
 	go.opentelemetry.io/otel v1.38.0
 	go.uber.org/goleak v1.3.0
 	go.uber.org/multierr v1.11.0
-	go.uber.org/zap v1.27.0
+	go.uber.org/zap v1.27.1
 	golang.org/x/mod v0.30.0
 	golang.org/x/sync v0.18.0
 	google.golang.org/protobuf v1.36.10
@@ -307,7 +307,7 @@ require (
 	go.opentelemetry.io/collector/extension/extensionmiddleware v0.139.0 // indirect
 	go.opentelemetry.io/collector/extension/extensiontest v0.139.0 // indirect
 	go.opentelemetry.io/collector/extension/zpagesextension v0.139.0 // indirect
-	go.opentelemetry.io/collector/featuregate v1.46.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.47.0 // indirect
 	go.opentelemetry.io/collector/internal/fanoutconsumer v0.139.0 // indirect
 	go.opentelemetry.io/collector/internal/memorylimiter v0.139.0 // indirect
 	go.opentelemetry.io/collector/internal/sharedcomponent v0.139.0 // indirect
