@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v3/internal/config"
-	"github.com/nginx/agent/v3/internal/file/filefakes"
 	"github.com/nginx/agent/v3/internal/model"
 
 	"github.com/nginx/agent/v3/pkg/files"
@@ -1424,42 +1423,6 @@ func TestFileManagerService_downloadExternalFiles(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestFileManagerService_ExternalFileRenameCalled(t *testing.T) {
-	ctx := context.Background()
-	fms := NewFileManagerService(nil, types.AgentConfig(), &sync.RWMutex{})
-
-	fakeFSO := &filefakes.FakeFileServiceOperatorInterface{}
-
-	fakeFSO.RenameExternalFileStub = func(ctx context.Context, fileName, tempDir string) error {
-		return nil
-	}
-
-	fms.fileServiceOperator = fakeFSO
-
-	fileName := filepath.Join(t.TempDir(), "ext.conf")
-	fms.fileActions = map[string]*model.FileCache{
-		fileName: {
-			File:   &mpi.File{FileMeta: &mpi.FileMeta{Name: fileName}},
-			Action: model.ExternalFile,
-		},
-	}
-
-	tempPath := tempFilePath(fileName)
-	reqDir := filepath.Dir(tempPath)
-	require.NoError(t, os.MkdirAll(reqDir, 0o755))
-	require.NoError(t, os.WriteFile(tempPath, []byte("data"), 0o600))
-
-	err := fms.moveOrDeleteFiles(ctx, nil)
-	require.NoError(t, err)
-
-	assert.Equal(t, 1, fakeFSO.RenameExternalFileCallCount(), "RenameExternalFile should be called once")
-
-	_, srcArg, dstArg := fakeFSO.RenameExternalFileArgsForCall(0)
-
-	assert.Equal(t, tempPath, srcArg, "RenameExternalFile source argument mismatch")
-	assert.Equal(t, fileName, dstArg, "RenameExternalFile destination argument mismatch")
 }
 
 func TestFileManagerService_DownloadFileContent_MaxBytesLimit(t *testing.T) {

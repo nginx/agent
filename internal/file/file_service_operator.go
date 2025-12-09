@@ -110,7 +110,7 @@ func (fso *FileServiceOperator) File(
 		return writeErr
 	}
 
-	return fso.validateFileHash(tempFilePath, expectedHash)
+	return fso.ValidateFileHash(ctx, tempFilePath, expectedHash)
 }
 
 func (fso *FileServiceOperator) UpdateOverview(
@@ -263,7 +263,7 @@ func (fso *FileServiceOperator) ChunkedFile(
 		return writeChunkedFileError
 	}
 
-	return fso.validateFileHash(tempFilePath, expectedHash)
+	return fso.ValidateFileHash(ctx, tempFilePath, expectedHash)
 }
 
 func (fso *FileServiceOperator) UpdateFile(
@@ -285,26 +285,9 @@ func (fso *FileServiceOperator) UpdateFile(
 	return fso.sendUpdateFileStream(ctx, fileToUpdate, fso.agentConfig.Client.Grpc.FileChunkSize)
 }
 
-func (fso *FileServiceOperator) RenameExternalFile(
-	ctx context.Context, source, desination string,
-) error {
-	slog.DebugContext(ctx, fmt.Sprintf("Moving file %s to %s (no hash validation)", source, desination))
-
-	if err := os.MkdirAll(filepath.Dir(desination), dirPerm); err != nil {
-		return fmt.Errorf("failed to create directories for %s: %w", desination, err)
-	}
-
-	moveErr := os.Rename(source, desination)
-	if moveErr != nil {
-		return fmt.Errorf("failed to move file: %w", moveErr)
-	}
-
-	return nil
-}
-
 // renameFile, renames (moves) file from tempDir to new location to update file.
 func (fso *FileServiceOperator) RenameFile(
-	ctx context.Context, hash, source, desination string,
+	ctx context.Context, source, desination string,
 ) error {
 	slog.DebugContext(ctx, fmt.Sprintf("Renaming file %s to %s", source, desination))
 
@@ -318,10 +301,11 @@ func (fso *FileServiceOperator) RenameFile(
 		return fmt.Errorf("failed to rename file: %w", moveErr)
 	}
 
-	return fso.validateFileHash(desination, hash)
+	return nil
 }
 
-func (fso *FileServiceOperator) validateFileHash(filePath, expectedHash string) error {
+func (fso *FileServiceOperator) ValidateFileHash(ctx context.Context, filePath, expectedHash string) error {
+	slog.DebugContext(ctx, "Validating file hash for file ", "file_path", filePath)
 	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return err

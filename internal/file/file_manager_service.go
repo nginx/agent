@@ -85,8 +85,8 @@ type (
 			fileToUpdate *mpi.File,
 		) error
 		SetIsConnected(isConnected bool)
-		RenameFile(ctx context.Context, hash, fileName, tempDir string) error
-		RenameExternalFile(ctx context.Context, fileName, tempDir string) error
+		RenameFile(ctx context.Context, fileName, tempDir string) error
+		ValidateFileHash(ctx context.Context, fileName, expectedHash string) error
 		UpdateClient(ctx context.Context, fileServiceClient mpi.FileServiceClient)
 	}
 
@@ -680,6 +680,7 @@ func (fms *FileManagerService) downloadUpdatedFilesToTempLocation(ctx context.Co
 	return errGroup.Wait()
 }
 
+//nolint:revive // cognitive-complexity of 14 max is 12, loop is needed cant be broken up
 func (fms *FileManagerService) moveOrDeleteFiles(ctx context.Context, actionError error) error {
 actionsLoop:
 	for _, fileAction := range fms.fileActions {
