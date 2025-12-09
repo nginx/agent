@@ -361,6 +361,8 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				upstreamCounters["upstream.response.length"] = getAverageMetricValue(upstreamResponseLength)
 			}
 
+			log.Tracef("%s log file: Converting httpCounters: %v", logFile, httpCounters)
+
 			c.group = "http"
 			simpleMetrics := c.convertSamplesToSimpleMetrics(httpCounters)
 
