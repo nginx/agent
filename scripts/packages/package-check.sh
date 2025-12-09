@@ -110,11 +110,11 @@ done
 
 # Aggregate all URIs to fetch
 uris=(
-#  ${DEBIAN[@]}
-#  ${UBUNTU[@]}
-#  ${CENTOS[@]}
-#  ${APK[@]}
-#  ${AMZN[@]}
+  ${DEBIAN[@]}
+  ${UBUNTU[@]}
+  ${CENTOS[@]}
+  ${APK[@]}
+  ${AMZN[@]}
   ${SUSE[@]}
 )
 
