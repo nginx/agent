@@ -47,26 +47,12 @@ type FakeFileServiceOperatorInterface struct {
 	isConnectedReturnsOnCall map[int]struct {
 		result1 bool
 	}
-	RenameExternalFileStub        func(context.Context, string, string) error
-	renameExternalFileMutex       sync.RWMutex
-	renameExternalFileArgsForCall []struct {
-		arg1 context.Context
-		arg2 string
-		arg3 string
-	}
-	renameExternalFileReturns struct {
-		result1 error
-	}
-	renameExternalFileReturnsOnCall map[int]struct {
-		result1 error
-	}
-	RenameFileStub        func(context.Context, string, string, string) error
+	RenameFileStub        func(context.Context, string, string) error
 	renameFileMutex       sync.RWMutex
 	renameFileArgsForCall []struct {
 		arg1 context.Context
 		arg2 string
 		arg3 string
-		arg4 string
 	}
 	renameFileReturns struct {
 		result1 error
@@ -111,6 +97,19 @@ type FakeFileServiceOperatorInterface struct {
 		result1 error
 	}
 	updateOverviewReturnsOnCall map[int]struct {
+		result1 error
+	}
+	ValidateFileHashStub        func(context.Context, string, string) error
+	validateFileHashMutex       sync.RWMutex
+	validateFileHashArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+	}
+	validateFileHashReturns struct {
+		result1 error
+	}
+	validateFileHashReturnsOnCall map[int]struct {
 		result1 error
 	}
 	invocations      map[string][][]interface{}
@@ -298,84 +297,20 @@ func (fake *FakeFileServiceOperatorInterface) IsConnectedReturnsOnCall(i int, re
 	}{result1}
 }
 
-func (fake *FakeFileServiceOperatorInterface) RenameExternalFile(arg1 context.Context, arg2 string, arg3 string) error {
-	fake.renameExternalFileMutex.Lock()
-	ret, specificReturn := fake.renameExternalFileReturnsOnCall[len(fake.renameExternalFileArgsForCall)]
-	fake.renameExternalFileArgsForCall = append(fake.renameExternalFileArgsForCall, struct {
-		arg1 context.Context
-		arg2 string
-		arg3 string
-	}{arg1, arg2, arg3})
-	stub := fake.RenameExternalFileStub
-	fakeReturns := fake.renameExternalFileReturns
-	fake.recordInvocation("RenameExternalFile", []interface{}{arg1, arg2, arg3})
-	fake.renameExternalFileMutex.Unlock()
-	if stub != nil {
-		return stub(arg1, arg2, arg3)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fakeReturns.result1
-}
-
-func (fake *FakeFileServiceOperatorInterface) RenameExternalFileCallCount() int {
-	fake.renameExternalFileMutex.RLock()
-	defer fake.renameExternalFileMutex.RUnlock()
-	return len(fake.renameExternalFileArgsForCall)
-}
-
-func (fake *FakeFileServiceOperatorInterface) RenameExternalFileCalls(stub func(context.Context, string, string) error) {
-	fake.renameExternalFileMutex.Lock()
-	defer fake.renameExternalFileMutex.Unlock()
-	fake.RenameExternalFileStub = stub
-}
-
-func (fake *FakeFileServiceOperatorInterface) RenameExternalFileArgsForCall(i int) (context.Context, string, string) {
-	fake.renameExternalFileMutex.RLock()
-	defer fake.renameExternalFileMutex.RUnlock()
-	argsForCall := fake.renameExternalFileArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
-}
-
-func (fake *FakeFileServiceOperatorInterface) RenameExternalFileReturns(result1 error) {
-	fake.renameExternalFileMutex.Lock()
-	defer fake.renameExternalFileMutex.Unlock()
-	fake.RenameExternalFileStub = nil
-	fake.renameExternalFileReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeFileServiceOperatorInterface) RenameExternalFileReturnsOnCall(i int, result1 error) {
-	fake.renameExternalFileMutex.Lock()
-	defer fake.renameExternalFileMutex.Unlock()
-	fake.RenameExternalFileStub = nil
-	if fake.renameExternalFileReturnsOnCall == nil {
-		fake.renameExternalFileReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.renameExternalFileReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *FakeFileServiceOperatorInterface) RenameFile(arg1 context.Context, arg2 string, arg3 string, arg4 string) error {
+func (fake *FakeFileServiceOperatorInterface) RenameFile(arg1 context.Context, arg2 string, arg3 string) error {
 	fake.renameFileMutex.Lock()
 	ret, specificReturn := fake.renameFileReturnsOnCall[len(fake.renameFileArgsForCall)]
 	fake.renameFileArgsForCall = append(fake.renameFileArgsForCall, struct {
 		arg1 context.Context
 		arg2 string
 		arg3 string
-		arg4 string
-	}{arg1, arg2, arg3, arg4})
+	}{arg1, arg2, arg3})
 	stub := fake.RenameFileStub
 	fakeReturns := fake.renameFileReturns
-	fake.recordInvocation("RenameFile", []interface{}{arg1, arg2, arg3, arg4})
+	fake.recordInvocation("RenameFile", []interface{}{arg1, arg2, arg3})
 	fake.renameFileMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3, arg4)
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1
@@ -389,17 +324,17 @@ func (fake *FakeFileServiceOperatorInterface) RenameFileCallCount() int {
 	return len(fake.renameFileArgsForCall)
 }
 
-func (fake *FakeFileServiceOperatorInterface) RenameFileCalls(stub func(context.Context, string, string, string) error) {
+func (fake *FakeFileServiceOperatorInterface) RenameFileCalls(stub func(context.Context, string, string) error) {
 	fake.renameFileMutex.Lock()
 	defer fake.renameFileMutex.Unlock()
 	fake.RenameFileStub = stub
 }
 
-func (fake *FakeFileServiceOperatorInterface) RenameFileArgsForCall(i int) (context.Context, string, string, string) {
+func (fake *FakeFileServiceOperatorInterface) RenameFileArgsForCall(i int) (context.Context, string, string) {
 	fake.renameFileMutex.RLock()
 	defer fake.renameFileMutex.RUnlock()
 	argsForCall := fake.renameFileArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
 func (fake *FakeFileServiceOperatorInterface) RenameFileReturns(result1 error) {
@@ -623,6 +558,69 @@ func (fake *FakeFileServiceOperatorInterface) UpdateOverviewReturnsOnCall(i int,
 	}{result1}
 }
 
+func (fake *FakeFileServiceOperatorInterface) ValidateFileHash(arg1 context.Context, arg2 string, arg3 string) error {
+	fake.validateFileHashMutex.Lock()
+	ret, specificReturn := fake.validateFileHashReturnsOnCall[len(fake.validateFileHashArgsForCall)]
+	fake.validateFileHashArgsForCall = append(fake.validateFileHashArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 string
+	}{arg1, arg2, arg3})
+	stub := fake.ValidateFileHashStub
+	fakeReturns := fake.validateFileHashReturns
+	fake.recordInvocation("ValidateFileHash", []interface{}{arg1, arg2, arg3})
+	fake.validateFileHashMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeFileServiceOperatorInterface) ValidateFileHashCallCount() int {
+	fake.validateFileHashMutex.RLock()
+	defer fake.validateFileHashMutex.RUnlock()
+	return len(fake.validateFileHashArgsForCall)
+}
+
+func (fake *FakeFileServiceOperatorInterface) ValidateFileHashCalls(stub func(context.Context, string, string) error) {
+	fake.validateFileHashMutex.Lock()
+	defer fake.validateFileHashMutex.Unlock()
+	fake.ValidateFileHashStub = stub
+}
+
+func (fake *FakeFileServiceOperatorInterface) ValidateFileHashArgsForCall(i int) (context.Context, string, string) {
+	fake.validateFileHashMutex.RLock()
+	defer fake.validateFileHashMutex.RUnlock()
+	argsForCall := fake.validateFileHashArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeFileServiceOperatorInterface) ValidateFileHashReturns(result1 error) {
+	fake.validateFileHashMutex.Lock()
+	defer fake.validateFileHashMutex.Unlock()
+	fake.ValidateFileHashStub = nil
+	fake.validateFileHashReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeFileServiceOperatorInterface) ValidateFileHashReturnsOnCall(i int, result1 error) {
+	fake.validateFileHashMutex.Lock()
+	defer fake.validateFileHashMutex.Unlock()
+	fake.ValidateFileHashStub = nil
+	if fake.validateFileHashReturnsOnCall == nil {
+		fake.validateFileHashReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.validateFileHashReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeFileServiceOperatorInterface) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -632,8 +630,6 @@ func (fake *FakeFileServiceOperatorInterface) Invocations() map[string][][]inter
 	defer fake.fileMutex.RUnlock()
 	fake.isConnectedMutex.RLock()
 	defer fake.isConnectedMutex.RUnlock()
-	fake.renameExternalFileMutex.RLock()
-	defer fake.renameExternalFileMutex.RUnlock()
 	fake.renameFileMutex.RLock()
 	defer fake.renameFileMutex.RUnlock()
 	fake.setIsConnectedMutex.RLock()
@@ -644,6 +640,8 @@ func (fake *FakeFileServiceOperatorInterface) Invocations() map[string][][]inter
 	defer fake.updateFileMutex.RUnlock()
 	fake.updateOverviewMutex.RLock()
 	defer fake.updateOverviewMutex.RUnlock()
+	fake.validateFileHashMutex.RLock()
+	defer fake.validateFileHashMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
