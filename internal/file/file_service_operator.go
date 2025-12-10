@@ -182,12 +182,15 @@ func (fso *FileServiceOperator) UpdateOverview(
 			"request", request, "parent_correlation_id", correlationID,
 		)
 
-		response, updateError := fso.fileServiceClient.UpdateOverview(newCtx, request)
+		grpcCtx, cancel := context.WithTimeout(ctx, fso.agentConfig.Client.Grpc.ResponseTimeout)
+		defer cancel()
+
+		response, updateError := fso.fileServiceClient.UpdateOverview(grpcCtx, request)
 
 		validatedError := internalgrpc.ValidateGrpcError(updateError)
 
 		if validatedError != nil {
-			slog.ErrorContext(newCtx, "Failed to send update overview", "error", validatedError)
+			slog.ErrorContext(grpcCtx, "Failed to send update overview", "error", validatedError)
 
 			return nil, validatedError
 		}

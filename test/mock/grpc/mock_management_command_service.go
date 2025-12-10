@@ -33,19 +33,21 @@ import (
 
 type CommandService struct {
 	mpi.UnimplementedCommandServiceServer
+	instanceFiles                map[string][]*mpi.File
+	firstConnectionCallCh        chan struct{}
 	server                       *gin.Engine
 	connectionRequest            *mpi.CreateConnectionRequest
 	requestChan                  chan *mpi.ManagementPlaneRequest
 	updateDataPlaneStatusRequest *mpi.UpdateDataPlaneStatusRequest
 	updateDataPlaneHealthRequest *mpi.UpdateDataPlaneHealthRequest
-	instanceFiles                map[string][]*mpi.File // key is instanceID
-	configDirectory              string
 	externalFileServer           string
+	configDirectory              string
 	dataPlaneResponses           []*mpi.DataPlaneResponse
-	updateDataPlaneHealthMutex   sync.Mutex
-	connectionMutex              sync.Mutex
-	updateDataPlaneStatusMutex   sync.Mutex
 	dataPlaneResponsesMutex      sync.Mutex
+	updateDataPlaneStatusMutex   sync.Mutex
+	connectionMutex              sync.Mutex
+	updateDataPlaneHealthMutex   sync.Mutex
+	firstConnectionCallFlag      bool
 }
 
 func init() {
@@ -66,6 +68,8 @@ func NewCommandService(
 		configDirectory:            configDirectory,
 		externalFileServer:         externalFileServer,
 		instanceFiles:              make(map[string][]*mpi.File),
+		firstConnectionCallCh:      make(chan struct{}),
+		firstConnectionCallFlag:    false,
 	}
 
 	handler := slog.NewTextHandler(
@@ -91,6 +95,7 @@ type ExternalDataSource struct {
 // Adding a struct for the request body of the config apply endpoint.
 type ConfigApplyRequestBody struct {
 	ExternalDataSources []*ExternalDataSource `json:"externalDataSources"`
+	UnreferencedFiles   []*mpi.File           `json:"unreferencedFiles"`
 }
 
 func (cs *CommandService) StartServer(listener net.Listener) {
@@ -109,13 +114,25 @@ func (cs *CommandService) CreateConnection(
 ) {
 	slog.DebugContext(ctx, "Create connection request", "request", request)
 
+	// This checks if this is the first create connection call, this is done to test the logic in Agent where
+	// if Agent does not get a response to a request after a certain amount of time it will resend the request
+	if !cs.firstConnectionCallFlag {
+		cs.firstConnectionCallFlag = true
+		slog.DebugContext(ctx, "First CreateConnection call: blocking until second call")
+		<-cs.firstConnectionCallCh
+	} else {
+		slog.DebugContext(ctx, "Second CreateConnection call: unblocking first call")
+		close(cs.firstConnectionCallCh)
+	}
+
+	cs.connectionMutex.Lock()
+	defer cs.connectionMutex.Unlock()
+
 	if request == nil {
 		return nil, errors.New("empty connection request")
 	}
 
-	cs.connectionMutex.Lock()
 	cs.connectionRequest = request
-	cs.connectionMutex.Unlock()
 
 	return &mpi.CreateConnectionResponse{
 		Response: &mpi.CommandResponse{
@@ -378,13 +395,13 @@ func (cs *CommandService) addConfigApplyEndpoint() {
 			return
 		}
 
-		updatedConfigFiles, externalFilesUpdated, err := processConfigApplyRequestBody(c, configFiles)
+		updatedConfigFiles, filesUpdated, err := processConfigApplyRequestBody(c, configFiles)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		if externalFilesUpdated {
+		if filesUpdated {
 			cs.instanceFiles[instanceID] = updatedConfigFiles
 		} else {
 			cs.instanceFiles[instanceID] = configFiles
@@ -566,10 +583,44 @@ func processConfigApplyRequestBody(c *gin.Context, initialFiles []*mpi.File) ([]
 		}
 	}
 
-	var externalFilesWereUpdated bool
-	updatedFiles := initialFiles
+	updatedFiles := filterReferencedFiles(initialFiles, body.UnreferencedFiles)
 
-	for _, ed := range body.ExternalDataSources {
+	filesWereUpdated := false
+
+	if len(body.ExternalDataSources) > 0 {
+		updatedFiles = addExternalDataSources(updatedFiles, filesMap, body.ExternalDataSources)
+		filesWereUpdated = true
+	}
+
+	if len(body.UnreferencedFiles) > 0 {
+		updatedFiles = addUnreferencedFiles(updatedFiles, filesMap, body.UnreferencedFiles)
+		filesWereUpdated = true
+	}
+
+	return updatedFiles, filesWereUpdated, nil
+}
+
+func filterReferencedFiles(initialFiles, unreferencedFiles []*mpi.File) []*mpi.File {
+	unreferencedSet := make(map[string]bool)
+	for _, unref := range unreferencedFiles {
+		unreferencedSet[unref.GetFileMeta().GetName()] = true
+	}
+
+	filteredFiles := make([]*mpi.File, 0, len(initialFiles))
+	for _, file := range initialFiles {
+		if file.GetFileMeta() != nil && !unreferencedSet[file.GetFileMeta().GetName()] {
+			filteredFiles = append(filteredFiles, file)
+		}
+	}
+
+	return filteredFiles
+}
+
+func addExternalDataSources(filesList []*mpi.File, filesMap map[string]*mpi.File,
+	externalDataSources []*ExternalDataSource,
+) []*mpi.File {
+	updatedFiles := filesList
+	for _, ed := range externalDataSources {
 		if file, ok := filesMap[ed.FilePath]; ok {
 			file.ExternalDataSource = &mpi.ExternalDataSource{
 				Location: ed.Location,
@@ -585,8 +636,29 @@ func processConfigApplyRequestBody(c *gin.Context, initialFiles []*mpi.File) ([]
 			}
 			updatedFiles = append(updatedFiles, newFile)
 		}
-		externalFilesWereUpdated = true
 	}
 
-	return updatedFiles, externalFilesWereUpdated, nil
+	return updatedFiles
+}
+
+func addUnreferencedFiles(filesList []*mpi.File, filesMap map[string]*mpi.File,
+	unreferencedFiles []*mpi.File,
+) []*mpi.File {
+	updatedFiles := filesList
+	for _, unref := range unreferencedFiles {
+		if file, ok := filesMap[unref.GetFileMeta().GetName()]; ok {
+			if file.GetFileMeta().GetHash() != unref.GetFileMeta().GetHash() || unref.GetFileMeta().GetHash() == "" {
+				updatedFiles = append(updatedFiles, file)
+			} else {
+				updatedFiles = append(updatedFiles, unref)
+			}
+		} else {
+			newFile := &mpi.File{
+				FileMeta: unref.GetFileMeta(),
+			}
+			updatedFiles = append(updatedFiles, newFile)
+		}
+	}
+
+	return updatedFiles
 }

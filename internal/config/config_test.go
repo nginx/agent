@@ -1110,7 +1110,9 @@ func agentConfig() *Config {
 		UUID:    "",
 		Version: "",
 		Path:    "",
-		Log:     &Log{},
+		Log: &Log{
+			Level: "info",
+		},
 		Client: &Client{
 			HTTP: &HTTP{
 				Timeout: 10 * time.Second,
@@ -1184,6 +1186,7 @@ func createConfig() *Config {
 				MaxFileSize:               485753,
 				FileChunkSize:             48575,
 				MaxParallelFileOperations: 10,
+				ResponseTimeout:           30 * time.Second,
 			},
 			Backoff: &BackOff{
 				InitialInterval:     200 * time.Millisecond,
@@ -1614,7 +1617,7 @@ func TestValidateLabel(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual := validateLabel(tt.input)
+			actual := ValidateLabel(tt.input)
 			assert.Equal(t, tt.expected, actual)
 		})
 	}

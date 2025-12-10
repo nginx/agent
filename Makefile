@@ -17,14 +17,14 @@ GOBIN 	?= $$(go env GOPATH)/bin
 # | OS_RELEASE       | OS_VERSION                                | NOTES                                                          |
 # | ---------------- | ----------------------------------------- | -------------------------------------------------------------- |
 # | amazonlinux      | 2, 2023                                   |                                                                |
-# | ubuntu           | 22.04, 24.04 25.04                		 |                                                                |
+# | ubuntu           | 22.04, 24.04, 25.04 25.10                 |                                                                |
 # | debian           | bullseye-slim, bookworm-slim, trixie-slim |                                                                |
-# | alpine           | 3.19, 3.20, 3.21 3.22                     |                                                                |
 # | redhatenterprise | 8, 9, 10                                	 |                                                                |
 # | rockylinux       | 8, 9, 10                                  |                                                                |
 # | almalinux        | 8, 9, 10                                  |                                                                |
+# | alpine           | 3.20, 3.21 3.22                           |                                                                |
 # | oraclelinux      | 8, 9, 10                                  |                                                                |
-# | suse             | sle15                          			 |                                                                |
+# | suse             | sle15, sle16                           	 |                                                                |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 OS_RELEASE  ?= ubuntu
 OS_VERSION  ?= 24.04
@@ -69,8 +69,8 @@ APK_PACKAGE := ./build/$(PACKAGE_NAME).apk
 DEB_PACKAGE := ./build/$(PACKAGE_NAME).deb
 RPM_PACKAGE := ./build/$(PACKAGE_NAME).rpm
 
-MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY ?=
-MOCK_MANAGEMENT_PLANE_EXTERNAL_FILE_SERVER ?=
+MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY ?= 
+MOCK_MANAGEMENT_PLANE_EXTERNAL_FILE_SERVER ?= 
 MOCK_MANAGEMENT_PLANE_LOG_LEVEL ?= INFO
 MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS ?= 127.0.0.1:0
 MOCK_MANAGEMENT_PLANE_API_ADDRESS ?= 127.0.0.1:0
@@ -165,11 +165,11 @@ build-mock-management-otel-collector:
 	mkdir -p $(BUILD_DIR)/mock-management-otel-collector
 	@CGO_ENABLED=0 GOARCH=$(OSARCH) GOOS=linux $(GOBUILD) -o $(BUILD_DIR)/mock-management-otel-collector/collector test/mock/collector/mock-collector/main.go
 
-integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc
+integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc 
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) DOCKERFILE_PATH=$(DOCKERFILE_PATH) IMAGE_PATH=$(IMAGE_PATH) TAG=${IMAGE_TAG} \
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) \
-	go test -v ./test/integration/installuninstall ./test/integration/managementplane ./test/integration/auxiliarycommandserver ./test/integration/nginxless 
+	go test -v ./test/integration/installuninstall ./test/integration/managementplane ./test/integration/auxiliarycommandserver ./test/integration/nginxless
 	
 upgrade-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-repo" CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} \
@@ -181,8 +181,9 @@ official-image-integration-test: $(SELECTED_PACKAGE) build-mock-management-plane
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} BUILD_TARGET="install" \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) TAG=${TAG} PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) DOCKERFILE_PATH=$(OFFICIAL_IMAGE_DOCKERFILE_PATH) \
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) IMAGE_PATH=$(IMAGE_PATH) \
+	NGINX_LICENSE_JWT=$(NGINX_LICENSE_JWT) \
 	go test -v ./test/integration/managementplane ./test/integration/auxiliarycommandserver
-
+	
 metrics-test: $(SELECTED_PACKAGE) build-mock-management-otel-collector
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} BUILD_TARGET="install" \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) TAG=${TAG} PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) DOCKERFILE_PATH=$(OFFICIAL_IMAGE_DOCKERFILE_PATH) \

@@ -2,7 +2,7 @@ module github.com/nginx/agent/v3
 
 go 1.24.2
 
-toolchain go1.24.10
+toolchain go1.24.11
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.9-20250912141014-52f32327d4b0.1
@@ -81,7 +81,7 @@ require (
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/mod v0.30.0
-	golang.org/x/sync v0.18.0
+	golang.org/x/sync v0.19.0
 	google.golang.org/protobuf v1.36.10
 )
 

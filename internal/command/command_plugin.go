@@ -37,6 +37,7 @@ type (
 		Subscribe(ctx context.Context)
 		IsConnected() bool
 		CreateConnection(ctx context.Context, resource *mpi.Resource) (*mpi.CreateConnectionResponse, error)
+		Reconfigure(ctx context.Context, request *config.Config) error
 	}
 
 	CommandPlugin struct {
@@ -48,6 +49,7 @@ type (
 		subscribeChannel  chan *mpi.ManagementPlaneRequest
 		commandServerType model.ServerType
 		subscribeMutex    sync.Mutex
+		agentConfigMutex  sync.Mutex
 	}
 )
 
@@ -118,7 +120,9 @@ func (cp *CommandPlugin) Process(ctx context.Context, msg *bus.Message) {
 	if logger.ServerType(ctxWithMetadata) == cp.commandServerType.String() {
 		switch msg.Topic {
 		case bus.ConnectionResetTopic:
-			cp.processConnectionReset(ctxWithMetadata, msg)
+			// Running as a separate go routine so that the command plugin can continue to process data plane responses
+			// while the connection reset is in progress
+			go cp.processConnectionReset(ctxWithMetadata, msg)
 		case bus.ResourceUpdateTopic:
 			cp.processResourceUpdate(ctxWithMetadata, msg)
 		case bus.InstanceHealthTopic:
@@ -141,6 +145,16 @@ func (cp *CommandPlugin) Subscriptions() []string {
 		bus.DataPlaneHealthResponseTopic,
 		bus.DataPlaneResponseTopic,
 	}
+}
+
+func (cp *CommandPlugin) Reconfigure(ctx context.Context, agentConfig *config.Config) error {
+	cp.agentConfigMutex.Lock()
+	defer cp.agentConfigMutex.Unlock()
+
+	cp.config = agentConfig
+	err := cp.commandService.Reconfigure(ctx, agentConfig)
+
+	return err
 }
 
 func (cp *CommandPlugin) processResourceUpdate(ctx context.Context, msg *bus.Message) {
@@ -180,6 +194,16 @@ func (cp *CommandPlugin) createConnection(ctx context.Context, resource *mpi.Res
 			Topic: bus.ConnectionCreatedTopic,
 			Data:  createConnectionResponse,
 		})
+
+		if createConnectionResponse.GetAgentConfig() != nil {
+			slog.DebugContext(
+				ctx, "Notifying other plugins of agent configuration update from create connection response",
+			)
+			cp.messagePipe.Process(ctx, &bus.Message{
+				Topic: bus.ConnectionAgentConfigUpdateTopic,
+				Data:  createConnectionResponse.GetAgentConfig(),
+			})
+		}
 	}
 }
 
@@ -232,11 +256,19 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 	slog.DebugContext(ctx, "Command plugin received connection reset message")
 
 	if newConnection, ok := msg.Data.(grpc.GrpcConnectionInterface); ok {
-		slog.DebugContext(ctx, "Canceling Subscribe after connection reset")
 		ctxWithMetadata := cp.config.NewContextWithLabels(ctx)
 		cp.subscribeMutex.Lock()
 		defer cp.subscribeMutex.Unlock()
 
+		// Update the command service with the new client first
+		err := cp.commandService.UpdateClient(ctxWithMetadata, newConnection.CommandServiceClient())
+		if err != nil {
+			slog.ErrorContext(ctx, "Failed to reset connection", "error", err)
+			return
+		}
+
+		// Once the command service is updated, we close the old connection
+		slog.DebugContext(ctx, "Canceling Subscribe after connection reset")
 		if cp.subscribeCancel != nil {
 			cp.subscribeCancel()
 			slog.DebugContext(ctxWithMetadata, "Successfully canceled subscribe after connection reset")
@@ -248,12 +280,6 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 		}
 
 		cp.conn = newConnection
-		err := cp.commandService.UpdateClient(ctx, cp.conn.CommandServiceClient())
-		if err != nil {
-			slog.ErrorContext(ctx, "Failed to reset connection", "error", err)
-			return
-		}
-
 		slog.DebugContext(ctxWithMetadata, "Starting new subscribe after connection reset")
 		subscribeCtx, cp.subscribeCancel = context.WithCancel(ctxWithMetadata)
 		go cp.commandService.Subscribe(subscribeCtx)
@@ -262,7 +288,7 @@ func (cp *CommandPlugin) processConnectionReset(ctx context.Context, msg *bus.Me
 	}
 }
 
-//nolint:revive // cognitive complexity is 14
+//nolint:revive,cyclop // cognitive complexity is 14
 func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 	for {
 		select {
@@ -305,6 +331,17 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 				}
 				slog.InfoContext(ctx, "Received management plane action request")
 				cp.handleAPIActionRequest(newCtx, message)
+			case *mpi.ManagementPlaneRequest_UpdateAgentConfigRequest:
+				slog.InfoContext(ctx, "Received management plane update agent config request")
+				if cp.commandServerType != model.Command {
+					slog.WarnContext(newCtx, "Auxiliary command server can not perform agent config update",
+						"command_server_type", cp.commandServerType.String())
+					cp.handleInvalidRequest(newCtx, message, "Updating agent config failed", "")
+
+					return
+				}
+
+				cp.messagePipe.Process(ctx, &bus.Message{Topic: bus.AgentConfigUpdateTopic, Data: message})
 			default:
 				slog.DebugContext(newCtx, "Management plane request not implemented yet")
 			}

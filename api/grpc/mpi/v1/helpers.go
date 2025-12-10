@@ -6,6 +6,8 @@
 package v1
 
 import (
+	"log/slog"
+
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -44,4 +46,25 @@ func ConvertToStructs(input map[string]any) ([]*structpb.Struct, error) {
 	}
 
 	return structs, nil
+}
+
+func ConvertToMap(input []*structpb.Struct) map[string]any {
+	convertedMap := make(map[string]any)
+	for _, value := range input {
+		for key, field := range value.GetFields() {
+			kind := field.GetKind()
+			switch kind.(type) {
+			case *structpb.Value_StringValue:
+				convertedMap[key] = field.GetStringValue()
+			case *structpb.Value_NumberValue:
+				convertedMap[key] = int(field.GetNumberValue())
+			case *structpb.Value_BoolValue:
+				convertedMap[key] = field.GetBoolValue()
+			default:
+				slog.Warn("Unknown type for map conversion", "value", kind)
+			}
+		}
+	}
+
+	return convertedMap
 }
