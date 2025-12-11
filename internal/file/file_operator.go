@@ -176,9 +176,10 @@ func (fo *FileOperator) WriteManifestFile(
 	if err != nil {
 		return fmt.Errorf("failed to open temporary manifest file: %w", err)
 	}
-	defer closeFile(ctx, tempFile)
 
 	if _, err = tempFile.Write(manifestJSON); err != nil {
+		closeFile(ctx, tempFile)
+
 		return fmt.Errorf("failed to write to temporary manifest file: %w", err)
 	}
 
