@@ -36,7 +36,7 @@ GOTIDY  = ${GOMOD} tidy
 # | redhatenterprise | 8, 9, 10                                  |                                                                |
 # | rockylinux       | 8, 9, 10                                  |                                                                |
 # | almalinux        | 8, 9, 10                                  |                                                                |
-# | alpine           | 3.20, 3.21 3.22                          |                                                                |
+# | alpine           | 3.20, 3.21 3.22 3.23                      |                                                                |
 # | oraclelinux      | 8, 9, 10                                  |                                                                |
 # | suse             | sle15, sle16                              |                                                                |
 # | freebsd          |                                           | Not supported                                                  |
