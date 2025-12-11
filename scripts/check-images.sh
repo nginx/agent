@@ -77,7 +77,10 @@ echo "${FOUND[@]}" | sed 's/ /\n/g'
 for tag in "${FOUND[@]}"; do
     echo ":: ${IMAGE_PATH}:$tag"
     ${CONTAINER_TOOL} pull ${IMAGE_PATH}:$tag > /dev/null 2>&1
-    ${CONTAINER_TOOL} run ${IMAGE_PATH}:$tag nginx -v
-    ${CONTAINER_TOOL} run --rm ${IMAGE_PATH}:$tag nginx-agent --version | sed 's/version/version:/g' # --rm to clean up container after run
+    echo -n ":::: "; ${CONTAINER_TOOL} run ${IMAGE_PATH}:$tag cat /etc/os-release | grep PRETTY_NAME | awk -F'=' '{print $2}' | tr -d '"' \
+      || echo "No /etc/os-release found"
+    echo -n ":::: "; ${CONTAINER_TOOL} run ${IMAGE_PATH}:$tag nginx -v
+    echo -n ":::: "; ${CONTAINER_TOOL} run --rm ${IMAGE_PATH}:$tag nginx-agent --version | sed 's/version/version:/g' # --rm to clean up container after run
+    echo
 done
 
