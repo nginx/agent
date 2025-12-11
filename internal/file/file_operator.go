@@ -155,7 +155,7 @@ func (fo *FileOperator) ReadChunk(
 
 func (fo *FileOperator) WriteManifestFile(
 	ctx context.Context, updatedFiles map[string]*model.ManifestFile, manifestDir, manifestPath string,
-) (writeError error) {
+) error {
 	slog.DebugContext(ctx, "Writing manifest file", "updated_files", updatedFiles)
 	manifestJSON, err := json.MarshalIndent(updatedFiles, "", "  ")
 	if err != nil {
@@ -164,28 +164,50 @@ func (fo *FileOperator) WriteManifestFile(
 
 	fo.manifestLock.Lock()
 	defer fo.manifestLock.Unlock()
+
 	// 0755 allows read/execute for all, write for owner
 	if err = os.MkdirAll(manifestDir, dirPerm); err != nil {
 		return fmt.Errorf("unable to create directory %s: %w", manifestDir, err)
 	}
 
-	// 0600 ensures only root can read/write
-	newFile, err := os.OpenFile(manifestPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, filePerm)
+	// Write to a temporary file first to ensure atomicity
+	tempManifestFilePath := manifestPath + ".tmp"
+	tempFile, err := os.OpenFile(tempManifestFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, filePerm)
 	if err != nil {
-		return fmt.Errorf("failed to read manifest file: %w", err)
+		return fmt.Errorf("failed to open file %s: %w", tempManifestFilePath, err)
 	}
-	defer func() {
-		if closeErr := newFile.Close(); closeErr != nil {
-			writeError = closeErr
+
+	if _, err = tempFile.Write(manifestJSON); err != nil {
+		closeFile(ctx, tempFile)
+
+		return fmt.Errorf("failed to write to file %s: %w", tempManifestFilePath, err)
+	}
+
+	closeFile(ctx, tempFile)
+
+	// Verify the contents of the temporary file is JSON
+	file, err := os.ReadFile(tempManifestFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to read file %s: %w", tempManifestFilePath, err)
+	}
+
+	var manifestFiles map[string]*model.ManifestFile
+
+	err = json.Unmarshal(file, &manifestFiles)
+	if err != nil {
+		if len(file) == 0 {
+			return fmt.Errorf("file %s is empty: %w", tempManifestFilePath, err)
 		}
-	}()
 
-	_, err = newFile.Write(manifestJSON)
-	if err != nil {
-		return fmt.Errorf("failed to write manifest file: %w", err)
+		return fmt.Errorf("failed to parse file %s: %w", tempManifestFilePath, err)
 	}
 
-	return writeError
+	// Rename the temporary file to the actual manifest file path
+	if renameError := os.Rename(tempManifestFilePath, manifestPath); renameError != nil {
+		return fmt.Errorf("failed to file %s to %s: %w", tempManifestFilePath, manifestPath, renameError)
+	}
+
+	return nil
 }
 
 func (fo *FileOperator) MoveFile(ctx context.Context, sourcePath, destPath string) error {
