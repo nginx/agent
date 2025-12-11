@@ -174,13 +174,13 @@ func (fo *FileOperator) WriteManifestFile(
 	tempManifestFilePath := manifestPath + ".tmp"
 	tempFile, err := os.OpenFile(tempManifestFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, filePerm)
 	if err != nil {
-		return fmt.Errorf("failed to open temporary manifest file: %w", err)
+		return fmt.Errorf("failed to open file %s: %w", tempManifestFilePath, err)
 	}
 
 	if _, err = tempFile.Write(manifestJSON); err != nil {
 		closeFile(ctx, tempFile)
 
-		return fmt.Errorf("failed to write to temporary manifest file: %w", err)
+		return fmt.Errorf("failed to write to file %s: %w", tempManifestFilePath, err)
 	}
 
 	closeFile(ctx, tempFile)
@@ -188,7 +188,7 @@ func (fo *FileOperator) WriteManifestFile(
 	// Verify the contents of the temporary file is JSON
 	file, err := os.ReadFile(tempManifestFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to read temporary manifest file: %w", err)
+		return fmt.Errorf("failed to read file %s: %w", tempManifestFilePath, err)
 	}
 
 	var manifestFiles map[string]*model.ManifestFile
@@ -196,15 +196,15 @@ func (fo *FileOperator) WriteManifestFile(
 	err = json.Unmarshal(file, &manifestFiles)
 	if err != nil {
 		if len(file) == 0 {
-			return fmt.Errorf("temporary manifest file is empty: %w", err)
+			return fmt.Errorf("file %s is empty: %w", tempManifestFilePath, err)
 		}
 
-		return fmt.Errorf("failed to parse temporary manifest file: %w", err)
+		return fmt.Errorf("failed to parse file %s: %w", tempManifestFilePath, err)
 	}
 
 	// Rename the temporary file to the actual manifest file path
 	if renameError := os.Rename(tempManifestFilePath, manifestPath); renameError != nil {
-		return fmt.Errorf("failed to rename temporary manifest file: %w", renameError)
+		return fmt.Errorf("failed to file %s to %s: %w", tempManifestFilePath, manifestPath, renameError)
 	}
 
 	return nil
