@@ -16,3 +16,13 @@ containermetrics:
   collection_interval: <duration> # default = 1m
   initial_delay: <duration> # default = 1s
 ```
+
+The available scrapers are:
+
+| Scraper      | Supported OSs                | Description                                            |
+| ------------ | ---------------------------- | ------------------------------------------------------ |
+| [cpu]        | All                          | CPU utilization metrics                                |
+| [memory]     | All                          | Memory utilization metrics                             |
+
+[cpu]: ./internal/scraper/cpuscraper/documentation.md
+[memory]: ./internal/scraper/memoryscraper/documentation.md
