@@ -10,7 +10,7 @@ runs:
       run: |
         if [[ -z "${{ env.artifactory-user }}" ]] || \
         [[ -z "${{ env.artifactory-token }}" ]] || \
-        [[ -z "${{ env.artifactory-url }}" ]] || \
+        [[ -z "${{ env.artifactory-url-dev }}" ]] || \
         [[ "${{ github.event.pull_request.head.repo.fork }}" == 'true' ]] ||
         [[ "${{ startsWith(github.head_ref, 'dependabot-')}}" == 'true' ]] ; then
           echo "No Artifactory secrets available - using direct GOPROXY"
