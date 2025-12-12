@@ -82,10 +82,7 @@ jobs:
           secrets-filter: 'artifactory'
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
-        with:
-          user: ${{ env.artifactory_user }}
-          token: ${{ env.artifactory_token }}
-          url: ${{ env.artifactory_url_dev }}
+
       - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
