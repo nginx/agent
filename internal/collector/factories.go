@@ -8,8 +8,8 @@ package collector
 import (
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver"
 	"github.com/nginx/agent/v3/internal/collector/logsgzipprocessor"
-	nginxreceiver "github.com/nginx/agent/v3/internal/collector/nginxossreceiver"
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver"
+	"github.com/nginx/agent/v3/internal/collector/nginxreceiver"
 	"github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter"

@@ -110,6 +110,7 @@ $(RPM_PACKAGE):
 include Makefile.tools
 include Makefile.containers
 include Makefile.packaging
+include Makefile.weaver
 
 .PHONY: help clean no-local-changes build lint format unit-test integration-test run dev run-mock-management-grpc-server generate generate-mocks local-apk-package local-deb-package local-rpm-package
 help: ## Show help message
@@ -282,7 +283,7 @@ stop-mock-otel-collector-without-nap: ## Stop running mock management plane OTel
 	@echo "Stopping mock management plane OTel collector without NAP"
 	AGENT_IMAGE_WITH_NGINX_PLUS=nginx_plus_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_OSS=nginx_oss_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml down
 
-generate: ## Generate golang code
+generate: nginx-metadata-gen nginxplus-metadata-gen ## Generate golang code
 	@echo "🗄️ Generating proto files"
 	@cd api/grpc && $(GORUN) $(BUF) generate
 	@echo "🗃️ Generating go files"
