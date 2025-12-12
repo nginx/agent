@@ -31,12 +31,21 @@ jobs:
         - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
           with:
             fetch-tags: 'true'
+
+        - name: Get Secrets from Azure Key Vault
+          uses: ./.github/actions/az-sync
+          with:
+            az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+            az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+            az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+            keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+            secrets-filter: 'artifactory'
         - name: Configure Go Proxy
           uses: ./.github/actions/configure-goproxy
           with:
-            user: ${{ secrets.ARTIFACTORY_USER }}
-            token: ${{ secrets.ARTIFACTORY_TOKEN }}
-            url: ${{ secrets.ARTIFACTORY_URL_DEV }}
+            user: ${{ env.artifactory_user }}
+            token: ${{ env.artifactory_token }}
+            url: ${{ env.artifactory_url_dev }}
         - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
           with:
             go-version-file: 'go.mod'
@@ -61,12 +70,20 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - name: Get Secrets from Azure Key Vault
+        uses: ./.github/actions/az-sync
+        with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+          keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+          secrets-filter: 'artifactory'
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
         with:
-          user: ${{ secrets.ARTIFACTORY_USER }}
-          token: ${{ secrets.ARTIFACTORY_TOKEN }}
-          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
+          user: ${{ env.artifactory_user }}
+          token: ${{ env.artifactory_token }}
+          url: ${{ env.artifactory_url_dev }}
       - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
