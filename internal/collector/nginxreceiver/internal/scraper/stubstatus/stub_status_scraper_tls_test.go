@@ -21,7 +21,7 @@ import (
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/receiver/receivertest"
 
-	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/config"
+	"github.com/nginx/agent/v3/internal/collector/nginxreceiver/internal/config"
 	"github.com/nginx/agent/v3/test/helpers"
 )
 

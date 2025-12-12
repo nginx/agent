@@ -9,7 +9,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/model"
+	"github.com/nginx/agent/v3/internal/collector/nginxreceiver/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"

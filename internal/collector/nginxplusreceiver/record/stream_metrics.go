@@ -61,45 +61,45 @@ func RecordStreamMetrics(mb *metadata.MetricsBuilder, stats *plusapi.Stats, now 
 				now,
 				int64(peer.Received),
 				metadata.AttributeNginxIoDirectionReceive,
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				upstreamName,
+				upstream.Zone,
 			)
 			mb.RecordNginxStreamUpstreamPeerIoDataPoint(
 				now,
 				int64(peer.Sent),
 				metadata.AttributeNginxIoDirectionTransmit,
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				upstreamName,
+				upstream.Zone,
 			)
 			// Connection
 			mb.RecordNginxStreamUpstreamPeerConnectionCountDataPoint(
 				now,
 				int64(peer.Active),
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				upstreamName,
+				upstream.Zone,
 			)
 			mb.RecordNginxStreamUpstreamPeerConnectionTimeDataPoint(
 				now,
 				int64(peer.ConnectTime),
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				upstreamName,
+				upstream.Zone,
 			)
 
 			mb.RecordNginxStreamUpstreamPeerConnectionsDataPoint(
 				now,
 				int64(peer.Connections),
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				upstreamName,
+				upstream.Zone,
 			)
 
 			// Health
@@ -107,110 +107,110 @@ func RecordStreamMetrics(mb *metadata.MetricsBuilder, stats *plusapi.Stats, now 
 				now,
 				int64(peer.HealthChecks.Checks),
 				0,
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				upstreamName,
+				upstream.Zone,
 			)
 			mb.RecordNginxStreamUpstreamPeerHealthChecksDataPoint(
 				now,
 				int64(peer.HealthChecks.Fails),
 				metadata.AttributeNginxHealthCheckFAIL,
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				upstreamName,
+				upstream.Zone,
 			)
 			mb.RecordNginxStreamUpstreamPeerHealthChecksDataPoint(
 				now,
 				int64(peer.HealthChecks.Unhealthy),
 				metadata.AttributeNginxHealthCheckUNHEALTHY,
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				upstreamName,
+				upstream.Zone,
 			)
 
 			// Response
 			mb.RecordNginxStreamUpstreamPeerResponseTimeDataPoint(
 				now,
 				int64(peer.ResponseTime),
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				upstreamName,
+				upstream.Zone,
 			)
 			mb.RecordNginxStreamUpstreamPeerTtfbTimeDataPoint(
 				now,
 				int64(peer.FirstByteTime),
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				upstreamName,
+				upstream.Zone,
 			)
 			mb.RecordNginxStreamUpstreamPeerUnavailablesDataPoint(
 				now,
 				int64(peer.Unavail),
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				upstreamName,
+				upstream.Zone,
 			)
 
 			// State
 			mb.RecordNginxStreamUpstreamPeerStateDataPoint(
 				now,
 				boolToInt64(peer.State == peerStateChecking),
-				metadata.AttributeNginxPeerStateCHECKING,
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				metadata.AttributeNginxPeerStateCHECKING,
+				upstreamName,
+				upstream.Zone,
 			)
 			mb.RecordNginxStreamUpstreamPeerStateDataPoint(
 				now,
 				boolToInt64(peer.State == peerStateDown),
-				metadata.AttributeNginxPeerStateDOWN,
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				metadata.AttributeNginxPeerStateDOWN,
+				upstreamName,
+				upstream.Zone,
 			)
 			mb.RecordNginxStreamUpstreamPeerStateDataPoint(
 				now,
 				boolToInt64(peer.State == peerStateDraining),
-				metadata.AttributeNginxPeerStateDRAINING,
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				metadata.AttributeNginxPeerStateDRAINING,
+				upstreamName,
+				upstream.Zone,
 			)
 			mb.RecordNginxStreamUpstreamPeerStateDataPoint(
 				now,
 				boolToInt64(peer.State == peerStateUnavail),
-				metadata.AttributeNginxPeerStateUNAVAILABLE,
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				metadata.AttributeNginxPeerStateUNAVAILABLE,
+				upstreamName,
+				upstream.Zone,
 			)
 			mb.RecordNginxStreamUpstreamPeerStateDataPoint(
 				now,
 				boolToInt64(peer.State == peerStateUnhealthy),
-				metadata.AttributeNginxPeerStateUNHEALTHY,
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				metadata.AttributeNginxPeerStateUNHEALTHY,
+				upstreamName,
+				upstream.Zone,
 			)
 			mb.RecordNginxStreamUpstreamPeerStateDataPoint(
 				now,
 				boolToInt64(peer.State == peerStateUp),
-				metadata.AttributeNginxPeerStateUP,
-				upstream.Zone,
-				upstreamName,
 				peer.Server,
 				peer.Name,
+				metadata.AttributeNginxPeerStateUP,
+				upstreamName,
+				upstream.Zone,
 			)
 
 			peerStates[peer.State]++
@@ -221,45 +221,45 @@ func RecordStreamMetrics(mb *metadata.MetricsBuilder, stats *plusapi.Stats, now 
 			now,
 			int64(peerStates[peerStateChecking]),
 			metadata.AttributeNginxPeerStateCHECKING,
-			upstream.Zone,
 			upstreamName,
+			upstream.Zone,
 		)
 		mb.RecordNginxStreamUpstreamPeerCountDataPoint(
 			now,
 			int64(peerStates[peerStateDown]),
 			metadata.AttributeNginxPeerStateDOWN,
-			upstream.Zone,
 			upstreamName,
+			upstream.Zone,
 		)
 		mb.RecordNginxStreamUpstreamPeerCountDataPoint(
 			now,
 			int64(peerStates[peerStateDraining]),
 			metadata.AttributeNginxPeerStateDRAINING,
-			upstream.Zone,
 			upstreamName,
+			upstream.Zone,
 		)
 		mb.RecordNginxStreamUpstreamPeerCountDataPoint(
 			now,
 			int64(peerStates[peerStateUnavail]),
 			metadata.AttributeNginxPeerStateUNAVAILABLE,
-			upstream.Zone,
 			upstreamName,
+			upstream.Zone,
 		)
 		mb.RecordNginxStreamUpstreamPeerCountDataPoint(
 			now,
 			int64(peerStates[peerStateUnhealthy]),
 			metadata.AttributeNginxPeerStateUNHEALTHY,
-			upstream.Zone,
 			upstreamName,
+			upstream.Zone,
 		)
 		mb.RecordNginxStreamUpstreamPeerCountDataPoint(
 			now,
 			int64(peerStates[peerStateUp]),
 			metadata.AttributeNginxPeerStateUP,
-			upstream.Zone,
 			upstreamName,
+			upstream.Zone,
 		)
 
-		mb.RecordNginxStreamUpstreamZombieCountDataPoint(now, int64(upstream.Zombies), upstream.Zone, upstreamName)
+		mb.RecordNginxStreamUpstreamZombieCountDataPoint(now, int64(upstream.Zombies), upstreamName, upstream.Zone)
 	}
 }
