@@ -34,6 +34,7 @@ type namedMetric struct {
 }
 
 func (n *namedMetric) label(name string) string {
+	log.Tracef("Creating label for namespace %s, group %s, name %s", n.namespace, n.group, name)
 	if name == "" {
 		return ""
 	}
