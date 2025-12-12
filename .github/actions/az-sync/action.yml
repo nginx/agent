@@ -36,11 +36,10 @@ runs:
           for pattern in "${array[@]}"; do
             echo "Processing pattern: $pattern"
             for secret_name in $(az keyvault secret list --vault-name ${{ inputs.keyvault }} --query "[?contains(name, '$pattern')].name" -o tsv); do
-              echo "Fetching secret: $secret_name"
+              echo "Sync secret: env.$secret_name"
               secret_value=$(az keyvault secret show --name "$secret_name" --vault-name ${{ inputs.keyvault }} --query value -o tsv)
               echo "::add-mask::$secret_value"
-              echo "$secret_name=$secret_value" >> $GITHUB_OUTPUT
-              echo "Set secret env.$secret_name"
+              echo "$secret_name=$secret_value" >> $GITHUB_ENV
             done
           done
         IFS=$old_IFS
