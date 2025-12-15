@@ -62,7 +62,7 @@ majorVersion=$(echo ${VERSION} | cut -d. -f1)
 # Define package URIs to check for each platform
 
 APK=()
-ALPINE_VERSIONS=("3.22" "3.21" "3.20")
+ALPINE_VERSIONS=("3.23" "3.22" "3.21" "3.20")
 ALPINE_ARCH=("x86_64" "aarch64")
 for alpine_version in "${ALPINE_VERSIONS[@]}"; do
     for arch in ${ALPINE_ARCH[@]}; do

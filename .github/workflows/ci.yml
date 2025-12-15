@@ -188,7 +188,7 @@ jobs:
         - image: "redhatenterprise"
           version: "9"
         - image: "alpine"
-          version: "3.22"
+          version: "3.23"
     steps:
       - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       - name: Configure Go Proxy
