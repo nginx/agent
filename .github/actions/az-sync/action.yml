@@ -2,15 +2,6 @@ name: Sync Secrets from Azure Key Vault
 author: s.breen
 description: az-sync
 inputs:
-  az_client_id:
-    description: 'Azure Client ID'
-    required: true
-  az_tenant_id:
-    description: 'Azure Tenant ID'
-    required: true
-  az_subscription_id:
-    description: 'Azure Subscription ID'
-    required: true
   keyvault:
     description: 'Azure Key Vault name'
     required: true
@@ -24,9 +15,9 @@ runs:
     - name: Azure login
       uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2.3.0
       with:
-        client-id: ${{ inputs.az_client_id }}
-        tenant-id: ${{ inputs.az_tenant_id }}
-        subscription-id: ${{ inputs.az_subscription_id }}
+        client-id: ${{ env.AZ_KEYVAULT_CLIENT_ID }}
+        tenant-id: ${{ env.AZ_KEYVAULT_TENANT_ID }}
+        subscription-id: ${{ env.AZ_SUBSCRIPTION_ID }}
 
     - name: Sync
       shell: bash
