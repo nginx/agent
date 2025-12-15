@@ -14,7 +14,8 @@ on:
     - opened
     - reopened
     - synchronize
-
+#f5-nginx-github-nginx-service-account
+#eyJ2ZXIiOiIyIiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYiLCJraWQiOiJZSTNYR0xuYU1ISW1aN3hsUVBqX0lrSkNfMUJseGppSXcwSjlrVW1mcTQwIn0eyJzdWIiOiJqZmFjQDAxYzhncTBlMWpkYTV6MWEzcTN4OHYweW5uL3VzZXJzL2Y1LW5naW54LWdpdGh1Yi1uZ2lueC1zZXJ2aWNlLWFjY291bnQiLCJzY3AiOiJhcHBsaWVkLXBlcm1pc3Npb25zL3VzZXIiLCJhdWQiOiIqQCoiLCJpc3MiOiJqZmZlQDAxYzhncTBlMWpkYTV6MWEzcTN4OHYweW5uIiwiZXhwIjoxNzczOTU0NDExLCJpYXQiOjE3NDI0MTg0MTEsImp0aSI6IjRkY2NmMWFiLTAwZWUtNDQ2Zi1iNDAyLWIzMTRlNDgwYTU2NyJ9BTYk_Qs64JYfr30oEgJ0YaCXJcrViAa5-5sC4AaaM_MP8sm80LJRC_a1rLmYnA408yMkenYayC6diDhWy1Bx_5JO7tmn1iNQnEHJHz7rLLBJRaNNFee9mE5W36ZRUhCKtDQ1MOr9jSinibwxKXt8frwioUhjXQ29YNJcW6KYivFiviBxjU_xS-vyxhmWH0z85SxG-YDFkzOYbKbBIIgNN0iHgEfThmWbrGf7nWroP0jCnKaomLlASGZD_Z0bEmQ7KXfuxiQ9pfWDlYP0ak62s-QZmwEDB71RP-raxVaKYAMW1-DLh2ikBXkQHMAj7gzKCf163YnQce9hWce0X8DgAg
 permissions:
   contents: read
 
@@ -35,6 +36,9 @@ jobs:
         - name: Get Secrets from Azure Key Vault
           uses: ./.github/actions/az-sync
           with:
+            az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+            az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+            az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
             keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
             secrets-filter: 'artifactory'
         - name: Configure Go Proxy
@@ -68,6 +72,9 @@ jobs:
       - name: Get Secrets from Azure Key Vault
         uses: ./.github/actions/az-sync
         with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
           keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
           secrets-filter: 'artifactory'
       - name: Configure Go Proxy
@@ -106,6 +113,9 @@ jobs:
         - name: Get Secrets from Azure Key Vault
           uses: ./.github/actions/az-sync
           with:
+            az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+            az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+            az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
             keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
             secrets-filter: 'artifactory'
         - name: Configure Go Proxy
@@ -138,6 +148,9 @@ jobs:
         - name: Get Secrets from Azure Key Vault
           uses: ./.github/actions/az-sync
           with:
+            az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+            az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+            az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
             keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
             secrets-filter: 'artifactory'
         - name: Configure Go Proxy
@@ -167,6 +180,9 @@ jobs:
         - name: Get Secrets from Azure Key Vault
           uses: ./.github/actions/az-sync
           with:
+            az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+            az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+            az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
             keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
             secrets-filter: 'artifactory'
         - name: Configure Go Proxy
@@ -217,6 +233,9 @@ jobs:
       - name: Get Secrets from Azure Key Vault
         uses: ./.github/actions/az-sync
         with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
           keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
           secrets-filter: 'artifactory'
       - name: Configure Go Proxy
@@ -276,6 +295,9 @@ jobs:
       - name: Get Secrets from Azure Key Vault
         uses: ./.github/actions/az-sync
         with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
           keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
           secrets-filter: 'artifactory'
       - name: Configure Go Proxy
@@ -342,6 +364,9 @@ jobs:
       - name: Get Secrets from Azure Key Vault
         uses: ./.github/actions/az-sync
         with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
           keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
           secrets-filter: 'artifactory'
       - name: Configure Go Proxy
@@ -418,6 +443,9 @@ jobs:
       - name: Get Secrets from Azure Key Vault
         uses: ./.github/actions/az-sync
         with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
           keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
           secrets-filter: 'artifactory'
       - name: Configure Go Proxy
@@ -493,6 +521,9 @@ jobs:
       - name: Get Secrets from Azure Key Vault
         uses: ./.github/actions/az-sync
         with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
           keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
           secrets-filter: 'artifactory'
       - name: Configure Go Proxy
@@ -569,6 +600,9 @@ jobs:
       - name: Get Secrets from Azure Key Vault
         uses: ./.github/actions/az-sync
         with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
           keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
           secrets-filter: 'artifactory'
       - name: Configure Go Proxy
@@ -629,6 +663,9 @@ jobs:
       - name: Get Secrets from Azure Key Vault
         uses: ./.github/actions/az-sync
         with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
           keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
           secrets-filter: 'artifactory'
       - name: Configure Go Proxy
@@ -699,6 +736,9 @@ jobs:
       - name: Get Secrets from Azure Key Vault
         uses: ./.github/actions/az-sync
         with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
           keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
           secrets-filter: 'nginx-crt,nginx-key'
 
@@ -748,4 +788,4 @@ jobs:
 
       - name: Push load test result
         if:  ${{ success() && github.ref_name == 'main' }}
-        run: git push 'https://github-actions:${{ github.token }}@github.com/nginx/agent.git' benchmark-results:benchmark-results
+        run: git push 'https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/nginx/agent.git' benchmark-results:benchmark-results
