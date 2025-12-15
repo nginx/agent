@@ -143,7 +143,6 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 		return errors.New("OTel collector already running")
 	}
 
-	slog.InfoContext(ctx, "Starting OTel collector")
 	bootErr := oc.bootup(runCtx)
 	if bootErr != nil {
 		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)
@@ -163,30 +162,7 @@ func (oc *Collector) Info() *bus.Info {
 func (oc *Collector) Close(ctx context.Context) error {
 	slog.InfoContext(ctx, "Closing OTel Collector plugin")
 
-	if !oc.stopped {
-		slog.InfoContext(ctx, "Shutting down OTel Collector", "state", oc.service.GetState())
-		oc.service.Shutdown()
-		oc.cancel()
-
-		settings := *oc.config.Client.Backoff
-		settings.MaxElapsedTime = maxTimeToWaitForShutdown
-		err := backoff.WaitUntil(ctx, &settings, func() error {
-			if oc.service.GetState() == otelcol.StateClosed {
-				return nil
-			}
-
-			return errors.New("OTel Collector not in a closed state yet")
-		})
-
-		if err != nil {
-			slog.ErrorContext(ctx, "Failed to shutdown OTel Collector", "error", err, "state", oc.service.GetState())
-		} else {
-			slog.InfoContext(ctx, "OTel Collector shutdown", "state", oc.service.GetState())
-			oc.stopped = true
-		}
-	}
-
-	return nil
+	return oc.shutdownCollector(ctx)
 }
 
 // Process an incoming Message Bus message in the plugin
@@ -236,6 +212,33 @@ func (oc *Collector) Reconfigure(ctx context.Context, agentConfig *config.Config
 	return nil
 }
 
+func (oc *Collector) shutdownCollector(ctx context.Context) error {
+	if !oc.stopped {
+		slog.InfoContext(ctx, "Shutting down OTel Collector", "state", oc.service.GetState())
+		oc.service.Shutdown()
+		oc.cancel()
+
+		settings := *oc.config.Client.Backoff
+		settings.MaxElapsedTime = maxTimeToWaitForShutdown
+		err := backoff.WaitUntil(ctx, &settings, func() error {
+			if oc.service.GetState() == otelcol.StateClosed {
+				return nil
+			}
+
+			return errors.New("OTel Collector not in a closed state yet")
+		})
+
+		if err != nil {
+			slog.ErrorContext(ctx, "Failed to shutdown OTel Collector", "error", err, "state", oc.service.GetState())
+		} else {
+			slog.InfoContext(ctx, "OTel Collector shutdown", "state", oc.service.GetState())
+			oc.stopped = true
+		}
+	}
+
+	return nil
+}
+
 // Process receivers and log warning for sub-optimal configurations
 func (oc *Collector) processReceivers(ctx context.Context, receivers map[string]*config.OtlpReceiver) {
 	for _, receiver := range receivers {
@@ -275,11 +278,12 @@ func (oc *Collector) bootup(ctx context.Context) error {
 			oc.setProxyIfNeeded(ctx)
 		}
 
+		slog.InfoContext(ctx, "Starting OTel collector")
 		appErr := oc.service.Run(ctx)
 		if appErr != nil {
 			errChan <- appErr
 		}
-		slog.InfoContext(ctx, "OTel collector run finished")
+		slog.InfoContext(ctx, "OTel collector has stopped running")
 	}()
 
 	for {
@@ -453,7 +457,7 @@ func (oc *Collector) writeRunningConfig(ctx context.Context, settings otelcol.Co
 }
 
 func (oc *Collector) restartCollector(ctx context.Context) {
-	err := oc.Close(ctx)
+	err := oc.shutdownCollector(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to shutdown OTel Collector", "error", err)
 		return

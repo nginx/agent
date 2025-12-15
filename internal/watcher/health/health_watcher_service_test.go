@@ -47,7 +47,7 @@ func TestHealthWatcherService_AddHealthWatcher(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			healthWatcher := NewHealthWatcherService(agentConfig)
-			healthWatcher.AddHealthWatcher(test.instances)
+			healthWatcher.AddHealthWatcher(t.Context(), test.instances)
 
 			if test.numWatchers == 1 {
 				assert.Len(t, healthWatcher.watchers, 1)
@@ -66,7 +66,7 @@ func TestHealthWatcherService_DeleteHealthWatcher(t *testing.T) {
 	instance := protos.NginxOssInstance([]string{})
 
 	instances := []*mpi.Instance{instance}
-	healthWatcher.AddHealthWatcher(instances)
+	healthWatcher.AddHealthWatcher(t.Context(), instances)
 	assert.Len(t, healthWatcher.watchers, 1)
 
 	healthWatcher.DeleteHealthWatcher(instances)
@@ -82,7 +82,7 @@ func TestHealthWatcherService_UpdateHealthWatcher(t *testing.T) {
 	updatedInstance.GetInstanceMeta().InstanceId = instance.GetInstanceMeta().GetInstanceId()
 
 	instances := []*mpi.Instance{instance}
-	healthWatcher.AddHealthWatcher(instances)
+	healthWatcher.AddHealthWatcher(t.Context(), instances)
 	assert.Equal(t, instance, healthWatcher.instances[instance.GetInstanceMeta().GetInstanceId()])
 
 	healthWatcher.UpdateHealthWatcher([]*mpi.Instance{updatedInstance})
