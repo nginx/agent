@@ -15,9 +15,9 @@ runs:
     - name: Azure login
       uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2.3.0
       with:
-        client-id: ${{ env.AZ_KEYVAULT_CLIENT_ID }}
-        tenant-id: ${{ env.AZ_KEYVAULT_TENANT_ID }}
-        subscription-id: ${{ env.AZ_SUBSCRIPTION_ID }}
+        client-id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+        subscription-id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
 
     - name: Sync
       shell: bash
