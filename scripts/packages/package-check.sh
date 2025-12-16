@@ -71,7 +71,7 @@ for alpine_version in "${ALPINE_VERSIONS[@]}"; do
 done
 
 UBUNTU=()
-UBUNTU_VERSIONS=("jammy" "noble" "plucky")
+UBUNTU_VERSIONS=("jammy" "noble" "plucky" "questing")
 DEB_ARCH=("amd64" "arm64")
 for ubuntu_version in "${UBUNTU_VERSIONS[@]}"; do
     for arch in ${DEB_ARCH[@]}; do
@@ -103,18 +103,18 @@ for arch in ${RPM_ARCH[@]}; do
 done
 
 SUSE=()
-SUSE_VERSIONS=("15", "16")
+SUSE_VERSIONS=("15" "16")
 for suse_version in "${SUSE_VERSIONS[@]}"; do
     SUSE+=("sles/${suse_version}/x86_64/RPMS/nginx-agent-$VERSION.sles${suse_version}.ngx.x86_64.rpm")
 done
 
 # Aggregate all URIs to fetch
 uris=(
-  ${DEBIAN[@]}
-  ${UBUNTU[@]}
-  ${CENTOS[@]}
-  ${APK[@]}
-  ${AMZN[@]}
+#  ${DEBIAN[@]}
+#  ${UBUNTU[@]}
+#  ${CENTOS[@]}
+#  ${APK[@]}
+#  ${AMZN[@]}
   ${SUSE[@]}
 )
 
