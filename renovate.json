@@ -10,5 +10,6 @@
         ":disableRateLimiting",
         ":semanticCommitsDisabled"
     ],
-    "rebaseWhen": "behind-base-branch"
+    "rebaseWhen": "behind-base-branch",
+    "baseBranchPatterns": ["^main$", "dev-v2", "^release-*"]
 }
