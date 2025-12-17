@@ -1,6 +1,14 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended"
-  ]
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": [
+        "schedule:daily",
+        "config:recommended",
+        "docker:enableMajor",
+        "helpers:pinGitHubActionDigests",
+        ":gitSignOff",
+        ":maintainLockFilesMonthly",
+        ":disableRateLimiting",
+        ":semanticCommitsDisabled"
+    ],
+    "rebaseWhen": "behind-base-branch"
 }
