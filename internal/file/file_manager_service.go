@@ -21,9 +21,14 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 
+	gcpstorage "cloud.google.com/go/storage"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/nginx/agent/v3/internal/model"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -47,9 +52,76 @@ const (
 	executePerm = 0o111
 )
 
-type DownloadHeader struct {
-	ETag         string
-	LastModified string
+type HTTPDownloader struct {
+	fms *FileManagerService
+}
+type AWSDownloader struct {
+	fms      *FileManagerService
+	s3Client *s3.Client
+}
+
+//nolint:ireturn,revive,staticcheck // Just a POC
+func NewAWSDownloader(fms *FileManagerService) *AWSDownloader {
+	// 1. Load AWS Configuration (this handles finding credentials automatically)
+	cfg, err := awsconfig.LoadDefaultConfig(context.Background())
+	if err != nil {
+		// Handle fatal configuration error (e.g., no credentials found)
+		// You would typically log this or panic if necessary.
+	}
+
+	return &AWSDownloader{
+		fms:      fms,
+		s3Client: s3.NewFromConfig(cfg),
+	}
+}
+
+type GCPDownloader struct {
+	fms           *FileManagerService
+	storageClient *gcpstorage.Client
+}
+
+//nolint:ireturn,revive,staticcheck // Just a POC
+func NewGCPDownloader(fms *FileManagerService) *GCPDownloader {
+	// 1. Initialize the client, using the 'gcp_storage' alias.
+	client, err := gcpstorage.NewClient(context.Background(), option.WithScopes(gcpstorage.ScopeReadOnly))
+	if err != nil {
+		// Handle error
+	}
+
+	return &GCPDownloader{
+		fms:           fms,
+		storageClient: client,
+	}
+}
+
+type AzureDownloader struct {
+	fms *FileManagerService
+	// containerClient *container.Client
+}
+
+//nolint:ireturn,revive,staticcheck // Just a POC
+func NewAzureDownloader(fms *FileManagerService) *AzureDownloader {
+	// 1. Use the Default Azure Credential chain
+	_, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		// Handle error
+	}
+
+	// Need to construct the URL for the Blob Storage service,
+	// and create the client using the credential object. (URL is required here)
+	// storageURL := "https://youraccount.blob.core.windows.net"
+
+	// client, err := container.NewClient(storageURL, cred, nil)
+
+	return &AzureDownloader{
+		fms: fms,
+	}
+}
+
+// Downloader defines the contract for downloading content from various sources.
+type Downloader interface {
+	Download(ctx context.Context, location string, fileMeta *mpi.FileMeta) (content []byte,
+		headers model.DownloadHeader, err error)
 }
 
 type (
@@ -106,6 +178,8 @@ type (
 		IsConnected() bool
 		SetIsConnected(isConnected bool)
 		ResetClient(ctx context.Context, fileServiceClient mpi.FileServiceClient)
+		Download(ctx context.Context, location string, fileMeta *mpi.FileMeta) (content []byte,
+			headers model.DownloadHeader, err error)
 	}
 )
 
@@ -119,7 +193,7 @@ type FileManagerService struct {
 	// map of the files currently on disk, used to determine the file action during config apply
 	currentFilesOnDisk    map[string]*mpi.File // key is file path
 	previousManifestFiles map[string]*model.ManifestFile
-	externalFileHeaders   map[string]DownloadHeader
+	externalFileHeaders   map[string]model.DownloadHeader
 	manifestFilePath      string
 	rollbackManifest      bool
 	filesMutex            sync.RWMutex
@@ -135,7 +209,7 @@ func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig 
 		fileActions:           make(map[string]*model.FileCache),
 		currentFilesOnDisk:    make(map[string]*mpi.File),
 		previousManifestFiles: make(map[string]*model.ManifestFile),
-		externalFileHeaders:   make(map[string]DownloadHeader),
+		externalFileHeaders:   make(map[string]model.DownloadHeader),
 		rollbackManifest:      true,
 		manifestFilePath:      agentConfig.LibDir + "/manifest.json",
 		manifestLock:          manifestLock,
@@ -507,6 +581,240 @@ func (fms *FileManagerService) UpdateManifestFile(ctx context.Context,
 	return fms.fileOperator.WriteManifestFile(ctx, updatedFiles, fms.agentConfig.LibDir, fms.manifestFilePath)
 }
 
+// ConvertToMapOfFiles converts a list of files to a map of file caches (file and action) with the file name as the key
+func ConvertToMapOfFileCache(convertFiles []*mpi.File) map[string]*model.FileCache {
+	filesMap := make(map[string]*model.FileCache)
+	for _, convertFile := range convertFiles {
+		filesMap[convertFile.GetFileMeta().GetName()] = &model.FileCache{
+			File: convertFile,
+		}
+	}
+
+	return filesMap
+}
+
+func tempFilePath(fileName string) string {
+	tempFileName := "." + filepath.Base(fileName) + ".agent.tmp"
+	return filepath.Join(filepath.Dir(fileName), tempFileName)
+}
+
+func tempBackupFilePath(fileName string) string {
+	tempFileName := "." + filepath.Base(fileName) + ".agent.backup"
+	return filepath.Join(filepath.Dir(fileName), tempFileName)
+}
+
+func NewHTTPDownloader(fms *FileManagerService) *HTTPDownloader {
+	return &HTTPDownloader{fms: fms}
+}
+
+// Download implements the Downloader interface for standard HTTP.
+// This preserves the original file downloading logic.
+func (h *HTTPDownloader) Download(
+	ctx context.Context,
+	downloadURL string,
+	fileMeta *mpi.FileMeta,
+) (content []byte, headers model.DownloadHeader, err error) {
+	fileName := fileMeta.GetName()
+	externalConfig := h.fms.agentConfig.ExternalDataSource
+
+	if !isDomainAllowed(downloadURL, externalConfig.AllowedDomains) {
+		return nil, model.DownloadHeader{}, fmt.Errorf("download URL %s is not in the allowed domains list",
+			downloadURL)
+	}
+
+	httpClient, err := h.fms.setupHTTPClient(ctx, externalConfig.ProxyURL.URL)
+	if err != nil {
+		return nil, model.DownloadHeader{}, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL, nil)
+	if err != nil {
+		return nil, model.DownloadHeader{}, fmt.Errorf("failed to create request for %s: %w", downloadURL, err)
+	}
+
+	if externalConfig.ProxyURL.URL != "" {
+		h.fms.addConditionalHeaders(ctx, req, fileName)
+	} else {
+		slog.DebugContext(ctx, "No proxy configured; sending plain HTTP request without caching headers.")
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, model.DownloadHeader{}, fmt.Errorf("failed to execute download request for %s: %w",
+			downloadURL, err)
+	}
+	defer resp.Body.Close()
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		headers.ETag = resp.Header.Get("ETag")
+		headers.LastModified = resp.Header.Get("Last-Modified")
+	case http.StatusNotModified:
+		slog.DebugContext(ctx, "File content unchanged (304 Not Modified)", "file_name", fileName)
+		return nil, model.DownloadHeader{}, nil
+	default:
+		return nil, model.DownloadHeader{}, fmt.Errorf("download failed with status code %d", resp.StatusCode)
+	}
+
+	reader := io.Reader(resp.Body)
+	if h.fms.agentConfig.ExternalDataSource.MaxBytes > 0 {
+		reader = io.LimitReader(resp.Body, h.fms.agentConfig.ExternalDataSource.MaxBytes)
+	}
+
+	content, err = io.ReadAll(reader)
+	if err != nil {
+		return nil, model.DownloadHeader{}, fmt.Errorf("failed to read content from response body: %w", err)
+	}
+
+	slog.InfoContext(ctx, "Successfully downloaded file content", "file_name", fileName, "size", len(content))
+
+	return content, headers, nil
+}
+
+func (a *AWSDownloader) Download(
+	ctx context.Context,
+	location string,
+	fileMeta *mpi.FileMeta,
+) (content []byte, headers model.DownloadHeader, err error) {
+	// --- AWS IMPLEMENTATION GOES HERE ---
+	return nil, model.DownloadHeader{}, fmt.Errorf("AWS download from %s is not yet fully implemented", location)
+}
+
+func (g *GCPDownloader) Download(
+	ctx context.Context,
+	location string,
+	fileMeta *mpi.FileMeta,
+) (content []byte, headers model.DownloadHeader, err error) {
+	// --- GCP IMPLEMENTATION GOES HERE ---
+	return nil, model.DownloadHeader{}, fmt.Errorf("GCP download from %s is not yet fully implemented", location)
+}
+
+func (az *AzureDownloader) Download(
+	ctx context.Context,
+	location string,
+	fileMeta *mpi.FileMeta,
+) (content []byte, headers model.DownloadHeader, err error) {
+	// --- AZURE IMPLEMENTATION GOES HERE ---
+	return nil, model.DownloadHeader{}, fmt.Errorf("azure download from %s is not yet fully implemented", location)
+}
+
+//nolint:ireturn // Just a POC for cloud downloaders
+func (fms *FileManagerService) GetDownloader(location string) Downloader {
+	u, err := url.Parse(location)
+	if err != nil {
+		// Fallback to HTTP if parsing fails
+		return NewHTTPDownloader(fms)
+	}
+
+	// Check for specific cloud schemes (s3://, gs://)
+	switch u.Scheme {
+	case "s3":
+		return NewAWSDownloader(fms) // <--- AWS S3 Implementation Trigger
+	case "gs":
+		return NewGCPDownloader(fms) // <--- GCP Cloud Storage Implementation Trigger
+	}
+
+	// Check for specific cloud domains (Secrets Manager, Key Vault, etc.)
+	hostname := u.Hostname()
+
+	// AWS Secret/Service URLs
+	if strings.Contains(hostname, "amazonaws.com") {
+		return NewAWSDownloader(fms) // <--- AWS Secrets Manager/Service Implementation Trigger
+	}
+
+	// Azure Key Vault/Service URLs
+	if strings.Contains(hostname, ".vault.azure.net") || strings.Contains(hostname, ".blob.core.windows.net") {
+		return NewAzureDownloader(fms) // <--- Azure Key Vault/Blob Implementation Trigger
+	}
+
+	// GCP Secrets Manager/Service URLs
+	if strings.Contains(hostname, "googleapis.com") {
+		return NewGCPDownloader(fms) // <--- GCP Secret Manager/Service Implementation Trigger
+	}
+
+	// Default to standard HTTP/HTTPS download if no cloud provider matches
+	return NewHTTPDownloader(fms)
+}
+
+func (fms *FileManagerService) Download(
+	ctx context.Context,
+	location string,
+	fileMeta *mpi.FileMeta,
+) (content []byte, headers model.DownloadHeader, err error) {
+	// Created a temporary mpi.File structure to satisfy the Downloader interface
+	tempFile := &mpi.File{
+		FileMeta: fileMeta,
+		ExternalDataSource: &mpi.ExternalDataSource{
+			Location: location,
+		},
+	}
+
+	return fms.downloadFileContent(ctx, tempFile)
+}
+
+// downloadFileContent performs an HTTP GET request to the given URL and returns the file content as a byte slice.
+func (fms *FileManagerService) downloadFileContent(
+	ctx context.Context,
+	file *mpi.File,
+) (content []byte, headers model.DownloadHeader, err error) {
+	fileName := file.GetFileMeta().GetName()
+	downloadURL := file.GetExternalDataSource().GetLocation()
+	externalConfig := fms.agentConfig.ExternalDataSource
+
+	if !isDomainAllowed(downloadURL, externalConfig.AllowedDomains) {
+		return nil, model.DownloadHeader{}, fmt.Errorf("download URL %s is not in the allowed domains list",
+			downloadURL)
+	}
+
+	httpClient, err := fms.setupHTTPClient(ctx, externalConfig.ProxyURL.URL)
+	if err != nil {
+		return nil, model.DownloadHeader{}, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL, nil)
+	if err != nil {
+		return nil, model.DownloadHeader{}, fmt.Errorf("failed to create request for %s: %w", downloadURL, err)
+	}
+
+	if externalConfig.ProxyURL.URL != "" {
+		fms.addConditionalHeaders(ctx, req, fileName)
+	} else {
+		slog.DebugContext(ctx, "No proxy configured; sending plain HTTP request without caching headers.")
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, model.DownloadHeader{}, fmt.Errorf("failed to execute download request for %s: %w",
+			downloadURL, err)
+	}
+	defer resp.Body.Close()
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		headers.ETag = resp.Header.Get("ETag")
+		headers.LastModified = resp.Header.Get("Last-Modified")
+	case http.StatusNotModified:
+		slog.DebugContext(ctx, "File content unchanged (304 Not Modified)", "file_name", fileName)
+		return nil, model.DownloadHeader{}, nil
+	default:
+		return nil, model.DownloadHeader{}, fmt.Errorf("download failed with status code %d", resp.StatusCode)
+	}
+
+	reader := io.Reader(resp.Body)
+	if fms.agentConfig.ExternalDataSource.MaxBytes > 0 {
+		reader = io.LimitReader(resp.Body, fms.agentConfig.ExternalDataSource.MaxBytes)
+	}
+
+	content, err = io.ReadAll(reader)
+	if err != nil {
+		return nil, model.DownloadHeader{}, fmt.Errorf("failed to read content from response body: %w", err)
+	}
+
+	slog.InfoContext(ctx, "Successfully downloaded file content", "file_name", fileName, "size", len(content))
+
+	return content, headers, nil
+}
+
 func (fms *FileManagerService) backupFiles(ctx context.Context) error {
 	for _, file := range fms.fileActions {
 		if file.Action == model.Add || file.Action == model.Unchanged {
@@ -652,13 +960,13 @@ actionsLoop:
 	for _, fileAction := range fms.fileActions {
 		var err error
 		fileMeta := fileAction.File.GetFileMeta()
-		tempFilePath := tempFilePath(fileAction.File.GetFileMeta().GetName())
+		tempFilePath := tempFilePath(fileMeta.GetName())
 		switch fileAction.Action {
 		case model.Delete:
-			slog.DebugContext(ctx, "Deleting file", "file", fileAction.File.GetFileMeta().GetName())
-			if err = os.Remove(fileAction.File.GetFileMeta().GetName()); err != nil && !os.IsNotExist(err) {
+			slog.DebugContext(ctx, "Deleting file", "file", fileMeta.GetName())
+			if err = os.Remove(fileMeta.GetName()); err != nil && !os.IsNotExist(err) {
 				actionError = fmt.Errorf("error deleting file: %s error: %w",
-					fileAction.File.GetFileMeta().GetName(), err)
+					fileMeta.GetName(), err)
 
 				break actionsLoop
 			}
@@ -814,28 +1122,7 @@ func (fms *FileManagerService) convertToFile(manifestFile *model.ManifestFile) *
 	}
 }
 
-// ConvertToMapOfFiles converts a list of files to a map of file caches (file and action) with the file name as the key
-func ConvertToMapOfFileCache(convertFiles []*mpi.File) map[string]*model.FileCache {
-	filesMap := make(map[string]*model.FileCache)
-	for _, convertFile := range convertFiles {
-		filesMap[convertFile.GetFileMeta().GetName()] = &model.FileCache{
-			File: convertFile,
-		}
-	}
-
-	return filesMap
-}
-
-func tempFilePath(fileName string) string {
-	tempFileName := "." + filepath.Base(fileName) + ".agent.tmp"
-	return filepath.Join(filepath.Dir(fileName), tempFileName)
-}
-
-func tempBackupFilePath(fileName string) string {
-	tempFileName := "." + filepath.Base(fileName) + ".agent.backup"
-	return filepath.Join(filepath.Dir(fileName), tempFileName)
-}
-
+//nolint:ireturn // Just a POC
 func (fms *FileManagerService) downloadExternalFile(ctx context.Context, fileAction *model.FileCache,
 	filePath string,
 ) error {
@@ -846,7 +1133,7 @@ func (fms *FileManagerService) downloadExternalFile(ctx context.Context, fileAct
 
 	var contentToWrite []byte
 	var downloadErr, updateError error
-	var headers DownloadHeader
+	var headers model.DownloadHeader
 
 	contentToWrite, headers, downloadErr = fms.downloadFileContent(ctx, fileAction.File)
 
@@ -881,67 +1168,6 @@ func (fms *FileManagerService) downloadExternalFile(ctx context.Context, fileAct
 	}
 
 	return nil
-}
-
-// downloadFileContent performs an HTTP GET request to the given URL and returns the file content as a byte slice.
-func (fms *FileManagerService) downloadFileContent(
-	ctx context.Context,
-	file *mpi.File,
-) (content []byte, headers DownloadHeader, err error) {
-	fileName := file.GetFileMeta().GetName()
-	downloadURL := file.GetExternalDataSource().GetLocation()
-	externalConfig := fms.agentConfig.ExternalDataSource
-
-	if !isDomainAllowed(downloadURL, externalConfig.AllowedDomains) {
-		return nil, DownloadHeader{}, fmt.Errorf("download URL %s is not in the allowed domains list", downloadURL)
-	}
-
-	httpClient, err := fms.setupHTTPClient(ctx, externalConfig.ProxyURL.URL)
-	if err != nil {
-		return nil, DownloadHeader{}, err
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL, nil)
-	if err != nil {
-		return nil, DownloadHeader{}, fmt.Errorf("failed to create request for %s: %w", downloadURL, err)
-	}
-
-	if externalConfig.ProxyURL.URL != "" {
-		fms.addConditionalHeaders(ctx, req, fileName)
-	} else {
-		slog.DebugContext(ctx, "No proxy configured; sending plain HTTP request without caching headers.")
-	}
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return nil, DownloadHeader{}, fmt.Errorf("failed to execute download request for %s: %w", downloadURL, err)
-	}
-	defer resp.Body.Close()
-
-	switch resp.StatusCode {
-	case http.StatusOK:
-		headers.ETag = resp.Header.Get("ETag")
-		headers.LastModified = resp.Header.Get("Last-Modified")
-	case http.StatusNotModified:
-		slog.DebugContext(ctx, "File content unchanged (304 Not Modified)", "file_name", fileName)
-		return nil, DownloadHeader{}, nil
-	default:
-		return nil, DownloadHeader{}, fmt.Errorf("download failed with status code %d", resp.StatusCode)
-	}
-
-	reader := io.Reader(resp.Body)
-	if fms.agentConfig.ExternalDataSource.MaxBytes > 0 {
-		reader = io.LimitReader(resp.Body, fms.agentConfig.ExternalDataSource.MaxBytes)
-	}
-
-	content, err = io.ReadAll(reader)
-	if err != nil {
-		return nil, DownloadHeader{}, fmt.Errorf("failed to read content from response body: %w", err)
-	}
-
-	slog.InfoContext(ctx, "Successfully downloaded file content", "file_name", fileName, "size", len(content))
-
-	return content, headers, nil
 }
 
 func isDomainAllowed(downloadURL string, allowedDomains []string) bool {

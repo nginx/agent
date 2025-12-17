@@ -61,6 +61,23 @@ type FakeFileManagerServiceInterface struct {
 		result1 map[string]*model.FileCache
 		result2 error
 	}
+	DownloadStub        func(context.Context, string, *v1.FileMeta) ([]byte, model.DownloadHeader, error)
+	downloadMutex       sync.RWMutex
+	downloadArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 *v1.FileMeta
+	}
+	downloadReturns struct {
+		result1 []byte
+		result2 model.DownloadHeader
+		result3 error
+	}
+	downloadReturnsOnCall map[int]struct {
+		result1 []byte
+		result2 model.DownloadHeader
+		result3 error
+	}
 	IsConnectedStub        func() bool
 	isConnectedMutex       sync.RWMutex
 	isConnectedArgsForCall []struct {
@@ -361,6 +378,75 @@ func (fake *FakeFileManagerServiceInterface) DetermineFileActionsReturnsOnCall(i
 	}{result1, result2}
 }
 
+func (fake *FakeFileManagerServiceInterface) Download(arg1 context.Context, arg2 string, arg3 *v1.FileMeta) ([]byte, model.DownloadHeader, error) {
+	fake.downloadMutex.Lock()
+	ret, specificReturn := fake.downloadReturnsOnCall[len(fake.downloadArgsForCall)]
+	fake.downloadArgsForCall = append(fake.downloadArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 *v1.FileMeta
+	}{arg1, arg2, arg3})
+	stub := fake.DownloadStub
+	fakeReturns := fake.downloadReturns
+	fake.recordInvocation("Download", []interface{}{arg1, arg2, arg3})
+	fake.downloadMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2, ret.result3
+	}
+	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
+}
+
+func (fake *FakeFileManagerServiceInterface) DownloadCallCount() int {
+	fake.downloadMutex.RLock()
+	defer fake.downloadMutex.RUnlock()
+	return len(fake.downloadArgsForCall)
+}
+
+func (fake *FakeFileManagerServiceInterface) DownloadCalls(stub func(context.Context, string, *v1.FileMeta) ([]byte, model.DownloadHeader, error)) {
+	fake.downloadMutex.Lock()
+	defer fake.downloadMutex.Unlock()
+	fake.DownloadStub = stub
+}
+
+func (fake *FakeFileManagerServiceInterface) DownloadArgsForCall(i int) (context.Context, string, *v1.FileMeta) {
+	fake.downloadMutex.RLock()
+	defer fake.downloadMutex.RUnlock()
+	argsForCall := fake.downloadArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeFileManagerServiceInterface) DownloadReturns(result1 []byte, result2 model.DownloadHeader, result3 error) {
+	fake.downloadMutex.Lock()
+	defer fake.downloadMutex.Unlock()
+	fake.DownloadStub = nil
+	fake.downloadReturns = struct {
+		result1 []byte
+		result2 model.DownloadHeader
+		result3 error
+	}{result1, result2, result3}
+}
+
+func (fake *FakeFileManagerServiceInterface) DownloadReturnsOnCall(i int, result1 []byte, result2 model.DownloadHeader, result3 error) {
+	fake.downloadMutex.Lock()
+	defer fake.downloadMutex.Unlock()
+	fake.DownloadStub = nil
+	if fake.downloadReturnsOnCall == nil {
+		fake.downloadReturnsOnCall = make(map[int]struct {
+			result1 []byte
+			result2 model.DownloadHeader
+			result3 error
+		})
+	}
+	fake.downloadReturnsOnCall[i] = struct {
+		result1 []byte
+		result2 model.DownloadHeader
+		result3 error
+	}{result1, result2, result3}
+}
+
 func (fake *FakeFileManagerServiceInterface) IsConnected() bool {
 	fake.isConnectedMutex.Lock()
 	ret, specificReturn := fake.isConnectedReturnsOnCall[len(fake.isConnectedArgsForCall)]
@@ -617,6 +703,8 @@ func (fake *FakeFileManagerServiceInterface) Invocations() map[string][][]interf
 	defer fake.configUploadMutex.RUnlock()
 	fake.determineFileActionsMutex.RLock()
 	defer fake.determineFileActionsMutex.RUnlock()
+	fake.downloadMutex.RLock()
+	defer fake.downloadMutex.RUnlock()
 	fake.isConnectedMutex.RLock()
 	defer fake.isConnectedMutex.RUnlock()
 	fake.resetClientMutex.RLock()

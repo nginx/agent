@@ -21,3 +21,8 @@ const (
 	Unchanged
 	ExternalFile
 )
+
+type DownloadHeader struct {
+	ETag         string
+	LastModified string
+}
