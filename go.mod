@@ -9,7 +9,6 @@ require (
 	buf.build/go/protovalidate v1.0.0
 	cloud.google.com/go/storage v1.58.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.13.0
-	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.6.3
 	github.com/aws/aws-sdk-go-v2/config v1.31.15
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.94.0
 	github.com/cenkalti/backoff/v4 v4.3.0
