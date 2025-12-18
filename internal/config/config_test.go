@@ -1209,6 +1209,7 @@ func createConfig() *Config {
 					RandomizationFactor: 1.5,
 					Multiplier:          1.5,
 				},
+				MaxAccessLogFiles: 5,
 			},
 		},
 		Collector: &Collector{
