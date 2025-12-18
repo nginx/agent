@@ -379,7 +379,7 @@ require (
 	github.com/nginxinc/nginx-go-crossplane v0.4.84
 	github.com/prometheus/client_golang v1.23.2 // indirect
 	github.com/samber/slog-gin v1.17.2
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	github.com/vardius/message-bus v1.1.5
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.38.0 // indirect
