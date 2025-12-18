@@ -52,10 +52,6 @@ type ManifestFileMeta struct {
 	Referenced bool `json:"referenced"`
 	// File is not managed by the agent
 	Unmanaged bool `json:"unmanaged"`
-	// ETag of the 3rd Party external file
-	ETag string `json:"etag"`
-	// Last modified time of the 3rd Party external file
-	LastModified string `json:"last_modified"`
 }
 type ConfigApplyMessage struct {
 	Error         error

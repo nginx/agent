@@ -48,6 +48,8 @@ const (
 	executePerm = 0o111
 )
 
+const fileDownloadTimeout = 60 * time.Second
+
 type DownloadHeader struct {
 	ETag         string
 	LastModified string
