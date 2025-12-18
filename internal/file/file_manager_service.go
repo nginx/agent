@@ -633,7 +633,7 @@ func (fms *FileManagerService) downloadUpdatedFilesToTempLocation(ctx context.Co
 	}
 
 	if len(downloadFiles) == 0 {
-		slog.InfoContext(ctx, "No files are required to be downloaded")
+		slog.InfoContext(ctx, "No files require downloading")
 		return nil
 	}
 
