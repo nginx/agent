@@ -1161,6 +1161,7 @@ func agentConfig() *Config {
 	}
 }
 
+//nolint:maintidx // createConfig creates a sample Config object for testing purposes.
 func createConfig() *Config {
 	return &Config{
 		Log: &Log{
