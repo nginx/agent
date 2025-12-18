@@ -686,7 +686,7 @@ actionsLoop:
 	for _, fileAction := range fms.fileActions {
 		var err error
 		fileMeta := fileAction.File.GetFileMeta()
-		tempFilePath := tempFilePath(fileAction.File.GetFileMeta().GetName())
+		tempFilePath := tempFilePath(fileMeta.GetName())
 		switch fileAction.Action {
 		case model.Delete:
 			slog.DebugContext(ctx, "Deleting file", "file", fileMeta.GetName())
