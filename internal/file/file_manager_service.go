@@ -20,7 +20,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
@@ -47,8 +46,6 @@ const (
 	filePerm    = 0o600
 	executePerm = 0o111
 )
-
-const fileDownloadTimeout = 60 * time.Second
 
 type DownloadHeader struct {
 	ETag         string
@@ -416,6 +413,7 @@ func (fms *FileManagerService) DetermineFileActions(
 			slog.DebugContext(ctx, "External file detected - flagging for fetch", "file_name", fileName)
 			modifiedFile.Action = model.ExternalFile
 			fileDiff[fileName] = modifiedFile
+
 			continue
 		}
 
@@ -644,7 +642,8 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) (actionEr
 func (fms *FileManagerService) downloadUpdatedFilesToTempLocation(ctx context.Context) (updateError error) {
 	var downloadFiles []*model.FileCache
 	for _, fileAction := range fms.fileActions {
-		if fileAction.Action == model.Add || fileAction.Action == model.Update || fileAction.Action == model.ExternalFile {
+		if fileAction.Action == model.Add || fileAction.Action == model.Update ||
+			fileAction.Action == model.ExternalFile {
 			downloadFiles = append(downloadFiles, fileAction)
 		}
 	}

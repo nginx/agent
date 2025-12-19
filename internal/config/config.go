@@ -665,12 +665,6 @@ func registerClientFlags(fs *flag.FlagSet) {
 		"Duration to wait for a response before retrying request",
 	)
 
-	fs.Duration(
-		ClientGRPCResponseTimeoutKey,
-		DefResponseTimeout,
-		"Duration to wait for a response before retrying request",
-	)
-
 	fs.Int(
 		ClientGRPCMaxParallelFileOperationsKey,
 		DefMaxParallelFileOperations,
