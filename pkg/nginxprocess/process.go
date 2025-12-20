@@ -18,13 +18,13 @@ import (
 type Process struct {
 	// Created is when this process was created, precision varies by platform and is at best to the millisecond. On
 	// linux there can be significant skew compared to [time.Now], ± 1s.
-	Created time.Time
-	Name    string
-	Cmd     string
-	Exe     string // path to the executable
-	Status  string // process status, only present if this process was created using [WithStatus]
-	PID     int32
-	PPID    int32 // parent PID
+	Created time.Time `json:"created"`
+	Name    string    `json:"name"`
+	Cmd     string    `json:"cmd"`
+	Exe     string    `json:"exe"`    // path to the executable
+	Status  string    `json:"status"` // process status, only present if this process was created using [WithStatus]
+	PID     int32     `json:"pid"`
+	PPID    int32     `json:"ppid"` // parent PID
 }
 
 // IsWorker returns true if the process is a NGINX worker process.
@@ -48,6 +48,11 @@ func (p *Process) IsShuttingDown() bool { return strings.Contains(p.Cmd, "is shu
 // IsHealthy uses Status flags to judge process health. Only works on processes created using [WithStatus].
 func (p *Process) IsHealthy() bool {
 	return p.Status != "" && !strings.Contains(p.Status, process.Zombie)
+}
+
+func (p *Process) Equal(b *Process) bool {
+	return p.PID == b.PID && p.Name == b.Name && p.PPID == b.PPID && p.Cmd == b.Cmd &&
+		p.Exe == b.Exe && p.Created.Equal(b.Created) && p.Status == b.Status
 }
 
 type options struct {

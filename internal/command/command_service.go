@@ -524,7 +524,7 @@ func (cs *CommandService) handleSubscribeError(ctx context.Context, err error, e
 		return nil
 	}
 
-	slog.ErrorContext(ctx, "Failed to"+errorMsg, "error", err)
+	slog.ErrorContext(ctx, "Failed to "+errorMsg, "error", err)
 
 	return err
 }

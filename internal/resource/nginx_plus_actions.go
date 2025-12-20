@@ -21,82 +21,138 @@ type APIAction struct {
 	ResourceService resourceServiceInterface
 }
 
-func (a *APIAction) HandleUpdateStreamServersRequest(ctx context.Context, action *mpi.NGINXPlusAction,
-	instance *mpi.Instance,
-) *mpi.DataPlaneResponse {
-	correlationID := logger.CorrelationID(ctx)
-	instanceID := instance.GetInstanceMeta().GetInstanceId()
-
-	add, update, del, err := a.ResourceService.UpdateStreamServers(ctx, instance,
-		action.GetUpdateStreamServers().GetUpstreamStreamName(), action.GetUpdateStreamServers().GetServers())
-	if err != nil {
-		slog.ErrorContext(ctx, "Unable to update stream servers of upstream", "request",
-			action.GetUpdateHttpUpstreamServers(), "error", err)
-
-		return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-			"", instanceID, err.Error())
-	}
-
-	slog.DebugContext(ctx, "Successfully updated stream upstream servers", "http_upstream_name",
-		action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(), "add", len(add), "update", len(update),
-		"delete", len(del))
-
-	return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
-		"Successfully updated stream upstream servers", instanceID, "")
-}
-
 func (a *APIAction) HandleGetStreamUpstreamsRequest(ctx context.Context,
 	instance *mpi.Instance,
 ) *mpi.DataPlaneResponse {
-	correlationID := logger.CorrelationID(ctx)
-	instanceID := instance.GetInstanceMeta().GetInstanceId()
-	streamUpstreamsResponse := emptyResponse
-
-	streamUpstreams, err := a.ResourceService.GetStreamUpstreams(ctx, instance)
-	if err != nil {
-		slog.ErrorContext(ctx, "Unable to get stream upstreams", "error", err)
-		return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-			"", instanceID, err.Error())
-	}
-
-	if streamUpstreams != nil {
-		streamUpstreamsJSON, jsonErr := json.Marshal(streamUpstreams)
-		if jsonErr != nil {
-			slog.ErrorContext(ctx, "Unable to marshal stream upstreams", "err", err)
-		}
-		streamUpstreamsResponse = string(streamUpstreamsJSON)
-	}
-
-	return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
-		streamUpstreamsResponse, instanceID, "")
+	return a.handleUpstreamGetRequest(
+		ctx,
+		instance,
+		func(ctx context.Context, instance *mpi.Instance) (interface{}, error) {
+			return a.ResourceService.GetStreamUpstreams(ctx, instance)
+		},
+		"Unable to get stream upstreams",
+	)
 }
 
 func (a *APIAction) HandleGetUpstreamsRequest(ctx context.Context, instance *mpi.Instance) *mpi.DataPlaneResponse {
+	return a.handleUpstreamGetRequest(
+		ctx,
+		instance,
+		func(ctx context.Context, instance *mpi.Instance) (interface{}, error) {
+			return a.ResourceService.GetUpstreams(ctx, instance)
+		},
+		"Unable to get upstreams",
+	)
+}
+
+func (a *APIAction) HandleGetHTTPUpstreamsServersRequest(
+	ctx context.Context,
+	action *mpi.NGINXPlusAction,
+	instance *mpi.Instance,
+) *mpi.DataPlaneResponse {
 	correlationID := logger.CorrelationID(ctx)
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
 	upstreamsResponse := emptyResponse
 
-	upstreams, err := a.ResourceService.GetUpstreams(ctx, instance)
+	upstreams, err := a.ResourceService.GetHTTPUpstreamServers(
+		ctx,
+		instance,
+		action.GetGetHttpUpstreamServers().GetHttpUpstreamName(),
+	)
 	if err != nil {
-		slog.InfoContext(ctx, "Unable to get upstreams", "error", err)
-
-		return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-			"", instanceID, err.Error())
+		slog.ErrorContext(ctx, "Unable to get HTTP servers of upstream", "error", err)
+		return response.CreateDataPlaneResponse(
+			correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "",
+				Error:   err.Error(),
+			},
+			mpi.DataPlaneResponse_API_ACTION_REQUEST,
+			instanceID,
+		)
 	}
 
 	if upstreams != nil {
 		upstreamsJSON, jsonErr := json.Marshal(upstreams)
 		if jsonErr != nil {
-			slog.ErrorContext(ctx, "Unable to marshal upstreams", "err", err)
+			slog.ErrorContext(ctx, "Unable to marshal http upstreams", "error", jsonErr)
 		}
 		upstreamsResponse = string(upstreamsJSON)
 	}
 
-	return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
-		upstreamsResponse, instanceID, "")
+	return response.CreateDataPlaneResponse(
+		correlationID,
+		&mpi.CommandResponse{
+			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+			Message: upstreamsResponse,
+			Error:   "",
+		},
+		mpi.DataPlaneResponse_API_ACTION_REQUEST,
+		instanceID,
+	)
 }
 
-func (a *APIAction) HandleUpdateHTTPUpstreamsRequest(ctx context.Context, action *mpi.NGINXPlusAction,
+//nolint:dupl // Having common code duplicated for clarity and ease of maintenance
+func (a *APIAction) HandleUpdateStreamServersRequest(
+	ctx context.Context,
+	action *mpi.NGINXPlusAction,
+	instance *mpi.Instance,
+) *mpi.DataPlaneResponse {
+	correlationID := logger.CorrelationID(ctx)
+	instanceID := instance.GetInstanceMeta().GetInstanceId()
+
+	add, update, del, err := a.ResourceService.UpdateStreamServers(
+		ctx,
+		instance,
+		action.GetUpdateStreamServers().GetUpstreamStreamName(),
+		action.GetUpdateStreamServers().GetServers(),
+	)
+	if err != nil {
+		slog.ErrorContext(
+			ctx,
+			"Unable to update stream servers of upstream",
+			"request", action.GetUpdateStreamServers(),
+			"error", err,
+		)
+
+		return response.CreateDataPlaneResponse(
+			correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "",
+				Error:   err.Error(),
+			},
+			mpi.DataPlaneResponse_API_ACTION_REQUEST,
+			instanceID,
+		)
+	}
+
+	slog.DebugContext(
+		ctx,
+		"Successfully updated stream upstream servers",
+		"http_upstream_name", action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(),
+		"add", len(add),
+		"update", len(update),
+		"delete", len(del),
+	)
+
+	return response.CreateDataPlaneResponse(
+		correlationID,
+		&mpi.CommandResponse{
+			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+			Message: "Successfully updated stream upstream servers",
+			Error:   "",
+		},
+		mpi.DataPlaneResponse_API_ACTION_REQUEST,
+		instanceID,
+	)
+}
+
+//nolint:dupl // Having common code duplicated for clarity and ease of maintenance
+func (a *APIAction) HandleUpdateHTTPUpstreamsRequest(
+	ctx context.Context,
+	action *mpi.NGINXPlusAction,
 	instance *mpi.Instance,
 ) *mpi.DataPlaneResponse {
 	correlationID := logger.CorrelationID(ctx)
@@ -106,44 +162,88 @@ func (a *APIAction) HandleUpdateHTTPUpstreamsRequest(ctx context.Context, action
 		action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(),
 		action.GetUpdateHttpUpstreamServers().GetServers())
 	if err != nil {
-		slog.ErrorContext(ctx, "Unable to update HTTP servers of upstream", "request",
-			action.GetUpdateHttpUpstreamServers(), "error", err)
+		slog.ErrorContext(
+			ctx,
+			"Unable to update HTTP servers of upstream",
+			"request", action.GetUpdateHttpUpstreamServers(),
+			"error", err,
+		)
 
-		return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-			"", instanceID, err.Error())
+		return response.CreateDataPlaneResponse(
+			correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "",
+				Error:   err.Error(),
+			},
+			mpi.DataPlaneResponse_API_ACTION_REQUEST,
+			instanceID,
+		)
 	}
 
-	slog.DebugContext(ctx, "Successfully updated http upstream servers", "http_upstream_name",
-		action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(), "add", len(add), "update", len(update),
-		"delete", len(del))
+	slog.DebugContext(
+		ctx,
+		"Successfully updated http upstream servers",
+		"http_upstream_name", action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(),
+		"add", len(add),
+		"update", len(update),
+		"delete", len(del),
+	)
 
-	return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
-		"Successfully updated HTTP Upstreams", instanceID, "")
+	return response.CreateDataPlaneResponse(
+		correlationID,
+		&mpi.CommandResponse{
+			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+			Message: "Successfully updated HTTP Upstreams",
+			Error:   "",
+		},
+		mpi.DataPlaneResponse_API_ACTION_REQUEST,
+		instanceID,
+	)
 }
 
-func (a *APIAction) HandleGetHTTPUpstreamsServersRequest(ctx context.Context, action *mpi.NGINXPlusAction,
+// handleUpstreamGetRequest is a generic helper function to handle GET requests for API actions
+func (a *APIAction) handleUpstreamGetRequest(
+	ctx context.Context,
 	instance *mpi.Instance,
+	getData func(context.Context, *mpi.Instance) (interface{}, error),
+	errorMsg string,
 ) *mpi.DataPlaneResponse {
 	correlationID := logger.CorrelationID(ctx)
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
-	upstreamsResponse := emptyResponse
+	jsonResponse := emptyResponse
 
-	upstreams, err := a.ResourceService.GetHTTPUpstreamServers(ctx, instance,
-		action.GetGetHttpUpstreamServers().GetHttpUpstreamName())
+	data, err := getData(ctx, instance)
 	if err != nil {
-		slog.ErrorContext(ctx, "Unable to get HTTP servers of upstream", "error", err)
-		return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-			"", instanceID, err.Error())
+		slog.ErrorContext(ctx, errorMsg, "error", err)
+		return response.CreateDataPlaneResponse(
+			correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "",
+				Error:   err.Error(),
+			},
+			mpi.DataPlaneResponse_API_ACTION_REQUEST,
+			instanceID,
+		)
 	}
 
-	if upstreams != nil {
-		upstreamsJSON, jsonErr := json.Marshal(upstreams)
+	if data != nil {
+		dataJSON, jsonErr := json.Marshal(data)
 		if jsonErr != nil {
-			slog.ErrorContext(ctx, "Unable to marshal http upstreams", "err", err)
+			slog.ErrorContext(ctx, "Unable to marshal data", "error", jsonErr)
 		}
-		upstreamsResponse = string(upstreamsJSON)
+		jsonResponse = string(dataJSON)
 	}
 
-	return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
-		upstreamsResponse, instanceID, "")
+	return response.CreateDataPlaneResponse(
+		correlationID,
+		&mpi.CommandResponse{
+			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+			Message: jsonResponse,
+			Error:   "",
+		},
+		mpi.DataPlaneResponse_API_ACTION_REQUEST,
+		instanceID,
+	)
 }

@@ -11,8 +11,11 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func CreateDataPlaneResponse(correlationID string, status mpi.CommandResponse_CommandStatus,
-	message, instanceID, err string,
+func CreateDataPlaneResponse(
+	correlationID string,
+	commandResponse *mpi.CommandResponse,
+	requestType mpi.DataPlaneResponse_RequestType,
+	instanceID string,
 ) *mpi.DataPlaneResponse {
 	return &mpi.DataPlaneResponse{
 		MessageMeta: &mpi.MessageMeta{
@@ -20,11 +23,8 @@ func CreateDataPlaneResponse(correlationID string, status mpi.CommandResponse_Co
 			CorrelationId: correlationID,
 			Timestamp:     timestamppb.Now(),
 		},
-		CommandResponse: &mpi.CommandResponse{
-			Status:  status,
-			Message: message,
-			Error:   err,
-		},
-		InstanceId: instanceID,
+		CommandResponse: commandResponse,
+		InstanceId:      instanceID,
+		RequestType:     requestType,
 	}
 }

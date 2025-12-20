@@ -85,6 +85,7 @@
     - [UpdateHTTPUpstreamServers](#mpi-v1-UpdateHTTPUpstreamServers)
     - [UpdateStreamServers](#mpi-v1-UpdateStreamServers)
   
+    - [DataPlaneResponse.RequestType](#mpi-v1-DataPlaneResponse-RequestType)
     - [InstanceHealth.InstanceHealthStatus](#mpi-v1-InstanceHealth-InstanceHealthStatus)
     - [InstanceMeta.InstanceType](#mpi-v1-InstanceMeta-InstanceType)
     - [Log.LogLevel](#mpi-v1-Log-LogLevel)
@@ -862,6 +863,7 @@ Reports the status of an associated command. This may be in response to a Manage
 | message_meta | [MessageMeta](#mpi-v1-MessageMeta) |  | Meta-information associated with a message |
 | command_response | [CommandResponse](#mpi-v1-CommandResponse) |  | The command response with the associated request |
 | instance_id | [string](#string) |  | The instance identifier, if applicable, for this response |
+| request_type | [DataPlaneResponse.RequestType](#mpi-v1-DataPlaneResponse-RequestType) |  | The management plane request type that is being responded to |
 
 
 
@@ -1324,6 +1326,24 @@ Update Upstream Stream Servers for an instance
 
 
  
+
+
+<a name="mpi-v1-DataPlaneResponse-RequestType"></a>
+
+### DataPlaneResponse.RequestType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| UNSPECIFIED_REQUEST | 0 |  |
+| CONFIG_APPLY_REQUEST | 1 |  |
+| CONFIG_UPLOAD_REQUEST | 2 |  |
+| HEALTH_REQUEST | 3 |  |
+| STATUS_REQUEST | 4 |  |
+| API_ACTION_REQUEST | 5 |  |
+| COMMAND_STATUS_REQUEST | 6 |  |
+| UPDATE_AGENT_CONFIG_REQUEST | 7 |  |
+
 
 
 <a name="mpi-v1-InstanceHealth-InstanceHealthStatus"></a>

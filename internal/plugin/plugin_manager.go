@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"sync"
 
+	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/internal/model"
 
 	pkg "github.com/nginx/agent/v3/pkg/config"
@@ -50,9 +51,14 @@ func addCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin, agentCo
 	manifestLock *sync.RWMutex,
 ) []bus.Plugin {
 	if agentConfig.IsCommandGrpcClientConfigured() {
-		grpcConnection, err := grpc.NewGrpcConnection(ctx, agentConfig, agentConfig.Command)
+		newCtx := context.WithValue(
+			ctx,
+			logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey, model.Command),
+		)
+
+		grpcConnection, err := grpc.NewGrpcConnection(newCtx, agentConfig, agentConfig.Command)
 		if err != nil {
-			slog.WarnContext(ctx, "Failed to create gRPC connection for command server", "error", err)
+			slog.WarnContext(newCtx, "Failed to create gRPC connection for command server", "error", err)
 		} else {
 			commandPlugin := command.NewCommandPlugin(agentConfig, grpcConnection, model.Command)
 			plugins = append(plugins, commandPlugin)
@@ -71,9 +77,14 @@ func addAuxiliaryCommandAndFilePlugins(ctx context.Context, plugins []bus.Plugin
 	agentConfig *config.Config, manifestLock *sync.RWMutex,
 ) []bus.Plugin {
 	if agentConfig.IsAuxiliaryCommandGrpcClientConfigured() {
-		auxGRPCConnection, err := grpc.NewGrpcConnection(ctx, agentConfig, agentConfig.AuxiliaryCommand)
+		newCtx := context.WithValue(
+			ctx,
+			logger.ServerTypeContextKey, slog.Any(logger.ServerTypeKey, model.Auxiliary),
+		)
+
+		auxGRPCConnection, err := grpc.NewGrpcConnection(newCtx, agentConfig, agentConfig.AuxiliaryCommand)
 		if err != nil {
-			slog.WarnContext(ctx, "Failed to create gRPC connection for auxiliary command server", "error", err)
+			slog.WarnContext(newCtx, "Failed to create gRPC connection for auxiliary command server", "error", err)
 		} else {
 			auxCommandPlugin := command.NewCommandPlugin(agentConfig, auxGRPCConnection, model.Auxiliary)
 			plugins = append(plugins, auxCommandPlugin)

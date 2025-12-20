@@ -83,7 +83,7 @@ func NewGrpcConnection(ctx context.Context, agentConfig *config.Config,
 
 	serverAddr := serverAddress(ctx, commandConfig)
 
-	slog.InfoContext(ctx, "Dialing grpc server", "server_addr", serverAddr)
+	slog.InfoContext(ctx, "Creating connection to management plane server", "server_address", serverAddr)
 
 	var err error
 	info := host.NewInfo()
@@ -217,7 +217,12 @@ func DialOptions(agentConfig *config.Config, commandConfig *config.Command, reso
 	// Proxy support: If proxy config exists, use HTTP CONNECT dialer
 	if commandConfig.Server.Proxy != nil && commandConfig.Server.Proxy.URL != "" {
 		opts = append(opts, grpc.WithContextDialer(func(ctx context.Context, addr string) (net.Conn, error) {
-			slog.InfoContext(ctx, "Dialing grpc server via proxy")
+			slog.InfoContext(
+				ctx,
+				"Creating connection to management plane server via proxy",
+				"proxy_url", commandConfig.Server.Proxy.URL,
+			)
+
 			return DialViaHTTPProxy(ctx, commandConfig.Server.Proxy, addr)
 		}))
 	}

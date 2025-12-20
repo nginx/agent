@@ -206,8 +206,13 @@ func (p *MessagePipe) Reconfigure(ctx context.Context, agentConfig *mpi.AgentCon
 
 		// If the agent update was received from a create connection request no data plane response needs to be sent
 		if topic == AgentConfigUpdateTopic {
-			response := p.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-				"Failed to update agent config", reconfigureError.Error())
+			response := p.createDataPlaneResponse(
+				correlationID,
+				mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				mpi.DataPlaneResponse_UPDATE_AGENT_CONFIG_REQUEST,
+				"Failed to update agent config",
+				reconfigureError.Error(),
+			)
 			p.bus.Publish(DataPlaneResponseTopic, ctx, &Message{Topic: DataPlaneResponseTopic, Data: response})
 		}
 
@@ -222,8 +227,13 @@ func (p *MessagePipe) Reconfigure(ctx context.Context, agentConfig *mpi.AgentCon
 
 	slog.InfoContext(ctx, "Finished reconfiguring plugins", "plugins", p.plugins)
 	if topic == AgentConfigUpdateTopic {
-		response := p.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
-			"Successfully updated agent config", "")
+		response := p.createDataPlaneResponse(
+			correlationID,
+			mpi.CommandResponse_COMMAND_STATUS_OK,
+			mpi.DataPlaneResponse_UPDATE_AGENT_CONFIG_REQUEST,
+			"Successfully updated agent config",
+			"",
+		)
 		p.bus.Publish(DataPlaneResponseTopic, ctx, &Message{Topic: DataPlaneResponseTopic, Data: response})
 	}
 }
@@ -339,7 +349,10 @@ func (p *MessagePipe) initPlugins(ctx context.Context) {
 	}
 }
 
-func (p *MessagePipe) createDataPlaneResponse(correlationID string, status mpi.CommandResponse_CommandStatus,
+func (p *MessagePipe) createDataPlaneResponse(
+	correlationID string,
+	status mpi.CommandResponse_CommandStatus,
+	requestType mpi.DataPlaneResponse_RequestType,
 	message, err string,
 ) *mpi.DataPlaneResponse {
 	return &mpi.DataPlaneResponse{
@@ -353,6 +366,7 @@ func (p *MessagePipe) createDataPlaneResponse(correlationID string, status mpi.C
 			Message: message,
 			Error:   err,
 		},
+		RequestType: requestType,
 	}
 }
 

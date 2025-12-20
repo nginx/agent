@@ -1832,6 +1832,8 @@ func (m *DataPlaneResponse) validate(all bool) error {
 
 	// no validation rules for InstanceId
 
+	// no validation rules for RequestType
+
 	if len(errors) > 0 {
 		return DataPlaneResponseMultiError(errors)
 	}
