@@ -628,7 +628,8 @@ func addExternalDataSources(filesList []*mpi.File, filesMap map[string]*mpi.File
 		} else {
 			newFile := &mpi.File{
 				FileMeta: &mpi.FileMeta{
-					Name: ed.FilePath,
+					Name:        ed.FilePath,
+					Permissions: "0644",
 				},
 				ExternalDataSource: &mpi.ExternalDataSource{
 					Location: ed.Location,
