@@ -24,7 +24,7 @@ The current number of connections.
 
 | Name | Description | Values |
 | ---- | ----------- | ------ |
-| nginx.connections.outcome | The outcome of the connection. | Str: ``ACCEPTED``, ``ACTIVE``, ``HANDLED``, ``READING``, ``WRITING``, ``WAITING`` |
+| nginx.connections.outcome | The outcome of a connection | Str: ``ACCEPTED``, ``ACTIVE``, ``HANDLED``, ``READING``, ``WRITING``, ``WAITING`` |
 
 ### nginx.http.connections
 
@@ -38,7 +38,7 @@ The total number of connections, since NGINX was last started or reloaded.
 
 | Name | Description | Values |
 | ---- | ----------- | ------ |
-| nginx.connections.outcome | The outcome of the connection. | Str: ``ACCEPTED``, ``ACTIVE``, ``HANDLED``, ``READING``, ``WRITING``, ``WAITING`` |
+| nginx.connections.outcome | The outcome of a connection | Str: ``ACCEPTED``, ``ACTIVE``, ``HANDLED``, ``READING``, ``WRITING``, ``WAITING`` |
 
 ### nginx.http.request.count
 

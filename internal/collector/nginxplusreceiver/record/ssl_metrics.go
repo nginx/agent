@@ -16,39 +16,39 @@ func RecordSSLMetrics(mb *metadata.MetricsBuilder, now pcommon.Timestamp, stats 
 	mb.RecordNginxSslHandshakesDataPoint(
 		now,
 		int64(stats.SSL.HandshakesFailed),
-		metadata.AttributeNginxSslStatusFAILED,
 		0,
+		metadata.AttributeNginxSslStatusFAILED,
 	)
 	mb.RecordNginxSslHandshakesDataPoint(now, int64(stats.SSL.Handshakes), 0, 0)
 	mb.RecordNginxSslHandshakesDataPoint(
 		now,
 		int64(stats.SSL.SessionReuses),
-		metadata.AttributeNginxSslStatusREUSE,
 		0,
+		metadata.AttributeNginxSslStatusREUSE,
 	)
 	mb.RecordNginxSslHandshakesDataPoint(
 		now,
 		int64(stats.SSL.NoCommonProtocol),
-		metadata.AttributeNginxSslStatusFAILED,
 		metadata.AttributeNginxSslHandshakeReasonNOCOMMONPROTOCOL,
+		metadata.AttributeNginxSslStatusFAILED,
 	)
 	mb.RecordNginxSslHandshakesDataPoint(
 		now,
 		int64(stats.SSL.NoCommonCipher),
-		metadata.AttributeNginxSslStatusFAILED,
 		metadata.AttributeNginxSslHandshakeReasonNOCOMMONCIPHER,
+		metadata.AttributeNginxSslStatusFAILED,
 	)
 	mb.RecordNginxSslHandshakesDataPoint(
 		now,
 		int64(stats.SSL.HandshakeTimeout),
-		metadata.AttributeNginxSslStatusFAILED,
 		metadata.AttributeNginxSslHandshakeReasonTIMEOUT,
+		metadata.AttributeNginxSslStatusFAILED,
 	)
 	mb.RecordNginxSslHandshakesDataPoint(
 		now,
 		int64(stats.SSL.PeerRejectedCert),
-		metadata.AttributeNginxSslStatusFAILED,
 		metadata.AttributeNginxSslHandshakeReasonCERTREJECTED,
+		metadata.AttributeNginxSslStatusFAILED,
 	)
 
 	// SSL Certificate

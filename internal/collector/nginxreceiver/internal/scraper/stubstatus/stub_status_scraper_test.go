@@ -13,7 +13,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/config"
+	"github.com/nginx/agent/v3/internal/collector/nginxreceiver/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"

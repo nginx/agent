@@ -32,15 +32,15 @@ func RecordSlabPageMetrics(mb *metadata.MetricsBuilder, stats *plusapi.Stats, no
 			mb.RecordNginxSlabSlotAllocationsDataPoint(
 				now,
 				int64(slot.Fails),
-				slotNumber,
 				metadata.AttributeNginxSlabSlotAllocationResultFAILURE,
+				slotNumber,
 				name,
 			)
 			mb.RecordNginxSlabSlotAllocationsDataPoint(
 				now,
 				int64(slot.Reqs),
-				slotNumber,
 				metadata.AttributeNginxSlabSlotAllocationResultSUCCESS,
+				slotNumber,
 				name,
 			)
 		}

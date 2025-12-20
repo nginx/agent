@@ -15,7 +15,7 @@ import (
 
 	"go.opentelemetry.io/collector/component"
 
-	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/config"
+	"github.com/nginx/agent/v3/internal/collector/nginxreceiver/internal/config"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest/pmetrictest"
 	"github.com/stretchr/testify/assert"
