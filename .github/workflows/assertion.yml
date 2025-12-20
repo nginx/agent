@@ -16,28 +16,6 @@ on:
         type: boolean
         required: false
         default: false
-  workflow_call:
-    inputs:
-      packageVersion:
-        description: 'Agent version'
-        type: string
-        required: true
-      runId:
-        description: 'Run ID of the workflow that built the artifacts'
-        type: string
-        required: false
-      signAssertion:
-        description: 'Sign and store the assertion document'
-        type: boolean
-        required: false
-        default: false
-    secrets:
-      ARTIFACTORY_USER:
-        required: true
-      ARTIFACTORY_TOKEN:
-        required: true
-      ARTIFACTORY_URL:
-        required: true
 
 jobs:
   build-assertion-document:
@@ -94,9 +72,9 @@ jobs:
           builder-id: 'github.com'
           builder-version: '${{env.GO_VERSION}}_test'
           invocation-id: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
-          artifactory-user: ${{ secrets.ARTIFACTORY_USER }}
-          artifactory-api-token: ${{ secrets.ARTIFACTORY_TOKEN }}
-          artifactory-url: ${{ secrets.ARTIFACTORY_URL }}
+          artifactory-user: ${{ env.artifactory-user }}
+          artifactory-api-token: ${{ env.artifactory-token }}
+          artifactory-url: ${{ env.artifactory-url }}
           artifactory-repo: 'f5-nginx-go-local-approved-dependency'
           assertion-doc-file: assertion_nginx-agent_${{ inputs.packageVersion }}_${{ matrix.osarch }}.json
           build-content-path: ${{ env.goversionm }}
