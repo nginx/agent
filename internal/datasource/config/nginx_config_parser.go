@@ -361,6 +361,13 @@ func (ncp *NginxConfigParser) addAccessLog(accessLog *model.AccessLog,
 		}
 	}
 
+	if len(accessLogs) >= ncp.agentConfig.DataPlaneConfig.Nginx.MaxAccessLogFiles {
+		slog.Warn("Maximum access log files have been reached, unable to monitor access log",
+			"access_log", accessLog.Name)
+
+		return accessLogs
+	}
+
 	slog.Debug("Found valid access log", "access_log", accessLog.Name)
 
 	return append(accessLogs, accessLog)
