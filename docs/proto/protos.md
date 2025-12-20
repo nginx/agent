@@ -3,6 +3,12 @@
 
 ## Table of Contents
 
+- [events/v1/security_violation.proto](#events_v1_security_violation-proto)
+    - [ContextData](#events-v1-ContextData)
+    - [SecurityViolationEvent](#events-v1-SecurityViolationEvent)
+    - [SignatureData](#events-v1-SignatureData)
+    - [ViolationData](#events-v1-ViolationData)
+  
 - [mpi/v1/common.proto](#mpi_v1_common-proto)
     - [AuthSettings](#mpi-v1-AuthSettings)
     - [CommandResponse](#mpi-v1-CommandResponse)
@@ -92,6 +98,130 @@
     - [CommandService](#mpi-v1-CommandService)
   
 - [Scalar Value Types](#scalar-value-types)
+
+
+
+<a name="events_v1_security_violation-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## events/v1/security_violation.proto
+Copyright (c) F5, Inc.
+
+This source code is licensed under the Apache License, Version 2.0 license found in the
+LICENSE file in the root directory of this source tree.
+
+
+<a name="events-v1-ContextData"></a>
+
+### ContextData
+ContextData represents the context data of the violation
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| context_data_name | [string](#string) |  | Name of the context |
+| context_data_value | [string](#string) |  | Value of the context |
+
+
+
+
+
+
+<a name="events-v1-SecurityViolationEvent"></a>
+
+### SecurityViolationEvent
+SecurityViolationEvent represents the structured NGINX App Protect security violation data
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| policy_name | [string](#string) |  | Name of the security policy |
+| support_id | [string](#string) |  | Unique support ID for the violation |
+| outcome | [string](#string) |  | Outcome of the request (e.g., REJECTED, PASSED) |
+| outcome_reason | [string](#string) |  | Reason for the outcome |
+| blocking_exception_reason | [string](#string) |  | Reason for blocking exception if applicable |
+| method | [string](#string) |  | HTTP method used |
+| protocol | [string](#string) |  | Protocol used (e.g., HTTP/1.1) |
+| xff_header_value | [string](#string) |  | X-Forwarded-For header value |
+| uri | [string](#string) |  | Request URI |
+| request | [string](#string) |  | Full request |
+| is_truncated | [string](#string) |  | Indicates if the request was truncated |
+| request_status | [string](#string) |  | Status of the request |
+| response_code | [string](#string) |  | HTTP response code |
+| server_addr | [string](#string) |  | Server address |
+| vs_name | [string](#string) |  | Virtual server name |
+| remote_addr | [string](#string) |  | Remote address of the client |
+| destination_port | [string](#string) |  | Destination port |
+| server_port | [string](#string) |  | Server port |
+| violations | [string](#string) |  | List of violations |
+| sub_violations | [string](#string) |  | List of sub-violations |
+| violation_rating | [string](#string) |  | Violation rating |
+| sig_set_names | [string](#string) |  | Signature set names |
+| sig_cves | [string](#string) |  | Signature CVEs |
+| client_class | [string](#string) |  | Client class |
+| client_application | [string](#string) |  | Client application |
+| client_application_version | [string](#string) |  | Client application version |
+| severity | [string](#string) |  | Severity of the violation |
+| threat_campaign_names | [string](#string) |  | Threat campaign names |
+| bot_anomalies | [string](#string) |  | Bot anomalies detected |
+| bot_category | [string](#string) |  | Bot category |
+| enforced_bot_anomalies | [string](#string) |  | Enforced bot anomalies |
+| bot_signature_name | [string](#string) |  | Bot signature name |
+| system_id | [string](#string) |  | System ID |
+| instance_tags | [string](#string) |  | Instance tags |
+| instance_group | [string](#string) |  | Instance group |
+| parent_hostname | [string](#string) |  | Parent hostname |
+| display_name | [string](#string) |  | Display name |
+| violations_data | [ViolationData](#events-v1-ViolationData) | repeated | Detailed violation data |
+
+
+
+
+
+
+<a name="events-v1-SignatureData"></a>
+
+### SignatureData
+SignatureData represents signature data contained within each violation
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| sig_data_id | [string](#string) |  | Signature ID |
+| sig_data_blocking_mask | [string](#string) |  | Blocking mask |
+| sig_data_buffer | [string](#string) |  | Buffer information |
+| sig_data_offset | [string](#string) |  | Offset in the buffer |
+| sig_data_length | [string](#string) |  | Length of the signature match |
+
+
+
+
+
+
+<a name="events-v1-ViolationData"></a>
+
+### ViolationData
+ViolationData represents individual violation details
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| violation_data_name | [string](#string) |  | Name of the violation |
+| violation_data_context | [string](#string) |  | Context of the violation |
+| violation_data_context_data | [ContextData](#events-v1-ContextData) |  | Context data associated with the violation |
+| violation_data_signatures | [SignatureData](#events-v1-SignatureData) | repeated | Signature data for the violation |
+
+
+
+
+
+ 
+
+ 
+
+ 
+
+ 
 
 
 
