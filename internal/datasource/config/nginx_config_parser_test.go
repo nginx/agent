@@ -750,12 +750,13 @@ func TestNginxConfigParser_checkLog(t *testing.T) {
 	logBuf := &bytes.Buffer{}
 	stub.StubLoggerWith(logBuf)
 	tests := []struct {
-		name               string
-		expectedLog        string
-		accessLog          *model.AccessLog
-		currentAccessLogs  []*model.AccessLog
-		expectedAccessLogs []*model.AccessLog
-		maxAccessLogFiles  int
+		name                string
+		expectedLog         string
+		accessLog           *model.AccessLog
+		currentAccessLogs   []*model.AccessLog
+		expectedAccessLogs  []*model.AccessLog
+		maxAccessLogFiles   uint32
+		maxAccessLogReached bool
 	}{
 		{
 			name: "Test 1: valid access log",
@@ -791,8 +792,9 @@ func TestNginxConfigParser_checkLog(t *testing.T) {
 					Readable:    true,
 				},
 			},
-			expectedLog:       "Found valid access log",
-			maxAccessLogFiles: 3,
+			expectedLog:         "Found valid access log",
+			maxAccessLogFiles:   3,
+			maxAccessLogReached: false,
 		},
 		{
 			name: "Test 2: Duplicate access log, with same format",
@@ -821,8 +823,9 @@ func TestNginxConfigParser_checkLog(t *testing.T) {
 					Readable:    true,
 				},
 			},
-			expectedLog:       "Found duplicate access log, skipping",
-			maxAccessLogFiles: 3,
+			expectedLog:         "Found duplicate access log, skipping",
+			maxAccessLogFiles:   3,
+			maxAccessLogReached: false,
 		},
 
 		{
@@ -847,7 +850,8 @@ func TestNginxConfigParser_checkLog(t *testing.T) {
 			expectedLog: "Found multiple log_format directives for the same access log. " +
 				"Multiple log formats are not supported in the same access log, metrics from this access log " +
 				"will not be collected",
-			maxAccessLogFiles: 3,
+			maxAccessLogFiles:   3,
+			maxAccessLogReached: false,
 		},
 
 		{
@@ -891,8 +895,9 @@ func TestNginxConfigParser_checkLog(t *testing.T) {
 					Readable:    true,
 				},
 			},
-			expectedLog:       "Maximum access log files have been reached",
-			maxAccessLogFiles: 2,
+			expectedLog:         "Maximum access log files have been reached",
+			maxAccessLogFiles:   2,
+			maxAccessLogReached: true,
 		},
 	}
 
@@ -900,8 +905,9 @@ func TestNginxConfigParser_checkLog(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ncp := NewNginxConfigParser(types.AgentConfig())
 			ncp.agentConfig.DataPlaneConfig.Nginx.MaxAccessLogFiles = test.maxAccessLogFiles
-			logs := ncp.addAccessLog(test.accessLog, test.currentAccessLogs)
+			logs, maxReached := ncp.addAccessLog(test.accessLog, test.currentAccessLogs)
 			assert.Equal(t, test.expectedAccessLogs, logs)
+			assert.Equal(t, test.maxAccessLogReached, maxReached)
 
 			helpers.ValidateLog(t, test.expectedLog, logBuf)
 

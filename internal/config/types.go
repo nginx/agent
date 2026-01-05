@@ -71,7 +71,7 @@ type (
 		ExcludeLogs            []string      `yaml:"exclude_logs"             mapstructure:"exclude_logs"`
 		ReloadMonitoringPeriod time.Duration `yaml:"reload_monitoring_period" mapstructure:"reload_monitoring_period"`
 		TreatWarningsAsErrors  bool          `yaml:"treat_warnings_as_errors" mapstructure:"treat_warnings_as_errors"`
-		MaxAccessLogFiles      int           `yaml:"max_access_log_files"     mapstructure:"max_access_log_files"`
+		MaxAccessLogFiles      uint32        `yaml:"max_access_log_files"     mapstructure:"max_access_log_files"`
 	}
 
 	Client struct {

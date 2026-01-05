@@ -469,7 +469,7 @@ func registerFlags() {
 		"The port Agent will start the syslog server on for logs collection",
 	)
 
-	fs.Int(
+	fs.Uint32(
 		MaxAccessLogFilesKey,
 		DefMaxAccessLogFiles,
 		"The maximum number of access log files to monitor",
@@ -1097,7 +1097,7 @@ func resolveDataPlaneConfig() *DataPlaneConfig {
 				RandomizationFactor: viperInstance.GetFloat64(NginxReloadBackoffRandomizationFactorKey),
 				Multiplier:          viperInstance.GetFloat64(NginxReloadBackoffMultiplierKey),
 			},
-			MaxAccessLogFiles: viperInstance.GetInt(MaxAccessLogFilesKey),
+			MaxAccessLogFiles: viperInstance.GetUint32(MaxAccessLogFilesKey),
 		},
 	}
 }
