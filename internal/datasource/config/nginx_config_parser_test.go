@@ -895,7 +895,7 @@ func TestNginxConfigParser_checkLog(t *testing.T) {
 					Readable:    true,
 				},
 			},
-			expectedLog:         "Maximum access log files have been reached",
+			expectedLog:         "",
 			maxAccessLogFiles:   2,
 			maxAccessLogReached: true,
 		},

@@ -232,6 +232,10 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 						nginxConfigContext.AccessLogs, maxAccessLogReached = ncp.addAccessLog(
 							accessLog,
 							nginxConfigContext.AccessLogs)
+						if maxAccessLogReached {
+							slog.Warn("Maximum access log files have been reached, " +
+								"no further access logs will be monitored")
+						}
 					}
 				case "error_log":
 					if !ncp.ignoreLog(directive.Args[0]) {
