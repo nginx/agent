@@ -27,4 +27,4 @@ jobs:
       - name: "Dependency Review"
         uses: actions/dependency-review-action@3c4e3dcb1aa7874d2c16be7d79418e9b7efd6261 # v4.8.2
         with:
-          config-file: "nginxinc/k8s-common/dependency-review-config.yml@main"
+          config-file: "dhurley/k8s-common/dependency-review-config.yml@chore/allow-dependencies-license-for-hashicorp-go-version"
