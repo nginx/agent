@@ -91,20 +91,15 @@ func LogLevel(level string) slog.Level {
 }
 
 func logWriter(logFile string) io.Writer {
-	logPath := logFile
-	if logFile != "" {
-		fileInfo, err := os.Stat(logPath)
+	if logFile != "" && filepath.IsAbs(logFile) {
+		logFilePath, err := logFilePath(logFile)
 		if err != nil {
 			slog.Error("Error reading log directory, proceeding to log only to stdout/stderr", "error", err)
 
 			return os.Stderr
 		}
 
-		if fileInfo.IsDir() {
-			logPath = path.Join(logPath, defaultLogFile)
-		}
-
-		logFileHandle, err := os.OpenFile(logPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, filePermission)
+		logFileHandle, err := os.OpenFile(logFilePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, filePermission)
 		if err != nil {
 			slog.Error("Failed to open log file, proceeding to log only to stdout/stderr", "error", err)
 
@@ -118,6 +113,24 @@ func logWriter(logFile string) io.Writer {
 	}
 
 	return os.Stderr
+}
+
+func logFilePath(logPath string) (logFilePath string, err error) {
+	logFilePath = logPath
+	fileInfo, err := os.Stat(logPath)
+
+	if err != nil && os.IsNotExist(err) && !strings.HasSuffix(logPath, string(os.PathSeparator)) {
+		_, dirStatError := os.Stat(filepath.Dir(logPath))
+		if dirStatError != nil {
+			return "", dirStatError
+		}
+	} else if err != nil {
+		return "", err
+	} else if fileInfo.IsDir() {
+		logFilePath = path.Join(logPath, defaultLogFile)
+	}
+
+	return logFilePath, nil
 }
 
 func (c contextKey) String() string {

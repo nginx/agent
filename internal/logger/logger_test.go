@@ -9,6 +9,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/nginx/agent/v3/test/helpers"
@@ -65,9 +66,9 @@ func TestGetLogLevel(t *testing.T) {
 }
 
 func TestGetLogWriter(t *testing.T) {
-	file, err := os.CreateTemp(".", "TestGetLogWriter.*.log")
+	tempDir := t.TempDir()
+	file, err := os.CreateTemp(tempDir, "TestGetLogWriter.*.log")
 	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
-	defer helpers.RemoveFileWithErrorCheck(t, "agent.log")
 
 	require.NoError(t, err)
 
@@ -83,17 +84,27 @@ func TestGetLogWriter(t *testing.T) {
 		},
 		{
 			name:     "Test 2: Log file does not exist",
-			input:    "/unknown/file.log",
+			input:    filepath.Join(tempDir, "file.log"),
+			expected: io.MultiWriter(),
+		},
+		{
+			name:     "Test 3: Log file and directory do not exist",
+			input:    filepath.Join(tempDir, "nginx-agent", "file.log"),
 			expected: os.Stderr,
 		},
 		{
-			name:     "Test 3: Log file exists",
+			name:     "Test 4: Log file exists",
 			input:    file.Name(),
 			expected: io.MultiWriter(),
 		},
 		{
-			name:     "Test 4: Log directory",
-			input:    ".",
+			name:     "Test 5: Invalid log file path",
+			input:    "../../invalid_path/agent.log",
+			expected: os.Stderr,
+		},
+		{
+			name:     "Test 6: Log directory",
+			input:    tempDir,
 			expected: io.MultiWriter(),
 		},
 	}

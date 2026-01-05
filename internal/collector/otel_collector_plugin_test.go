@@ -147,7 +147,7 @@ func TestCollector_InitAndClose(t *testing.T) {
 	require.NoError(t, err, "NewCollector should not return an error with valid config")
 
 	ctx := context.Background()
-	messagePipe := bus.NewMessagePipe(10)
+	messagePipe := bus.NewMessagePipe(10, types.AgentConfig())
 	err = messagePipe.Register(10, []bus.Plugin{collector})
 
 	require.NoError(t, err)
@@ -315,7 +315,7 @@ func TestCollector_ProcessNginxConfigUpdateTopic(t *testing.T) {
 			collector.service = createFakeCollector()
 
 			ctx := context.Background()
-			messagePipe := bus.NewMessagePipe(10)
+			messagePipe := bus.NewMessagePipe(10, types.AgentConfig())
 			err = messagePipe.Register(10, []bus.Plugin{collector})
 
 			require.NoError(tt, err)
@@ -400,7 +400,7 @@ func TestCollector_ProcessResourceUpdateTopic(t *testing.T) {
 			collector.service = createFakeCollector()
 
 			ctx := context.Background()
-			messagePipe := bus.NewMessagePipe(10)
+			messagePipe := bus.NewMessagePipe(10, types.AgentConfig())
 			err = messagePipe.Register(10, []bus.Plugin{collector})
 
 			require.NoError(tt, err)
@@ -462,7 +462,7 @@ func TestCollector_ProcessResourceUpdateTopicFails(t *testing.T) {
 			collector.service = createFakeCollector()
 
 			ctx := context.Background()
-			messagePipe := bus.NewMessagePipe(10)
+			messagePipe := bus.NewMessagePipe(10, types.AgentConfig())
 			err = messagePipe.Register(10, []bus.Plugin{collector})
 
 			require.NoError(tt, err)

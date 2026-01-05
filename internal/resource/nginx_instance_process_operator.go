@@ -74,7 +74,7 @@ func (p *NginxInstanceProcessOperator) FindParentProcessID(ctx context.Context, 
 			}
 			processInstanceID := id.Generate("%s_%s_%s", info.ExePath, info.ConfPath, info.Prefix)
 			if instanceID == processInstanceID {
-				slog.DebugContext(ctx, "Found NGINX process ID", "process_id", processInstanceID)
+				slog.DebugContext(ctx, "Found NGINX process ID", "instance_id", processInstanceID)
 				return proc.PID, nil
 			}
 		}

@@ -94,15 +94,17 @@ type (
 
 	//nolint:lll // max line limit exceeded
 	GRPC struct {
-		KeepAlive *KeepAlive `yaml:"keepalive" mapstructure:"keepalive"`
+		KeepAlive       *KeepAlive    `yaml:"keepalive"        mapstructure:"keepalive"`
+		ResponseTimeout time.Duration `yaml:"response_timeout" mapstructure:"response_timeout"`
 		// if MaxMessageSize is size set then we use that value,
 		// otherwise MaxMessageRecieveSize and MaxMessageSendSize for individual settings
-		MaxMessageSize            int    `yaml:"max_message_size"             mapstructure:"max_message_size"`
-		MaxMessageReceiveSize     int    `yaml:"max_message_receive_size"     mapstructure:"max_message_receive_size"`
-		MaxMessageSendSize        int    `yaml:"max_message_send_size"        mapstructure:"max_message_send_size"`
-		MaxFileSize               uint32 `yaml:"max_file_size"                mapstructure:"max_file_size"`
-		FileChunkSize             uint32 `yaml:"file_chunk_size"              mapstructure:"file_chunk_size"`
-		MaxParallelFileOperations int    `yaml:"max_parallel_file_operations" mapstructure:"max_parallel_file_operations"`
+		MaxMessageSize            int           `yaml:"max_message_size"             mapstructure:"max_message_size"`
+		MaxMessageReceiveSize     int           `yaml:"max_message_receive_size"     mapstructure:"max_message_receive_size"`
+		MaxMessageSendSize        int           `yaml:"max_message_send_size"        mapstructure:"max_message_send_size"`
+		MaxFileSize               uint32        `yaml:"max_file_size"                mapstructure:"max_file_size"`
+		FileChunkSize             uint32        `yaml:"file_chunk_size"              mapstructure:"file_chunk_size"`
+		MaxParallelFileOperations int           `yaml:"max_parallel_file_operations" mapstructure:"max_parallel_file_operations"`
+		ConnectionResetTimeout    time.Duration `yaml:"connection_reset_timeout"     mapstructure:"connection_reset_timeout"`
 	}
 
 	KeepAlive struct {

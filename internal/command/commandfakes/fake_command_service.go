@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	v1 "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/internal/config"
 )
 
 type FakeCommandService struct {
@@ -32,6 +33,18 @@ type FakeCommandService struct {
 	}
 	isConnectedReturnsOnCall map[int]struct {
 		result1 bool
+	}
+	ReconfigureStub        func(context.Context, *config.Config) error
+	reconfigureMutex       sync.RWMutex
+	reconfigureArgsForCall []struct {
+		arg1 context.Context
+		arg2 *config.Config
+	}
+	reconfigureReturns struct {
+		result1 error
+	}
+	reconfigureReturnsOnCall map[int]struct {
+		result1 error
 	}
 	SendDataPlaneResponseStub        func(context.Context, *v1.DataPlaneResponse) error
 	sendDataPlaneResponseMutex       sync.RWMutex
@@ -205,6 +218,68 @@ func (fake *FakeCommandService) IsConnectedReturnsOnCall(i int, result1 bool) {
 	}
 	fake.isConnectedReturnsOnCall[i] = struct {
 		result1 bool
+	}{result1}
+}
+
+func (fake *FakeCommandService) Reconfigure(arg1 context.Context, arg2 *config.Config) error {
+	fake.reconfigureMutex.Lock()
+	ret, specificReturn := fake.reconfigureReturnsOnCall[len(fake.reconfigureArgsForCall)]
+	fake.reconfigureArgsForCall = append(fake.reconfigureArgsForCall, struct {
+		arg1 context.Context
+		arg2 *config.Config
+	}{arg1, arg2})
+	stub := fake.ReconfigureStub
+	fakeReturns := fake.reconfigureReturns
+	fake.recordInvocation("Reconfigure", []interface{}{arg1, arg2})
+	fake.reconfigureMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeCommandService) ReconfigureCallCount() int {
+	fake.reconfigureMutex.RLock()
+	defer fake.reconfigureMutex.RUnlock()
+	return len(fake.reconfigureArgsForCall)
+}
+
+func (fake *FakeCommandService) ReconfigureCalls(stub func(context.Context, *config.Config) error) {
+	fake.reconfigureMutex.Lock()
+	defer fake.reconfigureMutex.Unlock()
+	fake.ReconfigureStub = stub
+}
+
+func (fake *FakeCommandService) ReconfigureArgsForCall(i int) (context.Context, *config.Config) {
+	fake.reconfigureMutex.RLock()
+	defer fake.reconfigureMutex.RUnlock()
+	argsForCall := fake.reconfigureArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeCommandService) ReconfigureReturns(result1 error) {
+	fake.reconfigureMutex.Lock()
+	defer fake.reconfigureMutex.Unlock()
+	fake.ReconfigureStub = nil
+	fake.reconfigureReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeCommandService) ReconfigureReturnsOnCall(i int, result1 error) {
+	fake.reconfigureMutex.Lock()
+	defer fake.reconfigureMutex.Unlock()
+	fake.ReconfigureStub = nil
+	if fake.reconfigureReturnsOnCall == nil {
+		fake.reconfigureReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.reconfigureReturnsOnCall[i] = struct {
+		result1 error
 	}{result1}
 }
 
@@ -500,6 +575,8 @@ func (fake *FakeCommandService) Invocations() map[string][][]interface{} {
 	defer fake.createConnectionMutex.RUnlock()
 	fake.isConnectedMutex.RLock()
 	defer fake.isConnectedMutex.RUnlock()
+	fake.reconfigureMutex.RLock()
+	defer fake.reconfigureMutex.RUnlock()
 	fake.sendDataPlaneResponseMutex.RLock()
 	defer fake.sendDataPlaneResponseMutex.RUnlock()
 	fake.subscribeMutex.RLock()

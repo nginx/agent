@@ -228,6 +228,17 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 		instancesList[1].GetInstanceMeta().GetInstanceId(): instancesList[1],
 	}
 
+	process6 := protos.NginxOssInstance(nil)
+	process6.GetInstanceRuntime().InstanceChildren = []*mpi.InstanceChild{
+		{ProcessId: 567},
+		{ProcessId: 789},
+		{ProcessId: 5678},
+	}
+
+	instancesTest6 := map[string]*mpi.Instance{
+		process6.GetInstanceMeta().GetInstanceId(): process6,
+	}
+
 	tests := []struct {
 		expected  map[string]*mpi.Instance
 		name      string
@@ -367,6 +378,40 @@ func TestNginxProcessParser_Parse_Processes(t *testing.T) {
 				},
 			},
 			expected: make(map[string]*mpi.Instance),
+		},
+		{
+			name: "Test 6: 1 master process each with 2 workers and 1 master process",
+			processes: []*nginxprocess.Process{
+				{
+					PID:  1234,
+					PPID: 1,
+					Name: "nginx",
+					Cmd:  "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
+					Exe:  exePath,
+				},
+				{
+					PID:  789,
+					PPID: 1234,
+					Name: "nginx",
+					Cmd:  "nginx: worker process",
+					Exe:  exePath,
+				},
+				{
+					PID:  567,
+					PPID: 1234,
+					Name: "nginx",
+					Cmd:  "nginx: worker process",
+					Exe:  exePath,
+				},
+				{
+					PID:  5678,
+					PPID: 1234,
+					Name: "nginx",
+					Cmd:  "nginx: master process /usr/local/opt/nginx/bin/nginx -g daemon off;",
+					Exe:  exePath,
+				},
+			},
+			expected: instancesTest6,
 		},
 	}
 
