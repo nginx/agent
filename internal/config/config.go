@@ -506,6 +506,11 @@ func registerExternalDataSourceFlags(fs *flag.FlagSet) {
 		[]string{},
 		"List of allowed domains for external data sources.",
 	)
+	fs.StringSlice(
+		ExternalDataSourceAllowedFileTypesKey,
+		[]string{},
+		"List of allowed file types for external data sources.",
+	)
 	fs.Int64(
 		ExternalDataSourceMaxBytesKey,
 		DefExternalDataSourceMaxBytes,
@@ -1610,9 +1615,10 @@ func resolveExternalDataSource() *ExternalDataSource {
 		URL: viperInstance.GetString(ExternalDataSourceProxyUrlKey),
 	}
 	externalDataSource := &ExternalDataSource{
-		ProxyURL:       proxyURLStruct,
-		AllowedDomains: viperInstance.GetStringSlice(ExternalDataSourceAllowDomainsKey),
-		MaxBytes:       viperInstance.GetInt64(ExternalDataSourceMaxBytesKey),
+		ProxyURL:         proxyURLStruct,
+		AllowedDomains:   viperInstance.GetStringSlice(ExternalDataSourceAllowDomainsKey),
+		AllowedFileTypes: viperInstance.GetStringSlice(ExternalDataSourceAllowedFileTypesKey),
+		MaxBytes:         viperInstance.GetInt64(ExternalDataSourceMaxBytesKey),
 	}
 
 	if err := validateAllowedDomains(externalDataSource.AllowedDomains); err != nil {

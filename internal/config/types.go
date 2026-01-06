@@ -368,9 +368,10 @@ type (
 	}
 
 	ExternalDataSource struct {
-		ProxyURL       ProxyURL `yaml:"proxy"           mapstructure:"proxy"`
-		AllowedDomains []string `yaml:"allowed_domains" mapstructure:"allowed_domains"`
-		MaxBytes       int64    `yaml:"max_bytes"       mapstructure:"max_bytes"`
+		ProxyURL         ProxyURL `yaml:"proxy"              mapstructure:"proxy"`
+		AllowedDomains   []string `yaml:"allowed_domains"    mapstructure:"allowed_domains"`
+		AllowedFileTypes []string `yaml:"allowed_file_types" mapstructure:"allowed_file_types"`
+		MaxBytes         int64    `yaml:"max_bytes"          mapstructure:"max_bytes"`
 	}
 )
 

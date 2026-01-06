@@ -146,10 +146,11 @@ var (
 	FileWatcherMonitoringFrequencyKey = pre(FileWatcherKey) + "monitoring_frequency"
 	NginxExcludeFilesKey              = pre(FileWatcherKey) + "exclude_files"
 
-	ExternalDataSourceProxyKey        = pre(ExternalDataSourceRootKey) + "proxy"
-	ExternalDataSourceProxyUrlKey     = pre(ExternalDataSourceProxyKey) + "url"
-	ExternalDataSourceMaxBytesKey     = pre(ExternalDataSourceRootKey) + "max_bytes"
-	ExternalDataSourceAllowDomainsKey = pre(ExternalDataSourceRootKey) + "allowed_domains"
+	ExternalDataSourceProxyKey            = pre(ExternalDataSourceRootKey) + "proxy"
+	ExternalDataSourceProxyUrlKey         = pre(ExternalDataSourceProxyKey) + "url"
+	ExternalDataSourceMaxBytesKey         = pre(ExternalDataSourceRootKey) + "max_bytes"
+	ExternalDataSourceAllowDomainsKey     = pre(ExternalDataSourceRootKey) + "allowed_domains"
+	ExternalDataSourceAllowedFileTypesKey = pre(ExternalDataSourceRootKey) + "allowed_file_types"
 )
 
 func pre(prefixes ...string) string {
