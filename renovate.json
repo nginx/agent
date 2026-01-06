@@ -11,5 +11,5 @@
         ":semanticCommitsDisabled"
     ],
     "rebaseWhen": "behind-base-branch",
-    "baseBranchPatterns": ["main", "dev-v2"]
+    "baseBranchPatterns": ["main"]
 }
