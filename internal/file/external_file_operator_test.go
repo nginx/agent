@@ -286,31 +286,31 @@ func TestFileManagerService_IsDomainAllowed(t *testing.T) {
 
 	tests := []testCase{
 		{
-			name:           "Invalid URL (Percent)",
+			name:           "Test 1: Invalid URL (Percent)",
 			url:            "http://%",
 			allowedDomains: []string{"example.com"},
 			expected:       false,
 		},
 		{
-			name:           "Invalid URL (Empty Host)",
+			name:           "Test 2: Invalid URL (Empty Host)",
 			url:            "http://",
 			allowedDomains: []string{"example.com"},
 			expected:       false,
 		},
 		{
-			name:           "Empty Allowed List",
+			name:           "Test 3: Empty Allowed List",
 			url:            "http://example.com/path",
 			allowedDomains: []string{""},
 			expected:       false,
 		},
 		{
-			name:           "Basic Match",
+			name:           "Test 4: Basic Match",
 			url:            "http://example.com/path",
 			allowedDomains: []string{"example.com"},
 			expected:       true,
 		},
 		{
-			name:           "Wildcard Subdomain Match",
+			name:           "Test 5: Wildcard Subdomain Match",
 			url:            "http://sub.example.com/path",
 			allowedDomains: []string{"*.example.com"},
 			expected:       true,
@@ -337,31 +337,31 @@ func TestFileManagerService_IsMatchesWildcardDomain(t *testing.T) {
 
 	tests := []testCase{
 		{
-			name:     "True Match - Subdomain",
+			name:     "Test 1: True Match - Subdomain",
 			hostname: "sub.example.com",
 			pattern:  "*.example.com",
 			expected: true,
 		},
 		{
-			name:     "True Match - Exact Base Domain",
+			name:     "Test 2: True Match - Exact Base Domain",
 			hostname: "example.com",
 			pattern:  "*.example.com",
 			expected: true,
 		},
 		{
-			name:     "False Match - Bad Domain Suffix",
+			name:     "Test 3: False Match - Bad Domain Suffix",
 			hostname: "badexample.com",
 			pattern:  "*.example.com",
 			expected: false,
 		},
 		{
-			name:     "False Match - No Wildcard Prefix",
+			name:     "Test 4: False Match - No Wildcard Prefix",
 			hostname: "test.com",
 			pattern:  "google.com",
 			expected: false,
 		},
 		{
-			name:     "False Match - Different Suffix",
+			name:     "Test 5: False Match - Different Suffix",
 			hostname: "sub.anotherexample.com",
 			pattern:  "*.example.com",
 			expected: false,
@@ -392,32 +392,33 @@ func TestExternalFileOperator_validateDownloadedFile(t *testing.T) {
 		expectErr   bool
 	}{
 		{
-			name:      "Accept when extension matches detected MIME (text)",
+			name:      "Test 1: Accept when extension matches detected MIME (text)",
 			content:   textBytes,
 			fileName:  "/tmp/file.txt",
 			expectErr: false,
 		},
 		{
-			name:        "Reject when extension maps to different MIME (html implies text/html but content is png)",
+			name: "Test 2: Reject when extension maps to different MIME " +
+				"(html implies text/html but content is png)",
 			content:     pngBytes,
 			fileName:    "/tmp/file.html",
 			expectErr:   true,
 			errContains: "implies MIME",
 		},
 		{
-			name:        "Allow when extension unknown but detected MIME is in allowed list",
+			name:        "Test 3: Allow when extension unknown but detected MIME is in allowed list",
 			content:     pngBytes,
 			fileName:    "/tmp/file.unknownext",
 			allowedList: []string{"image/png"},
 			expectErr:   false,
 		},
 		{
-			name:        "Reject when detected MIME not in allowed list and extension has no known mapping",
+			name:        "Test 4: Reject when detected MIME not in allowed list and extension has no known mapping",
 			content:     pngBytes,
-			fileName:    "/tmp/file.bin",
+			fileName:    "/tmp/file.definitelyunknown",
 			allowedList: []string{".conf"},
 			expectErr:   true,
-			errContains: "implies MIME",
+			errContains: "is not allowed",
 		},
 	}
 
