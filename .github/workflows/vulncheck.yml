@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
             fetch-depth: 0
-            ref: ${{ inputs.targetBranch || 'main' }}
+            ref: ${{ inputs.target-branch || 'main' }}
 
       - name: Check Go version
         id: get-go-version
