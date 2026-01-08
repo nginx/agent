@@ -142,14 +142,18 @@ func (s *AuxiliaryTestSuite) TestAuxiliary_Test4_FileWatcher() {
 	s.Require().NoError(err)
 
 	// Check command server has 2 ManagementPlaneResponses from updating a file on disk
-	commandResponses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
+	commandResponses := utils.ManagementPlaneResponses(s.T(), 2, utils.MockManagementPlaneAPIAddress)
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, commandResponses[0].GetCommandResponse().GetStatus())
 	s.Equal("Successfully updated all files", commandResponses[0].GetCommandResponse().GetMessage())
+	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, commandResponses[1].GetCommandResponse().GetStatus())
+	s.Equal("Successfully updated all files", commandResponses[1].GetCommandResponse().GetMessage())
 
 	// Check auxiliary server has 2 ManagementPlaneResponses from updating a file on disk
-	auxResponses := utils.ManagementPlaneResponses(s.T(), 1, utils.AuxiliaryMockManagementPlaneAPIAddress)
+	auxResponses := utils.ManagementPlaneResponses(s.T(), 2, utils.AuxiliaryMockManagementPlaneAPIAddress)
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, auxResponses[0].GetCommandResponse().GetStatus())
 	s.Equal("Successfully updated all files", auxResponses[0].GetCommandResponse().GetMessage())
+	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, auxResponses[1].GetCommandResponse().GetStatus())
+	s.Equal("Successfully updated all files", auxResponses[1].GetCommandResponse().GetMessage())
 	slog.Info("finished auxiliary command server file watcher test")
 }
 
