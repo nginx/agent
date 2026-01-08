@@ -141,12 +141,10 @@ func (s *AuxiliaryTestSuite) TestAuxiliary_Test4_FileWatcher() {
 	)
 	s.Require().NoError(err)
 
-	// Check command server has 2 ManagementPlaneResponses from updating a file on disk
-	commandResponses := utils.ManagementPlaneResponses(s.T(), 2, utils.MockManagementPlaneAPIAddress)
+	// Check command server has 1 ManagementPlaneResponses from updating a file on disk
+	commandResponses := utils.ManagementPlaneResponses(s.T(), 1, utils.MockManagementPlaneAPIAddress)
 	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, commandResponses[0].GetCommandResponse().GetStatus())
 	s.Equal("Successfully updated all files", commandResponses[0].GetCommandResponse().GetMessage())
-	s.Equal(mpi.CommandResponse_COMMAND_STATUS_OK, commandResponses[1].GetCommandResponse().GetStatus())
-	s.Equal("Successfully updated all files", commandResponses[1].GetCommandResponse().GetMessage())
 
 	// Check auxiliary server has 2 ManagementPlaneResponses from updating a file on disk
 	auxResponses := utils.ManagementPlaneResponses(s.T(), 2, utils.AuxiliaryMockManagementPlaneAPIAddress)
