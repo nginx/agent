@@ -38,6 +38,7 @@ const (
 var (
 	MockManagementPlaneAPIAddress          string
 	AuxiliaryMockManagementPlaneAPIAddress string
+	mockManifestFiles                      map[string]*model.ManifestFile
 )
 
 func PerformConfigApply(t *testing.T, nginxInstanceID, mockManagementPlaneAPIAddress string) {
@@ -48,6 +49,20 @@ func PerformConfigApply(t *testing.T, nginxInstanceID, mockManagementPlaneAPIAdd
 
 	url := fmt.Sprintf("http://%s/api/v1/instance/%s/config/apply", mockManagementPlaneAPIAddress, nginxInstanceID)
 	resp, err := client.R().EnableTrace().Post(url)
+
+	t.Logf("Config ApplyResponse: %s", resp.String())
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode())
+}
+
+func PerformConfigApplyWithRequestBody(t *testing.T, nginxInstanceID, mockManagementPlaneAPIAddress, body string) {
+	t.Helper()
+
+	client := resty.New()
+	client.SetRetryCount(RetryCount).SetRetryWaitTime(RetryWaitTime).SetRetryMaxWaitTime(RetryMaxWaitTime)
+
+	url := fmt.Sprintf("http://%s/api/v1/instance/%s/config/apply", mockManagementPlaneAPIAddress, nginxInstanceID)
+	resp, err := client.R().EnableTrace().SetBody(body).Post(url)
 
 	t.Logf("Config ApplyResponse: %s", resp.String())
 	require.NoError(t, err)
@@ -154,6 +169,34 @@ func CheckManifestFile(t *testing.T, container testcontainers.Container,
 	require.NoError(t, err)
 
 	assert.Equal(t, expectedContent, manifestFiles)
+}
+
+func ManifestFiles() map[string]*model.ManifestFile {
+	nginxConfSize := 1172
+	mimeTypeSize := 5349
+
+	if len(mockManifestFiles) == 0 {
+		mockManifestFiles = map[string]*model.ManifestFile{
+			"/etc/nginx/mime.types": {
+				ManifestFileMeta: &model.ManifestFileMeta{
+					Name:       "/etc/nginx/mime.types",
+					Hash:       "b5XR19dePAcpB9hFYipp0jEQ0SZsFv8SKzEJuLIfOuk=",
+					Size:       int64(mimeTypeSize),
+					Referenced: true,
+				},
+			},
+			"/etc/nginx/nginx.conf": {
+				ManifestFileMeta: &model.ManifestFileMeta{
+					Name:       "/etc/nginx/nginx.conf",
+					Hash:       "gJ1slpIAUmHAiSo5ZIalKvE40b1hJCgaXasQOMab6kc=",
+					Size:       int64(nginxConfSize),
+					Referenced: true,
+				},
+			},
+		}
+	}
+
+	return mockManifestFiles
 }
 
 func WriteConfigFileMock(t *testing.T, nginxInstanceID, file1, file2, file3 string) {

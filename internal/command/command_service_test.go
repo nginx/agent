@@ -116,10 +116,11 @@ func TestCommandService_receiveCallback_configApplyRequest(t *testing.T) {
 		10*time.Millisecond,
 	)
 
+	wg.Wait()
+
 	commandService.configApplyRequestQueueMutex.Lock()
 	defer commandService.configApplyRequestQueueMutex.Unlock()
 	assert.Len(t, commandService.configApplyRequestQueue, 1)
-	wg.Wait()
 }
 
 func TestCommandService_UpdateDataPlaneStatus(t *testing.T) {
