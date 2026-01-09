@@ -161,6 +161,22 @@ func (efo *ExternalFileOperator) downloadFileContent(ctx context.Context, file *
 
 		return nil, h, nil
 	default:
+		const maxErrBody = 4096
+		var bodyMsg string
+
+		limited := io.LimitReader(resp.Body, maxErrBody)
+		b, readErr := io.ReadAll(limited)
+		if readErr != nil {
+			slog.DebugContext(ctx, "Failed to read error response body", "error", readErr, "status", resp.StatusCode)
+		} else {
+			bodyMsg = strings.TrimSpace(string(b))
+		}
+
+		if bodyMsg != "" {
+			return nil, DownloadHeader{}, fmt.Errorf("download failed with status code %d: %s",
+				resp.StatusCode, bodyMsg)
+		}
+
 		return nil, DownloadHeader{}, fmt.Errorf("download failed with status code %d", resp.StatusCode)
 	}
 
