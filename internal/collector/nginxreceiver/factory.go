@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package nginxossreceiver
+package nginxreceiver
 
 import (
 	"context"
@@ -11,10 +11,10 @@ import (
 
 	"go.opentelemetry.io/collector/scraper"
 
-	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/config"
-	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/metadata"
-	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/scraper/accesslog"
-	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/scraper/stubstatus"
+	"github.com/nginx/agent/v3/internal/collector/nginxreceiver/internal/config"
+	"github.com/nginx/agent/v3/internal/collector/nginxreceiver/internal/metadata"
+	"github.com/nginx/agent/v3/internal/collector/nginxreceiver/internal/scraper/accesslog"
+	"github.com/nginx/agent/v3/internal/collector/nginxreceiver/internal/scraper/stubstatus"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/receiver"

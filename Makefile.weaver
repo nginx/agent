@@ -1,0 +1,82 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# https://github.com/open-telemetry/weaver                                                    #
+# These images are for invoking weaver                                                        #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# From where to resolve the containers (e.g. "otel/weaver").
+CONTAINER_REPOSITORY=docker.io
+
+# Per container overrides for the repository resolution.
+WEAVER_CONTAINER_REPOSITORY=$(CONTAINER_REPOSITORY)
+SEMCONVGEN_CONTAINER_REPOSITORY=$(CONTAINER_REPOSITORY)
+OPA_CONTAINER_REPOSITORY=$(CONTAINER_REPOSITORY)
+
+CHECK_TARGETS=install-tools markdownlint
+
+# Versioned, non-qualified references to containers used in this Makefile.
+# These are parsed from dependencies.Dockerfile so dependabot will autoupdate
+# the versions of docker files we use.
+VERSIONED_WEAVER_CONTAINER_NO_REPO=$(shell cat dependencies.Dockerfile | awk '$$4=="weaver" {print $$2}')
+VERSIONED_SEMCONVGEN_CONTAINER_NO_REPO=$(shell cat dependencies.Dockerfile | awk '$$4=="semconvgen" {print $$2}')
+VERSIONED_OPA_CONTAINER_NO_REPO=$(shell cat dependencies.Dockerfile | awk '$$4=="opa" {print $$2}')
+
+# Fully qualified references to containers used in this Makefile. These
+# include the container repository, so that the build will work with tools
+# like "podman" with a default "/etc/containers/registries.conf", where
+# a default respository of "docker.io" is not assumed. This is intended to
+# eliminate errors from podman such as:
+#
+#    Error: short-name "otel/weaver:v1.2.3" did not resolve to an alias
+#    and no unqualified-search registries are defined in "/etc/containers/registries.conf"
+WEAVER_CONTAINER=$(WEAVER_CONTAINER_REPOSITORY)/$(VERSIONED_WEAVER_CONTAINER_NO_REPO)
+SEMCONVGEN_CONTAINER=$(SEMCONVGEN_CONTAINER_REPOSITORY)/$(VERSIONED_SEMCONVGEN_CONTAINER_NO_REPO)
+OPA_CONTAINER=$(OPA_CONTAINER_REPOSITORY)/$(VERSIONED_OPA_CONTAINER_NO_REPO)
+
+# Determine if "docker" is actually podman
+DOCKER_VERSION_OUTPUT := $(shell docker --version 2>&1)
+DOCKER_IS_PODMAN := $(shell echo $(DOCKER_VERSION_OUTPUT) | grep -c podman)
+
+ifeq ($(DOCKER_IS_PODMAN),0)
+    DOCKER_COMMAND := docker
+else
+    DOCKER_COMMAND := podman
+endif
+
+# Debug printing
+ifdef DEBUG
+$(info Docker version output: $(DOCKER_VERSION_OUTPUT))
+$(info Is Docker actually Podman? $(DOCKER_IS_PODMAN))
+$(info Using command: $(DOCKER_COMMAND))
+endif
+
+DOCKER_RUN=$(DOCKER_COMMAND) run
+DOCKER_USER=$(shell id -u):$(shell id -g)
+DOCKER_USER_IS_HOST_USER_ARG=-u $(DOCKER_USER)
+ifeq ($(DOCKER_COMMAND),podman)
+ # On podman, additional arguments are needed to make "-u" work
+ # correctly with the host user ID and host group ID.
+ #
+ #      Error: OCI runtime error: crun: setgroups: Invalid argument
+ DOCKER_USER_IS_HOST_USER_ARG=--userns=keep-id -u $(DOCKER_USER)
+endif
+
+# Generate attribute registry metadata for mdatagen.
+# Example uses: 
+#   make nginxplus-metadata-gen
+#   make nginx-metadata-gen
+.PHONY: %-metadata-gen
+%-metadata-gen:
+	$(DOCKER_RUN) --rm \
+		$(DOCKER_USER_IS_HOST_USER_ARG) \
+		--mount 'type=bind,source=$(PWD)/templates,target=/home/weaver/templates,readonly' \
+		--mount 'type=bind,source=$(PWD)/catalog/$*,target=/home/weaver/source/,readonly' \
+		--mount 'type=bind,source=$(PWD)/internal/collector,target=/home/weaver/target' \
+		$(WEAVER_CONTAINER) registry generate \
+		  --registry=/home/weaver/source \
+		  --templates=/home/weaver/templates \
+		  metadata \
+		  /home/weaver/target/$*receiver
+	cat $(PWD)/internal/collector/$*receiver/*_metadata.yaml > $(PWD)/internal/collector/$*receiver/metadata.yaml
+	rm $(PWD)/internal/collector/$*receiver/*_metadata.yaml
+	@echo "🗃️ Generating go files"
+	@$(GOGEN) $(PWD)/internal/collector/$*receiver/...
