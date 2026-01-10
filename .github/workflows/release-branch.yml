@@ -291,23 +291,6 @@ jobs:
         run: |
           make release
 
-  assertion-document:
-    name: Build and Generate Assertion Document
-    needs: [build-and-upload-packages]
-    if : ${{ inputs.assertionDoc == true }}
-    uses: ./.github/workflows/assertion.yml
-    permissions:
-      id-token: write
-      contents: read
-    with:
-      packageVersion: ${{ inputs.packageVersion }}
-      runId: ${{ github.run_id }}
-    secrets:
-      ARTIFACTORY_USER: ${{ secrets.ARTIFACTORY_USER }}
-      ARTIFACTORY_TOKEN: ${{ secrets.ARTIFACTORY_TOKEN }}
-      ARTIFACTORY_URL: ${{ secrets.ARTIFACTORY_URL }}
-
-
   merge-release:
     if: ${{ needs.vars.outputs.create_pull_request == 'true' }}
     name: Merge release branch back into main branch
