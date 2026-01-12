@@ -17,44 +17,44 @@ func RecordCacheMetrics(mb *metadata.MetricsBuilder, stats *plusapi.Stats, now p
 		mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Bypass.Bytes),
-			metadata.AttributeNginxCacheOutcomeBYPASS,
 			name,
+			metadata.AttributeNginxCacheOutcomeBYPASS,
 		)
 		mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Expired.Bytes),
-			metadata.AttributeNginxCacheOutcomeEXPIRED,
 			name,
+			metadata.AttributeNginxCacheOutcomeEXPIRED,
 		)
 		mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Hit.Bytes),
-			metadata.AttributeNginxCacheOutcomeHIT,
 			name,
+			metadata.AttributeNginxCacheOutcomeHIT,
 		)
 		mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Miss.Bytes),
-			metadata.AttributeNginxCacheOutcomeMISS,
 			name,
+			metadata.AttributeNginxCacheOutcomeMISS,
 		)
 		mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Revalidated.Bytes),
-			metadata.AttributeNginxCacheOutcomeREVALIDATED,
 			name,
+			metadata.AttributeNginxCacheOutcomeREVALIDATED,
 		)
 		mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Stale.Bytes),
-			metadata.AttributeNginxCacheOutcomeSTALE,
 			name,
+			metadata.AttributeNginxCacheOutcomeSTALE,
 		)
 		mb.RecordNginxCacheBytesReadDataPoint(
 			now,
 			int64(cache.Updating.Bytes),
-			metadata.AttributeNginxCacheOutcomeUPDATING,
 			name,
+			metadata.AttributeNginxCacheOutcomeUPDATING,
 		)
 
 		// Cache Memory
@@ -65,44 +65,44 @@ func RecordCacheMetrics(mb *metadata.MetricsBuilder, stats *plusapi.Stats, now p
 		mb.RecordNginxCacheResponsesDataPoint(
 			now,
 			int64(cache.Bypass.Responses),
-			metadata.AttributeNginxCacheOutcomeBYPASS,
 			name,
+			metadata.AttributeNginxCacheOutcomeBYPASS,
 		)
 		mb.RecordNginxCacheResponsesDataPoint(
 			now,
 			int64(cache.Expired.Responses),
-			metadata.AttributeNginxCacheOutcomeEXPIRED,
 			name,
+			metadata.AttributeNginxCacheOutcomeEXPIRED,
 		)
 		mb.RecordNginxCacheResponsesDataPoint(
 			now,
 			int64(cache.Hit.Responses),
-			metadata.AttributeNginxCacheOutcomeHIT,
 			name,
+			metadata.AttributeNginxCacheOutcomeHIT,
 		)
 		mb.RecordNginxCacheResponsesDataPoint(
 			now,
 			int64(cache.Miss.Responses),
-			metadata.AttributeNginxCacheOutcomeMISS,
 			name,
+			metadata.AttributeNginxCacheOutcomeMISS,
 		)
 		mb.RecordNginxCacheResponsesDataPoint(
 			now,
 			int64(cache.Revalidated.Responses),
-			metadata.AttributeNginxCacheOutcomeREVALIDATED,
 			name,
+			metadata.AttributeNginxCacheOutcomeREVALIDATED,
 		)
 		mb.RecordNginxCacheResponsesDataPoint(
 			now,
 			int64(cache.Stale.Responses),
-			metadata.AttributeNginxCacheOutcomeSTALE,
 			name,
+			metadata.AttributeNginxCacheOutcomeSTALE,
 		)
 		mb.RecordNginxCacheResponsesDataPoint(
 			now,
 			int64(cache.Updating.Responses),
-			metadata.AttributeNginxCacheOutcomeUPDATING,
 			name,
+			metadata.AttributeNginxCacheOutcomeUPDATING,
 		)
 	}
 }

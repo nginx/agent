@@ -13,7 +13,7 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/confighttp"
 
-	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/metadata"
+	"github.com/nginx/agent/v3/internal/collector/nginxreceiver/internal/metadata"
 )
 
 const (

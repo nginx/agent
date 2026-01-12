@@ -27,10 +27,10 @@ import (
 	metricSdk "go.opentelemetry.io/otel/sdk/metric"
 	"go.uber.org/zap"
 
-	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/config"
-	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/metadata"
-	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/model"
-	"github.com/nginx/agent/v3/internal/collector/nginxossreceiver/internal/scraper/accesslog/operator/input/file"
+	"github.com/nginx/agent/v3/internal/collector/nginxreceiver/internal/config"
+	"github.com/nginx/agent/v3/internal/collector/nginxreceiver/internal/metadata"
+	"github.com/nginx/agent/v3/internal/collector/nginxreceiver/internal/model"
+	"github.com/nginx/agent/v3/internal/collector/nginxreceiver/internal/scraper/accesslog/operator/input/file"
 )
 
 const Percentage = 100
