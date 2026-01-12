@@ -11,8 +11,10 @@ import (
 	"encoding/json"
 	"errors"
 	"sort"
+	"sync"
 	"testing"
 
+	"github.com/nginx/agent/v3/internal/grpc/grpcfakes"
 	"github.com/nginx/agent/v3/test/stub"
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -106,7 +108,9 @@ func TestResource_Process(t *testing.T) {
 			fakeResourceService.DeleteInstancesReturns(test.resource)
 			messagePipe := busfakes.NewFakeMessagePipe()
 
-			resourcePlugin := NewResource(types.AgentConfig())
+			fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+
+			resourcePlugin := NewResource(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
 			resourcePlugin.resourceService = fakeResourceService
 
 			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
@@ -165,7 +169,9 @@ func TestResource_Process_Apply(t *testing.T) {
 			fakeResourceService.ApplyConfigReturns(&model.NginxConfigContext{}, test.applyErr)
 			messagePipe := busfakes.NewFakeMessagePipe()
 
-			resourcePlugin := NewResource(types.AgentConfig())
+			fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+
+			resourcePlugin := NewResource(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
 			resourcePlugin.resourceService = fakeResourceService
 
 			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
@@ -368,8 +374,9 @@ func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 				[]client.UpstreamServer{}, []client.UpstreamServer{}, test.err)
 
 			messagePipe := busfakes.NewFakeMessagePipe()
+			fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
 
-			resourcePlugin := NewResource(types.AgentConfig())
+			resourcePlugin := NewResource(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
 			resourcePlugin.resourceService = fakeResourceService
 
 			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
@@ -472,7 +479,9 @@ func TestResource_Process_APIAction_UpdateStreamServers(t *testing.T) {
 
 			messagePipe := busfakes.NewFakeMessagePipe()
 
-			resourcePlugin := NewResource(types.AgentConfig())
+			fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+
+			resourcePlugin := NewResource(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
 			resourcePlugin.resourceService = fakeResourceService
 
 			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
@@ -614,7 +623,9 @@ func TestResource_Process_APIAction_GetStreamUpstreams(t *testing.T) {
 
 			messagePipe := busfakes.NewFakeMessagePipe()
 
-			resourcePlugin := NewResource(types.AgentConfig())
+			fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+
+			resourcePlugin := NewResource(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
 			resourcePlugin.resourceService = fakeResourceService
 
 			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
@@ -803,7 +814,9 @@ func TestResource_Process_Rollback(t *testing.T) {
 			fakeResourceService.ApplyConfigReturns(&model.NginxConfigContext{}, test.rollbackErr)
 			messagePipe := busfakes.NewFakeMessagePipe()
 
-			resourcePlugin := NewResource(types.AgentConfig())
+			fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+
+			resourcePlugin := NewResource(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
 			resourcePlugin.resourceService = fakeResourceService
 
 			err := messagePipe.Register(2, []bus.Plugin{resourcePlugin})
@@ -836,7 +849,9 @@ func TestResource_Process_Rollback(t *testing.T) {
 }
 
 func TestResource_Subscriptions(t *testing.T) {
-	resourcePlugin := NewResource(types.AgentConfig())
+	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+
+	resourcePlugin := NewResource(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
 	assert.Equal(t,
 		[]string{
 			bus.AddInstancesTopic,
@@ -850,7 +865,9 @@ func TestResource_Subscriptions(t *testing.T) {
 }
 
 func TestResource_Info(t *testing.T) {
-	resourcePlugin := NewResource(types.AgentConfig())
+	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+
+	resourcePlugin := NewResource(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
 	assert.Equal(t, &bus.Info{Name: "resource"}, resourcePlugin.Info())
 }
 
@@ -861,7 +878,9 @@ func TestResource_Init(t *testing.T) {
 	messagePipe := busfakes.NewFakeMessagePipe()
 	messagePipe.RunWithoutInit(ctx)
 
-	resourcePlugin := NewResource(types.AgentConfig())
+	fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+
+	resourcePlugin := NewResource(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
 	resourcePlugin.resourceService = &resourceService
 	err := resourcePlugin.Init(ctx, messagePipe)
 	require.NoError(t, err)
@@ -884,7 +903,9 @@ func runResourceTestHelper(t *testing.T, ctx context.Context, testName string, g
 		}
 
 		messagePipe := busfakes.NewFakeMessagePipe()
-		resourcePlugin := NewResource(types.AgentConfig())
+		fakeGrpcConnection := &grpcfakes.FakeGrpcConnectionInterface{}
+
+		resourcePlugin := NewResource(types.AgentConfig(), fakeGrpcConnection, model.Command, &sync.RWMutex{})
 		resourcePlugin.resourceService = fakeResourceService
 
 		registerErr := messagePipe.Register(2, []bus.Plugin{resourcePlugin})

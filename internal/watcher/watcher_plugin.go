@@ -287,6 +287,8 @@ func (w *Watcher) handleCredentialUpdate(ctx context.Context, message credential
 	})
 }
 
+// TODO: WHy?
+// Remove logic just send one list or dont send any to be honest
 func (w *Watcher) handleInstanceUpdates(newCtx context.Context, message instance.InstanceUpdatesMessage) {
 	if len(message.InstanceUpdates.NewInstances) > 0 {
 		slog.DebugContext(newCtx, "New instances found", "instances", message.InstanceUpdates.NewInstances)
