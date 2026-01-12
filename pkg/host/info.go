@@ -9,9 +9,11 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"regexp"
 	"strings"
@@ -30,6 +32,8 @@ const (
 	selfCgroupLocation = "/proc/self/cgroup"
 	mountInfoLocation  = "/proc/self/mountinfo"
 	osReleaseLocation  = "/etc/os-release"
+
+	ecsMetadataEnvV4 = "ECS_CONTAINER_METADATA_URI_V4"
 
 	k8sKind    = "kubepods"
 	docker     = "docker"
@@ -112,7 +116,20 @@ func (i *Info) IsContainer() (bool, error) {
 		}
 	}
 
-	return containsContainerReference(i.selfCgroupLocation)
+	ref, err := containsContainerReference(i.selfCgroupLocation)
+	if ref {
+		return true, nil
+	}
+
+	if os.Getenv(ecsMetadataEnvV4) != "" {
+		return true, nil
+	}
+
+	if err != nil {
+		return false, err
+	}
+
+	return false, nil
 }
 
 // ResourceID returns a unique identifier for the resource.
@@ -121,7 +138,7 @@ func (i *Info) IsContainer() (bool, error) {
 func (i *Info) ResourceID(ctx context.Context) (string, error) {
 	isContainer, _ := i.IsContainer()
 	if isContainer {
-		return i.containerID()
+		return i.containerID(ctx)
 	}
 
 	return i.hostID(ctx)
@@ -134,7 +151,7 @@ func (i *Info) ContainerInfo(ctx context.Context) (*v1.Resource_ContainerInfo, e
 	if err != nil {
 		return nil, err
 	}
-	containerId, err := i.containerID()
+	containerId, err := i.containerID(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -203,9 +220,34 @@ func (i *Info) releaseInfo(ctx context.Context, osReleaseLocation string) (*v1.R
 }
 
 // containerID returns the container ID of the current running environment.
-func (i *Info) containerID() (string, error) {
-	containerID, err := containerIDFromMountInfo(i.mountInfoLocation)
-	return uuid.NewMD5(uuid.NameSpaceDNS, []byte(containerID)).String(), err
+func (i *Info) containerID(ctx context.Context) (string, error) {
+	var (
+		containerIDMount string
+		errMount         error
+	)
+
+	containerIDMount, errMount = containerIDFromMountInfo(i.mountInfoLocation)
+	if containerIDMount != "" {
+		return uuid.NewMD5(uuid.NameSpaceDNS, []byte(containerIDMount)).String(), nil
+	}
+
+	if metadataURI := os.Getenv(ecsMetadataEnvV4); metadataURI != "" {
+		if cid, errEcs := i.containerIDFromECS(ctx, metadataURI); errEcs == nil && cid != "" {
+			return uuid.NewMD5(uuid.NameSpaceDNS, []byte(cid)).String(), nil
+		} else if errEcs != nil {
+			if errMount != nil {
+				return "", errMount
+			}
+
+			return "", errEcs
+		}
+	}
+
+	if errMount != nil {
+		return "", errMount
+	}
+
+	return "", errors.New("container ID not found")
 }
 
 // containsContainerReference checks if the cgroup file contains references to container runtimes.
@@ -366,4 +408,31 @@ func mergeHostAndOsReleaseInfo(
 		Name:      osReleaseInfo[name],
 		Id:        osReleaseInfo[id],
 	}
+}
+
+func (i *Info) containerIDFromECS(ctx context.Context, uri string) (string, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri, nil)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("metadata endpoint returned status %d", resp.StatusCode)
+	}
+
+	var metadata struct {
+		DockerId string `json:"DockerId"`
+	}
+
+	if err = json.NewDecoder(resp.Body).Decode(&metadata); err != nil {
+		return "", err
+	}
+
+	return metadata.DockerId, nil
 }
