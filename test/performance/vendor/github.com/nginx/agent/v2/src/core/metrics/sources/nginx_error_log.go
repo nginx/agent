@@ -57,13 +57,13 @@ var regularExpressionErrorMap = map[string][]*re.Regexp{
 }
 
 type NginxErrorLog struct {
-	baseDimensions *metrics.CommonDim
-	*namedMetric
+	baseDimensions     *metrics.CommonDim
 	mu                 *sync.Mutex
 	logFormats         map[string]string
 	logs               map[string]context.CancelFunc
 	binary             core.NginxBinary
 	nginxType          string
+	namespace          string
 	collectionInterval time.Duration
 	buf                []*metrics.StatsEntityWrapper
 }
@@ -78,12 +78,12 @@ func NewNginxErrorLog(
 	log.Trace("Creating NewNginxErrorLog")
 	nginxErrorLog := &NginxErrorLog{
 		baseDimensions,
-		&namedMetric{namespace: namespace},
 		&sync.Mutex{},
 		make(map[string]string),
 		make(map[string]context.CancelFunc),
 		binary,
 		nginxType,
+		namespace,
 		collectionInterval,
 		[]*metrics.StatsEntityWrapper{},
 	}
@@ -111,7 +111,7 @@ func (c *NginxErrorLog) Stop() {
 		fn()
 		delete(c.logs, f)
 	}
-	log.Debugf("Stopping NginxErrorLog source for nginx id: %v", c.baseDimensions.NginxId)
+	log.Debugf("Stopping NginxErrorLog source for NGINX ID: %v", c.baseDimensions.NginxId)
 }
 
 func (c *NginxErrorLog) Update(dimensions *metrics.CommonDim, collectorConf *metrics.NginxCollectorConfig) {
@@ -189,14 +189,14 @@ func (c *NginxErrorLog) collectLogStats(_ context.Context, m chan<- *metrics.Sta
 }
 
 func (c *NginxErrorLog) logStats(ctx context.Context, logFile string) {
-	log.Debugf("Collecting from error log: %s", logFile)
+	log.Debugf("Collecting from error log %s", logFile)
 
 	counters := map[string]float64{}
 	mu := sync.Mutex{}
 
 	t, err := tailer.NewTailer(logFile)
 	if err != nil {
-		log.Errorf("Unable to tail %q: %v", logFile, err)
+		log.Errorf("Unable to tail %s, %v", logFile, err)
 		return
 	}
 	data := make(chan string, 1024)
@@ -204,6 +204,8 @@ func (c *NginxErrorLog) logStats(ctx context.Context, logFile string) {
 
 	tick := time.NewTicker(c.collectionInterval)
 	defer tick.Stop()
+
+	errorLogNamedMetric := namedMetric{namespace: c.namespace}
 
 	for {
 		select {
@@ -228,14 +230,20 @@ func (c *NginxErrorLog) logStats(ctx context.Context, logFile string) {
 
 		case <-tick.C:
 			mu.Lock()
+
+			log.Tracef("Collecting metrics from error log: %s", logFile)
+
 			c.baseDimensions.NginxType = c.nginxType
 			c.baseDimensions.PublishedAPI = logFile
 
-			simpleMetrics := c.convertSamplesToSimpleMetrics(counters)
-			log.Tracef("Error log metrics collected: %v", simpleMetrics)
+			log.Tracef("Converting counters for %s error log file, counters=%v", logFile, counters)
+			simpleMetrics := errorLogNamedMetric.convertSamplesToSimpleMetrics(counters)
+			log.Tracef("Error log %s metrics collected: %v", logFile, simpleMetrics)
 
 			// reset the counters
 			counters = map[string]float64{}
+
+			log.Debugf("Error log %s stats count: %d", logFile, len(simpleMetrics))
 
 			c.buf = append(c.buf, metrics.NewStatsEntityWrapper(c.baseDimensions.ToDimensions(), simpleMetrics, proto.MetricsReport_INSTANCE))
 

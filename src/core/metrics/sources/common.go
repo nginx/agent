@@ -37,6 +37,7 @@ func (n *namedMetric) label(name string) string {
 	if name == "" {
 		return ""
 	}
+
 	switch {
 	case n.namespace != "" && n.group != "":
 		return strings.Join([]string{n.namespace, n.group, name}, ".")
@@ -45,6 +46,7 @@ func (n *namedMetric) label(name string) string {
 	case n.group != "":
 		return strings.Join([]string{n.group, name}, ".")
 	}
+
 	return name
 }
 
