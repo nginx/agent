@@ -502,7 +502,7 @@ func registerDataPlaneFlags(fs *flag.FlagSet) {
 	)
 
 	fs.String(
-		NginxApiTlsCa,
+		NginxApiTlsCaKey,
 		DefNginxApiTlsCa,
 		"The NGINX Plus CA certificate file location needed to call the NGINX Plus API if SSL is enabled.",
 	)
@@ -1095,7 +1095,10 @@ func resolveDataPlaneConfig() *DataPlaneConfig {
 			ReloadMonitoringPeriod: viperInstance.GetDuration(NginxReloadMonitoringPeriodKey),
 			TreatWarningsAsErrors:  viperInstance.GetBool(NginxTreatWarningsAsErrorsKey),
 			ExcludeLogs:            viperInstance.GetStringSlice(NginxExcludeLogsKey),
-			APITls:                 TLSConfig{Ca: viperInstance.GetString(NginxApiTlsCa)},
+			API: &NginxAPI{
+				URL: viperInstance.GetString(NginxApiURLKey),
+				TLS: TLSConfig{Ca: viperInstance.GetString(NginxApiTlsCaKey)},
+			},
 			ReloadBackoff: &BackOff{
 				InitialInterval:     viperInstance.GetDuration(NginxReloadBackoffInitialIntervalKey),
 				MaxInterval:         viperInstance.GetDuration(NginxReloadBackoffMaxIntervalKey),

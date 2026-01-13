@@ -16,6 +16,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -269,18 +270,20 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 			return nginxConfigContext, fmt.Errorf("traverse nginx config: %w", err)
 		}
 
-		stubStatuses := ncp.crossplaneConfigTraverseAPIDetails(
-			ctx, &conf, ncp.apiCallback, stubStatusAPIDirective,
-		)
-		if stubStatuses != nil {
-			nginxConfigContext.StubStatuses = append(nginxConfigContext.StubStatuses, stubStatuses...)
-		}
+		if !ncp.agentConfig.IsNginxApiUrlConfigured() {
+			stubStatuses := ncp.crossplaneConfigTraverseAPIDetails(
+				ctx, &conf, ncp.apiCallback, stubStatusAPIDirective,
+			)
+			if stubStatuses != nil {
+				nginxConfigContext.StubStatuses = append(nginxConfigContext.StubStatuses, stubStatuses...)
+			}
 
-		plusAPIs := ncp.crossplaneConfigTraverseAPIDetails(
-			ctx, &conf, ncp.apiCallback, plusAPIDirective,
-		)
-		if plusAPIs != nil {
-			nginxConfigContext.PlusAPIs = append(nginxConfigContext.PlusAPIs, plusAPIs...)
+			plusAPIs := ncp.crossplaneConfigTraverseAPIDetails(
+				ctx, &conf, ncp.apiCallback, plusAPIDirective,
+			)
+			if plusAPIs != nil {
+				nginxConfigContext.PlusAPIs = append(nginxConfigContext.PlusAPIs, plusAPIs...)
+			}
 		}
 
 		fileMeta, err := files.FileMeta(conf.File)
@@ -300,11 +303,46 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 			"server configured on port %s", ncp.agentConfig.SyslogServer.Port))
 	}
 
-	nginxConfigContext.PlusAPIs = ncp.sortPlusAPIs(ctx, nginxConfigContext.PlusAPIs)
-	nginxConfigContext.StubStatus = ncp.FindStubStatusAPI(ctx, nginxConfigContext)
-	nginxConfigContext.PlusAPI = ncp.FindPlusAPI(ctx, nginxConfigContext)
+	if !ncp.agentConfig.IsNginxApiUrlConfigured() {
+		nginxConfigContext.PlusAPIs = ncp.sortPlusAPIs(ctx, nginxConfigContext.PlusAPIs)
+		nginxConfigContext.StubStatus = ncp.FindStubStatusAPI(ctx, nginxConfigContext)
+		nginxConfigContext.PlusAPI = ncp.FindPlusAPI(ctx, nginxConfigContext)
+	} else {
+		nginxConfigContext = ncp.addApiToNginxConfigContext(ctx, nginxConfigContext)
+	}
 
 	return nginxConfigContext, nil
+}
+
+func (ncp *NginxConfigParser) addApiToNginxConfigContext(
+	ctx context.Context,
+	nginxConfigContext *model.NginxConfigContext,
+) *model.NginxConfigContext {
+	apiDetails, err := parseURL(ncp.agentConfig.DataPlaneConfig.Nginx.API.URL)
+	if err != nil {
+		slog.ErrorContext(
+			ctx,
+			"Configured NGINX API URL is invalid",
+			"url", ncp.agentConfig.DataPlaneConfig.Nginx.API.URL,
+			"error", err,
+		)
+
+		return nginxConfigContext
+	}
+
+	if ncp.pingAPIEndpoint(ctx, apiDetails, stubStatusAPIDirective) {
+		nginxConfigContext.StubStatus = apiDetails
+	} else if ncp.pingAPIEndpoint(ctx, apiDetails, plusAPIDirective) {
+		nginxConfigContext.PlusAPI = apiDetails
+	} else {
+		slog.WarnContext(
+			ctx,
+			"Configured NGINX API URL is not reachable",
+			"url", ncp.agentConfig.DataPlaneConfig.Nginx.API.URL,
+		)
+	}
+
+	return nginxConfigContext
 }
 
 func (ncp *NginxConfigParser) findLocalSysLogServers(sysLogServer string) string {
@@ -886,24 +924,26 @@ func (ncp *NginxConfigParser) socketClient(socketPath string) *http.Client {
 // prepareHTTPClient handles TLS config
 func (ncp *NginxConfigParser) prepareHTTPClient(ctx context.Context) (*http.Client, error) {
 	httpClient := http.DefaultClient
-	caCertLocation := ncp.agentConfig.DataPlaneConfig.Nginx.APITls.Ca
+	if ncp.agentConfig.IsNginxApiConfigured() {
+		caCertLocation := ncp.agentConfig.DataPlaneConfig.Nginx.API.TLS.Ca
 
-	if caCertLocation != "" && ncp.agentConfig.IsDirectoryAllowed(caCertLocation) {
-		slog.DebugContext(ctx, "Reading CA certificate", "file_path", caCertLocation)
-		caCert, err := os.ReadFile(caCertLocation)
-		if err != nil {
-			return nil, err
-		}
-		caCertPool := x509.NewCertPool()
-		caCertPool.AppendCertsFromPEM(caCert)
+		if caCertLocation != "" && ncp.agentConfig.IsDirectoryAllowed(caCertLocation) {
+			slog.DebugContext(ctx, "Reading CA certificate", "file_path", caCertLocation)
+			caCert, err := os.ReadFile(caCertLocation)
+			if err != nil {
+				return nil, err
+			}
+			caCertPool := x509.NewCertPool()
+			caCertPool.AppendCertsFromPEM(caCert)
 
-		httpClient = &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					RootCAs:    caCertPool,
-					MinVersion: tls.VersionTLS13,
+			httpClient = &http.Client{
+				Transport: &http.Transport{
+					TLSClientConfig: &tls.Config{
+						RootCAs:    caCertPool,
+						MinVersion: tls.VersionTLS13,
+					},
 				},
-			},
+			}
 		}
 	}
 
@@ -912,15 +952,19 @@ func (ncp *NginxConfigParser) prepareHTTPClient(ctx context.Context) (*http.Clie
 
 // Populate the CA cert location based ondirectory allowance.
 func (ncp *NginxConfigParser) selfSignedCACertLocation(ctx context.Context) string {
-	caCertLocation := ncp.agentConfig.DataPlaneConfig.Nginx.APITls.Ca
+	if ncp.agentConfig.IsNginxApiConfigured() {
+		caCertLocation := ncp.agentConfig.DataPlaneConfig.Nginx.API.TLS.Ca
 
-	if caCertLocation != "" && !ncp.agentConfig.IsDirectoryAllowed(caCertLocation) {
-		// If SSL is enabled but CA cert is provided and not allowed, treat it as if no CA cert
-		slog.WarnContext(ctx, "CA certificate location is not allowed, treating as if no CA cert provided.")
-		return ""
+		if caCertLocation != "" && !ncp.agentConfig.IsDirectoryAllowed(caCertLocation) {
+			// If SSL is enabled but CA cert is provided and not allowed, treat it as if no CA cert
+			slog.WarnContext(ctx, "CA certificate location is not allowed, treating as if no CA cert provided.")
+			return ""
+		}
+
+		return caCertLocation
 	}
 
-	return caCertLocation
+	return ""
 }
 
 func (ncp *NginxConfigParser) isDuplicateFile(nginxConfigContextFiles []*mpi.File, newFile *mpi.File) bool {
@@ -975,4 +1019,17 @@ func (ncp *NginxConfigParser) sortPlusAPIs(ctx context.Context, apis []*model.AP
 	})
 
 	return apis
+}
+
+func parseURL(unparsedUrl string) (*model.APIDetails, error) {
+	parsedURL, err := url.Parse(unparsedUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.APIDetails{
+		URL:      unparsedUrl,
+		Listen:   parsedURL.Host,
+		Location: parsedURL.Path,
+	}, nil
 }
