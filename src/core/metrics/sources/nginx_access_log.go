@@ -62,13 +62,13 @@ var logVarRegex = regexp.MustCompile(`\$([a-zA-Z]+[_[a-zA-Z]+]*)`)
 // This metrics source is used to tail the NGINX access logs to retrieve metrics.
 
 type NginxAccessLog struct {
-	baseDimensions *metrics.CommonDim
-	*namedMetric
+	baseDimensions     *metrics.CommonDim
 	mu                 *sync.Mutex
 	logFormats         map[string]string
 	logs               map[string]context.CancelFunc
 	binary             core.NginxBinary
 	nginxType          string
+	namespace          string
 	collectionInterval time.Duration
 	buf                []*metrics.StatsEntityWrapper
 	logger             *MetricSourceLogger
@@ -85,12 +85,12 @@ func NewNginxAccessLog(
 
 	nginxAccessLog := &NginxAccessLog{
 		baseDimensions,
-		&namedMetric{namespace: namespace},
 		&sync.Mutex{},
 		make(map[string]string),
 		make(map[string]context.CancelFunc),
 		binary,
 		nginxType,
+		namespace,
 		collectionInterval,
 		[]*metrics.StatsEntityWrapper{},
 		NewMetricSourceLogger(),
@@ -203,8 +203,8 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 
 	logPattern = replaceCustomLogVars(logPattern)
 
-	log.Debugf("Collecting from: %s using format: %s", logFile, logFormat)
-	log.Debugf("Pattern used for tailing logs: %s", logPattern)
+	log.Debugf("Collecting from %s using format %s", logFile, logFormat)
+	log.Debugf("Pattern used for tailing logs, %s", logPattern)
 
 	httpCounters, upstreamCounters, upstreamCacheCounters := map[string]float64{}, map[string]float64{}, map[string]float64{}
 	gzipRatios, requestLengths, requestTimes, upstreamResponseLength, upstreamResponseTimes, upstreamConnectTimes, upstreamHeaderTimes := []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}
@@ -214,18 +214,20 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 	if logPattern == "ltsv" {
 		t, err := tailer.NewLTSVTailer(logFile)
 		if err != nil {
-			log.Errorf("unable to tail %q: %v", logFile, err)
+			log.Errorf("Unable to tail %q: %v", logFile, err)
 			return
 		}
 		go t.Tail(ctx, data)
 	} else {
 		t, err := tailer.NewPatternTailer(logFile, map[string]string{"DEFAULT": logPattern})
 		if err != nil {
-			log.Errorf("unable to tail %q: %v", logFile, err)
+			log.Errorf("Unable to tail %q: %v", logFile, err)
 			return
 		}
 		go t.Tail(ctx, data)
 	}
+
+	accessLogNamedMetric := namedMetric{namespace: c.namespace}
 
 	tick := time.NewTicker(c.collectionInterval)
 	defer tick.Stop()
@@ -295,7 +297,7 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 							upstreamCounters[n] = 1
 						}
 					} else {
-						log.Debugf("Error getting upstream status value from access logs, %v", err)
+						log.Debugf("Error getting upstream status value from access log %s, %v", logFile, err)
 					}
 				}
 
@@ -330,6 +332,8 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 		case <-tick.C:
 			mu.Lock()
 
+			log.Tracef("Collecting metrics from access log: %s", logFile)
+
 			c.baseDimensions.NginxType = c.nginxType
 			c.baseDimensions.PublishedAPI = logFile
 
@@ -361,24 +365,23 @@ func (c *NginxAccessLog) logStats(ctx context.Context, logFile, logFormat string
 				upstreamCounters["upstream.response.length"] = getAverageMetricValue(upstreamResponseLength)
 			}
 
-			log.Tracef("%s log file: Converting httpCounters: %v", logFile, httpCounters)
+			accessLogNamedMetric.group = "http"
+			log.Tracef("Converting httpCounters for %s access log file, httpCounters=%v", logFile, httpCounters)
+			simpleMetrics := accessLogNamedMetric.convertSamplesToSimpleMetrics(httpCounters)
 
-			c.group = "http"
-			simpleMetrics := c.convertSamplesToSimpleMetrics(httpCounters)
+			accessLogNamedMetric.group = ""
+			log.Tracef("Converting upstreamCounters for %s access log file, upstreamCounters=%v", logFile, upstreamCounters)
+			simpleMetrics = append(simpleMetrics, accessLogNamedMetric.convertSamplesToSimpleMetrics(upstreamCounters)...)
+			log.Tracef("Converting upstreamCacheCounters for %s access log file, upstreamCacheCounters=%v", logFile, upstreamCacheCounters)
+			simpleMetrics = append(simpleMetrics, accessLogNamedMetric.convertSamplesToSimpleMetrics(upstreamCacheCounters)...)
 
-			c.group = ""
-			simpleMetrics = append(simpleMetrics, c.convertSamplesToSimpleMetrics(upstreamCounters)...)
-
-			c.group = ""
-			simpleMetrics = append(simpleMetrics, c.convertSamplesToSimpleMetrics(upstreamCacheCounters)...)
-
-			log.Tracef("Access log metrics collected: %v", simpleMetrics)
+			log.Tracef("Access log %s metrics collected: %v", logFile, simpleMetrics)
 
 			// reset the counters
 			httpCounters, upstreamCounters, upstreamCacheCounters = map[string]float64{}, map[string]float64{}, map[string]float64{}
 			gzipRatios, requestLengths, requestTimes, upstreamResponseLength, upstreamResponseTimes, upstreamConnectTimes, upstreamHeaderTimes = []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}, []float64{}
 
-			log.Debugf("access log stats count: %d", len(simpleMetrics))
+			log.Debugf("Access log %s stats count: %d", logFile, len(simpleMetrics))
 
 			c.buf = append(c.buf, metrics.NewStatsEntityWrapper(c.baseDimensions.ToDimensions(), simpleMetrics, proto.MetricsReport_INSTANCE))
 
