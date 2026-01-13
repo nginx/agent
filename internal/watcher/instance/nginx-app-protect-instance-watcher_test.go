@@ -100,13 +100,11 @@ func TestNginxAppProtectInstanceWatcher_Watch(t *testing.T) {
 	t.Run("Test 1: New instance", func(t *testing.T) {
 		select {
 		case instanceUpdates := <-instancesChannel:
-			assert.Len(t, instanceUpdates.InstanceUpdates.NewInstances, 1)
 			assert.Empty(t, instanceUpdates.InstanceUpdates.UpdatedInstances)
-			assert.Empty(t, instanceUpdates.InstanceUpdates.DeletedInstances)
 			assert.Truef(
 				t,
-				proto.Equal(instanceUpdates.InstanceUpdates.NewInstances[0], expectedInstance),
-				"expected %s, actual %s", expectedInstance, instanceUpdates.InstanceUpdates.NewInstances[0],
+				proto.Equal(instanceUpdates.InstanceUpdates.UpdatedInstances[0], expectedInstance),
+				"expected %s, actual %s", expectedInstance, instanceUpdates.InstanceUpdates.UpdatedInstances[0],
 			)
 		case <-time.After(timeout):
 			t.Fatalf("Timed out waiting for instance updates")
@@ -121,8 +119,6 @@ func TestNginxAppProtectInstanceWatcher_Watch(t *testing.T) {
 		select {
 		case instanceUpdates := <-instancesChannel:
 			assert.Len(t, instanceUpdates.InstanceUpdates.UpdatedInstances, 1)
-			assert.Empty(t, instanceUpdates.InstanceUpdates.NewInstances)
-			assert.Empty(t, instanceUpdates.InstanceUpdates.DeletedInstances)
 			assert.Truef(
 				t,
 				proto.Equal(instanceUpdates.InstanceUpdates.UpdatedInstances[0], expectedInstance),
@@ -139,13 +135,11 @@ func TestNginxAppProtectInstanceWatcher_Watch(t *testing.T) {
 
 		select {
 		case instanceUpdates := <-instancesChannel:
-			assert.Len(t, instanceUpdates.InstanceUpdates.DeletedInstances, 1)
-			assert.Empty(t, instanceUpdates.InstanceUpdates.NewInstances)
 			assert.Empty(t, instanceUpdates.InstanceUpdates.UpdatedInstances)
 			assert.Truef(
 				t,
-				proto.Equal(instanceUpdates.InstanceUpdates.DeletedInstances[0], expectedInstance),
-				"expected %s, actual %s", expectedInstance, instanceUpdates.InstanceUpdates.DeletedInstances[0],
+				proto.Equal(instanceUpdates.InstanceUpdates.UpdatedInstances[0], expectedInstance),
+				"expected %s, actual %s", expectedInstance, instanceUpdates.InstanceUpdates.UpdatedInstances[0],
 			)
 		case <-time.After(timeout):
 			t.Fatalf("Timed out waiting for instance updates")

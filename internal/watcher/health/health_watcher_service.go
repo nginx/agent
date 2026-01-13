@@ -30,9 +30,9 @@ type (
 
 	HealthWatcherService struct {
 		agentConfig        *config.Config
-		cache              map[string]*mpi.InstanceHealth   // key is instanceID
-		watchers           map[string]healthWatcherOperator // key is instanceID
-		instances          map[string]*mpi.Instance         // key is instanceID
+		cache              map[string]*mpi.InstanceHealth // key is instanceID
+		watcher            healthWatcherOperator          // key is instanceID
+		instances          map[string]*mpi.Instance       // key is instanceID
 		healthWatcherMutex sync.Mutex
 	}
 
@@ -44,32 +44,10 @@ type (
 
 func NewHealthWatcherService(agentConfig *config.Config) *HealthWatcherService {
 	return &HealthWatcherService{
-		watchers:    make(map[string]healthWatcherOperator),
+		watcher:     NewNginxHealthWatcher(),
 		cache:       make(map[string]*mpi.InstanceHealth),
 		instances:   make(map[string]*mpi.Instance),
 		agentConfig: agentConfig,
-	}
-}
-
-func (hw *HealthWatcherService) AddHealthWatcher(instances []*mpi.Instance) {
-	hw.healthWatcherMutex.Lock()
-	defer hw.healthWatcherMutex.Unlock()
-
-	for _, instance := range instances {
-		switch instance.GetInstanceMeta().GetInstanceType() {
-		case mpi.InstanceMeta_INSTANCE_TYPE_NGINX, mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS:
-			watcher := NewNginxHealthWatcher()
-			hw.watchers[instance.GetInstanceMeta().GetInstanceId()] = watcher
-		case mpi.InstanceMeta_INSTANCE_TYPE_AGENT:
-		case mpi.InstanceMeta_INSTANCE_TYPE_UNSPECIFIED,
-			mpi.InstanceMeta_INSTANCE_TYPE_UNIT,
-			mpi.InstanceMeta_INSTANCE_TYPE_NGINX_APP_PROTECT:
-			fallthrough
-		default:
-			slog.Warn("Health watcher not implemented", "instance_type",
-				instance.GetInstanceMeta().GetInstanceType())
-		}
-		hw.instances[instance.GetInstanceMeta().GetInstanceId()] = instance
 	}
 }
 
@@ -77,18 +55,10 @@ func (hw *HealthWatcherService) UpdateHealthWatcher(instances []*mpi.Instance) {
 	hw.healthWatcherMutex.Lock()
 	defer hw.healthWatcherMutex.Unlock()
 
+	clear(hw.instances)
+
 	for _, instance := range instances {
 		hw.instances[instance.GetInstanceMeta().GetInstanceId()] = instance
-	}
-}
-
-func (hw *HealthWatcherService) DeleteHealthWatcher(instances []*mpi.Instance) {
-	hw.healthWatcherMutex.Lock()
-	defer hw.healthWatcherMutex.Unlock()
-
-	for _, instance := range instances {
-		delete(hw.watchers, instance.GetInstanceMeta().GetInstanceId())
-		delete(hw.instances, instance.GetInstanceMeta().GetInstanceId())
 	}
 }
 
@@ -135,11 +105,11 @@ func (hw *HealthWatcherService) Watch(ctx context.Context, ch chan<- InstanceHea
 
 func (hw *HealthWatcherService) health(ctx context.Context) (updatedStatuses []*mpi.InstanceHealth, isHealthDiff bool,
 ) {
-	currentHealth := make(map[string]*mpi.InstanceHealth, len(hw.watchers))
+	currentHealth := make(map[string]*mpi.InstanceHealth, len(hw.instances))
 	allStatuses := make([]*mpi.InstanceHealth, 0)
 
-	for instanceID, watcher := range hw.watchers {
-		instanceHealth, err := watcher.Health(ctx, hw.instances[instanceID])
+	for instanceID := range hw.instances {
+		instanceHealth, err := hw.watcher.Health(ctx, hw.instances[instanceID])
 		if instanceHealth == nil {
 			instanceHealth = &mpi.InstanceHealth{
 				InstanceId:           instanceID,

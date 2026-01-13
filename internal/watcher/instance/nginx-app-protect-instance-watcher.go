@@ -15,7 +15,6 @@ import (
 	"github.com/fsnotify/fsnotify"
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
-	"github.com/nginx/agent/v3/internal/logger"
 	"github.com/nginx/agent/v3/pkg/id"
 )
 
@@ -38,7 +37,6 @@ var (
 type NginxAppProtectInstanceWatcher struct {
 	agentConfig             *config.Config
 	watcher                 *fsnotify.Watcher
-	instancesChannel        chan<- InstanceUpdatesMessage
 	nginxAppProtectInstance *mpi.Instance
 	filesBeingWatched       map[string]bool
 	version                 string
@@ -55,7 +53,7 @@ func NewNginxAppProtectInstanceWatcher(agentConfig *config.Config) *NginxAppProt
 	}
 }
 
-func (w *NginxAppProtectInstanceWatcher) Watch(ctx context.Context, instancesChannel chan<- InstanceUpdatesMessage) {
+func (w *NginxAppProtectInstanceWatcher) Watch(ctx context.Context) {
 	monitoringFrequency := w.agentConfig.Watchers.InstanceWatcher.MonitoringFrequency
 	slog.DebugContext(
 		ctx,
@@ -70,7 +68,6 @@ func (w *NginxAppProtectInstanceWatcher) Watch(ctx context.Context, instancesCha
 	}
 
 	w.watcher = watcher
-	w.instancesChannel = instancesChannel
 
 	w.watchVersionFiles(ctx)
 
@@ -96,6 +93,10 @@ func (w *NginxAppProtectInstanceWatcher) Watch(ctx context.Context, instancesCha
 			slog.ErrorContext(ctx, "Unexpected error in NGINX App Protect instance watcher", "error", watcherError)
 		}
 	}
+}
+
+func (w *NginxAppProtectInstanceWatcher) NginxAppProtectInstance() *mpi.Instance {
+	return w.nginxAppProtectInstance
 }
 
 func (w *NginxAppProtectInstanceWatcher) watchVersionFiles(ctx context.Context) {
@@ -233,49 +234,27 @@ func (w *NginxAppProtectInstanceWatcher) createInstance(ctx context.Context) {
 	}
 
 	slog.InfoContext(ctx, "Discovered a new NGINX App Protect instance")
-
-	w.instancesChannel <- InstanceUpdatesMessage{
-		CorrelationID: logger.CorrelationIDAttr(ctx),
-		InstanceUpdates: InstanceUpdates{
-			NewInstances: []*mpi.Instance{
-				w.nginxAppProtectInstance,
-			},
-		},
-	}
 }
 
 func (w *NginxAppProtectInstanceWatcher) deleteInstance(ctx context.Context) {
 	slog.InfoContext(ctx, "NGINX App Protect instance not longer exists")
-
-	w.instancesChannel <- InstanceUpdatesMessage{
-		CorrelationID: logger.CorrelationIDAttr(ctx),
-		InstanceUpdates: InstanceUpdates{
-			DeletedInstances: []*mpi.Instance{
-				w.nginxAppProtectInstance,
-			},
-		},
-	}
 	w.nginxAppProtectInstance = nil
 }
 
 func (w *NginxAppProtectInstanceWatcher) updateInstance(ctx context.Context) {
 	w.nginxAppProtectInstance.GetInstanceMeta().Version = w.version
 	runtimeInfo := w.nginxAppProtectInstance.GetInstanceRuntime().GetNginxAppProtectRuntimeInfo()
+	if runtimeInfo == nil {
+		slog.ErrorContext(ctx, "Error updating NGINX App Protect instance runtimeInfo, instance no longer exists")
+		return
+	}
+
 	runtimeInfo.Release = w.release
 	runtimeInfo.AttackSignatureVersion = w.attackSignatureVersion
 	runtimeInfo.ThreatCampaignVersion = w.threatCampaignVersion
 	runtimeInfo.EnforcerEngineVersion = w.enforcerEngineVersion
 
 	slog.DebugContext(ctx, "NGINX App Protect instance updated")
-
-	w.instancesChannel <- InstanceUpdatesMessage{
-		CorrelationID: logger.CorrelationIDAttr(ctx),
-		InstanceUpdates: InstanceUpdates{
-			UpdatedInstances: []*mpi.Instance{
-				w.nginxAppProtectInstance,
-			},
-		},
-	}
 }
 
 func (w *NginxAppProtectInstanceWatcher) haveVersionsChanged() bool {

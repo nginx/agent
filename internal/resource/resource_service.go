@@ -56,9 +56,7 @@ const (
 //counterfeiter:generate . processOperator
 
 type resourceServiceInterface interface {
-	AddInstances(instanceList []*mpi.Instance) *mpi.Resource
 	UpdateInstances(ctx context.Context, instanceList []*mpi.Instance) *mpi.Resource
-	DeleteInstances(ctx context.Context, instanceList []*mpi.Instance) *mpi.Resource
 	ApplyConfig(ctx context.Context, instanceID string) (*model.NginxConfigContext, error)
 	Instance(instanceID string) *mpi.Instance
 	GetHTTPUpstreamServers(ctx context.Context, instance *mpi.Instance, upstreams string) ([]client.UpstreamServer,
@@ -91,9 +89,10 @@ type (
 
 type ResourceService struct {
 	resource          *mpi.Resource
+	napInstance       *mpi.Instance
 	nginxConfigParser parser.ConfigParser
 	agentConfig       *config.Config
-	instanceOperators map[string]instanceOperator // key is instance ID
+	instanceOperator  instanceOperator
 	info              host.InfoInterface
 	manifestFilePath  string
 	resourceMutex     sync.Mutex
@@ -106,7 +105,7 @@ func NewResourceService(ctx context.Context, agentConfig *config.Config) *Resour
 		resourceMutex:     sync.Mutex{},
 		info:              host.NewInfo(),
 		operatorsMutex:    sync.Mutex{},
-		instanceOperators: make(map[string]instanceOperator),
+		instanceOperator:  NewInstanceOperator(agentConfig),
 		nginxConfigParser: parser.NewNginxConfigParser(agentConfig),
 		agentConfig:       agentConfig,
 		manifestFilePath:  agentConfig.LibDir + "/manifest.json",
@@ -115,15 +114,6 @@ func NewResourceService(ctx context.Context, agentConfig *config.Config) *Resour
 	resourceService.updateResourceInfo(ctx)
 
 	return resourceService
-}
-
-func (r *ResourceService) AddInstances(instanceList []*mpi.Instance) *mpi.Resource {
-	r.resourceMutex.Lock()
-	defer r.resourceMutex.Unlock()
-	r.resource.Instances = append(r.resource.GetInstances(), instanceList...)
-	r.AddOperator(instanceList)
-
-	return r.resource
 }
 
 func (r *ResourceService) Instance(instanceID string) *mpi.Instance {
@@ -136,73 +126,25 @@ func (r *ResourceService) Instance(instanceID string) *mpi.Instance {
 	return nil
 }
 
-func (r *ResourceService) AddOperator(instanceList []*mpi.Instance) {
-	r.operatorsMutex.Lock()
-	defer r.operatorsMutex.Unlock()
-	for _, instance := range instanceList {
-		r.instanceOperators[instance.GetInstanceMeta().GetInstanceId()] = NewInstanceOperator(r.agentConfig)
-	}
-}
-
-func (r *ResourceService) RemoveOperator(instanceList []*mpi.Instance) {
-	r.operatorsMutex.Lock()
-	defer r.operatorsMutex.Unlock()
-	for _, instance := range instanceList {
-		delete(r.instanceOperators, instance.GetInstanceMeta().GetInstanceId())
-	}
-}
-
 func (r *ResourceService) UpdateInstances(ctx context.Context, instanceList []*mpi.Instance) *mpi.Resource {
 	r.resourceMutex.Lock()
 	defer r.resourceMutex.Unlock()
-
-	for _, updatedInstance := range instanceList {
-		resourceCopy, ok := proto.Clone(r.resource).(*mpi.Resource)
-		if ok {
-			for _, instance := range resourceCopy.GetInstances() {
-				if updatedInstance.GetInstanceMeta().GetInstanceId() == instance.GetInstanceMeta().GetInstanceId() {
-					instance.InstanceMeta = updatedInstance.GetInstanceMeta()
-					instance.InstanceRuntime = updatedInstance.GetInstanceRuntime()
-					instance.InstanceConfig = updatedInstance.GetInstanceConfig()
-				}
-			}
-			r.resource = resourceCopy
-		} else {
-			slog.WarnContext(ctx, "Unable to clone resource while updating instances", "resource",
-				r.resource, "instances", instanceList)
-		}
+	resourceCopy, ok := proto.Clone(r.resource).(*mpi.Resource)
+	if ok {
+		resourceCopy.Instances = instanceList
+		r.resource = resourceCopy
+	} else {
+		slog.WarnContext(ctx, "Unable to clone resource while updating instances", "resource",
+			r.resource, "instances", instanceList)
 	}
-
-	return r.resource
-}
-
-func (r *ResourceService) DeleteInstances(ctx context.Context, instanceList []*mpi.Instance) *mpi.Resource {
-	r.resourceMutex.Lock()
-	defer r.resourceMutex.Unlock()
-
-	for _, deletedInstance := range instanceList {
-		resourceCopy, ok := proto.Clone(r.resource).(*mpi.Resource)
-		if ok {
-			for index, instance := range resourceCopy.GetInstances() {
-				if deletedInstance.GetInstanceMeta().GetInstanceId() == instance.GetInstanceMeta().GetInstanceId() {
-					r.resource.Instances = append(r.resource.Instances[:index], r.resource.GetInstances()[index+1:]...)
-				}
-			}
-		} else {
-			slog.WarnContext(ctx, "Unable to clone resource while deleting instances", "resource",
-				r.resource, "instances", instanceList)
-		}
-	}
-	r.RemoveOperator(instanceList)
 
 	return r.resource
 }
 
 func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) (*model.NginxConfigContext, error) {
 	var instance *mpi.Instance
-	operator := r.instanceOperators[instanceID]
 
-	if operator == nil {
+	if r.instanceOperator == nil {
 		return nil, fmt.Errorf("instance %s not found", instanceID)
 	}
 
@@ -224,12 +166,12 @@ func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) (*
 
 	slog.DebugContext(ctx, "Updated Instance Runtime after parsing config", "instance", instance.GetInstanceRuntime())
 
-	valErr := operator.Validate(ctx, instance)
+	valErr := r.instanceOperator.Validate(ctx, instance)
 	if valErr != nil {
 		return nil, fmt.Errorf("failed validating config %w", valErr)
 	}
 
-	reloadErr := operator.Reload(ctx, instance)
+	reloadErr := r.instanceOperator.Reload(ctx, instance)
 	if reloadErr != nil {
 		return nil, fmt.Errorf("failed to reload NGINX %w", reloadErr)
 	}

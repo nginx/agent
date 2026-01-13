@@ -77,20 +77,6 @@ func (*Resource) Info() *bus.Info {
 
 func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 	switch msg.Topic {
-	case bus.AddInstancesTopic:
-		slog.DebugContext(ctx, "Resource plugin received add instances message")
-		instanceList, ok := msg.Data.([]*mpi.Instance)
-		if !ok {
-			slog.ErrorContext(ctx, "Unable to cast message payload to []*mpi.Instance", "payload", msg.Data)
-
-			return
-		}
-
-		resource := r.resourceService.AddInstances(instanceList)
-
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: resource})
-
-		return
 	case bus.UpdatedInstancesTopic:
 		slog.DebugContext(ctx, "Resource plugin received update instances message")
 		instanceList, ok := msg.Data.([]*mpi.Instance)
@@ -100,20 +86,6 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 			return
 		}
 		resource := r.resourceService.UpdateInstances(ctx, instanceList)
-
-		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: resource})
-
-		return
-
-	case bus.DeletedInstancesTopic:
-		slog.DebugContext(ctx, "Resource plugin received delete instances message")
-		instanceList, ok := msg.Data.([]*mpi.Instance)
-		if !ok {
-			slog.ErrorContext(ctx, "Unable to cast message payload to []*mpi.Instance", "payload", msg.Data)
-
-			return
-		}
-		resource := r.resourceService.DeleteInstances(ctx, instanceList)
 
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: resource})
 
@@ -133,9 +105,7 @@ func (r *Resource) Process(ctx context.Context, msg *bus.Message) {
 
 func (*Resource) Subscriptions() []string {
 	return []string{
-		bus.AddInstancesTopic,
 		bus.UpdatedInstancesTopic,
-		bus.DeletedInstancesTopic,
 		bus.WriteConfigSuccessfulTopic,
 		bus.RollbackWriteTopic,
 		bus.APIActionRequestTopic,

@@ -8,7 +8,6 @@ package instance
 import (
 	"context"
 	"log/slog"
-	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -40,23 +39,22 @@ type (
 	}
 
 	InstanceWatcherService struct {
-		processOperator           process.ProcessOperatorInterface
-		nginxConfigParser         parser.ConfigParser
-		executer                  exec.ExecInterface
-		enabled                   *atomic.Bool
-		agentConfig               *config.Config
-		instanceCache             map[string]*mpi.Instance
-		nginxConfigCache          map[string]*model.NginxConfigContext
-		instancesChannel          chan<- InstanceUpdatesMessage
-		nginxConfigContextChannel chan<- NginxConfigContextMessage
-		nginxParser               processParser
-		cacheMutex                sync.Mutex
+		processOperator                process.ProcessOperatorInterface
+		nginxAppProtectInstanceWatcher *NginxAppProtectInstanceWatcher
+		nginxConfigParser              parser.ConfigParser
+		executer                       exec.ExecInterface
+		enabled                        *atomic.Bool
+		agentConfig                    *config.Config
+		instanceCache                  map[string]*mpi.Instance
+		nginxConfigCache               map[string]*model.NginxConfigContext
+		instancesChannel               chan<- InstanceUpdatesMessage
+		nginxConfigContextChannel      chan<- NginxConfigContextMessage
+		nginxParser                    processParser
+		cacheMutex                     sync.Mutex
 	}
 
 	InstanceUpdates struct {
-		NewInstances     []*mpi.Instance
 		UpdatedInstances []*mpi.Instance
-		DeletedInstances []*mpi.Instance
 	}
 
 	InstanceUpdatesMessage struct {
@@ -70,20 +68,21 @@ type (
 	}
 )
 
-func NewInstanceWatcherService(agentConfig *config.Config) *InstanceWatcherService {
+func NewInstanceWatcherService(agentConfig *config.Config, watcher *NginxAppProtectInstanceWatcher) *InstanceWatcherService {
 	enabled := &atomic.Bool{}
 	enabled.Store(true)
 
 	return &InstanceWatcherService{
-		agentConfig:       agentConfig,
-		processOperator:   process.NewProcessOperator(),
-		nginxParser:       NewNginxProcessParser(),
-		nginxConfigParser: parser.NewNginxConfigParser(agentConfig),
-		instanceCache:     make(map[string]*mpi.Instance),
-		cacheMutex:        sync.Mutex{},
-		nginxConfigCache:  make(map[string]*model.NginxConfigContext),
-		executer:          &exec.Exec{},
-		enabled:           enabled,
+		agentConfig:                    agentConfig,
+		nginxAppProtectInstanceWatcher: watcher,
+		processOperator:                process.NewProcessOperator(),
+		nginxParser:                    NewNginxProcessParser(),
+		nginxConfigParser:              parser.NewNginxConfigParser(agentConfig),
+		instanceCache:                  make(map[string]*mpi.Instance),
+		cacheMutex:                     sync.Mutex{},
+		nginxConfigCache:               make(map[string]*model.NginxConfigContext),
+		executer:                       &exec.Exec{},
+		enabled:                        enabled,
 	}
 }
 
@@ -195,7 +194,6 @@ func (iw *InstanceWatcherService) checkForUpdates(
 	}
 
 	instancesToParse = append(instancesToParse, instanceUpdates.UpdatedInstances...)
-	instancesToParse = append(instancesToParse, instanceUpdates.NewInstances...)
 
 	for _, newInstance := range instancesToParse {
 		instanceType := newInstance.GetInstanceMeta().GetInstanceType()
@@ -230,8 +228,12 @@ func (iw *InstanceWatcherService) checkForUpdates(
 		}
 	}
 
-	if len(instanceUpdates.NewInstances) > 0 || len(instanceUpdates.DeletedInstances) > 0 ||
-		len(instanceUpdates.UpdatedInstances) > 0 {
+	if iw.nginxAppProtectInstanceWatcher.NginxAppProtectInstance() != nil {
+		slog.DebugContext(ctx, "Adding nginx app protect instance to instance list")
+		instanceUpdates.UpdatedInstances = append(instanceUpdates.UpdatedInstances, iw.nginxAppProtectInstanceWatcher.NginxAppProtectInstance())
+	}
+
+	if len(instanceUpdates.UpdatedInstances) > 0 {
 		iw.instancesChannel <- InstanceUpdatesMessage{
 			CorrelationID:   correlationID,
 			InstanceUpdates: instanceUpdates,
@@ -280,19 +282,16 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 		instancesFound[instance.GetInstanceMeta().GetInstanceId()] = instance
 	}
 
-	newInstances, updatedInstances, deletedInstances := compareInstances(iw.instanceCache, instancesFound)
+	if areInstanceDifferent(iw.instanceCache, instancesFound) {
+		var updatedInstances []*mpi.Instance
+		for _, instance := range instancesFound {
+			updatedInstances = append(updatedInstances, instance)
+		}
 
-	instanceUpdates.NewInstances = newInstances
-	instanceUpdates.UpdatedInstances = updatedInstances
-	instanceUpdates.DeletedInstances = deletedInstances
-
-	for _, instance := range slices.Concat[[]*mpi.Instance](newInstances, updatedInstances) {
-		iw.instanceCache[instance.GetInstanceMeta().GetInstanceId()] = instance
+		instanceUpdates.UpdatedInstances = updatedInstances
 	}
 
-	for _, instance := range deletedInstances {
-		delete(iw.instanceCache, instance.GetInstanceMeta().GetInstanceId())
-	}
+	iw.instanceCache = instancesFound
 
 	return instanceUpdates, nil
 }
@@ -345,16 +344,14 @@ func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *mpi.Instan
 	return instance
 }
 
-func compareInstances(oldInstancesMap, instancesMap map[string]*mpi.Instance) (
-	newInstances, updatedInstances, deletedInstances []*mpi.Instance,
-) {
+func areInstanceDifferent(oldInstancesMap, instancesMap map[string]*mpi.Instance) bool {
 	updatedInstancesMap := make(map[string]*mpi.Instance)
 	updatedOldInstancesMap := make(map[string]*mpi.Instance)
 
 	for instanceID, instance := range instancesMap {
 		_, ok := oldInstancesMap[instanceID]
 		if !ok {
-			newInstances = append(newInstances, instance)
+			return true
 		} else {
 			updatedInstancesMap[instanceID] = instance
 		}
@@ -363,29 +360,28 @@ func compareInstances(oldInstancesMap, instancesMap map[string]*mpi.Instance) (
 	for instanceID, oldInstance := range oldInstancesMap {
 		_, ok := instancesMap[instanceID]
 		if !ok {
-			deletedInstances = append(deletedInstances, oldInstance)
+			return true
 		} else {
 			updatedOldInstancesMap[instanceID] = oldInstance
 		}
 	}
 
-	updatedInstances = checkForProcessChanges(updatedInstancesMap, updatedOldInstancesMap)
-
-	return newInstances, updatedInstances, deletedInstances
+	return checkForProcessChanges(updatedInstancesMap, updatedOldInstancesMap)
 }
 
 func checkForProcessChanges(
 	updatedInstancesMap map[string]*mpi.Instance,
 	updatedOldInstancesMap map[string]*mpi.Instance,
-) (updatedInstances []*mpi.Instance) {
+) (updated bool) {
+	updated = false
 	for instanceID, instance := range updatedInstancesMap {
 		oldInstance := updatedOldInstancesMap[instanceID]
 		if !areInstancesEqual(oldInstance.GetInstanceRuntime(), instance.GetInstanceRuntime()) {
-			updatedInstances = append(updatedInstances, instance)
+			return true
 		}
 	}
 
-	return updatedInstances
+	return updated
 }
 
 func areInstancesEqual(oldRuntime, currentRuntime *mpi.InstanceRuntime) (equal bool) {
