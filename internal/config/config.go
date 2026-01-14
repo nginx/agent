@@ -502,6 +502,18 @@ func registerDataPlaneFlags(fs *flag.FlagSet) {
 	)
 
 	fs.String(
+		NginxApiURLKey,
+		"",
+		"The NGINX Plus API URL.",
+	)
+
+	fs.String(
+		NginxApiSocketKey,
+		"",
+		"The NGINX Plus API Unix socket path.",
+	)
+
+	fs.String(
 		NginxApiTlsCaKey,
 		DefNginxApiTlsCa,
 		"The NGINX Plus CA certificate file location needed to call the NGINX Plus API if SSL is enabled.",
@@ -1090,14 +1102,15 @@ func parseJSON(value string) interface{} {
 }
 
 func resolveDataPlaneConfig() *DataPlaneConfig {
-	return &DataPlaneConfig{
+	dataPlaneConfig := &DataPlaneConfig{
 		Nginx: &NginxDataPlaneConfig{
 			ReloadMonitoringPeriod: viperInstance.GetDuration(NginxReloadMonitoringPeriodKey),
 			TreatWarningsAsErrors:  viperInstance.GetBool(NginxTreatWarningsAsErrorsKey),
 			ExcludeLogs:            viperInstance.GetStringSlice(NginxExcludeLogsKey),
 			API: &NginxAPI{
-				URL: viperInstance.GetString(NginxApiURLKey),
-				TLS: TLSConfig{Ca: viperInstance.GetString(NginxApiTlsCaKey)},
+				URL:    viperInstance.GetString(NginxApiURLKey),
+				Socket: viperInstance.GetString(NginxApiSocketKey),
+				TLS:    TLSConfig{Ca: viperInstance.GetString(NginxApiTlsCaKey)},
 			},
 			ReloadBackoff: &BackOff{
 				InitialInterval:     viperInstance.GetDuration(NginxReloadBackoffInitialIntervalKey),
@@ -1108,6 +1121,12 @@ func resolveDataPlaneConfig() *DataPlaneConfig {
 			},
 		},
 	}
+
+	if dataPlaneConfig.Nginx.API.Socket != "" && !strings.HasPrefix(dataPlaneConfig.Nginx.API.Socket, "unix:") {
+		dataPlaneConfig.Nginx.API.Socket = "unix:" + dataPlaneConfig.Nginx.API.Socket
+	}
+
+	return dataPlaneConfig
 }
 
 func resolveClient() *Client {

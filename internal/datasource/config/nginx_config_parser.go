@@ -330,6 +330,10 @@ func (ncp *NginxConfigParser) addApiToNginxConfigContext(
 		return nginxConfigContext
 	}
 
+	if ncp.agentConfig.IsNginxApiSocketConfigured() {
+		apiDetails.Listen = ncp.agentConfig.DataPlaneConfig.Nginx.API.Socket
+	}
+
 	if ncp.pingAPIEndpoint(ctx, apiDetails, stubStatusAPIDirective) {
 		nginxConfigContext.StubStatus = apiDetails
 	} else if ncp.pingAPIEndpoint(ctx, apiDetails, plusAPIDirective) {

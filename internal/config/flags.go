@@ -139,6 +139,7 @@ var (
 	NginxExcludeLogsKey                      = pre(DataPlaneConfigRootKey, "nginx") + "exclude_logs"
 	NginxApiTlsCaKey                         = pre(DataPlaneConfigRootKey, "nginx") + "api_tls_ca"
 	NginxApiURLKey                           = pre(DataPlaneConfigRootKey, "nginx") + "api_url"
+	NginxApiSocketKey                        = pre(DataPlaneConfigRootKey, "nginx") + "api_socket"
 
 	SyslogServerPort = pre("syslog_server") + "port"
 

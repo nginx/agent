@@ -74,8 +74,9 @@ type (
 	}
 
 	NginxAPI struct {
-		URL string    `yaml:"url" mapstructure:"url"`
-		TLS TLSConfig `yaml:"tls" mapstructure:"tls"`
+		URL    string    `yaml:"url"    mapstructure:"url"`
+		Socket string    `yaml:"socket" mapstructure:"socket"`
+		TLS    TLSConfig `yaml:"tls"    mapstructure:"tls"`
 	}
 
 	Client struct {
@@ -508,6 +509,14 @@ func (c *Config) IsNginxApiUrlConfigured() bool {
 	}
 
 	return c.DataPlaneConfig.Nginx.API.URL != ""
+}
+
+func (c *Config) IsNginxApiSocketConfigured() bool {
+	if !c.IsNginxApiConfigured() {
+		return false
+	}
+
+	return c.DataPlaneConfig.Nginx.API.Socket != ""
 }
 
 func (c *Config) IsNginxApiConfigured() bool {

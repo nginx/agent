@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -756,6 +757,23 @@ func TestNginxConfigParser_PlusAPIParse(t *testing.T) {
 	fakeServerUrl, err := url.Parse(fakeServer.URL)
 	require.NoError(t, err)
 
+	// Create a unix socket listener for testing unix socket
+	socketFile, err := os.CreateTemp("/tmp", "nginx-plus-api-*.sock")
+	require.NoError(t, err)
+	socket := socketFile.Name()
+	require.NoError(t, socketFile.Close())
+	require.NoError(t, os.Remove(socket))
+	defer os.Remove(socket)
+
+	listener, err := (&net.ListenConfig{}).Listen(t.Context(), "unix", socket)
+	require.NoError(t, err)
+	defer listener.Close()
+
+	server := httptest.NewUnstartedServer(handler)
+	server.Listener = listener
+	server.Start()
+	defer server.Close()
+
 	file := helpers.CreateFileWithErrorCheck(t, dir, "nginx-parse-config.conf")
 	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
 
@@ -772,24 +790,39 @@ func TestNginxConfigParser_PlusAPIParse(t *testing.T) {
 	agentConfigWithOverride.DataPlaneConfig.Nginx.API = &config.NginxAPI{
 		URL: fmt.Sprintf("http://localhost:%s/api/", fakeServerUrl.Port()),
 	}
+	agentConfigWithUnixOverride := types.AgentConfig()
+	agentConfigWithUnixOverride.DataPlaneConfig.Nginx.API = &config.NginxAPI{
+		URL:    "http://localhost/api/",
+		Socket: "unix:" + socket,
+	}
 
 	tests := []struct {
 		agentConfig *config.Config
 		name        string
 		content     string
 		url         string
+		listen      string
 	}{
 		{
 			name:        "Test 1: No override of Plus API URL in agent config",
 			content:     testconfig.NginxConfigWithPlusAPI(fakeServerUrl.Port()),
 			url:         "http://localhost:" + fakeServerUrl.Port() + "/api/",
+			listen:      "localhost:" + fakeServerUrl.Port(),
 			agentConfig: types.AgentConfig(),
 		},
 		{
 			name:        "Test 2: Override Plus API URL in agent config",
 			content:     testconfig.NginxConfigWithPlusAPI("8080"),
 			url:         "http://localhost:" + fakeServerUrl.Port() + "/api/",
+			listen:      "localhost:" + fakeServerUrl.Port(),
 			agentConfig: agentConfigWithOverride,
+		},
+		{
+			name:        "Test 3: Override Plus API URL in agent config with unix socket",
+			content:     testconfig.NginxConfigWithPlusAPI("8080"),
+			url:         "http://localhost/api/",
+			listen:      "unix:" + socket,
+			agentConfig: agentConfigWithUnixOverride,
 		},
 	}
 
@@ -806,6 +839,8 @@ func TestNginxConfigParser_PlusAPIParse(t *testing.T) {
 			require.NoError(t, parseError)
 
 			assert.Equal(t, test.url, result.PlusAPI.URL)
+			assert.Equal(t, test.listen, result.PlusAPI.Listen)
+			assert.Equal(t, "/api/", result.PlusAPI.Location)
 		})
 	}
 }
