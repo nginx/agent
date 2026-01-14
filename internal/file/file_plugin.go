@@ -7,6 +7,7 @@ package file
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"sync"
 
@@ -341,12 +342,17 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			instanceID,
 		)
 		if rollbackErr != nil {
+			// include both the original apply error and the rollback error so the management plane
+			// receives actionable information about what failed during apply and what failed during rollback
+			combinedErr := fmt.Sprintf("apply error: %s; rollback error: %s", err.Error(), rollbackErr.Error())
+
 			rollbackResponse := fp.createDataPlaneResponse(
 				correlationID,
 				mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 				"Config apply failed, rollback failed",
 				instanceID,
-				rollbackErr.Error())
+				combinedErr,
+			)
 
 			fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: rollbackResponse})
 
