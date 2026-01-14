@@ -87,7 +87,7 @@ func NewNginxPlus(baseDimensions *metrics.CommonDim, nginxNamespace, plusNamespa
 
 	client := http.DefaultClient
 
-	if conf.Nginx.API.TLS.Ca != "" && conf.IsFileAllowed(conf.Nginx.API.TLS.Ca) {
+	if conf.Nginx.API != nil && conf.Nginx.API.TLS.Ca != "" && conf.IsFileAllowed(conf.Nginx.API.TLS.Ca) {
 		data, err := os.ReadFile(conf.Nginx.API.TLS.Ca)
 		if err != nil {
 			log.Errorf("Unable to collect NGINX Plus metrics. Failed to read NGINX CA certificate file: %v", err)
