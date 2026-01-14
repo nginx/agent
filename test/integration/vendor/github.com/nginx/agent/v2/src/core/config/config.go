@@ -354,8 +354,9 @@ func getNginx() Nginx {
 		NginxClientVersion:           Viper.GetInt(NginxClientVersion),
 		ConfigReloadMonitoringPeriod: Viper.GetDuration(NginxConfigReloadMonitoringPeriod),
 		TreatWarningsAsErrors:        Viper.GetBool(NginxTreatWarningsAsErrors),
-		ApiTls: TLSConfig{
-			Ca: Viper.GetString(NginxApiTlsCa),
+		API: &NginxAPI{
+			URL: Viper.GetString(NginxApiURLKey),
+			TLS: TLSConfig{Ca: Viper.GetString(NginxApiTlsCa)},
 		},
 	}
 }
