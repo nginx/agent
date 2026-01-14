@@ -220,20 +220,25 @@ func (n *NginxBinaryType) GetNginxDetailsFromProcess(nginxProcess *Process) *pro
 	n.statusUrlMutex.RUnlock()
 
 	if urlsLength == 0 || nginxStatus == "" {
-		stubStatusApiUrl, err := sdk.GetStubStatusApiUrl(nginxDetailsFacade.ConfPath, n.config.IgnoreDirectives)
-		if err != nil {
-			log.Tracef("Unable to get Stub Status API URL from the configuration: NGINX OSS metrics will be unavailable for this system. please configure a Stub Status API to get NGINX OSS metrics: %v", err)
-		}
-
-		nginxPlusApiUrl, err := sdk.GetNginxPlusApiUrl(nginxDetailsFacade.ConfPath, n.config.IgnoreDirectives)
-		if err != nil {
-			log.Tracef("Unable to get NGINX Plus API URL from the configuration: NGINX Plus metrics will be unavailable for this system. please configure a NGINX Plus API to get NGINX Plus metrics: %v", err)
-		}
-
-		if nginxDetailsFacade.Plus.Enabled {
-			nginxDetailsFacade.StatusUrl = nginxPlusApiUrl
+		// If NGINX API URL is configured in agent config then use that istead of discovering the URL from the NGINX configuration
+		if n.config.Nginx.API != nil && n.config.Nginx.API.URL != "" {
+			nginxDetailsFacade.StatusUrl = n.config.Nginx.API.URL
 		} else {
-			nginxDetailsFacade.StatusUrl = stubStatusApiUrl
+			stubStatusApiUrl, err := sdk.GetStubStatusApiUrl(nginxDetailsFacade.ConfPath, n.config.IgnoreDirectives)
+			if err != nil {
+				log.Tracef("Unable to get Stub Status API URL from the configuration: NGINX OSS metrics will be unavailable for this system. please configure a Stub Status API to get NGINX OSS metrics: %v", err)
+			}
+
+			nginxPlusApiUrl, err := sdk.GetNginxPlusApiUrl(nginxDetailsFacade.ConfPath, n.config.IgnoreDirectives)
+			if err != nil {
+				log.Tracef("Unable to get NGINX Plus API URL from the configuration: NGINX Plus metrics will be unavailable for this system. please configure a NGINX Plus API to get NGINX Plus metrics: %v", err)
+			}
+
+			if nginxDetailsFacade.Plus.Enabled {
+				nginxDetailsFacade.StatusUrl = nginxPlusApiUrl
+			} else {
+				nginxDetailsFacade.StatusUrl = stubStatusApiUrl
+			}
 		}
 
 		n.statusUrlMutex.Lock()
