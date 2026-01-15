@@ -217,14 +217,24 @@ func (cp *CommandPlugin) processDataPlaneHealth(ctx context.Context, msg *bus.Me
 
 			cp.processDataPlaneResponse(ctx, &bus.Message{
 				Topic: bus.DataPlaneResponseTopic,
-				Data: cp.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-					"Failed to send the health status update", err.Error()),
+				Data: cp.createDataPlaneResponse(
+					correlationID,
+					mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+					mpi.DataPlaneResponse_HEALTH_REQUEST,
+					"Failed to send the health status update",
+					err.Error(),
+				),
 			})
 		}
 		cp.processDataPlaneResponse(ctx, &bus.Message{
 			Topic: bus.DataPlaneResponseTopic,
-			Data: cp.createDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
-				"Successfully sent health status update", ""),
+			Data: cp.createDataPlaneResponse(
+				correlationID,
+				mpi.CommandResponse_COMMAND_STATUS_OK,
+				mpi.DataPlaneResponse_HEALTH_REQUEST,
+				"Successfully sent health status update",
+				"",
+			),
 		})
 	}
 }
@@ -242,8 +252,25 @@ func (cp *CommandPlugin) processInstanceHealth(ctx context.Context, msg *bus.Mes
 func (cp *CommandPlugin) processDataPlaneResponse(ctx context.Context, msg *bus.Message) {
 	slog.DebugContext(ctx, "Command plugin received data plane response message")
 	if response, ok := msg.Data.(*mpi.DataPlaneResponse); ok {
-		slog.InfoContext(ctx, "Sending data plane response message", "message",
-			response.GetCommandResponse().GetMessage(), "status", response.GetCommandResponse().GetStatus())
+		// To prevent this type of request from spamming the logs too much, we use debug level
+		if response.GetRequestType() != mpi.DataPlaneResponse_HEALTH_REQUEST {
+			slog.InfoContext(
+				ctx,
+				"Sending data plane response message",
+				"message", response.GetCommandResponse().GetMessage(),
+				"status", response.GetCommandResponse().GetStatus(),
+				"error", response.GetCommandResponse().GetError(),
+			)
+		} else {
+			slog.DebugContext(
+				ctx,
+				"Sending data plane response message",
+				"message", response.GetCommandResponse().GetMessage(),
+				"status", response.GetCommandResponse().GetStatus(),
+				"error", response.GetCommandResponse().GetError(),
+			)
+		}
+
 		err := cp.commandService.SendDataPlaneResponse(ctx, response)
 		if err != nil {
 			slog.ErrorContext(ctx, "Unable to send data plane response", "error", err)
@@ -318,7 +345,8 @@ func (cp *CommandPlugin) monitorSubscribeChannel(ctx context.Context) {
 				slog.InfoContext(ctx, "Received management plane config apply request")
 				cp.handleConfigApplyRequest(newCtx, message)
 			case *mpi.ManagementPlaneRequest_HealthRequest:
-				slog.InfoContext(ctx, "Received management plane health request")
+				// To prevent this type of request from spamming the logs too much, we use debug level
+				slog.DebugContext(ctx, "Received management plane health request")
 				cp.handleHealthRequest(newCtx)
 			case *mpi.ManagementPlaneRequest_ActionRequest:
 				if cp.commandServerType != model.Command {
@@ -445,7 +473,10 @@ func (cp *CommandPlugin) handleInvalidRequest(ctx context.Context,
 	}
 }
 
-func (cp *CommandPlugin) createDataPlaneResponse(correlationID string, status mpi.CommandResponse_CommandStatus,
+func (cp *CommandPlugin) createDataPlaneResponse(
+	correlationID string,
+	status mpi.CommandResponse_CommandStatus,
+	requestType mpi.DataPlaneResponse_RequestType,
 	message, err string,
 ) *mpi.DataPlaneResponse {
 	return &mpi.DataPlaneResponse{
@@ -459,5 +490,6 @@ func (cp *CommandPlugin) createDataPlaneResponse(correlationID string, status mp
 			Message: message,
 			Error:   err,
 		},
+		RequestType: requestType,
 	}
 }

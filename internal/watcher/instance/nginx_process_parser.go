@@ -48,24 +48,12 @@ func NewNginxProcessParser() *NginxProcessParser {
 //
 //nolint:revive,gocognit // cognitive complexity of 20 because of the if statements in the for loop
 func (npp *NginxProcessParser) Parse(ctx context.Context, processes []*nginxprocess.Process) map[string]*mpi.Instance {
-	slog.DebugContext(ctx, "Parsing NGINX processes", "number_of_processes", len(processes))
-
 	instanceMap := make(map[string]*mpi.Instance)   // key is instanceID
 	workers := make(map[int32][]*mpi.InstanceChild) // key is ppid of process
 
 	processesByPID := convertToMap(processes)
 
 	for _, proc := range processesByPID {
-		slog.DebugContext(ctx, "NGINX process details",
-			"ppid", proc.PPID,
-			"pid", proc.PID,
-			"name", proc.Name,
-			"created", proc.Created,
-			"status", proc.Status,
-			"cmd", proc.Cmd,
-			"exe", proc.Exe,
-		)
-
 		if proc.IsWorker() {
 			// Here we are determining if the worker process has a master
 			if masterProcess, ok := processesByPID[proc.PPID]; ok {
