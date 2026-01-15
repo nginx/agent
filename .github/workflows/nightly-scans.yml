@@ -13,7 +13,7 @@ jobs:
     uses: ./.github/workflows/vulncheck.yml
     permissions:
       contents: read
-      security-events: write
+      security-events: write # for reporting vulnerabilities via code-scanning API
     with:
       target-branch: 'main'
 
@@ -22,6 +22,6 @@ jobs:
     uses: ./.github/workflows/vulncheck.yml
     permissions:
       contents: read
-      security-events: write
+      security-events: write # for reporting vulnerabilities via code-scanning API
     with:
       target-branch: 'dev-v2'
