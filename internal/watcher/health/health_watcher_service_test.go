@@ -59,8 +59,8 @@ func TestHealthWatcherService_UpdateHealthWatcher(t *testing.T) {
 	assert.Equal(t, updatedInstance, healthWatcher.instances[instance.GetInstanceMeta().GetInstanceId()])
 }
 
-// TODO: Fix this test
-//func TestHealthWatcherService_health(t *testing.T) {
+// commented out to push branch
+// func TestHealthWatcherService_health(t *testing.T) {
 //	ctx := context.Background()
 //	agentConfig := types.AgentConfig()
 //	healthWatcher := NewHealthWatcherService(agentConfig)
@@ -139,7 +139,7 @@ func TestHealthWatcherService_UpdateHealthWatcher(t *testing.T) {
 //			reflect.DeepEqual(instanceHealth, expected)
 //		})
 //	}
-//}
+// }
 
 func TestHealthWatcherService_compareCache(t *testing.T) {
 	ossInstance := protos.NginxOssInstance([]string{})
