@@ -4,15 +4,24 @@ on:
     - cron: '0 2 * * *'  # Runs daily at 2:00 AM UTC
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   scan-main:
     name: Vulnerability Scan - Main
     uses: ./.github/workflows/vulncheck.yml
+    permissions:
+      contents: read
+      security-events: write
     with:
       target-branch: 'main'
 
   scan-v2:
     name: Vulnerability Scan - dev-v2
     uses: ./.github/workflows/vulncheck.yml
+    permissions:
+      contents: read
+      security-events: write
     with:
       target-branch: 'dev-v2'
