@@ -125,7 +125,7 @@ type FileManagerService struct {
 func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig *config.Config,
 	manifestLock *sync.RWMutex,
 ) *FileManagerService {
-	fms := &FileManagerService{
+	fileManagerService := &FileManagerService{
 		agentConfig:           agentConfig,
 		fileOperator:          NewFileOperator(manifestLock),
 		fileServiceOperator:   NewFileServiceOperator(agentConfig, fileServiceClient, manifestLock),
@@ -139,9 +139,9 @@ func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig 
 	}
 
 	// initialize the external file operator with a reference to the FileManagerService
-	fms.externalFileOperator = NewExternalFileOperator(fms)
+	fileManagerService.externalFileOperator = NewExternalFileOperator(fileManagerService)
 
-	return fms
+	return fileManagerService
 }
 
 func (fms *FileManagerService) ResetClient(ctx context.Context, fileServiceClient mpi.FileServiceClient) {
@@ -409,10 +409,10 @@ func (fms *FileManagerService) DetermineFileActions(
 			continue
 		}
 
-		// If it's external, we DON'T care about disk state or hashes here.
+		// If it's external, we don't care about disk state or hashes here.
 		// We tag it as ExternalFile and let the downloader handle the rest.
 		if modifiedFile.File.GetExternalDataSource() != nil || (ok && currentFile.GetExternalDataSource() != nil) {
-			slog.DebugContext(ctx, "External file detected - flagging for fetch", "file_name", fileName)
+			slog.DebugContext(ctx, "External file requires downloading", "file_name", fileName)
 			modifiedFile.Action = model.ExternalFile
 			fileDiff[fileName] = modifiedFile
 
@@ -664,7 +664,6 @@ func (fms *FileManagerService) downloadUpdatedFilesToTempLocation(ctx context.Co
 
 			switch fileAction.Action {
 			case model.ExternalFile:
-				// delegate to the new operator
 				return fms.externalFileOperator.DownloadExternalFile(errGroupCtx, fileAction, tempFilePath)
 			case model.Add, model.Update:
 				slog.DebugContext(

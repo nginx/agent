@@ -684,6 +684,18 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 	addErr := os.WriteFile(addTestFile.Name(), addFileContent, 0o600)
 	require.NoError(t, addErr)
 
+	externalFileName := filepath.Join(tempDir, "external.conf")
+	modifiedExternalFiles := map[string]*model.FileCache{
+		externalFileName: {
+			File: &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name: externalFileName,
+				},
+				ExternalDataSource: &mpi.ExternalDataSource{Location: "http://example.com/file"},
+			},
+		},
+	}
+
 	tests := []struct {
 		expectedError   error
 		modifiedFiles   map[string]*model.FileCache
@@ -822,6 +834,20 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 				"unable to create file %s since a directory with the same name already exists",
 				tempDir,
 			),
+		},
+		{
+			name:          "Test 5: External file becomes ExternalFile",
+			allowedDirs:   []string{tempDir},
+			expectedError: nil,
+			modifiedFiles: modifiedExternalFiles,
+			currentFiles:  make(map[string]*mpi.File),
+			expectedCache: map[string]*model.FileCache{
+				externalFileName: {
+					File:   modifiedExternalFiles[externalFileName].File,
+					Action: model.ExternalFile,
+				},
+			},
+			expectedContent: nil,
 		},
 	}
 

@@ -24,7 +24,7 @@ import (
 )
 
 type ExternalFileOperator struct {
-	fms *FileManagerService
+	fileManagerService *FileManagerService
 }
 
 const (
@@ -35,7 +35,7 @@ const (
 )
 
 func NewExternalFileOperator(fms *FileManagerService) *ExternalFileOperator {
-	return &ExternalFileOperator{fms: fms}
+	return &ExternalFileOperator{fileManagerService: fms}
 }
 
 func (efo *ExternalFileOperator) DownloadExternalFile(ctx context.Context, fileAction *model.FileCache,
@@ -69,7 +69,7 @@ func (efo *ExternalFileOperator) DownloadExternalFile(ctx context.Context, fileA
 		// persist headers if present
 		if headers.ETag != "" || headers.LastModified != "" {
 			fileName := fileAction.File.GetFileMeta().GetName()
-			efo.fms.externalFileHeaders[fileName] = headers
+			efo.fileManagerService.externalFileHeaders[fileName] = headers
 		}
 
 		return nil
@@ -82,9 +82,9 @@ func (efo *ExternalFileOperator) DownloadExternalFile(ctx context.Context, fileA
 		return fmt.Errorf("downloaded file validation failed for %s: %w", fileName, err)
 	}
 
-	efo.fms.externalFileHeaders[fileName] = headers
+	efo.fileManagerService.externalFileHeaders[fileName] = headers
 
-	writeErr := efo.fms.fileOperator.Write(
+	writeErr := efo.fileManagerService.fileOperator.Write(
 		ctx,
 		contentToWrite,
 		filePath,
@@ -104,22 +104,22 @@ func (efo *ExternalFileOperator) downloadFileContent(ctx context.Context, file *
 ) {
 	fileName := file.GetFileMeta().GetName()
 	downloadURL := file.GetExternalDataSource().GetLocation()
-	externalConfig := efo.fms.agentConfig.ExternalDataSource
+	externalConfig := efo.fileManagerService.agentConfig.ExternalDataSource
 
 	if !efo.isDomainAllowed(downloadURL, externalConfig.AllowedDomains) {
 		return nil, DownloadHeader{}, fmt.Errorf("download URL %s is not in the allowed domains list", downloadURL)
 	}
 
-	u, err := url.Parse(downloadURL)
+	pasrsedURl, err := url.Parse(downloadURL)
 	if err != nil {
 		return nil, DownloadHeader{}, fmt.Errorf("failed to parse URL: %w", err)
 	}
 
-	originalScheme := u.Scheme
+	originalScheme := pasrsedURl.Scheme
 	if originalScheme != httpScheme && originalScheme != httpsScheme {
-		u.Scheme = httpsScheme
+		pasrsedURl.Scheme = httpsScheme
 	}
-	networkURL := u.String()
+	networkURL := pasrsedURl.String()
 
 	httpClient, err := efo.setupHTTPClient(ctx, externalConfig.ProxyURL.URL)
 	if err != nil {
@@ -154,22 +154,22 @@ func (efo *ExternalFileOperator) downloadFileContent(ctx context.Context, file *
 	case http.StatusNotModified:
 		slog.DebugContext(ctx, "File content unchanged (304 Not Modified)", "file_name", fileName)
 		// return empty content but preserve headers if present
-		h := DownloadHeader{
+		header := DownloadHeader{
 			ETag:         resp.Header.Get("ETag"),
 			LastModified: resp.Header.Get("Last-Modified"),
 		}
 
-		return nil, h, nil
+		return nil, header, nil
 	default:
 		const maxErrBody = 4096
 		var bodyMsg string
 
 		limited := io.LimitReader(resp.Body, maxErrBody)
-		b, readErr := io.ReadAll(limited)
+		body, readErr := io.ReadAll(limited)
 		if readErr != nil {
 			slog.DebugContext(ctx, "Failed to read error response body", "error", readErr, "status", resp.StatusCode)
 		} else {
-			bodyMsg = strings.TrimSpace(string(b))
+			bodyMsg = strings.TrimSpace(string(body))
 		}
 
 		if bodyMsg != "" {
@@ -181,8 +181,8 @@ func (efo *ExternalFileOperator) downloadFileContent(ctx context.Context, file *
 	}
 
 	reader := io.Reader(resp.Body)
-	if efo.fms.agentConfig.ExternalDataSource.MaxBytes > 0 {
-		reader = io.LimitReader(resp.Body, efo.fms.agentConfig.ExternalDataSource.MaxBytes)
+	if efo.fileManagerService.agentConfig.ExternalDataSource.MaxBytes > 0 {
+		reader = io.LimitReader(resp.Body, efo.fileManagerService.agentConfig.ExternalDataSource.MaxBytes)
 	}
 
 	content, err = io.ReadAll(reader)
@@ -196,13 +196,13 @@ func (efo *ExternalFileOperator) downloadFileContent(ctx context.Context, file *
 }
 
 func (efo *ExternalFileOperator) isDomainAllowed(downloadURL string, allowedDomains []string) bool {
-	u, err := url.Parse(downloadURL)
+	parsedURL, err := url.Parse(downloadURL)
 	if err != nil {
 		slog.Debug("Failed to parse download URL for domain check", "url", downloadURL, "error", err)
 		return false
 	}
 
-	hostname := u.Hostname()
+	hostname := parsedURL.Hostname()
 	if hostname == "" {
 		return false
 	}
@@ -241,7 +241,7 @@ func (efo *ExternalFileOperator) setupHTTPClient(ctx context.Context, proxyURLSt
 
 	httpClient := &http.Client{
 		Transport: transport,
-		Timeout:   efo.fms.agentConfig.Client.FileDownloadTimeout,
+		Timeout:   efo.fileManagerService.agentConfig.Client.FileDownloadTimeout,
 	}
 
 	return httpClient, nil
@@ -250,7 +250,7 @@ func (efo *ExternalFileOperator) setupHTTPClient(ctx context.Context, proxyURLSt
 func (efo *ExternalFileOperator) addConditionalHeaders(ctx context.Context, req *http.Request, fileName string) {
 	slog.DebugContext(ctx, "Proxy configured; adding headers to GET request.")
 
-	manifestFiles, _, manifestFileErr := efo.fms.manifestFile()
+	manifestFiles, _, manifestFileErr := efo.fileManagerService.manifestFile()
 
 	if manifestFileErr != nil && !errors.Is(manifestFileErr, os.ErrNotExist) {
 		slog.WarnContext(ctx, "Error reading manifest file for headers", "error", manifestFileErr)
@@ -299,12 +299,11 @@ func (efo *ExternalFileOperator) validateDownloadedFile(content []byte, fileName
 	detected := mimetype.Detect(sniff).String()
 	ext := strings.ToLower(filepath.Ext(fileName)) // includes leading dot or empty
 
-	// extension <-> detected MIME compatibility
 	if err := efo.checkExtCompatibility(ext, detected); err != nil {
 		return err
 	}
 
-	allowed := efo.fms.agentConfig.ExternalDataSource.AllowedFileTypes
+	allowed := efo.fileManagerService.agentConfig.ExternalDataSource.AllowedFileTypes
 	if len(allowed) == 0 {
 		return nil
 	}
@@ -340,7 +339,7 @@ func (efo *ExternalFileOperator) checkExtCompatibility(ext, detected string) err
 //
 //nolint:revive // simple logic
 func (efo *ExternalFileOperator) allowedByConfig(detected, ext string) bool {
-	for _, t := range efo.fms.agentConfig.ExternalDataSource.AllowedFileTypes {
+	for _, t := range efo.fileManagerService.agentConfig.ExternalDataSource.AllowedFileTypes {
 		tt := strings.ToLower(strings.TrimSpace(t))
 		if tt == "" {
 			continue

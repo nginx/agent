@@ -1633,69 +1633,60 @@ func TestValidateLabel(t *testing.T) {
 
 func TestValidateAllowedDomains(t *testing.T) {
 	tests := []struct {
-		name    string
-		domains []string
-		wantErr bool
+		expectedErr error
+		name        string
+		domains     []string
 	}{
 		{
-			name:    "Test 1: Success: Empty slice",
-			domains: []string{},
-			wantErr: false,
+			name:        "Test 1: Success: Empty slice",
+			domains:     []string{},
+			expectedErr: nil,
 		},
 		{
-			name:    "Test 2: Success: Nil slice",
-			domains: nil,
-			wantErr: false,
+			name:        "Test 2: Success: Nil slice",
+			domains:     nil,
+			expectedErr: nil,
 		},
 		{
-			name:    "Test 3: Success: Valid domains",
-			domains: []string{"example.com", "api.nginx.com", "sub.domain.io"},
-			wantErr: false,
+			name:        "Test 3: Success: Valid domains",
+			domains:     []string{"example.com", "api.nginx.com", "sub.domain.io"},
+			expectedErr: nil,
 		},
 		{
-			name:    "Test 4: Failure: Domain contains space",
-			domains: []string{"valid.com", "bad domain.com"},
-			wantErr: true,
+			name:        "Test 4: Failure: Domain contains space",
+			domains:     []string{"valid.com", "bad domain.com"},
+			expectedErr: errors.New("invalid domain found in allowed_domains"),
 		},
 		{
-			name:    "Test 5: Failure: Empty string domain",
-			domains: []string{"valid.com", ""},
-			wantErr: true,
+			name:        "Test 5: Failure: Empty string domain",
+			domains:     []string{"valid.com", ""},
+			expectedErr: errors.New("invalid domain found in allowed_domains"),
 		},
 		{
-			name:    "Test 6: Failure: Domain contains forward slash /",
-			domains: []string{"domain.com/path"},
-			wantErr: true,
+			name:        "Test 6: Failure: Domain contains forward slash /",
+			domains:     []string{"domain.com/path"},
+			expectedErr: errors.New("invalid domain found in allowed_domains"),
 		},
 		{
-			name:    "Test 7: Failure: Domain contains backward slash \\",
-			domains: []string{"domain.com\\path"},
-			wantErr: true,
+			name:        "Test 7: Failure: Domain contains backward slash \\",
+			domains:     []string{"domain.com\\path"},
+			expectedErr: errors.New("invalid domain found in allowed_domains"),
 		},
 		{
-			name:    "Test 8: Failure: Mixed valid and invalid (first is invalid)",
-			domains: []string{" only.com", "good.com"},
-			wantErr: true,
+			name:        "Test 8: Failure: Mixed valid and invalid (first is invalid)",
+			domains:     []string{" only.com", "good.com"},
+			expectedErr: errors.New("invalid domain found in allowed_domains"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var logBuffer bytes.Buffer
-			logHandler := slog.NewTextHandler(&logBuffer, &slog.HandlerOptions{Level: slog.LevelError})
-
-			originalLogger := slog.Default()
-			slog.SetDefault(slog.New(logHandler))
-			defer slog.SetDefault(originalLogger)
-
-			actualErr := validateAllowedDomains(tt.domains)
-
-			if tt.wantErr {
-				require.Error(t, actualErr, "Expected an error but got nil.")
-				assert.Contains(t, logBuffer.String(), "domain specified in allowed_domains is invalid",
-					"Expected the error log message to be present in the output.")
+			err := validateAllowedDomains(tt.domains)
+			if tt.expectedErr == nil {
+				assert.NoError(t, err)
 			} else {
-				assert.NoError(t, actualErr, "Did not expect an error but got one: %v", actualErr)
+				require.Error(t, err)
+				assert.EqualError(t, err, tt.expectedErr.Error())
 			}
 		})
 	}
