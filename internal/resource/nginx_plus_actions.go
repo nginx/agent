@@ -18,7 +18,7 @@ import (
 const emptyResponse = "{}"
 
 type APIAction struct {
-	ResourceService resourceServiceInterface
+	NginxService nginxServiceInterface
 }
 
 func (a *APIAction) HandleUpdateStreamServersRequest(ctx context.Context, action *mpi.NGINXPlusAction,
@@ -27,7 +27,7 @@ func (a *APIAction) HandleUpdateStreamServersRequest(ctx context.Context, action
 	correlationID := logger.CorrelationID(ctx)
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
 
-	add, update, del, err := a.ResourceService.UpdateStreamServers(ctx, instance,
+	add, update, del, err := a.NginxService.UpdateStreamServers(ctx, instance,
 		action.GetUpdateStreamServers().GetUpstreamStreamName(), action.GetUpdateStreamServers().GetServers())
 	if err != nil {
 		slog.ErrorContext(ctx, "Unable to update stream servers of upstream", "request",
@@ -52,7 +52,7 @@ func (a *APIAction) HandleGetStreamUpstreamsRequest(ctx context.Context,
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
 	streamUpstreamsResponse := emptyResponse
 
-	streamUpstreams, err := a.ResourceService.GetStreamUpstreams(ctx, instance)
+	streamUpstreams, err := a.NginxService.GetStreamUpstreams(ctx, instance)
 	if err != nil {
 		slog.ErrorContext(ctx, "Unable to get stream upstreams", "error", err)
 		return response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
@@ -76,7 +76,7 @@ func (a *APIAction) HandleGetUpstreamsRequest(ctx context.Context, instance *mpi
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
 	upstreamsResponse := emptyResponse
 
-	upstreams, err := a.ResourceService.GetUpstreams(ctx, instance)
+	upstreams, err := a.NginxService.GetUpstreams(ctx, instance)
 	if err != nil {
 		slog.InfoContext(ctx, "Unable to get upstreams", "error", err)
 
@@ -102,7 +102,7 @@ func (a *APIAction) HandleUpdateHTTPUpstreamsRequest(ctx context.Context, action
 	correlationID := logger.CorrelationID(ctx)
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
 
-	add, update, del, err := a.ResourceService.UpdateHTTPUpstreamServers(ctx, instance,
+	add, update, del, err := a.NginxService.UpdateHTTPUpstreamServers(ctx, instance,
 		action.GetUpdateHttpUpstreamServers().GetHttpUpstreamName(),
 		action.GetUpdateHttpUpstreamServers().GetServers())
 	if err != nil {
@@ -128,7 +128,7 @@ func (a *APIAction) HandleGetHTTPUpstreamsServersRequest(ctx context.Context, ac
 	instanceID := instance.GetInstanceMeta().GetInstanceId()
 	upstreamsResponse := emptyResponse
 
-	upstreams, err := a.ResourceService.GetHTTPUpstreamServers(ctx, instance,
+	upstreams, err := a.NginxService.GetHTTPUpstreamServers(ctx, instance,
 		action.GetGetHttpUpstreamServers().GetHttpUpstreamName())
 	if err != nil {
 		slog.ErrorContext(ctx, "Unable to get HTTP servers of upstream", "error", err)

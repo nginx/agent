@@ -40,7 +40,7 @@ func LoadPlugins(ctx context.Context, agentConfig *config.Config) []bus.Plugin {
 }
 
 func addResourcePlugin(plugins []bus.Plugin, agentConfig *config.Config) []bus.Plugin {
-	resourcePlugin := resource.NewResource(agentConfig)
+	resourcePlugin := resource.NewNginx(agentConfig)
 	plugins = append(plugins, resourcePlugin)
 
 	return plugins

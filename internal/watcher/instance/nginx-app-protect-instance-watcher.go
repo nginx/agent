@@ -254,7 +254,7 @@ func (w *NginxAppProtectInstanceWatcher) updateInstance(ctx context.Context) {
 	runtimeInfo.ThreatCampaignVersion = w.threatCampaignVersion
 	runtimeInfo.EnforcerEngineVersion = w.enforcerEngineVersion
 
-	slog.DebugContext(ctx, "NGINX App Protect instance updated")
+	slog.InfoContext(ctx, "NGINX App Protect instance updated")
 }
 
 func (w *NginxAppProtectInstanceWatcher) haveVersionsChanged() bool {

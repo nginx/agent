@@ -27,11 +27,11 @@ type FakeInstanceWatcherServiceInterface struct {
 	setEnabledArgsForCall []struct {
 		arg1 bool
 	}
-	WatchStub        func(context.Context, chan<- instance.InstanceUpdatesMessage, chan<- instance.NginxConfigContextMessage)
+	WatchStub        func(context.Context, chan<- instance.ResourceUpdatesMessage, chan<- instance.NginxConfigContextMessage)
 	watchMutex       sync.RWMutex
 	watchArgsForCall []struct {
 		arg1 context.Context
-		arg2 chan<- instance.InstanceUpdatesMessage
+		arg2 chan<- instance.ResourceUpdatesMessage
 		arg3 chan<- instance.NginxConfigContextMessage
 	}
 	invocations      map[string][][]interface{}
@@ -136,11 +136,11 @@ func (fake *FakeInstanceWatcherServiceInterface) SetEnabledArgsForCall(i int) bo
 	return argsForCall.arg1
 }
 
-func (fake *FakeInstanceWatcherServiceInterface) Watch(arg1 context.Context, arg2 chan<- instance.InstanceUpdatesMessage, arg3 chan<- instance.NginxConfigContextMessage) {
+func (fake *FakeInstanceWatcherServiceInterface) Watch(arg1 context.Context, arg2 chan<- instance.ResourceUpdatesMessage, arg3 chan<- instance.NginxConfigContextMessage) {
 	fake.watchMutex.Lock()
 	fake.watchArgsForCall = append(fake.watchArgsForCall, struct {
 		arg1 context.Context
-		arg2 chan<- instance.InstanceUpdatesMessage
+		arg2 chan<- instance.ResourceUpdatesMessage
 		arg3 chan<- instance.NginxConfigContextMessage
 	}{arg1, arg2, arg3})
 	stub := fake.WatchStub
@@ -157,13 +157,13 @@ func (fake *FakeInstanceWatcherServiceInterface) WatchCallCount() int {
 	return len(fake.watchArgsForCall)
 }
 
-func (fake *FakeInstanceWatcherServiceInterface) WatchCalls(stub func(context.Context, chan<- instance.InstanceUpdatesMessage, chan<- instance.NginxConfigContextMessage)) {
+func (fake *FakeInstanceWatcherServiceInterface) WatchCalls(stub func(context.Context, chan<- instance.ResourceUpdatesMessage, chan<- instance.NginxConfigContextMessage)) {
 	fake.watchMutex.Lock()
 	defer fake.watchMutex.Unlock()
 	fake.WatchStub = stub
 }
 
-func (fake *FakeInstanceWatcherServiceInterface) WatchArgsForCall(i int) (context.Context, chan<- instance.InstanceUpdatesMessage, chan<- instance.NginxConfigContextMessage) {
+func (fake *FakeInstanceWatcherServiceInterface) WatchArgsForCall(i int) (context.Context, chan<- instance.ResourceUpdatesMessage, chan<- instance.NginxConfigContextMessage) {
 	fake.watchMutex.RLock()
 	defer fake.watchMutex.RUnlock()
 	argsForCall := fake.watchArgsForCall[i]

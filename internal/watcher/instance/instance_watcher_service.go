@@ -12,7 +12,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/nginx/agent/v3/pkg/host"
 	"github.com/nginx/agent/v3/pkg/host/exec"
+	proto2 "google.golang.org/protobuf/proto"
 
 	"github.com/nginx/agent/v3/internal/datasource/proto"
 
@@ -47,19 +49,22 @@ type (
 		agentConfig                    *config.Config
 		instanceCache                  map[string]*mpi.Instance
 		nginxConfigCache               map[string]*model.NginxConfigContext
-		instancesChannel               chan<- InstanceUpdatesMessage
+		instancesChannel               chan<- ResourceUpdatesMessage
 		nginxConfigContextChannel      chan<- NginxConfigContextMessage
+		info                           host.InfoInterface
+		resource                       *mpi.Resource
 		nginxParser                    processParser
 		cacheMutex                     sync.Mutex
+		resourceMutex                  sync.Mutex
 	}
 
 	InstanceUpdates struct {
 		UpdatedInstances []*mpi.Instance
 	}
 
-	InstanceUpdatesMessage struct {
-		CorrelationID   slog.Attr
-		InstanceUpdates InstanceUpdates
+	ResourceUpdatesMessage struct {
+		CorrelationID slog.Attr
+		Resource      *mpi.Resource
 	}
 
 	NginxConfigContextMessage struct {
@@ -68,22 +73,29 @@ type (
 	}
 )
 
-func NewInstanceWatcherService(agentConfig *config.Config, watcher *NginxAppProtectInstanceWatcher) *InstanceWatcherService {
+func NewInstanceWatcherService(agentConfig *config.Config) *InstanceWatcherService {
 	enabled := &atomic.Bool{}
 	enabled.Store(true)
 
-	return &InstanceWatcherService{
+	napWatcher := NewNginxAppProtectInstanceWatcher(agentConfig)
+
+	instanceWatcherService := &InstanceWatcherService{
 		agentConfig:                    agentConfig,
-		nginxAppProtectInstanceWatcher: watcher,
+		nginxAppProtectInstanceWatcher: napWatcher,
 		processOperator:                process.NewProcessOperator(),
 		nginxParser:                    NewNginxProcessParser(),
 		nginxConfigParser:              parser.NewNginxConfigParser(agentConfig),
 		instanceCache:                  make(map[string]*mpi.Instance),
 		cacheMutex:                     sync.Mutex{},
+		resourceMutex:                  sync.Mutex{},
 		nginxConfigCache:               make(map[string]*model.NginxConfigContext),
 		executer:                       &exec.Exec{},
+		info:                           host.NewInfo(),
+		resource:                       &mpi.Resource{},
 		enabled:                        enabled,
 	}
+
+	return instanceWatcherService
 }
 
 func (iw *InstanceWatcherService) SetEnabled(enabled bool) {
@@ -92,9 +104,12 @@ func (iw *InstanceWatcherService) SetEnabled(enabled bool) {
 
 func (iw *InstanceWatcherService) Watch(
 	ctx context.Context,
-	instancesChannel chan<- InstanceUpdatesMessage,
+	instancesChannel chan<- ResourceUpdatesMessage,
 	nginxConfigContextChannel chan<- NginxConfigContextMessage,
 ) {
+	iw.updateResourceInfo(ctx)
+	go iw.nginxAppProtectInstanceWatcher.Watch(ctx)
+
 	monitoringFrequency := iw.agentConfig.Watchers.InstanceWatcher.MonitoringFrequency
 	slog.DebugContext(ctx, "Starting instance watcher monitoring", "monitoring_frequency", monitoringFrequency)
 
@@ -172,11 +187,12 @@ func (iw *InstanceWatcherService) HandleNginxConfigContextUpdate(ctx context.Con
 	}
 
 	if updatesRequired {
+		iw.updateInstanceInResource(ctx, instance)
 		instanceUpdates := InstanceUpdates{}
 		instanceUpdates.UpdatedInstances = append(instanceUpdates.UpdatedInstances, instance)
-		iw.instancesChannel <- InstanceUpdatesMessage{
-			CorrelationID:   correlationID,
-			InstanceUpdates: instanceUpdates,
+		iw.instancesChannel <- ResourceUpdatesMessage{
+			CorrelationID: correlationID,
+			Resource:      iw.resource,
 		}
 	}
 }
@@ -230,15 +246,54 @@ func (iw *InstanceWatcherService) checkForUpdates(
 
 	if iw.nginxAppProtectInstanceWatcher.NginxAppProtectInstance() != nil {
 		slog.DebugContext(ctx, "Adding nginx app protect instance to instance list")
-		instanceUpdates.UpdatedInstances = append(instanceUpdates.UpdatedInstances, iw.nginxAppProtectInstanceWatcher.NginxAppProtectInstance())
+		instanceUpdates.UpdatedInstances = append(instanceUpdates.UpdatedInstances,
+			iw.nginxAppProtectInstanceWatcher.NginxAppProtectInstance())
 	}
 
 	if len(instanceUpdates.UpdatedInstances) > 0 {
-		iw.instancesChannel <- InstanceUpdatesMessage{
-			CorrelationID:   correlationID,
-			InstanceUpdates: instanceUpdates,
+		iw.updateResourceInstanceList(ctx, instanceUpdates.UpdatedInstances)
+
+		iw.instancesChannel <- ResourceUpdatesMessage{
+			CorrelationID: correlationID,
+			Resource:      iw.resource,
 		}
 	}
+}
+
+func (iw *InstanceWatcherService) updateResourceInstanceList(ctx context.Context, instances []*mpi.Instance) {
+	iw.resourceMutex.Lock()
+	defer iw.resourceMutex.Unlock()
+
+	resourceCopy, ok := proto2.Clone(iw.resource).(*mpi.Resource)
+	if ok {
+		resourceCopy.Instances = instances
+	} else {
+		slog.WarnContext(ctx, "Unable to clone resource while updating instances", "resource",
+			iw.resource, "instances", instances)
+	}
+
+	iw.resource = resourceCopy
+}
+
+func (iw *InstanceWatcherService) updateInstanceInResource(ctx context.Context, updatedInstance *mpi.Instance) {
+	iw.resourceMutex.Lock()
+	defer iw.resourceMutex.Unlock()
+
+	resourceCopy, ok := proto2.Clone(iw.resource).(*mpi.Resource)
+	if ok {
+		for _, instance := range resourceCopy.GetInstances() {
+			if instance.GetInstanceMeta().GetInstanceId() == updatedInstance.GetInstanceMeta().GetInstanceId() {
+				instance.InstanceMeta = updatedInstance.GetInstanceMeta()
+				instance.InstanceRuntime = updatedInstance.GetInstanceRuntime()
+				instance.InstanceConfig = updatedInstance.GetInstanceConfig()
+			}
+		}
+	} else {
+		slog.WarnContext(ctx, "Unable to clone resource while updating instances", "resource",
+			iw.resource, "instances", updatedInstance)
+	}
+
+	iw.resource = resourceCopy
 }
 
 func (iw *InstanceWatcherService) sendNginxConfigContextUpdate(
@@ -352,18 +407,16 @@ func areInstanceDifferent(oldInstancesMap, instancesMap map[string]*mpi.Instance
 		_, ok := oldInstancesMap[instanceID]
 		if !ok {
 			return true
-		} else {
-			updatedInstancesMap[instanceID] = instance
 		}
+		updatedInstancesMap[instanceID] = instance
 	}
 
 	for instanceID, oldInstance := range oldInstancesMap {
 		_, ok := instancesMap[instanceID]
 		if !ok {
 			return true
-		} else {
-			updatedOldInstancesMap[instanceID] = oldInstance
 		}
+		updatedOldInstancesMap[instanceID] = oldInstance
 	}
 
 	return checkForProcessChanges(updatedInstancesMap, updatedOldInstancesMap)
@@ -411,4 +464,32 @@ func areInstancesEqual(oldRuntime, currentRuntime *mpi.InstanceRuntime) (equal b
 	}
 
 	return true
+}
+
+func (iw *InstanceWatcherService) updateResourceInfo(ctx context.Context) {
+	iw.resourceMutex.Lock()
+	defer iw.resourceMutex.Unlock()
+
+	isContainer, err := iw.info.IsContainer()
+	if err != nil {
+		slog.WarnContext(ctx, "Failed to check if resource is container", "error", err)
+	}
+
+	if isContainer {
+		iw.resource.Info, err = iw.info.ContainerInfo(ctx)
+		if err != nil {
+			slog.ErrorContext(ctx, "Failed to get container info", "error", err)
+			return
+		}
+		iw.resource.ResourceId = iw.resource.GetContainerInfo().GetContainerId()
+		iw.resource.Instances = []*mpi.Instance{}
+	} else {
+		iw.resource.Info, err = iw.info.HostInfo(ctx)
+		if err != nil {
+			slog.ErrorContext(ctx, "Failed to get host info", "error", err)
+			return
+		}
+		iw.resource.ResourceId = iw.resource.GetHostInfo().GetHostId()
+		iw.resource.Instances = []*mpi.Instance{}
+	}
 }
