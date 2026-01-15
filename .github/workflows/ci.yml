@@ -87,6 +87,7 @@ jobs:
     name: Vulnerability Scan
     uses: ./.github/workflows/vulncheck.yml
     permissions:
+      contents: read
       security-events: write
     with:
       target-branch: ${{ github.event.pull_request.base.ref || github.ref_name }}

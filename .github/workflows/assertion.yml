@@ -39,6 +39,9 @@ on:
       ARTIFACTORY_URL:
         required: true
 
+permissions:
+  contents: read
+
 jobs:
   build-assertion-document:
     name: Create Assertion Document
