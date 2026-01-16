@@ -25,7 +25,7 @@ defaults:
     shell: bash
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   vars:
@@ -51,6 +51,8 @@ jobs:
     name: Upload assets
     runs-on: ubuntu-22.04
     needs: [vars]
+    permissions:
+      contents: write # Needed for uploading release assets to GitHub
     steps:
       - name: Checkout Repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1

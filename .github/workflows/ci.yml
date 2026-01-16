@@ -88,15 +88,13 @@ jobs:
     uses: ./.github/workflows/vulncheck.yml
     permissions:
       contents: read
-      security-events: write
+      security-events: write # for reporting vulnerabilities via code-scanning API
     with:
       target-branch: ${{ github.event.pull_request.base.ref || github.ref_name }}
 
   unit-test:
     name: Unit Tests
     runs-on: ubuntu-22.04
-    permissions:
-      contents: write
     steps:
         - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         - name: Configure Go Proxy
@@ -593,7 +591,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs: build-unsigned-snapshot
     permissions:
-      contents: write
+      contents: write # Needed for pushing benchmark results to github branch
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Configure Go Proxy
@@ -635,7 +633,7 @@ jobs:
     name: Load Tests
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
     permissions:
-      contents: write
+      contents: write # Needed for pushing benchmark results to github branch
     runs-on: ubuntu-22.04
     needs: build-unsigned-snapshot
     steps:
