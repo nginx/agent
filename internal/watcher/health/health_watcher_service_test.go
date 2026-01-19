@@ -55,7 +55,7 @@ func TestHealthWatcherService_UpdateHealthWatcher(t *testing.T) {
 
 	assert.Equal(t, instance, healthWatcher.instances[instance.GetInstanceMeta().GetInstanceId()])
 
-	healthWatcher.UpdateHealthWatcher([]*mpi.Instance{updatedInstance})
+	healthWatcher.UpdateHealthWatcher(t.Context(), []*mpi.Instance{updatedInstance})
 	assert.Equal(t, updatedInstance, healthWatcher.instances[instance.GetInstanceMeta().GetInstanceId()])
 }
 

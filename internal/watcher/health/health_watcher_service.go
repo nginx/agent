@@ -51,14 +51,28 @@ func NewHealthWatcherService(agentConfig *config.Config) *HealthWatcherService {
 	}
 }
 
-func (hw *HealthWatcherService) UpdateHealthWatcher(instances []*mpi.Instance) {
+func (hw *HealthWatcherService) UpdateHealthWatcher(ctx context.Context, instances []*mpi.Instance) {
 	hw.healthWatcherMutex.Lock()
 	defer hw.healthWatcherMutex.Unlock()
 
 	clear(hw.instances)
 
 	for _, instance := range instances {
-		hw.instances[instance.GetInstanceMeta().GetInstanceId()] = instance
+		switch instance.GetInstanceMeta().GetInstanceType() {
+		case mpi.InstanceMeta_INSTANCE_TYPE_NGINX, mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS:
+			hw.instances[instance.GetInstanceMeta().GetInstanceId()] = instance
+		case mpi.InstanceMeta_INSTANCE_TYPE_AGENT:
+		case mpi.InstanceMeta_INSTANCE_TYPE_UNSPECIFIED,
+			mpi.InstanceMeta_INSTANCE_TYPE_UNIT,
+			mpi.InstanceMeta_INSTANCE_TYPE_NGINX_APP_PROTECT:
+			fallthrough
+		default:
+			slog.DebugContext(
+				ctx,
+				"Health watcher not implemented",
+				"instance_type", instance.GetInstanceMeta().GetInstanceType(),
+			)
+		}
 	}
 }
 

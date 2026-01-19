@@ -303,7 +303,7 @@ func (w *Watcher) handleCredentialUpdate(ctx context.Context, message credential
 func (w *Watcher) handleInstanceUpdates(newCtx context.Context, message instance.ResourceUpdatesMessage) {
 	if message.Resource != nil {
 		slog.DebugContext(newCtx, "Resource updated", "resource", message.Resource)
-		w.healthWatcherService.UpdateHealthWatcher(message.Resource.GetInstances())
+		w.healthWatcherService.UpdateHealthWatcher(newCtx, message.Resource.GetInstances())
 
 		w.messagePipe.Process(newCtx, &bus.Message{Topic: bus.ResourceUpdateTopic, Data: message.Resource})
 	}
