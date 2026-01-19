@@ -111,7 +111,7 @@ func TestNginxAppProtectInstanceWatcher_Watch(t *testing.T) {
 
 		assert.Eventually(t, func() bool {
 			return proto.Equal(nginxAppProtectInstanceWatcher.nginxAppProtectInstance, expectedInstance)
-		}, timeout, 10*time.Millisecond)
+		}, timeout, 30*time.Millisecond)
 	})
 	t.Run("Test 3: Delete instance", func(t *testing.T) {
 		helpers.RemoveFileWithErrorCheck(t, versionFile.Name())
