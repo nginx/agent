@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -44,12 +45,14 @@ type NginxAppProtectInstanceWatcher struct {
 	attackSignatureVersion  string
 	threatCampaignVersion   string
 	enforcerEngineVersion   string
+	instanceMutex           sync.Mutex
 }
 
 func NewNginxAppProtectInstanceWatcher(agentConfig *config.Config) *NginxAppProtectInstanceWatcher {
 	return &NginxAppProtectInstanceWatcher{
 		agentConfig:       agentConfig,
 		filesBeingWatched: make(map[string]bool),
+		instanceMutex:     sync.Mutex{},
 	}
 }
 
@@ -96,6 +99,9 @@ func (w *NginxAppProtectInstanceWatcher) Watch(ctx context.Context) {
 }
 
 func (w *NginxAppProtectInstanceWatcher) NginxAppProtectInstance() *mpi.Instance {
+	w.instanceMutex.Lock()
+	defer w.instanceMutex.Unlock()
+
 	return w.nginxAppProtectInstance
 }
 
@@ -210,6 +216,8 @@ func (w *NginxAppProtectInstanceWatcher) isNewInstance() bool {
 }
 
 func (w *NginxAppProtectInstanceWatcher) createInstance(ctx context.Context) {
+	w.instanceMutex.Lock()
+	defer w.instanceMutex.Unlock()
 	w.nginxAppProtectInstance = &mpi.Instance{
 		InstanceMeta: &mpi.InstanceMeta{
 			InstanceId:   id.Generate(versionFilePath),
