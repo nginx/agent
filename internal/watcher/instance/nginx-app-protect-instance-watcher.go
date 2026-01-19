@@ -145,7 +145,7 @@ func (w *NginxAppProtectInstanceWatcher) addWatcher(ctx context.Context, version
 func (w *NginxAppProtectInstanceWatcher) readVersionFile(ctx context.Context, versionFile string) {
 	w.instanceMutex.Lock()
 	defer w.instanceMutex.Unlock()
-	
+
 	switch versionFile {
 	case versionFilePath:
 		w.version = w.readFile(ctx, versionFilePath)
