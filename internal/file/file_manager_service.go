@@ -237,13 +237,14 @@ func (fms *FileManagerService) ClearCache() {
 
 //nolint:revive,cyclop // cognitive-complexity of 13 max is 12, loop is needed cant be broken up
 func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) error {
-	slog.InfoContext(ctx, "Rolling back config for instance", "instance_id", instanceID)
+	slog.InfoContext(ctx, "Rolling back config apply updates", "instance_id", instanceID)
 
 	fms.filesMutex.Lock()
 	defer fms.filesMutex.Unlock()
 	for _, fileAction := range fms.fileActions {
 		switch fileAction.Action {
 		case model.Add:
+			slog.InfoContext(ctx, "Deleting file", "file", fileAction.File.GetFileMeta().GetName())
 			if err := os.Remove(fileAction.File.GetFileMeta().GetName()); err != nil && !os.IsNotExist(err) {
 				return fmt.Errorf("error deleting file: %s error: %w", fileAction.File.GetFileMeta().GetName(), err)
 			}
@@ -293,9 +294,15 @@ func (fms *FileManagerService) ConfigUpdate(ctx context.Context,
 		slog.ErrorContext(ctx, "Unable to update current files on disk", "error", updateError)
 	}
 
-	slog.InfoContext(ctx, "Updating overview after nginx config update")
-	err := fms.fileServiceOperator.UpdateOverview(ctx, nginxConfigContext.InstanceID,
-		nginxConfigContext.Files, nginxConfigContext.ConfigPath, 0)
+	slog.InfoContext(ctx, "Sending file overview update due to NGINX configuration updates")
+
+	err := fms.fileServiceOperator.UpdateOverview(
+		ctx,
+		nginxConfigContext.InstanceID,
+		nginxConfigContext.Files,
+		nginxConfigContext.ConfigPath,
+		0,
+	)
 	if err != nil {
 		slog.ErrorContext(
 			ctx,
@@ -304,6 +311,7 @@ func (fms *FileManagerService) ConfigUpdate(ctx context.Context,
 			"error", err,
 		)
 	}
+
 	slog.InfoContext(ctx, "Finished updating file overview")
 }
 
@@ -572,7 +580,7 @@ func (fms *FileManagerService) backupFiles(ctx context.Context) error {
 	return nil
 }
 
-func (fms *FileManagerService) restoreFiles(fileAction *model.FileCache) ([]byte, error) {
+func (fms *FileManagerService) restoreFiles(ctx context.Context, fileAction *model.FileCache) ([]byte, error) {
 	fileMeta := fileAction.File.GetFileMeta()
 	fileName := fileMeta.GetName()
 
@@ -582,6 +590,8 @@ func (fms *FileManagerService) restoreFiles(fileAction *model.FileCache) ([]byte
 	if err := os.MkdirAll(filepath.Dir(fileName), dirPerm); err != nil {
 		return nil, fmt.Errorf("failed to create directories for %s: %w", fileName, err)
 	}
+
+	slog.InfoContext(ctx, "Restoring file from it's backup", "file", fileName, "backup_file", tempFilePath)
 
 	moveErr := os.Rename(tempFilePath, fileName)
 	if moveErr != nil {
@@ -651,7 +661,7 @@ func (fms *FileManagerService) downloadUpdatedFilesToTempLocation(ctx context.Co
 	}
 
 	if len(downloadFiles) == 0 {
-		slog.DebugContext(ctx, "No updated files to download")
+		slog.InfoContext(ctx, "No files require downloading")
 		return nil
 	}
 

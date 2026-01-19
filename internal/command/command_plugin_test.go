@@ -434,6 +434,7 @@ func Test_createDataPlaneResponse(t *testing.T) {
 	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{}, model.Command)
 	result := commandPlugin.createDataPlaneResponse(expected.GetMessageMeta().GetCorrelationId(),
 		expected.GetCommandResponse().GetStatus(),
+		expected.GetRequestType(),
 		expected.GetCommandResponse().GetMessage(), expected.GetCommandResponse().GetError())
 
 	assert.Equal(t, expected.GetCommandResponse(), result.GetCommandResponse())

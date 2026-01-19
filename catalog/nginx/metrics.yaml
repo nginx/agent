@@ -1,0 +1,63 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/open-telemetry/weaver/v0.9.2/schemas/semconv.schema.json
+groups:
+  # nginx.http.* metrics
+  - id: metric.nginx.http.connections
+    type: metric
+    unit: "connections"
+    metric_name: nginx.http.connections
+    stability: experimental
+    brief: "The total number of connections, since NGINX was last started or reloaded."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/status`
+    attributes:
+      - ref: nginx.connections.outcome
+        requirement_level: required
+
+  - id: metric.nginx.http.connection.count
+    type: metric
+    unit: "connections"
+    metric_name: nginx.http.connection.count
+    stability: experimental
+    brief: "The current number of connections."
+    instrument: gauge
+    note: |
+      Source: HTTP GET `/status`
+    attributes:
+      - ref: nginx.connections.outcome
+        requirement_level: required
+
+  - id: metric.nginx.http.requests
+    type: metric
+    unit: "requests"
+    metric_name: nginx.http.requests
+    stability: experimental
+    brief: "The total number of client requests received, since NGINX was last started or reloaded."
+    instrument: counter
+    note: |
+      Source: HTTP GET `/status`
+    attributes: []
+
+  - id: metric.nginx.http.request.count
+    type: metric
+    unit: "requests"
+    metric_name: nginx.http.request.count
+    stability: experimental
+    brief: "The total number of client requests received, since the last collection interval."
+    instrument: gauge
+    note: |
+      Source: HTTP API `/status`
+    attributes: []
+
+  - id: metric.nginx.http.response.count
+    type: metric
+    unit: "responses"
+    metric_name: nginx.http.response.count
+    stability: experimental
+    brief: "The total number of HTTP responses since the last collection interval, grouped by status code range."
+    instrument: gauge
+    note: |
+      Source: Logs `access.log`
+    attributes:
+      - ref: nginx.status_range
+        requirement_level: required

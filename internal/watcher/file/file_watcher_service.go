@@ -144,7 +144,7 @@ func (fws *FileWatcherService) Update(ctx context.Context, nginxConfigContext *m
 	fws.directoriesToWatch = directoriesToWatch
 
 	if fws.watcher != nil {
-		slog.InfoContext(ctx, "Updating file watcher", "allowed", fws.agentConfig.AllowedDirectories)
+		slog.DebugContext(ctx, "No watcher exists, creating new watcher")
 
 		// Start watching new directories
 		fws.addWatchers(ctx)

@@ -244,13 +244,21 @@ func (fp *FilePlugin) handleConfigApplyFailedRequest(ctx context.Context, msg *b
 
 	err := fp.fileManagerService.Rollback(ctx, data.InstanceID)
 	if err != nil {
-		rollbackResponse := fp.createDataPlaneResponse(data.CorrelationID,
+		rollbackResponse := fp.createDataPlaneResponse(
+			data.CorrelationID,
 			mpi.CommandResponse_COMMAND_STATUS_ERROR,
-			"Rollback failed", data.InstanceID, err.Error())
+			"Rollback failed",
+			data.InstanceID,
+			err.Error(),
+		)
 
-		applyResponse := fp.createDataPlaneResponse(data.CorrelationID,
+		applyResponse := fp.createDataPlaneResponse(
+			data.CorrelationID,
 			mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-			"Config apply failed, rollback failed", data.InstanceID, data.Error.Error())
+			"Config apply failed, rollback failed",
+			data.InstanceID,
+			data.Error.Error(),
+		)
 
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: applyResponse})
@@ -364,7 +372,8 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"Config apply failed, rollback successful",
 			instanceID,
-			err.Error())
+			err.Error(),
+		)
 
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: response})
 
@@ -422,6 +431,8 @@ func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Me
 			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
 			Message: "Successfully updated all files",
 		},
+		InstanceId:  configUploadRequest.GetOverview().GetConfigVersion().GetInstanceId(),
+		RequestType: mpi.DataPlaneResponse_CONFIG_UPLOAD_REQUEST,
 	}
 
 	if updatingFilesError != nil {
@@ -448,7 +459,9 @@ func (fp *FilePlugin) handleAgentConfigUpdate(ctx context.Context, msg *bus.Mess
 	fp.config = agentConfig
 }
 
-func (fp *FilePlugin) createDataPlaneResponse(correlationID string, status mpi.CommandResponse_CommandStatus,
+func (fp *FilePlugin) createDataPlaneResponse(
+	correlationID string,
+	status mpi.CommandResponse_CommandStatus,
 	message, instanceID, err string,
 ) *mpi.DataPlaneResponse {
 	return &mpi.DataPlaneResponse{
@@ -462,6 +475,7 @@ func (fp *FilePlugin) createDataPlaneResponse(correlationID string, status mpi.C
 			Message: message,
 			Error:   err,
 		},
-		InstanceId: instanceID,
+		InstanceId:  instanceID,
+		RequestType: mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
 	}
 }

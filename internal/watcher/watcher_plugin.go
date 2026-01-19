@@ -186,12 +186,6 @@ func (w *Watcher) handleEnableWatchers(ctx context.Context, msg *bus.Message) {
 	instanceID := enableWatchersMessage.InstanceID
 	configContext := enableWatchersMessage.ConfigContext
 
-	// if config apply ended in a reload there is no need to reparse the config so an empty config context is sent
-	// from the file plugin
-	if configContext.InstanceID != "" {
-		w.instanceWatcherService.HandleNginxConfigContextUpdate(ctx, instanceID, configContext)
-	}
-
 	w.watcherMutex.Lock()
 	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
 		w.instancesWithConfigApplyInProgress,
@@ -203,6 +197,12 @@ func (w *Watcher) handleEnableWatchers(ctx context.Context, msg *bus.Message) {
 	w.fileWatcherService.EnableWatcher(ctx)
 	w.instanceWatcherService.SetEnabled(true)
 	w.watcherMutex.Unlock()
+
+	// if config apply ended in a reload there is no need to reparse the config so an empty config context is sent
+	// from the file plugin
+	if configContext.InstanceID != "" {
+		w.instanceWatcherService.HandleNginxConfigContextUpdate(ctx, instanceID, configContext)
+	}
 }
 
 func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message) {
@@ -306,7 +306,7 @@ func (w *Watcher) handleCredentialUpdate(ctx context.Context, message credential
 func (w *Watcher) handleInstanceUpdates(newCtx context.Context, message instance.InstanceUpdatesMessage) {
 	if len(message.InstanceUpdates.NewInstances) > 0 {
 		slog.DebugContext(newCtx, "New instances found", "instances", message.InstanceUpdates.NewInstances)
-		w.healthWatcherService.AddHealthWatcher(message.InstanceUpdates.NewInstances)
+		w.healthWatcherService.AddHealthWatcher(newCtx, message.InstanceUpdates.NewInstances)
 		w.messagePipe.Process(
 			newCtx,
 			&bus.Message{Topic: bus.AddInstancesTopic, Data: message.InstanceUpdates.NewInstances},

@@ -51,7 +51,7 @@ func NewHealthWatcherService(agentConfig *config.Config) *HealthWatcherService {
 	}
 }
 
-func (hw *HealthWatcherService) AddHealthWatcher(instances []*mpi.Instance) {
+func (hw *HealthWatcherService) AddHealthWatcher(ctx context.Context, instances []*mpi.Instance) {
 	hw.healthWatcherMutex.Lock()
 	defer hw.healthWatcherMutex.Unlock()
 
@@ -66,8 +66,11 @@ func (hw *HealthWatcherService) AddHealthWatcher(instances []*mpi.Instance) {
 			mpi.InstanceMeta_INSTANCE_TYPE_NGINX_APP_PROTECT:
 			fallthrough
 		default:
-			slog.Warn("Health watcher not implemented", "instance_type",
-				instance.GetInstanceMeta().GetInstanceType())
+			slog.DebugContext(
+				ctx,
+				"Health watcher not implemented",
+				"instance_type", instance.GetInstanceMeta().GetInstanceType(),
+			)
 		}
 		hw.instances[instance.GetInstanceMeta().GetInstanceId()] = instance
 	}

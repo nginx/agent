@@ -271,9 +271,16 @@ func (fso *FileServiceOperator) UpdateFile(
 	instanceID string,
 	fileToUpdate *mpi.File,
 ) error {
-	slog.InfoContext(ctx, "Updating file", "file_name", fileToUpdate.GetFileMeta().GetName(), "instance_id", instanceID)
+	slog.InfoContext(
+		ctx,
+		"Sending file updates",
+		"file_name", fileToUpdate.GetFileMeta().GetName(),
+		"instance_id", instanceID,
+	)
 
-	slog.DebugContext(ctx, "Checking file size",
+	slog.DebugContext(
+		ctx,
+		"Checking file size",
 		"file_size", fileToUpdate.GetFileMeta().GetSize(),
 		"max_file_size", int64(fso.agentConfig.Client.Grpc.MaxFileSize),
 	)
@@ -289,7 +296,7 @@ func (fso *FileServiceOperator) UpdateFile(
 func (fso *FileServiceOperator) RenameFile(
 	ctx context.Context, source, desination string,
 ) error {
-	slog.DebugContext(ctx, fmt.Sprintf("Renaming file %s to %s", source, desination))
+	slog.InfoContext(ctx, fmt.Sprintf("Renaming file %s to %s", source, desination))
 
 	// Create parent directories for the target file if they don't exist
 	if err := os.MkdirAll(filepath.Dir(desination), dirPerm); err != nil {
@@ -339,7 +346,7 @@ func (fso *FileServiceOperator) updateFiles(
 	}
 
 	iteration++
-	slog.InfoContext(ctx, "Updating file overview after file updates", "attempt_number", iteration)
+	slog.InfoContext(ctx, "Sending file overview updates", "attempt_number", iteration)
 
 	return fso.UpdateOverview(ctx, instanceID, diffFiles, configPath, iteration)
 }
