@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package resource
+package nginx
 
 import (
 	"bytes"
@@ -27,7 +27,7 @@ import (
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/bus"
-	"github.com/nginx/agent/v3/internal/resource/resourcefakes"
+	"github.com/nginx/agent/v3/internal/nginx/nginxfakes"
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -72,7 +72,7 @@ func TestResource_Process_Apply(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			fakeNginxService := &resourcefakes.FakeNginxServiceInterface{}
+			fakeNginxService := &nginxfakes.FakeNginxServiceInterface{}
 			fakeNginxService.ApplyConfigReturns(&model.NginxConfigContext{}, test.applyErr)
 			messagePipe := busfakes.NewFakeMessagePipe()
 
@@ -198,7 +198,7 @@ func TestResource_Process_APIAction_GetHTTPServers(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		runResourceTestHelper(t, ctx, test.name, func(fakeService *resourcefakes.FakeNginxServiceInterface) {
+		runResourceTestHelper(t, ctx, test.name, func(fakeService *nginxfakes.FakeNginxServiceInterface) {
 			fakeService.GetHTTPUpstreamServersReturns(test.upstreams, test.err)
 		}, test.instance, test.message, test.topic, test.err)
 	}
@@ -271,7 +271,7 @@ func TestResource_Process_APIAction_UpdateHTTPUpstreams(t *testing.T) {
 			logBuf := &bytes.Buffer{}
 			stub.StubLoggerWith(logBuf)
 
-			fakeNginxService := &resourcefakes.FakeNginxServiceInterface{}
+			fakeNginxService := &nginxfakes.FakeNginxServiceInterface{}
 			fakeNginxService.InstanceReturns(test.instance)
 			fakeNginxService.UpdateHTTPUpstreamServersReturnsOnCall(0, test.upstreams, []client.UpstreamServer{},
 				[]client.UpstreamServer{}, test.err)
@@ -374,7 +374,7 @@ func TestResource_Process_APIAction_UpdateStreamServers(t *testing.T) {
 			logBuf := &bytes.Buffer{}
 			stub.StubLoggerWith(logBuf)
 
-			fakeNginxService := &resourcefakes.FakeNginxServiceInterface{}
+			fakeNginxService := &nginxfakes.FakeNginxServiceInterface{}
 			fakeNginxService.InstanceReturns(test.instance)
 			fakeNginxService.UpdateStreamServersReturnsOnCall(0, test.upstreams, []client.StreamUpstreamServer{},
 				[]client.StreamUpstreamServer{}, test.err)
@@ -517,7 +517,7 @@ func TestResource_Process_APIAction_GetStreamUpstreams(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			fakeNginxService := &resourcefakes.FakeNginxServiceInterface{}
+			fakeNginxService := &nginxfakes.FakeNginxServiceInterface{}
 			fakeNginxService.GetStreamUpstreamsReturns(test.upstreams, test.err)
 			if test.instance.GetInstanceMeta().GetInstanceId() != "e1374cb1-462d-3b6c-9f3b-f28332b5f10f" {
 				fakeNginxService.InstanceReturns(test.instance)
@@ -665,7 +665,7 @@ func TestResource_Process_APIAction_GetUpstreams(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		runResourceTestHelper(t, ctx, test.name, func(fakeService *resourcefakes.FakeNginxServiceInterface) {
+		runResourceTestHelper(t, ctx, test.name, func(fakeService *nginxfakes.FakeNginxServiceInterface) {
 			fakeService.GetUpstreamsReturns(test.upstreams, test.err)
 		}, test.instance, test.message, test.topic, test.err)
 	}
@@ -710,7 +710,7 @@ func TestResource_Process_Rollback(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			fakeNginxService := &resourcefakes.FakeNginxServiceInterface{}
+			fakeNginxService := &nginxfakes.FakeNginxServiceInterface{}
 			fakeNginxService.ApplyConfigReturns(&model.NginxConfigContext{}, test.rollbackErr)
 			messagePipe := busfakes.NewFakeMessagePipe()
 
@@ -766,7 +766,7 @@ func TestResource_Info(t *testing.T) {
 
 func TestResource_Init(t *testing.T) {
 	ctx := context.Background()
-	fakeNginxService := resourcefakes.FakeNginxServiceInterface{}
+	fakeNginxService := nginxfakes.FakeNginxServiceInterface{}
 
 	messagePipe := busfakes.NewFakeMessagePipe()
 	messagePipe.RunWithoutInit(ctx)
@@ -782,11 +782,11 @@ func TestResource_Init(t *testing.T) {
 }
 
 //nolint:revive,lll // maximum number of arguments exceed
-func runResourceTestHelper(t *testing.T, ctx context.Context, testName string, getUpstreamsFunc func(serviceInterface *resourcefakes.FakeNginxServiceInterface), instance *mpi.Instance, message *bus.Message, topic []string, err error) {
+func runResourceTestHelper(t *testing.T, ctx context.Context, testName string, getUpstreamsFunc func(serviceInterface *nginxfakes.FakeNginxServiceInterface), instance *mpi.Instance, message *bus.Message, topic []string, err error) {
 	t.Helper()
 
 	t.Run(testName, func(tt *testing.T) {
-		fakeNginxService := &resourcefakes.FakeNginxServiceInterface{}
+		fakeNginxService := &nginxfakes.FakeNginxServiceInterface{}
 		getUpstreamsFunc(fakeNginxService)
 
 		if instance.GetInstanceMeta().GetInstanceId() != "e1374cb1-462d-3b6c-9f3b-f28332b5f10f" {

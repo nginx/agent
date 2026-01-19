@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package resource
+package nginx
 
 import (
 	"bytes"
@@ -43,7 +43,7 @@ func NewInstanceOperator(agentConfig *config.Config) *NginxInstanceOperator {
 }
 
 func (i *NginxInstanceOperator) Validate(ctx context.Context, instance *mpi.Instance) error {
-	slog.DebugContext(ctx, "Validating NGINX config")
+	slog.InfoContext(ctx, "Validating NGINX configuration")
 	exePath := instance.GetInstanceRuntime().GetBinaryPath()
 
 	out, err := i.executer.RunCmd(ctx, exePath, "-t")
@@ -56,7 +56,7 @@ func (i *NginxInstanceOperator) Validate(ctx context.Context, instance *mpi.Inst
 		return err
 	}
 
-	slog.InfoContext(ctx, "NGINX config tested", "output", out)
+	slog.InfoContext(ctx, "NGINX configuration tested", "output", out)
 
 	return nil
 }
@@ -66,8 +66,7 @@ func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instan
 	var errorsFound error
 	pid := instance.GetInstanceRuntime().GetProcessId()
 
-	slog.InfoContext(ctx, "Reloading NGINX PID", "pid",
-		pid)
+	slog.InfoContext(ctx, "Reloading NGINX master process", "pid", pid)
 
 	workers := i.nginxProcessOperator.NginxWorkerProcesses(ctx, pid)
 
@@ -95,24 +94,24 @@ func (i *NginxInstanceOperator) Reload(ctx context.Context, instance *mpi.Instan
 		i.checkWorkers(ctx, instance.GetInstanceMeta().GetInstanceId(), createdTime, processes)
 	}
 
-	slog.InfoContext(ctx, "NGINX reloaded", "process_id", pid)
+	slog.InfoContext(ctx, "Finished reloading NGINX master process", "process_id", pid)
 
 	numberOfExpectedMessages := len(errorLogs)
 
 	for range numberOfExpectedMessages {
 		logErr := <-logErrorChannel
-		slog.InfoContext(ctx, "Message received in logErrorChannel", "error", logErr)
 		if logErr != nil {
 			errorsFound = errors.Join(errorsFound, logErr)
-			slog.InfoContext(ctx, "Errors Found", "", errorsFound)
 		}
 	}
 
-	slog.InfoContext(ctx, "Finished monitoring post reload")
+	slog.InfoContext(ctx, "Finished monitoring NGINX error logs after reload")
 
 	if errorsFound != nil {
 		return errorsFound
 	}
+
+	slog.InfoContext(ctx, "No errors found in NGINX error logs after reload")
 
 	return nil
 }
@@ -128,7 +127,7 @@ func (i *NginxInstanceOperator) checkWorkers(ctx context.Context, instanceID str
 		Multiplier:          i.agentConfig.DataPlaneConfig.Nginx.ReloadBackoff.Multiplier,
 	}
 
-	slog.DebugContext(ctx, "Waiting for NGINX to finish reloading")
+	slog.InfoContext(ctx, "Waiting for NGINX worker processes to be reloaded")
 
 	newPid, findErr := i.nginxProcessOperator.FindParentProcessID(ctx, instanceID, processes, i.executer)
 	if findErr != nil {
@@ -153,12 +152,14 @@ func (i *NginxInstanceOperator) checkWorkers(ctx context.Context, instanceID str
 			}
 		}
 
-		return fmt.Errorf("waiting for NGINX worker to be newer "+
-			"than %v", createdTime)
+		return fmt.Errorf("waiting for NGINX worker to be newer than %v", createdTime)
 	})
 	if err != nil {
-		slog.WarnContext(ctx, "Failed to check if NGINX worker processes have successfully reloaded, "+
-			"timed out waiting", "error", err)
+		slog.WarnContext(
+			ctx,
+			"Failed to check if NGINX worker processes have successfully reloaded, timed out waiting",
+			"error", err,
+		)
 
 		return
 	}
@@ -197,6 +198,7 @@ func (i *NginxInstanceOperator) monitorLogs(ctx context.Context, errorLogs []str
 	}
 
 	for _, errorLog := range errorLogs {
+		slog.InfoContext(ctx, "Starting to monitor NGINX error log for errors", "log_file", errorLog)
 		go i.logTailer.Tail(ctx, errorLog, errorChannel)
 	}
 }

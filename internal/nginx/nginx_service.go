@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package resource
+package nginx
 
 import (
 	"context"
@@ -196,8 +196,9 @@ func (n *NginxService) GetHTTPUpstreamServers(ctx context.Context, instance *mpi
 	}
 
 	servers, getServersErr := plusClient.GetHTTPServers(ctx, upstream)
-
-	slog.WarnContext(ctx, "Error returned from NGINX Plus client, GetHTTPUpstreamServers", "err", getServersErr)
+	if getServersErr != nil {
+		slog.WarnContext(ctx, "Error returned from NGINX Plus client, GetHTTPUpstreamServers", "error", getServersErr)
+	}
 
 	return servers, createPlusAPIError(getServersErr)
 }
@@ -212,7 +213,9 @@ func (n *NginxService) GetUpstreams(ctx context.Context, instance *mpi.Instance,
 
 	servers, getUpstreamsErr := plusClient.GetUpstreams(ctx)
 
-	slog.WarnContext(ctx, "Error returned from NGINX Plus client, GetUpstreams", "err", getUpstreamsErr)
+	if getUpstreamsErr != nil {
+		slog.WarnContext(ctx, "Error returned from NGINX Plus client, GetUpstreams", "error", getUpstreamsErr)
+	}
 
 	return servers, createPlusAPIError(getUpstreamsErr)
 }
@@ -227,7 +230,9 @@ func (n *NginxService) GetStreamUpstreams(ctx context.Context, instance *mpi.Ins
 
 	streamUpstreams, getServersErr := plusClient.GetStreamUpstreams(ctx)
 
-	slog.WarnContext(ctx, "Error returned from NGINX Plus client, GetStreamUpstreams", "err", getServersErr)
+	if getServersErr != nil {
+		slog.WarnContext(ctx, "Error returned from NGINX Plus client, GetStreamUpstreams", "error", getServersErr)
+	}
 
 	return streamUpstreams, createPlusAPIError(getServersErr)
 }
@@ -248,7 +253,9 @@ func (n *NginxService) UpdateStreamServers(ctx context.Context, instance *mpi.In
 
 	added, updated, deleted, updateError := plusClient.UpdateStreamServers(ctx, upstream, servers)
 
-	slog.WarnContext(ctx, "Error returned from NGINX Plus client, UpdateStreamServers", "err", updateError)
+	if updateError != nil {
+		slog.WarnContext(ctx, "Error returned from NGINX Plus client, UpdateStreamServers", "error", updateError)
+	}
 
 	return added, updated, deleted, createPlusAPIError(updateError)
 }
@@ -270,7 +277,7 @@ func (n *NginxService) UpdateHTTPUpstreamServers(ctx context.Context, instance *
 	added, updated, deleted, updateError := plusClient.UpdateHTTPServers(ctx, upstream, servers)
 
 	if updateError != nil {
-		slog.WarnContext(ctx, "Error returned from NGINX Plus client, UpdateHTTPUpstreamServers", "err", updateError)
+		slog.WarnContext(ctx, "Error returned from NGINX Plus client, UpdateHTTPUpstreamServers", "error", updateError)
 	}
 
 	return added, updated, deleted, createPlusAPIError(updateError)

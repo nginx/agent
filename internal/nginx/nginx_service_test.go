@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package resource
+package nginx
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 	"github.com/nginx/nginx-plus-go-client/v3/client"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"github.com/nginx/agent/v3/internal/resource/resourcefakes"
+	"github.com/nginx/agent/v3/internal/nginx/nginxfakes"
 	"github.com/nginx/agent/v3/test/types"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -278,7 +278,7 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			instanceOp := &resourcefakes.FakeInstanceOperator{}
+			instanceOp := &nginxfakes.FakeInstanceOperator{}
 
 			instanceOp.ReloadReturns(test.reloadErr)
 			instanceOp.ValidateReturns(test.validateErr)

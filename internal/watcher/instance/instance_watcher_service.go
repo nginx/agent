@@ -7,7 +7,9 @@ package instance
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -44,6 +46,7 @@ type (
 		processOperator                process.ProcessOperatorInterface
 		nginxAppProtectInstanceWatcher *NginxAppProtectInstanceWatcher
 		nginxConfigParser              parser.ConfigParser
+		nginxParser                    processParser
 		executer                       exec.ExecInterface
 		enabled                        *atomic.Bool
 		agentConfig                    *config.Config
@@ -53,7 +56,7 @@ type (
 		nginxConfigContextChannel      chan<- NginxConfigContextMessage
 		info                           host.InfoInterface
 		resource                       *mpi.Resource
-		nginxParser                    processParser
+		processCache                   []*nginxprocess.Process
 		cacheMutex                     sync.Mutex
 		resourceMutex                  sync.Mutex
 	}
@@ -93,6 +96,7 @@ func NewInstanceWatcherService(agentConfig *config.Config) *InstanceWatcherServi
 		info:                           host.NewInfo(),
 		resource:                       &mpi.Resource{},
 		enabled:                        enabled,
+		processCache:                   []*nginxprocess.Process{},
 	}
 
 	return instanceWatcherService
@@ -325,6 +329,18 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 	nginxProcesses, err := iw.processOperator.Processes(ctx)
 	if err != nil {
 		return instanceUpdates, err
+	}
+
+	if !slices.EqualFunc(iw.processCache, nginxProcesses, func(a, b *nginxprocess.Process) bool {
+		return a.Equal(b)
+	}) {
+		processesJSON, marshalErr := json.Marshal(nginxProcesses)
+		if marshalErr != nil {
+			slog.DebugContext(ctx, "Unable to marshal NGINX processes", "error", marshalErr)
+		} else {
+			slog.DebugContext(ctx, "NGINX processes changed", "processes", processesJSON)
+			iw.processCache = nginxProcesses
+		}
 	}
 
 	// NGINX Agent is always the first instance in the list
