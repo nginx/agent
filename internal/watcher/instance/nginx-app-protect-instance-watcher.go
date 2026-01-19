@@ -143,6 +143,9 @@ func (w *NginxAppProtectInstanceWatcher) addWatcher(ctx context.Context, version
 }
 
 func (w *NginxAppProtectInstanceWatcher) readVersionFile(ctx context.Context, versionFile string) {
+	w.instanceMutex.Lock()
+	defer w.instanceMutex.Unlock()
+	
 	switch versionFile {
 	case versionFilePath:
 		w.version = w.readFile(ctx, versionFilePath)
@@ -167,6 +170,9 @@ func (w *NginxAppProtectInstanceWatcher) handleEvent(ctx context.Context, event 
 }
 
 func (w *NginxAppProtectInstanceWatcher) handleFileUpdateEvent(ctx context.Context, event fsnotify.Event) {
+	w.instanceMutex.Lock()
+	defer w.instanceMutex.Unlock()
+
 	switch event.Name {
 	case versionFilePath:
 		w.version = w.readFile(ctx, event.Name)
@@ -182,6 +188,9 @@ func (w *NginxAppProtectInstanceWatcher) handleFileUpdateEvent(ctx context.Conte
 }
 
 func (w *NginxAppProtectInstanceWatcher) handleFileDeleteEvent(event fsnotify.Event) {
+	w.instanceMutex.Lock()
+	defer w.instanceMutex.Unlock()
+
 	switch event.Name {
 	case versionFilePath:
 		w.version = ""
@@ -212,6 +221,9 @@ func (w *NginxAppProtectInstanceWatcher) checkForUpdates(ctx context.Context) {
 }
 
 func (w *NginxAppProtectInstanceWatcher) isNewInstance() bool {
+	w.instanceMutex.Lock()
+	defer w.instanceMutex.Unlock()
+
 	return w.nginxAppProtectInstance == nil && w.version != ""
 }
 
@@ -245,6 +257,9 @@ func (w *NginxAppProtectInstanceWatcher) createInstance(ctx context.Context) {
 }
 
 func (w *NginxAppProtectInstanceWatcher) deleteInstance(ctx context.Context) {
+	w.instanceMutex.Lock()
+	defer w.instanceMutex.Unlock()
+
 	slog.InfoContext(ctx, "NGINX App Protect instance not longer exists")
 	w.nginxAppProtectInstance = nil
 }
@@ -252,6 +267,7 @@ func (w *NginxAppProtectInstanceWatcher) deleteInstance(ctx context.Context) {
 func (w *NginxAppProtectInstanceWatcher) updateInstance(ctx context.Context) {
 	w.instanceMutex.Lock()
 	defer w.instanceMutex.Unlock()
+
 	w.nginxAppProtectInstance.GetInstanceMeta().Version = w.version
 	runtimeInfo := w.nginxAppProtectInstance.GetInstanceRuntime().GetNginxAppProtectRuntimeInfo()
 	if runtimeInfo == nil {
