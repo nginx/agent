@@ -684,6 +684,18 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 	addErr := os.WriteFile(addTestFile.Name(), addFileContent, 0o600)
 	require.NoError(t, addErr)
 
+	externalFileName := filepath.Join(tempDir, "external.conf")
+	modifiedExternalFiles := map[string]*model.FileCache{
+		externalFileName: {
+			File: &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name: externalFileName,
+				},
+				ExternalDataSource: &mpi.ExternalDataSource{Location: "http://example.com/file"},
+			},
+		},
+	}
+
 	tests := []struct {
 		expectedError   error
 		modifiedFiles   map[string]*model.FileCache
@@ -822,6 +834,20 @@ func TestFileManagerService_DetermineFileActions(t *testing.T) {
 				"unable to create file %s since a directory with the same name already exists",
 				tempDir,
 			),
+		},
+		{
+			name:          "Test 5: External file becomes ExternalFile",
+			allowedDirs:   []string{tempDir},
+			expectedError: nil,
+			modifiedFiles: modifiedExternalFiles,
+			currentFiles:  make(map[string]*mpi.File),
+			expectedCache: map[string]*model.FileCache{
+				externalFileName: {
+					File:   modifiedExternalFiles[externalFileName].File,
+					Action: model.ExternalFile,
+				},
+			},
+			expectedContent: nil,
 		},
 	}
 
@@ -1196,4 +1222,32 @@ rQHX6DP4w6IwZY8JB8LS
 			assert.Equal(t, test.expectedSerial, certFileMeta.GetCertificateMeta().GetSerialNumber())
 		})
 	}
+}
+
+func TestFileManagerService_DetermineFileActions_ExternalFile(t *testing.T) {
+	ctx := context.Background()
+	tempDir := t.TempDir()
+	fileName := filepath.Join(tempDir, "external.conf")
+
+	modifiedFiles := map[string]*model.FileCache{
+		fileName: {
+			File: &mpi.File{
+				FileMeta: &mpi.FileMeta{
+					Name: fileName,
+				},
+				ExternalDataSource: &mpi.ExternalDataSource{Location: "http://example.com/file"},
+			},
+		},
+	}
+
+	fakeFileServiceClient := &v1fakes.FakeFileServiceClient{}
+	fileManagerService := NewFileManagerService(fakeFileServiceClient, types.AgentConfig(), &sync.RWMutex{})
+	fileManagerService.agentConfig.AllowedDirectories = []string{tempDir}
+
+	diff, err := fileManagerService.DetermineFileActions(ctx, make(map[string]*mpi.File), modifiedFiles)
+	require.NoError(t, err)
+
+	fc, ok := diff[fileName]
+	require.True(t, ok, "expected file to be present in diff")
+	assert.Equal(t, model.ExternalFile, fc.Action)
 }
