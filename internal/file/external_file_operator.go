@@ -43,6 +43,7 @@ func (efo *ExternalFileOperator) DownloadExternalFile(ctx context.Context, fileA
 ) error {
 	location := fileAction.File.GetExternalDataSource().GetLocation()
 	permission := fileAction.File.GetFileMeta().GetPermissions()
+	fileName := fileAction.File.GetFileMeta().GetName()
 
 	slog.InfoContext(ctx, "Downloading external file from", "location", location)
 
@@ -54,28 +55,25 @@ func (efo *ExternalFileOperator) DownloadExternalFile(ctx context.Context, fileA
 
 	if downloadErr != nil {
 		updateError = fmt.Errorf("failed to download file %s from %s: %w",
-			fileAction.File.GetFileMeta().GetName(), location, downloadErr)
+			fileName, location, downloadErr)
 
 		return updateError
 	}
 
 	if contentToWrite == nil {
 		slog.DebugContext(ctx, "External file unchanged (304), skipping disk write.",
-			"file", fileAction.File.GetFileMeta().GetName())
+			"file", fileName)
 
 		// preserve previous behavior: mark as unchanged so later rename is skipped
 		fileAction.Action = model.Unchanged
 
 		// persist headers if present
 		if headers.ETag != "" || headers.LastModified != "" {
-			fileName := fileAction.File.GetFileMeta().GetName()
 			efo.fileManagerService.externalFileHeaders[fileName] = headers
 		}
 
 		return nil
 	}
-
-	fileName := fileAction.File.GetFileMeta().GetName()
 
 	// Validate downloaded file type before writing to temp location.
 	if err := efo.validateDownloadedFile(contentToWrite, fileName); err != nil {

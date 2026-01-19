@@ -254,7 +254,7 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 
 			continue
 		case model.Delete, model.Update, model.ExternalFile:
-			content, err := fms.restoreFiles(fileAction)
+			content, err := fms.restoreFiles(ctx, fileAction)
 			if err != nil {
 				return err
 			}
