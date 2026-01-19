@@ -38,6 +38,8 @@ const (
 	k8sKind    = "kubepods"
 	docker     = "docker"
 	containerd = "containerd"
+	ecsPrefix  = "ecs"     // AWS ECS Fargate
+	fargate    = "fargate" // AWS EKS Fargate
 
 	numberOfKeysAndValues = 2
 	lengthOfContainerID   = 64
@@ -260,7 +262,8 @@ func containsContainerReference(cgroupFile string) (bool, error) {
 	scanner := bufio.NewScanner(bytes.NewReader(data))
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-		if strings.Contains(line, k8sKind) || strings.Contains(line, docker) || strings.Contains(line, containerd) {
+		if strings.Contains(line, k8sKind) || strings.Contains(line, docker) || strings.Contains(line, containerd) ||
+			strings.Contains(line, ecsPrefix) || strings.Contains(line, fargate) {
 			return true, nil
 		}
 	}
