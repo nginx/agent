@@ -250,6 +250,8 @@ func (w *NginxAppProtectInstanceWatcher) deleteInstance(ctx context.Context) {
 }
 
 func (w *NginxAppProtectInstanceWatcher) updateInstance(ctx context.Context) {
+	w.instanceMutex.Lock()
+	defer w.instanceMutex.Unlock()
 	w.nginxAppProtectInstance.GetInstanceMeta().Version = w.version
 	runtimeInfo := w.nginxAppProtectInstance.GetInstanceRuntime().GetNginxAppProtectRuntimeInfo()
 	if runtimeInfo == nil {
