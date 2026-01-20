@@ -11,10 +11,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nginx/agent/v3/internal/config"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
-
-	"github.com/nginx/agent/v3/internal/config"
 
 	"github.com/nginx/agent/v3/pkg/id"
 	"github.com/nginx/agent/v3/test/protos"

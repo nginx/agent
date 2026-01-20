@@ -17,6 +17,7 @@ import (
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
 	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/pkg/id"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -268,19 +269,28 @@ func (w *NginxAppProtectInstanceWatcher) updateInstance(ctx context.Context) {
 	w.instanceMutex.Lock()
 	defer w.instanceMutex.Unlock()
 
-	w.nginxAppProtectInstance.GetInstanceMeta().Version = w.version
-	runtimeInfo := w.nginxAppProtectInstance.GetInstanceRuntime().GetNginxAppProtectRuntimeInfo()
-	if runtimeInfo == nil {
-		slog.ErrorContext(ctx, "Error updating NGINX App Protect instance runtimeInfo, instance no longer exists")
-		return
+	instanceCopy, ok := proto.Clone(w.nginxAppProtectInstance).(*mpi.Instance)
+
+	if ok {
+		instanceCopy.GetInstanceMeta().Version = w.version
+		runtimeInfo := instanceCopy.GetInstanceRuntime().GetNginxAppProtectRuntimeInfo()
+		if runtimeInfo == nil {
+			slog.ErrorContext(ctx, "Error updating NGINX App Protect instance runtimeInfo, instance no longer exists")
+			return
+		}
+
+		runtimeInfo.Release = w.release
+		runtimeInfo.AttackSignatureVersion = w.attackSignatureVersion
+		runtimeInfo.ThreatCampaignVersion = w.threatCampaignVersion
+		runtimeInfo.EnforcerEngineVersion = w.enforcerEngineVersion
+
+		w.nginxAppProtectInstance = instanceCopy
+
+		slog.InfoContext(ctx, "NGINX App Protect instance updated")
+	} else {
+		slog.WarnContext(ctx, "Unable to clone instance while updating instance", "instance",
+			w.NginxAppProtectInstance())
 	}
-
-	runtimeInfo.Release = w.release
-	runtimeInfo.AttackSignatureVersion = w.attackSignatureVersion
-	runtimeInfo.ThreatCampaignVersion = w.threatCampaignVersion
-	runtimeInfo.EnforcerEngineVersion = w.enforcerEngineVersion
-
-	slog.InfoContext(ctx, "NGINX App Protect instance updated")
 }
 
 func (w *NginxAppProtectInstanceWatcher) haveVersionsChanged() bool {
