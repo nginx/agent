@@ -110,7 +110,7 @@ func TestNginxAppProtectInstanceWatcher_Watch(t *testing.T) {
 		expectedInstance.GetInstanceRuntime().GetNginxAppProtectRuntimeInfo().EnforcerEngineVersion = "6.113.0"
 
 		assert.Eventually(t, func() bool {
-			return proto.Equal(nginxAppProtectInstanceWatcher.nginxAppProtectInstance, expectedInstance)
+			return proto.Equal(nginxAppProtectInstanceWatcher.NginxAppProtectInstance(), expectedInstance)
 		}, timeout, 30*time.Millisecond)
 	})
 	t.Run("Test 3: Delete instance", func(t *testing.T) {
