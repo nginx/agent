@@ -703,7 +703,7 @@ actionsLoop:
 		tempFilePath := tempFilePath(fileMeta.GetName())
 		switch fileAction.Action {
 		case model.Delete:
-			slog.DebugContext(ctx, "Deleting file", "file", fileMeta.GetName())
+			slog.InfoContext(ctx, "Deleting file", "file", fileMeta.GetName())
 			if err = os.Remove(fileMeta.GetName()); err != nil && !os.IsNotExist(err) {
 				actionError = fmt.Errorf("error deleting file: %s error: %w",
 					fileMeta.GetName(), err)

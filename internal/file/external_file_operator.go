@@ -45,7 +45,7 @@ func (efo *ExternalFileOperator) DownloadExternalFile(ctx context.Context, fileA
 	permission := fileAction.File.GetFileMeta().GetPermissions()
 	fileName := fileAction.File.GetFileMeta().GetName()
 
-	slog.InfoContext(ctx, "Downloading external file from", "location", location)
+	slog.InfoContext(ctx, "Downloading external file", "location", location)
 
 	var contentToWrite []byte
 	var downloadErr, updateError error
@@ -150,7 +150,8 @@ func (efo *ExternalFileOperator) downloadFileContent(ctx context.Context, file *
 		headers.ETag = resp.Header.Get("ETag")
 		headers.LastModified = resp.Header.Get("Last-Modified")
 	case http.StatusNotModified:
-		slog.DebugContext(ctx, "File content unchanged (304 Not Modified)", "file_name", fileName)
+		slog.InfoContext(ctx, "Received 304 status code in response from external data source, "+
+			"file has not been modified", "file_name", fileName)
 		// return empty content but preserve headers if present
 		header := DownloadHeader{
 			ETag:         resp.Header.Get("ETag"),

@@ -1622,6 +1622,7 @@ func resolveExternalDataSource() *ExternalDataSource {
 	}
 
 	if err := validateAllowedDomains(externalDataSource.AllowedDomains); err != nil {
+		slog.Error("External data source not configured due to invalid configuration", "error", err)
 		return nil
 	}
 
@@ -1636,7 +1637,6 @@ func validateAllowedDomains(domains []string) error {
 	for _, domain := range domains {
 		// Validating syntax using the RFC-compliant regex
 		if !domainRegex.MatchString(domain) || domain == "" {
-			slog.Error("domain specified in allowed_domains is invalid", "domain", domain)
 			return errors.New("invalid domain found in allowed_domains")
 		}
 	}
