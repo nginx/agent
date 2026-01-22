@@ -223,33 +223,25 @@ func (i *Info) releaseInfo(ctx context.Context, osReleaseLocation string) (*v1.R
 
 // containerID returns the container ID of the current running environment.
 func (i *Info) containerID(ctx context.Context) (string, error) {
-	var (
-		containerIDMount string
-		errMount         error
-	)
+	var errs error
 
-	containerIDMount, errMount = containerIDFromMountInfo(i.mountInfoLocation)
-	if containerIDMount != "" {
+	// Try to get container ID from mount info first
+	if containerIDMount, err := containerIDFromMountInfo(i.mountInfoLocation); err == nil && containerIDMount != "" {
 		return uuid.NewMD5(uuid.NameSpaceDNS, []byte(containerIDMount)).String(), nil
+	} else if err != nil {
+		errs = errors.Join(errs, err)
 	}
 
+	// Try to get container ID from ECS metadata if available
 	if metadataURI := os.Getenv(ecsMetadataEnvV4); metadataURI != "" {
-		if cid, errEcs := i.containerIDFromECS(ctx, metadataURI); errEcs == nil && cid != "" {
+		if cid, err := i.containerIDFromECS(ctx, metadataURI); err == nil && cid != "" {
 			return uuid.NewMD5(uuid.NameSpaceDNS, []byte(cid)).String(), nil
-		} else if errEcs != nil {
-			if errMount != nil {
-				return "", errMount
-			}
-
-			return "", errEcs
+		} else if err != nil {
+			errs = errors.Join(errs, err)
 		}
 	}
 
-	if errMount != nil {
-		return "", errMount
-	}
-
-	return "", errors.New("container ID not found")
+	return "", errs
 }
 
 // containsContainerReference checks if the cgroup file contains references to container runtimes.
@@ -426,7 +418,7 @@ func (i *Info) containerIDFromECS(ctx context.Context, uri string) (string, erro
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("metadata endpoint returned status %d", resp.StatusCode)
+		return "", fmt.Errorf("metadata endpoint %s returned status %d", uri, resp.StatusCode)
 	}
 
 	var metadata struct {
