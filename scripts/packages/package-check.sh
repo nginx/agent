@@ -254,7 +254,7 @@ prep_txz() {
     # Should be 'nginx-agent-2.44.0-FreeBSD.12.amd64.pkg'
     dest="$(dirname "$i")/nginx-agent-${VERSION}-FreeBSD.$ver.$arch.pkg"
     echo "Moving ${i} to ${dest}"
-    cp "${i}" "${dest}"
+    mv "${i}" "${dest}"
   done
 }
 
