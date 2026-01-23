@@ -459,17 +459,28 @@ jobs:
             ~/.cache/go-build
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-
+
+      - name: Sync NGINX Plus License
+        uses: ./.github/actions/az-sync
+        with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+          keyvault: ${{ secrets.AZ_KEYVAULT_COMMON }}
+          secrets-filter: 'nginx-private-registry, nginx-pkg-jwt'
+
       - name: Download Packages
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
+
       - name: Login to Docker Registry
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
-          registry: ${{ secrets.TEST_REGISTRY_URL }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
+          registry: ${{ env.nginx-private-registry-url }}
+          username: ${{ env.nginx-pkg-jwt }}
+          password: ${{ env.docker-password }}
 
       - name: Create Results Directory
         run: mkdir -p ${{ github.workspace }}/test/dashboard/logs/${{ github.job }}/${{matrix.container.image}}-${{matrix.container.version}}
@@ -482,10 +493,10 @@ jobs:
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.TEST_REGISTRY_URL }}" \
+          CONTAINER_NGINX_IMAGE_REGISTRY="${{ env.nginx-private-registry-url }}" \
           TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
           OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" IMAGE_PATH="${{ matrix.container.path }}" \
-          NGINX_LICENSE_JWT='${{ secrets.TEST_JWT }}' \
+          NGINX_LICENSE_JWT='${{ env.nginx-pkg-jwt }}' \
             make official-image-integration-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}}/raw_logs.log
           exit "${PIPESTATUS[0]}"
 
@@ -639,10 +650,10 @@ jobs:
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.TEST_REGISTRY_URL }}" \
+          CONTAINER_NGINX_IMAGE_REGISTRY="${{ env.nginx-private-registry-url }}" \
           TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
           OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" IMAGE_PATH="${{ matrix.container.path }}" \
-          NGINX_LICENSE_JWT="${{ secrets.TEST_JWT }}" \
+          NGINX_LICENSE_JWT="${{ env.nginx-pkg-jwt }}" \
             make metrics-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}}/raw_logs.log
           exit "${PIPESTATUS[0]}"
 
@@ -738,8 +749,8 @@ jobs:
           az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
           az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
           az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
-          keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
-          secrets-filter: 'nginx-crt,nginx-key'
+          keyvault: ${{ secrets.AZ_KEYVAULT_COMMON }}
+          secrets-filter: 'nginx-pkg'
 
       - name: Build Docker Image
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
@@ -753,8 +764,8 @@ jobs:
           load: true
           no-cache: true
           secrets: |
-            "nginx-crt=${{ secrets.NGINX_CRT }}"
-            "nginx-key=${{ secrets.NGINX_KEY }}"
+            "nginx-crt=${{ env.nginx-pkg-cert }}"
+            "nginx-key=${{ env.nginx-pkg-key }}"
           build-args: |
             OSARCH=amd64
             GO_VERSION=${{ env.GO_VERSION }}
@@ -787,4 +798,4 @@ jobs:
 
       - name: Push load test result
         if:  ${{ success() && github.ref_name == 'main' }}
-        run: git push 'https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/nginx/agent.git' benchmark-results:benchmark-results
+        run: git push 'https://github-actions:${{ github.token }}@github.com/nginx/agent.git' benchmark-results:benchmark-results
