@@ -17,6 +17,9 @@ on:
         required: false
         default: false
 
+permissions:
+  contents: read
+
 jobs:
   build-assertion-document:
     name: Create Assertion Document

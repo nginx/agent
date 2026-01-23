@@ -185,7 +185,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs: [vars,release-draft]
     permissions:
-      contents: write
+      contents: write # Needed to tag a release
     steps:
       - name: Checkout Repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -206,8 +206,7 @@ jobs:
     runs-on: ubuntu-22.04-amd64
     needs: [vars,release-draft,tag-release]
     permissions:
-      id-token: write
-      contents: write # Needed to update a release
+      id-token: write # Needed to get a token to upload packages to NGINX repo
     steps:
       - name: Checkout Repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -294,7 +293,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs: [vars,tag-release]
     permissions:
-      pull-requests: write
+      pull-requests: write # Needed to create pull request back into main branch
     steps:
       - name: Checkout Repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1

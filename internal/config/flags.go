@@ -25,6 +25,7 @@ const (
 	InstanceHealthWatcherMonitoringFrequencyKey = "watchers_instance_health_watcher_monitoring_frequency"
 	FileWatcherKey                              = "watchers_file_watcher"
 	LibDirPathKey                               = "lib_dir"
+	ExternalDataSourceRootKey                   = "external_data_source"
 )
 
 var (
@@ -49,6 +50,7 @@ var (
 	ClientBackoffMaxElapsedTimeKey      = pre(ClientRootKey) + "backoff_max_elapsed_time"
 	ClientBackoffRandomizationFactorKey = pre(ClientRootKey) + "backoff_randomization_factor"
 	ClientBackoffMultiplierKey          = pre(ClientRootKey) + "backoff_multiplier"
+	ClientFileDownloadTimeoutKey        = pre(ClientRootKey) + "file_download_timeout"
 
 	CollectorConfigPathKey                      = pre(CollectorRootKey) + "config_path"
 	CollectorAdditionalConfigPathsKey           = pre(CollectorRootKey) + "additional_config_paths"
@@ -143,6 +145,12 @@ var (
 
 	FileWatcherMonitoringFrequencyKey = pre(FileWatcherKey) + "monitoring_frequency"
 	NginxExcludeFilesKey              = pre(FileWatcherKey) + "exclude_files"
+
+	ExternalDataSourceProxyKey            = pre(ExternalDataSourceRootKey) + "proxy"
+	ExternalDataSourceProxyUrlKey         = pre(ExternalDataSourceProxyKey) + "url"
+	ExternalDataSourceMaxBytesKey         = pre(ExternalDataSourceRootKey) + "max_bytes"
+	ExternalDataSourceAllowDomainsKey     = pre(ExternalDataSourceRootKey) + "allowed_domains"
+	ExternalDataSourceAllowedFileTypesKey = pre(ExternalDataSourceRootKey) + "allowed_file_types"
 )
 
 func pre(prefixes ...string) string {

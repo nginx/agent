@@ -96,19 +96,19 @@ func createFile(confPath string) error {
 
 // Generates an OTel Collector config to a file by injecting the Metrics Config to a Go template.
 func writeCollectorConfig(conf *config.Collector) error {
+	confPath := filepath.Clean(conf.ConfigPath)
+
+	slog.Info("Writing OTel collector config", "config_path", confPath)
+
 	if conf.Processors.Resource["default"] != nil {
 		addDefaultResourceProcessor(conf.Pipelines.Metrics)
 		addDefaultResourceProcessor(conf.Pipelines.Logs)
 	}
 
-	slog.Info("Writing OTel collector config")
-
 	otelcolTemplate, templateErr := template.New(otelTemplatePath).Parse(otelcolTemplate)
 	if templateErr != nil {
 		return templateErr
 	}
-
-	confPath := filepath.Clean(conf.ConfigPath)
 
 	// Ensure file exists and has correct permissions
 	if err := ensureFileExists(confPath); err != nil {
