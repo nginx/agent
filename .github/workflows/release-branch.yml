@@ -235,13 +235,10 @@ jobs:
 
       - name: Build Packages
         env:
-          GPG_KEY: ${{ secrets.INDIGO_GPG_AGENT }}
-          NFPM_SIGNING_KEY_FILE: .key.asc
           VERSION: ${{ env.VERSION }}
           PACKAGE_BUILD: ${{ inputs.packageBuildNo }}
         run: |
           export PATH=$PATH:~/go/bin
-          echo "$GPG_KEY" | base64 --decode > ${NFPM_SIGNING_KEY_FILE}
           make package
           find build/ -type f -name "nginx-agent*"
 
