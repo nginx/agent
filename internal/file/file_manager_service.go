@@ -33,12 +33,20 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
 //counterfeiter:generate . fileManagerServiceInterface
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6@v6.8.1 -generate
+//counterfeiter:generate . fileServiceOperatorInterface
+
 const (
 	maxAttempts = 5
 	dirPerm     = 0o755
 	filePerm    = 0o600
 	executePerm = 0o111
 )
+
+type DownloadHeader struct {
+	ETag         string
+	LastModified string
+}
 
 type (
 	fileOperator interface {
@@ -73,7 +81,8 @@ type (
 			fileToUpdate *mpi.File,
 		) error
 		SetIsConnected(isConnected bool)
-		RenameFile(ctx context.Context, hash, fileName, tempDir string) error
+		RenameFile(ctx context.Context, fileName, tempDir string) error
+		ValidateFileHash(ctx context.Context, fileName, expectedHash string) error
 		UpdateClient(ctx context.Context, fileServiceClient mpi.FileServiceClient)
 	}
 
@@ -97,15 +106,17 @@ type (
 )
 
 type FileManagerService struct {
-	manifestLock        *sync.RWMutex
-	agentConfig         *config.Config
-	fileOperator        fileOperator
-	fileServiceOperator fileServiceOperatorInterface
+	manifestLock         *sync.RWMutex
+	agentConfig          *config.Config
+	externalFileOperator *ExternalFileOperator
+	fileOperator         fileOperator
+	fileServiceOperator  fileServiceOperatorInterface
 	// map of files and the actions performed on them during config apply
 	fileActions map[string]*model.FileCache // key is file path
 	// map of the files currently on disk, used to determine the file action during config apply
 	currentFilesOnDisk    map[string]*mpi.File // key is file path
 	previousManifestFiles map[string]*model.ManifestFile
+	externalFileHeaders   map[string]DownloadHeader
 	manifestFilePath      string
 	rollbackManifest      bool
 	filesMutex            sync.RWMutex
@@ -114,17 +125,23 @@ type FileManagerService struct {
 func NewFileManagerService(fileServiceClient mpi.FileServiceClient, agentConfig *config.Config,
 	manifestLock *sync.RWMutex,
 ) *FileManagerService {
-	return &FileManagerService{
+	fileManagerService := &FileManagerService{
 		agentConfig:           agentConfig,
 		fileOperator:          NewFileOperator(manifestLock),
 		fileServiceOperator:   NewFileServiceOperator(agentConfig, fileServiceClient, manifestLock),
 		fileActions:           make(map[string]*model.FileCache),
 		currentFilesOnDisk:    make(map[string]*mpi.File),
 		previousManifestFiles: make(map[string]*model.ManifestFile),
+		externalFileHeaders:   make(map[string]DownloadHeader),
 		rollbackManifest:      true,
 		manifestFilePath:      agentConfig.LibDir + "/manifest.json",
 		manifestLock:          manifestLock,
 	}
+
+	// initialize the external file operator with a reference to the FileManagerService
+	fileManagerService.externalFileOperator = NewExternalFileOperator(fileManagerService)
+
+	return fileManagerService
 }
 
 func (fms *FileManagerService) ResetClient(ctx context.Context, fileServiceClient mpi.FileServiceClient) {
@@ -236,7 +253,7 @@ func (fms *FileManagerService) Rollback(ctx context.Context, instanceID string) 
 			delete(fms.currentFilesOnDisk, fileAction.File.GetFileMeta().GetName())
 
 			continue
-		case model.Delete, model.Update:
+		case model.Delete, model.Update, model.ExternalFile:
 			content, err := fms.restoreFiles(ctx, fileAction)
 			if err != nil {
 				return err
@@ -397,6 +414,16 @@ func (fms *FileManagerService) DetermineFileActions(
 		// If file is unmanaged, action is set to unchanged so file is skipped when performing actions.
 		if modifiedFile.File.GetUnmanaged() {
 			slog.DebugContext(ctx, "Skipping unmanaged file updates", "file_name", fileName)
+			continue
+		}
+
+		// If it's external, we don't care about disk state or hashes here.
+		// We tag it as ExternalFile and let the downloader handle the rest.
+		if modifiedFile.File.GetExternalDataSource() != nil || (ok && currentFile.GetExternalDataSource() != nil) {
+			slog.DebugContext(ctx, "External file requires downloading", "file_name", fileName)
+			modifiedFile.Action = model.ExternalFile
+			fileDiff[fileName] = modifiedFile
+
 			continue
 		}
 
@@ -627,7 +654,8 @@ func (fms *FileManagerService) executeFileActions(ctx context.Context) (actionEr
 func (fms *FileManagerService) downloadUpdatedFilesToTempLocation(ctx context.Context) (updateError error) {
 	var downloadFiles []*model.FileCache
 	for _, fileAction := range fms.fileActions {
-		if fileAction.Action == model.Add || fileAction.Action == model.Update {
+		if fileAction.Action == model.Add || fileAction.Action == model.Update ||
+			fileAction.Action == model.ExternalFile {
 			downloadFiles = append(downloadFiles, fileAction)
 		}
 	}
@@ -644,44 +672,61 @@ func (fms *FileManagerService) downloadUpdatedFilesToTempLocation(ctx context.Co
 		errGroup.Go(func() error {
 			tempFilePath := tempFilePath(fileAction.File.GetFileMeta().GetName())
 
-			slog.InfoContext(
-				errGroupCtx,
-				"Downloading file to temp location",
-				"file", tempFilePath,
-			)
+			switch fileAction.Action {
+			case model.ExternalFile:
+				return fms.externalFileOperator.DownloadExternalFile(errGroupCtx, fileAction, tempFilePath)
+			case model.Add, model.Update:
+				slog.DebugContext(
+					errGroupCtx,
+					"Downloading file to temp location",
+					"file", tempFilePath,
+				)
 
-			return fms.fileUpdate(errGroupCtx, fileAction.File, tempFilePath)
+				return fms.fileUpdate(errGroupCtx, fileAction.File, tempFilePath)
+			case model.Delete, model.Unchanged: // had to add for linter
+				return nil
+			default:
+				return nil
+			}
 		})
 	}
 
 	return errGroup.Wait()
 }
 
+//nolint:revive // cognitive-complexity of 14 max is 12, loop is needed cant be broken up
 func (fms *FileManagerService) moveOrDeleteFiles(ctx context.Context, actionError error) error {
 actionsLoop:
 	for _, fileAction := range fms.fileActions {
+		var err error
+		fileMeta := fileAction.File.GetFileMeta()
+		tempFilePath := tempFilePath(fileMeta.GetName())
 		switch fileAction.Action {
 		case model.Delete:
-			slog.InfoContext(ctx, "Deleting file", "file", fileAction.File.GetFileMeta().GetName())
-			if err := os.Remove(fileAction.File.GetFileMeta().GetName()); err != nil && !os.IsNotExist(err) {
+			slog.InfoContext(ctx, "Deleting file", "file", fileMeta.GetName())
+			if err = os.Remove(fileMeta.GetName()); err != nil && !os.IsNotExist(err) {
 				actionError = fmt.Errorf("error deleting file: %s error: %w",
-					fileAction.File.GetFileMeta().GetName(), err)
+					fileMeta.GetName(), err)
 
 				break actionsLoop
 			}
 
 			continue
 		case model.Add, model.Update:
-			fileMeta := fileAction.File.GetFileMeta()
-			tempFilePath := tempFilePath(fileAction.File.GetFileMeta().GetName())
-			err := fms.fileServiceOperator.RenameFile(ctx, fileMeta.GetHash(), tempFilePath, fileMeta.GetName())
+			err = fms.fileServiceOperator.RenameFile(ctx, tempFilePath, fileMeta.GetName())
 			if err != nil {
 				actionError = err
-
 				break actionsLoop
 			}
+			err = fms.fileServiceOperator.ValidateFileHash(ctx, fileMeta.GetName(), fileMeta.GetHash())
+		case model.ExternalFile:
+			err = fms.fileServiceOperator.RenameFile(ctx, tempFilePath, fileMeta.GetName())
 		case model.Unchanged:
 			slog.DebugContext(ctx, "File unchanged")
+		}
+		if err != nil {
+			actionError = err
+			break actionsLoop
 		}
 	}
 
