@@ -185,6 +185,7 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 	configPath string,
 ) (*model.NginxConfigContext, error) {
 	napEnabled := false
+	maxAccessLogReached := false
 
 	nginxConfigContext := &model.NginxConfigContext{
 		InstanceID: instance.GetInstanceMeta().GetInstanceId(),
@@ -225,10 +226,16 @@ func (ncp *NginxConfigParser) createNginxConfigContext(
 				case "log_format":
 					formatMap = ncp.formatMap(directive)
 				case "access_log":
-					if !ncp.ignoreLog(directive.Args[0]) {
+					if !ncp.ignoreLog(directive.Args[0]) && !maxAccessLogReached {
 						accessLog := ncp.accessLog(directive.Args[0], ncp.accessLogDirectiveFormat(directive),
 							formatMap)
-						nginxConfigContext.AccessLogs = ncp.addAccessLog(accessLog, nginxConfigContext.AccessLogs)
+						nginxConfigContext.AccessLogs, maxAccessLogReached = ncp.addAccessLog(
+							accessLog,
+							nginxConfigContext.AccessLogs)
+						if maxAccessLogReached {
+							slog.Warn("Maximum access log files have been reached, " +
+								"no further access logs will be monitored")
+						}
 					}
 				case "error_log":
 					if !ncp.ignoreLog(directive.Args[0]) {
@@ -345,7 +352,7 @@ func (ncp *NginxConfigParser) parseIncludeDirective(
 
 func (ncp *NginxConfigParser) addAccessLog(accessLog *model.AccessLog,
 	accessLogs []*model.AccessLog,
-) []*model.AccessLog {
+) ([]*model.AccessLog, bool) {
 	for i, log := range accessLogs {
 		if accessLog.Name == log.Name {
 			if accessLog.Format != log.Format {
@@ -353,17 +360,21 @@ func (ncp *NginxConfigParser) addAccessLog(accessLog *model.AccessLog,
 					"are not supported in the same access log, metrics from this access log "+
 					"will not be collected", "access_log", accessLog.Name)
 
-				return append(accessLogs[:i], accessLogs[i+1:]...)
+				return append(accessLogs[:i], accessLogs[i+1:]...), false
 			}
 			slog.Debug("Found duplicate access log, skipping", "access_log", accessLog.Name)
 
-			return accessLogs
+			return accessLogs, false
 		}
+	}
+
+	if len(accessLogs) >= int(ncp.agentConfig.DataPlaneConfig.Nginx.MaxAccessLogFiles) {
+		return accessLogs, true
 	}
 
 	slog.Debug("Found valid access log", "access_log", accessLog.Name)
 
-	return append(accessLogs, accessLog)
+	return append(accessLogs, accessLog), false
 }
 
 func (ncp *NginxConfigParser) crossplaneConfigTraverse(
