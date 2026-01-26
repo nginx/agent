@@ -469,7 +469,7 @@ jobs:
           az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
           az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
           keyvault: ${{ secrets.AZ_KEYVAULT_COMMON }}
-          secrets-filter: 'nginx-private-registry, nginx-pkg-jwt'
+          secrets-filter: 'docker, nginx-private-registry, nginx-pkg-jwt'
 
       - name: Download Packages
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
@@ -634,12 +634,20 @@ jobs:
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
+      - name: Sync NGINX Plus License
+        uses: ./.github/actions/az-sync
+        with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+          keyvault: ${{ secrets.AZ_KEYVAULT_COMMON }}
+          secrets-filter: 'docker, nginx-private-registry, nginx-pkg-jwt'
       - name: Login to Docker Registry
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
-          registry: ${{ secrets.TEST_REGISTRY_URL }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
+          registry: ${{ env.nginx-private-registry-url }}
+          username: ${{ env.nginx-pkg-jwt }}
+          password: ${{ env.docker-password }}
 
       - name: Create Results Directory
         run: mkdir -p ${{ github.workspace }}/test/dashboard/logs/${{ github.job }}/${{matrix.container.image}}-${{matrix.container.version}}
@@ -766,7 +774,7 @@ jobs:
           load: true
           no-cache: true
           secrets: |
-            "nginx-crt=${{ env.nginx-pkg-cert }}"
+            "nginx-crt=${{ env.nginx-pkg-certificate }}"
             "nginx-key=${{ env.nginx-pkg-key }}"
           build-args: |
             OSARCH=amd64
