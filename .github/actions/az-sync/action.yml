@@ -37,7 +37,7 @@ runs:
             echo "Processing pattern: $pattern"
             for secret_name in $(az keyvault secret list --vault-name ${{ inputs.keyvault }} --query "[?contains(name, '$pattern')].name" -o tsv); do
               echo "Sync secret: env.$secret_name"
-              secret_value=$(az keyvault secret show --only-show-errors --name "$secret_name" --vault-name ${{ inputs.keyvault }} --query value -o tsv 2>&1)
+              secret_value="$(az keyvault secret show --only-show-errors --name "$secret_name" --vault-name ${{ inputs.keyvault }} --query value -o tsv)"
               echo "::add-mask::$(echo "$secret_value" | sed ':a;N;$!ba;s/%/%25/g' | sed ':a;N;$!ba;s/\r/%0D/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
               echo "$secret_name=$secret_value" >> $GITHUB_ENV
             done
