@@ -37,10 +37,19 @@ runs:
             echo "Processing pattern: $pattern"
             for secret_name in $(az keyvault secret list --vault-name ${{ inputs.keyvault }} --query "[?contains(name, '$pattern')].name" -o tsv); do
               echo "Sync secret: env.$secret_name"
-              secret_value=$(az keyvault secret show --only-show-errors --name "$secret_name" --vault-name ${{ inputs.keyvault }} --query value -o tsv)
-              escaped_secret=$(printf '%s' "$secret_value" | sed ':a;N;$!ba;s/%/%25/g' | sed ':a;N;$!ba;s/\r/%0D/g' | sed ':a;N;$!ba;s/\n/%0A/g')
-              echo "::add-mask::$escaped_secret"
-              echo "$secret_name=$secret_value" >> $GITHUB_ENV
+              secret_value=$(az keyvault secret show --name "$secret_name" --vault-name ${{ inputs.keyvault }} --query value -o tsv)
+              # check if value is multiline
+              if [[ "$secret_value" == *$'\n'* ]]; then
+                echo "Secret $secret_name is multiline"
+                IFS=@ VAL=$secret_value
+                while read -r line; do
+                  echo "::add-mask::${line}"
+                done <<< "${VAL}"
+              else
+                echo "Secret $secret_name is single line"
+                echo "::add-mask::${secret_value}"
+                echo "$secret_name=$secret_value" >> $GITHUB_ENV
+              fi
             done
           done
         IFS=$old_IFS
