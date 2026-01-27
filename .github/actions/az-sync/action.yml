@@ -31,28 +31,32 @@ runs:
     - name: Sync
       shell: bash
       run: |
-        old_IFS=$IFS
         IFS=',' read -r -a array <<< "${{ inputs.secrets-filter }}"
           for pattern in "${array[@]}"; do
             echo "Processing pattern: $pattern"
-            for secret_name in $(az keyvault secret list --vault-name ${{ inputs.keyvault }} --query "[?contains(name, '$pattern')].name" -o tsv); do
-              echo "Sync secret: env.$secret_name"
-              secret_value=$(az keyvault secret show --name "$secret_name" --vault-name ${{ inputs.keyvault }} --query value -o tsv)
+            for secret_name in $(az keyvault secret list --vault-name "${{ inputs.keyvault }}" --query "[?contains(name, '$pattern')].name" -o tsv); do
+              secret_value=$(az keyvault secret show --name "$secret_name" --vault-name "${{ inputs.keyvault }}" --query value -o tsv)
               # check if value is multiline
               if [[ "$secret_value" == *$'\n'* ]]; then
-                echo "Secret $secret_name is multiline"
-                IFS=@ VAL=$secret_value
-                while read -r line; do
-                  echo "::add-mask::${line}"
-                done <<< "${VAL}"
+              # Mask each line for multiline secrets
+              while IFS= read -r line; do
+              [[ -n "$line" ]] && echo "::add-mask::${line}"
+              done <<< "$secret_value"
+        
+              # Use heredoc syntax for multiline environment variables
+              delimiter="EOF_${secret_name}_$(date +%s)"
+              {
+                echo "${secret_name}<<${delimiter}"
+                echo "$secret_value"
+                echo "$delimiter"
+              } >> $GITHUB_ENV
               else
-                echo "Secret $secret_name is single line"
                 echo "::add-mask::${secret_value}"
                 echo "$secret_name=$secret_value" >> $GITHUB_ENV
               fi
+              echo "Synced secret: env.$secret_name"
             done
           done
-        IFS=$old_IFS
 
     - name: Azure logout
       shell: bash
