@@ -470,7 +470,7 @@ jobs:
           az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
           az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
           keyvault: ${{ secrets.AZ_KEYVAULT_COMMON }}
-          secrets-filter: 'docker, nginx-private-registry, nginx-pkg'
+          secrets-filter: 'docker,nginx-private-registry,nginx-pkg'
 
       - name: Download Packages
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
@@ -642,7 +642,7 @@ jobs:
           az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
           az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
           keyvault: ${{ secrets.AZ_KEYVAULT_COMMON }}
-          secrets-filter: 'docker, nginx-private-registry, nginx-pkg-jwt'
+          secrets-filter: 'docker,nginx-private-registry,nginx-pkg-jwt'
 
       - name: Login to Docker Registry
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
