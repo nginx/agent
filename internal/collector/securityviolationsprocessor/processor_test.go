@@ -7,16 +7,17 @@ package securityviolationsprocessor
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/leodido/go-syslog/v4/rfc3164"
+	events "github.com/nginx/agent/v3/api/grpc/events/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/processor/processortest"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 )
 
 //nolint:lll,revive // long test string kept for readability
@@ -35,7 +36,7 @@ func TestSecurityViolationsProcessor(t *testing.T) {
 			expectAttrs: map[string]string{
 				"app_protect.policy_name": "nms_app_protect_default_policy",
 				"app_protect.support_id":  "5377540117854870581",
-				"app_protect.outcome":     "REJECTED",
+				"app_protect.outcome":     "REQUEST_OUTCOME_REJECTED",
 				"app_protect.remote_addr": "127.0.0.1",
 			},
 			expectRecords: 1,
@@ -106,60 +107,53 @@ func TestSecurityViolationsProcessor(t *testing.T) {
 			}
 
 			if tc.name == "Test 1: CSV NGINX App Protect syslog message" {
-				processedBody := lrOut.Body().Str()
+				processedBody := lrOut.Body().Bytes().AsRaw()
 
-				var actualEvent SecurityViolationEvent
-				jsonErr := json.Unmarshal([]byte(processedBody), &actualEvent)
+				var actualEvent events.SecurityViolationEvent
+				jsonErr := proto.Unmarshal(processedBody, &actualEvent)
 				require.NoError(t, jsonErr, "Failed to unmarshal processed log body as SecurityViolationEvent")
 
-				assert.Equal(t, "nms_app_protect_default_policy", actualEvent.PolicyName)
-				assert.Equal(t, "5377540117854870581", actualEvent.SupportID)
-				assert.Equal(t, "REJECTED", actualEvent.Outcome)
-				assert.Equal(t, "SECURITY_WAF_VIOLATION", actualEvent.OutcomeReason)
-				assert.Equal(t, "GET", actualEvent.Method)
-				assert.Equal(t, "HTTP", actualEvent.Protocol)
-				assert.Equal(t, "N/A", actualEvent.XForwardedForHeaderValue)
-				assert.Equal(t, "/<><script>", actualEvent.URI)
-				assert.Equal(t, "false", actualEvent.IsTruncated)
-				assert.Equal(t, "blocked", actualEvent.RequestStatus)
-				assert.Equal(t, "0", actualEvent.ResponseCode)
-				assert.Equal(t, "172.16.0.213", actualEvent.ServerAddr)
-				assert.Equal(t, "1-localhost:1-/", actualEvent.VSName)
-				assert.Equal(t, "127.0.0.1", actualEvent.RemoteAddr)
-				assert.Equal(t, "80", actualEvent.RemotePort)
-				assert.Equal(t, "56064", actualEvent.ServerPort)
-				assert.Equal(t, "Illegal meta character in URL::Attack signature detected::Violation Rating Threat detected::Bot Client Detected", actualEvent.Violations)
-				assert.Equal(t, "N/A", actualEvent.SubViolations)
-				assert.Equal(t, "5", actualEvent.ViolationRating)
-				assert.Equal(t, "{High Accuracy Signatures;Cross Site Scripting Signatures}", actualEvent.SigSetNames)
-				assert.Equal(t, "{High Accuracy Signatures; Cross Site Scripting Signatures}", actualEvent.SigCVEs)
-				assert.Equal(t, "Untrusted Bot", actualEvent.ClientClass)
-				assert.Equal(t, "N/A", actualEvent.ClientApplication)
-				assert.Equal(t, "N/A", actualEvent.ClientApplicationVersion)
-				assert.Equal(t, "N/A", actualEvent.Severity)
-				assert.Equal(t, "N/A", actualEvent.ThreatCampaignNames)
-				assert.Equal(t, "N/A", actualEvent.BotAnomalies)
-				assert.Equal(t, "HTTP Library", actualEvent.BotCategory)
-				assert.Equal(t, "N/A", actualEvent.EnforcedBotAnomalies)
-				assert.Equal(t, "curl", actualEvent.BotSignatureName)
-				assert.Equal(t, "ip-172-16-0-213", actualEvent.SystemID)
-				assert.Empty(t, actualEvent.InstanceTags)
-				assert.Empty(t, actualEvent.InstanceGroup)
-				assert.Empty(t, actualEvent.DisplayName)
-				assert.Equal(t, "ip-172-16-0-213", actualEvent.ParentHostname)
+				assert.Equal(t, "nms_app_protect_default_policy", actualEvent.GetPolicyName())
+				assert.Equal(t, "5377540117854870581", actualEvent.GetSupportId())
+				assert.Equal(t, events.RequestOutcome_REQUEST_OUTCOME_REJECTED, actualEvent.GetRequestOutcome())
+				assert.Equal(t, events.RequestOutcomeReason_SECURITY_WAF_VIOLATION, actualEvent.GetRequestOutcomeReason())
+				assert.Equal(t, "GET", actualEvent.GetMethod())
+				assert.Equal(t, "HTTP", actualEvent.GetProtocol())
+				assert.Equal(t, "N/A", actualEvent.GetXffHeaderValue())
+				assert.Equal(t, "/<><script>", actualEvent.GetUri())
+				assert.Equal(t, false, actualEvent.GetIsTruncated())
+				assert.Equal(t, events.RequestStatus_REQUEST_STATUS_BLOCKED, actualEvent.GetRequestStatus())
+				assert.Equal(t, uint32(0), actualEvent.GetResponseCode())
+				assert.Equal(t, "172.16.0.213", actualEvent.GetServerAddr())
+				assert.Equal(t, "1-localhost:1-/", actualEvent.GetVsName())
+				assert.Equal(t, "127.0.0.1", actualEvent.GetRemoteAddr())
+				assert.Equal(t, uint32(80), actualEvent.GetDestinationPort())
+				assert.Equal(t, uint32(56064), actualEvent.GetServerPort())
+				assert.Equal(t, "Illegal meta character in URL::Attack signature detected::Violation Rating Threat detected::Bot Client Detected", actualEvent.GetViolations())
+				assert.Equal(t, "N/A", actualEvent.GetSubViolations())
+				assert.Equal(t, uint32(5), actualEvent.GetViolationRating())
+				assert.Equal(t, "{High Accuracy Signatures;Cross Site Scripting Signatures}", actualEvent.GetSigSetNames())
+				assert.Equal(t, "{High Accuracy Signatures; Cross Site Scripting Signatures}", actualEvent.GetSigCves())
+				assert.Equal(t, "Untrusted Bot", actualEvent.GetClientClass())
+				assert.Equal(t, "N/A", actualEvent.GetClientApplication())
+				assert.Equal(t, "N/A", actualEvent.GetClientApplicationVersion())
+				assert.Equal(t, events.Severity_SEVERITY_UNKNOWN, actualEvent.GetSeverity())
+				assert.Equal(t, "N/A", actualEvent.GetThreatCampaignNames())
+				assert.Equal(t, "N/A", actualEvent.GetBotAnomalies())
+				assert.Equal(t, "HTTP Library", actualEvent.GetBotCategory())
+				assert.Equal(t, "N/A", actualEvent.GetEnforcedBotAnomalies())
+				assert.Equal(t, "curl", actualEvent.GetBotSignatureName())
+				assert.Equal(t, "ip-172-16-0-213", actualEvent.GetSystemId())
+				assert.Empty(t, actualEvent.GetDisplayName())
 
-				require.Len(t, actualEvent.ViolationsData, 1)
-				assert.Equal(t, "VIOL_ATTACK_SIGNATURE", actualEvent.ViolationsData[0].Name)
-				assert.Equal(t, "/<><script>", actualEvent.ViolationsData[0].Context)
-				assert.Equal(t, "uri", actualEvent.ViolationsData[0].ContextData.Name)
-				assert.Equal(t, "/<><script>", actualEvent.ViolationsData[0].ContextData.Value)
+				require.Len(t, actualEvent.ViolationsData, 5)
+				assert.Equal(t, "VIOL_ATTACK_SIGNATURE", actualEvent.ViolationsData[0].GetViolationDataName())
+				assert.Equal(t, "uri", actualEvent.ViolationsData[0].GetViolationDataContextData().GetContextDataName())
+				assert.Equal(t, "/<><script>", actualEvent.ViolationsData[0].GetViolationDataContextData().GetContextDataValue())
 
-				assert.NotNil(t, actualEvent.ViolationsData[0].Signatures)
-				assert.Empty(t, actualEvent.ViolationsData[0].Signatures)
-				assert.IsType(t, []SignatureData{}, actualEvent.ViolationsData[0].Signatures)
-
-				actualJSON, _ := json.MarshalIndent(actualEvent, "", "  ")
-				t.Logf("Actual JSON output:\n%s", string(actualJSON))
+				assert.NotNil(t, actualEvent.ViolationsData[0].GetViolationDataSignatures())
+				assert.NotEmpty(t, actualEvent.ViolationsData[0].GetViolationDataSignatures())
+				assert.IsType(t, []*events.SignatureData{}, actualEvent.ViolationsData[0].GetViolationDataSignatures())
 			}
 			require.NoError(t, p.Shutdown(ctx))
 		})
@@ -170,22 +164,6 @@ func TestSecurityViolationsProcessor_ExtractIPFromHostname(t *testing.T) {
 	assert.Equal(t, "127.0.0.1", extractIPFromHostname("127.0.0.1"))
 	assert.Equal(t, "172.16.0.213", extractIPFromHostname("ip-172-16-0-213"))
 	assert.Empty(t, extractIPFromHostname("not-an-ip"))
-}
-
-func TestSplitAndTrim(t *testing.T) {
-	assert.Nil(t, splitAndTrim(""))
-	assert.Nil(t, splitAndTrim("N/A"))
-	assert.Equal(t, []string{"a", "b"}, splitAndTrim(" a , b "))
-}
-
-func TestBuildSignatures(t *testing.T) {
-	ids := []string{"1", "2"}
-	names := []string{"buf1", "buf2"}
-	sigs := buildSignatures(ids, names, "mask", "off", "len")
-	assert.Len(t, sigs, 2)
-	assert.Equal(t, "1", sigs[0].ID)
-	assert.Equal(t, "buf1", sigs[0].Buffer)
-	assert.Equal(t, "mask", sigs[0].BlockingMask)
 }
 
 func TestSetSyslogAttributesNilFields(t *testing.T) {
