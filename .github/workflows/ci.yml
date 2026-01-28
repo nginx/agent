@@ -511,6 +511,8 @@ jobs:
     needs: build-unsigned-snapshot
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
     runs-on: ubuntu-22.04
+    permissions:
+      id-token: write # for OIDC authentication
     strategy:
       matrix:
         container:
@@ -580,6 +582,8 @@ jobs:
     needs: build-unsigned-snapshot
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
     runs-on: ubuntu-22.04
+    permissions:
+      id-token: write # for OIDC authentication
     strategy:
       matrix:
         container:
