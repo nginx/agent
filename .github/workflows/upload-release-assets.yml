@@ -52,6 +52,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs: [vars]
     permissions:
+      id-token: write # for OIDC authentication
       contents: write # Needed for uploading release assets to GitHub
     steps:
       - name: Checkout Repository

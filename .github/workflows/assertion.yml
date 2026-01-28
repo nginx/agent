@@ -26,6 +26,7 @@ jobs:
     runs-on: ubuntu-22.04
     if: ${{ !github.event.pull_request.head.repo.fork }}
     permissions:
+      id-token: write # for OIDC authentication
       contents: read # Needed to download artifacts
     strategy:
       matrix:
