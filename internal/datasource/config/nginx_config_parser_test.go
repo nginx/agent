@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -576,6 +577,21 @@ func TestNginxConfigParser_Parse(t *testing.T) {
 			expectedLog:        "Found NAP syslog server",
 		},
 		{
+			name:     "Test 10a: NAP V5 syslog server without docker0 interface",
+			instance: protos.NginxPlusInstance([]string{}),
+			content: testconfig.NginxConfigWithMultipleSysLogs(errorLog.Name(), accessLog.Name(),
+				"192.168.12.34:1517", "my.domain.com:1517", "192.0.10.1:1514"),
+			expectedConfigContext: modelHelpers.ConfigContextWithSysLog(
+				accessLog.Name(),
+				errorLog.Name(),
+				protos.NginxPlusInstance([]string{}).GetInstanceMeta().GetInstanceId(),
+				"", // Empty because docker0 interface not found and 192.0.10.1 is not localhost
+			),
+			allowedDirectories: []string{dir},
+			expectedLog: "Could not find available local NGINX App Protect syslog server " +
+				"configured on port 1514. Security violations will not be collected.",
+		},
+		{
 			name:     "Test 11: Unavailable NAP syslog server",
 			instance: protos.NginxPlusInstance([]string{}),
 			content: testconfig.NginxConfigWithMultipleSysLogs(errorLog.Name(), accessLog.Name(),
@@ -732,18 +748,64 @@ func TestNginxConfigParser_SyslogServerParse(t *testing.T) {
 }
 
 func TestNginxConfigParser_findValidSysLogServers(t *testing.T) {
-	servers := []string{
-		"syslog:server=192.168.12.34:1517", "syslog:server=my.domain.com:1517", "syslog:server=127.0.0.1:1514",
-		"syslog:server=localhost:1516", "syslog:server=localhost:1514", "syslog:server=127.255.255.255:1517",
-	}
-	expected := []string{"", "", "127.0.0.1:1514", "", "localhost:1514", ""}
-	ncp := NewNginxConfigParser(types.AgentConfig())
+	// Test with no docker0 interface (empty docker0IP)
+	t.Run("without docker0 interface", func(t *testing.T) {
+		servers := []string{
+			"syslog:server=192.168.12.34:1517", "syslog:server=my.domain.com:1517", "syslog:server=127.0.0.1:1514",
+			"syslog:server=localhost:1516", "syslog:server=localhost:1514", "syslog:server=127.255.255.255:1517",
+			"syslog:server=192.0.10.1:1514",
+		}
+		// When docker0IP is empty, only localhost and loopback addresses should match
+		expected := []string{"", "", "127.0.0.1:1514", "", "localhost:1514", "", ""}
+		ncp := NewNginxConfigParser(types.AgentConfig())
+		ncp.docker0IP = "" // Simulate no docker0 interface
 
-	for i, server := range servers {
-		result := ncp.findLocalSysLogServers(server)
+		for i, server := range servers {
+			result := ncp.findLocalSysLogServers(server)
 
-		assert.Equal(t, expected[i], result)
-	}
+			assert.Equal(t, expected[i], result)
+		}
+	})
+
+	// Test with custom docker0 IP
+	t.Run("with custom docker0 IP", func(t *testing.T) {
+		ncp := NewNginxConfigParser(types.AgentConfig())
+		// Override the docker0IP with a custom value for testing
+		ncp.docker0IP = "172.17.0.1"
+
+		servers := []string{
+			"syslog:server=172.17.0.1:1514", // should match custom docker0 IP
+			"syslog:server=192.0.10.1:1514", // should NOT match (old default)
+			"syslog:server=127.0.0.1:1514",  // should match localhost
+			"syslog:server=172.17.0.1:1515", // wrong port
+			"syslog:server=172.17.0.2:1514", // wrong IP
+		}
+		expected := []string{"172.17.0.1:1514", "", "127.0.0.1:1514", "", ""}
+
+		for i, server := range servers {
+			result := ncp.findLocalSysLogServers(server)
+
+			assert.Equal(t, expected[i], result, "server: %s", server)
+		}
+	})
+
+	// Test with another docker0 IP variation
+	t.Run("with docker0 IP 172.18.0.1", func(t *testing.T) {
+		ncp := NewNginxConfigParser(types.AgentConfig())
+		ncp.docker0IP = "172.18.0.1"
+
+		servers := []string{
+			"syslog:server=172.18.0.1:1514",
+			"syslog:server=localhost:1514",
+		}
+		expected := []string{"172.18.0.1:1514", "localhost:1514"}
+
+		for i, server := range servers {
+			result := ncp.findLocalSysLogServers(server)
+
+			assert.Equal(t, expected[i], result)
+		}
+	})
 }
 
 func TestNginxConfigParser_checkLog(t *testing.T) {
@@ -1520,6 +1582,23 @@ func TestNginxConfigParser_checkDuplicate(t *testing.T) {
 			assert.Equal(t, test.expected, ncp.isDuplicateFile(nginxConfigContextFiles.Files, test.file))
 		})
 	}
+}
+
+func TestGetDocker0IP(t *testing.T) {
+	t.Run("getDocker0IP returns valid IP or empty string", func(t *testing.T) {
+		ip := getDocker0IP()
+
+		// The function should return either:
+		// 1. A valid IP address if docker0 interface exists
+		// 2. Empty string if docker0 doesn't exist
+		if ip != "" {
+			// If an IP is returned, validate it's a proper IPv4 address
+			parsedIP := net.ParseIP(ip)
+			assert.NotNil(t, parsedIP, "should return a valid IP address")
+			assert.NotNil(t, parsedIP.To4(), "should be an IPv4 address")
+		}
+		// Empty string is also valid when docker0 doesn't exist
+	})
 }
 
 func TestNginxConfigParser_parseIncludeDirective(t *testing.T) {
