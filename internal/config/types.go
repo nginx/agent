@@ -68,10 +68,16 @@ type (
 	}
 	NginxDataPlaneConfig struct {
 		ReloadBackoff          *BackOff      `yaml:"reload_backoff"           mapstructure:"reload_backoff"`
-		APITls                 TLSConfig     `yaml:"api_tls"                  mapstructure:"api_tls"`
+		API                    *NginxAPI     `yaml:"api"                      mapstructure:"api"`
 		ExcludeLogs            []string      `yaml:"exclude_logs"             mapstructure:"exclude_logs"`
 		ReloadMonitoringPeriod time.Duration `yaml:"reload_monitoring_period" mapstructure:"reload_monitoring_period"`
 		TreatWarningsAsErrors  bool          `yaml:"treat_warnings_as_errors" mapstructure:"treat_warnings_as_errors"`
+	}
+
+	NginxAPI struct {
+		URL    string    `yaml:"url"    mapstructure:"url"`
+		Socket string    `yaml:"socket" mapstructure:"socket"`
+		TLS    TLSConfig `yaml:"tls"    mapstructure:"tls"`
 	}
 
 	Client struct {
@@ -508,4 +514,28 @@ func checkDirIsAllowed(path string, allowedDirs []string) bool {
 	}
 
 	return checkDirIsAllowed(filepath.Dir(path), allowedDirs)
+}
+
+func (c *Config) IsNginxApiUrlConfigured() bool {
+	if !c.IsNginxApiConfigured() {
+		return false
+	}
+
+	return c.DataPlaneConfig.Nginx.API.URL != ""
+}
+
+func (c *Config) IsNginxApiSocketConfigured() bool {
+	if !c.IsNginxApiConfigured() {
+		return false
+	}
+
+	return c.DataPlaneConfig.Nginx.API.Socket != ""
+}
+
+func (c *Config) IsNginxApiConfigured() bool {
+	if c.DataPlaneConfig == nil || c.DataPlaneConfig.Nginx == nil || c.DataPlaneConfig.Nginx.API == nil {
+		return false
+	}
+
+	return true
 }

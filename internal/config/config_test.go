@@ -1213,6 +1213,9 @@ func createConfig() *Config {
 					RandomizationFactor: 1.5,
 					Multiplier:          1.5,
 				},
+				API: &NginxAPI{
+					URL: "http://127.0.0.1:80/api",
+				},
 			},
 		},
 		Collector: &Collector{

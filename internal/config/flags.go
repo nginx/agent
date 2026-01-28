@@ -139,7 +139,9 @@ var (
 	NginxReloadBackoffRandomizationFactorKey = pre(NginxReloadBackoffKey) + "randomization_factor"
 	NginxReloadBackoffMultiplierKey          = pre(NginxReloadBackoffKey) + "multiplier"
 	NginxExcludeLogsKey                      = pre(DataPlaneConfigRootKey, "nginx") + "exclude_logs"
-	NginxApiTlsCa                            = pre(DataPlaneConfigRootKey, "nginx") + "api_tls_ca"
+	NginxApiTlsCaKey                         = pre(DataPlaneConfigRootKey, "nginx") + "api_tls_ca"
+	NginxApiURLKey                           = pre(DataPlaneConfigRootKey, "nginx") + "api_url"
+	NginxApiSocketKey                        = pre(DataPlaneConfigRootKey, "nginx") + "api_socket"
 
 	SyslogServerPort = pre("syslog_server") + "port"
 
