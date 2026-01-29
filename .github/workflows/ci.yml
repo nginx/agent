@@ -52,7 +52,7 @@ jobs:
           run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
         - name: Fix golang dependency permissions
           run: chmod -R 0755 ~/go/pkg/mod ~/.cache/go-build
-        - uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        - uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
           with:
             path: |
               ~/.cache/go-build
@@ -82,7 +82,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+      - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ~/.cache/go-build
@@ -124,7 +124,7 @@ jobs:
           with:
             go-version-file: 'go.mod'
             cache: false
-        - uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
           with:
             path: |
               ~/.cache/go-build
@@ -159,7 +159,7 @@ jobs:
           with:
             go-version-file: 'go.mod'
             cache: false
-        - uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
           with:
             path: |
               ~/.cache/go-build
@@ -197,7 +197,7 @@ jobs:
           run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
         - name: Fix golang dependency permissions
           run: chmod -R 0755 ~/go/pkg/mod ~/.cache/go-build
-        - uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
           with:
             path: |
               ~/.cache/go-build
@@ -244,7 +244,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+      - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ~/.cache/go-build
@@ -306,7 +306,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+      - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ~/.cache/go-build
@@ -375,7 +375,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+      - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ~/.cache/go-build
@@ -455,7 +455,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+      - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ~/.cache/go-build
@@ -544,7 +544,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+      - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ~/.cache/go-build
@@ -623,7 +623,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+      - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ~/.cache/go-build
@@ -695,7 +695,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
-      - uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+      - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ~/.cache/go-build
@@ -735,7 +735,7 @@ jobs:
           go-version-file: 'go.mod'
           cache: false
 
-      - uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+      - uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ~/.cache/go-build
