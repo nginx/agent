@@ -5,13 +5,13 @@ on:
       target-branch:
         description: 'Target branch to run govulncheck against'
         type: string
-        required: false
+        required: true
         default: 'main'
   workflow_dispatch:
     inputs:
       target-branch:
         description: 'Target branch to run govulncheck against'
-        required: false
+        required: true
         default: 'main'
 
 permissions:

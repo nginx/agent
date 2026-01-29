@@ -52,6 +52,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs: [vars]
     permissions:
+      id-token: write # for OIDC authentication
       contents: write # Needed for uploading release assets to GitHub
     steps:
       - name: Checkout Repository
@@ -59,12 +60,21 @@ jobs:
         with:
           ref: ${{ inputs.releaseBranch }}
 
+      - name: Get Secrets from Azure Key Vault
+        uses: ./.github/actions/az-sync
+        with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+          keyvault: ${{ secrets.AZ_KEYVAULT_COMMON }}
+          secrets-filter: 'nginx-pkg'
+
       - name: Download Packages
         run:
           |
           echo "Checking Packages in ${{inputs.pkgRepo}}/nginx-agent"
-          echo "${{secrets.PUBTEST_CERT}}" > pubtest.crt
-          echo "${{secrets.PUBTEST_KEY}}" > pubtest.key
+          echo "${{ env.nginx-pkg-certificate }}" > pubtest.crt
+          echo "${{ env.nginx-pkg-key }}" > pubtest.key
           
           DL=1 PKG_REPO=${{inputs.pkgRepo}} \
           CERT=pubtest.crt KEY=pubtest.key \
@@ -73,7 +83,7 @@ jobs:
       - name: GitHub Upload
         if: ${{ needs.vars.outputs.github_release == 'true' }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         # clobber overwrites existing assets of the same name
         run: |
           gh release list
@@ -92,16 +102,18 @@ jobs:
         with:
           inlineScript: |
             echo "Uploading tarball... nginx-agent/release-${{ inputs.pkgVersion }}/nginx-agent.tar.gz"
-            az storage blob upload --auth-mode=login -f "${{ inputs.pkgRepo }}/nginx-agent/nginx-agent.tar.gz" \
+            az storage blob upload --auth-mode=login \
+              -f "${{ inputs.pkgRepo }}/nginx-agent/nginx-agent.tar.gz" \
               -c ${{ secrets.AZURE_CONTAINER_NAME }} \
-              --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n nginx-agent/release-${{ inputs.pkgVersion }}/nginx-agent.tar.gz
+              --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} \
+              --overwrite -n nginx-agent/release-${{ inputs.pkgVersion }}/nginx-agent.tar.gz
             
             echo "Uploading packages..."
             for i in $(find ${{ inputs.pkgRepo }}/nginx-agent | grep -e "nginx-agent[_-]${{ inputs.pkgVersion }}"); do
               dest="nginx-agent/release-${{ inputs.pkgVersion }}/${i##*/}"
               echo "Uploading ${i} to ${dest}"
               az storage blob upload --auth-mode=login -f "$i" -c ${{ secrets.AZURE_CONTAINER_NAME }} \
-              --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n ${dest}
+                --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} --overwrite -n ${dest}
             done
 
       - name: Azure Logout

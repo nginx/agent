@@ -31,12 +31,17 @@ jobs:
         - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
           with:
             fetch-tags: 'true'
+
+        - name: Get Secrets from Azure Key Vault
+          uses: ./.github/actions/az-sync
+          with:
+            az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+            az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+            az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+            keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+            secrets-filter: 'artifactory'
         - name: Configure Go Proxy
           uses: ./.github/actions/configure-goproxy
-          with:
-            user: ${{ secrets.ARTIFACTORY_USER }}
-            token: ${{ secrets.ARTIFACTORY_TOKEN }}
-            url: ${{ secrets.ARTIFACTORY_URL_DEV }}
         - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
           with:
             go-version-file: 'go.mod'
@@ -59,14 +64,20 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-22.04
+    permissions:
+      id-token: write # for OIDC authentication
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - name: Get Secrets from Azure Key Vault
+        uses: ./.github/actions/az-sync
+        with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+          keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+          secrets-filter: 'artifactory'
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
-        with:
-          user: ${{ secrets.ARTIFACTORY_USER }}
-          token: ${{ secrets.ARTIFACTORY_TOKEN }}
-          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
@@ -95,14 +106,20 @@ jobs:
   unit-test:
     name: Unit Tests
     runs-on: ubuntu-22.04
+    permissions:
+      id-token: write # for OIDC authentication
     steps:
         - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        - name: Get Secrets from Azure Key Vault
+          uses: ./.github/actions/az-sync
+          with:
+            az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+            az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+            az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+            keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+            secrets-filter: 'artifactory'
         - name: Configure Go Proxy
           uses: ./.github/actions/configure-goproxy
-          with:
-            user: ${{ secrets.ARTIFACTORY_USER }}
-            token: ${{ secrets.ARTIFACTORY_TOKEN }}
-            url: ${{ secrets.ARTIFACTORY_URL_DEV }}
         - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
           with:
             go-version-file: 'go.mod'
@@ -124,14 +141,20 @@ jobs:
   race-condition-test:
     name: Unit tests with race condition detection
     runs-on: ubuntu-22.04
+    permissions:
+      id-token: write # for OIDC authentication
     steps:
         - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        - name: Get Secrets from Azure Key Vault
+          uses: ./.github/actions/az-sync
+          with:
+            az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+            az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+            az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+            keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+            secrets-filter: 'artifactory'
         - name: Configure Go Proxy
           uses: ./.github/actions/configure-goproxy
-          with:
-            user: ${{ secrets.ARTIFACTORY_USER }}
-            token: ${{ secrets.ARTIFACTORY_TOKEN }}
-            url: ${{ secrets.ARTIFACTORY_URL_DEV }}
         - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
           with:
             go-version-file: 'go.mod'
@@ -148,16 +171,22 @@ jobs:
   build-unsigned-snapshot:
     name: Build Unsigned Snapshot
     runs-on: ubuntu-22.04
+    permissions:
+      id-token: write # for OIDC authentication
     steps:
         - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
           with:
             fetch-tags: 'true'
+        - name: Get Secrets from Azure Key Vault
+          uses: ./.github/actions/az-sync
+          with:
+            az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+            az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+            az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+            keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+            secrets-filter: 'artifactory'
         - name: Configure Go Proxy
           uses: ./.github/actions/configure-goproxy
-          with:
-            user: ${{ secrets.ARTIFACTORY_USER }}
-            token: ${{ secrets.ARTIFACTORY_TOKEN }}
-            url: ${{ secrets.ARTIFACTORY_URL_DEV }}
         - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
           with:
             go-version-file: 'go.mod'
@@ -188,6 +217,8 @@ jobs:
     name: Integration Tests
     needs: build-unsigned-snapshot
     runs-on: ubuntu-22.04
+    permissions:
+      id-token: write # for OIDC authentication
     strategy:
       matrix:
         container:
@@ -199,12 +230,16 @@ jobs:
           version: "3.23"
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - name: Get Secrets from Azure Key Vault
+        uses: ./.github/actions/az-sync
+        with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+          keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+          secrets-filter: 'artifactory'
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
-        with:
-          user: ${{ secrets.ARTIFACTORY_USER }}
-          token: ${{ secrets.ARTIFACTORY_TOKEN }}
-          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
@@ -244,6 +279,8 @@ jobs:
     name: Upgrade Tests
     needs: build-unsigned-snapshot
     runs-on: ubuntu-22.04
+    permissions:
+      id-token: write # for OIDC authentication
     strategy:
       matrix:
         container:
@@ -255,12 +292,16 @@ jobs:
             version: "3.22"
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - name: Get Secrets from Azure Key Vault
+        uses: ./.github/actions/az-sync
+        with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+          keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+          secrets-filter: 'artifactory'
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
-        with:
-          user: ${{ secrets.ARTIFACTORY_USER }}
-          token: ${{ secrets.ARTIFACTORY_TOKEN }}
-          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
@@ -301,6 +342,8 @@ jobs:
     needs: build-unsigned-snapshot
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
     runs-on: ubuntu-22.04
+    permissions:
+      id-token: write # for OIDC authentication
     strategy:
       matrix:
         container:
@@ -318,12 +361,16 @@ jobs:
             release: "alpine"
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - name: Get Secrets from Azure Key Vault
+        uses: ./.github/actions/az-sync
+        with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+          keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+          secrets-filter: 'artifactory'
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
-        with:
-          user: ${{ secrets.ARTIFACTORY_USER }}
-          token: ${{ secrets.ARTIFACTORY_TOKEN }}
-          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
@@ -366,6 +413,8 @@ jobs:
     needs: build-unsigned-snapshot
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
     runs-on: ubuntu-22.04
+    permissions:
+      id-token: write # for OIDC authentication
     strategy:
       matrix:
         container:
@@ -391,12 +440,17 @@ jobs:
           path: "/nginx-plus/agent"
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - name: Get Secrets from Azure Key Vault
+        uses: ./.github/actions/az-sync
+        with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+          keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+          secrets-filter: 'artifactory'
+
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
-        with:
-          user: ${{ secrets.ARTIFACTORY_USER }}
-          token: ${{ secrets.ARTIFACTORY_TOKEN }}
-          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
@@ -407,17 +461,28 @@ jobs:
             ~/.cache/go-build
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-
+
+      - name: Sync NGINX Plus License
+        uses: ./.github/actions/az-sync
+        with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+          keyvault: ${{ secrets.AZ_KEYVAULT_COMMON }}
+          secrets-filter: 'docker,nginx-private-registry,nginx-pkg'
+
       - name: Download Packages
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
+
       - name: Login to Docker Registry
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
-          registry: ${{ secrets.TEST_REGISTRY_URL }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
+          registry: ${{ env.nginx-private-registry-url }}
+          username: ${{ env.nginx-pkg-jwt }}
+          password: "none"
 
       - name: Create Results Directory
         run: mkdir -p ${{ github.workspace }}/test/dashboard/logs/${{ github.job }}/${{matrix.container.image}}-${{matrix.container.version}}
@@ -430,10 +495,10 @@ jobs:
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.TEST_REGISTRY_URL }}" \
+          CONTAINER_NGINX_IMAGE_REGISTRY="${{ env.nginx-private-registry-url }}" \
           TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
           OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" IMAGE_PATH="${{ matrix.container.path }}" \
-          NGINX_LICENSE_JWT='${{ secrets.TEST_JWT }}' \
+          NGINX_LICENSE_JWT='${{ env.nginx-pkg-jwt }}' \
             make official-image-integration-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}}/raw_logs.log
           exit "${PIPESTATUS[0]}"
 
@@ -446,6 +511,8 @@ jobs:
     needs: build-unsigned-snapshot
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
     runs-on: ubuntu-22.04
+    permissions:
+      id-token: write # for OIDC authentication
     strategy:
       matrix:
         container:
@@ -463,12 +530,16 @@ jobs:
             release: "alpine"
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - name: Get Secrets from Azure Key Vault
+        uses: ./.github/actions/az-sync
+        with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+          keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+          secrets-filter: 'artifactory'
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
-        with:
-          user: ${{ secrets.ARTIFACTORY_USER }}
-          token: ${{ secrets.ARTIFACTORY_TOKEN }}
-          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
@@ -511,6 +582,8 @@ jobs:
     needs: build-unsigned-snapshot
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
     runs-on: ubuntu-22.04
+    permissions:
+      id-token: write # for OIDC authentication
     strategy:
       matrix:
         container:
@@ -536,12 +609,16 @@ jobs:
             path: "/nginx-plus/agent"
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - name: Get Secrets from Azure Key Vault
+        uses: ./.github/actions/az-sync
+        with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+          keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+          secrets-filter: 'artifactory'
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
-        with:
-          user: ${{ secrets.ARTIFACTORY_USER }}
-          token: ${{ secrets.ARTIFACTORY_TOKEN }}
-          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
@@ -557,12 +634,21 @@ jobs:
         with:
           name: nginx-agent-unsigned-snapshots
           path: build
+      - name: Sync NGINX Plus License
+        uses: ./.github/actions/az-sync
+        with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+          keyvault: ${{ secrets.AZ_KEYVAULT_COMMON }}
+          secrets-filter: 'docker,nginx-private-registry,nginx-pkg-jwt'
+
       - name: Login to Docker Registry
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
-          registry: ${{ secrets.TEST_REGISTRY_URL }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
+          registry: ${{ env.nginx-private-registry-url }}
+          username: ${{ env.nginx-pkg-jwt }}
+          password: "none"
 
       - name: Create Results Directory
         run: mkdir -p ${{ github.workspace }}/test/dashboard/logs/${{ github.job }}/${{matrix.container.image}}-${{matrix.container.version}}
@@ -575,10 +661,10 @@ jobs:
       - name: Run Integration Tests
         run: |
           go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-          CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.TEST_REGISTRY_URL }}" \
+          CONTAINER_NGINX_IMAGE_REGISTRY="${{ env.nginx-private-registry-url }}" \
           TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
           OS_RELEASE="${{ matrix.container.release }}" OS_VERSION="${{ matrix.container.version }}" IMAGE_PATH="${{ matrix.container.path }}" \
-          NGINX_LICENSE_JWT="${{ secrets.TEST_JWT }}" \
+          NGINX_LICENSE_JWT="${{ env.nginx-pkg-jwt }}" \
             make metrics-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}-${{matrix.container.version}}/raw_logs.log
           exit "${PIPESTATUS[0]}"
 
@@ -591,15 +677,20 @@ jobs:
     runs-on: ubuntu-22.04
     needs: build-unsigned-snapshot
     permissions:
+      id-token: write # for OIDC authentication
       contents: write # Needed for pushing benchmark results to github branch
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - name: Get Secrets from Azure Key Vault
+        uses: ./.github/actions/az-sync
+        with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+          keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+          secrets-filter: 'artifactory'
       - name: Configure Go Proxy
         uses: ./.github/actions/configure-goproxy
-        with:
-          user: ${{ secrets.ARTIFACTORY_USER }}
-          token: ${{ secrets.ARTIFACTORY_TOKEN }}
-          url: ${{ secrets.ARTIFACTORY_URL_DEV }}
       - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: 'go.mod'
@@ -633,6 +724,7 @@ jobs:
     name: Load Tests
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
     permissions:
+      id-token: write # for OIDC authentication
       contents: write # Needed for pushing benchmark results to github branch
     runs-on: ubuntu-22.04
     needs: build-unsigned-snapshot
@@ -662,6 +754,15 @@ jobs:
       - name: Set env
         run: echo "GO_VERSION=$(cat go.mod | grep toolchain | sed 's/toolchain //; s/go//')" >> $GITHUB_ENV
 
+      - name: Get Secrets from Azure Key Vault
+        uses: ./.github/actions/az-sync
+        with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+          keyvault: ${{ secrets.AZ_KEYVAULT_COMMON }}
+          secrets-filter: 'nginx-pkg'
+
       - name: Build Docker Image
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
         env:
@@ -674,8 +775,8 @@ jobs:
           load: true
           no-cache: true
           secrets: |
-            "nginx-crt=${{ secrets.NGINX_CRT }}"
-            "nginx-key=${{ secrets.NGINX_KEY }}"
+            "nginx-crt=${{ env.nginx-pkg-certificate }}"
+            "nginx-key=${{ env.nginx-pkg-key }}"
           build-args: |
             OSARCH=amd64
             GO_VERSION=${{ env.GO_VERSION }}
@@ -708,4 +809,4 @@ jobs:
 
       - name: Push load test result
         if:  ${{ success() && github.ref_name == 'main' }}
-        run: git push 'https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/nginx/agent.git' benchmark-results:benchmark-results
+        run: git push 'https://github-actions:${{ github.token }}@github.com/nginx/agent.git' benchmark-results:benchmark-results

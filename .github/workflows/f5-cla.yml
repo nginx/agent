@@ -47,5 +47,5 @@ jobs:
           # Do not lock PRs after a merge.
           lock-pullrequest-aftermerge: false
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           PERSONAL_ACCESS_TOKEN: ${{ secrets.F5_CLA_TOKEN }}
