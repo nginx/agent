@@ -36,7 +36,7 @@ jobs:
       upload_azure: ${{steps.vars.outputs.upload_azure }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ inputs.releaseBranch }}
 
@@ -56,7 +56,7 @@ jobs:
       contents: write # Needed for uploading release assets to GitHub
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ inputs.releaseBranch }}
 
@@ -75,7 +75,7 @@ jobs:
           echo "Checking Packages in ${{inputs.pkgRepo}}/nginx-agent"
           echo "${{ env.nginx-pkg-certificate }}" > pubtest.crt
           echo "${{ env.nginx-pkg-key }}" > pubtest.key
-          
+
           DL=1 PKG_REPO=${{inputs.pkgRepo}} \
           CERT=pubtest.crt KEY=pubtest.key \
             scripts/packages/package-check.sh ${{inputs.pkgVersion}}
@@ -107,7 +107,7 @@ jobs:
               -c ${{ secrets.AZURE_CONTAINER_NAME }} \
               --account-name ${{ secrets.AZURE_ACCOUNT_NAME }} \
               --overwrite -n nginx-agent/release-${{ inputs.pkgVersion }}/nginx-agent.tar.gz
-            
+
             echo "Uploading packages..."
             for i in $(find ${{ inputs.pkgRepo }}/nginx-agent | grep -e "nginx-agent[_-]${{ inputs.pkgVersion }}"); do
               dest="nginx-agent/release-${{ inputs.pkgVersion }}/${i##*/}"
