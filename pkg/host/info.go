@@ -9,9 +9,11 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"regexp"
 	"strings"
@@ -31,9 +33,13 @@ const (
 	mountInfoLocation  = "/proc/self/mountinfo"
 	osReleaseLocation  = "/etc/os-release"
 
+	ecsMetadataEnvV4 = "ECS_CONTAINER_METADATA_URI_V4"
+
 	k8sKind    = "kubepods"
 	docker     = "docker"
 	containerd = "containerd"
+	ecsPrefix  = "ecs"     // AWS ECS Fargate
+	fargate    = "fargate" // AWS EKS Fargate
 
 	numberOfKeysAndValues = 2
 	lengthOfContainerID   = 64
@@ -112,7 +118,20 @@ func (i *Info) IsContainer() (bool, error) {
 		}
 	}
 
-	return containsContainerReference(i.selfCgroupLocation)
+	ref, err := containsContainerReference(i.selfCgroupLocation)
+	if ref {
+		return true, nil
+	}
+
+	if os.Getenv(ecsMetadataEnvV4) != "" {
+		return true, nil
+	}
+
+	if err != nil {
+		return false, err
+	}
+
+	return false, nil
 }
 
 // ResourceID returns a unique identifier for the resource.
@@ -121,7 +140,7 @@ func (i *Info) IsContainer() (bool, error) {
 func (i *Info) ResourceID(ctx context.Context) (string, error) {
 	isContainer, _ := i.IsContainer()
 	if isContainer {
-		return i.containerID()
+		return i.containerID(ctx)
 	}
 
 	return i.hostID(ctx)
@@ -134,7 +153,7 @@ func (i *Info) ContainerInfo(ctx context.Context) (*v1.Resource_ContainerInfo, e
 	if err != nil {
 		return nil, err
 	}
-	containerId, err := i.containerID()
+	containerId, err := i.containerID(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -203,9 +222,26 @@ func (i *Info) releaseInfo(ctx context.Context, osReleaseLocation string) (*v1.R
 }
 
 // containerID returns the container ID of the current running environment.
-func (i *Info) containerID() (string, error) {
-	containerID, err := containerIDFromMountInfo(i.mountInfoLocation)
-	return uuid.NewMD5(uuid.NameSpaceDNS, []byte(containerID)).String(), err
+func (i *Info) containerID(ctx context.Context) (string, error) {
+	var errs error
+
+	// Try to get container ID from mount info first
+	if containerIDMount, err := containerIDFromMountInfo(i.mountInfoLocation); err == nil && containerIDMount != "" {
+		return uuid.NewMD5(uuid.NameSpaceDNS, []byte(containerIDMount)).String(), nil
+	} else if err != nil {
+		errs = errors.Join(errs, err)
+	}
+
+	// Try to get container ID from ECS metadata if available
+	if metadataURI := os.Getenv(ecsMetadataEnvV4); metadataURI != "" {
+		if cid, err := i.containerIDFromECS(ctx, metadataURI); err == nil && cid != "" {
+			return uuid.NewMD5(uuid.NameSpaceDNS, []byte(cid)).String(), nil
+		} else if err != nil {
+			errs = errors.Join(errs, err)
+		}
+	}
+
+	return "", errs
 }
 
 // containsContainerReference checks if the cgroup file contains references to container runtimes.
@@ -218,7 +254,8 @@ func containsContainerReference(cgroupFile string) (bool, error) {
 	scanner := bufio.NewScanner(bytes.NewReader(data))
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-		if strings.Contains(line, k8sKind) || strings.Contains(line, docker) || strings.Contains(line, containerd) {
+		if strings.Contains(line, k8sKind) || strings.Contains(line, docker) || strings.Contains(line, containerd) ||
+			strings.Contains(line, ecsPrefix) || strings.Contains(line, fargate) {
 			return true, nil
 		}
 	}
@@ -366,4 +403,31 @@ func mergeHostAndOsReleaseInfo(
 		Name:      osReleaseInfo[name],
 		Id:        osReleaseInfo[id],
 	}
+}
+
+func (i *Info) containerIDFromECS(ctx context.Context, uri string) (string, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri, nil)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("metadata endpoint %s returned status %d", uri, resp.StatusCode)
+	}
+
+	var metadata struct {
+		DockerId string `json:"DockerId"`
+	}
+
+	if err = json.NewDecoder(resp.Body).Decode(&metadata); err != nil {
+		return "", err
+	}
+
+	return metadata.DockerId, nil
 }

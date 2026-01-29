@@ -7,6 +7,9 @@ package host
 
 import (
 	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
@@ -629,6 +632,58 @@ func TestInfo_ParseOsReleaseFile(t *testing.T) {
 			osRelease, _ := parseOsReleaseFile(reader)
 			for releaseInfokey := range tt.expect {
 				assert.Equal(t, osRelease[releaseInfokey], tt.expect[releaseInfokey])
+			}
+		})
+	}
+}
+
+func TestInfo_containerIDFromECS(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		name      string
+		handler   http.HandlerFunc
+		wantID    string
+		expectErr bool
+	}{
+		{
+			name: "Test 1: success - valid JSON",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				fmt.Fprintln(w, `{"DockerId":"c1234567890"}`)
+			},
+			wantID:    "c1234567890",
+			expectErr: false,
+		},
+		{
+			name: "Test 2: non-200 response",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusInternalServerError)
+			},
+			expectErr: true,
+		},
+		{
+			name: "Test 3: invalid JSON",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				fmt.Fprintln(w, `not-a-json`)
+			},
+			expectErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			srv := httptest.NewServer(tt.handler)
+			defer srv.Close()
+
+			info := NewInfo()
+			id, err := info.containerIDFromECS(ctx, srv.URL)
+			if tt.expectErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.wantID, id)
 			}
 		})
 	}
