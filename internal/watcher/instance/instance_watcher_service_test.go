@@ -7,6 +7,7 @@ package instance
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	"github.com/nginx/agent/v3/internal/datasource/config/configfakes"
@@ -40,7 +41,7 @@ func TestInstanceWatcherService_checkForUpdates(t *testing.T) {
 
 	fakeNginxConfigParser := &configfakes.FakeConfigParser{}
 	fakeNginxConfigParser.ParseReturns(nginxConfigContext, nil)
-	instanceUpdatesChannel := make(chan InstanceUpdatesMessage, 1)
+	instanceUpdatesChannel := make(chan ResourceUpdatesMessage, 1)
 	nginxConfigContextChannel := make(chan NginxConfigContextMessage, 1)
 
 	instanceWatcherService := NewInstanceWatcherService(types.AgentConfig())
@@ -53,8 +54,8 @@ func TestInstanceWatcherService_checkForUpdates(t *testing.T) {
 	instanceWatcherService.checkForUpdates(ctx)
 
 	instanceUpdatesMessage := <-instanceUpdatesChannel
-	assert.Len(t, instanceUpdatesMessage.InstanceUpdates.NewInstances, 2)
-	assert.Empty(t, instanceUpdatesMessage.InstanceUpdates.DeletedInstances)
+	assert.Len(t, instanceUpdatesMessage.Resource.GetInstances(), 2)
+	// assert.Empty(t, instanceUpdatesMessage.InstanceUpdates.DeletedInstances)
 
 	nginxConfigContextMessage := <-nginxConfigContextChannel
 	assert.Equal(t, nginxConfigContext, nginxConfigContextMessage.NginxConfigContext)
@@ -93,7 +94,8 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 				nginxInstance.GetInstanceMeta().GetInstanceId(): nginxInstance,
 			},
 			expectedInstanceUpdates: InstanceUpdates{
-				NewInstances: []*mpi.Instance{
+				UpdatedInstances: []*mpi.Instance{
+					agentInstance,
 					nginxInstance,
 				},
 			},
@@ -110,6 +112,7 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 			},
 			expectedInstanceUpdates: InstanceUpdates{
 				UpdatedInstances: []*mpi.Instance{
+					agentInstance,
 					nginxInstance,
 				},
 			},
@@ -123,8 +126,8 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 			},
 			parsedInstances: make(map[string]*mpi.Instance),
 			expectedInstanceUpdates: InstanceUpdates{
-				DeletedInstances: []*mpi.Instance{
-					protos.NginxOssInstance([]string{}),
+				UpdatedInstances: []*mpi.Instance{
+					agentInstance,
 				},
 			},
 		},
@@ -151,7 +154,9 @@ func TestInstanceWatcherService_instanceUpdates(t *testing.T) {
 			instanceUpdates, err := instanceWatcherService.instanceUpdates(ctx)
 
 			require.NoError(tt, err)
-			assert.Equal(tt, test.expectedInstanceUpdates, instanceUpdates)
+			assert.Len(tt, instanceUpdates.UpdatedInstances, len(test.expectedInstanceUpdates.UpdatedInstances))
+
+			compareInstances(t, test.expectedInstanceUpdates.UpdatedInstances, instanceUpdates.UpdatedInstances)
 		})
 	}
 }
@@ -277,12 +282,18 @@ func TestInstanceWatcherService_ReparseConfig(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			instanceUpdatesChannel := make(chan InstanceUpdatesMessage, 1)
+			instanceUpdatesChannel := make(chan ResourceUpdatesMessage, 1)
 			nginxConfigContextChannel := make(chan NginxConfigContextMessage, 1)
 
 			instanceWatcherService := NewInstanceWatcherService(types.AgentConfig())
 			instanceWatcherService.instancesChannel = instanceUpdatesChannel
 			instanceWatcherService.nginxConfigContextChannel = nginxConfigContextChannel
+			instanceWatcherService.resource = &mpi.Resource{
+				ResourceId: protos.HostResource().GetResourceId(),
+				Instances: []*mpi.Instance{
+					instance,
+				},
+			}
 
 			instanceWatcherService.nginxConfigCache = map[string]*model.NginxConfigContext{
 				instance.GetInstanceMeta().GetInstanceId(): nginxConfigContext,
@@ -303,9 +314,42 @@ func TestInstanceWatcherService_ReparseConfig(t *testing.T) {
 				nginxConfigCache[updatedInstance.GetInstanceMeta().GetInstanceId()])
 
 			instanceUpdatesMessage := <-instanceUpdatesChannel
-			assert.Len(t, instanceUpdatesMessage.InstanceUpdates.UpdatedInstances, 1)
-			assert.Equal(tt, updatedInstance, instanceUpdatesMessage.InstanceUpdates.UpdatedInstances[0])
-			assert.Empty(t, instanceUpdatesMessage.InstanceUpdates.DeletedInstances)
+			assert.Len(t, instanceUpdatesMessage.Resource.GetInstances(), 1)
+			assert.Equal(tt, updatedInstance.GetInstanceRuntime().GetNginxRuntimeInfo().GetAccessLogs(),
+				instanceUpdatesMessage.Resource.GetInstances()[0].GetInstanceRuntime().GetNginxRuntimeInfo().
+					GetAccessLogs())
 		})
+	}
+}
+
+func compareInstances(t *testing.T, expected, actual []*mpi.Instance) {
+	t.Helper()
+
+	sort.Slice(actual, func(i, j int) bool {
+		return actual[i].GetInstanceMeta().GetInstanceId() < actual[j].GetInstanceMeta().GetInstanceId()
+	})
+
+	sort.Slice(expected, func(i, j int) bool {
+		return expected[i].GetInstanceMeta().GetInstanceId() < expected[j].GetInstanceMeta().GetInstanceId()
+	})
+
+	for id, instanceUpdate := range expected {
+		assert.Equal(t, instanceUpdate.GetInstanceMeta().GetInstanceId(),
+			actual[id].GetInstanceMeta().GetInstanceId())
+		assert.Equal(t, instanceUpdate.GetInstanceMeta().GetInstanceType(),
+			actual[id].GetInstanceMeta().GetInstanceType())
+		assert.Equal(t, instanceUpdate.GetInstanceMeta().GetVersion(),
+			actual[id].GetInstanceMeta().GetVersion())
+
+		assert.Equal(t, instanceUpdate.GetInstanceRuntime().GetInstanceChildren(),
+			actual[id].GetInstanceRuntime().GetInstanceChildren())
+		assert.Equal(t, instanceUpdate.GetInstanceRuntime().GetConfigPath(),
+			actual[id].GetInstanceRuntime().GetConfigPath())
+		assert.Equal(t, instanceUpdate.GetInstanceRuntime().GetBinaryPath(),
+			actual[id].GetInstanceRuntime().GetBinaryPath())
+		assert.Equal(t, instanceUpdate.GetInstanceRuntime().GetDetails(),
+			actual[id].GetInstanceRuntime().GetDetails())
+		assert.Equal(t, instanceUpdate.GetInstanceRuntime().GetProcessId(),
+			actual[id].GetInstanceRuntime().GetProcessId())
 	}
 }

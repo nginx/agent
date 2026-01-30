@@ -14,7 +14,7 @@ import (
 	"github.com/nginx/agent/v3/internal/collector"
 	"github.com/nginx/agent/v3/internal/command"
 	"github.com/nginx/agent/v3/internal/file"
-	"github.com/nginx/agent/v3/internal/resource"
+	"github.com/nginx/agent/v3/internal/nginx"
 
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
@@ -34,7 +34,7 @@ func TestLoadPlugins(t *testing.T) {
 			name:  "Test 1: Load plugins",
 			input: &config.Config{},
 			expected: []bus.Plugin{
-				&resource.Resource{},
+				&nginx.Nginx{},
 				&watcher.Watcher{},
 			},
 		},
@@ -58,7 +58,7 @@ func TestLoadPlugins(t *testing.T) {
 				Features: config.DefaultFeatures(),
 			},
 			expected: []bus.Plugin{
-				&resource.Resource{},
+				&nginx.Nginx{},
 				&command.CommandPlugin{},
 				&file.FilePlugin{},
 				&command.CommandPlugin{},
@@ -77,7 +77,7 @@ func TestLoadPlugins(t *testing.T) {
 				Features: config.DefaultFeatures(),
 			},
 			expected: []bus.Plugin{
-				&resource.Resource{},
+				&nginx.Nginx{},
 				&collector.Collector{},
 				&watcher.Watcher{},
 			},
@@ -103,7 +103,7 @@ func TestLoadPlugins(t *testing.T) {
 				},
 			},
 			expected: []bus.Plugin{
-				&resource.Resource{},
+				&nginx.Nginx{},
 				&command.CommandPlugin{},
 				&file.FilePlugin{},
 				&watcher.Watcher{},
@@ -134,7 +134,7 @@ func TestLoadPlugins(t *testing.T) {
 				},
 			},
 			expected: []bus.Plugin{
-				&resource.Resource{},
+				&nginx.Nginx{},
 				&command.CommandPlugin{},
 				&file.FilePlugin{},
 				&collector.Collector{},

@@ -6,9 +6,7 @@
 package bus
 
 const (
-	AddInstancesTopic                = "add-instances"
 	UpdatedInstancesTopic            = "updated-instances"
-	DeletedInstancesTopic            = "deleted-instances"
 	ResourceUpdateTopic              = "resource-update"
 	NginxConfigUpdateTopic           = "nginx-config-update"
 	InstanceHealthTopic              = "instance-health"

@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package resource
+package nginx
 
 import (
 	"bytes"
@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/nginx/agent/v3/internal/config"
-	"github.com/nginx/agent/v3/internal/resource/resourcefakes"
+	"github.com/nginx/agent/v3/internal/nginx/nginxfakes"
 	"github.com/nginx/agent/v3/pkg/nginxprocess"
 	"github.com/nginx/agent/v3/test/stub"
 
@@ -393,7 +393,7 @@ func TestInstanceOperator_checkWorkers(t *testing.T) {
 			mockExec.RunCmdReturnsOnCall(2, bytes.NewBufferString(nginxVersionCommandOutput), nil)
 			mockExec.RunCmdReturnsOnCall(3, bytes.NewBufferString(nginxVersionCommandOutput), nil)
 
-			mockProcessOp := &resourcefakes.FakeProcessOperator{}
+			mockProcessOp := &nginxfakes.FakeProcessOperator{}
 			allProcesses := slices.Concat(test.workers, test.masterProcess)
 			mockProcessOp.FindNginxProcessesReturnsOnCall(0, allProcesses, nil)
 			mockProcessOp.NginxWorkerProcessesReturnsOnCall(0, test.workers)
