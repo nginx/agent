@@ -68,7 +68,7 @@ jobs:
       create_pull_request: ${{steps.vars.outputs.create_pull_request }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ inputs.releaseBranch }}
 
@@ -91,7 +91,7 @@ jobs:
       release_id: ${{ steps.vars.outputs.RELEASE_ID }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         if: ${{ needs.vars.outputs.github_release == 'true' }}
         with:
           ref: ${{ inputs.releaseBranch }}
@@ -187,7 +187,7 @@ jobs:
       contents: write # Needed to tag a release
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         if: ${{ needs.vars.outputs.tag_release == 'true' }}
         with:
           ref: ${{ inputs.releaseBranch }}
@@ -208,7 +208,7 @@ jobs:
       id-token: write # Needed to get a token to upload packages to NGINX repo
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ inputs.releaseBranch }}
 
@@ -222,7 +222,7 @@ jobs:
           secrets-filter: 'artifactory'
 
       - name: Setup go
-        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
+        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
         with:
             go-version-file: 'go.mod'
             cache: false
@@ -304,7 +304,7 @@ jobs:
       pull-requests: write # Needed to create pull request back into main branch
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/ccheckout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ inputs.releaseBranch }}
 
