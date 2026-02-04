@@ -186,30 +186,36 @@ type Severity int32
 
 const (
 	Severity_SEVERITY_UNKNOWN       Severity = 0
-	Severity_SEVERITY_INFORMATIONAL Severity = 1
-	Severity_SEVERITY_LOW           Severity = 2
-	Severity_SEVERITY_MEDIUM        Severity = 3
-	Severity_SEVERITY_HIGH          Severity = 4
-	Severity_SEVERITY_CRITICAL      Severity = 5
+	Severity_SEVERITY_EMERGENCY     Severity = 1
+	Severity_SEVERITY_ALERT         Severity = 2
+	Severity_SEVERITY_CRITICAL      Severity = 3
+	Severity_SEVERITY_ERROR         Severity = 4
+	Severity_SEVERITY_WARNING       Severity = 5
+	Severity_SEVERITY_NOTICE        Severity = 6
+	Severity_SEVERITY_INFORMATIONAL Severity = 7
 )
 
 // Enum value maps for Severity.
 var (
 	Severity_name = map[int32]string{
 		0: "SEVERITY_UNKNOWN",
-		1: "SEVERITY_INFORMATIONAL",
-		2: "SEVERITY_LOW",
-		3: "SEVERITY_MEDIUM",
-		4: "SEVERITY_HIGH",
-		5: "SEVERITY_CRITICAL",
+		1: "SEVERITY_EMERGENCY",
+		2: "SEVERITY_ALERT",
+		3: "SEVERITY_CRITICAL",
+		4: "SEVERITY_ERROR",
+		5: "SEVERITY_WARNING",
+		6: "SEVERITY_NOTICE",
+		7: "SEVERITY_INFORMATIONAL",
 	}
 	Severity_value = map[string]int32{
 		"SEVERITY_UNKNOWN":       0,
-		"SEVERITY_INFORMATIONAL": 1,
-		"SEVERITY_LOW":           2,
-		"SEVERITY_MEDIUM":        3,
-		"SEVERITY_HIGH":          4,
-		"SEVERITY_CRITICAL":      5,
+		"SEVERITY_EMERGENCY":     1,
+		"SEVERITY_ALERT":         2,
+		"SEVERITY_CRITICAL":      3,
+		"SEVERITY_ERROR":         4,
+		"SEVERITY_WARNING":       5,
+		"SEVERITY_NOTICE":        6,
+		"SEVERITY_INFORMATIONAL": 7,
 	}
 )
 
@@ -880,14 +886,16 @@ const file_events_v1_security_violation_proto_rawDesc = "" +
 	"\x0fSECURITY_WAF_OK\x10\x01\x12\x1a\n" +
 	"\x16SECURITY_WAF_VIOLATION\x10\x02\x12\x18\n" +
 	"\x14SECURITY_WAF_FLAGGED\x10\x03\x12&\n" +
-	"\"SECURITY_WAF_VIOLATION_TRANSPARENT\x10\x04*\x8d\x01\n" +
+	"\"SECURITY_WAF_VIOLATION_TRANSPARENT\x10\x04*\xbe\x01\n" +
 	"\bSeverity\x12\x14\n" +
-	"\x10SEVERITY_UNKNOWN\x10\x00\x12\x1a\n" +
-	"\x16SEVERITY_INFORMATIONAL\x10\x01\x12\x10\n" +
-	"\fSEVERITY_LOW\x10\x02\x12\x13\n" +
-	"\x0fSEVERITY_MEDIUM\x10\x03\x12\x11\n" +
-	"\rSEVERITY_HIGH\x10\x04\x12\x15\n" +
-	"\x11SEVERITY_CRITICAL\x10\x05B\vZ\tevents/v1b\x06proto3"
+	"\x10SEVERITY_UNKNOWN\x10\x00\x12\x16\n" +
+	"\x12SEVERITY_EMERGENCY\x10\x01\x12\x12\n" +
+	"\x0eSEVERITY_ALERT\x10\x02\x12\x15\n" +
+	"\x11SEVERITY_CRITICAL\x10\x03\x12\x12\n" +
+	"\x0eSEVERITY_ERROR\x10\x04\x12\x14\n" +
+	"\x10SEVERITY_WARNING\x10\x05\x12\x13\n" +
+	"\x0fSEVERITY_NOTICE\x10\x06\x12\x1a\n" +
+	"\x16SEVERITY_INFORMATIONAL\x10\aB\vZ\tevents/v1b\x06proto3"
 
 var (
 	file_events_v1_security_violation_proto_rawDescOnce sync.Once

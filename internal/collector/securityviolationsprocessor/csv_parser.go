@@ -121,16 +121,20 @@ func parseIsTruncated(value string) bool {
 // parseSeverity converts string severity to Severity enum
 func parseSeverity(severity string) events.Severity {
 	switch strings.ToLower(strings.TrimSpace(severity)) {
-	case "informational":
-		return events.Severity_SEVERITY_INFORMATIONAL
-	case "low":
-		return events.Severity_SEVERITY_LOW
-	case "medium":
-		return events.Severity_SEVERITY_MEDIUM
-	case "high":
-		return events.Severity_SEVERITY_HIGH
+	case "emergency":
+		return events.Severity_SEVERITY_EMERGENCY
+	case "alert":
+		return events.Severity_SEVERITY_ALERT
 	case "critical":
 		return events.Severity_SEVERITY_CRITICAL
+	case "error":
+		return events.Severity_SEVERITY_ERROR
+	case "warning":
+		return events.Severity_SEVERITY_WARNING
+	case "notice":
+		return events.Severity_SEVERITY_NOTICE
+	case "informational":
+		return events.Severity_SEVERITY_INFORMATIONAL
 	default:
 		return events.Severity_SEVERITY_UNKNOWN
 	}
