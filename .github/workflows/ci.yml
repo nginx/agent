@@ -271,6 +271,8 @@ jobs:
       name: Integration Tests - Official Plus Images
       needs: build-unsigned-snapshot
       runs-on: ubuntu-24.04
+      permissions:
+        id-token: write  # for OIDC authentication
       if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
       strategy:
           fail-fast: false
@@ -365,6 +367,8 @@ jobs:
     name: Performance Tests
     if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.ref_name, 'dependabot/') }}
     runs-on: ubuntu-22.04
+    permissions:
+      id-token: write  # for OIDC authentication
     steps:
       - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - name: Set up Docker Build
