@@ -22,7 +22,7 @@ jobs:
       - uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
       - run: npm install semver@7.6.2
       - name: Get Secrets from Azure Key Vault
-        uses: ./.github/workflows/azure-action.yml
+        uses: ./.github/actions/az-sync
         with:
             az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
             az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}

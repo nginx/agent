@@ -299,7 +299,7 @@ jobs:
             with:
                 go-version-file: 'go.mod'
           - name: Get Secrets from Azure Key Vault
-            uses: ./.github/workflows/azure-action.yml
+            uses: ./.github/actions/az-sync
             with:
                   az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
                   az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
@@ -359,7 +359,7 @@ jobs:
       - name: Set up Docker Build
         uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
       - name: Get Secrets from Azure Key Vault
-        uses: ./.github/workflows/azure-action.yml
+        uses: ./.github/actions/az-sync
         with:
               az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
               az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
@@ -393,7 +393,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - name: Get Secrets from Azure Key Vault
-        uses: ./.github/workflows/azure-action.yml
+        uses: ./.github/actions/az-sync
         with:
             az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
             az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}

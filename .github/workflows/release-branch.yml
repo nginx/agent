@@ -48,7 +48,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - name: Get Secrets from Azure Key Vault
-        uses: ./.github/workflows/azure-action.yml
+        uses: ./.github/actions/az-sync
         with:
             az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
             az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
