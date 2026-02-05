@@ -298,6 +298,14 @@ jobs:
           - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
             with:
                 go-version-file: 'go.mod'
+          - name: Get Secrets from Azure Key Vault
+            uses: ./.github/workflows/azure-action.yml
+            with:
+                  az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+                  az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+                  az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+                  keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+                  secrets-filter: 'artifactory'
           - name: Download Packages
             uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
             with:
@@ -306,9 +314,9 @@ jobs:
           - name: Login to Docker Registry
             uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
             with:
-                registry: ${{ secrets.TEST_REGISTRY_URL }}
-                username: ${{ secrets.REGISTRY_USERNAME }}
-                password: ${{ secrets.REGISTRY_PASSWORD }}
+                registry: ${{ env.nginx-private-registry-url }}
+                username: ${{ env.nginx-pkg-jwt }}
+                password: "none"
           - name: Set Start Time
             run: echo "START_TIME=$(date +"%Y-%m-%dT%H:%M:%S.%NZ")" >> ${GITHUB_ENV}
           - name: Create Directory
@@ -320,8 +328,9 @@ jobs:
           - name: Run Integration Tests
             run: |
                 go install github.com/goreleaser/nfpm/v2/cmd/nfpm@${{ env.NFPM_VERSION }}
-                CONTAINER_NGINX_IMAGE_REGISTRY="${{ secrets.TEST_REGISTRY_URL }}" TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
+                CONTAINER_NGINX_IMAGE_REGISTRY="${{ env.nginx-private-registry-url }}" TAG="${{ matrix.container.plus }}-${{ matrix.container.image }}-${{ matrix.container.version }}" \
                 OS_RELEASE="${{ matrix.container.release }}" IMAGE_PATH="${{ matrix.container.path }}" \
+                 NGINX_LICENSE_JWT='${{ env.nginx-pkg-jwt }}' \
                   make official-image-integration-test | tee ${{github.workspace}}/test/dashboard/logs/${{github.job}}/${{matrix.container.image}}${{matrix.container.version}}/raw_logs.log && exit "${PIPESTATUS[0]}"
           - name: Generate Test Results
             if: always()
@@ -349,6 +358,14 @@ jobs:
       - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - name: Set up Docker Build
         uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
+      - name: Get Secrets from Azure Key Vault
+        uses: ./.github/workflows/azure-action.yml
+        with:
+              az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+              az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+              az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+              keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+              secrets-filter: 'artifactory'
       - name: Build Docker Image
         uses: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0 # v5.3.0
         with:
@@ -359,8 +376,8 @@ jobs:
           load: true
           no-cache: true
           secrets: |
-            "nginx-crt=${{ secrets.NGINX_CRT }}"
-            "nginx-key=${{ secrets.NGINX_KEY }}"
+            "nginx-crt=${{ env.nginx-pkg-certificate }}"
+            "nginx-key=${{ env.nginx-pkg-key }}"
       - name: Run Performance Tests
         run: docker run -v ${GITHUB_WORKSPACE}:/home/nginx/ --rm nginx-agent-benchmark:1.0.0
 
@@ -375,6 +392,14 @@ jobs:
       - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version-file: 'go.mod'
+      - name: Get Secrets from Azure Key Vault
+        uses: ./.github/workflows/azure-action.yml
+        with:
+            az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+            az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+            az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+            keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+            secrets-filter: 'artifactory'
       - name: Setup build environment
         run: |
           sudo apt-get update
@@ -394,11 +419,7 @@ jobs:
           build-args: |
             package_type=signed-package
       - name: Build Packages
-        env:
-          INDIGO_GPG_AGENT: ${{ secrets.INDIGO_GPG_AGENT }}
-          NFPM_SIGNING_KEY_FILE: .key.asc
         run: |
-          echo "$INDIGO_GPG_AGENT" | base64 --decode > .key.asc
           make clean package
       - name: Upload Artifacts
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3

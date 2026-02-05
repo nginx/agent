@@ -21,6 +21,14 @@ jobs:
           go-version-file: 'go.mod'
       - uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
       - run: npm install semver@7.6.2
+      - name: Get Secrets from Azure Key Vault
+        uses: ./.github/workflows/azure-action.yml
+        with:
+            az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+            az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+            az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+            keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+            secrets-filter: 'artifactory'
       - name: Setup build environment
         run: |
           if [ "${{ env.ACT }}" = "true" ]; then
@@ -51,11 +59,7 @@ jobs:
           build-args: |
             package_type=signed-package
       - name: Build Packages
-        env:
-          INDIGO_GPG_AGENT: ${{ secrets.INDIGO_GPG_AGENT }}
-          NFPM_SIGNING_KEY_FILE: .key.asc
         run: |
-          echo "$INDIGO_GPG_AGENT" | base64 --decode > .key.asc
           make clean package
       - name: Azure Login
         uses: azure/login@6b2456866fc08b011acb422a92a4aa20e2c4de32 # v2.1.0
