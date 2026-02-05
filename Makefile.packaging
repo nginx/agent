@@ -41,7 +41,7 @@ $(GITHUB_PACKAGES_DIR):
 $(AZURE_PACKAGES_DIR):
 	@mkdir -p $(AZURE_PACKAGES_DIR)
 
-package: gpg-key $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) #### Create final packages for all supported distros
+package: $(PACKAGES_DIR) $(GITHUB_PACKAGES_DIR) $(AZURE_PACKAGES_DIR) #### Create final packages for all supported distros
 	# Create deb packages
 	
 	@for arch in $(DEB_ARCHS); do \
