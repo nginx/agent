@@ -39,15 +39,8 @@ overrides:
     depends:
       - apt-transport-https
 deb:
-  signature:
-    method: dpkg-sig
-    key_file: ".key.asc"
 rpm:
-  signature:
-    key_file: ".key.asc"
 apk:
-  signature:
-    key_file: ".key.rsa"
   scripts:
     postupgrade: "./scripts/packages/postupgrade.sh"
 scripts:
