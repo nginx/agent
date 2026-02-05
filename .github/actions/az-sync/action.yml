@@ -1,0 +1,64 @@
+name: Sync Secrets from Azure Key Vault
+author: s.breen
+description: az-sync
+inputs:
+  az_client_id:
+    description: 'Azure Client ID'
+    required: true
+  az_tenant_id:
+    description: 'Azure Tenant ID'
+    required: true
+  az_subscription_id:
+    description: 'Azure Subscription ID'
+    required: true
+  keyvault:
+    description: 'Azure Key Vault name'
+    required: true
+  secrets-filter:
+    description: 'Filter for secrets to sync (comma-separated patterns)'
+    required: true
+    default: '*'
+runs:
+  using: "composite"
+  steps:
+    - name: Azure login
+      uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2.3.0
+      with:
+        client-id: ${{ inputs.az_client_id }}
+        tenant-id: ${{ inputs.az_tenant_id }}
+        subscription-id: ${{ inputs.az_subscription_id }}
+
+    - name: Sync
+      shell: bash
+      run: |
+        IFS=',' read -r -a array <<< "${{ inputs.secrets-filter }}"
+          for pattern in "${array[@]}"; do
+            echo "Processing pattern: $pattern"
+            for secret_name in $(az keyvault secret list --vault-name "${{ inputs.keyvault }}" --query "[?contains(name, '$pattern')].name" -o tsv); do
+              secret_value=$(az keyvault secret show --name "$secret_name" --vault-name "${{ inputs.keyvault }}" --query value -o tsv)
+              # check if value is multiline
+              if [[ "$secret_value" == *$'\n'* ]]; then
+                # Mask each line for multiline secrets
+                while IFS= read -r line; do
+                [[ -n "$line" ]] && echo "::add-mask::${line}"
+                done <<< "$secret_value"
+          
+                # Use heredoc syntax for multiline environment variables
+                delimiter="EOF_${secret_name}_$(date +%s)"
+                {
+                  echo "${secret_name}<<${delimiter}"
+                  echo "$secret_value"
+                  echo "$delimiter"
+                } >> $GITHUB_ENV
+              else
+                echo "::add-mask::${secret_value}"
+                echo "$secret_name=$secret_value" >> $GITHUB_ENV
+              fi
+              echo "Synced secret: env.$secret_name"
+            done
+          done
+
+    - name: Azure logout
+      shell: bash
+      run: |
+        az logout
