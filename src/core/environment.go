@@ -656,12 +656,7 @@ func (env *EnvironmentType) Processes() (result []*Process) {
 }
 
 func (env *EnvironmentType) isNginxProcess(name string, cmd string) bool {
-	base := filepath.Base(name) // strip path if any
-
-	// Accept both the normal nginx binary and the debug binary
-	isNginxBinary := base == "nginx" || base == "nginx-debug"
-
-	return isNginxBinary && !strings.Contains(cmd, "upgrade") && strings.HasPrefix(cmd, "nginx:")
+	return !strings.Contains(cmd, "upgrade") && (strings.HasPrefix(cmd, "nginx:") || strings.HasPrefix(cmd, "{nginx-debug} nginx:"))
 }
 
 func getNginxProcessExe(nginxProcess *process.Process) string {

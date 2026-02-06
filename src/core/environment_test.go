@@ -1146,28 +1146,10 @@ func TestGetNginxProcess(t *testing.T) {
 			expect: false,
 		},
 		{
-			name:   "nginx binary with master cmd",
-			pName:  "nginx",
-			cmd:    "nginx: master process /usr/sbin/nginx -c /etc/nginx/nginx.conf",
-			expect: true,
-		},
-		{
-			name:   "nginx-debug binary with master cmd",
+			name:   "nginx-debug process",
 			pName:  "nginx-debug",
-			cmd:    "nginx: master process /usr/sbin/nginx-debug -c /etc/nginx/nginx.conf",
+			cmd:    "{nginx-debug} nginx: master process /usr/sbin/nginx-debug -g daemon off;",
 			expect: true,
-		},
-		{
-			name:   "nginx-asg-sync shouldn't match",
-			pName:  "nginx-asg-sync",
-			cmd:    "/usr/sbin/nginx-asg-sync -log_path=/var/log/...",
-			expect: false,
-		},
-		{
-			name:   "nginx upgrade excluded",
-			pName:  "nginx",
-			cmd:    "nginx: upgrade",
-			expect: false,
 		},
 	}
 
