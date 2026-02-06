@@ -35,6 +35,7 @@ jobs:
             fetch-tags: 'true'
 
         - name: Get Secrets from Azure Key Vault
+          if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
           uses: ./.github/actions/az-sync
           with:
             az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -71,6 +72,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Get Secrets from Azure Key Vault
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
         uses: ./.github/actions/az-sync
         with:
           az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -113,6 +115,7 @@ jobs:
     steps:
         - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         - name: Get Secrets from Azure Key Vault
+          if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
           uses: ./.github/actions/az-sync
           with:
             az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -148,6 +151,7 @@ jobs:
     steps:
         - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         - name: Get Secrets from Azure Key Vault
+          if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
           uses: ./.github/actions/az-sync
           with:
             az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -180,6 +184,7 @@ jobs:
           with:
             fetch-tags: 'true'
         - name: Get Secrets from Azure Key Vault
+          if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
           uses: ./.github/actions/az-sync
           with:
             az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -233,6 +238,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Get Secrets from Azure Key Vault
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
         uses: ./.github/actions/az-sync
         with:
           az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -295,6 +301,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Get Secrets from Azure Key Vault
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
         uses: ./.github/actions/az-sync
         with:
           az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -364,6 +371,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Get Secrets from Azure Key Vault
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
         uses: ./.github/actions/az-sync
         with:
           az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -443,6 +451,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Get Secrets from Azure Key Vault
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
         uses: ./.github/actions/az-sync
         with:
           az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -465,6 +474,7 @@ jobs:
           key: ${{ runner.os }}-go-
 
       - name: Sync NGINX Plus License
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
         uses: ./.github/actions/az-sync
         with:
           az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -533,6 +543,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Get Secrets from Azure Key Vault
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
         uses: ./.github/actions/az-sync
         with:
           az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -612,6 +623,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Get Secrets from Azure Key Vault
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
         uses: ./.github/actions/az-sync
         with:
           az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
@@ -637,6 +649,7 @@ jobs:
           name: nginx-agent-unsigned-snapshots
           path: build
       - name: Sync NGINX Plus License
+        if: ${{ !github.event.pull_request.head.repo.fork && !startsWith(github.head_ref, 'dependabot-') }}
         uses: ./.github/actions/az-sync
         with:
           az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
