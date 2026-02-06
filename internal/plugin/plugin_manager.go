@@ -19,7 +19,7 @@ import (
 	"github.com/nginx/agent/v3/internal/command"
 	"github.com/nginx/agent/v3/internal/file"
 	"github.com/nginx/agent/v3/internal/grpc"
-	"github.com/nginx/agent/v3/internal/resource"
+	"github.com/nginx/agent/v3/internal/nginx"
 
 	"github.com/nginx/agent/v3/internal/bus"
 	"github.com/nginx/agent/v3/internal/config"
@@ -41,7 +41,7 @@ func LoadPlugins(ctx context.Context, agentConfig *config.Config) []bus.Plugin {
 }
 
 func addResourcePlugin(plugins []bus.Plugin, agentConfig *config.Config) []bus.Plugin {
-	resourcePlugin := resource.NewResource(agentConfig)
+	resourcePlugin := nginx.NewNginx(agentConfig)
 	plugins = append(plugins, resourcePlugin)
 
 	return plugins

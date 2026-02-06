@@ -3,7 +3,7 @@
 // This source code is licensed under the Apache License, Version 2.0 license found in the
 // LICENSE file in the root directory of this source tree.
 
-package resource
+package nginx
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 	"github.com/nginx/nginx-plus-go-client/v3/client"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"github.com/nginx/agent/v3/internal/resource/resourcefakes"
+	"github.com/nginx/agent/v3/internal/nginx/nginxfakes"
 	"github.com/nginx/agent/v3/test/types"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
@@ -29,47 +29,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func TestResourceService_AddInstance(t *testing.T) {
-	ctx := context.Background()
-
-	tests := []struct {
-		name         string
-		resource     *mpi.Resource
-		instanceList []*mpi.Instance
-	}{
-		{
-			name: "Test 1: Add One Instance",
-			instanceList: []*mpi.Instance{
-				protos.NginxOssInstance([]string{}),
-			},
-			resource: protos.HostResource(),
-		},
-		{
-			name: "Test 2: Add Multiple Instance",
-			instanceList: []*mpi.Instance{
-				protos.NginxOssInstance([]string{}),
-				protos.NginxPlusInstance([]string{}),
-			},
-			resource: &mpi.Resource{
-				ResourceId: protos.HostResource().GetResourceId(),
-				Instances: []*mpi.Instance{
-					protos.NginxOssInstance([]string{}),
-					protos.NginxPlusInstance([]string{}),
-				},
-				Info: protos.HostResource().GetInfo(),
-			},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(tt *testing.T) {
-			resourceService := NewResourceService(ctx, types.AgentConfig())
-			resource := resourceService.AddInstances(test.instanceList)
-			assert.Equal(tt, test.resource.GetInstances(), resource.GetInstances())
-		})
-	}
-}
 
 func TestResourceService_UpdateInstance(t *testing.T) {
 	ctx := context.Background()
@@ -107,47 +66,10 @@ func TestResourceService_UpdateInstance(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			resourceService := NewResourceService(ctx, types.AgentConfig())
+			resourceService := NewNginxService(ctx, types.AgentConfig())
 			resourceService.resource.Instances = []*mpi.Instance{protos.NginxOssInstance([]string{})}
-			resource := resourceService.UpdateInstances(ctx, test.instanceList)
-			assert.Equal(tt, test.resource.GetInstances(), resource.GetInstances())
-		})
-	}
-}
-
-func TestResourceService_DeleteInstance(t *testing.T) {
-	ctx := context.Background()
-
-	tests := []struct {
-		name         string
-		err          error
-		resource     *mpi.Resource
-		instanceList []*mpi.Instance
-	}{
-		{
-			name: "Test 1: Update Instances",
-			instanceList: []*mpi.Instance{
-				protos.NginxPlusInstance([]string{}),
-			},
-			resource: &mpi.Resource{
-				ResourceId: protos.HostResource().GetResourceId(),
-				Instances: []*mpi.Instance{
-					protos.NginxOssInstance([]string{}),
-				},
-				Info: protos.HostResource().GetInfo(),
-			},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(tt *testing.T) {
-			resourceService := NewResourceService(ctx, types.AgentConfig())
-			resourceService.resource.Instances = []*mpi.Instance{
-				protos.NginxOssInstance([]string{}),
-				protos.NginxPlusInstance([]string{}),
-			}
-			resource := resourceService.DeleteInstances(ctx, test.instanceList)
-			assert.Equal(tt, test.resource.GetInstances(), resource.GetInstances())
+			resourceService.updateInstances(ctx, test.instanceList)
+			assert.Equal(tt, test.resource.GetInstances(), resourceService.resource.GetInstances())
 		})
 	}
 }
@@ -179,7 +101,7 @@ func TestResourceService_Instance(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			resourceService := NewResourceService(ctx, types.AgentConfig())
+			resourceService := NewNginxService(ctx, types.AgentConfig())
 			resourceService.resource.Instances = test.instances
 			instance := resourceService.Instance(protos.NginxPlusInstance([]string{}).
 				GetInstanceMeta().GetInstanceId())
@@ -222,7 +144,7 @@ func TestResourceService_GetResource(t *testing.T) {
 
 		mockInfo.IsContainerReturns(tc.isContainer, nil)
 
-		resourceService := NewResourceService(ctx, types.AgentConfig())
+		resourceService := NewNginxService(ctx, types.AgentConfig())
 		resourceService.info = mockInfo
 		resourceService.resource = tc.expectedResource
 
@@ -295,7 +217,7 @@ func TestResourceService_createPlusClient(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			resourceService := NewResourceService(ctx, types.AgentConfig())
+			resourceService := NewNginxService(ctx, types.AgentConfig())
 			resourceService.resource.Instances = []*mpi.Instance{
 				protos.NginxOssInstance([]string{}),
 				protos.NginxPlusInstance([]string{}),
@@ -356,7 +278,7 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(tt *testing.T) {
-			instanceOp := &resourcefakes.FakeInstanceOperator{}
+			instanceOp := &nginxfakes.FakeInstanceOperator{}
 
 			instanceOp.ReloadReturns(test.reloadErr)
 			instanceOp.ValidateReturns(test.validateErr)
@@ -387,10 +309,8 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 				Ca:       "",
 			})
 
-			resourceService := NewResourceService(ctx, types.AgentConfig())
-			resourceOpMap := make(map[string]instanceOperator)
-			resourceOpMap[protos.NginxOssInstance([]string{}).GetInstanceMeta().GetInstanceId()] = instanceOp
-			resourceService.instanceOperators = resourceOpMap
+			resourceService := NewNginxService(ctx, types.AgentConfig())
+			resourceService.instanceOperator = instanceOp
 			resourceService.nginxConfigParser = &nginxParser
 
 			instance := protos.NginxOssInstance([]string{})
@@ -408,7 +328,7 @@ func TestResourceService_ApplyConfig(t *testing.T) {
 
 func Test_updateConfigContextFiles(t *testing.T) {
 	ctx := t.Context()
-	resourceService := NewResourceService(ctx, types.AgentConfig())
+	resourceService := NewNginxService(ctx, types.AgentConfig())
 
 	manifestFileContents := map[string]*model.ManifestFile{
 		"/etc/nginx/nginx.conf": {
