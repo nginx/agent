@@ -165,11 +165,7 @@ jobs:
             package_type=signed-package
 
       - name: Build Packages
-        env:
-          INDIGO_GPG_AGENT: ${{ secrets.INDIGO_GPG_AGENT }}
-          NFPM_SIGNING_KEY_FILE: .key.asc
         run: |
-          echo "$INDIGO_GPG_AGENT" | base64 --decode > .key.asc
           make clean package
 
       - name: Get Id Token
@@ -184,7 +180,7 @@ jobs:
       - name: Publish Release Packages
         if: ${{ inputs.publishPackages == true }}
         env:
-          TOKEN: ${{ steps.idtoken.outputs.id_token }}
+          TOKEN: ${{ github.token }}
           UPLOAD_URL: "https://up-ap.nginx.com"
         run: |
           make release
