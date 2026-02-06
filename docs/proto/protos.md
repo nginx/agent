@@ -3,6 +3,17 @@
 
 ## Table of Contents
 
+- [events/v1/security_violation.proto](#events_v1_security_violation-proto)
+    - [ContextData](#events-v1-ContextData)
+    - [SecurityViolationEvent](#events-v1-SecurityViolationEvent)
+    - [SignatureData](#events-v1-SignatureData)
+    - [ViolationData](#events-v1-ViolationData)
+  
+    - [RequestOutcome](#events-v1-RequestOutcome)
+    - [RequestOutcomeReason](#events-v1-RequestOutcomeReason)
+    - [RequestStatus](#events-v1-RequestStatus)
+    - [Severity](#events-v1-Severity)
+  
 - [mpi/v1/common.proto](#mpi_v1_common-proto)
     - [AuthSettings](#mpi-v1-AuthSettings)
     - [CommandResponse](#mpi-v1-CommandResponse)
@@ -93,6 +104,188 @@
     - [CommandService](#mpi-v1-CommandService)
   
 - [Scalar Value Types](#scalar-value-types)
+
+
+
+<a name="events_v1_security_violation-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## events/v1/security_violation.proto
+Copyright (c) F5, Inc.
+
+This source code is licensed under the Apache License, Version 2.0 license
+found in the LICENSE file in the root directory of this source tree.
+
+
+<a name="events-v1-ContextData"></a>
+
+### ContextData
+ContextData represents the context data of the violation
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| context_data_name | [string](#string) |  | Name of the context |
+| context_data_value | [string](#string) |  | Value of the context |
+
+
+
+
+
+
+<a name="events-v1-SecurityViolationEvent"></a>
+
+### SecurityViolationEvent
+SecurityViolationEvent represents the structured NGINX App Protect
+security violation data
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| policy_name | [string](#string) |  | Name of the security policy |
+| support_id | [string](#string) |  | Unique support ID for the violation |
+| request_outcome | [RequestOutcome](#events-v1-RequestOutcome) |  | Outcome of the request (e.g., REJECTED, PASSED) |
+| request_outcome_reason | [RequestOutcomeReason](#events-v1-RequestOutcomeReason) |  | Reason for the outcome |
+| blocking_exception_reason | [string](#string) |  | Reason for blocking exception if applicable |
+| method | [string](#string) |  | HTTP method used |
+| protocol | [string](#string) |  | Protocol used (e.g., HTTP/1.1) |
+| xff_header_value | [string](#string) |  | X-Forwarded-For header value |
+| uri | [string](#string) |  | Request URI |
+| request | [string](#string) |  | Full request |
+| is_truncated | [bool](#bool) |  | Indicates if the request was truncated |
+| request_status | [RequestStatus](#events-v1-RequestStatus) |  | Status of the request |
+| response_code | [uint32](#uint32) |  | HTTP response code |
+| server_addr | [string](#string) |  | Server address |
+| vs_name | [string](#string) |  | Virtual server name |
+| remote_addr | [string](#string) |  | Remote address of the client |
+| destination_port | [uint32](#uint32) |  | Destination port |
+| server_port | [uint32](#uint32) |  | Server port |
+| violations | [string](#string) |  | List of violations |
+| sub_violations | [string](#string) |  | List of sub-violations |
+| violation_rating | [uint32](#uint32) |  | Violation rating |
+| sig_set_names | [string](#string) |  | Signature set names |
+| sig_cves | [string](#string) |  | Signature CVEs |
+| client_class | [string](#string) |  | Client class |
+| client_application | [string](#string) |  | Client application |
+| client_application_version | [string](#string) |  | Client application version |
+| severity | [Severity](#events-v1-Severity) |  | Severity of the violation |
+| threat_campaign_names | [string](#string) |  | Threat campaign names |
+| bot_anomalies | [string](#string) |  | Bot anomalies detected |
+| bot_category | [string](#string) |  | Bot category |
+| enforced_bot_anomalies | [string](#string) |  | Enforced bot anomalies |
+| bot_signature_name | [string](#string) |  | Bot signature name |
+| system_id | [string](#string) |  | System ID |
+| display_name | [string](#string) |  | Display name |
+| violations_data | [ViolationData](#events-v1-ViolationData) | repeated | Detailed violation data |
+
+
+
+
+
+
+<a name="events-v1-SignatureData"></a>
+
+### SignatureData
+SignatureData represents signature data contained within each violation
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| sig_data_id | [uint32](#uint32) |  | Signature ID |
+| sig_data_blocking_mask | [string](#string) |  | Blocking mask |
+| sig_data_buffer | [string](#string) |  | Buffer information |
+| sig_data_offset | [uint32](#uint32) |  | Offset in the buffer |
+| sig_data_length | [uint32](#uint32) |  | Length of the signature match |
+
+
+
+
+
+
+<a name="events-v1-ViolationData"></a>
+
+### ViolationData
+ViolationData represents individual violation details
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| violation_data_name | [string](#string) |  | Name of the violation |
+| violation_data_context | [string](#string) |  | Context of the violation |
+| violation_data_context_data | [ContextData](#events-v1-ContextData) |  | Context data associated with the violation |
+| violation_data_signatures | [SignatureData](#events-v1-SignatureData) | repeated | Signature data for the violation |
+
+
+
+
+
+ 
+
+
+<a name="events-v1-RequestOutcome"></a>
+
+### RequestOutcome
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| REQUEST_OUTCOME_UNKNOWN | 0 |  |
+| REQUEST_OUTCOME_PASSED | 1 |  |
+| REQUEST_OUTCOME_REJECTED | 2 |  |
+
+
+
+<a name="events-v1-RequestOutcomeReason"></a>
+
+### RequestOutcomeReason
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| SECURITY_WAF_UNKNOWN | 0 |  |
+| SECURITY_WAF_OK | 1 |  |
+| SECURITY_WAF_VIOLATION | 2 |  |
+| SECURITY_WAF_FLAGGED | 3 |  |
+| SECURITY_WAF_VIOLATION_TRANSPARENT | 4 |  |
+
+
+
+<a name="events-v1-RequestStatus"></a>
+
+### RequestStatus
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| REQUEST_STATUS_UNKNOWN | 0 |  |
+| REQUEST_STATUS_BLOCKED | 1 |  |
+| REQUEST_STATUS_ALERTED | 2 |  |
+| REQUEST_STATUS_PASSED | 3 |  |
+
+
+
+<a name="events-v1-Severity"></a>
+
+### Severity
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| SEVERITY_UNKNOWN | 0 |  |
+| SEVERITY_EMERGENCY | 1 |  |
+| SEVERITY_ALERT | 2 |  |
+| SEVERITY_CRITICAL | 3 |  |
+| SEVERITY_ERROR | 4 |  |
+| SEVERITY_WARNING | 5 |  |
+| SEVERITY_NOTICE | 6 |  |
+| SEVERITY_INFORMATIONAL | 7 |  |
+
+
+ 
+
+ 
+
+ 
 
 
 
