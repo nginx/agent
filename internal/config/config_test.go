@@ -1161,6 +1161,7 @@ func agentConfig() *Config {
 	}
 }
 
+//nolint:maintidx // createConfig creates a sample Config object for testing purposes.
 func createConfig() *Config {
 	return &Config{
 		Log: &Log{
@@ -1211,6 +1212,9 @@ func createConfig() *Config {
 					MaxElapsedTime:      15 * time.Second,
 					RandomizationFactor: 1.5,
 					Multiplier:          1.5,
+				},
+				API: &NginxAPI{
+					URL: "http://127.0.0.1:80/api",
 				},
 			},
 		},
@@ -1428,6 +1432,13 @@ func createConfig() *Config {
 			config.FeatureCertificates, config.FeatureFileWatcher, config.FeatureMetrics,
 			config.FeatureAPIAction, config.FeatureLogsNap,
 		},
+		ExternalDataSource: &ExternalDataSource{
+			ProxyURL: ProxyURL{
+				URL: "http://proxy.example.com",
+			},
+			AllowedDomains: []string{"example.com", "api.example.com"},
+			MaxBytes:       1048576,
+		},
 	}
 }
 
@@ -1619,6 +1630,67 @@ func TestValidateLabel(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			actual := ValidateLabel(tt.input)
 			assert.Equal(t, tt.expected, actual)
+		})
+	}
+}
+
+func TestValidateAllowedDomains(t *testing.T) {
+	tests := []struct {
+		expectedErr error
+		name        string
+		domains     []string
+	}{
+		{
+			name:        "Test 1: Success: Empty slice",
+			domains:     []string{},
+			expectedErr: nil,
+		},
+		{
+			name:        "Test 2: Success: Nil slice",
+			domains:     nil,
+			expectedErr: nil,
+		},
+		{
+			name:        "Test 3: Success: Valid domains",
+			domains:     []string{"example.com", "api.nginx.com", "sub.domain.io"},
+			expectedErr: nil,
+		},
+		{
+			name:        "Test 4: Failure: Domain contains space",
+			domains:     []string{"valid.com", "bad domain.com"},
+			expectedErr: errors.New("invalid domain found in allowed_domains"),
+		},
+		{
+			name:        "Test 5: Failure: Empty string domain",
+			domains:     []string{"valid.com", ""},
+			expectedErr: errors.New("invalid domain found in allowed_domains"),
+		},
+		{
+			name:        "Test 6: Failure: Domain contains forward slash /",
+			domains:     []string{"domain.com/path"},
+			expectedErr: errors.New("invalid domain found in allowed_domains"),
+		},
+		{
+			name:        "Test 7: Failure: Domain contains backward slash \\",
+			domains:     []string{"domain.com\\path"},
+			expectedErr: errors.New("invalid domain found in allowed_domains"),
+		},
+		{
+			name:        "Test 8: Failure: Mixed valid and invalid (first is invalid)",
+			domains:     []string{" only.com", "good.com"},
+			expectedErr: errors.New("invalid domain found in allowed_domains"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateAllowedDomains(tt.domains)
+			if tt.expectedErr == nil {
+				assert.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.EqualError(t, err, tt.expectedErr.Error())
+			}
 		})
 	}
 }

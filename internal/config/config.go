@@ -50,6 +50,10 @@ const (
 	regexLabelPattern = "^[a-zA-Z0-9]([a-zA-Z0-9-_.]{0,254}[a-zA-Z0-9])?$"
 )
 
+var domainRegex = regexp.MustCompile(
+	`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`,
+)
+
 var viperInstance = viper.NewWithOptions(viper.KeyDelimiter(KeyDelimiter))
 
 func RegisterRunner(r func(cmd *cobra.Command, args []string)) {
@@ -158,6 +162,7 @@ func ResolveConfig() (*Config, error) {
 		Labels:             resolveLabels(),
 		LibDir:             viperInstance.GetString(LibDirPathKey),
 		SyslogServer:       resolveSyslogServer(),
+		ExternalDataSource: resolveExternalDataSource(),
 	}
 
 	defaultCollector(collector, config)
@@ -475,6 +480,7 @@ func registerFlags() {
 	registerCollectorFlags(fs)
 	registerClientFlags(fs)
 	registerDataPlaneFlags(fs)
+	registerExternalDataSourceFlags(fs)
 
 	fs.SetNormalizeFunc(normalizeFunc)
 
@@ -487,6 +493,29 @@ func registerFlags() {
 			slog.Warn("Error occurred binding env", "env", flag.Name, "error", err)
 		}
 	})
+}
+
+func registerExternalDataSourceFlags(fs *flag.FlagSet) {
+	fs.String(
+		ExternalDataSourceProxyUrlKey,
+		DefExternalDataSourceProxyUrl,
+		"Url to the proxy service for fetching external files.",
+	)
+	fs.StringSlice(
+		ExternalDataSourceAllowDomainsKey,
+		[]string{},
+		"List of allowed domains for external data sources.",
+	)
+	fs.StringSlice(
+		ExternalDataSourceAllowedFileTypesKey,
+		[]string{},
+		"List of allowed file types for external data sources.",
+	)
+	fs.Int64(
+		ExternalDataSourceMaxBytesKey,
+		DefExternalDataSourceMaxBytes,
+		"Maximum size in bytes for external data sources.",
+	)
 }
 
 func registerDataPlaneFlags(fs *flag.FlagSet) {
@@ -502,7 +531,19 @@ func registerDataPlaneFlags(fs *flag.FlagSet) {
 	)
 
 	fs.String(
-		NginxApiTlsCa,
+		NginxApiURLKey,
+		"",
+		"The NGINX Plus API URL.",
+	)
+
+	fs.String(
+		NginxApiSocketKey,
+		"",
+		"The NGINX Plus API Unix socket path.",
+	)
+
+	fs.String(
+		NginxApiTlsCaKey,
 		DefNginxApiTlsCa,
 		"The NGINX Plus CA certificate file location needed to call the NGINX Plus API if SSL is enabled.",
 	)
@@ -645,6 +686,11 @@ func registerClientFlags(fs *flag.FlagSet) {
 		ClientGRPCMaxParallelFileOperationsKey,
 		DefMaxParallelFileOperations,
 		"Maximum number of file downloads or uploads performed in parallel",
+	)
+	fs.Duration(
+		ClientFileDownloadTimeoutKey,
+		DefClientFileDownloadTimeout,
+		"Timeout value in seconds, for downloading a file during a config apply.",
 	)
 }
 
@@ -1090,12 +1136,16 @@ func parseJSON(value string) interface{} {
 }
 
 func resolveDataPlaneConfig() *DataPlaneConfig {
-	return &DataPlaneConfig{
+	dataPlaneConfig := &DataPlaneConfig{
 		Nginx: &NginxDataPlaneConfig{
 			ReloadMonitoringPeriod: viperInstance.GetDuration(NginxReloadMonitoringPeriodKey),
 			TreatWarningsAsErrors:  viperInstance.GetBool(NginxTreatWarningsAsErrorsKey),
 			ExcludeLogs:            viperInstance.GetStringSlice(NginxExcludeLogsKey),
-			APITls:                 TLSConfig{Ca: viperInstance.GetString(NginxApiTlsCa)},
+			API: &NginxAPI{
+				URL:    viperInstance.GetString(NginxApiURLKey),
+				Socket: viperInstance.GetString(NginxApiSocketKey),
+				TLS:    TLSConfig{Ca: viperInstance.GetString(NginxApiTlsCaKey)},
+			},
 			ReloadBackoff: &BackOff{
 				InitialInterval:     viperInstance.GetDuration(NginxReloadBackoffInitialIntervalKey),
 				MaxInterval:         viperInstance.GetDuration(NginxReloadBackoffMaxIntervalKey),
@@ -1105,6 +1155,12 @@ func resolveDataPlaneConfig() *DataPlaneConfig {
 			},
 		},
 	}
+
+	if dataPlaneConfig.Nginx.API.Socket != "" && !strings.HasPrefix(dataPlaneConfig.Nginx.API.Socket, "unix:") {
+		dataPlaneConfig.Nginx.API.Socket = "unix:" + dataPlaneConfig.Nginx.API.Socket
+	}
+
+	return dataPlaneConfig
 }
 
 func resolveClient() *Client {
@@ -1134,6 +1190,7 @@ func resolveClient() *Client {
 			RandomizationFactor: viperInstance.GetFloat64(ClientBackoffRandomizationFactorKey),
 			Multiplier:          viperInstance.GetFloat64(ClientBackoffMultiplierKey),
 		},
+		FileDownloadTimeout: viperInstance.GetDuration(ClientFileDownloadTimeoutKey),
 	}
 }
 
@@ -1573,4 +1630,38 @@ func areCommandServerProxyTLSSettingsSet() bool {
 		viperInstance.IsSet(CommandServerProxyTLSCaKey) ||
 		viperInstance.IsSet(CommandServerProxyTLSSkipVerifyKey) ||
 		viperInstance.IsSet(CommandServerProxyTLSServerNameKey)
+}
+
+func resolveExternalDataSource() *ExternalDataSource {
+	proxyURLStruct := ProxyURL{
+		URL: viperInstance.GetString(ExternalDataSourceProxyUrlKey),
+	}
+	externalDataSource := &ExternalDataSource{
+		ProxyURL:         proxyURLStruct,
+		AllowedDomains:   viperInstance.GetStringSlice(ExternalDataSourceAllowDomainsKey),
+		AllowedFileTypes: viperInstance.GetStringSlice(ExternalDataSourceAllowedFileTypesKey),
+		MaxBytes:         viperInstance.GetInt64(ExternalDataSourceMaxBytesKey),
+	}
+
+	if err := validateAllowedDomains(externalDataSource.AllowedDomains); err != nil {
+		slog.Error("External data source not configured due to invalid configuration", "error", err)
+		return nil
+	}
+
+	return externalDataSource
+}
+
+func validateAllowedDomains(domains []string) error {
+	if len(domains) == 0 {
+		return nil
+	}
+
+	for _, domain := range domains {
+		// Validating syntax using the RFC-compliant regex
+		if !domainRegex.MatchString(domain) || domain == "" {
+			return errors.New("invalid domain found in allowed_domains")
+		}
+	}
+
+	return nil
 }
