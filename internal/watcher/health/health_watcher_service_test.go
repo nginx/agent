@@ -6,10 +6,13 @@
 package health
 
 import (
+	"errors"
 	"fmt"
+	"reflect"
 	"testing"
 
 	mpi "github.com/nginx/agent/v3/api/grpc/mpi/v1"
+	"github.com/nginx/agent/v3/internal/watcher/health/healthfakes"
 	"github.com/nginx/agent/v3/test/protos"
 	"github.com/nginx/agent/v3/test/types"
 	"github.com/stretchr/testify/assert"
@@ -59,8 +62,131 @@ func TestHealthWatcherService_UpdateHealthWatcher(t *testing.T) {
 	assert.Equal(t, updatedInstance, healthWatcher.instances[instance.GetInstanceMeta().GetInstanceId()])
 }
 
-// commented out to push branch
-// func TestHealthWatcherService_health(t *testing.T) {
+func TestHealthWatcherService_health(t *testing.T) {
+	ossInstance := protos.NginxOssInstance([]string{})
+	plusInstance := protos.NginxPlusInstance([]string{})
+	unspecifiedInstance := protos.UnsupportedInstance()
+
+	tests := []struct {
+		name             string
+		instances        map[string]*mpi.Instance
+		cache            map[string]*mpi.InstanceHealth
+		isHealthDiff     bool
+		updatedInstances []*mpi.InstanceHealth
+	}{
+		{
+			name: "Test 1: NGINX Instance Status Changed",
+			instances: map[string]*mpi.Instance{
+				ossInstance.GetInstanceMeta().GetInstanceId():         ossInstance,
+				plusInstance.GetInstanceMeta().GetInstanceId():        plusInstance,
+				unspecifiedInstance.GetInstanceMeta().GetInstanceId(): unspecifiedInstance,
+			},
+			cache: map[string]*mpi.InstanceHealth{
+				ossInstance.GetInstanceMeta().GetInstanceId(): protos.HealthyInstanceHealth(),
+				plusInstance.GetInstanceMeta().GetInstanceId(): {
+					InstanceId:           plusInstance.GetInstanceMeta().GetInstanceId(),
+					InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_HEALTHY,
+				},
+				unspecifiedInstance.GetInstanceMeta().GetInstanceId(): protos.UnspecifiedInstanceHealth(),
+			},
+			isHealthDiff: true,
+			updatedInstances: []*mpi.InstanceHealth{
+				protos.HealthyInstanceHealth(),
+				{
+					InstanceId:           plusInstance.GetInstanceMeta().GetInstanceId(),
+					InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNHEALTHY,
+				},
+				protos.UnspecifiedInstanceHealth(),
+			},
+		},
+		{
+			name: "Test 2: NGINX Instance No Status Changed",
+			instances: map[string]*mpi.Instance{
+				ossInstance.GetInstanceMeta().GetInstanceId():         ossInstance,
+				plusInstance.GetInstanceMeta().GetInstanceId():        plusInstance,
+				unspecifiedInstance.GetInstanceMeta().GetInstanceId(): unspecifiedInstance,
+			},
+			cache: map[string]*mpi.InstanceHealth{
+				ossInstance.GetInstanceMeta().GetInstanceId():         protos.HealthyInstanceHealth(),
+				plusInstance.GetInstanceMeta().GetInstanceId():        protos.UnhealthyInstanceHealth(),
+				unspecifiedInstance.GetInstanceMeta().GetInstanceId(): protos.UnspecifiedInstanceHealth(),
+			},
+			isHealthDiff: false,
+			updatedInstances: []*mpi.InstanceHealth{
+				protos.HealthyInstanceHealth(),
+				{
+					InstanceId:           plusInstance.GetInstanceMeta().GetInstanceId(),
+					InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNHEALTHY,
+				},
+				protos.UnspecifiedInstanceHealth(),
+			},
+		},
+		{
+			name: "Test 3: Deleted NGINX Instances ",
+			instances: map[string]*mpi.Instance{
+				ossInstance.GetInstanceMeta().GetInstanceId():         ossInstance,
+				unspecifiedInstance.GetInstanceMeta().GetInstanceId(): unspecifiedInstance,
+			},
+			cache: map[string]*mpi.InstanceHealth{
+				ossInstance.GetInstanceMeta().GetInstanceId():         protos.HealthyInstanceHealth(),
+				plusInstance.GetInstanceMeta().GetInstanceId():        protos.UnhealthyInstanceHealth(),
+				unspecifiedInstance.GetInstanceMeta().GetInstanceId(): protos.UnspecifiedInstanceHealth(),
+			},
+			isHealthDiff: true,
+			updatedInstances: []*mpi.InstanceHealth{
+				protos.HealthyInstanceHealth(),
+				{
+					InstanceId:           plusInstance.GetInstanceMeta().GetInstanceId(),
+					InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNHEALTHY,
+				},
+				protos.UnspecifiedInstanceHealth(),
+			},
+		},
+		{
+			name: "Test 4: Added NGINX Instances ",
+			instances: map[string]*mpi.Instance{
+				ossInstance.GetInstanceMeta().GetInstanceId():         ossInstance,
+				plusInstance.GetInstanceMeta().GetInstanceId():        plusInstance,
+				unspecifiedInstance.GetInstanceMeta().GetInstanceId(): unspecifiedInstance,
+			},
+			cache: map[string]*mpi.InstanceHealth{
+				ossInstance.GetInstanceMeta().GetInstanceId():         protos.HealthyInstanceHealth(),
+				unspecifiedInstance.GetInstanceMeta().GetInstanceId(): protos.UnspecifiedInstanceHealth(),
+			},
+			isHealthDiff: true,
+			updatedInstances: []*mpi.InstanceHealth{
+				protos.HealthyInstanceHealth(),
+				{
+					InstanceId:           plusInstance.GetInstanceMeta().GetInstanceId(),
+					InstanceHealthStatus: mpi.InstanceHealth_INSTANCE_HEALTH_STATUS_UNHEALTHY,
+				},
+				protos.UnspecifiedInstanceHealth(),
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			agentConfig := types.AgentConfig()
+			healthWatcher := NewHealthWatcherService(agentConfig)
+			fakeHealthWatcher := healthfakes.FakeHealthWatcherOperator{}
+
+			fakeHealthWatcher.HealthReturnsOnCall(0, protos.HealthyInstanceHealth(), nil)
+			fakeHealthWatcher.HealthReturnsOnCall(1, protos.UnhealthyInstanceHealth(), nil)
+			fakeHealthWatcher.HealthReturnsOnCall(2, nil, errors.New("unable to determine health"))
+
+			healthWatcher.instances = test.instances
+			healthWatcher.updateCache(test.cache)
+			healthWatcher.watcher = &fakeHealthWatcher
+			updatedStatus, isHealthDiff := healthWatcher.health(t.Context())
+			assert.Equal(t, test.isHealthDiff, isHealthDiff)
+
+			reflect.DeepEqual(test.updatedInstances, updatedStatus)
+		})
+	}
+}
+
+//func TestHealthWatcherService_health2(t *testing.T) {
 //	ctx := context.Background()
 //	agentConfig := types.AgentConfig()
 //	healthWatcher := NewHealthWatcherService(agentConfig)
@@ -139,7 +265,7 @@ func TestHealthWatcherService_UpdateHealthWatcher(t *testing.T) {
 //			reflect.DeepEqual(instanceHealth, expected)
 //		})
 //	}
-// }
+//}
 
 func TestHealthWatcherService_compareCache(t *testing.T) {
 	ossInstance := protos.NginxOssInstance([]string{})

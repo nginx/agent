@@ -126,7 +126,7 @@ func (n *NginxService) Instance(instanceID string) *mpi.Instance {
 }
 
 func (n *NginxService) UpdateResource(ctx context.Context, resource *mpi.Resource) *mpi.Resource {
-	slog.DebugContext(ctx, "Updating resource")
+	slog.DebugContext(ctx, "Updating resource", "resource", resource)
 	n.resourceMutex.Lock()
 	defer n.resourceMutex.Unlock()
 
