@@ -45,7 +45,6 @@ on:
 
 env:
   NFPM_VERSION: 'v2.35.3'
-  GOPROXY: "https://${{ secrets.ARTIFACTORY_USER }}:${{ secrets.ARTIFACTORY_TOKEN }}@${{ secrets.ARTIFACTORY_URL_PROD }}"
 
 defaults:
   run:
@@ -69,7 +68,7 @@ jobs:
       create_pull_request: ${{steps.vars.outputs.create_pull_request }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ inputs.releaseBranch }}
 
@@ -92,7 +91,7 @@ jobs:
       release_id: ${{ steps.vars.outputs.RELEASE_ID }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         if: ${{ needs.vars.outputs.github_release == 'true' }}
         with:
           ref: ${{ inputs.releaseBranch }}
@@ -188,7 +187,7 @@ jobs:
       contents: write # Needed to tag a release
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         if: ${{ needs.vars.outputs.tag_release == 'true' }}
         with:
           ref: ${{ inputs.releaseBranch }}
@@ -209,12 +208,21 @@ jobs:
       id-token: write # Needed to get a token to upload packages to NGINX repo
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ inputs.releaseBranch }}
 
+      - name: Get Secrets from Azure Key Vault
+        uses: ./.github/actions/az-sync
+        with:
+          az_client_id: ${{ secrets.AZ_KEYVAULT_CLIENT_ID }}
+          az_tenant_id: ${{ secrets.AZ_KEYVAULT_TENANT_ID }}
+          az_subscription_id: ${{ secrets.AZ_SUBSCRIPTION_ID }}
+          keyvault: ${{ secrets.AZ_KEYVAULT_AGENT }}
+          secrets-filter: 'artifactory'
+
       - name: Setup go
-        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
+        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
         with:
             go-version-file: 'go.mod'
             cache: false
@@ -234,13 +242,10 @@ jobs:
 
       - name: Build Packages
         env:
-          GPG_KEY: ${{ secrets.INDIGO_GPG_AGENT }}
-          NFPM_SIGNING_KEY_FILE: .key.asc
           VERSION: ${{ env.VERSION }}
           PACKAGE_BUILD: ${{ inputs.packageBuildNo }}
         run: |
           export PATH=$PATH:~/go/bin
-          echo "$GPG_KEY" | base64 --decode > ${NFPM_SIGNING_KEY_FILE}
           make package
           find build/ -type f -name "nginx-agent*"
 
@@ -290,23 +295,6 @@ jobs:
         run: |
           make release
 
-  assertion-document:
-    name: Build and Generate Assertion Document
-    needs: [build-and-upload-packages]
-    if : ${{ inputs.assertionDoc == true }}
-    uses: ./.github/workflows/assertion.yml
-    permissions:
-      id-token: write
-      contents: read
-    with:
-      packageVersion: ${{ inputs.packageVersion }}
-      runId: ${{ github.run_id }}
-    secrets:
-      ARTIFACTORY_USER: ${{ secrets.ARTIFACTORY_USER }}
-      ARTIFACTORY_TOKEN: ${{ secrets.ARTIFACTORY_TOKEN }}
-      ARTIFACTORY_URL: ${{ secrets.ARTIFACTORY_URL }}
-
-
   merge-release:
     if: ${{ needs.vars.outputs.create_pull_request == 'true' }}
     name: Merge release branch back into main branch
@@ -316,7 +304,7 @@ jobs:
       pull-requests: write # Needed to create pull request back into main branch
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/ccheckout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ inputs.releaseBranch }}
 

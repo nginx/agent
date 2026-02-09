@@ -9,8 +9,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"sort"
 	"testing"
@@ -19,6 +21,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/nginx/agent/v3/internal/config"
 	"github.com/nginx/agent/v3/internal/model"
 	"github.com/nginx/agent/v3/pkg/files"
 	"github.com/nginx/agent/v3/test/stub"
@@ -727,6 +730,117 @@ func TestNginxConfigParser_SyslogServerParse(t *testing.T) {
 			logBuf.Reset()
 
 			assert.Equal(t, test.expectedSyslogServer, result.NAPSysLogServer)
+		})
+	}
+}
+
+func TestNginxConfigParser_PlusAPIParse(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+
+	// Create fake HTTP server for NGINX Plus API
+	handler := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		if req.URL.Path == "/api" || req.URL.Path == "/api/" {
+			// Return a mock NGINX Plus API response
+			data := []byte(`[1,2,3,4,5,6,7,8]`)
+			rw.Header().Set("Content-Type", "application/json")
+			_, err := rw.Write(data)
+			assert.NoError(t, err)
+		} else {
+			rw.WriteHeader(http.StatusNotFound)
+		}
+	})
+
+	fakeServer := httptest.NewServer(handler)
+	defer fakeServer.Close()
+
+	fakeServerUrl, err := url.Parse(fakeServer.URL)
+	require.NoError(t, err)
+
+	// Create a unix socket listener for testing unix socket
+	socketFile, err := os.CreateTemp("/tmp", "nginx-plus-api-*.sock")
+	require.NoError(t, err)
+	socket := socketFile.Name()
+	require.NoError(t, socketFile.Close())
+	require.NoError(t, os.Remove(socket))
+	defer os.Remove(socket)
+
+	listener, err := (&net.ListenConfig{}).Listen(t.Context(), "unix", socket)
+	require.NoError(t, err)
+	defer listener.Close()
+
+	server := httptest.NewUnstartedServer(handler)
+	server.Listener = listener
+	server.Start()
+	defer server.Close()
+
+	file := helpers.CreateFileWithErrorCheck(t, dir, "nginx-parse-config.conf")
+	defer helpers.RemoveFileWithErrorCheck(t, file.Name())
+
+	errorLog := helpers.CreateFileWithErrorCheck(t, dir, "error.log")
+	defer helpers.RemoveFileWithErrorCheck(t, errorLog.Name())
+
+	accessLog := helpers.CreateFileWithErrorCheck(t, dir, "access.log")
+	defer helpers.RemoveFileWithErrorCheck(t, accessLog.Name())
+
+	instance := protos.NginxPlusInstance([]string{})
+	instance.InstanceRuntime.ConfigPath = file.Name()
+
+	agentConfigWithOverride := types.AgentConfig()
+	agentConfigWithOverride.DataPlaneConfig.Nginx.API = &config.NginxAPI{
+		URL: fmt.Sprintf("http://localhost:%s/api/", fakeServerUrl.Port()),
+	}
+	agentConfigWithUnixOverride := types.AgentConfig()
+	agentConfigWithUnixOverride.DataPlaneConfig.Nginx.API = &config.NginxAPI{
+		URL:    "http://localhost/api/",
+		Socket: "unix:" + socket,
+	}
+
+	tests := []struct {
+		agentConfig *config.Config
+		name        string
+		content     string
+		url         string
+		listen      string
+	}{
+		{
+			name:        "Test 1: No override of Plus API URL in agent config",
+			content:     testconfig.NginxConfigWithPlusAPI(fakeServerUrl.Port()),
+			url:         "http://localhost:" + fakeServerUrl.Port() + "/api/",
+			listen:      "localhost:" + fakeServerUrl.Port(),
+			agentConfig: types.AgentConfig(),
+		},
+		{
+			name:        "Test 2: Override Plus API URL in agent config",
+			content:     testconfig.NginxConfigWithPlusAPI("8080"),
+			url:         "http://localhost:" + fakeServerUrl.Port() + "/api/",
+			listen:      "localhost:" + fakeServerUrl.Port(),
+			agentConfig: agentConfigWithOverride,
+		},
+		{
+			name:        "Test 3: Override Plus API URL in agent config with unix socket",
+			content:     testconfig.NginxConfigWithPlusAPI("8080"),
+			url:         "http://localhost/api/",
+			listen:      "unix:" + socket,
+			agentConfig: agentConfigWithUnixOverride,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			agentConfig := test.agentConfig
+			agentConfig.AllowedDirectories = []string{dir}
+			nginxConfig := NewNginxConfigParser(agentConfig)
+
+			writeErr := os.WriteFile(file.Name(), []byte(test.content), 0o600)
+			require.NoError(t, writeErr)
+
+			result, parseError := nginxConfig.Parse(ctx, instance)
+			require.NoError(t, parseError)
+
+			assert.Equal(t, test.url, result.PlusAPI.URL)
+			assert.Equal(t, test.listen, result.PlusAPI.Listen)
+			assert.Equal(t, "/api/", result.PlusAPI.Location)
 		})
 	}
 }
