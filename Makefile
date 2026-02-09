@@ -17,14 +17,14 @@ GOBIN 	?= $$(go env GOPATH)/bin
 # | OS_RELEASE       | OS_VERSION                                | NOTES                                                          |
 # | ---------------- | ----------------------------------------- | -------------------------------------------------------------- |
 # | amazonlinux      | 2, 2023                                   |                                                                |
-# | ubuntu           | 22.04, 24.04 25.04                		 |                                                                |
+# | ubuntu           | 22.04, 24.04, 25.04 25.10                 |                                                                |
 # | debian           | bullseye-slim, bookworm-slim, trixie-slim |                                                                |
 # | redhatenterprise | 8, 9, 10                                	 |                                                                |
 # | rockylinux       | 8, 9, 10                                  |                                                                |
 # | almalinux        | 8, 9, 10                                  |                                                                |
-# | alpine           | 3.19, 3.20, 3.21 3.22                     |                                                                |
+# | alpine           | 3.20, 3.21 3.22 3.23                      |                                                                |
 # | oraclelinux      | 8, 9, 10                                  |                                                                |
-# | suse             | sle15                          			 |                                                                |
+# | suse             | sle15, sle16                           	 |                                                                |
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 OS_RELEASE  ?= ubuntu
 OS_VERSION  ?= 24.04
@@ -36,17 +36,19 @@ IMAGE_PATH ?= "/nginx/agent"
 TAG ?= ""
 NGINX_LICENSE_JWT ?= ""
 
-BUILD_DIR		:= build
-TEST_BUILD_DIR  := build/test
-CERTS_DIR       := build/certs
+BUILD_DIR       := $(shell pwd)/build
+RUN_DIR	        := $(BUILD_DIR)/run
+TEST_BUILD_DIR  := $(BUILD_DIR)/test
+CERTS_DIR       := $(BUILD_DIR)/certs
 DOCS_DIR        := docs
 PROTO_DIR       := proto
-BINARY_NAME		:= nginx-agent
-PROJECT_DIR		= cmd/agent
-PROJECT_FILE	= main.go
-COLLECTOR_PATH  ?= /etc/nginx-agent/opentelemetry-collector-agent.yaml
-LIB_DIR	        ?= /var/lib/nginx-agent
-DIRS            = $(BUILD_DIR) $(TEST_BUILD_DIR) $(BUILD_DIR)/$(DOCS_DIR) $(BUILD_DIR)/$(DOCS_DIR)/$(PROTO_DIR)
+BINARY_NAME     := nginx-agent
+PROJECT_DIR     = cmd/agent
+PROJECT_FILE    = main.go
+LOG_PATH        ?= $(RUN_DIR)/agent.log
+COLLECTOR_PATH  ?= $(RUN_DIR)
+LIB_DIR         ?= $(RUN_DIR)
+DIRS            = $(BUILD_DIR) $(RUN_DIR) $(TEST_BUILD_DIR) $(BUILD_DIR)/$(DOCS_DIR) $(BUILD_DIR)/$(DOCS_DIR)/$(PROTO_DIR)
 $(shell mkdir -p $(DIRS))
 
 VERSION ?= $(shell git describe --match "v[0-9]*" --abbrev=0 --tags)
@@ -108,6 +110,7 @@ $(RPM_PACKAGE):
 include Makefile.tools
 include Makefile.containers
 include Makefile.packaging
+include Makefile.weaver
 
 .PHONY: help clean no-local-changes build lint format unit-test integration-test run dev run-mock-management-grpc-server generate generate-mocks local-apk-package local-deb-package local-rpm-package
 help: ## Show help message
@@ -167,7 +170,7 @@ integration-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-local" CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} \
 	PACKAGES_REPO=$(OSS_PACKAGES_REPO) PACKAGE_NAME=$(PACKAGE_NAME) BASE_IMAGE=$(BASE_IMAGE) DOCKERFILE_PATH=$(DOCKERFILE_PATH) IMAGE_PATH=$(IMAGE_PATH) TAG=${IMAGE_TAG} \
 	OS_VERSION=$(OS_VERSION) OS_RELEASE=$(OS_RELEASE) \
-	go test -v ./test/integration/installuninstall ./test/integration/managementplane ./test/integration/auxiliarycommandserver ./test/integration/nginxless 
+	go test -v ./test/integration/installuninstall ./test/integration/managementplane ./test/integration/auxiliarycommandserver ./test/integration/nginxless
 	
 upgrade-test: $(SELECTED_PACKAGE) build-mock-management-plane-grpc
 	TEST_ENV="Container" CONTAINER_OS_TYPE=$(CONTAINER_OS_TYPE) BUILD_TARGET="install-agent-repo" CONTAINER_NGINX_IMAGE_REGISTRY=${CONTAINER_NGINX_IMAGE_REGISTRY} \
@@ -202,7 +205,12 @@ run: build ## Run code
 
 dev: ## Run agent executable
 	@echo "🚀 Running App"
-	NGINX_AGENT_COLLECTOR_CONFIG_PATH=$(COLLECTOR_PATH) NGINX_AGENT_LIB_DIR=$(LIB_DIR) $(GORUN) -ldflags=$(DEBUG_LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
+	touch $(LOG_PATH)
+	NGINX_AGENT_COLLECTOR_CONFIG_PATH=$(COLLECTOR_PATH)/opentelemetry-collector-agent.yaml \
+	NGINX_AGENT_COLLECTOR_LOG_LEVEL="DEBUG" \
+	NGINX_AGENT_COLLECTOR_LOG_PATH=$(COLLECTOR_PATH)/otel.log \
+	NGINX_AGENT_LIB_DIR=$(LIB_DIR) \
+	$(GORUN) -ldflags=$(DEBUG_LDFLAGS) $(PROJECT_DIR)/$(PROJECT_FILE)
 
 race-condition-dev: ## Run agent executable with race condition detection
 	@echo "🏎️ Running app with race condition detection enabled"
@@ -210,7 +218,12 @@ race-condition-dev: ## Run agent executable with race condition detection
 
 run-mock-management-grpc-server: ## Run mock management plane gRPC server
 	@echo "🖲️ Running mock management plane gRPC server"
-	$(GORUN) test/mock/grpc/cmd/main.go -configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY) -logLevel=$(MOCK_MANAGEMENT_PLANE_LOG_LEVEL) -grpcAddress=$(MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS) -apiAddress=$(MOCK_MANAGEMENT_PLANE_API_ADDRESS) -externalFileServer=$(MOCK_MANAGEMENT_PLANE_EXTERNAL_FILE_SERVER)
+	$(GORUN) test/mock/grpc/cmd/main.go \
+		-configDirectory=$(MOCK_MANAGEMENT_PLANE_CONFIG_DIRECTORY) \
+		-logLevel=$(MOCK_MANAGEMENT_PLANE_LOG_LEVEL) \
+		-grpcAddress=$(MOCK_MANAGEMENT_PLANE_GRPC_ADDRESS) \
+		-apiAddress=$(MOCK_MANAGEMENT_PLANE_API_ADDRESS) \
+		-externalFileServer=$(MOCK_MANAGEMENT_PLANE_EXTERNAL_FILE_SERVER)
 
 
 .PHONY: build-test-nginx-plus-and-nap-image
@@ -270,7 +283,7 @@ stop-mock-otel-collector-without-nap: ## Stop running mock management plane OTel
 	@echo "Stopping mock management plane OTel collector without NAP"
 	AGENT_IMAGE_WITH_NGINX_PLUS=nginx_plus_$(IMAGE_TAG):latest AGENT_IMAGE_WITH_NGINX_OSS=nginx_oss_$(IMAGE_TAG):latest $(CONTAINER_COMPOSE) -f ./test/mock/collector/docker-compose.yaml down
 
-generate: ## Generate golang code
+generate: nginx-metadata-gen nginxplus-metadata-gen ## Generate golang code
 	@echo "🗄️ Generating proto files"
 	@cd api/grpc && $(GORUN) $(BUF) generate
 	@echo "🗃️ Generating go files"

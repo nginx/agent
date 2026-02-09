@@ -7,6 +7,8 @@ package file
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log/slog"
 	"sync"
 
@@ -29,6 +31,7 @@ var _ bus.Plugin = (*FilePlugin)(nil)
 
 type FilePlugin struct {
 	manifestLock       *sync.RWMutex
+	agentConfigMutex   *sync.Mutex
 	messagePipe        bus.MessagePipeInterface
 	config             *config.Config
 	conn               grpc.GrpcConnectionInterface
@@ -40,10 +43,11 @@ func NewFilePlugin(agentConfig *config.Config, grpcConnection grpc.GrpcConnectio
 	serverType model.ServerType, manifestLock *sync.RWMutex,
 ) *FilePlugin {
 	return &FilePlugin{
-		config:       agentConfig,
-		conn:         grpcConnection,
-		serverType:   serverType,
-		manifestLock: manifestLock,
+		config:           agentConfig,
+		conn:             grpcConnection,
+		serverType:       serverType,
+		manifestLock:     manifestLock,
+		agentConfigMutex: &sync.Mutex{},
 	}
 }
 
@@ -81,6 +85,7 @@ func (fp *FilePlugin) Info() *bus.Info {
 	}
 }
 
+//nolint:revive,cyclop // Cyclomatic complexity is acceptable for this function
 func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 	ctxWithMetadata := fp.config.NewContextWithLabels(ctx)
 
@@ -110,6 +115,8 @@ func (fp *FilePlugin) Process(ctx context.Context, msg *bus.Message) {
 			fp.handleReloadSuccess(ctxWithMetadata, msg)
 		case bus.ConfigApplyFailedTopic:
 			fp.handleConfigApplyFailedRequest(ctxWithMetadata, msg)
+		case bus.AgentConfigUpdateTopic:
+			fp.handleAgentConfigUpdate(ctxWithMetadata, msg)
 		default:
 			slog.DebugContext(ctxWithMetadata, "File plugin received unknown topic", "topic", msg.Topic)
 		}
@@ -135,7 +142,19 @@ func (fp *FilePlugin) Subscriptions() []string {
 		bus.ConfigApplyFailedTopic,
 		bus.ReloadSuccessfulTopic,
 		bus.ConfigApplyCompleteTopic,
+		bus.AgentConfigUpdateTopic,
 	}
+}
+
+func (fp *FilePlugin) Reconfigure(ctx context.Context, agentConfig *config.Config) error {
+	slog.DebugContext(ctx, "File plugin is reconfiguring to update agent configuration")
+
+	fp.agentConfigMutex.Lock()
+	defer fp.agentConfigMutex.Unlock()
+
+	fp.config = agentConfig
+
+	return nil
 }
 
 func (fp *FilePlugin) enableWatchers(ctx context.Context,
@@ -226,13 +245,21 @@ func (fp *FilePlugin) handleConfigApplyFailedRequest(ctx context.Context, msg *b
 
 	err := fp.fileManagerService.Rollback(ctx, data.InstanceID)
 	if err != nil {
-		rollbackResponse := fp.createDataPlaneResponse(data.CorrelationID,
+		rollbackResponse := fp.createDataPlaneResponse(
+			data.CorrelationID,
 			mpi.CommandResponse_COMMAND_STATUS_ERROR,
-			"Rollback failed", data.InstanceID, err.Error())
+			"Rollback failed",
+			data.InstanceID,
+			err.Error(),
+		)
 
-		applyResponse := fp.createDataPlaneResponse(data.CorrelationID,
+		applyResponse := fp.createDataPlaneResponse(
+			data.CorrelationID,
 			mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-			"Config apply failed, rollback failed", data.InstanceID, data.Error.Error())
+			"Config apply failed, rollback failed",
+			data.InstanceID,
+			data.Error.Error(),
+		)
 
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: applyResponse})
@@ -324,12 +351,19 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			instanceID,
 		)
 		if rollbackErr != nil {
+			// include both the original apply error and the rollback error so the management plane
+			// receives actionable information about what failed during apply and what failed during rollback
+			applyErr := fmt.Errorf("config apply error: %w", err)
+			rbErr := fmt.Errorf("rollback error: %w", rollbackErr)
+			combinedErr := errors.Join(applyErr, rbErr)
+
 			rollbackResponse := fp.createDataPlaneResponse(
 				correlationID,
 				mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 				"Config apply failed, rollback failed",
 				instanceID,
-				rollbackErr.Error())
+				combinedErr.Error(),
+			)
 
 			fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: rollbackResponse})
 
@@ -341,7 +375,8 @@ func (fp *FilePlugin) handleConfigApplyRequest(ctx context.Context, msg *bus.Mes
 			mpi.CommandResponse_COMMAND_STATUS_FAILURE,
 			"Config apply failed, rollback successful",
 			instanceID,
-			err.Error())
+			err.Error(),
+		)
 
 		fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.ConfigApplyCompleteTopic, Data: response})
 
@@ -399,6 +434,8 @@ func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Me
 			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
 			Message: "Successfully updated all files",
 		},
+		InstanceId:  configUploadRequest.GetOverview().GetConfigVersion().GetInstanceId(),
+		RequestType: mpi.DataPlaneResponse_CONFIG_UPLOAD_REQUEST,
 	}
 
 	if updatingFilesError != nil {
@@ -410,7 +447,24 @@ func (fp *FilePlugin) handleConfigUploadRequest(ctx context.Context, msg *bus.Me
 	fp.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: response})
 }
 
-func (fp *FilePlugin) createDataPlaneResponse(correlationID string, status mpi.CommandResponse_CommandStatus,
+func (fp *FilePlugin) handleAgentConfigUpdate(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "File plugin received agent config update message")
+
+	fp.agentConfigMutex.Lock()
+	defer fp.agentConfigMutex.Unlock()
+
+	agentConfig, ok := msg.Data.(*config.Config)
+	if !ok {
+		slog.ErrorContext(ctx, "Unable to cast message payload to *config.Config", "payload", msg.Data)
+		return
+	}
+
+	fp.config = agentConfig
+}
+
+func (fp *FilePlugin) createDataPlaneResponse(
+	correlationID string,
+	status mpi.CommandResponse_CommandStatus,
 	message, instanceID, err string,
 ) *mpi.DataPlaneResponse {
 	return &mpi.DataPlaneResponse{
@@ -424,6 +478,7 @@ func (fp *FilePlugin) createDataPlaneResponse(correlationID string, status mpi.C
 			Message: message,
 			Error:   err,
 		},
-		InstanceId: instanceID,
+		InstanceId:  instanceID,
+		RequestType: mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
 	}
 }

@@ -36,21 +36,22 @@ func parseServerType(str string) (ServerType, bool) {
 
 type (
 	Config struct {
-		Command            *Command         `yaml:"command"             mapstructure:"command"`
-		AuxiliaryCommand   *Command         `yaml:"auxiliary_command"   mapstructure:"auxiliary_command"`
-		Log                *Log             `yaml:"log"                 mapstructure:"log"`
-		DataPlaneConfig    *DataPlaneConfig `yaml:"data_plane_config"   mapstructure:"data_plane_config"`
-		Client             *Client          `yaml:"client"              mapstructure:"client"`
-		Collector          *Collector       `yaml:"collector"           mapstructure:"collector"`
-		Watchers           *Watchers        `yaml:"watchers"            mapstructure:"watchers"`
-		SyslogServer       *SyslogServer    `yaml:"syslog_server"       mapstructure:"syslog_server"`
-		Labels             map[string]any   `yaml:"labels"              mapstructure:"labels"`
-		Version            string           `yaml:"-"`
-		Path               string           `yaml:"-"`
-		UUID               string           `yaml:"-"`
-		LibDir             string           `yaml:"-"`
-		AllowedDirectories []string         `yaml:"allowed_directories" mapstructure:"allowed_directories"`
-		Features           []string         `yaml:"features"            mapstructure:"features"`
+		Command            *Command            `yaml:"command"              mapstructure:"command"`
+		AuxiliaryCommand   *Command            `yaml:"auxiliary_command"    mapstructure:"auxiliary_command"`
+		Log                *Log                `yaml:"log"                  mapstructure:"log"`
+		DataPlaneConfig    *DataPlaneConfig    `yaml:"data_plane_config"    mapstructure:"data_plane_config"`
+		Client             *Client             `yaml:"client"               mapstructure:"client"`
+		Collector          *Collector          `yaml:"collector"            mapstructure:"collector"`
+		Watchers           *Watchers           `yaml:"watchers"             mapstructure:"watchers"`
+		ExternalDataSource *ExternalDataSource `yaml:"external_data_source" mapstructure:"external_data_source"`
+		SyslogServer       *SyslogServer       `yaml:"syslog_server"        mapstructure:"syslog_server"`
+		Labels             map[string]any      `yaml:"labels"               mapstructure:"labels"`
+		Version            string              `yaml:"-"`
+		Path               string              `yaml:"-"`
+		UUID               string              `yaml:"-"`
+		LibDir             string              `yaml:"-"`
+		AllowedDirectories []string            `yaml:"allowed_directories"  mapstructure:"allowed_directories"`
+		Features           []string            `yaml:"features"             mapstructure:"features"`
 	}
 
 	Log struct {
@@ -67,16 +68,23 @@ type (
 	}
 	NginxDataPlaneConfig struct {
 		ReloadBackoff          *BackOff      `yaml:"reload_backoff"           mapstructure:"reload_backoff"`
-		APITls                 TLSConfig     `yaml:"api_tls"                  mapstructure:"api_tls"`
+		API                    *NginxAPI     `yaml:"api"                      mapstructure:"api"`
 		ExcludeLogs            []string      `yaml:"exclude_logs"             mapstructure:"exclude_logs"`
 		ReloadMonitoringPeriod time.Duration `yaml:"reload_monitoring_period" mapstructure:"reload_monitoring_period"`
 		TreatWarningsAsErrors  bool          `yaml:"treat_warnings_as_errors" mapstructure:"treat_warnings_as_errors"`
 	}
 
+	NginxAPI struct {
+		URL    string    `yaml:"url"    mapstructure:"url"`
+		Socket string    `yaml:"socket" mapstructure:"socket"`
+		TLS    TLSConfig `yaml:"tls"    mapstructure:"tls"`
+	}
+
 	Client struct {
-		HTTP    *HTTP    `yaml:"http"    mapstructure:"http"`
-		Grpc    *GRPC    `yaml:"grpc"    mapstructure:"grpc"`
-		Backoff *BackOff `yaml:"backoff" mapstructure:"backoff"`
+		HTTP                *HTTP         `yaml:"http"                  mapstructure:"http"`
+		Grpc                *GRPC         `yaml:"grpc"                  mapstructure:"grpc"`
+		Backoff             *BackOff      `yaml:"backoff"               mapstructure:"backoff"`
+		FileDownloadTimeout time.Duration `yaml:"file_download_timeout" mapstructure:"file_download_timeout"`
 	}
 
 	HTTP struct {
@@ -93,15 +101,17 @@ type (
 
 	//nolint:lll // max line limit exceeded
 	GRPC struct {
-		KeepAlive *KeepAlive `yaml:"keepalive" mapstructure:"keepalive"`
+		KeepAlive       *KeepAlive    `yaml:"keepalive"        mapstructure:"keepalive"`
+		ResponseTimeout time.Duration `yaml:"response_timeout" mapstructure:"response_timeout"`
 		// if MaxMessageSize is size set then we use that value,
 		// otherwise MaxMessageRecieveSize and MaxMessageSendSize for individual settings
-		MaxMessageSize            int    `yaml:"max_message_size"             mapstructure:"max_message_size"`
-		MaxMessageReceiveSize     int    `yaml:"max_message_receive_size"     mapstructure:"max_message_receive_size"`
-		MaxMessageSendSize        int    `yaml:"max_message_send_size"        mapstructure:"max_message_send_size"`
-		MaxFileSize               uint32 `yaml:"max_file_size"                mapstructure:"max_file_size"`
-		FileChunkSize             uint32 `yaml:"file_chunk_size"              mapstructure:"file_chunk_size"`
-		MaxParallelFileOperations int    `yaml:"max_parallel_file_operations" mapstructure:"max_parallel_file_operations"`
+		MaxMessageSize            int           `yaml:"max_message_size"             mapstructure:"max_message_size"`
+		MaxMessageReceiveSize     int           `yaml:"max_message_receive_size"     mapstructure:"max_message_receive_size"`
+		MaxMessageSendSize        int           `yaml:"max_message_send_size"        mapstructure:"max_message_send_size"`
+		MaxFileSize               uint32        `yaml:"max_file_size"                mapstructure:"max_file_size"`
+		FileChunkSize             uint32        `yaml:"file_chunk_size"              mapstructure:"file_chunk_size"`
+		MaxParallelFileOperations int           `yaml:"max_parallel_file_operations" mapstructure:"max_parallel_file_operations"`
+		ConnectionResetTimeout    time.Duration `yaml:"connection_reset_timeout"     mapstructure:"connection_reset_timeout"`
 	}
 
 	KeepAlive struct {
@@ -358,6 +368,17 @@ type (
 		Token      string        `yaml:"token,omitempty"       mapstructure:"token"`
 		Timeout    time.Duration `yaml:"timeout"               mapstructure:"timeout"`
 	}
+
+	ProxyURL struct {
+		URL string `yaml:"url" mapstructure:"url"`
+	}
+
+	ExternalDataSource struct {
+		ProxyURL         ProxyURL `yaml:"proxy"              mapstructure:"proxy"`
+		AllowedDomains   []string `yaml:"allowed_domains"    mapstructure:"allowed_domains"`
+		AllowedFileTypes []string `yaml:"allowed_file_types" mapstructure:"allowed_file_types"`
+		MaxBytes         int64    `yaml:"max_bytes"          mapstructure:"max_bytes"`
+	}
 )
 
 func (col *Collector) Validate(allowedDirectories []string) error {
@@ -493,4 +514,28 @@ func checkDirIsAllowed(path string, allowedDirs []string) bool {
 	}
 
 	return checkDirIsAllowed(filepath.Dir(path), allowedDirs)
+}
+
+func (c *Config) IsNginxApiUrlConfigured() bool {
+	if !c.IsNginxApiConfigured() {
+		return false
+	}
+
+	return c.DataPlaneConfig.Nginx.API.URL != ""
+}
+
+func (c *Config) IsNginxApiSocketConfigured() bool {
+	if !c.IsNginxApiConfigured() {
+		return false
+	}
+
+	return c.DataPlaneConfig.Nginx.API.Socket != ""
+}
+
+func (c *Config) IsNginxApiConfigured() bool {
+	if c.DataPlaneConfig == nil || c.DataPlaneConfig.Nginx == nil || c.DataPlaneConfig.Nginx.API == nil {
+		return false
+	}
+
+	return true
 }

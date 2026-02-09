@@ -8,6 +8,7 @@ package command
 import (
 	"bytes"
 	"context"
+	"log/slog"
 	"testing"
 	"time"
 
@@ -77,8 +78,20 @@ func TestCommandPlugin_Init(t *testing.T) {
 
 func TestCommandPlugin_createConnection(t *testing.T) {
 	ctx := context.Background()
+	response := &mpi.CreateConnectionResponse{
+		Response: &mpi.CommandResponse{
+			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+			Message: "Connection created successfully",
+		},
+		AgentConfig: &mpi.AgentConfig{
+			Log: &mpi.Log{
+				LogLevel: mpi.Log_LOG_LEVEL_DEBUG,
+			},
+		},
+	}
+
 	commandService := &commandfakes.FakeCommandService{}
-	commandService.CreateConnectionReturns(&mpi.CreateConnectionResponse{}, nil)
+	commandService.CreateConnectionReturns(response, nil)
 	messagePipe := busfakes.NewFakeMessagePipe()
 
 	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{}, model.Command)
@@ -98,14 +111,15 @@ func TestCommandPlugin_createConnection(t *testing.T) {
 
 	assert.Eventually(
 		t,
-		func() bool { return len(messagePipe.Messages()) == 1 },
+		func() bool { return len(messagePipe.Messages()) == 2 },
 		2*time.Second,
 		10*time.Millisecond,
 	)
 
 	messages := messagePipe.Messages()
-	assert.Len(t, messages, 1)
+	assert.Len(t, messages, 2)
 	assert.Equal(t, bus.ConnectionCreatedTopic, messages[0].Topic)
+	assert.Equal(t, bus.ConnectionAgentConfigUpdateTopic, messages[1].Topic)
 }
 
 func TestCommandPlugin_Process(t *testing.T) {
@@ -150,10 +164,21 @@ func TestCommandPlugin_Process(t *testing.T) {
 		Topic: bus.ConnectionResetTopic,
 		Data:  commandPlugin.conn,
 	})
-	require.Equal(t, 1, fakeCommandService.UpdateClientCallCount())
+
+	// Separate goroutine is executed so need to wait for it to complete
+	assert.Eventually(
+		t,
+		func() bool { return fakeCommandService.UpdateClientCallCount() == 1 },
+		2*time.Second,
+		10*time.Millisecond,
+	)
 }
 
 func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
+	defer func() {
+		slog.SetDefault(slog.Default())
+	}()
+
 	tests := []struct {
 		managementPlaneRequest *mpi.ManagementPlaneRequest
 		expectedTopic          *bus.Message
@@ -211,6 +236,24 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 				pkg.FeatureAPIAction,
 			},
 		},
+
+		{
+			name: "Test 5: Update Agent Config Request",
+			managementPlaneRequest: &mpi.ManagementPlaneRequest{
+				Request: &mpi.ManagementPlaneRequest_UpdateAgentConfigRequest{
+					UpdateAgentConfigRequest: &mpi.UpdateAgentConfigRequest{
+						AgentConfig: &mpi.AgentConfig{
+							Log: &mpi.Log{
+								LogLevel: mpi.Log_LOG_LEVEL_DEBUG,
+							},
+						},
+					},
+				},
+			},
+			expectedTopic:  &bus.Message{Topic: bus.AgentConfigUpdateTopic},
+			request:        "AgentConfigUpdateTopic",
+			configFeatures: config.DefaultFeatures(),
+		},
 	}
 
 	for _, test := range tests {
@@ -253,6 +296,9 @@ func TestCommandPlugin_monitorSubscribeChannel(t *testing.T) {
 			case "APIActionRequest":
 				assert.True(tt, ok)
 				require.NotNil(tt, mp.GetActionRequest())
+			case "AgentConfigUpdateTopic":
+				assert.True(tt, ok)
+				require.NotNil(tt, mp.GetUpdateAgentConfigRequest())
 			}
 		})
 	}
@@ -388,6 +434,7 @@ func Test_createDataPlaneResponse(t *testing.T) {
 	commandPlugin := NewCommandPlugin(types.AgentConfig(), &grpcfakes.FakeGrpcConnectionInterface{}, model.Command)
 	result := commandPlugin.createDataPlaneResponse(expected.GetMessageMeta().GetCorrelationId(),
 		expected.GetCommandResponse().GetStatus(),
+		expected.GetRequestType(),
 		expected.GetCommandResponse().GetMessage(), expected.GetCommandResponse().GetError())
 
 	assert.Equal(t, expected.GetCommandResponse(), result.GetCommandResponse())

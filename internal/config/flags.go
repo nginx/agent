@@ -25,6 +25,7 @@ const (
 	InstanceHealthWatcherMonitoringFrequencyKey = "watchers_instance_health_watcher_monitoring_frequency"
 	FileWatcherKey                              = "watchers_file_watcher"
 	LibDirPathKey                               = "lib_dir"
+	ExternalDataSourceRootKey                   = "external_data_source"
 )
 
 var (
@@ -41,12 +42,15 @@ var (
 	ClientGRPCMaxFileSizeKey               = pre(ClientRootKey) + "grpc_max_file_size"
 	ClientGRPCFileChunkSizeKey             = pre(ClientRootKey) + "grpc_file_chunk_size"
 	ClientGRPCMaxParallelFileOperationsKey = pre(ClientRootKey) + "grpc_max_parallel_file_operations"
+	ClientGRPCConnectionResetTimeoutKey    = pre(ClientRootKey) + "grpc_connection_reset_timeout"
+	ClientGRPCResponseTimeoutKey           = pre(ClientRootKey) + "grpc_response_timeout"
 
 	ClientBackoffInitialIntervalKey     = pre(ClientRootKey) + "backoff_initial_interval"
 	ClientBackoffMaxIntervalKey         = pre(ClientRootKey) + "backoff_max_interval"
 	ClientBackoffMaxElapsedTimeKey      = pre(ClientRootKey) + "backoff_max_elapsed_time"
 	ClientBackoffRandomizationFactorKey = pre(ClientRootKey) + "backoff_randomization_factor"
 	ClientBackoffMultiplierKey          = pre(ClientRootKey) + "backoff_multiplier"
+	ClientFileDownloadTimeoutKey        = pre(ClientRootKey) + "file_download_timeout"
 
 	CollectorConfigPathKey                      = pre(CollectorRootKey) + "config_path"
 	CollectorAdditionalConfigPathsKey           = pre(CollectorRootKey) + "additional_config_paths"
@@ -135,12 +139,20 @@ var (
 	NginxReloadBackoffRandomizationFactorKey = pre(NginxReloadBackoffKey) + "randomization_factor"
 	NginxReloadBackoffMultiplierKey          = pre(NginxReloadBackoffKey) + "multiplier"
 	NginxExcludeLogsKey                      = pre(DataPlaneConfigRootKey, "nginx") + "exclude_logs"
-	NginxApiTlsCa                            = pre(DataPlaneConfigRootKey, "nginx") + "api_tls_ca"
+	NginxApiTlsCaKey                         = pre(DataPlaneConfigRootKey, "nginx") + "api_tls_ca"
+	NginxApiURLKey                           = pre(DataPlaneConfigRootKey, "nginx") + "api_url"
+	NginxApiSocketKey                        = pre(DataPlaneConfigRootKey, "nginx") + "api_socket"
 
 	SyslogServerPort = pre("syslog_server") + "port"
 
 	FileWatcherMonitoringFrequencyKey = pre(FileWatcherKey) + "monitoring_frequency"
 	NginxExcludeFilesKey              = pre(FileWatcherKey) + "exclude_files"
+
+	ExternalDataSourceProxyKey            = pre(ExternalDataSourceRootKey) + "proxy"
+	ExternalDataSourceProxyUrlKey         = pre(ExternalDataSourceProxyKey) + "url"
+	ExternalDataSourceMaxBytesKey         = pre(ExternalDataSourceRootKey) + "max_bytes"
+	ExternalDataSourceAllowDomainsKey     = pre(ExternalDataSourceRootKey) + "allowed_domains"
+	ExternalDataSourceAllowedFileTypesKey = pre(ExternalDataSourceRootKey) + "allowed_file_types"
 )
 
 func pre(prefixes ...string) string {

@@ -50,7 +50,7 @@ func (a *App) Run(ctx context.Context) error {
 			slog.String("commit", a.commit),
 		)
 
-		messagePipe := bus.NewMessagePipe(defaultMessagePipeChannelSize)
+		messagePipe := bus.NewMessagePipe(defaultMessagePipeChannelSize, agentConfig)
 		err = messagePipe.Register(defaultQueueSize, plugin.LoadPlugins(ctx, agentConfig))
 		if err != nil {
 			slog.ErrorContext(ctx, "Failed to register plugins", "error", err)

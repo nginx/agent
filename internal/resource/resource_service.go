@@ -95,6 +95,7 @@ type ResourceService struct {
 	agentConfig       *config.Config
 	instanceOperators map[string]instanceOperator // key is instance ID
 	info              host.InfoInterface
+	manifestFilePath  string
 	resourceMutex     sync.Mutex
 	operatorsMutex    sync.Mutex
 }
@@ -108,6 +109,7 @@ func NewResourceService(ctx context.Context, agentConfig *config.Config) *Resour
 		instanceOperators: make(map[string]instanceOperator),
 		nginxConfigParser: parser.NewNginxConfigParser(agentConfig),
 		agentConfig:       agentConfig,
+		manifestFilePath:  agentConfig.LibDir + "/manifest.json",
 	}
 
 	resourceService.updateResourceInfo(ctx)
@@ -216,6 +218,8 @@ func (r *ResourceService) ApplyConfig(ctx context.Context, instanceID string) (*
 		return nil, fmt.Errorf("failed to parse config %w", parseErr)
 	}
 
+	nginxConfigContext = r.updateConfigContextFiles(ctx, nginxConfigContext)
+
 	datasource.UpdateNginxInstanceRuntime(instance, nginxConfigContext)
 
 	slog.DebugContext(ctx, "Updated Instance Runtime after parsing config", "instance", instance.GetInstanceRuntime())
@@ -252,8 +256,9 @@ func (r *ResourceService) GetHTTPUpstreamServers(ctx context.Context, instance *
 	}
 
 	servers, getServersErr := plusClient.GetHTTPServers(ctx, upstream)
-
-	slog.WarnContext(ctx, "Error returned from NGINX Plus client, GetHTTPUpstreamServers", "err", getServersErr)
+	if getServersErr != nil {
+		slog.WarnContext(ctx, "Error returned from NGINX Plus client, GetHTTPUpstreamServers", "error", getServersErr)
+	}
 
 	return servers, createPlusAPIError(getServersErr)
 }
@@ -268,7 +273,9 @@ func (r *ResourceService) GetUpstreams(ctx context.Context, instance *mpi.Instan
 
 	servers, getUpstreamsErr := plusClient.GetUpstreams(ctx)
 
-	slog.WarnContext(ctx, "Error returned from NGINX Plus client, GetUpstreams", "err", getUpstreamsErr)
+	if getUpstreamsErr != nil {
+		slog.WarnContext(ctx, "Error returned from NGINX Plus client, GetUpstreams", "error", getUpstreamsErr)
+	}
 
 	return servers, createPlusAPIError(getUpstreamsErr)
 }
@@ -283,7 +290,9 @@ func (r *ResourceService) GetStreamUpstreams(ctx context.Context, instance *mpi.
 
 	streamUpstreams, getServersErr := plusClient.GetStreamUpstreams(ctx)
 
-	slog.WarnContext(ctx, "Error returned from NGINX Plus client, GetStreamUpstreams", "err", getServersErr)
+	if getServersErr != nil {
+		slog.WarnContext(ctx, "Error returned from NGINX Plus client, GetStreamUpstreams", "error", getServersErr)
+	}
 
 	return streamUpstreams, createPlusAPIError(getServersErr)
 }
@@ -304,7 +313,9 @@ func (r *ResourceService) UpdateStreamServers(ctx context.Context, instance *mpi
 
 	added, updated, deleted, updateError := plusClient.UpdateStreamServers(ctx, upstream, servers)
 
-	slog.WarnContext(ctx, "Error returned from NGINX Plus client, UpdateStreamServers", "err", updateError)
+	if updateError != nil {
+		slog.WarnContext(ctx, "Error returned from NGINX Plus client, UpdateStreamServers", "error", updateError)
+	}
 
 	return added, updated, deleted, createPlusAPIError(updateError)
 }
@@ -326,10 +337,55 @@ func (r *ResourceService) UpdateHTTPUpstreamServers(ctx context.Context, instanc
 	added, updated, deleted, updateError := plusClient.UpdateHTTPServers(ctx, upstream, servers)
 
 	if updateError != nil {
-		slog.WarnContext(ctx, "Error returned from NGINX Plus client, UpdateHTTPUpstreamServers", "err", updateError)
+		slog.WarnContext(ctx, "Error returned from NGINX Plus client, UpdateHTTPUpstreamServers", "error", updateError)
 	}
 
 	return added, updated, deleted, createPlusAPIError(updateError)
+}
+
+func (r *ResourceService) updateConfigContextFiles(ctx context.Context,
+	nginxConfigContext *model.NginxConfigContext,
+) *model.NginxConfigContext {
+	manifestFiles, manifestErr := r.manifestFile()
+	if manifestErr != nil {
+		slog.ErrorContext(ctx, "Error getting manifest files", "error", manifestErr)
+	}
+
+	for _, manifestFile := range manifestFiles {
+		if manifestFile.ManifestFileMeta.Unmanaged {
+			for _, configFile := range nginxConfigContext.Files {
+				if configFile.GetFileMeta().GetName() == manifestFile.ManifestFileMeta.Name {
+					configFile.Unmanaged = true
+				}
+			}
+		}
+	}
+
+	return nginxConfigContext
+}
+
+func (r *ResourceService) manifestFile() (map[string]*model.ManifestFile, error) {
+	if _, err := os.Stat(r.manifestFilePath); err != nil {
+		return nil, err
+	}
+
+	file, err := os.ReadFile(r.manifestFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read manifest file: %w", err)
+	}
+
+	var manifestFiles map[string]*model.ManifestFile
+
+	err = json.Unmarshal(file, &manifestFiles)
+	if err != nil {
+		if len(file) == 0 {
+			return nil, fmt.Errorf("manifest file is empty: %w", err)
+		}
+
+		return nil, fmt.Errorf("failed to parse manifest file: %w", err)
+	}
+
+	return manifestFiles, nil
 }
 
 func convertToUpstreamServer(upstreams []*structpb.Struct) []client.UpstreamServer {

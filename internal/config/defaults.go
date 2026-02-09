@@ -60,12 +60,14 @@ const (
 	DefAuxiliaryCommandTLServerNameKey  = ""
 
 	// Client GRPC Settings
-	DefMaxMessageSize                   = 0       // 0 = unset
-	DefMaxMessageRecieveSize            = 4194304 // default 4 MB
-	DefMaxMessageSendSize               = 4194304 // default 4 MB
-	DefMaxFileSize               uint32 = 1048576 // 1MB
-	DefFileChunkSize             uint32 = 524288  // 0.5MB
-	DefMaxParallelFileOperations        = 5
+	DefMaxMessageSize                    = 0       // 0 = unset
+	DefMaxMessageRecieveSize             = 4194304 // default 4 MB
+	DefMaxMessageSendSize                = 4194304 // default 4 MB
+	DefMaxFileSize                uint32 = 1048576 // 1MB
+	DefFileChunkSize              uint32 = 524288  // 0.5MB
+	DefMaxParallelFileOperations         = 5
+	DefResponseTimeout                   = 10 * time.Second
+	DefGRPCConnectionResetTimeout        = 3 * time.Minute
 
 	// Client HTTP Settings
 	DefHTTPTimeout = 10 * time.Second
@@ -81,6 +83,8 @@ const (
 	DefBackoffMultiplier          = 3
 	DefBackoffMaxInterval         = 20 * time.Second
 	DefBackoffMaxElapsedTime      = 1 * time.Minute
+
+	DefClientFileDownloadTimeout = 60 * time.Second
 
 	// Watcher defaults
 	DefInstanceWatcherMonitoringFrequency       = 5 * time.Second
@@ -114,6 +118,9 @@ const (
 
 	// File defaults
 	DefLibDir = "/var/lib/nginx-agent"
+
+	DefExternalDataSourceProxyUrl = ""
+	DefExternalDataSourceMaxBytes = 100 * 1024 * 1024 // default 100MB
 )
 
 func DefaultFeatures() []string {

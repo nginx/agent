@@ -49,6 +49,7 @@ type (
 		cancel                             context.CancelFunc
 		instancesWithConfigApplyInProgress []string
 		watcherMutex                       sync.Mutex
+		agentConfigMutex                   sync.Mutex
 	}
 
 	instanceWatcherServiceInterface interface {
@@ -89,6 +90,7 @@ func NewWatcher(agentConfig *config.Config) *Watcher {
 		auxiliaryCredentialUpdatesChannel:  make(chan credentials.CredentialUpdateMessage),
 		instancesWithConfigApplyInProgress: []string{},
 		watcherMutex:                       sync.Mutex{},
+		agentConfigMutex:                   sync.Mutex{},
 	}
 }
 
@@ -144,6 +146,8 @@ func (w *Watcher) Process(ctx context.Context, msg *bus.Message) {
 		w.handleHealthRequest(ctx)
 	case bus.EnableWatchersTopic:
 		w.handleEnableWatchers(ctx, msg)
+	case bus.AgentConfigUpdateTopic:
+		w.handleAgentConfigUpdate(ctx, msg)
 	default:
 		slog.DebugContext(ctx, "Watcher plugin unknown topic", "topic", msg.Topic)
 	}
@@ -154,7 +158,19 @@ func (*Watcher) Subscriptions() []string {
 		bus.ConfigApplyRequestTopic,
 		bus.DataPlaneHealthRequestTopic,
 		bus.EnableWatchersTopic,
+		bus.AgentConfigUpdateTopic,
 	}
+}
+
+func (w *Watcher) Reconfigure(ctx context.Context, agentConfig *config.Config) error {
+	slog.DebugContext(ctx, "Watcher plugin is reconfiguring to update agent configuration")
+
+	w.agentConfigMutex.Lock()
+	defer w.agentConfigMutex.Unlock()
+
+	w.agentConfig = agentConfig
+
+	return nil
 }
 
 func (w *Watcher) handleEnableWatchers(ctx context.Context, msg *bus.Message) {
@@ -170,12 +186,6 @@ func (w *Watcher) handleEnableWatchers(ctx context.Context, msg *bus.Message) {
 	instanceID := enableWatchersMessage.InstanceID
 	configContext := enableWatchersMessage.ConfigContext
 
-	// if config apply ended in a reload there is no need to reparse the config so an empty config context is sent
-	// from the file plugin
-	if configContext.InstanceID != "" {
-		w.instanceWatcherService.HandleNginxConfigContextUpdate(ctx, instanceID, configContext)
-	}
-
 	w.watcherMutex.Lock()
 	w.instancesWithConfigApplyInProgress = slices.DeleteFunc(
 		w.instancesWithConfigApplyInProgress,
@@ -187,6 +197,12 @@ func (w *Watcher) handleEnableWatchers(ctx context.Context, msg *bus.Message) {
 	w.fileWatcherService.EnableWatcher(ctx)
 	w.instanceWatcherService.SetEnabled(true)
 	w.watcherMutex.Unlock()
+
+	// if config apply ended in a reload there is no need to reparse the config so an empty config context is sent
+	// from the file plugin
+	if configContext.InstanceID != "" {
+		w.instanceWatcherService.HandleNginxConfigContextUpdate(ctx, instanceID, configContext)
+	}
 }
 
 func (w *Watcher) handleConfigApplyRequest(ctx context.Context, msg *bus.Message) {
@@ -292,7 +308,7 @@ func (w *Watcher) handleCredentialUpdate(ctx context.Context, message credential
 func (w *Watcher) handleInstanceUpdates(newCtx context.Context, message instance.InstanceUpdatesMessage) {
 	if len(message.InstanceUpdates.NewInstances) > 0 {
 		slog.DebugContext(newCtx, "New instances found", "instances", message.InstanceUpdates.NewInstances)
-		w.healthWatcherService.AddHealthWatcher(message.InstanceUpdates.NewInstances)
+		w.healthWatcherService.AddHealthWatcher(newCtx, message.InstanceUpdates.NewInstances)
 		w.messagePipe.Process(
 			newCtx,
 			&bus.Message{Topic: bus.AddInstancesTopic, Data: message.InstanceUpdates.NewInstances},
@@ -315,4 +331,19 @@ func (w *Watcher) handleInstanceUpdates(newCtx context.Context, message instance
 			&bus.Message{Topic: bus.DeletedInstancesTopic, Data: message.InstanceUpdates.DeletedInstances},
 		)
 	}
+}
+
+func (w *Watcher) handleAgentConfigUpdate(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Watcher plugin received agent config update message")
+
+	w.agentConfigMutex.Lock()
+	defer w.agentConfigMutex.Unlock()
+
+	agentConfig, ok := msg.Data.(*config.Config)
+	if !ok {
+		slog.ErrorContext(ctx, "Unable to cast message payload to *config.Config", "payload", msg.Data)
+		return
+	}
+
+	w.agentConfig = agentConfig
 }

@@ -7,6 +7,7 @@ package instance
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"slices"
 	"sync"
@@ -43,13 +44,14 @@ type (
 		processOperator           process.ProcessOperatorInterface
 		nginxConfigParser         parser.ConfigParser
 		executer                  exec.ExecInterface
+		nginxParser               processParser
 		enabled                   *atomic.Bool
 		agentConfig               *config.Config
 		instanceCache             map[string]*mpi.Instance
 		nginxConfigCache          map[string]*model.NginxConfigContext
 		instancesChannel          chan<- InstanceUpdatesMessage
 		nginxConfigContextChannel chan<- NginxConfigContextMessage
-		nginxParser               processParser
+		processCache              []*nginxprocess.Process
 		cacheMutex                sync.Mutex
 	}
 
@@ -84,6 +86,7 @@ func NewInstanceWatcherService(agentConfig *config.Config) *InstanceWatcherServi
 		nginxConfigCache:  make(map[string]*model.NginxConfigContext),
 		executer:          &exec.Exec{},
 		enabled:           enabled,
+		processCache:      []*nginxprocess.Process{},
 	}
 }
 
@@ -270,6 +273,18 @@ func (iw *InstanceWatcherService) instanceUpdates(ctx context.Context) (
 		return instanceUpdates, err
 	}
 
+	if !slices.EqualFunc(iw.processCache, nginxProcesses, func(a, b *nginxprocess.Process) bool {
+		return a.Equal(b)
+	}) {
+		processesJSON, marshalErr := json.Marshal(nginxProcesses)
+		if marshalErr != nil {
+			slog.DebugContext(ctx, "Unable to marshal NGINX processes", "error", marshalErr)
+		} else {
+			slog.DebugContext(ctx, "NGINX processes changed", "processes", processesJSON)
+			iw.processCache = nginxProcesses
+		}
+	}
+
 	// NGINX Agent is always the first instance in the list
 	instancesFound := make(map[string]*mpi.Instance)
 	agentInstance := iw.agentInstance(ctx)
@@ -325,6 +340,7 @@ func (iw *InstanceWatcherService) agentInstance(ctx context.Context) *mpi.Instan
 					Labels:            labels,
 					Features:          iw.agentConfig.Features,
 					MessageBufferSize: "",
+					Log:               config.ToAgentConfigLogProto(iw.agentConfig.Log),
 				},
 			},
 		},

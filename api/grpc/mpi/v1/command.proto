@@ -113,6 +113,13 @@ message UpdateDataPlaneStatusRequest {
 // Respond to a UpdateDataPlaneStatusRequest - intentionally empty
 message UpdateDataPlaneStatusResponse {}
 
+message UpdateAgentConfigRequest {
+    // Meta-information associated with a message
+    mpi.v1.MessageMeta message_meta = 1;
+    // The NGINX Agent configuration to update
+    AgentConfig agent_config = 2;
+}
+
 message InstanceHealth {
     // Health status enum
     enum InstanceHealthStatus {
@@ -145,12 +152,25 @@ message UpdateDataPlaneHealthResponse {}
 
 // Reports the status of an associated command. This may be in response to a ManagementPlaneRequest
 message DataPlaneResponse {
+    enum RequestType {
+        UNSPECIFIED_REQUEST = 0; 
+        CONFIG_APPLY_REQUEST = 1; 
+        CONFIG_UPLOAD_REQUEST = 2;
+        HEALTH_REQUEST = 3; 
+        STATUS_REQUEST = 4;
+        API_ACTION_REQUEST = 5; 
+        COMMAND_STATUS_REQUEST = 6; 
+        UPDATE_AGENT_CONFIG_REQUEST = 7;
+    }
+
     // Meta-information associated with a message
     mpi.v1.MessageMeta message_meta = 1;
     // The command response with the associated request
     mpi.v1.CommandResponse command_response = 2;
     // The instance identifier, if applicable, for this response
     string instance_id = 3;
+    // The management plane request type that is being responded to
+    RequestType request_type = 4;
 }
 
 // A Management Plane request for information, triggers an associated rpc on the Data Plane
@@ -171,6 +191,8 @@ message ManagementPlaneRequest {
         APIActionRequest action_request = 7;
         // triggers a DataPlaneResponse with a command_response for a particular correlation_id
         CommandStatusRequest command_status_request = 8;
+        // triggers an update to the NGINX Agent configuration
+        UpdateAgentConfigRequest update_agent_config_request = 9;
     }
 }
 
@@ -387,6 +409,24 @@ message AgentConfig {
     string message_buffer_size = 6;
     // Auxiliary Command server settings
     AuxiliaryCommandServer auxiliary_command = 7;
+    // Log settings
+    Log log = 8;
+}
+
+// The log settings associated with NGINX Agent
+message Log {
+    LogLevel log_level = 1;
+    enum LogLevel {
+        // Info log level
+        LOG_LEVEL_INFO = 0;
+        // Error log level
+        LOG_LEVEL_ERROR = 1;
+        // Warning log level
+        LOG_LEVEL_WARN = 2;
+        // Debug log level
+        LOG_LEVEL_DEBUG = 3;
+    }
+    string log_path = 2;
 }
 
 // The command server settings, associated with messaging from an external source

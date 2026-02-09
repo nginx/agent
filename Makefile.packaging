@@ -12,13 +12,13 @@ PACKAGE_BUILD       ?= 1
 PACKAGE_VERSION     ?= $(shell echo ${VERSION} | tr -d 'v')
 TARBALL_NAME        := $(PACKAGE_PREFIX).tar.gz
 
-DEB_DISTROS         ?= ubuntu-plucky-25.04 ubuntu-noble-24.04 ubuntu-jammy-22.04 ubuntu-focal-20.04 debian-trixie-13 debian-bookworm-12 debian-bullseye-11
+DEB_DISTROS         ?= ubuntu-questing-25.10 ubuntu-plucky-25.04 ubuntu-noble-24.04 ubuntu-jammy-22.04 ubuntu-focal-20.04 debian-trixie-13 debian-bookworm-12 debian-bullseye-11
 DEB_ARCHS           ?= arm64 amd64
-RPM_DISTROS         ?= suse-15-x86_64
+RPM_DISTROS         ?= suse-15-x86_64 suse-16-x86_64
 RPM_ARCH            := x86_64
 REDHAT_VERSIONS     ?= redhatenterprise-8 redhatenterprise-9 redhatenterprise-10
 REDHAT_ARCHS        ?= aarch64 x86_64
-APK_VERSIONS        ?= 3.18 3.19 3.20 3.21 3.22
+APK_VERSIONS        ?= 3.20 3.21 3.22 3.23
 APK_ARCHS           ?= aarch64 x86_64
 APK_REVISION 		?= 1
 AMAZON_VERSIONS     ?= amazon-2 amazon-2023
@@ -35,7 +35,7 @@ $(PACKAGES_DIR):
 	@mkdir -p $(PACKAGES_DIR)/deb && mkdir -p $(PACKAGES_DIR)/rpm && mkdir -p $(PACKAGES_DIR)/apk
 
 .PHONY: package
-package: gpg-key $(PACKAGES_DIR) #### Create final packages for all supported distros
+package: $(PACKAGES_DIR) #### Create final packages for all supported distros
 # Build binaries for all supported architectures
 	@for arch in $(DEB_ARCHS); do \
 		mkdir -p $(BUILD_DIR)/$${arch}; \

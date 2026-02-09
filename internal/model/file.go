@@ -19,4 +19,5 @@ const (
 	Update
 	Delete
 	Unchanged
+	ExternalFile
 )

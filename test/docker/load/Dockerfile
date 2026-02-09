@@ -7,6 +7,8 @@ ARG DEBIAN_FRONTEND=noninteractive
 WORKDIR /agent
 COPY . /agent
 
+ENV PLUS_VERSION=R35
+
 RUN --mount=type=secret,id=nginx-crt,dst=nginx-repo.crt \
     --mount=type=secret,id=nginx-key,dst=nginx-repo.key \
     set -x \

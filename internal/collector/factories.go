@@ -8,8 +8,8 @@ package collector
 import (
 	"github.com/nginx/agent/v3/internal/collector/containermetricsreceiver"
 	"github.com/nginx/agent/v3/internal/collector/logsgzipprocessor"
-	nginxreceiver "github.com/nginx/agent/v3/internal/collector/nginxossreceiver"
 	"github.com/nginx/agent/v3/internal/collector/nginxplusreceiver"
+	"github.com/nginx/agent/v3/internal/collector/nginxreceiver"
 	"github.com/nginx/agent/v3/internal/collector/securityviolationsprocessor"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter"
@@ -22,6 +22,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/redactionprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/tcplogreceiver"
 	"go.opentelemetry.io/collector/component"
@@ -37,6 +38,7 @@ import (
 	"go.opentelemetry.io/collector/processor/memorylimiterprocessor"
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
+	"go.opentelemetry.io/collector/service/telemetry/otelconftelemetry"
 )
 
 // OTelComponentFactories returns all the OTel collector components supported
@@ -54,6 +56,7 @@ func OTelComponentFactories() (otelcol.Factories, error) {
 		Receivers:  receivers,
 		Processors: processors,
 		Exporters:  exporters,
+		Telemetry:  otelconftelemetry.NewFactory(),
 	}
 
 	return factories, nil
@@ -86,6 +89,7 @@ func createReceiverFactories() map[component.Type]receiver.Factory {
 		nginxreceiver.NewFactory(),
 		nginxplusreceiver.NewFactory(),
 		tcplogreceiver.NewFactory(),
+		filelogreceiver.NewFactory(),
 	}
 
 	receivers := make(map[component.Type]receiver.Factory)

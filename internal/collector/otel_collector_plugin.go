@@ -13,6 +13,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -59,6 +60,8 @@ type (
 		previousNAPSysLogServer string
 		debugOTelConfigPath     string
 		stopped                 bool
+		agentConfigMutex        sync.Mutex
+		restartMutex            sync.Mutex
 	}
 )
 
@@ -100,6 +103,7 @@ func NewCollector(conf *config.Config) (*Collector, error) {
 		service:                 oTelCollector,
 		stopped:                 true,
 		mu:                      &sync.Mutex{},
+		agentConfigMutex:        sync.Mutex{},
 		previousNAPSysLogServer: "",
 		debugOTelConfigPath:     debugOTelConfigPath,
 	}, nil
@@ -139,7 +143,6 @@ func (oc *Collector) Init(ctx context.Context, mp bus.MessagePipeInterface) erro
 		return errors.New("OTel collector already running")
 	}
 
-	slog.InfoContext(ctx, "Starting OTel collector")
 	bootErr := oc.bootup(runCtx)
 	if bootErr != nil {
 		slog.ErrorContext(runCtx, "Unable to start OTel Collector", "error", bootErr)
@@ -159,6 +162,57 @@ func (oc *Collector) Info() *bus.Info {
 func (oc *Collector) Close(ctx context.Context) error {
 	slog.InfoContext(ctx, "Closing OTel Collector plugin")
 
+	return oc.shutdownCollector(ctx)
+}
+
+// Process an incoming Message Bus message in the plugin
+func (oc *Collector) Process(ctx context.Context, msg *bus.Message) {
+	switch msg.Topic {
+	case bus.NginxConfigUpdateTopic:
+		oc.handleNginxConfigUpdate(ctx, msg)
+	case bus.ResourceUpdateTopic:
+		oc.handleResourceUpdate(ctx, msg)
+	default:
+		slog.DebugContext(ctx, "OTel collector plugin unknown topic", "topic", msg.Topic)
+	}
+}
+
+// Subscriptions returns the list of topics the plugin is subscribed to
+func (oc *Collector) Subscriptions() []string {
+	return []string{
+		bus.ResourceUpdateTopic,
+		bus.NginxConfigUpdateTopic,
+	}
+}
+
+func (oc *Collector) Reconfigure(ctx context.Context, agentConfig *config.Config) error {
+	slog.DebugContext(ctx, "OTel collector plugin received agent config update message")
+
+	oc.agentConfigMutex.Lock()
+	defer oc.agentConfigMutex.Unlock()
+
+	if oc.config.Collector != nil && oc.config.Collector.Extensions.HeadersSetter != nil &&
+		oc.config.Collector.Extensions.HeadersSetter.Headers != nil {
+		if !reflect.DeepEqual(oc.config.Collector.Extensions.HeadersSetter.Headers,
+			agentConfig.Collector.Extensions.HeadersSetter.Headers) {
+			slog.InfoContext(ctx, "OTel collector headers have changed, restarting collector")
+			oc.config = agentConfig
+			oc.restartMutex.Lock()
+			defer oc.restartMutex.Unlock()
+			oc.restartCollector(ctx)
+		}
+	} else {
+		slog.InfoContext(ctx, "OTel collector headers have been added, restarting collector")
+		oc.config = agentConfig
+		oc.restartMutex.Lock()
+		defer oc.restartMutex.Unlock()
+		oc.restartCollector(ctx)
+	}
+
+	return nil
+}
+
+func (oc *Collector) shutdownCollector(ctx context.Context) error {
 	if !oc.stopped {
 		slog.InfoContext(ctx, "Shutting down OTel Collector", "state", oc.service.GetState())
 		oc.service.Shutdown()
@@ -183,26 +237,6 @@ func (oc *Collector) Close(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-// Process an incoming Message Bus message in the plugin
-func (oc *Collector) Process(ctx context.Context, msg *bus.Message) {
-	switch msg.Topic {
-	case bus.NginxConfigUpdateTopic:
-		oc.handleNginxConfigUpdate(ctx, msg)
-	case bus.ResourceUpdateTopic:
-		oc.handleResourceUpdate(ctx, msg)
-	default:
-		slog.DebugContext(ctx, "OTel collector plugin unknown topic", "topic", msg.Topic)
-	}
-}
-
-// Subscriptions returns the list of topics the plugin is subscribed to
-func (oc *Collector) Subscriptions() []string {
-	return []string{
-		bus.ResourceUpdateTopic,
-		bus.NginxConfigUpdateTopic,
-	}
 }
 
 // Process receivers and log warning for sub-optimal configurations
@@ -244,11 +278,12 @@ func (oc *Collector) bootup(ctx context.Context) error {
 			oc.setProxyIfNeeded(ctx)
 		}
 
+		slog.InfoContext(ctx, "Starting OTel collector")
 		appErr := oc.service.Run(ctx)
 		if appErr != nil {
 			errChan <- appErr
 		}
-		slog.InfoContext(ctx, "OTel collector run finished")
+		slog.InfoContext(ctx, "OTel collector has stopped running")
 	}()
 
 	for {
@@ -299,6 +334,8 @@ func (oc *Collector) handleNginxConfigUpdate(ctx context.Context, msg *bus.Messa
 			return
 		}
 
+		oc.restartMutex.Lock()
+		defer oc.restartMutex.Unlock()
 		oc.restartCollector(ctx)
 	}
 }
@@ -325,6 +362,8 @@ func (oc *Collector) handleResourceUpdate(ctx context.Context, msg *bus.Message)
 			return
 		}
 
+		oc.restartMutex.Lock()
+		defer oc.restartMutex.Unlock()
 		oc.restartCollector(ctx)
 	}
 }
@@ -418,7 +457,7 @@ func (oc *Collector) writeRunningConfig(ctx context.Context, settings otelcol.Co
 }
 
 func (oc *Collector) restartCollector(ctx context.Context) {
-	err := oc.Close(ctx)
+	err := oc.shutdownCollector(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to shutdown OTel Collector", "error", err)
 		return

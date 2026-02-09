@@ -888,7 +888,7 @@ resourceMetrics:
                         stringValue: 5xx
               isMonotonic: true
             unit: responses
-          - description: Number of times the server became unavailable for client requests (“unavail”).
+          - description: The total number of times the server became unavailable for client requests ('unavail').
             name: nginx.http.upstream.peer.unavailables
             sum:
               aggregationTemporality: 2
@@ -1939,7 +1939,7 @@ resourceMetrics:
                         stringValue: upstream_test_zone
               isMonotonic: true
             unit: ms
-          - description: How many times the server became unavailable for client connections (state “unavail”) due to the number of unsuccessful attempts reaching the max_fails threshold.
+          - description: How many times the server became unavailable for client connections (state 'unavail') due to the number of unsuccessful attempts reaching the max_fails threshold.
             name: nginx.stream.upstream.peer.unavailables
             sum:
               aggregationTemporality: 2
@@ -1960,7 +1960,7 @@ resourceMetrics:
                         stringValue: upstream_test_zone
               isMonotonic: true
             unit: requests
-          - description: Current state of upstream peers in deployment. If any of the upstream peers in the deployment match the given state then the value will be 1. If no upstream peer is a match then the value will be 0.
+          - description: Current state of upstream peers in deployment.
             name: nginx.stream.upstream.peer.state
             sum:
               aggregationTemporality: 2

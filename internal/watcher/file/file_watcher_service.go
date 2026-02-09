@@ -57,6 +57,7 @@ func NewFileWatcherService(agentConfig *config.Config) *FileWatcherService {
 	}
 }
 
+//nolint:revive // cant simplify due to for loop
 func (fws *FileWatcherService) Watch(ctx context.Context, ch chan<- FileUpdateMessage) {
 	monitoringFrequency := fws.agentConfig.Watchers.FileWatcher.MonitoringFrequency
 	slog.DebugContext(ctx, "Starting file watcher monitoring", "monitoring_frequency", monitoringFrequency)
@@ -83,7 +84,11 @@ func (fws *FileWatcherService) Watch(ctx context.Context, ch chan<- FileUpdateMe
 
 			return
 		case <-instanceWatcherTicker.C:
-			fws.checkForUpdates(ctx, ch)
+			if fws.enabled.Load() {
+				fws.checkForUpdates(ctx, ch)
+			} else {
+				slog.DebugContext(ctx, "Skipping check for file updates, file watcher is disabled")
+			}
 		}
 
 		if fws.watcher != nil {
@@ -139,7 +144,7 @@ func (fws *FileWatcherService) Update(ctx context.Context, nginxConfigContext *m
 	fws.directoriesToWatch = directoriesToWatch
 
 	if fws.watcher != nil {
-		slog.InfoContext(ctx, "Updating file watcher", "allowed", fws.agentConfig.AllowedDirectories)
+		slog.DebugContext(ctx, "No watcher exists, creating new watcher")
 
 		// Start watching new directories
 		fws.addWatchers(ctx)

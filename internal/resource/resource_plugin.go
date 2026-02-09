@@ -8,7 +8,6 @@ package resource
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"sync"
 
@@ -342,9 +341,16 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 	}
 	if instance == nil {
 		slog.ErrorContext(ctx, "Unable to find instance with ID", "id", instanceID)
-		resp := response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-			"", instanceID, fmt.Sprintf("failed to preform API "+
-				"action, could not find instance with ID: %s", instanceID))
+		resp := response.CreateDataPlaneResponse(
+			correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "",
+				Error:   "failed to preform API action, could not find instance with ID: " + instanceID,
+			},
+			mpi.DataPlaneResponse_API_ACTION_REQUEST,
+			instanceID,
+		)
 
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 
@@ -353,8 +359,16 @@ func (r *Resource) handleNginxPlusActionRequest(ctx context.Context, action *mpi
 
 	if instance.GetInstanceMeta().GetInstanceType() != mpi.InstanceMeta_INSTANCE_TYPE_NGINX_PLUS {
 		slog.ErrorContext(ctx, "Failed to preform API action", "error", errors.New("instance is not NGINX Plus"))
-		resp := response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-			"", instanceID, "failed to preform API action, instance is not NGINX Plus")
+		resp := response.CreateDataPlaneResponse(
+			correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "",
+				Error:   "failed to preform API action, instance is not NGINX Plus",
+			},
+			mpi.DataPlaneResponse_API_ACTION_REQUEST,
+			instanceID,
+		)
 
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: resp})
 
@@ -418,10 +432,13 @@ func (r *Resource) handleConfigApplyRequest(ctx context.Context, msg *bus.Messag
 	case model.NoChange:
 		slog.DebugContext(ctx, "No changes required for config apply request")
 		dataPlaneResponse = response.CreateDataPlaneResponse(correlationID,
-			mpi.CommandResponse_COMMAND_STATUS_OK,
-			"Config apply successful, no files to change",
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+				Message: "Config apply successful, no files to change",
+				Error:   "",
+			},
+			mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
 			instanceID,
-			"",
 		)
 		r.completeConfigApply(ctx, dataPlaneResponse)
 	case model.Error:
@@ -433,10 +450,13 @@ func (r *Resource) handleConfigApplyRequest(ctx context.Context, msg *bus.Messag
 		)
 		dataPlaneResponse = response.CreateDataPlaneResponse(
 			correlationID,
-			mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-			"Config apply failed",
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "Config apply failed",
+				Error:   "",
+			},
+			mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
 			instanceID,
-			err.Error(),
 		)
 
 		r.completeConfigApply(ctx, dataPlaneResponse)
@@ -450,10 +470,13 @@ func (r *Resource) handleConfigApplyRequest(ctx context.Context, msg *bus.Messag
 
 		dataPlaneResponse = response.CreateDataPlaneResponse(
 			correlationID,
-			mpi.CommandResponse_COMMAND_STATUS_ERROR,
-			"Config apply failed, rolling back config",
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_ERROR,
+				Message: "Config apply failed, rolling back config",
+				Error:   "",
+			},
+			mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
 			instanceID,
-			err.Error(),
 		)
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: dataPlaneResponse})
 
@@ -464,10 +487,14 @@ func (r *Resource) handleConfigApplyRequest(ctx context.Context, msg *bus.Messag
 		if rollbackErr != nil {
 			rollbackResponse := response.CreateDataPlaneResponse(
 				correlationID,
-				mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-				"Config apply failed, rollback failed",
+				&mpi.CommandResponse{
+					Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+					Message: "Config apply failed, rollback failed",
+					Error:   "",
+				},
+				mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
 				instanceID,
-				rollbackErr.Error())
+			)
 
 			r.completeConfigApply(ctx, rollbackResponse)
 
@@ -476,11 +503,14 @@ func (r *Resource) handleConfigApplyRequest(ctx context.Context, msg *bus.Messag
 
 		dataPlaneResponse = response.CreateDataPlaneResponse(
 			correlationID,
-			mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-			"Config apply failed, rollback successful",
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "Config apply failed, rollback succeeded",
+				Error:   "",
+			},
+			mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
 			instanceID,
-			err.Error())
-
+		)
 		r.completeConfigApply(ctx, dataPlaneResponse)
 	case model.OK:
 		slog.DebugContext(ctx, "Changes required for config apply request")
@@ -499,10 +529,21 @@ func (r *Resource) applyConfig(ctx context.Context, correlationID, instanceID st
 
 	configContext, err := r.resourceService.ApplyConfig(ctx, instanceID)
 	if err != nil {
-		slog.ErrorContext(ctx, "errors found during config apply, "+
-			"sending error status, rolling back config", "err", err)
-		dpResponse := response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_ERROR,
-			"Config apply failed, rolling back config", instanceID, err.Error())
+		slog.ErrorContext(
+			ctx,
+			"Errors found during config apply, sending error status and rolling back configuration updates",
+			"error", err,
+		)
+		dpResponse := response.CreateDataPlaneResponse(
+			correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_ERROR,
+				Message: "Config apply failed, rolling back config",
+				Error:   err.Error(),
+			},
+			mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
+			instanceID,
+		)
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: dpResponse})
 
 		r.failedConfigApply(ctx, correlationID, instanceID, err)
@@ -510,8 +551,16 @@ func (r *Resource) applyConfig(ctx context.Context, correlationID, instanceID st
 		return
 	}
 
-	dpResponse := response.CreateDataPlaneResponse(correlationID, mpi.CommandResponse_COMMAND_STATUS_OK,
-		"Config apply successful", instanceID, "")
+	dpResponse := response.CreateDataPlaneResponse(
+		correlationID,
+		&mpi.CommandResponse{
+			Status:  mpi.CommandResponse_COMMAND_STATUS_OK,
+			Message: "Config apply successful",
+			Error:   "",
+		},
+		mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
+		instanceID,
+	)
 
 	r.reloadSuccessful(ctx, configContext, dpResponse)
 }
@@ -525,13 +574,27 @@ func (r *Resource) failedConfigApply(ctx context.Context, correlationID, instanc
 
 	err := r.fileManagerService.Rollback(ctx, instanceID)
 	if err != nil {
-		rollbackResponse := response.CreateDataPlaneResponse(correlationID,
-			mpi.CommandResponse_COMMAND_STATUS_ERROR,
-			"Rollback failed", instanceID, err.Error())
+		rollbackResponse := response.CreateDataPlaneResponse(
+			correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_ERROR,
+				Message: "Rollback failed",
+				Error:   err.Error(),
+			},
+			mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
+			instanceID,
+		)
 
-		applyResponse := response.CreateDataPlaneResponse(correlationID,
-			mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-			"Config apply failed, rollback failed", instanceID, applyErr.Error())
+		applyResponse := response.CreateDataPlaneResponse(
+			correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "Config apply failed, rollback failed",
+				Error:   err.Error(),
+			},
+			mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
+			instanceID,
+		)
 
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
 
@@ -548,14 +611,29 @@ func (r *Resource) handleRollbackWrite(ctx context.Context, correlationID, insta
 
 	_, err := r.resourceService.ApplyConfig(ctx, instanceID)
 	if err != nil {
-		slog.ErrorContext(ctx, "errors found during rollback, sending failure status", "err", err)
+		slog.ErrorContext(ctx, "Errors found during rollback, sending failure status", "error", err)
 
-		rollbackResponse := response.CreateDataPlaneResponse(correlationID,
-			mpi.CommandResponse_COMMAND_STATUS_ERROR, "Rollback failed", instanceID, err.Error())
+		rollbackResponse := response.CreateDataPlaneResponse(
+			correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_ERROR,
+				Message: "Rollback failed",
+				Error:   err.Error(),
+			},
+			mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
+			instanceID,
+		)
 
-		applyResponse := response.CreateDataPlaneResponse(correlationID,
-			mpi.CommandResponse_COMMAND_STATUS_FAILURE, "Config apply failed, rollback failed",
-			instanceID, applyErr.Error())
+		applyResponse := response.CreateDataPlaneResponse(
+			correlationID,
+			&mpi.CommandResponse{
+				Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+				Message: "Config apply failed, rollback failed",
+				Error:   err.Error(),
+			},
+			mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
+			instanceID,
+		)
 
 		r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: rollbackResponse})
 
@@ -564,9 +642,16 @@ func (r *Resource) handleRollbackWrite(ctx context.Context, correlationID, insta
 		return
 	}
 
-	applyResponse := response.CreateDataPlaneResponse(correlationID,
-		mpi.CommandResponse_COMMAND_STATUS_FAILURE,
-		"Config apply failed, rollback successful", instanceID, applyErr.Error())
+	applyResponse := response.CreateDataPlaneResponse(
+		correlationID,
+		&mpi.CommandResponse{
+			Status:  mpi.CommandResponse_COMMAND_STATUS_FAILURE,
+			Message: "Config apply failed, rollback successful",
+			Error:   "",
+		},
+		mpi.DataPlaneResponse_CONFIG_APPLY_REQUEST,
+		instanceID,
+	)
 
 	r.completeConfigApply(ctx, applyResponse)
 }
@@ -589,4 +674,19 @@ func (r *Resource) reloadSuccessful(ctx context.Context,
 		}
 	}
 	r.messagePipe.Process(ctx, &bus.Message{Topic: bus.DataPlaneResponseTopic, Data: dpResponse})
+}
+
+func (r *Resource) handleAgentConfigUpdate(ctx context.Context, msg *bus.Message) {
+	slog.DebugContext(ctx, "Resource plugin received agent config update message")
+
+	r.agentConfigMutex.Lock()
+	defer r.agentConfigMutex.Unlock()
+
+	agentConfig, ok := msg.Data.(*config.Config)
+	if !ok {
+		slog.ErrorContext(ctx, "Unable to cast message payload to *config.Config", "payload", msg.Data)
+		return
+	}
+
+	r.agentConfig = agentConfig
 }
