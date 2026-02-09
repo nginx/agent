@@ -68,11 +68,11 @@ func TestHealthWatcherService_health(t *testing.T) {
 	unspecifiedInstance := protos.UnsupportedInstance()
 
 	tests := []struct {
-		name             string
 		instances        map[string]*mpi.Instance
+		name             string
 		cache            map[string]*mpi.InstanceHealth
-		isHealthDiff     bool
 		updatedInstances []*mpi.InstanceHealth
+		isHealthDiff     bool
 	}{
 		{
 			name: "Test 1: NGINX Instance Status Changed",
