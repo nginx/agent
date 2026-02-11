@@ -606,7 +606,6 @@ func (env *EnvironmentType) Processes() (result []*Process) {
 		cmd, _ := p.CmdlineWithContext(ctx)
 
 		if env.isNginxProcess(name, cmd) {
-			log.Infof("-------------------- %v", name)
 			nginxProcesses[pid] = p
 		}
 
