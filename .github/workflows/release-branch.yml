@@ -180,7 +180,7 @@ jobs:
       - name: Publish Release Packages
         if: ${{ inputs.publishPackages == true }}
         env:
-          TOKEN: ${{ github.token }}
+          TOKEN: ${{ steps.idtoken.outputs.id_token }}
           UPLOAD_URL: "https://up-ap.nginx.com"
         run: |
           make release
