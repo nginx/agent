@@ -6,9 +6,38 @@
         "docker:enableMajor",
         "helpers:pinGitHubActionDigests",
         ":gitSignOff",
-        ":maintainLockFilesMonthly",
-        ":disableRateLimiting",
         ":semanticCommitsDisabled"
+    ],
+    "packageRules": [
+        {
+            "groupName": "GitHub Actions",
+            "matchManagers": [
+                "github-actions"
+            ],
+            "matchUpdateTypes": [
+                "minor",
+                "patch"
+            ]
+        },
+        {
+            "groupName": "OpenTelemetry Collector",
+            "schedule": [
+                "before 3am on Monday"
+            ],
+            "matchPackageNames": [
+                "/opentelemetry.*collector/",
+                "/opentelemetry-collector/"
+            ]
+        },
+        {
+            "groupName": "CodeQL",
+            "matchPackageNames": [
+                "github/codeql-action"
+            ],
+            "schedule": [
+                "before 3am on Monday"
+            ]
+        }
     ],
     "rebaseWhen": "behind-base-branch",
     "baseBranchPatterns": ["main"]
