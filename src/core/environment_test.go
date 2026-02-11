@@ -1145,6 +1145,18 @@ func TestGetNginxProcess(t *testing.T) {
 			cmd:    "nginx: upgrade",
 			expect: false,
 		},
+		{
+			name:   "nginx-debug process",
+			pName:  "nginx-debug",
+			cmd:    "nginx: master process /usr/sbin/nginx-debug -c /etc/nginx/nginx.conf",
+			expect: true,
+		},
+		{
+			name:   "nginx-debug process",
+			pName:  "nginx-debug",
+			cmd:    "{nginx-debug} nginx: master process /usr/sbin/nginx-debug -g daemon off;",
+			expect: true,
+		},
 	}
 
 	for _, tt := range tests {

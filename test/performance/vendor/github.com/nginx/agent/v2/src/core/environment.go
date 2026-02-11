@@ -606,6 +606,7 @@ func (env *EnvironmentType) Processes() (result []*Process) {
 		cmd, _ := p.CmdlineWithContext(ctx)
 
 		if env.isNginxProcess(name, cmd) {
+			log.Infof("-------------------- %v", name)
 			nginxProcesses[pid] = p
 		}
 
@@ -656,7 +657,9 @@ func (env *EnvironmentType) Processes() (result []*Process) {
 }
 
 func (env *EnvironmentType) isNginxProcess(name string, cmd string) bool {
-	return name == "nginx" && !strings.Contains(cmd, "upgrade") && strings.HasPrefix(cmd, "nginx:")
+	isNameValid := name == "nginx" || name == "nginx-debug"
+	isCmdValid := strings.HasPrefix(cmd, "nginx:") || strings.HasPrefix(cmd, "{nginx-debug} nginx:")
+	return !strings.Contains(cmd, "upgrade") && isNameValid && isCmdValid
 }
 
 func getNginxProcessExe(nginxProcess *process.Process) string {
