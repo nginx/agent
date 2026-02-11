@@ -155,7 +155,12 @@ type Nginx struct {
 	NginxClientVersion           int           `mapstructure:"client_version" yaml:"-"`
 	ConfigReloadMonitoringPeriod time.Duration `mapstructure:"config_reload_monitoring_period" yaml:"-"`
 	TreatWarningsAsErrors        bool          `mapstructure:"treat_warnings_as_errors" yaml:"-"`
-	ApiTls                       TLSConfig     `mapstructure:"api_tls" yaml:"-"`
+	API                          *NginxAPI     `mapstructure:"api"`
+}
+
+type NginxAPI struct {
+	URL string    `mapstructure:"url"`
+	TLS TLSConfig `mapstructure:"tls"`
 }
 
 type Dataplane struct {

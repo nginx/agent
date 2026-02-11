@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/nginx/agent/sdk/v2/proto"
 	"github.com/nginx/agent/sdk/v2/zip"
@@ -1496,6 +1497,218 @@ func TestGenerateActionMaps(t *testing.T) {
 			assert.Equal(tt, testCase.expectedFilesToUpdate, filesToUpdate)
 			assert.Equal(tt, testCase.expectedFilesToDelete, filesToDelete)
 			assert.Equal(tt, testCase.allFilesHaveAnAction, allFilesHaveAnAction)
+		})
+	}
+}
+
+func TestGetNginxDetailsFromProcess(t *testing.T) {
+	// Test the core parsing and transformation logic by using the lower-level functions
+	testCases := []struct {
+		name                string
+		process             *Process
+		nginxInfo           *nginxInfo
+		config              *config.Config
+		expectedVersion     string
+		expectedConfPath    string
+		expectedProcessId   string
+		expectedPlus        bool
+		expectedPlusVersion string
+		expectedStatusUrl   string
+	}{
+		{
+			name: "Test 1: OSS nginx process",
+			process: &Process{
+				Pid:        1234,
+				CreateTime: 1640995200,
+				Path:       "/usr/sbin/nginx",
+				Command:    "/usr/sbin/nginx",
+				IsMaster:   true,
+			},
+			nginxInfo: &nginxInfo{
+				version:  "1.20.2",
+				plusver:  "",
+				source:   "built by gcc 7.5.0",
+				prefix:   "/etc/nginx",
+				confPath: "/etc/nginx/nginx.conf",
+				ssl:      []string{"OpenSSL", "1.1.1f", "31 Mar 2020"},
+				cfgf: map[string]interface{}{
+					"prefix":    "/etc/nginx",
+					"conf-path": "/etc/nginx/nginx.conf",
+				},
+				configureArgs: []string{"--prefix=/etc/nginx", "--with-http_ssl_module"},
+				mtime:         time.Now(),
+			},
+			config: &config.Config{
+				Nginx:            config.Nginx{},
+				IgnoreDirectives: []string{},
+			},
+			expectedVersion:     "1.20.2",
+			expectedConfPath:    "/etc/nginx/nginx.conf",
+			expectedProcessId:   "1234",
+			expectedPlus:        false,
+			expectedPlusVersion: "",
+			expectedStatusUrl:   "", // Empty because no stub_status configured
+		},
+		{
+			name: "Test 2: Nginx Plus process",
+			process: &Process{
+				Pid:        5678,
+				CreateTime: 1640995300,
+				Path:       "/usr/sbin/nginx",
+				Command:    "/usr/sbin/nginx",
+				IsMaster:   true,
+			},
+			nginxInfo: &nginxInfo{
+				version:  "1.21.6",
+				plusver:  "R26",
+				source:   "built by gcc 9.4.0",
+				prefix:   "/etc/nginx",
+				confPath: "/etc/nginx/nginx.conf",
+				ssl:      []string{"OpenSSL", "1.1.1k", "25 Mar 2021"},
+				cfgf: map[string]interface{}{
+					"prefix":    "/etc/nginx",
+					"conf-path": "/etc/nginx/nginx.conf",
+				},
+				configureArgs: []string{"--prefix=/etc/nginx", "--with-http_v2_module"},
+				mtime:         time.Now(),
+			},
+			config: &config.Config{
+				Nginx:            config.Nginx{},
+				IgnoreDirectives: []string{},
+			},
+			expectedVersion:     "1.21.6",
+			expectedConfPath:    "/etc/nginx/nginx.conf",
+			expectedProcessId:   "5678",
+			expectedPlus:        true,
+			expectedPlusVersion: "R26",
+			expectedStatusUrl:   "", // Empty because no Plus API configured
+		},
+		{
+			name: "Test 3: Process with custom conf path from command line",
+			process: &Process{
+				Pid:        9012,
+				CreateTime: 1640995400,
+				Path:       "/opt/nginx/sbin/nginx",
+				Command:    "/opt/nginx/sbin/nginx -c /custom/nginx.conf",
+				IsMaster:   true,
+			},
+			nginxInfo: &nginxInfo{
+				version:  "1.22.1",
+				plusver:  "",
+				prefix:   "/opt/nginx",
+				confPath: "/opt/nginx/conf/nginx.conf",
+				ssl:      []string{"BoringSSL"},
+				cfgf: map[string]interface{}{
+					"prefix":    "/opt/nginx",
+					"conf-path": "/opt/nginx/conf/nginx.conf",
+				},
+				configureArgs: []string{"--prefix=/opt/nginx"},
+				mtime:         time.Now(),
+			},
+			config: &config.Config{
+				Nginx:            config.Nginx{},
+				IgnoreDirectives: []string{},
+			},
+			expectedVersion:     "1.22.1",
+			expectedConfPath:    "/custom/nginx.conf", // Should be overridden by command line
+			expectedProcessId:   "9012",
+			expectedPlus:        false,
+			expectedPlusVersion: "",
+			expectedStatusUrl:   "", // Empty because no stub_status configured
+		},
+		{
+			name: "Test 4: Process with configured API URL",
+			process: &Process{
+				Pid:        1111,
+				CreateTime: 1640995500,
+				Path:       "/usr/sbin/nginx",
+				Command:    "/usr/sbin/nginx",
+				IsMaster:   true,
+			},
+			nginxInfo: &nginxInfo{
+				version:  "1.20.2",
+				plusver:  "",
+				source:   "built by gcc 7.5.0",
+				prefix:   "/etc/nginx",
+				confPath: "/etc/nginx/nginx.conf",
+				ssl:      []string{"OpenSSL", "1.1.1f", "31 Mar 2020"},
+				cfgf: map[string]interface{}{
+					"prefix":    "/etc/nginx",
+					"conf-path": "/etc/nginx/nginx.conf",
+				},
+				configureArgs: []string{"--prefix=/etc/nginx", "--with-http_ssl_module"},
+				mtime:         time.Now(),
+			},
+			config: &config.Config{
+				Nginx: config.Nginx{
+					API: &config.NginxAPI{
+						URL: "http://127.0.0.1:8080/api",
+					},
+				},
+				IgnoreDirectives: []string{},
+			},
+			expectedVersion:     "1.20.2",
+			expectedConfPath:    "/etc/nginx/nginx.conf",
+			expectedProcessId:   "1111",
+			expectedPlus:        false,
+			expectedPlusVersion: "",
+			expectedStatusUrl:   "http://127.0.0.1:8080/api", // From agent config
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Create a function to test the core logic without file system dependencies
+			nginxBinary := &NginxBinaryType{
+				config:     tc.config,
+				statusUrls: make(map[string]string),
+			}
+
+			// Mock the getNginxInfoFrom method by creating a wrapper that returns our test data
+			originalPath := tc.process.Path
+
+			// Create temporary file to satisfy the os.Stat call in the cached path
+			tmpFile := filepath.Join(t.TempDir(), "nginx")
+			err := os.WriteFile(tmpFile, []byte(""), 0o755)
+			require.NoError(t, err)
+
+			// Set modification time to match our test data
+			err = os.Chtimes(tmpFile, tc.nginxInfo.mtime, tc.nginxInfo.mtime)
+			require.NoError(t, err)
+
+			// Update process path and cache the nginx info to avoid nginx -V call
+			tc.process.Path = tmpFile
+			if nginxBinary.nginxInfoMap == nil {
+				nginxBinary.nginxInfoMap = make(map[string]*nginxInfo)
+			}
+			nginxBinary.nginxInfoMap[tmpFile] = tc.nginxInfo
+
+			// Call the function under test
+			result := nginxBinary.GetNginxDetailsFromProcess(tc.process)
+
+			// Restore original path for consistent testing
+			tc.process.Path = originalPath
+
+			// Validate core fields
+			assert.Equal(t, tc.expectedVersion, result.Version)
+			assert.Equal(t, tc.expectedConfPath, result.ConfPath)
+			assert.Equal(t, tc.expectedProcessId, result.ProcessId)
+
+			// Test Plus-specific assertions
+			require.NotNil(t, result.Plus)
+			assert.Equal(t, tc.expectedPlus, result.Plus.Enabled)
+			assert.Equal(t, tc.expectedPlusVersion, result.Plus.Release)
+
+			// Validate StatusUrl
+			assert.Equal(t, tc.expectedStatusUrl, result.StatusUrl)
+
+			// Validate NginxId is generated
+			assert.NotEmpty(t, result.NginxId)
+
+			// Validate other core fields are set correctly
+			assert.Equal(t, fmt.Sprintf("%d", tc.process.Pid), result.ProcessId)
+			assert.Equal(t, tc.process.CreateTime, result.StartTime)
+			assert.Equal(t, false, result.BuiltFromSource) // Default value
 		})
 	}
 }
