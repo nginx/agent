@@ -539,7 +539,10 @@ func (fso *FileServiceOperator) sendFileUpdateStreamChunks(
 		chunkID++
 	}
 
-	return nil
+	// Ensure the stream is properly closed and wait for the server's response
+	// after all chunks are sent
+	_, err = updateFileStreamClient.CloseAndRecv()
+	return err
 }
 
 func (fso *FileServiceOperator) sendFileUpdateStreamChunk(
