@@ -623,6 +623,7 @@ func TestResource_Subscriptions(t *testing.T) {
 			bus.NginxConfigUpdateTopic,
 			bus.ConfigUploadRequestTopic,
 			bus.ConfigApplyRequestTopic,
+			bus.ResourceUpdateTopic,
 		},
 		nginxPlugin.Subscriptions())
 
@@ -634,6 +635,7 @@ func TestResource_Subscriptions(t *testing.T) {
 			bus.ConnectionCreatedTopic,
 			bus.NginxConfigUpdateTopic,
 			bus.ConfigUploadRequestTopic,
+			bus.ResourceUpdateTopic,
 		},
 		readNginxPlugin.Subscriptions())
 }

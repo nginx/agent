@@ -161,6 +161,7 @@ func (n *NginxPlugin) Subscriptions() []string {
 		bus.ConnectionCreatedTopic,
 		bus.NginxConfigUpdateTopic,
 		bus.ConfigUploadRequestTopic,
+		bus.ResourceUpdateTopic,
 	}
 
 	if n.serverType == model.Command {
